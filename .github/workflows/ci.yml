@@ -44,6 +44,7 @@ jobs:
   gitleaks:
     name: Secret Scan (gitleaks)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,6 +64,7 @@ jobs:
   validate-wrapper:
     name: Validate Gradle Wrapper
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: gradle/actions/wrapper-validation@v4
@@ -71,6 +73,7 @@ jobs:
   build:
     name: Build (compile only)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: validate-wrapper
     steps:
       - uses: actions/checkout@v4
@@ -94,6 +97,7 @@ jobs:
   test-core:
     name: Test / exposed-core + exposed-dao (H2)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: build
     steps:
       - uses: actions/checkout@v4
@@ -138,6 +142,7 @@ jobs:
   test-serialization:
     name: Test / serialization modules (H2)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: build
     steps:
       - uses: actions/checkout@v4
@@ -192,6 +197,7 @@ jobs:
   test-tink:
     name: Test / exposed-tink (H2)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: build
     steps:
       - uses: actions/checkout@v4
@@ -236,6 +242,7 @@ jobs:
   test-jdbc-h2:
     name: Test / exposed-jdbc + exposed-jdbc-tests (H2)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: build
     steps:
       - uses: actions/checkout@v4
@@ -289,6 +296,7 @@ jobs:
   test-r2dbc-h2:
     name: Test / exposed-r2dbc + exposed-r2dbc-tests (H2)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: build
     steps:
       - uses: actions/checkout@v4
@@ -340,6 +348,7 @@ jobs:
 
   # spring-boot3 exposed-jdbc + exposed-r2dbc (H2, Docker for Redis)
   test-spring-boot3:
+    timeout-minutes: 10
     name: Test / spring-boot3 exposed-jdbc + exposed-r2dbc
     runs-on: ubuntu-latest
     needs: build
@@ -394,6 +403,7 @@ jobs:
 
   # spring-boot4 exposed-jdbc + exposed-r2dbc (H2, Docker for Redis)
   test-spring-boot4:
+    timeout-minutes: 10
     name: Test / spring-boot4 exposed-jdbc + exposed-r2dbc
     runs-on: ubuntu-latest
     needs: build
@@ -450,6 +460,7 @@ jobs:
   coverage-report:
     name: Coverage Report
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs:
       - test-core
       - test-serialization
@@ -486,6 +497,7 @@ jobs:
   ci-status:
     name: CI Status
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs:
       - gitleaks
       - build
