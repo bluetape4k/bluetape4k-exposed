@@ -1,9 +1,6 @@
 # Compiled class file
 *.class
 
-# Git Worktrees
-.worktrees/
-
 # Log file
 *.log
 
@@ -52,12 +49,16 @@ local.properties
 logs/
 
 # AI tools
+.claude/lib-sources/
 .claude/settings.local.json
 .claude/worktrees
 .omc/
 .omx/
 .ai/
 .code-review-graph
+
+# Git Worktrees
+.worktrees/
 
 # Eclipse
 .project
@@ -67,5 +68,3 @@ logs/
 # Gradle build
 .gradletasknamecache
 src_managed
-
-.claude/lib-sources/
