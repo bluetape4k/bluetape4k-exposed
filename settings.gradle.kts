@@ -14,6 +14,7 @@ val projectName = "bluetape4k"
 rootProject.name = "$projectName-exposed-projects"
 
 includeModules("data", withBaseDir = false)
+includeModules("examples", withBaseDir = true)
 includeModules("spring-boot3", withBaseDir = true)
 includeModules("spring-boot4", withBaseDir = true)
 
