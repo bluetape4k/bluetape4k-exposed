@@ -56,7 +56,7 @@ jobs:
           path: 'build/reports/detekt/*.xml'
           retention-days: 14
 
-  # exposed-core + exposed-dao (H2, no Docker)
+  # exposed-core + exposed-dao (H2)
   test-core:
     name: Test / exposed-core + exposed-dao (H2)
     runs-on: ubuntu-latest
@@ -95,7 +95,7 @@ jobs:
           path: '**/build/reports/kover/'
           retention-days: 14
 
-  # Serialization modules (H2, no Docker)
+  # Serialization modules (H2)
   test-serialization:
     name: Test / serialization modules (H2)
     runs-on: ubuntu-latest
@@ -144,7 +144,7 @@ jobs:
           path: '**/build/reports/kover/'
           retention-days: 14
 
-  # exposed-tink (H2, no Docker)
+  # exposed-tink (H2)
   test-tink:
     name: Test / exposed-tink (H2)
     runs-on: ubuntu-latest
@@ -643,7 +643,7 @@ jobs:
           path: '**/build/reports/kover/'
           retention-days: 14
 
-  # exposed-measured (no Docker)
+  # exposed-measured
   test-measured:
     name: Test / exposed-measured
     runs-on: ubuntu-latest
@@ -862,6 +862,437 @@ jobs:
           path: '**/build/reports/kover/'
           retention-days: 14
 
+  # exposed-duckdb (embedded, requires --enable-native-access)
+  test-duckdb:
+    name: Test / exposed-duckdb
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Test exposed-duckdb
+        run: ./gradlew :bluetape4k-exposed-duckdb:test --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=--enable-native-access=ALL-UNNAMED"
+      - name: Generate Kover XML report
+        if: always()
+        run: ./gradlew :bluetape4k-exposed-duckdb:koverXmlReport --no-daemon
+        continue-on-error: true
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-duckdb
+          path: '**/build/test-results/test/*.xml'
+          retention-days: 14
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-duckdb
+          path: '**/build/reports/kover/'
+          retention-days: 14
+
+  # exposed-cache (abstract cache interface, H2)
+  test-cache:
+    name: Test / exposed-cache (H2)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Test exposed-cache
+        run: ./gradlew :bluetape4k-exposed-cache:test --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+      - name: Generate Kover XML report
+        if: always()
+        run: ./gradlew :bluetape4k-exposed-cache:koverXmlReport --no-daemon
+        continue-on-error: true
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-cache
+          path: '**/build/test-results/test/*.xml'
+          retention-days: 14
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-cache
+          path: '**/build/reports/kover/'
+          retention-days: 14
+
+  # exposed-jdbc-caffeine (matrix: H2/PostgreSQL/MySQL 8)
+  test-jdbc-caffeine:
+    name: Test / exposed-jdbc-caffeine (${{ matrix.db }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [H2, POSTGRESQL, MYSQL_V8]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Test exposed-jdbc-caffeine (${{ matrix.db }})
+        run: ./gradlew :bluetape4k-exposed-jdbc-caffeine:test --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
+          EXPOSED_TEST_DB: ${{ matrix.db }}
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+          DOCKER_HOST: "unix:///var/run/docker.sock"
+      - name: Generate Kover XML report
+        if: always()
+        run: ./gradlew :bluetape4k-exposed-jdbc-caffeine:koverXmlReport --no-daemon
+        continue-on-error: true
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-jdbc-caffeine-${{ matrix.db }}
+          path: '**/build/test-results/test/*.xml'
+          retention-days: 14
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-jdbc-caffeine-${{ matrix.db }}
+          path: '**/build/reports/kover/'
+          retention-days: 14
+
+  # exposed-r2dbc-caffeine (matrix: H2/PostgreSQL/MySQL 8)
+  test-r2dbc-caffeine:
+    name: Test / exposed-r2dbc-caffeine (${{ matrix.db }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [H2, POSTGRESQL, MYSQL_V8]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Test exposed-r2dbc-caffeine (${{ matrix.db }})
+        run: ./gradlew :bluetape4k-exposed-r2dbc-caffeine:test --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
+          EXPOSED_TEST_DB: ${{ matrix.db }}
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+          DOCKER_HOST: "unix:///var/run/docker.sock"
+      - name: Generate Kover XML report
+        if: always()
+        run: ./gradlew :bluetape4k-exposed-r2dbc-caffeine:koverXmlReport --no-daemon
+        continue-on-error: true
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-r2dbc-caffeine-${{ matrix.db }}
+          path: '**/build/test-results/test/*.xml'
+          retention-days: 14
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-r2dbc-caffeine-${{ matrix.db }}
+          path: '**/build/reports/kover/'
+          retention-days: 14
+
+  # exposed-clickhouse (Testcontainers)
+  test-clickhouse:
+    name: Test / exposed-clickhouse
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Test exposed-clickhouse
+        run: ./gradlew :bluetape4k-exposed-clickhouse:test --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+          DOCKER_HOST: "unix:///var/run/docker.sock"
+      - name: Generate Kover XML report
+        if: always()
+        run: ./gradlew :bluetape4k-exposed-clickhouse:koverXmlReport --no-daemon
+        continue-on-error: true
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-clickhouse
+          path: '**/build/test-results/test/*.xml'
+          retention-days: 14
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-clickhouse
+          path: '**/build/reports/kover/'
+          retention-days: 14
+
+  # exposed-trino (Testcontainers)
+  test-trino:
+    name: Test / exposed-trino
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Test exposed-trino
+        run: ./gradlew :bluetape4k-exposed-trino:test --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+          DOCKER_HOST: "unix:///var/run/docker.sock"
+      - name: Generate Kover XML report
+        if: always()
+        run: ./gradlew :bluetape4k-exposed-trino:koverXmlReport --no-daemon
+        continue-on-error: true
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-trino
+          path: '**/build/test-results/test/*.xml'
+          retention-days: 14
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-trino
+          path: '**/build/reports/kover/'
+          retention-days: 14
+
+  # exposed-bigquery (gcloud Testcontainers)
+  test-bigquery:
+    name: Test / exposed-bigquery
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Test exposed-bigquery
+        run: ./gradlew :bluetape4k-exposed-bigquery:test --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+          DOCKER_HOST: "unix:///var/run/docker.sock"
+      - name: Generate Kover XML report
+        if: always()
+        run: ./gradlew :bluetape4k-exposed-bigquery:koverXmlReport --no-daemon
+        continue-on-error: true
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-bigquery
+          path: '**/build/test-results/test/*.xml'
+          retention-days: 14
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-bigquery
+          path: '**/build/reports/kover/'
+          retention-days: 14
+
+  # exposed-timefold-solver-persistence (matrix: H2/PostgreSQL/MySQL 8)
+  test-timefold:
+    name: Test / exposed-timefold (${{ matrix.db }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [H2, POSTGRESQL, MYSQL_V8]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Test exposed-timefold (${{ matrix.db }})
+        run: ./gradlew :bluetape4k-exposed-timefold-solver-persistence:test --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
+          EXPOSED_TEST_DB: ${{ matrix.db }}
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+          DOCKER_HOST: "unix:///var/run/docker.sock"
+      - name: Generate Kover XML report
+        if: always()
+        run: ./gradlew :bluetape4k-exposed-timefold-solver-persistence:koverXmlReport --no-daemon
+        continue-on-error: true
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-timefold-${{ matrix.db }}
+          path: '**/build/test-results/test/*.xml'
+          retention-days: 14
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-timefold-${{ matrix.db }}
+          path: '**/build/reports/kover/'
+          retention-days: 14
+
+  # spring-boot4-batch-exposed (matrix: H2/PostgreSQL/MySQL 8)
+  test-spring-boot4-batch:
+    name: Test / spring-boot4-batch-exposed (${{ matrix.db }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [H2, POSTGRESQL, MYSQL_V8]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Test spring-boot4-batch-exposed (${{ matrix.db }})
+        run: ./gradlew :bluetape4k-spring-boot4-batch-exposed:test --no-daemon
+        env:
+          GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false'
+          EXPOSED_TEST_DB: ${{ matrix.db }}
+          TESTCONTAINERS_RYUK_DISABLED: 'true'
+          DOCKER_HOST: 'unix:///var/run/docker.sock'
+      - name: Generate Kover XML report
+        if: always()
+        run: ./gradlew :bluetape4k-spring-boot4-batch-exposed:koverXmlReport --no-daemon
+        continue-on-error: true
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-spring-boot4-batch-${{ matrix.db }}
+          path: '**/build/test-results/test/*.xml'
+          retention-days: 14
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-spring-boot4-batch-${{ matrix.db }}
+          path: '**/build/reports/kover/'
+          retention-days: 14
+
+  # utils-batch (matrix: H2/PostgreSQL/MySQL 8)
+  test-utils-batch:
+    name: Test / utils-batch (${{ matrix.db }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [H2, POSTGRESQL, MYSQL_V8]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Test utils-batch (${{ matrix.db }})
+        run: ./gradlew :bluetape4k-utils-batch:test --no-daemon
+        env:
+          GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false'
+          EXPOSED_TEST_DB: ${{ matrix.db }}
+          TESTCONTAINERS_RYUK_DISABLED: 'true'
+          DOCKER_HOST: 'unix:///var/run/docker.sock'
+      - name: Generate Kover XML report
+        if: always()
+        run: ./gradlew :bluetape4k-utils-batch:koverXmlReport --no-daemon
+        continue-on-error: true
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-utils-batch-${{ matrix.db }}
+          path: '**/build/test-results/test/*.xml'
+          retention-days: 14
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-utils-batch-${{ matrix.db }}
+          path: '**/build/reports/kover/'
+          retention-days: 14
+
   coverage-report:
     name: Coverage Report
     runs-on: ubuntu-latest
@@ -885,6 +1316,16 @@ jobs:
       - test-mysql8-module
       - test-spring-boot3
       - test-spring-boot4
+      - test-duckdb
+      - test-cache
+      - test-jdbc-caffeine
+      - test-r2dbc-caffeine
+      - test-clickhouse
+      - test-trino
+      - test-bigquery
+      - test-timefold
+      - test-spring-boot4-batch
+      - test-utils-batch
     if: always()
     steps:
       - uses: actions/checkout@v4
@@ -933,6 +1374,16 @@ jobs:
       - test-mysql8-module
       - test-spring-boot3
       - test-spring-boot4
+      - test-duckdb
+      - test-cache
+      - test-jdbc-caffeine
+      - test-r2dbc-caffeine
+      - test-clickhouse
+      - test-trino
+      - test-bigquery
+      - test-timefold
+      - test-spring-boot4-batch
+      - test-utils-batch
       - coverage-report
     if: always()
     steps:
