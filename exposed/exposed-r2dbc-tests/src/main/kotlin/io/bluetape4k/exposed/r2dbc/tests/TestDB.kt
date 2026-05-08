@@ -272,13 +272,19 @@ enum class TestDB(
          * 현재 설정([TestDBConfig])에 따라 활성화된 dialect 집합을 반환합니다.
          *
          * - [TestDBConfig.useFastDB]가 `true`이면 H2만 반환합니다 (빠른 로컬 테스트).
-         * - `false`이면 H2, PostgreSQL, MySQL V8을 반환합니다 (Testcontainers 필요).
+         * - `EXPOSED_TEST_DB` 환경 변수가 설정된 경우 해당 DB + H2를 반환합니다 (CI 매트릭스 실행).
+         * - 그 외에는 H2, PostgreSQL, MySQL V8 전체를 반환합니다 (로컬 Docker 환경).
          *
          * **참고**: [MYSQL_V5]는 R2DBC 드라이버 호환성 문제로 항상 제외됩니다.
          */
         fun enabledDialects(): Set<TestDB> {
-            return if (useFastDB) setOf(H2)
-            else setOf(TestDB.H2, TestDB.POSTGRESQL, TestDB.MYSQL_V8)
+            if (useFastDB) return setOf(H2)
+            return when (System.getenv("EXPOSED_TEST_DB")?.uppercase()) {
+                "H2" -> setOf(H2)
+                "POSTGRESQL" -> setOf(H2, POSTGRESQL)
+                "MYSQL_V8" -> setOf(H2, MYSQL_V8)
+                else -> setOf(H2, POSTGRESQL, MYSQL_V8)
+            }
         }
     }
 }

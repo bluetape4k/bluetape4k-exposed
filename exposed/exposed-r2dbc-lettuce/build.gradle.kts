@@ -37,6 +37,8 @@ dependencies {
 
     // R2DBC drivers (test)
     testRuntimeOnly(libs.r2dbc.h2)
+    testRuntimeOnly(libs.postgresql.driver)     // Testcontainers PostgreSQL startup verification
+    testRuntimeOnly(libs.mysql.connector.j)     // Testcontainers MySQL8 startup verification
 
     testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
     testImplementation("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")

@@ -42,20 +42,17 @@ abstract class AbstractExposedTest {
     }
 
     /**
-     * `runSuspendIO` 타임아웃 컨텍스트 진입 전에 필요한 Testcontainers 컨테이너를 미리 초기화합니다.
+     * `runSuspendIO` 타임아웃 컨텍스트 진입 전에 활성 dialect에 필요한 컨테이너를 미리 초기화합니다.
      *
-     * `EXPOSED_TEST_DB` 환경 변수 값에 따라 해당 컨테이너만 선택적으로 시작합니다.
-     * 환경 변수가 없거나 `H2`이면 컨테이너를 시작하지 않습니다.
-     * 이를 통해 MySQL JDBC 드라이버가 없는 모듈(예: exposed-postgresql)에서
-     * 불필요한 MySQL 컨테이너 시작을 방지하고, 타임아웃 문제도 해결합니다.
+     * [enableDialects]가 반환하는 dialect 목록에 따라 해당 컨테이너만 선택적으로 시작합니다.
+     * `EXPOSED_TEST_DB` 환경 변수 설정 시 해당 DB만 포함되어 불필요한 컨테이너 시작을 방지합니다.
      */
     @BeforeAll
     fun initTestContainers() {
         if (!TestDBConfig.useTestcontainers) return
-        when (System.getenv("EXPOSED_TEST_DB")?.uppercase()) {
-            "POSTGRESQL" -> Containers.Postgres
-            "MYSQL_V8" -> Containers.MySQL8
-        }
+        val dialects = enableDialects()
+        if (TestDB.POSTGRESQL in dialects) Containers.Postgres
+        if (TestDB.MYSQL_V8 in dialects) Containers.MySQL8
     }
 
     private object CurrentTestDBInterceptor: StatementInterceptor {
