@@ -42,17 +42,19 @@ abstract class AbstractExposedTest {
     }
 
     /**
-     * `runSuspendIO` 타임아웃 컨텍스트 진입 전에 Testcontainers 컨테이너를 미리 초기화합니다.
+     * `runSuspendIO` 타임아웃 컨텍스트 진입 전에 필요한 Testcontainers 컨테이너를 미리 초기화합니다.
      *
-     * [TestDBConfig.useFastDB]가 `false`이고 [TestDBConfig.useTestcontainers]가 `true`일 때만 실행되며,
-     * [Containers.Postgres]와 [Containers.MySQL8]의 lazy 초기화를 `@BeforeAll`에서 트리거하여
-     * 컨테이너 시작 시간이 테스트 타임아웃에 포함되지 않도록 합니다.
+     * `EXPOSED_TEST_DB` 환경 변수 값에 따라 해당 컨테이너만 선택적으로 시작합니다.
+     * 환경 변수가 없거나 `H2`이면 컨테이너를 시작하지 않습니다.
+     * 이를 통해 MySQL JDBC 드라이버가 없는 모듈(예: exposed-postgresql)에서
+     * 불필요한 MySQL 컨테이너 시작을 방지하고, 타임아웃 문제도 해결합니다.
      */
     @BeforeAll
     fun initTestContainers() {
-        if (!TestDBConfig.useFastDB && TestDBConfig.useTestcontainers) {
-            Containers.Postgres
-            Containers.MySQL8
+        if (!TestDBConfig.useTestcontainers) return
+        when (System.getenv("EXPOSED_TEST_DB")?.uppercase()) {
+            "POSTGRESQL" -> Containers.Postgres
+            "MYSQL_V8" -> Containers.MySQL8
         }
     }
 
