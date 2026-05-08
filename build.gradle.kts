@@ -88,6 +88,9 @@ subprojects {
 }
 
 subprojects {
+    // BOM 모듈은 java-platform 플러그인을 사용하므로 Java/Kotlin 설정을 건너뜁니다.
+    if (name == "bluetape4k-exposed-bom") return@subprojects
+
     apply {
         plugin<JavaLibraryPlugin>()
         plugin("org.jetbrains.kotlin.jvm")
