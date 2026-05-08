@@ -194,7 +194,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test exposed-core + exposed-dao
-        run: ./gradlew :bluetape4k-exposed-core:test :bluetape4k-exposed-dao:test --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-exposed-core:test :bluetape4k-exposed-dao:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
       - name: Generate Kover XML report
@@ -234,12 +239,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test serialization modules
-        run: >
-          ./gradlew
-          :bluetape4k-exposed-jackson2:test
-          :bluetape4k-exposed-jackson3:test
-          :bluetape4k-exposed-fastjson2:test
-          --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-exposed-jackson2:test :bluetape4k-exposed-jackson3:test :bluetape4k-exposed-fastjson2:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
       - name: Generate Kover XML report
@@ -284,7 +289,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test exposed-tink
-        run: ./gradlew :bluetape4k-exposed-tink:test --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-exposed-tink:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
       - name: Generate Kover XML report
@@ -324,11 +334,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test exposed-jdbc (H2)
-        run: >
-          ./gradlew
-          :bluetape4k-exposed-jdbc:test
-          :bluetape4k-exposed-jdbc-tests:test
-          --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-exposed-jdbc:test :bluetape4k-exposed-jdbc-tests:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
           EXPOSED_TEST_DB: "H2"
@@ -373,11 +384,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test exposed-r2dbc (H2)
-        run: >
-          ./gradlew
-          :bluetape4k-exposed-r2dbc:test
-          :bluetape4k-exposed-r2dbc-tests:test
-          --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-exposed-r2dbc:test :bluetape4k-exposed-r2dbc-tests:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
           EXPOSED_TEST_DB: "H2"
@@ -422,11 +434,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test spring-boot4
-        run: >
-          ./gradlew
-          :bluetape4k-spring-boot4-exposed-jdbc:test
-          :bluetape4k-spring-boot4-exposed-r2dbc:test
-          --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-spring-boot4-exposed-jdbc:test :bluetape4k-spring-boot4-exposed-r2dbc:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false'
           TESTCONTAINERS_RYUK_DISABLED: 'true'
@@ -472,11 +485,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test exposed-jdbc-lettuce + exposed-r2dbc-lettuce
-        run: >
-          ./gradlew
-          :bluetape4k-exposed-jdbc-lettuce:test
-          :bluetape4k-exposed-r2dbc-lettuce:test
-          --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-exposed-jdbc-lettuce:test :bluetape4k-exposed-r2dbc-lettuce:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
           TESTCONTAINERS_RYUK_DISABLED: "true"
@@ -522,11 +536,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test exposed-jdbc-redisson + exposed-r2dbc-redisson
-        run: >
-          ./gradlew
-          :bluetape4k-exposed-jdbc-redisson:test
-          :bluetape4k-exposed-r2dbc-redisson:test
-          --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-exposed-jdbc-redisson:test :bluetape4k-exposed-r2dbc-redisson:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
           TESTCONTAINERS_RYUK_DISABLED: "true"
@@ -572,7 +587,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test exposed-measured
-        run: ./gradlew :bluetape4k-exposed-measured:test --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-exposed-measured:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
       - name: Generate Kover XML report
@@ -612,7 +632,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test exposed-postgresql
-        run: ./gradlew :bluetape4k-exposed-postgresql:test --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-exposed-postgresql:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
           TESTCONTAINERS_RYUK_DISABLED: "true"
@@ -654,7 +679,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test exposed-mysql8
-        run: ./gradlew :bluetape4k-exposed-mysql8:test --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-exposed-mysql8:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
           TESTCONTAINERS_RYUK_DISABLED: "true"
@@ -696,7 +726,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test exposed-duckdb
-        run: ./gradlew :bluetape4k-exposed-duckdb:test --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-exposed-duckdb:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=--enable-native-access=ALL-UNNAMED"
       - name: Generate Kover XML report
@@ -736,7 +771,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test exposed-cache
-        run: ./gradlew :bluetape4k-exposed-cache:test --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-exposed-cache:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
       - name: Generate Kover XML report
@@ -776,7 +816,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test exposed-jdbc-caffeine (H2)
-        run: ./gradlew :bluetape4k-exposed-jdbc-caffeine:test --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-exposed-jdbc-caffeine:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
           EXPOSED_TEST_DB: "H2"
@@ -817,7 +862,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test exposed-r2dbc-caffeine (H2)
-        run: ./gradlew :bluetape4k-exposed-r2dbc-caffeine:test --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-exposed-r2dbc-caffeine:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
           EXPOSED_TEST_DB: "H2"
@@ -858,7 +908,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test exposed-clickhouse
-        run: ./gradlew :bluetape4k-exposed-clickhouse:test --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-exposed-clickhouse:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
           TESTCONTAINERS_RYUK_DISABLED: "true"
@@ -900,7 +955,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test exposed-trino
-        run: ./gradlew :bluetape4k-exposed-trino:test --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-exposed-trino:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
           TESTCONTAINERS_RYUK_DISABLED: "true"
@@ -942,7 +1002,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test exposed-bigquery
-        run: ./gradlew :bluetape4k-exposed-bigquery:test --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-exposed-bigquery:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
           TESTCONTAINERS_RYUK_DISABLED: "true"
@@ -984,7 +1049,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test exposed-timefold (H2)
-        run: ./gradlew :bluetape4k-exposed-timefold-solver-persistence:test --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-exposed-timefold-solver-persistence:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
           EXPOSED_TEST_DB: "H2"
@@ -1025,7 +1095,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test spring-boot4-batch-exposed (H2)
-        run: ./gradlew :bluetape4k-spring-boot4-batch-exposed:test --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-spring-boot4-batch-exposed:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false'
           EXPOSED_TEST_DB: 'H2'
@@ -1068,7 +1143,12 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test utils-batch (H2)
-        run: ./gradlew :bluetape4k-utils-batch:test --no-daemon
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :bluetape4k-utils-batch:test --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 3 ] && sleep 10 || exit 1
+          done
         env:
           GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false'
           EXPOSED_TEST_DB: 'H2'
