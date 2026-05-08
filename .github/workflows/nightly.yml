@@ -1268,7 +1268,7 @@ jobs:
           gradle-version: wrapper
           cache-read-only: true
       - name: Test utils-batch (${{ matrix.db }})
-        run: ./gradlew :bluetape4k-utils-batch:test --no-daemon
+        run: ./gradlew :bluetape4k-batch:test --no-daemon
         env:
           GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false'
           EXPOSED_TEST_DB: ${{ matrix.db }}
@@ -1276,7 +1276,7 @@ jobs:
           DOCKER_HOST: 'unix:///var/run/docker.sock'
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-utils-batch:koverXmlReport --no-daemon
+        run: ./gradlew :bluetape4k-batch:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()

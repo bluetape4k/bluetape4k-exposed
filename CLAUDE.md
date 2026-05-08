@@ -55,7 +55,7 @@ buildSrc/                   # Versions, plugins, dependency catalog
 | `exposed/exposed-r2dbc` | `:bluetape4k-exposed-r2dbc` |
 | `spring-boot3/exposed-jdbc` | `:bluetape4k-spring-boot3-exposed-jdbc` |
 | `spring-boot4/exposed-r2dbc` | `:bluetape4k-spring-boot4-exposed-r2dbc` |
-| `utils/batch` | `:bluetape4k-utils-batch` |
+| `utils/batch` | `:bluetape4k-batch` |
 
 ## Build Commands
 
