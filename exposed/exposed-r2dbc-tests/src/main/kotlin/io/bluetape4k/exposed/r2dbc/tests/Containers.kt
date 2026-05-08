@@ -13,6 +13,9 @@ import io.bluetape4k.utils.ShutdownQueue
  * 모든 컨테이너는 `lazy`로 초기화되며, 최초 접근 시 Docker 컨테이너를 시작합니다.
  * JVM 종료 시 [ShutdownQueue]에 등록된 순서로 정리됩니다.
  *
+ * `runSuspendIO` 등 코루틴 타임아웃 컨텍스트 내에서 지연 초기화로 인한 타임아웃을 피하려면
+ * `@BeforeAll`에서 필요한 컨테이너 속성을 미리 접근해야 합니다.
+ *
  * ```kotlin
  * // MariaDB 컨테이너 사용 예시
  * val port = Containers.MariaDB.port
@@ -84,6 +87,4 @@ object Containers: KLogging() {
      * [TestDB.POSTGRESQL] 연결에서 [TestDBConfig.useTestcontainers]가 `true`일 때 사용됩니다.
      */
     val Postgres by lazy { PostgreSQLServer.Launcher.postgres }
-
-
 }

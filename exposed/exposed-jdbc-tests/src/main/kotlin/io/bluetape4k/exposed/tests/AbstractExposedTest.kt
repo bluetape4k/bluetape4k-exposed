@@ -5,6 +5,7 @@ import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Key
 import org.jetbrains.exposed.v1.core.Schema
 import org.jetbrains.exposed.v1.core.statements.StatementInterceptor
+import org.junit.jupiter.api.BeforeAll
 import java.util.*
 
 /**
@@ -38,6 +39,21 @@ abstract class AbstractExposedTest {
 
     init {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
+    }
+
+    /**
+     * `runSuspendIO` 타임아웃 컨텍스트 진입 전에 Testcontainers 컨테이너를 미리 초기화합니다.
+     *
+     * [TestDBConfig.useFastDB]가 `false`이고 [TestDBConfig.useTestcontainers]가 `true`일 때만 실행되며,
+     * [Containers.Postgres]와 [Containers.MySQL8]의 lazy 초기화를 `@BeforeAll`에서 트리거하여
+     * 컨테이너 시작 시간이 테스트 타임아웃에 포함되지 않도록 합니다.
+     */
+    @BeforeAll
+    fun initTestContainers() {
+        if (!TestDBConfig.useFastDB && TestDBConfig.useTestcontainers) {
+            Containers.Postgres
+            Containers.MySQL8
+        }
     }
 
     private object CurrentTestDBInterceptor: StatementInterceptor {
