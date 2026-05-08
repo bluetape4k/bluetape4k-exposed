@@ -40,7 +40,7 @@ Google Tink는 Google에서 개발한 현대적인 암호화 라이브러리로,
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k:bluetape4k-exposed-tink:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-tink:${version}")
 }
 ```
 

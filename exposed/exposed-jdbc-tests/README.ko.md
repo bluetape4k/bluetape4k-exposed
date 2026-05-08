@@ -10,7 +10,7 @@
 
 ```kotlin
 dependencies {
-    testImplementation("io.github.bluetape4k:bluetape4k-exposed-tests:${version}")
+    testImplementation("io.github.bluetape4k.exposed:bluetape4k-exposed-tests:${version}")
 }
 ```
 

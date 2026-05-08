@@ -43,7 +43,7 @@ A module that generates SQL using JetBrains Exposed DSL and executes it via the 
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k:bluetape4k-exposed-bigquery:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-bigquery:${version}")
 }
 ```
 

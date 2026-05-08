@@ -21,7 +21,7 @@ Exposed JDBC와 Lettuce Redis 캐시를 결합한 Read-through / Write-through /
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k:bluetape4k-exposed-jdbc-lettuce:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:${version}")
 }
 ```
 

@@ -19,7 +19,7 @@ Exposed JSON/JSONB 컬럼을 Jackson 2로 직렬화/역직렬화하기 위한 �
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k:bluetape4k-exposed-jackson:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson:${version}")
     implementation("io.github.bluetape4k:bluetape4k-jackson2:${version}")
 }
 ```

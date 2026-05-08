@@ -93,7 +93,7 @@ sequenceDiagram
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k:bluetape4k-exposed-r2dbc-lettuce:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-lettuce:${version}")
 }
 ```
 

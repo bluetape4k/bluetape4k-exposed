@@ -18,7 +18,7 @@ Provides entity extensions, String-based entities, and IdTable implementations w
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k:bluetape4k-exposed-dao:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-dao:${version}")
 }
 ```
 

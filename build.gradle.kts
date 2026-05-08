@@ -323,8 +323,14 @@ extensions.configure<NmcpAggregationExtension>("nmcpAggregation") {
     }
 }
 
+val publishableProjects = subprojects.filterNot { project ->
+    project.path.contains("examples") || project.path.contains("-demo")
+}
+
 dependencies {
-    subprojects.forEach { add("nmcpAggregation", project(it.path)) }
+    publishableProjects.forEach { publishableProject ->
+        add("nmcpAggregation", project(publishableProject.path))
+    }
 }
 
 dependencies {

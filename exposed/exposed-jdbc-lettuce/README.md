@@ -21,7 +21,7 @@ A Read-through / Write-through / Write-behind cache repository module that combi
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k:bluetape4k-exposed-jdbc-lettuce:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:${version}")
 }
 ```
 

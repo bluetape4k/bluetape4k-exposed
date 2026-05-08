@@ -44,7 +44,7 @@ Google Tink is a modern cryptography library developed by Google, designed to be
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k:bluetape4k-exposed-tink:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-tink:${version}")
 }
 ```
 

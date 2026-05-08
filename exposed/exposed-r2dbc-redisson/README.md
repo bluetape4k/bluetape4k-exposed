@@ -22,7 +22,7 @@ Combines Exposed R2DBC with Redisson caching to implement asynchronous Read-Thro
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k:bluetape4k-exposed-r2dbc-redisson:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-redisson:${version}")
     implementation("org.redisson:redisson:3.37.0")
 
     // R2DBC driver

@@ -57,15 +57,15 @@ Kotlin extensions for [JetBrains Exposed](https://github.com/JetBrains/Exposed) 
 ```kotlin
 dependencies {
     // Core
-    implementation("io.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.8.0-SNAPSHOT")
     // R2DBC (coroutines)
-    implementation("io.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.8.0-SNAPSHOT")
     // Redis cache
-    implementation("io.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.8.0-SNAPSHOT")
     // Jackson JSON columns
-    implementation("io.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.8.0-SNAPSHOT")
     // Spring Boot 3 auto-configuration
-    implementation("io.bluetape4k.exposed:bluetape4k-spring-boot3-exposed-jdbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-spring-boot3-exposed-jdbc:1.8.0-SNAPSHOT")
 }
 ```
 

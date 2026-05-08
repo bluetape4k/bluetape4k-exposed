@@ -25,7 +25,7 @@ Exposed R2DBC 환경에서 사용할 수 있는 확장 함수와 Repository 패�
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k:bluetape4k-exposed-r2dbc:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:${version}")
 
     // R2DBC 드라이버 (예시)
     implementation("org.postgresql:r2dbc-postgresql:1.0.5.RELEASE")

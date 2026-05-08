@@ -21,7 +21,7 @@ Exposed JDBC와 Redisson 캐시를 결합해 Read-Through/Write-Through 캐시 �
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k:bluetape4k-exposed-jdbc-redisson:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-redisson:${version}")
     implementation("org.redisson:redisson:3.37.0")
 }
 ```

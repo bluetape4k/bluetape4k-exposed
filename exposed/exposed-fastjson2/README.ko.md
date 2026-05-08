@@ -18,7 +18,7 @@ Exposed JSON/JSONB 컬럼을 Fastjson2로 직렬화/역직렬화하기 위한 �
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k:bluetape4k-exposed-fastjson2:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-fastjson2:${version}")
     implementation("io.github.bluetape4k:bluetape4k-fastjson2:${version}")
 }
 ```

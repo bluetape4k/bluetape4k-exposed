@@ -57,15 +57,15 @@
 ```kotlin
 dependencies {
     // 핵심 JDBC
-    implementation("io.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.8.0-SNAPSHOT")
     // R2DBC (코루틴)
-    implementation("io.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.8.0-SNAPSHOT")
     // Redis 캐시 (Lettuce)
-    implementation("io.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.8.0-SNAPSHOT")
     // Jackson JSON Column
-    implementation("io.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.8.0-SNAPSHOT")
     // Spring Boot 3 자동 설정
-    implementation("io.bluetape4k.exposed:bluetape4k-spring-boot3-exposed-jdbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-spring-boot3-exposed-jdbc:1.8.0-SNAPSHOT")
 }
 ```
 

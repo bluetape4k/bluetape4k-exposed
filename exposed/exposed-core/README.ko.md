@@ -21,7 +21,7 @@ JetBrains Exposed의 핵심 컬럼 타입, 확장 함수, Repository 공통 인�
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k:bluetape4k-exposed-core:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-core:${version}")
 
     // 압축 컬럼 타입 사용 시
     implementation("io.github.bluetape4k:bluetape4k-io:${version}")
@@ -554,7 +554,7 @@ transaction {
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k:bluetape4k-exposed-core:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-core:${version}")
 
     // Auditable 사용 시
     compileOnly("org.jetbrains.exposed:exposed-java-time:${exposedVersion}")

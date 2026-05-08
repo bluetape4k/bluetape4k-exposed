@@ -139,7 +139,7 @@ object SecretTable : Table() {
 
 ```properties
 # gradle.properties
-projectGroup=io.bluetape4k.exposed
+projectGroup=io.github.bluetape4k.exposed
 baseVersion=1.8.0
 snapshotVersion=-SNAPSHOT
 ```

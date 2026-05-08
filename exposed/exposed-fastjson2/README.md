@@ -18,7 +18,7 @@ A module for serializing and deserializing Exposed JSON/JSONB columns using Fast
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k:bluetape4k-exposed-fastjson2:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-fastjson2:${version}")
     implementation("io.github.bluetape4k:bluetape4k-fastjson2:${version}")
 }
 ```

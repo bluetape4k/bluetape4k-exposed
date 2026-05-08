@@ -41,7 +41,7 @@ JetBrains Exposed DSL로 SQL을 생성하고 Google BigQuery REST API로 실행�
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k:bluetape4k-exposed-bigquery:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-bigquery:${version}")
 }
 ```
 
