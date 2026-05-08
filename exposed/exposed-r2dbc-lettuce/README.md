@@ -18,6 +18,78 @@ A coroutine-native Read-through / Write-through / Write-behind cache repository 
     - `loadAllKeys()` iterates stably in ascending PK order
     - `chunkSize` (writer) and `batchSize` (loader) must be greater than 0
 
+## Architecture
+
+```mermaid
+classDiagram
+    direction TB
+    class R2dbcLettuceRepository~K, E~ {
+        <<interface>>
+        +findById(id) E?
+        +save(id, entity) Unit
+        +delete(id) Boolean
+        +clearCache() Unit
+    }
+    class AbstractR2dbcLettuceRepository~K, E~ {
+        <<abstract>>
+        -map: LettuceSuspendedLoadedMap
+        -nearCache: Caffeine?
+        +toEntity(ResultRow) E
+        +updateEntity(entity) Unit
+        +insertEntity(entity) Unit
+    }
+    class R2dbcExposedEntityMapLoader {
+        +load(key) E?
+        +loadAll(keys) Map
+        +loadAllKeys() Iterable
+    }
+    class R2dbcExposedEntityMapWriter {
+        +write(key, value) Unit
+        +writeAll(map) Unit
+        +delete(key) Unit
+    }
+    class LettuceCacheConfig {
+        +writeMode: WriteMode
+        +nearCacheEnabled: Boolean
+    }
+
+    R2dbcLettuceRepository <|.. AbstractR2dbcLettuceRepository
+    AbstractR2dbcLettuceRepository --> R2dbcExposedEntityMapLoader : MapLoader
+    AbstractR2dbcLettuceRepository --> R2dbcExposedEntityMapWriter : MapWriter
+    AbstractR2dbcLettuceRepository --> LettuceCacheConfig : config
+
+    style R2dbcLettuceRepository fill:#E3F2FD,stroke:#90CAF9,color:#0D47A1
+    style AbstractR2dbcLettuceRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
+    style LettuceCacheConfig fill:#FFFDE7,stroke:#FFF176,color:#F57F17
+```
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant Repo as AbstractR2dbcLettuceRepository
+    participant Near as Caffeine NearCache
+    participant Redis as Lettuce Redis
+    participant DB as R2DBC DB
+
+    App->>Repo: suspend findById(id)
+    Repo->>Near: get(id)
+    alt NearCache Hit
+        Near-->>Repo: entity
+    else NearCache Miss
+        Repo->>Redis: GET key
+        alt Redis Hit
+            Redis-->>Repo: entity
+            Repo->>Near: put(id, entity)
+        else Redis Miss
+            Repo->>DB: suspendTransaction { SELECT WHERE id=? }
+            DB-->>Repo: row
+            Repo->>Redis: SET key entity
+            Repo->>Near: put(id, entity)
+        end
+    end
+    Repo-->>App: entity?
+```
+
 ## Dependency
 
 ```kotlin
