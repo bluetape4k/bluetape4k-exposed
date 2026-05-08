@@ -1145,7 +1145,7 @@ jobs:
       - name: Test utils-batch (H2)
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-utils-batch:test --no-daemon && break
+            ./gradlew :bluetape4k-batch:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -1154,7 +1154,7 @@ jobs:
           EXPOSED_TEST_DB: 'H2'
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-utils-batch:koverXmlReport --no-daemon
+        run: ./gradlew :bluetape4k-batch:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
