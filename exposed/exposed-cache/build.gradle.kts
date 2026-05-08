@@ -49,10 +49,10 @@ dependencies {
     testFixturesImplementation(libs.kotlinx.coroutines.core)
     testFixturesImplementation(libs.kotlinx.coroutines.test)
 
-    testFixturesImplementation(libs.kluent)
+    testFixturesImplementation("io.github.bluetape4k:bluetape4k-assertions:${bluetape4kVersion}")
     testFixturesImplementation(libs.awaitility.kotlin)
 
     // Testing
     testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    testImplementation(libs.kluent)
+    testImplementation("io.github.bluetape4k:bluetape4k-assertions:${bluetape4kVersion}")
 }
