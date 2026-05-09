@@ -28,4 +28,5 @@ dependencies {
     implementation(libs.jackson3.module.blackbird)
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
 }
