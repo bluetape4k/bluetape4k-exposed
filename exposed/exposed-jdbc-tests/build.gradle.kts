@@ -23,7 +23,6 @@ dependencies {
     compileOnly("io.github.bluetape4k:bluetape4k-io:${bluetape4kVersion}")
     
 
-    api("io.github.bluetape4k:bluetape4k-assertions:${bluetape4kVersion}")
     api("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
     api("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
     api(libs.testcontainers)
