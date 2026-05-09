@@ -30,5 +30,6 @@ dependencies {
 
     testRuntimeOnly(libs.h2.v2)
     testRuntimeOnly(libs.postgresql.driver)
+    testRuntimeOnly(libs.mysql.connector.j)   // Testcontainers MySQL8 startup verification
     testRuntimeOnly(libs.hikaricp)
 }

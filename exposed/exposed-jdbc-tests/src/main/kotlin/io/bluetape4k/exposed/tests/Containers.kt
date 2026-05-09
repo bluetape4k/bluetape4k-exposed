@@ -12,6 +12,9 @@ import io.bluetape4k.utils.ShutdownQueue
  *
  * 각 속성은 lazy 초기화로 최초 접근 시 컨테이너를 시작하고, JVM 종료 시 자동으로 정리됩니다.
  * Docker 환경이 필요하며, [TestDBConfig.useTestcontainers]가 `true`일 때 사용됩니다.
+ *
+ * `runSuspendIO` 등 코루틴 타임아웃 컨텍스트 내에서 지연 초기화로 인한 타임아웃을 피하려면
+ * `@BeforeAll`에서 필요한 컨테이너 속성을 미리 접근해야 합니다.
  */
 object Containers: KLogging() {
 

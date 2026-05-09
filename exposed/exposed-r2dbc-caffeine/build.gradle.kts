@@ -19,6 +19,8 @@ dependencies {
     api(libs.kotlinx.coroutines.reactive)
 
     testRuntimeOnly(libs.r2dbc.h2)
+    testRuntimeOnly(libs.postgresql.driver)     // Testcontainers PostgreSQL startup verification
+    testRuntimeOnly(libs.mysql.connector.j)     // Testcontainers MySQL8 startup verification
     testImplementation(testFixtures(project(":bluetape4k-exposed-cache")))
     testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
     testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")

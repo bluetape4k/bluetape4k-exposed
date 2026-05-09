@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.r2dbc.tests
 import io.bluetape4k.junit5.faker.Fakers
 import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Schema
+import org.junit.jupiter.api.BeforeAll
 import java.util.*
 
 /**
@@ -26,6 +27,20 @@ abstract class AbstractExposedR2dbcTest {
 
     init {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
+    }
+
+    /**
+     * `runSuspendIO` 타임아웃 컨텍스트 진입 전에 활성 dialect에 필요한 컨테이너를 미리 초기화합니다.
+     *
+     * [enableDialects]가 반환하는 dialect 목록에 따라 해당 컨테이너만 선택적으로 시작합니다.
+     * `EXPOSED_TEST_DB` 환경 변수 설정 시 해당 DB만 포함되어 불필요한 컨테이너 시작을 방지합니다.
+     */
+    @BeforeAll
+    fun initTestContainers() {
+        if (!TestDBConfig.useTestcontainers) return
+        val dialects = enableDialects()
+        if (TestDB.POSTGRESQL in dialects) Containers.Postgres
+        if (TestDB.MYSQL_V8 in dialects) Containers.MySQL8
     }
 
     companion object: KLogging() {
