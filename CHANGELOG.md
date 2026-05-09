@@ -7,11 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `bluetape4k-exposed-bom` BOM module for Exposed consumers ([PR #15](https://github.com/bluetape4k/bluetape4k-exposed/pull/15)).
+- English and Korean README files for the Exposed BOM module ([PR #16](https://github.com/bluetape4k/bluetape4k-exposed/pull/16)).
+- Mermaid architecture and sequence diagrams for `exposed-r2dbc-lettuce` documentation ([PR #2](https://github.com/bluetape4k/bluetape4k-exposed/pull/2)).
+
 ### Changed
 
 - Removed `spring-boot3/*` modules and renamed `spring-boot4/*` to versionless `spring-boot/*`.
 - Standardized Spring Boot Gradle catalog aliases to `spring.boot.dependencies`, `spring.cloud.dependencies`, and `libs.plugins.spring.boot`.
 - Updated CI, BOM documentation, and module README files for the Spring Boot 4-only contract.
+- Reworked CI/Nightly workflows with path filters and new-module test coverage ([PR #11](https://github.com/bluetape4k/bluetape4k-exposed/pull/11)).
+- Added `retry=3` to CI and nightly test jobs to reduce transient failure noise ([PR #12](https://github.com/bluetape4k/bluetape4k-exposed/pull/12)).
+- Test code migrated from Kluent to `bluetape4k-assertions` ([PR #14](https://github.com/bluetape4k/bluetape4k-exposed/pull/14)).
+
+### Fixed
+
+- Corrected the `utils/batch` Gradle module name from `:bluetape4k-utils-batch` to `:bluetape4k-batch` ([PR #13](https://github.com/bluetape4k/bluetape4k-exposed/pull/13)).
 
 ## [1.8.0] - 2026-05-07
 
