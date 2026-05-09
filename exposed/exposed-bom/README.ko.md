@@ -51,17 +51,16 @@ graph TB
     end
 
     subgraph "Spring Boot"
-      SB3J[spring-boot3 / exposed-jdbc]
-      SB3R[spring-boot3 / exposed-r2dbc]
-      SB4J[spring-boot4 / exposed-jdbc]
-      SB4R[spring-boot4 / exposed-r2dbc]
+      SBJ[spring-boot / exposed-jdbc]
+      SBR[spring-boot / exposed-r2dbc]
+      SBB[spring-boot / batch-exposed]
     end
 
     Consumer -->|platform import| BOM
     BOM -.->|버전 constraint| Core
     BOM -.->|버전 constraint| Jdbc
     BOM -.->|버전 constraint| Cache
-    BOM -.->|버전 constraint| SB3J
+    BOM -.->|버전 constraint| SBJ
 ```
 
 BOM은 Gradle `java-platform` 으로 `<dependencyManagement>` constraint 만 게시한다.
@@ -82,7 +81,7 @@ BOM은 Gradle `java-platform` 으로 `<dependencyManagement>` constraint 만 게
 | 직렬화 | `bluetape4k-exposed-fastjson2`, `bluetape4k-exposed-jackson2`, `bluetape4k-exposed-jackson3` |
 | 암호화 | `bluetape4k-exposed-tink` |
 | DB 어댑터 | `bluetape4k-exposed-{mysql8,postgresql,clickhouse,bigquery,duckdb,trino,measured,timefold-solver-persistence}` |
-| Spring Boot | `bluetape4k-spring-boot3-exposed-{jdbc,r2dbc}`, `bluetape4k-spring-boot4-exposed-{jdbc,r2dbc}`, `bluetape4k-spring-boot{3,4}-batch-exposed` |
+| Spring Boot | `bluetape4k-spring-boot-exposed-{jdbc,r2dbc}`, `bluetape4k-spring-boot-batch-exposed` |
 | 유틸 | `bluetape4k-utils-batch` |
 
 > 참고: `examples/*` 및 `*-demo` 모듈은 BOM constraint 에서 제외된다.

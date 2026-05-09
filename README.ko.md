@@ -18,7 +18,7 @@
 - **JSON Column** — Jackson 2.x, Jackson 3.x, Fastjson2 Column 직렬화
 - **암호화** — Google Tink 기반 암호화 Column
 - **DB 특화 확장** — PostgreSQL 및 MySQL 8 다이얼렉트 헬퍼
-- **Spring Boot** — Spring Boot 3.x / 4.x 자동 설정 (JDBC + R2DBC)
+- **Spring Boot** — Spring Boot 4.x 자동 설정 (JDBC + R2DBC)
 - **메트릭** — `exposed-measured`를 통한 Micrometer 통합
 
 ## 모듈 목록
@@ -45,10 +45,9 @@
 | `bluetape4k-exposed-measured` | Micrometer 메트릭 통합 |
 | `bluetape4k-exposed-postgresql` | PostgreSQL 다이얼렉트 확장 |
 | `bluetape4k-exposed-mysql8` | MySQL 8 다이얼렉트 확장 |
-| `bluetape4k-spring-boot3-exposed-jdbc` | Spring Boot 3.x JDBC 자동 설정 |
-| `bluetape4k-spring-boot3-exposed-r2dbc` | Spring Boot 3.x R2DBC 자동 설정 |
-| `bluetape4k-spring-boot4-exposed-jdbc` | Spring Boot 4.x JDBC 자동 설정 |
-| `bluetape4k-spring-boot4-exposed-r2dbc` | Spring Boot 4.x R2DBC 자동 설정 |
+| `bluetape4k-spring-boot-exposed-jdbc` | Spring Boot 4.x JDBC 자동 설정 |
+| `bluetape4k-spring-boot-exposed-r2dbc` | Spring Boot 4.x R2DBC 자동 설정 |
+| `bluetape4k-spring-boot-batch-exposed` | Spring Boot 4.x Batch 통합 |
 
 ## 빠른 시작
 
@@ -64,8 +63,8 @@ dependencies {
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.8.0-SNAPSHOT")
     // Jackson JSON Column
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.8.0-SNAPSHOT")
-    // Spring Boot 3 자동 설정
-    implementation("io.github.bluetape4k.exposed:bluetape4k-spring-boot3-exposed-jdbc:1.8.0-SNAPSHOT")
+    // Spring Boot 자동 설정
+    implementation("io.github.bluetape4k.exposed:bluetape4k-spring-boot-exposed-jdbc:1.8.0-SNAPSHOT")
 }
 ```
 

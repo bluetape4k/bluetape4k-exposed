@@ -16,8 +16,7 @@ rootProject.name = "$projectName-exposed-projects"
 includeModules("exposed", withBaseDir = false)
 includeModules("utils", withBaseDir = false)
 includeModules("examples", withBaseDir = true)
-includeModules("spring-boot3", withBaseDir = true)
-includeModules("spring-boot4", withBaseDir = true)
+includeModules("spring-boot", withBaseDir = true)
 
 fun includeModules(baseDir: String, withProjectName: Boolean = true, withBaseDir: Boolean = true) {
     files("$rootDir/$baseDir").files

@@ -52,17 +52,16 @@ graph TB
     end
 
     subgraph "Spring Boot"
-      SB3J[spring-boot3 / exposed-jdbc]
-      SB3R[spring-boot3 / exposed-r2dbc]
-      SB4J[spring-boot4 / exposed-jdbc]
-      SB4R[spring-boot4 / exposed-r2dbc]
+      SBJ[spring-boot / exposed-jdbc]
+      SBR[spring-boot / exposed-r2dbc]
+      SBB[spring-boot / batch-exposed]
     end
 
     Consumer -->|platform import| BOM
     BOM -.->|version constraints| Core
     BOM -.->|version constraints| Jdbc
     BOM -.->|version constraints| Cache
-    BOM -.->|version constraints| SB3J
+    BOM -.->|version constraints| SBJ
 ```
 
 The BOM is a Gradle `java-platform` that publishes only `<dependencyManagement>` constraints — no runtime classes.
@@ -83,7 +82,7 @@ The BOM is a Gradle `java-platform` that publishes only `<dependencyManagement>`
 | Serialization | `bluetape4k-exposed-fastjson2`, `bluetape4k-exposed-jackson2`, `bluetape4k-exposed-jackson3` |
 | Crypto | `bluetape4k-exposed-tink` |
 | DB adapters | `bluetape4k-exposed-{mysql8,postgresql,clickhouse,bigquery,duckdb,trino,measured,timefold-solver-persistence}` |
-| Spring Boot | `bluetape4k-spring-boot3-exposed-{jdbc,r2dbc}`, `bluetape4k-spring-boot4-exposed-{jdbc,r2dbc}`, `bluetape4k-spring-boot{3,4}-batch-exposed` |
+| Spring Boot | `bluetape4k-spring-boot-exposed-{jdbc,r2dbc}`, `bluetape4k-spring-boot-batch-exposed` |
 | Utils | `bluetape4k-utils-batch` |
 
 > Note: `examples/*` and `*-demo` modules are excluded from the BOM constraints.

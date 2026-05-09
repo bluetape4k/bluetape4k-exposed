@@ -1,6 +1,6 @@
 # CLAUDE.md — bluetape4k-exposed
 
-JetBrains Exposed ORM Kotlin 확장 라이브러리. JDBC/R2DBC 기반 Repository 패턴, 캐시 통합(Caffeine, Lettuce, Redisson), JSON 직렬화(Jackson2/3, Fastjson2), 암호화(Tink), Spring Boot 3.x/4.x 자동 설정.
+JetBrains Exposed ORM Kotlin 확장 라이브러리. JDBC/R2DBC 기반 Repository 패턴, 캐시 통합(Caffeine, Lettuce, Redisson), JSON 직렬화(Jackson2/3, Fastjson2), 암호화(Tink), Spring Boot 4 자동 설정.
 
 - **Group**: `io.bluetape4k.exposed` · **Publishing**: Maven Central (NMCP)
 
@@ -34,13 +34,12 @@ exposed/
 ├── exposed-duckdb/         # DuckDB 지원
 └── exposed-timefold-solver-persistence/ # Timefold Solver 영속성
 utils/
-spring-boot3/
-├── exposed-jdbc/           # Spring Boot 3.x JDBC 자동 설정
+spring-boot/
+├── exposed-jdbc/           # Spring Boot 4 JDBC 자동 설정
 ├── exposed-jdbc-demo/      # JDBC 데모 앱
-├── exposed-r2dbc/          # Spring Boot 3.x R2DBC 자동 설정
+├── exposed-r2dbc/          # Spring Boot 4 R2DBC 자동 설정
 ├── exposed-r2dbc-demo/     # R2DBC 데모 앱
 └── batch-exposed/          # Spring Batch + Exposed 통합
-spring-boot4/               # (spring-boot3 와 동일 구조, Boot 4.x 대상)
 buildSrc/                   # Versions, plugins, dependency catalog
 ```
 
@@ -53,8 +52,8 @@ buildSrc/                   # Versions, plugins, dependency catalog
 | `exposed/exposed-core` | `:bluetape4k-exposed-core` |
 | `exposed/exposed-jdbc` | `:bluetape4k-exposed-jdbc` |
 | `exposed/exposed-r2dbc` | `:bluetape4k-exposed-r2dbc` |
-| `spring-boot3/exposed-jdbc` | `:bluetape4k-spring-boot3-exposed-jdbc` |
-| `spring-boot4/exposed-r2dbc` | `:bluetape4k-spring-boot4-exposed-r2dbc` |
+| `spring-boot/exposed-jdbc` | `:bluetape4k-spring-boot-exposed-jdbc` |
+| `spring-boot/exposed-r2dbc` | `:bluetape4k-spring-boot-exposed-r2dbc` |
 | `utils/batch` | `:bluetape4k-utils-batch` |
 
 ## Build Commands
@@ -67,7 +66,7 @@ buildSrc/                   # Versions, plugins, dependency catalog
 ./gradlew :bluetape4k-exposed-r2dbc:test
 ./gradlew :bluetape4k-exposed-jdbc-lettuce:test
 ./gradlew test --tests "io.bluetape4k.exposed.jdbc.ExposedJdbcRepositoryTest"
-./gradlew :bluetape4k-spring-boot3-exposed-jdbc:test
+./gradlew :bluetape4k-spring-boot-exposed-jdbc:test
 ./gradlew detekt
 ./gradlew publishAggregationToCentralSnapshots          # SNAPSHOT 배포
 ./gradlew publishAggregationToCentralPortal             # RELEASE 배포
@@ -125,7 +124,7 @@ object SecretTable : Table() {
 
 ### Spring Boot Auto-configuration
 
-`spring-boot3/` 및 `spring-boot4/` 모듈은 `@EnableExposedJdbc` / `@EnableExposedR2dbc` 어노테이션과 조건부 자동 설정 제공.
+`spring-boot/` 모듈은 `@EnableExposedJdbc` / `@EnableExposedR2dbc` 어노테이션과 조건부 자동 설정 제공.
 
 ## Test Environment Variables
 
