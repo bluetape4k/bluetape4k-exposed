@@ -58,6 +58,7 @@ abstract class AbstractExposedBatchJobTest {
             // Spring Boot에서 패키지 이동: org.springframework.boot.jdbc.autoconfigure
             "org.springframework.boot.jdbc.autoconfigure.DataSourceTransactionManagerAutoConfiguration",
             "org.jetbrains.exposed.v1.spring.boot.autoconfigure.ExposedAutoConfiguration",
+            "org.jetbrains.exposed.v1.spring.boot4.autoconfigure.ExposedAutoConfiguration",
         ]
     )
     class TestApplication {
