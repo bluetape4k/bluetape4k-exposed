@@ -18,7 +18,7 @@ Kotlin extensions for [JetBrains Exposed](https://github.com/JetBrains/Exposed) 
 - **JSON Columns** — Jackson 2.x, Jackson 3.x, and Fastjson2 column serializers
 - **Encryption** — Google Tink-based encrypted columns
 - **Database-specific Extensions** — PostgreSQL and MySQL 8 dialect helpers
-- **Spring Boot** — Auto-configuration for Spring Boot 3.x and 4.x (JDBC + R2DBC)
+- **Spring Boot** — Spring Boot 4.x auto-configuration (JDBC + R2DBC)
 - **Metrics** — Micrometer integration via `exposed-measured`
 
 ## Modules
@@ -45,10 +45,9 @@ Kotlin extensions for [JetBrains Exposed](https://github.com/JetBrains/Exposed) 
 | `bluetape4k-exposed-measured` | Micrometer metrics integration |
 | `bluetape4k-exposed-postgresql` | PostgreSQL dialect extensions |
 | `bluetape4k-exposed-mysql8` | MySQL 8 dialect extensions |
-| `bluetape4k-spring-boot3-exposed-jdbc` | Spring Boot 3.x JDBC auto-configuration |
-| `bluetape4k-spring-boot3-exposed-r2dbc` | Spring Boot 3.x R2DBC auto-configuration |
-| `bluetape4k-spring-boot4-exposed-jdbc` | Spring Boot 4.x JDBC auto-configuration |
-| `bluetape4k-spring-boot4-exposed-r2dbc` | Spring Boot 4.x R2DBC auto-configuration |
+| `bluetape4k-spring-boot-exposed-jdbc` | Spring Boot 4.x JDBC auto-configuration |
+| `bluetape4k-spring-boot-exposed-r2dbc` | Spring Boot 4.x R2DBC auto-configuration |
+| `bluetape4k-spring-boot-batch-exposed` | Spring Boot 4.x batch integration |
 
 ## Quick Start
 
@@ -64,8 +63,8 @@ dependencies {
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.8.0-SNAPSHOT")
     // Jackson JSON columns
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.8.0-SNAPSHOT")
-    // Spring Boot 3 auto-configuration
-    implementation("io.github.bluetape4k.exposed:bluetape4k-spring-boot3-exposed-jdbc:1.8.0-SNAPSHOT")
+    // Spring Boot auto-configuration
+    implementation("io.github.bluetape4k.exposed:bluetape4k-spring-boot-exposed-jdbc:1.8.0-SNAPSHOT")
 }
 ```
 

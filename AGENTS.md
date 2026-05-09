@@ -1,7 +1,7 @@
 # AGENTS.md - bluetape4k-exposed
 
 JetBrains Exposed ORM extensions for Kotlin: JDBC/R2DBC repositories, cache
-integrations, JSON serialization, encryption columns, and Spring Boot 3/4
+integrations, JSON serialization, encryption columns, and Spring Boot 4
 auto-configuration.
 
 - Group: `io.bluetape4k.exposed`
@@ -37,8 +37,7 @@ exposed/
   exposed-duckdb/
   exposed-timefold-solver-persistence/
 utils/
-spring-boot3/
-spring-boot4/
+spring-boot/
 buildSrc/
 ```
 
@@ -51,8 +50,8 @@ buildSrc/
 | `exposed/exposed-core` | `:bluetape4k-exposed-core` |
 | `exposed/exposed-jdbc` | `:bluetape4k-exposed-jdbc` |
 | `exposed/exposed-r2dbc` | `:bluetape4k-exposed-r2dbc` |
-| `spring-boot3/exposed-jdbc` | `:bluetape4k-spring-boot3-exposed-jdbc` |
-| `spring-boot4/exposed-r2dbc` | `:bluetape4k-spring-boot4-exposed-r2dbc` |
+| `spring-boot/exposed-jdbc` | `:bluetape4k-spring-boot-exposed-jdbc` |
+| `spring-boot/exposed-r2dbc` | `:bluetape4k-spring-boot-exposed-r2dbc` |
 | `utils/batch` | `:bluetape4k-utils-batch` |
 
 ## Commands
@@ -65,7 +64,7 @@ buildSrc/
 ./gradlew :bluetape4k-exposed-r2dbc:test
 ./gradlew :bluetape4k-exposed-jdbc-lettuce:test
 ./gradlew test --tests "io.bluetape4k.exposed.jdbc.ExposedJdbcRepositoryTest"
-./gradlew :bluetape4k-spring-boot3-exposed-jdbc:test
+./gradlew :bluetape4k-spring-boot-exposed-jdbc:test
 ./gradlew detekt
 ./gradlew publishAggregationToCentralSnapshots
 ./gradlew publishAggregationToCentralPortal

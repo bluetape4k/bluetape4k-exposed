@@ -80,7 +80,7 @@ jobs:
       tink: ${{ steps.filter.outputs.tink }}
       jdbc: ${{ steps.filter.outputs.jdbc }}
       r2dbc: ${{ steps.filter.outputs.r2dbc }}
-      spring-boot4: ${{ steps.filter.outputs.spring-boot4 }}
+      spring-boot: ${{ steps.filter.outputs.spring-boot }}
       lettuce: ${{ steps.filter.outputs.lettuce }}
       redisson: ${{ steps.filter.outputs.redisson }}
       measured: ${{ steps.filter.outputs.measured }}
@@ -94,7 +94,7 @@ jobs:
       trino: ${{ steps.filter.outputs.trino }}
       bigquery: ${{ steps.filter.outputs.bigquery }}
       timefold: ${{ steps.filter.outputs.timefold }}
-      spring-boot4-batch: ${{ steps.filter.outputs.spring-boot4-batch }}
+      spring-boot-batch: ${{ steps.filter.outputs.spring-boot-batch }}
       utils-batch: ${{ steps.filter.outputs.utils-batch }}
     steps:
       - uses: actions/checkout@v4
@@ -117,8 +117,8 @@ jobs:
             r2dbc:
               - 'exposed/exposed-r2dbc/**'
               - 'exposed/exposed-r2dbc-tests/**'
-            spring-boot4:
-              - 'spring-boot4/**'
+            spring-boot:
+              - 'spring-boot/**'
             lettuce:
               - 'exposed/exposed-jdbc-lettuce/**'
               - 'exposed/exposed-r2dbc-lettuce/**'
@@ -147,8 +147,8 @@ jobs:
               - 'exposed/exposed-bigquery/**'
             timefold:
               - 'exposed/exposed-timefold-solver-persistence/**'
-            spring-boot4-batch:
-              - 'spring-boot4/batch-exposed/**'
+            spring-boot-batch:
+              - 'spring-boot/batch-exposed/**'
             utils-batch:
               - 'utils/**'
 
@@ -416,13 +416,13 @@ jobs:
           path: '**/build/reports/kover/'
           retention-days: 7
 
-  # spring-boot4 exposed-jdbc + exposed-r2dbc (H2, Docker for Redis)
-  test-spring-boot4:
-    name: Test / spring-boot4 exposed-jdbc + exposed-r2dbc
+  # spring-boot exposed-jdbc + exposed-r2dbc (H2, Docker for Redis)
+  test-spring-boot:
+    name: Test / spring-boot exposed-jdbc + exposed-r2dbc
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [build, changes]
-    if: ${{ needs.changes.outputs['spring-boot4'] == 'true' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ needs.changes.outputs['spring-boot'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -433,10 +433,10 @@ jobs:
         with:
           gradle-version: wrapper
           cache-read-only: true
-      - name: Test spring-boot4
+      - name: Test spring-boot
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-spring-boot4-exposed-jdbc:test :bluetape4k-spring-boot4-exposed-r2dbc:test --no-daemon && break
+            ./gradlew :bluetape4k-spring-boot-exposed-jdbc:test :bluetape4k-spring-boot-exposed-r2dbc:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -448,22 +448,22 @@ jobs:
         if: always()
         run: >
           ./gradlew
-          :bluetape4k-spring-boot4-exposed-jdbc:koverXmlReport
-          :bluetape4k-spring-boot4-exposed-r2dbc:koverXmlReport
+          :bluetape4k-spring-boot-exposed-jdbc:koverXmlReport
+          :bluetape4k-spring-boot-exposed-r2dbc:koverXmlReport
           --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-spring-boot4
+          name: test-results-spring-boot
           path: '**/build/test-results/test/*.xml'
           retention-days: 7
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-spring-boot4
+          name: coverage-spring-boot
           path: '**/build/reports/kover/'
           retention-days: 7
 
@@ -1077,13 +1077,13 @@ jobs:
           path: '**/build/reports/kover/'
           retention-days: 7
 
-  # spring-boot4-batch-exposed (H2)
-  test-spring-boot4-batch:
-    name: Test / spring-boot4-batch-exposed (H2)
+  # spring-boot-batch-exposed (H2)
+  test-spring-boot-batch:
+    name: Test / spring-boot-batch-exposed (H2)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [build, changes]
-    if: ${{ needs.changes.outputs['spring-boot4-batch'] == 'true' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ needs.changes.outputs['spring-boot-batch'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -1094,10 +1094,10 @@ jobs:
         with:
           gradle-version: wrapper
           cache-read-only: true
-      - name: Test spring-boot4-batch-exposed (H2)
+      - name: Test spring-boot-batch-exposed (H2)
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-spring-boot4-batch-exposed:test --no-daemon && break
+            ./gradlew :bluetape4k-spring-boot-batch-exposed:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -1108,20 +1108,20 @@ jobs:
           DOCKER_HOST: 'unix:///var/run/docker.sock'
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-spring-boot4-batch-exposed:koverXmlReport --no-daemon
+        run: ./gradlew :bluetape4k-spring-boot-batch-exposed:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-spring-boot4-batch
+          name: test-results-spring-boot-batch
           path: '**/build/test-results/test/*.xml'
           retention-days: 7
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-spring-boot4-batch
+          name: coverage-spring-boot-batch
           path: '**/build/reports/kover/'
           retention-days: 7
 
@@ -1182,7 +1182,7 @@ jobs:
       - test-tink
       - test-jdbc-h2
       - test-r2dbc-h2
-      - test-spring-boot4
+      - test-spring-boot
       - test-lettuce
       - test-redisson
       - test-measured
@@ -1196,7 +1196,7 @@ jobs:
       - test-trino
       - test-bigquery
       - test-timefold
-      - test-spring-boot4-batch
+      - test-spring-boot-batch
       - test-utils-batch
     if: always()
     steps:
@@ -1235,7 +1235,7 @@ jobs:
       - test-tink
       - test-jdbc-h2
       - test-r2dbc-h2
-      - test-spring-boot4
+      - test-spring-boot
       - test-lettuce
       - test-redisson
       - test-measured
@@ -1249,7 +1249,7 @@ jobs:
       - test-trino
       - test-bigquery
       - test-timefold
-      - test-spring-boot4-batch
+      - test-spring-boot-batch
       - test-utils-batch
       - coverage-report
     if: always()

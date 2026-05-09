@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Removed `spring-boot3/*` modules and renamed `spring-boot4/*` to versionless `spring-boot/*`.
+- Standardized Spring Boot Gradle catalog aliases to `spring.boot.dependencies`, `spring.cloud.dependencies`, and `libs.plugins.spring.boot`.
+- Updated CI, BOM documentation, and module README files for the Spring Boot 4-only contract.
+
 ## [1.8.0] - 2026-05-07
 
 ### Added
