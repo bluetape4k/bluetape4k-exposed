@@ -12,13 +12,13 @@ dependencies {
     compileOnly(libs.exposed.jdbc)
 
     // Entity ID generators
-    api("io.github.bluetape4k:bluetape4k-idgenerators:${bluetape4kVersion}")
+    api(libs.bluetape4k.idgenerators)
     api(libs.java.uuid.generator)
 
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
 
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    testImplementation("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.mariadb)
     testImplementation(libs.testcontainers.mysql)

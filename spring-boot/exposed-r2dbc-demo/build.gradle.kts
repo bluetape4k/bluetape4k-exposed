@@ -22,17 +22,17 @@ dependencies {
     runtimeOnly(libs.h2.v2)   // JDBC DataSource (DataInitializer + SchemaUtils에 필요)
 
     // Jackson 3
-    implementation("io.github.bluetape4k:bluetape4k-jackson3:${bluetape4kVersion}")
+    implementation(libs.bluetape4k.jackson3)
     implementation(libs.jackson3.module.kotlin)
     implementation(libs.jackson3.module.blackbird)
 
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
-    implementation("io.github.bluetape4k:bluetape4k-coroutines:${bluetape4kVersion}")
+    implementation(libs.bluetape4k.coroutines)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.reactor)
     testImplementation(libs.kotlinx.coroutines.test)
 
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
 }

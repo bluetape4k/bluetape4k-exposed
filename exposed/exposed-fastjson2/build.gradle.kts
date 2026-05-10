@@ -15,7 +15,7 @@ dependencies {
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
 
     /* Fastjson2 */
-    api("io.github.bluetape4k:bluetape4k-fastjson2:${bluetape4kVersion}")
+    api(libs.bluetape4k.fastjson2)
     api(libs.fastjson2.kotlin)
     api(libs.fastjson2.extension)
     compileOnly(libs.r2dbc.spi)
@@ -28,8 +28,8 @@ dependencies {
     testRuntimeOnly(libs.postgresql.driver)
     testRuntimeOnly(libs.pgjdbc.ng)
 
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    testImplementation("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(libs.testcontainers.mariadb)
     testImplementation(libs.testcontainers.mysql)
     testImplementation(libs.testcontainers.postgresql)

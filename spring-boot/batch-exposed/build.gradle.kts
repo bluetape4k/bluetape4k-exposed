@@ -52,7 +52,7 @@ dependencies {
     api(libs.kotlin.reflect)
     api(project(":bluetape4k-exposed-jdbc"))
     api(project(":bluetape4k-exposed-core"))
-    api("io.github.bluetape4k:bluetape4k-virtualthread-api:${bluetape4kVersion}")
+    api(libs.bluetape4k.virtualthread.api)
 
     // Exposed
     api(libs.exposed.spring7.transaction)
@@ -65,12 +65,12 @@ dependencies {
     compileOnly("org.springframework.boot:spring-boot-autoconfigure")
 
     // Test
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
     // 테스트 fixture의 Exposed starter 대신 이 모듈의 Spring Boot platform/starter 조합을 사용한다.
     testImplementation(project(":bluetape4k-exposed-jdbc-tests")) {
         exclude(group = "org.jetbrains.exposed", module = "exposed-spring-boot-starter")
     }
-    testImplementation("io.github.bluetape4k:bluetape4k-virtualthread-jdk21:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.virtualthread.jdk21)
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-jdbc")  // DataSource auto-configuration (Spring Boot 분리 모듈)
     testImplementation(libs.spring.batch.test)

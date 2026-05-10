@@ -20,11 +20,11 @@ dependencies {
     testImplementation(testFixtures(project(":bluetape4k-exposed-cache")))
 
     // Redisson
-    api("io.github.bluetape4k:bluetape4k-redisson:${bluetape4kVersion}")
+    api(libs.bluetape4k.redisson)
     api(libs.redisson)
 
 
-    testImplementation("io.github.bluetape4k:bluetape4k-io:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.io)
 
     // Codecs
     compileOnly(libs.kryo5)
@@ -36,19 +36,19 @@ dependencies {
     compileOnly(libs.zstd.jni)
 
     // Coroutines
-    compileOnly("io.github.bluetape4k:bluetape4k-coroutines:${bluetape4kVersion}")
+    compileOnly(libs.bluetape4k.coroutines)
     compileOnly(libs.kotlinx.coroutines.core)
     testImplementation(libs.kotlinx.coroutines.test)
 
     // Bluetape4k Modules for Testing
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    testImplementation("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.mariadb)
     testImplementation(libs.testcontainers.mysql)
     testImplementation(libs.testcontainers.postgresql)
 
-    testImplementation("io.github.bluetape4k:bluetape4k-idgenerators:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.idgenerators)
 
     // Database Drivers
     testImplementation(libs.hikaricp)

@@ -18,8 +18,8 @@ dependencies {
 
     testImplementation(testFixtures(project(":bluetape4k-exposed-cache")))
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    testImplementation("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(libs.h2.v2)
     testImplementation(libs.hikaricp)
     testImplementation(libs.kotlinx.coroutines.test)

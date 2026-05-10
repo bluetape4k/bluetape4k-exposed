@@ -24,8 +24,8 @@ dependencies {
     testRuntimeOnly(libs.pgjdbc.ng)
 
     // Bluetape4k Modules for Testing
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    testImplementation("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.mariadb)
     testImplementation(libs.testcontainers.mysql)

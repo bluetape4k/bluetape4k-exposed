@@ -10,9 +10,9 @@ dependencies {
     compileOnly(libs.exposed.jdbc)
     compileOnly(libs.exposed.dao)
 
-    api("io.github.bluetape4k:bluetape4k-measured:${bluetape4kVersion}")
+    api(libs.bluetape4k.measured)
 
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
 
     // Database Drivers for exposed-jdbc-tests dialect matrix

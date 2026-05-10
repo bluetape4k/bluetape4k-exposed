@@ -19,12 +19,12 @@ dependencies {
     implementation(libs.exposed.spring.boot.starter)
 
     // Bluetape4k
-    compileOnly("io.github.bluetape4k:bluetape4k-jdbc:${bluetape4kVersion}")
-    compileOnly("io.github.bluetape4k:bluetape4k-io:${bluetape4kVersion}")
+    compileOnly(libs.bluetape4k.jdbc)
+    compileOnly(libs.bluetape4k.io)
     
 
-    api("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    api("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
+    api(libs.bluetape4k.junit5)
+    api(libs.bluetape4k.testcontainers)
     api(libs.testcontainers)
     api(libs.testcontainers.mariadb)
     api(libs.testcontainers.mysql)
@@ -42,12 +42,12 @@ dependencies {
     compileOnly(libs.pgjdbc.ng)
 
     // Coroutines
-    implementation("io.github.bluetape4k:bluetape4k-coroutines:${bluetape4kVersion}")
+    implementation(libs.bluetape4k.coroutines)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.debug)
     implementation(libs.kotlinx.coroutines.test)
 
     // Id Generators
-    implementation("io.github.bluetape4k:bluetape4k-idgenerators:${bluetape4kVersion}")
+    implementation(libs.bluetape4k.idgenerators)
     implementation(libs.java.uuid.generator)
 }

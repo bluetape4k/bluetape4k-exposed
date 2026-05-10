@@ -6,8 +6,8 @@ tasks.test {
 }
 
 dependencies {
-    implementation("io.github.bluetape4k:bluetape4k-core:${bluetape4kVersion}")
-    api("io.github.bluetape4k:bluetape4k-logging:${bluetape4kVersion}")
+    implementation(libs.bluetape4k.core)
+    api(libs.bluetape4k.logging)
     api(libs.exposed.core)
     api(libs.exposed.jdbc)
     api(libs.exposed.java.time)
@@ -16,6 +16,6 @@ dependencies {
     // DuckDB JDBC 드라이버
     api(libs.duckdb.jdbc)
 
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
     testImplementation(libs.kotlinx.coroutines.test)
 }

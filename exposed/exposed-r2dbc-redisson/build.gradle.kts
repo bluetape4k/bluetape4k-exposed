@@ -19,11 +19,11 @@ dependencies {
     testImplementation(testFixtures(project(":bluetape4k-exposed-cache")))
 
     // Redisson
-    api("io.github.bluetape4k:bluetape4k-redisson:${bluetape4kVersion}")
+    api(libs.bluetape4k.redisson)
     api(libs.redisson)
 
     // Codecs
-    api("io.github.bluetape4k:bluetape4k-io:${bluetape4kVersion}")
+    api(libs.bluetape4k.io)
 
     // Serializers
     runtimeOnly(libs.kryo5)
@@ -35,12 +35,12 @@ dependencies {
     runtimeOnly(libs.zstd.jni)
 
     // Coroutines
-    implementation("io.github.bluetape4k:bluetape4k-coroutines:${bluetape4kVersion}")
+    implementation(libs.bluetape4k.coroutines)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.reactive)
     testImplementation(libs.kotlinx.coroutines.test)
 
-    testImplementation("io.github.bluetape4k:bluetape4k-idgenerators:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.idgenerators)
 
     // R2DBC
     api(libs.r2dbc.spi)
@@ -51,8 +51,8 @@ dependencies {
     testRuntimeOnly(libs.r2dbc.postgresql)
 
     // Bluetape4k Modules for Testing
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    testImplementation("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(libs.testcontainers.mariadb)
     testImplementation(libs.testcontainers.mysql)
     testImplementation(libs.testcontainers.postgresql)

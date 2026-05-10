@@ -39,21 +39,21 @@ dependencies {
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
 
     // Entity ID generators
-    implementation("io.github.bluetape4k:bluetape4k-idgenerators:${bluetape4kVersion}")
+    implementation(libs.bluetape4k.idgenerators)
     implementation(libs.java.uuid.generator)
 
     // JDBC
-    api("io.github.bluetape4k:bluetape4k-jdbc:${bluetape4kVersion}")
+    api(libs.bluetape4k.jdbc)
     compileOnly(libs.hikaricp)
 
     // Coroutines
-    compileOnly("io.github.bluetape4k:bluetape4k-coroutines:${bluetape4kVersion}")
+    compileOnly(libs.bluetape4k.coroutines)
     compileOnly(libs.kotlinx.coroutines.core)
     compileOnly(libs.kotlinx.coroutines.reactor)
     testImplementation(libs.kotlinx.coroutines.test)
 
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    testImplementation("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.mariadb)
     testImplementation(libs.testcontainers.mysql)

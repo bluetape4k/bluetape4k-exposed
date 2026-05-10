@@ -23,10 +23,10 @@ dependencies {
     runtimeOnly(libs.h2.v2)
 
     // Jackson 3
-    implementation("io.github.bluetape4k:bluetape4k-jackson3:${bluetape4kVersion}")
+    implementation(libs.bluetape4k.jackson3)
     implementation(libs.jackson3.module.kotlin)
     implementation(libs.jackson3.module.blackbird)
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
 }

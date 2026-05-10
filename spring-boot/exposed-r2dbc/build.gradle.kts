@@ -26,14 +26,14 @@ dependencies {
 
     testImplementation(libs.exposed.migration.r2dbc)
     testImplementation(libs.flyway.core)
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
 
     api(project(":bluetape4k-exposed-r2dbc"))
     testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
 
-    testImplementation("io.github.bluetape4k:bluetape4k-virtualthread-jdk21:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.virtualthread.jdk21)
 
-    api("io.github.bluetape4k:bluetape4k-coroutines:${bluetape4kVersion}")
+    api(libs.bluetape4k.coroutines)
     api(libs.kotlinx.coroutines.core)
     api(libs.kotlinx.coroutines.reactor)  // Spring Data 코루틴 지원 요구사항
     testImplementation(libs.kotlinx.coroutines.test)

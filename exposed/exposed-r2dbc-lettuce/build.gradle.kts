@@ -5,11 +5,11 @@ configurations {
 }
 
 dependencies {
-    api("io.github.bluetape4k:bluetape4k-lettuce:${bluetape4kVersion}")
-    api("io.github.bluetape4k:bluetape4k-cache-lettuce:${bluetape4kVersion}")
+    api(libs.bluetape4k.lettuce)
+    api(libs.bluetape4k.cache.lettuce)
     api(project(":bluetape4k-exposed-r2dbc"))
     api(project(":bluetape4k-exposed-cache"))
-    api("io.github.bluetape4k:bluetape4k-resilience4j:${bluetape4kVersion}")
+    api(libs.bluetape4k.resilience4j)
     api(libs.resilience4j.retry)
 
     // Exposed R2DBC
@@ -31,7 +31,7 @@ dependencies {
     compileOnly(libs.zstd.jni)
 
     // Coroutines (R2DBC suspend 브리징)
-    implementation("io.github.bluetape4k:bluetape4k-coroutines:${bluetape4kVersion}")
+    implementation(libs.bluetape4k.coroutines)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.reactive)
 
@@ -40,11 +40,11 @@ dependencies {
     testRuntimeOnly(libs.postgresql.driver)     // Testcontainers PostgreSQL startup verification
     testRuntimeOnly(libs.mysql.connector.j)     // Testcontainers MySQL8 startup verification
 
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    testImplementation("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
     testImplementation(testFixtures(project(":bluetape4k-exposed-cache")))
     testImplementation(libs.h2.v2)
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation("io.github.bluetape4k:bluetape4k-idgenerators:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.idgenerators)
 }
