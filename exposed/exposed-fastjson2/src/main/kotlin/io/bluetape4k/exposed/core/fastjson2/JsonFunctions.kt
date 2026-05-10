@@ -59,7 +59,7 @@ class Extract<T>(
 inline fun <reified T: Any> ExpressionWithColumnType<*>.extract(
     vararg path: String,
     toScalar: Boolean = true,
-    serializer: FastjsonSerializer = FastjsonSerializer.Default,
+    serializer: FastjsonSerializer = DefaultFastjsonSerializer,
 ): Extract<T> {
     @OptIn(InternalApi::class)
     val columnType = resolveColumnType(

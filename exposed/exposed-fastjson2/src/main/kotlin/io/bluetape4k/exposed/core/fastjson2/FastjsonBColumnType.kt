@@ -102,7 +102,7 @@ fun <T: Any> Table.fastjsonb(
  */
 inline fun <reified T: Any> Table.fastjsonb(
     name: String,
-    serializer: FastjsonSerializer = FastjsonSerializer.Default,
+    serializer: FastjsonSerializer = DefaultFastjsonSerializer,
 ): Column<T> =
     fastjsonb(
         name,

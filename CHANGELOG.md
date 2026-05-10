@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Added the `DefaultFastjsonSerializer` facade for `exposed-fastjson2` and aligned module defaults with Jackson serializer parity.
 - Corrected the `utils/batch` Gradle module name from `:bluetape4k-utils-batch` to `:bluetape4k-batch` ([PR #13](https://github.com/bluetape4k/bluetape4k-exposed/pull/13)).
 
 ## [1.8.0] - 2026-05-07

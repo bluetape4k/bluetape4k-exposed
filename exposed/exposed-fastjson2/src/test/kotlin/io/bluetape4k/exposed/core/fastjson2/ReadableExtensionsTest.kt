@@ -3,7 +3,6 @@ package io.bluetape4k.exposed.core.fastjson2
 import com.alibaba.fastjson2.JSON
 import com.alibaba.fastjson2.JSONArray
 import com.alibaba.fastjson2.JSONObject
-import io.bluetape4k.fastjson2.FastjsonSerializer
 import io.r2dbc.spi.Readable
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -52,7 +51,7 @@ class ReadableExtensionsTest {
     @Test
     fun `Readable fastjson getter supports ByteArray value by index`() {
         val payload = Payload("bytes", 5)
-        val jsonbBytes = FastjsonSerializer.Default.serialize(payload)
+        val jsonbBytes = DefaultFastjsonSerializer.serialize(payload)
         val readable = FakeReadable(valuesByIndex = mapOf(0 to jsonbBytes))
 
         assertEquals(payload, readable.getFastjson<Payload>(0))
@@ -61,7 +60,7 @@ class ReadableExtensionsTest {
     @Test
     fun `Readable fastjson getter supports ByteArray value by name`() {
         val payload = Payload("bytes", 5)
-        val jsonbBytes = FastjsonSerializer.Default.serialize(payload)
+        val jsonbBytes = DefaultFastjsonSerializer.serialize(payload)
         val readable = FakeReadable(valuesByName = mapOf("payload" to jsonbBytes))
 
         assertEquals(payload, readable.getFastjson<Payload>("payload"))

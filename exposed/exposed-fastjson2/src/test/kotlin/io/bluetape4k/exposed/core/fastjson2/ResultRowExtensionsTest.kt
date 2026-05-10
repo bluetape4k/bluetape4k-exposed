@@ -6,7 +6,6 @@ import com.alibaba.fastjson2.JSONObject
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
-import io.bluetape4k.fastjson2.FastjsonSerializer
 import io.mockk.every
 import io.mockk.mockk
 import io.bluetape4k.assertions.shouldBeEqualTo
@@ -36,7 +35,7 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `ResultRow Fastjson 전용 getter를 지원한다`(testDB: TestDB) {
         val payload = Payload(FastjsonSchema.User("tester", "A"), true)
-        val objectText = FastjsonSerializer.Default.serializeAsString(payload)
+        val objectText = DefaultFastjsonSerializer.serializeAsString(payload)
         val arrayText = """[1,2,3]"""
 
         withTables(testDB, JsonTextTable) {
@@ -77,7 +76,7 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
     @Test
     fun `ResultRow getFastjsonOrNull은 ByteArray 값을 역직렬화한다`() {
         val payload = Payload(FastjsonSchema.User("bytes-user", "B"), false)
-        val jsonBytes = FastjsonSerializer.Default.serialize(payload)
+        val jsonBytes = DefaultFastjsonSerializer.serialize(payload)
 
         val expr = mockk<Expression<Any?>>()
         val row = mockk<ResultRow>()
@@ -100,7 +99,7 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
     @Test
     fun `ResultRow getFastjsonOrNull은 else 분기에서 toString으로 역직렬화한다`() {
         val payload = Payload(FastjsonSchema.User("tostring-user", "D"), true)
-        val jsonText = FastjsonSerializer.Default.serializeAsString(payload)
+        val jsonText = DefaultFastjsonSerializer.serializeAsString(payload)
         val customObj = object {
             override fun toString() = jsonText
         }

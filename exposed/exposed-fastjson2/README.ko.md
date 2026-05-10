@@ -11,6 +11,7 @@ Exposed JSON/JSONB 컬럼을 Fastjson2로 직렬화/역직렬화하기 위한 �
 ### 주요 기능
 
 - **Fastjson 컬럼 타입**: JSON/JSONB 컬럼 매핑
+- **기본 serializer facade**: `DefaultFastjsonSerializer`로 Exposed 기본 Fastjson2 serializer 진입점 제공
 - **ResultRow 확장**: JSON 컬럼 값 읽기 유틸
 - **JSON 함수/조건식**: DB별 JSON 조회 조건 작성 보조
 
@@ -22,6 +23,11 @@ dependencies {
     implementation("io.github.bluetape4k:bluetape4k-fastjson2:${version}")
 }
 ```
+
+기본 오버로드는 `DefaultFastjsonSerializer`를 사용하며, 이 값은
+`io.bluetape4k.fastjson2.FastjsonSerializer.Default`를 재노출합니다. 다른
+Fastjson2 설정이 필요하면 `fastjson`, `fastjsonb`, `extract`, ResultRow /
+Readable getter에 사용자 정의 `FastjsonSerializer`를 전달하면 됩니다.
 
 ## 기본 사용법
 
@@ -97,6 +103,7 @@ val extraData: Map<String, Any>? = resultRow.getFastjsonOrNull(Products.extraDat
 
 | 파일                       | 설명                   |
 |--------------------------|----------------------|
+| `FastjsonSerializer.kt`  | 기본 Fastjson2 serializer facade |
 | `FastjsonColumnType.kt`  | JSON 컬럼 타입 (문자열 기반)  |
 | `FastjsonBColumnType.kt` | JSONB 컬럼 타입 (이진 포맷)  |
 | `JsonFunctions.kt`       | JSON 함수 확장           |
@@ -125,24 +132,24 @@ val extraData: Map<String, Any>? = resultRow.getFastjsonOrNull(Products.extraDat
 ```mermaid
 classDiagram
     direction LR
-    class Fastjson2ColumnType~T~ {
+    class FastjsonColumnType~T~ {
         <<ColumnType>>
         +valueFromDB(value): T
         +valueToDB(value): Any
     }
-    class Fastjson2BColumnType~T~ {
+    class FastjsonBColumnType~T~ {
         <<ColumnTypeJSONB>>
         +valueToDB(value): PGobject
     }
     class TableExtensions {
         <<extensionFunctions>>
-        +Table.fastjson2~T~(name): Column~T~
-        +Table.fastjson2b~T~(name): Column~T~
+        +Table.fastjson~T~(name): Column~T~
+        +Table.fastjsonb~T~(name): Column~T~
     }
-    Fastjson2ColumnType <|-- Fastjson2BColumnType
+    FastjsonColumnType <|-- FastjsonBColumnType
 
-    style Fastjson2ColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style Fastjson2BColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
+    style FastjsonColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
+    style FastjsonBColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
     style TableExtensions fill:#FFF3E0,stroke:#FFCC80,color:#E65100
 ```
 
@@ -157,16 +164,20 @@ classDiagram
         +notNullValueToDB(value): Any
     }
     class FastjsonColumnType~T~ {
-        -objectMapper: ObjectMapper
+        -serializer: FastjsonSerializer
         +sqlType(): String
         +valueFromDB(value): T
         +notNullValueToDB(value): String
     }
     class FastjsonBColumnType~T~ {
-        -objectMapper: ObjectMapper
+        -serializer: FastjsonSerializer
         +sqlType(): String
         +valueFromDB(value): T
-        +notNullValueToDB(value): ByteArray
+        +notNullValueToDB(value): String
+    }
+    class DefaultFastjsonSerializer {
+        <<facade>>
+        +FastjsonSerializer.Default
     }
     class JsonFunctions {
         +Column.jsonPath(path): Expression
@@ -181,12 +192,15 @@ classDiagram
     ColumnType <|-- FastjsonBColumnType
     FastjsonColumnType --> JsonFunctions : 연동
     FastjsonBColumnType --> JsonFunctions : 연동
+    DefaultFastjsonSerializer --> FastjsonColumnType : 기본 serializer
+    DefaultFastjsonSerializer --> FastjsonBColumnType : 기본 serializer
     ResultRowExtensions --> FastjsonColumnType : 사용
     ResultRowExtensions --> FastjsonBColumnType : 사용
 
     style ColumnType fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
     style FastjsonColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
     style FastjsonBColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
+    style DefaultFastjsonSerializer fill:#FFF3E0,stroke:#FFCC80,color:#E65100
     style JsonFunctions fill:#FFFDE7,stroke:#FFF176,color:#F57F17
     style ResultRowExtensions fill:#FFFDE7,stroke:#FFF176,color:#F57F17
 ```

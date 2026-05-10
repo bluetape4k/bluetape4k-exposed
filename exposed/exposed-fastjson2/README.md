@@ -11,6 +11,7 @@ A module for serializing and deserializing Exposed JSON/JSONB columns using Fast
 ### Key Features
 
 - **Fastjson column types**: JSON/JSONB column mapping
+- **Default serializer facade**: `DefaultFastjsonSerializer` exposes the shared Fastjson2 serializer for Exposed defaults
 - **ResultRow extensions**: Utilities for reading JSON column values
 - **JSON functions/conditions**: Helpers for building database-specific JSON query conditions
 
@@ -50,6 +51,11 @@ object Products: IdTable<Long>("products") {
     val extraData = fastjsonb<Map<String, Any>>("extra_data")
 }
 ```
+
+The default overloads use `DefaultFastjsonSerializer`, which delegates to
+`io.bluetape4k.fastjson2.FastjsonSerializer.Default`. Pass a custom
+`FastjsonSerializer` to `fastjson`, `fastjsonb`, `extract`, or the ResultRow /
+Readable getters when a different Fastjson2 configuration is required.
 
 ### 2. Using JSON Columns
 
@@ -97,6 +103,7 @@ val extraData: Map<String, Any>? = resultRow.getFastjsonOrNull(Products.extraDat
 
 | File                     | Description                          |
 |--------------------------|--------------------------------------|
+| `FastjsonSerializer.kt`  | Default Fastjson2 serializer facade  |
 | `FastjsonColumnType.kt`  | JSON column type (string-based)      |
 | `FastjsonBColumnType.kt` | JSONB column type (binary format)    |
 | `JsonFunctions.kt`       | JSON function extensions             |
@@ -125,24 +132,24 @@ val extraData: Map<String, Any>? = resultRow.getFastjsonOrNull(Products.extraDat
 ```mermaid
 classDiagram
     direction LR
-    class Fastjson2ColumnType~T~ {
+    class FastjsonColumnType~T~ {
         <<ColumnType>>
         +valueFromDB(value): T
         +valueToDB(value): Any
     }
-    class Fastjson2BColumnType~T~ {
+    class FastjsonBColumnType~T~ {
         <<ColumnTypeJSONB>>
         +valueToDB(value): PGobject
     }
     class TableExtensions {
         <<extensionFunctions>>
-        +Table.fastjson2~T~(name): Column~T~
-        +Table.fastjson2b~T~(name): Column~T~
+        +Table.fastjson~T~(name): Column~T~
+        +Table.fastjsonb~T~(name): Column~T~
     }
-    Fastjson2ColumnType <|-- Fastjson2BColumnType
+    FastjsonColumnType <|-- FastjsonBColumnType
 
-    style Fastjson2ColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style Fastjson2BColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
+    style FastjsonColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
+    style FastjsonBColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
     style TableExtensions fill:#FFF3E0,stroke:#FFCC80,color:#E65100
 ```
 
@@ -157,16 +164,20 @@ classDiagram
         +notNullValueToDB(value): Any
     }
     class FastjsonColumnType~T~ {
-        -objectMapper: ObjectMapper
+        -serializer: FastjsonSerializer
         +sqlType(): String
         +valueFromDB(value): T
         +notNullValueToDB(value): String
     }
     class FastjsonBColumnType~T~ {
-        -objectMapper: ObjectMapper
+        -serializer: FastjsonSerializer
         +sqlType(): String
         +valueFromDB(value): T
-        +notNullValueToDB(value): ByteArray
+        +notNullValueToDB(value): String
+    }
+    class DefaultFastjsonSerializer {
+        <<facade>>
+        +FastjsonSerializer.Default
     }
     class JsonFunctions {
         +Column.jsonPath(path): Expression
@@ -181,12 +192,15 @@ classDiagram
     ColumnType <|-- FastjsonBColumnType
     FastjsonColumnType --> JsonFunctions : integrates
     FastjsonBColumnType --> JsonFunctions : integrates
+    DefaultFastjsonSerializer --> FastjsonColumnType : default serializer
+    DefaultFastjsonSerializer --> FastjsonBColumnType : default serializer
     ResultRowExtensions --> FastjsonColumnType : uses
     ResultRowExtensions --> FastjsonBColumnType : uses
 
     style ColumnType fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
     style FastjsonColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
     style FastjsonBColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
+    style DefaultFastjsonSerializer fill:#FFF3E0,stroke:#FFCC80,color:#E65100
     style JsonFunctions fill:#FFFDE7,stroke:#FFF176,color:#F57F17
     style ResultRowExtensions fill:#FFFDE7,stroke:#FFF176,color:#F57F17
 ```
