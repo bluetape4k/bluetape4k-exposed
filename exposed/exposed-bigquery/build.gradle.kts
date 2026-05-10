@@ -1,7 +1,7 @@
 val bluetape4kVersion: String by project
 
 dependencies {
-    api("io.github.bluetape4k:bluetape4k-logging:${bluetape4kVersion}")
+    api(libs.bluetape4k.logging)
     api(libs.exposed.core)
     // BigQueryContext 가 Database.connect(), transaction() 을 내부적으로 호출하므로 implementation 필요
     implementation(libs.exposed.jdbc)
@@ -12,8 +12,8 @@ dependencies {
     // BigQueryContext.create() 가 H2 sqlGenDb 를 내부 생성하므로 런타임 classpath 에 필요하다.
     implementation(libs.h2.v2)
 
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    testImplementation("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.testcontainers)
     testImplementation(libs.testcontainers.gcloud)

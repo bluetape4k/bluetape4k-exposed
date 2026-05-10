@@ -16,11 +16,11 @@ dependencies {
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
 
     // Encryption - Google Tink
-    api("io.github.bluetape4k:bluetape4k-tink:${bluetape4kVersion}")
+    api(libs.bluetape4k.tink)
     api(libs.tink)
 
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    testImplementation("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.mariadb)
     testImplementation(libs.testcontainers.mysql)

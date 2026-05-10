@@ -21,7 +21,7 @@ dependencies {
     testImplementation(project(":bluetape4k-exposed-dao"))
 
     // Entity ID generators (ColumnExtensions에서 사용)
-    api("io.github.bluetape4k:bluetape4k-idgenerators:${bluetape4kVersion}")
+    api(libs.bluetape4k.idgenerators)
     api(libs.java.uuid.generator)
 
     //
@@ -29,7 +29,7 @@ dependencies {
     //
 
     // Compress column types
-    compileOnly("io.github.bluetape4k:bluetape4k-io:${bluetape4kVersion}")
+    compileOnly(libs.bluetape4k.io)
 
     // Serializer (runtime for tests)
     testRuntimeOnly(libs.kryo5)
@@ -43,8 +43,8 @@ dependencies {
     // Phone number column types (compileOnly -> testImplementation 자동 전이 via extendsFrom)
     compileOnly(libs.libphonenumber)
 
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    testImplementation("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.mariadb)
     testImplementation(libs.testcontainers.mysql)

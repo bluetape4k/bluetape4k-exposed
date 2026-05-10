@@ -17,7 +17,7 @@ dependencies {
     api("org.springframework.data:spring-data-commons")
 
     api(libs.kotlin.reflect)
-    api("io.github.bluetape4k:bluetape4k-logging:${bluetape4kVersion}")
+    api(libs.bluetape4k.logging)
     api(libs.exposed.core)
     api(libs.exposed.dao)
     api(libs.exposed.jdbc)
@@ -26,9 +26,9 @@ dependencies {
 
     testImplementation(libs.exposed.migration.jdbc)
     testImplementation(libs.flyway.core)
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
 
-    testImplementation("io.github.bluetape4k:bluetape4k-virtualthread-jdk21:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.virtualthread.jdk21)
 
     api(project(":bluetape4k-exposed-jdbc"))
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))

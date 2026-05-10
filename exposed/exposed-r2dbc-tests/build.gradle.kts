@@ -15,11 +15,11 @@ dependencies {
     implementation(libs.exposed.java.time)
 
     // Id Generators
-    implementation("io.github.bluetape4k:bluetape4k-idgenerators:${bluetape4kVersion}")
+    implementation(libs.bluetape4k.idgenerators)
     implementation(libs.java.uuid.generator)
 
     // Coroutines
-    compileOnly("io.github.bluetape4k:bluetape4k-coroutines:${bluetape4kVersion}")
+    compileOnly(libs.bluetape4k.coroutines)
     compileOnly(libs.kotlinx.coroutines.core)
     compileOnly(libs.kotlinx.coroutines.reactor)
     testImplementation(libs.kotlinx.coroutines.test)
@@ -33,8 +33,8 @@ dependencies {
     implementation(libs.r2dbc.postgresql)
 
     // Bluetape4k Modules for Testing
-    api("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    api("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
+    api(libs.bluetape4k.junit5)
+    api(libs.bluetape4k.testcontainers)
     api(libs.testcontainers.mariadb)
     api(libs.testcontainers.mysql)
     api(libs.testcontainers.postgresql)

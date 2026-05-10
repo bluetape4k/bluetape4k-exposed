@@ -131,13 +131,13 @@ tasks.register<JavaExec>("generateBenchmarkDocs") {
 }
 
 dependencies {
-    api("io.github.bluetape4k:bluetape4k-core:${bluetape4kVersion}")
-    api("io.github.bluetape4k:bluetape4k-coroutines:${bluetape4kVersion}")
-    api("io.github.bluetape4k:bluetape4k-logging:${bluetape4kVersion}")
-    api("io.github.bluetape4k:bluetape4k-workflow:${bluetape4kVersion}")
+    api(libs.bluetape4k.core)
+    api(libs.bluetape4k.coroutines)
+    api(libs.bluetape4k.logging)
+    api(libs.bluetape4k.workflow)
 
-    implementation("io.github.bluetape4k:bluetape4k-virtualthread-api:${bluetape4kVersion}")
-    runtimeOnly("io.github.bluetape4k:bluetape4k-virtualthread-jdk21:${bluetape4kVersion}")
+    implementation(libs.bluetape4k.virtualthread.api)
+    runtimeOnly(libs.bluetape4k.virtualthread.jdk21)
 
     // Exposed JDBC/R2DBC
     compileOnly(project(":bluetape4k-exposed-jdbc"))
@@ -145,20 +145,20 @@ dependencies {
     compileOnly(libs.exposed.java.time)
 
     // Checkpoint JSON 직렬화
-    compileOnly("io.github.bluetape4k:bluetape4k-jackson3:${bluetape4kVersion}")
+    compileOnly(libs.bluetape4k.jackson3)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
 
     // Test
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    testImplementation("io.github.bluetape4k:bluetape4k-jackson3:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.bluetape4k.jackson3)
     testImplementation(libs.kotlinx.coroutines.test)
 
     // JDBC/R2DBC 통합 테스트 인프라
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
     testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
-    testImplementation("io.github.bluetape4k:bluetape4k-virtualthread-jdk21:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.virtualthread.jdk21)
 
     // Test DB — H2 (내장)
     testImplementation(libs.h2.v2)

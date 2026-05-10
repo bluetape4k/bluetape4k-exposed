@@ -22,7 +22,7 @@ configurations {
 
 dependencies {
     // Bluetape4k
-    api("io.github.bluetape4k:bluetape4k-logging:${bluetape4kVersion}")
+    api(libs.bluetape4k.logging)
 
     // Exposed
     api(platform(libs.exposed.bom))
@@ -35,13 +35,13 @@ dependencies {
     compileOnly(libs.kotlinx.coroutines.core)
 
     // Test Fixtures
-    testFixturesApi("io.github.bluetape4k:bluetape4k-logging:${bluetape4kVersion}")
+    testFixturesApi(libs.bluetape4k.logging)
     testFixturesApi(platform(libs.exposed.bom))
     testFixturesApi(libs.exposed.core)
     testFixturesApi(libs.exposed.jdbc)
     testFixturesImplementation(libs.exposed.java.time)
 
-    testFixturesImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
+    testFixturesImplementation(libs.bluetape4k.junit5)
     testFixturesImplementation(project(":bluetape4k-exposed-jdbc-tests"))
     testFixturesImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
     testFixturesCompileOnly(libs.exposed.r2dbc)
@@ -52,5 +52,5 @@ dependencies {
     testFixturesImplementation(libs.awaitility.kotlin)
 
     // Testing
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
 }

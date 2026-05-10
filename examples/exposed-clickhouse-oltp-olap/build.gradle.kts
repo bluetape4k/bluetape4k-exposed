@@ -17,13 +17,13 @@ dependencies {
     testImplementation(libs.clickhouse.jdbc)
 
     // Coroutines
-    testImplementation("io.github.bluetape4k:bluetape4k-coroutines:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.coroutines)
     testImplementation(libs.kotlinx.coroutines.core)
     testImplementation(libs.kotlinx.coroutines.test)
 
     // Testing
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    testImplementation("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(libs.testcontainers.clickhouse)
     testImplementation(libs.testcontainers.postgresql)
 }

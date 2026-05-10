@@ -17,7 +17,7 @@ dependencies {
     api(project(":bluetape4k-exposed-dao"))
     testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
 
-    api("io.github.bluetape4k:bluetape4k-r2dbc:${bluetape4kVersion}")
+    api(libs.bluetape4k.r2dbc)
     api(libs.r2dbc.spi)
     testRuntimeOnly(libs.r2dbc.h2)
     testRuntimeOnly(libs.r2dbc.mariadb)
@@ -25,16 +25,16 @@ dependencies {
     testRuntimeOnly(libs.r2dbc.postgresql)
 
     // Coroutines
-    api("io.github.bluetape4k:bluetape4k-coroutines:${bluetape4kVersion}")
+    api(libs.bluetape4k.coroutines)
     api(libs.kotlinx.coroutines.core)
     testImplementation(libs.kotlinx.coroutines.test)
 
-    compileOnly("io.github.bluetape4k:bluetape4k-io:${bluetape4kVersion}")
-    compileOnly("io.github.bluetape4k:bluetape4k-idgenerators:${bluetape4kVersion}")
+    compileOnly(libs.bluetape4k.io)
+    compileOnly(libs.bluetape4k.idgenerators)
 
     // Bluetape4k Modules for Testing
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    testImplementation("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(libs.testcontainers.mariadb)
     testImplementation(libs.testcontainers.mysql)
     testImplementation(libs.testcontainers.postgresql)

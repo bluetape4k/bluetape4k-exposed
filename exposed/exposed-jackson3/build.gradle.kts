@@ -15,7 +15,7 @@ dependencies {
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
 
     /* Jackson */
-    api("io.github.bluetape4k:bluetape4k-jackson3:${bluetape4kVersion}")
+    api(libs.bluetape4k.jackson3)
     api(libs.jackson3.module.kotlin)
     implementation(libs.jackson3.module.blackbird)
 
@@ -30,8 +30,8 @@ dependencies {
     testRuntimeOnly(libs.postgresql.driver)
     testRuntimeOnly(libs.pgjdbc.ng)
 
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    testImplementation("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(libs.testcontainers.mariadb)
     testImplementation(libs.testcontainers.mysql)
     testImplementation(libs.testcontainers.postgresql)

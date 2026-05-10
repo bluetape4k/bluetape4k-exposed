@@ -5,11 +5,11 @@ configurations {
 }
 
 dependencies {
-    api("io.github.bluetape4k:bluetape4k-cache-lettuce:${bluetape4kVersion}")
-    api("io.github.bluetape4k:bluetape4k-lettuce:${bluetape4kVersion}")
+    api(libs.bluetape4k.cache.lettuce)
+    api(libs.bluetape4k.lettuce)
     api(project(":bluetape4k-exposed-jdbc"))
     api(project(":bluetape4k-exposed-cache"))
-    api("io.github.bluetape4k:bluetape4k-resilience4j:${bluetape4kVersion}")
+    api(libs.bluetape4k.resilience4j)
     api(libs.resilience4j.retry)
 
     // Exposed
@@ -30,8 +30,8 @@ dependencies {
     compileOnly(libs.lz4.java)
     compileOnly(libs.zstd.jni)
 
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    testImplementation("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
     testImplementation(testFixtures(project(":bluetape4k-exposed-cache")))
 

@@ -12,7 +12,7 @@ dependencies {
     compileOnly(libs.exposed.java.time)  // 현재 미사용, exposed-postgresql 패턴과 일관성 위해 포함
 
     // Logging
-    implementation("io.github.bluetape4k:bluetape4k-logging:${bluetape4kVersion}")
+    implementation(libs.bluetape4k.logging)
 
     // MySQL 8 GIS 전용 라이브러리 (사용자가 필요한 것만 런타임에 추가)
     api(libs.jts.core)                   // JTS Core (Geometry 타입)
@@ -22,8 +22,8 @@ dependencies {
 
     // Testing
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
-    testImplementation("io.github.bluetape4k:bluetape4k-junit5:${bluetape4kVersion}")
-    testImplementation("io.github.bluetape4k:bluetape4k-testcontainers:${bluetape4kVersion}")
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.mysql)
 
