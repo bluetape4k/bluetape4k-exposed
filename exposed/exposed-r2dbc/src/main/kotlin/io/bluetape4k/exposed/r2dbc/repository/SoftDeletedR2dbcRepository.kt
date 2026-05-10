@@ -40,7 +40,7 @@ import kotlin.uuid.Uuid
  *     val isDeleted: Boolean = false,
  * )
  *
- * val repo = object : LongSoftDeletedR2dbcRepository<ContactTable, ContactRecord> {
+ * val repo = object : LongSoftDeletedR2dbcRepository<ContactRecord, ContactTable> {
  *     override val table = ContactTable
  *     override suspend fun ResultRow.toEntity() = ContactRecord(
  *         id        = this[ContactTable.id].value,

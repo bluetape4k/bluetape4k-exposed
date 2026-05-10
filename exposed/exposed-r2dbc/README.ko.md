@@ -10,11 +10,13 @@ Exposed R2DBC 환경에서 사용할 수 있는 확장 함수와 Repository 패�
 
 ### 주요 기능
 
-- **Repository 패턴**: `R2dbcRepository<ID, T, E>`, `SoftDeletedR2dbcRepository<ID, T, E>` 인터페이스
+- **Repository 패턴**: `R2dbcRepository<ID, E>`, `AuditableR2dbcRepository<ID, E, T>`,
+  `SoftDeletedR2dbcRepository<ID, E, T>` 인터페이스
 - **Flow 기반 조회**: `findAll`, `findBy`, `findByField` 등이 `Flow<E>` 반환
 - **Batch Insert 지원**: 충돌 무시 배치 삽입(`BatchInsertOnConflictDoNothing`) 패턴
     - PostgreSQL 계열은 특정 `id` 컬럼에 고정하지 않고 `ON CONFLICT DO NOTHING`으로 동작
 - **Coroutines 친화 API**: 모든 단건 조회/변경 연산이 `suspend` 함수
+- **감사 UPDATE 지원**: `AuditableR2dbcRepository`가 `updatedAt`, `updatedBy` 자동 설정
 - **Soft Delete 지원**: `SoftDeletedR2dbcRepository`
 - **가상 스레드 트랜잭션**: `virtualThreadTransaction` — Java 21 Virtual Thread 기반 R2DBC 트랜잭션 실행
 - **R2DBC Readable 확장**: `Readable.getString`, `Readable.getLong` 등 타입 안전 컬럼 값 조회 확장 함수
@@ -106,8 +108,9 @@ object ActorTable : LongIdTable("actors") {
     val lastName  = varchar("last_name",  50)
 }
 
-class ActorRepository : LongR2dbcRepository<ActorTable, ActorRecord> {
+class ActorRepository : LongR2dbcRepository<ActorRecord> {
     override val table = ActorTable
+    override fun extractId(entity: ActorRecord) = entity.id
 
     override suspend fun ResultRow.toEntity() = ActorRecord(
         id        = this[ActorTable.id].value,
@@ -137,7 +140,55 @@ suspendTransaction {
 }
 ```
 
-### 2. SoftDeletedR2dbcRepository 구현
+### 2. AuditableR2dbcRepository 구현
+
+```kotlin
+import io.bluetape4k.exposed.core.auditable.AuditableLongIdTable
+import io.bluetape4k.exposed.r2dbc.repository.LongAuditableR2dbcRepository
+
+object ArticleTable : AuditableLongIdTable("articles") {
+    val title = varchar("title", 100)
+    val category = varchar("category", 50)
+}
+
+data class ArticleRecord(
+    val id: Long = 0L,
+    val title: String,
+    val category: String,
+)
+
+class ArticleRepository : LongAuditableR2dbcRepository<ArticleRecord, ArticleTable> {
+    override val table = ArticleTable
+    override fun extractId(entity: ArticleRecord) = entity.id
+
+    override suspend fun ResultRow.toEntity() = ArticleRecord(
+        id       = this[ArticleTable.id].value,
+        title    = this[ArticleTable.title],
+        category = this[ArticleTable.category],
+    )
+}
+
+suspendTransaction {
+    val repo = ArticleRepository()
+
+    repo.auditedUpdateById(1L, updatedBy = "editor") {
+        it[title] = "Published"
+    }
+
+    repo.auditedUpdateAll(
+        updatedBy = "batch",
+        predicate = { ArticleTable.category eq "draft" },
+    ) {
+        it[category] = "published"
+    }
+}
+```
+
+`updatedAt`은 DB `CURRENT_TIMESTAMP`로 설정되고, `updatedBy`는 명시한 `updatedBy` 인자를 사용합니다.
+`updatedBy`를 생략하면 호출 시점의 `UserContext.getCurrentUser()` 값을 캡처합니다.
+일반 `updateById()`, `updateAll()`은 감사 컬럼을 설정하지 않습니다.
+
+### 3. SoftDeletedR2dbcRepository 구현
 
 ```kotlin
 import io.bluetape4k.exposed.core.dao.id.SoftDeletedIdTable
@@ -155,8 +206,9 @@ data class ContactRecord(
     val isDeleted: Boolean = false,
 )
 
-class ContactRepository : LongSoftDeletedR2dbcRepository<ContactTable, ContactRecord> {
+class ContactRepository : LongSoftDeletedR2dbcRepository<ContactRecord, ContactTable> {
     override val table = ContactTable
+    override fun extractId(entity: ContactRecord) = entity.id
 
     override suspend fun ResultRow.toEntity() = ContactRecord(
         id        = this[ContactTable.id].value,
@@ -185,7 +237,7 @@ suspendTransaction {
 }
 ```
 
-### 3. 배치 삽입 / Upsert
+### 4. 배치 삽입 / Upsert
 
 ```kotlin
 suspendTransaction {
@@ -249,6 +301,13 @@ suspendTransaction {
 | `restoreAll(predicate)`                     | suspend    | `Int`            | 조건에 맞는 레코드 일괄 복원             |
 | `findActivePage(pageNumber, pageSize, ...)` | suspend    | `ExposedPage<E>` | 활성 레코드 페이징 조회                |
 
+## AuditableR2dbcRepository 추가 메서드
+
+| 메서드                                              | suspend 여부 | 반환 타입 | 설명                      |
+|--------------------------------------------------|------------|-------|-------------------------|
+| `auditedUpdateById(id, updatedBy, ...)`          | suspend    | `Int` | ID로 수정하고 감사 컬럼 설정      |
+| `auditedUpdateAll(updatedBy, predicate, ...)`    | suspend    | `Int` | 조건에 맞게 일괄 수정하고 감사 컬럼 설정 |
+
 ## 다이어그램
 
 ### R2dbcRepository 핵심 구조
@@ -305,6 +364,12 @@ classDiagram
         +findDeleted(...) Flow~E~
         +findActivePage(...) ExposedPage~E~
     }
+    class AuditableR2dbcRepository {
+        <<interface>>
+        +table: AuditableIdTable~ID~
+        +auditedUpdateById(id, updatedBy, ...) Int
+        +auditedUpdateAll(updatedBy, predicate, ...) Int
+    }
     class IntR2dbcRepository {
         <<interface>>
     }
@@ -317,19 +382,26 @@ classDiagram
     class LongSoftDeletedR2dbcRepository {
         <<interface>>
     }
+    class LongAuditableR2dbcRepository {
+        <<interface>>
+    }
 
     R2dbcRepository <|-- SoftDeletedR2dbcRepository
+    R2dbcRepository <|-- AuditableR2dbcRepository
     R2dbcRepository <|-- IntR2dbcRepository
     R2dbcRepository <|-- LongR2dbcRepository
     R2dbcRepository <|-- StringR2dbcRepository
     SoftDeletedR2dbcRepository <|-- LongSoftDeletedR2dbcRepository
+    AuditableR2dbcRepository <|-- LongAuditableR2dbcRepository
 
     style R2dbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
     style SoftDeletedR2dbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
+    style AuditableR2dbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
     style IntR2dbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
     style LongR2dbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
     style StringR2dbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
     style LongSoftDeletedR2dbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
+    style LongAuditableR2dbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
 ```
 
 ### suspend 트랜잭션 흐름
@@ -403,6 +475,9 @@ sequenceDiagram
 | `UuidR2dbcRepository`              | `kotlin.uuid.Uuid` |
 | `UUIDR2dbcRepository`              | `java.util.UUID`   |
 | `StringR2dbcRepository`            | `String`           |
+| `IntAuditableR2dbcRepository`      | `Int`              |
+| `LongAuditableR2dbcRepository`     | `Long`             |
+| `UUIDAuditableR2dbcRepository`     | `java.util.UUID`   |
 | `IntSoftDeletedR2dbcRepository`    | `Int`              |
 | `LongSoftDeletedR2dbcRepository`   | `Long`             |
 | `UuidSoftDeletedR2dbcRepository`   | `kotlin.uuid.Uuid` |

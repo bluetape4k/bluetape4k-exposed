@@ -10,6 +10,7 @@ dependencies {
 
     api(libs.exposed.core)
     api(libs.exposed.r2dbc)
+    compileOnly(libs.exposed.java.time)
     compileOnly(libs.exposed.migration.r2dbc)
     testImplementation(libs.exposed.java.time)
 

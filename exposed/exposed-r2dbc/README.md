@@ -10,11 +10,13 @@ Provides extension functions and the Repository pattern for use with Exposed in 
 
 ### Key Features
 
-- **Repository pattern**: `R2dbcRepository<ID, T, E>` and `SoftDeletedR2dbcRepository<ID, T, E>` interfaces
+- **Repository pattern**: `R2dbcRepository<ID, E>`, `AuditableR2dbcRepository<ID, E, T>`,
+  and `SoftDeletedR2dbcRepository<ID, E, T>` interfaces
 - **Flow-based queries**: `findAll`, `findBy`, `findByField`, and others return `Flow<E>`
 - **Batch insert support**: `BatchInsertOnConflictDoNothing` pattern
     - For PostgreSQL-compatible databases, uses `ON CONFLICT DO NOTHING` without pinning to a specific `id` column
 - **Coroutines-friendly API**: All single-record lookup and mutation operations are `suspend` functions
+- **Audit update support**: `AuditableR2dbcRepository` automatically sets `updatedAt` and `updatedBy`
 - **Soft delete support**: `SoftDeletedR2dbcRepository`
 - **Virtual Thread transactions**: `virtualThreadTransaction` — run R2DBC transactions on Java 21 Virtual Threads
 - **R2DBC Readable extensions**: Type-safe column value accessors such as `Readable.getString` and `Readable.getLong`
@@ -107,8 +109,9 @@ object ActorTable : LongIdTable("actors") {
     val lastName  = varchar("last_name",  50)
 }
 
-class ActorRepository : LongR2dbcRepository<ActorTable, ActorRecord> {
+class ActorRepository : LongR2dbcRepository<ActorRecord> {
     override val table = ActorTable
+    override fun extractId(entity: ActorRecord) = entity.id
 
     override suspend fun ResultRow.toEntity() = ActorRecord(
         id        = this[ActorTable.id].value,
@@ -138,7 +141,55 @@ suspendTransaction {
 }
 ```
 
-### 2. Implementing SoftDeletedR2dbcRepository
+### 2. Implementing AuditableR2dbcRepository
+
+```kotlin
+import io.bluetape4k.exposed.core.auditable.AuditableLongIdTable
+import io.bluetape4k.exposed.r2dbc.repository.LongAuditableR2dbcRepository
+
+object ArticleTable : AuditableLongIdTable("articles") {
+    val title = varchar("title", 100)
+    val category = varchar("category", 50)
+}
+
+data class ArticleRecord(
+    val id: Long = 0L,
+    val title: String,
+    val category: String,
+)
+
+class ArticleRepository : LongAuditableR2dbcRepository<ArticleRecord, ArticleTable> {
+    override val table = ArticleTable
+    override fun extractId(entity: ArticleRecord) = entity.id
+
+    override suspend fun ResultRow.toEntity() = ArticleRecord(
+        id       = this[ArticleTable.id].value,
+        title    = this[ArticleTable.title],
+        category = this[ArticleTable.category],
+    )
+}
+
+suspendTransaction {
+    val repo = ArticleRepository()
+
+    repo.auditedUpdateById(1L, updatedBy = "editor") {
+        it[title] = "Published"
+    }
+
+    repo.auditedUpdateAll(
+        updatedBy = "batch",
+        predicate = { ArticleTable.category eq "draft" },
+    ) {
+        it[category] = "published"
+    }
+}
+```
+
+`updatedAt` is assigned with the database `CURRENT_TIMESTAMP`, and `updatedBy` uses the explicit
+`updatedBy` argument. If `updatedBy` is omitted, the value is captured from `UserContext.getCurrentUser()`.
+Plain `updateById()` and `updateAll()` do not set audit columns.
+
+### 3. Implementing SoftDeletedR2dbcRepository
 
 ```kotlin
 import io.bluetape4k.exposed.core.dao.id.SoftDeletedIdTable
@@ -156,8 +207,9 @@ data class ContactRecord(
     val isDeleted: Boolean = false,
 )
 
-class ContactRepository : LongSoftDeletedR2dbcRepository<ContactTable, ContactRecord> {
+class ContactRepository : LongSoftDeletedR2dbcRepository<ContactRecord, ContactTable> {
     override val table = ContactTable
+    override fun extractId(entity: ContactRecord) = entity.id
 
     override suspend fun ResultRow.toEntity() = ContactRecord(
         id        = this[ContactTable.id].value,
@@ -186,7 +238,7 @@ suspendTransaction {
 }
 ```
 
-### 3. Batch insert / Upsert
+### 4. Batch insert / Upsert
 
 ```kotlin
 suspendTransaction {
@@ -251,6 +303,13 @@ Because
 | `restoreAll(predicate)`                     | yes     | `Int`            | Bulk restore matching records        |
 | `findActivePage(pageNumber, pageSize, ...)` | yes     | `ExposedPage<E>` | Paginated query of active records    |
 
+## AuditableR2dbcRepository Additional Methods
+
+| Method                                           | Suspend | Return type | Description                           |
+|--------------------------------------------------|---------|-------------|---------------------------------------|
+| `auditedUpdateById(id, updatedBy, ...)`          | yes     | `Int`       | Update by ID and set audit columns    |
+| `auditedUpdateAll(updatedBy, predicate, ...)`    | yes     | `Int`       | Bulk update and set audit columns     |
+
 ## Diagrams
 
 ### Core R2dbcRepository Structure
@@ -307,6 +366,12 @@ classDiagram
         +findDeleted(...) Flow~E~
         +findActivePage(...) ExposedPage~E~
     }
+    class AuditableR2dbcRepository {
+        <<interface>>
+        +table: AuditableIdTable~ID~
+        +auditedUpdateById(id, updatedBy, ...) Int
+        +auditedUpdateAll(updatedBy, predicate, ...) Int
+    }
     class IntR2dbcRepository {
         <<interface>>
     }
@@ -319,19 +384,26 @@ classDiagram
     class LongSoftDeletedR2dbcRepository {
         <<interface>>
     }
+    class LongAuditableR2dbcRepository {
+        <<interface>>
+    }
 
     R2dbcRepository <|-- SoftDeletedR2dbcRepository
+    R2dbcRepository <|-- AuditableR2dbcRepository
     R2dbcRepository <|-- IntR2dbcRepository
     R2dbcRepository <|-- LongR2dbcRepository
     R2dbcRepository <|-- StringR2dbcRepository
     SoftDeletedR2dbcRepository <|-- LongSoftDeletedR2dbcRepository
+    AuditableR2dbcRepository <|-- LongAuditableR2dbcRepository
 
     style R2dbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
     style SoftDeletedR2dbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
+    style AuditableR2dbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
     style IntR2dbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
     style LongR2dbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
     style StringR2dbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
     style LongSoftDeletedR2dbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
+    style LongAuditableR2dbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
 ```
 
 ### suspend Transaction Flow
@@ -405,6 +477,9 @@ sequenceDiagram
 | `UuidR2dbcRepository`              | `kotlin.uuid.Uuid` |
 | `UUIDR2dbcRepository`              | `java.util.UUID`   |
 | `StringR2dbcRepository`            | `String`           |
+| `IntAuditableR2dbcRepository`      | `Int`              |
+| `LongAuditableR2dbcRepository`     | `Long`             |
+| `UUIDAuditableR2dbcRepository`     | `java.util.UUID`   |
 | `IntSoftDeletedR2dbcRepository`    | `Int`              |
 | `LongSoftDeletedR2dbcRepository`   | `Long`             |
 | `UuidSoftDeletedR2dbcRepository`   | `kotlin.uuid.Uuid` |
