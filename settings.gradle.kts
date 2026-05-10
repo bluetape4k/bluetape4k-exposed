@@ -11,7 +11,7 @@ pluginManagement {
 
 val projectName = "bluetape4k"
 
-rootProject.name = "$projectName-exposed-projects"
+rootProject.name = "$projectName-exposed"
 
 includeModules("exposed", withBaseDir = false)
 includeModules("utils", withBaseDir = false)
