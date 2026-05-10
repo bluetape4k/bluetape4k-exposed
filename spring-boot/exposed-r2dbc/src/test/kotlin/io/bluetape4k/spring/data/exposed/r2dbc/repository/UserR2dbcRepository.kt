@@ -2,6 +2,7 @@ package io.bluetape4k.spring.data.exposed.r2dbc.repository
 
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
+import kotlinx.coroutines.flow.Flow
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
 
@@ -28,4 +29,24 @@ interface UserR2dbcRepository: ExposedR2dbcRepository<User, Long> {
             Users.email to domain.email,
             Users.age to domain.age,
         )
+
+    suspend fun findByName(name: String): List<User>
+
+    suspend fun findByAgeGreaterThan(age: Int): List<User>
+
+    suspend fun findByEmailContaining(keyword: String): List<User>
+
+    suspend fun findByNameAndAge(name: String, age: Int): User?
+
+    suspend fun countByAge(age: Int): Long
+
+    suspend fun existsByEmail(email: String): Boolean
+
+    suspend fun deleteByName(name: String): Long
+
+    suspend fun findTop3ByOrderByAgeDesc(): List<User>
+
+    suspend fun findFirstByNameOrderByAgeDesc(name: String): User?
+
+    fun findByNameOrderByAgeAsc(name: String): Flow<User>
 }

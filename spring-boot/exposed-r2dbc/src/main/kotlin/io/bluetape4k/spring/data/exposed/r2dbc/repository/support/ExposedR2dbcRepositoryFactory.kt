@@ -1,5 +1,9 @@
 package io.bluetape4k.spring.data.exposed.r2dbc.repository.support
 
+import io.bluetape4k.spring.data.exposed.r2dbc.repository.query.ExposedR2dbcQueryLookupStrategy
+import io.bluetape4k.spring.data.exposed.r2dbc.repository.query.ExposedR2dbcQueryMethod
+import io.bluetape4k.spring.data.exposed.r2dbc.repository.query.PartTreeExposedR2dbcQuery
+import io.bluetape4k.spring.data.exposed.r2dbc.repository.query.R2dbcQueryMapper
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
@@ -16,6 +20,9 @@ import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.intrinsics.startCoroutineUninterceptedOrReturn
 
 /**
  * 테이블 기반 코루틴 Exposed Repository 프록시를 생성합니다.
@@ -33,9 +40,8 @@ import java.util.*
 @Suppress("UNCHECKED_CAST")
 class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
 
-    override fun <T: Any, ID: Any> getEntityInformation(domainClass: Class<T>): EntityInformation<T, ID> =
-        @Suppress("UNCHECKED_CAST")
-        StaticEntityInformation(domainClass, Any::class.java as Class<ID>) as EntityInformation<T, ID>
+    override fun getEntityInformation(metadata: RepositoryMetadata): EntityInformation<*, *> =
+        StaticEntityInformation(metadata.domainType as Class<Any>, Any::class.java)
 
     override fun getTargetRepository(information: RepositoryInformation): Any =
         createRepositoryImplementation(information.repositoryInterface)
@@ -49,7 +55,13 @@ class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
     override fun getQueryLookupStrategy(
         key: QueryLookupStrategy.Key?,
         valueExpressionDelegate: ValueExpressionDelegate,
-    ): Optional<QueryLookupStrategy> = Optional.empty()
+    ): Optional<QueryLookupStrategy> =
+        Optional.of(
+            ExposedR2dbcQueryLookupStrategy.create(
+                key ?: QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND,
+                ::resolveQueryMapper,
+            )
+        )
 
     /**
      * Spring Data 의 프록시 인터셉터 체인(트랜잭션 래핑, 코루틴 변환 등)을 완전히 우회하여
@@ -82,6 +94,9 @@ class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
      */
     private fun createDirectProxy(repositoryInterface: Class<*>, impl: SimpleExposedR2dbcRepository<Any, Any>): Any {
         val implClass: Class<*> = impl::class.java
+        val repositoryMetadata = getRepositoryMetadata(repositoryInterface)
+        val queryMapper = R2dbcQueryMapper(impl.table, impl::toDomain)
+        val queryCache = ConcurrentHashMap<Method, PartTreeExposedR2dbcQuery<Any, Any>>()
 
         val handler = InvocationHandler { proxy, method, args ->
             // Object 메서드 처리
@@ -110,7 +125,20 @@ class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
                 return@InvocationHandler InvocationHandler.invokeDefault(proxy, method, *(args ?: emptyArray()))
             }
 
-            error("No implementation found for method '${method.name}' in ${repositoryInterface.name}")
+            val query = queryCache.computeIfAbsent(method) {
+                PartTreeExposedR2dbcQuery(
+                    ExposedR2dbcQueryMethod(it, repositoryMetadata, projectionFactory),
+                    queryMapper,
+                )
+            }
+            val continuation = args?.lastOrNull() as? Continuation<Any?>
+            if (continuation != null) {
+                return@InvocationHandler suspend {
+                    query.executeSuspending(args)
+                }.startCoroutineUninterceptedOrReturn(continuation)
+            }
+
+            query.execute(args ?: emptyArray())
         }
 
         return Proxy.newProxyInstance(repositoryInterface.classLoader, arrayOf(repositoryInterface), handler)
@@ -148,6 +176,11 @@ class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
             toPersistValues = { domain -> toPersistValuesHandle.invoke(domain) as Map<Column<*>, Any?> },
             extractId = { entity -> extractIdHandle.invoke(entity) },
         )
+    }
+
+    private fun resolveQueryMapper(repositoryInterface: Class<*>): R2dbcQueryMapper<Any, Any> {
+        val mapper = resolveMapper(repositoryInterface)
+        return R2dbcQueryMapper(mapper.table, mapper.toDomain)
     }
 
     private fun bindDefaultMethodHandle(
