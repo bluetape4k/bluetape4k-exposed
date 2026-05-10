@@ -5,6 +5,10 @@ import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import kotlinx.coroutines.flow.Flow
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Slice
+import org.springframework.data.domain.Sort
 
 /**
  * 테스트용 suspend 기반 User Repository 입니다.
@@ -32,7 +36,13 @@ interface UserR2dbcRepository: ExposedR2dbcRepository<User, Long> {
 
     suspend fun findByName(name: String): List<User>
 
+    suspend fun findByName(name: String, sort: Sort): List<User>
+
+    suspend fun findByName(name: String, pageable: Pageable): Page<User>
+
     suspend fun findByAgeGreaterThan(age: Int): List<User>
+
+    suspend fun findByAgeGreaterThan(age: Int, pageable: Pageable): Slice<User>
 
     suspend fun findByEmailContaining(keyword: String): List<User>
 

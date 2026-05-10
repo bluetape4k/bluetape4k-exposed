@@ -40,6 +40,13 @@ import kotlin.coroutines.intrinsics.startCoroutineUninterceptedOrReturn
 @Suppress("UNCHECKED_CAST")
 class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
 
+    private var queryLookupStrategyKey: QueryLookupStrategy.Key? = null
+
+    override fun setQueryLookupStrategyKey(key: QueryLookupStrategy.Key?) {
+        queryLookupStrategyKey = key
+        super.setQueryLookupStrategyKey(key)
+    }
+
     override fun getEntityInformation(metadata: RepositoryMetadata): EntityInformation<*, *> =
         StaticEntityInformation(metadata.domainType as Class<Any>, Any::class.java)
 
@@ -126,6 +133,9 @@ class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
             }
 
             val query = queryCache.computeIfAbsent(method) {
+                require(queryLookupStrategyKey != QueryLookupStrategy.Key.USE_DECLARED_QUERY) {
+                    "Exposed R2DBC repositories do not support declared @Query methods yet: '${it.name}'"
+                }
                 PartTreeExposedR2dbcQuery(
                     ExposedR2dbcQueryMethod(it, repositoryMetadata, projectionFactory),
                     queryMapper,

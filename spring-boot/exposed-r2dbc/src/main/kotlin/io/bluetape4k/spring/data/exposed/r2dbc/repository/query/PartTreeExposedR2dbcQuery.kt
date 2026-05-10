@@ -5,7 +5,7 @@ import io.bluetape4k.spring.data.exposed.jdbc.repository.query.ExposedQueryCreat
 import io.bluetape4k.spring.data.exposed.jdbc.repository.query.ParameterMetadataProvider
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.toExposedOrderBy
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.channelFlow
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
@@ -52,6 +52,8 @@ internal class PartTreeExposedR2dbcQuery<R: Any, ID: Any>(
         val sort = partTree.sort
             .and(pageable.sort)
             .and(values.firstInstanceOrNull<Sort>() ?: Sort.unsorted())
+        // Spring Data 4 suspend query parameters in this factory path still expect
+        // the trailing Continuation when ParameterAccessor binds method arguments.
         val bindValues = parameters.toList().toTypedArray()
 
         return suspendTransaction {
@@ -69,14 +71,19 @@ internal class PartTreeExposedR2dbcQuery<R: Any, ID: Any>(
         }
     }
 
-    private fun executeFlow(values: Array<Any?>): Flow<R> = flow {
-        val rows = suspendTransaction {
+    private fun executeFlow(values: Array<Any?>): Flow<R> = channelFlow {
+        suspendTransaction {
             val op = createOp(values)
             val sort = partTree.sort
                 .and(values.firstInstanceOrNull<Sort>() ?: Sort.unsorted())
-            select(op, sort)
+            val query = query(op)
+            if (sort.isSorted) {
+                query.orderBy(*sort.toExposedOrderBy(table))
+            }
+            query.collect { row ->
+                send(mapper.toDomain(row))
+            }
         }
-        rows.forEach { emit(it) }
     }
 
     private fun createOp(values: Array<Any?>): Op<Boolean> {
