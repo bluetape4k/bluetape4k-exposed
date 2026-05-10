@@ -48,6 +48,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.test)
 
     // Id Generators
-    compileOnly("io.github.bluetape4k:bluetape4k-idgenerators:${bluetape4kVersion}")
-    compileOnly(libs.java.uuid.generator)
+    implementation("io.github.bluetape4k:bluetape4k-idgenerators:${bluetape4kVersion}")
+    implementation(libs.java.uuid.generator)
 }

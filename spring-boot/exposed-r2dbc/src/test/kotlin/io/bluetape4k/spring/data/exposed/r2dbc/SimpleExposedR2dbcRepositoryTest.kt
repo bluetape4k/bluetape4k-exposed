@@ -1,5 +1,11 @@
 package io.bluetape4k.spring.data.exposed.r2dbc
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
@@ -17,12 +23,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
@@ -37,6 +37,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.domain.Sort.Direction
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.minutes
 
 class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
 
@@ -143,27 +144,29 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
 
     @ParameterizedTest
     @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
-    fun `findAllAsList - SuspendedJobTester 병렬 조회에서도 같은 개수를 본다`(testDB: TestDB) = runSuspendIO {
+    fun `findAllAsList - SuspendedJobTester 병렬 조회에서도 같은 개수를 본다`(testDB: TestDB) = runSuspendIO(5.minutes) {
+        val userCount = 4
         withTables(testDB, Users) {
-            repeat(4) { index ->
+            repeat(userCount) { index ->
                 createUser("Parallel-$index", "parallel-$index@example.com", 30 + index)
             }
 
             val readCount = AtomicInteger(0)
+            val expectedRead = 12
             SuspendedJobTester()
-                .rounds(12)
+                .rounds(expectedRead)
                 .add {
                     val users = userRepository.findAllAsList()
-                    users shouldHaveSize 4
+                    users shouldHaveSize userCount
                     readCount.incrementAndGet()
                 }
                 .run()
 
-            readCount.get() shouldBeEqualTo 12
+            readCount.get() shouldBeEqualTo expectedRead
         }
     }
 
-    @EnabledForJreRange(min = JRE.JAVA_21, max = JRE.JAVA_26)
+    @EnabledForJreRange(min = JRE.JAVA_21)
     @ParameterizedTest
     @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
     fun `streamAll - StructuredTaskScopeTester 병렬 collector 에서도 전체 row 를 유지한다`(testDB: TestDB) = runTest {

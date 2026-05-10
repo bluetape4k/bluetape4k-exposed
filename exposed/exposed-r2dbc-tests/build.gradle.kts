@@ -14,7 +14,9 @@ dependencies {
     implementation(libs.exposed.migration.r2dbc)
     implementation(libs.exposed.java.time)
 
+    // Id Generators
     implementation("io.github.bluetape4k:bluetape4k-idgenerators:${bluetape4kVersion}")
+    implementation(libs.java.uuid.generator)
 
     // Coroutines
     compileOnly("io.github.bluetape4k:bluetape4k-coroutines:${bluetape4kVersion}")
@@ -42,6 +44,8 @@ dependencies {
     compileOnly(libs.mariadb.java.client)
     compileOnly(libs.mysql.connector.j)
     compileOnly(libs.postgresql.driver)
+
+
 
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
         exclude(group = "junit", module = "junit")

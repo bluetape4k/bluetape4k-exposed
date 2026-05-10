@@ -3,7 +3,6 @@ import io.gitlab.arturbosch.detekt.report.ReportMergeTask
 import nmcp.NmcpAggregationExtension
 import nmcp.NmcpExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
-import java.util.concurrent.TimeUnit
 
 plugins {
     base
@@ -230,11 +229,19 @@ subprojects {
         setApplyMavenExclusions(false)
         imports {
             mavenBom("io.github.bluetape4k:bluetape4k-bom:$bluetape4kVersion")
+            mavenBom(rootLibs.spring.boot.dependencies.get().toString())
             mavenBom(rootLibs.kotlinx.coroutines.bom.get().toString())
             mavenBom(rootLibs.kotlin.bom.get().toString())
             mavenBom(rootLibs.junit.bom.get().toString())
             mavenBom(rootLibs.micrometer.bom.get().toString())
             mavenBom(rootLibs.testcontainers.bom.get().toString())
+            mavenBom(rootLibs.jackson.bom.get().toString())
+            mavenBom(rootLibs.jackson3.bom.get().toString())
+            mavenBom(rootLibs.netty.bom.get().toString())
+        }
+        dependencies {
+            dependency(rootLibs.guava.get().toString())
+            dependency(rootLibs.lz4.java.get().toString())
         }
     }
 
