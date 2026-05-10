@@ -347,5 +347,8 @@ dependencies {
 }
 
 dependencies {
-    subprojects.forEach { sub -> kover(project(sub.path)) }
+    subprojects
+        .filterNot { sub -> sub.name == "bluetape4k-exposed-bom" }
+        .filter { it.plugins.hasPlugin("org.jetbrains.kotlinx.kover") }
+        .forEach { sub -> kover(project(sub.path)) }
 }
