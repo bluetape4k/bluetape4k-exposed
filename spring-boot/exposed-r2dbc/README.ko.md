@@ -124,6 +124,7 @@ interface ExposedR2dbcRepository<R : Any, ID : Any> : CoroutineCrudRepository<R,
 - **Flow 지원**: 대용량 데이터 스트리밍 (백프레셔 포함)
 - **페이징**: suspend 기반 페이징 조회
 - **Exposed DSL 통합**: R2DBC 조건 쿼리
+- **PartTree 파생 쿼리**: `findByName`, `countByAge`, `existsByEmail`, `deleteByName` 같은 Spring Data 메서드명 기반 쿼리
 
 ### 2. 도메인 객체 매핑
 
@@ -194,7 +195,27 @@ userRepository.streamAll()
     }
 ```
 
-### 5. 페이징 조회
+### 5. 메서드명 기반 파생 쿼리
+
+Spring Data PartTree 쿼리를 suspend Repository 메서드로 선언할 수 있습니다:
+
+```kotlin
+interface UserRepository : ExposedR2dbcRepository<User, Long> {
+    suspend fun findByName(name: String): List<User>
+    suspend fun findByAgeGreaterThan(age: Int): List<User>
+    suspend fun findByEmailContaining(keyword: String): List<User>
+    suspend fun findByNameAndAge(name: String, age: Int): User?
+    suspend fun countByAge(age: Int): Long
+    suspend fun existsByEmail(email: String): Boolean
+    suspend fun deleteByName(name: String): Long
+    suspend fun findTop3ByOrderByAgeDesc(): List<User>
+    suspend fun findFirstByNameOrderByAgeDesc(name: String): User?
+}
+```
+
+지원 범위는 Exposed DSL helper와 같은 컬럼명 매핑을 사용하며, equality, comparison, `Containing`, count/exists/delete projection, 선언적 정렬, top/first limit을 포함합니다.
+
+### 6. 페이징 조회
 
 ```kotlin
 suspend fun getUsersPage(pageNo: Int, pageSize: Int): Page<User> {
@@ -208,7 +229,7 @@ suspend fun getUsersSorted(): Page<User> {
 }
 ```
 
-### 6. Exposed DSL 조건
+### 7. Exposed DSL 조건
 
 복잡한 조건은 DSL로 표현:
 

@@ -124,6 +124,7 @@ interface ExposedR2dbcRepository<R : Any, ID : Any> : CoroutineCrudRepository<R,
 - **Flow support**: Large-dataset streaming with backpressure
 - **Pagination**: Suspend-based paginated retrieval
 - **Exposed DSL integration**: R2DBC conditional queries
+- **PartTree derived queries**: Spring Data method-name queries such as `findByName`, `countByAge`, `existsByEmail`, and `deleteByName`
 
 ### 2. Domain Object Mapping
 
@@ -194,7 +195,27 @@ userRepository.streamAll()
     }
 ```
 
-### 5. Paginated Retrieval
+### 5. Method-name Derived Queries
+
+Spring Data PartTree queries are available as suspend repository methods:
+
+```kotlin
+interface UserRepository : ExposedR2dbcRepository<User, Long> {
+    suspend fun findByName(name: String): List<User>
+    suspend fun findByAgeGreaterThan(age: Int): List<User>
+    suspend fun findByEmailContaining(keyword: String): List<User>
+    suspend fun findByNameAndAge(name: String, age: Int): User?
+    suspend fun countByAge(age: Int): Long
+    suspend fun existsByEmail(email: String): Boolean
+    suspend fun deleteByName(name: String): Long
+    suspend fun findTop3ByOrderByAgeDesc(): List<User>
+    suspend fun findFirstByNameOrderByAgeDesc(name: String): User?
+}
+```
+
+Supported query forms follow the same column-name mapping as the Exposed DSL helpers, including equality, comparison, `Containing`, count/exists/delete projections, declared ordering, and top/first limits.
+
+### 6. Paginated Retrieval
 
 ```kotlin
 suspend fun getUsersPage(pageNo: Int, pageSize: Int): Page<User> {
@@ -208,7 +229,7 @@ suspend fun getUsersSorted(): Page<User> {
 }
 ```
 
-### 6. Exposed DSL Conditions
+### 7. Exposed DSL Conditions
 
 Express complex conditions using DSL:
 
