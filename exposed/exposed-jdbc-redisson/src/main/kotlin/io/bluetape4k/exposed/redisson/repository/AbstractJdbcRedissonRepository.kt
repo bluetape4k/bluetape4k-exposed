@@ -29,6 +29,7 @@ import org.redisson.api.RLocalCachedMap
 import org.redisson.api.RMap
 import org.redisson.api.RMapCache
 import org.redisson.api.RedissonClient
+import org.redisson.api.options.LocalCachedMapOptions
 import java.io.Serializable
 import java.time.Duration
 
@@ -134,6 +135,34 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
     }
 
     /**
+     * MapWriter를 붙이지 않은 동일 이름의 Redis map입니다.
+     *
+     * invalidate 계열은 기본적으로 캐시 엔트리만 제거해야 하므로, `deleteFromDBOnInvalidate=false`일 때
+     * writer-backed [cache]를 직접 제거하지 않고 이 map으로 Redis 엔트리만 삭제합니다.
+     */
+    protected open val cacheOnlyMap: RMap<ID, E?> by lazy<RMap<ID, E?>> {
+        if (config.isNearCacheEnabled) {
+            createCacheOnlyLocalCacheMap()
+        } else {
+            redissonClient.getMapCache<ID, E?>(cacheName, config.codec)
+        }
+    }
+
+    /**
+     * MapWriter를 붙이지 않은 Near Cache map을 생성합니다.
+     * 삭제 이벤트는 Redisson local-cache sync 경로를 타지만 DB writer는 호출하지 않습니다.
+     */
+    protected fun createCacheOnlyLocalCacheMap(): RLocalCachedMap<ID, E?> =
+        LocalCachedMapOptions.name<ID, E?>(cacheName).apply {
+            codec(config.codec)
+            syncStrategy(config.nearCacheSyncStrategy)
+            timeToLive(config.ttl)
+            if (config.nearCacheMaxIdleTime > Duration.ZERO) {
+                maxIdle(config.nearCacheMaxIdleTime)
+            }
+        }.let { redissonClient.getLocalCachedMap(it) }
+
+    /**
      * Near Cache(로컬 캐시)가 활성화된 [RLocalCachedMap]을 생성합니다.
      * Read-Only 모드에서는 loader만, Read-Write 모드에서는 loader + writer를 설정합니다.
      */
@@ -179,6 +208,87 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
     }.apply {
         if (config.nearCacheMaxSize > 0) {
             setMaxSize(config.nearCacheMaxSize, EvictionMode.LRU)
+        }
+    }
+
+    /**
+     * 캐시에서 지정한 ID를 제거합니다.
+     *
+     * `deleteFromDBOnInvalidate=false`이면 MapWriter를 우회해 Redis 캐시만 제거하고 DB는 유지합니다.
+     * `true`이면 기존 writer-backed map 경로를 사용해 DB 삭제 정책을 그대로 적용합니다.
+     */
+    override fun invalidate(id: ID) {
+        if (config.deleteFromDBOnInvalidate) {
+            cache.fastRemove(id)
+        } else {
+            cacheOnlyMap.fastRemove(id)
+            clearNearCacheIfNeeded()
+        }
+    }
+
+    /**
+     * 여러 ID를 캐시에서 제거합니다.
+     *
+     * `deleteFromDBOnInvalidate=false`인 기본 설정에서는 DB writer를 호출하지 않습니다.
+     */
+    override fun invalidateAll(ids: Collection<ID>) {
+        if (ids.isEmpty()) return
+        if (config.deleteFromDBOnInvalidate) {
+            ids.forEach { cache.fastRemove(it) }
+        } else {
+            @Suppress("UNCHECKED_CAST")
+            cacheOnlyMap.fastRemove(*ids.toTypedArray<Any>() as Array<ID>)
+            clearNearCacheIfNeeded()
+        }
+    }
+
+    /**
+     * 캐시를 모두 비웁니다.
+     *
+     * `deleteFromDBOnInvalidate=false`인 기본 설정에서는 DB writer를 호출하지 않습니다.
+     */
+    override fun clear() {
+        if (config.deleteFromDBOnInvalidate) {
+            cache.clear()
+        } else {
+            cacheOnlyMap.clear()
+            clearNearCacheIfNeeded()
+        }
+    }
+
+    /**
+     * 패턴에 맞는 키를 가진 엔티티를 캐시에서 제거합니다.
+     *
+     * @param patterns 키 패턴
+     * @param count 최대 제거 개수
+     * @return 제거된 엔티티 수
+     */
+    override fun invalidateByPattern(
+        patterns: String,
+        count: Int,
+    ): Long {
+        count.requirePositiveNumber("count")
+
+        val map = if (config.deleteFromDBOnInvalidate) cache else cacheOnlyMap
+        val keys = map.keySet(patterns, count)
+        if (keys.isEmpty()) {
+            return 0
+        }
+
+        val removed =
+            if (config.deleteFromDBOnInvalidate) {
+                keys.sumOf { cache.fastRemove(it) }
+            } else {
+                @Suppress("UNCHECKED_CAST")
+                cacheOnlyMap.fastRemove(*keys.toTypedArray<Any>() as Array<ID>)
+            }
+        clearNearCacheIfNeeded()
+        return removed
+    }
+
+    private fun clearNearCacheIfNeeded() {
+        if (config.isNearCacheEnabled) {
+            (cache as? RLocalCachedMap<*, *>)?.clearLocalCache()
         }
     }
 

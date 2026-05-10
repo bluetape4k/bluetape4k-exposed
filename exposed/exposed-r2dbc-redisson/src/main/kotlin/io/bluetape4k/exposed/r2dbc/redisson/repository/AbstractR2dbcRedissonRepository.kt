@@ -14,6 +14,7 @@ import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import io.bluetape4k.redis.redisson.cache.localCachedMap
 import io.bluetape4k.redis.redisson.cache.mapCache
 import io.bluetape4k.support.requireNotNull
+import io.bluetape4k.support.requirePositiveNumber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
@@ -31,6 +32,7 @@ import org.redisson.api.RLocalCachedMap
 import org.redisson.api.RMap
 import org.redisson.api.RMapCache
 import org.redisson.api.RedissonClient
+import org.redisson.api.options.LocalCachedMapOptions
 import java.io.Serializable
 import java.time.Duration
 
@@ -133,6 +135,34 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
         }
     }
 
+    /**
+     * MapWriter를 붙이지 않은 동일 이름의 Redis map입니다.
+     *
+     * invalidate 계열은 기본적으로 캐시 엔트리만 제거해야 하므로, `deleteFromDBOnInvalidate=false`일 때
+     * writer-backed [cache]를 직접 제거하지 않고 이 map으로 Redis 엔트리만 삭제합니다.
+     */
+    protected open val cacheOnlyMap: RMap<ID, E?> by lazy<RMap<ID, E?>> {
+        if (config.isNearCacheEnabled) {
+            createCacheOnlyLocalCacheMap()
+        } else {
+            redissonClient.getMapCache<ID, E?>(cacheName, config.codec)
+        }
+    }
+
+    /**
+     * MapWriter를 붙이지 않은 Near Cache map을 생성합니다.
+     * 삭제 이벤트는 Redisson local-cache sync 경로를 타지만 DB writer는 호출하지 않습니다.
+     */
+    protected fun createCacheOnlyLocalCacheMap(): RLocalCachedMap<ID, E?> =
+        LocalCachedMapOptions.name<ID, E?>(cacheName).apply {
+            codec(config.codec)
+            syncStrategy(config.nearCacheSyncStrategy)
+            timeToLive(config.ttl)
+            if (config.nearCacheMaxIdleTime > Duration.ZERO) {
+                maxIdle(config.nearCacheMaxIdleTime)
+            }
+        }.let { redissonClient.getLocalCachedMap(it) }
+
     protected fun createLocalCacheMap(): RLocalCachedMap<ID, E?> =
         localCachedMap(cacheName, redissonClient) {
             log.info { "RLocalCacheMap 를 생성합니다. local cacheName=$cacheName, config=$config" }
@@ -176,6 +206,88 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
                 setMaxSize(config.nearCacheMaxSize, EvictionMode.LRU)
             }
         }
+
+    /**
+     * 주어진 ID의 엔티티를 캐시에서 제거합니다.
+     *
+     * `deleteFromDBOnInvalidate=false`이면 MapWriter를 우회해 Redis 캐시만 제거하고 DB는 유지합니다.
+     */
+    override suspend fun invalidate(id: ID) {
+        if (config.deleteFromDBOnInvalidate) {
+            cache.fastRemoveAsync(id).await()
+        } else {
+            cacheOnlyMap.fastRemoveAsync(id).await()
+            clearNearCacheIfNeeded()
+        }
+    }
+
+    /**
+     * 여러 ID의 엔티티를 캐시에서 제거합니다.
+     *
+     * `deleteFromDBOnInvalidate=false`인 기본 설정에서는 DB writer를 호출하지 않습니다.
+     */
+    override suspend fun invalidateAll(ids: Collection<ID>) {
+        if (ids.isEmpty()) return
+        if (config.deleteFromDBOnInvalidate) {
+            @Suppress("UNCHECKED_CAST")
+            cache.fastRemoveAsync(*ids.toTypedArray<Any>() as Array<ID>).await()
+        } else {
+            @Suppress("UNCHECKED_CAST")
+            cacheOnlyMap.fastRemoveAsync(*ids.toTypedArray<Any>() as Array<ID>).await()
+            clearNearCacheIfNeeded()
+        }
+    }
+
+    /**
+     * 캐시의 모든 엔티티를 제거합니다.
+     *
+     * `deleteFromDBOnInvalidate=false`인 기본 설정에서는 DB writer를 호출하지 않습니다.
+     */
+    override suspend fun clear() {
+        if (config.deleteFromDBOnInvalidate) {
+            cache.clearAsync().await()
+        } else {
+            cacheOnlyMap.clearAsync().await()
+            clearNearCacheIfNeeded()
+        }
+    }
+
+    /**
+     * 패턴에 맞는 키의 엔티티를 캐시에서 제거합니다.
+     *
+     * @param patterns 키 패턴
+     * @param count 최대 삭제 개수
+     * @return 삭제된 엔티티 개수
+     */
+    override suspend fun invalidateByPattern(
+        patterns: String,
+        count: Int,
+    ): Long {
+        count.requirePositiveNumber("count")
+        val map = if (config.deleteFromDBOnInvalidate) cache else cacheOnlyMap
+        val keys = map.keySet(patterns, count)
+        if (keys.isEmpty()) {
+            return 0
+        }
+
+        val removed =
+            if (config.deleteFromDBOnInvalidate) {
+                var countRemoved = 0L
+                keys.forEach { key -> countRemoved += cache.fastRemoveAsync(key).await() }
+                countRemoved
+            } else {
+                @Suppress("UNCHECKED_CAST")
+                cacheOnlyMap.fastRemoveAsync(*keys.toTypedArray<Any>() as Array<ID>).await()
+            }
+        clearNearCacheIfNeeded()
+        return removed
+    }
+
+    private suspend fun clearNearCacheIfNeeded() {
+        if (config.isNearCacheEnabled) {
+            (cache as? RLocalCachedMap<*, *>)?.clearLocalCacheAsync()?.await()
+        }
+    }
 
     /**
      * 지정한 조건에 따라 DB에서 엔티티 목록을 조회하고, 조회된 엔티티를 캐시에 저장합니다.
