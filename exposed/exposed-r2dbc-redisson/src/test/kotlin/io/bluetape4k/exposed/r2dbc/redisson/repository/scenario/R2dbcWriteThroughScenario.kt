@@ -158,8 +158,8 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `invalidte(id) - 캐시 invalidate 시 DB에 영향을 줄 수 있다`(testDB: TestDB) =
         runTest {
-            // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
-            Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
+            // NOTE: DB 삭제를 동반하는 invalidate는 MySQL/MariaDB에서 격리 수준에 민감하므로 기존처럼 제외한다.
+            Assumptions.assumeFalse(testDB in TestDB.ALL_MYSQL_MARIADB && cacheConfig.deleteFromDBOnInvalidate)
 
             withR2dbcEntityTable(testDB) {
                 val id = getExistingId()
@@ -184,6 +184,38 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
                     // 캐시에서 삭제했지만, DB에는 여전히 존재한다.
                     val userFromDB = repository.findByIdFromDb(id)
                     userFromDB shouldBeEqualTo entityFromCache
+
+                    // get()은 캐시 miss 후 DB Read-Through로 다시 로드한다.
+                    repository.get(id) shouldBeEqualTo entityFromCache
+                }
+            }
+        }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `invalidateAll - 설정에 따라 캐시만 또는 DB까지 삭제한다`(testDB: TestDB) =
+        runTest {
+            Assumptions.assumeFalse(testDB in TestDB.ALL_MYSQL_MARIADB && cacheConfig.deleteFromDBOnInvalidate)
+
+            withR2dbcEntityTable(testDB) {
+                val ids = getExistingIds()
+                val entities = ids.associateWith { id ->
+                    repository.get(id).shouldNotBeNull()
+                }
+
+                repository.invalidateAll(ids)
+
+                if (cacheConfig.isReadWrite) {
+                    delay(DEFAULT_DELAY.milliseconds)
+                }
+
+                if (cacheConfig.deleteFromDBOnInvalidate) {
+                    ids.forEach { id -> repository.findByIdFromDb(id).shouldBeNull() }
+                } else {
+                    ids.forEach { id ->
+                        repository.findByIdFromDb(id) shouldBeEqualTo entities[id]
+                        repository.get(id) shouldBeEqualTo entities[id]
+                    }
                 }
             }
         }
