@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `bluetape4k-exposed-bom` BOM module for Exposed consumers ([PR #15](https://github.com/bluetape4k/bluetape4k-exposed/pull/15)).
 - English and Korean README files for the Exposed BOM module ([PR #16](https://github.com/bluetape4k/bluetape4k-exposed/pull/16)).
 - Mermaid architecture and sequence diagrams for `exposed-r2dbc-lettuce` documentation ([PR #2](https://github.com/bluetape4k/bluetape4k-exposed/pull/2)).
+- `AuditableR2dbcRepository` and `Int`/`Long`/`UUID` convenience interfaces for R2DBC audit update parity.
 
 ### Changed
 
