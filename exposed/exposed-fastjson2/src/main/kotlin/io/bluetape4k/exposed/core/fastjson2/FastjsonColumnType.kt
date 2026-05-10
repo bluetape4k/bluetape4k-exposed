@@ -136,7 +136,7 @@ fun <T: Any> Table.fastjson(
  */
 inline fun <reified T: Any> Table.fastjson(
     name: String,
-    fastjsonSerializer: FastjsonSerializer = FastjsonSerializer.Default,
+    fastjsonSerializer: FastjsonSerializer = DefaultFastjsonSerializer,
 ): Column<T> =
     fastjson(
         name,

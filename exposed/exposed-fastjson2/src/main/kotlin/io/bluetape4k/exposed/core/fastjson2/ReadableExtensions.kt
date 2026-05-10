@@ -28,7 +28,7 @@ internal fun requiredFastjsonReadableError(column: Any, typeName: String): Nothi
  */
 inline fun <reified T: Any> Readable.getFastjson(
     index: Int,
-    serializer: FastjsonSerializer = FastjsonSerializer.Default,
+    serializer: FastjsonSerializer = DefaultFastjsonSerializer,
 ): T = getFastjsonOrNull<T>(index, serializer) ?: requiredFastjsonReadableError(index, T::class.simpleName ?: "T")
 
 /**
@@ -49,7 +49,7 @@ inline fun <reified T: Any> Readable.getFastjson(
  */
 inline fun <reified T: Any> Readable.getFastjson(
     name: String,
-    serializer: FastjsonSerializer = FastjsonSerializer.Default,
+    serializer: FastjsonSerializer = DefaultFastjsonSerializer,
 ): T = getFastjsonOrNull<T>(name, serializer) ?: requiredFastjsonReadableError(name, T::class.simpleName ?: "T")
 
 /**
@@ -70,7 +70,7 @@ inline fun <reified T: Any> Readable.getFastjson(
  */
 inline fun <reified T: Any> Readable.getFastjsonOrNull(
     index: Int,
-    serializer: FastjsonSerializer = FastjsonSerializer.Default,
+    serializer: FastjsonSerializer = DefaultFastjsonSerializer,
 ): T? {
     val value = get(index) ?: return null
     return when (value) {
@@ -99,7 +99,7 @@ inline fun <reified T: Any> Readable.getFastjsonOrNull(
  */
 inline fun <reified T: Any> Readable.getFastjsonOrNull(
     name: String,
-    serializer: FastjsonSerializer = FastjsonSerializer.Default,
+    serializer: FastjsonSerializer = DefaultFastjsonSerializer,
 ): T? {
     val value = get(name) ?: return null
     return when (value) {

@@ -10,7 +10,6 @@ import io.bluetape4k.exposed.tests.currentDialectTest
 import io.bluetape4k.exposed.tests.expectException
 import io.bluetape4k.exposed.tests.withDb
 import io.bluetape4k.exposed.tests.withTables
-import io.bluetape4k.fastjson2.FastjsonSerializer
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
@@ -276,7 +275,7 @@ class FastjsonColumnTest: AbstractExposedTest() {
             val rows = tester.selectAll().where { userIsInactive }.toList()
             rows.shouldBeEmpty()
 
-            val alphaTeamUserAsJson = """{"user":${FastjsonSerializer.Default.serializeAsString(alphaTeamUser)}}"""
+            val alphaTeamUserAsJson = """{"user":${DefaultFastjsonSerializer.serializeAsString(alphaTeamUser)}}"""
             var userIsInAlphaTeam = tester.fastjsonColumn.contains(stringLiteral(alphaTeamUserAsJson))
             tester.selectAll().where { userIsInAlphaTeam }.count() shouldBeEqualTo 1L
 

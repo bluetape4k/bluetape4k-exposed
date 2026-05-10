@@ -35,7 +35,7 @@ internal fun requiredFastjsonError(expression: Expression<*>, typeName: String):
  */
 inline fun <reified T: Any> ResultRow.getFastjson(
     expression: Expression<*>,
-    serializer: FastjsonSerializer = FastjsonSerializer.Default,
+    serializer: FastjsonSerializer = DefaultFastjsonSerializer,
 ): T = getFastjsonOrNull<T>(expression, serializer) ?: requiredFastjsonError(expression, T::class.simpleName ?: "T")
 
 /**
@@ -56,7 +56,7 @@ inline fun <reified T: Any> ResultRow.getFastjson(
  */
 inline fun <reified T: Any> ResultRow.getFastjsonOrNull(
     expression: Expression<*>,
-    serializer: FastjsonSerializer = FastjsonSerializer.Default,
+    serializer: FastjsonSerializer = DefaultFastjsonSerializer,
 ): T? {
     val value = anyValueOrNull(expression) ?: return null
     return when (value) {

@@ -1,6 +1,6 @@
 package io.bluetape4k.exposed.core.fastjson2
 
-import io.bluetape4k.fastjson2.FastjsonSerializer
+import io.bluetape4k.fastjson2.FastjsonSerializer as SharedFastjsonSerializer
 import io.bluetape4k.support.toUtf8Bytes
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
@@ -19,7 +19,7 @@ class FastjsonColumnTypeUnitTest {
         val count: Int,
     )
 
-    private val serializer = FastjsonSerializer.Default
+    private val serializer = DefaultFastjsonSerializer
     private val columnType =
         FastjsonColumnType<SamplePayload>(
             serilaize = { serializer.serializeAsString(it) },
@@ -100,6 +100,18 @@ class FastjsonColumnTypeUnitTest {
         assertFailsWith<Exception> {
             columnType.valueFromDB("not-valid-json")
         }
+    }
+
+    /**
+     * Exposed Fastjson2 모듈의 기본 serializer facade가 shared serializer와 같은 인스턴스를 반환합니다.
+     */
+    @Test
+    fun `DefaultFastjsonSerializer 는 동일한 싱글턴 인스턴스를 반환한다`() {
+        val s1 = DefaultFastjsonSerializer
+        val s2 = DefaultFastjsonSerializer
+
+        (s1 === s2).shouldBeTrue()
+        (s1 === SharedFastjsonSerializer.Default).shouldBeTrue()
     }
 
     /**
