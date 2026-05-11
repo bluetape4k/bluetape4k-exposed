@@ -837,7 +837,7 @@ pulsar-client-api = { module = "org.apache.pulsar:pulsar-client-api", version = 
 pulsar-client = { module = "org.apache.pulsar:pulsar-client", version = "3.3.9" }  # https://mvnrepository.com/artifact/org.apache.pulsar/pulsar-client
 
 # Nats
-jnats = { module = "io.nats:jnats", version = "2.25.1" }  # https://mvnrepository.com/artifact/io.nats/jnats
+jnats = { module = "io.nats:jnats", version = "2.25.3" }  # https://mvnrepository.com/artifact/io.nats/jnats
 nats-spring = { module = "io.nats:nats-spring", version = "0.6.2+3.5" }  # https://mvnrepository.com/artifact/io.nats/nats-spring
 nats-spring-cloud-stream-binder = { module = "io.nats:nats-spring-cloud-stream-binder", version = "0.6.2+3.5" }  # https://mvnrepository.com/artifact/io.nats/nats-spring-cloud-stream-binder
 
