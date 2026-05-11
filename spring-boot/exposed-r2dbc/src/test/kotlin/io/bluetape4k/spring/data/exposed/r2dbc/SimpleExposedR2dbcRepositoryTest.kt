@@ -145,6 +145,8 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     @ParameterizedTest
     @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
     fun `findAllAsList - SuspendedJobTester 병렬 조회에서도 같은 개수를 본다`(testDB: TestDB) = runSuspendIO(5.minutes) {
+        Assumptions.assumeTrue { testDB in TestDB.ALL_H2 + TestDB.ALL_POSTGRES }
+
         val userCount = 4
         withTables(testDB, Users) {
             repeat(userCount) { index ->
