@@ -932,7 +932,7 @@ mysql-connector-j = { module = "com.mysql:mysql-connector-j", version.ref = "mys
 mariadb-java-client = { module = "org.mariadb.jdbc:mariadb-java-client", version.ref = "mariadb-java-client" }
 postgresql-driver = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 pgjdbc-ng = { module = "com.impossibl.pgjdbc-ng:pgjdbc-ng", version = "0.8.9" }  # https://mvnrepository.com/artifact/com.impossibl.pgjdbc-ng/pgjdbc-ng
-postgis-jdbc = { module = "net.postgis:postgis-jdbc", version = "2024.1.0" }  # https://mvnrepository.com/artifact/net.postgis/postgis-jdbc
+postgis-jdbc = { module = "net.postgis:postgis-jdbc", version = "2025.1.1" }  # https://mvnrepository.com/artifact/net.postgis/postgis-jdbc
 pgvector = { module = "com.pgvector:pgvector", version = "0.1.6" }  # https://mvnrepository.com/artifact/com.pgvector/pgvector
 jts-core = { module = "org.locationtech.jts:jts-core", version = "1.20.0" }  # https://mvnrepository.com/artifact/org.locationtech.jts/jts-core
 h2 = { module = "com.h2database:h2", version = "1.4.197" }  # https://mvnrepository.com/artifact/com.h2database/h2
