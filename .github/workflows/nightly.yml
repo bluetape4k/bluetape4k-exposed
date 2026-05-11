@@ -2,8 +2,18 @@ name: Nightly
 
 on:
   schedule:
-    - cron: '0 19 * * *'  # UTC 19:00 (KST 04:00)
+    - cron: '0 19 * * 1-6'  # Daily smoke, UTC 19:00 (KST 04:00) Mon-Sat
+    - cron: '0 19 * * 0'    # Weekly full, UTC 19:00 (KST 04:00) Sunday
   workflow_dispatch:
+    inputs:
+      scope:
+        description: 'Nightly scope to run'
+        required: true
+        type: choice
+        default: full
+        options:
+          - smoke
+          - full
 
 permissions:
   contents: read
@@ -245,6 +255,8 @@ jobs:
   # exposed-jdbc (PostgreSQL, Testcontainers)
   test-jdbc-postgresql:
     name: Test / exposed-jdbc (PostgreSQL)
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: build
@@ -296,6 +308,8 @@ jobs:
   # exposed-jdbc (MySQL 8, Testcontainers)
   test-jdbc-mysql:
     name: Test / exposed-jdbc (MySQL 8)
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: build
@@ -396,6 +410,8 @@ jobs:
   # exposed-r2dbc (PostgreSQL, Testcontainers)
   test-r2dbc-postgresql:
     name: Test / exposed-r2dbc (PostgreSQL)
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: build
@@ -447,6 +463,8 @@ jobs:
   # exposed-r2dbc (MySQL 8, Testcontainers)
   test-r2dbc-mysql:
     name: Test / exposed-r2dbc (MySQL 8)
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: build
@@ -498,6 +516,8 @@ jobs:
   # exposed-jdbc-lettuce (Redis, Testcontainers)
   test-jdbc-lettuce:
     name: Test / exposed-jdbc-lettuce (Redis)
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: build
@@ -544,6 +564,8 @@ jobs:
   # exposed-jdbc-redisson (Redis, Testcontainers)
   test-jdbc-redisson:
     name: Test / exposed-jdbc-redisson (Redis)
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: build
@@ -590,6 +612,8 @@ jobs:
   # exposed-r2dbc-lettuce (Redis, Testcontainers)
   test-r2dbc-lettuce:
     name: Test / exposed-r2dbc-lettuce (Redis)
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: build
@@ -636,6 +660,8 @@ jobs:
   # exposed-r2dbc-redisson (Redis, Testcontainers)
   test-r2dbc-redisson:
     name: Test / exposed-r2dbc-redisson (Redis)
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: build
@@ -726,6 +752,8 @@ jobs:
   # exposed-postgresql module (Testcontainers)
   test-postgresql-module:
     name: Test / exposed-postgresql module
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: build
@@ -772,6 +800,8 @@ jobs:
   # exposed-mysql8 module (Testcontainers)
   test-mysql8-module:
     name: Test / exposed-mysql8 module
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: build
@@ -956,6 +986,8 @@ jobs:
   # exposed-jdbc-caffeine (matrix: H2/PostgreSQL/MySQL 8)
   test-jdbc-caffeine:
     name: Test / exposed-jdbc-caffeine (${{ matrix.db }})
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: build
@@ -1007,6 +1039,8 @@ jobs:
   # exposed-r2dbc-caffeine (matrix: H2/PostgreSQL/MySQL 8)
   test-r2dbc-caffeine:
     name: Test / exposed-r2dbc-caffeine (${{ matrix.db }})
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: build
@@ -1058,6 +1092,8 @@ jobs:
   # exposed-clickhouse (Testcontainers)
   test-clickhouse:
     name: Test / exposed-clickhouse
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: build
@@ -1104,6 +1140,8 @@ jobs:
   # exposed-trino (Testcontainers)
   test-trino:
     name: Test / exposed-trino
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: build
@@ -1150,6 +1188,8 @@ jobs:
   # exposed-bigquery (gcloud Testcontainers)
   test-bigquery:
     name: Test / exposed-bigquery
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: build
@@ -1196,6 +1236,8 @@ jobs:
   # exposed-timefold-solver-persistence (matrix: H2/PostgreSQL/MySQL 8)
   test-timefold:
     name: Test / exposed-timefold (${{ matrix.db }})
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: build
@@ -1247,6 +1289,8 @@ jobs:
   # spring-boot-batch-exposed (matrix: H2/PostgreSQL/MySQL 8)
   test-spring-boot-batch:
     name: Test / spring-boot-batch-exposed (${{ matrix.db }})
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: build
@@ -1298,6 +1342,8 @@ jobs:
   # utils-batch (matrix: H2/PostgreSQL/MySQL 8)
   test-utils-batch:
     name: Test / utils-batch (${{ matrix.db }})
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: build
@@ -1348,6 +1394,7 @@ jobs:
 
   coverage-report:
     name: Coverage Report
+
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs:
@@ -1378,7 +1425,7 @@ jobs:
       - test-timefold
       - test-spring-boot-batch
       - test-utils-batch
-    if: always()
+    if: ${{ always() && ((github.event_name == 'schedule' && github.event.schedule == '0 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full')) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
