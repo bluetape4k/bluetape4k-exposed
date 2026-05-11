@@ -935,7 +935,7 @@ pgjdbc-ng = { module = "com.impossibl.pgjdbc-ng:pgjdbc-ng", version = "0.8.9" } 
 postgis-jdbc = { module = "net.postgis:postgis-jdbc", version = "2024.1.0" }  # https://mvnrepository.com/artifact/net.postgis/postgis-jdbc
 pgvector = { module = "com.pgvector:pgvector", version = "0.1.6" }  # https://mvnrepository.com/artifact/com.pgvector/pgvector
 jts-core = { module = "org.locationtech.jts:jts-core", version = "1.20.0" }  # https://mvnrepository.com/artifact/org.locationtech.jts/jts-core
-h2 = { module = "com.h2database:h2", version = "1.4.197" }  # https://mvnrepository.com/artifact/com.h2database/h2
+h2 = { module = "com.h2database:h2", version = "2.4.240" }  # https://mvnrepository.com/artifact/com.h2database/h2
 h2-v2 = { module = "com.h2database:h2", version.ref = "h2-v2" }
 hsqldb = { module = "org.hsqldb:hsqldb", version = "2.7.4" }  # https://mvnrepository.com/artifact/org.hsqldb/hsqldb
 flyway-core = { module = "org.flywaydb:flyway-core", version = "11.20.3" }  # https://mvnrepository.com/artifact/org.flywaydb/flyway-core
