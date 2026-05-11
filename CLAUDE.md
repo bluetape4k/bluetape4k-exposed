@@ -60,7 +60,7 @@ buildSrc/                   # Versions, plugins, dependency catalog
 
 ```bash
 ./gradlew clean build
-./gradlew build -x test -x koverVerify --parallel
+./gradlew build -x test --parallel
 ./gradlew :bluetape4k-exposed-core:build
 ./gradlew :bluetape4k-exposed-jdbc:test
 ./gradlew :bluetape4k-exposed-r2dbc:test

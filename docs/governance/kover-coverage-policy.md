@@ -4,7 +4,7 @@
 
 `bluetape4k-exposed` generates Kover reports in CI/Nightly. Selected modules
 exclude benchmark or test-fixture support packages from measurement, but broad
-`koverVerify` enforcement is not enabled.
+coverage threshold enforcement is not enabled.
 
 ## Policy
 
@@ -16,12 +16,14 @@ dialects. A single repository threshold would hide module-specific risk.
 
 ## Threshold Plan
 
-- Gate pure modules such as core/cache/batch first after baseline measurement.
-- Use lower documented bounds for database-specific and Spring Boot integration
-  modules.
+- Treat Kover as a trend signal, not a build gate.
+- Use CI/Nightly reports to identify coverage regressions.
+- Open a focused issue when a module needs coverage repair; do not introduce a
+  failing threshold as the default enforcement mechanism.
 - Keep generated, benchmark, and test-fixture helper code excluded explicitly.
 
 ## CI/Nightly Contract
 
-CI/Nightly upload module coverage artifacts. Add `koverVerify` only when a
-module has a measured baseline and a documented threshold.
+CI/Nightly upload module coverage artifacts for visibility. They must not fail
+solely because a module is below a fixed coverage percentage unless a future
+issue explicitly reintroduces that gate.
