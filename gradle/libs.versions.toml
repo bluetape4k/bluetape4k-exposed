@@ -515,7 +515,7 @@ aws-kotlin-sns = { module = "aws.sdk.kotlin:sns", version.ref = "aws-kotlin" }
 aws-kotlin-sqs = { module = "aws.sdk.kotlin:sqs", version.ref = "aws-kotlin" }
 aws-kotlin-sts = { module = "aws.sdk.kotlin:sts", version.ref = "aws-kotlin" }
 aws-kotlin-sesv2 = { module = "aws.sdk.kotlin:sesv2", version.ref = "aws-kotlin" }
-elasticmq-rest-sqs = { module = "org.elasticmq:elasticmq-rest-sqs_2.13", version = "1.6.12" }  # https://mvnrepository.com/artifact/org.elasticmq/elasticmq-rest-sqs_2.13
+elasticmq-rest-sqs = { module = "org.elasticmq:elasticmq-rest-sqs_2.13", version = "1.7.1" }  # https://mvnrepository.com/artifact/org.elasticmq/elasticmq-rest-sqs_2.13
 
 # AWS Smithy Kotlin
 aws-smithy-kotlin-http = { module = "aws.smithy.kotlin:http-jvm", version.ref = "aws-smithy-kotlin" }
