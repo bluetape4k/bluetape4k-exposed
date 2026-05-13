@@ -1,46 +1,70 @@
 # WIP - bluetape4k-exposed
 
-Snapshot: 2026-05-11 KST
-Scope: open GitHub issues assigned to `debop`, created on or after 2026-01-01. Open count: 2 issues.
+Snapshot: 2026-05-13 KST
+Scope: open GitHub issues assigned to `debop`, created on or after 2026-01-01.
+Open count: 12 issues.
 
 ## Recently Completed
 
-- `#8` FastjsonSerializer facade parity — PR #21 merged.
-- `#6` AuditableR2dbcRepository — PR #22 merged.
-- R2DBC MySQL parallel read timeout mitigation — PR #34 merged.
-- Governance/doc maintenance merged today: PR #35 Nightly smoke/full lanes, PR #36 lessons guidance, PR #37 Kover policy, PR #38 Dependabot baseline, PR #40 unassigned Dependabot updates.
+- Spring Boot 3 removal and Spring Boot 4 versionless rename are closed.
+- Query lookup, serializer parity, and `AuditableR2dbcRepository` work are
+  merged into `develop`.
+- R2DBC MySQL timeout mitigation, Nightly lane split, lessons guidance, Kover
+  policy, and Dependabot governance are merged.
+- PR #63 refreshed the WIP queue after the Trino and CockroachDB epics were
+  opened.
 
 ## Current Direction
 
-The Spring Boot 3 removal / Spring Boot 4 versionless rename lane is closed, and the two immediate R2DBC/serializer correctness gaps are now merged. The remaining active work is post-R2DBC feature expansion.
+The active backlog is now post-R2DBC expansion. Keep database connector work
+separate from Spring Boot repository query work so testcontainers and dialect
+behavior stay reviewable.
 
-Do not keep a merge-wait lane open for PR #21/#22; both are now part of develop history.
+- Trino Phase 2 is tracked by epic `#25` and implementation issues `#27/#28/#29`.
+- CockroachDB support is tracked by epic `#24` and implementation issues
+  `#30/#31/#32`.
+- Spring Boot R2DBC raw SQL support is tracked by `#26`.
+- Earlier integration ideas `#4/#5` remain useful but should not displace the
+  open database-connector epics.
 
 ## Priority Queue
 
 | Priority | Issue | Difficulty | Notes |
 |---|---|---:|---|
-| P1 | [#4](https://github.com/bluetape4k/bluetape4k-exposed/issues/4) exposed-bucket4j | L | Useful distributed rate limiting feature; can start after confirming the merged R2DBC baseline remains stable. |
-| P1 | [#5](https://github.com/bluetape4k/bluetape4k-exposed/issues/5) Spring Modulith Exposed | L | Should wait until Boot 4-only direction and event publication boundaries are stable. |
+| P1 | [#26](https://github.com/bluetape4k/bluetape4k-exposed/issues/26) Spring Boot R2DBC raw SQL support | M | Directly improves repository query ergonomics; keep JDBC/R2DBC semantics explicit. |
+| P1 | [#27](https://github.com/bluetape4k/bluetape4k-exposed/issues/27) Trino DataSource connection support | M | First executable slice for Trino Phase 2. |
+| P1 | [#30](https://github.com/bluetape4k/bluetape4k-exposed/issues/30) CockroachDB module scaffold and smoke test | M | Establishes the module and Testcontainers baseline before dialect details. |
+| P2 | [#28](https://github.com/bluetape4k/bluetape4k-exposed/issues/28) Trino streaming/paged query API | M | Depends on the connection shape from `#27`. |
+| P2 | [#29](https://github.com/bluetape4k/bluetape4k-exposed/issues/29) Trino batch insert/write optimization | M | Depends on Phase 2 connection and query behavior. |
+| P2 | [#31](https://github.com/bluetape4k/bluetape4k-exposed/issues/31) CockroachDB dialect/DDL differences | M | Depends on `#30`; must verify PostgreSQL compatibility boundaries. |
+| P2 | [#32](https://github.com/bluetape4k/bluetape4k-exposed/issues/32) CockroachDB serializable retry guide and tests | M | Depends on `#30/#31`; should document retry contracts clearly. |
+| P3 | [#4](https://github.com/bluetape4k/bluetape4k-exposed/issues/4) exposed-bucket4j | L | Useful distributed rate limiting feature; start after connector epics are scheduled. |
+| P3 | [#5](https://github.com/bluetape4k/bluetape4k-exposed/issues/5) Spring Modulith Exposed | L | Wait until Boot 4 event publication boundaries are stable. |
+| P3 | [#24](https://github.com/bluetape4k/bluetape4k-exposed/issues/24) CockroachDB epic | L | Planning container for `#30/#31/#32`; do not implement directly. |
+| P3 | [#25](https://github.com/bluetape4k/bluetape4k-exposed/issues/25) Trino Phase 2 epic | L | Planning container for `#27/#28/#29`; do not implement directly. |
 
 ## Dependency Map
 
 ```text
-projects #280/#263 policy and removal/rename (closed)
-  -> dependencies #8 first official Spring Boot aliases (closed)
-  -> exposed #3 Spring Boot 3 removal + spring-boot4 -> spring-boot rename (closed)
+#25 Trino Phase 2 epic
+  -> #27 DataSource connection support
+      -> #28 streaming/paged query API
+      -> #29 batch insert/write optimization
 
-exposed #7 QueryLookupStrategy ✅
-exposed #8 serializer parity ✅ (PR #21)
-exposed #6 AuditableR2dbcRepository ✅ (PR #22)
-  -> exposed #4 bucket4j
-  -> exposed #5 Spring Modulith integration
+#24 CockroachDB epic
+  -> #30 module scaffold + smoke test
+      -> #31 dialect/DDL differences
+      -> #32 serializable retry guide + regression tests
+
+#26 Spring Boot R2DBC raw SQL
+  -> independent Spring Boot repository feature
 ```
 
 ## WIP Limits
 
 | Lane | Limit | Current next |
 |---|---:|---|
-| New integrations | 1 | Choose `#4` or `#5`; keep each as a separate design/implementation PR. |
-| Correctness gaps | 0 | `#6/#7/#8` are closed/merged; reopen only with new evidence. |
+| Database connector | 1 | Choose `#27` or `#30`; avoid parallel connector epics. |
+| Spring Boot repository | 1 | `#26` can proceed independently. |
+| Lower-priority integrations | 0 | Hold `#4/#5` until connector queue is stable. |
 | Build/CI maintenance | 1 | Handle only concrete failures from Nightly/CI. |

@@ -1,60 +1,63 @@
-# CLAUDE.md — bluetape4k-exposed
+# CLAUDE.md - bluetape4k-exposed
 
-JetBrains Exposed ORM Kotlin 확장 라이브러리. JDBC/R2DBC 기반 Repository 패턴, 캐시 통합(Caffeine, Lettuce, Redisson), JSON 직렬화(Jackson2/3, Fastjson2), 암호화(Tink), Spring Boot 4 자동 설정.
+JetBrains Exposed ORM extensions for Kotlin. This repository provides JDBC and
+R2DBC repository patterns, cache integration, JSON/encrypted columns, dialect
+extensions, and Spring Boot 4 auto-configuration.
 
-- **Group**: `io.bluetape4k.exposed` · **Publishing**: Maven Central (NMCP)
+- **Group**: `io.bluetape4k.exposed`
+- **Publishing**: Maven Central through NMCP
 
 ## Repository Layout
 
-```
+```text
 exposed/
-├── exposed-core/           # Column 타입 확장, 공통 DSL 헬퍼
-├── exposed-dao/            # DAO Entity 확장, 이벤트 후킹
-├── exposed-jdbc/           # JDBC Repository 패턴, 트랜잭션 DSL
-├── exposed-r2dbc/          # R2DBC 코루틴 지원, suspend Repository
-├── exposed-jdbc-tests/     # JDBC 통합 테스트 픽스처
-├── exposed-r2dbc-tests/    # R2DBC 통합 테스트 픽스처
-├── exposed-cache/          # 캐시 추상화 인터페이스
-├── exposed-jdbc-caffeine/  # JDBC + Caffeine 캐시 백엔드
-├── exposed-jdbc-lettuce/   # JDBC + Lettuce Redis 캐시
-├── exposed-jdbc-redisson/  # JDBC + Redisson Redis 캐시
-├── exposed-r2dbc-caffeine/ # R2DBC + Caffeine 캐시 백엔드
-├── exposed-r2dbc-lettuce/  # R2DBC + Lettuce Redis 캐시
-├── exposed-r2dbc-redisson/ # R2DBC + Redisson Redis 캐시
-├── exposed-jackson2/       # Jackson 2.x Column 직렬화
-├── exposed-jackson3/       # Jackson 3.x Column 직렬화
-├── exposed-fastjson2/      # Fastjson2 Column 직렬화
-├── exposed-tink/           # Google Tink 암호화 Column
-├── exposed-measured/       # Micrometer 메트릭 통합
-├── exposed-mysql8/         # MySQL 8 전용 확장
-├── exposed-postgresql/     # PostgreSQL 전용 확장
-├── exposed-bigquery/       # BigQuery 지원 (SaaS 계정 필요)
-├── exposed-clickhouse/     # ClickHouse 지원 (SaaS 계정 필요)
-├── exposed-trino/          # Trino 지원 (SaaS 계정 필요)
-├── exposed-duckdb/         # DuckDB 지원
-└── exposed-timefold-solver-persistence/ # Timefold Solver 영속성
+  exposed-core/                         # Column types and common DSL helpers
+  exposed-dao/                          # DAO entity extensions and lifecycle hooks
+  exposed-jdbc/                         # JDBC repository pattern and transaction DSL
+  exposed-r2dbc/                        # R2DBC coroutine repositories and suspend transactions
+  exposed-jdbc-tests/                   # JDBC integration test fixtures
+  exposed-r2dbc-tests/                  # R2DBC integration test fixtures
+  exposed-cache/                        # Repository cache abstraction
+  exposed-jdbc-caffeine/                # JDBC + Caffeine cache
+  exposed-jdbc-lettuce/                 # JDBC + Lettuce Redis cache
+  exposed-jdbc-redisson/                # JDBC + Redisson Redis cache
+  exposed-r2dbc-caffeine/               # R2DBC + Caffeine cache
+  exposed-r2dbc-lettuce/                # R2DBC + Lettuce Redis cache
+  exposed-r2dbc-redisson/               # R2DBC + Redisson Redis cache
+  exposed-jackson2/                     # Jackson 2.x columns
+  exposed-jackson3/                     # Jackson 3.x columns
+  exposed-fastjson2/                    # Fastjson2 columns
+  exposed-tink/                         # Google Tink encrypted columns
+  exposed-measured/                     # Micrometer metrics
+  exposed-mysql8/                       # MySQL 8 dialect helpers
+  exposed-postgresql/                   # PostgreSQL dialect helpers
+  exposed-bigquery/                     # BigQuery support
+  exposed-clickhouse/                   # ClickHouse support
+  exposed-trino/                        # Trino support
+  exposed-duckdb/                       # DuckDB support
+  exposed-timefold-solver-persistence/  # Timefold Solver persistence
 utils/
+  batch/                                # Batch utilities
 spring-boot/
-├── exposed-jdbc/           # Spring Boot 4 JDBC 자동 설정
-├── exposed-jdbc-demo/      # JDBC 데모 앱
-├── exposed-r2dbc/          # Spring Boot 4 R2DBC 자동 설정
-├── exposed-r2dbc-demo/     # R2DBC 데모 앱
-└── batch-exposed/          # Spring Batch + Exposed 통합
-buildSrc/                   # Versions, plugins, dependency catalog
+  exposed-jdbc/                         # Spring Boot 4 JDBC auto-configuration
+  exposed-jdbc-demo/                    # JDBC demo app
+  exposed-r2dbc/                        # Spring Boot 4 R2DBC auto-configuration
+  exposed-r2dbc-demo/                   # R2DBC demo app
+  batch-exposed/                        # Spring Batch + Exposed integration
 ```
 
-## Module Naming (settings.gradle.kts)
+## Module Naming
 
-`exposed/` 디렉토리는 `withBaseDir=false`로 include되어 아래와 같이 매핑:
+`settings.gradle.kts` maps directories to published-style Gradle module names:
 
-| 디렉토리 | Gradle 모듈명 |
-|---------|-------------|
+| Directory | Gradle module |
+|---|---|
 | `exposed/exposed-core` | `:bluetape4k-exposed-core` |
 | `exposed/exposed-jdbc` | `:bluetape4k-exposed-jdbc` |
 | `exposed/exposed-r2dbc` | `:bluetape4k-exposed-r2dbc` |
 | `spring-boot/exposed-jdbc` | `:bluetape4k-spring-boot-exposed-jdbc` |
 | `spring-boot/exposed-r2dbc` | `:bluetape4k-spring-boot-exposed-r2dbc` |
-| `utils/batch` | `:bluetape4k-utils-batch` |
+| `utils/batch` | `:bluetape4k-batch` |
 
 ## Build Commands
 
@@ -68,88 +71,23 @@ buildSrc/                   # Versions, plugins, dependency catalog
 ./gradlew test --tests "io.bluetape4k.exposed.jdbc.ExposedJdbcRepositoryTest"
 ./gradlew :bluetape4k-spring-boot-exposed-jdbc:test
 ./gradlew detekt
-./gradlew publishAggregationToCentralSnapshots          # SNAPSHOT 배포
-./gradlew publishAggregationToCentralPortal             # RELEASE 배포
+./gradlew publishAggregationToCentralSnapshots
+./gradlew publishAggregationToCentralPortal
 ```
 
-## Key Design Patterns
+## Design Contracts
 
-### JDBC Repository
+- JDBC repository code runs inside Exposed `transaction {}`.
+- R2DBC repository code uses `suspendTransaction {}`.
+- Cache-backed repositories use decorator-style wrappers around repository
+  delegates.
+- JSON/encryption column helpers should match existing module-specific DSL
+  styles.
+- Spring Boot modules expose enable annotations and conditional auto-config.
 
-```kotlin
-abstract class JdbcExposedRepository<T : LongIdTable>(val table: T) {
-    fun findById(id: Long): ResultRow? = transaction {
-        table.selectAll().where { table.id eq id }.singleOrNull()
-    }
-    fun save(entity: T): Unit = transaction { /* upsert */ }
-}
-```
+## Documentation Rules
 
-### R2DBC Coroutine Repository
-
-R2DBC 모듈은 `suspendTransaction {}` DSL로 코루틴 친화적 트랜잭션 지원:
-
-```kotlin
-suspend fun findById(id: Long): ResultRow? = suspendTransaction {
-    table.selectAll().where { table.id eq id }.singleOrNull()
-}
-```
-
-### Cache-backed Repositories
-
-캐시 통합 모듈은 데코레이터 패턴 사용:
-
-```kotlin
-val repo = CaffeineBackedJdbcRepository(
-    delegate = MyJdbcRepository(),
-    cache = Caffeine.newBuilder().expireAfterWrite(5, MINUTES).build()
-)
-```
-
-Redis 기반 캐시(Lettuce, Redisson)는 분산 캐시로 동일 인터페이스 제공.
-
-### Column 직렬화/암호화
-
-```kotlin
-// Jackson JSON column
-object UserTable : Table() {
-    val profile = json<UserProfile>("profile", jacksonMapper)
-}
-
-// Tink 암호화 column
-object SecretTable : Table() {
-    val sensitiveData = encrypted("data", tinkAead)
-}
-```
-
-### Spring Boot Auto-configuration
-
-`spring-boot/` 모듈은 `@EnableExposedJdbc` / `@EnableExposedR2dbc` 어노테이션과 조건부 자동 설정 제공.
-
-## Test Environment Variables
-
-| 변수 | 값 | 설명 |
-|------|-----|------|
-| `EXPOSED_TEST_DB` | `H2` / `POSTGRESQL` / `MYSQL_V8` | 테스트 DB 선택 |
-| `TESTCONTAINERS_RYUK_DISABLED` | `true` | Testcontainers Ryuk 비활성화 (CI) |
-| `DOCKER_HOST` | `unix:///var/run/docker.sock` | Docker 소켓 (CI) |
-
-## Publishing
-
-```properties
-# gradle.properties
-projectGroup=io.github.bluetape4k.exposed
-baseVersion=1.8.0
-snapshotVersion=-SNAPSHOT
-```
-
-- Snapshot: `./gradlew publishAggregationToCentralSnapshots`
-- Release: `./gradlew publishAggregationToCentralPortal`
-- Release 시 `snapshotVersion=` 를 빈 값으로 설정 후 태그 푸시
-
-## CI/CD
-
-- **CI** (`.github/workflows/ci.yml`): PR/push — Docker 불필요 모듈만 빠르게 테스트
-- **Nightly** (`.github/workflows/nightly.yml`): PostgreSQL, MySQL, Redis Testcontainers 포함 전체 테스트
-- **Publish Snapshot**: Nightly 성공 후 자동 또는 수동 dispatch
-- **Publish Release**: 태그 푸시 또는 수동 dispatch
+- Keep `README.md` and `README.ko.md` structurally aligned.
+- Store shared README images under `docs/assets/` and reference them with the
+  same relative path from both locales.
+- Keep this file and other agent-facing guidance in English.

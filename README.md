@@ -7,9 +7,18 @@
 
 [한국어](README.ko.md)
 
+![Bluetape4k Exposed workbench](./docs/assets/exposed-workbench.png)
+
 Kotlin extensions for [JetBrains Exposed](https://github.com/JetBrains/Exposed) ORM — providing Repository patterns, cache integrations, JSON column serialization, encryption, and Spring Boot auto-configuration.
 
 ---
+
+## Project Purpose
+
+`bluetape4k-exposed` turns JetBrains Exposed into a production-oriented Kotlin
+data toolkit. It standardizes JDBC and R2DBC repository patterns, cache-backed
+read paths, JSON/encrypted columns, database dialect extensions, and Spring Boot
+4 auto-configuration while preserving Exposed DSL ergonomics.
 
 ## Features
 
@@ -17,9 +26,56 @@ Kotlin extensions for [JetBrains Exposed](https://github.com/JetBrains/Exposed) 
 - **Cache Integrations** — Caffeine (local), Lettuce and Redisson (distributed Redis) cache backends
 - **JSON Columns** — Jackson 2.x, Jackson 3.x, and Fastjson2 column serializers
 - **Encryption** — Google Tink-based encrypted columns
-- **Database-specific Extensions** — PostgreSQL and MySQL 8 dialect helpers
-- **Spring Boot** — Spring Boot 4.x auto-configuration (JDBC + R2DBC)
+- **Database-specific Extensions** — PostgreSQL, MySQL 8, BigQuery, ClickHouse, Trino, DuckDB, and Timefold persistence helpers
+- **Spring Boot** — Spring Boot 4.x auto-configuration (JDBC, R2DBC, and Batch integration)
 - **Metrics** — Micrometer integration via `exposed-measured`
+
+## Architecture
+
+```mermaid
+flowchart TD
+    APP["Kotlin application"]
+
+    subgraph Core["Exposed core layer"]
+        CORE["bluetape4k-exposed-core\ncolumn types + DSL helpers"]
+        DAO["bluetape4k-exposed-dao\nentity lifecycle helpers"]
+        JDBC["bluetape4k-exposed-jdbc\nblocking repositories"]
+        R2DBC["bluetape4k-exposed-r2dbc\ncoroutine repositories"]
+    end
+
+    subgraph CrossCutting["Cross-cutting modules"]
+        CACHE["cache abstractions\nCaffeine / Lettuce / Redisson"]
+        JSON["JSON columns\nJackson2 / Jackson3 / Fastjson2"]
+        TINK["Tink encrypted columns"]
+        METRICS["Micrometer measurement"]
+    end
+
+    subgraph Dialects["Database extensions"]
+        PG["PostgreSQL"]
+        MYSQL["MySQL 8"]
+        ANALYTICS["BigQuery / ClickHouse / Trino / DuckDB"]
+        TIMEFOLD["Timefold Solver persistence"]
+    end
+
+    subgraph Boot["Spring Boot 4"]
+        BOOTJDBC["JDBC auto-configuration"]
+        BOOTR2DBC["R2DBC auto-configuration"]
+        BATCH["Batch + Exposed"]
+    end
+
+    APP --> JDBC
+    APP --> R2DBC
+    JDBC --> CORE
+    R2DBC --> CORE
+    DAO --> CORE
+    CACHE --> JDBC
+    CACHE --> R2DBC
+    JSON --> CORE
+    TINK --> CORE
+    METRICS --> CORE
+    Dialects --> CORE
+    Boot --> Core
+```
 
 ## Modules
 
@@ -45,6 +101,11 @@ Kotlin extensions for [JetBrains Exposed](https://github.com/JetBrains/Exposed) 
 | `bluetape4k-exposed-measured` | Micrometer metrics integration |
 | `bluetape4k-exposed-postgresql` | PostgreSQL dialect extensions |
 | `bluetape4k-exposed-mysql8` | MySQL 8 dialect extensions |
+| `bluetape4k-exposed-bigquery` | BigQuery connector support |
+| `bluetape4k-exposed-clickhouse` | ClickHouse connector support |
+| `bluetape4k-exposed-trino` | Trino connector support |
+| `bluetape4k-exposed-duckdb` | DuckDB embedded analytics support |
+| `bluetape4k-exposed-timefold-solver-persistence` | Timefold Solver persistence integration |
 | `bluetape4k-spring-boot-exposed-jdbc` | Spring Boot 4.x JDBC auto-configuration |
 | `bluetape4k-spring-boot-exposed-r2dbc` | Spring Boot 4.x R2DBC auto-configuration |
 | `bluetape4k-spring-boot-batch-exposed` | Spring Boot 4.x batch integration |

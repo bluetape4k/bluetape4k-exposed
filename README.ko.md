@@ -7,9 +7,17 @@
 
 [English](README.md)
 
+![bluetape4k Exposed 작업대 일러스트](./docs/assets/exposed-workbench.png)
+
 [JetBrains Exposed](https://github.com/JetBrains/Exposed) ORM을 위한 Kotlin 확장 라이브러리. Repository 패턴, 캐시 통합, JSON Column 직렬화, 암호화, Spring Boot 자동 설정을 제공합니다.
 
 ---
+
+## 프로젝트 목적
+
+`bluetape4k-exposed`는 JetBrains Exposed를 운영 환경에 맞는 Kotlin 데이터 툴킷으로 확장합니다.
+JDBC/R2DBC Repository 패턴, cache-backed read path, JSON/암호화 Column, 데이터베이스별
+dialect 확장, Spring Boot 4 자동 설정을 Exposed DSL 스타일 안에서 제공합니다.
 
 ## 주요 기능
 
@@ -17,9 +25,56 @@
 - **캐시 통합** — Caffeine(로컬), Lettuce/Redisson(분산 Redis) 캐시 백엔드
 - **JSON Column** — Jackson 2.x, Jackson 3.x, Fastjson2 Column 직렬화
 - **암호화** — Google Tink 기반 암호화 Column
-- **DB 특화 확장** — PostgreSQL 및 MySQL 8 다이얼렉트 헬퍼
-- **Spring Boot** — Spring Boot 4.x 자동 설정 (JDBC + R2DBC)
+- **DB 특화 확장** — PostgreSQL, MySQL 8, BigQuery, ClickHouse, Trino, DuckDB, Timefold persistence 헬퍼
+- **Spring Boot** — Spring Boot 4.x 자동 설정 (JDBC, R2DBC, Batch 통합)
 - **메트릭** — `exposed-measured`를 통한 Micrometer 통합
+
+## 아키텍처
+
+```mermaid
+flowchart TD
+    APP["Kotlin application"]
+
+    subgraph Core["Exposed core layer"]
+        CORE["bluetape4k-exposed-core\nColumn 타입 + DSL 헬퍼"]
+        DAO["bluetape4k-exposed-dao\nEntity lifecycle 헬퍼"]
+        JDBC["bluetape4k-exposed-jdbc\nBlocking Repository"]
+        R2DBC["bluetape4k-exposed-r2dbc\nCoroutine Repository"]
+    end
+
+    subgraph CrossCutting["Cross-cutting modules"]
+        CACHE["Cache 추상화\nCaffeine / Lettuce / Redisson"]
+        JSON["JSON Column\nJackson2 / Jackson3 / Fastjson2"]
+        TINK["Tink 암호화 Column"]
+        METRICS["Micrometer 측정"]
+    end
+
+    subgraph Dialects["Database extensions"]
+        PG["PostgreSQL"]
+        MYSQL["MySQL 8"]
+        ANALYTICS["BigQuery / ClickHouse / Trino / DuckDB"]
+        TIMEFOLD["Timefold Solver persistence"]
+    end
+
+    subgraph Boot["Spring Boot 4"]
+        BOOTJDBC["JDBC auto-configuration"]
+        BOOTR2DBC["R2DBC auto-configuration"]
+        BATCH["Batch + Exposed"]
+    end
+
+    APP --> JDBC
+    APP --> R2DBC
+    JDBC --> CORE
+    R2DBC --> CORE
+    DAO --> CORE
+    CACHE --> JDBC
+    CACHE --> R2DBC
+    JSON --> CORE
+    TINK --> CORE
+    METRICS --> CORE
+    Dialects --> CORE
+    Boot --> Core
+```
 
 ## 모듈 목록
 
@@ -45,6 +100,11 @@
 | `bluetape4k-exposed-measured` | Micrometer 메트릭 통합 |
 | `bluetape4k-exposed-postgresql` | PostgreSQL 다이얼렉트 확장 |
 | `bluetape4k-exposed-mysql8` | MySQL 8 다이얼렉트 확장 |
+| `bluetape4k-exposed-bigquery` | BigQuery connector 지원 |
+| `bluetape4k-exposed-clickhouse` | ClickHouse connector 지원 |
+| `bluetape4k-exposed-trino` | Trino connector 지원 |
+| `bluetape4k-exposed-duckdb` | DuckDB embedded analytics 지원 |
+| `bluetape4k-exposed-timefold-solver-persistence` | Timefold Solver persistence 통합 |
 | `bluetape4k-spring-boot-exposed-jdbc` | Spring Boot 4.x JDBC 자동 설정 |
 | `bluetape4k-spring-boot-exposed-r2dbc` | Spring Boot 4.x R2DBC 자동 설정 |
 | `bluetape4k-spring-boot-batch-exposed` | Spring Boot 4.x Batch 통합 |

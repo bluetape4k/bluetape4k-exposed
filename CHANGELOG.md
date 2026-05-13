@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Root README hero image plus refreshed purpose, feature, and Mermaid architecture documentation.
+- Current WIP queue now tracks the Trino Phase 2 and CockroachDB epics opened after the initial standalone release.
 - `bluetape4k-exposed-bom` BOM module for Exposed consumers ([PR #15](https://github.com/bluetape4k/bluetape4k-exposed/pull/15)).
 - English and Korean README files for the Exposed BOM module ([PR #16](https://github.com/bluetape4k/bluetape4k-exposed/pull/16)).
 - Mermaid architecture and sequence diagrams for `exposed-r2dbc-lettuce` documentation ([PR #2](https://github.com/bluetape4k/bluetape4k-exposed/pull/2)).
@@ -16,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Refreshed WIP queue for 2026-05-12 ([PR #63](https://github.com/bluetape4k/bluetape4k-exposed/pull/63)).
+- Build, dependency, and governance maintenance updated NMCP, compatibility guards, and dependency pins ([PR #49](https://github.com/bluetape4k/bluetape4k-exposed/pull/49), [PR #50](https://github.com/bluetape4k/bluetape4k-exposed/pull/50), [PR #53](https://github.com/bluetape4k/bluetape4k-exposed/pull/53), [PR #54](https://github.com/bluetape4k/bluetape4k-exposed/pull/54), [PR #55](https://github.com/bluetape4k/bluetape4k-exposed/pull/55), [PR #56](https://github.com/bluetape4k/bluetape4k-exposed/pull/56), [PR #57](https://github.com/bluetape4k/bluetape4k-exposed/pull/57), [PR #58](https://github.com/bluetape4k/bluetape4k-exposed/pull/58), [PR #59](https://github.com/bluetape4k/bluetape4k-exposed/pull/59), [PR #60](https://github.com/bluetape4k/bluetape4k-exposed/pull/60), [PR #61](https://github.com/bluetape4k/bluetape4k-exposed/pull/61), [PR #62](https://github.com/bluetape4k/bluetape4k-exposed/pull/62)).
 - Removed `spring-boot3/*` modules and renamed `spring-boot4/*` to versionless `spring-boot/*`.
 - Standardized Spring Boot Gradle catalog aliases to `spring.boot.dependencies`, `spring.cloud.dependencies`, and `libs.plugins.spring.boot`.
 - Updated CI, BOM documentation, and module README files for the Spring Boot 4-only contract.
