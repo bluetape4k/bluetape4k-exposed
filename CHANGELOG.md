@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Root README hero image plus refreshed purpose, feature, and Mermaid architecture documentation.
+- Root README hero image plus refreshed purpose, feature, and Mermaid architecture documentation ([PR #64](https://github.com/bluetape4k/bluetape4k-exposed/pull/64)).
 - Current WIP queue now tracks the Trino Phase 2 and CockroachDB epics opened after the initial standalone release.
 - `bluetape4k-exposed-bom` BOM module for Exposed consumers ([PR #15](https://github.com/bluetape4k/bluetape4k-exposed/pull/15)).
 - English and Korean README files for the Exposed BOM module ([PR #16](https://github.com/bluetape4k/bluetape4k-exposed/pull/16)).
