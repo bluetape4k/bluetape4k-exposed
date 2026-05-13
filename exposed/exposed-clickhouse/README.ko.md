@@ -210,4 +210,4 @@ flowchart TD
 
 ## 라이선스
 
-Apache License 2.0 — 자세한 내용은 [LICENSE](../../LICENSE)를 참조하세요.
+MIT License — 자세한 내용은 [LICENSE](../../LICENSE)를 참조하세요.
