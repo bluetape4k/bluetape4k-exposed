@@ -16,6 +16,7 @@ A module that integrates JetBrains Exposed ORM with Trino JDBC. Built on Postgre
 - **TrinoDatabase**: Connection factory based on JDBC URL or host/port/catalog/schema (`object`)
 - **suspendTransaction**: Wraps blocking JDBC calls in a suspend function using `Dispatchers.IO`
 - **queryFlow**: Materializes results inside a transaction and emits them as a `Flow<T>`
+- **trinoBatchInsert**: Bounded chunk wrapper around Exposed `batchInsert` for connector-dependent Trino writes
 - **TrinoTable**: Base table class that strips unsupported PRIMARY KEY / NULL syntax from Trino DDL
 - **@TrinoUnsupported**: Marker annotation for Trino-unsupported features
 
@@ -147,6 +148,37 @@ Large result set guidance:
   would couple the `ResultSet` lifetime to Flow collection outside the
   transaction boundary.
 
+### 6. Batch Write Helper
+
+Use `trinoBatchInsert` when the target Trino catalog supports `INSERT` and you
+want explicit client-side chunking around Exposed `batchInsert`.
+
+```kotlin
+import io.bluetape4k.exposed.trino.TrinoBatchInsertOptions
+import io.bluetape4k.exposed.trino.trinoBatchInsert
+
+transaction(db) {
+    Events.trinoBatchInsert(events, TrinoBatchInsertOptions(chunkSize = 500)) { event ->
+        this[Events.eventId] = event.id
+        this[Events.eventName] = event.name
+        this[Events.region] = event.region
+    }
+}
+```
+
+Batch write guidance:
+
+- Trino supports `INSERT INTO ... query` and multi-row `VALUES` syntax, but
+  actual write support is connector-specific.
+- `trinoBatchInsert` is a bounded wrapper over Exposed JDBC `batchInsert`; it is
+  not a Trino connector bulk-loader protocol.
+- `shouldReturnGeneratedValues` defaults to `false` because generated keys are
+  not a reliable Trino write contract.
+- If a later chunk fails, earlier chunks may already be visible. This module
+  does not claim rollback or all-or-nothing semantics for Trino writes.
+- Connector-side write tuning, such as JDBC connector `write.batch-size`
+  catalog properties, remains a Trino catalog configuration concern.
+
 ## ⚠️ Transaction Behavior Warning
 
 Trino does not support ACID transactions. While
@@ -174,7 +206,8 @@ Trino does not support ACID transactions. While
 | Feature                        | Supported              | Notes                                                                         |
 |--------------------------------|------------------------|-------------------------------------------------------------------------------|
 | SELECT / JOIN / Aggregation    | ✅                      | Standard SQL                                                                  |
-| INSERT / UPDATE / DELETE       | ⚠️ Connector-dependent | This module provides the Exposed DSL; actual support depends on the connector |
+| INSERT / batch INSERT          | ⚠️ Connector-dependent | `trinoBatchInsert` is verified against Memory; actual support depends on the connector |
+| UPDATE / DELETE                | ⚠️ Connector-dependent | This module provides the Exposed DSL; actual support depends on the connector |
 | CREATE TABLE / DROP TABLE      | ⚠️ Connector-dependent | Tests verified against the Memory connector                                   |
 | DDL via SchemaUtils            | ⚠️ Connector-dependent | Prefer `TrinoTable`                                                           |
 | Window functions (GROUPS mode) | ✅                      | `supportsWindowFrameGroupsMode = true`                                        |
@@ -192,7 +225,8 @@ Features verified in a Trino Memory connector environment via Testcontainers.
 | Feature                              | Verified | Notes                                |
 |--------------------------------------|----------|--------------------------------------|
 | CREATE/DROP TABLE                    | ✅        | Memory connector                     |
-| Single/batch INSERT                  | ✅        |                                      |
+| Single/batch INSERT                  | ✅        | Memory connector                     |
+| trinoBatchInsert                     | ✅        | Chunked Exposed batchInsert wrapper  |
 | SELECT / WHERE / ORDER BY            | ✅        |                                      |
 | COUNT / Aggregation functions        | ✅        |                                      |
 | suspendTransaction                   | ✅        | Dispatchers.IO                       |
@@ -216,6 +250,7 @@ classDiagram
         <<extensionFunctions>>
         +suspendTransaction~T~(db, dispatcher, block): T
         +queryFlow~T~(db, dispatcher, block): Flow~T~
+        +trinoBatchInsert~E~(data, options, body): List~ResultRow~
     }
     class TrinoConnectionWrapper {
         -conn: Connection
@@ -305,12 +340,14 @@ The following features are planned for future releases.
 |---------------------------|-------------------------------------------------------------------------------|
 | `connect(dataSource)`     | `javax.sql.DataSource`-based connection factory (connection pool integration) |
 | `exposed-bigquery-trino`  | Integrated pipeline module: BigQuery → Trino → Exposed                        |
-| Batch INSERT optimization | Support for Trino Bulk Insert connectors                                      |
+| Connector-specific bulk loaders | Dedicated non-Exposed bulk write protocols for connectors that expose them |
 | Result set streaming      | True row-by-row cursor streaming is deferred until a safe cursor contract exists |
 
 ## References
 
 - [Trino](https://trino.io/)
 - [Trino JDBC Driver](https://trino.io/docs/current/client/jdbc.html)
+- [Trino INSERT syntax](https://trino.io/docs/current/sql/insert.html)
+- [Trino SQL statement support](https://trino.io/docs/current/language/sql-support.html)
 - [JetBrains Exposed](https://github.com/JetBrains/Exposed)
 - [bluetape4k-exposed-duckdb](../exposed-duckdb/README.md) — Similar in-process analytics DB integration reference
