@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `exposed-trino` now provides `trinoBatchInsert` for bounded connector-dependent batch writes with generated-key retrieval disabled by default.
 - `exposed-trino` now provides `pagedQueryFlow` for page-by-page large result set collection without exposing JDBC `ResultSet` lifetimes outside Exposed transactions.
 - Root README hero image plus refreshed purpose, feature, and Mermaid architecture documentation ([PR #64](https://github.com/bluetape4k/bluetape4k-exposed/pull/64)).
 - Current WIP queue now tracks the Trino Phase 2 and CockroachDB epics opened after the initial standalone release.

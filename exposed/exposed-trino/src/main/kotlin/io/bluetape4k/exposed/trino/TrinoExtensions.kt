@@ -8,11 +8,16 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.Transaction
+import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 private const val DEFAULT_TRINO_PAGE_SIZE = 1_000
+private const val DEFAULT_TRINO_BATCH_CHUNK_SIZE = 1_000
 
 /**
  * Options for [pagedQueryFlow].
@@ -28,6 +33,74 @@ data class TrinoPagedQueryOptions(
         require(pageSize > 0) { "pageSize must be positive: $pageSize" }
         require(initialOffset >= 0L) { "initialOffset must be non-negative: $initialOffset" }
     }
+}
+
+/**
+ * Options for [trinoBatchInsert].
+ *
+ * Trino write support is connector-dependent and this module cannot make a
+ * connector write path transactional. The defaults favor compatibility with
+ * Trino JDBC by avoiding generated-key retrieval and sending rows in bounded
+ * chunks.
+ *
+ * @property chunkSize maximum number of rows sent through one Exposed
+ *   `batchInsert` call.
+ * @property shouldReturnGeneratedValues whether Exposed should request
+ *   generated values from JDBC. Keep this disabled for normal Trino tables.
+ */
+data class TrinoBatchInsertOptions(
+    val chunkSize: Int = DEFAULT_TRINO_BATCH_CHUNK_SIZE,
+    val shouldReturnGeneratedValues: Boolean = false,
+) {
+    init {
+        require(chunkSize > 0) { "chunkSize must be positive: $chunkSize" }
+    }
+}
+
+/**
+ * Executes connector-dependent Trino batch inserts in bounded chunks.
+ *
+ * This is a thin Exposed `batchInsert` wrapper, not a Trino-specific bulk-loader
+ * protocol. It is intended for connectors that already support `INSERT`, and it
+ * keeps the batch size explicit so callers do not accidentally materialize or
+ * submit a very large write in one JDBC call.
+ *
+ * Trino transactions are autocommit-like for this module. If a later chunk
+ * fails, earlier chunks may already be visible and are not rolled back by
+ * [TrinoConnectionWrapper.rollback].
+ *
+ * ```kotlin
+ * Events.trinoBatchInsert(events, TrinoBatchInsertOptions(chunkSize = 500)) { event ->
+ *     this[Events.eventId] = event.id
+ *     this[Events.eventName] = event.name
+ *     this[Events.region] = event.region
+ * }
+ * ```
+ *
+ * @param data source rows to insert.
+ * @param options chunking and generated-value behavior.
+ * @param body Exposed batch insert body.
+ * @return generated rows returned by Exposed when
+ *   [TrinoBatchInsertOptions.shouldReturnGeneratedValues] is enabled. The
+ *   default returns an empty list after successful writes.
+ */
+fun <E> Table.trinoBatchInsert(
+    data: Iterable<E>,
+    options: TrinoBatchInsertOptions = TrinoBatchInsertOptions(),
+    body: BatchInsertStatement.(E) -> Unit,
+): List<ResultRow> {
+    val generatedRows = mutableListOf<ResultRow>()
+    data.asSequence().chunked(options.chunkSize).forEach { chunk ->
+        val rows = batchInsert(
+            data = chunk,
+            shouldReturnGeneratedValues = options.shouldReturnGeneratedValues,
+            body = body,
+        )
+        if (options.shouldReturnGeneratedValues) {
+            generatedRows += rows
+        }
+    }
+    return generatedRows
 }
 
 /**
