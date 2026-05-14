@@ -306,7 +306,6 @@ The following features are planned for future releases.
 | `connect(dataSource)`     | `javax.sql.DataSource`-based connection factory (connection pool integration) |
 | `exposed-bigquery-trino`  | Integrated pipeline module: BigQuery → Trino → Exposed                        |
 | Batch INSERT optimization | Support for Trino Bulk Insert connectors                                      |
-| Large result set querying | `pagedQueryFlow` with transaction-scoped page materialization                 |
 | Result set streaming      | True row-by-row cursor streaming is deferred until a safe cursor contract exists |
 
 ## References

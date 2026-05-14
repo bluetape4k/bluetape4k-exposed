@@ -175,7 +175,7 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
     }
 
     @Test
-    fun `pagedQueryFlow 는 collector 취소 후 다음 page 를 요청하지 않는다`() = runTest {
+    fun `pagedQueryFlow 는 take 후 다음 page 를 요청하지 않는다`() = runTest {
         withEventsTableSuspend {
             suspendTransaction(db) {
                 insertRows(PAGED_FIXTURES)

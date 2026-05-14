@@ -10,6 +10,8 @@ import io.bluetape4k.assertions.shouldNotBeEmpty
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.count
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.groupConcat
+import org.jetbrains.exposed.v1.core.locate
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -124,6 +126,43 @@ class SelectTest: AbstractTrinoTest() {
             regionCounts["eu"] shouldBeEqualTo 1L
             regionCounts["kr"] shouldBeEqualTo 2L
             regionCounts["us"] shouldBeEqualTo 2L
+        }
+    }
+
+    @Test
+    fun `groupConcat - Trino aggregate 로 리전별 이벤트 이름을 집계한다`() = withEventsTable {
+        transaction(db) {
+            insertFixtures()
+
+            val names = Events.eventName.groupConcat(
+                separator = "|",
+                orderBy = Events.eventName to SortOrder.ASC,
+            )
+            val rows = Events
+                .select(Events.region, names)
+                .groupBy(Events.region)
+                .orderBy(Events.region to SortOrder.ASC)
+                .toList()
+
+            val regionNames = rows.associate { it[Events.region] to it[names] }
+            regionNames["eu"] shouldBeEqualTo "impression"
+            regionNames["kr"] shouldBeEqualTo "click|view"
+            regionNames["us"] shouldBeEqualTo "purchase|scroll"
+        }
+    }
+
+    @Test
+    fun `locate - Trino POSITION 함수로 문자열 위치를 조회한다`() = withEventsTable {
+        transaction(db) {
+            insertFixtures()
+
+            val position = Events.eventName.locate("c")
+            val rows = Events
+                .select(Events.eventId, position)
+                .orderBy(Events.eventId to SortOrder.ASC)
+                .toList()
+
+            rows.map { it[position] } shouldBeEqualTo listOf(1, 0, 4, 2, 0)
         }
     }
 }

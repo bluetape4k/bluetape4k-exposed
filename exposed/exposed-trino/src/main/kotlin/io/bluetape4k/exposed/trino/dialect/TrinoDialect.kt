@@ -3,7 +3,10 @@ package io.bluetape4k.exposed.trino.dialect
 import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ColumnDiff
+import org.jetbrains.exposed.v1.core.Expression
+import org.jetbrains.exposed.v1.core.GroupConcat
 import org.jetbrains.exposed.v1.core.InternalApi
+import org.jetbrains.exposed.v1.core.QueryBuilder
 import org.jetbrains.exposed.v1.core.vendors.FunctionProvider
 import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
 
@@ -51,5 +54,37 @@ private object TrinoFunctionProvider: FunctionProvider() {
             if (isNotEmpty()) append(" ")
             append("LIMIT $it")
         }
+    }
+
+    override fun <T: String?> groupConcat(expr: GroupConcat<T>, queryBuilder: QueryBuilder) {
+        queryBuilder {
+            append("ARRAY_JOIN(ARRAY_AGG(")
+            if (expr.distinct) {
+                append("DISTINCT ")
+            }
+            append(expr.expr)
+            if (expr.orderBy.isNotEmpty()) {
+                expr.orderBy.appendTo(prefix = " ORDER BY ") {
+                    append(it.first)
+                    append(" ")
+                    append(it.second.name)
+                }
+            }
+            append("), '")
+            append(expr.separator ?: ",")
+            append("')")
+        }
+    }
+
+    override fun <T: String?> locate(
+        queryBuilder: QueryBuilder,
+        expr: Expression<T>,
+        substring: String,
+    ): Unit = queryBuilder {
+        append("POSITION('")
+        append(substring)
+        append("' IN ")
+        append(expr)
+        append(")")
     }
 }
