@@ -3,12 +3,32 @@ package io.bluetape4k.exposed.trino
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+
+private const val DEFAULT_TRINO_PAGE_SIZE = 1_000
+
+/**
+ * Options for [pagedQueryFlow].
+ *
+ * @property pageSize maximum number of rows requested per transaction.
+ * @property initialOffset first offset passed to the page query block.
+ */
+data class TrinoPagedQueryOptions(
+    val pageSize: Int = DEFAULT_TRINO_PAGE_SIZE,
+    val initialOffset: Long = 0L,
+) {
+    init {
+        require(pageSize > 0) { "pageSize must be positive: $pageSize" }
+        require(initialOffset >= 0L) { "initialOffset must be non-negative: $initialOffset" }
+    }
+}
 
 /**
  * Trino에서 suspend 트랜잭션을 실행합니다.
@@ -96,5 +116,79 @@ fun <T> queryFlow(
         // 코루틴 취소는 반드시 재전파해야 합니다 — 삼키면 구조적 동시성이 깨집니다.
         throw e
     }
-    items.forEach { emit(it) }
+    for (item in items) {
+        currentCoroutineContext().ensureActive()
+        emit(item)
+    }
+}
+
+/**
+ * Returns Trino query results as a page-by-page [Flow].
+ *
+ * This function is intentionally not a row-by-row JDBC cursor stream. Each page
+ * is fetched and materialized inside a short Exposed transaction, then emitted
+ * after the transaction is closed. This preserves JDBC `ResultSet` and Exposed
+ * transaction lifetimes while avoiding one full-result-set materialization.
+ *
+ * The caller must apply the provided `limit` and `offset` to a stable,
+ * deterministic query, usually with an explicit `orderBy`.
+ *
+ * ```kotlin
+ * pagedQueryFlow(db, TrinoPagedQueryOptions(pageSize = 500)) { limit, offset ->
+ *     Events.selectAll()
+ *         .orderBy(Events.eventId to SortOrder.ASC)
+ *         .limit(limit)
+ *         .offset(offset)
+ * }.collect { row ->
+ *     println(row[Events.eventId])
+ * }
+ * ```
+ *
+ * Cancellation is checked before each page fetch and before each emitted item.
+ * If collection is cancelled, the current transaction is allowed to close and no
+ * further pages are requested.
+ *
+ * @param db Trino database connection.
+ * @param options page size and initial offset.
+ * @param dispatcher dispatcher used for blocking JDBC calls.
+ * @param block page query block. It receives the page `limit` and `offset` and
+ *   must return at most `limit` rows.
+ */
+fun <T> pagedQueryFlow(
+    db: Database,
+    options: TrinoPagedQueryOptions = TrinoPagedQueryOptions(),
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    block: Transaction.(limit: Int, offset: Long) -> Iterable<T>,
+): Flow<T> = flow {
+    var offset = options.initialOffset
+
+    while (true) {
+        currentCoroutineContext().ensureActive()
+
+        val page = try {
+            withContext(dispatcher) {
+                transaction(db) {
+                    block(options.pageSize, offset).toList()
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        }
+
+        check(page.size <= options.pageSize) {
+            "pagedQueryFlow block returned ${page.size} rows for pageSize=${options.pageSize}. " +
+                    "Apply the provided limit and offset."
+        }
+        if (page.isEmpty()) break
+
+        for (item in page) {
+            currentCoroutineContext().ensureActive()
+            emit(item)
+        }
+        if (page.size < options.pageSize) break
+
+        val nextOffset = offset + page.size.toLong()
+        check(nextOffset > offset) { "pagedQueryFlow offset overflow at offset=$offset, pageSize=${page.size}" }
+        offset = nextOffset
+    }
 }

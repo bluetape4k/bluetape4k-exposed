@@ -108,6 +108,39 @@ queryFlow(db) {
 > API는 `Flow`이지만, 진정한 row-by-row 스트리밍 커서는 아닙니다.
 > 매우 큰 결과셋은 페이지네이션 또는 전용 배치 전략을 별도로 고려해야 합니다.
 
+### 5. 페이지 단위 Flow 쿼리
+
+대용량 결과셋을 하나의 트랜잭션에서 모두 materialize 하지 않으려면
+`pagedQueryFlow`를 사용합니다. 각 page는 별도 Exposed 트랜잭션 안에서
+로드되고, 트랜잭션이 닫힌 뒤 emit 됩니다.
+
+```kotlin
+import io.bluetape4k.exposed.trino.TrinoPagedQueryOptions
+import io.bluetape4k.exposed.trino.pagedQueryFlow
+import org.jetbrains.exposed.v1.core.SortOrder
+
+pagedQueryFlow(db, TrinoPagedQueryOptions(pageSize = 500)) { limit, offset ->
+    Events.selectAll()
+        .where { Events.region eq "kr" }
+        .orderBy(Events.eventId to SortOrder.ASC)
+        .limit(limit)
+        .offset(offset)
+}.collect { row ->
+    println(row[Events.eventId])
+}
+```
+
+대용량 결과셋 가이드:
+
+- `queryFlow`는 기존의 안전한 materialize 후 emit 동작을 유지합니다.
+- `pagedQueryFlow`는 대용량 JDBC 결과셋에 권장되는 API입니다.
+- `limit`, `offset`과 함께 항상 결정적인 `orderBy`를 사용하세요.
+- 블록은 전달받은 `limit` 이하의 row만 반환해야 합니다.
+- `pageSize`는 애플리케이션 쪽 materialize 크기를 제한합니다. Trino JDBC 처리량 튜닝은
+  대용량 결과 전송을 위한 Trino spooling protocol을 포함해 드라이버/클러스터 프로토콜 영역입니다.
+- 취소되면 다음 page 요청을 시작하지 않습니다. 진행 중인 page 트랜잭션은 닫힌 뒤 컬렉션이 중단됩니다.
+- 진정한 row-by-row 커서 스트리밍은 `ResultSet` 수명을 트랜잭션 밖 Flow 컬렉션과 결합하므로 아직 노출하지 않습니다.
+
 ## ⚠️ 트랜잭션 동작 주의사항
 
 Trino는 ACID 트랜잭션을 지원하지 않습니다. `transaction {}` 블록을 사용할 수 있지만, 아래 표를 참고하여 동작 차이를 반드시 인지하세요.
@@ -156,6 +189,7 @@ Testcontainers를 통한 Trino Memory 커넥터 환경에서 검증된 기능입
 | COUNT / 집계 함수             | ✅     |                           |
 | suspendTransaction        | ✅     | Dispatchers.IO            |
 | queryFlow                 | ✅     | materialize 후 emit        |
+| pagedQueryFlow            | ✅     | page 단위 materialize 후 emit |
 | TrinoConnectionWrapper 호환 | ✅     | prepareStatement 오버로드     |
 | JDBC 드라이버 자동 등록           | ✅     | TrinoDatabase 접근 시 init{} |
 
@@ -263,8 +297,9 @@ sequenceDiagram
 |--------------------------|------------------------------------------------|
 | `connect(dataSource)`    | `javax.sql.DataSource` 기반 연결 팩토리 (커넥션 풀 통합)    |
 | `exposed-bigquery-trino` | BigQuery → Trino → Exposed 파이프라인 통합 모듈         |
+| 대용량 결과셋 조회                | `pagedQueryFlow` 기반 page 단위 materialize             |
 | 배치 INSERT 최적화            | Trino Bulk Insert 커넥터 지원                       |
-| 결과셋 스트리밍                 | 진정한 row-by-row 커서 스트리밍 (Trino Arrow Flight 기반) |
+| 결과셋 스트리밍                 | 안전한 커서 수명 계약이 생길 때까지 진정한 row-by-row 스트리밍 보류 |
 
 ## 참고
 
