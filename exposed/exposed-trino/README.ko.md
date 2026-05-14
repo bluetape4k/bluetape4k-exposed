@@ -297,7 +297,6 @@ sequenceDiagram
 |--------------------------|------------------------------------------------|
 | `connect(dataSource)`    | `javax.sql.DataSource` 기반 연결 팩토리 (커넥션 풀 통합)    |
 | `exposed-bigquery-trino` | BigQuery → Trino → Exposed 파이프라인 통합 모듈         |
-| 대용량 결과셋 조회                | `pagedQueryFlow` 기반 page 단위 materialize             |
 | 배치 INSERT 최적화            | Trino Bulk Insert 커넥터 지원                       |
 | 결과셋 스트리밍                 | 안전한 커서 수명 계약이 생길 때까지 진정한 row-by-row 스트리밍 보류 |
 

@@ -9,19 +9,38 @@
 
 ## Result
 
-Claude Code CLI was invoked for PR review, but it produced no output after more
-than two minutes and was terminated. No Claude findings were available to
-integrate.
+Claude Code CLI was invoked again and allowed to run for more than five minutes.
+It completed and reported two HIGH findings plus one informational test note.
+The raw stdout was captured at `/tmp/claude-pr67-review.out` during the session.
 
-## Local Review Status
+## Findings Integrated
 
-Local Tier 4 review remains the authoritative review evidence for this PR:
+- HIGH: replacing Exposed's PostgreSQL function provider with
+  `TrinoFunctionProvider` fixed `OFFSET ... LIMIT`, but dropped working
+  mappings for `groupConcat` and `locate`.
+  - Accepted.
+  - Fixed with Trino-compatible `ARRAY_JOIN(ARRAY_AGG(...), separator)` for
+    `groupConcat` and `POSITION(substring IN expr)` for `locate`.
+  - Added real Trino Testcontainers coverage for both functions.
+- HIGH: README Phase 2 Roadmap still listed `pagedQueryFlow` as future work even
+  though the public API and usage docs were implemented in this PR.
+  - Accepted.
+  - Removed the stale roadmap row from both English and Korean README files.
+- Informational: the `.take(3)` cancellation test proves collector
+  short-circuiting/no additional page fetch after truncation, but does not prove
+  job-cancellation semantics.
+  - Accepted as a wording/test-scope note.
+  - Kept the test focused on no-extra-page-fetch behavior; `ensureActive()`
+    guards remain in the production flow for cancellation responsiveness.
 
-- No CRITICAL/HIGH findings found in the final local reread.
+## Review Status
+
 - `pagedQueryFlow` keeps JDBC `ResultSet` access inside page-scoped Exposed
   transactions.
 - Trino `OFFSET ... LIMIT ...` SQL order is covered by real Trino
   Testcontainers tests.
+- Trino `groupConcat` and `locate` mappings are covered by real Trino
+  Testcontainers tests after the Claude review fix.
 - Cancellation behavior is covered by a collector-side `take(3)` test that
   proves no third page is requested.
 - README claims were adjusted to separate application `pageSize` memory bounds
