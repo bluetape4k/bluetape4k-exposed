@@ -4,6 +4,7 @@ import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ColumnDiff
 import org.jetbrains.exposed.v1.core.InternalApi
+import org.jetbrains.exposed.v1.core.vendors.FunctionProvider
 import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
 
 /**
@@ -23,6 +24,8 @@ class TrinoDialect: PostgreSQLDialect(name = dialectName) {
         const val dialectName: String = "trino"
     }
 
+    override val functionProvider: FunctionProvider = TrinoFunctionProvider
+
     // Trino는 ALTER COLUMN TYPE 미지원
     override val supportsColumnTypeChange: Boolean = false
 
@@ -34,4 +37,19 @@ class TrinoDialect: PostgreSQLDialect(name = dialectName) {
 
     @OptIn(InternalApi::class)
     override fun modifyColumn(column: Column<*>, columnDiff: ColumnDiff): List<String> = emptyList()
+}
+
+private object TrinoFunctionProvider: FunctionProvider() {
+
+    // Trino SELECT syntax evaluates OFFSET before LIMIT. Exposed's default
+    // provider emits LIMIT before OFFSET, which Trino rejects.
+    override fun queryLimitAndOffset(size: Int?, offset: Long, alreadyOrdered: Boolean): String = buildString {
+        if (offset > 0) {
+            append("OFFSET $offset")
+        }
+        size?.let {
+            if (isNotEmpty()) append(" ")
+            append("LIMIT $it")
+        }
+    }
 }

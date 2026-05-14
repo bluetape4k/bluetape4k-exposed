@@ -110,6 +110,43 @@ queryFlow(db) {
 > The API surface is `Flow`, but it is not a true row-by-row streaming cursor.
 > For very large result sets, consider a separate pagination or dedicated batch strategy.
 
+### 5. Paged Flow Query
+
+Use `pagedQueryFlow` for large result sets that should not be materialized in a
+single transaction. Each page is loaded inside its own Exposed transaction and
+then emitted after the transaction is closed.
+
+```kotlin
+import io.bluetape4k.exposed.trino.TrinoPagedQueryOptions
+import io.bluetape4k.exposed.trino.pagedQueryFlow
+import org.jetbrains.exposed.v1.core.SortOrder
+
+pagedQueryFlow(db, TrinoPagedQueryOptions(pageSize = 500)) { limit, offset ->
+    Events.selectAll()
+        .where { Events.region eq "kr" }
+        .orderBy(Events.eventId to SortOrder.ASC)
+        .limit(limit)
+        .offset(offset)
+}.collect { row ->
+    println(row[Events.eventId])
+}
+```
+
+Large result set guidance:
+
+- `queryFlow` keeps the existing safe materialize-then-emit behavior.
+- `pagedQueryFlow` is the preferred API for large JDBC result sets.
+- Always use a deterministic `orderBy` with `limit` and `offset`.
+- The block must return at most the provided `limit` rows.
+- `pageSize` bounds application-side materialization. Trino JDBC throughput
+  tuning remains a driver/cluster protocol concern, including Trino's spooling
+  protocol for high-volume result transfer.
+- Cancellation stops before the next page request; the in-flight page
+  transaction is closed before collection continues or fails.
+- True row-by-row cursor streaming is intentionally not exposed because it
+  would couple the `ResultSet` lifetime to Flow collection outside the
+  transaction boundary.
+
 ## ⚠️ Transaction Behavior Warning
 
 Trino does not support ACID transactions. While
@@ -160,6 +197,7 @@ Features verified in a Trino Memory connector environment via Testcontainers.
 | COUNT / Aggregation functions        | ✅        |                                      |
 | suspendTransaction                   | ✅        | Dispatchers.IO                       |
 | queryFlow                            | ✅        | Materialized before emit             |
+| pagedQueryFlow                       | ✅        | Page materialized before emit        |
 | TrinoConnectionWrapper compatibility | ✅        | prepareStatement overloads           |
 | Automatic JDBC driver registration   | ✅        | init{} block on TrinoDatabase access |
 
@@ -268,7 +306,8 @@ The following features are planned for future releases.
 | `connect(dataSource)`     | `javax.sql.DataSource`-based connection factory (connection pool integration) |
 | `exposed-bigquery-trino`  | Integrated pipeline module: BigQuery → Trino → Exposed                        |
 | Batch INSERT optimization | Support for Trino Bulk Insert connectors                                      |
-| Result set streaming      | True row-by-row cursor streaming (Trino Arrow Flight-based)                   |
+| Large result set querying | `pagedQueryFlow` with transaction-scoped page materialization                 |
+| Result set streaming      | True row-by-row cursor streaming is deferred until a safe cursor contract exists |
 
 ## References
 
