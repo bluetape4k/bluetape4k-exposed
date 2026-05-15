@@ -3,7 +3,9 @@ package io.bluetape4k.spring.data.exposed.r2dbc.domain
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import java.io.Serializable
 
-object Users: LongIdTable("coroutine_users") {
+const val USERS_TABLE_NAME = "coroutine_users"
+
+object Users: LongIdTable(USERS_TABLE_NAME) {
     val name = varchar("name", 255)
     val email = varchar("email", 255)
     val age = integer("age")
