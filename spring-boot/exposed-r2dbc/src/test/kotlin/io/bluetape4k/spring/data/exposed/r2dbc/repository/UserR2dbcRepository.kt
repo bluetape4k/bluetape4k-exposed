@@ -1,6 +1,7 @@
 package io.bluetape4k.spring.data.exposed.r2dbc.repository
 
 import io.bluetape4k.spring.data.exposed.jdbc.annotation.Query
+import io.bluetape4k.spring.data.exposed.r2dbc.domain.USERS_TABLE_NAME
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import kotlinx.coroutines.flow.Flow
@@ -61,27 +62,27 @@ interface UserR2dbcRepository: ExposedR2dbcRepository<User, Long> {
 
     fun findByNameOrderByAgeAsc(name: String): Flow<User>
 
-    @Query("SELECT * FROM coroutine_users WHERE email = ?1")
+    @Query("SELECT * FROM $USERS_TABLE_NAME WHERE email = ?1")
     suspend fun findByEmailNative(email: String): List<User>
 
-    @Query("SELECT * FROM coroutine_users WHERE age = ?2 AND email = ?1")
+    @Query("SELECT * FROM $USERS_TABLE_NAME WHERE age = ?2 AND email = ?1")
     suspend fun findByEmailAndAgeNative(email: String, age: Int): List<User>
 
-    @Query("SELECT * FROM coroutine_users WHERE email = ?1 OR email = ?1")
+    @Query("SELECT * FROM $USERS_TABLE_NAME WHERE email = ?1 OR email = ?1")
     suspend fun findByEmailNativeDuplicatedPlaceholder(email: String): List<User>
 
-    @Query("SELECT * FROM coroutine_users WHERE age = ?1")
+    @Query("SELECT * FROM $USERS_TABLE_NAME WHERE age = ?1")
     suspend fun findByAgeNativeLong(age: Long): List<User>
 
-    @Query("SELECT * FROM coroutine_users WHERE age BETWEEN ?1 AND ?2")
+    @Query("SELECT * FROM $USERS_TABLE_NAME WHERE age BETWEEN ?1 AND ?2")
     suspend fun findByAgeRangeNative(minAge: Int, maxAge: Int): List<User>
 
-    @Query("SELECT * FROM coroutine_users WHERE email = ?10")
+    @Query("SELECT * FROM $USERS_TABLE_NAME WHERE email = ?10")
     suspend fun findByEmailNativeTenthPlaceholder(
         p1: String, p2: String, p3: String, p4: String, p5: String,
         p6: String, p7: String, p8: String, p9: String, p10: String,
     ): List<User>
 
-    @Query("SELECT * FROM coroutine_users WHERE email = ?2")
+    @Query("SELECT * FROM $USERS_TABLE_NAME WHERE email = ?2")
     suspend fun findByEmailNativeBrokenPlaceholder(email: String): List<User>
 }
