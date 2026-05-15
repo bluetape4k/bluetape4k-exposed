@@ -23,6 +23,11 @@ import kotlin.reflect.KClass
  * 새 트랜잭션을 열지 않으므로 호출자 트랜잭션의 미커밋 데이터가 그대로 보입니다.
  *
  * 위치 기반 파라미터(?1, ?2, ...)를 바인딩하고, SELECT 결과의 id 컬럼으로 엔티티를 reload합니다.
+ *
+ * **두 쿼리 패턴 제약**: raw SQL은 id를 추출하는 데만 사용됩니다. 실제 엔티티 로드는
+ * `selectAll().where { id inList ids }` 쿼리로 수행되므로, raw SQL에 포함된
+ * ORDER BY, JOIN, GROUP BY, LIMIT 등의 의미론은 최종 결과에 반영되지 않습니다.
+ * 정렬 또는 집계가 필요한 경우 [PartTreeExposedR2dbcQuery] 또는 직접 Exposed DSL을 사용하세요.
  */
 internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
     private val queryMethod: ExposedR2dbcQueryMethod,
@@ -45,7 +50,14 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
         val values = parameters.withoutContinuation()
         val boundSql = bindParameters(rawSql, values)
 
-        val tx = TransactionManager.current()
+        val tx = try {
+            TransactionManager.current()
+        } catch (e: IllegalStateException) {
+            throw IllegalStateException(
+                "DeclaredExposedR2dbcQuery '${queryMethod.name}' must be called within an active R2DBC suspendTransaction { }.",
+                e
+            )
+        }
         val idColumnName = mapper.table.id.name
         val rawIds = tx.exec(boundSql.sql, boundSql.args, StatementType.SELECT) { row ->
             row.get(idColumnName, Any::class.java) ?: row.get(0, Any::class.java)
@@ -74,6 +86,8 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
             require(idx in parameters.indices) {
                 "Query placeholder index out of bounds: ${match.value} (param count: ${parameters.size})"
             }
+            // 동일 인덱스 placeholder가 여러 번 나타나면 args에 중복 추가 — JDBC prepared statement는
+            // positional binding이므로 각 ? 자리마다 독립적인 인자가 필요합니다.
             args += toSqlArg(parameters[idx])
             "?"
         }
