@@ -60,7 +60,12 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
         }
         val idColumnName = mapper.table.id.name
         val rawIds = tx.exec(boundSql.sql, boundSql.args, StatementType.SELECT) { row ->
-            row.get(idColumnName, Any::class.java) ?: row.get(0, Any::class.java)
+            // 컬럼명 조회 실패 시(alias, expression 등) ordinal 0번으로 fallback
+            try {
+                row.get(idColumnName, Any::class.java)
+            } catch (_: Exception) {
+                row.get(0, Any::class.java)
+            }
         }?.toList().orEmpty()
 
         if (rawIds.isEmpty()) return emptyList<R>()
