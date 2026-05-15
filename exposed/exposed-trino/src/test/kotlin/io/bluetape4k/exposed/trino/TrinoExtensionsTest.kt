@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.trino
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.exposed.trino.domain.Events
 import io.bluetape4k.logging.KLogging
@@ -15,6 +16,8 @@ import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.junit.jupiter.api.Test
+import java.io.ObjectStreamClass
+import java.io.Serializable
 import java.time.Instant
 
 class TrinoExtensionsTest: AbstractTrinoTest() {
@@ -66,6 +69,15 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
         assertFailsWith<IllegalArgumentException> {
             TrinoPagedQueryOptions(initialOffset = -1L)
         }
+    }
+
+    @Test
+    fun `Trino option classes are Serializable with stable serialVersionUID`() {
+        TrinoPagedQueryOptions() shouldBeInstanceOf Serializable::class
+        TrinoBatchInsertOptions() shouldBeInstanceOf Serializable::class
+
+        ObjectStreamClass.lookup(TrinoPagedQueryOptions::class.java).serialVersionUID shouldBeEqualTo 1L
+        ObjectStreamClass.lookup(TrinoBatchInsertOptions::class.java).serialVersionUID shouldBeEqualTo 1L
     }
 
     @Test
