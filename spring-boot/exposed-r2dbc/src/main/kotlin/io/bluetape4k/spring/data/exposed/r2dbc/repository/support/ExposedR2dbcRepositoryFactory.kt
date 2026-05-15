@@ -1,7 +1,6 @@
 package io.bluetape4k.spring.data.exposed.r2dbc.repository.support
 
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.query.DeclaredExposedR2dbcQuery
-import io.bluetape4k.spring.data.exposed.r2dbc.repository.query.ExposedR2dbcQueryLookupStrategy
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.query.ExposedR2dbcQueryMethod
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.query.PartTreeExposedR2dbcQuery
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.query.R2dbcQueryMapper
@@ -16,12 +15,10 @@ import org.springframework.data.repository.core.support.RepositoryComposition
 import org.springframework.data.repository.core.support.RepositoryFactorySupport
 import org.springframework.data.repository.query.QueryLookupStrategy
 import org.springframework.data.repository.query.RepositoryQuery
-import org.springframework.data.repository.query.ValueExpressionDelegate
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.intrinsics.startCoroutineUninterceptedOrReturn
@@ -60,17 +57,6 @@ class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
 
     override fun getRepositoryFragments(metadata: RepositoryMetadata): RepositoryComposition.RepositoryFragments =
         RepositoryComposition.RepositoryFragments.just(createRepositoryImplementation(metadata.repositoryInterface))
-
-    override fun getQueryLookupStrategy(
-        key: QueryLookupStrategy.Key?,
-        valueExpressionDelegate: ValueExpressionDelegate,
-    ): Optional<QueryLookupStrategy> =
-        Optional.of(
-            ExposedR2dbcQueryLookupStrategy.create(
-                key ?: QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND,
-                ::resolveQueryMapper,
-            )
-        )
 
     /**
      * Spring Data 의 프록시 인터셉터 체인(트랜잭션 래핑, 코루틴 변환 등)을 완전히 우회하여
@@ -204,10 +190,6 @@ class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
         )
     }
 
-    private fun resolveQueryMapper(repositoryInterface: Class<*>): R2dbcQueryMapper<Any, Any> {
-        val mapper = resolveMapper(repositoryInterface)
-        return R2dbcQueryMapper(mapper.table, mapper.toDomain)
-    }
 
     private fun bindDefaultMethodHandle(
         repositoryInterface: Class<*>,
