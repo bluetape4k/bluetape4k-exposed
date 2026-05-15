@@ -51,7 +51,20 @@ val db = TrinoDatabase.connect(
     jdbcUrl = "jdbc:trino://localhost:8080/memory/default",
     user = "trino",
 )
+
+// Or connect via a DataSource (e.g., HikariCP connection pool)
+val hikariConfig = HikariConfig().apply {
+    jdbcUrl = "jdbc:trino://trino-coordinator:8080/hive/default"
+    username = "analyst"
+    driverClassName = "io.trino.jdbc.TrinoDriver"
+    maximumPoolSize = 10
+}
+val db = TrinoDatabase.connect(HikariDataSource(hikariConfig))
 ```
+
+> **Note:** `connect(dataSource)` wraps each connection obtained from the pool in
+> `TrinoConnectionWrapper`, enforcing `autoCommit=true`. If wrapping fails the raw
+> connection is closed automatically to prevent leaks.
 
 ### 2. Synchronous Transaction
 
@@ -338,7 +351,6 @@ The following features are planned for future releases.
 
 | Feature                   | Description                                                                   |
 |---------------------------|-------------------------------------------------------------------------------|
-| `connect(dataSource)`     | `javax.sql.DataSource`-based connection factory (connection pool integration) |
 | `exposed-bigquery-trino`  | Integrated pipeline module: BigQuery → Trino → Exposed                        |
 | Connector-specific bulk loaders | Dedicated non-Exposed bulk write protocols for connectors that expose them |
 | Result set streaming      | True row-by-row cursor streaming is deferred until a safe cursor contract exists |
