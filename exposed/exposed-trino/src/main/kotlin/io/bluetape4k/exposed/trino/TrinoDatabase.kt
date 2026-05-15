@@ -146,6 +146,26 @@ object TrinoDatabase: KLogging() {
         )
     }
 
-    // Phase 2: DataSource 기반 연결
-    // fun connect(dataSource: javax.sql.DataSource): Database { ... }
+    /**
+     * [javax.sql.DataSource]를 통해 Trino 데이터베이스에 연결합니다.
+     *
+     * HikariCP 등 커넥션 풀을 운영 환경에서 사용할 때 이 오버로드를 씁니다.
+     * `dataSource.getConnection()`으로 커넥션을 획득한 후 [TrinoConnectionWrapper]로 감싸
+     * autocommit=true를 강제합니다. 래퍼 생성 실패 시 원본 커넥션을 닫아 leak을 방지합니다.
+     *
+     * **주의**: Trino는 트랜잭션을 지원하지 않습니다. autocommit 모드로 실행되며,
+     * 블록 중간 실패 시 앞선 DML은 롤백되지 않습니다.
+     *
+     * @param dataSource 커넥션을 공급할 [javax.sql.DataSource] (예: HikariCP)
+     * @return Exposed [Database] 인스턴스
+     */
+    fun connect(dataSource: javax.sql.DataSource): Database {
+        return Database.connect(
+            getNewConnection = {
+                val raw = dataSource.connection
+                runCatching { TrinoConnectionWrapper(raw) }
+                    .getOrElse { e -> raw.runCatching { close() }; throw e }
+            }
+        )
+    }
 }

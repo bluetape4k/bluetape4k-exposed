@@ -49,7 +49,19 @@ val db = TrinoDatabase.connect(
     jdbcUrl = "jdbc:trino://localhost:8080/memory/default",
     user = "trino",
 )
+
+// 또는 DataSource 기반 연결 (HikariCP 등 커넥션 풀)
+val hikariConfig = HikariConfig().apply {
+    jdbcUrl = "jdbc:trino://trino-coordinator:8080/hive/default"
+    username = "analyst"
+    driverClassName = "io.trino.jdbc.TrinoDriver"
+    maximumPoolSize = 10
+}
+val db = TrinoDatabase.connect(HikariDataSource(hikariConfig))
 ```
+
+> **주의:** `connect(dataSource)`는 풀에서 획득한 각 커넥션을 `TrinoConnectionWrapper`로 감싸
+> `autoCommit=true`를 강제합니다. 래퍼 생성 실패 시 원본 커넥션을 자동으로 닫아 leak을 방지합니다.
 
 ### 2. 동기 트랜잭션
 
@@ -330,7 +342,6 @@ sequenceDiagram
 
 | 기능                       | 설명                                             |
 |--------------------------|------------------------------------------------|
-| `connect(dataSource)`    | `javax.sql.DataSource` 기반 연결 팩토리 (커넥션 풀 통합)    |
 | `exposed-bigquery-trino` | BigQuery → Trino → Exposed 파이프라인 통합 모듈         |
 | 커넥터별 bulk loader          | 커넥터가 제공하는 전용 non-Exposed bulk write protocol |
 | 결과셋 스트리밍                 | 안전한 커서 수명 계약이 생길 때까지 진정한 row-by-row 스트리밍 보류 |
