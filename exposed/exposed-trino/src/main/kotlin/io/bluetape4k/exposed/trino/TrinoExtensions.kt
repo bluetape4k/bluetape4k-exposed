@@ -15,6 +15,7 @@ import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import java.io.Serializable
 
 private const val DEFAULT_TRINO_PAGE_SIZE = 1_000
 private const val DEFAULT_TRINO_BATCH_CHUNK_SIZE = 1_000
@@ -28,7 +29,11 @@ private const val DEFAULT_TRINO_BATCH_CHUNK_SIZE = 1_000
 data class TrinoPagedQueryOptions(
     val pageSize: Int = DEFAULT_TRINO_PAGE_SIZE,
     val initialOffset: Long = 0L,
-) {
+): Serializable {
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+
     init {
         require(pageSize > 0) { "pageSize must be positive: $pageSize" }
         require(initialOffset >= 0L) { "initialOffset must be non-negative: $initialOffset" }
@@ -51,7 +56,11 @@ data class TrinoPagedQueryOptions(
 data class TrinoBatchInsertOptions(
     val chunkSize: Int = DEFAULT_TRINO_BATCH_CHUNK_SIZE,
     val shouldReturnGeneratedValues: Boolean = false,
-) {
+): Serializable {
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+
     init {
         require(chunkSize > 0) { "chunkSize must be positive: $chunkSize" }
     }
