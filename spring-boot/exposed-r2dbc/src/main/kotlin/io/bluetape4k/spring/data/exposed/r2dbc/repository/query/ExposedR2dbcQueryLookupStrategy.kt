@@ -33,12 +33,26 @@ internal class ExposedR2dbcQueryLookupStrategy(
         factory: ProjectionFactory,
         namedQueries: NamedQueries,
     ): RepositoryQuery {
-        require(key != QueryLookupStrategy.Key.USE_DECLARED_QUERY) {
-            "Exposed R2DBC repositories do not support declared @Query methods yet: '${method.name}'"
-        }
-
         val queryMethod = ExposedR2dbcQueryMethod(method, metadata, factory)
         val mapper = mapperResolver(metadata.repositoryInterface)
-        return PartTreeExposedR2dbcQuery(queryMethod, mapper)
+
+        return when (key) {
+            QueryLookupStrategy.Key.USE_DECLARED_QUERY -> {
+                require(queryMethod.isAnnotatedQuery) {
+                    "No @Query annotation found on method '${method.name}'"
+                }
+                DeclaredExposedR2dbcQuery(queryMethod, mapper)
+            }
+
+            QueryLookupStrategy.Key.CREATE -> PartTreeExposedR2dbcQuery(queryMethod, mapper)
+
+            QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND -> {
+                if (queryMethod.isAnnotatedQuery) {
+                    DeclaredExposedR2dbcQuery(queryMethod, mapper)
+                } else {
+                    PartTreeExposedR2dbcQuery(queryMethod, mapper)
+                }
+            }
+        }
     }
 }

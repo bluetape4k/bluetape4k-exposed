@@ -215,7 +215,33 @@ interface UserRepository : ExposedR2dbcRepository<User, Long> {
 
 지원 범위는 Exposed DSL helper와 같은 컬럼명 매핑을 사용하며, equality, comparison, `Containing`, count/exists/delete projection, 선언적 정렬, top/first limit을 포함합니다.
 
-### 6. 페이징 조회
+### 6. `@Query` raw SQL
+
+`@Query` 어노테이션으로 네이티브 SQL을 실행할 수 있습니다. 위치 기반 플레이스홀더 `?1`, `?2`, ...가 메서드 파라미터에 순서대로 매핑됩니다.
+
+```kotlin
+import io.bluetape4k.spring.data.exposed.jdbc.annotation.Query
+
+interface UserRepository : ExposedR2dbcRepository<User, Long> {
+    @Query("SELECT * FROM users WHERE email = ?1")
+    suspend fun findByEmailNative(email: String): List<User>
+
+    @Query("SELECT * FROM users WHERE age = ?2 AND email = ?1")
+    suspend fun findByEmailAndAgeNative(email: String, age: Int): List<User>
+
+    @Query("SELECT * FROM users WHERE age BETWEEN ?1 AND ?2")
+    suspend fun findByAgeRangeNative(minAge: Int, maxAge: Int): List<User>
+}
+```
+
+파라미터는 prepared statement 플레이스홀더로 바인딩되므로 SQL injection이 방지됩니다.
+
+> **제약**: raw SQL은 매칭되는 행의 ID를 추출하는 데만 사용됩니다. 최종 엔티티는
+> `selectAll().where { id inList ids }` 로 다시 로드되므로, raw SQL의 ORDER BY, JOIN, GROUP BY, LIMIT은
+> 최종 결과에 반영되지 않습니다.
+> 정렬이나 집계가 필요한 경우 [메서드명 기반 파생 쿼리](#5-메서드명-기반-파생-쿼리) 또는 Exposed DSL을 사용하세요.
+
+### 7. 페이징 조회
 
 ```kotlin
 suspend fun getUsersPage(pageNo: Int, pageSize: Int): Page<User> {
@@ -229,7 +255,7 @@ suspend fun getUsersSorted(): Page<User> {
 }
 ```
 
-### 7. Exposed DSL 조건
+### 8. Exposed DSL 조건
 
 복잡한 조건은 DSL로 표현:
 

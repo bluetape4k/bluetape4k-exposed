@@ -215,7 +215,34 @@ interface UserRepository : ExposedR2dbcRepository<User, Long> {
 
 Supported query forms follow the same column-name mapping as the Exposed DSL helpers, including equality, comparison, `Containing`, count/exists/delete projections, declared ordering, and top/first limits.
 
-### 6. Paginated Retrieval
+### 6. Raw SQL with `@Query`
+
+Use the `@Query` annotation for native SQL queries. Positional placeholders `?1`, `?2`, ... map to method parameters in order.
+
+```kotlin
+import io.bluetape4k.spring.data.exposed.jdbc.annotation.Query
+
+interface UserRepository : ExposedR2dbcRepository<User, Long> {
+    @Query("SELECT * FROM users WHERE email = ?1")
+    suspend fun findByEmailNative(email: String): List<User>
+
+    @Query("SELECT * FROM users WHERE age = ?2 AND email = ?1")
+    suspend fun findByEmailAndAgeNative(email: String, age: Int): List<User>
+
+    @Query("SELECT * FROM users WHERE age BETWEEN ?1 AND ?2")
+    suspend fun findByAgeRangeNative(minAge: Int, maxAge: Int): List<User>
+}
+```
+
+Parameters are bound as prepared-statement placeholders, so SQL injection is prevented.
+
+> **Limitation**: The raw SQL is used only to extract matching row IDs. The final entities are
+> reloaded via `selectAll().where { id inList ids }`, so ORDER BY, JOIN, GROUP BY, and LIMIT
+> clauses in the raw SQL are silently ignored in the returned result.
+> Use [method-name derived queries](#5-method-name-derived-queries) or the Exposed DSL for
+> sorting or aggregation.
+
+### 7. Paginated Retrieval
 
 ```kotlin
 suspend fun getUsersPage(pageNo: Int, pageSize: Int): Page<User> {
@@ -229,7 +256,7 @@ suspend fun getUsersSorted(): Page<User> {
 }
 ```
 
-### 7. Exposed DSL Conditions
+### 8. Exposed DSL Conditions
 
 Express complex conditions using DSL:
 

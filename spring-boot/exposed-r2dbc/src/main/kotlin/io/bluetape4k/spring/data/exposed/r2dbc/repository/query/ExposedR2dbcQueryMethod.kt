@@ -1,6 +1,7 @@
 package io.bluetape4k.spring.data.exposed.r2dbc.repository.query
 
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.spring.data.exposed.jdbc.annotation.Query
 import org.springframework.data.projection.ProjectionFactory
 import org.springframework.data.repository.core.RepositoryMetadata
 import org.springframework.data.repository.query.Parameters
@@ -24,4 +25,12 @@ internal class ExposedR2dbcQueryMethod(
 
     val kotlinReturnClassifier: KClassifier? =
         sourceMethod.kotlinFunction?.returnType?.classifier
+
+    private val queryAnnotation: Query? = sourceMethod.getAnnotation(Query::class.java)
+
+    /** @Query 어노테이션 존재 여부 */
+    val isAnnotatedQuery: Boolean get() = queryAnnotation != null
+
+    /** @Query 어노테이션의 SQL 문자열 (없으면 null) */
+    fun getAnnotatedQuery(): String? = queryAnnotation?.value
 }
