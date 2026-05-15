@@ -351,7 +351,6 @@ The following features are planned for future releases.
 
 | Feature                   | Description                                                                   |
 |---------------------------|-------------------------------------------------------------------------------|
-| `connect(dataSource)`     | `javax.sql.DataSource`-based connection factory (connection pool integration) |
 | `exposed-bigquery-trino`  | Integrated pipeline module: BigQuery → Trino → Exposed                        |
 | Connector-specific bulk loaders | Dedicated non-Exposed bulk write protocols for connectors that expose them |
 | Result set streaming      | True row-by-row cursor streaming is deferred until a safe cursor contract exists |
