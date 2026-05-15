@@ -1,5 +1,6 @@
 package io.bluetape4k.spring.data.exposed.r2dbc.repository.support
 
+import io.bluetape4k.spring.data.exposed.r2dbc.repository.query.DeclaredExposedR2dbcQuery
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.query.ExposedR2dbcQueryLookupStrategy
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.query.ExposedR2dbcQueryMethod
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.query.PartTreeExposedR2dbcQuery
@@ -14,6 +15,7 @@ import org.springframework.data.repository.core.support.AbstractEntityInformatio
 import org.springframework.data.repository.core.support.RepositoryComposition
 import org.springframework.data.repository.core.support.RepositoryFactorySupport
 import org.springframework.data.repository.query.QueryLookupStrategy
+import org.springframework.data.repository.query.RepositoryQuery
 import org.springframework.data.repository.query.ValueExpressionDelegate
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.InvocationHandler
@@ -103,7 +105,7 @@ class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
         val implClass: Class<*> = impl::class.java
         val repositoryMetadata = getRepositoryMetadata(repositoryInterface)
         val queryMapper = R2dbcQueryMapper(impl.table, impl::toDomain)
-        val queryCache = ConcurrentHashMap<Method, PartTreeExposedR2dbcQuery<Any, Any>>()
+        val queryCache = ConcurrentHashMap<Method, RepositoryQuery>()
 
         val handler = InvocationHandler { proxy, method, args ->
             // Object 메서드 처리
@@ -132,19 +134,33 @@ class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
                 return@InvocationHandler InvocationHandler.invokeDefault(proxy, method, *(args ?: emptyArray()))
             }
 
-            val query = queryCache.computeIfAbsent(method) {
-                require(queryLookupStrategyKey != QueryLookupStrategy.Key.USE_DECLARED_QUERY) {
-                    "Exposed R2DBC repositories do not support declared @Query methods yet: '${it.name}'"
+            val query = queryCache.computeIfAbsent(method) { m ->
+                val qMethod = ExposedR2dbcQueryMethod(m, repositoryMetadata, projectionFactory)
+                val key = queryLookupStrategyKey ?: QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND
+                when (key) {
+                    QueryLookupStrategy.Key.USE_DECLARED_QUERY -> {
+                        require(qMethod.isAnnotatedQuery) {
+                            "No @Query annotation found on method '${m.name}'"
+                        }
+                        DeclaredExposedR2dbcQuery(qMethod, queryMapper)
+                    }
+                    QueryLookupStrategy.Key.CREATE -> PartTreeExposedR2dbcQuery(qMethod, queryMapper)
+                    QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND ->
+                        if (qMethod.isAnnotatedQuery) DeclaredExposedR2dbcQuery(qMethod, queryMapper)
+                        else PartTreeExposedR2dbcQuery(qMethod, queryMapper)
                 }
-                PartTreeExposedR2dbcQuery(
-                    ExposedR2dbcQueryMethod(it, repositoryMetadata, projectionFactory),
-                    queryMapper,
-                )
             }
             val continuation = args?.lastOrNull() as? Continuation<Any?>
             if (continuation != null) {
                 return@InvocationHandler suspend {
-                    query.executeSuspending(args)
+                    @Suppress("UNCHECKED_CAST")
+                    when (query) {
+                        is DeclaredExposedR2dbcQuery<*, *> ->
+                            (query as DeclaredExposedR2dbcQuery<Any, Any>).executeSuspending(args)
+                        is PartTreeExposedR2dbcQuery<*, *> ->
+                            (query as PartTreeExposedR2dbcQuery<Any, Any>).executeSuspending(args)
+                        else -> query.execute(args ?: emptyArray())
+                    }
                 }.startCoroutineUninterceptedOrReturn(continuation)
             }
 
