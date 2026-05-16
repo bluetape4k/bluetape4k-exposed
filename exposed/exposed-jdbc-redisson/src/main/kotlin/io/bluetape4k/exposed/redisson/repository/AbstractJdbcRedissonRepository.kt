@@ -236,8 +236,7 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
         if (config.deleteFromDBOnInvalidate) {
             ids.forEach { cache.fastRemove(it) }
         } else {
-            @Suppress("UNCHECKED_CAST")
-            cacheOnlyMap.fastRemove(*ids.toTypedArray<Any>() as Array<ID>)
+            ids.forEach { cacheOnlyMap.fastRemove(it) }
             clearNearCacheIfNeeded()
         }
     }
@@ -279,8 +278,7 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
             if (config.deleteFromDBOnInvalidate) {
                 keys.sumOf { cache.fastRemove(it) }
             } else {
-                @Suppress("UNCHECKED_CAST")
-                cacheOnlyMap.fastRemove(*keys.toTypedArray<Any>() as Array<ID>)
+                keys.sumOf { cacheOnlyMap.fastRemove(it) }
             }
         clearNearCacheIfNeeded()
         return removed

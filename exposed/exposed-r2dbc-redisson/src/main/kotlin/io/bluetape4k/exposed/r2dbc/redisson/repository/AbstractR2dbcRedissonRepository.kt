@@ -229,11 +229,9 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
     override suspend fun invalidateAll(ids: Collection<ID>) {
         if (ids.isEmpty()) return
         if (config.deleteFromDBOnInvalidate) {
-            @Suppress("UNCHECKED_CAST")
-            cache.fastRemoveAsync(*ids.toTypedArray<Any>() as Array<ID>).await()
+            ids.forEach { cache.fastRemoveAsync(it).await() }
         } else {
-            @Suppress("UNCHECKED_CAST")
-            cacheOnlyMap.fastRemoveAsync(*ids.toTypedArray<Any>() as Array<ID>).await()
+            ids.forEach { cacheOnlyMap.fastRemoveAsync(it).await() }
             clearNearCacheIfNeeded()
         }
     }
@@ -270,15 +268,12 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
             return 0
         }
 
-        val removed =
-            if (config.deleteFromDBOnInvalidate) {
-                var countRemoved = 0L
-                keys.forEach { key -> countRemoved += cache.fastRemoveAsync(key).await() }
-                countRemoved
-            } else {
-                @Suppress("UNCHECKED_CAST")
-                cacheOnlyMap.fastRemoveAsync(*keys.toTypedArray<Any>() as Array<ID>).await()
-            }
+        var removed = 0L
+        if (config.deleteFromDBOnInvalidate) {
+            keys.forEach { key -> removed += cache.fastRemoveAsync(key).await() }
+        } else {
+            keys.forEach { key -> removed += cacheOnlyMap.fastRemoveAsync(key).await() }
+        }
         clearNearCacheIfNeeded()
         return removed
     }
