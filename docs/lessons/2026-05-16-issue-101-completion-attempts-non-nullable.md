@@ -43,13 +43,28 @@ This is a column type change (`NULL`→`NOT NULL DEFAULT 0`). For `initialize-sc
 (test/local) users `SchemaUtils.create` handles the new DDL automatically. Production
 deployments using Flyway or Liquibase need a migration:
 
+**Important**: run the UPDATE before the ALTER or it will fail on any existing NULL rows.
+
 ```sql
+-- Step 1: backfill NULLs before removing the nullable constraint
+UPDATE EVENT_PUBLICATION
+   SET COMPLETION_ATTEMPTS = 0
+ WHERE COMPLETION_ATTEMPTS IS NULL;
+
+UPDATE EVENT_PUBLICATION_ARCHIVE
+   SET COMPLETION_ATTEMPTS = 0
+ WHERE COMPLETION_ATTEMPTS IS NULL;
+
+-- Step 2: remove nullable and set the default
 ALTER TABLE EVENT_PUBLICATION
   ALTER COLUMN COMPLETION_ATTEMPTS SET NOT NULL;
 ALTER TABLE EVENT_PUBLICATION
   ALTER COLUMN COMPLETION_ATTEMPTS SET DEFAULT 0;
 
--- Repeat for EVENT_PUBLICATION_ARCHIVE if used
+ALTER TABLE EVENT_PUBLICATION_ARCHIVE
+  ALTER COLUMN COMPLETION_ATTEMPTS SET NOT NULL;
+ALTER TABLE EVENT_PUBLICATION_ARCHIVE
+  ALTER COLUMN COMPLETION_ATTEMPTS SET DEFAULT 0;
 ```
 
 For H2 the ALTER syntax differs; use `SchemaUtils.createMissingTablesAndColumns()`
