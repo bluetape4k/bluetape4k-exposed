@@ -3,6 +3,7 @@ package io.bluetape4k.batch.jdbc
 import io.bluetape4k.batch.BatchDefaults
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.concurrent.virtualthread.VT
+import kotlin.reflect.KClass
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
 import io.bluetape4k.support.requirePositiveNumber
@@ -66,6 +67,7 @@ class ExposedJdbcBatchReader<K: Comparable<K>, T: Any>(
     private val keyExtractor: (T) -> K,
     private val minKey: K? = null,
     private val maxKey: K? = null,
+    private val keyClass: KClass<K>? = null,
 ): BatchReader<T> {
 
     companion object: KLoggingChannel()
@@ -107,7 +109,24 @@ class ExposedJdbcBatchReader<K: Comparable<K>, T: Any>(
 
     @Suppress("UNCHECKED_CAST")
     override suspend fun restoreFrom(checkpoint: Any) {
-        val key = checkpoint as K
+        // Use keyClass.isInstance for a real runtime check when the key type is known.
+        // Without keyClass, K is erased to Comparable at runtime so `as K` may not
+        // catch a wrong-type checkpoint (e.g. String for a Long key).
+        if (keyClass != null && !keyClass.isInstance(checkpoint)) {
+            throw IllegalArgumentException(
+                "restoreFrom: checkpoint type mismatch — expected ${keyClass.simpleName}, " +
+                    "got ${checkpoint::class.qualifiedName} for keyColumn '${keyColumn.name}'"
+            )
+        }
+        val key = try {
+            checkpoint as K
+        } catch (e: ClassCastException) {
+            throw IllegalArgumentException(
+                "restoreFrom: checkpoint type mismatch — expected type compatible with " +
+                    "keyColumn '${keyColumn.name}', got ${checkpoint::class.qualifiedName}",
+                e
+            )
+        }
         lastCommittedKey = key
         lastFetchedKey = key
         lastReadKey = key
