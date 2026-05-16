@@ -27,7 +27,7 @@ read paths, JSON/encrypted columns, database dialect extensions, and Spring Boot
 - **JSON Columns** — Jackson 2.x, Jackson 3.x, and Fastjson2 column serializers
 - **Encryption** — Google Tink-based encrypted columns
 - **Database-specific Extensions** — PostgreSQL, MySQL 8, BigQuery, ClickHouse, Trino, DuckDB, and Timefold persistence helpers
-- **Spring Boot** — Spring Boot 4.x auto-configuration (JDBC, R2DBC, and Batch integration)
+- **Spring Boot** — Spring Boot 4.x auto-configuration (JDBC, R2DBC, Batch, and Spring Modulith JDBC event publication integration)
 - **Metrics** — Micrometer integration via `exposed-measured`
 
 ## Architecture
@@ -109,6 +109,7 @@ flowchart TD
 | `bluetape4k-spring-boot-exposed-jdbc` | Spring Boot 4.x JDBC auto-configuration |
 | `bluetape4k-spring-boot-exposed-r2dbc` | Spring Boot 4.x R2DBC auto-configuration |
 | `bluetape4k-spring-boot-batch-exposed` | Spring Boot 4.x batch integration |
+| `bluetape4k-spring-boot-exposed-spring-modulith` | Spring Modulith JDBC event publication repository backed by Exposed |
 
 ## Quick Start
 
@@ -126,6 +127,8 @@ dependencies {
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.8.0-SNAPSHOT")
     // Spring Boot auto-configuration
     implementation("io.github.bluetape4k.exposed:bluetape4k-spring-boot-exposed-jdbc:1.8.0-SNAPSHOT")
+    // Spring Modulith JDBC event publication through Exposed
+    implementation("io.github.bluetape4k.exposed:bluetape4k-spring-boot-exposed-spring-modulith:1.8.0-SNAPSHOT")
 }
 ```
 
@@ -245,6 +248,26 @@ class MyApplication
 //   datasource:
 //     url: jdbc:postgresql://localhost:5432/mydb
 ```
+
+### Spring Modulith Event Publication
+
+`bluetape4k-spring-boot-exposed-spring-modulith` provides a JDBC-only
+Spring Modulith `EventPublicationRepository` backed by Exposed DSL and the
+same Exposed `DataSource`/`springTransactionManager`. The artifact is named
+`exposed-spring-modulith` to avoid looking like an official Spring Modulith
+store module.
+
+```yaml
+bluetape4k:
+  spring:
+    modulith:
+      exposed:
+        completion-mode: update
+        initialize-schema: false
+```
+
+Use Flyway or Liquibase for production schema creation. `initialize-schema`
+is intended for tests and small local applications.
 
 ## Requirements
 
