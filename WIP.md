@@ -52,17 +52,34 @@ Nightly CI is green. The next step is to tag `1.8.0` and run the publish pipelin
 
 Post-release work resumes with the CockroachDB epic and Spring Boot R2DBC raw SQL.
 
-## Post-release Priority Queue
+## 1.8.1 Bug Queue
 
-| Priority | Issue | Difficulty | Notes |
-|----------|-------|:----------:|-------|
-| P1 | [#30](https://github.com/bluetape4k/bluetape4k-exposed/issues/30) CockroachDB module scaffold and smoke test | M | Establishes module and Testcontainers baseline before dialect details. |
-| P1 | [#26](https://github.com/bluetape4k/bluetape4k-exposed/issues/26) Spring Boot R2DBC raw SQL support | M | Improves repository query ergonomics; independent of connector epics. |
-| P2 | [#31](https://github.com/bluetape4k/bluetape4k-exposed/issues/31) CockroachDB dialect/DDL differences | M | Depends on `#30`; verify PostgreSQL compatibility boundaries. |
-| P2 | [#32](https://github.com/bluetape4k/bluetape4k-exposed/issues/32) CockroachDB serializable retry guide and tests | M | Depends on `#30`/`#31`; document retry contracts clearly. |
-| P3 | [#4](https://github.com/bluetape4k/bluetape4k-exposed/issues/4) exposed-bucket4j | L | Useful distributed rate limiting; start after connector epics are scheduled. |
-| P3 | [#5](https://github.com/bluetape4k/bluetape4k-exposed/issues/5) Spring Modulith Exposed | L | Wait until Boot 4 event publication boundaries are stable. |
-| P3 | [#24](https://github.com/bluetape4k/bluetape4k-exposed/issues/24) CockroachDB epic | L | Planning container for `#30`/`#31`/`#32`; do not implement directly. |
+Bugs identified by post-release code review (2026-05-16). All assigned to milestone `1.8.1`.
+
+| Priority | Issue | Module | Description |
+|----------|-------|--------|-------------|
+| P0 | [#120](https://github.com/bluetape4k/bluetape4k-exposed/issues/120) | jdbc-caffeine / r2dbc-caffeine | `get()` / `getAll()` non-atomic cache-miss → stale-read overwrite under concurrency |
+| P1 | [#117](https://github.com/bluetape4k/bluetape4k-exposed/issues/117) | batch | `findOrCreateJobExecution`: `firstOrNull()!!` NPE after concurrent INSERT failure |
+| P1 | [#118](https://github.com/bluetape4k/bluetape4k-exposed/issues/118) | jdbc-caffeine / r2dbc-caffeine | `close()` uses `runCatching{}` → swallows `CancellationException` |
+| P2 | [#119](https://github.com/bluetape4k/bluetape4k-exposed/issues/119) | batch | `ExposedJdbcBatchReader` / `ExposedR2dbcBatchReader`: `close()` does not reset key-cursor state |
+
+## 1.9.0 Feature Queue
+
+Features identified by post-release review (2026-05-16). All assigned to milestone `1.9.0`.
+
+| Priority | Issue | Module | Description |
+|----------|-------|--------|-------------|
+| P1 | [#121](https://github.com/bluetape4k/bluetape4k-exposed/issues/121) | exposed-jdbc / exposed-r2dbc | Add `saveAll(entities)` to `JdbcRepository` and `R2dbcRepository` interfaces |
+| P1 | [#30](https://github.com/bluetape4k/bluetape4k-exposed/issues/30) | exposed-cockroachdb | CockroachDB module scaffold and Testcontainers smoke test |
+| P2 | [#122](https://github.com/bluetape4k/bluetape4k-exposed/issues/122) | spring-boot/batch-exposed | Spring Batch executor auto-configuration properties |
+| P2 | [#126](https://github.com/bluetape4k/bluetape4k-exposed/issues/126) | jdbc-redisson / r2dbc-redisson | Add `upsertAll(Map<ID, E>)` batch API to Redisson-backed repositories |
+| P2 | [#123](https://github.com/bluetape4k/bluetape4k-exposed/issues/123) | jdbc-caffeine / r2dbc-caffeine | Add `validateConsistency()` cache health check |
+| P2 | [#124](https://github.com/bluetape4k/bluetape4k-exposed/issues/124) | batch | Integration tests for concurrent `findOrCreateJobExecution` race condition |
+| P2 | [#31](https://github.com/bluetape4k/bluetape4k-exposed/issues/31) | exposed-cockroachdb | CockroachDB dialect/DDL differences (depends on `#30`) |
+| P2 | [#32](https://github.com/bluetape4k/bluetape4k-exposed/issues/32) | exposed-cockroachdb | CockroachDB serializable retry guide and tests (depends on `#30`/`#31`) |
+| P3 | [#4](https://github.com/bluetape4k/bluetape4k-exposed/issues/4) | new module | exposed-bucket4j distributed rate limiting |
+| P3 | [#5](https://github.com/bluetape4k/bluetape4k-exposed/issues/5) | new module | Spring Modulith Exposed (hold until Boot 4 event boundaries stable) |
+| P3 | [#24](https://github.com/bluetape4k/bluetape4k-exposed/issues/24) | epic | CockroachDB epic — planning container; do not implement directly |
 
 ## Dependency Map
 
@@ -71,14 +88,22 @@ Post-release work resumes with the CockroachDB epic and Spring Boot R2DBC raw SQ
   -> Tag 1.8.0
   -> ./gradlew publishAggregationToCentralPortal
 
-#24 CockroachDB epic (post-release)
-  -> #30 module scaffold + smoke test
-      -> #31 dialect/DDL differences
-      -> #32 serializable retry guide + regression tests
+1.8.1 patch
+  -> #120 Caffeine cache stale-read race (P0)
+  -> #117 batch NPE on concurrent INSERT
+  -> #118 CancellationException swallowed in close()
+  -> #119 BatchReader close() state not reset
 
-#26 Spring Boot R2DBC raw SQL (post-release, independent)
-
-#4/#5 lower-priority integrations (hold until connector queue is stable)
+1.9.0 minor
+  -> #121 saveAll() interface API
+  -> #30 CockroachDB scaffold
+      -> #31 dialect/DDL
+      -> #32 serializable retry
+  -> #122 Batch executor properties
+  -> #126 Redisson upsertAll
+  -> #123 Caffeine validateConsistency
+  -> #124 batch concurrent test coverage
+  -> #4/#5 (hold)
 ```
 
 ## WIP Limits
@@ -86,7 +111,7 @@ Post-release work resumes with the CockroachDB epic and Spring Boot R2DBC raw SQ
 | Lane | Limit | Current next |
 |------|------:|--------------|
 | Release gate | 1 | Tag 1.8.0 and publish to Maven Central. |
+| 1.8.1 patch | 1 | Fix #120 (Caffeine stale-read, P0) first. |
 | Database connector | 1 | Resume after 1.8.0 ships; start with `#30`. |
-| Spring Boot repository | 1 | `#26` can proceed independently after release. |
 | Lower-priority integrations | 0 | Hold `#4`/`#5` until connector queue is stable. |
 | Build/CI maintenance | 1 | Handle only concrete failures from Nightly/CI. |
