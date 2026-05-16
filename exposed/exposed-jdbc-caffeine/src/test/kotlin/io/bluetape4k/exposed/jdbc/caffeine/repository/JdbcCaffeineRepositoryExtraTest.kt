@@ -16,6 +16,7 @@ import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.core.autoIncColumnType
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -233,6 +234,50 @@ class JdbcCaffeineRepositoryExtraTest {
             // DB에 모두 반영됐는지 독립 트랜잭션으로 확인 (격리 수준 문제 우회)
             val newCount = transaction { CredentialTable.selectAll().count() }
             newCount shouldBeEqualTo prevCount + newEntities.size
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Write-Behind queue overflow → IllegalStateException (not silent data loss)
+    // -------------------------------------------------------------------------
+
+    @Nested
+    inner class WriteBehindOverflowTest: AbstractJdbcCaffeineTest() {
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `put - Write-Behind queue overflow throws IllegalStateException`(testDB: TestDB) {
+            // Use a capacity large enough that we can fill it synchronously before the worker drains it.
+            // The worker needs a full DB batch transaction to drain, which takes far longer than
+            // filling the queue in a CPU-bound loop.
+            val capacity = 500
+            val config = LocalCacheConfig(
+                keyPrefix = "jdbc:caffeine:extra:wb-overflow",
+                writeMode = CacheWriteMode.WRITE_BEHIND,
+                writeBehindBatchSize = capacity,
+                writeBehindQueueCapacity = capacity,
+            )
+            val repository = CredentialJdbcCaffeineRepository(config)
+            // Pre-generate entities in memory — no DB insert needed
+            val entities = List(capacity * 2) { ActorSchema.newCredentialRecord() }
+
+            withCredentialTable(testDB) {
+                var overflowSeen = false
+                try {
+                    for (entity in entities) {
+                        try {
+                            repository.put(entity.id, entity)
+                        } catch (e: IllegalStateException) {
+                            overflowSeen = true
+                            break
+                        }
+                    }
+                } finally {
+                    repository.close()
+                }
+                // At least one put must have thrown — data must NOT be silently dropped
+                overflowSeen.shouldBeTrue()
+            }
         }
     }
 }
