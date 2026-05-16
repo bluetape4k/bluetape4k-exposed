@@ -3,6 +3,7 @@
 package io.bluetape4k.spring.modulith.exposed
 
 import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
@@ -272,24 +273,23 @@ class ExposedEventPublicationRepository(
     }
 
     private fun insertArchive(row: ResultRow, completionDate: Instant) {
-        val archiveId = row[table.id]
-        val exists = archiveTable.selectAll()
-            .where { archiveTable.id eq archiveId }
-            .empty()
-            .not()
-
-        if (exists) return
-
-        archiveTable.insert { archive ->
-            archive[archiveTable.id] = row[table.id]
-            archive[archiveTable.listenerId] = row[table.listenerId]
-            archive[archiveTable.eventType] = row[table.eventType]
-            archive[archiveTable.serializedEvent] = row[table.serializedEvent]
-            archive[archiveTable.publicationDate] = row[table.publicationDate]
-            archive[archiveTable.status] = Status.COMPLETED.name
-            archive[archiveTable.completionDate] = completionDate
-            archive[archiveTable.completionAttempts] = row[table.completionAttempts]
-            archive[archiveTable.lastResubmissionDate] = row[table.lastResubmissionDate]
+        try {
+            archiveTable.insert { archive ->
+                archive[archiveTable.id] = row[table.id]
+                archive[archiveTable.listenerId] = row[table.listenerId]
+                archive[archiveTable.eventType] = row[table.eventType]
+                archive[archiveTable.serializedEvent] = row[table.serializedEvent]
+                archive[archiveTable.publicationDate] = row[table.publicationDate]
+                archive[archiveTable.status] = Status.COMPLETED.name
+                archive[archiveTable.completionDate] = completionDate
+                archive[archiveTable.completionAttempts] = row[table.completionAttempts]
+                archive[archiveTable.lastResubmissionDate] = row[table.lastResubmissionDate]
+            }
+        } catch (e: ExposedSQLException) {
+            // SQL state 23xxx = integrity constraint violation (unique key already exists)
+            // Treat as idempotent: the row was already archived by a concurrent caller.
+            if (e.sqlState?.startsWith("23") == true) return
+            throw e
         }
     }
 
