@@ -229,7 +229,12 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
     override suspend fun invalidateAll(ids: Collection<ID>) {
         if (ids.isEmpty()) return
         if (config.deleteFromDBOnInvalidate) {
-            ids.forEach { cache.fastRemoveAsync(it).await() }
+            // Delete from DB in a single transaction, then remove from Redis cache.
+            // Using individual fastRemoveAsync calls triggers the writer per-element,
+            // causing N separate transactions; a mid-sequence failure leaves partial
+            // DB deletes already committed.
+            r2dbcEntityMapWriter?.delete(ids)?.await()
+            ids.forEach { cacheOnlyMap.fastRemoveAsync(it).await() }
         } else {
             ids.forEach { cacheOnlyMap.fastRemoveAsync(it).await() }
             clearNearCacheIfNeeded()
@@ -270,7 +275,10 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
 
         var removed = 0L
         if (config.deleteFromDBOnInvalidate) {
-            keys.forEach { key -> removed += cache.fastRemoveAsync(key).await() }
+            // Delete from DB in a single transaction to preserve batch atomicity,
+            // then remove from Redis cache without triggering the writer again.
+            r2dbcEntityMapWriter?.delete(keys)?.await()
+            keys.forEach { key -> removed += cacheOnlyMap.fastRemoveAsync(key).await() }
         } else {
             keys.forEach { key -> removed += cacheOnlyMap.fastRemoveAsync(key).await() }
         }
