@@ -17,8 +17,10 @@ import io.bluetape4k.support.requireNotNull
 import io.bluetape4k.support.requirePositiveNumber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.future.asDeferred
 import kotlinx.coroutines.future.await
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
@@ -229,11 +231,14 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
     override suspend fun invalidateAll(ids: Collection<ID>) {
         if (ids.isEmpty()) return
         if (config.deleteFromDBOnInvalidate) {
-            @Suppress("UNCHECKED_CAST")
-            cache.fastRemoveAsync(*ids.toTypedArray<Any>() as Array<ID>).await()
+            // Delete from DB in a single transaction, then remove from Redis cache
+            // in parallel. Using individual fastRemoveAsync calls with a writer
+            // triggers N separate DB transactions; a mid-sequence failure leaves
+            // partial DB deletes already committed.
+            r2dbcEntityMapWriter?.delete(ids)?.await()
+            ids.map { cacheOnlyMap.fastRemoveAsync(it).asDeferred() }.awaitAll()
         } else {
-            @Suppress("UNCHECKED_CAST")
-            cacheOnlyMap.fastRemoveAsync(*ids.toTypedArray<Any>() as Array<ID>).await()
+            ids.map { cacheOnlyMap.fastRemoveAsync(it).asDeferred() }.awaitAll()
             clearNearCacheIfNeeded()
         }
     }
@@ -270,15 +275,15 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
             return 0
         }
 
-        val removed =
-            if (config.deleteFromDBOnInvalidate) {
-                var countRemoved = 0L
-                keys.forEach { key -> countRemoved += cache.fastRemoveAsync(key).await() }
-                countRemoved
-            } else {
-                @Suppress("UNCHECKED_CAST")
-                cacheOnlyMap.fastRemoveAsync(*keys.toTypedArray<Any>() as Array<ID>).await()
-            }
+        val removed: Long
+        if (config.deleteFromDBOnInvalidate) {
+            // Delete from DB in a single transaction to preserve batch atomicity,
+            // then remove from Redis cache in parallel without triggering the writer again.
+            r2dbcEntityMapWriter?.delete(keys)?.await()
+            removed = keys.map { cacheOnlyMap.fastRemoveAsync(it).asDeferred() }.awaitAll().sum()
+        } else {
+            removed = keys.map { cacheOnlyMap.fastRemoveAsync(it).asDeferred() }.awaitAll().sum()
+        }
         clearNearCacheIfNeeded()
         return removed
     }
