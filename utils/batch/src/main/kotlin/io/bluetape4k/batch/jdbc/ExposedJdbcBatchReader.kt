@@ -107,7 +107,15 @@ class ExposedJdbcBatchReader<K: Comparable<K>, T: Any>(
 
     @Suppress("UNCHECKED_CAST")
     override suspend fun restoreFrom(checkpoint: Any) {
-        val key = checkpoint as K
+        val key = try {
+            checkpoint as K
+        } catch (e: ClassCastException) {
+            throw IllegalArgumentException(
+                "restoreFrom: checkpoint type mismatch — expected type compatible with " +
+                    "keyColumn '${keyColumn.name}', got ${checkpoint::class.qualifiedName}",
+                e
+            )
+        }
         lastCommittedKey = key
         lastFetchedKey = key
         lastReadKey = key
