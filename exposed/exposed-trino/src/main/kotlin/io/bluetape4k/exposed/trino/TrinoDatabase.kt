@@ -9,12 +9,12 @@ import java.sql.DriverManager
 import java.util.*
 
 /**
- * Trino 데이터베이스 연결 팩토리.
+ * Factory object for connecting to a Trino database via Exposed ORM.
  *
- * Trino JDBC 드라이버를 통해 Exposed ORM과 연동할 수 있도록
- * 드라이버/다이얼렉트 등록 및 연결 생성을 담당합니다.
+ * Registers the Trino JDBC driver and dialect on first access, then provides
+ * `connect` overloads for host/port, JDBC URL, and `javax.sql.DataSource`.
  *
- * ## 기본 사용 예
+ * ## Basic usage
  *
  * ```kotlin
  * val db = TrinoDatabase.connect(
@@ -29,7 +29,7 @@ import java.util.*
  * }
  * ```
  *
- * ## 코루틴 사용 예
+ * ## Coroutine usage
  *
  * ```kotlin
  * val db = TrinoDatabase.connect("jdbc:trino://host:8080/hive/default", user = "analyst")
@@ -43,21 +43,24 @@ import java.util.*
  * }.collect { row -> ... }
  * ```
  *
- * ## autocommit 주의사항
+ * ## autocommit behaviour
  *
- * - Trino는 트랜잭션을 지원하지 않습니다. 모든 문(statement)은 autocommit 모드로 실행됩니다.
- * - `transaction {}` 블록 내 다중 DML 실행 시, 중간 실패가 발생하면 앞선 DML은 롤백되지 않습니다.
- * - `rollback()`은 no-op입니다 — Exposed 프레임워크 호환을 위한 어댑터입니다.
- * - Nested transaction / Savepoint는 미지원됩니다 — 호출은 허용되나 원자성이 보장되지 않습니다.
- * - DDL 생성 시에는 일반 [org.jetbrains.exposed.v1.core.Table] 대신 [TrinoTable] 사용을 권장합니다.
+ * - Trino does not support transactions. Every statement runs in autocommit mode.
+ * - Multiple DML statements inside a `transaction {}` block are NOT atomic; a
+ *   mid-block failure leaves preceding statements already committed.
+ * - `rollback()` is a no-op adapter provided for Exposed framework compatibility.
+ * - Nested transactions and savepoints are accepted but provide no atomicity guarantees.
+ * - Prefer [TrinoTable] over [org.jetbrains.exposed.v1.core.Table] for DDL so that
+ *   `PRIMARY KEY` clauses are stripped before Trino sees them.
  */
-object TrinoDatabase: KLogging() {
+object TrinoDatabase : KLogging() {
 
     /**
-     * Trino JDBC 드라이버 클래스명.
+     * Trino JDBC driver class name.
      *
-     * `const val` 대신 `val`을 사용하여 이 프로퍼티 접근 시 객체 초기화(init{})를 보장합니다.
-     * `const val`은 컴파일 타임에 인라인되므로 객체 초기화를 트리거하지 않을 수 있습니다.
+     * Declared as `val` (not `const val`) so that accessing this property triggers
+     * the `init` block and registers the driver. A `const val` is inlined at compile
+     * time and may not trigger object initialisation.
      */
     val DRIVER = "io.trino.jdbc.TrinoDriver"
 
@@ -69,20 +72,20 @@ object TrinoDatabase: KLogging() {
     }
 
     /**
-     * Trino 데이터베이스에 연결합니다.
+     * Connects to a Trino database using individual host/port/catalog/schema parameters.
      *
-     * JDBC URL을 `jdbc:trino://{host}:{port}/{catalog}/{schema}` 형식으로 조합합니다.
+     * Builds a JDBC URL of the form `jdbc:trino://{host}:{port}/{catalog}/{schema}`.
      *
-     * **주의**: Trino는 트랜잭션을 지원하지 않습니다. autocommit 모드로 실행되며,
-     * 블록 중간 실패 시 앞선 DML은 롤백되지 않습니다.
-     * DDL을 생성할 때는 PRIMARY KEY 구문을 제거하는 [TrinoTable] 사용을 권장합니다.
+     * **Warning**: Trino does not support transactions. All statements run in autocommit
+     * mode; a failure mid-block leaves preceding DML already committed.
+     * Use [TrinoTable] for DDL to strip unsupported `PRIMARY KEY` syntax.
      *
-     * @param host Trino 코디네이터 호스트 (기본값: `localhost`)
-     * @param port Trino 코디네이터 포트 (기본값: `8080`)
-     * @param catalog Trino 카탈로그 이름 (기본값: `memory`)
-     * @param schema Trino 스키마 이름 (기본값: `default`)
-     * @param user 접속 사용자 (기본값: `trino`)
-     * @return Exposed [Database] 인스턴스
+     * @param host Trino coordinator host (default: `localhost`)
+     * @param port Trino coordinator port (default: `8080`)
+     * @param catalog Trino catalog name (default: `memory`)
+     * @param schema Trino schema name (default: `default`)
+     * @param user Connection user (default: `trino`)
+     * @return Exposed [Database] instance
      */
     fun connect(
         host: String = "localhost",
@@ -91,22 +94,20 @@ object TrinoDatabase: KLogging() {
         schema: String = "default",
         user: String = "trino",
     ): Database {
-        // 빈 값으로 JDBC URL을 구성하면 "jdbc:trino://:8080//"처럼 무효한 URL이 만들어져
-        // DriverManager.getConnection() 호출 시점에 불명확한 예외가 발생합니다.
-        // 조기에 명확한 메시지로 실패하여 디버깅 비용을 줄입니다.
-        requireNotNull(host.ifBlank { null }) { "host는 공백일 수 없습니다." }
-        // 유효하지 않은 포트 번호는 TCP 연결 시도 단계에서야 실패하므로, 미리 차단합니다.
-        require(port in 1..65535) { "port는 1~65535 범위여야 합니다: $port" }
-        // Trino에서 catalog/schema는 JDBC URL의 필수 경로 세그먼트입니다.
-        // 누락 시 Trino 코디네이터가 세션 컨텍스트를 찾지 못해 쿼리 실행에 실패합니다.
-        requireNotNull(catalog.ifBlank { null }) { "catalog는 공백일 수 없습니다." }
-        requireNotNull(schema.ifBlank { null }) { "schema는 공백일 수 없습니다." }
+        // A blank host produces "jdbc:trino://:8080//" — an invalid URL that causes
+        // an obscure DriverManager exception. Fail early with a clear message.
+        requireNotNull(host.ifBlank { null }) { "host must not be blank." }
+        // An invalid port only fails at TCP connect time; reject it early.
+        require(port in 1..65535) { "port must be in range 1..65535: $port" }
+        // Trino requires catalog and schema as path segments in the JDBC URL.
+        requireNotNull(catalog.ifBlank { null }) { "catalog must not be blank." }
+        requireNotNull(schema.ifBlank { null }) { "schema must not be blank." }
 
         val url = "jdbc:trino://$host:$port/$catalog/$schema"
         return Database.connect(
             getNewConnection = {
                 val props = Properties().apply { setProperty("user", user) }
-                // 연결 획득 후 래퍼 생성 실패 시 원본 연결을 닫아 leak을 방지합니다.
+                // Close the raw connection on wrapper construction failure to prevent leaks.
                 val raw = DriverManager.getConnection(url, props)
                 runCatching { TrinoConnectionWrapper(raw) }
                     .getOrElse { e -> raw.runCatching { close() }; throw e }
@@ -115,30 +116,30 @@ object TrinoDatabase: KLogging() {
     }
 
     /**
-     * JDBC URL을 직접 지정하여 Trino 데이터베이스에 연결합니다.
+     * Connects to a Trino database using a fully-qualified JDBC URL.
      *
-     * **주의**: Trino는 트랜잭션을 지원하지 않습니다. autocommit 모드로 실행되며,
-     * 블록 중간 실패 시 앞선 DML은 롤백되지 않습니다.
-     * DDL을 생성할 때는 PRIMARY KEY 구문을 제거하는 [TrinoTable] 사용을 권장합니다.
+     * **Warning**: Trino does not support transactions. All statements run in autocommit
+     * mode; a failure mid-block leaves preceding DML already committed.
+     * Use [TrinoTable] for DDL to strip unsupported `PRIMARY KEY` syntax.
      *
-     * @param jdbcUrl Trino JDBC URL (예: `jdbc:trino://host:8080/hive/default`)
-     * @param user 접속 사용자 (기본값: `trino`)
-     * @return Exposed [Database] 인스턴스
+     * @param jdbcUrl Trino JDBC URL (e.g. `jdbc:trino://host:8080/hive/default`)
+     * @param user Connection user (default: `trino`)
+     * @return Exposed [Database] instance
      */
     fun connect(
         jdbcUrl: String,
         user: String = "trino",
     ): Database {
-        // 빈 URL은 DriverManager.getConnection()에서 No suitable driver 예외를 발생시킵니다.
-        requireNotNull(jdbcUrl.ifBlank { null }) { "jdbcUrl은 공백일 수 없습니다." }
-        // Trino 드라이버는 "jdbc:trino://" 접두사가 있는 URL만 처리합니다.
-        // 다른 DB URL이 실수로 전달될 경우 "No suitable driver" 오류가 발생해 원인 파악이 어렵습니다.
-        require(jdbcUrl.startsWith("jdbc:trino://")) { "jdbcUrl은 'jdbc:trino://'로 시작해야 합니다: $jdbcUrl" }
+        // A blank URL causes a "No suitable driver" exception from DriverManager.
+        requireNotNull(jdbcUrl.ifBlank { null }) { "jdbcUrl must not be blank." }
+        // The Trino driver only handles URLs prefixed with "jdbc:trino://".
+        // Passing a different DB URL silently fails with an unhelpful "No suitable driver" error.
+        require(jdbcUrl.startsWith("jdbc:trino://")) { "jdbcUrl must start with 'jdbc:trino://': $jdbcUrl" }
 
         return Database.connect(
             getNewConnection = {
                 val props = Properties().apply { setProperty("user", user) }
-                // 연결 획득 후 래퍼 생성 실패 시 원본 연결을 닫아 leak을 방지합니다.
+                // Close the raw connection on wrapper construction failure to prevent leaks.
                 val raw = DriverManager.getConnection(jdbcUrl, props)
                 runCatching { TrinoConnectionWrapper(raw) }
                     .getOrElse { e -> raw.runCatching { close() }; throw e }
@@ -147,17 +148,18 @@ object TrinoDatabase: KLogging() {
     }
 
     /**
-     * [javax.sql.DataSource]를 통해 Trino 데이터베이스에 연결합니다.
+     * Connects to a Trino database via a `javax.sql.DataSource` (e.g. HikariCP).
      *
-     * HikariCP 등 커넥션 풀을 운영 환경에서 사용할 때 이 오버로드를 씁니다.
-     * `dataSource.getConnection()`으로 커넥션을 획득한 후 [TrinoConnectionWrapper]로 감싸
-     * autocommit=true를 강제합니다. 래퍼 생성 실패 시 원본 커넥션을 닫아 leak을 방지합니다.
+     * Use this overload in production when the application manages a connection pool.
+     * A connection is obtained from the pool via `dataSource.getConnection()`, then
+     * wrapped in [TrinoConnectionWrapper] to enforce `autoCommit = true`.
+     * If wrapper construction fails, the raw connection is closed to prevent leaks.
      *
-     * **주의**: Trino는 트랜잭션을 지원하지 않습니다. autocommit 모드로 실행되며,
-     * 블록 중간 실패 시 앞선 DML은 롤백되지 않습니다.
+     * **Warning**: Trino does not support transactions. All statements run in autocommit
+     * mode; a failure mid-block leaves preceding DML already committed.
      *
-     * @param dataSource 커넥션을 공급할 [javax.sql.DataSource] (예: HikariCP)
-     * @return Exposed [Database] 인스턴스
+     * @param dataSource Connection pool supplying JDBC connections (e.g. HikariCP)
+     * @return Exposed [Database] instance
      */
     fun connect(dataSource: javax.sql.DataSource): Database {
         return Database.connect(
