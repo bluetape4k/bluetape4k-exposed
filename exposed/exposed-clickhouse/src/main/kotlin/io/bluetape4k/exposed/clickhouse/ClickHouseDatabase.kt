@@ -104,8 +104,8 @@ object ClickHouseDatabase: KLogging() {
                 val raw = DriverManager.getConnection(url, props)
                 runCatching { ClickHouseConnectionWrapper(raw) }
                     .getOrElse { e ->
-                        raw.runCatching { close() }.onFailure { closeEx ->
-                            log.warn("Connection close failed after wrapper creation error: ${closeEx.message}")
+                        runCatching { raw.close() }.onFailure { closeEx ->
+                            e.addSuppressed(closeEx)
                         }
                         throw e
                     }
@@ -146,8 +146,8 @@ object ClickHouseDatabase: KLogging() {
                 val raw = DriverManager.getConnection(jdbcUrl, props)
                 runCatching { ClickHouseConnectionWrapper(raw) }
                     .getOrElse { e ->
-                        raw.runCatching { close() }.onFailure { closeEx ->
-                            log.warn("Connection close failed after wrapper creation error: ${closeEx.message}")
+                        runCatching { raw.close() }.onFailure { closeEx ->
+                            e.addSuppressed(closeEx)
                         }
                         throw e
                     }
