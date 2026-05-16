@@ -87,6 +87,8 @@ class PartTreeExposedQuery<E: Entity<ID>, ID: Any>(
     }
 
     private fun executePageQuery(op: Op<Boolean>, pageable: Pageable, sort: Sort): Page<E> {
+        // Use entityClass.find for both count and content so that any custom filters
+        // defined on the EntityClass (e.g. soft-delete) are applied consistently.
         val total = entityClass.find { op }.count()
         val query = entityClass.find { op }
         if (sort.isSorted) {
