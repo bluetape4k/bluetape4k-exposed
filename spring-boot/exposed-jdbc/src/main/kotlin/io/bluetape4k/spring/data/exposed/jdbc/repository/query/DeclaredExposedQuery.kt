@@ -101,11 +101,23 @@ class DeclaredExposedQuery<E: Entity<ID>, ID: Any>(
             return rawId as ID
         }
         return when (idType) {
-            Long::class.java  -> if (rawId is Number) rawId.toLong() as ID else rawId as ID
-            Int::class.java   -> if (rawId is Number) rawId.toInt() as ID else rawId as ID
-            Short::class.java -> if (rawId is Number) rawId.toShort() as ID else rawId as ID
+            Long::class.java   -> if (rawId is Number) rawId.toLong() as ID
+                else throw IllegalStateException(
+                    "Cannot coerce id value '$rawId' (${rawId::class.java.simpleName}) to Long"
+                )
+            Int::class.java    -> if (rawId is Number) rawId.toInt() as ID
+                else throw IllegalStateException(
+                    "Cannot coerce id value '$rawId' (${rawId::class.java.simpleName}) to Int"
+                )
+            Short::class.java  -> if (rawId is Number) rawId.toShort() as ID
+                else throw IllegalStateException(
+                    "Cannot coerce id value '$rawId' (${rawId::class.java.simpleName}) to Short"
+                )
             String::class.java -> rawId.toString() as ID
-            else              -> rawId as ID
+            else               -> throw IllegalStateException(
+                "Cannot coerce id value '$rawId' (${rawId::class.java.simpleName}) to entity id type " +
+                    "${idType.simpleName}. Add a coercion rule in DeclaredExposedQuery.coerceIdValue()."
+            )
         }
     }
 }
