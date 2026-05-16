@@ -87,15 +87,23 @@ class BigQueryResultRow(private val data: Map<String, Any?>) {
         if (raw == null || raw.javaClass == Any::class.java) return null
         val s = raw.toString()
         if (s.equals("null", ignoreCase = true)) return null
-        return when (column.columnType) {
-            is DecimalColumnType ->
-                BigDecimal(s)
-            is JavaInstantColumnType ->
-                // BigQuery REST API: TIMESTAMP = 초 단위 float 문자열 (예: "1.704067200E9")
-                Instant.ofEpochMilli((s.toDouble() * 1000).toLong())
-            else                 ->
-                column.columnType.valueFromDB(s)
-        } as T?
+        return try {
+            when (column.columnType) {
+                is DecimalColumnType ->
+                    BigDecimal(s)
+                is JavaInstantColumnType ->
+                    // BigQuery REST API: TIMESTAMP = 초 단위 float 문자열 (예: "1.704067200E9")
+                    Instant.ofEpochMilli((s.toDouble() * 1000).toLong())
+                else                 ->
+                    column.columnType.valueFromDB(s)
+            } as T?
+        } catch (e: Exception) {
+            throw IllegalArgumentException(
+                "Failed to convert BigQuery value '$s' for column '${column.name}' " +
+                    "(type: ${column.columnType::class.simpleName})",
+                e
+            )
+        }
     }
 
     override fun toString(): String = normalizedData.toString()
