@@ -21,22 +21,22 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 /**
- * Exposed JDBC keyset 페이지네이션 기반 [BatchReader] 구현.
+ * [BatchReader] implementation using Exposed JDBC with keyset pagination.
  *
- * ## Keyset 페이지네이션
- * `WHERE keyColumn > lastFetchedKey ORDER BY keyColumn ASC LIMIT pageSize` 쿼리로
- * 오프셋 방식보다 대용량 데이터에 효율적이다.
+ * ## Keyset pagination
+ * Each page uses `WHERE keyColumn > lastFetchedKey ORDER BY keyColumn ASC LIMIT pageSize`,
+ * which is more efficient than offset-based pagination for large data sets.
  *
- * ## 체크포인트
- * - [checkpoint]: `lastCommittedKey` 반환 (마지막 커밋 성공 키)
- * - [onChunkCommitted]: `lastCommittedKey = lastReadKey` 전진
- * - [restoreFrom]: 저장된 키에서 재개 — [open] 이후, 첫 [read] 전에 호출됨
+ * ## Checkpoint semantics
+ * - [checkpoint]: returns `lastCommittedKey` (the key of the last successfully committed chunk)
+ * - [onChunkCommitted]: advances `lastCommittedKey` to `lastReadKey`
+ * - [restoreFrom]: resumes from the stored key — call after [open] and before the first [read]
  *
- * ## 동시성
- * 내부 상태(`buffer`, `lastFetchedKey`, `lastReadKey`, `lastCommittedKey`, `exhausted`)는
- * 단일 스레드(runner)에서 접근하는 것을 전제로 한다.
+ * ## Concurrency
+ * Internal state (`buffer`, `lastFetchedKey`, `lastReadKey`, `lastCommittedKey`, `exhausted`)
+ * is designed for single-threaded (runner) access only.
  *
- * ## 사용 예
+ * ## Usage
  * ```kotlin
  * val reader = ExposedJdbcBatchReader<Long, OrderRecord>(
  *     database = db,
@@ -47,16 +47,16 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
  * )
  * ```
  *
- * @param K 키 타입 (Comparable)
- * @param T 아이템 타입
+ * @param K Key type (must be Comparable)
+ * @param T Item type
  * @param database Exposed JDBC [Database]
- * @param table 대상 [Table]
- * @param keyColumn keyset 기준 컬럼 (`K` 타입)
- * @param pageSize 한 번에 읽어올 페이지 크기 (>0)
- * @param rowMapper [ResultRow] → [T] 변환 함수
- * @param keyExtractor [T] → [K] 추출 함수 (페이지 전진 및 커밋 포인터 갱신에 사용)
- * @param minKey 파티션 시작 키 (exclusive) — null이면 처음부터 읽음. 병렬 처리 시 파티션 하한 설정에 사용.
- * @param maxKey 파티션 종료 키 (inclusive) — null이면 끝까지 읽음. 병렬 처리 시 파티션 상한 설정에 사용.
+ * @param table Target [Table]
+ * @param keyColumn Keyset column of type [K]
+ * @param pageSize Number of rows to fetch per page (must be > 0)
+ * @param rowMapper Converts a [ResultRow] to [T]
+ * @param keyExtractor Extracts [K] from [T] — used to advance page and commit pointers
+ * @param minKey Partition start key (exclusive) — null means read from the beginning; use for parallel partitioning
+ * @param maxKey Partition end key (inclusive) — null means read to the end; use for parallel partitioning
  */
 class ExposedJdbcBatchReader<K: Comparable<K>, T: Any>(
     private val database: Database,
