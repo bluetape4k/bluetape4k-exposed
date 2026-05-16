@@ -18,18 +18,18 @@ import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 
 /**
- * Exposed R2DBC keyset 페이지네이션 기반 [BatchReader] 구현.
+ * [BatchReader] implementation using Exposed R2DBC with keyset pagination.
  *
- * JDBC 구현([io.bluetape4k.batch.jdbc.ExposedJdbcBatchReader])과 동일한
- * keyset 페이지네이션 패턴을 사용하지만, `suspendTransaction`으로 네이티브 suspend를 활용한다.
+ * Follows the same keyset pagination pattern as [io.bluetape4k.batch.jdbc.ExposedJdbcBatchReader]
+ * but uses `suspendTransaction` for native coroutine support.
  *
- * ## Keyset 페이지네이션 원리
- * - 매 페이지마다 `WHERE keyColumn > lastFetchedKey ORDER BY keyColumn ASC LIMIT pageSize` 쿼리를 실행한다.
- * - OFFSET 방식 대비 대용량에서 성능이 안정적이다.
+ * ## Keyset pagination
+ * Each page uses `WHERE keyColumn > lastFetchedKey ORDER BY keyColumn ASC LIMIT pageSize`,
+ * which is more stable under large data sets than offset-based approaches.
  *
- * ## 체크포인트 시맨틱
- * - [onChunkCommitted] 호출 시 `lastCommittedKey`를 `lastReadKey`로 전진시킨다.
- * - [restoreFrom] 호출 시 해당 키 이후부터 다시 읽기 시작한다.
+ * ## Checkpoint semantics
+ * - Calling [onChunkCommitted] advances `lastCommittedKey` to `lastReadKey`.
+ * - Calling [restoreFrom] resumes reading from that key onward.
  *
  * ```kotlin
  * val reader = ExposedR2dbcBatchReader(
@@ -42,16 +42,16 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
  * )
  * ```
  *
- * @param K keyset 키 타입 (Comparable — 일반적으로 Long/Int/UUID)
- * @param T 읽어들이는 아이템 타입
- * @param database Exposed R2DBC Database
- * @param table 읽어올 Exposed 테이블
- * @param keyColumn keyset 정렬 기준 컬럼 (PK 권장)
- * @param pageSize 페이지당 조회 크기 (양수)
- * @param rowMapper ResultRow → T 변환 함수
- * @param keyExtractor T → K 키 추출 함수
- * @param minKey 파티션 시작 키 (exclusive) — null이면 처음부터 읽음. 병렬 처리 시 파티션 하한 설정에 사용.
- * @param maxKey 파티션 종료 키 (inclusive) — null이면 끝까지 읽음. 병렬 처리 시 파티션 상한 설정에 사용.
+ * @param K Keyset key type (Comparable — typically Long, Int, or UUID)
+ * @param T Item type being read
+ * @param database Exposed R2DBC database
+ * @param table Target Exposed table
+ * @param keyColumn Keyset sort column (PK recommended)
+ * @param pageSize Number of rows per page (must be positive)
+ * @param rowMapper Converts [ResultRow] to [T]
+ * @param keyExtractor Extracts [K] from [T]
+ * @param minKey Partition start key (exclusive) — null means read from the beginning; use for parallel partitioning
+ * @param maxKey Partition end key (inclusive) — null means read to the end; use for parallel partitioning
  */
 class ExposedR2dbcBatchReader<K : Comparable<K>, T : Any>(
     private val database: R2dbcDatabase,

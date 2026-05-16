@@ -34,20 +34,20 @@ import org.jetbrains.exposed.v1.jdbc.update
 import java.io.Serializable
 
 /**
- * Exposed JDBC + Caffeine 로컬 캐시를 결합한 추상 레포지토리.
+ * Abstract repository combining Exposed JDBC with a Caffeine in-process local cache.
  *
- * Caffeine [Cache]를 사용하여 인프로세스 캐싱을 제공합니다.
- * JDBC `transaction`을 통해 모든 DB 접근이 동기 함수로 이루어집니다.
+ * Uses a Caffeine [Cache] for in-process caching. All database access is synchronous
+ * via JDBC `transaction {}`.
  *
- * 서브클래스는 4개 추상 멤버를 구현합니다:
- * - [table]: Exposed [IdTable]
- * - [ResultRow.toEntity]: ResultRow -> E 변환
- * - [UpdateStatement.updateEntity]: UPDATE 컬럼 매핑
- * - [BatchInsertStatement.insertEntity]: INSERT 컬럼 매핑
+ * Subclasses must implement four abstract members:
+ * - [table]: the Exposed [IdTable]
+ * - [ResultRow.toEntity]: converts a [ResultRow] to entity [E]
+ * - [UpdateStatement.updateEntity]: maps entity fields for UPDATE
+ * - [BatchInsertStatement.insertEntity]: maps entity fields for INSERT
  *
- * @param ID PK 타입
- * @param E 엔티티(DTO) 타입. 캐시 저장을 위해 [Serializable] 구현 필수.
- * @param config [LocalCacheConfig] 설정
+ * @param ID Primary key type
+ * @param E Entity (DTO) type — must implement [Serializable] for cache storage
+ * @param config [LocalCacheConfig] settings
  */
 abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     override val config: LocalCacheConfig = LocalCacheConfig.READ_ONLY,

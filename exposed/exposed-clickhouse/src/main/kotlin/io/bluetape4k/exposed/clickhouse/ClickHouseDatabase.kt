@@ -9,12 +9,12 @@ import java.sql.DriverManager
 import java.util.Properties
 
 /**
- * ClickHouse 데이터베이스 연결 팩토리.
+ * Factory object for connecting to a ClickHouse database via Exposed ORM.
  *
- * ClickHouse JDBC 드라이버를 통해 Exposed ORM과 연동할 수 있도록
- * 드라이버/다이얼렉트 등록 및 연결 생성을 담당합니다.
+ * Registers the ClickHouse JDBC driver, dialect, and dialect metadata on first access,
+ * then provides convenience overloads for creating an Exposed [Database] instance.
  *
- * ## 기본 사용 예
+ * ## Basic usage
  *
  * ```kotlin
  * val db = ClickHouseDatabase.connect(
@@ -29,7 +29,7 @@ import java.util.Properties
  * }
  * ```
  *
- * ## JDBC URL 직접 사용 예
+ * ## Direct JDBC URL usage
  *
  * ```kotlin
  * val db = ClickHouseDatabase.connect(
@@ -39,20 +39,21 @@ import java.util.Properties
  * )
  * ```
  *
- * ## autocommit 주의사항
+ * ## Autocommit contract
  *
- * - ClickHouse는 트랜잭션을 지원하지 않습니다. 모든 문(statement)은 autocommit 모드로 실행됩니다.
- * - `transaction {}` 블록 내 다중 DML 실행 시, 중간 실패가 발생하면 앞선 DML은 롤백되지 않습니다.
- * - `rollback()`은 no-op입니다 — Exposed 프레임워크 호환을 위한 어댑터입니다.
- * - Nested transaction / Savepoint는 미지원됩니다 — 호출은 허용되나 원자성이 보장되지 않습니다.
+ * - ClickHouse does not support transactions. All statements run in autocommit mode.
+ * - A failure mid-block does not roll back earlier DML statements.
+ * - `rollback()` is a no-op — present only for Exposed framework compatibility.
+ * - Nested transactions and savepoints are not supported; calls are accepted but atomicity is not guaranteed.
  */
 object ClickHouseDatabase: KLogging() {
 
     /**
-     * ClickHouse JDBC 드라이버 클래스명.
+     * ClickHouse JDBC driver class name.
      *
-     * `const val` 대신 `val`을 사용하여 이 프로퍼티 접근 시 객체 초기화(init{})를 보장합니다.
-     * `const val`은 컴파일 타임에 인라인되므로 객체 초기화를 트리거하지 않을 수 있습니다.
+     * Declared as `val` rather than `const val` to guarantee that accessing this property
+     * triggers object initialization (`init {}`). A `const val` is inlined at compile time
+     * and may not trigger object initialization.
      */
     val DRIVER = "com.clickhouse.jdbc.ClickHouseDriver"
 
@@ -64,19 +65,18 @@ object ClickHouseDatabase: KLogging() {
     }
 
     /**
-     * ClickHouse 데이터베이스에 연결합니다.
+     * Connects to a ClickHouse database, assembling the JDBC URL as
+     * `jdbc:clickhouse://{host}:{port}/{database}`.
      *
-     * JDBC URL을 `jdbc:clickhouse://{host}:{port}/{database}` 형식으로 조합합니다.
+     * **Note**: ClickHouse does not support transactions. All statements run in autocommit mode;
+     * a failure mid-block does not roll back earlier DML statements.
      *
-     * **주의**: ClickHouse는 트랜잭션을 지원하지 않습니다. autocommit 모드로 실행되며,
-     * 블록 중간 실패 시 앞선 DML은 롤백되지 않습니다.
-     *
-     * @param host ClickHouse 호스트 (기본값: `localhost`)
-     * @param port ClickHouse HTTP 포트 (기본값: `8123`)
-     * @param database ClickHouse 데이터베이스 이름 (기본값: `default`)
-     * @param user 접속 사용자 (기본값: `default`)
-     * @param password 접속 비밀번호 (기본값: 빈 문자열)
-     * @return Exposed [Database] 인스턴스
+     * @param host ClickHouse host (default: `localhost`)
+     * @param port ClickHouse HTTP port (default: `8123`)
+     * @param database ClickHouse database name (default: `default`)
+     * @param user Login user (default: `default`)
+     * @param password Login password (default: empty string)
+     * @return Exposed [Database] instance
      */
     fun connect(
         host: String = "localhost",
@@ -114,15 +114,15 @@ object ClickHouseDatabase: KLogging() {
     }
 
     /**
-     * JDBC URL을 직접 지정하여 ClickHouse 데이터베이스에 연결합니다.
+     * Connects to a ClickHouse database using the given JDBC URL directly.
      *
-     * **주의**: ClickHouse는 트랜잭션을 지원하지 않습니다. autocommit 모드로 실행되며,
-     * 블록 중간 실패 시 앞선 DML은 롤백되지 않습니다.
+     * **Note**: ClickHouse does not support transactions. All statements run in autocommit mode;
+     * a failure mid-block does not roll back earlier DML statements.
      *
-     * @param jdbcUrl ClickHouse JDBC URL (예: `jdbc:clickhouse://host:8123/default`)
-     * @param user 접속 사용자 (기본값: `default`)
-     * @param password 접속 비밀번호 (기본값: 빈 문자열)
-     * @return Exposed [Database] 인스턴스
+     * @param jdbcUrl ClickHouse JDBC URL (e.g. `jdbc:clickhouse://host:8123/default`)
+     * @param user Login user (default: `default`)
+     * @param password Login password (default: empty string)
+     * @return Exposed [Database] instance
      */
     fun connect(
         jdbcUrl: String,

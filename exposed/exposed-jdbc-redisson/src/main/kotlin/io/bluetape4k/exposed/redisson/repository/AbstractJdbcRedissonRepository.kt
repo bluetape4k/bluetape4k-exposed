@@ -34,16 +34,17 @@ import java.io.Serializable
 import java.time.Duration
 
 /**
- * Exposed JDBC와 Redisson을 결합한 동기 캐시 Repository의 추상 기반 클래스입니다.
+ * Abstract base class for a synchronous cache repository combining Exposed JDBC with Redisson.
  *
- * ## 사용 방법
- * 이 클래스를 상속하고 [table], [ResultRow.toEntity], [UpdateStatement.updateEntity], [BatchInsertStatement.insertEntity]를 구현하세요.
- * Read-Only 모드에서는 [UpdateStatement.updateEntity]/[BatchInsertStatement.insertEntity] 구현이 불필요합니다.
+ * ## Usage
+ * Extend this class and implement [table], [ResultRow.toEntity], [UpdateStatement.updateEntity],
+ * and [BatchInsertStatement.insertEntity]. In READ_ONLY mode the write mappers are not called.
  *
- * ## 동작/계약
- * - [config]의 `cacheMode`가 [RedissonCacheConfig.CacheMode.READ_ONLY]이면 mapWriter를 생성하지 않습니다.
- * - [config]의 `isNearCacheEnabled`가 true이면 `RLocalCachedMap`, 그렇지 않으면 `RMapCache`를 사용합니다.
- * - [UpdateStatement.updateEntity]와 [BatchInsertStatement.insertEntity]는 Write-Through/Write-Behind 모드에서만 호출됩니다.
+ * ## Behavior / Contract
+ * - When [config]`cacheMode` is READ_ONLY, no mapWriter is created.
+ * - When [config]`isNearCacheEnabled` is true, an `RLocalCachedMap` is used; otherwise `RMapCache`.
+ * - [UpdateStatement.updateEntity] and [BatchInsertStatement.insertEntity] are only called in
+ *   WRITE_THROUGH or WRITE_BEHIND mode.
  *
  * ```kotlin
  * class UserCacheRepository(
@@ -58,10 +59,10 @@ import java.time.Duration
  * }
  * ```
  *
- * @param ID 엔티티 ID 타입
- * @param E 엔티티 타입. Redis 저장 시 직렬화 문제로 인해 반드시 Serializable data class를 사용해야 합니다.
- * @param redissonClient Redisson 클라이언트
- * @param config 캐시 설정 ([RedissonCacheConfig]). 캐시 이름은 [RedissonCacheConfig.name]으로 지정합니다.
+ * @param ID Entity ID type
+ * @param E Entity type — must be a Serializable data class for Redis serialization
+ * @param redissonClient Redisson client instance
+ * @param config Cache configuration ([RedissonCacheConfig]); cache name is taken from [RedissonCacheConfig.name]
  */
 abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
     val redissonClient: RedissonClient,
