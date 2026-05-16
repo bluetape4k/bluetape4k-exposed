@@ -6,6 +6,7 @@ import io.bluetape4k.spring.data.exposed.jdbc.repository.support.toExposedOrderB
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.dao.Entity
 import org.jetbrains.exposed.v1.dao.EntityClass
+import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
@@ -89,7 +90,8 @@ class PartTreeExposedQuery<E: Entity<ID>, ID: Any>(
     }
 
     private fun executePageQuery(op: Op<Boolean>, pageable: Pageable, sort: Sort): Page<E> {
-        val total = entityClass.find { op }.count()
+        // COUNT via table DSL — avoids going through entity infrastructure for a scalar
+        val total = entityInformation.table.selectAll().where { op }.count()
         val query = entityClass.find { op }
         if (sort.isSorted) {
             query.orderBy(*sort.toExposedOrderBy(entityInformation.table))
