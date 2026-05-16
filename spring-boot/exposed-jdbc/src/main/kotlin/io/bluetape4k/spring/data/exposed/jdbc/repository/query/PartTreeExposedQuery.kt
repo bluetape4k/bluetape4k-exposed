@@ -6,6 +6,7 @@ import io.bluetape4k.spring.data.exposed.jdbc.repository.support.toExposedOrderB
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.dao.Entity
 import org.jetbrains.exposed.v1.dao.EntityClass
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
@@ -73,11 +74,8 @@ class PartTreeExposedQuery<E: Entity<ID>, ID: Any>(
         }
     }
 
-    private fun executeDelete(op: Op<Boolean>): Long {
-        val entities = entityClass.find { op }.toList()
-        entities.forEach { it.delete() }
-        return entities.size.toLong()
-    }
+    private fun executeDelete(op: Op<Boolean>): Long =
+        entityInformation.table.deleteWhere { op }.toLong()
 
     private fun executeLimiting(op: Op<Boolean>, maxResults: Int?, sort: Sort): Any? {
         val query = entityClass.find { op }
