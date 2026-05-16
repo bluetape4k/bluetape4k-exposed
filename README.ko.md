@@ -171,6 +171,10 @@ class UserRepository(private val database: Database) {
             it[UserTable.createdAt] = org.joda.time.DateTime.now()
         }.value
     }
+
+    fun deleteById(id: Long): Boolean = transaction(database) {
+        UserTable.deleteWhere { UserTable.id eq id } > 0
+    }
 }
 
 // 사용 예
@@ -264,7 +268,7 @@ bluetape4k:
 
 - JVM 21+
 - Kotlin 2.3+
-- JetBrains Exposed 0.60+
+- JetBrains Exposed 1.2+
 
 ## 라이선스
 

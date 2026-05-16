@@ -273,7 +273,7 @@ is intended for tests and small local applications.
 
 - JVM 21+
 - Kotlin 2.3+
-- JetBrains Exposed 0.60+
+- JetBrains Exposed 1.2+
 
 ## License
 
