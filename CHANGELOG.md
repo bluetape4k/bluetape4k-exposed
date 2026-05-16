@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions CI workflow (H2-only fast tests on PR/push).
 - GitHub Actions Nightly workflow (full matrix: H2, PostgreSQL, MySQL, Redis).
 - NMCP aggregation publishing to Maven Central (Snapshot + Release).
+- `exposed-trino` now provides `TrinoDatabase.connect(dataSource)` for production connection-pool integration (e.g. HikariCP); the overload wraps pool connections in `TrinoConnectionWrapper` to enforce `autoCommit = true` and closes the raw connection on wrapper failure ([#27](https://github.com/bluetape4k/bluetape4k-exposed/issues/27)).
 - `exposed-trino` now provides `trinoBatchInsert` for bounded connector-dependent batch writes with generated-key retrieval disabled by default.
 - `exposed-trino` now provides `pagedQueryFlow` for page-by-page large result set collection without exposing JDBC `ResultSet` lifetimes outside Exposed transactions.
 - Root README hero image plus refreshed purpose, feature, and Mermaid architecture documentation ([PR #64](https://github.com/bluetape4k/bluetape4k-exposed/pull/64)).
