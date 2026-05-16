@@ -1,6 +1,7 @@
 package io.bluetape4k.spring.data.exposed.r2dbc.repository.query
 
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.warn
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.IColumnType
 import org.jetbrains.exposed.v1.core.InternalApi
@@ -102,10 +103,13 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
     @OptIn(InternalApi::class)
     private fun toSqlArg(value: Any?): Pair<IColumnType<*>, Any?> {
         if (value == null) return TextColumnType() to null
-        val columnType = runCatching {
+        val columnType = try {
             @Suppress("UNCHECKED_CAST")
             resolveColumnType(value::class as KClass<Any>, defaultType = TextColumnType())
-        }.getOrElse { TextColumnType() }
+        } catch (e: Exception) {
+            log.warn(e) { "Cannot resolve column type for ${value::class.simpleName}, falling back to TextColumnType" }
+            TextColumnType()
+        }
         val normalized = if (columnType is TextColumnType && value !is String) value.toString() else value
         return columnType to normalized
     }
