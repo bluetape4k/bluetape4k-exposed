@@ -7,8 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-05-16
+
 ### Added
 
+- Initial release of `bluetape4k-exposed` as a standalone repository.
+- `exposed-core`: Core Column types, extension functions for JetBrains Exposed DSL.
+- `exposed-dao`: DAO Entity extensions and lifecycle hooks.
+- `exposed-jdbc`: JDBC-based Repository pattern with type-safe transaction DSL.
+- `exposed-r2dbc`: R2DBC coroutine-native Repository with `suspendTransaction` DSL.
+- `exposed-jdbc-tests` / `exposed-r2dbc-tests`: Shared integration test fixtures.
+- `exposed-cache`: Cache abstraction interfaces for Repository pattern.
+- `exposed-jdbc-caffeine`: JDBC Repository backed by Caffeine local cache.
+- `exposed-jdbc-lettuce`: JDBC Repository backed by Lettuce Redis distributed cache.
+- `exposed-jdbc-redisson`: JDBC Repository backed by Redisson Redis distributed cache.
+- `exposed-r2dbc-caffeine`: R2DBC Repository backed by Caffeine local cache.
+- `exposed-r2dbc-lettuce`: R2DBC Repository backed by Lettuce Redis distributed cache.
+- `exposed-r2dbc-redisson`: R2DBC Repository backed by Redisson Redis distributed cache.
+- `exposed-jackson2`: Jackson 2.x JSON column serialization.
+- `exposed-jackson3`: Jackson 3.x JSON column serialization.
+- `exposed-fastjson2`: Fastjson2 JSON column serialization.
+- `exposed-tink`: Google Tink AES-GCM encrypted column support.
+- `exposed-measured`: Micrometer metrics integration for query instrumentation.
+- `exposed-postgresql`: PostgreSQL dialect-specific column types and extensions.
+- `exposed-mysql8`: MySQL 8 dialect-specific column types and extensions.
+- `exposed-bigquery`: BigQuery connector support (requires external SaaS account).
+- `exposed-clickhouse`: ClickHouse connector support (requires external SaaS account).
+- `exposed-trino`: Trino connector support (requires external SaaS account).
+- `exposed-duckdb`: DuckDB embedded analytics database support.
+- `exposed-timefold-solver-persistence`: Timefold Solver persistence integration.
+- `spring-boot/exposed-jdbc`: Spring Boot 4 JDBC auto-configuration.
+- `spring-boot/exposed-r2dbc`: Spring Boot 4 R2DBC auto-configuration.
+- `spring-boot/batch-exposed`: Spring Batch + Exposed integration for Boot 4.
+- GitHub Actions CI workflow (H2-only fast tests on PR/push).
+- GitHub Actions Nightly workflow (full matrix: H2, PostgreSQL, MySQL, Redis).
+- NMCP aggregation publishing to Maven Central (Snapshot + Release).
 - `exposed-trino` now provides `trinoBatchInsert` for bounded connector-dependent batch writes with generated-key retrieval disabled by default.
 - `exposed-trino` now provides `pagedQueryFlow` for page-by-page large result set collection without exposing JDBC `ResultSet` lifetimes outside Exposed transactions.
 - Root README hero image plus refreshed purpose, feature, and Mermaid architecture documentation ([PR #64](https://github.com/bluetape4k/bluetape4k-exposed/pull/64)).
@@ -31,44 +64,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **#79** `AbstractJdbcCaffeineRepository` / `AbstractR2dbcCaffeineRepository`: `writeBehindQueue.trySend()` silently dropped entities on channel overflow; now throws `IllegalStateException` ([PR #95](https://github.com/bluetape4k/bluetape4k-exposed/pull/95)).
+- **#80** `AbstractJdbcRedissonRepository.invalidateAll()` / `invalidateByPattern()`: unsafe `*ids.toTypedArray<Any>() as Array<ID>` cast replaced with per-element `fastRemove()` to eliminate `ClassCastException` ([PR #96](https://github.com/bluetape4k/bluetape4k-exposed/pull/96)).
+- **#81** `PartTreeExposedQuery.executeDelete`: non-atomic SELECT+DELETE replaced with direct `table.deleteWhere { op }` DSL call; return value now reflects actual deleted row count ([PR #97](https://github.com/bluetape4k/bluetape4k-exposed/pull/97)).
+- **#82** `DeclaredExposedQuery.coerceIdValue`: bare `rawId as ID` cast guarded with `idType.isInstance(rawId)` check; `IllegalArgumentException` with descriptive message thrown on mismatch ([PR #98](https://github.com/bluetape4k/bluetape4k-exposed/pull/98)).
+- **#83** `ClickHouseDatabase.connect()`: close exception after wrapper construction failure now attached via `e.addSuppressed(closeEx)` instead of replacing the original exception ([PR #99](https://github.com/bluetape4k/bluetape4k-exposed/pull/99)).
+- **#84** `ExposedEventPublicationRepository.markResubmitted`: non-atomic read-modify-write on `completionAttempts` replaced with single UPDATE using `Coalesce(completionAttempts, 0) + 1` SQL expression ([PR #100](https://github.com/bluetape4k/bluetape4k-exposed/pull/100)).
+- **#85** `DeclaredExposedR2dbcQuery.toSqlArg`: `runCatching { resolveColumnType() }.getOrElse { TextColumnType() }` silently swallowed errors; replaced with try/catch that logs a warning before falling back ([PR #102](https://github.com/bluetape4k/bluetape4k-exposed/pull/102)).
+- **#86** `ExposedJdbcBatchReader.restoreFrom` / `ExposedR2dbcBatchReader.restoreFrom`: `checkpoint as K` guarded with try/catch `ClassCastException` and rethrows `IllegalArgumentException` with column name and actual type in the message ([PR #103](https://github.com/bluetape4k/bluetape4k-exposed/pull/103)).
+- **#87** `DeclaredExposedR2dbcQuery`: broad `catch (_: Exception)` when resolving the ID column by name narrowed to `IllegalArgumentException`; other exceptions rethrow as `IllegalStateException` with method context ([PR #102](https://github.com/bluetape4k/bluetape4k-exposed/pull/102)).
+- **#88** `ExposedEventPublicationRepository.insertArchive`: TOCTOU existence-check-then-insert race eliminated; duplicate-key `ExposedSQLException` (SQL state `23xxx`) is silently absorbed, all other exceptions rethrow ([PR #104](https://github.com/bluetape4k/bluetape4k-exposed/pull/104)).
+- **#89** `BigQueryQueryExecutor.convertValue`: `NumberFormatException` and other conversion errors now wrapped in `IllegalArgumentException` with raw value, column name, and column type context ([PR #105](https://github.com/bluetape4k/bluetape4k-exposed/pull/105)).
+- **#90** `PartTreeExposedQuery.executePageQuery`: double `entityClass.find { op }` call for count eliminated; count now uses `table.selectAll().where { op }.count()` directly ([PR #106](https://github.com/bluetape4k/bluetape4k-exposed/pull/106)).
 - Added the `DefaultFastjsonSerializer` facade for `exposed-fastjson2` and aligned module defaults with Jackson serializer parity.
 - Corrected the initial `utils/batch` Gradle module naming mismatch; current module path is `:exposed-batch` ([PR #13](https://github.com/bluetape4k/bluetape4k-exposed/pull/13)).
-
-## [1.8.0] - 2026-05-07
-
-### Added
-
-- Initial release of bluetape4k-exposed as a standalone repository
-- `exposed-core`: Core Column types, extension functions for JetBrains Exposed DSL
-- `exposed-dao`: DAO Entity extensions and lifecycle hooks
-- `exposed-jdbc`: JDBC-based Repository pattern with type-safe transaction DSL
-- `exposed-r2dbc`: R2DBC coroutine-native Repository with `suspendTransaction` DSL
-- `exposed-jdbc-tests` / `exposed-r2dbc-tests`: Shared integration test fixtures
-- `exposed-cache`: Cache abstraction interfaces for Repository pattern
-- `exposed-jdbc-caffeine`: JDBC Repository backed by Caffeine local cache
-- `exposed-jdbc-lettuce`: JDBC Repository backed by Lettuce Redis distributed cache
-- `exposed-jdbc-redisson`: JDBC Repository backed by Redisson Redis distributed cache
-- `exposed-r2dbc-caffeine`: R2DBC Repository backed by Caffeine local cache
-- `exposed-r2dbc-lettuce`: R2DBC Repository backed by Lettuce Redis distributed cache
-- `exposed-r2dbc-redisson`: R2DBC Repository backed by Redisson Redis distributed cache
-- `exposed-jackson2`: Jackson 2.x JSON column serialization
-- `exposed-jackson3`: Jackson 3.x JSON column serialization
-- `exposed-fastjson2`: Fastjson2 JSON column serialization
-- `exposed-tink`: Google Tink AES-GCM encrypted column support
-- `exposed-measured`: Micrometer metrics integration for query instrumentation
-- `exposed-postgresql`: PostgreSQL dialect-specific column types and extensions
-- `exposed-mysql8`: MySQL 8 dialect-specific column types and extensions
-- `exposed-bigquery`: BigQuery connector support (requires external SaaS account)
-- `exposed-clickhouse`: ClickHouse connector support (requires external SaaS account)
-- `exposed-trino`: Trino connector support (requires external SaaS account)
-- `exposed-duckdb`: DuckDB embedded analytics database support
-- `exposed-timefold-solver-persistence`: Timefold Solver persistence integration
-- `spring-boot3/exposed-jdbc`: Spring Boot 3.x JDBC auto-configuration
-- `spring-boot3/exposed-r2dbc`: Spring Boot 3.x R2DBC auto-configuration
-- `spring-boot3/batch-exposed`: Spring Batch + Exposed integration for Boot 3.x
-- `spring-boot4/exposed-jdbc`: Spring Boot 4.x JDBC auto-configuration
-- `spring-boot4/exposed-r2dbc`: Spring Boot 4.x R2DBC auto-configuration
-- `spring-boot4/batch-exposed`: Spring Batch + Exposed integration for Boot 4.x
-- GitHub Actions CI workflow (H2-only fast tests on PR/push)
-- GitHub Actions Nightly workflow (full matrix: H2, PostgreSQL, MySQL, Redis)
-- NMCP aggregation publishing to Maven Central (Snapshot + Release)
