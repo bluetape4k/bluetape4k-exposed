@@ -41,7 +41,7 @@ import kotlin.system.measureTimeMillis
  *
  * 로컬에서만 실행:
  * ```bash
- * ./gradlew :bluetape4k-spring-boot-batch-exposed:test --tests "*ParallelQueryBenchmarkTest*" -PincludeTags="benchmark"
+ * ./gradlew :exposed-spring-boot-batch:test --tests "*ParallelQueryBenchmarkTest*" -PincludeTags="benchmark"
  * ```
  */
 @Tag("benchmark")

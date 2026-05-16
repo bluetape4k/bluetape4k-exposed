@@ -1,4 +1,4 @@
-# bluetape4k-spring-boot-batch-exposed
+# exposed-spring-boot-batch
 
 English | [한국어](./README.ko.md)
 
@@ -128,7 +128,7 @@ sequenceDiagram
 ### build.gradle.kts
 
 ```kotlin
-implementation("io.github.bluetape4k:bluetape4k-spring-boot-batch-exposed")
+implementation("io.github.bluetape4k.exposed:exposed-spring-boot-batch")
 ```
 
 ### Partitioned Migration Job
@@ -197,9 +197,9 @@ class MigrationJobConfig(
 ## Module Dependencies
 
 ```
-bluetape4k-spring-boot-batch-exposed
+exposed-spring-boot-batch
   ├── spring-batch-core
   ├── spring-batch-test
-  ├── bluetape4k-exposed-jdbc
+  ├── exposed-jdbc
   └── bluetape4k-virtualthread-api
 ```

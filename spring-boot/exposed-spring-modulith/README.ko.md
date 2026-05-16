@@ -1,4 +1,4 @@
-# bluetape4k-spring-boot-exposed-spring-modulith
+# exposed-spring-modulith
 
 Exposed DSL 기반 JDBC-only Spring Modulith `EventPublicationRepository`를
 제공하는 Spring Boot 자동 설정 모듈입니다.
@@ -11,8 +11,8 @@ artifact는 공식 Spring Modulith 저장소 모듈처럼 보이지 않도록
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-spring-boot-exposed-jdbc:1.8.0-SNAPSHOT")
-    implementation("io.github.bluetape4k.exposed:bluetape4k-spring-boot-exposed-spring-modulith:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:exposed-spring-boot-jdbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:exposed-spring-modulith:1.8.0-SNAPSHOT")
 }
 ```
 
@@ -60,7 +60,7 @@ bluetape4k:
 
 ## 검증
 
-통합 테스트는 `bluetape4k-exposed-jdbc-tests`의 `TestDB.enabledDialects()`를
+통합 테스트는 `exposed-jdbc-tests`의 `TestDB.enabledDialects()`를
 사용하므로 기본 범위는 H2, PostgreSQL, MySQL 8입니다. CI에서는
 `EXPOSED_TEST_DB=POSTGRESQL` 또는 `EXPOSED_TEST_DB=MYSQL_V8`로 매트릭스를
 줄일 수 있습니다.

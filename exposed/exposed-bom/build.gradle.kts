@@ -7,7 +7,7 @@ plugins {
 dependencies {
     constraints {
         rootProject.subprojects {
-            if (name != "bluetape4k-exposed-bom" &&
+            if (name != "exposed-bom" &&
                 !projectDir.absolutePath.contains("/examples/") &&
                 !name.endsWith("-demo")
             ) {
@@ -22,7 +22,7 @@ publishing {
         create<MavenPublication>("BluetapeExposed") {
             from(components["javaPlatform"])
             pom {
-                name.set("bluetape4k-exposed-bom")
+                name.set("exposed-bom")
                 description.set("BOM for bluetape4k-exposed — JetBrains Exposed ORM Kotlin extensions")
                 url.set("https://github.com/bluetape4k/bluetape4k-exposed")
                 licenses {

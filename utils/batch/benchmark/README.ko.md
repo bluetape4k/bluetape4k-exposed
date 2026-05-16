@@ -1,4 +1,4 @@
-# bluetape4k-batch 벤치마크 허브
+# exposed-batch 벤치마크 허브
 
 한국어 | [English](./README.md)
 
@@ -41,5 +41,5 @@ xychart-beta
 
 - 상세 수치 표는 DB별 문서에 둡니다.
 - `generateBenchmarkDocs` 는 현재 benchmark 허브와 DB별 상세 문서 골격을 생성합니다.
-- Report directory: `/Users/debop/work/bluetape4k/bluetape4k-projects/.claude/worktrees/utils-batch-kotlinx-benchmark/build/bluetape4k-batch/reports/benchmarks`
+- Report directory: `/Users/debop/work/bluetape4k/bluetape4k-projects/.claude/worktrees/utils-batch-kotlinx-benchmark/build/exposed-batch/reports/benchmarks`
 - PostgreSQL/MySQL full run 결과는 나중에 추가해도 링크 구조는 그대로 유지됩니다.

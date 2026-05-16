@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-fastjson2
+# Module exposed-fastjson2
 
 [English](./README.md) | 한국어
 
@@ -6,7 +6,7 @@ Exposed JSON/JSONB 컬럼을 Fastjson2로 직렬화/역직렬화하기 위한 �
 
 ## 개요
 
-`bluetape4k-exposed-fastjson2`는 JetBrains Exposed의 JSON/JSONB 컬럼 타입을 [Alibaba Fastjson2](https://github.com/alibaba/fastjson2)로 직렬화/역직렬화하는 기능을 제공합니다. 고성능 JSON 처리가 필요한 환경에 적합합니다.
+`exposed-fastjson2`는 JetBrains Exposed의 JSON/JSONB 컬럼 타입을 [Alibaba Fastjson2](https://github.com/alibaba/fastjson2)로 직렬화/역직렬화하는 기능을 제공합니다. 고성능 JSON 처리가 필요한 환경에 적합합니다.
 
 ### 주요 기능
 
@@ -19,7 +19,7 @@ Exposed JSON/JSONB 컬럼을 Fastjson2로 직렬화/역직렬화하기 위한 �
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-fastjson2:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-fastjson2:${version}")
     implementation("io.github.bluetape4k:bluetape4k-fastjson2:${version}")
 }
 ```
@@ -122,7 +122,7 @@ val extraData: Map<String, Any>? = resultRow.getFastjsonOrNull(Products.extraDat
 ## 테스트
 
 ```bash
-./gradlew :bluetape4k-exposed-fastjson2:test
+./gradlew :exposed-fastjson2:test
 ```
 
 ## 아키텍처 다이어그램

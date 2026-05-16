@@ -39,7 +39,7 @@ import java.util.*
  * - **보장**: SELECT/filter/order/group/aggregate, 기본 DML(INSERT/UPDATE/DELETE)
  * - **제한**: SchemaUtils DDL 자동화, DAO 완전 호환, JDBC 트랜잭션 의미론
  * - **조건부**: join/alias(컬럼명 기준 접근), 대용량 결과셋(pagination 자동 처리)
- * - **분리**: JDBC 트랜잭션 일관성이나 Trino connector 기반 실행이 필요하면 `bluetape4k-exposed-trino` 또는
+ * - **분리**: JDBC 트랜잭션 일관성이나 Trino connector 기반 실행이 필요하면 `exposed-trino` 또는
  *   후속 `exposed-bigquery-trino` 모듈을 사용해야 합니다.
  *
  * ## 동기 사용 예

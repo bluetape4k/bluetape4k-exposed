@@ -122,7 +122,8 @@ Representative POM generation:
   :exposed-batch:generatePomFileForBluetapeExposedPublication \
   :exposed-spring-boot-jdbc:generatePomFileForBluetapeExposedPublication \
   :exposed-spring-modulith:generatePomFileForBluetapeExposedPublication \
-  --no-daemon
+  --no-daemon \
+  --no-configuration-cache
 ```
 
 Generated POM artifactId grep:
@@ -151,7 +152,7 @@ Workflow checks:
 ```bash
 actionlint .github/workflows/ci.yml .github/workflows/nightly.yml .github/workflows/publish-snapshot.yml
 rg -n 'bluetape4k-' .github/workflows/{ci,nightly}.yml
-rg -n "\\\\'" .github/workflows
+rg -n -F "\\'" .github/workflows
 ```
 
 The two `rg` workflow checks must return no hits. The escaped single-quote check

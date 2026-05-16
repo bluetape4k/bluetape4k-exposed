@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-core
+# Module exposed-core
 
 English | [한국어](./README.ko.md)
 
@@ -6,7 +6,7 @@ A foundation module that provides core column types, extension functions, and co
 
 ## Overview
 
-`bluetape4k-exposed-core` provides:
+`exposed-core` provides:
 
 - **Custom column types
   **: Binary/Blob columns backed by compression (LZ4/Snappy/Zstd), encryption, and serialization (Kryo/Fory)
@@ -24,7 +24,7 @@ A foundation module that provides core column types, extension functions, and co
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-core:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-core:${version}")
 
     // For compressed column types
     implementation("io.github.bluetape4k:bluetape4k-io:${version}")
@@ -558,7 +558,7 @@ The `exposed-java-time` module is required:
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-core:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-core:${version}")
 
     // Required for Auditable
     compileOnly("org.jetbrains.exposed:exposed-java-time:${exposedVersion}")
@@ -568,7 +568,7 @@ dependencies {
 ## Testing
 
 ```bash
-./gradlew :bluetape4k-exposed-core:test
+./gradlew :exposed-core:test
 ```
 
 ## References

@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-r2dbc-lettuce
+# Module exposed-r2dbc-lettuce
 
 [English](./README.md) | 한국어
 
@@ -7,7 +7,7 @@ Exposed R2DBC와 Lettuce Redis 캐시를 결합한 코루틴 네이티브 Read-t
 
 ## 개요
 
-`bluetape4k-exposed-r2dbc-lettuce`는 다음을 제공합니다:
+`exposed-r2dbc-lettuce`는 다음을 제공합니다:
 
 - **Read-through 캐시**: `findById` 시 캐시 미스이면 R2DBC `suspendTransaction`으로 DB 자동 로드 후 Redis에 캐싱
 - **Write-through / Write-behind**: `save` 시 Redis와 DB를 동시(또는 비동기)로 반영
@@ -93,7 +93,7 @@ sequenceDiagram
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-lettuce:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-r2dbc-lettuce:${version}")
 }
 ```
 
@@ -208,12 +208,12 @@ NearCache가 활성화되면 조회 순서: **Caffeine(로컬) → Redis → DB*
 ## 테스트
 
 ```bash
-./gradlew :bluetape4k-exposed-r2dbc-lettuce:test
+./gradlew :exposed-r2dbc-lettuce:test
 ```
 
 ## 참고
 
-- [bluetape4k-exposed-r2dbc](../exposed-r2dbc)
-- [bluetape4k-exposed-jdbc-lettuce](../exposed-jdbc-lettuce)
+- [exposed-r2dbc](../exposed-r2dbc)
+- [exposed-jdbc-lettuce](../exposed-jdbc-lettuce)
 - [bluetape4k-lettuce](../../infra/lettuce)
 - [Lettuce Redis Client](https://lettuce.io)

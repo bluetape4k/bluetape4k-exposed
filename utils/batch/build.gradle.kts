@@ -140,8 +140,8 @@ dependencies {
     runtimeOnly(libs.bluetape4k.virtualthread.jdk21)
 
     // Exposed JDBC/R2DBC
-    compileOnly(project(":bluetape4k-exposed-jdbc"))
-    compileOnly(project(":bluetape4k-exposed-r2dbc"))
+    compileOnly(project(":exposed-jdbc"))
+    compileOnly(project(":exposed-r2dbc"))
     compileOnly(libs.exposed.java.time)
 
     // Checkpoint JSON 직렬화
@@ -156,8 +156,8 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
 
     // JDBC/R2DBC 통합 테스트 인프라
-    testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
-    testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
+    testImplementation(project(":exposed-jdbc-tests"))
+    testImplementation(project(":exposed-r2dbc-tests"))
     testImplementation(libs.bluetape4k.virtualthread.jdk21)
 
     // Test DB — H2 (내장)

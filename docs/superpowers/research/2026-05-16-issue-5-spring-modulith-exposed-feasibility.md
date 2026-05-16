@@ -20,7 +20,7 @@ Recommended scope:
 - Do not implement the original issue as written.
 - Keep the runtime scope JDBC-only.
 - Implement the runtime as `exposed-spring-modulith`, published as
-  `bluetape4k-spring-boot-exposed-spring-modulith`, so the artifact does not
+  `exposed-spring-modulith`, so the artifact does not
   look like an official Spring Modulith store module.
 - Use the same `DataSource` and Exposed `springTransactionManager` as the
   application.
@@ -32,7 +32,7 @@ Recommended scope:
 The accepted implementation scope is:
 
 - Module path: `spring-boot/exposed-spring-modulith`
-- Gradle module/artifact: `bluetape4k-spring-boot-exposed-spring-modulith`
+- Gradle module/artifact: `exposed-spring-modulith`
 - Public integration: Spring Boot auto-configuration
 - Runtime store: JDBC only
 - Transaction boundary: Exposed `springTransactionManager`
@@ -58,7 +58,7 @@ plain insert instead of dialect-specific ignore/upsert syntax.
 
 Current verification command:
 
-`./gradlew :bluetape4k-spring-boot-exposed-spring-modulith:test --no-daemon --rerun-tasks`
+`./gradlew :exposed-spring-modulith:test --no-daemon --rerun-tasks`
 
 Coverage/result:
 

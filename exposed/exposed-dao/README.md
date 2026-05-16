@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-dao
+# Module exposed-dao
 
 English | [한국어](./README.ko.md)
 
@@ -6,19 +6,19 @@ Provides entity extensions, String-based entities, and IdTable implementations w
 
 ## Overview
 
-`bluetape4k-exposed-dao` provides:
+`exposed-dao` provides:
 
 - **DAO extension functions**: Helpers for common Entity implementations such as `idEquals`, `idHashCode`, and
   `entityToStringBuilder`
 - **StringEntity**: DAO entities with a `String` primary key
 - **Custom IdTables**: Various ID strategies including KSUID, ULID, Snowflake, Timebased UUID, and Soft Delete
-- Built on `bluetape4k-exposed-core`, isolating features needed only in the DAO layer
+- Built on `exposed-core`, isolating features needed only in the DAO layer
 
 ## Adding Dependencies
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-dao:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-dao:${version}")
 }
 ```
 
@@ -508,12 +508,12 @@ transaction {
 ## Testing
 
 ```bash
-./gradlew :bluetape4k-exposed-dao:test
+./gradlew :exposed-dao:test
 ```
 
 ## References
 
 - [JetBrains Exposed DAO](https://github.com/JetBrains/Exposed/wiki/DAO)
-- [bluetape4k-exposed-core](../exposed-core)
-- [bluetape4k-exposed-jdbc (AuditableJdbcRepository)](../exposed-jdbc)
+- [exposed-core](../exposed-core)
+- [exposed-jdbc (AuditableJdbcRepository)](../exposed-jdbc)
 - [bluetape4k-idgenerators](../../../utils/idgenerators)

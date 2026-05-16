@@ -1,6 +1,6 @@
 [한국어](./README.ko.md) | English
 
-# bluetape4k-exposed-clickhouse
+# exposed-clickhouse
 
 Kotlin/Exposed dialect for ClickHouse JDBC — brings type-safe DSL, MergeTree engine configuration, ClickHouse-specific column types, and coroutine-friendly helpers to your ClickHouse-backed applications.
 
@@ -8,7 +8,7 @@ Kotlin/Exposed dialect for ClickHouse JDBC — brings type-safe DSL, MergeTree e
 
 ```mermaid
 graph LR
-    subgraph bluetape4k-exposed-clickhouse
+    subgraph exposed-clickhouse
         DB[ClickHouseDatabase]
         TBL[ClickHouseTable]
         ENG[ClickHouseEngine DSL]
@@ -32,8 +32,8 @@ graph LR
         bluetape4k-testcontainers
     end
 
-    bluetape4k-exposed-clickhouse -.-> bluetape4k-junit5
-    bluetape4k-exposed-clickhouse -.-> bluetape4k-testcontainers
+    exposed-clickhouse -.-> bluetape4k-junit5
+    exposed-clickhouse -.-> bluetape4k-testcontainers
 ```
 
 ## Features

@@ -13,10 +13,10 @@ dependencies {
     compileOnly(libs.exposed.java.time)
     compileOnly(libs.exposed.kotlin.datetime)
 
-    api(project(":bluetape4k-exposed-r2dbc"))
-    api(project(":bluetape4k-exposed-cache"))
-    testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
-    testImplementation(testFixtures(project(":bluetape4k-exposed-cache")))
+    api(project(":exposed-r2dbc"))
+    api(project(":exposed-cache"))
+    testImplementation(project(":exposed-r2dbc-tests"))
+    testImplementation(testFixtures(project(":exposed-cache")))
 
     // Redisson
     api(libs.bluetape4k.redisson)

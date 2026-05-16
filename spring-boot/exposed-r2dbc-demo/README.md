@@ -1,4 +1,4 @@
-# bluetape4k-spring-boot-exposed-r2dbc-demo
+# exposed-spring-boot-r2dbc-demo
 
 English | [한국어](./README.ko.md)
 
@@ -447,7 +447,7 @@ dependencies {
     implementation(platform(Libs.spring_boot_dependencies))
 
     // Other dependencies remain the same
-    implementation(project(":bluetape4k-spring-boot-exposed-r2dbc"))
+    implementation(project(":exposed-spring-boot-r2dbc"))
     implementation(Libs.springBootStarter("webflux"))
 }
 ```
@@ -476,7 +476,7 @@ Spring Boot provides the following versions by default:
 ```kotlin
 dependencies {
     implementation(platform(Libs.spring_boot_dependencies))
-    implementation(project(":bluetape4k-spring-boot-exposed-r2dbc"))
+    implementation(project(":exposed-spring-boot-r2dbc"))
     implementation(Libs.springBootStarter("webflux"))
     implementation(Libs.exposed_spring_boot_starter)
     implementation(Libs.exposed_r2dbc)

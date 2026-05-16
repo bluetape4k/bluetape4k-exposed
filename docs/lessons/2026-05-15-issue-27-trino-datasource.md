@@ -1,7 +1,7 @@
 # Lessons Learned — Issue #27: TrinoDatabase.connect(DataSource) (2026-05-15)
 
 **관련 PR**: #75
-**영향 모듈**: `:bluetape4k-exposed-trino`
+**영향 모듈**: `:exposed-trino`
 
 ## L1: 기존 패턴 복사로 안전하게 구현
 

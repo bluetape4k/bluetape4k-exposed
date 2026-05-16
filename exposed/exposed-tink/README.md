@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-tink
+# Module exposed-tink
 
 English | [한국어](./README.ko.md)
 
@@ -6,7 +6,7 @@ A module for encrypting and decrypting Exposed column values using [Google Tink]
 
 ## Overview
 
-`bluetape4k-exposed-tink` provides transparent authenticated encryption (AEAD — Authenticated Encryption with Associated Data) of JetBrains Exposed column values using the Google Tink library.
+`exposed-tink` provides transparent authenticated encryption (AEAD — Authenticated Encryption with Associated Data) of JetBrains Exposed column values using the Google Tink library.
 
 Google Tink is a modern cryptography library developed by Google, designed to be hard to misuse and to prevent incorrect usage by design. This module supports two encryption modes:
 
@@ -44,7 +44,7 @@ Google Tink is a modern cryptography library developed by Google, designed to be
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-tink:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-tink:${version}")
 }
 ```
 
@@ -307,7 +307,7 @@ classDiagram
 ## Testing
 
 ```bash
-./gradlew :bluetape4k-exposed-tink:test
+./gradlew :exposed-tink:test
 ```
 
 ## References
@@ -316,4 +316,4 @@ classDiagram
 - [Google Tink GitHub](https://github.com/google/tink)
 - [JetBrains Exposed](https://github.com/JetBrains/Exposed)
 - [bluetape4k-tink](../../io/tink/README.md) — Tink-based encryption utility module
-- [bluetape4k-exposed-jasypt](../exposed-jasypt/README.md) — Jasypt-based encrypted column module (legacy)
+- [exposed-jasypt](../exposed-jasypt/README.md) — Jasypt-based encrypted column module (legacy)

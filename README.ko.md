@@ -36,10 +36,10 @@ flowchart TD
     APP["Kotlin application"]
 
     subgraph Core["Exposed core layer"]
-        CORE["bluetape4k-exposed-core\nColumn 타입 + DSL 헬퍼"]
-        DAO["bluetape4k-exposed-dao\nEntity lifecycle 헬퍼"]
-        JDBC["bluetape4k-exposed-jdbc\nBlocking Repository"]
-        R2DBC["bluetape4k-exposed-r2dbc\nCoroutine Repository"]
+        CORE["exposed-core\nColumn 타입 + DSL 헬퍼"]
+        DAO["exposed-dao\nEntity lifecycle 헬퍼"]
+        JDBC["exposed-jdbc\nBlocking Repository"]
+        R2DBC["exposed-r2dbc\nCoroutine Repository"]
     end
 
     subgraph CrossCutting["Cross-cutting modules"]
@@ -80,35 +80,35 @@ flowchart TD
 
 | 모듈 | 설명 |
 |------|------|
-| `bluetape4k-exposed-core` | 핵심 Column 타입, DSL 헬퍼, 확장 함수 |
-| `bluetape4k-exposed-dao` | DAO Entity 확장, 라이프사이클 훅 |
-| `bluetape4k-exposed-jdbc` | JDBC 기반 Repository 패턴, 트랜잭션 DSL |
-| `bluetape4k-exposed-r2dbc` | R2DBC 코루틴 네이티브 Repository, suspend 트랜잭션 |
-| `bluetape4k-exposed-jdbc-tests` | JDBC 통합 테스트 픽스처 |
-| `bluetape4k-exposed-r2dbc-tests` | R2DBC 통합 테스트 픽스처 |
-| `bluetape4k-exposed-cache` | 캐시 추상화 인터페이스 |
-| `bluetape4k-exposed-jdbc-caffeine` | JDBC + Caffeine 로컬 캐시 |
-| `bluetape4k-exposed-jdbc-lettuce` | JDBC + Lettuce Redis 분산 캐시 |
-| `bluetape4k-exposed-jdbc-redisson` | JDBC + Redisson Redis 분산 캐시 |
-| `bluetape4k-exposed-r2dbc-caffeine` | R2DBC + Caffeine 로컬 캐시 |
-| `bluetape4k-exposed-r2dbc-lettuce` | R2DBC + Lettuce Redis 분산 캐시 |
-| `bluetape4k-exposed-r2dbc-redisson` | R2DBC + Redisson Redis 분산 캐시 |
-| `bluetape4k-exposed-jackson2` | Jackson 2.x JSON Column 직렬화 |
-| `bluetape4k-exposed-jackson3` | Jackson 3.x JSON Column 직렬화 |
-| `bluetape4k-exposed-fastjson2` | Fastjson2 JSON Column 직렬화 |
-| `bluetape4k-exposed-tink` | Google Tink 암호화 Column |
-| `bluetape4k-exposed-measured` | Micrometer 메트릭 통합 |
-| `bluetape4k-exposed-postgresql` | PostgreSQL 다이얼렉트 확장 |
-| `bluetape4k-exposed-mysql8` | MySQL 8 다이얼렉트 확장 |
-| `bluetape4k-exposed-bigquery` | BigQuery connector 지원 |
-| `bluetape4k-exposed-clickhouse` | ClickHouse connector 지원 |
-| `bluetape4k-exposed-trino` | Trino connector 지원 |
-| `bluetape4k-exposed-duckdb` | DuckDB embedded analytics 지원 |
-| `bluetape4k-exposed-timefold-solver-persistence` | Timefold Solver persistence 통합 |
-| `bluetape4k-spring-boot-exposed-jdbc` | Spring Boot 4.x JDBC 자동 설정 |
-| `bluetape4k-spring-boot-exposed-r2dbc` | Spring Boot 4.x R2DBC 자동 설정 |
-| `bluetape4k-spring-boot-batch-exposed` | Spring Boot 4.x Batch 통합 |
-| `bluetape4k-spring-boot-exposed-spring-modulith` | Exposed 기반 Spring Modulith JDBC 이벤트 발행 Repository |
+| `exposed-core` | 핵심 Column 타입, DSL 헬퍼, 확장 함수 |
+| `exposed-dao` | DAO Entity 확장, 라이프사이클 훅 |
+| `exposed-jdbc` | JDBC 기반 Repository 패턴, 트랜잭션 DSL |
+| `exposed-r2dbc` | R2DBC 코루틴 네이티브 Repository, suspend 트랜잭션 |
+| `exposed-jdbc-tests` | JDBC 통합 테스트 픽스처 |
+| `exposed-r2dbc-tests` | R2DBC 통합 테스트 픽스처 |
+| `exposed-cache` | 캐시 추상화 인터페이스 |
+| `exposed-jdbc-caffeine` | JDBC + Caffeine 로컬 캐시 |
+| `exposed-jdbc-lettuce` | JDBC + Lettuce Redis 분산 캐시 |
+| `exposed-jdbc-redisson` | JDBC + Redisson Redis 분산 캐시 |
+| `exposed-r2dbc-caffeine` | R2DBC + Caffeine 로컬 캐시 |
+| `exposed-r2dbc-lettuce` | R2DBC + Lettuce Redis 분산 캐시 |
+| `exposed-r2dbc-redisson` | R2DBC + Redisson Redis 분산 캐시 |
+| `exposed-jackson2` | Jackson 2.x JSON Column 직렬화 |
+| `exposed-jackson3` | Jackson 3.x JSON Column 직렬화 |
+| `exposed-fastjson2` | Fastjson2 JSON Column 직렬화 |
+| `exposed-tink` | Google Tink 암호화 Column |
+| `exposed-measured` | Micrometer 메트릭 통합 |
+| `exposed-postgresql` | PostgreSQL 다이얼렉트 확장 |
+| `exposed-mysql8` | MySQL 8 다이얼렉트 확장 |
+| `exposed-bigquery` | BigQuery connector 지원 |
+| `exposed-clickhouse` | ClickHouse connector 지원 |
+| `exposed-trino` | Trino connector 지원 |
+| `exposed-duckdb` | DuckDB embedded analytics 지원 |
+| `exposed-timefold-solver-persistence` | Timefold Solver persistence 통합 |
+| `exposed-spring-boot-jdbc` | Spring Boot 4.x JDBC 자동 설정 |
+| `exposed-spring-boot-r2dbc` | Spring Boot 4.x R2DBC 자동 설정 |
+| `exposed-spring-boot-batch` | Spring Boot 4.x Batch 통합 |
+| `exposed-spring-modulith` | Exposed 기반 Spring Modulith JDBC 이벤트 발행 Repository |
 
 ## 빠른 시작
 
@@ -117,17 +117,17 @@ flowchart TD
 ```kotlin
 dependencies {
     // 핵심 JDBC
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:exposed-jdbc:1.8.0-SNAPSHOT")
     // R2DBC (코루틴)
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:exposed-r2dbc:1.8.0-SNAPSHOT")
     // Redis 캐시 (Lettuce)
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:exposed-jdbc-lettuce:1.8.0-SNAPSHOT")
     // Jackson JSON Column
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:exposed-jackson2:1.8.0-SNAPSHOT")
     // Spring Boot 자동 설정
-    implementation("io.github.bluetape4k.exposed:bluetape4k-spring-boot-exposed-jdbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:exposed-spring-boot-jdbc:1.8.0-SNAPSHOT")
     // Exposed 기반 Spring Modulith JDBC 이벤트 발행
-    implementation("io.github.bluetape4k.exposed:bluetape4k-spring-boot-exposed-spring-modulith:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:exposed-spring-modulith:1.8.0-SNAPSHOT")
 }
 ```
 
@@ -242,7 +242,7 @@ class MyApplication
 
 ### Spring Modulith 이벤트 발행
 
-`bluetape4k-spring-boot-exposed-spring-modulith`는 Exposed DSL과 동일한
+`exposed-spring-modulith`는 Exposed DSL과 동일한
 Exposed `DataSource`/`springTransactionManager`를 사용하는 JDBC-only Spring
 Modulith `EventPublicationRepository`를 제공합니다. artifact 이름은 공식
 Spring Modulith 저장소 모듈처럼 보이지 않도록 `exposed-spring-modulith`

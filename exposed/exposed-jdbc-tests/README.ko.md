@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-tests
+# Module exposed-jdbc-tests
 
 [English](./README.md) | 한국어
 
@@ -10,7 +10,7 @@
 
 ```kotlin
 dependencies {
-    testImplementation("io.github.bluetape4k.exposed:bluetape4k-exposed-tests:${version}")
+    testImplementation("io.github.bluetape4k.exposed:exposed-jdbc-tests:${version}")
 }
 ```
 

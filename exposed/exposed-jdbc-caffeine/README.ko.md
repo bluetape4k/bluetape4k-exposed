@@ -1,8 +1,8 @@
-# bluetape4k-exposed-jdbc-caffeine
+# exposed-jdbc-caffeine
 
 [English](./README.md) | 한국어
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.bluetape4k/bluetape4k-exposed-jdbc-caffeine)](https://central.sonatype.com/artifact/io.github.bluetape4k/bluetape4k-exposed-jdbc-caffeine)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.bluetape4k.exposed/exposed-jdbc-caffeine)](https://central.sonatype.com/artifact/io.github.bluetape4k.exposed/exposed-jdbc-caffeine)
 
 Caffeine 로컬(인프로세스) 캐시를 사용하는 Exposed JDBC 저장소입니다. Redis 의존 없이 `exposed-cache` 인터페이스만 사용합니다.
 
@@ -264,7 +264,7 @@ val config = LocalCacheConfig(
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-caffeine:$version")
+    implementation("io.github.bluetape4k.exposed:exposed-jdbc-caffeine:$version")
 }
 ```
 

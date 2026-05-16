@@ -1,4 +1,4 @@
-# bluetape4k-spring-boot-batch-exposed
+# exposed-spring-boot-batch
 
 [English](./README.md) | 한국어
 
@@ -128,7 +128,7 @@ sequenceDiagram
 ### build.gradle.kts
 
 ```kotlin
-implementation("io.github.bluetape4k:bluetape4k-spring-boot-batch-exposed")
+implementation("io.github.bluetape4k.exposed:exposed-spring-boot-batch")
 ```
 
 ### 파티션 마이그레이션 Job
@@ -209,9 +209,9 @@ val restartExecution = jobLauncher.run(job, params)  // BatchStatus.COMPLETED
 ## 모듈 의존성
 
 ```
-bluetape4k-spring-boot-batch-exposed
+exposed-spring-boot-batch
   ├── spring-batch-core
   ├── spring-batch-test
-  ├── bluetape4k-exposed-jdbc
+  ├── exposed-jdbc
   └── bluetape4k-virtualthread-api
 ```

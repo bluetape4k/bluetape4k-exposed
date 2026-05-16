@@ -1,7 +1,7 @@
 # Lessons Learned — R2DBC @Query raw SQL 지원 (2026-05-15)
 
 **관련 PR**: #71
-**영향 모듈**: `spring-boot/exposed-r2dbc` (`:bluetape4k-spring-boot-exposed-r2dbc`)
+**영향 모듈**: `spring-boot/exposed-r2dbc` (`:exposed-spring-boot-r2dbc`)
 
 ## L1: 에러 메시지를 먼저 읽어라
 

@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-tink
+# Module exposed-tink
 
 [English](./README.md) | 한국어
 
@@ -6,7 +6,7 @@ Exposed 컬럼 암복호화를 [Google Tink](https://developers.google.com/tink)
 
 ## 개요
 
-`bluetape4k-exposed-tink`는 JetBrains Exposed의 컬럼 값을 Google Tink 라이브러리를 통해 인증 암호화(AEAD, Authenticated Encryption with Associated Data)로 저장하는 기능을 제공합니다.
+`exposed-tink`는 JetBrains Exposed의 컬럼 값을 Google Tink 라이브러리를 통해 인증 암호화(AEAD, Authenticated Encryption with Associated Data)로 저장하는 기능을 제공합니다.
 
 Google Tink는 Google에서 개발한 현대적인 암호화 라이브러리로, 오용하기 어렵고 잘못된 사용을 방지하는 설계 철학을 가지고 있습니다. 이 모듈은 두 가지 암호화 방식을 지원합니다:
 
@@ -40,7 +40,7 @@ Google Tink는 Google에서 개발한 현대적인 암호화 라이브러리로,
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-tink:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-tink:${version}")
 }
 ```
 
@@ -302,7 +302,7 @@ classDiagram
 ## 테스트
 
 ```bash
-./gradlew :bluetape4k-exposed-tink:test
+./gradlew :exposed-tink:test
 ```
 
 ## 참고
@@ -311,4 +311,4 @@ classDiagram
 - [Google Tink GitHub](https://github.com/google/tink)
 - [JetBrains Exposed](https://github.com/JetBrains/Exposed)
 - [bluetape4k-tink](../../io/tink/README.ko.md) — Tink 기반 암호화 유틸리티 모듈
-- [bluetape4k-exposed-jasypt](../exposed-jasypt/README.ko.md) — Jasypt 기반 암호화 컬럼 모듈 (구형)
+- [exposed-jasypt](../exposed-jasypt/README.ko.md) — Jasypt 기반 암호화 컬럼 모듈 (구형)

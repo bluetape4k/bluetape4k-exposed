@@ -5,8 +5,8 @@ configurations {
 }
 
 dependencies {
-    api(project(":bluetape4k-exposed-jdbc"))
-    api(project(":bluetape4k-exposed-cache"))
+    api(project(":exposed-jdbc"))
+    api(project(":exposed-cache"))
     api(libs.caffeine)
 
     api(libs.exposed.core)
@@ -16,8 +16,8 @@ dependencies {
 
     api(libs.kotlinx.coroutines.core)
 
-    testImplementation(testFixtures(project(":bluetape4k-exposed-cache")))
-    testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
+    testImplementation(testFixtures(project(":exposed-cache")))
+    testImplementation(project(":exposed-jdbc-tests"))
     testImplementation(libs.bluetape4k.junit5)
     testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(libs.h2.v2)

@@ -1,4 +1,4 @@
-# Module bluetape4k-timefold-solver-persistence-exposed
+# Module exposed-timefold-solver-persistence
 
 English | [한국어](./README.ko.md)
 
@@ -38,7 +38,7 @@ This module provides seamless integration between Timefold Solver's scoring syst
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k:bluetape4k-timefold-solver-persistence-exposed:${bluetape4kVersion}")
+    implementation("io.github.bluetape4k.exposed:exposed-timefold-solver-persistence:${bluetape4kVersion}")
 }
 ```
 
@@ -47,7 +47,7 @@ dependencies {
 ```xml
 <dependency>
     <groupId>io.github.bluetape4k</groupId>
-    <artifactId>bluetape4k-timefold-solver-persistence-exposed</artifactId>
+    <artifactId>exposed-timefold-solver-persistence</artifactId>
     <version>${bluetape4kVersion}</version>
 </dependency>
 ```
@@ -235,17 +235,17 @@ CREATE TABLE planning_solution (
 ### Test
 
 - `timefold-solver-test`: Timefold Solver test utilities
-- `bluetape4k-exposed-tests`: Exposed test support
+- `exposed-jdbc-tests`: Exposed test support
 - Testcontainers (H2, MariaDB, MySQL, PostgreSQL)
 
 ## Running Tests
 
 ```bash
 # Run all tests
-./gradlew :bluetape4k-timefold-solver-persistence-exposed:test
+./gradlew :exposed-timefold-solver-persistence:test
 
 # Run a specific test class
-./gradlew :bluetape4k-timefold-solver-persistence-exposed:test --tests "HardSoftScoreTest"
+./gradlew :exposed-timefold-solver-persistence:test --tests "HardSoftScoreTest"
 ```
 
 ## Class Diagram
@@ -324,7 +324,7 @@ flowchart LR
         BS["BendableScore"]
     end
 
-    subgraph Module["bluetape4k-timefold-solver-persistence-exposed"]
+    subgraph Module["exposed-timefold-solver-persistence"]
         CT["ColumnType implementations<br/>(simpleScore, hardSoftScore, ...)"]
         EXT["Exposed extension functions<br/>(Table.hardSoftScore(), etc.)"]
     end

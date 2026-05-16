@@ -239,7 +239,7 @@ Run `actionlint` before PR push. Also verify workflows no longer reference old
 project paths or accidental shell quoting artifacts:
 
 - `rg -n 'bluetape4k-' .github/workflows/{ci,nightly}.yml` returns no hits
-- `rg -n "\\\\'" .github/workflows` returns no hits
+- `rg -n -F "\\'" .github/workflows` returns no hits
 
 ### Documentation
 
@@ -290,6 +290,8 @@ Local verification before PR:
 - old path absence:
   - `./gradlew -q projects | rg 'bluetape4k-exposed-|bluetape4k-spring-boot-|bluetape4k-examples-|bluetape4k-batch'` must return no project path hits
 - generated POM tasks for representative modules:
+  - run with `--no-configuration-cache` because empirical verification showed
+    the current publication task graph is not configuration-cache compatible
   - `:exposed-core:generatePomFileForBluetapeExposedPublication`
   - `:exposed-jdbc:generatePomFileForBluetapeExposedPublication`
   - `:exposed-r2dbc:generatePomFileForBluetapeExposedPublication`
@@ -315,7 +317,7 @@ Local verification before PR:
 - workflow validation:
   - `actionlint .github/workflows/ci.yml .github/workflows/nightly.yml .github/workflows/publish-snapshot.yml`
   - `rg -n 'bluetape4k-' .github/workflows/{ci,nightly}.yml` returns no hits
-  - `rg -n "\\\\'" .github/workflows` returns no hits
+  - `rg -n -F "\\'" .github/workflows` returns no hits
 
 Remote verification before downstream PRs:
 

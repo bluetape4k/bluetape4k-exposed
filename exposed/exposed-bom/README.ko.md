@@ -1,8 +1,8 @@
-# bluetape4k-exposed-bom
+# exposed-bom
 
 한국어 | [English](./README.md)
 
-**bluetape4k-exposed** 생태계용 Maven BOM (Bill of Materials). 모든 `io.github.bluetape4k.exposed:*`
+Exposed extension 생태계용 Maven BOM (Bill of Materials). 모든 `io.github.bluetape4k.exposed:*`
 모듈의 버전을 중앙 관리한다.
 
 ## Architecture
@@ -10,7 +10,7 @@
 ```mermaid
 graph TB
     Consumer[소비 프로젝트]
-    BOM[bluetape4k-exposed-bom<br/>java-platform]
+    BOM[exposed-bom<br/>java-platform]
 
     subgraph "exposed-core"
       Core[exposed-core]
@@ -67,7 +67,7 @@ BOM은 Gradle `java-platform` 으로 `<dependencyManagement>` constraint 만 게
 
 ## 핵심 기능
 
-- 모든 `bluetape4k-exposed` 모듈 버전 중앙 관리
+- 모든 `exposed-*` 모듈 버전 중앙 관리
 - JetBrains Exposed 확장 (JDBC + R2DBC) 버전 일관성 보장
 - `bluetape4k-dependencies` 가 상위에서 통합
 
@@ -75,14 +75,14 @@ BOM은 Gradle `java-platform` 으로 `<dependencyManagement>` constraint 만 게
 
 | 그룹 | 모듈 |
 |------|------|
-| 코어 | `bluetape4k-exposed-core`, `bluetape4k-exposed-dao` |
-| 드라이버 | `bluetape4k-exposed-jdbc`, `bluetape4k-exposed-r2dbc`, `bluetape4k-exposed-jdbc-tests`, `bluetape4k-exposed-r2dbc-tests` |
-| 캐시 | `bluetape4k-exposed-cache`, `bluetape4k-exposed-jdbc-{lettuce,redisson,caffeine}`, `bluetape4k-exposed-r2dbc-{lettuce,redisson,caffeine}` |
-| 직렬화 | `bluetape4k-exposed-fastjson2`, `bluetape4k-exposed-jackson2`, `bluetape4k-exposed-jackson3` |
-| 암호화 | `bluetape4k-exposed-tink` |
-| DB 어댑터 | `bluetape4k-exposed-{mysql8,postgresql,clickhouse,bigquery,duckdb,trino,measured,timefold-solver-persistence}` |
-| Spring Boot | `bluetape4k-spring-boot-exposed-{jdbc,r2dbc}`, `bluetape4k-spring-boot-batch-exposed` |
-| 유틸 | `bluetape4k-utils-batch` |
+| 코어 | `exposed-core`, `exposed-dao` |
+| 드라이버 | `exposed-jdbc`, `exposed-r2dbc`, `exposed-jdbc-tests`, `exposed-r2dbc-tests` |
+| 캐시 | `exposed-cache`, `exposed-jdbc-{lettuce,redisson,caffeine}`, `exposed-r2dbc-{lettuce,redisson,caffeine}` |
+| 직렬화 | `exposed-fastjson2`, `exposed-jackson2`, `exposed-jackson3` |
+| 암호화 | `exposed-tink` |
+| DB 어댑터 | `exposed-{mysql8,postgresql,clickhouse,bigquery,duckdb,trino,measured,timefold-solver-persistence}` |
+| Spring Boot | `exposed-spring-boot-{jdbc,r2dbc}`, `exposed-spring-boot-batch` |
+| 유틸 | `exposed-batch` |
 
 > 참고: `examples/*` 및 `*-demo` 모듈은 BOM constraint 에서 제외된다.
 
@@ -97,14 +97,14 @@ plugins {
 
 dependencyManagement {
     imports {
-        mavenBom("io.github.bluetape4k.exposed:bluetape4k-exposed-bom:<version>")
+        mavenBom("io.github.bluetape4k.exposed:exposed-bom:<version>")
     }
 }
 
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc")
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-cache")
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-redisson")
+    implementation("io.github.bluetape4k.exposed:exposed-jdbc")
+    implementation("io.github.bluetape4k.exposed:exposed-cache")
+    implementation("io.github.bluetape4k.exposed:exposed-jdbc-redisson")
 }
 ```
 
@@ -112,8 +112,8 @@ dependencies {
 
 ```kotlin
 dependencies {
-    implementation(platform("io.github.bluetape4k.exposed:bluetape4k-exposed-bom:<version>"))
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc")
+    implementation(platform("io.github.bluetape4k.exposed:exposed-bom:<version>"))
+    implementation("io.github.bluetape4k.exposed:exposed-jdbc")
 }
 ```
 
@@ -124,8 +124,8 @@ dependencies {
     <dependencies>
         <dependency>
             <groupId>io.github.bluetape4k.exposed</groupId>
-            <artifactId>bluetape4k-exposed-bom</artifactId>
-            <version>${bluetape4k-exposed.version}</version>
+            <artifactId>exposed-bom</artifactId>
+            <version>${exposed.version}</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>

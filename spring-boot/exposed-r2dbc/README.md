@@ -1,4 +1,4 @@
-# bluetape4k-spring-boot-exposed-r2dbc
+# exposed-spring-boot-r2dbc
 
 English | [한국어](./README.ko.md)
 
@@ -104,7 +104,7 @@ flowchart LR
 ```gradle
 dependencies {
     implementation(platform(Libs.spring_boot_dependencies))
-    implementation("io.github.bluetape4k:bluetape4k-spring-boot-exposed-r2dbc:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-spring-boot-r2dbc:${version}")
 
     // Coroutines support (required)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:${version}")
@@ -714,7 +714,7 @@ suspend fun getUsers(): List<User> =
 
 ## Related Modules
 
-- **bluetape4k-exposed-r2dbc**: Core Exposed R2DBC Repository implementation
-- **bluetape4k-spring-boot-exposed-r2dbc**: Spring Boot 4 version
-- **bluetape4k-spring-boot-exposed-jdbc**: JDBC-based Repository
+- **exposed-r2dbc**: Core Exposed R2DBC Repository implementation
+- **exposed-spring-boot-r2dbc**: Spring Boot 4 version
+- **exposed-spring-boot-jdbc**: JDBC-based Repository
 - **bluetape4k-coroutines**: Coroutine utilities

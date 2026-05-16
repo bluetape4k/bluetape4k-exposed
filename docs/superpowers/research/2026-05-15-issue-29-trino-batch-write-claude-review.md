@@ -2,7 +2,7 @@
 
 - Issue: https://github.com/bluetape4k/bluetape4k-exposed/issues/29
 - Local artifact: `.omx/artifacts/ask-claude-code-review-issue-29-trino-batch-write-20260515041756.md`
-- Scope: current uncommitted diff for `:bluetape4k-exposed-trino`
+- Scope: current uncommitted diff for `:exposed-trino`
 - Model command: `claude -p --model "${CLAUDE_ADVISOR_MODEL:-claude-opus-4-7}" --effort high`
 
 ## Result
@@ -34,4 +34,4 @@ P0/P1 counts:
 
 ## Verification After Integration
 
-- `./gradlew :bluetape4k-exposed-trino:test --tests "io.bluetape4k.exposed.trino.insert.InsertTest" --rerun-tasks --console=plain` passed with 8 tests.
+- `./gradlew :exposed-trino:test --tests "io.bluetape4k.exposed.trino.insert.InsertTest" --rerun-tasks --console=plain` passed with 8 tests.

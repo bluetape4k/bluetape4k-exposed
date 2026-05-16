@@ -1,4 +1,4 @@
-# bluetape4k-examples-exposed-clickhouse-oltp-olap
+# examples-exposed-clickhouse-oltp-olap
 
 [한국어](./README.ko.md) | English
 
@@ -29,7 +29,7 @@ flowchart LR
 The integration test uses **Testcontainers** to spin up both PostgreSQL and ClickHouse:
 
 ```bash
-./gradlew :bluetape4k-examples-exposed-clickhouse-oltp-olap:test
+./gradlew :examples-exposed-clickhouse-oltp-olap:test
 ```
 
 ## Caveats
@@ -41,4 +41,4 @@ The integration test uses **Testcontainers** to spin up both PostgreSQL and Clic
 
 ## See Also
 
-- [`bluetape4k-exposed-clickhouse`](../../data/exposed-clickhouse/README.md) — the underlying ClickHouse adapter
+- [`exposed-clickhouse`](../../exposed/exposed-clickhouse/README.md) — the underlying ClickHouse adapter

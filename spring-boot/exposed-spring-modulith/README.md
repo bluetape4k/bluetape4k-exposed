@@ -1,4 +1,4 @@
-# bluetape4k-spring-boot-exposed-spring-modulith
+# exposed-spring-modulith
 
 Spring Boot auto-configuration for a JDBC-only Spring Modulith
 `EventPublicationRepository` backed by Exposed DSL.
@@ -11,8 +11,8 @@ Modulith store module.
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-spring-boot-exposed-jdbc:1.8.0-SNAPSHOT")
-    implementation("io.github.bluetape4k.exposed:bluetape4k-spring-boot-exposed-spring-modulith:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:exposed-spring-boot-jdbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:exposed-spring-modulith:1.8.0-SNAPSHOT")
 }
 ```
 
@@ -61,6 +61,6 @@ applications.
 ## Verification
 
 The integration test uses `TestDB.enabledDialects()` from
-`bluetape4k-exposed-jdbc-tests`, so the default coverage is H2, PostgreSQL, and
+`exposed-jdbc-tests`, so the default coverage is H2, PostgreSQL, and
 MySQL 8. CI can narrow the matrix with `EXPOSED_TEST_DB=POSTGRESQL` or
 `EXPOSED_TEST_DB=MYSQL_V8`.

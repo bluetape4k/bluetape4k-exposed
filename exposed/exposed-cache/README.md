@@ -1,12 +1,12 @@
-# bluetape4k-exposed-cache
+# exposed-cache
 
 English | [한국어](./README.ko.md)
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.bluetape4k/bluetape4k-exposed-cache)](https://central.sonatype.com/artifact/io.github.bluetape4k/bluetape4k-exposed-cache)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.bluetape4k.exposed/exposed-cache)](https://central.sonatype.com/artifact/io.github.bluetape4k.exposed/exposed-cache)
 
 ## Overview
 
-`bluetape4k-exposed-cache` defines the **core interfaces and shared configuration** for cache-backed Exposed repositories.
+`exposed-cache` defines the **core interfaces and shared configuration** for cache-backed Exposed repositories.
 
 It is **cache-backend agnostic** — the same interfaces are implemented by both local cache (Caffeine) and distributed cache (Redis via Lettuce/Redisson) modules. All cache-specific modules depend on this hub module and add only their backend-specific implementation.
 
@@ -238,7 +238,7 @@ sequenceDiagram
 
 ```kotlin
 // testFixtures dependency in build.gradle.kts
-testImplementation(testFixtures("io.github.bluetape4k.exposed:bluetape4k-exposed-cache:$version"))
+testImplementation(testFixtures("io.github.bluetape4k.exposed:exposed-cache:$version"))
 
 // Extend the scenario in your module test
 class MyCaffeineReadThroughTest : JdbcReadThroughScenario() {
@@ -268,6 +268,6 @@ class MyCaffeineReadThroughTest : JdbcReadThroughScenario() {
 
 ```kotlin
 dependencies {
-    api("io.github.bluetape4k.exposed:bluetape4k-exposed-cache:$version")
+    api("io.github.bluetape4k.exposed:exposed-cache:$version")
 }
 ```

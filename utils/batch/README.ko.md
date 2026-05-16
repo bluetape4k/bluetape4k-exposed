@@ -1,4 +1,4 @@
-# bluetape4k-batch
+# exposed-batch
 
 한국어 | [English](./README.md)
 
@@ -259,7 +259,7 @@ benchmark 체계는 `kotlinx-benchmark` 기반으로 재구성되었고, JDBC + 
 | MySQL | seed 및 전체 batch job 실행을 JDBC/R2DBC로 비교 | [MySQL 상세 결과](docs/benchmark/mysql.md) |
 
 - [Benchmark 문서 허브](docs/benchmark/README.ko.md)
-- 실행 예시: `./gradlew :bluetape4k-batch:h2JdbcBenchmark`, `./gradlew :bluetape4k-batch:postgresR2dbcBenchmark`, `./gradlew :bluetape4k-batch:generateBenchmarkDocs`
+- 실행 예시: `./gradlew :exposed-batch:h2JdbcBenchmark`, `./gradlew :exposed-batch:postgresR2dbcBenchmark`, `./gradlew :exposed-batch:generateBenchmarkDocs`
 
 ### 비교 초점
 
@@ -281,12 +281,12 @@ xychart-beta
 
 ```kotlin
 dependencies {
-    implementation(project(":bluetape4k-batch"))
+    implementation(project(":exposed-batch"))
     // JDBC repository / reader / writer 사용 시:
-    implementation(project(":bluetape4k-exposed-jdbc"))
+    implementation(project(":exposed-jdbc"))
     // R2DBC repository / reader / writer 사용 시:
-    implementation(project(":bluetape4k-exposed-r2dbc"))
+    implementation(project(":exposed-r2dbc"))
     // Workflow 임베딩 사용 시:
-    implementation(project(":bluetape4k-workflow"))
+    implementation("io.github.bluetape4k:bluetape4k-workflow:${version}")
 }
 ```

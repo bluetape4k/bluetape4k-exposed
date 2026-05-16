@@ -1,4 +1,4 @@
-# bluetape4k-exposed-r2dbc-caffeine
+# exposed-r2dbc-caffeine
 
 [English](./README.md) | 한국어
 
@@ -133,7 +133,7 @@ behindRepo.put(1L, updatedActor)  // 즉시 반환
 
 | 의존성 | 용도 |
 |---|---|
-| `bluetape4k-exposed-r2dbc` | Exposed R2DBC 트랜잭션 지원 |
-| `bluetape4k-exposed-cache` | `R2dbcCacheRepository`, `LocalCacheConfig`, `CacheMode` |
+| `exposed-r2dbc` | Exposed R2DBC 트랜잭션 지원 |
+| `exposed-cache` | `R2dbcCacheRepository`, `LocalCacheConfig`, `CacheMode` |
 | `bluetape4k-coroutines` | 코루틴 유틸리티 |
 | `com.github.ben-manes.caffeine:caffeine` | 인프로세스 비동기 캐시 |

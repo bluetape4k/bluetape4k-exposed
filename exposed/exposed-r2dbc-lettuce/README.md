@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-r2dbc-lettuce
+# Module exposed-r2dbc-lettuce
 
 English | [한국어](./README.ko.md)
 
@@ -7,7 +7,7 @@ A coroutine-native Read-through / Write-through / Write-behind cache repository 
 
 ## Overview
 
-`bluetape4k-exposed-r2dbc-lettuce` provides:
+`exposed-r2dbc-lettuce` provides:
 
 - **Read-through cache**: On `findById` cache miss, automatically loads from DB via R2DBC
   `suspendTransaction` and caches in Redis
@@ -94,7 +94,7 @@ sequenceDiagram
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-lettuce:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-r2dbc-lettuce:${version}")
 }
 ```
 
@@ -209,12 +209,12 @@ When NearCache is enabled, the lookup order is: **Caffeine (local) → Redis →
 ## Testing
 
 ```bash
-./gradlew :bluetape4k-exposed-r2dbc-lettuce:test
+./gradlew :exposed-r2dbc-lettuce:test
 ```
 
 ## References
 
-- [bluetape4k-exposed-r2dbc](../exposed-r2dbc)
-- [bluetape4k-exposed-jdbc-lettuce](../exposed-jdbc-lettuce)
+- [exposed-r2dbc](../exposed-r2dbc)
+- [exposed-jdbc-lettuce](../exposed-jdbc-lettuce)
 - [bluetape4k-lettuce](../../infra/lettuce)
 - [Lettuce Redis Client](https://lettuce.io)

@@ -7,7 +7,7 @@ configurations {
 dependencies {
     // Exposed
     implementation(platform(libs.exposed.bom))
-    api(project(":bluetape4k-exposed-core"))
+    api(project(":exposed-core"))
     api(libs.exposed.dao)
     compileOnly(libs.exposed.jdbc)
 
@@ -15,7 +15,7 @@ dependencies {
     api(libs.bluetape4k.idgenerators)
     api(libs.java.uuid.generator)
 
-    testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
+    testImplementation(project(":exposed-jdbc-tests"))
 
     testImplementation(libs.bluetape4k.junit5)
     testImplementation(libs.bluetape4k.testcontainers)

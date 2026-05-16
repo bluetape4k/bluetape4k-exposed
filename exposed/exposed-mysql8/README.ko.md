@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-mysql8
+# Module exposed-mysql8
 
 [English](./README.md) | 한국어
 
@@ -367,7 +367,7 @@ transaction(db) {
 ## 의존성
 
 ```kotlin
-testImplementation(project(":bluetape4k-exposed-mysql8"))
+testImplementation(project(":exposed-mysql8"))
 ```
 
 모듈이 제공하는 의존성:
@@ -447,8 +447,8 @@ abstract class AbstractMySqlGisTest : AbstractExposedTest() {
 핵심 회귀 테스트:
 
 ```bash
-./gradlew :bluetape4k-exposed-mysql8:test --tests "io.bluetape4k.exposed.mysql8.gis.GeometryColumnTypeTest"
-./gradlew :bluetape4k-exposed-mysql8:test --tests "io.bluetape4k.exposed.mysql8.gis.MySqlWkbUtilsTest"
+./gradlew :exposed-mysql8:test --tests "io.bluetape4k.exposed.mysql8.gis.GeometryColumnTypeTest"
+./gradlew :exposed-mysql8:test --tests "io.bluetape4k.exposed.mysql8.gis.MySqlWkbUtilsTest"
 ```
 
 ## 참조

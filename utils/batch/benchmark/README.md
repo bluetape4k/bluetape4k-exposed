@@ -1,4 +1,4 @@
-# bluetape4k-batch Benchmark Hub
+# exposed-batch Benchmark Hub
 
 [한국어](./README.ko.md) | English
 
@@ -41,5 +41,5 @@ xychart-beta
 
 - Detailed numeric rows are generated per DB document.
 - `generateBenchmarkDocs` currently writes the benchmark hub and DB detail skeletons.
-- Report directory: `/Users/debop/work/bluetape4k/bluetape4k-projects/.claude/worktrees/utils-batch-kotlinx-benchmark/build/bluetape4k-batch/reports/benchmarks`.
+- Report directory: `/Users/debop/work/bluetape4k/bluetape4k-projects/.claude/worktrees/utils-batch-kotlinx-benchmark/build/exposed-batch/reports/benchmarks`.
 - Full PostgreSQL/MySQL runs can be generated later without changing the README link structure.

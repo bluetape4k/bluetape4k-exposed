@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-tests
+# Module exposed-jdbc-tests
 
 English | [한국어](./README.ko.md)
 
@@ -10,7 +10,7 @@ A shared test infrastructure module for testing Exposed-based modules. It simpli
 
 ```kotlin
 dependencies {
-    testImplementation("io.github.bluetape4k.exposed:bluetape4k-exposed-tests:${version}")
+    testImplementation("io.github.bluetape4k.exposed:exposed-jdbc-tests:${version}")
 }
 ```
 

@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-jackson
+# Module exposed-jackson2
 
 English | [한국어](./README.ko.md)
 
@@ -6,7 +6,7 @@ A module for serializing and deserializing Exposed JSON/JSONB columns using Jack
 
 ## Overview
 
-`bluetape4k-exposed-jackson` provides serialization and deserialization of JetBrains Exposed JSON/JSONB column types using [Jackson 2.x](https://github.com/FasterXML/jackson). It supports JSON column types in PostgreSQL, H2, and other databases.
+`exposed-jackson2` provides serialization and deserialization of JetBrains Exposed JSON/JSONB column types using [Jackson 2.x](https://github.com/FasterXML/jackson). It supports JSON column types in PostgreSQL, H2, and other databases.
 
 ### Key Features
 
@@ -19,7 +19,7 @@ A module for serializing and deserializing Exposed JSON/JSONB columns using Jack
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-jackson2:${version}")
     implementation("io.github.bluetape4k:bluetape4k-jackson2:${version}")
 }
 ```
@@ -234,7 +234,7 @@ sequenceDiagram
 ## Testing
 
 ```bash
-./gradlew :bluetape4k-exposed-jackson:test
+./gradlew :exposed-jackson2:test
 ```
 
 ## References

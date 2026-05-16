@@ -1,4 +1,4 @@
-# bluetape4k-spring-boot-exposed-r2dbc-demo
+# exposed-spring-boot-r2dbc-demo
 
 [English](./README.md) | 한국어
 
@@ -449,7 +449,7 @@ dependencies {
     implementation(platform(Libs.spring_boot_dependencies))
 
     // 나머지 의존성은 동일
-    implementation(project(":bluetape4k-spring-boot-exposed-r2dbc"))
+    implementation(project(":exposed-spring-boot-r2dbc"))
     implementation(Libs.springBootStarter("webflux"))
 }
 ```
@@ -478,7 +478,7 @@ Spring Boot는 기본적으로 다음 버전을 제공합니다:
 ```kotlin
 dependencies {
     implementation(platform(Libs.spring_boot_dependencies))
-    implementation(project(":bluetape4k-spring-boot-exposed-r2dbc"))
+    implementation(project(":exposed-spring-boot-r2dbc"))
     implementation(Libs.springBootStarter("webflux"))
     implementation(Libs.exposed_spring_boot_starter)
     implementation(Libs.exposed_r2dbc)

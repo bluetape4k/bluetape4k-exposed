@@ -1,8 +1,8 @@
-# bluetape4k-exposed-jdbc-caffeine
+# exposed-jdbc-caffeine
 
 English | [한국어](./README.ko.md)
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.bluetape4k/bluetape4k-exposed-jdbc-caffeine)](https://central.sonatype.com/artifact/io.github.bluetape4k/bluetape4k-exposed-jdbc-caffeine)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.bluetape4k.exposed/exposed-jdbc-caffeine)](https://central.sonatype.com/artifact/io.github.bluetape4k.exposed/exposed-jdbc-caffeine)
 
 Exposed JDBC repository with Caffeine local (in-process) cache. No Redis dependency — only `exposed-cache` interfaces are required.
 
@@ -264,7 +264,7 @@ Tests run against:
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-caffeine:$version")
+    implementation("io.github.bluetape4k.exposed:exposed-jdbc-caffeine:$version")
 }
 ```
 

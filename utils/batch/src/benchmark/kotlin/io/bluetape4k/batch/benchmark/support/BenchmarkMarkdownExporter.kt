@@ -29,8 +29,8 @@ internal object BenchmarkMarkdownExporter {
             title = "# H2 Benchmark Details",
             databaseName = "H2",
             profileRows = listOf(
-                "| JDBC | `./gradlew :bluetape4k-batch:h2JdbcBenchmark` | `H2JdbcBatchBenchmark` |",
-                "| R2DBC | `./gradlew :bluetape4k-batch:h2R2dbcBenchmark` | `H2R2dbcBatchBenchmark` |",
+                "| JDBC | `./gradlew :exposed-batch:h2JdbcBenchmark` | `H2JdbcBatchBenchmark` |",
+                "| R2DBC | `./gradlew :exposed-batch:h2R2dbcBenchmark` | `H2R2dbcBatchBenchmark` |",
             ),
             notes = listOf(
                 "H2는 인메모리 DB이므로 네트워크 왕복 비용 없이 JDBC/R2DBC 차이를 비교할 수 있습니다.",
@@ -43,8 +43,8 @@ internal object BenchmarkMarkdownExporter {
             title = "# PostgreSQL Benchmark Details",
             databaseName = "PostgreSQL",
             profileRows = listOf(
-                "| JDBC | `./gradlew :bluetape4k-batch:postgresJdbcBenchmark` | `PostgreSqlJdbcBatchBenchmark` |",
-                "| R2DBC | `./gradlew :bluetape4k-batch:postgresR2dbcBenchmark` | `PostgreSqlR2dbcBatchBenchmark` |",
+                "| JDBC | `./gradlew :exposed-batch:postgresJdbcBenchmark` | `PostgreSqlJdbcBatchBenchmark` |",
+                "| R2DBC | `./gradlew :exposed-batch:postgresR2dbcBenchmark` | `PostgreSqlR2dbcBatchBenchmark` |",
             ),
             notes = listOf(
                 "PostgreSQL benchmark는 Testcontainers를 자동 기동하도록 설계되어 있습니다.",
@@ -57,8 +57,8 @@ internal object BenchmarkMarkdownExporter {
             title = "# MySQL Benchmark Details",
             databaseName = "MySQL",
             profileRows = listOf(
-                "| JDBC | `./gradlew :bluetape4k-batch:mysqlJdbcBenchmark` | `MySqlJdbcBatchBenchmark` |",
-                "| R2DBC | `./gradlew :bluetape4k-batch:mysqlR2dbcBenchmark` | `MySqlR2dbcBatchBenchmark` |",
+                "| JDBC | `./gradlew :exposed-batch:mysqlJdbcBenchmark` | `MySqlJdbcBatchBenchmark` |",
+                "| R2DBC | `./gradlew :exposed-batch:mysqlR2dbcBenchmark` | `MySqlR2dbcBatchBenchmark` |",
             ),
             notes = listOf(
                 "MySQL benchmark도 Testcontainers 자동 기동을 전제로 합니다.",
@@ -71,7 +71,7 @@ internal object BenchmarkMarkdownExporter {
     private fun writeHubReadme(docsDir: Path, reportDir: Path?) {
         docsDir.resolve("README.md").writeText(
             """
-            # bluetape4k-batch Benchmark Hub
+            # exposed-batch Benchmark Hub
 
             [한국어](./README.ko.md) | English
 
@@ -123,7 +123,7 @@ internal object BenchmarkMarkdownExporter {
     private fun writeHubReadmeKo(docsDir: Path, reportDir: Path?) {
         docsDir.resolve("README.ko.md").writeText(
             """
-            # bluetape4k-batch 벤치마크 허브
+            # exposed-batch 벤치마크 허브
 
             한국어 | [English](./README.md)
 

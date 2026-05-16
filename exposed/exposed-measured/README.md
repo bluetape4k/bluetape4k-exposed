@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-measured
+# Module exposed-measured
 
 English | [한국어](./README.ko.md)
 

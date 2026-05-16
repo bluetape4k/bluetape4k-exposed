@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-bigquery
+# Module exposed-bigquery
 
 [English](./README.md) | 한국어
 
@@ -7,7 +7,7 @@ JetBrains Exposed DSL로 SQL을 생성하고 Google BigQuery REST API로 실행�
 
 ## 개요
 
-`bluetape4k-exposed-bigquery`는 다음을 제공합니다:
+`exposed-bigquery`는 다음을 제공합니다:
 
 - **BigQueryContext**: Exposed DSL → SQL(H2 PostgreSQL 모드) 변환 후 BigQuery REST API 실행
     - SELECT, INSERT, UPDATE, DELETE, CREATE TABLE DDL 지원
@@ -20,10 +20,10 @@ JetBrains Exposed DSL로 SQL을 생성하고 Google BigQuery REST API로 실행�
 
 ## 모듈 포지셔닝
 
-`bluetape4k-exposed-bigquery` 는 JDBC 드라이버 기반 ORM 모듈이 아닙니다. Exposed DSL을 SQL 생성기로 재사용하고, 실제 실행은 BigQuery REST API가 담당합니다.
+`exposed-bigquery` 는 JDBC 드라이버 기반 ORM 모듈이 아닙니다. Exposed DSL을 SQL 생성기로 재사용하고, 실제 실행은 BigQuery REST API가 담당합니다.
 
 - BigQuery REST API 실행이 필요하면 이 모듈을 사용합니다.
-- JDBC 트랜잭션 일관성이나 Trino connector 기반 실행이 필요하면 `bluetape4k-exposed-trino` 또는 후속 `exposed-bigquery-trino`을 사용해야 합니다.
+- JDBC 트랜잭션 일관성이나 Trino connector 기반 실행이 필요하면 `exposed-trino` 또는 후속 `exposed-bigquery-trino`을 사용해야 합니다.
 - `sqlGenDb` 는 SQL 문자열 생성 전용 내부 구현이며, 애플리케이션 데이터 저장소가 아닙니다.
 
 ## 포지셔닝
@@ -41,7 +41,7 @@ JetBrains Exposed DSL로 SQL을 생성하고 Google BigQuery REST API로 실행�
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-bigquery:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-bigquery:${version}")
 }
 ```
 
@@ -242,7 +242,7 @@ BigQuery 에뮬레이터(`goccy/bigquery-emulator`) 기반 통합 테스트를 �
 brew install goccy/bigquery-emulator/bigquery-emulator
 bigquery-emulator --project=test --dataset=testdb --port=9050
 
-./gradlew :bluetape4k-exposed-bigquery:test
+./gradlew :exposed-bigquery:test
 ```
 
 에뮬레이터가 없으면 Testcontainers Docker 컨테이너가 자동 시작됩니다.
@@ -250,8 +250,8 @@ bigquery-emulator --project=test --dataset=testdb --port=9050
 회귀 테스트 예:
 
 ```bash
-./gradlew :bluetape4k-exposed-bigquery:test --tests "io.bluetape4k.exposed.bigquery.BigQueryResultRowTest"
-./gradlew :bluetape4k-exposed-bigquery:test --tests "io.bluetape4k.exposed.bigquery.query.SelectQueryTest"
+./gradlew :exposed-bigquery:test --tests "io.bluetape4k.exposed.bigquery.BigQueryResultRowTest"
+./gradlew :exposed-bigquery:test --tests "io.bluetape4k.exposed.bigquery.query.SelectQueryTest"
 ```
 
 ## 참고

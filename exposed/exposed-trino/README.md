@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-trino
+# Module exposed-trino
 
 English | [한국어](./README.ko.md)
 
@@ -6,7 +6,7 @@ A module that integrates JetBrains Exposed ORM with Trino JDBC. Built on Postgre
 
 ## Overview
 
-`bluetape4k-exposed-trino` provides:
+`exposed-trino` provides:
 
 - **TrinoDialect**: Extends
   `PostgreSQLDialect` for Exposed ORM compatibility with Trino (disables ALTER COLUMN TYPE / multiple generated keys)
@@ -24,9 +24,9 @@ A module that integrates JetBrains Exposed ORM with Trino JDBC. Built on Postgre
 
 ```kotlin
 dependencies {
-    implementation(project(":bluetape4k-exposed-trino"))
+    implementation(project(":exposed-trino"))
     // or Maven coordinates
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-trino:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-trino:${version}")
 }
 ```
 
@@ -334,15 +334,15 @@ sequenceDiagram
 ## Testing
 
 ```bash
-./gradlew :bluetape4k-exposed-trino:test
+./gradlew :exposed-trino:test
 ```
 
 Core regression test examples:
 
 ```bash
-./gradlew :bluetape4k-exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoConnectionWrapperTest"
-./gradlew :bluetape4k-exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoDatabaseTest"
-./gradlew :bluetape4k-exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoTransactionAtomicityTest"
+./gradlew :exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoConnectionWrapperTest"
+./gradlew :exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoDatabaseTest"
+./gradlew :exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoTransactionAtomicityTest"
 ```
 
 ## Phase 2 Roadmap
@@ -362,4 +362,4 @@ The following features are planned for future releases.
 - [Trino INSERT syntax](https://trino.io/docs/current/sql/insert.html)
 - [Trino SQL statement support](https://trino.io/docs/current/language/sql-support.html)
 - [JetBrains Exposed](https://github.com/JetBrains/Exposed)
-- [bluetape4k-exposed-duckdb](../exposed-duckdb/README.md) — Similar in-process analytics DB integration reference
+- [exposed-duckdb](../exposed-duckdb/README.md) — Similar in-process analytics DB integration reference

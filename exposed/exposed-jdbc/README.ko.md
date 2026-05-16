@@ -1,13 +1,13 @@
-# Module bluetape4k-exposed-jdbc
+# Module exposed-jdbc
 
 [English](./README.md) | 한국어
 
 JetBrains Exposed JDBC 계층을 위한 Repository 패턴, 트랜잭션 확장, 쿼리 유틸리티를 제공하는 모듈입니다.
-`bluetape4k-exposed-core`와 `bluetape4k-exposed-dao`를 기반으로 JDBC에 특화된 기능을 제공합니다.
+`exposed-core`와 `exposed-dao`를 기반으로 JDBC에 특화된 기능을 제공합니다.
 
 ## 개요
 
-`bluetape4k-exposed-jdbc`는 다음을 제공합니다:
+`exposed-jdbc`는 다음을 제공합니다:
 
 - **Repository 패턴**: `JdbcRepository<ID, T, E>`, `SoftDeletedJdbcRepository<ID, T, E>` 인터페이스
 - **Coroutines 지원**: `SuspendedQuery` — suspend 함수로 JDBC 쿼리 실행
@@ -18,7 +18,7 @@ JetBrains Exposed JDBC 계층을 위한 Repository 패턴, 트랜잭션 확장, 
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-jdbc:${version}")
 
     // Coroutines 지원 시 (SuspendedQuery)
     implementation("io.github.bluetape4k:bluetape4k-coroutines:${version}")
@@ -644,11 +644,11 @@ sequenceDiagram
 ## 테스트
 
 ```bash
-./gradlew :bluetape4k-exposed-jdbc:test
+./gradlew :exposed-jdbc:test
 ```
 
 ## 참고
 
 - [JetBrains Exposed JDBC](https://github.com/JetBrains/Exposed/wiki/DSL)
-- [bluetape4k-exposed-core](../exposed-core)
-- [bluetape4k-exposed-dao](../exposed-dao)
+- [exposed-core](../exposed-core)
+- [exposed-dao](../exposed-dao)

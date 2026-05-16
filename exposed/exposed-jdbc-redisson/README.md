@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-jdbc-redisson
+# Module exposed-jdbc-redisson
 
 English | [한국어](./README.ko.md)
 
@@ -6,7 +6,7 @@ Combines Exposed JDBC with Redisson caching to implement Read-Through/Write-Thro
 
 ## Overview
 
-`bluetape4k-exposed-jdbc-redisson` integrates JetBrains Exposed ORM with the [Redisson](https://github.com/redisson/redisson) Redis client, making it easy to cache database query results in Redis.
+`exposed-jdbc-redisson` integrates JetBrains Exposed ORM with the [Redisson](https://github.com/redisson/redisson) Redis client, making it easy to cache database query results in Redis.
 
 ### Key Features
 
@@ -22,7 +22,7 @@ Combines Exposed JDBC with Redisson caching to implement Read-Through/Write-Thro
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-redisson:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-jdbc-redisson:${version}")
     implementation("org.redisson:redisson:3.37.0")
 }
 ```
@@ -615,7 +615,7 @@ sequenceDiagram
 ## Testing
 
 ```bash
-./gradlew :bluetape4k-exposed-jdbc-redisson:test
+./gradlew :exposed-jdbc-redisson:test
 ```
 
 ## References
@@ -623,4 +623,4 @@ sequenceDiagram
 - [JetBrains Exposed](https://github.com/JetBrains/Exposed)
 - [Redisson](https://github.com/redisson/redisson)
 - [Redisson RMap](https://www.javadoc.io/doc/org.redisson/redisson/latest/org/redisson/api/RMap.html)
-- [bluetape4k-exposed-jdbc](../exposed-jdbc)
+- [exposed-jdbc](../exposed-jdbc)

@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-duckdb
+# Module exposed-duckdb
 
 [English](./README.md) | 한국어
 
@@ -6,7 +6,7 @@ JetBrains Exposed ORM과 DuckDB JDBC를 통합하는 모듈입니다. PostgreSQL
 
 ## 개요
 
-`bluetape4k-exposed-duckdb`는 다음을 제공합니다:
+`exposed-duckdb`는 다음을 제공합니다:
 
 - **DuckDBDialect**: `PostgreSQLDialect` 상속, Exposed ORM과 DuckDB 호환
 - **DuckDBDialectMetadata**: `getImportedKeys` 미지원 우회 (FK 제약 캐싱 no-op)
@@ -25,7 +25,7 @@ JetBrains Exposed ORM과 DuckDB JDBC를 통합하는 모듈입니다. PostgreSQL
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-duckdb:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-duckdb:${version}")
 }
 ```
 
@@ -169,15 +169,15 @@ sequenceDiagram
 ## 테스트
 
 ```bash
-./gradlew :bluetape4k-exposed-duckdb:test
+./gradlew :exposed-duckdb:test
 ```
 
 핵심 회귀 테스트 예:
 
 ```bash
-./gradlew :bluetape4k-exposed-duckdb:test --tests "io.bluetape4k.exposed.duckdb.DuckDBConnectionWrapperTest"
-./gradlew :bluetape4k-exposed-duckdb:test --tests "io.bluetape4k.exposed.duckdb.DuckDBDatabaseTest"
-./gradlew :bluetape4k-exposed-duckdb:test --tests "io.bluetape4k.exposed.duckdb.DuckDBExtensionsTest"
+./gradlew :exposed-duckdb:test --tests "io.bluetape4k.exposed.duckdb.DuckDBConnectionWrapperTest"
+./gradlew :exposed-duckdb:test --tests "io.bluetape4k.exposed.duckdb.DuckDBDatabaseTest"
+./gradlew :exposed-duckdb:test --tests "io.bluetape4k.exposed.duckdb.DuckDBExtensionsTest"
 ```
 
 ## 참고

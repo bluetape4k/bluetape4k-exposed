@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-fastjson2
+# Module exposed-fastjson2
 
 English | [한국어](./README.ko.md)
 
@@ -6,7 +6,7 @@ A module for serializing and deserializing Exposed JSON/JSONB columns using Fast
 
 ## Overview
 
-`bluetape4k-exposed-fastjson2` provides serialization and deserialization of JetBrains Exposed JSON/JSONB column types using [Alibaba Fastjson2](https://github.com/alibaba/fastjson2). It is well-suited for environments that require high-performance JSON processing.
+`exposed-fastjson2` provides serialization and deserialization of JetBrains Exposed JSON/JSONB column types using [Alibaba Fastjson2](https://github.com/alibaba/fastjson2). It is well-suited for environments that require high-performance JSON processing.
 
 ### Key Features
 
@@ -19,7 +19,7 @@ A module for serializing and deserializing Exposed JSON/JSONB columns using Fast
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-fastjson2:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-fastjson2:${version}")
     implementation("io.github.bluetape4k:bluetape4k-fastjson2:${version}")
 }
 ```
@@ -122,7 +122,7 @@ val extraData: Map<String, Any>? = resultRow.getFastjsonOrNull(Products.extraDat
 ## Testing
 
 ```bash
-./gradlew :bluetape4k-exposed-fastjson2:test
+./gradlew :exposed-fastjson2:test
 ```
 
 ## Architecture Diagram

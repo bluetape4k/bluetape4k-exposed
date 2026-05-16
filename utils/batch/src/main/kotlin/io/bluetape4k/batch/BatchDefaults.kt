@@ -3,7 +3,7 @@ package io.bluetape4k.batch
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * bluetape4k-batch 공용 디폴트 상수.
+ * exposed-batch 공용 디폴트 상수.
  *
  * 청크 크기, 페이지 크기, 커밋 타임아웃 등 배치 처리에서 공통으로 사용하는
  * 기본값을 중앙 관리합니다.

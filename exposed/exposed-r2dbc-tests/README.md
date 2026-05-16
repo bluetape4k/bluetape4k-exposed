@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-r2dbc-tests
+# Module exposed-r2dbc-tests
 
 English | [한국어](./README.ko.md)
 
@@ -10,7 +10,7 @@ A shared test-infrastructure module for testing modules built on [Exposed R2DBC]
 
 ```kotlin
 dependencies {
-    testImplementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-tests:${version}")
+    testImplementation("io.github.bluetape4k.exposed:exposed-r2dbc-tests:${version}")
 }
 ```
 
