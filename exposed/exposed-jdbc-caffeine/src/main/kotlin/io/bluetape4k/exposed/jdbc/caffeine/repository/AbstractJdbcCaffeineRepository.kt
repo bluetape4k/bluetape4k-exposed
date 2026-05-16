@@ -202,8 +202,8 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
         if (cached != null) return cached
 
         val fromDb = findByIdFromDb(id) ?: return null
-        cache.put(key, fromDb)
-        return fromDb
+        // putIfAbsent is atomic: if another thread wrote a value concurrently, we keep theirs.
+        return cache.asMap().putIfAbsent(key, fromDb) ?: fromDb
     }
 
     override fun getAll(ids: Collection<ID>): Map<ID, E> {
@@ -227,7 +227,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
             for (entity in fromDb) {
                 val id = extractId(entity)
                 result[id] = entity
-                cache.put(serializeKey(id), entity)
+                cache.asMap().putIfAbsent(serializeKey(id), entity)
             }
         }
 
@@ -363,10 +363,28 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
      */
     override fun close() {
         if (config.writeMode == CacheWriteMode.WRITE_BEHIND) {
-            runCatching { writeBehindQueue.close() }
-            runCatching { runBlocking { writeBehindJob.join() } }
+            try {
+                writeBehindQueue.close()
+            } catch (e: Exception) {
+                log.warn(e) { "Failed to close writeBehindQueue on close" }
+            }
+            try {
+                runBlocking { writeBehindJob.join() }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                log.warn(e) { "Failed to join writeBehindJob on close" }
+            }
         }
-        runCatching { cache.invalidateAll() }
-        runCatching { scope.cancel() }
+        try {
+            cache.invalidateAll()
+        } catch (e: Exception) {
+            log.warn(e) { "Failed to invalidate cache on close" }
+        }
+        try {
+            scope.cancel()
+        } catch (e: Exception) {
+            log.warn(e) { "Failed to cancel scope on close" }
+        }
     }
 }

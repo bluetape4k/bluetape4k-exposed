@@ -136,7 +136,13 @@ class ExposedJdbcBatchReader<K: Comparable<K>, T: Any>(
     }
 
     override suspend fun close() {
-        runCatching { buffer.clear() }
+        runCatching {
+            buffer.clear()
+            lastFetchedKey = null
+            lastReadKey = null
+            lastCommittedKey = null
+            exhausted = false
+        }
     }
 
     private suspend fun fetchNextPage() {

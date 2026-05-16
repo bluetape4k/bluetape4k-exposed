@@ -117,7 +117,11 @@ class ExposedR2dbcBatchJobRepository(
                     .orderBy(BatchJobExecutionTable.id, SortOrder.DESC)
                     .limit(1)
                     .map { it.toJobExecution(checkpointJson) }
-                    .firstOrNull()!!
+                    .firstOrNull()
+                    ?: throw IllegalStateException(
+                        "Job execution disappeared after unique-constraint violation re-query. " +
+                            "jobName=${jobName}, params=${params}"
+                    )
             }
         }
     }

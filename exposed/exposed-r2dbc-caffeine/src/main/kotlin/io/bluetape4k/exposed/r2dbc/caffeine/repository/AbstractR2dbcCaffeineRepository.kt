@@ -215,8 +215,9 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
         if (cached != null) return cached
 
         val fromDb = findByIdFromDb(id) ?: return null
-        cache.put(key, CompletableFuture.completedFuture(fromDb))
-        return fromDb
+        // putIfAbsent is atomic: if another coroutine wrote a value concurrently, we keep theirs.
+        val winner = cache.asMap().putIfAbsent(key, CompletableFuture.completedFuture(fromDb))
+        return winner?.await() ?: fromDb
     }
 
     override suspend fun getAll(ids: Collection<ID>): Map<ID, E> {
@@ -240,7 +241,7 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
             for (entity in fromDb) {
                 val id = extractId(entity)
                 result[id] = entity
-                cache.put(serializeKey(id), CompletableFuture.completedFuture(entity))
+                cache.asMap().putIfAbsent(serializeKey(id), CompletableFuture.completedFuture(entity))
             }
         }
 
