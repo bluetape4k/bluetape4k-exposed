@@ -23,7 +23,7 @@ class ExposedEventPublicationTable(
     val publicationDate = timestamp("PUBLICATION_DATE")
     val completionDate = timestamp("COMPLETION_DATE").nullable()
     val status = varchar("STATUS", 20).nullable()
-    val completionAttempts = integer("COMPLETION_ATTEMPTS").nullable()
+    val completionAttempts = integer("COMPLETION_ATTEMPTS").default(0)
     val lastResubmissionDate = timestamp("LAST_RESUBMISSION_DATE").nullable()
 
     override val primaryKey: PrimaryKey = PrimaryKey(id)
