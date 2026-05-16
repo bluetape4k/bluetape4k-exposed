@@ -5,6 +5,8 @@ package io.bluetape4k.spring.modulith.exposed
 import org.jetbrains.exposed.v1.core.Coalesce
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
+import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.intLiteral
 import org.jetbrains.exposed.v1.core.plus
@@ -269,24 +271,30 @@ class ExposedEventPublicationRepository(
     }
 
     private fun insertArchive(row: ResultRow, completionDate: Instant) {
-        val archiveId = row[table.id]
-        val exists = archiveTable.selectAll()
-            .where { archiveTable.id eq archiveId }
-            .empty()
-            .not()
-
-        if (exists) return
-
-        archiveTable.insert { archive ->
-            archive[archiveTable.id] = row[table.id]
-            archive[archiveTable.listenerId] = row[table.listenerId]
-            archive[archiveTable.eventType] = row[table.eventType]
-            archive[archiveTable.serializedEvent] = row[table.serializedEvent]
-            archive[archiveTable.publicationDate] = row[table.publicationDate]
-            archive[archiveTable.status] = Status.COMPLETED.name
-            archive[archiveTable.completionDate] = completionDate
-            archive[archiveTable.completionAttempts] = row[table.completionAttempts]
-            archive[archiveTable.lastResubmissionDate] = row[table.lastResubmissionDate]
+        // Use a savepoint so that a duplicate-key violation does not abort the outer
+        // PostgreSQL transaction. Without a savepoint, catching ExposedSQLException
+        // leaves the connection in the "current transaction is aborted" state.
+        val conn = TransactionManager.current().connection
+        val savepoint = conn.setSavepoint("archive_insert")
+        try {
+            archiveTable.insert { archive ->
+                archive[archiveTable.id] = row[table.id]
+                archive[archiveTable.listenerId] = row[table.listenerId]
+                archive[archiveTable.eventType] = row[table.eventType]
+                archive[archiveTable.serializedEvent] = row[table.serializedEvent]
+                archive[archiveTable.publicationDate] = row[table.publicationDate]
+                archive[archiveTable.status] = Status.COMPLETED.name
+                archive[archiveTable.completionDate] = completionDate
+                archive[archiveTable.completionAttempts] = row[table.completionAttempts]
+                archive[archiveTable.lastResubmissionDate] = row[table.lastResubmissionDate]
+            }
+            conn.releaseSavepoint(savepoint)
+        } catch (e: ExposedSQLException) {
+            conn.rollback(savepoint)
+            // SQL state 23xxx = integrity constraint violation (unique key already exists)
+            // Treat as idempotent: the row was already archived by a concurrent caller.
+            if (e.sqlState?.startsWith("23") == true) return
+            throw e
         }
     }
 
