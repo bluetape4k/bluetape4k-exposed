@@ -68,7 +68,7 @@ Post-release work resumes with the CockroachDB epic and Spring Boot R2DBC raw SQ
 
 ```text
 1.8.0 release
-  -> Tag v1.8.0
+  -> Tag 1.8.0
   -> ./gradlew publishAggregationToCentralPortal
 
 #24 CockroachDB epic (post-release)
@@ -85,7 +85,7 @@ Post-release work resumes with the CockroachDB epic and Spring Boot R2DBC raw SQ
 
 | Lane | Limit | Current next |
 |------|------:|--------------|
-| Release gate | 1 | Tag v1.8.0 and publish to Maven Central. |
+| Release gate | 1 | Tag 1.8.0 and publish to Maven Central. |
 | Database connector | 1 | Resume after 1.8.0 ships; start with `#30`. |
 | Spring Boot repository | 1 | `#26` can proceed independently after release. |
 | Lower-priority integrations | 0 | Hold `#4`/`#5` until connector queue is stable. |
