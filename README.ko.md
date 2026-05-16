@@ -26,7 +26,7 @@ dialect 확장, Spring Boot 4 자동 설정을 Exposed DSL 스타일 안에서 �
 - **JSON Column** — Jackson 2.x, Jackson 3.x, Fastjson2 Column 직렬화
 - **암호화** — Google Tink 기반 암호화 Column
 - **DB 특화 확장** — PostgreSQL, MySQL 8, BigQuery, ClickHouse, Trino, DuckDB, Timefold persistence 헬퍼
-- **Spring Boot** — Spring Boot 4.x 자동 설정 (JDBC, R2DBC, Batch 통합)
+- **Spring Boot** — Spring Boot 4.x 자동 설정 (JDBC, R2DBC, Batch, Spring Modulith JDBC 이벤트 발행 통합)
 - **메트릭** — `exposed-measured`를 통한 Micrometer 통합
 
 ## 아키텍처
@@ -108,6 +108,7 @@ flowchart TD
 | `bluetape4k-spring-boot-exposed-jdbc` | Spring Boot 4.x JDBC 자동 설정 |
 | `bluetape4k-spring-boot-exposed-r2dbc` | Spring Boot 4.x R2DBC 자동 설정 |
 | `bluetape4k-spring-boot-batch-exposed` | Spring Boot 4.x Batch 통합 |
+| `bluetape4k-spring-boot-exposed-spring-modulith` | Exposed 기반 Spring Modulith JDBC 이벤트 발행 Repository |
 
 ## 빠른 시작
 
@@ -125,6 +126,8 @@ dependencies {
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.8.0-SNAPSHOT")
     // Spring Boot 자동 설정
     implementation("io.github.bluetape4k.exposed:bluetape4k-spring-boot-exposed-jdbc:1.8.0-SNAPSHOT")
+    // Exposed 기반 Spring Modulith JDBC 이벤트 발행
+    implementation("io.github.bluetape4k.exposed:bluetape4k-spring-boot-exposed-spring-modulith:1.8.0-SNAPSHOT")
 }
 ```
 
@@ -236,6 +239,26 @@ class MyApplication
 //   datasource:
 //     url: jdbc:postgresql://localhost:5432/mydb
 ```
+
+### Spring Modulith 이벤트 발행
+
+`bluetape4k-spring-boot-exposed-spring-modulith`는 Exposed DSL과 동일한
+Exposed `DataSource`/`springTransactionManager`를 사용하는 JDBC-only Spring
+Modulith `EventPublicationRepository`를 제공합니다. artifact 이름은 공식
+Spring Modulith 저장소 모듈처럼 보이지 않도록 `exposed-spring-modulith`
+형태로 둡니다.
+
+```yaml
+bluetape4k:
+  spring:
+    modulith:
+      exposed:
+        completion-mode: update
+        initialize-schema: false
+```
+
+운영 스키마는 Flyway 또는 Liquibase 사용을 권장합니다. `initialize-schema`는
+테스트와 작은 로컬 애플리케이션 용도입니다.
 
 ## 요구사항
 

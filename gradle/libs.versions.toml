@@ -14,6 +14,7 @@ spring-boot = "4.0.6"  # https://mvnrepository.com/artifact/org.springframework.
 spring-cloud = "2025.1.1"  # https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-dependencies
 reactor-bom = "2025.0.5"  # https://mvnrepository.com/artifact/io.projectreactor/reactor-bom
 spring-statemachine = "4.0.1"  # https://mvnrepository.com/artifact/org.springframework.statemachine/spring-statemachine-bom
+spring-modulith = "2.0.6"  # https://mvnrepository.com/artifact/org.springframework.modulith/spring-modulith-bom
 
 chaos-monkey = "4.0.0"  # https://mvnrepository.com/artifact/de.codecentric/chaos-monkey-spring-boot
 blockhound = "1.0.16.RELEASE"  # https://mvnrepository.com/artifact/io.projectreactor.tools/blockhound
@@ -354,6 +355,12 @@ spring-cloud-dependencies = { module = "org.springframework.cloud:spring-cloud-d
 # Spring Statemachine
 spring-statemachine-bom = { module = "org.springframework.statemachine:spring-statemachine-bom", version.ref = "spring-statemachine" }
 spring-statemachine-core = { module = "org.springframework.statemachine:spring-statemachine-core", version.ref = "spring-statemachine" }
+
+# Spring Modulith
+spring-modulith-bom = { module = "org.springframework.modulith:spring-modulith-bom", version.ref = "spring-modulith" }
+spring-modulith-events-api = { module = "org.springframework.modulith:spring-modulith-events-api" }
+spring-modulith-events-core = { module = "org.springframework.modulith:spring-modulith-events-core" }
+spring-modulith-events-jackson = { module = "org.springframework.modulith:spring-modulith-events-jackson" }
 
 # Chaos Monkey
 chaos-monkey-spring-boot = { module = "de.codecentric:chaos-monkey-spring-boot", version.ref = "chaos-monkey" }
