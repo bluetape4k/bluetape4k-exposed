@@ -2,13 +2,11 @@
 
 package io.bluetape4k.spring.modulith.exposed
 
-import org.jetbrains.exposed.v1.core.Coalesce
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.core.and
-import org.jetbrains.exposed.v1.core.intLiteral
 import org.jetbrains.exposed.v1.core.plus
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
@@ -127,7 +125,7 @@ class ExposedEventPublicationRepository(
             (table.id eq identifier.toKotlinUuid()) and (table.status neq Status.RESUBMITTED.name)
         }) { row ->
             row[table.status] = Status.RESUBMITTED.name
-            row[table.completionAttempts] = Coalesce(table.completionAttempts, intLiteral(0)) + 1
+            row[table.completionAttempts] = table.completionAttempts + 1
             row[table.lastResubmissionDate] = resubmissionDate
         }
 
@@ -316,7 +314,7 @@ class ExposedEventPublicationRepository(
             completionDate = row[publicationTable.completionDate],
             status = row[publicationTable.status]?.let(Status::valueOf),
             lastResubmissionDate = row[publicationTable.lastResubmissionDate],
-            completionAttempts = row[publicationTable.completionAttempts] ?: 0,
+            completionAttempts = row[publicationTable.completionAttempts],
         )
     }
 
