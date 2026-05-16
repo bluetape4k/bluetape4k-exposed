@@ -78,3 +78,19 @@ Internal demo/example Gradle paths also change:
 
 Consumer repositories should not be updated directly against unpublished exposed
 coordinates. They should consume the dependencies snapshot first.
+
+## `bluetape4k-dependencies` Sync Requirement
+
+`bluetape4k-dependencies` generates managed catalog aliases and BOM constraints
+from this repository's Gradle project graph. Its sync script must be updated for
+the new explicit mapping shape before publishing the dependencies snapshot:
+
+- parse `includeMappedModule("path", "project-name")` entries
+- treat `includeModules("exposed", withBaseDir = false)` as publishing
+  directory names directly, not as `bluetape4k-*`
+- preserve the old alias keys only if intentionally keeping consumer source
+  compatibility; otherwise update consuming build scripts together
+- verify generated aliases and constraints contain `exposed-*`,
+  `exposed-batch`, `exposed-spring-boot-*`, and `exposed-spring-modulith`
+
+This is the first downstream blocker after exposed snapshot publication.
