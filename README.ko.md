@@ -268,7 +268,7 @@ bluetape4k:
 
 - JVM 21+
 - Kotlin 2.3+
-- JetBrains Exposed 1.2+
+- JetBrains Exposed 1.3+
 
 ## 라이선스
 
