@@ -280,23 +280,31 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
 
     override fun put(id: ID, entity: E) {
         val key = serializeKey(id)
-        cache.put(key, entity)
 
         when (config.writeMode) {
-            CacheWriteMode.WRITE_THROUGH -> writeToDb(id, entity)
+            CacheWriteMode.WRITE_THROUGH -> {
+                cache.put(key, entity)
+                writeToDb(id, entity)
+            }
             CacheWriteMode.WRITE_BEHIND -> {
                 // Write-Behind Job 초기화 보장
                 writeBehindJob
-                // runBlocking 대신 trySend를 사용하여 Virtual Thread pinning을 방지한다.
-                // 큐가 가득 찬 경우 경고 로깅 후 유실(drop)한다. 큐 용량을 충분히 설정하면 유실을 방지할 수 있다.
+                // runBlocking is avoided to prevent Virtual Thread pinning.
+                // trySend() fails immediately when the queue is full — throw to prevent silent data loss.
+                // cache.put() is intentionally deferred until after trySend() succeeds to prevent
+                // a cache entry existing without a corresponding queued DB write.
                 val result = writeBehindQueue.trySend(id to entity)
                 if (result.isFailure) {
-                    log.warn { "Write-Behind 큐가 가득 찼습니다. 엔티티 id=$id 쓰기가 유실됩니다. 큐 용량(writeBehindQueueCapacity)을 늘려주세요." }
+                    throw IllegalStateException(
+                        "Write-Behind queue is full (capacity=${config.writeBehindQueueCapacity}). " +
+                            "Entity id=$id was NOT persisted to the database. " +
+                            "Increase LocalCacheConfig.writeBehindQueueCapacity or reduce the write rate."
+                    )
                 }
+                cache.put(key, entity)
             }
 
-            else -> { /* READ_ONLY: 캐시만 갱신 */
-            }
+            else -> cache.put(key, entity)  // READ_ONLY: 캐시만 갱신
         }
     }
 
@@ -355,10 +363,10 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
      */
     override fun close() {
         if (config.writeMode == CacheWriteMode.WRITE_BEHIND) {
-            writeBehindQueue.close()
-            runBlocking { writeBehindJob.join() }
+            runCatching { writeBehindQueue.close() }
+            runCatching { runBlocking { writeBehindJob.join() } }
         }
-        cache.invalidateAll()
-        scope.cancel()
+        runCatching { cache.invalidateAll() }
+        runCatching { scope.cancel() }
     }
 }
