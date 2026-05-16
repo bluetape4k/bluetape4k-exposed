@@ -60,6 +60,15 @@ The safe rollout is:
 Consumer repositories depend on the dependencies catalog/BOM, so the
 dependencies snapshot is the first downstream blocker.
 
+## L6: Downstream Generators Must Understand New Settings Shape
+
+`bluetape4k-dependencies` does not only bump versions. It reads managed
+repositories and generates catalog aliases plus BOM constraints. After this
+rename, its sync script must understand `includeMappedModule(...)` and the
+`includeModules("exposed", withBaseDir = false)` convention, or it can recreate
+old `bluetape4k-exposed-*` aliases from stale assumptions. Treat this as part of
+the dependencies PR, not as a consumer repo cleanup.
+
 ## Verification Snapshot
 
 Local verification for the implementation branch covered project graph, old
