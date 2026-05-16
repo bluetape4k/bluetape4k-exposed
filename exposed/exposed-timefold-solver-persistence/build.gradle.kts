@@ -12,8 +12,8 @@ dependencies {
     testImplementation(libs.timefold.solver.test)
 
     api(libs.exposed.core)
-    compileOnly(project(":bluetape4k-exposed-jdbc"))
-    testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
+    compileOnly(project(":exposed-jdbc"))
+    testImplementation(project(":exposed-jdbc-tests"))
 
     // JDBC Drivers
     testImplementation(libs.hikaricp)

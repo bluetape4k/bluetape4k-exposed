@@ -23,9 +23,9 @@ bluetape4k Serializable contract.
   `TrinoPagedQueryOptions` and `TrinoBatchInsertOptions`.
 - Added a regression test that checks both `Serializable` implementation and
   `ObjectStreamClass` serialVersionUID values.
-- `./gradlew :bluetape4k-exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoExtensionsTest" --no-configuration-cache --console=plain`
+- `./gradlew :exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoExtensionsTest" --no-configuration-cache --console=plain`
   passed.
-- `./gradlew :bluetape4k-exposed-trino:test --no-configuration-cache --console=plain`
+- `./gradlew :exposed-trino:test --no-configuration-cache --console=plain`
   passed with 67 tests.
 - `git diff --check` passed.
 - `./gradlew detekt --no-configuration-cache --console=plain` passed with

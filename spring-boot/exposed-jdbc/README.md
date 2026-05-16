@@ -1,4 +1,4 @@
-# bluetape4k-spring-boot-exposed-jdbc
+# exposed-spring-boot-jdbc
 
 English | [한국어](./README.ko.md)
 
@@ -102,7 +102,7 @@ flowchart LR
 ```gradle
 dependencies {
     implementation(platform(Libs.spring_boot_dependencies))
-    implementation("io.github.bluetape4k:bluetape4k-spring-boot-exposed-jdbc:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-spring-boot-jdbc:${version}")
 }
 ```
 
@@ -432,6 +432,6 @@ fun getUser(id: Long): UserDto {
 
 ## Related Modules
 
-- **bluetape4k-exposed-jdbc**: Core Exposed JDBC Repository implementation
-- **bluetape4k-spring-boot-exposed-jdbc**: Spring Boot 4 version
-- **bluetape4k-spring-boot-exposed-r2dbc**: R2DBC coroutine Repository
+- **exposed-jdbc**: Core Exposed JDBC Repository implementation
+- **exposed-spring-boot-jdbc**: Spring Boot 4 version
+- **exposed-spring-boot-r2dbc**: R2DBC coroutine Repository

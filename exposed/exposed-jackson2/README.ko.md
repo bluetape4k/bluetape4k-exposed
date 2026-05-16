@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-jackson
+# Module exposed-jackson2
 
 [English](./README.md) | 한국어
 
@@ -6,7 +6,7 @@ Exposed JSON/JSONB 컬럼을 Jackson 2로 직렬화/역직렬화하기 위한 �
 
 ## 개요
 
-`bluetape4k-exposed-jackson`은 JetBrains Exposed의 JSON/JSONB 컬럼 타입을 [Jackson 2.x](https://github.com/FasterXML/jackson)로 직렬화/역직렬화하는 기능을 제공합니다. PostgreSQL, H2 등의 JSON 타입을 지원합니다.
+`exposed-jackson2`은 JetBrains Exposed의 JSON/JSONB 컬럼 타입을 [Jackson 2.x](https://github.com/FasterXML/jackson)로 직렬화/역직렬화하는 기능을 제공합니다. PostgreSQL, H2 등의 JSON 타입을 지원합니다.
 
 ### 주요 기능
 
@@ -19,7 +19,7 @@ Exposed JSON/JSONB 컬럼을 Jackson 2로 직렬화/역직렬화하기 위한 �
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-jackson2:${version}")
     implementation("io.github.bluetape4k:bluetape4k-jackson2:${version}")
 }
 ```
@@ -234,7 +234,7 @@ sequenceDiagram
 ## 테스트
 
 ```bash
-./gradlew :bluetape4k-exposed-jackson:test
+./gradlew :exposed-jackson2:test
 ```
 
 ## 참고

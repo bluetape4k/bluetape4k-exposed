@@ -4,7 +4,7 @@ JetBrains Exposed ORM extensions for Kotlin: JDBC/R2DBC repositories, cache
 integrations, JSON serialization, encryption columns, and Spring Boot 4
 auto-configuration.
 
-- Group: `io.bluetape4k.exposed`
+- Group: `io.github.bluetape4k.exposed`
 - Publishing: Maven Central through NMCP
 
 ## Layout
@@ -50,24 +50,24 @@ Root README visual assets live under `docs/assets/` and should be shared by
 
 | Directory | Gradle module |
 |---|---|
-| `exposed/exposed-core` | `:bluetape4k-exposed-core` |
-| `exposed/exposed-jdbc` | `:bluetape4k-exposed-jdbc` |
-| `exposed/exposed-r2dbc` | `:bluetape4k-exposed-r2dbc` |
-| `spring-boot/exposed-jdbc` | `:bluetape4k-spring-boot-exposed-jdbc` |
-| `spring-boot/exposed-r2dbc` | `:bluetape4k-spring-boot-exposed-r2dbc` |
-| `utils/batch` | `:bluetape4k-utils-batch` |
+| `exposed/exposed-core` | `:exposed-core` |
+| `exposed/exposed-jdbc` | `:exposed-jdbc` |
+| `exposed/exposed-r2dbc` | `:exposed-r2dbc` |
+| `spring-boot/exposed-jdbc` | `:exposed-spring-boot-jdbc` |
+| `spring-boot/exposed-r2dbc` | `:exposed-spring-boot-r2dbc` |
+| `utils/batch` | `:exposed-batch` |
 
 ## Commands
 
 ```bash
 ./gradlew clean build
 ./gradlew build -x test --parallel
-./gradlew :bluetape4k-exposed-core:build
-./gradlew :bluetape4k-exposed-jdbc:test
-./gradlew :bluetape4k-exposed-r2dbc:test
-./gradlew :bluetape4k-exposed-jdbc-lettuce:test
+./gradlew :exposed-core:build
+./gradlew :exposed-jdbc:test
+./gradlew :exposed-r2dbc:test
+./gradlew :exposed-jdbc-lettuce:test
 ./gradlew test --tests "io.bluetape4k.exposed.jdbc.ExposedJdbcRepositoryTest"
-./gradlew :bluetape4k-spring-boot-exposed-jdbc:test
+./gradlew :exposed-spring-boot-jdbc:test
 ./gradlew detekt
 ./gradlew publishAggregationToCentralSnapshots
 ./gradlew publishAggregationToCentralPortal

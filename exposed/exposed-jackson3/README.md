@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-jackson3
+# Module exposed-jackson3
 
 English | [한국어](./README.ko.md)
 
@@ -6,7 +6,7 @@ A module for serializing and deserializing Exposed JSON/JSONB columns using Jack
 
 ## Overview
 
-`bluetape4k-exposed-jackson3` provides serialization and deserialization of JetBrains Exposed JSON/JSONB column types using [Jackson 3.x](https://github.com/FasterXML/jackson). It takes advantage of Jackson 3's new features and improved performance.
+`exposed-jackson3` provides serialization and deserialization of JetBrains Exposed JSON/JSONB column types using [Jackson 3.x](https://github.com/FasterXML/jackson). It takes advantage of Jackson 3's new features and improved performance.
 
 ### Key Features
 
@@ -19,7 +19,7 @@ A module for serializing and deserializing Exposed JSON/JSONB columns using Jack
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson3:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-jackson3:${version}")
     implementation("io.github.bluetape4k:bluetape4k-jackson3:${version}")
 }
 ```
@@ -107,7 +107,7 @@ val query2 = Users.selectAll()
 ## Testing
 
 ```bash
-./gradlew :bluetape4k-exposed-jackson3:test
+./gradlew :exposed-jackson3:test
 ```
 
 ## Architecture Diagram
@@ -197,11 +197,11 @@ classDiagram
 
 ```mermaid
 flowchart LR
-    subgraph Jackson2["bluetape4k-exposed-jackson (Jackson 2.x)"]
+    subgraph Jackson2["exposed-jackson2 (Jackson 2.x)"]
         A2["com.fasterxml.jackson.*"]
         B2["jackson&lt;T&gt; / jacksonb&lt;T&gt;"]
     end
-    subgraph Jackson3["bluetape4k-exposed-jackson3 (Jackson 3.x)"]
+    subgraph Jackson3["exposed-jackson3 (Jackson 3.x)"]
         A3["tools.jackson.*"]
         B3["jackson&lt;T&gt; / jacksonb&lt;T&gt;"]
     end
@@ -224,4 +224,4 @@ flowchart LR
 - [JetBrains Exposed](https://github.com/JetBrains/Exposed)
 - [Jackson 3.x](https://github.com/FasterXML/jackson)
 - bluetape4k-jackson3
-- bluetape4k-exposed-jackson
+- exposed-jackson2

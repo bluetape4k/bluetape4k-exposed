@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-core
+# Module exposed-core
 
 [English](./README.md) | 한국어
 
@@ -6,7 +6,7 @@ JetBrains Exposed의 핵심 컬럼 타입, 확장 함수, Repository 공통 인�
 
 ## 개요
 
-`bluetape4k-exposed-core`는 다음을 제공합니다:
+`exposed-core`는 다음을 제공합니다:
 
 - **커스텀 컬럼 타입**: 압축(LZ4/Snappy/Zstd), 암호화, 직렬화(Kryo/Fory) 기반의 Binary/Blob 컬럼
 - **네트워크 컬럼 타입**: IPv4/IPv6 주소(`inetAddress`), CIDR 블록(`cidr`), PostgreSQL `<<` 연산자
@@ -21,7 +21,7 @@ JetBrains Exposed의 핵심 컬럼 타입, 확장 함수, Repository 공통 인�
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-core:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-core:${version}")
 
     // 압축 컬럼 타입 사용 시
     implementation("io.github.bluetape4k:bluetape4k-io:${version}")
@@ -554,7 +554,7 @@ transaction {
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-core:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-core:${version}")
 
     // Auditable 사용 시
     compileOnly("org.jetbrains.exposed:exposed-java-time:${exposedVersion}")
@@ -564,7 +564,7 @@ dependencies {
 ## 테스트
 
 ```bash
-./gradlew :bluetape4k-exposed-core:test
+./gradlew :exposed-core:test
 ```
 
 ## 참고

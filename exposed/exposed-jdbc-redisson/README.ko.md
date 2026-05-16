@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-jdbc-redisson
+# Module exposed-jdbc-redisson
 
 [English](./README.md) | 한국어
 
@@ -6,7 +6,7 @@ Exposed JDBC와 Redisson 캐시를 결합해 Read-Through/Write-Through 캐시 �
 
 ## 개요
 
-`bluetape4k-exposed-jdbc-redisson`은 JetBrains Exposed ORM과 [Redisson](https://github.com/redisson/redisson) Redis 클라이언트를 통합하여, 데이터베이스 조회 결과를 Redis에 캐싱하는 패턴을 쉽게 구현할 수 있도록 지원합니다.
+`exposed-jdbc-redisson`은 JetBrains Exposed ORM과 [Redisson](https://github.com/redisson/redisson) Redis 클라이언트를 통합하여, 데이터베이스 조회 결과를 Redis에 캐싱하는 패턴을 쉽게 구현할 수 있도록 지원합니다.
 
 ### 주요 기능
 
@@ -21,7 +21,7 @@ Exposed JDBC와 Redisson 캐시를 결합해 Read-Through/Write-Through 캐시 �
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-redisson:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-jdbc-redisson:${version}")
     implementation("org.redisson:redisson:3.37.0")
 }
 ```
@@ -612,7 +612,7 @@ sequenceDiagram
 ## 테스트
 
 ```bash
-./gradlew :bluetape4k-exposed-jdbc-redisson:test
+./gradlew :exposed-jdbc-redisson:test
 ```
 
 ## 참고
@@ -620,4 +620,4 @@ sequenceDiagram
 - [JetBrains Exposed](https://github.com/JetBrains/Exposed)
 - [Redisson](https://github.com/redisson/redisson)
 - [Redisson RMap](https://www.javadoc.io/doc/org.redisson/redisson/latest/org/redisson/api/RMap.html)
-- [bluetape4k-exposed-jdbc](../exposed-jdbc)
+- [exposed-jdbc](../exposed-jdbc)

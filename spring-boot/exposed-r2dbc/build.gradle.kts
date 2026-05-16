@@ -17,7 +17,7 @@ dependencies {
     api("org.springframework.data:spring-data-commons")
 
     // JDBC 모듈 재사용: EntityInformation, ExposedMappingContext
-    api(project(":bluetape4k-spring-boot-exposed-jdbc"))
+    api(project(":exposed-spring-boot-jdbc"))
 
     api(libs.kotlin.reflect)
     api(libs.exposed.core)
@@ -28,8 +28,8 @@ dependencies {
     testImplementation(libs.flyway.core)
     testImplementation(libs.bluetape4k.junit5)
 
-    api(project(":bluetape4k-exposed-r2dbc"))
-    testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
+    api(project(":exposed-r2dbc"))
+    testImplementation(project(":exposed-r2dbc-tests"))
 
     testImplementation(libs.bluetape4k.virtualthread.jdk21)
 

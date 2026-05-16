@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-trino
+# Module exposed-trino
 
 [English](./README.md) | 한국어
 
@@ -6,7 +6,7 @@ JetBrains Exposed ORM과 Trino JDBC를 통합하는 모듈입니다. PostgreSQL 
 
 ## 개요
 
-`bluetape4k-exposed-trino`는 다음을 제공합니다:
+`exposed-trino`는 다음을 제공합니다:
 
 - **TrinoDialect**: `PostgreSQLDialect` 상속, Exposed ORM과 Trino 호환 (ALTER COLUMN TYPE / multiple generated keys 비활성화)
 - **TrinoDialectMetadata**: `getImportedKeys` 미지원 우회 (FK 제약 캐싱 no-op)
@@ -22,9 +22,9 @@ JetBrains Exposed ORM과 Trino JDBC를 통합하는 모듈입니다. PostgreSQL 
 
 ```kotlin
 dependencies {
-    implementation(project(":bluetape4k-exposed-trino"))
+    implementation(project(":exposed-trino"))
     // 또는 Maven 좌표
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-trino:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-trino:${version}")
 }
 ```
 
@@ -325,15 +325,15 @@ sequenceDiagram
 ## 테스트
 
 ```bash
-./gradlew :bluetape4k-exposed-trino:test
+./gradlew :exposed-trino:test
 ```
 
 핵심 회귀 테스트 예:
 
 ```bash
-./gradlew :bluetape4k-exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoConnectionWrapperTest"
-./gradlew :bluetape4k-exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoDatabaseTest"
-./gradlew :bluetape4k-exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoTransactionAtomicityTest"
+./gradlew :exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoConnectionWrapperTest"
+./gradlew :exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoDatabaseTest"
+./gradlew :exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoTransactionAtomicityTest"
 ```
 
 ## Phase 2 로드맵
@@ -353,4 +353,4 @@ sequenceDiagram
 - [Trino INSERT syntax](https://trino.io/docs/current/sql/insert.html)
 - [Trino SQL statement support](https://trino.io/docs/current/language/sql-support.html)
 - [JetBrains Exposed](https://github.com/JetBrains/Exposed)
-- [bluetape4k-exposed-duckdb](../exposed-duckdb/README.ko.md) — 유사한 in-process 분석 DB 통합 참고
+- [exposed-duckdb](../exposed-duckdb/README.ko.md) — 유사한 in-process 분석 DB 통합 참고

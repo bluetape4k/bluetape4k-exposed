@@ -31,13 +31,13 @@
 
 - First targeted run failed on Trino SQL syntax: `mismatched input 'OFFSET'`.
 - Fixed `TrinoDialect` limit/offset SQL generation.
-- `./gradlew :bluetape4k-exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoExtensionsTest"` passed with 8 tests.
+- `./gradlew :exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoExtensionsTest"` passed with 8 tests.
 - Claude PR review then found `groupConcat`/`locate` regressions from the
   custom provider and a stale README roadmap row.
 - Fixed Trino function mappings and added real Trino tests for `groupConcat`
   and `locate`.
-- `./gradlew :bluetape4k-exposed-trino:test --tests "io.bluetape4k.exposed.trino.query.SelectTest"` passed with 8 tests.
-- `./gradlew :bluetape4k-exposed-trino:test` passed with 61 tests.
+- `./gradlew :exposed-trino:test --tests "io.bluetape4k.exposed.trino.query.SelectTest"` passed with 8 tests.
+- `./gradlew :exposed-trino:test` passed with 61 tests.
 
 ## Follow-up Guidance
 

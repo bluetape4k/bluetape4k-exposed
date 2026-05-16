@@ -1,12 +1,12 @@
-# bluetape4k-exposed-cache
+# exposed-cache
 
 [English](./README.md) | 한국어
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.bluetape4k/bluetape4k-exposed-cache)](https://central.sonatype.com/artifact/io.github.bluetape4k/bluetape4k-exposed-cache)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.bluetape4k.exposed/exposed-cache)](https://central.sonatype.com/artifact/io.github.bluetape4k.exposed/exposed-cache)
 
 ## 개요
 
-`bluetape4k-exposed-cache`는 캐시 기반 Exposed 저장소를 위한 **핵심 인터페이스와 공통 설정**을 정의합니다.
+`exposed-cache`는 캐시 기반 Exposed 저장소를 위한 **핵심 인터페이스와 공통 설정**을 정의합니다.
 
 **캐시 백엔드에 독립적**으로 설계되어, 동일한 인터페이스를 로컬 캐시(Caffeine)와 분산 캐시(Redis — Lettuce/Redisson) 모듈이 모두 구현합니다. 각 캐시 모듈은 이 허브 모듈에 의존하며, 백엔드 특화 구현만 추가합니다.
 
@@ -238,7 +238,7 @@ sequenceDiagram
 
 ```kotlin
 // build.gradle.kts
-testImplementation(testFixtures("io.github.bluetape4k.exposed:bluetape4k-exposed-cache:$version"))
+testImplementation(testFixtures("io.github.bluetape4k.exposed:exposed-cache:$version"))
 
 // 모듈 테스트에서 시나리오 상속
 class MyCaffeineReadThroughTest : JdbcReadThroughScenario() {
@@ -268,6 +268,6 @@ class MyCaffeineReadThroughTest : JdbcReadThroughScenario() {
 
 ```kotlin
 dependencies {
-    api("io.github.bluetape4k.exposed:bluetape4k-exposed-cache:$version")
+    api("io.github.bluetape4k.exposed:exposed-cache:$version")
 }
 ```

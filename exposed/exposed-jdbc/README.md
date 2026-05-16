@@ -1,13 +1,13 @@
-# Module bluetape4k-exposed-jdbc
+# Module exposed-jdbc
 
 English | [한국어](./README.ko.md)
 
 Provides the Repository pattern, transaction extensions, and query utilities for the JetBrains Exposed JDBC layer. Built on top of
-`bluetape4k-exposed-core` and `bluetape4k-exposed-dao`, it delivers JDBC-specific features.
+`exposed-core` and `exposed-dao`, it delivers JDBC-specific features.
 
 ## Overview
 
-`bluetape4k-exposed-jdbc` provides:
+`exposed-jdbc` provides:
 
 - **Repository pattern**: `JdbcRepository<ID, T, E>` and `SoftDeletedJdbcRepository<ID, T, E>` interfaces
 - **Coroutines support**: `SuspendedQuery` — run JDBC queries as suspend functions
@@ -18,7 +18,7 @@ Provides the Repository pattern, transaction extensions, and query utilities for
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-jdbc:${version}")
 
     // For Coroutines support (SuspendedQuery)
     implementation("io.github.bluetape4k:bluetape4k-coroutines:${version}")
@@ -645,11 +645,11 @@ See [2026-04-21-self-improve.md](./2026-04-21-self-improve.md) for the full opti
 ## Testing
 
 ```bash
-./gradlew :bluetape4k-exposed-jdbc:test
+./gradlew :exposed-jdbc:test
 ```
 
 ## References
 
 - [JetBrains Exposed JDBC](https://github.com/JetBrains/Exposed/wiki/DSL)
-- [bluetape4k-exposed-core](../exposed-core)
-- [bluetape4k-exposed-dao](../exposed-dao)
+- [exposed-core](../exposed-core)
+- [exposed-dao](../exposed-dao)

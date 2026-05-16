@@ -6,8 +6,8 @@
 
 | Driver | Gradle Task | Benchmark Class |
 |--------|-------------|-----------------|
-| JDBC | `./gradlew :bluetape4k-batch:postgresJdbcBenchmark` | `PostgreSqlJdbcBatchBenchmark` |
-| R2DBC | `./gradlew :bluetape4k-batch:postgresR2dbcBenchmark` | `PostgreSqlR2dbcBatchBenchmark` |
+| JDBC | `./gradlew :exposed-batch:postgresJdbcBenchmark` | `PostgreSqlJdbcBatchBenchmark` |
+| R2DBC | `./gradlew :exposed-batch:postgresR2dbcBenchmark` | `PostgreSqlR2dbcBatchBenchmark` |
 
 ## Comparison Dimensions
 

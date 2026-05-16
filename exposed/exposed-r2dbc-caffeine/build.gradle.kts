@@ -5,8 +5,8 @@ configurations {
 }
 
 dependencies {
-    api(project(":bluetape4k-exposed-r2dbc"))
-    api(project(":bluetape4k-exposed-cache"))
+    api(project(":exposed-r2dbc"))
+    api(project(":exposed-cache"))
     api(libs.bluetape4k.coroutines)
     api(libs.caffeine)
 
@@ -21,8 +21,8 @@ dependencies {
     testRuntimeOnly(libs.r2dbc.h2)
     testRuntimeOnly(libs.postgresql.driver)     // Testcontainers PostgreSQL startup verification
     testRuntimeOnly(libs.mysql.connector.j)     // Testcontainers MySQL8 startup verification
-    testImplementation(testFixtures(project(":bluetape4k-exposed-cache")))
-    testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
+    testImplementation(testFixtures(project(":exposed-cache")))
+    testImplementation(project(":exposed-r2dbc-tests"))
     testImplementation(libs.bluetape4k.junit5)
     testImplementation(libs.h2.v2)
     testImplementation(libs.kotlinx.coroutines.test)

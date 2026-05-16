@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-bigquery
+# Module exposed-bigquery
 
 English | [한국어](./README.ko.md)
 
@@ -7,7 +7,7 @@ A module that generates SQL using JetBrains Exposed DSL and executes it via the 
 
 ## Overview
 
-`bluetape4k-exposed-bigquery` provides:
+`exposed-bigquery` provides:
 
 - **BigQueryContext
   **: Converts Exposed DSL to SQL (via H2 in PostgreSQL mode), then executes it against the BigQuery REST API
@@ -21,10 +21,10 @@ A module that generates SQL using JetBrains Exposed DSL and executes it via the 
 
 ## Module Positioning
 
-`bluetape4k-exposed-bigquery` is not a JDBC-driver-based ORM module. It reuses the Exposed DSL as a SQL generator while delegating actual execution to the BigQuery REST API.
+`exposed-bigquery` is not a JDBC-driver-based ORM module. It reuses the Exposed DSL as a SQL generator while delegating actual execution to the BigQuery REST API.
 
 - Use this module when you need to execute queries via the BigQuery REST API.
-- For JDBC transaction consistency or Trino connector-based execution, use `bluetape4k-exposed-trino` or the upcoming
+- For JDBC transaction consistency or Trino connector-based execution, use `exposed-trino` or the upcoming
   `exposed-bigquery-trino`.
 - `sqlGenDb` is an internal implementation for SQL string generation only — it is not an application data store.
 
@@ -43,7 +43,7 @@ A module that generates SQL using JetBrains Exposed DSL and executes it via the 
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-bigquery:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-bigquery:${version}")
 }
 ```
 
@@ -244,7 +244,7 @@ Running the local emulator directly allows you to test quickly without Testconta
 brew install goccy/bigquery-emulator/bigquery-emulator
 bigquery-emulator --project=test --dataset=testdb --port=9050
 
-./gradlew :bluetape4k-exposed-bigquery:test
+./gradlew :exposed-bigquery:test
 ```
 
 If the emulator is not available, a Testcontainers Docker container starts automatically.
@@ -252,8 +252,8 @@ If the emulator is not available, a Testcontainers Docker container starts autom
 Regression test examples:
 
 ```bash
-./gradlew :bluetape4k-exposed-bigquery:test --tests "io.bluetape4k.exposed.bigquery.BigQueryResultRowTest"
-./gradlew :bluetape4k-exposed-bigquery:test --tests "io.bluetape4k.exposed.bigquery.query.SelectQueryTest"
+./gradlew :exposed-bigquery:test --tests "io.bluetape4k.exposed.bigquery.BigQueryResultRowTest"
+./gradlew :exposed-bigquery:test --tests "io.bluetape4k.exposed.bigquery.query.SelectQueryTest"
 ```
 
 ## References

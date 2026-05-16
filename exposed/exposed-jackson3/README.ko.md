@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-jackson3
+# Module exposed-jackson3
 
 [English](./README.md) | 한국어
 
@@ -6,7 +6,7 @@ Exposed JSON/JSONB 컬럼을 Jackson 3로 직렬화/역직렬화하기 위한 �
 
 ## 개요
 
-`bluetape4k-exposed-jackson3`은 JetBrains Exposed의 JSON/JSONB 컬럼 타입을 [Jackson 3.x](https://github.com/FasterXML/jackson)로 직렬화/역직렬화하는 기능을 제공합니다. Jackson 3의 새로운 기능과 개선된 성능을 활용할 수 있습니다.
+`exposed-jackson3`은 JetBrains Exposed의 JSON/JSONB 컬럼 타입을 [Jackson 3.x](https://github.com/FasterXML/jackson)로 직렬화/역직렬화하는 기능을 제공합니다. Jackson 3의 새로운 기능과 개선된 성능을 활용할 수 있습니다.
 
 ### 주요 기능
 
@@ -19,7 +19,7 @@ Exposed JSON/JSONB 컬럼을 Jackson 3로 직렬화/역직렬화하기 위한 �
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson3:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-jackson3:${version}")
     implementation("io.github.bluetape4k:bluetape4k-jackson3:${version}")
 }
 ```
@@ -107,7 +107,7 @@ val query2 = Users.selectAll()
 ## 테스트
 
 ```bash
-./gradlew :bluetape4k-exposed-jackson3:test
+./gradlew :exposed-jackson3:test
 ```
 
 ## 아키텍처 다이어그램
@@ -197,11 +197,11 @@ classDiagram
 
 ```mermaid
 flowchart LR
-    subgraph Jackson2["bluetape4k-exposed-jackson (Jackson 2.x)"]
+    subgraph Jackson2["exposed-jackson2 (Jackson 2.x)"]
         A2["com.fasterxml.jackson.*"]
         B2["jackson&lt;T&gt; / jacksonb&lt;T&gt;"]
     end
-    subgraph Jackson3["bluetape4k-exposed-jackson3 (Jackson 3.x)"]
+    subgraph Jackson3["exposed-jackson3 (Jackson 3.x)"]
         A3["tools.jackson.*"]
         B3["jackson&lt;T&gt; / jacksonb&lt;T&gt;"]
     end
@@ -224,4 +224,4 @@ flowchart LR
 - [JetBrains Exposed](https://github.com/JetBrains/Exposed)
 - [Jackson 3.x](https://github.com/FasterXML/jackson)
 - bluetape4k-jackson3
-- bluetape4k-exposed-jackson
+- exposed-jackson2

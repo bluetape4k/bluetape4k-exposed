@@ -1,8 +1,8 @@
-# bluetape4k-exposed-bom
+# exposed-bom
 
 [한국어](./README.ko.md) | English
 
-Maven BOM (Bill of Materials) for the **bluetape4k-exposed** ecosystem. Manages versions of all
+Maven BOM (Bill of Materials) for the Exposed extension ecosystem. Manages versions of all
 `io.github.bluetape4k.exposed:*` modules so consumers can declare dependencies without specifying
 individual versions.
 
@@ -11,7 +11,7 @@ individual versions.
 ```mermaid
 graph TB
     Consumer[Consumer Project]
-    BOM[bluetape4k-exposed-bom<br/>java-platform]
+    BOM[exposed-bom<br/>java-platform]
 
     subgraph "exposed-core"
       Core[exposed-core]
@@ -68,7 +68,7 @@ The BOM is a Gradle `java-platform` that publishes only `<dependencyManagement>`
 
 ## Core Features
 
-- Centralized version management for all `bluetape4k-exposed` modules
+- Centralized version management for all `exposed-*` modules
 - Single source of truth for JetBrains Exposed extensions (JDBC + R2DBC)
 - Aggregated by `bluetape4k-dependencies` for cross-ecosystem version coordination
 
@@ -76,14 +76,14 @@ The BOM is a Gradle `java-platform` that publishes only `<dependencyManagement>`
 
 | Group | Modules |
 |-------|---------|
-| Core | `bluetape4k-exposed-core`, `bluetape4k-exposed-dao` |
-| Drivers | `bluetape4k-exposed-jdbc`, `bluetape4k-exposed-r2dbc`, `bluetape4k-exposed-jdbc-tests`, `bluetape4k-exposed-r2dbc-tests` |
-| Cache | `bluetape4k-exposed-cache`, `bluetape4k-exposed-jdbc-{lettuce,redisson,caffeine}`, `bluetape4k-exposed-r2dbc-{lettuce,redisson,caffeine}` |
-| Serialization | `bluetape4k-exposed-fastjson2`, `bluetape4k-exposed-jackson2`, `bluetape4k-exposed-jackson3` |
-| Crypto | `bluetape4k-exposed-tink` |
-| DB adapters | `bluetape4k-exposed-{mysql8,postgresql,clickhouse,bigquery,duckdb,trino,measured,timefold-solver-persistence}` |
-| Spring Boot | `bluetape4k-spring-boot-exposed-{jdbc,r2dbc}`, `bluetape4k-spring-boot-batch-exposed` |
-| Utils | `bluetape4k-utils-batch` |
+| Core | `exposed-core`, `exposed-dao` |
+| Drivers | `exposed-jdbc`, `exposed-r2dbc`, `exposed-jdbc-tests`, `exposed-r2dbc-tests` |
+| Cache | `exposed-cache`, `exposed-jdbc-{lettuce,redisson,caffeine}`, `exposed-r2dbc-{lettuce,redisson,caffeine}` |
+| Serialization | `exposed-fastjson2`, `exposed-jackson2`, `exposed-jackson3` |
+| Crypto | `exposed-tink` |
+| DB adapters | `exposed-{mysql8,postgresql,clickhouse,bigquery,duckdb,trino,measured,timefold-solver-persistence}` |
+| Spring Boot | `exposed-spring-boot-{jdbc,r2dbc}`, `exposed-spring-boot-batch` |
+| Utils | `exposed-batch` |
 
 > Note: `examples/*` and `*-demo` modules are excluded from the BOM constraints.
 
@@ -98,14 +98,14 @@ plugins {
 
 dependencyManagement {
     imports {
-        mavenBom("io.github.bluetape4k.exposed:bluetape4k-exposed-bom:<version>")
+        mavenBom("io.github.bluetape4k.exposed:exposed-bom:<version>")
     }
 }
 
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc")
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-cache")
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-redisson")
+    implementation("io.github.bluetape4k.exposed:exposed-jdbc")
+    implementation("io.github.bluetape4k.exposed:exposed-cache")
+    implementation("io.github.bluetape4k.exposed:exposed-jdbc-redisson")
 }
 ```
 
@@ -113,8 +113,8 @@ dependencies {
 
 ```kotlin
 dependencies {
-    implementation(platform("io.github.bluetape4k.exposed:bluetape4k-exposed-bom:<version>"))
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc")
+    implementation(platform("io.github.bluetape4k.exposed:exposed-bom:<version>"))
+    implementation("io.github.bluetape4k.exposed:exposed-jdbc")
 }
 ```
 
@@ -125,8 +125,8 @@ dependencies {
     <dependencies>
         <dependency>
             <groupId>io.github.bluetape4k.exposed</groupId>
-            <artifactId>bluetape4k-exposed-bom</artifactId>
-            <version>${bluetape4k-exposed.version}</version>
+            <artifactId>exposed-bom</artifactId>
+            <version>${exposed.version}</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>

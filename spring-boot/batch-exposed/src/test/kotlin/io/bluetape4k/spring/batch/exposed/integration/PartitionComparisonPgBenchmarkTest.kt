@@ -52,7 +52,7 @@ import kotlin.system.measureTimeMillis
  *
  * 로컬 실행:
  * ```bash
- * ./gradlew :bluetape4k-spring-boot-batch-exposed:test \
+ * ./gradlew :exposed-spring-boot-batch:test \
  *   --tests "*PartitionComparisonPgBenchmarkTest*" -PincludeTags="benchmark"
  * ```
  */

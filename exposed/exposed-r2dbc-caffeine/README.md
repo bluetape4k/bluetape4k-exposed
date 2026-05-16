@@ -1,4 +1,4 @@
-# bluetape4k-exposed-r2dbc-caffeine
+# exposed-r2dbc-caffeine
 
 English | [한국어](./README.ko.md)
 
@@ -133,7 +133,7 @@ behindRepo.put(1L, updatedActor)  // returns immediately
 
 | Dependency | Purpose |
 |---|---|
-| `bluetape4k-exposed-r2dbc` | Exposed R2DBC transaction support |
-| `bluetape4k-exposed-cache` | `R2dbcCacheRepository`, `LocalCacheConfig`, `CacheMode` |
+| `exposed-r2dbc` | Exposed R2DBC transaction support |
+| `exposed-cache` | `R2dbcCacheRepository`, `LocalCacheConfig`, `CacheMode` |
 | `bluetape4k-coroutines` | Coroutines utilities |
 | `com.github.ben-manes.caffeine:caffeine` | In-process async cache |

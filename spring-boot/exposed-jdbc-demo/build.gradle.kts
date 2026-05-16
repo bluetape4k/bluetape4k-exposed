@@ -12,7 +12,7 @@ dependencies {
     // Spring Boot BOM: platform() 방식 필수 (dependencyManagement 사용 금지 - KGP 2.3 충돌)
     implementation(platform(libs.spring.boot.dependencies))
 
-    implementation(project(":bluetape4k-spring-boot-exposed-jdbc"))
+    implementation(project(":exposed-spring-boot-jdbc"))
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
 

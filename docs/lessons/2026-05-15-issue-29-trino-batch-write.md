@@ -32,12 +32,12 @@ optimized.
 - First targeted `InsertTest` passed with 7 tests.
 - A local code-review subagent reported an `InsertTest --rerun-tasks` failure
   caused by Trino connection EOF/connection errors in its sandbox.
-- Leader reran `./gradlew :bluetape4k-exposed-trino:test --tests "io.bluetape4k.exposed.trino.insert.InsertTest" --rerun-tasks --console=plain`; it passed with 7 tests before Claude review integration.
+- Leader reran `./gradlew :exposed-trino:test --tests "io.bluetape4k.exposed.trino.insert.InsertTest" --rerun-tasks --console=plain`; it passed with 7 tests before Claude review integration.
 - Claude advisor reported no P0/P1 blockers and recommended follow-up coverage
   for `shouldReturnGeneratedValues=true`, a simpler chunk loop, and stronger
   partial-write assertions.
 - Integrated those review findings.
-- `./gradlew :bluetape4k-exposed-trino:test --tests "io.bluetape4k.exposed.trino.insert.InsertTest" --rerun-tasks --console=plain` passed with 8 tests after review integration.
+- `./gradlew :exposed-trino:test --tests "io.bluetape4k.exposed.trino.insert.InsertTest" --rerun-tasks --console=plain` passed with 8 tests after review integration.
 
 ## Follow-up Guidance
 

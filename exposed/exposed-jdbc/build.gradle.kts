@@ -28,15 +28,15 @@ dependencies {
     implementation(platform(libs.spring.boot.dependencies))
     // Exposed
     implementation(platform(libs.exposed.bom))
-    api(project(":bluetape4k-exposed-core"))
-    api(project(":bluetape4k-exposed-dao"))
+    api(project(":exposed-core"))
+    api(project(":exposed-dao"))
     api(libs.exposed.jdbc)
     compileOnly(libs.exposed.migration.jdbc)
     compileOnly(libs.exposed.spring.boot.starter)
     compileOnly(libs.exposed.java.time)
     compileOnly(libs.exposed.kotlin.datetime)
 
-    testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
+    testImplementation(project(":exposed-jdbc-tests"))
 
     // Entity ID generators
     implementation(libs.bluetape4k.idgenerators)

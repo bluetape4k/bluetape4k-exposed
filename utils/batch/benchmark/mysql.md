@@ -6,8 +6,8 @@
 
 | Driver | Gradle Task | Benchmark Class |
 |--------|-------------|-----------------|
-| JDBC | `./gradlew :bluetape4k-batch:mysqlJdbcBenchmark` | `MySqlJdbcBatchBenchmark` |
-| R2DBC | `./gradlew :bluetape4k-batch:mysqlR2dbcBenchmark` | `MySqlR2dbcBatchBenchmark` |
+| JDBC | `./gradlew :exposed-batch:mysqlJdbcBenchmark` | `MySqlJdbcBatchBenchmark` |
+| R2DBC | `./gradlew :exposed-batch:mysqlR2dbcBenchmark` | `MySqlR2dbcBatchBenchmark` |
 
 ## Comparison Dimensions
 

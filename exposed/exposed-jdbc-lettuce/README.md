@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-jdbc-lettuce
+# Module exposed-jdbc-lettuce
 
 English | [한국어](./README.ko.md)
 
@@ -7,7 +7,7 @@ A Read-through / Write-through / Write-behind cache repository module that combi
 
 ## Overview
 
-`bluetape4k-exposed-jdbc-lettuce` provides:
+`exposed-jdbc-lettuce` provides:
 
 - **Read-through cache**: On `findById` cache miss, automatically loads from DB and caches in Redis
 - **Write-through / Write-behind**: On `save`, reflects changes in Redis and DB simultaneously (or asynchronously)
@@ -21,7 +21,7 @@ A Read-through / Write-through / Write-behind cache repository module that combi
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-jdbc-lettuce:${version}")
 }
 ```
 
@@ -189,11 +189,11 @@ sequenceDiagram
 ## Testing
 
 ```bash
-./gradlew :bluetape4k-exposed-jdbc-lettuce:test
+./gradlew :exposed-jdbc-lettuce:test
 ```
 
 ## References
 
-- [bluetape4k-exposed-jdbc](../exposed-jdbc)
+- [exposed-jdbc](../exposed-jdbc)
 - [bluetape4k-lettuce](../../infra/lettuce)
 - [Lettuce Redis Client](https://lettuce.io)

@@ -37,10 +37,10 @@ flowchart TD
     APP["Kotlin application"]
 
     subgraph Core["Exposed core layer"]
-        CORE["bluetape4k-exposed-core\ncolumn types + DSL helpers"]
-        DAO["bluetape4k-exposed-dao\nentity lifecycle helpers"]
-        JDBC["bluetape4k-exposed-jdbc\nblocking repositories"]
-        R2DBC["bluetape4k-exposed-r2dbc\ncoroutine repositories"]
+        CORE["exposed-core\ncolumn types + DSL helpers"]
+        DAO["exposed-dao\nentity lifecycle helpers"]
+        JDBC["exposed-jdbc\nblocking repositories"]
+        R2DBC["exposed-r2dbc\ncoroutine repositories"]
     end
 
     subgraph CrossCutting["Cross-cutting modules"]
@@ -81,35 +81,35 @@ flowchart TD
 
 | Module | Description |
 |--------|-------------|
-| `bluetape4k-exposed-core` | Core Column types, DSL helpers, extension functions |
-| `bluetape4k-exposed-dao` | DAO Entity extensions, lifecycle hooks |
-| `bluetape4k-exposed-jdbc` | JDBC-based Repository pattern, transaction DSL |
-| `bluetape4k-exposed-r2dbc` | R2DBC coroutine-native Repository, suspend transactions |
-| `bluetape4k-exposed-jdbc-tests` | JDBC integration test fixtures |
-| `bluetape4k-exposed-r2dbc-tests` | R2DBC integration test fixtures |
-| `bluetape4k-exposed-cache` | Cache abstraction interfaces |
-| `bluetape4k-exposed-jdbc-caffeine` | JDBC + Caffeine local cache |
-| `bluetape4k-exposed-jdbc-lettuce` | JDBC + Lettuce Redis distributed cache |
-| `bluetape4k-exposed-jdbc-redisson` | JDBC + Redisson Redis distributed cache |
-| `bluetape4k-exposed-r2dbc-caffeine` | R2DBC + Caffeine local cache |
-| `bluetape4k-exposed-r2dbc-lettuce` | R2DBC + Lettuce Redis distributed cache |
-| `bluetape4k-exposed-r2dbc-redisson` | R2DBC + Redisson Redis distributed cache |
-| `bluetape4k-exposed-jackson2` | Jackson 2.x JSON column serialization |
-| `bluetape4k-exposed-jackson3` | Jackson 3.x JSON column serialization |
-| `bluetape4k-exposed-fastjson2` | Fastjson2 JSON column serialization |
-| `bluetape4k-exposed-tink` | Google Tink encrypted columns |
-| `bluetape4k-exposed-measured` | Micrometer metrics integration |
-| `bluetape4k-exposed-postgresql` | PostgreSQL dialect extensions |
-| `bluetape4k-exposed-mysql8` | MySQL 8 dialect extensions |
-| `bluetape4k-exposed-bigquery` | BigQuery connector support |
-| `bluetape4k-exposed-clickhouse` | ClickHouse connector support |
-| `bluetape4k-exposed-trino` | Trino connector support |
-| `bluetape4k-exposed-duckdb` | DuckDB embedded analytics support |
-| `bluetape4k-exposed-timefold-solver-persistence` | Timefold Solver persistence integration |
-| `bluetape4k-spring-boot-exposed-jdbc` | Spring Boot 4.x JDBC auto-configuration |
-| `bluetape4k-spring-boot-exposed-r2dbc` | Spring Boot 4.x R2DBC auto-configuration |
-| `bluetape4k-spring-boot-batch-exposed` | Spring Boot 4.x batch integration |
-| `bluetape4k-spring-boot-exposed-spring-modulith` | Spring Modulith JDBC event publication repository backed by Exposed |
+| `exposed-core` | Core Column types, DSL helpers, extension functions |
+| `exposed-dao` | DAO Entity extensions, lifecycle hooks |
+| `exposed-jdbc` | JDBC-based Repository pattern, transaction DSL |
+| `exposed-r2dbc` | R2DBC coroutine-native Repository, suspend transactions |
+| `exposed-jdbc-tests` | JDBC integration test fixtures |
+| `exposed-r2dbc-tests` | R2DBC integration test fixtures |
+| `exposed-cache` | Cache abstraction interfaces |
+| `exposed-jdbc-caffeine` | JDBC + Caffeine local cache |
+| `exposed-jdbc-lettuce` | JDBC + Lettuce Redis distributed cache |
+| `exposed-jdbc-redisson` | JDBC + Redisson Redis distributed cache |
+| `exposed-r2dbc-caffeine` | R2DBC + Caffeine local cache |
+| `exposed-r2dbc-lettuce` | R2DBC + Lettuce Redis distributed cache |
+| `exposed-r2dbc-redisson` | R2DBC + Redisson Redis distributed cache |
+| `exposed-jackson2` | Jackson 2.x JSON column serialization |
+| `exposed-jackson3` | Jackson 3.x JSON column serialization |
+| `exposed-fastjson2` | Fastjson2 JSON column serialization |
+| `exposed-tink` | Google Tink encrypted columns |
+| `exposed-measured` | Micrometer metrics integration |
+| `exposed-postgresql` | PostgreSQL dialect extensions |
+| `exposed-mysql8` | MySQL 8 dialect extensions |
+| `exposed-bigquery` | BigQuery connector support |
+| `exposed-clickhouse` | ClickHouse connector support |
+| `exposed-trino` | Trino connector support |
+| `exposed-duckdb` | DuckDB embedded analytics support |
+| `exposed-timefold-solver-persistence` | Timefold Solver persistence integration |
+| `exposed-spring-boot-jdbc` | Spring Boot 4.x JDBC auto-configuration |
+| `exposed-spring-boot-r2dbc` | Spring Boot 4.x R2DBC auto-configuration |
+| `exposed-spring-boot-batch` | Spring Boot 4.x batch integration |
+| `exposed-spring-modulith` | Spring Modulith JDBC event publication repository backed by Exposed |
 
 ## Quick Start
 
@@ -118,17 +118,17 @@ flowchart TD
 ```kotlin
 dependencies {
     // Core
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:exposed-jdbc:1.8.0-SNAPSHOT")
     // R2DBC (coroutines)
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:exposed-r2dbc:1.8.0-SNAPSHOT")
     // Redis cache
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:exposed-jdbc-lettuce:1.8.0-SNAPSHOT")
     // Jackson JSON columns
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:exposed-jackson2:1.8.0-SNAPSHOT")
     // Spring Boot auto-configuration
-    implementation("io.github.bluetape4k.exposed:bluetape4k-spring-boot-exposed-jdbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:exposed-spring-boot-jdbc:1.8.0-SNAPSHOT")
     // Spring Modulith JDBC event publication through Exposed
-    implementation("io.github.bluetape4k.exposed:bluetape4k-spring-boot-exposed-spring-modulith:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:exposed-spring-modulith:1.8.0-SNAPSHOT")
 }
 ```
 
@@ -251,7 +251,7 @@ class MyApplication
 
 ### Spring Modulith Event Publication
 
-`bluetape4k-spring-boot-exposed-spring-modulith` provides a JDBC-only
+`exposed-spring-modulith` provides a JDBC-only
 Spring Modulith `EventPublicationRepository` backed by Exposed DSL and the
 same Exposed `DataSource`/`springTransactionManager`. The artifact is named
 `exposed-spring-modulith` to avoid looking like an official Spring Modulith

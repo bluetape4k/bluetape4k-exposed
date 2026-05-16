@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-r2dbc-redisson
+# Module exposed-r2dbc-redisson
 
 [English](./README.md) | 한국어
 
@@ -6,7 +6,7 @@ Exposed R2DBC와 Redisson 캐시를 결합해 비동기 Read-Through/Write-Throu
 
 ## 개요
 
-`bluetape4k-exposed-r2dbc-redisson`은 Exposed R2DBC(비동기)와 [Redisson](https://github.com/redisson/redisson) Redis 클라이언트를 통합하여, 비동기 환경에서 데이터베이스 조회 결과를 Redis에 캐싱하는 패턴을 쉽게 구현할 수 있도록 지원합니다. 모든 인터페이스는
+`exposed-r2dbc-redisson`은 Exposed R2DBC(비동기)와 [Redisson](https://github.com/redisson/redisson) Redis 클라이언트를 통합하여, 비동기 환경에서 데이터베이스 조회 결과를 Redis에 캐싱하는 패턴을 쉽게 구현할 수 있도록 지원합니다. 모든 인터페이스는
 `suspend` 함수 기반이며 Kotlin Coroutines와 완벽하게 호환됩니다.
 
 ### 주요 기능
@@ -22,7 +22,7 @@ Exposed R2DBC와 Redisson 캐시를 결합해 비동기 Read-Through/Write-Throu
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-redisson:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-r2dbc-redisson:${version}")
     implementation("org.redisson:redisson:3.37.0")
 
     // R2DBC 드라이버
@@ -368,7 +368,7 @@ sequenceDiagram
 ## 테스트
 
 ```bash
-./gradlew :bluetape4k-exposed-r2dbc-redisson:test
+./gradlew :exposed-r2dbc-redisson:test
 ```
 
 ## 참고
@@ -376,5 +376,5 @@ sequenceDiagram
 - [JetBrains Exposed R2DBC](https://github.com/JetBrains/Exposed)
 - [Redisson](https://github.com/redisson/redisson)
 - [Redisson AsyncMapLoader](https://www.javadoc.io/doc/org.redisson/redisson/latest/org/redisson/api/map/MapLoaderAsync.html)
-- [bluetape4k-exposed-r2dbc](../exposed-r2dbc)
-- [bluetape4k-exposed-jdbc-redisson](../exposed-jdbc-redisson)
+- [exposed-r2dbc](../exposed-r2dbc)
+- [exposed-jdbc-redisson](../exposed-jdbc-redisson)

@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-r2dbc-redisson
+# Module exposed-r2dbc-redisson
 
 English | [한국어](./README.ko.md)
 
@@ -6,7 +6,7 @@ Combines Exposed R2DBC with Redisson caching to implement asynchronous Read-Thro
 
 ## Overview
 
-`bluetape4k-exposed-r2dbc-redisson` integrates Exposed R2DBC (asynchronous) with the [Redisson](https://github.com/redisson/redisson) Redis client, making it easy to cache database query results in Redis within an async environment. All interfaces are based on
+`exposed-r2dbc-redisson` integrates Exposed R2DBC (asynchronous) with the [Redisson](https://github.com/redisson/redisson) Redis client, making it easy to cache database query results in Redis within an async environment. All interfaces are based on
 `suspend` functions and are fully compatible with Kotlin Coroutines.
 
 ### Key Features
@@ -22,7 +22,7 @@ Combines Exposed R2DBC with Redisson caching to implement asynchronous Read-Thro
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-redisson:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-r2dbc-redisson:${version}")
     implementation("org.redisson:redisson:3.37.0")
 
     // R2DBC driver
@@ -368,7 +368,7 @@ Commonly used cache mode constants are provided as named constants.
 ## Testing
 
 ```bash
-./gradlew :bluetape4k-exposed-r2dbc-redisson:test
+./gradlew :exposed-r2dbc-redisson:test
 ```
 
 ## References
@@ -376,5 +376,5 @@ Commonly used cache mode constants are provided as named constants.
 - [JetBrains Exposed R2DBC](https://github.com/JetBrains/Exposed)
 - [Redisson](https://github.com/redisson/redisson)
 - [Redisson AsyncMapLoader](https://www.javadoc.io/doc/org.redisson/redisson/latest/org/redisson/api/map/MapLoaderAsync.html)
-- [bluetape4k-exposed-r2dbc](../exposed-r2dbc)
-- [bluetape4k-exposed-jdbc-redisson](../exposed-jdbc-redisson)
+- [exposed-r2dbc](../exposed-r2dbc)
+- [exposed-jdbc-redisson](../exposed-jdbc-redisson)

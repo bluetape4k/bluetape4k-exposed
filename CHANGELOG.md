@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `exposed-trino` now provides `pagedQueryFlow` for page-by-page large result set collection without exposing JDBC `ResultSet` lifetimes outside Exposed transactions.
 - Root README hero image plus refreshed purpose, feature, and Mermaid architecture documentation ([PR #64](https://github.com/bluetape4k/bluetape4k-exposed/pull/64)).
 - Current WIP queue now tracks the Trino Phase 2 and CockroachDB epics opened after the initial standalone release.
-- `bluetape4k-exposed-bom` BOM module for Exposed consumers ([PR #15](https://github.com/bluetape4k/bluetape4k-exposed/pull/15)).
+- `exposed-bom` BOM module for Exposed consumers ([PR #15](https://github.com/bluetape4k/bluetape4k-exposed/pull/15)).
 - English and Korean README files for the Exposed BOM module ([PR #16](https://github.com/bluetape4k/bluetape4k-exposed/pull/16)).
 - Mermaid architecture and sequence diagrams for `exposed-r2dbc-lettuce` documentation ([PR #2](https://github.com/bluetape4k/bluetape4k-exposed/pull/2)).
 - `AuditableR2dbcRepository` and `Int`/`Long`/`UUID` convenience interfaces for R2DBC audit update parity.
@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Added the `DefaultFastjsonSerializer` facade for `exposed-fastjson2` and aligned module defaults with Jackson serializer parity.
-- Corrected the `utils/batch` Gradle module name from `:bluetape4k-utils-batch` to `:bluetape4k-batch` ([PR #13](https://github.com/bluetape4k/bluetape4k-exposed/pull/13)).
+- Corrected the initial `utils/batch` Gradle module naming mismatch; current module path is `:exposed-batch` ([PR #13](https://github.com/bluetape4k/bluetape4k-exposed/pull/13)).
 
 ## [1.8.0] - 2026-05-07
 

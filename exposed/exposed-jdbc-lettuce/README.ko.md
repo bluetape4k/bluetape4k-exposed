@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-jdbc-lettuce
+# Module exposed-jdbc-lettuce
 
 [English](./README.md) | 한국어
 
@@ -7,7 +7,7 @@ Exposed JDBC와 Lettuce Redis 캐시를 결합한 Read-through / Write-through /
 
 ## 개요
 
-`bluetape4k-exposed-jdbc-lettuce`는 다음을 제공합니다:
+`exposed-jdbc-lettuce`는 다음을 제공합니다:
 
 - **Read-through 캐시**: `findById` 시 캐시 미스이면 DB에서 자동 로드 후 Redis에 캐싱
 - **Write-through / Write-behind**: `save` 시 Redis와 DB를 동시(또는 비동기)로 반영
@@ -21,7 +21,7 @@ Exposed JDBC와 Lettuce Redis 캐시를 결합한 Read-through / Write-through /
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-jdbc-lettuce:${version}")
 }
 ```
 
@@ -192,11 +192,11 @@ sequenceDiagram
 ## 테스트
 
 ```bash
-./gradlew :bluetape4k-exposed-jdbc-lettuce:test
+./gradlew :exposed-jdbc-lettuce:test
 ```
 
 ## 참고
 
-- [bluetape4k-exposed-jdbc](../exposed-jdbc)
+- [exposed-jdbc](../exposed-jdbc)
 - [bluetape4k-lettuce](../../infra/lettuce)
 - [Lettuce Redis Client](https://lettuce.io)

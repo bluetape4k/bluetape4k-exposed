@@ -1,6 +1,6 @@
 한국어 | [English](./README.md)
 
-# bluetape4k-exposed-clickhouse
+# exposed-clickhouse
 
 ClickHouse JDBC를 위한 Kotlin/Exposed 다이얼렉트 — 타입 안전 DSL, MergeTree 엔진 설정, ClickHouse 전용 컬럼 타입, 코루틴 친화 헬퍼를 제공합니다.
 
@@ -8,7 +8,7 @@ ClickHouse JDBC를 위한 Kotlin/Exposed 다이얼렉트 — 타입 안전 DSL, 
 
 ```mermaid
 graph LR
-    subgraph bluetape4k-exposed-clickhouse
+    subgraph exposed-clickhouse
         DB[ClickHouseDatabase]
         TBL[ClickHouseTable]
         ENG[ClickHouseEngine DSL]
@@ -32,8 +32,8 @@ graph LR
         bluetape4k-testcontainers
     end
 
-    bluetape4k-exposed-clickhouse -.-> bluetape4k-junit5
-    bluetape4k-exposed-clickhouse -.-> bluetape4k-testcontainers
+    exposed-clickhouse -.-> bluetape4k-junit5
+    exposed-clickhouse -.-> bluetape4k-testcontainers
 ```
 
 ## 주요 기능

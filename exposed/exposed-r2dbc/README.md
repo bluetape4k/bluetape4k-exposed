@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-r2dbc
+# Module exposed-r2dbc
 
 English | [한국어](./README.ko.md)
 
@@ -6,7 +6,7 @@ Provides extension functions and the Repository pattern for use with Exposed in 
 
 ## Overview
 
-`bluetape4k-exposed-r2dbc` builds on the JetBrains Exposed R2DBC (Reactive Relational Database Connectivity) driver to deliver extensions for asynchronous, reactive database operations. Fully compatible with Kotlin Coroutines.
+`exposed-r2dbc` builds on the JetBrains Exposed R2DBC (Reactive Relational Database Connectivity) driver to deliver extensions for asynchronous, reactive database operations. Fully compatible with Kotlin Coroutines.
 
 ### Key Features
 
@@ -27,7 +27,7 @@ Provides extension functions and the Repository pattern for use with Exposed in 
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-r2dbc:${version}")
 
     // R2DBC driver (examples)
     implementation("org.postgresql:r2dbc-postgresql:1.0.5.RELEASE")
@@ -38,7 +38,7 @@ dependencies {
 
 ## High-throughput Pool Setup
 
-`bluetape4k-exposed-r2dbc` exposes `bluetape4k-r2dbc`, so Exposed R2DBC applications can reuse
+`exposed-r2dbc` exposes `bluetape4k-r2dbc`, so Exposed R2DBC applications can reuse
 `R2dbcPoolConfig.highThroughput()` and pass the resulting `ConnectionPool` to `R2dbcDatabase`.
 
 ```kotlin
@@ -568,7 +568,7 @@ val rows = ActorTable.selectImplicitAll()
 ## Testing
 
 ```bash
-./gradlew :bluetape4k-exposed-r2dbc:test
+./gradlew :exposed-r2dbc:test
 ```
 
 ## References

@@ -1,4 +1,4 @@
-# bluetape4k-spring-boot-exposed-jdbc-demo
+# exposed-spring-boot-jdbc-demo
 
 [English](./README.md) | 한국어
 
@@ -405,7 +405,7 @@ dependencies {
     implementation(platform(Libs.spring_boot_dependencies))
 
     // 나머지 의존성은 동일
-    implementation(project(":bluetape4k-spring-boot-exposed-jdbc"))
+    implementation(project(":exposed-spring-boot-jdbc"))
     implementation(Libs.springBootStarter("web"))
 }
 ```
@@ -433,7 +433,7 @@ Spring Boot는 기본적으로 다음 버전을 제공합니다:
 ```kotlin
 dependencies {
     implementation(platform(Libs.spring_boot_dependencies))
-    implementation(project(":bluetape4k-spring-boot-exposed-jdbc"))
+    implementation(project(":exposed-spring-boot-jdbc"))
     implementation(Libs.springBootStarter("web"))
     implementation(Libs.jackson_module_kotlin)
     implementation(Libs.exposed_spring_boot_starter)

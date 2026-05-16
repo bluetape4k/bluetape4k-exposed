@@ -16,9 +16,9 @@ dependencies {
     compileOnly(libs.exposed.json)
     compileOnly(libs.exposed.money)
 
-    testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
+    testImplementation(project(":exposed-jdbc-tests"))
     // exposed-dao 모듈에서 idEquals, idHashCode 등 사용
-    testImplementation(project(":bluetape4k-exposed-dao"))
+    testImplementation(project(":exposed-dao"))
 
     // Entity ID generators (ColumnExtensions에서 사용)
     api(libs.bluetape4k.idgenerators)

@@ -1,4 +1,4 @@
-# bluetape4k-examples-exposed-clickhouse-oltp-olap
+# examples-exposed-clickhouse-oltp-olap
 
 한국어 | [English](./README.md)
 
@@ -29,7 +29,7 @@ flowchart LR
 통합 테스트는 **Testcontainers**로 PostgreSQL과 ClickHouse를 모두 기동합니다:
 
 ```bash
-./gradlew :bluetape4k-examples-exposed-clickhouse-oltp-olap:test
+./gradlew :examples-exposed-clickhouse-oltp-olap:test
 ```
 
 ## 주의사항
@@ -42,4 +42,4 @@ flowchart LR
 
 ## 관련 모듈
 
-- [`bluetape4k-exposed-clickhouse`](../../data/exposed-clickhouse/README.ko.md) — 본 예제의 ClickHouse 어댑터
+- [`exposed-clickhouse`](../../exposed/exposed-clickhouse/README.ko.md) — 본 예제의 ClickHouse 어댑터

@@ -13,7 +13,7 @@ dependencies {
     api(libs.bluetape4k.measured)
 
     testImplementation(libs.bluetape4k.junit5)
-    testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
+    testImplementation(project(":exposed-jdbc-tests"))
 
     // Database Drivers for exposed-jdbc-tests dialect matrix
     testRuntimeOnly(libs.hikaricp)

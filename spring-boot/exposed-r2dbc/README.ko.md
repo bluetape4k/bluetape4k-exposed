@@ -1,4 +1,4 @@
-# bluetape4k-spring-boot-exposed-r2dbc
+# exposed-spring-boot-r2dbc
 
 [English](./README.md) | 한국어
 
@@ -104,7 +104,7 @@ flowchart LR
 ```gradle
 dependencies {
     implementation(platform(Libs.spring_boot_dependencies))
-    implementation("io.github.bluetape4k:bluetape4k-spring-boot-exposed-r2dbc:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-spring-boot-r2dbc:${version}")
 
     // 코루틴 지원 (필수)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:${version}")
@@ -713,7 +713,7 @@ suspend fun getUsers(): List<User> =
 
 ## 관련 모듈
 
-- **bluetape4k-exposed-r2dbc**: 핵심 Exposed R2DBC Repository 구현
-- **bluetape4k-spring-boot-exposed-r2dbc**: Spring Boot 4 버전
-- **bluetape4k-spring-boot-exposed-jdbc**: JDBC 기반 Repository
+- **exposed-r2dbc**: 핵심 Exposed R2DBC Repository 구현
+- **exposed-spring-boot-r2dbc**: Spring Boot 4 버전
+- **exposed-spring-boot-jdbc**: JDBC 기반 Repository
 - **bluetape4k-coroutines**: 코루틴 유틸리티

@@ -11,9 +11,9 @@ dependencies {
     api(libs.exposed.core)
     compileOnly(libs.exposed.jdbc)
     compileOnly(libs.exposed.dao)
-    api(project(":bluetape4k-exposed-core"))
-    compileOnly(project(":bluetape4k-exposed-dao"))
-    testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
+    api(project(":exposed-core"))
+    compileOnly(project(":exposed-dao"))
+    testImplementation(project(":exposed-jdbc-tests"))
 
     // Encryption - Google Tink
     api(libs.bluetape4k.tink)

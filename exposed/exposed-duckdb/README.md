@@ -1,4 +1,4 @@
-# Module bluetape4k-exposed-duckdb
+# Module exposed-duckdb
 
 English | [한국어](./README.ko.md)
 
@@ -6,7 +6,7 @@ A module that integrates JetBrains Exposed ORM with DuckDB JDBC. Built on Postgr
 
 ## Overview
 
-`bluetape4k-exposed-duckdb` provides:
+`exposed-duckdb` provides:
 
 - **DuckDBDialect**: Extends `PostgreSQLDialect` for Exposed ORM compatibility with DuckDB
 - **DuckDBDialectMetadata**: Bypasses unsupported `getImportedKeys` (FK constraint caching no-op)
@@ -27,7 +27,7 @@ A module that integrates JetBrains Exposed ORM with DuckDB JDBC. Built on Postgr
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-duckdb:${version}")
+    implementation("io.github.bluetape4k.exposed:exposed-duckdb:${version}")
 }
 ```
 
@@ -172,15 +172,15 @@ sequenceDiagram
 ## Testing
 
 ```bash
-./gradlew :bluetape4k-exposed-duckdb:test
+./gradlew :exposed-duckdb:test
 ```
 
 Core regression test examples:
 
 ```bash
-./gradlew :bluetape4k-exposed-duckdb:test --tests "io.bluetape4k.exposed.duckdb.DuckDBConnectionWrapperTest"
-./gradlew :bluetape4k-exposed-duckdb:test --tests "io.bluetape4k.exposed.duckdb.DuckDBDatabaseTest"
-./gradlew :bluetape4k-exposed-duckdb:test --tests "io.bluetape4k.exposed.duckdb.DuckDBExtensionsTest"
+./gradlew :exposed-duckdb:test --tests "io.bluetape4k.exposed.duckdb.DuckDBConnectionWrapperTest"
+./gradlew :exposed-duckdb:test --tests "io.bluetape4k.exposed.duckdb.DuckDBDatabaseTest"
+./gradlew :exposed-duckdb:test --tests "io.bluetape4k.exposed.duckdb.DuckDBExtensionsTest"
 ```
 
 ## References
