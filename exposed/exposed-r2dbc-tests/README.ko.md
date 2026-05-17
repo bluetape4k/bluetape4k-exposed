@@ -10,7 +10,7 @@
 
 ```kotlin
 dependencies {
-    testImplementation("io.github.bluetape4k.exposed:exposed-r2dbc-tests:${version}")
+    testImplementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-tests:${version}")
 }
 ```
 

@@ -27,7 +27,7 @@ A module that integrates JetBrains Exposed ORM with DuckDB JDBC. Built on Postgr
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:exposed-duckdb:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-duckdb:${version}")
 }
 ```
 

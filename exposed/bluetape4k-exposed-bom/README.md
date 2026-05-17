@@ -98,14 +98,14 @@ plugins {
 
 dependencyManagement {
     imports {
-        mavenBom("io.github.bluetape4k.exposed:exposed-bom:<version>")
+        mavenBom("io.github.bluetape4k.exposed:bluetape4k-exposed-bom:<version>")
     }
 }
 
 dependencies {
-    implementation("io.github.bluetape4k.exposed:exposed-jdbc")
-    implementation("io.github.bluetape4k.exposed:exposed-cache")
-    implementation("io.github.bluetape4k.exposed:exposed-jdbc-redisson")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-cache")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-redisson")
 }
 ```
 
@@ -113,8 +113,8 @@ dependencies {
 
 ```kotlin
 dependencies {
-    implementation(platform("io.github.bluetape4k.exposed:exposed-bom:<version>"))
-    implementation("io.github.bluetape4k.exposed:exposed-jdbc")
+    implementation(platform("io.github.bluetape4k.exposed:bluetape4k-exposed-bom:<version>"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc")
 }
 ```
 

@@ -102,7 +102,7 @@ flowchart LR
 ```gradle
 dependencies {
     implementation(platform(Libs.spring_boot_dependencies))
-    implementation("io.github.bluetape4k.exposed:exposed-spring-boot-jdbc:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:${version}")
 }
 ```
 

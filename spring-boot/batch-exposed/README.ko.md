@@ -128,7 +128,7 @@ sequenceDiagram
 ### build.gradle.kts
 
 ```kotlin
-implementation("io.github.bluetape4k.exposed:exposed-spring-boot-batch")
+implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-batch")
 ```
 
 ### 파티션 마이그레이션 Job

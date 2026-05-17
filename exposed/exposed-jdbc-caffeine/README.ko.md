@@ -264,7 +264,7 @@ val config = LocalCacheConfig(
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:exposed-jdbc-caffeine:$version")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-caffeine:$version")
 }
 ```
 

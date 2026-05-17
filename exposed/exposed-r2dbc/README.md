@@ -27,7 +27,7 @@ Provides extension functions and the Repository pattern for use with Exposed in 
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:exposed-r2dbc:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:${version}")
 
     // R2DBC driver (examples)
     implementation("org.postgresql:r2dbc-postgresql:1.0.5.RELEASE")

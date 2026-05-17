@@ -238,7 +238,7 @@ sequenceDiagram
 
 ```kotlin
 // build.gradle.kts
-testImplementation(testFixtures("io.github.bluetape4k.exposed:exposed-cache:$version"))
+testImplementation(testFixtures("io.github.bluetape4k.exposed:bluetape4k-exposed-cache:$version"))
 
 // 모듈 테스트에서 시나리오 상속
 class MyCaffeineReadThroughTest : JdbcReadThroughScenario() {
@@ -268,6 +268,6 @@ class MyCaffeineReadThroughTest : JdbcReadThroughScenario() {
 
 ```kotlin
 dependencies {
-    api("io.github.bluetape4k.exposed:exposed-cache:$version")
+    api("io.github.bluetape4k.exposed:bluetape4k-exposed-cache:$version")
 }
 ```
