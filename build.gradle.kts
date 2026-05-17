@@ -227,6 +227,7 @@ subprojects {
 
     dependencyManagement {
         setApplyMavenExclusions(false)
+        generatedPomCustomization { setEnabled(false) }
         imports {
             mavenBom(rootLibs.bluetape4k.bom.get().toString())
             mavenBom(rootLibs.bluetape4k.dependencies.get().toString())
