@@ -14,10 +14,10 @@ dependencies {
     implementation(libs.exposed.java.time)
     implementation(libs.exposed.kotlin.datetime)
 
-    api(project(":exposed-jdbc"))
-    api(project(":exposed-cache"))
-    testImplementation(project(":exposed-jdbc-tests"))
-    testImplementation(testFixtures(project(":exposed-cache")))
+    api(project(":bluetape4k-exposed-jdbc"))
+    api(project(":bluetape4k-exposed-cache"))
+    testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
+    testImplementation(testFixtures(project(":bluetape4k-exposed-cache")))
 
     // Redisson
     api(libs.bluetape4k.redisson)

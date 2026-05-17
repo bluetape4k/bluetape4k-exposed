@@ -24,7 +24,7 @@ A foundation module that provides core column types, extension functions, and co
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:exposed-core:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-core:${version}")
 
     // For compressed column types
     implementation("io.github.bluetape4k:bluetape4k-io:${version}")
@@ -558,7 +558,7 @@ The `exposed-java-time` module is required:
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:exposed-core:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-core:${version}")
 
     // Required for Auditable
     compileOnly("org.jetbrains.exposed:exposed-java-time:${exposedVersion}")

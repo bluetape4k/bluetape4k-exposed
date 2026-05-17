@@ -22,7 +22,7 @@ Combines Exposed JDBC with Redisson caching to implement Read-Through/Write-Thro
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:exposed-jdbc-redisson:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-redisson:${version}")
     implementation("org.redisson:redisson:3.37.0")
 }
 ```

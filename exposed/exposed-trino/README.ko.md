@@ -24,7 +24,7 @@ JetBrains Exposed ORM과 Trino JDBC를 통합하는 모듈입니다. PostgreSQL 
 dependencies {
     implementation(project(":exposed-trino"))
     // 또는 Maven 좌표
-    implementation("io.github.bluetape4k.exposed:exposed-trino:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-trino:${version}")
 }
 ```
 

@@ -11,33 +11,40 @@ pluginManagement {
 
 rootProject.name = "bluetape4k-exposed"
 
-includeModules("exposed", withBaseDir = false)
+// BOM — explicitly included (excluded from exposed/ auto-discovery below)
+includeProject("bluetape4k-exposed-bom", file("exposed/bluetape4k-exposed-bom"))
+
+includeModules("exposed", withBaseDir = false, prefix = "bluetape4k-", excludeDirNames = setOf("bluetape4k-exposed-bom"))
 includeModules("examples", withBaseDir = true)
 
-includeMappedModule("utils/batch", "exposed-batch")
+includeMappedModule("utils/batch", "bluetape4k-exposed-batch")
 
-includeMappedModule("spring-boot/exposed-jdbc", "exposed-spring-boot-jdbc")
-includeMappedModule("spring-boot/exposed-r2dbc", "exposed-spring-boot-r2dbc")
-includeMappedModule("spring-boot/batch-exposed", "exposed-spring-boot-batch")
-includeMappedModule("spring-boot/exposed-spring-modulith", "exposed-spring-modulith")
+includeMappedModule("spring-boot/exposed-jdbc", "bluetape4k-exposed-spring-boot-jdbc")
+includeMappedModule("spring-boot/exposed-r2dbc", "bluetape4k-exposed-spring-boot-r2dbc")
+includeMappedModule("spring-boot/batch-exposed", "bluetape4k-exposed-spring-boot-batch")
+includeMappedModule("spring-boot/exposed-spring-modulith", "bluetape4k-exposed-spring-modulith")
 includeMappedModule("spring-boot/exposed-jdbc-demo", "exposed-spring-boot-jdbc-demo")
 includeMappedModule("spring-boot/exposed-r2dbc-demo", "exposed-spring-boot-r2dbc-demo")
 
-fun includeModules(baseDir: String, withBaseDir: Boolean = true) {
+fun includeModules(
+    baseDir: String,
+    withBaseDir: Boolean = true,
+    prefix: String = "",
+    excludeDirNames: Set<String> = emptySet(),
+) {
     files("$rootDir/$baseDir").files
         .filter { it.isDirectory }
         .forEach { moduleDir ->
             moduleDir.listFiles()
-                ?.filter { it.isDirectory }
+                ?.filter { it.isDirectory && it.name !in excludeDirNames }
                 ?.filter { it.resolve("build.gradle.kts").isFile }
                 ?.forEach { dir ->
                     val basePath = baseDir.replace("/", "-")
                     val projectName = if (withBaseDir) {
-                        "$basePath-${dir.name}"
+                        "$prefix$basePath-${dir.name}"
                     } else {
-                        dir.name
+                        "$prefix${dir.name}"
                     }
-
                     includeProject(projectName, dir)
                 }
         }

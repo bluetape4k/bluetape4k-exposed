@@ -50,8 +50,8 @@ dependencies {
 
     // Core
     api(libs.kotlin.reflect)
-    api(project(":exposed-jdbc"))
-    api(project(":exposed-core"))
+    api(project(":bluetape4k-exposed-jdbc"))
+    api(project(":bluetape4k-exposed-core"))
     api(libs.bluetape4k.virtualthread.api)
 
     // Exposed
@@ -67,7 +67,7 @@ dependencies {
     // Test
     testImplementation(libs.bluetape4k.junit5)
     // 테스트 fixture의 Exposed starter 대신 이 모듈의 Spring Boot platform/starter 조합을 사용한다.
-    testImplementation(project(":exposed-jdbc-tests")) {
+    testImplementation(project(":bluetape4k-exposed-jdbc-tests")) {
         exclude(group = "org.jetbrains.exposed", module = "exposed-spring-boot-starter")
     }
     testImplementation(libs.bluetape4k.virtualthread.jdk21)

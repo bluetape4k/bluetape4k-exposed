@@ -19,7 +19,7 @@ A module for serializing and deserializing Exposed JSON/JSONB columns using Jack
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:exposed-jackson2:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:${version}")
     implementation("io.github.bluetape4k:bluetape4k-jackson2:${version}")
 }
 ```

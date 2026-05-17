@@ -80,4 +80,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **#89** `BigQueryQueryExecutor.convertValue`: `NumberFormatException` and other conversion errors now wrapped in `IllegalArgumentException` with raw value, column name, and column type context ([PR #105](https://github.com/bluetape4k/bluetape4k-exposed/pull/105)).
 - **#90** `PartTreeExposedQuery.executePageQuery`: double `entityClass.find { op }` call for count eliminated; count now uses `table.selectAll().where { op }.count()` directly ([PR #106](https://github.com/bluetape4k/bluetape4k-exposed/pull/106)).
 - Added the `DefaultFastjsonSerializer` facade for `exposed-fastjson2` and aligned module defaults with Jackson serializer parity.
-- Corrected the initial `utils/batch` Gradle module naming mismatch; current module path is `:exposed-batch` ([PR #13](https://github.com/bluetape4k/bluetape4k-exposed/pull/13)).
+- Corrected the initial `utils/batch` Gradle module naming mismatch; current module path is `:bluetape4k-exposed-batch` ([PR #13](https://github.com/bluetape4k/bluetape4k-exposed/pull/13)).

@@ -18,7 +18,7 @@ Provides the Repository pattern, transaction extensions, and query utilities for
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:exposed-jdbc:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:${version}")
 
     // For Coroutines support (SuspendedQuery)
     implementation("io.github.bluetape4k:bluetape4k-coroutines:${version}")

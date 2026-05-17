@@ -19,7 +19,7 @@ dependencies {
     api(libs.spring.modulith.events.api)
     api(libs.spring.modulith.events.core)
 
-    api(project(":exposed-spring-boot-jdbc"))
+    api(project(":bluetape4k-exposed-spring-boot-jdbc"))
 
     implementation(libs.spring.modulith.events.jackson)
 
@@ -30,7 +30,7 @@ dependencies {
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation(project(":exposed-jdbc-tests"))
+    testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
     testImplementation(libs.bluetape4k.junit5)
     testImplementation(libs.h2.v2)
     testImplementation(libs.hikaricp)

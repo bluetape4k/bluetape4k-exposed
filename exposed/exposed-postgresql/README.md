@@ -341,7 +341,7 @@ Add the following to your `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:exposed-postgresql:1.5.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-postgresql:1.5.0-SNAPSHOT")
 
     // Add runtime dependencies for the features you need
     runtimeOnly("net.postgis:postgis-jdbc:2024.1.0")      // For PostGIS

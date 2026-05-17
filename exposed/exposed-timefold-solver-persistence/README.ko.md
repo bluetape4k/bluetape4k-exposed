@@ -38,7 +38,7 @@
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:exposed-timefold-solver-persistence:${bluetape4kVersion}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-timefold-solver-persistence:${bluetape4kVersion}")
 }
 ```
 

@@ -25,7 +25,7 @@ JetBrains Exposed ORM과 DuckDB JDBC를 통합하는 모듈입니다. PostgreSQL
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:exposed-duckdb:${version}")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-duckdb:${version}")
 }
 ```
 

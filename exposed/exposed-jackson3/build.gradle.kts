@@ -10,9 +10,9 @@ dependencies {
     api(libs.exposed.core)
     compileOnly(libs.exposed.jdbc)
     compileOnly(libs.exposed.dao)
-    api(project(":exposed-core"))
-    compileOnly(project(":exposed-dao"))
-    testImplementation(project(":exposed-jdbc-tests"))
+    api(project(":bluetape4k-exposed-core"))
+    compileOnly(project(":bluetape4k-exposed-dao"))
+    testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
 
     /* Jackson */
     api(libs.bluetape4k.jackson3)
