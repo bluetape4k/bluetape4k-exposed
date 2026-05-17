@@ -921,7 +921,7 @@ querydsl-kotlin-codegen = { module = "com.querydsl:querydsl-kotlin-codegen", ver
 
 # MyBatis
 mybatis = { module = "org.mybatis:mybatis", version = "3.5.19" }  # https://mvnrepository.com/artifact/org.mybatis/mybatis
-mybatis-spring = { module = "org.mybatis:mybatis-spring", version = "3.0.5" }  # https://mvnrepository.com/artifact/org.mybatis/mybatis-spring
+mybatis-spring = { module = "org.mybatis:mybatis-spring", version = "4.0.0" }  # https://mvnrepository.com/artifact/org.mybatis/mybatis-spring
 mybatis-dynamic-sql = { module = "org.mybatis.dynamic-sql:mybatis-dynamic-sql", version = "1.5.2" }  # https://mvnrepository.com/artifact/org.mybatis.dynamic-sql/mybatis-dynamic-sql
 
 # Agroal
