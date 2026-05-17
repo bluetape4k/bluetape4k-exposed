@@ -230,7 +230,6 @@ subprojects {
         generatedPomCustomization { setEnabled(false) }
         imports {
             mavenBom(rootLibs.bluetape4k.bom.get().toString())
-            mavenBom(rootLibs.bluetape4k.dependencies.get().toString())
             mavenBom(rootLibs.spring.boot.dependencies.get().toString())
             mavenBom(rootLibs.kotlinx.coroutines.bom.get().toString())
             mavenBom(rootLibs.kotlin.bom.get().toString())
