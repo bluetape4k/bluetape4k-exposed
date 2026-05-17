@@ -7,7 +7,7 @@ configurations {
 dependencies {
     // Exposed
     implementation(platform(libs.exposed.bom))
-    api(project(":exposed-core"))
+    api(project(":bluetape4k-exposed-core"))
     compileOnly(libs.exposed.jdbc)
     compileOnly(libs.exposed.java.time)
 
@@ -22,7 +22,7 @@ dependencies {
     compileOnly(libs.postgresql.driver)
 
     // Testing
-    testImplementation(project(":exposed-jdbc-tests"))
+    testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
     testImplementation(libs.bluetape4k.junit5)
     testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)

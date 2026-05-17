@@ -7,7 +7,7 @@ configurations {
 dependencies {
     // Exposed
     implementation(platform(libs.exposed.bom))
-    api(project(":exposed-core"))
+    api(project(":bluetape4k-exposed-core"))
     compileOnly(libs.exposed.jdbc)
     compileOnly(libs.exposed.java.time)  // 현재 미사용, exposed-postgresql 패턴과 일관성 위해 포함
 
@@ -21,7 +21,7 @@ dependencies {
     compileOnly(libs.mysql.connector.j)
 
     // Testing
-    testImplementation(project(":exposed-jdbc-tests"))
+    testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
     testImplementation(libs.bluetape4k.junit5)
     testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)

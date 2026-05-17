@@ -11,31 +11,31 @@ auto-configuration.
 
 ```text
 exposed/
-  exposed-core/
-  exposed-dao/
-  exposed-jdbc/
-  exposed-r2dbc/
-  exposed-jdbc-tests/
-  exposed-r2dbc-tests/
-  exposed-cache/
-  exposed-jdbc-caffeine/
-  exposed-jdbc-lettuce/
-  exposed-jdbc-redisson/
-  exposed-r2dbc-caffeine/
-  exposed-r2dbc-lettuce/
-  exposed-r2dbc-redisson/
-  exposed-jackson2/
-  exposed-jackson3/
-  exposed-fastjson2/
-  exposed-tink/
-  exposed-measured/
-  exposed-mysql8/
-  exposed-postgresql/
-  exposed-bigquery/
-  exposed-clickhouse/
-  exposed-trino/
-  exposed-duckdb/
-  exposed-timefold-solver-persistence/
+  bluetape4k-exposed-core/
+  bluetape4k-exposed-dao/
+  bluetape4k-exposed-jdbc/
+  bluetape4k-exposed-r2dbc/
+  bluetape4k-exposed-jdbc-tests/
+  bluetape4k-exposed-r2dbc-tests/
+  bluetape4k-exposed-cache/
+  bluetape4k-exposed-jdbc-caffeine/
+  bluetape4k-exposed-jdbc-lettuce/
+  bluetape4k-exposed-jdbc-redisson/
+  bluetape4k-exposed-r2dbc-caffeine/
+  bluetape4k-exposed-r2dbc-lettuce/
+  bluetape4k-exposed-r2dbc-redisson/
+  bluetape4k-exposed-jackson2/
+  bluetape4k-exposed-jackson3/
+  bluetape4k-exposed-fastjson2/
+  bluetape4k-exposed-tink/
+  bluetape4k-exposed-measured/
+  bluetape4k-exposed-mysql8/
+  bluetape4k-exposed-postgresql/
+  bluetape4k-exposed-bigquery/
+  bluetape4k-exposed-clickhouse/
+  bluetape4k-exposed-trino/
+  bluetape4k-exposed-duckdb/
+  bluetape4k-exposed-timefold-solver-persistence/
 utils/
 spring-boot/
 buildSrc/
@@ -50,24 +50,24 @@ Root README visual assets live under `docs/assets/` and should be shared by
 
 | Directory | Gradle module |
 |---|---|
-| `exposed/exposed-core` | `:exposed-core` |
-| `exposed/exposed-jdbc` | `:exposed-jdbc` |
-| `exposed/exposed-r2dbc` | `:exposed-r2dbc` |
-| `spring-boot/exposed-jdbc` | `:exposed-spring-boot-jdbc` |
-| `spring-boot/exposed-r2dbc` | `:exposed-spring-boot-r2dbc` |
-| `utils/batch` | `:exposed-batch` |
+| `exposed/exposed-core` | `:bluetape4k-exposed-core` |
+| `exposed/exposed-jdbc` | `:bluetape4k-exposed-jdbc` |
+| `exposed/exposed-r2dbc` | `:bluetape4k-exposed-r2dbc` |
+| `spring-boot/exposed-jdbc` | `:bluetape4k-exposed-spring-boot-jdbc` |
+| `spring-boot/exposed-r2dbc` | `:bluetape4k-exposed-spring-boot-r2dbc` |
+| `utils/batch` | `:bluetape4k-exposed-batch` |
 
 ## Commands
 
 ```bash
 ./gradlew clean build
 ./gradlew build -x test --parallel
-./gradlew :exposed-core:build
-./gradlew :exposed-jdbc:test
-./gradlew :exposed-r2dbc:test
-./gradlew :exposed-jdbc-lettuce:test
+./gradlew :bluetape4k-exposed-core:build
+./gradlew :bluetape4k-exposed-jdbc:test
+./gradlew :bluetape4k-exposed-r2dbc:test
+./gradlew :bluetape4k-exposed-jdbc-lettuce:test
 ./gradlew test --tests "io.bluetape4k.exposed.jdbc.ExposedJdbcRepositoryTest"
-./gradlew :exposed-spring-boot-jdbc:test
+./gradlew :bluetape4k-exposed-spring-boot-jdbc:test
 ./gradlew detekt
 ./gradlew publishAggregationToCentralSnapshots
 ./gradlew publishAggregationToCentralPortal

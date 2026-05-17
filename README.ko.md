@@ -117,17 +117,17 @@ flowchart TD
 ```kotlin
 dependencies {
     // 핵심 JDBC
-    implementation("io.github.bluetape4k.exposed:exposed-jdbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.8.0-SNAPSHOT")
     // R2DBC (코루틴)
-    implementation("io.github.bluetape4k.exposed:exposed-r2dbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.8.0-SNAPSHOT")
     // Redis 캐시 (Lettuce)
-    implementation("io.github.bluetape4k.exposed:exposed-jdbc-lettuce:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.8.0-SNAPSHOT")
     // Jackson JSON Column
-    implementation("io.github.bluetape4k.exposed:exposed-jackson2:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.8.0-SNAPSHOT")
     // Spring Boot 자동 설정
-    implementation("io.github.bluetape4k.exposed:exposed-spring-boot-jdbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.8.0-SNAPSHOT")
     // Exposed 기반 Spring Modulith JDBC 이벤트 발행
-    implementation("io.github.bluetape4k.exposed:exposed-spring-modulith:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.8.0-SNAPSHOT")
 }
 ```
 

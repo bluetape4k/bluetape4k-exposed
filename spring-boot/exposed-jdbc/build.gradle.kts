@@ -30,8 +30,8 @@ dependencies {
 
     testImplementation(libs.bluetape4k.virtualthread.jdk21)
 
-    api(project(":exposed-jdbc"))
-    testImplementation(project(":exposed-jdbc-tests"))
+    api(project(":bluetape4k-exposed-jdbc"))
+    testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
 
     compileOnly("org.springframework.boot:spring-boot-autoconfigure")
     compileOnly("org.springframework.boot:spring-boot-starter-data-jdbc")

@@ -37,10 +37,10 @@ flowchart TD
     APP["Kotlin application"]
 
     subgraph Core["Exposed core layer"]
-        CORE["exposed-core\ncolumn types + DSL helpers"]
-        DAO["exposed-dao\nentity lifecycle helpers"]
-        JDBC["exposed-jdbc\nblocking repositories"]
-        R2DBC["exposed-r2dbc\ncoroutine repositories"]
+        CORE["bluetape4k-exposed-core\ncolumn types + DSL helpers"]
+        DAO["bluetape4k-exposed-dao\nentity lifecycle helpers"]
+        JDBC["bluetape4k-exposed-jdbc\nblocking repositories"]
+        R2DBC["bluetape4k-exposed-r2dbc\ncoroutine repositories"]
     end
 
     subgraph CrossCutting["Cross-cutting modules"]
@@ -118,17 +118,17 @@ flowchart TD
 ```kotlin
 dependencies {
     // Core
-    implementation("io.github.bluetape4k.exposed:exposed-jdbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.8.0-SNAPSHOT")
     // R2DBC (coroutines)
-    implementation("io.github.bluetape4k.exposed:exposed-r2dbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.8.0-SNAPSHOT")
     // Redis cache
-    implementation("io.github.bluetape4k.exposed:exposed-jdbc-lettuce:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.8.0-SNAPSHOT")
     // Jackson JSON columns
-    implementation("io.github.bluetape4k.exposed:exposed-jackson2:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.8.0-SNAPSHOT")
     // Spring Boot auto-configuration
-    implementation("io.github.bluetape4k.exposed:exposed-spring-boot-jdbc:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.8.0-SNAPSHOT")
     // Spring Modulith JDBC event publication through Exposed
-    implementation("io.github.bluetape4k.exposed:exposed-spring-modulith:1.8.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.8.0-SNAPSHOT")
 }
 ```
 

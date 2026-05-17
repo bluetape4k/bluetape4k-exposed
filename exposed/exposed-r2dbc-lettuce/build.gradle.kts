@@ -7,8 +7,8 @@ configurations {
 dependencies {
     api(libs.bluetape4k.lettuce)
     api(libs.bluetape4k.cache.lettuce)
-    api(project(":exposed-r2dbc"))
-    api(project(":exposed-cache"))
+    api(project(":bluetape4k-exposed-r2dbc"))
+    api(project(":bluetape4k-exposed-cache"))
     api(libs.bluetape4k.resilience4j)
     api(libs.resilience4j.retry)
 
@@ -42,8 +42,8 @@ dependencies {
 
     testImplementation(libs.bluetape4k.junit5)
     testImplementation(libs.bluetape4k.testcontainers)
-    testImplementation(project(":exposed-r2dbc-tests"))
-    testImplementation(testFixtures(project(":exposed-cache")))
+    testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
+    testImplementation(testFixtures(project(":bluetape4k-exposed-cache")))
     testImplementation(libs.h2.v2)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.bluetape4k.idgenerators)

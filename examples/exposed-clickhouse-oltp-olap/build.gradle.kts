@@ -6,7 +6,7 @@ configurations {
 
 dependencies {
     // Exposed + ClickHouse (OLAP) + PostgreSQL (OLTP)
-    testImplementation(project(":exposed-clickhouse"))
+    testImplementation(project(":bluetape4k-exposed-clickhouse"))
     testImplementation(libs.exposed.core)
     testImplementation(libs.exposed.jdbc)
     testImplementation(libs.exposed.java.time)
