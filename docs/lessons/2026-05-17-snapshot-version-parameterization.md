@@ -9,6 +9,11 @@ Decision: Keep `snapshotVersion=` empty by default and let
 Outcome: `develop` stays release-ready, while snapshot publishing remains
 explicit in the workflow command.
 
+Release-prep outcome: `bluetape4k-*` dependencies now use formal BOM-named
+release versions, not `-SNAPSHOT`, before Central Portal deployment. Do not
+import `bluetape4k-dependencies` from upstream libraries before the final
+aggregator BOM has been released.
+
 Verification: `actionlint .github/workflows/publish-snapshot.yml`.
 
 Future guard: Do not reintroduce `snapshotVersion=-SNAPSHOT` as the default in
