@@ -30,6 +30,20 @@ plugins {
 
 val rootLibs = libs
 
+fun Project.isNonPublishedModule(): Boolean {
+    val relativePath = rootProject.rootDir.toPath()
+        .relativize(projectDir.toPath())
+        .toString()
+        .replace(File.separatorChar, '/')
+
+    return relativePath == "examples" ||
+            relativePath.startsWith("examples/") ||
+            relativePath == "benchmark" ||
+            relativePath.startsWith("benchmark/") ||
+            name.contains("-demo") ||
+            name.endsWith("-benchmark")
+}
+
 val centralPublishing = resolveCentralPublishingConfig()
 val centralUser: String = centralPublishing.username
 val centralPassword: String = centralPublishing.password
@@ -62,7 +76,9 @@ allprojects {
 }
 
 subprojects {
-    apply(plugin = "com.gradleup.nmcp")
+    if (!isNonPublishedModule()) {
+        apply(plugin = "com.gradleup.nmcp")
+    }
 
     configurations.matching { it.name.startsWith("nmcp") }.configureEach {
         resolutionStrategy.eachDependency {
@@ -93,9 +109,11 @@ subprojects {
         plugin<JavaLibraryPlugin>()
         plugin("org.jetbrains.kotlin.jvm")
         plugin("org.jetbrains.kotlinx.atomicfu")
-        plugin("org.jetbrains.kotlinx.kover")
-        plugin("maven-publish")
-        plugin("signing")
+        if (!isNonPublishedModule()) {
+            plugin("org.jetbrains.kotlinx.kover")
+            plugin("maven-publish")
+            plugin("signing")
+        }
         plugin("io.spring.dependency-management")
         plugin("org.jetbrains.dokka")
         plugin("com.adarshr.test-logger")
@@ -274,56 +292,58 @@ subprojects {
         testImplementation(rootLibs.mockk)
     }
 
-    publishing {
-        publications {
-            create<MavenPublication>("BluetapeExposed") {
-                val sourcesJar by tasks.registering(Jar::class) {
-                    archiveClassifier.set("sources")
-                    from(sourceSets["main"].allSource)
-                }
-                val javadocJar by tasks.registering(Jar::class) {
-                    archiveClassifier.set("javadoc")
-                    from(layout.buildDirectory.asFile.get().resolve("javadoc"))
-                }
-                from(components["java"])
-                artifact(sourcesJar)
-                artifact(javadocJar)
+    if (!isNonPublishedModule()) {
+        publishing {
+            publications {
+                create<MavenPublication>("BluetapeExposed") {
+                    val sourcesJar by tasks.registering(Jar::class) {
+                        archiveClassifier.set("sources")
+                        from(sourceSets["main"].allSource)
+                    }
+                    val javadocJar by tasks.registering(Jar::class) {
+                        archiveClassifier.set("javadoc")
+                        from(layout.buildDirectory.asFile.get().resolve("javadoc"))
+                    }
+                    from(components["java"])
+                    artifact(sourcesJar)
+                    artifact(javadocJar)
 
-                pom {
-                    name.set(project.name)
-                    description.set("Kotlin Exposed ORM extensions — coroutine-native, virtual-thread aware")
-                    url.set("https://github.com/bluetape4k/bluetape4k-exposed")
-                    licenses {
-                        license {
-                            name.set("The Apache License, Version 2.0")
-                            url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
-                        }
-                    }
-                    developers {
-                        developer {
-                            id.set("debop")
-                            name.set("Sunghyouk Bae")
-                            email.set("sunghyouk.bae@gmail.com")
-                        }
-                    }
-                    scm {
-                        connection.set("scm:git:git://github.com/bluetape4k/bluetape4k-exposed.git")
-                        developerConnection.set("scm:git:ssh://github.com/bluetape4k/bluetape4k-exposed.git")
+                    pom {
+                        name.set(project.name)
+                        description.set("Kotlin Exposed ORM extensions — coroutine-native, virtual-thread aware")
                         url.set("https://github.com/bluetape4k/bluetape4k-exposed")
+                        licenses {
+                            license {
+                                name.set("The Apache License, Version 2.0")
+                                url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                            }
+                        }
+                        developers {
+                            developer {
+                                id.set("debop")
+                                name.set("Sunghyouk Bae")
+                                email.set("sunghyouk.bae@gmail.com")
+                            }
+                        }
+                        scm {
+                            connection.set("scm:git:git://github.com/bluetape4k/bluetape4k-exposed.git")
+                            developerConnection.set("scm:git:ssh://github.com/bluetape4k/bluetape4k-exposed.git")
+                            url.set("https://github.com/bluetape4k/bluetape4k-exposed")
+                        }
                     }
                 }
             }
-        }
-        repositories {
-            mavenCentral()
-            maven {
-                name = "central-snapshots"
-                url = uri("https://central.sonatype.com/repository/maven-snapshots/")
+            repositories {
+                mavenCentral()
+                maven {
+                    name = "central-snapshots"
+                    url = uri("https://central.sonatype.com/repository/maven-snapshots/")
+                }
             }
         }
-    }
 
-    configurePublishingSigning("BluetapeExposed")
+        configurePublishingSigning("BluetapeExposed")
+    }
 }
 
 extensions.configure<NmcpAggregationExtension>("nmcpAggregation") {
@@ -336,7 +356,7 @@ extensions.configure<NmcpAggregationExtension>("nmcpAggregation") {
 }
 
 val publishableProjects = subprojects.filterNot { project ->
-    project.path.contains("examples") || project.path.contains("-demo")
+    project.isNonPublishedModule()
 }
 
 dependencies {
