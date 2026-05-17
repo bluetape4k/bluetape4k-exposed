@@ -87,7 +87,7 @@ subprojects {
 
 subprojects {
     // BOM 모듈은 java-platform 플러그인을 사용하므로 Java/Kotlin 설정을 건너뜁니다.
-    if (name == "exposed-bom") return@subprojects
+    if (name == "bluetape4k-exposed-bom") return@subprojects
 
     apply {
         plugin<JavaLibraryPlugin>()
@@ -348,7 +348,7 @@ dependencies {
 
 dependencies {
     subprojects
-        .filterNot { sub -> sub.name == "exposed-bom" }
+        .filterNot { sub -> sub.name == "bluetape4k-exposed-bom" }
         .filter { it.plugins.hasPlugin("org.jetbrains.kotlinx.kover") }
         .forEach { sub -> kover(project(sub.path)) }
 }
