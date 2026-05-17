@@ -29,8 +29,8 @@ bucket4j = "8.18.0"  # https://mvnrepository.com/artifact/com.bucket4j/bucket4j_
 resilience4j = "2.4.0"  # https://mvnrepository.com/artifact/io.github.resilience4j/resilience4j-bom
 netty = "4.2.13.Final"  # https://mvnrepository.com/artifact/io.netty/netty-bom
 
-aws2 = "2.44.4"  # https://mvnrepository.com/artifact/software.amazon.awssdk/bom
-aws2-crt = "0.45.3"  # https://mvnrepository.com/artifact/software.amazon.awssdk.crt/aws-crt
+aws2 = "2.44.7"  # https://mvnrepository.com/artifact/software.amazon.awssdk/bom
+aws2-crt = "0.45.4"  # https://mvnrepository.com/artifact/software.amazon.awssdk.crt/aws-crt
 aws-kotlin = "1.6.72"  # https://mvnrepository.com/artifact/aws.sdk.kotlin/aws-core
 aws-smithy-kotlin = "1.6.14"  # https://mvnrepository.com/artifact/aws.smithy.kotlin/http-jvm
 
