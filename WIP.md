@@ -16,6 +16,14 @@ Verified with `gh` on 2026-05-18 KST.
 
 ## Recently Completed
 
+### JDBC Batch Retry Empty Re-query (2026-05-19)
+
+- [#165](https://github.com/bluetape4k/bluetape4k-exposed/issues/165) replaces the JDBC batch job unique-violation
+  retry `.first()` re-query with `firstOrNull()` plus a contextual `IllegalStateException`.
+- The JDBC behavior now matches the R2DBC retry contract when the winner row disappears or no longer matches the
+  restartable status filter.
+- Regression coverage verifies the missing-winner retry error across H2, PostgreSQL, and MySQL 8.
+
 ### R2DBC Caffeine Close Waits For Final Flush (2026-05-19)
 
 - [#163](https://github.com/bluetape4k/bluetape4k-exposed/issues/163) makes `AbstractR2dbcCaffeineRepository.close()`
