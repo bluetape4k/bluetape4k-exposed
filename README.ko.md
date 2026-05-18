@@ -22,6 +22,7 @@ dialect 확장, Spring Boot 4 자동 설정을 Exposed DSL 스타일 안에서 �
 ## 주요 기능
 
 - **Repository 패턴** — Exposed DSL 기반 타입 안전한 JDBC 및 R2DBC(코루틴) Repository 추상화
+- **CTE Query DSL** — PostgreSQL/MySQL `WITH`, `WITH RECURSIVE` SELECT를 위한 JDBC/R2DBC 헬퍼
 - **캐시 통합** — Caffeine(로컬), Lettuce/Redisson(분산 Redis) 캐시 백엔드
 - **JSON Column** — Jackson 2.x, Jackson 3.x, Fastjson2 Column 직렬화
 - **암호화** — Google Tink 기반 암호화 Column
@@ -206,6 +207,25 @@ class UserR2dbcRepository(private val database: R2dbcDatabase) {
         }.value
     }
 }
+```
+
+### Common Table Expression (PostgreSQL / MySQL)
+
+```kotlin
+import io.bluetape4k.exposed.core.CteTable
+import io.bluetape4k.exposed.jdbc.withCte
+import org.jetbrains.exposed.v1.jdbc.select
+
+val activeUsers = CteTable(
+    name = "active_users",
+    query = Users.select(Users.id, Users.name).where { Users.active eq true }
+)
+
+val rows = activeUsers
+    .select(activeUsers[Users.id], activeUsers[Users.name])
+    .withCte(activeUsers)
+    .orderBy(activeUsers[Users.id])
+    .toList()
 ```
 
 ### JSON Column (Jackson)

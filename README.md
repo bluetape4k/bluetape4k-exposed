@@ -23,6 +23,7 @@ read paths, JSON/encrypted columns, database dialect extensions, and Spring Boot
 ## Features
 
 - **Repository Pattern** — Type-safe JDBC and R2DBC (coroutine) repository abstractions built on Exposed DSL
+- **CTE Query DSL** — PostgreSQL/MySQL `WITH` and `WITH RECURSIVE` SELECT helpers for JDBC and R2DBC
 - **Cache Integrations** — Caffeine (local), Lettuce and Redisson (distributed Redis) cache backends
 - **JSON Columns** — Jackson 2.x, Jackson 3.x, and Fastjson2 column serializers
 - **Encryption** — Google Tink-based encrypted columns
@@ -211,6 +212,25 @@ class UserR2dbcRepository(private val database: R2dbcDatabase) {
 // Usage in a coroutine scope
 val repo = UserR2dbcRepository(r2dbcDatabase)
 val id = repo.create("Bob", "bob@example.com")
+```
+
+### Common Table Expressions (PostgreSQL / MySQL)
+
+```kotlin
+import io.bluetape4k.exposed.core.CteTable
+import io.bluetape4k.exposed.jdbc.withCte
+import org.jetbrains.exposed.v1.jdbc.select
+
+val activeUsers = CteTable(
+    name = "active_users",
+    query = Users.select(Users.id, Users.name).where { Users.active eq true }
+)
+
+val rows = activeUsers
+    .select(activeUsers[Users.id], activeUsers[Users.name])
+    .withCte(activeUsers)
+    .orderBy(activeUsers[Users.id])
+    .toList()
 ```
 
 ### JSON Columns (Jackson)

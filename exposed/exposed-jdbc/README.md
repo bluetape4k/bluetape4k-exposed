@@ -12,6 +12,7 @@ Provides the Repository pattern, transaction extensions, and query utilities for
 - **Repository pattern**: `JdbcRepository<ID, T, E>` and `SoftDeletedJdbcRepository<ID, T, E>` interfaces
 - **Coroutines support**: `SuspendedQuery` — run JDBC queries as suspend functions
 - **Virtual Thread transactions**: Transaction execution on JDK 21+ Virtual Threads
+- **CTE SELECT queries**: `withCte()` / `withCtes()` for PostgreSQL/MySQL `WITH` and `WITH RECURSIVE`
 - **Table/schema extensions**: `ImplicitSelectAll`, `TableExtensions`, `SchemaUtilsExtensions`
 
 ## Adding Dependencies
@@ -203,6 +204,32 @@ transaction {
     }
 }
 ```
+
+### 7. Common Table Expressions
+
+```kotlin
+import io.bluetape4k.exposed.core.CteTable
+import io.bluetape4k.exposed.jdbc.withCte
+import org.jetbrains.exposed.v1.jdbc.select
+
+transaction {
+    val activeUsers = CteTable(
+        name = "active_users",
+        query = UserTable
+            .select(UserTable.id, UserTable.name)
+            .where { UserTable.active eq true }
+    )
+
+    activeUsers
+        .select(activeUsers[UserTable.id], activeUsers[UserTable.name])
+        .withCte(activeUsers)
+        .orderBy(activeUsers[UserTable.id])
+        .toList()
+}
+```
+
+`withCte()` renders the CTE body and the final SELECT through the same Exposed `QueryBuilder`, so prepared
+parameters from CTE predicates keep their binding order.
 
 ## JdbcRepository Key Methods
 
