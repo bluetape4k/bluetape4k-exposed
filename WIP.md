@@ -66,7 +66,10 @@ Bugs identified by post-release code review (2026-05-16). All assigned to milest
 
 | Priority | Issue | Module | Description |
 |----------|-------|--------|-------------|
+| P0 | [#161](https://github.com/bluetape4k/bluetape4k-exposed/issues/161) | exposed-r2dbc-caffeine | R2DBC write-behind `finally` block calls suspend `flushBatch()` without `NonCancellable` — silent data loss on cancellation |
 | P0 | [#120](https://github.com/bluetape4k/bluetape4k-exposed/issues/120) | jdbc-caffeine / r2dbc-caffeine | `get()` / `getAll()` non-atomic cache-miss → stale-read overwrite under concurrency |
+| P1 | [#163](https://github.com/bluetape4k/bluetape4k-exposed/issues/163) | exposed-r2dbc-caffeine | `close()` cancels coroutine scope before write-behind flush completes — data loss (fix after #161) |
+| P1 | [#162](https://github.com/bluetape4k/bluetape4k-exposed/issues/162) | exposed-jdbc-caffeine | `findAll()` cache-warming uses bare `runCatching{}` — all exceptions silently dropped |
 | P1 | [#117](https://github.com/bluetape4k/bluetape4k-exposed/issues/117) | batch | `findOrCreateJobExecution`: `firstOrNull()!!` NPE after concurrent INSERT failure |
 | P1 | [#118](https://github.com/bluetape4k/bluetape4k-exposed/issues/118) | jdbc-caffeine / r2dbc-caffeine | `close()` uses `runCatching{}` → swallows `CancellationException` |
 | P2 | [#119](https://github.com/bluetape4k/bluetape4k-exposed/issues/119) | batch | `ExposedJdbcBatchReader` / `ExposedR2dbcBatchReader`: `close()` does not reset key-cursor state |
@@ -97,6 +100,9 @@ Features identified by post-release review (2026-05-16). All assigned to milesto
   -> ./gradlew publishAggregationToCentralPortal
 
 1.8.1 patch
+  -> #161 R2DBC write-behind finally NonCancellable (P0) — fix first
+  -> #163 R2DBC write-behind close() scope race (P1) — depends on #161
+  -> #162 AbstractJdbcCaffeineRepository.findAll() runCatching{} swallows errors (P1)
   -> #120 Caffeine cache stale-read race (P0)
   -> #117 batch NPE on concurrent INSERT
   -> #118 CancellationException swallowed in close()
