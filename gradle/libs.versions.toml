@@ -83,7 +83,7 @@ agroal = "3.1.2"  # https://mvnrepository.com/artifact/io.agroal/agroal-api
 blaze-persistence = "3.34.6"  # https://mvnrepository.com/artifact/com.blazebit/blaze-persistence-core-api
 javers = "7.11.0"  # https://mvnrepository.com/artifact/org.javers/javers-core
 
-slf4j = "2.0.17"  # https://mvnrepository.com/artifact/org.slf4j/slf4j-api
+slf4j = "2.0.18"  # https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 logback = "1.5.32"  # https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
 log4j = "2.26.0"  # https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-bom
 
