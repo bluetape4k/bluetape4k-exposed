@@ -1,5 +1,10 @@
 package io.bluetape4k.batch.jdbc
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBe
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.batch.internal.CheckpointJson
@@ -8,9 +13,6 @@ import io.bluetape4k.batch.jdbc.tables.BatchStepExecutionTable
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
-import io.bluetape4k.assertions.shouldBe
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
@@ -145,6 +147,40 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
 
             je1.id shouldBeEqualTo je1.id
             (je2.id > je1.id) shouldBe true
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `UniqueViolation 재조회 - winner row가 있으면 반환한다`(testDB: TestDB) {
+        withRepoTables(testDB) {
+            val created = findOrCreateJobExecution("retryWinnerJob", mapOf("date" to "2026-05-19"))
+
+            val retried = requeryJobExecutionAfterUniqueViolation(
+                jobName = "retryWinnerJob",
+                params = mapOf("date" to "2026-05-19"),
+            )
+
+            retried.id shouldBeEqualTo created.id
+            retried.status shouldBe BatchStatus.RUNNING
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `UniqueViolation 재조회 - winner row가 없으면 맥락 있는 IllegalStateException을 던진다`(testDB: TestDB) {
+        withRepoTables(testDB) {
+            val error = assertFailsWith<IllegalStateException> {
+                requeryJobExecutionAfterUniqueViolation(
+                    jobName = "missingRetryJob",
+                    params = mapOf("date" to "2026-05-19"),
+                )
+            }
+
+            val message = error.message.shouldNotBeNull()
+            message shouldContain "Job execution disappeared after unique-constraint violation re-query"
+            message shouldContain "missingRetryJob"
+            message shouldContain "date=2026-05-19"
         }
     }
 }
