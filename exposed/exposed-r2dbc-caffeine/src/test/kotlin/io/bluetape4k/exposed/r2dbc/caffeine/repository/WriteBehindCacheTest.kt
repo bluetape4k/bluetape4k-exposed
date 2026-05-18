@@ -37,6 +37,9 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.*
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 
@@ -178,6 +181,113 @@ class WriteBehindCacheTest {
                 }
             }
         }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `close waits for write-behind final flush to finish`(testDB: TestDB) = runSuspendIO {
+            val config = LocalCacheConfig(
+                keyPrefix = "r2dbc:caffeine:write-behind:close-final-flush",
+                writeMode = CacheWriteMode.WRITE_BEHIND,
+                writeBehindBatchSize = 10,
+                writeBehindQueueCapacity = 16,
+            )
+            val flushStarted = CountDownLatch(1)
+            val releaseFlush = CountDownLatch(1)
+            val repository = CloseWaitingActorRepository(
+                config = config,
+                flushStarted = flushStarted,
+                releaseFlush = releaseFlush,
+            )
+
+            withActorTable(testDB) {
+                val existingId = ActorTable.select(ActorTable.id).first()[ActorTable.id].value
+                val updated = findActorById(existingId).shouldNotBeNull()
+                    .copy(firstName = "close-waits-final-flush")
+
+                repository.put(existingId, updated)
+                val closeFuture = CompletableFuture.runAsync {
+                    repository.close()
+                }
+
+                try {
+                    flushStarted.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
+                    closeFuture.isDone shouldBeEqualTo false
+
+                    releaseFlush.countDown()
+                    closeFuture.get(5, TimeUnit.SECONDS)
+
+                    findActorById(existingId).shouldNotBeNull().firstName shouldBeEqualTo updated.firstName
+                } finally {
+                    releaseFlush.countDown()
+                    closeFuture.cancel(true)
+                    repository.close()
+                }
+            }
+        }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `close before any write-behind put completes without hanging`(testDB: TestDB) = runSuspendIO {
+            val repository = ActorR2dbcCaffeineRepository(
+                LocalCacheConfig(
+                    keyPrefix = "r2dbc:caffeine:write-behind:close-before-put",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 10,
+                    writeBehindQueueCapacity = 16,
+                )
+            )
+
+            withActorTable(testDB) {
+                repository.close()
+
+                writeBehindJobOf(repository).isCompleted shouldBeEqualTo true
+            }
+        }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `close is idempotent after write-behind job started`(testDB: TestDB) = runSuspendIO {
+            val repository = ActorR2dbcCaffeineRepository(
+                LocalCacheConfig(
+                    keyPrefix = "r2dbc:caffeine:write-behind:close-idempotent",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 10,
+                    writeBehindQueueCapacity = 16,
+                )
+            )
+
+            withActorTable(testDB) {
+                val existingId = ActorTable.select(ActorTable.id).first()[ActorTable.id].value
+                val updated = findActorById(existingId).shouldNotBeNull()
+                    .copy(firstName = "close-idempotent-final-flush")
+
+                repository.put(existingId, updated)
+                repository.close()
+                repository.close()
+
+                findActorById(existingId).shouldNotBeNull().firstName shouldBeEqualTo updated.firstName
+                writeBehindJobOf(repository).isCompleted shouldBeEqualTo true
+            }
+        }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `close in write-through mode does not initialize write-behind job`(testDB: TestDB) = runSuspendIO {
+            val repository = ActorR2dbcCaffeineRepository(
+                LocalCacheConfig(
+                    keyPrefix = "r2dbc:caffeine:write-through:close",
+                    writeMode = CacheWriteMode.WRITE_THROUGH,
+                )
+            )
+
+            withActorTable(testDB) {
+                writeBehindJobLazyOf(repository).isInitialized() shouldBeEqualTo false
+
+                repository.close()
+
+                writeBehindJobLazyOf(repository).isInitialized() shouldBeEqualTo false
+            }
+        }
     }
 
     private class CancellingActorRepository(
@@ -212,11 +322,44 @@ class WriteBehindCacheTest {
         override fun extractId(entity: ActorRecord): Long = entity.id
     }
 
+    private class CloseWaitingActorRepository(
+        config: LocalCacheConfig,
+        private val flushStarted: CountDownLatch,
+        private val releaseFlush: CountDownLatch,
+    ): AbstractR2dbcCaffeineRepository<Long, ActorRecord>(config) {
+
+        override val table: IdTable<Long> = ActorTable
+
+        override suspend fun ResultRow.toEntity(): ActorRecord = toActorRecord()
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) {
+            flushStarted.countDown()
+            releaseFlush.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
+
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) {
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun extractId(entity: ActorRecord): Long = entity.id
+    }
+
     @Suppress("UNCHECKED_CAST")
     private fun writeBehindJobOf(repository: AbstractR2dbcCaffeineRepository<*, *>): Job {
+        return writeBehindJobLazyOf(repository).value
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun writeBehindJobLazyOf(repository: AbstractR2dbcCaffeineRepository<*, *>): Lazy<Job> {
         val field = AbstractR2dbcCaffeineRepository::class.java.getDeclaredField("writeBehindJob\$delegate")
         field.isAccessible = true
 
-        return (field.get(repository) as Lazy<Job>).value
+        return field.get(repository) as Lazy<Job>
     }
 }

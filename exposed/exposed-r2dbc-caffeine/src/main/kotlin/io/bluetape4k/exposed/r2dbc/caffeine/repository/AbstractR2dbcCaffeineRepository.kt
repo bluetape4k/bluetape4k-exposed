@@ -38,6 +38,8 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.r2dbc.update
 import java.io.Serializable
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
  * Exposed R2DBC + Caffeine 로컬 캐시를 결합한 추상 레포지토리.
@@ -59,7 +61,9 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
     override val config: LocalCacheConfig = LocalCacheConfig.WRITE_THROUGH,
 ): R2dbcCaffeineRepository<ID, E> {
 
-    companion object: KLogging()
+    companion object: KLogging() {
+        private const val WRITE_BEHIND_CLOSE_TIMEOUT_SECONDS = 30L
+    }
 
     abstract override val table: IdTable<ID>
 
@@ -372,17 +376,35 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
      * 레포지토리를 닫습니다.
      *
      * Write-Behind 모드인 경우 채널을 닫아 새로운 항목 수신을 중단합니다.
-     * writeBehindJob은 채널이 닫힌 후 남은 항목을 모두 처리하고 종료됩니다.
-     * `runBlocking`을 사용하면 Virtual Thread와 충돌하므로, scope를 취소하여
-     * Job이 자연스럽게 종료되도록 위임합니다.
+     * writeBehindJob은 채널이 닫힌 후 남은 항목을 모두 처리하고 종료됩니다. 종료 대기는 동기
+     * [close] 경계에서 수행하며, DB/driver hang으로 무한 shutdown이 되지 않도록 bounded wait를 사용합니다.
      */
     override fun close() {
         if (config.writeMode == CacheWriteMode.WRITE_BEHIND) {
             writeBehindQueue.close()
-            // writeBehindJob은 채널 닫힘을 감지하고 남은 배치를 처리한 뒤 자동 종료됩니다.
-            // runBlocking을 쓰면 Virtual Thread와 충돌하므로, scope 취소로 대신합니다.
+            awaitWriteBehindJobCompletion()
         }
         cache.synchronous().invalidateAll()
         scope.cancel()
+    }
+
+    private fun awaitWriteBehindJobCompletion() {
+        val completed = CountDownLatch(1)
+        writeBehindJob.invokeOnCompletion { completed.countDown() }
+
+        val completedInTime =
+            try {
+                completed.await(WRITE_BEHIND_CLOSE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+                false
+            }
+
+        if (!completedInTime) {
+            log.warn {
+                "Write-Behind: close timed out waiting for final flush. " +
+                    "timeoutSeconds=$WRITE_BEHIND_CLOSE_TIMEOUT_SECONDS"
+            }
+        }
     }
 }
