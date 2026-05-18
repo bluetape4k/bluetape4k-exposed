@@ -12,6 +12,7 @@ import io.bluetape4k.support.requirePositiveNumber
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -139,7 +141,9 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                 // 채널 닫힌 후에도 루프에서 빠져나온 시점의 미처리 항목을 DB에 기록해야
                 // 데이터 유실을 방지할 수 있다.
                 if (batch.isNotEmpty()) {
-                    flushBatch(batch)
+                    withContext(NonCancellable) {
+                        flushBatch(batch)
+                    }
                 }
             }
         }

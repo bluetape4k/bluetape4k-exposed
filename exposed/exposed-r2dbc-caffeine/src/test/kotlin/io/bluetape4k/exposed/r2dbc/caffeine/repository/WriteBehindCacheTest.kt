@@ -1,5 +1,7 @@
 package io.bluetape4k.exposed.r2dbc.caffeine.repository
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
@@ -11,19 +13,31 @@ import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.ActorRecord
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.ActorTable
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.CredentialRecord
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.CredentialTable
+import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.findActorById
+import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.toActorRecord
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.withActorTable
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.withCredentialTable
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.CredentialR2dbcCaffeineRepository
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.dao.id.IdTable
+import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
+import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.junit.jupiter.api.Nested
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -125,5 +139,84 @@ class WriteBehindCacheTest {
 
         override suspend fun createNewEntity(): CredentialRecord =
             ActorSchema.newCredentialRecord()
+    }
+
+    // -------------------------------------------------------------------------
+    // Cancellation-safe final flush
+    // -------------------------------------------------------------------------
+
+    @Nested
+    inner class CancellationSafeFinalFlush: AbstractR2dbcCaffeineTest() {
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `write-behind final batch is flushed after job cancellation`(testDB: TestDB) = runSuspendIO {
+            val config = LocalCacheConfig(
+                keyPrefix = "r2dbc:caffeine:write-behind:cancel-final-flush",
+                writeMode = CacheWriteMode.WRITE_BEHIND,
+                writeBehindBatchSize = 10,
+                writeBehindQueueCapacity = 16,
+            )
+            lateinit var repository: CancellingActorRepository
+            repository = CancellingActorRepository(config) {
+                writeBehindJobOf(repository)
+            }
+
+            withActorTable(testDB) {
+                val existingId = ActorTable.select(ActorTable.id).first()[ActorTable.id].value
+                val updated = findActorById(existingId).shouldNotBeNull()
+                    .copy(firstName = "cancel-safe-final-flush")
+
+                try {
+                    repository.put(existingId, updated)
+                    writeBehindJobOf(repository).join()
+
+                    repository.updateAttempts.get() shouldBeEqualTo 2
+                    findActorById(existingId).shouldNotBeNull().firstName shouldBeEqualTo updated.firstName
+                } finally {
+                    repository.close()
+                }
+            }
+        }
+    }
+
+    private class CancellingActorRepository(
+        config: LocalCacheConfig,
+        private val jobProvider: () -> Job,
+    ): AbstractR2dbcCaffeineRepository<Long, ActorRecord>(config) {
+
+        val updateAttempts = AtomicInteger()
+
+        override val table: IdTable<Long> = ActorTable
+
+        override suspend fun ResultRow.toEntity(): ActorRecord = toActorRecord()
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) {
+            if (updateAttempts.incrementAndGet() == 1) {
+                val cancellation = CancellationException("cancel write-behind job during flush")
+                jobProvider().cancel(cancellation)
+                throw cancellation
+            }
+
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) {
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun extractId(entity: ActorRecord): Long = entity.id
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun writeBehindJobOf(repository: AbstractR2dbcCaffeineRepository<*, *>): Job {
+        val field = AbstractR2dbcCaffeineRepository::class.java.getDeclaredField("writeBehindJob\$delegate")
+        field.isAccessible = true
+
+        return (field.get(repository) as Lazy<Job>).value
     }
 }
