@@ -25,6 +25,15 @@ Verified with `gh` on 2026-05-18 KST.
 - [#163](https://github.com/bluetape4k/bluetape4k-exposed/issues/163) remains separate because it covers
   `close()` lifecycle ordering, not the final cleanup context itself.
 
+### JDBC Caffeine Cache Warming Visibility (2026-05-19)
+
+- [#162](https://github.com/bluetape4k/bluetape4k-exposed/issues/162) replaced bare `runCatching {}`
+  in JDBC Caffeine `findAll()` cache warming with explicit `try/catch (Exception)` and `warn` logging.
+- The same silent-swallow pattern was present in `AbstractSuspendedJdbcCaffeineRepository.findAll()`, so the
+  suspend counterpart was fixed in the same PR to keep repository behavior consistent.
+- Regression tests now cover non-fatal cache warming exceptions preserving query results and fatal `Error`
+  propagation for both blocking and suspend implementations across H2, PostgreSQL, and MySQL 8.
+
 ### CTE Query DSL (2026-05-18)
 
 - [#157](https://github.com/bluetape4k/bluetape4k-exposed/issues/157) added `CteTable` and JDBC/R2DBC

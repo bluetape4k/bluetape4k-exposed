@@ -3,22 +3,30 @@ package io.bluetape4k.exposed.jdbc.caffeine.repository
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
 import io.bluetape4k.exposed.jdbc.caffeine.AbstractJdbcCaffeineTest
+import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.ActorRecord
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorJdbcCaffeineRepository
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.ActorTable
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.CredentialTable
+import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.toActorRecord
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.withActorTable
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.withCredentialTable
 import io.bluetape4k.exposed.jdbc.caffeine.domain.CredentialJdbcCaffeineRepository
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.autoIncColumnType
+import org.jetbrains.exposed.v1.core.dao.id.IdTable
+import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
+import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -29,6 +37,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.Instant
 import java.util.*
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * JDBC Caffeine 레포지토리 추가 커버리지 테스트.
@@ -114,6 +123,89 @@ class JdbcCaffeineRepositoryExtraTest {
                 ids.forEach { id ->
                     repository.cache.getIfPresent(id.toString()).shouldBeNull()
                 }
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // findAll cache warming failures
+    // -------------------------------------------------------------------------
+
+    @Nested
+    inner class CacheWarmingFailureTest: AbstractJdbcCaffeineTest() {
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `findAll - cache warming Exception is skipped without losing query result`(testDB: TestDB) {
+            val repository = FailingCacheWarmJdbcRepository(
+                failure = IllegalStateException("cache key failure")
+            )
+
+            withActorTable(testDB) {
+                RecordingLogbackAppender().use { appender ->
+                    val entities = repository.findAll()
+
+                    entities.size shouldBeEqualTo ActorTable.selectAll().count().toInt()
+                    repository.cache.asMap().shouldBeEmpty()
+                    appender.hasWarnContaining(
+                        "Cache warming failed for entity - skipping. " +
+                            "cacheName=jdbc:caffeine:extra:find-all-failure"
+                    ).shouldBeTrue()
+                }
+            }
+        }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `findAll - cache key serialization Exception is warned and skipped`(testDB: TestDB) {
+            val repository = FailingCacheWarmJdbcRepository(
+                failure = IllegalStateException("cache key serialization failure"),
+                failInSerializeKey = true,
+            )
+
+            withActorTable(testDB) {
+                RecordingLogbackAppender().use { appender ->
+                    val entities = repository.findAll()
+
+                    entities.size shouldBeEqualTo ActorTable.selectAll().count().toInt()
+                    repository.cache.asMap().shouldBeEmpty()
+                    appender.hasWarnContaining(
+                        "Cache warming failed for entity - skipping. " +
+                            "cacheName=jdbc:caffeine:extra:find-all-failure"
+                    ).shouldBeTrue()
+                }
+            }
+        }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `findAll - cache warming CancellationException is not swallowed`(testDB: TestDB) {
+            val repository = FailingCacheWarmJdbcRepository(
+                failure = CancellationException("cache warming cancelled")
+            )
+
+            withActorTable(testDB) {
+                val error = assertFailsWith<CancellationException> {
+                    repository.findAll()
+                }
+
+                error.message shouldBeEqualTo "cache warming cancelled"
+            }
+        }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `findAll - cache warming Error is not swallowed`(testDB: TestDB) {
+            val repository = FailingCacheWarmJdbcRepository(
+                failure = AssertionError("fatal cache warming failure")
+            )
+
+            withActorTable(testDB) {
+                val error = assertFailsWith<AssertionError> {
+                    repository.findAll()
+                }
+
+                error.message shouldBeEqualTo "fatal cache warming failure"
             }
         }
     }
@@ -278,6 +370,44 @@ class JdbcCaffeineRepositoryExtraTest {
                 // At least one put must have thrown — data must NOT be silently dropped
                 overflowSeen.shouldBeTrue()
             }
+        }
+    }
+
+    private class FailingCacheWarmJdbcRepository(
+        private val failure: Throwable,
+        private val failInSerializeKey: Boolean = false,
+    ): AbstractJdbcCaffeineRepository<Long, ActorRecord>(
+        LocalCacheConfig(keyPrefix = "jdbc:caffeine:extra:find-all-failure")
+    ) {
+
+        override val table: IdTable<Long> = ActorTable
+
+        override fun ResultRow.toEntity(): ActorRecord = toActorRecord()
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) {
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) {
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun serializeKey(id: Long): String {
+            if (failInSerializeKey) {
+                throw failure
+            }
+            return super.serializeKey(id)
+        }
+
+        override fun extractId(entity: ActorRecord): Long {
+            if (failInSerializeKey) {
+                return entity.id
+            }
+            throw failure
         }
     }
 }

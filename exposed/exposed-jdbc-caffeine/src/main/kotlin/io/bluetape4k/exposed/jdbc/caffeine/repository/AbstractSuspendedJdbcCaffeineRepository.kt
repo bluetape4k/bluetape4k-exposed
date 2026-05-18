@@ -260,9 +260,13 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
         // 조회 결과를 캐시에 적재
         if (entities.isNotEmpty()) {
             entities.forEach { entity ->
-                runCatching {
+                try {
                     val id = extractId(entity)
                     cache.put(serializeKey(id), entity)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    log.warn(e) { "Cache warming failed for entity - skipping. cacheName=$cacheName" }
                 }
             }
         }
