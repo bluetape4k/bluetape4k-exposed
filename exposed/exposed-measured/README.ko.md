@@ -84,26 +84,24 @@ classDiagram
     style Temperature fill:#FFFDE7,stroke:#FFF176,color:#F57F17
 ```
 
-## 쿼리 실행 흐름
+## Column 변환 흐름
 
 ```mermaid
 flowchart LR
-    A[SQL 쿼리 실행] --> B{MeasuredTransaction}
-    B --> C[Micrometer Timer 시작]
-    C --> D[실제 DB 쿼리]
-    D --> E[Timer 종료 + 태그 기록]
-    E --> F[결과 반환]
+    A[애플리케이션 Measure 값] --> B[MeasureColumnType]
+    B --> C[기준 단위로 변환]
+    C --> D[DOUBLE로 저장]
+    D --> E[DOUBLE 조회]
+    E --> F[Measure 타입으로 복원]
 
-    classDef queryStyle fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    classDef txStyle fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-    classDef timerStyle fill:#FCE4EC,stroke:#F48FB1,color:#AD1457
+    classDef appStyle fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
+    classDef typeStyle fill:#E0F2F1,stroke:#80CBC4,color:#00695C
+    classDef dbStyle fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
     classDef resultStyle fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
 
-    class A queryStyle
-    class D queryStyle
-    class B txStyle
-    class C timerStyle
-    class E timerStyle
+    class A appStyle
+    class B,C,E typeStyle
+    class D dbStyle
     class F resultStyle
 ```
 
