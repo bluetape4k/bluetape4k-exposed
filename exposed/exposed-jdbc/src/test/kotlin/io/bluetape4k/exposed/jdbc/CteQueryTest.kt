@@ -1,13 +1,18 @@
 package io.bluetape4k.exposed.jdbc
 
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.core.CteTable
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import org.jetbrains.exposed.v1.core.IExpressionAlias
 import org.jetbrains.exposed.v1.core.QueryBuilder
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.alias
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.crossJoin
 import org.jetbrains.exposed.v1.core.eq
@@ -90,6 +95,123 @@ class CteQueryTest: AbstractExposedTest() {
 
             sql shouldContain "WITH RECURSIVE"
             query.map { it[hierarchyName] } shouldBeEqualTo listOf("root", "child", "inactive-child")
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `multiple CTEs joined in single WITH clause`(testDB: TestDB) {
+        Assumptions.assumeTrue { testDB in cteCapableDialects }
+
+        withTables(testDB, CteUsers) {
+            seedUsers()
+
+            val activeUsers = CteTable(
+                name = "active_users",
+                query = CteUsers
+                    .select(CteUsers.id, CteUsers.name)
+                    .where { CteUsers.active eq true }
+            )
+            val rootUsers = CteTable(
+                name = "root_users",
+                query = CteUsers
+                    .select(CteUsers.id, CteUsers.name)
+                    .where { CteUsers.managerId.isNull() }
+            )
+            val activeName = activeUsers[CteUsers.name]
+            val rootName = rootUsers[CteUsers.name]
+            val query = activeUsers
+                .crossJoin(rootUsers)
+                .select(activeName, rootName)
+                .withCtes(activeUsers, rootUsers)
+                .orderBy(
+                    activeUsers[CteUsers.id] to SortOrder.ASC,
+                    rootUsers[CteUsers.id] to SortOrder.ASC
+                )
+            val expectedPairs = listOf("root:root", "root:other-root", "child:root", "child:other-root")
+
+            val sql = query.prepareSQL(QueryBuilder(prepared = true)).lowercase()
+
+            sql shouldContain "active_users"
+            sql shouldContain ", root_users"
+            query.map { "${it[activeName]}:${it[rootName]}" } shouldBeEqualTo expectedPairs
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `CTE with unionAll=false renders UNION not UNION ALL`(testDB: TestDB) {
+        Assumptions.assumeTrue { testDB in cteCapableDialects }
+
+        withTables(testDB, CteUsers) {
+            val hierarchy = CteTable(
+                name = "user_hierarchy",
+                query = CteUsers
+                    .select(CteUsers.id, CteUsers.name, CteUsers.managerId)
+                    .where { CteUsers.managerId.isNull() and (CteUsers.active eq true) },
+                recursiveQuery = { cte ->
+                    CteUsers
+                        .crossJoin(cte)
+                        .select(CteUsers.id, CteUsers.name, CteUsers.managerId)
+                        .where { CteUsers.managerId eq cte[CteUsers.id] }
+                },
+                unionAll = false,
+            )
+            val query = hierarchy
+                .select(hierarchy[CteUsers.name])
+                .withCte(hierarchy)
+
+            val sql = query.prepareSQL(QueryBuilder(prepared = true))
+
+            sql shouldContain " UNION "
+            sql shouldNotContain "UNION ALL"
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `accessing field not in CTE query set throws error`(testDB: TestDB) {
+        Assumptions.assumeTrue { testDB in cteCapableDialects }
+
+        withTables(testDB, CteUsers) {
+            val idOnlyUsers = CteTable(
+                name = "id_only_users",
+                query = CteUsers.select(CteUsers.id)
+            )
+
+            val ex = assertFailsWith<IllegalStateException> {
+                idOnlyUsers[CteUsers.name]
+            }
+
+            ex.message shouldContain "is not in CTE query set"
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `CTE field map handles expression alias correctly`(testDB: TestDB) {
+        Assumptions.assumeTrue { testDB in cteCapableDialects }
+
+        withTables(testDB, CteUsers) {
+            seedUsers()
+
+            val userNameAlias = CteUsers.name.alias("user_name")
+            val aliasedUsers = CteTable(
+                name = "aliased_users",
+                query = CteUsers
+                    .select(CteUsers.id, userNameAlias)
+                    .where { CteUsers.active eq true }
+            )
+            val aliasedName = aliasedUsers[userNameAlias as IExpressionAlias<String>]
+            val query = aliasedUsers
+                .select(aliasedName)
+                .withCte(aliasedUsers)
+                .orderBy(aliasedUsers[CteUsers.id])
+
+            val sql = query.prepareSQL(QueryBuilder(prepared = true)).lowercase()
+
+            sql shouldContain "user_name"
+            query.map { it[aliasedName] } shouldBeEqualTo listOf("root", "child")
         }
     }
 

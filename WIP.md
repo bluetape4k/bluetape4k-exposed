@@ -24,6 +24,12 @@ Verified with `gh` on 2026-05-18 KST.
   path, preserving prepared-parameter binding order.
 - Targeted CTE tests passed for JDBC and R2DBC against H2, PostgreSQL, and MySQL 8.
 
+### CTE Edge Coverage (2026-05-19)
+
+- [#167](https://github.com/bluetape4k/bluetape4k-exposed/issues/167) adds JDBC/R2DBC regression coverage
+  for multiple CTE rendering, `UNION` without `ALL`, missing-field access errors, and expression-alias field mapping.
+- No runtime API changes were required; the work locks down behavior introduced by #157.
+
 ### 1.8.0 Release (2026-05-16) — All 18 PRs merged and CI green
 
 **Critical bug fixes (PRs #95–#108):**
