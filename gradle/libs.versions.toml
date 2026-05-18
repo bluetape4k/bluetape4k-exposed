@@ -673,7 +673,7 @@ tink = { module = "com.google.crypto.tink:tink", version = "1.20.0" }  # https:/
 zero-allocation-hashing = { module = "net.openhft:zero-allocation-hashing", version = "2026.0" }  # https://mvnrepository.com/artifact/net.openhft/zero-allocation-hashing
 
 # Typesafe (HOCON)
-typesafe-config = { module = "com.typesafe:config", version = "1.4.3" }  # https://mvnrepository.com/artifact/com.typesafe/config
+typesafe-config = { module = "com.typesafe:config", version = "1.4.8" }  # https://mvnrepository.com/artifact/com.typesafe/config
 
 # MVEL
 mvel2 = { module = "org.mvel:mvel2", version = "2.5.2.Final" }  # https://mvnrepository.com/artifact/org.mvel/mvel2
