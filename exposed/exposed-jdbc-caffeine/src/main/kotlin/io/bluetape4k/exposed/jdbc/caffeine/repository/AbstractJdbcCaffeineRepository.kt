@@ -57,31 +57,31 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
 
     abstract override val table: IdTable<ID>
 
-    /** [ResultRow]를 엔티티 [E]로 변환합니다 */
+    /** Converts a [ResultRow] into entity [E]. */
     abstract override fun ResultRow.toEntity(): E
 
-    /** 기존 엔티티 UPDATE 시 컬럼 매핑 */
+    /** Maps entity fields when updating an existing row. */
     abstract fun UpdateStatement.updateEntity(entity: E)
 
-    /** 신규 엔티티 INSERT 시 컬럼 매핑 */
+    /** Maps entity fields when inserting a new row. */
     abstract fun BatchInsertStatement.insertEntity(entity: E)
 
-    /** 엔티티 ID를 캐시 키 문자열로 직렬화합니다 (기본: toString()) */
+    /** Serializes an entity id to a cache key string. The default uses [toString]. */
     open fun serializeKey(id: ID): String = id.toString()
 
     // -------------------------------------------------------------------------
     // JdbcCacheRepository 필수 프로퍼티 구현
     // -------------------------------------------------------------------------
 
-    /** 캐시 이름 (키 접두사로 사용) */
+    /** Cache name used as the key prefix. */
     override val cacheName: String
         get() = config.keyPrefix
 
-    /** 캐시 저장 방식 — Caffeine은 항상 LOCAL */
+    /** Cache storage mode. Caffeine repositories are always local. */
     override val cacheMode: CacheMode
         get() = CacheMode.LOCAL
 
-    /** 캐시 쓰기 전략 */
+    /** Cache write strategy configured for this repository. */
     override val cacheWriteMode: CacheWriteMode
         get() = config.writeMode
 
@@ -133,11 +133,11 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     }
 
     /**
-     * Write-Behind 배치를 DB에 flush합니다.
-     * AutoIncrement 테이블의 경우 신규 엔티티는 DB에 삽입하지 않습니다.
+     * Flushes a write-behind batch to the database.
      *
-     * CancellationException은 코루틴 취소 신호이므로 반드시 재전파해야 합니다.
-     * 일반 DB 오류만 잡아서 로깅하고, 코루틴 취소는 상위로 전파합니다.
+     * New entities are not inserted for auto-increment tables because the database owns
+     * id allocation. [CancellationException] is a coroutine cancellation signal and must
+     * be rethrown; only ordinary database errors are logged and suppressed.
      */
     private fun flushBatch(batch: List<Pair<ID, E>>) {
         try {
@@ -269,8 +269,9 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     }
 
     /**
-     * 엔티티에서 ID를 추출합니다.
-     * [findAll] (where 조건 버전) 사용 시 서브클래스에서 override 필요.
+     * Extracts the id from an entity.
+     *
+     * Subclasses must override this when using the `findAll(where)` variant.
      */
     override fun extractId(entity: E): ID =
         error(
@@ -318,8 +319,10 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     }
 
     /**
-     * Write-Through 시 단일 엔티티를 DB에 저장합니다.
-     * AutoIncrement 테이블의 경우 신규 엔티티는 DB에 삽입하지 않습니다.
+     * Stores a single entity in the database for write-through mode.
+     *
+     * New entities are not inserted for auto-increment tables because the database owns
+     * id allocation.
      */
     private fun writeToDb(id: ID, entity: E) {
         transaction {
@@ -357,13 +360,13 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     }
 
     /**
-     * 레포지토리를 닫고 리소스를 해제합니다.
+     * Closes the repository and releases its resources.
      *
-     * Write-Behind 모드에서는 채널을 닫아 더 이상 새 항목을 받지 않고,
-     * 이미 큐에 있는 항목이 모두 DB에 flush될 때까지 대기합니다.
+     * In write-behind mode, closing the channel stops new items from being accepted and
+     * waits until queued items have been flushed to the database.
      *
-     * [runBlocking]은 [Closeable] 계약을 이행하기 위해 불가피하게 사용합니다.
-     * 정상 종료 시 호출되는 맥락이므로 Virtual Thread pinning 위험은 허용 범위입니다.
+     * [runBlocking] is used to honor the [Closeable] contract. This path runs during
+     * normal shutdown, so the virtual-thread pinning risk is acceptable.
      */
     override fun close() {
         if (config.writeMode == CacheWriteMode.WRITE_BEHIND) {
