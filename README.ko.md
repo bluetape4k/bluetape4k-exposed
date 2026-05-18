@@ -28,54 +28,11 @@ dialect 확장, Spring Boot 4 자동 설정을 Exposed DSL 스타일 안에서 �
 - **암호화** — Google Tink 기반 암호화 Column
 - **DB 특화 확장** — PostgreSQL, MySQL 8, BigQuery, ClickHouse, Trino, DuckDB, Timefold persistence 헬퍼
 - **Spring Boot** — Spring Boot 4.x 자동 설정 (JDBC, R2DBC, Batch, Spring Modulith JDBC 이벤트 발행 통합)
-- **메트릭** — `exposed-measured`를 통한 Micrometer 통합
+- **측정 단위 Column** — `bluetape4k-measured` 단위를 위한 Exposed Custom ColumnType
 
 ## 아키텍처
 
-```mermaid
-flowchart TD
-    APP["Kotlin application"]
-
-    subgraph Core["Exposed core layer"]
-        CORE["exposed-core\nColumn 타입 + DSL 헬퍼"]
-        DAO["exposed-dao\nEntity lifecycle 헬퍼"]
-        JDBC["exposed-jdbc\nBlocking Repository"]
-        R2DBC["exposed-r2dbc\nCoroutine Repository"]
-    end
-
-    subgraph CrossCutting["Cross-cutting modules"]
-        CACHE["Cache 추상화\nCaffeine / Lettuce / Redisson"]
-        JSON["JSON Column\nJackson2 / Jackson3 / Fastjson2"]
-        TINK["Tink 암호화 Column"]
-        METRICS["Micrometer 측정"]
-    end
-
-    subgraph Dialects["Database extensions"]
-        PG["PostgreSQL"]
-        MYSQL["MySQL 8"]
-        ANALYTICS["BigQuery / ClickHouse / Trino / DuckDB"]
-        TIMEFOLD["Timefold Solver persistence"]
-    end
-
-    subgraph Boot["Spring Boot 4"]
-        BOOTJDBC["JDBC auto-configuration"]
-        BOOTR2DBC["R2DBC auto-configuration"]
-        BATCH["Batch + Exposed"]
-    end
-
-    APP --> JDBC
-    APP --> R2DBC
-    JDBC --> CORE
-    R2DBC --> CORE
-    DAO --> CORE
-    CACHE --> JDBC
-    CACHE --> R2DBC
-    JSON --> CORE
-    TINK --> CORE
-    METRICS --> CORE
-    Dialects --> CORE
-    Boot --> Core
-```
+![bluetape4k-exposed architecture](docs/assets/exposed-architecture.svg)
 
 ## 모듈 목록
 
@@ -98,7 +55,7 @@ flowchart TD
 | `exposed-jackson3` | Jackson 3.x JSON Column 직렬화 |
 | `exposed-fastjson2` | Fastjson2 JSON Column 직렬화 |
 | `exposed-tink` | Google Tink 암호화 Column |
-| `exposed-measured` | Micrometer 메트릭 통합 |
+| `exposed-measured` | 측정 단위용 Custom ColumnType 매핑 |
 | `exposed-postgresql` | PostgreSQL 다이얼렉트 확장 |
 | `exposed-mysql8` | MySQL 8 다이얼렉트 확장 |
 | `exposed-bigquery` | BigQuery connector 지원 |
