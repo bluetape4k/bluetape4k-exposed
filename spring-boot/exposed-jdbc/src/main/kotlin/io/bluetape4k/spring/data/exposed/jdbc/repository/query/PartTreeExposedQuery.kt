@@ -16,11 +16,11 @@ import org.springframework.data.repository.query.RepositoryQuery
 import org.springframework.data.repository.query.parser.PartTree
 
 /**
- * 메서드명 기반 PartTree 쿼리를 Exposed DAO로 실행합니다.
+ * Executes Spring Data PartTree queries against an Exposed DAO.
  *
  * ```kotlin
- * // ExposedQueryLookupStrategy가 내부적으로 생성합니다.
- * // 아래 메서드명은 자동으로 PartTreeExposedQuery로 처리됩니다.
+ * // ExposedQueryLookupStrategy creates this query internally.
+ * // The following repository methods are handled by PartTreeExposedQuery.
  * interface UserRepository : ExposedJdbcRepository<User, Long> {
  *     fun findByName(name: String): List<User>
  *     fun findByAgeGreaterThan(age: Int): List<User>

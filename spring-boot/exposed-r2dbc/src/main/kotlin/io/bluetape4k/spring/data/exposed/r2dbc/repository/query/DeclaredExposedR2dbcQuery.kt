@@ -16,19 +16,21 @@ import kotlin.coroutines.Continuation
 import kotlin.reflect.KClass
 
 /**
- * [@Query][io.bluetape4k.spring.data.exposed.jdbc.annotation.Query] 어노테이션으로 지정한
- * raw SQL을 호출자의 활성 R2DBC 트랜잭션 컨텍스트 내에서 실행합니다.
+ * Executes raw SQL declared with [@Query][io.bluetape4k.spring.data.exposed.jdbc.annotation.Query]
+ * inside the caller's active R2DBC transaction context.
  *
- * JDBC [DeclaredExposedQuery][io.bluetape4k.spring.data.exposed.jdbc.repository.query.DeclaredExposedQuery]와
- * 동일한 패턴: `TransactionManager.current()`로 현재 트랜잭션을 직접 획득하여 실행합니다.
- * 새 트랜잭션을 열지 않으므로 호출자 트랜잭션의 미커밋 데이터가 그대로 보입니다.
+ * This follows the JDBC [DeclaredExposedQuery][io.bluetape4k.spring.data.exposed.jdbc.repository.query.DeclaredExposedQuery]
+ * pattern: it obtains the current transaction directly through `TransactionManager.current()`
+ * instead of opening a new transaction, so uncommitted caller data remains visible.
  *
- * 위치 기반 파라미터(?1, ?2, ...)를 바인딩하고, SELECT 결과의 id 컬럼으로 엔티티를 reload합니다.
+ * Positional parameters (`?1`, `?2`, ...) are bound before execution, and entities
+ * are reloaded from the id column returned by the SELECT query.
  *
- * **두 쿼리 패턴 제약**: raw SQL은 id를 추출하는 데만 사용됩니다. 실제 엔티티 로드는
- * `selectAll().where { id inList ids }` 쿼리로 수행되므로, raw SQL에 포함된
- * ORDER BY, JOIN, GROUP BY, LIMIT 등의 의미론은 최종 결과에 반영되지 않습니다.
- * 정렬 또는 집계가 필요한 경우 [PartTreeExposedR2dbcQuery] 또는 직접 Exposed DSL을 사용하세요.
+ * **Two-query pattern constraint**: the raw SQL is used only to extract ids. Actual
+ * entity loading is performed with `selectAll().where { id inList ids }`, so ORDER BY,
+ * JOIN, GROUP BY, LIMIT, and similar semantics from the raw SQL are not preserved in
+ * the final result. Use [PartTreeExposedR2dbcQuery] or direct Exposed DSL when sorting
+ * or aggregation semantics must be preserved.
  */
 internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
     private val queryMethod: ExposedR2dbcQueryMethod,
@@ -61,7 +63,7 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
         }
         val idColumnName = mapper.table.id.name
         val rawIds = tx.exec(boundSql.sql, boundSql.args, StatementType.SELECT) { row ->
-            // 컬럼명 조회 실패 시(alias, expression 등) ordinal 0번으로 fallback
+            // Fall back to ordinal 0 when name-based lookup fails for aliases or expressions.
             try {
                 row.get(idColumnName, Any::class.java)
             } catch (_: Exception) {
@@ -92,8 +94,8 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
             require(idx in parameters.indices) {
                 "Query placeholder index out of bounds: ${match.value} (param count: ${parameters.size})"
             }
-            // 동일 인덱스 placeholder가 여러 번 나타나면 args에 중복 추가 — JDBC prepared statement는
-            // positional binding이므로 각 ? 자리마다 독립적인 인자가 필요합니다.
+            // Duplicate repeated placeholders in args because positional binding needs
+            // one independent argument for each question-mark slot.
             args += toSqlArg(parameters[idx])
             "?"
         }
