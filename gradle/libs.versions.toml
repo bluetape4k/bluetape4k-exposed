@@ -116,7 +116,7 @@ timefold-solver = "1.33.0"  # https://mvnrepository.com/artifact/ai.timefold.sol
 
 eclipse-collections = "13.0.0"  # https://mvnrepository.com/artifact/org.eclipse.collections/eclipse-collections
 jctools = "4.0.6"  # https://mvnrepository.com/artifact/org.jctools/jctools-core
-ow2-asm = "9.9.1"  # https://mvnrepository.com/artifact/org.ow2.asm/asm
+ow2-asm = "9.10"  # https://mvnrepository.com/artifact/org.ow2.asm/asm
 
 junit-jupiter = "6.0.3"  # https://mvnrepository.com/artifact/org.junit/junit-bom
 junit-platform = "6.0.3"  # https://mvnrepository.com/artifact/org.junit.platform/junit-platform-commons
