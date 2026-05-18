@@ -16,13 +16,23 @@ Verified with `gh` on 2026-05-18 KST.
 
 ## Recently Completed
 
+### R2DBC Caffeine Close Waits For Final Flush (2026-05-19)
+
+- [#163](https://github.com/bluetape4k/bluetape4k-exposed/issues/163) makes `AbstractR2dbcCaffeineRepository.close()`
+  close the write-behind channel and wait for the write-behind job to finish before cache invalidation and scope
+  cancellation.
+- This builds on #161: the final flush is cancellation-safe, and `close()` now performs a bounded wait for that final
+  flush before cancelling the repository scope.
+- Regression coverage blocks the final flush, checks idempotent close, verifies close before any write-behind put, and
+  confirms WRITE_THROUGH close does not initialize the write-behind job.
+
 ### R2DBC Caffeine Write-Behind Cancellation (2026-05-19)
 
 - [#161](https://github.com/bluetape4k/bluetape4k-exposed/issues/161) protects the write-behind
   job's final `flushBatch(batch)` cleanup with `NonCancellable`.
 - The targeted regression test cancels the write-behind job during the first flush and verifies the final
   batch is flushed on the second cleanup attempt.
-- [#163](https://github.com/bluetape4k/bluetape4k-exposed/issues/163) remains separate because it covers
+- [#163](https://github.com/bluetape4k/bluetape4k-exposed/issues/163) was handled separately because it covers
   `close()` lifecycle ordering, not the final cleanup context itself.
 
 ### CTE Query DSL (2026-05-18)
