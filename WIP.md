@@ -2,6 +2,17 @@
 
 Snapshot: 2026-05-18 KST
 Scope: open GitHub issues assigned to `debop`, created on or after 2026-01-01.
+Open count: 19 issues.
+
+## Refresh Notes
+
+Verified with `gh` on 2026-05-18 KST.
+
+- qmd was queried first for prior batch repository design and catch-and-retry notes.
+- Existing issues #161, #162, and #163 were unassigned; they are now assigned to `debop`.
+- New issue registered from this audit:
+  - [#165](https://github.com/bluetape4k/bluetape4k-exposed/issues/165) - `bug: ExposedJdbcBatchJobRepository retry path can throw NoSuchElementException`
+- PR #164 (`chore: refresh WIP snapshot - 2026-05-18`) is already merged, so this file reflects the current post-merge GitHub state.
 
 ## Recently Completed
 
@@ -70,9 +81,9 @@ Bugs identified by post-release code review (2026-05-16). All assigned to milest
 | P0 | [#120](https://github.com/bluetape4k/bluetape4k-exposed/issues/120) | jdbc-caffeine / r2dbc-caffeine | `get()` / `getAll()` non-atomic cache-miss → stale-read overwrite under concurrency |
 | P1 | [#163](https://github.com/bluetape4k/bluetape4k-exposed/issues/163) | exposed-r2dbc-caffeine | `close()` cancels coroutine scope before write-behind flush completes — data loss (fix after #161) |
 | P1 | [#162](https://github.com/bluetape4k/bluetape4k-exposed/issues/162) | exposed-jdbc-caffeine | `findAll()` cache-warming uses bare `runCatching{}` — all exceptions silently dropped |
-| P1 | [#117](https://github.com/bluetape4k/bluetape4k-exposed/issues/117) | batch | `findOrCreateJobExecution`: `firstOrNull()!!` NPE after concurrent INSERT failure |
 | P1 | [#118](https://github.com/bluetape4k/bluetape4k-exposed/issues/118) | jdbc-caffeine / r2dbc-caffeine | `close()` uses `runCatching{}` → swallows `CancellationException` |
 | P2 | [#119](https://github.com/bluetape4k/bluetape4k-exposed/issues/119) | batch | `ExposedJdbcBatchReader` / `ExposedR2dbcBatchReader`: `close()` does not reset key-cursor state |
+| P2 | [#165](https://github.com/bluetape4k/bluetape4k-exposed/issues/165) | batch-jdbc | `ExposedJdbcBatchJobRepository` unique-violation retry path uses `.first()` and can throw generic `NoSuchElementException` |
 
 ## 1.9.0 Feature Queue
 
@@ -104,9 +115,9 @@ Features identified by post-release review (2026-05-16). All assigned to milesto
   -> #163 R2DBC write-behind close() scope race (P1) — depends on #161
   -> #162 AbstractJdbcCaffeineRepository.findAll() runCatching{} swallows errors (P1)
   -> #120 Caffeine cache stale-read race (P0)
-  -> #117 batch NPE on concurrent INSERT
   -> #118 CancellationException swallowed in close()
   -> #119 BatchReader close() state not reset
+  -> #165 JDBC batch unique-violation retry uses .first()
 
 1.9.0 minor
   -> #121 saveAll() interface API
@@ -125,7 +136,7 @@ Features identified by post-release review (2026-05-16). All assigned to milesto
 | Lane | Limit | Current next |
 |------|------:|--------------|
 | Release gate | 1 | Closed for 1.8.0; publish 1.8.1 snapshots from `develop`. |
-| 1.8.1 patch | 1 | Fix #120 (Caffeine stale-read, P0) first. |
+| 1.8.1 patch | 1 | Fix #161 (R2DBC write-behind data loss, P0) first; then #163/#162/#120. |
 | Database connector | 1 | Resume after 1.8.0 ships; start with `#30`. |
 | Lower-priority integrations | 0 | Hold `#4`/`#5` until connector queue is stable. |
 | Build/CI maintenance | 1 | Handle only concrete failures from Nightly/CI. |
