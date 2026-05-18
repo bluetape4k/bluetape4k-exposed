@@ -53,10 +53,10 @@ Scope: open GitHub issues assigned to `debop`, created on or after 2026-01-01.
 
 ## Current Direction
 
-**1.8.0 release is ready for tagging and Maven Central publishing.**
+**1.8.0 is released; develop is open for 1.8.1-SNAPSHOT.**
 
-All pre-release blocker issues (#79–#94, #101) are resolved and merged into `develop`.
-Nightly CI is green. The next step is to tag `1.8.0` and run the publish pipeline.
+All pre-release blocker issues (#79–#94, #101) are resolved and released in `1.8.0`.
+The next patch snapshot line is `1.8.1-SNAPSHOT`, with #120 as the first priority.
 
 Post-release work resumes with the CockroachDB epic and Spring Boot R2DBC raw SQL.
 
@@ -118,7 +118,7 @@ Features identified by post-release review (2026-05-16). All assigned to milesto
 
 | Lane | Limit | Current next |
 |------|------:|--------------|
-| Release gate | 1 | Tag 1.8.0 and publish to Maven Central. |
+| Release gate | 1 | Closed for 1.8.0; publish 1.8.1 snapshots from `develop`. |
 | 1.8.1 patch | 1 | Fix #120 (Caffeine stale-read, P0) first. |
 | Database connector | 1 | Resume after 1.8.0 ships; start with `#30`. |
 | Lower-priority integrations | 0 | Hold `#4`/`#5` until connector queue is stable. |
