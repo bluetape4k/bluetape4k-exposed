@@ -950,7 +950,7 @@ trino-jdbc = { module = "io.trino:trino-jdbc", version = "480" }  # https://mvnr
 oracle-ojdbc8 = { module = "com.oracle.ojdbc:ojdbc8", version = "19.3.0.0" }  # https://mvnrepository.com/artifact/com.oracle.ojdbc/ojdbc8
 
 # Neo4j
-neo4j-java-driver = { module = "org.neo4j.driver:neo4j-java-driver", version = "5.28.4" }  # https://mvnrepository.com/artifact/org.neo4j.driver/neo4j-java-driver
+neo4j-java-driver = { module = "org.neo4j.driver:neo4j-java-driver", version = "6.1.0" }  # https://mvnrepository.com/artifact/org.neo4j.driver/neo4j-java-driver
 
 # FalkorDB
 jfalkordb = { module = "com.falkordb:jfalkordb", version = "0.7.0" }  # https://mvnrepository.com/artifact/com.falkordb/jfalkordb
