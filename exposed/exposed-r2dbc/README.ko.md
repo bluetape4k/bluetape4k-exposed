@@ -21,6 +21,7 @@ Exposed R2DBC 환경에서 사용할 수 있는 확장 함수와 Repository 패�
 - **가상 스레드 트랜잭션**: `virtualThreadTransaction` — Java 21 Virtual Thread 기반 R2DBC 트랜잭션 실행
 - **R2DBC Readable 확장**: `Readable.getString`, `Readable.getLong` 등 타입 안전 컬럼 값 조회 확장 함수
 - **SELECT \* 지원**: `ImplicitQuery` / `FieldSet.selectImplicitAll()` — `SELECT *` SQL 생성
+- **CTE SELECT 쿼리**: PostgreSQL/MySQL `WITH`, `WITH RECURSIVE`를 위한 `withCte()` / `withCtes()`
 - **테이블 메타데이터 조회**: `Table.suspendColumnMetadata()`, `suspendIndexes()` 등 비동기 메타데이터 API
 
 ## 의존성 추가
@@ -259,6 +260,33 @@ suspendTransaction {
 
 `BatchInsertOnConflictDoNothing`는 PostgreSQL 계열에서 conflict target을 특정 컬럼으로 고정하지 않으므로,
 `id`가 아닌 unique 컬럼 또는 unique index를 사용하는 테이블에도 그대로 적용할 수 있습니다.
+
+### 5. Common Table Expression
+
+```kotlin
+import io.bluetape4k.exposed.core.CteTable
+import io.bluetape4k.exposed.r2dbc.withCte
+import kotlinx.coroutines.flow.toList
+import org.jetbrains.exposed.v1.r2dbc.select
+
+suspendTransaction {
+    val activeUsers = CteTable(
+        name = "active_users",
+        query = UserTable
+            .select(UserTable.id, UserTable.name)
+            .where { UserTable.active eq true }
+    )
+
+    activeUsers
+        .select(activeUsers[UserTable.id], activeUsers[UserTable.name])
+        .withCte(activeUsers)
+        .orderBy(activeUsers[UserTable.id])
+        .toList()
+}
+```
+
+`withCte()`는 CTE 본문과 최종 SELECT를 같은 Exposed `QueryBuilder`로 렌더링하므로 CTE predicate의
+prepared parameter binding 순서를 유지합니다.
 
 ## R2dbcRepository 주요 메서드
 

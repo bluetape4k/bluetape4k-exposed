@@ -12,6 +12,7 @@ JetBrains Exposed JDBC 계층을 위한 Repository 패턴, 트랜잭션 확장, 
 - **Repository 패턴**: `JdbcRepository<ID, T, E>`, `SoftDeletedJdbcRepository<ID, T, E>` 인터페이스
 - **Coroutines 지원**: `SuspendedQuery` — suspend 함수로 JDBC 쿼리 실행
 - **Virtual Thread 트랜잭션**: JDK 21+ Virtual Thread 기반 트랜잭션 실행
+- **CTE SELECT 쿼리**: PostgreSQL/MySQL `WITH`, `WITH RECURSIVE`를 위한 `withCte()` / `withCtes()`
 - **테이블/스키마 확장**: `ImplicitSelectAll`, `TableExtensions`, `SchemaUtilsExtensions`
 
 ## 의존성 추가
@@ -203,6 +204,32 @@ transaction {
     }
 }
 ```
+
+### 7. Common Table Expression
+
+```kotlin
+import io.bluetape4k.exposed.core.CteTable
+import io.bluetape4k.exposed.jdbc.withCte
+import org.jetbrains.exposed.v1.jdbc.select
+
+transaction {
+    val activeUsers = CteTable(
+        name = "active_users",
+        query = UserTable
+            .select(UserTable.id, UserTable.name)
+            .where { UserTable.active eq true }
+    )
+
+    activeUsers
+        .select(activeUsers[UserTable.id], activeUsers[UserTable.name])
+        .withCte(activeUsers)
+        .orderBy(activeUsers[UserTable.id])
+        .toList()
+}
+```
+
+`withCte()`는 CTE 본문과 최종 SELECT를 같은 Exposed `QueryBuilder`로 렌더링하므로 CTE predicate의
+prepared parameter 바인딩 순서가 유지됩니다.
 
 ## JdbcRepository 주요 메서드
 

@@ -15,6 +15,7 @@ JetBrains Exposed의 핵심 컬럼 타입, 확장 함수, Repository 공통 인�
 - **ResultRow 확장**: `getOrNull`, `toMap` 등 ResultRow 처리 보조
 - **Blob 확장**: `ExposedBlob` 유틸 함수
 - **배치 삽입**: `BatchInsertOnConflictDoNothing` (중복 무시 배치 삽입)
+- **CTE 테이블 facade**: JDBC/R2DBC `WITH` 쿼리에서 선택 필드를 매핑하는 `CteTable`
 - **공통 인터페이스**: `HasIdentifier<ID>`, `ExposedPage<T>`
 
 ## 의존성 추가
@@ -170,7 +171,25 @@ executable.run {
 }
 ```
 
-### 6. HasIdentifier 인터페이스
+### 8. CTE 테이블 facade
+
+```kotlin
+import io.bluetape4k.exposed.core.CteTable
+import org.jetbrains.exposed.v1.jdbc.select
+
+val activeUsers = CteTable(
+    name = "active_users",
+    query = Users.select(Users.id, Users.name).where { Users.active eq true }
+)
+
+val activeUserId = activeUsers[Users.id]
+val activeUserName = activeUsers[Users.name]
+```
+
+`CteTable`은 JDBC/R2DBC 모듈이 공유합니다. 최종 SELECT query 앞에 `WITH` 절을 붙일 때는 각 모듈의
+`withCte()`를 사용합니다.
+
+### 9. HasIdentifier 인터페이스
 
 ```kotlin
 import io.bluetape4k.exposed.core.HasIdentifier
@@ -183,7 +202,7 @@ data class UserRecord(
 ): HasIdentifier<Long>
 ```
 
-### 7. ExposedPage (페이징 결과)
+### 10. ExposedPage (페이징 결과)
 
 ```kotlin
 import io.bluetape4k.exposed.core.ExposedPage

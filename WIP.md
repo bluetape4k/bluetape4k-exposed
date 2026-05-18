@@ -1,9 +1,17 @@
 # WIP - bluetape4k-exposed
 
-Snapshot: 2026-05-16 KST
+Snapshot: 2026-05-18 KST
 Scope: open GitHub issues assigned to `debop`, created on or after 2026-01-01.
 
 ## Recently Completed
+
+### CTE Query DSL (2026-05-18)
+
+- [#157](https://github.com/bluetape4k/bluetape4k-exposed/issues/157) added `CteTable` and JDBC/R2DBC
+  `withCte` / `withCtes` SELECT helpers for PostgreSQL/MySQL `WITH` and `WITH RECURSIVE` queries.
+- The implementation keeps CTE body predicates and final SELECT predicates on the same Exposed `QueryBuilder`
+  path, preserving prepared-parameter binding order.
+- Targeted CTE tests passed for JDBC and R2DBC against H2, PostgreSQL, and MySQL 8.
 
 ### 1.8.0 Release (2026-05-16) — All 18 PRs merged and CI green
 

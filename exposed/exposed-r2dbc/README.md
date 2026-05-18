@@ -21,6 +21,7 @@ Provides extension functions and the Repository pattern for use with Exposed in 
 - **Virtual Thread transactions**: `virtualThreadTransaction` — run R2DBC transactions on Java 21 Virtual Threads
 - **R2DBC Readable extensions**: Type-safe column value accessors such as `Readable.getString` and `Readable.getLong`
 - **SELECT \* support**: `ImplicitQuery` / `FieldSet.selectImplicitAll()` — generates `SELECT *` SQL
+- **CTE SELECT queries**: `withCte()` / `withCtes()` for PostgreSQL/MySQL `WITH` and `WITH RECURSIVE`
 - **Async table metadata**: `Table.suspendColumnMetadata()`, `suspendIndexes()`, and other async metadata APIs
 
 ## Adding Dependencies
@@ -261,6 +262,33 @@ suspendTransaction {
 Because
 `BatchInsertOnConflictDoNothing` does not pin the conflict target to a specific column on PostgreSQL-compatible databases, it works with tables that use unique columns or indexes other than
 `id`.
+
+### 5. Common Table Expressions
+
+```kotlin
+import io.bluetape4k.exposed.core.CteTable
+import io.bluetape4k.exposed.r2dbc.withCte
+import kotlinx.coroutines.flow.toList
+import org.jetbrains.exposed.v1.r2dbc.select
+
+suspendTransaction {
+    val activeUsers = CteTable(
+        name = "active_users",
+        query = UserTable
+            .select(UserTable.id, UserTable.name)
+            .where { UserTable.active eq true }
+    )
+
+    activeUsers
+        .select(activeUsers[UserTable.id], activeUsers[UserTable.name])
+        .withCte(activeUsers)
+        .orderBy(activeUsers[UserTable.id])
+        .toList()
+}
+```
+
+`withCte()` renders the CTE body and the final SELECT through the same Exposed `QueryBuilder`, so prepared
+parameters from CTE predicates keep their binding order.
 
 ## R2dbcRepository Key Methods
 

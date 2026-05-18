@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added `CteTable` plus JDBC/R2DBC `withCte` / `withCtes` SELECT helpers for PostgreSQL/MySQL `WITH` and `WITH RECURSIVE` queries ([#157](https://github.com/bluetape4k/bluetape4k-exposed/issues/157)).
+
 ## [1.8.0] - 2026-05-16
 
 ### Added

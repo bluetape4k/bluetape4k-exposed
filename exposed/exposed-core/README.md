@@ -18,6 +18,7 @@ A foundation module that provides core column types, extension functions, and co
 - **ResultRow extensions**: Helpers like `getOrNull` and `toMap`
 - **Blob extensions**: Utility functions for `ExposedBlob`
 - **Batch insert**: `BatchInsertOnConflictDoNothing` (ignore-duplicate batch insert)
+- **CTE table facade**: `CteTable` maps selected query fields for JDBC/R2DBC `WITH` queries
 - **Common interfaces**: `HasIdentifier<ID>`, `ExposedPage<T>`
 
 ## Adding Dependencies
@@ -173,7 +174,25 @@ executable.run {
 }
 ```
 
-### 8. HasIdentifier interface
+### 8. CTE table facade
+
+```kotlin
+import io.bluetape4k.exposed.core.CteTable
+import org.jetbrains.exposed.v1.jdbc.select
+
+val activeUsers = CteTable(
+    name = "active_users",
+    query = Users.select(Users.id, Users.name).where { Users.active eq true }
+)
+
+val activeUserId = activeUsers[Users.id]
+val activeUserName = activeUsers[Users.name]
+```
+
+`CteTable` is shared by the JDBC and R2DBC modules. Use `withCte()` from those modules to prepend the `WITH`
+clause to a final SELECT query.
+
+### 9. HasIdentifier interface
 
 ```kotlin
 import io.bluetape4k.exposed.core.HasIdentifier
@@ -186,7 +205,7 @@ data class UserRecord(
 ): HasIdentifier<Long>
 ```
 
-### 9. ExposedPage (paginated results)
+### 10. ExposedPage (paginated results)
 
 ```kotlin
 import io.bluetape4k.exposed.core.ExposedPage
