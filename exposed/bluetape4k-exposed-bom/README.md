@@ -8,61 +8,7 @@ individual versions.
 
 ## Architecture
 
-```mermaid
-graph TB
-    Consumer[Consumer Project]
-    BOM[exposed-bom<br/>java-platform]
-
-    subgraph "exposed-core"
-      Core[exposed-core]
-      Dao[exposed-dao]
-    end
-
-    subgraph "Drivers"
-      Jdbc[exposed-jdbc]
-      R2dbc[exposed-r2dbc]
-      Tests1[exposed-jdbc-tests]
-      Tests2[exposed-r2dbc-tests]
-    end
-
-    subgraph "Cache"
-      Cache[exposed-cache]
-      JdbcLet[exposed-jdbc-lettuce]
-      JdbcRedi[exposed-jdbc-redisson]
-      JdbcCaf[exposed-jdbc-caffeine]
-      R2dbcLet[exposed-r2dbc-lettuce]
-      R2dbcRedi[exposed-r2dbc-redisson]
-      R2dbcCaf[exposed-r2dbc-caffeine]
-    end
-
-    subgraph "Serialization / Crypto"
-      Fast[exposed-fastjson2]
-      Jack2[exposed-jackson2]
-      Jack3[exposed-jackson3]
-      Tink[exposed-tink]
-    end
-
-    subgraph "Database adapters"
-      Mysql[exposed-mysql8]
-      Pg[exposed-postgresql]
-      Click[exposed-clickhouse]
-      Bq[exposed-bigquery]
-      Duck[exposed-duckdb]
-      Trino[exposed-trino]
-    end
-
-    subgraph "Spring Boot"
-      SBJ[spring-boot / exposed-jdbc]
-      SBR[spring-boot / exposed-r2dbc]
-      SBB[spring-boot / batch-exposed]
-    end
-
-    Consumer -->|platform import| BOM
-    BOM -.->|version constraints| Core
-    BOM -.->|version constraints| Jdbc
-    BOM -.->|version constraints| Cache
-    BOM -.->|version constraints| SBJ
-```
+![Architecture 1](../../docs/images/readme-diagrams/exposed-bluetape4k-exposed-bom-diagram-01.svg)
 
 The BOM is a Gradle `java-platform` that publishes only `<dependencyManagement>` constraints — no runtime classes.
 

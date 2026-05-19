@@ -26,84 +26,11 @@ object ProductTable: Table("products") {
 
 ## Class Diagram
 
-```mermaid
-classDiagram
-    class ColumnType~T~ {
-        <<Exposed>>
-        +sqlType(): String
-        +valueFromDB(value: Any): T?
-        +notNullValueToDB(value: T): Any
-    }
-
-    class MeasureColumnType~T~ {
-        -baseUnit: T
-        -fromBaseValue: (Double) -> Measure~T~
-        +sqlType(): String
-        +valueFromDB(value: Any): Measure~T~?
-        +notNullValueToDB(value: Measure~T~): Any
-    }
-    class TemperatureColumnType {
-        +sqlType(): String
-        +valueFromDB(value: Any): Temperature?
-        +notNullValueToDB(value: Temperature): Any
-    }
-    class TemperatureDeltaColumnType {
-        +sqlType(): String
-        +valueFromDB(value: Any): TemperatureDelta?
-        +notNullValueToDB(value: TemperatureDelta): Any
-    }
-
-    class Measure~T~ {
-        <<bluetape4k_measured>>
-        +value: Double
-        +unit: T
-        +in(unit: T): Double
-    }
-    class Units {
-        <<bluetape4k_measured>>
-    }
-    class Temperature {
-        <<bluetape4k_measured>>
-        +inKelvin(): Double
-        +fromKelvin(k: Double): Temperature
-    }
-
-    ColumnType <|-- MeasureColumnType
-    ColumnType <|-- TemperatureColumnType
-    ColumnType <|-- TemperatureDeltaColumnType
-    MeasureColumnType ..> Measure : stores as DOUBLE
-    MeasureColumnType ..> Units : baseUnit
-    TemperatureColumnType ..> Temperature : stores as Kelvin DOUBLE
-
-    style ColumnType fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    style MeasureColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style TemperatureColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style TemperatureDeltaColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style Measure fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style Units fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style Temperature fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-```
+![Class Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-measured-diagram-01.svg)
 
 ## Column Conversion Flow
 
-```mermaid
-flowchart LR
-    A[Application Measure value] --> B[MeasureColumnType]
-    B --> C[Convert to base unit]
-    C --> D[Persist as DOUBLE]
-    D --> E[Read DOUBLE]
-    E --> F[Restore typed Measure value]
-
-    classDef appStyle fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    classDef typeStyle fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    classDef dbStyle fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    classDef resultStyle fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-
-    class A appStyle
-    class B,C,E typeStyle
-    class D dbStyle
-    class F resultStyle
-```
+![Column Conversion Flow 2](../../docs/images/readme-diagrams/exposed-exposed-measured-diagram-02.svg)
 
 ## Storage / Retrieval Sequence Diagram
 

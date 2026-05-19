@@ -20,48 +20,7 @@ A coroutine-native Read-through / Write-through / Write-behind cache repository 
 
 ## Architecture
 
-```mermaid
-classDiagram
-    direction TB
-    class R2dbcLettuceRepository~K, E~ {
-        <<interface>>
-        +findById(id) E?
-        +save(id, entity) Unit
-        +delete(id) Boolean
-        +clearCache() Unit
-    }
-    class AbstractR2dbcLettuceRepository~K, E~ {
-        <<abstract>>
-        -map: LettuceSuspendedLoadedMap
-        -nearCache: Caffeine?
-        +toEntity(ResultRow) E
-        +updateEntity(entity) Unit
-        +insertEntity(entity) Unit
-    }
-    class R2dbcExposedEntityMapLoader {
-        +load(key) E?
-        +loadAll(keys) Map
-        +loadAllKeys() Iterable
-    }
-    class R2dbcExposedEntityMapWriter {
-        +write(key, value) Unit
-        +writeAll(map) Unit
-        +delete(key) Unit
-    }
-    class LettuceCacheConfig {
-        +writeMode: WriteMode
-        +nearCacheEnabled: Boolean
-    }
-
-    R2dbcLettuceRepository <|.. AbstractR2dbcLettuceRepository
-    AbstractR2dbcLettuceRepository --> R2dbcExposedEntityMapLoader : MapLoader
-    AbstractR2dbcLettuceRepository --> R2dbcExposedEntityMapWriter : MapWriter
-    AbstractR2dbcLettuceRepository --> LettuceCacheConfig : config
-
-    style R2dbcLettuceRepository fill:#E3F2FD,stroke:#90CAF9,color:#0D47A1
-    style AbstractR2dbcLettuceRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    style LettuceCacheConfig fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-```
+![Architecture 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-diagram-01.svg)
 
 ```mermaid
 sequenceDiagram

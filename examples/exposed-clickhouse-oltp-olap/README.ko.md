@@ -8,12 +8,7 @@ Exposed를 통해 트랜잭션성 데이터를 OLAP 저장소로 forwarding하�
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    Client["클라이언트 / 서비스"] -->|주문 적재| PG[("PostgreSQL OLTP\nOrders")]
-    PG -->|배치 forwarding| CH[("ClickHouse OLAP\nOrderEvents")]
-    CH -->|집계| Analytics["분석 결과\n(count, uniqExact, quantile, argMax)"]
-```
+![Architecture 1](../../docs/images/readme-diagrams/examples-exposed-clickhouse-oltp-olap-ko-diagram-01.svg)
 
 ## 구성 요소
 

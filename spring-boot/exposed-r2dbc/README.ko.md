@@ -8,96 +8,11 @@ Spring Boot와 Spring Data Reactive를 활용하여 Exposed R2DBC를 완전한 s
 
 ## UML
 
-```mermaid
-classDiagram
-    class UserController {
-        -userService: UserService
-        +createUser(request): ResponseEntity~User~
-        +getUser(id): ResponseEntity~User~
-        +listUsers(pageable): Page~User~
-        +getAdults(): Flow~User~
-        +streamUsers(): Flow~User~
-    }
-    class UserService {
-        -userRepository: UserRepository
-        +createUser(name, email, age): User
-        +getUserById(id): User?
-        +getAdultUsers(): List~User~
-        +streamLargeUserList(): Flow~User~
-        +countByAge(age): Long
-    }
-    class UserRepository {
-        <<interface>>
-        +table: IdTable~Long~
-        +extractId(entity): Long?
-        +toDomain(row): UserDto
-        +toPersistValues(domain): Map
-        +findByAge(age): Flow~UserDto~
-    }
-    class ExposedR2dbcRepository {
-        <<interface>>
-        +save(entity): T
-        +findById(id): T?
-        +findAll(): Flow~T~
-        +deleteById(id): Boolean
-        +count(): Long
-    }
-    class UserDto {
-        +id: Long
-        +name: String
-        +email: String
-        +age: Int
-    }
-    class UserTable {
-        <<object>>
-        +name: Column~String~
-        +email: Column~String~
-        +age: Column~Int~
-    }
-
-    UserController --> UserService
-    UserService --> UserRepository
-    UserRepository --|> ExposedR2dbcRepository
-    UserRepository --> UserDto
-    UserDto --> UserTable
-
-    style UserController fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    style UserService fill:#E0F7FA,stroke:#80DEEA,color:#00838F
-    style UserRepository fill:#E0F7FA,stroke:#80DEEA,color:#00838F
-    style ExposedR2dbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style UserDto fill:#F57F17,stroke:#E65100,color:#000000
-    style UserTable fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-```
+![UML 1](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-ko-diagram-01.svg)
 
 ### 비동기 처리 흐름
 
-```mermaid
-flowchart LR
-    WebFlux["WebFlux / Coroutine Service"]
-    Repo["ExposedR2dbcRepository"]
-    Mapper["toDomain / toPersistValues"]
-    DSL["Exposed R2DBC DSL"]
-    Driver["R2DBC Driver"]
-    DB[("Reactive DB")]
-
-    WebFlux --> Repo
-    Repo --> Mapper
-    Repo --> DSL
-    DSL --> Driver
-    Driver --> DB
-
-    classDef webStyle fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-    classDef repoStyle fill:#E0F7FA,stroke:#80DEEA,color:#00838F
-    classDef mapperStyle fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-    classDef dslStyle fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    classDef dbStyle fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-
-    class WebFlux webStyle
-    class Repo repoStyle
-    class Mapper mapperStyle
-    class DSL dslStyle
-    class Driver,DB dbStyle
-```
+![비동기 처리 흐름 2](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-ko-diagram-02.svg)
 
 ## 설치
 

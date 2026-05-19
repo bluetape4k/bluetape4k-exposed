@@ -114,110 +114,15 @@ val query2 = Users.selectAll()
 
 ### Column Type Structure (Summary)
 
-```mermaid
-classDiagram
-    direction LR
-    class JacksonColumnType~T~ {
-        <<ColumnType>>
-        -objectMapper: ObjectMapper
-        +valueFromDB(value): T
-        +valueToDB(value): Any
-    }
-    class JacksonBColumnType~T~ {
-        <<ColumnTypeJSONB>>
-        -objectMapper: ObjectMapper
-        +valueFromDB(value): T
-        +valueToDB(value): PGobject
-    }
-    class TableExtensions {
-        <<extensionFunctions>>
-        +Table.jackson~T~(name): Column~T~
-        +Table.jacksonb~T~(name): Column~T~
-    }
-    JacksonColumnType <|-- JacksonBColumnType
-    TableExtensions --> JacksonColumnType : creates
-    TableExtensions --> JacksonBColumnType : creates
-
-    style JacksonColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style JacksonBColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style TableExtensions fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-```
+![Column Type Structure (Summary) 1](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-01.svg)
 
 ### JSON Column Type Class Structure
 
-```mermaid
-classDiagram
-    class ColumnType {
-        <<Exposed base abstract>>
-        +sqlType(): String
-        +valueFromDB(value): T
-        +notNullValueToDB(value): Any
-    }
-    class JacksonColumnType~T~ {
-        -objectMapper: ObjectMapper
-        +sqlType(): String
-        +valueFromDB(value): T
-        +notNullValueToDB(value): String
-    }
-    class JacksonBColumnType~T~ {
-        -objectMapper: ObjectMapper
-        +sqlType(): String
-        +valueFromDB(value): T
-        +notNullValueToDB(value): ByteArray
-    }
-    class JacksonSerializer {
-        +configure(objectMapper): ObjectMapper
-    }
-    class JsonFunctions {
-        +Column.jsonPath(path): Expression
-        +Column.jsonContains(field, value): Op
-    }
-    class ResultRowExtensions {
-        +ResultRow.getJackson(col): T
-        +ResultRow.getJacksonOrNull(col): T?
-    }
-
-    ColumnType <|-- JacksonColumnType
-    ColumnType <|-- JacksonBColumnType
-    JacksonSerializer --> JacksonColumnType : provides ObjectMapper
-    JacksonSerializer --> JacksonBColumnType : provides ObjectMapper
-    JacksonColumnType --> JsonFunctions : integrates
-    ResultRowExtensions --> JacksonColumnType : uses
-    ResultRowExtensions --> JacksonBColumnType : uses
-
-    style ColumnType fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    style JacksonColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style JacksonBColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style JacksonSerializer fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-    style JsonFunctions fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style ResultRowExtensions fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-```
+![JSON Column Type Class Structure 2](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-02.svg)
 
 ### Jackson 2 vs Jackson 3 Package Differences
 
-```mermaid
-flowchart LR
-    subgraph Jackson2["exposed-jackson2 (Jackson 2.x)"]
-        A2["com.fasterxml.jackson.*"]
-        B2["jackson&lt;T&gt; / jacksonb&lt;T&gt;"]
-    end
-    subgraph Jackson3["exposed-jackson3 (Jackson 3.x)"]
-        A3["tools.jackson.*"]
-        B3["jackson&lt;T&gt; / jacksonb&lt;T&gt;"]
-    end
-    C[Kotlin Object] -->|serialize| Jackson2
-    C -->|serialize| Jackson3
-    Jackson2 -->|deserialize| C
-    Jackson3 -->|deserialize| C
-
-    classDef objectStyle fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    classDef jackson2Style fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    classDef jackson3Style fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-
-    class C objectStyle
-    class Jackson2 jackson2Style
-    class Jackson3 jackson3Style
-```
+![Jackson 2 vs Jackson 3 Package Differences 3](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-03.svg)
 
 ## References
 

@@ -9,93 +9,11 @@ Spring Boot와 Spring Data를 활용하여 Exposed DAO 엔티티를 관리하는
 
 ## UML
 
-```mermaid
-classDiagram
-    class UserController {
-        -userService: UserService
-        +createUser(request): ResponseEntity~User~
-        +listUsers(pageable): Page~User~
-        +searchByName(name): List~User~
-    }
-    class UserService {
-        -userRepository: UserRepository
-        +createUser(name, email, age): User
-        +getUserByName(name): List~User~
-        +getAdultUsers(): List~User~
-        +getUserPage(pageable): Page~User~
-    }
-    class UserRepository {
-        +findByName(name): List~User~
-        +findByAgeGreaterThan(age): List~User~
-        +findByEmailContaining(keyword): List~User~
-        +countByAge(age): Long
-        +existsByEmail(email): Boolean
-    }
-    class ExposedJdbcRepository {
-        <<interface>>
-        +save(entity): E
-        +findById(id): Optional~E~
-        +findAll(pageable): Page~E~
-        +delete(entity)
-    }
-    class UserEntity {
-        +id: EntityID~Long~
-        +name: String
-        +email: String
-        +age: Int
-    }
-    class UserTable {
-        <<object>>
-        +name: Column~String~
-        +email: Column~String~
-        +age: Column~Int~
-    }
-
-    UserController --> UserService
-    UserService --> UserRepository
-    UserRepository --|> ExposedJdbcRepository
-    UserRepository --> UserEntity
-    UserEntity --> UserTable
-
-    style UserController fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    style UserService fill:#E0F7FA,stroke:#80DEEA,color:#00838F
-    style UserRepository fill:#E0F7FA,stroke:#80DEEA,color:#00838F
-    style ExposedJdbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style UserEntity fill:#F57F17,stroke:#E65100,color:#000000
-    style UserTable fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-```
+![UML 1](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-ko-diagram-01.svg)
 
 ### 쿼리 처리 흐름
 
-```mermaid
-flowchart LR
-    Controller["Spring MVC / Service"]
-    Repo["UserRepository<br/>ExposedJdbcRepository"]
-    PartTree["PartTree Parser"]
-    Query["@Query SQL"]
-    DSL["Exposed DSL"]
-    DB[("RDBMS")]
-
-    Controller --> Repo
-    Repo --> PartTree
-    Repo --> Query
-    Repo --> DSL
-    PartTree --> DSL
-    Query --> DB
-    DSL --> DB
-
-    classDef controllerStyle fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    classDef repoStyle fill:#E0F7FA,stroke:#80DEEA,color:#00838F
-    classDef parserStyle fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    classDef dslStyle fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    classDef dbStyle fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-
-    class Controller controllerStyle
-    class Repo repoStyle
-    class PartTree,Query parserStyle
-    class DSL dslStyle
-    class DB dbStyle
-```
+![쿼리 처리 흐름 2](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-ko-diagram-02.svg)
 
 ## 설치
 

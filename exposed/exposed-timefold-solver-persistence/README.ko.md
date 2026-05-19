@@ -250,101 +250,11 @@ CREATE TABLE planning_solution (
 
 ## 클래스 다이어그램
 
-```mermaid
-classDiagram
-    class Score {
-        <<interface>>
-        +isFeasible() Boolean
-        +isZero() Boolean
-        +negate() Score
-        +add(other) Score
-    }
-    class SimpleScore {
-        +score: Int
-        +of(score) SimpleScore
-    }
-    class HardSoftScore {
-        +hardScore: Int
-        +softScore: Int
-        +of(hard, soft) HardSoftScore
-    }
-    class HardMediumSoftScore {
-        +hardScore: Int
-        +mediumScore: Int
-        +softScore: Int
-    }
-    class BendableScore {
-        +hardScores: IntArray
-        +softScores: IntArray
-        +of(hard, soft) BendableScore
-    }
-    class ScoreColumnType {
-        <<abstract>>
-        +valueFromDB(value) Score
-        +valueToDB(value) Any
-        +sqlType() String
-    }
-    class SimpleScoreColumnType {
-        +sqlType() String = "INTEGER"
-    }
-    class HardSoftScoreColumnType {
-        +sqlType() String = "VARCHAR(255)"
-    }
-    class BendableScoreColumnType {
-        +sqlType() String = "VARCHAR(500)"
-    }
-    class ExposedTableExt {
-        +Table.simpleScore(name) Column~SimpleScore~
-        +Table.hardSoftScore(name) Column~HardSoftScore~
-        +Table.bendableScore(name) Column~BendableScore~
-    }
-
-    Score <|-- SimpleScore
-    Score <|-- HardSoftScore
-    Score <|-- HardMediumSoftScore
-    Score <|-- BendableScore
-    ScoreColumnType <|-- SimpleScoreColumnType
-    ScoreColumnType <|-- HardSoftScoreColumnType
-    ScoreColumnType <|-- BendableScoreColumnType
-    ExposedTableExt --> ScoreColumnType : uses
-    SimpleScoreColumnType --> SimpleScore : serializes
-    HardSoftScoreColumnType --> HardSoftScore : serializes
-    BendableScoreColumnType --> BendableScore : serializes
-
-```
+![클래스 다이어그램 1](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-ko-diagram-01.svg)
 
 ## 아키텍처 다이어그램
 
-```mermaid
-flowchart LR
-    subgraph Timefold["Timefold Solver"]
-        SS["SimpleScore"]
-        HSS["HardSoftScore"]
-        HMSS["HardMediumSoftScore"]
-        BS["BendableScore"]
-    end
-
-    subgraph Module["exposed-timefold-solver-persistence"]
-        CT["ColumnType 구현체<br/>(simpleScore, hardSoftScore, ...)"]
-        EXT["Exposed 확장 함수<br/>(Table.hardSoftScore() 등)"]
-    end
-
-    subgraph Exposed["JetBrains Exposed ORM"]
-        TABLE["IdTable 정의<br/>(val score = hardSoftScore(...))"]
-        DAO["Entity (DAO)<br/>(var score by Table.score)"]
-        DSL["DSL insert/update/select"]
-    end
-
-    subgraph DB["RDB (H2/MySQL/PostgreSQL 등)"]
-        INT["INTEGER<br/>(SimpleScore)"]
-        VC["VARCHAR<br/>(HardSoftScore → '100/-50')"]
-        VC2["VARCHAR<br/>(BendableScore → '[100]hard/[-30]soft')"]
-    end
-
-    Timefold --> Module
-    Module --> Exposed
-    Exposed --> DB
-```
+![아키텍처 다이어그램 2](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-ko-diagram-02.svg)
 
 ## Score 직렬화 흐름
 

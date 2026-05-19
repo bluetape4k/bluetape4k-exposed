@@ -6,84 +6,7 @@ Kotlin 코루틴 네이티브 배치 처리 프레임워크. Spring Batch 없이
 
 ## 아키텍처
 
-```mermaid
-classDiagram
-    class BatchJob {
-        +name: String
-        +params: Map
-        +steps: List~BatchStep~
-        +run() BatchReport
-        +execute(WorkContext) WorkReport
-    }
-
-    class BatchStep {
-        +name: String
-        +chunkSize: Int
-        +reader: BatchReader
-        +processor: BatchProcessor
-        +writer: BatchWriter
-        +skipPolicy: SkipPolicy
-        +retryPolicy: RetryPolicy
-        +commitTimeout: Duration
-    }
-
-    class BatchStepRunner {
-        -step: BatchStep
-        -jobExecution: JobExecution
-        -repository: BatchJobRepository
-        +run() StepReport
-    }
-
-    class BatchJobRepository {
-        <<interface>>
-        +findOrCreateJobExecution()
-        +findOrCreateStepExecution()
-        +completeJobExecution()
-        +completeStepExecution()
-        +saveCheckpoint()
-        +loadCheckpoint()
-    }
-
-    class BatchReader {
-        <<interface>>
-        +open()
-        +read() T?
-        +checkpoint() Any?
-        +onChunkCommitted()
-        +restoreFrom(checkpoint)
-        +close()
-    }
-
-    class BatchWriter {
-        <<interface>>
-        +open()
-        +write(items: List~T~)
-        +close()
-    }
-
-    class SkipPolicy {
-        <<fun interface>>
-        +shouldSkip(exception, skipCount) Boolean
-        NONE$
-        ALL$
-        maxSkips(n)$
-    }
-
-    BatchJob "1" o-- "1..*" BatchStep
-    BatchStep --> BatchReader
-    BatchStep --> BatchWriter
-    BatchStep --> SkipPolicy
-    BatchStepRunner --> BatchStep
-    BatchStepRunner --> BatchJobRepository
-
-    style BatchJob fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    style BatchStep fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style BatchStepRunner fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style BatchJobRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style BatchReader fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style BatchWriter fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style SkipPolicy fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-```
+![아키텍처 1](../../docs/images/readme-diagrams/utils-batch-ko-diagram-01.svg)
 
 ```mermaid
 sequenceDiagram
@@ -268,14 +191,7 @@ benchmark 체계는 `kotlinx-benchmark` 기반으로 재구성되었고, JDBC + 
 - 파라미터: `dataSize = 1000/10000/100000`, `poolSize = 10/30/60`, `parallelism = 1/4/8`
 - 상세 표와 그래프는 `docs/benchmark/*.md` 에서 관리
 
-```mermaid
-xychart-beta
-    title "Benchmark 문서 구조"
-    x-axis [H2, PostgreSQL, MySQL]
-    y-axis "문서화 범위" 0 --> 100
-    bar [100, 100, 100]
-    bar [100, 100, 100]
-```
+![비교 초점 2](../../docs/images/readme-diagrams/utils-batch-ko-diagram-02.svg)
 
 ## 모듈 의존성
 

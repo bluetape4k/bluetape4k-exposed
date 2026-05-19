@@ -12,95 +12,11 @@ This module demonstrates the pattern of wrapping **Exposed R2DBC
 
 ## UML
 
-```mermaid
-classDiagram
-    class ProductController {
-        -productRepository: ProductR2dbcRepository
-        +findAll(): List~ProductDto~
-        +findById(id): ProductDto
-        +create(dto): ResponseEntity~ProductDto~
-        +update(id, dto): ProductDto
-        +delete(id): ResponseEntity~Void~
-    }
-    class ProductR2dbcRepository {
-        <<interface>>
-        +table: IdTable~Long~
-        +extractId(entity): Long?
-        +toDomain(row): ProductDto
-        +toPersistValues(domain): Map
-    }
-    class ExposedR2dbcRepository {
-        <<interface>>
-        +save(entity): T
-        +findById(id): T?
-        +findAll(): Flow~T~
-        +deleteById(id): Boolean
-    }
-    class ProductDto {
-        +id: Long
-        +name: String
-        +description: String
-        +price: BigDecimal
-    }
-    class Products {
-        <<object>>
-        +name: Column~String~
-        +description: Column~String~
-        +price: Column~BigDecimal~
-    }
-    class DataInitializer {
-        +initialize()
-    }
-
-    ProductController --> ProductR2dbcRepository
-    ProductR2dbcRepository --|> ExposedR2dbcRepository
-    ProductR2dbcRepository --> ProductDto
-    ProductDto --> Products
-    DataInitializer --> ProductR2dbcRepository
-
-    style ProductController fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    style ProductR2dbcRepository fill:#E0F7FA,stroke:#80DEEA,color:#00838F
-    style ExposedR2dbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style ProductDto fill:#F57F17,stroke:#E65100,color:#000000
-    style Products fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-    style DataInitializer fill:#FCE4EC,stroke:#F48FB1,color:#AD1457
-```
+![UML 1](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-01.svg)
 
 ### Application Structure Flow
 
-```mermaid
-flowchart TD
-    App["WebfluxDemoApplication"]
-    Init["DataInitializer"]
-    Controller["ProductController<br/>suspend endpoints"]
-    Repo["ProductR2dbcRepository"]
-    Table["Products / ProductDto"]
-    R2DBC["Exposed R2DBC"]
-    DB[("Reactive DB")]
-
-    App --> Init
-    App --> Controller
-    Controller --> Repo
-    Repo --> Table
-    Repo --> R2DBC
-    R2DBC --> DB
-
-    classDef appStyle fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    classDef initStyle fill:#FCE4EC,stroke:#F48FB1,color:#AD1457
-    classDef controllerStyle fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    classDef repoStyle fill:#E0F7FA,stroke:#80DEEA,color:#00838F
-    classDef tableStyle fill:#F57F17,stroke:#E65100,color:#000000
-    classDef r2dbcStyle fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-    classDef dbStyle fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-
-    class App appStyle
-    class Init initStyle
-    class Controller controllerStyle
-    class Repo repoStyle
-    class Table tableStyle
-    class R2DBC r2dbcStyle
-    class DB dbStyle
-```
+![Application Structure Flow 2](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-02.svg)
 
 ### Key Characteristics
 

@@ -23,110 +23,11 @@ It is **cache-backend agnostic** — the same interfaces are implemented by both
 
 ## Interface Hierarchy
 
-```mermaid
-classDiagram
-    direction TB
-
-    class JdbcCacheRepository {
-        <<interface>>
-        +get(id: ID): E?
-        +getAll(ids: Collection~ID~): Map~ID, E~
-        +put(id: ID, entity: E)
-        +putAll(entities: Map~ID, E~)
-        +invalidate(id: ID)
-        +invalidateAll(ids: Collection~ID~)
-        +clear()
-        +containsKey(id: ID): Boolean
-        +findByIdFromDb(id: ID): E?
-        +findAllFromDb(ids: Collection~ID~): List~E~
-        +findAll(...): List~E~
-    }
-    class JdbcRedisRepository {
-        <<interface>>
-        +invalidateByPattern(patterns: String, count: Int): Long
-    }
-    class JdbcCaffeineRepository {
-        <<interface>>
-        +config: LocalCacheConfig
-        +cache: Cache~String, E~
-    }
-    class SuspendedJdbcCacheRepository {
-        <<interface>>
-        +get(id: ID): E?
-        +put(id: ID, entity: E)
-        +invalidate(id: ID)
-        +clear()
-        +findByIdFromDb(id: ID): E?
-        +findAll(...): List~E~
-    }
-    class SuspendJdbcRedisRepository {
-        <<interface>>
-        +invalidateByPattern(patterns: String, count: Int): Long
-    }
-    class SuspendedJdbcCaffeineRepository {
-        <<interface>>
-        +config: LocalCacheConfig
-        +cache: Cache~String, E~
-    }
-    class R2dbcCacheRepository {
-        <<interface>>
-        +get(id: ID): E?
-        +put(id: ID, entity: E)
-        +invalidate(id: ID)
-        +clear()
-        +findByIdFromDb(id: ID): E?
-        +findAll(...): List~E~
-    }
-    class R2dbcRedisRepository {
-        <<interface>>
-        +invalidateByPattern(patterns: String, count: Int): Long
-    }
-    class R2dbcCaffeineRepository {
-        <<interface>>
-        +config: LocalCacheConfig
-        +cache: AsyncCache~String, E~
-    }
-
-    JdbcCacheRepository <|-- JdbcRedisRepository
-    JdbcCacheRepository <|-- JdbcCaffeineRepository
-    SuspendedJdbcCacheRepository <|-- SuspendJdbcRedisRepository
-    SuspendedJdbcCacheRepository <|-- SuspendedJdbcCaffeineRepository
-    R2dbcCacheRepository <|-- R2dbcRedisRepository
-    R2dbcCacheRepository <|-- R2dbcCaffeineRepository
-
-    style JdbcCacheRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style JdbcRedisRepository fill:#FCE4EC,stroke:#F48FB1,color:#AD1457
-    style JdbcCaffeineRepository fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style SuspendedJdbcCacheRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style SuspendJdbcRedisRepository fill:#FCE4EC,stroke:#F48FB1,color:#AD1457
-    style SuspendedJdbcCaffeineRepository fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style R2dbcCacheRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style R2dbcRedisRepository fill:#FCE4EC,stroke:#F48FB1,color:#AD1457
-    style R2dbcCaffeineRepository fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-```
+![Interface Hierarchy 1](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-01.svg)
 
 Redis-specific sub-interfaces (Lettuce and Redisson) extend the Redis interfaces:
 
-```mermaid
-classDiagram
-    direction LR
-    JdbcRedisRepository <|-- JdbcLettuceRepository
-    JdbcRedisRepository <|-- JdbcRedissonRepository
-    SuspendJdbcRedisRepository <|-- SuspendedJdbcLettuceRepository
-    SuspendJdbcRedisRepository <|-- SuspendedJdbcRedissonRepository
-    R2dbcRedisRepository <|-- R2dbcLettuceRepository
-    R2dbcRedisRepository <|-- R2dbcRedissonRepository
-
-    style JdbcRedisRepository fill:#FCE4EC,stroke:#F48FB1,color:#AD1457
-    style SuspendJdbcRedisRepository fill:#FCE4EC,stroke:#F48FB1,color:#AD1457
-    style R2dbcRedisRepository fill:#FCE4EC,stroke:#F48FB1,color:#AD1457
-    style JdbcLettuceRepository fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style JdbcRedissonRepository fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style SuspendedJdbcLettuceRepository fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-    style SuspendedJdbcRedissonRepository fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-    style R2dbcLettuceRepository fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-    style R2dbcRedissonRepository fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-```
+![Interface Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-02.svg)
 
 ## CacheMode
 

@@ -6,35 +6,7 @@ Kotlin/Exposed dialect for ClickHouse JDBC — brings type-safe DSL, MergeTree e
 
 ## Architecture
 
-```mermaid
-graph LR
-    subgraph exposed-clickhouse
-        DB[ClickHouseDatabase]
-        TBL[ClickHouseTable]
-        ENG[ClickHouseEngine DSL]
-        TYPES[Column Types]
-        FUNCS[Date & Aggregate Functions]
-        EXT[ClickHouseExtensions]
-    end
-
-    DB --> exposed-core
-    DB --> exposed-jdbc
-    DB --> clickhouse-jdbc
-    TBL --> exposed-core
-    ENG --> TBL
-    TYPES --> exposed-core
-    FUNCS --> exposed-core
-    EXT --> bluetape4k-coroutines
-    DB --> bluetape4k-logging
-
-    subgraph Testing
-        bluetape4k-junit5
-        bluetape4k-testcontainers
-    end
-
-    exposed-clickhouse -.-> bluetape4k-junit5
-    exposed-clickhouse -.-> bluetape4k-testcontainers
-```
+![Architecture 1](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-diagram-01.svg)
 
 ## Features
 
@@ -181,16 +153,7 @@ transaction(database) {
 
 ## DDL Flow
 
-```mermaid
-flowchart TD
-    A[ClickHouseTable.createStatement] --> B[super.createStatement\nExposed standard DDL]
-    B --> C{Filter: CREATE TABLE only}
-    C -->|DROP TABLE / other DDL| X[Discard]
-    C -->|CREATE TABLE statement| D[sanitizeForClickHouse]
-    D --> E[Remove PRIMARY KEY / CONSTRAINT /\nREFERENCES / NOT NULL / NULL /\nCOMMENT ON]
-    E --> F[Append engine.toClause\nENGINE = MergeTree\nORDER BY ...\nPARTITION BY ...]
-    F --> G[Final ClickHouse DDL]
-```
+![DDL Flow 2](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-diagram-02.svg)
 
 ## Caveats
 

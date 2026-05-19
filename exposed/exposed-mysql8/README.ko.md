@@ -8,66 +8,11 @@ JTS(Java Topology Suite)를 사용하여 8가지 geometry 타입을 지원하며
 
 ## UML
 
-```mermaid
-classDiagram
-    class GeometryColumnType {
-        <<base>>
-    }
-    class GeoPointColumnType
-    class GeoLineStringColumnType
-    class GeoPolygonColumnType
-    class GeoMultiPointColumnType
-    class GeoMultiLineStringColumnType
-    class GeoMultiPolygonColumnType
-    class GeoGeometryCollectionColumnType
-    class GeoGeometryColumnType
-
-    GeometryColumnType <|-- GeoPointColumnType
-    GeometryColumnType <|-- GeoLineStringColumnType
-    GeometryColumnType <|-- GeoPolygonColumnType
-    GeometryColumnType <|-- GeoMultiPointColumnType
-    GeometryColumnType <|-- GeoMultiLineStringColumnType
-    GeometryColumnType <|-- GeoMultiPolygonColumnType
-    GeometryColumnType <|-- GeoGeometryCollectionColumnType
-    GeometryColumnType <|-- GeoGeometryColumnType
-
-    style GeometryColumnType fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style GeoPointColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style GeoLineStringColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style GeoPolygonColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style GeoMultiPointColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style GeoMultiLineStringColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style GeoMultiPolygonColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style GeoGeometryCollectionColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style GeoGeometryColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-```
+![UML 1](../../docs/images/readme-diagrams/exposed-exposed-mysql8-ko-diagram-01.svg)
 
 ## 확장 함수 다이어그램
 
-```mermaid
-classDiagram
-    direction LR
-    class GeoPointColumnType {
-        <<ColumnType>>
-        +valueFromDB(value): Point
-    }
-    class GeoPolygonColumnType {
-        <<ColumnType>>
-        +valueFromDB(value): Polygon
-    }
-    class MySQL8GeoExtensions {
-        <<extensionFunctions>>
-        +Table.geoPoint(name): Column~Point~
-        +Table.geoPolygon(name): Column~Polygon~
-        +Table.geoLineString(name): Column~LineString~
-        +ST_Distance(g1, g2): Expression
-        +ST_Contains(g1, g2): Expression
-    }
-
-    style GeoPointColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style GeoPolygonColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style MySQL8GeoExtensions fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-```
+![확장 함수 다이어그램 2](../../docs/images/readme-diagrams/exposed-exposed-mysql8-ko-diagram-02.svg)
 
 ## 개요
 

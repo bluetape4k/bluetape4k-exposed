@@ -340,97 +340,11 @@ prepared parameter binding 순서를 유지합니다.
 
 ### R2dbcRepository 핵심 구조
 
-```mermaid
-classDiagram
-    direction TB
-    class ExposedR2dbcRepository~ID_E~ {
-        <<interface>>
-        +findByIdOrNull(id): E?
-        +findAll(): Flow~E~
-        +save(entity): E
-        +deleteById(id): Long
-    }
-    class AbstractR2dbcRepository~ID_E~ {
-        <<abstract>>
-        #table: Table
-        +findAll(where): Flow~E~
-        +count(where): Long
-        #ResultRow.toEntity(): E
-    }
-    ExposedR2dbcRepository <|-- AbstractR2dbcRepository
-
-    style ExposedR2dbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style AbstractR2dbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-```
+![R2dbcRepository 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-ko-diagram-01.svg)
 
 ### R2dbcRepository 계층
 
-```mermaid
-classDiagram
-    class R2dbcRepository {
-        <<interface>>
-        +table: IdTable~ID~
-        +extractId(entity) ID
-        +count() Long
-        +existsById(id) Boolean
-        +findById(id) E
-        +findByIdOrNull(id) E?
-        +findAll(...) Flow~E~
-        +findPage(...) ExposedPage~E~
-        +deleteById(id) Int
-        +updateById(id, ...) Int
-        +batchInsert(...) List~E~
-        +batchUpsert(...) List~E~
-    }
-    class SoftDeletedR2dbcRepository {
-        <<interface>>
-        +table: SoftDeletedIdTable~ID~
-        +softDeleteById(id)
-        +restoreById(id)
-        +countActive(...) Long
-        +findActive(...) Flow~E~
-        +findDeleted(...) Flow~E~
-        +findActivePage(...) ExposedPage~E~
-    }
-    class AuditableR2dbcRepository {
-        <<interface>>
-        +table: AuditableIdTable~ID~
-        +auditedUpdateById(id, updatedBy, ...) Int
-        +auditedUpdateAll(updatedBy, predicate, ...) Int
-    }
-    class IntR2dbcRepository {
-        <<interface>>
-    }
-    class LongR2dbcRepository {
-        <<interface>>
-    }
-    class StringR2dbcRepository {
-        <<interface>>
-    }
-    class LongSoftDeletedR2dbcRepository {
-        <<interface>>
-    }
-    class LongAuditableR2dbcRepository {
-        <<interface>>
-    }
-
-    R2dbcRepository <|-- SoftDeletedR2dbcRepository
-    R2dbcRepository <|-- AuditableR2dbcRepository
-    R2dbcRepository <|-- IntR2dbcRepository
-    R2dbcRepository <|-- LongR2dbcRepository
-    R2dbcRepository <|-- StringR2dbcRepository
-    SoftDeletedR2dbcRepository <|-- LongSoftDeletedR2dbcRepository
-    AuditableR2dbcRepository <|-- LongAuditableR2dbcRepository
-
-    style R2dbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style SoftDeletedR2dbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style AuditableR2dbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style IntR2dbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    style LongR2dbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    style StringR2dbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    style LongSoftDeletedR2dbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    style LongAuditableR2dbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-```
+![R2dbcRepository 계층 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-ko-diagram-02.svg)
 
 ### suspend 트랜잭션 흐름
 

@@ -114,110 +114,15 @@ val query2 = Users.selectAll()
 
 ### 컬럼 타입 구조 (요약)
 
-```mermaid
-classDiagram
-    direction LR
-    class JacksonColumnType~T~ {
-        <<ColumnType>>
-        -objectMapper: ObjectMapper
-        +valueFromDB(value): T
-        +valueToDB(value): Any
-    }
-    class JacksonBColumnType~T~ {
-        <<ColumnTypeJSONB>>
-        -objectMapper: ObjectMapper
-        +valueFromDB(value): T
-        +valueToDB(value): PGobject
-    }
-    class TableExtensions {
-        <<extensionFunctions>>
-        +Table.jackson~T~(name): Column~T~
-        +Table.jacksonb~T~(name): Column~T~
-    }
-    JacksonColumnType <|-- JacksonBColumnType
-    TableExtensions --> JacksonColumnType : creates
-    TableExtensions --> JacksonBColumnType : creates
-
-    style JacksonColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style JacksonBColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style TableExtensions fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-```
+![컬럼 타입 구조 (요약) 1](../../docs/images/readme-diagrams/exposed-exposed-jackson3-ko-diagram-01.svg)
 
 ### JSON 컬럼 타입 클래스 구조
 
-```mermaid
-classDiagram
-    class ColumnType {
-        <<Exposed기반추상>>
-        +sqlType(): String
-        +valueFromDB(value): T
-        +notNullValueToDB(value): Any
-    }
-    class JacksonColumnType~T~ {
-        -objectMapper: ObjectMapper
-        +sqlType(): String
-        +valueFromDB(value): T
-        +notNullValueToDB(value): String
-    }
-    class JacksonBColumnType~T~ {
-        -objectMapper: ObjectMapper
-        +sqlType(): String
-        +valueFromDB(value): T
-        +notNullValueToDB(value): ByteArray
-    }
-    class JacksonSerializer {
-        +configure(objectMapper): ObjectMapper
-    }
-    class JsonFunctions {
-        +Column.jsonPath(path): Expression
-        +Column.jsonContains(field, value): Op
-    }
-    class ResultRowExtensions {
-        +ResultRow.getJackson(col): T
-        +ResultRow.getJacksonOrNull(col): T?
-    }
-
-    ColumnType <|-- JacksonColumnType
-    ColumnType <|-- JacksonBColumnType
-    JacksonSerializer --> JacksonColumnType : ObjectMapper 제공
-    JacksonSerializer --> JacksonBColumnType : ObjectMapper 제공
-    JacksonColumnType --> JsonFunctions : 연동
-    ResultRowExtensions --> JacksonColumnType : 사용
-    ResultRowExtensions --> JacksonBColumnType : 사용
-
-    style ColumnType fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    style JacksonColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style JacksonBColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style JacksonSerializer fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-    style JsonFunctions fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style ResultRowExtensions fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-```
+![JSON 컬럼 타입 클래스 구조 2](../../docs/images/readme-diagrams/exposed-exposed-jackson3-ko-diagram-02.svg)
 
 ### Jackson 2 vs Jackson 3 패키지 차이
 
-```mermaid
-flowchart LR
-    subgraph Jackson2["exposed-jackson2 (Jackson 2.x)"]
-        A2["com.fasterxml.jackson.*"]
-        B2["jackson&lt;T&gt; / jacksonb&lt;T&gt;"]
-    end
-    subgraph Jackson3["exposed-jackson3 (Jackson 3.x)"]
-        A3["tools.jackson.*"]
-        B3["jackson&lt;T&gt; / jacksonb&lt;T&gt;"]
-    end
-    C[Kotlin 객체] -->|직렬화| Jackson2
-    C -->|직렬화| Jackson3
-    Jackson2 -->|역직렬화| C
-    Jackson3 -->|역직렬화| C
-
-    classDef objectStyle fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    classDef jackson2Style fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    classDef jackson3Style fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-
-    class C objectStyle
-    class Jackson2 jackson2Style
-    class Jackson3 jackson3Style
-```
+![Jackson 2 vs Jackson 3 패키지 차이 3](../../docs/images/readme-diagrams/exposed-exposed-jackson3-ko-diagram-03.svg)
 
 ## 참고
 

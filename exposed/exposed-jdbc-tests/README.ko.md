@@ -286,58 +286,7 @@ Containers.Postgres
 
 ## 테스트 인프라 구조
 
-```mermaid
-flowchart TD
-    subgraph 테스트_클래스
-        A[AbstractExposedTest] --> B[ParameterizedTest]
-        B --> C[ENABLE_DIALECTS_METHOD]
-    end
-
-    subgraph 지원_DB
-        D[H2 / H2_MYSQL / H2_MARIADB / H2_PSQL]
-        E[MariaDB - Testcontainers]
-        F[MySQL 5.7 / 8.0 - Testcontainers]
-        G[PostgreSQL - Testcontainers]
-    end
-
-    subgraph 유틸_함수
-        H[withDb - DB 연결만]
-        I[withTables - 테이블 자동 생성/삭제]
-        J[withTablesSuspending - Coroutine 버전]
-        K[withSchemas]
-        L[withAutoCommit]
-    end
-
-    C --> D
-    C --> E
-    C --> F
-    C --> G
-
-    A --> H
-    A --> I
-    A --> J
-
-    subgraph 공유_스키마
-        M[MovieSchema]
-        N[BoardSchema]
-        O[BlogSchema]
-        P[PersonSchema]
-        Q[OrderSchema]
-    end
-
-    I --> M
-    I --> N
-
-    classDef testStyle fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    classDef dbStyle fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    classDef utilStyle fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    classDef schemaStyle fill:#FCE4EC,stroke:#F48FB1,color:#AD1457
-
-    class 테스트_클래스 testStyle
-    class 지원_DB dbStyle
-    class 유틸_함수 utilStyle
-    class 공유_스키마 schemaStyle
-```
+![테스트 인프라 구조 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-ko-diagram-01.svg)
 
 ### 테스트 실행 흐름
 

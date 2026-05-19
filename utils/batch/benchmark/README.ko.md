@@ -28,14 +28,7 @@
 
 ## 그래프
 
-```mermaid
-xychart-beta
-    title "Benchmark 비교 초점"
-    x-axis [H2, PostgreSQL, MySQL]
-    y-axis "비교 강조도" 0 --> 100
-    bar [70, 100, 95]
-    bar [70, 100, 95]
-```
+![그래프 1](../../../docs/images/readme-diagrams/utils-batch-benchmark-ko-diagram-01.svg)
 
 ## 참고
 

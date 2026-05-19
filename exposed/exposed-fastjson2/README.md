@@ -129,106 +129,15 @@ val extraData: Map<String, Any>? = resultRow.getFastjsonOrNull(Products.extraDat
 
 ### Column Type Structure (Summary)
 
-```mermaid
-classDiagram
-    direction LR
-    class FastjsonColumnType~T~ {
-        <<ColumnType>>
-        +valueFromDB(value): T
-        +valueToDB(value): Any
-    }
-    class FastjsonBColumnType~T~ {
-        <<ColumnTypeJSONB>>
-        +valueToDB(value): PGobject
-    }
-    class TableExtensions {
-        <<extensionFunctions>>
-        +Table.fastjson~T~(name): Column~T~
-        +Table.fastjsonb~T~(name): Column~T~
-    }
-    FastjsonColumnType <|-- FastjsonBColumnType
-
-    style FastjsonColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style FastjsonBColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style TableExtensions fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-```
+![Column Type Structure (Summary) 1](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-01.svg)
 
 ### JSON Column Type Class Structure
 
-```mermaid
-classDiagram
-    class ColumnType {
-        <<Exposed base abstract>>
-        +sqlType(): String
-        +valueFromDB(value): T
-        +notNullValueToDB(value): Any
-    }
-    class FastjsonColumnType~T~ {
-        -serializer: FastjsonSerializer
-        +sqlType(): String
-        +valueFromDB(value): T
-        +notNullValueToDB(value): String
-    }
-    class FastjsonBColumnType~T~ {
-        -serializer: FastjsonSerializer
-        +sqlType(): String
-        +valueFromDB(value): T
-        +notNullValueToDB(value): String
-    }
-    class DefaultFastjsonSerializer {
-        <<facade>>
-        +FastjsonSerializer.Default
-    }
-    class JsonFunctions {
-        +Column.jsonPath(path): Expression
-        +Column.jsonContains(field, value): Op
-    }
-    class ResultRowExtensions {
-        +ResultRow.getFastjson(col): T
-        +ResultRow.getFastjsonOrNull(col): T?
-    }
-
-    ColumnType <|-- FastjsonColumnType
-    ColumnType <|-- FastjsonBColumnType
-    FastjsonColumnType --> JsonFunctions : integrates
-    FastjsonBColumnType --> JsonFunctions : integrates
-    DefaultFastjsonSerializer --> FastjsonColumnType : default serializer
-    DefaultFastjsonSerializer --> FastjsonBColumnType : default serializer
-    ResultRowExtensions --> FastjsonColumnType : uses
-    ResultRowExtensions --> FastjsonBColumnType : uses
-
-    style ColumnType fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    style FastjsonColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style FastjsonBColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style DefaultFastjsonSerializer fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-    style JsonFunctions fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style ResultRowExtensions fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-```
+![JSON Column Type Class Structure 2](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-02.svg)
 
 ### JSON Column Data Flow
 
-```mermaid
-flowchart LR
-    A[Kotlin Object] -->|Fastjson2 serialize| B[JSON String / ByteArray]
-    B -->|Store to DB| C[(Database)]
-    C -->|Read from DB| D[JSON String / ByteArray]
-    D -->|Fastjson2 deserialize| E[Kotlin Object]
-
-    subgraph JSON Column Types
-        F["fastjson~T~ → TEXT"]
-        G["fastjsonb~T~ → JSONB/BLOB"]
-    end
-
-    classDef objectStyle fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    classDef processStyle fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    classDef dbStyle fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-
-    class A objectStyle
-    class E objectStyle
-    class B processStyle
-    class D processStyle
-    class C dbStyle
-```
+![JSON Column Data Flow 3](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-03.svg)
 
 ## References
 

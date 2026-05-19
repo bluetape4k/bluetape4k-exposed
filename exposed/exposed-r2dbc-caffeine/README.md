@@ -8,45 +8,7 @@ Exposed R2DBC repository with Caffeine local (in-process) cache. No JDBC depende
 
 ## Architecture
 
-```mermaid
-classDiagram
-    direction TB
-
-    class R2dbcCacheRepository~ID, E~ {
-        <<interface>>
-        +get(id: ID): E?
-        +getAll(ids: Collection~ID~): Map~ID, E~
-        +put(id: ID, entity: E)
-        +putAll(entities: Map~ID, E~)
-        +invalidate(id: ID)
-        +clear()
-        +findByIdFromDb(id: ID): E?
-        +findAllFromDb(ids: Collection~ID~): List~E~
-    }
-
-    class R2dbcCaffeineRepository~ID, E~ {
-        <<interface>>
-        +config: LocalCacheConfig
-        +cache: AsyncCache~String, E~
-    }
-
-    class AbstractR2dbcCaffeineRepository~ID, E~ {
-        <<abstract>>
-        #table: IdTable~ID~
-        #toEntity(): E
-        #updateEntity(entity: E)
-        #insertEntity(entity: E)
-        -writeBehindQueue: Channel
-        -writeBehindJob: Job
-    }
-
-    R2dbcCacheRepository <|-- R2dbcCaffeineRepository
-    R2dbcCaffeineRepository <|.. AbstractR2dbcCaffeineRepository
-
-    style R2dbcCacheRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style R2dbcCaffeineRepository fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-    style AbstractR2dbcCaffeineRepository fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-```
+![Architecture 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-diagram-01.svg)
 
 ```mermaid
 sequenceDiagram

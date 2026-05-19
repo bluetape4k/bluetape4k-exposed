@@ -12,94 +12,11 @@ This module demonstrates the fundamental pattern of wrapping **Exposed DAO entit
 
 ## UML
 
-```mermaid
-classDiagram
-    class ProductController {
-        -productJdbcRepository: ProductJdbcRepository
-        +findAll(): List~ProductDto~
-        +findById(id): ResponseEntity~ProductDto~
-        +create(dto): ResponseEntity~ProductDto~
-        +update(id, dto): ResponseEntity~ProductDto~
-        +delete(id): ResponseEntity~Void~
-        +search(name): List~ProductDto~
-    }
-    class ProductJdbcRepository {
-        <<interface>>
-        +findByName(name): List~ProductEntity~
-        +findByPriceLessThan(price): List~ProductEntity~
-    }
-    class ExposedJdbcRepository {
-        <<interface>>
-        +save(entity): E
-        +findById(id): Optional~E~
-        +findAll(): List~E~
-        +delete(entity)
-    }
-    class ProductEntity {
-        +id: EntityID~Long~
-        +name: String
-        +description: String
-        +price: BigDecimal
-    }
-    class Products {
-        <<object>>
-        +name: Column~String~
-        +description: Column~String~
-        +price: Column~BigDecimal~
-    }
-    class DataInitializer {
-        +initialize()
-    }
-
-    ProductController --> ProductJdbcRepository
-    ProductJdbcRepository --|> ExposedJdbcRepository
-    ProductJdbcRepository --> ProductEntity
-    ProductEntity --> Products
-    DataInitializer --> ProductJdbcRepository
-
-    style ProductController fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    style ProductJdbcRepository fill:#E0F7FA,stroke:#80DEEA,color:#00838F
-    style ExposedJdbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style ProductEntity fill:#F57F17,stroke:#E65100,color:#000000
-    style Products fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-    style DataInitializer fill:#FCE4EC,stroke:#F48FB1,color:#AD1457
-```
+![UML 1](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-01.svg)
 
 ### Application Structure Flow
 
-```mermaid
-flowchart TD
-    App["DemoApplication"]
-    Init["DataInitializer"]
-    Controller["ProductController"]
-    Service["transaction { ... }"]
-    Repo["ProductJdbcRepository"]
-    Entity["ProductEntity / Products"]
-    DB[("H2 / JDBC DB")]
-
-    App --> Init
-    App --> Controller
-    Controller --> Service
-    Service --> Repo
-    Repo --> Entity
-    Entity --> DB
-
-    classDef appStyle fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    classDef initStyle fill:#FCE4EC,stroke:#F48FB1,color:#AD1457
-    classDef controllerStyle fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    classDef serviceStyle fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-    classDef repoStyle fill:#E0F7FA,stroke:#80DEEA,color:#00838F
-    classDef entityStyle fill:#F57F17,stroke:#E65100,color:#000000
-    classDef dbStyle fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-
-    class App appStyle
-    class Init initStyle
-    class Controller controllerStyle
-    class Service serviceStyle
-    class Repo repoStyle
-    class Entity entityStyle
-    class DB dbStyle
-```
+![Application Structure Flow 2](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-02.svg)
 
 ### Key Characteristics
 

@@ -424,42 +424,7 @@ transaction {
 
 ### Repository 및 VirtualThread 트랜잭션 핵심 구조
 
-```mermaid
-classDiagram
-    direction TB
-    class LongJdbcRepository~E~ {
-        <<interface>>
-        +findByIdOrNull(id): E?
-        +findAll(): List~E~
-        +save(entity): E
-        +deleteById(id): Int
-    }
-    class AbstractJdbcRepository~ID_E~ {
-        <<abstract>>
-        #table: Table
-        +findAll(where): List~E~
-        +count(where): Long
-        #ResultRow.toEntity(): E
-    }
-    class AuditableJdbcRepository~E~ {
-        <<abstract>>
-        +auditedUpdateById(id, block)
-        +auditedUpdateAll(where, block)
-    }
-    class VirtualThreadJdbcTransaction {
-        <<functions>>
-        +newVirtualThreadJdbcTransaction(): T
-        +virtualThreadJdbcTransactionAsync(): VirtualFuture~T~
-    }
-
-    LongJdbcRepository <|-- AbstractJdbcRepository
-    AbstractJdbcRepository <|-- AuditableJdbcRepository
-
-    style LongJdbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style AbstractJdbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style AuditableJdbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    style VirtualThreadJdbcTransaction fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-```
+![Repository 및 VirtualThread 트랜잭션 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-ko-diagram-01.svg)
 
 ```mermaid
 sequenceDiagram
@@ -478,93 +443,7 @@ sequenceDiagram
 
 ### Repository 계층 구조
 
-```mermaid
-classDiagram
-    direction TB
-
-    class JdbcRepository~ID_E~ {
-<<interface>>
-+table: IdTable~ID~
-+extractId(entity: E) ID
-+ResultRow.toEntity() E
-+count() Long
-+existsById(id: ID) Boolean
-+findById(id: ID) E
-+findByIdOrNull(id: ID) E?
-+findAll(limit, offset, ...) List~E~
-+findPage(pageNumber, pageSize, ...) ExposedPage~E~
-+deleteById(id: ID) Int
-+updateById(id: ID, ...) Int
-+batchInsert(entities, ...) List~E~
-+batchUpsert(entities, ...) List~E~
-}
-
-class SoftDeletedJdbcRepository~ID_E_T~ {
-<<interface>>
-+table: T
-+softDeleteById(id: ID)
-+restoreById(id: ID)
-+findActive(...) List~E~
-+findDeleted(...) List~E~
-+countActive(predicate) Long
-+countDeleted(predicate) Long
-+softDeleteAll(predicate) Int
-+restoreAll(predicate) Int
-+findActivePage(...) ExposedPage~E~
-}
-
-class IntJdbcRepository~E~ {
-<<interface>>
-}
-
-class LongJdbcRepository~E~ {
-<<interface>>
-}
-
-class UUIDJdbcRepository~E~ {
-<<interface>>
-}
-
-class StringJdbcRepository~E~ {
-<<interface>>
-}
-
-class LongSoftDeletedJdbcRepository~E_T~ {
-<<interface>>
-}
-
-class IntSoftDeletedJdbcRepository~E_T~ {
-<<interface>>
-}
-
-class ExposedPage~E~ {
-+content: List~E~
-+totalCount: Long
-+pageNumber: Int
-+pageSize: Int
-+totalPages: Int
-+isLast: Boolean
-}
-
-JdbcRepository <|-- SoftDeletedJdbcRepository
-JdbcRepository <|-- IntJdbcRepository
-JdbcRepository <|-- LongJdbcRepository
-JdbcRepository <|-- UUIDJdbcRepository
-JdbcRepository <|-- StringJdbcRepository
-SoftDeletedJdbcRepository <|-- LongSoftDeletedJdbcRepository
-SoftDeletedJdbcRepository <|-- IntSoftDeletedJdbcRepository
-JdbcRepository ..> ExposedPage: returns
-
-    style JdbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style SoftDeletedJdbcRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style IntJdbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    style LongJdbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    style UUIDJdbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    style StringJdbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    style LongSoftDeletedJdbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    style IntSoftDeletedJdbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    style ExposedPage fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-```
+![Repository 계층 구조 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-ko-diagram-02.svg)
 
 ## 시퀀스 다이어그램
 
