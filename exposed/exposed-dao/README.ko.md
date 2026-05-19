@@ -226,153 +226,19 @@ transaction {
 
 `AuditableLongEntity`, `AuditableLongEntityClass`, 커스텀 IdTable 계층의 관계를 나타냅니다.
 
-```mermaid
-classDiagram
-    direction TB
-    class AuditableLongEntity {
-        <<abstractEntity>>
-        +createdBy: String
-        +createdAt: Instant
-        +updatedBy: String
-        +updatedAt: Instant
-        +flush()
-    }
-    class AuditableLongEntityClass~E~ {
-        <<abstractEntityClass>>
-        +new(init): E
-    }
-    class KsuidTable {
-        <<IdTable_String>>
-        +id: Column~String~
-    }
-    class SnowflakeIdTable {
-        <<IdTable_Long>>
-        +id: Column~Long~
-    }
-    AuditableLongEntityClass --> AuditableLongEntity : manages
-
-    style AuditableLongEntity fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style AuditableLongEntityClass fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style KsuidTable fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style SnowflakeIdTable fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-```
+![AuditableEntity 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-01.svg)
 
 ### 커스텀 IdTable 계층
 
 `exposed-core`의 IdTable 구현을 DAO 엔티티와 함께 사용하는 전체 계층입니다.
 
-```mermaid
-classDiagram
-    class IdTable {
-<<ExposedCore>>
-+id: Column~EntityID~
-+primaryKey: PrimaryKey
-}
-class SoftDeletedIdTable {
-<<abstract_exposed_core>>
-+isDeleted: Column~Boolean~
-}
-class KsuidTable {
-+id: Column~EntityID~String~~
-}
-class KsuidMillisTable {
-+id: Column~EntityID~String~~
-}
-class UlidTable {
-+id: Column~EntityID~String~~
-}
-class SnowflakeIdTable {
-+id: Column~EntityID~Long~~
-}
-class TimebasedUUIDTable {
-+id: Column~EntityID~UUID~~
-}
-class TimebasedUUIDBase62Table {
-+id: Column~EntityID~String~~
-}
-
-IdTable <|-- SoftDeletedIdTable
-IdTable <|-- KsuidTable
-IdTable <|-- KsuidMillisTable
-IdTable <|-- UlidTable
-IdTable <|-- SnowflakeIdTable
-IdTable <|-- TimebasedUUIDTable
-IdTable <|-- TimebasedUUIDBase62Table
-
-    style IdTable fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    style SoftDeletedIdTable fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style KsuidTable fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style KsuidMillisTable fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style UlidTable fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style SnowflakeIdTable fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style TimebasedUUIDTable fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style TimebasedUUIDBase62Table fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-```
+![커스텀 IdTable 계층 2](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-02.svg)
 
 ### Entity 확장 계층
 
 각 IdTable에 대응하는 DAO Entity 및 EntityClass 계층입니다.
 
-```mermaid
-classDiagram
-    class Entity {
-<<ExposedCore>>
-+id: EntityID~ID~
-}
-class StringEntity {
-<<abstract>>
-}
-class KsuidEntity
-class KsuidMillisEntity
-class UlidEntity
-class SnowflakeIdEntity
-class TimebasedUUIDEntity
-class TimebasedUUIDBase62Entity
-
-class EntityClass {
-<<ExposedCore>>
-+new(init) E
-+findById(id) E?
-}
-class StringEntityClass {
-<<abstract>>
-}
-class KsuidEntityClass
-class SnowflakeIdEntityClass
-class TimebasedUUIDEntityClass
-
-Entity <|-- StringEntity
-StringEntity <|-- KsuidEntity
-StringEntity <|-- KsuidMillisEntity
-StringEntity <|-- UlidEntity
-StringEntity <|-- TimebasedUUIDBase62Entity
-Entity <|-- SnowflakeIdEntity
-Entity <|-- TimebasedUUIDEntity
-
-EntityClass <|-- StringEntityClass
-StringEntityClass <|-- KsuidEntityClass
-StringEntityClass <|-- TimebasedUUIDBase62EntityClass
-EntityClass <|-- SnowflakeIdEntityClass
-EntityClass <|-- TimebasedUUIDEntityClass
-
-KsuidEntityClass --> KsuidEntity: manages
-SnowflakeIdEntityClass --> SnowflakeIdEntity: manages
-TimebasedUUIDEntityClass --> TimebasedUUIDEntity: manages
-
-    style Entity fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    style EntityClass fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    style StringEntity fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style StringEntityClass fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style KsuidEntity fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style KsuidMillisEntity fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style UlidEntity fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style SnowflakeIdEntity fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style TimebasedUUIDEntity fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style TimebasedUUIDBase62Entity fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style KsuidEntityClass fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style SnowflakeIdEntityClass fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style TimebasedUUIDEntityClass fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-```
+![Entity 확장 계층 3](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-03.svg)
 
 ## 주요 파일/클래스 목록
 

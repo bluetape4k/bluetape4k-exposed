@@ -276,61 +276,11 @@ Containers.Postgres
 
 ## Test Infrastructure Structure
 
-```mermaid
-flowchart TD
-    subgraph TestClasses
-        A[AbstractExposedR2dbcTest] --> B[ParameterizedTest]
-        B --> C[ENABLE_DIALECTS_METHOD]
-    end
-
-    subgraph SupportedDBs_R2DBC
-        D[H2 / H2_MYSQL / H2_MARIADB / H2_PSQL<br/>r2dbc-h2]
-        E[MariaDB - r2dbc-mariadb]
-        F[MySQL 8.0 - r2dbc-mysql]
-        G[PostgreSQL - r2dbc-postgresql]
-    end
-
-    subgraph CoroutineUtilities
-        H[suspend withDb]
-        I[suspend withTables]
-        J[suspend withAutoCommit]
-        K[suspend withSchemas]
-    end
-
-    C --> D
-    C --> E
-    C --> F
-    C --> G
-
-    A --> H
-    A --> I
-    A --> J
-
-    classDef testStyle fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    classDef dbStyle fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    classDef coroutineStyle fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-
-    class TestClasses testStyle
-    class SupportedDBs_R2DBC dbStyle
-    class CoroutineUtilities coroutineStyle
-```
+![Test Infrastructure Structure 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-01.svg)
 
 ### JDBC vs R2DBC Test Comparison
 
-```mermaid
-flowchart LR
-    subgraph JDBC_Tests["exposed-jdbc-tests"]
-        J1[withDb] -->|synchronous| J2[JdbcTransaction]
-        J3[withTables] -->|sync/async| J4[withTablesSuspending]
-    end
-    subgraph R2DBC_Tests["exposed-r2dbc-tests"]
-        R1[suspend withDb] -->|coroutine-native| R2[R2dbcTransaction]
-        R3[suspend withTables] -->|Flow streaming| R4[Flow queries]
-    end
-
-    style JDBC_Tests fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style R2DBC_Tests fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-```
+![JDBC vs R2DBC Test Comparison 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-02.svg)
 
 ## Notes
 

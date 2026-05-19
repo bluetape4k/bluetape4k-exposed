@@ -228,185 +228,23 @@ println("Is last page: ${page.isLast}")
 
 Illustrates the relationships among `AuditableLongIdTable`, `UserContext`, `HasIdentifier`, and `ExposedPage`.
 
-```mermaid
-classDiagram
-    direction TB
-    class AuditableLongIdTable {
-        <<abstractTable>>
-        +createdBy: Column~String~
-        +createdAt: Column~Instant~
-        +updatedBy: Column~String~
-        +updatedAt: Column~Instant~
-    }
-    class UserContext {
-        <<object>>
-        +withUser(username): T
-        +currentUser(): String?
-    }
-    class HasIdentifier~ID~ {
-        <<interface>>
-        +id: ID
-    }
-    class ExposedPage~T~ {
-        +content: List~T~
-        +totalElements: Long
-        +pageNumber: Int
-        +pageSize: Int
-    }
-    AuditableLongIdTable --> UserContext : reads current user
-
-    style AuditableLongIdTable fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style UserContext fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-    style HasIdentifier fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style ExposedPage fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-```
+![Core Auditable Structure 1](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-01.svg)
 
 ### Custom Column Type Hierarchy
 
 Compressed, encrypted, and serialized column types are consistently structured around `ColumnWithTransform`.
 
-```mermaid
-classDiagram
-    class ColumnWithTransform {
-<<ExposedCore>>
-+delegate: ColumnType
-+transformer: ColumnTransformer
-}
-class ColumnTransformer {
-<<interface>>
-+wrap(value) T
-+unwrap(value) T
-}
-
-class CompressedBinaryColumnType {
-+compressor: Compressor
-+length: Int
- }
-class CompressedBlobColumnType {
-+compressor: Compressor
-}
-class EncryptedBinaryColumnType {
-+encryptor: Encryptor
-+length: Int
- }
-class EncryptedVarCharColumnType {
-+encryptor: Encryptor
-+colLength: Int
- }
-class BinarySerializedBinaryColumnType {
-+serializer: BinarySerializer
-+length: Int
- }
-class BinarySerializedBlobColumnType {
-+serializer: BinarySerializer
-}
-
-ColumnWithTransform <|-- CompressedBinaryColumnType
-ColumnWithTransform <|-- CompressedBlobColumnType
-ColumnWithTransform <|-- EncryptedBinaryColumnType
-ColumnWithTransform <|-- EncryptedVarCharColumnType
-ColumnWithTransform <|-- BinarySerializedBinaryColumnType
-ColumnWithTransform <|-- BinarySerializedBlobColumnType
-ColumnWithTransform --> ColumnTransformer
-
-    style ColumnWithTransform fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    style ColumnTransformer fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style CompressedBinaryColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style CompressedBlobColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style EncryptedBinaryColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style EncryptedVarCharColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style BinarySerializedBinaryColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style BinarySerializedBlobColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-```
+![Custom Column Type Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-02.svg)
 
 ### IdTable Hierarchy by ID Generation Strategy
 
 Custom `IdTable` implementations that generate IDs on the client side.
 
-```mermaid
-classDiagram
-    class IdTable {
-<<ExposedCore>>
-+id: Column~EntityID~
-+primaryKey: PrimaryKey
-}
-class KsuidTable {
-+id: Column~EntityID~String~~
-+ksuidGenerated()
-}
-class KsuidMillisTable {
-+id: Column~EntityID~String~~
-+ksuidMillisGenerated()
-}
-class UlidTable {
-+id: Column~EntityID~String~~
-+ulidGenerated()
-}
-class SnowflakeIdTable {
-+id: Column~EntityID~Long~~
-+snowflakeGenerated()
-}
-class TimebasedUUIDTable {
-+id: Column~EntityID~UUID~~
-+timebasedGenerated()
-}
-class TimebasedUUIDBase62Table {
-+id: Column~EntityID~String~~
-+timebasedGenerated()
-}
-class SoftDeletedIdTable {
-<<abstract>>
-+isDeleted: Column~Boolean~
-}
-
-IdTable <|-- KsuidTable
-IdTable <|-- KsuidMillisTable
-IdTable <|-- UlidTable
-IdTable <|-- SnowflakeIdTable
-IdTable <|-- TimebasedUUIDTable
-IdTable <|-- TimebasedUUIDBase62Table
-IdTable <|-- SoftDeletedIdTable
-
-    style IdTable fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    style KsuidTable fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style KsuidMillisTable fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style UlidTable fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style SnowflakeIdTable fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style TimebasedUUIDTable fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style TimebasedUUIDBase62Table fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style SoftDeletedIdTable fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-```
+![IdTable Hierarchy by ID Generation Strategy 3](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-03.svg)
 
 ### HasIdentifier and ExposedPage
 
-```mermaid
-classDiagram
-    class HasIdentifier {
-        <<interface>>
-        +id: ID?
-    }
-    class ExposedPage {
-        +content: List~T~
-        +totalCount: Long
-        +pageNumber: Int
-        +pageSize: Int
-        +totalPages: Int
-        +isFirst: Boolean
-        +isLast: Boolean
-        +hasNext: Boolean
-        +hasPrevious: Boolean
-    }
-    class Serializable {
-        <<interface>>
-    }
-
-Serializable <|-- HasIdentifier
-HasIdentifier <.. ExposedPage: applicable to content items
-
-    style HasIdentifier fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style ExposedPage fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style Serializable fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-```
+![HasIdentifier and ExposedPage 4](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-04.svg)
 
 ## Key Files and Classes
 

@@ -286,58 +286,7 @@ Containers.Postgres
 
 ## Test Infrastructure Structure
 
-```mermaid
-flowchart TD
-    subgraph Test_Classes
-        A[AbstractExposedTest] --> B[ParameterizedTest]
-        B --> C[ENABLE_DIALECTS_METHOD]
-    end
-
-    subgraph Supported_DBs
-        D[H2 / H2_MYSQL / H2_MARIADB / H2_PSQL]
-        E[MariaDB - Testcontainers]
-        F[MySQL 5.7 / 8.0 - Testcontainers]
-        G[PostgreSQL - Testcontainers]
-    end
-
-    subgraph Utility_Functions
-        H[withDb - DB connection only]
-        I[withTables - auto create/drop tables]
-        J[withTablesSuspending - Coroutines version]
-        K[withSchemas]
-        L[withAutoCommit]
-    end
-
-    C --> D
-    C --> E
-    C --> F
-    C --> G
-
-    A --> H
-    A --> I
-    A --> J
-
-    subgraph Shared_Schemas
-        M[MovieSchema]
-        N[BoardSchema]
-        O[BlogSchema]
-        P[PersonSchema]
-        Q[OrderSchema]
-    end
-
-    I --> M
-    I --> N
-
-    classDef testStyle fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    classDef dbStyle fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    classDef utilStyle fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    classDef schemaStyle fill:#FCE4EC,stroke:#F48FB1,color:#AD1457
-
-    class Test_Classes testStyle
-    class Supported_DBs dbStyle
-    class Utility_Functions utilStyle
-    class Shared_Schemas schemaStyle
-```
+![Test Infrastructure Structure 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-diagram-01.svg)
 
 ### Test execution flow
 

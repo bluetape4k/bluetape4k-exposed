@@ -127,110 +127,13 @@ val nearCacheConfig = RedisCacheConfig.readOnly(
 
 ## Architecture Overview
 
-```mermaid
-classDiagram
-    direction TB
-    class RedissonR2dbcRepository~E~ {
-        <<abstractSuspend>>
-        -nearCache: RedissonNearCache
-        +findByIdOrNull(id): E?
-        +findAll(): Flow~E~
-        +save(entity): E
-    }
-    class RedissonNearCache~V~ {
-        +get(key): V?
-        +put(key, value)
-        +invalidate(key)
-    }
-    RedissonR2dbcRepository --> RedissonNearCache : RLocalCachedMap
-
-    style RedissonR2dbcRepository fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-    style RedissonNearCache fill:#FCE4EC,stroke:#F48FB1,color:#AD1457
-```
+![Architecture Overview 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-01.svg)
 
 ## Class Diagrams
 
 ### R2DBC Redisson Repository Hierarchy
 
-```mermaid
-classDiagram
-    class R2dbcRedissonRepository~ID_E~ {
-<<interface>>
-+cacheName: String
-+table: IdTable~ID~
-+cache: RMap~ID, E~
-+extractId(entity: E): ID
-+toEntity(ResultRow): E [suspend]
-+exists(id: ID): Boolean [suspend]
-+get(id: ID): E? [suspend]
-+getAll(ids, batchSize): List~E~ [suspend]
-+findByIdFromDb(id: ID): E? [suspend]
-+findAllFromDb(ids): List~E~ [suspend]
-+findAll(...): List~E~ [suspend]
-+put(entity: E): Boolean? [suspend]
-+putAll(entities, batchSize) [suspend]
-+invalidate(vararg ids): Long [suspend]
-+invalidateAll(): Boolean [suspend]
-+invalidateByPattern(patterns, count): Long [suspend]
-}
-
-class AbstractR2dbcRedissonRepository~ID_E~ {
-<<abstract>>
-+redissonClient: RedissonClient
-+cacheName: String
-#config: RedissonCacheConfig
-#scope: CoroutineScope
-#r2dbcEntityMapLoader: R2dbcEntityMapLoader~ID, E~
-#r2dbcEntityMapWriter: R2dbcEntityMapWriter~ID, E~ ?
-#createLocalCacheMap(): RLocalCachedMap
-#createMapCache(): RMapCache
-#UpdateStatement.updateEntity(entity)
-#BatchInsertStatement.insertEntity(entity)
-+findAll(...): List~E~ [suspend]
-+getAll(ids, batchSize): List~E~ [suspend]
-}
-
-class R2dbcEntityMapLoader~ID_E~ {
-<<abstract>>
-+load(key: ID): CompletableFuture~E~
-+loadAllKeys(): AsyncIterator~ID~
-}
-
-class R2dbcEntityMapWriter~ID_E~ {
-<<abstract>>
-+write(map: Map~ID, E~): CompletableFuture~Void~
-+delete(keys: Collection~Any~): CompletableFuture~Void~
-}
-
-class R2dbcExposedEntityMapLoader~ID_E~ {
--entityTable: IdTable~ID~
--scope: CoroutineScope
--batchSize: Int
--toEntity: suspend ResultRow.() -> E
- }
-
-class R2dbcExposedEntityMapWriter~ID_E~ {
--entityTable: IdTable~ID~
--scope: CoroutineScope
--updateBody: (UpdateStatement, E) -> Unit
--batchInsertBody: BatchInsertStatement.(E) -> Unit
--deleteFromDBOnInvalidate: Boolean
--writeMode: WriteMode
-}
-
-R2dbcRedissonRepository~ID_E~ <|.. AbstractR2dbcRedissonRepository~ID_E~
-AbstractR2dbcRedissonRepository~ID_E~ --> R2dbcEntityMapLoader~ID_E~: r2dbcEntityMapLoader
-AbstractR2dbcRedissonRepository~ID_E~ --> R2dbcEntityMapWriter~ID_E~: r2dbcEntityMapWriter (nullable)
-R2dbcEntityMapLoader~ID_E~ <|-- R2dbcExposedEntityMapLoader~ID_E~
-R2dbcEntityMapWriter~ID_E~ <|-- R2dbcExposedEntityMapWriter~ID_E~
-
-    style R2dbcRedissonRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style AbstractR2dbcRedissonRepository fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-    style R2dbcEntityMapLoader fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style R2dbcEntityMapWriter fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style R2dbcExposedEntityMapLoader fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style R2dbcExposedEntityMapWriter fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-```
+![R2DBC Redisson Repository Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-02.svg)
 
 ## Cache Patterns
 

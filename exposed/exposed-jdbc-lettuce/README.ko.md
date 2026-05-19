@@ -100,34 +100,7 @@ suspend fun example(repo: UserSuspendedRepository) {
 
 ## 아키텍처 개요
 
-```mermaid
-classDiagram
-    direction TB
-    class LettuceJdbcRepository~E~ {
-        <<abstract>>
-        -nearCache: LettuceNearCache
-        +findByIdOrNull(id): E?
-        +save(entity): E
-        +deleteById(id): Int
-    }
-    class LettuceNearCache~V~ {
-        +get(key): V?
-        +put(key, value)
-        +invalidate(key)
-    }
-    class ReadWriteThrough {
-        <<strategy>>
-        DB읽기 → 캐시 저장
-        캐시 먼저 조회 → Miss시 DB
-    }
-
-    LettuceJdbcRepository --> LettuceNearCache : L1/L2 cache
-    LettuceJdbcRepository --> ReadWriteThrough : pattern
-
-    style LettuceJdbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    style LettuceNearCache fill:#FCE4EC,stroke:#F48FB1,color:#AD1457
-    style ReadWriteThrough fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-```
+![아키텍처 개요 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-ko-diagram-01.svg)
 
 ```mermaid
 sequenceDiagram

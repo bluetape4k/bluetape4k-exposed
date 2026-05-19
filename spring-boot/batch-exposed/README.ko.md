@@ -10,66 +10,7 @@ Range Partitioner, Spring Boot Auto-Configuration을 제공합니다.
 
 ## 아키텍처
 
-```mermaid
-classDiagram
-    class ExposedKeysetItemReader {
-        -database: Database
-        -pageSize: Int
-        -column: ExpressionWithColumnType~Long~
-        -table: Table
-        -rowMapper: (ResultRow) -> T
-        +open(executionContext)
-        +read(): T?
-        +update(executionContext)
-        +close()
-        +forEntityId()$
-    }
-    class ExposedItemWriter {
-        -database: Database
-        -table: Table
-        -mapper: (InsertStatement, T) -> Unit
-        +write(chunk)
-    }
-    class ExposedUpdateItemWriter {
-        -database: Database
-        -table: Table
-        -idExtractor: (T) -> Any
-        -mapper: (UpdateStatement, T) -> Unit
-        +write(chunk)
-    }
-    class ExposedUpsertItemWriter {
-        -database: Database
-        -table: Table
-        -mapper: (UpsertStatement, T) -> Unit
-        +write(chunk)
-    }
-    class ExposedRangePartitioner {
-        -table: IdTable~Long~
-        -gridSize: Int
-        -database: Database
-        +partition(gridSize): Map~String, ExecutionContext~
-        +forEntityId()$
-    }
-    class ExposedBatchAutoConfiguration {
-        +batchPartitionTaskExecutor(): TaskExecutor
-    }
-
-    ExposedKeysetItemReader ..|> ItemStreamReader
-    ExposedItemWriter ..|> ItemWriter
-    ExposedUpdateItemWriter ..|> ItemWriter
-    ExposedUpsertItemWriter ..|> ItemWriter
-    ExposedRangePartitioner ..|> Partitioner
-
-    style ExposedKeysetItemReader fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style ExposedItemWriter fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style ExposedUpdateItemWriter fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style ExposedUpsertItemWriter fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style ExposedRangePartitioner fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-    style ExposedBatchAutoConfiguration fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    style ItemStreamReader fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style ItemWriter fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style Partitioner fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-```
+![아키텍처 1](../../docs/images/readme-diagrams/spring-boot-batch-exposed-ko-diagram-01.svg)
 
 ```mermaid
 sequenceDiagram

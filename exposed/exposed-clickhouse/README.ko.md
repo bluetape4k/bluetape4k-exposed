@@ -6,35 +6,7 @@ ClickHouse JDBC를 위한 Kotlin/Exposed 다이얼렉트 — 타입 안전 DSL, 
 
 ## 아키텍처
 
-```mermaid
-graph LR
-    subgraph exposed-clickhouse
-        DB[ClickHouseDatabase]
-        TBL[ClickHouseTable]
-        ENG[ClickHouseEngine DSL]
-        TYPES[Column Types]
-        FUNCS[날짜 및 집계 함수]
-        EXT[ClickHouseExtensions]
-    end
-
-    DB --> exposed-core
-    DB --> exposed-jdbc
-    DB --> clickhouse-jdbc
-    TBL --> exposed-core
-    ENG --> TBL
-    TYPES --> exposed-core
-    FUNCS --> exposed-core
-    EXT --> bluetape4k-coroutines
-    DB --> bluetape4k-logging
-
-    subgraph 테스트
-        bluetape4k-junit5
-        bluetape4k-testcontainers
-    end
-
-    exposed-clickhouse -.-> bluetape4k-junit5
-    exposed-clickhouse -.-> bluetape4k-testcontainers
-```
+![아키텍처 1](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-ko-diagram-01.svg)
 
 ## 주요 기능
 
@@ -181,16 +153,7 @@ transaction(database) {
 
 ## DDL 생성 흐름
 
-```mermaid
-flowchart TD
-    A[ClickHouseTable.createStatement] --> B[super.createStatement\nExposed 표준 DDL]
-    B --> C{필터: CREATE TABLE만}
-    C -->|DROP TABLE / 기타 DDL| X[버림]
-    C -->|CREATE TABLE 구문| D[sanitizeForClickHouse]
-    D --> E[PRIMARY KEY / CONSTRAINT /\nREFERENCES / NOT NULL / NULL /\nCOMMENT ON 제거]
-    E --> F[engine.toClause 추가\nENGINE = MergeTree\nORDER BY ...\nPARTITION BY ...]
-    F --> G[최종 ClickHouse DDL]
-```
+![DDL 생성 흐름 2](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-ko-diagram-02.svg)
 
 ## 주의사항
 

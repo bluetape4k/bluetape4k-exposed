@@ -216,67 +216,11 @@ object SensitiveData: IntIdTable("sensitive_data") {
 
 ### Column Type Structure (Summary)
 
-```mermaid
-classDiagram
-    direction LR
-    class TinkEncryptedColumnType~T~ {
-        <<ColumnType>>
-        -aead: Aead
-        +valueFromDB(value): T
-        +valueToDB(value): ByteArray
-    }
-    class TableExtensions {
-        <<extensionFunctions>>
-        +Table.tinkEncrypted~T~(name): Column~T~
-    }
-    TableExtensions --> TinkEncryptedColumnType : creates
-
-    style TinkEncryptedColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style TableExtensions fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-```
+![Column Type Structure (Summary) 1](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-01.svg)
 
 ## Class Diagram
 
-```mermaid
-classDiagram
-    class ColumnWithTransform~Exposed_Entity~ {
-        <<Exposed>>
-    }
-    class ColumnTransformer~Exposed_Entity~ {
-        <<interface>>
-        +unwrap(value: Entity): Exposed
-        +wrap(value: Exposed): Entity
-    }
-
-    class TinkAeadVarCharColumnType {
-        -encryptor: TinkAead
-        +delegate: VarCharColumnType
-    }
-    class TinkAeadBinaryColumnType {
-        -encryptor: TinkAead
-        +delegate: BinaryColumnType
-    }
-    class TinkDaeadVarCharColumnType {
-        -encryptor: TinkDeterministicAead
-        +delegate: VarCharColumnType
-    }
-    class TinkDaeadBinaryColumnType {
-        -encryptor: TinkDeterministicAead
-        +delegate: BinaryColumnType
-    }
-
-    ColumnWithTransform <|-- TinkAeadVarCharColumnType
-    ColumnWithTransform <|-- TinkAeadBinaryColumnType
-    ColumnWithTransform <|-- TinkDaeadVarCharColumnType
-    ColumnWithTransform <|-- TinkDaeadBinaryColumnType
-
-    style ColumnWithTransform fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    style ColumnTransformer fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style TinkAeadVarCharColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style TinkAeadBinaryColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style TinkDaeadVarCharColumnType fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-    style TinkDaeadBinaryColumnType fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-```
+![Class Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-02.svg)
 
 ## Key Files / Classes
 

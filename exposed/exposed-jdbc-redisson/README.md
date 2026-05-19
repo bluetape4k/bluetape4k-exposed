@@ -221,110 +221,13 @@ transaction {
 
 ## Architecture Overview
 
-```mermaid
-classDiagram
-    direction TB
-    class RedissonJdbcRepository~E~ {
-        <<abstract>>
-        -nearCache: RedissonNearCache
-        +findByIdOrNull(id): E?
-        +save(entity): E
-    }
-    class RedissonNearCache~V~ {
-        +get(key): V?
-        +put(key, value)
-        +invalidate(key)
-    }
-    RedissonJdbcRepository --> RedissonNearCache : RLocalCachedMap
-
-    style RedissonJdbcRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    style RedissonNearCache fill:#FCE4EC,stroke:#F48FB1,color:#AD1457
-```
+![Architecture Overview 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-01.svg)
 
 ## Class Diagrams
 
 ### Synchronous Repository Hierarchy
 
-```mermaid
-classDiagram
-    class JdbcRedissonRepository~ID_E~ {
-        <<interface>>
-        +cacheName: String
-        +table: IdTable~ID~
-        +cache: RMap~ID, E~
-        +extractId(entity: E): ID
-        +toEntity(ResultRow): E
-        +exists(id: ID): Boolean
-        +get(id: ID): E?
-        +getAll(ids, batchSize): List~E~
-        +findByIdFromDb(id: ID): E?
-        +findAllFromDb(ids): List~E~
-        +findAll(limit, offset, sortBy, where): List~E~
-        +put(entity: E)
-        +putAll(entities, batchSize)
-        +invalidate(vararg ids): Long
-        +invalidateAll()
-        +invalidateByPattern(patterns, count): Long
-    }
-
-    class AbstractJdbcRedissonRepository~ID_E~ {
-        <<abstract>>
-        +redissonClient: RedissonClient
-        +cacheName: String
-        #config: RedissonCacheConfig
-        #mapLoader: EntityMapLoader~ID, E~
-        #mapWriter: EntityMapWriter~ID, E~?
-        #createLocalCacheMap(): RLocalCachedMap
-        #createMapCache(): RMapCache
-        #UpdateStatement.updateEntity(entity)
-        #BatchInsertStatement.insertEntity(entity)
-        +findAll(...): List~E~
-        +getAll(ids, batchSize): List~E~
-    }
-
-    class EntityMapLoader~ID_E~ {
-        <<abstract>>
-        +load(key: ID): E?
-        +loadAllKeys(): Iterable~ID~?
-    }
-
-    class EntityMapWriter~ID_E~ {
-        <<abstract>>
-        +write(map: Map~ID, E~)
-        +delete(keys: Collection~Any~)
-    }
-
-    class ExposedEntityMapLoader~ID_E~ {
-        -entityTable: IdTable~ID~
-        -batchSize: Int
-        -toEntity: ResultRow.() -> E
-    }
-
-    class ExposedEntityMapWriter~ID_E~ {
-        -entityTable: IdTable~ID~
-        -updateBody: (UpdateStatement, E) -> Unit
-        -batchInsertBody: BatchInsertStatement.(E) -> Unit
-        -deleteFromDBOnInvalidate: Boolean
-        -writeMode: WriteMode
-    }
-
-    JdbcRedissonRepository~ID_E~ <|.. AbstractJdbcRedissonRepository~ID_E~
-    AbstractJdbcRedissonRepository~ID_E~ --> EntityMapLoader~ID_E~ : mapLoader
-    AbstractJdbcRedissonRepository~ID_E~ --> EntityMapWriter~ID_E~ : mapWriter (nullable)
-    EntityMapLoader~ID_E~ <|-- ExposedEntityMapLoader~ID_E~
-    EntityMapWriter~ID_E~ <|-- ExposedEntityMapWriter~ID_E~
-
-    style JdbcRedissonRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style AbstractJdbcRedissonRepository fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    style EntityMapLoader fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style EntityMapWriter fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style ExposedEntityMapLoader fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style ExposedEntityMapWriter fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-
-
-### Coroutines (Suspend) Repository Hierarchy
-
-```mermaid
+![Synchronous Repository Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-02.svg)mermaid
 classDiagram
     class SuspendedJdbcRedissonRepository~ID_E~ {
         <<interface>>

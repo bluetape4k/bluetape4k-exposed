@@ -275,61 +275,11 @@ Containers.Postgres
 
 ## 테스트 인프라 구조
 
-```mermaid
-flowchart TD
-    subgraph 테스트_클래스
-        A[AbstractExposedR2dbcTest] --> B[ParameterizedTest]
-        B --> C[ENABLE_DIALECTS_METHOD]
-    end
-
-    subgraph 지원_DB_R2DBC
-        D[H2 / H2_MYSQL / H2_MARIADB / H2_PSQL<br/>r2dbc-h2]
-        E[MariaDB - r2dbc-mariadb]
-        F[MySQL 8.0 - r2dbc-mysql]
-        G[PostgreSQL - r2dbc-postgresql]
-    end
-
-    subgraph Coroutine_유틸
-        H[suspend withDb]
-        I[suspend withTables]
-        J[suspend withAutoCommit]
-        K[suspend withSchemas]
-    end
-
-    C --> D
-    C --> E
-    C --> F
-    C --> G
-
-    A --> H
-    A --> I
-    A --> J
-
-    classDef testStyle fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    classDef dbStyle fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    classDef coroutineStyle fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-
-    class 테스트_클래스 testStyle
-    class 지원_DB_R2DBC dbStyle
-    class Coroutine_유틸 coroutineStyle
-```
+![테스트 인프라 구조 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-ko-diagram-01.svg)
 
 ### JDBC vs R2DBC 테스트 비교
 
-```mermaid
-flowchart LR
-    subgraph JDBC_Tests["exposed-jdbc-tests"]
-        J1[withDb] -->|동기| J2[JdbcTransaction]
-        J3[withTables] -->|동기/비동기| J4[withTablesSuspending]
-    end
-    subgraph R2DBC_Tests["exposed-r2dbc-tests"]
-        R1[suspend withDb] -->|코루틴 네이티브| R2[R2dbcTransaction]
-        R3[suspend withTables] -->|Flow 스트리밍| R4[Flow 쿼리]
-    end
-
-    style JDBC_Tests fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style R2DBC_Tests fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-```
+![JDBC vs R2DBC 테스트 비교 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-ko-diagram-02.svg)
 
 ## 참고 사항
 

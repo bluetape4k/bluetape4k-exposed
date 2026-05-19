@@ -28,14 +28,7 @@ The primary comparison is **JDBC vs R2DBC** for each database, split into:
 
 ## Graph
 
-```mermaid
-xychart-beta
-    title "Benchmark comparison focus"
-    x-axis [H2, PostgreSQL, MySQL]
-    y-axis "Relative emphasis" 0 --> 100
-    bar [70, 100, 95]
-    bar [70, 100, 95]
-```
+![Graph 1](../../../docs/images/readme-diagrams/utils-batch-benchmark-diagram-01.svg)
 
 ## Notes
 

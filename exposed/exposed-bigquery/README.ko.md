@@ -159,50 +159,7 @@ BigQuery REST API 응답 → Kotlin 타입 변환:
 
 ## 아키텍처 다이어그램
 
-```mermaid
-classDiagram
-    class BigQueryContext {
-        +bigquery: Bigquery
-        +projectId: String
-        +datasetId: String
-        +sqlGenDb: Database
-        +create(bigquery, projectId, datasetId): BigQueryContext
-        +runRawQuery(sql): QueryResponse
-        +runQuery(query): QueryResponse
-        +Query.withBigQuery(): BigQueryQueryExecutor
-        +Table.execInsert(body): QueryResponse
-        +Table.execUpdate(where, body): QueryResponse
-        +Table.execDelete(where): QueryResponse
-        +Table.execCreateTable()
-        +Table.execDeleteAll(): QueryResponse
-    }
-    class BigQueryQueryExecutor {
-        +toList(): List~BigQueryResultRow~
-        +toListSuspending(): List~BigQueryResultRow~
-        +toFlow(): Flow~BigQueryResultRow~
-        +single(): BigQueryResultRow
-        +singleOrNull(): BigQueryResultRow?
-        +firstOrNull(): BigQueryResultRow?
-    }
-    class BigQueryResultRow {
-        +get(column): T
-        +get(name): Any?
-    }
-    class BigQueryDialect {
-        +dialectName: String = "BigQuery"
-        +supportsColumnTypeChange: Boolean = false
-        +supportsWindowFrameGroupsMode: Boolean = true
-    }
-
-    BigQueryContext ..> BigQueryQueryExecutor : creates
-    BigQueryQueryExecutor ..> BigQueryResultRow : returns
-    BigQueryDialect --|> PostgreSQLDialect
-
-    style BigQueryContext fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-    style BigQueryQueryExecutor fill:#E8F5E9,stroke:#A5D6A7,color:#2E7D32
-    style BigQueryResultRow fill:#FFFDE7,stroke:#FFF176,color:#F57F17
-    style BigQueryDialect fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-```
+![아키텍처 다이어그램 1](../../docs/images/readme-diagrams/exposed-exposed-bigquery-ko-diagram-01.svg)
 
 ### 쿼리 실행 흐름
 

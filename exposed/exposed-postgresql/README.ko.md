@@ -6,73 +6,11 @@ PostgreSQL 전용 Kotlin Exposed 확장 모듈입니다. PostGIS 공간 데이�
 
 ## UML
 
-```mermaid
-flowchart LR
-    Core["Exposed PostgreSQL Module"]
-    PostGIS["postgis<br/>Geometry types + spatial ops"]
-    Pgvector["pgvector<br/>Vector type + similarity ops"]
-    Range["tsrange / tstzrange<br/>Range column types"]
-    Query["Exposed DSL / SQL functions"]
-    PG[("PostgreSQL")]
-
-    Core --> PostGIS
-    Core --> Pgvector
-    Core --> Range
-    PostGIS --> Query
-    Pgvector --> Query
-    Range --> Query
-    Query --> PG
-
-    classDef coreStyle fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-    classDef featureStyle fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    classDef queryStyle fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-    classDef dbStyle fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-
-    class Core coreStyle
-    class PostGIS featureStyle
-    class Pgvector featureStyle
-    class Range featureStyle
-    class Query queryStyle
-    class PG dbStyle
-```
+![UML 1](../../docs/images/readme-diagrams/exposed-exposed-postgresql-ko-diagram-01.svg)
 
 ## 컬럼 타입 다이어그램
 
-```mermaid
-classDiagram
-    direction TB
-    class GeoGeometryColumnType {
-        <<ColumnType>>
-        +valueFromDB(value): PGgeometry
-        +valueToDB(value): PGobject
-    }
-    class PgvectorColumnType {
-        <<ColumnType>>
-        +valueFromDB(value): FloatArray
-        +valueToDB(value): PGobject
-    }
-    class TstzrangeColumnType {
-        <<ColumnType>>
-        +valueFromDB(value): ClosedRange~Instant~
-        +valueToDB(value): PGobject
-    }
-    class PostGISExtensions {
-        <<extensionFunctions>>
-        +Table.geoGeometry(name): Column~PGgeometry~
-        +Table.geoPoint(name): Column~PGgeometry~
-        +Table.geoPolygon(name): Column~PGgeometry~
-        +Table.pgvector(name, dim): Column~FloatArray~
-        +Table.tstzrange(name): Column~ClosedRange~Instant~~
-    }
-    PostGISExtensions --> GeoGeometryColumnType : creates
-    PostGISExtensions --> PgvectorColumnType : creates
-    PostGISExtensions --> TstzrangeColumnType : creates
-
-    style GeoGeometryColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style PgvectorColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style TstzrangeColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style PostGISExtensions fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-```
+![컬럼 타입 다이어그램 2](../../docs/images/readme-diagrams/exposed-exposed-postgresql-ko-diagram-02.svg)
 
 ## 주요 기능
 

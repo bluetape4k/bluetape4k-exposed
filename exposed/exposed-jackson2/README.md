@@ -107,81 +107,11 @@ val metadata: ProductMetadata? = resultRow.getJacksonOrNull(Products.metadata)
 
 ### Column Type Structure (Summary)
 
-```mermaid
-classDiagram
-    direction LR
-    class JacksonColumnType~T~ {
-        <<ColumnType>>
-        -objectMapper: ObjectMapper
-        +valueFromDB(value): T
-        +valueToDB(value): Any
-    }
-    class JacksonBColumnType~T~ {
-        <<ColumnTypeJSONB>>
-        -objectMapper: ObjectMapper
-        +valueFromDB(value): T
-        +valueToDB(value): PGobject
-    }
-    class TableExtensions {
-        <<extensionFunctions>>
-        +Table.jackson~T~(name): Column~T~
-        +Table.jacksonb~T~(name): Column~T~
-    }
-    JacksonColumnType <|-- JacksonBColumnType
-    TableExtensions --> JacksonColumnType : creates
-    TableExtensions --> JacksonBColumnType : creates
-
-    style JacksonColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style JacksonBColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style TableExtensions fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-```
+![Column Type Structure (Summary) 1](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-01.svg)
 
 ## Class Diagram
 
-```mermaid
-classDiagram
-    class ColumnType~T~ {
-        <<Exposed>>
-        +sqlType(): String
-        +valueFromDB(value: Any): T?
-        +notNullValueToDB(value: T): Any
-    }
-    class JsonColumnMarker {
-        <<interfaceExposed>>
-        +usesBinaryFormat: Boolean
-        +needsBinaryFormatCast: Boolean
-    }
-
-    class JacksonColumnType~T~ {
-        +serilaize: (T) -> String
-        +deserialize: (String) -> T
-        +sqlType(): String
-        +valueFromDB(value: Any): T?
-        +notNullValueToDB(value: T): Any
-    }
-    class JacksonBColumnType~T~ {
-        +usesBinaryFormat: Boolean = true
-        +sqlType(): String
-        +parameterMarker(value: T?): String
-    }
-
-    class JacksonSerializer {
-        <<bluetape4k_jackson>>
-        +serializeAsString(value: T): String
-        +deserializeFromString(json: String): T?
-    }
-
-    ColumnType <|-- JacksonColumnType
-    JsonColumnMarker <|.. JacksonColumnType
-    JacksonColumnType <|-- JacksonBColumnType
-    JacksonColumnType ..> JacksonSerializer : uses
-
-    style ColumnType fill:#ECEFF1,stroke:#B0BEC5,color:#37474F
-    style JsonColumnMarker fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style JacksonColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style JacksonBColumnType fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style JacksonSerializer fill:#FFF3E0,stroke:#FFCC80,color:#E65100
-```
+![Class Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-02.svg)
 
 ## Serialization / Deserialization Sequence Diagrams
 

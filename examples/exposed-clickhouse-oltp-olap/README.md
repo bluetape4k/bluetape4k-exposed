@@ -8,12 +8,7 @@ queries with ClickHouse-native functions.
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    Client["Client / Service"] -->|insert order| PG[("PostgreSQL OLTP\nOrders")]
-    PG -->|batch forward| CH[("ClickHouse OLAP\nOrderEvents")]
-    CH -->|aggregate| Analytics["Analytics Result\n(count, uniqExact, quantile, argMax)"]
-```
+![Architecture 1](../../docs/images/readme-diagrams/examples-exposed-clickhouse-oltp-olap-diagram-01.svg)
 
 ## Components
 
