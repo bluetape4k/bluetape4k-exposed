@@ -60,14 +60,14 @@ object Products : LongIdTable("webflux_products") {
 
 ```kotlin
 data class ProductDto(
-    override val id: Long? = null,
+    val id: Long? = null,
     val name: String,
     val price: java.math.BigDecimal,
     val stock: Int = 0,
-) : HasIdentifier<Long>
+) : java.io.Serializable
 ```
 
-`HasIdentifier<Long>` 인터페이스를 구현하여 Repository에서 ID 추출이 가능합니다.
+Repository는 `extractId(entity)`를 통해 ID를 추출합니다.
 
 ## Repository
 

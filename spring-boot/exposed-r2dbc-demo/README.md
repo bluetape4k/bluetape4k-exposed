@@ -60,14 +60,14 @@ object Products : LongIdTable("webflux_products") {
 
 ```kotlin
 data class ProductDto(
-    override val id: Long? = null,
+    val id: Long? = null,
     val name: String,
     val price: java.math.BigDecimal,
     val stock: Int = 0,
-) : HasIdentifier<Long>
+) : java.io.Serializable
 ```
 
-Implements `HasIdentifier<Long>` so the Repository can extract the ID.
+The repository extracts the ID through `extractId(entity)`.
 
 ## Repository
 

@@ -37,20 +37,20 @@ dependencies {
 Extend `AbstractR2dbcRedissonRepository` to implement an async cache Repository.
 
 ```kotlin
-import io.bluetape4k.exposed.core.HasIdentifier
 import io.bluetape4k.exposed.r2dbc.redisson.repository.AbstractR2dbcRedissonRepository
-import io.bluetape4k.redis.redisson.cache.RedisCacheConfig
+import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.redisson.api.RedissonClient
 
 // Entity (must implement java.io.Serializable)
 data class UserRecord(
-    override val id: Long,
+    val id: Long,
     val name: String,
     val email: String,
-): HasIdentifier<Long>, java.io.Serializable
+): java.io.Serializable
 
 object UserTable: LongIdTable("users") {
     val name = varchar("name", 100)
@@ -59,13 +59,14 @@ object UserTable: LongIdTable("users") {
 
 class UserR2dbcRedissonRepository(
     redissonClient: RedissonClient,
-    config: RedisCacheConfig,
-): AbstractR2dbcRedissonRepository<Long, UserTable, UserRecord>(
+    config: RedissonCacheConfig,
+): AbstractR2dbcRedissonRepository<Long, UserRecord>(
     redissonClient = redissonClient,
-    cacheName = "users",
     config = config,
 ) {
-    override val entityTable = UserTable
+    override val table = UserTable
+
+    override fun extractId(entity: UserRecord): Long = entity.id
 
     override suspend fun ResultRow.toEntity() = UserRecord(
         id    = this[UserTable.id].value,
@@ -78,10 +79,15 @@ class UserR2dbcRedissonRepository(
         this[UserTable.name]  = entity.name
         this[UserTable.email] = entity.email
     }
+
+    override fun BatchInsertStatement.insertEntity(entity: UserRecord) {
+        this[UserTable.name]  = entity.name
+        this[UserTable.email] = entity.email
+    }
 }
 
 // Usage (all methods are suspend)
-val repo = UserR2dbcRedissonRepository(redissonClient, RedisCacheConfig.readOnly())
+val repo = UserR2dbcRedissonRepository(redissonClient, RedissonCacheConfig.readOnly())
 
 // Retrieve from cache (auto-loads from DB on miss)
 val user = repo.get(1L)
@@ -105,21 +111,21 @@ repo.invalidateByPattern("user:*")
 ### 2. Cache pattern configuration
 
 ```kotlin
-import io.bluetape4k.redis.redisson.cache.RedisCacheConfig
+import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 
 // Read-Through Only
-val readOnlyConfig = RedisCacheConfig.readOnly(
+val readOnlyConfig = RedissonCacheConfig.readOnly(
     ttl = Duration.ofMinutes(30),
 )
 
 // Read-Through + Write-Through
-val readWriteConfig = RedisCacheConfig.readWrite(
+val readWriteConfig = RedissonCacheConfig.readWrite(
     ttl = Duration.ofMinutes(30),
     writeMode = WriteMode.WRITE_THROUGH,
 )
 
 // Enable Near Cache (Local + Redis two-tier)
-val nearCacheConfig = RedisCacheConfig.readOnly(
+val nearCacheConfig = RedissonCacheConfig.readOnly(
     ttl = Duration.ofMinutes(30),
     nearCacheEnabled = true,
 )
@@ -159,7 +165,7 @@ On `put()`, immediately returns and then `R2dbcExposedEntityMapWriter` asynchron
 
 | Method                                  | Description                                                |
 |-----------------------------------------|------------------------------------------------------------|
-| `exists(id)`                            | Check ID existence in cache (suspend)                      |
+| `containsKey(id)`                            | Check ID existence in cache (suspend)                      |
 | `get(id)`                               | Retrieve entity from cache, load from DB on miss (suspend) |
 | `getAll(ids, batchSize)`                | Batch retrieve from cache (suspend)                        |
 | `findByIdFromDb(id)`                    | Bypass cache, query DB directly (suspend)                  |
@@ -171,18 +177,18 @@ On `put()`, immediately returns and then `R2dbcExposedEntityMapWriter` asynchron
 | `invalidateAll()`                       | Clear all cache entries (suspend)                          |
 | `invalidateByPattern(pattern, count)`   | Remove cache entries matching a pattern (suspend)          |
 
-## Cache Configuration Constants (`RedisCacheConfig`)
+## Cache Configuration Constants (`RedissonCacheConfig`)
 
 Commonly used cache mode constants are provided as named constants.
 
 | Constant                                              | Description                      |
 |-------------------------------------------------------|----------------------------------|
-| `RedisCacheConfig.READ_ONLY`                          | Read-Through only (remote cache) |
-| `RedisCacheConfig.READ_ONLY_WITH_NEAR_CACHE`          | Read-Through + Near Cache        |
-| `RedisCacheConfig.READ_WRITE_THROUGH`                 | Read-Through + Write-Through     |
-| `RedisCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE` | Read-Write-Through + Near Cache  |
-| `RedisCacheConfig.WRITE_BEHIND`                       | Write-Behind (remote cache)      |
-| `RedisCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE`       | Write-Behind + Near Cache        |
+| `RedissonCacheConfig.READ_ONLY`                          | Read-Through only (remote cache) |
+| `RedissonCacheConfig.READ_ONLY_WITH_NEAR_CACHE`          | Read-Through + Near Cache        |
+| `RedissonCacheConfig.READ_WRITE_THROUGH`                 | Read-Through + Write-Through     |
+| `RedissonCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE` | Read-Write-Through + Near Cache  |
+| `RedissonCacheConfig.WRITE_BEHIND`                       | Write-Behind (remote cache)      |
+| `RedissonCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE`       | Write-Behind + Near Cache        |
 
 ## Key Files and Classes
 

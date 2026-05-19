@@ -33,21 +33,21 @@ dependencies {
 `AbstractJdbcRedissonRepository`를 상속하여 동기 방식의 캐시 Repository를 구현합니다.
 
 ```kotlin
-import io.bluetape4k.exposed.core.HasIdentifier
 import io.bluetape4k.exposed.redisson.repository.AbstractJdbcRedissonRepository
-import io.bluetape4k.redis.redisson.cache.RedisCacheConfig
+import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.jetbrains.exposed.v1.jdbc.update
 import org.redisson.api.RedissonClient
 
 // 엔티티 (java.io.Serializable 필수)
 data class UserRecord(
-    override val id: Long,
+    val id: Long,
     val name: String,
     val email: String,
-): HasIdentifier<Long>, java.io.Serializable
+): java.io.Serializable
 
 object UserTable: LongIdTable("users") {
     val name = varchar("name", 100)
@@ -56,13 +56,14 @@ object UserTable: LongIdTable("users") {
 
 class UserRedissonRepository(
     redissonClient: RedissonClient,
-    config: RedisCacheConfig,
-): AbstractJdbcRedissonRepository<Long, UserTable, UserRecord>(
+    config: RedissonCacheConfig,
+): AbstractJdbcRedissonRepository<Long, UserRecord>(
     redissonClient = redissonClient,
-    cacheName = "users",
     config = config,
 ) {
-    override val entityTable = UserTable
+    override val table = UserTable
+
+    override fun extractId(entity: UserRecord): Long = entity.id
 
     override fun ResultRow.toEntity() = UserRecord(
         id    = this[UserTable.id].value,
@@ -75,16 +76,21 @@ class UserRedissonRepository(
         this[UserTable.name]  = entity.name
         this[UserTable.email] = entity.email
     }
+
+    override fun BatchInsertStatement.insertEntity(entity: UserRecord) {
+        this[UserTable.name]  = entity.name
+        this[UserTable.email] = entity.email
+    }
 }
 
 // 사용 (Read-Through)
-val repo = UserRedissonRepository(redissonClient, RedisCacheConfig.READ_ONLY)
+val repo = UserRedissonRepository(redissonClient, RedissonCacheConfig.READ_ONLY)
 
 // 캐시에서 조회 (미스 시 DB에서 자동 로드)
 val user = repo[1L]
 
-// ID 존재 여부 확인 (캐시 미스 시 DB Read-Through)
-val exists = repo.exists(1L)
+// ID 캐시 키 존재 여부 확인 (캐시 미스 시 DB Read-Through)
+val exists = repo.containsKey(1L)
 
 // DB에서 직접 조회 (캐시 우회)
 val freshUser = repo.findByIdFromDb(1L)
@@ -107,31 +113,44 @@ repo.invalidateByPattern("*홍*")  // 패턴으로 무효화
 
 ```kotlin
 import io.bluetape4k.exposed.redisson.repository.AbstractSuspendedJdbcRedissonRepository
-import io.bluetape4k.redis.redisson.cache.RedisCacheConfig
+import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
+import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
+import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.redisson.api.RedissonClient
 
 class SuspendedUserRedissonRepository(
     redissonClient: RedissonClient,
-    config: RedisCacheConfig,
-): AbstractSuspendedJdbcRedissonRepository<Long, UserTable, UserRecord>(
+    config: RedissonCacheConfig,
+): AbstractSuspendedJdbcRedissonRepository<Long, UserRecord>(
     redissonClient = redissonClient,
-    cacheName = "users",
     config = config,
 ) {
-    override val entityTable = UserTable
+    override val table = UserTable
+
+    override fun extractId(entity: UserRecord): Long = entity.id
 
     override fun ResultRow.toEntity() = UserRecord(
         id    = this[UserTable.id].value,
         name  = this[UserTable.name],
         email = this[UserTable.email],
     )
+
+    override fun UpdateStatement.updateEntity(entity: UserRecord) {
+        this[UserTable.name]  = entity.name
+        this[UserTable.email] = entity.email
+    }
+
+    override fun BatchInsertStatement.insertEntity(entity: UserRecord) {
+        this[UserTable.name]  = entity.name
+        this[UserTable.email] = entity.email
+    }
 }
 
 // 사용 (suspend 함수)
-val repo = SuspendedUserRedissonRepository(redissonClient, RedisCacheConfig.READ_ONLY)
+val repo = SuspendedUserRedissonRepository(redissonClient, RedissonCacheConfig.READ_ONLY)
 
 val user = repo.get(1L)                          // 캐시 조회 (미스 시 DB Read-Through)
-val exists = repo.exists(1L)                     // 존재 여부 확인
+val exists = repo.containsKey(1L)                     // 캐시 키 존재 여부 확인
 val fresh = repo.findByIdFromDb(1L)              // DB 직접 조회 (캐시 우회)
 val all = repo.findAll(limit = 100)              // DB 조회 후 캐시 저장
 val batch = repo.getAll(listOf(1L, 2L, 3L))     // 여러 엔티티 일괄 조회
@@ -145,30 +164,30 @@ repo.invalidateByPattern("user:*")               // 패턴으로 무효화
 ### 3. 캐시 패턴 설정
 
 ```kotlin
-import io.bluetape4k.redis.redisson.cache.RedisCacheConfig
+import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import org.redisson.api.map.WriteMode
 
 // Read-Through Only (기본) — 캐시 미스 시 DB에서 자동 로드
-val readOnlyConfig = RedisCacheConfig.READ_ONLY
+val readOnlyConfig = RedissonCacheConfig.READ_ONLY
 
 // Read-Through + Near Cache — 로컬 캐시 + Redis 2단계 캐시
-val readOnlyNearCacheConfig = RedisCacheConfig.READ_ONLY_WITH_NEAR_CACHE
+val readOnlyNearCacheConfig = RedissonCacheConfig.READ_ONLY_WITH_NEAR_CACHE
 
 // Read-Through + Write-Through — 캐시 저장 즉시 DB에도 동기 반영
-val writeThroughConfig = RedisCacheConfig.READ_WRITE_THROUGH
+val writeThroughConfig = RedissonCacheConfig.READ_WRITE_THROUGH
 
 // Read-Through + Write-Through + Near Cache
-val writeThroughNearCacheConfig = RedisCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE
+val writeThroughNearCacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE
 
 // Read-Through + Write-Behind — 캐시 저장 후 비동기로 DB에 반영
-val writeBehindConfig = RedisCacheConfig.WRITE_BEHIND
+val writeBehindConfig = RedissonCacheConfig.WRITE_BEHIND
 
 // Read-Through + Write-Behind + Near Cache
-val writeBehindNearCacheConfig = RedisCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE
+val writeBehindNearCacheConfig = RedissonCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE
 
 // invalidate 시 DB에서도 삭제하는 설정 (deleteFromDBOnInvalidate=true)
 // ⚠️ 주의: 프로덕션 환경에서 신중하게 사용하세요.
-val deleteFromDbConfig = RedisCacheConfig.READ_WRITE_THROUGH.copy(
+val deleteFromDbConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(
     deleteFromDBOnInvalidate = true,
 )
 ```
@@ -180,12 +199,13 @@ Write-Through/Write-Behind 모드에서는 `UpdateStatement.updateEntity`와 `Ba
 ```kotlin
 class UserWriteThroughRepository(
     redissonClient: RedissonClient,
-): AbstractJdbcRedissonRepository<Long, UserTable, UserRecord>(
+): AbstractJdbcRedissonRepository<Long, UserRecord>(
     redissonClient = redissonClient,
-    cacheName = "users:write-through",
-    config = RedisCacheConfig.READ_WRITE_THROUGH,
+    config = RedissonCacheConfig.READ_WRITE_THROUGH.copy(name = "users:write-through"),
 ) {
-    override val entityTable = UserTable
+    override val table = UserTable
+
+    override fun extractId(entity: UserRecord): Long = entity.id
 
     override fun ResultRow.toEntity() = UserRecord(
         id    = this[UserTable.id].value,
@@ -268,7 +288,7 @@ transaction {
 
 | 메서드                                     | 설명                                                 |
 |-----------------------------------------|----------------------------------------------------|
-| `exists(id)`                            | 캐시에 해당 ID 존재 여부 확인 (미스 시 DB Read-Through)          |
+| `containsKey(id)`                            | 캐시에 해당 ID 캐시 키 존재 여부 확인 (미스 시 DB Read-Through)          |
 | `get(id)` / `cache[id]`                 | 캐시에서 엔티티 조회 (Read-Through)                         |
 | `getAll(ids, batchSize)`                | 캐시에서 여러 엔티티 일괄 조회                                  |
 | `findByIdFromDb(id)`                    | DB에서 직접 조회 (캐시 우회)                                 |

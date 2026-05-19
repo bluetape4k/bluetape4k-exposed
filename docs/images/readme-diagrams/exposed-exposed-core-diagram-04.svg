@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="998" height="782" viewBox="0 0 998 782" role="img" aria-label="HasIdentifier and ExposedPage">
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="700" viewBox="0 0 920 700" role="img" aria-label="ExposedPage Result Model">
 <defs>
   <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
   <marker id="openArrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#758297" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker>
@@ -8,48 +8,42 @@
     .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
     .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
     .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
-    .smallLabel{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:21px;font-weight:400;fill:#102033}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
     .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .strong{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
+    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
+    .pill{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
     .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .line{stroke:#758297;stroke-width:2.1;fill:none;marker-end:url(#openArrow)}
-    .plainLine{stroke:#758297;stroke-width:2.1;fill:none}
     .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
     .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-    .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
-  </style>
-</defs>
-<rect class="canvas" width="998" height="782"/>
-<rect class="frame" x="32" y="28" width="934" height="726" rx="28"/>
-<text class="title" x="66" y="82">HasIdentifier and ExposedPage</text>
-<text class="subtitle" x="70" y="118">UML classes from the original Mermaid source</text>
-<path class="dashed" d="M499 498 C499 463 274 463 274 428"/>
-<path class="inheritLine" d="M499 498 C499 391 724 391 724 284"/>
-<g transform="translate(84,180)">
-  <rect class="card" x="0" y="0" width="380" height="240" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <line class="compartment" x1="0" y1="78" x2="380" y2="78" stroke="#5B8DEF"/>
-  <text class="small" x="190" y="26" text-anchor="middle"></text>
-  <text class="label" x="190" y="57" text-anchor="middle">ExposedPage</text>
-  <text class="mono" x="18" y="108">+content: List~T~</text>
-<text class="mono" x="18" y="132">+totalCount: Long</text>
-<text class="mono" x="18" y="156">+pageNumber: Int</text>
-<text class="mono" x="18" y="180">+pageSize: Int</text>
-<text class="mono" x="18" y="204">+totalPages: Int</text>
-<text class="mono" x="18" y="228">+isFirst: Boolean</text>
+  </style></defs>
+<rect class="canvas" width="920" height="700"/>
+<rect class="frame" x="32" y="28" width="856" height="644" rx="28"/>
+<text class="title" x="66" y="86">ExposedPage Result Model</text>
+<text class="subtitle" x="70" y="122">Source-verified DTO for paginated query results</text>
+<g transform="translate(90,174)">
+  <rect class="card" x="0" y="0" width="430" height="340" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
+  <line class="compartment" x1="0" y1="78" x2="430" y2="78" stroke="#5B8DEF"/>
+  <text class="small" x="215" y="26" text-anchor="middle">«data class»</text>
+  <text class="label" x="215" y="57" text-anchor="middle">ExposedPage&lt;T&gt;</text>
+  <text class="mono" x="18" y="108">+content: List&lt;T&gt;</text>
+  <text class="mono" x="18" y="131">+totalCount: Long</text>
+  <text class="mono" x="18" y="154">+pageNumber: Int</text>
+  <text class="mono" x="18" y="177">+pageSize: Int</text>
+  <text class="mono" x="18" y="200"></text>
+  <text class="mono" x="18" y="223">+totalPages: Int</text>
+  <text class="mono" x="18" y="246">+isFirst: Boolean</text>
+  <text class="mono" x="18" y="269">+isLast: Boolean</text>
+  <text class="mono" x="18" y="292">+hasNext: Boolean</text>
+  <text class="mono" x="18" y="315">+hasPrevious: Boolean</text>
 </g>
-<g transform="translate(534,180)">
-  <rect class="card" x="0" y="0" width="380" height="96" rx="5" fill="#EAF7EF" stroke="#58A978"/>
-  <line class="compartment" x1="0" y1="78" x2="380" y2="78" stroke="#58A978"/>
-  <text class="small" x="190" y="26" text-anchor="middle">«interface»</text>
-  <text class="label" x="190" y="57" text-anchor="middle">Serializable</text>
-
+<path class="dashed" d="M520 314 C580 314 600 314 654 314"/>
+<rect x="548" y="286" width="94" height="26" rx="13" fill="#ffffff" opacity="0.95"/>
+<text class="pill" x="595" y="304" text-anchor="middle">derives</text>
+<g transform="translate(654,224)">
+  <rect class="card" x="0" y="0" width="184" height="184" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+  <text class="label" x="92" y="52" text-anchor="middle">Page State</text>
+  <text class="mono" x="22" y="92">totalPages</text>
+  <text class="mono" x="22" y="122">navigation flags</text>
+  <text class="mono" x="22" y="152">empty page safe</text>
 </g>
-<g transform="translate(309,506)">
-  <rect class="card" x="0" y="0" width="380" height="120" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
-  <line class="compartment" x1="0" y1="78" x2="380" y2="78" stroke="#D6A441"/>
-  <text class="small" x="190" y="26" text-anchor="middle">«interface»</text>
-  <text class="label" x="190" y="57" text-anchor="middle">HasIdentifier</text>
-  <text class="mono" x="18" y="108">+id: ID?</text>
-</g>
+<text class="subtitle" x="92" y="590">Deprecated HasIdentifier is intentionally omitted; use Serializable records and explicit ID extraction.</text>
 </svg>

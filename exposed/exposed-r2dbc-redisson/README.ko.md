@@ -37,20 +37,20 @@ dependencies {
 `AbstractR2dbcRedissonRepository`를 상속하여 비동기 캐시 Repository를 구현합니다.
 
 ```kotlin
-import io.bluetape4k.exposed.core.HasIdentifier
 import io.bluetape4k.exposed.r2dbc.redisson.repository.AbstractR2dbcRedissonRepository
-import io.bluetape4k.redis.redisson.cache.RedisCacheConfig
+import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.redisson.api.RedissonClient
 
 // 엔티티 (java.io.Serializable 필수)
 data class UserRecord(
-    override val id: Long,
+    val id: Long,
     val name: String,
     val email: String,
-): HasIdentifier<Long>, java.io.Serializable
+): java.io.Serializable
 
 object UserTable: LongIdTable("users") {
     val name = varchar("name", 100)
@@ -59,13 +59,14 @@ object UserTable: LongIdTable("users") {
 
 class UserR2dbcRedissonRepository(
     redissonClient: RedissonClient,
-    config: RedisCacheConfig,
-): AbstractR2dbcRedissonRepository<Long, UserTable, UserRecord>(
+    config: RedissonCacheConfig,
+): AbstractR2dbcRedissonRepository<Long, UserRecord>(
     redissonClient = redissonClient,
-    cacheName = "users",
     config = config,
 ) {
-    override val entityTable = UserTable
+    override val table = UserTable
+
+    override fun extractId(entity: UserRecord): Long = entity.id
 
     override suspend fun ResultRow.toEntity() = UserRecord(
         id    = this[UserTable.id].value,
@@ -78,10 +79,15 @@ class UserR2dbcRedissonRepository(
         this[UserTable.name]  = entity.name
         this[UserTable.email] = entity.email
     }
+
+    override fun BatchInsertStatement.insertEntity(entity: UserRecord) {
+        this[UserTable.name]  = entity.name
+        this[UserTable.email] = entity.email
+    }
 }
 
 // 사용 (모든 메서드가 suspend)
-val repo = UserR2dbcRedissonRepository(redissonClient, RedisCacheConfig.readOnly())
+val repo = UserR2dbcRedissonRepository(redissonClient, RedissonCacheConfig.readOnly())
 
 // 캐시에서 조회 (미스 시 DB에서 자동 로드)
 val user = repo.get(1L)
@@ -105,21 +111,21 @@ repo.invalidateByPattern("user:*")
 ### 2. 캐시 패턴 설정
 
 ```kotlin
-import io.bluetape4k.redis.redisson.cache.RedisCacheConfig
+import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 
 // Read-Through Only
-val readOnlyConfig = RedisCacheConfig.readOnly(
+val readOnlyConfig = RedissonCacheConfig.readOnly(
     ttl = Duration.ofMinutes(30),
 )
 
 // Read-Through + Write-Through
-val readWriteConfig = RedisCacheConfig.readWrite(
+val readWriteConfig = RedissonCacheConfig.readWrite(
     ttl = Duration.ofMinutes(30),
     writeMode = WriteMode.WRITE_THROUGH,
 )
 
 // Near Cache 활성화 (Local + Redis 2-Tier)
-val nearCacheConfig = RedisCacheConfig.readOnly(
+val nearCacheConfig = RedissonCacheConfig.readOnly(
     ttl = Duration.ofMinutes(30),
     nearCacheEnabled = true,
 )
@@ -159,7 +165,7 @@ val nearCacheConfig = RedisCacheConfig.readOnly(
 
 | 메서드                                     | 설명                                |
 |-----------------------------------------|-----------------------------------|
-| `exists(id)`                            | 캐시에 해당 ID 존재 여부 확인 (suspend)      |
+| `containsKey(id)`                            | 캐시에 해당 ID 캐시 키 존재 여부 확인 (suspend)      |
 | `get(id)`                               | 캐시에서 엔티티 조회, 미스 시 DB 로드 (suspend) |
 | `getAll(ids, batchSize)`                | 캐시에서 여러 엔티티 배치 조회 (suspend)       |
 | `findByIdFromDb(id)`                    | DB에서 직접 조회, 캐시 우회 (suspend)       |
@@ -171,18 +177,18 @@ val nearCacheConfig = RedisCacheConfig.readOnly(
 | `invalidateAll()`                       | 캐시 전체 비우기 (suspend)               |
 | `invalidateByPattern(pattern, count)`   | 패턴에 맞는 키 캐시 제거 (suspend)          |
 
-## 캐시 설정 상수 (`RedisCacheConfig`)
+## 캐시 설정 상수 (`RedissonCacheConfig`)
 
 자주 사용하는 캐시 모드 설정값이 상수로 제공됩니다.
 
 | 상수                                                    | 설명                              |
 |-------------------------------------------------------|---------------------------------|
-| `RedisCacheConfig.READ_ONLY`                          | Read-Through 전용 (원격 캐시)         |
-| `RedisCacheConfig.READ_ONLY_WITH_NEAR_CACHE`          | Read-Through + Near Cache       |
-| `RedisCacheConfig.READ_WRITE_THROUGH`                 | Read-Through + Write-Through    |
-| `RedisCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE` | Read-Write-Through + Near Cache |
-| `RedisCacheConfig.WRITE_BEHIND`                       | Write-Behind (원격 캐시)            |
-| `RedisCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE`       | Write-Behind + Near Cache       |
+| `RedissonCacheConfig.READ_ONLY`                          | Read-Through 전용 (원격 캐시)         |
+| `RedissonCacheConfig.READ_ONLY_WITH_NEAR_CACHE`          | Read-Through + Near Cache       |
+| `RedissonCacheConfig.READ_WRITE_THROUGH`                 | Read-Through + Write-Through    |
+| `RedissonCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE` | Read-Write-Through + Near Cache |
+| `RedissonCacheConfig.WRITE_BEHIND`                       | Write-Behind (원격 캐시)            |
+| `RedissonCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE`       | Write-Behind + Near Cache       |
 
 ## 주요 파일/클래스 목록
 

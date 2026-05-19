@@ -19,7 +19,7 @@ A foundation module that provides core column types, extension functions, and co
 - **Blob extensions**: Utility functions for `ExposedBlob`
 - **Batch insert**: `BatchInsertOnConflictDoNothing` (ignore-duplicate batch insert)
 - **CTE table facade**: `CteTable` maps selected query fields for JDBC/R2DBC `WITH` queries
-- **Common interfaces**: `HasIdentifier<ID>`, `ExposedPage<T>`
+- **Pagination DTO**: `ExposedPage<T>` with derived page metadata
 
 ## Adding Dependencies
 
@@ -192,20 +192,7 @@ val activeUserName = activeUsers[Users.name]
 `CteTable` is shared by the JDBC and R2DBC modules. Use `withCte()` from those modules to prepend the `WITH`
 clause to a final SELECT query.
 
-### 9. HasIdentifier interface
-
-```kotlin
-import io.bluetape4k.exposed.core.HasIdentifier
-
-// Common interface for entities that have an ID
-data class UserRecord(
-    override val id: Long,
-    val name: String,
-    val email: String
-): HasIdentifier<Long>
-```
-
-### 10. ExposedPage (paginated results)
+### 9. ExposedPage (paginated results)
 
 ```kotlin
 import io.bluetape4k.exposed.core.ExposedPage
@@ -226,7 +213,7 @@ println("Is last page: ${page.isLast}")
 
 ### Core Auditable Structure
 
-Illustrates the relationships among `AuditableLongIdTable`, `UserContext`, `HasIdentifier`, and `ExposedPage`.
+Illustrates the relationships among `AuditableIdTable`, concrete auditable table bases, and `UserContext`.
 
 ![Core Auditable Structure 1](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-01.png)
 
@@ -242,15 +229,14 @@ Custom `IdTable` implementations that generate IDs on the client side.
 
 ![IdTable Hierarchy by ID Generation Strategy 3](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-03.png)
 
-### HasIdentifier and ExposedPage
+### ExposedPage Result Model
 
-![HasIdentifier and ExposedPage 4](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-04.png)
+![ExposedPage Result Model 4](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-04.png)
 
 ## Key Files and Classes
 
 | File                                               | Description                                        |
 |----------------------------------------------------|----------------------------------------------------|
-| `HasIdentifier.kt`                                 | Common interface for entities with an ID           |
 | `ColumnExtensions.kt`                              | Client-side ID auto-generation extension functions |
 | `ExposedColumnSupports.kt`                         | Column type support utilities                      |
 | `ResultRowExtensions.kt`                           | ResultRow processing extensions                    |
@@ -264,6 +250,7 @@ Custom `IdTable` implementations that generate IDs on the client side.
 | `serializable/BinarySerializedBinaryColumnType.kt` | Serialized Binary column type                      |
 | `serializable/BinarySerializedBlobColumnType.kt`   | Serialized Blob column type                        |
 | `ExposedPage.kt`                                   | Paginated result data class                        |
+| `HasIdentifier.kt`                                 | Deprecated compatibility interface; prefer `Serializable` records |
 | `dao/id/KsuidTable.kt`                             | KSUID primary key table                            |
 | `dao/id/KsuidMillisTable.kt`                       | KsuidMillis primary key table                      |
 | `dao/id/UlidTable.kt`                              | ULID primary key table                             |
