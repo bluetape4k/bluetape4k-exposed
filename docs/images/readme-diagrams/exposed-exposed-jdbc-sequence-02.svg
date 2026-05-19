@@ -25,17 +25,17 @@
 <text class="title" x="66" y="82">findById — Single record lookup</text>
 <text class="subtitle" x="70" y="118">Sequence messages from the original Mermaid source</text>
 <rect class="card" x="35" y="166" width="210" height="72" rx="20" fill="#E8F3FF" stroke="#5B8DEF"/>
-<text class="smallLabel" x="140" y="197" text-anchor="middle">Client</text>
+<text class="smallLabel" x="140" y="209" text-anchor="middle">Client</text>
 <line x1="140" y1="252" x2="140" y2="874" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
 <rect class="card" x="341.6666666666667" y="166" width="210" height="72" rx="20" fill="#EAF7EF" stroke="#58A978"/>
-<text class="smallLabel" x="446.6666666666667" y="187" text-anchor="middle">MyRepository</text>
-<text class="smallLabel" x="446.6666666666667" y="208" text-anchor="middle">(JdbcRepository)</text>
+<text class="smallLabel" x="446.6666666666667" y="198.5" text-anchor="middle">MyRepository</text>
+<text class="smallLabel" x="446.6666666666667" y="219.5" text-anchor="middle">(JdbcRepository)</text>
 <line x1="446.6666666666667" y1="252" x2="446.6666666666667" y2="874" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
 <rect class="card" x="648.3333333333334" y="166" width="210" height="72" rx="20" fill="#FFF3D9" stroke="#D6A441"/>
-<text class="smallLabel" x="753.3333333333334" y="197" text-anchor="middle">Exposed DSL</text>
+<text class="smallLabel" x="753.3333333333334" y="209" text-anchor="middle">Exposed DSL</text>
 <line x1="753.3333333333334" y1="252" x2="753.3333333333334" y2="874" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
 <rect class="card" x="955" y="166" width="210" height="72" rx="20" fill="#FDECEF" stroke="#DC6B82"/>
-<text class="smallLabel" x="1060" y="197" text-anchor="middle">Database</text>
+<text class="smallLabel" x="1060" y="209" text-anchor="middle">Database</text>
 <line x1="1060" y1="252" x2="1060" y2="874" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
 <rect x="158" y="270" width="270.6666666666667" height="39" rx="12" fill="#ffffff" opacity="0.97"/>
 <text class="strong" x="174" y="297" text-anchor="start">1. findById(id)</text>
@@ -56,7 +56,7 @@
 <rect x="464.6666666666667" y="680" width="190" height="62" rx="12" fill="#ffffff" opacity="0.97"/>
 <text class="strong" x="480.6666666666667" y="707" text-anchor="start">6.</text>
 <text class="strong" x="480.6666666666667" y="730" text-anchor="start">ResultRow.toEntity()</text>
-<path class="line" d="M446.6666666666667 720 L446.6666666666667 720"/>
+<path class="line" d="M446.6666666666667 720 C502.6666666666667 720 502.6666666666667 750 446.6666666666667 750"/>
 <rect x="158" y="762" width="270.6666666666667" height="39" rx="12" fill="#ffffff" opacity="0.97"/>
 <text class="strong" x="174" y="789" text-anchor="start">7. entity E</text>
 <path class="dashed" d="M446.6666666666667 802 L140 802"/>
