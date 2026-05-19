@@ -16,6 +16,7 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import io.bluetape4k.assertions.assertFailsWith
@@ -28,6 +29,7 @@ import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.autoIncColumnType
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -339,6 +341,53 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
             val newCount = transaction { CredentialTable.selectAll().count() }
             newCount shouldBeEqualTo prevCount + newEntities.size
         }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `close - write-behind put 전에도 hang 없이 종료한다`(testDB: TestDB) = runTest(timeout = 35.seconds) {
+            val repository = CredentialSuspendedJdbcCaffeineRepository(
+                LocalCacheConfig(
+                    keyPrefix = "jdbc:caffeine:s-extra:wb-close-before-put",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 10,
+                    writeBehindQueueCapacity = 16,
+                )
+            )
+
+            withSuspendedCredentialTable(testDB) {
+                repository.close()
+
+                writeBehindJobOf(repository).isCompleted shouldBeEqualTo true
+            }
+        }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `close - write-behind job 시작 후 반복 호출해도 hang 없이 종료한다`(
+            testDB: TestDB,
+        ) = runTest(timeout = 35.seconds) {
+            val repository = CredentialSuspendedJdbcCaffeineRepository(
+                LocalCacheConfig(
+                    keyPrefix = "jdbc:caffeine:s-extra:wb-close-idempotent",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 10,
+                    writeBehindQueueCapacity = 16,
+                )
+            )
+
+            withSuspendedCredentialTable(testDB) {
+                val entity = ActorSchema.newCredentialRecord()
+
+                repository.put(entity.id, entity)
+                repository.close()
+                repository.close()
+
+                CredentialTable.selectAll()
+                    .where { CredentialTable.id eq entity.id }
+                    .count() shouldBeEqualTo 1L
+                writeBehindJobOf(repository).isCompleted shouldBeEqualTo true
+            }
+        }
     }
 
     private class FailingCacheWarmSuspendedJdbcRepository(
@@ -377,5 +426,13 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
             }
             throw failure
         }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun writeBehindJobOf(repository: AbstractSuspendedJdbcCaffeineRepository<*, *>): Job {
+        val field = AbstractSuspendedJdbcCaffeineRepository::class.java.getDeclaredField("writeBehindJob\$delegate")
+        field.isAccessible = true
+
+        return (field.get(repository) as Lazy<Job>).value
     }
 }

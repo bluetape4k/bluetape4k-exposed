@@ -15,7 +15,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlin.coroutines.cancellation.CancellationException
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
@@ -32,6 +31,8 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
 import java.io.Serializable
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
  * Abstract repository combining Exposed JDBC with a Caffeine in-process local cache.
@@ -53,7 +54,9 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     override val config: LocalCacheConfig = LocalCacheConfig.READ_ONLY,
 ): JdbcCaffeineRepository<ID, E> {
 
-    companion object: KLogging()
+    companion object: KLogging() {
+        private const val WRITE_BEHIND_CLOSE_TIMEOUT_SECONDS = 30L
+    }
 
     abstract override val table: IdTable<ID>
 
@@ -365,23 +368,13 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
      * In write-behind mode, closing the channel stops new items from being accepted and
      * waits until queued items have been flushed to the database.
      *
-     * [runBlocking] is used to honor the [Closeable] contract. This path runs during
-     * normal shutdown, so the virtual-thread pinning risk is acceptable.
+     * Waiting uses a bounded synchronous latch so database or driver hangs cannot block
+     * shutdown forever.
      */
     override fun close() {
         if (config.writeMode == CacheWriteMode.WRITE_BEHIND) {
-            try {
-                writeBehindQueue.close()
-            } catch (e: Exception) {
-                log.warn(e) { "Failed to close writeBehindQueue on close" }
-            }
-            try {
-                runBlocking { writeBehindJob.join() }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                log.warn(e) { "Failed to join writeBehindJob on close" }
-            }
+            writeBehindQueue.close()
+            awaitWriteBehindJobCompletion()
         }
         try {
             cache.invalidateAll()
@@ -392,6 +385,27 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
             scope.cancel()
         } catch (e: Exception) {
             log.warn(e) { "Failed to cancel scope on close" }
+        }
+    }
+
+    private fun awaitWriteBehindJobCompletion() {
+        val completed = CountDownLatch(1)
+        writeBehindJob.invokeOnCompletion { completed.countDown() }
+
+        val completedInTime =
+            try {
+                completed.await(WRITE_BEHIND_CLOSE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+                false
+            }
+
+        if (!completedInTime) {
+            log.warn {
+                "Write-Behind: close timed out waiting for final flush. " +
+                    "Remaining queued items may be discarded when the repository scope is cancelled. " +
+                    "timeoutSeconds=$WRITE_BEHIND_CLOSE_TIMEOUT_SECONDS"
+            }
         }
     }
 }
