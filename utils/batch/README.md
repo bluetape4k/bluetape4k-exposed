@@ -8,49 +8,7 @@ A coroutine-native batch processing framework for Kotlin. Implements a lightweig
 
 ![Architecture 1](../../docs/images/readme-diagrams/utils-batch-diagram-01.svg)
 
-```mermaid
-sequenceDiagram
-    box "Orchestration" #E8F5E9
-    participant Job as BatchJob
-    end
-    box "Execution" #E3F2FD
-    participant Runner as BatchStepRunner
-    end
-    box "Persistence" #FFF3E0
-    participant Repo as BatchJobRepository
-    end
-    box "I/O" #F3E5F5
-    participant Reader as BatchReader
-    participant Writer as BatchWriter
-    end
-
-    Job->>Repo: findOrCreateJobExecution
-    loop for each step
-        Job->>Runner: run()
-        Runner->>Repo: findOrCreateStepExecution
-        alt already COMPLETED
-            Runner-->>Job: StepReport (skip)
-        else RUNNING / new
-            Runner->>Reader: open()
-            Runner->>Writer: open()
-            Repo-->>Runner: loadCheckpoint
-            opt checkpoint != null
-                Runner->>Reader: restoreFrom(checkpoint)
-            end
-            loop chunk loop
-                loop chunkSize times
-                    Runner->>Reader: read()
-                    Reader-->>Runner: item or null(EOF)
-                end
-                Runner->>Writer: write(chunk)
-                Runner->>Repo: saveCheckpoint
-                Runner->>Reader: onChunkCommitted()
-            end
-            Runner->>Repo: completeStepExecution
-        end
-    end
-    Job->>Repo: completeJobExecution
-```
+![Architecture diagram](../../docs/images/readme-diagrams/utils-batch-sequence-01.png)
 
 ## Features
 

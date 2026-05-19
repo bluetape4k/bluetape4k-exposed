@@ -10,39 +10,7 @@ Exposed R2DBC repository with Caffeine local (in-process) cache. No JDBC depende
 
 ![Architecture 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-diagram-01.svg)
 
-```mermaid
-sequenceDiagram
-        participant Client
-        participant Repository
-        participant Caffeine as Caffeine AsyncCache
-        participant DB as R2DBC Database
-
-    Note over Client,DB: Read-Through
-    Client->>Repository: get(id)
-    Repository->>Caffeine: getIfPresent(key)
-    alt Cache Hit
-        Caffeine-->>Repository: entity
-    else Cache Miss
-        Caffeine-->>Repository: null
-        Repository->>DB: suspendTransaction { selectAll }
-        DB-->>Repository: entity
-        Repository->>Caffeine: put(key, entity)
-    end
-    Repository-->>Client: entity
-
-    Note over Client,DB: Write-Through
-    Client->>Repository: put(id, entity)
-    Repository->>Caffeine: put(key, entity)
-    Repository->>DB: suspendTransaction { update/insert }
-    Repository-->>Client: done
-
-    Note over Client,DB: Write-Behind
-    Client->>Repository: put(id, entity)
-    Repository->>Caffeine: put(key, entity)
-    Repository->>Repository: writeBehindQueue.send(entry)
-    Repository-->>Client: done (immediate)
-    Repository->>DB: flushBatch (async)
-```
+![Architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-sequence-01.png)
 
 ## Features
 

@@ -352,63 +352,11 @@ parameters from CTE predicates keep their binding order.
 
 How CRUD operations are executed through `R2dbcRepository` inside a `suspendTransaction` block.
 
-```mermaid
-sequenceDiagram
-        participant C as Caller
-        participant T as suspendTransaction
-        participant R as R2dbcRepository
-        participant DB as R2DBC Database
-
-    C->>T: suspendTransaction { ... }
-    activate T
-
-    T->>R: findById(id)
-    R->>DB: SELECT * WHERE id = ?
-    DB-->>R: ResultRow
-    R-->>T: toEntity() → E
-
-    T->>R: updateById(id) { ... }
-    R->>DB: UPDATE SET ... WHERE id = ?
-    DB-->>R: Int (updated rows)
-    R-->>T: Int
-
-    T->>R: deleteById(id)
-    R->>DB: DELETE WHERE id = ?
-    DB-->>R: Int (deleted rows)
-    R-->>T: Int
-
-    deactivate T
-    T-->>C: Result returned
-```
+![suspend Transaction Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-01.png)
 
 ### SoftDelete Transaction Flow
 
-```mermaid
-sequenceDiagram
-        participant C as Caller
-        participant T as suspendTransaction
-        participant R as SoftDeletedR2dbcRepository
-        participant DB as R2DBC Database
-
-    C->>T: suspendTransaction { ... }
-    activate T
-
-    T->>R: softDeleteById(id)
-    R->>DB: UPDATE SET is_deleted=true WHERE id=?
-    DB-->>R: Unit
-
-    T->>R: findActive()
-    R->>DB: SELECT * WHERE is_deleted=false
-    DB-->>R: Flow~ResultRow~
-    R-->>T: Flow~E~
-
-    T->>R: restoreById(id)
-    R->>DB: UPDATE SET is_deleted=false WHERE id=?
-    DB-->>R: Unit
-
-    deactivate T
-    T-->>C: Result returned
-```
+![SoftDelete Transaction Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-02.png)
 
 ## Convenience Type Aliases
 

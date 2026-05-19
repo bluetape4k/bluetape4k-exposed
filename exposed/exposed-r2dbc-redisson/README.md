@@ -141,82 +141,19 @@ val nearCacheConfig = RedisCacheConfig.readOnly(
 
 On a cache miss, `R2dbcExposedEntityMapLoader` automatically loads from the DB via R2DBC `suspendTransaction`.
 
-```mermaid
-sequenceDiagram
-        participant Client as Client (Coroutine)
-        participant Repo as R2dbcRedissonRepository
-        participant RMap as Redisson RMap
-        participant Loader as R2dbcExposedEntityMapLoader
-        participant DB as Database (R2DBC)
-
-    Client ->> Repo: suspend get(id)
-    Repo ->> RMap: cache.getAsync(id).await()
-    alt RMap HIT
-        RMap -->> Repo: entity
-        Repo -->> Client: entity
-    else RMap MISS
-        RMap ->> Loader: loadAsync(id) [Read-Through]
-        Note over Loader, DB: suspendTransaction { selectAll().where { id eq ... } }
-        Loader ->> DB: SELECT WHERE id=? (R2DBC async)
-        DB -->> Loader: ResultRow
-        Loader -->> RMap: entity (stored in cache)
-        RMap -->> Repo: entity
-        Repo -->> Client: entity
-    end
-```
+![Read-Through (R2DBC + suspend) diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-01.png)
 
 ### Write-Through (R2DBC + suspend)
 
 On `put()`, `R2dbcExposedEntityMapWriter` immediately persists to DB via R2DBC `suspendTransaction`.
 
-```mermaid
-sequenceDiagram
-        participant Client as Client (Coroutine)
-        participant Repo as R2dbcRedissonRepository
-        participant RMap as Redisson RMap
-        participant Writer as R2dbcExposedEntityMapWriter
-        participant DB as Database (R2DBC)
-
-    Client ->> Repo: suspend put(entity)
-    Repo ->> RMap: cache.fastPutAsync(id, entity).await()
-    RMap ->> Writer: writeAsync(map) [Write-Through]
-    Note over Writer, DB: suspendTransaction inside CoroutineScope(Dispatchers.IO)
-    Writer ->> DB: SELECT id (check existence via R2DBC Flow)
-    DB -->> Writer: existIds
-    alt Existing record
-        Writer ->> DB: UPDATE SET ... WHERE id=? (R2DBC)
-        DB -->> Writer: OK
-    else New record (non-autoInc ID)
-        Writer ->> DB: batchInsert(entities) (R2DBC)
-        DB -->> Writer: OK
-    end
-    Writer -->> RMap: done
-    RMap -->> Repo: true
-    Repo -->> Client: true
-```
+![Write-Through (R2DBC + suspend) diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-02.png)
 
 ### Write-Behind (R2DBC + suspend + async DB)
 
 On `put()`, immediately returns and then `R2dbcExposedEntityMapWriter` asynchronously batch-persists to the DB.
 
-```mermaid
-sequenceDiagram
-        participant Client as Client (Coroutine)
-        participant Repo as R2dbcRedissonRepository
-        participant RMap as Redisson RMap
-        participant Writer as R2dbcExposedEntityMapWriter
-        participant DB as Database (R2DBC)
-
-    Client ->> Repo: suspend put(entity)
-    Repo ->> RMap: cache.fastPutAsync(id, entity).await()
-    RMap -->> Repo: true (returns immediately)
-    Repo -->> Client: true
-    Note over RMap, DB: Write-Behind: Redisson asynchronously batch-persists to DB
-    RMap ->> Writer: writeAsync(map) [async]
-    Note over Writer, DB: suspendTransaction inside CoroutineScope(Dispatchers.IO)
-    Writer ->> DB: batchInsert(entities).asFlow().collect { ... } (R2DBC)
-    DB -->> Writer: OK
-```
+![Write-Behind (R2DBC + suspend + async DB) diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-03.png)
 
 ## R2dbcRedissonRepository Key Methods
 

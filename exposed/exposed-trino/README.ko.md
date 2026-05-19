@@ -245,25 +245,7 @@ Testcontainers를 통한 Trino Memory 커넥터 환경에서 검증된 기능입
 
 ### 분산 쿼리 흐름
 
-```mermaid
-sequenceDiagram
-        participant App as Kotlin 코드
-        participant DSL as Exposed DSL
-        participant TD as TrinoDialect
-        participant TC as TrinoConnectionWrapper
-        participant COORD as Trino Coordinator
-        participant WORKER as Trino Workers
-
-    App->>DSL: Table.selectAll().where { ... }
-    DSL->>TD: SQL 생성
-    TD-->>DSL: SQL 문자열 (autocommit)
-    DSL->>TC: JDBC 실행
-    TC->>COORD: 쿼리 제출
-    COORD->>WORKER: 워커 분배
-    WORKER-->>COORD: 부분 결과
-    COORD-->>TC: ResultSet
-    TC-->>App: List<ResultRow> / Flow<T>
-```
+![exposed-trino diagram diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-sequence-01.png)
 
 ## 주요 파일/클래스 목록
 

@@ -290,23 +290,7 @@ Containers.Postgres
 
 ### 테스트 실행 흐름
 
-```mermaid
-sequenceDiagram
-        participant Test as 테스트 클래스
-        participant Infra as 테스트 인프라
-        participant TC as Testcontainers
-        participant DB as 데이터베이스
-
-    Test->>Infra: withTables(testDB, Users, Orders)
-    Infra->>TC: Docker 컨테이너 시작 (실제 DB인 경우)
-    TC-->>Infra: 컨테이너 준비 완료
-    Infra->>DB: 커넥션 획득 + 테이블 생성
-    DB-->>Infra: 테이블 준비 완료
-    Infra->>Test: 트랜잭션 블록 실행
-    Test->>DB: CRUD 작업
-    DB-->>Test: 결과 반환
-    Infra->>DB: 테이블 삭제 + 롤백
-```
+![Test Execution diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-sequence-01.png)
 
 ## 참고 사항
 

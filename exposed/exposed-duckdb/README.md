@@ -108,26 +108,7 @@ queryFlow(db) {
 
 ### Query Execution Flow
 
-```mermaid
-sequenceDiagram
-        participant App as Kotlin Code
-        participant DSL as Exposed DSL
-        participant DIA as DuckDBDialect
-        participant DB as DuckDB Engine
-
-    App->>DSL: Table.selectAll().where { ... }
-    DSL->>DIA: Generate SQL
-    DIA-->>DSL: SQL string
-    DSL->>DB: JDBC execute
-    DB-->>DSL: ResultSet
-    DSL-->>App: List<ResultRow>
-
-    Note over App,DB: Coroutine variant
-    App->>DSL: suspendTransaction { query }
-    DSL->>DB: Dispatchers.IO → JDBC
-    DB-->>DSL: ResultSet
-    DSL->>App: Flow<T> via queryFlow
-```
+![Query Execution Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-duckdb-sequence-01.png)
 
 ## Key Files / Classes
 

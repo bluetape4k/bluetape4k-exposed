@@ -8,49 +8,7 @@ Kotlin 코루틴 네이티브 배치 처리 프레임워크. Spring Batch 없이
 
 ![아키텍처 1](../../docs/images/readme-diagrams/utils-batch-ko-diagram-01.svg)
 
-```mermaid
-sequenceDiagram
-    box "오케스트레이션" #E8F5E9
-    participant Job as BatchJob
-    end
-    box "실행" #E3F2FD
-    participant Runner as BatchStepRunner
-    end
-    box "영속성" #FFF3E0
-    participant Repo as BatchJobRepository
-    end
-    box "I/O" #F3E5F5
-    participant Reader as BatchReader
-    participant Writer as BatchWriter
-    end
-
-    Job->>Repo: findOrCreateJobExecution
-    loop 각 Step
-        Job->>Runner: run()
-        Runner->>Repo: findOrCreateStepExecution
-        alt 이미 COMPLETED
-            Runner-->>Job: StepReport (skip 반환)
-        else RUNNING / 신규
-            Runner->>Reader: open()
-            Runner->>Writer: open()
-            Repo-->>Runner: loadCheckpoint
-            opt checkpoint != null
-                Runner->>Reader: restoreFrom(checkpoint)
-            end
-            loop 청크 루프
-                loop chunkSize 번
-                    Runner->>Reader: read()
-                    Reader-->>Runner: 아이템 or null(EOF)
-                end
-                Runner->>Writer: write(chunk)
-                Runner->>Repo: saveCheckpoint
-                Runner->>Reader: onChunkCommitted()
-            end
-            Runner->>Repo: completeStepExecution
-        end
-    end
-    Job->>Repo: completeJobExecution
-```
+![Architecture diagram](../../docs/images/readme-diagrams/utils-batch-sequence-01.png)
 
 ## 주요 기능
 

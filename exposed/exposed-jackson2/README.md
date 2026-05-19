@@ -117,37 +117,11 @@ val metadata: ProductMetadata? = resultRow.getJacksonOrNull(Products.metadata)
 
 ### Object → JSON → DB
 
-```mermaid
-sequenceDiagram
-        participant App as Application
-        participant Col as JacksonColumnType~T~
-        participant Ser as JacksonSerializer
-        participant DB as Database
-
-    App->>Col: insert { it[settings] = UserSettings(theme="dark") }
-    Col->>Ser: serializeAsString(UserSettings(...))
-    Note over Ser: ObjectMapper.writeValueAsString()
-    Ser-->>Col: '{"theme":"dark","notifications":true}'
-    Col->>DB: INSERT ... VALUES ('{"theme":"dark",...}')
-    Note over DB: Stored in JSON / JSONB column
-```
+![Object → JSON → DB diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-sequence-01.png)
 
 ### DB → JSON → Object
 
-```mermaid
-sequenceDiagram
-        participant App as Application
-        participant Col as JacksonColumnType~T~
-        participant Ser as JacksonSerializer
-        participant DB as Database
-
-    App->>DB: SELECT settings FROM users WHERE id = 1
-    DB-->>Col: '{"theme":"dark","notifications":true}'
-    Col->>Ser: deserializeFromString~UserSettings~(json)
-    Note over Ser: ObjectMapper.readValue()
-    Ser-->>Col: UserSettings(theme="dark", notifications=true)
-    Col-->>App: row[Users.settings]
-```
+![DB → JSON → Object diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-sequence-02.png)
 
 ## Key Files / Classes
 

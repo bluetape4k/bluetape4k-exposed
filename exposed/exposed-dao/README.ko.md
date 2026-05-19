@@ -281,21 +281,7 @@ transaction {
 | 신규 엔티티 INSERT | `createdBy` | `createdAt`은 테이블의 DB `defaultExpression(CurrentTimestamp)`으로 설정 |
 | 기존 엔티티 UPDATE | `updatedBy` | `updatedAt`은 Repository의 `auditedUpdateById()` 호출 시 설정          |
 
-```mermaid
-sequenceDiagram
-        participant Caller
-        participant UserContext
-        participant Article
-        participant AuditableEntity
-        participant DB
-
-    Caller->>UserContext: withUser("alice") { ... }
-    Caller->>Article: new / flush
-    Article->>AuditableEntity: flush()
-    AuditableEntity->>UserContext: getCurrentUser()
-    AuditableEntity->>DB: INSERT / UPDATE
-    DB-->>Article: createdBy 또는 updatedBy 저장
-```
+![Configuration diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-sequence-01.png)
 
 #### 주의 사항
 

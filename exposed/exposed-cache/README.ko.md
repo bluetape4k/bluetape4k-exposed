@@ -83,38 +83,7 @@ Redis 기반 저장소의 선택적 Resilience 설정입니다. `null`(기본값
 
 ## 쓰기 전략 패턴
 
-```mermaid
-sequenceDiagram
-        participant Client as 클라이언트
-        participant Repo as 레포지토리
-        participant Cache as 로컬/Redis 캐시
-        participant DB as 데이터베이스
-
-    Note over Client,DB: Read-Through (모든 모드 공통)
-    Client->>Repo: get(id)
-    Repo->>Cache: getIfPresent(key)
-    alt 캐시 히트
-        Cache-->>Repo: 엔티티
-    else 캐시 미스
-        Repo->>DB: SELECT WHERE id = ?
-        DB-->>Repo: 행
-        Repo->>Cache: put(key, 엔티티)
-    end
-    Repo-->>Client: 엔티티?
-
-    Note over Client,DB: Write-Through
-    Client->>Repo: put(id, entity)
-    Repo->>Cache: put(key, entity)
-    Repo->>DB: UPDATE / INSERT
-    Repo-->>Client: 완료
-
-    Note over Client,DB: Write-Behind
-    Client->>Repo: put(id, entity)
-    Repo->>Cache: put(key, entity)
-    Repo->>Repo: writeBehindQueue.send(entry)
-    Repo-->>Client: 즉시 반환
-    Repo->>DB: flushBatch (비동기)
-```
+![Write diagram](../../docs/images/readme-diagrams/exposed-exposed-cache-sequence-01.png)
 
 ## testFixtures 시나리오
 
