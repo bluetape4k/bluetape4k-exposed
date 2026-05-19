@@ -112,6 +112,9 @@ class ExposedR2dbcBatchJobRepository(
         }
     }
 
+    /**
+     * Re-queries the active winner row after a concurrent insert loses the unique-index race.
+     */
     internal suspend fun requeryJobExecutionAfterUniqueViolation(
         jobName: String,
         params: Map<String, Any>,
