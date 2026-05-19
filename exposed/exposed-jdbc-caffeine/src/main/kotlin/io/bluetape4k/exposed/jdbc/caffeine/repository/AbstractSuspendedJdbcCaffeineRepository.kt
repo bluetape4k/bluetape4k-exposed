@@ -15,6 +15,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.cancellation.CancellationException
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
@@ -31,6 +34,7 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.v1.jdbc.update
 import java.io.Serializable
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -109,6 +113,8 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
     private val writeBehindQueue: Channel<Pair<ID, E>> by lazy {
         Channel(capacity = config.writeBehindQueueCapacity)
     }
+
+    private val loadMutexes = ConcurrentHashMap<String, Mutex>()
 
     private val writeBehindJob by lazy {
         scope.launch {
@@ -208,38 +214,24 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
         val cached = cache.getIfPresent(key)
         if (cached != null) return cached
 
-        val fromDb = findByIdFromDb(id) ?: return null
-        cache.put(key, fromDb)
-        return fromDb
+        return loadMutex(key).withLock {
+            cache.getIfPresent(key)
+                ?: findByIdFromDb(id)?.let { fromDb ->
+                    cache.asMap().putIfAbsent(key, fromDb) ?: fromDb
+                }
+        }
     }
 
     override suspend fun getAll(ids: Collection<ID>): Map<ID, E> {
         if (ids.isEmpty()) return emptyMap()
 
-        val result = mutableMapOf<ID, E>()
-        val missedIds = mutableListOf<ID>()
-
-        for (id in ids) {
-            val key = serializeKey(id)
-            val cached = cache.getIfPresent(key)
-            if (cached != null) {
-                result[id] = cached
-            } else {
-                missedIds.add(id)
-            }
-        }
-
-        if (missedIds.isNotEmpty()) {
-            val fromDb = findAllFromDb(missedIds)
-            for (entity in fromDb) {
-                val id = extractId(entity)
-                result[id] = entity
-                cache.put(serializeKey(id), entity)
-            }
-        }
-
-        return result
+        return ids.mapNotNull { id ->
+            get(id)?.let { id to it }
+        }.toMap()
     }
+
+    private fun loadMutex(key: String): Mutex =
+        loadMutexes.computeIfAbsent(key) { Mutex() }
 
     @Suppress("DEPRECATION")
     override suspend fun findAll(

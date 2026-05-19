@@ -4,10 +4,16 @@ import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
 import io.bluetape4k.exposed.r2dbc.caffeine.AbstractR2dbcCaffeineTest
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorR2dbcCaffeineRepository
+import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema
+import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.ActorRecord
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.ActorTable
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.withActorTable
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
@@ -20,12 +26,18 @@ import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
+import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -50,6 +62,70 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
     )
 
     private val repository by lazy { ActorR2dbcCaffeineRepository(config) }
+
+    @Test
+    fun `get - concurrent cache misses run one async loader per key`() = runTest {
+        val repository = CountingActorRepository("r2dbc:caffeine:atomic:get")
+
+        val results = List(8) {
+            async(Dispatchers.Default) {
+                repository.get(1L)
+            }
+        }.awaitAll()
+
+        results.toSet().size shouldBeEqualTo 1
+        repository.singleLoadCount.get() shouldBeEqualTo 1
+    }
+
+    @Test
+    fun `getAll - concurrent cache misses run one async loader per key`() = runTest {
+        val repository = CountingActorRepository("r2dbc:caffeine:atomic:get-all")
+        val ids = listOf(1L, 2L, 3L)
+
+        val results = List(8) {
+            async(Dispatchers.Default) {
+                repository.getAll(ids)
+            }
+        }.awaitAll()
+
+        results.forEach { result ->
+            result.keys shouldBeEqualTo ids.toSet()
+        }
+        repository.singleLoadCount.get() shouldBeEqualTo ids.size
+        repository.bulkLoadCount.get() shouldBeEqualTo 0
+    }
+
+    private class CountingActorRepository(
+        keyPrefix: String,
+    ): AbstractR2dbcCaffeineRepository<Long, ActorRecord>(
+        LocalCacheConfig(keyPrefix = keyPrefix, writeMode = CacheWriteMode.READ_ONLY)
+    ) {
+        val singleLoadCount = AtomicInteger()
+        val bulkLoadCount = AtomicInteger()
+
+        override val table: IdTable<Long> = ActorTable
+
+        override suspend fun ResultRow.toEntity(): ActorRecord =
+            error("DB row conversion is not used by this in-memory concurrency test")
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) = Unit
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) = Unit
+
+        override fun extractId(entity: ActorRecord): Long = entity.id
+
+        override suspend fun findByIdFromDb(id: Long): ActorRecord? {
+            singleLoadCount.incrementAndGet()
+            delay(100)
+            return ActorSchema.newActorRecord().withId(id)
+        }
+
+        override suspend fun findAllFromDb(ids: Collection<Long>): List<ActorRecord> {
+            bulkLoadCount.incrementAndGet()
+            delay(100)
+            return ids.map { ActorSchema.newActorRecord().withId(it) }
+        }
+    }
 
     private suspend fun withTable(
         testDB: TestDB,
