@@ -26,30 +26,12 @@ object ProductTable: Table("products") {
 
 ## 클래스 다이어그램
 
-![클래스 다이어그램 1](../../docs/images/readme-diagrams/exposed-exposed-measured-ko-diagram-01.svg)
+![Component Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-measured-ko-diagram-01.svg)
 
 ## Column 변환 흐름
 
-![Column 변환 흐름 2](../../docs/images/readme-diagrams/exposed-exposed-measured-ko-diagram-02.svg)
+![Column Component Component 2](../../docs/images/readme-diagrams/exposed-exposed-measured-ko-diagram-02.svg)
 
 ## 저장/조회 시퀀스 다이어그램
 
-```mermaid
-sequenceDiagram
-        participant App as 애플리케이션
-        participant Col as MeasureColumnType~Length~
-        participant DB as Database
-
-    Note over App,DB: 저장 — 기준 단위(meter)로 변환하여 DOUBLE 저장
-    App->>Col: insert { it[width] = 1500.millimeters() }
-    Col->>Col: notNullValueToDB(value in Length.meters)
-    Note over Col: Measure(1500mm) → 1.5 (meter 기준)
-    Col->>DB: INSERT ... VALUES (1.5)
-
-    Note over App,DB: 조회 — DOUBLE을 Measure 타입으로 복원
-    App->>DB: SELECT width FROM products WHERE id = 1
-    DB-->>Col: 1.5 (Double)
-    Col->>Col: fromBaseValue(1.5) → Measure(1.5, meters)
-    Col-->>App: Measure(1.5, Length.meters)
-    Note over App: 1.5.meters().inMillimeters() == 1500.0
-```
+![Save/Query Component Diagram 3](../../docs/images/readme-diagrams/exposed-exposed-measured-ko-diagram-03.svg)

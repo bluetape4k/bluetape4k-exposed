@@ -10,34 +10,9 @@ Range Partitioner, Spring Boot Auto-Configuration을 제공합니다.
 
 ## 아키텍처
 
-![아키텍처 1](../../docs/images/readme-diagrams/spring-boot-batch-exposed-ko-diagram-01.svg)
+![Architecture 1](../../docs/images/readme-diagrams/spring-boot-batch-exposed-ko-diagram-01.svg)
 
-```mermaid
-sequenceDiagram
-    box rgb(27,94,32) 배치 관리
-        participant Manager as 파티션 매니저 Step
-        participant Partitioner as ExposedRangePartitioner
-        participant Handler as TaskExecutorPartitionHandler
-    end
-        participant Worker as Worker Step (×N VirtualThread)
-        participant Reader as ExposedKeysetItemReader
-        participant Writer as ExposedItemWriter
-
-    Manager->>Partitioner: partition(gridSize)
-    Partitioner-->>Manager: Map<String, ExecutionContext> (파티션별 minId/maxId)
-    Manager->>Handler: handle(stepSplitter, stepExecution)
-    loop 각 파티션 (VirtualThread)
-        Handler->>Worker: execute(executionContext)
-        Worker->>Reader: open(executionContext) — minId/maxId/lastKey 설정
-        loop 페이지 단위
-            Worker->>Reader: read() → T
-            Reader->>Reader: fetchNextPage (WHERE id > lastKey AND id <= maxId)
-        end
-        Worker->>Writer: write(chunk)
-        Writer->>Writer: Exposed batchInsert
-        Worker->>Reader: update(executionContext) — lastKey 저장 (재시작 지원)
-    end
-```
+![Architecture 2](../../docs/images/readme-diagrams/spring-boot-batch-exposed-ko-diagram-02.svg)
 
 ## 주요 기능
 

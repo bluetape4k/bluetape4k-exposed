@@ -340,73 +340,21 @@ prepared parameter binding 순서를 유지합니다.
 
 ### R2dbcRepository 핵심 구조
 
-![R2dbcRepository 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-ko-diagram-01.svg)
+![R2dbcRepository Component Component 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-ko-diagram-01.svg)
 
 ### R2dbcRepository 계층
 
-![R2dbcRepository 계층 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-ko-diagram-02.svg)
+![R2dbcRepository Component 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-ko-diagram-02.svg)
 
 ### suspend 트랜잭션 흐름
 
 `suspendTransaction` 블록 내에서 `R2dbcRepository`를 통해 CRUD 연산이 수행되는 흐름입니다.
 
-```mermaid
-sequenceDiagram
-        participant C as 호출자
-        participant T as suspendTransaction
-        participant R as R2dbcRepository
-        participant DB as R2DBC Database
-
-    C->>T: suspendTransaction { ... }
-    activate T
-
-    T->>R: findById(id)
-    R->>DB: SELECT * WHERE id = ?
-    DB-->>R: ResultRow
-    R-->>T: toEntity() → E
-
-    T->>R: updateById(id) { ... }
-    R->>DB: UPDATE SET ... WHERE id = ?
-    DB-->>R: Int (updated rows)
-    R-->>T: Int
-
-    T->>R: deleteById(id)
-    R->>DB: DELETE WHERE id = ?
-    DB-->>R: Int (deleted rows)
-    R-->>T: Int
-
-    deactivate T
-    T-->>C: 결과 반환
-```
+![suspend Transaction Component 3](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-ko-diagram-03.svg)
 
 ### SoftDelete 트랜잭션 흐름
 
-```mermaid
-sequenceDiagram
-        participant C as 호출자
-        participant T as suspendTransaction
-        participant R as SoftDeletedR2dbcRepository
-        participant DB as R2DBC Database
-
-    C->>T: suspendTransaction { ... }
-    activate T
-
-    T->>R: softDeleteById(id)
-    R->>DB: UPDATE SET is_deleted=true WHERE id=?
-    DB-->>R: Unit
-
-    T->>R: findActive()
-    R->>DB: SELECT * WHERE is_deleted=false
-    DB-->>R: Flow~ResultRow~
-    R-->>T: Flow~E~
-
-    T->>R: restoreById(id)
-    R->>DB: UPDATE SET is_deleted=false WHERE id=?
-    DB-->>R: Unit
-
-    deactivate T
-    T-->>C: 결과 반환
-```
+![SoftDelete Transaction Component 4](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-ko-diagram-04.svg)
 
 ## 편의 타입 별칭
 

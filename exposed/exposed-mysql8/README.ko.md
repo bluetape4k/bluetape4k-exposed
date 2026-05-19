@@ -12,7 +12,7 @@ JTS(Java Topology Suite)를 사용하여 8가지 geometry 타입을 지원하며
 
 ## 확장 함수 다이어그램
 
-![확장 함수 다이어그램 2](../../docs/images/readme-diagrams/exposed-exposed-mysql8-ko-diagram-02.svg)
+![Component Function Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-mysql8-ko-diagram-02.svg)
 
 ## 개요
 

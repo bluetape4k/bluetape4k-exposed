@@ -254,25 +254,7 @@ Features verified in a Trino Memory connector environment via Testcontainers.
 
 ### Distributed Query Flow
 
-```mermaid
-sequenceDiagram
-        participant App as Kotlin Code
-        participant DSL as Exposed DSL
-        participant TD as TrinoDialect
-        participant TC as TrinoConnectionWrapper
-        participant COORD as Trino Coordinator
-        participant WORKER as Trino Workers
-
-    App->>DSL: Table.selectAll().where { ... }
-    DSL->>TD: Generate SQL
-    TD-->>DSL: SQL string (autocommit)
-    DSL->>TC: JDBC execute
-    TC->>COORD: Submit query
-    COORD->>WORKER: Distribute to workers
-    WORKER-->>COORD: Partial results
-    COORD-->>TC: ResultSet
-    TC-->>App: List<ResultRow> / Flow<T>
-```
+![Distributed Query Flow 2](../../docs/images/readme-diagrams/exposed-exposed-trino-diagram-02.svg)
 
 ## Key Files / Classes
 

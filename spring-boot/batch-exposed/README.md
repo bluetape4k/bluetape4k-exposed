@@ -12,32 +12,7 @@ for VirtualThread parallel execution, and Spring Boot Auto-Configuration.
 
 ![Architecture 1](../../docs/images/readme-diagrams/spring-boot-batch-exposed-diagram-01.svg)
 
-```mermaid
-sequenceDiagram
-    box rgb(27,94,32) Batch Management
-        participant Manager as Partition Manager Step
-        participant Partitioner as ExposedRangePartitioner
-        participant Handler as TaskExecutorPartitionHandler
-    end
-        participant Worker as Worker Step (×N VirtualThread)
-        participant Reader as ExposedKeysetItemReader
-        participant Writer as ExposedItemWriter
-
-    Manager->>Partitioner: partition(gridSize)
-    Partitioner-->>Manager: Map<String, ExecutionContext> (minId/maxId per partition)
-    Manager->>Handler: handle(stepSplitter, stepExecution)
-    loop each partition (VirtualThread)
-        Handler->>Worker: execute(executionContext)
-        Worker->>Reader: open(executionContext) — sets minId/maxId/lastKey
-        loop pages
-            Worker->>Reader: read() → T
-            Reader->>Reader: fetchNextPage (keyset WHERE id > lastKey AND id <= maxId)
-        end
-        Worker->>Writer: write(chunk)
-        Writer->>Writer: batchInsert via Exposed
-        Worker->>Reader: update(executionContext) — saves lastKey for restart
-    end
-```
+![Architecture 2](../../docs/images/readme-diagrams/spring-boot-batch-exposed-diagram-02.svg)
 
 ## Features
 

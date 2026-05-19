@@ -226,19 +226,19 @@ transaction {
 
 `AuditableLongEntity`, `AuditableLongEntityClass`, 커스텀 IdTable 계층의 관계를 나타냅니다.
 
-![AuditableEntity 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-01.svg)
+![AuditableEntity Component Component 1](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-01.svg)
 
 ### 커스텀 IdTable 계층
 
 `exposed-core`의 IdTable 구현을 DAO 엔티티와 함께 사용하는 전체 계층입니다.
 
-![커스텀 IdTable 계층 2](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-02.svg)
+![Component IdTable Component 2](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-02.svg)
 
 ### Entity 확장 계층
 
 각 IdTable에 대응하는 DAO Entity 및 EntityClass 계층입니다.
 
-![Entity 확장 계층 3](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-03.svg)
+![Entity Component Component 3](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-03.svg)
 
 ## 주요 파일/클래스 목록
 
@@ -281,21 +281,7 @@ transaction {
 | 신규 엔티티 INSERT | `createdBy` | `createdAt`은 테이블의 DB `defaultExpression(CurrentTimestamp)`으로 설정 |
 | 기존 엔티티 UPDATE | `updatedBy` | `updatedAt`은 Repository의 `auditedUpdateById()` 호출 시 설정          |
 
-```mermaid
-sequenceDiagram
-        participant Caller
-        participant UserContext
-        participant Article
-        participant AuditableEntity
-        participant DB
-
-    Caller->>UserContext: withUser("alice") { ... }
-    Caller->>Article: new / flush
-    Article->>AuditableEntity: flush()
-    AuditableEntity->>UserContext: getCurrentUser()
-    AuditableEntity->>DB: INSERT / UPDATE
-    DB-->>Article: createdBy 또는 updatedBy 저장
-```
+![Component Configuration Component 4](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-04.svg)
 
 #### 주의 사항
 

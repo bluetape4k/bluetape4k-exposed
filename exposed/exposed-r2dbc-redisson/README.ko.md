@@ -127,13 +127,13 @@ val nearCacheConfig = RedisCacheConfig.readOnly(
 
 ## 아키텍처 개요
 
-![아키텍처 개요 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-ko-diagram-01.svg)
+![Architecture Component 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-ko-diagram-01.svg)
 
 ## 클래스 다이어그램
 
 ### R2DBC Redisson Repository 계층 구조
 
-![R2DBC Redisson Repository 계층 구조 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-ko-diagram-02.svg)
+![R2DBC Redisson Repository Component Component 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-ko-diagram-02.svg)
 
 ## 캐시 패턴
 
@@ -141,82 +141,19 @@ val nearCacheConfig = RedisCacheConfig.readOnly(
 
 캐시 미스 시 `R2dbcExposedEntityMapLoader`가 R2DBC `suspendTransaction`으로 DB에서 자동 로드합니다.
 
-```mermaid
-sequenceDiagram
-        participant Client as Client (Coroutine)
-        participant Repo as R2dbcRedissonRepository
-        participant RMap as Redisson RMap
-        participant Loader as R2dbcExposedEntityMapLoader
-        participant DB as Database (R2DBC)
-
-    Client ->> Repo: suspend get(id)
-    Repo ->> RMap: cache.getAsync(id).await()
-    alt RMap HIT
-        RMap -->> Repo: entity
-        Repo -->> Client: entity
-    else RMap MISS
-        RMap ->> Loader: loadAsync(id) [Read-Through]
-        Note over Loader, DB: suspendTransaction { selectAll().where { id eq ... } }
-        Loader ->> DB: SELECT WHERE id=? (R2DBC 비동기)
-        DB -->> Loader: ResultRow
-        Loader -->> RMap: entity (캐시에 저장)
-        RMap -->> Repo: entity
-        Repo -->> Client: entity
-    end
-```
+![Read-Through (R2DBC + suspend) 3](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-ko-diagram-03.svg)
 
 ### Write-Through (R2DBC + suspend)
 
 `put()` 호출 시 `R2dbcExposedEntityMapWriter`가 R2DBC `suspendTransaction`으로 DB에 즉시 반영합니다.
 
-```mermaid
-sequenceDiagram
-        participant Client as Client (Coroutine)
-        participant Repo as R2dbcRedissonRepository
-        participant RMap as Redisson RMap
-        participant Writer as R2dbcExposedEntityMapWriter
-        participant DB as Database (R2DBC)
-
-    Client ->> Repo: suspend put(entity)
-    Repo ->> RMap: cache.fastPutAsync(id, entity).await()
-    RMap ->> Writer: writeAsync(map) [Write-Through]
-    Note over Writer, DB: CoroutineScope(Dispatchers.IO) 내 suspendTransaction
-    Writer ->> DB: SELECT id (존재 여부 확인, R2DBC Flow)
-    DB -->> Writer: existIds
-    alt 기존 레코드
-        Writer ->> DB: UPDATE SET ... WHERE id=? (R2DBC)
-        DB -->> Writer: OK
-    else 신규 레코드 (non-autoInc ID)
-        Writer ->> DB: batchInsert(entities) (R2DBC)
-        DB -->> Writer: OK
-    end
-    Writer -->> RMap: 완료
-    RMap -->> Repo: true
-    Repo -->> Client: true
-```
+![Write-Through (R2DBC + suspend) 4](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-ko-diagram-04.svg)
 
 ### Write-Behind (R2DBC + suspend + 비동기 DB)
 
 `put()` 호출 즉시 응답하고, 이후 `R2dbcExposedEntityMapWriter`가 비동기 배치로 DB에 반영합니다.
 
-```mermaid
-sequenceDiagram
-        participant Client as Client (Coroutine)
-        participant Repo as R2dbcRedissonRepository
-        participant RMap as Redisson RMap
-        participant Writer as R2dbcExposedEntityMapWriter
-        participant DB as Database (R2DBC)
-
-    Client ->> Repo: suspend put(entity)
-    Repo ->> RMap: cache.fastPutAsync(id, entity).await()
-    RMap -->> Repo: true (즉시 반환)
-    Repo -->> Client: true
-    Note over RMap, DB: Write-Behind: Redisson이 비동기 배치로 DB 반영
-    RMap ->> Writer: writeAsync(map) [비동기]
-    Note over Writer, DB: CoroutineScope(Dispatchers.IO) 내 suspendTransaction
-    Writer ->> DB: batchInsert(entities).asFlow().collect { ... } (R2DBC)
-    DB -->> Writer: OK
-```
+![Write-Behind (R2DBC + suspend + Async DB) 5](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-ko-diagram-05.svg)
 
 ## R2dbcRedissonRepository 주요 메서드
 

@@ -99,24 +99,7 @@ suspend fun example(repo: UserSuspendedRepository) {
 
 ![Architecture Overview 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-diagram-01.svg)
 
-```mermaid
-sequenceDiagram
-        participant App
-        participant Repo as LettuceJdbcRepository
-        participant Cache as LettuceNearCache
-        participant DB as PostgreSQL
-
-    App->>Repo: findByIdOrNull(id)
-    Repo->>Cache: get(id)
-    alt Cache Hit
-        Cache-->>Repo: entity
-    else Cache Miss
-        Repo->>DB: SELECT WHERE id=?
-        DB-->>Repo: row
-        Repo->>Cache: put(id, entity)
-    end
-    Repo-->>App: entity?
-```
+![Architecture Overview 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-diagram-02.svg)
 
 ## Key Methods of JdbcLettuceRepository
 

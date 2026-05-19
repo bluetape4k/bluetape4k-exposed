@@ -18,22 +18,7 @@ dependencies {
 
 ## 런타임 모델
 
-```mermaid
-sequenceDiagram
-    participant App as Application service
-    participant Tx as Exposed springTransactionManager
-    participant Repo as ExposedEventPublicationRepository
-    participant DB as JDBC database
-    participant Listener as ApplicationModuleListener
-
-    App->>Tx: begin business transaction
-    App->>Repo: create(TargetEventPublication)
-    Repo->>DB: insert EVENT_PUBLICATION
-    App->>Tx: commit
-    Listener->>Repo: markProcessing(id)
-    Listener->>Repo: markCompleted(id, instant)
-    Repo->>DB: update/delete/archive publication
-```
+![Runtime Component 1](../../docs/images/readme-diagrams/spring-boot-exposed-spring-modulith-ko-diagram-01.svg)
 
 Repository는 애플리케이션과 같은 `DataSource` 및 Exposed
 `springTransactionManager`를 사용합니다. Spring Modulith 2.x의

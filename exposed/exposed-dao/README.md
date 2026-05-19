@@ -282,21 +282,7 @@ Overrides `flush()` to automatically set `createdBy` and `updatedBy`.
 | New entity INSERT      | `createdBy`    | `createdAt` is set by the table's DB `defaultExpression(CurrentTimestamp)` |
 | Existing entity UPDATE | `updatedBy`    | `updatedAt` is set when `auditedUpdateById()` is called on the Repository  |
 
-```mermaid
-sequenceDiagram
-        participant Caller
-        participant UserContext
-        participant Article
-        participant AuditableEntity
-        participant DB
-
-    Caller->>UserContext: withUser("alice") { ... }
-    Caller->>Article: new / flush
-    Article->>AuditableEntity: flush()
-    AuditableEntity->>UserContext: getCurrentUser()
-    AuditableEntity->>DB: INSERT / UPDATE
-    DB-->>Article: Save createdBy or updatedBy
-```
+![Automatic field assignment 4](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-04.svg)
 
 #### Important notes
 

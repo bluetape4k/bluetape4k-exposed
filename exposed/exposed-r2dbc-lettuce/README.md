@@ -22,32 +22,7 @@ A coroutine-native Read-through / Write-through / Write-behind cache repository 
 
 ![Architecture 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-diagram-01.svg)
 
-```mermaid
-sequenceDiagram
-    participant App
-    participant Repo as AbstractR2dbcLettuceRepository
-    participant Near as Caffeine NearCache
-    participant Redis as Lettuce Redis
-    participant DB as R2DBC DB
-
-    App->>Repo: suspend findById(id)
-    Repo->>Near: get(id)
-    alt NearCache Hit
-        Near-->>Repo: entity
-    else NearCache Miss
-        Repo->>Redis: GET key
-        alt Redis Hit
-            Redis-->>Repo: entity
-            Repo->>Near: put(id, entity)
-        else Redis Miss
-            Repo->>DB: suspendTransaction { SELECT WHERE id=? }
-            DB-->>Repo: row
-            Repo->>Redis: SET key entity
-            Repo->>Near: put(id, entity)
-        end
-    end
-    Repo-->>App: entity?
-```
+![Architecture 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-diagram-02.svg)
 
 ## Dependency
 

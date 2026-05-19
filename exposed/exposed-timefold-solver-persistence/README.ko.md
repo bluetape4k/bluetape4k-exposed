@@ -250,34 +250,15 @@ CREATE TABLE planning_solution (
 
 ## 클래스 다이어그램
 
-![클래스 다이어그램 1](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-ko-diagram-01.svg)
+![Component Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-ko-diagram-01.svg)
 
 ## 아키텍처 다이어그램
 
-![아키텍처 다이어그램 2](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-ko-diagram-02.svg)
+![Architecture Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-ko-diagram-02.svg)
 
 ## Score 직렬화 흐름
 
-```mermaid
-sequenceDiagram
-    participant APP as 애플리케이션
-    participant EXP as Exposed ORM
-    participant CT as ScoreColumnType
-    participant DB as 데이터베이스
-
-    Note over APP,DB: 저장 (직렬화)
-    APP->>EXP: entity.score = HardSoftScore.of(100, -50)
-    EXP->>CT: valueToDb(score)
-    CT->>CT: ScoreDefinition.formatScore(score)<br/>→ "100hard/-50soft"
-    CT->>DB: INSERT ... score = '100hard/-50soft'
-
-    Note over APP,DB: 조회 (역직렬화)
-    APP->>EXP: PlanningSolution.findById(1)
-    EXP->>DB: SELECT score FROM ...
-    DB-->>CT: "100hard/-50soft"
-    CT->>CT: ScoreDefinition.parseScore("100hard/-50soft")<br/>→ HardSoftScore.of(100, -50)
-    CT-->>APP: HardSoftScore 객체
-```
+![Score Component Component 3](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-ko-diagram-03.svg)
 
 ## 참고
 

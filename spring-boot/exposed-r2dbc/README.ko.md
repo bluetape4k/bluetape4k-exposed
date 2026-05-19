@@ -12,7 +12,7 @@ Spring Boot와 Spring Data Reactive를 활용하여 Exposed R2DBC를 완전한 s
 
 ### 비동기 처리 흐름
 
-![비동기 처리 흐름 2](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-ko-diagram-02.svg)
+![Async Component Component 2](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-ko-diagram-02.svg)
 
 ## 설치
 

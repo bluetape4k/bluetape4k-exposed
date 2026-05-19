@@ -101,30 +101,11 @@ queryFlow(db) {
 
 ## 다이어그램
 
-![다이어그램 1](../../docs/images/readme-diagrams/exposed-exposed-duckdb-ko-diagram-01.svg)
+![Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-duckdb-ko-diagram-01.svg)
 
 ### 쿼리 실행 흐름
 
-```mermaid
-sequenceDiagram
-        participant App as Kotlin 코드
-        participant DSL as Exposed DSL
-        participant DIA as DuckDBDialect
-        participant DB as DuckDB 엔진
-
-    App->>DSL: Table.selectAll().where { ... }
-    DSL->>DIA: SQL 생성
-    DIA-->>DSL: SQL 문자열
-    DSL->>DB: JDBC 실행
-    DB-->>DSL: ResultSet
-    DSL-->>App: List<ResultRow>
-
-    Note over App,DB: 코루틴 변형
-    App->>DSL: suspendTransaction { query }
-    DSL->>DB: Dispatchers.IO → JDBC
-    DB-->>DSL: ResultSet
-    DSL->>App: queryFlow로 Flow<T> emit
-```
+![Query Component Component 2](../../docs/images/readme-diagrams/exposed-exposed-duckdb-ko-diagram-02.svg)
 
 ## 주요 파일/클래스 목록
 

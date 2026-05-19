@@ -225,23 +225,23 @@ println("마지막 페이지: ${page.isLast}")
 
 `AuditableLongIdTable`, `UserContext`, `HasIdentifier`, `ExposedPage`의 관계를 나타냅니다.
 
-![Auditable 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-core-ko-diagram-01.svg)
+![Auditable Component Component 1](../../docs/images/readme-diagrams/exposed-exposed-core-ko-diagram-01.svg)
 
 ### 커스텀 컬럼 타입 계층
 
 `ColumnWithTransform`을 기반으로 압축/암호화/직렬화 컬럼 타입이 일관된 구조로 구성됩니다.
 
-![커스텀 컬럼 타입 계층 2](../../docs/images/readme-diagrams/exposed-exposed-core-ko-diagram-02.svg)
+![Component Component Component Component 2](../../docs/images/readme-diagrams/exposed-exposed-core-ko-diagram-02.svg)
 
 ### ID 생성 전략별 IdTable 계층
 
 클라이언트 측에서 ID를 생성하는 커스텀 `IdTable` 구현체들입니다.
 
-![ID 생성 전략별 IdTable 계층 3](../../docs/images/readme-diagrams/exposed-exposed-core-ko-diagram-03.svg)
+![ID Component Component IdTable Component 3](../../docs/images/readme-diagrams/exposed-exposed-core-ko-diagram-03.svg)
 
 ### HasIdentifier 및 ExposedPage
 
-![HasIdentifier 및 ExposedPage 4](../../docs/images/readme-diagrams/exposed-exposed-core-ko-diagram-04.svg)
+![HasIdentifier Component ExposedPage 4](../../docs/images/readme-diagrams/exposed-exposed-core-ko-diagram-04.svg)
 
 ## 주요 파일/클래스 목록
 
@@ -295,21 +295,7 @@ interface Auditable {
 
 현재 작업 중인 사용자명을 전파하는 컨텍스트 객체입니다. Virtual Thread / Structured Concurrency와 Coroutines 환경 모두 지원합니다.
 
-```mermaid
-sequenceDiagram
-        participant Caller
-        participant UserContext
-        participant ScopedValue
-        participant ThreadLocal
-        participant Entity
-
-    Caller->>UserContext: withUser("admin") { ... }
-    UserContext->>ThreadLocal: 이전 값 백업 후 admin 설정
-    UserContext->>ScopedValue: admin 바인딩
-    ScopedValue-->>Entity: getCurrentUser() == "admin"
-    Entity-->>Caller: createdBy / updatedBy 반영
-    UserContext->>ThreadLocal: 블록 종료 후 이전 값 복원
-```
+![UserContext — User Component Component 5](../../docs/images/readme-diagrams/exposed-exposed-core-ko-diagram-05.svg)
 
 #### Virtual Thread 환경
 

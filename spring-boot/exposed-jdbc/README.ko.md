@@ -13,7 +13,7 @@ Spring Boot와 Spring Data를 활용하여 Exposed DAO 엔티티를 관리하는
 
 ### 쿼리 처리 흐름
 
-![쿼리 처리 흐름 2](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-ko-diagram-02.svg)
+![Query Component Component 2](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-ko-diagram-02.svg)
 
 ## 설치
 

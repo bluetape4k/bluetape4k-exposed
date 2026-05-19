@@ -107,47 +107,21 @@ val metadata: ProductMetadata? = resultRow.getJacksonOrNull(Products.metadata)
 
 ### 컬럼 타입 구조 (요약)
 
-![컬럼 타입 구조 (요약) 1](../../docs/images/readme-diagrams/exposed-exposed-jackson2-ko-diagram-01.svg)
+![Component Component Component (Component) 1](../../docs/images/readme-diagrams/exposed-exposed-jackson2-ko-diagram-01.svg)
 
 ## 클래스 다이어그램
 
-![클래스 다이어그램 2](../../docs/images/readme-diagrams/exposed-exposed-jackson2-ko-diagram-02.svg)
+![Component Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-jackson2-ko-diagram-02.svg)
 
 ## 직렬화/역직렬화 시퀀스 다이어그램
 
 ### 객체 → JSON → DB 저장
 
-```mermaid
-sequenceDiagram
-        participant App as 애플리케이션
-        participant Col as JacksonColumnType~T~
-        participant Ser as JacksonSerializer
-        participant DB as Database
-
-    App->>Col: insert { it[settings] = UserSettings(theme="dark") }
-    Col->>Ser: serializeAsString(UserSettings(...))
-    Note over Ser: ObjectMapper.writeValueAsString()
-    Ser-->>Col: '{"theme":"dark","notifications":true}'
-    Col->>DB: INSERT ... VALUES ('{"theme":"dark",...}')
-    Note over DB: JSON / JSONB 컬럼에 저장
-```
+![Component → JSON → DB Save 3](../../docs/images/readme-diagrams/exposed-exposed-jackson2-ko-diagram-03.svg)
 
 ### DB 조회 → JSON → 객체 역직렬화
 
-```mermaid
-sequenceDiagram
-        participant App as 애플리케이션
-        participant Col as JacksonColumnType~T~
-        participant Ser as JacksonSerializer
-        participant DB as Database
-
-    App->>DB: SELECT settings FROM users WHERE id = 1
-    DB-->>Col: '{"theme":"dark","notifications":true}'
-    Col->>Ser: deserializeFromString~UserSettings~(json)
-    Note over Ser: ObjectMapper.readValue()
-    Ser-->>Col: UserSettings(theme="dark", notifications=true)
-    Col-->>App: row[Users.settings]
-```
+![DB Query → JSON → Component Component 4](../../docs/images/readme-diagrams/exposed-exposed-jackson2-ko-diagram-04.svg)
 
 ## 주요 파일/클래스 목록
 

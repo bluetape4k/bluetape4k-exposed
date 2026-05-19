@@ -165,22 +165,7 @@ This module uses the BigQuery REST API and does not provide JDBC transaction sem
 
 ### Query Execution Flow
 
-```mermaid
-sequenceDiagram
-        participant App as Kotlin Code
-        participant CTX as BigQueryContext
-        participant H2 as H2 (PostgreSQL mode)
-        participant BQ as BigQuery REST API
-        participant ROW as BigQueryResultRow
-
-    App->>CTX: Exposed DSL query
-    CTX->>H2: Generate SQL string
-    H2-->>CTX: SQL text
-    CTX->>BQ: Execute via REST API
-    BQ-->>CTX: QueryResponse (JSON)
-    CTX->>ROW: Map to type-safe rows
-    ROW-->>App: List / Flow<BigQueryResultRow>
-```
+![Query Execution Flow 2](../../docs/images/readme-diagrams/exposed-exposed-bigquery-diagram-02.svg)
 
 ## Key Files / Classes
 

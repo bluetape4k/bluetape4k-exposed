@@ -258,26 +258,7 @@ CREATE TABLE planning_solution (
 
 ## Score Serialization Flow
 
-```mermaid
-sequenceDiagram
-    participant APP as Application
-    participant EXP as Exposed ORM
-    participant CT as ScoreColumnType
-    participant DB as Database
-
-    Note over APP,DB: Save (Serialization)
-    APP->>EXP: entity.score = HardSoftScore.of(100, -50)
-    EXP->>CT: valueToDb(score)
-    CT->>CT: ScoreDefinition.formatScore(score)<br/>→ "100hard/-50soft"
-    CT->>DB: INSERT ... score = '100hard/-50soft'
-
-    Note over APP,DB: Load (Deserialization)
-    APP->>EXP: PlanningSolution.findById(1)
-    EXP->>DB: SELECT score FROM ...
-    DB-->>CT: "100hard/-50soft"
-    CT->>CT: ScoreDefinition.parseScore("100hard/-50soft")<br/>→ HardSoftScore.of(100, -50)
-    CT-->>APP: HardSoftScore object
-```
+![Score Serialization Flow 3](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-03.svg)
 
 ## References
 

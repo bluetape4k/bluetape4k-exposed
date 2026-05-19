@@ -299,21 +299,7 @@ interface Auditable {
 
 A context object that propagates the current user's name. Supports both Virtual Thread / Structured Concurrency and Coroutines environments.
 
-```mermaid
-sequenceDiagram
-        participant Caller
-        participant UserContext
-        participant ScopedValue
-        participant ThreadLocal
-        participant Entity
-
-    Caller->>UserContext: withUser("admin") { ... }
-    UserContext->>ThreadLocal: Back up previous value, set admin
-    UserContext->>ScopedValue: Bind admin
-    ScopedValue-->>Entity: getCurrentUser() == "admin"
-    Entity-->>Caller: Reflect in createdBy / updatedBy
-    UserContext->>ThreadLocal: Restore previous value after block exits
-```
+![UserContext — Managing the Current User 5](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-05.svg)
 
 #### Virtual Thread environment
 

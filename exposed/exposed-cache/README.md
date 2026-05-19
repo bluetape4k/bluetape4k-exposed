@@ -83,38 +83,7 @@ Optional resilience configuration for Redis-backed repositories. Pass `null` (th
 
 ## Write Strategy Patterns
 
-```mermaid
-sequenceDiagram
-        participant Client
-        participant Repo as Repository
-        participant Cache as Local/Redis Cache
-        participant DB as Database
-
-    Note over Client,DB: Read-Through (all modes)
-    Client->>Repo: get(id)
-    Repo->>Cache: getIfPresent(key)
-    alt Cache Hit
-        Cache-->>Repo: entity
-    else Cache Miss
-        Repo->>DB: SELECT WHERE id = ?
-        DB-->>Repo: row
-        Repo->>Cache: put(key, entity)
-    end
-    Repo-->>Client: entity?
-
-    Note over Client,DB: Write-Through
-    Client->>Repo: put(id, entity)
-    Repo->>Cache: put(key, entity)
-    Repo->>DB: UPDATE / INSERT
-    Repo-->>Client: done
-
-    Note over Client,DB: Write-Behind
-    Client->>Repo: put(id, entity)
-    Repo->>Cache: put(key, entity)
-    Repo->>Repo: writeBehindQueue.send(entry)
-    Repo-->>Client: done (immediate)
-    Repo->>DB: flushBatch (async)
-```
+![Write Strategy Patterns 3](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-03.svg)
 
 ## testFixtures Scenarios
 

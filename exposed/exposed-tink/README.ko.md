@@ -213,11 +213,11 @@ object SensitiveData: IntIdTable("sensitive_data") {
 
 ### 컬럼 타입 구조 (요약)
 
-![컬럼 타입 구조 (요약) 1](../../docs/images/readme-diagrams/exposed-exposed-tink-ko-diagram-01.svg)
+![Component Component Component (Component) 1](../../docs/images/readme-diagrams/exposed-exposed-tink-ko-diagram-01.svg)
 
 ## 클래스 다이어그램
 
-![클래스 다이어그램 2](../../docs/images/readme-diagrams/exposed-exposed-tink-ko-diagram-02.svg)
+![Component Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-tink-ko-diagram-02.svg)
 
 ## 주요 파일/클래스 목록
 

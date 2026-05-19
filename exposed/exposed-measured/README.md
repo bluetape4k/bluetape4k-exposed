@@ -34,22 +34,4 @@ object ProductTable: Table("products") {
 
 ## Storage / Retrieval Sequence Diagram
 
-```mermaid
-sequenceDiagram
-        participant App as Application
-        participant Col as MeasureColumnType~Length~
-        participant DB as Database
-
-    Note over App,DB: Store — converts to base unit (meters) and saves as DOUBLE
-    App->>Col: insert { it[width] = 1500.millimeters() }
-    Col->>Col: notNullValueToDB(value in Length.meters)
-    Note over Col: Measure(1500mm) → 1.5 (in meters)
-    Col->>DB: INSERT ... VALUES (1.5)
-
-    Note over App,DB: Retrieve — restores DOUBLE back to Measure type
-    App->>DB: SELECT width FROM products WHERE id = 1
-    DB-->>Col: 1.5 (Double)
-    Col->>Col: fromBaseValue(1.5) → Measure(1.5, meters)
-    Col-->>App: Measure(1.5, Length.meters)
-    Note over App: 1.5.meters().inMillimeters() == 1500.0
-```
+![Storage / Retrieval Sequence Diagram 3](../../docs/images/readme-diagrams/exposed-exposed-measured-diagram-03.svg)
