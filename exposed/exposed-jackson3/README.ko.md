@@ -114,15 +114,15 @@ val query2 = Users.selectAll()
 
 ### 컬럼 타입 구조 (요약)
 
-![Component Component Component (Component) 1](../../docs/images/readme-diagrams/exposed-exposed-jackson3-ko-diagram-01.svg)
+![Component Component Component (Component) 1](../../docs/images/readme-diagrams/exposed-exposed-jackson3-ko-diagram-01.png)
 
 ### JSON 컬럼 타입 클래스 구조
 
-![JSON Component Component Component Component 2](../../docs/images/readme-diagrams/exposed-exposed-jackson3-ko-diagram-02.svg)
+![JSON Component Component Component Component 2](../../docs/images/readme-diagrams/exposed-exposed-jackson3-ko-diagram-02.png)
 
 ### Jackson 2 vs Jackson 3 패키지 차이
 
-![Jackson 2 vs Jackson 3 Component Component 3](../../docs/images/readme-diagrams/exposed-exposed-jackson3-ko-diagram-03.svg)
+![Jackson 2 vs Jackson 3 Component Component 3](../../docs/images/readme-diagrams/exposed-exposed-jackson3-ko-diagram-03.png)
 
 ## 참고
 

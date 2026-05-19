@@ -6,11 +6,11 @@ PostgreSQL 전용 Kotlin Exposed 확장 모듈입니다. PostGIS 공간 데이�
 
 ## UML
 
-![UML 1](../../docs/images/readme-diagrams/exposed-exposed-postgresql-ko-diagram-01.svg)
+![UML 1](../../docs/images/readme-diagrams/exposed-exposed-postgresql-ko-diagram-01.png)
 
 ## 컬럼 타입 다이어그램
 
-![Component Component Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-postgresql-ko-diagram-02.svg)
+![Component Component Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-postgresql-ko-diagram-02.png)
 
 ## 주요 기능
 

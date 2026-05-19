@@ -159,11 +159,11 @@ BigQuery REST API 응답 → Kotlin 타입 변환:
 
 ## 아키텍처 다이어그램
 
-![Architecture Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-bigquery-ko-diagram-01.svg)
+![Architecture Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-bigquery-ko-diagram-01.png)
 
 ### 쿼리 실행 흐름
 
-![Query Component Component 2](../../docs/images/readme-diagrams/exposed-exposed-bigquery-ko-diagram-02.svg)
+![Query Component Component 2](../../docs/images/readme-diagrams/exposed-exposed-bigquery-ko-diagram-02.png)
 
 ## 주요 파일/클래스 목록
 

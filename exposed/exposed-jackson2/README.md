@@ -107,21 +107,21 @@ val metadata: ProductMetadata? = resultRow.getJacksonOrNull(Products.metadata)
 
 ### Column Type Structure (Summary)
 
-![Column Type Structure (Summary) 1](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-01.svg)
+![Column Type Structure (Summary) 1](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-01.png)
 
 ## Class Diagram
 
-![Class Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-02.svg)
+![Class Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-02.png)
 
 ## Serialization / Deserialization Sequence Diagrams
 
 ### Object → JSON → DB
 
-![Object → JSON → DB 3](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-03.svg)
+![Object → JSON → DB 3](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-03.png)
 
 ### DB → JSON → Object
 
-![DB → JSON → Object 4](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-04.svg)
+![DB → JSON → Object 4](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-04.png)
 
 ## Key Files / Classes
 

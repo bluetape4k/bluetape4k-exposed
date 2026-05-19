@@ -227,19 +227,19 @@ transaction {
 
 Illustrates the relationships among `AuditableLongEntity`, `AuditableLongEntityClass`, and the custom IdTable hierarchy.
 
-![Core AuditableEntity Structure 1](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-01.svg)
+![Core AuditableEntity Structure 1](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-01.png)
 
 ### Custom IdTable Hierarchy
 
 The full hierarchy of IdTable implementations used together with DAO entities.
 
-![Custom IdTable Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-02.svg)
+![Custom IdTable Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-02.png)
 
 ### Entity Extension Hierarchy
 
 DAO Entity and EntityClass hierarchies corresponding to each IdTable.
 
-![Entity Extension Hierarchy 3](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-03.svg)
+![Entity Extension Hierarchy 3](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-03.png)
 
 ## Key Files and Classes
 
@@ -282,7 +282,7 @@ Overrides `flush()` to automatically set `createdBy` and `updatedBy`.
 | New entity INSERT      | `createdBy`    | `createdAt` is set by the table's DB `defaultExpression(CurrentTimestamp)` |
 | Existing entity UPDATE | `updatedBy`    | `updatedAt` is set when `auditedUpdateById()` is called on the Repository  |
 
-![Automatic field assignment 4](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-04.svg)
+![Automatic field assignment 4](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-04.png)
 
 #### Important notes
 

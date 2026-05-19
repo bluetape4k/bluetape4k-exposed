@@ -104,11 +104,11 @@ queryFlow(db) {
 
 ## Diagram
 
-![Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-duckdb-diagram-01.svg)
+![Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-duckdb-diagram-01.png)
 
 ### Query Execution Flow
 
-![Query Execution Flow 2](../../docs/images/readme-diagrams/exposed-exposed-duckdb-diagram-02.svg)
+![Query Execution Flow 2](../../docs/images/readme-diagrams/exposed-exposed-duckdb-diagram-02.png)
 
 ## Key Files / Classes
 

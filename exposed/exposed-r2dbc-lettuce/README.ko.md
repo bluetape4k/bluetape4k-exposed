@@ -19,9 +19,9 @@ Exposed R2DBC와 Lettuce Redis 캐시를 결합한 코루틴 네이티브 Read-t
 
 ## 아키텍처
 
-![Architecture 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-ko-diagram-01.svg)
+![Architecture 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-ko-diagram-01.png)
 
-![Architecture 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-ko-diagram-02.svg)
+![Architecture 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-ko-diagram-02.png)
 
 ## 의존성 추가
 

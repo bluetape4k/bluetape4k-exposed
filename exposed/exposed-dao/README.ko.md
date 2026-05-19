@@ -226,19 +226,19 @@ transaction {
 
 `AuditableLongEntity`, `AuditableLongEntityClass`, 커스텀 IdTable 계층의 관계를 나타냅니다.
 
-![AuditableEntity Component Component 1](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-01.svg)
+![AuditableEntity Component Component 1](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-01.png)
 
 ### 커스텀 IdTable 계층
 
 `exposed-core`의 IdTable 구현을 DAO 엔티티와 함께 사용하는 전체 계층입니다.
 
-![Component IdTable Component 2](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-02.svg)
+![Component IdTable Component 2](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-02.png)
 
 ### Entity 확장 계층
 
 각 IdTable에 대응하는 DAO Entity 및 EntityClass 계층입니다.
 
-![Entity Component Component 3](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-03.svg)
+![Entity Component Component 3](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-03.png)
 
 ## 주요 파일/클래스 목록
 
@@ -281,7 +281,7 @@ transaction {
 | 신규 엔티티 INSERT | `createdBy` | `createdAt`은 테이블의 DB `defaultExpression(CurrentTimestamp)`으로 설정 |
 | 기존 엔티티 UPDATE | `updatedBy` | `updatedAt`은 Repository의 `auditedUpdateById()` 호출 시 설정          |
 
-![Component Configuration Component 4](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-04.svg)
+![Component Configuration Component 4](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-04.png)
 
 #### 주의 사항
 

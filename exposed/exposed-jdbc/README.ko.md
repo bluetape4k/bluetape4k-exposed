@@ -424,27 +424,27 @@ transaction {
 
 ### Repository 및 VirtualThread 트랜잭션 핵심 구조
 
-![Repository Component VirtualThread Transaction Component Component 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-ko-diagram-01.svg)
+![Repository Component VirtualThread Transaction Component Component 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-ko-diagram-01.png)
 
-![Repository Component VirtualThread Transaction Component Component 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-ko-diagram-02.svg)
+![Repository Component VirtualThread Transaction Component Component 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-ko-diagram-02.png)
 
 ### Repository 계층 구조
 
-![Repository Component Component 3](../../docs/images/readme-diagrams/exposed-exposed-jdbc-ko-diagram-03.svg)
+![Repository Component Component 3](../../docs/images/readme-diagrams/exposed-exposed-jdbc-ko-diagram-03.png)
 
 ## 시퀀스 다이어그램
 
 ### findById — 단건 조회
 
-![findById — Component Query 4](../../docs/images/readme-diagrams/exposed-exposed-jdbc-ko-diagram-04.svg)
+![findById — Component Query 4](../../docs/images/readme-diagrams/exposed-exposed-jdbc-ko-diagram-04.png)
 
 ### save + findPage — 저장 후 페이징 조회
 
-![save + findPage — Save Component Component Query 5](../../docs/images/readme-diagrams/exposed-exposed-jdbc-ko-diagram-05.svg)
+![save + findPage — Save Component Component Query 5](../../docs/images/readme-diagrams/exposed-exposed-jdbc-ko-diagram-05.png)
 
 ### softDeleteById / restoreById — 논리 삭제 및 복원
 
-![softDeleteById / restoreById — Component Delete Component Component 6](../../docs/images/readme-diagrams/exposed-exposed-jdbc-ko-diagram-06.svg)
+![softDeleteById / restoreById — Component Delete Component Component 6](../../docs/images/readme-diagrams/exposed-exposed-jdbc-ko-diagram-06.png)
 
 ## 주요 파일/클래스 목록
 

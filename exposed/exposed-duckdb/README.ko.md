@@ -101,11 +101,11 @@ queryFlow(db) {
 
 ## 다이어그램
 
-![Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-duckdb-ko-diagram-01.svg)
+![Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-duckdb-ko-diagram-01.png)
 
 ### 쿼리 실행 흐름
 
-![Query Component Component 2](../../docs/images/readme-diagrams/exposed-exposed-duckdb-ko-diagram-02.svg)
+![Query Component Component 2](../../docs/images/readme-diagrams/exposed-exposed-duckdb-ko-diagram-02.png)
 
 ## 주요 파일/클래스 목록
 

@@ -10,9 +10,9 @@ Range Partitioner, Spring Boot Auto-Configuration을 제공합니다.
 
 ## 아키텍처
 
-![Architecture 1](../../docs/images/readme-diagrams/spring-boot-batch-exposed-ko-diagram-01.svg)
+![Architecture 1](../../docs/images/readme-diagrams/spring-boot-batch-exposed-ko-diagram-01.png)
 
-![Architecture 2](../../docs/images/readme-diagrams/spring-boot-batch-exposed-ko-diagram-02.svg)
+![Architecture 2](../../docs/images/readme-diagrams/spring-boot-batch-exposed-ko-diagram-02.png)
 
 ## 주요 기능
 

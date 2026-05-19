@@ -10,11 +10,11 @@ Exposed JDBC repository with Caffeine local (in-process) cache. No Redis depende
 
 ## Architecture
 
-![Architecture 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-diagram-01.svg)
+![Architecture 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-diagram-01.png)
 
 ## Write Strategy Flows
 
-![Write Strategy Flows 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-diagram-02.svg)
+![Write Strategy Flows 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-diagram-02.png)
 
 ## Features
 

@@ -250,15 +250,15 @@ CREATE TABLE planning_solution (
 
 ## 클래스 다이어그램
 
-![Component Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-ko-diagram-01.svg)
+![Component Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-ko-diagram-01.png)
 
 ## 아키텍처 다이어그램
 
-![Architecture Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-ko-diagram-02.svg)
+![Architecture Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-ko-diagram-02.png)
 
 ## Score 직렬화 흐름
 
-![Score Component Component 3](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-ko-diagram-03.svg)
+![Score Component Component 3](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-ko-diagram-03.png)
 
 ## 참고
 

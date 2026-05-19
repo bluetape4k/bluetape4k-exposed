@@ -241,11 +241,11 @@ Testcontainers를 통한 Trino Memory 커넥터 환경에서 검증된 기능입
 
 ## 핵심 API 다이어그램
 
-![Component API Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-trino-ko-diagram-01.svg)
+![Component API Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-trino-ko-diagram-01.png)
 
 ### 분산 쿼리 흐름
 
-![Component Query Component 2](../../docs/images/readme-diagrams/exposed-exposed-trino-ko-diagram-02.svg)
+![Component Query Component 2](../../docs/images/readme-diagrams/exposed-exposed-trino-ko-diagram-02.png)
 
 ## 주요 파일/클래스 목록
 

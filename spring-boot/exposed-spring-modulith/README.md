@@ -18,7 +18,7 @@ dependencies {
 
 ## Runtime Model
 
-![Runtime Model 1](../../docs/images/readme-diagrams/spring-boot-exposed-spring-modulith-diagram-01.svg)
+![Runtime Model 1](../../docs/images/readme-diagrams/spring-boot-exposed-spring-modulith-diagram-01.png)
 
 The repository uses the same `DataSource` and Exposed
 `springTransactionManager` as the application. It does not provide an R2DBC or

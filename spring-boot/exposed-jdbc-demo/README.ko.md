@@ -12,11 +12,11 @@ Boot 4 BOM**을 사용합니다.
 
 ## UML
 
-![UML 1](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-ko-diagram-01.svg)
+![UML 1](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-ko-diagram-01.png)
 
 ### 애플리케이션 구조 흐름
 
-![Application Component Component 2](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-ko-diagram-02.svg)
+![Application Component Component 2](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-ko-diagram-02.png)
 
 ### 주요 특징
 

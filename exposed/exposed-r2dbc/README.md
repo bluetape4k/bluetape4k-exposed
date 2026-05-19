@@ -342,21 +342,21 @@ parameters from CTE predicates keep their binding order.
 
 ### Core R2dbcRepository Structure
 
-![Core R2dbcRepository Structure 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-01.svg)
+![Core R2dbcRepository Structure 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-01.png)
 
 ### R2dbcRepository Hierarchy
 
-![R2dbcRepository Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.svg)
+![R2dbcRepository Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.png)
 
 ### suspend Transaction Flow
 
 How CRUD operations are executed through `R2dbcRepository` inside a `suspendTransaction` block.
 
-![suspend Transaction Flow 3](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-03.svg)
+![suspend Transaction Flow 3](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-03.png)
 
 ### SoftDelete Transaction Flow
 
-![SoftDelete Transaction Flow 4](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-04.svg)
+![SoftDelete Transaction Flow 4](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-04.png)
 
 ## Convenience Type Aliases
 

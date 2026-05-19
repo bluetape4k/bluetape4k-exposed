@@ -127,13 +127,13 @@ val nearCacheConfig = RedisCacheConfig.readOnly(
 
 ## Architecture Overview
 
-![Architecture Overview 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-01.svg)
+![Architecture Overview 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-01.png)
 
 ## Class Diagrams
 
 ### R2DBC Redisson Repository Hierarchy
 
-![R2DBC Redisson Repository Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-02.svg)
+![R2DBC Redisson Repository Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-02.png)
 
 ## Cache Patterns
 
@@ -141,19 +141,19 @@ val nearCacheConfig = RedisCacheConfig.readOnly(
 
 On a cache miss, `R2dbcExposedEntityMapLoader` automatically loads from the DB via R2DBC `suspendTransaction`.
 
-![Read-Through (R2DBC + suspend) 3](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-03.svg)
+![Read-Through (R2DBC + suspend) 3](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-03.png)
 
 ### Write-Through (R2DBC + suspend)
 
 On `put()`, `R2dbcExposedEntityMapWriter` immediately persists to DB via R2DBC `suspendTransaction`.
 
-![Write-Through (R2DBC + suspend) 4](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-04.svg)
+![Write-Through (R2DBC + suspend) 4](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-04.png)
 
 ### Write-Behind (R2DBC + suspend + async DB)
 
 On `put()`, immediately returns and then `R2dbcExposedEntityMapWriter` asynchronously batch-persists to the DB.
 
-![Write-Behind (R2DBC + suspend + async DB) 5](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-05.svg)
+![Write-Behind (R2DBC + suspend + async DB) 5](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-05.png)
 
 ## R2dbcRedissonRepository Key Methods
 

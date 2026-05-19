@@ -107,21 +107,21 @@ val metadata: ProductMetadata? = resultRow.getJacksonOrNull(Products.metadata)
 
 ### 컬럼 타입 구조 (요약)
 
-![Component Component Component (Component) 1](../../docs/images/readme-diagrams/exposed-exposed-jackson2-ko-diagram-01.svg)
+![Component Component Component (Component) 1](../../docs/images/readme-diagrams/exposed-exposed-jackson2-ko-diagram-01.png)
 
 ## 클래스 다이어그램
 
-![Component Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-jackson2-ko-diagram-02.svg)
+![Component Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-jackson2-ko-diagram-02.png)
 
 ## 직렬화/역직렬화 시퀀스 다이어그램
 
 ### 객체 → JSON → DB 저장
 
-![Component → JSON → DB Save 3](../../docs/images/readme-diagrams/exposed-exposed-jackson2-ko-diagram-03.svg)
+![Component → JSON → DB Save 3](../../docs/images/readme-diagrams/exposed-exposed-jackson2-ko-diagram-03.png)
 
 ### DB 조회 → JSON → 객체 역직렬화
 
-![DB Query → JSON → Component Component 4](../../docs/images/readme-diagrams/exposed-exposed-jackson2-ko-diagram-04.svg)
+![DB Query → JSON → Component Component 4](../../docs/images/readme-diagrams/exposed-exposed-jackson2-ko-diagram-04.png)
 
 ## 주요 파일/클래스 목록
 

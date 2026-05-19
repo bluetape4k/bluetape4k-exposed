@@ -425,27 +425,27 @@ transaction {
 
 ### Core Repository and VirtualThread Transaction Structure
 
-![Core Repository and VirtualThread Transaction Structure 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-01.svg)
+![Core Repository and VirtualThread Transaction Structure 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-01.png)
 
-![Core Repository and VirtualThread Transaction Structure 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-02.svg)
+![Core Repository and VirtualThread Transaction Structure 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-02.png)
 
 ### Repository Hierarchy
 
-![Repository Hierarchy 3](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-03.svg)
+![Repository Hierarchy 3](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-03.png)
 
 ## Sequence Diagrams
 
 ### findById — Single record lookup
 
-![findById — Single record lookup 4](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-04.svg)
+![findById — Single record lookup 4](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-04.png)
 
 ### save + findPage — Save then paginate
 
-![save + findPage — Save then paginate 5](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-05.svg)
+![save + findPage — Save then paginate 5](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-05.png)
 
 ### softDeleteById / restoreById — Soft delete and restore
 
-![softDeleteById / restoreById — Soft delete and restore 6](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-06.svg)
+![softDeleteById / restoreById — Soft delete and restore 6](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-06.png)
 
 ## Key Files and Classes
 

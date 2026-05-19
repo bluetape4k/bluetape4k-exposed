@@ -161,11 +161,11 @@ This module uses the BigQuery REST API and does not provide JDBC transaction sem
 
 ## Architecture Diagram
 
-![Architecture Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-bigquery-diagram-01.svg)
+![Architecture Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-bigquery-diagram-01.png)
 
 ### Query Execution Flow
 
-![Query Execution Flow 2](../../docs/images/readme-diagrams/exposed-exposed-bigquery-diagram-02.svg)
+![Query Execution Flow 2](../../docs/images/readme-diagrams/exposed-exposed-bigquery-diagram-02.png)
 
 ## Key Files / Classes
 

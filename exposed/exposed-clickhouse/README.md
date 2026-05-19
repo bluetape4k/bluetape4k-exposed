@@ -6,7 +6,7 @@ Kotlin/Exposed dialect for ClickHouse JDBC — brings type-safe DSL, MergeTree e
 
 ## Architecture
 
-![Architecture 1](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-diagram-01.svg)
+![Architecture 1](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-diagram-01.png)
 
 ## Features
 
@@ -153,7 +153,7 @@ transaction(database) {
 
 ## DDL Flow
 
-![DDL Flow 2](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-diagram-02.svg)
+![DDL Flow 2](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-diagram-02.png)
 
 ## Caveats
 

@@ -10,11 +10,11 @@ Caffeine 로컬(인프로세스) 캐시를 사용하는 Exposed JDBC 저장소�
 
 ## 아키텍처
 
-![Architecture 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-ko-diagram-01.svg)
+![Architecture 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-ko-diagram-01.png)
 
 ## 쓰기 전략 흐름
 
-![Component Component Component 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-ko-diagram-02.svg)
+![Component Component Component 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-ko-diagram-02.png)
 
 ## 주요 기능
 

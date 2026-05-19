@@ -7,7 +7,7 @@ Exposed extension 생태계용 Maven BOM (Bill of Materials). 모든 `io.github.
 
 ## Architecture
 
-![Architecture 1](../../docs/images/readme-diagrams/exposed-bluetape4k-exposed-bom-ko-diagram-01.svg)
+![Architecture 1](../../docs/images/readme-diagrams/exposed-bluetape4k-exposed-bom-ko-diagram-01.png)
 
 BOM은 Gradle `java-platform` 으로 `<dependencyManagement>` constraint 만 게시한다.
 

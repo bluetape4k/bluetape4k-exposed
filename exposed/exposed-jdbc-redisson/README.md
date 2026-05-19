@@ -221,13 +221,13 @@ transaction {
 
 ## Architecture Overview
 
-![Architecture Overview 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-01.svg)
+![Architecture Overview 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-01.png)
 
 ## Class Diagrams
 
 ### Synchronous Repository Hierarchy
 
-![Synchronous Repository Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-02.svg)mermaid
+![Synchronous Repository Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-02.png)mermaid
 classDiagram
     class SuspendedJdbcRedissonRepository~ID_E~ {
         <<interface>>
@@ -313,33 +313,33 @@ classDiagram
 
 On a cache miss, `ExposedEntityMapLoader` automatically loads from the DB.
 
-![Read-Through (synchronous) 3](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-03.svg)
+![Read-Through (synchronous) 3](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-03.png)
 
 ### Write-Through (synchronous)
 
 On `put()`, `ExposedEntityMapWriter` immediately and synchronously persists to the DB.
 
-![Write-Through (synchronous) 4](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-04.svg)
+![Write-Through (synchronous) 4](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-04.png)
 
 ### Write-Behind (synchronous)
 
 On `put()`, immediately returns and then `ExposedEntityMapWriter` asynchronously batch-persists to the DB.
 
-![Write-Behind (synchronous) 5](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-05.svg)
+![Write-Behind (synchronous) 5](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-05.png)
 
 ### Read-Through (Suspend Coroutines)
 
 `SuspendedJdbcRedissonRepository` exposes all operations as `suspend` functions.
 
-![Read-Through (Suspend Coroutines) 6](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-06.svg)
+![Read-Through (Suspend Coroutines) 6](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-06.png)
 
 ### Write-Through (Suspend Coroutines)
 
-![Write-Through (Suspend Coroutines) 7](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-07.svg)
+![Write-Through (Suspend Coroutines) 7](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-07.png)
 
 ### Write-Behind (Suspend Coroutines)
 
-![Write-Behind (Suspend Coroutines) 8](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-08.svg)
+![Write-Behind (Suspend Coroutines) 8](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-08.png)
 
 ## JdbcRedissonRepository / SuspendedJdbcRedissonRepository Key Methods
 

@@ -129,15 +129,15 @@ val extraData: Map<String, Any>? = resultRow.getFastjsonOrNull(Products.extraDat
 
 ### 컬럼 타입 구조 (요약)
 
-![Component Component Component (Component) 1](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-ko-diagram-01.svg)
+![Component Component Component (Component) 1](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-ko-diagram-01.png)
 
 ### JSON 컬럼 타입 클래스 구조
 
-![JSON Component Component Component Component 2](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-ko-diagram-02.svg)
+![JSON Component Component Component Component 2](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-ko-diagram-02.png)
 
 ### JSON 컬럼 데이터 흐름
 
-![JSON Component Data Component 3](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-ko-diagram-03.svg)
+![JSON Component Data Component 3](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-ko-diagram-03.png)
 
 ## 참고
 
