@@ -100,7 +100,7 @@ suspend fun example(repo: UserSuspendedRepository) {
 
 ## 아키텍처 개요
 
-![아키텍처 개요 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-ko-diagram-01.svg)
+![아키텍처 개요 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-diagram-01.png)
 
 ![Architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-sequence-01.png)
 

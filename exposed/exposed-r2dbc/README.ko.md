@@ -340,11 +340,11 @@ prepared parameter binding 순서를 유지합니다.
 
 ### R2dbcRepository 핵심 구조
 
-![R2dbcRepository 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-ko-diagram-01.svg)
+![R2dbcRepository 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-01.png)
 
 ### R2dbcRepository 계층
 
-![R2dbcRepository 계층 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-ko-diagram-02.svg)
+![R2dbcRepository 계층 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.png)
 
 ### suspend 트랜잭션 흐름
 

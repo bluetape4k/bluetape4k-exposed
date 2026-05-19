@@ -104,7 +104,7 @@ queryFlow(db) {
 
 ## Diagram
 
-![Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-duckdb-diagram-01.svg)
+![Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-duckdb-diagram-01.png)
 
 ### Query Execution Flow
 

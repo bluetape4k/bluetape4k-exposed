@@ -20,7 +20,7 @@ A coroutine-native Read-through / Write-through / Write-behind cache repository 
 
 ## Architecture
 
-![Architecture 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-diagram-01.svg)
+![Architecture 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-diagram-01.png)
 
 ![Architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-sequence-01.png)
 

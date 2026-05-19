@@ -28,7 +28,7 @@ The primary comparison is **JDBC vs R2DBC** for each database, split into:
 
 ## Graph
 
-![Graph 1](../../../docs/images/readme-diagrams/utils-batch-benchmark-diagram-01.svg)
+![Graph 1](../../../docs/images/readme-diagrams/utils-batch-benchmark-diagram-01.png)
 
 ## Notes
 

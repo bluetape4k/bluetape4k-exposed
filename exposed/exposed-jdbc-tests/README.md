@@ -286,7 +286,7 @@ Containers.Postgres
 
 ## Test Infrastructure Structure
 
-![Test Infrastructure Structure 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-diagram-01.svg)
+![Test Infrastructure Structure 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-diagram-01.png)
 
 ### Test execution flow
 

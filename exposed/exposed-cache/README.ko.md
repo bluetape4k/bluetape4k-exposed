@@ -23,11 +23,11 @@
 
 ## 인터페이스 계층 구조
 
-![인터페이스 계층 구조 1](../../docs/images/readme-diagrams/exposed-exposed-cache-ko-diagram-01.svg)
+![인터페이스 계층 구조 1](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-01.png)
 
 Redis 전용 하위 인터페이스(Lettuce/Redisson)는 Redis 인터페이스를 확장합니다:
 
-![인터페이스 계층 구조 2](../../docs/images/readme-diagrams/exposed-exposed-cache-ko-diagram-02.svg)
+![인터페이스 계층 구조 2](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-02.png)
 
 ## CacheMode
 

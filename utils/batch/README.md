@@ -6,7 +6,7 @@ A coroutine-native batch processing framework for Kotlin. Implements a lightweig
 
 ## Architecture
 
-![Architecture 1](../../docs/images/readme-diagrams/utils-batch-diagram-01.svg)
+![Architecture 1](../../docs/images/readme-diagrams/utils-batch-diagram-01.png)
 
 ![Architecture diagram](../../docs/images/readme-diagrams/utils-batch-sequence-01.png)
 
@@ -138,7 +138,7 @@ The benchmark setup has been migrated to `kotlinx-benchmark` with DB-specific pr
 - Parameters: `dataSize = 1000/10000/100000`, `poolSize = 10/30/60`, `parallelism = 1/4/8`
 - Detailed tables and graphs live under `docs/benchmark/*.md`
 
-![Comparison Focus 2](../../docs/images/readme-diagrams/utils-batch-diagram-02.svg)
+![Comparison Focus 2](../../docs/images/readme-diagrams/utils-batch-diagram-02.png)
 
 ## Module Dependencies
 

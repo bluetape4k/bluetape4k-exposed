@@ -250,11 +250,11 @@ CREATE TABLE planning_solution (
 
 ## Class Diagram
 
-![Class Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-01.svg)
+![Class Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-01.png)
 
 ## Architecture Diagram
 
-![Architecture Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-02.svg)
+![Architecture Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-02.png)
 
 ## Score Serialization Flow
 

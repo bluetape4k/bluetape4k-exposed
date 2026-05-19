@@ -10,7 +10,7 @@ Caffeine 로컬(인프로세스) 캐시를 사용하는 Exposed JDBC 저장소�
 
 ## 아키텍처
 
-![아키텍처 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-ko-diagram-01.svg)
+![아키텍처 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-diagram-01.png)
 
 ## 쓰기 전략 흐름
 

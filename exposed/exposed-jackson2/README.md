@@ -107,11 +107,11 @@ val metadata: ProductMetadata? = resultRow.getJacksonOrNull(Products.metadata)
 
 ### Column Type Structure (Summary)
 
-![Column Type Structure (Summary) 1](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-01.svg)
+![Column Type Structure (Summary) 1](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-01.png)
 
 ## Class Diagram
 
-![Class Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-02.svg)
+![Class Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-02.png)
 
 ## Serialization / Deserialization Sequence Diagrams
 

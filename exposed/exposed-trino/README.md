@@ -250,7 +250,7 @@ Features verified in a Trino Memory connector environment via Testcontainers.
 
 ## Core API Diagram
 
-![Core API Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-trino-diagram-01.svg)
+![Core API Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-trino-diagram-01.png)
 
 ### Distributed Query Flow
 

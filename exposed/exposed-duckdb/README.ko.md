@@ -101,7 +101,7 @@ queryFlow(db) {
 
 ## 다이어그램
 
-![다이어그램 1](../../docs/images/readme-diagrams/exposed-exposed-duckdb-ko-diagram-01.svg)
+![다이어그램 1](../../docs/images/readme-diagrams/exposed-exposed-duckdb-diagram-01.png)
 
 ### 쿼리 실행 흐름
 

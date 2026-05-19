@@ -26,11 +26,11 @@ object ProductTable: Table("products") {
 
 ## 클래스 다이어그램
 
-![클래스 다이어그램 1](../../docs/images/readme-diagrams/exposed-exposed-measured-ko-diagram-01.svg)
+![클래스 다이어그램 1](../../docs/images/readme-diagrams/exposed-exposed-measured-diagram-01.png)
 
 ## Column 변환 흐름
 
-![Column 변환 흐름 2](../../docs/images/readme-diagrams/exposed-exposed-measured-ko-diagram-02.svg)
+![Column 변환 흐름 2](../../docs/images/readme-diagrams/exposed-exposed-measured-diagram-02.png)
 
 ## 저장/조회 시퀀스 다이어그램
 

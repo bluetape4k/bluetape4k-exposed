@@ -6,11 +6,11 @@ A Kotlin Exposed extension module for PostgreSQL. Provides PostGIS spatial data,
 
 ## UML
 
-![UML 1](../../docs/images/readme-diagrams/exposed-exposed-postgresql-diagram-01.svg)
+![UML 1](../../docs/images/readme-diagrams/exposed-exposed-postgresql-diagram-01.png)
 
 ## Column Type Diagram
 
-![Column Type Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-postgresql-diagram-02.svg)
+![Column Type Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-postgresql-diagram-02.png)
 
 ## Features
 

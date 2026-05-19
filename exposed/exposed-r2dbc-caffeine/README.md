@@ -8,7 +8,7 @@ Exposed R2DBC repository with Caffeine local (in-process) cache. No JDBC depende
 
 ## Architecture
 
-![Architecture 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-diagram-01.svg)
+![Architecture 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-diagram-01.png)
 
 ![Architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-sequence-01.png)
 

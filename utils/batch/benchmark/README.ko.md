@@ -28,7 +28,7 @@
 
 ## 그래프
 
-![그래프 1](../../../docs/images/readme-diagrams/utils-batch-benchmark-ko-diagram-01.svg)
+![그래프 1](../../../docs/images/readme-diagrams/utils-batch-benchmark-diagram-01.png)
 
 ## 참고
 

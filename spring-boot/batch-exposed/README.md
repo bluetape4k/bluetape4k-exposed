@@ -10,7 +10,7 @@ for VirtualThread parallel execution, and Spring Boot Auto-Configuration.
 
 ## Architecture
 
-![Architecture 1](../../docs/images/readme-diagrams/spring-boot-batch-exposed-diagram-01.svg)
+![Architecture 1](../../docs/images/readme-diagrams/spring-boot-batch-exposed-diagram-01.png)
 
 ![Architecture diagram](../../docs/images/readme-diagrams/spring-boot-batch-exposed-sequence-01.png)
 

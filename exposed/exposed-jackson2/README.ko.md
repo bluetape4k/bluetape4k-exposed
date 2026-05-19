@@ -107,11 +107,11 @@ val metadata: ProductMetadata? = resultRow.getJacksonOrNull(Products.metadata)
 
 ### 컬럼 타입 구조 (요약)
 
-![컬럼 타입 구조 (요약) 1](../../docs/images/readme-diagrams/exposed-exposed-jackson2-ko-diagram-01.svg)
+![컬럼 타입 구조 (요약) 1](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-01.png)
 
 ## 클래스 다이어그램
 
-![클래스 다이어그램 2](../../docs/images/readme-diagrams/exposed-exposed-jackson2-ko-diagram-02.svg)
+![클래스 다이어그램 2](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-02.png)
 
 ## 직렬화/역직렬화 시퀀스 다이어그램
 

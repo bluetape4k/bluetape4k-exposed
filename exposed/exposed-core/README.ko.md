@@ -225,23 +225,23 @@ println("마지막 페이지: ${page.isLast}")
 
 `AuditableLongIdTable`, `UserContext`, `HasIdentifier`, `ExposedPage`의 관계를 나타냅니다.
 
-![Auditable 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-core-ko-diagram-01.svg)
+![Auditable 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-01.png)
 
 ### 커스텀 컬럼 타입 계층
 
 `ColumnWithTransform`을 기반으로 압축/암호화/직렬화 컬럼 타입이 일관된 구조로 구성됩니다.
 
-![커스텀 컬럼 타입 계층 2](../../docs/images/readme-diagrams/exposed-exposed-core-ko-diagram-02.svg)
+![커스텀 컬럼 타입 계층 2](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-02.png)
 
 ### ID 생성 전략별 IdTable 계층
 
 클라이언트 측에서 ID를 생성하는 커스텀 `IdTable` 구현체들입니다.
 
-![ID 생성 전략별 IdTable 계층 3](../../docs/images/readme-diagrams/exposed-exposed-core-ko-diagram-03.svg)
+![ID 생성 전략별 IdTable 계층 3](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-03.png)
 
 ### HasIdentifier 및 ExposedPage
 
-![HasIdentifier 및 ExposedPage 4](../../docs/images/readme-diagrams/exposed-exposed-core-ko-diagram-04.svg)
+![HasIdentifier 및 ExposedPage 4](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-04.png)
 
 ## 주요 파일/클래스 목록
 

@@ -6,7 +6,7 @@ ClickHouse JDBC를 위한 Kotlin/Exposed 다이얼렉트 — 타입 안전 DSL, 
 
 ## 아키텍처
 
-![아키텍처 1](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-ko-diagram-01.svg)
+![아키텍처 1](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-diagram-01.png)
 
 ## 주요 기능
 
@@ -153,7 +153,7 @@ transaction(database) {
 
 ## DDL 생성 흐름
 
-![DDL 생성 흐름 2](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-ko-diagram-02.svg)
+![DDL 생성 흐름 2](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-diagram-02.png)
 
 ## 주의사항
 

@@ -33,7 +33,7 @@ read paths, JSON/encrypted columns, database dialect extensions, and Spring Boot
 
 ## Architecture
 
-![bluetape4k-exposed architecture](docs/assets/exposed-architecture.svg)
+![bluetape4k-exposed architecture](docs/assets/exposed-architecture.png)
 
 ## Modules
 

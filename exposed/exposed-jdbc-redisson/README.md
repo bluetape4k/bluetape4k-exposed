@@ -221,90 +221,13 @@ transaction {
 
 ## Architecture Overview
 
-![Architecture Overview 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-01.svg)
+![Architecture Overview 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-01.png)
 
 ## Class Diagrams
 
 ### Synchronous Repository Hierarchy
 
-![Synchronous Repository Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-02.svg)mermaid
-classDiagram
-    class SuspendedJdbcRedissonRepository~ID_E~ {
-        <<interface>>
-        +cacheName: String
-        +table: IdTable~ID~
-        +cache: RMap~ID, E~
-        +extractId(entity: E): ID
-        +toEntity(ResultRow): E
-        +exists(id: ID): Boolean [suspend]
-        +get(id: ID): E? [suspend]
-        +getAll(ids, batchSize): List~E~ [suspend]
-        +findByIdFromDb(id: ID): E? [suspend]
-        +findAllFromDb(ids): List~E~ [suspend]
-        +findAll(...): List~E~ [suspend]
-        +put(entity: E): Boolean [suspend]
-        +putAll(entities, batchSize) [suspend]
-        +invalidate(vararg ids): Long [suspend]
-        +invalidateAll(): Boolean [suspend]
-        +invalidateByPattern(patterns, count): Long [suspend]
-    }
-
-    class AbstractSuspendedJdbcRedissonRepository~ID_E~ {
-        <<abstract>>
-        +redissonClient: RedissonClient
-        +cacheName: String
-        #config: RedissonCacheConfig
-        #scope: CoroutineScope
-        #suspendedMapLoader: SuspendedEntityMapLoader~ID, E~
-        #suspendedMapWriter: SuspendedEntityMapWriter~ID, E~?
-        #createLocalCacheMap(): RLocalCachedMap
-        #createMapCache(): RMapCache
-        #UpdateStatement.updateEntity(entity)
-        #BatchInsertStatement.insertEntity(entity)
-        +findAll(...): List~E~ [suspend]
-        +getAll(ids, batchSize): List~E~ [suspend]
-    }
-
-    class SuspendedEntityMapLoader~ID_E~ {
-        <<abstract>>
-        +load(key: ID): CompletableFuture~E~
-        +loadAllKeys(): AsyncIterator~ID~
-    }
-
-    class SuspendedEntityMapWriter~ID_E~ {
-        <<abstract>>
-        +write(map: Map~ID, E~): CompletableFuture~Void~
-        +delete(keys: Collection~Any~): CompletableFuture~Void~
-    }
-
-    class SuspendedExposedEntityMapLoader~ID_E~ {
-        -entityTable: IdTable~ID~
-        -scope: CoroutineScope
-        -batchSize: Int
-        -toEntity: ResultRow.() -> E
-    }
-
-    class SuspendedExposedEntityMapWriter~ID_E~ {
-        -entityTable: IdTable~ID~
-        -scope: CoroutineScope
-        -updateBody: (UpdateStatement, E) -> Unit
-        -batchInsertBody: BatchInsertStatement.(E) -> Unit
-        -deleteFromDBOnInvalidate: Boolean
-        -writeMode: WriteMode
-    }
-
-    SuspendedJdbcRedissonRepository~ID_E~ <|.. AbstractSuspendedJdbcRedissonRepository~ID_E~
-    AbstractSuspendedJdbcRedissonRepository~ID_E~ --> SuspendedEntityMapLoader~ID_E~ : suspendedMapLoader
-    AbstractSuspendedJdbcRedissonRepository~ID_E~ --> SuspendedEntityMapWriter~ID_E~ : suspendedMapWriter (nullable)
-    SuspendedEntityMapLoader~ID_E~ <|-- SuspendedExposedEntityMapLoader~ID_E~
-    SuspendedEntityMapWriter~ID_E~ <|-- SuspendedExposedEntityMapWriter~ID_E~
-
-    style SuspendedJdbcRedissonRepository fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style AbstractSuspendedJdbcRedissonRepository fill:#F3E5F5,stroke:#CE93D8,color:#6A1B9A
-    style SuspendedEntityMapLoader fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style SuspendedEntityMapWriter fill:#E3F2FD,stroke:#90CAF9,color:#1565C0
-    style SuspendedExposedEntityMapLoader fill:#E0F2F1,stroke:#80CBC4,color:#00695C
-    style SuspendedExposedEntityMapWriter fill:#E0F2F1,stroke:#80CBC4,color:#00695C
+![Synchronous Repository Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-02.png)
 
 
 ## Cache Patterns

@@ -286,7 +286,7 @@ Containers.Postgres
 
 ## 테스트 인프라 구조
 
-![테스트 인프라 구조 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-ko-diagram-01.svg)
+![테스트 인프라 구조 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-diagram-01.png)
 
 ### 테스트 실행 흐름
 

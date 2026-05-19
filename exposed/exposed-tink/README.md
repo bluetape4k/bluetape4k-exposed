@@ -216,11 +216,11 @@ object SensitiveData: IntIdTable("sensitive_data") {
 
 ### Column Type Structure (Summary)
 
-![Column Type Structure (Summary) 1](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-01.svg)
+![Column Type Structure (Summary) 1](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-01.png)
 
 ## Class Diagram
 
-![Class Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-02.svg)
+![Class Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-02.png)
 
 ## Key Files / Classes
 
