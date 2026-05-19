@@ -26,7 +26,11 @@ import org.junit.jupiter.params.provider.MethodSource
  */
 class ExposedJdbcBatchReaderTest : AbstractBatchJdbcTest() {
 
-    private fun makeReader(testDB: TestDB, pageSize: Int = 10): ExposedJdbcBatchReader<Long, SourceRecord> =
+    private fun makeReader(
+        testDB: TestDB,
+        pageSize: Int = 10,
+        minKey: Long? = null,
+    ): ExposedJdbcBatchReader<Long, SourceRecord> =
         ExposedJdbcBatchReader(
             database = testDB.db!!,
             table = BatchSourceTable,
@@ -40,6 +44,7 @@ class ExposedJdbcBatchReaderTest : AbstractBatchJdbcTest() {
                 )
             },
             keyExtractor = { it.id },
+            minKey = minKey,
         )
 
     // ─── 1. 전체 읽기 ────────────────────────────────────────────────────────
@@ -207,6 +212,77 @@ class ExposedJdbcBatchReaderTest : AbstractBatchJdbcTest() {
                 reader.close()
             }
             count shouldBeEqualTo 11
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `close 후 open 없이 재사용해도 minKey partition을 유지한다`(testDB: TestDB) {
+        withBatchTables(testDB) {
+            val firstRunIds = mutableListOf<Long>()
+            val secondRunIds = mutableListOf<Long>()
+
+            runSuspendIO {
+                transaction(testDB.db!!) { insertSources(10) }
+
+                val reader = makeReader(testDB, pageSize = 3, minKey = 5L)
+                reader.open()
+                var item = reader.read()
+                while (item != null) {
+                    firstRunIds.add(item.id)
+                    item = reader.read()
+                }
+
+                reader.close()
+
+                // Issue #118 regression: retry paths may reuse the same reader instance
+                // without an explicit open(), so close() must restore the partition cursor.
+                item = reader.read()
+                while (item != null) {
+                    secondRunIds.add(item.id)
+                    item = reader.read()
+                }
+
+                reader.close()
+            }
+
+            firstRunIds shouldBeEqualTo (6L..10L).toList()
+            secondRunIds shouldBeEqualTo (6L..10L).toList()
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `close 후 open으로 재사용해도 minKey partition을 유지한다`(testDB: TestDB) {
+        withBatchTables(testDB) {
+            val firstRunIds = mutableListOf<Long>()
+            val secondRunIds = mutableListOf<Long>()
+
+            runSuspendIO {
+                transaction(testDB.db!!) { insertSources(10) }
+
+                val reader = makeReader(testDB, pageSize = 3, minKey = 5L)
+                reader.open()
+                var item = reader.read()
+                while (item != null) {
+                    firstRunIds.add(item.id)
+                    item = reader.read()
+                }
+
+                reader.close()
+                reader.open()
+
+                item = reader.read()
+                while (item != null) {
+                    secondRunIds.add(item.id)
+                    item = reader.read()
+                }
+
+                reader.close()
+            }
+
+            firstRunIds shouldBeEqualTo (6L..10L).toList()
+            secondRunIds shouldBeEqualTo (6L..10L).toList()
         }
     }
 }

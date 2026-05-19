@@ -83,11 +83,7 @@ class ExposedJdbcBatchReader<K: Comparable<K>, T: Any>(
     private var exhausted = false
 
     override suspend fun open() {
-        buffer.clear()
-        lastFetchedKey = minKey
-        lastReadKey = null
-        lastCommittedKey = null
-        exhausted = false
+        resetState()
     }
 
     override suspend fun read(): T? {
@@ -135,14 +131,19 @@ class ExposedJdbcBatchReader<K: Comparable<K>, T: Any>(
         log.debug { "체크포인트 복원: lastCommittedKey=$key" }
     }
 
+    /**
+     * Clears buffered items and restores the reader to its initial partition boundary.
+     */
     override suspend fun close() {
-        runCatching {
-            buffer.clear()
-            lastFetchedKey = null
-            lastReadKey = null
-            lastCommittedKey = null
-            exhausted = false
-        }
+        resetState()
+    }
+
+    private fun resetState() {
+        buffer.clear()
+        lastFetchedKey = minKey
+        lastReadKey = null
+        lastCommittedKey = null
+        exhausted = false
     }
 
     private suspend fun fetchNextPage() {
