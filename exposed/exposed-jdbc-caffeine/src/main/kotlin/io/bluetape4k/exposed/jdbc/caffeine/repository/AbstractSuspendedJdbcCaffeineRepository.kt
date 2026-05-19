@@ -15,7 +15,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlin.coroutines.cancellation.CancellationException
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
@@ -32,6 +31,8 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.v1.jdbc.update
 import java.io.Serializable
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
  * Exposed JDBC + Caffeine 로컬 캐시를 결합한 suspend 추상 레포지토리.
@@ -53,7 +54,9 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
     override val config: LocalCacheConfig = LocalCacheConfig.READ_ONLY,
 ): SuspendedJdbcCaffeineRepository<ID, E> {
 
-    companion object: KLogging()
+    companion object: KLogging() {
+        private const val WRITE_BEHIND_CLOSE_TIMEOUT_SECONDS = 30L
+    }
 
     abstract override val table: IdTable<ID>
 
@@ -355,15 +358,35 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
      * Write-Behind 모드에서는 채널을 닫아 더 이상 새 항목을 받지 않고,
      * 이미 큐에 있는 항목이 모두 DB에 flush될 때까지 대기합니다.
      *
-     * [runBlocking]은 [Closeable] 계약을 이행하기 위해 불가피하게 사용합니다.
-     * 정상 종료 시 호출되는 맥락이므로 Virtual Thread pinning 위험은 허용 범위입니다.
+     * bounded synchronous latch로 대기하여 DB/드라이버 hang이 종료를 무한정 막지 않게 합니다.
      */
     override fun close() {
         if (config.writeMode == CacheWriteMode.WRITE_BEHIND) {
             writeBehindQueue.close()
-            runBlocking { writeBehindJob.join() }
+            awaitWriteBehindJobCompletion()
         }
         cache.invalidateAll()
         scope.cancel()
+    }
+
+    private fun awaitWriteBehindJobCompletion() {
+        val completed = CountDownLatch(1)
+        writeBehindJob.invokeOnCompletion { completed.countDown() }
+
+        val completedInTime =
+            try {
+                completed.await(WRITE_BEHIND_CLOSE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+                false
+            }
+
+        if (!completedInTime) {
+            log.warn {
+                "Write-Behind: close timed out waiting for final flush. " +
+                    "Remaining queued items may be discarded when the repository scope is cancelled. " +
+                    "timeoutSeconds=$WRITE_BEHIND_CLOSE_TIMEOUT_SECONDS"
+            }
+        }
     }
 }
