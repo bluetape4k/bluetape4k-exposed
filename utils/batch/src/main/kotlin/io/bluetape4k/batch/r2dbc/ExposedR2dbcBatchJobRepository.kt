@@ -14,6 +14,7 @@ import io.bluetape4k.batch.jdbc.tables.toStepExecution
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
 import io.bluetape4k.support.requireNotBlank
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -102,27 +103,38 @@ class ExposedR2dbcBatchJobRepository(
                     startTime = now,
                 )
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Throwable) {
             if (!e.isUniqueViolation()) throw e
             log.debug(e) { "동시 INSERT 감지 — job=$jobName, 재조회" }
-            suspendTransaction(db = database) {
-                BatchJobExecutionTable.selectAll()
-                    .where {
-                        (BatchJobExecutionTable.jobName eq jobName) and
-                            (BatchJobExecutionTable.paramsHash eq hash) and
-                            (BatchJobExecutionTable.status inList listOf(
-                                BatchStatus.RUNNING, BatchStatus.FAILED, BatchStatus.STOPPED,
-                            ))
-                    }
-                    .orderBy(BatchJobExecutionTable.id, SortOrder.DESC)
-                    .limit(1)
-                    .map { it.toJobExecution(checkpointJson) }
-                    .firstOrNull()
-                    ?: throw IllegalStateException(
-                        "Job execution disappeared after unique-constraint violation re-query. " +
-                            "jobName=${jobName}, params=${params}"
-                    )
-            }
+            requeryJobExecutionAfterUniqueViolation(jobName, params)
+        }
+    }
+
+    internal suspend fun requeryJobExecutionAfterUniqueViolation(
+        jobName: String,
+        params: Map<String, Any>,
+    ): JobExecution {
+        val hash = params.toParamsHash()
+
+        return suspendTransaction(db = database) {
+            BatchJobExecutionTable.selectAll()
+                .where {
+                    (BatchJobExecutionTable.jobName eq jobName) and
+                        (BatchJobExecutionTable.paramsHash eq hash) and
+                        (BatchJobExecutionTable.status inList listOf(
+                            BatchStatus.RUNNING, BatchStatus.FAILED, BatchStatus.STOPPED,
+                        ))
+                }
+                .orderBy(BatchJobExecutionTable.id, SortOrder.DESC)
+                .limit(1)
+                .map { it.toJobExecution(checkpointJson) }
+                .firstOrNull()
+                ?: throw IllegalStateException(
+                    "Job execution disappeared after unique-constraint violation re-query. " +
+                        "jobName=${jobName}, params=${params}"
+                )
         }
     }
 

@@ -12,9 +12,15 @@ import io.bluetape4k.batch.jdbc.tables.BatchJobExecutionTable
 import io.bluetape4k.batch.jdbc.tables.BatchStepExecutionTable
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.junit5.concurrency.MultithreadingTester
+import io.bluetape4k.junit5.concurrency.StructuredTaskScopeTester
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import org.junit.jupiter.api.Assumptions
+import org.junit.jupiter.api.condition.EnabledForJreRange
+import org.junit.jupiter.api.condition.JRE
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
  * [ExposedJdbcBatchJobRepository] 통합 테스트.
@@ -28,10 +34,23 @@ import org.junit.jupiter.params.provider.MethodSource
  */
 class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
 
+    companion object {
+        private const val ACTIVE_JOB_EXECUTION_UNIQUE_INDEX_SQL =
+            """
+            CREATE UNIQUE INDEX batch_job_exec_active_uidx
+                ON batch_job_execution(job_name, params_hash)
+                WHERE status IN ('RUNNING', 'FAILED', 'STOPPED')
+            """
+    }
+
     private val batchTables = arrayOf(BatchJobExecutionTable, BatchStepExecutionTable)
 
     private fun withRepoTables(testDB: TestDB, block: suspend ExposedJdbcBatchJobRepository.() -> Unit) {
         withTables(testDB, *batchTables) {
+            if (testDB == TestDB.POSTGRESQL) {
+                exec(ACTIVE_JOB_EXECUTION_UNIQUE_INDEX_SQL)
+            }
+            commit()
             val repo = ExposedJdbcBatchJobRepository(testDB.db!!, CheckpointJson.jackson3())
             runSuspendIO { repo.block() }
         }
@@ -147,6 +166,62 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
 
             je1.id shouldBeEqualTo je1.id
             (je2.id > je1.id) shouldBe true
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `동시 findOrCreateJobExecution - MultithreadingTester는 같은 JobExecution을 반환한다`(testDB: TestDB) {
+        Assumptions.assumeTrue { testDB == TestDB.POSTGRESQL }
+
+        withRepoTables(testDB) {
+            val repository = this
+            val executionIds = ConcurrentLinkedQueue<Long>()
+
+            MultithreadingTester()
+                .workers(2)
+                .rounds(1)
+                .add {
+                    runSuspendIO {
+                        val jobExecution = repository.findOrCreateJobExecution(
+                            jobName = "raceJob",
+                            params = mapOf("runId" to "issue-124"),
+                        )
+                        executionIds += jobExecution.id
+                    }
+                }
+                .run()
+
+            executionIds.size shouldBeEqualTo 2
+            executionIds.distinct().size shouldBeEqualTo 1
+        }
+    }
+
+    @EnabledForJreRange(min = JRE.JAVA_21)
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `동시 findOrCreateJobExecution - StructuredTaskScopeTester는 같은 JobExecution을 반환한다`(testDB: TestDB) {
+        Assumptions.assumeTrue { testDB == TestDB.POSTGRESQL }
+
+        withRepoTables(testDB) {
+            val repository = this
+            val executionIds = ConcurrentLinkedQueue<Long>()
+
+            StructuredTaskScopeTester()
+                .rounds(2)
+                .add {
+                    runSuspendIO {
+                        val jobExecution = repository.findOrCreateJobExecution(
+                            jobName = "structuredRaceJob",
+                            params = mapOf("runId" to "issue-124"),
+                        )
+                        executionIds += jobExecution.id
+                    }
+                }
+                .run()
+
+            executionIds.size shouldBeEqualTo 2
+            executionIds.distinct().size shouldBeEqualTo 1
         }
     }
 
