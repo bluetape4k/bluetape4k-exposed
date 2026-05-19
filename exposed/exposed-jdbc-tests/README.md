@@ -290,23 +290,7 @@ Containers.Postgres
 
 ### Test execution flow
 
-```mermaid
-sequenceDiagram
-        participant Test as Test Class
-        participant Infra as Test Infrastructure
-        participant TC as Testcontainers
-        participant DB as Database
-
-    Test->>Infra: withTables(testDB, Users, Orders)
-    Infra->>TC: Start Docker container (for real DBs)
-    TC-->>Infra: Container ready
-    Infra->>DB: Acquire connection + create tables
-    DB-->>Infra: Tables ready
-    Infra->>Test: Execute transaction block
-    Test->>DB: CRUD operations
-    DB-->>Test: Results
-    Infra->>DB: Drop tables + rollback
-```
+![Test execution flow diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-sequence-01.png)
 
 ## Notes
 

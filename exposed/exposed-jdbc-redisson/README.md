@@ -313,158 +313,33 @@ classDiagram
 
 On a cache miss, `ExposedEntityMapLoader` automatically loads from the DB.
 
-```mermaid
-sequenceDiagram
-        participant Client as Client
-        participant Repo as JdbcRedissonRepository
-        participant RMap as Redisson RMap
-        participant Loader as ExposedEntityMapLoader
-        participant DB as Database (JDBC)
-
-    Client->>Repo: get(id) / exists(id)
-    Repo->>RMap: RMap.get(id)
-    alt RMap HIT
-        RMap-->>Repo: entity
-        Repo-->>Client: entity
-    else RMap MISS
-        RMap->>Loader: load(id) [Read-Through]
-        Loader->>DB: SELECT WHERE id=?
-        DB-->>Loader: ResultRow
-        Loader-->>RMap: entity (stored in cache)
-        RMap-->>Repo: entity
-        Repo-->>Client: entity
-    end
-```
+![Read-Through (synchronous) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-01.png)
 
 ### Write-Through (synchronous)
 
 On `put()`, `ExposedEntityMapWriter` immediately and synchronously persists to the DB.
 
-```mermaid
-sequenceDiagram
-        participant Client as Client
-        participant Repo as JdbcRedissonRepository
-        participant RMap as Redisson RMap
-        participant Writer as ExposedEntityMapWriter
-        participant DB as Database (JDBC)
-
-    Client ->> Repo: put(entity)
-    Repo ->> RMap: RMap.fastPut(id, entity)
-    RMap ->> Writer: write(map) [Write-Through]
-    Writer ->> DB: SELECT id (check existence)
-    DB -->> Writer: existIds
-    alt Existing record
-        Writer ->> DB: UPDATE SET ... WHERE id=?
-        DB -->> Writer: OK
-    else New record (non-autoInc ID)
-        Writer ->> DB: batchInsert(entities)
-        DB -->> Writer: OK
-    end
-    Writer -->> RMap: done
-    RMap -->> Repo: OK
-    Repo -->> Client: done
-```
+![Write-Through (synchronous) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-02.png)
 
 ### Write-Behind (synchronous)
 
 On `put()`, immediately returns and then `ExposedEntityMapWriter` asynchronously batch-persists to the DB.
 
-```mermaid
-sequenceDiagram
-        participant Client as Client
-        participant Repo as JdbcRedissonRepository
-        participant RMap as Redisson RMap
-        participant Writer as ExposedEntityMapWriter
-        participant DB as Database (JDBC)
-
-    Client->>Repo: put(entity)
-    Repo->>RMap: RMap.fastPut(id, entity)
-    RMap-->>Repo: OK (returns immediately)
-    Repo-->>Client: done
-
-    Note over RMap,DB: Write-Behind: Redisson asynchronously batch-persists to DB
-    RMap->>Writer: write(map) [async]
-    Writer->>DB: batchInsert(entities)
-    DB-->>Writer: OK
-```
+![Write-Behind (synchronous) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-03.png)
 
 ### Read-Through (Suspend Coroutines)
 
 `SuspendedJdbcRedissonRepository` exposes all operations as `suspend` functions.
 
-```mermaid
-sequenceDiagram
-        participant Client as Client (Coroutine)
-        participant Repo as SuspendedJdbcRedissonRepository
-        participant RMap as Redisson RMap
-        participant Loader as SuspendedExposedEntityMapLoader
-        participant DB as Database (JDBC/IO)
-
-    Client->>Repo: suspend get(id)
-    Repo->>RMap: cache.getAsync(id).await()
-    alt RMap HIT
-        RMap-->>Repo: entity
-        Repo-->>Client: entity
-    else RMap MISS
-        RMap->>Loader: loadAsync(id) [Read-Through]
-        Note over Loader,DB: suspendedTransactionAsync(Dispatchers.IO)
-        Loader->>DB: SELECT WHERE id=?
-        DB-->>Loader: ResultRow
-        Loader-->>RMap: entity (stored in cache)
-        RMap-->>Repo: entity
-        Repo-->>Client: entity
-    end
-```
+![Read-Through (Suspend Coroutines) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-04.png)
 
 ### Write-Through (Suspend Coroutines)
 
-```mermaid
-sequenceDiagram
-        participant Client as Client (Coroutine)
-        participant Repo as SuspendedJdbcRedissonRepository
-        participant RMap as Redisson RMap
-        participant Writer as SuspendedExposedEntityMapWriter
-        participant DB as Database (JDBC/IO)
-
-    Client->>Repo: suspend put(entity)
-    Repo->>RMap: cache.fastPutAsync(id, entity).await()
-    RMap->>Writer: writeAsync(map) [Write-Through]
-    Note over Writer,DB: Runs inside CoroutineScope(Dispatchers.IO)
-    Writer->>DB: SELECT id (check existence)
-    DB-->>Writer: existIds
-    alt Existing record
-        Writer->>DB: UPDATE SET ... WHERE id=?
-        DB-->>Writer: OK
-    else New record (non-autoInc ID)
-        Writer->>DB: batchInsert(entities)
-        DB-->>Writer: OK
-    end
-    Writer-->>RMap: done
-    RMap-->>Repo: true
-    Repo-->>Client: true
-```
+![Write-Through (Suspend Coroutines) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-05.png)
 
 ### Write-Behind (Suspend Coroutines)
 
-```mermaid
-sequenceDiagram
-        participant Client as Client (Coroutine)
-        participant Repo as SuspendedJdbcRedissonRepository
-        participant RMap as Redisson RMap
-        participant Writer as SuspendedExposedEntityMapWriter
-        participant DB as Database (JDBC/IO)
-
-    Client->>Repo: suspend put(entity)
-    Repo->>RMap: cache.fastPutAsync(id, entity).await()
-    RMap-->>Repo: true (returns immediately)
-    Repo-->>Client: true
-
-    Note over RMap,DB: Write-Behind: Redisson asynchronously batch-persists to DB
-    RMap->>Writer: writeAsync(map) [async]
-    Note over Writer,DB: Runs inside CoroutineScope(Dispatchers.IO)
-    Writer->>DB: batchInsert(entities)
-    DB-->>Writer: OK
-```
+![Write-Behind (Suspend Coroutines) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-06.png)
 
 ## JdbcRedissonRepository / SuspendedJdbcRedissonRepository Key Methods
 

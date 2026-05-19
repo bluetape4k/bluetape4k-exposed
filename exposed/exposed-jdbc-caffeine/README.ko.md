@@ -14,35 +14,7 @@ Caffeine 로컬(인프로세스) 캐시를 사용하는 Exposed JDBC 저장소�
 
 ## 쓰기 전략 흐름
 
-```mermaid
-sequenceDiagram
-        participant Client as 클라이언트
-        participant Repo as 레포지토리
-        participant Caffeine as Caffeine 캐시
-        participant DB as JDBC 데이터베이스
-
-    Note over Client,DB: Read-Through (캐시 미스)
-    Client->>Repo: get(id)
-    Repo->>Caffeine: getIfPresent(key)
-    Caffeine-->>Repo: null
-    Repo->>DB: transaction { selectAll where id = ? }
-    DB-->>Repo: 행
-    Repo->>Caffeine: put(key, 엔티티)
-    Repo-->>Client: 엔티티
-
-    Note over Client,DB: Write-Through
-    Client->>Repo: put(id, entity)
-    Repo->>Caffeine: put(key, entity)
-    Repo->>DB: transaction { update / batchInsert }
-    Repo-->>Client: 완료
-
-    Note over Client,DB: Write-Behind
-    Client->>Repo: put(id, entity)
-    Repo->>Caffeine: put(key, entity)
-    Repo->>Repo: writeBehindQueue.send(id to entity)
-    Repo-->>Client: 즉시 반환
-    Repo->>DB: flushBatch (비동기, 배치)
-```
+![Write diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-sequence-01.png)
 
 ## 주요 기능
 

@@ -426,20 +426,7 @@ transaction {
 
 ![Repository 및 VirtualThread 트랜잭션 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-ko-diagram-01.svg)
 
-```mermaid
-sequenceDiagram
-        participant Caller
-        participant VT as newVirtualThreadJdbcTransaction
-        participant DB as Database
-
-    Caller->>VT: { query/insert/update }
-    VT->>DB: BEGIN (VirtualThread)
-    DB-->>VT: connection
-    VT->>DB: SQL operations
-    DB-->>VT: result
-    VT->>DB: COMMIT
-    VT-->>Caller: T (result)
-```
+![Repository VirtualThread Transaction Core Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-01.png)
 
 ### Repository 계층 구조
 
@@ -449,70 +436,15 @@ sequenceDiagram
 
 ### findById — 단건 조회
 
-```mermaid
-sequenceDiagram
-        participant Client
-        participant Repository as MyRepository<br/>(JdbcRepository)
-        participant Exposed as Exposed DSL
-        participant DB as Database
-    Client ->> Repository: findById(id)
-    Repository ->> Exposed: table.selectAll().where { id eq id }.single()
-    Exposed ->> DB: SELECT * FROM table WHERE id = ?
-    DB -->> Exposed: ResultRow
-    Exposed -->> Repository: ResultRow
-    Repository ->> Repository: ResultRow.toEntity()
-    Repository -->> Client: entity E
-```
+![findById — Query diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-02.png)
 
 ### save + findPage — 저장 후 페이징 조회
 
-```mermaid
-sequenceDiagram
-        participant Client
-        participant Repository as MyRepository<br/>(JdbcRepository)
-        participant Exposed as Exposed DSL
-        participant DB as Database
-    Client ->> Repository: save(entity)
-    Repository ->> Exposed: table.insert { ... }
-    Exposed ->> DB: INSERT INTO table VALUES (...)
-    DB -->> Exposed: generated id
-    Exposed -->> Repository: EntityID
-    Repository -->> Client: saved entity
-    Client ->> Repository: findPage(pageNumber=0, pageSize=20)
-    Repository ->> Exposed: countBy(predicate)
-    Exposed ->> DB: SELECT COUNT(*) FROM table WHERE ...
-    DB -->> Exposed: totalCount
-    Repository ->> Exposed: findAll(limit=20, offset=0)
-    Exposed ->> DB: SELECT * FROM table ORDER BY id LIMIT 20
-    DB -->> Exposed: List~ResultRow~
-    Exposed -->> Repository: List~ResultRow~
-    Repository ->> Repository: rows.map { toEntity() }
-    Repository -->> Client: ExposedPage(content, totalCount, ...)
-```
+![save + findPage — Query diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-03.png)
 
 ### softDeleteById / restoreById — 논리 삭제 및 복원
 
-```mermaid
-sequenceDiagram
-        participant Client
-        participant Repository as MyRepository<br/>(SoftDeletedJdbcRepository)
-        participant Exposed as Exposed DSL
-        participant DB as Database
-    Client ->> Repository: softDeleteById(id)
-    Repository ->> Exposed: table.update { isDeleted = true }
-    Exposed ->> DB: UPDATE table SET is_deleted = true WHERE id = ?
-    DB -->> Client: (완료)
-    Client ->> Repository: findActive()
-    Repository ->> Exposed: findAll { isDeleted eq false }
-    Exposed ->> DB: SELECT * FROM table WHERE is_deleted = false
-    DB -->> Exposed: List~ResultRow~
-    Exposed -->> Repository: List~ResultRow~
-    Repository -->> Client: List~E~ (활성 엔티티만)
-    Client ->> Repository: restoreById(id)
-    Repository ->> Exposed: table.update { isDeleted = false }
-    Exposed ->> DB: UPDATE table SET is_deleted = false WHERE id = ?
-    DB -->> Client: (완료)
-```
+![softDeleteById / restoreById — Delete diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-04.png)
 
 ## 주요 파일/클래스 목록
 

@@ -10,39 +10,7 @@ Caffeine 로컬(인프로세스) 캐시를 사용하는 Exposed R2DBC 저장소�
 
 ![아키텍처 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-ko-diagram-01.svg)
 
-```mermaid
-sequenceDiagram
-        participant Client as 클라이언트
-        participant Repository as 레포지토리
-        participant Caffeine as Caffeine AsyncCache
-        participant DB as R2DBC 데이터베이스
-
-    Note over Client,DB: Read-Through
-    Client->>Repository: get(id)
-    Repository->>Caffeine: getIfPresent(key)
-    alt 캐시 히트
-        Caffeine-->>Repository: 엔티티
-    else 캐시 미스
-        Caffeine-->>Repository: null
-        Repository->>DB: suspendTransaction { selectAll }
-        DB-->>Repository: 엔티티
-        Repository->>Caffeine: put(key, 엔티티)
-    end
-    Repository-->>Client: 엔티티
-
-    Note over Client,DB: Write-Through
-    Client->>Repository: put(id, entity)
-    Repository->>Caffeine: put(key, entity)
-    Repository->>DB: suspendTransaction { update/insert }
-    Repository-->>Client: 완료
-
-    Note over Client,DB: Write-Behind
-    Client->>Repository: put(id, entity)
-    Repository->>Caffeine: put(key, entity)
-    Repository->>Repository: writeBehindQueue.send(entry)
-    Repository-->>Client: 즉시 반환
-    Repository->>DB: flushBatch (비동기)
-```
+![Architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-sequence-01.png)
 
 ## 주요 기능
 

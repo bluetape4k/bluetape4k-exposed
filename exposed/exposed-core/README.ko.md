@@ -295,21 +295,7 @@ interface Auditable {
 
 현재 작업 중인 사용자명을 전파하는 컨텍스트 객체입니다. Virtual Thread / Structured Concurrency와 Coroutines 환경 모두 지원합니다.
 
-```mermaid
-sequenceDiagram
-        participant Caller
-        participant UserContext
-        participant ScopedValue
-        participant ThreadLocal
-        participant Entity
-
-    Caller->>UserContext: withUser("admin") { ... }
-    UserContext->>ThreadLocal: 이전 값 백업 후 admin 설정
-    UserContext->>ScopedValue: admin 바인딩
-    ScopedValue-->>Entity: getCurrentUser() == "admin"
-    Entity-->>Caller: createdBy / updatedBy 반영
-    UserContext->>ThreadLocal: 블록 종료 후 이전 값 복원
-```
+![UserContext — User diagram](../../docs/images/readme-diagrams/exposed-exposed-core-sequence-01.png)
 
 #### Virtual Thread 환경
 

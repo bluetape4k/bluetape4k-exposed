@@ -14,35 +14,7 @@ Exposed JDBC repository with Caffeine local (in-process) cache. No Redis depende
 
 ## Write Strategy Flows
 
-```mermaid
-sequenceDiagram
-        participant Client
-        participant Repo as Repository
-        participant Caffeine as Caffeine Cache
-        participant DB as JDBC Database
-
-    Note over Client,DB: Read-Through (cache miss)
-    Client->>Repo: get(id)
-    Repo->>Caffeine: getIfPresent(key)
-    Caffeine-->>Repo: null
-    Repo->>DB: transaction { selectAll where id = ? }
-    DB-->>Repo: row
-    Repo->>Caffeine: put(key, entity)
-    Repo-->>Client: entity
-
-    Note over Client,DB: Write-Through
-    Client->>Repo: put(id, entity)
-    Repo->>Caffeine: put(key, entity)
-    Repo->>DB: transaction { update / batchInsert }
-    Repo-->>Client: done
-
-    Note over Client,DB: Write-Behind
-    Client->>Repo: put(id, entity)
-    Repo->>Caffeine: put(key, entity)
-    Repo->>Repo: writeBehindQueue.send(id to entity)
-    Repo-->>Client: done (immediate)
-    Repo->>DB: flushBatch (async, batched)
-```
+![Write Strategy Flows diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-sequence-01.png)
 
 ## Features
 

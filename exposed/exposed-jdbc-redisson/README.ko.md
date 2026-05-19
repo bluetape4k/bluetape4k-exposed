@@ -311,158 +311,33 @@ classDiagram
 
 캐시 미스 시 `ExposedEntityMapLoader`가 DB에서 자동 로드합니다.
 
-```mermaid
-sequenceDiagram
-        participant Client as Client
-        participant Repo as JdbcRedissonRepository
-        participant RMap as Redisson RMap
-        participant Loader as ExposedEntityMapLoader
-        participant DB as Database (JDBC)
-
-    Client->>Repo: get(id) / exists(id)
-    Repo->>RMap: RMap.get(id)
-    alt RMap HIT
-        RMap-->>Repo: entity
-        Repo-->>Client: entity
-    else RMap MISS
-        RMap->>Loader: load(id) [Read-Through]
-        Loader->>DB: SELECT WHERE id=?
-        DB-->>Loader: ResultRow
-        Loader-->>RMap: entity (캐시에 저장)
-        RMap-->>Repo: entity
-        Repo-->>Client: entity
-    end
-```
+![Read-Through diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-01.png)
 
 ### Write-Through (동기)
 
 `put()` 호출 시 `ExposedEntityMapWriter`가 DB에 즉시 동기 반영합니다.
 
-```mermaid
-sequenceDiagram
-        participant Client as Client
-        participant Repo as JdbcRedissonRepository
-        participant RMap as Redisson RMap
-        participant Writer as ExposedEntityMapWriter
-        participant DB as Database (JDBC)
-
-    Client ->> Repo: put(entity)
-    Repo ->> RMap: RMap.fastPut(id, entity)
-    RMap ->> Writer: write(map) [Write-Through]
-    Writer ->> DB: SELECT id (존재 여부 확인)
-    DB -->> Writer: existIds
-    alt 기존 레코드
-        Writer ->> DB: UPDATE SET ... WHERE id=?
-        DB -->> Writer: OK
-    else 신규 레코드 (non-autoInc ID)
-        Writer ->> DB: batchInsert(entities)
-        DB -->> Writer: OK
-    end
-    Writer -->> RMap: 완료
-    RMap -->> Repo: OK
-    Repo -->> Client: 완료
-```
+![Write-Through diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-02.png)
 
 ### Write-Behind (동기)
 
 `put()` 호출 즉시 응답하고, 이후 `ExposedEntityMapWriter`가 비동기로 DB에 배치 반영합니다.
 
-```mermaid
-sequenceDiagram
-        participant Client as Client
-        participant Repo as JdbcRedissonRepository
-        participant RMap as Redisson RMap
-        participant Writer as ExposedEntityMapWriter
-        participant DB as Database (JDBC)
-
-    Client->>Repo: put(entity)
-    Repo->>RMap: RMap.fastPut(id, entity)
-    RMap-->>Repo: OK (즉시 반환)
-    Repo-->>Client: 완료
-
-    Note over RMap,DB: Write-Behind: Redisson이 비동기 배치로 DB 반영
-    RMap->>Writer: write(map) [비동기]
-    Writer->>DB: batchInsert(entities)
-    DB-->>Writer: OK
-```
+![Write-Behind diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-03.png)
 
 ### Read-Through (Suspend 코루틴)
 
 `SuspendedJdbcRedissonRepository`는 모든 연산을 `suspend` 함수로 제공합니다.
 
-```mermaid
-sequenceDiagram
-        participant Client as Client (Coroutine)
-        participant Repo as SuspendedJdbcRedissonRepository
-        participant RMap as Redisson RMap
-        participant Loader as SuspendedExposedEntityMapLoader
-        participant DB as Database (JDBC/IO)
-
-    Client->>Repo: suspend get(id)
-    Repo->>RMap: cache.getAsync(id).await()
-    alt RMap HIT
-        RMap-->>Repo: entity
-        Repo-->>Client: entity
-    else RMap MISS
-        RMap->>Loader: loadAsync(id) [Read-Through]
-        Note over Loader,DB: suspendedTransactionAsync(Dispatchers.IO)
-        Loader->>DB: SELECT WHERE id=?
-        DB-->>Loader: ResultRow
-        Loader-->>RMap: entity (캐시에 저장)
-        RMap-->>Repo: entity
-        Repo-->>Client: entity
-    end
-```
+![Read-Through (Suspend Coroutine) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-04.png)
 
 ### Write-Through (Suspend 코루틴)
 
-```mermaid
-sequenceDiagram
-        participant Client as Client (Coroutine)
-        participant Repo as SuspendedJdbcRedissonRepository
-        participant RMap as Redisson RMap
-        participant Writer as SuspendedExposedEntityMapWriter
-        participant DB as Database (JDBC/IO)
-
-    Client->>Repo: suspend put(entity)
-    Repo->>RMap: cache.fastPutAsync(id, entity).await()
-    RMap->>Writer: writeAsync(map) [Write-Through]
-    Note over Writer,DB: CoroutineScope(Dispatchers.IO) 내에서 실행
-    Writer->>DB: SELECT id (존재 여부 확인)
-    DB-->>Writer: existIds
-    alt 기존 레코드
-        Writer->>DB: UPDATE SET ... WHERE id=?
-        DB-->>Writer: OK
-    else 신규 레코드 (non-autoInc ID)
-        Writer->>DB: batchInsert(entities)
-        DB-->>Writer: OK
-    end
-    Writer-->>RMap: 완료
-    RMap-->>Repo: true
-    Repo-->>Client: true
-```
+![Write-Through (Suspend Coroutine) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-05.png)
 
 ### Write-Behind (Suspend 코루틴)
 
-```mermaid
-sequenceDiagram
-        participant Client as Client (Coroutine)
-        participant Repo as SuspendedJdbcRedissonRepository
-        participant RMap as Redisson RMap
-        participant Writer as SuspendedExposedEntityMapWriter
-        participant DB as Database (JDBC/IO)
-
-    Client->>Repo: suspend put(entity)
-    Repo->>RMap: cache.fastPutAsync(id, entity).await()
-    RMap-->>Repo: true (즉시 반환)
-    Repo-->>Client: true
-
-    Note over RMap,DB: Write-Behind: Redisson이 비동기 배치로 DB 반영
-    RMap->>Writer: writeAsync(map) [비동기]
-    Note over Writer,DB: CoroutineScope(Dispatchers.IO) 내에서 실행
-    Writer->>DB: batchInsert(entities)
-    DB-->>Writer: OK
-```
+![Write-Behind (Suspend Coroutine) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-06.png)
 
 ## JdbcRedissonRepository / SuspendedJdbcRedissonRepository 주요 메서드
 

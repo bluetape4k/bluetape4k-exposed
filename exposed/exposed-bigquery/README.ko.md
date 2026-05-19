@@ -163,22 +163,7 @@ BigQuery REST API 응답 → Kotlin 타입 변환:
 
 ### 쿼리 실행 흐름
 
-```mermaid
-sequenceDiagram
-        participant App as Kotlin 코드
-        participant CTX as BigQueryContext
-        participant H2 as H2 (PostgreSQL 모드)
-        participant BQ as BigQuery REST API
-        participant ROW as BigQueryResultRow
-
-    App->>CTX: Exposed DSL 쿼리
-    CTX->>H2: SQL 문자열 생성
-    H2-->>CTX: SQL 텍스트
-    CTX->>BQ: REST API 실행
-    BQ-->>CTX: QueryResponse (JSON)
-    CTX->>ROW: 타입 안전 행 매핑
-    ROW-->>App: List / Flow<BigQueryResultRow>
-```
+![Execution diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-sequence-01.png)
 
 ## 주요 파일/클래스 목록
 

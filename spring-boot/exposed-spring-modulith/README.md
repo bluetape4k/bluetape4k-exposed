@@ -18,22 +18,7 @@ dependencies {
 
 ## Runtime Model
 
-```mermaid
-sequenceDiagram
-    participant App as Application service
-    participant Tx as Exposed springTransactionManager
-    participant Repo as ExposedEventPublicationRepository
-    participant DB as JDBC database
-    participant Listener as ApplicationModuleListener
-
-    App->>Tx: begin business transaction
-    App->>Repo: create(TargetEventPublication)
-    Repo->>DB: insert EVENT_PUBLICATION
-    App->>Tx: commit
-    Listener->>Repo: markProcessing(id)
-    Listener->>Repo: markCompleted(id, instant)
-    Repo->>DB: update/delete/archive publication
-```
+![Runtime Model diagram](../../docs/images/readme-diagrams/spring-boot-exposed-spring-modulith-sequence-01.png)
 
 The repository uses the same `DataSource` and Exposed
 `springTransactionManager` as the application. It does not provide an R2DBC or
