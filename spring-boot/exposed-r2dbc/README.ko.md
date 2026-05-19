@@ -198,11 +198,11 @@ object Users : LongIdTable("users") {
 }
 
 data class User(
-    override val id: Long? = null,
+    val id: Long? = null,
     val name: String,
     val email: String,
     val age: Int,
-) : HasIdentifier<Long>
+) : java.io.Serializable
 ```
 
 ### Repository 구현

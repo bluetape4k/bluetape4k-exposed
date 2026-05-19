@@ -74,7 +74,7 @@
   <line class="compartment" x1="0" y1="78" x2="350" y2="78" stroke="#45A7A1"/>
   <text class="small" x="175" y="26" text-anchor="middle"></text>
   <text class="label" x="175" y="57" text-anchor="middle">R2dbcExposedEntityMapLoaderID_E</text>
-  <text class="mono" x="18" y="108">-entityTable: IdTable~ID~</text>
+  <text class="mono" x="18" y="108">-table: IdTable~ID~</text>
 <text class="mono" x="18" y="132">-scope: CoroutineScope</text>
 <text class="mono" x="18" y="156">-batchSize: Int</text>
 <text class="mono" x="18" y="180">-toEntity: suspend ResultRow.() -&gt; E</text>
@@ -84,7 +84,7 @@
   <line class="compartment" x1="0" y1="78" x2="350" y2="78" stroke="#8A72D6"/>
   <text class="small" x="175" y="26" text-anchor="middle"></text>
   <text class="label" x="175" y="57" text-anchor="middle">R2dbcExposedEntityMapWriterID_E</text>
-  <text class="mono" x="18" y="108">-entityTable: IdTable~ID~</text>
+  <text class="mono" x="18" y="108">-table: IdTable~ID~</text>
 <text class="mono" x="18" y="132">-scope: CoroutineScope</text>
 <text class="mono" x="18" y="156">-updateBody: (UpdateStatement, E) -&gt; Unit</text>
 <text class="mono" x="18" y="180">-batchInsertBody: BatchInsertStatement.(E) -&gt; Unit</text>

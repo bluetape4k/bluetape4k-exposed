@@ -16,7 +16,7 @@ JetBrains Exposed의 핵심 컬럼 타입, 확장 함수, Repository 공통 인�
 - **Blob 확장**: `ExposedBlob` 유틸 함수
 - **배치 삽입**: `BatchInsertOnConflictDoNothing` (중복 무시 배치 삽입)
 - **CTE 테이블 facade**: JDBC/R2DBC `WITH` 쿼리에서 선택 필드를 매핑하는 `CteTable`
-- **공통 인터페이스**: `HasIdentifier<ID>`, `ExposedPage<T>`
+- **페이징 DTO**: 파생 페이지 메타데이터를 제공하는 `ExposedPage<T>`
 
 ## 의존성 추가
 
@@ -189,20 +189,7 @@ val activeUserName = activeUsers[Users.name]
 `CteTable`은 JDBC/R2DBC 모듈이 공유합니다. 최종 SELECT query 앞에 `WITH` 절을 붙일 때는 각 모듈의
 `withCte()`를 사용합니다.
 
-### 9. HasIdentifier 인터페이스
-
-```kotlin
-import io.bluetape4k.exposed.core.HasIdentifier
-
-// ID를 가진 엔티티 인터페이스
-data class UserRecord(
-    override val id: Long,
-    val name: String,
-    val email: String
-): HasIdentifier<Long>
-```
-
-### 10. ExposedPage (페이징 결과)
+### 9. ExposedPage (페이징 결과)
 
 ```kotlin
 import io.bluetape4k.exposed.core.ExposedPage
@@ -223,7 +210,7 @@ println("마지막 페이지: ${page.isLast}")
 
 ### Auditable 핵심 구조
 
-`AuditableLongIdTable`, `UserContext`, `HasIdentifier`, `ExposedPage`의 관계를 나타냅니다.
+`AuditableIdTable`, 구체 Auditable 테이블 베이스, `UserContext`의 관계를 나타냅니다.
 
 ![Auditable 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-01.png)
 
@@ -239,15 +226,14 @@ println("마지막 페이지: ${page.isLast}")
 
 ![ID 생성 전략별 IdTable 계층 3](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-03.png)
 
-### HasIdentifier 및 ExposedPage
+### ExposedPage 결과 모델
 
-![HasIdentifier 및 ExposedPage 4](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-04.png)
+![ExposedPage 결과 모델 4](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-04.png)
 
 ## 주요 파일/클래스 목록
 
 | 파일                                                 | 설명                                     |
 |----------------------------------------------------|----------------------------------------|
-| `HasIdentifier.kt`                                 | ID를 가진 엔티티 공통 인터페이스                    |
 | `ColumnExtensions.kt`                              | 클라이언트 측 ID 자동 생성 확장 함수                 |
 | `ExposedColumnSupports.kt`                         | 컬럼 타입 관련 지원 함수                         |
 | `ResultRowExtensions.kt`                           | ResultRow 처리 확장 함수                     |
@@ -261,6 +247,7 @@ println("마지막 페이지: ${page.isLast}")
 | `serializable/BinarySerializedBinaryColumnType.kt` | 직렬화 Binary 컬럼 타입                       |
 | `serializable/BinarySerializedBlobColumnType.kt`   | 직렬화 Blob 컬럼 타입                         |
 | `ExposedPage.kt`                                   | 페이징 결과 데이터 클래스                         |
+| `HasIdentifier.kt`                                 | Deprecated 호환 인터페이스; `Serializable` record 권장 |
 | `dao/id/KsuidTable.kt`                             | KSUID 기본키 테이블                          |
 | `dao/id/KsuidMillisTable.kt`                       | KsuidMillis 기본키 테이블                    |
 | `dao/id/UlidTable.kt`                              | ULID 기본키 테이블                           |

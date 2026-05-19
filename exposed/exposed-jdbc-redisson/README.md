@@ -34,21 +34,21 @@ dependencies {
 Extend `AbstractJdbcRedissonRepository` to implement a synchronous cache Repository.
 
 ```kotlin
-import io.bluetape4k.exposed.core.HasIdentifier
 import io.bluetape4k.exposed.redisson.repository.AbstractJdbcRedissonRepository
-import io.bluetape4k.redis.redisson.cache.RedisCacheConfig
+import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.jetbrains.exposed.v1.jdbc.update
 import org.redisson.api.RedissonClient
 
 // Entity (must implement java.io.Serializable)
 data class UserRecord(
-    override val id: Long,
+    val id: Long,
     val name: String,
     val email: String,
-): HasIdentifier<Long>, java.io.Serializable
+): java.io.Serializable
 
 object UserTable: LongIdTable("users") {
     val name = varchar("name", 100)
@@ -57,13 +57,14 @@ object UserTable: LongIdTable("users") {
 
 class UserRedissonRepository(
     redissonClient: RedissonClient,
-    config: RedisCacheConfig,
-): AbstractJdbcRedissonRepository<Long, UserTable, UserRecord>(
+    config: RedissonCacheConfig,
+): AbstractJdbcRedissonRepository<Long, UserRecord>(
     redissonClient = redissonClient,
-    cacheName = "users",
     config = config,
 ) {
-    override val entityTable = UserTable
+    override val table = UserTable
+
+    override fun extractId(entity: UserRecord): Long = entity.id
 
     override fun ResultRow.toEntity() = UserRecord(
         id    = this[UserTable.id].value,
@@ -76,16 +77,21 @@ class UserRedissonRepository(
         this[UserTable.name]  = entity.name
         this[UserTable.email] = entity.email
     }
+
+    override fun BatchInsertStatement.insertEntity(entity: UserRecord) {
+        this[UserTable.name]  = entity.name
+        this[UserTable.email] = entity.email
+    }
 }
 
 // Usage (Read-Through)
-val repo = UserRedissonRepository(redissonClient, RedisCacheConfig.READ_ONLY)
+val repo = UserRedissonRepository(redissonClient, RedissonCacheConfig.READ_ONLY)
 
 // Retrieve from cache (auto-loads from DB on miss)
 val user = repo[1L]
 
-// Check existence by ID (DB Read-Through on cache miss)
-val exists = repo.exists(1L)
+// Check cache key existence by ID (DB Read-Through on cache miss)
+val exists = repo.containsKey(1L)
 
 // Bypass cache and query DB directly
 val freshUser = repo.findByIdFromDb(1L)
@@ -108,31 +114,44 @@ Extend `AbstractSuspendedJdbcRedissonRepository` to implement a coroutine-based 
 
 ```kotlin
 import io.bluetape4k.exposed.redisson.repository.AbstractSuspendedJdbcRedissonRepository
-import io.bluetape4k.redis.redisson.cache.RedisCacheConfig
+import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
+import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
+import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.redisson.api.RedissonClient
 
 class SuspendedUserRedissonRepository(
     redissonClient: RedissonClient,
-    config: RedisCacheConfig,
-): AbstractSuspendedJdbcRedissonRepository<Long, UserTable, UserRecord>(
+    config: RedissonCacheConfig,
+): AbstractSuspendedJdbcRedissonRepository<Long, UserRecord>(
     redissonClient = redissonClient,
-    cacheName = "users",
     config = config,
 ) {
-    override val entityTable = UserTable
+    override val table = UserTable
+
+    override fun extractId(entity: UserRecord): Long = entity.id
 
     override fun ResultRow.toEntity() = UserRecord(
         id    = this[UserTable.id].value,
         name  = this[UserTable.name],
         email = this[UserTable.email],
     )
+
+    override fun UpdateStatement.updateEntity(entity: UserRecord) {
+        this[UserTable.name]  = entity.name
+        this[UserTable.email] = entity.email
+    }
+
+    override fun BatchInsertStatement.insertEntity(entity: UserRecord) {
+        this[UserTable.name]  = entity.name
+        this[UserTable.email] = entity.email
+    }
 }
 
 // Usage (suspend functions)
-val repo = SuspendedUserRedissonRepository(redissonClient, RedisCacheConfig.READ_ONLY)
+val repo = SuspendedUserRedissonRepository(redissonClient, RedissonCacheConfig.READ_ONLY)
 
 val user = repo.get(1L)                          // Cache lookup (DB Read-Through on miss)
-val exists = repo.exists(1L)                     // Check existence
+val exists = repo.containsKey(1L)                     // Check cache key existence
 val fresh = repo.findByIdFromDb(1L)              // Bypass cache, query DB directly
 val all = repo.findAll(limit = 100)              // Load from DB, populate cache
 val batch = repo.getAll(listOf(1L, 2L, 3L))     // Batch retrieval
@@ -146,30 +165,30 @@ repo.invalidateByPattern("user:*")               // Invalidate by pattern
 ### 3. Cache pattern configuration
 
 ```kotlin
-import io.bluetape4k.redis.redisson.cache.RedisCacheConfig
+import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import org.redisson.api.map.WriteMode
 
 // Read-Through Only (default) — auto-loads from DB on cache miss
-val readOnlyConfig = RedisCacheConfig.READ_ONLY
+val readOnlyConfig = RedissonCacheConfig.READ_ONLY
 
 // Read-Through + Near Cache — two-tier Local Cache + Redis
-val readOnlyNearCacheConfig = RedisCacheConfig.READ_ONLY_WITH_NEAR_CACHE
+val readOnlyNearCacheConfig = RedissonCacheConfig.READ_ONLY_WITH_NEAR_CACHE
 
 // Read-Through + Write-Through — synchronously persists to DB on cache write
-val writeThroughConfig = RedisCacheConfig.READ_WRITE_THROUGH
+val writeThroughConfig = RedissonCacheConfig.READ_WRITE_THROUGH
 
 // Read-Through + Write-Through + Near Cache
-val writeThroughNearCacheConfig = RedisCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE
+val writeThroughNearCacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE
 
 // Read-Through + Write-Behind — asynchronously persists to DB after cache write
-val writeBehindConfig = RedisCacheConfig.WRITE_BEHIND
+val writeBehindConfig = RedissonCacheConfig.WRITE_BEHIND
 
 // Read-Through + Write-Behind + Near Cache
-val writeBehindNearCacheConfig = RedisCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE
+val writeBehindNearCacheConfig = RedissonCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE
 
 // Also delete from DB on invalidate (deleteFromDBOnInvalidate=true)
 // ⚠️ Use with caution in production.
-val deleteFromDbConfig = RedisCacheConfig.READ_WRITE_THROUGH.copy(
+val deleteFromDbConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(
     deleteFromDBOnInvalidate = true,
 )
 ```
@@ -182,12 +201,13 @@ In Write-Through/Write-Behind mode, also implement `UpdateStatement.updateEntity
 ```kotlin
 class UserWriteThroughRepository(
     redissonClient: RedissonClient,
-): AbstractJdbcRedissonRepository<Long, UserTable, UserRecord>(
+): AbstractJdbcRedissonRepository<Long, UserRecord>(
     redissonClient = redissonClient,
-    cacheName = "users:write-through",
-    config = RedisCacheConfig.READ_WRITE_THROUGH,
+    config = RedissonCacheConfig.READ_WRITE_THROUGH.copy(name = "users:write-through"),
 ) {
-    override val entityTable = UserTable
+    override val table = UserTable
+
+    override fun extractId(entity: UserRecord): Long = entity.id
 
     override fun ResultRow.toEntity() = UserRecord(
         id    = this[UserTable.id].value,
@@ -271,7 +291,7 @@ On `put()`, immediately returns and then `ExposedEntityMapWriter` asynchronously
 
 | Method                                  | Description                                                                 |
 |-----------------------------------------|-----------------------------------------------------------------------------|
-| `exists(id)`                            | Check whether the ID exists in cache (DB Read-Through on miss)              |
+| `containsKey(id)`                            | Check whether the ID exists in cache (DB Read-Through on miss)              |
 | `get(id)` / `cache[id]`                 | Retrieve entity from cache (Read-Through)                                   |
 | `getAll(ids, batchSize)`                | Batch retrieve multiple entities from cache                                 |
 | `findByIdFromDb(id)`                    | Bypass cache and query DB directly                                          |
