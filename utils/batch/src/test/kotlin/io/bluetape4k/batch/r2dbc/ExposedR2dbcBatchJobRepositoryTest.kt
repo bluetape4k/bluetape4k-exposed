@@ -10,10 +10,16 @@ import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.batch.internal.CheckpointJson
 import io.bluetape4k.batch.jdbc.tables.BatchJobExecutionTable
 import io.bluetape4k.batch.jdbc.tables.BatchStepExecutionTable
+import io.bluetape4k.batch.jdbc.tables.toParamsHash
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.SuspendedJobTester
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.support.requireNotNull
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.inList
+import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -51,9 +57,25 @@ class ExposedR2dbcBatchJobRepositoryTest : AbstractBatchR2dbcTest() {
                 exec(ACTIVE_JOB_EXECUTION_UNIQUE_INDEX_SQL)
             }
             commit()
-            val repo = ExposedR2dbcBatchJobRepository(db.db!!, CheckpointJson.jackson3())
+            val repo = ExposedR2dbcBatchJobRepository(db.db.requireNotNull("db.db"), CheckpointJson.jackson3())
             repo.block()
         }
+    }
+
+    private suspend fun activeJobExecutionCount(jobName: String, params: Map<String, Any>): Long {
+        val hash = params.toParamsHash()
+
+        return BatchJobExecutionTable.selectAll()
+            .where {
+                (BatchJobExecutionTable.jobName eq jobName) and
+                    (BatchJobExecutionTable.paramsHash eq hash) and
+                    (BatchJobExecutionTable.status inList listOf(
+                        BatchStatus.RUNNING,
+                        BatchStatus.FAILED,
+                        BatchStatus.STOPPED,
+                    ))
+            }
+            .count()
     }
 
     // ─── 1. JobExecution 신규 생성 ────────────────────────────────────────────
@@ -197,6 +219,7 @@ class ExposedR2dbcBatchJobRepositoryTest : AbstractBatchR2dbcTest() {
 
                 executionIds.size shouldBeEqualTo 2
                 executionIds.distinct().size shouldBeEqualTo 1
+                activeJobExecutionCount("raceJob", mapOf("runId" to "issue-124")) shouldBeEqualTo 1L
             }
         }
     }

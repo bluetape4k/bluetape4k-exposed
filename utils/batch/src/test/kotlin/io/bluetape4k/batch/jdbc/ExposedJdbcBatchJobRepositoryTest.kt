@@ -4,17 +4,25 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.batch.internal.CheckpointJson
 import io.bluetape4k.batch.jdbc.tables.BatchJobExecutionTable
 import io.bluetape4k.batch.jdbc.tables.BatchStepExecutionTable
+import io.bluetape4k.batch.jdbc.tables.toParamsHash
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.junit5.concurrency.MultithreadingTester
 import io.bluetape4k.junit5.concurrency.StructuredTaskScopeTester
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.support.requireNotNull
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.inList
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.condition.EnabledForJreRange
 import org.junit.jupiter.api.condition.JRE
@@ -51,8 +59,26 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
                 exec(ACTIVE_JOB_EXECUTION_UNIQUE_INDEX_SQL)
             }
             commit()
-            val repo = ExposedJdbcBatchJobRepository(testDB.db!!, CheckpointJson.jackson3())
+            val repo = ExposedJdbcBatchJobRepository(testDB.db.requireNotNull("testDB.db"), CheckpointJson.jackson3())
             runSuspendIO { repo.block() }
+        }
+    }
+
+    private fun activeJobExecutionCount(testDB: TestDB, jobName: String, params: Map<String, Any>): Long {
+        val hash = params.toParamsHash()
+
+        return transaction(testDB.db.requireNotNull("testDB.db")) {
+            BatchJobExecutionTable.selectAll()
+                .where {
+                    (BatchJobExecutionTable.jobName eq jobName) and
+                        (BatchJobExecutionTable.paramsHash eq hash) and
+                        (BatchJobExecutionTable.status inList listOf(
+                            BatchStatus.RUNNING,
+                            BatchStatus.FAILED,
+                            BatchStatus.STOPPED,
+                        ))
+                }
+                .count()
         }
     }
 
@@ -164,7 +190,7 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
             val je1 = findOrCreateJobExecution("paramJob", mapOf("date" to "2026-04-10"))
             val je2 = findOrCreateJobExecution("paramJob", mapOf("date" to "2026-04-11"))
 
-            je1.id shouldBeEqualTo je1.id
+            je2.id shouldNotBeEqualTo je1.id
             (je2.id > je1.id) shouldBe true
         }
     }
@@ -194,6 +220,7 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
 
             executionIds.size shouldBeEqualTo 2
             executionIds.distinct().size shouldBeEqualTo 1
+            activeJobExecutionCount(testDB, "raceJob", mapOf("runId" to "issue-124")) shouldBeEqualTo 1L
         }
     }
 
@@ -222,6 +249,7 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
 
             executionIds.size shouldBeEqualTo 2
             executionIds.distinct().size shouldBeEqualTo 1
+            activeJobExecutionCount(testDB, "structuredRaceJob", mapOf("runId" to "issue-124")) shouldBeEqualTo 1L
         }
     }
 
