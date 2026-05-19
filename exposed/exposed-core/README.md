@@ -228,23 +228,23 @@ println("Is last page: ${page.isLast}")
 
 Illustrates the relationships among `AuditableLongIdTable`, `UserContext`, `HasIdentifier`, and `ExposedPage`.
 
-![Core Auditable Structure 1](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-01.svg)
+![Core Auditable Structure 1](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-01.png)
 
 ### Custom Column Type Hierarchy
 
 Compressed, encrypted, and serialized column types are consistently structured around `ColumnWithTransform`.
 
-![Custom Column Type Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-02.svg)
+![Custom Column Type Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-02.png)
 
 ### IdTable Hierarchy by ID Generation Strategy
 
 Custom `IdTable` implementations that generate IDs on the client side.
 
-![IdTable Hierarchy by ID Generation Strategy 3](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-03.svg)
+![IdTable Hierarchy by ID Generation Strategy 3](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-03.png)
 
 ### HasIdentifier and ExposedPage
 
-![HasIdentifier and ExposedPage 4](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-04.svg)
+![HasIdentifier and ExposedPage 4](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-04.png)
 
 ## Key Files and Classes
 

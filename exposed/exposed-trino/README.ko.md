@@ -241,7 +241,7 @@ Testcontainers를 통한 Trino Memory 커넥터 환경에서 검증된 기능입
 
 ## 핵심 API 다이어그램
 
-![핵심 API 다이어그램 1](../../docs/images/readme-diagrams/exposed-exposed-trino-ko-diagram-01.svg)
+![핵심 API 다이어그램 1](../../docs/images/readme-diagrams/exposed-exposed-trino-diagram-01.png)
 
 ### 분산 쿼리 흐름
 

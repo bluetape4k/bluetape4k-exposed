@@ -226,19 +226,19 @@ transaction {
 
 `AuditableLongEntity`, `AuditableLongEntityClass`, 커스텀 IdTable 계층의 관계를 나타냅니다.
 
-![AuditableEntity 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-01.svg)
+![AuditableEntity 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-01.png)
 
 ### 커스텀 IdTable 계층
 
 `exposed-core`의 IdTable 구현을 DAO 엔티티와 함께 사용하는 전체 계층입니다.
 
-![커스텀 IdTable 계층 2](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-02.svg)
+![커스텀 IdTable 계층 2](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-02.png)
 
 ### Entity 확장 계층
 
 각 IdTable에 대응하는 DAO Entity 및 EntityClass 계층입니다.
 
-![Entity 확장 계층 3](../../docs/images/readme-diagrams/exposed-exposed-dao-ko-diagram-03.svg)
+![Entity 확장 계층 3](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-03.png)
 
 ## 주요 파일/클래스 목록
 

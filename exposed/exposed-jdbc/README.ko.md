@@ -424,13 +424,13 @@ transaction {
 
 ### Repository 및 VirtualThread 트랜잭션 핵심 구조
 
-![Repository 및 VirtualThread 트랜잭션 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-ko-diagram-01.svg)
+![Repository 및 VirtualThread 트랜잭션 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-01.png)
 
 ![Repository VirtualThread Transaction Core Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-01.png)
 
 ### Repository 계층 구조
 
-![Repository 계층 구조 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-ko-diagram-02.svg)
+![Repository 계층 구조 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-02.png)
 
 ## 시퀀스 다이어그램
 

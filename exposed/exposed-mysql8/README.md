@@ -8,11 +8,11 @@ It supports 8 geometry types using JTS (Java Topology Suite) and provides spatia
 
 ## UML
 
-![UML 1](../../docs/images/readme-diagrams/exposed-exposed-mysql8-diagram-01.svg)
+![UML 1](../../docs/images/readme-diagrams/exposed-exposed-mysql8-diagram-01.png)
 
 ## Extension Function Diagram
 
-![Extension Function Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-mysql8-diagram-02.svg)
+![Extension Function Diagram 2](../../docs/images/readme-diagrams/exposed-exposed-mysql8-diagram-02.png)
 
 ## Overview
 

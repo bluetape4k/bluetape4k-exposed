@@ -276,11 +276,11 @@ Containers.Postgres
 
 ## Test Infrastructure Structure
 
-![Test Infrastructure Structure 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-01.svg)
+![Test Infrastructure Structure 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-01.png)
 
 ### JDBC vs R2DBC Test Comparison
 
-![JDBC vs R2DBC Test Comparison 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-02.svg)
+![JDBC vs R2DBC Test Comparison 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-02.png)
 
 ## Notes
 

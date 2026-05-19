@@ -114,15 +114,15 @@ val query2 = Users.selectAll()
 
 ### Column Type Structure (Summary)
 
-![Column Type Structure (Summary) 1](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-01.svg)
+![Column Type Structure (Summary) 1](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-01.png)
 
 ### JSON Column Type Class Structure
 
-![JSON Column Type Class Structure 2](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-02.svg)
+![JSON Column Type Class Structure 2](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-02.png)
 
 ### Jackson 2 vs Jackson 3 Package Differences
 
-![Jackson 2 vs Jackson 3 Package Differences 3](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-03.svg)
+![Jackson 2 vs Jackson 3 Package Differences 3](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-03.png)
 
 ## References
 

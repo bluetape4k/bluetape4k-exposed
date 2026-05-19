@@ -127,13 +127,13 @@ val nearCacheConfig = RedisCacheConfig.readOnly(
 
 ## 아키텍처 개요
 
-![아키텍처 개요 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-ko-diagram-01.svg)
+![아키텍처 개요 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-01.png)
 
 ## 클래스 다이어그램
 
 ### R2DBC Redisson Repository 계층 구조
 
-![R2DBC Redisson Repository 계층 구조 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-ko-diagram-02.svg)
+![R2DBC Redisson Repository 계층 구조 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-02.png)
 
 ## 캐시 패턴
 

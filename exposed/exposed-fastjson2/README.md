@@ -129,15 +129,15 @@ val extraData: Map<String, Any>? = resultRow.getFastjsonOrNull(Products.extraDat
 
 ### Column Type Structure (Summary)
 
-![Column Type Structure (Summary) 1](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-01.svg)
+![Column Type Structure (Summary) 1](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-01.png)
 
 ### JSON Column Type Class Structure
 
-![JSON Column Type Class Structure 2](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-02.svg)
+![JSON Column Type Class Structure 2](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-02.png)
 
 ### JSON Column Data Flow
 
-![JSON Column Data Flow 3](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-03.svg)
+![JSON Column Data Flow 3](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-03.png)
 
 ## References
 

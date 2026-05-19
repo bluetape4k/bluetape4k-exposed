@@ -97,7 +97,7 @@ suspend fun example(repo: UserSuspendedRepository) {
 
 ## Architecture Overview
 
-![Architecture Overview 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-diagram-01.svg)
+![Architecture Overview 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-diagram-01.png)
 
 ![Architecture Overview diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-sequence-01.png)
 

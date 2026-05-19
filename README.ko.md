@@ -32,7 +32,7 @@ dialect 확장, Spring Boot 4 자동 설정을 Exposed DSL 스타일 안에서 �
 
 ## 아키텍처
 
-![bluetape4k-exposed architecture](docs/assets/exposed-architecture.svg)
+![bluetape4k-exposed architecture](docs/assets/exposed-architecture.png)
 
 ## 모듈 목록
 
