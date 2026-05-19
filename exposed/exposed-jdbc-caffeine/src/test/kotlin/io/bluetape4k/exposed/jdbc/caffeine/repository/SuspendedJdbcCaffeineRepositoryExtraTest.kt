@@ -17,6 +17,9 @@ import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import io.bluetape4k.assertions.assertFailsWith
@@ -39,10 +42,12 @@ import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTrans
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.Instant
 import kotlin.coroutines.cancellation.CancellationException
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -58,6 +63,70 @@ import kotlin.time.Duration.Companion.seconds
 class SuspendedJdbcCaffeineRepositoryExtraTest {
 
     companion object: KLogging()
+
+    @Test
+    fun `get - concurrent suspended cache misses run one loader per key`() = runTest {
+        val repository = CountingSuspendedActorRepository("jdbc:caffeine:s-atomic:get")
+
+        val results = List(8) {
+            async(Dispatchers.Default) {
+                repository.get(1L)
+            }
+        }.awaitAll()
+
+        results.toSet().size shouldBeEqualTo 1
+        repository.singleLoadCount.get() shouldBeEqualTo 1
+    }
+
+    @Test
+    fun `getAll - concurrent suspended cache misses run one loader per key`() = runTest {
+        val repository = CountingSuspendedActorRepository("jdbc:caffeine:s-atomic:get-all")
+        val ids = listOf(1L, 2L, 3L)
+
+        val results = List(8) {
+            async(Dispatchers.Default) {
+                repository.getAll(ids)
+            }
+        }.awaitAll()
+
+        results.forEach { result ->
+            result.keys shouldBeEqualTo ids.toSet()
+        }
+        repository.singleLoadCount.get() shouldBeEqualTo ids.size
+        repository.bulkLoadCount.get() shouldBeEqualTo 0
+    }
+
+    private class CountingSuspendedActorRepository(
+        keyPrefix: String,
+    ): AbstractSuspendedJdbcCaffeineRepository<Long, ActorRecord>(
+        LocalCacheConfig(keyPrefix = keyPrefix, writeMode = CacheWriteMode.READ_ONLY)
+    ) {
+        val singleLoadCount = AtomicInteger()
+        val bulkLoadCount = AtomicInteger()
+
+        override val table: IdTable<Long> = ActorTable
+
+        override fun ResultRow.toEntity(): ActorRecord =
+            error("DB row conversion is not used by this in-memory concurrency test")
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) = Unit
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) = Unit
+
+        override fun extractId(entity: ActorRecord): Long = entity.id
+
+        override suspend fun findByIdFromDb(id: Long): ActorRecord? {
+            singleLoadCount.incrementAndGet()
+            delay(100)
+            return ActorSchema.newActorRecord().withId(id)
+        }
+
+        override suspend fun findAllFromDb(ids: Collection<Long>): List<ActorRecord> {
+            bulkLoadCount.incrementAndGet()
+            delay(100)
+            return ids.map { ActorSchema.newActorRecord().withId(it) }
+        }
+    }
 
     // -------------------------------------------------------------------------
     // countFromDb + clear + invalidateAll — AutoInc Actor

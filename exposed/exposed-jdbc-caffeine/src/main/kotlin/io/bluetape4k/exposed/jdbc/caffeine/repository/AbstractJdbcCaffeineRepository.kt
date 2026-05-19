@@ -201,41 +201,22 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
 
     override fun get(id: ID): E? {
         val key = serializeKey(id)
-        val cached = cache.getIfPresent(key)
-        if (cached != null) return cached
-
-        val fromDb = findByIdFromDb(id) ?: return null
-        // putIfAbsent is atomic: if another thread wrote a value concurrently, we keep theirs.
-        return cache.asMap().putIfAbsent(key, fromDb) ?: fromDb
+        return cache.getNullable(key) {
+            findByIdFromDb(id)
+        }
     }
 
     override fun getAll(ids: Collection<ID>): Map<ID, E> {
         if (ids.isEmpty()) return emptyMap()
 
-        val result = mutableMapOf<ID, E>()
-        val missedIds = mutableListOf<ID>()
-
-        for (id in ids) {
-            val key = serializeKey(id)
-            val cached = cache.getIfPresent(key)
-            if (cached != null) {
-                result[id] = cached
-            } else {
-                missedIds.add(id)
-            }
-        }
-
-        if (missedIds.isNotEmpty()) {
-            val fromDb = findAllFromDb(missedIds)
-            for (entity in fromDb) {
-                val id = extractId(entity)
-                result[id] = entity
-                cache.asMap().putIfAbsent(serializeKey(id), entity)
-            }
-        }
-
-        return result
+        return ids.mapNotNull { id ->
+            get(id)?.let { id to it }
+        }.toMap()
     }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun Cache<String, E>.getNullable(key: String, loader: (String) -> E?): E? =
+        (this as Cache<String, E?>).get(key) { loader(it) }
 
     override fun findAll(
         limit: Int?,

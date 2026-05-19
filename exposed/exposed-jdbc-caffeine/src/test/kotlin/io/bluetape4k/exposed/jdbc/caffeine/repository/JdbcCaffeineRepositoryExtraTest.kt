@@ -3,9 +3,9 @@ package io.bluetape4k.exposed.jdbc.caffeine.repository
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
 import io.bluetape4k.exposed.jdbc.caffeine.AbstractJdbcCaffeineTest
-import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.ActorRecord
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorJdbcCaffeineRepository
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema
+import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.ActorRecord
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.ActorTable
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.CredentialTable
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.toActorRecord
@@ -34,14 +34,18 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.Instant
 import java.util.*
-import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Job
 import kotlin.coroutines.cancellation.CancellationException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * JDBC Caffeine 레포지토리 추가 커버리지 테스트.
@@ -55,6 +59,94 @@ import kotlin.coroutines.cancellation.CancellationException
 class JdbcCaffeineRepositoryExtraTest {
 
     companion object: KLogging()
+
+    @Test
+    fun `get - concurrent cache misses run one loader per key`() {
+        val repository = CountingActorRepository("jdbc:caffeine:atomic:get")
+        val executor = Executors.newFixedThreadPool(8)
+        val ready = CountDownLatch(8)
+        val start = CountDownLatch(1)
+
+        try {
+            val futures = List(8) {
+                executor.submit<ActorRecord?> {
+                    ready.countDown()
+                    start.await()
+                    repository.get(1L)
+                }
+            }
+
+            ready.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            start.countDown()
+
+            futures.map { it.get(5, TimeUnit.SECONDS) }.toSet().size shouldBeEqualTo 1
+            repository.singleLoadCount.get() shouldBeEqualTo 1
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    @Test
+    fun `getAll - concurrent cache misses run one loader per key`() {
+        val repository = CountingActorRepository("jdbc:caffeine:atomic:get-all")
+        val executor = Executors.newFixedThreadPool(8)
+        val ready = CountDownLatch(8)
+        val start = CountDownLatch(1)
+        val ids = listOf(1L, 2L, 3L)
+
+        try {
+            val futures = List(8) {
+                executor.submit<Map<Long, ActorRecord>> {
+                    ready.countDown()
+                    start.await()
+                    repository.getAll(ids)
+                }
+            }
+
+            ready.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            start.countDown()
+
+            futures.forEach { future ->
+                future.get(5, TimeUnit.SECONDS).keys shouldBeEqualTo ids.toSet()
+            }
+            repository.singleLoadCount.get() shouldBeEqualTo ids.size
+            repository.bulkLoadCount.get() shouldBeEqualTo 0
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    private class CountingActorRepository(
+        keyPrefix: String,
+    ): AbstractJdbcCaffeineRepository<Long, ActorRecord>(
+        LocalCacheConfig(keyPrefix = keyPrefix, writeMode = CacheWriteMode.READ_ONLY)
+    ) {
+        val singleLoadCount = AtomicInteger()
+        val bulkLoadCount = AtomicInteger()
+
+        override val table: IdTable<Long> = ActorTable
+
+        override fun ResultRow.toEntity(): ActorRecord =
+            error("DB row conversion is not used by this in-memory concurrency test")
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) = Unit
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) = Unit
+
+        override fun extractId(entity: ActorRecord): Long = entity.id
+
+        override fun findByIdFromDb(id: Long): ActorRecord? {
+            singleLoadCount.incrementAndGet()
+            Thread.sleep(100)
+            return ActorSchema.newActorRecord().withId(id)
+        }
+
+        override fun findAllFromDb(ids: Collection<Long>): List<ActorRecord> {
+            bulkLoadCount.incrementAndGet()
+            Thread.sleep(100)
+            return ids.map { ActorSchema.newActorRecord().withId(it) }
+        }
+    }
 
     // -------------------------------------------------------------------------
     // countFromDb + clear + invalidateAll — AutoInc Actor

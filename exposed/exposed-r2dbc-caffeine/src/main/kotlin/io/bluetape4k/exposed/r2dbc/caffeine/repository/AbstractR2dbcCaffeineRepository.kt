@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.future.future
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.Expression
@@ -220,41 +221,20 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
 
     override suspend fun get(id: ID): E? {
         val key = serializeKey(id)
-        val cached = cache.getIfPresent(key)?.await()
-        if (cached != null) return cached
-
-        val fromDb = findByIdFromDb(id) ?: return null
-        // putIfAbsent is atomic: if another coroutine wrote a value concurrently, we keep theirs.
-        val winner = cache.asMap().putIfAbsent(key, CompletableFuture.completedFuture(fromDb))
-        return winner?.await() ?: fromDb
+        @Suppress("UNCHECKED_CAST")
+        return cache.get(key) { _, _ ->
+            scope.future {
+                findByIdFromDb(id)
+            } as CompletableFuture<E>
+        }.await()
     }
 
     override suspend fun getAll(ids: Collection<ID>): Map<ID, E> {
         if (ids.isEmpty()) return emptyMap()
 
-        val result = mutableMapOf<ID, E>()
-        val missedIds = mutableListOf<ID>()
-
-        for (id in ids) {
-            val key = serializeKey(id)
-            val cached = cache.getIfPresent(key)?.await()
-            if (cached != null) {
-                result[id] = cached
-            } else {
-                missedIds.add(id)
-            }
-        }
-
-        if (missedIds.isNotEmpty()) {
-            val fromDb = findAllFromDb(missedIds)
-            for (entity in fromDb) {
-                val id = extractId(entity)
-                result[id] = entity
-                cache.asMap().putIfAbsent(serializeKey(id), CompletableFuture.completedFuture(entity))
-            }
-        }
-
-        return result
+        return ids.mapNotNull { id ->
+            get(id)?.let { id to it }
+        }.toMap()
     }
 
     override suspend fun findAll(
