@@ -87,6 +87,26 @@ val database = R2dbcDatabase.connect(
 `1-5 ms` 점유하면 처리량은 점유 시간에 지배되고 기본/고처리량 profile이 수렴했습니다. 별도 `64` threads contention benchmark에서는 동시 요청 수가 풀 크기를 넘을 때
 `maxSize` 영향이 뚜렷했습니다. Exposed repository 서비스에서는 부하 상황에서 bounded pending acquire, warmup, 유한한 acquisition timeout이 필요하면 high-throughput 프리셋을 우선하고, 과부하 보호보다 짧은 내부 작업의 순수 처리량이 중요한 경우에만 기본 profile을 우선하세요.
 
+## 다이어그램
+
+### R2dbcRepository 핵심 구조
+
+![R2dbcRepository diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-01.png)
+
+### R2dbcRepository 계층
+
+![R2dbcRepository diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.png)
+
+### suspend 트랜잭션 흐름
+
+`suspendTransaction` 블록 내에서 `R2dbcRepository`를 통해 CRUD 연산이 수행되는 흐름입니다.
+
+![suspend diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-01.png)
+
+### SoftDelete 트랜잭션 흐름
+
+![SoftDelete diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-02.png)
+
 ## 기본 사용법
 
 ### 1. R2dbcRepository 구현
@@ -335,26 +355,6 @@ prepared parameter binding 순서를 유지합니다.
 |--------------------------------------------------|------------|-------|-------------------------|
 | `auditedUpdateById(id, updatedBy, ...)`          | suspend    | `Int` | ID로 수정하고 감사 컬럼 설정      |
 | `auditedUpdateAll(updatedBy, predicate, ...)`    | suspend    | `Int` | 조건에 맞게 일괄 수정하고 감사 컬럼 설정 |
-
-## 다이어그램
-
-### R2dbcRepository 핵심 구조
-
-![R2dbcRepository diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-01.png)
-
-### R2dbcRepository 계층
-
-![R2dbcRepository diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.png)
-
-### suspend 트랜잭션 흐름
-
-`suspendTransaction` 블록 내에서 `R2dbcRepository`를 통해 CRUD 연산이 수행되는 흐름입니다.
-
-![suspend diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-01.png)
-
-### SoftDelete 트랜잭션 흐름
-
-![SoftDelete diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-02.png)
 
 ## 편의 타입 별칭
 

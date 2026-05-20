@@ -24,6 +24,20 @@ dependencies {
 }
 ```
 
+## Architecture Diagram
+
+### Column Type Structure (Summary)
+
+![Column Type Structure (Summary) diagram](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-01.png)
+
+### JSON Column Type Class Structure
+
+![JSON Column Type Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-02.png)
+
+### JSON Column Data Flow
+
+![JSON Column Data Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-03.png)
+
 ## Basic Usage
 
 ### 1. Defining JSON Columns
@@ -124,20 +138,6 @@ val extraData: Map<String, Any>? = resultRow.getFastjsonOrNull(Products.extraDat
 ```bash
 ./gradlew :exposed-fastjson2:test
 ```
-
-## Architecture Diagram
-
-### Column Type Structure (Summary)
-
-![Column Type Structure (Summary) diagram](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-01.png)
-
-### JSON Column Type Class Structure
-
-![JSON Column Type Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-02.png)
-
-### JSON Column Data Flow
-
-![JSON Column Data Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-03.png)
 
 ## References
 

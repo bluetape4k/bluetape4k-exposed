@@ -24,6 +24,20 @@ dependencies {
 }
 ```
 
+## Architecture Diagram
+
+### Column Type Structure (Summary)
+
+![Column Type Structure (Summary) diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-01.png)
+
+### JSON Column Type Class Structure
+
+![JSON Column Type Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-02.png)
+
+### Jackson 2 vs Jackson 3 Package Differences
+
+![Jackson 2 vs Jackson 3 Package Differences diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-03.png)
+
 ## Basic Usage
 
 ### 1. Defining JSON Columns
@@ -109,20 +123,6 @@ val query2 = Users.selectAll()
 ```bash
 ./gradlew :exposed-jackson3:test
 ```
-
-## Architecture Diagram
-
-### Column Type Structure (Summary)
-
-![Column Type Structure (Summary) diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-01.png)
-
-### JSON Column Type Class Structure
-
-![JSON Column Type Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-02.png)
-
-### Jackson 2 vs Jackson 3 Package Differences
-
-![Jackson 2 vs Jackson 3 Package Differences diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-03.png)
 
 ## References
 

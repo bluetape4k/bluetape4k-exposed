@@ -24,6 +24,26 @@ dependencies {
 }
 ```
 
+## 아키텍처 다이어그램
+
+### 컬럼 타입 구조 (요약)
+
+![() diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-01.png)
+
+## 클래스 다이어그램
+
+![exposed jackson2 Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-02.png)
+
+## 직렬화/역직렬화 시퀀스 다이어그램
+
+### 객체 → JSON → DB 저장
+
+![→ JSON → DB diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-sequence-01.png)
+
+### DB 조회 → JSON → 객체 역직렬화
+
+![DB → JSON → diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-sequence-02.png)
+
 ## 기본 사용법
 
 ### 1. JSON 컬럼 정의
@@ -102,26 +122,6 @@ import io.bluetape4k.exposed.core.jackson.*
 val settings: UserSettings = resultRow.getJackson(Users.settings)
 val metadata: ProductMetadata? = resultRow.getJacksonOrNull(Products.metadata)
 ```
-
-## 아키텍처 다이어그램
-
-### 컬럼 타입 구조 (요약)
-
-![() diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-01.png)
-
-## 클래스 다이어그램
-
-![exposed jackson2 Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-02.png)
-
-## 직렬화/역직렬화 시퀀스 다이어그램
-
-### 객체 → JSON → DB 저장
-
-![→ JSON → DB diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-sequence-01.png)
-
-### DB 조회 → JSON → 객체 역직렬화
-
-![DB → JSON → diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-sequence-02.png)
 
 ## 주요 파일/클래스 목록
 

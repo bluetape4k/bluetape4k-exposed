@@ -29,6 +29,14 @@ dependencies {
 }
 ```
 
+## 다이어그램
+
+![exposed duckdb Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-duckdb-diagram-01.png)
+
+### 쿼리 실행 흐름
+
+![exposed duckdb Sequence Flow 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-duckdb-sequence-01.png)
+
 ## 기본 사용법
 
 ### 1. 인메모리 DuckDB 연결
@@ -98,14 +106,6 @@ queryFlow(db) {
 > 트랜잭션 안에서 결과를 `List`로 materialize 한 뒤 emit 합니다.
 > 따라서 API는 `Flow`이지만, 진짜 row-by-row streaming cursor는 아닙니다.
 > 큰 결과셋은 `Flow` API라도 결국 메모리에 적재되므로 페이지 전략을 별도로 고려해야 합니다.
-
-## 다이어그램
-
-![exposed duckdb Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-duckdb-diagram-01.png)
-
-### 쿼리 실행 흐름
-
-![exposed duckdb Sequence Flow 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-duckdb-sequence-01.png)
 
 ## 주요 파일/클래스 목록
 

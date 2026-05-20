@@ -13,6 +13,18 @@ Exposed에서 `bluetape4k-measured` 타입(`Measure<T>`, `Temperature`, `Tempera
 - `energy(name)`, `power(name)`
 - `temperature(name)`, `temperatureDelta(name)`
 
+## 클래스 다이어그램
+
+![exposed measured Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-measured-diagram-01.png)
+
+## 저장/조회 시퀀스 다이어그램
+
+![/ diagram](../../docs/images/readme-diagrams/exposed-exposed-measured-sequence-01.png)
+
+## Column 변환 흐름
+
+![Column diagram](../../docs/images/readme-diagrams/exposed-exposed-measured-diagram-02.png)
+
 ## 예제
 
 ```kotlin
@@ -23,15 +35,3 @@ object ProductTable: Table("products") {
     val temp = temperature("temp")
 }
 ```
-
-## 클래스 다이어그램
-
-![exposed measured Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-measured-diagram-01.png)
-
-## Column 변환 흐름
-
-![Column diagram](../../docs/images/readme-diagrams/exposed-exposed-measured-diagram-02.png)
-
-## 저장/조회 시퀀스 다이어그램
-
-![/ diagram](../../docs/images/readme-diagrams/exposed-exposed-measured-sequence-01.png)

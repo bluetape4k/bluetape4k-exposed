@@ -31,6 +31,14 @@ dependencies {
 }
 ```
 
+## Diagram
+
+![exposed duckdb Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-duckdb-diagram-01.png)
+
+### Query Execution Flow
+
+![Query Execution Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-duckdb-sequence-01.png)
+
 ## Basic Usage
 
 ### 1. In-Memory DuckDB Connection
@@ -101,14 +109,6 @@ queryFlow(db) {
 > The API surface is `Flow`, but it does not perform true row-by-row streaming.
 > Even with the
 `Flow` API, large result sets are ultimately loaded into memory — consider a separate pagination strategy for very large datasets.
-
-## Diagram
-
-![exposed duckdb Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-duckdb-diagram-01.png)
-
-### Query Execution Flow
-
-![Query Execution Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-duckdb-sequence-01.png)
 
 ## Key Files / Classes
 

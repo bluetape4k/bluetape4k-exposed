@@ -48,6 +48,16 @@ dependencies {
 }
 ```
 
+## Architecture Diagram
+
+### Column Type Structure (Summary)
+
+![Column Type Structure (Summary) diagram](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-01.png)
+
+## Class Diagram
+
+![exposed tink Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-02.png)
+
 ## Basic Usage
 
 ### 1. Defining Columns
@@ -211,16 +221,6 @@ object SensitiveData: IntIdTable("sensitive_data") {
     val secret = tinkAeadVarChar("secret", 512, customEncryptor)
 }
 ```
-
-## Architecture Diagram
-
-### Column Type Structure (Summary)
-
-![Column Type Structure (Summary) diagram](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-01.png)
-
-## Class Diagram
-
-![exposed tink Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-02.png)
 
 ## Key Files / Classes
 

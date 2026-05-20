@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1754" height="1254" viewBox="0 0 1754 1254" role="img" aria-label="Interface Hierarchy">
 <defs>
   <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#758297" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M 0 1 L 12 6 L 0 11 Z" fill="#ffffff" stroke="#758297" stroke-width="1.8"/></marker>
+  <marker id="openArrow" markerWidth="10" markerHeight="8" refX="8.5" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 8.5 4 L 1 7" fill="none" stroke="#758297" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker>
+  <marker id="inherit" markerWidth="11" markerHeight="10" refX="9.5" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 0.5 1 L 9.5 5 L 0.5 9 Z" fill="#ffffff" stroke="#758297" stroke-width="1.7"/></marker>
   <style>
     .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
     .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
@@ -24,27 +24,15 @@
 <rect class="frame" x="32" y="28" width="1690" height="1198" rx="28"/>
 <text class="title" x="66" y="82">Interface Hierarchy</text>
 <text class="subtitle" x="70" y="118">UML classes from the original Mermaid source</text>
-<path class="inheritLine" d="M1082 576 C1082 501 877 501 877 426"/>
-<path class="inheritLine" d="M1492 576 C1492 501 877 501 877 426"/>
-<path class="inheritLine" d="M672 856 C672 649 1287 649 1287 442"/>
-<path class="inheritLine" d="M1082 856 C1082 649 1287 649 1287 442"/>
-<path class="inheritLine" d="M262 576 C262 501 467 501 467 426"/>
-<path class="inheritLine" d="M672 576 C672 501 467 501 467 426"/>
+<path class="inheritLine" d="M262 584 L262 493 L467 493 L467 418"/>
+<path class="inheritLine" d="M1492 584 L1492 525 L467 525 L467 418"/>
+<path class="inheritLine" d="M672 864 L672 809 L1287 809 L1287 434"/>
+<path class="inheritLine" d="M1082 864 L1082 801 L1287 801 L1287 434"/>
+<path class="inheritLine" d="M672 584 L672 501 L877 501 L877 418"/>
+<path class="inheritLine" d="M1082 584 L1082 493 L877 493 L877 418"/>
 <g transform="translate(297,180)">
   <rect class="card" x="0" y="0" width="340" height="238" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
   <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#5B8DEF"/>
-  <text class="small" x="170" y="26" text-anchor="middle">«interface»</text>
-  <text class="label" x="170" y="61" text-anchor="middle">JdbcCacheRepository</text>
-  <text class="mono" x="18" y="108">+get(id: ID): E?</text>
-<text class="mono" x="18" y="129">+getAll(ids: Collection~ID~): Map~ID, E~</text>
-<text class="mono" x="18" y="150">+put(id: ID, entity: E)</text>
-<text class="mono" x="18" y="171">+putAll(entities: Map~ID, E~)</text>
-<text class="mono" x="18" y="192">+invalidate(id: ID)</text>
-<text class="mono" x="18" y="213">+invalidateAll(ids: Collection~ID~)</text>
-</g>
-<g transform="translate(707,180)">
-  <rect class="card" x="0" y="0" width="340" height="238" rx="5" fill="#EAF7EF" stroke="#58A978"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#58A978"/>
   <text class="small" x="170" y="26" text-anchor="middle">«interface»</text>
   <text class="label" x="170" y="61" text-anchor="middle">R2dbcCacheRepository</text>
   <text class="mono" x="18" y="108">+get(id: ID): E?</text>
@@ -53,6 +41,18 @@
 <text class="mono" x="18" y="171">+clear()</text>
 <text class="mono" x="18" y="192">+findByIdFromDb(id: ID): E?</text>
 <text class="mono" x="18" y="213">+findAll(...): List~E~</text>
+</g>
+<g transform="translate(707,180)">
+  <rect class="card" x="0" y="0" width="340" height="238" rx="5" fill="#EAF7EF" stroke="#58A978"/>
+  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#58A978"/>
+  <text class="small" x="170" y="26" text-anchor="middle">«interface»</text>
+  <text class="label" x="170" y="61" text-anchor="middle">JdbcCacheRepository</text>
+  <text class="mono" x="18" y="108">+get(id: ID): E?</text>
+<text class="mono" x="18" y="129">+getAll(ids: Collection~ID~): Map~ID, E~</text>
+<text class="mono" x="18" y="150">+put(id: ID, entity: E)</text>
+<text class="mono" x="18" y="171">+putAll(entities: Map~ID, E~)</text>
+<text class="mono" x="18" y="192">+invalidate(id: ID)</text>
+<text class="mono" x="18" y="213">+invalidateAll(ids: Collection~ID~)</text>
 </g>
 <g transform="translate(1117,180)">
   <rect class="card" x="0" y="0" width="340" height="254" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
@@ -71,25 +71,25 @@
   <rect class="card" x="0" y="0" width="340" height="154" rx="5" fill="#FDECEF" stroke="#DC6B82"/>
   <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#DC6B82"/>
   <text class="small" x="170" y="26" text-anchor="middle">«interface»</text>
-  <text class="label" x="170" y="61" text-anchor="middle">JdbcCaffeineRepository</text>
+  <text class="label" x="170" y="61" text-anchor="middle">R2dbcCaffeineRepository</text>
   <text class="mono" x="18" y="108">+config: LocalCacheConfig</text>
-<text class="mono" x="18" y="129">+cache: Cache~String, E~</text>
+<text class="mono" x="18" y="129">+cache: AsyncCache~String, E~</text>
 </g>
 <g transform="translate(502,584)">
   <rect class="card" x="0" y="0" width="340" height="154" rx="5" fill="#E9F7F6" stroke="#45A7A1"/>
   <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#45A7A1"/>
   <text class="small" x="170" y="26" text-anchor="middle">«interface»</text>
-  <text class="label" x="170" y="61" text-anchor="middle">JdbcRedisRepository</text>
-  <text class="mono" x="18" y="108">+invalidateByPattern(patterns: String,</text>
-<text class="mono" x="18" y="129">count: Int): Long</text>
+  <text class="label" x="170" y="61" text-anchor="middle">JdbcCaffeineRepository</text>
+  <text class="mono" x="18" y="108">+config: LocalCacheConfig</text>
+<text class="mono" x="18" y="129">+cache: Cache~String, E~</text>
 </g>
 <g transform="translate(912,584)">
   <rect class="card" x="0" y="0" width="340" height="154" rx="5" fill="#F1ECFF" stroke="#8A72D6"/>
   <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#8A72D6"/>
   <text class="small" x="170" y="26" text-anchor="middle">«interface»</text>
-  <text class="label" x="170" y="61" text-anchor="middle">R2dbcCaffeineRepository</text>
-  <text class="mono" x="18" y="108">+config: LocalCacheConfig</text>
-<text class="mono" x="18" y="129">+cache: AsyncCache~String, E~</text>
+  <text class="label" x="170" y="61" text-anchor="middle">JdbcRedisRepository</text>
+  <text class="mono" x="18" y="108">+invalidateByPattern(patterns: String,</text>
+<text class="mono" x="18" y="129">count: Int): Long</text>
 </g>
 <g transform="translate(1322,584)">
   <rect class="card" x="0" y="0" width="340" height="154" rx="5" fill="#F7F1E7" stroke="#B88A44"/>

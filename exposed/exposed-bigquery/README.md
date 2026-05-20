@@ -47,6 +47,14 @@ dependencies {
 }
 ```
 
+## Architecture Diagram
+
+![Architecture Diagram diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-diagram-01.png)
+
+### Query Execution Flow
+
+![Query Execution Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-sequence-01.png)
+
 ## Basic Usage
 
 ### 1. Creating a BigQueryContext
@@ -158,14 +166,6 @@ This module uses the BigQuery REST API and does not provide JDBC transaction sem
 - Actual BigQuery write operations are performed per REST API call.
 - When calling multiple DML operations sequentially, your application must account for the possibility of partial writes.
 - Do not expect RDBMS-level rollback, savepoints, or nested transaction atomicity.
-
-## Architecture Diagram
-
-![Architecture Diagram diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-diagram-01.png)
-
-### Query Execution Flow
-
-![Query Execution Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-sequence-01.png)
 
 ## Key Files / Classes
 

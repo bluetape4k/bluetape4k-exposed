@@ -31,6 +31,16 @@ read paths, JSON/encrypted columns, database dialect extensions, and Spring Boot
 - **Spring Boot** — Spring Boot 4.x auto-configuration (JDBC, R2DBC, Batch, and Spring Modulith JDBC event publication integration)
 - **Measured Columns** — Exposed custom column types for `bluetape4k-measured` units
 
+<!-- README_VISUAL_OVERVIEW:START -->
+## Overview Diagram
+
+![Bluetape4k Exposed overview diagram](docs/images/readme-diagrams/root-readme-overview-01.png)
+
+## Module Composition Chart
+
+![Bluetape4k Exposed module composition chart](docs/images/readme-charts/root-readme-module-chart-01.png)
+<!-- README_VISUAL_OVERVIEW:END -->
+
 ## Architecture
 
 ![bluetape4k-exposed architecture](docs/assets/exposed-architecture.png)

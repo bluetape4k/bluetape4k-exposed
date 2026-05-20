@@ -24,6 +24,26 @@ dependencies {
 }
 ```
 
+## Architecture Diagram
+
+### Column Type Structure (Summary)
+
+![Column Type Structure (Summary) diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-01.png)
+
+## Class Diagram
+
+![exposed jackson2 Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-02.png)
+
+## Serialization / Deserialization Sequence Diagrams
+
+### Object → JSON → DB
+
+![Object → JSON → DB diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-sequence-01.png)
+
+### DB → JSON → Object
+
+![DB → JSON → Object diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-sequence-02.png)
+
 ## Basic Usage
 
 ### 1. Defining a JSON Column
@@ -102,26 +122,6 @@ import io.bluetape4k.exposed.core.jackson.*
 val settings: UserSettings = resultRow.getJackson(Users.settings)
 val metadata: ProductMetadata? = resultRow.getJacksonOrNull(Products.metadata)
 ```
-
-## Architecture Diagram
-
-### Column Type Structure (Summary)
-
-![Column Type Structure (Summary) diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-01.png)
-
-## Class Diagram
-
-![exposed jackson2 Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-02.png)
-
-## Serialization / Deserialization Sequence Diagrams
-
-### Object → JSON → DB
-
-![Object → JSON → DB diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-sequence-01.png)
-
-### DB → JSON → Object
-
-![DB → JSON → Object diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-sequence-02.png)
 
 ## Key Files / Classes
 

@@ -88,6 +88,26 @@ Measured local H2/PostgreSQL/MySQL8 benchmarks showed that pure acquire/close th
 `64` threads showed that
 `maxSize` matters when concurrent requests exceed pool size. For Exposed repositories, prefer the high-throughput preset when the service needs bounded pending acquire, warmup, and finite acquisition timeout under load; prefer the default profile only for very short-lived internal jobs where overload protection is less important.
 
+## Diagrams
+
+### Core R2dbcRepository Structure
+
+![Core R2dbcRepository Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-01.png)
+
+### R2dbcRepository Hierarchy
+
+![R2dbcRepository Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.png)
+
+### suspend Transaction Flow
+
+How CRUD operations are executed through `R2dbcRepository` inside a `suspendTransaction` block.
+
+![suspend Transaction Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-01.png)
+
+### SoftDelete Transaction Flow
+
+![SoftDelete Transaction Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-02.png)
+
 ## Basic Usage
 
 ### 1. Implementing R2dbcRepository
@@ -337,26 +357,6 @@ parameters from CTE predicates keep their binding order.
 |--------------------------------------------------|---------|-------------|---------------------------------------|
 | `auditedUpdateById(id, updatedBy, ...)`          | yes     | `Int`       | Update by ID and set audit columns    |
 | `auditedUpdateAll(updatedBy, predicate, ...)`    | yes     | `Int`       | Bulk update and set audit columns     |
-
-## Diagrams
-
-### Core R2dbcRepository Structure
-
-![Core R2dbcRepository Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-01.png)
-
-### R2dbcRepository Hierarchy
-
-![R2dbcRepository Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.png)
-
-### suspend Transaction Flow
-
-How CRUD operations are executed through `R2dbcRepository` inside a `suspendTransaction` block.
-
-![suspend Transaction Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-01.png)
-
-### SoftDelete Transaction Flow
-
-![SoftDelete Transaction Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-02.png)
 
 ## Convenience Type Aliases
 

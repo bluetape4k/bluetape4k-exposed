@@ -21,6 +21,26 @@ dependencies {
 }
 ```
 
+## 다이어그램
+
+### AuditableEntity 핵심 구조
+
+`AuditableLongEntity`, `AuditableLongEntityClass`, 커스텀 IdTable 계층의 관계를 나타냅니다.
+
+![AuditableEntity diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-01.png)
+
+### 커스텀 IdTable 계층
+
+`exposed-core`의 IdTable 구현을 DAO 엔티티와 함께 사용하는 전체 계층입니다.
+
+![IdTable diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-02.png)
+
+### Entity 확장 계층
+
+각 IdTable에 대응하는 DAO Entity 및 EntityClass 계층입니다.
+
+![Entity diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-03.png)
+
 ## 기본 사용법
 
 ### 1. DAO Entity 공통 구현
@@ -219,26 +239,6 @@ transaction {
         .map { it[PostTable.title] }
 }
 ```
-
-## 다이어그램
-
-### AuditableEntity 핵심 구조
-
-`AuditableLongEntity`, `AuditableLongEntityClass`, 커스텀 IdTable 계층의 관계를 나타냅니다.
-
-![AuditableEntity diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-01.png)
-
-### 커스텀 IdTable 계층
-
-`exposed-core`의 IdTable 구현을 DAO 엔티티와 함께 사용하는 전체 계층입니다.
-
-![IdTable diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-02.png)
-
-### Entity 확장 계층
-
-각 IdTable에 대응하는 DAO Entity 및 EntityClass 계층입니다.
-
-![Entity diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-03.png)
 
 ## 주요 파일/클래스 목록
 

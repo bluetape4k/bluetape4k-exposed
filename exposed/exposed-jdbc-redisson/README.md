@@ -27,6 +27,17 @@ dependencies {
 }
 ```
 
+## Architecture Overview
+
+![Architecture Overview diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-01.png)
+
+## Class Diagrams
+
+### Synchronous Repository Hierarchy
+
+![Synchronous Repository Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-02.png)
+
+
 ## Basic Usage
 
 ### 1. Implementing JdbcRedissonRepository (synchronous)
@@ -240,17 +251,6 @@ transaction {
     repo.invalidate(user.id)         // Remove from cache (also deletes from DB if deleteFromDBOnInvalidate=true)
 }
 ```
-
-## Architecture Overview
-
-![Architecture Overview diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-01.png)
-
-## Class Diagrams
-
-### Synchronous Repository Hierarchy
-
-![Synchronous Repository Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-02.png)
-
 
 ## Cache Patterns
 

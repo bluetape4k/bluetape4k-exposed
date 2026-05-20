@@ -29,6 +29,20 @@ dependencies {
 Fastjson2 설정이 필요하면 `fastjson`, `fastjsonb`, `extract`, ResultRow /
 Readable getter에 사용자 정의 `FastjsonSerializer`를 전달하면 됩니다.
 
+## 아키텍처 다이어그램
+
+### 컬럼 타입 구조 (요약)
+
+![() diagram](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-01.png)
+
+### JSON 컬럼 타입 클래스 구조
+
+![JSON diagram](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-02.png)
+
+### JSON 컬럼 데이터 흐름
+
+![JSON diagram](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-03.png)
+
 ## 기본 사용법
 
 ### 1. JSON 컬럼 정의
@@ -124,20 +138,6 @@ val extraData: Map<String, Any>? = resultRow.getFastjsonOrNull(Products.extraDat
 ```bash
 ./gradlew :exposed-fastjson2:test
 ```
-
-## 아키텍처 다이어그램
-
-### 컬럼 타입 구조 (요약)
-
-![() diagram](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-01.png)
-
-### JSON 컬럼 타입 클래스 구조
-
-![JSON diagram](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-02.png)
-
-### JSON 컬럼 데이터 흐름
-
-![JSON diagram](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-03.png)
 
 ## 참고
 

@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1754" height="1306" viewBox="0 0 1754 1306" role="img" aria-label="UML">
 <defs>
   <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#758297" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M 0 1 L 12 6 L 0 11 Z" fill="#ffffff" stroke="#758297" stroke-width="1.8"/></marker>
+  <marker id="openArrow" markerWidth="10" markerHeight="8" refX="8.5" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 8.5 4 L 1 7" fill="none" stroke="#758297" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker>
+  <marker id="inherit" markerWidth="11" markerHeight="10" refX="9.5" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 0.5 1 L 9.5 5 L 0.5 9 Z" fill="#ffffff" stroke="#758297" stroke-width="1.7"/></marker>
   <style>
     .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
     .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
@@ -24,11 +24,11 @@
 <rect class="frame" x="32" y="28" width="1690" height="1250" rx="28"/>
 <text class="title" x="66" y="82">UML</text>
 <text class="subtitle" x="70" y="118">UML classes from the original Mermaid source</text>
-<path class="line" d="M1082 384 C1082 460 877 460 877 536"/>
-<path class="line" d="M877 861 C877 622.5 1082 622.5 1082 384"/>
-<path class="inheritLine" d="M877 861 C877 633 262 633 262 405"/>
-<path class="line" d="M1492 426 C1492 643.5 877 643.5 877 861"/>
-<path class="line" d="M672 172 C672 299 1492 299 1492 426"/>
+<path class="line" d="M672 376 L672 497 L877 497 L877 544"/>
+<path class="line" d="M877 869 L877 802 L672 802 L672 376"/>
+<path class="inheritLine" d="M877 869 L877 794 L262 794 L262 397"/>
+<path class="line" d="M1082 418 L1082 786 L877 786 L877 869"/>
+<path class="line" d="M1492 418 L1492 465 L1082 465 L1082 180"/>
 <g transform="translate(92,180)">
   <rect class="card" x="0" y="0" width="340" height="217" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
   <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#5B8DEF"/>
@@ -41,20 +41,8 @@
 <text class="mono" x="18" y="192">+count(): Long</text>
 </g>
 <g transform="translate(502,180)">
-  <rect class="card" x="0" y="0" width="340" height="238" rx="5" fill="#EAF7EF" stroke="#58A978"/>
+  <rect class="card" x="0" y="0" width="340" height="196" rx="5" fill="#EAF7EF" stroke="#58A978"/>
   <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#58A978"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="61" text-anchor="middle">UserController</text>
-  <text class="mono" x="18" y="108">-userService: UserService</text>
-<text class="mono" x="18" y="129">+createUser(request): ResponseEntity~User~</text>
-<text class="mono" x="18" y="150">+getUser(id): ResponseEntity~User~</text>
-<text class="mono" x="18" y="171">+listUsers(pageable): Page~User~</text>
-<text class="mono" x="18" y="192">+getAdults(): Flow~User~</text>
-<text class="mono" x="18" y="213">+streamUsers(): Flow~User~</text>
-</g>
-<g transform="translate(912,180)">
-  <rect class="card" x="0" y="0" width="340" height="196" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#D6A441"/>
   <text class="small" x="170" y="26" text-anchor="middle"></text>
   <text class="label" x="170" y="61" text-anchor="middle">UserDto</text>
   <text class="mono" x="18" y="108">+id: Long</text>
@@ -62,9 +50,9 @@
 <text class="mono" x="18" y="150">+email: String</text>
 <text class="mono" x="18" y="171">+age: Int</text>
 </g>
-<g transform="translate(1322,180)">
-  <rect class="card" x="0" y="0" width="340" height="238" rx="5" fill="#FDECEF" stroke="#DC6B82"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#DC6B82"/>
+<g transform="translate(912,180)">
+  <rect class="card" x="0" y="0" width="340" height="238" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
+  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#D6A441"/>
   <text class="small" x="170" y="26" text-anchor="middle"></text>
   <text class="label" x="170" y="61" text-anchor="middle">UserService</text>
   <text class="mono" x="18" y="108">-userRepository: UserRepository</text>
@@ -73,6 +61,18 @@
 <text class="mono" x="18" y="171">+getAdultUsers(): List~User~</text>
 <text class="mono" x="18" y="192">+streamLargeUserList(): Flow~User~</text>
 <text class="mono" x="18" y="213">+countByAge(age): Long</text>
+</g>
+<g transform="translate(1322,180)">
+  <rect class="card" x="0" y="0" width="340" height="238" rx="5" fill="#FDECEF" stroke="#DC6B82"/>
+  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#DC6B82"/>
+  <text class="small" x="170" y="26" text-anchor="middle"></text>
+  <text class="label" x="170" y="61" text-anchor="middle">UserController</text>
+  <text class="mono" x="18" y="108">-userService: UserService</text>
+<text class="mono" x="18" y="129">+createUser(request): ResponseEntity~User~</text>
+<text class="mono" x="18" y="150">+getUser(id): ResponseEntity~User~</text>
+<text class="mono" x="18" y="171">+listUsers(pageable): Page~User~</text>
+<text class="mono" x="18" y="192">+getAdults(): Flow~User~</text>
+<text class="mono" x="18" y="213">+streamUsers(): Flow~User~</text>
 </g>
 <g transform="translate(707,544)">
   <rect class="card" x="0" y="0" width="340" height="175" rx="5" fill="#E9F7F6" stroke="#45A7A1"/>
