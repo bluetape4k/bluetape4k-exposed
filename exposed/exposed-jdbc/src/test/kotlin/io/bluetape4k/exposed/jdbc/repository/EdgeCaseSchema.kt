@@ -5,6 +5,7 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 
@@ -49,6 +50,12 @@ object EdgeCaseSchema {
             age = this[EdgeCaseTable.age],
             isActive = this[EdgeCaseTable.isActive],
         )
+
+        override fun BatchInsertStatement.bindSave(entity: EdgeCaseRecord) {
+            this[EdgeCaseTable.name] = entity.name
+            this[EdgeCaseTable.age] = entity.age
+            this[EdgeCaseTable.isActive] = entity.isActive
+        }
 
         /**
          * 새 레코드를 삽입하고 저장된 레코드를 반환한다.

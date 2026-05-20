@@ -104,6 +104,49 @@ interface JdbcRepository<ID: Any, E: Any> {
     fun ResultRow.toEntity(): E
 
     /**
+     * Binds [entity] values to a batch insert statement used by [saveAll].
+     *
+     * Repository implementations that want to use the default [saveAll] should
+     * override this hook and assign all non-id columns required for insertion.
+     *
+     * ```kotlin
+     * override fun BatchInsertStatement.bindSave(entity: ActorRecord) {
+     *     this[ActorTable.firstName] = entity.firstName
+     *     this[ActorTable.lastName] = entity.lastName
+     * }
+     * ```
+     *
+     * @throws UnsupportedOperationException when [saveAll] is called without an
+     *         implementation-specific binding.
+     */
+    fun BatchInsertStatement.bindSave(entity: E): Unit =
+        throw UnsupportedOperationException(
+            "Override BatchInsertStatement.bindSave(entity) before calling JdbcRepository.saveAll()."
+        )
+
+    /**
+     * Persists [entities] with Exposed batch insert and returns generated IDs.
+     *
+     * The returned IDs preserve the input order reported by Exposed
+     * `batchInsert`. Empty input is a no-op.
+     *
+     * @param entities entities to insert
+     * @return generated primary key values
+     */
+    fun saveAll(entities: Iterable<E>): List<ID> {
+        val entityList = entities.toList()
+        if (entityList.isEmpty()) {
+            return emptyList()
+        }
+
+        return table
+            .batchInsert(entityList) { entity ->
+                bindSave(entity)
+            }
+            .map { row -> row[table.id].value }
+    }
+
+    /**
      * 전체 엔티티 개수를 반환합니다.
      * @return 엔티티 개수
      */

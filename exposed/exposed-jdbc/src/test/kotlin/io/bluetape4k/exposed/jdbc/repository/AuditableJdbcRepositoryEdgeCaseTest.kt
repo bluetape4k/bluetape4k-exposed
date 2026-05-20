@@ -9,9 +9,11 @@ import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.api.Assumptions
@@ -70,6 +72,11 @@ class AuditableJdbcRepositoryEdgeCaseTest : AbstractExposedTest() {
             updatedBy = this[AuditableEdgeCaseTable.updatedBy],
             updatedAt = this[AuditableEdgeCaseTable.updatedAt],
         )
+
+        override fun BatchInsertStatement.bindSave(entity: AuditableEdgeCaseRecord) {
+            this[AuditableEdgeCaseTable.name] = entity.name
+            this[AuditableEdgeCaseTable.age] = entity.age
+        }
     }
 
     // ── 헬퍼 ─────────────────────────────────────────────────────────────────────
@@ -81,6 +88,25 @@ class AuditableJdbcRepositoryEdgeCaseTest : AbstractExposedTest() {
             .let { with(AuditableEdgeCaseRepository) { it.toEntity() } }
 
     // ── 테스트 ────────────────────────────────────────────────────────────────────
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `saveAll 은 감사 기본값을 유지하며 여러 row 를 삽입한다`(testDB: TestDB) {
+        withTables(testDB, AuditableEdgeCaseTable) {
+            val records = List(100) { index ->
+                AuditableEdgeCaseRecord(id = 0L, name = "bulk-$index", age = index)
+            }
+
+            val ids = AuditableEdgeCaseRepository.saveAll(records)
+
+            ids shouldHaveSize records.size
+            ids.all { id -> id > 0L } shouldBeEqualTo true
+            AuditableEdgeCaseTable.selectAll().count() shouldBeEqualTo records.size.toLong()
+            val saved = findById(ids.first())
+            saved.createdBy shouldBeEqualTo UserContext.DEFAULT_USERNAME
+            saved.createdAt.shouldNotBeNull()
+        }
+    }
 
     /**
      * [AuditableJdbcRepository.auditedUpdateAll]은 predicate에 매칭되는 row의

@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.r2dbc.repository
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.core.auditable.Auditable
@@ -12,6 +13,7 @@ import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -54,6 +56,11 @@ class AuditableR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             updatedBy = this[ArticleTable.updatedBy],
             updatedAt = this[ArticleTable.updatedAt],
         )
+
+        override fun BatchInsertStatement.bindSave(entity: ArticleRecord) {
+            this[ArticleTable.title] = entity.title
+            this[ArticleTable.category] = entity.category
+        }
     }
 
     private suspend fun insertArticle(
@@ -72,6 +79,26 @@ class AuditableR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             val id = insertArticle()
 
             val article = ArticleRepository.findById(id)
+            article.createdBy shouldBeEqualTo UserContext.DEFAULT_USERNAME
+            article.createdAt.shouldNotBeNull()
+            article.updatedBy.shouldBeNull()
+            article.updatedAt.shouldBeNull()
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `saveAll 은 감사 기본값을 유지하며 여러 row 를 삽입한다`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, ArticleTable) {
+            val records = List(100) { index ->
+                ArticleRecord(id = 0L, title = "bulk-$index", category = "save-all")
+            }
+
+            val ids = ArticleRepository.saveAll(records)
+
+            ids shouldHaveSize records.size
+            ids.all { id -> id > 0L } shouldBeEqualTo true
+            val article = ArticleRepository.findById(ids.first())
             article.createdBy shouldBeEqualTo UserContext.DEFAULT_USERNAME
             article.createdAt.shouldNotBeNull()
             article.updatedBy.shouldBeNull()
