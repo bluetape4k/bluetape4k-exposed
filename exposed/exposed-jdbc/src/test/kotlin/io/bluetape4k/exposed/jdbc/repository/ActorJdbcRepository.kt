@@ -8,6 +8,7 @@ import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.jdbc.andWhere
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -21,6 +22,12 @@ class ActorJdbcRepository: LongJdbcRepository<ActorRecord> {
     override fun extractId(entity: ActorRecord): Long = entity.id
 
     override fun ResultRow.toEntity(): ActorRecord = toActorRecord()
+
+    override fun BatchInsertStatement.bindSave(entity: ActorRecord) {
+        this[ActorTable.firstName] = entity.firstName
+        this[ActorTable.lastName] = entity.lastName
+        this[ActorTable.birthday] = entity.birthday?.let { birthday -> LocalDate.parse(birthday) }
+    }
 
     fun searchActors(params: Map<String, String?>): List<ActorEntity> {
         val query = ActorTable.selectAll()

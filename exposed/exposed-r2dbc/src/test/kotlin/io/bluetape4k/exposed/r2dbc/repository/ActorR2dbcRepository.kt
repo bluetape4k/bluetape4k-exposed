@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.r2dbc.andWhere
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.jetbrains.exposed.v1.r2dbc.selectAll
@@ -20,6 +21,12 @@ class ActorR2dbcRepository: LongR2dbcRepository<ActorRecord> {
     override val table = ActorTable
     override fun extractId(entity: ActorRecord): Long = entity.id
     override suspend fun ResultRow.toEntity(): ActorRecord = toActorRecord()
+
+    override fun BatchInsertStatement.bindSave(entity: ActorRecord) {
+        this[ActorTable.firstName] = entity.firstName
+        this[ActorTable.lastName] = entity.lastName
+        this[ActorTable.birthday] = entity.birthday?.let { day -> LocalDate.parse(day) }
+    }
 
     fun searchActors(params: Map<String, String?>): Flow<ActorRecord> {
         val query = ActorTable.selectAll()

@@ -91,6 +91,50 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `saveAll inserts 100 actors and returns generated ids`(testDB: TestDB) {
+        withMovieAndActors(testDB) {
+            val currentCount = repository.count()
+            val actors = List(100) { index ->
+                ActorRecord(
+                    firstName = "Bulk-$index",
+                    lastName = "SaveAll",
+                    birthday = LocalDate.of(1980, 1, 1).plusDays((index % 365).toLong()).toString(),
+                )
+            }
+
+            val ids = repository.saveAll(actors)
+
+            ids shouldHaveSize actors.size
+            ids.all { it > 0L }.shouldBeTrue()
+            repository.count() shouldBeEqualTo currentCount + actors.size
+            repository.findAllByIds(ids) shouldHaveSize actors.size
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `saveAll inserts 10000 actors on H2`(testDB: TestDB) {
+        Assumptions.assumeTrue(testDB == TestDB.H2)
+        withMovieAndActors(testDB) {
+            val currentCount = repository.count()
+            val actors = List(10_000) { index ->
+                ActorRecord(
+                    firstName = "Bulk10k-$index",
+                    lastName = "SaveAll",
+                    birthday = LocalDate.of(1980, 1, 1).plusDays((index % 365).toLong()).toString(),
+                )
+            }
+
+            val ids = repository.saveAll(actors)
+
+            ids shouldHaveSize actors.size
+            ids.toSet() shouldHaveSize actors.size
+            repository.count() shouldBeEqualTo currentCount + actors.size
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `delete actor by id`(testDB: TestDB) {
         withMovieAndActors(testDB) {
             val actor = newActorRecord()
