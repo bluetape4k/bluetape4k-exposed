@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.jdbc.caffeine.repository
 
 import com.github.benmanes.caffeine.cache.Cache
+import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.JdbcCacheRepository
 import io.bluetape4k.exposed.cache.LocalCacheConfig
 import io.bluetape4k.logging.KLogging
@@ -47,4 +48,9 @@ interface JdbcCaffeineRepository<ID: Any, E: Serializable>: JdbcCacheRepository<
      * 엔티티에서 식별자를 추출합니다.
      */
     override fun extractId(entity: E): ID
+
+    /**
+     * Returns a snapshot of Caffeine write-behind consistency state.
+     */
+    fun validateConsistency(): CacheHealthReport
 }

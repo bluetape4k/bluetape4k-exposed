@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.jdbc.caffeine.repository
 
+import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
 import io.bluetape4k.exposed.jdbc.caffeine.AbstractJdbcCaffeineTest
@@ -516,6 +517,109 @@ class JdbcCaffeineRepositoryExtraTest {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Write-Behind health report
+    // -------------------------------------------------------------------------
+
+    @Nested
+    inner class WriteBehindHealthReportTest: AbstractJdbcCaffeineTest() {
+
+        @Test
+        fun `validateConsistency - write-behind idle repository does not start flush job`() {
+            val repository = CredentialJdbcCaffeineRepository(
+                LocalCacheConfig(
+                    keyPrefix = "jdbc:caffeine:extra:wb-health-idle",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 10,
+                    writeBehindQueueCapacity = 16,
+                )
+            )
+
+            try {
+                val report = repository.validateConsistency()
+
+                report.mode shouldBeEqualTo CacheWriteMode.WRITE_BEHIND
+                report.queueDepth shouldBeEqualTo 0
+                report.isFlushJobRunning shouldBeEqualTo false
+                report.lastFlushError.shouldBeNull()
+            } finally {
+                repository.close()
+            }
+        }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `validateConsistency - in-flight write-behind batch reports queue depth`(testDB: TestDB) {
+            val flushStarted = CountDownLatch(1)
+            val releaseFlush = CountDownLatch(1)
+            val repository = BlockingFlushJdbcRepository(
+                config = LocalCacheConfig(
+                    keyPrefix = "jdbc:caffeine:extra:wb-health-in-flight",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 10,
+                    writeBehindQueueCapacity = 16,
+                ),
+                flushStarted = flushStarted,
+                releaseFlush = releaseFlush,
+            )
+
+            withActorTable(testDB) {
+                val existingId = ActorTable.select(ActorTable.id).first()[ActorTable.id].value
+                val updated = ActorSchema.findActorById(existingId).shouldNotBeNull()
+                    .copy(firstName = "health-in-flight")
+
+                try {
+                    repository.put(existingId, updated)
+                    flushStarted.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
+
+                    val report = repository.validateConsistency()
+                    report.mode shouldBeEqualTo CacheWriteMode.WRITE_BEHIND
+                    report.queueDepth shouldBeEqualTo 1
+                    report.isFlushJobRunning shouldBeEqualTo true
+                    report.lastFlushError.shouldBeNull()
+                } finally {
+                    releaseFlush.countDown()
+                    repository.close()
+                }
+            }
+        }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `validateConsistency - write-behind flush failure is reported`(testDB: TestDB) {
+            val flushFailed = CountDownLatch(1)
+            val repository = FailingFlushJdbcRepository(
+                config = LocalCacheConfig(
+                    keyPrefix = "jdbc:caffeine:extra:wb-health-failure",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 10,
+                    writeBehindQueueCapacity = 16,
+                ),
+                flushFailed = flushFailed,
+            )
+
+            withActorTable(testDB) {
+                val existingId = ActorTable.select(ActorTable.id).first()[ActorTable.id].value
+                val updated = ActorSchema.findActorById(existingId).shouldNotBeNull()
+                    .copy(firstName = "health-failure")
+
+                try {
+                    repository.put(existingId, updated)
+                    flushFailed.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
+
+                    val report = awaitHealthReport(repository) { health ->
+                        health.queueDepth == 0 && health.lastFlushError != null
+                    }
+                    report.mode shouldBeEqualTo CacheWriteMode.WRITE_BEHIND
+                    report.queueDepth shouldBeEqualTo 0
+                    report.lastFlushError.shouldNotBeNull()
+                } finally {
+                    repository.close()
+                }
+            }
+        }
+    }
+
     private class FailingCacheWarmJdbcRepository(
         private val failure: Throwable,
         private val failInSerializeKey: Boolean = false,
@@ -552,6 +656,71 @@ class JdbcCaffeineRepositoryExtraTest {
             }
             throw failure
         }
+    }
+
+    private class BlockingFlushJdbcRepository(
+        config: LocalCacheConfig,
+        private val flushStarted: CountDownLatch,
+        private val releaseFlush: CountDownLatch,
+    ): AbstractJdbcCaffeineRepository<Long, ActorRecord>(config) {
+
+        override val table: IdTable<Long> = ActorTable
+
+        override fun ResultRow.toEntity(): ActorRecord = toActorRecord()
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) {
+            flushStarted.countDown()
+            releaseFlush.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
+
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) {
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun extractId(entity: ActorRecord): Long = entity.id
+    }
+
+    private class FailingFlushJdbcRepository(
+        config: LocalCacheConfig,
+        private val flushFailed: CountDownLatch,
+    ): AbstractJdbcCaffeineRepository<Long, ActorRecord>(config) {
+
+        override val table: IdTable<Long> = ActorTable
+
+        override fun ResultRow.toEntity(): ActorRecord = toActorRecord()
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) {
+            flushFailed.countDown()
+            throw IllegalStateException("planned write-behind flush failure")
+        }
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) {
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun extractId(entity: ActorRecord): Long = entity.id
+    }
+
+    private fun awaitHealthReport(
+        repository: JdbcCaffeineRepository<*, *>,
+        predicate: (CacheHealthReport) -> Boolean,
+    ): CacheHealthReport {
+        repeat(100) {
+            val report = repository.validateConsistency()
+            if (predicate(report)) {
+                return report
+            }
+            Thread.sleep(10)
+        }
+        return repository.validateConsistency()
     }
 
     @Suppress("UNCHECKED_CAST")
