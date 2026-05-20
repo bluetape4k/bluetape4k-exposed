@@ -156,6 +156,7 @@ val all = repo.findAll(limit = 100)              // DB 조회 후 캐시 저장
 val batch = repo.getAll(listOf(1L, 2L, 3L))     // 여러 엔티티 일괄 조회
 repo.put(user!!)                                 // 캐시 저장
 repo.putAll(batch)                               // 일괄 캐시 저장
+repo.upsertAll(batch, batchSize = 100)           // 명시적 벌크 캐시 upsert
 repo.invalidate(1L)                              // 캐시 무효화
 repo.invalidateAll()                             // 전체 캐시 무효화 (Boolean 반환)
 repo.invalidateByPattern("user:*")               // 패턴으로 무효화
@@ -233,6 +234,7 @@ transaction {
     val user = UserRecord(id = 0, name = "홍길동", email = "hong@example.com")
     repo.put(user)                   // 캐시 저장 + DB 동기 반영
     repo.putAll(listOf(user))        // 일괄 캐시 저장 + DB 동기 반영
+    repo.upsertAll(mapOf(user.id to user)) // 명시적 벌크 캐시 upsert + DB writer
     repo.invalidate(user.id)         // 캐시 제거 (deleteFromDBOnInvalidate=true 면 DB도 삭제)
 }
 ```
@@ -296,6 +298,7 @@ transaction {
 | `findAll(limit, offset, sortBy, where)` | DB 조회 후 결과를 캐시에 저장하여 반환                            |
 | `put(entity)`                           | 캐시에 저장 (Write-Through/Behind 모드 시 DB에도 반영)         |
 | `putAll(entities, batchSize)`           | 캐시에 일괄 저장                                          |
+| `upsertAll(entities, batchSize)`        | Redisson 배치 map write 경로를 사용하는 명시적 벌크 캐시 upsert |
 | `invalidate(ids)`                       | 캐시에서 제거 (`deleteFromDBOnInvalidate=true` 시 DB도 삭제) |
 | `invalidateAll()`                       | 캐시 전체 비우기                                          |
 | `invalidateByPattern(pattern, count)`   | 패턴에 맞는 키 캐시 제거                                     |

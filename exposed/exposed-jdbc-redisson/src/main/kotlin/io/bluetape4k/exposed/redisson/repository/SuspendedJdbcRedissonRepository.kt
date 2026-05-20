@@ -33,6 +33,7 @@ import java.io.Serializable
 interface SuspendedJdbcRedissonRepository<ID: Any, E: Serializable>: SuspendJdbcRedisRepository<ID, E> {
     companion object {
         const val DEFAULT_BATCH_SIZE = 500
+        const val DEFAULT_UPSERT_BATCH_SIZE = 100
     }
 
     /**
@@ -114,7 +115,24 @@ interface SuspendedJdbcRedissonRepository<ID: Any, E: Serializable>: SuspendJdbc
      * @param batchSize 일괄 처리 크기
      */
     override suspend fun putAll(entities: Map<ID, E>, batchSize: Int) {
+        upsertAll(entities, batchSize)
+    }
+
+    /**
+     * Upserts multiple entities into the cache using Redisson's batched async map write path.
+     *
+     * In write-through or write-behind mode, Redisson invokes the configured map writer
+     * with the same semantics as [putAll]. Empty input is ignored.
+     *
+     * @param entities entities keyed by ID
+     * @param batchSize Redisson batch size; must be greater than zero
+     */
+    suspend fun upsertAll(
+        entities: Map<ID, E>,
+        batchSize: Int = DEFAULT_UPSERT_BATCH_SIZE,
+    ) {
         batchSize.requirePositiveNumber("batchSize")
+        if (entities.isEmpty()) return
         cache.putAllAsync(entities, batchSize).await()
     }
 

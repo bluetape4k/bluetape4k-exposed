@@ -128,6 +128,60 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `upsertAll - 캐시에 벌크 저장하면, DB에도 저장된다`(testDB: TestDB) =
+        runTest {
+            // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
+            Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
+
+            withR2dbcEntityTable(testDB) {
+                val ids = getExistingIds()
+                delay(10.milliseconds)
+
+                await
+                    .atMost(Duration.ofSeconds(30))
+                    .withPollInterval(Duration.ofMillis(100))
+                    .untilSuspending { getExistingIds().size == 3 }
+
+                // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
+                if (cacheConfig.isReadWrite) {
+                    delay(DEFAULT_DELAY.milliseconds)
+                }
+
+                val entityMap = repository.getAll(ids)
+                entityMap.shouldNotBeEmpty()
+                entityMap.size shouldBeEqualTo ids.size
+
+                val updatedEntityMap = entityMap.mapValues { (_, v) -> updateEntityEmail(v) }
+                repository.upsertAll(updatedEntityMap, batchSize = 2)
+
+                val entityMapFromCache = repository.getAll(ids)
+                entityMapFromCache.shouldNotBeNull()
+                entityMapFromCache.forEach { (id, entity) ->
+                    assertSameEntityWithoutAudit(
+                        entity,
+                        updatedEntityMap[id]!!
+                    )
+                }
+
+                // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
+                if (cacheConfig.isReadWrite) {
+                    delay(DEFAULT_DELAY.milliseconds)
+                }
+
+                val entitiesFromDB = repository.findAllFromDb(ids)
+                entitiesFromDB.shouldNotBeEmpty() shouldHaveSize ids.size
+
+                entitiesFromDB.forEach { entity ->
+                    assertSameEntityWithoutAudit(
+                        entity,
+                        entityMapFromCache[repository.extractId(entity)]!!
+                    )
+                }
+            }
+        }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `putAll - 새로운 Record를 추가하면 AutoInc Id 는 DB 저장을 하지 않고, Client 생성 Id는 DB에 저장된다`(testDB: TestDB) =
         runTest {
             // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
@@ -137,6 +191,34 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
                 val prevCount = repository.table.selectAll().count()
                 val newEntities = List(5) { createNewEntity() }
                 repository.putAll(newEntities.associateBy { repository.extractId(it) })
+
+                // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
+                if (cacheConfig.isReadWrite) {
+                    delay(DEFAULT_DELAY.milliseconds)
+                }
+
+                val newCount = repository.table.selectAll().count()
+
+                // id가 DB에서 자동증가하지 않는 경우에만 batchInsert 를 수행합니다.
+                if (repository.table.id.autoIncColumnType == null) {
+                    newCount shouldBeEqualTo prevCount + newEntities.size
+                } else {
+                    newCount shouldBeEqualTo prevCount
+                }
+            }
+        }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `upsertAll - 새로운 Record를 벌크 추가하면 AutoInc Id 는 DB 저장을 하지 않고, Client 생성 Id는 DB에 저장된다`(testDB: TestDB) =
+        runTest {
+            // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
+            Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
+
+            withR2dbcEntityTable(testDB) {
+                val prevCount = repository.table.selectAll().count()
+                val newEntities = List(5) { createNewEntity() }
+                repository.upsertAll(newEntities.associateBy { repository.extractId(it) }, batchSize = 2)
 
                 // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
                 if (cacheConfig.isReadWrite) {

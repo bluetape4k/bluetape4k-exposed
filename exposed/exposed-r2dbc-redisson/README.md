@@ -101,6 +101,7 @@ val all = repo.findAll(limit = 100)
 // Store in cache
 repo.put(user!!)
 repo.putAll(users)
+repo.upsertAll(users, batchSize = 100)
 
 // Invalidate cache
 repo.invalidate(1L)
@@ -173,6 +174,7 @@ On `put()`, immediately returns and then `R2dbcExposedEntityMapWriter` asynchron
 | `findAll(limit, offset, sortBy, where)` | Load from DB and sync cache (suspend)                      |
 | `put(entity)`                           | Store in cache (suspend)                                   |
 | `putAll(entities, batchSize)`           | Batch store in cache (suspend)                             |
+| `upsertAll(entities, batchSize)`        | Explicit bulk cache upsert with batched map writes (suspend) |
 | `invalidate(vararg ids)`                | Remove from cache (suspend)                                |
 | `invalidateAll()`                       | Clear all cache entries (suspend)                          |
 | `invalidateByPattern(pattern, count)`   | Remove cache entries matching a pattern (suspend)          |

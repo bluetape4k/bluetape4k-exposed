@@ -157,6 +157,7 @@ val all = repo.findAll(limit = 100)              // Load from DB, populate cache
 val batch = repo.getAll(listOf(1L, 2L, 3L))     // Batch retrieval
 repo.put(user!!)                                 // Store in cache
 repo.putAll(batch)                               // Batch store in cache
+repo.upsertAll(batch, batchSize = 100)           // Explicit bulk cache upsert
 repo.invalidate(1L)                              // Invalidate single entry
 repo.invalidateAll()                             // Invalidate all (returns Boolean)
 repo.invalidateByPattern("user:*")               // Invalidate by pattern
@@ -235,6 +236,7 @@ transaction {
     val user = UserRecord(id = 0, name = "Hong Gildong", email = "hong@example.com")
     repo.put(user)                   // Write to cache + synchronously persist to DB
     repo.putAll(listOf(user))        // Batch write to cache + DB
+    repo.upsertAll(mapOf(user.id to user)) // Explicit bulk cache upsert + DB writer
     repo.invalidate(user.id)         // Remove from cache (also deletes from DB if deleteFromDBOnInvalidate=true)
 }
 ```
@@ -299,6 +301,7 @@ On `put()`, immediately returns and then `ExposedEntityMapWriter` asynchronously
 | `findAll(limit, offset, sortBy, where)` | Load from DB and store results in cache                                     |
 | `put(entity)`                           | Store in cache (also persists to DB in Write-Through/Behind mode)           |
 | `putAll(entities, batchSize)`           | Batch store in cache                                                        |
+| `upsertAll(entities, batchSize)`        | Explicit bulk cache upsert using Redisson batched map writes                |
 | `invalidate(ids)`                       | Remove from cache (also deletes from DB if `deleteFromDBOnInvalidate=true`) |
 | `invalidateAll()`                       | Clear all cache entries                                                     |
 | `invalidateByPattern(pattern, count)`   | Remove cache entries matching a pattern                                     |

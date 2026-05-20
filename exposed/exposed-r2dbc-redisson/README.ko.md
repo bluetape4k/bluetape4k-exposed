@@ -101,6 +101,7 @@ val all = repo.findAll(limit = 100)
 // 캐시에 저장
 repo.put(user!!)
 repo.putAll(users)
+repo.upsertAll(users, batchSize = 100)
 
 // 캐시 무효화
 repo.invalidate(1L)
@@ -173,6 +174,7 @@ val nearCacheConfig = RedissonCacheConfig.readOnly(
 | `findAll(limit, offset, sortBy, where)` | DB 조회 후 캐시 동기화 (suspend)          |
 | `put(entity)`                           | 캐시에 저장 (suspend)                  |
 | `putAll(entities, batchSize)`           | 캐시에 일괄 저장 (suspend)               |
+| `upsertAll(entities, batchSize)`        | 배치 map write 기반 명시적 벌크 캐시 upsert (suspend) |
 | `invalidate(vararg ids)`                | 캐시에서 제거 (suspend)                 |
 | `invalidateAll()`                       | 캐시 전체 비우기 (suspend)               |
 | `invalidateByPattern(pattern, count)`   | 패턴에 맞는 키 캐시 제거 (suspend)          |
