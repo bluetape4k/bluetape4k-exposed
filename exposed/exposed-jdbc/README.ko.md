@@ -424,27 +424,27 @@ transaction {
 
 ### Repository 및 VirtualThread 트랜잭션 핵심 구조
 
-![Repository 및 VirtualThread 트랜잭션 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-01.png)
+![Repository VirtualThread diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-01.png)
 
-![Repository VirtualThread Transaction Core Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-01.png)
+![Repository VirtualThread diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-01.png)
 
 ### Repository 계층 구조
 
-![Repository 계층 구조 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-02.png)
+![Repository diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-02.png)
 
 ## 시퀀스 다이어그램
 
 ### findById — 단건 조회
 
-![findById — Query diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-02.png)
+![findById — diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-02.png)
 
 ### save + findPage — 저장 후 페이징 조회
 
-![save + findPage — Query diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-03.png)
+![save + findPage — diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-03.png)
 
 ### softDeleteById / restoreById — 논리 삭제 및 복원
 
-![softDeleteById / restoreById — Delete diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-04.png)
+![softDeleteById / restoreById — diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-04.png)
 
 ## 주요 파일/클래스 목록
 

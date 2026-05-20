@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1754" height="842" viewBox="0 0 1754 842" role="img" aria-label="Architecture">
+<svg xmlns="http://www.w3.org/2000/svg" width="1754" height="960" viewBox="0 0 1754 960" role="img" aria-label="batch Class Structure">
 <defs>
   <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
   <marker id="openArrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#758297" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker>
@@ -20,89 +20,89 @@
     .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
   </style>
 </defs>
-<rect class="canvas" width="1754" height="842"/>
-<rect class="frame" x="32" y="28" width="1690" height="786" rx="28"/>
-<text class="title" x="66" y="82">Architecture</text>
+<rect class="canvas" width="1754" height="960"/>
+<rect class="frame" x="32" y="28" width="1690" height="904" rx="28"/>
+<text class="title" x="66" y="82">batch Class Structure</text>
 <text class="subtitle" x="70" y="118">UML classes from the original Mermaid source</text>
-<path class="line" d="M467 486 C467 457 672 457 672 428"/>
-<path class="line" d="M467 486 C467 457 1492 457 1492 428"/>
-<path class="line" d="M1492 428 C1492 457 1287 457 1287 486"/>
-<path class="line" d="M1492 428 C1492 457 877 457 877 486"/>
-<path class="line" d="M1492 172 C1492 300 1082 300 1082 428"/>
+<path class="line" d="M467 536 C467 481 672 481 672 426"/>
+<path class="line" d="M467 536 C467 481 1492 481 1492 426"/>
+<path class="line" d="M1492 426 C1492 481 1287 481 1287 536"/>
+<path class="line" d="M1492 426 C1492 481 877 481 877 536"/>
+<path class="line" d="M1492 172 C1492 299 1082 299 1082 426"/>
 <g transform="translate(92,180)">
-  <rect class="card" x="0" y="0" width="340" height="216" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
+  <rect class="card" x="0" y="0" width="340" height="217" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
   <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#5B8DEF"/>
   <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="57" text-anchor="middle">BatchJob</text>
+  <text class="label" x="170" y="61" text-anchor="middle">BatchJob</text>
   <text class="mono" x="18" y="108">+name: String</text>
-<text class="mono" x="18" y="132">+params: Map</text>
-<text class="mono" x="18" y="156">+steps: List~BatchStep~</text>
-<text class="mono" x="18" y="180">+run() BatchReport</text>
-<text class="mono" x="18" y="204">+execute(WorkContext) WorkReport</text>
+<text class="mono" x="18" y="129">+params: Map</text>
+<text class="mono" x="18" y="150">+steps: List~BatchStep~</text>
+<text class="mono" x="18" y="171">+run() BatchReport</text>
+<text class="mono" x="18" y="192">+execute(WorkContext) WorkReport</text>
 </g>
 <g transform="translate(502,180)">
-  <rect class="card" x="0" y="0" width="340" height="240" rx="5" fill="#EAF7EF" stroke="#58A978"/>
+  <rect class="card" x="0" y="0" width="340" height="238" rx="5" fill="#EAF7EF" stroke="#58A978"/>
   <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#58A978"/>
   <text class="small" x="170" y="26" text-anchor="middle">«interface»</text>
-  <text class="label" x="170" y="57" text-anchor="middle">BatchJobRepository</text>
+  <text class="label" x="170" y="61" text-anchor="middle">BatchJobRepository</text>
   <text class="mono" x="18" y="108">+findOrCreateJobExecution()</text>
-<text class="mono" x="18" y="132">+findOrCreateStepExecution()</text>
-<text class="mono" x="18" y="156">+completeJobExecution()</text>
-<text class="mono" x="18" y="180">+completeStepExecution()</text>
-<text class="mono" x="18" y="204">+saveCheckpoint()</text>
-<text class="mono" x="18" y="228">+loadCheckpoint()</text>
+<text class="mono" x="18" y="129">+findOrCreateStepExecution()</text>
+<text class="mono" x="18" y="150">+completeJobExecution()</text>
+<text class="mono" x="18" y="171">+completeStepExecution()</text>
+<text class="mono" x="18" y="192">+saveCheckpoint()</text>
+<text class="mono" x="18" y="213">+loadCheckpoint()</text>
 </g>
 <g transform="translate(912,180)">
-  <rect class="card" x="0" y="0" width="340" height="240" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
+  <rect class="card" x="0" y="0" width="340" height="238" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
   <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#D6A441"/>
   <text class="small" x="170" y="26" text-anchor="middle">«interface»</text>
-  <text class="label" x="170" y="57" text-anchor="middle">BatchReader</text>
+  <text class="label" x="170" y="61" text-anchor="middle">BatchReader</text>
   <text class="mono" x="18" y="108">+open()</text>
-<text class="mono" x="18" y="132">+read() T?</text>
-<text class="mono" x="18" y="156">+checkpoint() Any?</text>
-<text class="mono" x="18" y="180">+onChunkCommitted()</text>
-<text class="mono" x="18" y="204">+restoreFrom(checkpoint)</text>
-<text class="mono" x="18" y="228">+close()</text>
+<text class="mono" x="18" y="129">+read() T?</text>
+<text class="mono" x="18" y="150">+checkpoint() Any?</text>
+<text class="mono" x="18" y="171">+onChunkCommitted()</text>
+<text class="mono" x="18" y="192">+restoreFrom(checkpoint)</text>
+<text class="mono" x="18" y="213">+close()</text>
 </g>
 <g transform="translate(1322,180)">
-  <rect class="card" x="0" y="0" width="340" height="240" rx="5" fill="#FDECEF" stroke="#DC6B82"/>
+  <rect class="card" x="0" y="0" width="340" height="238" rx="5" fill="#FDECEF" stroke="#DC6B82"/>
   <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#DC6B82"/>
   <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="57" text-anchor="middle">BatchStep</text>
+  <text class="label" x="170" y="61" text-anchor="middle">BatchStep</text>
   <text class="mono" x="18" y="108">+name: String</text>
-<text class="mono" x="18" y="132">+chunkSize: Int</text>
-<text class="mono" x="18" y="156">+reader: BatchReader</text>
-<text class="mono" x="18" y="180">+processor: BatchProcessor</text>
-<text class="mono" x="18" y="204">+writer: BatchWriter</text>
-<text class="mono" x="18" y="228">+skipPolicy: SkipPolicy</text>
+<text class="mono" x="18" y="129">+chunkSize: Int</text>
+<text class="mono" x="18" y="150">+reader: BatchReader</text>
+<text class="mono" x="18" y="171">+processor: BatchProcessor</text>
+<text class="mono" x="18" y="192">+writer: BatchWriter</text>
+<text class="mono" x="18" y="213">+skipPolicy: SkipPolicy</text>
 </g>
-<g transform="translate(297,494)">
-  <rect class="card" x="0" y="0" width="340" height="192" rx="5" fill="#E9F7F6" stroke="#45A7A1"/>
+<g transform="translate(297,544)">
+  <rect class="card" x="0" y="0" width="340" height="196" rx="5" fill="#E9F7F6" stroke="#45A7A1"/>
   <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#45A7A1"/>
   <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="57" text-anchor="middle">BatchStepRunner</text>
+  <text class="label" x="170" y="61" text-anchor="middle">BatchStepRunner</text>
   <text class="mono" x="18" y="108">-step: BatchStep</text>
-<text class="mono" x="18" y="132">-jobExecution: JobExecution</text>
-<text class="mono" x="18" y="156">-repository: BatchJobRepository</text>
-<text class="mono" x="18" y="180">+run() StepReport</text>
+<text class="mono" x="18" y="129">-jobExecution: JobExecution</text>
+<text class="mono" x="18" y="150">-repository: BatchJobRepository</text>
+<text class="mono" x="18" y="171">+run() StepReport</text>
 </g>
-<g transform="translate(707,494)">
-  <rect class="card" x="0" y="0" width="340" height="168" rx="5" fill="#F1ECFF" stroke="#8A72D6"/>
+<g transform="translate(707,544)">
+  <rect class="card" x="0" y="0" width="340" height="175" rx="5" fill="#F1ECFF" stroke="#8A72D6"/>
   <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#8A72D6"/>
   <text class="small" x="170" y="26" text-anchor="middle">«interface»</text>
-  <text class="label" x="170" y="57" text-anchor="middle">BatchWriter</text>
+  <text class="label" x="170" y="61" text-anchor="middle">BatchWriter</text>
   <text class="mono" x="18" y="108">+open()</text>
-<text class="mono" x="18" y="132">+write(items: List~T~)</text>
-<text class="mono" x="18" y="156">+close()</text>
+<text class="mono" x="18" y="129">+write(items: List~T~)</text>
+<text class="mono" x="18" y="150">+close()</text>
 </g>
-<g transform="translate(1117,494)">
-  <rect class="card" x="0" y="0" width="340" height="192" rx="5" fill="#F7F1E7" stroke="#B88A44"/>
+<g transform="translate(1117,544)">
+  <rect class="card" x="0" y="0" width="340" height="196" rx="5" fill="#F7F1E7" stroke="#B88A44"/>
   <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#B88A44"/>
   <text class="small" x="170" y="26" text-anchor="middle">«fun interface»</text>
-  <text class="label" x="170" y="57" text-anchor="middle">SkipPolicy</text>
+  <text class="label" x="170" y="61" text-anchor="middle">SkipPolicy</text>
   <text class="mono" x="18" y="108">+shouldSkip(exception, skipCount) Boolean</text>
-<text class="mono" x="18" y="132">NONE$</text>
-<text class="mono" x="18" y="156">ALL$</text>
-<text class="mono" x="18" y="180">maxSkips(n)$</text>
+<text class="mono" x="18" y="129">NONE$</text>
+<text class="mono" x="18" y="150">ALL$</text>
+<text class="mono" x="18" y="171">maxSkips(n)$</text>
 </g>
 </svg>

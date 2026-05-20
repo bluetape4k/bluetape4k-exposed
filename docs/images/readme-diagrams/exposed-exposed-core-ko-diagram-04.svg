@@ -45,5 +45,5 @@
   <text class="mono" x="22" y="122">navigation flags</text>
   <text class="mono" x="22" y="152">empty page safe</text>
 </g>
-<text class="subtitle" x="92" y="590">Deprecated HasIdentifier is intentionally omitted; use Serializable records and explicit ID extraction.</text>
+	<text class="subtitle" x="92" y="590">Deprecated compatibility APIs are omitted; prefer Serializable records and explicit ID extraction.</text>
 </svg>

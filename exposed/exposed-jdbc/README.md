@@ -425,13 +425,13 @@ transaction {
 
 ### Core Repository and VirtualThread Transaction Structure
 
-![Core Repository and VirtualThread Transaction Structure 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-01.png)
+![Core Repository and VirtualThread Transaction Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-01.png)
 
 ![Core Repository and VirtualThread Transaction Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-01.png)
 
 ### Repository Hierarchy
 
-![Repository Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-02.png)
+![Repository Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-02.png)
 
 ## Sequence Diagrams
 

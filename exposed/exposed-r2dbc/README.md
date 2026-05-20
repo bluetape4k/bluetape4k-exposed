@@ -342,11 +342,11 @@ parameters from CTE predicates keep their binding order.
 
 ### Core R2dbcRepository Structure
 
-![Core R2dbcRepository Structure 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-01.png)
+![Core R2dbcRepository Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-01.png)
 
 ### R2dbcRepository Hierarchy
 
-![R2dbcRepository Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.png)
+![R2dbcRepository Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.png)
 
 ### suspend Transaction Flow
 

@@ -26,11 +26,11 @@ object ProductTable: Table("products") {
 
 ## Class Diagram
 
-![Class Diagram 1](../../docs/images/readme-diagrams/exposed-exposed-measured-diagram-01.png)
+![exposed measured Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-measured-diagram-01.png)
 
 ## Column Conversion Flow
 
-![Column Conversion Flow 2](../../docs/images/readme-diagrams/exposed-exposed-measured-diagram-02.png)
+![Column Conversion Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-measured-diagram-02.png)
 
 ## Storage / Retrieval Sequence Diagram
 

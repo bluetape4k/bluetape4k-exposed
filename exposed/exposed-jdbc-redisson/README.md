@@ -241,13 +241,13 @@ transaction {
 
 ## Architecture Overview
 
-![Architecture Overview 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-01.png)
+![Architecture Overview diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-01.png)
 
 ## Class Diagrams
 
 ### Synchronous Repository Hierarchy
 
-![Synchronous Repository Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-02.png)
+![Synchronous Repository Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-02.png)
 
 
 ## Cache Patterns

@@ -1,49 +1,44 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="920" height="700" viewBox="0 0 920 700" role="img" aria-label="ExposedPage Result Model">
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="620" viewBox="0 0 980 620" role="img" aria-label="ExposedPage Result Model">
 <defs>
   <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#758297" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M 0 1 L 12 6 L 0 11 Z" fill="#ffffff" stroke="#758297" stroke-width="1.8"/></marker>
   <style>
     .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
     .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
     .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
     .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
+    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
     .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .pill{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
     .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
-    .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-  </style></defs>
-<rect class="canvas" width="920" height="700"/>
-<rect class="frame" x="32" y="28" width="856" height="644" rx="28"/>
-<text class="title" x="66" y="86">ExposedPage Result Model</text>
-<text class="subtitle" x="70" y="122">Source-verified DTO for paginated query results</text>
-<g transform="translate(90,174)">
-  <rect class="card" x="0" y="0" width="430" height="340" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <line class="compartment" x1="0" y1="78" x2="430" y2="78" stroke="#5B8DEF"/>
-  <text class="small" x="215" y="26" text-anchor="middle">«data class»</text>
-  <text class="label" x="215" y="57" text-anchor="middle">ExposedPage&lt;T&gt;</text>
+  </style>
+</defs>
+<rect class="canvas" width="980" height="620"/>
+<rect class="frame" x="32" y="28" width="916" height="564" rx="28"/>
+<text class="title" x="66" y="82">ExposedPage Result Model</text>
+<text class="subtitle" x="70" y="118">Current paginated result DTO; deprecated compatibility interfaces are omitted</text>
+<g transform="translate(86,172)">
+  <rect class="card" x="0" y="0" width="390" height="260" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
+  <line class="compartment" x1="0" y1="78" x2="390" y2="78" stroke="#5B8DEF"/>
+  <text class="small" x="195" y="26" text-anchor="middle">data class</text>
+  <text class="label" x="195" y="61" text-anchor="middle">ExposedPage&lt;T&gt;</text>
   <text class="mono" x="18" y="108">+content: List&lt;T&gt;</text>
-  <text class="mono" x="18" y="131">+totalCount: Long</text>
-  <text class="mono" x="18" y="154">+pageNumber: Int</text>
-  <text class="mono" x="18" y="177">+pageSize: Int</text>
-  <text class="mono" x="18" y="200"></text>
-  <text class="mono" x="18" y="223">+totalPages: Int</text>
-  <text class="mono" x="18" y="246">+isFirst: Boolean</text>
-  <text class="mono" x="18" y="269">+isLast: Boolean</text>
-  <text class="mono" x="18" y="292">+hasNext: Boolean</text>
-  <text class="mono" x="18" y="315">+hasPrevious: Boolean</text>
+  <text class="mono" x="18" y="129">+totalCount: Long</text>
+  <text class="mono" x="18" y="150">+pageNumber: Int</text>
+  <text class="mono" x="18" y="171">+pageSize: Int</text>
+  <text class="mono" x="18" y="207">+totalPages: Int</text>
+  <text class="mono" x="18" y="228">+isFirst / isLast / hasNext / hasPrevious</text>
 </g>
-<path class="dashed" d="M520 314 C580 314 600 314 654 314"/>
-<rect x="548" y="286" width="94" height="26" rx="13" fill="#ffffff" opacity="0.95"/>
-<text class="pill" x="595" y="304" text-anchor="middle">derives</text>
-<g transform="translate(654,224)">
-  <rect class="card" x="0" y="0" width="184" height="184" rx="12" fill="#EAF7EF" stroke="#58A978"/>
-  <text class="label" x="92" y="52" text-anchor="middle">Page State</text>
-  <text class="mono" x="22" y="92">totalPages</text>
-  <text class="mono" x="22" y="122">navigation flags</text>
-  <text class="mono" x="22" y="152">empty page safe</text>
+<g transform="translate(548,172)">
+  <rect class="card" x="0" y="0" width="346" height="260" rx="14" fill="#EAF7EF" stroke="#58A978"/>
+  <text class="label" x="173" y="58" text-anchor="middle">Usage Contract</text>
+  <text class="mono" x="26" y="104">content holds the page items</text>
+  <text class="mono" x="26" y="132">totalPages is derived from</text>
+  <text class="mono" x="26" y="153">totalCount and pageSize</text>
+  <text class="mono" x="26" y="190">navigation flags are computed</text>
+  <text class="mono" x="26" y="211">from pageNumber and totalPages</text>
 </g>
-<text class="subtitle" x="92" y="590">Deprecated HasIdentifier is intentionally omitted; use Serializable records and explicit ID extraction.</text>
+	<g transform="translate(86,472)">
+	  <rect class="card" x="0" y="0" width="808" height="84" rx="18" fill="#FFF3D9" stroke="#D6A441"/>
+	  <text class="label" x="28" y="35">Compatibility note</text>
+	  <text class="small" x="30" y="61">Deprecated compatibility APIs are omitted; current diagrams prefer explicit DTO fields.</text>
+	</g>
 </svg>

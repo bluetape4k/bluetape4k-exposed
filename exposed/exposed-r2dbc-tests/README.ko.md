@@ -275,11 +275,11 @@ Containers.Postgres
 
 ## 테스트 인프라 구조
 
-![테스트 인프라 구조 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-01.png)
+![exposed r2dbc tests Architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-01.png)
 
 ### JDBC vs R2DBC 테스트 비교
 
-![JDBC vs R2DBC 테스트 비교 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-02.png)
+![JDBC vs R2DBC diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-02.png)
 
 ## 참고 사항
 

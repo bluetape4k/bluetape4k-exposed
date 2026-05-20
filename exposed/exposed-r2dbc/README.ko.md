@@ -340,21 +340,21 @@ prepared parameter binding 순서를 유지합니다.
 
 ### R2dbcRepository 핵심 구조
 
-![R2dbcRepository 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-01.png)
+![R2dbcRepository diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-01.png)
 
 ### R2dbcRepository 계층
 
-![R2dbcRepository 계층 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.png)
+![R2dbcRepository diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.png)
 
 ### suspend 트랜잭션 흐름
 
 `suspendTransaction` 블록 내에서 `R2dbcRepository`를 통해 CRUD 연산이 수행되는 흐름입니다.
 
-![suspend Transaction diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-01.png)
+![suspend diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-01.png)
 
 ### SoftDelete 트랜잭션 흐름
 
-![SoftDelete Transaction diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-02.png)
+![SoftDelete diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-02.png)
 
 ## 편의 타입 별칭
 

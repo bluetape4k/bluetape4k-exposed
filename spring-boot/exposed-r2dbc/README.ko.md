@@ -8,11 +8,11 @@ Spring Boot와 Spring Data Reactive를 활용하여 Exposed R2DBC를 완전한 s
 
 ## UML
 
-![UML 1](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-diagram-01.png)
+![UML diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-diagram-01.png)
 
 ### 비동기 처리 흐름
 
-![비동기 처리 흐름 2](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-diagram-02.png)
+![exposed r2dbc Architecture 2 diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-diagram-02.png)
 
 ## 설치
 

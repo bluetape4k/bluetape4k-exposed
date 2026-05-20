@@ -9,11 +9,11 @@ Spring Boot와 Spring Data를 활용하여 Exposed DAO 엔티티를 관리하는
 
 ## UML
 
-![UML 1](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-diagram-01.png)
+![UML diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-diagram-01.png)
 
 ### 쿼리 처리 흐름
 
-![쿼리 처리 흐름 2](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-diagram-02.png)
+![exposed jdbc Architecture 2 diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-diagram-02.png)
 
 ## 설치
 
