@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.r2dbc.caffeine.repository
 
 import com.github.benmanes.caffeine.cache.AsyncCache
+import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.LocalCacheConfig
 import io.bluetape4k.exposed.cache.R2dbcCacheRepository
 import io.bluetape4k.logging.coroutines.KLoggingChannel
@@ -53,4 +54,9 @@ interface R2dbcCaffeineRepository<ID: Any, E: Serializable>: R2dbcCacheRepositor
      * Caffeine 비동기 캐시. 키는 문자열로 직렬화된 ID입니다.
      */
     val cache: AsyncCache<String, E>
+
+    /**
+     * Returns a snapshot of Caffeine write-behind consistency state.
+     */
+    suspend fun validateConsistency(): CacheHealthReport
 }

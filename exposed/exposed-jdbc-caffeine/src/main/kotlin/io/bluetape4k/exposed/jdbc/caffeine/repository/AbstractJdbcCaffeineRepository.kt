@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.jdbc.caffeine.repository
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
+import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
@@ -11,6 +12,7 @@ import io.bluetape4k.logging.warn
 import io.bluetape4k.support.requirePositiveNumber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
@@ -33,6 +35,9 @@ import org.jetbrains.exposed.v1.jdbc.update
 import java.io.Serializable
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Abstract repository combining Exposed JDBC with a Caffeine in-process local cache.
@@ -110,6 +115,10 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
         Channel(capacity = config.writeBehindQueueCapacity)
     }
 
+    private val writeBehindQueueDepth = AtomicInteger(0)
+    private val writeBehindJobStarted = AtomicBoolean(false)
+    private val lastFlushError = AtomicReference<Throwable?>(null)
+
     private val writeBehindJob by lazy {
         scope.launch {
             val batch = mutableListOf<Pair<ID, E>>()
@@ -122,17 +131,27 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                         batch.add(next)
                     }
                     if (batch.isNotEmpty()) {
+                        val flushedCount = batch.size
                         flushBatch(batch)
+                        writeBehindQueueDepth.addAndGet(-flushedCount)
                         batch.clear()
                     }
                 }
             } finally {
                 // 채널 닫힌 후 남은 항목 처리
                 if (batch.isNotEmpty()) {
+                    val flushedCount = batch.size
                     flushBatch(batch)
+                    writeBehindQueueDepth.addAndGet(-flushedCount)
+                    batch.clear()
                 }
             }
         }
+    }
+
+    private fun startWriteBehindJob(): Job {
+        writeBehindJobStarted.set(true)
+        return writeBehindJob
     }
 
     /**
@@ -158,10 +177,12 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                 }
             }
             log.debug { "Write-Behind: ${batch.size}건 DB flush 완료" }
+            lastFlushError.set(null)
         } catch (e: CancellationException) {
             // 코루틴 취소는 삼키지 않고 반드시 재전파한다
             throw e
         } catch (e: Exception) {
+            lastFlushError.set(e)
             log.warn(e) { "Write-Behind: ${batch.size}건 DB flush 실패" }
         }
     }
@@ -277,13 +298,15 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
             }
             CacheWriteMode.WRITE_BEHIND -> {
                 // Write-Behind Job 초기화 보장
-                writeBehindJob
+                startWriteBehindJob()
                 // runBlocking is avoided to prevent Virtual Thread pinning.
                 // trySend() fails immediately when the queue is full — throw to prevent silent data loss.
                 // cache.put() is intentionally deferred until after trySend() succeeds to prevent
                 // a cache entry existing without a corresponding queued DB write.
+                writeBehindQueueDepth.incrementAndGet()
                 val result = writeBehindQueue.trySend(id to entity)
                 if (result.isFailure) {
+                    writeBehindQueueDepth.decrementAndGet()
                     throw IllegalStateException(
                         "Write-Behind queue is full (capacity=${config.writeBehindQueueCapacity}). " +
                             "Entity id=$id was NOT persisted to the database. " +
@@ -343,6 +366,19 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
         cache.invalidateAll()
     }
 
+    override fun validateConsistency(): CacheHealthReport =
+        CacheHealthReport(
+            mode = cacheWriteMode,
+            queueDepth = writeBehindQueueDepth.get().coerceAtLeast(0),
+            isFlushJobRunning = isWriteBehindJobRunning(),
+            lastFlushError = lastFlushError.get(),
+        )
+
+    private fun isWriteBehindJobRunning(): Boolean =
+        config.writeMode == CacheWriteMode.WRITE_BEHIND &&
+            writeBehindJobStarted.get() &&
+            writeBehindJob.isActive
+
     /**
      * Closes the repository and releases its resources.
      *
@@ -371,7 +407,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
 
     private fun awaitWriteBehindJobCompletion() {
         val completed = CountDownLatch(1)
-        writeBehindJob.invokeOnCompletion { completed.countDown() }
+        startWriteBehindJob().invokeOnCompletion { completed.countDown() }
 
         val completedInTime =
             try {

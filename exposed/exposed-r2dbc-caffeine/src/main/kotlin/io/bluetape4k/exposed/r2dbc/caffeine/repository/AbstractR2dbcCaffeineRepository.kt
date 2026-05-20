@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.r2dbc.caffeine.repository
 
 import com.github.benmanes.caffeine.cache.AsyncCache
 import com.github.benmanes.caffeine.cache.Caffeine
+import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
@@ -12,6 +13,7 @@ import io.bluetape4k.support.requirePositiveNumber
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -41,6 +43,9 @@ import java.io.Serializable
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Abstract repository combining Exposed R2DBC with a Caffeine in-process local cache.
@@ -118,6 +123,10 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
         Channel(capacity = config.writeBehindQueueCapacity)
     }
 
+    private val writeBehindQueueDepth = AtomicInteger(0)
+    private val writeBehindJobStarted = AtomicBoolean(false)
+    private val lastFlushError = AtomicReference<Throwable?>(null)
+
     /**
      * Write-behind background job.
      *
@@ -138,7 +147,9 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                         batch.add(next)
                     }
                     if (batch.isNotEmpty()) {
+                        val flushedCount = batch.size
                         flushBatch(batch)
+                        writeBehindQueueDepth.addAndGet(-flushedCount)
                         batch.clear()
                     }
                 }
@@ -146,12 +157,20 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                 // 채널 닫힌 후에도 루프에서 빠져나온 시점의 미처리 항목을 DB에 기록해야
                 // 데이터 유실을 방지할 수 있다.
                 if (batch.isNotEmpty()) {
+                    val flushedCount = batch.size
                     withContext(NonCancellable) {
                         flushBatch(batch)
                     }
+                    writeBehindQueueDepth.addAndGet(-flushedCount)
+                    batch.clear()
                 }
             }
         }
+    }
+
+    private fun startWriteBehindJob(): Job {
+        writeBehindJobStarted.set(true)
+        return writeBehindJob
     }
 
     /**
@@ -177,10 +196,12 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                 }
             }
             log.debug { "Write-Behind: ${batch.size}건 DB flush 완료" }
+            lastFlushError.set(null)
         } catch (e: CancellationException) {
             // 코루틴 취소는 반드시 재던져야 한다 — 삼키면 구조적 동시성이 깨진다
             throw e
         } catch (e: Exception) {
+            lastFlushError.set(e)
             log.warn(e) { "Write-Behind: ${batch.size}건 DB flush 실패" }
         }
     }
@@ -298,8 +319,14 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
             CacheWriteMode.WRITE_BEHIND -> {
                 // writeBehindJob은 lazy이므로 첫 send() 전에 명시적으로 접근하여
                 // 백그라운드 소비 루프가 시작되도록 보장한다.
-                writeBehindJob
-                writeBehindQueue.send(id to entity)
+                startWriteBehindJob()
+                writeBehindQueueDepth.incrementAndGet()
+                try {
+                    writeBehindQueue.send(id to entity)
+                } catch (e: Exception) {
+                    writeBehindQueueDepth.decrementAndGet()
+                    throw e
+                }
             }
 
             else -> { /* READ_ONLY: 캐시만 갱신 */
@@ -311,6 +338,19 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
         batchSize.requirePositiveNumber("batchSize")
         entities.forEach { (id, entity) -> put(id, entity) }
     }
+
+    override suspend fun validateConsistency(): CacheHealthReport =
+        CacheHealthReport(
+            mode = cacheWriteMode,
+            queueDepth = writeBehindQueueDepth.get().coerceAtLeast(0),
+            isFlushJobRunning = isWriteBehindJobRunning(),
+            lastFlushError = lastFlushError.get(),
+        )
+
+    private fun isWriteBehindJobRunning(): Boolean =
+        config.writeMode == CacheWriteMode.WRITE_BEHIND &&
+            writeBehindJobStarted.get() &&
+            writeBehindJob.isActive
 
     /**
      * Stores a single entity in the database for write-through mode.
@@ -373,7 +413,7 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
 
     private fun awaitWriteBehindJobCompletion() {
         val completed = CountDownLatch(1)
-        writeBehindJob.invokeOnCompletion { completed.countDown() }
+        startWriteBehindJob().invokeOnCompletion { completed.countDown() }
 
         val completedInTime =
             try {
