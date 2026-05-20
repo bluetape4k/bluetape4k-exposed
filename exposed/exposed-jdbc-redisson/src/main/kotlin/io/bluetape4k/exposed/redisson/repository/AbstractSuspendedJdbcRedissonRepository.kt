@@ -232,6 +232,18 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
         }
 
     /**
+     * Upserts many entities through the writer-backed Redisson async map.
+     */
+    override suspend fun upsertAll(
+        entities: Map<ID, E>,
+        batchSize: Int,
+    ) {
+        batchSize.requirePositiveNumber("batchSize")
+        if (entities.isEmpty()) return
+        cache.putAllAsync(entities, batchSize).await()
+    }
+
+    /**
      * 주어진 ID의 엔티티를 캐시에서 삭제합니다.
      *
      * `deleteFromDBOnInvalidate=false`이면 MapWriter를 우회해 Redis 캐시만 제거하고 DB는 유지합니다.
@@ -383,7 +395,7 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
                 }.map { it.toEntity() }
         }.await().also { entities ->
             if (entities.isNotEmpty()) {
-                cache.putAllAsync(entities.associateBy { extractId(it) }).await()
+                upsertAll(entities.associateBy { extractId(it) }, DEFAULT_BATCH_SIZE)
             }
         }
     }

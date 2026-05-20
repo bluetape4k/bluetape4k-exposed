@@ -129,6 +129,65 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: Suspe
                     )
                 }
             }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `upsertAll - 캐시에 벌크 저장하면, DB에도 저장된다`(testDB: TestDB) =
+        runSuspendIO {
+            // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
+            Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_LIKE }
+
+            withSuspendedEntityTable(testDB) {
+                val ids = getExistingIds()
+                delay(10.milliseconds)
+
+                await
+                    .atMost(Duration.ofSeconds(30))
+                    .withPollInterval(Duration.ofMillis(5))
+                    .untilSuspending { getExistingIds().size == 3 }
+
+                // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
+                if (cacheConfig.isReadWrite) {
+                    delay(DEFAULT_DELAY.milliseconds)
+                }
+
+                val entitiesMap = repository.getAll(ids)
+                entitiesMap.shouldNotBeEmpty()
+                entitiesMap.size shouldBeEqualTo ids.size
+
+                val updatedEntities = entitiesMap.values.map { updateEntityEmail(it) }
+                repository.upsertAll(updatedEntities.associateBy { repository.extractId(it) }, batchSize = 2)
+
+                val entitiesFromCacheMap = repository.getAll(ids)
+                entitiesFromCacheMap.shouldNotBeNull()
+                entitiesFromCacheMap.values.forEach { entity ->
+                    assertSameEntityWithoutAudit(
+                        entity,
+                        updatedEntities.find {
+                            repository.extractId(it) ==
+                                    repository.extractId(entity)
+                        }!!
+                    )
+                }
+
+                // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
+                if (cacheConfig.isReadWrite) {
+                    delay(DEFAULT_DELAY.milliseconds)
+                }
+
+                val entitiesFromDB = repository.findAllFromDb(ids)
+                entitiesFromDB.shouldNotBeEmpty() shouldHaveSize ids.size
+
+                entitiesFromDB.forEach { entity ->
+                    assertSameEntityWithoutAudit(
+                        entity,
+                        entitiesFromCacheMap.values.find {
+                            repository.extractId(it) == repository.extractId(entity)
+                        }!!
+                    )
+                }
+            }
         }
 
     @ParameterizedTest
@@ -142,6 +201,34 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: Suspe
                 val prevCount = repository.table.selectAll().count()
                 val newEntities = List(5) { createNewEntity() }
                 repository.putAll(newEntities.associateBy { repository.extractId(it) })
+
+                // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
+                if (cacheConfig.isReadWrite) {
+                    delay(DEFAULT_DELAY.milliseconds)
+                }
+
+                val newCount = repository.table.selectAll().count()
+
+                // id가 DB에서 자동증가하지 않는 경우에만 batchInsert 를 수행합니다.
+                if (repository.table.id.autoIncColumnType == null) {
+                    newCount shouldBeEqualTo prevCount + newEntities.size
+                } else {
+                    newCount shouldBeEqualTo prevCount
+                }
+            }
+        }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `upsertAll - 새로운 Record를 벌크 추가하면 AutoInc Id 는 DB 저장을 하지 않고, Client 생성 Id는 DB에 저장된다`(testDB: TestDB) =
+        runSuspendIO {
+            // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
+            Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
+
+            withSuspendedEntityTable(testDB) {
+                val prevCount = repository.table.selectAll().count()
+                val newEntities = List(5) { createNewEntity() }
+                repository.upsertAll(newEntities.associateBy { repository.extractId(it) }, batchSize = 2)
 
                 // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
                 if (cacheConfig.isReadWrite) {

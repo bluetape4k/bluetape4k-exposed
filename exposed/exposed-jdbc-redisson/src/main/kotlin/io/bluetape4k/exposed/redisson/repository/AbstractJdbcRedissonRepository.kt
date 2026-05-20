@@ -213,6 +213,18 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
     }
 
     /**
+     * Upserts many entities through the writer-backed Redisson map.
+     */
+    override fun upsertAll(
+        entities: Map<ID, E>,
+        batchSize: Int,
+    ) {
+        batchSize.requirePositiveNumber("batchSize")
+        if (entities.isEmpty()) return
+        cache.putAll(entities, batchSize)
+    }
+
+    /**
      * 캐시에서 지정한 ID를 제거합니다.
      *
      * `deleteFromDBOnInvalidate=false`이면 MapWriter를 우회해 Redis 캐시만 제거하고 DB는 유지합니다.
@@ -361,7 +373,7 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
 
         if (entities.isNotEmpty()) {
             log.debug { "DB에서 엔티티를 조회했습니다. entities=$entities" }
-            cache.putAll(entities.associateBy { extractId(it) })
+            upsertAll(entities.associateBy { extractId(it) }, DEFAULT_BATCH_SIZE)
         }
         return entities
     }
