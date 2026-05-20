@@ -212,23 +212,23 @@ println("마지막 페이지: ${page.isLast}")
 
 `AuditableIdTable`, 구체 Auditable 테이블 베이스, `UserContext`의 관계를 나타냅니다.
 
-![Auditable 핵심 구조 1](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-01.png)
+![Auditable diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-01.png)
 
 ### 커스텀 컬럼 타입 계층
 
 `ColumnWithTransform`을 기반으로 압축/암호화/직렬화 컬럼 타입이 일관된 구조로 구성됩니다.
 
-![커스텀 컬럼 타입 계층 2](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-02.png)
+![exposed core Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-02.png)
 
 ### ID 생성 전략별 IdTable 계층
 
 클라이언트 측에서 ID를 생성하는 커스텀 `IdTable` 구현체들입니다.
 
-![ID 생성 전략별 IdTable 계층 3](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-03.png)
+![ID IdTable diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-03.png)
 
 ### ExposedPage 결과 모델
 
-![ExposedPage 결과 모델 4](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-04.png)
+![ExposedPage diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-04.png)
 
 ## 주요 파일/클래스 목록
 
@@ -282,7 +282,7 @@ interface Auditable {
 
 현재 작업 중인 사용자명을 전파하는 컨텍스트 객체입니다. Virtual Thread / Structured Concurrency와 Coroutines 환경 모두 지원합니다.
 
-![UserContext — User diagram](../../docs/images/readme-diagrams/exposed-exposed-core-sequence-01.png)
+![UserContext — diagram](../../docs/images/readme-diagrams/exposed-exposed-core-sequence-01.png)
 
 #### Virtual Thread 환경
 

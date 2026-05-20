@@ -18,7 +18,7 @@ dependencies {
 
 ## 런타임 모델
 
-![exposed-spring-modulith diagram diagram](../../docs/images/readme-diagrams/spring-boot-exposed-spring-modulith-sequence-01.png)
+![exposed spring modulith Sequence Flow diagram](../../docs/images/readme-diagrams/spring-boot-exposed-spring-modulith-sequence-01.png)
 
 Repository는 애플리케이션과 같은 `DataSource` 및 Exposed
 `springTransactionManager`를 사용합니다. Spring Modulith 2.x의

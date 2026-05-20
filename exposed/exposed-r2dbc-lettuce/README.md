@@ -20,9 +20,9 @@ A coroutine-native Read-through / Write-through / Write-behind cache repository 
 
 ## Architecture
 
-![Architecture 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-diagram-01.png)
+![exposed r2dbc lettuce Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-diagram-01.png)
 
-![Architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-sequence-01.png)
+![exposed r2dbc lettuce Sequence Flow 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-sequence-01.png)
 
 ## Dependency
 

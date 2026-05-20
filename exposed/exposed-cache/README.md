@@ -23,11 +23,11 @@ It is **cache-backend agnostic** — the same interfaces are implemented by both
 
 ## Interface Hierarchy
 
-![Interface Hierarchy 1](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-01.png)
+![Interface Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-01.png)
 
 Redis-specific sub-interfaces (Lettuce and Redisson) extend the Redis interfaces:
 
-![Interface Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-02.png)
+![Interface Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-02.png)
 
 ## CacheMode
 

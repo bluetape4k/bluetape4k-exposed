@@ -1,68 +1,59 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="820" viewBox="0 0 1180 820" role="img" aria-label="Auditable Table Context">
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="680" viewBox="0 0 1360 680" role="img" aria-label="Core Auditable Structure">
 <defs>
   <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#758297" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker>
   <marker id="inherit" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M 0 1 L 12 6 L 0 11 Z" fill="#ffffff" stroke="#758297" stroke-width="1.8"/></marker>
+  <marker id="openArrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#758297" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker>
   <style>
     .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
     .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
     .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
     .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
+    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
     .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .pill{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
     .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
     .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-  </style></defs>
-<rect class="canvas" width="1180" height="820"/>
-<rect class="frame" x="32" y="28" width="1116" height="764" rx="28"/>
-<text class="title" x="66" y="86">Auditable Table Context</text>
-<text class="subtitle" x="70" y="122">Source-verified UML view of auditable Exposed table bases</text>
-<path class="inheritLine" d="M230 575 L230 455 L470 455 L470 376"/>
-<path class="inheritLine" d="M590 575 L590 376"/>
-<path class="inheritLine" d="M950 575 L950 455 L710 455 L710 376"/>
-<path class="dashed" d="M800 252 L865 252"/>
-<rect x="804" y="224" width="52" height="26" rx="13" fill="#ffffff" opacity="0.95"/>
-<text class="pill" x="830" y="242" text-anchor="middle">uses</text>
-<g transform="translate(380,166)">
-  <rect class="card" x="0" y="0" width="420" height="210" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <line class="compartment" x1="0" y1="78" x2="420" y2="78" stroke="#5B8DEF"/>
-  <text class="small" x="210" y="26" text-anchor="middle">«abstract»</text>
-  <text class="label" x="210" y="57" text-anchor="middle">AuditableIdTable&lt;ID&gt;</text>
-  <text class="mono" x="18" y="108">+createdBy: Column&lt;String&gt;</text>
-  <text class="mono" x="18" y="132">+createdAt: Column&lt;Instant?&gt;</text>
-  <text class="mono" x="18" y="156">+updatedBy: Column&lt;String?&gt;</text>
-  <text class="mono" x="18" y="180">+updatedAt: Column&lt;Instant?&gt;</text>
+    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
+  </style>
+</defs>
+<rect class="canvas" width="1360" height="680"/>
+<rect class="frame" x="32" y="28" width="1296" height="624" rx="28"/>
+<text class="title" x="66" y="82">Core Auditable Structure</text>
+<text class="subtitle" x="70" y="118">Auditable table bases and UserContext from current source</text>
+<path class="inheritLine" d="M680 330 C680 270 258 270 258 210"/>
+<path class="inheritLine" d="M680 330 C680 270 680 270 680 210"/>
+<path class="inheritLine" d="M680 330 C680 270 1102 270 1102 210"/>
+<path class="dashed" d="M1102 430 C1102 500 680 500 680 542"/>
+<g transform="translate(118,172)">
+  <rect class="card" x="0" y="0" width="280" height="120" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
+  <line class="compartment" x1="0" y1="74" x2="280" y2="74" stroke="#5B8DEF"/>
+  <text class="small" x="140" y="24" text-anchor="middle">abstract table</text>
+  <text class="label" x="140" y="56" text-anchor="middle">AuditableIntIdTable</text>
+  <text class="mono" x="18" y="102">ID type: Int</text>
 </g>
-<g transform="translate(870,184)">
-  <rect class="card" x="0" y="0" width="220" height="184" rx="5" fill="#FDECEF" stroke="#DC6B82"/>
-  <line class="compartment" x1="0" y1="78" x2="220" y2="78" stroke="#DC6B82"/>
-  <text class="small" x="110" y="26" text-anchor="middle">«object»</text>
-  <text class="label" x="110" y="57" text-anchor="middle">UserContext</text>
-  <text class="mono" x="18" y="108">+withUser(username)</text>
-  <text class="mono" x="18" y="132">+withThreadLocalUser(username)</text>
-  <text class="mono" x="18" y="156">+getCurrentUser(): String</text>
+<g transform="translate(540,172)">
+  <rect class="card" x="0" y="0" width="280" height="120" rx="5" fill="#EAF7EF" stroke="#58A978"/>
+  <line class="compartment" x1="0" y1="74" x2="280" y2="74" stroke="#58A978"/>
+  <text class="small" x="140" y="24" text-anchor="middle">abstract table</text>
+  <text class="label" x="140" y="56" text-anchor="middle">AuditableLongIdTable</text>
+  <text class="mono" x="18" y="102">ID type: Long</text>
 </g>
-<g transform="translate(80,575)">
-  <rect class="card" x="0" y="0" width="300" height="140" rx="5" fill="#EAF7EF" stroke="#58A978"/>
-  <line class="compartment" x1="0" y1="78" x2="300" y2="78" stroke="#58A978"/>
-  <text class="small" x="150" y="26" text-anchor="middle">«abstract»</text>
-  <text class="label" x="150" y="57" text-anchor="middle">AuditableIntIdTable</text>
-  <text class="mono" x="18" y="108">+id: EntityID&lt;Int&gt;</text>
+<g transform="translate(962,172)">
+  <rect class="card" x="0" y="0" width="280" height="120" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
+  <line class="compartment" x1="0" y1="74" x2="280" y2="74" stroke="#D6A441"/>
+  <text class="small" x="140" y="24" text-anchor="middle">abstract table</text>
+  <text class="label" x="140" y="56" text-anchor="middle">AuditableUUIDTable</text>
+  <text class="mono" x="18" y="102">ID type: UUID</text>
 </g>
-<g transform="translate(440,575)">
-  <rect class="card" x="0" y="0" width="300" height="140" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
-  <line class="compartment" x1="0" y1="78" x2="300" y2="78" stroke="#D6A441"/>
-  <text class="small" x="150" y="26" text-anchor="middle">«abstract»</text>
-  <text class="label" x="150" y="57" text-anchor="middle">AuditableLongIdTable</text>
-  <text class="mono" x="18" y="108">+id: EntityID&lt;Long&gt;</text>
+<g transform="translate(470,340)">
+  <rect class="card" x="0" y="0" width="420" height="150" rx="5" fill="#FDECEF" stroke="#DC6B82"/>
+  <line class="compartment" x1="0" y1="74" x2="420" y2="74" stroke="#DC6B82"/>
+  <text class="small" x="210" y="24" text-anchor="middle">abstract base</text>
+  <text class="label" x="210" y="56" text-anchor="middle">AuditableIdTable&lt;ID&gt;</text>
+  <text class="mono" x="18" y="102">+createdBy / createdAt</text>
+  <text class="mono" x="18" y="123">+updatedBy / updatedAt</text>
 </g>
-<g transform="translate(800,575)">
-  <rect class="card" x="0" y="0" width="300" height="140" rx="5" fill="#EFEAFE" stroke="#8B75D7"/>
-  <line class="compartment" x1="0" y1="78" x2="300" y2="78" stroke="#8B75D7"/>
-  <text class="small" x="150" y="26" text-anchor="middle">«abstract»</text>
-  <text class="label" x="150" y="57" text-anchor="middle">AuditableUUIDTable</text>
-  <text class="mono" x="18" y="108">+id: EntityID&lt;UUID&gt;</text>
+<g transform="translate(470,542)">
+  <rect class="card" x="0" y="0" width="420" height="70" rx="14" fill="#F1ECFF" stroke="#8A72D6"/>
+  <text class="label" x="210" y="44" text-anchor="middle">UserContext</text>
 </g>
 </svg>

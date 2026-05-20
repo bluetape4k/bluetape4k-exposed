@@ -8,7 +8,7 @@ Exposed를 통해 트랜잭션성 데이터를 OLAP 저장소로 forwarding하�
 
 ## Architecture
 
-![Architecture 1](../../docs/images/readme-diagrams/examples-exposed-clickhouse-oltp-olap-diagram-01.png)
+![exposed clickhouse oltp olap Architecture diagram](../../docs/images/readme-diagrams/examples-exposed-clickhouse-oltp-olap-diagram-01.png)
 
 ## 구성 요소
 

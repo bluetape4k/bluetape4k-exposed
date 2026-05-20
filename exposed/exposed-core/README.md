@@ -215,23 +215,23 @@ println("Is last page: ${page.isLast}")
 
 Illustrates the relationships among `AuditableIdTable`, concrete auditable table bases, and `UserContext`.
 
-![Core Auditable Structure 1](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-01.png)
+![Core Auditable Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-01.png)
 
 ### Custom Column Type Hierarchy
 
 Compressed, encrypted, and serialized column types are consistently structured around `ColumnWithTransform`.
 
-![Custom Column Type Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-02.png)
+![Custom Column Type Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-02.png)
 
 ### IdTable Hierarchy by ID Generation Strategy
 
 Custom `IdTable` implementations that generate IDs on the client side.
 
-![IdTable Hierarchy by ID Generation Strategy 3](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-03.png)
+![IdTable Hierarchy by ID Generation Strategy diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-03.png)
 
 ### ExposedPage Result Model
 
-![ExposedPage Result Model 4](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-04.png)
+![ExposedPage Result Model diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-04.png)
 
 ## Key Files and Classes
 

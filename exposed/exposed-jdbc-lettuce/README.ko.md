@@ -100,9 +100,9 @@ suspend fun example(repo: UserSuspendedRepository) {
 
 ## 아키텍처 개요
 
-![아키텍처 개요 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-diagram-01.png)
+![exposed jdbc lettuce Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-diagram-01.png)
 
-![Architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-sequence-01.png)
+![exposed jdbc lettuce Sequence Flow 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-sequence-01.png)
 
 ## JdbcLettuceRepository 주요 메서드
 

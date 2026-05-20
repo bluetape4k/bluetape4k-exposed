@@ -286,11 +286,11 @@ Containers.Postgres
 
 ## 테스트 인프라 구조
 
-![테스트 인프라 구조 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-diagram-01.png)
+![exposed jdbc tests Architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-diagram-01.png)
 
 ### 테스트 실행 흐름
 
-![Test Execution diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-sequence-01.png)
+![exposed jdbc tests Sequence Flow 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-sequence-01.png)
 
 ## 참고 사항
 

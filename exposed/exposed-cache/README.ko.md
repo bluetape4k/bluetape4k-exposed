@@ -23,11 +23,11 @@
 
 ## 인터페이스 계층 구조
 
-![인터페이스 계층 구조 1](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-01.png)
+![exposed cache Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-01.png)
 
 Redis 전용 하위 인터페이스(Lettuce/Redisson)는 Redis 인터페이스를 확장합니다:
 
-![인터페이스 계층 구조 2](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-02.png)
+![exposed cache Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-02.png)
 
 ## CacheMode
 
@@ -83,7 +83,7 @@ Redis 기반 저장소의 선택적 Resilience 설정입니다. `null`(기본값
 
 ## 쓰기 전략 패턴
 
-![Write diagram](../../docs/images/readme-diagrams/exposed-exposed-cache-sequence-01.png)
+![exposed cache Sequence Flow 3 diagram](../../docs/images/readme-diagrams/exposed-exposed-cache-sequence-01.png)
 
 ## testFixtures 시나리오
 

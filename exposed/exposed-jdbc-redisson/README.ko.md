@@ -239,13 +239,13 @@ transaction {
 
 ## 아키텍처 개요
 
-![아키텍처 개요 1](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-01.png)
+![exposed jdbc redisson Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-01.png)
 
 ## 클래스 다이어그램
 
 ### 동기 Repository 계층 구조
 
-![동기 Repository 계층 구조 2](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-02.png)
+![Repository diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-02.png)
 
 
 ## 캐시 패턴
@@ -254,33 +254,33 @@ transaction {
 
 캐시 미스 시 `ExposedEntityMapLoader`가 DB에서 자동 로드합니다.
 
-![Read-Through diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-01.png)
+![Read-Through () diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-01.png)
 
 ### Write-Through (동기)
 
 `put()` 호출 시 `ExposedEntityMapWriter`가 DB에 즉시 동기 반영합니다.
 
-![Write-Through diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-02.png)
+![Write-Through () diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-02.png)
 
 ### Write-Behind (동기)
 
 `put()` 호출 즉시 응답하고, 이후 `ExposedEntityMapWriter`가 비동기로 DB에 배치 반영합니다.
 
-![Write-Behind diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-03.png)
+![Write-Behind () diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-03.png)
 
 ### Read-Through (Suspend 코루틴)
 
 `SuspendedJdbcRedissonRepository`는 모든 연산을 `suspend` 함수로 제공합니다.
 
-![Read-Through (Suspend Coroutine) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-04.png)
+![Read-Through (Suspend ) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-04.png)
 
 ### Write-Through (Suspend 코루틴)
 
-![Write-Through (Suspend Coroutine) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-05.png)
+![Write-Through (Suspend ) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-05.png)
 
 ### Write-Behind (Suspend 코루틴)
 
-![Write-Behind (Suspend Coroutine) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-06.png)
+![Write-Behind (Suspend ) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-06.png)
 
 ## JdbcRedissonRepository / SuspendedJdbcRedissonRepository 주요 메서드
 

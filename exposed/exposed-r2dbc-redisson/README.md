@@ -133,13 +133,13 @@ val nearCacheConfig = RedissonCacheConfig.readOnly(
 
 ## Architecture Overview
 
-![Architecture Overview 1](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-01.png)
+![Architecture Overview diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-01.png)
 
 ## Class Diagrams
 
 ### R2DBC Redisson Repository Hierarchy
 
-![R2DBC Redisson Repository Hierarchy 2](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-02.png)
+![R2DBC Redisson Repository Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-02.png)
 
 ## Cache Patterns
 

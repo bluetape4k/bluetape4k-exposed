@@ -8,7 +8,7 @@ queries with ClickHouse-native functions.
 
 ## Architecture
 
-![Architecture 1](../../docs/images/readme-diagrams/examples-exposed-clickhouse-oltp-olap-diagram-01.png)
+![exposed clickhouse oltp olap Architecture diagram](../../docs/images/readme-diagrams/examples-exposed-clickhouse-oltp-olap-diagram-01.png)
 
 ## Components
 

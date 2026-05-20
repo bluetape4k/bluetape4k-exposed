@@ -12,11 +12,11 @@ This module demonstrates the pattern of wrapping **Exposed R2DBC
 
 ## UML
 
-![UML 1](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-01.png)
+![UML diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-01.png)
 
 ### Application Structure Flow
 
-![Application Structure Flow 2](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-02.png)
+![Application Structure Flow diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-02.png)
 
 ### Key Characteristics
 

@@ -8,7 +8,7 @@ individual versions.
 
 ## Architecture
 
-![Architecture 1](../../docs/images/readme-diagrams/exposed-bluetape4k-exposed-bom-diagram-01.png)
+![exposed bom Architecture diagram](../../docs/images/readme-diagrams/exposed-bluetape4k-exposed-bom-diagram-01.png)
 
 The BOM is a Gradle `java-platform` that publishes only `<dependencyManagement>` constraints — no runtime classes.
 
