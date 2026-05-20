@@ -28,6 +28,14 @@ This module provides seamless integration between Timefold Solver's scoring syst
 | `BendableScore`                 | Flexible Hard/Soft level score      | VarChar                       |
 | `BendableBigDecimalScore`       | Bendable score as BigDecimal        | VarChar                       |
 
+## Class Diagram
+
+![exposed timefold solver persistence Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-01.png)
+
+## Architecture Diagram
+
+![Architecture Diagram diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-02.png)
+
 ## Installation
 
 ### Gradle
@@ -242,14 +250,6 @@ CREATE TABLE planning_solution (
 # Run a specific test class
 ./gradlew :exposed-timefold-solver-persistence:test --tests "HardSoftScoreTest"
 ```
-
-## Class Diagram
-
-![exposed timefold solver persistence Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-01.png)
-
-## Architecture Diagram
-
-![Architecture Diagram diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-02.png)
 
 ## Score Serialization Flow
 

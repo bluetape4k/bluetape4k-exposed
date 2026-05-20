@@ -28,6 +28,14 @@
 | `BendableScore`                 | 가변적 Hard/Soft 레벨 점수     | VarChar                   |
 | `BendableBigDecimalScore`       | BigDecimal Bendable 점수  | VarChar                   |
 
+## 클래스 다이어그램
+
+![exposed timefold solver persistence Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-01.png)
+
+## 아키텍처 다이어그램
+
+![exposed timefold solver persistence Architecture 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-02.png)
+
 ## 설치
 
 ### Gradle
@@ -242,14 +250,6 @@ CREATE TABLE planning_solution (
 # 특정 테스트 클래스 실행
 ./gradlew :exposed-timefold-solver-persistence:test --tests "HardSoftScoreTest"
 ```
-
-## 클래스 다이어그램
-
-![exposed timefold solver persistence Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-01.png)
-
-## 아키텍처 다이어그램
-
-![exposed timefold solver persistence Architecture 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-02.png)
 
 ## Score 직렬화 흐름
 

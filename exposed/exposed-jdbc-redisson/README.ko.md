@@ -26,6 +26,17 @@ dependencies {
 }
 ```
 
+## 아키텍처 개요
+
+![exposed jdbc redisson Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-01.png)
+
+## 클래스 다이어그램
+
+### 동기 Repository 계층 구조
+
+![Repository diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-02.png)
+
+
 ## 기본 사용법
 
 ### 1. JdbcRedissonRepository (동기) 구현
@@ -238,17 +249,6 @@ transaction {
     repo.invalidate(user.id)         // 캐시 제거 (deleteFromDBOnInvalidate=true 면 DB도 삭제)
 }
 ```
-
-## 아키텍처 개요
-
-![exposed jdbc redisson Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-01.png)
-
-## 클래스 다이어그램
-
-### 동기 Repository 계층 구조
-
-![Repository diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-02.png)
-
 
 ## 캐시 패턴
 

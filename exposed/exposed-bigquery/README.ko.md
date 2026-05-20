@@ -45,6 +45,14 @@ dependencies {
 }
 ```
 
+## 아키텍처 다이어그램
+
+![exposed bigquery Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-diagram-01.png)
+
+### 쿼리 실행 흐름
+
+![exposed bigquery Sequence Flow 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-sequence-01.png)
+
 ## 기본 사용법
 
 ### 1. BigQueryContext 생성
@@ -156,14 +164,6 @@ BigQuery REST API 응답 → Kotlin 타입 변환:
 - 실제 BigQuery 쓰기 작업은 REST API 호출 단위로 수행됩니다.
 - 여러 DML을 순차 호출할 때는 부분 반영 가능성을 애플리케이션에서 감안해야 합니다.
 - RDBMS 수준 rollback, savepoint, nested transaction 원자성은 기대하면 안 됩니다.
-
-## 아키텍처 다이어그램
-
-![exposed bigquery Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-diagram-01.png)
-
-### 쿼리 실행 흐름
-
-![exposed bigquery Sequence Flow 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-sequence-01.png)
 
 ## 주요 파일/클래스 목록
 

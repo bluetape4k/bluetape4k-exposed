@@ -24,6 +24,20 @@ dependencies {
 }
 ```
 
+## 아키텍처 다이어그램
+
+### 컬럼 타입 구조 (요약)
+
+![() diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-01.png)
+
+### JSON 컬럼 타입 클래스 구조
+
+![JSON diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-02.png)
+
+### Jackson 2 vs Jackson 3 패키지 차이
+
+![Jackson 2 vs Jackson 3 diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-03.png)
+
 ## 기본 사용법
 
 ### 1. JSON 컬럼 정의
@@ -109,20 +123,6 @@ val query2 = Users.selectAll()
 ```bash
 ./gradlew :exposed-jackson3:test
 ```
-
-## 아키텍처 다이어그램
-
-### 컬럼 타입 구조 (요약)
-
-![() diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-01.png)
-
-### JSON 컬럼 타입 클래스 구조
-
-![JSON diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-02.png)
-
-### Jackson 2 vs Jackson 3 패키지 차이
-
-![Jackson 2 vs Jackson 3 diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-03.png)
 
 ## 참고
 

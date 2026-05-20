@@ -44,6 +44,16 @@ dependencies {
 }
 ```
 
+## 아키텍처 다이어그램
+
+### 컬럼 타입 구조 (요약)
+
+![() diagram](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-01.png)
+
+## 클래스 다이어그램
+
+![exposed tink Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-02.png)
+
 ## 기본 사용법
 
 ### 1. 컬럼 정의
@@ -208,16 +218,6 @@ object SensitiveData: IntIdTable("sensitive_data") {
     val secret = tinkAeadVarChar("secret", 512, customEncryptor)
 }
 ```
-
-## 아키텍처 다이어그램
-
-### 컬럼 타입 구조 (요약)
-
-![() diagram](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-01.png)
-
-## 클래스 다이어그램
-
-![exposed tink Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-02.png)
 
 ## 주요 파일/클래스 목록
 

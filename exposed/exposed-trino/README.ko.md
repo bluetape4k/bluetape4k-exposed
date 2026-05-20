@@ -28,6 +28,14 @@ dependencies {
 }
 ```
 
+## 핵심 API 다이어그램
+
+![API diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-diagram-01.png)
+
+### 분산 쿼리 흐름
+
+![exposed trino Sequence Flow 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-sequence-01.png)
+
 ## 기본 사용법
 
 ### 1. Trino 데이터베이스 연결
@@ -238,14 +246,6 @@ Testcontainers를 통한 Trino Memory 커넥터 환경에서 검증된 기능입
 | pagedQueryFlow            | ✅     | page 단위 materialize 후 emit |
 | TrinoConnectionWrapper 호환 | ✅     | prepareStatement 오버로드     |
 | JDBC 드라이버 자동 등록           | ✅     | TrinoDatabase 접근 시 init{} |
-
-## 핵심 API 다이어그램
-
-![API diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-diagram-01.png)
-
-### 분산 쿼리 흐름
-
-![exposed trino Sequence Flow 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-sequence-01.png)
 
 ## 주요 파일/클래스 목록
 

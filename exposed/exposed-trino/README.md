@@ -30,6 +30,14 @@ dependencies {
 }
 ```
 
+## Core API Diagram
+
+![Core API Diagram diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-diagram-01.png)
+
+### Distributed Query Flow
+
+![Distributed Query Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-sequence-01.png)
+
 ## Basic Usage
 
 ### 1. Connecting to Trino
@@ -247,14 +255,6 @@ Features verified in a Trino Memory connector environment via Testcontainers.
 | pagedQueryFlow                       | ✅        | Page materialized before emit        |
 | TrinoConnectionWrapper compatibility | ✅        | prepareStatement overloads           |
 | Automatic JDBC driver registration   | ✅        | init{} block on TrinoDatabase access |
-
-## Core API Diagram
-
-![Core API Diagram diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-diagram-01.png)
-
-### Distributed Query Flow
-
-![Distributed Query Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-sequence-01.png)
 
 ## Key Files / Classes
 

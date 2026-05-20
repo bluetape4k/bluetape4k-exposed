@@ -25,6 +25,12 @@ dependencies {
 }
 ```
 
+## Architecture Overview
+
+![Architecture Overview diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-diagram-01.png)
+
+![Architecture Overview diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-sequence-01.png)
+
 ## Basic Usage
 
 ### 1. Synchronous Repository (AbstractJdbcLettuceRepository)
@@ -94,12 +100,6 @@ suspend fun example(repo: UserSuspendedRepository) {
     repo.clearCache()                // Clears all Redis cache keys
 }
 ```
-
-## Architecture Overview
-
-![Architecture Overview diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-diagram-01.png)
-
-![Architecture Overview diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-sequence-01.png)
 
 ## Key Methods of JdbcLettuceRepository
 

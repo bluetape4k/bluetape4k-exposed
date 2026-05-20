@@ -26,6 +26,32 @@ dependencies {
 }
 ```
 
+## Class Diagrams
+
+### Core Repository and VirtualThread Transaction Structure
+
+![Core Repository and VirtualThread Transaction Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-01.png)
+
+![Core Repository and VirtualThread Transaction Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-01.png)
+
+### Repository Hierarchy
+
+![Repository Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-02.png)
+
+## Sequence Diagrams
+
+### findById — Single record lookup
+
+![findById — Single record lookup diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-02.png)
+
+### save + findPage — Save then paginate
+
+![save + findPage — Save then paginate diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-03.png)
+
+### softDeleteById / restoreById — Soft delete and restore
+
+![softDeleteById / restoreById — Soft delete and restore diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-04.png)
+
 ## Basic Usage
 
 ### 1. Implementing JdbcRepository
@@ -420,32 +446,6 @@ transaction {
 | `UuidSoftDeletedJdbcRepository`   | `kotlin.uuid.Uuid` |
 | `UUIDSoftDeletedJdbcRepository`   | `java.util.UUID`   |
 | `StringSoftDeletedJdbcRepository` | `String`           |
-
-## Class Diagrams
-
-### Core Repository and VirtualThread Transaction Structure
-
-![Core Repository and VirtualThread Transaction Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-01.png)
-
-![Core Repository and VirtualThread Transaction Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-01.png)
-
-### Repository Hierarchy
-
-![Repository Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-02.png)
-
-## Sequence Diagrams
-
-### findById — Single record lookup
-
-![findById — Single record lookup diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-02.png)
-
-### save + findPage — Save then paginate
-
-![save + findPage — Save then paginate diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-03.png)
-
-### softDeleteById / restoreById — Soft delete and restore
-
-![softDeleteById / restoreById — Soft delete and restore diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-04.png)
 
 ## Key Files and Classes
 
