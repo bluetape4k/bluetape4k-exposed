@@ -100,69 +100,28 @@
 | R2DBC | 100000 | 60 | 4 | 0.126 | 7931.421 |
 | R2DBC | 100000 | 60 | 8 | 0.182 | 5490.831 |
 
-## Comparison Graph Templates
+## Comparison Charts
 
-> 아래 그래프는 최신 JSON benchmark report의 실측값(ops/sec)을 사용합니다. avg ms는 표에서 함께 확인할 수 있습니다.
+> These charts use the latest JSON benchmark report values (ops/sec). Use the tables above for avg ms.
 
-### Graph Legend
+### Chart Legend
 
 | Color | Series | Meaning |
 |-------|--------|---------|
 | 🟦 | 첫 번째 bar (`JDBC`) | JDBC with Virtual Threads |
 | 🟧 | 두 번째 bar (`R2DBC`) | R2DBC |
 
-Mermaid `xychart-beta` 렌더러가 범례를 자동 표시하지 않는 경우를 대비해 색상 swatch(🟦/🟧)와 bar 순서를 함께 표기합니다.
-
 ### Seed — dataSize 비교 (poolSize=30 예시)
 
-```mermaid
----
-config:
-  themeVariables:
-    xyChart:
-      plotColorPalette: "#4F81BD, #F79646"
----
-xychart-beta
-    title "MySQL Seed: JDBC vs R2DBC by dataSize (poolSize=30)"
-    x-axis [1000, 10000, 100000]
-    y-axis "ops/sec" 0 --> 172
-    bar "JDBC" [142.9, 14.4, 1.2]
-    bar "R2DBC" [5.0, 0.5, 0.0]
-```
+![mysql seed dataSize chart](../../../docs/images/readme-charts/utils-batch-mysql-seed-datasize-chart-01.png)
 
 ### Seed — poolSize 비교 (dataSize=10000 예시)
 
-```mermaid
----
-config:
-  themeVariables:
-    xyChart:
-      plotColorPalette: "#4F81BD, #F79646"
----
-xychart-beta
-    title "MySQL Seed: JDBC vs R2DBC by poolSize (dataSize=10000)"
-    x-axis [10, 30, 60]
-    y-axis "ops/sec" 0 --> 18
-    bar "JDBC" [13.4, 14.4, 12.7]
-    bar "R2DBC" [0.5, 0.5, 0.5]
-```
+![mysql seed poolSize chart](../../../docs/images/readme-charts/utils-batch-mysql-seed-poolsize-chart-01.png)
 
 ### End-to-End — parallelism 비교 (dataSize=10000, poolSize=30 예시)
 
-```mermaid
----
-config:
-  themeVariables:
-    xyChart:
-      plotColorPalette: "#4F81BD, #F79646"
----
-xychart-beta
-    title "MySQL End-to-End: JDBC vs R2DBC by parallelism (dataSize=10000, poolSize=30)"
-    x-axis [1, 4, 8]
-    y-axis "ops/sec" 0 --> 11
-    bar "JDBC" [4.4, 8.6, 8.5]
-    bar "R2DBC" [0.5, 2.9, 5.2]
-```
+![mysql end-to-end parallelism chart](../../../docs/images/readme-charts/utils-batch-mysql-e2e-parallelism-chart-01.png)
 
 ## Notes
 

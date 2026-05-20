@@ -100,69 +100,28 @@
 | R2DBC | 100000 | 60 | 4 | 0.119 | 8425.800 |
 | R2DBC | 100000 | 60 | 8 | 0.193 | 5187.407 |
 
-## Comparison Graph Templates
+## Comparison Charts
 
-> 아래 그래프는 최신 JSON benchmark report의 실측값(ops/sec)을 사용합니다. avg ms는 표에서 함께 확인할 수 있습니다.
+> These charts use the latest JSON benchmark report values (ops/sec). Use the tables above for avg ms.
 
-### Graph Legend
+### Chart Legend
 
 | Color | Series | Meaning |
 |-------|--------|---------|
 | 🟦 | 첫 번째 bar (`JDBC`) | JDBC with Virtual Threads |
 | 🟧 | 두 번째 bar (`R2DBC`) | R2DBC |
 
-Mermaid `xychart-beta` 렌더러가 범례를 자동 표시하지 않는 경우를 대비해 색상 swatch(🟦/🟧)와 bar 순서를 함께 표기합니다.
-
 ### Seed — dataSize 비교 (poolSize=30 예시)
 
-```mermaid
----
-config:
-  themeVariables:
-    xyChart:
-      plotColorPalette: "#4F81BD, #F79646"
----
-xychart-beta
-    title "PostgreSQL Seed: JDBC vs R2DBC by dataSize (poolSize=30)"
-    x-axis [1000, 10000, 100000]
-    y-axis "ops/sec" 0 --> 178
-    bar "JDBC" [147.6, 14.4, 1.4]
-    bar "R2DBC" [4.1, 0.4, 0.0]
-```
+![postgresql seed dataSize chart](../../../docs/images/readme-charts/utils-batch-postgresql-seed-datasize-chart-01.png)
 
 ### Seed — poolSize 비교 (dataSize=10000 예시)
 
-```mermaid
----
-config:
-  themeVariables:
-    xyChart:
-      plotColorPalette: "#4F81BD, #F79646"
----
-xychart-beta
-    title "PostgreSQL Seed: JDBC vs R2DBC by poolSize (dataSize=10000)"
-    x-axis [10, 30, 60]
-    y-axis "ops/sec" 0 --> 18
-    bar "JDBC" [14.4, 14.4, 14.9]
-    bar "R2DBC" [0.4, 0.4, 0.4]
-```
+![postgresql seed poolSize chart](../../../docs/images/readme-charts/utils-batch-postgresql-seed-poolsize-chart-01.png)
 
 ### End-to-End — parallelism 비교 (dataSize=10000, poolSize=30 예시)
 
-```mermaid
----
-config:
-  themeVariables:
-    xyChart:
-      plotColorPalette: "#4F81BD, #F79646"
----
-xychart-beta
-    title "PostgreSQL End-to-End: JDBC vs R2DBC by parallelism (dataSize=10000, poolSize=30)"
-    x-axis [1, 4, 8]
-    y-axis "ops/sec" 0 --> 13
-    bar "JDBC" [5.1, 10.5, 10.4]
-    bar "R2DBC" [0.4, 4.7, 9.7]
-```
+![postgresql end-to-end parallelism chart](../../../docs/images/readme-charts/utils-batch-postgresql-e2e-parallelism-chart-01.png)
 
 ## Notes
 
