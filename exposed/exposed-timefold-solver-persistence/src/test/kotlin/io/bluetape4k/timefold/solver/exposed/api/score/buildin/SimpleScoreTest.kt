@@ -1,6 +1,6 @@
 package io.bluetape4k.timefold.solver.exposed.api.score.buildin
 
-import ai.timefold.solver.core.api.score.buildin.simple.SimpleScore
+import ai.timefold.solver.core.api.score.SimpleScore
 import io.bluetape4k.exposed.dao.entityToStringBuilder
 import io.bluetape4k.exposed.dao.idEquals
 import io.bluetape4k.exposed.dao.idHashCode
@@ -49,7 +49,7 @@ class SimpleScoreTest: AbstractScoreExposedTest() {
         withTables(testDB, T1) {
 
             val name = faker.name().name()
-            val simpleScore = SimpleScore.of(faker.random().nextInt(0, 100))
+            val simpleScore = SimpleScore.of(faker.random().nextLong(0, 100))
 
             val id = T1.insertAndGetId {
                 it[T1.name] = name
@@ -74,7 +74,7 @@ class SimpleScoreTest: AbstractScoreExposedTest() {
         withTables(testDB, T1) {
             val saved = E1.new {
                 this.name = faker.name().name()
-                this.simpleScore = SimpleScore.of(faker.random().nextInt(0, 100))
+                this.simpleScore = SimpleScore.of(faker.random().nextLong(0, 100))
             }
             log.debug { "saved=$saved" }
             flushCache()

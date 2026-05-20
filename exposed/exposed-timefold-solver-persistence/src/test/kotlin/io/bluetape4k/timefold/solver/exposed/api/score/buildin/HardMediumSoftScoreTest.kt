@@ -1,6 +1,6 @@
 package io.bluetape4k.timefold.solver.exposed.api.score.buildin
 
-import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore
+import ai.timefold.solver.core.api.score.HardMediumSoftScore
 import io.bluetape4k.exposed.dao.entityToStringBuilder
 import io.bluetape4k.exposed.dao.idEquals
 import io.bluetape4k.exposed.dao.idHashCode
@@ -50,9 +50,9 @@ class HardMediumSoftScoreTest: AbstractScoreExposedTest() {
 
             val name = faker.name().name()
             val hardMediumSoftScore = HardMediumSoftScore.of(
-                faker.random().nextInt(),
-                faker.random().nextInt(),
-                faker.random().nextInt()
+                faker.random().nextLong(),
+                faker.random().nextLong(),
+                faker.random().nextLong()
             )
 
             val id = T1.insertAndGetId {
@@ -79,9 +79,9 @@ class HardMediumSoftScoreTest: AbstractScoreExposedTest() {
             val saved = E1.new {
                 this.name = faker.name().name()
                 this.hardMediumSoftScore = HardMediumSoftScore.of(
-                    faker.random().nextInt(),
-                    faker.random().nextInt(),
-                    faker.random().nextInt()
+                    faker.random().nextLong(),
+                    faker.random().nextLong(),
+                    faker.random().nextLong()
                 )
             }
             log.debug { "saved=$saved" }

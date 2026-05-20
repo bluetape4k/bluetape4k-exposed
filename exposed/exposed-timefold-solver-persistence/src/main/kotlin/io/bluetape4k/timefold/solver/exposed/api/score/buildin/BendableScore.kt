@@ -1,6 +1,6 @@
 package io.bluetape4k.timefold.solver.exposed.api.score.buildin
 
-import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore
+import ai.timefold.solver.core.api.score.BendableScore
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ColumnTransformer
 import org.jetbrains.exposed.v1.core.ColumnWithTransform
@@ -21,8 +21,8 @@ import org.jetbrains.exposed.v1.core.VarCharColumnType
  *
  * // 사용 예시
  * val bendableScore = BendableScore.of(
- *     intArrayOf(100, 50),  // hard levels
- *     intArrayOf(-30, -20)  // soft levels
+ *     longArrayOf(100, 50),  // hard levels
+ *     longArrayOf(-30, -20)  // soft levels
  * )
  * PlanningTables.insert {
  *     it[name] = "Test Solution"
@@ -48,7 +48,7 @@ fun Table.bendableScore(
  *
  * ```kotlin
  * val columnType = BendableScoreColumnType(255)
- * val score = BendableScore.of(intArrayOf(100, 50), intArrayOf(-30, -20))
+ * val score = BendableScore.of(longArrayOf(100, 50), longArrayOf(-30, -20))
  * val raw = columnType.notNullValueToDB(score)
  * // raw == score.toString()
  * ```
@@ -67,7 +67,7 @@ class BendableScoreColumnType(
  *
  * ```kotlin
  * val transformer = BendableScoreTransformer()
- * val score = BendableScore.of(intArrayOf(100, 50), intArrayOf(-30, -20))
+ * val score = BendableScore.of(longArrayOf(100, 50), longArrayOf(-30, -20))
  * val raw = transformer.unwrap(score)
  * val restored = transformer.wrap(raw)
  * // restored == score
@@ -78,7 +78,7 @@ class BendableScoreTransformer: ColumnTransformer<String, BendableScore> {
      * [BendableScore]를 데이터베이스 String 값으로 변환합니다.
      *
      * ```kotlin
-     * val score = BendableScore.of(intArrayOf(100, 50), intArrayOf(-30, -20))
+     * val score = BendableScore.of(longArrayOf(100, 50), longArrayOf(-30, -20))
      * val raw = BendableScoreTransformer().unwrap(score)
      * // raw == score.toString()
      * ```
@@ -92,7 +92,7 @@ class BendableScoreTransformer: ColumnTransformer<String, BendableScore> {
      * 데이터베이스 String 값을 [BendableScore]로 변환합니다.
      *
      * ```kotlin
-     * val score = BendableScore.of(intArrayOf(100, 50), intArrayOf(-30, -20))
+     * val score = BendableScore.of(longArrayOf(100, 50), longArrayOf(-30, -20))
      * val raw = score.toString()
      * val restored = BendableScoreTransformer().wrap(raw)
      * // restored == score
