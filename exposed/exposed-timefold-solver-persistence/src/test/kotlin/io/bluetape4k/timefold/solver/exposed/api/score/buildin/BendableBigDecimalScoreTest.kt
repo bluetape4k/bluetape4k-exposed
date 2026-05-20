@@ -1,6 +1,6 @@
 package io.bluetape4k.timefold.solver.exposed.api.score.buildin
 
-import ai.timefold.solver.core.api.score.buildin.bendablebigdecimal.BendableBigDecimalScore
+import ai.timefold.solver.core.api.score.BendableBigDecimalScore
 import io.bluetape4k.exposed.dao.entityToStringBuilder
 import io.bluetape4k.exposed.dao.idEquals
 import io.bluetape4k.exposed.dao.idHashCode
@@ -83,7 +83,7 @@ class BendableBigDecimalScoreTest: AbstractScoreExposedTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `BendableLongScore 를 가진 인테티 저장 및 로드하기`(testDB: TestDB) {
+    fun `BendableBigDecimalScore 를 가진 인테티 저장 및 로드하기`(testDB: TestDB) {
         withTables(testDB, T1) {
             val saved = E1.new {
                 this.name = faker.name().name()

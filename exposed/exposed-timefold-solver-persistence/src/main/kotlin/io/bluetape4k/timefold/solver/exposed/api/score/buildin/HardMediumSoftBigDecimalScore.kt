@@ -1,6 +1,6 @@
 package io.bluetape4k.timefold.solver.exposed.api.score.buildin
 
-import ai.timefold.solver.core.api.score.buildin.hardmediumsoftbigdecimal.HardMediumSoftBigDecimalScore
+import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ColumnTransformer
 import org.jetbrains.exposed.v1.core.ColumnWithTransform

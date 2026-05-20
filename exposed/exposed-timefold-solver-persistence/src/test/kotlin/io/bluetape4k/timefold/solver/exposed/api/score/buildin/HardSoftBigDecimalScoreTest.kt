@@ -1,6 +1,6 @@
 package io.bluetape4k.timefold.solver.exposed.api.score.buildin
 
-import ai.timefold.solver.core.api.score.buildin.hardsoftbigdecimal.HardSoftBigDecimalScore
+import ai.timefold.solver.core.api.score.HardSoftBigDecimalScore
 import io.bluetape4k.exposed.dao.entityToStringBuilder
 import io.bluetape4k.exposed.dao.idEquals
 import io.bluetape4k.exposed.dao.idHashCode
@@ -76,7 +76,7 @@ class HardSoftBigDecimalScoreTest: AbstractScoreExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `HardSoftBigDecimalScore 수형의 속성을 가진 엔티티 사용`(testDB: TestDB) {
         withTables(testDB, T1) {
-            // Creates entity with name and hardSoftLongScore
+            // Creates entity with name and hardSoftBigDecimalScore
             val saved = E1.new {
                 this.name = faker.name().name()
                 this.hardSoftBigDecimalScore = HardSoftBigDecimalScore.of(

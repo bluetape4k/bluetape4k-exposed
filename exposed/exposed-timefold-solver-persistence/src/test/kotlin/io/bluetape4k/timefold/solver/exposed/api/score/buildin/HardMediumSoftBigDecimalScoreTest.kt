@@ -1,6 +1,6 @@
 package io.bluetape4k.timefold.solver.exposed.api.score.buildin
 
-import ai.timefold.solver.core.api.score.buildin.hardmediumsoftbigdecimal.HardMediumSoftBigDecimalScore
+import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore
 import io.bluetape4k.exposed.dao.entityToStringBuilder
 import io.bluetape4k.exposed.dao.idEquals
 import io.bluetape4k.exposed.dao.idHashCode

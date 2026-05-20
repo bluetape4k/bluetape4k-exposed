@@ -10,7 +10,7 @@
 
 ### 주요 특징
 
-- **모든 Timefold Score 유형 지원**: SimpleScore, HardSoftScore, BendableScore 등 12가지 Score 유형
+- **모든 Timefold 2 Score 유형 지원**: SimpleScore, HardSoftScore, BendableScore 등 8가지 Score 유형
 - **Exposed 통합**: Exposed의 `ColumnType`과 `ColumnTransformer`를 활용한 자연스러운 통합
 - **타입 안전성**: 컴파일 타임에 Score 타입 검증
 - **데이터베이스 독립성**: H2, MySQL, MariaDB, PostgreSQL 등 다양한 데이터베이스 지원
@@ -19,17 +19,13 @@
 
 | Score 유형                        | 설명                      | DB 저장 형식                  |
 |---------------------------------|-------------------------|---------------------------|
-| `SimpleScore`                   | 단일 점수 값                 | Integer                   |
-| `SimpleLongScore`               | Long 타입 단일 점수           | BigInt                    |
+| `SimpleScore`                   | 단일 점수 값                 | BigInt                    |
 | `SimpleBigDecimalScore`         | BigDecimal 단일 점수        | VarChar                   |
 | `HardSoftScore`                 | Hard/Soft 2단계 점수        | VarChar (예: "100/-50")    |
-| `HardSoftLongScore`             | Long 타입 Hard/Soft 점수    | VarChar                   |
 | `HardSoftBigDecimalScore`       | BigDecimal Hard/Soft 점수 | VarChar                   |
 | `HardMediumSoftScore`           | Hard/Medium/Soft 3단계 점수 | VarChar (예: "100/50/-30") |
-| `HardMediumSoftLongScore`       | Long 타입 3단계 점수          | VarChar                   |
 | `HardMediumSoftBigDecimalScore` | BigDecimal 3단계 점수       | VarChar                   |
 | `BendableScore`                 | 가변적 Hard/Soft 레벨 점수     | VarChar                   |
-| `BendableLongScore`             | Long 타입 Bendable 점수     | VarChar                   |
 | `BendableBigDecimalScore`       | BigDecimal Bendable 점수  | VarChar                   |
 
 ## 설치
@@ -78,7 +74,7 @@ object BendablePlanningSolutions : IntIdTable("bendable_solution") {
 ### 2. Entity 클래스 정의
 
 ```kotlin
-import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore
+import ai.timefold.solver.core.api.score.HardSoftScore
 import org.jetbrains.exposed.v1.dao.IntEntity
 import org.jetbrains.exposed.v1.dao.IntEntityClass
 
@@ -94,7 +90,7 @@ class PlanningSolution(id: EntityID<Int>) : IntEntity(id) {
 ### 3. 데이터 삽입
 
 ```kotlin
-import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore
+import ai.timefold.solver.core.api.score.HardSoftScore
 
 transaction {
     // DSL 방식
@@ -132,11 +128,11 @@ transaction {
 
 ```kotlin
 import io.bluetape4k.timefold.solver.exposed.api.score.buildin.simpleScore
-import ai.timefold.solver.core.api.score.buildin.simple.SimpleScore
+import ai.timefold.solver.core.api.score.SimpleScore
 
 object SimpleScoreTable : IntIdTable() {
     val name = varchar("name", 255)
-    val score = simpleScore("score")  // Integer 컬럼으로 저장
+    val score = simpleScore("score")  // BIGINT 컬럼으로 저장
 }
 
 transaction {
@@ -151,7 +147,7 @@ transaction {
 
 ```kotlin
 import io.bluetape4k.timefold.solver.exposed.api.score.buildin.bendableScore
-import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore
+import ai.timefold.solver.core.api.score.BendableScore
 
 object BendableScoreTable : IntIdTable() {
     val name = varchar("name", 255)
@@ -161,8 +157,8 @@ object BendableScoreTable : IntIdTable() {
 transaction {
     // 2개의 Hard 레벨과 3개의 Soft 레벨을 가진 BendableScore
     val bendableScore = BendableScore.of(
-        intArrayOf(100, 50),      // hard levels
-        intArrayOf(-30, -20, -10) // soft levels
+        longArrayOf(100, 50),      // hard levels
+        longArrayOf(-30, -20, -10) // soft levels
     )
     
     BendableScoreTable.insert {
@@ -177,11 +173,11 @@ transaction {
 각 Score 유형별로 권장하는 데이터베이스 컬럼 타입:
 
 ```sql
--- SimpleScore: INTEGER
+-- SimpleScore: BIGINT
 CREATE TABLE planning_solution (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(255),
-    score INTEGER
+    score BIGINT
 );
 
 -- HardSoftScore: VARCHAR(255)
@@ -234,7 +230,6 @@ CREATE TABLE planning_solution (
 
 ### 테스트 의존성
 
-- `timefold-solver-test`: Timefold Solver 테스트 유틸리티
 - `exposed-jdbc-tests`: Exposed 테스트 지원
 - Testcontainers (H2, MariaDB, MySQL, PostgreSQL)
 

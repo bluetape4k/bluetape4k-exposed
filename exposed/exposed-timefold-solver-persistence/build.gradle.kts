@@ -8,8 +8,6 @@ dependencies {
     implementation(platform(libs.timefold.solver.bom))
 
     api(libs.timefold.solver.core)
-    api(libs.timefold.solver.persistence.common)
-    testImplementation(libs.timefold.solver.test)
 
     api(libs.exposed.core)
     compileOnly(project(":bluetape4k-exposed-jdbc"))

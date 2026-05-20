@@ -1,17 +1,17 @@
 package io.bluetape4k.timefold.solver.exposed.api.score.buildin
 
-import ai.timefold.solver.core.api.score.buildin.simple.SimpleScore
+import ai.timefold.solver.core.api.score.SimpleScore
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ColumnTransformer
 import org.jetbrains.exposed.v1.core.ColumnWithTransform
-import org.jetbrains.exposed.v1.core.IntegerColumnType
+import org.jetbrains.exposed.v1.core.LongColumnType
 import org.jetbrains.exposed.v1.core.Table
 
 /**
  * Timefold Solver의 [SimpleScore]를 저장할 수 있는 Column을 생성합니다.
  *
  * [SimpleScore]는 단일 점수 값을 가지는 가장 기본적인 Score 유형입니다.
- * 데이터베이스에는 Integer 형태로 저장됩니다.
+ * 데이터베이스에는 Long 형태로 저장됩니다.
  *
  * ```kotlin
  * object PlanningTables : IntIdTable("planning_solution") {
@@ -37,54 +37,54 @@ fun Table.simpleScore(name: String): Column<SimpleScore> = registerColumn(name, 
 /**
  * [SimpleScore]를 위한 Exposed ColumnType 구현체입니다.
  *
- * Kotlin Int 타입과 [SimpleScore] 간의 변환을 처리합니다.
+ * Kotlin Long 타입과 [SimpleScore] 간의 변환을 처리합니다.
  *
  * ```kotlin
  * val columnType = SimpleScoreColumnType()
  * val score = SimpleScore.of(42)
  * val raw = columnType.notNullValueToDB(score)
- * // raw == 42
+ * // raw == 42L
  * ```
  */
-class SimpleScoreColumnType: ColumnWithTransform<Int, SimpleScore>(IntegerColumnType(), SimpleScoreTransformer())
+class SimpleScoreColumnType: ColumnWithTransform<Long, SimpleScore>(LongColumnType(), SimpleScoreTransformer())
 
 /**
- * [SimpleScore]와 데이터베이스 Int 값 간의 변환을 수행하는 Transformer 클래스입니다.
+ * [SimpleScore]와 데이터베이스 Long 값 간의 변환을 수행하는 Transformer 클래스입니다.
  *
- * [unwrap] 메서드는 [SimpleScore]를 Int로 변환하고,
- * [wrap] 메서드는 Int를 [SimpleScore]로 변환합니다.
+ * [unwrap] 메서드는 [SimpleScore]를 Long으로 변환하고,
+ * [wrap] 메서드는 Long을 [SimpleScore]로 변환합니다.
  *
  * ```kotlin
  * val transformer = SimpleScoreTransformer()
  * val score = SimpleScore.of(100)
- * val raw = transformer.unwrap(score)    // 100
+ * val raw = transformer.unwrap(score)    // 100L
  * val restored = transformer.wrap(raw)  // SimpleScore.of(100)
  * ```
  */
-class SimpleScoreTransformer: ColumnTransformer<Int, SimpleScore> {
+class SimpleScoreTransformer: ColumnTransformer<Long, SimpleScore> {
     /**
-     * [SimpleScore]를 데이터베이스 Int 값으로 변환합니다.
+     * [SimpleScore]를 데이터베이스 Long 값으로 변환합니다.
      *
      * ```kotlin
      * val raw = SimpleScoreTransformer().unwrap(SimpleScore.of(77))
-     * // raw == 77
+     * // raw == 77L
      * ```
      *
      * @param value 변환할 [SimpleScore] 인스턴스
-     * @return 점수의 Int 값
+     * @return 점수의 Long 값
      */
-    override fun unwrap(value: SimpleScore): Int = value.score()
+    override fun unwrap(value: SimpleScore): Long = value.score()
 
     /**
-     * 데이터베이스 Int 값을 [SimpleScore]로 변환합니다.
+     * 데이터베이스 Long 값을 [SimpleScore]로 변환합니다.
      *
      * ```kotlin
      * val score = SimpleScoreTransformer().wrap(77)
      * // score == SimpleScore.of(77)
      * ```
      *
-     * @param value 데이터베이스에서 읽은 Int 값
+     * @param value 데이터베이스에서 읽은 Long 값
      * @return 생성된 [SimpleScore] 인스턴스
      */
-    override fun wrap(value: Int): SimpleScore = SimpleScore.of(value)
+    override fun wrap(value: Long): SimpleScore = SimpleScore.of(value)
 }

@@ -10,7 +10,7 @@ This module provides seamless integration between Timefold Solver's scoring syst
 
 ### Key Features
 
-- **All Timefold Score types supported**: 12 score types including SimpleScore, HardSoftScore, and BendableScore
+- **All Timefold 2 Score types supported**: 8 score types including SimpleScore, HardSoftScore, and BendableScore
 - **Exposed integration**: Natural integration using Exposed's `ColumnType` and `ColumnTransformer`
 - **Type safety**: Score type validation at compile time
 - **Database independence**: Supports H2, MySQL, MariaDB, PostgreSQL, and more
@@ -19,17 +19,13 @@ This module provides seamless integration between Timefold Solver's scoring syst
 
 | Score Type                        | Description                         | DB Storage Format             |
 |---------------------------------|-------------------------------------|-------------------------------|
-| `SimpleScore`                   | Single score value                  | Integer                       |
-| `SimpleLongScore`               | Single score as Long                | BigInt                        |
+| `SimpleScore`                   | Single score value                  | BigInt                        |
 | `SimpleBigDecimalScore`         | Single score as BigDecimal          | VarChar                       |
 | `HardSoftScore`                 | Two-level Hard/Soft score           | VarChar (e.g., "100/-50")     |
-| `HardSoftLongScore`             | Hard/Soft score as Long             | VarChar                       |
 | `HardSoftBigDecimalScore`       | Hard/Soft score as BigDecimal       | VarChar                       |
 | `HardMediumSoftScore`           | Three-level Hard/Medium/Soft score  | VarChar (e.g., "100/50/-30")  |
-| `HardMediumSoftLongScore`       | Three-level score as Long           | VarChar                       |
 | `HardMediumSoftBigDecimalScore` | Three-level score as BigDecimal     | VarChar                       |
 | `BendableScore`                 | Flexible Hard/Soft level score      | VarChar                       |
-| `BendableLongScore`             | Bendable score as Long              | VarChar                       |
 | `BendableBigDecimalScore`       | Bendable score as BigDecimal        | VarChar                       |
 
 ## Installation
@@ -78,7 +74,7 @@ object BendablePlanningSolutions : IntIdTable("bendable_solution") {
 ### 2. Define Entity Classes
 
 ```kotlin
-import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore
+import ai.timefold.solver.core.api.score.HardSoftScore
 import org.jetbrains.exposed.v1.dao.IntEntity
 import org.jetbrains.exposed.v1.dao.IntEntityClass
 
@@ -94,7 +90,7 @@ class PlanningSolution(id: EntityID<Int>) : IntEntity(id) {
 ### 3. Insert Data
 
 ```kotlin
-import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore
+import ai.timefold.solver.core.api.score.HardSoftScore
 
 transaction {
     // DSL style
@@ -132,11 +128,11 @@ transaction {
 
 ```kotlin
 import io.bluetape4k.timefold.solver.exposed.api.score.buildin.simpleScore
-import ai.timefold.solver.core.api.score.buildin.simple.SimpleScore
+import ai.timefold.solver.core.api.score.SimpleScore
 
 object SimpleScoreTable : IntIdTable() {
     val name = varchar("name", 255)
-    val score = simpleScore("score")  // Stored as an Integer column
+    val score = simpleScore("score")  // Stored as a BIGINT column
 }
 
 transaction {
@@ -151,7 +147,7 @@ transaction {
 
 ```kotlin
 import io.bluetape4k.timefold.solver.exposed.api.score.buildin.bendableScore
-import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore
+import ai.timefold.solver.core.api.score.BendableScore
 
 object BendableScoreTable : IntIdTable() {
     val name = varchar("name", 255)
@@ -161,8 +157,8 @@ object BendableScoreTable : IntIdTable() {
 transaction {
     // BendableScore with 2 hard levels and 3 soft levels
     val bendableScore = BendableScore.of(
-        intArrayOf(100, 50),      // hard levels
-        intArrayOf(-30, -20, -10) // soft levels
+        longArrayOf(100, 50),      // hard levels
+        longArrayOf(-30, -20, -10) // soft levels
     )
     
     BendableScoreTable.insert {
@@ -177,11 +173,11 @@ transaction {
 Recommended column types for each Score type:
 
 ```sql
--- SimpleScore: INTEGER
+-- SimpleScore: BIGINT
 CREATE TABLE planning_solution (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(255),
-    score INTEGER
+    score BIGINT
 );
 
 -- HardSoftScore: VARCHAR(255)
@@ -234,7 +230,6 @@ CREATE TABLE planning_solution (
 
 ### Test
 
-- `timefold-solver-test`: Timefold Solver test utilities
 - `exposed-jdbc-tests`: Exposed test support
 - Testcontainers (H2, MariaDB, MySQL, PostgreSQL)
 
