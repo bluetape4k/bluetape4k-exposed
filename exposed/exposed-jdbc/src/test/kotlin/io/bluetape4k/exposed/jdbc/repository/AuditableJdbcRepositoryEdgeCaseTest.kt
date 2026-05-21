@@ -8,7 +8,9 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
+import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -88,6 +90,34 @@ class AuditableJdbcRepositoryEdgeCaseTest : AbstractExposedTest() {
             .let { with(AuditableEdgeCaseRepository) { it.toEntity() } }
 
     // ── 테스트 ────────────────────────────────────────────────────────────────────
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `saveAll with empty list returns empty ids`(testDB: TestDB) {
+        withTables(testDB, AuditableEdgeCaseTable) {
+            val ids = AuditableEdgeCaseRepository.saveAll(emptyList())
+
+            ids.shouldBeEmpty()
+            AuditableEdgeCaseTable.selectAll().count() shouldBeEqualTo 0L
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `saveAll with single entity preserves audit defaults`(testDB: TestDB) {
+        withTables(testDB, AuditableEdgeCaseTable) {
+            val record = AuditableEdgeCaseRecord(id = 0L, name = "single", age = 1)
+
+            val ids = AuditableEdgeCaseRepository.saveAll(listOf(record))
+
+            ids shouldHaveSize 1
+            ids.first().shouldBeGreaterThan(0L)
+            AuditableEdgeCaseTable.selectAll().count() shouldBeEqualTo 1L
+            val saved = findById(ids.first())
+            saved.createdBy shouldBeEqualTo UserContext.DEFAULT_USERNAME
+            saved.createdAt.shouldNotBeNull()
+        }
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
