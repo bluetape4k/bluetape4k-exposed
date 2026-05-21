@@ -106,20 +106,17 @@
 
 ### Chart Legend
 
-| Color | Series | Meaning |
-|-------|--------|---------|
-| 🟦 | 첫 번째 bar (`JDBC`) | JDBC with Virtual Threads |
-| 🟧 | 두 번째 bar (`R2DBC`) | R2DBC |
+JDBC bars are blue; R2DBC bars are orange.
 
-### Seed — dataSize 비교 (poolSize=30 예시)
+### Seed — dataSize comparison (poolSize=30)
 
 ![mysql seed dataSize chart](../../../docs/images/readme-charts/utils-batch-mysql-seed-datasize-chart-01.png)
 
-### Seed — poolSize 비교 (dataSize=10000 예시)
+### Seed — poolSize comparison (dataSize=10000)
 
 ![mysql seed poolSize chart](../../../docs/images/readme-charts/utils-batch-mysql-seed-poolsize-chart-01.png)
 
-### End-to-End — parallelism 비교 (dataSize=10000, poolSize=30 예시)
+### End-to-End — parallelism comparison (dataSize=10000, poolSize=30)
 
 ![mysql end-to-end parallelism chart](../../../docs/images/readme-charts/utils-batch-mysql-e2e-parallelism-chart-01.png)
 

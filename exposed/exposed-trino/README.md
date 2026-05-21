@@ -32,7 +32,7 @@ dependencies {
 
 ## Core API Diagram
 
-![Core API Diagram diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-diagram-01.png)
+![exposed exposed trino diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-diagram-01.png)
 
 ### Distributed Query Flow
 

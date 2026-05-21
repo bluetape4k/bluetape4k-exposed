@@ -8,7 +8,7 @@ A coroutine-native batch processing framework for Kotlin. Implements a lightweig
 
 ![batch Class Structure diagram](../../docs/images/readme-diagrams/utils-batch-diagram-01.png)
 
-![batch Sequence Flow 2 diagram](../../docs/images/readme-diagrams/utils-batch-sequence-01.png)
+![Batch execution flow diagram](../../docs/images/readme-diagrams/utils-batch-sequence-01.png)
 
 ## Features
 
@@ -136,9 +136,9 @@ The benchmark setup has been migrated to `kotlinx-benchmark` with DB-specific pr
 - Primary axis: **JDBC vs R2DBC**
 - Scenarios: `seedBenchmark`, `endToEndBatchJobBenchmark`
 - Parameters: `dataSize = 1000/10000/100000`, `poolSize = 10/30/60`, `parallelism = 1/4/8`
-- Detailed tables and graphs live under `docs/benchmark/*.md`
+- Detailed tables and charts live under `docs/benchmark/*.md`
 
-![Comparison Focus diagram](../../docs/images/readme-diagrams/utils-batch-diagram-02.png)
+![Batch seed throughput by database chart](../../docs/images/readme-charts/utils-batch-db-summary-chart-01.png)
 
 ## Module Dependencies
 

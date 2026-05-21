@@ -48,7 +48,7 @@ dependencies {
 
 ### 컬럼 타입 구조 (요약)
 
-![() diagram](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-01.png)
+![Tink encrypted column summary diagram](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-01.png)
 
 ## 클래스 다이어그램
 

@@ -8,7 +8,7 @@ Kotlin 코루틴 네이티브 배치 처리 프레임워크. Spring Batch 없이
 
 ![batch Class Structure diagram](../../docs/images/readme-diagrams/utils-batch-diagram-01.png)
 
-![batch Sequence Flow 2 diagram](../../docs/images/readme-diagrams/utils-batch-sequence-01.png)
+![Batch execution flow diagram](../../docs/images/readme-diagrams/utils-batch-sequence-01.png)
 
 ## 주요 기능
 
@@ -147,9 +147,9 @@ benchmark 체계는 `kotlinx-benchmark` 기반으로 재구성되었고, JDBC + 
 - 핵심 비교 축: **JDBC vs R2DBC**
 - 시나리오: `seedBenchmark`, `endToEndBatchJobBenchmark`
 - 파라미터: `dataSize = 1000/10000/100000`, `poolSize = 10/30/60`, `parallelism = 1/4/8`
-- 상세 표와 그래프는 `docs/benchmark/*.md` 에서 관리
+- 상세 표와 차트는 `docs/benchmark/*.md` 에서 관리
 
-![batch Architecture 3 diagram](../../docs/images/readme-diagrams/utils-batch-diagram-02.png)
+![Batch seed throughput by database chart](../../docs/images/readme-charts/utils-batch-db-summary-chart-01.png)
 
 ## 모듈 의존성
 

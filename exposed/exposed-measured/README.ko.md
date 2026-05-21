@@ -19,7 +19,7 @@ Exposed에서 `bluetape4k-measured` 타입(`Measure<T>`, `Temperature`, `Tempera
 
 ## 저장/조회 시퀀스 다이어그램
 
-![/ diagram](../../docs/images/readme-diagrams/exposed-exposed-measured-sequence-01.png)
+![Measured column storage and retrieval flow diagram](../../docs/images/readme-diagrams/exposed-exposed-measured-sequence-01.png)
 
 ## Column 변환 흐름
 

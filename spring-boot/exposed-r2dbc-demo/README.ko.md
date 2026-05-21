@@ -12,11 +12,11 @@ Exposed R2DBC + suspend Repository + Spring WebFlux 통합 데모 (Spring Boot 4
 
 ## UML
 
-![UML diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-01.png)
+![Spring Boot R2DBC demo structure diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-01.png)
 
 ### 애플리케이션 구조 흐름
 
-![exposed r2dbc demo Architecture 2 diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-02.png)
+![Spring Boot R2DBC demo application flow diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-02.png)
 
 ### 주요 특징
 

@@ -34,7 +34,7 @@ This module provides seamless integration between Timefold Solver's scoring syst
 
 ## Architecture Diagram
 
-![Architecture Diagram diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-02.png)
+![Timefold persistence architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-02.png)
 
 ## Installation
 

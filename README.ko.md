@@ -30,10 +30,6 @@ dialect 확장, Spring Boot 4 자동 설정을 Exposed DSL 스타일 안에서 �
 - **Spring Boot** — Spring Boot 4.x 자동 설정 (JDBC, R2DBC, Batch, Spring Modulith JDBC 이벤트 발행 통합)
 - **측정 단위 Column** — `bluetape4k-measured` 단위를 위한 Exposed Custom ColumnType
 
-## 아키텍처
-
-![bluetape4k-exposed architecture](docs/assets/exposed-architecture.png)
-
 <!-- README_VISUAL_OVERVIEW:START -->
 ## Overview Diagram
 
@@ -43,6 +39,10 @@ dialect 확장, Spring Boot 4 자동 설정을 Exposed DSL 스타일 안에서 �
 
 ![Bluetape4k Exposed module composition chart](docs/images/readme-charts/root-readme-module-chart-01.png)
 <!-- README_VISUAL_OVERVIEW:END -->
+
+## 아키텍처
+
+![bluetape4k-exposed architecture](docs/assets/exposed-architecture.png)
 
 ## 모듈 목록
 

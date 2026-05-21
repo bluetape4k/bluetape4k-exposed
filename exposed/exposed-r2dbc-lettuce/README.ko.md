@@ -21,7 +21,7 @@ Exposed R2DBC와 Lettuce Redis 캐시를 결합한 코루틴 네이티브 Read-t
 
 ![exposed r2dbc lettuce Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-diagram-01.png)
 
-![exposed r2dbc lettuce Sequence Flow 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-sequence-01.png)
+![R2DBC Lettuce cache flow diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-sequence-01.png)
 
 ## 의존성 추가
 

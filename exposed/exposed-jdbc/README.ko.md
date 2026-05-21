@@ -476,6 +476,8 @@ transaction {
 | `batchInsert` (batchSize=100) | ~217 |
 | **합계** | **~45,431** |
 
+![Exposed JDBC benchmark throughput chart](../../docs/images/readme-charts/exposed-exposed-jdbc-benchmark-chart-01.png)
+
 > 8 라운드 자동화 최적화: 초기 baseline 대비 **+78.9% 개선** (25,401 → 45,431 ops/s).
 > 주요 개선 요인: HikariCP pool 튜닝 (+71%), `bench_orders` 복합 인덱스 추가 (+1.5%), JMH 측정 안정화 (+2.9%).
 

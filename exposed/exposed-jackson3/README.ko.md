@@ -28,7 +28,7 @@ dependencies {
 
 ### 컬럼 타입 구조 (요약)
 
-![() diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-01.png)
+![Jackson3 column type summary diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-01.png)
 
 ### JSON 컬럼 타입 클래스 구조
 

@@ -12,7 +12,7 @@ This module demonstrates the fundamental pattern of wrapping **Exposed DAO entit
 
 ## UML
 
-![UML diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-01.png)
+![Spring Boot JDBC demo structure diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-01.png)
 
 ### Application Structure Flow
 

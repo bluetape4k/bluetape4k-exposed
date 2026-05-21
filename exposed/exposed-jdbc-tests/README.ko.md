@@ -6,6 +6,14 @@
 
 [Exposed](https://github.com/JetBrains/Exposed) 기반 모듈 테스트를 위한 공통 테스트 인프라 모듈입니다. 다양한 데이터베이스(H2, MySQL, MariaDB, PostgreSQL)에 대한 통합 테스트를 쉽게 작성할 수 있도록 도와줍니다.
 
+## Test Infrastructure
+
+![exposed jdbc tests Architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-diagram-01.png)
+
+### Test Execution Flow
+
+![JDBC test execution flow diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-sequence-01.png)
+
 ## 의존성 추가
 
 ```kotlin
@@ -283,14 +291,6 @@ Containers.Postgres
 # 특정 DB만 테스트
 ./gradlew test -DtestDB=POSTGRESQL
 ```
-
-## 테스트 인프라 구조
-
-![exposed jdbc tests Architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-diagram-01.png)
-
-### 테스트 실행 흐름
-
-![exposed jdbc tests Sequence Flow 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-sequence-01.png)
 
 ## 참고 사항
 

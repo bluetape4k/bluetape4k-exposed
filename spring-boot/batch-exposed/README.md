@@ -12,7 +12,7 @@ for VirtualThread parallel execution, and Spring Boot Auto-Configuration.
 
 ![batch exposed Class Structure diagram](../../docs/images/readme-diagrams/spring-boot-batch-exposed-diagram-01.png)
 
-![batch exposed Sequence Flow 2 diagram](../../docs/images/readme-diagrams/spring-boot-batch-exposed-sequence-01.png)
+![Spring Batch Exposed execution flow diagram](../../docs/images/readme-diagrams/spring-boot-batch-exposed-sequence-01.png)
 
 ## Features
 

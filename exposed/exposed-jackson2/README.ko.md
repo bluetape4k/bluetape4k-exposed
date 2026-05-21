@@ -28,7 +28,7 @@ dependencies {
 
 ### 컬럼 타입 구조 (요약)
 
-![() diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-01.png)
+![Jackson2 column type summary diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-01.png)
 
 ## 클래스 다이어그램
 

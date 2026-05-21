@@ -9,7 +9,7 @@ A high-performance Repository implementation for managing Exposed DAO entities u
 
 ## UML
 
-![UML diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-diagram-01.png)
+![Spring Boot JDBC auto-configuration diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-diagram-01.png)
 
 ### Query Processing Flow
 

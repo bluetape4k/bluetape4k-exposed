@@ -26,9 +26,9 @@
 1. `seedBenchmark` — source row 적재 비용
 2. `endToEndBatchJobBenchmark` — 전체 batch job 실행 비용
 
-## 그래프
+## Comparison Map
 
-![benchmark Architecture diagram](../../../docs/images/readme-diagrams/utils-batch-benchmark-diagram-01.png)
+![Batch benchmark comparison map](../../../docs/images/readme-diagrams/utils-batch-benchmark-map-01.png)
 
 ## 참고
 
