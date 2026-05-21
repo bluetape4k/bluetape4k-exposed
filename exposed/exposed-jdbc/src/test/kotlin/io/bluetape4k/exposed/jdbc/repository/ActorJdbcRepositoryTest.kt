@@ -91,6 +91,32 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `saveAll with empty list returns empty ids`(testDB: TestDB) {
+        withMovieAndActors(testDB) {
+            val currentCount = repository.count()
+            val ids = repository.saveAll(emptyList())
+
+            ids.shouldBeEmpty()
+            repository.count() shouldBeEqualTo currentCount
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `saveAll with single entity returns one generated id`(testDB: TestDB) {
+        withMovieAndActors(testDB) {
+            val currentCount = repository.count()
+            val ids = repository.saveAll(listOf(newActorRecord()))
+
+            ids shouldHaveSize 1
+            ids.first().shouldBeGreaterThan(0L)
+            repository.count() shouldBeEqualTo currentCount + 1
+            repository.findAllByIds(ids) shouldHaveSize 1
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `saveAll inserts 100 actors and returns generated ids`(testDB: TestDB) {
         withMovieAndActors(testDB) {
             val currentCount = repository.count()
