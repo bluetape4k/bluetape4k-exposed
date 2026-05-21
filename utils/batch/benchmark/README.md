@@ -26,9 +26,9 @@ The primary comparison is **JDBC vs R2DBC** for each database, split into:
 1. `seedBenchmark` — source row insert cost
 2. `endToEndBatchJobBenchmark` — full batch job execution cost
 
-## Graph
+## Comparison Map
 
-![Graph diagram](../../../docs/images/readme-diagrams/utils-batch-benchmark-diagram-01.png)
+![Batch benchmark comparison map](../../../docs/images/readme-diagrams/utils-batch-benchmark-map-01.png)
 
 ## Notes
 

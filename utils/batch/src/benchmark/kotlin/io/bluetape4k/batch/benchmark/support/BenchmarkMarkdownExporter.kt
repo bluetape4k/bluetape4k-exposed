@@ -9,7 +9,6 @@ import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
-import kotlin.math.ceil
 
 /**
  * benchmark 결과 Markdown 문서를 생성하는 도우미입니다.
@@ -99,16 +98,9 @@ internal object BenchmarkMarkdownExporter {
             1. `seedBenchmark` — source row insert cost
             2. `endToEndBatchJobBenchmark` — full batch job execution cost
 
-            ## Graph
+            ## Comparison Map
 
-            ```mermaid
-            xychart-beta
-                title "Benchmark comparison focus"
-                x-axis [H2, PostgreSQL, MySQL]
-                y-axis "Relative emphasis" 0 --> 100
-                bar [70, 100, 95]
-                bar [70, 100, 95]
-            ```
+            ![Batch benchmark comparison map](../../../docs/images/readme-diagrams/utils-batch-benchmark-map-01.png)
 
             ## Notes
 
@@ -151,16 +143,9 @@ internal object BenchmarkMarkdownExporter {
             1. `seedBenchmark` — source row 적재 비용
             2. `endToEndBatchJobBenchmark` — 전체 batch job 실행 비용
 
-            ## 그래프
+            ## Comparison Map
 
-            ```mermaid
-            xychart-beta
-                title "Benchmark 비교 초점"
-                x-axis [H2, PostgreSQL, MySQL]
-                y-axis "비교 강조도" 0 --> 100
-                bar [70, 100, 95]
-                bar [70, 100, 95]
-            ```
+            ![Batch benchmark comparison map](../../../docs/images/readme-diagrams/utils-batch-benchmark-map-01.png)
 
             ## 참고
 
@@ -214,69 +199,22 @@ internal object BenchmarkMarkdownExporter {
             appendEndToEndRows(reportSet.endToEndRows, "JDBC")
             appendEndToEndRows(reportSet.endToEndRows, "R2DBC")
             appendLine()
-            appendLine("## Comparison Graph Templates")
+            val chartSlug = databaseName.lowercase()
+            appendLine("## Comparison Charts")
             appendLine()
-            appendLine(buildGraphHint(reportSet.hasMeasuredData))
+            appendLine(buildChartHint(reportSet.hasMeasuredData))
             appendLine()
-            appendLine("### Graph Legend")
+            appendLine("### Seed — dataSize comparison (poolSize=30)")
             appendLine()
-            appendLine("| Color | Series | Meaning |")
-            appendLine("|-------|--------|---------|")
-            appendLine("| 🟦 | 첫 번째 bar (`JDBC`) | JDBC with Virtual Threads |")
-            appendLine("| 🟧 | 두 번째 bar (`R2DBC`) | R2DBC |")
+            appendLine("![${databaseName.lowercase()} seed dataSize chart](../../../docs/images/readme-charts/utils-batch-$chartSlug-seed-datasize-chart-01.png)")
             appendLine()
-            appendLine("Mermaid `xychart-beta` 렌더러가 범례를 자동 표시하지 않는 경우를 대비해 색상 swatch(🟦/🟧)와 bar 순서를 함께 표기합니다.")
+            appendLine("### Seed — poolSize comparison (dataSize=10000)")
             appendLine()
-            appendLine("### Seed — dataSize 비교 (poolSize=30 예시)")
+            appendLine("![${databaseName.lowercase()} seed poolSize chart](../../../docs/images/readme-charts/utils-batch-$chartSlug-seed-poolsize-chart-01.png)")
             appendLine()
-            appendLine("```mermaid")
-            appendLine("---")
-            appendLine("config:")
-            appendLine("  themeVariables:")
-            appendLine("    xyChart:")
-            appendLine("      plotColorPalette: \"#4F81BD, #F79646\"")
-            appendLine("---")
-            appendLine("xychart-beta")
-            appendLine("    title \"$databaseName Seed: JDBC vs R2DBC by dataSize (poolSize=30)\"")
-            appendLine("    x-axis [1000, 10000, 100000]")
-            appendLine("    y-axis \"ops/sec\" 0 --> ${graphUpperBound(reportSet.seedDataSizeGraph)}")
-            appendLine("    bar \"JDBC\" ${toMermaidSeries(reportSet.seedDataSizeGraph, "JDBC")}")
-            appendLine("    bar \"R2DBC\" ${toMermaidSeries(reportSet.seedDataSizeGraph, "R2DBC")}")
-            appendLine("```")
+            appendLine("### End-to-End — parallelism comparison (dataSize=10000, poolSize=30)")
             appendLine()
-            appendLine("### Seed — poolSize 비교 (dataSize=10000 예시)")
-            appendLine()
-            appendLine("```mermaid")
-            appendLine("---")
-            appendLine("config:")
-            appendLine("  themeVariables:")
-            appendLine("    xyChart:")
-            appendLine("      plotColorPalette: \"#4F81BD, #F79646\"")
-            appendLine("---")
-            appendLine("xychart-beta")
-            appendLine("    title \"$databaseName Seed: JDBC vs R2DBC by poolSize (dataSize=10000)\"")
-            appendLine("    x-axis [10, 30, 60]")
-            appendLine("    y-axis \"ops/sec\" 0 --> ${graphUpperBound(reportSet.seedPoolSizeGraph)}")
-            appendLine("    bar \"JDBC\" ${toMermaidSeries(reportSet.seedPoolSizeGraph, "JDBC")}")
-            appendLine("    bar \"R2DBC\" ${toMermaidSeries(reportSet.seedPoolSizeGraph, "R2DBC")}")
-            appendLine("```")
-            appendLine()
-            appendLine("### End-to-End — parallelism 비교 (dataSize=10000, poolSize=30 예시)")
-            appendLine()
-            appendLine("```mermaid")
-            appendLine("---")
-            appendLine("config:")
-            appendLine("  themeVariables:")
-            appendLine("    xyChart:")
-            appendLine("      plotColorPalette: \"#4F81BD, #F79646\"")
-            appendLine("---")
-            appendLine("xychart-beta")
-            appendLine("    title \"$databaseName End-to-End: JDBC vs R2DBC by parallelism (dataSize=10000, poolSize=30)\"")
-            appendLine("    x-axis [1, 4, 8]")
-            appendLine("    y-axis \"ops/sec\" 0 --> ${graphUpperBound(reportSet.endToEndParallelismGraph)}")
-            appendLine("    bar \"JDBC\" ${toMermaidSeries(reportSet.endToEndParallelismGraph, "JDBC")}")
-            appendLine("    bar \"R2DBC\" ${toMermaidSeries(reportSet.endToEndParallelismGraph, "R2DBC")}")
-            appendLine("```")
+            appendLine("![${databaseName.lowercase()} end-to-end parallelism chart](../../../docs/images/readme-charts/utils-batch-$chartSlug-e2e-parallelism-chart-01.png)")
             appendLine()
             appendLine("## Notes")
             appendLine()
@@ -386,11 +324,11 @@ internal object BenchmarkMarkdownExporter {
         }
     }
 
-    private fun buildGraphHint(hasMeasuredData: Boolean): String =
+    private fun buildChartHint(hasMeasuredData: Boolean): String =
         if (hasMeasuredData) {
-            "> 아래 그래프는 최신 JSON benchmark report의 실측값(ops/sec)을 사용합니다. avg ms는 표에서 함께 확인할 수 있습니다."
+            "> These chart images use the latest JSON benchmark report values (ops/sec). Use the tables above for avg ms."
         } else {
-            "> 아래 그래프는 JSON benchmark report가 생성되면 실제 수치로 치환할 템플릿입니다. 현재 `0` 값은 미수집 placeholder 이며, 비교 축을 명확히 드러내기 위한 것입니다."
+            "> Chart image paths are reserved for generated benchmark reports. Re-run the benchmark tasks and `generateBenchmarkDocs` after JSON reports exist."
         }
 
     private fun buildGeneratedRowsNote(reportSet: DatabaseReportSet): String =
@@ -399,17 +337,6 @@ internal object BenchmarkMarkdownExporter {
         } else {
             "> JSON benchmark reports are not available in the current worktree yet, so this document records the benchmark contract, task mapping, and graph layout first. Numeric rows can be appended by rerunning the corresponding benchmark tasks and `generateBenchmarkDocs`."
         }
-
-    private fun graphUpperBound(graph: GraphSeries): Int {
-        val max = (graph.valuesByDriver.values.flatMap { it }.maxOrNull() ?: 0.0)
-        return if (max <= 0.0) 100 else ceil(max * 1.2).toInt()
-    }
-
-    private fun toMermaidSeries(graph: GraphSeries, driver: String): String =
-        graph.valuesByDriver[driver]?.joinToString(prefix = "[", postfix = "]") { it.roundForGraph() } ?: "[0, 0, 0]"
-
-    private fun Double.roundForGraph(): String =
-        if (this <= 0.0) "0" else String.format("%.1f", this)
 
     private fun Double.formatScore(): String = String.format("%.3f", this)
 
@@ -433,62 +360,12 @@ internal object BenchmarkMarkdownExporter {
         fun avgMs(): Double = if (opsPerSecond <= 0.0) 0.0 else 1000.0 / opsPerSecond
     }
 
-    private data class GraphSeries(
-        val valuesByDriver: Map<String, List<Double>>,
-    )
-
     private data class DatabaseReportSet(
         val seedRows: List<BenchmarkRow>,
         val endToEndRows: List<BenchmarkRow>,
     ) {
         val hasMeasuredData: Boolean
             get() = seedRows.isNotEmpty() || endToEndRows.isNotEmpty()
-
-        val seedDataSizeGraph: GraphSeries
-            get() = buildSeedGraphByDataSize(poolSize = 30)
-
-        val seedPoolSizeGraph: GraphSeries
-            get() = buildSeedGraphByPoolSize(dataSize = 10000)
-
-        val endToEndParallelismGraph: GraphSeries
-            get() = GraphSeries(
-                valuesByDriver = mapOf(
-                    "JDBC" to listOf(1, 4, 8).map { target ->
-                        endToEndRows.firstOrNull {
-                            it.driver == "JDBC" && it.dataSize == 10000 && it.poolSize == 30 && it.parallelism == target
-                        }?.opsPerSecond ?: 0.0
-                    },
-                    "R2DBC" to listOf(1, 4, 8).map { target ->
-                        endToEndRows.firstOrNull {
-                            it.driver == "R2DBC" && it.dataSize == 10000 && it.poolSize == 30 && it.parallelism == target
-                        }?.opsPerSecond ?: 0.0
-                    },
-                )
-            )
-
-        private fun buildSeedGraphByDataSize(poolSize: Int): GraphSeries =
-            GraphSeries(
-                valuesByDriver = mapOf(
-                    "JDBC" to listOf(1000, 10000, 100000).map { target ->
-                        seedRows.firstOrNull { it.driver == "JDBC" && it.poolSize == poolSize && it.dataSize == target }?.opsPerSecond ?: 0.0
-                    },
-                    "R2DBC" to listOf(1000, 10000, 100000).map { target ->
-                        seedRows.firstOrNull { it.driver == "R2DBC" && it.poolSize == poolSize && it.dataSize == target }?.opsPerSecond ?: 0.0
-                    },
-                )
-            )
-
-        private fun buildSeedGraphByPoolSize(dataSize: Int): GraphSeries =
-            GraphSeries(
-                valuesByDriver = mapOf(
-                    "JDBC" to listOf(10, 30, 60).map { target ->
-                        seedRows.firstOrNull { it.driver == "JDBC" && it.dataSize == dataSize && it.poolSize == target }?.opsPerSecond ?: 0.0
-                    },
-                    "R2DBC" to listOf(10, 30, 60).map { target ->
-                        seedRows.firstOrNull { it.driver == "R2DBC" && it.dataSize == dataSize && it.poolSize == target }?.opsPerSecond ?: 0.0
-                    },
-                )
-            )
     }
 }
 

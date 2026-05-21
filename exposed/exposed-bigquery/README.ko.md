@@ -51,7 +51,7 @@ dependencies {
 
 ### 쿼리 실행 흐름
 
-![exposed bigquery Sequence Flow 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-sequence-01.png)
+![BigQuery query execution flow diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-sequence-01.png)
 
 ## 기본 사용법
 

@@ -12,7 +12,7 @@ This module demonstrates the pattern of wrapping **Exposed R2DBC
 
 ## UML
 
-![UML diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-01.png)
+![Spring Boot R2DBC demo structure diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-01.png)
 
 ### Application Structure Flow
 

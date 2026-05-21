@@ -34,4 +34,4 @@ object ProductTable: Table("products") {
 
 ## Storage / Retrieval Sequence Diagram
 
-![Storage / Retrieval Sequence Diagram diagram](../../docs/images/readme-diagrams/exposed-exposed-measured-sequence-01.png)
+![Measured column storage and retrieval flow diagram](../../docs/images/readme-diagrams/exposed-exposed-measured-sequence-01.png)

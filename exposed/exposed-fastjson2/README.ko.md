@@ -33,7 +33,7 @@ Readable getter에 사용자 정의 `FastjsonSerializer`를 전달하면 됩니�
 
 ### 컬럼 타입 구조 (요약)
 
-![() diagram](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-01.png)
+![Fastjson2 column type summary diagram](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-01.png)
 
 ### JSON 컬럼 타입 클래스 구조
 

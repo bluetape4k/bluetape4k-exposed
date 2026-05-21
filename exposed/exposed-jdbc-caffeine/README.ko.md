@@ -14,7 +14,7 @@ Caffeine 로컬(인프로세스) 캐시를 사용하는 Exposed JDBC 저장소�
 
 ## 쓰기 전략 흐름
 
-![exposed jdbc caffeine Sequence Flow 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-sequence-01.png)
+![JDBC Caffeine write strategy flow diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-sequence-01.png)
 
 ## 주요 기능
 

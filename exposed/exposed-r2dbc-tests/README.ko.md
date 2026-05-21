@@ -6,6 +6,14 @@
 
 [Exposed R2DBC](https://github.com/JetBrains/Exposed) 기반 모듈 테스트를 위한 공통 테스트 인프라 모듈입니다. 반응형(R2DBC) 데이터베이스 테스트를 쉽게 작성할 수 있도록 도와줍니다.
 
+## Test Infrastructure
+
+![exposed r2dbc tests Architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-01.png)
+
+### JDBC vs R2DBC Test Model
+
+![JDBC vs R2DBC diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-02.png)
+
 ## 의존성 추가
 
 ```kotlin
@@ -272,14 +280,6 @@ Containers.Postgres
 // PostgreSQL
 "r2dbc:postgresql://user:pass@host:5432/database"
 ```
-
-## 테스트 인프라 구조
-
-![exposed r2dbc tests Architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-01.png)
-
-### JDBC vs R2DBC 테스트 비교
-
-![JDBC vs R2DBC diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-02.png)
 
 ## 참고 사항
 

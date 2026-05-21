@@ -34,7 +34,7 @@
 
 ## 아키텍처 다이어그램
 
-![exposed timefold solver persistence Architecture 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-02.png)
+![Timefold persistence architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-02.png)
 
 ## 설치
 

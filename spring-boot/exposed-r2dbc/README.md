@@ -8,7 +8,7 @@ Provides Exposed R2DBC as a fully suspend-based coroutine Repository using Sprin
 
 ## UML
 
-![UML diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-diagram-01.png)
+![Spring Boot R2DBC auto-configuration diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-diagram-01.png)
 
 ### Async Processing Flow
 

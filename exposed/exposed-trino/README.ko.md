@@ -34,7 +34,7 @@ dependencies {
 
 ### 분산 쿼리 흐름
 
-![exposed trino Sequence Flow 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-sequence-01.png)
+![Trino distributed query flow diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-sequence-01.png)
 
 ## 기본 사용법
 

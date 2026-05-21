@@ -256,19 +256,19 @@ transaction {
 
 캐시 미스 시 `ExposedEntityMapLoader`가 DB에서 자동 로드합니다.
 
-![Read-Through () diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-01.png)
+![JDBC Redisson read-through flow diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-01.png)
 
 ### Write-Through (동기)
 
 `put()` 호출 시 `ExposedEntityMapWriter`가 DB에 즉시 동기 반영합니다.
 
-![Write-Through () diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-02.png)
+![JDBC Redisson write-through flow diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-02.png)
 
 ### Write-Behind (동기)
 
 `put()` 호출 즉시 응답하고, 이후 `ExposedEntityMapWriter`가 비동기로 DB에 배치 반영합니다.
 
-![Write-Behind () diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-03.png)
+![JDBC Redisson write-behind flow diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-03.png)
 
 ### Read-Through (Suspend 코루틴)
 

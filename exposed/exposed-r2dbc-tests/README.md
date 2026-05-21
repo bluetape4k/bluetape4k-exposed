@@ -6,6 +6,14 @@ English | [한국어](./README.ko.md)
 
 A shared test-infrastructure module for testing modules built on [Exposed R2DBC](https://github.com/JetBrains/Exposed). It helps you write reactive database tests more easily.
 
+## Test Infrastructure
+
+![Test Infrastructure Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-01.png)
+
+### JDBC vs R2DBC Test Model
+
+![JDBC vs R2DBC Test Comparison diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-02.png)
+
 ## Adding the Dependency
 
 ```kotlin
@@ -273,14 +281,6 @@ Containers.Postgres
 // PostgreSQL
 "r2dbc:postgresql://user:pass@host:5432/database"
 ```
-
-## Test Infrastructure Structure
-
-![Test Infrastructure Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-01.png)
-
-### JDBC vs R2DBC Test Comparison
-
-![JDBC vs R2DBC Test Comparison diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-02.png)
 
 ## Notes
 

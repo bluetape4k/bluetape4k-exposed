@@ -281,7 +281,7 @@ transaction {
 | 신규 엔티티 INSERT | `createdBy` | `createdAt`은 테이블의 DB `defaultExpression(CurrentTimestamp)`으로 설정 |
 | 기존 엔티티 UPDATE | `updatedBy` | `updatedAt`은 Repository의 `auditedUpdateById()` 호출 시 설정          |
 
-![exposed dao Sequence Flow 4 diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-sequence-01.png)
+![DAO automatic field assignment flow diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-sequence-01.png)
 
 #### 주의 사항
 

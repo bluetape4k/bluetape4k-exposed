@@ -83,7 +83,7 @@ Redis 기반 저장소의 선택적 Resilience 설정입니다. `null`(기본값
 
 ## 쓰기 전략 패턴
 
-![exposed cache Sequence Flow 3 diagram](../../docs/images/readme-diagrams/exposed-exposed-cache-sequence-01.png)
+![Cache write strategy flow diagram](../../docs/images/readme-diagrams/exposed-exposed-cache-sequence-01.png)
 
 ## testFixtures 시나리오
 

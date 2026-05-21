@@ -49,7 +49,7 @@ dependencies {
 
 ## Architecture Diagram
 
-![Architecture Diagram diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-diagram-01.png)
+![BigQuery architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-diagram-01.png)
 
 ### Query Execution Flow
 

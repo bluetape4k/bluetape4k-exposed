@@ -6,6 +6,14 @@ English | [한국어](./README.ko.md)
 
 A shared test infrastructure module for testing Exposed-based modules. It simplifies writing integration tests against multiple databases (H2, MySQL, MariaDB, PostgreSQL).
 
+## Test Infrastructure
+
+![Test Infrastructure Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-diagram-01.png)
+
+### Test Execution Flow
+
+![Test execution flow diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-sequence-01.png)
+
 ## Adding Dependencies
 
 ```kotlin
@@ -283,14 +291,6 @@ Containers.Postgres
 # Test against a specific database only
 ./gradlew test -DtestDB=POSTGRESQL
 ```
-
-## Test Infrastructure Structure
-
-![Test Infrastructure Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-diagram-01.png)
-
-### Test execution flow
-
-![Test execution flow diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-sequence-01.png)
 
 ## Notes
 
