@@ -33,7 +33,7 @@ for VirtualThread parallel execution, and Spring Boot Auto-Configuration.
   - Stores `minId` / `maxId` per partition in `ExecutionContext`
 
 - **`ExposedBatchAutoConfiguration`** — Spring Boot Auto-Configuration
-  - Registers `batchPartitionTaskExecutor` (VirtualThread-based `TaskExecutor`)
+  - Registers `batchPartitionTaskExecutor` (configurable `TaskExecutor`)
 
 - **`virtualThreadPartitionTaskExecutor(concurrencyLimit)`** — Helper to create a VirtualThread `TaskExecutor` with concurrency limit
 
@@ -45,6 +45,21 @@ for VirtualThread parallel execution, and Spring Boot Auto-Configuration.
 
 ```kotlin
 implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-batch")
+```
+
+### Auto-Configuration
+
+`ExposedBatchAutoConfiguration` registers a default `batchPartitionTaskExecutor`
+unless the application provides a bean with the same name or disables it.
+
+```yaml
+bluetape4k:
+  batch:
+    executor:
+      enabled: true
+      virtual-threads: true
+      concurrency-limit: 8
+      await-termination-seconds: 30
 ```
 
 ### Partitioned Migration Job

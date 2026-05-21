@@ -6,38 +6,53 @@ import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.batch.autoconfigure.BatchAutoConfiguration
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.core.task.SimpleAsyncTaskExecutor
 import org.springframework.core.task.TaskExecutor
+import java.time.Duration
 
 /**
- * Spring Boot Auto-Configuration for Exposed Batch 컴포넌트.
+ * Spring Boot auto-configuration for Exposed Batch components.
  *
- * 주의: `@EnableBatchProcessing` 절대 사용 금지 -- Spring Boot 4 auto-config 무력화됨.
+ * Do not add `@EnableBatchProcessing` to applications using this module. It
+ * disables Spring Boot 4 batch auto-configuration.
  *
- * 권장 설정:
+ * Recommended application configuration:
  * ```yaml
  * spring:
  *   batch:
  *     job:
- *       enabled: false  # 자동 실행 비활성화, 명시적 JobLauncher 사용 권장
+ *       enabled: false  # prefer explicit JobLauncher usage
  * ```
  */
 @AutoConfiguration(after = [BatchAutoConfiguration::class])
 @ConditionalOnClass(Job::class)
+@EnableConfigurationProperties(ExposedBatchProperties::class)
 class ExposedBatchAutoConfiguration {
 
     companion object : KLogging()
 
     /**
-     * 배치 파티션 실행용 VirtualThread TaskExecutor.
-     * 사용자가 직접 빈을 등록하면 이 기본 빈은 생성되지 않음.
+     * Default [TaskExecutor] for partitioned batch execution.
+     *
+     * User-defined `batchPartitionTaskExecutor` beans take precedence over this
+     * default bean.
      */
     @Bean
     @ConditionalOnMissingBean(name = ["batchPartitionTaskExecutor"])
-    fun batchPartitionTaskExecutor(): TaskExecutor =
+    @ConditionalOnProperty(
+        prefix = "bluetape4k.batch.executor",
+        name = ["enabled"],
+        havingValue = "true",
+        matchIfMissing = true
+    )
+    fun batchPartitionTaskExecutor(properties: ExposedBatchProperties): TaskExecutor =
         SimpleAsyncTaskExecutor("batch-partition-").apply {
-            setVirtualThreads(true)
-            setConcurrencyLimit(Runtime.getRuntime().availableProcessors() * 2)
+            val executor = properties.executor
+            setVirtualThreads(executor.virtualThreads)
+            setConcurrencyLimit(executor.concurrencyLimit)
+            setTaskTerminationTimeout(Duration.ofSeconds(executor.awaitTerminationSeconds).toMillis())
         }
 }
