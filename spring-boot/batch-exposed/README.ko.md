@@ -33,7 +33,7 @@ Range Partitioner, Spring Boot Auto-Configuration을 제공합니다.
   - 파티션별 `minId` / `maxId`를 `ExecutionContext`에 저장
 
 - **`ExposedBatchAutoConfiguration`** — Spring Boot Auto-Configuration
-  - `batchPartitionTaskExecutor` (VirtualThread 기반 `TaskExecutor`) 자동 등록
+  - `batchPartitionTaskExecutor` (설정 가능한 `TaskExecutor`) 자동 등록
 
 - **`virtualThreadPartitionTaskExecutor(concurrencyLimit)`** — 동시성 제한 VirtualThread `TaskExecutor` 생성 헬퍼
 
@@ -45,6 +45,22 @@ Range Partitioner, Spring Boot Auto-Configuration을 제공합니다.
 
 ```kotlin
 implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-batch")
+```
+
+### Auto-Configuration
+
+`ExposedBatchAutoConfiguration`은 애플리케이션이 같은 이름의 빈을 제공하지
+않고 설정으로 비활성화하지 않은 경우 기본 `batchPartitionTaskExecutor`를
+등록합니다.
+
+```yaml
+bluetape4k:
+  batch:
+    executor:
+      enabled: true
+      virtual-threads: true
+      concurrency-limit: 8
+      await-termination-seconds: 30
 ```
 
 ### 파티션 마이그레이션 Job
