@@ -7,9 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-05-22
+
 ### Added
 
 - Added `CteTable` plus JDBC/R2DBC `withCte` / `withCtes` SELECT helpers for PostgreSQL/MySQL `WITH` and `WITH RECURSIVE` queries ([#157](https://github.com/bluetape4k/bluetape4k-exposed/issues/157)).
+- Added batch `saveAll(entities)` APIs to JDBC and R2DBC repository contracts, plus empty and single-entity edge-case coverage ([#121](https://github.com/bluetape4k/bluetape4k-exposed/issues/121), [#195](https://github.com/bluetape4k/bluetape4k-exposed/issues/195)).
+- Added Caffeine repository consistency health checks and explicit Redisson `upsertAll(Map<ID, E>)` cache-warming support ([#123](https://github.com/bluetape4k/bluetape4k-exposed/issues/123), [#126](https://github.com/bluetape4k/bluetape4k-exposed/issues/126)).
+- Added Spring Batch auto-configuration properties for virtual-thread executors ([#122](https://github.com/bluetape4k/bluetape4k-exposed/issues/122)).
+
+### Changed
+
+- Prepared the 1.8.1 release line to depend on `io.github.bluetape4k:bluetape4k-bom:1.8.0` instead of the later `1.8.1-SNAPSHOT` BOM.
+- Aligned public KDoc and README language for repository and cache APIs touched during the 1.8.1 cycle ([#129](https://github.com/bluetape4k/bluetape4k-exposed/issues/129), [#130](https://github.com/bluetape4k/bluetape4k-exposed/issues/130), [#138](https://github.com/bluetape4k/bluetape4k-exposed/issues/138), [#194](https://github.com/bluetape4k/bluetape4k-exposed/issues/194)).
+
+### Fixed
+
+- Fixed R2DBC batch job execution retry and concurrent insert recovery paths that could throw `NullPointerException` or `NoSuchElementException` ([#117](https://github.com/bluetape4k/bluetape4k-exposed/issues/117), [#124](https://github.com/bluetape4k/bluetape4k-exposed/issues/124), [#165](https://github.com/bluetape4k/bluetape4k-exposed/issues/165)).
+- Fixed batch reader close/checkpoint state handling so cursor state is reset safely after close and invalid checkpoint casts fail with context ([#118](https://github.com/bluetape4k/bluetape4k-exposed/issues/118)).
+- Fixed Caffeine repository cache miss and cache warming error paths that could cause stale read-through overwrites or swallowed cache failures ([#120](https://github.com/bluetape4k/bluetape4k-exposed/issues/120), [#162](https://github.com/bluetape4k/bluetape4k-exposed/issues/162)).
+- Fixed write-behind close/finally behavior so cancellation is preserved and pending batches are flushed before scope shutdown ([#119](https://github.com/bluetape4k/bluetape4k-exposed/issues/119), [#161](https://github.com/bluetape4k/bluetape4k-exposed/issues/161), [#163](https://github.com/bluetape4k/bluetape4k-exposed/issues/163)).
+- Added CTE edge-case coverage for multiple CTEs, `UNION`, and invalid field-set usage ([#167](https://github.com/bluetape4k/bluetape4k-exposed/issues/167)).
 
 ## [1.8.0] - 2026-05-16
 

@@ -2,7 +2,7 @@
 # Gradle Version Catalog — migrated from buildSrc/src/main/kotlin/Libs.kt
 
 [versions]
-bluetape4k-bom = "1.8.1-SNAPSHOT"  # https://mvnrepository.com/artifact/io.github.bluetape4k/bluetape4k-bom
+bluetape4k-bom = "1.8.0"  # https://mvnrepository.com/artifact/io.github.bluetape4k/bluetape4k-bom
 kotlin = "2.3.21"  # https://mvnrepository.com/artifact/org.jetbrains.kotlin/kotlin-bom
 kotlinx-coroutines = "1.11.0"  # https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-coroutines-bom
 kotlinx-serialization = "1.11.0"  # https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-serialization-bom
@@ -742,7 +742,7 @@ micrometer-context-propagation = { module = "io.micrometer:context-propagation",
 
 # OpenTelemetry
 opentelemetry-bom = { module = "io.opentelemetry:opentelemetry-bom", version.ref = "opentelemetry" }
-opentelemetry-alpha-bom = { module = "io.opentelemetry:opentelemetry-bom-alpha", version = "1.63.0-alpha-SNAPSHOT" }  # https://mvnrepository.com/artifact/io.opentelemetry/opentelemetry-bom-alpha
+opentelemetry-alpha-bom = { module = "io.opentelemetry:opentelemetry-bom-alpha", version = "1.62.0-alpha" }  # https://mvnrepository.com/artifact/io.opentelemetry/opentelemetry-bom-alpha
 opentelemetry-instrumentation-bom-alpha = { module = "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom-alpha", version = "2.26.1-alpha" }  # https://mvnrepository.com/artifact/io.opentelemetry.instrumentation/opentelemetry-instrumentation-bom-alpha
 opentelemetry-api = { module = "io.opentelemetry:opentelemetry-api" }
 opentelemetry-api-incubator = { module = "io.opentelemetry:opentelemetry-api-incubator" }
