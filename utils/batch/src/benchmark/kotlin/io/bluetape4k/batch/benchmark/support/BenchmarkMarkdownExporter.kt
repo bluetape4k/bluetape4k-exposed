@@ -1,7 +1,7 @@
 package io.bluetape4k.batch.benchmark.support
 
-import java.nio.file.Files
 import java.nio.file.Path
+import java.util.Locale
 import kotlin.io.path.createDirectories
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
@@ -338,9 +338,9 @@ internal object BenchmarkMarkdownExporter {
             "> JSON benchmark reports are not available in the current worktree yet, so this document records the benchmark contract, task mapping, and graph layout first. Numeric rows can be appended by rerunning the corresponding benchmark tasks and `generateBenchmarkDocs`."
         }
 
-    private fun Double.formatScore(): String = String.format("%.3f", this)
+    private fun Double.formatScore(): String = String.format(Locale.ROOT, "%.3f", this)
 
-    private fun Double.formatMs(): String = String.format("%.3f", this)
+    private fun Double.formatMs(): String = String.format(Locale.ROOT, "%.3f", this)
 
     private data class JsonBenchmarkEntry(
         val benchmark: String,
@@ -369,8 +369,3 @@ internal object BenchmarkMarkdownExporter {
     }
 }
 
-private fun Path.createDirectories(): Path = apply {
-    if (!Files.exists(this)) {
-        Files.createDirectories(this)
-    }
-}
