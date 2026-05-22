@@ -17,6 +17,7 @@ import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.io.Serializable
 import java.time.Instant
 import java.util.*
 
@@ -47,7 +48,11 @@ class AuditableJdbcRepositoryVariantTest : AbstractExposedTest() {
         override val createdAt: Instant? = null,
         override val updatedBy: String? = null,
         override val updatedAt: Instant? = null,
-    ) : Auditable
+    ) : Auditable, Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+    }
 
     // ── Int PK Repository 구현 ──────────────────────────────────────────────────
 
@@ -90,7 +95,11 @@ class AuditableJdbcRepositoryVariantTest : AbstractExposedTest() {
         override val createdAt: Instant? = null,
         override val updatedBy: String? = null,
         override val updatedAt: Instant? = null,
-    ) : Auditable
+    ) : Auditable, Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+    }
 
     // ── UUID PK Repository 구현 ─────────────────────────────────────────────────
 

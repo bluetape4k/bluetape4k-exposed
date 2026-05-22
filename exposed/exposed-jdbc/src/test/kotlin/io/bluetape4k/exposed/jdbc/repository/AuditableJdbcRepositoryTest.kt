@@ -15,6 +15,7 @@ import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.io.Serializable
 import java.time.Instant
 
 /**
@@ -40,7 +41,11 @@ class AuditableJdbcRepositoryTest: AbstractExposedTest() {
         override val updatedBy: String? = null,
         override val updatedAt: Instant? = null,
         val id: Long = 0L,
-    ): Auditable
+    ): Auditable, Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+    }
 
     // Repository 구현
     object ActorRepository: LongAuditableJdbcRepository<ActorRecord, ActorTable> {

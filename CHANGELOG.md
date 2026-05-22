@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-05-22
+
+### Changed
+
+- Prepared the 1.9.0 release line to depend on `io.github.bluetape4k:bluetape4k-bom:1.9.0` and publish immutable `io.github.bluetape4k.exposed` artifacts ([#202](https://github.com/bluetape4k/bluetape4k-exposed/issues/202)).
+
+### Fixed
+
+- Added stable Java serialization contracts to JDBC repository test records, including `AuditableEdgeCaseRecord` ([#200](https://github.com/bluetape4k/bluetape4k-exposed/issues/200)).
+
 ## [1.8.1] - 2026-05-22
 
 ### Added

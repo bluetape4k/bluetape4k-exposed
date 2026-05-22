@@ -49,7 +49,11 @@ class SoftDeletedJdbcRepositoryEdgeCaseTest : AbstractExposedTest() {
         val name: String,
         val category: String = "default",
         val isDeleted: Boolean = false,
-    ) : Serializable
+    ) : Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+    }
 
     // ── Repository 구현 ─────────────────────────────────────────────────────────────
 

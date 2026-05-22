@@ -49,6 +49,10 @@ class SoftDeletedJdbcRepositoryTest: AbstractExposedTest() {
         val isDeleted: Boolean,
         val id: Long = 0L,
     ): Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+
         fun withId(id: Long) = copy(id = id)
     }
 
