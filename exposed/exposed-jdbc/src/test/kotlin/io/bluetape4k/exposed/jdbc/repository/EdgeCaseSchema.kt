@@ -8,6 +8,7 @@ import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
+import java.io.Serializable
 
 /**
  * 엣지 케이스 테스트용 공유 스키마 정의.
@@ -34,7 +35,11 @@ object EdgeCaseSchema {
         val name: String,
         val age: Int = 0,
         val isActive: Boolean = true,
-    )
+    ) : Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+    }
 
     /**
      * EdgeCaseTable에 대한 JDBC Repository 구현체.
