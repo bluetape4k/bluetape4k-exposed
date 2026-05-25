@@ -195,16 +195,23 @@ class UserController(
 Repository 인터페이스에서 추가 메서드 사용:
 
 ```kotlin
-val userRepository: UserRepository = TODO()
+@Service
+@Transactional(readOnly = true)
+class UserQueryService(
+    private val userRepository: UserRepository
+) {
+    // DSL 조건으로 조회
+    fun findActiveUsers(): List<User> =
+        userRepository.findAll { Users.age greaterEq 18 }
 
-// DSL 조건으로 조회
-val activeUsers = userRepository.findAll { Users.age greaterEq 18 }
+    // DSL 조건으로 개수 세기
+    fun countAdults(): Long =
+        userRepository.count { Users.age greaterEq 18 }
 
-// DSL 조건으로 개수 세기
-val adultCount = userRepository.count { Users.age greaterEq 18 }
-
-// DSL 조건으로 존재 확인
-val hasAdults = userRepository.exists { Users.age greaterEq 18 }
+    // DSL 조건으로 존재 확인
+    fun hasAdults(): Boolean =
+        userRepository.exists { Users.age greaterEq 18 }
+}
 ```
 
 ## 의존성

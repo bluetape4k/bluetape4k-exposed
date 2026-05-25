@@ -195,16 +195,23 @@ class UserController(
 Additional methods available in the Repository interface:
 
 ```kotlin
-val userRepository: UserRepository = TODO()
+@Service
+@Transactional(readOnly = true)
+class UserQueryService(
+    private val userRepository: UserRepository
+) {
+    // Query with DSL condition
+    fun findActiveUsers(): List<User> =
+        userRepository.findAll { Users.age greaterEq 18 }
 
-// Query with DSL condition
-val activeUsers = userRepository.findAll { Users.age greaterEq 18 }
+    // Count with DSL condition
+    fun countAdults(): Long =
+        userRepository.count { Users.age greaterEq 18 }
 
-// Count with DSL condition
-val adultCount = userRepository.count { Users.age greaterEq 18 }
-
-// Check existence with DSL condition
-val hasAdults = userRepository.exists { Users.age greaterEq 18 }
+    // Check existence with DSL condition
+    fun hasAdults(): Boolean =
+        userRepository.exists { Users.age greaterEq 18 }
+}
 ```
 
 ## Dependencies
