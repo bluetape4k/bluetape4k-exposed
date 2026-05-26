@@ -36,9 +36,9 @@ read paths, JSON/encrypted columns, database dialect extensions, and Spring Boot
 
 ![Bluetape4k Exposed overview diagram](docs/images/readme-diagrams/root-readme-overview-01.png)
 
-## Module Composition Chart
+## Module Relationship Diagram
 
-![Bluetape4k Exposed module composition chart](docs/images/readme-charts/root-readme-module-chart-01.png)
+![Bluetape4k Exposed module relationship diagram](docs/images/readme-diagrams/root-readme-module-relationships-01.png)
 <!-- README_VISUAL_OVERVIEW:END -->
 
 ## Architecture
