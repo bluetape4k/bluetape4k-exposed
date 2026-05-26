@@ -109,6 +109,27 @@ repositories {
 }
 ```
 
+### Exposed Gradle Plugin
+
+Use JetBrains' official Exposed Gradle plugin in application or example modules
+that generate migration scripts from Exposed table definitions. Keep its version
+aligned with the JetBrains Exposed version used by the project. In bluetape4k
+repositories, consume the plugin from the central `bluetape4k-dependencies`
+catalog so the plugin version follows the shared `exposed` compatibility line.
+
+```kotlin
+plugins {
+    alias(bt4k.plugins.exposed.plugin)
+}
+```
+
+The plugin adds the `generateMigrations` workflow and uses the
+`exposed.migrations` block to configure the table package and the target
+database or Testcontainers image. See the
+[Exposed Gradle plugin documentation](https://www.jetbrains.com/help/exposed/exposed-gradle-plugin.html)
+and the
+[Gradle Plugin Portal entry](https://plugins.gradle.org/plugin/org.jetbrains.exposed.plugin).
+
 ### JDBC Repository (H2 / PostgreSQL / MySQL)
 
 ```kotlin
