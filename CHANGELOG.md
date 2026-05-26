@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Replaced placeholder Spring Boot JDBC README repository examples with copyable examples ([#208](https://github.com/bluetape4k/bluetape4k-exposed/issues/208)).
 - Refreshed root README module relationship diagrams from the current module table and source layout, with matching SVG and PNG assets under `docs/images/readme-diagrams/` ([#209](https://github.com/bluetape4k/bluetape4k-exposed/issues/209)).
+- Aligned README dependency snippets with the 1.9.2 stable release coordinates.
 
 ## [1.9.0] - 2026-05-22
 

@@ -85,17 +85,17 @@ dialect 확장, Spring Boot 4 자동 설정을 Exposed DSL 스타일 안에서 �
 ```kotlin
 dependencies {
     // 핵심 JDBC
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.8.1-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.9.2")
     // R2DBC (코루틴)
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.8.1-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.9.2")
     // Redis 캐시 (Lettuce)
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.8.1-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.9.2")
     // Jackson JSON Column
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.8.1-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.9.2")
     // Spring Boot 자동 설정
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.8.1-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.9.2")
     // Exposed 기반 Spring Modulith JDBC 이벤트 발행
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.8.1-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.9.2")
 }
 ```
 

@@ -278,7 +278,7 @@ transaction {
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-postgresql:1.5.0-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-postgresql:1.9.2")
 
     // 필요한 기능별로 런타임 의존성 추가
     runtimeOnly("net.postgis:postgis-jdbc:2024.1.0")      // PostGIS 사용 시
