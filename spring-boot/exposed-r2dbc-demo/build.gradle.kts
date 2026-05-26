@@ -2,6 +2,16 @@ val bluetape4kVersion: String by project
 
 plugins {
     kotlin("plugin.spring")
+    alias(bt4k.plugins.exposed.plugin)
+}
+
+exposed {
+    migrations {
+        tablesPackage.set("io.bluetape4k.examples.exposed.webflux.domain")
+        databaseUrl.set("jdbc:h2:mem:exposed-r2dbc-demo-migrations;DB_CLOSE_DELAY=-1;MODE=PostgreSQL")
+        databaseUser.set("sa")
+        databasePassword.set("")
+    }
 }
 
 configurations {
