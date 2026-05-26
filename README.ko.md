@@ -35,9 +35,9 @@ dialect 확장, Spring Boot 4 자동 설정을 Exposed DSL 스타일 안에서 �
 
 ![Bluetape4k Exposed overview diagram](docs/images/readme-diagrams/root-readme-overview-01.png)
 
-## Module Composition Chart
+## Module Relationship Diagram
 
-![Bluetape4k Exposed module composition chart](docs/images/readme-charts/root-readme-module-chart-01.png)
+![Bluetape4k Exposed module relationship diagram](docs/images/readme-diagrams/root-readme-module-relationships-01.png)
 <!-- README_VISUAL_OVERVIEW:END -->
 
 ## 아키텍처
