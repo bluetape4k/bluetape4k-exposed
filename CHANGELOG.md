@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.2] - 2026-05-26
+
+### Changed
+
+- Prepared the 1.9.2 release line to consume `io.github.bluetape4k:bluetape4k-bom:1.9.2` and the `catalog/2026-05-26-00` shared dependency catalog.
+- Adopted the centrally managed JetBrains Exposed Gradle plugin so application and example modules can generate migration scripts from the shared compatibility line ([#213](https://github.com/bluetape4k/bluetape4k-exposed/issues/213)).
+
+### Documentation
+
+- Replaced placeholder Spring Boot JDBC README repository examples with copyable examples ([#208](https://github.com/bluetape4k/bluetape4k-exposed/issues/208)).
+- Refreshed root README module relationship diagrams from the current module table and source layout, with matching SVG and PNG assets under `docs/images/readme-diagrams/` ([#209](https://github.com/bluetape4k/bluetape4k-exposed/issues/209)).
+
 ## [1.9.0] - 2026-05-22
 
 ### Changed
