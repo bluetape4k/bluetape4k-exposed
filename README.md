@@ -86,17 +86,17 @@ read paths, JSON/encrypted columns, database dialect extensions, and Spring Boot
 ```kotlin
 dependencies {
     // Core
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.8.1-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.9.2")
     // R2DBC (coroutines)
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.8.1-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.9.2")
     // Redis cache
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.8.1-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.9.2")
     // Jackson JSON columns
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.8.1-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.9.2")
     // Spring Boot auto-configuration
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.8.1-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.9.2")
     // Spring Modulith JDBC event publication through Exposed
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.8.1-SNAPSHOT")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.9.2")
 }
 ```
 

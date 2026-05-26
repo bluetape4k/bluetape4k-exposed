@@ -25,3 +25,10 @@ does not change runtime code, build logic, or generated artifacts.
 
 Check `CHANGELOG.md` before stable release dispatch even when the milestone and
 version files already look ready.
+
+## 2026-05-26 README Coordinate Preflight
+
+Stable-release preflight also found user-facing README dependency snippets that
+still pointed at old `*-SNAPSHOT` coordinates. Update the multilingual README
+examples to the stable release version before tagging so the GitHub release
+artifact does not advertise stale snapshot dependencies.
