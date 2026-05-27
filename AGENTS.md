@@ -117,6 +117,18 @@ Store durable project design/history artifacts in repo-local docs paths:
 - Nightly covers PostgreSQL, MySQL, Redis, and broader Testcontainers paths.
 - Snapshot publishing follows successful nightly or manual dispatch.
 
+## Cross-Repo Lesson Guards
+
+- Before issue, PR, workflow, release, artifact-rename, or module-registration
+  work, query GNO for this repo in both `bluetape4k-github` and
+  `bluetape4k-docs`.
+- For module or artifact moves, scan workflows for both old and new names, then
+  update README locale sets, module lists, CI/Nightly jobs, coverage artifacts,
+  BOM/catalog constraints, and generated catalog/check scripts together.
+- Run PostgreSQL, MySQL, Redis, and other Testcontainers-backed verification
+  sequentially. Keep Kover XML/Codecov visible but do not add hard Kover gates
+  without an explicit policy decision.
+
 ## GitHub Issue And Pull Request Workflow
 
 When creating GitHub issues or pull requests for bluetape4k repositories,
