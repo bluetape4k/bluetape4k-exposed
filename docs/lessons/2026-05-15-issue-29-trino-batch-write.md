@@ -20,12 +20,12 @@ optimized.
 - Chunking improves caller control and bounds each JDBC batch, but it increases
   the need to document partial-write behavior: if a later chunk fails, earlier
   chunks may already be visible.
-- In this shell, `qmdq` is a `~/.zshrc` function, not a standalone binary.
-  Use `source ~/.zshrc; qmdq ...` or `qmd query ... --no-rerank` directly.
+- In this shell, `gnoq` is a `~/.zshrc` function, not a standalone binary.
+  Use `source ~/.zshrc; gnoq ...` or `gno query ... --no-rerank` directly.
 
 ## Verification
 
-- qmd lookup confirmed the existing Trino autocommit/transaction warning in the
+- GNO lookup confirmed the existing Trino autocommit/transaction warning in the
   local knowledge base.
 - Official Trino docs confirmed `INSERT` syntax and connector-dependent SQL
   statement support.

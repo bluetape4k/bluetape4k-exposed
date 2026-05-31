@@ -7,13 +7,13 @@
 
 ## Local Knowledge Lookup
 
-`qmdq` was unavailable as a direct binary in the non-interactive shell because it
+`gnoq` was unavailable as a direct binary in the non-interactive shell because it
 is defined in `~/.zshrc`. Retried with `source ~/.zshrc` and with direct
-`qmd query ... --no-rerank`.
+`gno query ... --no-rerank`.
 
-Relevant qmd result:
+Relevant GNO result:
 
-- `qmd://wiki/pages/database-dialects.md` records Trino as autocommit-only for
+- `gno://wiki/pages/database-dialects.md` records Trino as autocommit-only for
   this module and notes that the Trino Memory connector does not support
   `BEGIN` / `COMMIT` / `ROLLBACK`.
 

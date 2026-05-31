@@ -13,7 +13,7 @@ bluetape4k Serializable contract.
 - Review checklists for small option/config classes must include JVM
   serialization compatibility, even when the class only contains primitive
   properties.
-- qmd lookup did not surface a strong current rule for this repository. Treat
+- GNO lookup did not surface a strong current rule for this repository. Treat
   the issue body and existing source patterns as the source of truth, then
   capture the rule here for future searches.
 
