@@ -74,6 +74,33 @@ val db = TrinoDatabase.connect(HikariDataSource(hikariConfig))
 > `TrinoConnectionWrapper`, enforcing `autoCommit=true`. If wrapping fails the raw
 > connection is closed automatically to prevent leaks.
 
+### 1.1 JDBC Performance and Session Options
+
+Use `TrinoConnectionOptions` to pass Trino JDBC properties for large-result and
+optimizer-sensitive workloads while keeping the existing connection overloads.
+
+```kotlin
+import io.bluetape4k.exposed.trino.TrinoConnectionOptions
+import io.bluetape4k.exposed.trino.TrinoDatabase
+
+val db = TrinoDatabase.connect(
+    jdbcUrl = "jdbc:trino://trino-coordinator:8080/hive/default",
+    user = "analyst",
+    options = TrinoConnectionOptions(
+        explicitPrepare = false,
+        encoding = "json+zstd",
+        validateConnection = true,
+        source = "bluetape4k-exposed",
+        clientTags = listOf("exposed", "analytics"),
+        sessionProperties = mapOf("join_distribution_type" to "AUTOMATIC"),
+    )
+)
+```
+
+Actual pushdown support remains connector-specific. Use `EXPLAIN` against the
+target catalog for stable signals such as predicate, projection, aggregation,
+top-N, or limit pushdown, and avoid full-plan snapshot assertions in tests.
+
 ### 2. Synchronous Transaction
 
 ```kotlin

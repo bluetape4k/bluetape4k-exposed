@@ -1,0 +1,56 @@
+name: Migration Smoke
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 19 * * 0'  # Weekly after Sunday nightly, UTC 19:30 (KST 04:30 Monday)
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'spring-boot/*-demo/**'
+      - 'settings.gradle.kts'
+      - 'build.gradle.kts'
+      - 'gradle/libs.versions.toml'
+      - '.github/workflows/migration-smoke.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: '21'
+  JAVA_DISTRIBUTION: 'temurin'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+  demo-migrations:
+    name: Demo Migration Generation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: wrapper
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+      - name: Generate JDBC demo migrations
+        run: >
+          ./gradlew
+          :exposed-spring-boot-jdbc-demo:generateMigrations
+          --filename=V1__create_products.sql
+          --no-daemon
+      - name: Generate R2DBC demo migrations
+        run: >
+          ./gradlew
+          :exposed-spring-boot-r2dbc-demo:generateMigrations
+          --filename=V1__create_webflux_products.sql
+          --no-daemon
+      - name: Verify generated migrations are checked in intentionally
+        run: git diff --exit-code -- spring-boot/exposed-jdbc-demo/src/main/resources/db/migration spring-boot/exposed-r2dbc-demo/src/main/resources/db/migration

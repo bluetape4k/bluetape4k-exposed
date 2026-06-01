@@ -3,16 +3,20 @@ package io.bluetape4k.exposed.bigquery
 import com.google.api.services.bigquery.Bigquery
 import com.google.api.services.bigquery.Bigquery.Jobs
 import com.google.api.services.bigquery.model.ErrorProto
+import com.google.api.services.bigquery.model.QueryRequest
 import com.google.api.services.bigquery.model.QueryResponse
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.mockk.CapturingSlot
+import io.mockk.slot
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.junit.jupiter.api.Test
-import io.bluetape4k.assertions.assertFailsWith
 
 /**
  * [BigQueryContext] 단위 테스트 — 에뮬레이터 없이 MockK로 동작 검증.
@@ -28,12 +32,19 @@ class BigQueryContextUnitTest {
      * BigQuery REST API mock 헬퍼.
      * [responseSupplier]가 반환하는 [QueryResponse]를 `jobs().query().execute()` 호출 시 반환합니다.
      */
-    private fun mockBigquery(responseSupplier: () -> QueryResponse): Bigquery {
+    private fun mockBigquery(
+        requestSlot: CapturingSlot<QueryRequest>? = null,
+        responseSupplier: () -> QueryResponse,
+    ): Bigquery {
         val bq = mockk<Bigquery>(relaxed = true)
         val jobs = mockk<Jobs>(relaxed = true)
         val queryCall = mockk<Jobs.Query>(relaxed = true)
         every { bq.jobs() } returns jobs
-        every { jobs.query(any(), any()) } returns queryCall
+        if (requestSlot == null) {
+            every { jobs.query(any(), any()) } returns queryCall
+        } else {
+            every { jobs.query(any(), capture(requestSlot)) } returns queryCall
+        }
         every { queryCall.execute() } answers { responseSupplier() }
         return bq
     }
@@ -48,6 +59,55 @@ class BigQueryContextUnitTest {
 
         result.shouldNotBeNull()
         verify(exactly = 1) { bq.jobs() }
+    }
+
+    @Test
+    fun `runRawQuery applies query job options to QueryRequest`() {
+        val request = slot<QueryRequest>()
+        val bq = mockBigquery(request) { QueryResponse().setJobComplete(true) }
+        val context = BigQueryContext(bq, "proj", "ds", sqlGenDb)
+
+        context.runRawQuery(
+            "SELECT 1",
+            BigQueryQueryOptions(
+                maximumBytesBilled = 10_000L,
+                labels = mapOf("workload" to "unit"),
+                priority = BigQueryQueryPriority.BATCH,
+                location = "US",
+                destinationTable = BigQueryDestinationTable("proj", "scratch", "result_1"),
+                timeoutMs = 7_000L,
+                useQueryCache = false,
+            )
+        )
+
+        request.captured.maximumBytesBilled shouldBeEqualTo 10_000L
+        request.captured.labels shouldBeEqualTo mapOf("workload" to "unit")
+        request.captured.get("priority") shouldBeEqualTo "BATCH"
+        request.captured.location shouldBeEqualTo "US"
+        (request.captured.get("destinationTable") as com.google.api.services.bigquery.model.TableReference).tableId shouldBeEqualTo "result_1"
+        request.captured.timeoutMs shouldBeEqualTo 7_000L
+        request.captured.useQueryCache shouldBeEqualTo false
+    }
+
+    @Test
+    fun `validateRawQuery forces dry run without executing billable query`() {
+        val request = slot<QueryRequest>()
+        val bq = mockBigquery(request) { QueryResponse().setJobComplete(true) }
+        val context = BigQueryContext(bq, "proj", "ds", sqlGenDb)
+
+        context.validateRawQuery("SELECT 1")
+
+        request.captured.dryRun shouldBeEqualTo true
+    }
+
+    @Test
+    fun `BigQueryQueryOptions validates positive numeric options`() {
+        assertFailsWith<IllegalArgumentException> {
+            BigQueryQueryOptions(maximumBytesBilled = 0L)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            BigQueryQueryOptions(timeoutMs = 0L)
+        }
     }
 
     @Test

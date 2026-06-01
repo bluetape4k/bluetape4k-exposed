@@ -32,17 +32,24 @@ import java.util.*
 class BigQueryQueryExecutor(
     private val query: Query,
     private val context: BigQueryContext,
+    private val options: BigQueryQueryOptions = BigQueryQueryOptions(),
 ) {
     private fun sql(): String = transaction(context.sqlGenDb) { query.prepareSQL(this, prepared = false) }
 
     /** Executes the query and returns all result rows (following BigQuery page tokens) as a list. */
-    fun toList(): List<BigQueryResultRow> = context.collectAllRows(sql())
+    fun toList(): List<BigQueryResultRow> = context.collectAllRows(sql(), options)
 
     /** Executes the query asynchronously on [BigQueryContext.dispatcher] and returns all rows. */
     suspend fun toListSuspending(): List<BigQueryResultRow> = withContext(context.dispatcher) { toList() }
 
     /** Returns a [Flow] that emits rows page by page without loading the entire result set into memory. */
-    fun toFlow(): Flow<BigQueryResultRow> = context.collectRowsFlow(sql())
+    fun toFlow(): Flow<BigQueryResultRow> = context.collectRowsFlow(sql(), options)
+
+    /** Validates the generated SQL with a BigQuery dry run. */
+    fun dryRun() = context.validateRawQuery(sql(), options)
+
+    /** Asynchronously validates the generated SQL with a BigQuery dry run. */
+    suspend fun dryRunSuspending() = withContext(context.dispatcher) { dryRun() }
 
     /** Returns the single result row; throws if there are zero or more than one rows. */
     fun single(): BigQueryResultRow = toList().single()

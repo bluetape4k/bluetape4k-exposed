@@ -143,6 +143,34 @@ with(context) {
 }
 ```
 
+### 6. Query Job Options and Dry Run
+
+Use `BigQueryQueryOptions` when a query needs cost controls, labels, priority,
+location, destination-table routing, timeout overrides, or cache behavior.
+
+```kotlin
+import io.bluetape4k.exposed.bigquery.BigQueryQueryOptions
+import io.bluetape4k.exposed.bigquery.BigQueryQueryPriority
+
+with(context) {
+    validateRawQuery(
+        "SELECT region, COUNT(*) FROM events GROUP BY region",
+        BigQueryQueryOptions(
+            maximumBytesBilled = 1_000_000L,
+            labels = mapOf("workload" to "validation"),
+            priority = BigQueryQueryPriority.BATCH,
+            location = "US",
+            timeoutMs = 5_000L,
+        )
+    )
+}
+```
+
+`validateRawQuery` and `validateQuery` force `dryRun=true`, so BigQuery validates
+SQL, permissions, and estimated cost without executing a billable query. The
+same options can be passed to `runRawQuery`, `runQuery`, or `withBigQuery(...)`
+when the query should actually execute.
+
 ## Type Mapping
 
 BigQuery REST API response → Kotlin type conversion:

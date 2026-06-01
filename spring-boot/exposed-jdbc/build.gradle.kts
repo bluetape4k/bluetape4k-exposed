@@ -34,8 +34,11 @@ dependencies {
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
 
     compileOnly("org.springframework.boot:spring-boot-autoconfigure")
+    compileOnly("org.springframework.boot:spring-boot-health")
     compileOnly("org.springframework.boot:spring-boot-starter-data-jdbc")
+    compileOnly(project(":bluetape4k-exposed-jdbc-caffeine"))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation(libs.mockk)
     testImplementation(libs.h2.v2)
     testImplementation(libs.hikaricp)
 

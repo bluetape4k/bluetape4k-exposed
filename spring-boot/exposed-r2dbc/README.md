@@ -157,7 +157,21 @@ Parameters are bound as prepared-statement placeholders, so SQL injection is pre
 > Use [method-name derived queries](#5-method-name-derived-queries) or the Exposed DSL for
 > sorting or aggregation.
 
-### 7. Paginated Retrieval
+### 7. Actuator Cache Health
+
+When Spring Boot Actuator and `bluetape4k-exposed-r2dbc-caffeine` are on the
+classpath, auto-configuration registers `exposedR2dbcCacheHealthIndicator` as a
+reactive health indicator. It reports cache mode, queue depth, flush job state,
+and the last flush error from suspend cache consistency checks.
+
+```properties
+bluetape4k.exposed.cache.health.enabled=true
+```
+
+Flush failures map to `DOWN`; a write-behind queue with no running flush job
+maps to `OUT_OF_SERVICE`. Set the property to `false` to disable the indicator.
+
+### 8. Paginated Retrieval
 
 ```kotlin
 suspend fun getUsersPage(pageNo: Int, pageSize: Int): Page<User> {
@@ -171,7 +185,7 @@ suspend fun getUsersSorted(): Page<User> {
 }
 ```
 
-### 8. Exposed DSL Conditions
+### 9. Exposed DSL Conditions
 
 Express complex conditions using DSL:
 

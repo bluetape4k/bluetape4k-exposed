@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.trino
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
@@ -15,9 +16,11 @@ import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
 import java.io.ObjectStreamClass
 import java.io.Serializable
+import java.sql.Connection
 import java.time.Instant
 
 class TrinoExtensionsTest: AbstractTrinoTest() {
@@ -75,9 +78,80 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
     fun `Trino option classes are Serializable with stable serialVersionUID`() {
         TrinoPagedQueryOptions() shouldBeInstanceOf Serializable::class
         TrinoBatchInsertOptions() shouldBeInstanceOf Serializable::class
+        TrinoConnectionOptions() shouldBeInstanceOf Serializable::class
 
         ObjectStreamClass.lookup(TrinoPagedQueryOptions::class.java).serialVersionUID shouldBeEqualTo 1L
         ObjectStreamClass.lookup(TrinoBatchInsertOptions::class.java).serialVersionUID shouldBeEqualTo 1L
+        ObjectStreamClass.lookup(TrinoConnectionOptions::class.java).serialVersionUID shouldBeEqualTo 1L
+    }
+
+    @Test
+    fun `TrinoConnectionOptions converts typed settings to JDBC properties`() {
+        val properties = TrinoConnectionOptions(
+            explicitPrepare = false,
+            encoding = "json+zstd",
+            validateConnection = true,
+            source = "bluetape4k-exposed-test",
+            clientTags = listOf("exposed", "smoke"),
+            sessionProperties = mapOf("join_distribution_type" to "AUTOMATIC"),
+            extraCredentials = mapOf("token" to "secret"),
+            extraHeaders = mapOf("X-Trace" to "unit"),
+        ).toProperties("analyst")
+
+        properties.getProperty("user") shouldBeEqualTo "analyst"
+        properties.getProperty("explicitPrepare") shouldBeEqualTo "false"
+        properties.getProperty("encoding") shouldBeEqualTo "json+zstd"
+        properties.getProperty("validateConnection") shouldBeEqualTo "true"
+        properties.getProperty("source") shouldBeEqualTo "bluetape4k-exposed-test"
+        properties.getProperty("clientTags") shouldBeEqualTo "exposed,smoke"
+        properties.getProperty("sessionProperties") shouldBeEqualTo "join_distribution_type=AUTOMATIC"
+        properties.getProperty("extraCredentials") shouldBeEqualTo "token=secret"
+        properties.getProperty("extraHeaders") shouldBeEqualTo "X-Trace=unit"
+    }
+
+    @Test
+    fun `TrinoConnectionOptions rejects blank option entries`() {
+        assertFailsWith<IllegalArgumentException> {
+            TrinoConnectionOptions(source = "")
+        }
+        assertFailsWith<IllegalArgumentException> {
+            TrinoConnectionOptions(clientTags = listOf("analytics", ""))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            TrinoConnectionOptions(sessionProperties = mapOf("" to "value"))
+        }
+    }
+
+    @Test
+    fun `EXPLAIN smoke keeps topN and predicate query shape visible`() {
+        withEventsTable {
+            transaction(db) {
+                insertFixtures()
+                val plan = (TransactionManager.current().connection.connection as Connection)
+                    .createStatement()
+                    .use { statement ->
+                        statement.executeQuery(
+                            """
+                            EXPLAIN
+                            SELECT event_id, event_name
+                            FROM events
+                            WHERE region = 'kr'
+                            ORDER BY event_id
+                            LIMIT 2
+                            """.trimIndent()
+                        ).use { rs ->
+                            buildString {
+                                while (rs.next()) {
+                                    appendLine(rs.getString(1))
+                                }
+                            }
+                        }
+                    }
+
+                plan shouldContain "TopN"
+                plan shouldContain "region"
+            }
+        }
     }
 
     @Test

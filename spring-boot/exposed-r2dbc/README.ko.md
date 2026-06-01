@@ -156,7 +156,22 @@ interface UserRepository : ExposedR2dbcRepository<User, Long> {
 > 최종 결과에 반영되지 않습니다.
 > 정렬이나 집계가 필요한 경우 [메서드명 기반 파생 쿼리](#5-메서드명-기반-파생-쿼리) 또는 Exposed DSL을 사용하세요.
 
-### 7. 페이징 조회
+### 7. Actuator Cache Health
+
+Spring Boot Actuator와 `bluetape4k-exposed-r2dbc-caffeine`이 classpath에 있으면
+`exposedR2dbcCacheHealthIndicator`가 reactive health indicator로 자동 등록됩니다.
+이 indicator는 suspend cache consistency check 결과에서 cache mode, queue depth,
+flush job 상태, 마지막 flush error를 노출합니다.
+
+```properties
+bluetape4k.exposed.cache.health.enabled=true
+```
+
+Flush 실패는 `DOWN`, write-behind queue가 남아 있는데 flush job이 동작하지 않는
+상태는 `OUT_OF_SERVICE`로 매핑됩니다. 비활성화하려면 이 property를 `false`로
+설정하세요.
+
+### 8. 페이징 조회
 
 ```kotlin
 suspend fun getUsersPage(pageNo: Int, pageSize: Int): Page<User> {
@@ -170,7 +185,7 @@ suspend fun getUsersSorted(): Page<User> {
 }
 ```
 
-### 8. Exposed DSL 조건
+### 9. Exposed DSL 조건
 
 복잡한 조건은 DSL로 표현:
 
