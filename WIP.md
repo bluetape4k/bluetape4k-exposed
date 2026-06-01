@@ -1,34 +1,31 @@
 # WIP - bluetape4k-exposed
 
-Snapshot: 2026-05-26 KST
+Snapshot: 2026-06-01 KST
 Scope: open GitHub issues assigned to `debop`.
-Open count: 5 issues.
+Open count: 6 issues in the 1.10.0 milestone before this branch.
 
 ## Current Direction
 
-The `1.9.2` patch line is now focused on README diagram freshness after the
-Exposed Gradle plugin adoption work landed. The longer backlog remains the
-CockroachDB dialect/Testcontainers track.
+The `1.10.0` line is focused on database stability, analytical database
+operation controls, and local example verification while consuming
+`io.github.bluetape4k:bluetape4k-bom:1.10.0`.
 
 ## Active Queue
 
 | Priority | Issue | Milestone | Notes |
 |---|---|---|---|
-| P1 | [#209](https://github.com/bluetape4k/bluetape4k-exposed/issues/209) docs: refresh README module relationship diagrams from current tables | 1.9.2 | Only open patch-line issue assigned to `debop`. |
-| P2 | [#24](https://github.com/bluetape4k/bluetape4k-exposed/issues/24) [epic] exposed-cockroachdb | backlog | Parent for CockroachDB JDBC dialect and Testcontainers support. |
-| P2 | [#30](https://github.com/bluetape4k/bluetape4k-exposed/issues/30) CockroachDB module scaffolding and Testcontainers smoke test | backlog | First implementation slice under #24. |
-| P3 | [#31](https://github.com/bluetape4k/bluetape4k-exposed/issues/31) CockroachDB PostgreSQL compatibility and DDL differences | backlog | Design/research slice before broad dialect support. |
-| P3 | [#32](https://github.com/bluetape4k/bluetape4k-exposed/issues/32) CockroachDB serializable retry guide and regression tests | backlog | Stability and documentation follow-up. |
+| P1 | [#225](https://github.com/bluetape4k/bluetape4k-exposed/issues/225) feat: add Spring Boot Actuator health indicators for Exposed cache consistency | 1.10.0 | Implemented in this branch for JDBC and R2DBC Caffeine repositories. |
+| P1 | [#226](https://github.com/bluetape4k/bluetape4k-exposed/issues/226) test: add migration generation smoke coverage for Exposed Gradle plugin demo modules | 1.10.0 | Implemented in this branch through a weekly/PR workflow. |
+| P1 | [#228](https://github.com/bluetape4k/bluetape4k-exposed/issues/228) feat: add BigQuery query job options and dry-run validation | 1.10.0 | Implemented in this branch with credential-free dry-run coverage. |
+| P1 | [#229](https://github.com/bluetape4k/bluetape4k-exposed/issues/229) feat: expose Trino JDBC performance options and pushdown smoke coverage | 1.10.0 | Implemented in this branch for typed JDBC options and EXPLAIN guidance. |
+| P1 | [#230](https://github.com/bluetape4k/bluetape4k-exposed/issues/230) feat: add database-specific scenario examples for exposed modules | 1.10.0 | Implemented in this branch with a BigQuery dry-run example plus the existing ClickHouse example matrix. |
+| P1 | [#231](https://github.com/bluetape4k/bluetape4k-exposed/issues/231) [epic] 1.10.0 database stability, analytics, and examples | 1.10.0 | Close after all child issues are closed. |
 
 ## Open PRs
 
-None.
-
-## Recently Completed
-
-- [#213](https://github.com/bluetape4k/bluetape4k-exposed/issues/213) / [PR #214](https://github.com/bluetape4k/bluetape4k-exposed/pull/214) adopted the JetBrains Exposed Gradle plugin through `catalog/2026-05-26-00`.
+None before this branch.
 
 ## Refresh Notes
 
-- Verified with `gh` on 2026-05-26 KST.
+- Verified with `gh` on 2026-06-01 KST.
 - Keep `bluetape4k-*` issue and resolving PR milestones aligned.

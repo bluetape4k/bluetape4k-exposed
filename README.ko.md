@@ -85,17 +85,17 @@ dialect 확장, Spring Boot 4 자동 설정을 Exposed DSL 스타일 안에서 �
 ```kotlin
 dependencies {
     // 핵심 JDBC
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.9.2")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.10.0")
     // R2DBC (코루틴)
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.9.2")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.10.0")
     // Redis 캐시 (Lettuce)
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.9.2")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.10.0")
     // Jackson JSON Column
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.9.2")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.10.0")
     // Spring Boot 자동 설정
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.9.2")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.10.0")
     // Exposed 기반 Spring Modulith JDBC 이벤트 발행
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.9.2")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.10.0")
 }
 ```
 
@@ -128,6 +128,20 @@ block에서 table package와 대상 database 또는 Testcontainers image를 설�
 [Exposed Gradle plugin 문서](https://www.jetbrains.com/help/exposed/exposed-gradle-plugin.html)와
 [Gradle Plugin Portal entry](https://plugins.gradle.org/plugin/org.jetbrains.exposed.plugin)를
 참고하세요.
+
+Demo migration 생성은 weekly 및 pull request smoke workflow에서 검증합니다:
+
+```bash
+./gradlew :exposed-spring-boot-jdbc-demo:generateMigrations --filename=V1__create_products.sql
+./gradlew :exposed-spring-boot-r2dbc-demo:generateMigrations --filename=V1__create_webflux_products.sql
+```
+
+### Database 예제
+
+| 예제 | 목적 | 검증 |
+|------|------|------|
+| `examples-exposed-clickhouse-oltp-olap` | PostgreSQL OLTP에서 ClickHouse OLAP으로 forwarding 후 집계 분석 | `./gradlew :examples-exposed-clickhouse-oltp-olap:test` |
+| `examples-exposed-bigquery-dry-run` | Credential 없이 BigQuery REST dry-run과 query-job option 검증 | `./gradlew :examples-exposed-bigquery-dry-run:test` |
 
 ### JDBC Repository (H2 / PostgreSQL / MySQL)
 

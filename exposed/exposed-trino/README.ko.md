@@ -71,6 +71,34 @@ val db = TrinoDatabase.connect(HikariDataSource(hikariConfig))
 > **주의:** `connect(dataSource)`는 풀에서 획득한 각 커넥션을 `TrinoConnectionWrapper`로 감싸
 > `autoCommit=true`를 강제합니다. 래퍼 생성 실패 시 원본 커넥션을 자동으로 닫아 leak을 방지합니다.
 
+### 1.1 JDBC 성능 및 Session Option
+
+대용량 결과셋이나 optimizer 민감 workload에서는 `TrinoConnectionOptions`로
+Trino JDBC property를 타입 안전하게 전달할 수 있습니다. 기존 `connect`
+오버로드는 그대로 유지됩니다.
+
+```kotlin
+import io.bluetape4k.exposed.trino.TrinoConnectionOptions
+import io.bluetape4k.exposed.trino.TrinoDatabase
+
+val db = TrinoDatabase.connect(
+    jdbcUrl = "jdbc:trino://trino-coordinator:8080/hive/default",
+    user = "analyst",
+    options = TrinoConnectionOptions(
+        explicitPrepare = false,
+        encoding = "json+zstd",
+        validateConnection = true,
+        source = "bluetape4k-exposed",
+        clientTags = listOf("exposed", "analytics"),
+        sessionProperties = mapOf("join_distribution_type" to "AUTOMATIC"),
+    )
+)
+```
+
+실제 pushdown 지원은 connector별로 다릅니다. 대상 catalog에서 `EXPLAIN`으로
+predicate, projection, aggregation, top-N, limit pushdown 같은 안정적인 신호만
+확인하고, 테스트에서는 전체 plan snapshot 비교를 피하세요.
+
 ### 2. 동기 트랜잭션
 
 ```kotlin

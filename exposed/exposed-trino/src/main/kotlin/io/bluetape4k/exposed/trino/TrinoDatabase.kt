@@ -6,7 +6,6 @@ import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.DatabaseApi
 import org.jetbrains.exposed.v1.jdbc.Database
 import java.sql.DriverManager
-import java.util.*
 
 /**
  * Factory object for connecting to a Trino database via Exposed ORM.
@@ -93,6 +92,7 @@ object TrinoDatabase : KLogging() {
         catalog: String = "memory",
         schema: String = "default",
         user: String = "trino",
+        options: TrinoConnectionOptions = TrinoConnectionOptions(),
     ): Database {
         // A blank host produces "jdbc:trino://:8080//" — an invalid URL that causes
         // an obscure DriverManager exception. Fail early with a clear message.
@@ -106,7 +106,7 @@ object TrinoDatabase : KLogging() {
         val url = "jdbc:trino://$host:$port/$catalog/$schema"
         return Database.connect(
             getNewConnection = {
-                val props = Properties().apply { setProperty("user", user) }
+                val props = options.toProperties(user)
                 // Close the raw connection on wrapper construction failure to prevent leaks.
                 val raw = DriverManager.getConnection(url, props)
                 runCatching { TrinoConnectionWrapper(raw) }
@@ -129,6 +129,7 @@ object TrinoDatabase : KLogging() {
     fun connect(
         jdbcUrl: String,
         user: String = "trino",
+        options: TrinoConnectionOptions = TrinoConnectionOptions(),
     ): Database {
         // A blank URL causes a "No suitable driver" exception from DriverManager.
         requireNotNull(jdbcUrl.ifBlank { null }) { "jdbcUrl must not be blank." }
@@ -138,7 +139,7 @@ object TrinoDatabase : KLogging() {
 
         return Database.connect(
             getNewConnection = {
-                val props = Properties().apply { setProperty("user", user) }
+                val props = options.toProperties(user)
                 // Close the raw connection on wrapper construction failure to prevent leaks.
                 val raw = DriverManager.getConnection(jdbcUrl, props)
                 runCatching { TrinoConnectionWrapper(raw) }
@@ -146,6 +147,15 @@ object TrinoDatabase : KLogging() {
             }
         )
     }
+
+    /**
+     * Connects to a Trino database using a JDBC URL and typed JDBC options.
+     */
+    fun connect(
+        jdbcUrl: String,
+        options: TrinoConnectionOptions,
+    ): Database =
+        connect(jdbcUrl = jdbcUrl, user = "trino", options = options)
 
     /**
      * Connects to a Trino database via a `javax.sql.DataSource` (e.g. HikariCP).

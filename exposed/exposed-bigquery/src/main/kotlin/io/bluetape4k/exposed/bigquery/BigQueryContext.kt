@@ -119,12 +119,15 @@ class BigQueryContext(
      * Legacy SQL은 사용하지 않으며(ZetaSQL 표준), 데이터셋 컨텍스트와 쿼리 타임아웃을 설정합니다.
      * 앞뒤 공백을 제거하여 BigQuery 파서가 불필요한 공백으로 오류를 반환하는 상황을 방지합니다.
      */
-    private fun newQueryRequest(sql: String): QueryRequest =
-        QueryRequest()
+    private fun newQueryRequest(
+        sql: String,
+        options: BigQueryQueryOptions = BigQueryQueryOptions(),
+    ): QueryRequest =
+        options.applyTo(QueryRequest()
             .setQuery(sql.trimIndent().trim())
             .setUseLegacySql(false)
             .setDefaultDataset(DatasetReference().setProjectId(projectId).setDatasetId(datasetId))
-            .setTimeoutMs(DEFAULT_QUERY_TIMEOUT_MS)
+            .setTimeoutMs(options.timeoutMs ?: DEFAULT_QUERY_TIMEOUT_MS))
 
     // ── RAW SQL ───────────────────────────────────────────────────────────────
 
@@ -136,10 +139,25 @@ class BigQueryContext(
      * @param sql 실행할 SQL 문자열 (표준 SQL, Legacy SQL 불가)
      * @throws BigQueryQueryException BigQuery 서버 오류 응답 시
      */
-    fun runRawQuery(sql: String): QueryResponse {
-        return bigquery.jobs().query(projectId, newQueryRequest(sql)).execute()
+    fun runRawQuery(
+        sql: String,
+        options: BigQueryQueryOptions = BigQueryQueryOptions(),
+    ): QueryResponse {
+        return bigquery.jobs().query(projectId, newQueryRequest(sql, options)).execute()
             .also { it.checkErrors(sql) }
     }
+
+    /**
+     * Validates raw SQL with a BigQuery dry run.
+     *
+     * A dry run performs server-side parsing, authorization, and cost checks
+     * without executing a billable query.
+     */
+    fun validateRawQuery(
+        sql: String,
+        options: BigQueryQueryOptions = BigQueryQueryOptions(),
+    ): QueryResponse =
+        runRawQuery(sql, options.asDryRun())
 
     /**
      * 원시 SQL 문자열을 BigQuery에서 비동기로 실행합니다.
@@ -149,23 +167,47 @@ class BigQueryContext(
      * @param sql 실행할 SQL 문자열
      * @throws BigQueryQueryException BigQuery 서버 오류 응답 시
      */
-    suspend fun runRawQuerySuspending(sql: String): QueryResponse =
-        withContext(dispatcher) { runRawQuery(sql) }
+    suspend fun runRawQuerySuspending(
+        sql: String,
+        options: BigQueryQueryOptions = BigQueryQueryOptions(),
+    ): QueryResponse =
+        withContext(dispatcher) { runRawQuery(sql, options) }
+
+    /** Asynchronously validates raw SQL with a BigQuery dry run. */
+    suspend fun validateRawQuerySuspending(
+        sql: String,
+        options: BigQueryQueryOptions = BigQueryQueryOptions(),
+    ): QueryResponse =
+        withContext(dispatcher) { validateRawQuery(sql, options) }
 
     // ── SELECT ────────────────────────────────────────────────────────────────
 
     /** Exposed [Query]를 SQL로 변환한 뒤 실행하고 [QueryResponse]를 반환합니다. */
-    fun runQuery(query: Query): QueryResponse {
+    fun runQuery(
+        query: Query,
+        options: BigQueryQueryOptions = BigQueryQueryOptions(),
+    ): QueryResponse {
         val sql = transaction(sqlGenDb) { query.prepareSQL(this, prepared = false) }
-        return runRawQuery(sql)
+        return runRawQuery(sql, options)
+    }
+
+    /** Validates an Exposed [Query] with a BigQuery dry run. */
+    fun validateQuery(
+        query: Query,
+        options: BigQueryQueryOptions = BigQueryQueryOptions(),
+    ): QueryResponse {
+        val sql = transaction(sqlGenDb) { query.prepareSQL(this, prepared = false) }
+        return validateRawQuery(sql, options)
     }
 
     /**
      * Exposed [Query]를 [BigQueryQueryExecutor]로 래핑합니다.
      * [BigQueryQueryExecutor.toList]는 pageToken/jobComplete를 처리하여 전체 결과를 반환합니다.
      */
-    fun Query.withBigQuery(): BigQueryQueryExecutor =
-        BigQueryQueryExecutor(this, this@BigQueryContext)
+    fun Query.withBigQuery(
+        options: BigQueryQueryOptions = BigQueryQueryOptions(),
+    ): BigQueryQueryExecutor =
+        BigQueryQueryExecutor(this, this@BigQueryContext, options)
 
     // ── INSERT ────────────────────────────────────────────────────────────────
 
@@ -280,8 +322,11 @@ class BigQueryContext(
      * SQL을 실행하고 pageToken/jobComplete를 처리하여 전체 행을 수집합니다.
      * [BigQueryQueryExecutor.toList]에서 내부적으로 사용합니다.
      */
-    internal fun collectAllRows(sql: String): List<BigQueryResultRow> {
-        val (schema, allRows) = fetchAllPages(sql)
+    internal fun collectAllRows(
+        sql: String,
+        options: BigQueryQueryOptions = BigQueryQueryOptions(),
+    ): List<BigQueryResultRow> {
+        val (schema, allRows) = fetchAllPages(sql, options)
         val fieldNames = schema?.fields?.map { it.name.lowercase(Locale.ROOT) } ?: emptyList()
         return allRows.map { row ->
             val data = fieldNames.zip(row.f).associate { (name, cell) -> name to cell.v }
@@ -294,9 +339,12 @@ class BigQueryContext(
      * 대용량 결과셋을 메모리에 모두 올리지 않고 처리할 때 적합합니다.
      * [BigQueryQueryExecutor.toFlow]에서 내부적으로 사용합니다.
      */
-    internal fun collectRowsFlow(sql: String): Flow<BigQueryResultRow> = flow {
+    internal fun collectRowsFlow(
+        sql: String,
+        options: BigQueryQueryOptions = BigQueryQueryOptions(),
+    ): Flow<BigQueryResultRow> = flow {
         val initial = withContext(dispatcher) {
-            bigquery.jobs().query(projectId, newQueryRequest(sql)).execute()
+            bigquery.jobs().query(projectId, newQueryRequest(sql, options)).execute()
         }
         initial.checkErrors(sql)
 
@@ -344,8 +392,11 @@ class BigQueryContext(
         }
     }
 
-    private fun fetchAllPages(sql: String): Pair<com.google.api.services.bigquery.model.TableSchema?, List<TableRow>> {
-        val initial = bigquery.jobs().query(projectId, newQueryRequest(sql)).execute()
+    private fun fetchAllPages(
+        sql: String,
+        options: BigQueryQueryOptions = BigQueryQueryOptions(),
+    ): Pair<com.google.api.services.bigquery.model.TableSchema?, List<TableRow>> {
+        val initial = bigquery.jobs().query(projectId, newQueryRequest(sql, options)).execute()
         initial.checkErrors(sql)
 
         val jobId = initial.jobReference?.jobId

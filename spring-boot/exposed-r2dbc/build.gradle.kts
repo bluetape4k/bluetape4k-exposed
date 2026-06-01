@@ -39,8 +39,11 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
 
     compileOnly("org.springframework.boot:spring-boot-autoconfigure")
+    compileOnly("org.springframework.boot:spring-boot-health")
+    compileOnly(project(":bluetape4k-exposed-r2dbc-caffeine"))
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation(libs.mockk)
 
     testImplementation(libs.h2.v2)
     testImplementation(libs.r2dbc.h2)

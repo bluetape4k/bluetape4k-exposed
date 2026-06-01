@@ -92,6 +92,21 @@ spring.data.exposed-jdbc.repositories.enabled=true
 spring.data.exposed-jdbc.repositories.base-packages=com.example.repository
 ```
 
+### 5. Actuator Cache Health
+
+Spring Boot Actuator와 `bluetape4k-exposed-jdbc-caffeine`이 classpath에 있으면
+`exposedJdbcCacheHealthIndicator`가 자동 등록됩니다. 이 indicator는 Caffeine
+write-through/write-behind 상태를 Boot health detail로 노출합니다: cache mode,
+queue depth, flush job 상태, 마지막 flush error.
+
+```properties
+bluetape4k.exposed.cache.health.enabled=true
+```
+
+Flush 실패는 `DOWN`, write-behind queue가 남아 있는데 flush job이 동작하지 않는
+상태는 `OUT_OF_SERVICE`로 매핑됩니다. 비활성화하려면 이 property를 `false`로
+설정하세요.
+
 ## 사용 예시
 
 ### 엔티티 정의

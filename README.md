@@ -86,17 +86,17 @@ read paths, JSON/encrypted columns, database dialect extensions, and Spring Boot
 ```kotlin
 dependencies {
     // Core
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.9.2")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.10.0")
     // R2DBC (coroutines)
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.9.2")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.10.0")
     // Redis cache
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.9.2")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.10.0")
     // Jackson JSON columns
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.9.2")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.10.0")
     // Spring Boot auto-configuration
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.9.2")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.10.0")
     // Spring Modulith JDBC event publication through Exposed
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.9.2")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.10.0")
 }
 ```
 
@@ -129,6 +129,20 @@ database or Testcontainers image. See the
 [Exposed Gradle plugin documentation](https://www.jetbrains.com/help/exposed/exposed-gradle-plugin.html)
 and the
 [Gradle Plugin Portal entry](https://plugins.gradle.org/plugin/org.jetbrains.exposed.plugin).
+
+Demo migration generation is covered by a weekly and pull-request smoke workflow:
+
+```bash
+./gradlew :exposed-spring-boot-jdbc-demo:generateMigrations --filename=V1__create_products.sql
+./gradlew :exposed-spring-boot-r2dbc-demo:generateMigrations --filename=V1__create_webflux_products.sql
+```
+
+### Database Examples
+
+| Example | Purpose | Verification |
+|---------|---------|--------------|
+| `examples-exposed-clickhouse-oltp-olap` | PostgreSQL OLTP to ClickHouse OLAP forwarding and aggregate analytics | `./gradlew :examples-exposed-clickhouse-oltp-olap:test` |
+| `examples-exposed-bigquery-dry-run` | Credential-free BigQuery REST dry-run validation with query-job options | `./gradlew :examples-exposed-bigquery-dry-run:test` |
 
 ### JDBC Repository (H2 / PostgreSQL / MySQL)
 

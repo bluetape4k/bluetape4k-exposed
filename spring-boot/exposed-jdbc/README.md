@@ -92,6 +92,20 @@ spring.data.exposed-jdbc.repositories.enabled=true
 spring.data.exposed-jdbc.repositories.base-packages=com.example.repository
 ```
 
+### 5. Actuator Cache Health
+
+When Spring Boot Actuator and `bluetape4k-exposed-jdbc-caffeine` are on the
+classpath, auto-configuration registers `exposedJdbcCacheHealthIndicator`.
+It reports Caffeine write-through/write-behind state through Boot health
+details: cache mode, queue depth, flush job state, and the last flush error.
+
+```properties
+bluetape4k.exposed.cache.health.enabled=true
+```
+
+Flush failures map to `DOWN`; a write-behind queue with no running flush job
+maps to `OUT_OF_SERVICE`. Set the property to `false` to disable the indicator.
+
 ## Usage Examples
 
 ### Entity Definition

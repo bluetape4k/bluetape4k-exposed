@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added Spring Boot Actuator health indicators for JDBC and R2DBC Caffeine cache consistency reports ([#225](https://github.com/bluetape4k/bluetape4k-exposed/issues/225)).
+- Added BigQuery query job options and dry-run validation APIs for raw SQL and generated Exposed queries ([#228](https://github.com/bluetape4k/bluetape4k-exposed/issues/228)).
+- Added typed Trino JDBC connection options for performance/session properties and documented pushdown verification guidance ([#229](https://github.com/bluetape4k/bluetape4k-exposed/issues/229)).
+- Added a credential-free BigQuery dry-run example module and database example matrix ([#230](https://github.com/bluetape4k/bluetape4k-exposed/issues/230)).
+
+### Changed
+
+- Prepared the 1.10.0 line to consume `io.github.bluetape4k:bluetape4k-bom:1.10.0`.
+- Added a weekly and pull-request migration smoke workflow for the JDBC and R2DBC Spring Boot demo modules ([#226](https://github.com/bluetape4k/bluetape4k-exposed/issues/226)).
+
 ## [1.9.2] - 2026-05-26
 
 ### Changed
