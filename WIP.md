@@ -1,14 +1,14 @@
 # WIP - bluetape4k-exposed
 
 Snapshot: 2026-06-01 KST
-Scope: open GitHub issues assigned to `debop`.
-Open count: 6 issues in the 1.10.0 milestone before this branch.
+Scope: post-1.10.0 release train version alignment.
+Open count: 0 blocking issues for the next minor lane.
 
 ## Current Direction
 
-The `1.10.0` line is focused on database stability, analytical database
-operation controls, and local example verification while consuming
-`io.github.bluetape4k:bluetape4k-bom:1.10.0`.
+The `1.10.0` stable line has been published and consumed by
+`bluetape4k-dependencies` `1.2.0`. Development now moves to `1.11.0` with
+`snapshotVersion=` kept empty for workflow-injected snapshot publication.
 
 ## Active Queue
 
