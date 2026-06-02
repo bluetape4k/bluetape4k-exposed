@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Opened the `1.11.0` development line after the `1.10.0` stable release.
+- Aligned the local `bluetape4k-bom` and direct `bluetape4kVersion`
+  references to `1.11.0-SNAPSHOT`.
+
 ### Added
 
 - Added Spring Boot Actuator health indicators for JDBC and R2DBC Caffeine cache consistency reports ([#225](https://github.com/bluetape4k/bluetape4k-exposed/issues/225)).
