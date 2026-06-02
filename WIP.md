@@ -1,8 +1,8 @@
 # WIP - bluetape4k-exposed
 
-Snapshot: 2026-06-01 KST
+Snapshot: 2026-06-02 KST
 Scope: post-1.10.0 release train version alignment.
-Open count: 0 blocking issues for the next minor lane.
+Open count: 6 issues.
 
 ## Current Direction
 
@@ -27,5 +27,5 @@ None before this branch.
 
 ## Refresh Notes
 
-- Verified with `gh` on 2026-06-01 KST.
+- Verified with `gh` on 2026-06-02 KST.
 - Keep `bluetape4k-*` issue and resolving PR milestones aligned.
