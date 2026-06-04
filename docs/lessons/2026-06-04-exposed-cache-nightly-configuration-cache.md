@@ -12,7 +12,10 @@ runner discarded a configuration-cache entry and resolved
 
 The follow-up PR then failed in the CI `Build (compile only)` job because CI
 still resolved snapshot artifacts without `--refresh-dependencies`, so stale
-Central metadata can break PR checks before Nightly runs.
+Central metadata can break PR checks before Nightly runs. After that fix merged,
+post-merge Nightly smoke failed again in `Test / exposed-core + exposed-dao
+(H2)`, proving the configuration-cache/BOM-empty-version failure is not limited
+to the cache module.
 
 ## Decision
 
@@ -23,7 +26,8 @@ specific rather than a source test failure.
 
 Mirror snapshot refresh and GitHub runner configuration-cache avoidance in CI
 Gradle invocations so PR checks and Nightly use the same dependency-resolution
-policy.
+policy. For Nightly, apply `--no-configuration-cache` to every test and Kover
+Gradle command, not only `exposed-cache`.
 
 ## Outcome
 
@@ -38,12 +42,15 @@ bluetape4k dependencies.
 - `actionlint .github/workflows/ci.yml .github/workflows/nightly-tests.yml`
 - CI/Nightly Gradle audit: every `./gradlew` call includes
   `--refresh-dependencies`.
+- Nightly Gradle audit: every `./gradlew` run block includes
+  `--no-configuration-cache`.
 
 ## Future Rule
 
 When a Nightly-only workflow change passes PR CI but post-merge smoke still
 fails, inspect whether changed-module PR CI skipped the affected module test.
-For `exposed-cache`, keep Nightly commands on `--no-configuration-cache` unless
-the configuration-cache failure is fixed and verified on GitHub runners.
+Keep exposed Nightly commands on `--no-configuration-cache` unless the
+configuration-cache failure is fixed and verified on GitHub runners across the
+core smoke path, not just `exposed-cache`.
 When changing snapshot dependency policy, audit both `.github/workflows/ci.yml`
 and `.github/workflows/nightly-tests.yml`.
