@@ -2,8 +2,8 @@ name: Nightly
 
 on:
   schedule:
-    - cron: '0 19 * * 1-6'  # Daily smoke, UTC 19:00 (KST 04:00) Mon-Sat
-    - cron: '0 19 * * 0'    # Weekly full, UTC 19:00 (KST 04:00) Sunday
+    - cron: '3 19 * * 1-6'  # Daily smoke, UTC 19:03 (KST 04:03) Mon-Sat
+    - cron: '3 19 * * 0'    # Weekly full, UTC 19:03 (KST 04:03) Sunday
   workflow_dispatch:
     inputs:
       scope:
@@ -51,11 +51,11 @@ jobs:
         with:
           gradle-version: wrapper
       - name: Build (compile only)
-        run: ./gradlew build -x test -x koverVerify --parallel
+        run: ./gradlew --refresh-dependencies build -x test -x koverVerify --parallel
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
       - name: Detekt static analysis
-        run: ./gradlew detekt --parallel
+        run: ./gradlew --refresh-dependencies detekt --parallel
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
       - name: Upload detekt report
@@ -85,7 +85,7 @@ jobs:
       - name: Test exposed-core + exposed-dao
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-core:test :bluetape4k-exposed-dao:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-core:test :bluetape4k-exposed-dao:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -93,7 +93,7 @@ jobs:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-core:koverXmlReport :bluetape4k-exposed-dao:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-core:koverXmlReport :bluetape4k-exposed-dao:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
@@ -129,7 +129,7 @@ jobs:
       - name: Test serialization modules
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-jackson2:test :bluetape4k-exposed-jackson3:test :bluetape4k-exposed-fastjson2:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-jackson2:test :bluetape4k-exposed-jackson3:test :bluetape4k-exposed-fastjson2:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -138,7 +138,7 @@ jobs:
       - name: Generate Kover XML report
         if: always()
         run: >
-          ./gradlew
+          ./gradlew --refresh-dependencies
           :bluetape4k-exposed-jackson2:koverXmlReport
           :bluetape4k-exposed-jackson3:koverXmlReport
           :bluetape4k-exposed-fastjson2:koverXmlReport
@@ -178,7 +178,7 @@ jobs:
       - name: Test exposed-tink
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-tink:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-tink:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -186,7 +186,7 @@ jobs:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-tink:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-tink:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
@@ -222,7 +222,7 @@ jobs:
       - name: Test exposed-jdbc (H2)
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-jdbc:test :bluetape4k-exposed-jdbc-tests:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-jdbc:test :bluetape4k-exposed-jdbc-tests:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -232,7 +232,7 @@ jobs:
       - name: Generate Kover XML report
         if: always()
         run: >
-          ./gradlew
+          ./gradlew --refresh-dependencies
           :bluetape4k-exposed-jdbc:koverXmlReport
           :bluetape4k-exposed-jdbc-tests:koverXmlReport
           --no-daemon
@@ -273,7 +273,7 @@ jobs:
       - name: Test exposed-jdbc (PostgreSQL)
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-jdbc:test :bluetape4k-exposed-jdbc-tests:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-jdbc:test :bluetape4k-exposed-jdbc-tests:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -285,7 +285,7 @@ jobs:
       - name: Generate Kover XML report
         if: always()
         run: >
-          ./gradlew
+          ./gradlew --refresh-dependencies
           :bluetape4k-exposed-jdbc:koverXmlReport
           :bluetape4k-exposed-jdbc-tests:koverXmlReport
           --no-daemon
@@ -326,7 +326,7 @@ jobs:
       - name: Test exposed-jdbc (MySQL 8)
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-jdbc:test :bluetape4k-exposed-jdbc-tests:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-jdbc:test :bluetape4k-exposed-jdbc-tests:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -338,7 +338,7 @@ jobs:
       - name: Generate Kover XML report
         if: always()
         run: >
-          ./gradlew
+          ./gradlew --refresh-dependencies
           :bluetape4k-exposed-jdbc:koverXmlReport
           :bluetape4k-exposed-jdbc-tests:koverXmlReport
           --no-daemon
@@ -377,7 +377,7 @@ jobs:
       - name: Test exposed-r2dbc (H2)
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-r2dbc:test :bluetape4k-exposed-r2dbc-tests:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-r2dbc:test :bluetape4k-exposed-r2dbc-tests:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -387,7 +387,7 @@ jobs:
       - name: Generate Kover XML report
         if: always()
         run: >
-          ./gradlew
+          ./gradlew --refresh-dependencies
           :bluetape4k-exposed-r2dbc:koverXmlReport
           :bluetape4k-exposed-r2dbc-tests:koverXmlReport
           --no-daemon
@@ -428,7 +428,7 @@ jobs:
       - name: Test exposed-r2dbc (PostgreSQL)
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-r2dbc:test :bluetape4k-exposed-r2dbc-tests:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-r2dbc:test :bluetape4k-exposed-r2dbc-tests:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -440,7 +440,7 @@ jobs:
       - name: Generate Kover XML report
         if: always()
         run: >
-          ./gradlew
+          ./gradlew --refresh-dependencies
           :bluetape4k-exposed-r2dbc:koverXmlReport
           :bluetape4k-exposed-r2dbc-tests:koverXmlReport
           --no-daemon
@@ -481,7 +481,7 @@ jobs:
       - name: Test exposed-r2dbc (MySQL 8)
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-r2dbc:test :bluetape4k-exposed-r2dbc-tests:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-r2dbc:test :bluetape4k-exposed-r2dbc-tests:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -493,7 +493,7 @@ jobs:
       - name: Generate Kover XML report
         if: always()
         run: >
-          ./gradlew
+          ./gradlew --refresh-dependencies
           :bluetape4k-exposed-r2dbc:koverXmlReport
           :bluetape4k-exposed-r2dbc-tests:koverXmlReport
           --no-daemon
@@ -534,7 +534,7 @@ jobs:
       - name: Test exposed-jdbc-lettuce
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-jdbc-lettuce:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-jdbc-lettuce:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -544,7 +544,7 @@ jobs:
           DOCKER_HOST: "unix:///var/run/docker.sock"
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-jdbc-lettuce:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-jdbc-lettuce:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
@@ -582,7 +582,7 @@ jobs:
       - name: Test exposed-jdbc-redisson
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-jdbc-redisson:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-jdbc-redisson:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -592,7 +592,7 @@ jobs:
           DOCKER_HOST: "unix:///var/run/docker.sock"
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-jdbc-redisson:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-jdbc-redisson:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
@@ -630,7 +630,7 @@ jobs:
       - name: Test exposed-r2dbc-lettuce
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-r2dbc-lettuce:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-r2dbc-lettuce:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -640,7 +640,7 @@ jobs:
           DOCKER_HOST: "unix:///var/run/docker.sock"
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-r2dbc-lettuce:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-r2dbc-lettuce:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
@@ -678,7 +678,7 @@ jobs:
       - name: Test exposed-r2dbc-redisson
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-r2dbc-redisson:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-r2dbc-redisson:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -688,7 +688,7 @@ jobs:
           DOCKER_HOST: "unix:///var/run/docker.sock"
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-r2dbc-redisson:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-r2dbc-redisson:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
@@ -724,7 +724,7 @@ jobs:
       - name: Test exposed-measured
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-measured:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-measured:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -732,7 +732,7 @@ jobs:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-measured:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-measured:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
@@ -770,7 +770,7 @@ jobs:
       - name: Test exposed-postgresql
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-postgresql:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-postgresql:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -780,7 +780,7 @@ jobs:
           DOCKER_HOST: "unix:///var/run/docker.sock"
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-postgresql:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-postgresql:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
@@ -818,7 +818,7 @@ jobs:
       - name: Test exposed-mysql8
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-mysql8:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-mysql8:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -828,7 +828,7 @@ jobs:
           DOCKER_HOST: "unix:///var/run/docker.sock"
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-mysql8:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-mysql8:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
@@ -864,7 +864,7 @@ jobs:
       - name: Test spring-boot
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-spring-boot-jdbc:test :bluetape4k-exposed-spring-boot-r2dbc:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-spring-boot-jdbc:test :bluetape4k-exposed-spring-boot-r2dbc:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -875,7 +875,7 @@ jobs:
       - name: Generate Kover XML report
         if: always()
         run: >
-          ./gradlew
+          ./gradlew --refresh-dependencies
           :bluetape4k-exposed-spring-boot-jdbc:koverXmlReport
           :bluetape4k-exposed-spring-boot-r2dbc:koverXmlReport
           --no-daemon
@@ -914,7 +914,7 @@ jobs:
       - name: Test exposed-duckdb
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-duckdb:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-duckdb:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -922,7 +922,7 @@ jobs:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=--enable-native-access=ALL-UNNAMED"
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-duckdb:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-duckdb:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
@@ -958,7 +958,7 @@ jobs:
       - name: Test exposed-cache
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-cache:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-cache:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -966,7 +966,7 @@ jobs:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-cache:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-cache:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
@@ -1008,7 +1008,7 @@ jobs:
       - name: Test exposed-jdbc-caffeine (${{ matrix.db }})
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-jdbc-caffeine:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-jdbc-caffeine:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -1019,7 +1019,7 @@ jobs:
           DOCKER_HOST: "unix:///var/run/docker.sock"
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-jdbc-caffeine:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-jdbc-caffeine:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
@@ -1061,7 +1061,7 @@ jobs:
       - name: Test exposed-r2dbc-caffeine (${{ matrix.db }})
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-r2dbc-caffeine:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-r2dbc-caffeine:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -1072,7 +1072,7 @@ jobs:
           DOCKER_HOST: "unix:///var/run/docker.sock"
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-r2dbc-caffeine:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-r2dbc-caffeine:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
@@ -1110,7 +1110,7 @@ jobs:
       - name: Test exposed-clickhouse
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-clickhouse:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-clickhouse:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -1120,7 +1120,7 @@ jobs:
           DOCKER_HOST: "unix:///var/run/docker.sock"
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-clickhouse:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-clickhouse:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
@@ -1158,7 +1158,7 @@ jobs:
       - name: Test exposed-trino
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-trino:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-trino:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -1168,7 +1168,7 @@ jobs:
           DOCKER_HOST: "unix:///var/run/docker.sock"
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-trino:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-trino:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
@@ -1206,7 +1206,7 @@ jobs:
       - name: Test exposed-bigquery
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-bigquery:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-bigquery:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -1216,7 +1216,7 @@ jobs:
           DOCKER_HOST: "unix:///var/run/docker.sock"
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-bigquery:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-bigquery:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
@@ -1258,7 +1258,7 @@ jobs:
       - name: Test exposed-timefold (${{ matrix.db }})
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-timefold-solver-persistence:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-timefold-solver-persistence:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -1269,7 +1269,7 @@ jobs:
           DOCKER_HOST: "unix:///var/run/docker.sock"
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-timefold-solver-persistence:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-timefold-solver-persistence:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
@@ -1311,7 +1311,7 @@ jobs:
       - name: Test spring-boot-batch-exposed (${{ matrix.db }})
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-spring-boot-batch:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-spring-boot-batch:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -1322,7 +1322,7 @@ jobs:
           DOCKER_HOST: 'unix:///var/run/docker.sock'
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-spring-boot-batch:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-spring-boot-batch:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
@@ -1364,7 +1364,7 @@ jobs:
       - name: Test utils-batch (${{ matrix.db }})
         run: |
           for attempt in 1 2 3; do
-            ./gradlew :bluetape4k-exposed-batch:test --no-daemon && break
+            ./gradlew --refresh-dependencies :bluetape4k-exposed-batch:test --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 3 ] && sleep 10 || exit 1
           done
@@ -1375,7 +1375,7 @@ jobs:
           DOCKER_HOST: 'unix:///var/run/docker.sock'
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-batch:koverXmlReport --no-daemon
+        run: ./gradlew --refresh-dependencies :bluetape4k-exposed-batch:koverXmlReport --no-daemon
         continue-on-error: true
       - name: Upload test results
         if: always()
