@@ -173,10 +173,10 @@ jobs:
 
       - name: Build (compile only)
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew build -x test -x koverVerify --parallel --refresh-dependencies --no-configuration-cache && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
@@ -200,10 +200,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-core + exposed-dao
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-core:test :bluetape4k-exposed-dao:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
@@ -245,10 +245,10 @@ jobs:
           cache-read-only: true
       - name: Test serialization modules
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-jackson2:test :bluetape4k-exposed-jackson3:test :bluetape4k-exposed-fastjson2:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
@@ -297,10 +297,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-tink
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-tink:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
@@ -342,10 +342,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-jdbc (H2)
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-jdbc:test :bluetape4k-exposed-jdbc-tests:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
@@ -394,10 +394,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-r2dbc (H2)
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-r2dbc:test :bluetape4k-exposed-r2dbc-tests:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
@@ -446,10 +446,10 @@ jobs:
           cache-read-only: true
       - name: Test spring-boot
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-spring-boot-jdbc:test :bluetape4k-exposed-spring-boot-r2dbc:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false'
@@ -499,10 +499,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-jdbc-lettuce + exposed-r2dbc-lettuce
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-jdbc-lettuce:test :bluetape4k-exposed-r2dbc-lettuce:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
@@ -552,10 +552,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-jdbc-redisson + exposed-r2dbc-redisson
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-jdbc-redisson:test :bluetape4k-exposed-r2dbc-redisson:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
@@ -605,10 +605,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-measured
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-measured:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
@@ -650,10 +650,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-postgresql
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-postgresql:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
@@ -697,10 +697,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-mysql8
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-mysql8:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
@@ -744,10 +744,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-duckdb
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-duckdb:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=--enable-native-access=ALL-UNNAMED"
@@ -789,10 +789,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-cache
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-cache:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
@@ -834,10 +834,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-jdbc-caffeine (H2)
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-jdbc-caffeine:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
@@ -880,10 +880,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-r2dbc-caffeine (H2)
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-r2dbc-caffeine:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
@@ -926,10 +926,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-clickhouse
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-clickhouse:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
@@ -973,10 +973,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-trino
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-trino:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
@@ -1020,10 +1020,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-bigquery
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-bigquery:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
@@ -1067,10 +1067,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-timefold (H2)
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-timefold-solver-persistence:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
@@ -1113,10 +1113,10 @@ jobs:
           cache-read-only: true
       - name: Test spring-boot-batch-exposed (H2)
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-spring-boot-batch:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false'
@@ -1161,10 +1161,10 @@ jobs:
           cache-read-only: true
       - name: Test utils-batch (H2)
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-batch:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 3 ] && sleep 10 || exit 1
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
         env:
           GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false'
