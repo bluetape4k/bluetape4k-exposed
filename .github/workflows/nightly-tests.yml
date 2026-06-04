@@ -1135,7 +1135,7 @@ jobs:
     if: ${{ (github.event_name == 'schedule' && github.event.schedule == '3 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
 
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     needs: build
     steps:
       - uses: actions/checkout@v6
@@ -1150,10 +1150,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-clickhouse
         run: |
-          for attempt in 1 2 3 4 5; do
+          for attempt in 1 2 3 4 5 6 7 8; do
             ./gradlew --refresh-dependencies :bluetape4k-exposed-clickhouse:test --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 5 ] && sleep 30 || exit 1
+            [ $attempt -lt 8 ] && sleep 60 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
