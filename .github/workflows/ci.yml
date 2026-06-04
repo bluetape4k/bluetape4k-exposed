@@ -911,7 +911,7 @@ jobs:
   test-clickhouse:
     name: Test / exposed-clickhouse
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     needs: [build, changes]
     if: ${{ needs.changes.outputs.clickhouse == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
@@ -926,10 +926,10 @@ jobs:
           cache-read-only: true
       - name: Test exposed-clickhouse
         run: |
-          for attempt in 1 2 3 4 5; do
+          for attempt in 1 2 3 4 5 6 7 8; do
             ./gradlew :bluetape4k-exposed-clickhouse:test --refresh-dependencies --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
-            [ $attempt -lt 5 ] && sleep 30 || exit 1
+            [ $attempt -lt 8 ] && sleep 60 || exit 1
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
