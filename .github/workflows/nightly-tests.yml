@@ -50,6 +50,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
       - name: Build (compile only)
         run: ./gradlew --refresh-dependencies build -x test -x koverVerify --parallel --no-configuration-cache
         env:
@@ -81,6 +82,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-core + exposed-dao
         run: |
@@ -125,6 +127,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test serialization modules
         run: |
@@ -175,6 +178,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-tink
         run: |
@@ -219,6 +223,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-jdbc (H2)
         run: |
@@ -271,6 +276,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-jdbc (PostgreSQL)
         run: |
@@ -325,6 +331,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-jdbc (MySQL 8)
         run: |
@@ -377,6 +384,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-r2dbc (H2)
         run: |
@@ -429,6 +437,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-r2dbc (PostgreSQL)
         run: |
@@ -483,6 +492,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-r2dbc (MySQL 8)
         run: |
@@ -537,6 +547,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-jdbc-lettuce
         run: |
@@ -585,6 +596,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-jdbc-redisson
         run: |
@@ -633,6 +645,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-r2dbc-lettuce
         run: |
@@ -681,6 +694,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-r2dbc-redisson
         run: |
@@ -727,6 +741,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-measured
         run: |
@@ -773,6 +788,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-postgresql
         run: |
@@ -821,6 +837,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-mysql8
         run: |
@@ -867,6 +884,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test spring-boot
         run: |
@@ -918,6 +936,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-duckdb
         run: |
@@ -962,6 +981,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-cache
         run: |
@@ -1012,6 +1032,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-jdbc-caffeine (${{ matrix.db }})
         run: |
@@ -1065,6 +1086,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-r2dbc-caffeine (${{ matrix.db }})
         run: |
@@ -1114,6 +1136,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-clickhouse
         run: |
@@ -1162,6 +1185,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-trino
         run: |
@@ -1210,6 +1234,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-bigquery
         run: |
@@ -1262,6 +1287,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test exposed-timefold (${{ matrix.db }})
         run: |
@@ -1315,6 +1341,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test spring-boot-batch-exposed (${{ matrix.db }})
         run: |
@@ -1368,6 +1395,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: wrapper
+          cache-disabled: true
           cache-read-only: true
       - name: Test utils-batch (${{ matrix.db }})
         run: |
