@@ -188,27 +188,27 @@ dependency-check = { id = "org.owasp.dependencycheck", version.ref = "dependency
 [libraries]
 # bluetape4k
 bluetape4k-bom = { module = "io.github.bluetape4k:bluetape4k-bom", version.ref = "bluetape4k-bom" }
-bluetape4k-cache-lettuce = { module = "io.github.bluetape4k:bluetape4k-cache-lettuce" }
-bluetape4k-core = { module = "io.github.bluetape4k:bluetape4k-core" }
-bluetape4k-coroutines = { module = "io.github.bluetape4k:bluetape4k-coroutines" }
-bluetape4k-fastjson2 = { module = "io.github.bluetape4k:bluetape4k-fastjson2" }
-bluetape4k-idgenerators = { module = "io.github.bluetape4k:bluetape4k-idgenerators" }
-bluetape4k-io = { module = "io.github.bluetape4k:bluetape4k-io" }
-bluetape4k-jackson2 = { module = "io.github.bluetape4k:bluetape4k-jackson2" }
-bluetape4k-jackson3 = { module = "io.github.bluetape4k:bluetape4k-jackson3" }
-bluetape4k-jdbc = { module = "io.github.bluetape4k:bluetape4k-jdbc" }
-bluetape4k-junit5 = { module = "io.github.bluetape4k:bluetape4k-junit5" }
-bluetape4k-lettuce = { module = "io.github.bluetape4k:bluetape4k-lettuce" }
-bluetape4k-logging = { module = "io.github.bluetape4k:bluetape4k-logging" }
-bluetape4k-measured = { module = "io.github.bluetape4k:bluetape4k-measured" }
-bluetape4k-r2dbc = { module = "io.github.bluetape4k:bluetape4k-r2dbc" }
-bluetape4k-redisson = { module = "io.github.bluetape4k:bluetape4k-redisson" }
-bluetape4k-resilience4j = { module = "io.github.bluetape4k:bluetape4k-resilience4j" }
-bluetape4k-testcontainers = { module = "io.github.bluetape4k:bluetape4k-testcontainers" }
-bluetape4k-tink = { module = "io.github.bluetape4k:bluetape4k-tink" }
-bluetape4k-virtualthread-api = { module = "io.github.bluetape4k:bluetape4k-virtualthread-api" }
-bluetape4k-virtualthread-jdk21 = { module = "io.github.bluetape4k:bluetape4k-virtualthread-jdk21" }
-bluetape4k-workflow = { module = "io.github.bluetape4k:bluetape4k-workflow" }
+bluetape4k-cache-lettuce = { module = "io.github.bluetape4k:bluetape4k-cache-lettuce", version.ref = "bluetape4k-bom" }
+bluetape4k-core = { module = "io.github.bluetape4k:bluetape4k-core", version.ref = "bluetape4k-bom" }
+bluetape4k-coroutines = { module = "io.github.bluetape4k:bluetape4k-coroutines", version.ref = "bluetape4k-bom" }
+bluetape4k-fastjson2 = { module = "io.github.bluetape4k:bluetape4k-fastjson2", version.ref = "bluetape4k-bom" }
+bluetape4k-idgenerators = { module = "io.github.bluetape4k:bluetape4k-idgenerators", version.ref = "bluetape4k-bom" }
+bluetape4k-io = { module = "io.github.bluetape4k:bluetape4k-io", version.ref = "bluetape4k-bom" }
+bluetape4k-jackson2 = { module = "io.github.bluetape4k:bluetape4k-jackson2", version.ref = "bluetape4k-bom" }
+bluetape4k-jackson3 = { module = "io.github.bluetape4k:bluetape4k-jackson3", version.ref = "bluetape4k-bom" }
+bluetape4k-jdbc = { module = "io.github.bluetape4k:bluetape4k-jdbc", version.ref = "bluetape4k-bom" }
+bluetape4k-junit5 = { module = "io.github.bluetape4k:bluetape4k-junit5", version.ref = "bluetape4k-bom" }
+bluetape4k-lettuce = { module = "io.github.bluetape4k:bluetape4k-lettuce", version.ref = "bluetape4k-bom" }
+bluetape4k-logging = { module = "io.github.bluetape4k:bluetape4k-logging", version.ref = "bluetape4k-bom" }
+bluetape4k-measured = { module = "io.github.bluetape4k:bluetape4k-measured", version.ref = "bluetape4k-bom" }
+bluetape4k-r2dbc = { module = "io.github.bluetape4k:bluetape4k-r2dbc", version.ref = "bluetape4k-bom" }
+bluetape4k-redisson = { module = "io.github.bluetape4k:bluetape4k-redisson", version.ref = "bluetape4k-bom" }
+bluetape4k-resilience4j = { module = "io.github.bluetape4k:bluetape4k-resilience4j", version.ref = "bluetape4k-bom" }
+bluetape4k-testcontainers = { module = "io.github.bluetape4k:bluetape4k-testcontainers", version.ref = "bluetape4k-bom" }
+bluetape4k-tink = { module = "io.github.bluetape4k:bluetape4k-tink", version.ref = "bluetape4k-bom" }
+bluetape4k-virtualthread-api = { module = "io.github.bluetape4k:bluetape4k-virtualthread-api", version.ref = "bluetape4k-bom" }
+bluetape4k-virtualthread-jdk21 = { module = "io.github.bluetape4k:bluetape4k-virtualthread-jdk21", version.ref = "bluetape4k-bom" }
+bluetape4k-workflow = { module = "io.github.bluetape4k:bluetape4k-workflow", version.ref = "bluetape4k-bom" }
 
 jetbrains-annotations = { module = "org.jetbrains:annotations", version = "26.1.0" }  # https://mvnrepository.com/artifact/org.jetbrains/annotations
 
