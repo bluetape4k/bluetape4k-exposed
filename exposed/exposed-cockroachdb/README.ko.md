@@ -4,7 +4,8 @@
 
 JetBrains Exposed ORM을 위한 최소 CockroachDB JDBC 통합 모듈입니다. 이 모듈은
 `bluetape4k-exposed`에서 CockroachDB를 지원하기 위한 첫 경로로 PostgreSQL wire
-JDBC 연결과 실제 Testcontainers 기반 smoke test를 검증합니다.
+JDBC 연결, 제한된 serializable transaction retry helper, 실제 Testcontainers 기반
+smoke test를 검증합니다.
 
 ## 범위
 
@@ -17,6 +18,9 @@ JDBC 연결과 실제 Testcontainers 기반 smoke test를 검증합니다.
   지원하는 Exposed schema subset을 CockroachDB에서 직접 검증하는 테스트
 - **Testcontainers smoke coverage**:
   `bluetape4k-testcontainers`의 `CockroachServer`를 사용하는 단일 노드 CockroachDB 테스트
+- **Serializable transaction retry helper**:
+  CockroachDB transaction retry error(`40001` + `restart transaction`)만 재시도하는
+  `withCockroachTransaction`
 
 CockroachDB는 PostgreSQL wire protocol과 호환되지만 PostgreSQL과 동일하지는
 않습니다. 이 모듈은 의도적으로 custom Exposed dialect를 등록하지 않으며 넓은
@@ -35,6 +39,7 @@ slice로 보아야 합니다.
 | Generated ID | Supported | `LongIdTable.insertAndGetId`가 generated ID 반환 |
 | `RETURNING` | Supported | PostgreSQL JDBC를 통한 raw `INSERT ... RETURNING` 성공 |
 | Schema metadata | Supported | HikariCP 경유 `DatabaseMetaData`로 table/index metadata 조회 성공 |
+| Serializable transaction retry | Supported | `withCockroachTransaction`이 CockroachDB retryable transaction error만 재시도 |
 | Migration diff no-op | Deferred | `MigrationUtils`가 create 이후에도 generated-ID sequence ownership 변경을 제안 |
 | `CREATE DOMAIN` | Deferred | CockroachDB 공식 문서에서 unsupported PostgreSQL feature로 분류 |
 | PostgreSQL range types | Deferred | CockroachDB 공식 문서에서 PostgreSQL range types를 unsupported로 분류 |
@@ -45,7 +50,6 @@ slice로 보아야 합니다.
 - Custom CockroachDB dialect 등록
 - Full PostgreSQL compatibility
 - No-op migration diff 보장
-- Serializable transaction retry helper API
 - R2DBC 지원
 
 위 항목은 이후 slice에서 수용하기 전까지 parent epic의 follow-up 후보로 남겨둡니다.
@@ -93,6 +97,37 @@ transaction(db) {
     }
 }
 ```
+
+## Serializable Transaction Retry
+
+CockroachDB transaction retry error는 SQLSTATE `40001`과 `restart transaction`으로
+시작하는 메시지로 식별합니다. 이 retryable signature만 제한적으로 재시도하려면
+`withCockroachTransaction`을 사용합니다:
+
+```kotlin
+import io.bluetape4k.exposed.cockroachdb.CockroachTransactionRetryOptions
+import io.bluetape4k.exposed.cockroachdb.withCockroachTransaction
+import org.jetbrains.exposed.v1.jdbc.insert
+import kotlin.time.Duration.Companion.milliseconds
+
+val options = CockroachTransactionRetryOptions(
+    maxAttempts = 5,
+    minRetryDelay = 25.milliseconds,
+    maxRetryDelay = 250.milliseconds,
+)
+
+withCockroachTransaction(db, options) {
+    Events.insert {
+        it[eventName] = "order-created"
+    }
+}
+```
+
+JetBrains Exposed에도 `maxAttempts`, `minRetryDelay`, `maxRetryDelay` 같은 generic
+transaction retry knob이 있습니다. 하지만 Exposed JDBC retry loop는 `SQLException`
+전체를 재시도합니다. `withCockroachTransaction`은 내부 Exposed transaction을 한 번만
+시도하도록 고정한 뒤, CockroachDB가 문서화한 transaction retry signature만
+재시도합니다.
 
 caller-managed pool을 쓰는 경우 `DataSource`를 `CockroachDatabase.connect`에
 전달합니다. 예를 들어 `bluetape4k-jdbc`로 PostgreSQL JDBC URL 기반 HikariCP

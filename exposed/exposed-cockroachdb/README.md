@@ -4,7 +4,8 @@ English | [한국어](./README.ko.md)
 
 Minimal CockroachDB JDBC integration for JetBrains Exposed ORM. This module
 proves the first supported path for CockroachDB in `bluetape4k-exposed`:
-PostgreSQL-wire JDBC connectivity plus a real Testcontainers-backed smoke test.
+PostgreSQL-wire JDBC connectivity, bounded serializable transaction retry
+helpers, and real Testcontainers-backed smoke tests.
 
 ## Scope
 
@@ -17,6 +18,8 @@ PostgreSQL-wire JDBC connectivity plus a real Testcontainers-backed smoke test.
   Exposed schema subset.
 - **Testcontainers smoke coverage**: a single-node CockroachDB test using
   `CockroachServer` from `bluetape4k-testcontainers`.
+- **Serializable transaction retry helper**: `withCockroachTransaction` retries
+  only CockroachDB transaction retry errors (`40001` + `restart transaction`).
 
 CockroachDB is PostgreSQL-wire-compatible but not PostgreSQL-equivalent. This
 module intentionally does not register a custom Exposed dialect and does not
@@ -35,6 +38,7 @@ slice, not as a full dialect.
 | Generated ID | Supported | `LongIdTable.insertAndGetId` returns generated IDs. |
 | `RETURNING` | Supported | Raw `INSERT ... RETURNING` succeeds through PostgreSQL JDBC. |
 | Schema metadata | Supported | `DatabaseMetaData` discovers table and index metadata through HikariCP. |
+| Serializable transaction retry | Supported | `withCockroachTransaction` retries only CockroachDB retryable transaction errors. |
 | Migration diff no-op | Deferred | `MigrationUtils` still proposes generated-ID sequence ownership changes after create. |
 | `CREATE DOMAIN` | Deferred | CockroachDB documents this PostgreSQL feature as unsupported. |
 | PostgreSQL range types | Deferred | CockroachDB documents PostgreSQL range types as unsupported. |
@@ -45,7 +49,6 @@ slice, not as a full dialect.
 - Custom CockroachDB dialect registration.
 - Full PostgreSQL compatibility.
 - No-op migration diff guarantees.
-- Serializable transaction retry helper APIs.
 - R2DBC support.
 
 Those items remain parent-epic follow-up candidates until a later slice accepts
@@ -93,6 +96,39 @@ transaction(db) {
     }
 }
 ```
+
+## Serializable Transaction Retry
+
+CockroachDB transaction retry errors are identified by SQLSTATE `40001` and a
+message beginning with `restart transaction`. Use `withCockroachTransaction` for
+bounded serializable work that should retry only that CockroachDB retryable
+signature:
+
+```kotlin
+import io.bluetape4k.exposed.cockroachdb.CockroachTransactionRetryOptions
+import io.bluetape4k.exposed.cockroachdb.withCockroachTransaction
+import org.jetbrains.exposed.v1.jdbc.insert
+import kotlin.time.Duration.Companion.milliseconds
+
+val options = CockroachTransactionRetryOptions(
+    maxAttempts = 5,
+    minRetryDelay = 25.milliseconds,
+    maxRetryDelay = 250.milliseconds,
+)
+
+withCockroachTransaction(db, options) {
+    Events.insert {
+        it[eventName] = "order-created"
+    }
+}
+```
+
+JetBrains Exposed also has generic transaction retry knobs such as
+`maxAttempts`, `minRetryDelay`, and `maxRetryDelay`, but the Exposed JDBC retry
+loop catches `SQLException` broadly. `withCockroachTransaction` keeps the retry
+boundary CockroachDB-specific by forcing the wrapped Exposed transaction to one
+internal attempt and retrying only the documented CockroachDB transaction retry
+signature.
 
 For caller-managed pools, pass any `DataSource` to `CockroachDatabase.connect`.
 For example, `bluetape4k-jdbc` can create a HikariCP pool with the PostgreSQL
