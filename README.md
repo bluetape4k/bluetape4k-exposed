@@ -5,7 +5,7 @@
 [![JVM](https://img.shields.io/badge/JVM-21-ED8B00?logo=openjdk)](https://openjdk.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[한국어](README.ko.md)
+English | [한국어](README.ko.md)
 
 ![Bluetape4k Exposed workbench](./docs/assets/exposed-workbench.png)
 
@@ -72,6 +72,7 @@ read paths, JSON/encrypted columns, database dialect extensions, and Spring Boot
 | `exposed-bigquery` | BigQuery connector support |
 | `exposed-clickhouse` | ClickHouse connector support |
 | `exposed-trino` | Trino connector support |
+| `exposed-starrocks` | StarRocks local-first OLAP connector support |
 | `exposed-duckdb` | DuckDB embedded analytics support |
 | `exposed-timefold-solver-persistence` | Timefold Solver persistence integration |
 | `exposed-spring-boot-jdbc` | Spring Boot 4.x JDBC auto-configuration |

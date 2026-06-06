@@ -34,6 +34,7 @@ exposed/
   bluetape4k-exposed-bigquery/
   bluetape4k-exposed-clickhouse/
   bluetape4k-exposed-trino/
+  bluetape4k-exposed-starrocks/
   bluetape4k-exposed-duckdb/
   bluetape4k-exposed-timefold-solver-persistence/
 utils/

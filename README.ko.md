@@ -5,7 +5,7 @@
 [![JVM](https://img.shields.io/badge/JVM-21-ED8B00?logo=openjdk)](https://openjdk.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[English](README.md)
+[English](README.md) | 한국어
 
 ![bluetape4k Exposed 작업대 일러스트](./docs/assets/exposed-workbench.png)
 
@@ -71,6 +71,7 @@ dialect 확장, Spring Boot 4 자동 설정을 Exposed DSL 스타일 안에서 �
 | `exposed-bigquery` | BigQuery connector 지원 |
 | `exposed-clickhouse` | ClickHouse connector 지원 |
 | `exposed-trino` | Trino connector 지원 |
+| `exposed-starrocks` | StarRocks local-first OLAP connector 지원 |
 | `exposed-duckdb` | DuckDB embedded analytics 지원 |
 | `exposed-timefold-solver-persistence` | Timefold Solver persistence 통합 |
 | `exposed-spring-boot-jdbc` | Spring Boot 4.x JDBC 자동 설정 |
