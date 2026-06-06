@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added BigQuery query job options and dry-run validation APIs for raw SQL and generated Exposed queries ([#228](https://github.com/bluetape4k/bluetape4k-exposed/issues/228)).
 - Added typed Trino JDBC connection options for performance/session properties and documented pushdown verification guidance ([#229](https://github.com/bluetape4k/bluetape4k-exposed/issues/229)).
 - Added a credential-free BigQuery dry-run example module and database example matrix ([#230](https://github.com/bluetape4k/bluetape4k-exposed/issues/230)).
+- Added the initial `exposed-cockroachdb` module with PostgreSQL-wire JDBC connection helpers and CockroachDB Testcontainers smoke coverage ([#30](https://github.com/bluetape4k/bluetape4k-exposed/issues/30)).
 
 ### Changed
 

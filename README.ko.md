@@ -26,7 +26,7 @@ dialect 확장, Spring Boot 4 자동 설정을 Exposed DSL 스타일 안에서 �
 - **캐시 통합** — Caffeine(로컬), Lettuce/Redisson(분산 Redis) 캐시 백엔드
 - **JSON Column** — Jackson 2.x, Jackson 3.x, Fastjson2 Column 직렬화
 - **암호화** — Google Tink 기반 암호화 Column
-- **DB 특화 확장** — PostgreSQL, MySQL 8, BigQuery, ClickHouse, Trino, DuckDB, Timefold persistence 헬퍼
+- **DB 특화 확장** — PostgreSQL, MySQL 8, BigQuery, ClickHouse, Trino, StarRocks, CockroachDB, DuckDB, Timefold persistence 헬퍼
 - **Spring Boot** — Spring Boot 4.x 자동 설정 (JDBC, R2DBC, Batch, Spring Modulith JDBC 이벤트 발행 통합)
 - **측정 단위 Column** — `bluetape4k-measured` 단위를 위한 Exposed Custom ColumnType
 
@@ -72,6 +72,7 @@ dialect 확장, Spring Boot 4 자동 설정을 Exposed DSL 스타일 안에서 �
 | `exposed-clickhouse` | ClickHouse connector 지원 |
 | `exposed-trino` | Trino connector 지원 |
 | `exposed-starrocks` | StarRocks local-first OLAP connector 지원 |
+| `exposed-cockroachdb` | CockroachDB PostgreSQL-wire smoke 지원 |
 | `exposed-duckdb` | DuckDB embedded analytics 지원 |
 | `exposed-timefold-solver-persistence` | Timefold Solver persistence 통합 |
 | `exposed-spring-boot-jdbc` | Spring Boot 4.x JDBC 자동 설정 |
