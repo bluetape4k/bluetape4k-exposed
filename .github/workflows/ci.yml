@@ -93,6 +93,7 @@ jobs:
       clickhouse: ${{ steps.filter.outputs.clickhouse }}
       trino: ${{ steps.filter.outputs.trino }}
       starrocks: ${{ steps.filter.outputs.starrocks }}
+      cockroachdb: ${{ steps.filter.outputs.cockroachdb }}
       bigquery: ${{ steps.filter.outputs.bigquery }}
       timefold: ${{ steps.filter.outputs.timefold }}
       spring-boot-batch: ${{ steps.filter.outputs.spring-boot-batch }}
@@ -146,6 +147,8 @@ jobs:
               - 'exposed/exposed-trino/**'
             starrocks:
               - 'exposed/exposed-starrocks/**'
+            cockroachdb:
+              - 'exposed/exposed-cockroachdb/**'
             bigquery:
               - 'exposed/exposed-bigquery/**'
             timefold:
@@ -1045,6 +1048,53 @@ jobs:
           path: '**/build/reports/kover/'
           retention-days: 7
 
+  # exposed-cockroachdb (Testcontainers)
+  test-cockroachdb:
+    name: Test / exposed-cockroachdb
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [build, changes]
+    if: ${{ needs.changes.outputs.cockroachdb == 'true' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Test exposed-cockroachdb
+        run: |
+          for attempt in 1 2 3 4 5; do
+            ./gradlew :bluetape4k-exposed-cockroachdb:test --no-configuration-cache --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
+          done
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+          DOCKER_HOST: "unix:///var/run/docker.sock"
+      - name: Generate Kover XML report
+        if: always()
+        run: ./gradlew :bluetape4k-exposed-cockroachdb:koverXmlReport --no-configuration-cache --no-daemon
+        continue-on-error: true
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-cockroachdb
+          path: '**/build/test-results/test/*.xml'
+          retention-days: 7
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-cockroachdb
+          path: '**/build/reports/kover/'
+          retention-days: 7
+
   # exposed-bigquery (gcloud Testcontainers)
   test-bigquery:
     name: Test / exposed-bigquery
@@ -1256,6 +1306,7 @@ jobs:
       - test-clickhouse
       - test-trino
       - test-starrocks
+      - test-cockroachdb
       - test-bigquery
       - test-timefold
       - test-spring-boot-batch
@@ -1310,6 +1361,7 @@ jobs:
       - test-clickhouse
       - test-trino
       - test-starrocks
+      - test-cockroachdb
       - test-bigquery
       - test-timefold
       - test-spring-boot-batch

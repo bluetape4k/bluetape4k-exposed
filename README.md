@@ -27,7 +27,7 @@ read paths, JSON/encrypted columns, database dialect extensions, and Spring Boot
 - **Cache Integrations** — Caffeine (local), Lettuce and Redisson (distributed Redis) cache backends
 - **JSON Columns** — Jackson 2.x, Jackson 3.x, and Fastjson2 column serializers
 - **Encryption** — Google Tink-based encrypted columns
-- **Database-specific Extensions** — PostgreSQL, MySQL 8, BigQuery, ClickHouse, Trino, DuckDB, and Timefold persistence helpers
+- **Database-specific Extensions** — PostgreSQL, MySQL 8, BigQuery, ClickHouse, Trino, StarRocks, CockroachDB, DuckDB, and Timefold persistence helpers
 - **Spring Boot** — Spring Boot 4.x auto-configuration (JDBC, R2DBC, Batch, and Spring Modulith JDBC event publication integration)
 - **Measured Columns** — Exposed custom column types for `bluetape4k-measured` units
 
@@ -73,6 +73,7 @@ read paths, JSON/encrypted columns, database dialect extensions, and Spring Boot
 | `exposed-clickhouse` | ClickHouse connector support |
 | `exposed-trino` | Trino connector support |
 | `exposed-starrocks` | StarRocks local-first OLAP connector support |
+| `exposed-cockroachdb` | CockroachDB PostgreSQL-wire smoke support |
 | `exposed-duckdb` | DuckDB embedded analytics support |
 | `exposed-timefold-solver-persistence` | Timefold Solver persistence integration |
 | `exposed-spring-boot-jdbc` | Spring Boot 4.x JDBC auto-configuration |
