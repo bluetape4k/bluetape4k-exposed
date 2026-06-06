@@ -1,0 +1,57 @@
+digraph starrocks_architecture {
+  graph [
+    rankdir=TB,
+    bgcolor="transparent",
+    nodesep=0.75,
+    ranksep=0.9,
+    splines=ortho,
+    outputorder=edgesfirst
+  ];
+  node [
+    shape=box,
+    style="rounded,filled",
+    fontname="Architects Daughter",
+    fontsize=18,
+    margin="0.18,0.12",
+    penwidth=1.8
+  ];
+  edge [
+    fontname="Comic Mono",
+    fontsize=11,
+    penwidth=1.8,
+    arrowsize=0.8,
+    color="#6f7d90"
+  ];
+
+  app [label="Kotlin App", fillcolor="#E8F3FF", color="#5B8DEF"];
+  dsl [label="Exposed DSL", fillcolor="#EAF7EF", color="#58A978"];
+  database [label="StarRocksDatabase", fillcolor="#FDECEF", color="#DC6B82"];
+  dialect [label="StarRocksDialect", fillcolor="#F1ECFF", color="#8A72D6"];
+  metadata [label="StarRocksDialectMetadata", fillcolor="#E9F7F6", color="#45A7A1"];
+  table [label="StarRocksTable", fillcolor="#FFF3D9", color="#D6A441"];
+  wrapper [label="StarRocksConnectionWrapper", fillcolor="#F7F1E7", color="#B88A44"];
+  options [label="ConnectionOptions", fillcolor="#EEF6D9", color="#8BA84D"];
+  driver [label="StarRocks Connector/J", fillcolor="#E8F3FF", color="#5B8DEF"];
+  fe [label="StarRocks FE\nquery port 9030", fillcolor="#E9F7F6", color="#45A7A1"];
+  catalog [label="default_catalog.database", fillcolor="#FFF3D9", color="#D6A441"];
+  table_runtime [label="OLAP table", fillcolor="#FDECEF", color="#DC6B82"];
+
+  { rank=same; app; dsl }
+  { rank=same; database; dialect; metadata; table; wrapper; options }
+  { rank=same; driver }
+  { rank=same; fe; catalog; table_runtime }
+
+  app -> dsl [label="transaction/query"];
+  dsl -> database [label="connect/register"];
+  database -> dialect [label="register dialect"];
+  database -> metadata [label="register metadata"];
+  database -> wrapper [label="wrap connection"];
+  database -> options [label="build properties"];
+  wrapper -> driver [label="autocommit JDBC"];
+  driver -> fe [label="jdbc:starrocks"];
+  fe -> catalog [label="catalog.database"];
+  catalog -> table_runtime [label="OLAP DDL / rows"];
+  dsl -> table [label="render fixture DDL"];
+  table -> catalog [label="create/drop"];
+  metadata -> catalog [label="DatabaseMetaData"];
+}
