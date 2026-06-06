@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1040" viewBox="0 0 1900 1040" role="img" aria-label="StarRocks Local Smoke Sequence">
+<defs>
+  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
+  <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 7 4 L 1 7 Z" fill="#5B8DEF"/></marker>
+  <marker id="arrow-teal" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 7 4 L 1 7 Z" fill="#45A7A1"/></marker>
+  <marker id="arrow-amber" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 7 4 L 1 7 Z" fill="#D6A441"/></marker>
+  <marker id="arrow-gray" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 7 4 L 1 7 Z" fill="#758297"/></marker>
+  <style>
+    .canvas{fill:#f7f9fc}.frame{fill:#ffffff;stroke:#d8e0ea;stroke-width:1.5}
+    .title{font-family:"Architects Daughter","Comic Sans MS",cursive;font-size:44px;fill:#102033}
+    .subtitle{font-family:"Comic Mono","Comic Sans MS";font-size:15px;fill:#536273}
+    .participant{stroke-width:2.1;filter:url(#shadow)}.lifeline{stroke:#b7c2d1;stroke-width:2;stroke-dasharray:9 9}
+    .label{font-family:"Architects Daughter","Comic Sans MS",cursive;font-size:22px;fill:#102033}
+    .msg{font-family:"Comic Mono","Comic Sans MS";font-size:13px;fill:#102033}
+    .small{font-family:"Comic Mono","Comic Sans MS";font-size:12px;fill:#536273}
+    .callBlue{stroke:#5B8DEF;stroke-width:3;fill:none;marker-end:url(#arrow-blue)}
+    .callAmber{stroke:#D6A441;stroke-width:3;fill:none;marker-end:url(#arrow-amber)}
+    .callTeal{stroke:#45A7A1;stroke-width:3;fill:none;marker-end:url(#arrow-teal)}
+    .returnLine{stroke:#758297;stroke-width:2.6;fill:none;stroke-dasharray:8 7;marker-end:url(#arrow-gray)}
+    .box{fill:#ffffff;stroke:#d8e0ea;stroke-width:1.2}
+  </style>
+</defs>
+<rect class="canvas" width="1900" height="1040"/>
+<rect class="frame" x="36" y="32" width="1828" height="976" rx="26"/>
+<text class="title" x="72" y="88">StarRocks Local Smoke Sequence</text>
+<text class="subtitle" x="76" y="122">Bootstrap, autocommit query, and metadata discovery through the StarRocks module</text>
+
+<g transform="translate(88,170)">
+  <rect class="participant" x="0" y="0" width="230" height="70" rx="8" fill="#E8F3FF" stroke="#5B8DEF"/>
+  <text class="label" x="115" y="43" text-anchor="middle">Kotlin Code</text>
+  <line class="lifeline" x1="115" y1="86" x2="115" y2="800"/>
+</g>
+<g transform="translate(410,170)">
+  <rect class="participant" x="0" y="0" width="230" height="70" rx="8" fill="#FDECEF" stroke="#DC6B82"/>
+  <text class="label" x="115" y="43" text-anchor="middle">StarRocksDatabase</text>
+  <line class="lifeline" x1="115" y1="86" x2="115" y2="800"/>
+</g>
+<g transform="translate(732,170)">
+  <rect class="participant" x="0" y="0" width="230" height="70" rx="8" fill="#EAF7EF" stroke="#58A978"/>
+  <text class="label" x="115" y="43" text-anchor="middle">Exposed Tx</text>
+  <line class="lifeline" x1="115" y1="86" x2="115" y2="800"/>
+</g>
+<g transform="translate(1054,170)">
+  <rect class="participant" x="0" y="0" width="230" height="70" rx="8" fill="#F7F1E7" stroke="#B88A44"/>
+  <text class="label" x="115" y="34" text-anchor="middle">Connection</text>
+  <text class="label" x="115" y="55" text-anchor="middle">Wrapper</text>
+  <line class="lifeline" x1="115" y1="86" x2="115" y2="800"/>
+</g>
+<g transform="translate(1376,170)">
+  <rect class="participant" x="0" y="0" width="230" height="70" rx="8" fill="#E8F3FF" stroke="#5B8DEF"/>
+  <text class="label" x="115" y="43" text-anchor="middle">Connector/J</text>
+  <line class="lifeline" x1="115" y1="86" x2="115" y2="800"/>
+</g>
+<g transform="translate(1698,170)">
+  <rect class="participant" x="0" y="0" width="150" height="70" rx="8" fill="#E9F7F6" stroke="#45A7A1"/>
+  <text class="label" x="75" y="34" text-anchor="middle">StarRocks</text>
+  <text class="label" x="75" y="55" text-anchor="middle">FE/BE</text>
+  <line class="lifeline" x1="75" y1="86" x2="75" y2="800"/>
+</g>
+
+<rect class="box" x="178" y="292" width="272" height="34" rx="8"/>
+<text class="msg" x="192" y="314">1. connect(host, catalog, db)</text>
+<path class="callAmber" d="M203 346 L525 346"/>
+
+<rect class="box" x="610" y="362" width="276" height="34" rx="8"/>
+<text class="msg" x="624" y="384">2. DriverManager.getConnection</text>
+<path class="callAmber" d="M525 416 L1491 416"/>
+
+<rect class="box" x="628" y="432" width="238" height="34" rx="8"/>
+<text class="msg" x="642" y="454">3. wrap and force autocommit</text>
+<path class="callAmber" d="M525 486 L1169 486"/>
+
+<rect class="box" x="272" y="522" width="210" height="34" rx="8"/>
+<text class="msg" x="286" y="544">4. transaction(db)</text>
+<path class="callBlue" d="M203 576 L847 576"/>
+
+<rect class="box" x="910" y="592" width="196" height="34" rx="8"/>
+<text class="msg" x="924" y="614">5. execute SQL</text>
+<path class="callBlue" d="M847 646 L1169 646"/>
+
+<rect class="box" x="1230" y="662" width="206" height="34" rx="8"/>
+<text class="msg" x="1244" y="684">6. JDBC query</text>
+<path class="callBlue" d="M1169 716 L1773 716"/>
+
+<rect class="box" x="1256" y="744" width="174" height="34" rx="8"/>
+<text class="msg" x="1270" y="766">7. ResultSet rows</text>
+<path class="returnLine" d="M1773 796 L847 796"/>
+
+<rect class="box" x="628" y="834" width="238" height="34" rx="8"/>
+<text class="msg" x="642" y="856">8. DatabaseMetaData smoke</text>
+<path class="callTeal" d="M525 888 L1773 888"/>
+
+<rect class="box" x="278" y="922" width="242" height="34" rx="8"/>
+<text class="msg" x="292" y="944">9. table and column names</text>
+<path class="returnLine" d="M1773 976 L203 976"/>
+</svg>
