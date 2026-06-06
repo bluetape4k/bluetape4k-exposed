@@ -1203,6 +1203,53 @@ jobs:
           path: '**/build/reports/kover/'
           retention-days: 14
 
+  # exposed-starrocks (Testcontainers)
+  test-starrocks:
+    name: Test / exposed-starrocks
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '3 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    needs: build
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Test exposed-starrocks
+        run: |
+          for attempt in 1 2 3 4 5; do
+            ./gradlew :bluetape4k-exposed-starrocks:test --no-configuration-cache --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 5 ] && sleep 60 || exit 1
+          done
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+          DOCKER_HOST: "unix:///var/run/docker.sock"
+      - name: Generate Kover XML report
+        if: always()
+        run: ./gradlew :bluetape4k-exposed-starrocks:koverXmlReport --no-configuration-cache --no-daemon
+        continue-on-error: true
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-starrocks
+          path: '**/build/test-results/test/*.xml'
+          retention-days: 14
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-starrocks
+          path: '**/build/reports/kover/'
+          retention-days: 14
+
   # exposed-bigquery (gcloud Testcontainers)
   test-bigquery:
     name: Test / exposed-bigquery
@@ -1439,6 +1486,7 @@ jobs:
       - test-r2dbc-caffeine
       - test-clickhouse
       - test-trino
+      - test-starrocks
       - test-bigquery
       - test-timefold
       - test-spring-boot-batch
@@ -1496,6 +1544,7 @@ jobs:
       - test-r2dbc-caffeine
       - test-clickhouse
       - test-trino
+      - test-starrocks
       - test-bigquery
       - test-timefold
       - test-spring-boot-batch
