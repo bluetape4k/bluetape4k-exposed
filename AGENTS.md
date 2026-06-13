@@ -1,5 +1,10 @@
 # AGENTS.md - bluetape4k-exposed
 
+This repository inherits the workspace guidance from `../AGENTS.md`.
+Read and follow the workspace root guide first. This file only adds
+repo-specific layout, commands, domain rules, and local exceptions.
+
+
 JetBrains Exposed ORM extensions for Kotlin: JDBC/R2DBC repositories, cache
 integrations, JSON serialization, encryption columns, and Spring Boot 4
 auto-configuration.
@@ -43,9 +48,6 @@ spring-boot/
 buildSrc/
 ```
 
-Root README visual assets live under `docs/assets/` and should be shared by
-`README.md` and `README.ko.md` through the same relative path.
-
 ## Module Naming
 
 `settings.gradle.kts` maps directories to published-style Gradle names. Examples:
@@ -74,20 +76,6 @@ Root README visual assets live under `docs/assets/` and should be shared by
 ./gradlew publishAggregationToCentralSnapshots
 ./gradlew publishAggregationToCentralPortal
 ```
-
-## Project Documentation Artifacts
-
-Store durable project design/history artifacts in repo-local docs paths:
-
-- Specs: `docs/superpowers/specs/YYYY-MM-DD-{slug}-design.md`
-- Plans: `docs/superpowers/plans/YYYY-MM-DD-{slug}-plan.md`
-- Research notes, when needed: `docs/superpowers/research/YYYY-MM-DD-{slug}-research.md`
-- Lessons Learned / work retrospectives: `docs/lessons/YYYY-MM-DD-{slug}.md`
-- Use lowercase ASCII kebab-case slugs; include `issue-{number}-` when the
-  artifact is tied to a GitHub issue.
-- Treat `.omx/plans`, `.omx/notepad.md`, chat summaries, and runtime notes as
-  transient. Promote durable decisions and lessons into `docs/superpowers/` or
-  `docs/lessons/`.
 
 ## Design Contracts
 
@@ -119,22 +107,9 @@ Store durable project design/history artifacts in repo-local docs paths:
 - Nightly covers PostgreSQL, MySQL, Redis, and broader Testcontainers paths.
 - Snapshot publishing follows successful nightly or manual dispatch.
 
-## Cross-Repo Lesson Guards
+## Repo-Specific Guards
 
-- Before issue, PR, workflow, release, artifact-rename, or module-registration
-  work, query GNO for this repo in both `bluetape4k-github` and
-  `bluetape4k-docs`.
 - For module or artifact moves, scan workflows for both old and new names, then
-  update README locale sets, module lists, CI/Nightly jobs, coverage artifacts,
-  BOM/catalog constraints, and generated catalog/check scripts together.
-- Run PostgreSQL, MySQL, Redis, and other Testcontainers-backed verification
-  sequentially. Keep Kover XML/Codecov visible but do not add hard Kover gates
-  without an explicit policy decision.
-
-## GitHub Issue And Pull Request Workflow
-
-When creating GitHub issues or pull requests for bluetape4k repositories,
-assign them to `debop` by default unless the user explicitly says otherwise.
-Use `--assignee debop` with `gh issue create` and `gh pr create`, or the
-equivalent GitHub API `assignees` field. If a repository rejects the assignee,
-report that blocker instead of creating an unassigned issue or PR silently.
+  update generated catalog/check scripts with the same branch.
+- Run PostgreSQL, MySQL, Redis, and other Exposed Testcontainers-backed
+  verification sequentially.
