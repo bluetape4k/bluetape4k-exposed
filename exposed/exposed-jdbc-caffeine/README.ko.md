@@ -10,9 +10,13 @@ Caffeine 로컬(인프로세스) 캐시를 사용하는 Exposed JDBC 저장소�
 
 ## 아키텍처
 
-![exposed jdbc caffeine Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-diagram-01.png)
+Caffeine 인프로세스 캐시가 JDBC Repository 계약을 감싸는 위치와, 동기/Suspend Repository가 Exposed 트랜잭션으로 들어가는 경계를 보여줍니다.
+
+![JDBC Caffeine local cache architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-diagram-01.png)
 
 ## 쓰기 전략 흐름
+
+시퀀스 다이어그램은 동기 Repository 기준의 흐름을 보여줍니다. read-through miss, write-through 내구성, write-behind 큐잉, 캐시 전용 eviction을 구분합니다.
 
 ![JDBC Caffeine write strategy flow diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-sequence-01.png)
 

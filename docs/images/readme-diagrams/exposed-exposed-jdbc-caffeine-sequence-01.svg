@@ -1,87 +1,268 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1344" height="2136" viewBox="0 0 1344 2136" role="img" aria-label="Write Strategy Flows">
-<defs>
-  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#758297" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M 0 1 L 12 6 L 0 11 Z" fill="#ffffff" stroke="#758297" stroke-width="1.8"/></marker>
-  <style>
-    .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
-    .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
-    .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
-    .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
-    .smallLabel{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:21px;font-weight:400;fill:#102033}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
-    .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .strong{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .line{stroke:#758297;stroke-width:2.1;fill:none;marker-end:url(#openArrow)}
-    .plainLine{stroke:#758297;stroke-width:2.1;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
-    .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-    .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
-  </style>
-</defs>
-<rect class="canvas" width="1344" height="2136"/>
-<rect class="frame" x="32" y="28" width="1280" height="2080" rx="28"/>
-<text class="title" x="66" y="82">Write Strategy Flows</text>
-<text class="subtitle" x="70" y="118">Sequence messages from the original Mermaid source</text>
-<rect class="card" x="25" y="166" width="230" height="72" rx="20" fill="#E8F3FF" stroke="#5B8DEF"/>
-<text class="smallLabel" x="140" y="209" text-anchor="middle">Client</text>
-<line class="lifeline" x1="140" y1="252" x2="140" y2="2076" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect class="card" x="379.6666666666667" y="166" width="230" height="72" rx="20" fill="#EAF7EF" stroke="#58A978"/>
-<text class="smallLabel" x="494.6666666666667" y="209" text-anchor="middle">Repository</text>
-<line class="lifeline" x1="494.6666666666667" y1="252" x2="494.6666666666667" y2="2076" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect class="card" x="734.3333333333334" y="166" width="230" height="72" rx="20" fill="#FFF3D9" stroke="#D6A441"/>
-<text class="smallLabel" x="849.3333333333334" y="209" text-anchor="middle">Caffeine Cache</text>
-<line class="lifeline" x1="849.3333333333334" y1="252" x2="849.3333333333334" y2="2076" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect class="card" x="1089" y="166" width="230" height="72" rx="20" fill="#FDECEF" stroke="#DC6B82"/>
-<text class="smallLabel" x="1204" y="209" text-anchor="middle">JDBC Database</text>
-<line class="lifeline" x1="1204" y1="252" x2="1204" y2="2076" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect x="212.33333333333337" y="286" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="230.33333333333337" y="313" text-anchor="start">1. get(id)</text>
-<path class="line" d="M140 344 L494.6666666666667 344"/>
-<rect x="567" y="396" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="585" y="423" text-anchor="start">2. getIfPresent(key)</text>
-<path class="line" d="M494.6666666666667 454 L849.3333333333334 454"/>
-<rect x="567" y="506" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="585" y="533" text-anchor="start">3. null</text>
-<path class="dashed" d="M849.3333333333334 564 L494.6666666666667 564"/>
-<rect x="665.8333333333334" y="616" width="367" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="683.8333333333334" y="643" text-anchor="start">4. transaction { selectAll where id = ? }</text>
-<path class="line" d="M494.6666666666667 674 L1204 674"/>
-<rect x="744.3333333333334" y="726" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="762.3333333333334" y="753" text-anchor="start">5. row</text>
-<path class="dashed" d="M1204 784 L494.6666666666667 784"/>
-<rect x="567" y="836" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="585" y="863" text-anchor="start">6. put(key, entity)</text>
-<path class="line" d="M494.6666666666667 894 L849.3333333333334 894"/>
-<rect x="212.33333333333337" y="946" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="230.33333333333337" y="973" text-anchor="start">7. entity</text>
-<path class="dashed" d="M494.6666666666667 1004 L140 1004"/>
-<rect x="212.33333333333337" y="1056" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="230.33333333333337" y="1083" text-anchor="start">8. put(id, entity)</text>
-<path class="line" d="M140 1114 L494.6666666666667 1114"/>
-<rect x="567" y="1166" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="585" y="1193" text-anchor="start">9. put(key, entity)</text>
-<path class="line" d="M494.6666666666667 1224 L849.3333333333334 1224"/>
-<rect x="669.8333333333334" y="1276" width="359" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="687.8333333333334" y="1303" text-anchor="start">10. transaction { update / batchInsert }</text>
-<path class="line" d="M494.6666666666667 1334 L1204 1334"/>
-<rect x="212.33333333333337" y="1386" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="230.33333333333337" y="1413" text-anchor="start">11. done</text>
-<path class="dashed" d="M494.6666666666667 1444 L140 1444"/>
-<rect x="212.33333333333337" y="1496" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="230.33333333333337" y="1523" text-anchor="start">12. put(id, entity)</text>
-<path class="line" d="M140 1554 L494.6666666666667 1554"/>
-<rect x="567" y="1606" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="585" y="1633" text-anchor="start">13. put(key, entity)</text>
-<path class="line" d="M494.6666666666667 1664 L849.3333333333334 1664"/>
-<rect x="367.16666666666674" y="1716" width="351" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="385.16666666666674" y="1743" text-anchor="start">14. writeBehindQueue.send(id to entity)</text>
-<path class="line" d="M494.6666666666667 1774 C558.6666666666667 1774 558.6666666666667 1808 494.6666666666667 1808"/>
-<rect x="212.33333333333337" y="1846" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="230.33333333333337" y="1873" text-anchor="start">15. done (immediate)</text>
-<path class="dashed" d="M494.6666666666667 1904 L140 1904"/>
-<rect x="706.3333333333334" y="1956" width="286" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="724.3333333333334" y="1983" text-anchor="start">16. flushBatch (async, batched)</text>
-<path class="line" d="M494.6666666666667 2014 L1204 2014"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1740" height="3020" viewBox="0 0 1740 3020" role="img" aria-labelledby="title desc">
+  <title id="title">JDBC Caffeine Write Strategy Sequence</title>
+  <desc id="desc">Sequence diagram rebuilt from exposed-jdbc-caffeine README, AbstractJdbcCaffeineRepository source, LocalCacheConfig, and read/write strategy tests.</desc>
+  <defs>
+    <marker id="seqArrow-call" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5 Z" fill="#4F83BF"/></marker>
+    <marker id="seqArrow-scoped" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5 Z" fill="#755BC6"/></marker>
+    <marker id="seqArrow-thread" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5 Z" fill="#2E8F89"/></marker>
+    <marker id="seqArrow-restore" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5 Z" fill="#3E9868"/></marker>
+    <marker id="seqArrow-fallback" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5 Z" fill="#B9851B"/></marker>
+    <marker id="seqArrow-audit" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5 Z" fill="#C94D68"/></marker>
+    <marker id="seqArrow-neutral" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5 Z" fill="#758297"/></marker>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <style>
+      .canvas{fill:#F7FAFC}.frame{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:2.6;filter:url(#shadow)}
+      .title{font-family:"Architects Daughter";font-size:44px;fill:#22344A;font-weight:400}.subtitle{font-family:"Comic Mono";font-size:16px;fill:#536476;font-weight:400}
+      .card{filter:url(#shadow);stroke-width:2}.cardTitle{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .detail{font-family:"Comic Mono";font-size:13px;fill:#42556B;font-weight:400}.small{font-family:"Comic Mono";font-size:12px;fill:#627184;font-weight:400}
+      .seq{fill:none;stroke-width:3;stroke-linecap:round}.seqReturn{fill:none;stroke-width:2.7;stroke-linecap:round;stroke-dasharray:8 7}
+      .lifeline{stroke:#A7B4C3;stroke-width:1.8;stroke-dasharray:8 8}.labelPill{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
+      .branchBox{fill:#FFFFFF;fill-opacity:.42;stroke:#D6A441;stroke-width:1.8;stroke-dasharray:8 8}.note{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
+    </style>
+  </defs>
+  <rect class="canvas" width="1740" height="3020"/>
+  <rect class="frame" x="32" y="28" width="1676" height="2964" rx="28"/>
+  <text class="title" x="66" y="82">JDBC Caffeine Write Strategy Sequence</text>
+  <text class="subtitle" x="70" y="116">Read-through loads misses from JDBC; write-through persists in-line; write-behind queues a bounded background batch.</text>
+<g id="participant-caller">
+  <rect class="card" x="96" y="165" width="250" height="76" rx="10" fill="#E8F3FF" stroke="#5B8DEF"/>
+  <text class="cardTitle" x="221" y="210" text-anchor="middle">Application caller</text>
+  <line class="lifeline" x1="221" y1="241" x2="221" y2="2926"/>
+</g>
+<g id="participant-repo">
+  <rect class="card" x="355.6" y="165" width="250" height="76" rx="10" fill="#EAF7EF" stroke="#58A978"/>
+  <text class="cardTitle" x="480.6" y="210" text-anchor="middle">JdbcCaffeineRepository</text>
+  <line class="lifeline" x1="480.6" y1="241" x2="480.6" y2="2926"/>
+</g>
+<g id="participant-cache">
+  <rect class="card" x="615.2" y="165" width="250" height="76" rx="10" fill="#E9F7F6" stroke="#45A7A1"/>
+  <text class="cardTitle" x="740.2" y="210" text-anchor="middle">Caffeine Cache</text>
+  <line class="lifeline" x1="740.2" y1="241" x2="740.2" y2="2926"/>
+</g>
+<g id="participant-tx">
+  <rect class="card" x="874.8000000000001" y="165" width="250" height="76" rx="10" fill="#F1ECFF" stroke="#8A72D6"/>
+  <text class="cardTitle" x="999.8000000000001" y="197" text-anchor="middle">Exposed</text>
+  <text class="cardTitle" x="999.8000000000001" y="220" text-anchor="middle">transaction</text>
+  <line class="lifeline" x1="999.8000000000001" y1="241" x2="999.8000000000001" y2="2926"/>
+</g>
+<g id="participant-database">
+  <rect class="card" x="1134.4" y="165" width="250" height="76" rx="10" fill="#FDECEF" stroke="#DC6B82"/>
+  <text class="cardTitle" x="1259.4" y="210" text-anchor="middle">SQL database</text>
+  <line class="lifeline" x1="1259.4" y1="241" x2="1259.4" y2="2926"/>
+</g>
+<g id="participant-worker">
+  <rect class="card" x="1394" y="165" width="250" height="76" rx="10" fill="#FFF3D9" stroke="#D6A441"/>
+  <text class="cardTitle" x="1519" y="197" text-anchor="middle">Write-behind</text>
+  <text class="cardTitle" x="1519" y="220" text-anchor="middle">worker</text>
+  <line class="lifeline" x1="1519" y1="241" x2="1519" y2="2926"/>
+</g>
+<g>
+  <rect class="branchBox" x="74" y="292" width="1592" height="48" rx="15"/>
+  <rect class="labelPill" x="222.55" y="286" width="256.5" height="30" rx="8"/>
+  <text class="detail" x="350.8" y="302" text-anchor="middle" dominant-baseline="middle">READ_ONLY read-through miss</text>
+</g>
+<g id="m2">
+  <rect class="labelPill" x="228.3" y="364" width="245" height="30" rx="7"/>
+  <circle cx="247.3" cy="379" r="12" fill="#4F83BF"/>
+  <text class="detail" x="247.3" y="380" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">2</text>
+  <text class="detail" x="368.8" y="380" text-anchor="middle" dominant-baseline="middle">get(id)</text>
+  <path class="seq" d="M221 412 L480.6 412" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
+</g>
+<g id="m3">
+  <rect class="labelPill" x="485.4000000000001" y="446" width="250" height="30" rx="7"/>
+  <circle cx="504.4000000000001" cy="461" r="12" fill="#2E8F89"/>
+  <text class="detail" x="504.4000000000001" y="462" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">3</text>
+  <text class="detail" x="628.4000000000001" y="462" text-anchor="middle" dominant-baseline="middle">cache.getNullable(key)</text>
+  <path class="seq" d="M480.6 494 L740.2 494" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g id="m4">
+  <rect class="labelPill" x="487.9000000000001" y="528" width="245" height="30" rx="7"/>
+  <circle cx="506.9000000000001" cy="543" r="12" fill="#2E8F89"/>
+  <text class="detail" x="506.9000000000001" y="544" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">4</text>
+  <text class="detail" x="628.4000000000001" y="544" text-anchor="middle" dominant-baseline="middle">cache miss</text>
+  <path class="seqReturn" d="M740.2 576 L480.6 576" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g id="m5">
+  <rect class="labelPill" x="617.7" y="610" width="245" height="30" rx="7"/>
+  <circle cx="636.7" cy="625" r="12" fill="#755BC6"/>
+  <text class="detail" x="636.7" y="626" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">5</text>
+  <text class="detail" x="758.2" y="626" text-anchor="middle" dominant-baseline="middle">findByIdFromDb(id)</text>
+  <path class="seq" d="M480.6 658 L999.8000000000001 658" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
+</g>
+<g id="m6">
+  <rect class="labelPill" x="1007.1000000000001" y="692" width="245" height="30" rx="7"/>
+  <circle cx="1026.1000000000001" cy="707" r="12" fill="#C94D68"/>
+  <text class="detail" x="1026.1000000000001" y="708" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">6</text>
+  <text class="detail" x="1147.6000000000001" y="708" text-anchor="middle" dominant-baseline="middle">SELECT row by id</text>
+  <path class="seq" d="M999.8000000000001 740 L1259.4 740" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m7">
+  <rect class="labelPill" x="1007.1000000000001" y="774" width="245" height="30" rx="7"/>
+  <circle cx="1026.1000000000001" cy="789" r="12" fill="#C94D68"/>
+  <text class="detail" x="1026.1000000000001" y="790" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">7</text>
+  <text class="detail" x="1147.6000000000001" y="790" text-anchor="middle" dominant-baseline="middle">ResultRow</text>
+  <path class="seqReturn" d="M1259.4 822 L999.8000000000001 822" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m8">
+  <rect class="labelPill" x="576.2" y="856" width="328" height="30" rx="7"/>
+  <circle cx="595.2" cy="871" r="12" fill="#755BC6"/>
+  <text class="detail" x="595.2" y="872" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">8</text>
+  <text class="detail" x="758.2" y="872" text-anchor="middle" dominant-baseline="middle">toEntity(); cache stores value</text>
+  <path class="seqReturn" d="M999.8000000000001 904 L480.6 904" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
+</g>
+<g id="m9">
+  <rect class="labelPill" x="228.3" y="938" width="245" height="30" rx="7"/>
+  <circle cx="247.3" cy="953" r="12" fill="#B9851B"/>
+  <text class="detail" x="247.3" y="954" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">9</text>
+  <text class="detail" x="368.8" y="954" text-anchor="middle" dominant-baseline="middle">entity or null</text>
+  <path class="seqReturn" d="M480.6 986 L221 986" stroke="#B9851B" marker-end="url(#seqArrow-fallback)"/>
+</g>
+<g>
+  <rect class="branchBox" x="74" y="1030" width="1592" height="48" rx="15"/>
+  <rect class="labelPill" x="255.8" y="1024" width="190" height="30" rx="8"/>
+  <text class="detail" x="350.8" y="1040" text-anchor="middle" dominant-baseline="middle">WRITE_THROUGH put</text>
+</g>
+<g id="m11">
+  <rect class="labelPill" x="228.3" y="1102" width="245" height="30" rx="7"/>
+  <circle cx="247.3" cy="1117" r="12" fill="#4F83BF"/>
+  <text class="detail" x="247.3" y="1118" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">11</text>
+  <text class="detail" x="368.8" y="1118" text-anchor="middle" dominant-baseline="middle">put(id, entity)</text>
+  <path class="seq" d="M221 1150 L480.6 1150" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
+</g>
+<g id="m12">
+  <rect class="labelPill" x="485.4000000000001" y="1184" width="250" height="30" rx="7"/>
+  <circle cx="504.4000000000001" cy="1199" r="12" fill="#2E8F89"/>
+  <text class="detail" x="504.4000000000001" y="1200" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">12</text>
+  <text class="detail" x="628.4000000000001" y="1200" text-anchor="middle" dominant-baseline="middle">cache.put(key, entity)</text>
+  <path class="seq" d="M480.6 1232 L740.2 1232" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g id="m13">
+  <rect class="labelPill" x="608.6" y="1266" width="263.20000000000005" height="30" rx="7"/>
+  <circle cx="627.6" cy="1281" r="12" fill="#755BC6"/>
+  <text class="detail" x="627.6" y="1282" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">13</text>
+  <text class="detail" x="758.2" y="1282" text-anchor="middle" dominant-baseline="middle">writeToDb(id, entity)</text>
+  <path class="seq" d="M480.6 1314 L999.8000000000001 1314" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
+</g>
+<g id="m14">
+  <rect class="labelPill" x="1007.1000000000001" y="1336" width="245" height="42" rx="7"/>
+  <circle cx="1026.1000000000001" cy="1357" r="12" fill="#C94D68"/>
+  <text class="detail" x="1026.1000000000001" y="1358" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">14</text>
+  <text class="detail" x="1147.6000000000001" y="1349" text-anchor="middle" dominant-baseline="middle">UPDATE; optional</text>
+  <text class="detail" x="1147.6000000000001" y="1364" text-anchor="middle" dominant-baseline="middle">batchInsert</text>
+  <path class="seq" d="M999.8000000000001 1396 L1259.4 1396" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m15">
+  <rect class="labelPill" x="1007.1000000000001" y="1418" width="245" height="42" rx="7"/>
+  <circle cx="1026.1000000000001" cy="1439" r="12" fill="#C94D68"/>
+  <text class="detail" x="1026.1000000000001" y="1440" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">15</text>
+  <text class="detail" x="1147.6000000000001" y="1431" text-anchor="middle" dominant-baseline="middle">write committed in</text>
+  <text class="detail" x="1147.6000000000001" y="1446" text-anchor="middle" dominant-baseline="middle">transaction</text>
+  <path class="seqReturn" d="M1259.4 1478 L999.8000000000001 1478" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m16">
+  <rect class="labelPill" x="225.8" y="1512" width="250" height="30" rx="7"/>
+  <circle cx="244.8" cy="1527" r="12" fill="#B9851B"/>
+  <text class="detail" x="244.8" y="1528" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">16</text>
+  <text class="detail" x="368.8" y="1528" text-anchor="middle" dominant-baseline="middle">return after DB write</text>
+  <path class="seqReturn" d="M480.6 1560 L221 1560" stroke="#B9851B" marker-end="url(#seqArrow-fallback)"/>
+</g>
+<g>
+  <rect class="branchBox" x="74" y="1604" width="1592" height="48" rx="15"/>
+  <rect class="labelPill" x="255.8" y="1598" width="190" height="30" rx="8"/>
+  <text class="detail" x="350.8" y="1614" text-anchor="middle" dominant-baseline="middle">WRITE_BEHIND put</text>
+</g>
+<g id="m18">
+  <rect class="labelPill" x="228.3" y="1676" width="245" height="30" rx="7"/>
+  <circle cx="247.3" cy="1691" r="12" fill="#4F83BF"/>
+  <text class="detail" x="247.3" y="1692" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">18</text>
+  <text class="detail" x="368.8" y="1692" text-anchor="middle" dominant-baseline="middle">put(id, entity)</text>
+  <path class="seq" d="M221 1724 L480.6 1724" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
+</g>
+<g id="m19">
+  <rect class="labelPill" x="835.8" y="1758" width="328" height="30" rx="7"/>
+  <circle cx="854.8" cy="1773" r="12" fill="#755BC6"/>
+  <text class="detail" x="854.8" y="1774" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">19</text>
+  <text class="detail" x="1017.8" y="1774" text-anchor="middle" dominant-baseline="middle">start writeBehindJob if needed</text>
+  <path class="seq" d="M480.6 1806 L1519 1806" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
+</g>
+<g id="m20">
+  <rect class="labelPill" x="868.1999999999999" y="1840" width="263.20000000000005" height="30" rx="7"/>
+  <circle cx="887.1999999999999" cy="1855" r="12" fill="#C94D68"/>
+  <text class="detail" x="887.1999999999999" y="1856" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">20</text>
+  <text class="detail" x="1017.8" y="1856" text-anchor="middle" dominant-baseline="middle">trySend(id to entity)</text>
+  <path class="seq" d="M480.6 1888 L1519 1888" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m21">
+  <rect class="labelPill" x="828.5999999999999" y="1922" width="342.4" height="30" rx="7"/>
+  <circle cx="847.5999999999999" cy="1937" r="12" fill="#C94D68"/>
+  <text class="detail" x="847.5999999999999" y="1938" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">21</text>
+  <text class="detail" x="1017.8" y="1938" text-anchor="middle" dominant-baseline="middle">queue accepted; depth increments</text>
+  <path class="seqReturn" d="M1519 1970 L480.6 1970" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m22">
+  <rect class="labelPill" x="485.4000000000001" y="1992" width="250" height="42" rx="7"/>
+  <circle cx="504.4000000000001" cy="2013" r="12" fill="#2E8F89"/>
+  <text class="detail" x="504.4000000000001" y="2014" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">22</text>
+  <text class="detail" x="628.4000000000001" y="2005" text-anchor="middle" dominant-baseline="middle">cache.put after enqueue</text>
+  <text class="detail" x="628.4000000000001" y="2020" text-anchor="middle" dominant-baseline="middle">succeeds</text>
+  <path class="seq" d="M480.6 2052 L740.2 2052" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g id="m23">
+  <rect class="labelPill" x="228.3" y="2086" width="245" height="30" rx="7"/>
+  <circle cx="247.3" cy="2101" r="12" fill="#B9851B"/>
+  <text class="detail" x="247.3" y="2102" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">23</text>
+  <text class="detail" x="368.8" y="2102" text-anchor="middle" dominant-baseline="middle">return immediately</text>
+  <path class="seqReturn" d="M480.6 2134 L221 2134" stroke="#B9851B" marker-end="url(#seqArrow-fallback)"/>
+</g>
+<g id="m24">
+  <rect class="labelPill" x="1136.9" y="2168" width="245" height="30" rx="7"/>
+  <circle cx="1155.9" cy="2183" r="12" fill="#755BC6"/>
+  <text class="detail" x="1155.9" y="2184" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">24</text>
+  <text class="detail" x="1277.4" y="2184" text-anchor="middle" dominant-baseline="middle">flushBatch(batch)</text>
+  <path class="seq" d="M1519 2216 L999.8000000000001 2216" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
+</g>
+<g id="m25">
+  <rect class="labelPill" x="1007.1000000000001" y="2238" width="245" height="42" rx="7"/>
+  <circle cx="1026.1000000000001" cy="2259" r="12" fill="#C94D68"/>
+  <text class="detail" x="1026.1000000000001" y="2260" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">25</text>
+  <text class="detail" x="1147.6000000000001" y="2251" text-anchor="middle" dominant-baseline="middle">UPDATE; optional</text>
+  <text class="detail" x="1147.6000000000001" y="2266" text-anchor="middle" dominant-baseline="middle">batchInsert</text>
+  <path class="seq" d="M999.8000000000001 2298 L1259.4 2298" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m26">
+  <rect class="labelPill" x="1264.2" y="2320" width="250" height="42" rx="7"/>
+  <circle cx="1283.2" cy="2341" r="12" fill="#C94D68"/>
+  <text class="detail" x="1283.2" y="2342" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">26</text>
+  <text class="detail" x="1407.2" y="2333" text-anchor="middle" dominant-baseline="middle">batch flushed; depth</text>
+  <text class="detail" x="1407.2" y="2348" text-anchor="middle" dominant-baseline="middle">decreases</text>
+  <path class="seqReturn" d="M1259.4 2380 L1519 2380" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g>
+  <rect class="branchBox" x="74" y="2424" width="1592" height="48" rx="15"/>
+  <rect class="labelPill" x="222.55" y="2418" width="256.5" height="30" rx="8"/>
+  <text class="detail" x="350.8" y="2434" text-anchor="middle" dominant-baseline="middle">Evict-only cache operations</text>
+</g>
+<g id="m28">
+  <rect class="labelPill" x="225.8" y="2496" width="250" height="30" rx="7"/>
+  <circle cx="244.8" cy="2511" r="12" fill="#4F83BF"/>
+  <text class="detail" x="244.8" y="2512" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">28</text>
+  <text class="detail" x="368.8" y="2512" text-anchor="middle" dominant-baseline="middle">invalidate(id) or clear()</text>
+  <path class="seq" d="M221 2544 L480.6 2544" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
+</g>
+<g id="m29">
+  <rect class="labelPill" x="487.9000000000001" y="2566" width="245" height="42" rx="7"/>
+  <circle cx="506.9000000000001" cy="2587" r="12" fill="#2E8F89"/>
+  <text class="detail" x="506.9000000000001" y="2588" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">29</text>
+  <text class="detail" x="628.4000000000001" y="2579" text-anchor="middle" dominant-baseline="middle">cache.invalidate /</text>
+  <text class="detail" x="628.4000000000001" y="2594" text-anchor="middle" dominant-baseline="middle">invalidateAll</text>
+  <path class="seq" d="M480.6 2626 L740.2 2626" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g id="m30">
+  <rect class="labelPill" x="486.0000000000001" y="2660" width="248.8" height="30" rx="7"/>
+  <circle cx="505.0000000000001" cy="2675" r="12" fill="#2E8F89"/>
+  <text class="detail" x="505.0000000000001" y="2676" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">30</text>
+  <text class="detail" x="628.4000000000001" y="2676" text-anchor="middle" dominant-baseline="middle">cache entry removed</text>
+  <path class="seqReturn" d="M740.2 2708 L480.6 2708" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g data-footer="reader-note"><rect class="note" x="110" y="2902" width="1520" height="48" rx="12"/><text class="small" x="870" y="2919" text-anchor="middle" dominant-baseline="middle">This sequence follows the blocking JdbcCaffeineRepository path; suspend repositories mirror the strategy with suspend DB calls.</text><text class="small" x="870" y="2936" text-anchor="middle" dominant-baseline="middle">Write-behind accepts the queue before exposing the cache update, then flushes JDBC batches in the worker.</text></g>
 </svg>
