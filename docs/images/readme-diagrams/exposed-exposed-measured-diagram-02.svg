@@ -1,58 +1,74 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1378" height="526" viewBox="0 0 1378 526" role="img" aria-label="Column Conversion Flow">
-<defs>
-  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#758297" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M 0 1 L 12 6 L 0 11 Z" fill="#ffffff" stroke="#758297" stroke-width="1.8"/></marker>
-  <style>
-    .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
-    .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
-    .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
-    .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
-    .smallLabel{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:21px;font-weight:400;fill:#102033}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
-    .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .strong{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .line{stroke:#758297;stroke-width:2.1;fill:none;marker-end:url(#openArrow)}
-    .plainLine{stroke:#758297;stroke-width:2.1;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
-    .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-    .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
-  </style>
-</defs>
-<rect class="canvas" width="1378" height="526"/>
-<rect class="frame" x="32" y="28" width="1314" height="470" rx="28"/>
-<text class="title" x="66" y="82">Column Conversion Flow</text>
-<text class="subtitle" x="70" y="118">Architecture nodes and edges from the original Mermaid source</text>
-<path class="line" d="M672 386 C672 386 706 386 706 386"/>
-<path class="line" d="M1040 220 C1040 303 672 303 672 386"/>
-<path class="line" d="M1006 220 C1006 220 1040 220 1040 220"/>
-<path class="line" d="M672 220 C672 220 706 220 706 220"/>
-<path class="line" d="M338 220 C338 220 372 220 372 220"/>
-<g transform="translate(48,170)">
-  <rect class="card" x="0" y="0" width="280" height="100" rx="14" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <text class="smallLabel" x="140" y="33" text-anchor="middle">Application Measure</text>
-<text class="smallLabel" x="140" y="59" text-anchor="middle">value</text>
-</g>
-<g transform="translate(382,170)">
-  <rect class="card" x="0" y="0" width="280" height="100" rx="14" fill="#EAF7EF" stroke="#58A978"/>
-  <text class="smallLabel" x="140" y="45" text-anchor="middle">MeasureColumnType</text>
-</g>
-<g transform="translate(716,170)">
-  <rect class="card" x="0" y="0" width="280" height="100" rx="14" fill="#FFF3D9" stroke="#D6A441"/>
-  <text class="smallLabel" x="140" y="45" text-anchor="middle">Convert to base unit</text>
-</g>
-<g transform="translate(1050,170)">
-  <rect class="card" x="0" y="0" width="280" height="100" rx="14" fill="#FDECEF" stroke="#DC6B82"/>
-  <text class="smallLabel" x="140" y="45" text-anchor="middle">Persist as DOUBLE</text>
-</g>
-<g transform="translate(382,336)">
-  <rect class="card" x="0" y="0" width="280" height="100" rx="14" fill="#E9F7F6" stroke="#45A7A1"/>
-  <text class="smallLabel" x="140" y="45" text-anchor="middle">Read DOUBLE</text>
-</g>
-<g transform="translate(716,336)">
-  <rect class="card" x="0" y="0" width="280" height="100" rx="14" fill="#F1ECFF" stroke="#8A72D6"/>
-  <text class="smallLabel" x="140" y="33" text-anchor="middle">Restore typed</text>
-<text class="smallLabel" x="140" y="59" text-anchor="middle">Measure value</text>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1040" viewBox="0 0 1680 1040" role="img" aria-labelledby="title desc">
+  <title id="title">Measured Column Conversion Flow</title>
+  <desc id="desc">Flow diagram for exposed-measured showing how measured Kotlin values are converted to base-unit DOUBLE values and restored from ResultRow reads.</desc>
+  <defs>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#4F83BF"/></marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#2E8F89"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755BC6"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#B9851B"/></marker>
+    <style>
+      .canvas{fill:#F6F9FC}.frame{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
+      .layer{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}.card{filter:url(#shadow);stroke-width:2}
+      .title{font-family:"Architects Daughter";font-size:46px;fill:#22344A;font-weight:400}
+      .subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476;font-weight:400}
+      .layer-title{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .card-title{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}
+      .detail{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}
+      .small{font-family:"Comic Mono";font-size:13px;fill:#627184;font-weight:400}
+      .connector{fill:none;stroke-width:2.8;stroke-linejoin:round;stroke-linecap:round}
+      .note{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1.4}
+    </style>
+  </defs>
+  <rect class="canvas" width="1680" height="1040"/>
+  <rect class="frame" x="44" y="36" width="1592" height="968" rx="34"/>
+  <text class="title" x="72" y="88">Measured Column Conversion Flow</text>
+  <text class="subtitle" x="76" y="121">The column type is the only boundary that knows the base unit; the database stores a plain DOUBLE.</text>
+
+  <rect class="layer" x="82" y="160" width="1516" height="150" rx="18"/><text class="layer-title" x="112" y="190" dominant-baseline="middle">1. Table DSL</text>
+  <rect class="layer" x="82" y="350" width="1516" height="180" rx="18"/><text class="layer-title" x="112" y="380" dominant-baseline="middle">2. ColumnType boundary</text>
+  <rect class="layer" x="82" y="570" width="1516" height="150" rx="18"/><text class="layer-title" x="112" y="600" dominant-baseline="middle">3. JDBC storage</text>
+  <rect class="layer" x="82" y="760" width="1516" height="120" rx="18"/><text class="layer-title" x="112" y="790" dominant-baseline="middle">4. Readback</text>
+
+  <path data-edge="dsl-measure-to-type" class="connector" d="M 500 247 L 640 247 L 640 402" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
+  <path data-edge="dsl-temp-to-dedicated" class="connector" d="M 1030 247 L 1160 247" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+  <path data-edge="dedicated-to-type" class="connector" d="M 1290 284 L 1290 360 L 1040 360 L 1040 402" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+  <path data-edge="type-to-db" class="connector" d="M 840 486 L 840 624" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
+  <path data-edge="db-to-read" class="connector" d="M 840 676 L 840 802" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
+  <path data-edge="read-to-type" class="connector" d="M 1070 820 L 1480 820 L 1480 430 L 1160 430" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+
+  <g id="node-measure-dsl" data-node="measure-dsl" transform="translate(200,210)">
+    <rect class="card" x="0" y="0" width="300" height="74" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <text class="card-title" x="150" y="27" text-anchor="middle" dominant-baseline="middle">measure helpers</text>
+    <text class="detail" x="150" y="52" text-anchor="middle" dominant-baseline="middle">length, mass, area, power...</text>
+  </g>
+  <g id="node-temp-dsl" data-node="temp-dsl" transform="translate(730,210)">
+    <rect class="card" x="0" y="0" width="300" height="74" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="150" y="27" text-anchor="middle" dominant-baseline="middle">temperature helpers</text>
+    <text class="detail" x="150" y="52" text-anchor="middle" dominant-baseline="middle">temperature, temperatureDelta</text>
+  </g>
+  <g id="node-column" data-node="column" transform="translate(1160,210)">
+    <rect class="card" x="0" y="0" width="260" height="74" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="130" y="27" text-anchor="middle" dominant-baseline="middle">dedicated types</text>
+    <text class="detail" x="130" y="52" text-anchor="middle" dominant-baseline="middle">Kelvin conversions</text>
+  </g>
+
+  <g id="node-boundary" data-node="boundary" transform="translate(540,402)">
+    <rect class="card" x="0" y="0" width="600" height="84" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="300" y="28" text-anchor="middle" dominant-baseline="middle">MeasureColumnType / TemperatureColumnType</text>
+    <text class="detail" x="300" y="55" text-anchor="middle" dominant-baseline="middle">notNullValueToDB stores base value; valueFromDB restores typed value</text>
+  </g>
+  <g id="node-db" data-node="db" transform="translate(620,624)">
+    <rect class="card" x="0" y="0" width="440" height="52" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <text class="card-title" x="220" y="28" text-anchor="middle" dominant-baseline="middle">DOUBLE column value</text>
+  </g>
+  <g id="node-read" data-node="read" transform="translate(610,802)">
+    <rect class="card" x="0" y="0" width="460" height="54" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="230" y="29" text-anchor="middle" dominant-baseline="middle">ResultRow returns measured object</text>
+  </g>
+
+  <g transform="translate(112,928)">
+    <rect class="note" x="0" y="0" width="1456" height="40" rx="10"/>
+    <text class="small" x="728" y="22" text-anchor="middle" dominant-baseline="middle">Unsupported DB value types fail at valueFromDB, which keeps wrong column mappings visible during tests.</text>
+  </g>
 </svg>
