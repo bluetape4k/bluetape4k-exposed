@@ -23,7 +23,7 @@ Exposed R2DBC와 Lettuce Redis 캐시를 결합한 코루틴 네이티브 Read-t
 
 ![R2DBC Lettuce Redis cache architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-diagram-01.png)
 
-시퀀스 그림은 실행 흐름에 집중합니다. 읽기는 NearCache, Redis, DB 순서로 확인하고, 저장은 Redis를 먼저 갱신한 뒤 설정된 쓰기 모드에 따라 R2DBC writer로 전달합니다. delete와 clear는 캐시 상태를 제거하되, 저장소 delete 경로에서만 writer를 통해 DB 삭제까지 이어집니다.
+시퀀스 그림은 실제 메시지 순서를 따릅니다. NearCache hit, Redis hit, Redis miss 시 R2DBC loader 경로, 설정된 쓰기 모드에 따른 save, delete/invalidate/clear의 캐시 정리 흐름을 구분해서 보여줍니다.
 
 ![R2DBC Lettuce cache sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-sequence-01.png)
 
