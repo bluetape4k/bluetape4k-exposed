@@ -1,124 +1,136 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1280" viewBox="0 0 1680 1280" role="img" aria-labelledby="title desc">
-  <title id="title">Custom Column Type Hierarchy</title>
-  <desc id="desc">Class-oriented custom column type hierarchy rebuilt from exposed-core README and current column source files.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120" role="img" aria-labelledby="title desc">
+  <title id="title">exposed-core Column Type Pipeline Map</title>
+  <desc id="desc">Pipeline map showing how exposed-core column extension functions connect Kotlin values, transformers, and SQL storage types.</desc>
   <defs>
-    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
-    <marker id="arrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="context-stroke"/></marker>
-    <marker id="generalizationArrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 9 5 L 1 9 Z" fill="#FFFFFF" stroke="context-stroke" stroke-width="1.2" stroke-dasharray="none"/></marker>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%">
+      <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#203040" flood-opacity="0.12"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 12 10" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 5 L1 9 Z" fill="context-stroke"/>
+    </marker>
     <style>
-      .canvas{fill:#F6F9FC}.decor{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
-      .innerFrame{fill:#FBFDFF;stroke:#D9E4EF;stroke-width:2}
-      .title{font-family:"Architects Daughter";font-size:46px;fill:#22344A;font-weight:400}
-      .subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476;font-weight:400}
-      .group{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}.group-title{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
-      .card-title{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}.detail{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}
-      .small{font-family:"Comic Mono";font-size:13px;fill:#627184;font-weight:400}.shape{filter:url(#shadow);stroke-width:2}
-      .connector{fill:none;stroke-width:2.6;marker-end:url(#arrow);stroke-linejoin:round;stroke-linecap:round}.generalization{marker-end:url(#generalizationArrow)}.dashed{stroke-dasharray:7 6}
-      .pill{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1}
+      .canvas{fill:#F6F9FC}
+      .panel{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3;filter:url(#shadow)}
+      .title{font-family:"Architects Daughter";font-size:44px;fill:#22344A;font-weight:400}
+      .subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476}
+      .lane-title{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .box-title{font-family:"Architects Daughter";font-size:21px;fill:#22344A;font-weight:400}
+      .text{font-family:"Comic Mono";font-size:14px;fill:#34485E}
+      .small{font-family:"Comic Mono";font-size:13px;fill:#627184}
+      .lane{fill:#F3F7FB;stroke:#D9E4EF;stroke-width:2}
+      .box{stroke-width:2;filter:url(#shadow)}
+      .value{fill:#E8F3FF;stroke:#4F83BF}
+      .transform{fill:#FFF3D9;stroke:#D6A441}
+      .storage{fill:#EAF7EF;stroke:#58A978}
+      .direct{fill:#F1ECFF;stroke:#755BC6}
+      .arrow{fill:none;stroke:#536C85;stroke-width:2.4;marker-end:url(#arrow);stroke-linecap:round;stroke-linejoin:round}
+      .bidir{fill:none;stroke:#536C85;stroke-width:2.4;marker-end:url(#arrow);stroke-linecap:round;stroke-linejoin:round}
     </style>
   </defs>
-  <rect class="canvas" width="1680" height="1280"/>
-  <rect class="decor" x="44" y="36" width="1592" height="1208" rx="34"/>
-  <rect class="innerFrame" x="82" y="154" width="1516" height="924" rx="24"/>
-  <text class="title" x="72" y="88">Custom Column Type Hierarchy</text>
-  <text class="subtitle" x="76" y="121">Current source groups transformed columns around ColumnWithTransform, while network and normalized phone string columns extend ColumnType directly.</text>
-  <g id="group-exposed-base">
-    <rect class="group" x="92" y="156" width="1496" height="220" rx="18"/>
-    <text class="group-title" x="122" y="180" dominant-baseline="middle">Exposed base abstractions</text>
+
+  <rect class="canvas" width="1600" height="1120"/>
+  <rect class="panel" x="42" y="36" width="1516" height="1048" rx="30"/>
+  <text class="title" x="72" y="88">Column Type Pipeline Map</text>
+  <text class="subtitle" x="76" y="121">Each row answers how a Kotlin value becomes a database value and which extension function registers it.</text>
+
+  <rect class="lane" x="92" y="170" width="1416" height="130" rx="18"/>
+  <text class="lane-title" x="122" y="198">Compressed bytes</text>
+  <path class="arrow" d="M420 235 L535 235"/>
+  <path class="arrow" d="M810 235 L925 235"/>
+  <g transform="translate(150 208)">
+    <rect class="box value" x="0" y="0" width="270" height="70" rx="10"/>
+    <text class="box-title" x="135" y="24" text-anchor="middle">ByteArray</text>
+    <text class="text" x="135" y="47" text-anchor="middle">application payload</text>
   </g>
-  <g id="group-transformed">
-    <rect class="group" x="92" y="416" width="1496" height="360" rx="18"/>
-    <text class="group-title" x="122" y="440" dominant-baseline="middle">ColumnWithTransform-backed families</text>
+  <g transform="translate(535 195)">
+    <rect class="box transform" x="0" y="0" width="275" height="96" rx="10"/>
+    <text class="box-title" x="137.5" y="24" text-anchor="middle">Compression</text>
+    <text class="text" x="137.5" y="47" text-anchor="middle">LZ4 / Snappy / Zstd</text>
+    <text class="text" x="137.5" y="70" text-anchor="middle">rethrows cancellation</text>
   </g>
-  <g id="group-direct">
-    <rect class="group" x="92" y="816" width="1496" height="220" rx="18"/>
-    <text class="group-title" x="122" y="840" dominant-baseline="middle">Direct ColumnType families</text>
+  <g transform="translate(925 208)">
+    <rect class="box storage" x="0" y="0" width="430" height="70" rx="10"/>
+    <text class="box-title" x="215" y="24" text-anchor="middle">compressedBinary / compressedBlob</text>
+    <text class="text" x="215" y="47" text-anchor="middle">VARBINARY(length) or BLOB</text>
   </g>
-  <path id="route-column-with-transform-column-transformer" data-edge="column-with-transform-&gt;column-transformer" data-label="delegates conversion" class="connector" d="M 850 288 L 900 288" stroke="#2E8F89"/>
-  <path id="route-compressed-binary-column-with-transform" data-edge="compressed-binary-&gt;column-with-transform" data-label="inherits transformed column" class="connector generalization" d="M 305 510 L 305 456 L 520 456 L 520 344" stroke="#4F83BF"/>
-  <path id="route-serialized-binary-column-with-transform" data-edge="serialized-binary-&gt;column-with-transform" data-label="inherits transformed column" class="connector generalization" d="M 715 510 L 715 344" stroke="#755BC6"/>
-  <path id="route-phone-number-column-with-transform" data-edge="phone-number-&gt;column-with-transform" data-label="inherits transformed column" class="connector generalization" d="M 1115 510 L 1115 456 L 840 456 L 840 344" stroke="#2E8F89"/>
-  <path id="route-direct-impl-column-type" data-edge="direct-impl-&gt;column-type" data-label="extends directly" class="connector generalization" d="M 1380 875 L 1380 334" stroke="#758297"/>
-  <path id="route-transformers-column-transformer" data-edge="transformers-&gt;column-transformer" data-label="implements conversion contract" class="connector generalization" d="M 930 635 L 930 334" stroke="#B9851B"/>
-  <g id="node-column-with-transform" data-node="column-with-transform" transform="translate(410,232)">
-    <rect class="shape" x="0" y="0" width="440" height="112" rx="12" fill="#EAF7EF" stroke="#58A978"/>
-    <text class="card-title" x="220" y="37" text-anchor="middle" dominant-baseline="middle">ColumnWithTransform&lt;DB, T&gt;</text>
-    <text class="detail" x="220" y="56" text-anchor="middle" dominant-baseline="middle">wraps base ColumnType</text>
-    <text class="detail" x="220" y="75" text-anchor="middle" dominant-baseline="middle">delegates value mapping</text>
+
+  <rect class="lane" x="92" y="330" width="1416" height="130" rx="18"/>
+  <text class="lane-title" x="122" y="358">Serialized objects</text>
+  <path class="arrow" d="M420 395 L535 395"/>
+  <path class="arrow" d="M810 395 L925 395"/>
+  <g transform="translate(150 368)">
+    <rect class="box value" x="0" y="0" width="270" height="70" rx="10"/>
+    <text class="box-title" x="135" y="24" text-anchor="middle">T : Any</text>
+    <text class="text" x="135" y="47" text-anchor="middle">domain object</text>
   </g>
-  <g id="node-column-transformer" data-node="column-transformer" transform="translate(900,248)">
-    <rect class="shape" x="0" y="0" width="330" height="86" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
-    <text class="card-title" x="165" y="24" text-anchor="middle" dominant-baseline="middle">ColumnTransformer&lt;DB, T&gt;</text>
-    <text class="detail" x="165" y="43" text-anchor="middle" dominant-baseline="middle">unwrap entity to DB</text>
-    <text class="detail" x="165" y="62" text-anchor="middle" dominant-baseline="middle">wrap DB to entity</text>
+  <g transform="translate(535 355)">
+    <rect class="box transform" x="0" y="0" width="275" height="96" rx="10"/>
+    <text class="box-title" x="137.5" y="24" text-anchor="middle">BinarySerializer</text>
+    <text class="text" x="137.5" y="47" text-anchor="middle">Kryo / Fory family</text>
+    <text class="text" x="137.5" y="70" text-anchor="middle">null deserialize fails</text>
   </g>
-  <g id="node-column-type" data-node="column-type" transform="translate(1235,248)">
-    <rect class="shape" x="0" y="0" width="330" height="86" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
-    <text class="card-title" x="165" y="24" text-anchor="middle" dominant-baseline="middle">ColumnType&lt;T&gt;</text>
-    <text class="detail" x="165" y="43" text-anchor="middle" dominant-baseline="middle">direct SQL type</text>
-    <text class="detail" x="165" y="62" text-anchor="middle" dominant-baseline="middle">DB value conversion</text>
+  <g transform="translate(925 368)">
+    <rect class="box storage" x="0" y="0" width="430" height="70" rx="10"/>
+    <text class="box-title" x="215" y="24" text-anchor="middle">binarySerializedBinary / Blob</text>
+    <text class="text" x="215" y="47" text-anchor="middle">VARBINARY(length) or BLOB</text>
   </g>
-  <g id="node-compressed-binary" data-node="compressed-binary" transform="translate(130,510)">
-    <rect class="shape" x="0" y="0" width="350" height="76" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
-    <text class="card-title" x="175" y="19" text-anchor="middle" dominant-baseline="middle">CompressedBinaryColumnType</text>
-    <text class="detail" x="175" y="38" text-anchor="middle" dominant-baseline="middle">BinaryColumnType</text>
-    <text class="detail" x="175" y="57" text-anchor="middle" dominant-baseline="middle">ByteArray &lt;-&gt; ByteArray</text>
+
+  <rect class="lane" x="92" y="490" width="1416" height="155" rx="18"/>
+  <text class="lane-title" x="122" y="518">Network addresses</text>
+  <path class="arrow" d="M500 568 L615 568"/>
+  <path class="arrow" d="M935 568 L1050 568"/>
+  <g transform="translate(150 535)">
+    <rect class="box direct" x="0" y="0" width="350" height="94" rx="10"/>
+    <text class="box-title" x="175" y="24" text-anchor="middle">InetAddress / CIDR text</text>
+    <text class="text" x="175" y="47" text-anchor="middle">inetAddress(), cidr()</text>
+    <text class="text" x="175" y="70" text-anchor="middle">PostgreSQL operator: &lt;&lt;</text>
   </g>
-  <g id="node-compressed-blob" data-node="compressed-blob" transform="translate(130,635)">
-    <rect class="shape" x="0" y="0" width="350" height="76" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
-    <text class="card-title" x="175" y="19" text-anchor="middle" dominant-baseline="middle">CompressedBlobColumnType</text>
-    <text class="detail" x="175" y="38" text-anchor="middle" dominant-baseline="middle">BlobColumnType</text>
-    <text class="detail" x="175" y="57" text-anchor="middle" dominant-baseline="middle">ExposedBlob &lt;-&gt; ByteArray</text>
+  <g transform="translate(615 535)">
+    <rect class="box transform" x="0" y="0" width="320" height="94" rx="10"/>
+    <text class="box-title" x="160" y="24" text-anchor="middle">Direct ColumnType</text>
+    <text class="text" x="160" y="47" text-anchor="middle">no ColumnWithTransform</text>
+    <text class="text" x="160" y="70" text-anchor="middle">custom SQL type binding</text>
   </g>
-  <g id="node-serialized-binary" data-node="serialized-binary" transform="translate(520,510)">
-    <rect class="shape" x="0" y="0" width="390" height="76" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
-    <text class="card-title" x="195" y="19" text-anchor="middle" dominant-baseline="middle">BinarySerializedBinaryColumnType</text>
-    <text class="detail" x="195" y="38" text-anchor="middle" dominant-baseline="middle">BinaryColumnType</text>
-    <text class="detail" x="195" y="57" text-anchor="middle" dominant-baseline="middle">ByteArray &lt;-&gt; T</text>
+  <g transform="translate(1050 535)">
+    <rect class="box storage" x="0" y="0" width="320" height="94" rx="10"/>
+    <text class="box-title" x="160" y="24" text-anchor="middle">INET / CIDR fallback</text>
+    <text class="text" x="160" y="47" text-anchor="middle">PostgreSQL native types</text>
+    <text class="text" x="160" y="70" text-anchor="middle">VARCHAR on other dialects</text>
   </g>
-  <g id="node-serialized-blob" data-node="serialized-blob" transform="translate(520,635)">
-    <rect class="shape" x="0" y="0" width="390" height="76" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
-    <text class="card-title" x="195" y="19" text-anchor="middle" dominant-baseline="middle">BinarySerializedBlobColumnType</text>
-    <text class="detail" x="195" y="38" text-anchor="middle" dominant-baseline="middle">BlobColumnType</text>
-    <text class="detail" x="195" y="57" text-anchor="middle" dominant-baseline="middle">ExposedBlob &lt;-&gt; T</text>
+
+  <rect class="lane" x="92" y="675" width="1416" height="155" rx="18"/>
+  <text class="lane-title" x="122" y="703">Phone numbers</text>
+  <path class="arrow" d="M500 753 L615 753"/>
+  <path class="arrow" d="M935 753 L1050 753"/>
+  <g transform="translate(150 720)">
+    <rect class="box value" x="0" y="0" width="350" height="94" rx="10"/>
+    <text class="box-title" x="175" y="24" text-anchor="middle">PhoneNumber or String</text>
+    <text class="text" x="175" y="47" text-anchor="middle">phoneNumber()</text>
+    <text class="text" x="175" y="70" text-anchor="middle">phoneNumberString()</text>
   </g>
-  <g id="node-phone-number" data-node="phone-number" transform="translate(950,510)">
-    <rect class="shape" x="0" y="0" width="330" height="76" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
-    <text class="card-title" x="165" y="19" text-anchor="middle" dominant-baseline="middle">PhoneNumberColumnType</text>
-    <text class="detail" x="165" y="38" text-anchor="middle" dominant-baseline="middle">VarCharColumnType(20)</text>
-    <text class="detail" x="165" y="57" text-anchor="middle" dominant-baseline="middle">String &lt;-&gt; PhoneNumber</text>
+  <g transform="translate(615 720)">
+    <rect class="box transform" x="0" y="0" width="320" height="94" rx="10"/>
+    <text class="box-title" x="160" y="24" text-anchor="middle">libphonenumber</text>
+    <text class="text" x="160" y="47" text-anchor="middle">parse / validate</text>
+    <text class="text" x="160" y="70" text-anchor="middle">normalize to E.164</text>
   </g>
-  <g id="node-transformers" data-node="transformers" transform="translate(920,635)">
-    <rect class="shape" x="0" y="0" width="360" height="76" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
-    <text class="card-title" x="180" y="9.5" text-anchor="middle" dominant-baseline="middle">Transformer implementations</text>
-    <text class="detail" x="180" y="28.5" text-anchor="middle" dominant-baseline="middle">compression</text>
-    <text class="detail" x="180" y="47.5" text-anchor="middle" dominant-baseline="middle">serialization</text>
-    <text class="detail" x="180" y="66.5" text-anchor="middle" dominant-baseline="middle">phone number parsing</text>
+  <g transform="translate(1050 720)">
+    <rect class="box storage" x="0" y="0" width="320" height="94" rx="10"/>
+    <text class="box-title" x="160" y="24" text-anchor="middle">VARCHAR(20)</text>
+    <text class="text" x="160" y="47" text-anchor="middle">stores E.164 string</text>
+    <text class="text" x="160" y="70" text-anchor="middle">object or string API</text>
   </g>
-  <g id="node-direct-impl" data-node="direct-impl" transform="translate(1185,875)">
-    <rect class="shape" x="0" y="0" width="390" height="70" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
-    <text class="card-title" x="195" y="16" text-anchor="middle" dominant-baseline="middle">Direct ColumnType implementations</text>
-    <text class="detail" x="195" y="35" text-anchor="middle" dominant-baseline="middle">no ColumnWithTransform</text>
-    <text class="detail" x="195" y="54" text-anchor="middle" dominant-baseline="middle">custom SQL binding</text>
+
+  <g transform="translate(150 882)">
+    <rect class="box" x="0" y="0" width="1200" height="98" rx="12" fill="#FBFDFF" stroke="#D7E2EC"/>
+    <text class="box-title" x="600" y="31" text-anchor="middle">Reader rule</text>
+    <text class="text" x="600" y="58" text-anchor="middle">Use transformed column families when a reversible value mapping is needed.</text>
+    <text class="text" x="600" y="80" text-anchor="middle">Use direct ColumnType families when SQL binding or dialect fallback is the main concern.</text>
   </g>
-  <g id="node-phone-string" data-node="phone-string" transform="translate(145,950)">
-    <rect class="shape" x="0" y="0" width="360" height="70" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
-    <text class="card-title" x="180" y="25.5" text-anchor="middle" dominant-baseline="middle">PhoneNumberStringColumnType</text>
-    <text class="detail" x="180" y="44.5" text-anchor="middle" dominant-baseline="middle">normalizes to E.164</text>
-  </g>
-  <g id="node-inet-address" data-node="inet-address" transform="translate(650,950)">
-    <rect class="shape" x="0" y="0" width="360" height="70" rx="12" fill="#EAF7EF" stroke="#58A978"/>
-    <text class="card-title" x="180" y="25.5" text-anchor="middle" dominant-baseline="middle">InetAddressColumnType</text>
-    <text class="detail" x="180" y="44.5" text-anchor="middle" dominant-baseline="middle">INET or VARCHAR(45)</text>
-  </g>
-  <g id="node-cidr" data-node="cidr" transform="translate(1110,950)">
-    <rect class="shape" x="0" y="0" width="330" height="70" rx="12" fill="#EAF7EF" stroke="#58A978"/>
-    <text class="card-title" x="165" y="25.5" text-anchor="middle" dominant-baseline="middle">CidrColumnType</text>
-    <text class="detail" x="165" y="44.5" text-anchor="middle" dominant-baseline="middle">CIDR or VARCHAR(50)</text>
-  </g>
-  <g transform="translate(76,1158)" data-footer="reader-contract">
-    <rect class="pill" x="0" y="0" width="1528" height="48" rx="10"/>
-    <text class="small" x="764" y="18" text-anchor="middle" dominant-baseline="middle">Core column families cover compression, serialization, network/CIDR, and E.164 phone values.</text>
-    <text class="small" x="764" y="35" text-anchor="middle" dominant-baseline="middle">Tink encryption belongs to exposed-tink; exposed-core provides the shared transform foundation.</text>
+
+  <g transform="translate(76 1010)">
+    <rect x="0" y="0" width="1448" height="48" rx="10" fill="#FFFFFF" stroke="#D7E2EC"/>
+    <text class="small" x="724" y="19" text-anchor="middle">This is a pipeline map, not a class hierarchy: arrows show value conversion from Kotlin API to SQL storage.</text>
+    <text class="small" x="724" y="36" text-anchor="middle">Tink encryption lives in exposed-tink; exposed-core covers compression, serialization, inet/CIDR, and phone values.</text>
   </g>
 </svg>
