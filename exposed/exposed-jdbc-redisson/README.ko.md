@@ -28,13 +28,20 @@ dependencies {
 
 ## 아키텍처 개요
 
-![exposed jdbc redisson Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-01.png)
+아키텍처 그림은 애플리케이션 호출을 처리하는 Redisson map과 캐시만 제거할 때 사용하는 map을 나눠 보여줍니다.
+`RedissonCacheConfig`가 `RMapCache`와 `RLocalCachedMap` 중 하나를 선택하고, read-only 모드에서는 loader만 붙이며,
+read/write 모드에서만 writer를 붙입니다.
+
+![JDBC Redisson Redis cache architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-01.png)
 
 ## 클래스 다이어그램
 
 ### 동기 Repository 계층 구조
 
-![Repository diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-02.png)
+클래스 다이어그램은 동기 repository 계약에 집중합니다. 코루틴 경로도 같은 캐시 정책을 사용하지만, Redisson future와
+Exposed suspend transaction을 기다리는 흐름은 sequence diagram에서 보는 편이 더 읽기 쉽습니다.
+
+![JDBC Redisson synchronous repository hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-02.png)
 
 
 ## 기본 사용법
@@ -254,35 +261,43 @@ transaction {
 
 ### Read-Through (동기)
 
-캐시 미스 시 `ExposedEntityMapLoader`가 DB에서 자동 로드합니다.
+캐시 미스가 발생하면 `ExposedEntityMapLoader`가 DB에서 엔티티를 읽고, Redisson이 Redis에 저장합니다. 무효화는
+`deleteFromDBOnInvalidate=true`가 아닌 한 DB를 건드리지 않고 캐시 데이터만 제거합니다.
 
-![JDBC Redisson read-through flow diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-01.png)
+![JDBC Redisson read-through sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-01.png)
 
 ### Write-Through (동기)
 
-`put()` 호출 시 `ExposedEntityMapWriter`가 DB에 즉시 동기 반영합니다.
+`put()`을 호출하면 Redisson이 반환하기 전에 `ExposedEntityMapWriter`를 실행합니다. 이미 존재하는 ID는 UPDATE하고,
+DB가 ID를 자동 생성하지 않는 테이블은 `BatchInsertStatement.insertEntity`로 INSERT할 수 있습니다.
 
-![JDBC Redisson write-through flow diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-02.png)
+![JDBC Redisson write-through sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-02.png)
 
 ### Write-Behind (동기)
 
-`put()` 호출 즉시 응답하고, 이후 `ExposedEntityMapWriter`가 비동기로 DB에 배치 반영합니다.
+`put()` 호출에서는 Redis가 값을 먼저 받아들이고, writer가 나중에 DB로 flush합니다. 쓰기 지연은 줄어들지만, DB 반영을
+바로 확인해야 하는 호출자는 background write 구간을 고려해야 합니다.
 
-![JDBC Redisson write-behind flow diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-03.png)
+![JDBC Redisson write-behind sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-03.png)
 
 ### Read-Through (Suspend 코루틴)
 
-`SuspendedJdbcRedissonRepository`는 모든 연산을 `suspend` 함수로 제공합니다.
+`SuspendedJdbcRedissonRepository`는 같은 read-through 정책을 `suspend` 함수로 제공합니다. repository는 Redisson
+async map 연산을 기다리고, DB 읽기는 Exposed suspend transaction으로 수행합니다.
 
-![Read-Through (Suspend ) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-04.png)
+![Suspended JDBC Redisson read-through sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-04.png)
 
 ### Write-Through (Suspend 코루틴)
 
-![Write-Through (Suspend ) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-05.png)
+Suspend write-through 경로는 Redisson과 suspended writer가 DB UPDATE 또는 INSERT를 끝낸 뒤에 재개됩니다.
+
+![Suspended JDBC Redisson write-through sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-05.png)
 
 ### Write-Behind (Suspend 코루틴)
 
-![Write-Behind (Suspend ) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-06.png)
+Suspend write-behind 경로는 Redis가 값을 받은 뒤에 재개됩니다. DB 반영은 Redisson background writer가 이어서 처리합니다.
+
+![Suspended JDBC Redisson write-behind sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-06.png)
 
 ## JdbcRedissonRepository / SuspendedJdbcRedissonRepository 주요 메서드
 
@@ -315,10 +330,6 @@ transaction {
 | `AbstractJdbcRedissonRepository.kt`          | 동기식 캐시 Repository 추상 클래스            |
 | `SuspendedJdbcRedissonRepository.kt`         | 코루틴 캐시 Repository 인터페이스             |
 | `AbstractSuspendedJdbcRedissonRepository.kt` | 코루틴 캐시 Repository 추상 클래스            |
-| `ExposedCacheRepository.kt`                  | (Deprecated) 구 동기식 Repository 인터페이스 |
-| `AbstractExposedCacheRepository.kt`          | (Deprecated) 구 동기식 추상 클래스           |
-| `SuspendedExposedCacheRepository.kt`         | (Deprecated) 구 코루틴 Repository 인터페이스 |
-| `AbstractSuspendedExposedCacheRepository.kt` | (Deprecated) 구 코루틴 추상 클래스           |
 
 ### Map (map/)
 
@@ -336,7 +347,7 @@ transaction {
 ## 테스트
 
 ```bash
-./gradlew :exposed-jdbc-redisson:test
+./gradlew :bluetape4k-exposed-jdbc-redisson:test
 ```
 
 ## 참고

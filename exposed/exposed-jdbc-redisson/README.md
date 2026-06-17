@@ -29,13 +29,21 @@ dependencies {
 
 ## Architecture Overview
 
-![Architecture Overview diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-01.png)
+The architecture view separates the Redisson map that serves application calls from the map used for cache-only
+invalidation. `RedissonCacheConfig` chooses `RMapCache` or `RLocalCachedMap`, attaches a loader in read-only mode, and
+adds a writer only for read/write modes.
+
+![JDBC Redisson Redis cache architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-01.png)
 
 ## Class Diagrams
 
 ### Synchronous Repository Hierarchy
 
-![Synchronous Repository Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-02.png)
+The class diagram focuses on the synchronous repository contract. Coroutine behavior uses the same cache policy, but
+the suspend path is easier to read in the sequence diagrams because it awaits Redisson futures and suspended Exposed
+transactions.
+
+![JDBC Redisson synchronous repository hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-diagram-02.png)
 
 
 ## Basic Usage
@@ -256,35 +264,44 @@ transaction {
 
 ### Read-Through (synchronous)
 
-On a cache miss, `ExposedEntityMapLoader` automatically loads from the DB.
+On a cache miss, `ExposedEntityMapLoader` loads from the DB and Redisson stores the entity in Redis. Invalidating an
+entry removes cache data only unless `deleteFromDBOnInvalidate=true`.
 
-![Read-Through (synchronous) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-01.png)
+![JDBC Redisson read-through sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-01.png)
 
 ### Write-Through (synchronous)
 
-On `put()`, `ExposedEntityMapWriter` immediately and synchronously persists to the DB.
+On `put()`, Redisson calls `ExposedEntityMapWriter` before the write returns. Existing IDs are updated; non-generated
+IDs can be inserted with `BatchInsertStatement.insertEntity`.
 
-![Write-Through (synchronous) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-02.png)
+![JDBC Redisson write-through sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-02.png)
 
 ### Write-Behind (synchronous)
 
-On `put()`, immediately returns and then `ExposedEntityMapWriter` asynchronously batch-persists to the DB.
+On `put()`, Redis accepts the value first and the writer flushes to the DB later. This mode improves write latency, but
+callers that require DB durability must account for the background write window.
 
-![Write-Behind (synchronous) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-03.png)
+![JDBC Redisson write-behind sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-03.png)
 
 ### Read-Through (Suspend Coroutines)
 
-`SuspendedJdbcRedissonRepository` exposes all operations as `suspend` functions.
+`SuspendedJdbcRedissonRepository` exposes the same read-through policy as `suspend` functions. The repository awaits
+Redisson async map operations and uses suspended Exposed transactions for DB reads.
 
-![Read-Through (Suspend Coroutines) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-04.png)
+![Suspended JDBC Redisson read-through sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-04.png)
 
 ### Write-Through (Suspend Coroutines)
 
-![Write-Through (Suspend Coroutines) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-05.png)
+The suspend write-through path resumes after Redisson and the suspended writer have completed the DB update or insert.
+
+![Suspended JDBC Redisson write-through sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-05.png)
 
 ### Write-Behind (Suspend Coroutines)
 
-![Write-Behind (Suspend Coroutines) diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-06.png)
+The suspend write-behind path resumes after Redis accepts the value; DB persistence is still handled by Redisson's
+background writer.
+
+![Suspended JDBC Redisson write-behind sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-redisson-sequence-06.png)
 
 ## JdbcRedissonRepository / SuspendedJdbcRedissonRepository Key Methods
 
@@ -318,10 +335,6 @@ On `put()`, immediately returns and then `ExposedEntityMapWriter` asynchronously
 | `AbstractJdbcRedissonRepository.kt`          | Synchronous cache Repository abstract class    |
 | `SuspendedJdbcRedissonRepository.kt`         | Coroutines cache Repository interface          |
 | `AbstractSuspendedJdbcRedissonRepository.kt` | Coroutines cache Repository abstract class     |
-| `ExposedCacheRepository.kt`                  | (Deprecated) Legacy synchronous Repository     |
-| `AbstractExposedCacheRepository.kt`          | (Deprecated) Legacy synchronous abstract class |
-| `SuspendedExposedCacheRepository.kt`         | (Deprecated) Legacy Coroutines Repository      |
-| `AbstractSuspendedExposedCacheRepository.kt` | (Deprecated) Legacy Coroutines abstract class  |
 
 ### Map (map/)
 
@@ -339,7 +352,7 @@ On `put()`, immediately returns and then `ExposedEntityMapWriter` asynchronously
 ## Testing
 
 ```bash
-./gradlew :exposed-jdbc-redisson:test
+./gradlew :bluetape4k-exposed-jdbc-redisson:test
 ```
 
 ## References
