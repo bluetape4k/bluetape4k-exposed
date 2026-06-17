@@ -2,8 +2,7 @@
 
 English | [한국어](./README.ko.md)
 
-A coroutine-native Read-through / Write-through / Write-behind cache repository module that combines Exposed R2DBC with Lettuce Redis. Guarantees fully coroutine-native behavior using
-`suspendTransaction` — no `runBlocking` required.
+A coroutine-native Read-through / Write-through / Write-behind cache repository module that combines Exposed R2DBC with Lettuce Redis. Data-access operations use `suspendTransaction` and the suspend `LettuceSuspendedLoadedMap`; no JDBC repository path is provided.
 
 ## Overview
 
@@ -20,9 +19,13 @@ A coroutine-native Read-through / Write-through / Write-behind cache repository 
 
 ## Architecture
 
-![exposed r2dbc lettuce Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-diagram-01.png)
+The architecture view separates the repository surface, optional Caffeine NearCache, Redis loaded map, and R2DBC loader/writer. Use it to see which component owns read-through loading, write-mode behavior, and DB retry policy.
 
-![R2DBC Lettuce cache flow diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-sequence-01.png)
+![R2DBC Lettuce Redis cache architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-diagram-01.png)
+
+The sequence view focuses on runtime behavior: reads check NearCache, Redis, then DB; saves update Redis first and reach the R2DBC writer according to the configured write mode; delete and clear operations remove cache state and use the writer path only for repository deletes.
+
+![R2DBC Lettuce cache sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-sequence-01.png)
 
 ## Dependency
 
@@ -143,7 +146,7 @@ When NearCache is enabled, the lookup order is: **Caffeine (local) → Redis →
 ## Testing
 
 ```bash
-./gradlew :exposed-r2dbc-lettuce:test
+./gradlew :bluetape4k-exposed-r2dbc-lettuce:test
 ```
 
 ## References

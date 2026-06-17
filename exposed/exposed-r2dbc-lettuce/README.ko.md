@@ -3,7 +3,7 @@
 [English](./README.md) | 한국어
 
 Exposed R2DBC와 Lettuce Redis 캐시를 결합한 코루틴 네이티브 Read-through / Write-through / Write-behind 캐시 레포지토리 모듈입니다.
-`runBlocking` 없이 `suspendTransaction` 기반으로 완전한 코루틴 네이티브 동작을 보장합니다.
+데이터 접근 작업은 `suspendTransaction`과 suspend 기반 `LettuceSuspendedLoadedMap`을 사용하며, JDBC 레포지토리 경로는 제공하지 않습니다.
 
 ## 개요
 
@@ -19,9 +19,13 @@ Exposed R2DBC와 Lettuce Redis 캐시를 결합한 코루틴 네이티브 Read-t
 
 ## 아키텍처
 
-![exposed r2dbc lettuce Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-diagram-01.png)
+아키텍처 그림은 저장소 표면, 선택적 Caffeine NearCache, Redis loaded map, R2DBC loader/writer를 분리해서 보여줍니다. read-through 로딩, 쓰기 모드 처리, DB 재시도 정책을 어느 컴포넌트가 맡는지 확인할 때 보면 됩니다.
 
-![R2DBC Lettuce cache flow diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-sequence-01.png)
+![R2DBC Lettuce Redis cache architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-diagram-01.png)
+
+시퀀스 그림은 실행 흐름에 집중합니다. 읽기는 NearCache, Redis, DB 순서로 확인하고, 저장은 Redis를 먼저 갱신한 뒤 설정된 쓰기 모드에 따라 R2DBC writer로 전달합니다. delete와 clear는 캐시 상태를 제거하되, 저장소 delete 경로에서만 writer를 통해 DB 삭제까지 이어집니다.
+
+![R2DBC Lettuce cache sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-sequence-01.png)
 
 ## 의존성 추가
 
@@ -142,7 +146,7 @@ NearCache가 활성화되면 조회 순서: **Caffeine(로컬) → Redis → DB*
 ## 테스트
 
 ```bash
-./gradlew :exposed-r2dbc-lettuce:test
+./gradlew :bluetape4k-exposed-r2dbc-lettuce:test
 ```
 
 ## 참고
