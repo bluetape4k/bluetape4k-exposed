@@ -24,19 +24,13 @@ dependencies {
 }
 ```
 
-## Architecture Diagram
+## Fastjson2 Adapter Boundary
 
-### Column Type Structure (Summary)
+![Fastjson2 JSON column boundary](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-01.png)
 
-![Column Type Structure (Summary) diagram](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-01.png)
+## JSON Round Trip
 
-### JSON Column Type Class Structure
-
-![JSON Column Type Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-02.png)
-
-### JSON Column Data Flow
-
-![JSON Column Data Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-diagram-03.png)
+![Fastjson2 JSON round trip](../../docs/images/readme-diagrams/exposed-exposed-fastjson2-flow-02.png)
 
 ## Basic Usage
 
@@ -136,7 +130,7 @@ val extraData: Map<String, Any>? = resultRow.getFastjsonOrNull(Products.extraDat
 ## Testing
 
 ```bash
-./gradlew :exposed-fastjson2:test
+./gradlew :bluetape4k-exposed-fastjson2:test
 ```
 
 ## References
