@@ -8,9 +8,13 @@ Exposed R2DBC repository with Caffeine local (in-process) cache. No JDBC depende
 
 ## Architecture
 
-![exposed r2dbc caffeine Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-diagram-01.png)
+The architecture view separates the coroutine-facing repository contract, the local `AsyncCache`, the Exposed R2DBC transaction path, and the write-behind worker. Use it to decide where cache configuration, table mapping, and database writes are owned.
 
-![R2DBC Caffeine cache flow diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-sequence-01.png)
+![R2DBC Caffeine local cache architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-diagram-01.png)
+
+The sequence view focuses on behavior: read-through misses load through `suspendTransaction`, write-through waits for the database write, and write-behind returns after queuing while `close()` waits for the final flush.
+
+![R2DBC Caffeine cache sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-sequence-01.png)
 
 ## Features
 

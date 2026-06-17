@@ -8,9 +8,13 @@ Caffeine 로컬(인프로세스) 캐시를 사용하는 Exposed R2DBC 저장소�
 
 ## 아키텍처
 
-![exposed r2dbc caffeine Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-diagram-01.png)
+아키텍처 그림은 코루틴에서 호출하는 저장소 계약, 로컬 `AsyncCache`, Exposed R2DBC 트랜잭션 경로, write-behind 작업자를 분리해서 보여줍니다. 캐시 설정, 테이블 매핑, DB 쓰기 책임이 어디에 있는지 확인할 때 보면 됩니다.
 
-![R2DBC Caffeine cache flow diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-sequence-01.png)
+![R2DBC Caffeine local cache architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-diagram-01.png)
+
+시퀀스 그림은 동작 흐름에 집중합니다. read-through 미스는 `suspendTransaction`으로 DB를 읽고, write-through는 DB 쓰기까지 기다리며, write-behind는 큐에 넣은 뒤 반환하고 `close()`에서 마지막 flush를 기다립니다.
+
+![R2DBC Caffeine cache sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-sequence-01.png)
 
 ## 주요 기능
 
