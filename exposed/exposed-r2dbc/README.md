@@ -98,12 +98,12 @@ statements.
 
 ![Core R2DBC repository structure diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-01.png)
 
-### R2dbcRepository Hierarchy
+### Repository Capability Map
 
-The class diagram separates the base repository contract from key-type convenience interfaces and the optional
-auditable/soft-delete extensions.
+This capability map separates repository CRUD, state extensions, SQL composition helpers, driver utilities, and
+virtual-thread execution helpers so readers can choose the lowest API boundary they need.
 
-![R2DBC repository hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.png)
+![R2DBC repository capability map](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.png)
 
 ### suspend Transaction Flow
 
@@ -111,12 +111,12 @@ How CRUD operations are executed through `R2dbcRepository` inside a `suspendTran
 
 ![R2DBC suspend transaction sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-01.png)
 
-### SoftDelete Transaction Flow
+### Soft-delete Visibility Flow
 
-Soft-delete operations update the `isDeleted` flag and then route reads through `findActive` or `findDeleted` so callers
-choose the visibility boundary explicitly.
+Soft-delete operations update the `isDeleted` flag. Later reads choose `findAll`, `findActive`, or `findDeleted`
+explicitly, so the visibility boundary stays under caller control.
 
-![R2DBC soft-delete transaction sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-02.png)
+![R2DBC soft-delete visibility flow diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-02.png)
 
 ## Basic Usage
 
@@ -467,7 +467,7 @@ val rows = ActorTable.selectImplicitAll()
 ## Testing
 
 ```bash
-./gradlew :exposed-r2dbc:test
+./gradlew :bluetape4k-exposed-r2dbc:test
 ```
 
 ## References

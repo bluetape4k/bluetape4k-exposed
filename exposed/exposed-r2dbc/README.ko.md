@@ -97,12 +97,12 @@ R2DBC statement로 위임합니다.
 
 ![Core R2DBC repository structure diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-01.png)
 
-### R2dbcRepository 계층
+### Repository 기능 지도
 
-클래스 다이어그램은 기본 repository 계약, key type별 편의 인터페이스, 선택적으로 붙는 auditing/soft-delete 확장을
-분리해서 보여줍니다.
+이 기능 지도는 repository CRUD, 상태 확장, SQL 조합 helper, driver utility, virtual-thread 실행 helper를 나눠
+보여줍니다. 필요한 API 경계를 가장 낮은 수준에서 고르기 쉽도록 정리했습니다.
 
-![R2DBC repository hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.png)
+![R2DBC repository capability map](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.png)
 
 ### suspend 트랜잭션 흐름
 
@@ -110,12 +110,12 @@ R2DBC statement로 위임합니다.
 
 ![R2DBC suspend transaction sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-01.png)
 
-### SoftDelete 트랜잭션 흐름
+### Soft-delete 가시성 흐름
 
-Soft-delete 연산은 `isDeleted` 플래그를 갱신하고, 이후 읽기 경로는 `findActive` 또는 `findDeleted`로 나뉩니다.
-호출자는 어떤 가시성 경계를 사용할지 명시적으로 선택합니다.
+Soft-delete 연산은 `isDeleted` 플래그만 갱신합니다. 이후 읽기는 `findAll`, `findActive`, `findDeleted` 중 하나를
+명시적으로 선택하므로, 어떤 행까지 보일지는 호출자가 정합니다.
 
-![R2DBC soft-delete transaction sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-02.png)
+![R2DBC soft-delete visibility flow diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-02.png)
 
 ## 기본 사용법
 
@@ -274,7 +274,7 @@ suspendTransaction {
 suspendTransaction {
     val repo = ActorRepository()
 
-// 배치 삽입
+    // 배치 삽입
     val inserted = repo.batchInsert(actorList) { actor ->
         this[ActorTable.firstName] = actor.firstName
         this[ActorTable.lastName]  = actor.lastName
@@ -465,7 +465,7 @@ val rows = ActorTable.selectImplicitAll()
 ## 테스트
 
 ```bash
-./gradlew :exposed-r2dbc:test
+./gradlew :bluetape4k-exposed-r2dbc:test
 ```
 
 ## 참고
