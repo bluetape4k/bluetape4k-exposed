@@ -24,23 +24,23 @@ dependencies {
 
 ## 다이어그램
 
-### AuditableEntity 핵심 구조
+### AuditableEntity UML 클래스 다이어그램
 
-`AuditableLongEntity`, `AuditableLongEntityClass`, 커스텀 IdTable 계층의 관계를 나타냅니다.
+`AuditableEntity`, 타입별 Auditable DAO 엔티티, `EntityClass` helper의 상속 관계를 보여줍니다. 런타임 감사 필드 설정은 별도로 요약해 클래스 구조와 `flush()` 시점을 혼동하지 않도록 했습니다.
 
-![AuditableEntity diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-01.png)
+![AuditableEntity UML Class Diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-01.png)
 
-### 생성형 ID DAO Entity 계층
+### 생성형 ID DAO 지원 매트릭스
 
-`exposed-core`의 생성형 ID 테이블 계열에 대응하는 DAO Entity/EntityClass helper입니다.
+`exposed-core`의 생성형 ID 테이블마다 이 모듈이 제공하는 DAO `Entity`와 `EntityClass` helper 쌍을 매핑합니다.
 
-![Generated-ID DAO Entity Families diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-02.png)
+![Generated-ID DAO Support Matrix](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-02.png)
 
-### Entity 확장 계층
+### Entity helper pairing map
 
-각 IdTable에 대응하는 DAO Entity 및 EntityClass 계층입니다.
+애플리케이션 코드에서 테이블 베이스를 고르고, 대응하는 엔티티를 상속한 뒤, 같은 계열의 `EntityClass` companion을 노출하는 흐름을 보여줍니다. 공통 확장 함수는 상속 구조가 아니라 공유 helper로 표시합니다.
 
-![Entity diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-03.png)
+![Entity Helper Pairing Map](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-03.png)
 
 ## 기본 사용법
 

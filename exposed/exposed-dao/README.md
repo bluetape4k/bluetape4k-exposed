@@ -25,23 +25,23 @@ dependencies {
 
 ## Diagrams
 
-### Core AuditableEntity Structure
+### AuditableEntity UML Class Diagram
 
-Illustrates the relationships among `AuditableLongEntity`, `AuditableLongEntityClass`, and the custom IdTable hierarchy.
+Shows the inheritance among `AuditableEntity`, typed auditable DAO entities, and their `EntityClass` helpers. Runtime audit assignment is summarized separately so class structure is not confused with flush timing.
 
-![Core AuditableEntity Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-01.png)
+![AuditableEntity UML Class Diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-01.png)
 
-### Generated-ID DAO Entity Families
+### Generated-ID DAO Support Matrix
 
-DAO Entity and EntityClass helpers paired with the generated-ID table families from `exposed-core`.
+Maps each generated-ID table from `exposed-core` to the DAO `Entity` and `EntityClass` helper pair available in this module.
 
-![Generated-ID DAO Entity Families diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-02.png)
+![Generated-ID DAO Support Matrix](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-02.png)
 
-### Entity Extension Hierarchy
+### Entity Helper Pairing Map
 
-DAO Entity and EntityClass hierarchies corresponding to each IdTable.
+Shows the application pattern: choose a table base, extend the matching entity, and expose the matching `EntityClass` companion. Common extension functions are shown as shared helpers, not as inheritance.
 
-![Entity Extension Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-03.png)
+![Entity Helper Pairing Map](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-03.png)
 
 ## Basic Usage
 
