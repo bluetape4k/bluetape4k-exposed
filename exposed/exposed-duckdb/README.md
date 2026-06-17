@@ -18,9 +18,7 @@ A module that integrates JetBrains Exposed ORM with DuckDB JDBC. Built on Postgr
 ## Positioning
 
 - Use DuckDB as an Exposed JDBC backend for analytics, temporary storage, or embedded file-based databases.
--
-
-`DuckDBDatabase.inMemory()` creates an independent in-memory database per connection, making it unsuitable as a shared store across multiple transactions.
+- `DuckDBDatabase.inMemory()` creates an independent in-memory database per connection, making it unsuitable as a shared store across multiple transactions.
 - If you need persistence or a consistent shared state across transactions, prefer `DuckDBDatabase.file(...)`.
 
 ## Dependency
@@ -31,13 +29,13 @@ dependencies {
 }
 ```
 
-## Diagram
+## Integration Boundary
 
-![exposed duckdb Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-duckdb-diagram-01.png)
+![DuckDB Exposed integration boundary](../../docs/images/readme-diagrams/exposed-exposed-duckdb-diagram-01.png)
 
-### Query Execution Flow
+## Query Flow Materialization
 
-![Query Execution Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-duckdb-sequence-01.png)
+![DuckDB query flow materialization](../../docs/images/readme-diagrams/exposed-exposed-duckdb-flow-02.png)
 
 ## Basic Usage
 
@@ -107,8 +105,7 @@ queryFlow(db) {
 > To safely manage JDBC `ResultSet` lifetimes and Exposed transaction boundaries,
 > `queryFlow` materializes results into a `List` inside the transaction before emitting.
 > The API surface is `Flow`, but it does not perform true row-by-row streaming.
-> Even with the
-`Flow` API, large result sets are ultimately loaded into memory — consider a separate pagination strategy for very large datasets.
+> Even with the `Flow` API, large result sets are ultimately loaded into memory — consider a separate pagination strategy for very large datasets.
 
 ## Key Files / Classes
 
@@ -123,15 +120,15 @@ queryFlow(db) {
 ## Testing
 
 ```bash
-./gradlew :exposed-duckdb:test
+./gradlew :bluetape4k-exposed-duckdb:test
 ```
 
 Core regression test examples:
 
 ```bash
-./gradlew :exposed-duckdb:test --tests "io.bluetape4k.exposed.duckdb.DuckDBConnectionWrapperTest"
-./gradlew :exposed-duckdb:test --tests "io.bluetape4k.exposed.duckdb.DuckDBDatabaseTest"
-./gradlew :exposed-duckdb:test --tests "io.bluetape4k.exposed.duckdb.DuckDBExtensionsTest"
+./gradlew :bluetape4k-exposed-duckdb:test --tests "io.bluetape4k.exposed.duckdb.DuckDBConnectionWrapperTest"
+./gradlew :bluetape4k-exposed-duckdb:test --tests "io.bluetape4k.exposed.duckdb.DuckDBDatabaseTest"
+./gradlew :bluetape4k-exposed-duckdb:test --tests "io.bluetape4k.exposed.duckdb.DuckDBExtensionsTest"
 ```
 
 ## References
