@@ -47,14 +47,14 @@ English-label PNG assets only:
 - `docs/images/readme-diagrams/exposed-exposed-starrocks-diagram-01.png`
 - `docs/images/readme-diagrams/exposed-exposed-starrocks-sequence-01.png`
 
-Matching SVG sources, Graphviz `.dot`, `.plain`, and Graphviz SVG/PNG preview
-evidence were added next to the README PNGs.
+Matching SVG sources and rendered PNG assets were added next to the README PNGs.
+Keep future diagram validation on SVG/XML parsing, CairoSVG rendering, geometry
+checks, and visual inspection.
 
 | Diagram Gate | Result | Evidence |
 |---|---|---|
-| SVG/XML parse | PASS | `xmllint --noout` on final and Graphviz SVG assets. |
+| SVG/XML parse | PASS | `xmllint --noout` on final SVG assets. |
 | PNG/SVG asset pair | PASS | Both README PNGs have matching SVG sources. |
-| Graphviz evidence | PASS | `.dot`, `.plain`, `-graphviz.svg`, and `-graphviz.png` exist for both diagrams. |
 | README embed rule | PASS | `exposed-starrocks` README files embed PNG only; no SVG embeds found. |
 | Font/arrow stale-pattern scan | PASS | No `Inter`, `Arial`, `Helvetica`, `13x13`, or `3.9x3.9` marker patterns in StarRocks SVG assets. |
 | Geometry summary | PASS | Architecture: `nodes=18`, `routes=11`, `segments=24`, `badEndpointAngle=0`, `badBends=0`, `interiorCrossings=0`, `marginImbalance=0`, `titleGap=PASS`; Sequence: `nodes=17`, `routes=9`, `segments=9`, all bad counts `0`, `titleGap=PASS`. |
@@ -72,7 +72,7 @@ evidence were added next to the README PNGs.
 | `./gradlew :bluetape4k-exposed-starrocks:compileTestKotlin --no-configuration-cache --no-daemon` | PASS after the Step 6-R cleanup patch. |
 | `actionlint .github/workflows/ci.yml .github/workflows/nightly-tests.yml` | PASS. |
 | `git diff --check` | PASS. |
-| Diagram asset checks | PASS: XML parse, PNG/SVG/DOT/plain/Graphviz evidence, README PNG-only embeds, stale font/marker scan, geometry summary, and individual PNG visual inspection. |
+| Diagram asset checks | PASS: XML parse, PNG/SVG asset pairs, README PNG-only embeds, stale font/marker scan, geometry summary, and individual PNG visual inspection. |
 
 IntelliJ MCP diagnostics were unavailable in this session, so Gradle compile/test/Kover plus static workflow checks were used as the recorded fallback.
 
