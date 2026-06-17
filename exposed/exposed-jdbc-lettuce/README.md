@@ -27,9 +27,13 @@ dependencies {
 
 ## Architecture Overview
 
-![Architecture Overview diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-diagram-01.png)
+This architecture view separates the blocking repository, the suspend repository, the Redis loaded-map layer, and the Exposed JDBC loader/writer path. NearCache is shown only on the suspend path because the blocking repository goes straight through `LettuceLoadedMap`.
 
-![Architecture Overview diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-sequence-01.png)
+![JDBC Lettuce Redis cache architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-diagram-01.png)
+
+The sequence view follows the read-through, write-through/write-behind, and invalidation timing shared by the repository contracts. It calls out the optional suspend NearCache step instead of implying that every Lettuce repository has a local front cache.
+
+![JDBC Lettuce cache flow diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-sequence-01.png)
 
 ## Basic Usage
 

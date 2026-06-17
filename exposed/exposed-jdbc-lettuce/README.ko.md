@@ -27,7 +27,11 @@ dependencies {
 
 ## 아키텍처 개요
 
-![exposed jdbc lettuce Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-diagram-01.png)
+아키텍처 다이어그램은 동기 Repository, suspend Repository, Redis loaded-map 계층, Exposed JDBC loader/writer 경계를 나눠 보여줍니다. NearCache는 suspend 경로에만 표시합니다. 동기 Repository는 `LettuceLoadedMap`을 통해 바로 Redis loaded-map을 사용합니다.
+
+![JDBC Lettuce Redis cache architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-diagram-01.png)
+
+시퀀스 다이어그램은 read-through, write-through/write-behind, invalidation의 실행 순서를 설명합니다. 모든 Lettuce Repository가 로컬 캐시를 갖는 것처럼 보이지 않도록, suspend NearCache 단계는 선택 경로로 분리했습니다.
 
 ![JDBC Lettuce cache flow diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-lettuce-sequence-01.png)
 
@@ -88,12 +92,9 @@ class UserSuspendedRepository(redisClient: RedisClient):
     ) {
     override val table = UserTable
     override fun ResultRow.toEntity() = /* ... */
-        override
-    fun UpdateStatement.updateEntity(entity: UserRecord) = /* ... */
-        override
-    fun BatchInsertStatement.insertEntity(entity: UserRecord) = /* ... */
-        override
-    fun extractId(entity: UserRecord) = entity.id
+    override fun UpdateStatement.updateEntity(entity: UserRecord) = /* ... */
+    override fun BatchInsertStatement.insertEntity(entity: UserRecord) = /* ... */
+    override fun extractId(entity: UserRecord) = entity.id
 }
 
 // suspend 함수로 사용
