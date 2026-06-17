@@ -1,101 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1754" height="1170" viewBox="0 0 1754 1170" role="img" aria-label="Custom Column Type Hierarchy">
-<defs>
-  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="10" markerHeight="8" refX="8.5" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 8.5 4 L 1 7" fill="none" stroke="#758297" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="11" markerHeight="10" refX="9.5" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 0.5 1 L 9.5 5 L 0.5 9 Z" fill="#ffffff" stroke="#758297" stroke-width="1.7"/></marker>
-  <style>
-    .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
-    .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
-    .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
-    .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
-    .smallLabel{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:21px;font-weight:400;fill:#102033}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
-    .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .strong{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .line{stroke:#758297;stroke-width:2.1;fill:none;marker-end:url(#openArrow)}
-    .plainLine{stroke:#758297;stroke-width:2.1;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
-    .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-    .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
-  </style>
-</defs>
-<rect class="canvas" width="1754" height="1170"/>
-<rect class="frame" x="32" y="28" width="1690" height="1114" rx="28"/>
-<text class="title" x="66" y="82">Custom Column Type Hierarchy</text>
-<text class="subtitle" x="70" y="118">UML classes from the original Mermaid source</text>
-<path class="line" d="M672 334 L672 132 L1082 132 L1082 180"/>
-<path class="inheritLine" d="M1082 484 L1082 393 L672 393 L672 334"/>
-<path class="inheritLine" d="M672 484 L672 334"/>
-<path class="inheritLine" d="M1082 780 L1082 725 L30 725 L30 417 L672 417 L672 334"/>
-<path class="inheritLine" d="M672 780 L672 717 L40 717 L40 409 L672 409 L672 334"/>
-<path class="inheritLine" d="M1492 484 L1492 401 L672 401 L672 334"/>
-<path class="inheritLine" d="M262 484 L262 393 L672 393 L672 334"/>
-<g transform="translate(502,180)">
-  <rect class="card" x="0" y="0" width="340" height="154" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#5B8DEF"/>
-  <text class="small" x="170" y="26" text-anchor="middle">«ExposedCore»</text>
-  <text class="label" x="170" y="61" text-anchor="middle">ColumnWithTransform</text>
-  <text class="mono" x="18" y="108">+delegate: ColumnType</text>
-<text class="mono" x="18" y="129">+transformer: ColumnTransformer</text>
-</g>
-<g transform="translate(912,180)">
-  <rect class="card" x="0" y="0" width="340" height="154" rx="5" fill="#EAF7EF" stroke="#58A978"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#58A978"/>
-  <text class="small" x="170" y="26" text-anchor="middle">«interface»</text>
-  <text class="label" x="170" y="61" text-anchor="middle">ColumnTransformer</text>
-  <text class="mono" x="18" y="108">+wrap(value) T</text>
-<text class="mono" x="18" y="129">+unwrap(value) T</text>
-</g>
-<g transform="translate(92,484)">
-  <rect class="card" x="0" y="0" width="340" height="170" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
-  <line class="compartment" x1="0" y1="94" x2="340" y2="94" stroke="#D6A441"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="56.5" text-anchor="middle">Compressed Binary Column</text>
-<text class="label" x="170" y="81.5" text-anchor="middle">Type</text>
-  <text class="mono" x="18" y="124">+compressor: Compressor</text>
-<text class="mono" x="18" y="145">+length: Int</text>
-</g>
-<g transform="translate(502,484)">
-  <rect class="card" x="0" y="0" width="340" height="170" rx="5" fill="#FDECEF" stroke="#DC6B82"/>
-  <line class="compartment" x1="0" y1="94" x2="340" y2="94" stroke="#DC6B82"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="56.5" text-anchor="middle">Binary Serialized Binary</text>
-<text class="label" x="170" y="81.5" text-anchor="middle">Column Type</text>
-  <text class="mono" x="18" y="124">+serializer: BinarySerializer</text>
-<text class="mono" x="18" y="145">+length: Int</text>
-</g>
-<g transform="translate(912,484)">
-  <rect class="card" x="0" y="0" width="340" height="149" rx="5" fill="#E9F7F6" stroke="#45A7A1"/>
-  <line class="compartment" x1="0" y1="94" x2="340" y2="94" stroke="#45A7A1"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="56.5" text-anchor="middle">Binary Serialized Blob</text>
-<text class="label" x="170" y="81.5" text-anchor="middle">Column Type</text>
-  <text class="mono" x="18" y="124">+serializer: BinarySerializer</text>
-</g>
-<g transform="translate(1322,484)">
-  <rect class="card" x="0" y="0" width="340" height="133" rx="5" fill="#F1ECFF" stroke="#8A72D6"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#8A72D6"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="61" text-anchor="middle">CompressedBlobColumnType</text>
-  <text class="mono" x="18" y="108">+compressor: Compressor</text>
-</g>
-<g transform="translate(502,780)">
-  <rect class="card" x="0" y="0" width="340" height="170" rx="5" fill="#F7F1E7" stroke="#B88A44"/>
-  <line class="compartment" x1="0" y1="94" x2="340" y2="94" stroke="#B88A44"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="56.5" text-anchor="middle">Encrypted Binary Column</text>
-<text class="label" x="170" y="81.5" text-anchor="middle">Type</text>
-  <text class="mono" x="18" y="124">+encryptor: Encryptor</text>
-<text class="mono" x="18" y="145">+length: Int</text>
-</g>
-<g transform="translate(912,780)">
-  <rect class="card" x="0" y="0" width="340" height="170" rx="5" fill="#EEF6D9" stroke="#8BA84D"/>
-  <line class="compartment" x1="0" y1="94" x2="340" y2="94" stroke="#8BA84D"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="56.5" text-anchor="middle">Encrypted Var Char</text>
-<text class="label" x="170" y="81.5" text-anchor="middle">Column Type</text>
-  <text class="mono" x="18" y="124">+encryptor: Encryptor</text>
-<text class="mono" x="18" y="145">+colLength: Int</text>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1280" viewBox="0 0 1680 1280" role="img" aria-labelledby="title desc">
+  <title id="title">Custom Column Type Hierarchy</title>
+  <desc id="desc">Class-oriented custom column type hierarchy rebuilt from exposed-core README and current column source files.</desc>
+  <defs>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <marker id="arrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="context-stroke"/></marker>
+    <marker id="generalizationArrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 9 5 L 1 9 Z" fill="#FFFFFF" stroke="context-stroke" stroke-width="1.2" stroke-dasharray="none"/></marker>
+    <style>
+      .canvas{fill:#F6F9FC}.decor{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
+      .innerFrame{fill:#FBFDFF;stroke:#D9E4EF;stroke-width:2}
+      .title{font-family:"Architects Daughter";font-size:46px;fill:#22344A;font-weight:400}
+      .subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476;font-weight:400}
+      .group{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}.group-title{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .card-title{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}.detail{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}
+      .small{font-family:"Comic Mono";font-size:13px;fill:#627184;font-weight:400}.shape{filter:url(#shadow);stroke-width:2}
+      .connector{fill:none;stroke-width:2.6;marker-end:url(#arrow);stroke-linejoin:round;stroke-linecap:round}.generalization{marker-end:url(#generalizationArrow)}.dashed{stroke-dasharray:7 6}
+      .pill{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1}
+    </style>
+  </defs>
+  <rect class="canvas" width="1680" height="1280"/>
+  <rect class="decor" x="44" y="36" width="1592" height="1208" rx="34"/>
+  <rect class="innerFrame" x="82" y="154" width="1516" height="924" rx="24"/>
+  <text class="title" x="72" y="88">Custom Column Type Hierarchy</text>
+  <text class="subtitle" x="76" y="121">Current source groups transformed columns around ColumnWithTransform, while network and normalized phone string columns extend ColumnType directly.</text>
+  <g id="group-exposed-base">
+    <rect class="group" x="92" y="156" width="1496" height="220" rx="18"/>
+    <text class="group-title" x="122" y="180" dominant-baseline="middle">Exposed base abstractions</text>
+  </g>
+  <g id="group-transformed">
+    <rect class="group" x="92" y="416" width="1496" height="360" rx="18"/>
+    <text class="group-title" x="122" y="440" dominant-baseline="middle">ColumnWithTransform-backed families</text>
+  </g>
+  <g id="group-direct">
+    <rect class="group" x="92" y="816" width="1496" height="220" rx="18"/>
+    <text class="group-title" x="122" y="840" dominant-baseline="middle">Direct ColumnType families</text>
+  </g>
+  <path id="route-column-with-transform-column-transformer" data-edge="column-with-transform-&gt;column-transformer" data-label="delegates conversion" class="connector" d="M 850 288 L 900 288" stroke="#2E8F89"/>
+  <path id="route-compressed-binary-column-with-transform" data-edge="compressed-binary-&gt;column-with-transform" data-label="inherits transformed column" class="connector generalization" d="M 305 510 L 305 456 L 520 456 L 520 344" stroke="#4F83BF"/>
+  <path id="route-serialized-binary-column-with-transform" data-edge="serialized-binary-&gt;column-with-transform" data-label="inherits transformed column" class="connector generalization" d="M 715 510 L 715 344" stroke="#755BC6"/>
+  <path id="route-phone-number-column-with-transform" data-edge="phone-number-&gt;column-with-transform" data-label="inherits transformed column" class="connector generalization" d="M 1115 510 L 1115 456 L 840 456 L 840 344" stroke="#2E8F89"/>
+  <path id="route-direct-impl-column-type" data-edge="direct-impl-&gt;column-type" data-label="extends directly" class="connector generalization" d="M 1380 875 L 1380 334" stroke="#758297"/>
+  <path id="route-transformers-column-transformer" data-edge="transformers-&gt;column-transformer" data-label="implements conversion contract" class="connector generalization" d="M 930 635 L 930 334" stroke="#B9851B"/>
+  <g id="node-column-with-transform" data-node="column-with-transform" transform="translate(410,232)">
+    <rect class="shape" x="0" y="0" width="440" height="112" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="220" y="37" text-anchor="middle" dominant-baseline="middle">ColumnWithTransform&lt;DB, T&gt;</text>
+    <text class="detail" x="220" y="56" text-anchor="middle" dominant-baseline="middle">wraps base ColumnType</text>
+    <text class="detail" x="220" y="75" text-anchor="middle" dominant-baseline="middle">delegates value mapping</text>
+  </g>
+  <g id="node-column-transformer" data-node="column-transformer" transform="translate(900,248)">
+    <rect class="shape" x="0" y="0" width="330" height="86" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="165" y="24" text-anchor="middle" dominant-baseline="middle">ColumnTransformer&lt;DB, T&gt;</text>
+    <text class="detail" x="165" y="43" text-anchor="middle" dominant-baseline="middle">unwrap entity to DB</text>
+    <text class="detail" x="165" y="62" text-anchor="middle" dominant-baseline="middle">wrap DB to entity</text>
+  </g>
+  <g id="node-column-type" data-node="column-type" transform="translate(1235,248)">
+    <rect class="shape" x="0" y="0" width="330" height="86" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
+    <text class="card-title" x="165" y="24" text-anchor="middle" dominant-baseline="middle">ColumnType&lt;T&gt;</text>
+    <text class="detail" x="165" y="43" text-anchor="middle" dominant-baseline="middle">direct SQL type</text>
+    <text class="detail" x="165" y="62" text-anchor="middle" dominant-baseline="middle">DB value conversion</text>
+  </g>
+  <g id="node-compressed-binary" data-node="compressed-binary" transform="translate(130,510)">
+    <rect class="shape" x="0" y="0" width="350" height="76" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <text class="card-title" x="175" y="19" text-anchor="middle" dominant-baseline="middle">CompressedBinaryColumnType</text>
+    <text class="detail" x="175" y="38" text-anchor="middle" dominant-baseline="middle">BinaryColumnType</text>
+    <text class="detail" x="175" y="57" text-anchor="middle" dominant-baseline="middle">ByteArray &lt;-&gt; ByteArray</text>
+  </g>
+  <g id="node-compressed-blob" data-node="compressed-blob" transform="translate(130,635)">
+    <rect class="shape" x="0" y="0" width="350" height="76" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <text class="card-title" x="175" y="19" text-anchor="middle" dominant-baseline="middle">CompressedBlobColumnType</text>
+    <text class="detail" x="175" y="38" text-anchor="middle" dominant-baseline="middle">BlobColumnType</text>
+    <text class="detail" x="175" y="57" text-anchor="middle" dominant-baseline="middle">ExposedBlob &lt;-&gt; ByteArray</text>
+  </g>
+  <g id="node-serialized-binary" data-node="serialized-binary" transform="translate(520,510)">
+    <rect class="shape" x="0" y="0" width="390" height="76" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="195" y="19" text-anchor="middle" dominant-baseline="middle">BinarySerializedBinaryColumnType</text>
+    <text class="detail" x="195" y="38" text-anchor="middle" dominant-baseline="middle">BinaryColumnType</text>
+    <text class="detail" x="195" y="57" text-anchor="middle" dominant-baseline="middle">ByteArray &lt;-&gt; T</text>
+  </g>
+  <g id="node-serialized-blob" data-node="serialized-blob" transform="translate(520,635)">
+    <rect class="shape" x="0" y="0" width="390" height="76" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="195" y="19" text-anchor="middle" dominant-baseline="middle">BinarySerializedBlobColumnType</text>
+    <text class="detail" x="195" y="38" text-anchor="middle" dominant-baseline="middle">BlobColumnType</text>
+    <text class="detail" x="195" y="57" text-anchor="middle" dominant-baseline="middle">ExposedBlob &lt;-&gt; T</text>
+  </g>
+  <g id="node-phone-number" data-node="phone-number" transform="translate(950,510)">
+    <rect class="shape" x="0" y="0" width="330" height="76" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="165" y="19" text-anchor="middle" dominant-baseline="middle">PhoneNumberColumnType</text>
+    <text class="detail" x="165" y="38" text-anchor="middle" dominant-baseline="middle">VarCharColumnType(20)</text>
+    <text class="detail" x="165" y="57" text-anchor="middle" dominant-baseline="middle">String &lt;-&gt; PhoneNumber</text>
+  </g>
+  <g id="node-transformers" data-node="transformers" transform="translate(920,635)">
+    <rect class="shape" x="0" y="0" width="360" height="76" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <text class="card-title" x="180" y="9.5" text-anchor="middle" dominant-baseline="middle">Transformer implementations</text>
+    <text class="detail" x="180" y="28.5" text-anchor="middle" dominant-baseline="middle">compression</text>
+    <text class="detail" x="180" y="47.5" text-anchor="middle" dominant-baseline="middle">serialization</text>
+    <text class="detail" x="180" y="66.5" text-anchor="middle" dominant-baseline="middle">phone number parsing</text>
+  </g>
+  <g id="node-direct-impl" data-node="direct-impl" transform="translate(1185,875)">
+    <rect class="shape" x="0" y="0" width="390" height="70" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
+    <text class="card-title" x="195" y="16" text-anchor="middle" dominant-baseline="middle">Direct ColumnType implementations</text>
+    <text class="detail" x="195" y="35" text-anchor="middle" dominant-baseline="middle">no ColumnWithTransform</text>
+    <text class="detail" x="195" y="54" text-anchor="middle" dominant-baseline="middle">custom SQL binding</text>
+  </g>
+  <g id="node-phone-string" data-node="phone-string" transform="translate(145,950)">
+    <rect class="shape" x="0" y="0" width="360" height="70" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="180" y="25.5" text-anchor="middle" dominant-baseline="middle">PhoneNumberStringColumnType</text>
+    <text class="detail" x="180" y="44.5" text-anchor="middle" dominant-baseline="middle">normalizes to E.164</text>
+  </g>
+  <g id="node-inet-address" data-node="inet-address" transform="translate(650,950)">
+    <rect class="shape" x="0" y="0" width="360" height="70" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="180" y="25.5" text-anchor="middle" dominant-baseline="middle">InetAddressColumnType</text>
+    <text class="detail" x="180" y="44.5" text-anchor="middle" dominant-baseline="middle">INET or VARCHAR(45)</text>
+  </g>
+  <g id="node-cidr" data-node="cidr" transform="translate(1110,950)">
+    <rect class="shape" x="0" y="0" width="330" height="70" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="165" y="25.5" text-anchor="middle" dominant-baseline="middle">CidrColumnType</text>
+    <text class="detail" x="165" y="44.5" text-anchor="middle" dominant-baseline="middle">CIDR or VARCHAR(50)</text>
+  </g>
+  <g transform="translate(76,1158)" data-footer="reader-contract">
+    <rect class="pill" x="0" y="0" width="1528" height="48" rx="10"/>
+    <text class="small" x="764" y="18" text-anchor="middle" dominant-baseline="middle">Core column families cover compression, serialization, network/CIDR, and E.164 phone values.</text>
+    <text class="small" x="764" y="35" text-anchor="middle" dominant-baseline="middle">Tink encryption belongs to exposed-tink; exposed-core provides the shared transform foundation.</text>
+  </g>
 </svg>
