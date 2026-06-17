@@ -2,7 +2,7 @@
 
 English | [한국어](./README.ko.md)
 
-Provides entity extensions, String-based entities, and IdTable implementations with various client-side ID strategies for the JetBrains Exposed DAO layer.
+Provides Entity helpers, String-based DAO entities, auditable DAO bases, and Entity/EntityClass wrappers for the client-side ID tables defined in `exposed-core`.
 
 ## Overview
 
@@ -10,9 +10,10 @@ Provides entity extensions, String-based entities, and IdTable implementations w
 
 - **DAO extension functions**: Helpers for common Entity implementations such as `idEquals`, `idHashCode`, and
   `entityToStringBuilder`
-- **StringEntity**: DAO entities with a `String` primary key
-- **Custom IdTables**: Various ID strategies including KSUID, ULID, Snowflake, Timebased UUID, and Soft Delete
-- Built on `exposed-core`, isolating features needed only in the DAO layer
+- **StringEntity**: DAO entity and EntityClass bases for `String` primary keys
+- **Generated-ID DAO wrappers**: Entity and EntityClass pairs for KSUID, KSUID millis, ULID, Snowflake, Timebased UUID, and Timebased UUID Base62 tables from `exposed-core`
+- **Auditable DAO bases**: `AuditableEntity` and Int/Long/UUID EntityClass pairs that fill audit users during `flush()`
+- Built on `exposed-core`, keeping table definitions and DAO entity helpers in separate modules
 
 ## Adding Dependencies
 
@@ -30,11 +31,11 @@ Illustrates the relationships among `AuditableLongEntity`, `AuditableLongEntityC
 
 ![Core AuditableEntity Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-01.png)
 
-### Custom IdTable Hierarchy
+### Generated-ID DAO Entity Families
 
-The full hierarchy of IdTable implementations used together with DAO entities.
+DAO Entity and EntityClass helpers paired with the generated-ID table families from `exposed-core`.
 
-![Custom IdTable Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-02.png)
+![Generated-ID DAO Entity Families diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-02.png)
 
 ### Entity Extension Hierarchy
 
@@ -183,8 +184,10 @@ import io.bluetape4k.exposed.core.dao.id.TimebasedUUIDTable
 import io.bluetape4k.exposed.core.dao.id.TimebasedUUIDBase62Table
 import io.bluetape4k.exposed.dao.id.TimebasedUUIDEntity
 import io.bluetape4k.exposed.dao.id.TimebasedUUIDEntityClass
+import io.bluetape4k.exposed.dao.id.TimebasedUUIDEntityID
 import io.bluetape4k.exposed.dao.id.TimebasedUUIDBase62Entity
 import io.bluetape4k.exposed.dao.id.TimebasedUUIDBase62EntityClass
+import io.bluetape4k.exposed.dao.id.TimebasedUUIDBase62EntityID
 
 // UUID v7 (time-based) primary key
 object SessionTable: TimebasedUUIDTable("sessions") {
@@ -211,35 +214,10 @@ class TokenEntity(id: TimebasedUUIDBase62EntityID): TimebasedUUIDBase62Entity(id
 }
 ```
 
-### 7. Soft Delete IdTable
+### 7. Soft Delete table-only support
 
-```kotlin
-import io.bluetape4k.exposed.core.dao.id.SoftDeletedIdTable
-import org.jetbrains.exposed.v1.core.Column
-import org.jetbrains.exposed.v1.core.dao.id.EntityID
-
-// Table with an automatically-added isDeleted column
-object PostTable: SoftDeletedIdTable<Long>("posts") {
-    override val id: Column<EntityID<Long>> = long("id").autoIncrement().entityId()
-    val title = varchar("title", 255)
-    val content = text("content")
-    override val primaryKey = PrimaryKey(id)
-}
-
-// Soft delete
-transaction {
-    PostTable.update({ PostTable.id eq postId }) {
-        it[isDeleted] = true
-    }
-}
-
-// Query only active records
-transaction {
-    PostTable.selectAll()
-        .where { PostTable.isDeleted eq false }
-        .map { it[PostTable.title] }
-}
-```
+`SoftDeletedIdTable` lives in `exposed-core` and can still be used with your own DAO entity class. `exposed-dao`
+does not add a dedicated `SoftDeletedEntity` base, so soft-delete filtering remains an explicit table/query concern.
 
 ## Key Files and Classes
 
@@ -247,25 +225,27 @@ transaction {
 |--------------------------------------|-------------------------------------------------------------------|
 | `EntityExtensions.kt`                | Entity helpers: `idEquals`, `idHashCode`, `entityToStringBuilder` |
 | `StringEntity.kt`                    | Entity/EntityClass with a String primary key                      |
-| `dao/id/KsuidTable.kt`               | KSUID PK IdTable                                                  |
-| `dao/id/KsuidMillisTable.kt`         | KSUID Millis PK IdTable                                           |
-| `dao/id/UlidTable.kt`                | ULID PK IdTable                                                   |
-| `dao/id/SnowflakeIdTable.kt`         | Snowflake Long PK IdTable                                         |
-| `dao/id/TimebasedUUIDTable.kt`       | Timebased UUID PK IdTable                                         |
-| `dao/id/TimebasedUUIDBase62Table.kt` | Timebased UUID Base62-encoded PK IdTable                          |
-| `dao/id/SoftDeletedIdTable.kt`       | Soft Delete IdTable with an `isDeleted` column                    |
+| `auditable/AuditableEntity.kt`       | DAO audit base; sets `createdBy` or `updatedBy` during `flush()`   |
+| `auditable/AuditableEntityClass.kt`  | Int/Long/UUID auditable EntityClass helpers                       |
+| `dao/id/KsuidEntity.kt`              | KSUID Entity/EntityClass pair                                     |
+| `dao/id/KsuidMillisEntity.kt`        | KSUID millis Entity/EntityClass pair                              |
+| `dao/id/UlidEntity.kt`               | ULID Entity/EntityClass pair                                      |
+| `dao/id/SnowflakeIdEntity.kt`        | Snowflake Long Entity/EntityClass pair                            |
+| `dao/id/TimebasedUUIDEntity.kt`      | UUIDv7 Entity/EntityClass pair                                    |
+| `dao/id/TimebasedUUIDBase62Entity.kt` | UUIDv7 Base62 Entity/EntityClass pairs, including MySQL variant  |
 
 ## ID Strategy Comparison
 
-| IdTable                    | PK type  | Length   | Characteristics                           |
-|----------------------------|----------|----------|-------------------------------------------|
-| `KsuidTable`               | `String` | 27 chars | Time-sortable, URL-safe                   |
-| `KsuidMillisTable`         | `String` | 27 chars | Millisecond-precision KSUID               |
-| `UlidTable`                | `String` | 26 chars | StatefulMonotonic ULID                    |
-| `SnowflakeIdTable`         | `Long`   | —        | Distributed environments, high throughput |
-| `TimebasedUUIDTable`       | `UUID`   | 36 chars | Time-sortable UUID v7                     |
-| `TimebasedUUIDBase62Table` | `String` | up to 24 | UUID v7 encoded as Base62                 |
-| `SoftDeletedIdTable`       | Generic  | —        | Includes an `isDeleted` column            |
+| Core table                  | DAO helper pair                           | PK type  | Length   | Characteristics                           |
+|-----------------------------|-------------------------------------------|----------|----------|-------------------------------------------|
+| `KsuidTable`                | `KsuidEntity` / `KsuidEntityClass`         | `String` | 27 chars | Time-sortable, URL-safe                   |
+| `KsuidMillisTable`          | `KsuidMillisEntity` / Class                | `String` | 27 chars | Millisecond-precision KSUID               |
+| `UlidTable`                 | `UlidEntity` / `UlidEntityClass`           | `String` | 26 chars | StatefulMonotonic ULID                    |
+| `SnowflakeIdTable`          | `SnowflakeIdEntity` / Class                | `Long`   | —        | Distributed environments, high throughput |
+| `TimebasedUUIDTable`        | `TimebasedUUIDEntity` / Class              | `UUID`   | 36 chars | Time-sortable UUID v7                     |
+| `TimebasedUUIDBase62Table`  | `TimebasedUUIDBase62Entity` / Class        | `String` | up to 24 | UUID v7 encoded as Base62                 |
+| `TimebasedUUIDBase62TableMySql` | `TimebasedUUIDBase62EntityMySql` / Class | `String` | up to 24 | Base62 UUID with MySQL binary collation   |
+| `SoftDeletedIdTable`        | Core table only                            | Generic  | —        | Includes an `isDeleted` column            |
 
 ## AuditableEntity (Audit Tracking for DAO)
 
@@ -360,7 +340,7 @@ transaction {
 ## Testing
 
 ```bash
-./gradlew :exposed-dao:test
+./gradlew :bluetape4k-exposed-dao:test
 ```
 
 ## References

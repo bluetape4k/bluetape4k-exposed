@@ -2,16 +2,17 @@
 
 [English](./README.md) | 한국어
 
-JetBrains Exposed DAO 계층을 위한 엔티티 확장, String 기반 엔티티, 그리고 다양한 클라이언트 ID 전략을 사용하는 IdTable 구현을 제공합니다.
+JetBrains Exposed DAO 계층을 위한 Entity helper, String 기반 DAO 엔티티, Auditable DAO 기반 클래스, 그리고 `exposed-core`의 클라이언트 ID 테이블에 맞춘 Entity/EntityClass wrapper를 제공합니다.
 
 ## 개요
 
 `exposed-dao`는 다음을 제공합니다:
 
 - **DAO 확장 함수**: `idEquals`, `idHashCode`, `entityToStringBuilder` 등 Entity 공통 구현 보조
-- **StringEntity**: `String` 타입 기본 키를 가진 DAO Entity
-- **커스텀 IdTable**: KSUID, ULID, Snowflake, Timebased UUID, Soft Delete 등 다양한 ID 전략
-- `exposed-core`를 기반으로 하며, DAO 레이어에서만 필요한 기능을 분리
+- **StringEntity**: `String` 타입 기본 키를 쓰는 DAO Entity/EntityClass 기반 클래스
+- **생성형 ID DAO wrapper**: `exposed-core`의 KSUID, KSUID millis, ULID, Snowflake, Timebased UUID, Timebased UUID Base62 테이블에 대응하는 Entity/EntityClass 쌍
+- **Auditable DAO 기반 클래스**: `flush()` 중 감사 사용자명을 채우는 `AuditableEntity`와 Int/Long/UUID EntityClass 쌍
+- `exposed-core`를 기반으로 하며, 테이블 정의와 DAO 엔티티 helper의 경계를 분리
 
 ## 의존성 추가
 
@@ -29,11 +30,11 @@ dependencies {
 
 ![AuditableEntity diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-01.png)
 
-### 커스텀 IdTable 계층
+### 생성형 ID DAO Entity 계층
 
-`exposed-core`의 IdTable 구현을 DAO 엔티티와 함께 사용하는 전체 계층입니다.
+`exposed-core`의 생성형 ID 테이블 계열에 대응하는 DAO Entity/EntityClass helper입니다.
 
-![IdTable diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-02.png)
+![Generated-ID DAO Entity Families diagram](../../docs/images/readme-diagrams/exposed-exposed-dao-diagram-02.png)
 
 ### Entity 확장 계층
 
@@ -182,8 +183,10 @@ import io.bluetape4k.exposed.core.dao.id.TimebasedUUIDTable
 import io.bluetape4k.exposed.core.dao.id.TimebasedUUIDBase62Table
 import io.bluetape4k.exposed.dao.id.TimebasedUUIDEntity
 import io.bluetape4k.exposed.dao.id.TimebasedUUIDEntityClass
+import io.bluetape4k.exposed.dao.id.TimebasedUUIDEntityID
 import io.bluetape4k.exposed.dao.id.TimebasedUUIDBase62Entity
 import io.bluetape4k.exposed.dao.id.TimebasedUUIDBase62EntityClass
+import io.bluetape4k.exposed.dao.id.TimebasedUUIDBase62EntityID
 
 // UUID v7 (시간 기반) PK
 object SessionTable: TimebasedUUIDTable("sessions") {
@@ -210,35 +213,10 @@ class TokenEntity(id: TimebasedUUIDBase62EntityID): TimebasedUUIDBase62Entity(id
 }
 ```
 
-### 7. Soft Delete 지원 IdTable
+### 7. Soft Delete table-only 지원
 
-```kotlin
-import io.bluetape4k.exposed.core.dao.id.SoftDeletedIdTable
-import org.jetbrains.exposed.v1.core.Column
-import org.jetbrains.exposed.v1.core.dao.id.EntityID
-
-// isDeleted 컬럼이 자동으로 추가되는 테이블
-object PostTable: SoftDeletedIdTable<Long>("posts") {
-    override val id: Column<EntityID<Long>> = long("id").autoIncrement().entityId()
-    val title = varchar("title", 255)
-    val content = text("content")
-    override val primaryKey = PrimaryKey(id)
-}
-
-// soft delete
-transaction {
-    PostTable.update({ PostTable.id eq postId }) {
-        it[isDeleted] = true
-    }
-}
-
-// 활성 레코드만 조회
-transaction {
-    PostTable.selectAll()
-        .where { PostTable.isDeleted eq false }
-        .map { it[PostTable.title] }
-}
-```
+`SoftDeletedIdTable`은 `exposed-core`에 있으며, 직접 만든 DAO Entity와 함께 사용할 수 있습니다. `exposed-dao`는 별도의
+`SoftDeletedEntity` 기반 클래스를 추가하지 않으므로, soft-delete 필터링은 테이블/쿼리에서 명시적으로 다루는 영역입니다.
 
 ## 주요 파일/클래스 목록
 
@@ -246,25 +224,27 @@ transaction {
 |--------------------------------------|---------------------------------------------------------------|
 | `EntityExtensions.kt`                | `idEquals`, `idHashCode`, `entityToStringBuilder` 등 Entity 보조 |
 | `StringEntity.kt`                    | String PK 기반 Entity/EntityClass                               |
-| `dao/id/KsuidTable.kt`               | KSUID PK IdTable                                              |
-| `dao/id/KsuidMillisTable.kt`         | KSUID Millis PK IdTable                                       |
-| `dao/id/UlidTable.kt`                | ULID PK IdTable                                               |
-| `dao/id/SnowflakeIdTable.kt`         | Snowflake Long PK IdTable                                     |
-| `dao/id/TimebasedUUIDTable.kt`       | Timebased UUID PK IdTable                                     |
-| `dao/id/TimebasedUUIDBase62Table.kt` | Timebased UUID Base62 인코딩 PK IdTable                          |
-| `dao/id/SoftDeletedIdTable.kt`       | `isDeleted` 컬럼 포함 Soft Delete IdTable                         |
+| `auditable/AuditableEntity.kt`       | `flush()` 중 `createdBy` 또는 `updatedBy`를 설정하는 DAO 감사 기반 클래스 |
+| `auditable/AuditableEntityClass.kt`  | Int/Long/UUID Auditable EntityClass helper                    |
+| `dao/id/KsuidEntity.kt`              | KSUID Entity/EntityClass 쌍                                     |
+| `dao/id/KsuidMillisEntity.kt`        | KSUID millis Entity/EntityClass 쌍                              |
+| `dao/id/UlidEntity.kt`               | ULID Entity/EntityClass 쌍                                      |
+| `dao/id/SnowflakeIdEntity.kt`        | Snowflake Long Entity/EntityClass 쌍                            |
+| `dao/id/TimebasedUUIDEntity.kt`      | UUIDv7 Entity/EntityClass 쌍                                    |
+| `dao/id/TimebasedUUIDBase62Entity.kt` | UUIDv7 Base62 Entity/EntityClass 쌍 및 MySQL variant            |
 
 ## ID 전략 비교
 
-| IdTable                    | PK 타입    | 길이     | 특징                     |
-|----------------------------|----------|--------|------------------------|
-| `KsuidTable`               | `String` | 27자    | 시간 정렬, URL-safe        |
-| `KsuidMillisTable`         | `String` | 27자    | 밀리초 정밀도 KSUID          |
-| `UlidTable`                | `String` | 26자    | StatefulMonotonic ULID |
-| `SnowflakeIdTable`         | `Long`   | -      | 분산 환경, 고성능             |
-| `TimebasedUUIDTable`       | `UUID`   | 36자    | UUID v7 기반 시간 정렬 ID    |
-| `TimebasedUUIDBase62Table` | `String` | 최대 24자 | UUID v7을 Base62로 인코딩   |
-| `SoftDeletedIdTable`       | 제네릭      | -      | `isDeleted` 컬럼 포함      |
+| Core table                  | DAO helper pair                           | PK 타입    | 길이     | 특징                         |
+|-----------------------------|-------------------------------------------|----------|--------|----------------------------|
+| `KsuidTable`                | `KsuidEntity` / `KsuidEntityClass`         | `String` | 27자    | 시간 정렬, URL-safe            |
+| `KsuidMillisTable`          | `KsuidMillisEntity` / Class                | `String` | 27자    | 밀리초 정밀도 KSUID              |
+| `UlidTable`                 | `UlidEntity` / `UlidEntityClass`           | `String` | 26자    | StatefulMonotonic ULID     |
+| `SnowflakeIdTable`          | `SnowflakeIdEntity` / Class                | `Long`   | -      | 분산 환경, 고성능                 |
+| `TimebasedUUIDTable`        | `TimebasedUUIDEntity` / Class              | `UUID`   | 36자    | UUID v7 기반 시간 정렬 ID        |
+| `TimebasedUUIDBase62Table`  | `TimebasedUUIDBase62Entity` / Class        | `String` | 최대 24자 | UUID v7을 Base62로 인코딩       |
+| `TimebasedUUIDBase62TableMySql` | `TimebasedUUIDBase62EntityMySql` / Class | `String` | 최대 24자 | MySQL binary collation variant |
+| `SoftDeletedIdTable`        | Core table only                            | 제네릭      | -      | `isDeleted` 컬럼 포함          |
 
 ## AuditableEntity (감사 추적 DAO)
 
@@ -359,7 +339,7 @@ transaction {
 ## 테스트
 
 ```bash
-./gradlew :exposed-dao:test
+./gradlew :bluetape4k-exposed-dao:test
 ```
 
 ## 참고

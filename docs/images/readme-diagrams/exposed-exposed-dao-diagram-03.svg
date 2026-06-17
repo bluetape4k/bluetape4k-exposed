@@ -1,144 +1,130 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2222" height="1892" viewBox="0 0 2222 1892" role="img" aria-label="Entity Extension Hierarchy">
-<defs>
-  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="10" markerHeight="8" refX="8.5" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 8.5 4 L 1 7" fill="none" stroke="#758297" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="11" markerHeight="10" refX="9.5" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 0.5 1 L 9.5 5 L 0.5 9 Z" fill="#ffffff" stroke="#758297" stroke-width="1.7"/></marker>
-  <style>
-    .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
-    .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
-    .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
-    .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
-    .smallLabel{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:21px;font-weight:400;fill:#102033}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
-    .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .strong{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .line{stroke:#758297;stroke-width:2.1;fill:none;marker-end:url(#openArrow)}
-    .plainLine{stroke:#758297;stroke-width:2.1;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
-    .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-    .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
-  </style>
-</defs>
-<rect class="canvas" width="2222" height="1892"/>
-<rect class="frame" x="32" y="28" width="2158" height="1836" rx="28"/>
-<text class="title" x="66" y="82">Entity Extension Hierarchy</text>
-<text class="subtitle" x="70" y="118">UML classes from the original Mermaid source</text>
-<path class="line" d="M1111 838 L1111 770 L1955 770 L1955 670"/>
-<path class="line" d="M267 670 L267 762 L1533 762 L1533 558"/>
-<path class="line" d="M689 1302 L689 1402 L1111 1402 L1111 1190"/>
-<path class="inheritLine" d="M1111 838 L1111 746 L1322 746 L1322 334"/>
-<path class="inheritLine" d="M267 558 L267 430 L1322 430 L1322 334"/>
-<path class="inheritLine" d="M1955 1190 L1955 1094 L689 1094 L689 670"/>
-<path class="inheritLine" d="M689 1190 L689 670"/>
-<path class="inheritLine" d="M689 558 L689 446 L1322 446 L1322 334"/>
-<path class="inheritLine" d="M1955 558 L1955 438 L900 438 L900 313"/>
-<path class="inheritLine" d="M1533 558 L1533 430 L900 430 L900 313"/>
-<path class="inheritLine" d="M267 1190 L267 770 L1111 770 L1111 670"/>
-<path class="inheritLine" d="M1111 1486 L1111 1410 L50 1410 L50 762 L1111 762 L1111 670"/>
-<path class="inheritLine" d="M1533 1190 L1533 754 L1111 754 L1111 670"/>
-<path class="inheritLine" d="M1111 1190 L1111 1070 L70 1070 L70 746 L1111 746 L1111 670"/>
-<path class="inheritLine" d="M1111 558 L1111 430 L900 430 L900 313"/>
-<g transform="translate(745,180)">
-  <rect class="card" x="0" y="0" width="310" height="133" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#5B8DEF"/>
-  <text class="small" x="155" y="26" text-anchor="middle">«ExposedCore»</text>
-  <text class="label" x="155" y="61" text-anchor="middle">Entity</text>
-  <text class="mono" x="18" y="108">+id: EntityID~ID~</text>
-</g>
-<g transform="translate(1167,180)">
-  <rect class="card" x="0" y="0" width="310" height="154" rx="5" fill="#EAF7EF" stroke="#58A978"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#58A978"/>
-  <text class="small" x="155" y="26" text-anchor="middle">«ExposedCore»</text>
-  <text class="label" x="155" y="61" text-anchor="middle">EntityClass</text>
-  <text class="mono" x="18" y="108">+new(init) E</text>
-<text class="mono" x="18" y="129">+findById(id) E?</text>
-</g>
-<g transform="translate(112,558)">
-  <rect class="card" x="0" y="0" width="310" height="112" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#D6A441"/>
-  <text class="small" x="155" y="26" text-anchor="middle"></text>
-  <text class="label" x="155" y="61" text-anchor="middle">SnowflakeIdEntityClass</text>
-
-</g>
-<g transform="translate(534,558)">
-  <rect class="card" x="0" y="0" width="310" height="112" rx="5" fill="#FDECEF" stroke="#DC6B82"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#DC6B82"/>
-  <text class="small" x="155" y="26" text-anchor="middle">«abstract»</text>
-  <text class="label" x="155" y="61" text-anchor="middle">StringEntityClass</text>
-
-</g>
-<g transform="translate(956,558)">
-  <rect class="card" x="0" y="0" width="310" height="112" rx="5" fill="#E9F7F6" stroke="#45A7A1"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#45A7A1"/>
-  <text class="small" x="155" y="26" text-anchor="middle">«abstract»</text>
-  <text class="label" x="155" y="61" text-anchor="middle">StringEntity</text>
-
-</g>
-<g transform="translate(1378,558)">
-  <rect class="card" x="0" y="0" width="310" height="112" rx="5" fill="#F1ECFF" stroke="#8A72D6"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#8A72D6"/>
-  <text class="small" x="155" y="26" text-anchor="middle"></text>
-  <text class="label" x="155" y="61" text-anchor="middle">SnowflakeIdEntity</text>
-
-</g>
-<g transform="translate(1800,558)">
-  <rect class="card" x="0" y="0" width="310" height="112" rx="5" fill="#F7F1E7" stroke="#B88A44"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#B88A44"/>
-  <text class="small" x="155" y="26" text-anchor="middle"></text>
-  <text class="label" x="155" y="61" text-anchor="middle">TimebasedUUIDEntity</text>
-
-</g>
-<g transform="translate(956,838)">
-  <rect class="card" x="0" y="0" width="310" height="128" rx="5" fill="#EEF6D9" stroke="#8BA84D"/>
-  <line class="compartment" x1="0" y1="94" x2="310" y2="94" stroke="#8BA84D"/>
-  <text class="small" x="155" y="26" text-anchor="middle"></text>
-  <text class="label" x="155" y="56.5" text-anchor="middle">Timebased UUIDEntity</text>
-<text class="label" x="155" y="81.5" text-anchor="middle">Class</text>
-
-</g>
-<g transform="translate(112,1190)">
-  <rect class="card" x="0" y="0" width="310" height="128" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <line class="compartment" x1="0" y1="94" x2="310" y2="94" stroke="#5B8DEF"/>
-  <text class="small" x="155" y="26" text-anchor="middle"></text>
-  <text class="label" x="155" y="56.5" text-anchor="middle">Timebased UUIDBase62</text>
-<text class="label" x="155" y="81.5" text-anchor="middle">Entity</text>
-
-</g>
-<g transform="translate(534,1190)">
-  <rect class="card" x="0" y="0" width="310" height="112" rx="5" fill="#EAF7EF" stroke="#58A978"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#58A978"/>
-  <text class="small" x="155" y="26" text-anchor="middle"></text>
-  <text class="label" x="155" y="61" text-anchor="middle">KsuidEntityClass</text>
-
-</g>
-<g transform="translate(956,1190)">
-  <rect class="card" x="0" y="0" width="310" height="112" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#D6A441"/>
-  <text class="small" x="155" y="26" text-anchor="middle"></text>
-  <text class="label" x="155" y="61" text-anchor="middle">KsuidEntity</text>
-
-</g>
-<g transform="translate(1378,1190)">
-  <rect class="card" x="0" y="0" width="310" height="112" rx="5" fill="#FDECEF" stroke="#DC6B82"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#DC6B82"/>
-  <text class="small" x="155" y="26" text-anchor="middle"></text>
-  <text class="label" x="155" y="61" text-anchor="middle">KsuidMillisEntity</text>
-
-</g>
-<g transform="translate(1800,1190)">
-  <rect class="card" x="0" y="0" width="310" height="128" rx="5" fill="#E9F7F6" stroke="#45A7A1"/>
-  <line class="compartment" x1="0" y1="94" x2="310" y2="94" stroke="#45A7A1"/>
-  <text class="small" x="155" y="26" text-anchor="middle"></text>
-  <text class="label" x="155" y="56.5" text-anchor="middle">Timebased UUIDBase62</text>
-<text class="label" x="155" y="81.5" text-anchor="middle">Entity Class</text>
-
-</g>
-<g transform="translate(956,1486)">
-  <rect class="card" x="0" y="0" width="310" height="112" rx="5" fill="#F1ECFF" stroke="#8A72D6"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#8A72D6"/>
-  <text class="small" x="155" y="26" text-anchor="middle"></text>
-  <text class="label" x="155" y="61" text-anchor="middle">UlidEntity</text>
-
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" width="1740" height="1465" viewBox="0 0 1740 1465" role="img" aria-labelledby="title desc">
+  <title id="title">DAO Entity Extension Hierarchy</title>
+  <desc id="desc">Class-oriented DAO entity extension hierarchy rebuilt from exposed-dao README and entity source files.</desc>
+  <defs>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <marker id="arrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="context-stroke"/></marker>
+    <marker id="generalizationArrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 9 5 L 1 9 Z" fill="#FFFFFF" stroke="context-stroke" stroke-width="1.2" stroke-dasharray="none"/></marker>
+    <style>
+      .canvas{fill:#F6F9FC}.decor{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
+      .innerFrame{fill:#FBFDFF;stroke:#D9E4EF;stroke-width:2}
+      .title{font-family:"Architects Daughter";font-size:46px;fill:#22344A;font-weight:400}
+      .subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476;font-weight:400}
+      .group{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}.group-title{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .card-title{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}.detail{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}
+      .small{font-family:"Comic Mono";font-size:13px;fill:#627184;font-weight:400}.shape{filter:url(#shadow);stroke-width:2}
+      .connector{fill:none;stroke-width:2.6;marker-end:url(#arrow);stroke-linejoin:round;stroke-linecap:round}.generalization{marker-end:url(#generalizationArrow)}.dashed{stroke-dasharray:7 6}
+      .pill{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1}
+    </style>
+  </defs>
+  <rect class="canvas" width="1740" height="1465"/>
+  <rect class="decor" x="44" y="36" width="1652" height="1393" rx="34"/>
+  <rect class="innerFrame" x="82" y="154" width="1576" height="1169" rx="24"/>
+  <text class="title" x="72" y="88">DAO Entity Extension Hierarchy</text>
+  <text class="subtitle" x="76" y="121">Entity bases, EntityClass companions, generated-ID pairs, audit pairs, and common extension helpers stay separated by role.</text>
+  <g id="group-framework">
+    <rect class="group" x="92" y="156" width="1556" height="210" rx="18"/>
+    <text class="group-title" x="122" y="180" dominant-baseline="middle">Exposed DAO framework contracts</text>
+  </g>
+  <g id="group-bluetape-bases">
+    <rect class="group" x="92" y="406" width="1556" height="300" rx="18"/>
+    <text class="group-title" x="122" y="430" dominant-baseline="middle">Bluetape DAO bases</text>
+  </g>
+  <g id="group-families">
+    <rect class="group" x="92" y="746" width="1556" height="300" rx="18"/>
+    <text class="group-title" x="122" y="770" dominant-baseline="middle">Concrete helper families</text>
+  </g>
+  <g id="group-extensions">
+    <rect class="group" x="92" y="1086" width="1556" height="190" rx="18"/>
+    <text class="group-title" x="122" y="1110" dominant-baseline="middle">Common Entity extension helpers</text>
+  </g>
+  <path id="route-string-entity-entity" data-edge="string-entity-&gt;entity" data-label="extends" class="connector generalization" d="M 315 500 L 315 331" stroke="#4F83BF"/>
+  <path id="route-string-class-entity-class" data-edge="string-class-&gt;entity-class" data-label="extends" class="connector generalization" d="M 730 500 L 730 331" stroke="#2E8F89"/>
+  <path id="route-string-class-id-table" data-edge="string-class-&gt;id-table" data-label="binds table" class="connector" d="M 730 500 L 730 372 L 1330 372 L 1330 331" stroke="#2E8F89"/>
+  <path id="route-auditable-entity-entity" data-edge="auditable-entity-&gt;entity" data-label="extends" class="connector generalization" d="M 1090 490 L 1090 385 L 380 385 L 380 331" stroke="#3E9868"/>
+  <path id="route-auditable-class-entity-class" data-edge="auditable-class-&gt;entity-class" data-label="extends" class="connector generalization" d="M 1483 500 L 1483 398 L 900 398 L 900 331" stroke="#B9851B"/>
+  <path id="route-string-id-pairs-string-entity" data-edge="string-id-pairs-&gt;string-entity" data-label="entity base" class="connector" d="M 295 830 L 295 586" stroke="#755BC6"/>
+  <path id="route-string-id-pairs-string-class" data-edge="string-id-pairs-&gt;string-class" data-label="companion class" class="connector" d="M 475 830 L 475 725 L 730 725 L 730 586" stroke="#2E8F89"/>
+  <path id="route-audit-pairs-auditable-entity" data-edge="audit-pairs-&gt;auditable-entity" data-label="inherits audit flush" class="connector generalization" d="M 1295 830 L 1295 596" stroke="#3E9868"/>
+  <path id="route-audit-pairs-auditable-class" data-edge="audit-pairs-&gt;auditable-class" data-label="binds audit table" class="connector" d="M 1450 830 L 1450 586" stroke="#B9851B"/>
+  <g id="node-entity" data-node="entity" transform="translate(160,245)">
+    <rect class="shape" x="0" y="0" width="310" height="86" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
+    <text class="card-title" x="155" y="24" text-anchor="middle" dominant-baseline="middle">Entity&lt;ID&gt;</text>
+    <text class="detail" x="155" y="43" text-anchor="middle" dominant-baseline="middle">Exposed DAO base</text>
+    <text class="detail" x="155" y="62" text-anchor="middle" dominant-baseline="middle">id and lifecycle</text>
+  </g>
+  <g id="node-entity-class" data-node="entity-class" transform="translate(610,245)">
+    <rect class="shape" x="0" y="0" width="360" height="86" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
+    <text class="card-title" x="180" y="24" text-anchor="middle" dominant-baseline="middle">EntityClass&lt;ID, E&gt;</text>
+    <text class="detail" x="180" y="43" text-anchor="middle" dominant-baseline="middle">table-bound factory</text>
+    <text class="detail" x="180" y="62" text-anchor="middle" dominant-baseline="middle">query and cache surface</text>
+  </g>
+  <g id="node-id-table" data-node="id-table" transform="translate(1150,245)">
+    <rect class="shape" x="0" y="0" width="360" height="86" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
+    <text class="card-title" x="180" y="24" text-anchor="middle" dominant-baseline="middle">IdTable&lt;ID&gt;</text>
+    <text class="detail" x="180" y="43" text-anchor="middle" dominant-baseline="middle">table primary key contract</text>
+    <text class="detail" x="180" y="62" text-anchor="middle" dominant-baseline="middle">EntityClass binding input</text>
+  </g>
+  <g id="node-string-entity" data-node="string-entity" transform="translate(140,500)">
+    <rect class="shape" x="0" y="0" width="310" height="86" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <text class="card-title" x="155" y="24" text-anchor="middle" dominant-baseline="middle">StringEntity</text>
+    <text class="detail" x="155" y="43" text-anchor="middle" dominant-baseline="middle">extends Entity&lt;String&gt;</text>
+    <text class="detail" x="155" y="62" text-anchor="middle" dominant-baseline="middle">String PK entity base</text>
+  </g>
+  <g id="node-string-class" data-node="string-class" transform="translate(540,500)">
+    <rect class="shape" x="0" y="0" width="380" height="86" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="190" y="24" text-anchor="middle" dominant-baseline="middle">StringEntityClass&lt;E&gt;</text>
+    <text class="detail" x="190" y="43" text-anchor="middle" dominant-baseline="middle">extends EntityClass&lt;String, E&gt;</text>
+    <text class="detail" x="190" y="62" text-anchor="middle" dominant-baseline="middle">binds IdTable&lt;String&gt;</text>
+  </g>
+  <g id="node-auditable-entity" data-node="auditable-entity" transform="translate(985,490)">
+    <rect class="shape" x="0" y="0" width="360" height="106" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="180" y="24.5" text-anchor="middle" dominant-baseline="middle">AuditableEntity&lt;ID&gt;</text>
+    <text class="detail" x="180" y="43.5" text-anchor="middle" dominant-baseline="middle">extends Entity&lt;ID&gt;</text>
+    <text class="detail" x="180" y="62.5" text-anchor="middle" dominant-baseline="middle">implements Auditable</text>
+    <text class="detail" x="180" y="81.5" text-anchor="middle" dominant-baseline="middle">flush sets audit user</text>
+  </g>
+  <g id="node-auditable-class" data-node="auditable-class" transform="translate(1358,500)">
+    <rect class="shape" x="0" y="0" width="250" height="86" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <text class="card-title" x="125" y="24" text-anchor="middle" dominant-baseline="middle">Auditable*EntityClass</text>
+    <text class="detail" x="125" y="43" text-anchor="middle" dominant-baseline="middle">Int / Long / UUID helpers</text>
+    <text class="detail" x="125" y="62" text-anchor="middle" dominant-baseline="middle">bind Auditable*IdTable</text>
+  </g>
+  <g id="node-string-id-pairs" data-node="string-id-pairs" transform="translate(145,830)">
+    <rect class="shape" x="0" y="0" width="390" height="96" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="195" y="29" text-anchor="middle" dominant-baseline="middle">Generated String ID pairs</text>
+    <text class="detail" x="195" y="48" text-anchor="middle" dominant-baseline="middle">KSUID, KSUID millis, ULID</text>
+    <text class="detail" x="195" y="67" text-anchor="middle" dominant-baseline="middle">UUIDv7 Base62 and MySQL</text>
+  </g>
+  <g id="node-typed-id-pairs" data-node="typed-id-pairs" transform="translate(640,820)">
+    <rect class="shape" x="0" y="0" width="400" height="116" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="200" y="29.5" text-anchor="middle" dominant-baseline="middle">Generated typed ID pairs</text>
+    <text class="detail" x="200" y="48.5" text-anchor="middle" dominant-baseline="middle">Snowflake extends LongEntity</text>
+    <text class="detail" x="200" y="67.5" text-anchor="middle" dominant-baseline="middle">TimebasedUUID extends UUIDEntity</text>
+    <text class="detail" x="200" y="86.5" text-anchor="middle" dominant-baseline="middle">matching EntityClass helpers</text>
+  </g>
+  <g id="node-audit-pairs" data-node="audit-pairs" transform="translate(1145,830)">
+    <rect class="shape" x="0" y="0" width="390" height="96" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="195" y="29" text-anchor="middle" dominant-baseline="middle">Auditable typed pairs</text>
+    <text class="detail" x="195" y="48" text-anchor="middle" dominant-baseline="middle">AuditableInt/Long/UUIDEntity</text>
+    <text class="detail" x="195" y="67" text-anchor="middle" dominant-baseline="middle">matching EntityClass helpers</text>
+  </g>
+  <g id="node-entity-extensions" data-node="entity-extensions" transform="translate(220,1160)">
+    <rect class="shape" x="0" y="0" width="480" height="96" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
+    <text class="card-title" x="240" y="19.5" text-anchor="middle" dominant-baseline="middle">EntityExtensions.kt</text>
+    <text class="detail" x="240" y="38.5" text-anchor="middle" dominant-baseline="middle">receiver: Entity&lt;ID&gt;</text>
+    <text class="detail" x="240" y="57.5" text-anchor="middle" dominant-baseline="middle">idValue, idEquals, idHashCode</text>
+    <text class="detail" x="240" y="76.5" text-anchor="middle" dominant-baseline="middle">entityToStringBuilder()</text>
+  </g>
+  <g id="node-usage-pattern" data-node="usage-pattern" transform="translate(900,1170)">
+    <rect class="shape" x="0" y="0" width="560" height="86" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
+    <text class="card-title" x="280" y="24" text-anchor="middle" dominant-baseline="middle">README usage pattern</text>
+    <text class="detail" x="280" y="43" text-anchor="middle" dominant-baseline="middle">entity chooses base class</text>
+    <text class="detail" x="280" y="62" text-anchor="middle" dominant-baseline="middle">companion object chooses EntityClass</text>
+  </g>
+  <g transform="translate(76,1373)" data-footer="reader-contract">
+    <rect class="pill" x="0" y="0" width="1588" height="48" rx="10"/>
+    <text class="small" x="794" y="18" text-anchor="middle" dominant-baseline="middle">Pick an entity base for the ID type, then pair it with the matching EntityClass helper.</text>
+    <text class="small" x="794" y="35" text-anchor="middle" dominant-baseline="middle">Common helpers stay as Entity&lt;ID&gt; extensions and do not depend on a specific table family.</text>
+  </g>
 </svg>
