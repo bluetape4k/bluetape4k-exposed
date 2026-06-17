@@ -26,19 +26,25 @@ dependencies {
 }
 ```
 
-## 클래스 다이어그램
+## 다이어그램
 
-### Repository 및 VirtualThread 트랜잭션 핵심 구조
+### JDBC 아키텍처 개요
 
-![Repository VirtualThread diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-01.png)
+Repository 계약, 트랜잭션 헬퍼, 런타임 쿼리 유틸리티, Exposed JDBC 실행 경계를 한눈에 분리해 보여줍니다.
 
-![Repository VirtualThread diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-01.png)
+![JDBC Architecture Overview diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-01.png)
 
-### Repository 계층 구조
+### Repository 계약 지도
 
-![Repository diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-02.png)
+Repository를 구현할 때 보는 지도입니다. 테이블 접근, ID 추출, 결과 매핑, 페이징, 논리 삭제 동작이 어떤 계약에서 제공되는지 정리합니다.
+
+![Repository Contract Map diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-02.png)
 
 ## 시퀀스 다이어그램
+
+### VirtualThread 트랜잭션 헬퍼
+
+![VirtualThread transaction helper diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-01.png)
 
 ### findById — 단건 조회
 

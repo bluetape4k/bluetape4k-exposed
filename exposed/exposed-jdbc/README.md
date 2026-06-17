@@ -26,19 +26,25 @@ dependencies {
 }
 ```
 
-## Class Diagrams
+## Diagrams
 
-### Core Repository and VirtualThread Transaction Structure
+### JDBC Architecture Overview
 
-![Core Repository and VirtualThread Transaction Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-01.png)
+This overview separates the repository contract, transaction helpers, runtime query utilities, and Exposed JDBC execution boundary.
 
-![Core Repository and VirtualThread Transaction Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-01.png)
+![JDBC Architecture Overview diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-01.png)
 
-### Repository Hierarchy
+### Repository Contract Map
 
-![Repository Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-02.png)
+Use this map when implementing a repository: it shows which contracts provide table access, ID extraction, result mapping, paging, and soft-delete behavior.
+
+![Repository Contract Map diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-diagram-02.png)
 
 ## Sequence Diagrams
+
+### VirtualThread transaction helper
+
+![VirtualThread transaction helper diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-sequence-01.png)
 
 ### findById — Single record lookup
 
