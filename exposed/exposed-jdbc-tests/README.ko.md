@@ -4,15 +4,15 @@
 
 ## 개요
 
-[Exposed](https://github.com/JetBrains/Exposed) 기반 모듈 테스트를 위한 공통 테스트 인프라 모듈입니다. 다양한 데이터베이스(H2, MySQL, MariaDB, PostgreSQL)에 대한 통합 테스트를 쉽게 작성할 수 있도록 도와줍니다.
+Exposed 기반 모듈을 JDBC로 검증할 때 쓰는 공통 테스트 인프라입니다. 테스트 작성자는 `TestDB`로 실행 대상 DB를 고르고, 트랜잭션 스코프 헬퍼와 테이블/스키마 fixture 유틸을 사용해 H2 빠른 피드백부터 실제 MySQL/PostgreSQL 커버리지까지 같은 테스트 코드로 다룰 수 있습니다.
 
-## Test Infrastructure
+## Dialect 커버리지
 
-![exposed jdbc tests Architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-diagram-01.png)
+![JDBC test dialect coverage](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-diagram-01.png)
 
-### Test Execution Flow
+### 테스트 생명주기
 
-![JDBC test execution flow diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-sequence-01.png)
+![JDBC test lifecycle](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-sequence-01.png)
 
 ## 의존성 추가
 
@@ -24,24 +24,26 @@ dependencies {
 
 ## 주요 기능
 
-- **공통 테스트 베이스**: `AbstractExposedTest`로 DB 테스트 기본 구조 제공
-- **다중 DB 지원**: H2, MySQL, MariaDB, PostgreSQL 테스트 지원
-- **Testcontainers 통합**: Docker 기반 실제 DB 테스트 지원
-- **동기/비동기 테스트**: 일반 JDBC 및 Coroutine 환경 모두 지원
-- **테이블/스키마 유틸**: 테스트용 엔티티/테이블 재사용
+- **공통 테스트 베이스**: `AbstractExposedTest`가 기본 시간대를 UTC로 고정하고, parameterized test용 `ENABLE_DIALECTS_METHOD`를 제공합니다.
+- **Dialect 선택**: `TestDB.enabledDialects()`가 `useFastDB`, `EXPOSED_TEST_DB`, 기본 `H2 + PostgreSQL + MySQL 8` 조합을 기준으로 실행 대상을 정합니다.
+- **JDBC 스코프 헬퍼**: `withDb`, `withTables`, `withSchemas`, auto-commit 변형이 하나의 Exposed transaction 안에서 fixture를 준비하고 정리합니다.
+- **Coroutine 변형**: suspending 헬퍼가 blocking JDBC 헬퍼와 같은 흐름을 `newSuspendedTransaction`으로 제공합니다.
+- **공유 스키마와 assertion**: movie, board, blog, person, order, composite-id fixture를 재사용해 각 모듈 테스트 코드를 줄입니다.
 
 ## 지원 데이터베이스
 
-| 데이터베이스           | TestDB       | Testcontainers |
-|------------------|--------------|----------------|
-| H2 v2            | `H2`         | ❌              |
-| H2 MySQL 모드      | `H2_MYSQL`   | ❌              |
-| H2 MariaDB 모드    | `H2_MARIADB` | ❌              |
-| H2 PostgreSQL 모드 | `H2_PSQL`    | ❌              |
-| MariaDB          | `MARIADB`    | ✅              |
-| MySQL 5.7        | `MYSQL_V5`   | ✅              |
-| MySQL 8.0        | `MYSQL_V8`   | ✅              |
-| PostgreSQL       | `POSTGRESQL` | ✅              |
+| 데이터베이스             | TestDB         | Testcontainers |
+|--------------------|----------------|----------------|
+| H2 v1              | `H2_V1`        | 아니요            |
+| H2 v2              | `H2`           | 아니요            |
+| H2 MySQL 모드        | `H2_MYSQL`     | 아니요            |
+| H2 MariaDB 모드      | `H2_MARIADB`   | 아니요            |
+| H2 PostgreSQL 모드   | `H2_PSQL`      | 아니요            |
+| MariaDB            | `MARIADB`      | 예              |
+| MySQL 5.7          | `MYSQL_V5`     | 예              |
+| MySQL 8.0          | `MYSQL_V8`     | 예              |
+| PostgreSQL         | `POSTGRESQL`   | 예              |
+| PostgreSQL pgjdbc-ng | `POSTGRESQLNG` | 예              |
 
 ## 사용 예시
 
@@ -207,7 +209,7 @@ import io.bluetape4k.exposed.tests.TestDBConfig
 // Testcontainers 사용 여부
 TestDBConfig.useTestcontainers = true  // 기본값
 
-// 빠른 테스트를 위해 H2만 사용 (기본값: true)
+// 빠른 테스트를 위해 H2만 사용 (기본값: false)
 TestDBConfig.useFastDB = true
 ```
 
@@ -282,18 +284,20 @@ Containers.Postgres
 ## 테스트 실행 옵션
 
 ```bash
-# 빠른 테스트 (H2만)
-./gradlew test -DuseFastDB=true
+# H2만 실행
+EXPOSED_TEST_DB=H2 ./gradlew :bluetape4k-exposed-jdbc-tests:test
 
-# 전체 DB 테스트
-./gradlew test
+# 기본 활성 dialect: H2 + PostgreSQL + MySQL 8
+./gradlew :bluetape4k-exposed-jdbc-tests:test
 
-# 특정 DB만 테스트
-./gradlew test -DtestDB=POSTGRESQL
+# CI 매트릭스처럼 H2 옆에 실제 DB 하나를 추가
+EXPOSED_TEST_DB=POSTGRESQL ./gradlew :bluetape4k-exposed-jdbc-tests:test
+EXPOSED_TEST_DB=MYSQL_V8 ./gradlew :bluetape4k-exposed-jdbc-tests:test
 ```
 
 ## 참고 사항
 
-- `exposed-tests` 모듈은 Detekt 검사가 비활성화되어 있습니다
-- Testcontainers 사용 시 Docker가 필요합니다
-- 로컬 DB 사용 시 `TestDBConfig.useTestcontainers = false`로 설정
+- 이 테스트 지원 모듈은 Detekt 검사가 비활성화되어 있습니다.
+- `TestDBConfig.useTestcontainers`가 `true`이면 Docker가 필요합니다.
+- 로컬 PostgreSQL/MySQL/MariaDB 서버를 사용할 때는 `TestDBConfig.useTestcontainers = false`로 설정합니다.
+- CI 매트릭스처럼 H2 옆에 실제 DB를 하나 더 붙일 때는 `EXPOSED_TEST_DB=POSTGRESQL` 또는 `EXPOSED_TEST_DB=MYSQL_V8`을 사용합니다.

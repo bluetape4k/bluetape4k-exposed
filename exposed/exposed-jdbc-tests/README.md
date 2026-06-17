@@ -4,15 +4,15 @@ English | [한국어](./README.ko.md)
 
 ## Overview
 
-A shared test infrastructure module for testing Exposed-based modules. It simplifies writing integration tests against multiple databases (H2, MySQL, MariaDB, PostgreSQL).
+Shared JDBC test infrastructure for Exposed-based modules. It gives test authors a stable `TestDB` selector, transaction-scoped helpers, schema/table fixture utilities, and reusable sample schemas so one test can run against fast H2 feedback or real MySQL/PostgreSQL coverage.
 
-## Test Infrastructure
+## Dialect Coverage
 
-![Test Infrastructure Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-diagram-01.png)
+![JDBC test dialect coverage](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-diagram-01.png)
 
-### Test Execution Flow
+### Test Lifecycle
 
-![Test execution flow diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-sequence-01.png)
+![JDBC test lifecycle](../../docs/images/readme-diagrams/exposed-exposed-jdbc-tests-sequence-01.png)
 
 ## Adding Dependencies
 
@@ -24,24 +24,26 @@ dependencies {
 
 ## Key Features
 
-- **Common test base**: `AbstractExposedTest` provides the foundation for DB tests
-- **Multi-database support**: Tests against H2, MySQL, MariaDB, and PostgreSQL
-- **Testcontainers integration**: Docker-based real database testing
-- **Sync and async tests**: Supports both plain JDBC and Coroutines environments
-- **Table/schema utilities**: Reusable test entities and tables
+- **Common test base**: `AbstractExposedTest` fixes the default timezone to UTC and exposes `ENABLE_DIALECTS_METHOD` for parameterized tests.
+- **Dialect selection**: `TestDB.enabledDialects()` combines `useFastDB`, `EXPOSED_TEST_DB`, and the default H2/PostgreSQL/MySQL 8 set.
+- **Scoped JDBC helpers**: `withDb`, `withTables`, `withSchemas`, and auto-commit variants run inside one Exposed transaction and clean up fixtures.
+- **Coroutine variants**: suspending helpers mirror the blocking JDBC helpers while using `newSuspendedTransaction`.
+- **Shared schemas and assertions**: reusable movie, board, blog, person, order, and composite-id fixtures keep module tests concise.
 
 ## Supported Databases
 
-| Database           | TestDB       | Testcontainers |
-|--------------------|--------------|----------------|
-| H2 v2              | `H2`         | No             |
-| H2 MySQL mode      | `H2_MYSQL`   | No             |
-| H2 MariaDB mode    | `H2_MARIADB` | No             |
-| H2 PostgreSQL mode | `H2_PSQL`    | No             |
-| MariaDB            | `MARIADB`    | Yes            |
-| MySQL 5.7          | `MYSQL_V5`   | Yes            |
-| MySQL 8.0          | `MYSQL_V8`   | Yes            |
-| PostgreSQL         | `POSTGRESQL` | Yes            |
+| Database             | TestDB         | Testcontainers |
+|----------------------|----------------|----------------|
+| H2 v1                | `H2_V1`        | No             |
+| H2 v2                | `H2`           | No             |
+| H2 MySQL mode        | `H2_MYSQL`     | No             |
+| H2 MariaDB mode      | `H2_MARIADB`   | No             |
+| H2 PostgreSQL mode   | `H2_PSQL`      | No             |
+| MariaDB              | `MARIADB`      | Yes            |
+| MySQL 5.7            | `MYSQL_V5`     | Yes            |
+| MySQL 8.0            | `MYSQL_V8`     | Yes            |
+| PostgreSQL           | `POSTGRESQL`   | Yes            |
+| PostgreSQL pgjdbc-ng | `POSTGRESQLNG` | Yes            |
 
 ## Usage Examples
 
@@ -207,7 +209,7 @@ import io.bluetape4k.exposed.tests.TestDBConfig
 // Whether to use Testcontainers
 TestDBConfig.useTestcontainers = true  // default
 
-// Use only H2 for fast tests (default: true)
+// Use only H2 for fast tests (default: false)
 TestDBConfig.useFastDB = true
 ```
 
@@ -282,18 +284,20 @@ Containers.Postgres
 ## Test Run Options
 
 ```bash
-# Fast tests (H2 only)
-./gradlew test -DuseFastDB=true
+# H2 only
+EXPOSED_TEST_DB=H2 ./gradlew :bluetape4k-exposed-jdbc-tests:test
 
-# Full database tests
-./gradlew test
+# Default enabled dialects: H2 + PostgreSQL + MySQL 8
+./gradlew :bluetape4k-exposed-jdbc-tests:test
 
-# Test against a specific database only
-./gradlew test -DtestDB=POSTGRESQL
+# CI-style matrix lanes add one real DB next to H2
+EXPOSED_TEST_DB=POSTGRESQL ./gradlew :bluetape4k-exposed-jdbc-tests:test
+EXPOSED_TEST_DB=MYSQL_V8 ./gradlew :bluetape4k-exposed-jdbc-tests:test
 ```
 
 ## Notes
 
-- Detekt static analysis is disabled for the `exposed-tests` module
-- Docker is required when using Testcontainers
-- Set `TestDBConfig.useTestcontainers = false` when using a local database
+- Detekt static analysis is disabled for this test-support module.
+- Docker is required when `TestDBConfig.useTestcontainers` is `true`.
+- Set `TestDBConfig.useTestcontainers = false` when a local PostgreSQL/MySQL/MariaDB server should be used instead of Testcontainers.
+- `EXPOSED_TEST_DB=POSTGRESQL` or `EXPOSED_TEST_DB=MYSQL_V8` adds that real DB next to H2 for CI-style matrix runs.
