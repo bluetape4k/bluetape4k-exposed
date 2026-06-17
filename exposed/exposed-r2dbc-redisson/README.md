@@ -6,7 +6,7 @@ Combines Exposed R2DBC with Redisson caching to implement coroutine-friendly Rea
 
 ## Overview
 
-`exposed-r2dbc-redisson` integrates Exposed R2DBC with the [Redisson](https://github.com/redisson/redisson) Redis client, making it practical to cache database query results in Redis without leaving a coroutine-based repository API. Repository operations are `suspend` functions, while Redisson `MapLoaderAsync` and `MapWriterAsync` adapters bridge cache misses and writes into Exposed R2DBC `suspendTransaction` blocks.
+`exposed-r2dbc-redisson` integrates Exposed R2DBC with the [Redisson](https://github.com/redisson/redisson) Redis client, so repositories can cache database rows in Redis without leaving a coroutine-first API. Repository operations stay `suspend`, while Redisson `MapLoaderAsync` and `MapWriterAsync` adapters bridge cache misses and cache writes into Exposed R2DBC `suspendTransaction` blocks.
 
 ### Key Features
 
@@ -31,7 +31,7 @@ dependencies {
 
 ## Architecture Overview
 
-The architecture view separates the suspend repository API, Redisson map ownership, cache-only invalidation path, and R2DBC loader/writer adapters. It also highlights the main durability rule: invalidation removes cache state by default and deletes database rows only when `deleteFromDBOnInvalidate` is enabled.
+The architecture view separates the suspend repository API, writer-backed Redisson maps, the cache-only invalidation path, and the R2DBC loader/writer adapters. It also highlights the main durability rule: invalidation removes Redis state by default and deletes database rows only when `deleteFromDBOnInvalidate` is enabled.
 
 ![R2DBC Redisson coroutine cache architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-01.png)
 
@@ -151,7 +151,7 @@ val nearCacheConfig = RedissonCacheConfig.readOnly(
 
 ### Read-Through (R2DBC + suspend)
 
-On `get(id)` or `getAll(ids)`, a cache miss invokes `R2dbcExposedEntityMapLoader`, which loads rows from the database through R2DBC `suspendTransaction`.
+On `get(id)` or `getAll(ids)`, Redisson serves cache hits directly. A miss invokes `R2dbcExposedEntityMapLoader`, which loads rows from the database through an R2DBC `suspendTransaction`.
 
 ![R2DBC Redisson read-through sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-01.png)
 
@@ -163,7 +163,7 @@ In `WRITE_THROUGH` mode, `put(id, entity)`, `putAll(...)`, and `upsertAll(...)` 
 
 ### Write-Behind (R2DBC + suspend + async DB)
 
-In `WRITE_BEHIND` mode, `put(id, entity)` and bulk writes return after Redisson accepts the cache update. The database batch write is eventual, so read-after-write durability must be observed separately.
+In `WRITE_BEHIND` mode, `put(id, entity)` and bulk writes return after Redisson accepts the cache update. The database batch write happens later, so read-after-write durability is eventual rather than immediate.
 
 ![R2DBC Redisson write-behind sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-03.png)
 

@@ -6,7 +6,7 @@ Exposed R2DBC와 Redisson 캐시를 결합해 코루틴 기반 Read-Through, Wri
 
 ## 개요
 
-`exposed-r2dbc-redisson`은 Exposed R2DBC와 [Redisson](https://github.com/redisson/redisson) Redis 클라이언트를 통합해, 코루틴 기반 Repository API를 유지하면서 데이터베이스 조회 결과를 Redis에 캐싱할 수 있게 합니다. Repository 연산은 `suspend` 함수로 제공하고, Redisson `MapLoaderAsync`와 `MapWriterAsync` 어댑터가 캐시 미스와 쓰기 경로를 Exposed R2DBC `suspendTransaction`으로 연결합니다.
+`exposed-r2dbc-redisson`은 Exposed R2DBC와 [Redisson](https://github.com/redisson/redisson) Redis 클라이언트를 통합해, 코루틴 우선 Repository API를 유지하면서 데이터베이스 행을 Redis에 캐싱할 수 있게 합니다. Repository 연산은 `suspend` 함수로 유지하고, Redisson `MapLoaderAsync`와 `MapWriterAsync` 어댑터가 캐시 미스와 캐시 쓰기 경로를 Exposed R2DBC `suspendTransaction`으로 연결합니다.
 
 ### 주요 기능
 
@@ -31,7 +31,7 @@ dependencies {
 
 ## 아키텍처 개요
 
-아키텍처 다이어그램은 suspend Repository API, Redisson map 소유권, cache-only invalidation 경로, R2DBC loader/writer 어댑터를 나눠 보여줍니다. 핵심 규칙은 명확합니다. 기본 invalidation은 캐시 상태만 제거하며, 데이터베이스 행 삭제는 `deleteFromDBOnInvalidate`가 활성화된 경우에만 수행됩니다.
+아키텍처 다이어그램은 suspend Repository API, writer-backed Redisson map, cache-only invalidation 경로, R2DBC loader/writer 어댑터를 나눠 보여줍니다. 핵심 규칙은 명확합니다. 기본 invalidation은 Redis 상태만 제거하며, 데이터베이스 행 삭제는 `deleteFromDBOnInvalidate`가 활성화된 경우에만 수행됩니다.
 
 ![R2DBC Redisson coroutine cache architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-01.png)
 
@@ -151,7 +151,7 @@ val nearCacheConfig = RedissonCacheConfig.readOnly(
 
 ### Read-Through (R2DBC + suspend)
 
-`get(id)`나 `getAll(ids)`에서 캐시 미스가 발생하면 `R2dbcExposedEntityMapLoader`가 R2DBC `suspendTransaction`으로 데이터베이스 행을 로드합니다.
+`get(id)`나 `getAll(ids)`에서 캐시 히트가 나면 Redisson이 바로 값을 돌려줍니다. 미스가 발생한 경우에만 `R2dbcExposedEntityMapLoader`가 R2DBC `suspendTransaction`으로 데이터베이스 행을 로드합니다.
 
 ![R2DBC Redisson read-through sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-01.png)
 
@@ -163,7 +163,7 @@ val nearCacheConfig = RedissonCacheConfig.readOnly(
 
 ### Write-Behind (R2DBC + suspend + 비동기 DB)
 
-`WRITE_BEHIND` 모드에서는 `put(id, entity)`와 bulk write가 Redisson의 캐시 갱신 수락 후 반환됩니다. 데이터베이스 배치 쓰기는 이후에 반영되므로, read-after-write 내구성은 별도로 관찰해야 합니다.
+`WRITE_BEHIND` 모드에서는 `put(id, entity)`와 bulk write가 Redisson의 캐시 갱신 수락 후 반환됩니다. 데이터베이스 배치 쓰기는 나중에 반영되므로, read-after-write 내구성은 즉시 보장되는 값이 아니라 eventual한 값으로 보아야 합니다.
 
 ![R2DBC Redisson write-behind sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-03.png)
 

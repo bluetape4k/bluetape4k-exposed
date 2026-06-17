@@ -1,184 +1,51 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1740" height="1900" viewBox="0 0 1740 1900" role="img" aria-labelledby="title desc">
-  <title id="title">R2DBC Redisson Write-Through Flow</title>
-  <desc id="desc">Write-through sequence showing repository writes waiting for Redisson writerAsync and the R2DBC database write before resuming the caller.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1080" viewBox="0 0 1680 1080" role="img" aria-labelledby="title desc">
+  <title id="title">R2DBC Redisson Write-Through Sequence</title>
+  <desc id="desc">Sequence diagram for write-through put and upsertAll where Redisson invokes the R2DBC writer and the repository resumes after the database transaction completes.</desc>
   <defs>
-    <marker id="seqArrow-call" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#4F83BF"/></marker>
-    <marker id="seqArrow-scoped" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755BC6"/></marker>
-    <marker id="seqArrow-thread" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#2E8F89"/></marker>
-    <marker id="seqArrow-restore" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#3E9868"/></marker>
-    <marker id="seqArrow-fallback" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#B9851B"/></marker>
-    <marker id="seqArrow-audit" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#C94D68"/></marker>
-    <marker id="seqArrow-neutral" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#758297"/></marker>
-    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <marker id="arrowCall" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#3f7d9c" stroke-dasharray="none"/></marker>
+    <marker id="arrowCache" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#6e8f4f" stroke-dasharray="none"/></marker>
+    <marker id="arrowDb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#7e6ab8" stroke-dasharray="none"/></marker>
+    <marker id="arrowReturn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#9b7d54" stroke-dasharray="none"/></marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="8" stdDeviation="11" flood-color="#20303a" flood-opacity="0.12"/></filter>
     <style>
-      .canvas{fill:#F7FAFC}.frame{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:2.6;filter:url(#shadow)}
-      .title{font-family:"Architects Daughter";font-size:44px;fill:#22344A;font-weight:400}.subtitle{font-family:"Comic Mono";font-size:16px;fill:#536476;font-weight:400}
-      .card{filter:url(#shadow);stroke-width:2}.cardTitle{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
-      .detail{font-family:"Comic Mono";font-size:13px;fill:#42556B;font-weight:400}.small{font-family:"Comic Mono";font-size:12px;fill:#627184;font-weight:400}
-      .seq{fill:none;stroke-width:3;stroke-linecap:round}.seqReturn{fill:none;stroke-width:2.7;stroke-linecap:round;stroke-dasharray:8 7}
-      .lifeline{stroke:#A7B4C3;stroke-width:1.8;stroke-dasharray:8 8}.labelPill{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
-      .branchBox{fill:#FFFFFF;fill-opacity:.42;stroke:#D6A441;stroke-width:1.8;stroke-dasharray:8 8}.note{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
+      .canvas { fill: #f6f0e8; } .frame { fill: #fffaf2; stroke: #28485a; stroke-width: 4; }
+      .title { font-family: "Architects Daughter", "Comic Mono", monospace; font-size: 46px; fill: #21343f; }
+      .subtitle, .role, .msg, .note, .footer { font-family: "Comic Mono", monospace; fill: #52636f; }
+      .subtitle { font-size: 18px; } .participantText { font-family: "Architects Daughter", "Comic Mono", monospace; font-size: 20px; fill: #1f3138; }
+      .role { font-size: 13px; } .msg { font-size: 13px; } .note { font-size: 13px; fill: #40515b; } .footer { font-size: 14px; }
+      .participant { fill: #ffffff; stroke: #8db7c2; stroke-width: 2.2; } .lifeline { stroke: #9aaab1; stroke-width: 2; stroke-dasharray: 7 8; }
+      .activation { fill: #eef7f0; stroke: #6e8f4f; stroke-width: 1.5; }
+      .call { fill: none; stroke: #3f7d9c; stroke-width: 3.2; stroke-linecap: round; marker-end: url(#arrowCall); }
+      .cache { fill: none; stroke: #6e8f4f; stroke-width: 3.2; stroke-linecap: round; marker-end: url(#arrowCache); }
+      .db { fill: none; stroke: #7e6ab8; stroke-width: 3.2; stroke-linecap: round; marker-end: url(#arrowDb); }
+      .return { fill: none; stroke: #9b7d54; stroke-width: 2.7; stroke-linecap: round; stroke-dasharray: 8 6; marker-end: url(#arrowReturn); }
+      .opt { fill: none; stroke: #7e6ab8; stroke-width: 2.5; stroke-dasharray: 11 7; }
+      .label { fill: #ffffff; stroke: #cbd9e7; stroke-width: 1.5; } .callLabel { stroke: #9cc2d1; } .cacheLabel { stroke: #b6c9a4; } .dbLabel { stroke: #b9addd; } .returnLabel { stroke: #c8b38f; }
+      .badge { stroke-width: 1.7; } .callBadge { fill: #eaf4f8; stroke: #3f7d9c; } .cacheBadge { fill: #eef7f0; stroke: #6e8f4f; } .dbBadge { fill: #f3eefb; stroke: #7e6ab8; } .returnBadge { fill: #fff7e8; stroke: #9b7d54; }
+      .badgeText { font-family: "Comic Mono", monospace; font-size: 11px; font-weight: 700; } .callText { fill: #2f6f8e; } .cacheText { fill: #55783f; } .dbText { fill: #6d58a8; } .returnText { fill: #7f6038; }
+      .code { fill: #9b3d5a; font-weight: 700; } .type { fill: #176f7a; font-weight: 700; } .keyword { fill: #8a5b00; font-weight: 700; }
     </style>
   </defs>
-  <rect class="canvas" width="1740" height="1900"/>
-  <rect class="frame" x="32" y="28" width="1676" height="1844" rx="28"/>
-  <text class="title" x="66" y="82">R2DBC Redisson Write-Through Flow</text>
-  <text class="subtitle" x="70" y="116">The suspend write path awaits Redisson async map writes and MapWriterAsync commits R2DBC updates before the repository call resumes.</text>
-<g id="participant-caller">
-  <rect class="card" x="96" y="165" width="250" height="76" rx="10" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <text class="cardTitle" x="221" y="210" text-anchor="middle">Suspend caller</text>
-  <line class="lifeline" x1="221" y1="241" x2="221" y2="1806"/>
-</g>
-<g id="participant-repo">
-  <rect class="card" x="355.6" y="165" width="250" height="76" rx="10" fill="#EAF7EF" stroke="#58A978"/>
-  <text class="cardTitle" x="480.6" y="197" text-anchor="middle">R2DBC Redisson</text>
-  <text class="cardTitle" x="480.6" y="220" text-anchor="middle">repo</text>
-  <line class="lifeline" x1="480.6" y1="241" x2="480.6" y2="1806"/>
-</g>
-<g id="participant-map">
-  <rect class="card" x="615.2" y="165" width="250" height="76" rx="10" fill="#F2F5F9" stroke="#9AA8B8"/>
-  <text class="cardTitle" x="740.2" y="210" text-anchor="middle">Async Redisson map</text>
-  <line class="lifeline" x1="740.2" y1="241" x2="740.2" y2="1806"/>
-</g>
-<g id="participant-writer">
-  <rect class="card" x="874.8000000000001" y="165" width="250" height="76" rx="10" fill="#E9F7F6" stroke="#45A7A1"/>
-  <text class="cardTitle" x="999.8000000000001" y="210" text-anchor="middle">MapWriterAsync</text>
-  <line class="lifeline" x1="999.8000000000001" y1="241" x2="999.8000000000001" y2="1806"/>
-</g>
-<g id="participant-tx">
-  <rect class="card" x="1134.4" y="165" width="250" height="76" rx="10" fill="#F1ECFF" stroke="#8A72D6"/>
-  <text class="cardTitle" x="1259.4" y="210" text-anchor="middle">R2DBC suspend tx</text>
-  <line class="lifeline" x1="1259.4" y1="241" x2="1259.4" y2="1806"/>
-</g>
-<g id="participant-database">
-  <rect class="card" x="1394" y="165" width="250" height="76" rx="10" fill="#FDECEF" stroke="#DC6B82"/>
-  <text class="cardTitle" x="1519" y="210" text-anchor="middle">R2DBC database</text>
-  <line class="lifeline" x1="1519" y1="241" x2="1519" y2="1806"/>
-</g>
-<g>
-  <rect class="branchBox" x="74" y="292" width="1592" height="48" rx="15"/>
-  <rect class="labelPill" x="230.05" y="286" width="241.5" height="30" rx="8"/>
-  <text class="detail" x="350.8" y="302" text-anchor="middle" dominant-baseline="middle">Awaited write-through put</text>
-</g>
-<g id="m2">
-  <rect class="labelPill" x="225.8" y="364" width="250" height="30" rx="7"/>
-  <circle cx="244.8" cy="379" r="12" fill="#4F83BF"/>
-  <text class="detail" x="244.8" y="380" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">2</text>
-  <text class="detail" x="368.8" y="380" text-anchor="middle" dominant-baseline="middle">put(id, entity) suspends</text>
-  <path class="seq" d="M221 412 L480.6 412" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
-</g>
-<g id="m3">
-  <rect class="labelPill" x="487.9000000000001" y="434" width="245" height="42" rx="7"/>
-  <circle cx="506.9000000000001" cy="455" r="12" fill="#2E8F89"/>
-  <text class="detail" x="506.9000000000001" y="456" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">3</text>
-  <text class="detail" x="628.4000000000001" y="447" text-anchor="middle" dominant-baseline="middle">fastPutAsync(id,</text>
-  <text class="detail" x="628.4000000000001" y="462" text-anchor="middle" dominant-baseline="middle">entity).await()</text>
-  <path class="seq" d="M480.6 494 L740.2 494" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
-</g>
-<g id="m4">
-  <rect class="labelPill" x="745" y="528" width="250" height="30" rx="7"/>
-  <circle cx="764" cy="543" r="12" fill="#755BC6"/>
-  <text class="detail" x="764" y="544" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">4</text>
-  <text class="detail" x="888" y="544" text-anchor="middle" dominant-baseline="middle">writerAsync.write(map)</text>
-  <path class="seq" d="M740.2 576 L999.8000000000001 576" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
-</g>
-<g id="m5">
-  <rect class="labelPill" x="1007.1000000000001" y="610" width="245" height="30" rx="7"/>
-  <circle cx="1026.1000000000001" cy="625" r="12" fill="#C94D68"/>
-  <text class="detail" x="1026.1000000000001" y="626" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">5</text>
-  <text class="detail" x="1147.6000000000001" y="626" text-anchor="middle" dominant-baseline="middle">suspendTransaction</text>
-  <path class="seq" d="M999.8000000000001 658 L1259.4 658" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
-</g>
-<g id="m6">
-  <rect class="labelPill" x="1264.8" y="692" width="248.8" height="30" rx="7"/>
-  <circle cx="1283.8" cy="707" r="12" fill="#C94D68"/>
-  <text class="detail" x="1283.8" y="708" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">6</text>
-  <text class="detail" x="1407.2" y="708" text-anchor="middle" dominant-baseline="middle">SELECT existing IDs</text>
-  <path class="seq" d="M1259.4 740 L1519 740" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
-</g>
-<g id="m7">
-  <rect class="labelPill" x="1266.7" y="774" width="245" height="30" rx="7"/>
-  <circle cx="1285.7" cy="789" r="12" fill="#C94D68"/>
-  <text class="detail" x="1285.7" y="790" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">7</text>
-  <text class="detail" x="1407.2" y="790" text-anchor="middle" dominant-baseline="middle">existingIds</text>
-  <path class="seqReturn" d="M1519 822 L1259.4 822" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
-</g>
-<g id="m8">
-  <rect class="labelPill" x="1264.2" y="844" width="250" height="42" rx="7"/>
-  <circle cx="1283.2" cy="865" r="12" fill="#C94D68"/>
-  <text class="detail" x="1283.2" y="866" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">8</text>
-  <text class="detail" x="1407.2" y="857" text-anchor="middle" dominant-baseline="middle">UPDATE rows or batchInsert</text>
-  <text class="detail" x="1407.2" y="872" text-anchor="middle" dominant-baseline="middle">client IDs</text>
-  <path class="seq" d="M1259.4 904 L1519 904" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
-</g>
-<g id="m9">
-  <rect class="labelPill" x="1266.7" y="938" width="245" height="30" rx="7"/>
-  <circle cx="1285.7" cy="953" r="12" fill="#C94D68"/>
-  <text class="detail" x="1285.7" y="954" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">9</text>
-  <text class="detail" x="1407.2" y="954" text-anchor="middle" dominant-baseline="middle">commit</text>
-  <path class="seqReturn" d="M1519 986 L1259.4 986" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
-</g>
-<g id="m10">
-  <rect class="labelPill" x="1007.1000000000001" y="1020" width="245" height="30" rx="7"/>
-  <circle cx="1026.1000000000001" cy="1035" r="12" fill="#C94D68"/>
-  <text class="detail" x="1026.1000000000001" y="1036" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">10</text>
-  <text class="detail" x="1147.6000000000001" y="1036" text-anchor="middle" dominant-baseline="middle">write complete</text>
-  <path class="seqReturn" d="M1259.4 1068 L999.8000000000001 1068" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
-</g>
-<g id="m11">
-  <rect class="labelPill" x="747.5" y="1102" width="245" height="30" rx="7"/>
-  <circle cx="766.5" cy="1117" r="12" fill="#755BC6"/>
-  <text class="detail" x="766.5" y="1118" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">11</text>
-  <text class="detail" x="888" y="1118" text-anchor="middle" dominant-baseline="middle">future completes</text>
-  <path class="seqReturn" d="M999.8000000000001 1150 L740.2 1150" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
-</g>
-<g id="m12">
-  <rect class="labelPill" x="487.9000000000001" y="1184" width="245" height="30" rx="7"/>
-  <circle cx="506.9000000000001" cy="1199" r="12" fill="#2E8F89"/>
-  <text class="detail" x="506.9000000000001" y="1200" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">12</text>
-  <text class="detail" x="628.4000000000001" y="1200" text-anchor="middle" dominant-baseline="middle">await resumes</text>
-  <path class="seqReturn" d="M740.2 1232 L480.6 1232" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
-</g>
-<g id="m13">
-  <rect class="labelPill" x="225.8" y="1266" width="250" height="30" rx="7"/>
-  <circle cx="244.8" cy="1281" r="12" fill="#B9851B"/>
-  <text class="detail" x="244.8" y="1282" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">13</text>
-  <text class="detail" x="368.8" y="1282" text-anchor="middle" dominant-baseline="middle">return after DB write</text>
-  <path class="seqReturn" d="M480.6 1314 L221 1314" stroke="#B9851B" marker-end="url(#seqArrow-fallback)"/>
-</g>
-<g>
-  <rect class="branchBox" x="74" y="1358" width="1592" height="48" rx="15"/>
-  <rect class="labelPill" x="255.8" y="1352" width="190" height="30" rx="8"/>
-  <text class="detail" x="350.8" y="1368" text-anchor="middle" dominant-baseline="middle">Invalidate policy</text>
-</g>
-<g id="m15">
-  <rect class="labelPill" x="228.3" y="1430" width="245" height="30" rx="7"/>
-  <circle cx="247.3" cy="1445" r="12" fill="#4F83BF"/>
-  <text class="detail" x="247.3" y="1446" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">15</text>
-  <text class="detail" x="368.8" y="1446" text-anchor="middle" dominant-baseline="middle">invalidateAll(ids)</text>
-  <path class="seq" d="M221 1478 L480.6 1478" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
-</g>
-<g id="m16">
-  <rect class="labelPill" x="540.2" y="1512" width="400" height="30" rx="7"/>
-  <circle cx="559.2" cy="1527" r="12" fill="#755BC6"/>
-  <text class="detail" x="559.2" y="1528" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">16</text>
-  <text class="detail" x="758.2" y="1528" text-anchor="middle" dominant-baseline="middle">delete(ids) first when DB delete enabled</text>
-  <path class="seq" d="M480.6 1560 L999.8000000000001 1560" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
-</g>
-<g id="m17">
-  <rect class="labelPill" x="1136.9" y="1594" width="245" height="30" rx="7"/>
-  <circle cx="1155.9" cy="1609" r="12" fill="#C94D68"/>
-  <text class="detail" x="1155.9" y="1610" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">17</text>
-  <text class="detail" x="1277.4" y="1610" text-anchor="middle" dominant-baseline="middle">DELETE by ids</text>
-  <path class="seq" d="M999.8000000000001 1642 L1519 1642" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
-</g>
-<g id="m18">
-  <rect class="labelPill" x="485.4000000000001" y="1664" width="250" height="42" rx="7"/>
-  <circle cx="504.4000000000001" cy="1685" r="12" fill="#2E8F89"/>
-  <text class="detail" x="504.4000000000001" y="1686" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">18</text>
-  <text class="detail" x="628.4000000000001" y="1677" text-anchor="middle" dominant-baseline="middle">otherwise cacheOnlyMap</text>
-  <text class="detail" x="628.4000000000001" y="1692" text-anchor="middle" dominant-baseline="middle">fastRemoveAsync</text>
-  <path class="seq" d="M480.6 1724 L740.2 1724" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
-</g>
-<g><rect class="note" x="110" y="1782" width="1520" height="48" rx="12"/><text class="small" x="870" y="1799" text-anchor="middle" dominant-baseline="middle">WRITE_THROUGH returns after writerAsync completes the R2DBC write.</text><text class="small" x="870" y="1816" text-anchor="middle" dominant-baseline="middle">Invalidation deletes database rows only when deleteFromDBOnInvalidate is enabled.</text></g>
+  <rect class="canvas" width="1680" height="1080"/><rect class="frame" x="42" y="34" width="1596" height="1000" rx="24" filter="url(#shadow)"/>
+  <text class="title" x="84" y="91">R2DBC Redisson Write-Through</text>
+  <text class="subtitle" x="86" y="126">Write-through waits for the Redisson MapWriterAsync R2DBC transaction before the suspend repository call resumes.</text>
+  <g id="participants">
+    <rect class="participant" x="86" y="172" width="160" height="72" rx="10"/><text class="participantText" x="166" y="201" text-anchor="middle">Caller</text><text class="role" x="166" y="224" text-anchor="middle">coroutine</text>
+    <rect class="participant" x="330" y="172" width="218" height="72" rx="10"/><text class="participantText" x="439" y="201" text-anchor="middle">Repository</text><text class="role" x="439" y="224" text-anchor="middle">suspend API</text>
+    <rect class="participant" x="662" y="172" width="246" height="72" rx="10"/><image x="684" y="188" width="34" height="34" href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcKICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICB4bWxuczpjYz0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbnMjIgogICB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiCiAgIHhtbG5zOnN2Zz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c29kaXBvZGk9Imh0dHA6Ly9zb2RpcG9kaS5zb3VyY2Vmb3JnZS5uZXQvRFREL3NvZGlwb2RpLTAuZHRkIgogICB4bWxuczppbmtzY2FwZT0iaHR0cDovL3d3dy5pbmtzY2FwZS5vcmcvbmFtZXNwYWNlcy9pbmtzY2FwZSIKICAgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwIDAgODAwIDYwMCIKICAgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIKICAgaGVpZ2h0PSIxODAiCiAgIHZpZXdCb3g9IjAgMCAxNzkuOTk4OTEgMTc5Ljk5Nzc0IgogICB3aWR0aD0iMTgwIgogICB2ZXJzaW9uPSIxLjEiCiAgIHk9IjBweCIKICAgeD0iMHB4IgogICBpZD0ic3ZnODY5IgogICBzb2RpcG9kaTpkb2NuYW1lPSJSZWRpc19Mb2dvLnN2ZyIKICAgaW5rc2NhcGU6dmVyc2lvbj0iMS4wLjEgKGM0OTdiMDNjLCAyMDIwLTA5LTEwKSIKICAgaW5rc2NhcGU6ZXhwb3J0LWZpbGVuYW1lPSIvVXNlcnMvaG9uemEvRG93bmxvYWRzL3JlZGlzLnBuZyIKICAgaW5rc2NhcGU6ZXhwb3J0LXhkcGk9IjExMi41ODk1OCIKICAgaW5rc2NhcGU6ZXhwb3J0LXlkcGk9IjExMi41ODk1OCI+PGRlZnMKICAgICBpZD0iZGVmczg3MyIgLz48c29kaXBvZGk6bmFtZWR2aWV3CiAgICAgcGFnZWNvbG9yPSIjZmZmZmZmIgogICAgIGJvcmRlcmNvbG9yPSIjNjY2NjY2IgogICAgIGJvcmRlcm9wYWNpdHk9IjEiCiAgICAgb2JqZWN0dG9sZXJhbmNlPSIxMCIKICAgICBncmlkdG9sZXJhbmNlPSIxMCIKICAgICBndWlkZXRvbGVyYW5jZT0iMTAiCiAgICAgaW5rc2NhcGU6cGFnZW9wYWNpdHk9IjAiCiAgICAgaW5rc2NhcGU6cGFnZXNoYWRvdz0iMiIKICAgICBpbmtzY2FwZTp3aW5kb3ctd2lkdGg9IjEzODIiCiAgICAgaW5rc2NhcGU6d2luZG93LWhlaWdodD0iODQ3IgogICAgIGlkPSJuYW1lZHZpZXc4NzEiCiAgICAgc2hvd2dyaWQ9ImZhbHNlIgogICAgIGZpdC1tYXJnaW4tdG9wPSIwIgogICAgIGZpdC1tYXJnaW4tbGVmdD0iMCIKICAgICBmaXQtbWFyZ2luLXJpZ2h0PSIwIgogICAgIGZpdC1tYXJnaW4tYm90dG9tPSIwIgogICAgIGlua3NjYXBlOnpvb209IjEuNTIzNDUwOSIKICAgICBpbmtzY2FwZTpjeD0iOTUuNDMzODUyIgogICAgIGlua3NjYXBlOmN5PSI4OS4zMDk1NjciCiAgICAgaW5rc2NhcGU6d2luZG93LXg9IjU4IgogICAgIGlua3NjYXBlOndpbmRvdy15PSIyNSIKICAgICBpbmtzY2FwZTp3aW5kb3ctbWF4aW1pemVkPSIxIgogICAgIGlua3NjYXBlOmN1cnJlbnQtbGF5ZXI9InN2Zzg2OSIgLz48bWV0YWRhdGEKICAgICBpZD0ibWV0YWRhdGE4MzMiPjxyZGY6UkRGPjxjYzpXb3JrCiAgICAgICAgIHJkZjphYm91dD0iIj48ZGM6Zm9ybWF0PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD48ZGM6dHlwZQogICAgICAgICAgIHJkZjpyZXNvdXJjZT0iaHR0cDovL3B1cmwub3JnL2RjL2RjbWl0eXBlL1N0aWxsSW1hZ2UiIC8+PGRjOnRpdGxlPjwvZGM6dGl0bGU+PC9jYzpXb3JrPjwvcmRmOlJERj48L21ldGFkYXRhPjxnCiAgICAgaWQ9Imc5NzkiCiAgICAgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNC45NDEyMzA2LDE3LjA5Nzg3NykiPjxwYXRoCiAgICAgICBmaWxsPSIjYTQxZTExIgogICAgICAgZD0ibSAxNjMuNDQ4MTQsMTEyLjQyNjUzIGMgLTkuMDc4LDQuNzMyIC01Ni4xMDYsMjQuMDY4IC02Ni4xMTgwMDIsMjkuMjg3IC0xMC4wMTIsNS4yMjEgLTE1LjU3NCw1LjE3IC0yMy40ODMsMS4zODkgLTcuOTA5LC0zLjc4MSAtNTcuOTU1LC0yMy45OTYgLTY2Ljk3MDAwMDMsLTI4LjMwNSAtNC41MDYsLTIuMTU0IC02Ljg3NTAwMDAzLC0zLjk3MSAtNi44NzUwMDAwMywtNS42ODggViA5MS45MTQ1MzQgYyAwLDAgNjUuMTUzMDAwMzMsLTE0LjE4NCA3NS42NzIwMDAzMywtMTcuOTU3IDEwLjUxOCwtMy43NzQgMTQuMTY3LC0zLjkxIDIzLjExOCwtMC42MzEgOC45NTIwMDIsMy4yNzkgNjIuNDc0MDAyLDEyLjkzNiA3MS4zMjEwMDIsMTYuMTc2IDAsMCAtMC4wMDQsMTUuMzU2OTk2IC0wLjAwNCwxNi45NTA5OTYgMC4wMDEsMS43IC0yLjA0LDMuNTY1IC02LjY2MSw1Ljk3MyB6IgogICAgICAgaWQ9InBhdGg4NDUiIC8+PHBhdGgKICAgICAgIGZpbGw9IiNkODJjMjAiCiAgICAgICBkPSJtIDE2My40NDgxNCw5NS4yMjY1MzQgYyAtOS4wNzgsNC43MyAtNTYuMTA2LDI0LjA2Nzk5NiAtNjYuMTE4MDAyLDI5LjI4Njk5NiAtMTAuMDEyLDUuMjIxIC0xNS41NzQsNS4xNyAtMjMuNDgzLDEuMzg5IC03LjkxLC0zLjc3OSAtNTcuOTU1LC0yMy45OTggLTY2Ljk3MDAwMDMsLTI4LjMwNDk5NiAtOS4wMTUsLTQuMzA5IC05LjIwNCwtNy4yNzUgLTAuMzQ4LC0xMC43NDIgOC44NTUwMDAzLC0zLjQ2OSA1OC42MjYwMDAzLC0yMi45OTYgNjkuMTQ2MDAwMywtMjYuNzcgMTAuNTE4LC0zLjc3MiAxNC4xNjcsLTMuOTEgMjMuMTE4LC0wLjYzIDguOTUyMDAyLDMuMjc5IDU1LjY5OTAwMiwyMS44ODYgNjQuNTQ1MDAyLDI1LjEyNiA4Ljg0OCwzLjI0MyA5LjE4OCw1LjkxMyAwLjExLDEwLjY0NSB6IgogICAgICAgaWQ9InBhdGg4NDciIC8+PHBhdGgKICAgICAgIGZpbGw9IiNhNDFlMTEiCiAgICAgICBkPSJtIDE2My40NDgxNCw4NC4zODY1MzQgYyAtOS4wNzgsNC43MzIgLTU2LjEwNiwyNC4wNjc5OTYgLTY2LjExODAwMiwyOS4yODg5OTYgLTEwLjAxMiw1LjIxOSAtMTUuNTc0LDUuMTY4IC0yMy40ODMsMS4zODcgLTcuOTEsLTMuNzc5IC01Ny45NTUsLTIzLjk5NTk5NiAtNjYuOTcwMDAwMywtMjguMzA0OTk2IC00LjUwNiwtMi4xNTQgLTYuODc1MDAwMDMsLTMuOTY5IC02Ljg3NTAwMDAzLC01LjY4NiB2IC0xNy4xOTcgYyAwLDAgNjUuMTUzMDAwMzMsLTE0LjE4MyA3NS42NzIwMDAzMywtMTcuOTU3IDEwLjUxOCwtMy43NzMgMTQuMTY3LC0zLjkxIDIzLjExOCwtMC42MzEgOC45NTIwMDIsMy4yNzkgNjIuNDc0MDAyLDEyLjkzNCA3MS4zMjEwMDIsMTYuMTc1IDAsMCAtMC4wMDQsMTUuMzU3IC0wLjAwNCwxNi45NTMgMC4wMDEsMS42OTkgLTIuMDQsMy41NjQgLTYuNjYxLDUuOTcyIHoiCiAgICAgICBpZD0icGF0aDg0OSIgLz48cGF0aAogICAgICAgZmlsbD0iI2Q4MmMyMCIKICAgICAgIGQ9Im0gMTYzLjQ0ODE0LDY3LjE4NjUzNCBjIC05LjA3OCw0LjczMiAtNTYuMTA2LDI0LjA2OCAtNjYuMTE4MDAyLDI5LjI4OSAtMTAuMDEyLDUuMjE4OTk2IC0xNS41NzQsNS4xNjc5OTYgLTIzLjQ4MywxLjM4NyAtNy45MSwtMy43NzkgLTU3Ljk1NSwtMjMuOTk3IC02Ni45NzAwMDAzLC0yOC4zMDUgLTkuMDE1LC00LjMwOCAtOS4yMDQsLTcuMjc0IC0wLjM0OCwtMTAuNzQzIDguODU1MDAwMywtMy40NjcgNTguNjI2MDAwMywtMjIuOTk1IDY5LjE0NjAwMDMsLTI2Ljc2OCAxMC41MTgsLTMuNzczIDE0LjE2NywtMy45MSAyMy4xMTgsLTAuNjMxIDguOTUyMDAyLDMuMjc5IDU1LjY5OTAwMiwyMS44ODUgNjQuNTQ1MDAyLDI1LjEyNiA4Ljg0OCwzLjI0MiA5LjE4OCw1LjkxMyAwLjExLDEwLjY0NSB6IgogICAgICAgaWQ9InBhdGg4NTEiIC8+PHBhdGgKICAgICAgIGZpbGw9IiNhNDFlMTEiCiAgICAgICBkPSJtIDE2My40NDgxNCw1NS4zMDY1MzQgYyAtOS4wNzgsNC43MzIgLTU2LjEwNiwyNC4wNjkgLTY2LjExODAwMiwyOS4yOSAtMTAuMDEyLDUuMjE5IC0xNS41NzQsNS4xNjggLTIzLjQ4MywxLjM4NyAtNy45MSwtMy43NzkgLTU3Ljk1NSwtMjMuOTk3IC02Ni45NzAwMDAzLC0yOC4zMDUgLTQuNTA2LC0yLjE1NCAtNi44NzUwMDAwMywtMy45NyAtNi44NzUwMDAwMywtNS42ODYgdiAtMTcuMTk3IGMgMCwwIDY1LjE1MzAwMDMzLC0xNC4xODMgNzUuNjcyMDAwMzMsLTE3Ljk1NiAxMC41MTgsLTMuNzc0IDE0LjE2NywtMy45MSAyMy4xMTgsLTAuNjMxIDguOTUyMDAyLDMuMjc5IDYyLjQ3NDAwMiwxMi45MzQgNzEuMzIxMDAyLDE2LjE3NSAwLDAgLTAuMDA0LDE1LjM1NyAtMC4wMDQsMTYuOTUyIDAuMDAxLDEuNjk4IC0yLjA0LDMuNTYzIC02LjY2MSw1Ljk3MSB6IgogICAgICAgaWQ9InBhdGg4NTMiIC8+PHBhdGgKICAgICAgIGZpbGw9IiNkODJjMjAiCiAgICAgICBkPSJtIDE2My40NDgxNCwzOC4xMDY1MzQgYyAtOS4wNzgsNC43MzIgLTU2LjEwNiwyNC4wNjkgLTY2LjExODAwMiwyOS4yODkgLTEwLjAxMiw1LjIxOSAtMTUuNTc0LDUuMTY4IC0yMy40ODMsMS4zODggLTcuOTA5LC0zLjc4IC01Ny45NTUsLTIzLjk5NyAtNjYuOTcwMDAwMywtMjguMzA1IC05LjAxNSwtNC4zMDggLTkuMjA0LC03LjI3NSAtMC4zNDgsLTEwLjc0MyA4Ljg1NTAwMDMsLTMuNDY4IDU4LjYyNjAwMDMsLTIyLjk5NDAwMDMgNjkuMTQ2MDAwMywtMjYuNzY4MDAwMyAxMC41MTgsLTMuNzc0IDE0LjE2NywtMy45MSAyMy4xMTgsLTAuNjMgOC45NTIwMDIsMy4yNzkgNTUuNjk5MDAyLDIxLjg4NTAwMDMgNjQuNTQ1MDAyLDI1LjEyNjAwMDMgOC44NDgsMy4yNCA5LjE4OCw1LjkxMiAwLjExLDEwLjY0MyB6IgogICAgICAgaWQ9InBhdGg4NTUiIC8+PHRleHQKICAgICAgIHhtbDpzcGFjZT0icHJlc2VydmUiCiAgICAgICBzdHlsZT0iZm9udC1zdHlsZTpub3JtYWw7Zm9udC13ZWlnaHQ6bm9ybWFsO2ZvbnQtc2l6ZTo4NS4zMzI4cHg7bGluZS1oZWlnaHQ6MS4yNTtmb250LWZhbWlseTpzYW5zLXNlcmlmO2ZpbGw6IzAwMDAwMDtmaWxsLW9wYWNpdHk6MTtzdHJva2U6bm9uZTtzdHJva2Utd2lkdGg6MC45OTk5OTQiCiAgICAgICB4PSIxNi45MTI4MTUiCiAgICAgICB5PSIxMDMuNDIxNjciCiAgICAgICBpZD0idGV4dDg5MyI+PHRzcGFuCiAgICAgICAgIHNvZGlwb2RpOnJvbGU9ImxpbmUiCiAgICAgICAgIGlkPSJ0c3Bhbjg5MSIKICAgICAgICAgeD0iMTYuOTEyODE1IgogICAgICAgICB5PSIxMDMuNDIxNjciCiAgICAgICAgIHN0eWxlPSJmb250LXN0eWxlOm5vcm1hbDtmb250LXZhcmlhbnQ6bm9ybWFsO2ZvbnQtd2VpZ2h0Om5vcm1hbDtmb250LXN0cmV0Y2g6bm9ybWFsO2ZvbnQtc2l6ZTo4NS4zMzI4cHg7Zm9udC1mYW1pbHk6J0FyaWFsIEJsYWNrJzstaW5rc2NhcGUtZm9udC1zcGVjaWZpY2F0aW9uOidBcmlhbCBCbGFjaywgJztmaWxsOiNmZmZmZmY7c3Ryb2tlLXdpZHRoOjAuOTk5OTk0Ij5SQzwvdHNwYW4+PC90ZXh0PjwvZz48L3N2Zz4K"/><text class="participantText" x="804" y="201" text-anchor="middle">Redisson map</text><text class="role" x="804" y="224" text-anchor="middle">WRITE_THROUGH</text>
+    <rect class="participant" x="1018" y="172" width="246" height="72" rx="10"/><text class="participantText" x="1141" y="201" text-anchor="middle">R2DBC writer</text><text class="role code" x="1141" y="224" text-anchor="middle">MapWriterAsync</text>
+    <rect class="participant" x="1412" y="172" width="178" height="72" rx="10"/><image x="1430" y="188" width="34" height="34" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K"/><text class="participantText" x="1520" y="201" text-anchor="middle">DB</text><text class="role" x="1520" y="224" text-anchor="middle">R2DBC rows</text>
+  </g>
+  <line class="lifeline" x1="166" y1="244" x2="166" y2="938"/><line class="lifeline" x1="439" y1="244" x2="439" y2="938"/><line class="lifeline" x1="804" y1="244" x2="804" y2="938"/><line class="lifeline" x1="1141" y1="244" x2="1141" y2="938"/><line class="lifeline" x1="1520" y1="244" x2="1520" y2="938"/>
+  <rect class="activation" x="432" y="358" width="14" height="450" rx="6"/><rect class="activation" x="797" y="436" width="14" height="280" rx="6"/><rect class="activation" x="1134" y="524" width="14" height="200" rx="6"/>
+  <rect x="70" y="310" width="1540" height="540" rx="14" class="opt"/><rect x="94" y="328" width="376" height="30" rx="15" fill="#f3eefb" stroke="#7e6ab8" stroke-width="1.6"/><text class="note" x="118" y="348">WRITE_THROUGH mode</text>
+  <rect x="96" y="376" width="270" height="32" rx="16" class="label callLabel"/><circle cx="119" cy="392" r="12" class="badge callBadge"/><text x="119" y="396" text-anchor="middle" class="badgeText callText">1</text><text x="146" y="397" class="msg callText"><tspan class="code">put</tspan> / <tspan class="code">upsertAll</tspan></text><path class="call" d="M166 422 L439 422"/>
+  <rect x="512" y="448" width="304" height="32" rx="16" class="label cacheLabel"/><circle cx="535" cy="464" r="12" class="badge cacheBadge"/><text x="535" y="468" text-anchor="middle" class="badgeText cacheText">2</text><text x="562" y="469" class="msg cacheText"><tspan class="code">fastPutAsync</tspan> / <tspan class="code">putAllAsync</tspan></text><path class="cache" d="M439 498 L804 498"/>
+  <rect x="862" y="520" width="274" height="32" rx="16" class="label dbLabel"/><circle cx="885" cy="536" r="12" class="badge dbBadge"/><text x="885" y="540" text-anchor="middle" class="badgeText dbText">3</text><text x="912" y="541" class="msg dbText"><tspan class="code">writer.write(map)</tspan></text><path class="db" d="M804 570 L1141 570"/>
+  <rect x="1224" y="594" width="286" height="32" rx="16" class="label dbLabel"/><circle cx="1247" cy="610" r="12" class="badge dbBadge"/><text x="1247" y="614" text-anchor="middle" class="badgeText dbText">4</text><text x="1274" y="615" class="msg dbText">select existing IDs</text><path class="db" d="M1141 638 L1520 638"/>
+  <rect x="1220" y="668" width="330" height="32" rx="16" class="label dbLabel"/><circle cx="1243" cy="684" r="12" class="badge dbBadge"/><text x="1243" y="688" text-anchor="middle" class="badgeText dbText">5</text><text x="1270" y="689" class="msg dbText"><tspan class="keyword">UPDATE</tspan> existing, <tspan class="keyword">INSERT</tspan> allowed rows</text><path class="db" d="M1141 714 L1520 714"/>
+  <rect x="856" y="738" width="272" height="32" rx="16" class="label returnLabel"/><circle cx="879" cy="754" r="12" class="badge returnBadge"/><text x="879" y="758" text-anchor="middle" class="badgeText returnText">6</text><text x="906" y="759" class="msg returnText">writer completed</text><path class="return" d="M1141 782 L804 782"/>
+  <rect x="510" y="796" width="260" height="32" rx="16" class="label returnLabel"/><circle cx="533" cy="812" r="12" class="badge returnBadge"/><text x="533" y="816" text-anchor="middle" class="badgeText returnText">7</text><text x="560" y="817" class="msg returnText">cache write accepted</text><path class="return" d="M804 840 L439 840"/>
+  <rect x="196" y="872" width="230" height="32" rx="16" class="label returnLabel"/><circle cx="219" cy="888" r="12" class="badge returnBadge"/><text x="219" y="892" text-anchor="middle" class="badgeText returnText">8</text><text x="246" y="893" class="msg returnText">suspend call resumes</text><path class="return" d="M439 922 L166 922"/>
+  <rect x="128" y="970" width="1424" height="42" rx="13" fill="#eef3f4" stroke="#c2d1d4" stroke-width="2"/><text class="footer" x="152" y="996">Write-through rule: the repository observes DB write completion, not just cache acceptance.</text>
 </svg>

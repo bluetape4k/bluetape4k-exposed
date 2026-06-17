@@ -1,154 +1,100 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1720" height="1450" viewBox="0 0 1720 1450" role="img" aria-labelledby="title desc">
-  <title id="title">R2DBC Redisson Coroutine Cache Architecture</title>
-  <desc id="desc">R2DBC Redisson cache architecture showing suspend repository calls, Redisson async maps, cache-only invalidation, and Exposed R2DBC loader and writer paths.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1080" viewBox="0 0 1680 1080" role="img" aria-labelledby="title desc">
+  <title id="title">R2DBC Redisson Repository Boundary</title>
+  <desc id="desc">Architecture diagram for exposed-r2dbc-redisson showing coroutine repository calls, writer-backed Redisson maps, cache-only invalidation, and R2DBC loader/writer transactions.</desc>
   <defs>
-    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
-    <marker id="arrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="context-stroke"/></marker>
-    <marker id="generalizationArrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#FFFFFF" stroke="context-stroke" stroke-width="1.4" stroke-dasharray="none"/></marker>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#327d91" stroke-dasharray="none"/></marker>
+    <marker id="arrowWarn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#9b5e3b" stroke-dasharray="none"/></marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="9" stdDeviation="12" flood-color="#20303a" flood-opacity="0.14"/></filter>
     <style>
-      .canvas{fill:#F6F9FC}.decor{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
-      .innerFrame{fill:#FBFDFF;stroke:#D9E4EF;stroke-width:2}
-      .title{font-family:"Architects Daughter";font-size:46px;fill:#22344A;font-weight:400}
-      .subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476;font-weight:400}
-      .group{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}.group-title{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
-      .card-title{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}.detail{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}
-      .small{font-family:"Comic Mono";font-size:13px;fill:#627184;font-weight:400}.shape{filter:url(#shadow);stroke-width:2}
-      .connector{fill:none;stroke-width:2.6;marker-end:url(#arrow);stroke-linejoin:round;stroke-linecap:round}.generalization{marker-end:url(#generalizationArrow)}.dashed{stroke-dasharray:7 6}
-      .pill{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1}
+      .canvas { fill: #f6f0e8; }
+      .frame { fill: #fffaf2; stroke: #28485a; stroke-width: 4; }
+      .title { font-family: "Architects Daughter", "Comic Mono", monospace; font-size: 46px; fill: #21343f; }
+      .subtitle { font-family: "Comic Mono", monospace; font-size: 18px; fill: #51636f; }
+      .zoneTitle { font-family: "Architects Daughter", "Comic Mono", monospace; font-size: 27px; fill: #21343f; }
+      .cardTitle { font-family: "Comic Mono", monospace; font-size: 19px; font-weight: 700; fill: #20323d; }
+      .cardText { font-family: "Comic Mono", monospace; font-size: 15px; fill: #33454f; }
+      .small { font-family: "Comic Mono", monospace; font-size: 13px; fill: #52636f; }
+      .label { font-family: "Comic Mono", monospace; font-size: 14px; fill: #315664; }
+      .flow { stroke: #327d91; stroke-width: 4.3; marker-end: url(#arrow); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .side { stroke: #7d6ab0; stroke-width: 4.1; marker-end: url(#arrow); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .write { stroke: #8c6f33; stroke-width: 4.1; marker-end: url(#arrow); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .warn { stroke: #9b5e3b; stroke-width: 4.1; marker-end: url(#arrowWarn); fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 10 8; }
+      .code { fill: #9b3d5a; font-weight: 700; }
+      .type { fill: #176f7a; font-weight: 700; }
+      .keyword { fill: #8a5b00; font-weight: 700; }
     </style>
   </defs>
-  <rect class="canvas" width="1720" height="1450"/>
-  <rect class="decor" x="44" y="36" width="1632" height="1378" rx="34"/>
-  <rect class="innerFrame" x="82" y="154" width="1556" height="1154" rx="24"/>
-  <text class="title" x="72" y="88">R2DBC Redisson Coroutine Cache Architecture</text>
-  <text class="subtitle" x="76" y="121">Suspending repository calls await Redisson async maps while loaderAsync and writerAsync bridge cache misses and writes into Exposed R2DBC transactions.</text>
-  <g id="group-api">
-    <rect class="group" x="92" y="150" width="1536" height="250" rx="18"/>
-    <text class="group-title" x="122" y="174" dominant-baseline="middle">Coroutine repository surface</text>
+
+  <rect class="canvas" width="1680" height="1080"/>
+  <rect class="frame" x="42" y="34" width="1596" height="1008" rx="24" filter="url(#shadow)"/>
+  <text class="title" x="84" y="91">R2DBC Redisson Repository Boundary</text>
+  <text class="subtitle" x="86" y="126">A suspend repository fronts Redisson maps; misses and writer callbacks cross into Exposed R2DBC transactions.</text>
+
+  <g transform="translate(92 164)">
+    <rect x="0" y="0" width="1496" height="176" rx="18" fill="#e7f1f4" stroke="#9dbbc4" stroke-width="2.5"/>
+    <text class="zoneTitle" x="28" y="46">Coroutine repository surface</text>
+    <rect x="284" y="66" width="330" height="88" rx="14" fill="#fffdf8" stroke="#8db7c2" stroke-width="2"/>
+    <text class="cardTitle" x="314" y="99">Caller coroutine</text>
+    <text class="cardText" x="314" y="128"><tspan class="code">get</tspan>, <tspan class="code">put</tspan>, <tspan class="code">findAll</tspan>, <tspan class="code">invalidate</tspan></text>
+    <rect x="760" y="58" width="466" height="104" rx="14" fill="#fffdf8" stroke="#8db7c2" stroke-width="2"/>
+    <text class="cardTitle type" x="790" y="94">AbstractR2dbcRedissonRepository</text>
+    <text class="cardText" x="790" y="124">selects cache mode + write mode</text>
+    <text class="cardText" x="790" y="148">implements <tspan class="type">R2dbcRedissonRepository</tspan></text>
   </g>
-  <g id="group-cache">
-    <rect class="group" x="92" y="440" width="1536" height="330" rx="18"/>
-    <text class="group-title" x="122" y="464" dominant-baseline="middle">Redisson async map and cache policy</text>
+
+  <path class="flow" d="M866 340 V386"/>
+  <text class="label" x="888" y="368">suspend repository call</text>
+
+  <g transform="translate(92 386)">
+    <rect x="0" y="0" width="1496" height="298" rx="18" fill="#eef4e6" stroke="#a9c58b" stroke-width="2.5"/>
+    <text class="zoneTitle" x="28" y="46">Redisson cache boundary</text>
+    <rect x="112" y="82" width="356" height="132" rx="14" fill="#fffdf8" stroke="#a7c481" stroke-width="2"/>
+    <image x="138" y="104" width="46" height="46" href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcKICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICB4bWxuczpjYz0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbnMjIgogICB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiCiAgIHhtbG5zOnN2Zz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c29kaXBvZGk9Imh0dHA6Ly9zb2RpcG9kaS5zb3VyY2Vmb3JnZS5uZXQvRFREL3NvZGlwb2RpLTAuZHRkIgogICB4bWxuczppbmtzY2FwZT0iaHR0cDovL3d3dy5pbmtzY2FwZS5vcmcvbmFtZXNwYWNlcy9pbmtzY2FwZSIKICAgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwIDAgODAwIDYwMCIKICAgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIKICAgaGVpZ2h0PSIxODAiCiAgIHZpZXdCb3g9IjAgMCAxNzkuOTk4OTEgMTc5Ljk5Nzc0IgogICB3aWR0aD0iMTgwIgogICB2ZXJzaW9uPSIxLjEiCiAgIHk9IjBweCIKICAgeD0iMHB4IgogICBpZD0ic3ZnODY5IgogICBzb2RpcG9kaTpkb2NuYW1lPSJSZWRpc19Mb2dvLnN2ZyIKICAgaW5rc2NhcGU6dmVyc2lvbj0iMS4wLjEgKGM0OTdiMDNjLCAyMDIwLTA5LTEwKSIKICAgaW5rc2NhcGU6ZXhwb3J0LWZpbGVuYW1lPSIvVXNlcnMvaG9uemEvRG93bmxvYWRzL3JlZGlzLnBuZyIKICAgaW5rc2NhcGU6ZXhwb3J0LXhkcGk9IjExMi41ODk1OCIKICAgaW5rc2NhcGU6ZXhwb3J0LXlkcGk9IjExMi41ODk1OCI+PGRlZnMKICAgICBpZD0iZGVmczg3MyIgLz48c29kaXBvZGk6bmFtZWR2aWV3CiAgICAgcGFnZWNvbG9yPSIjZmZmZmZmIgogICAgIGJvcmRlcmNvbG9yPSIjNjY2NjY2IgogICAgIGJvcmRlcm9wYWNpdHk9IjEiCiAgICAgb2JqZWN0dG9sZXJhbmNlPSIxMCIKICAgICBncmlkdG9sZXJhbmNlPSIxMCIKICAgICBndWlkZXRvbGVyYW5jZT0iMTAiCiAgICAgaW5rc2NhcGU6cGFnZW9wYWNpdHk9IjAiCiAgICAgaW5rc2NhcGU6cGFnZXNoYWRvdz0iMiIKICAgICBpbmtzY2FwZTp3aW5kb3ctd2lkdGg9IjEzODIiCiAgICAgaW5rc2NhcGU6d2luZG93LWhlaWdodD0iODQ3IgogICAgIGlkPSJuYW1lZHZpZXc4NzEiCiAgICAgc2hvd2dyaWQ9ImZhbHNlIgogICAgIGZpdC1tYXJnaW4tdG9wPSIwIgogICAgIGZpdC1tYXJnaW4tbGVmdD0iMCIKICAgICBmaXQtbWFyZ2luLXJpZ2h0PSIwIgogICAgIGZpdC1tYXJnaW4tYm90dG9tPSIwIgogICAgIGlua3NjYXBlOnpvb209IjEuNTIzNDUwOSIKICAgICBpbmtzY2FwZTpjeD0iOTUuNDMzODUyIgogICAgIGlua3NjYXBlOmN5PSI4OS4zMDk1NjciCiAgICAgaW5rc2NhcGU6d2luZG93LXg9IjU4IgogICAgIGlua3NjYXBlOndpbmRvdy15PSIyNSIKICAgICBpbmtzY2FwZTp3aW5kb3ctbWF4aW1pemVkPSIxIgogICAgIGlua3NjYXBlOmN1cnJlbnQtbGF5ZXI9InN2Zzg2OSIgLz48bWV0YWRhdGEKICAgICBpZD0ibWV0YWRhdGE4MzMiPjxyZGY6UkRGPjxjYzpXb3JrCiAgICAgICAgIHJkZjphYm91dD0iIj48ZGM6Zm9ybWF0PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD48ZGM6dHlwZQogICAgICAgICAgIHJkZjpyZXNvdXJjZT0iaHR0cDovL3B1cmwub3JnL2RjL2RjbWl0eXBlL1N0aWxsSW1hZ2UiIC8+PGRjOnRpdGxlPjwvZGM6dGl0bGU+PC9jYzpXb3JrPjwvcmRmOlJERj48L21ldGFkYXRhPjxnCiAgICAgaWQ9Imc5NzkiCiAgICAgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNC45NDEyMzA2LDE3LjA5Nzg3NykiPjxwYXRoCiAgICAgICBmaWxsPSIjYTQxZTExIgogICAgICAgZD0ibSAxNjMuNDQ4MTQsMTEyLjQyNjUzIGMgLTkuMDc4LDQuNzMyIC01Ni4xMDYsMjQuMDY4IC02Ni4xMTgwMDIsMjkuMjg3IC0xMC4wMTIsNS4yMjEgLTE1LjU3NCw1LjE3IC0yMy40ODMsMS4zODkgLTcuOTA5LC0zLjc4MSAtNTcuOTU1LC0yMy45OTYgLTY2Ljk3MDAwMDMsLTI4LjMwNSAtNC41MDYsLTIuMTU0IC02Ljg3NTAwMDAzLC0zLjk3MSAtNi44NzUwMDAwMywtNS42ODggViA5MS45MTQ1MzQgYyAwLDAgNjUuMTUzMDAwMzMsLTE0LjE4NCA3NS42NzIwMDAzMywtMTcuOTU3IDEwLjUxOCwtMy43NzQgMTQuMTY3LC0zLjkxIDIzLjExOCwtMC42MzEgOC45NTIwMDIsMy4yNzkgNjIuNDc0MDAyLDEyLjkzNiA3MS4zMjEwMDIsMTYuMTc2IDAsMCAtMC4wMDQsMTUuMzU2OTk2IC0wLjAwNCwxNi45NTA5OTYgMC4wMDEsMS43IC0yLjA0LDMuNTY1IC02LjY2MSw1Ljk3MyB6IgogICAgICAgaWQ9InBhdGg4NDUiIC8+PHBhdGgKICAgICAgIGZpbGw9IiNkODJjMjAiCiAgICAgICBkPSJtIDE2My40NDgxNCw5NS4yMjY1MzQgYyAtOS4wNzgsNC43MyAtNTYuMTA2LDI0LjA2Nzk5NiAtNjYuMTE4MDAyLDI5LjI4Njk5NiAtMTAuMDEyLDUuMjIxIC0xNS41NzQsNS4xNyAtMjMuNDgzLDEuMzg5IC03LjkxLC0zLjc3OSAtNTcuOTU1LC0yMy45OTggLTY2Ljk3MDAwMDMsLTI4LjMwNDk5NiAtOS4wMTUsLTQuMzA5IC05LjIwNCwtNy4yNzUgLTAuMzQ4LC0xMC43NDIgOC44NTUwMDAzLC0zLjQ2OSA1OC42MjYwMDAzLC0yMi45OTYgNjkuMTQ2MDAwMywtMjYuNzcgMTAuNTE4LC0zLjc3MiAxNC4xNjcsLTMuOTEgMjMuMTE4LC0wLjYzIDguOTUyMDAyLDMuMjc5IDU1LjY5OTAwMiwyMS44ODYgNjQuNTQ1MDAyLDI1LjEyNiA4Ljg0OCwzLjI0MyA5LjE4OCw1LjkxMyAwLjExLDEwLjY0NSB6IgogICAgICAgaWQ9InBhdGg4NDciIC8+PHBhdGgKICAgICAgIGZpbGw9IiNhNDFlMTEiCiAgICAgICBkPSJtIDE2My40NDgxNCw4NC4zODY1MzQgYyAtOS4wNzgsNC43MzIgLTU2LjEwNiwyNC4wNjc5OTYgLTY2LjExODAwMiwyOS4yODg5OTYgLTEwLjAxMiw1LjIxOSAtMTUuNTc0LDUuMTY4IC0yMy40ODMsMS4zODcgLTcuOTEsLTMuNzc5IC01Ny45NTUsLTIzLjk5NTk5NiAtNjYuOTcwMDAwMywtMjguMzA0OTk2IC00LjUwNiwtMi4xNTQgLTYuODc1MDAwMDMsLTMuOTY5IC02Ljg3NTAwMDAzLC01LjY4NiB2IC0xNy4xOTcgYyAwLDAgNjUuMTUzMDAwMzMsLTE0LjE4MyA3NS42NzIwMDAzMywtMTcuOTU3IDEwLjUxOCwtMy43NzMgMTQuMTY3LC0zLjkxIDIzLjExOCwtMC42MzEgOC45NTIwMDIsMy4yNzkgNjIuNDc0MDAyLDEyLjkzNCA3MS4zMjEwMDIsMTYuMTc1IDAsMCAtMC4wMDQsMTUuMzU3IC0wLjAwNCwxNi45NTMgMC4wMDEsMS42OTkgLTIuMDQsMy41NjQgLTYuNjYxLDUuOTcyIHoiCiAgICAgICBpZD0icGF0aDg0OSIgLz48cGF0aAogICAgICAgZmlsbD0iI2Q4MmMyMCIKICAgICAgIGQ9Im0gMTYzLjQ0ODE0LDY3LjE4NjUzNCBjIC05LjA3OCw0LjczMiAtNTYuMTA2LDI0LjA2OCAtNjYuMTE4MDAyLDI5LjI4OSAtMTAuMDEyLDUuMjE4OTk2IC0xNS41NzQsNS4xNjc5OTYgLTIzLjQ4MywxLjM4NyAtNy45MSwtMy43NzkgLTU3Ljk1NSwtMjMuOTk3IC02Ni45NzAwMDAzLC0yOC4zMDUgLTkuMDE1LC00LjMwOCAtOS4yMDQsLTcuMjc0IC0wLjM0OCwtMTAuNzQzIDguODU1MDAwMywtMy40NjcgNTguNjI2MDAwMywtMjIuOTk1IDY5LjE0NjAwMDMsLTI2Ljc2OCAxMC41MTgsLTMuNzczIDE0LjE2NywtMy45MSAyMy4xMTgsLTAuNjMxIDguOTUyMDAyLDMuMjc5IDU1LjY5OTAwMiwyMS44ODUgNjQuNTQ1MDAyLDI1LjEyNiA4Ljg0OCwzLjI0MiA5LjE4OCw1LjkxMyAwLjExLDEwLjY0NSB6IgogICAgICAgaWQ9InBhdGg4NTEiIC8+PHBhdGgKICAgICAgIGZpbGw9IiNhNDFlMTEiCiAgICAgICBkPSJtIDE2My40NDgxNCw1NS4zMDY1MzQgYyAtOS4wNzgsNC43MzIgLTU2LjEwNiwyNC4wNjkgLTY2LjExODAwMiwyOS4yOSAtMTAuMDEyLDUuMjE5IC0xNS41NzQsNS4xNjggLTIzLjQ4MywxLjM4NyAtNy45MSwtMy43NzkgLTU3Ljk1NSwtMjMuOTk3IC02Ni45NzAwMDAzLC0yOC4zMDUgLTQuNTA2LC0yLjE1NCAtNi44NzUwMDAwMywtMy45NyAtNi44NzUwMDAwMywtNS42ODYgdiAtMTcuMTk3IGMgMCwwIDY1LjE1MzAwMDMzLC0xNC4xODMgNzUuNjcyMDAwMzMsLTE3Ljk1NiAxMC41MTgsLTMuNzc0IDE0LjE2NywtMy45MSAyMy4xMTgsLTAuNjMxIDguOTUyMDAyLDMuMjc5IDYyLjQ3NDAwMiwxMi45MzQgNzEuMzIxMDAyLDE2LjE3NSAwLDAgLTAuMDA0LDE1LjM1NyAtMC4wMDQsMTYuOTUyIDAuMDAxLDEuNjk4IC0yLjA0LDMuNTYzIC02LjY2MSw1Ljk3MSB6IgogICAgICAgaWQ9InBhdGg4NTMiIC8+PHBhdGgKICAgICAgIGZpbGw9IiNkODJjMjAiCiAgICAgICBkPSJtIDE2My40NDgxNCwzOC4xMDY1MzQgYyAtOS4wNzgsNC43MzIgLTU2LjEwNiwyNC4wNjkgLTY2LjExODAwMiwyOS4yODkgLTEwLjAxMiw1LjIxOSAtMTUuNTc0LDUuMTY4IC0yMy40ODMsMS4zODggLTcuOTA5LC0zLjc4IC01Ny45NTUsLTIzLjk5NyAtNjYuOTcwMDAwMywtMjguMzA1IC05LjAxNSwtNC4zMDggLTkuMjA0LC03LjI3NSAtMC4zNDgsLTEwLjc0MyA4Ljg1NTAwMDMsLTMuNDY4IDU4LjYyNjAwMDMsLTIyLjk5NDAwMDMgNjkuMTQ2MDAwMywtMjYuNzY4MDAwMyAxMC41MTgsLTMuNzc0IDE0LjE2NywtMy45MSAyMy4xMTgsLTAuNjMgOC45NTIwMDIsMy4yNzkgNTUuNjk5MDAyLDIxLjg4NTAwMDMgNjQuNTQ1MDAyLDI1LjEyNjAwMDMgOC44NDgsMy4yNCA5LjE4OCw1LjkxMiAwLjExLDEwLjY0MyB6IgogICAgICAgaWQ9InBhdGg4NTUiIC8+PHRleHQKICAgICAgIHhtbDpzcGFjZT0icHJlc2VydmUiCiAgICAgICBzdHlsZT0iZm9udC1zdHlsZTpub3JtYWw7Zm9udC13ZWlnaHQ6bm9ybWFsO2ZvbnQtc2l6ZTo4NS4zMzI4cHg7bGluZS1oZWlnaHQ6MS4yNTtmb250LWZhbWlseTpzYW5zLXNlcmlmO2ZpbGw6IzAwMDAwMDtmaWxsLW9wYWNpdHk6MTtzdHJva2U6bm9uZTtzdHJva2Utd2lkdGg6MC45OTk5OTQiCiAgICAgICB4PSIxNi45MTI4MTUiCiAgICAgICB5PSIxMDMuNDIxNjciCiAgICAgICBpZD0idGV4dDg5MyI+PHRzcGFuCiAgICAgICAgIHNvZGlwb2RpOnJvbGU9ImxpbmUiCiAgICAgICAgIGlkPSJ0c3Bhbjg5MSIKICAgICAgICAgeD0iMTYuOTEyODE1IgogICAgICAgICB5PSIxMDMuNDIxNjciCiAgICAgICAgIHN0eWxlPSJmb250LXN0eWxlOm5vcm1hbDtmb250LXZhcmlhbnQ6bm9ybWFsO2ZvbnQtd2VpZ2h0Om5vcm1hbDtmb250LXN0cmV0Y2g6bm9ybWFsO2ZvbnQtc2l6ZTo4NS4zMzI4cHg7Zm9udC1mYW1pbHk6J0FyaWFsIEJsYWNrJzstaW5rc2NhcGUtZm9udC1zcGVjaWZpY2F0aW9uOidBcmlhbCBCbGFjaywgJztmaWxsOiNmZmZmZmY7c3Ryb2tlLXdpZHRoOjAuOTk5OTk0Ij5SQzwvdHNwYW4+PC90ZXh0PjwvZz48L3N2Zz4K"/>
+    <text class="cardTitle type" x="198" y="120">RLocalCachedMap</text>
+    <text class="cardText" x="198" y="150">optional Near Cache</text>
+    <text class="cardText" x="138" y="190">cleared after cache-only invalidation</text>
+
+    <rect x="560" y="64" width="430" height="168" rx="14" fill="#fffdf8" stroke="#a7c481" stroke-width="2"/>
+    <image x="590" y="88" width="52" height="52" href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcKICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICB4bWxuczpjYz0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbnMjIgogICB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiCiAgIHhtbG5zOnN2Zz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c29kaXBvZGk9Imh0dHA6Ly9zb2RpcG9kaS5zb3VyY2Vmb3JnZS5uZXQvRFREL3NvZGlwb2RpLTAuZHRkIgogICB4bWxuczppbmtzY2FwZT0iaHR0cDovL3d3dy5pbmtzY2FwZS5vcmcvbmFtZXNwYWNlcy9pbmtzY2FwZSIKICAgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwIDAgODAwIDYwMCIKICAgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIKICAgaGVpZ2h0PSIxODAiCiAgIHZpZXdCb3g9IjAgMCAxNzkuOTk4OTEgMTc5Ljk5Nzc0IgogICB3aWR0aD0iMTgwIgogICB2ZXJzaW9uPSIxLjEiCiAgIHk9IjBweCIKICAgeD0iMHB4IgogICBpZD0ic3ZnODY5IgogICBzb2RpcG9kaTpkb2NuYW1lPSJSZWRpc19Mb2dvLnN2ZyIKICAgaW5rc2NhcGU6dmVyc2lvbj0iMS4wLjEgKGM0OTdiMDNjLCAyMDIwLTA5LTEwKSIKICAgaW5rc2NhcGU6ZXhwb3J0LWZpbGVuYW1lPSIvVXNlcnMvaG9uemEvRG93bmxvYWRzL3JlZGlzLnBuZyIKICAgaW5rc2NhcGU6ZXhwb3J0LXhkcGk9IjExMi41ODk1OCIKICAgaW5rc2NhcGU6ZXhwb3J0LXlkcGk9IjExMi41ODk1OCI+PGRlZnMKICAgICBpZD0iZGVmczg3MyIgLz48c29kaXBvZGk6bmFtZWR2aWV3CiAgICAgcGFnZWNvbG9yPSIjZmZmZmZmIgogICAgIGJvcmRlcmNvbG9yPSIjNjY2NjY2IgogICAgIGJvcmRlcm9wYWNpdHk9IjEiCiAgICAgb2JqZWN0dG9sZXJhbmNlPSIxMCIKICAgICBncmlkdG9sZXJhbmNlPSIxMCIKICAgICBndWlkZXRvbGVyYW5jZT0iMTAiCiAgICAgaW5rc2NhcGU6cGFnZW9wYWNpdHk9IjAiCiAgICAgaW5rc2NhcGU6cGFnZXNoYWRvdz0iMiIKICAgICBpbmtzY2FwZTp3aW5kb3ctd2lkdGg9IjEzODIiCiAgICAgaW5rc2NhcGU6d2luZG93LWhlaWdodD0iODQ3IgogICAgIGlkPSJuYW1lZHZpZXc4NzEiCiAgICAgc2hvd2dyaWQ9ImZhbHNlIgogICAgIGZpdC1tYXJnaW4tdG9wPSIwIgogICAgIGZpdC1tYXJnaW4tbGVmdD0iMCIKICAgICBmaXQtbWFyZ2luLXJpZ2h0PSIwIgogICAgIGZpdC1tYXJnaW4tYm90dG9tPSIwIgogICAgIGlua3NjYXBlOnpvb209IjEuNTIzNDUwOSIKICAgICBpbmtzY2FwZTpjeD0iOTUuNDMzODUyIgogICAgIGlua3NjYXBlOmN5PSI4OS4zMDk1NjciCiAgICAgaW5rc2NhcGU6d2luZG93LXg9IjU4IgogICAgIGlua3NjYXBlOndpbmRvdy15PSIyNSIKICAgICBpbmtzY2FwZTp3aW5kb3ctbWF4aW1pemVkPSIxIgogICAgIGlua3NjYXBlOmN1cnJlbnQtbGF5ZXI9InN2Zzg2OSIgLz48bWV0YWRhdGEKICAgICBpZD0ibWV0YWRhdGE4MzMiPjxyZGY6UkRGPjxjYzpXb3JrCiAgICAgICAgIHJkZjphYm91dD0iIj48ZGM6Zm9ybWF0PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD48ZGM6dHlwZQogICAgICAgICAgIHJkZjpyZXNvdXJjZT0iaHR0cDovL3B1cmwub3JnL2RjL2RjbWl0eXBlL1N0aWxsSW1hZ2UiIC8+PGRjOnRpdGxlPjwvZGM6dGl0bGU+PC9jYzpXb3JrPjwvcmRmOlJERj48L21ldGFkYXRhPjxnCiAgICAgaWQ9Imc5NzkiCiAgICAgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNC45NDEyMzA2LDE3LjA5Nzg3NykiPjxwYXRoCiAgICAgICBmaWxsPSIjYTQxZTExIgogICAgICAgZD0ibSAxNjMuNDQ4MTQsMTEyLjQyNjUzIGMgLTkuMDc4LDQuNzMyIC01Ni4xMDYsMjQuMDY4IC02Ni4xMTgwMDIsMjkuMjg3IC0xMC4wMTIsNS4yMjEgLTE1LjU3NCw1LjE3IC0yMy40ODMsMS4zODkgLTcuOTA5LC0zLjc4MSAtNTcuOTU1LC0yMy45OTYgLTY2Ljk3MDAwMDMsLTI4LjMwNSAtNC41MDYsLTIuMTU0IC02Ljg3NTAwMDAzLC0zLjk3MSAtNi44NzUwMDAwMywtNS42ODggViA5MS45MTQ1MzQgYyAwLDAgNjUuMTUzMDAwMzMsLTE0LjE4NCA3NS42NzIwMDAzMywtMTcuOTU3IDEwLjUxOCwtMy43NzQgMTQuMTY3LC0zLjkxIDIzLjExOCwtMC42MzEgOC45NTIwMDIsMy4yNzkgNjIuNDc0MDAyLDEyLjkzNiA3MS4zMjEwMDIsMTYuMTc2IDAsMCAtMC4wMDQsMTUuMzU2OTk2IC0wLjAwNCwxNi45NTA5OTYgMC4wMDEsMS43IC0yLjA0LDMuNTY1IC02LjY2MSw1Ljk3MyB6IgogICAgICAgaWQ9InBhdGg4NDUiIC8+PHBhdGgKICAgICAgIGZpbGw9IiNkODJjMjAiCiAgICAgICBkPSJtIDE2My40NDgxNCw5NS4yMjY1MzQgYyAtOS4wNzgsNC43MyAtNTYuMTA2LDI0LjA2Nzk5NiAtNjYuMTE4MDAyLDI5LjI4Njk5NiAtMTAuMDEyLDUuMjIxIC0xNS41NzQsNS4xNyAtMjMuNDgzLDEuMzg5IC03LjkxLC0zLjc3OSAtNTcuOTU1LC0yMy45OTggLTY2Ljk3MDAwMDMsLTI4LjMwNDk5NiAtOS4wMTUsLTQuMzA5IC05LjIwNCwtNy4yNzUgLTAuMzQ4LC0xMC43NDIgOC44NTUwMDAzLC0zLjQ2OSA1OC42MjYwMDAzLC0yMi45OTYgNjkuMTQ2MDAwMywtMjYuNzcgMTAuNTE4LC0zLjc3MiAxNC4xNjcsLTMuOTEgMjMuMTE4LC0wLjYzIDguOTUyMDAyLDMuMjc5IDU1LjY5OTAwMiwyMS44ODYgNjQuNTQ1MDAyLDI1LjEyNiA4Ljg0OCwzLjI0MyA5LjE4OCw1LjkxMyAwLjExLDEwLjY0NSB6IgogICAgICAgaWQ9InBhdGg4NDciIC8+PHBhdGgKICAgICAgIGZpbGw9IiNhNDFlMTEiCiAgICAgICBkPSJtIDE2My40NDgxNCw4NC4zODY1MzQgYyAtOS4wNzgsNC43MzIgLTU2LjEwNiwyNC4wNjc5OTYgLTY2LjExODAwMiwyOS4yODg5OTYgLTEwLjAxMiw1LjIxOSAtMTUuNTc0LDUuMTY4IC0yMy40ODMsMS4zODcgLTcuOTEsLTMuNzc5IC01Ny45NTUsLTIzLjk5NTk5NiAtNjYuOTcwMDAwMywtMjguMzA0OTk2IC00LjUwNiwtMi4xNTQgLTYuODc1MDAwMDMsLTMuOTY5IC02Ljg3NTAwMDAzLC01LjY4NiB2IC0xNy4xOTcgYyAwLDAgNjUuMTUzMDAwMzMsLTE0LjE4MyA3NS42NzIwMDAzMywtMTcuOTU3IDEwLjUxOCwtMy43NzMgMTQuMTY3LC0zLjkxIDIzLjExOCwtMC42MzEgOC45NTIwMDIsMy4yNzkgNjIuNDc0MDAyLDEyLjkzNCA3MS4zMjEwMDIsMTYuMTc1IDAsMCAtMC4wMDQsMTUuMzU3IC0wLjAwNCwxNi45NTMgMC4wMDEsMS42OTkgLTIuMDQsMy41NjQgLTYuNjYxLDUuOTcyIHoiCiAgICAgICBpZD0icGF0aDg0OSIgLz48cGF0aAogICAgICAgZmlsbD0iI2Q4MmMyMCIKICAgICAgIGQ9Im0gMTYzLjQ0ODE0LDY3LjE4NjUzNCBjIC05LjA3OCw0LjczMiAtNTYuMTA2LDI0LjA2OCAtNjYuMTE4MDAyLDI5LjI4OSAtMTAuMDEyLDUuMjE4OTk2IC0xNS41NzQsNS4xNjc5OTYgLTIzLjQ4MywxLjM4NyAtNy45MSwtMy43NzkgLTU3Ljk1NSwtMjMuOTk3IC02Ni45NzAwMDAzLC0yOC4zMDUgLTkuMDE1LC00LjMwOCAtOS4yMDQsLTcuMjc0IC0wLjM0OCwtMTAuNzQzIDguODU1MDAwMywtMy40NjcgNTguNjI2MDAwMywtMjIuOTk1IDY5LjE0NjAwMDMsLTI2Ljc2OCAxMC41MTgsLTMuNzczIDE0LjE2NywtMy45MSAyMy4xMTgsLTAuNjMxIDguOTUyMDAyLDMuMjc5IDU1LjY5OTAwMiwyMS44ODUgNjQuNTQ1MDAyLDI1LjEyNiA4Ljg0OCwzLjI0MiA5LjE4OCw1LjkxMyAwLjExLDEwLjY0NSB6IgogICAgICAgaWQ9InBhdGg4NTEiIC8+PHBhdGgKICAgICAgIGZpbGw9IiNhNDFlMTEiCiAgICAgICBkPSJtIDE2My40NDgxNCw1NS4zMDY1MzQgYyAtOS4wNzgsNC43MzIgLTU2LjEwNiwyNC4wNjkgLTY2LjExODAwMiwyOS4yOSAtMTAuMDEyLDUuMjE5IC0xNS41NzQsNS4xNjggLTIzLjQ4MywxLjM4NyAtNy45MSwtMy43NzkgLTU3Ljk1NSwtMjMuOTk3IC02Ni45NzAwMDAzLC0yOC4zMDUgLTQuNTA2LC0yLjE1NCAtNi44NzUwMDAwMywtMy45NyAtNi44NzUwMDAwMywtNS42ODYgdiAtMTcuMTk3IGMgMCwwIDY1LjE1MzAwMDMzLC0xNC4xODMgNzUuNjcyMDAwMzMsLTE3Ljk1NiAxMC41MTgsLTMuNzc0IDE0LjE2NywtMy45MSAyMy4xMTgsLTAuNjMxIDguOTUyMDAyLDMuMjc5IDYyLjQ3NDAwMiwxMi45MzQgNzEuMzIxMDAyLDE2LjE3NSAwLDAgLTAuMDA0LDE1LjM1NyAtMC4wMDQsMTYuOTUyIDAuMDAxLDEuNjk4IC0yLjA0LDMuNTYzIC02LjY2MSw1Ljk3MSB6IgogICAgICAgaWQ9InBhdGg4NTMiIC8+PHBhdGgKICAgICAgIGZpbGw9IiNkODJjMjAiCiAgICAgICBkPSJtIDE2My40NDgxNCwzOC4xMDY1MzQgYyAtOS4wNzgsNC43MzIgLTU2LjEwNiwyNC4wNjkgLTY2LjExODAwMiwyOS4yODkgLTEwLjAxMiw1LjIxOSAtMTUuNTc0LDUuMTY4IC0yMy40ODMsMS4zODggLTcuOTA5LC0zLjc4IC01Ny45NTUsLTIzLjk5NyAtNjYuOTcwMDAwMywtMjguMzA1IC05LjAxNSwtNC4zMDggLTkuMjA0LC03LjI3NSAtMC4zNDgsLTEwLjc0MyA4Ljg1NTAwMDMsLTMuNDY4IDU4LjYyNjAwMDMsLTIyLjk5NDAwMDMgNjkuMTQ2MDAwMywtMjYuNzY4MDAwMyAxMC41MTgsLTMuNzc0IDE0LjE2NywtMy45MSAyMy4xMTgsLTAuNjMgOC45NTIwMDIsMy4yNzkgNTUuNjk5MDAyLDIxLjg4NTAwMDMgNjQuNTQ1MDAyLDI1LjEyNjAwMDMgOC44NDgsMy4yNCA5LjE4OCw1LjkxMiAwLjExLDEwLjY0MyB6IgogICAgICAgaWQ9InBhdGg4NTUiIC8+PHRleHQKICAgICAgIHhtbDpzcGFjZT0icHJlc2VydmUiCiAgICAgICBzdHlsZT0iZm9udC1zdHlsZTpub3JtYWw7Zm9udC13ZWlnaHQ6bm9ybWFsO2ZvbnQtc2l6ZTo4NS4zMzI4cHg7bGluZS1oZWlnaHQ6MS4yNTtmb250LWZhbWlseTpzYW5zLXNlcmlmO2ZpbGw6IzAwMDAwMDtmaWxsLW9wYWNpdHk6MTtzdHJva2U6bm9uZTtzdHJva2Utd2lkdGg6MC45OTk5OTQiCiAgICAgICB4PSIxNi45MTI4MTUiCiAgICAgICB5PSIxMDMuNDIxNjciCiAgICAgICBpZD0idGV4dDg5MyI+PHRzcGFuCiAgICAgICAgIHNvZGlwb2RpOnJvbGU9ImxpbmUiCiAgICAgICAgIGlkPSJ0c3Bhbjg5MSIKICAgICAgICAgeD0iMTYuOTEyODE1IgogICAgICAgICB5PSIxMDMuNDIxNjciCiAgICAgICAgIHN0eWxlPSJmb250LXN0eWxlOm5vcm1hbDtmb250LXZhcmlhbnQ6bm9ybWFsO2ZvbnQtd2VpZ2h0Om5vcm1hbDtmb250LXN0cmV0Y2g6bm9ybWFsO2ZvbnQtc2l6ZTo4NS4zMzI4cHg7Zm9udC1mYW1pbHk6J0FyaWFsIEJsYWNrJzstaW5rc2NhcGUtZm9udC1zcGVjaWZpY2F0aW9uOidBcmlhbCBCbGFjaywgJztmaWxsOiNmZmZmZmY7c3Ryb2tlLXdpZHRoOjAuOTk5OTk0Ij5SQzwvdHNwYW4+PC90ZXh0PjwvZz48L3N2Zz4K"/>
+    <text class="cardTitle type" x="656" y="112">Writer-backed Redisson map</text>
+    <text class="cardText" x="656" y="142"><tspan class="type">RMapCache</tspan> or <tspan class="type">RLocalCachedMap</tspan></text>
+    <text class="cardText" x="590" y="176">loaderAsync always; writerAsync for writes</text>
+    <text class="cardText" x="590" y="206"><tspan class="type">READ_ONLY</tspan>, <tspan class="type">WRITE_THROUGH</tspan>, <tspan class="type">WRITE_BEHIND</tspan></text>
+
+    <rect x="1088" y="82" width="334" height="132" rx="14" fill="#fffdf8" stroke="#a7c481" stroke-width="2"/>
+    <image x="1116" y="104" width="46" height="46" href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcKICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICB4bWxuczpjYz0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbnMjIgogICB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiCiAgIHhtbG5zOnN2Zz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c29kaXBvZGk9Imh0dHA6Ly9zb2RpcG9kaS5zb3VyY2Vmb3JnZS5uZXQvRFREL3NvZGlwb2RpLTAuZHRkIgogICB4bWxuczppbmtzY2FwZT0iaHR0cDovL3d3dy5pbmtzY2FwZS5vcmcvbmFtZXNwYWNlcy9pbmtzY2FwZSIKICAgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwIDAgODAwIDYwMCIKICAgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIKICAgaGVpZ2h0PSIxODAiCiAgIHZpZXdCb3g9IjAgMCAxNzkuOTk4OTEgMTc5Ljk5Nzc0IgogICB3aWR0aD0iMTgwIgogICB2ZXJzaW9uPSIxLjEiCiAgIHk9IjBweCIKICAgeD0iMHB4IgogICBpZD0ic3ZnODY5IgogICBzb2RpcG9kaTpkb2NuYW1lPSJSZWRpc19Mb2dvLnN2ZyIKICAgaW5rc2NhcGU6dmVyc2lvbj0iMS4wLjEgKGM0OTdiMDNjLCAyMDIwLTA5LTEwKSIKICAgaW5rc2NhcGU6ZXhwb3J0LWZpbGVuYW1lPSIvVXNlcnMvaG9uemEvRG93bmxvYWRzL3JlZGlzLnBuZyIKICAgaW5rc2NhcGU6ZXhwb3J0LXhkcGk9IjExMi41ODk1OCIKICAgaW5rc2NhcGU6ZXhwb3J0LXlkcGk9IjExMi41ODk1OCI+PGRlZnMKICAgICBpZD0iZGVmczg3MyIgLz48c29kaXBvZGk6bmFtZWR2aWV3CiAgICAgcGFnZWNvbG9yPSIjZmZmZmZmIgogICAgIGJvcmRlcmNvbG9yPSIjNjY2NjY2IgogICAgIGJvcmRlcm9wYWNpdHk9IjEiCiAgICAgb2JqZWN0dG9sZXJhbmNlPSIxMCIKICAgICBncmlkdG9sZXJhbmNlPSIxMCIKICAgICBndWlkZXRvbGVyYW5jZT0iMTAiCiAgICAgaW5rc2NhcGU6cGFnZW9wYWNpdHk9IjAiCiAgICAgaW5rc2NhcGU6cGFnZXNoYWRvdz0iMiIKICAgICBpbmtzY2FwZTp3aW5kb3ctd2lkdGg9IjEzODIiCiAgICAgaW5rc2NhcGU6d2luZG93LWhlaWdodD0iODQ3IgogICAgIGlkPSJuYW1lZHZpZXc4NzEiCiAgICAgc2hvd2dyaWQ9ImZhbHNlIgogICAgIGZpdC1tYXJnaW4tdG9wPSIwIgogICAgIGZpdC1tYXJnaW4tbGVmdD0iMCIKICAgICBmaXQtbWFyZ2luLXJpZ2h0PSIwIgogICAgIGZpdC1tYXJnaW4tYm90dG9tPSIwIgogICAgIGlua3NjYXBlOnpvb209IjEuNTIzNDUwOSIKICAgICBpbmtzY2FwZTpjeD0iOTUuNDMzODUyIgogICAgIGlua3NjYXBlOmN5PSI4OS4zMDk1NjciCiAgICAgaW5rc2NhcGU6d2luZG93LXg9IjU4IgogICAgIGlua3NjYXBlOndpbmRvdy15PSIyNSIKICAgICBpbmtzY2FwZTp3aW5kb3ctbWF4aW1pemVkPSIxIgogICAgIGlua3NjYXBlOmN1cnJlbnQtbGF5ZXI9InN2Zzg2OSIgLz48bWV0YWRhdGEKICAgICBpZD0ibWV0YWRhdGE4MzMiPjxyZGY6UkRGPjxjYzpXb3JrCiAgICAgICAgIHJkZjphYm91dD0iIj48ZGM6Zm9ybWF0PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD48ZGM6dHlwZQogICAgICAgICAgIHJkZjpyZXNvdXJjZT0iaHR0cDovL3B1cmwub3JnL2RjL2RjbWl0eXBlL1N0aWxsSW1hZ2UiIC8+PGRjOnRpdGxlPjwvZGM6dGl0bGU+PC9jYzpXb3JrPjwvcmRmOlJERj48L21ldGFkYXRhPjxnCiAgICAgaWQ9Imc5NzkiCiAgICAgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNC45NDEyMzA2LDE3LjA5Nzg3NykiPjxwYXRoCiAgICAgICBmaWxsPSIjYTQxZTExIgogICAgICAgZD0ibSAxNjMuNDQ4MTQsMTEyLjQyNjUzIGMgLTkuMDc4LDQuNzMyIC01Ni4xMDYsMjQuMDY4IC02Ni4xMTgwMDIsMjkuMjg3IC0xMC4wMTIsNS4yMjEgLTE1LjU3NCw1LjE3IC0yMy40ODMsMS4zODkgLTcuOTA5LC0zLjc4MSAtNTcuOTU1LC0yMy45OTYgLTY2Ljk3MDAwMDMsLTI4LjMwNSAtNC41MDYsLTIuMTU0IC02Ljg3NTAwMDAzLC0zLjk3MSAtNi44NzUwMDAwMywtNS42ODggViA5MS45MTQ1MzQgYyAwLDAgNjUuMTUzMDAwMzMsLTE0LjE4NCA3NS42NzIwMDAzMywtMTcuOTU3IDEwLjUxOCwtMy43NzQgMTQuMTY3LC0zLjkxIDIzLjExOCwtMC42MzEgOC45NTIwMDIsMy4yNzkgNjIuNDc0MDAyLDEyLjkzNiA3MS4zMjEwMDIsMTYuMTc2IDAsMCAtMC4wMDQsMTUuMzU2OTk2IC0wLjAwNCwxNi45NTA5OTYgMC4wMDEsMS43IC0yLjA0LDMuNTY1IC02LjY2MSw1Ljk3MyB6IgogICAgICAgaWQ9InBhdGg4NDUiIC8+PHBhdGgKICAgICAgIGZpbGw9IiNkODJjMjAiCiAgICAgICBkPSJtIDE2My40NDgxNCw5NS4yMjY1MzQgYyAtOS4wNzgsNC43MyAtNTYuMTA2LDI0LjA2Nzk5NiAtNjYuMTE4MDAyLDI5LjI4Njk5NiAtMTAuMDEyLDUuMjIxIC0xNS41NzQsNS4xNyAtMjMuNDgzLDEuMzg5IC03LjkxLC0zLjc3OSAtNTcuOTU1LC0yMy45OTggLTY2Ljk3MDAwMDMsLTI4LjMwNDk5NiAtOS4wMTUsLTQuMzA5IC05LjIwNCwtNy4yNzUgLTAuMzQ4LC0xMC43NDIgOC44NTUwMDAzLC0zLjQ2OSA1OC42MjYwMDAzLC0yMi45OTYgNjkuMTQ2MDAwMywtMjYuNzcgMTAuNTE4LC0zLjc3MiAxNC4xNjcsLTMuOTEgMjMuMTE4LC0wLjYzIDguOTUyMDAyLDMuMjc5IDU1LjY5OTAwMiwyMS44ODYgNjQuNTQ1MDAyLDI1LjEyNiA4Ljg0OCwzLjI0MyA5LjE4OCw1LjkxMyAwLjExLDEwLjY0NSB6IgogICAgICAgaWQ9InBhdGg4NDciIC8+PHBhdGgKICAgICAgIGZpbGw9IiNhNDFlMTEiCiAgICAgICBkPSJtIDE2My40NDgxNCw4NC4zODY1MzQgYyAtOS4wNzgsNC43MzIgLTU2LjEwNiwyNC4wNjc5OTYgLTY2LjExODAwMiwyOS4yODg5OTYgLTEwLjAxMiw1LjIxOSAtMTUuNTc0LDUuMTY4IC0yMy40ODMsMS4zODcgLTcuOTEsLTMuNzc5IC01Ny45NTUsLTIzLjk5NTk5NiAtNjYuOTcwMDAwMywtMjguMzA0OTk2IC00LjUwNiwtMi4xNTQgLTYuODc1MDAwMDMsLTMuOTY5IC02Ljg3NTAwMDAzLC01LjY4NiB2IC0xNy4xOTcgYyAwLDAgNjUuMTUzMDAwMzMsLTE0LjE4MyA3NS42NzIwMDAzMywtMTcuOTU3IDEwLjUxOCwtMy43NzMgMTQuMTY3LC0zLjkxIDIzLjExOCwtMC42MzEgOC45NTIwMDIsMy4yNzkgNjIuNDc0MDAyLDEyLjkzNCA3MS4zMjEwMDIsMTYuMTc1IDAsMCAtMC4wMDQsMTUuMzU3IC0wLjAwNCwxNi45NTMgMC4wMDEsMS42OTkgLTIuMDQsMy41NjQgLTYuNjYxLDUuOTcyIHoiCiAgICAgICBpZD0icGF0aDg0OSIgLz48cGF0aAogICAgICAgZmlsbD0iI2Q4MmMyMCIKICAgICAgIGQ9Im0gMTYzLjQ0ODE0LDY3LjE4NjUzNCBjIC05LjA3OCw0LjczMiAtNTYuMTA2LDI0LjA2OCAtNjYuMTE4MDAyLDI5LjI4OSAtMTAuMDEyLDUuMjE4OTk2IC0xNS41NzQsNS4xNjc5OTYgLTIzLjQ4MywxLjM4NyAtNy45MSwtMy43NzkgLTU3Ljk1NSwtMjMuOTk3IC02Ni45NzAwMDAzLC0yOC4zMDUgLTkuMDE1LC00LjMwOCAtOS4yMDQsLTcuMjc0IC0wLjM0OCwtMTAuNzQzIDguODU1MDAwMywtMy40NjcgNTguNjI2MDAwMywtMjIuOTk1IDY5LjE0NjAwMDMsLTI2Ljc2OCAxMC41MTgsLTMuNzczIDE0LjE2NywtMy45MSAyMy4xMTgsLTAuNjMxIDguOTUyMDAyLDMuMjc5IDU1LjY5OTAwMiwyMS44ODUgNjQuNTQ1MDAyLDI1LjEyNiA4Ljg0OCwzLjI0MiA5LjE4OCw1LjkxMyAwLjExLDEwLjY0NSB6IgogICAgICAgaWQ9InBhdGg4NTEiIC8+PHBhdGgKICAgICAgIGZpbGw9IiNhNDFlMTEiCiAgICAgICBkPSJtIDE2My40NDgxNCw1NS4zMDY1MzQgYyAtOS4wNzgsNC43MzIgLTU2LjEwNiwyNC4wNjkgLTY2LjExODAwMiwyOS4yOSAtMTAuMDEyLDUuMjE5IC0xNS41NzQsNS4xNjggLTIzLjQ4MywxLjM4NyAtNy45MSwtMy43NzkgLTU3Ljk1NSwtMjMuOTk3IC02Ni45NzAwMDAzLC0yOC4zMDUgLTQuNTA2LC0yLjE1NCAtNi44NzUwMDAwMywtMy45NyAtNi44NzUwMDAwMywtNS42ODYgdiAtMTcuMTk3IGMgMCwwIDY1LjE1MzAwMDMzLC0xNC4xODMgNzUuNjcyMDAwMzMsLTE3Ljk1NiAxMC41MTgsLTMuNzc0IDE0LjE2NywtMy45MSAyMy4xMTgsLTAuNjMxIDguOTUyMDAyLDMuMjc5IDYyLjQ3NDAwMiwxMi45MzQgNzEuMzIxMDAyLDE2LjE3NSAwLDAgLTAuMDA0LDE1LjM1NyAtMC4wMDQsMTYuOTUyIDAuMDAxLDEuNjk4IC0yLjA0LDMuNTYzIC02LjY2MSw1Ljk3MSB6IgogICAgICAgaWQ9InBhdGg4NTMiIC8+PHBhdGgKICAgICAgIGZpbGw9IiNkODJjMjAiCiAgICAgICBkPSJtIDE2My40NDgxNCwzOC4xMDY1MzQgYyAtOS4wNzgsNC43MzIgLTU2LjEwNiwyNC4wNjkgLTY2LjExODAwMiwyOS4yODkgLTEwLjAxMiw1LjIxOSAtMTUuNTc0LDUuMTY4IC0yMy40ODMsMS4zODggLTcuOTA5LC0zLjc4IC01Ny45NTUsLTIzLjk5NyAtNjYuOTcwMDAwMywtMjguMzA1IC05LjAxNSwtNC4zMDggLTkuMjA0LC03LjI3NSAtMC4zNDgsLTEwLjc0MyA4Ljg1NTAwMDMsLTMuNDY4IDU4LjYyNjAwMDMsLTIyLjk5NDAwMDMgNjkuMTQ2MDAwMywtMjYuNzY4MDAwMyAxMC41MTgsLTMuNzc0IDE0LjE2NywtMy45MSAyMy4xMTgsLTAuNjMgOC45NTIwMDIsMy4yNzkgNTUuNjk5MDAyLDIxLjg4NTAwMDMgNjQuNTQ1MDAyLDI1LjEyNjAwMDMgOC44NDgsMy4yNCA5LjE4OCw1LjkxMiAwLjExLDEwLjY0MyB6IgogICAgICAgaWQ9InBhdGg4NTUiIC8+PHRleHQKICAgICAgIHhtbDpzcGFjZT0icHJlc2VydmUiCiAgICAgICBzdHlsZT0iZm9udC1zdHlsZTpub3JtYWw7Zm9udC13ZWlnaHQ6bm9ybWFsO2ZvbnQtc2l6ZTo4NS4zMzI4cHg7bGluZS1oZWlnaHQ6MS4yNTtmb250LWZhbWlseTpzYW5zLXNlcmlmO2ZpbGw6IzAwMDAwMDtmaWxsLW9wYWNpdHk6MTtzdHJva2U6bm9uZTtzdHJva2Utd2lkdGg6MC45OTk5OTQiCiAgICAgICB4PSIxNi45MTI4MTUiCiAgICAgICB5PSIxMDMuNDIxNjciCiAgICAgICBpZD0idGV4dDg5MyI+PHRzcGFuCiAgICAgICAgIHNvZGlwb2RpOnJvbGU9ImxpbmUiCiAgICAgICAgIGlkPSJ0c3Bhbjg5MSIKICAgICAgICAgeD0iMTYuOTEyODE1IgogICAgICAgICB5PSIxMDMuNDIxNjciCiAgICAgICAgIHN0eWxlPSJmb250LXN0eWxlOm5vcm1hbDtmb250LXZhcmlhbnQ6bm9ybWFsO2ZvbnQtd2VpZ2h0Om5vcm1hbDtmb250LXN0cmV0Y2g6bm9ybWFsO2ZvbnQtc2l6ZTo4NS4zMzI4cHg7Zm9udC1mYW1pbHk6J0FyaWFsIEJsYWNrJzstaW5rc2NhcGUtZm9udC1zcGVjaWZpY2F0aW9uOidBcmlhbCBCbGFjaywgJztmaWxsOiNmZmZmZmY7c3Ryb2tlLXdpZHRoOjAuOTk5OTk0Ij5SQzwvdHNwYW4+PC90ZXh0PjwvZz48L3N2Zz4K"/>
+    <text class="cardTitle" x="1176" y="120">cacheOnlyMap</text>
+    <text class="cardText" x="1176" y="150">same Redis name</text>
+    <text class="cardText" x="1116" y="190">writerless cache removal</text>
   </g>
-  <g id="group-persistence">
-    <rect class="group" x="92" y="810" width="1536" height="330" rx="18"/>
-    <text class="group-title" x="122" y="834" dominant-baseline="middle">R2DBC loader and writer path</text>
+
+  <path class="flow" d="M560 520 H652"/>
+  <text class="label" x="578" y="500">near miss</text>
+  <path class="side" d="M1082 530 H1180"/>
+  <text class="label" x="1096" y="510">cache-only</text>
+  <path class="flow" d="M866 684 V734"/>
+  <text class="label" x="888" y="716">loader / writer callbacks</text>
+
+  <g transform="translate(92 734)">
+    <rect x="0" y="0" width="1496" height="204" rx="18" fill="#fff0d8" stroke="#d8ad68" stroke-width="2.5"/>
+    <text class="zoneTitle" x="28" y="46">Exposed R2DBC persistence boundary</text>
+    <rect x="118" y="76" width="382" height="92" rx="14" fill="#fffdf8" stroke="#d8ad68" stroke-width="2"/>
+    <text class="cardTitle code" x="146" y="108">R2dbcExposedEntityMapLoader</text>
+    <text class="cardText" x="146" y="138"><tspan class="keyword">SELECT</tspan> by id; PK-ascending keys</text>
+    <rect x="596" y="76" width="408" height="92" rx="14" fill="#fffdf8" stroke="#d8ad68" stroke-width="2"/>
+    <text class="cardTitle code" x="624" y="108">R2dbcExposedEntityMapWriter</text>
+    <text class="cardText" x="624" y="138"><tspan class="keyword">UPDATE</tspan>/<tspan class="keyword">INSERT</tspan>; optional <tspan class="keyword">DELETE</tspan></text>
+    <rect x="1108" y="68" width="308" height="108" rx="14" fill="#fffdf8" stroke="#d8ad68" stroke-width="2"/>
+    <image x="1134" y="92" width="48" height="48" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K"/>
+    <text class="cardTitle" x="1196" y="108">R2DBC database</text>
+    <text class="cardText" x="1196" y="138"><tspan class="code">suspendTransaction</tspan></text>
   </g>
-  <g id="group-modes">
-    <rect class="group" x="92" y="1180" width="1536" height="150" rx="18"/>
-    <text class="group-title" x="122" y="1204" dominant-baseline="middle">Write mode and invalidation caveats</text>
-  </g>
-  <path id="route-caller-repo" data-edge="caller-&gt;repo" data-label="suspend API" class="connector" d="M 430 293 L 520 293" stroke="#4F83BF"/>
-  <path id="route-repo-base" data-edge="repo-&gt;base" data-label="implemented by" class="connector" d="M 880 273 L 1030 273" stroke="#755BC6"/>
-  <path id="route-base-remote-map" data-edge="base-&gt;remote-map" data-label="creates when remote" class="connector" d="M 1245 321 L 1245 490 L 740 490 L 740 520" stroke="#2E8F89"/>
-  <path id="route-base-near-map" data-edge="base-&gt;near-map" data-label="creates when near cache" class="connector" d="M 1245 321 L 1245 410 L 500 410 L 500 698 L 560 698" stroke="#3E9868"/>
-  <path id="route-config-remote-map" data-edge="config-&gt;remote-map" data-label="cache mode" class="connector" d="M 480 592 L 560 592" stroke="#B9851B"/>
-  <path id="route-remote-map-redisson" data-edge="remote-map-&gt;redisson" data-label="async map ops" class="connector" d="M 920 568 L 950 568 L 950 770 L 1475 770 L 1475 700" stroke="#C94D68"/>
-  <path id="route-cache-only-redisson" data-edge="cache-only-&gt;redisson" data-label="evict without writer" class="connector" d="M 1290 596 L 1320 596 L 1320 650 L 1340 650" stroke="#758297"/>
-  <path id="route-remote-map-loader" data-edge="remote-map-&gt;loader" data-label="miss invokes loaderAsync" class="connector" d="M 560 568 L 500 568 L 500 865 L 305 865 L 305 910" stroke="#755BC6"/>
-  <path id="route-remote-map-writer" data-edge="remote-map-&gt;writer" data-label="write invokes writerAsync" class="connector" d="M 560 568 L 500 568 L 500 960 L 535 960" stroke="#C94D68"/>
-  <path id="route-loader-tx" data-edge="loader-&gt;tx" data-label="SELECT inside suspend tx" class="connector" d="M 305 1010 L 305 1080 L 970 1080 L 970 960 L 1000 960" stroke="#755BC6"/>
-  <path id="route-writer-tx" data-edge="writer-&gt;tx" data-label="write/delete inside suspend tx" class="connector" d="M 885 960 L 1000 960" stroke="#C94D68"/>
-  <path id="route-tx-database" data-edge="tx-&gt;database" data-label="R2DBC statements" class="connector" d="M 1340 960 L 1400 960" stroke="#C94D68"/>
-  <g id="node-caller" data-node="caller" transform="translate(130,250)">
-    <rect class="shape" x="0" y="0" width="300" height="86" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
-    <text class="card-title" x="150" y="24" text-anchor="middle" dominant-baseline="middle">Coroutine caller</text>
-    <text class="detail" x="150" y="43" text-anchor="middle" dominant-baseline="middle">suspend get/put</text>
-    <text class="detail" x="150" y="62" text-anchor="middle" dominant-baseline="middle">awaits async map futures</text>
-  </g>
-  <g id="node-repo" data-node="repo" transform="translate(520,225)">
-    <rect class="shape" x="0" y="0" width="360" height="96" rx="12" fill="#EAF7EF" stroke="#58A978"/>
-    <text class="card-title" x="180" y="29" text-anchor="middle" dominant-baseline="middle">R2dbcRedissonRepository</text>
-    <text class="detail" x="180" y="48" text-anchor="middle" dominant-baseline="middle">suspend cache contract</text>
-    <text class="detail" x="180" y="67" text-anchor="middle" dominant-baseline="middle">R2dbcRedisRepository</text>
-  </g>
-  <g id="node-base" data-node="base" transform="translate(1030,225)">
-    <rect class="shape" x="0" y="0" width="430" height="96" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
-    <text class="card-title" x="215" y="29" text-anchor="middle" dominant-baseline="middle">AbstractR2dbcRedissonRepo</text>
-    <text class="detail" x="215" y="48" text-anchor="middle" dominant-baseline="middle">creates async Redisson map</text>
-    <text class="detail" x="215" y="67" text-anchor="middle" dominant-baseline="middle">loaderAsync/writerAsync</text>
-  </g>
-  <g id="node-config" data-node="config" transform="translate(130,548)">
-    <rect class="shape" x="0" y="0" width="350" height="108" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
-    <text class="card-title" x="175" y="35" text-anchor="middle" dominant-baseline="middle">RedissonCacheConfig</text>
-    <text class="detail" x="175" y="54" text-anchor="middle" dominant-baseline="middle">READ_ONLY/WRITE_THROUGH</text>
-    <text class="detail" x="175" y="73" text-anchor="middle" dominant-baseline="middle">WRITE_BEHIND, near cache</text>
-  </g>
-  <g id="node-remote-map" data-node="remote-map" transform="translate(560,520)">
-    <rect class="shape" x="0" y="0" width="360" height="96" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
-    <text class="card-title" x="180" y="29" text-anchor="middle" dominant-baseline="middle">RMapCache</text>
-    <text class="detail" x="180" y="48" text-anchor="middle" dominant-baseline="middle">remote Redis cache</text>
-    <text class="detail" x="180" y="67" text-anchor="middle" dominant-baseline="middle">getAsync/putAllAsync</text>
-  </g>
-  <g id="node-near-map" data-node="near-map" transform="translate(560,650)">
-    <rect class="shape" x="0" y="0" width="360" height="96" rx="12" fill="#EAF7EF" stroke="#58A978"/>
-    <text class="card-title" x="180" y="29" text-anchor="middle" dominant-baseline="middle">RLocalCachedMap</text>
-    <text class="detail" x="180" y="48" text-anchor="middle" dominant-baseline="middle">near cache enabled</text>
-    <text class="detail" x="180" y="67" text-anchor="middle" dominant-baseline="middle">local sync strategy</text>
-  </g>
-  <g id="node-cache-only" data-node="cache-only" transform="translate(970,548)">
-    <rect class="shape" x="0" y="0" width="320" height="96" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
-    <text class="card-title" x="160" y="29" text-anchor="middle" dominant-baseline="middle">cacheOnlyMap</text>
-    <text class="detail" x="160" y="48" text-anchor="middle" dominant-baseline="middle">cache-only invalidation</text>
-    <text class="detail" x="160" y="67" text-anchor="middle" dominant-baseline="middle">clear local near cache</text>
-  </g>
-  <g id="node-redisson" data-node="redisson" transform="translate(1340,600)">
-    <rect class="shape" x="0" y="0" width="270" height="100" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
-    <text class="card-title" x="135" y="31" text-anchor="middle" dominant-baseline="middle">Redisson Redis backend</text>
-    <text class="detail" x="135" y="50" text-anchor="middle" dominant-baseline="middle">async map storage</text>
-    <text class="detail" x="135" y="69" text-anchor="middle" dominant-baseline="middle">write-behind queue</text>
-  </g>
-  <g id="node-loader" data-node="loader" transform="translate(130,910)">
-    <rect class="shape" x="0" y="0" width="350" height="100" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
-    <text class="card-title" x="175" y="31" text-anchor="middle" dominant-baseline="middle">R2DBC MapLoaderAsync</text>
-    <text class="detail" x="175" y="50" text-anchor="middle" dominant-baseline="middle">load(id)</text>
-    <text class="detail" x="175" y="69" text-anchor="middle" dominant-baseline="middle">loadAllKeys channel</text>
-  </g>
-  <g id="node-writer" data-node="writer" transform="translate(535,910)">
-    <rect class="shape" x="0" y="0" width="350" height="100" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
-    <text class="card-title" x="175" y="31" text-anchor="middle" dominant-baseline="middle">R2DBC MapWriterAsync</text>
-    <text class="detail" x="175" y="50" text-anchor="middle" dominant-baseline="middle">write(map)</text>
-    <text class="detail" x="175" y="69" text-anchor="middle" dominant-baseline="middle">delete(ids)</text>
-  </g>
-  <g id="node-tx" data-node="tx" transform="translate(1000,910)">
-    <rect class="shape" x="0" y="0" width="340" height="100" rx="12" fill="#EAF7EF" stroke="#58A978"/>
-    <text class="card-title" x="170" y="31" text-anchor="middle" dominant-baseline="middle">suspendTransaction</text>
-    <text class="detail" x="170" y="50" text-anchor="middle" dominant-baseline="middle">SELECT / UPDATE</text>
-    <text class="detail" x="170" y="69" text-anchor="middle" dominant-baseline="middle">batchInsert / deleteWhere</text>
-  </g>
-  <g id="node-database" data-node="database" transform="translate(1400,925)">
-    <rect class="shape" x="0" y="0" width="200" height="92" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
-    <text class="card-title" x="100" y="27" text-anchor="middle" dominant-baseline="middle">R2DBC database</text>
-    <text class="detail" x="100" y="46" text-anchor="middle" dominant-baseline="middle">Exposed IdTable</text>
-    <text class="detail" x="100" y="65" text-anchor="middle" dominant-baseline="middle">reactive driver</text>
-  </g>
-  <g id="node-read-only" data-node="read-only" transform="translate(130,1240)">
-    <rect class="shape" x="0" y="0" width="330" height="64" rx="12" fill="#EAF7EF" stroke="#58A978"/>
-    <text class="card-title" x="165" y="13" text-anchor="middle" dominant-baseline="middle">READ_ONLY</text>
-    <text class="detail" x="165" y="32" text-anchor="middle" dominant-baseline="middle">loader only</text>
-    <text class="detail" x="165" y="51" text-anchor="middle" dominant-baseline="middle">DB rows survive invalidation</text>
-  </g>
-  <g id="node-write-through" data-node="write-through" transform="translate(520,1240)">
-    <rect class="shape" x="0" y="0" width="380" height="64" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
-    <text class="card-title" x="190" y="13" text-anchor="middle" dominant-baseline="middle">WRITE_THROUGH</text>
-    <text class="detail" x="190" y="32" text-anchor="middle" dominant-baseline="middle">writer completes before await resumes</text>
-    <text class="detail" x="190" y="51" text-anchor="middle" dominant-baseline="middle">updates rows; inserts client IDs</text>
-  </g>
-  <g id="node-write-behind" data-node="write-behind" transform="translate(960,1240)">
-    <rect class="shape" x="0" y="0" width="320" height="64" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
-    <text class="card-title" x="160" y="13" text-anchor="middle" dominant-baseline="middle">WRITE_BEHIND</text>
-    <text class="detail" x="160" y="32" text-anchor="middle" dominant-baseline="middle">cache first</text>
-    <text class="detail" x="160" y="51" text-anchor="middle" dominant-baseline="middle">deferred DB batch</text>
-  </g>
-  <g id="node-not-jdbc" data-node="not-jdbc" transform="translate(1340,1240)">
-    <rect class="shape" x="0" y="0" width="220" height="64" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
-    <text class="card-title" x="110" y="13" text-anchor="middle" dominant-baseline="middle">Not JDBC</text>
-    <text class="detail" x="110" y="32" text-anchor="middle" dominant-baseline="middle">uses Exposed R2DBC</text>
-    <text class="detail" x="110" y="51" text-anchor="middle" dominant-baseline="middle">suspendTransaction</text>
-  </g>
-  <g transform="translate(76,1358)">
-    <rect class="pill" x="0" y="0" width="1568" height="48" rx="10"/>
-    <text class="small" x="784" y="18" text-anchor="middle" dominant-baseline="middle">Read-through uses loaderAsync; write-through and write-behind use writerAsync; DB deletion is opt-in.</text>
-    <text class="small" x="784" y="35" text-anchor="middle" dominant-baseline="middle">Default invalidation removes cache state through writerless map paths and leaves database rows intact.</text>
+
+  <path class="write" d="M1096 842 H1224"/>
+  <text class="label" x="1120" y="822">DB rows</text>
+
+  <g transform="translate(126 970)">
+    <rect x="0" y="0" width="1428" height="50" rx="14" fill="#eef3f4" stroke="#c2d1d4" stroke-width="2"/>
+    <text class="small" x="28" y="31">Boundary rule: invalidation removes Redis state by default; database row deletion is opt-in and batched through the R2DBC writer.</text>
   </g>
 </svg>
