@@ -1,60 +1,173 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1754" height="575" viewBox="0 0 1754 575" role="img" aria-label="Architecture Overview">
-<defs>
-  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="10" markerHeight="8" refX="8.5" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 8.5 4 L 1 7" fill="none" stroke="#758297" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="11" markerHeight="10" refX="9.5" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 0.5 1 L 9.5 5 L 0.5 9 Z" fill="#ffffff" stroke="#758297" stroke-width="1.7"/></marker>
-  <style>
-    .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
-    .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
-    .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
-    .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
-    .smallLabel{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:21px;font-weight:400;fill:#102033}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
-    .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .strong{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .line{stroke:#758297;stroke-width:2.1;fill:none;marker-end:url(#openArrow)}
-    .plainLine{stroke:#758297;stroke-width:2.1;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
-    .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-    .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
-  </style>
-</defs>
-<rect class="canvas" width="1754" height="575"/>
-<rect class="frame" x="32" y="28" width="1690" height="519" rx="28"/>
-<text class="title" x="66" y="82">Architecture Overview</text>
-<text class="subtitle" x="70" y="118">UML classes from the original Mermaid source</text>
-<path class="line" d="M672 292 L672 393 L1082 393 L1082 180"/>
-<g transform="translate(92,180)">
-  <rect class="card" x="0" y="0" width="340" height="175" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#5B8DEF"/>
-  <text class="small" x="170" y="26" text-anchor="middle">«abstract»</text>
-  <text class="label" x="170" y="61" text-anchor="middle">RedissonJdbcRepositoryE</text>
-  <text class="mono" x="18" y="108">-nearCache: RedissonNearCache</text>
-<text class="mono" x="18" y="129">+findByIdOrNull(id): E?</text>
-<text class="mono" x="18" y="150">+save(entity): E</text>
-</g>
-<g transform="translate(502,180)">
-  <rect class="card" x="0" y="0" width="340" height="112" rx="5" fill="#EAF7EF" stroke="#58A978"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#58A978"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="61" text-anchor="middle">RedissonJdbcRepository</text>
-
-</g>
-<g transform="translate(912,180)">
-  <rect class="card" x="0" y="0" width="340" height="112" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#D6A441"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="61" text-anchor="middle">RedissonNearCache</text>
-
-</g>
-<g transform="translate(1322,180)">
-  <rect class="card" x="0" y="0" width="340" height="175" rx="5" fill="#FDECEF" stroke="#DC6B82"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#DC6B82"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="61" text-anchor="middle">RedissonNearCacheV</text>
-  <text class="mono" x="18" y="108">+get(key): V?</text>
-<text class="mono" x="18" y="129">+put(key, value)</text>
-<text class="mono" x="18" y="150">+invalidate(key)</text>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" width="1720" height="1540" viewBox="0 0 1720 1540" role="img" aria-labelledby="title desc">
+  <title id="title">JDBC Redisson Redis Cache Architecture</title>
+  <desc id="desc">JDBC Redisson architecture rebuilt from exposed-jdbc-redisson README, sync/suspend repositories, loader, and writer source files.</desc>
+  <defs>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <marker id="arrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="context-stroke"/></marker>
+    <marker id="generalizationArrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.8 0.8 L 9 5 L 0.8 9.2 Z" fill="#FFFFFF" stroke="context-stroke" stroke-width="1.4" stroke-dasharray="none"/></marker>
+    <style>
+      .canvas{fill:#F6F9FC}.decor{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
+      .innerFrame{fill:#FBFDFF;stroke:#D9E4EF;stroke-width:2}
+      .title{font-family:"Architects Daughter";font-size:46px;fill:#22344A;font-weight:400}
+      .subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476;font-weight:400}
+      .group{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}.group-title{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .card-title{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}.detail{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}
+      .small{font-family:"Comic Mono";font-size:13px;fill:#627184;font-weight:400}.shape{filter:url(#shadow);stroke-width:2}
+      .connector{fill:none;stroke-width:2.6;marker-end:url(#arrow);stroke-linejoin:round;stroke-linecap:round}.generalization{marker-end:url(#generalizationArrow)}.dashed{stroke-dasharray:7 6}
+      .pill{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1}
+    </style>
+  </defs>
+  <rect class="canvas" width="1720" height="1540"/>
+  <rect class="decor" x="44" y="36" width="1632" height="1468" rx="34"/>
+  <rect class="innerFrame" x="82" y="154" width="1556" height="1244" rx="24"/>
+  <text class="title" x="72" y="88">JDBC Redisson Redis Cache Architecture</text>
+  <text class="subtitle" x="76" y="121">Redisson RMapCache or RLocalCachedMap wires read-through loaders, optional writers, and JDBC transaction-backed Exposed persistence.</text>
+  <g id="group-api">
+    <rect class="group" x="92" y="156" width="1536" height="300" rx="18"/>
+    <text class="group-title" x="122" y="180" dominant-baseline="middle">Redisson repository surfaces</text>
+  </g>
+  <g id="group-cache">
+    <rect class="group" x="92" y="496" width="1536" height="315" rx="18"/>
+    <text class="group-title" x="122" y="520" dominant-baseline="middle">Redisson map selection and invalidation</text>
+  </g>
+  <g id="group-persistence">
+    <rect class="group" x="92" y="851" width="1536" height="330" rx="18"/>
+    <text class="group-title" x="122" y="875" dominant-baseline="middle">Exposed JDBC loader and writer path</text>
+  </g>
+  <g id="group-modes">
+    <rect class="group" x="92" y="1221" width="1536" height="175" rx="18"/>
+    <text class="group-title" x="122" y="1245" dominant-baseline="middle">Write modes and delete policy</text>
+  </g>
+  <path id="route-caller-sync-contract" data-edge="caller-&gt;sync-contract" data-label="blocking calls" class="connector" d="M 430 304 L 476 304 L 476 268 L 520 268" stroke="#4F83BF"/>
+  <path id="route-caller-suspend-contract" data-edge="caller-&gt;suspend-contract" data-label="suspend calls" class="connector" d="M 430 356 L 520 356" stroke="#2E8F89"/>
+  <path id="route-sync-contract-sync-base" data-edge="sync-contract-&gt;sync-base" data-label="implemented by" class="connector" d="M 880 268 L 1030 268" stroke="#755BC6"/>
+  <path id="route-suspend-contract-suspend-base" data-edge="suspend-contract-&gt;suspend-base" data-label="implemented by" class="connector" d="M 880 383 L 1030 383" stroke="#755BC6"/>
+  <path id="route-sync-base-remote-map" data-edge="sync-base-&gt;remote-map" data-label="creates map cache" class="connector" d="M 1460 268 L 1510 268 L 1510 542 L 740 542 L 740 560" stroke="#2E8F89"/>
+  <path id="route-config-remote-map" data-edge="config-&gt;remote-map" data-label="remote mode" class="connector" d="M 480 612 L 560 612" stroke="#B9851B"/>
+  <path id="route-cache-only-redisson" data-edge="cache-only-&gt;redisson" data-label="evict without writer" class="connector" d="M 1330 618 L 1345 618 L 1345 658 L 1360 658" stroke="#758297"/>
+  <path id="route-remote-map-loader" data-edge="remote-map-&gt;loader" data-label="cache miss loads" class="connector" d="M 560 608 L 500 608 L 500 900 L 305 900 L 305 940" stroke="#755BC6"/>
+  <path id="route-writer-tx-sync" data-edge="writer-&gt;tx-sync" data-label="UPDATE/INSERT/DELETE" class="connector" d="M 890 982 L 1010 982" stroke="#C94D68"/>
+  <path id="route-loader-tx-sync" data-edge="loader-&gt;tx-sync" data-label="SELECT" class="connector" d="M 480 983 L 500 983 L 500 912 L 1145 912 L 1145 930" stroke="#755BC6"/>
+  <path id="route-writer-database" data-edge="writer-&gt;database" data-label="writer-backed delete/write" class="connector" d="M 890 1034 L 930 1034 L 930 1160 L 1490 1160 L 1490 1087" stroke="#C94D68"/>
+  <path id="route-tx-sync-database" data-edge="tx-sync-&gt;database" data-label="JDBC statements" class="connector" d="M 1280 973 L 1335 973 L 1335 1041 L 1390 1041" stroke="#C94D68"/>
+  <path id="route-tx-suspend-database" data-edge="tx-suspend-&gt;database" data-label="direct read" class="connector" d="M 1320 1093 L 1360 1093 L 1360 1041 L 1390 1041" stroke="#C94D68"/>
+  <g id="node-caller" data-node="caller" transform="translate(130,280)">
+    <rect class="shape" x="0" y="0" width="300" height="86" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <text class="card-title" x="150" y="24" text-anchor="middle" dominant-baseline="middle">Application repository code</text>
+    <text class="detail" x="150" y="43" text-anchor="middle" dominant-baseline="middle">get, put, upsertAll</text>
+    <text class="detail" x="150" y="62" text-anchor="middle" dominant-baseline="middle">invalidate, clear</text>
+  </g>
+  <g id="node-sync-contract" data-node="sync-contract" transform="translate(520,220)">
+    <rect class="shape" x="0" y="0" width="360" height="96" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="180" y="29" text-anchor="middle" dominant-baseline="middle">JdbcRedissonRepository</text>
+    <text class="detail" x="180" y="48" text-anchor="middle" dominant-baseline="middle">blocking RMap contract</text>
+    <text class="detail" x="180" y="67" text-anchor="middle" dominant-baseline="middle">JdbcRedisRepository</text>
+  </g>
+  <g id="node-suspend-contract" data-node="suspend-contract" transform="translate(520,335)">
+    <rect class="shape" x="0" y="0" width="360" height="96" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="180" y="29" text-anchor="middle" dominant-baseline="middle">SuspendedJdbcRedissonRepo</text>
+    <text class="detail" x="180" y="48" text-anchor="middle" dominant-baseline="middle">suspend RMap contract</text>
+    <text class="detail" x="180" y="67" text-anchor="middle" dominant-baseline="middle">async API await()</text>
+  </g>
+  <g id="node-sync-base" data-node="sync-base" transform="translate(1030,220)">
+    <rect class="shape" x="0" y="0" width="430" height="96" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="215" y="29" text-anchor="middle" dominant-baseline="middle">AbstractJdbcRedissonRepo</text>
+    <text class="detail" x="215" y="48" text-anchor="middle" dominant-baseline="middle">loader/writer</text>
+    <text class="detail" x="215" y="67" text-anchor="middle" dominant-baseline="middle">transaction { }</text>
+  </g>
+  <g id="node-suspend-base" data-node="suspend-base" transform="translate(1030,335)">
+    <rect class="shape" x="0" y="0" width="430" height="96" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="215" y="29" text-anchor="middle" dominant-baseline="middle">AbstractSuspendedJdbcRedissonRepo</text>
+    <text class="detail" x="215" y="48" text-anchor="middle" dominant-baseline="middle">loaderAsync/writerAsync</text>
+    <text class="detail" x="215" y="67" text-anchor="middle" dominant-baseline="middle">suspended tx async</text>
+  </g>
+  <g id="node-config" data-node="config" transform="translate(130,590)">
+    <rect class="shape" x="0" y="0" width="350" height="108" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <text class="card-title" x="175" y="35" text-anchor="middle" dominant-baseline="middle">RedissonCacheConfig</text>
+    <text class="detail" x="175" y="54" text-anchor="middle" dominant-baseline="middle">READ_ONLY or READ_WRITE</text>
+    <text class="detail" x="175" y="73" text-anchor="middle" dominant-baseline="middle">near cache, ttl, retry</text>
+  </g>
+  <g id="node-remote-map" data-node="remote-map" transform="translate(560,560)">
+    <rect class="shape" x="0" y="0" width="360" height="96" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="180" y="29" text-anchor="middle" dominant-baseline="middle">RMapCache</text>
+    <text class="detail" x="180" y="48" text-anchor="middle" dominant-baseline="middle">remote Redis map</text>
+    <text class="detail" x="180" y="67" text-anchor="middle" dominant-baseline="middle">loader/writer attached</text>
+  </g>
+  <g id="node-near-map" data-node="near-map" transform="translate(560,680)">
+    <rect class="shape" x="0" y="0" width="360" height="96" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="180" y="29" text-anchor="middle" dominant-baseline="middle">RLocalCachedMap</text>
+    <text class="detail" x="180" y="48" text-anchor="middle" dominant-baseline="middle">near cache enabled</text>
+    <text class="detail" x="180" y="67" text-anchor="middle" dominant-baseline="middle">local sync strategy</text>
+  </g>
+  <g id="node-cache-only" data-node="cache-only" transform="translate(1010,575)">
+    <rect class="shape" x="0" y="0" width="320" height="86" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
+    <text class="card-title" x="160" y="24" text-anchor="middle" dominant-baseline="middle">cacheOnlyMap</text>
+    <text class="detail" x="160" y="43" text-anchor="middle" dominant-baseline="middle">evict Redis only</text>
+    <text class="detail" x="160" y="62" text-anchor="middle" dominant-baseline="middle">bypass DB writer</text>
+  </g>
+  <g id="node-redisson" data-node="redisson" transform="translate(1360,620)">
+    <rect class="shape" x="0" y="0" width="250" height="100" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
+    <text class="card-title" x="125" y="31" text-anchor="middle" dominant-baseline="middle">Redisson Redis backend</text>
+    <text class="detail" x="125" y="50" text-anchor="middle" dominant-baseline="middle">MapCache storage</text>
+    <text class="detail" x="125" y="69" text-anchor="middle" dominant-baseline="middle">local-cache sync events</text>
+  </g>
+  <g id="node-loader" data-node="loader" transform="translate(130,940)">
+    <rect class="shape" x="0" y="0" width="350" height="86" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="175" y="24" text-anchor="middle" dominant-baseline="middle">Exposed MapLoader</text>
+    <text class="detail" x="175" y="43" text-anchor="middle" dominant-baseline="middle">loadById, loadAllIds</text>
+    <text class="detail" x="175" y="62" text-anchor="middle" dominant-baseline="middle">sync or async wrapper</text>
+  </g>
+  <g id="node-writer" data-node="writer" transform="translate(530,930)">
+    <rect class="shape" x="0" y="0" width="360" height="104" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
+    <text class="card-title" x="180" y="33" text-anchor="middle" dominant-baseline="middle">Exposed MapWriter</text>
+    <text class="detail" x="180" y="52" text-anchor="middle" dominant-baseline="middle">upsert/delete</text>
+    <text class="detail" x="180" y="71" text-anchor="middle" dominant-baseline="middle">write-through or behind</text>
+  </g>
+  <g id="node-tx-sync" data-node="tx-sync" transform="translate(1010,930)">
+    <rect class="shape" x="0" y="0" width="270" height="86" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="135" y="24" text-anchor="middle" dominant-baseline="middle">Exposed transaction</text>
+    <text class="detail" x="135" y="43" text-anchor="middle" dominant-baseline="middle">select, update</text>
+    <text class="detail" x="135" y="62" text-anchor="middle" dominant-baseline="middle">batchInsert/deleteWhere</text>
+  </g>
+  <g id="node-tx-suspend" data-node="tx-suspend" transform="translate(1010,1050)">
+    <rect class="shape" x="0" y="0" width="310" height="86" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="155" y="24" text-anchor="middle" dominant-baseline="middle">suspended tx async</text>
+    <text class="detail" x="155" y="43" text-anchor="middle" dominant-baseline="middle">direct DB reads</text>
+    <text class="detail" x="155" y="62" text-anchor="middle" dominant-baseline="middle">suspend repository</text>
+  </g>
+  <g id="node-database" data-node="database" transform="translate(1390,995)">
+    <rect class="shape" x="0" y="0" width="200" height="92" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
+    <text class="card-title" x="100" y="27" text-anchor="middle" dominant-baseline="middle">JDBC database</text>
+    <text class="detail" x="100" y="46" text-anchor="middle" dominant-baseline="middle">Exposed IdTable</text>
+    <text class="detail" x="100" y="65" text-anchor="middle" dominant-baseline="middle">Serializable DTO</text>
+  </g>
+  <g id="node-read-only" data-node="read-only" transform="translate(130,1305)">
+    <rect class="shape" x="0" y="0" width="300" height="70" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="150" y="16" text-anchor="middle" dominant-baseline="middle">READ_ONLY</text>
+    <text class="detail" x="150" y="35" text-anchor="middle" dominant-baseline="middle">loader only</text>
+    <text class="detail" x="150" y="54" text-anchor="middle" dominant-baseline="middle">no writer created</text>
+  </g>
+  <g id="node-write-mode" data-node="write-mode" transform="translate(500,1305)">
+    <rect class="shape" x="0" y="0" width="340" height="70" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="170" y="16" text-anchor="middle" dominant-baseline="middle">READ_WRITE</text>
+    <text class="detail" x="170" y="35" text-anchor="middle" dominant-baseline="middle">writer + Redisson WriteMode</text>
+    <text class="detail" x="170" y="54" text-anchor="middle" dominant-baseline="middle">WRITE_THROUGH/BEHIND</text>
+  </g>
+  <g id="node-delete-policy" data-node="delete-policy" transform="translate(900,1305)">
+    <rect class="shape" x="0" y="0" width="360" height="70" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <text class="card-title" x="180" y="16" text-anchor="middle" dominant-baseline="middle">deleteFromDBOnInvalidate</text>
+    <text class="detail" x="180" y="35" text-anchor="middle" dominant-baseline="middle">false: cache-only evict</text>
+    <text class="detail" x="180" y="54" text-anchor="middle" dominant-baseline="middle">true: writer-backed delete</text>
+  </g>
+  <g id="node-boundary" data-node="boundary" transform="translate(1320,1305)">
+    <rect class="shape" x="0" y="0" width="240" height="70" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
+    <text class="card-title" x="120" y="16" text-anchor="middle" dominant-baseline="middle">Not R2DBC</text>
+    <text class="detail" x="120" y="35" text-anchor="middle" dominant-baseline="middle">JDBC Exposed DSL</text>
+    <text class="detail" x="120" y="54" text-anchor="middle" dominant-baseline="middle">Redisson client only</text>
+  </g>
+  <g transform="translate(76,1448)">
+    <rect class="pill" x="0" y="0" width="1568" height="48" rx="10"/>
+    <text class="small" x="784" y="18" text-anchor="middle" dominant-baseline="middle">Use this view to locate Redisson ownership: config selects RMapCache or RLocalCachedMap, with loader-only or loader-plus-writer mode.</text>
+    <text class="small" x="784" y="35" text-anchor="middle" dominant-baseline="middle">Invalidate paths use cacheOnlyMap unless deleteFromDBOnInvalidate explicitly routes removal through the writer-backed map.</text>
+  </g>
 </svg>

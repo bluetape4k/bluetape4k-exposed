@@ -1,84 +1,183 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1960" height="1812" viewBox="0 0 1960 1812" role="img" aria-label="Write-Through (Suspend Coroutines)">
-<defs>
-  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#758297" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M 0 1 L 12 6 L 0 11 Z" fill="#ffffff" stroke="#758297" stroke-width="1.8"/></marker>
-  <style>
-    .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
-    .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
-    .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
-    .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
-    .smallLabel{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:21px;font-weight:400;fill:#102033}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
-    .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .strong{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .line{stroke:#758297;stroke-width:2.1;fill:none;marker-end:url(#openArrow)}
-    .plainLine{stroke:#758297;stroke-width:2.1;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
-    .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-    .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
-  </style>
-</defs>
-<rect class="canvas" width="1960" height="1812"/>
-<rect class="frame" x="32" y="28" width="1896" height="1756" rx="28"/>
-<text class="title" x="66" y="82">Write-Through (Suspend Coroutines)</text>
-<text class="subtitle" x="70" y="118">Sequence messages from the original Mermaid source</text>
-<rect class="card" x="-10" y="166" width="300" height="72" rx="20" fill="#E8F3FF" stroke="#5B8DEF"/>
-<text class="smallLabel" x="140" y="209" text-anchor="middle">Client (Coroutine)</text>
-<line class="lifeline" x1="140" y1="252" x2="140" y2="1752" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect class="card" x="410" y="166" width="300" height="72" rx="20" fill="#EAF7EF" stroke="#58A978"/>
-<text class="smallLabel" x="560" y="198.5" text-anchor="middle">Suspended Jdbc</text>
-<text class="smallLabel" x="560" y="219.5" text-anchor="middle">Redisson Repository</text>
-<line class="lifeline" x1="560" y1="252" x2="560" y2="1752" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect class="card" x="830" y="166" width="300" height="72" rx="20" fill="#FFF3D9" stroke="#D6A441"/>
-<text class="smallLabel" x="980" y="209" text-anchor="middle">Redisson RMap</text>
-<line class="lifeline" x1="980" y1="252" x2="980" y2="1752" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect class="card" x="1250" y="166" width="300" height="72" rx="20" fill="#FDECEF" stroke="#DC6B82"/>
-<text class="smallLabel" x="1400" y="198.5" text-anchor="middle">Suspended Exposed</text>
-<text class="smallLabel" x="1400" y="219.5" text-anchor="middle">Entity Map Writer</text>
-<line class="lifeline" x1="1400" y1="252" x2="1400" y2="1752" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect class="card" x="1670" y="166" width="300" height="72" rx="20" fill="#E9F7F6" stroke="#45A7A1"/>
-<text class="smallLabel" x="1820" y="209" text-anchor="middle">Database (JDBC/IO)</text>
-<line class="lifeline" x1="1820" y1="252" x2="1820" y2="1752" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect x="243" y="286" width="214" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="261" y="313" text-anchor="start">1. suspend put(entity)</text>
-<path class="line" d="M140 344 L560 344"/>
-<rect x="586.5" y="396" width="367" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="604.5" y="423" text-anchor="start">2. cache.fastPutAsync(id, entity).await()</text>
-<path class="line" d="M560 454 L980 454"/>
-<rect x="1034.5" y="506" width="311" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="1052.5" y="533" text-anchor="start">3. writeAsync(map) [Write-Through]</text>
-<path class="line" d="M980 564 L1400 564"/>
-<rect x="1471" y="616" width="278" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="1489" y="643" text-anchor="start">4. SELECT id (check existence)</text>
-<path class="line" d="M1400 674 L1820 674"/>
-<rect x="1505" y="726" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="1523" y="753" text-anchor="start">5. existIds</text>
-<path class="dashed" d="M1820 784 L1400 784"/>
-<rect x="70" y="836" width="1820" height="40" rx="16" fill="#F7F1E7" stroke="#B88A44" stroke-width="1.6" opacity="0.96"/>
-<text class="strong" x="92" y="863" text-anchor="start">ALT: Existing record</text>
-<rect x="1479" y="904" width="262" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="1497" y="931" text-anchor="start">7. UPDATE SET ... WHERE id=?</text>
-<path class="line" d="M1400 962 L1820 962"/>
-<rect x="1505" y="1014" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="1523" y="1041" text-anchor="start">8. OK</text>
-<path class="dashed" d="M1820 1072 L1400 1072"/>
-<rect x="70" y="1124" width="1820" height="40" rx="16" fill="#F7F1E7" stroke="#B88A44" stroke-width="1.6" opacity="0.96"/>
-<text class="strong" x="92" y="1151" text-anchor="start">ELSE: New record (non-autoInc ID)</text>
-<rect x="1491" y="1192" width="238" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="1509" y="1219" text-anchor="start">10. batchInsert(entities)</text>
-<path class="line" d="M1400 1250 L1820 1250"/>
-<rect x="1505" y="1302" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="1523" y="1329" text-anchor="start">11. OK</text>
-<path class="dashed" d="M1820 1360 L1400 1360"/>
-<rect x="1085" y="1412" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="1103" y="1439" text-anchor="start">12. done</text>
-<path class="dashed" d="M1400 1470 L980 1470"/>
-<rect x="665" y="1522" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="683" y="1549" text-anchor="start">13. true</text>
-<path class="dashed" d="M980 1580 L560 1580"/>
-<rect x="245" y="1632" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="263" y="1659" text-anchor="start">14. true</text>
-<path class="dashed" d="M560 1690 L140 1690"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1740" height="1900" viewBox="0 0 1740 1900" role="img" aria-labelledby="title desc">
+  <title id="title">Suspended JDBC Redisson Write-Through Flow</title>
+  <desc id="desc">Sequence diagram rebuilt from exposed-jdbc-redisson README, SuspendedJdbcRedissonRepository, AbstractSuspendedJdbcRedissonRepository, SuspendedEntityMapWriter, and suspended write-through tests.</desc>
+  <defs>
+    <marker id="seqArrow-call" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#4F83BF"/></marker>
+    <marker id="seqArrow-scoped" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755BC6"/></marker>
+    <marker id="seqArrow-thread" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#2E8F89"/></marker>
+    <marker id="seqArrow-restore" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#3E9868"/></marker>
+    <marker id="seqArrow-fallback" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#B9851B"/></marker>
+    <marker id="seqArrow-audit" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#C94D68"/></marker>
+    <marker id="seqArrow-neutral" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#758297"/></marker>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <style>
+      .canvas{fill:#F7FAFC}.frame{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:2.6;filter:url(#shadow)}
+      .title{font-family:"Architects Daughter";font-size:44px;fill:#22344A;font-weight:400}.subtitle{font-family:"Comic Mono";font-size:16px;fill:#536476;font-weight:400}
+      .card{filter:url(#shadow);stroke-width:2}.cardTitle{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .detail{font-family:"Comic Mono";font-size:13px;fill:#42556B;font-weight:400}.small{font-family:"Comic Mono";font-size:12px;fill:#627184;font-weight:400}
+      .seq{fill:none;stroke-width:3;stroke-linecap:round}.seqReturn{fill:none;stroke-width:2.7;stroke-linecap:round;stroke-dasharray:8 7}
+      .lifeline{stroke:#A7B4C3;stroke-width:1.8;stroke-dasharray:8 8}.labelPill{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
+      .branchBox{fill:#FFFFFF;fill-opacity:.42;stroke:#D6A441;stroke-width:1.8;stroke-dasharray:8 8}.note{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
+    </style>
+  </defs>
+  <rect class="canvas" width="1740" height="1900"/>
+  <rect class="frame" x="32" y="28" width="1676" height="1844" rx="28"/>
+  <text class="title" x="66" y="82">Suspended JDBC Redisson Write-Through Flow</text>
+  <text class="subtitle" x="70" y="116">Suspended write-through awaits Redisson async cache writes and writerAsync persists inside newSuspendedTransaction before the call resumes.</text>
+<g id="participant-caller">
+  <rect class="card" x="96" y="165" width="250" height="76" rx="10" fill="#E8F3FF" stroke="#5B8DEF"/>
+  <text class="cardTitle" x="221" y="210" text-anchor="middle">Suspend caller</text>
+  <line class="lifeline" x1="221" y1="241" x2="221" y2="1806"/>
+</g>
+<g id="participant-repo">
+  <rect class="card" x="355.6" y="165" width="250" height="76" rx="10" fill="#EAF7EF" stroke="#58A978"/>
+  <text class="cardTitle" x="480.6" y="210" text-anchor="middle">Suspended repo</text>
+  <line class="lifeline" x1="480.6" y1="241" x2="480.6" y2="1806"/>
+</g>
+<g id="participant-map">
+  <rect class="card" x="615.2" y="165" width="250" height="76" rx="10" fill="#F2F5F9" stroke="#9AA8B8"/>
+  <text class="cardTitle" x="740.2" y="210" text-anchor="middle">Async Redisson map</text>
+  <line class="lifeline" x1="740.2" y1="241" x2="740.2" y2="1806"/>
+</g>
+<g id="participant-writer">
+  <rect class="card" x="874.8000000000001" y="165" width="250" height="76" rx="10" fill="#E9F7F6" stroke="#45A7A1"/>
+  <text class="cardTitle" x="999.8000000000001" y="210" text-anchor="middle">WriterAsync</text>
+  <line class="lifeline" x1="999.8000000000001" y1="241" x2="999.8000000000001" y2="1806"/>
+</g>
+<g id="participant-tx">
+  <rect class="card" x="1134.4" y="165" width="250" height="76" rx="10" fill="#F1ECFF" stroke="#8A72D6"/>
+  <text class="cardTitle" x="1259.4" y="210" text-anchor="middle">Coroutine tx</text>
+  <line class="lifeline" x1="1259.4" y1="241" x2="1259.4" y2="1806"/>
+</g>
+<g id="participant-database">
+  <rect class="card" x="1394" y="165" width="250" height="76" rx="10" fill="#FDECEF" stroke="#DC6B82"/>
+  <text class="cardTitle" x="1519" y="210" text-anchor="middle">JDBC database</text>
+  <line class="lifeline" x1="1519" y1="241" x2="1519" y2="1806"/>
+</g>
+<g>
+  <rect class="branchBox" x="74" y="292" width="1592" height="48" rx="15"/>
+  <rect class="labelPill" x="255.8" y="286" width="190" height="30" rx="8"/>
+  <text class="detail" x="350.8" y="302" text-anchor="middle" dominant-baseline="middle">Awaited put</text>
+</g>
+<g id="m2">
+  <rect class="labelPill" x="225.8" y="364" width="250" height="30" rx="7"/>
+  <circle cx="244.8" cy="379" r="12" fill="#4F83BF"/>
+  <text class="detail" x="244.8" y="380" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">2</text>
+  <text class="detail" x="368.8" y="380" text-anchor="middle" dominant-baseline="middle">put(id, entity) suspends</text>
+  <path class="seq" d="M221 412 L480.6 412" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
+</g>
+<g id="m3">
+  <rect class="labelPill" x="487.9000000000001" y="434" width="245" height="42" rx="7"/>
+  <circle cx="506.9000000000001" cy="455" r="12" fill="#2E8F89"/>
+  <text class="detail" x="506.9000000000001" y="456" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">3</text>
+  <text class="detail" x="628.4000000000001" y="447" text-anchor="middle" dominant-baseline="middle">fastPutAsync(id,</text>
+  <text class="detail" x="628.4000000000001" y="462" text-anchor="middle" dominant-baseline="middle">entity).await()</text>
+  <path class="seq" d="M480.6 494 L740.2 494" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g id="m4">
+  <rect class="labelPill" x="745" y="528" width="250" height="30" rx="7"/>
+  <circle cx="764" cy="543" r="12" fill="#755BC6"/>
+  <text class="detail" x="764" y="544" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">4</text>
+  <text class="detail" x="888" y="544" text-anchor="middle" dominant-baseline="middle">writerAsync.write(map)</text>
+  <path class="seq" d="M740.2 576 L999.8000000000001 576" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
+</g>
+<g id="m5">
+  <rect class="labelPill" x="1004.6000000000001" y="610" width="250" height="30" rx="7"/>
+  <circle cx="1023.6000000000001" cy="625" r="12" fill="#C94D68"/>
+  <text class="detail" x="1023.6000000000001" y="626" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">5</text>
+  <text class="detail" x="1147.6000000000001" y="626" text-anchor="middle" dominant-baseline="middle">newSuspendedTransaction</text>
+  <path class="seq" d="M999.8000000000001 658 L1259.4 658" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m6">
+  <rect class="labelPill" x="1264.8" y="692" width="248.8" height="30" rx="7"/>
+  <circle cx="1283.8" cy="707" r="12" fill="#C94D68"/>
+  <text class="detail" x="1283.8" y="708" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">6</text>
+  <text class="detail" x="1407.2" y="708" text-anchor="middle" dominant-baseline="middle">SELECT existing IDs</text>
+  <path class="seq" d="M1259.4 740 L1519 740" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m7">
+  <rect class="labelPill" x="1266.7" y="774" width="245" height="30" rx="7"/>
+  <circle cx="1285.7" cy="789" r="12" fill="#C94D68"/>
+  <text class="detail" x="1285.7" y="790" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">7</text>
+  <text class="detail" x="1407.2" y="790" text-anchor="middle" dominant-baseline="middle">existingIds</text>
+  <path class="seqReturn" d="M1519 822 L1259.4 822" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m8">
+  <rect class="labelPill" x="1264.2" y="844" width="250" height="42" rx="7"/>
+  <circle cx="1283.2" cy="865" r="12" fill="#C94D68"/>
+  <text class="detail" x="1283.2" y="866" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">8</text>
+  <text class="detail" x="1407.2" y="857" text-anchor="middle" dominant-baseline="middle">UPDATE rows or batchInsert</text>
+  <text class="detail" x="1407.2" y="872" text-anchor="middle" dominant-baseline="middle">client IDs</text>
+  <path class="seq" d="M1259.4 904 L1519 904" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m9">
+  <rect class="labelPill" x="1266.7" y="938" width="245" height="30" rx="7"/>
+  <circle cx="1285.7" cy="953" r="12" fill="#C94D68"/>
+  <text class="detail" x="1285.7" y="954" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">9</text>
+  <text class="detail" x="1407.2" y="954" text-anchor="middle" dominant-baseline="middle">commit</text>
+  <path class="seqReturn" d="M1519 986 L1259.4 986" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m10">
+  <rect class="labelPill" x="1007.1000000000001" y="1020" width="245" height="30" rx="7"/>
+  <circle cx="1026.1000000000001" cy="1035" r="12" fill="#C94D68"/>
+  <text class="detail" x="1026.1000000000001" y="1036" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">10</text>
+  <text class="detail" x="1147.6000000000001" y="1036" text-anchor="middle" dominant-baseline="middle">write complete</text>
+  <path class="seqReturn" d="M1259.4 1068 L999.8000000000001 1068" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m11">
+  <rect class="labelPill" x="747.5" y="1102" width="245" height="30" rx="7"/>
+  <circle cx="766.5" cy="1117" r="12" fill="#755BC6"/>
+  <text class="detail" x="766.5" y="1118" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">11</text>
+  <text class="detail" x="888" y="1118" text-anchor="middle" dominant-baseline="middle">future completes</text>
+  <path class="seqReturn" d="M999.8000000000001 1150 L740.2 1150" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
+</g>
+<g id="m12">
+  <rect class="labelPill" x="487.9000000000001" y="1184" width="245" height="30" rx="7"/>
+  <circle cx="506.9000000000001" cy="1199" r="12" fill="#2E8F89"/>
+  <text class="detail" x="506.9000000000001" y="1200" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">12</text>
+  <text class="detail" x="628.4000000000001" y="1200" text-anchor="middle" dominant-baseline="middle">await resumes</text>
+  <path class="seqReturn" d="M740.2 1232 L480.6 1232" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g id="m13">
+  <rect class="labelPill" x="225.8" y="1266" width="250" height="30" rx="7"/>
+  <circle cx="244.8" cy="1281" r="12" fill="#B9851B"/>
+  <text class="detail" x="244.8" y="1282" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">13</text>
+  <text class="detail" x="368.8" y="1282" text-anchor="middle" dominant-baseline="middle">return after DB write</text>
+  <path class="seqReturn" d="M480.6 1314 L221 1314" stroke="#B9851B" marker-end="url(#seqArrow-fallback)"/>
+</g>
+<g>
+  <rect class="branchBox" x="74" y="1358" width="1592" height="48" rx="15"/>
+  <rect class="labelPill" x="215.05" y="1352" width="271.5" height="30" rx="8"/>
+  <text class="detail" x="350.8" y="1368" text-anchor="middle" dominant-baseline="middle">Optional delete on invalidate</text>
+</g>
+<g id="m15">
+  <rect class="labelPill" x="228.3" y="1430" width="245" height="30" rx="7"/>
+  <circle cx="247.3" cy="1445" r="12" fill="#4F83BF"/>
+  <text class="detail" x="247.3" y="1446" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">15</text>
+  <text class="detail" x="368.8" y="1446" text-anchor="middle" dominant-baseline="middle">invalidate(id)</text>
+  <path class="seq" d="M221 1478 L480.6 1478" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
+</g>
+<g id="m16">
+  <rect class="labelPill" x="485.4000000000001" y="1512" width="250" height="30" rx="7"/>
+  <circle cx="504.4000000000001" cy="1527" r="12" fill="#2E8F89"/>
+  <text class="detail" x="504.4000000000001" y="1528" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">16</text>
+  <text class="detail" x="628.4000000000001" y="1528" text-anchor="middle" dominant-baseline="middle">fastRemoveAsync(id).await()</text>
+  <path class="seq" d="M480.6 1560 L740.2 1560" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g id="m17">
+  <rect class="labelPill" x="745" y="1582" width="250" height="42" rx="7"/>
+  <circle cx="764" cy="1603" r="12" fill="#755BC6"/>
+  <text class="detail" x="764" y="1604" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">17</text>
+  <text class="detail" x="888" y="1595" text-anchor="middle" dominant-baseline="middle">writerAsync.delete(keys)</text>
+  <text class="detail" x="888" y="1610" text-anchor="middle" dominant-baseline="middle">when enabled</text>
+  <path class="seq" d="M740.2 1642 L999.8000000000001 1642" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
+</g>
+<g id="m18">
+  <rect class="labelPill" x="1136.9" y="1676" width="245" height="30" rx="7"/>
+  <circle cx="1155.9" cy="1691" r="12" fill="#C94D68"/>
+  <text class="detail" x="1155.9" y="1692" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">18</text>
+  <text class="detail" x="1277.4" y="1692" text-anchor="middle" dominant-baseline="middle">DELETE by ids</text>
+  <path class="seq" d="M999.8000000000001 1724 L1519 1724" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g><rect class="note" x="110" y="1782" width="1520" height="48" rx="12"/><text class="small" x="870" y="1799" text-anchor="middle" dominant-baseline="middle">Suspend WRITE_THROUGH resumes after the async Redisson write and suspended JDBC writer complete successfully.</text><text class="small" x="870" y="1816" text-anchor="middle" dominant-baseline="middle">The writer decides update versus insert by existing IDs and skips DB work when the cache mode is READ_ONLY.</text></g>
 </svg>
