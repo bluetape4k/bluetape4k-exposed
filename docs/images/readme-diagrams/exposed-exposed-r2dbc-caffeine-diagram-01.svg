@@ -1,132 +1,89 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1320" viewBox="0 0 1680 1320" role="img" aria-labelledby="title desc">
-  <title id="title">R2DBC Caffeine Local Cache Architecture</title>
-  <desc id="desc">R2DBC Caffeine architecture showing coroutine callers, the Caffeine AsyncCache boundary, write modes, and the Exposed R2DBC persistence path.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="980" viewBox="0 0 1680 980" role="img" aria-labelledby="title desc">
+  <title id="title">R2DBC Caffeine Repository Boundary</title>
+  <desc id="desc">Architecture diagram for exposed-r2dbc-caffeine showing coroutine callers, local AsyncCache, repository mapping, write-behind worker, and Exposed R2DBC transaction boundary.</desc>
   <defs>
-    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
-    <marker id="arrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="context-stroke"/></marker>
-    <marker id="generalizationArrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#FFFFFF" stroke="context-stroke" stroke-width="1.4" stroke-dasharray="none"/></marker>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#327d91" stroke-dasharray="none"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="9" stdDeviation="12" flood-color="#20303a" flood-opacity="0.14"/>
+    </filter>
     <style>
-      .canvas{fill:#F6F9FC}.decor{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
-      .innerFrame{fill:#FBFDFF;stroke:#D9E4EF;stroke-width:2}
-      .title{font-family:"Architects Daughter";font-size:46px;fill:#22344A;font-weight:400}
-      .subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476;font-weight:400}
-      .group{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}.group-title{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
-      .card-title{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}.detail{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}
-      .small{font-family:"Comic Mono";font-size:13px;fill:#627184;font-weight:400}.shape{filter:url(#shadow);stroke-width:2}
-      .connector{fill:none;stroke-width:2.6;marker-end:url(#arrow);stroke-linejoin:round;stroke-linecap:round}.generalization{marker-end:url(#generalizationArrow)}.dashed{stroke-dasharray:7 6}
-      .pill{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1}
+      .canvas { fill: #f6f0e8; }
+      .frame { fill: #fffaf2; stroke: #28485a; stroke-width: 4; }
+      .title { font-family: "Architects Daughter", "Comic Mono", monospace; font-size: 46px; fill: #21343f; }
+      .subtitle { font-family: "Comic Mono", monospace; font-size: 19px; fill: #51636f; }
+      .zoneTitle { font-family: "Architects Daughter", "Comic Mono", monospace; font-size: 28px; fill: #21343f; }
+      .cardTitle { font-family: "Comic Mono", monospace; font-size: 20px; font-weight: 700; fill: #20323d; }
+      .cardText { font-family: "Comic Mono", monospace; font-size: 16px; fill: #33454f; }
+      .small { font-family: "Comic Mono", monospace; font-size: 14px; fill: #52636f; }
+      .label { font-family: "Comic Mono", monospace; font-size: 14px; fill: #315664; }
+      .flow { stroke: #327d91; stroke-width: 4.4; marker-end: url(#arrow); fill: none; }
+      .side { stroke: #7d6ab0; stroke-width: 4.2; marker-end: url(#arrow); fill: none; }
+      .code { fill: #9b3d5a; font-weight: 700; }
+      .type { fill: #176f7a; font-weight: 700; }
+      .keyword { fill: #8a5b00; font-weight: 700; }
     </style>
   </defs>
-  <rect class="canvas" width="1680" height="1320"/>
-  <rect class="decor" x="44" y="36" width="1592" height="1248" rx="34"/>
-  <rect class="innerFrame" x="82" y="154" width="1516" height="1024" rx="24"/>
-  <text class="title" x="72" y="88">R2DBC Caffeine Local Cache Architecture</text>
-  <text class="subtitle" x="76" y="121">A coroutine-native R2DBC repository wraps Exposed table access with Caffeine AsyncCache; no JDBC dependency is involved.</text>
-  <g id="group-api">
-    <rect class="group" x="92" y="156" width="1496" height="210" rx="18"/>
-    <text class="group-title" x="122" y="180" dominant-baseline="middle">Reader-facing coroutine cache repository</text>
+
+  <rect class="canvas" width="1680" height="980"/>
+  <rect class="frame" x="42" y="34" width="1596" height="908" rx="24" filter="url(#shadow)"/>
+  <text class="title" x="84" y="91">R2DBC Caffeine Repository Boundary</text>
+  <text class="subtitle" x="86" y="126">A coroutine repository keeps Caffeine local, delegates database work through suspendTransaction, and batches write-behind safely.</text>
+
+  <g transform="translate(92 168)">
+    <rect x="0" y="0" width="1496" height="150" rx="18" fill="#e7f1f4" stroke="#9dbbc4" stroke-width="2.5"/>
+    <text class="zoneTitle" x="28" y="46">Coroutine caller boundary</text>
+    <rect x="372" y="32" width="318" height="88" rx="14" fill="#fffdf8" stroke="#8db7c2" stroke-width="2"/>
+    <text class="cardTitle" x="400" y="66">Caller coroutine</text>
+    <text class="cardText" x="400" y="96"><tspan class="code">get</tspan>, <tspan class="code">put</tspan>, <tspan class="code">putAll</tspan>, <tspan class="code">close</tspan></text>
+    <rect x="768" y="32" width="390" height="88" rx="14" fill="#fffdf8" stroke="#8db7c2" stroke-width="2"/>
+    <text class="cardTitle type" x="796" y="66">R2dbcCaffeineRepository</text>
+    <text class="cardText" x="796" y="96">implements <tspan class="type">R2dbcCacheRepository</tspan></text>
   </g>
-  <g id="group-cache">
-    <rect class="group" x="92" y="406" width="1496" height="265" rx="18"/>
-    <text class="group-title" x="122" y="430" dominant-baseline="middle">Local Caffeine AsyncCache wrapper</text>
+
+  <path class="flow" d="M856 318 V378"/>
+  <text class="label" x="878" y="354">repository operation</text>
+
+  <g transform="translate(92 378)">
+    <rect x="0" y="0" width="1496" height="252" rx="18" fill="#eef4e6" stroke="#a9c58b" stroke-width="2.5"/>
+    <text class="zoneTitle" x="28" y="46">Local cache and write policy</text>
+    <rect x="160" y="82" width="336" height="116" rx="14" fill="#fffdf8" stroke="#a7c481" stroke-width="2"/>
+    <text class="cardTitle type" x="188" y="116">AsyncCache&lt;String, E&gt;</text>
+    <text class="cardText" x="188" y="146">key from <tspan class="code">serializeKey(id)</tspan></text>
+    <text class="cardText" x="188" y="176">local, in-process Caffeine</text>
+
+    <rect x="580" y="82" width="332" height="116" rx="14" fill="#fffdf8" stroke="#a7c481" stroke-width="2"/>
+    <text class="cardTitle type" x="608" y="116">LocalCacheConfig</text>
+    <text class="cardText" x="608" y="146"><tspan class="type">READ_ONLY</tspan> / <tspan class="type">WRITE_THROUGH</tspan></text>
+    <text class="cardText" x="608" y="176"><tspan class="type">WRITE_BEHIND</tspan> batching</text>
+
+    <rect x="996" y="82" width="340" height="130" rx="14" fill="#fffdf8" stroke="#a7c481" stroke-width="2"/>
+    <text class="cardTitle" x="1024" y="116">Write-behind worker</text>
+    <text class="cardText" x="1024" y="146"><tspan class="type">Channel&lt;Pair&lt;ID,E&gt;&gt;</tspan></text>
+    <text class="cardText" x="1024" y="176"><tspan class="code">close()</tspan> waits final flush</text>
+    <text class="small" x="1024" y="198">health: depth + last error</text>
   </g>
-  <g id="group-persistence">
-    <rect class="group" x="92" y="711" width="1496" height="240" rx="18"/>
-    <text class="group-title" x="122" y="735" dominant-baseline="middle">Exposed R2DBC persistence path</text>
+
+  <path class="flow" d="M856 630 V690"/>
+  <text class="label" x="878" y="666">DB path</text>
+
+  <g transform="translate(92 690)">
+    <rect x="0" y="0" width="1496" height="160" rx="18" fill="#fff0d8" stroke="#d8ad68" stroke-width="2.5"/>
+    <text class="zoneTitle" x="28" y="46">Exposed R2DBC transaction boundary</text>
+    <rect x="270" y="64" width="322" height="72" rx="14" fill="#fffdf8" stroke="#d8ad68" stroke-width="2"/>
+    <text class="cardTitle code" x="298" y="98">suspendTransaction</text>
+    <text class="cardText" x="298" y="124">all DB access enters here</text>
+    <rect x="686" y="64" width="326" height="72" rx="14" fill="#fffdf8" stroke="#d8ad68" stroke-width="2"/>
+    <text class="cardTitle type" x="714" y="98">IdTable + ResultRow</text>
+    <text class="cardText" x="714" y="124"><tspan class="code">toEntity()</tspan> maps rows</text>
+    <rect x="1106" y="64" width="260" height="72" rx="14" fill="#fffdf8" stroke="#d8ad68" stroke-width="2"/>
+    <text class="cardTitle" x="1134" y="98">Database rows</text>
+    <text class="cardText" x="1134" y="124"><tspan class="keyword">update</tspan> then <tspan class="keyword">batchInsert</tspan></text>
   </g>
-  <g id="group-ops">
-    <rect class="group" x="92" y="991" width="1496" height="165" rx="18"/>
-    <text class="group-title" x="122" y="1015" dominant-baseline="middle">Write-behind, invalidation, and health</text>
-  </g>
-  <path id="route-caller-contract" data-edge="caller-&gt;contract" data-label="suspend cache calls" class="connector" d="M 465 293 L 560 293" stroke="#4F83BF"/>
-  <path id="route-contract-abstract" data-edge="contract-&gt;abstract" data-label="implemented by base class" class="connector" d="M 950 287 L 1070 287" stroke="#755BC6"/>
-  <path id="route-abstract-config" data-edge="abstract-&gt;config" data-label="uses write mode and TTL" class="connector" d="M 1190 339 L 1190 376 L 320 376 L 320 494" stroke="#B9851B"/>
-  <path id="route-config-cache" data-edge="config-&gt;cache" data-label="builds AsyncCache" class="connector" d="M 500 548 L 610 548" stroke="#3E9868"/>
-  <path id="route-abstract-cache" data-edge="abstract-&gt;cache" data-label="get/put/invalidate" class="connector" d="M 1270 339 L 1270 382 L 800 382 L 800 494" stroke="#3E9868"/>
-  <path id="route-abstract-queue" data-edge="abstract-&gt;queue" data-label="WRITE_BEHIND sends entries" class="connector" d="M 1270 339 L 1270 500" stroke="#2E8F89"/>
-  <path id="route-abstract-suspend-tx" data-edge="abstract-&gt;suspend-tx" data-label="misses and writes delegate" class="connector" d="M 1080 339 L 1080 735 L 785 735 L 785 790" stroke="#2E8F89"/>
-  <path id="route-table-suspend-tx" data-edge="table-&gt;suspend-tx" data-label="table + mapper" class="connector" d="M 470 848 L 590 848" stroke="#755BC6"/>
-  <path id="route-suspend-tx-database" data-edge="suspend-tx-&gt;database" data-label="R2DBC statements" class="connector" d="M 980 846 L 1110 846" stroke="#C94D68"/>
-  <path id="route-read-suspend-tx" data-edge="read-&gt;suspend-tx" data-label="cache miss load" class="connector" d="M 280 1070 L 280 940 L 705 940 L 705 902" stroke="#3E9868"/>
-  <path id="route-write-through-suspend-tx" data-edge="write-through-&gt;suspend-tx" data-label="immediate DB write" class="connector" d="M 660 1070 L 660 902" stroke="#2E8F89"/>
-  <path id="route-write-behind-queue" data-edge="write-behind-&gt;queue" data-label="batch consumer flush" class="connector" d="M 1055 1070 L 1055 650 L 1295 650 L 1295 604" stroke="#B9851B"/>
-  <g id="node-caller" data-node="caller" transform="translate(135,250)">
-    <rect class="shape" x="0" y="0" width="330" height="86" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
-    <text class="card-title" x="165" y="24" text-anchor="middle" dominant-baseline="middle">Coroutine application code</text>
-    <text class="detail" x="165" y="43" text-anchor="middle" dominant-baseline="middle">get, put, putAll</text>
-    <text class="detail" x="165" y="62" text-anchor="middle" dominant-baseline="middle">invalidate, clear, close</text>
-  </g>
-  <g id="node-contract" data-node="contract" transform="translate(560,235)">
-    <rect class="shape" x="0" y="0" width="390" height="104" rx="12" fill="#EAF7EF" stroke="#58A978"/>
-    <text class="card-title" x="195" y="33" text-anchor="middle" dominant-baseline="middle">R2dbcCaffeineRepository</text>
-    <text class="detail" x="195" y="52" text-anchor="middle" dominant-baseline="middle">R2dbcCacheRepository contract</text>
-    <text class="detail" x="195" y="71" text-anchor="middle" dominant-baseline="middle">AsyncCache&lt;String,E&gt;</text>
-  </g>
-  <g id="node-abstract" data-node="abstract" transform="translate(1070,235)">
-    <rect class="shape" x="0" y="0" width="400" height="104" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
-    <text class="card-title" x="200" y="33" text-anchor="middle" dominant-baseline="middle">AbstractR2dbcCaffeineRepository</text>
-    <text class="detail" x="200" y="52" text-anchor="middle" dominant-baseline="middle">suspend DB hooks</text>
-    <text class="detail" x="200" y="71" text-anchor="middle" dominant-baseline="middle">write mode dispatch</text>
-  </g>
-  <g id="node-config" data-node="config" transform="translate(140,494)">
-    <rect class="shape" x="0" y="0" width="360" height="108" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
-    <text class="card-title" x="180" y="35" text-anchor="middle" dominant-baseline="middle">LocalCacheConfig</text>
-    <text class="detail" x="180" y="54" text-anchor="middle" dominant-baseline="middle">keyPrefix, TTL, maximumSize</text>
-    <text class="detail" x="180" y="73" text-anchor="middle" dominant-baseline="middle">WRITE_THROUGH / BEHIND</text>
-  </g>
-  <g id="node-cache" data-node="cache" transform="translate(610,494)">
-    <rect class="shape" x="0" y="0" width="380" height="118" rx="12" fill="#EAF7EF" stroke="#58A978"/>
-    <text class="card-title" x="190" y="30.5" text-anchor="middle" dominant-baseline="middle">Caffeine AsyncCache</text>
-    <text class="detail" x="190" y="49.5" text-anchor="middle" dominant-baseline="middle">in-process local cache</text>
-    <text class="detail" x="190" y="68.5" text-anchor="middle" dominant-baseline="middle">CompletableFuture backed</text>
-    <text class="detail" x="190" y="87.5" text-anchor="middle" dominant-baseline="middle">CacheMode.LOCAL</text>
-  </g>
-  <g id="node-queue" data-node="queue" transform="translate(1100,500)">
-    <rect class="shape" x="0" y="0" width="390" height="104" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
-    <text class="card-title" x="195" y="33" text-anchor="middle" dominant-baseline="middle">Write-behind Channel</text>
-    <text class="detail" x="195" y="52" text-anchor="middle" dominant-baseline="middle">lazy background consumer</text>
-    <text class="detail" x="195" y="71" text-anchor="middle" dominant-baseline="middle">batch flush and queueDepth</text>
-  </g>
-  <g id="node-table" data-node="table" transform="translate(140,805)">
-    <rect class="shape" x="0" y="0" width="330" height="86" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
-    <text class="card-title" x="165" y="24" text-anchor="middle" dominant-baseline="middle">Exposed IdTable&lt;ID&gt;</text>
-    <text class="detail" x="165" y="43" text-anchor="middle" dominant-baseline="middle">repository table</text>
-    <text class="detail" x="165" y="62" text-anchor="middle" dominant-baseline="middle">ResultRow.toEntity</text>
-  </g>
-  <g id="node-suspend-tx" data-node="suspend-tx" transform="translate(590,790)">
-    <rect class="shape" x="0" y="0" width="390" height="112" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
-    <text class="card-title" x="195" y="37" text-anchor="middle" dominant-baseline="middle">R2DBC suspendTransaction</text>
-    <text class="detail" x="195" y="56" text-anchor="middle" dominant-baseline="middle">selectAll/update/batchInsert</text>
-    <text class="detail" x="195" y="75" text-anchor="middle" dominant-baseline="middle">no JDBC transaction path</text>
-  </g>
-  <g id="node-database" data-node="database" transform="translate(1110,805)">
-    <rect class="shape" x="0" y="0" width="330" height="86" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
-    <text class="card-title" x="165" y="24" text-anchor="middle" dominant-baseline="middle">R2DBC database</text>
-    <text class="detail" x="165" y="43" text-anchor="middle" dominant-baseline="middle">H2, PostgreSQL, MySQL</text>
-    <text class="detail" x="165" y="62" text-anchor="middle" dominant-baseline="middle">non-blocking driver path</text>
-  </g>
-  <g id="node-read" data-node="read" transform="translate(140,1070)">
-    <rect class="shape" x="0" y="0" width="280" height="70" rx="12" fill="#EAF7EF" stroke="#58A978"/>
-    <text class="card-title" x="140" y="16" text-anchor="middle" dominant-baseline="middle">Read-through</text>
-    <text class="detail" x="140" y="35" text-anchor="middle" dominant-baseline="middle">miss loads from DB</text>
-    <text class="detail" x="140" y="54" text-anchor="middle" dominant-baseline="middle">findAll warms cache</text>
-  </g>
-  <g id="node-write-through" data-node="write-through" transform="translate(510,1070)">
-    <rect class="shape" x="0" y="0" width="300" height="70" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
-    <text class="card-title" x="150" y="16" text-anchor="middle" dominant-baseline="middle">Write-through</text>
-    <text class="detail" x="150" y="35" text-anchor="middle" dominant-baseline="middle">cache + DB together</text>
-    <text class="detail" x="150" y="54" text-anchor="middle" dominant-baseline="middle">suspend writeToDb</text>
-  </g>
-  <g id="node-write-behind" data-node="write-behind" transform="translate(900,1070)">
-    <rect class="shape" x="0" y="0" width="310" height="70" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
-    <text class="card-title" x="155" y="16" text-anchor="middle" dominant-baseline="middle">Write-behind</text>
-    <text class="detail" x="155" y="35" text-anchor="middle" dominant-baseline="middle">cache now, DB later</text>
-    <text class="detail" x="155" y="54" text-anchor="middle" dominant-baseline="middle">close waits final flush</text>
-  </g>
-  <g id="node-health" data-node="health" transform="translate(1300,1070)">
-    <rect class="shape" x="0" y="0" width="220" height="70" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
-    <text class="card-title" x="110" y="16" text-anchor="middle" dominant-baseline="middle">Consistency health</text>
-    <text class="detail" x="110" y="35" text-anchor="middle" dominant-baseline="middle">validateConsistency()</text>
-    <text class="detail" x="110" y="54" text-anchor="middle" dominant-baseline="middle">lastFlushError</text>
+
+  <g transform="translate(126 884)">
+    <rect x="0" y="0" width="1428" height="46" rx="14" fill="#eef3f4" stroke="#c2d1d4" stroke-width="2"/>
+    <text class="small" x="28" y="30">Auto-increment tables are update-only for new IDs; client-generated IDs may be inserted after a missed update.</text>
   </g>
 </svg>
