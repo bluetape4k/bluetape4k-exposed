@@ -1,10 +1,10 @@
-# exposed-bom
+# bluetape4k-exposed-bom
 
 [한국어](./README.ko.md) | English
 
-Maven BOM (Bill of Materials) for the Exposed extension ecosystem. Manages versions of all
-`io.github.bluetape4k.exposed:*` modules so consumers can declare dependencies without specifying
-individual versions.
+Maven BOM (Bill of Materials) for the Exposed extension ecosystem. It manages
+published `io.github.bluetape4k.exposed:bluetape4k-exposed-*` artifact versions
+so consumers can declare modules without repeating individual versions.
 
 ## Architecture
 
@@ -18,18 +18,18 @@ The BOM is a Gradle `java-platform` that publishes only `<dependencyManagement>`
 - Single source of truth for JetBrains Exposed extensions (JDBC + R2DBC)
 - Aggregated by `bluetape4k-dependencies` for cross-ecosystem version coordination
 
-## Modules Managed
+## Managed ArtifactIds
 
-| Group | Modules |
+| Group | ArtifactIds |
 |-------|---------|
-| Core | `exposed-core`, `exposed-dao` |
-| Drivers | `exposed-jdbc`, `exposed-r2dbc`, `exposed-jdbc-tests`, `exposed-r2dbc-tests` |
-| Cache | `exposed-cache`, `exposed-jdbc-{lettuce,redisson,caffeine}`, `exposed-r2dbc-{lettuce,redisson,caffeine}` |
-| Serialization | `exposed-fastjson2`, `exposed-jackson2`, `exposed-jackson3` |
-| Crypto | `exposed-tink` |
-| DB adapters | `exposed-{mysql8,postgresql,clickhouse,bigquery,duckdb,trino,measured,timefold-solver-persistence}` |
-| Spring Boot | `exposed-spring-boot-{jdbc,r2dbc}`, `exposed-spring-boot-batch` |
-| Utils | `exposed-batch` |
+| Core | `bluetape4k-exposed-core`, `bluetape4k-exposed-dao` |
+| Repository runtimes | `bluetape4k-exposed-jdbc`, `bluetape4k-exposed-r2dbc`, `bluetape4k-exposed-jdbc-tests`, `bluetape4k-exposed-r2dbc-tests` |
+| Cache decorators | `bluetape4k-exposed-cache`, `bluetape4k-exposed-jdbc-caffeine`, `bluetape4k-exposed-jdbc-lettuce`, `bluetape4k-exposed-jdbc-redisson`, `bluetape4k-exposed-r2dbc-caffeine`, `bluetape4k-exposed-r2dbc-lettuce`, `bluetape4k-exposed-r2dbc-redisson` |
+| Column codecs | `bluetape4k-exposed-jackson2`, `bluetape4k-exposed-jackson3`, `bluetape4k-exposed-fastjson2`, `bluetape4k-exposed-tink`, `bluetape4k-exposed-measured` |
+| Dialects and analytics | `bluetape4k-exposed-postgresql`, `bluetape4k-exposed-mysql8`, `bluetape4k-exposed-cockroachdb`, `bluetape4k-exposed-bigquery`, `bluetape4k-exposed-clickhouse`, `bluetape4k-exposed-trino`, `bluetape4k-exposed-starrocks`, `bluetape4k-exposed-duckdb` |
+| Persistence integration | `bluetape4k-exposed-timefold-solver-persistence` |
+| Spring Boot | `bluetape4k-exposed-spring-boot-jdbc`, `bluetape4k-exposed-spring-boot-r2dbc`, `bluetape4k-exposed-spring-boot-batch`, `bluetape4k-exposed-spring-modulith` |
+| Utils | `bluetape4k-exposed-batch` |
 
 > Note: `examples/*` and `*-demo` modules are excluded from the BOM constraints.
 
@@ -71,7 +71,7 @@ dependencies {
     <dependencies>
         <dependency>
             <groupId>io.github.bluetape4k.exposed</groupId>
-            <artifactId>exposed-bom</artifactId>
+            <artifactId>bluetape4k-exposed-bom</artifactId>
             <version>${exposed.version}</version>
             <type>pom</type>
             <scope>import</scope>
