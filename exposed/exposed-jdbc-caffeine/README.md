@@ -10,9 +10,13 @@ Exposed JDBC repository with Caffeine local (in-process) cache. No Redis depende
 
 ## Architecture
 
-![exposed jdbc caffeine Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-diagram-01.png)
+The architecture view shows where the in-process Caffeine cache wraps the JDBC repository contract, and where synchronous and suspend repositories enter Exposed transactions.
+
+![JDBC Caffeine local cache architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-diagram-01.png)
 
 ## Write Strategy Flows
+
+The sequence view focuses on the blocking repository path: read-through misses, write-through durability, write-behind queueing, and cache-only eviction.
 
 ![Write Strategy Flows diagram](../../docs/images/readme-diagrams/exposed-exposed-jdbc-caffeine-sequence-01.png)
 
