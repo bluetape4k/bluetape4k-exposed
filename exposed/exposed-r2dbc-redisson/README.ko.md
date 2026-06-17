@@ -2,19 +2,18 @@
 
 [English](./README.md) | 한국어
 
-Exposed R2DBC와 Redisson 캐시를 결합해 비동기 Read-Through/Write-Through 캐시 패턴을 구성하는 모듈입니다.
+Exposed R2DBC와 Redisson 캐시를 결합해 코루틴 기반 Read-Through, Write-Through, Write-Behind 캐시 패턴을 구성하는 모듈입니다.
 
 ## 개요
 
-`exposed-r2dbc-redisson`은 Exposed R2DBC(비동기)와 [Redisson](https://github.com/redisson/redisson) Redis 클라이언트를 통합하여, 비동기 환경에서 데이터베이스 조회 결과를 Redis에 캐싱하는 패턴을 쉽게 구현할 수 있도록 지원합니다. 모든 인터페이스는
-`suspend` 함수 기반이며 Kotlin Coroutines와 완벽하게 호환됩니다.
+`exposed-r2dbc-redisson`은 Exposed R2DBC와 [Redisson](https://github.com/redisson/redisson) Redis 클라이언트를 통합해, 코루틴 기반 Repository API를 유지하면서 데이터베이스 조회 결과를 Redis에 캐싱할 수 있게 합니다. Repository 연산은 `suspend` 함수로 제공하고, Redisson `MapLoaderAsync`와 `MapWriterAsync` 어댑터가 캐시 미스와 쓰기 경로를 Exposed R2DBC `suspendTransaction`으로 연결합니다.
 
 ### 주요 기능
 
 - **MapLoader/MapWriter 비동기 지원**: Redisson `AsyncMapLoader`/`AsyncMapWriter` 연동
     - `loadAllKeys()`는 PK 오름차순으로 안정적으로 순회
 - **Repository 추상화**: 캐시 + DB 접근 공통 패턴 (`R2dbcRedissonRepository`)
-- **Coroutines 네이티브**: 모든 연산이 `suspend` 함수
+- **Coroutines 네이티브 Repository API**: 캐시와 Repository 호출은 `suspend` 함수이고, Redisson SPI 어댑터는 내부적으로 async로 동작
 - **Near Cache 지원**: Local Cache + Redis 2-Tier 캐시
 - **Read-Through/Write-Through/Write-Behind**: 다양한 캐시 패턴 지원
 
@@ -32,13 +31,17 @@ dependencies {
 
 ## 아키텍처 개요
 
-![exposed r2dbc redisson Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-01.png)
+아키텍처 다이어그램은 suspend Repository API, Redisson map 소유권, cache-only invalidation 경로, R2DBC loader/writer 어댑터를 나눠 보여줍니다. 핵심 규칙은 명확합니다. 기본 invalidation은 캐시 상태만 제거하며, 데이터베이스 행 삭제는 `deleteFromDBOnInvalidate`가 활성화된 경우에만 수행됩니다.
+
+![R2DBC Redisson coroutine cache architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-01.png)
 
 ## 클래스 다이어그램
 
 ### R2DBC Redisson Repository 계층 구조
 
-![R2DBC Redisson Repository diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-02.png)
+클래스 다이어그램은 Repository 계약과 어댑터 책임만 다룹니다. 실제 Repository 구현체는 자신의 직렬화 가능한 DTO에 맞춰 table 매핑, ID 추출, row-to-entity 변환, write DSL hook을 제공합니다.
+
+![R2DBC Redisson repository hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-02.png)
 
 ## 기본 사용법
 
@@ -109,13 +112,15 @@ val freshUser = repo.findByIdFromDb(1L)
 val all = repo.findAll(limit = 100)
 
 // 캐시에 저장
-repo.put(user!!)
-repo.putAll(users)
-repo.upsertAll(users, batchSize = 100)
+user?.let { repo.put(it.id, it.copy(name = "Jane")) }
+val usersById = users.associateBy { it.id }
+repo.putAll(usersById, batchSize = 100)
+repo.upsertAll(usersById, batchSize = 100)
 
 // 캐시 무효화
 repo.invalidate(1L)
-repo.invalidateAll()
+repo.invalidateAll(listOf(1L, 2L, 3L))
+repo.clear()
 repo.invalidateByPattern("user:*")
 ```
 
@@ -146,21 +151,21 @@ val nearCacheConfig = RedissonCacheConfig.readOnly(
 
 ### Read-Through (R2DBC + suspend)
 
-캐시 미스 시 `R2dbcExposedEntityMapLoader`가 R2DBC `suspendTransaction`으로 DB에서 자동 로드합니다.
+`get(id)`나 `getAll(ids)`에서 캐시 미스가 발생하면 `R2dbcExposedEntityMapLoader`가 R2DBC `suspendTransaction`으로 데이터베이스 행을 로드합니다.
 
-![Read-Through (R2DBC + suspend) diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-01.png)
+![R2DBC Redisson read-through sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-01.png)
 
 ### Write-Through (R2DBC + suspend)
 
-`put()` 호출 시 `R2dbcExposedEntityMapWriter`가 R2DBC `suspendTransaction`으로 DB에 즉시 반영합니다.
+`WRITE_THROUGH` 모드에서는 `put(id, entity)`, `putAll(...)`, `upsertAll(...)` 호출이 Redisson `writerAsync`의 R2DBC `suspendTransaction` 쓰기를 기다린 뒤 반환됩니다.
 
-![Write-Through (R2DBC + suspend) diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-02.png)
+![R2DBC Redisson write-through sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-02.png)
 
 ### Write-Behind (R2DBC + suspend + 비동기 DB)
 
-`put()` 호출 즉시 응답하고, 이후 `R2dbcExposedEntityMapWriter`가 비동기 배치로 DB에 반영합니다.
+`WRITE_BEHIND` 모드에서는 `put(id, entity)`와 bulk write가 Redisson의 캐시 갱신 수락 후 반환됩니다. 데이터베이스 배치 쓰기는 이후에 반영되므로, read-after-write 내구성은 별도로 관찰해야 합니다.
 
-![Write-Behind (R2DBC + suspend + DB) diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-03.png)
+![R2DBC Redisson write-behind sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-03.png)
 
 ## R2dbcRedissonRepository 주요 메서드
 
@@ -172,11 +177,12 @@ val nearCacheConfig = RedissonCacheConfig.readOnly(
 | `findByIdFromDb(id)`                    | DB에서 직접 조회, 캐시 우회 (suspend)       |
 | `findAllFromDb(ids)`                    | DB에서 여러 엔티티 직접 조회 (suspend)       |
 | `findAll(limit, offset, sortBy, where)` | DB 조회 후 캐시 동기화 (suspend)          |
-| `put(entity)`                           | 캐시에 저장 (suspend)                  |
-| `putAll(entities, batchSize)`           | 캐시에 일괄 저장 (suspend)               |
+| `put(id, entity)`                       | 엔티티 하나를 캐시에 저장하며, writer 동작은 캐시 모드에 따라 달라짐 (suspend) |
+| `putAll(entities, batchSize)`           | ID-to-entity map을 캐시에 일괄 저장하며, writer 동작은 캐시 모드에 따라 달라짐 (suspend) |
 | `upsertAll(entities, batchSize)`        | 배치 map write 기반 명시적 벌크 캐시 upsert (suspend) |
-| `invalidate(vararg ids)`                | 캐시에서 제거 (suspend)                 |
-| `invalidateAll()`                       | 캐시 전체 비우기 (suspend)               |
+| `invalidate(id)`                        | 캐시 엔트리 하나를 제거하며, DB 삭제는 `deleteFromDBOnInvalidate` 설정 시에만 수행 (suspend) |
+| `invalidateAll(ids)`                    | 여러 캐시 엔트리를 제거하며, DB 삭제는 `deleteFromDBOnInvalidate` 설정 시에만 수행 (suspend) |
+| `clear()`                               | map 엔트리를 비우며, 기본 경로는 writer 없는 cache-only 제거를 사용 (suspend) |
 | `invalidateByPattern(pattern, count)`   | 패턴에 맞는 키 캐시 제거 (suspend)          |
 
 ## 캐시 설정 상수 (`RedissonCacheConfig`)
@@ -200,8 +206,6 @@ val nearCacheConfig = RedissonCacheConfig.readOnly(
 |--------------------------------------|------------------------------------|
 | `R2dbcRedissonRepository.kt`         | R2DBC 비동기 캐시 Repository 인터페이스      |
 | `AbstractR2dbcRedissonRepository.kt` | R2DBC 비동기 캐시 Repository 추상 클래스     |
-| `R2dbcCacheRepository.kt`            | (Deprecated) 구 R2DBC 캐시 Repository |
-| `AbstractR2dbcCacheRepository.kt`    | (Deprecated) 구 R2DBC 캐시 추상 클래스     |
 
 ### Map (map/)
 
@@ -216,7 +220,7 @@ val nearCacheConfig = RedissonCacheConfig.readOnly(
 ## 테스트
 
 ```bash
-./gradlew :exposed-r2dbc-redisson:test
+./gradlew :bluetape4k-exposed-r2dbc-redisson:test
 ```
 
 ## 참고

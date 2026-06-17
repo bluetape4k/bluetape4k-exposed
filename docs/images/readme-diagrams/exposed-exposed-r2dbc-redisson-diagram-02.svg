@@ -1,103 +1,126 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1366" height="1100" viewBox="0 0 1366 1100" role="img" aria-label="R2DBC Redisson Repository Hierarchy">
-<defs>
-  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="10" markerHeight="8" refX="8.5" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 8.5 4 L 1 7" fill="none" stroke="#758297" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="11" markerHeight="10" refX="9.5" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 0.5 1 L 9.5 5 L 0.5 9 Z" fill="#ffffff" stroke="#758297" stroke-width="1.7"/></marker>
-  <style>
-    .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
-    .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
-    .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
-    .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
-    .smallLabel{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:21px;font-weight:400;fill:#102033}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
-    .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .strong{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .line{stroke:#758297;stroke-width:2.1;fill:none;marker-end:url(#openArrow)}
-    .plainLine{stroke:#758297;stroke-width:2.1;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
-    .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-    .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
-  </style>
-</defs>
-<rect class="canvas" width="1366" height="1100"/>
-<rect class="frame" x="32" y="28" width="1302" height="1044" rx="28"/>
-<text class="title" x="66" y="82">R2DBC Redisson Repository Hierarchy</text>
-<text class="subtitle" x="70" y="118">UML classes from the original Mermaid source</text>
-<path class="inheritLine" d="M1103 584 L1103 525 L263 525 L263 376"/>
-<path class="inheritLine" d="M263 584 L263 517 L683 517 L683 334"/>
-<path class="line" d="M683 584 L683 509 L263 509 L263 376"/>
-<path class="line" d="M683 584 L683 334"/>
-<path class="implLine" d="M683 584 L683 493 L1103 493 L1103 434"/>
-<g transform="translate(88,180)">
-  <rect class="card" x="0" y="0" width="350" height="196" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <line class="compartment" x1="0" y1="78" x2="350" y2="78" stroke="#5B8DEF"/>
-  <text class="small" x="175" y="26" text-anchor="middle">«abstract»</text>
-  <text class="label" x="175" y="61" text-anchor="middle">R2dbcEntityMapWriterID_E</text>
-  <text class="mono" x="18" y="108">+write(map: Map~ID, E~):</text>
-<text class="mono" x="18" y="129">CompletableFuture~Void~</text>
-<text class="mono" x="18" y="150">+delete(keys: Collection~Any~):</text>
-<text class="mono" x="18" y="171">CompletableFuture~Void~</text>
-</g>
-<g transform="translate(508,180)">
-  <rect class="card" x="0" y="0" width="350" height="154" rx="5" fill="#EAF7EF" stroke="#58A978"/>
-  <line class="compartment" x1="0" y1="78" x2="350" y2="78" stroke="#58A978"/>
-  <text class="small" x="175" y="26" text-anchor="middle">«abstract»</text>
-  <text class="label" x="175" y="61" text-anchor="middle">R2dbcEntityMapLoaderID_E</text>
-  <text class="mono" x="18" y="108">+load(key: ID): CompletableFuture~E~</text>
-<text class="mono" x="18" y="129">+loadAllKeys(): AsyncIterator~ID~</text>
-</g>
-<g transform="translate(928,180)">
-  <rect class="card" x="0" y="0" width="350" height="254" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
-  <line class="compartment" x1="0" y1="94" x2="350" y2="94" stroke="#D6A441"/>
-  <text class="small" x="175" y="26" text-anchor="middle">«interface»</text>
-  <text class="label" x="175" y="56.5" text-anchor="middle">R2dbc Redisson Repository</text>
-<text class="label" x="175" y="81.5" text-anchor="middle">ID_E</text>
-  <text class="mono" x="18" y="124">+cacheName: String</text>
-<text class="mono" x="18" y="145">+table: IdTable~ID~</text>
-<text class="mono" x="18" y="166">+cache: RMap~ID, E~</text>
-<text class="mono" x="18" y="187">+extractId(entity: E): ID</text>
-<text class="mono" x="18" y="208">+toEntity(ResultRow): E [suspend]</text>
-<text class="mono" x="18" y="229">+exists(id: ID): Boolean [suspend]</text>
-</g>
-<g transform="translate(88,584)">
-  <rect class="card" x="0" y="0" width="350" height="212" rx="5" fill="#FDECEF" stroke="#DC6B82"/>
-  <line class="compartment" x1="0" y1="94" x2="350" y2="94" stroke="#DC6B82"/>
-  <text class="small" x="175" y="26" text-anchor="middle"></text>
-  <text class="label" x="175" y="56.5" text-anchor="middle">R2dbc Exposed Entity Map</text>
-<text class="label" x="175" y="81.5" text-anchor="middle">Loader ID_E</text>
-  <text class="mono" x="18" y="124">-entityTable: IdTable~ID~</text>
-<text class="mono" x="18" y="145">-scope: CoroutineScope</text>
-<text class="mono" x="18" y="166">-batchSize: Int</text>
-<text class="mono" x="18" y="187">-toEntity: suspend ResultRow.() -&gt; E</text>
-</g>
-<g transform="translate(508,584)">
-  <rect class="card" x="0" y="0" width="350" height="296" rx="5" fill="#E9F7F6" stroke="#45A7A1"/>
-  <line class="compartment" x1="0" y1="94" x2="350" y2="94" stroke="#45A7A1"/>
-  <text class="small" x="175" y="26" text-anchor="middle">«abstract»</text>
-  <text class="label" x="175" y="56.5" text-anchor="middle">Abstract R2dbc Redisson</text>
-<text class="label" x="175" y="81.5" text-anchor="middle">Repository ID_E</text>
-  <text class="mono" x="18" y="124">+redissonClient: RedissonClient</text>
-<text class="mono" x="18" y="145">+cacheName: String</text>
-<text class="mono" x="18" y="166">#config: RedissonCacheConfig</text>
-<text class="mono" x="18" y="187">#scope: CoroutineScope</text>
-<text class="mono" x="18" y="208">#r2dbcEntityMapLoader:</text>
-<text class="mono" x="18" y="229">R2dbcEntityMapLoader~ID, E~</text>
-<text class="mono" x="18" y="250">#r2dbcEntityMapWriter:</text>
-<text class="mono" x="18" y="271">R2dbcEntityMapWriter~ID, E~ ?</text>
-</g>
-<g transform="translate(928,584)">
-  <rect class="card" x="0" y="0" width="350" height="275" rx="5" fill="#F1ECFF" stroke="#8A72D6"/>
-  <line class="compartment" x1="0" y1="94" x2="350" y2="94" stroke="#8A72D6"/>
-  <text class="small" x="175" y="26" text-anchor="middle"></text>
-  <text class="label" x="175" y="56.5" text-anchor="middle">R2dbc Exposed Entity Map</text>
-<text class="label" x="175" y="81.5" text-anchor="middle">Writer ID_E</text>
-  <text class="mono" x="18" y="124">-entityTable: IdTable~ID~</text>
-<text class="mono" x="18" y="145">-scope: CoroutineScope</text>
-<text class="mono" x="18" y="166">-updateBody: (UpdateStatement, E) -&gt; Unit</text>
-<text class="mono" x="18" y="187">-batchInsertBody: BatchInsertStatement.(E)</text>
-<text class="mono" x="18" y="208">-&gt; Unit</text>
-<text class="mono" x="18" y="229">-deleteFromDBOnInvalidate: Boolean</text>
-<text class="mono" x="18" y="250">-writeMode: WriteMode</text>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" width="1760" height="1500" viewBox="0 0 1760 1500" role="img" aria-labelledby="title desc">
+  <title id="title">R2DBC Redisson Repository Hierarchy</title>
+  <desc id="desc">R2DBC Redisson class hierarchy showing repository contracts, the abstract base, Redisson async map contracts, and R2DBC loader and writer adapters.</desc>
+  <defs>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <marker id="arrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="context-stroke"/></marker>
+    <marker id="generalizationArrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#FFFFFF" stroke="context-stroke" stroke-width="1.4" stroke-dasharray="none"/></marker>
+    <style>
+      .canvas{fill:#F6F9FC}.decor{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
+      .innerFrame{fill:#FBFDFF;stroke:#D9E4EF;stroke-width:2}
+      .title{font-family:"Architects Daughter";font-size:46px;fill:#22344A;font-weight:400}
+      .subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476;font-weight:400}
+      .group{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}.group-title{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .card-title{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}.detail{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}
+      .small{font-family:"Comic Mono";font-size:13px;fill:#627184;font-weight:400}.shape{filter:url(#shadow);stroke-width:2}
+      .connector{fill:none;stroke-width:2.6;marker-end:url(#arrow);stroke-linejoin:round;stroke-linecap:round}.generalization{marker-end:url(#generalizationArrow)}.dashed{stroke-dasharray:7 6}
+      .pill{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1}
+    </style>
+  </defs>
+  <rect class="canvas" width="1760" height="1500"/>
+  <rect class="decor" x="44" y="36" width="1672" height="1428" rx="34"/>
+  <rect class="innerFrame" x="82" y="154" width="1596" height="1204" rx="24"/>
+  <text class="title" x="72" y="88">R2DBC Redisson Repository Hierarchy</text>
+  <text class="subtitle" x="76" y="121">Coroutine repositories extend the R2DBC Redisson contract while MapLoaderAsync and MapWriterAsync adapters bridge Redisson SPI calls into Exposed R2DBC transactions.</text>
+  <g id="group-contracts">
+    <rect class="group" x="92" y="150" width="1576" height="230" rx="18"/>
+    <text class="group-title" x="122" y="174" dominant-baseline="middle">Repository and Redisson async contracts</text>
+  </g>
+  <g id="group-repository">
+    <rect class="group" x="92" y="420" width="1576" height="210" rx="18"/>
+    <text class="group-title" x="122" y="444" dominant-baseline="middle">Coroutine repository base</text>
+  </g>
+  <g id="group-adapters">
+    <rect class="group" x="92" y="670" width="1576" height="460" rx="18"/>
+    <text class="group-title" x="122" y="694" dominant-baseline="middle">R2DBC map adapters</text>
+  </g>
+  <g id="group-note">
+    <rect class="group" x="92" y="1170" width="1576" height="160" rx="18"/>
+    <text class="group-title" x="122" y="1194" dominant-baseline="middle">Reader caveat</text>
+  </g>
+  <path id="route-abstract-repo-repo-api" data-edge="abstract-repo-&gt;repo-api" data-label="implements suspend contract" class="connector generalization" d="M 800 495 L 800 333" stroke="#755BC6"/>
+  <path id="route-abstract-repo-config" data-edge="abstract-repo-&gt;config" data-label="reads cache policy" class="connector" d="M 1070 549 L 1150 549" stroke="#B9851B"/>
+  <path id="route-entity-loader-loader-api" data-edge="entity-loader-&gt;loader-api" data-label="implements" class="connector generalization" d="M 315 855 L 315 832" stroke="#4F83BF"/>
+  <path id="route-entity-writer-writer-api" data-edge="entity-writer-&gt;writer-api" data-label="implements" class="connector generalization" d="M 720 855 L 720 832" stroke="#C94D68"/>
+  <path id="route-exposed-loader-entity-loader" data-edge="exposed-loader-&gt;entity-loader" data-label="extends" class="connector generalization" d="M 315 980 L 315 959" stroke="#2E8F89"/>
+  <path id="route-exposed-writer-entity-writer" data-edge="exposed-writer-&gt;entity-writer" data-label="extends" class="connector generalization" d="M 720 980 L 720 959" stroke="#B9851B"/>
+  <path id="route-abstract-repo-rmap" data-edge="abstract-repo-&gt;rmap" data-label="owns cache map" class="connector" d="M 800 495 L 800 400 L 1220 400 L 1220 330" stroke="#2E8F89"/>
+  <path id="route-exposed-loader-r2dbc-dsl" data-edge="exposed-loader-&gt;r2dbc-dsl" data-label="uses SELECT" class="connector" d="M 315 1084 L 315 1110 L 1255 1110 L 1255 1022" stroke="#2E8F89"/>
+  <path id="route-exposed-writer-r2dbc-dsl" data-edge="exposed-writer-&gt;r2dbc-dsl" data-label="uses write/delete DSL" class="connector" d="M 720 1084 L 720 1128 L 1255 1128 L 1255 1022" stroke="#B9851B"/>
+  <g id="node-repo-api" data-node="repo-api" transform="translate(420,225)">
+    <rect class="shape" x="0" y="0" width="440" height="108" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="220" y="35" text-anchor="middle" dominant-baseline="middle">R2dbcRedissonRepository&lt;ID, E&gt;</text>
+    <text class="detail" x="220" y="54" text-anchor="middle" dominant-baseline="middle">suspend cache contract</text>
+    <text class="detail" x="220" y="73" text-anchor="middle" dominant-baseline="middle">RMap&lt;ID, E?&gt; cache</text>
+  </g>
+  <g id="node-rmap" data-node="rmap" transform="translate(1040,238)">
+    <rect class="shape" x="0" y="0" width="360" height="92" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="180" y="27" text-anchor="middle" dominant-baseline="middle">Redisson RMap&lt;ID, E?&gt;</text>
+    <text class="detail" x="180" y="46" text-anchor="middle" dominant-baseline="middle">getAsync, putAllAsync</text>
+    <text class="detail" x="180" y="65" text-anchor="middle" dominant-baseline="middle">fastRemoveAsync</text>
+  </g>
+  <g id="node-abstract-repo" data-node="abstract-repo" transform="translate(530,495)">
+    <rect class="shape" x="0" y="0" width="540" height="108" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="270" y="35" text-anchor="middle" dominant-baseline="middle">AbstractR2dbcRedissonRepository</text>
+    <text class="detail" x="270" y="54" text-anchor="middle" dominant-baseline="middle">implements repository</text>
+    <text class="detail" x="270" y="73" text-anchor="middle" dominant-baseline="middle">creates loaderAsync/writerAsync map</text>
+  </g>
+  <g id="node-config" data-node="config" transform="translate(1150,502)">
+    <rect class="shape" x="0" y="0" width="360" height="92" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <text class="card-title" x="180" y="27" text-anchor="middle" dominant-baseline="middle">RedissonCacheConfig</text>
+    <text class="detail" x="180" y="46" text-anchor="middle" dominant-baseline="middle">read-only or read-write</text>
+    <text class="detail" x="180" y="65" text-anchor="middle" dominant-baseline="middle">near cache and delete policy</text>
+  </g>
+  <g id="node-loader-api" data-node="loader-api" transform="translate(135,740)">
+    <rect class="shape" x="0" y="0" width="350" height="92" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <text class="card-title" x="175" y="27" text-anchor="middle" dominant-baseline="middle">MapLoaderAsync&lt;ID, E&gt;</text>
+    <text class="detail" x="175" y="46" text-anchor="middle" dominant-baseline="middle">Redisson read-through SPI</text>
+    <text class="detail" x="175" y="65" text-anchor="middle" dominant-baseline="middle">CompletionStage result</text>
+  </g>
+  <g id="node-writer-api" data-node="writer-api" transform="translate(540,740)">
+    <rect class="shape" x="0" y="0" width="350" height="92" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
+    <text class="card-title" x="175" y="27" text-anchor="middle" dominant-baseline="middle">MapWriterAsync&lt;ID, E&gt;</text>
+    <text class="detail" x="175" y="46" text-anchor="middle" dominant-baseline="middle">Redisson write SPI</text>
+    <text class="detail" x="175" y="65" text-anchor="middle" dominant-baseline="middle">CompletionStage result</text>
+  </g>
+  <g id="node-entity-loader" data-node="entity-loader" transform="translate(135,855)">
+    <rect class="shape" x="0" y="0" width="360" height="104" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <text class="card-title" x="180" y="33" text-anchor="middle" dominant-baseline="middle">R2dbcEntityMapLoader</text>
+    <text class="detail" x="180" y="52" text-anchor="middle" dominant-baseline="middle">suspendTransaction load</text>
+    <text class="detail" x="180" y="71" text-anchor="middle" dominant-baseline="middle">Channel AsyncIterator keys</text>
+  </g>
+  <g id="node-entity-writer" data-node="entity-writer" transform="translate(540,855)">
+    <rect class="shape" x="0" y="0" width="360" height="104" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
+    <text class="card-title" x="180" y="33" text-anchor="middle" dominant-baseline="middle">R2dbcEntityMapWriter</text>
+    <text class="detail" x="180" y="52" text-anchor="middle" dominant-baseline="middle">single suspend transaction</text>
+    <text class="detail" x="180" y="71" text-anchor="middle" dominant-baseline="middle">write/delete delegates</text>
+  </g>
+  <g id="node-exposed-loader" data-node="exposed-loader" transform="translate(135,980)">
+    <rect class="shape" x="0" y="0" width="360" height="104" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="180" y="33" text-anchor="middle" dominant-baseline="middle">R2dbcExposedEntityMapLoader</text>
+    <text class="detail" x="180" y="52" text-anchor="middle" dominant-baseline="middle">IdTable SELECT</text>
+    <text class="detail" x="180" y="71" text-anchor="middle" dominant-baseline="middle">batched ordered key scan</text>
+  </g>
+  <g id="node-exposed-writer" data-node="exposed-writer" transform="translate(540,980)">
+    <rect class="shape" x="0" y="0" width="360" height="104" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <text class="card-title" x="180" y="33" text-anchor="middle" dominant-baseline="middle">R2dbcExposedEntityMapWriter</text>
+    <text class="detail" x="180" y="52" text-anchor="middle" dominant-baseline="middle">UPDATE or batchInsert</text>
+    <text class="detail" x="180" y="71" text-anchor="middle" dominant-baseline="middle">optional DB delete</text>
+  </g>
+  <g id="node-r2dbc-dsl" data-node="r2dbc-dsl" transform="translate(1045,918)">
+    <rect class="shape" x="0" y="0" width="420" height="104" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
+    <text class="card-title" x="210" y="33" text-anchor="middle" dominant-baseline="middle">Exposed R2DBC DSL</text>
+    <text class="detail" x="210" y="52" text-anchor="middle" dominant-baseline="middle">ResultRow.toEntity</text>
+    <text class="detail" x="210" y="71" text-anchor="middle" dominant-baseline="middle">UpdateStatement, BatchInsert</text>
+  </g>
+  <g id="node-caveat" data-node="caveat" transform="translate(240,1242)">
+    <rect class="shape" x="0" y="0" width="1280" height="58" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
+    <text class="card-title" x="640" y="19.5" text-anchor="middle" dominant-baseline="middle">User repositories extend the abstract base</text>
+    <text class="detail" x="640" y="38.5" text-anchor="middle" dominant-baseline="middle">Concrete repositories provide table, extractId(), ResultRow.toEntity(), updateEntity(), and insertEntity() for their serializable DTO.</text>
+  </g>
+  <g transform="translate(76,1408)">
+    <rect class="pill" x="0" y="0" width="1608" height="48" rx="10"/>
+    <text class="small" x="804" y="18" text-anchor="middle" dominant-baseline="middle">Concrete repositories provide table, extractId(), ResultRow.toEntity(), updateEntity(), and insertEntity().</text>
+    <text class="small" x="804" y="35" text-anchor="middle" dominant-baseline="middle">MapLoaderAsync and MapWriterAsync stay Redisson-facing; R2DBC work happens inside suspendTransaction.</text>
+  </g>
 </svg>

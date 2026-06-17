@@ -2,19 +2,18 @@
 
 English | [한국어](./README.ko.md)
 
-Combines Exposed R2DBC with Redisson caching to implement asynchronous Read-Through/Write-Through cache patterns.
+Combines Exposed R2DBC with Redisson caching to implement coroutine-friendly Read-Through, Write-Through, and Write-Behind cache patterns.
 
 ## Overview
 
-`exposed-r2dbc-redisson` integrates Exposed R2DBC (asynchronous) with the [Redisson](https://github.com/redisson/redisson) Redis client, making it easy to cache database query results in Redis within an async environment. All interfaces are based on
-`suspend` functions and are fully compatible with Kotlin Coroutines.
+`exposed-r2dbc-redisson` integrates Exposed R2DBC with the [Redisson](https://github.com/redisson/redisson) Redis client, making it practical to cache database query results in Redis without leaving a coroutine-based repository API. Repository operations are `suspend` functions, while Redisson `MapLoaderAsync` and `MapWriterAsync` adapters bridge cache misses and writes into Exposed R2DBC `suspendTransaction` blocks.
 
 ### Key Features
 
 - **Async MapLoader/MapWriter support**: Integration with Redisson `AsyncMapLoader`/`AsyncMapWriter`
     - `loadAllKeys()` iterates reliably in ascending primary key order
 - **Repository abstraction**: Common cache + DB access pattern (`R2dbcRedissonRepository`)
-- **Coroutines-native**: All operations are `suspend` functions
+- **Coroutines-native repository API**: Cache and repository calls are `suspend` functions; Redisson SPI adapters remain async internally
 - **Near Cache support**: Two-tier Local Cache + Redis caching
 - **Read-Through/Write-Through/Write-Behind**: Multiple cache patterns supported
 
@@ -32,13 +31,17 @@ dependencies {
 
 ## Architecture Overview
 
-![Architecture Overview diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-01.png)
+The architecture view separates the suspend repository API, Redisson map ownership, cache-only invalidation path, and R2DBC loader/writer adapters. It also highlights the main durability rule: invalidation removes cache state by default and deletes database rows only when `deleteFromDBOnInvalidate` is enabled.
+
+![R2DBC Redisson coroutine cache architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-01.png)
 
 ## Class Diagrams
 
 ### R2DBC Redisson Repository Hierarchy
 
-![R2DBC Redisson Repository Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-02.png)
+The class diagram is limited to repository contracts and adapter responsibilities. Concrete repositories provide the table mapping, ID extraction, row-to-entity mapping, and write DSL hooks for their own serializable DTOs.
+
+![R2DBC Redisson repository hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-diagram-02.png)
 
 ## Basic Usage
 
@@ -109,13 +112,15 @@ val freshUser = repo.findByIdFromDb(1L)
 val all = repo.findAll(limit = 100)
 
 // Store in cache
-repo.put(user!!)
-repo.putAll(users)
-repo.upsertAll(users, batchSize = 100)
+user?.let { repo.put(it.id, it.copy(name = "Jane")) }
+val usersById = users.associateBy { it.id }
+repo.putAll(usersById, batchSize = 100)
+repo.upsertAll(usersById, batchSize = 100)
 
 // Invalidate cache
 repo.invalidate(1L)
-repo.invalidateAll()
+repo.invalidateAll(listOf(1L, 2L, 3L))
+repo.clear()
 repo.invalidateByPattern("user:*")
 ```
 
@@ -146,21 +151,21 @@ val nearCacheConfig = RedissonCacheConfig.readOnly(
 
 ### Read-Through (R2DBC + suspend)
 
-On a cache miss, `R2dbcExposedEntityMapLoader` automatically loads from the DB via R2DBC `suspendTransaction`.
+On `get(id)` or `getAll(ids)`, a cache miss invokes `R2dbcExposedEntityMapLoader`, which loads rows from the database through R2DBC `suspendTransaction`.
 
-![Read-Through (R2DBC + suspend) diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-01.png)
+![R2DBC Redisson read-through sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-01.png)
 
 ### Write-Through (R2DBC + suspend)
 
-On `put()`, `R2dbcExposedEntityMapWriter` immediately persists to DB via R2DBC `suspendTransaction`.
+In `WRITE_THROUGH` mode, `put(id, entity)`, `putAll(...)`, and `upsertAll(...)` wait for Redisson `writerAsync` to complete its R2DBC `suspendTransaction` write before the repository call resumes.
 
-![Write-Through (R2DBC + suspend) diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-02.png)
+![R2DBC Redisson write-through sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-02.png)
 
 ### Write-Behind (R2DBC + suspend + async DB)
 
-On `put()`, immediately returns and then `R2dbcExposedEntityMapWriter` asynchronously batch-persists to the DB.
+In `WRITE_BEHIND` mode, `put(id, entity)` and bulk writes return after Redisson accepts the cache update. The database batch write is eventual, so read-after-write durability must be observed separately.
 
-![Write-Behind (R2DBC + suspend + async DB) diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-03.png)
+![R2DBC Redisson write-behind sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-redisson-sequence-03.png)
 
 ## R2dbcRedissonRepository Key Methods
 
@@ -172,11 +177,12 @@ On `put()`, immediately returns and then `R2dbcExposedEntityMapWriter` asynchron
 | `findByIdFromDb(id)`                    | Bypass cache, query DB directly (suspend)                  |
 | `findAllFromDb(ids)`                    | Bypass cache, batch query DB (suspend)                     |
 | `findAll(limit, offset, sortBy, where)` | Load from DB and sync cache (suspend)                      |
-| `put(entity)`                           | Store in cache (suspend)                                   |
-| `putAll(entities, batchSize)`           | Batch store in cache (suspend)                             |
+| `put(id, entity)`                       | Store one entity in cache; writer behavior depends on cache mode (suspend) |
+| `putAll(entities, batchSize)`           | Store an ID-to-entity map in cache; writer behavior depends on cache mode (suspend) |
 | `upsertAll(entities, batchSize)`        | Explicit bulk cache upsert with batched map writes (suspend) |
-| `invalidate(vararg ids)`                | Remove from cache (suspend)                                |
-| `invalidateAll()`                       | Clear all cache entries (suspend)                          |
+| `invalidate(id)`                        | Remove one cache entry; database delete is opt-in via `deleteFromDBOnInvalidate` (suspend) |
+| `invalidateAll(ids)`                    | Remove multiple cache entries; database delete is opt-in via `deleteFromDBOnInvalidate` (suspend) |
+| `clear()`                               | Clear map entries; the default path uses writerless cache-only removal (suspend) |
 | `invalidateByPattern(pattern, count)`   | Remove cache entries matching a pattern (suspend)          |
 
 ## Cache Configuration Constants (`RedissonCacheConfig`)
@@ -200,8 +206,6 @@ Commonly used cache mode constants are provided as named constants.
 |--------------------------------------|------------------------------------------------|
 | `R2dbcRedissonRepository.kt`         | R2DBC async cache Repository interface         |
 | `AbstractR2dbcRedissonRepository.kt` | R2DBC async cache Repository abstract class    |
-| `R2dbcCacheRepository.kt`            | (Deprecated) Legacy R2DBC cache Repository     |
-| `AbstractR2dbcCacheRepository.kt`    | (Deprecated) Legacy R2DBC cache abstract class |
 
 ### Map (map/)
 
@@ -216,7 +220,7 @@ Commonly used cache mode constants are provided as named constants.
 ## Testing
 
 ```bash
-./gradlew :exposed-r2dbc-redisson:test
+./gradlew :bluetape4k-exposed-r2dbc-redisson:test
 ```
 
 ## References

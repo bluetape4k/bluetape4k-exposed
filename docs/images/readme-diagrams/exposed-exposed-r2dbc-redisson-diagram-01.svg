@@ -1,61 +1,154 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1754" height="596" viewBox="0 0 1754 596" role="img" aria-label="Architecture Overview">
-<defs>
-  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="10" markerHeight="8" refX="8.5" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 8.5 4 L 1 7" fill="none" stroke="#758297" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="11" markerHeight="10" refX="9.5" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 0.5 1 L 9.5 5 L 0.5 9 Z" fill="#ffffff" stroke="#758297" stroke-width="1.7"/></marker>
-  <style>
-    .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
-    .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
-    .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
-    .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
-    .smallLabel{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:21px;font-weight:400;fill:#102033}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
-    .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .strong{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .line{stroke:#758297;stroke-width:2.1;fill:none;marker-end:url(#openArrow)}
-    .plainLine{stroke:#758297;stroke-width:2.1;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
-    .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-    .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
-  </style>
-</defs>
-<rect class="canvas" width="1754" height="596"/>
-<rect class="frame" x="32" y="28" width="1690" height="540" rx="28"/>
-<text class="title" x="66" y="82">Architecture Overview</text>
-<text class="subtitle" x="70" y="118">UML classes from the original Mermaid source</text>
-<path class="line" d="M1082 292 L1082 414 L672 414 L672 180"/>
-<g transform="translate(92,180)">
-  <rect class="card" x="0" y="0" width="340" height="175" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#5B8DEF"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="61" text-anchor="middle">RedissonNearCacheV</text>
-  <text class="mono" x="18" y="108">+get(key): V?</text>
-<text class="mono" x="18" y="129">+put(key, value)</text>
-<text class="mono" x="18" y="150">+invalidate(key)</text>
-</g>
-<g transform="translate(502,180)">
-  <rect class="card" x="0" y="0" width="340" height="112" rx="5" fill="#EAF7EF" stroke="#58A978"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#58A978"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="61" text-anchor="middle">RedissonNearCache</text>
-
-</g>
-<g transform="translate(912,180)">
-  <rect class="card" x="0" y="0" width="340" height="112" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#D6A441"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="61" text-anchor="middle">RedissonR2dbcRepository</text>
-
-</g>
-<g transform="translate(1322,180)">
-  <rect class="card" x="0" y="0" width="340" height="196" rx="5" fill="#FDECEF" stroke="#DC6B82"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#DC6B82"/>
-  <text class="small" x="170" y="26" text-anchor="middle">«abstractSuspend»</text>
-  <text class="label" x="170" y="61" text-anchor="middle">RedissonR2dbcRepositoryE</text>
-  <text class="mono" x="18" y="108">-nearCache: RedissonNearCache</text>
-<text class="mono" x="18" y="129">+findByIdOrNull(id): E?</text>
-<text class="mono" x="18" y="150">+findAll(): Flow~E~</text>
-<text class="mono" x="18" y="171">+save(entity): E</text>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" width="1720" height="1450" viewBox="0 0 1720 1450" role="img" aria-labelledby="title desc">
+  <title id="title">R2DBC Redisson Coroutine Cache Architecture</title>
+  <desc id="desc">R2DBC Redisson cache architecture showing suspend repository calls, Redisson async maps, cache-only invalidation, and Exposed R2DBC loader and writer paths.</desc>
+  <defs>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <marker id="arrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="context-stroke"/></marker>
+    <marker id="generalizationArrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#FFFFFF" stroke="context-stroke" stroke-width="1.4" stroke-dasharray="none"/></marker>
+    <style>
+      .canvas{fill:#F6F9FC}.decor{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
+      .innerFrame{fill:#FBFDFF;stroke:#D9E4EF;stroke-width:2}
+      .title{font-family:"Architects Daughter";font-size:46px;fill:#22344A;font-weight:400}
+      .subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476;font-weight:400}
+      .group{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}.group-title{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .card-title{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}.detail{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}
+      .small{font-family:"Comic Mono";font-size:13px;fill:#627184;font-weight:400}.shape{filter:url(#shadow);stroke-width:2}
+      .connector{fill:none;stroke-width:2.6;marker-end:url(#arrow);stroke-linejoin:round;stroke-linecap:round}.generalization{marker-end:url(#generalizationArrow)}.dashed{stroke-dasharray:7 6}
+      .pill{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1}
+    </style>
+  </defs>
+  <rect class="canvas" width="1720" height="1450"/>
+  <rect class="decor" x="44" y="36" width="1632" height="1378" rx="34"/>
+  <rect class="innerFrame" x="82" y="154" width="1556" height="1154" rx="24"/>
+  <text class="title" x="72" y="88">R2DBC Redisson Coroutine Cache Architecture</text>
+  <text class="subtitle" x="76" y="121">Suspending repository calls await Redisson async maps while loaderAsync and writerAsync bridge cache misses and writes into Exposed R2DBC transactions.</text>
+  <g id="group-api">
+    <rect class="group" x="92" y="150" width="1536" height="250" rx="18"/>
+    <text class="group-title" x="122" y="174" dominant-baseline="middle">Coroutine repository surface</text>
+  </g>
+  <g id="group-cache">
+    <rect class="group" x="92" y="440" width="1536" height="330" rx="18"/>
+    <text class="group-title" x="122" y="464" dominant-baseline="middle">Redisson async map and cache policy</text>
+  </g>
+  <g id="group-persistence">
+    <rect class="group" x="92" y="810" width="1536" height="330" rx="18"/>
+    <text class="group-title" x="122" y="834" dominant-baseline="middle">R2DBC loader and writer path</text>
+  </g>
+  <g id="group-modes">
+    <rect class="group" x="92" y="1180" width="1536" height="150" rx="18"/>
+    <text class="group-title" x="122" y="1204" dominant-baseline="middle">Write mode and invalidation caveats</text>
+  </g>
+  <path id="route-caller-repo" data-edge="caller-&gt;repo" data-label="suspend API" class="connector" d="M 430 293 L 520 293" stroke="#4F83BF"/>
+  <path id="route-repo-base" data-edge="repo-&gt;base" data-label="implemented by" class="connector" d="M 880 273 L 1030 273" stroke="#755BC6"/>
+  <path id="route-base-remote-map" data-edge="base-&gt;remote-map" data-label="creates when remote" class="connector" d="M 1245 321 L 1245 490 L 740 490 L 740 520" stroke="#2E8F89"/>
+  <path id="route-base-near-map" data-edge="base-&gt;near-map" data-label="creates when near cache" class="connector" d="M 1245 321 L 1245 410 L 500 410 L 500 698 L 560 698" stroke="#3E9868"/>
+  <path id="route-config-remote-map" data-edge="config-&gt;remote-map" data-label="cache mode" class="connector" d="M 480 592 L 560 592" stroke="#B9851B"/>
+  <path id="route-remote-map-redisson" data-edge="remote-map-&gt;redisson" data-label="async map ops" class="connector" d="M 920 568 L 950 568 L 950 770 L 1475 770 L 1475 700" stroke="#C94D68"/>
+  <path id="route-cache-only-redisson" data-edge="cache-only-&gt;redisson" data-label="evict without writer" class="connector" d="M 1290 596 L 1320 596 L 1320 650 L 1340 650" stroke="#758297"/>
+  <path id="route-remote-map-loader" data-edge="remote-map-&gt;loader" data-label="miss invokes loaderAsync" class="connector" d="M 560 568 L 500 568 L 500 865 L 305 865 L 305 910" stroke="#755BC6"/>
+  <path id="route-remote-map-writer" data-edge="remote-map-&gt;writer" data-label="write invokes writerAsync" class="connector" d="M 560 568 L 500 568 L 500 960 L 535 960" stroke="#C94D68"/>
+  <path id="route-loader-tx" data-edge="loader-&gt;tx" data-label="SELECT inside suspend tx" class="connector" d="M 305 1010 L 305 1080 L 970 1080 L 970 960 L 1000 960" stroke="#755BC6"/>
+  <path id="route-writer-tx" data-edge="writer-&gt;tx" data-label="write/delete inside suspend tx" class="connector" d="M 885 960 L 1000 960" stroke="#C94D68"/>
+  <path id="route-tx-database" data-edge="tx-&gt;database" data-label="R2DBC statements" class="connector" d="M 1340 960 L 1400 960" stroke="#C94D68"/>
+  <g id="node-caller" data-node="caller" transform="translate(130,250)">
+    <rect class="shape" x="0" y="0" width="300" height="86" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <text class="card-title" x="150" y="24" text-anchor="middle" dominant-baseline="middle">Coroutine caller</text>
+    <text class="detail" x="150" y="43" text-anchor="middle" dominant-baseline="middle">suspend get/put</text>
+    <text class="detail" x="150" y="62" text-anchor="middle" dominant-baseline="middle">awaits async map futures</text>
+  </g>
+  <g id="node-repo" data-node="repo" transform="translate(520,225)">
+    <rect class="shape" x="0" y="0" width="360" height="96" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="180" y="29" text-anchor="middle" dominant-baseline="middle">R2dbcRedissonRepository</text>
+    <text class="detail" x="180" y="48" text-anchor="middle" dominant-baseline="middle">suspend cache contract</text>
+    <text class="detail" x="180" y="67" text-anchor="middle" dominant-baseline="middle">R2dbcRedisRepository</text>
+  </g>
+  <g id="node-base" data-node="base" transform="translate(1030,225)">
+    <rect class="shape" x="0" y="0" width="430" height="96" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="215" y="29" text-anchor="middle" dominant-baseline="middle">AbstractR2dbcRedissonRepo</text>
+    <text class="detail" x="215" y="48" text-anchor="middle" dominant-baseline="middle">creates async Redisson map</text>
+    <text class="detail" x="215" y="67" text-anchor="middle" dominant-baseline="middle">loaderAsync/writerAsync</text>
+  </g>
+  <g id="node-config" data-node="config" transform="translate(130,548)">
+    <rect class="shape" x="0" y="0" width="350" height="108" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <text class="card-title" x="175" y="35" text-anchor="middle" dominant-baseline="middle">RedissonCacheConfig</text>
+    <text class="detail" x="175" y="54" text-anchor="middle" dominant-baseline="middle">READ_ONLY/WRITE_THROUGH</text>
+    <text class="detail" x="175" y="73" text-anchor="middle" dominant-baseline="middle">WRITE_BEHIND, near cache</text>
+  </g>
+  <g id="node-remote-map" data-node="remote-map" transform="translate(560,520)">
+    <rect class="shape" x="0" y="0" width="360" height="96" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="180" y="29" text-anchor="middle" dominant-baseline="middle">RMapCache</text>
+    <text class="detail" x="180" y="48" text-anchor="middle" dominant-baseline="middle">remote Redis cache</text>
+    <text class="detail" x="180" y="67" text-anchor="middle" dominant-baseline="middle">getAsync/putAllAsync</text>
+  </g>
+  <g id="node-near-map" data-node="near-map" transform="translate(560,650)">
+    <rect class="shape" x="0" y="0" width="360" height="96" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="180" y="29" text-anchor="middle" dominant-baseline="middle">RLocalCachedMap</text>
+    <text class="detail" x="180" y="48" text-anchor="middle" dominant-baseline="middle">near cache enabled</text>
+    <text class="detail" x="180" y="67" text-anchor="middle" dominant-baseline="middle">local sync strategy</text>
+  </g>
+  <g id="node-cache-only" data-node="cache-only" transform="translate(970,548)">
+    <rect class="shape" x="0" y="0" width="320" height="96" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
+    <text class="card-title" x="160" y="29" text-anchor="middle" dominant-baseline="middle">cacheOnlyMap</text>
+    <text class="detail" x="160" y="48" text-anchor="middle" dominant-baseline="middle">cache-only invalidation</text>
+    <text class="detail" x="160" y="67" text-anchor="middle" dominant-baseline="middle">clear local near cache</text>
+  </g>
+  <g id="node-redisson" data-node="redisson" transform="translate(1340,600)">
+    <rect class="shape" x="0" y="0" width="270" height="100" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
+    <text class="card-title" x="135" y="31" text-anchor="middle" dominant-baseline="middle">Redisson Redis backend</text>
+    <text class="detail" x="135" y="50" text-anchor="middle" dominant-baseline="middle">async map storage</text>
+    <text class="detail" x="135" y="69" text-anchor="middle" dominant-baseline="middle">write-behind queue</text>
+  </g>
+  <g id="node-loader" data-node="loader" transform="translate(130,910)">
+    <rect class="shape" x="0" y="0" width="350" height="100" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="175" y="31" text-anchor="middle" dominant-baseline="middle">R2DBC MapLoaderAsync</text>
+    <text class="detail" x="175" y="50" text-anchor="middle" dominant-baseline="middle">load(id)</text>
+    <text class="detail" x="175" y="69" text-anchor="middle" dominant-baseline="middle">loadAllKeys channel</text>
+  </g>
+  <g id="node-writer" data-node="writer" transform="translate(535,910)">
+    <rect class="shape" x="0" y="0" width="350" height="100" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
+    <text class="card-title" x="175" y="31" text-anchor="middle" dominant-baseline="middle">R2DBC MapWriterAsync</text>
+    <text class="detail" x="175" y="50" text-anchor="middle" dominant-baseline="middle">write(map)</text>
+    <text class="detail" x="175" y="69" text-anchor="middle" dominant-baseline="middle">delete(ids)</text>
+  </g>
+  <g id="node-tx" data-node="tx" transform="translate(1000,910)">
+    <rect class="shape" x="0" y="0" width="340" height="100" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="170" y="31" text-anchor="middle" dominant-baseline="middle">suspendTransaction</text>
+    <text class="detail" x="170" y="50" text-anchor="middle" dominant-baseline="middle">SELECT / UPDATE</text>
+    <text class="detail" x="170" y="69" text-anchor="middle" dominant-baseline="middle">batchInsert / deleteWhere</text>
+  </g>
+  <g id="node-database" data-node="database" transform="translate(1400,925)">
+    <rect class="shape" x="0" y="0" width="200" height="92" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
+    <text class="card-title" x="100" y="27" text-anchor="middle" dominant-baseline="middle">R2DBC database</text>
+    <text class="detail" x="100" y="46" text-anchor="middle" dominant-baseline="middle">Exposed IdTable</text>
+    <text class="detail" x="100" y="65" text-anchor="middle" dominant-baseline="middle">reactive driver</text>
+  </g>
+  <g id="node-read-only" data-node="read-only" transform="translate(130,1240)">
+    <rect class="shape" x="0" y="0" width="330" height="64" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="165" y="13" text-anchor="middle" dominant-baseline="middle">READ_ONLY</text>
+    <text class="detail" x="165" y="32" text-anchor="middle" dominant-baseline="middle">loader only</text>
+    <text class="detail" x="165" y="51" text-anchor="middle" dominant-baseline="middle">DB rows survive invalidation</text>
+  </g>
+  <g id="node-write-through" data-node="write-through" transform="translate(520,1240)">
+    <rect class="shape" x="0" y="0" width="380" height="64" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="190" y="13" text-anchor="middle" dominant-baseline="middle">WRITE_THROUGH</text>
+    <text class="detail" x="190" y="32" text-anchor="middle" dominant-baseline="middle">writer completes before await resumes</text>
+    <text class="detail" x="190" y="51" text-anchor="middle" dominant-baseline="middle">updates rows; inserts client IDs</text>
+  </g>
+  <g id="node-write-behind" data-node="write-behind" transform="translate(960,1240)">
+    <rect class="shape" x="0" y="0" width="320" height="64" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <text class="card-title" x="160" y="13" text-anchor="middle" dominant-baseline="middle">WRITE_BEHIND</text>
+    <text class="detail" x="160" y="32" text-anchor="middle" dominant-baseline="middle">cache first</text>
+    <text class="detail" x="160" y="51" text-anchor="middle" dominant-baseline="middle">deferred DB batch</text>
+  </g>
+  <g id="node-not-jdbc" data-node="not-jdbc" transform="translate(1340,1240)">
+    <rect class="shape" x="0" y="0" width="220" height="64" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
+    <text class="card-title" x="110" y="13" text-anchor="middle" dominant-baseline="middle">Not JDBC</text>
+    <text class="detail" x="110" y="32" text-anchor="middle" dominant-baseline="middle">uses Exposed R2DBC</text>
+    <text class="detail" x="110" y="51" text-anchor="middle" dominant-baseline="middle">suspendTransaction</text>
+  </g>
+  <g transform="translate(76,1358)">
+    <rect class="pill" x="0" y="0" width="1568" height="48" rx="10"/>
+    <text class="small" x="784" y="18" text-anchor="middle" dominant-baseline="middle">Read-through uses loaderAsync; write-through and write-behind use writerAsync; DB deletion is opt-in.</text>
+    <text class="small" x="784" y="35" text-anchor="middle" dominant-baseline="middle">Default invalidation removes cache state through writerless map paths and leaves database rows intact.</text>
+  </g>
 </svg>
