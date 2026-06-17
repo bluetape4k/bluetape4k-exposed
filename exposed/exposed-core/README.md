@@ -36,27 +36,29 @@ dependencies {
 
 ## Diagrams
 
-### Core Auditable Structure
+### Auditable UML Class Diagram
 
-Illustrates the relationships among `AuditableIdTable`, concrete auditable table bases, and `UserContext`.
+Shows the class inheritance among `AuditableIdTable` and concrete auditable table bases. Runtime user propagation is shown only as a dependency on `UserContext`, so class structure is not mixed with update flow.
 
-![Core Auditable Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-01.png)
+![Auditable UML Class Diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-01.png)
 
-### Custom Column Type Hierarchy
+### Column Type Pipeline Map
 
-Compressed, serialized, network, and phone-number column types are grouped by their actual Exposed base contracts.
+Maps each column extension family from Kotlin API values through conversion logic to SQL storage types. This is a pipeline map, not a class hierarchy.
 
-![Custom Column Type Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-02.png)
+![Column Type Pipeline Map](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-02.png)
 
-### IdTable Hierarchy by ID Generation Strategy
+### IdTable Selection Matrix
 
-Custom `IdTable` implementations that generate IDs on the client side.
+Compares custom `IdTable` bases by value type, generator, storage shape, and selection criteria.
 
-![IdTable Hierarchy by ID Generation Strategy diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-03.png)
+![IdTable Selection Matrix](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-03.png)
 
-### ExposedPage Result Model
+### ExposedPage Data Model
 
-![ExposedPage Result Model diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-04.png)
+Shows the four stored constructor fields and the derived pagination flags that are calculated on demand.
+
+![ExposedPage Data Model](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-04.png)
 
 ## Basic Usage
 

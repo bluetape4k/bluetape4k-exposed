@@ -34,27 +34,29 @@ dependencies {
 
 ## 다이어그램
 
-### Auditable 핵심 구조
+### Auditable UML 클래스 다이어그램
 
-`AuditableIdTable`, 구체 Auditable 테이블 베이스, `UserContext`의 관계를 나타냅니다.
+`AuditableIdTable`과 구체 Auditable 테이블 베이스의 상속 관계를 보여줍니다. 런타임 사용자 전파는 `UserContext` 의존으로만 표시해 클래스 구조와 업데이트 흐름이 섞이지 않도록 했습니다.
 
-![Auditable diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-01.png)
+![Auditable UML Class Diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-01.png)
 
-### 커스텀 컬럼 타입 계층
+### 컬럼 타입 파이프라인 맵
 
-압축, 직렬화, 네트워크, 전화번호 컬럼 타입을 실제 Exposed 기반 타입별로 정리합니다.
+각 컬럼 확장 family가 Kotlin API 값에서 변환 로직을 거쳐 어떤 SQL 저장 타입으로 이어지는지 보여줍니다. 클래스 계층도가 아니라 값 변환 파이프라인 맵입니다.
 
-![exposed core Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-02.png)
+![Column Type Pipeline Map](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-02.png)
 
-### ID 생성 전략별 IdTable 계층
+### IdTable 선택 매트릭스
 
-클라이언트 측에서 ID를 생성하는 커스텀 `IdTable` 구현체들입니다.
+커스텀 `IdTable` 베이스를 값 타입, 생성기, 저장 형태, 선택 기준으로 비교합니다.
 
-![ID IdTable diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-03.png)
+![IdTable Selection Matrix](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-03.png)
 
-### ExposedPage 결과 모델
+### ExposedPage 데이터 모델
 
-![ExposedPage diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-04.png)
+생성자에 저장되는 네 개의 필드와 요청 시 계산되는 페이지 메타데이터를 구분해서 보여줍니다.
+
+![ExposedPage Data Model](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-04.png)
 
 ## 기본 사용법
 
