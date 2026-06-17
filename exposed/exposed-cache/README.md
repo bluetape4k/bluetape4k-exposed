@@ -2,7 +2,7 @@
 
 English | [한국어](./README.ko.md)
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.bluetape4k.exposed/exposed-cache)](https://central.sonatype.com/artifact/io.github.bluetape4k.exposed/exposed-cache)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.bluetape4k.exposed/bluetape4k-exposed-cache)](https://central.sonatype.com/artifact/io.github.bluetape4k.exposed/bluetape4k-exposed-cache)
 
 ## Overview
 
@@ -21,13 +21,19 @@ It is **cache-backend agnostic** — the same interfaces are implemented by both
 | `exposed-jdbc-redisson` | Redis (Redisson) | `REMOTE` / `NEAR_CACHE` | JDBC | sync + suspend |
 | `exposed-r2dbc-redisson` | Redis (Redisson) | `REMOTE` | R2DBC | suspend only |
 
-## Interface Hierarchy
+## Diagrams
 
-![Interface Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-01.png)
+### Repository Interface Class Diagram
 
-Redis-specific sub-interfaces (Lettuce and Redisson) extend the Redis interfaces:
+The shared cache repository contracts and Redis-only extension interfaces are shown as a UML-style class diagram.
 
-![Interface Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-02.png)
+![Repository Interface Class Diagram](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-01.png)
+
+### Cache Configuration Decision Map
+
+`CacheMode`, `CacheWriteMode`, local cache limits, and optional Redis resilience settings are configuration decisions, not class inheritance.
+
+![Cache Configuration Decision Map](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-02.png)
 
 ## CacheMode
 
@@ -81,7 +87,7 @@ Optional resilience configuration for Redis-backed repositories. Pass `null` (th
 
 `retryMaxAttempts` must be at least 1. `retryWaitDuration` and `timeoutDuration` must be positive.
 
-## Write Strategy Patterns
+## Write Strategy Flow
 
 ![Write Strategy Patterns diagram](../../docs/images/readme-diagrams/exposed-exposed-cache-sequence-01.png)
 

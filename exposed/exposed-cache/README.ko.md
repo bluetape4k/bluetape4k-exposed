@@ -2,7 +2,7 @@
 
 [English](./README.md) | 한국어
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.bluetape4k.exposed/exposed-cache)](https://central.sonatype.com/artifact/io.github.bluetape4k.exposed/exposed-cache)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.bluetape4k.exposed/bluetape4k-exposed-cache)](https://central.sonatype.com/artifact/io.github.bluetape4k.exposed/bluetape4k-exposed-cache)
 
 ## 개요
 
@@ -21,13 +21,19 @@
 | `exposed-jdbc-redisson` | Redis (Redisson) | `REMOTE` / `NEAR_CACHE` | JDBC | sync + suspend |
 | `exposed-r2dbc-redisson` | Redis (Redisson) | `REMOTE` | R2DBC | suspend 전용 |
 
-## 인터페이스 계층 구조
+## 다이어그램
 
-![exposed cache Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-01.png)
+### Repository Interface Class Diagram
 
-Redis 전용 하위 인터페이스(Lettuce/Redisson)는 Redis 인터페이스를 확장합니다:
+공통 캐시 저장소 계약과 Redis 전용 확장 인터페이스를 UML 스타일 class diagram으로 정리했습니다.
 
-![exposed cache Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-02.png)
+![Repository Interface Class Diagram](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-01.png)
+
+### Cache Configuration Decision Map
+
+`CacheMode`, `CacheWriteMode`, 로컬 캐시 제한, 선택적 Redis resilience 설정은 상속 구조가 아니라 설정 선택지입니다.
+
+![Cache Configuration Decision Map](../../docs/images/readme-diagrams/exposed-exposed-cache-diagram-02.png)
 
 ## CacheMode
 
@@ -81,7 +87,7 @@ Redis 기반 저장소의 선택적 Resilience 설정입니다. `null`(기본값
 
 `retryMaxAttempts`는 1 이상이어야 하며, `retryWaitDuration`과 `timeoutDuration`은 양수여야 합니다.
 
-## 쓰기 전략 패턴
+## 쓰기 전략 흐름
 
 ![Cache write strategy flow diagram](../../docs/images/readme-diagrams/exposed-exposed-cache-sequence-01.png)
 
