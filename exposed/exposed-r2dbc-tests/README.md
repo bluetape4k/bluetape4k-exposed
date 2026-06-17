@@ -4,15 +4,19 @@ English | [한국어](./README.ko.md)
 
 ## Overview
 
-A shared test-infrastructure module for testing modules built on [Exposed R2DBC](https://github.com/JetBrains/Exposed). It helps you write reactive database tests more easily.
+A shared test-infrastructure module for testing code built on [Exposed R2DBC](https://github.com/JetBrains/Exposed). It provides coroutine-aware database fixtures, dialect selection, Testcontainers bootstrap, and schema/table cleanup helpers so module tests can focus on behavior instead of connection setup.
 
 ## Test Infrastructure
 
+The architecture view shows the public testing surface first: test classes extend `AbstractExposedR2dbcTest`, receive `TestDB` values from `enabledDialects()`, and run assertions inside suspend helpers such as `withDb`, `withTables`, and `withSchemas`.
+
 ![Test Infrastructure Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-01.png)
 
-### JDBC vs R2DBC Test Model
+### `withTables` Test Lifecycle
 
-![JDBC vs R2DBC Test Comparison diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-02.png)
+The lifecycle view follows the most common helper. `withTables` delegates to `withDb`, serializes work per `TestDB`, creates the requested tables, commits before cleanup, and retries table drop in a top-level suspend transaction if normal cleanup fails.
+
+![withTables R2DBC test lifecycle diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-02.png)
 
 ## Adding the Dependency
 
@@ -27,7 +31,7 @@ dependencies {
 - **Common test base**: `AbstractExposedR2dbcTest` provides the base structure for R2DBC tests
 - **Multiple database support**: supports H2, MySQL, MariaDB, and PostgreSQL R2DBC tests
 - **Testcontainers integration**: supports real database tests through Docker-based containers
-- **Coroutine-native**: all tests are based on suspend functions
+- **Coroutine-native helpers**: database helpers are `suspend` functions and fit naturally inside `runTest`
 - **Table and schema utilities**: reusable entities and tables for tests
 
 ## Supported Databases
@@ -50,9 +54,13 @@ dependencies {
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
+import kotlinx.coroutines.test.runTest
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.r2dbc.insert
+import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import kotlin.test.assertEquals
 
 object Users: LongIdTable("users") {
     val name = varchar("name", 50)
@@ -63,7 +71,7 @@ class UserRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `should insert and find user`(testDB: TestDB) = runBlocking {
+    fun `should insert and find user`(testDB: TestDB) = runTest {
         withTables(testDB, Users) {
             // Insert
             Users.insert {
@@ -86,10 +94,12 @@ class UserRepositoryTest: AbstractExposedR2dbcTest() {
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
+import kotlinx.coroutines.test.runTest
+import kotlin.test.assertTrue
 
 @ParameterizedTest
 @MethodSource(ENABLE_DIALECTS_METHOD)
-fun `should connect to database`(testDB: TestDB) = runBlocking {
+fun `should connect to database`(testDB: TestDB) = runTest {
     withDb(testDB) {
         // runs inside a suspend transaction
         val isConnected = true // connection check logic
@@ -103,10 +113,11 @@ fun `should connect to database`(testDB: TestDB) = runBlocking {
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
+import kotlinx.coroutines.test.runTest
 
 @ParameterizedTest
 @MethodSource(ENABLE_DIALECTS_METHOD)
-fun `should create and drop tables`(testDB: TestDB) = runBlocking {
+fun `should create and drop tables`(testDB: TestDB) = runTest {
     withTables(testDB, Users, Orders) {
         // tables are created automatically before the test
         // tables are dropped automatically after the test
@@ -123,6 +134,7 @@ fun `should create and drop tables`(testDB: TestDB) = runBlocking {
 
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import kotlinx.coroutines.test.runTest
 
 class PostgresOnlyTest: AbstractExposedR2dbcTest() {
 
@@ -134,7 +146,7 @@ class PostgresOnlyTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("databases")
-    fun `postgres specific test`(testDB: TestDB) = runBlocking {
+    fun `postgres specific test`(testDB: TestDB) = runTest {
         withTables(testDB, Users) {
             // PostgreSQL-specific test
         }
@@ -146,6 +158,7 @@ class PostgresOnlyTest: AbstractExposedR2dbcTest() {
 
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import kotlinx.coroutines.test.runTest
 
 class MySQLLikeTest: AbstractExposedR2dbcTest() {
 
@@ -161,7 +174,7 @@ class MySQLLikeTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("databases")
-    fun `mysql compatible test`(testDB: TestDB) = runBlocking {
+    fun `mysql compatible test`(testDB: TestDB) = runTest {
         withTables(testDB, Users) {
             // test on MySQL-compatible databases
         }
@@ -173,10 +186,12 @@ class MySQLLikeTest: AbstractExposedR2dbcTest() {
 
 ```kotlin
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.test.runTest
+import kotlin.test.assertEquals
 
 @ParameterizedTest
 @MethodSource(ENABLE_DIALECTS_METHOD)
-fun `should stream query results`(testDB: TestDB) = runBlocking {
+fun `should stream query results`(testDB: TestDB) = runTest {
     withTables(testDB, Users) {
         // insert multiple records
         repeat(100) { i ->
@@ -208,7 +223,7 @@ object TestDBConfig {
 ```
 
 If `useFastDB = true` (default), `enabledDialects()` returns only H2. Set
-`useFastDB = false` when full database coverage is required. Docker is needed in that case.
+`useFastDB = false` when full database coverage is required. `EXPOSED_TEST_DB=POSTGRESQL` or `EXPOSED_TEST_DB=MYSQL_V8` can narrow CI runs to H2 plus one real driver. Docker is needed for Testcontainers-backed databases.
 
 ## Test Schema and Data
 
@@ -284,7 +299,7 @@ Containers.Postgres
 
 ## Notes
 
-- All R2DBC tests are based on `suspend` functions
+- R2DBC helpers are `suspend` functions and should normally be called from `runTest`
 - MySQL 5.7 is excluded due to R2DBC driver compatibility issues
 - Docker is required when using Testcontainers
 - Flow-based streaming queries are supported

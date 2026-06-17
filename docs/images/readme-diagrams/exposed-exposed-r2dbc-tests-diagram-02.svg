@@ -1,2 +1,165 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="700" viewBox="0 0 1400 700" role="img" aria-label="JDBC vs R2DBC Test Model"><defs><filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter><marker id="arrow" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 8 4 L 1 7" fill="none" stroke="#758297" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker><style>
-.canvas{fill:#F6F9FC}.frame{fill:#fff;stroke:#D7E2EC;stroke-width:2}.title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:42px;fill:#22344A;font-weight:400}.subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:16px;fill:#536476;font-weight:400}.label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:24px;fill:#22344A;font-weight:400}.small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:14px;fill:#536476;font-weight:400}.tiny{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;fill:#536476;font-weight:400}.mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;fill:#22344A;font-weight:400}.card{filter:url(#shadow);stroke-width:2}.line{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#arrow)}.soft{stroke:#AAB6C5;stroke-width:1.8;fill:none;marker-end:url(#arrow)}.axis{stroke:#B8C4D3;stroke-width:1.3}.barText{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;fill:#22344A;font-weight:400}</style></defs><rect class="canvas" width="1400" height="700"/><rect class="frame" x="34" y="28" width="1332" height="644" rx="24"/><text class="title" x="72" y="82">JDBC vs R2DBC Test Model</text><text class="subtitle" x="76" y="114">Parallel test-support contracts with different execution models.</text><rect class="card" x="110" y="170" width="300" height="90" rx="14" fill="#E8F3FF" stroke="#75A9E8"/><text class="label" x="260" y="215" text-anchor="middle" dominant-baseline="middle">JDBC tests</text><rect class="card" x="990" y="170" width="300" height="90" rx="14" fill="#EAF7EF" stroke="#69B888"/><text class="label" x="1140" y="215" text-anchor="middle" dominant-baseline="middle">R2DBC tests</text><rect class="card" x="550" y="150" width="300" height="90" rx="14" fill="#FFF3D9" stroke="#D9AA4D"/><text class="label" x="700" y="195" text-anchor="middle" dominant-baseline="middle">Shared test contract</text><rect class="card" x="120" y="330" width="280" height="54" rx="12" fill="#F7FBFF" stroke="#75A9E8"/><text class="mono" x="260" y="357" text-anchor="middle" dominant-baseline="middle">blocking transaction</text><rect class="card" x="120" y="410" width="280" height="54" rx="12" fill="#F7FBFF" stroke="#75A9E8"/><text class="mono" x="260" y="437" text-anchor="middle" dominant-baseline="middle">withDb / withTables</text><rect class="card" x="120" y="490" width="280" height="54" rx="12" fill="#F7FBFF" stroke="#75A9E8"/><text class="mono" x="260" y="517" text-anchor="middle" dominant-baseline="middle">JDBC dialect matrix</text><rect class="card" x="1000" y="330" width="280" height="54" rx="12" fill="#F8FFFB" stroke="#69B888"/><text class="mono" x="1140" y="357" text-anchor="middle" dominant-baseline="middle">suspend transaction</text><rect class="card" x="1000" y="410" width="280" height="54" rx="12" fill="#F8FFFB" stroke="#69B888"/><text class="mono" x="1140" y="437" text-anchor="middle" dominant-baseline="middle">suspend withDb / withTables</text><rect class="card" x="1000" y="490" width="280" height="54" rx="12" fill="#F8FFFB" stroke="#69B888"/><text class="mono" x="1140" y="517" text-anchor="middle" dominant-baseline="middle">R2DBC driver matrix</text><rect class="card" x="560" y="330" width="280" height="54" rx="12" fill="#FFFDF8" stroke="#D9AA4D"/><text class="mono" x="700" y="357" text-anchor="middle" dominant-baseline="middle">same schema fixtures</text><rect class="card" x="560" y="410" width="280" height="54" rx="12" fill="#FFFDF8" stroke="#D9AA4D"/><text class="mono" x="700" y="437" text-anchor="middle" dominant-baseline="middle">same dialect intent</text><rect class="card" x="560" y="490" width="280" height="54" rx="12" fill="#FFFDF8" stroke="#D9AA4D"/><text class="mono" x="700" y="517" text-anchor="middle" dominant-baseline="middle">same cleanup guarantees</text><path class="line" d="M410 215 C480 215 480 195 550 195"/><path class="line" d="M850 195 C920 195 920 215 990 215"/><path class="soft" d="M400 357 C480 357 480 357 560 357"/><path class="soft" d="M840 357 C920 357 920 357 1000 357"/><path class="soft" d="M400 437 C480 437 480 437 560 437"/><path class="soft" d="M840 437 C920 437 920 437 1000 437"/><path class="soft" d="M400 517 C480 517 480 517 560 517"/><path class="soft" d="M840 517 C920 517 920 517 1000 517"/><text class="small" x="552" y="625">The modules differ by execution model, but keep fixtures, dialect coverage, and cleanup semantics aligned.</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1760" height="1180" viewBox="0 0 1760 1180" role="img" aria-labelledby="title desc">
+  <title id="title">withTables R2DBC Test Lifecycle</title>
+  <desc id="desc">Vertical layer flow for exposed-r2dbc-tests showing dialect selection, withDb entry, table lifecycle, fallback cleanup, and semaphore release.</desc>
+  <defs>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%">
+      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/>
+    </filter>
+    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#4F83BF"/>
+    </marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#B9851B"/>
+    </marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#2E8F89"/>
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#755BC6"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#C94D68"/>
+    </marker>
+    <style>
+      .canvas{fill:#F6F9FC}.decor{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
+      .title{font-family:"Architects Daughter";font-size:46px;fill:#22344A;font-weight:400}
+      .subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476;font-weight:400}
+      .layer{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}
+      .layer-title{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}
+      .card-title{font-family:"Architects Daughter";font-size:21px;fill:#22344A;font-weight:400}
+      .detail{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}
+      .small{font-family:"Comic Mono";font-size:13px;fill:#627184;font-weight:400}
+      .step{font-family:"Comic Mono";font-size:13px;fill:#FFFFFF;font-weight:700}
+      .shape{filter:url(#shadow);stroke-width:2}
+      .connector{fill:none;stroke-width:2.7;stroke-linejoin:round;stroke-linecap:round}
+      .alt{stroke-dasharray:8 6}
+      .badge{fill:#4F83BF}
+      .pill{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1}
+    </style>
+  </defs>
+  <rect class="canvas" width="1760" height="1180"/>
+  <rect class="decor" x="44" y="36" width="1672" height="1108" rx="34"/>
+  <text class="title" x="72" y="88">withTables R2DBC Test Lifecycle</text>
+  <text class="subtitle" x="76" y="121">Vertical phase layers keep the normal path left-to-right and reserve one dashed branch for fallback cleanup.</text>
+
+  <g id="layer-select">
+    <rect class="layer" x="82" y="164" width="380" height="840" rx="18"/>
+    <text class="layer-title" x="112" y="190" dominant-baseline="middle">Select dialect and runtime</text>
+  </g>
+  <g id="layer-connect">
+    <rect class="layer" x="502" y="164" width="380" height="840" rx="18"/>
+    <text class="layer-title" x="532" y="190" dominant-baseline="middle">Enter withDb</text>
+  </g>
+  <g id="layer-tables">
+    <rect class="layer" x="922" y="164" width="420" height="840" rx="18"/>
+    <text class="layer-title" x="952" y="190" dominant-baseline="middle">Manage tables and statement</text>
+  </g>
+  <g id="layer-release">
+    <rect class="layer" x="1382" y="164" width="300" height="840" rx="18"/>
+    <text class="layer-title" x="1412" y="190" dominant-baseline="middle">Release resources</text>
+  </g>
+
+  <path id="route-test-dialects" data-edge="test-method-&gt;enabled-dialects" class="connector" d="M 272 300 L 272 360" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
+  <path id="route-dialects-container" data-edge="enabled-dialects-&gt;container-prewarm" class="connector" d="M 272 452 L 272 515" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
+  <path id="route-container-with-tables" data-edge="container-prewarm-&gt;with-tables" class="connector" d="M 462 565 L 532 565" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
+  <path id="route-with-tables-semaphore" data-edge="with-tables-&gt;semaphore" class="connector" d="M 692 612 L 692 705" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
+  <path id="route-semaphore-connect" data-edge="semaphore-&gt;connect" class="connector" d="M 692 797 L 692 855" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
+  <path id="route-connect-transaction" data-edge="connect-&gt;transaction" class="connector" d="M 852 905 L 900 905 L 900 340 L 952 340" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+  <path id="route-transaction-drop" data-edge="transaction-&gt;drop-before" class="connector" d="M 1132 386 L 1132 450" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+  <path id="route-drop-create" data-edge="drop-before-&gt;create-tables" class="connector" d="M 1132 542 L 1132 605" stroke="#C94D68" marker-end="url(#arrow-red)"/>
+  <path id="route-create-statement" data-edge="create-tables-&gt;statement" class="connector" d="M 1132 697 L 1132 760" stroke="#C94D68" marker-end="url(#arrow-red)"/>
+  <path id="route-statement-drop-after" data-edge="statement-&gt;drop-after" class="connector" d="M 1132 852 L 1132 915" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
+  <path id="route-drop-after-release" data-edge="drop-after-&gt;release" class="connector" d="M 1342 965 L 1362 965 L 1362 630 L 1412 630" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
+  <path id="route-drop-after-fallback" data-edge="drop-after-&gt;fallback-drop" class="connector alt" d="M 1232 1007 L 1232 1065 L 1532 1065 L 1532 852" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
+  <path id="route-fallback-release" data-edge="fallback-drop-&gt;release" class="connector" d="M 1532 760 L 1532 670" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
+
+  <g id="node-test-method" data-node="test-method" transform="translate(132,220)">
+    <rect class="shape" x="0" y="0" width="280" height="80" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <circle class="badge" cx="24" cy="24" r="14"/><text class="step" x="24" y="24" text-anchor="middle" dominant-baseline="middle">1</text>
+    <text class="card-title" x="158" y="28" text-anchor="middle" dominant-baseline="middle">Parameterized test</text>
+    <text class="detail" x="158" y="52" text-anchor="middle" dominant-baseline="middle">runTest + TestDB argument</text>
+  </g>
+  <g id="node-enabled-dialects" data-node="enabled-dialects" transform="translate(112,360)">
+    <rect class="shape" x="0" y="0" width="320" height="92" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <circle class="badge" cx="24" cy="24" r="14"/><text class="step" x="24" y="24" text-anchor="middle" dominant-baseline="middle">2</text>
+    <text class="card-title" x="180" y="30" text-anchor="middle" dominant-baseline="middle">enabledDialects()</text>
+    <text class="detail" x="180" y="55" text-anchor="middle" dominant-baseline="middle">H2 fast path or env matrix</text>
+  </g>
+  <g id="node-container-prewarm" data-node="container-prewarm" transform="translate(102,515)">
+    <rect class="shape" x="0" y="0" width="360" height="100" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
+    <circle class="badge" cx="24" cy="24" r="14"/><text class="step" x="24" y="24" text-anchor="middle" dominant-baseline="middle">3</text>
+    <text class="card-title" x="200" y="30" text-anchor="middle" dominant-baseline="middle">@BeforeAll prewarm</text>
+    <text class="detail" x="200" y="55" text-anchor="middle" dominant-baseline="middle">PostgreSQL/MySQL8 start</text>
+    <text class="detail" x="200" y="74" text-anchor="middle" dominant-baseline="middle">before timeout scope</text>
+  </g>
+
+  <g id="node-with-tables" data-node="with-tables" transform="translate(532,520)">
+    <rect class="shape" x="0" y="0" width="320" height="92" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <circle class="badge" cx="24" cy="24" r="14"/><text class="step" x="24" y="24" text-anchor="middle" dominant-baseline="middle">4</text>
+    <text class="card-title" x="180" y="30" text-anchor="middle" dominant-baseline="middle">withTables()</text>
+    <text class="detail" x="180" y="55" text-anchor="middle" dominant-baseline="middle">delegates to withDb()</text>
+  </g>
+  <g id="node-semaphore" data-node="semaphore" transform="translate(532,705)">
+    <rect class="shape" x="0" y="0" width="320" height="92" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <circle class="badge" cx="24" cy="24" r="14"/><text class="step" x="24" y="24" text-anchor="middle" dominant-baseline="middle">5</text>
+    <text class="card-title" x="190" y="30" text-anchor="middle" dominant-baseline="middle">Acquire semaphore</text>
+    <text class="detail" x="190" y="55" text-anchor="middle" dominant-baseline="middle">serialize same TestDB work</text>
+  </g>
+  <g id="node-connect" data-node="connect" transform="translate(532,855)">
+    <rect class="shape" x="0" y="0" width="320" height="100" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <circle class="badge" cx="24" cy="24" r="14"/><text class="step" x="24" y="24" text-anchor="middle" dominant-baseline="middle">6</text>
+    <text class="card-title" x="190" y="30" text-anchor="middle" dominant-baseline="middle">Connect database</text>
+    <text class="detail" x="190" y="55" text-anchor="middle" dominant-baseline="middle">reuse R2dbcDatabase</text>
+    <text class="detail" x="190" y="74" text-anchor="middle" dominant-baseline="middle">restore optional config scope</text>
+  </g>
+
+  <g id="node-transaction" data-node="transaction" transform="translate(952,294)">
+    <rect class="shape" x="0" y="0" width="360" height="92" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <circle class="badge" cx="24" cy="24" r="14"/><text class="step" x="24" y="24" text-anchor="middle" dominant-baseline="middle">7</text>
+    <text class="card-title" x="200" y="30" text-anchor="middle" dominant-baseline="middle">suspendTransaction</text>
+    <text class="detail" x="200" y="55" text-anchor="middle" dominant-baseline="middle">currentTestDB + maxAttempts=1</text>
+  </g>
+  <g id="node-drop-before" data-node="drop-before" transform="translate(952,450)">
+    <rect class="shape" x="0" y="0" width="360" height="92" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
+    <circle class="badge" cx="24" cy="24" r="14"/><text class="step" x="24" y="24" text-anchor="middle" dominant-baseline="middle">8</text>
+    <text class="card-title" x="200" y="30" text-anchor="middle" dominant-baseline="middle">Drop old tables</text>
+    <text class="detail" x="200" y="55" text-anchor="middle" dominant-baseline="middle">best-effort cleanup</text>
+  </g>
+  <g id="node-create-tables" data-node="create-tables" transform="translate(952,605)">
+    <rect class="shape" x="0" y="0" width="360" height="92" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
+    <circle class="badge" cx="24" cy="24" r="14"/><text class="step" x="24" y="24" text-anchor="middle" dominant-baseline="middle">9</text>
+    <text class="card-title" x="200" y="30" text-anchor="middle" dominant-baseline="middle">Create requested tables</text>
+    <text class="detail" x="200" y="55" text-anchor="middle" dominant-baseline="middle">SchemaUtils.create(*tables)</text>
+  </g>
+  <g id="node-statement" data-node="statement" transform="translate(952,760)">
+    <rect class="shape" x="0" y="0" width="360" height="92" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <circle class="badge" cx="24" cy="24" r="14"/><text class="step" x="24" y="24" text-anchor="middle" dominant-baseline="middle">10</text>
+    <text class="card-title" x="200" y="30" text-anchor="middle" dominant-baseline="middle">Run test statement</text>
+    <text class="detail" x="200" y="55" text-anchor="middle" dominant-baseline="middle">commit before cleanup</text>
+  </g>
+  <g id="node-drop-after" data-node="drop-after" transform="translate(952,915)">
+    <rect class="shape" x="0" y="0" width="390" height="92" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <circle class="badge" cx="24" cy="24" r="14"/><text class="step" x="24" y="24" text-anchor="middle" dominant-baseline="middle">11</text>
+    <text class="card-title" x="220" y="30" text-anchor="middle" dominant-baseline="middle">Drop tables</text>
+    <text class="detail" x="220" y="55" text-anchor="middle" dominant-baseline="middle">default dropTables=true</text>
+  </g>
+
+  <g id="node-release" data-node="release" transform="translate(1412,590)">
+    <rect class="shape" x="0" y="0" width="240" height="80" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
+    <circle class="badge" cx="24" cy="24" r="14"/><text class="step" x="24" y="24" text-anchor="middle" dominant-baseline="middle">13</text>
+    <text class="card-title" x="145" y="28" text-anchor="middle" dominant-baseline="middle">Release semaphore</text>
+    <text class="detail" x="145" y="52" text-anchor="middle" dominant-baseline="middle">always in finally</text>
+  </g>
+  <g id="node-fallback-drop" data-node="fallback-drop" transform="translate(1412,760)">
+    <rect class="shape" x="0" y="0" width="240" height="92" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <circle class="badge" cx="24" cy="24" r="14"/><text class="step" x="24" y="24" text-anchor="middle" dominant-baseline="middle">12</text>
+    <text class="card-title" x="145" y="30" text-anchor="middle" dominant-baseline="middle">Fallback drop</text>
+    <text class="detail" x="145" y="55" text-anchor="middle" dominant-baseline="middle">top-level transaction</text>
+  </g>
+
+  <g transform="translate(76,1068)">
+    <rect class="pill" x="0" y="0" width="1608" height="48" rx="10"/>
+    <text class="small" x="804" y="18" text-anchor="middle" dominant-baseline="middle">Normal path: choose dialect, enter withDb, create tables, run statement, commit, drop tables, then release the per-TestDB semaphore.</text>
+    <text class="small" x="804" y="35" text-anchor="middle" dominant-baseline="middle">Fallback branch: only when normal table cleanup fails, retry the drop in a top-level suspend transaction before release completes.</text>
+  </g>
+</svg>
