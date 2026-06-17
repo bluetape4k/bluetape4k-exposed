@@ -91,21 +91,31 @@ val database = R2dbcDatabase.connect(
 
 ### R2dbcRepository 핵심 구조
 
-![R2dbcRepository diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-01.png)
+이 아키텍처 그림은 런타임 계약을 보여줍니다. 애플리케이션 코드는 직접 연 `suspendTransaction` 안에서 repository를
+호출하고, repository는 `IdTable` 행을 엔티티로 매핑하며, 읽기 메서드는 `Flow<E>`를 반환하고 쓰기 메서드는 Exposed
+R2DBC statement로 위임합니다.
+
+![Core R2DBC repository structure diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-01.png)
 
 ### R2dbcRepository 계층
 
-![R2dbcRepository diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.png)
+클래스 다이어그램은 기본 repository 계약, key type별 편의 인터페이스, 선택적으로 붙는 auditing/soft-delete 확장을
+분리해서 보여줍니다.
+
+![R2DBC repository hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.png)
 
 ### suspend 트랜잭션 흐름
 
 `suspendTransaction` 블록 내에서 `R2dbcRepository`를 통해 CRUD 연산이 수행되는 흐름입니다.
 
-![suspend diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-01.png)
+![R2DBC suspend transaction sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-01.png)
 
 ### SoftDelete 트랜잭션 흐름
 
-![SoftDelete diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-02.png)
+Soft-delete 연산은 `isDeleted` 플래그를 갱신하고, 이후 읽기 경로는 `findActive` 또는 `findDeleted`로 나뉩니다.
+호출자는 어떤 가시성 경계를 사용할지 명시적으로 선택합니다.
+
+![R2DBC soft-delete transaction sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-02.png)
 
 ## 기본 사용법
 
@@ -445,7 +455,6 @@ val rows = ActorTable.selectImplicitAll()
 |------------------------------------------------|---------------------------------------|
 | `repository/R2dbcRepository.kt`                | R2DBC Repository 기본 인터페이스             |
 | `repository/SoftDeletedR2dbcRepository.kt`     | Soft Delete R2DBC Repository          |
-| `repository/ExposedR2dbcRepository.kt`         | (Deprecated) 구 Repository 인터페이스       |
 | `TableExtensions.kt`                           | 테이블 메타데이터 비동기 확장 함수                   |
 | `QueryExtensions.kt`                           | Flow/Query 확장 함수 (`forEach`, `any` 등) |
 | `ReadableExtensions.kt`                        | R2DBC Readable 타입 안전 컬럼 값 조회 확장       |

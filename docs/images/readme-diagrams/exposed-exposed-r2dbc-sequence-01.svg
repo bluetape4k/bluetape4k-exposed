@@ -1,81 +1,277 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1532" height="1896" viewBox="0 0 1532 1896" role="img" aria-label="suspend Transaction Flow">
-<defs>
-  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#758297" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M 0 1 L 12 6 L 0 11 Z" fill="#ffffff" stroke="#758297" stroke-width="1.8"/></marker>
-  <style>
-    .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
-    .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
-    .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
-    .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
-    .smallLabel{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:21px;font-weight:400;fill:#102033}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
-    .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .strong{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .line{stroke:#758297;stroke-width:2.1;fill:none;marker-end:url(#openArrow)}
-    .plainLine{stroke:#758297;stroke-width:2.1;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
-    .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-    .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
-  </style>
-</defs>
-<rect class="canvas" width="1532" height="1896"/>
-<rect class="frame" x="32" y="28" width="1468" height="1840" rx="28"/>
-<text class="title" x="66" y="82">suspend Transaction Flow</text>
-<text class="subtitle" x="70" y="118">Sequence messages from the original Mermaid source</text>
-<rect class="card" x="1.5" y="166" width="277" height="72" rx="20" fill="#E8F3FF" stroke="#5B8DEF"/>
-<text class="smallLabel" x="140" y="209" text-anchor="middle">Caller</text>
-<line class="lifeline" x1="140" y1="252" x2="140" y2="1836" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect class="card" x="418.83333333333326" y="166" width="277" height="72" rx="20" fill="#EAF7EF" stroke="#58A978"/>
-<text class="smallLabel" x="557.3333333333333" y="209" text-anchor="middle">suspendTransaction</text>
-<line class="lifeline" x1="557.3333333333333" y1="252" x2="557.3333333333333" y2="1836" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect class="card" x="836.1666666666666" y="166" width="277" height="72" rx="20" fill="#FFF3D9" stroke="#D6A441"/>
-<text class="smallLabel" x="974.6666666666666" y="209" text-anchor="middle">R2dbcRepository</text>
-<line class="lifeline" x1="974.6666666666666" y1="252" x2="974.6666666666666" y2="1836" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect class="card" x="1253.5" y="166" width="277" height="72" rx="20" fill="#FDECEF" stroke="#DC6B82"/>
-<text class="smallLabel" x="1392" y="209" text-anchor="middle">R2DBC Database</text>
-<line class="lifeline" x1="1392" y1="252" x2="1392" y2="1836" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect x="213.66666666666663" y="286" width="270" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="231.66666666666663" y="313" text-anchor="start">1. suspendTransaction { ... }</text>
-<path class="line" d="M140 344 L557.3333333333333 344"/>
-<rect x="661" y="396" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="679" y="423" text-anchor="start">2. findById(id)</text>
-<path class="line" d="M557.3333333333333 454 L974.6666666666666 454"/>
-<rect x="1068.3333333333333" y="506" width="230" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="1086.3333333333333" y="533" text-anchor="start">3. SELECT * WHERE id = ?</text>
-<path class="line" d="M974.6666666666666 564 L1392 564"/>
-<rect x="1078.3333333333333" y="616" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="1096.3333333333333" y="643" text-anchor="start">4. ResultRow</text>
-<path class="dashed" d="M1392 674 L974.6666666666666 674"/>
-<rect x="661" y="726" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="679" y="753" text-anchor="start">5. toEntity() → E</text>
-<path class="dashed" d="M974.6666666666666 784 L557.3333333333333 784"/>
-<rect x="647" y="836" width="238" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="665" y="863" text-anchor="start">6. updateById(id) { ... }</text>
-<path class="line" d="M557.3333333333333 894 L974.6666666666666 894"/>
-<rect x="1044.3333333333333" y="946" width="278" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="1062.3333333333333" y="973" text-anchor="start">7. UPDATE SET ... WHERE id = ?</text>
-<path class="line" d="M974.6666666666666 1004 L1392 1004"/>
-<rect x="1078.3333333333333" y="1056" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="1096.3333333333333" y="1083" text-anchor="start">8. Int (updated rows)</text>
-<path class="dashed" d="M1392 1114 L974.6666666666666 1114"/>
-<rect x="661" y="1166" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="679" y="1193" text-anchor="start">9. Int</text>
-<path class="dashed" d="M974.6666666666666 1224 L557.3333333333333 1224"/>
-<rect x="661" y="1276" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="679" y="1303" text-anchor="start">10. deleteById(id)</text>
-<path class="line" d="M557.3333333333333 1334 L974.6666666666666 1334"/>
-<rect x="1072.3333333333333" y="1386" width="222" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="1090.3333333333333" y="1413" text-anchor="start">11. DELETE WHERE id = ?</text>
-<path class="line" d="M974.6666666666666 1444 L1392 1444"/>
-<rect x="1076.3333333333333" y="1496" width="214" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="1094.3333333333333" y="1523" text-anchor="start">12. Int (deleted rows)</text>
-<path class="dashed" d="M1392 1554 L974.6666666666666 1554"/>
-<rect x="661" y="1606" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="679" y="1633" text-anchor="start">13. Int</text>
-<path class="dashed" d="M974.6666666666666 1664 L557.3333333333333 1664"/>
-<rect x="243.66666666666663" y="1716" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="261.66666666666663" y="1743" text-anchor="start">14. Result returned</text>
-<path class="dashed" d="M557.3333333333333 1774 L140 1774"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1740" height="3000" viewBox="0 0 1740 3000" role="img" aria-labelledby="title desc">
+  <title id="title">R2DBC suspend Transaction Flow</title>
+  <desc id="desc">Sequence diagram rebuilt from exposed-r2dbc README usage, R2dbcRepository source, and R2DBC repository tests.</desc>
+  <defs>
+    <marker id="seqArrow-call" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#4F83BF"/></marker>
+    <marker id="seqArrow-scoped" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755BC6"/></marker>
+    <marker id="seqArrow-thread" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#2E8F89"/></marker>
+    <marker id="seqArrow-restore" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#3E9868"/></marker>
+    <marker id="seqArrow-fallback" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#B9851B"/></marker>
+    <marker id="seqArrow-audit" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#C94D68"/></marker>
+    <marker id="seqArrow-neutral" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#758297"/></marker>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <style>
+      .canvas{fill:#F7FAFC}.frame{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:2.6;filter:url(#shadow)}
+      .title{font-family:"Architects Daughter";font-size:44px;fill:#22344A;font-weight:400}.subtitle{font-family:"Comic Mono";font-size:16px;fill:#536476;font-weight:400}
+      .card{filter:url(#shadow);stroke-width:2}.cardTitle{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .detail{font-family:"Comic Mono";font-size:13px;fill:#42556B;font-weight:400}.small{font-family:"Comic Mono";font-size:12px;fill:#627184;font-weight:400}
+      .seq{fill:none;stroke-width:3;stroke-linecap:round}.seqReturn{fill:none;stroke-width:2.7;stroke-linecap:round;stroke-dasharray:8 7}
+      .lifeline{stroke:#A7B4C3;stroke-width:1.8;stroke-dasharray:8 8}.labelPill{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
+      .branchBox{fill:#FFFFFF;fill-opacity:.42;stroke:#D6A441;stroke-width:1.8;stroke-dasharray:8 8}.note{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
+    </style>
+  </defs>
+  <rect class="canvas" width="1740" height="3000"/>
+  <rect class="frame" x="32" y="28" width="1676" height="2944" rx="28"/>
+  <text class="title" x="66" y="82">R2DBC suspend Transaction Flow</text>
+  <text class="subtitle" x="70" y="116">Repository calls run inside suspendTransaction, delegate to Exposed R2DBC DSL, and map ResultRow values through suspend toEntity().</text>
+<g id="participant-caller">
+  <rect class="card" x="96" y="165" width="250" height="76" rx="10" fill="#E8F3FF" stroke="#5B8DEF"/>
+  <text class="cardTitle" x="221" y="210" text-anchor="middle">Coroutine caller</text>
+  <line class="lifeline" x1="221" y1="241" x2="221" y2="2906"/>
+</g>
+<g id="participant-tx">
+  <rect class="card" x="355.6" y="165" width="250" height="76" rx="10" fill="#EAF7EF" stroke="#58A978"/>
+  <text class="cardTitle" x="480.6" y="210" text-anchor="middle">suspendTransaction</text>
+  <line class="lifeline" x1="480.6" y1="241" x2="480.6" y2="2906"/>
+</g>
+<g id="participant-repo">
+  <rect class="card" x="615.2" y="165" width="250" height="76" rx="10" fill="#FFF3D9" stroke="#D6A441"/>
+  <text class="cardTitle" x="740.2" y="210" text-anchor="middle">R2dbcRepository</text>
+  <line class="lifeline" x1="740.2" y1="241" x2="740.2" y2="2906"/>
+</g>
+<g id="participant-dsl">
+  <rect class="card" x="874.8000000000001" y="165" width="250" height="76" rx="10" fill="#E9F7F6" stroke="#45A7A1"/>
+  <text class="cardTitle" x="999.8000000000001" y="197" text-anchor="middle">IdTable + R2DBC</text>
+  <text class="cardTitle" x="999.8000000000001" y="220" text-anchor="middle">DSL</text>
+  <line class="lifeline" x1="999.8000000000001" y1="241" x2="999.8000000000001" y2="2906"/>
+</g>
+<g id="participant-database">
+  <rect class="card" x="1134.4" y="165" width="250" height="76" rx="10" fill="#FDECEF" stroke="#DC6B82"/>
+  <text class="cardTitle" x="1259.4" y="210" text-anchor="middle">R2DBC database</text>
+  <line class="lifeline" x1="1259.4" y1="241" x2="1259.4" y2="2906"/>
+</g>
+<g id="participant-mapper">
+  <rect class="card" x="1394" y="165" width="250" height="76" rx="10" fill="#F1ECFF" stroke="#8A72D6"/>
+  <text class="cardTitle" x="1519" y="197" text-anchor="middle">suspend</text>
+  <text class="cardTitle" x="1519" y="220" text-anchor="middle">ResultRow.toEntity</text>
+  <line class="lifeline" x1="1519" y1="241" x2="1519" y2="2906"/>
+</g>
+<g>
+  <rect class="branchBox" x="74" y="292" width="1592" height="48" rx="15"/>
+  <rect class="labelPill" x="248.8" y="286" width="204" height="30" rx="8"/>
+  <text class="detail" x="350.8" y="302" text-anchor="middle" dominant-baseline="middle">Single-row read path</text>
+</g>
+<g id="m2">
+  <rect class="labelPill" x="225.8" y="352" width="250" height="42" rx="7"/>
+  <circle cx="244.8" cy="373" r="12" fill="#4F83BF"/>
+  <text class="detail" x="244.8" y="374" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">2</text>
+  <text class="detail" x="368.8" y="365" text-anchor="middle" dominant-baseline="middle">suspendTransaction {</text>
+  <text class="detail" x="368.8" y="380" text-anchor="middle" dominant-baseline="middle">repo.findById(id) }</text>
+  <path class="seq" d="M221 412 L480.6 412" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
+</g>
+<g id="m3">
+  <rect class="labelPill" x="487.9000000000001" y="446" width="245" height="30" rx="7"/>
+  <circle cx="506.9000000000001" cy="461" r="12" fill="#4F83BF"/>
+  <text class="detail" x="506.9000000000001" y="462" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">3</text>
+  <text class="detail" x="628.4000000000001" y="462" text-anchor="middle" dominant-baseline="middle">findById(id)</text>
+  <path class="seq" d="M480.6 494 L740.2 494" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
+</g>
+<g id="m4">
+  <rect class="labelPill" x="745" y="516" width="250" height="42" rx="7"/>
+  <circle cx="764" cy="537" r="12" fill="#2E8F89"/>
+  <text class="detail" x="764" y="538" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">4</text>
+  <text class="detail" x="888" y="529" text-anchor="middle" dominant-baseline="middle">table.selectAll().where {</text>
+  <text class="detail" x="888" y="544" text-anchor="middle" dominant-baseline="middle">id eq value }.single()</text>
+  <path class="seq" d="M740.2 576 L999.8000000000001 576" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g id="m5">
+  <rect class="labelPill" x="1004.6000000000001" y="598" width="250" height="42" rx="7"/>
+  <circle cx="1023.6000000000001" cy="619" r="12" fill="#C94D68"/>
+  <text class="detail" x="1023.6000000000001" y="620" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">5</text>
+  <text class="detail" x="1147.6000000000001" y="611" text-anchor="middle" dominant-baseline="middle">execute R2DBC SELECT by</text>
+  <text class="detail" x="1147.6000000000001" y="626" text-anchor="middle" dominant-baseline="middle">primary key</text>
+  <path class="seq" d="M999.8000000000001 658 L1259.4 658" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m6">
+  <rect class="labelPill" x="1004.6000000000001" y="680" width="250" height="42" rx="7"/>
+  <circle cx="1023.6000000000001" cy="701" r="12" fill="#C94D68"/>
+  <text class="detail" x="1023.6000000000001" y="702" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">6</text>
+  <text class="detail" x="1147.6000000000001" y="693" text-anchor="middle" dominant-baseline="middle">one ResultRow or lookup</text>
+  <text class="detail" x="1147.6000000000001" y="708" text-anchor="middle" dominant-baseline="middle">failure</text>
+  <path class="seqReturn" d="M1259.4 740 L999.8000000000001 740" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m7">
+  <rect class="labelPill" x="745" y="774" width="250" height="30" rx="7"/>
+  <circle cx="764" cy="789" r="12" fill="#2E8F89"/>
+  <text class="detail" x="764" y="790" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">7</text>
+  <text class="detail" x="888" y="790" text-anchor="middle" dominant-baseline="middle">single() returns row</text>
+  <path class="seqReturn" d="M999.8000000000001 822 L740.2 822" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g id="m8">
+  <rect class="labelPill" x="1005.1999999999999" y="856" width="248.8" height="30" rx="7"/>
+  <circle cx="1024.1999999999998" cy="871" r="12" fill="#755BC6"/>
+  <text class="detail" x="1024.1999999999998" y="872" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">8</text>
+  <text class="detail" x="1147.6" y="872" text-anchor="middle" dominant-baseline="middle">toEntity() maps row</text>
+  <path class="seq" d="M740.2 904 L1519 904" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
+</g>
+<g id="m9">
+  <rect class="labelPill" x="1007.0999999999999" y="938" width="245" height="30" rx="7"/>
+  <circle cx="1026.1" cy="953" r="12" fill="#755BC6"/>
+  <text class="detail" x="1026.1" y="954" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">9</text>
+  <text class="detail" x="1147.6" y="954" text-anchor="middle" dominant-baseline="middle">entity E</text>
+  <path class="seqReturn" d="M1519 986 L740.2 986" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
+</g>
+<g id="m10">
+  <rect class="labelPill" x="487.9000000000001" y="1020" width="245" height="30" rx="7"/>
+  <circle cx="506.9000000000001" cy="1035" r="12" fill="#B9851B"/>
+  <text class="detail" x="506.9000000000001" y="1036" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">10</text>
+  <text class="detail" x="628.4000000000001" y="1036" text-anchor="middle" dominant-baseline="middle">return entity</text>
+  <path class="seqReturn" d="M740.2 1068 L480.6 1068" stroke="#B9851B" marker-end="url(#seqArrow-fallback)"/>
+</g>
+<g id="m11">
+  <rect class="labelPill" x="225.8" y="1090" width="250" height="42" rx="7"/>
+  <circle cx="244.8" cy="1111" r="12" fill="#B9851B"/>
+  <text class="detail" x="244.8" y="1112" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">11</text>
+  <text class="detail" x="368.8" y="1103" text-anchor="middle" dominant-baseline="middle">transaction block returns</text>
+  <text class="detail" x="368.8" y="1118" text-anchor="middle" dominant-baseline="middle">E</text>
+  <path class="seqReturn" d="M480.6 1150 L221 1150" stroke="#B9851B" marker-end="url(#seqArrow-fallback)"/>
+</g>
+<g>
+  <rect class="branchBox" x="74" y="1194" width="1592" height="48" rx="15"/>
+  <rect class="labelPill" x="255.8" y="1188" width="190" height="30" rx="8"/>
+  <text class="detail" x="350.8" y="1204" text-anchor="middle" dominant-baseline="middle">Flow read path</text>
+</g>
+<g id="m13">
+  <rect class="labelPill" x="225.8" y="1254" width="250" height="42" rx="7"/>
+  <circle cx="244.8" cy="1275" r="12" fill="#4F83BF"/>
+  <text class="detail" x="244.8" y="1276" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">13</text>
+  <text class="detail" x="368.8" y="1267" text-anchor="middle" dominant-baseline="middle">suspendTransaction {</text>
+  <text class="detail" x="368.8" y="1282" text-anchor="middle" dominant-baseline="middle">repo.findAll(...).toList()</text>
+  <path class="seq" d="M221 1314 L480.6 1314" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
+</g>
+<g id="m14">
+  <rect class="labelPill" x="485.4000000000001" y="1336" width="250" height="42" rx="7"/>
+  <circle cx="504.4000000000001" cy="1357" r="12" fill="#4F83BF"/>
+  <text class="detail" x="504.4000000000001" y="1358" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">14</text>
+  <text class="detail" x="628.4000000000001" y="1349" text-anchor="middle" dominant-baseline="middle">findAll(limit, offset,</text>
+  <text class="detail" x="628.4000000000001" y="1364" text-anchor="middle" dominant-baseline="middle">sortOrder, predicate)</text>
+  <path class="seq" d="M480.6 1396 L740.2 1396" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
+</g>
+<g id="m15">
+  <rect class="labelPill" x="745" y="1430" width="250" height="30" rx="7"/>
+  <circle cx="764" cy="1445" r="12" fill="#2E8F89"/>
+  <text class="detail" x="764" y="1446" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">15</text>
+  <text class="detail" x="888" y="1446" text-anchor="middle" dominant-baseline="middle">selectAll().where(predicate).orderBy(id)</text>
+  <path class="seq" d="M740.2 1478 L999.8000000000001 1478" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g id="m16">
+  <rect class="labelPill" x="1004.6000000000001" y="1500" width="250" height="42" rx="7"/>
+  <circle cx="1023.6000000000001" cy="1521" r="12" fill="#C94D68"/>
+  <text class="detail" x="1023.6000000000001" y="1522" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">16</text>
+  <text class="detail" x="1147.6000000000001" y="1513" text-anchor="middle" dominant-baseline="middle">stream matching rows</text>
+  <text class="detail" x="1147.6000000000001" y="1528" text-anchor="middle" dominant-baseline="middle">through R2DBC</text>
+  <path class="seq" d="M999.8000000000001 1560 L1259.4 1560" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m17">
+  <rect class="labelPill" x="1007.1000000000001" y="1594" width="245" height="30" rx="7"/>
+  <circle cx="1026.1000000000001" cy="1609" r="12" fill="#C94D68"/>
+  <text class="detail" x="1026.1000000000001" y="1610" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">17</text>
+  <text class="detail" x="1147.6000000000001" y="1610" text-anchor="middle" dominant-baseline="middle">ResultRow stream</text>
+  <path class="seqReturn" d="M1259.4 1642 L999.8000000000001 1642" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m18">
+  <rect class="labelPill" x="1088.2" y="1676" width="342.4" height="30" rx="7"/>
+  <circle cx="1107.2" cy="1691" r="12" fill="#755BC6"/>
+  <text class="detail" x="1107.2" y="1692" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">18</text>
+  <text class="detail" x="1277.4" y="1692" text-anchor="middle" dominant-baseline="middle">map each row with suspend mapper</text>
+  <path class="seq" d="M999.8000000000001 1724 L1519 1724" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
+</g>
+<g id="m19">
+  <rect class="labelPill" x="1136.9" y="1758" width="245" height="30" rx="7"/>
+  <circle cx="1155.9" cy="1773" r="12" fill="#755BC6"/>
+  <text class="detail" x="1155.9" y="1774" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">19</text>
+  <text class="detail" x="1277.4" y="1774" text-anchor="middle" dominant-baseline="middle">entity stream</text>
+  <path class="seqReturn" d="M1519 1806 L999.8000000000001 1806" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
+</g>
+<g id="m20">
+  <rect class="labelPill" x="747.5" y="1840" width="245" height="30" rx="7"/>
+  <circle cx="766.5" cy="1855" r="12" fill="#2E8F89"/>
+  <text class="detail" x="766.5" y="1856" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">20</text>
+  <text class="detail" x="888" y="1856" text-anchor="middle" dominant-baseline="middle">Flow&lt;E&gt;</text>
+  <path class="seqReturn" d="M999.8000000000001 1888 L740.2 1888" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g id="m21">
+  <rect class="labelPill" x="485.4000000000001" y="1910" width="250" height="42" rx="7"/>
+  <circle cx="504.4000000000001" cy="1931" r="12" fill="#B9851B"/>
+  <text class="detail" x="504.4000000000001" y="1932" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">21</text>
+  <text class="detail" x="628.4000000000001" y="1923" text-anchor="middle" dominant-baseline="middle">caller collects inside</text>
+  <text class="detail" x="628.4000000000001" y="1938" text-anchor="middle" dominant-baseline="middle">transaction</text>
+  <path class="seqReturn" d="M740.2 1970 L480.6 1970" stroke="#B9851B" marker-end="url(#seqArrow-fallback)"/>
+</g>
+<g>
+  <rect class="branchBox" x="74" y="2014" width="1592" height="48" rx="15"/>
+  <rect class="labelPill" x="241.3" y="2008" width="219" height="30" rx="8"/>
+  <text class="detail" x="350.8" y="2024" text-anchor="middle" dominant-baseline="middle">Update and delete path</text>
+</g>
+<g id="m23">
+  <rect class="labelPill" x="225.8" y="2074" width="250" height="42" rx="7"/>
+  <circle cx="244.8" cy="2095" r="12" fill="#4F83BF"/>
+  <text class="detail" x="244.8" y="2096" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">23</text>
+  <text class="detail" x="368.8" y="2087" text-anchor="middle" dominant-baseline="middle">suspendTransaction {</text>
+  <text class="detail" x="368.8" y="2102" text-anchor="middle" dominant-baseline="middle">updateById or deleteById }</text>
+  <path class="seq" d="M221 2134 L480.6 2134" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
+</g>
+<g id="m24">
+  <rect class="labelPill" x="487.9000000000001" y="2156" width="245" height="42" rx="7"/>
+  <circle cx="506.9000000000001" cy="2177" r="12" fill="#4F83BF"/>
+  <text class="detail" x="506.9000000000001" y="2178" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">24</text>
+  <text class="detail" x="628.4000000000001" y="2169" text-anchor="middle" dominant-baseline="middle">updateById(id) or</text>
+  <text class="detail" x="628.4000000000001" y="2184" text-anchor="middle" dominant-baseline="middle">deleteById(id)</text>
+  <path class="seq" d="M480.6 2216 L740.2 2216" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
+</g>
+<g id="m25">
+  <rect class="labelPill" x="745" y="2238" width="250" height="42" rx="7"/>
+  <circle cx="764" cy="2259" r="12" fill="#2E8F89"/>
+  <text class="detail" x="764" y="2260" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">25</text>
+  <text class="detail" x="888" y="2251" text-anchor="middle" dominant-baseline="middle">table.update(...) or</text>
+  <text class="detail" x="888" y="2266" text-anchor="middle" dominant-baseline="middle">deleteWhere { id eq value</text>
+  <path class="seq" d="M740.2 2298 L999.8000000000001 2298" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g id="m26">
+  <rect class="labelPill" x="1004.6000000000001" y="2332" width="250" height="30" rx="7"/>
+  <circle cx="1023.6000000000001" cy="2347" r="12" fill="#C94D68"/>
+  <text class="detail" x="1023.6000000000001" y="2348" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">26</text>
+  <text class="detail" x="1147.6000000000001" y="2348" text-anchor="middle" dominant-baseline="middle">execute UPDATE or DELETE</text>
+  <path class="seq" d="M999.8000000000001 2380 L1259.4 2380" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m27">
+  <rect class="labelPill" x="1007.1000000000001" y="2414" width="245" height="30" rx="7"/>
+  <circle cx="1026.1000000000001" cy="2429" r="12" fill="#C94D68"/>
+  <text class="detail" x="1026.1000000000001" y="2430" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">27</text>
+  <text class="detail" x="1147.6000000000001" y="2430" text-anchor="middle" dominant-baseline="middle">affected-row count</text>
+  <path class="seqReturn" d="M1259.4 2462 L999.8000000000001 2462" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m28">
+  <rect class="labelPill" x="747.5" y="2496" width="245" height="30" rx="7"/>
+  <circle cx="766.5" cy="2511" r="12" fill="#2E8F89"/>
+  <text class="detail" x="766.5" y="2512" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">28</text>
+  <text class="detail" x="888" y="2512" text-anchor="middle" dominant-baseline="middle">Int count</text>
+  <path class="seqReturn" d="M999.8000000000001 2544 L740.2 2544" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g id="m29">
+  <rect class="labelPill" x="487.9000000000001" y="2578" width="245" height="30" rx="7"/>
+  <circle cx="506.9000000000001" cy="2593" r="12" fill="#B9851B"/>
+  <text class="detail" x="506.9000000000001" y="2594" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">29</text>
+  <text class="detail" x="628.4000000000001" y="2594" text-anchor="middle" dominant-baseline="middle">return Int</text>
+  <path class="seqReturn" d="M740.2 2626 L480.6 2626" stroke="#B9851B" marker-end="url(#seqArrow-fallback)"/>
+</g>
+<g id="m30">
+  <rect class="labelPill" x="225.8" y="2648" width="250" height="42" rx="7"/>
+  <circle cx="244.8" cy="2669" r="12" fill="#B9851B"/>
+  <text class="detail" x="244.8" y="2670" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">30</text>
+  <text class="detail" x="368.8" y="2661" text-anchor="middle" dominant-baseline="middle">transaction block returns</text>
+  <text class="detail" x="368.8" y="2676" text-anchor="middle" dominant-baseline="middle">count</text>
+  <path class="seqReturn" d="M480.6 2708 L221 2708" stroke="#B9851B" marker-end="url(#seqArrow-fallback)"/>
+</g>
+<g><rect class="note" x="110" y="2882" width="1520" height="48" rx="12"/><text class="small" x="870" y="2907" text-anchor="middle" dominant-baseline="middle">findById uses single(); findAll returns Flow&lt;E&gt;; update/delete return affected-row counts from Exposed R2DBC statements.</text></g>
 </svg>
