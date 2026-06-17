@@ -30,7 +30,11 @@ JetBrains Exposed 1.3.0은 CockroachDB를 built-in supported database로 나열�
 않습니다. 이 모듈은 full dialect가 아니라 제한된 helper와 검증된 compatibility
 slice로 보아야 합니다.
 
-## Compatibility Boundary
+## 헬퍼 경계
+
+![CockroachDB helper boundary](../../docs/images/readme-diagrams/exposed-exposed-cockroachdb-diagram-01.png)
+
+## 호환성 경계
 
 | 기능 | 상태 | 근거 |
 |---|---|---|
@@ -128,6 +132,8 @@ transaction retry knob이 있습니다. 하지만 Exposed JDBC retry loop는 `SQ
 전체를 재시도합니다. `withCockroachTransaction`은 내부 Exposed transaction을 한 번만
 시도하도록 고정한 뒤, CockroachDB가 문서화한 transaction retry signature만
 재시도합니다.
+
+![CockroachDB transaction retry flow](../../docs/images/readme-diagrams/exposed-exposed-cockroachdb-flow-02.png)
 
 caller-managed pool을 쓰는 경우 `DataSource`를 `CockroachDatabase.connect`에
 전달합니다. 예를 들어 `bluetape4k-jdbc`로 PostgreSQL JDBC URL 기반 HikariCP
