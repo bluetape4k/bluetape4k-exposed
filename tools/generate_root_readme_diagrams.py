@@ -10,13 +10,11 @@ from __future__ import annotations
 
 import html
 import re
-import subprocess
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "docs/images/readme-diagrams"
-EVIDENCE = ROOT / ".omx/artifacts/issue-209-readme-diagrams"
 
 README_MODULE_RE = re.compile(r"^\| `([^`]+)` \|")
 INCLUDE_MAPPED_RE = re.compile(r'includeMappedModule\("([^"]+)",\s*"([^"]+)"\)')
@@ -183,7 +181,7 @@ def header(width: int, height: int, title: str, subtitle: str) -> list[str]:
         '<marker id="arrow-blue" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M1,1 L8,4.5 L1,8 Z" fill="#557FAF"/></marker>',
         '<marker id="arrow-green" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M1,1 L8,4.5 L1,8 Z" fill="#4F8F6C"/></marker>',
         '<marker id="arrow-purple" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M1,1 L8,4.5 L1,8 Z" fill="#7B65B6"/></marker>',
-        '<style>.canvas{fill:#F6F9FC}.frame{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:2}.title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:42px;fill:#22344A;font-weight:400}.subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:17px;fill:#536476;font-weight:400}.group{filter:url(#shadow)}.gtitle{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:24px;fill:#22344A;font-weight:400}.label{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:14px;fill:#34465B;font-weight:400}.small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;fill:#627184;font-weight:400}.count{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:26px;fill:#22344A;font-weight:400}.edge{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}</style>',
+        '<style>.canvas{fill:#F6F9FC}.frame{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:2}.title{font-family:"Architects Daughter",cursive;font-size:42px;fill:#22344A;font-weight:400}.subtitle{font-family:"Comic Mono",monospace;font-size:17px;fill:#536476;font-weight:400}.group{filter:url(#shadow)}.gtitle{font-family:"Architects Daughter",cursive;font-size:24px;fill:#22344A;font-weight:400}.label{font-family:"Comic Mono",monospace;font-size:14px;fill:#34465B;font-weight:400}.small{font-family:"Comic Mono",monospace;font-size:12px;fill:#627184;font-weight:400}.count{font-family:"Architects Daughter",cursive;font-size:26px;fill:#22344A;font-weight:400}.edge{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}</style>',
         "</defs>",
         f'<rect class="canvas" width="{width}" height="{height}"/>',
         f'<rect class="frame" x="36" y="28" width="{width - 72}" height="{height - 56}" rx="24"/>',
@@ -270,37 +268,9 @@ def write_relationships() -> None:
     (OUT / "root-readme-module-relationships-01.svg").write_text("\n".join(parts) + "\n", encoding="utf-8")
 
 
-def write_graphviz_evidence() -> None:
-    EVIDENCE.mkdir(parents=True, exist_ok=True)
-    dot = [
-        "digraph G {",
-        "  graph [rankdir=TB];",
-        '  bom [label="BOM"];',
-    ]
-    for group in GROUPS:
-        dot.append(f'  {group["key"]} [label="{group["title"]}"];')
-    for key in ["foundation", "repositories", "cache", "columns", "dialects", "spring"]:
-        dot.append(f"  bom -> {key};")
-    dot.extend(
-        [
-            "  foundation -> repositories;",
-            "  repositories -> cache;",
-            "  repositories -> dialects;",
-            "  columns -> dialects;",
-            "  dialects -> spring;",
-            "}",
-        ]
-    )
-    dot_path = EVIDENCE / "root-readme-module-relationships.dot"
-    dot_path.write_text("\n".join(dot) + "\n", encoding="utf-8")
-    subprocess.run(["dot", "-Tplain", str(dot_path), "-o", str(dot_path.with_suffix(".plain"))], check=True)
-    subprocess.run(["dot", "-Tsvg", str(dot_path), "-o", str(dot_path.with_name("root-readme-module-relationships-sketch.svg"))], check=True)
-
-
 def main() -> None:
     validate_source()
     OUT.mkdir(parents=True, exist_ok=True)
-    write_graphviz_evidence()
     write_overview()
     write_relationships()
 
