@@ -1,68 +1,118 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1754" height="876" viewBox="0 0 1754 876" role="img" aria-label="Core AuditableEntity Structure">
-<defs>
-  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="10" markerHeight="8" refX="8.5" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 8.5 4 L 1 7" fill="none" stroke="#758297" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="11" markerHeight="10" refX="9.5" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 0.5 1 L 9.5 5 L 0.5 9 Z" fill="#ffffff" stroke="#758297" stroke-width="1.7"/></marker>
-  <style>
-    .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
-    .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
-    .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
-    .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
-    .smallLabel{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:21px;font-weight:400;fill:#102033}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
-    .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .strong{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .line{stroke:#758297;stroke-width:2.1;fill:none;marker-end:url(#openArrow)}
-    .plainLine{stroke:#758297;stroke-width:2.1;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
-    .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-    .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
-  </style>
-</defs>
-<rect class="canvas" width="1754" height="876"/>
-<rect class="frame" x="32" y="28" width="1690" height="820" rx="28"/>
-<text class="title" x="66" y="82">Core AuditableEntity Structure</text>
-<text class="subtitle" x="70" y="118">UML classes from the original Mermaid source</text>
-<path class="line" d="M1082 292 L1082 444 L672 444 L672 180"/>
-<g transform="translate(92,180)">
-  <rect class="card" x="0" y="0" width="340" height="149" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <line class="compartment" x1="0" y1="94" x2="340" y2="94" stroke="#5B8DEF"/>
-  <text class="small" x="170" y="26" text-anchor="middle">«abstractEntityClass»</text>
-  <text class="label" x="170" y="56.5" text-anchor="middle">Auditable Long Entity</text>
-<text class="label" x="170" y="81.5" text-anchor="middle">Class E</text>
-  <text class="mono" x="18" y="124">+new(init): E</text>
-</g>
-<g transform="translate(502,180)">
-  <rect class="card" x="0" y="0" width="340" height="217" rx="5" fill="#EAF7EF" stroke="#58A978"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#58A978"/>
-  <text class="small" x="170" y="26" text-anchor="middle">«abstractEntity»</text>
-  <text class="label" x="170" y="61" text-anchor="middle">AuditableLongEntity</text>
-  <text class="mono" x="18" y="108">+createdBy: String</text>
-<text class="mono" x="18" y="129">+createdAt: Instant</text>
-<text class="mono" x="18" y="150">+updatedBy: String</text>
-<text class="mono" x="18" y="171">+updatedAt: Instant</text>
-<text class="mono" x="18" y="192">+flush()</text>
-</g>
-<g transform="translate(912,180)">
-  <rect class="card" x="0" y="0" width="340" height="112" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#D6A441"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="61" text-anchor="middle">AuditableLongEntityClass</text>
-
-</g>
-<g transform="translate(1322,180)">
-  <rect class="card" x="0" y="0" width="340" height="133" rx="5" fill="#FDECEF" stroke="#DC6B82"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#DC6B82"/>
-  <text class="small" x="170" y="26" text-anchor="middle">«IdTable_String»</text>
-  <text class="label" x="170" y="61" text-anchor="middle">KsuidTable</text>
-  <text class="mono" x="18" y="108">+id: Column~String~</text>
-</g>
-<g transform="translate(707,523)">
-  <rect class="card" x="0" y="0" width="340" height="133" rx="5" fill="#E9F7F6" stroke="#45A7A1"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#45A7A1"/>
-  <text class="small" x="170" y="26" text-anchor="middle">«IdTable_Long»</text>
-  <text class="label" x="170" y="61" text-anchor="middle">SnowflakeIdTable</text>
-  <text class="mono" x="18" y="108">+id: Column~Long~</text>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1460" viewBox="0 0 1680 1460" role="img" aria-labelledby="title desc">
+  <title id="title">DAO AuditableEntity Structure</title>
+  <desc id="desc">Class-oriented DAO auditable structure rebuilt from exposed-dao README and auditable DAO source files.</desc>
+  <defs>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <marker id="arrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="context-stroke"/></marker>
+    <marker id="generalizationArrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 9 5 L 1 9 Z" fill="#FFFFFF" stroke="context-stroke" stroke-width="1.2" stroke-dasharray="none"/></marker>
+    <style>
+      .canvas{fill:#F6F9FC}.decor{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
+      .innerFrame{fill:#FBFDFF;stroke:#D9E4EF;stroke-width:2}
+      .title{font-family:"Architects Daughter";font-size:46px;fill:#22344A;font-weight:400}
+      .subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476;font-weight:400}
+      .group{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}.group-title{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .card-title{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}.detail{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}
+      .small{font-family:"Comic Mono";font-size:13px;fill:#627184;font-weight:400}.shape{filter:url(#shadow);stroke-width:2}
+      .connector{fill:none;stroke-width:2.6;marker-end:url(#arrow);stroke-linejoin:round;stroke-linecap:round}.generalization{marker-end:url(#generalizationArrow)}.dashed{stroke-dasharray:7 6}
+      .pill{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1}
+    </style>
+  </defs>
+  <rect class="canvas" width="1680" height="1460"/>
+  <rect class="decor" x="44" y="36" width="1592" height="1388" rx="34"/>
+  <rect class="innerFrame" x="82" y="154" width="1516" height="1164" rx="24"/>
+  <text class="title" x="72" y="88">DAO AuditableEntity Structure</text>
+  <text class="subtitle" x="76" y="121">DAO entities implement core Auditable fields, bind to core auditable tables, and set createdBy/updatedBy during flush.</text>
+  <g id="group-contracts">
+    <rect class="group" x="92" y="156" width="1496" height="250" rx="18"/>
+    <text class="group-title" x="122" y="180" dominant-baseline="middle">Core and Exposed contracts</text>
+  </g>
+  <g id="group-dao-base">
+    <rect class="group" x="92" y="446" width="1496" height="265" rx="18"/>
+    <text class="group-title" x="122" y="470" dominant-baseline="middle">DAO audit entity base</text>
+  </g>
+  <g id="group-families">
+    <rect class="group" x="92" y="751" width="1496" height="300" rx="18"/>
+    <text class="group-title" x="122" y="775" dominant-baseline="middle">ID-specific DAO entity families</text>
+  </g>
+  <g id="group-tables">
+    <rect class="group" x="92" y="1061" width="1496" height="220" rx="18"/>
+    <text class="group-title" x="122" y="1085" dominant-baseline="middle">Matching core table helpers</text>
+  </g>
+  <path id="route-auditable-entity-entity" data-edge="auditable-entity-&gt;entity" data-label="extends" class="connector generalization" d="M 650 535 L 650 336" stroke="#758297"/>
+  <path id="route-auditable-entity-auditable" data-edge="auditable-entity-&gt;auditable" data-label="implements" class="connector generalization" d="M 900 535 L 900 336" stroke="#4F83BF"/>
+  <path id="route-flush-contract-user-context" data-edge="flush-contract-&gt;user-context" data-label="reads current user" class="connector" d="M 1302 540 L 1302 336" stroke="#2E8F89"/>
+  <path id="route-auditable-entity-flush-contract" data-edge="auditable-entity-&gt;flush-contract" data-label="overrides" class="connector" d="M 1000 591 L 1120 591" stroke="#B9851B"/>
+  <path id="route-int-entity-auditable-entity" data-edge="int-entity-&gt;auditable-entity" data-label="inherits audit flush" class="connector generalization" d="M 300 855 L 300 730 L 650 730 L 650 647" stroke="#755BC6"/>
+  <path id="route-long-entity-auditable-entity" data-edge="long-entity-&gt;auditable-entity" data-label="inherits audit flush" class="connector generalization" d="M 705 855 L 705 647" stroke="#755BC6"/>
+  <path id="route-uuid-entity-auditable-entity" data-edge="uuid-entity-&gt;auditable-entity" data-label="inherits audit flush" class="connector generalization" d="M 1120 855 L 1120 730 L 880 730 L 880 647" stroke="#755BC6"/>
+  <path id="route-entity-class-tables" data-edge="entity-class-&gt;tables" data-label="binds matching table" class="connector" d="M 1428 951 L 1428 1160" stroke="#2E8F89"/>
+  <g id="node-entity" data-node="entity" transform="translate(500,250)">
+    <rect class="shape" x="0" y="0" width="300" height="86" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
+    <text class="card-title" x="150" y="24" text-anchor="middle" dominant-baseline="middle">Entity&lt;ID&gt;</text>
+    <text class="detail" x="150" y="43" text-anchor="middle" dominant-baseline="middle">Exposed DAO base</text>
+    <text class="detail" x="150" y="62" text-anchor="middle" dominant-baseline="middle">owns flush(batch)</text>
+  </g>
+  <g id="node-auditable" data-node="auditable" transform="translate(850,250)">
+    <rect class="shape" x="0" y="0" width="300" height="86" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <text class="card-title" x="150" y="24" text-anchor="middle" dominant-baseline="middle">Auditable</text>
+    <text class="detail" x="150" y="43" text-anchor="middle" dominant-baseline="middle">createdBy / createdAt</text>
+    <text class="detail" x="150" y="62" text-anchor="middle" dominant-baseline="middle">updatedBy / updatedAt</text>
+  </g>
+  <g id="node-user-context" data-node="user-context" transform="translate(1210,250)">
+    <rect class="shape" x="0" y="0" width="330" height="86" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="165" y="24" text-anchor="middle" dominant-baseline="middle">UserContext</text>
+    <text class="detail" x="165" y="43" text-anchor="middle" dominant-baseline="middle">ScopedValue &gt; ThreadLocal &gt; system</text>
+    <text class="detail" x="165" y="62" text-anchor="middle" dominant-baseline="middle">non-null audit username</text>
+  </g>
+  <g id="node-auditable-entity" data-node="auditable-entity" transform="translate(570,535)">
+    <rect class="shape" x="0" y="0" width="430" height="112" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="215" y="27.5" text-anchor="middle" dominant-baseline="middle">AuditableEntity&lt;ID&gt;</text>
+    <text class="detail" x="215" y="46.5" text-anchor="middle" dominant-baseline="middle">extends Entity&lt;ID&gt;</text>
+    <text class="detail" x="215" y="65.5" text-anchor="middle" dominant-baseline="middle">implements Auditable</text>
+    <text class="detail" x="215" y="84.5" text-anchor="middle" dominant-baseline="middle">flush sets audit user</text>
+  </g>
+  <g id="node-flush-contract" data-node="flush-contract" transform="translate(1120,540)">
+    <rect class="shape" x="0" y="0" width="365" height="102" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <text class="card-title" x="182.5" y="22.5" text-anchor="middle" dominant-baseline="middle">flush(batch)</text>
+    <text class="detail" x="182.5" y="41.5" text-anchor="middle" dominant-baseline="middle">new entity: createdBy</text>
+    <text class="detail" x="182.5" y="60.5" text-anchor="middle" dominant-baseline="middle">dirty existing entity: updatedBy</text>
+    <text class="detail" x="182.5" y="79.5" text-anchor="middle" dominant-baseline="middle">updatedAt via repository update</text>
+  </g>
+  <g id="node-int-entity" data-node="int-entity" transform="translate(140,855)">
+    <rect class="shape" x="0" y="0" width="320" height="86" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="160" y="24" text-anchor="middle" dominant-baseline="middle">AuditableIntEntity</text>
+    <text class="detail" x="160" y="43" text-anchor="middle" dominant-baseline="middle">EntityID&lt;Int&gt;</text>
+    <text class="detail" x="160" y="62" text-anchor="middle" dominant-baseline="middle">uses AuditableIntIdTable</text>
+  </g>
+  <g id="node-long-entity" data-node="long-entity" transform="translate(535,855)">
+    <rect class="shape" x="0" y="0" width="340" height="86" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="170" y="24" text-anchor="middle" dominant-baseline="middle">AuditableLongEntity</text>
+    <text class="detail" x="170" y="43" text-anchor="middle" dominant-baseline="middle">EntityID&lt;Long&gt;</text>
+    <text class="detail" x="170" y="62" text-anchor="middle" dominant-baseline="middle">uses AuditableLongIdTable</text>
+  </g>
+  <g id="node-uuid-entity" data-node="uuid-entity" transform="translate(950,855)">
+    <rect class="shape" x="0" y="0" width="340" height="86" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="170" y="24" text-anchor="middle" dominant-baseline="middle">AuditableUUIDEntity</text>
+    <text class="detail" x="170" y="43" text-anchor="middle" dominant-baseline="middle">EntityID&lt;UUID&gt;</text>
+    <text class="detail" x="170" y="62" text-anchor="middle" dominant-baseline="middle">uses AuditableUUIDTable</text>
+  </g>
+  <g id="node-entity-class" data-node="entity-class" transform="translate(1305,845)">
+    <rect class="shape" x="0" y="0" width="245" height="106" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="122.5" y="24.5" text-anchor="middle" dominant-baseline="middle">Auditable EntityClass</text>
+    <text class="detail" x="122.5" y="43.5" text-anchor="middle" dominant-baseline="middle">Int / Long / UUID variants</text>
+    <text class="detail" x="122.5" y="62.5" text-anchor="middle" dominant-baseline="middle">EntityClass&lt;ID, E&gt;</text>
+    <text class="detail" x="122.5" y="81.5" text-anchor="middle" dominant-baseline="middle">table + optional ctor</text>
+  </g>
+  <g id="node-tables" data-node="tables" transform="translate(1080,1160)">
+    <rect class="shape" x="0" y="0" width="430" height="86" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
+    <text class="card-title" x="215" y="14.5" text-anchor="middle" dominant-baseline="middle">Auditable*IdTable</text>
+    <text class="detail" x="215" y="33.5" text-anchor="middle" dominant-baseline="middle">core table columns</text>
+    <text class="detail" x="215" y="52.5" text-anchor="middle" dominant-baseline="middle">created_at DB default</text>
+    <text class="detail" x="215" y="71.5" text-anchor="middle" dominant-baseline="middle">created_by client default</text>
+  </g>
+  <g transform="translate(76,1368)" data-footer="reader-contract">
+    <rect class="pill" x="0" y="0" width="1528" height="48" rx="10"/>
+    <text class="small" x="764" y="18" text-anchor="middle" dominant-baseline="middle">AuditableEntity.flush fills createdBy for new entities and updatedBy for dirty existing entities.</text>
+    <text class="small" x="764" y="35" text-anchor="middle" dominant-baseline="middle">updatedAt is owned by repository audited update paths, not by flush alone.</text>
+  </g>
 </svg>
