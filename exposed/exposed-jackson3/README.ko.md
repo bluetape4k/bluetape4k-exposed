@@ -24,19 +24,13 @@ dependencies {
 }
 ```
 
-## 아키텍처 다이어그램
+## Jackson 3 어댑터 경계
 
-### 컬럼 타입 구조 (요약)
+![Jackson 3 JSON column boundary](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-01.png)
 
-![Jackson3 column type summary diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-01.png)
+## JSON 왕복 경로
 
-### JSON 컬럼 타입 클래스 구조
-
-![JSON diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-02.png)
-
-### Jackson 2 vs Jackson 3 패키지 차이
-
-![Jackson 2 vs Jackson 3 diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-03.png)
+![Jackson 3 JSON round trip](../../docs/images/readme-diagrams/exposed-exposed-jackson3-flow-02.png)
 
 ## 기본 사용법
 
@@ -121,7 +115,7 @@ val query2 = Users.selectAll()
 ## 테스트
 
 ```bash
-./gradlew :exposed-jackson3:test
+./gradlew :bluetape4k-exposed-jackson3:test
 ```
 
 ## 참고
