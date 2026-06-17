@@ -29,6 +29,10 @@ JetBrains Exposed 1.3.0 does not list CockroachDB as a built-in supported
 database. Treat this module as a bounded helper and verified compatibility
 slice, not as a full dialect.
 
+## Helper Boundary
+
+![CockroachDB helper boundary](../../docs/images/readme-diagrams/exposed-exposed-cockroachdb-diagram-01.png)
+
 ## Compatibility Boundary
 
 | Feature | Status | Evidence |
@@ -129,6 +133,8 @@ loop catches `SQLException` broadly. `withCockroachTransaction` keeps the retry
 boundary CockroachDB-specific by forcing the wrapped Exposed transaction to one
 internal attempt and retrying only the documented CockroachDB transaction retry
 signature.
+
+![CockroachDB transaction retry flow](../../docs/images/readme-diagrams/exposed-exposed-cockroachdb-flow-02.png)
 
 For caller-managed pools, pass any `DataSource` to `CockroachDatabase.connect`.
 For example, `bluetape4k-jdbc` can create a HikariCP pool with the PostgreSQL
