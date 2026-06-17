@@ -1,12 +1,12 @@
-한국어 | [English](./README.md)
+[English](./README.md) | 한국어
 
 # exposed-clickhouse
 
-ClickHouse JDBC를 위한 Kotlin/Exposed 다이얼렉트 — 타입 안전 DSL, MergeTree 엔진 설정, ClickHouse 전용 컬럼 타입, 코루틴 친화 헬퍼를 제공합니다.
+ClickHouse JDBC를 위한 Kotlin/Exposed 다이얼렉트입니다. Exposed의 테이블/쿼리 문법은 유지하면서 ClickHouse 엔진 절, 전용 컬럼 타입, 집계/날짜 함수, 블로킹 JDBC 작업을 코루틴에서 다루기 위한 헬퍼를 제공합니다.
 
 ## 아키텍처
 
-![exposed clickhouse Architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-diagram-01.png)
+![ClickHouse Exposed integration architecture](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-diagram-01.png)
 
 ## 주요 기능
 
@@ -16,7 +16,7 @@ ClickHouse JDBC를 위한 Kotlin/Exposed 다이얼렉트 — 타입 안전 DSL, 
 - **풍부한 컬럼 타입** — `String`, `FixedString(N)`, `Int8`–`Int64`, `UInt8`–`UInt64`, `Float32/64`, `DateTime64`, `Date32`, `LowCardinality(T)`, `Array(T)`, `Nullable(T)`
 - **날짜 함수** — `toYYYYMM()`, `dateDiff(unit, start, end)`, `toStartOfInterval()`
 - **집계 함수** — `argMax()`, `argMin()`, `quantile(level)()`, `uniq()`, `uniqExact()`
-- **코루틴 헬퍼** — 논블로킹 DB 접근을 위한 `suspendTransaction {}`, 스트리밍 쿼리 결과를 `Flow<T>`로 반환하는 `queryFlow {}`
+- **코루틴 헬퍼** — `suspendTransaction {}`은 블로킹 Exposed 작업을 IO 디스패처에서 실행하고, `queryFlow {}`는 트랜잭션 안에서 결과를 먼저 materialize한 뒤 `Flow<T>`로 emit합니다.
 
 ## 빠른 시작
 
@@ -151,9 +151,9 @@ transaction(database) {
 }
 ```
 
-## DDL 생성 흐름
+## DDL 라이프사이클
 
-![DDL diagram](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-diagram-02.png)
+![ClickHouse DDL lifecycle](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-flow-02.png)
 
 ## 주의사항
 

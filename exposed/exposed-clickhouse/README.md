@@ -1,12 +1,12 @@
-[한국어](./README.ko.md) | English
+English | [한국어](./README.ko.md)
 
 # exposed-clickhouse
 
-Kotlin/Exposed dialect for ClickHouse JDBC — brings type-safe DSL, MergeTree engine configuration, ClickHouse-specific column types, and coroutine-friendly helpers to your ClickHouse-backed applications.
+Kotlin/Exposed dialect for ClickHouse JDBC. It keeps Exposed table/query syntax while adding ClickHouse engine clauses, column types, aggregate/date functions, and coroutine-friendly wrappers around blocking JDBC work.
 
 ## Architecture
 
-![exposed clickhouse Architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-diagram-01.png)
+![ClickHouse Exposed integration architecture](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-diagram-01.png)
 
 ## Features
 
@@ -16,7 +16,7 @@ Kotlin/Exposed dialect for ClickHouse JDBC — brings type-safe DSL, MergeTree e
 - **Rich Column Types** — `String`, `FixedString(N)`, `Int8`–`Int64`, `UInt8`–`UInt64`, `Float32/64`, `DateTime64`, `Date32`, `LowCardinality(T)`, `Array(T)`, `Nullable(T)`
 - **Date Functions** — `toYYYYMM()`, `dateDiff(unit, start, end)`, `toStartOfInterval()`
 - **Aggregate Functions** — `argMax()`, `argMin()`, `quantile(level)()`, `uniq()`, `uniqExact()`
-- **Coroutine Helpers** — `suspendTransaction {}` for non-blocking DB access, `queryFlow {}` for streaming query results as `Flow<T>`
+- **Coroutine Helpers** — `suspendTransaction {}` runs blocking Exposed work on an IO dispatcher; `queryFlow {}` materializes results inside the transaction and then emits them as `Flow<T>`
 
 ## Quick Start
 
@@ -151,9 +151,9 @@ transaction(database) {
 }
 ```
 
-## DDL Flow
+## DDL Lifecycle
 
-![DDL Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-diagram-02.png)
+![ClickHouse DDL lifecycle](../../docs/images/readme-diagrams/exposed-exposed-clickhouse-flow-02.png)
 
 ## Caveats
 
