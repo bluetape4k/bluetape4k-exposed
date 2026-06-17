@@ -24,25 +24,13 @@ dependencies {
 }
 ```
 
-## 아키텍처 다이어그램
+## Jackson 2 어댑터 경계
 
-### 컬럼 타입 구조 (요약)
+![Jackson 2 JSON column boundary](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-01.png)
 
-![Jackson2 column type summary diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-01.png)
+## JSON 왕복 경로
 
-## 클래스 다이어그램
-
-![exposed jackson2 Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-02.png)
-
-## 직렬화/역직렬화 시퀀스 다이어그램
-
-### 객체 → JSON → DB 저장
-
-![→ JSON → DB diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-sequence-01.png)
-
-### DB 조회 → JSON → 객체 역직렬화
-
-![DB → JSON → diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-sequence-02.png)
+![Jackson 2 JSON round trip](../../docs/images/readme-diagrams/exposed-exposed-jackson2-flow-02.png)
 
 ## 기본 사용법
 
@@ -138,7 +126,7 @@ val metadata: ProductMetadata? = resultRow.getJacksonOrNull(Products.metadata)
 ## 테스트
 
 ```bash
-./gradlew :exposed-jackson2:test
+./gradlew :bluetape4k-exposed-jackson2:test
 ```
 
 ## 참고
