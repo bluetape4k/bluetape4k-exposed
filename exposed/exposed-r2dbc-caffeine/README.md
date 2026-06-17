@@ -12,7 +12,7 @@ The architecture view separates the coroutine-facing repository contract, the lo
 
 ![R2DBC Caffeine local cache architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-diagram-01.png)
 
-The sequence view focuses on behavior: read-through misses load through `suspendTransaction`, write-through waits for the database write, and write-behind returns after queuing while `close()` waits for the final flush.
+The sequence view follows the real message order: read-through hit and miss branches, write-through waiting for the DB write, write-behind returning after the queue send, and `close()` draining the final batch.
 
 ![R2DBC Caffeine cache sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-sequence-01.png)
 

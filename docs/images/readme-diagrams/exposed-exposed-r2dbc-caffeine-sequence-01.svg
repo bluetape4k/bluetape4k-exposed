@@ -1,325 +1,221 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1740" height="3560" viewBox="0 0 1740 3560" role="img" aria-labelledby="title desc">
-  <title id="title">R2DBC Caffeine Cache Flow</title>
-  <desc id="desc">Sequence diagram showing read-through, write-through, write-behind, invalidation, and close behavior for the R2DBC Caffeine repository.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1580" viewBox="0 0 1680 1580" role="img" aria-labelledby="title desc">
+  <title id="title">R2DBC Caffeine Cache Sequence</title>
+  <desc id="desc">Sequence diagram for read-through cache hit and miss, write-through database writes, write-behind queueing, and close-time final flush in AbstractR2dbcCaffeineRepository.</desc>
   <defs>
-    <marker id="seqArrow-call" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#4F83BF"/></marker>
-    <marker id="seqArrow-scoped" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755BC6"/></marker>
-    <marker id="seqArrow-thread" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#2E8F89"/></marker>
-    <marker id="seqArrow-restore" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#3E9868"/></marker>
-    <marker id="seqArrow-fallback" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#B9851B"/></marker>
-    <marker id="seqArrow-audit" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#C94D68"/></marker>
-    <marker id="seqArrow-neutral" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#758297"/></marker>
-    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <marker id="arrowCall" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#3f7d9c" stroke-dasharray="none"/>
+    </marker>
+    <marker id="arrowWork" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#6e8f4f" stroke-dasharray="none"/>
+    </marker>
+    <marker id="arrowAsync" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#7e6ab8" stroke-dasharray="none"/>
+    </marker>
+    <marker id="arrowReturn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#9b7d54" stroke-dasharray="none"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="11" flood-color="#20303a" flood-opacity="0.12"/>
+    </filter>
     <style>
-      .canvas{fill:#F7FAFC}.frame{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:2.6;filter:url(#shadow)}
-      .title{font-family:"Architects Daughter";font-size:44px;fill:#22344A;font-weight:400}.subtitle{font-family:"Comic Mono";font-size:16px;fill:#536476;font-weight:400}
-      .card{filter:url(#shadow);stroke-width:2}.cardTitle{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
-      .detail{font-family:"Comic Mono";font-size:13px;fill:#42556B;font-weight:400}.small{font-family:"Comic Mono";font-size:12px;fill:#627184;font-weight:400}
-      .seq{fill:none;stroke-width:3;stroke-linecap:round}.seqReturn{fill:none;stroke-width:2.7;stroke-linecap:round;stroke-dasharray:8 7}
-      .lifeline{stroke:#A7B4C3;stroke-width:1.8;stroke-dasharray:8 8}.labelPill{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
-      .branchBox{fill:#FFFFFF;fill-opacity:.42;stroke:#D6A441;stroke-width:1.8;stroke-dasharray:8 8}.note{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
+      .canvas { fill: #f6f0e8; }
+      .frame { fill: #fffaf2; stroke: #28485a; stroke-width: 4; }
+      .title { font-family: "Architects Daughter", "Comic Mono", monospace; font-size: 46px; fill: #21343f; }
+      .subtitle, .role, .msg, .note, .footer { font-family: "Comic Mono", monospace; fill: #52636f; }
+      .subtitle { font-size: 18px; }
+      .participantText { font-family: "Architects Daughter", "Comic Mono", monospace; font-size: 20px; fill: #1f3138; }
+      .role { font-size: 13px; }
+      .msg { font-size: 13px; }
+      .note { font-size: 13px; fill: #40515b; }
+      .footer { font-size: 14px; }
+      .participant { fill: #ffffff; stroke: #8db7c2; stroke-width: 2.2; }
+      .lifeline { stroke: #9aaab1; stroke-width: 2; stroke-dasharray: 7 8; }
+      .activation { fill: #eef7f0; stroke: #6e8f4f; stroke-width: 1.5; }
+      .call { fill: none; stroke: #3f7d9c; stroke-width: 3.2; stroke-linecap: round; marker-end: url(#arrowCall); }
+      .work { fill: none; stroke: #6e8f4f; stroke-width: 3.2; stroke-linecap: round; marker-end: url(#arrowWork); }
+      .async { fill: none; stroke: #7e6ab8; stroke-width: 3.2; stroke-linecap: round; marker-end: url(#arrowAsync); }
+      .return { fill: none; stroke: #9b7d54; stroke-width: 2.7; stroke-linecap: round; stroke-dasharray: 8 6; marker-end: url(#arrowReturn); }
+      .alt { fill: none; stroke: #78909c; stroke-width: 2.5; stroke-dasharray: 11 7; }
+      .opt { fill: none; stroke: #7e6ab8; stroke-width: 2.5; stroke-dasharray: 11 7; }
+      .branchDivider { stroke: #78909c; stroke-width: 2.5; stroke-dasharray: 11 7; }
+      .branchHit { fill: #eef7f0; stroke: #6e8f4f; stroke-width: 1.6; }
+      .branchMiss { fill: #eaf4f8; stroke: #3f7d9c; stroke-width: 1.6; }
+      .branchClose { fill: #f3eefb; stroke: #7e6ab8; stroke-width: 1.6; }
+      .label { fill: #ffffff; stroke: #cbd9e7; stroke-width: 1.5; }
+      .callLabel { stroke: #9cc2d1; }
+      .workLabel { stroke: #b6c9a4; }
+      .asyncLabel { stroke: #b9addd; }
+      .returnLabel { stroke: #c8b38f; }
+      .badge { stroke-width: 1.7; }
+      .callBadge { fill: #eaf4f8; stroke: #3f7d9c; }
+      .workBadge { fill: #eef7f0; stroke: #6e8f4f; }
+      .asyncBadge { fill: #f3eefb; stroke: #7e6ab8; }
+      .returnBadge { fill: #fff7e8; stroke: #9b7d54; }
+      .badgeText { font-family: "Comic Mono", monospace; font-size: 11px; font-weight: 700; }
+      .callText { fill: #2f6f8e; }
+      .workText { fill: #55783f; }
+      .asyncText { fill: #6d58a8; }
+      .returnText { fill: #7f6038; }
+      .code { fill: #9b3d5a; font-weight: 700; }
+      .type { fill: #176f7a; font-weight: 700; }
+      .keyword { fill: #8a5b00; font-weight: 700; }
     </style>
   </defs>
-  <rect class="canvas" width="1740" height="3560"/>
-  <rect class="frame" x="32" y="28" width="1676" height="3504" rx="28"/>
-  <text class="title" x="66" y="82">R2DBC Caffeine Cache Flow</text>
-  <text class="subtitle" x="70" y="116">AsyncCache serves local hits, misses load through suspendTransaction, and write-behind flushes batches from a coroutine worker.</text>
-<g id="participant-caller">
-  <rect class="card" x="96" y="165" width="245" height="76" rx="10" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <text class="cardTitle" x="218.5" y="210" text-anchor="middle">Coroutine caller</text>
-  <line class="lifeline" x1="218.5" y1="241" x2="218.5" y2="3466"/>
-</g>
-<g id="participant-repo">
-  <rect class="card" x="356.6" y="165" width="245" height="76" rx="10" fill="#EAF7EF" stroke="#58A978"/>
-  <text class="cardTitle" x="479.1" y="197" text-anchor="middle">R2DBC Caffeine</text>
-  <text class="cardTitle" x="479.1" y="220" text-anchor="middle">repo</text>
-  <line class="lifeline" x1="479.1" y1="241" x2="479.1" y2="3466"/>
-</g>
-<g id="participant-cache">
-  <rect class="card" x="617.2" y="165" width="245" height="76" rx="10" fill="#E9F7F6" stroke="#45A7A1"/>
-  <text class="cardTitle" x="739.7" y="197" text-anchor="middle">Caffeine</text>
-  <text class="cardTitle" x="739.7" y="220" text-anchor="middle">AsyncCache</text>
-  <line class="lifeline" x1="739.7" y1="241" x2="739.7" y2="3466"/>
-</g>
-<g id="participant-tx">
-  <rect class="card" x="877.8000000000001" y="165" width="245" height="76" rx="10" fill="#F1ECFF" stroke="#8A72D6"/>
-  <text class="cardTitle" x="1000.3000000000001" y="210" text-anchor="middle">suspendTransaction</text>
-  <line class="lifeline" x1="1000.3000000000001" y1="241" x2="1000.3000000000001" y2="3466"/>
-</g>
-<g id="participant-database">
-  <rect class="card" x="1138.4" y="165" width="245" height="76" rx="10" fill="#FDECEF" stroke="#DC6B82"/>
-  <text class="cardTitle" x="1260.9" y="210" text-anchor="middle">R2DBC database</text>
-  <line class="lifeline" x1="1260.9" y1="241" x2="1260.9" y2="3466"/>
-</g>
-<g id="participant-worker">
-  <rect class="card" x="1399" y="165" width="245" height="76" rx="10" fill="#FFF3D9" stroke="#D6A441"/>
-  <text class="cardTitle" x="1521.5" y="197" text-anchor="middle">Write-behind</text>
-  <text class="cardTitle" x="1521.5" y="220" text-anchor="middle">worker</text>
-  <line class="lifeline" x1="1521.5" y1="241" x2="1521.5" y2="3466"/>
-</g>
-<g>
-  <rect class="branchBox" x="74" y="292" width="1592" height="48" rx="15"/>
-  <rect class="labelPill" x="253.8" y="286" width="190" height="30" rx="8"/>
-  <text class="detail" x="348.8" y="302" text-anchor="middle" dominant-baseline="middle">Read-through get</text>
-</g>
-<g id="m2">
-  <rect class="labelPill" x="226.3" y="364" width="245" height="30" rx="7"/>
-  <circle cx="245.3" cy="379" r="12" fill="#4F83BF"/>
-  <text class="detail" x="245.3" y="380" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">2</text>
-  <text class="detail" x="366.8" y="380" text-anchor="middle" dominant-baseline="middle">get(id)</text>
-  <path class="seq" d="M218.5 412 L479.1 412" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
-</g>
-<g id="m3">
-  <rect class="labelPill" x="485.0000000000001" y="434" width="248.8" height="42" rx="7"/>
-  <circle cx="504.0000000000001" cy="455" r="12" fill="#2E8F89"/>
-  <text class="detail" x="504.0000000000001" y="456" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">3</text>
-  <text class="detail" x="627.4000000000001" y="447" text-anchor="middle" dominant-baseline="middle">cache.get(key) with</text>
-  <text class="detail" x="627.4000000000001" y="462" text-anchor="middle" dominant-baseline="middle">scope.future loader</text>
-  <path class="seq" d="M479.1 494 L739.7 494" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
-</g>
-<g id="m4">
-  <rect class="labelPill" x="484.4000000000001" y="516" width="250" height="42" rx="7"/>
-  <circle cx="503.4000000000001" cy="537" r="12" fill="#2E8F89"/>
-  <text class="detail" x="503.4000000000001" y="538" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">4</text>
-  <text class="detail" x="627.4000000000001" y="529" text-anchor="middle" dominant-baseline="middle">cache hit returns</text>
-  <text class="detail" x="627.4000000000001" y="544" text-anchor="middle" dominant-baseline="middle">CompletableFuture&lt;E&gt;</text>
-  <path class="seqReturn" d="M739.7 576 L479.1 576" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
-</g>
-<g id="m5">
-  <rect class="labelPill" x="223.8" y="598" width="250" height="42" rx="7"/>
-  <circle cx="242.8" cy="619" r="12" fill="#B9851B"/>
-  <text class="detail" x="242.8" y="620" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">5</text>
-  <text class="detail" x="366.8" y="611" text-anchor="middle" dominant-baseline="middle">await() returns cached</text>
-  <text class="detail" x="366.8" y="626" text-anchor="middle" dominant-baseline="middle">entity</text>
-  <path class="seqReturn" d="M479.1 658 L218.5 658" stroke="#B9851B" marker-end="url(#seqArrow-fallback)"/>
-</g>
-<g id="m6">
-  <rect class="labelPill" x="484.4000000000001" y="692" width="250" height="30" rx="7"/>
-  <circle cx="503.4000000000001" cy="707" r="12" fill="#2E8F89"/>
-  <text class="detail" x="503.4000000000001" y="708" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">6</text>
-  <text class="detail" x="627.4000000000001" y="708" text-anchor="middle" dominant-baseline="middle">cache miss invokes loader</text>
-  <path class="seqReturn" d="M739.7 740 L479.1 740" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
-</g>
-<g id="m7">
-  <rect class="labelPill" x="539.7" y="774" width="400" height="30" rx="7"/>
-  <circle cx="558.7" cy="789" r="12" fill="#755BC6"/>
-  <text class="detail" x="558.7" y="790" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">7</text>
-  <text class="detail" x="757.7" y="790" text-anchor="middle" dominant-baseline="middle">findByIdFromDb(id) in suspendTransaction</text>
-  <path class="seq" d="M479.1 822 L1000.3000000000001 822" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
-</g>
-<g id="m8">
-  <rect class="labelPill" x="1008.1000000000001" y="856" width="245" height="30" rx="7"/>
-  <circle cx="1027.1000000000001" cy="871" r="12" fill="#C94D68"/>
-  <text class="detail" x="1027.1000000000001" y="872" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">8</text>
-  <text class="detail" x="1148.6000000000001" y="872" text-anchor="middle" dominant-baseline="middle">SELECT row by id</text>
-  <path class="seq" d="M1000.3000000000001 904 L1260.9 904" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
-</g>
-<g id="m9">
-  <rect class="labelPill" x="1008.1000000000001" y="938" width="245" height="30" rx="7"/>
-  <circle cx="1027.1000000000001" cy="953" r="12" fill="#C94D68"/>
-  <text class="detail" x="1027.1000000000001" y="954" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">9</text>
-  <text class="detail" x="1148.6000000000001" y="954" text-anchor="middle" dominant-baseline="middle">ResultRow or null</text>
-  <path class="seqReturn" d="M1260.9 986 L1000.3000000000001 986" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
-</g>
-<g id="m10">
-  <rect class="labelPill" x="582.9000000000001" y="1020" width="313.6" height="30" rx="7"/>
-  <circle cx="601.9000000000001" cy="1035" r="12" fill="#755BC6"/>
-  <text class="detail" x="601.9000000000001" y="1036" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">10</text>
-  <text class="detail" x="757.7" y="1036" text-anchor="middle" dominant-baseline="middle">toEntity(); future completes</text>
-  <path class="seqReturn" d="M1000.3000000000001 1068 L479.1 1068" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
-</g>
-<g id="m11">
-  <rect class="labelPill" x="484.4000000000001" y="1090" width="250" height="42" rx="7"/>
-  <circle cx="503.4000000000001" cy="1111" r="12" fill="#2E8F89"/>
-  <text class="detail" x="503.4000000000001" y="1112" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">11</text>
-  <text class="detail" x="627.4000000000001" y="1103" text-anchor="middle" dominant-baseline="middle">AsyncCache stores loaded</text>
-  <text class="detail" x="627.4000000000001" y="1118" text-anchor="middle" dominant-baseline="middle">entity</text>
-  <path class="seq" d="M479.1 1150 L739.7 1150" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
-</g>
-<g id="m12">
-  <rect class="labelPill" x="223.8" y="1184" width="250" height="30" rx="7"/>
-  <circle cx="242.8" cy="1199" r="12" fill="#B9851B"/>
-  <text class="detail" x="242.8" y="1200" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">12</text>
-  <text class="detail" x="366.8" y="1200" text-anchor="middle" dominant-baseline="middle">return entity or null</text>
-  <path class="seqReturn" d="M479.1 1232 L218.5 1232" stroke="#B9851B" marker-end="url(#seqArrow-fallback)"/>
-</g>
-<g>
-  <rect class="branchBox" x="74" y="1276" width="1592" height="48" rx="15"/>
-  <rect class="labelPill" x="253.8" y="1270" width="190" height="30" rx="8"/>
-  <text class="detail" x="348.8" y="1286" text-anchor="middle" dominant-baseline="middle">WRITE_THROUGH put</text>
-</g>
-<g id="m14">
-  <rect class="labelPill" x="226.3" y="1348" width="245" height="30" rx="7"/>
-  <circle cx="245.3" cy="1363" r="12" fill="#4F83BF"/>
-  <text class="detail" x="245.3" y="1364" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">14</text>
-  <text class="detail" x="366.8" y="1364" text-anchor="middle" dominant-baseline="middle">put(id, entity)</text>
-  <path class="seq" d="M218.5 1396 L479.1 1396" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
-</g>
-<g id="m15">
-  <rect class="labelPill" x="484.4000000000001" y="1418" width="250" height="42" rx="7"/>
-  <circle cx="503.4000000000001" cy="1439" r="12" fill="#2E8F89"/>
-  <text class="detail" x="503.4000000000001" y="1440" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">15</text>
-  <text class="detail" x="627.4000000000001" y="1431" text-anchor="middle" dominant-baseline="middle">cache.put(key,</text>
-  <text class="detail" x="627.4000000000001" y="1446" text-anchor="middle" dominant-baseline="middle">completedFuture(entity))</text>
-  <path class="seq" d="M479.1 1478 L739.7 1478" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
-</g>
-<g id="m16">
-  <rect class="labelPill" x="608.1" y="1512" width="263.20000000000005" height="30" rx="7"/>
-  <circle cx="627.1" cy="1527" r="12" fill="#755BC6"/>
-  <text class="detail" x="627.1" y="1528" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">16</text>
-  <text class="detail" x="757.7" y="1528" text-anchor="middle" dominant-baseline="middle">writeToDb(id, entity)</text>
-  <path class="seq" d="M479.1 1560 L1000.3000000000001 1560" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
-</g>
-<g id="m17">
-  <rect class="labelPill" x="1008.1000000000001" y="1582" width="245" height="42" rx="7"/>
-  <circle cx="1027.1000000000001" cy="1603" r="12" fill="#C94D68"/>
-  <text class="detail" x="1027.1000000000001" y="1604" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">17</text>
-  <text class="detail" x="1148.6000000000001" y="1595" text-anchor="middle" dominant-baseline="middle">UPDATE; optional</text>
-  <text class="detail" x="1148.6000000000001" y="1610" text-anchor="middle" dominant-baseline="middle">batchInsert</text>
-  <path class="seq" d="M1000.3000000000001 1642 L1260.9 1642" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
-</g>
-<g id="m18">
-  <rect class="labelPill" x="1008.1000000000001" y="1676" width="245" height="30" rx="7"/>
-  <circle cx="1027.1000000000001" cy="1691" r="12" fill="#C94D68"/>
-  <text class="detail" x="1027.1000000000001" y="1692" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">18</text>
-  <text class="detail" x="1148.6000000000001" y="1692" text-anchor="middle" dominant-baseline="middle">write committed</text>
-  <path class="seqReturn" d="M1260.9 1724 L1000.3000000000001 1724" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
-</g>
-<g id="m19">
-  <rect class="labelPill" x="617.2" y="1758" width="245" height="30" rx="7"/>
-  <circle cx="636.2" cy="1773" r="12" fill="#755BC6"/>
-  <text class="detail" x="636.2" y="1774" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">19</text>
-  <text class="detail" x="757.7" y="1774" text-anchor="middle" dominant-baseline="middle">DB write completes</text>
-  <path class="seqReturn" d="M1000.3000000000001 1806 L479.1 1806" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
-</g>
-<g id="m20">
-  <rect class="labelPill" x="223.8" y="1828" width="250" height="42" rx="7"/>
-  <circle cx="242.8" cy="1849" r="12" fill="#B9851B"/>
-  <text class="detail" x="242.8" y="1850" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">20</text>
-  <text class="detail" x="366.8" y="1841" text-anchor="middle" dominant-baseline="middle">return after cache and DB</text>
-  <text class="detail" x="366.8" y="1856" text-anchor="middle" dominant-baseline="middle">write</text>
-  <path class="seqReturn" d="M479.1 1888 L218.5 1888" stroke="#B9851B" marker-end="url(#seqArrow-fallback)"/>
-</g>
-<g>
-  <rect class="branchBox" x="74" y="1932" width="1592" height="48" rx="15"/>
-  <rect class="labelPill" x="224.3" y="1926" width="249" height="30" rx="8"/>
-  <text class="detail" x="348.8" y="1942" text-anchor="middle" dominant-baseline="middle">WRITE_BEHIND put and flush</text>
-</g>
-<g id="m22">
-  <rect class="labelPill" x="226.3" y="2004" width="245" height="30" rx="7"/>
-  <circle cx="245.3" cy="2019" r="12" fill="#4F83BF"/>
-  <text class="detail" x="245.3" y="2020" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">22</text>
-  <text class="detail" x="366.8" y="2020" text-anchor="middle" dominant-baseline="middle">put(id, entity)</text>
-  <path class="seq" d="M218.5 2052 L479.1 2052" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
-</g>
-<g id="m23">
-  <rect class="labelPill" x="484.4000000000001" y="2074" width="250" height="42" rx="7"/>
-  <circle cx="503.4000000000001" cy="2095" r="12" fill="#2E8F89"/>
-  <text class="detail" x="503.4000000000001" y="2096" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">23</text>
-  <text class="detail" x="627.4000000000001" y="2087" text-anchor="middle" dominant-baseline="middle">cache.put(key,</text>
-  <text class="detail" x="627.4000000000001" y="2102" text-anchor="middle" dominant-baseline="middle">completedFuture(entity))</text>
-  <path class="seq" d="M479.1 2134 L739.7 2134" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
-</g>
-<g id="m24">
-  <rect class="labelPill" x="832.6999999999999" y="2168" width="335.20000000000005" height="30" rx="7"/>
-  <circle cx="851.6999999999999" cy="2183" r="12" fill="#755BC6"/>
-  <text class="detail" x="851.6999999999999" y="2184" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">24</text>
-  <text class="detail" x="1018.3" y="2184" text-anchor="middle" dominant-baseline="middle">startWriteBehindJob() if needed</text>
-  <path class="seq" d="M479.1 2216 L1521.5 2216" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
-</g>
-<g id="m25">
-  <rect class="labelPill" x="854.3" y="2250" width="292" height="30" rx="7"/>
-  <circle cx="873.3" cy="2265" r="12" fill="#C94D68"/>
-  <text class="detail" x="873.3" y="2266" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">25</text>
-  <text class="detail" x="1018.3" y="2266" text-anchor="middle" dominant-baseline="middle">send id/entity to Channel</text>
-  <path class="seq" d="M479.1 2298 L1521.5 2298" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
-</g>
-<g id="m26">
-  <rect class="labelPill" x="829.0999999999999" y="2332" width="342.4" height="30" rx="7"/>
-  <circle cx="848.0999999999999" cy="2347" r="12" fill="#C94D68"/>
-  <text class="detail" x="848.0999999999999" y="2348" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">26</text>
-  <text class="detail" x="1018.3" y="2348" text-anchor="middle" dominant-baseline="middle">queue accepted; depth increments</text>
-  <path class="seqReturn" d="M1521.5 2380 L479.1 2380" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
-</g>
-<g id="m27">
-  <rect class="labelPill" x="226.3" y="2414" width="245" height="30" rx="7"/>
-  <circle cx="245.3" cy="2429" r="12" fill="#B9851B"/>
-  <text class="detail" x="245.3" y="2430" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">27</text>
-  <text class="detail" x="366.8" y="2430" text-anchor="middle" dominant-baseline="middle">return immediately</text>
-  <path class="seqReturn" d="M479.1 2462 L218.5 2462" stroke="#B9851B" marker-end="url(#seqArrow-fallback)"/>
-</g>
-<g id="m28">
-  <rect class="labelPill" x="1138.4" y="2496" width="245" height="30" rx="7"/>
-  <circle cx="1157.4" cy="2511" r="12" fill="#755BC6"/>
-  <text class="detail" x="1157.4" y="2512" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">28</text>
-  <text class="detail" x="1278.9" y="2512" text-anchor="middle" dominant-baseline="middle">flushBatch(batch)</text>
-  <path class="seq" d="M1521.5 2544 L1000.3000000000001 2544" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
-</g>
-<g id="m29">
-  <rect class="labelPill" x="1008.1000000000001" y="2566" width="245" height="42" rx="7"/>
-  <circle cx="1027.1000000000001" cy="2587" r="12" fill="#C94D68"/>
-  <text class="detail" x="1027.1000000000001" y="2588" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">29</text>
-  <text class="detail" x="1148.6000000000001" y="2579" text-anchor="middle" dominant-baseline="middle">UPDATE; optional</text>
-  <text class="detail" x="1148.6000000000001" y="2594" text-anchor="middle" dominant-baseline="middle">batchInsert</text>
-  <path class="seq" d="M1000.3000000000001 2626 L1260.9 2626" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
-</g>
-<g id="m30">
-  <rect class="labelPill" x="1266.2" y="2648" width="250" height="42" rx="7"/>
-  <circle cx="1285.2" cy="2669" r="12" fill="#C94D68"/>
-  <text class="detail" x="1285.2" y="2670" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">30</text>
-  <text class="detail" x="1409.2" y="2661" text-anchor="middle" dominant-baseline="middle">batch flushed; depth</text>
-  <text class="detail" x="1409.2" y="2676" text-anchor="middle" dominant-baseline="middle">decreases</text>
-  <path class="seqReturn" d="M1260.9 2708 L1521.5 2708" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
-</g>
-<g>
-  <rect class="branchBox" x="74" y="2752" width="1592" height="48" rx="15"/>
-  <rect class="labelPill" x="246.8" y="2746" width="204" height="30" rx="8"/>
-  <text class="detail" x="348.8" y="2762" text-anchor="middle" dominant-baseline="middle">Invalidate and close</text>
-</g>
-<g id="m32">
-  <rect class="labelPill" x="223.8" y="2812" width="250" height="42" rx="7"/>
-  <circle cx="242.8" cy="2833" r="12" fill="#4F83BF"/>
-  <text class="detail" x="242.8" y="2834" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">32</text>
-  <text class="detail" x="366.8" y="2825" text-anchor="middle" dominant-baseline="middle">invalidate(id), clear(),</text>
-  <text class="detail" x="366.8" y="2840" text-anchor="middle" dominant-baseline="middle">or close()</text>
-  <path class="seq" d="M218.5 2872 L479.1 2872" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
-</g>
-<g id="m33">
-  <rect class="labelPill" x="486.9000000000001" y="2894" width="245" height="42" rx="7"/>
-  <circle cx="505.9000000000001" cy="2915" r="12" fill="#2E8F89"/>
-  <text class="detail" x="505.9000000000001" y="2916" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">33</text>
-  <text class="detail" x="627.4000000000001" y="2907" text-anchor="middle" dominant-baseline="middle">invalidate local</text>
-  <text class="detail" x="627.4000000000001" y="2922" text-anchor="middle" dominant-baseline="middle">AsyncCache entries</text>
-  <path class="seq" d="M479.1 2954 L739.7 2954" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
-</g>
-<g id="m34">
-  <rect class="labelPill" x="850.6999999999999" y="2988" width="299.20000000000005" height="30" rx="7"/>
-  <circle cx="869.6999999999999" cy="3003" r="12" fill="#C94D68"/>
-  <text class="detail" x="869.6999999999999" y="3004" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">34</text>
-  <text class="detail" x="1018.3" y="3004" text-anchor="middle" dominant-baseline="middle">close write-behind Channel</text>
-  <path class="seq" d="M479.1 3036 L1521.5 3036" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
-</g>
-<g id="m35">
-  <rect class="labelPill" x="1071.7" y="3070" width="378.40000000000003" height="30" rx="7"/>
-  <circle cx="1090.7" cy="3085" r="12" fill="#755BC6"/>
-  <text class="detail" x="1090.7" y="3086" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">35</text>
-  <text class="detail" x="1278.9" y="3086" text-anchor="middle" dominant-baseline="middle">final non-cancellable flush if needed</text>
-  <path class="seq" d="M1521.5 3118 L1000.3000000000001 3118" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
-</g>
-<g id="m36">
-  <rect class="labelPill" x="1008.1000000000001" y="3152" width="245" height="30" rx="7"/>
-  <circle cx="1027.1000000000001" cy="3167" r="12" fill="#C94D68"/>
-  <text class="detail" x="1027.1000000000001" y="3168" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">36</text>
-  <text class="detail" x="1148.6000000000001" y="3168" text-anchor="middle" dominant-baseline="middle">last batch write</text>
-  <path class="seq" d="M1000.3000000000001 3200 L1260.9 3200" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
-</g>
-<g id="m37">
-  <rect class="labelPill" x="223.8" y="3222" width="250" height="42" rx="7"/>
-  <circle cx="242.8" cy="3243" r="12" fill="#B9851B"/>
-  <text class="detail" x="242.8" y="3244" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">37</text>
-  <text class="detail" x="366.8" y="3235" text-anchor="middle" dominant-baseline="middle">cache cleared; scope</text>
-  <text class="detail" x="366.8" y="3250" text-anchor="middle" dominant-baseline="middle">cancelled</text>
-  <path class="seqReturn" d="M479.1 3282 L218.5 3282" stroke="#B9851B" marker-end="url(#seqArrow-fallback)"/>
-</g>
-<g><rect class="note" x="110" y="3442" width="1520" height="48" rx="12"/><text class="small" x="870" y="3467" text-anchor="middle" dominant-baseline="middle">Caffeine is local AsyncCache only; all DB access uses R2DBC suspendTransaction; write-behind close waits for final flush.</text></g>
+
+  <rect class="canvas" width="1680" height="1580"/>
+  <rect class="frame" x="42" y="34" width="1596" height="1494" rx="24" filter="url(#shadow)"/>
+  <text class="title" x="84" y="91">R2DBC Caffeine Cache Sequence</text>
+  <text class="subtitle" x="86" y="126">Read misses enter Exposed R2DBC; write-through waits for DB; write-behind returns after queueing and close drains the tail.</text>
+
+  <g id="participants">
+    <rect class="participant" x="78" y="170" width="178" height="68" rx="10"/>
+    <text class="participantText" x="167" y="198" text-anchor="middle">Caller</text>
+    <text class="role" x="167" y="220" text-anchor="middle">coroutine</text>
+    <rect class="participant" x="318" y="170" width="226" height="68" rx="10"/>
+    <text class="participantText" x="431" y="198" text-anchor="middle">Repository</text>
+    <text class="role" x="431" y="220" text-anchor="middle">R2dbcCaffeine</text>
+    <rect class="participant" x="626" y="170" width="210" height="68" rx="10"/>
+    <text class="participantText" x="731" y="198" text-anchor="middle">AsyncCache</text>
+    <text class="role" x="731" y="220" text-anchor="middle">local Caffeine</text>
+    <rect class="participant" x="918" y="170" width="212" height="68" rx="10"/>
+    <text class="participantText" x="1024" y="198" text-anchor="middle">Queue</text>
+    <text class="role" x="1024" y="220" text-anchor="middle">write-behind channel</text>
+    <rect class="participant" x="1210" y="170" width="232" height="68" rx="10"/>
+    <text class="participantText" x="1326" y="198" text-anchor="middle">Transaction</text>
+    <text class="role code" x="1326" y="220" text-anchor="middle">suspendTransaction</text>
+    <rect class="participant" x="1508" y="170" width="110" height="68" rx="10"/>
+    <text class="participantText" x="1563" y="198" text-anchor="middle">DB</text>
+    <text class="role" x="1563" y="220" text-anchor="middle">rows</text>
+  </g>
+
+  <line class="lifeline" x1="167" y1="238" x2="167" y2="1452"/>
+  <line class="lifeline" x1="431" y1="238" x2="431" y2="1452"/>
+  <line class="lifeline" x1="731" y1="238" x2="731" y2="1452"/>
+  <line class="lifeline" x1="1024" y1="238" x2="1024" y2="1452"/>
+  <line class="lifeline" x1="1326" y1="238" x2="1326" y2="1452"/>
+  <line class="lifeline" x1="1563" y1="238" x2="1563" y2="1452"/>
+  <rect class="activation" x="424" y="308" width="14" height="1142" rx="6"/>
+  <rect class="activation" x="724" y="368" width="14" height="138" rx="6"/>
+  <rect class="activation" x="1319" y="548" width="14" height="902" rx="6"/>
+
+  <rect x="70" y="286" width="1538" height="326" rx="14" class="alt"/>
+  <rect x="94" y="306" width="260" height="30" rx="15" class="branchHit"/>
+  <text class="note" x="118" y="326">alt cache hit</text>
+  <line class="branchDivider" x1="70" y1="462" x2="1608" y2="462"/>
+  <rect x="94" y="480" width="286" height="30" rx="15" class="branchMiss"/>
+  <text class="note" x="118" y="500">else cache miss</text>
+
+  <rect x="96" y="266" width="192" height="32" rx="16" class="label callLabel"/>
+  <circle cx="119" cy="282" r="12" class="badge callBadge"/><text x="119" y="286" text-anchor="middle" class="badgeText callText">1</text>
+  <text x="146" y="287" class="msg callText"><tspan class="code">get(id)</tspan></text>
+  <path class="call" d="M167 316 L431 316"/>
+
+  <rect x="468" y="330" width="256" height="32" rx="16" class="label callLabel"/>
+  <circle cx="491" cy="346" r="12" class="badge callBadge"/><text x="491" y="350" text-anchor="middle" class="badgeText callText">2</text>
+  <text x="518" y="351" class="msg callText"><tspan class="code">cache.get(key, loader)</tspan></text>
+  <path class="call" d="M431 380 L731 380"/>
+
+  <rect x="486" y="394" width="188" height="32" rx="16" class="label returnLabel"/>
+  <circle cx="509" cy="410" r="12" class="badge returnBadge"/><text x="509" y="414" text-anchor="middle" class="badgeText returnText">3</text>
+  <text x="536" y="415" class="msg returnText">cached <tspan class="type">E</tspan></text>
+  <path class="return" d="M731 442 L431 442"/>
+
+  <rect x="202" y="398" width="186" height="32" rx="16" class="label returnLabel"/>
+  <circle cx="225" cy="414" r="12" class="badge returnBadge"/><text x="225" y="418" text-anchor="middle" class="badgeText returnText">4</text>
+  <text x="252" y="419" class="msg returnText">return <tspan class="type">E?</tspan></text>
+  <path class="return" d="M431 454 L167 454"/>
+
+  <rect x="704" y="512" width="354" height="32" rx="16" class="label callLabel"/>
+  <circle cx="727" cy="528" r="12" class="badge callBadge"/><text x="727" y="532" text-anchor="middle" class="badgeText callText">3</text>
+  <text x="754" y="533" class="msg callText">loader future calls <tspan class="code">findByIdFromDb</tspan></text>
+  <path class="call" d="M431 560 L1326 560"/>
+
+  <rect x="1362" y="574" width="188" height="32" rx="16" class="label workLabel"/>
+  <circle cx="1385" cy="590" r="12" class="badge workBadge"/><text x="1385" y="594" text-anchor="middle" class="badgeText workText">4</text>
+  <text x="1412" y="595" class="msg workText"><tspan class="keyword">SELECT</tspan> by id</text>
+  <path class="work" d="M1326 606 L1563 606"/>
+
+  <rect x="1378" y="626" width="172" height="32" rx="16" class="label returnLabel"/>
+  <circle cx="1401" cy="642" r="12" class="badge returnBadge"/><text x="1401" y="646" text-anchor="middle" class="badgeText returnText">5</text>
+  <text x="1428" y="647" class="msg returnText"><tspan class="type">ResultRow?</tspan></text>
+  <path class="return" d="M1563 676 L1326 676"/>
+
+  <rect x="688" y="628" width="284" height="32" rx="16" class="label returnLabel"/>
+  <circle cx="711" cy="644" r="12" class="badge returnBadge"/><text x="711" y="648" text-anchor="middle" class="badgeText returnText">6</text>
+  <text x="738" y="649" class="msg returnText"><tspan class="code">toEntity()</tspan> and cache value</text>
+  <path class="return" d="M1326 682 L431 682"/>
+
+  <rect x="70" y="704" width="1538" height="310" rx="14" class="alt"/>
+  <rect x="350" y="724" width="306" height="30" rx="15" class="branchHit"/>
+  <text class="note" x="374" y="744">write-through branch</text>
+
+  <rect x="96" y="726" width="234" height="32" rx="16" class="label callLabel"/>
+  <circle cx="119" cy="742" r="12" class="badge callBadge"/><text x="119" y="746" text-anchor="middle" class="badgeText callText">7</text>
+  <text x="146" y="747" class="msg callText"><tspan class="code">put(id, entity)</tspan></text>
+  <path class="call" d="M167 776 L431 776"/>
+
+  <rect x="486" y="768" width="174" height="32" rx="16" class="label callLabel"/>
+  <circle cx="509" cy="784" r="12" class="badge callBadge"/><text x="509" y="788" text-anchor="middle" class="badgeText callText">8</text>
+  <text x="536" y="789" class="msg callText"><tspan class="code">cache.put</tspan></text>
+  <path class="call" d="M431 818 L731 818"/>
+
+  <rect x="702" y="812" width="398" height="32" rx="16" class="label workLabel"/>
+  <circle cx="725" cy="828" r="12" class="badge workBadge"/><text x="725" y="832" text-anchor="middle" class="badgeText workText">9</text>
+  <text x="752" y="833" class="msg workText"><tspan class="code">writeToDb</tspan> for <tspan class="type">WRITE_THROUGH</tspan></text>
+  <path class="work" d="M431 860 L1326 860"/>
+
+  <rect x="1348" y="854" width="238" height="32" rx="16" class="label workLabel"/>
+  <circle cx="1371" cy="870" r="12" class="badge workBadge"/><text x="1371" y="874" text-anchor="middle" class="badgeText workText">10</text>
+  <text x="1398" y="875" class="msg workText"><tspan class="keyword">UPDATE</tspan>; maybe insert</text>
+  <path class="work" d="M1326 902 L1563 902"/>
+
+  <rect x="762" y="912" width="226" height="32" rx="16" class="label returnLabel"/>
+  <circle cx="785" cy="928" r="12" class="badge returnBadge"/><text x="785" y="932" text-anchor="middle" class="badgeText returnText">11</text>
+  <text x="812" y="933" class="msg returnText">DB write complete</text>
+  <path class="return" d="M1326 952 L431 952"/>
+
+  <rect x="192" y="934" width="232" height="32" rx="16" class="label returnLabel"/>
+  <circle cx="215" cy="950" r="12" class="badge returnBadge"/><text x="215" y="954" text-anchor="middle" class="badgeText returnText">12</text>
+  <text x="242" y="955" class="msg returnText">return after DB</text>
+  <path class="return" d="M431 984 L167 984"/>
+
+  <rect x="70" y="1036" width="1538" height="308" rx="14" class="opt"/>
+  <rect x="94" y="1056" width="328" height="30" rx="15" class="branchClose"/>
+  <text class="note" x="118" y="1076">write-behind branch</text>
+
+  <rect x="494" y="1100" width="488" height="32" rx="16" class="label asyncLabel"/>
+  <circle cx="517" cy="1116" r="12" class="badge asyncBadge"/><text x="517" y="1120" text-anchor="middle" class="badgeText asyncText">13</text>
+  <text x="544" y="1121" class="msg asyncText"><tspan class="type">WRITE_BEHIND</tspan>: start job + <tspan class="code">send(id to entity)</tspan></text>
+  <path class="async" d="M431 1150 L1024 1150"/>
+
+  <rect x="188" y="1152" width="282" height="32" rx="16" class="label returnLabel"/>
+  <circle cx="211" cy="1168" r="12" class="badge returnBadge"/><text x="211" y="1172" text-anchor="middle" class="badgeText returnText">14</text>
+  <text x="238" y="1173" class="msg returnText">return after queue send</text>
+  <path class="return" d="M431 1196 L167 1196"/>
+
+  <rect x="1056" y="1174" width="226" height="32" rx="16" class="label asyncLabel"/>
+  <circle cx="1079" cy="1190" r="12" class="badge asyncBadge"/><text x="1079" y="1194" text-anchor="middle" class="badgeText asyncText">15</text>
+  <text x="1106" y="1195" class="msg asyncText">consumer drains batch</text>
+  <path class="async" d="M1024 1228 L1326 1228"/>
+
+  <rect x="1350" y="1226" width="244" height="32" rx="16" class="label workLabel"/>
+  <circle cx="1373" cy="1242" r="12" class="badge workBadge"/><text x="1373" y="1246" text-anchor="middle" class="badgeText workText">16</text>
+  <text x="1400" y="1247" class="msg workText"><tspan class="keyword">UPDATE</tspan>; client-ID insert</text>
+  <path class="work" d="M1326 1272 L1563 1272"/>
+
+  <rect x="678" y="1260" width="394" height="32" rx="16" class="label returnLabel"/>
+  <circle cx="701" cy="1276" r="12" class="badge returnBadge"/><text x="701" y="1280" text-anchor="middle" class="badgeText returnText">17</text>
+  <text x="728" y="1281" class="msg returnText">flush result; decrement queue depth</text>
+  <path class="return" d="M1326 1314 L1024 1314"/>
+
+  <rect x="70" y="1360" width="1538" height="84" rx="14" class="opt"/>
+  <rect x="94" y="1380" width="396" height="30" rx="15" class="branchClose"/>
+  <text class="note" x="118" y="1400">opt close waits for final flush</text>
+  <rect x="506" y="1392" width="470" height="32" rx="16" class="label asyncLabel"/>
+  <circle cx="529" cy="1408" r="12" class="badge asyncBadge"/><text x="529" y="1412" text-anchor="middle" class="badgeText asyncText">18</text>
+  <text x="556" y="1413" class="msg asyncText">close channel; remaining batch in <tspan class="type">NonCancellable</tspan></text>
+  <path class="async" d="M431 1450 L1326 1450"/>
+
+  <rect x="128" y="1470" width="1424" height="42" rx="13" fill="#eef3f4" stroke="#c2d1d4" stroke-width="2"/>
+  <text class="footer" x="152" y="1496">Boundary rule: Caffeine is local only; database effects happen through Exposed R2DBC suspend transactions.</text>
 </svg>

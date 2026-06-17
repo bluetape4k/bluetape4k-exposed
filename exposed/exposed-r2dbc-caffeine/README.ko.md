@@ -12,7 +12,7 @@ Caffeine 로컬(인프로세스) 캐시를 사용하는 Exposed R2DBC 저장소�
 
 ![R2DBC Caffeine local cache architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-diagram-01.png)
 
-시퀀스 그림은 동작 흐름에 집중합니다. read-through 미스는 `suspendTransaction`으로 DB를 읽고, write-through는 DB 쓰기까지 기다리며, write-behind는 큐에 넣은 뒤 반환하고 `close()`에서 마지막 flush를 기다립니다.
+시퀀스 그림은 실제 메시지 순서를 따릅니다. read-through의 hit/miss 분기, write-through가 DB 쓰기까지 기다리는 흐름, write-behind가 큐에 넣은 뒤 반환하는 흐름, `close()`가 마지막 batch를 flush하는 과정을 한눈에 볼 수 있습니다.
 
 ![R2DBC Caffeine cache sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-caffeine-sequence-01.png)
 
