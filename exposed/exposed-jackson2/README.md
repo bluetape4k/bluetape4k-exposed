@@ -24,25 +24,13 @@ dependencies {
 }
 ```
 
-## Architecture Diagram
+## Jackson 2 Adapter Boundary
 
-### Column Type Structure (Summary)
+![Jackson 2 JSON column boundary](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-01.png)
 
-![Column Type Structure (Summary) diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-01.png)
+## JSON Round Trip
 
-## Class Diagram
-
-![exposed jackson2 Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-diagram-02.png)
-
-## Serialization / Deserialization Sequence Diagrams
-
-### Object → JSON → DB
-
-![Object → JSON → DB diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-sequence-01.png)
-
-### DB → JSON → Object
-
-![DB → JSON → Object diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson2-sequence-02.png)
+![Jackson 2 JSON round trip](../../docs/images/readme-diagrams/exposed-exposed-jackson2-flow-02.png)
 
 ## Basic Usage
 
@@ -138,7 +126,7 @@ val metadata: ProductMetadata? = resultRow.getJacksonOrNull(Products.metadata)
 ## Testing
 
 ```bash
-./gradlew :exposed-jackson2:test
+./gradlew :bluetape4k-exposed-jackson2:test
 ```
 
 ## References
