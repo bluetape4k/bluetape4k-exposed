@@ -9,15 +9,15 @@
 
 ![bluetape4k Exposed 작업대 일러스트](./docs/assets/exposed-workbench.png)
 
-[JetBrains Exposed](https://github.com/JetBrains/Exposed) ORM을 위한 Kotlin 확장 라이브러리. Repository 패턴, 캐시 통합, JSON Column 직렬화, 암호화, Spring Boot 자동 설정을 제공합니다.
+[JetBrains Exposed](https://github.com/JetBrains/Exposed) ORM을 위한 Kotlin 확장 라이브러리입니다. Repository runtime, cache decorator, JSON/암호화 Column, 데이터베이스별 helper, Spring Boot 자동 설정을 제공합니다.
 
 ---
 
 ## 프로젝트 목적
 
 `bluetape4k-exposed`는 JetBrains Exposed를 운영 환경에 맞는 Kotlin 데이터 툴킷으로 확장합니다.
-JDBC/R2DBC Repository 패턴, cache-backed read path, JSON/암호화 Column, 데이터베이스별
-dialect 확장, Spring Boot 4 자동 설정을 Exposed DSL 스타일 안에서 제공합니다.
+먼저 JDBC 또는 R2DBC Repository runtime을 고르고, 필요한 데이터 경로에만 cache decorator,
+Column codec, 데이터베이스별 helper, Spring Boot 4 자동 설정을 더하는 식으로 사용할 수 있습니다.
 
 ## 주요 기능
 
@@ -35,14 +35,10 @@ dialect 확장, Spring Boot 4 자동 설정을 Exposed DSL 스타일 안에서 �
 
 ![Bluetape4k Exposed overview diagram](docs/images/readme-diagrams/root-readme-overview-01.png)
 
-## Module Relationship Diagram
+## Module Composition Diagram
 
-![Bluetape4k Exposed module relationship diagram](docs/images/readme-diagrams/root-readme-module-relationships-01.png)
+![Bluetape4k Exposed module composition diagram](docs/images/readme-diagrams/root-readme-module-relationships-01.png)
 <!-- README_VISUAL_OVERVIEW:END -->
-
-## 아키텍처
-
-![bluetape4k-exposed architecture](docs/assets/exposed-architecture.png)
 
 ## 모듈 목록
 
