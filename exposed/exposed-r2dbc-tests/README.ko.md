@@ -4,15 +4,19 @@
 
 ## 개요
 
-[Exposed R2DBC](https://github.com/JetBrains/Exposed) 기반 모듈 테스트를 위한 공통 테스트 인프라 모듈입니다. 반응형(R2DBC) 데이터베이스 테스트를 쉽게 작성할 수 있도록 도와줍니다.
+[Exposed R2DBC](https://github.com/JetBrains/Exposed) 기반 코드를 테스트하기 위한 공통 테스트 인프라 모듈입니다. 코루틴 친화적인 데이터베이스 fixture, dialect 선택, Testcontainers 부트스트랩, schema/table 정리 helper를 제공해 모듈 테스트가 연결 설정보다 동작 검증에 집중할 수 있게 합니다.
 
-## Test Infrastructure
+## 테스트 인프라
 
-![exposed r2dbc tests Architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-01.png)
+아키텍처 다이어그램은 테스트 작성자가 직접 만나는 표면부터 보여줍니다. 테스트 클래스는 `AbstractExposedR2dbcTest`를 상속하고, `enabledDialects()`가 제공하는 `TestDB` 값으로 실행되며, `withDb`, `withTables`, `withSchemas` 같은 suspend helper 안에서 검증 로직을 수행합니다.
 
-### JDBC vs R2DBC Test Model
+![R2DBC test support architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-01.png)
 
-![JDBC vs R2DBC diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-02.png)
+### `withTables` 테스트 생명주기
+
+생명주기 다이어그램은 가장 자주 쓰는 helper 흐름을 따라갑니다. `withTables`는 `withDb`에 위임하고, 같은 `TestDB` 작업을 직렬화하며, 요청한 테이블을 만들고, cleanup 전에 commit한 뒤, 일반 table drop이 실패하면 top-level suspend transaction에서 한 번 더 정리합니다.
+
+![withTables R2DBC test lifecycle diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-tests-diagram-02.png)
 
 ## 의존성 추가
 
@@ -27,7 +31,7 @@ dependencies {
 - **공통 테스트 베이스**: `AbstractExposedR2dbcTest`로 R2DBC 테스트 기본 구조 제공
 - **다중 DB 지원**: H2, MySQL, MariaDB, PostgreSQL R2DBC 테스트 지원
 - **Testcontainers 통합**: Docker 기반 실제 DB 테스트 지원
-- **Coroutine 네이티브**: 모든 테스트가 suspend 함수 기반
+- **Coroutine 네이티브 helper**: 데이터베이스 helper는 `suspend` 함수이며 `runTest` 안에서 자연스럽게 사용할 수 있음
 - **테이블/스키마 유틸**: 테스트용 엔티티/테이블 재사용
 
 ## 지원 데이터베이스
@@ -50,9 +54,13 @@ dependencies {
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
+import kotlinx.coroutines.test.runTest
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.r2dbc.insert
+import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import kotlin.test.assertEquals
 
 object Users: LongIdTable("users") {
     val name = varchar("name", 50)
@@ -63,7 +71,7 @@ class UserRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `should insert and find user`(testDB: TestDB) = runBlocking {
+    fun `should insert and find user`(testDB: TestDB) = runTest {
         withTables(testDB, Users) {
             // Insert
             Users.insert {
@@ -86,10 +94,12 @@ class UserRepositoryTest: AbstractExposedR2dbcTest() {
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
+import kotlinx.coroutines.test.runTest
+import kotlin.test.assertTrue
 
 @ParameterizedTest
 @MethodSource(ENABLE_DIALECTS_METHOD)
-fun `should connect to database`(testDB: TestDB) = runBlocking {
+fun `should connect to database`(testDB: TestDB) = runTest {
     withDb(testDB) {
         // suspend 트랜잭션 내에서 실행
         val isConnected = true // 연결 확인 로직
@@ -103,10 +113,11 @@ fun `should connect to database`(testDB: TestDB) = runBlocking {
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
+import kotlinx.coroutines.test.runTest
 
 @ParameterizedTest
 @MethodSource(ENABLE_DIALECTS_METHOD)
-fun `should create and drop tables`(testDB: TestDB) = runBlocking {
+fun `should create and drop tables`(testDB: TestDB) = runTest {
     withTables(testDB, Users, Orders) {
         // 테스트 시작 전 테이블 자동 생성
         // 테스트 종료 후 테이블 자동 삭제
@@ -123,6 +134,7 @@ fun `should create and drop tables`(testDB: TestDB) = runBlocking {
 
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import kotlinx.coroutines.test.runTest
 
 class PostgresOnlyTest: AbstractExposedR2dbcTest() {
 
@@ -134,7 +146,7 @@ class PostgresOnlyTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("databases")
-    fun `postgres specific test`(testDB: TestDB) = runBlocking {
+    fun `postgres specific test`(testDB: TestDB) = runTest {
         withTables(testDB, Users) {
             // PostgreSQL 전용 테스트
         }
@@ -146,6 +158,7 @@ class PostgresOnlyTest: AbstractExposedR2dbcTest() {
 
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import kotlinx.coroutines.test.runTest
 
 class MySQLLikeTest: AbstractExposedR2dbcTest() {
 
@@ -161,7 +174,7 @@ class MySQLLikeTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("databases")
-    fun `mysql compatible test`(testDB: TestDB) = runBlocking {
+    fun `mysql compatible test`(testDB: TestDB) = runTest {
         withTables(testDB, Users) {
             // MySQL 호환 DB 테스트
         }
@@ -173,10 +186,12 @@ class MySQLLikeTest: AbstractExposedR2dbcTest() {
 
 ```kotlin
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.test.runTest
+import kotlin.test.assertEquals
 
 @ParameterizedTest
 @MethodSource(ENABLE_DIALECTS_METHOD)
-fun `should stream query results`(testDB: TestDB) = runBlocking {
+fun `should stream query results`(testDB: TestDB) = runTest {
     withTables(testDB, Users) {
         // 여러 레코드 삽입
         repeat(100) { i ->
@@ -207,7 +222,7 @@ object TestDBConfig {
 }
 ```
 
-`useFastDB = true`(기본값)이면 `enabledDialects()`는 H2만 반환합니다. 풀 테스트가 필요한 경우 `useFastDB = false`로 변경하세요 (Docker 필요).
+`useFastDB = true`(기본값)이면 `enabledDialects()`는 H2만 반환합니다. 전체 데이터베이스 커버리지가 필요하면 `useFastDB = false`로 바꾸세요. CI에서는 `EXPOSED_TEST_DB=POSTGRESQL` 또는 `EXPOSED_TEST_DB=MYSQL_V8`로 H2와 특정 실제 드라이버 하나만 실행하도록 좁힐 수 있습니다. Testcontainers 기반 데이터베이스에는 Docker가 필요합니다.
 
 ## 테스트용 스키마/데이터
 
@@ -283,7 +298,7 @@ Containers.Postgres
 
 ## 참고 사항
 
-- R2DBC 테스트는 모두 `suspend` 함수 기반입니다
+- R2DBC helper는 `suspend` 함수이며 보통 `runTest` 안에서 호출합니다
 - MySQL 5.7은 R2DBC 드라이버 호환성 문제로 제외됩니다
 - Testcontainers 사용 시 Docker가 필요합니다
 - Flow 기반 스트리밍 쿼리가 가능합니다
