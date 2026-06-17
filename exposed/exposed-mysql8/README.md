@@ -2,24 +2,23 @@
 
 English | [한국어](./README.ko.md)
 
-A module that enables MySQL 8.0+ spatial data (GIS) in JetBrains Exposed ORM.
+`exposed-mysql8` adds MySQL 8.0+ spatial data support to JetBrains Exposed ORM.
 
-It supports 8 geometry types using JTS (Java Topology Suite) and provides spatial functions for distance calculation, spatial relationships (containment, intersection, etc.), and area/length measurements.
+It maps JTS geometry values to MySQL spatial columns, keeps SRID handling explicit, and exposes Exposed expressions for relationship predicates, measurements, metadata, and selected topology operations.
 
-## UML
+## Column DSL Coverage
 
-![MySQL8 extension overview diagram](../../docs/images/readme-diagrams/exposed-exposed-mysql8-diagram-01.png)
+![MySQL8 GIS column DSL coverage](../../docs/images/readme-diagrams/exposed-exposed-mysql8-diagram-01.png)
 
-## Extension Function Diagram
+## Serialization Flow
 
-![MySQL8 extension function diagram](../../docs/images/readme-diagrams/exposed-exposed-mysql8-diagram-02.png)
+![MySQL8 GIS serialization flow](../../docs/images/readme-diagrams/exposed-exposed-mysql8-diagram-02.png)
 
 ## Overview
 
-- **Geometry types
-  **: Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection, Geometry (generic)
+- **Geometry types**: Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection, Geometry (generic)
 - **Coordinate system**: WGS84 (SRID 4326) by default
-- **Spatial functions**: 9 relationship functions + 4 measurement functions + 3 property functions
+- **Spatial functions**: relationship predicates, measurement expressions, metadata expressions, and selected topology helpers
 - **MySQL only**: Works exclusively with `MysqlDialect`
 - **Serialization path**:
     - PreparedStatement binding uses MySQL Internal Format (`4-byte SRID LE + WKB`)
@@ -41,7 +40,7 @@ It supports 8 geometry types using JTS (Java Topology Suite) and provides spatia
 ## Table Extension Functions
 
 ```kotlin
-object Locations : LongIdTable("locations") {
+class Locations : LongIdTable("locations") {
     val name = varchar("name", 255)
     val point = geoPoint("point")                    // POINT
     val line = geoLineString("line")                 // LINESTRING
@@ -55,6 +54,7 @@ object Locations : LongIdTable("locations") {
 ```
 
 All extension functions use SRID 4326 (WGS84) by default. You can specify a different SRID as the second argument.
+The examples below use `Locations` as the already-instantiated table inside a MySQL transaction.
 
 ```kotlin
 val point = geoPoint("location", srid = 3857)  // Web Mercator
@@ -188,6 +188,12 @@ val typeExpr = Locations.point.stGeometryType()
 val typeName = Locations.select(typeExpr).single()[typeExpr]  // e.g. "POINT"
 ```
 
+## Topology Helper Functions
+
+`stUnion`, `stDifference`, and `stIntersection` return WKT strings by wrapping MySQL topology results with `ST_AsText(...)`.
+
+`stBuffer`, `stCentroid`, and `stEnvelope` remain available as deprecated APIs because MySQL has geographic-SRS limitations for SRID 4326. Prefer them only when the target SRS and geometry type are known to be safe.
+
 ## Usage Examples
 
 ### Basic CRUD
@@ -280,15 +286,15 @@ transaction(db) {
 
 ## Table Declaration Notes
 
-Tables with geometry columns **must only be instantiated inside a transaction**.
+Geometry columns check the current dialect while the table is instantiated. Declare geometry tables as classes and instantiate them inside a transaction so `MysqlDialect` is available.
 
 ```kotlin
-// ❌ Prohibited — cannot use object declaration (dialect check runs at instantiation time)
+// Prohibited: object initialization can run before the MySQL dialect is active.
 object Locations : LongIdTable("locations") {
     val point = geoPoint("point")  // IllegalStateException!
 }
 
-// ✅ Correct — declare as a class and instantiate inside a transaction
+// Correct: instantiate the table inside a transaction.
 class Locations : LongIdTable("locations") {
     val point = geoPoint("point")
 }
@@ -312,7 +318,7 @@ transaction(db) {
 ## Dependency
 
 ```kotlin
-testImplementation(project(":exposed-mysql8"))
+implementation(project(":bluetape4k-exposed-mysql8"))
 ```
 
 Dependencies provided by this module:
@@ -334,10 +340,10 @@ All extension functions work exclusively with `MysqlDialect`. Calling them with 
 val point = geoPoint("location")  // IllegalStateException: geoPoint is only supported with MySQL dialect
 ```
 
-### Unsupported Functions
+### Geographic-SRS Caveats
 
 Some MySQL spatial functions such as `ST_Centroid()` and `ST_Envelope()` throw
-`ER_NOT_IMPLEMENTED_FOR_GEOGRAPHIC_SRS` when used with a geographic SRID (4326). This module does not expose those functions.
+`ER_NOT_IMPLEMENTED_FOR_GEOGRAPHIC_SRS` when used with a geographic SRID (4326). This module keeps those APIs deprecated and documents the risk rather than presenting them as general-purpose WGS84 helpers.
 
 ### Coordinate Order
 
@@ -359,22 +365,20 @@ Tests use Testcontainers to automatically start MySQL 8.0.
 abstract class AbstractMySqlGisTest : AbstractExposedTest() {
     companion object : KLogging() {
         @JvmStatic
-        val mysqlContainer: MySQLContainer<*> = MySQLContainer(
-            DockerImageName.parse("mysql:8.0")
-        ).apply { start() }
+        val mysqlContainer: MySQL8Server = MySQL8Server.Launcher.mysql
 
         @JvmStatic
         val db: Database by lazy {
             Database.connect(
                 url = mysqlContainer.jdbcUrl + "?allowPublicKeyRetrieval=true&useSSL=false",
                 driver = "com.mysql.cj.jdbc.Driver",
-                user = mysqlContainer.username,
-                password = mysqlContainer.password,
+                user = mysqlContainer.username ?: "test",
+                password = mysqlContainer.password ?: "test",
             )
         }
     }
 
-    protected fun withGeoTables(vararg tables: Table, statement: () -> Unit) {
+    protected fun withGeoTables(vararg tables: Table, statement: JdbcTransaction.() -> Unit) {
         transaction(db) {
             runCatching { SchemaUtils.drop(*tables) }
             SchemaUtils.create(*tables)
@@ -393,8 +397,8 @@ abstract class AbstractMySqlGisTest : AbstractExposedTest() {
 Core regression tests:
 
 ```bash
-./gradlew :exposed-mysql8:test --tests "io.bluetape4k.exposed.mysql8.gis.GeometryColumnTypeTest"
-./gradlew :exposed-mysql8:test --tests "io.bluetape4k.exposed.mysql8.gis.MySqlWkbUtilsTest"
+./gradlew :bluetape4k-exposed-mysql8:test --tests "io.bluetape4k.exposed.mysql8.gis.GeometryColumnTypeTest"
+./gradlew :bluetape4k-exposed-mysql8:test --tests "io.bluetape4k.exposed.mysql8.gis.MySqlWkbUtilsTest"
 ```
 
 ## References

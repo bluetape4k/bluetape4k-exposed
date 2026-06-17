@@ -2,27 +2,26 @@
 
 [English](./README.md) | 한국어
 
-MySQL 8.0+ 공간 데이터(GIS)를 JetBrains Exposed ORM에서 사용할 수 있게 해주는 모듈입니다.
+`exposed-mysql8`는 MySQL 8.0+ 공간 데이터(GIS)를 JetBrains Exposed ORM에서 다루기 위한 모듈입니다.
 
-JTS(Java Topology Suite)를 사용하여 8가지 geometry 타입을 지원하며, 거리 계산, 공간 관계(포함, 교차 등), 넓이/길이 측정 등의 공간 함수를 제공합니다.
+JTS geometry 값을 MySQL spatial column에 매핑하고, SRID 처리를 명시적으로 유지하며, 공간 관계 조건, 측정식, 메타데이터 조회, 일부 topology 연산을 Exposed expression으로 제공합니다.
 
-## UML
+## Column DSL 커버리지
 
-![MySQL8 extension overview diagram](../../docs/images/readme-diagrams/exposed-exposed-mysql8-diagram-01.png)
+![MySQL8 GIS column DSL coverage](../../docs/images/readme-diagrams/exposed-exposed-mysql8-diagram-01.png)
 
-## 확장 함수 다이어그램
+## 직렬화 흐름
 
-![exposed mysql8 Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-mysql8-diagram-02.png)
+![MySQL8 GIS serialization flow](../../docs/images/readme-diagrams/exposed-exposed-mysql8-diagram-02.png)
 
 ## 개요
 
-- **Geometry 타입
-  **: Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection, Geometry (기본)
+- **Geometry 타입**: Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection, Geometry (범용)
 - **좌표계**: WGS84 (SRID 4326) 기본값
-- **공간 함수**: 9개 관계 함수 + 4개 측정 함수 + 3개 속성 함수
+- **공간 함수**: 관계 predicate, 측정 expression, 메타데이터 expression, 일부 topology helper
 - **MySQL 전용**: `MysqlDialect` 사용 시에만 동작
 - **직렬화 경로**:
-    - PreparedStatement 바인딩은 MySQL Internal Format (`4byte SRID LE + WKB`) 사용
+    - PreparedStatement 바인딩은 MySQL Internal Format (`4-byte SRID LE + WKB`) 사용
     - SQL literal 경로는 `ST_GeomFromWKB(..., srid, 'axis-order=long-lat')` 사용
 
 ## 지원하는 Geometry 타입
@@ -41,7 +40,7 @@ JTS(Java Topology Suite)를 사용하여 8가지 geometry 타입을 지원하며
 ## Table 확장 함수
 
 ```kotlin
-object Locations : LongIdTable("locations") {
+class Locations : LongIdTable("locations") {
     val name = varchar("name", 255)
     val point = geoPoint("point")                    // POINT
     val line = geoLineString("line")                 // LINESTRING
@@ -55,6 +54,7 @@ object Locations : LongIdTable("locations") {
 ```
 
 모든 확장 함수는 기본 SRID 4326(WGS84)을 사용합니다. 다른 SRID가 필요한 경우 두 번째 인자로 명시할 수 있습니다.
+아래 예제의 `Locations`는 MySQL transaction 안에서 이미 인스턴스화한 table을 가리키는 이름으로 사용합니다.
 
 ```kotlin
 val point = geoPoint("location", srid = 3857)  // Web Mercator
@@ -188,6 +188,12 @@ val typeExpr = Locations.point.stGeometryType()
 val typeName = Locations.select(typeExpr).single()[typeExpr]  // String, e.g. "POINT"
 ```
 
+## Topology 헬퍼 함수
+
+`stUnion`, `stDifference`, `stIntersection`는 MySQL topology 연산 결과를 `ST_AsText(...)`로 감싸 WKT 문자열로 반환합니다.
+
+`stBuffer`, `stCentroid`, `stEnvelope`는 SRID 4326 같은 geographic SRS에서 MySQL 제약이 있어 deprecated API로 남겨두었습니다. 대상 SRS와 geometry 타입이 안전하다고 확인된 경우에만 사용하세요.
+
 ## 사용 예제
 
 ### 기본 CRUD
@@ -280,15 +286,15 @@ transaction(db) {
 
 ## 테이블 선언 주의사항
 
-Geometry 컬럼을 포함한 테이블은 **반드시 트랜잭션 내에서만** 인스턴스화되어야 합니다.
+Geometry 컬럼은 테이블 인스턴스가 만들어질 때 현재 dialect를 확인합니다. 따라서 geometry table은 class로 선언하고, `MysqlDialect`가 활성화된 transaction 안에서 인스턴스화하세요.
 
 ```kotlin
-// ❌ 금지 — object 선언 불가 (dialect 체크가 컴파일 타임에 수행)
+// 금지: object 초기화가 MySQL dialect 활성화보다 먼저 실행될 수 있습니다.
 object Locations : LongIdTable("locations") {
     val point = geoPoint("point")  // IllegalStateException!
 }
 
-// ✅ 올바름 — 트랜잭션 내에서 class로 선언
+// 올바름: transaction 안에서 table 인스턴스를 만듭니다.
 class Locations : LongIdTable("locations") {
     val point = geoPoint("point")
 }
@@ -306,13 +312,13 @@ transaction(db) {
 |--------------|------------------------------------|
 | **MySQL**    | 8.0+ (Testcontainers: `mysql:8.0`) |
 | **JTS Core** | 1.20.0 이상                          |
-| **Exposed**  | v1 (Jetbrains)                     |
+| **Exposed**  | v1 (JetBrains)                     |
 | **SRID**     | 4326 (WGS84, 기본값)                  |
 
 ## 의존성
 
 ```kotlin
-testImplementation(project(":exposed-mysql8"))
+implementation(project(":bluetape4k-exposed-mysql8"))
 ```
 
 모듈이 제공하는 의존성:
@@ -333,10 +339,10 @@ testImplementation(project(":exposed-mysql8"))
 val point = geoPoint("location")  // IllegalStateException: geoPoint는 MySQL dialect에서만 지원됩니다.
 ```
 
-### 미지원 함수
+### Geographic SRS 주의사항
 
 MySQL의 `ST_Centroid()`, `ST_Envelope()` 등 일부 공간 함수는 geographic SRID(4326)에서
-`ER_NOT_IMPLEMENTED_FOR_GEOGRAPHIC_SRS` 오류를 발생시킵니다. 이 모듈은 이러한 함수를 제공하지 않습니다.
+`ER_NOT_IMPLEMENTED_FOR_GEOGRAPHIC_SRS` 오류를 발생시킵니다. 이 모듈은 해당 API를 deprecated로 유지하고, 일반적인 WGS84 helper처럼 보이지 않도록 위험을 문서화합니다.
 
 ### 좌표 순서
 
@@ -358,22 +364,20 @@ wgs84Point(lng = 37.5665, lat = 126.9780)
 abstract class AbstractMySqlGisTest : AbstractExposedTest() {
     companion object : KLogging() {
         @JvmStatic
-        val mysqlContainer: MySQLContainer<*> = MySQLContainer(
-            DockerImageName.parse("mysql:8.0")
-        ).apply { start() }
+        val mysqlContainer: MySQL8Server = MySQL8Server.Launcher.mysql
 
         @JvmStatic
         val db: Database by lazy {
             Database.connect(
                 url = mysqlContainer.jdbcUrl + "?allowPublicKeyRetrieval=true&useSSL=false",
                 driver = "com.mysql.cj.jdbc.Driver",
-                user = mysqlContainer.username,
-                password = mysqlContainer.password,
+                user = mysqlContainer.username ?: "test",
+                password = mysqlContainer.password ?: "test",
             )
         }
     }
 
-    protected fun withGeoTables(vararg tables: Table, statement: () -> Unit) {
+    protected fun withGeoTables(vararg tables: Table, statement: JdbcTransaction.() -> Unit) {
         transaction(db) {
             runCatching { SchemaUtils.drop(*tables) }
             SchemaUtils.create(*tables)
@@ -392,8 +396,8 @@ abstract class AbstractMySqlGisTest : AbstractExposedTest() {
 핵심 회귀 테스트:
 
 ```bash
-./gradlew :exposed-mysql8:test --tests "io.bluetape4k.exposed.mysql8.gis.GeometryColumnTypeTest"
-./gradlew :exposed-mysql8:test --tests "io.bluetape4k.exposed.mysql8.gis.MySqlWkbUtilsTest"
+./gradlew :bluetape4k-exposed-mysql8:test --tests "io.bluetape4k.exposed.mysql8.gis.GeometryColumnTypeTest"
+./gradlew :bluetape4k-exposed-mysql8:test --tests "io.bluetape4k.exposed.mysql8.gis.MySqlWkbUtilsTest"
 ```
 
 ## 참조
