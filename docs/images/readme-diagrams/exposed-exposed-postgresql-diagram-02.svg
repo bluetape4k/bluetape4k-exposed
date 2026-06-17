@@ -1,69 +1,172 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1754" height="701" viewBox="0 0 1754 701" role="img" aria-label="Column Type Diagram">
-<defs>
-  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="10" markerHeight="8" refX="8.5" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 8.5 4 L 1 7" fill="none" stroke="#758297" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="11" markerHeight="10" refX="9.5" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 0.5 1 L 9.5 5 L 0.5 9 Z" fill="#ffffff" stroke="#758297" stroke-width="1.7"/></marker>
-  <style>
-    .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
-    .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
-    .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
-    .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
-    .smallLabel{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:21px;font-weight:400;fill:#102033}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
-    .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .strong{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .line{stroke:#758297;stroke-width:2.1;fill:none;marker-end:url(#openArrow)}
-    .plainLine{stroke:#758297;stroke-width:2.1;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
-    .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-    .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
-  </style>
-</defs>
-<rect class="canvas" width="1754" height="701"/>
-<rect class="frame" x="32" y="28" width="1690" height="645" rx="28"/>
-<text class="title" x="66" y="82">Column Type Diagram</text>
-<text class="subtitle" x="70" y="118">UML classes from the original Mermaid source</text>
-<path class="line" d="M672 180 L672 122 L1492 122 L1492 334"/>
-<path class="line" d="M672 180 L672 132 L262 132 L262 334"/>
-<path class="line" d="M672 180 L672 519 L1082 519 L1082 334"/>
-<g transform="translate(92,180)">
-  <rect class="card" x="0" y="0" width="340" height="154" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#5B8DEF"/>
-  <text class="small" x="170" y="26" text-anchor="middle">«ColumnType»</text>
-  <text class="label" x="170" y="61" text-anchor="middle">PgvectorColumnType</text>
-  <text class="mono" x="18" y="108">+valueFromDB(value): FloatArray</text>
-<text class="mono" x="18" y="129">+valueToDB(value): PGobject</text>
-</g>
-<g transform="translate(502,180)">
-  <rect class="card" x="0" y="0" width="340" height="301" rx="5" fill="#EAF7EF" stroke="#58A978"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#58A978"/>
-  <text class="small" x="170" y="26" text-anchor="middle">«extensionFunctions»</text>
-  <text class="label" x="170" y="61" text-anchor="middle">PostGISExtensions</text>
-  <text class="mono" x="18" y="108">+Table.geoGeometry(name):</text>
-<text class="mono" x="18" y="129">Column~PGgeometry~</text>
-<text class="mono" x="18" y="150">+Table.geoPoint(name): Column~PGgeometry~</text>
-<text class="mono" x="18" y="171">+Table.geoPolygon(name):</text>
-<text class="mono" x="18" y="192">Column~PGgeometry~</text>
-<text class="mono" x="18" y="213">+Table.pgvector(name, dim):</text>
-<text class="mono" x="18" y="234">Column~FloatArray~</text>
-<text class="mono" x="18" y="255">+Table.tstzrange(name):</text>
-<text class="mono" x="18" y="276">Column~ClosedRange~Instant~~</text>
-</g>
-<g transform="translate(912,180)">
-  <rect class="card" x="0" y="0" width="340" height="154" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#D6A441"/>
-  <text class="small" x="170" y="26" text-anchor="middle">«ColumnType»</text>
-  <text class="label" x="170" y="61" text-anchor="middle">GeoGeometryColumnType</text>
-  <text class="mono" x="18" y="108">+valueFromDB(value): PGgeometry</text>
-<text class="mono" x="18" y="129">+valueToDB(value): PGobject</text>
-</g>
-<g transform="translate(1322,180)">
-  <rect class="card" x="0" y="0" width="340" height="154" rx="5" fill="#FDECEF" stroke="#DC6B82"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#DC6B82"/>
-  <text class="small" x="170" y="26" text-anchor="middle">«ColumnType»</text>
-  <text class="label" x="170" y="61" text-anchor="middle">TstzrangeColumnType</text>
-  <text class="mono" x="18" y="108">+valueFromDB(value): ClosedRange~Instant~</text>
-<text class="mono" x="18" y="129">+valueToDB(value): PGobject</text>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1030" viewBox="0 0 1680 1030" role="img" aria-labelledby="title desc">
+  <title id="title">PostgreSQL Column Conversion Flow</title>
+  <desc id="desc">Write and read conversion flow for PostGIS, pgvector, and TSTZRANGE column types.</desc>
+  <defs>
+    <marker id="arrowTeal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#2e8f83" stroke-dasharray="none"/>
+    </marker>
+    <marker id="arrowPurple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#8063c6" stroke-dasharray="none"/>
+    </marker>
+    <marker id="arrowGold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#c9852a" stroke-dasharray="none"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="9" stdDeviation="11" flood-color="#20303a" flood-opacity="0.14"/>
+    </filter>
+    <style>
+      .canvas { fill: #f6f0e8; }
+      .frame { fill: #fffaf2; stroke: #28485a; stroke-width: 4; }
+      .title { font-family: "Architects Daughter", "Comic Mono", monospace; font-size: 46px; fill: #21343f; }
+      .subtitle { font-family: "Comic Mono", monospace; font-size: 19px; fill: #51636f; }
+      .laneTitle { font-family: "Architects Daughter", "Comic Mono", monospace; font-size: 30px; fill: #21343f; }
+      .laneTitleSmall { font-family: "Architects Daughter", "Comic Mono", monospace; font-size: 25px; fill: #21343f; }
+      .laneText { font-family: "Comic Mono", monospace; font-size: 15px; fill: #4b5d68; }
+      .cardTitle { font-family: "Comic Mono", monospace; font-size: 19px; font-weight: 700; fill: #20323d; }
+      .cardText { font-family: "Comic Mono", monospace; font-size: 16px; fill: #30424e; }
+      .small { font-family: "Comic Mono", monospace; font-size: 14px; fill: #52636f; }
+      .step { font-family: "Comic Mono", monospace; font-size: 14px; font-weight: 700; fill: #20323d; }
+      .arrowLabel { font-family: "Comic Mono", monospace; font-size: 14px; fill: #394b56; }
+    </style>
+  </defs>
+
+  <rect class="canvas" width="1680" height="1030"/>
+  <rect class="frame" x="42" y="34" width="1596" height="958" rx="24" filter="url(#shadow)"/>
+
+  <text class="title" x="84" y="91">PostgreSQL Column Conversion Flow</text>
+  <text class="subtitle" x="86" y="126">Each family keeps the Kotlin API small while the ColumnType owns JDBC wrapping, literals, and dialect-specific SQL.</text>
+
+  <g transform="translate(96 174)">
+    <rect x="0" y="0" width="1488" height="242" rx="20" fill="#e6f4f1" stroke="#8bbfb7" stroke-width="3"/>
+    <rect x="24" y="28" width="210" height="186" rx="18" fill="#d5ece7" stroke="#75afa5" stroke-width="2"/>
+    <circle cx="64" cy="73" r="22" fill="#55a798"/>
+    <text class="laneTitle" x="98" y="82">PostGIS</text>
+    <text class="laneText" x="48" y="124">Point / Polygon</text>
+    <text class="laneText" x="48" y="154">Geometry, SRID 4326</text>
+
+    <g>
+      <rect x="282" y="42" width="234" height="142" rx="15" fill="#fffdf8" stroke="#75afa5" stroke-width="2"/>
+      <text class="step" x="306" y="72">01 Kotlin value</text>
+      <text class="cardTitle" x="306" y="108">net.postgis geometry</text>
+      <text class="cardText" x="306" y="140">Point, Polygon, Geometry</text>
+    </g>
+    <path d="M516 113 H590" stroke="#2e8f83" stroke-width="4.4" marker-end="url(#arrowTeal)" fill="none"/>
+    <text class="arrowLabel" x="527" y="94">write</text>
+
+    <g>
+      <rect x="610" y="42" width="246" height="142" rx="15" fill="#fffdf8" stroke="#75afa5" stroke-width="2"/>
+      <text class="step" x="634" y="72">02 ColumnType</text>
+      <text class="cardTitle" x="634" y="108">PGgeometry wrapper</text>
+      <text class="cardText" x="634" y="140">subtype check on read</text>
+    </g>
+    <path d="M856 113 H930" stroke="#2e8f83" stroke-width="4.4" marker-end="url(#arrowTeal)" fill="none"/>
+
+    <g>
+      <rect x="950" y="42" width="238" height="142" rx="15" fill="#fffdf8" stroke="#75afa5" stroke-width="2"/>
+      <text class="step" x="974" y="72">03 PostgreSQL</text>
+      <text class="cardTitle" x="974" y="108">GEOMETRY(..., 4326)</text>
+      <text class="cardText" x="974" y="140">PostGIS extension</text>
+    </g>
+    <path d="M1188 113 H1262" stroke="#2e8f83" stroke-width="4.4" marker-end="url(#arrowTeal)" fill="none"/>
+    <text class="arrowLabel" x="1203" y="94">read</text>
+
+    <g>
+      <rect x="1282" y="42" width="176" height="142" rx="15" fill="#fffdf8" stroke="#75afa5" stroke-width="2"/>
+      <text class="step" x="1304" y="72">04 API result</text>
+      <text class="cardTitle" x="1304" y="108">Geometry value</text>
+      <text class="cardText" x="1304" y="140">PGgeometry or WKT</text>
+    </g>
+  </g>
+
+  <g transform="translate(96 450)">
+    <rect x="0" y="0" width="1488" height="242" rx="20" fill="#eee9fb" stroke="#b5a3e2" stroke-width="3"/>
+    <rect x="24" y="28" width="210" height="186" rx="18" fill="#e2dcf6" stroke="#a993dc" stroke-width="2"/>
+    <circle cx="64" cy="73" r="22" fill="#8f72cf"/>
+    <text class="laneTitle" x="98" y="82">pgvector</text>
+    <text class="laneText" x="48" y="124">FloatArray vectors</text>
+    <text class="laneText" x="48" y="154">dimension is enforced</text>
+
+    <g>
+      <rect x="282" y="42" width="234" height="142" rx="15" fill="#fffdf8" stroke="#a993dc" stroke-width="2"/>
+      <text class="step" x="306" y="72">01 Kotlin value</text>
+      <text class="cardTitle" x="306" y="108">FloatArray</text>
+      <text class="cardText" x="306" y="140">size must equal n</text>
+    </g>
+    <path d="M516 113 H590" stroke="#8063c6" stroke-width="4.4" marker-end="url(#arrowPurple)" fill="none"/>
+    <text class="arrowLabel" x="527" y="94">write</text>
+
+    <g>
+      <rect x="610" y="42" width="246" height="142" rx="15" fill="#fffdf8" stroke="#a993dc" stroke-width="2"/>
+      <text class="step" x="634" y="72">02 ColumnType</text>
+      <text class="cardTitle" x="634" y="108">PGvector wrapper</text>
+      <text class="cardText" x="634" y="140">string or PGvector on read</text>
+    </g>
+    <path d="M856 113 H930" stroke="#8063c6" stroke-width="4.4" marker-end="url(#arrowPurple)" fill="none"/>
+
+    <g>
+      <rect x="950" y="42" width="238" height="142" rx="15" fill="#fffdf8" stroke="#a993dc" stroke-width="2"/>
+      <text class="step" x="974" y="72">03 PostgreSQL</text>
+      <text class="cardTitle" x="974" y="108">VECTOR(n)</text>
+      <text class="cardText" x="974" y="140">pgvector extension</text>
+    </g>
+    <path d="M1188 113 H1262" stroke="#8063c6" stroke-width="4.4" marker-end="url(#arrowPurple)" fill="none"/>
+    <text class="arrowLabel" x="1203" y="94">read</text>
+
+    <g>
+      <rect x="1282" y="42" width="176" height="142" rx="15" fill="#fffdf8" stroke="#a993dc" stroke-width="2"/>
+      <text class="step" x="1304" y="72">04 API result</text>
+      <text class="cardTitle" x="1304" y="108">FloatArray</text>
+      <text class="cardText" x="1304" y="140">&lt;=&gt;, &lt;-&gt;, &lt;#&gt;</text>
+    </g>
+
+    <rect x="610" y="194" width="704" height="28" rx="12" fill="#f9f6ff" stroke="#c9bdea" stroke-width="1.5"/>
+    <text class="small" x="632" y="214">Call registerVectorType() once per connection before reading pgvector values.</text>
+  </g>
+
+  <g transform="translate(96 726)">
+    <rect x="0" y="0" width="1488" height="242" rx="20" fill="#fff0d6" stroke="#e0b16a" stroke-width="3"/>
+    <rect x="24" y="28" width="210" height="186" rx="18" fill="#ffe5b3" stroke="#d99a3d" stroke-width="2"/>
+    <circle cx="64" cy="73" r="22" fill="#d69238"/>
+    <text class="laneTitle" x="98" y="70">TSTZ</text>
+    <text class="laneTitle" x="98" y="104">RANGE</text>
+    <text class="laneText" x="48" y="146">TimestampRange</text>
+    <text class="laneText" x="48" y="176">inclusive bounds kept</text>
+
+    <g>
+      <rect x="282" y="42" width="234" height="142" rx="15" fill="#fffdf8" stroke="#d99a3d" stroke-width="2"/>
+      <text class="step" x="306" y="72">01 Kotlin value</text>
+      <text class="cardTitle" x="306" y="108">TimestampRange</text>
+      <text class="cardText" x="306" y="140">Instant start and end</text>
+    </g>
+    <path d="M516 113 H590" stroke="#c9852a" stroke-width="4.4" marker-end="url(#arrowGold)" fill="none"/>
+    <text class="arrowLabel" x="527" y="94">write</text>
+
+    <g>
+      <rect x="610" y="42" width="246" height="142" rx="15" fill="#fffdf8" stroke="#d99a3d" stroke-width="2"/>
+      <text class="step" x="634" y="72">02 ColumnType</text>
+      <text class="cardTitle" x="634" y="108">range literal</text>
+      <text class="cardText" x="634" y="132">?::tstzrange</text>
+      <text class="small" x="634" y="160">on PostgreSQL</text>
+    </g>
+    <path d="M856 113 H930" stroke="#c9852a" stroke-width="4.4" marker-end="url(#arrowGold)" fill="none"/>
+
+    <g>
+      <rect x="950" y="42" width="238" height="142" rx="15" fill="#fffdf8" stroke="#d99a3d" stroke-width="2"/>
+      <text class="step" x="974" y="72">03 SQL type</text>
+      <text class="cardTitle" x="974" y="108">TSTZRANGE</text>
+      <text class="cardText" x="974" y="140">VARCHAR(120) fallback</text>
+    </g>
+    <path d="M1188 113 H1262" stroke="#c9852a" stroke-width="4.4" marker-end="url(#arrowGold)" fill="none"/>
+    <text class="arrowLabel" x="1203" y="94">read</text>
+
+    <g>
+      <rect x="1282" y="42" width="176" height="142" rx="15" fill="#fffdf8" stroke="#d99a3d" stroke-width="2"/>
+      <text class="step" x="1304" y="72">04 API result</text>
+      <text class="cardTitle" x="1304" y="108">TimestampRange</text>
+      <text class="cardText" x="1304" y="140">&amp;&amp;, @&gt;, -|-</text>
+    </g>
+
+    <rect x="610" y="194" width="704" height="28" rx="12" fill="#fff8e8" stroke="#e8c685" stroke-width="1.5"/>
+    <text class="small" x="632" y="214">Parser accepts ISO-8601 and PostgreSQL JDBC timestamps, including fractional seconds.</text>
+  </g>
 </svg>

@@ -2,15 +2,16 @@
 
 [English](./README.md) | 한국어
 
-PostgreSQL 전용 Kotlin Exposed 확장 모듈입니다. PostGIS 공간 데이터, pgvector 벡터 검색, TSTZRANGE 시간 범위 컬럼 타입을 제공합니다.
+PostgreSQL 전용 Kotlin Exposed 확장 모듈입니다. PostGIS 공간 데이터, pgvector 유사도 검색,
+TSTZRANGE 시간 범위 컬럼 타입을 각각 독립적인 컬럼 패밀리로 제공합니다.
 
-## UML
+## 기능 지원 범위
 
-![PostgreSQL extension overview diagram](../../docs/images/readme-diagrams/exposed-exposed-postgresql-diagram-01.png)
+![PostgreSQL extension feature coverage](../../docs/images/readme-diagrams/exposed-exposed-postgresql-diagram-01.png)
 
-## 컬럼 타입 다이어그램
+## 컬럼 변환 흐름
 
-![exposed postgresql Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-postgresql-diagram-02.png)
+![PostgreSQL column conversion flow](../../docs/images/readme-diagrams/exposed-exposed-postgresql-diagram-02.png)
 
 ## 주요 기능
 
@@ -320,13 +321,13 @@ val server = PgvectorServer.Launcher.withExtensions("pg_trgm")
 
 ## 주의사항
 
-- **PostgreSQL 전용
-  **: 모든 기능이 PostgreSQL dialect에서만 동작합니다. H2 등 다른 DB에서는 오류가 발생합니다. TSTZRANGE만 H2에서 VARCHAR fallback으로 작동합니다.
+- **PostgreSQL 전용**: PostGIS, pgvector, SQL range 연산자는 PostgreSQL dialect에서만 동작합니다.
+  TSTZRANGE 컬럼 타입만 H2 같은 테스트용 dialect에서 `VARCHAR(120)` fallback을 제공합니다.
 - **PostGIS 확장**: `PostgisServer` 사용 시 `postgis` 확장이 자동으로 활성화됩니다. 직접 서버에 연결하는 경우
   `CREATE EXTENSION IF NOT EXISTS postgis` 실행이 필요합니다.
 - **pgvector 확장**: `PgvectorServer` 사용 시 `vector` 확장이 자동으로 활성화됩니다. 단, JDBC 드라이버 타입 등록(
   `PGvector.addVectorType()`)은 연결마다 별도로 필요합니다.
-- **차원 검증**: pgvector 저장 시 벡터 차원이 컬럼 정의와 일치하지 않으면 오류가 발생합니다.
+- **차원 검증**: pgvector 저장 시 벡터 차원이 컬럼 정의와 맞지 않으면 저장 전에 실패합니다.
 
 ---
 
