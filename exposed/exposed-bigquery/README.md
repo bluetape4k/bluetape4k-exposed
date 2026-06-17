@@ -7,17 +7,17 @@ A module that generates SQL using JetBrains Exposed DSL and executes it via the 
 
 ## Overview
 
-`exposed-bigquery` provides:
+`exposed-bigquery` gives Exposed users a BigQuery REST execution path without pretending that BigQuery is a JDBC database:
 
-- **BigQueryContext
-  **: Converts Exposed DSL to SQL (via H2 in PostgreSQL mode), then executes it against the BigQuery REST API
-    - Supports SELECT, INSERT, UPDATE, DELETE, and CREATE TABLE DDL
-    - Includes suspend/Flow async APIs
-- **BigQueryQueryExecutor**: Executes Exposed `Query` objects against BigQuery with automatic pagination
-- **BigQueryResultRow**: Type-safe row access via column references (Long, BigDecimal, Instant, etc.)
-    - Case-insensitive column name lookup
-    - Converts `"null"` strings and BigQuery null sentinels to Kotlin `null`
-- **BigQueryDialect**: Extends `PostgreSQLDialect` with BigQuery-specific overrides
+- **BigQueryContext**: Converts Exposed DSL to SQL through an internal H2 PostgreSQL-mode database, then executes the SQL through BigQuery `jobs.query`.
+    - Supports SELECT, INSERT, UPDATE, DELETE, and CREATE TABLE DDL.
+    - Provides synchronous, suspend, and Flow result-consumption APIs.
+- **BigQueryQueryExecutor**: Wraps Exposed `Query` objects and follows BigQuery `pageToken` pagination.
+- **BigQueryResultRow**: Reads REST response rows through Exposed column references.
+    - Column lookup is case-insensitive.
+    - `"null"` strings and BigQuery null sentinels become Kotlin `null`.
+- **BigQueryQueryOptions**: Applies dry-run, billed-byte caps, labels, priority, location, timeout, query cache, and destination-table settings.
+- **BigQueryDialect**: Reuses `PostgreSQLDialect` while disabling BigQuery-incompatible behavior such as ALTER COLUMN TYPE.
 
 ## Module Positioning
 
@@ -47,13 +47,13 @@ dependencies {
 }
 ```
 
-## Architecture Diagram
+## Architecture
 
 ![BigQuery architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-diagram-01.png)
 
-### Query Execution Flow
+### Query Job Lifecycle
 
-![Query Execution Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-sequence-01.png)
+![BigQuery query job lifecycle flow diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-flow-02.png)
 
 ## Basic Usage
 
@@ -214,7 +214,7 @@ Running the local emulator directly allows you to test quickly without Testconta
 brew install goccy/bigquery-emulator/bigquery-emulator
 bigquery-emulator --project=test --dataset=testdb --port=9050
 
-./gradlew :exposed-bigquery:test
+./gradlew :bluetape4k-exposed-bigquery:test
 ```
 
 If the emulator is not available, a Testcontainers Docker container starts automatically.
@@ -222,8 +222,8 @@ If the emulator is not available, a Testcontainers Docker container starts autom
 Regression test examples:
 
 ```bash
-./gradlew :exposed-bigquery:test --tests "io.bluetape4k.exposed.bigquery.BigQueryResultRowTest"
-./gradlew :exposed-bigquery:test --tests "io.bluetape4k.exposed.bigquery.query.SelectQueryTest"
+./gradlew :bluetape4k-exposed-bigquery:test --tests "io.bluetape4k.exposed.bigquery.BigQueryResultRowTest"
+./gradlew :bluetape4k-exposed-bigquery:test --tests "io.bluetape4k.exposed.bigquery.query.SelectQueryTest"
 ```
 
 ## References

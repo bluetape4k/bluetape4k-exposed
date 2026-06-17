@@ -7,16 +7,17 @@ JetBrains Exposed DSL로 SQL을 생성하고 Google BigQuery REST API로 실행�
 
 ## 개요
 
-`exposed-bigquery`는 다음을 제공합니다:
+`exposed-bigquery`는 BigQuery를 JDBC 데이터베이스처럼 가장하지 않고, Exposed 사용자가 BigQuery REST API를 실행 경로로 사용할 수 있게 해줍니다.
 
-- **BigQueryContext**: Exposed DSL → SQL(H2 PostgreSQL 모드) 변환 후 BigQuery REST API 실행
-    - SELECT, INSERT, UPDATE, DELETE, CREATE TABLE DDL 지원
-    - suspend/Flow 비동기 API 포함
-- **BigQueryQueryExecutor**: Exposed `Query` → BigQuery 실행, 페이지네이션 자동 처리
-- **BigQueryResultRow**: Column 참조로 타입 안전한 행 접근 (Long, BigDecimal, Instant 등)
-    - 컬럼 이름 조회 시 대소문자 무시
-    - `"null"` 문자열과 BigQuery null sentinel을 Kotlin `null`로 변환
-- **BigQueryDialect**: `PostgreSQLDialect` 상속, BigQuery 제약사항 override
+- **BigQueryContext**: 내부 H2 PostgreSQL-mode DB로 Exposed DSL을 SQL로 변환한 뒤 BigQuery `jobs.query`로 실행합니다.
+    - SELECT, INSERT, UPDATE, DELETE, CREATE TABLE DDL을 지원합니다.
+    - 동기, suspend, Flow 기반 결과 소비 API를 제공합니다.
+- **BigQueryQueryExecutor**: Exposed `Query`를 감싸고 BigQuery `pageToken` 페이지네이션을 따라갑니다.
+- **BigQueryResultRow**: REST 응답 row를 Exposed column 참조로 읽습니다.
+    - 컬럼 이름 조회 시 대소문자를 구분하지 않습니다.
+    - `"null"` 문자열과 BigQuery null sentinel은 Kotlin `null`로 처리합니다.
+- **BigQueryQueryOptions**: dry-run, billed-byte 상한, label, priority, location, timeout, query cache, destination table 설정을 적용합니다.
+- **BigQueryDialect**: `PostgreSQLDialect`를 재사용하되 ALTER COLUMN TYPE처럼 BigQuery와 맞지 않는 동작을 비활성화합니다.
 
 ## 모듈 포지셔닝
 
@@ -26,7 +27,7 @@ JetBrains Exposed DSL로 SQL을 생성하고 Google BigQuery REST API로 실행�
 - JDBC 트랜잭션 일관성이나 Trino connector 기반 실행이 필요하면 `exposed-trino` 또는 후속 `exposed-bigquery-trino`을 사용해야 합니다.
 - `sqlGenDb` 는 SQL 문자열 생성 전용 내부 구현이며, 애플리케이션 데이터 저장소가 아닙니다.
 
-## 포지셔닝
+## 지원 범위
 
 | 지원                                  | 미지원                             |
 |-------------------------------------|---------------------------------|
@@ -47,11 +48,11 @@ dependencies {
 
 ## 아키텍처 다이어그램
 
-![exposed bigquery Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-diagram-01.png)
+![BigQuery architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-diagram-01.png)
 
-### 쿼리 실행 흐름
+### Query Job Lifecycle
 
-![BigQuery query execution flow diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-sequence-01.png)
+![BigQuery query job lifecycle flow diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-flow-02.png)
 
 ## 기본 사용법
 
@@ -212,7 +213,7 @@ BigQuery 에뮬레이터(`goccy/bigquery-emulator`) 기반 통합 테스트를 �
 brew install goccy/bigquery-emulator/bigquery-emulator
 bigquery-emulator --project=test --dataset=testdb --port=9050
 
-./gradlew :exposed-bigquery:test
+./gradlew :bluetape4k-exposed-bigquery:test
 ```
 
 에뮬레이터가 없으면 Testcontainers Docker 컨테이너가 자동 시작됩니다.
@@ -220,8 +221,8 @@ bigquery-emulator --project=test --dataset=testdb --port=9050
 회귀 테스트 예:
 
 ```bash
-./gradlew :exposed-bigquery:test --tests "io.bluetape4k.exposed.bigquery.BigQueryResultRowTest"
-./gradlew :exposed-bigquery:test --tests "io.bluetape4k.exposed.bigquery.query.SelectQueryTest"
+./gradlew :bluetape4k-exposed-bigquery:test --tests "io.bluetape4k.exposed.bigquery.BigQueryResultRowTest"
+./gradlew :bluetape4k-exposed-bigquery:test --tests "io.bluetape4k.exposed.bigquery.query.SelectQueryTest"
 ```
 
 ## 참고

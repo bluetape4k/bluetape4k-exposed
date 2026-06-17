@@ -1,81 +1,123 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1754" height="1005" viewBox="0 0 1754 1005" role="img" aria-label="Architecture Diagram">
-<defs>
-  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="10" markerHeight="8" refX="8.5" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 8.5 4 L 1 7" fill="none" stroke="#758297" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="11" markerHeight="10" refX="9.5" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 0.5 1 L 9.5 5 L 0.5 9 Z" fill="#ffffff" stroke="#758297" stroke-width="1.7"/></marker>
-  <style>
-    .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
-    .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
-    .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
-    .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
-    .smallLabel{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:21px;font-weight:400;fill:#102033}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
-    .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .strong{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .line{stroke:#758297;stroke-width:2.1;fill:none;marker-end:url(#openArrow)}
-    .plainLine{stroke:#758297;stroke-width:2.1;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
-    .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-    .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
-  </style>
-</defs>
-<rect class="canvas" width="1754" height="1005"/>
-<rect class="frame" x="32" y="28" width="1690" height="949" rx="28"/>
-<text class="title" x="66" y="82">Architecture Diagram</text>
-<text class="subtitle" x="70" y="118">UML classes from the original Mermaid source</text>
-<path class="inheritLine" d="M877 589 L877 514 L1492 514 L1492 292"/>
-<path class="dashed" d="M672 180 L672 132 L262 132 L262 334"/>
-<path class="dashed" d="M1082 439 L1082 498 L672 498 L672 180"/>
-<g transform="translate(92,180)">
-  <rect class="card" x="0" y="0" width="340" height="154" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#5B8DEF"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="61" text-anchor="middle">BigQueryResultRow</text>
-  <text class="mono" x="18" y="108">+get(column): T</text>
-<text class="mono" x="18" y="129">+get(name): Any?</text>
-</g>
-<g transform="translate(502,180)">
-  <rect class="card" x="0" y="0" width="340" height="259" rx="5" fill="#EAF7EF" stroke="#58A978"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#58A978"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="61" text-anchor="middle">BigQueryQueryExecutor</text>
-  <text class="mono" x="18" y="108">+toList(): List~BigQueryResultRow~</text>
-<text class="mono" x="18" y="129">+toListSuspending():</text>
-<text class="mono" x="18" y="150">List~BigQueryResultRow~</text>
-<text class="mono" x="18" y="171">+toFlow(): Flow~BigQueryResultRow~</text>
-<text class="mono" x="18" y="192">+single(): BigQueryResultRow</text>
-<text class="mono" x="18" y="213">+singleOrNull(): BigQueryResultRow?</text>
-<text class="mono" x="18" y="234">+firstOrNull(): BigQueryResultRow?</text>
-</g>
-<g transform="translate(912,180)">
-  <rect class="card" x="0" y="0" width="340" height="259" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#D6A441"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="61" text-anchor="middle">BigQueryContext</text>
-  <text class="mono" x="18" y="108">+bigquery: Bigquery</text>
-<text class="mono" x="18" y="129">+projectId: String</text>
-<text class="mono" x="18" y="150">+datasetId: String</text>
-<text class="mono" x="18" y="171">+sqlGenDb: Database</text>
-<text class="mono" x="18" y="192">+create(bigquery, projectId, datasetId):</text>
-<text class="mono" x="18" y="213">BigQueryContext</text>
-<text class="mono" x="18" y="234">+runRawQuery(sql): QueryResponse</text>
-</g>
-<g transform="translate(1322,180)">
-  <rect class="card" x="0" y="0" width="340" height="112" rx="5" fill="#FDECEF" stroke="#DC6B82"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#DC6B82"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="61" text-anchor="middle">PostgreSQLDialect</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1720" height="1160" viewBox="0 0 1720 1160" role="img" aria-labelledby="title desc">
+  <title id="title">BigQuery REST Execution Architecture</title>
+  <desc id="desc">Architecture diagram for exposed-bigquery showing application Exposed DSL, internal H2 SQL generation, BigQuery REST execution, query options, pagination, and result row conversion.</desc>
+  <defs>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%">
+      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/>
+    </filter>
+    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#4F83BF"/></marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#2E8F89"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#B9851B"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#C94D68"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755BC6"/></marker>
+    <style>
+      .canvas{fill:#F6F9FC}.decor{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
+      .layer{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}
+      .title{font-family:"Architects Daughter";font-size:45px;fill:#22344A;font-weight:400}
+      .subtitle{font-family:"Comic Mono";font-size:17px;fill:#536476;font-weight:400}
+      .layer-title{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .card-title{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}
+      .detail{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}
+      .small{font-family:"Comic Mono";font-size:13px;fill:#627184;font-weight:400}
+      .shape{filter:url(#shadow);stroke-width:2}
+      .connector{fill:none;stroke-width:2.7;stroke-linejoin:round;stroke-linecap:round}
+      .constraint{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1.4}
+    </style>
+  </defs>
 
-</g>
-<g transform="translate(707,589)">
-  <rect class="card" x="0" y="0" width="340" height="196" rx="5" fill="#E9F7F6" stroke="#45A7A1"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#45A7A1"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="61" text-anchor="middle">BigQueryDialect</text>
-  <text class="mono" x="18" y="108">+dialectName: String = BigQuery</text>
-<text class="mono" x="18" y="129">+supportsColumnTypeChange: Boolean = false</text>
-<text class="mono" x="18" y="150">+supportsWindowFrameGroupsMode: Boolean =</text>
-<text class="mono" x="18" y="171">true</text>
-</g>
+  <rect class="canvas" width="1720" height="1160"/>
+  <rect class="decor" x="44" y="36" width="1632" height="1088" rx="34"/>
+  <text class="title" x="72" y="88">BigQuery REST Execution Architecture</text>
+  <text class="subtitle" x="76" y="121">Exposed builds SQL locally; BigQuery executes each query job through the REST API, not through a JDBC transaction.</text>
+
+  <g id="layer-application">
+    <rect class="layer" x="82" y="164" width="410" height="760" rx="18"/>
+    <text class="layer-title" x="112" y="190" dominant-baseline="middle">Application and Exposed DSL</text>
+  </g>
+  <g id="layer-sqlgen">
+    <rect class="layer" x="532" y="164" width="410" height="760" rx="18"/>
+    <text class="layer-title" x="562" y="190" dominant-baseline="middle">Internal SQL generation</text>
+  </g>
+  <g id="layer-bigquery">
+    <rect class="layer" x="982" y="164" width="570" height="760" rx="18"/>
+    <text class="layer-title" x="1012" y="190" dominant-baseline="middle">BigQuery REST execution</text>
+  </g>
+
+  <path data-edge="dsl-&gt;context" class="connector" d="M 402 302 L 552 302" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
+  <path data-edge="context-&gt;sqlgen" class="connector" d="M 742 356 L 742 430" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
+  <path data-edge="options-&gt;request" class="connector" d="M 402 598 L 962 598 L 962 520 L 1022 520" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+  <path data-edge="sqlgen-&gt;request" class="connector" d="M 932 506 L 1022 506" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
+  <path data-edge="ddl-&gt;request" class="connector" d="M 932 716 L 962 716 L 962 552 L 1267 552" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
+  <path data-edge="request-&gt;jobs" class="connector" d="M 1267 552 L 1267 628" stroke="#C94D68" marker-end="url(#arrow-red)"/>
+  <path data-edge="jobs-&gt;pages" class="connector" d="M 1267 724 L 1267 802" stroke="#C94D68" marker-end="url(#arrow-red)"/>
+  <path data-edge="pages-&gt;row" class="connector" d="M 1022 850 L 402 850" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
+
+  <g id="node-dsl" data-node="dsl" transform="translate(132,242)">
+    <rect class="shape" x="0" y="0" width="270" height="120" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <text class="card-title" x="135" y="31" text-anchor="middle" dominant-baseline="middle">Exposed DSL</text>
+    <text class="detail" x="135" y="56" text-anchor="middle" dominant-baseline="middle">Table, Query, DML builders</text>
+    <text class="detail" x="135" y="76" text-anchor="middle" dominant-baseline="middle">SELECT / INSERT / UPDATE</text>
+    <text class="detail" x="135" y="96" text-anchor="middle" dominant-baseline="middle">DELETE / CREATE TABLE</text>
+  </g>
+  <g id="node-options" data-node="options" transform="translate(132,540)">
+    <rect class="shape" x="0" y="0" width="270" height="116" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="135" y="29" text-anchor="middle" dominant-baseline="middle">BigQueryQueryOptions</text>
+    <text class="detail" x="135" y="54" text-anchor="middle" dominant-baseline="middle">dryRun, labels, priority</text>
+    <text class="detail" x="135" y="74" text-anchor="middle" dominant-baseline="middle">maximumBytesBilled</text>
+    <text class="detail" x="135" y="94" text-anchor="middle" dominant-baseline="middle">location and timeout</text>
+  </g>
+  <g id="node-row" data-node="row" transform="translate(132,790)">
+    <rect class="shape" x="0" y="0" width="270" height="120" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="135" y="31" text-anchor="middle" dominant-baseline="middle">BigQueryResultRow</text>
+    <text class="detail" x="135" y="56" text-anchor="middle" dominant-baseline="middle">case-insensitive keys</text>
+    <text class="detail" x="135" y="76" text-anchor="middle" dominant-baseline="middle">Column-based conversion</text>
+    <text class="detail" x="135" y="96" text-anchor="middle" dominant-baseline="middle">Long, BigDecimal, Instant</text>
+  </g>
+
+  <g id="node-context" data-node="context" transform="translate(552,242)">
+    <rect class="shape" x="0" y="0" width="380" height="114" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="190" y="30" text-anchor="middle" dominant-baseline="middle">BigQueryContext</text>
+    <text class="detail" x="190" y="55" text-anchor="middle" dominant-baseline="middle">projectId + datasetId</text>
+    <text class="detail" x="190" y="75" text-anchor="middle" dominant-baseline="middle">create() builds H2 sqlGenDb</text>
+    <text class="detail" x="190" y="95" text-anchor="middle" dominant-baseline="middle">suspend work runs on dispatcher</text>
+  </g>
+  <g id="node-sqlgen" data-node="sqlgen" transform="translate(552,430)">
+    <rect class="shape" x="0" y="0" width="380" height="112" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="190" y="29" text-anchor="middle" dominant-baseline="middle">H2 PostgreSQL-mode DB</text>
+    <text class="detail" x="190" y="54" text-anchor="middle" dominant-baseline="middle">transaction(sqlGenDb)</text>
+    <text class="detail" x="190" y="74" text-anchor="middle" dominant-baseline="middle">prepareSQL / expandArgs</text>
+    <text class="detail" x="190" y="94" text-anchor="middle" dominant-baseline="middle">SQL string only, no storage</text>
+  </g>
+  <g id="node-ddl" data-node="ddl" transform="translate(552,660)">
+    <rect class="shape" x="0" y="0" width="380" height="112" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <text class="card-title" x="190" y="29" text-anchor="middle" dominant-baseline="middle">BigQuery DDL mapping</text>
+    <text class="detail" x="190" y="54" text-anchor="middle" dominant-baseline="middle">BIGINT to INT64</text>
+    <text class="detail" x="190" y="74" text-anchor="middle" dominant-baseline="middle">VARCHAR to STRING</text>
+    <text class="detail" x="190" y="94" text-anchor="middle" dominant-baseline="middle">DECIMAL to NUMERIC</text>
+  </g>
+
+  <g id="node-request" data-node="request" transform="translate(1022,450)">
+    <rect class="shape" x="0" y="0" width="490" height="102" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
+    <text class="card-title" x="245" y="28" text-anchor="middle" dominant-baseline="middle">QueryRequest</text>
+    <text class="detail" x="245" y="53" text-anchor="middle" dominant-baseline="middle">standard SQL + defaultDataset</text>
+    <text class="detail" x="245" y="73" text-anchor="middle" dominant-baseline="middle">options apply dryRun, cache, destination table</text>
+  </g>
+  <g id="node-jobs" data-node="jobs" transform="translate(1022,628)">
+    <rect class="shape" x="0" y="0" width="490" height="96" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
+    <text class="card-title" x="245" y="28" text-anchor="middle" dominant-baseline="middle">BigQuery jobs.query</text>
+    <text class="detail" x="245" y="53" text-anchor="middle" dominant-baseline="middle">REST API executes each call independently</text>
+    <text class="detail" x="245" y="73" text-anchor="middle" dominant-baseline="middle">errors become BigQueryQueryException</text>
+  </g>
+  <g id="node-pages" data-node="pages" transform="translate(1022,802)">
+    <rect class="shape" x="0" y="0" width="490" height="96" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="245" y="28" text-anchor="middle" dominant-baseline="middle">getQueryResults pagination</text>
+    <text class="detail" x="245" y="53" text-anchor="middle" dominant-baseline="middle">toList gathers all pages</text>
+    <text class="detail" x="245" y="73" text-anchor="middle" dominant-baseline="middle">toFlow emits page by page with cancellation checks</text>
+  </g>
+
+  <g transform="translate(112,974)">
+    <rect class="constraint" x="0" y="0" width="1496" height="72" rx="10"/>
+    <text class="small" x="748" y="24" text-anchor="middle" dominant-baseline="middle">Reader contract: this module is a BigQuery REST executor for Exposed-generated SQL, not a JDBC ORM or rollback-capable transaction layer.</text>
+    <text class="small" x="748" y="48" text-anchor="middle" dominant-baseline="middle">Use dry runs and maximumBytesBilled for cost control; plan for partial writes when multiple DML calls are issued sequentially.</text>
+  </g>
 </svg>
