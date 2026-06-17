@@ -1,60 +1,187 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1610" height="1016" viewBox="0 0 1610 1016" role="img" aria-label="UserContext — Managing the Current User">
-<defs>
-  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#758297" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M 0 1 L 12 6 L 0 11 Z" fill="#ffffff" stroke="#758297" stroke-width="1.8"/></marker>
-  <style>
-    .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
-    .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
-    .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
-    .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
-    .smallLabel{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:21px;font-weight:400;fill:#102033}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
-    .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .strong{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .line{stroke:#758297;stroke-width:2.1;fill:none;marker-end:url(#openArrow)}
-    .plainLine{stroke:#758297;stroke-width:2.1;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
-    .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-    .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
-  </style>
-</defs>
-<rect class="canvas" width="1610" height="1016"/>
-<rect class="frame" x="32" y="28" width="1546" height="960" rx="28"/>
-<text class="title" x="66" y="82">UserContext — Managing the Current User</text>
-<text class="subtitle" x="70" y="118">Sequence messages from the original Mermaid source</text>
-<rect class="card" x="25" y="166" width="230" height="72" rx="20" fill="#E8F3FF" stroke="#5B8DEF"/>
-<text class="smallLabel" x="140" y="209" text-anchor="middle">Caller</text>
-<line class="lifeline" x1="140" y1="252" x2="140" y2="956" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect class="card" x="357.5" y="166" width="230" height="72" rx="20" fill="#EAF7EF" stroke="#58A978"/>
-<text class="smallLabel" x="472.5" y="209" text-anchor="middle">UserContext</text>
-<line class="lifeline" x1="472.5" y1="252" x2="472.5" y2="956" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect class="card" x="690" y="166" width="230" height="72" rx="20" fill="#FFF3D9" stroke="#D6A441"/>
-<text class="smallLabel" x="805" y="209" text-anchor="middle">ScopedValue</text>
-<line class="lifeline" x1="805" y1="252" x2="805" y2="956" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect class="card" x="1022.5" y="166" width="230" height="72" rx="20" fill="#FDECEF" stroke="#DC6B82"/>
-<text class="smallLabel" x="1137.5" y="209" text-anchor="middle">ThreadLocal</text>
-<line class="lifeline" x1="1137.5" y1="252" x2="1137.5" y2="956" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect class="card" x="1355" y="166" width="230" height="72" rx="20" fill="#E9F7F6" stroke="#45A7A1"/>
-<text class="smallLabel" x="1470" y="209" text-anchor="middle">Entity</text>
-<line class="lifeline" x1="1470" y1="252" x2="1470" y2="956" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect x="183.25" y="286" width="246" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="201.25" y="313" text-anchor="start">1. withUser(admin) { ... }</text>
-<path class="line" d="M140 344 L472.5 344"/>
-<rect x="641.5" y="396" width="327" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="659.5" y="423" text-anchor="start">2. Back up previous value, set admin</text>
-<path class="line" d="M472.5 454 L1137.5 454"/>
-<rect x="533.75" y="506" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="551.75" y="533" text-anchor="start">3. Bind admin</text>
-<path class="line" d="M472.5 564 L805 564"/>
-<rect x="1006.5" y="616" width="262" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="1024.5" y="643" text-anchor="start">4. getCurrentUser() == admin</text>
-<path class="dashed" d="M805 674 L1470 674"/>
-<rect x="645.5" y="726" width="319" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="663.5" y="753" text-anchor="start">5. Reflect in createdBy / updatedBy</text>
-<path class="dashed" d="M1470 784 L140 784"/>
-<rect x="613.5" y="836" width="383" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="631.5" y="863" text-anchor="start">6. Restore previous value after block exits</text>
-<path class="line" d="M472.5 894 L1137.5 894"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1980" viewBox="0 0 1700 1980" role="img" aria-labelledby="title desc">
+  <title id="title">UserContext Current User Sequence</title>
+  <desc id="desc">Sequence diagram rebuilt from UserContext source, core README usage, and UserContext tests.</desc>
+  <defs>
+    <marker id="seqArrow-call" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#4F83BF"/></marker>
+    <marker id="seqArrow-scoped" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755BC6"/></marker>
+    <marker id="seqArrow-thread" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#2E8F89"/></marker>
+    <marker id="seqArrow-restore" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#3E9868"/></marker>
+    <marker id="seqArrow-fallback" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#B9851B"/></marker>
+    <marker id="seqArrow-audit" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#C94D68"/></marker>
+    <marker id="seqArrow-neutral" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#758297"/></marker>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <style>
+      .canvas{fill:#F7FAFC}.frame{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:2.6;filter:url(#shadow)}
+      .title{font-family:"Architects Daughter";font-size:44px;fill:#22344A;font-weight:400}.subtitle{font-family:"Comic Mono";font-size:16px;fill:#536476;font-weight:400}
+      .card{filter:url(#shadow);stroke-width:2}.cardTitle{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .detail{font-family:"Comic Mono";font-size:13px;fill:#42556B;font-weight:400}.small{font-family:"Comic Mono";font-size:12px;fill:#627184;font-weight:400}
+      .seq{fill:none;stroke-width:3;stroke-linecap:round}.seqReturn{fill:none;stroke-width:2.7;stroke-linecap:round;stroke-dasharray:8 7}
+      .lifeline{stroke:#A7B4C3;stroke-width:1.8;stroke-dasharray:8 8}.labelPill{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
+      .branchBox{fill:#FFFFFF;fill-opacity:.42;stroke:#D6A441;stroke-width:1.8;stroke-dasharray:8 8}.note{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
+    </style>
+  </defs>
+  <rect class="canvas" width="1700" height="1980"/>
+  <rect class="frame" x="32" y="28" width="1636" height="1924" rx="28"/>
+  <text class="title" x="66" y="82">UserContext Current User Sequence</text>
+  <text class="subtitle" x="70" y="116">ScopedValue has lookup priority, ThreadLocal covers coroutine/general thread scopes, and both paths restore the previous value.</text>
+<g id="participant-request">
+  <rect class="card" x="96" y="165" width="230" height="76" rx="10" fill="#E8F3FF" stroke="#5B8DEF"/>
+  <text class="cardTitle" x="211" y="197" text-anchor="middle">Request or</text>
+  <text class="cardTitle" x="211" y="220" text-anchor="middle">repository block</text>
+  <line class="lifeline" x1="211" y1="241" x2="211" y2="1886"/>
+</g>
+<g id="participant-context">
+  <rect class="card" x="415.5" y="165" width="230" height="76" rx="10" fill="#F1ECFF" stroke="#8A72D6"/>
+  <text class="cardTitle" x="530.5" y="210" text-anchor="middle">UserContext</text>
+  <line class="lifeline" x1="530.5" y1="241" x2="530.5" y2="1886"/>
+</g>
+<g id="participant-scoped">
+  <rect class="card" x="735" y="165" width="230" height="76" rx="10" fill="#EAF7EF" stroke="#58A978"/>
+  <text class="cardTitle" x="850" y="210" text-anchor="middle">ScopedValue</text>
+  <line class="lifeline" x1="850" y1="241" x2="850" y2="1886"/>
+</g>
+<g id="participant-threadLocal">
+  <rect class="card" x="1054.5" y="165" width="230" height="76" rx="10" fill="#E9F7F6" stroke="#45A7A1"/>
+  <text class="cardTitle" x="1169.5" y="197" text-anchor="middle">Inheritable</text>
+  <text class="cardTitle" x="1169.5" y="220" text-anchor="middle">ThreadLocal</text>
+  <line class="lifeline" x1="1169.5" y1="241" x2="1169.5" y2="1886"/>
+</g>
+<g id="participant-audit">
+  <rect class="card" x="1374" y="165" width="230" height="76" rx="10" fill="#FDECEF" stroke="#DC6B82"/>
+  <text class="cardTitle" x="1489" y="197" text-anchor="middle">Auditable table</text>
+  <text class="cardTitle" x="1489" y="220" text-anchor="middle">default</text>
+  <line class="lifeline" x1="1489" y1="241" x2="1489" y2="1886"/>
+</g>
+<g>
+  <rect class="branchBox" x="74" y="292" width="1552" height="48" rx="15"/>
+  <rect class="labelPill" x="178.75" y="286" width="384" height="30" rx="8"/>
+  <text class="detail" x="370.75" y="302" text-anchor="middle" dominant-baseline="middle">Virtual thread / structured concurrency path</text>
+</g>
+<g id="m2">
+  <rect class="labelPill" x="228.35" y="352" width="284.8" height="42" rx="7"/>
+  <circle cx="247.35" cy="373" r="12" fill="#4F83BF"/>
+  <text class="detail" x="247.35" y="374" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">2</text>
+  <text class="detail" x="388.75" y="365" text-anchor="middle" dominant-baseline="middle">withUser(&quot;admin&quot;) enters</text>
+  <text class="detail" x="388.75" y="380" text-anchor="middle" dominant-baseline="middle">block</text>
+  <path class="seq" d="M211 412 L530.5 412" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
+</g>
+<g id="m3">
+  <rect class="labelPill" x="653.6" y="446" width="392.8" height="30" rx="7"/>
+  <circle cx="672.6" cy="461" r="12" fill="#2E8F89"/>
+  <text class="detail" x="672.6" y="462" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">3</text>
+  <text class="detail" x="868" y="462" text-anchor="middle" dominant-baseline="middle">save previous ThreadLocal and set admin</text>
+  <path class="seq" d="M530.5 494 L1169.5 494" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g id="m4">
+  <rect class="labelPill" x="545.5" y="528" width="289.5" height="30" rx="7"/>
+  <circle cx="564.5" cy="543" r="12" fill="#755BC6"/>
+  <text class="detail" x="564.5" y="544" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">4</text>
+  <text class="detail" x="708.25" y="544" text-anchor="middle" dominant-baseline="middle">ScopedValue.where(...).call(block)</text>
+  <path class="seq" d="M530.5 576 L850 576" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
+</g>
+<g id="m5">
+  <rect class="labelPill" x="671.6" y="610" width="356.8" height="30" rx="7"/>
+  <circle cx="690.6" cy="625" r="12" fill="#C94D68"/>
+  <text class="detail" x="690.6" y="626" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">5</text>
+  <text class="detail" x="868" y="626" text-anchor="middle" dominant-baseline="middle">insert/update reads audit username</text>
+  <path class="seq" d="M211 658 L1489 658" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m6">
+  <rect class="labelPill" x="887.25" y="692" width="245" height="30" rx="7"/>
+  <circle cx="906.25" cy="707" r="12" fill="#C94D68"/>
+  <text class="detail" x="906.25" y="708" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">6</text>
+  <text class="detail" x="1027.75" y="708" text-anchor="middle" dominant-baseline="middle">getCurrentUser()</text>
+  <path class="seq" d="M1489 740 L530.5 740" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m7">
+  <rect class="labelPill" x="555.05" y="762" width="270.4" height="42" rx="7"/>
+  <circle cx="574.05" cy="783" r="12" fill="#755BC6"/>
+  <text class="detail" x="574.05" y="784" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">7</text>
+  <text class="detail" x="708.25" y="775" text-anchor="middle" dominant-baseline="middle">read bound ScopedValue</text>
+  <text class="detail" x="708.25" y="790" text-anchor="middle" dominant-baseline="middle">first</text>
+  <path class="seq" d="M530.5 822 L850 822" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
+</g>
+<g id="m8">
+  <rect class="labelPill" x="567.75" y="856" width="245" height="30" rx="7"/>
+  <circle cx="586.75" cy="871" r="12" fill="#755BC6"/>
+  <text class="detail" x="586.75" y="872" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">8</text>
+  <text class="detail" x="708.25" y="872" text-anchor="middle" dominant-baseline="middle">admin</text>
+  <path class="seqReturn" d="M850 904 L530.5 904" stroke="#755BC6" marker-end="url(#seqArrow-scoped)"/>
+</g>
+<g id="m9">
+  <rect class="labelPill" x="660.8" y="938" width="378.40000000000003" height="30" rx="7"/>
+  <circle cx="679.8" cy="953" r="12" fill="#3E9868"/>
+  <text class="detail" x="679.8" y="954" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">9</text>
+  <text class="detail" x="868" y="954" text-anchor="middle" dominant-baseline="middle">finally restores previous ThreadLocal</text>
+  <path class="seq" d="M530.5 986 L1169.5 986" stroke="#3E9868" marker-end="url(#seqArrow-restore)"/>
+</g>
+<g>
+  <rect class="branchBox" x="74" y="1030" width="1552" height="48" rx="15"/>
+  <rect class="labelPill" x="227.5" y="1024" width="286.5" height="30" rx="8"/>
+  <text class="detail" x="370.75" y="1040" text-anchor="middle" dominant-baseline="middle">Coroutine / general thread path</text>
+</g>
+<g id="m11">
+  <rect class="labelPill" x="226" y="1090" width="289.5" height="42" rx="7"/>
+  <circle cx="245" cy="1111" r="12" fill="#4F83BF"/>
+  <text class="detail" x="245" y="1112" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">11</text>
+  <text class="detail" x="388.75" y="1103" text-anchor="middle" dominant-baseline="middle">withThreadLocalUser(&quot;admin&quot;)</text>
+  <text class="detail" x="388.75" y="1118" text-anchor="middle" dominant-baseline="middle">enters block</text>
+  <path class="seq" d="M211 1150 L530.5 1150" stroke="#4F83BF" marker-end="url(#seqArrow-call)"/>
+</g>
+<g id="m12">
+  <rect class="labelPill" x="722" y="1184" width="256" height="30" rx="7"/>
+  <circle cx="741" cy="1199" r="12" fill="#2E8F89"/>
+  <text class="detail" x="741" y="1200" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">12</text>
+  <text class="detail" x="868" y="1200" text-anchor="middle" dominant-baseline="middle">set ThreadLocal only</text>
+  <path class="seq" d="M530.5 1232 L1169.5 1232" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g id="m13">
+  <rect class="labelPill" x="887.25" y="1266" width="245" height="30" rx="7"/>
+  <circle cx="906.25" cy="1281" r="12" fill="#C94D68"/>
+  <text class="detail" x="906.25" y="1282" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">13</text>
+  <text class="detail" x="1027.75" y="1282" text-anchor="middle" dominant-baseline="middle">getCurrentUser()</text>
+  <path class="seq" d="M1489 1314 L530.5 1314" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m14">
+  <rect class="labelPill" x="624.8" y="1348" width="450.40000000000003" height="30" rx="7"/>
+  <circle cx="643.8" cy="1363" r="12" fill="#2E8F89"/>
+  <text class="detail" x="643.8" y="1364" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">14</text>
+  <text class="detail" x="868" y="1364" text-anchor="middle" dominant-baseline="middle">fallback to ThreadLocal when ScopedValue absent</text>
+  <path class="seq" d="M530.5 1396 L1169.5 1396" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g id="m15">
+  <rect class="labelPill" x="727.5" y="1430" width="245" height="30" rx="7"/>
+  <circle cx="746.5" cy="1445" r="12" fill="#2E8F89"/>
+  <text class="detail" x="746.5" y="1446" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">15</text>
+  <text class="detail" x="868" y="1446" text-anchor="middle" dominant-baseline="middle">admin</text>
+  <path class="seqReturn" d="M1169.5 1478 L530.5 1478" stroke="#2E8F89" marker-end="url(#seqArrow-thread)"/>
+</g>
+<g id="m16">
+  <rect class="labelPill" x="660.8" y="1512" width="378.40000000000003" height="30" rx="7"/>
+  <circle cx="679.8" cy="1527" r="12" fill="#3E9868"/>
+  <text class="detail" x="679.8" y="1528" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">16</text>
+  <text class="detail" x="868" y="1528" text-anchor="middle" dominant-baseline="middle">finally restore or remove ThreadLocal</text>
+  <path class="seq" d="M530.5 1560 L1169.5 1560" stroke="#3E9868" marker-end="url(#seqArrow-restore)"/>
+</g>
+<g>
+  <rect class="branchBox" x="74" y="1604" width="1552" height="48" rx="15"/>
+  <rect class="labelPill" x="275.75" y="1598" width="190" height="30" rx="8"/>
+  <text class="detail" x="370.75" y="1614" text-anchor="middle" dominant-baseline="middle">No active context</text>
+</g>
+<g id="m18">
+  <rect class="labelPill" x="887.25" y="1676" width="245" height="30" rx="7"/>
+  <circle cx="906.25" cy="1691" r="12" fill="#C94D68"/>
+  <text class="detail" x="906.25" y="1692" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">18</text>
+  <text class="detail" x="1027.75" y="1692" text-anchor="middle" dominant-baseline="middle">getCurrentUser()</text>
+  <path class="seq" d="M1489 1724 L530.5 1724" stroke="#C94D68" marker-end="url(#seqArrow-audit)"/>
+</g>
+<g id="m19">
+  <rect class="labelPill" x="228.35" y="1746" width="284.8" height="42" rx="7"/>
+  <circle cx="247.35" cy="1767" r="12" fill="#B9851B"/>
+  <text class="detail" x="247.35" y="1768" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">19</text>
+  <text class="detail" x="388.75" y="1759" text-anchor="middle" dominant-baseline="middle">return default username:</text>
+  <text class="detail" x="388.75" y="1774" text-anchor="middle" dominant-baseline="middle">system</text>
+  <path class="seqReturn" d="M530.5 1806 L211 1806" stroke="#B9851B" marker-end="url(#seqArrow-fallback)"/>
+</g>
+<g data-footer="reader-contract"><rect class="note" x="110" y="1862" width="1480" height="48" rx="12"/><text class="small" x="850" y="1879" text-anchor="middle" dominant-baseline="middle">Use withUser for virtual-thread scopes; use withThreadLocalUser for coroutine or general-thread scopes.</text><text class="small" x="850" y="1896" text-anchor="middle" dominant-baseline="middle">getCurrentUser resolves ScopedValue first, then ThreadLocal, then the default system user.</text></g>
 </svg>

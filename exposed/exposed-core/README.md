@@ -2,14 +2,13 @@
 
 English | [한국어](./README.ko.md)
 
-A foundation module that provides core column types, extension functions, and common Repository interfaces for JetBrains Exposed. It has no JDBC dependency, making it shareable across R2DBC, serialization, encryption, and other higher-level modules.
+A foundation module that provides shared column types, table helpers, extension functions, and DTOs for JetBrains Exposed. It has no JDBC dependency, making it reusable from JDBC, R2DBC, serialization, Tink encryption, and Spring integration modules.
 
 ## Overview
 
 `exposed-core` provides:
 
-- **Custom column types
-  **: Binary/Blob columns backed by compression (LZ4/Snappy/Zstd), encryption, and serialization (Kryo/Fory)
+- **Custom column types**: Binary/Blob columns backed by compression (LZ4/Snappy/Zstd) and serialization (Kryo/Fory)
 - **Network column types**: IPv4/IPv6 addresses (`inetAddress`), CIDR blocks (`cidr`), PostgreSQL `<<` operator
 - **Phone number column types**: E.164-normalized storage (`phoneNumber`,
   `phoneNumberString`) based on Google libphonenumber
@@ -30,9 +29,6 @@ dependencies {
     // For compressed column types
     implementation("io.github.bluetape4k:bluetape4k-io:${version}")
 
-    // For encrypted column types
-    implementation("io.github.bluetape4k:bluetape4k-crypto:${version}")
-
     // For phone number column types (phoneNumber, phoneNumberString)
     implementation("com.googlecode.libphonenumber:libphonenumber:8.13.52")
 }
@@ -48,7 +44,7 @@ Illustrates the relationships among `AuditableIdTable`, concrete auditable table
 
 ### Custom Column Type Hierarchy
 
-Compressed, encrypted, and serialized column types are consistently structured around `ColumnWithTransform`.
+Compressed, serialized, network, and phone-number column types are grouped by their actual Exposed base contracts.
 
 ![Custom Column Type Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-02.png)
 
@@ -108,26 +104,7 @@ object Documents: LongIdTable("documents") {
 }
 ```
 
-### 3. Encrypted column types
-
-```kotlin
-import io.bluetape4k.exposed.core.encrypt.encryptedVarChar
-import io.bluetape4k.exposed.core.encrypt.encryptedBinary
-import io.bluetape4k.crypto.encrypt.Encryptors
-import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
-
-object Users: LongIdTable("users") {
-    val name = varchar("name", 100)
-
-    // Store as AES-encrypted varchar
-    val ssn = encryptedVarChar("ssn", 512, Encryptors.AES)
-
-    // Store as encrypted Binary
-    val secret = encryptedBinary("secret", 1024, Encryptors.AES).nullable()
-}
-```
-
-### 4. Serialized column types
+### 3. Serialized column types
 
 ```kotlin
 import io.bluetape4k.exposed.core.serializable.binarySerializedBinary
@@ -146,7 +123,7 @@ object Users: LongIdTable("users") {
 }
 ```
 
-### 5. Network address column types
+### 4. Network address column types
 
 ```kotlin
 import io.bluetape4k.exposed.core.inet.inetAddress
@@ -165,7 +142,7 @@ Networks.selectAll()
     .where { Networks.ip.isContainedBy(Networks.network) }
 ```
 
-### 6. Phone number column types
+### 5. Phone number column types
 
 ```kotlin
 import io.bluetape4k.exposed.core.phone.phoneNumber
@@ -182,7 +159,7 @@ object Contacts : LongIdTable("contacts") {
 // Stored: "010-1234-5678" → "+821012345678"
 ```
 
-### 7. Ignore-duplicate batch insert
+### 6. Ignore-duplicate batch insert
 
 ```kotlin
 import io.bluetape4k.exposed.core.BatchInsertOnConflictDoNothing
@@ -198,7 +175,7 @@ executable.run {
 }
 ```
 
-### 8. CTE table facade
+### 7. CTE table facade
 
 ```kotlin
 import io.bluetape4k.exposed.core.CteTable
@@ -216,7 +193,7 @@ val activeUserName = activeUsers[Users.name]
 `CteTable` is shared by the JDBC and R2DBC modules. Use `withCte()` from those modules to prepend the `WITH`
 clause to a final SELECT query.
 
-### 9. ExposedPage (paginated results)
+### 8. ExposedPage (paginated results)
 
 ```kotlin
 import io.bluetape4k.exposed.core.ExposedPage
@@ -244,9 +221,6 @@ println("Is last page: ${page.isLast}")
 | `statements/api/ExposedBlobExtensions.kt`          | ExposedBlob utility functions                      |
 | `compress/CompressedBinaryColumnType.kt`           | Compressed Binary column type                      |
 | `compress/CompressedBlobColumnType.kt`             | Compressed Blob column type                        |
-| `encrypt/EncryptedVarCharColumnType.kt`            | Encrypted VarChar column type                      |
-| `encrypt/EncryptedBinaryColumnType.kt`             | Encrypted Binary column type                       |
-| `encrypt/EncryptedBlobColumnType.kt`               | Encrypted Blob column type                         |
 | `serializable/BinarySerializedBinaryColumnType.kt` | Serialized Binary column type                      |
 | `serializable/BinarySerializedBlobColumnType.kt`   | Serialized Blob column type                        |
 | `ExposedPage.kt`                                   | Paginated result data class                        |
@@ -284,7 +258,7 @@ interface Auditable {
 
 ### UserContext — Managing the Current User
 
-A context object that propagates the current user's name. Supports both Virtual Thread / Structured Concurrency and Coroutines environments.
+A context object that propagates the current user's name. `withUser(...)` binds both `ScopedValue` and `ThreadLocal` for virtual-thread or structured-concurrency scopes, while `withThreadLocalUser(...)` is the coroutine/general-thread path.
 
 ![UserContext — Managing the Current User diagram](../../docs/images/readme-diagrams/exposed-exposed-core-sequence-01.png)
 
@@ -405,5 +379,4 @@ dependencies {
 
 - [JetBrains Exposed](https://github.com/JetBrains/Exposed)
 - [bluetape4k-io (compression/serialization)](../../../io/io)
-- [bluetape4k-crypto (encryption)](../../../io/crypto)
 - [bluetape4k-idgenerators (ID generation)](../../../utils/idgenerators)

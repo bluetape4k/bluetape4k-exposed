@@ -2,13 +2,13 @@
 
 [English](./README.md) | 한국어
 
-JetBrains Exposed의 핵심 컬럼 타입, 확장 함수, Repository 공통 인터페이스를 제공하는 기반 모듈입니다. JDBC 의존 없이 사용할 수 있어 R2DBC, 직렬화, 암호화 등 다양한 상위 모듈에서 공유됩니다.
+JetBrains Exposed에서 공통으로 쓰는 컬럼 타입, 테이블 helper, 확장 함수, DTO를 제공하는 기반 모듈입니다. JDBC 의존이 없기 때문에 JDBC/R2DBC, 직렬화, Tink 암호화, Spring 연동 모듈에서 함께 사용할 수 있습니다.
 
 ## 개요
 
 `exposed-core`는 다음을 제공합니다:
 
-- **커스텀 컬럼 타입**: 압축(LZ4/Snappy/Zstd), 암호화, 직렬화(Kryo/Fory) 기반의 Binary/Blob 컬럼
+- **커스텀 컬럼 타입**: 압축(LZ4/Snappy/Zstd), 직렬화(Kryo/Fory) 기반의 Binary/Blob 컬럼
 - **네트워크 컬럼 타입**: IPv4/IPv6 주소(`inetAddress`), CIDR 블록(`cidr`), PostgreSQL `<<` 연산자
 - **전화번호 컬럼 타입**: E.164 정규화 저장(`phoneNumber`, `phoneNumberString`), Google libphonenumber 기반
 - **컬럼 확장 함수**: 클라이언트 측 ID 생성(`timebasedGenerated`, `snowflakeGenerated`, `ksuidGenerated`, `ulidGenerated` 등)
@@ -27,9 +27,6 @@ dependencies {
     // 압축 컬럼 타입 사용 시
     implementation("io.github.bluetape4k:bluetape4k-io:${version}")
 
-    // 암호화 컬럼 타입 사용 시
-    implementation("io.github.bluetape4k:bluetape4k-crypto:${version}")
-
     // 전화번호 컬럼 타입 사용 시 (phoneNumber, phoneNumberString)
     implementation("com.googlecode.libphonenumber:libphonenumber:8.13.52")
 }
@@ -45,7 +42,7 @@ dependencies {
 
 ### 커스텀 컬럼 타입 계층
 
-`ColumnWithTransform`을 기반으로 압축/암호화/직렬화 컬럼 타입이 일관된 구조로 구성됩니다.
+압축, 직렬화, 네트워크, 전화번호 컬럼 타입을 실제 Exposed 기반 타입별로 정리합니다.
 
 ![exposed core Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-core-diagram-02.png)
 
@@ -105,26 +102,7 @@ object Documents: LongIdTable("documents") {
 }
 ```
 
-### 3. 암호화 컬럼 타입
-
-```kotlin
-import io.bluetape4k.exposed.core.encrypt.encryptedVarChar
-import io.bluetape4k.exposed.core.encrypt.encryptedBinary
-import io.bluetape4k.crypto.encrypt.Encryptors
-import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
-
-object Users: LongIdTable("users") {
-    val name = varchar("name", 100)
-
-    // AES 암호화로 varchar 저장
-    val ssn = encryptedVarChar("ssn", 512, Encryptors.AES)
-
-    // 암호화된 Binary 저장
-    val secret = encryptedBinary("secret", 1024, Encryptors.AES).nullable()
-}
-```
-
-### 4. 직렬화 컬럼 타입
+### 3. 직렬화 컬럼 타입
 
 ```kotlin
 import io.bluetape4k.exposed.core.serializable.binarySerializedBinary
@@ -143,7 +121,7 @@ object Users: LongIdTable("users") {
 }
 ```
 
-### 5. 네트워크 주소 컬럼 타입
+### 4. 네트워크 주소 컬럼 타입
 
 ```kotlin
 import io.bluetape4k.exposed.core.inet.inetAddress
@@ -162,7 +140,7 @@ Networks.selectAll()
     .where { Networks.ip.isContainedBy(Networks.network) }
 ```
 
-### 6. 전화번호 컬럼 타입
+### 5. 전화번호 컬럼 타입
 
 ```kotlin
 import io.bluetape4k.exposed.core.phone.phoneNumber
@@ -179,7 +157,7 @@ object Contacts : LongIdTable("contacts") {
 // 저장: "010-1234-5678" → "+821012345678"
 ```
 
-### 7. 중복 무시 배치 삽입
+### 6. 중복 무시 배치 삽입
 
 ```kotlin
 import io.bluetape4k.exposed.core.BatchInsertOnConflictDoNothing
@@ -195,7 +173,7 @@ executable.run {
 }
 ```
 
-### 8. CTE 테이블 facade
+### 7. CTE 테이블 facade
 
 ```kotlin
 import io.bluetape4k.exposed.core.CteTable
@@ -213,7 +191,7 @@ val activeUserName = activeUsers[Users.name]
 `CteTable`은 JDBC/R2DBC 모듈이 공유합니다. 최종 SELECT query 앞에 `WITH` 절을 붙일 때는 각 모듈의
 `withCte()`를 사용합니다.
 
-### 9. ExposedPage (페이징 결과)
+### 8. ExposedPage (페이징 결과)
 
 ```kotlin
 import io.bluetape4k.exposed.core.ExposedPage
@@ -241,9 +219,6 @@ println("마지막 페이지: ${page.isLast}")
 | `statements/api/ExposedBlobExtensions.kt`          | ExposedBlob 유틸 함수                      |
 | `compress/CompressedBinaryColumnType.kt`           | 압축 Binary 컬럼 타입                        |
 | `compress/CompressedBlobColumnType.kt`             | 압축 Blob 컬럼 타입                          |
-| `encrypt/EncryptedVarCharColumnType.kt`            | 암호화 VarChar 컬럼 타입                      |
-| `encrypt/EncryptedBinaryColumnType.kt`             | 암호화 Binary 컬럼 타입                       |
-| `encrypt/EncryptedBlobColumnType.kt`               | 암호화 Blob 컬럼 타입                         |
 | `serializable/BinarySerializedBinaryColumnType.kt` | 직렬화 Binary 컬럼 타입                       |
 | `serializable/BinarySerializedBlobColumnType.kt`   | 직렬화 Blob 컬럼 타입                         |
 | `ExposedPage.kt`                                   | 페이징 결과 데이터 클래스                         |
@@ -280,7 +255,7 @@ interface Auditable {
 
 ### UserContext — 사용자 컨텍스트 관리
 
-현재 작업 중인 사용자명을 전파하는 컨텍스트 객체입니다. Virtual Thread / Structured Concurrency와 Coroutines 환경 모두 지원합니다.
+현재 작업 중인 사용자명을 전파하는 컨텍스트 객체입니다. `withUser(...)`는 Virtual Thread/Structured Concurrency 범위에서 `ScopedValue`와 `ThreadLocal`을 함께 묶고, `withThreadLocalUser(...)`는 Coroutine이나 일반 Thread 환경에서 사용합니다.
 
 ![UserContext — diagram](../../docs/images/readme-diagrams/exposed-exposed-core-sequence-01.png)
 
@@ -401,5 +376,4 @@ dependencies {
 
 - [JetBrains Exposed](https://github.com/JetBrains/Exposed)
 - [bluetape4k-io (압축/직렬화)](../../../io/io)
-- [bluetape4k-crypto (암호화)](../../../io/crypto)
 - [bluetape4k-idgenerators (ID 생성)](../../../utils/idgenerators)
