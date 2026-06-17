@@ -23,7 +23,7 @@ The architecture view separates the repository surface, optional Caffeine NearCa
 
 ![R2DBC Lettuce Redis cache architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-diagram-01.png)
 
-The sequence view focuses on runtime behavior: reads check NearCache, Redis, then DB; saves update Redis first and reach the R2DBC writer according to the configured write mode; delete and clear operations remove cache state and use the writer path only for repository deletes.
+The sequence view follows the real message order: NearCache hit, Redis hit, Redis miss through the R2DBC loader, save through the configured write mode, and cache cleanup for delete, invalidate, and clear operations.
 
 ![R2DBC Lettuce cache sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-lettuce-sequence-01.png)
 
