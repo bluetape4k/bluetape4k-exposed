@@ -92,21 +92,31 @@ Measured local H2/PostgreSQL/MySQL8 benchmarks showed that pure acquire/close th
 
 ### Core R2dbcRepository Structure
 
-![Core R2dbcRepository Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-01.png)
+This architecture view shows the runtime contract: application code enters a caller-owned `suspendTransaction`, the
+repository maps `IdTable` rows to entities, read methods expose `Flow<E>`, and writes delegate to Exposed R2DBC
+statements.
+
+![Core R2DBC repository structure diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-01.png)
 
 ### R2dbcRepository Hierarchy
 
-![R2dbcRepository Hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.png)
+The class diagram separates the base repository contract from key-type convenience interfaces and the optional
+auditable/soft-delete extensions.
+
+![R2DBC repository hierarchy diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-diagram-02.png)
 
 ### suspend Transaction Flow
 
 How CRUD operations are executed through `R2dbcRepository` inside a `suspendTransaction` block.
 
-![suspend Transaction Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-01.png)
+![R2DBC suspend transaction sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-01.png)
 
 ### SoftDelete Transaction Flow
 
-![SoftDelete Transaction Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-02.png)
+Soft-delete operations update the `isDeleted` flag and then route reads through `findActive` or `findDeleted` so callers
+choose the visibility boundary explicitly.
+
+![R2DBC soft-delete transaction sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-r2dbc-sequence-02.png)
 
 ## Basic Usage
 
@@ -447,7 +457,6 @@ val rows = ActorTable.selectImplicitAll()
 |------------------------------------------------|----------------------------------------------------|
 | `repository/R2dbcRepository.kt`                | R2DBC Repository base interface                    |
 | `repository/SoftDeletedR2dbcRepository.kt`     | Soft Delete R2DBC Repository                       |
-| `repository/ExposedR2dbcRepository.kt`         | (Deprecated) Legacy Repository interface           |
 | `TableExtensions.kt`                           | Async table metadata extension functions           |
 | `QueryExtensions.kt`                           | Flow/Query extensions (`forEach`, `any`, etc.)     |
 | `ReadableExtensions.kt`                        | Type-safe R2DBC Readable column value accessors    |
