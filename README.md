@@ -9,16 +9,16 @@ English | [한국어](README.ko.md)
 
 ![Bluetape4k Exposed workbench](./docs/assets/exposed-workbench.png)
 
-Kotlin extensions for [JetBrains Exposed](https://github.com/JetBrains/Exposed) ORM — providing Repository patterns, cache integrations, JSON column serialization, encryption, and Spring Boot auto-configuration.
+Kotlin extensions for [JetBrains Exposed](https://github.com/JetBrains/Exposed) ORM — repository runtimes, cache decorators, JSON/encrypted columns, database dialect helpers, and Spring Boot auto-configuration.
 
 ---
 
 ## Project Purpose
 
 `bluetape4k-exposed` turns JetBrains Exposed into a production-oriented Kotlin
-data toolkit. It standardizes JDBC and R2DBC repository patterns, cache-backed
-read paths, JSON/encrypted columns, database dialect extensions, and Spring Boot
-4 auto-configuration while preserving Exposed DSL ergonomics.
+data toolkit. Start with the JDBC or R2DBC repository runtime, then add cache
+decorators, column codecs, database-specific helpers, and Spring Boot 4
+auto-configuration only where the application data path needs them.
 
 ## Features
 
@@ -36,14 +36,10 @@ read paths, JSON/encrypted columns, database dialect extensions, and Spring Boot
 
 ![Bluetape4k Exposed overview diagram](docs/images/readme-diagrams/root-readme-overview-01.png)
 
-## Module Relationship Diagram
+## Module Composition Diagram
 
-![Bluetape4k Exposed module relationship diagram](docs/images/readme-diagrams/root-readme-module-relationships-01.png)
+![Bluetape4k Exposed module composition diagram](docs/images/readme-diagrams/root-readme-module-relationships-01.png)
 <!-- README_VISUAL_OVERVIEW:END -->
-
-## Architecture
-
-![bluetape4k-exposed architecture](docs/assets/exposed-architecture.png)
 
 ## Modules
 

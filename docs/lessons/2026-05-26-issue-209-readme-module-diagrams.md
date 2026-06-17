@@ -10,9 +10,9 @@ SVG and PNG assets under `docs/images/readme-diagrams/`.
 ## Decision
 
 Keep the root overview diagram and replace the module chart with a module
-relationship diagram under `docs/images/readme-diagrams/`. Generate both assets
-from one validated module model so `README.md`, `README.ko.md`, and
-`settings.gradle.kts` stay aligned.
+relationship diagram under `docs/images/readme-diagrams/`. Validate the module
+model against `README.md`, `README.ko.md`, and `settings.gradle.kts` before
+editing assets, then render and inspect each SVG/PNG pair.
 
 ## Outcome
 
@@ -22,10 +22,9 @@ old root module chart under `docs/images/readme-charts/` was removed.
 
 ## Verification
 
-- `python3 tools/generate_root_readme_diagrams.py`
-- `rsvg-convert` for both SVG sources
+- Source model check against the README module table and `settings.gradle.kts`
+- CairoSVG render for both SVG sources
 - `xmllint --noout` for both generated SVG files
-- `python3 -m py_compile tools/generate_root_readme_diagrams.py`
 - README image link check
 - `git diff --check`
 
@@ -33,4 +32,6 @@ old root module chart under `docs/images/readme-charts/` was removed.
 
 For root README diagram refreshes, validate the README module table against
 `settings.gradle.kts` before drawing. Keep shared English-label assets for
-localized READMEs unless the diagram itself needs localized domain terms.
+localized READMEs unless the diagram itself needs localized domain terms. Do not
+reintroduce stale generator scripts that can overwrite manually validated
+README-scale SVG assets.
