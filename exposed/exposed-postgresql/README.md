@@ -2,15 +2,16 @@
 
 English | [한국어](./README.ko.md)
 
-A Kotlin Exposed extension module for PostgreSQL. Provides PostGIS spatial data, pgvector similarity search, and TSTZRANGE time-range column types.
+A Kotlin Exposed extension module for PostgreSQL. It adds three focused column families: PostGIS spatial
+data, pgvector similarity search, and TSTZRANGE time-range columns.
 
-## UML
+## Feature Coverage
 
-![PostgreSQL extension overview diagram](../../docs/images/readme-diagrams/exposed-exposed-postgresql-diagram-01.png)
+![PostgreSQL extension feature coverage](../../docs/images/readme-diagrams/exposed-exposed-postgresql-diagram-01.png)
 
-## Column Type Diagram
+## Column Conversion Flow
 
-![PostgreSQL column type diagram](../../docs/images/readme-diagrams/exposed-exposed-postgresql-diagram-02.png)
+![PostgreSQL column conversion flow](../../docs/images/readme-diagrams/exposed-exposed-postgresql-diagram-02.png)
 
 ## Features
 
@@ -322,15 +323,14 @@ val server = PgvectorServer.Launcher.withExtensions("pg_trgm")
 
 ## Notes
 
-- **PostgreSQL only
-  **: All features work exclusively with the PostgreSQL dialect. Other databases such as H2 will throw errors. Only TSTZRANGE falls back to VARCHAR in H2.
+- **PostgreSQL only**: PostGIS, pgvector, and SQL range operators require the PostgreSQL dialect. Only the
+  TSTZRANGE column type has a `VARCHAR(120)` fallback for non-PostgreSQL test dialects such as H2.
 - **PostGIS extension**: The `postgis` extension is activated automatically when using
   `PostgisServer`. For direct server connections, run `CREATE EXTENSION IF NOT EXISTS postgis` manually.
 - **pgvector extension**: The `vector` extension is activated automatically when using
   `PgvectorServer`. However, JDBC driver type registration (
   `PGvector.addVectorType()`) must still be performed per connection.
-- **Dimension validation
-  **: Storing a vector with a dimension that does not match the column definition will result in an error.
+- **Dimension validation**: A vector whose size differs from the column dimension fails before it is stored.
 
 ---
 
