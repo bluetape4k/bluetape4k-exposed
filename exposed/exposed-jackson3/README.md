@@ -24,19 +24,13 @@ dependencies {
 }
 ```
 
-## Architecture Diagram
+## Jackson 3 Adapter Boundary
 
-### Column Type Structure (Summary)
+![Jackson 3 JSON column boundary](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-01.png)
 
-![Column Type Structure (Summary) diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-01.png)
+## JSON Round Trip
 
-### JSON Column Type Class Structure
-
-![JSON Column Type Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-02.png)
-
-### Jackson 2 vs Jackson 3 Package Differences
-
-![Jackson 2 vs Jackson 3 Package Differences diagram](../../docs/images/readme-diagrams/exposed-exposed-jackson3-diagram-03.png)
+![Jackson 3 JSON round trip](../../docs/images/readme-diagrams/exposed-exposed-jackson3-flow-02.png)
 
 ## Basic Usage
 
@@ -121,7 +115,7 @@ val query2 = Users.selectAll()
 ## Testing
 
 ```bash
-./gradlew :exposed-jackson3:test
+./gradlew :bluetape4k-exposed-jackson3:test
 ```
 
 ## References
