@@ -257,7 +257,7 @@ runtimeOnly("org.postgresql:postgresql")
 ### Run Unit Tests
 
 ```bash
-./gradlew :spring-boot:exposed-jdbc-demo:test
+./gradlew :exposed-spring-boot-jdbc-demo:test
 ```
 
 ### Integration Tests
@@ -265,7 +265,7 @@ runtimeOnly("org.postgresql:postgresql")
 See `ProductJdbcRepositoryTest` and `ProductControllerTest`.
 
 ```bash
-./gradlew :spring-boot:exposed-jdbc-demo:test --tests "ProductControllerTest"
+./gradlew :exposed-spring-boot-jdbc-demo:test --tests "ProductControllerTest"
 ```
 
 ## Core Patterns

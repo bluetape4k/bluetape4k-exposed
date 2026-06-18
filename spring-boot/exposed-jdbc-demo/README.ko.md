@@ -257,7 +257,7 @@ runtimeOnly("org.postgresql:postgresql")
 ### 단위 테스트 실행
 
 ```bash
-./gradlew :spring-boot:exposed-jdbc-demo:test
+./gradlew :exposed-spring-boot-jdbc-demo:test
 ```
 
 ### 통합 테스트
@@ -265,7 +265,7 @@ runtimeOnly("org.postgresql:postgresql")
 `ProductJdbcRepositoryTest`와 `ProductControllerTest`를 확인하세요.
 
 ```bash
-./gradlew :spring-boot:exposed-jdbc-demo:test --tests "ProductControllerTest"
+./gradlew :exposed-spring-boot-jdbc-demo:test --tests "ProductControllerTest"
 ```
 
 ## 핵심 패턴
