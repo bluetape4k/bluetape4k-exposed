@@ -8,11 +8,13 @@ A high-performance batch processing module that integrates Spring Batch with Jet
 Provides keyset-based pagination readers, efficient Exposed-backed writers, range partitioners
 for VirtualThread parallel execution, and Spring Boot Auto-Configuration.
 
-## Architecture
+## Integration Map
 
-![batch exposed Class Structure diagram](../../docs/images/readme-diagrams/spring-boot-batch-exposed-diagram-01.png)
+![Spring Batch Exposed integration map](../../docs/images/readme-diagrams/spring-boot-batch-exposed-diagram-01.png)
 
-![Spring Batch Exposed execution flow diagram](../../docs/images/readme-diagrams/spring-boot-batch-exposed-sequence-01.png)
+## Partitioned Restart Flow
+
+![Partitioned keyset restart flow](../../docs/images/readme-diagrams/spring-boot-batch-exposed-sequence-01.png)
 
 ## Features
 
@@ -123,6 +125,20 @@ class MigrationJobConfig(
         this[TargetTable.transformedValue] = it.transformedValue
     }
 }
+```
+
+### Restart Support
+
+When the same job parameters are launched again after a failure, Spring Batch
+restores each worker `ExecutionContext`. `ExposedKeysetItemReader` then resumes
+from the saved `lastKey` inside that partition range.
+
+```kotlin
+// First run: fails after some chunks
+val firstExecution = jobLauncher.run(job, params)  // BatchStatus.FAILED
+
+// Second run with the same params: resumes from lastKey
+val restartExecution = jobLauncher.run(job, params)  // BatchStatus.COMPLETED
 ```
 
 ## Module Dependencies
