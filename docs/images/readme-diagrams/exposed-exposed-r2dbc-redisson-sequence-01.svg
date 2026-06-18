@@ -19,7 +19,7 @@
       .cache { fill: none; stroke: #6e8f4f; stroke-width: 3.2; stroke-linecap: round; marker-end: url(#arrowCache); }
       .db { fill: none; stroke: #7e6ab8; stroke-width: 3.2; stroke-linecap: round; marker-end: url(#arrowDb); }
       .return { fill: none; stroke: #9b7d54; stroke-width: 2.7; stroke-linecap: round; stroke-dasharray: 8 6; marker-end: url(#arrowReturn); }
-      .alt { fill: none; stroke: #78909c; stroke-width: 2.5; stroke-dasharray: 11 7; } .branchDivider { stroke: #78909c; stroke-width: 2.5; stroke-dasharray: 11 7; }
+      .alt { fill:#FFFFFF; fill-opacity:.12; stroke: #78909c; stroke-width: 2.5; stroke-dasharray: 11 7; } .branchDivider { stroke: #78909c; stroke-width: 2.5; stroke-dasharray: 11 7; }
       .branchHit { fill: #eef7f0; stroke: #6e8f4f; stroke-width: 1.6; } .branchMiss { fill: #f3eefb; stroke: #7e6ab8; stroke-width: 1.6; }
       .label { fill: #ffffff; stroke: #cbd9e7; stroke-width: 1.5; } .callLabel { stroke: #9cc2d1; } .cacheLabel { stroke: #b6c9a4; } .dbLabel { stroke: #b9addd; } .returnLabel { stroke: #c8b38f; }
       .badge { stroke-width: 1.7; } .callBadge { fill: #eaf4f8; stroke: #3f7d9c; } .cacheBadge { fill: #eef7f0; stroke: #6e8f4f; } .dbBadge { fill: #f3eefb; stroke: #7e6ab8; } .returnBadge { fill: #fff7e8; stroke: #9b7d54; }

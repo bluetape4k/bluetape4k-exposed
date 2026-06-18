@@ -21,7 +21,7 @@
       .db { fill: none; stroke: #7e6ab8; stroke-width: 3.2; stroke-linecap: round; marker-end: url(#arrowDb); }
       .async { fill: none; stroke: #9b5e3b; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 9 7; marker-end: url(#arrowAsync); }
       .return { fill: none; stroke: #9b7d54; stroke-width: 2.7; stroke-linecap: round; stroke-dasharray: 8 6; marker-end: url(#arrowReturn); }
-      .alt { fill: none; stroke: #78909c; stroke-width: 2.5; stroke-dasharray: 11 7; } .branchDivider { stroke: #78909c; stroke-width: 2.5; stroke-dasharray: 11 7; }
+      .alt { fill:#FFFFFF; fill-opacity:.12; stroke: #78909c; stroke-width: 2.5; stroke-dasharray: 11 7; } .branchDivider { stroke: #78909c; stroke-width: 2.5; stroke-dasharray: 11 7; }
       .label { fill: #ffffff; stroke: #cbd9e7; stroke-width: 1.5; } .callLabel { stroke: #9cc2d1; } .cacheLabel { stroke: #b6c9a4; } .dbLabel { stroke: #b9addd; } .asyncLabel { stroke: #d4a488; } .returnLabel { stroke: #c8b38f; }
       .badge { stroke-width: 1.7; } .callBadge { fill: #eaf4f8; stroke: #3f7d9c; } .cacheBadge { fill: #eef7f0; stroke: #6e8f4f; } .dbBadge { fill: #f3eefb; stroke: #7e6ab8; } .asyncBadge { fill: #fff0e6; stroke: #9b5e3b; } .returnBadge { fill: #fff7e8; stroke: #9b7d54; }
       .badgeText { font-family: "Comic Mono", monospace; font-size: 11px; font-weight: 700; } .callText { fill: #2f6f8e; } .cacheText { fill: #55783f; } .dbText { fill: #6d58a8; } .asyncText { fill: #8f4f2f; } .returnText { fill: #7f6038; }
