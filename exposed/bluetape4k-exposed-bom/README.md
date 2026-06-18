@@ -6,9 +6,9 @@ Maven BOM (Bill of Materials) for the Exposed extension ecosystem. It manages
 published `io.github.bluetape4k.exposed:bluetape4k-exposed-*` artifact versions
 so consumers can declare modules without repeating individual versions.
 
-## Architecture
+## Managed Artifact Map
 
-![exposed bom Architecture diagram](../../docs/images/readme-diagrams/exposed-bluetape4k-exposed-bom-diagram-01.png)
+![Exposed BOM managed artifact map](../../docs/images/readme-diagrams/exposed-bluetape4k-exposed-bom-diagram-01.png)
 
 The BOM is a Gradle `java-platform` that publishes only `<dependencyManagement>` constraints — no runtime classes.
 
@@ -21,7 +21,7 @@ The BOM is a Gradle `java-platform` that publishes only `<dependencyManagement>`
 ## Managed ArtifactIds
 
 | Group | ArtifactIds |
-|-------|---------|
+|-------|-------------|
 | Core | `bluetape4k-exposed-core`, `bluetape4k-exposed-dao` |
 | Repository runtimes | `bluetape4k-exposed-jdbc`, `bluetape4k-exposed-r2dbc`, `bluetape4k-exposed-jdbc-tests`, `bluetape4k-exposed-r2dbc-tests` |
 | Cache decorators | `bluetape4k-exposed-cache`, `bluetape4k-exposed-jdbc-caffeine`, `bluetape4k-exposed-jdbc-lettuce`, `bluetape4k-exposed-jdbc-redisson`, `bluetape4k-exposed-r2dbc-caffeine`, `bluetape4k-exposed-r2dbc-lettuce`, `bluetape4k-exposed-r2dbc-redisson` |
