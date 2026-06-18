@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1320" viewBox="0 0 1680 1320" role="img" aria-labelledby="title desc">
-  <title id="title">Exposed BOM Dependency Management</title>
-  <desc id="desc">BOM architecture rebuilt from the exposed-bom README and java-platform Gradle constraints.</desc>
+  <title id="title">Exposed BOM Managed Artifact Map</title>
+  <desc id="desc">Managed artifactId map rebuilt from the exposed-bom README and java-platform Gradle constraints.</desc>
   <defs>
     <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
     <marker id="arrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="context-stroke"/></marker>
@@ -20,8 +20,8 @@
   <rect class="canvas" width="1680" height="1320"/>
   <rect class="decor" x="44" y="36" width="1592" height="1248" rx="34"/>
   <rect class="innerFrame" x="82" y="154" width="1516" height="1024" rx="24"/>
-  <text class="title" x="72" y="88">Exposed BOM Dependency Management</text>
-  <text class="subtitle" x="76" y="121">Import-only Gradle java-platform BOM: dependencyManagement constraints for published Exposed modules; no runtime classes.</text>
+  <text class="title" x="72" y="88">Exposed BOM Managed Artifact Map</text>
+  <text class="subtitle" x="76" y="121">Import-only Gradle java-platform BOM: dependencyManagement constraints for published artifactIds; no runtime classes.</text>
   <g id="group-import">
     <rect class="group" x="92" y="156" width="1496" height="190" rx="18"/>
     <text class="group-title" x="122" y="180" dominant-baseline="middle">Consumer import surface</text>

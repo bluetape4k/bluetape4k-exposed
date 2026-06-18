@@ -6,11 +6,12 @@ Exposed extension 생태계용 Maven BOM(Bill of Materials)입니다. 배포되�
 `io.github.bluetape4k.exposed:bluetape4k-exposed-*` artifact 버전을 맞춰 주므로,
 사용자는 각 모듈 dependency에 버전을 반복해서 적지 않아도 됩니다.
 
-## Architecture
+## 관리 Artifact Map
 
-![exposed bom Architecture diagram](../../docs/images/readme-diagrams/exposed-bluetape4k-exposed-bom-diagram-01.png)
+![Exposed BOM managed artifact map](../../docs/images/readme-diagrams/exposed-bluetape4k-exposed-bom-diagram-01.png)
 
-BOM은 Gradle `java-platform` 으로 `<dependencyManagement>` constraint 만 게시한다.
+BOM은 Gradle `java-platform`으로 `<dependencyManagement>` constraint만 게시합니다. 런타임 class는 포함하지
+않고, 소비자가 사용할 `bluetape4k-exposed-*` artifactId의 버전만 맞춰 줍니다.
 
 ## 핵심 기능
 
@@ -21,7 +22,7 @@ BOM은 Gradle `java-platform` 으로 `<dependencyManagement>` constraint 만 게
 ## 관리 ArtifactId
 
 | 그룹 | ArtifactId |
-|------|------|
+|------|------------|
 | Core | `bluetape4k-exposed-core`, `bluetape4k-exposed-dao` |
 | Repository runtime | `bluetape4k-exposed-jdbc`, `bluetape4k-exposed-r2dbc`, `bluetape4k-exposed-jdbc-tests`, `bluetape4k-exposed-r2dbc-tests` |
 | Cache decorator | `bluetape4k-exposed-cache`, `bluetape4k-exposed-jdbc-caffeine`, `bluetape4k-exposed-jdbc-lettuce`, `bluetape4k-exposed-jdbc-redisson`, `bluetape4k-exposed-r2dbc-caffeine`, `bluetape4k-exposed-r2dbc-lettuce`, `bluetape4k-exposed-r2dbc-redisson` |
@@ -31,7 +32,7 @@ BOM은 Gradle `java-platform` 으로 `<dependencyManagement>` constraint 만 게
 | Spring Boot | `bluetape4k-exposed-spring-boot-jdbc`, `bluetape4k-exposed-spring-boot-r2dbc`, `bluetape4k-exposed-spring-boot-batch`, `bluetape4k-exposed-spring-modulith` |
 | Utils | `bluetape4k-exposed-batch` |
 
-> 참고: `examples/*` 및 `*-demo` 모듈은 BOM constraint 에서 제외된다.
+> 참고: `examples/*` 및 `*-demo` 모듈은 BOM constraint에서 제외됩니다.
 
 ## 사용 예제
 
@@ -82,7 +83,7 @@ dependencies {
 
 ## 설정 옵션
 
-BOM 자체는 별도 설정이 없다. SNAPSHOT 사용 시 Sonatype Central Snapshots 저장소 추가:
+BOM 자체에는 별도 설정이 없습니다. SNAPSHOT 사용 시 Sonatype Central Snapshots 저장소를 추가합니다:
 
 ```kotlin
 repositories {
@@ -96,5 +97,5 @@ repositories {
 
 ## 의존성
 
-이 BOM은 `bluetape4k-dependencies` 에서 자동 통합된다. 여러 bluetape4k 생태계를 함께 사용한다면
-`io.github.bluetape4k:bluetape4k-dependencies` import 권장.
+이 BOM은 `bluetape4k-dependencies`에서 자동 통합됩니다. 여러 bluetape4k 생태계를 함께 사용한다면
+`io.github.bluetape4k:bluetape4k-dependencies` import를 권장합니다.
