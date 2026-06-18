@@ -6,27 +6,27 @@ Exposed R2DBC + suspend Repository + Spring WebFlux 통합 데모 (Spring Boot 4
 
 ## 개요
 
-이 모듈은 **Exposed R2DBC
-**를 Spring Data Repository로 감싸고, Spring WebFlux REST API로 비동기 논블로킹으로 노출하는 패턴을 보여줍니다. *
-*Spring Boot BOM**을 사용합니다.
+이 모듈은 **Exposed R2DBC**와 Kotlin coroutine `suspend` 함수로 Spring WebFlux 상품 API를 구성하는 예제입니다.
+Repository는 `ProductRecord`를 `Products` 테이블과 매핑하고, Spring Boot는 WebFlux 런타임, R2DBC pool 설정,
+그리고 **Spring Boot BOM** 기반 플랫폼 의존성 관리를 맡습니다.
 
-## UML
+## 데모 구조
 
 ![Spring Boot R2DBC demo structure diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-01.png)
 
-### 애플리케이션 구조 흐름
+## WebFlux suspend 요청 흐름
 
-![Spring Boot R2DBC demo application flow diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-02.png)
+![WebFlux suspend request flow diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-02.png)
 
-### 주요 특징
+## 주요 특징
 
-- **Exposed R2DBC 기반**: `ProductDto`, `Products` 테이블 정의
+- **Exposed R2DBC 기반**: `ProductRecord`, `Products` 테이블 정의
 - **suspend 함수**: 모든 Repository와 Controller 메서드가 Kotlin 코루틴 `suspend` 함수
-- **ExposedR2dbcRepository**: DTO 중심의 매핑 구현
+- **ExposedR2dbcRepository**: record 중심의 row 매핑 구현
 - **Spring WebFlux**: 비동기 논블로킹 REST API
 - **코루틴**: `suspendTransaction`으로 R2DBC 데이터베이스 액세스
 - **자동 스키마 생성**: 애플리케이션 준비 완료 후 비동기 초기화
-- **Spring Boot 호환**: Spring Boot.0+ 플랫폼 의존성 관리
+- **Spring Boot 호환**: Spring Boot 4+ 플랫폼 의존성 관리
 
 ## 프로젝트 구조
 
@@ -34,7 +34,7 @@ Exposed R2DBC + suspend Repository + Spring WebFlux 통합 데모 (Spring Boot 4
 src/main/kotlin/io/bluetape4k/examples/exposed/webflux/
 ├── WebfluxDemoApplication.kt       # Spring Boot 애플리케이션
 ├── domain/
-│   └── ProductEntity.kt            # DTO + Products 테이블
+│   └── ProductEntity.kt            # ProductRecord + Products 테이블
 ├── repository/
 │   └── ProductR2dbcRepository.kt    # suspend CRUD Repository
 ├── controller/
@@ -56,13 +56,13 @@ object Products : LongIdTable("webflux_products") {
 }
 ```
 
-### ProductDto (DTO)
+### ProductRecord (HTTP record)
 
 ```kotlin
-data class ProductDto(
+data class ProductRecord(
     val id: Long? = null,
     val name: String,
-    val price: java.math.BigDecimal,
+    val price: java.math.BigDecimal = java.math.BigDecimal.ZERO,
     val stock: Int = 0,
 ) : java.io.Serializable
 ```
@@ -74,20 +74,20 @@ Repository는 `extractId(entity)`를 통해 ID를 추출합니다.
 ### ExposedR2dbcRepository 구현
 
 ```kotlin
-interface ProductR2dbcRepository: ExposedR2dbcRepository<ProductDto, Long> {
+interface ProductR2dbcRepository: ExposedR2dbcRepository<ProductRecord, Long> {
     override val table: IdTable<Long> get() = Products
 
-    override fun extractId(entity: ProductDto): Long? = entity.id
+    override fun extractId(entity: ProductRecord): Long? = entity.id
 
-    override fun toDomain(row: ResultRow): ProductDto =
-        ProductDto(
+    override fun toDomain(row: ResultRow): ProductRecord =
+        ProductRecord(
             id = row[Products.id].value,
             name = row[Products.name],
             price = row[Products.price],
             stock = row[Products.stock],
         )
 
-    override fun toPersistValues(domain: ProductDto): Map<Column<*>, Any?> =
+    override fun toPersistValues(domain: ProductRecord): Map<Column<*>, Any?> =
         mapOf(
             Products.name to domain.name,
             Products.price to domain.price,
@@ -99,9 +99,9 @@ interface ProductR2dbcRepository: ExposedR2dbcRepository<ProductDto, Long> {
 모든 Repository 메서드는 `suspend` 함수입니다:
 
 ```kotlin
-suspend fun findAll(): List<ProductDto>
-suspend fun findByIdOrNull(id: Long): ProductDto?
-suspend fun save(entity: ProductDto): ProductDto
+suspend fun findAll(): List<ProductRecord>
+suspend fun findByIdOrNull(id: Long): ProductRecord?
+suspend fun save(entity: ProductRecord): ProductRecord
 suspend fun deleteById(id: Long)
 ```
 
@@ -193,24 +193,24 @@ curl -X DELETE http://localhost:8080/products/1
 
 - Java 21+
 - Gradle 8.x+
-- Spring Boot.0+
+- Spring Boot 4+
 
 ### 빌드
 
 ```bash
-./gradlew :spring-boot:exposed-r2dbc-demo:build
+./gradlew :exposed-spring-boot-r2dbc-demo:build
 ```
 
 ### 애플리케이션 실행
 
 ```bash
-./gradlew :spring-boot:exposed-r2dbc-demo:bootRun
+./gradlew :exposed-spring-boot-r2dbc-demo:bootRun
 ```
 
 또는 JAR로 실행:
 
 ```bash
-./gradlew :spring-boot:exposed-r2dbc-demo:assemble
+./gradlew :exposed-spring-boot-r2dbc-demo:assemble
 java -jar spring-boot/exposed-r2dbc-demo/build/libs/exposed-r2dbc-spring-data-webflux-demo-*.jar
 ```
 
@@ -272,7 +272,7 @@ runtimeOnly("org.postgresql:postgresql")
 ### 단위 테스트 실행
 
 ```bash
-./gradlew :spring-boot:exposed-r2dbc-demo:test
+./gradlew :exposed-spring-boot-r2dbc-demo:test
 ```
 
 ### 코루틴 테스트
@@ -280,7 +280,7 @@ runtimeOnly("org.postgresql:postgresql")
 모든 테스트는 `runTest { ... }` 블록 내에서 실행되어 코루틴을 지원합니다.
 
 ```bash
-./gradlew :spring-boot:exposed-r2dbc-demo:test --tests "ProductControllerTest"
+./gradlew :exposed-spring-boot-r2dbc-demo:test --tests "ProductControllerTest"
 ```
 
 ## 핵심 패턴
@@ -291,7 +291,7 @@ runtimeOnly("org.postgresql:postgresql")
 
 ```kotlin
 @GetMapping("/{id}")
-suspend fun findById(@PathVariable id: Long): ProductDto =
+suspend fun findById(@PathVariable id: Long): ProductRecord =
     productRepository.findByIdOrNull(id)
         ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: $id")
 ```
@@ -304,7 +304,7 @@ R2DBC 데이터베이스 액세스는 `suspendTransaction`으로 감싸집니다
 
 ```kotlin
 @PutMapping("/{id}")
-suspend fun update(@PathVariable id: Long, @RequestBody dto: ProductDto): ProductDto =
+suspend fun update(@PathVariable id: Long, @RequestBody dto: ProductRecord): ProductRecord =
     suspendTransaction {
         val existing = productRepository.findByIdOrNull(id)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: $id")
@@ -330,20 +330,20 @@ class DataInitializer(private val r2dbcDatabase: R2dbcDatabase) {
 }
 ```
 
-## DTO 매핑
+## Record 매핑
 
-Repository 메서드는 DTO 중심이므로 Row -> DTO 변환을 구현해야 합니다.
+Repository 메서드는 record 중심이므로 Row -> `ProductRecord` 변환을 구현해야 합니다.
 
 ```kotlin
-override fun toDomain(row: ResultRow): ProductDto =
-    ProductDto(
+override fun toDomain(row: ResultRow): ProductRecord =
+    ProductRecord(
         id = row[Products.id].value,
         name = row[Products.name],
         price = row[Products.price],
         stock = row[Products.stock],
     )
 
-override fun toPersistValues(domain: ProductDto): Map<Column<*>, Any?> =
+override fun toPersistValues(domain: ProductRecord): Map<Column<*>, Any?> =
     mapOf(
         Products.name to domain.name,
         Products.price to domain.price,
@@ -351,9 +351,9 @@ override fun toPersistValues(domain: ProductDto): Map<Column<*>, Any?> =
     )
 ```
 
-## Spring Boot 마이그레이션
+## Spring Boot 4 참고
 
-Spring Boot 4에서 4.x로 마이그레이션하는 경우:
+Spring Boot 4 기반으로 예제를 실행할 때 확인할 내용입니다.
 
 ### BOM 변경
 
@@ -370,14 +370,15 @@ dependencies {
 }
 ```
 
-### 의존성 차이
+### 플랫폼 의존성 관리
 
-Spring Boot는 기본적으로 다음 버전을 제공합니다:
+Spring Boot BOM이 WebFlux, R2DBC, 테스트, Spring Framework 버전을 함께 맞춥니다:
 
-- Spring Framework 6.2+
-- Spring WebFlux 6.2+
-- Spring Boot.0+
+- Spring Boot 4+
 - Java 21+
+- Spring WebFlux
+- Spring R2DBC
+- Spring Boot Test
 
 ## 주의사항
 
