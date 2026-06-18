@@ -4,11 +4,13 @@
 
 Kotlin 코루틴 네이티브 배치 처리 프레임워크. Spring Batch 없이 경량화된 체크포인트 기반 청크 처리 파이프라인을 구현한다.
 
-## 아키텍처
+## Runtime 역할 맵
 
-![batch Class Structure diagram](../../docs/images/readme-diagrams/utils-batch-diagram-01.png)
+![Batch runtime role map](../../docs/images/readme-diagrams/utils-batch-diagram-01.png)
 
-![Batch execution flow diagram](../../docs/images/readme-diagrams/utils-batch-sequence-01.png)
+## Chunk 체크포인트 흐름
+
+![Batch chunk checkpoint flow](../../docs/images/readme-diagrams/utils-batch-sequence-01.png)
 
 ## 주요 기능
 
@@ -135,19 +137,19 @@ benchmark 체계는 `kotlinx-benchmark` 기반으로 재구성되었고, JDBC + 
 
 | DB | 요약 | 상세 문서 |
 |----|------|-----------|
-| H2 | `seedBenchmark`, `endToEndBatchJobBenchmark` 기준 JDBC vs R2DBC 비교 | [H2 상세 결과](docs/benchmark/h2.md) |
-| PostgreSQL | Testcontainers 기반으로 같은 시나리오를 JDBC/R2DBC로 비교 | [PostgreSQL 상세 결과](docs/benchmark/postgresql.md) |
-| MySQL | seed 및 전체 batch job 실행을 JDBC/R2DBC로 비교 | [MySQL 상세 결과](docs/benchmark/mysql.md) |
+| H2 | `seedBenchmark`, `endToEndBatchJobBenchmark` 기준 JDBC vs R2DBC 비교 | [H2 상세 결과](benchmark/h2.md) |
+| PostgreSQL | Testcontainers 기반으로 같은 시나리오를 JDBC/R2DBC로 비교 | [PostgreSQL 상세 결과](benchmark/postgresql.md) |
+| MySQL | seed 및 전체 batch job 실행을 JDBC/R2DBC로 비교 | [MySQL 상세 결과](benchmark/mysql.md) |
 
-- [Benchmark 문서 허브](docs/benchmark/README.ko.md)
-- 실행 예시: `./gradlew :exposed-batch:h2JdbcBenchmark`, `./gradlew :exposed-batch:postgresR2dbcBenchmark`, `./gradlew :exposed-batch:generateBenchmarkDocs`
+- [Benchmark 문서 허브](benchmark/README.ko.md)
+- 실행 예시: `./gradlew :bluetape4k-exposed-batch:h2JdbcBenchmark`, `./gradlew :bluetape4k-exposed-batch:postgresR2dbcBenchmark`, `./gradlew :bluetape4k-exposed-batch:generateBenchmarkDocs`
 
 ### 비교 초점
 
 - 핵심 비교 축: **JDBC vs R2DBC**
 - 시나리오: `seedBenchmark`, `endToEndBatchJobBenchmark`
 - 파라미터: `dataSize = 1000/10000/100000`, `poolSize = 10/30/60`, `parallelism = 1/4/8`
-- 상세 표와 차트는 `docs/benchmark/*.md` 에서 관리
+- 상세 표와 차트는 `benchmark/*.md`에서 관리
 
 ![Batch seed throughput by database chart](../../docs/images/readme-charts/utils-batch-db-summary-chart-01.png)
 
@@ -155,7 +157,7 @@ benchmark 체계는 `kotlinx-benchmark` 기반으로 재구성되었고, JDBC + 
 
 ```kotlin
 dependencies {
-    implementation(project(":exposed-batch"))
+    implementation(project(":bluetape4k-exposed-batch"))
     // JDBC repository / reader / writer 사용 시:
     implementation(project(":exposed-jdbc"))
     // R2DBC repository / reader / writer 사용 시:

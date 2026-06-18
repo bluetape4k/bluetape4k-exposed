@@ -1,99 +1,133 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1845" height="2414" viewBox="0 0 1845 2414" role="img" aria-label="batch Sequence Flow 2">
-<defs>
-  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#758297" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M 0 1 L 12 6 L 0 11 Z" fill="#ffffff" stroke="#758297" stroke-width="1.8"/></marker>
-  <style>
-    .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
-    .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
-    .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
-    .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
-    .smallLabel{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:21px;font-weight:400;fill:#102033}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
-    .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .strong{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .line{stroke:#758297;stroke-width:2.1;fill:none;marker-end:url(#openArrow)}
-    .plainLine{stroke:#758297;stroke-width:2.1;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
-    .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-    .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
-  </style>
-</defs>
-<rect class="canvas" width="1845" height="2414"/>
-<rect class="frame" x="32" y="28" width="1781" height="2358" rx="28"/>
-<text class="title" x="66" y="82">batch Sequence Flow 2</text>
-<text class="subtitle" x="70" y="118">Sequence messages from the original Mermaid source</text>
-<rect class="card" x="1.5" y="166" width="277" height="72" rx="20" fill="#E8F3FF" stroke="#5B8DEF"/>
-<text class="smallLabel" x="140" y="209" text-anchor="middle">BatchJob</text>
-<line class="lifeline" x1="140" y1="252" x2="140" y2="2354" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect class="card" x="392.75" y="166" width="277" height="72" rx="20" fill="#EAF7EF" stroke="#58A978"/>
-<text class="smallLabel" x="531.25" y="209" text-anchor="middle">BatchStepRunner</text>
-<line class="lifeline" x1="531.25" y1="252" x2="531.25" y2="2354" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect class="card" x="784" y="166" width="277" height="72" rx="20" fill="#FFF3D9" stroke="#D6A441"/>
-<text class="smallLabel" x="922.5" y="209" text-anchor="middle">BatchJobRepository</text>
-<line class="lifeline" x1="922.5" y1="252" x2="922.5" y2="2354" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect class="card" x="1175.25" y="166" width="277" height="72" rx="20" fill="#FDECEF" stroke="#DC6B82"/>
-<text class="smallLabel" x="1313.75" y="209" text-anchor="middle">BatchReader</text>
-<line class="lifeline" x1="1313.75" y1="252" x2="1313.75" y2="2354" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect class="card" x="1566.5" y="166" width="277" height="72" rx="20" fill="#E9F7F6" stroke="#45A7A1"/>
-<text class="smallLabel" x="1705" y="209" text-anchor="middle">BatchWriter</text>
-<line class="lifeline" x1="1705" y1="252" x2="1705" y2="2354" stroke="#b7c2d1" stroke-width="2" stroke-dasharray="10 10"/>
-<rect x="404.25" y="286" width="254" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="422.25" y="313" text-anchor="start">1. findOrCreateJobExecution</text>
-<path class="line" d="M140 344 L922.5 344"/>
-<rect x="70" y="396" width="1705" height="40" rx="16" fill="#F7F1E7" stroke="#B88A44" stroke-width="1.6" opacity="0.96"/>
-<text class="strong" x="92" y="423" text-anchor="start">LOOP: for each step</text>
-<rect x="230.625" y="464" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="248.625" y="491" text-anchor="start">3. run()</text>
-<path class="line" d="M140 522 L531.25 522"/>
-<rect x="595.875" y="574" width="262" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="613.875" y="601" text-anchor="start">4. findOrCreateStepExecution</text>
-<path class="line" d="M531.25 632 L922.5 632"/>
-<rect x="70" y="684" width="1705" height="40" rx="16" fill="#F7F1E7" stroke="#B88A44" stroke-width="1.6" opacity="0.96"/>
-<text class="strong" x="92" y="711" text-anchor="start">ALT: already COMPLETED</text>
-<rect x="230.625" y="752" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="248.625" y="779" text-anchor="start">6. StepReport (skip)</text>
-<path class="dashed" d="M531.25 810 L140 810"/>
-<rect x="70" y="862" width="1705" height="40" rx="16" fill="#F7F1E7" stroke="#B88A44" stroke-width="1.6" opacity="0.96"/>
-<text class="strong" x="92" y="889" text-anchor="start">ELSE: RUNNING / new</text>
-<rect x="817.5" y="930" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="835.5" y="957" text-anchor="start">8. open()</text>
-<path class="line" d="M531.25 988 L1313.75 988"/>
-<rect x="1013.125" y="1040" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="1031.125" y="1067" text-anchor="start">9. open()</text>
-<path class="line" d="M531.25 1098 L1705 1098"/>
-<rect x="621.875" y="1150" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="639.875" y="1177" text-anchor="start">10. loadCheckpoint</text>
-<path class="dashed" d="M922.5 1208 L531.25 1208"/>
-<rect x="70" y="1260" width="1705" height="40" rx="16" fill="#F7F1E7" stroke="#B88A44" stroke-width="1.6" opacity="0.96"/>
-<text class="strong" x="92" y="1287" text-anchor="start">OPT: checkpoint != null</text>
-<rect x="795.5" y="1328" width="254" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="813.5" y="1355" text-anchor="start">12. restoreFrom(checkpoint)</text>
-<path class="line" d="M531.25 1386 L1313.75 1386"/>
-<rect x="70" y="1438" width="1705" height="40" rx="16" fill="#F7F1E7" stroke="#B88A44" stroke-width="1.6" opacity="0.96"/>
-<text class="strong" x="92" y="1465" text-anchor="start">LOOP: chunk loop</text>
-<rect x="70" y="1506" width="1705" height="40" rx="16" fill="#F7F1E7" stroke="#B88A44" stroke-width="1.6" opacity="0.96"/>
-<text class="strong" x="92" y="1533" text-anchor="start">LOOP: chunkSize times</text>
-<rect x="817.5" y="1574" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="835.5" y="1601" text-anchor="start">15. read()</text>
-<path class="line" d="M531.25 1632 L1313.75 1632"/>
-<rect x="817.5" y="1684" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="835.5" y="1711" text-anchor="start">16. item or null(EOF)</text>
-<path class="dashed" d="M1313.75 1742 L531.25 1742"/>
-<rect x="1013.125" y="1794" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="1031.125" y="1821" text-anchor="start">17. write(chunk)</text>
-<path class="line" d="M531.25 1852 L1705 1852"/>
-<rect x="621.875" y="1904" width="210" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="639.875" y="1931" text-anchor="start">18. saveCheckpoint</text>
-<path class="line" d="M531.25 1962 L922.5 1962"/>
-<rect x="815.5" y="2014" width="214" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="833.5" y="2041" text-anchor="start">19. onChunkCommitted()</text>
-<path class="line" d="M531.25 2072 L1313.75 2072"/>
-<rect x="607.875" y="2124" width="238" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="625.875" y="2151" text-anchor="start">20. completeStepExecution</text>
-<path class="line" d="M531.25 2182 L922.5 2182"/>
-<rect x="416.25" y="2234" width="230" height="40" rx="12" fill="#ffffff" opacity="0.97"/>
-<text class="strong" x="434.25" y="2261" text-anchor="start">21. completeJobExecution</text>
-<path class="line" d="M140 2292 L922.5 2292"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1280" viewBox="0 0 1800 1280" role="img" aria-labelledby="title desc">
+  <title id="title">Batch Chunk Checkpoint Flow</title>
+  <desc id="desc">Flow diagram for exposed-batch showing restart lookup, completed step skip, checkpoint restore, chunk collection, writer retry, checkpoint persistence, and terminal status handling.</desc>
+  <defs>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#3f7d9c"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#6e8f4f"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#b9851b"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#b55353"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755bc6"/></marker>
+    <style>
+      .canvas{fill:#f6f0e8}.frame{fill:#fffaf2;stroke:#28485a;stroke-width:4}.lane{stroke-width:2.4}.card{fill:#fffdf8;stroke-width:2.2}.title{font-family:"Architects Daughter","Comic Mono",monospace;font-size:48px;fill:#21343f}.subtitle,.cardText,.small,.label,.step{font-family:"Comic Mono",monospace;fill:#51636f}.subtitle{font-size:18px}.laneTitle{font-family:"Architects Daughter","Comic Mono",monospace;font-size:27px;fill:#21343f}.cardTitle{font-family:"Comic Mono",monospace;font-size:17px;font-weight:700;fill:#20323d}.cardText{font-size:13px}.small{font-size:12px}.label{font-size:12px;fill:#315664}.step{font-size:12px;font-weight:700}.code{fill:#9b3d5a;font-weight:700}.type{fill:#176f7a;font-weight:700}.warn{fill:#8a5b00;font-weight:700}.bad{fill:#8b3c3c;font-weight:700}.blue{stroke:#8db7c2}.green{stroke:#a9c58b}.gold{stroke:#d3a663}.red{stroke:#cf8b83}.purple{stroke:#b2a1dc}.line{fill:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}.lineBlue{stroke:#3f7d9c;marker-end:url(#arrow-blue)}.lineGreen{stroke:#6e8f4f;marker-end:url(#arrow-green)}.lineGold{stroke:#b9851b;marker-end:url(#arrow-gold)}.lineRed{stroke:#b55353;marker-end:url(#arrow-red)}.linePurple{stroke:#755bc6;marker-end:url(#arrow-purple)}
+    </style>
+  </defs>
+
+  <rect class="canvas" width="1800" height="1280"/>
+  <rect class="frame" x="36" y="30" width="1728" height="1220" rx="24"/>
+  <text class="title" x="86" y="96">Batch Chunk Checkpoint Flow</text>
+  <text class="subtitle" x="90" y="132">StepRunner persists progress only after a chunk write succeeds, so restarts resume from the last committed key.</text>
+
+  <rect class="lane" x="92" y="176" width="1576" height="278" rx="18" fill="#e7f1f4" stroke="#9dbbc4"/>
+  <text class="laneTitle" x="124" y="224">Restart lookup</text>
+  <g transform="translate(138 288)">
+    <rect class="card blue" width="280" height="104" rx="12"/>
+    <text class="step" x="22" y="28">1</text>
+    <text class="cardTitle code" x="150" y="34" text-anchor="middle">BatchJob.run()</text>
+    <text class="cardText" x="150" y="62" text-anchor="middle">find or create JobExecution</text>
+    <text class="cardText" x="150" y="84" text-anchor="middle">RUNNING / FAILED / STOPPED reused</text>
+  </g>
+  <g transform="translate(528 288)">
+    <rect class="card blue" width="280" height="104" rx="12"/>
+    <text class="step" x="22" y="28">2</text>
+    <text class="cardTitle" x="150" y="34" text-anchor="middle">StepExecution</text>
+    <text class="cardText" x="150" y="62" text-anchor="middle">findOrCreateStepExecution</text>
+    <text class="cardText" x="150" y="84" text-anchor="middle">status decides next branch</text>
+  </g>
+  <g transform="translate(918 288)">
+    <rect class="card green" width="280" height="104" rx="12"/>
+    <text class="step" x="22" y="28">3a</text>
+    <text class="cardTitle type" x="150" y="34" text-anchor="middle">Already complete</text>
+    <text class="cardText" x="150" y="62" text-anchor="middle">return StepReport</text>
+    <text class="cardText" x="150" y="84" text-anchor="middle">do not open reader/writer</text>
+  </g>
+  <g transform="translate(1308 288)">
+    <rect class="card gold" width="280" height="104" rx="12"/>
+    <text class="step" x="22" y="28">3b</text>
+    <text class="cardTitle warn" x="150" y="34" text-anchor="middle">Needs run</text>
+    <text class="cardText" x="150" y="62" text-anchor="middle">open reader and writer</text>
+    <text class="cardText" x="150" y="84" text-anchor="middle">load checkpoint if present</text>
+  </g>
+
+  <rect class="lane" x="92" y="514" width="1576" height="376" rx="18" fill="#eef4e6" stroke="#a9c58b"/>
+  <text class="laneTitle" x="124" y="562">Chunk loop</text>
+  <g transform="translate(138 640)">
+    <rect class="card gold" width="260" height="112" rx="12"/>
+    <text class="step" x="22" y="29">4</text>
+    <text class="cardTitle warn" x="140" y="34" text-anchor="middle">restoreFrom()</text>
+    <text class="cardText" x="140" y="62" text-anchor="middle">only when checkpoint exists</text>
+    <text class="cardText" x="140" y="84" text-anchor="middle">keyset starts after saved key</text>
+  </g>
+  <g transform="translate(500 640)">
+    <rect class="card gold" width="260" height="112" rx="12"/>
+    <text class="step" x="22" y="29">5</text>
+    <text class="cardTitle" x="140" y="34" text-anchor="middle">read + process</text>
+    <text class="cardText" x="140" y="62" text-anchor="middle">collect up to chunkSize</text>
+    <text class="cardText" x="140" y="84" text-anchor="middle">null processor result filters</text>
+  </g>
+  <g transform="translate(862 640)">
+    <rect class="card green" width="260" height="112" rx="12"/>
+    <text class="step" x="22" y="29">6</text>
+    <text class="cardTitle type" x="140" y="34" text-anchor="middle">write chunk</text>
+    <text class="cardText" x="140" y="62" text-anchor="middle">commit timeout wrapper</text>
+    <text class="cardText" x="140" y="84" text-anchor="middle">retry with backoff on failure</text>
+  </g>
+  <g transform="translate(1224 640)">
+    <rect class="card green" width="260" height="112" rx="12"/>
+    <text class="step" x="22" y="29">7</text>
+    <text class="cardTitle type" x="140" y="34" text-anchor="middle">commit callback</text>
+    <text class="cardText" x="140" y="62" text-anchor="middle">reader.onChunkCommitted()</text>
+    <text class="cardText" x="140" y="84" text-anchor="middle">checkpoint() now returns key</text>
+  </g>
+  <g transform="translate(1224 798)">
+    <rect class="card purple" width="260" height="62" rx="12"/>
+    <text class="cardTitle" x="140" y="25" text-anchor="middle">saveCheckpoint()</text>
+    <text class="cardText" x="140" y="47" text-anchor="middle">persist typed checkpoint JSON</text>
+  </g>
+
+  <rect class="lane" x="92" y="950" width="1576" height="176" rx="18" fill="#fff0d8" stroke="#d3a663"/>
+  <text class="laneTitle" x="124" y="998">Terminal status</text>
+  <g transform="translate(188 1030)">
+    <rect class="card green" width="300" height="70" rx="12"/>
+    <text class="cardTitle type" x="150" y="28" text-anchor="middle">COMPLETED</text>
+    <text class="cardText" x="150" y="52" text-anchor="middle">all chunks written, no skips</text>
+  </g>
+  <g transform="translate(584 1030)">
+    <rect class="card gold" width="300" height="70" rx="12"/>
+    <text class="cardTitle warn" x="150" y="28" text-anchor="middle">COMPLETED_WITH_SKIPS</text>
+    <text class="cardText" x="150" y="52" text-anchor="middle">processor or chunk skip accepted</text>
+  </g>
+  <g transform="translate(980 1030)">
+    <rect class="card red" width="300" height="70" rx="12"/>
+    <text class="cardTitle bad" x="150" y="28" text-anchor="middle">FAILED</text>
+    <text class="cardText" x="150" y="52" text-anchor="middle">retry exhausted and skip denied</text>
+  </g>
+  <g transform="translate(1376 1030)">
+    <rect class="card red" width="230" height="70" rx="12"/>
+    <text class="cardTitle bad" x="115" y="28" text-anchor="middle">STOPPED</text>
+    <text class="cardText" x="115" y="52" text-anchor="middle">cancellation rethrown</text>
+  </g>
+
+  <path class="line lineBlue" d="M418 340 H528"/>
+  <path class="line lineGreen" d="M808 340 H918"/>
+  <path class="line lineGold" d="M808 340 V454 H1448 V392"/>
+  <path class="line lineGold" d="M1448 392 V580 H268 V640"/>
+  <path class="line lineGold" d="M398 696 H500"/>
+  <path class="line lineGreen" d="M760 696 H862"/>
+  <path class="line lineGreen" d="M1122 696 H1224"/>
+  <path class="line linePurple" d="M1354 752 V798"/>
+  <path class="line linePurple" d="M1354 860 V914 H338 V1030"/>
+  <path class="line lineGold" d="M1354 860 V914 H734 V1030"/>
+  <path class="line lineRed" d="M992 752 V914 H1130 V1030"/>
+  <path class="line lineRed" d="M1448 392 V914 H1491 V1030"/>
+
+  <text class="label" x="438" y="324">job state</text>
+  <text class="label" x="826" y="324">skip branch</text>
+  <text class="label" x="432" y="680">next chunk</text>
+  <text class="label" x="782" y="680">processed chunk</text>
+  <text class="label" x="1144" y="680">successful write</text>
+  <text class="label" x="1014" y="894">hard failure</text>
+  <text class="label" x="1392" y="888">cancellation</text>
+
+  <rect x="128" y="1172" width="1544" height="34" rx="10" fill="#eef3f4" stroke="#c2d1d4" stroke-width="1.8"/>
+  <text class="small" x="900" y="1194" text-anchor="middle">Restart safety depends on one rule: checkpoint is saved only after writer success and reader commit notification.</text>
 </svg>
