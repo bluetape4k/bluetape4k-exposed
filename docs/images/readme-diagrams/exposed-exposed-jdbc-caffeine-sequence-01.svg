@@ -2,13 +2,13 @@
   <title id="title">JDBC Caffeine Write Strategy Sequence</title>
   <desc id="desc">Sequence diagram rebuilt from exposed-jdbc-caffeine README, AbstractJdbcCaffeineRepository source, LocalCacheConfig, and read/write strategy tests.</desc>
   <defs>
-    <marker id="seqArrow-call" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5 Z" fill="#4F83BF"/></marker>
-    <marker id="seqArrow-scoped" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5 Z" fill="#755BC6"/></marker>
-    <marker id="seqArrow-thread" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5 Z" fill="#2E8F89"/></marker>
-    <marker id="seqArrow-restore" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5 Z" fill="#3E9868"/></marker>
-    <marker id="seqArrow-fallback" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5 Z" fill="#B9851B"/></marker>
-    <marker id="seqArrow-audit" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5 Z" fill="#C94D68"/></marker>
-    <marker id="seqArrow-neutral" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5 Z" fill="#758297"/></marker>
+    <marker id="seqArrow-call" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#4F83BF"/></marker>
+    <marker id="seqArrow-scoped" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755BC6"/></marker>
+    <marker id="seqArrow-thread" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#2E8F89"/></marker>
+    <marker id="seqArrow-restore" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#3E9868"/></marker>
+    <marker id="seqArrow-fallback" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#B9851B"/></marker>
+    <marker id="seqArrow-audit" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#C94D68"/></marker>
+    <marker id="seqArrow-neutral" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#758297"/></marker>
     <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
     <style>
       .canvas{fill:#F7FAFC}.frame{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:2.6;filter:url(#shadow)}
@@ -17,7 +17,7 @@
       .detail{font-family:"Comic Mono";font-size:13px;fill:#42556B;font-weight:400}.small{font-family:"Comic Mono";font-size:12px;fill:#627184;font-weight:400}
       .seq{fill:none;stroke-width:3;stroke-linecap:round}.seqReturn{fill:none;stroke-width:2.7;stroke-linecap:round;stroke-dasharray:8 7}
       .lifeline{stroke:#A7B4C3;stroke-width:1.8;stroke-dasharray:8 8}.labelPill{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
-      .branchBox{fill:#FFFFFF;fill-opacity:.42;stroke:#D6A441;stroke-width:1.8;stroke-dasharray:8 8}.note{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
+      .branchBox{fill:#FFFFFF;fill-opacity:.14;stroke:#D6A441;stroke-width:1.8;stroke-dasharray:8 8}.note{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
     </style>
   </defs>
   <rect class="canvas" width="1740" height="3020"/>
