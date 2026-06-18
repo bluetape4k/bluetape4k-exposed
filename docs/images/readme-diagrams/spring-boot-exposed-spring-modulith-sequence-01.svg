@@ -19,7 +19,7 @@
     .write{stroke:#dc6b82;stroke-width:2.4;fill:none;marker-end:url(#writeArrow)}
     .read{stroke:#5b8def;stroke-width:2.4;fill:none;marker-end:url(#readArrow)}
     .region{fill:#fbfdff;stroke:#d8e0ea;stroke-width:1.4}
-    .alt{fill:#fff7e8;fill-opacity:0.18;stroke:#d99a36;stroke-opacity:0.72;stroke-width:1.4}
+    .alt{fill:#fff7e8;fill-opacity:.12;stroke:#d99a36;stroke-opacity:0.72;stroke-width:1.4}
     .retry{fill:#f1ecff;fill-opacity:0.16;stroke:#8a72d6;stroke-opacity:0.72;stroke-width:1.4}
     .regionTitle{font-family:"Architects Daughter","Comic Mono",monospace;font-size:22px;fill:#243447}
     .labelBox{fill:#ffffff;stroke:#d8e0ea;stroke-width:1;rx:8}

@@ -35,7 +35,7 @@
       .work { fill: none; stroke: #6e8f4f; stroke-width: 3.2; stroke-linecap: round; marker-end: url(#arrowWork); }
       .async { fill: none; stroke: #7e6ab8; stroke-width: 3.2; stroke-linecap: round; marker-end: url(#arrowAsync); }
       .return { fill: none; stroke: #9b7d54; stroke-width: 2.7; stroke-linecap: round; stroke-dasharray: 8 6; marker-end: url(#arrowReturn); }
-      .alt { fill: none; stroke: #78909c; stroke-width: 2.5; stroke-dasharray: 11 7; }
+      .alt { fill:#FFFFFF; fill-opacity:.12; stroke: #78909c; stroke-width: 2.5; stroke-dasharray: 11 7; }
       .opt { fill: none; stroke: #7e6ab8; stroke-width: 2.5; stroke-dasharray: 11 7; }
       .branchDivider { stroke: #78909c; stroke-width: 2.5; stroke-dasharray: 11 7; }
       .branchHit { fill: #eef7f0; stroke: #6e8f4f; stroke-width: 1.6; }
