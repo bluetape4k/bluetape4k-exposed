@@ -17,6 +17,8 @@ Cloud credentials:
 
 ## Scenario
 
+![BigQuery dry-run example flow](../../docs/images/readme-diagrams/examples-exposed-bigquery-dry-run-flow-01.png)
+
 - Build a `BigQueryContext` with a generated SQL database backed by H2.
 - Submit SQL through `validateRawQuery`.
 - Verify the outgoing BigQuery REST `QueryRequest` uses `dryRun=true` and
