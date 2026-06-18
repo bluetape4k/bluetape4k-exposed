@@ -6,12 +6,12 @@ Exposed 컬럼 암복호화를 [Google Tink](https://developers.google.com/tink)
 
 ## 개요
 
-`exposed-tink`는 JetBrains Exposed의 컬럼 값을 Google Tink 라이브러리를 통해 인증 암호화(AEAD, Authenticated Encryption with Associated Data)로 저장하는 기능을 제공합니다.
+`exposed-tink`는 JetBrains Exposed의 `VARCHAR`, `VARBINARY`, `BLOB` 컬럼 값을 Google Tink 라이브러리의 인증 암호화(AEAD, Authenticated Encryption with Associated Data)로 저장하는 기능을 제공합니다.
 
 Google Tink는 Google에서 개발한 현대적인 암호화 라이브러리로, 오용하기 어렵고 잘못된 사용을 방지하는 설계 철학을 가지고 있습니다. 이 모듈은 두 가지 암호화 방식을 지원합니다:
 
 - **AEAD** (비결정적): 동일 평문이라도 매번 다른 암호문 생성 → 높은 보안
-- **Deterministic AEAD** (결정적): 동일 평문 → 항상 동일 암호문 → 인덱스/검색 가능
+- **Deterministic AEAD** (결정적): 동일 평문 → 항상 동일 암호문 → DB 컬럼 타입이 지원하는 범위에서 equality 검색/인덱스 가능
 
 ## Jasypt vs Google Tink 비교
 
@@ -46,13 +46,13 @@ dependencies {
 
 ## 아키텍처 다이어그램
 
-### 컬럼 타입 구조 (요약)
+### 암호화 컬럼 경계
 
-![Tink encrypted column summary diagram](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-01.png)
+![Tink encrypted column boundary diagram](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-01.png)
 
-## 클래스 다이어그램
+## 동작 흐름
 
-![exposed tink Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-02.png)
+![AEAD and DAEAD behavior flow diagram](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-02.png)
 
 ## 기본 사용법
 
@@ -76,6 +76,10 @@ object Users: IntIdTable("users") {
 
     // ④ 바이너리 DAEAD — 검색 가능한 바이너리 (지문, 해시값 등)
     val fingerprint = tinkDaeadBinary("fingerprint", 128).nullable()
+
+    // ⑤ Blob AEAD / DAEAD — 대용량 바이너리 payload
+    val profileBlob = tinkAeadBlob("profile_blob").nullable()
+    val searchableBlob = tinkDaeadBlob("searchable_blob").nullable()
 }
 ```
 
@@ -116,14 +120,14 @@ transaction {
 }
 ```
 
-> **⚠️ 주의**: AEAD(`tinkAeadVarChar`, `tinkAeadBinary`) 컬럼은 비결정적이므로
+> **⚠️ 주의**: AEAD(`tinkAeadVarChar`, `tinkAeadBinary`, `tinkAeadBlob`) 컬럼은 비결정적이므로
 > `WHERE col = value` 형태의 검색이 동작하지 않습니다.
 > 실제로 동일 평문으로 `WHERE col = value`를 만들어도 새 nonce로 다시 암호화되므로 일치하지 않습니다.
 > 검색이 필요한 컬럼에는 반드시 `tinkDaead*` 변형을 사용하세요.
 
 ## 알고리즘 선택 가이드
 
-### AEAD 알고리즘 (`tinkAeadVarChar`, `tinkAeadBinary`)
+### AEAD 알고리즘 (`tinkAeadVarChar`, `tinkAeadBinary`, `tinkAeadBlob`)
 
 ```kotlin
 import io.bluetape4k.tink.aead.TinkAeads
@@ -141,7 +145,7 @@ val col3 = tinkAeadVarChar("col3", 512, TinkAeads.CHACHA20_POLY1305)
 val col4 = tinkAeadVarChar("col4", 512, TinkAeads.XCHACHA20_POLY1305)
 ```
 
-### Deterministic AEAD 알고리즘 (`tinkDaeadVarChar`, `tinkDaeadBinary`)
+### Deterministic AEAD 알고리즘 (`tinkDaeadVarChar`, `tinkDaeadBinary`, `tinkDaeadBlob`)
 
 ```kotlin
 import io.bluetape4k.tink.daead.TinkDaeads
@@ -225,13 +229,15 @@ object SensitiveData: IntIdTable("sensitive_data") {
 |---------------------------------|----------------------------------------|
 | `TinkAeadVarCharColumnType.kt`  | AEAD VARCHAR 암호화 컬럼 타입                 |
 | `TinkAeadBinaryColumnType.kt`   | AEAD VARBINARY 암호화 컬럼 타입               |
+| `TinkAeadBlobColumnType.kt`     | AEAD BLOB 암호화 컬럼 타입                    |
 | `TinkDaeadVarCharColumnType.kt` | Deterministic AEAD VARCHAR 암호화 컬럼 타입   |
 | `TinkDaeadBinaryColumnType.kt`  | Deterministic AEAD VARBINARY 암호화 컬럼 타입 |
+| `TinkDaeadBlobColumnType.kt`    | Deterministic AEAD BLOB 암호화 컬럼 타입      |
 | `Tables.kt`                     | 테이블 확장 함수 (`tinkAeadVarChar` 등)        |
 
 ## 주의사항
 
-1. **AEAD는 검색 불가**: `tinkAeadVarChar`/`tinkAeadBinary`는 매번 다른 암호문을 생성하므로 `WHERE col = value` 조건 검색이 동작하지 않습니다. 검색이 필요하면
+1. **AEAD는 검색 불가**: `tinkAeadVarChar`/`tinkAeadBinary`/`tinkAeadBlob`은 매번 다른 암호문을 생성하므로 `WHERE col = value` 조건 검색이 동작하지 않습니다. 검색이 필요하면
    `tinkDaead*`를 사용하세요.
 
 2. **컬럼 길이**: 암호화 후 데이터가 늘어나므로 원본 최대 길이의 약 2배 이상으로 설정하세요.
@@ -240,13 +246,12 @@ object SensitiveData: IntIdTable("sensitive_data") {
 
 4. **키 교체**: Tink는 키 교체(Key Rotation)를 지원합니다. 정기적인 키 교체로 보안을 강화할 수 있습니다.
 
-5. **DAEAD의 패턴 노출
-   **: Deterministic AEAD도 동일 평문 → 동일 암호문이므로, 값의 분포/패턴이 노출될 수 있습니다. 유일값(이메일, 주민번호)에는 적합하지만 자주 반복되는 값에는 주의하세요.
+5. **DAEAD의 패턴 노출**: Deterministic AEAD도 동일 평문 → 동일 암호문이므로, 값의 분포/패턴이 노출될 수 있습니다. 유일값(이메일, 주민번호)에는 적합하지만 자주 반복되는 값에는 주의하세요.
 
 ## 테스트
 
 ```bash
-./gradlew :exposed-tink:test
+./gradlew :bluetape4k-exposed-tink:test
 ```
 
 ## 참고

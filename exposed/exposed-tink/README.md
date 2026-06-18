@@ -6,13 +6,12 @@ A module for encrypting and decrypting Exposed column values using [Google Tink]
 
 ## Overview
 
-`exposed-tink` provides transparent authenticated encryption (AEAD — Authenticated Encryption with Associated Data) of JetBrains Exposed column values using the Google Tink library.
+`exposed-tink` provides transparent authenticated encryption (AEAD — Authenticated Encryption with Associated Data) of JetBrains Exposed `VARCHAR`, `VARBINARY`, and `BLOB` column values using the Google Tink library.
 
 Google Tink is a modern cryptography library developed by Google, designed to be hard to misuse and to prevent incorrect usage by design. This module supports two encryption modes:
 
 - **AEAD** (non-deterministic): Produces a different ciphertext every time → maximum security
-- **Deterministic AEAD
-  ** (deterministic): Same plaintext always produces the same ciphertext → supports indexing and searching
+- **Deterministic AEAD** (deterministic): Same plaintext always produces the same ciphertext → supports equality search and indexing when the database column type supports it
 
 ## Jasypt vs Google Tink Comparison
 
@@ -29,14 +28,11 @@ Google Tink is a modern cryptography library developed by Google, designed to be
 
 ### Why Choose Google Tink
 
-1. **Built-in authentication
-   **: AEAD guarantees data integrity alongside encryption. If a stored ciphertext is tampered with, it is detected immediately during decryption. Jasypt does not provide this.
+1. **Built-in authentication**: AEAD guarantees data integrity alongside encryption. If a stored ciphertext is tampered with, it is detected immediately during decryption. Jasypt does not provide this.
 
-2. **Modern algorithms
-   **: Uses the latest NIST/IETF-recommended algorithms including AES-256-GCM, ChaCha20-Poly1305, and AES-256-SIV.
+2. **Modern algorithms**: Uses the latest NIST/IETF-recommended algorithms including AES-256-GCM, ChaCha20-Poly1305, and AES-256-SIV.
 
-3. **Misuse-resistant design
-   **: The API is designed to prevent weak algorithm choices, making it safe to use even without deep security expertise.
+3. **Misuse-resistant design**: The API is designed to prevent weak algorithm choices, making it safe to use even without deep security expertise.
 
 4. **Two modes**: Choose between AEAD (security-focused) and DAEAD (searchable) based on your requirements.
 
@@ -50,13 +46,13 @@ dependencies {
 
 ## Architecture Diagram
 
-### Column Type Structure (Summary)
+### Encrypted Column Boundary
 
-![Column Type Structure (Summary) diagram](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-01.png)
+![Tink encrypted column boundary diagram](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-01.png)
 
-## Class Diagram
+## Behavior Flow
 
-![exposed tink Class Structure 2 diagram](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-02.png)
+![AEAD and DAEAD behavior flow diagram](../../docs/images/readme-diagrams/exposed-exposed-tink-diagram-02.png)
 
 ## Basic Usage
 
@@ -80,6 +76,10 @@ object Users: IntIdTable("users") {
 
     // ④ Binary DAEAD — searchable binary data (fingerprints, hash values, etc.)
     val fingerprint = tinkDaeadBinary("fingerprint", 128).nullable()
+
+    // ⑤ Blob AEAD / DAEAD — large binary payloads
+    val profileBlob = tinkAeadBlob("profile_blob").nullable()
+    val searchableBlob = tinkDaeadBlob("searchable_blob").nullable()
 }
 ```
 
@@ -120,13 +120,13 @@ transaction {
 }
 ```
 
-> **Warning**: AEAD columns (`tinkAeadVarChar`, `tinkAeadBinary`) are non-deterministic, so
+> **Warning**: AEAD columns (`tinkAeadVarChar`, `tinkAeadBinary`, `tinkAeadBlob`) are non-deterministic, so
 > `WHERE col = value` searches do not work. Even if you re-encrypt the same plaintext, it produces
 > a new ciphertext with a new nonce that will not match. Use `tinkDaead*` variants for searchable columns.
 
 ## Algorithm Selection Guide
 
-### AEAD Algorithms (`tinkAeadVarChar`, `tinkAeadBinary`)
+### AEAD Algorithms (`tinkAeadVarChar`, `tinkAeadBinary`, `tinkAeadBlob`)
 
 ```kotlin
 import io.bluetape4k.tink.aead.TinkAeads
@@ -144,7 +144,7 @@ val col3 = tinkAeadVarChar("col3", 512, TinkAeads.CHACHA20_POLY1305)
 val col4 = tinkAeadVarChar("col4", 512, TinkAeads.XCHACHA20_POLY1305)
 ```
 
-### Deterministic AEAD Algorithms (`tinkDaeadVarChar`, `tinkDaeadBinary`)
+### Deterministic AEAD Algorithms (`tinkDaeadVarChar`, `tinkDaeadBinary`, `tinkDaeadBlob`)
 
 ```kotlin
 import io.bluetape4k.tink.daead.TinkDaeads
@@ -228,30 +228,30 @@ object SensitiveData: IntIdTable("sensitive_data") {
 |---------------------------------|-----------------------------------------------------|
 | `TinkAeadVarCharColumnType.kt`  | AEAD VARCHAR encrypted column type                  |
 | `TinkAeadBinaryColumnType.kt`   | AEAD VARBINARY encrypted column type                |
+| `TinkAeadBlobColumnType.kt`     | AEAD BLOB encrypted column type                     |
 | `TinkDaeadVarCharColumnType.kt` | Deterministic AEAD VARCHAR encrypted column type    |
 | `TinkDaeadBinaryColumnType.kt`  | Deterministic AEAD VARBINARY encrypted column type  |
+| `TinkDaeadBlobColumnType.kt`    | Deterministic AEAD BLOB encrypted column type       |
 | `Tables.kt`                     | Table extension functions (`tinkAeadVarChar`, etc.) |
 
 ## Notes
 
 1. **AEAD columns are not searchable**: `tinkAeadVarChar`/
-   `tinkAeadBinary` generate a new ciphertext on every encryption, so `WHERE col = value` does not work. Use
+   `tinkAeadBinary`/`tinkAeadBlob` generate a new ciphertext on every encryption, so `WHERE col = value` does not work. Use
    `tinkDaead*` for searchable columns.
 
 2. **Column length**: Data grows after encryption, so set the column length to at least 2x the original maximum length.
 
-3. **Key management
-   **: Lost encryption keys mean lost data. In production, integrate with an external KMS such as Google Cloud KMS or AWS KMS to securely manage keys.
+3. **Key management**: Lost encryption keys mean lost data. In production, integrate with an external KMS such as Google Cloud KMS or AWS KMS to securely manage keys.
 
 4. **Key rotation**: Tink supports key rotation. Regular key rotation strengthens security.
 
-5. **DAEAD pattern exposure
-   **: Deterministic AEAD still maps the same plaintext to the same ciphertext, which can reveal value distribution and patterns. It is suitable for unique values (email, SSN) but use caution with frequently repeated values.
+5. **DAEAD pattern exposure**: Deterministic AEAD still maps the same plaintext to the same ciphertext, which can reveal value distribution and patterns. It is suitable for unique values (email, SSN) but use caution with frequently repeated values.
 
 ## Testing
 
 ```bash
-./gradlew :exposed-tink:test
+./gradlew :bluetape4k-exposed-tink:test
 ```
 
 ## References
