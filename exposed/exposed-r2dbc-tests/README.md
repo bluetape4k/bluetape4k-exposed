@@ -163,7 +163,7 @@ import kotlinx.coroutines.test.runTest
 class MySQLLikeTest: AbstractExposedR2dbcTest() {
 
     companion object {
-        // MySQL + MariaDB + H2 MySQL mode
+        // MySQL variants + H2 MySQL mode
         @JvmStatic
         fun databases() = TestDB.ALL_MYSQL_LIKE
 
@@ -216,14 +216,17 @@ object TestDBConfig {
     // false: use locally installed DB servers directly
     var useTestcontainers = true
 
-    // true: use only in-memory H2 for fast local tests (default)
+    // true: use only in-memory H2 for fast local tests
     // false: use H2 + PostgreSQL + MySQL V8 (requires Testcontainers)
-    var useFastDB = true
+    var useFastDB = false
 }
 ```
 
-If `useFastDB = true` (default), `enabledDialects()` returns only H2. Set
-`useFastDB = false` when full database coverage is required. `EXPOSED_TEST_DB=POSTGRESQL` or `EXPOSED_TEST_DB=MYSQL_V8` can narrow CI runs to H2 plus one real driver. Docker is needed for Testcontainers-backed databases.
+The module default is `useFastDB = false`, so `enabledDialects()` returns H2,
+PostgreSQL, and MySQL 8.0 unless the environment narrows the matrix. Set
+`useFastDB = true` for an H2-only fast path. `EXPOSED_TEST_DB=POSTGRESQL` or
+`EXPOSED_TEST_DB=MYSQL_V8` narrows CI runs to H2 plus one real driver. Docker is
+needed for Testcontainers-backed databases.
 
 ## Test Schema and Data
 

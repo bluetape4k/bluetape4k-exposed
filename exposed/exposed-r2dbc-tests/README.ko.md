@@ -163,7 +163,7 @@ import kotlinx.coroutines.test.runTest
 class MySQLLikeTest: AbstractExposedR2dbcTest() {
 
     companion object {
-        // MySQL + MariaDB + H2 MySQL 모드
+        // MySQL 계열 + H2 MySQL 모드
         @JvmStatic
         fun databases() = TestDB.ALL_MYSQL_LIKE
 
@@ -216,13 +216,18 @@ object TestDBConfig {
     // false: 로컬에 DB 서버를 직접 설치한 경우
     var useTestcontainers = true
 
-    // true: H2 메모리 DB만 사용 — 빠른 로컬 테스트 (기본값)
+    // true: H2 메모리 DB만 사용 — 빠른 로컬 테스트
     // false: H2 + PostgreSQL + MySQL V8 사용 (Testcontainers 필요)
-    var useFastDB = true
+    var useFastDB = false
 }
 ```
 
-`useFastDB = true`(기본값)이면 `enabledDialects()`는 H2만 반환합니다. 전체 데이터베이스 커버리지가 필요하면 `useFastDB = false`로 바꾸세요. CI에서는 `EXPOSED_TEST_DB=POSTGRESQL` 또는 `EXPOSED_TEST_DB=MYSQL_V8`로 H2와 특정 실제 드라이버 하나만 실행하도록 좁힐 수 있습니다. Testcontainers 기반 데이터베이스에는 Docker가 필요합니다.
+모듈 기본값은 `useFastDB = false`입니다. 따라서 별도 설정이 없으면
+`enabledDialects()`는 H2, PostgreSQL, MySQL 8.0을 반환합니다. 빠른 H2 전용
+경로가 필요할 때 `useFastDB = true`로 좁히세요. CI에서는
+`EXPOSED_TEST_DB=POSTGRESQL` 또는 `EXPOSED_TEST_DB=MYSQL_V8`로 H2와 특정 실제
+드라이버 하나만 실행하도록 제한할 수 있습니다. Testcontainers 기반
+데이터베이스에는 Docker가 필요합니다.
 
 ## 테스트용 스키마/데이터
 
@@ -248,7 +253,7 @@ Containers.MariaDB
 // MySQL 8.0 컨테이너
 Containers.MySQL8
 
-// PostgreSQL 컨테이블
+// PostgreSQL 컨테이너
 Containers.Postgres
 ```
 
