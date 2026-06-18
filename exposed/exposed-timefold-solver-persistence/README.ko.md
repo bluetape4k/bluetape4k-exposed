@@ -28,13 +28,13 @@
 | `BendableScore`                 | 가변적 Hard/Soft 레벨 점수     | VarChar                   |
 | `BendableBigDecimalScore`       | BigDecimal Bendable 점수  | VarChar                   |
 
-## 클래스 다이어그램
+## Score 컬럼 계열
 
-![exposed timefold solver persistence Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-01.png)
+![Timefold Score column families diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-01.png)
 
-## 아키텍처 다이어그램
+## Score 저장 Round Trip
 
-![Timefold persistence architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-02.png)
+![Score persistence round trip diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-flow-02.png)
 
 ## 설치
 
@@ -245,15 +245,11 @@ CREATE TABLE planning_solution (
 
 ```bash
 # 모든 테스트 실행
-./gradlew :exposed-timefold-solver-persistence:test
+./gradlew :bluetape4k-exposed-timefold-solver-persistence:test
 
 # 특정 테스트 클래스 실행
-./gradlew :exposed-timefold-solver-persistence:test --tests "HardSoftScoreTest"
+./gradlew :bluetape4k-exposed-timefold-solver-persistence:test --tests "HardSoftScoreTest"
 ```
-
-## Score 직렬화 흐름
-
-![Score diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-sequence-01.png)
 
 ## 참고
 
