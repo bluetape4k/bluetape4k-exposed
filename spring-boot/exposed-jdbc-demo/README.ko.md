@@ -6,17 +6,17 @@ Exposed DAO + Spring Data JDBC Repository + Spring MVC 통합 데모 (Spring Boo
 
 ## 개요
 
-이 모듈은 **Exposed DAO 엔티티
-**를 Spring Data JDBC Repository로 감싸고, Spring MVC REST API로 노출하는 기본 패턴을 보여줍니다. **Spring
-Boot 4 BOM**을 사용합니다.
+이 모듈은 **Exposed DAO 엔티티**를 Spring Data JDBC Repository 뒤에 두고,
+Spring MVC REST API에서는 DTO만 노출하는 기본 패턴을 보여줍니다. 기본
+데이터베이스는 H2 인메모리이며, Spring Boot BOM을 사용합니다.
 
-## UML
+## Demo Structure
 
 ![Spring Boot JDBC demo structure diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-01.png)
 
-### 애플리케이션 구조 흐름
+## Request Transaction Flow
 
-![Spring Boot JDBC demo application flow diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-02.png)
+![Spring Boot JDBC demo request transaction flow diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-02.png)
 
 ### 주요 특징
 
@@ -26,7 +26,7 @@ Boot 4 BOM**을 사용합니다.
 - **Spring MVC REST API**: 표준 CRUD 엔드포인트
 - **트랜잭션 경계**: 요청 당 하나의 `transaction {}` 블록으로 DAO와 DTO 변환까지 처리
 - **자동 스키마 생성**: 애플리케이션 시작 시 테이블 자동 생성
-- **Spring Boot 호환**: Spring Boot.0+ 플랫폼 의존성 관리
+- **Spring Boot 호환**: Spring Boot 4 플랫폼 의존성 관리
 
 ## 프로젝트 구조
 
@@ -64,17 +64,17 @@ class ProductEntity(id: EntityID<Long>) : LongEntity(id) {
 }
 ```
 
-### ProductDto (전송 객체)
+### ProductRecord (전송 객체)
 
 ```kotlin
-data class ProductDto(
+data class ProductRecord(
     val id: Long? = null,
     val name: String,
     val price: java.math.BigDecimal,
     val stock: Int = 0,
 )
 
-fun ProductEntity.toDto() = ProductDto(id.value, name, price, stock)
+fun ProductEntity.toRecord() = ProductRecord(id.value, name, price, stock)
 ```
 
 ## Repository
@@ -183,24 +183,24 @@ curl "http://localhost:8080/products/search?name=Kotlin"
 
 - Java 21+
 - Gradle 8.x+
-- Spring Boot.0+
+- Spring Boot 4+
 
 ### 빌드
 
 ```bash
-./gradlew :spring-boot:exposed-jdbc-demo:build
+./gradlew :exposed-spring-boot-jdbc-demo:build
 ```
 
 ### 애플리케이션 실행
 
 ```bash
-./gradlew :spring-boot:exposed-jdbc-demo:bootRun
+./gradlew :exposed-spring-boot-jdbc-demo:bootRun
 ```
 
 또는 JAR로 실행:
 
 ```bash
-./gradlew :spring-boot:exposed-jdbc-demo:assemble
+./gradlew :exposed-spring-boot-jdbc-demo:assemble
 java -jar spring-boot/exposed-jdbc-demo/build/libs/exposed-spring-data-mvc-demo-*.jar
 ```
 
@@ -276,9 +276,9 @@ runtimeOnly("org.postgresql:postgresql")
 
 ```kotlin
 @GetMapping("/{id}")
-fun findById(@PathVariable id: Long): ResponseEntity<ProductDto> {
+fun findById(@PathVariable id: Long): ResponseEntity<ProductRecord> {
     val entity = transaction {
-        productJdbcRepository.findById(id).orElse(null)?.toDto()
+        productJdbcRepository.findById(id).orElse(null)?.toRecord()
     }
     return entity?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
 }
@@ -289,20 +289,20 @@ fun findById(@PathVariable id: Long): ResponseEntity<ProductDto> {
 트랜잭션 내에서 엔티티를 DTO로 변환하여 HTTP 응답으로 안전하게 반환합니다.
 
 ```kotlin
-fun ProductEntity.toDto() = ProductDto(id.value, name, price, stock)
+fun ProductEntity.toRecord() = ProductRecord(id.value, name, price, stock)
 ```
 
 ### 새 엔티티 생성
 
 ```kotlin
 @PostMapping
-fun create(@RequestBody dto: ProductDto): ResponseEntity<ProductDto> {
+fun create(@RequestBody dto: ProductRecord): ResponseEntity<ProductRecord> {
     val created = transaction {
         ProductEntity.new {
             name = dto.name
             price = dto.price
             stock = dto.stock
-        }.toDto()
+        }.toRecord()
     }
     return ResponseEntity.created(URI.create("/products/${created.id}")).body(created)
 }
@@ -310,7 +310,7 @@ fun create(@RequestBody dto: ProductDto): ResponseEntity<ProductDto> {
 
 ## Spring Boot 마이그레이션
 
-Spring Boot 4에서 4.x로 마이그레이션하는 경우:
+Spring Boot 4.x를 사용하는 경우:
 
 ### BOM 변경
 
@@ -332,7 +332,7 @@ dependencies {
 Spring Boot는 기본적으로 다음 버전을 제공합니다:
 
 - Spring Framework 6.2+
-- Spring Boot.0+
+- Spring Boot 4+
 - Java 21+
 
 ## 주의사항

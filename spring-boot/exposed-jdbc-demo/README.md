@@ -2,21 +2,21 @@
 
 English | [한국어](./README.ko.md)
 
-Exposed DAO + Spring Data JDBC Repository + Spring MVC Integration Demo (Spring Boot 4)
+Exposed DAO + Spring Data JDBC Repository + Spring MVC integration demo (Spring Boot 4)
 
 ## Overview
 
-This module demonstrates the fundamental pattern of wrapping **Exposed DAO entities
-** in a Spring Data JDBC Repository and exposing them through a Spring MVC REST API. using the
-**Spring Boot BOM**.
+This module demonstrates the basic pattern for keeping **Exposed DAO entities**
+behind a Spring Data JDBC repository and exposing DTOs through a Spring MVC REST
+API. It uses the Spring Boot BOM and an H2 in-memory database by default.
 
-## UML
+## Demo Structure
 
 ![Spring Boot JDBC demo structure diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-01.png)
 
-### Application Structure Flow
+## Request Transaction Flow
 
-![Application Structure Flow diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-02.png)
+![Spring Boot JDBC demo request transaction flow diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-02.png)
 
 ### Key Characteristics
 
@@ -26,7 +26,7 @@ This module demonstrates the fundamental pattern of wrapping **Exposed DAO entit
 - **Spring MVC REST API**: Standard CRUD endpoints
 - **Transaction boundary**: A single `transaction {}` block per request handles DAO operations through DTO conversion
 - **Automatic schema creation**: Tables created automatically on application startup
-- **Spring Boot compatible**: Spring Boot.0+ platform dependency management
+- **Spring Boot compatible**: Spring Boot 4 platform dependency management
 
 ## Project Structure
 
@@ -64,17 +64,17 @@ class ProductEntity(id: EntityID<Long>) : LongEntity(id) {
 }
 ```
 
-### ProductDto (Transfer Object)
+### ProductRecord (Transfer Object)
 
 ```kotlin
-data class ProductDto(
+data class ProductRecord(
     val id: Long? = null,
     val name: String,
     val price: java.math.BigDecimal,
     val stock: Int = 0,
 )
 
-fun ProductEntity.toDto() = ProductDto(id.value, name, price, stock)
+fun ProductEntity.toRecord() = ProductRecord(id.value, name, price, stock)
 ```
 
 ## Repository
@@ -183,24 +183,24 @@ curl "http://localhost:8080/products/search?name=Kotlin"
 
 - Java 21+
 - Gradle 8.x+
-- Spring Boot.0+
+- Spring Boot 4+
 
 ### Build
 
 ```bash
-./gradlew :spring-boot:exposed-jdbc-demo:build
+./gradlew :exposed-spring-boot-jdbc-demo:build
 ```
 
 ### Run the Application
 
 ```bash
-./gradlew :spring-boot:exposed-jdbc-demo:bootRun
+./gradlew :exposed-spring-boot-jdbc-demo:bootRun
 ```
 
 Or run as a JAR:
 
 ```bash
-./gradlew :spring-boot:exposed-jdbc-demo:assemble
+./gradlew :exposed-spring-boot-jdbc-demo:assemble
 java -jar spring-boot/exposed-jdbc-demo/build/libs/exposed-spring-data-mvc-demo-*.jar
 ```
 
@@ -276,9 +276,9 @@ All controller methods run within a `transaction {}` block to operate on DAO ent
 
 ```kotlin
 @GetMapping("/{id}")
-fun findById(@PathVariable id: Long): ResponseEntity<ProductDto> {
+fun findById(@PathVariable id: Long): ResponseEntity<ProductRecord> {
     val entity = transaction {
-        productJdbcRepository.findById(id).orElse(null)?.toDto()
+        productJdbcRepository.findById(id).orElse(null)?.toRecord()
     }
     return entity?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
 }
@@ -289,20 +289,20 @@ fun findById(@PathVariable id: Long): ResponseEntity<ProductDto> {
 Entities are converted to DTOs within the transaction for safe HTTP response serialization.
 
 ```kotlin
-fun ProductEntity.toDto() = ProductDto(id.value, name, price, stock)
+fun ProductEntity.toRecord() = ProductRecord(id.value, name, price, stock)
 ```
 
 ### Creating New Entities
 
 ```kotlin
 @PostMapping
-fun create(@RequestBody dto: ProductDto): ResponseEntity<ProductDto> {
+fun create(@RequestBody dto: ProductRecord): ResponseEntity<ProductRecord> {
     val created = transaction {
         ProductEntity.new {
             name = dto.name
             price = dto.price
             stock = dto.stock
-        }.toDto()
+        }.toRecord()
     }
     return ResponseEntity.created(URI.create("/products/${created.id}")).body(created)
 }
@@ -310,7 +310,7 @@ fun create(@RequestBody dto: ProductDto): ResponseEntity<ProductDto> {
 
 ## Migrating from Spring Boot
 
-When migrating from Spring Boot 4 to 4.x:
+When migrating with Spring Boot 4.x:
 
 ### BOM Change
 
@@ -332,13 +332,12 @@ dependencies {
 Spring Boot provides the following versions by default:
 
 - Spring Framework 6.2+
-- Spring Boot.0+
+- Spring Boot 4+
 - Java 21+
 
 ## Important Notes
 
-1. **Exposed DAO entities must not escape transaction boundaries
-   **: Convert to DTOs within the transaction to avoid proxy initialization errors during HTTP response serialization.
+1. **Exposed DAO entities must not escape transaction boundaries**: Convert to DTOs within the transaction to avoid proxy initialization errors during HTTP response serialization.
 
 2. **Spring Data JDBC Repository extension**: Adding methods to interfaces extending
    `ExposedJdbcRepository` automatically generates PartTree queries.
