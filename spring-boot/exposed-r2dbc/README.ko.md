@@ -2,17 +2,19 @@
 
 [English](./README.md) | 한국어
 
-**Exposed R2DBC DSL 기반 코루틴 Spring Data Repository (Spring Boot.0.x / Spring 7)**
+**Exposed R2DBC DSL 기반 코루틴 Spring Data Repository (Spring Boot 4.x / Spring 7)**
 
-Spring Boot와 Spring Data Reactive를 활용하여 Exposed R2DBC를 완전한 suspend 기반 코루틴 Repository로 제공합니다. 논블로킹 I/O와 백프레셔 지원으로 고성능 non-blocking 애플리케이션을 구축합니다.
+Spring Data coroutine repository를 Exposed R2DBC와 연결하는 repository
+브리지입니다. suspend와 `Flow` 시그니처를 유지하면서, 실제 트랜잭션 실행은
+Exposed R2DBC `suspendTransaction` 블록에 위임합니다.
 
-## UML
+## Coroutine Repository Wiring
 
-![Spring Boot R2DBC auto-configuration diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-diagram-01.png)
+![Spring Boot Exposed R2DBC coroutine repository wiring diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-diagram-01.png)
 
-### 비동기 처리 흐름
+## Suspend Query and Flow Execution
 
-![Spring Boot R2DBC async processing flow diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-diagram-02.png)
+![Spring Boot Exposed R2DBC suspend query flow diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-diagram-02.png)
 
 ## 설치
 
