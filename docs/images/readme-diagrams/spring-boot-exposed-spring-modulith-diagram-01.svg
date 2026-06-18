@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1540" height="900" viewBox="0 0 1540 900" role="img" aria-labelledby="title desc">
+<title id="title">Spring Modulith Exposed JDBC runtime wiring</title>
+<desc id="desc">Spring Boot auto-configuration wiring for a JDBC-only Spring Modulith EventPublicationRepository backed by Exposed DSL tables and the application DataSource.</desc>
+<defs>
+  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
+  <marker id="arrow" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 12 6 L 1 11" fill="none" stroke="#5d6f83" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></marker>
+  <marker id="dashArrow" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 12 6 L 1 11" fill="none" stroke="#8a72d6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none"/></marker>
+  <style>
+    .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
+    .layer{fill:#fbfdff;stroke:#d8e0ea;stroke-width:1.4}
+    .layerTitle{font-family:"Architects Daughter","Comic Mono",monospace;font-size:25px;fill:#243447}
+    .title{font-family:"Architects Daughter","Comic Mono",monospace;font-size:44px;fill:#102033}
+    .subtitle{font-family:"Comic Mono",monospace;font-size:17px;fill:#536273}
+    .card{stroke-width:2.2;filter:url(#shadow)}
+    .label{font-family:"Architects Daughter","Comic Mono",monospace;font-size:25px;fill:#102033}
+    .small{font-family:"Comic Mono",monospace;font-size:15px;fill:#536273}
+    .mono{font-family:"Comic Mono",monospace;font-size:15px;fill:#102033}
+    .line{stroke:#5d6f83;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
+    .dash{stroke:#8a72d6;stroke-width:2.5;stroke-dasharray:7 6;fill:none;marker-end:url(#dashArrow)}
+  </style>
+</defs>
+<rect class="canvas" width="1540" height="900"/>
+<rect class="frame" x="32" y="28" width="1476" height="844" rx="26"/>
+<text class="title" x="68" y="86">Spring Modulith Exposed JDBC Wiring</text>
+<text class="subtitle" x="72" y="120">Auto-configuration contributes a synchronous EventPublicationRepository that shares the app DataSource and Exposed transaction manager.</text>
+
+<rect class="layer" x="64" y="154" width="1412" height="168" rx="18"/>
+<text class="layerTitle" x="90" y="190">Boot conditions and inputs</text>
+<rect class="layer" x="64" y="372" width="1412" height="190" rx="18"/>
+<text class="layerTitle" x="90" y="408">Configured beans</text>
+<rect class="layer" x="64" y="612" width="1412" height="174" rx="18"/>
+<text class="layerTitle" x="90" y="648">JDBC publication store</text>
+
+<path class="line" d="M326 246 H396"/>
+<path class="line" d="M668 246 H740"/>
+<path class="line" d="M1012 246 H1084"/>
+<path class="dash" d="M222 282 V444"/>
+<path class="dash" d="M568 288 V424"/>
+<path class="dash" d="M1166 288 V424"/>
+<path class="line" d="M396 468 H470"/>
+<path class="line" d="M760 468 H834"/>
+<path class="line" d="M970 548 V650"/>
+<path class="line" d="M1168 548 V650"/>
+<path class="line" d="M1190 680 H1264"/>
+<path class="line" d="M834 680 H760"/>
+
+<g transform="translate(94,210)">
+  <rect class="card" x="0" y="0" width="232" height="72" rx="8" fill="#e8f3ff" stroke="#5b8def"/>
+  <text class="label" x="116" y="31" text-anchor="middle">Spring Boot App</text>
+  <text class="small" x="116" y="56" text-anchor="middle">JDBC application context</text>
+</g>
+<g transform="translate(396,204)">
+  <rect class="card" x="0" y="0" width="272" height="84" rx="8" fill="#eaf7ef" stroke="#58a978"/>
+  <text class="label" x="136" y="31" text-anchor="middle">Exposed JDBC AutoConfig</text>
+  <text class="small" x="136" y="58" text-anchor="middle">springTransactionManager</text>
+</g>
+<g transform="translate(740,204)">
+  <rect class="card" x="0" y="0" width="272" height="84" rx="8" fill="#fff3d9" stroke="#d6a441"/>
+  <text class="label" x="136" y="31" text-anchor="middle">Modulith AutoConfig</text>
+  <text class="small" x="136" y="58" text-anchor="middle">@ConditionalOnClass + bean</text>
+</g>
+<g transform="translate(1084,204)">
+  <rect class="card" x="0" y="0" width="302" height="84" rx="8" fill="#f1ecff" stroke="#8a72d6"/>
+  <text class="label" x="151" y="31" text-anchor="middle">EventSerializer</text>
+  <text class="small" x="151" y="58" text-anchor="middle">required Spring Modulith bean</text>
+</g>
+
+<g transform="translate(94,444)">
+  <rect class="card" x="0" y="0" width="302" height="88" rx="8" fill="#e9f7f6" stroke="#45a7a1"/>
+  <text class="label" x="151" y="34" text-anchor="middle">ExposedModulithProperties</text>
+  <text class="small" x="151" y="61" text-anchor="middle">table, archive, completion mode</text>
+</g>
+<g transform="translate(470,424)">
+  <rect class="card" x="0" y="0" width="290" height="124" rx="8" fill="#f7eef8" stroke="#b879bd"/>
+  <text class="label" x="145" y="34" text-anchor="middle">Publication Tables</text>
+  <text class="small" x="145" y="64" text-anchor="middle">EVENT_PUBLICATION</text>
+  <text class="mono" x="145" y="92" text-anchor="middle">optional ARCHIVE table</text>
+</g>
+<g transform="translate(834,424)">
+  <rect class="card" x="0" y="0" width="356" height="124" rx="8" fill="#fdecef" stroke="#dc6b82"/>
+  <text class="label" x="178" y="30" text-anchor="middle">Exposed Event</text>
+  <text class="label" x="178" y="56" text-anchor="middle">Publication Repo</text>
+  <text class="small" x="178" y="82" text-anchor="middle">EventPublicationRepository SPI</text>
+  <text class="mono" x="178" y="108" text-anchor="middle">@Transactional(springTransactionManager)</text>
+</g>
+<g transform="translate(1248,438)">
+  <rect class="card" x="0" y="0" width="138" height="96" rx="8" fill="#fff7e8" stroke="#d99a36"/>
+  <text class="label" x="69" y="34" text-anchor="middle">Schema</text>
+  <text class="small" x="69" y="62" text-anchor="middle">optional init</text>
+</g>
+
+<g transform="translate(94,650)">
+  <rect class="card" x="0" y="0" width="302" height="92" rx="8" fill="#e8f3ff" stroke="#5b8def"/>
+  <text class="label" x="151" y="35" text-anchor="middle">Spring Modulith Events</text>
+  <text class="small" x="151" y="64" text-anchor="middle">create, mark, query, cleanup</text>
+</g>
+<g transform="translate(470,650)">
+  <rect class="card" x="0" y="0" width="290" height="92" rx="8" fill="#fff3d9" stroke="#d6a441"/>
+  <text class="label" x="145" y="35" text-anchor="middle">Event Rows</text>
+  <text class="small" x="145" y="64" text-anchor="middle">status + completion attempts</text>
+</g>
+<g transform="translate(834,650)">
+  <rect class="card" x="0" y="0" width="356" height="92" rx="8" fill="#f1ecff" stroke="#8a72d6"/>
+  <text class="label" x="178" y="35" text-anchor="middle">Completion Mode</text>
+  <text class="small" x="178" y="64" text-anchor="middle">UPDATE, DELETE, ARCHIVE</text>
+</g>
+<g transform="translate(1264,632)">
+  <rect class="card" x="0" y="0" width="172" height="128" rx="8" fill="#f8fbff" stroke="#6b7f93"/>
+  <image x="14" y="34" width="48" height="48" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K"/>
+  <text class="label" x="112" y="38" text-anchor="middle">JDBC DB</text>
+  <text class="small" x="112" y="68" text-anchor="middle">same DataSource</text>
+  <text class="mono" x="112" y="98" text-anchor="middle">H2/Postgres/MySQL</text>
+</g>
+</svg>
