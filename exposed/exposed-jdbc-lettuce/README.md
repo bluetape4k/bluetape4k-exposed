@@ -2,8 +2,7 @@
 
 English | [한국어](./README.ko.md)
 
-A Read-through / Write-through / Write-behind cache repository module that combines Exposed JDBC with Lettuce Redis. Provides both a synchronous (
-`JdbcLettuceRepository`) and a coroutine-native (`SuspendedJdbcLettuceRepository`) implementation.
+A Read-through / Write-through / Write-behind cache repository module that combines Exposed JDBC with Lettuce Redis. It provides both synchronous (`JdbcLettuceRepository`) and coroutine-native (`SuspendedJdbcLettuceRepository`) implementations.
 
 ## Overview
 
@@ -149,7 +148,7 @@ suspend fun example(repo: UserSuspendedRepository) {
 ## Testing
 
 ```bash
-./gradlew :exposed-jdbc-lettuce:test
+./gradlew :bluetape4k-exposed-jdbc-lettuce:test
 ```
 
 ## References
