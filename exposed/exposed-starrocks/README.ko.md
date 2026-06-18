@@ -6,13 +6,13 @@ JetBrains Exposed ORM을 위한 StarRocks JDBC 통합 모듈입니다. 이 모�
 StarRocks Connector/J 연결, Exposed dialect 등록, metadata 조회, fixture table
 설정, 단순 query 실행까지의 좁은 local-first OLAP 경로를 검증합니다.
 
-## 아키텍처
+## 로컬 OLAP 통합 경계
 
-![StarRocks Exposed architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-starrocks-diagram-01.png)
+![StarRocks local OLAP integration boundary diagram](../../docs/images/readme-diagrams/exposed-exposed-starrocks-diagram-01.png)
 
-### 로컬 Smoke Sequence
+### 로컬 Smoke Lifecycle
 
-![StarRocks local smoke sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-starrocks-sequence-01.png)
+![StarRocks local smoke lifecycle diagram](../../docs/images/readme-diagrams/exposed-exposed-starrocks-flow-02.png)
 
 ## 범위
 

@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1760" height="1180" viewBox="0 0 1760 1180" role="img" aria-labelledby="title desc">
+  <title id="title">StarRocks Local Smoke Lifecycle</title>
+  <desc id="desc">Flow diagram for exposed-starrocks showing local container startup, readiness checks, database bootstrap, fixture table setup, Exposed execution, and verified smoke-test scope.</desc>
+  <defs>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#3f7d9c" stroke-dasharray="none"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#6e8f4f" stroke-dasharray="none"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#b9851b" stroke-dasharray="none"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755bc6" stroke-dasharray="none"/></marker>
+    <style>
+      .canvas{fill:#f6f0e8}.frame{fill:#fffaf2;stroke:#28485a;stroke-width:4}.title{font-family:"Architects Daughter","Comic Mono",monospace;font-size:48px;fill:#21343f}.subtitle,.cardText,.small,.label,.step{font-family:"Comic Mono",monospace;fill:#51636f}.subtitle{font-size:18px}.laneTitle{font-family:"Architects Daughter","Comic Mono",monospace;font-size:27px;fill:#21343f}.cardTitle{font-family:"Comic Mono",monospace;font-size:17px;font-weight:700;fill:#20323d}.cardText{font-size:13px}.small{font-size:13px}.label{font-size:12px;fill:#315664}.step{font-size:12px;font-weight:700}.lane{stroke-width:2.5}.card{fill:#fffdf8;stroke-width:2.2}.blue{stroke:#8db7c2}.green{stroke:#a9c58b}.gold{stroke:#d3a663}.purple{stroke:#b2a1dc}.red{stroke:#d58b96}.line{fill:none;stroke-width:4.0;stroke-linecap:round;stroke-linejoin:round}.lineBlue{stroke:#3f7d9c;marker-end:url(#arrow-blue)}.lineGreen{stroke:#6e8f4f;marker-end:url(#arrow-green)}.lineGold{stroke:#b9851b;marker-end:url(#arrow-gold)}.linePurple{stroke:#755bc6;marker-end:url(#arrow-purple)}.code{fill:#9b3d5a;font-weight:700}.type{fill:#176f7a;font-weight:700}.warn{fill:#8a5b00;font-weight:700}
+    </style>
+  </defs>
+
+  <rect class="canvas" width="1760" height="1180"/>
+  <rect class="frame" x="38" y="32" width="1684" height="1116" rx="24"/>
+  <text class="title" x="86" y="96">StarRocks Local Smoke Lifecycle</text>
+  <text class="subtitle" x="90" y="132">Tests prove the local all-in-one Connector/J path before exercising Exposed table metadata and simple query behavior.</text>
+
+  <rect class="lane" x="92" y="176" width="1576" height="244" rx="18" fill="#e7f1f4" stroke="#9dbbc4"/>
+  <text class="laneTitle" x="124" y="224">Container and bootstrap</text>
+  <g transform="translate(136 274)">
+    <rect class="card blue" width="270" height="92" rx="12"/>
+    <text class="step" x="22" y="27">1</text>
+    <text class="cardTitle code" x="150" y="32" text-anchor="middle">all-in-one image</text>
+    <text class="cardText" x="150" y="58" text-anchor="middle">starrocks/allin1-ubuntu</text>
+    <text class="cardText" x="150" y="76" text-anchor="middle">ports 9030 / 8030 / 8040</text>
+  </g>
+  <g transform="translate(516 274)">
+    <rect class="card green" width="300" height="92" rx="12"/>
+    <text class="step" x="22" y="27">2</text>
+    <text class="cardTitle type" x="160" y="32" text-anchor="middle">readiness probe</text>
+    <text class="cardText" x="160" y="58" text-anchor="middle">bootstrap JDBC URL</text>
+    <text class="cardText" x="160" y="76" text-anchor="middle">repeat SELECT 1</text>
+  </g>
+  <g transform="translate(926 274)">
+    <rect class="card gold" width="300" height="92" rx="12"/>
+    <text class="step" x="22" y="27">3</text>
+    <text class="cardTitle warn" x="160" y="32" text-anchor="middle">database bootstrap</text>
+    <text class="cardText" x="160" y="58" text-anchor="middle">CREATE DATABASE IF NOT EXISTS</text>
+    <text class="cardText" x="160" y="76" text-anchor="middle">default_catalog.database</text>
+  </g>
+  <g transform="translate(1324 274)">
+    <rect class="card purple" width="292" height="92" rx="12"/>
+    <image x="30" y="21" width="40" height="40" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K"/>
+    <text class="step" x="22" y="27">4</text>
+    <text class="cardTitle" x="176" y="32" text-anchor="middle">capacity probe</text>
+    <text class="cardText" x="176" y="58" text-anchor="middle">create/drop OLAP table</text>
+    <text class="cardText" x="176" y="76" text-anchor="middle">wait for DDL acceptance</text>
+  </g>
+
+  <rect class="lane" x="92" y="482" width="1576" height="306" rx="18" fill="#eef4e6" stroke="#a9c58b"/>
+  <text class="laneTitle" x="124" y="530">Exposed smoke path</text>
+  <g transform="translate(150 590)">
+    <rect class="card green" width="300" height="112" rx="12"/>
+    <text class="cardTitle type" x="150" y="31" text-anchor="middle">connect()</text>
+    <text class="cardText" x="150" y="58" text-anchor="middle">jdbc:starrocks://host:port</text>
+    <text class="cardText" x="150" y="78" text-anchor="middle">catalog.database path</text>
+    <text class="cardText" x="150" y="98" text-anchor="middle">wrap raw connection</text>
+  </g>
+  <g transform="translate(580 590)">
+    <rect class="card gold" width="300" height="112" rx="12"/>
+    <text class="cardTitle warn" x="150" y="31" text-anchor="middle">fixture table</text>
+    <text class="cardText" x="150" y="58" text-anchor="middle">DROP / CREATE events</text>
+    <text class="cardText" x="150" y="78" text-anchor="middle">ENGINE=OLAP</text>
+    <text class="cardText" x="150" y="98" text-anchor="middle">replication_num = 1</text>
+  </g>
+  <g transform="translate(1010 590)">
+    <rect class="card purple" width="300" height="112" rx="12"/>
+    <text class="cardTitle type" x="150" y="31" text-anchor="middle">metadata + query</text>
+    <text class="cardText" x="150" y="58" text-anchor="middle">table discovery visible</text>
+    <text class="cardText" x="150" y="78" text-anchor="middle">SELECT / WHERE / COUNT</text>
+    <text class="cardText" x="150" y="98" text-anchor="middle">insert smoke coverage</text>
+  </g>
+  <g transform="translate(1420 600)">
+    <rect class="card red" width="170" height="92" rx="12"/>
+    <text class="cardTitle warn" x="85" y="31" text-anchor="middle">Out of scope</text>
+    <text class="cardText" x="85" y="58" text-anchor="middle">stream load</text>
+    <text class="cardText" x="85" y="76" text-anchor="middle">cloud / external catalog</text>
+  </g>
+
+  <rect class="lane" x="92" y="850" width="1576" height="188" rx="18" fill="#fff0d8" stroke="#d3a663"/>
+  <text class="laneTitle" x="124" y="898">Reader-facing result</text>
+  <g transform="translate(250 930)">
+    <rect class="card gold" width="330" height="78" rx="12"/>
+    <text class="cardTitle" x="165" y="30" text-anchor="middle">Validated locally</text>
+    <text class="cardText" x="165" y="56" text-anchor="middle">Connector/J + Exposed path works</text>
+  </g>
+  <g transform="translate(715 930)">
+    <rect class="card gold" width="330" height="78" rx="12"/>
+    <text class="cardTitle" x="165" y="30" text-anchor="middle">DDL is conservative</text>
+    <text class="cardText" x="165" y="56" text-anchor="middle">StarRocksTable is fixture-first</text>
+  </g>
+  <g transform="translate(1180 930)">
+    <rect class="card gold" width="330" height="78" rx="12"/>
+    <text class="cardTitle" x="165" y="30" text-anchor="middle">Feature parity is not implied</text>
+    <text class="cardText" x="165" y="56" text-anchor="middle">test each production catalog path</text>
+  </g>
+
+  <path class="line lineBlue" d="M406 320 H516"/>
+  <path class="line lineGreen" d="M816 320 H926"/>
+  <path class="line lineGold" d="M1226 320 H1324"/>
+  <path class="line lineGreen" d="M676 366 V540 H300 V590"/>
+  <path class="line lineGold" d="M1466 366 V540 H730 V590"/>
+  <path class="line lineGreen" d="M450 646 H580"/>
+  <path class="line lineGold" d="M880 646 H1010"/>
+  <path class="line linePurple" d="M1310 646 H1420"/>
+  <path class="line lineGreen" d="M300 702 V820 H415 V930"/>
+  <path class="line lineGold" d="M730 702 V820 H880 V930"/>
+  <path class="line linePurple" d="M1160 702 V820 H1345 V930"/>
+
+  <text class="label" x="424" y="304">start</text>
+  <text class="label" x="834" y="304">ready</text>
+  <text class="label" x="1244" y="304">database</text>
+  <text class="label" x="320" y="570">connect</text>
+  <text class="label" x="752" y="570">fixture DDL</text>
+  <text class="label" x="470" y="630">transaction</text>
+  <text class="label" x="900" y="630">verify</text>
+  <text class="label" x="1328" y="630">boundary</text>
+
+  <rect x="126" y="1082" width="1508" height="28" rx="10" fill="#eef3f4" stroke="#c2d1d4" stroke-width="1.8"/>
+  <text class="small" x="880" y="1101" text-anchor="middle">The smoke path waits for StarRocks readiness and capacity before Exposed assertions begin, so failures map to setup, DDL, or query behavior.</text>
+</svg>

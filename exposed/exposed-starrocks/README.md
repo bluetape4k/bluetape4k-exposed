@@ -7,13 +7,13 @@ narrow local-first OLAP path: native StarRocks Connector/J connectivity, Exposed
 dialect registration, metadata discovery, fixture table setup, and simple query
 execution.
 
-## Architecture
+## Local OLAP Integration Boundary
 
-![StarRocks Exposed architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-starrocks-diagram-01.png)
+![StarRocks local OLAP integration boundary diagram](../../docs/images/readme-diagrams/exposed-exposed-starrocks-diagram-01.png)
 
-### Local Smoke Sequence
+### Local Smoke Lifecycle
 
-![StarRocks local smoke sequence diagram](../../docs/images/readme-diagrams/exposed-exposed-starrocks-sequence-01.png)
+![StarRocks local smoke lifecycle diagram](../../docs/images/readme-diagrams/exposed-exposed-starrocks-flow-02.png)
 
 ## Scope
 
