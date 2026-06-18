@@ -2,22 +2,27 @@
 
 [한국어](./README.ko.md) | English
 
-End-to-end example combining **PostgreSQL (OLTP)** and **ClickHouse (OLAP)** through Exposed,
-demonstrating how to forward transactional records into an analytical store and run aggregate
-queries with ClickHouse-native functions.
+End-to-end example combining **PostgreSQL (OLTP)** and **ClickHouse (OLAP)** through Exposed.
+The integration test writes transactional order rows to PostgreSQL, forwards the inserted records
+to a ClickHouse `MergeTree` table, and runs regional analytics with ClickHouse-native aggregate
+functions.
 
-## Architecture
+## Example Topology
 
-![exposed clickhouse oltp olap Architecture diagram](../../docs/images/readme-diagrams/examples-exposed-clickhouse-oltp-olap-diagram-01.png)
+![PostgreSQL OLTP and ClickHouse OLAP example topology](../../docs/images/readme-diagrams/examples-exposed-clickhouse-oltp-olap-diagram-01.png)
+
+## Test Flow
+
+![OLTP to OLAP integration test flow](../../docs/images/readme-diagrams/examples-exposed-clickhouse-oltp-olap-flow-02.png)
 
 ## Components
 
-| Component             | Role                                                       |
-|-----------------------|------------------------------------------------------------|
-| `Orders` table        | PostgreSQL OLTP — single-row inserts in JDBC transaction   |
-| `OrdersRepository`    | PostgreSQL synchronous repository                          |
-| `OrderEvents` table   | ClickHouse OLAP — `MergeTree` partitioned by `region`      |
-| `AnalyticsRepository` | Batch insert + aggregate query (`uniqExact`, `quantile`)   |
+| Component             | Role                                                               |
+|-----------------------|--------------------------------------------------------------------|
+| `Orders` table        | PostgreSQL OLTP table for transactional order rows                 |
+| `OrdersRepository`    | Synchronous JDBC repository that inserts one order per transaction |
+| `OrderEvents` table   | ClickHouse OLAP `MergeTree`, ordered by IDs and partitioned by `region` |
+| `AnalyticsRepository` | Batch forwarding plus aggregate query (`uniqExact`, `quantile`, `argMax`) |
 
 ## Running
 
@@ -29,8 +34,9 @@ The integration test uses **Testcontainers** to spin up both PostgreSQL and Clic
 
 ## Caveats
 
-- ClickHouse is **not transactional** — failures during forwarding leave partial data.
-  Implement idempotent forwarders (e.g. dedup by `order_id` with `ReplacingMergeTree`).
+- ClickHouse forwarding in this example is **not atomic with PostgreSQL commits**. A failure after
+  the OLTP transaction can leave partial OLAP events. Production pipelines should add idempotency,
+  replay, or an outbox boundary.
 - Aggregate functions (`uniqExact`, `quantile`, `argMax`) are issued as raw SQL because
   the Exposed expression API does not yet model these ClickHouse-native functions.
 
