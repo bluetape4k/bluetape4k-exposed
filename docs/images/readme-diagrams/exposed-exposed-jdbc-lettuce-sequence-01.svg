@@ -17,7 +17,7 @@
       .detail{font-family:"Comic Mono";font-size:13px;fill:#42556B;font-weight:400}.small{font-family:"Comic Mono";font-size:12px;fill:#627184;font-weight:400}
       .seq{fill:none;stroke-width:3;stroke-linecap:round}.seqReturn{fill:none;stroke-width:2.7;stroke-linecap:round;stroke-dasharray:8 7}
       .lifeline{stroke:#A7B4C3;stroke-width:1.8;stroke-dasharray:8 8}.labelPill{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
-      .branchBox{fill:#FFFFFF;fill-opacity:.42;stroke:#D6A441;stroke-width:1.8;stroke-dasharray:8 8}.note{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
+      .branchBox{fill:#FFFFFF;fill-opacity:.14;stroke:#D6A441;stroke-width:1.8;stroke-dasharray:8 8}.note{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
     </style>
   </defs>
   <rect class="canvas" width="1740" height="3120"/>

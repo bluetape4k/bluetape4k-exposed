@@ -2,8 +2,7 @@
 
 [English](./README.md) | 한국어
 
-Exposed JDBC와 Lettuce Redis 캐시를 결합한 Read-through / Write-through / Write-behind 캐시 레포지토리 모듈입니다. 동기(
-`JdbcLettuceRepository`) 버전과 코루틴 네이티브(`SuspendedJdbcLettuceRepository`) 버전을 모두 제공합니다.
+Exposed JDBC와 Lettuce Redis 캐시를 결합한 Read-through / Write-through / Write-behind 캐시 레포지토리 모듈입니다. 동기(`JdbcLettuceRepository`) 구현과 코루틴 네이티브(`SuspendedJdbcLettuceRepository`) 구현을 함께 제공합니다.
 
 ## 개요
 
@@ -149,7 +148,7 @@ suspend fun example(repo: UserSuspendedRepository) {
 ## 테스트
 
 ```bash
-./gradlew :exposed-jdbc-lettuce:test
+./gradlew :bluetape4k-exposed-jdbc-lettuce:test
 ```
 
 ## 참고
