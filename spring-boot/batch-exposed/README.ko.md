@@ -8,11 +8,13 @@ Spring Batch와 JetBrains Exposed를 통합하는 고성능 배치 처리 모듈
 Keyset 기반 페이지 읽기 Reader, Exposed 기반 Writer, VirtualThread 병렬 실행을 위한
 Range Partitioner, Spring Boot Auto-Configuration을 제공합니다.
 
-## 아키텍처
+## 통합 맵
 
-![batch exposed Class Structure diagram](../../docs/images/readme-diagrams/spring-boot-batch-exposed-diagram-01.png)
+![Spring Batch Exposed integration map](../../docs/images/readme-diagrams/spring-boot-batch-exposed-diagram-01.png)
 
-![Spring Batch Exposed execution flow diagram](../../docs/images/readme-diagrams/spring-boot-batch-exposed-sequence-01.png)
+## 파티션 재시작 흐름
+
+![Partitioned keyset restart flow](../../docs/images/readme-diagrams/spring-boot-batch-exposed-sequence-01.png)
 
 ## 주요 기능
 
@@ -128,7 +130,9 @@ class MigrationJobConfig(
 
 ### 재시작 지원
 
-동일한 Job 파라미터로 재실행하면 `lastKey` 이후부터 자동 재개됩니다:
+동일한 Job 파라미터로 재실행하면 Spring Batch가 각 worker의 `ExecutionContext`를
+복원하고, `ExposedKeysetItemReader`가 해당 partition 범위 안에서 저장된
+`lastKey` 이후부터 다시 읽습니다.
 
 ```kotlin
 // 1차 실행: 중간에 실패
