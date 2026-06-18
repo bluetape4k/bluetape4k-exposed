@@ -1,123 +1,134 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1720" height="1160" viewBox="0 0 1720 1160" role="img" aria-labelledby="title desc">
-  <title id="title">BigQuery REST Execution Architecture</title>
-  <desc id="desc">Architecture diagram for exposed-bigquery showing application Exposed DSL, internal H2 SQL generation, BigQuery REST execution, query options, pagination, and result row conversion.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1120" viewBox="0 0 1700 1120" role="img" aria-labelledby="title desc">
+  <title id="title">BigQuery REST Execution Boundary</title>
+  <desc id="desc">Architecture diagram for exposed-bigquery showing Exposed DSL entrypoints, local H2 SQL generation, BigQuery REST query jobs, result conversion, and the no-JDBC transaction boundary.</desc>
   <defs>
-    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%">
-      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/>
-    </filter>
-    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#4F83BF"/></marker>
-    <marker id="arrow-teal" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#2E8F89"/></marker>
-    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#B9851B"/></marker>
-    <marker id="arrow-red" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#C94D68"/></marker>
-    <marker id="arrow-purple" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755BC6"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#3f7d9c" stroke-dasharray="none"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#6e8f4f" stroke-dasharray="none"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#b9851b" stroke-dasharray="none"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755bc6" stroke-dasharray="none"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#bd5d6b" stroke-dasharray="none"/></marker>
     <style>
-      .canvas{fill:#F6F9FC}.decor{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
-      .layer{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}
-      .title{font-family:"Architects Daughter";font-size:45px;fill:#22344A;font-weight:400}
-      .subtitle{font-family:"Comic Mono";font-size:17px;fill:#536476;font-weight:400}
-      .layer-title{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
-      .card-title{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}
-      .detail{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}
-      .small{font-family:"Comic Mono";font-size:13px;fill:#627184;font-weight:400}
-      .shape{filter:url(#shadow);stroke-width:2}
-      .connector{fill:none;stroke-width:2.7;stroke-linejoin:round;stroke-linecap:round}
-      .constraint{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1.4}
+      .canvas{fill:#f6f0e8}.frame{fill:#fffaf2;stroke:#28485a;stroke-width:4}.title{font-family:"Architects Daughter","Comic Mono",monospace;font-size:48px;fill:#21343f}.subtitle,.cardText,.small,.label{font-family:"Comic Mono",monospace;fill:#51636f}.subtitle{font-size:18px}.laneTitle{font-family:"Architects Daughter","Comic Mono",monospace;font-size:27px;fill:#21343f}.cardTitle{font-family:"Comic Mono",monospace;font-size:17px;font-weight:700;fill:#20323d}.cardText{font-size:13px}.small{font-size:13px}.label{font-size:12px;fill:#315664}.lane{stroke-width:2.5}.card{fill:#fffdf8;stroke-width:2.2}.blue{stroke:#8db7c2}.green{stroke:#a9c58b}.gold{stroke:#d3a663}.purple{stroke:#b2a1dc}.red{stroke:#d58b96}.gray{stroke:#9fb0bc}.line{fill:none;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}.lineBlue{stroke:#3f7d9c;marker-end:url(#arrow-blue)}.lineGreen{stroke:#6e8f4f;marker-end:url(#arrow-green)}.lineGold{stroke:#b9851b;marker-end:url(#arrow-gold)}.linePurple{stroke:#755bc6;marker-end:url(#arrow-purple)}.lineRed{stroke:#bd5d6b;marker-end:url(#arrow-red)}.dash{stroke-dasharray:9 7}.code{fill:#9b3d5a;font-weight:700}.type{fill:#176f7a;font-weight:700}.warn{fill:#8a5b00;font-weight:700}.fail{fill:#a94452;font-weight:700}
     </style>
   </defs>
 
-  <rect class="canvas" width="1720" height="1160"/>
-  <rect class="decor" x="44" y="36" width="1632" height="1088" rx="34"/>
-  <text class="title" x="72" y="88">BigQuery REST Execution Architecture</text>
-  <text class="subtitle" x="76" y="121">Exposed builds SQL locally; BigQuery executes each query job through the REST API, not through a JDBC transaction.</text>
+  <rect class="canvas" width="1700" height="1120"/>
+  <rect class="frame" x="38" y="32" width="1624" height="1056" rx="24"/>
+  <text class="title" x="86" y="96">BigQuery REST Execution Boundary</text>
+  <text class="subtitle" x="90" y="132">Exposed builds SQL locally; BigQuery executes REST query jobs without JDBC transaction semantics.</text>
 
-  <g id="layer-application">
-    <rect class="layer" x="82" y="164" width="410" height="760" rx="18"/>
-    <text class="layer-title" x="112" y="190" dominant-baseline="middle">Application and Exposed DSL</text>
+  <rect class="lane" x="92" y="176" width="350" height="730" rx="18" fill="#e7f1f4" stroke="#9dbbc4"/>
+  <text class="laneTitle" x="124" y="226">Application API</text>
+  <g transform="translate(128 278)">
+    <rect class="card blue" width="278" height="98" rx="12"/>
+    <text class="cardTitle code" x="139" y="31" text-anchor="middle">Exposed Query DSL</text>
+    <text class="cardText" x="139" y="58" text-anchor="middle">select / where / groupBy</text>
+    <text class="cardText" x="139" y="78" text-anchor="middle">withBigQuery(options)</text>
   </g>
-  <g id="layer-sqlgen">
-    <rect class="layer" x="532" y="164" width="410" height="760" rx="18"/>
-    <text class="layer-title" x="562" y="190" dominant-baseline="middle">Internal SQL generation</text>
+  <g transform="translate(128 430)">
+    <rect class="card blue" width="278" height="118" rx="12"/>
+    <text class="cardTitle code" x="139" y="31" text-anchor="middle">DML / DDL helpers</text>
+    <text class="cardText" x="139" y="58" text-anchor="middle">execInsert / execUpdate</text>
+    <text class="cardText" x="139" y="78" text-anchor="middle">execDelete / execDeleteAll</text>
+    <text class="cardText" x="139" y="98" text-anchor="middle">execCreateTable</text>
   </g>
-  <g id="layer-bigquery">
-    <rect class="layer" x="982" y="164" width="570" height="760" rx="18"/>
-    <text class="layer-title" x="1012" y="190" dominant-baseline="middle">BigQuery REST execution</text>
-  </g>
-
-  <path data-edge="dsl-&gt;context" class="connector" d="M 402 302 L 552 302" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
-  <path data-edge="context-&gt;sqlgen" class="connector" d="M 742 356 L 742 430" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
-  <path data-edge="options-&gt;request" class="connector" d="M 402 598 L 962 598 L 962 520 L 1022 520" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
-  <path data-edge="sqlgen-&gt;request" class="connector" d="M 932 506 L 1022 506" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
-  <path data-edge="ddl-&gt;request" class="connector" d="M 932 716 L 962 716 L 962 552 L 1267 552" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
-  <path data-edge="request-&gt;jobs" class="connector" d="M 1267 552 L 1267 628" stroke="#C94D68" marker-end="url(#arrow-red)"/>
-  <path data-edge="jobs-&gt;pages" class="connector" d="M 1267 724 L 1267 802" stroke="#C94D68" marker-end="url(#arrow-red)"/>
-  <path data-edge="pages-&gt;row" class="connector" d="M 1022 850 L 402 850" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
-
-  <g id="node-dsl" data-node="dsl" transform="translate(132,242)">
-    <rect class="shape" x="0" y="0" width="270" height="120" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
-    <text class="card-title" x="135" y="31" text-anchor="middle" dominant-baseline="middle">Exposed DSL</text>
-    <text class="detail" x="135" y="56" text-anchor="middle" dominant-baseline="middle">Table, Query, DML builders</text>
-    <text class="detail" x="135" y="76" text-anchor="middle" dominant-baseline="middle">SELECT / INSERT / UPDATE</text>
-    <text class="detail" x="135" y="96" text-anchor="middle" dominant-baseline="middle">DELETE / CREATE TABLE</text>
-  </g>
-  <g id="node-options" data-node="options" transform="translate(132,540)">
-    <rect class="shape" x="0" y="0" width="270" height="116" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
-    <text class="card-title" x="135" y="29" text-anchor="middle" dominant-baseline="middle">BigQueryQueryOptions</text>
-    <text class="detail" x="135" y="54" text-anchor="middle" dominant-baseline="middle">dryRun, labels, priority</text>
-    <text class="detail" x="135" y="74" text-anchor="middle" dominant-baseline="middle">maximumBytesBilled</text>
-    <text class="detail" x="135" y="94" text-anchor="middle" dominant-baseline="middle">location and timeout</text>
-  </g>
-  <g id="node-row" data-node="row" transform="translate(132,790)">
-    <rect class="shape" x="0" y="0" width="270" height="120" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
-    <text class="card-title" x="135" y="31" text-anchor="middle" dominant-baseline="middle">BigQueryResultRow</text>
-    <text class="detail" x="135" y="56" text-anchor="middle" dominant-baseline="middle">case-insensitive keys</text>
-    <text class="detail" x="135" y="76" text-anchor="middle" dominant-baseline="middle">Column-based conversion</text>
-    <text class="detail" x="135" y="96" text-anchor="middle" dominant-baseline="middle">Long, BigDecimal, Instant</text>
+  <g transform="translate(128 604)">
+    <rect class="card blue" width="278" height="100" rx="12"/>
+    <text class="cardTitle code" x="139" y="31" text-anchor="middle">Raw SQL</text>
+    <text class="cardText" x="139" y="58" text-anchor="middle">runRawQuery()</text>
+    <text class="cardText" x="139" y="78" text-anchor="middle">validateRawQuery()</text>
   </g>
 
-  <g id="node-context" data-node="context" transform="translate(552,242)">
-    <rect class="shape" x="0" y="0" width="380" height="114" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
-    <text class="card-title" x="190" y="30" text-anchor="middle" dominant-baseline="middle">BigQueryContext</text>
-    <text class="detail" x="190" y="55" text-anchor="middle" dominant-baseline="middle">projectId + datasetId</text>
-    <text class="detail" x="190" y="75" text-anchor="middle" dominant-baseline="middle">create() builds H2 sqlGenDb</text>
-    <text class="detail" x="190" y="95" text-anchor="middle" dominant-baseline="middle">suspend work runs on dispatcher</text>
+  <rect class="lane" x="500" y="176" width="370" height="730" rx="18" fill="#eef4e6" stroke="#a9c58b"/>
+  <text class="laneTitle" x="532" y="226">Local SQL generation</text>
+  <g transform="translate(542 278)">
+    <rect class="card green" width="286" height="118" rx="12"/>
+    <text class="cardTitle code" x="143" y="31" text-anchor="middle">BigQueryContext</text>
+    <text class="cardText" x="143" y="58" text-anchor="middle">owns projectId / datasetId</text>
+    <text class="cardText" x="143" y="78" text-anchor="middle">sets Standard SQL</text>
+    <text class="cardText" x="143" y="98" text-anchor="middle">uses dispatcher for suspend</text>
   </g>
-  <g id="node-sqlgen" data-node="sqlgen" transform="translate(552,430)">
-    <rect class="shape" x="0" y="0" width="380" height="112" rx="12" fill="#EAF7EF" stroke="#58A978"/>
-    <text class="card-title" x="190" y="29" text-anchor="middle" dominant-baseline="middle">H2 PostgreSQL-mode DB</text>
-    <text class="detail" x="190" y="54" text-anchor="middle" dominant-baseline="middle">transaction(sqlGenDb)</text>
-    <text class="detail" x="190" y="74" text-anchor="middle" dominant-baseline="middle">prepareSQL / expandArgs</text>
-    <text class="detail" x="190" y="94" text-anchor="middle" dominant-baseline="middle">SQL string only, no storage</text>
+  <g transform="translate(542 448)">
+    <rect class="card green" width="286" height="118" rx="12"/>
+    <text class="cardTitle type" x="143" y="31" text-anchor="middle">H2 PostgreSQL mode</text>
+    <text class="cardText" x="143" y="58" text-anchor="middle">sqlGenDb only</text>
+    <text class="cardText" x="143" y="78" text-anchor="middle">transaction builds SQL</text>
+    <text class="cardText warn" x="143" y="98" text-anchor="middle">not application storage</text>
   </g>
-  <g id="node-ddl" data-node="ddl" transform="translate(552,660)">
-    <rect class="shape" x="0" y="0" width="380" height="112" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
-    <text class="card-title" x="190" y="29" text-anchor="middle" dominant-baseline="middle">BigQuery DDL mapping</text>
-    <text class="detail" x="190" y="54" text-anchor="middle" dominant-baseline="middle">BIGINT to INT64</text>
-    <text class="detail" x="190" y="74" text-anchor="middle" dominant-baseline="middle">VARCHAR to STRING</text>
-    <text class="detail" x="190" y="94" text-anchor="middle" dominant-baseline="middle">DECIMAL to NUMERIC</text>
-  </g>
-
-  <g id="node-request" data-node="request" transform="translate(1022,450)">
-    <rect class="shape" x="0" y="0" width="490" height="102" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
-    <text class="card-title" x="245" y="28" text-anchor="middle" dominant-baseline="middle">QueryRequest</text>
-    <text class="detail" x="245" y="53" text-anchor="middle" dominant-baseline="middle">standard SQL + defaultDataset</text>
-    <text class="detail" x="245" y="73" text-anchor="middle" dominant-baseline="middle">options apply dryRun, cache, destination table</text>
-  </g>
-  <g id="node-jobs" data-node="jobs" transform="translate(1022,628)">
-    <rect class="shape" x="0" y="0" width="490" height="96" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
-    <text class="card-title" x="245" y="28" text-anchor="middle" dominant-baseline="middle">BigQuery jobs.query</text>
-    <text class="detail" x="245" y="53" text-anchor="middle" dominant-baseline="middle">REST API executes each call independently</text>
-    <text class="detail" x="245" y="73" text-anchor="middle" dominant-baseline="middle">errors become BigQueryQueryException</text>
-  </g>
-  <g id="node-pages" data-node="pages" transform="translate(1022,802)">
-    <rect class="shape" x="0" y="0" width="490" height="96" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
-    <text class="card-title" x="245" y="28" text-anchor="middle" dominant-baseline="middle">getQueryResults pagination</text>
-    <text class="detail" x="245" y="53" text-anchor="middle" dominant-baseline="middle">toList gathers all pages</text>
-    <text class="detail" x="245" y="73" text-anchor="middle" dominant-baseline="middle">toFlow emits page by page with cancellation checks</text>
+  <g transform="translate(542 624)">
+    <rect class="card green" width="286" height="112" rx="12"/>
+    <text class="cardTitle" x="143" y="31" text-anchor="middle">DDL mapping</text>
+    <text class="cardText" x="143" y="58" text-anchor="middle">BIGINT -> INT64</text>
+    <text class="cardText" x="143" y="78" text-anchor="middle">VARCHAR -> STRING</text>
+    <text class="cardText" x="143" y="98" text-anchor="middle">DECIMAL -> NUMERIC</text>
   </g>
 
-  <g transform="translate(112,974)">
-    <rect class="constraint" x="0" y="0" width="1496" height="72" rx="10"/>
-    <text class="small" x="748" y="24" text-anchor="middle" dominant-baseline="middle">Reader contract: this module is a BigQuery REST executor for Exposed-generated SQL, not a JDBC ORM or rollback-capable transaction layer.</text>
-    <text class="small" x="748" y="48" text-anchor="middle" dominant-baseline="middle">Use dry runs and maximumBytesBilled for cost control; plan for partial writes when multiple DML calls are issued sequentially.</text>
+  <rect class="lane" x="928" y="176" width="346" height="730" rx="18" fill="#fff0d8" stroke="#d3a663"/>
+  <text class="laneTitle" x="960" y="226">BigQuery REST API</text>
+  <g transform="translate(968 278)">
+    <rect class="card gold" width="266" height="118" rx="12"/>
+    <image x="24" y="20" width="40" height="40" href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0ic3RhbmRhcmRfcHJvZHVjdF9pY29uIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDUxMiA1MTIiPgogIDwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyOS4xLjAsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiAyLjEuMCBCdWlsZCAxNDIpICAtLT4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgLnN0MCB7CiAgICAgICAgZmlsbDogbm9uZTsKICAgICAgfQoKICAgICAgLnN0MSB7CiAgICAgICAgZmlsbDogIzQyODVmNDsKICAgICAgfQoKICAgICAgLnN0MiB7CiAgICAgICAgZmlsbDogIzM0YTg1MzsKICAgICAgfQoKICAgICAgLnN0MyB7CiAgICAgICAgZmlsbDogI2ZiYmMwNDsKICAgICAgfQoKICAgICAgLnN0NCB7CiAgICAgICAgZmlsbDogI2VhNDMzNTsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPGcgaWQ9ImJvdW5kaW5nX2JveCI+CiAgICA8cmVjdCBjbGFzcz0ic3QwIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIvPgogIDwvZz4KICA8ZyBpZD0iYXJ0Ij4KICAgIDxwYXRoIGNsYXNzPSJzdDIiIGQ9Ik0zMTEuOSw0MTguOWMtOC44LDAtMTYtNy4yLTE2LTE2di0xNDUuOGMwLTguOCw3LjItMTYsMTYtMTZzMTYsNy4yLDE2LDE2djE0NS44YzAsOC44LTcuMiwxNi0xNiwxNmgwWiIvPgogICAgPHBhdGggY2xhc3M9InN0MiIgZD0iTTE0Ny42LDQxOC45Yy04LjgsMC0xNi03LjItMTYtMTZ2LTIwMC41YzAtOC44LDcuMi0xNiwxNi0xNnMxNiw3LjIsMTYsMTZ2MjAwLjVjMCw4LjgtNy4yLDE2LTE2LDE2WiIvPgogICAgPHBhdGggY2xhc3M9InN0MiIgZD0iTTIyOS44LDQzNy40Yy04LjgsMC0xNi03LjItMTYtMTZWMTQ3LjZjMC04LjgsNy4yLTE2LDE2LTE2czE2LDcuMiwxNiwxNnYyNzMuN2MwLDguOC03LjIsMTYtMTYsMTZoMFoiLz4KICAgIDxwYXRoIGNsYXNzPSJzdDMiIGQ9Ik0yMjkuOCw0MzcuNGMtMTE0LjUsMC0yMDcuNi05My4xLTIwNy42LTIwNy42aDMyYzAsOTYuOCw3OC44LDE3NS42LDE3NS42LDE3NS42czE3NS42LTc4LjgsMTc1LjYtMTc1LjZoMzJjMCwxMTQuNS05My4xLDIwNy42LTIwNy42LDIwNy42aDBaIi8+CiAgICA8cGF0aCBjbGFzcz0ic3Q0IiBkPSJNNDM3LjQsMjI5LjhoLTMyYzAtOTYuOC03OC44LTE3NS42LTE3NS42LTE3NS42UzU0LjEsMTMyLjksNTQuMSwyMjkuOEgyMi4xYzAtMTE0LjUsOTMuMi0yMDcuNywyMDcuNy0yMDcuN3MyMDcuNiw5My4xLDIwNy42LDIwNy42aDBaIi8+CiAgICA8cGF0aCBjbGFzcz0ic3QxIiBkPSJNNDg3LjQsNDY0LjhsLTEwMC0xMDBjMzIuMy0zNy42LDQ5LjktODUsNDkuOS0xMzUuMXMtMjEuNi0xMDcuNi02MC44LTE0Ni44bC0yMi42LDIyLjZjMzMuMiwzMy4yLDUxLjQsNzcuMyw1MS40LDEyNC4ycy0xOC4zLDkwLjktNTEuNSwxMjQuMWgwYy01LDUtNy41LDctMTEuOCwxMC44bDEyMi44LDEyMi44YzMuMSwzLjEsNy4yLDQuNywxMS4zLDQuN2gwYzQuMSwwLDguMi0xLjYsMTEuMy00LjcsNi4yLTYuMiw2LjItMTYuNCwwLTIyLjZoMFoiLz4KICA8L2c+Cjwvc3ZnPg=="/>
+    <text class="cardTitle" x="156" y="31" text-anchor="middle">jobs.query request</text>
+    <text class="cardText" x="133" y="58" text-anchor="middle">dryRun / labels / priority</text>
+    <text class="cardText" x="133" y="78" text-anchor="middle">maximumBytesBilled</text>
+    <text class="cardText" x="133" y="98" text-anchor="middle">location / timeout / cache</text>
   </g>
+  <g transform="translate(968 466)">
+    <rect class="card gold" width="266" height="110" rx="12"/>
+    <text class="cardTitle" x="133" y="31" text-anchor="middle">Query job result</text>
+    <text class="cardText" x="133" y="58" text-anchor="middle">jobComplete + pageToken</text>
+    <text class="cardText" x="133" y="78" text-anchor="middle">schema fields + TableRow</text>
+    <text class="cardText fail" x="133" y="98" text-anchor="middle">errors -> exception</text>
+  </g>
+  <g transform="translate(968 638)">
+    <rect class="card gold" width="266" height="98" rx="12"/>
+    <image x="30" y="23" width="42" height="42" href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0ic3RhbmRhcmRfcHJvZHVjdF9pY29uIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDUxMiA1MTIiPgogIDwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyOS4xLjAsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiAyLjEuMCBCdWlsZCAxNDIpICAtLT4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgLnN0MCB7CiAgICAgICAgZmlsbDogbm9uZTsKICAgICAgfQoKICAgICAgLnN0MSB7CiAgICAgICAgZmlsbDogIzQyODVmNDsKICAgICAgfQoKICAgICAgLnN0MiB7CiAgICAgICAgZmlsbDogIzM0YTg1MzsKICAgICAgfQoKICAgICAgLnN0MyB7CiAgICAgICAgZmlsbDogI2ZiYmMwNDsKICAgICAgfQoKICAgICAgLnN0NCB7CiAgICAgICAgZmlsbDogI2VhNDMzNTsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPGcgaWQ9ImJvdW5kaW5nX2JveCI+CiAgICA8cmVjdCBjbGFzcz0ic3QwIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIvPgogIDwvZz4KICA8ZyBpZD0iYXJ0Ij4KICAgIDxwYXRoIGNsYXNzPSJzdDIiIGQ9Ik0zMTEuOSw0MTguOWMtOC44LDAtMTYtNy4yLTE2LTE2di0xNDUuOGMwLTguOCw3LjItMTYsMTYtMTZzMTYsNy4yLDE2LDE2djE0NS44YzAsOC44LTcuMiwxNi0xNiwxNmgwWiIvPgogICAgPHBhdGggY2xhc3M9InN0MiIgZD0iTTE0Ny42LDQxOC45Yy04LjgsMC0xNi03LjItMTYtMTZ2LTIwMC41YzAtOC44LDcuMi0xNiwxNi0xNnMxNiw3LjIsMTYsMTZ2MjAwLjVjMCw4LjgtNy4yLDE2LTE2LDE2WiIvPgogICAgPHBhdGggY2xhc3M9InN0MiIgZD0iTTIyOS44LDQzNy40Yy04LjgsMC0xNi03LjItMTYtMTZWMTQ3LjZjMC04LjgsNy4yLTE2LDE2LTE2czE2LDcuMiwxNiwxNnYyNzMuN2MwLDguOC03LjIsMTYtMTYsMTZoMFoiLz4KICAgIDxwYXRoIGNsYXNzPSJzdDMiIGQ9Ik0yMjkuOCw0MzcuNGMtMTE0LjUsMC0yMDcuNi05My4xLTIwNy42LTIwNy42aDMyYzAsOTYuOCw3OC44LDE3NS42LDE3NS42LDE3NS42czE3NS42LTc4LjgsMTc1LjYtMTc1LjZoMzJjMCwxMTQuNS05My4xLDIwNy42LTIwNy42LDIwNy42aDBaIi8+CiAgICA8cGF0aCBjbGFzcz0ic3Q0IiBkPSJNNDM3LjQsMjI5LjhoLTMyYzAtOTYuOC03OC44LTE3NS42LTE3NS42LTE3NS42UzU0LjEsMTMyLjksNTQuMSwyMjkuOEgyMi4xYzAtMTE0LjUsOTMuMi0yMDcuNywyMDcuNy0yMDcuN3MyMDcuNiw5My4xLDIwNy42LDIwNy42aDBaIi8+CiAgICA8cGF0aCBjbGFzcz0ic3QxIiBkPSJNNDg3LjQsNDY0LjhsLTEwMC0xMDBjMzIuMy0zNy42LDQ5LjktODUsNDkuOS0xMzUuMXMtMjEuNi0xMDcuNi02MC44LTE0Ni44bC0yMi42LDIyLjZjMzMuMiwzMy4yLDUxLjQsNzcuMyw1MS40LDEyNC4ycy0xOC4zLDkwLjktNTEuNSwxMjQuMWgwYy01LDUtNy41LDctMTEuOCwxMC44bDEyMi44LDEyMi44YzMuMSwzLjEsNy4yLDQuNywxMS4zLDQuN2gwYzQuMSwwLDguMi0xLjYsMTEuMy00LjcsNi4yLTYuMiw2LjItMTYuNCwwLTIyLjZoMFoiLz4KICA8L2c+Cjwvc3ZnPg=="/>
+    <text class="cardTitle" x="158" y="31" text-anchor="middle">BigQuery dataset</text>
+    <text class="cardText" x="158" y="58" text-anchor="middle">tables receive REST DML</text>
+    <text class="cardText" x="158" y="78" text-anchor="middle">no JDBC rollback boundary</text>
+  </g>
+
+  <rect class="lane" x="1328" y="176" width="280" height="730" rx="18" fill="#f3edf9" stroke="#b2a1dc"/>
+  <text class="laneTitle" x="1360" y="226">Result boundary</text>
+  <g transform="translate(1360 278)">
+    <rect class="card purple" width="216" height="112" rx="12"/>
+    <text class="cardTitle code" x="108" y="31" text-anchor="middle">BigQueryResultRow</text>
+    <text class="cardText" x="108" y="58" text-anchor="middle">lowercase keys</text>
+    <text class="cardText" x="108" y="78" text-anchor="middle">Column based access</text>
+    <text class="cardText" x="108" y="98" text-anchor="middle">null sentinels -> null</text>
+  </g>
+  <g transform="translate(1360 466)">
+    <rect class="card purple" width="216" height="110" rx="12"/>
+    <text class="cardTitle" x="108" y="31" text-anchor="middle">Consumers</text>
+    <text class="cardText" x="108" y="58" text-anchor="middle">toList / single</text>
+    <text class="cardText" x="108" y="78" text-anchor="middle">toListSuspending</text>
+    <text class="cardText" x="108" y="98" text-anchor="middle">toFlow page stream</text>
+  </g>
+  <g transform="translate(1360 638)">
+    <rect class="card red" width="216" height="98" rx="12"/>
+    <text class="cardTitle fail" x="108" y="31" text-anchor="middle">BigQueryQueryException</text>
+    <text class="cardText" x="108" y="58" text-anchor="middle">errors[] become typed</text>
+    <text class="cardText" x="108" y="78" text-anchor="middle">message includes SQL prefix</text>
+  </g>
+
+  <path class="line lineBlue" d="M406 327 H542"/>
+  <path class="line lineBlue" d="M406 489 H500 V337 H542"/>
+  <path class="line lineBlue" d="M406 654 H500 V337 H542"/>
+  <path class="line lineGreen" d="M685 396 V448"/>
+  <path class="line lineGreen" d="M685 566 V624"/>
+  <path class="line lineGold" d="M828 337 H968"/>
+  <path class="line lineGold" d="M828 680 H900 V337 H968"/>
+  <path class="line linePurple" d="M1234 521 H1360"/>
+  <path class="line lineGold" d="M1101 396 V466"/>
+  <path class="line lineGold" d="M1101 576 V638"/>
+  <path class="line linePurple" d="M1576 334 H1604 V521 H1576"/>
+  <path class="line lineRed dash" d="M1234 521 H1300 V687 H1360"/>
+  <text class="label" x="440" y="310">query</text>
+  <text class="label" x="438" y="474">statement</text>
+  <text class="label" x="850" y="320">SQL + options</text>
+  <text class="label" x="1248" y="504">rows</text>
+  <text class="label" x="1314" y="668">errors</text>
+
+  <rect x="126" y="1018" width="1448" height="28" rx="10" fill="#eef3f4" stroke="#c2d1d4" stroke-width="1.8"/>
+  <text class="small" x="850" y="1037" text-anchor="middle">Reader contract: exposed-bigquery is a REST query-job executor for Exposed-generated SQL, not a JDBC ORM or rollback-capable transaction layer.</text>
 </svg>
