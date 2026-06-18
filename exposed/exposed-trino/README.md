@@ -30,13 +30,13 @@ dependencies {
 }
 ```
 
-## Core API Diagram
+## Trino JDBC Compatibility Boundary
 
-![exposed exposed trino diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-diagram-01.png)
+![Trino JDBC compatibility boundary diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-diagram-01.png)
 
-### Distributed Query Flow
+### Flow Materialization Contract
 
-![Distributed Query Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-sequence-01.png)
+![Trino Flow materialization contract diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-flow-02.png)
 
 ## Basic Usage
 
@@ -298,15 +298,15 @@ Features verified in a Trino Memory connector environment via Testcontainers.
 ## Testing
 
 ```bash
-./gradlew :exposed-trino:test
+./gradlew :bluetape4k-exposed-trino:test
 ```
 
 Core regression test examples:
 
 ```bash
-./gradlew :exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoConnectionWrapperTest"
-./gradlew :exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoDatabaseTest"
-./gradlew :exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoTransactionAtomicityTest"
+./gradlew :bluetape4k-exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoConnectionWrapperTest"
+./gradlew :bluetape4k-exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoDatabaseTest"
+./gradlew :bluetape4k-exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoTransactionAtomicityTest"
 ```
 
 ## Phase 2 Roadmap

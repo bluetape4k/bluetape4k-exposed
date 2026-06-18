@@ -28,13 +28,13 @@ dependencies {
 }
 ```
 
-## 핵심 API 다이어그램
+## Trino JDBC 호환 경계
 
-![API diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-diagram-01.png)
+![Trino JDBC compatibility boundary diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-diagram-01.png)
 
-### 분산 쿼리 흐름
+### Flow materialization 계약
 
-![Trino distributed query flow diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-sequence-01.png)
+![Trino Flow materialization contract diagram](../../docs/images/readme-diagrams/exposed-exposed-trino-flow-02.png)
 
 ## 기본 사용법
 
@@ -290,15 +290,15 @@ Testcontainers를 통한 Trino Memory 커넥터 환경에서 검증된 기능입
 ## 테스트
 
 ```bash
-./gradlew :exposed-trino:test
+./gradlew :bluetape4k-exposed-trino:test
 ```
 
 핵심 회귀 테스트 예:
 
 ```bash
-./gradlew :exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoConnectionWrapperTest"
-./gradlew :exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoDatabaseTest"
-./gradlew :exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoTransactionAtomicityTest"
+./gradlew :bluetape4k-exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoConnectionWrapperTest"
+./gradlew :bluetape4k-exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoDatabaseTest"
+./gradlew :bluetape4k-exposed-trino:test --tests "io.bluetape4k.exposed.trino.TrinoTransactionAtomicityTest"
 ```
 
 ## Phase 2 로드맵
