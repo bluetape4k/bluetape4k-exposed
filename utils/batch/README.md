@@ -4,11 +4,13 @@
 
 A coroutine-native batch processing framework for Kotlin. Implements a lightweight, checkpointable chunk-oriented pipeline — no Spring Batch required.
 
-## Architecture
+## Runtime Role Map
 
-![batch Class Structure diagram](../../docs/images/readme-diagrams/utils-batch-diagram-01.png)
+![Batch runtime role map](../../docs/images/readme-diagrams/utils-batch-diagram-01.png)
 
-![Batch execution flow diagram](../../docs/images/readme-diagrams/utils-batch-sequence-01.png)
+## Chunk Checkpoint Flow
+
+![Batch chunk checkpoint flow](../../docs/images/readme-diagrams/utils-batch-sequence-01.png)
 
 ## Features
 
@@ -124,19 +126,19 @@ The benchmark setup has been migrated to `kotlinx-benchmark` with DB-specific pr
 
 | DB | Summary | Details |
 |----|---------|---------|
-| H2 | Compare JDBC vs R2DBC for `seedBenchmark` and `endToEndBatchJobBenchmark` | [H2 benchmark details](docs/benchmark/h2.md) |
-| PostgreSQL | Compare JDBC vs R2DBC for the same scenarios with Testcontainers-backed execution | [PostgreSQL benchmark details](docs/benchmark/postgresql.md) |
-| MySQL | Compare JDBC vs R2DBC across seed and end-to-end batch job runs | [MySQL benchmark details](docs/benchmark/mysql.md) |
+| H2 | Compare JDBC vs R2DBC for `seedBenchmark` and `endToEndBatchJobBenchmark` | [H2 benchmark details](benchmark/h2.md) |
+| PostgreSQL | Compare JDBC vs R2DBC for the same scenarios with Testcontainers-backed execution | [PostgreSQL benchmark details](benchmark/postgresql.md) |
+| MySQL | Compare JDBC vs R2DBC across seed and end-to-end batch job runs | [MySQL benchmark details](benchmark/mysql.md) |
 
-- [Benchmark hub](docs/benchmark/README.md)
-- Example tasks: `./gradlew :exposed-batch:h2JdbcBenchmark`, `./gradlew :exposed-batch:postgresR2dbcBenchmark`, `./gradlew :exposed-batch:generateBenchmarkDocs`
+- [Benchmark hub](benchmark/README.md)
+- Example tasks: `./gradlew :bluetape4k-exposed-batch:h2JdbcBenchmark`, `./gradlew :bluetape4k-exposed-batch:postgresR2dbcBenchmark`, `./gradlew :bluetape4k-exposed-batch:generateBenchmarkDocs`
 
 ### Comparison Focus
 
 - Primary axis: **JDBC vs R2DBC**
 - Scenarios: `seedBenchmark`, `endToEndBatchJobBenchmark`
 - Parameters: `dataSize = 1000/10000/100000`, `poolSize = 10/30/60`, `parallelism = 1/4/8`
-- Detailed tables and charts live under `docs/benchmark/*.md`
+- Detailed tables and charts live under `benchmark/*.md`
 
 ![Batch seed throughput by database chart](../../docs/images/readme-charts/utils-batch-db-summary-chart-01.png)
 
@@ -144,7 +146,7 @@ The benchmark setup has been migrated to `kotlinx-benchmark` with DB-specific pr
 
 ```kotlin
 dependencies {
-    implementation(project(":exposed-batch"))
+    implementation(project(":bluetape4k-exposed-batch"))
     // for JDBC repository / reader / writer:
     implementation(project(":exposed-jdbc"))
     // for R2DBC repository / reader / writer:
