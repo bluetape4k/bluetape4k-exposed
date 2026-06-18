@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1520" height="840" viewBox="0 0 1520 840" role="img" aria-labelledby="title desc">
+  <title id="title">OLTP to OLAP Integration Test Flow</title>
+  <desc id="desc">Flow diagram showing the integration test lifecycle: container startup, schema creation, order generation, PostgreSQL transactional inserts, ClickHouse batch forwarding, regional aggregate query, and assertions.</desc>
+  <defs>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%">
+      <feDropShadow dx="0" dy="7" stdDeviation="8" flood-color="#203040" flood-opacity="0.10"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#4F83BF"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#2E8F6B"/>
+    </marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#B9851B"/>
+    </marker>
+    <style>
+      .canvas{fill:#F6F9FC}
+      .frame{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3;filter:url(#shadow)}
+      .title{font-family:"Architects Daughter";font-size:42px;fill:#203449;font-weight:400}
+      .subtitle{font-family:"Comic Mono";font-size:16px;fill:#536476;font-weight:400}
+      .lane-title{font-family:"Architects Daughter";font-size:24px;fill:#203449;font-weight:400}
+      .card-title{font-family:"Architects Daughter";font-size:23px;fill:#203449;font-weight:400}
+      .detail{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}
+      .small{font-family:"Comic Mono";font-size:12px;fill:#627184;font-weight:400}
+      .label{font-family:"Comic Mono";font-size:13px;fill:#42556B;font-weight:400}
+      .lane{fill:#F3F7FB;stroke:#D8E2EC;stroke-width:2}
+      .card{filter:url(#shadow);stroke-width:2}
+      .step{fill:#FFFFFF;stroke:#D8E2EC;stroke-width:1.4}
+      .connector{fill:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+      .dash{stroke-dasharray:9 7}
+    </style>
+  </defs>
+
+  <rect class="canvas" width="1520" height="840"/>
+  <rect class="frame" x="44" y="36" width="1432" height="760" rx="34"/>
+  <text class="title" x="76" y="90">OLTP to OLAP Integration Test Flow</text>
+  <text class="subtitle" x="80" y="123">The example is a test scenario: it starts two containers, writes OLTP orders, forwards them once, then queries ClickHouse aggregates.</text>
+
+  <rect class="lane" x="82" y="164" width="1356" height="136" rx="18"/>
+  <rect class="lane" x="82" y="338" width="1356" height="136" rx="18"/>
+  <rect class="lane" x="82" y="512" width="1356" height="154" rx="18"/>
+  <text class="lane-title" x="112" y="194">1. Setup</text>
+  <text class="lane-title" x="112" y="368">2. Move data</text>
+  <text class="lane-title" x="112" y="542">3. Analyze and assert</text>
+
+  <path data-edge="containers-to-schemas" class="connector" d="M 410 238 L 506 238" stroke="#4F83BF" marker-end="url(#arrow)"/>
+  <path data-edge="schemas-to-orders" class="connector" d="M 810 238 L 900 238" stroke="#4F83BF" marker-end="url(#arrow)"/>
+  <path data-edge="orders-down-to-insert" class="connector" d="M 1064 282 L 1064 320 L 287 320 L 287 376" stroke="#2E8F6B" marker-end="url(#arrow-green)"/>
+  <path data-edge="insert-to-forward" class="connector" d="M 410 412 L 506 412" stroke="#2E8F6B" marker-end="url(#arrow-green)"/>
+  <path data-edge="forward-to-events" class="connector" d="M 810 412 L 900 412" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
+  <path data-edge="events-down-to-query" class="connector" d="M 1064 456 L 1064 492 L 287 492 L 287 550" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
+  <path data-edge="query-to-result" class="connector" d="M 410 586 L 506 586" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
+  <path data-edge="result-to-caveat" class="connector dash" d="M 810 586 L 900 586" stroke="#8A72D6" marker-end="url(#arrow)"/>
+
+  <g id="containers" data-node="containers" transform="translate(164,202)">
+    <rect class="card" x="0" y="0" width="246" height="80" rx="13" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <text class="card-title" x="123" y="28" text-anchor="middle">Start containers</text>
+    <text class="detail" x="123" y="54" text-anchor="middle">PostgreSQL + ClickHouse</text>
+  </g>
+
+  <g id="schemas" data-node="schemas" transform="translate(506,202)">
+    <rect class="card" x="0" y="0" width="304" height="80" rx="13" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="152" y="28" text-anchor="middle">Create schemas</text>
+    <text class="detail" x="152" y="54" text-anchor="middle">Orders and OrderEvents</text>
+  </g>
+
+  <g id="generate-orders" data-node="generate-orders" transform="translate(900,202)">
+    <rect class="card" x="0" y="0" width="328" height="80" rx="13" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="164" y="28" text-anchor="middle">Generate 100 orders</text>
+    <text class="detail" x="164" y="54" text-anchor="middle">ASIA, EUROPE, AMERICAS</text>
+  </g>
+
+  <g id="insert-orders" data-node="insert-orders" transform="translate(164,376)">
+    <rect class="card" x="0" y="0" width="246" height="80" rx="13" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="123" y="28" text-anchor="middle">Insert orders</text>
+    <text class="detail" x="123" y="54" text-anchor="middle">transaction(pgDb)</text>
+  </g>
+
+  <g id="forward" data-node="forward" transform="translate(506,376)">
+    <rect class="card" x="0" y="0" width="304" height="80" rx="13" fill="#FFF3D9" stroke="#D6A441"/>
+    <text class="card-title" x="152" y="28" text-anchor="middle">Forward insertedOrders</text>
+    <text class="detail" x="152" y="54" text-anchor="middle">batchInsertOrders(list)</text>
+  </g>
+
+  <g id="events" data-node="events" transform="translate(900,376)">
+    <rect class="card" x="0" y="0" width="328" height="80" rx="13" fill="#FFF3D9" stroke="#D6A441"/>
+    <text class="card-title" x="164" y="28" text-anchor="middle">Persist OLAP events</text>
+    <text class="detail" x="164" y="54" text-anchor="middle">MergeTree partitioned by region</text>
+  </g>
+
+  <g id="query" data-node="query" transform="translate(164,550)">
+    <rect class="card" x="0" y="0" width="246" height="80" rx="13" fill="#FFF3D9" stroke="#D6A441"/>
+    <text class="card-title" x="123" y="28" text-anchor="middle">Query ASIA region</text>
+    <text class="detail" x="123" y="54" text-anchor="middle">raw aggregate SQL</text>
+  </g>
+
+  <g id="analytics-result" data-node="analytics-result" transform="translate(506,550)">
+    <rect class="card" x="0" y="0" width="304" height="80" rx="13" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="152" y="28" text-anchor="middle">Map result row</text>
+    <text class="detail" x="152" y="54" text-anchor="middle">OrderAnalyticsResult</text>
+  </g>
+
+  <g id="caveat" data-node="caveat" transform="translate(900,532)">
+    <rect class="card" x="0" y="0" width="390" height="116" rx="13" fill="#FDECEF" stroke="#DC6B82"/>
+    <text class="card-title" x="195" y="30" text-anchor="middle">Production caveat</text>
+    <text class="detail" x="195" y="58" text-anchor="middle">ClickHouse forwarding is not atomic</text>
+    <text class="detail" x="195" y="80" text-anchor="middle">use idempotency, replay, or outbox</text>
+  </g>
+
+  <g id="assertions" data-node="assertions" transform="translate(164,704)">
+    <rect class="step" x="0" y="0" width="1126" height="42" rx="10"/>
+    <text class="small" x="563" y="24" text-anchor="middle">Assertions check total orders, unique customers, p95 amount, and latest product id are present for the ASIA aggregate.</text>
+  </g>
+</svg>

@@ -2,22 +2,26 @@
 
 한국어 | [English](./README.md)
 
-PostgreSQL **OLTP**와 ClickHouse **OLAP**를 동시에 사용하는 end-to-end 예제입니다.
-Exposed를 통해 트랜잭션성 데이터를 OLAP 저장소로 forwarding하고, ClickHouse 전용 집계
-함수로 분석 쿼리를 수행하는 방법을 보여줍니다.
+PostgreSQL **OLTP**와 ClickHouse **OLAP**를 함께 사용하는 end-to-end 예제입니다.
+통합 테스트는 PostgreSQL에 트랜잭션성 주문 행을 저장한 뒤, 생성된 레코드를 ClickHouse
+`MergeTree` 테이블로 전달하고, ClickHouse 전용 집계 함수로 리전별 분석 결과를 조회합니다.
 
-## Architecture
+## 예제 구성
 
-![exposed clickhouse oltp olap Architecture diagram](../../docs/images/readme-diagrams/examples-exposed-clickhouse-oltp-olap-diagram-01.png)
+![PostgreSQL OLTP and ClickHouse OLAP example topology](../../docs/images/readme-diagrams/examples-exposed-clickhouse-oltp-olap-diagram-01.png)
+
+## 테스트 흐름
+
+![OLTP to OLAP integration test flow](../../docs/images/readme-diagrams/examples-exposed-clickhouse-oltp-olap-flow-02.png)
 
 ## 구성 요소
 
-| 구성 요소               | 역할                                                              |
-|---------------------|-----------------------------------------------------------------|
-| `Orders` 테이블         | PostgreSQL OLTP — JDBC 트랜잭션 단일 행 적재                              |
-| `OrdersRepository`  | PostgreSQL 동기 저장소                                                |
-| `OrderEvents` 테이블    | ClickHouse OLAP — `region` 파티셔닝의 `MergeTree`                     |
-| `AnalyticsRepository` | 배치 삽입 + 집계 쿼리 (`uniqExact`, `quantile`, `argMax`)                |
+| 구성 요소                 | 역할                                                              |
+|-----------------------|-----------------------------------------------------------------|
+| `Orders` 테이블          | 트랜잭션 주문 행을 저장하는 PostgreSQL OLTP 테이블                         |
+| `OrdersRepository`    | JDBC 트랜잭션 안에서 주문을 한 건씩 삽입하는 동기 repository                 |
+| `OrderEvents` 테이블     | ID 기준 정렬과 `region` 파티셔닝을 사용하는 ClickHouse OLAP `MergeTree` |
+| `AnalyticsRepository` | 배치 forwarding과 집계 쿼리(`uniqExact`, `quantile`, `argMax`) 담당     |
 
 ## 실행
 
@@ -29,9 +33,9 @@ Exposed를 통해 트랜잭션성 데이터를 OLAP 저장소로 forwarding하�
 
 ## 주의사항
 
-- ClickHouse는 **트랜잭션을 지원하지 않습니다** — forwarding 도중 실패 시 부분 데이터가
-  남을 수 있습니다. `order_id` 중복 제거가 가능한 `ReplacingMergeTree` 엔진을 사용하거나
-  멱등(idempotent) forwarder를 설계하세요.
+- 이 예제의 ClickHouse forwarding은 PostgreSQL commit과 **원자적으로 묶이지 않습니다**.
+  OLTP 트랜잭션 이후 전달 단계에서 실패하면 OLAP 이벤트가 일부만 남을 수 있습니다. 실제
+  파이프라인에서는 멱등 처리, replay, outbox 경계 중 하나를 설계해야 합니다.
 - 집계 함수(`uniqExact`, `quantile`, `argMax`)는 Exposed 표현식 API가 ClickHouse 전용
   함수를 모두 모델링하지 않아 raw SQL로 실행합니다.
 
