@@ -33,6 +33,6 @@
 ## 참고
 
 - 상세 수치 표는 DB별 문서에 둡니다.
-- `generateBenchmarkDocs` 는 현재 benchmark 허브와 DB별 상세 문서 골격을 생성합니다.
-- Report directory: `/Users/debop/work/bluetape4k/bluetape4k-projects/.claude/worktrees/utils-batch-kotlinx-benchmark/build/exposed-batch/reports/benchmarks`
+- `generateBenchmarkDocs`는 benchmark 허브와 DB별 상세 문서를 만들고, JSON report가 있으면 표와 차트까지 채웁니다.
+- Report directory: `utils/batch/build/reports/benchmarks`
 - PostgreSQL/MySQL full run 결과는 나중에 추가해도 링크 구조는 그대로 유지됩니다.
