@@ -45,13 +45,13 @@
   <text class="lane-title" x="112" y="542">3. Analyze and assert</text>
 
   <path data-edge="containers-to-schemas" class="connector" d="M 410 238 L 506 238" stroke="#4F83BF" marker-end="url(#arrow)"/>
-  <path data-edge="schemas-to-orders" class="connector" d="M 810 238 L 900 238" stroke="#4F83BF" marker-end="url(#arrow)"/>
-  <path data-edge="orders-down-to-insert" class="connector" d="M 1064 282 L 1064 320 L 287 320 L 287 376" stroke="#2E8F6B" marker-end="url(#arrow-green)"/>
-  <path data-edge="insert-to-forward" class="connector" d="M 410 412 L 506 412" stroke="#2E8F6B" marker-end="url(#arrow-green)"/>
+  <path data-edge="schemas-to-generate-orders" class="connector" d="M 810 238 L 900 238" stroke="#4F83BF" marker-end="url(#arrow)"/>
+  <path data-edge="generate-orders-to-insert-orders" class="connector" d="M 1064 282 L 1064 320 L 287 320 L 287 376" stroke="#2E8F6B" marker-end="url(#arrow-green)"/>
+  <path data-edge="insert-orders-to-forward" class="connector" d="M 410 412 L 506 412" stroke="#2E8F6B" marker-end="url(#arrow-green)"/>
   <path data-edge="forward-to-events" class="connector" d="M 810 412 L 900 412" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
-  <path data-edge="events-down-to-query" class="connector" d="M 1064 456 L 1064 492 L 287 492 L 287 550" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
-  <path data-edge="query-to-result" class="connector" d="M 410 586 L 506 586" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
-  <path data-edge="result-to-caveat" class="connector dash" d="M 810 586 L 900 586" stroke="#8A72D6" marker-end="url(#arrow)"/>
+  <path data-edge="events-to-query" class="connector" d="M 1064 456 L 1064 492 L 287 492 L 287 550" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
+  <path data-edge="query-to-analytics-result" class="connector" d="M 410 586 L 506 586" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
+  <path data-edge="analytics-result-to-caveat" class="connector dash" d="M 810 586 L 900 586" stroke="#8A72D6" marker-end="url(#arrow)"/>
 
   <g id="containers" data-node="containers" transform="translate(164,202)">
     <rect class="card" x="0" y="0" width="246" height="80" rx="13" fill="#E8F3FF" stroke="#5B8DEF"/>

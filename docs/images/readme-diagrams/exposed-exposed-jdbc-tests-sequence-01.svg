@@ -46,27 +46,27 @@
   <rect class="band" x="82" y="160" width="1516" height="890" rx="20"/>
 
   <g id="actors">
-    <g id="actor-junit" transform="translate(120,190)">
+    <g id="actor-junit" data-node="junit" transform="translate(120,190)">
       <rect class="actor" x="0" y="0" width="210" height="78" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
       <text class="actor-title" x="105" y="28" text-anchor="middle" dominant-baseline="middle">JUnit test</text>
       <text class="detail" x="105" y="52" text-anchor="middle" dominant-baseline="middle">@MethodSource</text>
     </g>
-    <g id="actor-testdb" transform="translate(390,190)">
+    <g id="actor-testdb" data-node="testdb" transform="translate(390,190)">
       <rect class="actor" x="0" y="0" width="220" height="78" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
       <text class="actor-title" x="110" y="28" text-anchor="middle" dominant-baseline="middle">TestDB</text>
       <text class="detail" x="110" y="52" text-anchor="middle" dominant-baseline="middle">dialect selector</text>
     </g>
-    <g id="actor-helper" transform="translate(680,190)">
+    <g id="actor-helper" data-node="helper" transform="translate(680,190)">
       <rect class="actor" x="0" y="0" width="250" height="78" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
       <text class="actor-title" x="125" y="28" text-anchor="middle" dominant-baseline="middle">withDb / withTables</text>
       <text class="detail" x="125" y="52" text-anchor="middle" dominant-baseline="middle">serialized helper scope</text>
     </g>
-    <g id="actor-exposed" transform="translate(1000,190)">
+    <g id="actor-exposed" data-node="exposed" transform="translate(1000,190)">
       <rect class="actor" x="0" y="0" width="220" height="78" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
       <text class="actor-title" x="110" y="28" text-anchor="middle" dominant-baseline="middle">Exposed JDBC</text>
       <text class="detail" x="110" y="52" text-anchor="middle" dominant-baseline="middle">transaction + schema</text>
     </g>
-    <g id="actor-db" transform="translate(1290,190)">
+    <g id="actor-db" data-node="db" transform="translate(1290,190)">
       <rect class="actor" x="0" y="0" width="230" height="78" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
       <text class="actor-title" x="115" y="28" text-anchor="middle" dominant-baseline="middle">JDBC database</text>
       <text class="detail" x="115" y="52" text-anchor="middle" dominant-baseline="middle">H2 or real server</text>
@@ -107,7 +107,7 @@
   <rect class="label-box" x="872" y="688" width="170" height="26" rx="8"/>
   <text class="step" x="957" y="702" text-anchor="middle" dominant-baseline="middle">transaction(maxAttempts=1)</text>
 
-  <path class="call" data-edge="exposed-&gt;db-create" d="M 1110 776 L 1405 776" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+  <path class="call" data-edge="exposed-&gt;db" d="M 1110 776 L 1405 776" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
   <rect class="label-box" x="1176" y="748" width="164" height="26" rx="8"/>
   <text class="step" x="1258" y="762" text-anchor="middle" dominant-baseline="middle">drop/create fixtures</text>
 
@@ -115,7 +115,7 @@
   <rect class="label-box" x="560" y="818" width="214" height="26" rx="8"/>
   <text class="step" x="667" y="832" text-anchor="middle" dominant-baseline="middle">test statement + assertions</text>
 
-  <path class="call" data-edge="exposed-&gt;db-drop" d="M 1110 916 L 1405 916" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+  <path class="call" data-edge="exposed-&gt;db" d="M 1110 916 L 1405 916" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
   <rect class="label-box" x="1175" y="888" width="166" height="26" rx="8"/>
   <text class="step" x="1258" y="902" text-anchor="middle" dominant-baseline="middle">commit then cleanup</text>
 

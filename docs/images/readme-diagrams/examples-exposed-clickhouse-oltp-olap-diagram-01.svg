@@ -44,10 +44,10 @@
   <text class="band-title" x="112" y="384">Storage boundaries</text>
   <text class="band-title" x="112" y="640">Reader contract</text>
 
-  <path data-edge="test-to-orders-repo" class="connector" d="M 354 278 L 496 278" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
-  <path data-edge="orders-repo-to-pg" class="connector" d="M 654 314 L 654 412" stroke="#2E8F6B" marker-end="url(#arrow-green)"/>
+  <path data-edge="test-scenario-to-orders-repo" class="connector" d="M 354 278 L 496 278" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
+  <path data-edge="orders-repo-to-postgres" class="connector" d="M 654 314 L 654 412" stroke="#2E8F6B" marker-end="url(#arrow-green)"/>
   <path data-edge="analytics-repo-to-clickhouse" class="connector" d="M 1092 314 L 1092 412" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
-  <path data-edge="pg-to-clickhouse-forwarding" class="connector" d="M 724 466 L 796 466" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
+  <path data-edge="postgres-to-clickhouse" class="connector" d="M 724 466 L 796 466" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
   <path data-edge="clickhouse-to-result" class="connector" d="M 1022 528 L 1100 652" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
 
   <g id="test-scenario" data-node="test-scenario" transform="translate(126,218)">
@@ -102,7 +102,7 @@
   </g>
 
   <text class="label" x="412" y="260" text-anchor="middle">insert(order)</text>
-  <text class="label" x="654" y="363" text-anchor="middle">transaction(pgDb)</text>
-  <text class="label" x="1092" y="363" text-anchor="middle">transaction(chDb)</text>
+  <text class="label" x="710" y="360" text-anchor="start">transaction(pgDb)</text>
+  <text class="label" x="1148" y="360" text-anchor="start">transaction(chDb)</text>
   <text class="label" x="760" y="448" text-anchor="middle">forward insertedOrders</text>
 </svg>
