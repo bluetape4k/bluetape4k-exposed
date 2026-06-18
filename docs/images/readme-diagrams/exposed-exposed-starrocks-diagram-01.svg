@@ -1,119 +1,122 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1220" viewBox="0 0 1800 1220" role="img" aria-label="StarRocks Exposed Architecture">
-<defs>
-  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 7 4 L 1 7 Z" fill="#5B8DEF"/></marker>
-  <marker id="arrow-teal" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 7 4 L 1 7 Z" fill="#45A7A1"/></marker>
-  <marker id="arrow-amber" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 7 4 L 1 7 Z" fill="#D6A441"/></marker>
-  <marker id="arrow-gray" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 7 4 L 1 7 Z" fill="#758297"/></marker>
-  <style>
-    .canvas{fill:#f7f9fc}.frame{fill:#ffffff;stroke:#d8e0ea;stroke-width:1.5}
-    .layer{stroke-width:2;fill-opacity:.72}.card{stroke-width:2.1;filter:url(#shadow)}
-    .title{font-family:"Architects Daughter","Comic Sans MS",cursive;font-size:44px;fill:#102033}
-    .subtitle{font-family:"Comic Mono","Comic Sans MS";font-size:15px;fill:#536273}
-    .layerLabel{font-family:"Architects Daughter","Comic Sans MS",cursive;font-size:25px;fill:#102033}
-    .label{font-family:"Architects Daughter","Comic Sans MS",cursive;font-size:24px;fill:#102033}
-    .detail{font-family:"Comic Mono","Comic Sans MS";font-size:14px;fill:#536273}
-    .small{font-family:"Comic Mono","Comic Sans MS";font-size:12px;fill:#536273}
-    .routeBlue{stroke:#5B8DEF;stroke-width:3;fill:none;marker-end:url(#arrow-blue)}
-    .routeTeal{stroke:#45A7A1;stroke-width:3;fill:none;marker-end:url(#arrow-teal)}
-    .routeAmber{stroke:#D6A441;stroke-width:3;fill:none;marker-end:url(#arrow-amber)}
-    .routeGray{stroke:#758297;stroke-width:2.6;fill:none;marker-end:url(#arrow-gray)}
-    .routeLabel{font-family:"Comic Mono","Comic Sans MS";font-size:13px;fill:#102033}
-  </style>
-</defs>
-<rect class="canvas" width="1800" height="1220"/>
-<rect class="frame" x="36" y="32" width="1728" height="1156" rx="26"/>
-<text class="title" x="72" y="88">StarRocks Exposed Architecture</text>
-<text class="subtitle" x="76" y="122">Narrow local-first OLAP connector path for Exposed and StarRocks Connector/J</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1120" viewBox="0 0 1700 1120" role="img" aria-labelledby="title desc">
+  <title id="title">StarRocks Local OLAP Integration Boundary</title>
+  <desc id="desc">Architecture diagram for exposed-starrocks showing Exposed-facing APIs, StarRocks adapter classes, Connector/J boundary, and the local StarRocks all-in-one service scope.</desc>
+  <defs>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#3f7d9c" stroke-dasharray="none"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#6e8f4f" stroke-dasharray="none"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#b9851b" stroke-dasharray="none"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755bc6" stroke-dasharray="none"/></marker>
+    <style>
+      .canvas{fill:#f6f0e8}.frame{fill:#fffaf2;stroke:#28485a;stroke-width:4}.title{font-family:"Architects Daughter","Comic Mono",monospace;font-size:48px;fill:#21343f}.subtitle,.cardText,.small,.label,.step{font-family:"Comic Mono",monospace;fill:#51636f}.subtitle{font-size:18px}.laneTitle{font-family:"Architects Daughter","Comic Mono",monospace;font-size:27px;fill:#21343f}.cardTitle{font-family:"Comic Mono",monospace;font-size:17px;font-weight:700;fill:#20323d}.cardText{font-size:13px}.small{font-size:13px}.label{font-size:12px;fill:#315664}.step{font-size:12px;font-weight:700}.lane{stroke-width:2.5}.card{fill:#fffdf8;stroke-width:2.2}.blue{stroke:#8db7c2}.green{stroke:#a9c58b}.gold{stroke:#d3a663}.purple{stroke:#b2a1dc}.red{stroke:#d58b96}.line{fill:none;stroke-width:4.0;stroke-linecap:round;stroke-linejoin:round}.lineBlue{stroke:#3f7d9c;marker-end:url(#arrow-blue)}.lineGreen{stroke:#6e8f4f;marker-end:url(#arrow-green)}.lineGold{stroke:#b9851b;marker-end:url(#arrow-gold)}.linePurple{stroke:#755bc6;marker-end:url(#arrow-purple)}.code{fill:#9b3d5a;font-weight:700}.type{fill:#176f7a;font-weight:700}.warn{fill:#8a5b00;font-weight:700}
+    </style>
+  </defs>
 
-<rect class="layer" x="88" y="180" width="1624" height="172" rx="20" fill="#E8F3FF" stroke="#5B8DEF"/>
-<text class="layerLabel" x="116" y="220">Application Layer</text>
-<g transform="translate(210,240)">
-  <rect class="card" x="0" y="0" width="330" height="82" rx="8" fill="#ffffff" stroke="#5B8DEF"/>
-  <text class="label" x="165" y="37" text-anchor="middle">Kotlin Application</text>
-  <text class="detail" x="165" y="60" text-anchor="middle">calls Exposed transactions</text>
-</g>
-<g transform="translate(720,240)">
-  <rect class="card" x="0" y="0" width="330" height="82" rx="8" fill="#ffffff" stroke="#58A978"/>
-  <text class="label" x="165" y="37" text-anchor="middle">Exposed DSL</text>
-  <text class="detail" x="165" y="60" text-anchor="middle">query, insert, metadata usage</text>
-</g>
+  <rect class="canvas" width="1700" height="1120"/>
+  <rect class="frame" x="38" y="32" width="1624" height="1056" rx="24"/>
+  <text class="title" x="86" y="96">StarRocks Local OLAP Integration Boundary</text>
+  <text class="subtitle" x="90" y="132">A narrow Connector/J smoke path for Exposed, not a broad StarRocks DDL or cloud feature layer.</text>
 
-<rect class="layer" x="88" y="412" width="1624" height="280" rx="20" fill="#FDECEF" stroke="#DC6B82"/>
-<text class="layerLabel" x="116" y="452">bluetape4k-exposed-starrocks Module</text>
-<g transform="translate(148,490)">
-  <rect class="card" x="0" y="0" width="300" height="122" rx="8" fill="#ffffff" stroke="#DC6B82"/>
-  <text class="label" x="150" y="38" text-anchor="middle">StarRocksDatabase</text>
-  <text class="detail" x="150" y="64" text-anchor="middle">registers driver and dialect</text>
-  <text class="detail" x="150" y="86" text-anchor="middle">builds catalog.database URL</text>
-</g>
-<g transform="translate(540,490)">
-  <rect class="card" x="0" y="0" width="300" height="122" rx="8" fill="#ffffff" stroke="#8A72D6"/>
-  <text class="label" x="150" y="38" text-anchor="middle">StarRocksDialect</text>
-  <text class="detail" x="150" y="64" text-anchor="middle">minimal MySQL wire reuse</text>
-  <text class="detail" x="150" y="86" text-anchor="middle">disables unproven DDL</text>
-</g>
-<g transform="translate(932,490)">
-  <rect class="card" x="0" y="0" width="300" height="122" rx="8" fill="#ffffff" stroke="#45A7A1"/>
-  <text class="label" x="150" y="38" text-anchor="middle">DialectMetadata</text>
-  <text class="detail" x="150" y="64" text-anchor="middle">keeps DatabaseMetaData</text>
-  <text class="detail" x="150" y="86" text-anchor="middle">table and column discovery</text>
-</g>
-<g transform="translate(1324,490)">
-  <rect class="card" x="0" y="0" width="300" height="122" rx="8" fill="#ffffff" stroke="#D6A441"/>
-  <text class="label" x="150" y="38" text-anchor="middle">StarRocksTable</text>
-  <text class="detail" x="150" y="64" text-anchor="middle">fixture-oriented OLAP DDL</text>
-  <text class="detail" x="150" y="86" text-anchor="middle">replication_num = 1</text>
-</g>
-<g transform="translate(344,622)">
-  <rect class="card" x="0" y="0" width="300" height="54" rx="8" fill="#ffffff" stroke="#B88A44"/>
-  <text class="label" x="150" y="34" text-anchor="middle">ConnectionWrapper</text>
-</g>
-<g transform="translate(736,622)">
-  <rect class="card" x="0" y="0" width="300" height="54" rx="8" fill="#ffffff" stroke="#8BA84D"/>
-  <text class="label" x="150" y="34" text-anchor="middle">ConnectionOptions</text>
-</g>
+  <rect class="lane" x="92" y="180" width="340" height="740" rx="18" fill="#e7f1f4" stroke="#9dbbc4"/>
+  <text class="laneTitle" x="124" y="230">Exposed-facing API</text>
+  <g transform="translate(122 292)">
+    <rect class="card blue" width="280" height="108" rx="12"/>
+    <text class="cardTitle code" x="140" y="31" text-anchor="middle">StarRocksDatabase</text>
+    <text class="cardText" x="140" y="58" text-anchor="middle">host / port / catalog</text>
+    <text class="cardText" x="140" y="78" text-anchor="middle">jdbcUrl / DataSource</text>
+    <text class="cardText" x="140" y="98" text-anchor="middle">registers dialect on access</text>
+  </g>
+  <g transform="translate(122 462)">
+    <rect class="card blue" width="280" height="108" rx="12"/>
+    <text class="cardTitle code" x="140" y="31" text-anchor="middle">transaction(db)</text>
+    <text class="cardText" x="140" y="58" text-anchor="middle">SELECT / INSERT smoke</text>
+    <text class="cardText" x="140" y="78" text-anchor="middle">metadata through Exposed</text>
+    <text class="cardText" x="140" y="98" text-anchor="middle">autocommit-oriented</text>
+  </g>
+  <g transform="translate(122 640)">
+    <rect class="card blue" width="280" height="108" rx="12"/>
+    <text class="cardTitle code" x="140" y="31" text-anchor="middle">StarRocksTable</text>
+    <text class="cardText" x="140" y="58" text-anchor="middle">fixture-oriented DDL base</text>
+    <text class="cardText" x="140" y="78" text-anchor="middle">removes generic PK / NULL</text>
+    <text class="cardText" x="140" y="98" text-anchor="middle">adds conservative OLAP opts</text>
+  </g>
 
-<rect class="layer" x="88" y="752" width="1624" height="150" rx="20" fill="#F7F1E7" stroke="#B88A44"/>
-<text class="layerLabel" x="116" y="792">JDBC Driver Layer</text>
-<g transform="translate(620,810)">
-  <rect class="card" x="0" y="0" width="430" height="64" rx="8" fill="#ffffff" stroke="#5B8DEF"/>
-  <text class="label" x="215" y="39" text-anchor="middle">StarRocks Connector/J 1.1.1</text>
-</g>
+  <rect class="lane" x="500" y="180" width="470" height="740" rx="18" fill="#eef4e6" stroke="#a9c58b"/>
+  <text class="laneTitle" x="532" y="230">StarRocks adapters</text>
+  <g transform="translate(540 285)">
+    <rect class="card green" width="350" height="116" rx="12"/>
+    <text class="cardTitle type" x="175" y="31" text-anchor="middle">Connection options</text>
+    <text class="cardText" x="175" y="58" text-anchor="middle">user / password properties</text>
+    <text class="cardText" x="175" y="78" text-anchor="middle">extraProperties escape hatch</text>
+    <text class="cardText" x="175" y="98" text-anchor="middle">blank keys rejected</text>
+  </g>
+  <g transform="translate(540 455)">
+    <rect class="card green" width="350" height="116" rx="12"/>
+    <text class="cardTitle type" x="175" y="31" text-anchor="middle">StarRocksDialect</text>
+    <text class="cardText" x="175" y="58" text-anchor="middle">MysqlDialect base</text>
+    <text class="cardText" x="175" y="78" text-anchor="middle">unproven mutation disabled</text>
+    <text class="cardText" x="175" y="98" text-anchor="middle">create/drop requires autocommit</text>
+  </g>
+  <g transform="translate(540 625)">
+    <rect class="card green" width="350" height="116" rx="12"/>
+    <text class="cardTitle type" x="175" y="31" text-anchor="middle">Dialect metadata</text>
+    <text class="cardText" x="175" y="58" text-anchor="middle">Mysql metadata behavior</text>
+    <text class="cardText" x="175" y="78" text-anchor="middle">standard DatabaseMetaData</text>
+    <text class="cardText" x="175" y="98" text-anchor="middle">kept visible for tests</text>
+  </g>
 
-<rect class="layer" x="88" y="962" width="1624" height="150" rx="20" fill="#E9F7F6" stroke="#45A7A1"/>
-<text class="layerLabel" x="116" y="1002">StarRocks Runtime Layer</text>
-<g transform="translate(208,1020)">
-  <rect class="card" x="0" y="0" width="330" height="64" rx="8" fill="#ffffff" stroke="#45A7A1"/>
-  <text class="label" x="165" y="39" text-anchor="middle">FE Query Port 9030</text>
-</g>
-<g transform="translate(720,1020)">
-  <rect class="card" x="0" y="0" width="330" height="64" rx="8" fill="#ffffff" stroke="#D6A441"/>
-  <text class="label" x="165" y="39" text-anchor="middle">default_catalog.database</text>
-</g>
-<g transform="translate(1232,1020)">
-  <rect class="card" x="0" y="0" width="330" height="64" rx="8" fill="#ffffff" stroke="#DC6B82"/>
-  <text class="label" x="165" y="39" text-anchor="middle">OLAP Fixture Table</text>
-</g>
+  <rect class="lane" x="1028" y="180" width="280" height="740" rx="18" fill="#fff0d8" stroke="#d3a663"/>
+  <text class="laneTitle" x="1060" y="230">Connector/J boundary</text>
+  <g transform="translate(1050 330)">
+    <rect class="card gold" width="236" height="146" rx="12"/>
+    <text class="cardTitle warn" x="118" y="31" text-anchor="middle">Connection wrapper</text>
+    <text class="cardText" x="118" y="58" text-anchor="middle">autoCommit always true</text>
+    <text class="cardText" x="118" y="78" text-anchor="middle">commit / rollback no-op</text>
+    <text class="cardText" x="118" y="98" text-anchor="middle">generated-key overloads</text>
+    <text class="cardText" x="118" y="118" text-anchor="middle">delegate to prepare(sql)</text>
+  </g>
+  <g transform="translate(1050 620)">
+    <rect class="card gold" width="236" height="106" rx="12"/>
+    <text class="cardTitle warn" x="118" y="31" text-anchor="middle">Connector/J</text>
+    <text class="cardText" x="118" y="58" text-anchor="middle">jdbc:starrocks://...</text>
+    <text class="cardText" x="118" y="78" text-anchor="middle">FE query port 9030</text>
+  </g>
 
-<path class="routeBlue" d="M540 281 L720 281"/>
-<text class="routeLabel" x="591" y="266">query</text>
-<path class="routeGray" d="M885 322 L885 390 L298 390 L298 490"/>
-<text class="routeLabel" x="590" y="378">connect/register</text>
-<path class="routeGray" d="M448 548 L540 548"/>
-<text class="routeLabel" x="466" y="532">dialect</text>
-<path class="routeTeal" d="M840 548 L932 548"/>
-<text class="routeLabel" x="860" y="532">metadata</text>
-<path class="routeAmber" d="M1232 548 L1324 548"/>
-<text class="routeLabel" x="1252" y="532">DDL</text>
-<path class="routeGray" d="M298 612 L298 649 L344 649"/>
-<path class="routeGray" d="M298 490 L298 468 L886 468 L886 622"/>
-<path class="routeBlue" d="M494 676 L494 736 L835 736 L835 810"/>
-<text class="routeLabel" x="630" y="722">autocommit JDBC</text>
-<path class="routeBlue" d="M835 874 L835 932 L373 932 L373 1020"/>
-<text class="routeLabel" x="544" y="920">jdbc:starrocks</text>
-<path class="routeTeal" d="M373 1084 L373 1140 L885 1140 L885 1084"/>
-<text class="routeLabel" x="570" y="1162">catalog metadata</text>
-<path class="routeAmber" d="M885 1020 L885 944 L1397 944 L1397 1020"/>
-<text class="routeLabel" x="1080" y="932">create/drop fixture</text>
+  <rect class="lane" x="1378" y="180" width="240" height="740" rx="18" fill="#f2edf8" stroke="#b2a1dc"/>
+  <text class="laneTitle" x="1410" y="230">Local StarRocks</text>
+  <g transform="translate(1398 338)">
+    <rect class="card purple" width="200" height="144" rx="12"/>
+    <image x="80" y="18" width="40" height="40" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K"/>
+    <text class="cardTitle" x="100" y="78" text-anchor="middle">all-in-one</text>
+    <text class="cardText" x="100" y="104" text-anchor="middle">FE + BE local image</text>
+    <text class="cardText" x="100" y="124" text-anchor="middle">9030 / 8030 / 8040</text>
+  </g>
+  <g transform="translate(1398 600)">
+    <rect class="card purple" width="200" height="128" rx="12"/>
+    <text class="cardTitle" x="100" y="31" text-anchor="middle">Smoke scope</text>
+    <text class="cardText" x="100" y="58" text-anchor="middle">database bootstrap</text>
+    <text class="cardText" x="100" y="78" text-anchor="middle">fixture table</text>
+    <text class="cardText" x="100" y="98" text-anchor="middle">metadata + SELECT</text>
+    <text class="cardText" x="100" y="118" text-anchor="middle">no cloud parity claim</text>
+  </g>
+
+  <path class="line lineBlue" d="M402 346 H540"/>
+  <path class="line lineBlue" d="M402 516 H500 V513 H540"/>
+  <path class="line lineBlue" d="M402 694 H500 V683 H540"/>
+  <path class="line lineGreen" d="M715 401 V455"/>
+  <path class="line lineGreen" d="M890 343 H1050"/>
+  <path class="line lineGold" d="M1168 476 V620"/>
+  <path class="line lineGold" d="M1286 673 H1398"/>
+  <path class="line linePurple" d="M1498 482 V600"/>
+  <path class="line lineGreen" d="M715 571 V625"/>
+
+  <text class="label" x="424" y="330">connect</text>
+  <text class="label" x="424" y="500">execute</text>
+  <text class="label" x="424" y="678">DDL fixture</text>
+  <text class="label" x="904" y="326">wrap</text>
+  <text class="label" x="1182" y="558">JDBC call</text>
+  <text class="label" x="1300" y="654">local query</text>
+  <text class="label" x="1512" y="552">verified</text>
+
+  <rect x="122" y="986" width="1456" height="28" rx="10" fill="#eef3f4" stroke="#c2d1d4" stroke-width="1.8"/>
+  <text class="small" x="850" y="1005" text-anchor="middle">Reader contract: exposed-starrocks proves a local Connector/J smoke path; broad StarRocks DDL, stream load, external catalogs, and cloud behavior remain out of scope.</text>
 </svg>
