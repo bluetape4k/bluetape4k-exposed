@@ -29,11 +29,11 @@
   <text class="subtitle" x="76" y="121">Measured values enter Exposed as typed Kotlin objects and leave the database as base-unit DOUBLE values.</text>
   <rect class="band" x="82" y="160" width="1516" height="820" rx="20"/>
 
-  <g transform="translate(132,190)"><rect class="actor" x="0" y="0" width="230" height="78" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/><text class="actor-title" x="115" y="28" text-anchor="middle">Test / repository</text><text class="detail" x="115" y="54" text-anchor="middle">typed values</text></g>
-  <g transform="translate(440,190)"><rect class="actor" x="0" y="0" width="230" height="78" rx="12" fill="#EAF7EF" stroke="#58A978"/><text class="actor-title" x="115" y="28" text-anchor="middle">Table DSL</text><text class="detail" x="115" y="54" text-anchor="middle">column definition</text></g>
-  <g transform="translate(742,190)"><rect class="actor" x="0" y="0" width="250" height="78" rx="12" fill="#E9F7F6" stroke="#45A7A1"/><text class="actor-title" x="125" y="28" text-anchor="middle">ColumnType</text><text class="detail" x="125" y="54" text-anchor="middle">base-unit conversion</text></g>
-  <g transform="translate(1078,190)"><rect class="actor" x="0" y="0" width="220" height="78" rx="12" fill="#FFF3D9" stroke="#D6A441"/><text class="actor-title" x="110" y="28" text-anchor="middle">Exposed JDBC</text><text class="detail" x="110" y="54" text-anchor="middle">insert/select</text></g>
-  <g transform="translate(1370,190)"><rect class="actor" x="0" y="0" width="180" height="78" rx="12" fill="#F1ECFF" stroke="#8A72D6"/><text class="actor-title" x="90" y="28" text-anchor="middle">DB</text><text class="detail" x="90" y="54" text-anchor="middle">DOUBLE</text></g>
+  <g data-node="test" transform="translate(132,190)"><rect class="actor" x="0" y="0" width="230" height="78" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/><text class="actor-title" x="115" y="28" text-anchor="middle">Test / repository</text><text class="detail" x="115" y="54" text-anchor="middle">typed values</text></g>
+  <g data-node="dsl" transform="translate(440,190)"><rect class="actor" x="0" y="0" width="230" height="78" rx="12" fill="#EAF7EF" stroke="#58A978"/><text class="actor-title" x="115" y="28" text-anchor="middle">Table DSL</text><text class="detail" x="115" y="54" text-anchor="middle">column definition</text></g>
+  <g data-node="column" transform="translate(742,190)"><rect class="actor" x="0" y="0" width="250" height="78" rx="12" fill="#E9F7F6" stroke="#45A7A1"/><text class="actor-title" x="125" y="28" text-anchor="middle">ColumnType</text><text class="detail" x="125" y="54" text-anchor="middle">base-unit conversion</text></g>
+  <g data-node="jdbc" transform="translate(1078,190)"><rect class="actor" x="0" y="0" width="220" height="78" rx="12" fill="#FFF3D9" stroke="#D6A441"/><text class="actor-title" x="110" y="28" text-anchor="middle">Exposed JDBC</text><text class="detail" x="110" y="54" text-anchor="middle">insert/select</text></g>
+  <g data-node="db" transform="translate(1370,190)"><rect class="actor" x="0" y="0" width="180" height="78" rx="12" fill="#F1ECFF" stroke="#8A72D6"/><text class="actor-title" x="90" y="28" text-anchor="middle">DB</text><text class="detail" x="90" y="54" text-anchor="middle">DOUBLE</text></g>
 
   <line class="lifeline" x1="247" y1="292" x2="247" y2="934"/>
   <line class="lifeline" x1="555" y1="292" x2="555" y2="934"/>
@@ -71,7 +71,7 @@
   <circle class="badge dbBadge" cx="1260" cy="683" r="13"/><text class="badgeText dbText" x="1260" y="688" text-anchor="middle">6</text>
   <text class="msg dbText" x="1284" y="688">store DOUBLE</text>
 
-  <path class="call" data-edge="jdbc-select-db" d="M 1188 792 L 1460 792" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+  <path class="call" data-edge="jdbc-&gt;db" d="M 1188 792 L 1460 792" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
   <rect class="labelPill readLabel" x="1242" y="734" width="164" height="34" rx="17"/>
   <circle class="badge readBadge" cx="1266" cy="751" r="13"/><text class="badgeText readText" x="1266" y="756" text-anchor="middle">7</text>
   <text class="msg readText" x="1290" y="756">selectAll()</text>

@@ -30,12 +30,12 @@
   <rect class="layer" x="82" y="570" width="1516" height="150" rx="18"/><text class="layer-title" x="112" y="600" dominant-baseline="middle">3. JDBC storage</text>
   <rect class="layer" x="82" y="760" width="1516" height="120" rx="18"/><text class="layer-title" x="112" y="790" dominant-baseline="middle">4. Readback</text>
 
-  <path data-edge="dsl-measure-to-type" class="connector" d="M 500 247 L 640 247 L 640 402" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
-  <path data-edge="dsl-temp-to-dedicated" class="connector" d="M 1030 247 L 1160 247" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
-  <path data-edge="dedicated-to-type" class="connector" d="M 1290 284 L 1290 360 L 1040 360 L 1040 402" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
-  <path data-edge="type-to-db" class="connector" d="M 840 486 L 840 624" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
+  <path data-edge="measure-dsl-to-boundary" class="connector" d="M 500 247 L 640 247 L 640 402" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
+  <path data-edge="temp-dsl-to-column" class="connector" d="M 1030 247 L 1160 247" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+  <path data-edge="column-to-boundary" class="connector" d="M 1290 284 L 1290 360 L 1040 360 L 1040 402" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+  <path data-edge="boundary-to-db" class="connector" d="M 840 486 L 840 624" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
   <path data-edge="db-to-read" class="connector" d="M 840 676 L 840 802" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
-  <path data-edge="read-to-type" class="connector" d="M 1070 820 L 1480 820 L 1480 430 L 1160 430" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+  <path data-edge="read-to-boundary" class="connector" d="M 1070 820 L 1480 820 L 1480 430 L 1140 430" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
 
   <g id="node-measure-dsl" data-node="measure-dsl" transform="translate(200,210)">
     <rect class="card" x="0" y="0" width="300" height="74" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
