@@ -6,27 +6,27 @@ Exposed R2DBC + suspend Repository + Spring WebFlux Integration Demo (Spring Boo
 
 ## Overview
 
-This module demonstrates the pattern of wrapping **Exposed R2DBC
-** in a Spring Data Repository and exposing it as an async, non-blocking Spring WebFlux REST API. using the
-**Spring Boot BOM**.
+This module demonstrates a Spring WebFlux product API built on **Exposed R2DBC** and Kotlin coroutine `suspend`
+functions. The repository maps `ProductRecord` values to the `Products` table, while Spring Boot supplies the
+WebFlux runtime, R2DBC pool configuration, and platform dependency management through the **Spring Boot BOM**.
 
-## UML
+## Demo Structure
 
 ![Spring Boot R2DBC demo structure diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-01.png)
 
-### Application Structure Flow
+## WebFlux Suspend Request Flow
 
-![Application Structure Flow diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-02.png)
+![WebFlux suspend request flow diagram](../../docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-02.png)
 
-### Key Characteristics
+## Key Characteristics
 
-- **Exposed R2DBC-based**: `ProductDto` and `Products` table definitions
+- **Exposed R2DBC-based**: `ProductRecord` and `Products` table definitions
 - **Suspend functions**: All Repository and Controller methods are Kotlin coroutine `suspend` functions
-- **ExposedR2dbcRepository**: DTO-centric mapping implementation
+- **ExposedR2dbcRepository**: record-centric row mapping implementation
 - **Spring WebFlux**: Async non-blocking REST API
 - **Coroutines**: R2DBC database access via `suspendTransaction`
 - **Automatic schema creation**: Async initialization after the application is ready
-- **Spring Boot compatible**: Spring Boot.0+ platform dependency management
+- **Spring Boot compatible**: Spring Boot 4+ platform dependency management
 
 ## Project Structure
 
@@ -34,7 +34,7 @@ This module demonstrates the pattern of wrapping **Exposed R2DBC
 src/main/kotlin/io/bluetape4k/examples/exposed/webflux/
 ├── WebfluxDemoApplication.kt       # Spring Boot application
 ├── domain/
-│   └── ProductEntity.kt            # DTO + Products table
+│   └── ProductEntity.kt            # ProductRecord + Products table
 ├── repository/
 │   └── ProductR2dbcRepository.kt    # suspend CRUD Repository
 ├── controller/
@@ -56,13 +56,13 @@ object Products : LongIdTable("webflux_products") {
 }
 ```
 
-### ProductDto (DTO)
+### ProductRecord (HTTP Record)
 
 ```kotlin
-data class ProductDto(
+data class ProductRecord(
     val id: Long? = null,
     val name: String,
-    val price: java.math.BigDecimal,
+    val price: java.math.BigDecimal = java.math.BigDecimal.ZERO,
     val stock: Int = 0,
 ) : java.io.Serializable
 ```
@@ -74,20 +74,20 @@ The repository extracts the ID through `extractId(entity)`.
 ### ExposedR2dbcRepository Implementation
 
 ```kotlin
-interface ProductR2dbcRepository: ExposedR2dbcRepository<ProductDto, Long> {
+interface ProductR2dbcRepository: ExposedR2dbcRepository<ProductRecord, Long> {
     override val table: IdTable<Long> get() = Products
 
-    override fun extractId(entity: ProductDto): Long? = entity.id
+    override fun extractId(entity: ProductRecord): Long? = entity.id
 
-    override fun toDomain(row: ResultRow): ProductDto =
-        ProductDto(
+    override fun toDomain(row: ResultRow): ProductRecord =
+        ProductRecord(
             id = row[Products.id].value,
             name = row[Products.name],
             price = row[Products.price],
             stock = row[Products.stock],
         )
 
-    override fun toPersistValues(domain: ProductDto): Map<Column<*>, Any?> =
+    override fun toPersistValues(domain: ProductRecord): Map<Column<*>, Any?> =
         mapOf(
             Products.name to domain.name,
             Products.price to domain.price,
@@ -99,9 +99,9 @@ interface ProductR2dbcRepository: ExposedR2dbcRepository<ProductDto, Long> {
 All Repository methods are `suspend` functions:
 
 ```kotlin
-suspend fun findAll(): List<ProductDto>
-suspend fun findByIdOrNull(id: Long): ProductDto?
-suspend fun save(entity: ProductDto): ProductDto
+suspend fun findAll(): List<ProductRecord>
+suspend fun findByIdOrNull(id: Long): ProductRecord?
+suspend fun save(entity: ProductRecord): ProductRecord
 suspend fun deleteById(id: Long)
 ```
 
@@ -193,24 +193,24 @@ curl -X DELETE http://localhost:8080/products/1
 
 - Java 21+
 - Gradle 8.x+
-- Spring Boot.0+
+- Spring Boot 4+
 
 ### Build
 
 ```bash
-./gradlew :spring-boot:exposed-r2dbc-demo:build
+./gradlew :exposed-spring-boot-r2dbc-demo:build
 ```
 
 ### Run the Application
 
 ```bash
-./gradlew :spring-boot:exposed-r2dbc-demo:bootRun
+./gradlew :exposed-spring-boot-r2dbc-demo:bootRun
 ```
 
 Or run as a JAR:
 
 ```bash
-./gradlew :spring-boot:exposed-r2dbc-demo:assemble
+./gradlew :exposed-spring-boot-r2dbc-demo:assemble
 java -jar spring-boot/exposed-r2dbc-demo/build/libs/exposed-r2dbc-spring-data-webflux-demo-*.jar
 ```
 
@@ -272,7 +272,7 @@ runtimeOnly("org.postgresql:postgresql")
 ### Run Unit Tests
 
 ```bash
-./gradlew :spring-boot:exposed-r2dbc-demo:test
+./gradlew :exposed-spring-boot-r2dbc-demo:test
 ```
 
 ### Coroutine Tests
@@ -280,7 +280,7 @@ runtimeOnly("org.postgresql:postgresql")
 All tests run within `runTest { ... }` blocks to support coroutines.
 
 ```bash
-./gradlew :spring-boot:exposed-r2dbc-demo:test --tests "ProductControllerTest"
+./gradlew :exposed-spring-boot-r2dbc-demo:test --tests "ProductControllerTest"
 ```
 
 ## Core Patterns
@@ -291,7 +291,7 @@ All Repository and Controller methods are `suspend` functions.
 
 ```kotlin
 @GetMapping("/{id}")
-suspend fun findById(@PathVariable id: Long): ProductDto =
+suspend fun findById(@PathVariable id: Long): ProductRecord =
     productRepository.findByIdOrNull(id)
         ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: $id")
 ```
@@ -304,7 +304,7 @@ R2DBC database access is wrapped with `suspendTransaction`.
 
 ```kotlin
 @PutMapping("/{id}")
-suspend fun update(@PathVariable id: Long, @RequestBody dto: ProductDto): ProductDto =
+suspend fun update(@PathVariable id: Long, @RequestBody dto: ProductRecord): ProductRecord =
     suspendTransaction {
         val existing = productRepository.findByIdOrNull(id)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: $id")
@@ -330,20 +330,20 @@ class DataInitializer(private val r2dbcDatabase: R2dbcDatabase) {
 }
 ```
 
-## DTO Mapping
+## Record Mapping
 
-Repository methods are DTO-centric, so you must implement Row -> DTO conversion.
+Repository methods are record-centric, so you must implement Row -> `ProductRecord` conversion.
 
 ```kotlin
-override fun toDomain(row: ResultRow): ProductDto =
-    ProductDto(
+override fun toDomain(row: ResultRow): ProductRecord =
+    ProductRecord(
         id = row[Products.id].value,
         name = row[Products.name],
         price = row[Products.price],
         stock = row[Products.stock],
     )
 
-override fun toPersistValues(domain: ProductDto): Map<Column<*>, Any?> =
+override fun toPersistValues(domain: ProductRecord): Map<Column<*>, Any?> =
     mapOf(
         Products.name to domain.name,
         Products.price to domain.price,
@@ -351,7 +351,7 @@ override fun toPersistValues(domain: ProductDto): Map<Column<*>, Any?> =
     )
 ```
 
-## Migrating from Spring Boot to Spring Boot
+## Spring Boot 4 Notes
 
 ### BOM Change
 
@@ -368,14 +368,15 @@ dependencies {
 }
 ```
 
-### Dependency Differences
+### Platform Management
 
-Spring Boot provides the following versions by default:
+The Spring Boot BOM keeps the WebFlux, R2DBC, test, and Spring Framework versions aligned:
 
-- Spring Framework 6.2+
-- Spring WebFlux 6.2+
-- Spring Boot.0+
+- Spring Boot 4+
 - Java 21+
+- Spring WebFlux
+- Spring R2DBC
+- Spring Boot Test
 
 ## Important Notes
 

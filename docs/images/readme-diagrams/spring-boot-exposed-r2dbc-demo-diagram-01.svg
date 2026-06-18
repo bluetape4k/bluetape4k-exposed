@@ -1,90 +1,104 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1754" height="1285" viewBox="0 0 1754 1285" role="img" aria-label="UML">
+<svg xmlns="http://www.w3.org/2000/svg" width="1540" height="900" viewBox="0 0 1540 900" role="img" aria-labelledby="title desc">
+<title id="title">Spring Boot R2DBC demo structure</title>
+<desc id="desc">Spring WebFlux product API structure with suspend controller methods, Exposed R2DBC repository mapping, startup initialization, connection pool, and H2 R2DBC database.</desc>
 <defs>
   <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="10" markerHeight="8" refX="8.5" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 8.5 4 L 1 7" fill="none" stroke="#758297" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="11" markerHeight="10" refX="9.5" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 0.5 1 L 9.5 5 L 0.5 9 Z" fill="#ffffff" stroke="#758297" stroke-width="1.7"/></marker>
+  <marker id="arrow" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 12 6 L 1 11" fill="none" stroke="#5d6f83" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></marker>
   <style>
     .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
-    .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
-    .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
-    .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
-    .smallLabel{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:21px;font-weight:400;fill:#102033}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
-    .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .strong{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .line{stroke:#758297;stroke-width:2.1;fill:none;marker-end:url(#openArrow)}
-    .plainLine{stroke:#758297;stroke-width:2.1;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
-    .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-    .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
+    .layer{fill:#fbfdff;stroke:#d8e0ea;stroke-width:1.4}
+    .layerTitle{font-family:"Architects Daughter","Comic Mono",monospace;font-size:25px;fill:#243447}
+    .title{font-family:"Architects Daughter","Comic Mono",monospace;font-size:44px;fill:#102033}
+    .subtitle{font-family:"Comic Mono",monospace;font-size:17px;fill:#536273}
+    .card{stroke-width:2.2;filter:url(#shadow)}
+    .label{font-family:"Architects Daughter","Comic Mono",monospace;font-size:25px;fill:#102033}
+    .small{font-family:"Comic Mono",monospace;font-size:15px;fill:#536273}
+    .mono{font-family:"Comic Mono",monospace;font-size:15px;fill:#102033}
+    .line{stroke:#5d6f83;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
+    .init{stroke:#45a7a1;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
   </style>
 </defs>
-<rect class="canvas" width="1754" height="1285"/>
-<rect class="frame" x="32" y="28" width="1690" height="1229" rx="28"/>
-<text class="title" x="66" y="82">UML</text>
-<text class="subtitle" x="70" y="118">UML classes from the original Mermaid source</text>
-<path class="line" d="M1082 313 L1082 810 L877 810 L877 869"/>
-<path class="line" d="M672 376 L672 489 L877 489 L877 544"/>
-<path class="line" d="M877 869 L877 794 L672 794 L672 376"/>
-<path class="inheritLine" d="M877 869 L877 786 L262 786 L262 376"/>
-<path class="line" d="M1492 418 L1492 778 L877 778 L877 869"/>
-<g transform="translate(92,180)">
-  <rect class="card" x="0" y="0" width="340" height="196" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#5B8DEF"/>
-  <text class="small" x="170" y="26" text-anchor="middle">«interface»</text>
-  <text class="label" x="170" y="61" text-anchor="middle">ExposedR2dbcRepository</text>
-  <text class="mono" x="18" y="108">+save(entity): T</text>
-<text class="mono" x="18" y="129">+findById(id): T?</text>
-<text class="mono" x="18" y="150">+findAll(): Flow~T~</text>
-<text class="mono" x="18" y="171">+deleteById(id): Boolean</text>
+<rect class="canvas" width="1540" height="900"/>
+<rect class="frame" x="32" y="28" width="1476" height="844" rx="26"/>
+<text class="title" x="68" y="86">Spring Boot R2DBC Demo Structure</text>
+<text class="subtitle" x="72" y="120">A WebFlux product API that keeps HTTP records, suspend repository mapping, and R2DBC pool setup explicit.</text>
+
+<rect class="layer" x="64" y="154" width="1412" height="162" rx="18"/>
+<text class="layerTitle" x="90" y="188">HTTP and coroutine boundary</text>
+<rect class="layer" x="64" y="358" width="1412" height="202" rx="18"/>
+<text class="layerTitle" x="90" y="400">Exposed R2DBC repository model</text>
+<rect class="layer" x="64" y="602" width="1412" height="188" rx="18"/>
+<text class="layerTitle" x="90" y="644">Boot startup and database</text>
+
+<path class="line" d="M330 250 H424"/>
+<path class="line" d="M764 250 H838"/>
+<path class="line" d="M594 298 V416"/>
+<path class="line" d="M764 472 H838"/>
+<path class="line" d="M1158 472 H1244"/>
+<path class="line" d="M1386 528 V650"/>
+<path class="line" d="M364 710 H424"/>
+<path class="line" d="M754 712 H810 V640 H1386 V650"/>
+<path class="init" d="M998 660 V548 H1292 V528"/>
+
+<g transform="translate(94,208)">
+  <rect class="card" x="0" y="0" width="236" height="84" rx="8" fill="#e8f3ff" stroke="#5b8def"/>
+  <text class="label" x="118" y="35" text-anchor="middle">HTTP Client</text>
+  <text class="small" x="118" y="62" text-anchor="middle">/products endpoints</text>
 </g>
-<g transform="translate(502,180)">
-  <rect class="card" x="0" y="0" width="340" height="196" rx="5" fill="#EAF7EF" stroke="#58A978"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#58A978"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="61" text-anchor="middle">ProductDto</text>
-  <text class="mono" x="18" y="108">+id: Long</text>
-<text class="mono" x="18" y="129">+name: String</text>
-<text class="mono" x="18" y="150">+description: String</text>
-<text class="mono" x="18" y="171">+price: BigDecimal</text>
+<g transform="translate(424,202)">
+  <rect class="card" x="0" y="0" width="340" height="96" rx="8" fill="#eaf7ef" stroke="#58a978"/>
+  <text class="label" x="170" y="35" text-anchor="middle">ProductController</text>
+  <text class="small" x="170" y="62" text-anchor="middle">suspend CRUD methods</text>
+  <text class="mono" x="170" y="84" text-anchor="middle">201, 204, 404 handling</text>
 </g>
-<g transform="translate(912,180)">
-  <rect class="card" x="0" y="0" width="340" height="133" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#D6A441"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="61" text-anchor="middle">DataInitializer</text>
-  <text class="mono" x="18" y="108">+initialize()</text>
+<g transform="translate(838,202)">
+  <rect class="card" x="0" y="0" width="310" height="96" rx="8" fill="#f1ecff" stroke="#8a72d6"/>
+  <text class="label" x="155" y="35" text-anchor="middle">ProductRecord</text>
+  <text class="small" x="155" y="62" text-anchor="middle">HTTP request/response body</text>
+  <text class="mono" x="155" y="84" text-anchor="middle">id name price stock</text>
 </g>
-<g transform="translate(1322,180)">
-  <rect class="card" x="0" y="0" width="340" height="238" rx="5" fill="#FDECEF" stroke="#DC6B82"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#DC6B82"/>
-  <text class="small" x="170" y="26" text-anchor="middle"></text>
-  <text class="label" x="170" y="61" text-anchor="middle">ProductController</text>
-  <text class="mono" x="18" y="108">-productRepository: ProductR2dbcRepository</text>
-<text class="mono" x="18" y="129">+findAll(): List~ProductDto~</text>
-<text class="mono" x="18" y="150">+findById(id): ProductDto</text>
-<text class="mono" x="18" y="171">+create(dto): ResponseEntity~ProductDto~</text>
-<text class="mono" x="18" y="192">+update(id, dto): ProductDto</text>
-<text class="mono" x="18" y="213">+delete(id): ResponseEntity~Void~</text>
+
+<g transform="translate(424,416)">
+  <rect class="card" x="0" y="0" width="340" height="112" rx="8" fill="#fff3d9" stroke="#d6a441"/>
+  <text class="label" x="170" y="35" text-anchor="middle">ProductR2dbcRepository</text>
+  <text class="small" x="170" y="64" text-anchor="middle">findAllAsList, save, deleteById</text>
+  <text class="mono" x="170" y="92" text-anchor="middle">ProductRecord &lt;-&gt; ResultRow</text>
 </g>
-<g transform="translate(707,544)">
-  <rect class="card" x="0" y="0" width="340" height="175" rx="5" fill="#E9F7F6" stroke="#45A7A1"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#45A7A1"/>
-  <text class="small" x="170" y="26" text-anchor="middle">«object»</text>
-  <text class="label" x="170" y="61" text-anchor="middle">Products</text>
-  <text class="mono" x="18" y="108">+name: Column~String~</text>
-<text class="mono" x="18" y="129">+description: Column~String~</text>
-<text class="mono" x="18" y="150">+price: Column~BigDecimal~</text>
+<g transform="translate(838,416)">
+  <rect class="card" x="0" y="0" width="320" height="112" rx="8" fill="#fdecef" stroke="#dc6b82"/>
+  <text class="label" x="160" y="35" text-anchor="middle">ExposedR2dbcRepository</text>
+  <text class="small" x="160" y="64" text-anchor="middle">suspend repository runtime</text>
+  <text class="mono" x="160" y="92" text-anchor="middle">suspendTransaction</text>
 </g>
-<g transform="translate(707,869)">
-  <rect class="card" x="0" y="0" width="340" height="196" rx="5" fill="#F1ECFF" stroke="#8A72D6"/>
-  <line class="compartment" x1="0" y1="78" x2="340" y2="78" stroke="#8A72D6"/>
-  <text class="small" x="170" y="26" text-anchor="middle">«interface»</text>
-  <text class="label" x="170" y="61" text-anchor="middle">ProductR2dbcRepository</text>
-  <text class="mono" x="18" y="108">+table: IdTable~Long~</text>
-<text class="mono" x="18" y="129">+extractId(entity): Long?</text>
-<text class="mono" x="18" y="150">+toDomain(row): ProductDto</text>
-<text class="mono" x="18" y="171">+toPersistValues(domain): Map</text>
+<g transform="translate(1244,416)">
+  <rect class="card" x="0" y="0" width="190" height="112" rx="8" fill="#fff7e8" stroke="#d99a36"/>
+  <text class="label" x="95" y="35" text-anchor="middle">Products</text>
+  <text class="small" x="95" y="64" text-anchor="middle">LongIdTable</text>
+  <text class="mono" x="95" y="92" text-anchor="middle">webflux_products</text>
+</g>
+
+<g transform="translate(94,666)">
+  <rect class="card" x="0" y="0" width="270" height="88" rx="8" fill="#e9f7f6" stroke="#45a7a1"/>
+  <text class="label" x="135" y="35" text-anchor="middle">ExposedR2dbcConfig</text>
+  <text class="small" x="135" y="62" text-anchor="middle">options + dispatcher</text>
+</g>
+<g transform="translate(424,660)">
+  <rect class="card" x="0" y="0" width="330" height="104" rx="8" fill="#f7eef8" stroke="#b879bd"/>
+  <text class="label" x="165" y="35" text-anchor="middle">ConnectionPool</text>
+  <text class="small" x="165" y="64" text-anchor="middle">pool properties</text>
+  <text class="mono" x="165" y="92" text-anchor="middle">R2dbcDatabase.connect(...)</text>
+</g>
+<g transform="translate(838,660)">
+  <rect class="card" x="0" y="0" width="320" height="104" rx="8" fill="#eaf7ef" stroke="#58a978"/>
+  <text class="label" x="160" y="35" text-anchor="middle">DataInitializer</text>
+  <text class="small" x="160" y="64" text-anchor="middle">ApplicationReadyEvent coroutine</text>
+  <text class="mono" x="160" y="92" text-anchor="middle">SchemaUtils + seed rows</text>
+</g>
+<g transform="translate(1244,650)">
+  <rect class="card" x="0" y="0" width="190" height="124" rx="8" fill="#f8fbff" stroke="#6b7f93"/>
+  <image x="16" y="32" width="48" height="48" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K"/>
+  <text class="label" x="124" y="39" text-anchor="middle">H2 R2DBC</text>
+  <text class="small" x="124" y="68" text-anchor="middle">in-memory DB</text>
+  <text class="mono" x="124" y="96" text-anchor="middle">webfluxdb</text>
 </g>
 </svg>
