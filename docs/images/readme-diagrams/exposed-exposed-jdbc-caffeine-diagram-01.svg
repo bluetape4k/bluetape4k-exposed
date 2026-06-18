@@ -3,8 +3,8 @@
   <desc id="desc">JDBC Caffeine architecture rebuilt from exposed-jdbc-caffeine README, AbstractJdbcCaffeineRepository, AbstractSuspendedJdbcCaffeineRepository, JdbcCacheRepository, and LocalCacheConfig source.</desc>
   <defs>
     <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
-    <marker id="arrow" viewBox="0 0 5 5" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5 Z" fill="context-stroke"/></marker>
-    <marker id="generalizationArrow" viewBox="0 0 5 5" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5 Z" fill="#FFFFFF" stroke="context-stroke" stroke-width="0.8"/></marker>
+    <marker id="arrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="context-stroke"/></marker>
+    <marker id="generalizationArrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 9 5 L 1 9 Z" fill="#FFFFFF" stroke="context-stroke" stroke-width="1.2" stroke-dasharray="none"/></marker>
     <style>
       .canvas{fill:#F6F9FC}.decor{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
       .innerFrame{fill:#FBFDFF;stroke:#D9E4EF;stroke-width:2}
