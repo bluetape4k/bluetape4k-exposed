@@ -19,7 +19,7 @@ import kotlin.io.path.writeText
 internal object BenchmarkMarkdownExporter {
 
     fun writeAll(projectDir: Path, reportDir: Path? = null) {
-        val docsDir = projectDir.resolve("docs/benchmark").createDirectories()
+        val docsDir = projectDir.resolve("benchmark").createDirectories()
         val reportRoot = reportDir ?: projectDir.resolve("build/reports/benchmarks")
         writeHubReadme(docsDir, reportDir)
         writeHubReadmeKo(docsDir, reportDir)
@@ -28,8 +28,8 @@ internal object BenchmarkMarkdownExporter {
             title = "# H2 Benchmark Details",
             databaseName = "H2",
             profileRows = listOf(
-                "| JDBC | `./gradlew :exposed-batch:h2JdbcBenchmark` | `H2JdbcBatchBenchmark` |",
-                "| R2DBC | `./gradlew :exposed-batch:h2R2dbcBenchmark` | `H2R2dbcBatchBenchmark` |",
+                "| JDBC | `./gradlew :bluetape4k-exposed-batch:h2JdbcBenchmark` | `H2JdbcBatchBenchmark` |",
+                "| R2DBC | `./gradlew :bluetape4k-exposed-batch:h2R2dbcBenchmark` | `H2R2dbcBatchBenchmark` |",
             ),
             notes = listOf(
                 "H2는 인메모리 DB이므로 네트워크 왕복 비용 없이 JDBC/R2DBC 차이를 비교할 수 있습니다.",
@@ -42,8 +42,8 @@ internal object BenchmarkMarkdownExporter {
             title = "# PostgreSQL Benchmark Details",
             databaseName = "PostgreSQL",
             profileRows = listOf(
-                "| JDBC | `./gradlew :exposed-batch:postgresJdbcBenchmark` | `PostgreSqlJdbcBatchBenchmark` |",
-                "| R2DBC | `./gradlew :exposed-batch:postgresR2dbcBenchmark` | `PostgreSqlR2dbcBatchBenchmark` |",
+                "| JDBC | `./gradlew :bluetape4k-exposed-batch:postgresJdbcBenchmark` | `PostgreSqlJdbcBatchBenchmark` |",
+                "| R2DBC | `./gradlew :bluetape4k-exposed-batch:postgresR2dbcBenchmark` | `PostgreSqlR2dbcBatchBenchmark` |",
             ),
             notes = listOf(
                 "PostgreSQL benchmark는 Testcontainers를 자동 기동하도록 설계되어 있습니다.",
@@ -56,8 +56,8 @@ internal object BenchmarkMarkdownExporter {
             title = "# MySQL Benchmark Details",
             databaseName = "MySQL",
             profileRows = listOf(
-                "| JDBC | `./gradlew :exposed-batch:mysqlJdbcBenchmark` | `MySqlJdbcBatchBenchmark` |",
-                "| R2DBC | `./gradlew :exposed-batch:mysqlR2dbcBenchmark` | `MySqlR2dbcBatchBenchmark` |",
+                "| JDBC | `./gradlew :bluetape4k-exposed-batch:mysqlJdbcBenchmark` | `MySqlJdbcBatchBenchmark` |",
+                "| R2DBC | `./gradlew :bluetape4k-exposed-batch:mysqlR2dbcBenchmark` | `MySqlR2dbcBatchBenchmark` |",
             ),
             notes = listOf(
                 "MySQL benchmark도 Testcontainers 자동 기동을 전제로 합니다.",
@@ -105,7 +105,7 @@ internal object BenchmarkMarkdownExporter {
             ## Notes
 
             - Detailed numeric rows are generated per DB document.
-            - `generateBenchmarkDocs` currently writes the benchmark hub and DB detail skeletons.
+            - `generateBenchmarkDocs` writes the benchmark hub and DB detail documents, then fills tables and charts when JSON reports exist.
             - Report directory: `${reportDir?.toString() ?: "not provided"}`.
             - Full PostgreSQL/MySQL runs can be generated later without changing the README link structure.
             """.trimIndent() + "\n"
@@ -150,7 +150,7 @@ internal object BenchmarkMarkdownExporter {
             ## 참고
 
             - 상세 수치 표는 DB별 문서에 둡니다.
-            - `generateBenchmarkDocs` 는 현재 benchmark 허브와 DB별 상세 문서 골격을 생성합니다.
+            - `generateBenchmarkDocs`는 benchmark 허브와 DB별 상세 문서를 만들고, JSON report가 있으면 표와 차트까지 채웁니다.
             - Report directory: `${reportDir?.toString() ?: "not provided"}`
             - PostgreSQL/MySQL full run 결과는 나중에 추가해도 링크 구조는 그대로 유지됩니다.
             """.trimIndent() + "\n"
@@ -368,4 +368,3 @@ internal object BenchmarkMarkdownExporter {
             get() = seedRows.isNotEmpty() || endToEndRows.isNotEmpty()
     }
 }
-

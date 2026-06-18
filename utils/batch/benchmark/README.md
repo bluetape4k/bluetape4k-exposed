@@ -33,6 +33,6 @@ The primary comparison is **JDBC vs R2DBC** for each database, split into:
 ## Notes
 
 - Detailed numeric rows are generated per DB document.
-- `generateBenchmarkDocs` currently writes the benchmark hub and DB detail skeletons.
-- Report directory: `/Users/debop/work/bluetape4k/bluetape4k-projects/.claude/worktrees/utils-batch-kotlinx-benchmark/build/exposed-batch/reports/benchmarks`.
+- `generateBenchmarkDocs` writes the benchmark hub and DB detail documents, then fills tables and charts when JSON reports exist.
+- Report directory: `utils/batch/build/reports/benchmarks`.
 - Full PostgreSQL/MySQL runs can be generated later without changing the README link structure.
