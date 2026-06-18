@@ -28,13 +28,13 @@ This module provides seamless integration between Timefold Solver's scoring syst
 | `BendableScore`                 | Flexible Hard/Soft level score      | VarChar                       |
 | `BendableBigDecimalScore`       | Bendable score as BigDecimal        | VarChar                       |
 
-## Class Diagram
+## Score Column Families
 
-![exposed timefold solver persistence Class Structure diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-01.png)
+![Timefold Score column families diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-01.png)
 
-## Architecture Diagram
+## Score Persistence Round Trip
 
-![Timefold persistence architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-diagram-02.png)
+![Score persistence round trip diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-flow-02.png)
 
 ## Installation
 
@@ -245,15 +245,11 @@ CREATE TABLE planning_solution (
 
 ```bash
 # Run all tests
-./gradlew :exposed-timefold-solver-persistence:test
+./gradlew :bluetape4k-exposed-timefold-solver-persistence:test
 
 # Run a specific test class
-./gradlew :exposed-timefold-solver-persistence:test --tests "HardSoftScoreTest"
+./gradlew :bluetape4k-exposed-timefold-solver-persistence:test --tests "HardSoftScoreTest"
 ```
-
-## Score Serialization Flow
-
-![Score Serialization Flow diagram](../../docs/images/readme-diagrams/exposed-exposed-timefold-solver-persistence-sequence-01.png)
 
 ## References
 

@@ -1,127 +1,111 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2222" height="1454" viewBox="0 0 2222 1454" role="img" aria-label="exposed timefold solver persistence Class Structure">
-<defs>
-  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="10" markerHeight="8" refX="8.5" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 8.5 4 L 1 7" fill="none" stroke="#758297" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="11" markerHeight="10" refX="9.5" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 0.5 1 L 9.5 5 L 0.5 9 Z" fill="#ffffff" stroke="#758297" stroke-width="1.7"/></marker>
-  <style>
-    .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
-    .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
-    .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
-    .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
-    .smallLabel{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:21px;font-weight:400;fill:#102033}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
-    .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .strong{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .line{stroke:#758297;stroke-width:2.1;fill:none;marker-end:url(#openArrow)}
-    .plainLine{stroke:#758297;stroke-width:2.1;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
-    .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-    .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
-  </style>
-</defs>
-<rect class="canvas" width="2222" height="1454"/>
-<rect class="frame" x="32" y="28" width="2158" height="1398" rx="28"/>
-<text class="title" x="66" y="82">exposed timefold solver persistence Class Structure</text>
-<text class="subtitle" x="70" y="118">UML classes from the original Mermaid source</text>
-<path class="line" d="M689 791 L689 885 L1111 885 L1111 642"/>
-<path class="line" d="M267 791 L267 546 L1533 546 L1533 642"/>
-<path class="line" d="M900 985 L900 909 L1955 909 L1955 796"/>
-<path class="line" d="M1533 180 L1533 122 L689 122 L689 355"/>
-<path class="inheritLine" d="M689 642 L689 355"/>
-<path class="inheritLine" d="M267 642 L267 514 L689 514 L689 355"/>
-<path class="inheritLine" d="M900 985 L900 546 L689 546 L689 355"/>
-<path class="inheritLine" d="M1111 642 L1111 376"/>
-<path class="inheritLine" d="M1322 985 L1322 530 L1111 530 L1111 376"/>
-<path class="inheritLine" d="M1533 642 L1533 522 L1111 522 L1111 376"/>
-<path class="inheritLine" d="M1955 642 L1955 514 L1111 514 L1111 376"/>
-<g transform="translate(534,180)">
-  <rect class="card" x="0" y="0" width="310" height="175" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#5B8DEF"/>
-  <text class="small" x="155" y="26" text-anchor="middle">«abstract»</text>
-  <text class="label" x="155" y="61" text-anchor="middle">ScoreColumnType</text>
-  <text class="mono" x="18" y="108">+valueFromDB(value) Score</text>
-<text class="mono" x="18" y="129">+valueToDB(value) Any</text>
-<text class="mono" x="18" y="150">+sqlType() String</text>
-</g>
-<g transform="translate(956,180)">
-  <rect class="card" x="0" y="0" width="310" height="196" rx="5" fill="#EAF7EF" stroke="#58A978"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#58A978"/>
-  <text class="small" x="155" y="26" text-anchor="middle">«interface»</text>
-  <text class="label" x="155" y="61" text-anchor="middle">Score</text>
-  <text class="mono" x="18" y="108">+isFeasible() Boolean</text>
-<text class="mono" x="18" y="129">+isZero() Boolean</text>
-<text class="mono" x="18" y="150">+negate() Score</text>
-<text class="mono" x="18" y="171">+add(other) Score</text>
-</g>
-<g transform="translate(1378,180)">
-  <rect class="card" x="0" y="0" width="310" height="238" rx="5" fill="#FFF3D9" stroke="#D6A441"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#D6A441"/>
-  <text class="small" x="155" y="26" text-anchor="middle"></text>
-  <text class="label" x="155" y="61" text-anchor="middle">ExposedTableExt</text>
-  <text class="mono" x="18" y="108">+Table.simpleScore(name)</text>
-<text class="mono" x="18" y="129">Column~SimpleScore~</text>
-<text class="mono" x="18" y="150">+Table.hardSoftScore(name)</text>
-<text class="mono" x="18" y="171">Column~HardSoftScore~</text>
-<text class="mono" x="18" y="192">+Table.bendableScore(name)</text>
-<text class="mono" x="18" y="213">Column~BendableScore~</text>
-</g>
-<g transform="translate(112,642)">
-  <rect class="card" x="0" y="0" width="310" height="149" rx="5" fill="#FDECEF" stroke="#DC6B82"/>
-  <line class="compartment" x1="0" y1="94" x2="310" y2="94" stroke="#DC6B82"/>
-  <text class="small" x="155" y="26" text-anchor="middle"></text>
-  <text class="label" x="155" y="56.5" text-anchor="middle">Hard Soft Score Column</text>
-<text class="label" x="155" y="81.5" text-anchor="middle">Type</text>
-  <text class="mono" x="18" y="124">+sqlType() String = VARCHAR(255)</text>
-</g>
-<g transform="translate(534,642)">
-  <rect class="card" x="0" y="0" width="310" height="149" rx="5" fill="#E9F7F6" stroke="#45A7A1"/>
-  <line class="compartment" x1="0" y1="94" x2="310" y2="94" stroke="#45A7A1"/>
-  <text class="small" x="155" y="26" text-anchor="middle"></text>
-  <text class="label" x="155" y="56.5" text-anchor="middle">Bendable Score Column</text>
-<text class="label" x="155" y="81.5" text-anchor="middle">Type</text>
-  <text class="mono" x="18" y="124">+sqlType() String = VARCHAR(500)</text>
-</g>
-<g transform="translate(956,642)">
-  <rect class="card" x="0" y="0" width="310" height="175" rx="5" fill="#F1ECFF" stroke="#8A72D6"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#8A72D6"/>
-  <text class="small" x="155" y="26" text-anchor="middle"></text>
-  <text class="label" x="155" y="61" text-anchor="middle">BendableScore</text>
-  <text class="mono" x="18" y="108">+hardScores: IntArray</text>
-<text class="mono" x="18" y="129">+softScores: IntArray</text>
-<text class="mono" x="18" y="150">+of(hard, soft) BendableScore</text>
-</g>
-<g transform="translate(1378,642)">
-  <rect class="card" x="0" y="0" width="310" height="175" rx="5" fill="#F7F1E7" stroke="#B88A44"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#B88A44"/>
-  <text class="small" x="155" y="26" text-anchor="middle"></text>
-  <text class="label" x="155" y="61" text-anchor="middle">HardSoftScore</text>
-  <text class="mono" x="18" y="108">+hardScore: Int</text>
-<text class="mono" x="18" y="129">+softScore: Int</text>
-<text class="mono" x="18" y="150">+of(hard, soft) HardSoftScore</text>
-</g>
-<g transform="translate(1800,642)">
-  <rect class="card" x="0" y="0" width="310" height="154" rx="5" fill="#EEF6D9" stroke="#8BA84D"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#8BA84D"/>
-  <text class="small" x="155" y="26" text-anchor="middle"></text>
-  <text class="label" x="155" y="61" text-anchor="middle">SimpleScore</text>
-  <text class="mono" x="18" y="108">+score: Int</text>
-<text class="mono" x="18" y="129">+of(score) SimpleScore</text>
-</g>
-<g transform="translate(745,985)">
-  <rect class="card" x="0" y="0" width="310" height="133" rx="5" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#5B8DEF"/>
-  <text class="small" x="155" y="26" text-anchor="middle"></text>
-  <text class="label" x="155" y="61" text-anchor="middle">SimpleScoreColumnType</text>
-  <text class="mono" x="18" y="108">+sqlType() String = INTEGER</text>
-</g>
-<g transform="translate(1167,985)">
-  <rect class="card" x="0" y="0" width="310" height="175" rx="5" fill="#EAF7EF" stroke="#58A978"/>
-  <line class="compartment" x1="0" y1="78" x2="310" y2="78" stroke="#58A978"/>
-  <text class="small" x="155" y="26" text-anchor="middle"></text>
-  <text class="label" x="155" y="61" text-anchor="middle">HardMediumSoftScore</text>
-  <text class="mono" x="18" y="108">+hardScore: Int</text>
-<text class="mono" x="18" y="129">+mediumScore: Int</text>
-<text class="mono" x="18" y="150">+softScore: Int</text>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1120" viewBox="0 0 1700 1120" role="img" aria-labelledby="title desc">
+  <title id="title">Timefold Score Column Families</title>
+  <desc id="desc">Architecture diagram for exposed-timefold-solver-persistence showing Timefold score families, Exposed extension columns, transformer storage forms, and relational database portability.</desc>
+  <defs>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#3f7d9c" stroke-dasharray="none"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#6e8f4f" stroke-dasharray="none"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#b9851b" stroke-dasharray="none"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755bc6" stroke-dasharray="none"/></marker>
+    <style>
+      .canvas{fill:#f6f0e8}.frame{fill:#fffaf2;stroke:#28485a;stroke-width:4}.title{font-family:"Architects Daughter","Comic Mono",monospace;font-size:48px;fill:#21343f}.subtitle,.cardText,.small,.label,.step{font-family:"Comic Mono",monospace;fill:#51636f}.subtitle{font-size:18px}.laneTitle{font-family:"Architects Daughter","Comic Mono",monospace;font-size:27px;fill:#21343f}.cardTitle{font-family:"Comic Mono",monospace;font-size:17px;font-weight:700;fill:#20323d}.cardText{font-size:13px}.small{font-size:13px}.label{font-size:12px;fill:#315664}.step{font-size:12px;font-weight:700}.lane{stroke-width:2.5}.card{fill:#fffdf8;stroke-width:2.2}.blue{stroke:#8db7c2}.green{stroke:#a9c58b}.gold{stroke:#d3a663}.purple{stroke:#b2a1dc}.line{fill:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}.lineBlue{stroke:#3f7d9c;marker-end:url(#arrow-blue)}.lineGreen{stroke:#6e8f4f;marker-end:url(#arrow-green)}.lineGold{stroke:#b9851b;marker-end:url(#arrow-gold)}.linePurple{stroke:#755bc6;marker-end:url(#arrow-purple)}.code{fill:#9b3d5a;font-weight:700}.type{fill:#176f7a;font-weight:700}.warn{fill:#8a5b00;font-weight:700}
+    </style>
+  </defs>
+
+  <rect class="canvas" width="1700" height="1120"/>
+  <rect class="frame" x="38" y="32" width="1624" height="1056" rx="24"/>
+  <text class="title" x="86" y="96">Timefold Score Column Families</text>
+  <text class="subtitle" x="90" y="132">Eight Timefold Score types become typed Exposed columns backed by either BIGINT or VARCHAR storage.</text>
+
+  <rect class="lane" x="92" y="176" width="390" height="750" rx="18" fill="#e7f1f4" stroke="#9dbbc4"/>
+  <text class="laneTitle" x="124" y="226">Timefold Score API</text>
+  <g transform="translate(128 286)">
+    <rect class="card blue" width="318" height="100" rx="12"/>
+    <text class="cardTitle code" x="159" y="31" text-anchor="middle">Simple family</text>
+    <text class="cardText" x="159" y="58" text-anchor="middle">SimpleScore</text>
+    <text class="cardText" x="159" y="78" text-anchor="middle">SimpleBigDecimalScore</text>
+  </g>
+  <g transform="translate(128 446)">
+    <rect class="card blue" width="318" height="118" rx="12"/>
+    <text class="cardTitle code" x="159" y="31" text-anchor="middle">Hard / Soft families</text>
+    <text class="cardText" x="159" y="58" text-anchor="middle">HardSoftScore</text>
+    <text class="cardText" x="159" y="78" text-anchor="middle">HardMediumSoftScore</text>
+    <text class="cardText" x="159" y="98" text-anchor="middle">BigDecimal variants</text>
+  </g>
+  <g transform="translate(128 636)">
+    <rect class="card blue" width="318" height="110" rx="12"/>
+    <text class="cardTitle code" x="159" y="31" text-anchor="middle">Bendable family</text>
+    <text class="cardText" x="159" y="58" text-anchor="middle">BendableScore</text>
+    <text class="cardText" x="159" y="78" text-anchor="middle">BendableBigDecimalScore</text>
+    <text class="cardText" x="159" y="98" text-anchor="middle">variable hard / soft levels</text>
+  </g>
+
+  <rect class="lane" x="548" y="176" width="390" height="750" rx="18" fill="#eef4e6" stroke="#a9c58b"/>
+  <text class="laneTitle" x="580" y="226">Exposed extension columns</text>
+  <g transform="translate(586 286)">
+    <rect class="card green" width="314" height="100" rx="12"/>
+    <text class="cardTitle type" x="157" y="31" text-anchor="middle">simpleScore()</text>
+    <text class="cardText" x="157" y="58" text-anchor="middle">ColumnWithTransform</text>
+    <text class="cardText" x="157" y="78" text-anchor="middle">LongColumnType</text>
+  </g>
+  <g transform="translate(586 446)">
+    <rect class="card green" width="314" height="118" rx="12"/>
+    <text class="cardTitle type" x="157" y="31" text-anchor="middle">hardSoftScore()</text>
+    <text class="cardText" x="157" y="58" text-anchor="middle">hardMediumSoftScore()</text>
+    <text class="cardText" x="157" y="78" text-anchor="middle">BigDecimal variants</text>
+    <text class="cardText" x="157" y="98" text-anchor="middle">VarCharColumnType(length)</text>
+  </g>
+  <g transform="translate(586 636)">
+    <rect class="card green" width="314" height="110" rx="12"/>
+    <text class="cardTitle type" x="157" y="31" text-anchor="middle">bendableScore()</text>
+    <text class="cardText" x="157" y="58" text-anchor="middle">bendableBigDecimalScore()</text>
+    <text class="cardText" x="157" y="78" text-anchor="middle">length should fit level arrays</text>
+  </g>
+
+  <rect class="lane" x="1004" y="176" width="300" height="750" rx="18" fill="#fff0d8" stroke="#d3a663"/>
+  <text class="laneTitle" x="1036" y="226">Transformers</text>
+  <g transform="translate(1030 298)">
+    <rect class="card gold" width="248" height="112" rx="12"/>
+    <text class="cardTitle warn" x="124" y="31" text-anchor="middle">Long storage</text>
+    <text class="cardText" x="124" y="58" text-anchor="middle">unwrap: score.score()</text>
+    <text class="cardText" x="124" y="78" text-anchor="middle">wrap: SimpleScore.of()</text>
+    <text class="cardText" x="124" y="98" text-anchor="middle">BIGINT column</text>
+  </g>
+  <g transform="translate(1030 508)">
+    <rect class="card gold" width="248" height="126" rx="12"/>
+    <text class="cardTitle warn" x="124" y="31" text-anchor="middle">String storage</text>
+    <text class="cardText" x="124" y="58" text-anchor="middle">unwrap: score.toString()</text>
+    <text class="cardText" x="124" y="78" text-anchor="middle">wrap: parseScore()</text>
+    <text class="cardText" x="124" y="98" text-anchor="middle">VARCHAR column</text>
+    <text class="cardText" x="124" y="118" text-anchor="middle">length configurable</text>
+  </g>
+
+  <rect class="lane" x="1370" y="176" width="238" height="750" rx="18" fill="#f2edf8" stroke="#b2a1dc"/>
+  <text class="laneTitle" x="1402" y="226">RDB storage</text>
+  <g transform="translate(1390 354)">
+    <rect class="card purple" width="198" height="138" rx="12"/>
+    <image x="79" y="18" width="40" height="40" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K"/>
+    <text class="cardTitle" x="99" y="78" text-anchor="middle">Database column</text>
+    <text class="cardText" x="99" y="104" text-anchor="middle">H2 / MySQL / MariaDB</text>
+    <text class="cardText" x="99" y="124" text-anchor="middle">PostgreSQL test surface</text>
+  </g>
+
+  <path class="line lineBlue" d="M446 336 H586"/>
+  <path class="line lineBlue" d="M446 505 H586"/>
+  <path class="line lineBlue" d="M446 691 H586"/>
+  <path class="line lineGreen" d="M900 336 H1030"/>
+  <path class="line lineGreen" d="M900 505 H970 V571 H1030"/>
+  <path class="line lineGreen" d="M900 691 H970 V598 H1030"/>
+  <path class="line lineGold" d="M1278 354 H1390"/>
+  <path class="line lineGold" d="M1278 571 H1340 V423 H1390"/>
+
+  <text class="label" x="462" y="320">typed column</text>
+  <text class="label" x="462" y="489">typed column</text>
+  <text class="label" x="462" y="675">typed column</text>
+  <text class="label" x="918" y="320">Long</text>
+  <text class="label" x="918" y="489">String</text>
+  <text class="label" x="1302" y="338">BIGINT</text>
+  <text class="label" x="1302" y="552">VARCHAR</text>
+
+  <rect x="122" y="986" width="1456" height="28" rx="10" fill="#eef3f4" stroke="#c2d1d4" stroke-width="1.8"/>
+  <text class="small" x="850" y="1005" text-anchor="middle">Reader contract: the module stores Timefold Score values through Exposed typed columns; SimpleScore is BIGINT, all other score families round-trip through parseable VARCHAR text.</text>
 </svg>
