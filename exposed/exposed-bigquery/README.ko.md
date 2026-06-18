@@ -46,9 +46,9 @@ dependencies {
 }
 ```
 
-## 아키텍처 다이어그램
+## BigQuery REST 실행 경계
 
-![BigQuery architecture diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-diagram-01.png)
+![BigQuery REST execution boundary diagram](../../docs/images/readme-diagrams/exposed-exposed-bigquery-diagram-01.png)
 
 ### Query Job Lifecycle
 
