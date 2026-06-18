@@ -2,18 +2,19 @@
 
 English | [한국어](./README.ko.md)
 
-**Exposed DAO Entity-based Spring Data JDBC Repository (Spring Boot.0.x / Spring 7)**
+**Exposed DAO Entity-based Spring Data JDBC Repository (Spring Boot 4.x / Spring 7)**
 
-A high-performance Repository implementation for managing Exposed DAO entities using Spring Boot and Spring Data. Supports PartTree method-name queries and Exposed DSL via the
-`@Query` annotation.
+A Spring Data repository bridge for Exposed DAO entities. It wires Spring Boot
+auto-configuration, Spring Data repository factories, Exposed transactions, and
+method-name query parsing into one JDBC repository model.
 
-## UML
+## Repository Wiring
 
-![Spring Boot JDBC auto-configuration diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-diagram-01.png)
+![Spring Boot Exposed JDBC repository wiring diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-diagram-01.png)
 
-### Query Processing Flow
+## Query Resolution Flow
 
-![Query Processing Flow diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-diagram-02.png)
+![Spring Boot Exposed JDBC query resolution flow diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-diagram-02.png)
 
 ## Installation
 

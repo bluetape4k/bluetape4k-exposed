@@ -1,60 +1,105 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1378" height="526" viewBox="0 0 1378 526" role="img" aria-label="Query Processing Flow">
+<svg xmlns="http://www.w3.org/2000/svg" width="1640" height="980" viewBox="0 0 1640 980" role="img" aria-labelledby="title desc">
+<title id="title">Spring Boot Exposed JDBC query resolution flow</title>
+<desc id="desc">Repository method calls flow through Spring Data query lookup and execute as declared SQL, PartTree Exposed queries, or default repository operations.</desc>
 <defs>
   <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="openArrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#758297" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="inherit" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M 0 1 L 12 6 L 0 11 Z" fill="#ffffff" stroke="#758297" stroke-width="1.8"/></marker>
+  <marker id="arrow" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto"><path d="M 1 1 L 12 6 L 1 11" fill="none" stroke="#5d6f83" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></marker>
   <style>
     .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
-    .title{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:43px;font-weight:400;fill:#102033}
-    .subtitle{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:15px;font-weight:400;fill:#536273}
-    .label{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:25px;font-weight:400;fill:#102033}
-    .smallLabel{font-family:"Architects Daughter","Comic Sans MS","Comic Sans",cursive;font-size:21px;font-weight:400;fill:#102033}
-    .mono{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#102033}
-    .small{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:12px;font-weight:400;fill:#536273}
-    .strong{font-family:"Comic Sans MS","Comic Sans","Comic Neue",Arial,sans-serif;font-size:13px;font-weight:400;fill:#102033}
-    .card{stroke-width:2.1;filter:url(#shadow)}.compartment{stroke-width:1.5;fill:none}
-    .line{stroke:#758297;stroke-width:2.1;fill:none;marker-end:url(#openArrow)}
-    .plainLine{stroke:#758297;stroke-width:2.1;fill:none}
-    .dashed{stroke:#758297;stroke-width:2.1;stroke-dasharray:7 6;fill:none;marker-end:url(#openArrow)}
-    .inheritLine{stroke:#758297;stroke-width:2.2;fill:none;marker-end:url(#inherit)}
-    .implLine{stroke:#758297;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#inherit)}
+    .band{fill:#fbfdff;stroke:#d8e0ea;stroke-width:1.4}
+    .bandTitle{font-family:"Architects Daughter","Comic Mono",monospace;font-size:24px;fill:#243447}
+    .title{font-family:"Architects Daughter","Comic Mono",monospace;font-size:44px;fill:#102033}
+    .subtitle{font-family:"Comic Mono",monospace;font-size:17px;fill:#536273}
+    .card{stroke-width:2.2;filter:url(#shadow)}
+    .label{font-family:"Architects Daughter","Comic Mono",monospace;font-size:25px;fill:#102033}
+    .small{font-family:"Comic Mono",monospace;font-size:15px;fill:#536273}
+    .mono{font-family:"Comic Mono",monospace;font-size:15px;fill:#102033}
+    .line{stroke:#5d6f83;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
+    .sql{stroke:#dc6b82;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
+    .part{stroke:#d99a36;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
+    .repo{stroke:#5b8def;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
   </style>
 </defs>
-<rect class="canvas" width="1378" height="526"/>
-<rect class="frame" x="32" y="28" width="1314" height="470" rx="28"/>
-<text class="title" x="66" y="82">Query Processing Flow</text>
-<text class="subtitle" x="70" y="118">Architecture nodes and edges from the original Mermaid source</text>
-<path class="line" d="M672 386 C672 386 706 386 706 386"/>
-<path class="line" d="M1040 220 C1040 303 1006 303 1006 386"/>
-<path class="line" d="M706 220 C706 303 672 303 672 386"/>
-<path class="line" d="M522 280 C522 303 522 303 522 326"/>
-<path class="line" d="M672 220 C672 220 1040 220 1040 220"/>
-<path class="line" d="M672 220 C672 220 706 220 706 220"/>
-<path class="line" d="M338 220 C338 220 372 220 372 220"/>
-<g transform="translate(48,170)">
-  <rect class="card" x="0" y="0" width="280" height="100" rx="14" fill="#E8F3FF" stroke="#5B8DEF"/>
-  <text class="smallLabel" x="140" y="45" text-anchor="middle">Spring MVC / Service</text>
+<rect class="canvas" width="1640" height="980"/>
+<rect class="frame" x="32" y="28" width="1576" height="924" rx="26"/>
+<text class="title" x="68" y="86">Spring Data Query Resolution Flow</text>
+<text class="subtitle" x="72" y="120">A repository method becomes declared SQL, a derived PartTree query, or a built-in repository operation.</text>
+
+<rect class="band" x="64" y="158" width="1512" height="152" rx="18"/>
+<text class="bandTitle" x="90" y="198">Caller and proxy</text>
+<rect class="band" x="64" y="360" width="1512" height="214" rx="18"/>
+<text class="bandTitle" x="90" y="400">Query resolution</text>
+<rect class="band" x="64" y="624" width="1512" height="318" rx="18"/>
+<text class="bandTitle" x="90" y="664">Execution boundary</text>
+
+<path class="repo" d="M390 236 H506"/>
+<path class="repo" d="M790 236 H906"/>
+<path class="line" d="M1070 308 V360 H390 V430"/>
+<path class="line" d="M1070 308 V360 H820 V430"/>
+<path class="line" d="M1070 308 V360 H1250 V430"/>
+<path class="sql" d="M390 490 V654"/>
+<path class="part" d="M820 490 V654"/>
+<path class="repo" d="M1250 490 V654"/>
+<path class="sql" d="M390 790 V824 H740 V870"/>
+<path class="part" d="M820 790 V870"/>
+<path class="repo" d="M1250 790 V824 H900 V870"/>
+
+<g transform="translate(96,190)">
+  <rect class="card" x="0" y="0" width="294" height="92" rx="8" fill="#e8f3ff" stroke="#5b8def"/>
+  <text class="label" x="147" y="35" text-anchor="middle">Service Layer</text>
+  <text class="mono" x="147" y="64" text-anchor="middle">repository.findByName(...)</text>
 </g>
-<g transform="translate(382,170)">
-  <rect class="card" x="0" y="0" width="280" height="100" rx="14" fill="#EAF7EF" stroke="#58A978"/>
-  <text class="smallLabel" x="140" y="21" text-anchor="middle">UserRepository</text>
-<text class="smallLabel" x="140" y="47" text-anchor="middle">Exposed Jdbc</text>
-<text class="smallLabel" x="140" y="73" text-anchor="middle">Repository</text>
+<g transform="translate(506,190)">
+  <rect class="card" x="0" y="0" width="284" height="92" rx="8" fill="#eaf7ef" stroke="#58a978"/>
+  <text class="label" x="142" y="35" text-anchor="middle">Repository Proxy</text>
+  <text class="small" x="142" y="64" text-anchor="middle">Spring Data dispatch</text>
 </g>
-<g transform="translate(716,170)">
-  <rect class="card" x="0" y="0" width="280" height="100" rx="14" fill="#FFF3D9" stroke="#D6A441"/>
-  <text class="smallLabel" x="140" y="45" text-anchor="middle">PartTree Parser</text>
+<g transform="translate(906,190)">
+  <rect class="card" x="0" y="0" width="328" height="118" rx="8" fill="#fff3d9" stroke="#d6a441"/>
+  <text class="label" x="164" y="34" text-anchor="middle">Query Lookup Strategy</text>
+  <text class="small" x="164" y="64" text-anchor="middle">USE_DECLARED_QUERY</text>
+  <text class="small" x="164" y="88" text-anchor="middle">CREATE or CREATE_IF_NOT_FOUND</text>
 </g>
-<g transform="translate(1050,170)">
-  <rect class="card" x="0" y="0" width="280" height="100" rx="14" fill="#FDECEF" stroke="#DC6B82"/>
-  <text class="smallLabel" x="140" y="45" text-anchor="middle">@Query SQL</text>
+
+<g transform="translate(260,430)">
+  <rect class="card" x="0" y="0" width="260" height="60" rx="8" fill="#fdecef" stroke="#dc6b82"/>
+  <text class="label" x="130" y="38" text-anchor="middle">@Query present?</text>
 </g>
-<g transform="translate(382,336)">
-  <rect class="card" x="0" y="0" width="280" height="100" rx="14" fill="#E9F7F6" stroke="#45A7A1"/>
-  <text class="smallLabel" x="140" y="45" text-anchor="middle">Exposed DSL</text>
+<g transform="translate(690,430)">
+  <rect class="card" x="0" y="0" width="260" height="60" rx="8" fill="#fff7e8" stroke="#d99a36"/>
+  <text class="label" x="130" y="38" text-anchor="middle">PartTree method?</text>
 </g>
-<g transform="translate(716,336)">
-  <rect class="card" x="0" y="0" width="280" height="100" rx="14" fill="#F1ECFF" stroke="#8A72D6"/>
-  <text class="smallLabel" x="140" y="45" text-anchor="middle">(RDBMS)</text>
+<g transform="translate(1120,430)">
+  <rect class="card" x="0" y="0" width="260" height="60" rx="8" fill="#e8f3ff" stroke="#5b8def"/>
+  <text class="label" x="130" y="38" text-anchor="middle">Base operation?</text>
+</g>
+
+<g transform="translate(240,654)">
+  <rect class="card" x="0" y="0" width="300" height="136" rx="8" fill="#fdecef" stroke="#dc6b82"/>
+  <text class="label" x="150" y="34" text-anchor="middle">DeclaredExposedQuery</text>
+  <text class="small" x="150" y="64" text-anchor="middle">binds ?1, ?2 parameters</text>
+  <text class="mono" x="150" y="92" text-anchor="middle">tx.exec(sql, args)</text>
+  <text class="small" x="150" y="118" text-anchor="middle">loads entities by id column</text>
+</g>
+<g transform="translate(670,654)">
+  <rect class="card" x="0" y="0" width="300" height="136" rx="8" fill="#fff3d9" stroke="#d6a441"/>
+  <text class="label" x="150" y="34" text-anchor="middle">PartTreeExposedQuery</text>
+  <text class="small" x="150" y="64" text-anchor="middle">builds Op&lt;Boolean&gt;</text>
+  <text class="mono" x="150" y="92" text-anchor="middle">EntityClass.find { op }</text>
+  <text class="small" x="150" y="118" text-anchor="middle">Page, Slice, count, exists, delete</text>
+</g>
+<g transform="translate(1100,654)">
+  <rect class="card" x="0" y="0" width="300" height="136" rx="8" fill="#e9f7f6" stroke="#45a7a1"/>
+  <text class="label" x="150" y="34" text-anchor="middle">Simple Repository</text>
+  <text class="small" x="150" y="64" text-anchor="middle">CRUD, sort, pageable, QBE</text>
+  <text class="mono" x="150" y="92" text-anchor="middle">save / findAll / exists</text>
+  <text class="small" x="150" y="118" text-anchor="middle">uses Exposed DAO identity model</text>
+</g>
+
+<g transform="translate(670,870)">
+  <rect class="card" x="0" y="0" width="300" height="70" rx="8" fill="#f8fbff" stroke="#6b7f93"/>
+  <image x="28" y="12" width="46" height="46" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K"/>
+  <text class="label" x="188" y="30" text-anchor="middle">Exposed DAO + RDBMS</text>
+  <text class="small" x="188" y="55" text-anchor="middle">transactional JDBC execution</text>
 </g>
 </svg>

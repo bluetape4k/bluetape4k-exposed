@@ -2,18 +2,19 @@
 
 [English](./README.md) | 한국어
 
-**Exposed DAO Entity 기반 Spring Data JDBC Repository (Spring Boot.0.x / Spring 7)**
+**Exposed DAO Entity 기반 Spring Data JDBC Repository (Spring Boot 4.x / Spring 7)**
 
-Spring Boot와 Spring Data를 활용하여 Exposed DAO 엔티티를 관리하는 고성능 Repository 구현입니다. PartTree 메서드 이름 쿼리와
-`@Query` 어노테이션을 통한 Exposed DSL 지원을 제공합니다.
+Exposed DAO 엔티티를 Spring Data Repository처럼 다루기 위한 JDBC 브리지입니다.
+Spring Boot 자동 구성, Spring Data repository factory, Exposed transaction,
+method-name query parsing을 하나의 repository 모델로 연결합니다.
 
-## UML
+## Repository Wiring
 
-![Spring Boot JDBC auto-configuration diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-diagram-01.png)
+![Spring Boot Exposed JDBC repository wiring diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-diagram-01.png)
 
-### 쿼리 처리 흐름
+## Query Resolution Flow
 
-![Spring Boot JDBC query processing flow diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-diagram-02.png)
+![Spring Boot Exposed JDBC query resolution flow diagram](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-diagram-02.png)
 
 ## 설치
 
