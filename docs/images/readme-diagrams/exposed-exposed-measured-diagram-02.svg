@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1040" viewBox="0 0 1680 1040" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1186" viewBox="0 0 1680 1186" role="img" aria-labelledby="title desc">
   <title id="title">Measured Column Conversion Flow</title>
   <desc id="desc">Flow diagram for exposed-measured showing how measured Kotlin values are converted to base-unit DOUBLE values and restored from ResultRow reads.</desc>
   <defs>
@@ -20,54 +20,54 @@
       .note{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1.4}
     </style>
   </defs>
-  <rect class="canvas" width="1680" height="1040"/>
-  <rect class="frame" x="44" y="36" width="1592" height="968" rx="34"/>
+  <rect class="canvas" width="1680" height="1186"/>
+  <rect class="frame" x="44" y="36" width="1592" height="1114" rx="34"/>
   <text class="title" x="72" y="88">Measured Column Conversion Flow</text>
   <text class="subtitle" x="76" y="121">The column type is the only boundary that knows the base unit; the database stores a plain DOUBLE.</text>
 
-  <rect class="layer" x="82" y="160" width="1516" height="150" rx="18"/><text class="layer-title" x="112" y="190" dominant-baseline="middle">1. Table DSL</text>
-  <rect class="layer" x="82" y="350" width="1516" height="180" rx="18"/><text class="layer-title" x="112" y="380" dominant-baseline="middle">2. ColumnType boundary</text>
-  <rect class="layer" x="82" y="570" width="1516" height="150" rx="18"/><text class="layer-title" x="112" y="600" dominant-baseline="middle">3. JDBC storage</text>
-  <rect class="layer" x="82" y="760" width="1516" height="120" rx="18"/><text class="layer-title" x="112" y="790" dominant-baseline="middle">4. Readback</text>
+  <rect class="layer" x="82" y="160" width="1516" height="186" rx="18"/><text class="layer-title" x="112" y="190" dominant-baseline="middle">1. Table DSL</text>
+  <rect class="layer" x="82" y="386" width="1516" height="214" rx="18"/><text class="layer-title" x="112" y="416" dominant-baseline="middle">2. ColumnType boundary</text>
+  <rect class="layer" x="82" y="640" width="1516" height="182" rx="18"/><text class="layer-title" x="112" y="670" dominant-baseline="middle">3. JDBC storage</text>
+  <rect class="layer" x="82" y="862" width="1516" height="164" rx="18"/><text class="layer-title" x="112" y="892" dominant-baseline="middle">4. Readback</text>
 
-  <path data-edge="measure-dsl-to-boundary" class="connector" d="M 500 247 L 628 247 Q 640 247 640 259 L 640 402" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
-  <path data-edge="temp-dsl-to-column" class="connector" d="M 1030 247 L 1160 247" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
-  <path data-edge="column-to-boundary" class="connector" d="M 1290 284 L 1290 348 Q 1290 360 1278 360 L 1052 360 Q 1040 360 1040 372 L 1040 402" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
-  <path data-edge="boundary-to-db" class="connector" d="M 840 486 L 840 624" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
-  <path data-edge="db-to-read" class="connector" d="M 840 676 L 840 802" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
-  <path data-edge="read-to-boundary" class="connector" d="M 1070 820 L 1468 820 Q 1480 820 1480 808 L 1480 442 Q 1480 430 1468 430 L 1140 430" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+  <path data-edge="measure-dsl-to-boundary" class="connector" d="M 500 283 L 628 283 Q 640 283 640 295 L 640 472" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
+  <path data-edge="temp-dsl-to-column" class="connector" d="M 1030 283 L 1160 283" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+  <path data-edge="column-to-boundary" class="connector" d="M 1290 320 L 1290 384 Q 1290 396 1278 396 L 1052 396 Q 1040 396 1040 442 L 1040 472" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+  <path data-edge="boundary-to-db" class="connector" d="M 840 556 L 840 726" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
+  <path data-edge="db-to-read" class="connector" d="M 840 778 L 840 948" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
+  <path data-edge="read-to-boundary" class="connector" d="M 1070 966 L 1468 966 Q 1480 966 1480 954 L 1480 512 Q 1480 500 1468 500 L 1140 500" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
 
-  <g id="node-measure-dsl" data-node="measure-dsl" transform="translate(200,210)">
+  <g id="node-measure-dsl" data-node="measure-dsl" transform="translate(200,246)">
     <rect class="card" x="0" y="0" width="300" height="74" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
     <text class="card-title" x="150" y="27" text-anchor="middle" dominant-baseline="middle">measure helpers</text>
     <text class="detail" x="150" y="52" text-anchor="middle" dominant-baseline="middle">length, mass, area, power...</text>
   </g>
-  <g id="node-temp-dsl" data-node="temp-dsl" transform="translate(730,210)">
+  <g id="node-temp-dsl" data-node="temp-dsl" transform="translate(730,246)">
     <rect class="card" x="0" y="0" width="300" height="74" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
     <text class="card-title" x="150" y="27" text-anchor="middle" dominant-baseline="middle">temperature helpers</text>
     <text class="detail" x="150" y="52" text-anchor="middle" dominant-baseline="middle">temperature, temperatureDelta</text>
   </g>
-  <g id="node-column" data-node="column" transform="translate(1160,210)">
+  <g id="node-column" data-node="column" transform="translate(1160,246)">
     <rect class="card" x="0" y="0" width="260" height="74" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
     <text class="card-title" x="130" y="27" text-anchor="middle" dominant-baseline="middle">dedicated types</text>
     <text class="detail" x="130" y="52" text-anchor="middle" dominant-baseline="middle">Kelvin conversions</text>
   </g>
 
-  <g id="node-boundary" data-node="boundary" transform="translate(540,402)">
+  <g id="node-boundary" data-node="boundary" transform="translate(540,472)">
     <rect class="card" x="0" y="0" width="600" height="84" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
     <text class="card-title" x="300" y="28" text-anchor="middle" dominant-baseline="middle">MeasureColumnType / TemperatureColumnType</text>
     <text class="detail" x="300" y="55" text-anchor="middle" dominant-baseline="middle">notNullValueToDB stores base value; valueFromDB restores typed value</text>
   </g>
-  <g id="node-db" data-node="db" transform="translate(620,624)">
+  <g id="node-db" data-node="db" transform="translate(620,726)">
     <rect class="card" x="0" y="0" width="440" height="52" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
     <text class="card-title" x="220" y="28" text-anchor="middle" dominant-baseline="middle">DOUBLE column value</text>
   </g>
-  <g id="node-read" data-node="read" transform="translate(610,802)">
+  <g id="node-read" data-node="read" transform="translate(610,948)">
     <rect class="card" x="0" y="0" width="460" height="54" rx="12" fill="#EAF7EF" stroke="#58A978"/>
     <text class="card-title" x="230" y="29" text-anchor="middle" dominant-baseline="middle">ResultRow returns measured object</text>
   </g>
 
-  <g transform="translate(112,928)">
+  <g transform="translate(112,1074)">
     <rect class="note" x="0" y="0" width="1456" height="40" rx="10"/>
     <text class="small" x="728" y="22" text-anchor="middle" dominant-baseline="middle">Unsupported DB value types fail at valueFromDB, which keeps wrong column mappings visible during tests.</text>
   </g>
