@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1316" viewBox="0 0 1600 1316" role="img" aria-labelledby="title desc">
   <title id="title">exposed-core Column Type Pipeline Map</title>
   <desc id="desc">Pipeline map showing how exposed-core column extension functions connect Kotlin values, transformers, and SQL storage types.</desc>
   <defs>
@@ -31,107 +31,107 @@
     </marker>
   </defs>
 
-  <rect class="canvas" width="1600" height="1120"/>
-  <rect class="panel" x="42" y="36" width="1516" height="1048" rx="30"/>
+  <rect class="canvas" width="1600" height="1316"/>
+  <rect class="panel" x="42" y="36" width="1516" height="1244" rx="30"/>
   <text class="title" x="72" y="88">Column Type Pipeline Map</text>
   <text class="subtitle" x="76" y="121">Each row answers how a Kotlin value becomes a database value and which extension function registers it.</text>
 
-  <rect class="lane" x="92" y="170" width="1416" height="130" rx="18"/>
+  <rect class="lane" x="92" y="170" width="1416" height="189" rx="18"/>
   <text class="lane-title" x="122" y="198">Compressed bytes</text>
-  <path class="arrow" d="M420 235 L535 235" style="marker-end:url(#arrow-536c85)"/>
-  <path class="arrow" d="M810 235 L925 235" style="marker-end:url(#arrow-536c85)"/>
-  <g transform="translate(150 208)">
+  <path class="arrow" d="M 420 294 L 535 294" style="marker-end:url(#arrow-536c85)"/>
+  <path class="arrow" d="M 810 294 L 925 294" style="marker-end:url(#arrow-536c85)"/>
+  <g transform="translate(150 267)">
     <rect class="box value" x="0" y="0" width="270" height="70" rx="10"/>
     <text class="box-title" x="135" y="24" text-anchor="middle">ByteArray</text>
     <text class="text" x="135" y="47" text-anchor="middle">application payload</text>
   </g>
-  <g transform="translate(535 195)">
+  <g transform="translate(535 254)">
     <rect class="box transform" x="0" y="0" width="275" height="96" rx="10"/>
     <text class="box-title" x="137.5" y="24" text-anchor="middle">Compression</text>
     <text class="text" x="137.5" y="47" text-anchor="middle">LZ4 / Snappy / Zstd</text>
     <text class="text" x="137.5" y="70" text-anchor="middle">rethrows cancellation</text>
   </g>
-  <g transform="translate(925 208)">
+  <g transform="translate(925 267)">
     <rect class="box storage" x="0" y="0" width="430" height="70" rx="10"/>
     <text class="box-title" x="215" y="24" text-anchor="middle">compressedBinary / compressedBlob</text>
     <text class="text" x="215" y="47" text-anchor="middle">VARBINARY(length) or BLOB</text>
   </g>
 
-  <rect class="lane" x="92" y="330" width="1416" height="130" rx="18"/>
-  <text class="lane-title" x="122" y="358">Serialized objects</text>
-  <path class="arrow" d="M420 395 L535 395" style="marker-end:url(#arrow-536c85)"/>
-  <path class="arrow" d="M810 395 L925 395" style="marker-end:url(#arrow-536c85)"/>
-  <g transform="translate(150 368)">
+  <rect class="lane" x="92" y="389" width="1416" height="189" rx="18"/>
+  <text class="lane-title" x="122" y="417">Serialized objects</text>
+  <path class="arrow" d="M 420 513 L 535 513" style="marker-end:url(#arrow-536c85)"/>
+  <path class="arrow" d="M 810 513 L 925 513" style="marker-end:url(#arrow-536c85)"/>
+  <g transform="translate(150 486)">
     <rect class="box value" x="0" y="0" width="270" height="70" rx="10"/>
     <text class="box-title" x="135" y="24" text-anchor="middle">T : Any</text>
     <text class="text" x="135" y="47" text-anchor="middle">domain object</text>
   </g>
-  <g transform="translate(535 355)">
+  <g transform="translate(535 473)">
     <rect class="box transform" x="0" y="0" width="275" height="96" rx="10"/>
     <text class="box-title" x="137.5" y="24" text-anchor="middle">BinarySerializer</text>
     <text class="text" x="137.5" y="47" text-anchor="middle">Kryo / Fory family</text>
     <text class="text" x="137.5" y="70" text-anchor="middle">null deserialize fails</text>
   </g>
-  <g transform="translate(925 368)">
+  <g transform="translate(925 486)">
     <rect class="box storage" x="0" y="0" width="430" height="70" rx="10"/>
     <text class="box-title" x="215" y="24" text-anchor="middle">binarySerializedBinary / Blob</text>
     <text class="text" x="215" y="47" text-anchor="middle">VARBINARY(length) or BLOB</text>
   </g>
 
-  <rect class="lane" x="92" y="490" width="1416" height="155" rx="18"/>
-  <text class="lane-title" x="122" y="518">Network addresses</text>
-  <path class="arrow" d="M500 568 L615 568" style="marker-end:url(#arrow-536c85)"/>
-  <path class="arrow" d="M935 568 L1050 568" style="marker-end:url(#arrow-536c85)"/>
-  <g transform="translate(150 535)">
+  <rect class="lane" x="92" y="608" width="1416" height="194" rx="18"/>
+  <text class="lane-title" x="122" y="636">Network addresses</text>
+  <path class="arrow" d="M 500 725 L 615 725" style="marker-end:url(#arrow-536c85)"/>
+  <path class="arrow" d="M 935 725 L 1050 725" style="marker-end:url(#arrow-536c85)"/>
+  <g transform="translate(150 692)">
     <rect class="box direct" x="0" y="0" width="350" height="94" rx="10"/>
     <text class="box-title" x="175" y="24" text-anchor="middle">InetAddress / CIDR text</text>
     <text class="text" x="175" y="47" text-anchor="middle">inetAddress(), cidr()</text>
     <text class="text" x="175" y="70" text-anchor="middle">PostgreSQL operator: &lt;&lt;</text>
   </g>
-  <g transform="translate(615 535)">
+  <g transform="translate(615 692)">
     <rect class="box transform" x="0" y="0" width="320" height="94" rx="10"/>
     <text class="box-title" x="160" y="24" text-anchor="middle">Direct ColumnType</text>
     <text class="text" x="160" y="47" text-anchor="middle">no ColumnWithTransform</text>
     <text class="text" x="160" y="70" text-anchor="middle">custom SQL type binding</text>
   </g>
-  <g transform="translate(1050 535)">
+  <g transform="translate(1050 692)">
     <rect class="box storage" x="0" y="0" width="320" height="94" rx="10"/>
     <text class="box-title" x="160" y="24" text-anchor="middle">INET / CIDR fallback</text>
     <text class="text" x="160" y="47" text-anchor="middle">PostgreSQL native types</text>
     <text class="text" x="160" y="70" text-anchor="middle">VARCHAR on other dialects</text>
   </g>
 
-  <rect class="lane" x="92" y="675" width="1416" height="155" rx="18"/>
-  <text class="lane-title" x="122" y="703">Phone numbers</text>
-  <path class="arrow" d="M500 753 L615 753" style="marker-end:url(#arrow-536c85)"/>
-  <path class="arrow" d="M935 753 L1050 753" style="marker-end:url(#arrow-536c85)"/>
-  <g transform="translate(150 720)">
+  <rect class="lane" x="92" y="832" width="1416" height="194" rx="18"/>
+  <text class="lane-title" x="122" y="860">Phone numbers</text>
+  <path class="arrow" d="M 500 949 L 615 949" style="marker-end:url(#arrow-536c85)"/>
+  <path class="arrow" d="M 935 949 L 1050 949" style="marker-end:url(#arrow-536c85)"/>
+  <g transform="translate(150 916)">
     <rect class="box value" x="0" y="0" width="350" height="94" rx="10"/>
     <text class="box-title" x="175" y="24" text-anchor="middle">PhoneNumber or String</text>
     <text class="text" x="175" y="47" text-anchor="middle">phoneNumber()</text>
     <text class="text" x="175" y="70" text-anchor="middle">phoneNumberString()</text>
   </g>
-  <g transform="translate(615 720)">
+  <g transform="translate(615 916)">
     <rect class="box transform" x="0" y="0" width="320" height="94" rx="10"/>
     <text class="box-title" x="160" y="24" text-anchor="middle">libphonenumber</text>
     <text class="text" x="160" y="47" text-anchor="middle">parse / validate</text>
     <text class="text" x="160" y="70" text-anchor="middle">normalize to E.164</text>
   </g>
-  <g transform="translate(1050 720)">
+  <g transform="translate(1050 916)">
     <rect class="box storage" x="0" y="0" width="320" height="94" rx="10"/>
     <text class="box-title" x="160" y="24" text-anchor="middle">VARCHAR(20)</text>
     <text class="text" x="160" y="47" text-anchor="middle">stores E.164 string</text>
     <text class="text" x="160" y="70" text-anchor="middle">object or string API</text>
   </g>
 
-  <g transform="translate(150 882)">
+  <g transform="translate(150 1078)">
     <rect class="box" x="0" y="0" width="1200" height="98" rx="12" fill="#FBFDFF" stroke="#D7E2EC"/>
     <text class="box-title" x="600" y="31" text-anchor="middle">Reader rule</text>
     <text class="text" x="600" y="58" text-anchor="middle">Use transformed column families when a reversible value mapping is needed.</text>
     <text class="text" x="600" y="80" text-anchor="middle">Use direct ColumnType families when SQL binding or dialect fallback is the main concern.</text>
   </g>
 
-  <g transform="translate(76 1010)">
+  <g transform="translate(76 1206)">
     <rect x="0" y="0" width="1448" height="48" rx="10" fill="#FFFFFF" stroke="#D7E2EC"/>
     <text class="small" x="724" y="19" text-anchor="middle">This is a pipeline map, not a class hierarchy: arrows show value conversion from Kotlin API to SQL storage.</text>
     <text class="small" x="724" y="36" text-anchor="middle">Tink encryption lives in exposed-tink; exposed-core covers compression, serialization, inet/CIDR, and phone values.</text>
