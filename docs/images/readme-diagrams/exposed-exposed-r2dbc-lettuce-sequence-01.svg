@@ -2,10 +2,10 @@
   <title id="title">R2DBC Lettuce Cache Sequence</title>
   <desc id="desc">Sequence diagram for NearCache, Redis loaded map, R2DBC loader, write-through or write-behind writer, and delete or clear cache behavior.</desc>
   <defs>
-    <marker id="seqArrow-3F7D9C" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#3f7d9c" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
-    <marker id="seqArrow-6E8F4F" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#6e8f4f" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
-    <marker id="seqArrow-7E6AB8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#7e6ab8" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
-    <marker id="seqArrow-9B7D54" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#9b7d54" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="seqArrow-3F7D9C" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="16" markerHeight="16" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#3f7d9c" stroke-dasharray="none" style="stroke-dasharray:none!important" stroke="#3f7d9c" /></marker>
+    <marker id="seqArrow-6E8F4F" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="16" markerHeight="16" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#6e8f4f" stroke-dasharray="none" style="stroke-dasharray:none!important" stroke="#6e8f4f" /></marker>
+    <marker id="seqArrow-7E6AB8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="16" markerHeight="16" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#7e6ab8" stroke-dasharray="none" style="stroke-dasharray:none!important" stroke="#7e6ab8" /></marker>
+    <marker id="seqArrow-9B7D54" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="16" markerHeight="16" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#9b7d54" stroke-dasharray="none" style="stroke-dasharray:none!important" stroke="#9b7d54" /></marker>
     <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="8" stdDeviation="11" flood-color="#20303a" flood-opacity="0.12"/></filter>
     <style>
       .canvas { fill: #f6f0e8; }

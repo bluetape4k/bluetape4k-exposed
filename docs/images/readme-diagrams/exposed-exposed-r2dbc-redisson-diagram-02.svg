@@ -2,8 +2,8 @@
   <title id="title">R2DBC Redisson Repository Class Map</title>
   <desc id="desc">UML-style class diagram for R2dbcRedissonRepository, AbstractR2dbcRedissonRepository, Redisson loader/writer base classes, Exposed adapter classes, and repository implementation hooks.</desc>
   <defs>
-    <marker id="hollow" viewBox="0 0 22 18" refX="20" refY="9" markerWidth="17" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 2 2 L 11.5 5.7 Q 20 9 11.5 12.3 L 2 16" fill="#fffaf2" stroke="#496879" stroke-width="2.8" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
-    <marker id="open" viewBox="0 0 14 14" refX="12" refY="7" markerWidth="12" markerHeight="12" orient="auto" markerUnits="userSpaceOnUse"><path d="M 2 2 L 7.4 4.7 Q 12 7 7.4 9.3 L 2 12" fill="none" stroke="#327d91" stroke-width="2.8" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="hollow" viewBox="0 0 22 18" refX="20" refY="9" markerWidth="18" markerHeight="16" orient="auto" markerUnits="userSpaceOnUse"><path d="M 2 2 L 11.5 5.7 Q 20 9 11.5 12.3 L 2 16" fill="#fffaf2" stroke="#496879" stroke-width="2.8" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="open" viewBox="0 0 14 14" refX="12" refY="7" markerWidth="10" markerHeight="10" orient="auto" markerUnits="userSpaceOnUse"><path d="M 2 2 L 7.4 4.7 Q 12 7 7.4 9.3 L 2 12" fill="none" stroke="#327d91" stroke-width="2.8" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
     <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="8" stdDeviation="11" flood-color="#20303a" flood-opacity="0.12"/></filter>
     <style>
       .canvas { fill: #f6f0e8; }
@@ -20,7 +20,7 @@
       .adapter { fill: #fffdf8; stroke: #d3a663; stroke-width: 2.3; }
       .hook { fill: #fffdf8; stroke: #a9c58b; stroke-width: 2.3; }
       .generalize { fill: none; stroke: #496879; stroke-width: 3.3; marker-end: url(#hollow); stroke-linecap: round; stroke-linejoin: round; }
-      .depends { fill: none; stroke: #327d91; stroke-width: 3; stroke-dasharray: 9 7; marker-end: url(#open); stroke-linecap: round; stroke-linejoin: round; }
+      .depends { fill: none; stroke: #327d91; stroke-width: 3; stroke-dasharray: 9 7; stroke-linecap: round; stroke-linejoin: round; }
       .owns { fill: none; stroke: #327d91; stroke-width: 3.4; marker-end: url(#open); stroke-linecap: round; stroke-linejoin: round; }
       .code { fill: #9b3d5a; font-weight: 700; }
       .type { fill: #176f7a; font-weight: 700; }
@@ -92,8 +92,10 @@
   <g transform="translate(674 922)"><rect class="hook" x="0" y="0" width="330" height="62" rx="12"/><text class="cardTitle code" x="26" y="38">ResultRow.toEntity()</text></g>
   <g transform="translate(1124 910)"><rect class="hook" x="0" y="0" width="360" height="86" rx="12"/><text class="cardTitle code" x="26" y="34">updateEntity / insertEntity</text><text class="cardText" x="26" y="62">write-mode mapping hooks</text></g>
   <path class="depends" d="M410 760 V922"/>
+  <polyline points="405,912 410,922 415,912" fill="none" stroke="#327d91" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="true"/>
   <text class="label" x="430" y="840">table</text>
   <path class="depends" d="M1216 760 V910"/>
+  <polyline points="1211,900 1216,910 1221,900" fill="none" stroke="#327d91" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="true"/>
   <text class="label" x="1236" y="836">write hooks</text>
 
   <rect x="126" y="1024" width="1428" height="42" rx="13" fill="#eef3f4" stroke="#c2d1d4" stroke-width="2"/>

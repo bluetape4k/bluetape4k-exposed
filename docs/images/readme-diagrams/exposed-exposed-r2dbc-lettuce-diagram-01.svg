@@ -2,7 +2,7 @@
   <title id="title">R2DBC Lettuce Repository Boundary</title>
   <desc id="desc">Architecture diagram for exposed-r2dbc-lettuce showing coroutine repository calls, optional NearCache, LettuceSuspendedLoadedMap, Redis cache, and R2DBC loader/writer transactions.</desc>
   <defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse">
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
       <path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#327d91" stroke-dasharray="none" style="stroke-dasharray:none!important"/>
     </marker>
     <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
@@ -25,9 +25,9 @@
       .type { fill: #176f7a; font-weight: 700; }
       .keyword { fill: #8a5b00; font-weight: 700; }
     </style>
-    <marker id="arrow-327d91" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#327d91" stroke="#327d91" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
-    <marker id="arrow-7d6ab0" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#7d6ab0" stroke="#7d6ab0" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
-    <marker id="arrow-8c6f33" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#8c6f33" stroke="#8c6f33" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-327d91" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#327d91" stroke="#327d91" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-7d6ab0" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#7d6ab0" stroke="#7d6ab0" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-8c6f33" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#8c6f33" stroke="#8c6f33" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
   </defs>
 
   <rect class="canvas" width="1680" height="1040"/>

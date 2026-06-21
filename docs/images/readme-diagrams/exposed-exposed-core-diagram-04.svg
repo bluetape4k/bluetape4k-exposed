@@ -5,7 +5,7 @@
     <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%">
       <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#203040" flood-opacity="0.12"/>
     </filter>
-    <marker id="arrow" viewBox="0 0 12 10" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+    <marker id="arrow" viewBox="0 0 12 10" markerWidth="14" markerHeight="14" refX="11" refY="5" orient="auto" markerUnits="userSpaceOnUse">
       <path d="M 1 1 L 6.5 3.2 Q 11 5 6.5 6.8 L 1 9" fill="#536C85" stroke-dasharray="none" style="stroke-dasharray:none!important"/>
     </marker>
     <style>
@@ -24,7 +24,7 @@
       .divider{stroke:#86A0B8;stroke-width:1.4}
       .line{fill:none;stroke:#536C85;stroke-width:2.4;marker-end:url(#arrow);stroke-linecap:round;stroke-linejoin:round}
     </style>
-    <marker id="arrow-536c85" viewBox="0 0 12 10" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+    <marker id="arrow-536c85" viewBox="0 0 12 10" markerWidth="14" markerHeight="14" refX="11" refY="5" orient="auto" markerUnits="userSpaceOnUse">
       <path d="M 1 1 L 6.5 3.2 Q 11 5 6.5 6.8 L 1 9" fill="#536C85" style="stroke-dasharray:none!important" stroke-dasharray="none"/>
     </marker>
   </defs>

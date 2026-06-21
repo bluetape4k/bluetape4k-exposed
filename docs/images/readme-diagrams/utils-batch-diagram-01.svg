@@ -1,22 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1120" viewBox="0 0 1800 1120" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1000" viewBox="0 0 1800 1000" role="img" aria-labelledby="title desc">
   <title id="title">Batch Runtime Role Map</title>
   <desc id="desc">Role map for exposed-batch showing the DSL, BatchJob, StepRunner, Reader/Processor/Writer contracts, and checkpoint repositories.</desc>
   <defs>
-    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#3f7d9c" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
-    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#6e8f4f" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
-    <marker id="arrow-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#b9851b" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
-    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#755bc6" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#3f7d9c" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#6e8f4f" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#b9851b" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#755bc6" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
     <style>
       .canvas{fill:#f6f0e8}.frame{fill:#fffaf2;stroke:#28485a;stroke-width:4}.lane{stroke-width:2.4}.card{fill:#fffdf8;stroke-width:2.2}.title{font-family:"Architects Daughter","Comic Mono",monospace;font-size:48px;fill:#21343f}.subtitle,.cardText,.small,.label,.step{font-family:"Comic Mono",monospace;fill:#51636f}.subtitle{font-size:18px}.laneTitle{font-family:"Architects Daughter","Comic Mono",monospace;font-size:27px;fill:#21343f}.cardTitle{font-family:"Comic Mono",monospace;font-size:17px;font-weight:700;fill:#20323d}.cardText{font-size:13px}.small{font-size:12px}.label{font-size:12px;fill:#315664}.code{fill:#9b3d5a;font-weight:700}.type{fill:#176f7a;font-weight:700}.warn{fill:#8a5b00;font-weight:700}.blue{stroke:#8db7c2}.green{stroke:#a9c58b}.gold{stroke:#d3a663}.purple{stroke:#b2a1dc}.line{fill:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}.lineBlue{stroke:#3f7d9c;marker-end:url(#arrow-blue)}.lineGreen{stroke:#6e8f4f;marker-end:url(#arrow-green)}.lineGold{stroke:#b9851b;marker-end:url(#arrow-gold)}.linePurple{stroke:#755bc6;marker-end:url(#arrow-purple)}
     </style>
   </defs>
 
-  <rect class="canvas" width="1800" height="1120"/>
-  <rect class="frame" x="36" y="30" width="1728" height="1060" rx="24"/>
+  <rect class="canvas" width="1800" height="1000"/>
+  <rect class="frame" x="36" y="30" width="1728" height="940" rx="24"/>
   <text class="title" x="86" y="96">Batch Runtime Role Map</text>
   <text class="subtitle" x="90" y="132">A coroutine-first chunk pipeline: DSL builds a job, StepRunner owns execution, repositories persist restart state.</text>
 
-  <rect class="lane" x="82" y="178" width="410" height="782" rx="18" fill="#e7f1f4" stroke="#9dbbc4"/>
+  <rect class="lane" x="82" y="178" width="410" height="682" rx="18" fill="#e7f1f4" stroke="#9dbbc4"/>
   <text class="laneTitle" x="116" y="226">User-facing DSL</text>
   <g transform="translate(122 272)">
     <rect class="card blue" width="330" height="112" rx="12"/>
@@ -39,7 +39,7 @@
     <text class="cardText" x="165" y="104" text-anchor="middle">retryPolicy, commitTimeout</text>
   </g>
 
-  <rect class="lane" x="540" y="178" width="410" height="782" rx="18" fill="#eef4e6" stroke="#a9c58b"/>
+  <rect class="lane" x="540" y="178" width="410" height="682" rx="18" fill="#eef4e6" stroke="#a9c58b"/>
   <text class="laneTitle" x="574" y="226">Execution engine</text>
   <g transform="translate(580 272)">
     <rect class="card green" width="330" height="150" rx="12"/>
@@ -63,7 +63,7 @@
     <text class="cardText" x="165" y="82" text-anchor="middle">final status + checkpoint</text>
   </g>
 
-  <rect class="lane" x="998" y="178" width="410" height="782" rx="18" fill="#fff0d8" stroke="#d3a663"/>
+  <rect class="lane" x="998" y="178" width="410" height="682" rx="18" fill="#fff0d8" stroke="#d3a663"/>
   <text class="laneTitle" x="1032" y="226">I/O contracts</text>
   <g transform="translate(1038 272)">
     <rect class="card gold" width="330" height="130" rx="12"/>
@@ -85,7 +85,7 @@
     <text class="cardText" x="165" y="82" text-anchor="middle">JDBC/R2DBC use batchInsert</text>
   </g>
 
-  <rect class="lane" x="1456" y="178" width="262" height="782" rx="18" fill="#efe9fb" stroke="#b2a1dc"/>
+  <rect class="lane" x="1456" y="178" width="262" height="682" rx="18" fill="#efe9fb" stroke="#b2a1dc"/>
   <text class="laneTitle" x="1488" y="226">State store</text>
   <g transform="translate(1488 272)">
     <rect class="card purple" width="198" height="126" rx="12"/>
@@ -119,6 +119,6 @@
   <text class="label" x="994" y="682">write chunk</text>
   <text class="label" x="1240" y="790">persist progress</text>
 
-  <rect x="128" y="1012" width="1544" height="34" rx="10" fill="#eef3f4" stroke="#c2d1d4" stroke-width="1.8"/>
-  <text class="small" x="900" y="1034" text-anchor="middle">Reader-facing contract: checkpoint keys advance only after writer success; completed steps are skipped on restart without opening reader or writer.</text>
+  <rect x="128" y="904" width="1544" height="34" rx="10" fill="#eef3f4" stroke="#c2d1d4" stroke-width="1.8"/>
+  <text class="small" x="900" y="926" text-anchor="middle">Reader-facing contract: checkpoint keys advance only after writer success; completed steps are skipped on restart without opening reader or writer.</text>
 </svg>

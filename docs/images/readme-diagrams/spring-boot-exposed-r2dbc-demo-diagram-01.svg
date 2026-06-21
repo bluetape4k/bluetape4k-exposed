@@ -3,9 +3,9 @@
 <desc id="desc">Spring WebFlux product API structure with suspend controller methods, Exposed R2DBC repository mapping, startup initialization, connection pool, and H2 R2DBC database.</desc>
 <defs>
   <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="arrow" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 7 3.7 Q 12 6 7 8.3 L 1 11" fill="none" stroke="#5d6f83" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
-  <marker id="arrow-5d6f83" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 7 3.7 Q 12 6 7 8.3 L 1 11" fill="none" stroke="#5d6f83" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
-  <marker id="arrow-45a7a1" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 7 3.7 Q 12 6 7 8.3 L 1 11" fill="none" stroke="#45a7a1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+  <marker id="arrow" markerWidth="14" markerHeight="14" refX="12" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 7 3.7 Q 12 6 7 8.3 L 1 11" fill="none" stroke="#5d6f83" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+  <marker id="arrow-5d6f83" markerWidth="14" markerHeight="14" refX="12" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 7 3.7 Q 12 6 7 8.3 L 1 11" fill="none" stroke="#5d6f83" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+  <marker id="arrow-45a7a1" markerWidth="14" markerHeight="14" refX="12" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 7 3.7 Q 12 6 7 8.3 L 1 11" fill="none" stroke="#45a7a1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
   <style>
     .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
     .layer{fill:#fbfdff;stroke:#d8e0ea;stroke-width:1.4}

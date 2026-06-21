@@ -1,12 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1320" viewBox="0 0 1680 1320" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1168" viewBox="0 0 1680 1168" role="img" aria-labelledby="title desc">
   <title id="title">DuckDB Query Flow Materialization</title>
   <desc id="desc">Vertical flow diagram showing how suspendTransaction and queryFlow run blocking DuckDB JDBC work on a dispatcher, materialize queryFlow results inside the Exposed transaction, then emit items with cancellation checks.</desc>
   <defs>
     <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
-    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#4F83BF" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
-    <marker id="arrow-teal" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#2E8F89" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
-    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#B9851B" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
-    <marker id="arrow-red" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#C94D68" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#4F83BF" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#2E8F89" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#B9851B" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#C94D68" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
     <style>
       .canvas{fill:#F6F9FC}.frame{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
       .layer{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}.card{filter:url(#shadow);stroke-width:2}
@@ -20,8 +20,8 @@
       .constraint{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1.4}
     </style>
   </defs>
-  <rect class="canvas" width="1680" height="1320"/>
-  <rect class="frame" x="44" y="36" width="1592" height="1248" rx="34"/>
+  <rect class="canvas" width="1680" height="1168"/>
+  <rect class="frame" x="44" y="36" width="1592" height="1096" rx="34"/>
   <text class="title" x="72" y="88">DuckDB Query Flow Materialization</text>
   <text class="subtitle" x="76" y="121">Flow is the consumer API; JDBC rows are collected inside the transaction before emission starts.</text>
   <rect class="layer" x="82" y="160" width="1516" height="172" rx="18"/><text class="layer-title" x="112" y="188" dominant-baseline="middle">1. Coroutine caller</text>

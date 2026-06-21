@@ -2,13 +2,13 @@
   <title id="t t l">JDBC Lettuce Cache Flow</title>
   <desc id="s c">Sequence diagram rebuilt from exposed-jdbc-lettuce README, sync/suspend repository source, loader/writer source, and Lettuce repository tests.</desc>
   <defs>
-    <marker id="seqArrow-4F83BF" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#4F83BF" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="seqArrow-755BC6" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#755BC6" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="seqArrow-2E8F89" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#2E8F89" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="seqArrow-3E9868" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#3E9868" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="seqArrow-B9851B" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#B9851B" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="seqArrow-C94D68" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#C94D68" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="seqArrow-758297" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#758297" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+    <marker id="seqArrow-4F83BF" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#4f83bf" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#4f83bf" /></marker>
+    <marker id="seqArrow-755BC6" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#755bc6" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#755bc6" /></marker>
+    <marker id="seqArrow-2E8F89" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#2e8f89" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#2e8f89" /></marker>
+    <marker id="seqArrow-3E9868" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#3e9868" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#3e9868" /></marker>
+    <marker id="seqArrow-B9851B" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#b9851b" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#b9851b" /></marker>
+    <marker id="seqArrow-C94D68" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#c94d68" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#c94d68" /></marker>
+    <marker id="seqArrow-758297" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#758297" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#758297" /></marker>
     <filter id="s h a" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
     <style>
       .canvas{fill:#F7FAFC}.frame{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:2.6;filter:url(#shadow)}
@@ -87,7 +87,7 @@
   <text class="actorNote" x="503.4000000000001" y="631.04" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">4</text>
   <text class="actorNote" x="627.4000000000001" y="631.04" text-anchor="middle" dominant-baseline="middle">local hit returns entity</text>
   <path class="ret" d="M 739.7 668.16 L 479.1 668.16" stroke="#2E8F89"/>
-<polygon points="479.1,668.16 491.1,660.504 491.1,675.816" fill="#2E8F89" stroke="#2E8F89" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="479.1,668.16 495.1,660.16 495.1,676.16" fill="#2E8F89" stroke="#2E8F89" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 5">
   <rect class="pill" x="557.7" y="707.6" width="364" height="34.8" rx="7"/>
@@ -102,7 +102,7 @@
   <text class="actorNote" x="616.3000000000001" y="821.28" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">6</text>
   <text class="actorNote" x="757.7" y="821.28" text-anchor="middle" dominant-baseline="middle">Redis hit returns entity</text>
   <path class="ret" d="M 1000.3000000000001 858.4 L 479.1 858.4" stroke="#C94D68"/>
-<polygon points="479.1,858.4 491.1,850.744 491.1,866.056" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="479.1,858.4 495.1,850.4 495.1,866.4" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 7">
   <rect class="pill" x="1005.6000000000001" y="883.92" width="250" height="48.72" rx="7"/>
@@ -125,7 +125,7 @@
   <text class="actorNote" x="1287.7" y="1106.64" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">9</text>
   <text class="actorNote" x="1409.2" y="1106.64" text-anchor="middle" dominant-baseline="middle">ResultRow or null</text>
   <path class="ret" d="M 1521.5 1143.76 L 1260.9 1143.76" stroke="#755BC6"/>
-<polygon points="1260.9,1143.76 1272.9,1136.104 1272.9,1151.416" fill="#755BC6" stroke="#755BC6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="1260.9,1143.76 1276.9,1135.76 1276.9,1151.76" fill="#755BC6" stroke="#755BC6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 10">
   <rect class="pill" x="1005.6000000000001" y="1169.28" width="250" height="48.72" rx="7"/>
@@ -134,7 +134,7 @@
   <text class="actorNote" x="1148.6000000000001" y="1184.36" text-anchor="middle" dominant-baseline="middle">toEntity(); cache miss</text>
   <text class="actorNote" x="1148.6000000000001" y="1201.76" text-anchor="middle" dominant-baseline="middle">value</text>
   <path class="ret" d="M 1260.9 1238.88 L 1000.3000000000001 1238.88" stroke="#755BC6"/>
-<polygon points="1000.3,1238.88 1012.3,1231.224 1012.3,1246.536" fill="#755BC6" stroke="#755BC6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="1000.3,1238.88 1016.3,1230.88 1016.3,1246.88" fill="#755BC6" stroke="#755BC6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 11">
   <rect class="pill" x="593.7" y="1278.32" width="292" height="34.8" rx="7"/>
@@ -142,7 +142,7 @@
   <text class="actorNote" x="612.7" y="1296.88" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">11</text>
   <text class="actorNote" x="757.7" y="1296.88" text-anchor="middle" dominant-baseline="middle">Redis stores loaded value</text>
   <path class="ret" d="M 1000.3000000000001 1334 L 479.1 1334" stroke="#C94D68"/>
-<polygon points="479.1,1334 491.1,1326.344 491.1,1341.656" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="479.1,1334 495.1,1326 495.1,1342" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 12">
   <rect class="pill" x="484.4000000000001" y="1359.52" width="250" height="48.72" rx="7"/>
@@ -158,7 +158,7 @@
   <text class="actorNote" x="242.8" y="1487.12" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">13</text>
   <text class="actorNote" x="366.8" y="1487.12" text-anchor="middle" dominant-baseline="middle">return entity or null</text>
   <path class="ret" d="M 479.1 1524.24 L 218.5 1524.24" stroke="#B9851B"/>
-<polygon points="218.5,1524.24 230.5,1516.584 230.5,1531.896" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="218.5,1524.24 234.5,1516.24 234.5,1532.24" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g>
   <rect class="alt" x="74" y="1575.28" width="1592" height="55.68" rx="15"/>
@@ -186,7 +186,7 @@
   <text class="actorNote" x="612.7" y="1867.6" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">17</text>
   <text class="actorNote" x="757.7" y="1867.6" text-anchor="middle" dominant-baseline="middle">Redis updated immediately</text>
   <path class="ret" d="M 1000.3000000000001 1904.72 L 479.1 1904.72" stroke="#C94D68"/>
-<polygon points="479.1,1904.72 491.1,1897.064 491.1,1912.376" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="479.1,1904.72 495.1,1896.72 495.1,1912.72" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 18">
   <rect class="pill" x="484.4000000000001" y="1930.24" width="250" height="48.72" rx="7"/>
@@ -218,7 +218,7 @@
   <text class="actorNote" x="1287.7" y="2248.08" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">21</text>
   <text class="actorNote" x="1409.2" y="2248.08" text-anchor="middle" dominant-baseline="middle">DB write committed</text>
   <path class="ret" d="M 1521.5 2285.2 L 1260.9 2285.2" stroke="#755BC6"/>
-<polygon points="1260.9,2285.2 1272.9,2277.544 1272.9,2292.856" fill="#755BC6" stroke="#755BC6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="1260.9,2285.2 1276.9,2277.2 1276.9,2293.2" fill="#755BC6" stroke="#755BC6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 22">
   <rect class="pill" x="677.2" y="2324.64" width="385.6" height="34.8" rx="7"/>
@@ -226,7 +226,7 @@
   <text class="actorNote" x="696.2" y="2343.2" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">22</text>
   <text class="actorNote" x="888" y="2343.2" text-anchor="middle" dominant-baseline="middle">WRITE_BEHIND: queued for delayed flush</text>
   <path class="ret" d="M 1260.9 2380.32 L 479.1 2380.32" stroke="#B9851B"/>
-<polygon points="479.1,2380.32 491.1,2372.664 491.1,2387.976" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="479.1,2380.32 495.1,2372.32 495.1,2388.32" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 23">
   <rect class="pill" x="223.8" y="2405.84" width="250" height="48.72" rx="7"/>
@@ -235,7 +235,7 @@
   <text class="actorNote" x="366.8" y="2420.92" text-anchor="middle" dominant-baseline="middle">return according to write</text>
   <text class="actorNote" x="366.8" y="2438.32" text-anchor="middle" dominant-baseline="middle">mode</text>
   <path class="ret" d="M 479.1 2475.44 L 218.5 2475.44" stroke="#B9851B"/>
-<polygon points="218.5,2475.44 230.5,2467.784 230.5,2483.096" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="218.5,2475.44 234.5,2467.44 234.5,2483.44" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g>
   <rect class="alt" x="74" y="2526.48" width="1592" height="55.68" rx="15"/>
@@ -287,7 +287,7 @@
   <text class="actorNote" x="1287.7" y="3104.16" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">30</text>
   <text class="actorNote" x="1409.2" y="3104.16" text-anchor="middle" dominant-baseline="middle">affected rows</text>
   <path class="ret" d="M 1521.5 3141.28 L 1260.9 3141.28" stroke="#755BC6"/>
-<polygon points="1260.9,3141.28 1272.9,3133.624 1272.9,3148.936" fill="#755BC6" stroke="#755BC6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="1260.9,3141.28 1276.9,3133.28 1276.9,3149.28" fill="#755BC6" stroke="#755BC6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 31">
   <rect class="pill" x="223.8" y="3180.72" width="250" height="34.8" rx="7"/>
@@ -295,7 +295,7 @@
   <text class="actorNote" x="242.8" y="3199.28" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">31</text>
   <text class="actorNote" x="366.8" y="3199.28" text-anchor="middle" dominant-baseline="middle">requested state updated</text>
   <path class="ret" d="M 479.1 3236.4 L 218.5 3236.4" stroke="#B9851B"/>
-<polygon points="218.5,3236.4 230.5,3228.744 230.5,3244.056" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="218.5,3236.4 234.5,3228.4 234.5,3244.4" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g><rect class="note" x="110" y="3482.32" width="1520" height="55.68" rx="12"/><text class="small" x="870" y="3502.04" text-anchor="middle" dominant-baseline="middle">NearCache steps apply to the suspend repository path; the blocking path reads and writes through the LettuceLoadedMap directly.</text><text class="small" x="870" y="3521.76" text-anchor="middle" dominant-baseline="middle">Write-through waits for the JDBC writer, write-behind queues the DB flush, and repository delete invokes writer delete.</text></g>
 </svg>
