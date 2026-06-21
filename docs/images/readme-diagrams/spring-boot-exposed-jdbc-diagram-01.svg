@@ -3,9 +3,9 @@
 <desc id="desc">Spring Boot auto-configuration, repository factory, query lookup, Exposed DAO runtime, and optional cache health wiring.</desc>
 <defs>
   <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#5d6f83" stroke="#5d6f83" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-  <marker id="arrow-5d6f83" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#5d6f83" stroke="#5d6f83" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-  <marker id="arrow-8a72d6" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#8a72d6" stroke="#8a72d6" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+  <marker id="arrow" markerWidth="14" markerHeight="14" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#5d6f83" stroke="#5d6f83" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+  <marker id="arrow-5d6f83" markerWidth="14" markerHeight="14" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#5d6f83" stroke="#5d6f83" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+  <marker id="arrow-8a72d6" markerWidth="14" markerHeight="14" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#8a72d6" stroke="#8a72d6" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
   <style>
     .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
     .layer{fill:#fbfdff;stroke:#d8e0ea;stroke-width:1.4}
@@ -17,7 +17,7 @@
     .small{font-family:"Comic Mono",monospace;font-size:14px;fill:#536273}
     .mono{font-family:"Comic Mono",monospace;font-size:13px;fill:#102033}
     .line{stroke:#5d6f83;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
-    .dash{stroke:#8a72d6;stroke-width:2.5;stroke-dasharray:8 7;fill:none;marker-end:url(#arrow)}
+    .dash{stroke:#8a72d6;stroke-width:2.5;stroke-dasharray:8 7;fill:none}
   </style>
 </defs>
 <rect class="canvas" width="1640" height="980"/>
@@ -42,7 +42,8 @@
 <path class="line" d="M390 764 H474" style="marker-end:url(#arrow-5d6f83)"/>
 <path class="line" d="M740 764 H824" style="marker-end:url(#arrow-5d6f83)"/>
 <path class="line" d="M1090 764 H1174" style="marker-end:url(#arrow-5d6f83)"/>
-<path class="dash" d="M1390 568 V704" style="marker-end:url(#arrow-8a72d6)"/>
+<path class="dash" d="M1390 568 V704" style="marker-end:none"/>
+<polygon points="1390,704 1385,694 1395,694" fill="#8a72d6" stroke="#8a72d6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="true"/>
 <path class="line" d="M 656 568 L 656 608 Q 656 620 668 620 L 962 620 Q 974 620 974 632 L 974 704" style="marker-end:url(#arrow-5d6f83)"/>
 
 <g transform="translate(96,214)">

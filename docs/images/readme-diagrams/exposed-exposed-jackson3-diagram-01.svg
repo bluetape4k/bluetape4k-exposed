@@ -3,10 +3,10 @@
   <desc id="desc">Responsibility map for exposed-jackson3 showing table APIs, serializer boundary, Exposed column types, JSON SQL helpers, and ResultRow or R2DBC Readable readback helpers.</desc>
   <defs>
     <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
-    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#4F83BF" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
-    <marker id="arrow-purple" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#755BC6" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
-    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#B9851B" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
-    <marker id="arrow-teal" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#2E8F89" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#4F83BF" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#755BC6" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#B9851B" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#2E8F89" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
     <style>
       .canvas{fill:#F6F9FC}.frame{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
       .lane{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}.card{filter:url(#shadow);stroke-width:2}

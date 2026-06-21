@@ -2,13 +2,13 @@
   <title id="t t l">JDBC Redisson Write-Through Flow</title>
   <desc id="s c">Sequence diagram rebuilt from exposed-jdbc-redisson README, JdbcRedissonRepository, AbstractJdbcRedissonRepository, EntityMapWriter, ExposedEntityMapWriter, and write-through scenario tests.</desc>
   <defs>
-    <marker id="seqArrow-4F83BF" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#4F83BF" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="seqArrow-755BC6" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#755BC6" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="seqArrow-2E8F89" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#2E8F89" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="seqArrow-3E9868" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#3E9868" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="seqArrow-B9851B" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#B9851B" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="seqArrow-C94D68" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#C94D68" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="seqArrow-758297" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#758297" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+    <marker id="seqArrow-4F83BF" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#4f83bf" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#4f83bf" /></marker>
+    <marker id="seqArrow-755BC6" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#755bc6" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#755bc6" /></marker>
+    <marker id="seqArrow-2E8F89" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#2e8f89" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#2e8f89" /></marker>
+    <marker id="seqArrow-3E9868" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#3e9868" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#3e9868" /></marker>
+    <marker id="seqArrow-B9851B" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#b9851b" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#b9851b" /></marker>
+    <marker id="seqArrow-C94D68" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#c94d68" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#c94d68" /></marker>
+    <marker id="seqArrow-758297" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#758297" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#758297" /></marker>
     <filter id="s h a" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
     <style>
       .canvas{fill:#F7FAFC}.frame{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:2.6;filter:url(#shadow)}
@@ -107,7 +107,7 @@
   <text class="actorNote" x="1285.7" y="916.4" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">7</text>
   <text class="actorNote" x="1407.2" y="916.4" text-anchor="middle" dominant-baseline="middle">existingIds</text>
   <path class="ret" d="M 1519 953.52 L 1259.4 953.52" stroke="#C94D68"/>
-<polygon points="1259.4,953.52 1271.4,945.864 1271.4,961.176" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="1259.4,953.52 1275.4,945.52 1275.4,961.52" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 8">
   <rect class="pill" x="1264.2" y="992.96" width="250" height="34.8" rx="7"/>
@@ -122,7 +122,7 @@
   <text class="actorNote" x="1285.7" y="1106.64" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">9</text>
   <text class="actorNote" x="1407.2" y="1106.64" text-anchor="middle" dominant-baseline="middle">committed</text>
   <path class="ret" d="M 1519 1143.76 L 1259.4 1143.76" stroke="#C94D68"/>
-<polygon points="1259.4,1143.76 1271.4,1136.104 1271.4,1151.416" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="1259.4,1143.76 1275.4,1135.76 1275.4,1151.76" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 10">
   <rect class="pill" x="1007.1000000000001" y="1183.2" width="245" height="34.8" rx="7"/>
@@ -130,7 +130,7 @@
   <text class="actorNote" x="1026.1000000000001" y="1201.76" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">10</text>
   <text class="actorNote" x="1147.6000000000001" y="1201.76" text-anchor="middle" dominant-baseline="middle">write complete</text>
   <path class="ret" d="M 1259.4 1238.88 L 999.8000000000001 1238.88" stroke="#C94D68"/>
-<polygon points="999.8,1238.88 1011.8,1231.224 1011.8,1246.536" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="999.8,1238.88 1015.8,1230.88 1015.8,1246.88" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 11">
   <rect class="pill" x="747.5" y="1278.32" width="245" height="34.8" rx="7"/>
@@ -138,7 +138,7 @@
   <text class="actorNote" x="766.5" y="1296.88" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">11</text>
   <text class="actorNote" x="888" y="1296.88" text-anchor="middle" dominant-baseline="middle">writer returns</text>
   <path class="ret" d="M 999.8000000000001 1334 L 740.2 1334" stroke="#755BC6"/>
-<polygon points="740.2,1334 752.2,1326.344 752.2,1341.656" fill="#755BC6" stroke="#755BC6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="740.2,1334 756.2,1326 756.2,1342" fill="#755BC6" stroke="#755BC6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 12">
   <rect class="pill" x="487.9000000000001" y="1373.44" width="245" height="34.8" rx="7"/>
@@ -146,7 +146,7 @@
   <text class="actorNote" x="506.9000000000001" y="1392" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">12</text>
   <text class="actorNote" x="628.4000000000001" y="1392" text-anchor="middle" dominant-baseline="middle">cache updated</text>
   <path class="ret" d="M 740.2 1429.12 L 480.6 1429.12" stroke="#2E8F89"/>
-<polygon points="480.6,1429.12 492.6,1421.464 492.6,1436.776" fill="#2E8F89" stroke="#2E8F89" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="480.6,1429.12 496.6,1421.12 496.6,1437.12" fill="#2E8F89" stroke="#2E8F89" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 13">
   <rect class="pill" x="225.8" y="1468.56" width="250" height="34.8" rx="7"/>
@@ -154,7 +154,7 @@
   <text class="actorNote" x="244.8" y="1487.12" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">13</text>
   <text class="actorNote" x="368.8" y="1487.12" text-anchor="middle" dominant-baseline="middle">return after DB write</text>
   <path class="ret" d="M 480.6 1524.24 L 221 1524.24" stroke="#B9851B"/>
-<polygon points="221,1524.24 233,1516.584 233,1531.896" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="221,1524.24 237,1516.24 237,1532.24" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g>
   <rect class="alt" x="74" y="1575.28" width="1592" height="55.68" rx="15"/>

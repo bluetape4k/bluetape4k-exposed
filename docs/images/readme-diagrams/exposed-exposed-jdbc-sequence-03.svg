@@ -2,13 +2,13 @@
   <title id="t t l">JDBC Save and findPage Sequence</title>
   <desc id="s c">Sequence diagram rebuilt from exposed-jdbc README save/findPage examples, JdbcRepository.findPage source, and repository pagination tests.</desc>
   <defs>
-    <marker id="seqArrow-4F83BF" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.58 L 4.5 2.9 L 0.5 5.22 Z" fill="#4F83BF" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="seqArrow-755BC6" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.58 L 4.5 2.9 L 0.5 5.22 Z" fill="#755BC6" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="seqArrow-2E8F89" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.58 L 4.5 2.9 L 0.5 5.22 Z" fill="#2E8F89" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="seqArrow-3E9868" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.58 L 4.5 2.9 L 0.5 5.22 Z" fill="#3E9868" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="seqArrow-B9851B" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.58 L 4.5 2.9 L 0.5 5.22 Z" fill="#B9851B" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="seqArrow-C94D68" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.58 L 4.5 2.9 L 0.5 5.22 Z" fill="#C94D68" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="seqArrow-758297" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.58 L 4.5 2.9 L 0.5 5.22 Z" fill="#758297" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+    <marker id="seqArrow-4F83BF" markerWidth="16" markerHeight="16" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.58 L 4.5 2.9 L 0.5 5.22 Z" fill="#4f83bf" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#4f83bf" /></marker>
+    <marker id="seqArrow-755BC6" markerWidth="16" markerHeight="16" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.58 L 4.5 2.9 L 0.5 5.22 Z" fill="#755bc6" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#755bc6" /></marker>
+    <marker id="seqArrow-2E8F89" markerWidth="16" markerHeight="16" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.58 L 4.5 2.9 L 0.5 5.22 Z" fill="#2e8f89" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#2e8f89" /></marker>
+    <marker id="seqArrow-3E9868" markerWidth="16" markerHeight="16" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.58 L 4.5 2.9 L 0.5 5.22 Z" fill="#3e9868" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#3e9868" /></marker>
+    <marker id="seqArrow-B9851B" markerWidth="16" markerHeight="16" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.58 L 4.5 2.9 L 0.5 5.22 Z" fill="#b9851b" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#b9851b" /></marker>
+    <marker id="seqArrow-C94D68" markerWidth="16" markerHeight="16" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.58 L 4.5 2.9 L 0.5 5.22 Z" fill="#c94d68" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#c94d68" /></marker>
+    <marker id="seqArrow-758297" markerWidth="16" markerHeight="16" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.58 L 4.5 2.9 L 0.5 5.22 Z" fill="#758297" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#758297" /></marker>
     <filter id="s h a" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
     <style>
       .canvas{fill:#F7FAFC}.frame{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:2.6;filter:url(#shadow)}
@@ -93,7 +93,7 @@
   <text class="actorNote" x="896.3000000000001" y="726.16" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">5</text>
   <text class="actorNote" x="1017.8000000000001" y="726.16" text-anchor="middle" dominant-baseline="middle">generated EntityID</text>
   <path class="ret" d="M 1259.4 763.28 L 740.2 763.28" stroke="#C94D68"/>
-<polygon points="740.2,763.28 752.2,755.624 752.2,770.936" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="740.2,763.28 756.2,755.28 756.2,771.28" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 6">
   <rect class="pill" x="487.9000000000001" y="802.72" width="245" height="34.8" rx="7"/>
@@ -101,7 +101,7 @@
   <text class="actorNote" x="506.9000000000001" y="821.28" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">6</text>
   <text class="actorNote" x="628.4000000000001" y="821.28" text-anchor="middle" dominant-baseline="middle">id.value</text>
   <path class="ret" d="M 740.2 858.4 L 480.6 858.4" stroke="#2E8F89"/>
-<polygon points="480.6,858.4 492.6,850.744 492.6,866.056" fill="#2E8F89" stroke="#2E8F89" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="480.6,858.4 496.6,850.4 496.6,866.4" fill="#2E8F89" stroke="#2E8F89" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 7">
   <rect class="pill" x="225.8" y="897.84" width="250" height="34.8" rx="7"/>
@@ -109,7 +109,7 @@
   <text class="actorNote" x="244.8" y="916.4" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">7</text>
   <text class="actorNote" x="368.8" y="916.4" text-anchor="middle" dominant-baseline="middle">return record.copy(id)</text>
   <path class="ret" d="M 480.6 953.52 L 221 953.52" stroke="#B9851B"/>
-<polygon points="221,953.52 233,945.864 233,961.176" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="221,953.52 237,945.52 237,961.52" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g>
   <rect class="alt" x="74" y="1004.56" width="1592" height="55.68" rx="15"/>
@@ -158,7 +158,7 @@
   <text class="actorNote" x="1026.1000000000001" y="1582.24" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">14</text>
   <text class="actorNote" x="1147.6000000000001" y="1582.24" text-anchor="middle" dominant-baseline="middle">totalCount</text>
   <path class="ret" d="M 1259.4 1619.36 L 999.8000000000001 1619.36" stroke="#C94D68"/>
-<polygon points="999.8,1619.36 1011.8,1611.704 1011.8,1627.016" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="999.8,1619.36 1015.8,1611.36 1015.8,1627.36" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 15">
   <rect class="pill" x="617.7" y="1658.8" width="245" height="34.8" rx="7"/>
@@ -166,7 +166,7 @@
   <text class="actorNote" x="636.7" y="1677.36" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">15</text>
   <text class="actorNote" x="758.2" y="1677.36" text-anchor="middle" dominant-baseline="middle">return totalCount</text>
   <path class="ret" d="M 999.8000000000001 1714.48 L 480.6 1714.48" stroke="#2E8F89"/>
-<polygon points="480.6,1714.48 492.6,1706.824 492.6,1722.136" fill="#2E8F89" stroke="#2E8F89" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="480.6,1714.48 496.6,1706.48 496.6,1722.48" fill="#2E8F89" stroke="#2E8F89" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g>
   <rect class="alt" x="74" y="1765.52" width="1592" height="55.68" rx="15"/>
@@ -201,7 +201,7 @@
   <text class="actorNote" x="1026.1000000000001" y="2152.96" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">20</text>
   <text class="actorNote" x="1147.6000000000001" y="2152.96" text-anchor="middle" dominant-baseline="middle">ResultRows</text>
   <path class="ret" d="M 1259.4 2190.08 L 999.8000000000001 2190.08" stroke="#C94D68"/>
-<polygon points="999.8,2190.08 1011.8,2182.424 1011.8,2197.736" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="999.8,2190.08 1015.8,2182.08 1015.8,2198.08" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 21">
   <rect class="pill" x="597.8000000000001" y="2229.52" width="284.8" height="34.8" rx="7"/>
@@ -209,7 +209,7 @@
   <text class="actorNote" x="616.8000000000001" y="2248.08" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">21</text>
   <text class="actorNote" x="758.2" y="2248.08" text-anchor="middle" dominant-baseline="middle">map rows with toEntity()</text>
   <path class="ret" d="M 999.8000000000001 2285.2 L 480.6 2285.2" stroke="#755BC6"/>
-<polygon points="480.6,2285.2 492.6,2277.544 492.6,2292.856" fill="#755BC6" stroke="#755BC6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="480.6,2285.2 496.6,2277.2 496.6,2293.2" fill="#755BC6" stroke="#755BC6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 22">
   <rect class="pill" x="875.4" y="2324.64" width="248.8" height="34.8" rx="7"/>
@@ -224,7 +224,7 @@
   <text class="actorNote" x="696.2" y="2438.32" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">23</text>
   <text class="actorNote" x="888" y="2438.32" text-anchor="middle" dominant-baseline="middle">return content, totalCount, totalPages</text>
   <path class="ret" d="M 1519 2475.44 L 221 2475.44" stroke="#B9851B"/>
-<polygon points="221,2475.44 233,2467.784 233,2483.096" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="221,2475.44 237,2467.44 237,2483.44" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g>
   <rect class="alt" x="74" y="2526.48" width="1592" height="55.68" rx="15"/>
@@ -246,7 +246,7 @@
   <text class="actorNote" x="368.8" y="2706.28" text-anchor="middle" dominant-baseline="middle">throw</text>
   <text class="actorNote" x="368.8" y="2723.68" text-anchor="middle" dominant-baseline="middle">IllegalArgumentException</text>
   <path class="ret" d="M 480.6 2760.8 L 221 2760.8" stroke="#B9851B"/>
-<polygon points="221,2760.8 233,2753.144 233,2768.456" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="221,2760.8 237,2752.8 237,2768.8" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 27">
   <rect class="pill" x="225.8" y="2786.32" width="250" height="48.72" rx="7"/>
@@ -276,7 +276,7 @@
   <text class="actorNote" x="1026.1000000000001" y="3104.16" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">30</text>
   <text class="actorNote" x="1147.6000000000001" y="3104.16" text-anchor="middle" dominant-baseline="middle">no ResultRows</text>
   <path class="ret" d="M 1259.4 3141.28 L 999.8000000000001 3141.28" stroke="#C94D68"/>
-<polygon points="999.8,3141.28 1011.8,3133.624 1011.8,3148.936" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+<polygon points="999.8,3141.28 1015.8,3133.28 1015.8,3149.28" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
 </g>
 <g id="m 31">
   <rect class="pill" x="846.5999999999999" y="3180.72" width="306.4" height="34.8" rx="7"/>
