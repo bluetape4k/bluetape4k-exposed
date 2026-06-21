@@ -48,8 +48,8 @@
   <path id="edge-int-auditable" class="inherit" d="M305 680 L305 622 Q305 610 317 610 L648 610 Q660 610 660 598 L660 520"/>
   <path id="edge-long-auditable" class="inherit" d="M750 680 L750 520"/>
   <path id="edge-uuid-auditable" class="inherit" d="M1195 680 L1195 622 Q1195 610 1183 610 L852 610 Q840 610 840 598 L840 520"/>
-  <path id="edge-interface-contract" class="dep" d="M425 278 L543 278 Q555 278 555 290 L555 405"/>
-  <path id="edge-user-context" class="dep" d="M1080 420 L957 420 Q945 420 945 432 L945 455"/>
+  <path id="edge-interface-contract" class="dep" d="M425 278 L520 278 Q532 278 532 290 L532 430 Q532 442 544 442 L555 442"/>
+  <path id="edge-user-context" class="dep" d="M1080 420 L980 420 Q968 420 968 432 L968 462 Q968 474 956 474 L945 474"/>
   <path id="edge-update-note" class="note-line" d="M405 820 L553 820 Q565 820 565 808 L565 520"/>
 
   <g id="class-idtable" transform="translate(555 170)">

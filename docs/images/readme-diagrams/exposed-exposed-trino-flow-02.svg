@@ -111,7 +111,7 @@
   <path class="line linePurple" d="M 930 686 L 962 686 Q 974 686 974 698 L 974 756 Q 974 768 962 768 L 827 768 Q 815 768 815 756 L 815 714"/>
   <path class="line lineGreen" d="M305 702 V950"/>
   <path class="line linePurple" d="M765 714 V950"/>
-  <path class="line lineGold" d="M1210 702 V950"/>
+  <path class="line lineGold" d="M1210 702 V878 Q1210 890 1222 890 H1358 Q1370 890 1370 902 V950"/>
 
   <text class="label" x="416" y="304">DSL</text>
   <text class="label" x="828" y="304">SQL</text>

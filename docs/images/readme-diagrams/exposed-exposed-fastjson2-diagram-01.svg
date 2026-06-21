@@ -30,7 +30,7 @@
   <rect class="lane" x="850" y="160" width="348" height="620" rx="18"/><text class="lane-title" x="880" y="190" dominant-baseline="middle">3. Exposed column + SQL</text>
   <rect class="lane" x="1234" y="160" width="348" height="620" rx="18"/><text class="lane-title" x="1264" y="190" dominant-baseline="middle">4. Readback API</text>
 
-  <path data-edge="api-json-&gt;serializer" class="connector" d="M 386 276 L 510 276" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
+  <path data-edge="api-json-&gt;serializer" class="connector" d="M 386 276 L 448 276 Q 460 276 460 288 L 460 304 Q 460 316 472 316 L 510 316" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
   <path data-edge="api-jsonb-&gt;serializer" class="connector" d="M 386 420 L 510 420" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
   <path data-edge="api-query-&gt;sql" class="connector" d="M 386 620 L 910 620" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
   <path data-edge="serializer-&gt;columns" class="connector" d="M 770 348 L 910 348" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
