@@ -3,7 +3,7 @@
   <desc id="desc">Architecture view of exposed-r2dbc runtime boundaries from coroutine callers to repository contracts, Exposed R2DBC statements, and database drivers.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#327d91" stroke-dasharray="none"/>
+      <path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#327d91" stroke-dasharray="none" style="stroke-dasharray:none!important"/>
     </marker>
     <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
       <feDropShadow dx="0" dy="9" stdDeviation="12" flood-color="#20303a" flood-opacity="0.14"/>
@@ -65,7 +65,7 @@
   <text class="label" x="862" y="618">statement delegation</text>
 
   <g transform="translate(94 638)">
-    <rect x="0" y="0" width="1492" height="184" rx="18" fill="#fff0d8" stroke="#d8ad68" stroke-width="2.5"/>
+    <rect x="0" y="0" width="1492" height="184" rx="18" fill="#fff0d8" stroke="#d8ad68" stroke-width="2.5"/><image data-bluetape4k-icon="generic.database" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSI2NCIgY3k9IjM2IiByeD0iMzQiIHJ5PSIxMyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiLz4KICA8cGF0aCBkPSJNMzAgNThjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMzAgODBjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==" preserveAspectRatio="xMidYMid meet"/>
     <text class="layerTitle" x="28" y="44">Exposed R2DBC and driver layer</text>
     <rect x="184" y="52" width="344" height="98" rx="14" fill="#fffdf8" stroke="#d8ad68" stroke-width="2"/>
     <text class="cardTitle" x="240" y="86">R2DBC Query</text>

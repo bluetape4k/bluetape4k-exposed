@@ -3,8 +3,8 @@
 <desc id="desc">Spring Boot auto-configuration wiring for a JDBC-only Spring Modulith EventPublicationRepository backed by Exposed DSL tables and the application DataSource.</desc>
 <defs>
   <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="arrow" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 12 6 L 1 11" fill="none" stroke="#5d6f83" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="dashArrow" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 12 6 L 1 11" fill="none" stroke="#8a72d6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none"/></marker>
+  <marker id="arrow" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 7 3.7 Q 12 6 7 8.3 L 1 11" fill="none" stroke="#5d6f83" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+  <marker id="dashArrow" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 7 3.7 Q 12 6 7 8.3 L 1 11" fill="none" stroke="#8a72d6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
   <style>
     .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
     .layer{fill:#fbfdff;stroke:#d8e0ea;stroke-width:1.4}
@@ -31,28 +31,29 @@
 <rect class="layer" x="64" y="612" width="1412" height="174" rx="18"/>
 <text class="layerTitle" x="90" y="648">JDBC publication store</text>
 
-<path class="line" d="M326 246 H396"/>
+<path class="line" d="M356 246 H396"/>
 <path class="line" d="M668 246 H740"/>
 <path class="line" d="M1012 246 H1084"/>
-<path class="dash" d="M222 282 V444"/>
+<path class="dash" d="M225 282 V344 Q225 356 237 356 H360 Q372 356 372 368 V444"/>
 <path class="dash" d="M568 288 V424"/>
 <path class="dash" d="M1166 288 V424"/>
 <path class="line" d="M396 468 H470"/>
 <path class="line" d="M760 468 H834"/>
 <path class="line" d="M970 548 V650"/>
 <path class="line" d="M1168 548 V650"/>
-<path class="line" d="M1190 680 H1264"/>
+<path class="line" d="M1190 680 H1248"/>
 <path class="line" d="M834 680 H760"/>
 
 <g transform="translate(94,210)">
-  <rect class="card" x="0" y="0" width="232" height="72" rx="8" fill="#e8f3ff" stroke="#5b8def"/>
-  <text class="label" x="116" y="31" text-anchor="middle">Spring Boot App</text>
-  <text class="small" x="116" y="56" text-anchor="middle">JDBC application context</text>
+  <rect class="card" x="0" y="0" width="262" height="72" rx="8" fill="#e8f3ff" stroke="#5b8def"/><image data-bluetape4k-icon="spring.boot" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDI0LjAuMywgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIGZpbGw9IiM2REIzM0YiIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCA1MTAgNDU3LjgiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDUxMCA0NTcuODsiIHhtbDpzcGFjZT0icHJlc2VydmUiPgo8c3R5bGUgdHlwZT0idGV4dC9jc3MiPgoJLnN0MHtmaWxsOiM2REIzM0Y7fQo8L3N0eWxlPgo8dGl0bGU+aWNvbi1zcHJpbmctYm9vdDwvdGl0bGU+CjxnIGlkPSJMYXllcl8yXzFfIj4KCTxnIGlkPSJMYXllcl8xLTIiPgoJCTxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik01MDMuNSwyMDEuNEw0MDMsMjcuNUMzOTQuMywxMi40LDM3Mi45LDAsMzU1LjQsMEgxNTQuNmMtMTcuNCwwLTM4LjksMTIuNC00Ny42LDI3LjVMNi42LDIwMS40CgkJCWMtOC43LDE1LjEtOC43LDM5LjgsMCw1NC45bDEwMC40LDE3NGM4LjcsMTUuMSwzMC4xLDI3LjUsNDcuNiwyNy41aDIwMC45YzE3LjQsMCwzOC44LTEyLjQsNDcuNi0yNy41bDEwMC40LTE3NAoJCQlDNTEyLjIsMjQxLjIsNTEyLjIsMjE2LjUsNTAzLjUsMjAxLjR6IE0yMzMuMyw5Ni4yYzAtMTEuNCw5LjMtMjAuNywyMC43LTIwLjdjMTEuNCwwLDIwLjcsOS4zLDIwLjcsMjAuN3YxMjMuNwoJCQljMCwxMS40LTkuMywyMC43LTIwLjcsMjAuN2MtMTEuNCwwLTIwLjctOS4zLTIwLjctMjAuN2wwLDBWOTYuMnogTTI1NCwzNjAuM2MtNzcuNCwwLTE0MC40LTYzLTE0MC40LTE0MC40CgkJCWMwLjEtNDQuNCwyMS4xLTg2LjEsNTYuNy0xMTIuN2M4LjItNi4xLDE5LjctNC40LDI1LjgsMy44czQuNCwxOS43LTMuOCwyNS44bDAsMGMtNDUuOSwzNC4xLTU1LjUsOTktMjEuNCwxNDQuOQoJCQlzOTksNTUuNSwxNDQuOSwyMS40YzI2LjMtMTkuNSw0MS44LTUwLjQsNDEuOC04My4yYy0wLjEtMzIuOS0xNS43LTYzLjgtNDIuMi04My40Yy04LjItNi05LjktMTcuNi0zLjktMjUuOHMxNy42LTkuOSwyNS44LTMuOQoJCQljMzUuOSwyNi41LDU3LDY4LjUsNTcuMSwxMTMuMUMzOTQuNCwyOTcuNCwzMzEuNCwzNjAuMywyNTQsMzYwLjN6Ii8+Cgk8L2c+CjwvZz4KPC9zdmc+Cg==" preserveAspectRatio="xMidYMid meet"/>
+  <text class="label" x="146" y="31" text-anchor="middle">Spring Boot App</text>
+  <text class="small" x="146" y="56" text-anchor="middle">JDBC application context</text>
 </g>
 <g transform="translate(396,204)">
   <rect class="card" x="0" y="0" width="272" height="84" rx="8" fill="#eaf7ef" stroke="#58a978"/>
-  <text class="label" x="136" y="31" text-anchor="middle">Exposed JDBC AutoConfig</text>
-  <text class="small" x="136" y="58" text-anchor="middle">springTransactionManager</text>
+  <text class="label" x="136" y="24" text-anchor="middle">Exposed JDBC</text>
+  <text class="label" x="136" y="47" text-anchor="middle">AutoConfig</text>
+  <text class="small" x="136" y="70" text-anchor="middle">springTransactionManager</text>
 </g>
 <g transform="translate(740,204)">
   <rect class="card" x="0" y="0" width="272" height="84" rx="8" fill="#fff3d9" stroke="#d6a441"/>
@@ -67,8 +68,9 @@
 
 <g transform="translate(94,444)">
   <rect class="card" x="0" y="0" width="302" height="88" rx="8" fill="#e9f7f6" stroke="#45a7a1"/>
-  <text class="label" x="151" y="34" text-anchor="middle">ExposedModulithProperties</text>
-  <text class="small" x="151" y="61" text-anchor="middle">table, archive, completion mode</text>
+  <text class="label" x="151" y="28" text-anchor="middle">ExposedModulith</text>
+  <text class="label" x="151" y="52" text-anchor="middle">Properties</text>
+  <text class="small" x="151" y="76" text-anchor="middle">table, archive, completion mode</text>
 </g>
 <g transform="translate(470,424)">
   <rect class="card" x="0" y="0" width="290" height="124" rx="8" fill="#f7eef8" stroke="#b879bd"/>
@@ -104,11 +106,11 @@
   <text class="label" x="178" y="35" text-anchor="middle">Completion Mode</text>
   <text class="small" x="178" y="64" text-anchor="middle">UPDATE, DELETE, ARCHIVE</text>
 </g>
-<g transform="translate(1264,632)">
-  <rect class="card" x="0" y="0" width="172" height="128" rx="8" fill="#f8fbff" stroke="#6b7f93"/>
-  <image x="14" y="34" width="48" height="48" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K"/>
-  <text class="label" x="112" y="38" text-anchor="middle">JDBC DB</text>
-  <text class="small" x="112" y="68" text-anchor="middle">same DataSource</text>
-  <text class="mono" x="112" y="98" text-anchor="middle">H2/Postgres/MySQL</text>
+<g transform="translate(1248,632)">
+  <rect class="card" x="0" y="0" width="200" height="128" rx="8" fill="#f8fbff" stroke="#6b7f93"/><image data-bluetape4k-icon="generic.database" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSI2NCIgY3k9IjM2IiByeD0iMzQiIHJ5PSIxMyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiLz4KICA8cGF0aCBkPSJNMzAgNThjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMzAgODBjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==" preserveAspectRatio="xMidYMid meet"/>
+  <text class="label" x="122" y="38" text-anchor="middle">JDBC DB</text>
+  <text class="small" x="122" y="68" text-anchor="middle">same DataSource</text>
+  <text class="mono" x="122" y="94" text-anchor="middle">H2 / PostgreSQL</text>
+  <text class="mono" x="122" y="116" text-anchor="middle">MySQL</text>
 </g>
 </svg>

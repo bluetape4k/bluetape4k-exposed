@@ -2,11 +2,11 @@
   <title id="title">withTables R2DBC Test Lifecycle</title>
   <desc id="desc">Lifecycle diagram for exposed-r2dbc-tests withTables: dialect selection, optional Testcontainers prewarm, withDb semaphore, R2DBC transaction setup, table create/drop, fallback cleanup, and semaphore release.</desc>
   <defs>
-    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#3f7d9c" stroke-dasharray="none"/></marker>
-    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#6e8f4f" stroke-dasharray="none"/></marker>
-    <marker id="arrow-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#b9851b" stroke-dasharray="none"/></marker>
-    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755bc6" stroke-dasharray="none"/></marker>
-    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#c94d68" stroke-dasharray="none"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#3f7d9c" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#6e8f4f" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#b9851b" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#755bc6" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#c94d68" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
     <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="8" stdDeviation="11" flood-color="#20303a" flood-opacity="0.12"/></filter>
     <style>
       .canvas{fill:#f6f0e8}.frame{fill:#fffaf2;stroke:#28485a;stroke-width:4}.lane{stroke-width:2.5}.title{font-family:"Architects Daughter","Comic Mono",monospace;font-size:46px;fill:#21343f}.subtitle,.cardText,.small,.label{font-family:"Comic Mono",monospace;fill:#51636f}.subtitle{font-size:18px}.laneTitle{font-family:"Architects Daughter","Comic Mono",monospace;font-size:24px;fill:#21343f}.cardTitle{font-family:"Comic Mono",monospace;font-size:16px;font-weight:700;fill:#20323d}.cardText{font-size:13px}.small{font-size:13px}.label{font-size:12px;fill:#315664}.card{fill:#fffdf8;stroke-width:2.2}.blue{stroke:#8db7c2}.green{stroke:#a9c58b}.gold{stroke:#d3a663}.purple{stroke:#b2a1dc}.red{stroke:#dc8ea1}.line{fill:none;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}.lineBlue{stroke:#3f7d9c;marker-end:url(#arrow-blue)}.lineGreen{stroke:#6e8f4f;marker-end:url(#arrow-green)}.lineGold{stroke:#b9851b;marker-end:url(#arrow-gold)}.linePurple{stroke:#755bc6;marker-end:url(#arrow-purple)}.lineRed{stroke:#c94d68;marker-end:url(#arrow-red)}.dash{stroke-dasharray:9 7}.badge{fill:#fffaf2;stroke-width:2}.num{font-family:"Comic Mono",monospace;font-size:13px;font-weight:700;fill:#21343f}.code{fill:#9b3d5a;font-weight:700}.type{fill:#176f7a;font-weight:700}.keyword{fill:#8a5b00;font-weight:700}
@@ -33,7 +33,7 @@
     <text class="cardText" x="166" y="56" text-anchor="middle">runTest + withTables</text>
   </g>
   <g transform="translate(116 386)">
-    <rect class="card gold" width="304" height="92" rx="12"/>
+    <rect class="card gold" width="304" height="92" rx="12"/><image data-bluetape4k-icon="database.h2" x="24" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjMDk0NzZCIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+SDIgRGF0YWJhc2U8L3RpdGxlPjxwYXRoIGQ9Ik0xNy4xNyAxMy4yN2MuMTQtLjAxNS4yOC0uMDIzLjQxNi0uMDIzLjcgMCAxLjIyOC4xNTkgMS41OTkuNDY5LjM3LjMxNC41NTUuNzU2LjU1NSAxLjMzNGEyLjg2MSAyLjg2MSAwIDAgMS0uNDMgMS40NTVjLS4yOTEuNDkyLS43NzUgMS4wNjYtMS40NiAxLjcyNy0uNDUzLjQ0Ni0xLjA2MS45NzYtMS44MjEgMS41OTJhNDguMDIgNDguMDIgMCAwIDEtMi4yNzUgMS43NDJ2Mi4wODNoOS44OTVWMjEuMjRIMTcuOTljLjIxOS0uMTU5LjU5LS40MzUgMS4xMS0uODMyLjUxOS0uNCAxLjAzMy0uODM1IDEuNTUtMS4zMTEuODE3LS43NiAxLjQyNS0xLjUgMS44MjItMi4yMTVhNC42MjQgNC42MjQgMCAwIDAgLjU5Ny0yLjI2OGMwLTEuMjEzLS40MTYtMi4xNTQtMS4yNDctMi44MTUtLjgyOC0uNjYyLTIuMDMzLS45OTQtMy42MTMtLjk5NC0uMzQ0IDAtLjY5Mi4wMTUtMS4wMzYuMDQ5VjYuMDRIMTMuODZ2NC43MDFIOC45NjVWNi4wNEg1LjY1djEyLjg0NmgzLjMxNXYtNS42NjFoNC44OXY1LjY2MWguMDM5Yy4zMS0uMjQyLjYyMy0uNDg3LjkzMy0uNzRhMjguNTY0IDI4LjU2NCAwIDAgMCAxLjgyNi0xLjU4OCAxNC44NTQgMTQuODU0IDAgMCAwIC41MTctLjUyOXpNMTIuMDExIDIzLjNBMTEuMzI3IDExLjMyNyAwIDAgMSAuNyAxMS45OSAxMS4zMDUgMTEuMzA1IDAgMCAxIDEyLjAxMS42OTlhMTEuMjg2IDExLjI4NiAwIDAgMSAxMS4yOSAxMS4yOXYuMzUxSDI0di0uMzUxQTExLjk4NSAxMS45ODUgMCAwIDAgMTIuMDExIDAgMTIuMDA4IDEyLjAwOCAwIDAgMCAwIDExLjk4OSAxMi4wMjYgMTIuMDI2IDAgMCAwIDEyLjAxMSAyNGguMzUydi0uN3oiLz48L3N2Zz4=" preserveAspectRatio="xMidYMid meet"/>
     <circle class="badge gold" cx="26" cy="26" r="15"/><text class="num" x="26" y="31" text-anchor="middle">2</text>
     <text class="cardTitle code" x="166" y="30" text-anchor="middle">enabledDialects()</text>
     <text class="cardText" x="166" y="56" text-anchor="middle">H2 only if useFastDB</text>
@@ -41,7 +41,7 @@
   </g>
   <g transform="translate(116 536)">
     <rect class="card blue" width="304" height="104" rx="12"/>
-    <image x="34" y="38" width="34" height="34" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K"/>
+
     <circle class="badge blue" cx="26" cy="26" r="15"/><text class="num" x="26" y="31" text-anchor="middle">3</text>
     <text class="cardTitle" x="186" y="34" text-anchor="middle">Prewarm containers</text>
     <text class="cardText" x="186" y="60" text-anchor="middle">only selected real dialects</text>
@@ -121,17 +121,17 @@
 
   <path class="line lineBlue" d="M268 332 V386"/>
   <path class="line lineBlue" d="M268 478 V536"/>
-  <path class="line lineGreen" d="M420 588 H500 V289 H544"/>
+  <path class="line lineGreen" d="M 420 588 L 488 588 Q 500 588 500 576 L 500 301 Q 500 289 512 289 L 544 289"/>
   <path class="line lineGreen" d="M699 334 V388"/>
   <path class="line lineGreen" d="M699 484 V536"/>
   <path class="line lineGreen" d="M699 652 V720"/>
-  <path class="line lineGold" d="M854 773 H918 V306 H984"/>
+  <path class="line lineGold" d="M 854 773 L 906 773 Q 918 773 918 761 L 918 318 Q 918 306 930 306 L 984 306"/>
   <path class="line lineGold" d="M1154 330 V378"/>
   <path class="line lineGold" d="M1154 470 V520"/>
   <path class="line lineGold" d="M1154 618 V672"/>
-  <path class="line linePurple" d="M1324 721 H1380 V562 H1448"/>
+  <path class="line linePurple" d="M 1324 721 L 1368 721 Q 1380 721 1380 709 L 1380 574 Q 1380 562 1392 562 L 1448 562"/>
   <path class="line lineRed dash" d="M1154 770 V844"/>
-  <path class="line linePurple" d="M1324 892 H1388 V586 H1448"/>
+  <path class="line linePurple" d="M 1324 892 L 1376 892 Q 1388 892 1388 880 L 1388 598 Q 1388 586 1400 586 L 1448 586"/>
 
   <text class="label" x="446" y="572">selected real DB</text>
   <text class="label" x="1172" y="812">cleanup failure</text>

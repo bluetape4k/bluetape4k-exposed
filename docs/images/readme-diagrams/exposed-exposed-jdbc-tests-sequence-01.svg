@@ -1,131 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1220" viewBox="0 0 1680 1220" role="img" aria-labelledby="title desc">
-  <title id="title">JDBC Test Lifecycle</title>
-  <desc id="desc">Sequence diagram for exposed-jdbc-tests showing JUnit parameterization, TestDB selection, connection setup, transaction-scoped helpers, fixture creation, cleanup, and shutdown handling.</desc>
-  <defs>
-    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%">
-      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/>
-    </filter>
-    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#4F83BF"/>
-    </marker>
-    <marker id="arrow-teal" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#2E8F89"/>
-    </marker>
-    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#B9851B"/>
-    </marker>
-    <marker id="arrow-purple" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#755BC6"/>
-    </marker>
-    <marker id="arrow-red" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#C94D68"/>
-    </marker>
-    <style>
-      .canvas{fill:#F6F9FC}
-      .frame{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
-      .band{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}
-      .actor{filter:url(#shadow);stroke-width:2}
-      .lifeline{stroke:#B8C8D8;stroke-width:2;stroke-dasharray:8 8}
-      .call{fill:none;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round}
-      .return{fill:none;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:8 8}
-      .label-box{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1.2}
-      .note{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1.4}
-      .title{font-family:"Architects Daughter";font-size:46px;fill:#22344A;font-weight:400}
-      .subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476;font-weight:400}
-      .actor-title{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}
-      .detail{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}
-      .small{font-family:"Comic Mono";font-size:13px;fill:#627184;font-weight:400}
-      .step{font-family:"Comic Mono";font-size:14px;fill:#31465E;font-weight:400}
-    </style>
-  </defs>
-  <rect class="canvas" width="1680" height="1220"/>
-  <rect class="frame" x="44" y="36" width="1592" height="1148" rx="34"/>
-  <text class="title" x="72" y="88">JDBC Test Lifecycle</text>
-  <text class="subtitle" x="76" y="121">A parameterized test receives a TestDB, opens one serialized transaction scope, creates fixtures, runs assertions, and cleans up deterministically.</text>
-
-  <rect class="band" x="82" y="160" width="1516" height="890" rx="20"/>
-
-  <g id="actors">
-    <g id="actor-junit" data-node="junit" transform="translate(120,190)">
-      <rect class="actor" x="0" y="0" width="210" height="78" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
-      <text class="actor-title" x="105" y="28" text-anchor="middle" dominant-baseline="middle">JUnit test</text>
-      <text class="detail" x="105" y="52" text-anchor="middle" dominant-baseline="middle">@MethodSource</text>
-    </g>
-    <g id="actor-testdb" data-node="testdb" transform="translate(390,190)">
-      <rect class="actor" x="0" y="0" width="220" height="78" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
-      <text class="actor-title" x="110" y="28" text-anchor="middle" dominant-baseline="middle">TestDB</text>
-      <text class="detail" x="110" y="52" text-anchor="middle" dominant-baseline="middle">dialect selector</text>
-    </g>
-    <g id="actor-helper" data-node="helper" transform="translate(680,190)">
-      <rect class="actor" x="0" y="0" width="250" height="78" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
-      <text class="actor-title" x="125" y="28" text-anchor="middle" dominant-baseline="middle">withDb / withTables</text>
-      <text class="detail" x="125" y="52" text-anchor="middle" dominant-baseline="middle">serialized helper scope</text>
-    </g>
-    <g id="actor-exposed" data-node="exposed" transform="translate(1000,190)">
-      <rect class="actor" x="0" y="0" width="220" height="78" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
-      <text class="actor-title" x="110" y="28" text-anchor="middle" dominant-baseline="middle">Exposed JDBC</text>
-      <text class="detail" x="110" y="52" text-anchor="middle" dominant-baseline="middle">transaction + schema</text>
-    </g>
-    <g id="actor-db" data-node="db" transform="translate(1290,190)">
-      <rect class="actor" x="0" y="0" width="230" height="78" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
-      <text class="actor-title" x="115" y="28" text-anchor="middle" dominant-baseline="middle">JDBC database</text>
-      <text class="detail" x="115" y="52" text-anchor="middle" dominant-baseline="middle">H2 or real server</text>
-    </g>
-  </g>
-
-  <line class="lifeline" x1="225" y1="282" x2="225" y2="1004"/>
-  <line class="lifeline" x1="500" y1="282" x2="500" y2="1004"/>
-  <line class="lifeline" x1="805" y1="282" x2="805" y2="1004"/>
-  <line class="lifeline" x1="1110" y1="282" x2="1110" y2="1004"/>
-  <line class="lifeline" x1="1405" y1="282" x2="1405" y2="1004"/>
-
-  <path class="call" data-edge="junit-&gt;testdb" d="M 225 330 L 500 330" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
-  <rect class="label-box" x="286" y="302" width="154" height="26" rx="8"/>
-  <text class="step" x="363" y="316" text-anchor="middle" dominant-baseline="middle">enableDialects()</text>
-
-  <path class="return" data-edge="testdb-&gt;junit" d="M 500 382 L 225 382" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
-  <rect class="label-box" x="296" y="392" width="134" height="26" rx="8"/>
-  <text class="step" x="363" y="406" text-anchor="middle" dominant-baseline="middle">TestDB set</text>
-
-  <path class="call" data-edge="junit-&gt;helper" d="M 225 462 L 805 462" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
-  <rect class="label-box" x="430" y="434" width="170" height="26" rx="8"/>
-  <text class="step" x="515" y="448" text-anchor="middle" dominant-baseline="middle">withTables(testDB)</text>
-
-  <path class="call" data-edge="helper-&gt;testdb" d="M 805 522 L 500 522" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
-  <rect class="label-box" x="590" y="494" width="126" height="26" rx="8"/>
-  <text class="step" x="653" y="508" text-anchor="middle" dominant-baseline="middle">connect()</text>
-
-  <path class="call" data-edge="testdb-&gt;db" d="M 500 584 L 1405 584" stroke="#C94D68" marker-end="url(#arrow-red)"/>
-  <rect class="label-box" x="840" y="556" width="224" height="26" rx="8"/>
-  <text class="step" x="952" y="570" text-anchor="middle" dominant-baseline="middle">JDBC URL, driver, credentials</text>
-
-  <path class="return" data-edge="db-&gt;helper" d="M 1405 640 L 805 640" stroke="#C94D68" marker-end="url(#arrow-red)"/>
-  <rect class="label-box" x="1036" y="650" width="138" height="26" rx="8"/>
-  <text class="step" x="1105" y="664" text-anchor="middle" dominant-baseline="middle">Database handle</text>
-
-  <path class="call" data-edge="helper-&gt;exposed" d="M 805 716 L 1110 716" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
-  <rect class="label-box" x="872" y="688" width="170" height="26" rx="8"/>
-  <text class="step" x="957" y="702" text-anchor="middle" dominant-baseline="middle">transaction(maxAttempts=1)</text>
-
-  <path class="call" data-edge="exposed-&gt;db" d="M 1110 776 L 1405 776" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
-  <rect class="label-box" x="1176" y="748" width="164" height="26" rx="8"/>
-  <text class="step" x="1258" y="762" text-anchor="middle" dominant-baseline="middle">drop/create fixtures</text>
-
-  <path class="call" data-edge="junit-&gt;exposed" d="M 225 846 L 1110 846" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
-  <rect class="label-box" x="560" y="818" width="214" height="26" rx="8"/>
-  <text class="step" x="667" y="832" text-anchor="middle" dominant-baseline="middle">test statement + assertions</text>
-
-  <path class="call" data-edge="exposed-&gt;db" d="M 1110 916 L 1405 916" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
-  <rect class="label-box" x="1175" y="888" width="166" height="26" rx="8"/>
-  <text class="step" x="1258" y="902" text-anchor="middle" dominant-baseline="middle">commit then cleanup</text>
-
-  <path class="return" data-edge="helper-&gt;junit" d="M 805 982 L 225 982" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
-  <rect class="label-box" x="440" y="992" width="150" height="26" rx="8"/>
-  <text class="step" x="515" y="1006" text-anchor="middle" dominant-baseline="middle">release semaphore</text>
-
-  <g id="note" transform="translate(112,1080)">
-    <rect class="note" x="0" y="0" width="1456" height="54" rx="12"/>
-    <text class="small" x="728" y="20" text-anchor="middle" dominant-baseline="middle">The same lifecycle is used by withDb, withTables, withSchemas, and their suspending variants; table/schema helpers add fixture create/drop around the user statement.</text>
-    <text class="small" x="728" y="39" text-anchor="middle" dominant-baseline="middle">Real DB containers are lazy; AbstractExposedTest prewarms PostgreSQL and MySQL 8 only when those dialects are enabled.</text>
-  </g>
-</svg>
+<svg data-sequence-spacing-scale="1.16" xmlns="http://www.w3.org/2000/svg" width="1770" height="1461.6" viewBox="0 0 1770 1461.6" role="img" aria-labelledby="title desc"><title id="t t l">JDBC Repository Test Sequence</title><desc id="s c">Tests start container fixtures, run repository calls, and assert persisted rows.</desc><defs><filter id="s h a" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+<marker id="seqArrow-4F83BF" markerWidth="13" markerHeight="13" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5.8 L 0 11.6 Z" fill="#4F83BF" stroke="#4F83BF" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+<marker id="seqArrow-3E9868" markerWidth="13" markerHeight="13" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5.8 L 0 11.6 Z" fill="#3E9868" stroke="#3E9868" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+<marker id="seqArrow-755BC6" markerWidth="13" markerHeight="13" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5.8 L 0 11.6 Z" fill="#755BC6" stroke="#755BC6" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+<marker id="seqArrow-B9851B" markerWidth="13" markerHeight="13" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5.8 L 0 11.6 Z" fill="#B9851B" stroke="#B9851B" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+</defs><style><![CDATA[
+svg{font-family:"Architects Daughter","Comic Mono","Comic Sans MS",ui-sans-serif,system-ui,sans-serif}.canvas{fill:#F6F9FC}.frame{fill:#fbfcf8;stroke:#41545d;stroke-width:3;filter:url(#shadow)}
+.title{font-family:"Architects Daughter";font-size:43px;fill:#263238}.subtitle,.msg,.note,.footer,.detail,.role{font-family:"Comic Mono";fill:#36464f}.subtitle{font-size:16px}
+.actor{fill:#ffffff;stroke:#546e7a;stroke-width:2;filter:url(#shadow)}.actor.db{fill:#fff7e8;stroke:#d6a441}.actorTitle{font-family:"Architects Daughter";font-size:22px;fill:#22344A}.actorNote{font-family:"Comic Mono";font-size:12px;fill:#536476}
+.lifeline{stroke:#9aaab1;stroke-width:2;stroke-dasharray:7 8}.activation{fill:#e6f2ec;stroke:#5b7e67;stroke-width:1.5}.seq{fill:none;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}.ret{fill:none;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:9 7}
+.alt{fill:#eef7f0;fill-opacity:0.12;stroke:#78909c;stroke-width:2.4;stroke-dasharray:12 7}.pill{fill:#fff;stroke:#d7e0e4;stroke-width:1.3}.altTitle{font-family:"Architects Daughter";font-size:20px;fill:#22344A}.seqText{font-size:13px;font-weight:700}.badgeText{font-family:"Comic Mono";font-size:12px;font-weight:700}
+.callBadge{fill:#eaf4f8;stroke:#3f7d9c}.workBadge{fill:#eef7f0;stroke:#6e8f4f}.asyncBadge{fill:#f3ecff;stroke:#7c5aa6}.returnBadge{fill:#fff7e8;stroke:#9b7d54}.callText{fill:#2f6f8e}.workText{fill:#55783f}.asyncText{fill:#674b91}.returnText{fill:#7f6038}.noteBox{fill:#FBFCF8;stroke:#D6E3EF;stroke-width:1.6}.note{font-size:13px;fill:#536476}
+]]></style><rect class="canvas" width="1770" height="1461.6"/><rect class="frame" x="30" y="32.48" width="1710" height="1396.64" rx="30"/><text class="title" x="70" y="99.76">JDBC Repository Test Sequence</text><text class="subtitle" x="74" y="136.88">Tests start container fixtures, run repository calls, and assert persisted rows.</text><g><rect class="actor" x="96" y="192.56" width="220" height="88.16" rx="10"/><text class="actorTitle" x="206.0" y="236.64" text-anchor="middle">JUnit Test</text><text class="actorNote" x="206.0" y="262.16" text-anchor="middle">test method</text><line class="lifeline" x1="206.0" y1="280.72" x2="206.0" y2="1310.8"/></g>
+<g><rect class="actor" x="430" y="192.56" width="240" height="88.16" rx="10"/><text class="actorTitle" x="550.0" y="236.64" text-anchor="middle">Test Fixture</text><text class="actorNote" x="550.0" y="262.16" text-anchor="middle">container setup</text><line class="lifeline" x1="550.0" y1="280.72" x2="550.0" y2="1310.8"/></g>
+<g><rect class="actor" x="780" y="192.56" width="230" height="88.16" rx="10"/><text class="actorTitle" x="895.0" y="236.64" text-anchor="middle">JdbcRepository</text><text class="actorNote" x="895.0" y="262.16" text-anchor="middle">blocking API</text><line class="lifeline" x1="895.0" y1="280.72" x2="895.0" y2="1310.8"/></g>
+<g><rect class="actor" x="1130" y="192.56" width="220" height="88.16" rx="10"/><text class="actorTitle" x="1240.0" y="236.64" text-anchor="middle">Exposed JDBC</text><text class="actorNote" x="1240.0" y="262.16" text-anchor="middle">transaction DSL</text><line class="lifeline" x1="1240.0" y1="280.72" x2="1240.0" y2="1310.8"/></g>
+<g><rect class="actor db" x="1470" y="192.56" width="210" height="76" rx="10"/><image data-bluetape4k-icon="generic.database" x="1486" y="215.76" width="28" height="28" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSI2NCIgY3k9IjM2IiByeD0iMzQiIHJ5PSIxMyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiLz4KICA8cGF0aCBkPSJNMzAgNThjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMzAgODBjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==" preserveAspectRatio="xMidYMid meet"/><text class="actorTitle" x="1589.0" y="236.64" text-anchor="middle">Test DB</text><text class="actorNote" x="1589.0" y="262.16" text-anchor="middle">container DB</text><line class="lifeline" x1="1575.0" y1="280.72" x2="1575.0" y2="1310.8"/></g><rect class="alt" x="380" y="638" width="1130" height="610" rx="16"/><rect class="pill" x="422" y="617.12" width="160" height="34" rx="17"/><text class="altTitle" x="502.0" y="644.96" text-anchor="middle">assertion path</text><rect class="activation" x="542.0" y="354.96" width="16" height="800" rx="5"/>
+<rect class="activation" x="887.0" y="354.96" width="16" height="928" rx="5"/>
+<rect class="activation" x="1232.0" y="354.96" width="16" height="928" rx="5"/><g><rect class="pill" x="215.0" y="345.68" width="326.0" height="39.44" rx="17" stroke="#4F83BF"/><circle cx="239.0" cy="365.4" r="13" class="badge callBadge"/><text x="239.0" y="371.2" text-anchor="middle" class="badgeText callText">1</text><text class="seqText callText" x="265.0" y="371.2">start fixture and migrate schema</text><path class="seq" d="M 206.0 394.4 H 550.0" stroke="#4F83BF" marker-end="url(#seqArrow-4F83BF)"/></g>
+<g><rect class="pill" x="899.5" y="473.28" width="326.0" height="39.44" rx="17" stroke="#755BC6"/><circle cx="923.5" cy="493" r="13" class="badge asyncBadge"/><text x="923.5" y="498.8" text-anchor="middle" class="badgeText asyncText">2</text><text class="seqText asyncText" x="949.5" y="498.8">open datasource and clean tables</text><path class="seq" d="M 550.0 522 H 1575.0" stroke="#755BC6" marker-end="url(#seqArrow-755BC6)"/></g>
+<g><rect class="pill" x="431.5" y="635.68" width="238.0" height="39.44" rx="17" stroke="#4F83BF"/><circle cx="455.5" cy="655.4" r="13" class="badge callBadge"/><text x="455.5" y="661.2" text-anchor="middle" class="badgeText callText">3</text><text class="seqText callText" x="481.5" y="661.2">invoke repository API</text><path class="seq" d="M 206.0 684.4 H 895.0" stroke="#4F83BF" marker-end="url(#seqArrow-4F83BF)"/></g>
+<g><rect class="pill" x="912.5" y="763.28" width="310.0" height="39.44" rx="17" stroke="#3E9868"/><circle cx="936.5" cy="783" r="13" class="badge workBadge"/><text x="936.5" y="788.8" text-anchor="middle" class="badgeText workText">4</text><text class="seqText workText" x="962.5" y="788.8">transaction { query / mutate }</text><path class="seq" d="M 895.0 812 H 1240.0" stroke="#3E9868" marker-end="url(#seqArrow-3E9868)"/></g>
+<g><rect class="pill" x="1312.5" y="890.88" width="190.0" height="39.44" rx="17" stroke="#755BC6"/><circle cx="1336.5" cy="910.6" r="13" class="badge asyncBadge"/><text x="1336.5" y="916.4" text-anchor="middle" class="badgeText asyncText">5</text><text class="seqText asyncText" x="1362.5" y="916.4">execute SQL</text><path class="seq" d="M 1240.0 939.6 H 1575.0" stroke="#755BC6" marker-end="url(#seqArrow-755BC6)"/></g>
+<g><rect class="pill" x="1288.5" y="1006.88" width="238.0" height="39.44" rx="17" stroke="#758297"/><circle cx="1312.5" cy="1026.6" r="13" class="badge returnBadge"/><text x="1312.5" y="1032.4" text-anchor="middle" class="badgeText returnText">6</text><text class="seqText returnText" x="1338.5" y="1032.4">rows or update counts</text><path class="ret" d="M 1575.0 1055.6 H 1252.0" stroke="#758297"/><polygon data-direct-solid-head="t" points="1240.0,1055.6 1252.0,1048.64 1252.0,1062.56" fill="#758297" stroke="#758297" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important"/></g>
+<g><rect class="pill" x="940.5" y="1122.88" width="254.0" height="39.44" rx="17" stroke="#758297"/><circle cx="964.5" cy="1142.6" r="13" class="badge returnBadge"/><text x="964.5" y="1148.4" text-anchor="middle" class="badgeText returnText">7</text><text class="seqText returnText" x="990.5" y="1148.4">map ResultRow to entity</text><path class="ret" d="M 1240.0 1171.6 H 907.0" stroke="#758297"/><polygon data-direct-solid-head="t" points="895.0,1171.6 907.0,1164.64 907.0,1178.56" fill="#758297" stroke="#758297" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important"/></g>
+<g><rect class="pill" x="431.5" y="1238.88" width="238.0" height="39.44" rx="17" stroke="#758297"/><circle cx="455.5" cy="1258.6" r="13" class="badge returnBadge"/><text x="455.5" y="1264.4" text-anchor="middle" class="badgeText returnText">8</text><text class="seqText returnText" x="481.5" y="1264.4">entity / page / count</text><path class="ret" d="M 895.0 1287.6 H 218.0" stroke="#758297"/><polygon data-direct-solid-head="t" points="206.0,1287.6 218.0,1280.64 218.0,1294.56" fill="#758297" stroke="#758297" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important"/></g></svg>

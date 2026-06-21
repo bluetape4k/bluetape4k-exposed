@@ -5,11 +5,11 @@
     <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%">
       <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/>
     </filter>
-    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#4F83BF"/></marker>
-    <marker id="arrow-teal" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#2E8F89"/></marker>
-    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#B9851B"/></marker>
-    <marker id="arrow-red" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#C94D68"/></marker>
-    <marker id="arrow-purple" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755BC6"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#4F83BF" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#2E8F89" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#B9851B" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#C94D68" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#755BC6" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
     <style>
       .canvas{fill:#F6F9FC}.frame{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
       .layer{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}
@@ -52,7 +52,7 @@
   <path data-edge="helpers-&gt;types" class="connector" d="M 1010 302 L 1010 454" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
   <path data-edge="table-&gt;engine" class="connector" d="M 445 514 L 508 514" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
   <path data-edge="engine-&gt;dialect" class="connector" d="M 630 574 L 630 728" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
-  <path data-edge="types-&gt;dialect" class="connector" d="M 1056 574 L 1056 650 L 760 650 L 760 728" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
+  <path data-edge="types-&gt;dialect" class="connector" d="M 1056 574 L 1056 638 Q 1056 650 1044 650 L 772 650 Q 760 650 760 662 L 760 728" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
   <path data-edge="database-&gt;wrapper" class="connector" d="M 1445 574 L 1445 728" stroke="#C94D68" marker-end="url(#arrow-red)"/>
   <path data-edge="dialect-&gt;driver" class="connector" d="M 788 773 L 998 773" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
   <path data-edge="wrapper-&gt;driver" class="connector" d="M 1288 773 L 1245 773" stroke="#C94D68" marker-end="url(#arrow-red)"/>
@@ -74,7 +74,7 @@
     <text class="detail" x="132" y="54" text-anchor="middle" dominant-baseline="middle">suspendTransaction, queryFlow</text>
   </g>
   <g id="node-table" data-node="table" transform="translate(122,454)">
-    <rect class="card" x="0" y="0" width="323" height="120" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <rect class="card" x="0" y="0" width="323" height="120" rx="12" fill="#E9F7F6" stroke="#45A7A1"/><image data-bluetape4k-icon="testcontainers.clickhouse" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjRkZDQzAxIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2xpY2tIb3VzZTwvdGl0bGU+PHBhdGggZD0iTTIxLjMzMyAxMEgyNHY0aC0yLjY2N1pNMTYgMS4zMzVoMi42Njd2MjEuMzNIMTZabS01LjMzMyAwaDIuNjY2djIxLjMzaC0yLjY2NlpNMCAyMi42NjVWMS4zMzVoMi42Njd2MjEuMzN6bTUuMzMzLTIxLjMzSDh2MjEuMzNINS4zMzNaIi8+PC9zdmc+" preserveAspectRatio="xMidYMid meet"/>
     <text class="card-title" x="161.5" y="30" text-anchor="middle" dominant-baseline="middle">ClickHouseTable</text>
     <text class="detail" x="161.5" y="56" text-anchor="middle" dominant-baseline="middle">abstract Table with engine</text>
     <text class="detail" x="161.5" y="78" text-anchor="middle" dominant-baseline="middle">filters CREATE TABLE only</text>
@@ -95,7 +95,7 @@
     <text class="detail" x="161.5" y="100" text-anchor="middle" dominant-baseline="middle">toYYYYMM, argMax, uniq</text>
   </g>
   <g id="node-database" data-node="database" transform="translate(1280,454)">
-    <rect class="card" x="0" y="0" width="323" height="120" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
+    <rect class="card" x="0" y="0" width="323" height="120" rx="12" fill="#FDECEF" stroke="#DC6B82"/><image data-bluetape4k-icon="testcontainers.clickhouse" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjRkZDQzAxIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2xpY2tIb3VzZTwvdGl0bGU+PHBhdGggZD0iTTIxLjMzMyAxMEgyNHY0aC0yLjY2N1pNMTYgMS4zMzVoMi42Njd2MjEuMzNIMTZabS01LjMzMyAwaDIuNjY2djIxLjMzaC0yLjY2NlpNMCAyMi42NjVWMS4zMzVoMi42Njd2MjEuMzN6bTUuMzMzLTIxLjMzSDh2MjEuMzNINS4zMzNaIi8+PC9zdmc+" preserveAspectRatio="xMidYMid meet"/>
     <text class="card-title" x="161.5" y="30" text-anchor="middle" dominant-baseline="middle">ClickHouseDatabase</text>
     <text class="detail" x="161.5" y="56" text-anchor="middle" dominant-baseline="middle">host/port/database factory</text>
     <text class="detail" x="161.5" y="78" text-anchor="middle" dominant-baseline="middle">jdbc:clickhouse URL guard</text>
@@ -103,13 +103,13 @@
   </g>
 
   <g id="node-dialect" data-node="dialect" transform="translate(472,728)">
-    <rect class="card" x="0" y="0" width="316" height="90" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <rect class="card" x="0" y="0" width="316" height="90" rx="12" fill="#FFF3D9" stroke="#D6A441"/><image data-bluetape4k-icon="testcontainers.clickhouse" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjRkZDQzAxIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2xpY2tIb3VzZTwvdGl0bGU+PHBhdGggZD0iTTIxLjMzMyAxMEgyNHY0aC0yLjY2N1pNMTYgMS4zMzVoMi42Njd2MjEuMzNIMTZabS01LjMzMyAwaDIuNjY2djIxLjMzaC0yLjY2NlpNMCAyMi42NjVWMS4zMzVoMi42Njd2MjEuMzN6bTUuMzMzLTIxLjMzSDh2MjEuMzNINS4zMzNaIi8+PC9zdmc+" preserveAspectRatio="xMidYMid meet"/>
     <text class="card-title" x="158" y="28" text-anchor="middle" dominant-baseline="middle">ClickHouseDialect</text>
     <text class="detail" x="158" y="54" text-anchor="middle" dominant-baseline="middle">PostgreSQL dialect base</text>
     <text class="detail" x="158" y="74" text-anchor="middle" dominant-baseline="middle">no modifyColumn support</text>
   </g>
   <g id="node-driver" data-node="driver" transform="translate(998,728)">
-    <rect class="card" x="0" y="0" width="247" height="90" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <rect class="card" x="0" y="0" width="247" height="90" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/><image data-bluetape4k-icon="testcontainers.clickhouse" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjRkZDQzAxIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2xpY2tIb3VzZTwvdGl0bGU+PHBhdGggZD0iTTIxLjMzMyAxMEgyNHY0aC0yLjY2N1pNMTYgMS4zMzVoMi42Njd2MjEuMzNIMTZabS01LjMzMyAwaDIuNjY2djIxLjMzaC0yLjY2NlpNMCAyMi42NjVWMS4zMzVoMi42Njd2MjEuMzN6bTUuMzMzLTIxLjMzSDh2MjEuMzNINS4zMzNaIi8+PC9zdmc+" preserveAspectRatio="xMidYMid meet"/>
     <text class="card-title" x="123.5" y="28" text-anchor="middle" dominant-baseline="middle">clickhouse-jdbc</text>
     <text class="detail" x="123.5" y="54" text-anchor="middle" dominant-baseline="middle">blocking JDBC driver</text>
     <text class="detail" x="123.5" y="74" text-anchor="middle" dominant-baseline="middle">HTTP/native transport</text>
@@ -122,7 +122,7 @@
   </g>
 
   <g id="node-server" data-node="server" transform="translate(820,926)">
-    <rect class="card" x="0" y="0" width="604" height="46" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <rect class="card" x="0" y="0" width="604" height="46" rx="12" fill="#E9F7F6" stroke="#45A7A1"/><image data-bluetape4k-icon="testcontainers.clickhouse" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjRkZDQzAxIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2xpY2tIb3VzZTwvdGl0bGU+PHBhdGggZD0iTTIxLjMzMyAxMEgyNHY0aC0yLjY2N1pNMTYgMS4zMzVoMi42Njd2MjEuMzNIMTZabS01LjMzMyAwaDIuNjY2djIxLjMzaC0yLjY2NlpNMCAyMi42NjVWMS4zMzVoMi42Njd2MjEuMzN6bTUuMzMzLTIxLjMzSDh2MjEuMzNINS4zMzNaIi8+PC9zdmc+" preserveAspectRatio="xMidYMid meet"/>
     <text class="card-title" x="302" y="23" text-anchor="middle" dominant-baseline="middle">ClickHouse tables execute each statement independently</text>
   </g>
 

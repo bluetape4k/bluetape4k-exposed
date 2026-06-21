@@ -3,8 +3,8 @@
   <desc id="desc">Repository contract map rebuilt from exposed-jdbc repository source files and README repository sections.</desc>
   <defs>
     <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
-    <marker id="arrow" viewBox="0 0 5 5" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5 Z" fill="context-stroke"/></marker>
-    <marker id="generalizationArrow" viewBox="0 0 5 5" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5 Z" fill="#FFFFFF" stroke="context-stroke" stroke-width="0.8"/></marker>
+    <marker id="arrow" viewBox="0 0 5 5" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5" fill="#536C85" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="generalizationArrow" viewBox="0 0 5 5" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5" fill="#FFFFFF" stroke="#536C85" stroke-width="0.8" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
     <style>
       .canvas{fill:#F6F9FC}.decor{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
       .innerFrame{fill:#FBFDFF;stroke:#D9E4EF;stroke-width:2}
@@ -16,6 +16,10 @@
       .connector{fill:none;stroke-width:2.6;marker-end:url(#arrow);stroke-linejoin:round;stroke-linecap:round}.generalization{marker-end:url(#generalizationArrow)}.dashed{stroke-dasharray:7 6}
       .pill{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1}
     </style>
+    <marker id="arrow-758297" viewBox="0 0 5 5" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5" fill="#758297" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+    <marker id="arrow-2e8f89" viewBox="0 0 5 5" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5" fill="#2E8F89" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+    <marker id="arrow-4f83bf" viewBox="0 0 5 5" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5" fill="#4F83BF" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+    <marker id="arrow-b9851b" viewBox="0 0 5 5" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5" fill="#B9851B" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
   </defs>
   <rect class="canvas" width="1760" height="1320"/>
   <rect class="decor" x="44" y="36" width="1672" height="1248" rx="34"/>
@@ -38,15 +42,15 @@
     <rect class="group" x="92" y="1030" width="1576" height="150" rx="18"/>
     <text class="group-title" x="122" y="1054" dominant-baseline="middle">Reader caveat</text>
   </g>
-  <path id="route-jdbc-id-table" data-edge="jdbc-&gt;id-table" data-label="table: IdTable&lt;ID&gt;" class="connector" d="M 715 480 L 715 380 L 310 380 L 310 327" stroke="#758297"/>
-  <path id="route-jdbc-result-row" data-edge="jdbc-&gt;result-row" data-label="maps row to E" class="connector" d="M 810 480 L 810 327" stroke="#2E8F89"/>
-  <path id="route-jdbc-page" data-edge="jdbc-&gt;page" data-label="findPage returns" class="connector" d="M 965 480 L 965 380 L 1095 380 L 1095 327" stroke="#4F83BF"/>
-  <path id="route-soft-jdbc" data-edge="soft-&gt;jdbc" data-label="extends base CRUD contract" class="connector generalization" d="M 575 634 L 700 634 L 700 596" stroke="#2E8F89"/>
-  <path id="route-auditable-jdbc" data-edge="auditable-&gt;jdbc" data-label="extends base CRUD contract" class="connector generalization" d="M 1160 634 L 1060 634 L 1060 596" stroke="#B9851B"/>
-  <path id="route-auditable-audit-context" data-edge="auditable-&gt;audit-context" data-label="sets updatedBy/updatedAt" class="connector" d="M 1395 578 L 1395 327" stroke="#B9851B"/>
-  <path id="route-jdbc-aliases-jdbc" data-edge="jdbc-aliases-&gt;jdbc" data-label="specializes ID type" class="connector" d="M 765 835 L 765 596" stroke="#4F83BF"/>
-  <path id="route-soft-aliases-soft" data-edge="soft-aliases-&gt;soft" data-label="specializes soft table type" class="connector" d="M 350 835 L 350 690" stroke="#2E8F89"/>
-  <path id="route-audit-aliases-auditable" data-edge="audit-aliases-&gt;auditable" data-label="specializes audit table type" class="connector" d="M 1375 835 L 1375 690" stroke="#B9851B"/>
+  <path id="route-jdbc-id-table" data-edge="jdbc-&gt;id-table" data-label="table: IdTable&lt;ID&gt;" class="connector" d="M 715 480 L 715 392 Q 715 380 703 380 L 322 380 Q 310 380 310 368 L 310 327" stroke="#758297" style="marker-end:url(#arrow-758297)"/>
+  <path id="route-jdbc-result-row" data-edge="jdbc-&gt;result-row" data-label="maps row to E" class="connector" d="M 810 480 L 810 327" stroke="#2E8F89" style="marker-end:url(#arrow-2e8f89)"/>
+  <path id="route-jdbc-page" data-edge="jdbc-&gt;page" data-label="findPage returns" class="connector" d="M 965 480 L 965 392 Q 965 380 977 380 L 1083 380 Q 1095 380 1095 368 L 1095 327" stroke="#4F83BF" style="marker-end:url(#arrow-4f83bf)"/>
+  <path id="route-soft-jdbc" data-edge="soft-&gt;jdbc" data-label="extends base CRUD contract" class="connector generalization" d="M 575 634 L 688 634 Q 700 634 700 622 L 700 596" stroke="#2E8F89" style="marker-end:url(#arrow-2e8f89)"/>
+  <path id="route-auditable-jdbc" data-edge="auditable-&gt;jdbc" data-label="extends base CRUD contract" class="connector generalization" d="M 1160 634 L 1072 634 Q 1060 634 1060 622 L 1060 596" stroke="#B9851B" style="marker-end:url(#arrow-b9851b)"/>
+  <path id="route-auditable-audit-context" data-edge="auditable-&gt;audit-context" data-label="sets updatedBy/updatedAt" class="connector" d="M 1395 578 L 1395 327" stroke="#B9851B" style="marker-end:url(#arrow-b9851b)"/>
+  <path id="route-jdbc-aliases-jdbc" data-edge="jdbc-aliases-&gt;jdbc" data-label="specializes ID type" class="connector" d="M 765 835 L 765 596" stroke="#4F83BF" style="marker-end:url(#arrow-4f83bf)"/>
+  <path id="route-soft-aliases-soft" data-edge="soft-aliases-&gt;soft" data-label="specializes soft table type" class="connector" d="M 350 835 L 350 690" stroke="#2E8F89" style="marker-end:url(#arrow-2e8f89)"/>
+  <path id="route-audit-aliases-auditable" data-edge="audit-aliases-&gt;auditable" data-label="specializes audit table type" class="connector" d="M 1375 835 L 1375 690" stroke="#B9851B" style="marker-end:url(#arrow-b9851b)"/>
   <g id="node-id-table" data-node="id-table" transform="translate(145,245)">
     <rect class="shape" x="0" y="0" width="330" height="82" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
     <text class="card-title" x="165" y="22" text-anchor="middle" dominant-baseline="middle">IdTable&lt;ID&gt;</text>

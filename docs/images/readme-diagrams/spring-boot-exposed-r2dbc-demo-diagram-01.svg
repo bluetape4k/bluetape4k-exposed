@@ -3,7 +3,9 @@
 <desc id="desc">Spring WebFlux product API structure with suspend controller methods, Exposed R2DBC repository mapping, startup initialization, connection pool, and H2 R2DBC database.</desc>
 <defs>
   <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="arrow" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 12 6 L 1 11" fill="none" stroke="#5d6f83" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></marker>
+  <marker id="arrow" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 7 3.7 Q 12 6 7 8.3 L 1 11" fill="none" stroke="#5d6f83" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+  <marker id="arrow-5d6f83" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 7 3.7 Q 12 6 7 8.3 L 1 11" fill="none" stroke="#5d6f83" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+  <marker id="arrow-45a7a1" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 7 3.7 Q 12 6 7 8.3 L 1 11" fill="none" stroke="#45a7a1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
   <style>
     .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
     .layer{fill:#fbfdff;stroke:#d8e0ea;stroke-width:1.4}
@@ -30,15 +32,15 @@
 <rect class="layer" x="64" y="602" width="1412" height="188" rx="18"/>
 <text class="layerTitle" x="90" y="644">Boot startup and database</text>
 
-<path class="line" d="M330 250 H424"/>
-<path class="line" d="M764 250 H838"/>
-<path class="line" d="M594 298 V416"/>
-<path class="line" d="M764 472 H838"/>
-<path class="line" d="M1158 472 H1244"/>
-<path class="line" d="M1386 528 V650"/>
-<path class="line" d="M364 710 H424"/>
-<path class="line" d="M754 712 H810 V640 H1386 V650"/>
-<path class="init" d="M998 660 V548 H1292 V528"/>
+<path class="line" d="M330 250 H424" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M764 250 H838" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M594 298 V416" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M764 472 H838" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M1158 472 H1244" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M1386 528 V650" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M364 710 H424" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M 754 712 L 798 712 Q 810 712 810 700 L 810 652 Q 810 640 822 640 L 1381.5 640 Q 1386 640 1386 644.5 L 1386 650" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="init" d="M 998 660 L 998 560 Q 998 548 1010 548 L 1282.5 548 Q 1292 548 1292 538.5 L 1292 528" style="marker-end:url(#arrow-45a7a1)"/>
 
 <g transform="translate(94,208)">
   <rect class="card" x="0" y="0" width="236" height="84" rx="8" fill="#e8f3ff" stroke="#5b8def"/>
@@ -95,8 +97,7 @@
   <text class="mono" x="160" y="92" text-anchor="middle">SchemaUtils + seed rows</text>
 </g>
 <g transform="translate(1244,650)">
-  <rect class="card" x="0" y="0" width="190" height="124" rx="8" fill="#f8fbff" stroke="#6b7f93"/>
-  <image x="16" y="32" width="48" height="48" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K"/>
+  <rect class="card" x="0" y="0" width="190" height="124" rx="8" fill="#f8fbff" stroke="#6b7f93"/><image data-bluetape4k-icon="database.h2" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjMDk0NzZCIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+SDIgRGF0YWJhc2U8L3RpdGxlPjxwYXRoIGQ9Ik0xNy4xNyAxMy4yN2MuMTQtLjAxNS4yOC0uMDIzLjQxNi0uMDIzLjcgMCAxLjIyOC4xNTkgMS41OTkuNDY5LjM3LjMxNC41NTUuNzU2LjU1NSAxLjMzNGEyLjg2MSAyLjg2MSAwIDAgMS0uNDMgMS40NTVjLS4yOTEuNDkyLS43NzUgMS4wNjYtMS40NiAxLjcyNy0uNDUzLjQ0Ni0xLjA2MS45NzYtMS44MjEgMS41OTJhNDguMDIgNDguMDIgMCAwIDEtMi4yNzUgMS43NDJ2Mi4wODNoOS44OTVWMjEuMjRIMTcuOTljLjIxOS0uMTU5LjU5LS40MzUgMS4xMS0uODMyLjUxOS0uNCAxLjAzMy0uODM1IDEuNTUtMS4zMTEuODE3LS43NiAxLjQyNS0xLjUgMS44MjItMi4yMTVhNC42MjQgNC42MjQgMCAwIDAgLjU5Ny0yLjI2OGMwLTEuMjEzLS40MTYtMi4xNTQtMS4yNDctMi44MTUtLjgyOC0uNjYyLTIuMDMzLS45OTQtMy42MTMtLjk5NC0uMzQ0IDAtLjY5Mi4wMTUtMS4wMzYuMDQ5VjYuMDRIMTMuODZ2NC43MDFIOC45NjVWNi4wNEg1LjY1djEyLjg0NmgzLjMxNXYtNS42NjFoNC44OXY1LjY2MWguMDM5Yy4zMS0uMjQyLjYyMy0uNDg3LjkzMy0uNzRhMjguNTY0IDI4LjU2NCAwIDAgMCAxLjgyNi0xLjU4OCAxNC44NTQgMTQuODU0IDAgMCAwIC41MTctLjUyOXpNMTIuMDExIDIzLjNBMTEuMzI3IDExLjMyNyAwIDAgMSAuNyAxMS45OSAxMS4zMDUgMTEuMzA1IDAgMCAxIDEyLjAxMS42OTlhMTEuMjg2IDExLjI4NiAwIDAgMSAxMS4yOSAxMS4yOXYuMzUxSDI0di0uMzUxQTExLjk4NSAxMS45ODUgMCAwIDAgMTIuMDExIDAgMTIuMDA4IDEyLjAwOCAwIDAgMCAwIDExLjk4OSAxMi4wMjYgMTIuMDI2IDAgMCAwIDEyLjAxMSAyNGguMzUydi0uN3oiLz48L3N2Zz4=" preserveAspectRatio="xMidYMid meet"/>
   <text class="label" x="124" y="39" text-anchor="middle">H2 R2DBC</text>
   <text class="small" x="124" y="68" text-anchor="middle">in-memory DB</text>
   <text class="mono" x="124" y="96" text-anchor="middle">webfluxdb</text>
