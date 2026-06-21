@@ -95,7 +95,7 @@
   <path class="line lineGreen" d="M900 336 H1030"/>
   <path class="line lineGreen" d="M 900 505 L 958 505 Q 970 505 970 517 L 970 559 Q 970 571 982 571 L 1030 571"/>
   <path class="line lineGreen" d="M 900 691 L 958 691 Q 970 691 970 679 L 970 610 Q 970 598 982 598 L 1030 598"/>
-  <path class="line lineGold" d="M1278 354 H1390"/>
+  <path class="line lineGold" d="M1278 354 H1354 Q1366 354 1366 366 V378 Q1366 390 1378 390 H1390"/>
   <path class="line lineGold" d="M 1278 571 L 1328 571 Q 1340 571 1340 559 L 1340 435 Q 1340 423 1352 423 L 1390 423"/>
 
   <text class="label" x="462" y="320">typed column</text>

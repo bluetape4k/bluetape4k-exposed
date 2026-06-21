@@ -36,7 +36,7 @@
 <path class="line" d="M1168 452 H1262"/>
 <path class="line" d="M330 702 H424"/>
 <path class="line" d="M 744 696 L 878 696 Q 890 696 890 684 L 890 540"/>
-<path class="line" d="M 1003 540 L 1003 648 Q 1003 660 1015 660 L 1262 660"/>
+<path class="line" d="M 1003 540 L 1003 628 Q 1003 640 1015 640 L 1335 640 Q 1347 640 1347 652 L 1347 660"/>
 
 <g transform="translate(94,194)">
   <rect class="card" x="0" y="0" width="236" height="80" rx="8" fill="#e8f3ff" stroke="#5b8def"/>

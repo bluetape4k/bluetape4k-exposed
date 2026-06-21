@@ -73,12 +73,12 @@
   <path class="edge" d="M 1014 253 L 1188 253" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
   <rect class="labelPill" x="1056" y="218" width="94" height="28" rx="14"/><text class="label purple" x="1103" y="237" text-anchor="middle">sqlType</text>
 
-  <path class="edge" d="M 520 465 L 644 465 Q 656 465 656 453 L 656 442" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
+  <path class="edge" d="M 520 442 L 664 442" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
   <rect class="labelPill" x="548" y="413" width="80" height="28" rx="14"/><text class="label teal" x="588" y="432" text-anchor="middle">bind</text>
-  <path class="edge" d="M 520 465 L 652 465 Q 664 465 664 477 L 664 568" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
+  <path class="edge" d="M 520 488 L 620 488 Q 632 488 632 500 L 632 556 Q 632 568 644 568 L 664 568" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
   <rect class="labelPill" x="532" y="526" width="102" height="28" rx="14"/><text class="label gold" x="583" y="545" text-anchor="middle">literal</text>
-  <path class="edge" d="M 1016 442 L 1158 442 Q 1170 442 1170 454 L 1170 500" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
-  <path class="edge" d="M 1016 568 L 1100 568 Q 1112 568 1112 556 L 1112 426 Q 1112 414 1124 414 L 1290 414 Q 1302 414 1302 426 L 1302 454" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
+  <path class="edge" d="M 1016 442 L 1138 442 Q 1150 442 1150 454 L 1150 488 Q 1150 500 1162 500 L 1170 500" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
+  <path class="edge" d="M 1016 568 L 1128 568 Q 1140 568 1140 556 L 1140 534 Q 1140 522 1152 522 L 1170 522" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
 
   <path class="return" d="M 1335 546 L 1335 764" stroke="#755BC6"/>
 <polygon points="1335,764 1328.4,752 1341.6,752" fill="#755BC6" stroke="#755BC6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="true"/>
