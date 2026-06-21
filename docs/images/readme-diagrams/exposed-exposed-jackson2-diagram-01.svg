@@ -3,10 +3,10 @@
   <desc id="desc">Responsibility map for exposed-jackson2 showing table APIs, serializer boundary, Exposed column types, JSON SQL helpers, and ResultRow or R2DBC Readable readback helpers.</desc>
   <defs>
     <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
-    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#4F83BF"/></marker>
-    <marker id="arrow-purple" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755BC6"/></marker>
-    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#B9851B"/></marker>
-    <marker id="arrow-teal" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#2E8F89"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#4F83BF" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#755BC6" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#B9851B" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#2E8F89" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
     <style>
       .canvas{fill:#F6F9FC}.frame{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
       .lane{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}.card{filter:url(#shadow);stroke-width:2}
@@ -36,7 +36,7 @@
   <path data-edge="serializer-&gt;columns" class="connector" d="M 770 348 L 910 348" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
   <path data-edge="columns-&gt;sql" class="connector" d="M 1024 452 L 1024 548" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
   <path data-edge="sql-&gt;readers" class="connector" d="M 1138 620 L 1294 620" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
-  <path data-edge="serializer-&gt;readers" class="connector" d="M 640 276 L 640 210 L 1408 210 L 1408 572" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
+  <path data-edge="serializer-&gt;readers" class="connector" d="M 640 276 L 640 222 Q 640 210 652 210 L 1396 210 Q 1408 210 1408 222 L 1408 572" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
 
   <g id="node-api-json" data-node="api-json" transform="translate(126,236)"><rect class="card" x="0" y="0" width="260" height="80" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/><text class="card-title" x="130" y="28" text-anchor="middle" dominant-baseline="middle">jackson()</text><text class="detail" x="130" y="54" text-anchor="middle" dominant-baseline="middle">JSON column registration</text></g>
   <g id="node-api-jsonb" data-node="api-jsonb" transform="translate(126,380)"><rect class="card" x="0" y="0" width="260" height="80" rx="12" fill="#F1ECFF" stroke="#8A72D6"/><text class="card-title" x="130" y="28" text-anchor="middle" dominant-baseline="middle">jacksonb()</text><text class="detail" x="130" y="54" text-anchor="middle" dominant-baseline="middle">JSONB column registration</text></g>

@@ -3,10 +3,10 @@
 <desc id="desc">Suspend WebFlux product API request flow showing read calls, create calls, guarded update and delete transactions, row mapping, database access, and HTTP response creation.</desc>
 <defs>
   <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="arrow" markerWidth="15" markerHeight="13" refX="13" refY="6.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 13 6.5 L 1 12" fill="none" stroke="#5d6f83" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="readArrow" markerWidth="15" markerHeight="13" refX="13" refY="6.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 13 6.5 L 1 12" fill="none" stroke="#5b8def" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="writeArrow" markerWidth="15" markerHeight="13" refX="13" refY="6.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 13 6.5 L 1 12" fill="none" stroke="#dc6b82" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  <marker id="dtoArrow" markerWidth="15" markerHeight="13" refX="13" refY="6.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 13 6.5 L 1 12" fill="none" stroke="#58a978" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></marker>
+  <marker id="arrow" markerWidth="15" markerHeight="13" refX="13" refY="6.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 7.5 4 Q 13 6.5 7.5 9 L 1 12" fill="none" stroke="#5d6f83" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+  <marker id="readArrow" markerWidth="15" markerHeight="13" refX="13" refY="6.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 7.5 4 Q 13 6.5 7.5 9 L 1 12" fill="none" stroke="#5b8def" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+  <marker id="writeArrow" markerWidth="15" markerHeight="13" refX="13" refY="6.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 7.5 4 Q 13 6.5 7.5 9 L 1 12" fill="none" stroke="#dc6b82" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+  <marker id="dtoArrow" markerWidth="15" markerHeight="13" refX="13" refY="6.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 7.5 4 Q 13 6.5 7.5 9 L 1 12" fill="none" stroke="#58a978" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
   <style>
     .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
     .band{fill:#fbfdff;stroke:#d8e0ea;stroke-width:1.4}
@@ -37,14 +37,14 @@
 
 <path class="line" d="M330 246 H424"/>
 <path class="line" d="M764 246 H820"/>
-<path class="read" d="M908 292 V382 H415 V424"/>
-<path class="write" d="M995 292 V382 H775 V424"/>
-<path class="write" d="M1082 292 V382 H1150 V424"/>
-<path class="read" d="M415 534 V598 H610"/>
+<path class="read" d="M 908 292 L 908 370 Q 908 382 896 382 L 427 382 Q 415 382 415 394 L 415 424"/>
+<path class="write" d="M 995 292 L 995 370 Q 995 382 983 382 L 787 382 Q 775 382 775 394 L 775 424"/>
+<path class="write" d="M 1082 292 L 1082 370 Q 1082 382 1094 382 L 1138 382 Q 1150 382 1150 394 L 1150 424"/>
+<path class="read" d="M 415 534 L 415 586 Q 415 598 427 598 L 610 598"/>
 <path class="write" d="M775 534 V554"/>
-<path class="write" d="M1150 534 V598 H940"/>
-<path class="dto" d="M940 598 H1040 V765 H1244"/>
-<path class="dto" d="M610 598 H520 V778 H404"/>
+<path class="write" d="M 1150 534 L 1150 586 Q 1150 598 1138 598 L 940 598"/>
+<path class="dto" d="M 940 598 L 1028 598 Q 1040 598 1040 610 L 1040 753 Q 1040 765 1052 765 L 1244 765"/>
+<path class="dto" d="M 610 598 L 532 598 Q 520 598 520 610 L 520 766 Q 520 778 508 778 L 404 778"/>
 
 <g transform="translate(94,204)">
   <rect class="card" x="0" y="0" width="236" height="84" rx="8" fill="#e8f3ff" stroke="#5b8def"/>
@@ -92,8 +92,7 @@
   <text class="small" x="155" y="60" text-anchor="middle">ProductRecord, 201, 204, 404</text>
 </g>
 <g transform="translate(1244,720)">
-  <rect class="card" x="0" y="0" width="190" height="90" rx="8" fill="#f8fbff" stroke="#6b7f93"/>
-  <image x="16" y="22" width="46" height="46" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K"/>
+  <rect class="card" x="0" y="0" width="190" height="90" rx="8" fill="#f8fbff" stroke="#6b7f93"/><image data-bluetape4k-icon="database.h2" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjMDk0NzZCIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+SDIgRGF0YWJhc2U8L3RpdGxlPjxwYXRoIGQ9Ik0xNy4xNyAxMy4yN2MuMTQtLjAxNS4yOC0uMDIzLjQxNi0uMDIzLjcgMCAxLjIyOC4xNTkgMS41OTkuNDY5LjM3LjMxNC41NTUuNzU2LjU1NSAxLjMzNGEyLjg2MSAyLjg2MSAwIDAgMS0uNDMgMS40NTVjLS4yOTEuNDkyLS43NzUgMS4wNjYtMS40NiAxLjcyNy0uNDUzLjQ0Ni0xLjA2MS45NzYtMS44MjEgMS41OTJhNDguMDIgNDguMDIgMCAwIDEtMi4yNzUgMS43NDJ2Mi4wODNoOS44OTVWMjEuMjRIMTcuOTljLjIxOS0uMTU5LjU5LS40MzUgMS4xMS0uODMyLjUxOS0uNCAxLjAzMy0uODM1IDEuNTUtMS4zMTEuODE3LS43NiAxLjQyNS0xLjUgMS44MjItMi4yMTVhNC42MjQgNC42MjQgMCAwIDAgLjU5Ny0yLjI2OGMwLTEuMjEzLS40MTYtMi4xNTQtMS4yNDctMi44MTUtLjgyOC0uNjYyLTIuMDMzLS45OTQtMy42MTMtLjk5NC0uMzQ0IDAtLjY5Mi4wMTUtMS4wMzYuMDQ5VjYuMDRIMTMuODZ2NC43MDFIOC45NjVWNi4wNEg1LjY1djEyLjg0NmgzLjMxNXYtNS42NjFoNC44OXY1LjY2MWguMDM5Yy4zMS0uMjQyLjYyMy0uNDg3LjkzMy0uNzRhMjguNTY0IDI4LjU2NCAwIDAgMCAxLjgyNi0xLjU4OCAxNC44NTQgMTQuODU0IDAgMCAwIC41MTctLjUyOXpNMTIuMDExIDIzLjNBMTEuMzI3IDExLjMyNyAwIDAgMSAuNyAxMS45OSAxMS4zMDUgMTEuMzA1IDAgMCAxIDEyLjAxMS42OTlhMTEuMjg2IDExLjI4NiAwIDAgMSAxMS4yOSAxMS4yOXYuMzUxSDI0di0uMzUxQTExLjk4NSAxMS45ODUgMCAwIDAgMTIuMDExIDAgMTIuMDA4IDEyLjAwOCAwIDAgMCAwIDExLjk4OSAxMi4wMjYgMTIuMDI2IDAgMCAwIDEyLjAxMSAyNGguMzUydi0uN3oiLz48L3N2Zz4=" preserveAspectRatio="xMidYMid meet"/>
   <text class="label" x="124" y="35" text-anchor="middle">H2 R2DBC</text>
   <text class="small" x="124" y="62" text-anchor="middle">webflux_products</text>
 </g>

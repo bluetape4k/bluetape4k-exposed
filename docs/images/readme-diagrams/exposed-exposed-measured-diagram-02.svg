@@ -3,10 +3,10 @@
   <desc id="desc">Flow diagram for exposed-measured showing how measured Kotlin values are converted to base-unit DOUBLE values and restored from ResultRow reads.</desc>
   <defs>
     <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
-    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#4F83BF"/></marker>
-    <marker id="arrow-teal" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#2E8F89"/></marker>
-    <marker id="arrow-purple" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755BC6"/></marker>
-    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#B9851B"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#4F83BF" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#2E8F89" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#755BC6" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#B9851B" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
     <style>
       .canvas{fill:#F6F9FC}.frame{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
       .layer{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}.card{filter:url(#shadow);stroke-width:2}
@@ -30,12 +30,12 @@
   <rect class="layer" x="82" y="570" width="1516" height="150" rx="18"/><text class="layer-title" x="112" y="600" dominant-baseline="middle">3. JDBC storage</text>
   <rect class="layer" x="82" y="760" width="1516" height="120" rx="18"/><text class="layer-title" x="112" y="790" dominant-baseline="middle">4. Readback</text>
 
-  <path data-edge="measure-dsl-to-boundary" class="connector" d="M 500 247 L 640 247 L 640 402" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
+  <path data-edge="measure-dsl-to-boundary" class="connector" d="M 500 247 L 628 247 Q 640 247 640 259 L 640 402" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
   <path data-edge="temp-dsl-to-column" class="connector" d="M 1030 247 L 1160 247" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
-  <path data-edge="column-to-boundary" class="connector" d="M 1290 284 L 1290 360 L 1040 360 L 1040 402" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+  <path data-edge="column-to-boundary" class="connector" d="M 1290 284 L 1290 348 Q 1290 360 1278 360 L 1052 360 Q 1040 360 1040 372 L 1040 402" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
   <path data-edge="boundary-to-db" class="connector" d="M 840 486 L 840 624" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
   <path data-edge="db-to-read" class="connector" d="M 840 676 L 840 802" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
-  <path data-edge="read-to-boundary" class="connector" d="M 1070 820 L 1480 820 L 1480 430 L 1140 430" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+  <path data-edge="read-to-boundary" class="connector" d="M 1070 820 L 1468 820 Q 1480 820 1480 808 L 1480 442 Q 1480 430 1468 430 L 1140 430" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
 
   <g id="node-measure-dsl" data-node="measure-dsl" transform="translate(200,210)">
     <rect class="card" x="0" y="0" width="300" height="74" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>

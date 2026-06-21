@@ -3,7 +3,7 @@
   <desc id="desc">Architecture diagram for exposed-r2dbc-caffeine showing coroutine callers, local AsyncCache, repository mapping, write-behind worker, and Exposed R2DBC transaction boundary.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="13" markerHeight="13" orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#327d91" stroke-dasharray="none"/>
+      <path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#327d91" stroke-dasharray="none" style="stroke-dasharray:none!important"/>
     </marker>
     <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
       <feDropShadow dx="0" dy="9" stdDeviation="12" flood-color="#20303a" flood-opacity="0.14"/>
@@ -32,7 +32,7 @@
   <text class="subtitle" x="86" y="126">A coroutine repository keeps Caffeine local, delegates database work through suspendTransaction, and batches write-behind safely.</text>
 
   <g transform="translate(92 168)">
-    <rect x="0" y="0" width="1496" height="150" rx="18" fill="#e7f1f4" stroke="#9dbbc4" stroke-width="2.5"/>
+    <rect x="0" y="0" width="1496" height="150" rx="18" fill="#e7f1f4" stroke="#9dbbc4" stroke-width="2.5"/><image data-bluetape4k-icon="cache.caffeine" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjOEI1QTJCIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2FmZmVpbmU8L3RpdGxlPjxwYXRoIGQ9Ik02LjE2MiAxLjU1N2MtLjE4LjAwNi0uMjYzLjEzNy0uMjkzLjE4TC4wNSAxMS44MmMtLjA3LjE0Mi0uMDYuMjctLjAwNC4zNTYgMS45NDIgMy4zNiAzLjg4MiA2LjcyMyA1LjgyMiAxMC4wODVhLjMzNy4zMzcgMCAwMC4zMDUuMTgyaDExLjY1Yy4xMzguMDAzLjI2LS4wOS4zMS0uMTgyIDEuOTQtMy4zNiAzLjg3OC02LjcyMSA1LjgyLTEwLjA4YS4zNjEuMzYxIDAgMDAwLS4zNThsLTUuODItMTAuMDg1Yy0uMTEyLS4xOTMtLjMwOC0uMTgxLS4zMDgtLjE4MXptLjgwNC43MTloOS41MTNMMTAuMTM2IDUuOTR6bS0uNDI3LjYwM2wyLjk2NCAzLjQyNkw2LjU0IDguMDE4em0xMC4zLjAxOGwtMy44NiA2LjY4NUw3LjE5IDguNDY5em0xLjM0MS4zNTdsNC43NTYgOC4yNDYtNC43NTYtLjkxNnptLTEyLjM2LjAwMnY1LjE3NmwtNC40OCAyLjU4N3ptMTEuNjQgMHYxMS4xNDJsLTMuODU3LTQuNDU3ek03LjEyNyA5LjE4Nmw1Ljg0NyAxLjEyNiAzLjg5OCA0LjUwMi01Ljg0Mi0xLjEyNXpNNS44MiA5LjI2djMuNDI1bC00LjQ1LS44NTV6bS43Mi4zNDFsMy44NTYgNC40NTctMy44NTcgNi42ODV6bTExLjY0IDEuNzEzbDQuNDQ3Ljg1Ni00LjQ0NyAyLjU3ek0xLjA2MiAxMi41bDQuNzYuOTE2djcuMzN6bTIxLjU5Ny40OGwtNC40NzkgNy43NjN2LTUuMTc1em0tMTEuNjQgMS40MzdsNS43OSAxLjExNC05LjY0OSA1LjU3MnptNi40NCAxLjU2NXY1LjEzOGwtMi45NjQtMy40MjV6bS0zLjU5NyAyLjA3OGwzLjE3MiAzLjY2NEg3LjUyeiIvPjwvc3ZnPg==" preserveAspectRatio="xMidYMid meet"/>
     <text class="zoneTitle" x="28" y="46">Coroutine caller boundary</text>
     <rect x="372" y="32" width="318" height="88" rx="14" fill="#fffdf8" stroke="#8db7c2" stroke-width="2"/>
     <text class="cardTitle" x="400" y="66">Caller coroutine</text>
@@ -46,7 +46,7 @@
   <text class="label" x="878" y="354">repository operation</text>
 
   <g transform="translate(92 378)">
-    <rect x="0" y="0" width="1496" height="252" rx="18" fill="#eef4e6" stroke="#a9c58b" stroke-width="2.5"/>
+    <rect x="0" y="0" width="1496" height="252" rx="18" fill="#eef4e6" stroke="#a9c58b" stroke-width="2.5"/><image data-bluetape4k-icon="cache.caffeine" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjOEI1QTJCIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2FmZmVpbmU8L3RpdGxlPjxwYXRoIGQ9Ik02LjE2MiAxLjU1N2MtLjE4LjAwNi0uMjYzLjEzNy0uMjkzLjE4TC4wNSAxMS44MmMtLjA3LjE0Mi0uMDYuMjctLjAwNC4zNTYgMS45NDIgMy4zNiAzLjg4MiA2LjcyMyA1LjgyMiAxMC4wODVhLjMzNy4zMzcgMCAwMC4zMDUuMTgyaDExLjY1Yy4xMzguMDAzLjI2LS4wOS4zMS0uMTgyIDEuOTQtMy4zNiAzLjg3OC02LjcyMSA1LjgyLTEwLjA4YS4zNjEuMzYxIDAgMDAwLS4zNThsLTUuODItMTAuMDg1Yy0uMTEyLS4xOTMtLjMwOC0uMTgxLS4zMDgtLjE4MXptLjgwNC43MTloOS41MTNMMTAuMTM2IDUuOTR6bS0uNDI3LjYwM2wyLjk2NCAzLjQyNkw2LjU0IDguMDE4em0xMC4zLjAxOGwtMy44NiA2LjY4NUw3LjE5IDguNDY5em0xLjM0MS4zNTdsNC43NTYgOC4yNDYtNC43NTYtLjkxNnptLTEyLjM2LjAwMnY1LjE3NmwtNC40OCAyLjU4N3ptMTEuNjQgMHYxMS4xNDJsLTMuODU3LTQuNDU3ek03LjEyNyA5LjE4Nmw1Ljg0NyAxLjEyNiAzLjg5OCA0LjUwMi01Ljg0Mi0xLjEyNXpNNS44MiA5LjI2djMuNDI1bC00LjQ1LS44NTV6bS43Mi4zNDFsMy44NTYgNC40NTctMy44NTcgNi42ODV6bTExLjY0IDEuNzEzbDQuNDQ3Ljg1Ni00LjQ0NyAyLjU3ek0xLjA2MiAxMi41bDQuNzYuOTE2djcuMzN6bTIxLjU5Ny40OGwtNC40NzkgNy43NjN2LTUuMTc1em0tMTEuNjQgMS40MzdsNS43OSAxLjExNC05LjY0OSA1LjU3MnptNi40NCAxLjU2NXY1LjEzOGwtMi45NjQtMy40MjV6bS0zLjU5NyAyLjA3OGwzLjE3MiAzLjY2NEg3LjUyeiIvPjwvc3ZnPg==" preserveAspectRatio="xMidYMid meet"/>
     <text class="zoneTitle" x="28" y="46">Local cache and write policy</text>
     <rect x="160" y="82" width="336" height="116" rx="14" fill="#fffdf8" stroke="#a7c481" stroke-width="2"/>
     <text class="cardTitle type" x="188" y="116">AsyncCache&lt;String, E&gt;</text>

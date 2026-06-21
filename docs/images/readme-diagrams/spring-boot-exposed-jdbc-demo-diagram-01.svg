@@ -3,7 +3,7 @@
 <desc id="desc">Spring MVC product API structure with controller, Exposed JDBC repository, DAO entity, startup initializer, transaction manager, and H2 database.</desc>
 <defs>
   <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="arrow" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto"><path d="M 1 1 L 12 6 L 1 11" fill="none" stroke="#5d6f83" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></marker>
+  <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#5d6f83" stroke="#5d6f83" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
   <style>
     .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
     .layer{fill:#fbfdff;stroke:#d8e0ea;stroke-width:1.4}
@@ -11,9 +11,9 @@
     .title{font-family:"Architects Daughter","Comic Mono",monospace;font-size:44px;fill:#102033}
     .subtitle{font-family:"Comic Mono",monospace;font-size:17px;fill:#536273}
     .card{stroke-width:2.2;filter:url(#shadow)}
-    .label{font-family:"Architects Daughter","Comic Mono",monospace;font-size:25px;fill:#102033}
-    .small{font-family:"Comic Mono",monospace;font-size:15px;fill:#536273}
-    .mono{font-family:"Comic Mono",monospace;font-size:15px;fill:#102033}
+    .label{font-family:"Architects Daughter","Comic Mono",monospace;font-size:22px;fill:#102033}
+    .small{font-family:"Comic Mono",monospace;font-size:14px;fill:#536273}
+    .mono{font-family:"Comic Mono",monospace;font-size:13px;fill:#102033}
     .line{stroke:#5d6f83;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
   </style>
 </defs>
@@ -35,8 +35,8 @@
 <path class="line" d="M744 452 H838"/>
 <path class="line" d="M1168 452 H1262"/>
 <path class="line" d="M330 702 H424"/>
-<path class="line" d="M744 696 H890 V540"/>
-<path class="line" d="M1003 540 V660 H1262"/>
+<path class="line" d="M 744 696 L 878 696 Q 890 696 890 684 L 890 540"/>
+<path class="line" d="M 1003 540 L 1003 648 Q 1003 660 1015 660 L 1262 660"/>
 
 <g transform="translate(94,194)">
   <rect class="card" x="0" y="0" width="236" height="80" rx="8" fill="#e8f3ff" stroke="#5b8def"/>
@@ -83,8 +83,7 @@
   <text class="small" x="160" y="61" text-anchor="middle">migration + sample products</text>
 </g>
 <g transform="translate(1262,660)">
-  <rect class="card" x="0" y="0" width="170" height="84" rx="8" fill="#f8fbff" stroke="#6b7f93"/>
-  <image x="14" y="18" width="44" height="44" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K"/>
+  <rect class="card" x="0" y="0" width="170" height="84" rx="8" fill="#f8fbff" stroke="#6b7f93"/><image data-bluetape4k-icon="database.h2" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjMDk0NzZCIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+SDIgRGF0YWJhc2U8L3RpdGxlPjxwYXRoIGQ9Ik0xNy4xNyAxMy4yN2MuMTQtLjAxNS4yOC0uMDIzLjQxNi0uMDIzLjcgMCAxLjIyOC4xNTkgMS41OTkuNDY5LjM3LjMxNC41NTUuNzU2LjU1NSAxLjMzNGEyLjg2MSAyLjg2MSAwIDAgMS0uNDMgMS40NTVjLS4yOTEuNDkyLS43NzUgMS4wNjYtMS40NiAxLjcyNy0uNDUzLjQ0Ni0xLjA2MS45NzYtMS44MjEgMS41OTJhNDguMDIgNDguMDIgMCAwIDEtMi4yNzUgMS43NDJ2Mi4wODNoOS44OTVWMjEuMjRIMTcuOTljLjIxOS0uMTU5LjU5LS40MzUgMS4xMS0uODMyLjUxOS0uNCAxLjAzMy0uODM1IDEuNTUtMS4zMTEuODE3LS43NiAxLjQyNS0xLjUgMS44MjItMi4yMTVhNC42MjQgNC42MjQgMCAwIDAgLjU5Ny0yLjI2OGMwLTEuMjEzLS40MTYtMi4xNTQtMS4yNDctMi44MTUtLjgyOC0uNjYyLTIuMDMzLS45OTQtMy42MTMtLjk5NC0uMzQ0IDAtLjY5Mi4wMTUtMS4wMzYuMDQ5VjYuMDRIMTMuODZ2NC43MDFIOC45NjVWNi4wNEg1LjY1djEyLjg0NmgzLjMxNXYtNS42NjFoNC44OXY1LjY2MWguMDM5Yy4zMS0uMjQyLjYyMy0uNDg3LjkzMy0uNzRhMjguNTY0IDI4LjU2NCAwIDAgMCAxLjgyNi0xLjU4OCAxNC44NTQgMTQuODU0IDAgMCAwIC41MTctLjUyOXpNMTIuMDExIDIzLjNBMTEuMzI3IDExLjMyNyAwIDAgMSAuNyAxMS45OSAxMS4zMDUgMTEuMzA1IDAgMCAxIDEyLjAxMS42OTlhMTEuMjg2IDExLjI4NiAwIDAgMSAxMS4yOSAxMS4yOXYuMzUxSDI0di0uMzUxQTExLjk4NSAxMS45ODUgMCAwIDAgMTIuMDExIDAgMTIuMDA4IDEyLjAwOCAwIDAgMCAwIDExLjk4OSAxMi4wMjYgMTIuMDI2IDAgMCAwIDEyLjAxMSAyNGguMzUydi0uN3oiLz48L3N2Zz4=" preserveAspectRatio="xMidYMid meet"/>
   <text class="label" x="112" y="34" text-anchor="middle">H2</text>
   <text class="small" x="112" y="61" text-anchor="middle">mvcdb</text>
 </g>

@@ -5,11 +5,11 @@
     <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%">
       <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/>
     </filter>
-    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#4F83BF"/></marker>
-    <marker id="arrow-teal" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#2E8F89"/></marker>
-    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#B9851B"/></marker>
-    <marker id="arrow-red" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#C94D68"/></marker>
-    <marker id="arrow-purple" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#755BC6"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#4F83BF" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#2E8F89" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#B9851B" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#C94D68" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#755BC6" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
     <style>
       .canvas{fill:#F6F9FC}.frame{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
       .track{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}
@@ -48,12 +48,12 @@
   <path data-edge="create-&gt;filter" class="connector" d="M 1192 292 L 1192 480" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
   <path data-edge="filter-&gt;sanitize" class="connector" d="M 1036 540 L 854 540" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
   <path data-edge="sanitize-&gt;engine" class="connector" d="M 530 540 L 348 540" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
-  <path data-edge="engine-&gt;autocommit" class="connector" d="M 212 600 L 212 800 L 502 800" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
+  <path data-edge="engine-&gt;autocommit" class="connector" d="M 212 600 L 212 788 Q 212 800 224 800 L 502 800" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
   <path data-edge="autocommit-&gt;table" class="connector" d="M 792 800 L 902 800" stroke="#C94D68" marker-end="url(#arrow-red)"/>
   <path data-edge="table-&gt;native" class="connector" d="M 1196 800 L 1392 800" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
 
   <g id="node-definition" data-node="definition" transform="translate(122,222)">
-    <rect class="card" x="0" y="0" width="270" height="84" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <rect class="card" x="0" y="0" width="270" height="84" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/><image data-bluetape4k-icon="testcontainers.clickhouse" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjRkZDQzAxIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2xpY2tIb3VzZTwvdGl0bGU+PHBhdGggZD0iTTIxLjMzMyAxMEgyNHY0aC0yLjY2N1pNMTYgMS4zMzVoMi42Njd2MjEuMzNIMTZabS01LjMzMyAwaDIuNjY2djIxLjMzaC0yLjY2NlpNMCAyMi42NjVWMS4zMzVoMi42Njd2MjEuMzN6bTUuMzMzLTIxLjMzSDh2MjEuMzNINS4zMzNaIi8+PC9zdmc+" preserveAspectRatio="xMidYMid meet"/>
     <text class="card-title" x="135" y="29" text-anchor="middle" dominant-baseline="middle">ClickHouseTable</text>
     <text class="detail" x="135" y="56" text-anchor="middle" dominant-baseline="middle">columns + engine property</text>
   </g>
@@ -76,7 +76,7 @@
     <text class="detail" x="156" y="100" text-anchor="middle" dominant-baseline="middle">avoid unsupported statements</text>
   </g>
   <g id="node-sanitize" data-node="sanitize" transform="translate(530,480)">
-    <rect class="card" x="0" y="0" width="324" height="120" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <rect class="card" x="0" y="0" width="324" height="120" rx="12" fill="#FFF3D9" stroke="#D6A441"/><image data-bluetape4k-icon="testcontainers.clickhouse" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjRkZDQzAxIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2xpY2tIb3VzZTwvdGl0bGU+PHBhdGggZD0iTTIxLjMzMyAxMEgyNHY0aC0yLjY2N1pNMTYgMS4zMzVoMi42Njd2MjEuMzNIMTZabS01LjMzMyAwaDIuNjY2djIxLjMzaC0yLjY2NlpNMCAyMi42NjVWMS4zMzVoMi42Njd2MjEuMzN6bTUuMzMzLTIxLjMzSDh2MjEuMzNINS4zMzNaIi8+PC9zdmc+" preserveAspectRatio="xMidYMid meet"/>
     <text class="card-title" x="162" y="30" text-anchor="middle" dominant-baseline="middle">sanitizeForClickHouse</text>
     <text class="detail" x="162" y="56" text-anchor="middle" dominant-baseline="middle">strip PRIMARY KEY</text>
     <text class="detail" x="162" y="78" text-anchor="middle" dominant-baseline="middle">strip CONSTRAINT / REFERENCES</text>
@@ -97,7 +97,7 @@
     <text class="detail" x="145" y="75" text-anchor="middle" dominant-baseline="middle">failure cannot undo prior DDL/DML</text>
   </g>
   <g id="node-table" data-node="table" transform="translate(902,755)">
-    <rect class="card" x="0" y="0" width="294" height="90" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <rect class="card" x="0" y="0" width="294" height="90" rx="12" fill="#EAF7EF" stroke="#58A978"/><image data-bluetape4k-icon="testcontainers.clickhouse" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjRkZDQzAxIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2xpY2tIb3VzZTwvdGl0bGU+PHBhdGggZD0iTTIxLjMzMyAxMEgyNHY0aC0yLjY2N1pNMTYgMS4zMzVoMi42Njd2MjEuMzNIMTZabS01LjMzMyAwaDIuNjY2djIxLjMzaC0yLjY2NlpNMCAyMi42NjVWMS4zMzVoMi42Njd2MjEuMzN6bTUuMzMzLTIxLjMzSDh2MjEuMzNINS4zMzNaIi8+PC9zdmc+" preserveAspectRatio="xMidYMid meet"/>
     <text class="card-title" x="147" y="29" text-anchor="middle" dominant-baseline="middle">ClickHouse table</text>
     <text class="detail" x="147" y="55" text-anchor="middle" dominant-baseline="middle">physical sort key from engine</text>
     <text class="detail" x="147" y="75" text-anchor="middle" dominant-baseline="middle">use idempotent load design</text>

@@ -15,11 +15,11 @@
       .text { font-family: "Comic Mono", monospace; font-size: 18px; fill: #283944; }
       .small { font-family: "Comic Mono", monospace; font-size: 15px; fill: #435360; }
       .tiny { font-family: "Comic Mono", monospace; font-size: 14px; fill: #51636f; }
-      .pillSmall { font-family: "Comic Mono", monospace; font-size: 14px; fill: #263844; }
+      .typeSmall { font-family: "Comic Mono", monospace; font-size: 14px; fill: #263844; }
       .muted { fill: #667783; }
       .grid { stroke: #d4cbc0; stroke-width: 2; }
       .badge { font-family: "Comic Mono", monospace; font-size: 15px; font-weight: 700; fill: #20323d; }
-      .pillText { font-family: "Comic Mono", monospace; font-size: 16px; fill: #263844; }
+      .typeText { font-family: "Comic Mono", monospace; font-size: 16px; fill: #263844; }
     </style>
   </defs>
 
@@ -60,9 +60,9 @@
       <text class="text" x="296" y="123">geoGeometry(name)</text>
 
       <rect x="554" y="24" width="318" height="132" rx="12" fill="#f0fbf8" stroke="#86beb3" stroke-width="2"/>
-      <text class="pillSmall" x="574" y="57">GeoPoint -> GEOMETRY(POINT, 4326)</text>
-      <text class="pillSmall" x="574" y="92">GeoPolygon -> GEOMETRY(POLYGON, 4326)</text>
-      <text class="pillSmall" x="574" y="127">GeoGeometry -> GEOMETRY(GEOMETRY, 4326)</text>
+      <text class="typeSmall" x="574" y="57">GeoPoint -> GEOMETRY(POINT, 4326)</text>
+      <text class="typeSmall" x="574" y="92">GeoPolygon -> GEOMETRY(POLYGON, 4326)</text>
+      <text class="typeSmall" x="574" y="127">GeoGeometry -> GEOMETRY(GEOMETRY, 4326)</text>
 
       <text class="text" x="928" y="55">PostgreSQL dialect</text>
       <text class="small" x="928" y="89">postgis extension</text>
@@ -88,8 +88,8 @@
       <text class="small" x="296" y="148">stored size is checked</text>
 
       <rect x="554" y="34" width="318" height="112" rx="12" fill="#f7f3ff" stroke="#b6a5e4" stroke-width="2"/>
-      <text class="pillText" x="576" y="72">VectorColumnType</text>
-      <text class="pillText" x="576" y="107">SQL type: VECTOR(n)</text>
+      <text class="typeText" x="576" y="72">VectorColumnType</text>
+      <text class="typeText" x="576" y="107">SQL type: VECTOR(n)</text>
 
       <text class="text" x="928" y="52">vector extension</text>
       <text class="small" x="928" y="87">pgvector runtime</text>
@@ -113,9 +113,9 @@
       <text class="small" x="296" y="158">exclusive upper default</text>
 
       <rect x="554" y="34" width="318" height="112" rx="12" fill="#fff8e9" stroke="#deb46d" stroke-width="2"/>
-      <text class="pillText" x="576" y="68">TstzRangeColumnType</text>
-      <text class="pillText" x="576" y="102">TSTZRANGE native</text>
-      <text class="pillText" x="576" y="132">VARCHAR(120) fallback</text>
+      <text class="typeText" x="576" y="68">TstzRangeColumnType</text>
+      <text class="typeText" x="576" y="102">TSTZRANGE native</text>
+      <text class="typeText" x="576" y="132">VARCHAR(120) fallback</text>
 
       <text class="text" x="928" y="47">Native range</text>
       <text class="text" x="928" y="78">on PostgreSQL</text>

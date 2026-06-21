@@ -3,7 +3,9 @@
 <desc id="desc">Spring Data coroutine repository scanning, direct proxy creation, mapper binding, suspend transactions, R2DBC database, and optional reactive cache health wiring.</desc>
 <defs>
   <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="arrow" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto"><path d="M 1 1 L 12 6 L 1 11" fill="none" stroke="#5d6f83" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></marker>
+  <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#5d6f83" stroke="#5d6f83" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+  <marker id="arrow-5d6f83" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#5d6f83" stroke="#5d6f83" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+  <marker id="arrow-8a72d6" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#8a72d6" stroke="#8a72d6" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
   <style>
     .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
     .layer{fill:#fbfdff;stroke:#d8e0ea;stroke-width:1.4}
@@ -11,9 +13,9 @@
     .title{font-family:"Architects Daughter","Comic Mono",monospace;font-size:44px;fill:#102033}
     .subtitle{font-family:"Comic Mono",monospace;font-size:17px;fill:#536273}
     .card{stroke-width:2.2;filter:url(#shadow)}
-    .label{font-family:"Architects Daughter","Comic Mono",monospace;font-size:25px;fill:#102033}
-    .small{font-family:"Comic Mono",monospace;font-size:15px;fill:#536273}
-    .mono{font-family:"Comic Mono",monospace;font-size:15px;fill:#102033}
+    .label{font-family:"Architects Daughter","Comic Mono",monospace;font-size:22px;fill:#102033}
+    .small{font-family:"Comic Mono",monospace;font-size:14px;fill:#536273}
+    .mono{font-family:"Comic Mono",monospace;font-size:13px;fill:#102033}
     .line{stroke:#5d6f83;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
     .dash{stroke:#8a72d6;stroke-width:2.5;stroke-dasharray:8 7;fill:none;marker-end:url(#arrow)}
   </style>
@@ -30,18 +32,18 @@
 <rect class="layer" x="64" y="632" width="1512" height="238" rx="18"/>
 <text class="layerTitle" x="90" y="674">R2DBC runtime boundary</text>
 
-<path class="line" d="M245 286 V444"/>
-<path class="line" d="M656 286 V444"/>
-<path class="line" d="M1067 286 V444"/>
-<path class="line" d="M390 506 H474"/>
-<path class="line" d="M740 506 H824"/>
-<path class="line" d="M1090 506 H1174"/>
-<path class="line" d="M957 568 V704"/>
-<path class="line" d="M390 764 H474"/>
-<path class="line" d="M740 764 H824"/>
-<path class="line" d="M1090 764 H1174"/>
-<path class="dash" d="M1390 568 V704"/>
-<path class="line" d="M656 568 V620 H957 V704"/>
+<path class="line" d="M245 286 V444" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M656 286 V444" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M1067 286 V444" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M390 506 H474" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M740 506 H824" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M1090 506 H1174" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M957 568 V704" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M390 764 H474" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M740 764 H824" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M1090 764 H1174" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="dash" d="M1390 568 V704" style="marker-end:url(#arrow-8a72d6)"/>
+<path class="line" d="M 656 568 L 656 608 Q 656 620 668 620 L 945 620 Q 957 620 957 632 L 957 704" style="marker-end:url(#arrow-5d6f83)"/>
 
 <g transform="translate(96,214)">
   <rect class="card" x="0" y="0" width="298" height="72" rx="8" fill="#e8f3ff" stroke="#5b8def"/>
@@ -56,7 +58,7 @@
 <g transform="translate(918,214)">
   <rect class="card" x="0" y="0" width="298" height="72" rx="8" fill="#fff3d9" stroke="#d6a441"/>
   <text class="label" x="149" y="30" text-anchor="middle">Coroutine Repository</text>
-  <text class="mono" x="149" y="55" text-anchor="middle">ExposedR2dbcRepository&lt;R, ID&gt;</text>
+  <text class="mono" x="149" y="55" text-anchor="middle">ExposedR2dbcRepository&lt;R,ID&gt;</text>
 </g>
 
 <g transform="translate(96,444)">
@@ -69,7 +71,7 @@
   <rect class="card" x="0" y="0" width="266" height="124" rx="8" fill="#e9f7f6" stroke="#45a7a1"/>
   <text class="label" x="133" y="32" text-anchor="middle">FactoryBean</text>
   <text class="small" x="133" y="62" text-anchor="middle">no tx interceptor wrapping</text>
-  <text class="mono" x="133" y="90" text-anchor="middle">RepositoryFactoryBeanSupport</text>
+  <text class="mono" x="133" y="90" text-anchor="middle">RepositoryFactoryBean...</text>
 </g>
 <g transform="translate(824,444)">
   <rect class="card" x="0" y="0" width="266" height="124" rx="8" fill="#fdecef" stroke="#dc6b82"/>
@@ -81,7 +83,7 @@
   <rect class="card" x="0" y="0" width="298" height="124" rx="8" fill="#fff7e8" stroke="#d99a36"/>
   <text class="label" x="149" y="32" text-anchor="middle">Query Dispatch</text>
   <text class="small" x="149" y="62" text-anchor="middle">@Query first, then PartTree</text>
-  <text class="mono" x="149" y="90" text-anchor="middle">Continuation-aware execution</text>
+  <text class="mono" x="149" y="90" text-anchor="middle">Continuation-aware exec</text>
 </g>
 
 <g transform="translate(96,704)">
@@ -103,9 +105,8 @@
   <text class="mono" x="133" y="90" text-anchor="middle">selectAll / update / delete</text>
 </g>
 <g transform="translate(1174,704)">
-  <rect class="card" x="0" y="0" width="298" height="120" rx="8" fill="#f8fbff" stroke="#6b7f93"/>
-  <image x="20" y="25" width="56" height="56" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K"/>
-  <text class="label" x="184" y="32" text-anchor="middle">R2DBC Database</text>
+  <rect class="card" x="0" y="0" width="298" height="120" rx="8" fill="#f8fbff" stroke="#6b7f93"/><image data-bluetape4k-icon="generic.database" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSI2NCIgY3k9IjM2IiByeD0iMzQiIHJ5PSIxMyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiLz4KICA8cGF0aCBkPSJNMzAgNThjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMzAgODBjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==" preserveAspectRatio="xMidYMid meet"/>
+  <text class="label" x="186" y="32" text-anchor="middle">R2DBC Database</text>
   <text class="small" x="184" y="62" text-anchor="middle">non-blocking row access</text>
   <text class="mono" x="184" y="90" text-anchor="middle">ResultRow -&gt; domain</text>
 </g>
