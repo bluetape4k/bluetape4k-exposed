@@ -41,4 +41,4 @@ PostgreSQL **OLTP**와 ClickHouse **OLAP**를 함께 사용하는 end-to-end 예
 
 ## 관련 모듈
 
-- [`exposed-clickhouse`](../../exposed/exposed-clickhouse/README.ko.md) — 본 예제의 ClickHouse 어댑터
+- [`exposed-clickhouse`](../../exposed/clickhouse/README.ko.md) — 본 예제의 ClickHouse 어댑터

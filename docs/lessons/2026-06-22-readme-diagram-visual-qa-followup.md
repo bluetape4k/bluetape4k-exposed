@@ -18,10 +18,10 @@
 ### Lane title overlap
 
 `exposed-*-diagram-02` 계열에서 lane 1/3 제목이 카드나 카드 그림자에
-가려지는 문제가 있었다. 특히 `exposed-exposed-core-diagram-02`는 첫 두
+가려지는 문제가 있었다. 특히 `exposed-core-diagram-02`는 첫 두
 lane의 카드 시작 y좌표가 lane 제목 baseline보다 위로 겹쳐 있었고,
-`exposed-exposed-measured-diagram-02`, `exposed-exposed-tink-diagram-02`,
-`exposed-exposed-r2dbc-tests-diagram-02`도 제목과 첫 카드 사이 간격이
+`exposed-measured-diagram-02`, `exposed-tink-diagram-02`,
+`exposed-r2dbc-tests-diagram-02`도 제목과 첫 카드 사이 간격이
 부족했다.
 
 해결은 카드만 이동하는 것이 아니라 전체 SVG 높이, viewBox, frame/canvas,
@@ -108,13 +108,13 @@ README 독자가 보는 최종 artifact이므로, 다음부터는 최소한 다�
 이번 follow-up에서는 `exposed-*-diagram-02` 계열의 lane 제목 겹침을 다시
 검사했고, gap이 부족한 7개 SVG/PNG를 수정했다.
 
-- `exposed-exposed-cache-diagram-02`
-- `exposed-exposed-core-diagram-02`
-- `exposed-exposed-jdbc-diagram-02`
-- `exposed-exposed-jdbc-redisson-diagram-02`
-- `exposed-exposed-measured-diagram-02`
-- `exposed-exposed-r2dbc-tests-diagram-02`
-- `exposed-exposed-tink-diagram-02`
+- `exposed-cache-diagram-02`
+- `exposed-core-diagram-02`
+- `exposed-jdbc-diagram-02`
+- `exposed-jdbc-redisson-diagram-02`
+- `exposed-measured-diagram-02`
+- `exposed-r2dbc-tests-diagram-02`
+- `exposed-tink-diagram-02`
 
 검증 증거:
 

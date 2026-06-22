@@ -42,4 +42,4 @@ The integration test uses **Testcontainers** to spin up both PostgreSQL and Clic
 
 ## See Also
 
-- [`exposed-clickhouse`](../../exposed/exposed-clickhouse/README.md) — the underlying ClickHouse adapter
+- [`exposed-clickhouse`](../../exposed/clickhouse/README.md) — the underlying ClickHouse adapter

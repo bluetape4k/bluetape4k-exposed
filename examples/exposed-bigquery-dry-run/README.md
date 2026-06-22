@@ -26,4 +26,4 @@ Cloud credentials:
 
 ## See Also
 
-- [`exposed-bigquery`](../../exposed/exposed-bigquery/README.md) — BigQuery REST executor
+- [`exposed-bigquery`](../../exposed/bigquery/README.md) — BigQuery REST executor

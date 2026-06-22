@@ -105,54 +105,54 @@ jobs:
         with:
           filters: |
             core:
-              - 'exposed/exposed-core/**'
-              - 'exposed/exposed-dao/**'
+              - 'exposed/core/**'
+              - 'exposed/dao/**'
             serialization:
-              - 'exposed/exposed-jackson2/**'
-              - 'exposed/exposed-jackson3/**'
-              - 'exposed/exposed-fastjson2/**'
+              - 'exposed/jackson2/**'
+              - 'exposed/jackson3/**'
+              - 'exposed/fastjson2/**'
             tink:
-              - 'exposed/exposed-tink/**'
+              - 'exposed/tink/**'
             jdbc:
-              - 'exposed/exposed-jdbc/**'
-              - 'exposed/exposed-jdbc-tests/**'
+              - 'exposed/jdbc/**'
+              - 'exposed/jdbc-tests/**'
             r2dbc:
-              - 'exposed/exposed-r2dbc/**'
-              - 'exposed/exposed-r2dbc-tests/**'
+              - 'exposed/r2dbc/**'
+              - 'exposed/r2dbc-tests/**'
             spring-boot:
               - 'spring-boot/**'
             lettuce:
-              - 'exposed/exposed-jdbc-lettuce/**'
-              - 'exposed/exposed-r2dbc-lettuce/**'
+              - 'exposed/jdbc-lettuce/**'
+              - 'exposed/r2dbc-lettuce/**'
             redisson:
-              - 'exposed/exposed-jdbc-redisson/**'
-              - 'exposed/exposed-r2dbc-redisson/**'
+              - 'exposed/jdbc-redisson/**'
+              - 'exposed/r2dbc-redisson/**'
             measured:
-              - 'exposed/exposed-measured/**'
+              - 'exposed/measured/**'
             postgresql-module:
-              - 'exposed/exposed-postgresql/**'
+              - 'exposed/postgresql/**'
             mysql8-module:
-              - 'exposed/exposed-mysql8/**'
+              - 'exposed/mysql8/**'
             duckdb:
-              - 'exposed/exposed-duckdb/**'
+              - 'exposed/duckdb/**'
             cache:
-              - 'exposed/exposed-cache/**'
+              - 'exposed/cache/**'
             jdbc-caffeine:
-              - 'exposed/exposed-jdbc-caffeine/**'
+              - 'exposed/jdbc-caffeine/**'
             r2dbc-caffeine:
-              - 'exposed/exposed-r2dbc-caffeine/**'
+              - 'exposed/r2dbc-caffeine/**'
             clickhouse:
-              - 'exposed/exposed-clickhouse/**'
+              - 'exposed/clickhouse/**'
             trino:
-              - 'exposed/exposed-trino/**'
+              - 'exposed/trino/**'
             starrocks:
-              - 'exposed/exposed-starrocks/**'
+              - 'exposed/starrocks/**'
             cockroachdb:
-              - 'exposed/exposed-cockroachdb/**'
+              - 'exposed/cockroachdb/**'
             bigquery:
-              - 'exposed/exposed-bigquery/**'
+              - 'exposed/bigquery/**'
             timefold:
-              - 'exposed/exposed-timefold-solver-persistence/**'
+              - 'exposed/timefold-solver-persistence/**'
             spring-boot-batch:
               - 'spring-boot/batch-exposed/**'
             utils-batch:

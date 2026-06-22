@@ -44,8 +44,8 @@ After PR creation, the StarRocks module README was found to be missing
 architecture and local smoke lifecycle diagrams. The README locale set now embeds shared
 English-label PNG assets only:
 
-- `docs/images/readme-diagrams/exposed-exposed-starrocks-diagram-01.png`
-- `docs/images/readme-diagrams/exposed-exposed-starrocks-flow-02.png`
+- `docs/images/readme-diagrams/exposed-starrocks-diagram-01.png`
+- `docs/images/readme-diagrams/exposed-starrocks-flow-02.png`
 
 Matching SVG sources and rendered PNG assets were added next to the README PNGs.
 Keep future diagram validation on SVG/XML parsing, CairoSVG rendering, geometry

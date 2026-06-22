@@ -53,4 +53,4 @@ jobs:
           --filename=V1__create_webflux_products.sql
           --no-daemon
       - name: Verify generated migrations are checked in intentionally
-        run: git diff --exit-code -- spring-boot/exposed-jdbc-demo/src/main/resources/db/migration spring-boot/exposed-r2dbc-demo/src/main/resources/db/migration
+        run: git diff --exit-code -- spring-boot/jdbc-demo/src/main/resources/db/migration spring-boot/r2dbc-demo/src/main/resources/db/migration

@@ -102,8 +102,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `exposed-trino`: Trino connector support (requires external SaaS account).
 - `exposed-duckdb`: DuckDB embedded analytics database support.
 - `exposed-timefold-solver-persistence`: Timefold Solver persistence integration.
-- `spring-boot/exposed-jdbc`: Spring Boot 4 JDBC auto-configuration.
-- `spring-boot/exposed-r2dbc`: Spring Boot 4 R2DBC auto-configuration.
+- `spring-boot/jdbc`: Spring Boot 4 JDBC auto-configuration.
+- `spring-boot/r2dbc`: Spring Boot 4 R2DBC auto-configuration.
 - `spring-boot/batch-exposed`: Spring Batch + Exposed integration for Boot 4.
 - GitHub Actions CI workflow (H2-only fast tests on PR/push).
 - GitHub Actions Nightly workflow (full matrix: H2, PostgreSQL, MySQL, Redis).
