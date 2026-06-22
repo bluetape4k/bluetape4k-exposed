@@ -16,35 +16,43 @@ auto-configuration.
 
 ```text
 exposed/
-  bluetape4k-exposed-core/
-  bluetape4k-exposed-dao/
-  bluetape4k-exposed-jdbc/
-  bluetape4k-exposed-r2dbc/
-  bluetape4k-exposed-jdbc-tests/
-  bluetape4k-exposed-r2dbc-tests/
-  bluetape4k-exposed-cache/
-  bluetape4k-exposed-jdbc-caffeine/
-  bluetape4k-exposed-jdbc-lettuce/
-  bluetape4k-exposed-jdbc-redisson/
-  bluetape4k-exposed-r2dbc-caffeine/
-  bluetape4k-exposed-r2dbc-lettuce/
-  bluetape4k-exposed-r2dbc-redisson/
-  bluetape4k-exposed-jackson2/
-  bluetape4k-exposed-jackson3/
-  bluetape4k-exposed-fastjson2/
-  bluetape4k-exposed-tink/
-  bluetape4k-exposed-measured/
-  bluetape4k-exposed-mysql8/
-  bluetape4k-exposed-postgresql/
-  bluetape4k-exposed-bigquery/
-  bluetape4k-exposed-clickhouse/
-  bluetape4k-exposed-trino/
-  bluetape4k-exposed-starrocks/
-  bluetape4k-exposed-cockroachdb/
-  bluetape4k-exposed-duckdb/
-  bluetape4k-exposed-timefold-solver-persistence/
+  core/
+  dao/
+  jdbc/
+  r2dbc/
+  jdbc-tests/
+  r2dbc-tests/
+  cache/
+  jdbc-caffeine/
+  jdbc-lettuce/
+  jdbc-redisson/
+  r2dbc-caffeine/
+  r2dbc-lettuce/
+  r2dbc-redisson/
+  jackson2/
+  jackson3/
+  fastjson2/
+  tink/
+  measured/
+  mysql8/
+  postgresql/
+  bigquery/
+  clickhouse/
+  trino/
+  starrocks/
+  cockroachdb/
+  duckdb/
+  timefold-solver-persistence/
+  bom/
 utils/
+  batch/
 spring-boot/
+  jdbc/
+  r2dbc/
+  batch-exposed/
+  spring-modulith/
+  jdbc-demo/
+  r2dbc-demo/
 buildSrc/
 ```
 
@@ -54,11 +62,11 @@ buildSrc/
 
 | Directory | Gradle module |
 |---|---|
-| `exposed/exposed-core` | `:bluetape4k-exposed-core` |
-| `exposed/exposed-jdbc` | `:bluetape4k-exposed-jdbc` |
-| `exposed/exposed-r2dbc` | `:bluetape4k-exposed-r2dbc` |
-| `spring-boot/exposed-jdbc` | `:bluetape4k-exposed-spring-boot-jdbc` |
-| `spring-boot/exposed-r2dbc` | `:bluetape4k-exposed-spring-boot-r2dbc` |
+| `exposed/core` | `:bluetape4k-exposed-core` |
+| `exposed/jdbc` | `:bluetape4k-exposed-jdbc` |
+| `exposed/r2dbc` | `:bluetape4k-exposed-r2dbc` |
+| `spring-boot/jdbc` | `:bluetape4k-exposed-spring-boot-jdbc` |
+| `spring-boot/r2dbc` | `:bluetape4k-exposed-spring-boot-r2dbc` |
 | `utils/batch` | `:bluetape4k-exposed-batch` |
 
 ## Commands

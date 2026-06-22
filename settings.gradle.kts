@@ -60,19 +60,19 @@ dependencyResolutionManagement {
 rootProject.name = "bluetape4k-exposed"
 
 // BOM — explicitly included (excluded from exposed/ auto-discovery below)
-includeProject("bluetape4k-exposed-bom", file("exposed/bluetape4k-exposed-bom"))
+includeProject("bluetape4k-exposed-bom", file("exposed/bom"))
 
-includeModules("exposed", withBaseDir = false, prefix = "bluetape4k-", excludeDirNames = setOf("bluetape4k-exposed-bom"))
+includeModules("exposed", withBaseDir = false, prefix = "bluetape4k-exposed-", excludeDirNames = setOf("bom"))
 includeModules("examples", withBaseDir = true)
 
 includeMappedModule("utils/batch", "bluetape4k-exposed-batch")
 
-includeMappedModule("spring-boot/exposed-jdbc", "bluetape4k-exposed-spring-boot-jdbc")
-includeMappedModule("spring-boot/exposed-r2dbc", "bluetape4k-exposed-spring-boot-r2dbc")
+includeMappedModule("spring-boot/jdbc", "bluetape4k-exposed-spring-boot-jdbc")
+includeMappedModule("spring-boot/r2dbc", "bluetape4k-exposed-spring-boot-r2dbc")
 includeMappedModule("spring-boot/batch-exposed", "bluetape4k-exposed-spring-boot-batch")
-includeMappedModule("spring-boot/exposed-spring-modulith", "bluetape4k-exposed-spring-modulith")
-includeMappedModule("spring-boot/exposed-jdbc-demo", "exposed-spring-boot-jdbc-demo")
-includeMappedModule("spring-boot/exposed-r2dbc-demo", "exposed-spring-boot-r2dbc-demo")
+includeMappedModule("spring-boot/spring-modulith", "bluetape4k-exposed-spring-modulith")
+includeMappedModule("spring-boot/jdbc-demo", "exposed-spring-boot-jdbc-demo")
+includeMappedModule("spring-boot/r2dbc-demo", "exposed-spring-boot-r2dbc-demo")
 
 fun includeModules(
     baseDir: String,

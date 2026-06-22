@@ -27,4 +27,4 @@ priority, location, timeout 같은 query-job option이 REST `QueryRequest`에
 
 ## 참고
 
-- [`exposed-bigquery`](../../exposed/exposed-bigquery/README.ko.md) — BigQuery REST executor
+- [`exposed-bigquery`](../../exposed/bigquery/README.ko.md) — BigQuery REST executor
