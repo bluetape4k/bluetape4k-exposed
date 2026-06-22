@@ -146,11 +146,11 @@ The benchmark setup has been migrated to `kotlinx-benchmark` with DB-specific pr
 
 ```kotlin
 dependencies {
-    implementation(project(":bluetape4k-exposed-batch"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-batch:${bluetape4kVersion}")
     // for JDBC repository / reader / writer:
-    implementation(project(":exposed-jdbc"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:${bluetape4kVersion}")
     // for R2DBC repository / reader / writer:
-    implementation(project(":exposed-r2dbc"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:${bluetape4kVersion}")
     // for workflow embedding:
     implementation("io.github.bluetape4k:bluetape4k-workflow:${version}")
 }

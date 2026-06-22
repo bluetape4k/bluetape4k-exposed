@@ -365,7 +365,7 @@ dependencies {
     implementation(platform(Libs.spring_boot_dependencies))
 
     // 나머지 의존성은 동일
-    implementation(project(":exposed-spring-boot-r2dbc"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-r2dbc:${bluetape4kVersion}")
     implementation(Libs.springBootStarter("webflux"))
 }
 ```
@@ -395,7 +395,7 @@ Spring Boot BOM이 WebFlux, R2DBC, 테스트, Spring Framework 버전을 함께 
 ```kotlin
 dependencies {
     implementation(platform(Libs.spring_boot_dependencies))
-    implementation(project(":exposed-spring-boot-r2dbc"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-r2dbc:${bluetape4kVersion}")
     implementation(Libs.springBootStarter("webflux"))
     implementation(Libs.exposed_spring_boot_starter)
     implementation(Libs.exposed_r2dbc)

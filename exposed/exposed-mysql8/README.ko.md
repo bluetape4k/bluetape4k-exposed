@@ -318,7 +318,7 @@ transaction(db) {
 ## 의존성
 
 ```kotlin
-implementation(project(":bluetape4k-exposed-mysql8"))
+implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-mysql8:${bluetape4kVersion}")
 ```
 
 모듈이 제공하는 의존성:

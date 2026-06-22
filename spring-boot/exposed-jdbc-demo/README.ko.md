@@ -322,7 +322,7 @@ dependencies {
     implementation(platform(Libs.spring_boot_dependencies))
 
     // 나머지 의존성은 동일
-    implementation(project(":exposed-spring-boot-jdbc"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:${bluetape4kVersion}")
     implementation(Libs.springBootStarter("web"))
 }
 ```
@@ -350,7 +350,7 @@ Spring Boot는 기본적으로 다음 버전을 제공합니다:
 ```kotlin
 dependencies {
     implementation(platform(Libs.spring_boot_dependencies))
-    implementation(project(":exposed-spring-boot-jdbc"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:${bluetape4kVersion}")
     implementation(Libs.springBootStarter("web"))
     implementation(Libs.jackson_module_kotlin)
     implementation(Libs.exposed_spring_boot_starter)

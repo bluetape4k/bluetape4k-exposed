@@ -24,7 +24,7 @@ A module that integrates JetBrains Exposed ORM with Trino JDBC. Built on Postgre
 
 ```kotlin
 dependencies {
-    implementation(project(":exposed-trino"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-trino:${bluetape4kVersion}")
     // or Maven coordinates
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-trino:${version}")
 }
