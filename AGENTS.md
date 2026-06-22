@@ -46,13 +46,14 @@ exposed/
   bom/
 utils/
   batch/
+examples/
+  jdbc-demo/
+  r2dbc-demo/
 spring-boot/
   jdbc/
   r2dbc/
   batch-exposed/
   spring-modulith/
-  jdbc-demo/
-  r2dbc-demo/
 buildSrc/
 ```
 
@@ -67,6 +68,8 @@ buildSrc/
 | `exposed/r2dbc` | `:bluetape4k-exposed-r2dbc` |
 | `spring-boot/jdbc` | `:bluetape4k-exposed-spring-boot-jdbc` |
 | `spring-boot/r2dbc` | `:bluetape4k-exposed-spring-boot-r2dbc` |
+| `examples/jdbc-demo` | `:exposed-spring-boot-jdbc-demo` |
+| `examples/r2dbc-demo` | `:exposed-spring-boot-r2dbc-demo` |
 | `utils/batch` | `:bluetape4k-exposed-batch` |
 
 ## Commands

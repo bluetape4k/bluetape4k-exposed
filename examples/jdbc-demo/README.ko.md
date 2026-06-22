@@ -201,7 +201,7 @@ curl "http://localhost:8080/products/search?name=Kotlin"
 
 ```bash
 ./gradlew :exposed-spring-boot-jdbc-demo:assemble
-java -jar spring-boot/jdbc-demo/build/libs/exposed-spring-data-mvc-demo-*.jar
+java -jar examples/jdbc-demo/build/libs/exposed-spring-data-mvc-demo-*.jar
 ```
 
 ### 기본 포트

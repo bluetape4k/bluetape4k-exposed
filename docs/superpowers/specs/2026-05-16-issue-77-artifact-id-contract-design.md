@@ -184,8 +184,8 @@ includeMappedModule("spring-boot/exposed-jdbc", "exposed-spring-boot-jdbc")
 includeMappedModule("spring-boot/exposed-r2dbc", "exposed-spring-boot-r2dbc")
 includeMappedModule("spring-boot/batch-exposed", "exposed-spring-boot-batch")
 includeMappedModule("spring-boot/exposed-spring-modulith", "exposed-spring-modulith")
-includeMappedModule("spring-boot/exposed-jdbc-demo", "exposed-spring-boot-jdbc-demo")
-includeMappedModule("spring-boot/exposed-r2dbc-demo", "exposed-spring-boot-r2dbc-demo")
+includeMappedModule("examples/jdbc-demo", "exposed-spring-boot-jdbc-demo")
+includeMappedModule("examples/r2dbc-demo", "exposed-spring-boot-r2dbc-demo")
 ```
 
 ### Maven publication
