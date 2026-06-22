@@ -157,11 +157,11 @@ benchmark 체계는 `kotlinx-benchmark` 기반으로 재구성되었고, JDBC + 
 
 ```kotlin
 dependencies {
-    implementation(project(":bluetape4k-exposed-batch"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-batch:${bluetape4kVersion}")
     // JDBC repository / reader / writer 사용 시:
-    implementation(project(":exposed-jdbc"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:${bluetape4kVersion}")
     // R2DBC repository / reader / writer 사용 시:
-    implementation(project(":exposed-r2dbc"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:${bluetape4kVersion}")
     // Workflow 임베딩 사용 시:
     implementation("io.github.bluetape4k:bluetape4k-workflow:${version}")
 }

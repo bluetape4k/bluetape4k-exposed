@@ -363,7 +363,7 @@ dependencies {
     implementation(platform(Libs.spring_boot_dependencies))
 
     // Other dependencies remain the same
-    implementation(project(":exposed-spring-boot-r2dbc"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-r2dbc:${bluetape4kVersion}")
     implementation(Libs.springBootStarter("webflux"))
 }
 ```
@@ -393,7 +393,7 @@ The Spring Boot BOM keeps the WebFlux, R2DBC, test, and Spring Framework version
 ```kotlin
 dependencies {
     implementation(platform(Libs.spring_boot_dependencies))
-    implementation(project(":exposed-spring-boot-r2dbc"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-r2dbc:${bluetape4kVersion}")
     implementation(Libs.springBootStarter("webflux"))
     implementation(Libs.exposed_spring_boot_starter)
     implementation(Libs.exposed_r2dbc)

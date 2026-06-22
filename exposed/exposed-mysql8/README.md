@@ -318,7 +318,7 @@ transaction(db) {
 ## Dependency
 
 ```kotlin
-implementation(project(":bluetape4k-exposed-mysql8"))
+implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-mysql8:${bluetape4kVersion}")
 ```
 
 Dependencies provided by this module:

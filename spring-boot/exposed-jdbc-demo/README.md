@@ -322,7 +322,7 @@ dependencies {
     implementation(platform(Libs.spring_boot_dependencies))
 
     // Other dependencies remain the same
-    implementation(project(":exposed-spring-boot-jdbc"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:${bluetape4kVersion}")
     implementation(Libs.springBootStarter("web"))
 }
 ```
@@ -351,7 +351,7 @@ Spring Boot provides the following versions by default:
 ```kotlin
 dependencies {
     implementation(platform(Libs.spring_boot_dependencies))
-    implementation(project(":exposed-spring-boot-jdbc"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:${bluetape4kVersion}")
     implementation(Libs.springBootStarter("web"))
     implementation(Libs.jackson_module_kotlin)
     implementation(Libs.exposed_spring_boot_starter)
