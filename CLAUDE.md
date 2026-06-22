@@ -41,11 +41,12 @@ exposed/
   bom/                                 # BOM for all publishable modules
 utils/
   batch/                                # Batch utilities → bluetape4k-exposed-batch
+examples/
+  jdbc-demo/                            # JDBC demo app (not published)
+  r2dbc-demo/                           # R2DBC demo app (not published)
 spring-boot/
   jdbc/                                 # Spring Boot 4 JDBC auto-configuration → bluetape4k-exposed-spring-boot-jdbc
-  jdbc-demo/                            # JDBC demo app (not published)
   r2dbc/                                # Spring Boot 4 R2DBC auto-configuration → bluetape4k-exposed-spring-boot-r2dbc
-  r2dbc-demo/                           # R2DBC demo app (not published)
   batch-exposed/                        # Spring Batch + Exposed integration → bluetape4k-exposed-spring-boot-batch
   spring-modulith/                      # Spring Modulith integration → bluetape4k-exposed-spring-modulith
 ```

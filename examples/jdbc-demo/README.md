@@ -201,7 +201,7 @@ Or run as a JAR:
 
 ```bash
 ./gradlew :exposed-spring-boot-jdbc-demo:assemble
-java -jar spring-boot/jdbc-demo/build/libs/exposed-spring-data-mvc-demo-*.jar
+java -jar examples/jdbc-demo/build/libs/exposed-spring-data-mvc-demo-*.jar
 ```
 
 ### Default Port

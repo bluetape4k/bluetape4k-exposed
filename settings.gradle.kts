@@ -63,7 +63,7 @@ rootProject.name = "bluetape4k-exposed"
 includeProject("bluetape4k-exposed-bom", file("exposed/bom"))
 
 includeModules("exposed", withBaseDir = false, prefix = "bluetape4k-exposed-", excludeDirNames = setOf("bom"))
-includeModules("examples", withBaseDir = true)
+includeModules("examples", withBaseDir = true, excludeDirNames = setOf("jdbc-demo", "r2dbc-demo"))
 
 includeMappedModule("utils/batch", "bluetape4k-exposed-batch")
 
@@ -71,8 +71,8 @@ includeMappedModule("spring-boot/jdbc", "bluetape4k-exposed-spring-boot-jdbc")
 includeMappedModule("spring-boot/r2dbc", "bluetape4k-exposed-spring-boot-r2dbc")
 includeMappedModule("spring-boot/batch-exposed", "bluetape4k-exposed-spring-boot-batch")
 includeMappedModule("spring-boot/spring-modulith", "bluetape4k-exposed-spring-modulith")
-includeMappedModule("spring-boot/jdbc-demo", "exposed-spring-boot-jdbc-demo")
-includeMappedModule("spring-boot/r2dbc-demo", "exposed-spring-boot-r2dbc-demo")
+includeMappedModule("examples/jdbc-demo", "exposed-spring-boot-jdbc-demo")
+includeMappedModule("examples/r2dbc-demo", "exposed-spring-boot-r2dbc-demo")
 
 fun includeModules(
     baseDir: String,
