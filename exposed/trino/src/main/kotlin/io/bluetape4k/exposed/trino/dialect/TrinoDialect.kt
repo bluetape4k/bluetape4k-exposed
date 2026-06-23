@@ -7,6 +7,7 @@ import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.GroupConcat
 import org.jetbrains.exposed.v1.core.InternalApi
 import org.jetbrains.exposed.v1.core.QueryBuilder
+import org.jetbrains.exposed.v1.core.stringLiteral
 import org.jetbrains.exposed.v1.core.vendors.FunctionProvider
 import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
 
@@ -70,9 +71,9 @@ private object TrinoFunctionProvider: FunctionProvider() {
                     append(it.second.name)
                 }
             }
-            append("), '")
-            append(expr.separator ?: ",")
-            append("')")
+            append("), ")
+            append(stringLiteral(expr.separator ?: ","))
+            append(")")
         }
     }
 
@@ -81,9 +82,9 @@ private object TrinoFunctionProvider: FunctionProvider() {
         expr: Expression<T>,
         substring: String,
     ): Unit = queryBuilder {
-        append("POSITION('")
-        append(substring)
-        append("' IN ")
+        append("POSITION(")
+        append(stringLiteral(substring))
+        append(" IN ")
         append(expr)
         append(")")
     }
