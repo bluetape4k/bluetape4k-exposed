@@ -3,15 +3,21 @@ package io.bluetape4k.exposed.r2dbc
 import io.bluetape4k.concurrent.virtualthread.VirtualThreadExecutor
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.exposed.r2dbc.tests.withTables
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.selectAll
@@ -20,7 +26,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import io.bluetape4k.assertions.assertFailsWith
+import kotlin.time.Duration.Companion.seconds
 
 class VirtualThreadTransactionTest: AbstractExposedR2dbcTest() {
 
@@ -174,6 +180,41 @@ class VirtualThreadTransactionTest: AbstractExposedR2dbcTest() {
                 VirtualThreadTable.selectAll().count()
             }
             count shouldBeEqualTo 1L
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `virtualThreadTransactionAsync는 완료 전 여러 Deferred를 반환한다`(testDB: TestDB) = runSuspendIO {
+        withTimeout(10.seconds) {
+            withDb(testDB) {
+                commit()
+            }
+            val database = testDB.db ?: error("testDB.db must be initialized")
+
+            val firstStarted = CompletableDeferred<Unit>()
+            val release = CompletableDeferred<Unit>()
+
+            val first = virtualThreadTransactionAsync(db = database) {
+                firstStarted.complete(Unit)
+                release.await()
+                "first"
+            }
+
+            withTimeout(2.seconds) {
+                firstStarted.await()
+            }
+            first.isCompleted.shouldBeFalse()
+
+            val second = virtualThreadTransactionAsync(db = database) {
+                release.await()
+                "second"
+            }
+            second.isCompleted.shouldBeFalse()
+
+            release.complete(Unit)
+
+            listOf(first, second).awaitAll() shouldBeEqualTo listOf("first", "second")
         }
     }
 }
