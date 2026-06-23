@@ -125,6 +125,41 @@ transaction {
 > 실제로 동일 평문으로 `WHERE col = value`를 만들어도 새 nonce로 다시 암호화되므로 일치하지 않습니다.
 > 검색이 필요한 컬럼에는 반드시 `tinkDaead*` 변형을 사용하세요.
 
+## Associated Data 바인딩
+
+`tinkAead*`, `tinkDaead*` 테이블 확장 함수는 기본적으로 암호문을 associated data에 바인딩합니다. 기본 provider는
+Exposed의 안정적인 테이블명과 컬럼명을 사용하므로, 같은 키를 쓰더라도 한 암호화 컬럼/테이블의 암호문을 다른 암호화 컬럼에서
+복호화할 수 없습니다.
+
+```kotlin
+object Users: IntIdTable("users") {
+    // 기본값: associated data = "bluetape4k-exposed-tink:v1:users:email"
+    val email = tinkDaeadVarChar("email", 512)
+}
+```
+
+더 강한 도메인이나 호환성 전용 도메인이 필요하면 `associatedDataProvider`를 지정하세요:
+
+```kotlin
+val provider = TinkColumnAssociatedDataProvider { tableName, columnName ->
+    "tenant-a:$tableName:$columnName".toByteArray()
+}
+
+object Users: IntIdTable("users") {
+    val email = tinkDaeadVarChar("email", 512, associatedDataProvider = provider)
+}
+```
+
+associated data 없이 기록된 기존 데이터를 마이그레이션해야 한다면 `TinkColumnAssociatedDataProvider.Empty`를 사용하세요.
+
+`associatedData`를 받지 않는 public column-type 직접 생성자는 기존 데이터 마이그레이션 호환성을 위해서만 유지되며 deprecated입니다.
+수동으로 `Tink*ColumnType`을 `registerColumn`에 넘겨야 한다면 `associatedData`를 명시하고, 일반 사용에서는
+`tinkAead*`/`tinkDaead*` 테이블 확장 함수를 우선 사용하세요.
+
+row-scoped associated data는 암호문을 특정 row에 더 강하게 묶을 수 있지만, 검색 가능한 도메인이 달라집니다. DAEAD equality 검색은
+암호화와 쿼리 바인딩이 같은 associated data를 사용할 때만 동작합니다. associated data에 row id 같은 row별 값을 넣으면, 일반적인
+`WHERE encrypted_col = value` 쿼리에서 모든 후보 row에 대해 하나의 공통 암호문을 만들 수 없습니다.
+
 ## 알고리즘 선택 가이드
 
 ### AEAD 알고리즘 (`tinkAeadVarChar`, `tinkAeadBinary`, `tinkAeadBlob`)
@@ -233,6 +268,7 @@ object SensitiveData: IntIdTable("sensitive_data") {
 | `TinkDaeadVarCharColumnType.kt` | Deterministic AEAD VARCHAR 암호화 컬럼 타입   |
 | `TinkDaeadBinaryColumnType.kt`  | Deterministic AEAD VARBINARY 암호화 컬럼 타입 |
 | `TinkDaeadBlobColumnType.kt`    | Deterministic AEAD BLOB 암호화 컬럼 타입      |
+| `TinkColumnAssociatedDataProvider.kt` | Associated data provider 계약          |
 | `Tables.kt`                     | 테이블 확장 함수 (`tinkAeadVarChar` 등)        |
 
 ## 주의사항
@@ -247,6 +283,8 @@ object SensitiveData: IntIdTable("sensitive_data") {
 4. **키 교체**: Tink는 키 교체(Key Rotation)를 지원합니다. 정기적인 키 교체로 보안을 강화할 수 있습니다.
 
 5. **DAEAD의 패턴 노출**: Deterministic AEAD도 동일 평문 → 동일 암호문이므로, 값의 분포/패턴이 노출될 수 있습니다. 유일값(이메일, 주민번호)에는 적합하지만 자주 반복되는 값에는 주의하세요.
+
+6. **Associated data 도메인**: 기본 associated data는 암호문을 테이블/컬럼 식별자에 묶습니다. 테이블명이나 컬럼명을 바꾸면 암호화 도메인도 바뀌므로, 암호화 컬럼 rename 전에는 마이그레이션을 계획하세요.
 
 ## 테스트
 

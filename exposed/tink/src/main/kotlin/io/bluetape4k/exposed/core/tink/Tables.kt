@@ -33,19 +33,24 @@ import org.jetbrains.exposed.v1.core.Table
  * @param name 컬럼명입니다. blank 문자열은 허용되지 않습니다.
  * @param cipherTextLength 암호문(Base64 인코딩)을 저장할 컬럼 길이입니다. 0보다 커야 합니다.
  * @param encryptor 사용할 Tink AEAD 암/복호화 인스턴스입니다.
+ * @param associatedDataProvider 암호문을 컬럼 컨텍스트에 바인딩할 associated data provider입니다.
  */
 fun Table.tinkAeadVarChar(
     name: String,
     cipherTextLength: Int = 255,
     encryptor: TinkAead = TinkAeads.AES256_GCM,
-): Column<String> =
-    registerColumn(
-        name.requireNotBlank("name"),
+    associatedDataProvider: TinkColumnAssociatedDataProvider = TinkColumnAssociatedDataProvider.TableAndColumn,
+): Column<String> {
+    val columnName = name.requireNotBlank("name")
+    return registerColumn(
+        columnName,
         TinkAeadVarCharColumnType(
             encryptor = encryptor,
-            colLength = cipherTextLength.requirePositiveNumber("cipherTextLength")
+            colLength = cipherTextLength.requirePositiveNumber("cipherTextLength"),
+            associatedData = tinkAssociatedData(columnName, associatedDataProvider)
         )
     )
+}
 
 /**
  * Google Tink AEAD(비결정적 암호화)로 암호화된 바이트 배열을 저장하기 위해 [name]의 `Binary` 컬럼을 생성합니다.
@@ -70,19 +75,24 @@ fun Table.tinkAeadVarChar(
  * @param name 컬럼명입니다. blank 문자열은 허용되지 않습니다.
  * @param cipherByteLength 암호문 바이트를 저장할 컬럼 길이입니다. 0보다 커야 합니다.
  * @param encryptor 사용할 Tink AEAD 암/복호화 인스턴스입니다.
+ * @param associatedDataProvider 암호문을 컬럼 컨텍스트에 바인딩할 associated data provider입니다.
  */
 fun Table.tinkAeadBinary(
     name: String,
     cipherByteLength: Int,
     encryptor: TinkAead = TinkAeads.AES256_GCM,
-): Column<ByteArray> =
-    registerColumn(
-        name.requireNotBlank("name"),
+    associatedDataProvider: TinkColumnAssociatedDataProvider = TinkColumnAssociatedDataProvider.TableAndColumn,
+): Column<ByteArray> {
+    val columnName = name.requireNotBlank("name")
+    return registerColumn(
+        columnName,
         TinkAeadBinaryColumnType(
             encryptor = encryptor,
-            length = cipherByteLength.requirePositiveNumber("cipherByteLength")
+            length = cipherByteLength.requirePositiveNumber("cipherByteLength"),
+            associatedData = tinkAssociatedData(columnName, associatedDataProvider)
         )
     )
+}
 
 /**
  * Google Tink AEAD(비결정적 암호화)로 암호화된 바이트 배열을 저장하기 위해 [name]의 `BLOB` 컬럼을 생성합니다.
@@ -106,15 +116,22 @@ fun Table.tinkAeadBinary(
  *
  * @param name 컬럼명입니다. blank 문자열은 허용되지 않습니다.
  * @param encryptor 사용할 Tink AEAD 암/복호화 인스턴스입니다.
+ * @param associatedDataProvider 암호문을 컬럼 컨텍스트에 바인딩할 associated data provider입니다.
  */
 fun Table.tinkAeadBlob(
     name: String,
     encryptor: TinkAead = TinkAeads.AES256_GCM,
-): Column<ByteArray> =
-    registerColumn(
-        name.requireNotBlank("name"),
-        TinkAeadBlobColumnType(encryptor = encryptor)
+    associatedDataProvider: TinkColumnAssociatedDataProvider = TinkColumnAssociatedDataProvider.TableAndColumn,
+): Column<ByteArray> {
+    val columnName = name.requireNotBlank("name")
+    return registerColumn(
+        columnName,
+        TinkAeadBlobColumnType(
+            encryptor = encryptor,
+            associatedData = tinkAssociatedData(columnName, associatedDataProvider)
+        )
     )
+}
 
 /**
  * Google Tink Deterministic AEAD(결정적 암호화)로 암호화된 문자열을 저장하기 위해 [name]의 `VARCHAR` 컬럼을 생성합니다.
@@ -139,19 +156,24 @@ fun Table.tinkAeadBlob(
  * @param name 컬럼명입니다. blank 문자열은 허용되지 않습니다.
  * @param cipherTextLength 암호문(Base64 인코딩)을 저장할 컬럼 길이입니다. 0보다 커야 합니다.
  * @param encryptor 사용할 Tink Deterministic AEAD 암/복호화 인스턴스입니다.
+ * @param associatedDataProvider 암호문을 컬럼 컨텍스트에 바인딩할 associated data provider입니다.
  */
 fun Table.tinkDaeadVarChar(
     name: String,
     cipherTextLength: Int = 255,
     encryptor: TinkDeterministicAead = TinkDaeads.AES256_SIV,
-): Column<String> =
-    registerColumn(
-        name.requireNotBlank("name"),
+    associatedDataProvider: TinkColumnAssociatedDataProvider = TinkColumnAssociatedDataProvider.TableAndColumn,
+): Column<String> {
+    val columnName = name.requireNotBlank("name")
+    return registerColumn(
+        columnName,
         TinkDaeadVarCharColumnType(
             encryptor = encryptor,
-            colLength = cipherTextLength.requirePositiveNumber("cipherTextLength")
+            colLength = cipherTextLength.requirePositiveNumber("cipherTextLength"),
+            associatedData = tinkAssociatedData(columnName, associatedDataProvider)
         )
     )
+}
 
 /**
  * Google Tink Deterministic AEAD(결정적 암호화)로 암호화된 바이트 배열을 저장하기 위해 [name]의 `Binary` 컬럼을 생성합니다.
@@ -177,19 +199,24 @@ fun Table.tinkDaeadVarChar(
  * @param name 컬럼명입니다. blank 문자열은 허용되지 않습니다.
  * @param cipherByteLength 암호문 바이트를 저장할 컬럼 길이입니다. 0보다 커야 합니다.
  * @param encryptor 사용할 Tink Deterministic AEAD 암/복호화 인스턴스입니다.
+ * @param associatedDataProvider 암호문을 컬럼 컨텍스트에 바인딩할 associated data provider입니다.
  */
 fun Table.tinkDaeadBinary(
     name: String,
     cipherByteLength: Int,
     encryptor: TinkDeterministicAead = TinkDaeads.AES256_SIV,
-): Column<ByteArray> =
-    registerColumn(
-        name.requireNotBlank("name"),
+    associatedDataProvider: TinkColumnAssociatedDataProvider = TinkColumnAssociatedDataProvider.TableAndColumn,
+): Column<ByteArray> {
+    val columnName = name.requireNotBlank("name")
+    return registerColumn(
+        columnName,
         TinkDaeadBinaryColumnType(
             encryptor = encryptor,
-            length = cipherByteLength.requirePositiveNumber("cipherByteLength")
+            length = cipherByteLength.requirePositiveNumber("cipherByteLength"),
+            associatedData = tinkAssociatedData(columnName, associatedDataProvider)
         )
     )
+}
 
 /**
  * Google Tink Deterministic AEAD(결정적 암호화)로 암호화된 바이트 배열을 저장하기 위해 [name]의 `BLOB` 컬럼을 생성합니다.
@@ -214,12 +241,19 @@ fun Table.tinkDaeadBinary(
  *
  * @param name 컬럼명입니다. blank 문자열은 허용되지 않습니다.
  * @param encryptor 사용할 Tink Deterministic AEAD 암/복호화 인스턴스입니다.
+ * @param associatedDataProvider 암호문을 컬럼 컨텍스트에 바인딩할 associated data provider입니다.
  */
 fun Table.tinkDaeadBlob(
     name: String,
     encryptor: TinkDeterministicAead = TinkDaeads.AES256_SIV,
-): Column<ByteArray> =
-    registerColumn(
-        name.requireNotBlank("name"),
-        TinkDaeadBlobColumnType(encryptor = encryptor)
+    associatedDataProvider: TinkColumnAssociatedDataProvider = TinkColumnAssociatedDataProvider.TableAndColumn,
+): Column<ByteArray> {
+    val columnName = name.requireNotBlank("name")
+    return registerColumn(
+        columnName,
+        TinkDaeadBlobColumnType(
+            encryptor = encryptor,
+            associatedData = tinkAssociatedData(columnName, associatedDataProvider)
+        )
     )
+}

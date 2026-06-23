@@ -30,13 +30,28 @@ import org.jetbrains.exposed.v1.core.VarCharColumnType
  * @param encryptor Tink Deterministic AEAD 암/복호화를 수행할 인스턴스입니다.
  * @param colLength 암호문(Base64 인코딩)을 저장할 컬럼 길이입니다.
  */
-class TinkDaeadVarCharColumnType(
+class TinkDaeadVarCharColumnType private constructor(
     colLength: Int,
-    private val encryptor: TinkDeterministicAead,
+    transformer: StringTinkDaeadEncryptionTransformer,
 ): ColumnWithTransform<String, String>(
     VarCharColumnType(colLength),
-    StringTinkDaeadEncryptionTransformer(encryptor)
-)
+    transformer
+) {
+    @Deprecated(
+        message = "This constructor uses empty associated data and is retained for legacy migration only. " +
+                "Use Table.tinkDaeadVarChar(...) or pass explicit associatedData.",
+    )
+    constructor(
+        colLength: Int,
+        encryptor: TinkDeterministicAead,
+    ): this(colLength, StringTinkDaeadEncryptionTransformer(encryptor))
+
+    constructor(
+        colLength: Int,
+        encryptor: TinkDeterministicAead,
+        associatedData: ByteArray,
+    ): this(colLength, StringTinkDaeadEncryptionTransformer(encryptor, associatedData))
+}
 
 /**
  * 문자열 컬럼의 저장/조회 경계에서 Tink Deterministic AEAD 암복호화를 수행하는 transformer입니다.
@@ -60,9 +75,20 @@ class TinkDaeadVarCharColumnType(
  *
  * @param encryptor Tink Deterministic AEAD 암/복호화 인스턴스입니다.
  */
-class StringTinkDaeadEncryptionTransformer(
-    private val encryptor: TinkDeterministicAead = TinkDaeads.AES256_SIV,
+class StringTinkDaeadEncryptionTransformer private constructor(
+    private val encryptor: TinkDeterministicAead,
+    private val associatedData: ByteArray,
+    @Suppress("UNUSED_PARAMETER") copyMarker: Boolean,
 ): ColumnTransformer<String, String> {
+
+    constructor(
+        encryptor: TinkDeterministicAead = TinkDaeads.AES256_SIV,
+    ): this(encryptor, EMPTY_TINK_ASSOCIATED_DATA.copyOf(), true)
+
+    constructor(
+        encryptor: TinkDeterministicAead,
+        associatedData: ByteArray,
+    ): this(encryptor, associatedData.copyOf(), true)
 
     companion object: KLogging()
 
@@ -83,7 +109,7 @@ class StringTinkDaeadEncryptionTransformer(
      * @param value 암호화할 평문 문자열입니다.
      */
     override fun unwrap(value: String): String {
-        return encryptor.encryptDeterministically(value)
+        return encryptor.encryptDeterministically(value, associatedData)
     }
 
     /**
@@ -103,6 +129,6 @@ class StringTinkDaeadEncryptionTransformer(
      * @param value 복호화할 Base64 인코딩 암호문 문자열입니다.
      */
     override fun wrap(value: String): String {
-        return encryptor.decryptDeterministically(value)
+        return encryptor.decryptDeterministically(value, associatedData)
     }
 }

@@ -29,13 +29,28 @@ import org.jetbrains.exposed.v1.core.VarCharColumnType
  * @param encryptor Tink AEAD 암/복호화를 수행할 인스턴스입니다.
  * @param colLength 암호문(Base64 인코딩)을 저장할 컬럼 길이입니다.
  */
-class TinkAeadVarCharColumnType(
-    private val encryptor: TinkAead,
+class TinkAeadVarCharColumnType private constructor(
     colLength: Int,
+    transformer: StringTinkAeadEncryptionTransformer,
 ): ColumnWithTransform<String, String>(
     VarCharColumnType(colLength),
-    StringTinkAeadEncryptionTransformer(encryptor)
-)
+    transformer
+) {
+    @Deprecated(
+        message = "This constructor uses empty associated data and is retained for legacy migration only. " +
+                "Use Table.tinkAeadVarChar(...) or pass explicit associatedData.",
+    )
+    constructor(
+        encryptor: TinkAead,
+        colLength: Int,
+    ): this(colLength, StringTinkAeadEncryptionTransformer(encryptor))
+
+    constructor(
+        encryptor: TinkAead,
+        colLength: Int,
+        associatedData: ByteArray,
+    ): this(colLength, StringTinkAeadEncryptionTransformer(encryptor, associatedData))
+}
 
 /**
  * 문자열 컬럼의 저장/조회 경계에서 Tink AEAD 암복호화를 수행하는 transformer입니다.
@@ -55,9 +70,20 @@ class TinkAeadVarCharColumnType(
  *
  * @param encryptor Tink AEAD 암/복호화 인스턴스입니다.
  */
-class StringTinkAeadEncryptionTransformer(
-    private val encryptor: TinkAead = TinkAeads.AES256_GCM,
+class StringTinkAeadEncryptionTransformer private constructor(
+    private val encryptor: TinkAead,
+    private val associatedData: ByteArray,
+    @Suppress("UNUSED_PARAMETER") copyMarker: Boolean,
 ): ColumnTransformer<String, String> {
+
+    constructor(
+        encryptor: TinkAead = TinkAeads.AES256_GCM,
+    ): this(encryptor, EMPTY_TINK_ASSOCIATED_DATA.copyOf(), true)
+
+    constructor(
+        encryptor: TinkAead,
+        associatedData: ByteArray,
+    ): this(encryptor, associatedData.copyOf(), true)
 
     companion object: KLogging()
 
@@ -77,7 +103,7 @@ class StringTinkAeadEncryptionTransformer(
      * @param value 암호화할 평문 문자열입니다.
      */
     override fun unwrap(value: String): String {
-        return encryptor.encrypt(value)
+        return encryptor.encrypt(value, associatedData)
     }
 
     /**
@@ -97,6 +123,6 @@ class StringTinkAeadEncryptionTransformer(
      * @param value 복호화할 Base64 인코딩 암호문 문자열입니다.
      */
     override fun wrap(value: String): String {
-        return encryptor.decrypt(value)
+        return encryptor.decrypt(value, associatedData)
     }
 }
