@@ -2,12 +2,14 @@ package io.bluetape4k.spring.modulith.exposed
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import org.jetbrains.exposed.v1.core.DatabaseConfig
+import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.spring7.transaction.SpringTransactionManager
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
@@ -26,10 +28,15 @@ import org.springframework.modulith.events.core.PublicationTargetIdentifier
 import org.springframework.modulith.events.core.TargetEventPublication
 import org.springframework.modulith.events.support.CompletionMode
 import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.Instant
+import java.util.UUID
 import javax.sql.DataSource
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@OptIn(ExperimentalUuidApi::class)
 class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
 
     companion object {
@@ -170,6 +177,47 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
         }
     }
 
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("enabledDialects")
+    fun `publications with unloadable event classes remain visible and fail on event access`(testDB: TestDB) {
+        withApplicationContext(testDB, CompletionMode.UPDATE) { context ->
+            val repository = context.getBean(EventPublicationRepository::class.java)
+            val table = context.getBean("eventPublicationTable", ExposedEventPublicationTable::class.java)
+            val txManager = context.getBean("springTransactionManager", PlatformTransactionManager::class.java)
+            val missingEventType = "com.example.missing.LegacyEvent"
+            val publishedId = UUID.randomUUID()
+            val failedId = UUID.randomUUID()
+
+            TransactionTemplate(txManager).executeWithoutResult {
+                table.insertUnknownPublication(
+                    id = publishedId,
+                    eventType = missingEventType,
+                    listenerId = "listener.unloadable.published",
+                    status = Status.PUBLISHED,
+                )
+                table.insertUnknownPublication(
+                    id = failedId,
+                    eventType = missingEventType,
+                    listenerId = "listener.unloadable.failed",
+                    status = Status.FAILED,
+                )
+            }
+
+            val incomplete = repository.findIncompletePublications()
+            incomplete.map { it.identifier }.toSet().shouldBeEqualTo(setOf(publishedId, failedId))
+
+            val failed = repository.findFailedPublications(EventPublicationRepository.FailedCriteria.ALL).single()
+            failed.identifier.shouldBeEqualTo(failedId)
+
+            assertFailsWith<UnloadableEventPublicationException> {
+                incomplete.single { it.identifier == publishedId }.event
+            }
+            assertFailsWith<UnloadableEventPublicationException> {
+                failed.event
+            }
+        }
+    }
+
     private fun withApplicationContext(
         testDB: TestDB,
         completionMode: CompletionMode,
@@ -226,6 +274,26 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
     }
 
     data class TestEvent(val value: String)
+
+    private fun ExposedEventPublicationTable.insertUnknownPublication(
+        id: UUID,
+        eventType: String,
+        listenerId: String,
+        status: Status,
+    ) {
+        val publicationDate = Instant.parse("2026-05-16T00:00:00Z")
+        insert { row ->
+            row[this@insertUnknownPublication.id] = Uuid.parse(id.toString())
+            row[this@insertUnknownPublication.eventType] = eventType
+            row[this@insertUnknownPublication.listenerId] = listenerId
+            row[serializedEvent] = """{"value":"legacy"}"""
+            row[this@insertUnknownPublication.publicationDate] = publicationDate
+            row[completionDate] = null
+            row[this@insertUnknownPublication.status] = status.name
+            row[completionAttempts] = 1
+            row[lastResubmissionDate] = publicationDate
+        }
+    }
 
     class TestEventSerializer : EventSerializer {
         override fun serialize(event: Any): Any =

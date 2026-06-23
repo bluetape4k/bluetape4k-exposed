@@ -36,6 +36,17 @@ import java.util.UUID
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+class UnloadableEventPublicationException(
+    val identifier: UUID,
+    val eventType: String,
+    val listenerId: String,
+    cause: Throwable,
+) : IllegalStateException(
+    "Event publication $identifier for listener '$listenerId' references unloadable event type '$eventType'. " +
+            "Keep the event class on the classpath or migrate/delete the publication row explicitly.",
+    cause,
+)
+
 /**
  * JDBC-only Spring Modulith [EventPublicationRepository] backed by Exposed DSL.
  *
@@ -161,7 +172,8 @@ class ExposedEventPublicationRepository(
                         (table.completionDate.isNull() or (table.status eq Status.FAILED.name))
             }
             .orderBy(table.publicationDate, SortOrder.ASC)
-            .firstNotNullOfOrNull(::toPublication)
+            .firstOrNull()
+            ?.let(::toPublication)
 
         return Optional.ofNullable(publication)
     }
@@ -291,7 +303,7 @@ class ExposedEventPublicationRepository(
             conn.rollback(savepoint)
             // SQL state 23xxx = integrity constraint violation (unique key already exists)
             // Treat as idempotent: the row was already archived by a concurrent caller.
-            if (e.sqlState?.startsWith("23") == true) return
+            if (e.sqlState.startsWith("23")) return
             throw e
         }
     }
@@ -299,18 +311,23 @@ class ExposedEventPublicationRepository(
     private fun Iterable<ResultRow>.toPublications(
         publicationTable: ExposedEventPublicationTable = table,
     ): List<TargetEventPublication> =
-        mapNotNull { row -> toPublication(row, publicationTable) }
+        map { row -> toPublication(row, publicationTable) }
 
     private fun toPublication(
         row: ResultRow,
         publicationTable: ExposedEventPublicationTable = table,
-    ): TargetEventPublication? {
-        val eventClass = loadEventClass(row[publicationTable.eventType]) ?: return null
+    ): TargetEventPublication {
+        val id = row[publicationTable.id].toJavaUuid()
+        val listenerId = row[publicationTable.listenerId]
+        val eventType = row[publicationTable.eventType]
+        val serializedEvent = row[publicationTable.serializedEvent]
+        val eventSupplier = eventSupplier(id, listenerId, eventType, serializedEvent)
+
         return StoredEventPublication(
-            id = row[publicationTable.id].toJavaUuid(),
+            id = id,
             publicationDate = row[publicationTable.publicationDate],
-            listenerId = row[publicationTable.listenerId],
-            eventSupplier = { serializer.deserialize(row[publicationTable.serializedEvent], eventClass) },
+            listenerId = listenerId,
+            eventSupplier = eventSupplier,
             completionDate = row[publicationTable.completionDate],
             status = row[publicationTable.status]?.let(Status::valueOf),
             lastResubmissionDate = row[publicationTable.lastResubmissionDate],
@@ -318,13 +335,25 @@ class ExposedEventPublicationRepository(
         )
     }
 
-    private fun loadEventClass(className: String): Class<Any>? =
+    private fun eventSupplier(
+        id: UUID,
+        listenerId: String,
+        eventType: String,
+        serializedEvent: String,
+    ): () -> Any =
         try {
-            @Suppress("UNCHECKED_CAST")
-            ClassUtils.forName(className, classLoader) as Class<Any>
-        } catch (_: ClassNotFoundException) {
-            null
+            val eventClass = loadEventClass(eventType)
+            fun(): Any = serializer.deserialize(serializedEvent, eventClass)
+        } catch (ex: ClassNotFoundException) {
+            fun(): Any = throw UnloadableEventPublicationException(id, eventType, listenerId, ex)
+        } catch (ex: LinkageError) {
+            fun(): Any = throw UnloadableEventPublicationException(id, eventType, listenerId, ex)
         }
+
+    private fun loadEventClass(className: String): Class<Any> {
+        @Suppress("UNCHECKED_CAST")
+        return ClassUtils.forName(className, classLoader) as Class<Any>
+    }
 
     private fun serialize(event: Any): String = serializer.serialize(event).toString()
 
