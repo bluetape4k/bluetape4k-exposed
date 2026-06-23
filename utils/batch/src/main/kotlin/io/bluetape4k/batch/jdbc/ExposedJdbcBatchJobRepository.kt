@@ -22,6 +22,9 @@ import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
+import org.jetbrains.exposed.v1.core.isNull
+import org.jetbrains.exposed.v1.core.less
+import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -97,16 +100,7 @@ class ExposedJdbcBatchJobRepository(
 
         if (existing != null) {
             log.debug { "기존 JobExecution 재사용: jobName=$jobName, id=${existing.id}, status=${existing.status}" }
-            if (existing.status != BatchStatus.RUNNING) {
-                withContext(Dispatchers.VT) {
-                    transaction(database) {
-                        BatchJobExecutionTable.update({ BatchJobExecutionTable.id eq existing.id }) { row ->
-                            row[BatchJobExecutionTable.status] = BatchStatus.RUNNING
-                        }
-                    }
-                }
-            }
-            return existing.copy(status = BatchStatus.RUNNING)
+            return existing
         }
 
         // 2. 신규 생성 — UniqueViolation 시 재조회
@@ -139,6 +133,45 @@ class ExposedJdbcBatchJobRepository(
             if (sqle == null || !sqle.isUniqueViolation()) throw e
             log.debug(e) { "동시 INSERT 감지 — job=$jobName, 재조회" }
             requeryJobExecutionAfterUniqueViolation(jobName, params)
+        }
+    }
+
+    override suspend fun claimJobExecution(
+        execution: JobExecution,
+        ownerId: String,
+        leaseUntil: Instant,
+    ): JobExecution? {
+        val now = Instant.now()
+        val updatedRows = withContext(Dispatchers.VT) {
+            transaction(database) {
+                BatchJobExecutionTable.update({
+                    (BatchJobExecutionTable.id eq execution.id) and
+                        (BatchJobExecutionTable.version eq execution.version) and
+                        (
+                            (BatchJobExecutionTable.status inList listOf(BatchStatus.FAILED, BatchStatus.STOPPED)) or
+                                (
+                                    (BatchJobExecutionTable.status eq BatchStatus.RUNNING) and
+                                        (
+                                            BatchJobExecutionTable.ownerId.isNull() or
+                                                BatchJobExecutionTable.leaseUntil.isNull() or
+                                                (BatchJobExecutionTable.leaseUntil less now)
+                                            )
+                                    )
+                            )
+                }) { row ->
+                    row[BatchJobExecutionTable.status] = BatchStatus.RUNNING
+                    row[BatchJobExecutionTable.ownerId] = ownerId
+                    row[BatchJobExecutionTable.leaseUntil] = leaseUntil
+                    row[BatchJobExecutionTable.version] = execution.version + 1
+                    row[BatchJobExecutionTable.endTime] = null
+                }
+            }
+        }
+
+        return if (updatedRows == 1) {
+            findJobExecutionById(execution.id)
+        } else {
+            null
         }
     }
 
@@ -177,8 +210,17 @@ class ExposedJdbcBatchJobRepository(
     override suspend fun completeJobExecution(execution: JobExecution, status: BatchStatus) {
         withContext(Dispatchers.VT) {
             transaction(database) {
-                BatchJobExecutionTable.update({ BatchJobExecutionTable.id eq execution.id }) { row ->
+                val condition = if (execution.ownerId == null) {
+                    BatchJobExecutionTable.id eq execution.id
+                } else {
+                    (BatchJobExecutionTable.id eq execution.id) and
+                        (BatchJobExecutionTable.ownerId eq execution.ownerId)
+                }
+                BatchJobExecutionTable.update({ condition }) { row ->
                     row[BatchJobExecutionTable.status] = status
+                    row[BatchJobExecutionTable.ownerId] = null
+                    row[BatchJobExecutionTable.leaseUntil] = null
+                    row[BatchJobExecutionTable.version] = execution.version + 1
                     row[BatchJobExecutionTable.endTime] = Instant.now()
                 }
             }
@@ -228,15 +270,8 @@ class ExposedJdbcBatchJobRepository(
                 BatchStatus.FAILED,
                 BatchStatus.STOPPED,
                     -> {
-                    log.debug { "StepExecution 재시작: stepName=$stepName, 이전 status=${existing.status}" }
-                    withContext(Dispatchers.VT) {
-                        transaction(database) {
-                            BatchStepExecutionTable.update({ BatchStepExecutionTable.id eq existing.id }) { row ->
-                                row[BatchStepExecutionTable.status] = BatchStatus.RUNNING
-                            }
-                        }
-                    }
-                    existing.copy(status = BatchStatus.RUNNING)
+                    log.debug { "StepExecution 재시작 대상: stepName=$stepName, 이전 status=${existing.status}" }
+                    existing
                 }
 
                 BatchStatus.RUNNING -> existing
@@ -269,16 +304,64 @@ class ExposedJdbcBatchJobRepository(
         }
     }
 
+    override suspend fun claimStepExecution(
+        execution: StepExecution,
+        ownerId: String,
+        leaseUntil: Instant,
+    ): StepExecution? {
+        val now = Instant.now()
+        val updatedRows = withContext(Dispatchers.VT) {
+            transaction(database) {
+                BatchStepExecutionTable.update({
+                    (BatchStepExecutionTable.id eq execution.id) and
+                        (BatchStepExecutionTable.version eq execution.version) and
+                        (
+                            (BatchStepExecutionTable.status inList listOf(BatchStatus.FAILED, BatchStatus.STOPPED)) or
+                                (
+                                    (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
+                                        (
+                                            BatchStepExecutionTable.ownerId.isNull() or
+                                                BatchStepExecutionTable.leaseUntil.isNull() or
+                                                (BatchStepExecutionTable.leaseUntil less now)
+                                            )
+                                    )
+                            )
+                }) { row ->
+                    row[BatchStepExecutionTable.status] = BatchStatus.RUNNING
+                    row[BatchStepExecutionTable.ownerId] = ownerId
+                    row[BatchStepExecutionTable.leaseUntil] = leaseUntil
+                    row[BatchStepExecutionTable.version] = execution.version + 1
+                    row[BatchStepExecutionTable.endTime] = null
+                }
+            }
+        }
+
+        return if (updatedRows == 1) {
+            findStepExecutionById(execution.id)
+        } else {
+            null
+        }
+    }
+
     override suspend fun completeStepExecution(execution: StepExecution, report: StepReport) {
         withContext(Dispatchers.VT) {
             transaction(database) {
-                BatchStepExecutionTable.update({ BatchStepExecutionTable.id eq execution.id }) { row ->
+                val condition = if (execution.ownerId == null) {
+                    BatchStepExecutionTable.id eq execution.id
+                } else {
+                    (BatchStepExecutionTable.id eq execution.id) and
+                        (BatchStepExecutionTable.ownerId eq execution.ownerId)
+                }
+                BatchStepExecutionTable.update({ condition }) { row ->
                     row[BatchStepExecutionTable.status] = report.status
                     row[BatchStepExecutionTable.readCount] = report.readCount
                     row[BatchStepExecutionTable.writeCount] = report.writeCount
                     row[BatchStepExecutionTable.skipCount] = report.skipCount
                     row[BatchStepExecutionTable.checkpoint] =
                         report.checkpoint?.let { checkpointJson.write(it) }
+                    row[BatchStepExecutionTable.ownerId] = null
+                    row[BatchStepExecutionTable.leaseUntil] = null
+                    row[BatchStepExecutionTable.version] = execution.version + 1
                     row[BatchStepExecutionTable.endTime] = Instant.now()
                 }
             }
@@ -301,6 +384,24 @@ class ExposedJdbcBatchJobRepository(
         log.debug { "체크포인트 저장: stepExecutionId=$stepExecutionId" }
     }
 
+    override suspend fun saveCheckpoint(execution: StepExecution, checkpoint: Any) {
+        val json = checkpointJson.write(checkpoint)
+        withContext(Dispatchers.VT) {
+            transaction(database) {
+                val condition = if (execution.ownerId == null) {
+                    BatchStepExecutionTable.id eq execution.id
+                } else {
+                    (BatchStepExecutionTable.id eq execution.id) and
+                        (BatchStepExecutionTable.ownerId eq execution.ownerId)
+                }
+                BatchStepExecutionTable.update({ condition }) { row ->
+                    row[BatchStepExecutionTable.checkpoint] = json
+                }
+            }
+        }
+        log.debug { "체크포인트 저장: stepExecutionId=${execution.id}" }
+    }
+
     override suspend fun loadCheckpoint(stepExecutionId: Long): Any? {
         val result = withContext(Dispatchers.VT) {
             transaction(database) {
@@ -315,6 +416,28 @@ class ExposedJdbcBatchJobRepository(
         log.debug { "체크포인트 조회: stepExecutionId=$stepExecutionId, exists=${result != null}" }
         return result
     }
+
+    private suspend fun findJobExecutionById(executionId: Long): JobExecution? =
+        withContext(Dispatchers.VT) {
+            transaction(database) {
+                BatchJobExecutionTable.selectAll()
+                    .where { BatchJobExecutionTable.id eq executionId }
+                    .limit(1)
+                    .firstOrNull()
+                    ?.toJobExecution(checkpointJson)
+            }
+        }
+
+    private suspend fun findStepExecutionById(executionId: Long): StepExecution? =
+        withContext(Dispatchers.VT) {
+            transaction(database) {
+                BatchStepExecutionTable.selectAll()
+                    .where { BatchStepExecutionTable.id eq executionId }
+                    .limit(1)
+                    .firstOrNull()
+                    ?.toStepExecution(checkpointJson)
+            }
+        }
 
     /**
      * 예외 체인을 따라 최초 [SQLException]을 찾는다.

@@ -21,6 +21,9 @@ import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
+import org.jetbrains.exposed.v1.core.isNull
+import org.jetbrains.exposed.v1.core.less
+import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.jetbrains.exposed.v1.r2dbc.selectAll
@@ -74,14 +77,7 @@ class ExposedR2dbcBatchJobRepository(
         }
 
         if (existing != null) {
-            if (existing.status != BatchStatus.RUNNING) {
-                suspendTransaction(db = database) {
-                    BatchJobExecutionTable.update({ BatchJobExecutionTable.id eq existing.id }) { row ->
-                        row[BatchJobExecutionTable.status] = BatchStatus.RUNNING
-                    }
-                }
-            }
-            return existing.copy(status = BatchStatus.RUNNING)
+            return existing
         }
 
         return try {
@@ -109,6 +105,43 @@ class ExposedR2dbcBatchJobRepository(
             if (!e.isUniqueViolation()) throw e
             log.debug(e) { "동시 INSERT 감지 — job=$jobName, 재조회" }
             requeryJobExecutionAfterUniqueViolation(jobName, params)
+        }
+    }
+
+    override suspend fun claimJobExecution(
+        execution: JobExecution,
+        ownerId: String,
+        leaseUntil: Instant,
+    ): JobExecution? {
+        val now = Instant.now()
+        val updatedRows = suspendTransaction(db = database) {
+            BatchJobExecutionTable.update({
+                (BatchJobExecutionTable.id eq execution.id) and
+                    (BatchJobExecutionTable.version eq execution.version) and
+                    (
+                        (BatchJobExecutionTable.status inList listOf(BatchStatus.FAILED, BatchStatus.STOPPED)) or
+                            (
+                                (BatchJobExecutionTable.status eq BatchStatus.RUNNING) and
+                                    (
+                                        BatchJobExecutionTable.ownerId.isNull() or
+                                            BatchJobExecutionTable.leaseUntil.isNull() or
+                                            (BatchJobExecutionTable.leaseUntil less now)
+                                        )
+                                )
+                        )
+            }) { row ->
+                row[BatchJobExecutionTable.status] = BatchStatus.RUNNING
+                row[BatchJobExecutionTable.ownerId] = ownerId
+                row[BatchJobExecutionTable.leaseUntil] = leaseUntil
+                row[BatchJobExecutionTable.version] = execution.version + 1
+                row[BatchJobExecutionTable.endTime] = null
+            }
+        }
+
+        return if (updatedRows == 1) {
+            findJobExecutionById(execution.id)
+        } else {
+            null
         }
     }
 
@@ -143,8 +176,17 @@ class ExposedR2dbcBatchJobRepository(
 
     override suspend fun completeJobExecution(execution: JobExecution, status: BatchStatus) {
         suspendTransaction(db = database) {
-            BatchJobExecutionTable.update({ BatchJobExecutionTable.id eq execution.id }) { row ->
+            val condition = if (execution.ownerId == null) {
+                BatchJobExecutionTable.id eq execution.id
+            } else {
+                (BatchJobExecutionTable.id eq execution.id) and
+                    (BatchJobExecutionTable.ownerId eq execution.ownerId)
+            }
+            BatchJobExecutionTable.update({ condition }) { row ->
                 row[BatchJobExecutionTable.status] = status
+                row[BatchJobExecutionTable.ownerId] = null
+                row[BatchJobExecutionTable.leaseUntil] = null
+                row[BatchJobExecutionTable.version] = execution.version + 1
                 row[BatchJobExecutionTable.endTime] = Instant.now()
             }
         }
@@ -170,16 +212,7 @@ class ExposedR2dbcBatchJobRepository(
         if (existing != null) {
             return when (existing.status) {
                 BatchStatus.COMPLETED, BatchStatus.COMPLETED_WITH_SKIPS -> existing
-                BatchStatus.FAILED, BatchStatus.STOPPED, BatchStatus.RUNNING -> {
-                    if (existing.status != BatchStatus.RUNNING) {
-                        suspendTransaction(db = database) {
-                            BatchStepExecutionTable.update({ BatchStepExecutionTable.id eq existing.id }) { row ->
-                                row[BatchStepExecutionTable.status] = BatchStatus.RUNNING
-                            }
-                        }
-                    }
-                    existing.copy(status = BatchStatus.RUNNING)
-                }
+                BatchStatus.FAILED, BatchStatus.STOPPED, BatchStatus.RUNNING -> existing
 
                 else -> existing
             }
@@ -203,14 +236,60 @@ class ExposedR2dbcBatchJobRepository(
         }
     }
 
+    override suspend fun claimStepExecution(
+        execution: StepExecution,
+        ownerId: String,
+        leaseUntil: Instant,
+    ): StepExecution? {
+        val now = Instant.now()
+        val updatedRows = suspendTransaction(db = database) {
+            BatchStepExecutionTable.update({
+                (BatchStepExecutionTable.id eq execution.id) and
+                    (BatchStepExecutionTable.version eq execution.version) and
+                    (
+                        (BatchStepExecutionTable.status inList listOf(BatchStatus.FAILED, BatchStatus.STOPPED)) or
+                            (
+                                (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
+                                    (
+                                        BatchStepExecutionTable.ownerId.isNull() or
+                                            BatchStepExecutionTable.leaseUntil.isNull() or
+                                            (BatchStepExecutionTable.leaseUntil less now)
+                                        )
+                                )
+                        )
+            }) { row ->
+                row[BatchStepExecutionTable.status] = BatchStatus.RUNNING
+                row[BatchStepExecutionTable.ownerId] = ownerId
+                row[BatchStepExecutionTable.leaseUntil] = leaseUntil
+                row[BatchStepExecutionTable.version] = execution.version + 1
+                row[BatchStepExecutionTable.endTime] = null
+            }
+        }
+
+        return if (updatedRows == 1) {
+            findStepExecutionById(execution.id)
+        } else {
+            null
+        }
+    }
+
     override suspend fun completeStepExecution(execution: StepExecution, report: StepReport) {
         suspendTransaction(db = database) {
-            BatchStepExecutionTable.update({ BatchStepExecutionTable.id eq execution.id }) { row ->
+            val condition = if (execution.ownerId == null) {
+                BatchStepExecutionTable.id eq execution.id
+            } else {
+                (BatchStepExecutionTable.id eq execution.id) and
+                    (BatchStepExecutionTable.ownerId eq execution.ownerId)
+            }
+            BatchStepExecutionTable.update({ condition }) { row ->
                 row[BatchStepExecutionTable.status] = report.status
                 row[BatchStepExecutionTable.readCount] = report.readCount
                 row[BatchStepExecutionTable.writeCount] = report.writeCount
                 row[BatchStepExecutionTable.skipCount] = report.skipCount
                 row[BatchStepExecutionTable.checkpoint] = report.checkpoint?.let { checkpointJson.write(it) }
+                row[BatchStepExecutionTable.ownerId] = null
+                row[BatchStepExecutionTable.leaseUntil] = null
+                row[BatchStepExecutionTable.version] = execution.version + 1
                 row[BatchStepExecutionTable.endTime] = Instant.now()
             }
         }
@@ -219,6 +298,20 @@ class ExposedR2dbcBatchJobRepository(
     override suspend fun saveCheckpoint(stepExecutionId: Long, checkpoint: Any) {
         suspendTransaction(db = database) {
             BatchStepExecutionTable.update({ BatchStepExecutionTable.id eq stepExecutionId }) { row ->
+                row[BatchStepExecutionTable.checkpoint] = checkpointJson.write(checkpoint)
+            }
+        }
+    }
+
+    override suspend fun saveCheckpoint(execution: StepExecution, checkpoint: Any) {
+        suspendTransaction(db = database) {
+            val condition = if (execution.ownerId == null) {
+                BatchStepExecutionTable.id eq execution.id
+            } else {
+                (BatchStepExecutionTable.id eq execution.id) and
+                    (BatchStepExecutionTable.ownerId eq execution.ownerId)
+            }
+            BatchStepExecutionTable.update({ condition }) { row ->
                 row[BatchStepExecutionTable.checkpoint] = checkpointJson.write(checkpoint)
             }
         }
@@ -234,6 +327,24 @@ class ExposedR2dbcBatchJobRepository(
                 ?.let { checkpointJson.read(it) }
         }
     }
+
+    private suspend fun findJobExecutionById(executionId: Long): JobExecution? =
+        suspendTransaction(db = database) {
+            BatchJobExecutionTable.selectAll()
+                .where { BatchJobExecutionTable.id eq executionId }
+                .limit(1)
+                .map { it.toJobExecution(checkpointJson) }
+                .firstOrNull()
+        }
+
+    private suspend fun findStepExecutionById(executionId: Long): StepExecution? =
+        suspendTransaction(db = database) {
+            BatchStepExecutionTable.selectAll()
+                .where { BatchStepExecutionTable.id eq executionId }
+                .limit(1)
+                .map { it.toStepExecution(checkpointJson) }
+                .firstOrNull()
+        }
 }
 
 /**

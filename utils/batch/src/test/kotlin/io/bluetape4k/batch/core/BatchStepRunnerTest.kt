@@ -397,8 +397,8 @@ class BatchStepRunnerTest {
         // StepExecution이 STOPPED로 저장되어야 함
         val je2 = repo.findOrCreateJobExecution(je.jobName, je.params)
         val se = repo.findOrCreateStepExecution(je2, step.name)
-        // STOPPED 상태이므로 findOrCreate가 RUNNING으로 복원
-        se.status shouldBe BatchStatus.RUNNING
+        // findOrCreate는 저장 상태를 바꾸지 않고, claim 단계에서 RUNNING으로 복원한다.
+        se.status shouldBe BatchStatus.STOPPED
     }
 
     // ─── 10. 이미 COMPLETED StepExecution ────────────────────────────────────

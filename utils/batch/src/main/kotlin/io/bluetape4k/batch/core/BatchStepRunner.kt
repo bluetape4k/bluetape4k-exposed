@@ -1,6 +1,7 @@
 package io.bluetape4k.batch.core
 
 import io.bluetape4k.batch.api.BatchJobRepository
+import io.bluetape4k.batch.api.BatchExecutionAlreadyClaimedException
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepReport
@@ -11,6 +12,9 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import java.time.Duration
+import java.time.Instant
+import java.util.UUID
 
 /**
  * [BatchStep]의 chunk 루프 실행 엔진.
@@ -53,6 +57,24 @@ internal class BatchStepRunner<I : Any, O : Any>(
      * @return 실행 결과 [StepReport]
      */
     suspend fun run(): StepReport {
+        val claimedJobExecution = if (jobExecution.ownerId != null && jobExecution.leaseUntil != null) {
+            jobExecution
+        } else {
+            val fallbackOwnerId = "${jobExecution.jobName}-${step.name}-${UUID.randomUUID()}"
+            repository.claimJobExecution(
+                execution = jobExecution,
+                ownerId = fallbackOwnerId,
+                leaseUntil = Instant.now().plus(Duration.ofMinutes(15)),
+            ) ?: return StepReport(
+                stepName = step.name,
+                status = BatchStatus.FAILED,
+                error = BatchExecutionAlreadyClaimedException(
+                    executionType = "Job",
+                    executionId = jobExecution.id,
+                    ownerId = jobExecution.ownerId,
+                ),
+            )
+        }
         val stepExecution = repository.findOrCreateStepExecution(jobExecution, step.name)
 
         // (1) 이미 완료된 Step은 즉시 기존 리포트 반환 — reader/writer open 및 checkpoint 복원 금지
@@ -70,16 +92,29 @@ internal class BatchStepRunner<I : Any, O : Any>(
             )
         }
 
-        var readCount = stepExecution.readCount
-        var writeCount = stepExecution.writeCount
-        var skipCount = stepExecution.skipCount
+        val ownerId = requireNotNull(claimedJobExecution.ownerId)
+        val leaseUntil = requireNotNull(claimedJobExecution.leaseUntil)
+        val claimedStepExecution = repository.claimStepExecution(stepExecution, ownerId, leaseUntil)
+            ?: return StepReport(
+                stepName = step.name,
+                status = BatchStatus.FAILED,
+                error = BatchExecutionAlreadyClaimedException(
+                    executionType = "Step",
+                    executionId = stepExecution.id,
+                    ownerId = stepExecution.ownerId,
+                ),
+            )
+
+        var readCount = claimedStepExecution.readCount
+        var writeCount = claimedStepExecution.writeCount
+        var skipCount = claimedStepExecution.skipCount
 
         try {
             step.reader.open()
             step.writer.open()
 
             // (2) checkpoint 조회 — null이 아닐 때만 restoreFrom 호출
-            val checkpoint = repository.loadCheckpoint(stepExecution.id)
+            val checkpoint = repository.loadCheckpoint(claimedStepExecution.id)
             if (checkpoint != null) {
                 log.debug { "체크포인트 복원: step=${step.name}, checkpoint=$checkpoint" }
                 step.reader.restoreFrom(checkpoint)
@@ -139,7 +174,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
                         writeWithTimeout(step.writer, chunk, step.commitTimeout)
                         step.reader.onChunkCommitted()
                         step.reader.checkpoint()?.let { cp ->
-                            repository.saveCheckpoint(stepExecution.id, cp)
+                            repository.saveCheckpoint(claimedStepExecution, cp)
                         }
                         writeCount += chunk.size
                         break@writerLoop
@@ -186,7 +221,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
                 skipCount = skipCount,
                 checkpoint = step.reader.checkpoint(),
             )
-            repository.completeStepExecution(stepExecution, stepReport)
+            repository.completeStepExecution(claimedStepExecution, stepReport)
             return stepReport
         } catch (e: CancellationException) {
             // 취소 → STOPPED 저장 후 즉시 재던짐 — 절대 삼키지 않음
@@ -199,7 +234,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
                     skipCount = skipCount,
                     checkpoint = runCatching { step.reader.checkpoint() }.getOrNull(),
                 )
-                runCatching { repository.completeStepExecution(stepExecution, stoppedReport) }
+                runCatching { repository.completeStepExecution(claimedStepExecution, stoppedReport) }
                     .onFailure { t ->
                         log.warn(t) { "STOPPED 상태 저장 실패 — step=${step.name}" }
                     }
@@ -214,7 +249,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
                 skipCount = skipCount,
                 error = e,
             )
-            runCatching { repository.completeStepExecution(stepExecution, failedReport) }
+            runCatching { repository.completeStepExecution(claimedStepExecution, failedReport) }
                 .onFailure { t ->
                     log.warn(t) { "FAILED 상태 저장 실패 — step=${step.name}" }
                 }

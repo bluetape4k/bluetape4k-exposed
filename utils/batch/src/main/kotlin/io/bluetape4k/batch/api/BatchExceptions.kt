@@ -31,3 +31,16 @@ class BatchStepFailedException(
 ) {
     companion object : KLogging()
 }
+
+/**
+ * Job/Step 실행 row가 다른 runner에 의해 이미 claim된 경우.
+ */
+class BatchExecutionAlreadyClaimedException(
+    executionType: String,
+    executionId: Long,
+    ownerId: String?,
+) : RuntimeException(
+    "$executionType execution is already claimed: id=$executionId, ownerId=${ownerId ?: "<unknown>"}",
+) {
+    companion object : KLogging()
+}

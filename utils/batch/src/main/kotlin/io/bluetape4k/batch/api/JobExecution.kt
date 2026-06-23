@@ -21,6 +21,9 @@ import java.time.Instant
  * @property jobName Job 이름
  * @property params Job 실행 파라미터
  * @property status 현재 실행 상태
+ * @property ownerId 현재 실행 소유자 ID. claim 전 또는 완료 후에는 null일 수 있다.
+ * @property leaseUntil 소유권 lease 만료 시각. null이면 활성 lease가 없다.
+ * @property version 원자적 claim/update를 위한 낙관적 버전
  * @property startTime 실행 시작 시각
  * @property endTime 실행 종료 시각 (실행 중이면 null)
  */
@@ -29,6 +32,9 @@ data class JobExecution(
     val jobName: String,
     val params: Map<String, Any> = emptyMap(),
     val status: BatchStatus = BatchStatus.STARTING,
+    val ownerId: String? = null,
+    val leaseUntil: Instant? = null,
+    val version: Long = 0L,
     val startTime: Instant = Instant.now(),
     val endTime: Instant? = null,
 ) : Serializable {

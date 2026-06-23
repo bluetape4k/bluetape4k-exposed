@@ -29,6 +29,15 @@ object BatchJobExecutionTable : LongIdTable("batch_job_execution") {
     /** 현재 실행 상태 */
     val status = enumerationByName<BatchStatus>("status", 20)
 
+    /** 현재 실행 소유자 ID. null이면 아직 claim되지 않았거나 terminal 상태이다. */
+    val ownerId = varchar("owner_id", 128).nullable()
+
+    /** 실행 소유권 lease 만료 시각. */
+    val leaseUntil = timestamp("lease_until").nullable()
+
+    /** claim CAS를 위한 낙관적 버전. */
+    val version = long("version").default(0L)
+
     /** Job 파라미터 JSON 문자열 */
     val params = text("params").nullable()
 

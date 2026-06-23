@@ -11,6 +11,7 @@ import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.Instant
 
 /**
  * [InMemoryBatchJobRepository]의 단위 테스트.
@@ -82,23 +83,33 @@ class InMemoryBatchJobRepositoryTest {
     }
 
     @Test
-    fun `findOrCreateJobExecution - FAILED 상태 재사용하여 RUNNING으로 복원`() = runSuspendIO {
+    fun `findOrCreateJobExecution - FAILED 상태 재사용 후 claim 으로 RUNNING 복원`() = runSuspendIO {
         val first = repo.findOrCreateJobExecution("job1", emptyMap())
         repo.completeJobExecution(first, BatchStatus.FAILED)
 
         val second = repo.findOrCreateJobExecution("job1", emptyMap())
         second.id shouldBeEqualTo first.id
-        second.status shouldBe BatchStatus.RUNNING
+        second.status shouldBe BatchStatus.FAILED
+
+        val claimed = repo.claimJobExecution(second, "owner-1", Instant.now().plusSeconds(60))
+        claimed.shouldNotBeNull()
+        claimed.status shouldBe BatchStatus.RUNNING
+        claimed.ownerId shouldBeEqualTo "owner-1"
     }
 
     @Test
-    fun `findOrCreateJobExecution - STOPPED 상태 재사용하여 RUNNING으로 복원`() = runSuspendIO {
+    fun `findOrCreateJobExecution - STOPPED 상태 재사용 후 claim 으로 RUNNING 복원`() = runSuspendIO {
         val first = repo.findOrCreateJobExecution("job1", emptyMap())
         repo.completeJobExecution(first, BatchStatus.STOPPED)
 
         val second = repo.findOrCreateJobExecution("job1", emptyMap())
         second.id shouldBeEqualTo first.id
-        second.status shouldBe BatchStatus.RUNNING
+        second.status shouldBe BatchStatus.STOPPED
+
+        val claimed = repo.claimJobExecution(second, "owner-1", Instant.now().plusSeconds(60))
+        claimed.shouldNotBeNull()
+        claimed.status shouldBe BatchStatus.RUNNING
+        claimed.ownerId shouldBeEqualTo "owner-1"
     }
 
     @Test
@@ -151,22 +162,32 @@ class InMemoryBatchJobRepositoryTest {
     }
 
     @Test
-    fun `findOrCreateStepExecution - FAILED 상태는 RUNNING으로 복원`() = runSuspendIO {
+    fun `findOrCreateStepExecution - FAILED 상태는 claim 으로 RUNNING 복원`() = runSuspendIO {
         val je = repo.findOrCreateJobExecution("job1", emptyMap())
         val se1 = completeStep(je, status = BatchStatus.FAILED)
 
         val se2 = repo.findOrCreateStepExecution(je, "step1")
         se2.id shouldBeEqualTo se1.id
-        se2.status shouldBe BatchStatus.RUNNING  // RUNNING으로 복원
+        se2.status shouldBe BatchStatus.FAILED
+
+        val claimed = repo.claimStepExecution(se2, "owner-1", Instant.now().plusSeconds(60))
+        claimed.shouldNotBeNull()
+        claimed.status shouldBe BatchStatus.RUNNING
+        claimed.ownerId shouldBeEqualTo "owner-1"
     }
 
     @Test
-    fun `findOrCreateStepExecution - STOPPED 상태는 RUNNING으로 복원`() = runSuspendIO {
+    fun `findOrCreateStepExecution - STOPPED 상태는 claim 으로 RUNNING 복원`() = runSuspendIO {
         val je = repo.findOrCreateJobExecution("job1", emptyMap())
         completeStep(je, status = BatchStatus.STOPPED)
 
         val se2 = repo.findOrCreateStepExecution(je, "step1")
-        se2.status shouldBe BatchStatus.RUNNING
+        se2.status shouldBe BatchStatus.STOPPED
+
+        val claimed = repo.claimStepExecution(se2, "owner-1", Instant.now().plusSeconds(60))
+        claimed.shouldNotBeNull()
+        claimed.status shouldBe BatchStatus.RUNNING
+        claimed.ownerId shouldBeEqualTo "owner-1"
     }
 
     // ─── checkpoint ───

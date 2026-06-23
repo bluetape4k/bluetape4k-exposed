@@ -31,6 +31,9 @@ fun ResultRow.toJobExecution(checkpointJson: CheckpointJson): JobExecution = Job
         ?.let { checkpointJson.read(it) as? Map<String, Any> }
         ?: emptyMap(),
     status = this[BatchJobExecutionTable.status],
+    ownerId = this[BatchJobExecutionTable.ownerId],
+    leaseUntil = this[BatchJobExecutionTable.leaseUntil],
+    version = this[BatchJobExecutionTable.version],
     startTime = this[BatchJobExecutionTable.startTime],
     endTime = this[BatchJobExecutionTable.endTime],
 )
@@ -61,6 +64,9 @@ fun ResultRow.toStepExecution(checkpointJson: CheckpointJson): StepExecution = S
     writeCount = this[BatchStepExecutionTable.writeCount],
     skipCount = this[BatchStepExecutionTable.skipCount],
     checkpoint = this[BatchStepExecutionTable.checkpoint]?.let { checkpointJson.read(it) },
+    ownerId = this[BatchStepExecutionTable.ownerId],
+    leaseUntil = this[BatchStepExecutionTable.leaseUntil],
+    version = this[BatchStepExecutionTable.version],
     startTime = this[BatchStepExecutionTable.startTime],
     endTime = this[BatchStepExecutionTable.endTime],
 )

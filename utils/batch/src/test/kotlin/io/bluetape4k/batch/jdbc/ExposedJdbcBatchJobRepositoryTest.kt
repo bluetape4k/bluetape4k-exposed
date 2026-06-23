@@ -28,6 +28,7 @@ import org.junit.jupiter.api.condition.EnabledForJreRange
 import org.junit.jupiter.api.condition.JRE
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.time.Instant
 import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
@@ -99,14 +100,19 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `FAILED Job 재시작 - 기존 JobExecution 재사용 RUNNING으로 전환`(testDB: TestDB) {
+    fun `FAILED Job 재시작 - 기존 JobExecution 재사용 후 claim 으로 RUNNING 전환`(testDB: TestDB) {
         withRepoTables(testDB) {
             val je1 = findOrCreateJobExecution("failedJob", emptyMap())
             completeJobExecution(je1, BatchStatus.FAILED)
 
             val je2 = findOrCreateJobExecution("failedJob", emptyMap())
             je2.id shouldBeEqualTo je1.id
-            je2.status shouldBe BatchStatus.RUNNING
+            je2.status shouldBe BatchStatus.FAILED
+
+            val claimed = claimJobExecution(je2, "owner-1", Instant.now().plusSeconds(60))
+            claimed.shouldNotBeNull()
+            claimed.status shouldBe BatchStatus.RUNNING
+            claimed.ownerId shouldBeEqualTo "owner-1"
         }
     }
 
@@ -142,14 +148,19 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `StepExecution FAILED - RUNNING으로 복원`(testDB: TestDB) {
+    fun `StepExecution FAILED - claim 으로 RUNNING 복원`(testDB: TestDB) {
         withRepoTables(testDB) {
             val je = findOrCreateJobExecution("failedStepJob", emptyMap())
             val se = findOrCreateStepExecution(je, "step1")
             completeStepExecution(se, StepReport("step1", BatchStatus.FAILED))
 
             val se2 = findOrCreateStepExecution(je, "step1")
-            se2.status shouldBe BatchStatus.RUNNING
+            se2.status shouldBe BatchStatus.FAILED
+
+            val claimed = claimStepExecution(se2, "owner-1", Instant.now().plusSeconds(60))
+            claimed.shouldNotBeNull()
+            claimed.status shouldBe BatchStatus.RUNNING
+            claimed.ownerId shouldBeEqualTo "owner-1"
         }
     }
 

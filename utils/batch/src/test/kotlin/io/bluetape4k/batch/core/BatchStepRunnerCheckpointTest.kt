@@ -103,6 +103,12 @@ class BatchStepRunnerCheckpointTest {
             savedValues.add(checkpoint)
             delegate.saveCheckpoint(stepExecutionId, checkpoint)
         }
+
+        override suspend fun saveCheckpoint(execution: StepExecution, checkpoint: Any) {
+            saveCheckpointCount.incrementAndGet()
+            savedValues.add(checkpoint)
+            delegate.saveCheckpoint(execution, checkpoint)
+        }
     }
 
     /**
@@ -112,6 +118,10 @@ class BatchStepRunnerCheckpointTest {
         private val delegate: InMemoryBatchJobRepository = InMemoryBatchJobRepository(),
     ): BatchJobRepository by delegate {
         override suspend fun saveCheckpoint(stepExecutionId: Long, checkpoint: Any) {
+            throw RuntimeException("checkpoint save failed")
+        }
+
+        override suspend fun saveCheckpoint(execution: StepExecution, checkpoint: Any) {
             throw RuntimeException("checkpoint save failed")
         }
     }
