@@ -23,6 +23,7 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.condition.EnabledForJreRange
 import org.junit.jupiter.api.condition.JRE
@@ -54,6 +55,34 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
 
     private val batchTables = arrayOf(BatchJobExecutionTable, BatchStepExecutionTable)
 
+    private data class UnexpectedCheckpoint(val value: Long)
+
+    private data class TamperedCheckpointCase(
+        val label: String,
+        val className: String,
+        val payload: String,
+    ) {
+        val json: String = """{"className":"$className","payload":"$payload"}"""
+    }
+
+    private val tamperedCheckpointCases = listOf(
+        TamperedCheckpointCase(
+            label = "unknown",
+            className = "com.example.DoesNotExist",
+            payload = "{}",
+        ),
+        TamperedCheckpointCase(
+            label = "disallowed",
+            className = "java.lang.Runtime",
+            payload = "{}",
+        ),
+        TamperedCheckpointCase(
+            label = "unexpected",
+            className = UnexpectedCheckpoint::class.java.name,
+            payload = """{\"value\":1}""",
+        ),
+    )
+
     private fun withRepoTables(testDB: TestDB, block: suspend ExposedJdbcBatchJobRepository.() -> Unit) {
         withTables(testDB, *batchTables) {
             if (testDB == TestDB.POSTGRESQL) {
@@ -80,6 +109,14 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
                         ))
                 }
                 .count()
+        }
+    }
+
+    private fun tamperCheckpoint(testDB: TestDB, stepExecutionId: Long, checkpoint: String) {
+        transaction(testDB.db.requireNotNull("testDB.db")) {
+            BatchStepExecutionTable.update({ BatchStepExecutionTable.id eq stepExecutionId }) { row ->
+                row[BatchStepExecutionTable.checkpoint] = checkpoint
+            }
         }
     }
 
@@ -189,6 +226,26 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
             val se = findOrCreateStepExecution(je, "step1")
 
             loadCheckpoint(se.id) shouldBe null
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `Checkpoint 변조 - 등록되지 않은 className 은 loadCheckpoint에서 거부`(testDB: TestDB) {
+        withRepoTables(testDB) {
+            val je = findOrCreateJobExecution("tamperedCpJob", emptyMap())
+
+            tamperedCheckpointCases.forEachIndexed { index, case ->
+                val se = findOrCreateStepExecution(je, "tampered-step-${case.label}-$index")
+
+                tamperCheckpoint(testDB, se.id, case.json)
+
+                val error = assertFailsWith<IllegalArgumentException> {
+                    loadCheckpoint(se.id)
+                }
+
+                error.message.shouldNotBeNull() shouldContain case.className
+            }
         }
     }
 

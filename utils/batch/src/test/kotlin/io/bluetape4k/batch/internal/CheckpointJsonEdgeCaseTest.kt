@@ -1,18 +1,19 @@
 package io.bluetape4k.batch.internal
 
-import io.bluetape4k.logging.KLogging
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
-import io.bluetape4k.assertions.assertFailsWith
 
 /**
  * [CheckpointJson] JSON 직렬화/역직렬화 엣지 케이스 검증.
  *
  * ## 검증 항목
  * - malformed JSON 입력 시 예외 발생
- * - 존재하지 않는 className 사용 시 ClassNotFoundException 발생
+ * - 등록되지 않은 className 사용 시 IllegalArgumentException 발생
  * - 알 수 없는 추가 필드는 무시하고 파싱 성공
  */
 class CheckpointJsonEdgeCaseTest {
@@ -37,19 +38,45 @@ class CheckpointJsonEdgeCaseTest {
     }
 
     /**
-     * 존재하지 않는 className 필드 값 사용 시 ClassNotFoundException 발생 검증.
+     * 존재하지 않는 className 필드 값 사용 시 allowlist 예외 발생 검증.
      *
-     * [TypedCheckpoint.className]이 classpath에 없는 클래스를 가리키면
-     * [Class.forName] 호출에서 [ClassNotFoundException]이 발생해야 한다.
+     * [TypedCheckpoint.className]이 classpath에 없는 클래스를 가리켜도
+     * 역직렬화는 임의 [Class.forName]을 호출하지 않고 allowlist에서 거부해야 한다.
      */
     @Test
-    fun `존재하지 않는 className 사용 시 ClassNotFoundException 발생`() {
+    fun `존재하지 않는 className 사용 시 IllegalArgumentException 발생`() {
         // TypedCheckpoint 봉투 형식: {"className":"...", "payload":"..."}
         val jsonWithUnknownClass = """{"className":"com.nonexistent.UnknownClass","payload":"42"}"""
 
-        assertFailsWith<ClassNotFoundException> {
+        val error = assertFailsWith<IllegalArgumentException> {
             sut.read(jsonWithUnknownClass)
-        }.shouldNotBeNull()
+        }
+
+        error.message.shouldNotBeNull() shouldContain "not registered"
+    }
+
+    @Test
+    fun `classpath 에 있어도 허용되지 않은 className 은 거부`() {
+        val jsonWithDisallowedClass = """{"className":"java.lang.Runtime","payload":"{}"}"""
+
+        val error = assertFailsWith<IllegalArgumentException> {
+            sut.read(jsonWithDisallowedClass)
+        }
+
+        error.message.shouldNotBeNull() shouldContain "not registered"
+    }
+
+    @Test
+    fun `예상 밖 checkpoint data class 는 명시 등록 없으면 거부`() {
+        data class UnexpectedCheckpoint(val value: Long)
+        val jsonWithUnexpectedClass =
+            """{"className":"${UnexpectedCheckpoint::class.java.name}","payload":"{\"value\":1}"}"""
+
+        val error = assertFailsWith<IllegalArgumentException> {
+            sut.read(jsonWithUnexpectedClass)
+        }
+
+        error.message.shouldNotBeNull() shouldContain "not registered"
     }
 
     /**

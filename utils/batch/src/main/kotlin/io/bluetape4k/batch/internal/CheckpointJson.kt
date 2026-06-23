@@ -1,5 +1,15 @@
 package io.bluetape4k.batch.internal
 
+import java.math.BigDecimal
+import java.math.BigInteger
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.util.UUID
+import kotlin.jvm.javaObjectType
+import kotlin.reflect.KClass
+
 /**
  * Checkpoint 객체를 직렬화 봉투([TypedCheckpoint])로 감싸 round-trip을 보장한다.
  *
@@ -29,14 +39,57 @@ interface CheckpointJson {
     fun read(json: String): Any
 
     companion object {
+        private val defaultAllowedCheckpointClasses: Set<KClass<out Any>> = setOf(
+            String::class,
+            Boolean::class,
+            Byte::class,
+            Short::class,
+            Int::class,
+            Long::class,
+            Float::class,
+            Double::class,
+            BigDecimal::class,
+            BigInteger::class,
+            Instant::class,
+            LocalDate::class,
+            LocalDateTime::class,
+            OffsetDateTime::class,
+            UUID::class,
+            Map::class,
+            List::class,
+            Set::class,
+            java.util.LinkedHashMap::class,
+            java.util.HashMap::class,
+            java.util.ArrayList::class,
+            java.util.LinkedHashSet::class,
+            java.util.HashSet::class,
+        )
+
         /**
          * `bluetape4k-jackson3` 기반 팩토리.
          * `tools.jackson.databind.json.JsonMapper`가 classpath에 없으면
          * 즉시 [IllegalStateException]을 던진다 (Jackson 3는 `tools.jackson.*` 패키지).
          */
-        fun jackson3(): CheckpointJson = try {
+        fun jackson3(): CheckpointJson =
+            jackson3(emptySet())
+
+        /**
+         * `bluetape4k-jackson3` 기반 팩토리.
+         *
+         * 기본 scalar/collection 타입 외 checkpoint 타입은 명시적으로 등록해야 한다.
+         * persisted JSON의 `className`은 이 registry에서만 해석하며 임의 [Class.forName]을 호출하지 않는다.
+         */
+        fun jackson3(vararg allowedCheckpointClasses: KClass<out Any>): CheckpointJson =
+            jackson3(allowedCheckpointClasses.asIterable())
+
+        /**
+         * `bluetape4k-jackson3` 기반 팩토리.
+         *
+         * 기본 scalar/collection 타입 외 checkpoint 타입은 명시적으로 등록해야 한다.
+         */
+        fun jackson3(allowedCheckpointClasses: Iterable<KClass<out Any>>): CheckpointJson = try {
             Class.forName("tools.jackson.databind.json.JsonMapper")
-            Jackson3CheckpointJson()
+            Jackson3CheckpointJson(defaultAllowedCheckpointClasses + allowedCheckpointClasses)
         } catch (e: ClassNotFoundException) {
             throw IllegalStateException(
                 "CheckpointJson.jackson3() requires bluetape4k-jackson3 (tools.jackson) on classpath. " +
@@ -57,12 +110,16 @@ interface CheckpointJson {
  * - write(42L) → `{"className":"java.lang.Long","payload":"42"}`
  * - read(json) → Long(42)
  */
-internal class Jackson3CheckpointJson : CheckpointJson {
+internal class Jackson3CheckpointJson(
+    allowedCheckpointClasses: Iterable<KClass<out Any>>,
+) : CheckpointJson {
     private val mapper = io.bluetape4k.jackson3.Jackson.defaultJsonMapper
+    private val registry = CheckpointClassRegistry(allowedCheckpointClasses)
 
     override fun write(obj: Any): String {
+        val checkpointClass = registry.serializationClass(obj)
         val envelope = TypedCheckpoint(
-            className = obj.javaClass.name,
+            className = checkpointClass.name,
             payload = mapper.writeValueAsString(obj),
         )
         return mapper.writeValueAsString(envelope)
@@ -70,7 +127,27 @@ internal class Jackson3CheckpointJson : CheckpointJson {
 
     override fun read(json: String): Any {
         val envelope = mapper.readValue(json, TypedCheckpoint::class.java)
-        val clazz = Class.forName(envelope.className)
+        val clazz = registry.deserializationClass(envelope.className)
         return mapper.readValue(envelope.payload, clazz)
     }
+}
+
+private class CheckpointClassRegistry(
+    allowedCheckpointClasses: Iterable<KClass<out Any>>,
+) {
+    private val registeredClasses: List<Class<out Any>> = allowedCheckpointClasses
+        .map { it.javaObjectType }
+        .distinctBy { it.name }
+
+    private val registeredClassesByName: Map<String, Class<out Any>> =
+        registeredClasses.associateBy { it.name }
+
+    fun serializationClass(obj: Any): Class<out Any> =
+        registeredClassesByName[obj.javaClass.name]
+            ?: registeredClasses.firstOrNull { it.isInstance(obj) }
+            ?: throw IllegalArgumentException("Checkpoint class is not registered: ${obj.javaClass.name}")
+
+    fun deserializationClass(className: String): Class<out Any> =
+        registeredClassesByName[className]
+            ?: throw IllegalArgumentException("Checkpoint class is not registered: $className")
 }
