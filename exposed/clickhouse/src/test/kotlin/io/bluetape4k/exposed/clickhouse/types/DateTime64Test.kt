@@ -24,11 +24,13 @@ class DateTime64Test: AbstractClickHouseTest() {
 
     companion object: KLogging()
 
-    private object Dt64Table: ClickHouseTable("dt64_test", mergeTree { orderBy("id") }) {
+    private object Dt64Table: ClickHouseTable("dt64_test") {
         val id = long("id")
         val ts3 = dateTime64("ts3", precision = 3)
         val ts6 = dateTime64("ts6", precision = 6)
         val tsNullable = chNullable("ts_nullable", DateTime64ColumnType(3))
+
+        override val engine = mergeTree { orderBy(id) }
     }
 
     @Test

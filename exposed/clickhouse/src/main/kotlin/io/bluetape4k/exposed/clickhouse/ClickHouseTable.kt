@@ -20,10 +20,12 @@ import org.jetbrains.exposed.v1.core.Table
  */
 abstract class ClickHouseTable(
     name: String = "",
-    val engine: ClickHouseEngine = mergeTree { orderBy("id") },
+    engine: ClickHouseEngine? = null,
 ): Table(name) {
 
     companion object: KLogging()
+
+    open val engine: ClickHouseEngine = engine ?: mergeTree { unsafeRawOrderBy("id") }
 
     override fun createStatement(): List<String> =
         super.createStatement()

@@ -21,10 +21,12 @@ class ArrayTypeTest: AbstractClickHouseTest() {
 
     companion object: KLogging()
 
-    private object ArrTable: ClickHouseTable("arr_test", mergeTree { orderBy("id") }) {
+    private object ArrTable: ClickHouseTable("arr_test") {
         val id = long("id")
         val tags = chArray("tags", ClickHouseStringColumnType())
         val nums = chArray("nums", ClickHouseInt32ColumnType())
+
+        override val engine = mergeTree { orderBy(id) }
     }
 
     @Test
