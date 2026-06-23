@@ -81,6 +81,8 @@ jobs:
       jdbc: ${{ steps.filter.outputs.jdbc }}
       r2dbc: ${{ steps.filter.outputs.r2dbc }}
       spring-boot: ${{ steps.filter.outputs.spring-boot }}
+      spring-modulith: ${{ steps.filter.outputs.spring-modulith }}
+      examples: ${{ steps.filter.outputs.examples }}
       lettuce: ${{ steps.filter.outputs.lettuce }}
       redisson: ${{ steps.filter.outputs.redisson }}
       measured: ${{ steps.filter.outputs.measured }}
@@ -121,6 +123,20 @@ jobs:
               - 'exposed/r2dbc-tests/**'
             spring-boot:
               - 'spring-boot/**'
+            spring-modulith:
+              - 'spring-boot/spring-modulith/**'
+            examples:
+              - 'examples/**'
+              - 'exposed/bigquery/**'
+              - 'exposed/clickhouse/**'
+              - 'spring-boot/jdbc/**'
+              - 'spring-boot/r2dbc/**'
+              - '.github/workflows/ci.yml'
+              - '.github/workflows/nightly-tests.yml'
+              - 'settings.gradle.kts'
+              - 'build.gradle.kts'
+              - 'gradle/**'
+              - 'buildSrc/**'
             lettuce:
               - 'exposed/jdbc-lettuce/**'
               - 'exposed/r2dbc-lettuce/**'
@@ -479,6 +495,51 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: coverage-spring-boot
+          path: '**/build/reports/kover/'
+          retention-days: 7
+
+  # spring-modulith integration tests
+  test-spring-modulith:
+    name: Test / spring-modulith
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [build, changes]
+    if: ${{ needs.changes.outputs['spring-modulith'] == 'true' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Test spring-modulith
+        run: |
+          for attempt in 1 2 3 4 5; do
+            ./gradlew :bluetape4k-exposed-spring-modulith:test --no-configuration-cache --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
+          done
+        env:
+          GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false'
+      - name: Generate Kover XML report
+        if: always()
+        run: ./gradlew :bluetape4k-exposed-spring-modulith:koverXmlReport --no-configuration-cache --no-daemon
+        continue-on-error: true
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-spring-modulith
+          path: '**/build/test-results/test/*.xml'
+          retention-days: 7
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-spring-modulith
           path: '**/build/reports/kover/'
           retention-days: 7
 
@@ -1142,6 +1203,66 @@ jobs:
           path: '**/build/reports/kover/'
           retention-days: 7
 
+  # documented examples and Spring Boot demos
+  test-examples:
+    name: Test / examples and demos
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [build, changes]
+    if: ${{ needs.changes.outputs.examples == 'true' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Test examples and demos
+        run: |
+          for attempt in 1 2 3 4 5; do
+            ./gradlew \
+              :examples-exposed-bigquery-dry-run:test \
+              :examples-exposed-clickhouse-oltp-olap:test \
+              :exposed-spring-boot-jdbc-demo:test \
+              :exposed-spring-boot-r2dbc-demo:test \
+              --no-configuration-cache \
+              --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
+          done
+        env:
+          GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false'
+          TESTCONTAINERS_RYUK_DISABLED: 'true'
+          DOCKER_HOST: 'unix:///var/run/docker.sock'
+      - name: Generate Kover XML report
+        if: always()
+        run: >
+          ./gradlew
+          :examples-exposed-bigquery-dry-run:koverXmlReport
+          :examples-exposed-clickhouse-oltp-olap:koverXmlReport
+          :exposed-spring-boot-jdbc-demo:koverXmlReport
+          :exposed-spring-boot-r2dbc-demo:koverXmlReport
+          --no-configuration-cache
+          --no-daemon
+        continue-on-error: true
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-examples
+          path: '**/build/test-results/test/*.xml'
+          retention-days: 7
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-examples
+          path: '**/build/reports/kover/'
+          retention-days: 7
+
   # exposed-timefold-solver-persistence (H2)
   test-timefold:
     name: Test / exposed-timefold (H2)
@@ -1294,6 +1415,7 @@ jobs:
       - test-jdbc-h2
       - test-r2dbc-h2
       - test-spring-boot
+      - test-spring-modulith
       - test-lettuce
       - test-redisson
       - test-measured
@@ -1308,6 +1430,7 @@ jobs:
       - test-starrocks
       - test-cockroachdb
       - test-bigquery
+      - test-examples
       - test-timefold
       - test-spring-boot-batch
       - test-utils-batch
@@ -1349,6 +1472,7 @@ jobs:
       - test-jdbc-h2
       - test-r2dbc-h2
       - test-spring-boot
+      - test-spring-modulith
       - test-lettuce
       - test-redisson
       - test-measured
@@ -1363,6 +1487,7 @@ jobs:
       - test-starrocks
       - test-cockroachdb
       - test-bigquery
+      - test-examples
       - test-timefold
       - test-spring-boot-batch
       - test-utils-batch
