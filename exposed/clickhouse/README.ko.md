@@ -29,14 +29,17 @@ val database = ClickHouseDatabase.connect(
 )
 
 // 2. 테이블 정의
-object EventsTable : ClickHouseTable("events", engine = mergeTree {
-    orderBy("event_date, user_id")
-    partitionBy("toYYYYMM(event_date)")
-}) {
+object EventsTable : ClickHouseTable("events") {
     val eventDate = date32("event_date")
     val userId    = chInt64("user_id")
     val eventType = lowCardinalityString("event_type")
     val value     = chFloat64("value")
+
+    override val engine = mergeTree {
+        orderBy(eventDate, userId)
+        partitionBy(eventDate.toYYYYMM())
+        setting("index_granularity", 8192)
+    }
 }
 
 // 3. 스키마 생성
@@ -89,36 +92,44 @@ val results = suspendTransaction(database) {
 ## 엔진 DSL
 
 ```kotlin
-// MergeTree — 완전한 제어
+// MergeTree — ClickHouseTable override에서 typed expression 사용
 val engine1 = mergeTree {
-    orderBy("event_date, user_id")
-    partitionBy("toYYYYMM(event_date)")
-    primaryKey("event_date")
-    settings("index_granularity = 8192")
+    orderBy(EventsTable.eventDate, EventsTable.userId)
+    partitionBy(EventsTable.eventDate.toYYYYMM())
+    primaryKey(EventsTable.eventDate)
+    setting("index_granularity", 8192)
+    setting("storage_policy", "hot")
 }
 
 // ReplacingMergeTree — 버전 컬럼을 이용한 중복 제거
 val engine2 = replacingMergeTree {
-    orderBy("id")
-    versionColumn("updated_at")
+    orderBy(EventsTable.userId)
+    versionColumn(EventsTable.eventDate)
 }
 
 // SummingMergeTree — 사전 집계
 val engine3 = summingMergeTree {
-    orderBy("category, event_date")
-    sumColumns("amount", "count")
+    orderBy(EventsTable.eventType, EventsTable.eventDate)
+    sumColumns(EventsTable.value)
 }
 
 // AggregatingMergeTree — 구체화된 뷰용
 val engine4 = aggregatingMergeTree {
-    orderBy("id")
-    partitionBy("toYYYYMM(ts)")
+    orderBy(EventsTable.userId)
+    partitionBy(EventsTable.eventDate.toYYYYMM())
+}
+
+// ClickHouse 문법을 Exposed가 아직 모델링하지 못하는 경우에만 raw fragment를 사용합니다.
+// 이 API들은 statement delimiter, comment, quote, clause-boundary token을 거부합니다.
+val rawEngine = mergeTree {
+    unsafeRawOrderBy("event_date", "user_id")
+    unsafeRawPartitionBy("toYYYYMM(event_date)")
 }
 
 // 경량 엔진
-val logEngine    = ClickHouseEngine.Log
-val tinyLog      = ClickHouseEngine.TinyLog
-val memoryEngine = ClickHouseEngine.Memory
+val logEngine    = Log
+val tinyLog      = TinyLog
+val memoryEngine = Memory
 ```
 
 ## 날짜 및 집계 함수

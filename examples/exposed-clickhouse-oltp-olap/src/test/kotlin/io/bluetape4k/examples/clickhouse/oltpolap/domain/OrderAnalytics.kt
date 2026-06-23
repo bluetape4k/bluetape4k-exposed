@@ -17,10 +17,6 @@ import java.io.Serializable
  */
 object OrderEvents: ClickHouseTable(
     name = "order_events",
-    engine = mergeTree {
-        orderBy("order_id", "customer_id")
-        partitionBy("region")
-    }
 ) {
     val orderId = long("order_id")
     val customerId = chString("customer_id")
@@ -28,6 +24,11 @@ object OrderEvents: ClickHouseTable(
     val amount = chFloat64("amount")
     val region = chString("region")
     val orderedAt = long("ordered_at")
+
+    override val engine = mergeTree {
+        orderBy(orderId, customerId)
+        partitionBy(region)
+    }
 }
 
 /**

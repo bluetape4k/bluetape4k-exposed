@@ -14,14 +14,15 @@ import io.bluetape4k.exposed.clickhouse.types.chNullable
  */
 object Events: ClickHouseTable(
     name = "events",
-    engine = mergeTree {
-        orderBy("event_id", "event_name")
-        partitionBy("toYYYYMM(assumeNotNull(created_at))")
-    }
 ) {
     val eventId = long("event_id")
     val eventName = varchar("event_name", 255)
     val region = varchar("region", 50)
     val createdAt = chNullable("created_at", DateTime64ColumnType(3))
     override val primaryKey = PrimaryKey(eventId)
+
+    override val engine = mergeTree {
+        orderBy(eventId, eventName)
+        unsafeRawPartitionBy("toYYYYMM(assumeNotNull(created_at))")
+    }
 }

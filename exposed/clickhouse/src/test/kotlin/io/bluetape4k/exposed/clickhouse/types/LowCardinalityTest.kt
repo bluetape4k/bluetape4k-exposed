@@ -22,10 +22,12 @@ class LowCardinalityTest: AbstractClickHouseTest() {
 
     companion object: KLogging()
 
-    private object LcTable: ClickHouseTable("lc_test", mergeTree { orderBy("id") }) {
+    private object LcTable: ClickHouseTable("lc_test") {
         val id = long("id")
         val category = lowCardinalityString("category")
         val nullableCategory = chNullable("nullable_category", ClickHouseStringColumnType())
+
+        override val engine = mergeTree { orderBy(id) }
     }
 
     @Test

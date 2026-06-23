@@ -29,14 +29,17 @@ val database = ClickHouseDatabase.connect(
 )
 
 // 2. Define a table
-object EventsTable : ClickHouseTable("events", engine = mergeTree {
-    orderBy("event_date, user_id")
-    partitionBy("toYYYYMM(event_date)")
-}) {
+object EventsTable : ClickHouseTable("events") {
     val eventDate = date32("event_date")
     val userId    = chInt64("user_id")
     val eventType = lowCardinalityString("event_type")
     val value     = chFloat64("value")
+
+    override val engine = mergeTree {
+        orderBy(eventDate, userId)
+        partitionBy(eventDate.toYYYYMM())
+        setting("index_granularity", 8192)
+    }
 }
 
 // 3. Create schema
@@ -89,36 +92,44 @@ val results = suspendTransaction(database) {
 ## Engine DSL
 
 ```kotlin
-// MergeTree — full control
+// MergeTree — typed expressions from a ClickHouseTable override
 val engine1 = mergeTree {
-    orderBy("event_date, user_id")
-    partitionBy("toYYYYMM(event_date)")
-    primaryKey("event_date")
-    settings("index_granularity = 8192")
+    orderBy(EventsTable.eventDate, EventsTable.userId)
+    partitionBy(EventsTable.eventDate.toYYYYMM())
+    primaryKey(EventsTable.eventDate)
+    setting("index_granularity", 8192)
+    setting("storage_policy", "hot")
 }
 
 // ReplacingMergeTree — deduplication with version column
 val engine2 = replacingMergeTree {
-    orderBy("id")
-    versionColumn("updated_at")
+    orderBy(EventsTable.userId)
+    versionColumn(EventsTable.eventDate)
 }
 
 // SummingMergeTree — pre-aggregation
 val engine3 = summingMergeTree {
-    orderBy("category, event_date")
-    sumColumns("amount", "count")
+    orderBy(EventsTable.eventType, EventsTable.eventDate)
+    sumColumns(EventsTable.value)
 }
 
 // AggregatingMergeTree — for materialized views
 val engine4 = aggregatingMergeTree {
-    orderBy("id")
-    partitionBy("toYYYYMM(ts)")
+    orderBy(EventsTable.userId)
+    partitionBy(EventsTable.eventDate.toYYYYMM())
+}
+
+// Use raw fragments only when ClickHouse grammar is not modeled by Exposed.
+// These APIs reject statement delimiters, comments, quotes, and clause-boundary tokens.
+val rawEngine = mergeTree {
+    unsafeRawOrderBy("event_date", "user_id")
+    unsafeRawPartitionBy("toYYYYMM(event_date)")
 }
 
 // Lightweight engines
-val logEngine    = ClickHouseEngine.Log
-val tinyLog      = ClickHouseEngine.TinyLog
-val memoryEngine = ClickHouseEngine.Memory
+val logEngine    = Log
+val tinyLog      = TinyLog
+val memoryEngine = Memory
 ```
 
 ## Date & Aggregate Functions

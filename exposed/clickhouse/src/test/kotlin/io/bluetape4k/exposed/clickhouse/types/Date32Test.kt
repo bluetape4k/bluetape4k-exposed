@@ -23,9 +23,11 @@ class Date32Test: AbstractClickHouseTest() {
 
     companion object: KLogging()
 
-    private object D32Table: ClickHouseTable("d32_test", mergeTree { orderBy("id") }) {
+    private object D32Table: ClickHouseTable("d32_test") {
         val id = long("id")
         val date = date32("event_date")
+
+        override val engine = mergeTree { orderBy(id) }
     }
 
     @Test
