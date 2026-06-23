@@ -7,11 +7,17 @@ import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ColumnType
 import org.jetbrains.exposed.v1.core.JsonColumnMarker
 import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.TextColumnType
 import org.jetbrains.exposed.v1.core.statements.api.PreparedStatementApi
 import org.jetbrains.exposed.v1.core.statements.api.RowApi
 import org.jetbrains.exposed.v1.core.vendors.H2Dialect
 import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
 import org.jetbrains.exposed.v1.core.vendors.currentDialect
+
+private val jsonSqlLiteralStringColumnType = TextColumnType()
+
+private fun jsonSqlLiteral(value: Any): String =
+    jsonSqlLiteralStringColumnType.nonNullValueToString(value.toString())
 
 /**
  * Fastjson2를 사용해 JSON 문자열 기반 컬럼을 매핑하는 Exposed 컬럼 타입입니다.
@@ -71,8 +77,8 @@ open class FastjsonColumnType<T: Any>(
     }
 
     override fun nonNullValueToString(value: T): String = when (currentDialect) {
-        is H2Dialect -> "JSON '${notNullValueToDB(value)}'"
-        else -> "'${notNullValueToDB(value)}'"
+        is H2Dialect -> "JSON ${jsonSqlLiteral(notNullValueToDB(value))}"
+        else -> jsonSqlLiteral(notNullValueToDB(value))
     }
 
     override fun setParameter(stmt: PreparedStatementApi, index: Int, value: Any?) {
