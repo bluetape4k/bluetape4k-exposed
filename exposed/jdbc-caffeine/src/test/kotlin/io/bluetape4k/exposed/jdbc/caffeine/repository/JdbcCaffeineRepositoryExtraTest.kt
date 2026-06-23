@@ -608,11 +608,59 @@ class JdbcCaffeineRepositoryExtraTest {
                     flushFailed.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
 
                     val report = awaitHealthReport(repository) { health ->
-                        health.queueDepth == 0 && health.lastFlushError != null
+                        health.queueDepth == 1 && health.lastFlushError != null
                     }
                     report.mode shouldBeEqualTo CacheWriteMode.WRITE_BEHIND
-                    report.queueDepth shouldBeEqualTo 0
+                    report.queueDepth shouldBeEqualTo 1
                     report.lastFlushError.shouldNotBeNull()
+                } finally {
+                    repository.close()
+                }
+            }
+        }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `write-behind retries retained batch after transient flush failure`(testDB: TestDB) {
+            val flushFailed = CountDownLatch(1)
+            val flushSucceeded = CountDownLatch(1)
+            val repository = TransientFailingFlushJdbcRepository(
+                config = LocalCacheConfig(
+                    keyPrefix = "jdbc:caffeine:extra:wb-transient-failure",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 10,
+                    writeBehindQueueCapacity = 16,
+                ),
+                flushFailed = flushFailed,
+                flushSucceeded = flushSucceeded,
+            )
+
+            withActorTable(testDB) {
+                val actors = ActorTable.selectAll().map { it.toActorRecord() }
+                val first = actors[0].copy(firstName = "transient-first")
+                val second = actors[1].copy(firstName = "transient-second")
+
+                try {
+                    repository.put(first.id, first)
+                    flushFailed.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
+
+                    val failedReport = awaitHealthReport(repository) { health ->
+                        health.queueDepth == 1 && health.lastFlushError != null
+                    }
+                    failedReport.queueDepth shouldBeEqualTo 1
+                    failedReport.lastFlushError.shouldNotBeNull()
+
+                    repository.put(second.id, second)
+                    flushSucceeded.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
+
+                    val recoveredReport = awaitHealthReport(repository) { health ->
+                        health.queueDepth == 0 && health.lastFlushError == null
+                    }
+                    recoveredReport.queueDepth shouldBeEqualTo 0
+                    recoveredReport.lastFlushError.shouldBeNull()
+                    commit()
+                    ActorSchema.findActorById(first.id).shouldNotBeNull().firstName shouldBeEqualTo first.firstName
+                    ActorSchema.findActorById(second.id).shouldNotBeNull().firstName shouldBeEqualTo second.firstName
                 } finally {
                     repository.close()
                 }
@@ -698,6 +746,39 @@ class JdbcCaffeineRepositoryExtraTest {
         override fun UpdateStatement.updateEntity(entity: ActorRecord) {
             flushFailed.countDown()
             throw IllegalStateException("planned write-behind flush failure")
+        }
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) {
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun extractId(entity: ActorRecord): Long = entity.id
+    }
+
+    private class TransientFailingFlushJdbcRepository(
+        config: LocalCacheConfig,
+        private val flushFailed: CountDownLatch,
+        private val flushSucceeded: CountDownLatch,
+    ): AbstractJdbcCaffeineRepository<Long, ActorRecord>(config) {
+
+        private val updateAttempts = AtomicInteger()
+
+        override val table: IdTable<Long> = ActorTable
+
+        override fun ResultRow.toEntity(): ActorRecord = toActorRecord()
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) {
+            if (updateAttempts.incrementAndGet() == 1) {
+                flushFailed.countDown()
+                throw IllegalStateException("planned transient write-behind flush failure")
+            }
+
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+            flushSucceeded.countDown()
         }
 
         override fun BatchInsertStatement.insertEntity(entity: ActorRecord) {

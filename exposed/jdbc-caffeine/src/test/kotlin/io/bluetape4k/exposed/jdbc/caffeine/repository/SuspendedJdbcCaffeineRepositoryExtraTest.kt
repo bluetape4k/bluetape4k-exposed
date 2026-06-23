@@ -19,6 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -47,6 +48,8 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.Instant
 import kotlin.coroutines.cancellation.CancellationException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.seconds
 
@@ -457,6 +460,77 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
                 writeBehindJobOf(repository).isCompleted shouldBeEqualTo true
             }
         }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `put - cancelled full-queue send does not publish dirty cache`(
+            testDB: TestDB,
+        ) = runTest(timeout = 35.seconds) {
+            val flushStarted = CountDownLatch(1)
+            val releaseFlush = CountDownLatch(1)
+            val repository = BlockingFlushSuspendedJdbcRepository(
+                config = LocalCacheConfig(
+                    keyPrefix = "jdbc:caffeine:s-extra:wb-cancel-full-send",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 1,
+                    writeBehindQueueCapacity = 1,
+                ),
+                flushStarted = flushStarted,
+                releaseFlush = releaseFlush,
+            )
+
+            withSuspendedActorTable(testDB) {
+                val actors = ActorTable.selectAll().map { it.toActorRecord() }
+                val blocked = actors[0].copy(firstName = "blocked-flush")
+                val queued = actors[1].copy(firstName = "queued-write")
+                val cancelled = actors[2].copy(firstName = "cancelled-write")
+
+                try {
+                    repository.put(blocked.id, blocked)
+                    flushStarted.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
+
+                    repository.put(queued.id, queued)
+                    val pending = async { repository.put(cancelled.id, cancelled) }
+                    delay(100)
+
+                    pending.isActive shouldBeEqualTo true
+                    repository.cache.getIfPresent(cancelled.id.toString()).shouldBeNull()
+
+                    pending.cancelAndJoin()
+                    repository.cache.getIfPresent(cancelled.id.toString()).shouldBeNull()
+                } finally {
+                    releaseFlush.countDown()
+                    repository.close()
+                }
+            }
+        }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `put - closed write-behind queue does not publish dirty cache`(
+            testDB: TestDB,
+        ) = runTest(timeout = 35.seconds) {
+            val repository = ActorSuspendedJdbcCaffeineRepository(
+                LocalCacheConfig(
+                    keyPrefix = "jdbc:caffeine:s-extra:wb-closed-queue",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 10,
+                    writeBehindQueueCapacity = 16,
+                )
+            )
+
+            withSuspendedActorTable(testDB) {
+                val actor = ActorTable.selectAll().first().toActorRecord()
+                    .copy(firstName = "closed-queue")
+
+                repository.close()
+
+                assertFailsWith<IllegalStateException> {
+                    repository.put(actor.id, actor)
+                }
+                repository.cache.getIfPresent(actor.id.toString()).shouldBeNull()
+            }
+        }
     }
 
     private class FailingCacheWarmSuspendedJdbcRepository(
@@ -495,6 +569,34 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
             }
             throw failure
         }
+    }
+
+    private class BlockingFlushSuspendedJdbcRepository(
+        config: LocalCacheConfig,
+        private val flushStarted: CountDownLatch,
+        private val releaseFlush: CountDownLatch,
+    ): AbstractSuspendedJdbcCaffeineRepository<Long, ActorRecord>(config) {
+
+        override val table: IdTable<Long> = ActorTable
+
+        override fun ResultRow.toEntity(): ActorRecord = toActorRecord()
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) {
+            flushStarted.countDown()
+            releaseFlush.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
+
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) {
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun extractId(entity: ActorRecord): Long = entity.id
     }
 
     @Suppress("UNCHECKED_CAST")

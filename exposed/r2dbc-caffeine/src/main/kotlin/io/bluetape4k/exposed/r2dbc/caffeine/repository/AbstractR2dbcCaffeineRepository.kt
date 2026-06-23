@@ -148,9 +148,10 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                     }
                     if (batch.isNotEmpty()) {
                         val flushedCount = batch.size
-                        flushBatch(batch)
-                        writeBehindQueueDepth.addAndGet(-flushedCount)
-                        batch.clear()
+                        if (flushBatch(batch)) {
+                            writeBehindQueueDepth.addAndGet(-flushedCount)
+                            batch.clear()
+                        }
                     }
                 }
             } finally {
@@ -159,10 +160,11 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                 if (batch.isNotEmpty()) {
                     val flushedCount = batch.size
                     withContext(NonCancellable) {
-                        flushBatch(batch)
+                        if (flushBatch(batch)) {
+                            writeBehindQueueDepth.addAndGet(-flushedCount)
+                            batch.clear()
+                        }
                     }
-                    writeBehindQueueDepth.addAndGet(-flushedCount)
-                    batch.clear()
                 }
             }
         }
@@ -180,7 +182,7 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
      * id allocation. [CancellationException] must be rethrown during coroutine cancellation,
      * so it is handled separately before the broad [Exception] catch.
      */
-    private suspend fun flushBatch(batch: List<Pair<ID, E>>) {
+    private suspend fun flushBatch(batch: List<Pair<ID, E>>): Boolean {
         try {
             suspendTransaction {
                 for ((id, entity) in batch) {
@@ -197,12 +199,14 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
             }
             log.debug { "Write-Behind: ${batch.size}건 DB flush 완료" }
             lastFlushError.set(null)
+            return true
         } catch (e: CancellationException) {
             // 코루틴 취소는 반드시 재던져야 한다 — 삼키면 구조적 동시성이 깨진다
             throw e
         } catch (e: Exception) {
             lastFlushError.set(e)
             log.warn(e) { "Write-Behind: ${batch.size}건 DB flush 실패" }
+            return false
         }
     }
 
@@ -312,25 +316,27 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
 
     override suspend fun put(id: ID, entity: E) {
         val key = serializeKey(id)
-        cache.put(key, CompletableFuture.completedFuture(entity))
 
         when (config.writeMode) {
-            CacheWriteMode.WRITE_THROUGH -> writeToDb(id, entity)
+            CacheWriteMode.WRITE_THROUGH -> {
+                cache.put(key, CompletableFuture.completedFuture(entity))
+                writeToDb(id, entity)
+            }
             CacheWriteMode.WRITE_BEHIND -> {
                 // writeBehindJob은 lazy이므로 첫 send() 전에 명시적으로 접근하여
                 // 백그라운드 소비 루프가 시작되도록 보장한다.
                 startWriteBehindJob()
-                writeBehindQueueDepth.incrementAndGet()
                 try {
                     writeBehindQueue.send(id to entity)
+                    writeBehindQueueDepth.incrementAndGet()
+                    cache.put(key, CompletableFuture.completedFuture(entity))
                 } catch (e: Exception) {
-                    writeBehindQueueDepth.decrementAndGet()
+                    cache.synchronous().invalidate(key)
                     throw e
                 }
             }
 
-            else -> { /* READ_ONLY: 캐시만 갱신 */
-            }
+            else -> cache.put(key, CompletableFuture.completedFuture(entity))  // READ_ONLY: 캐시만 갱신
         }
     }
 

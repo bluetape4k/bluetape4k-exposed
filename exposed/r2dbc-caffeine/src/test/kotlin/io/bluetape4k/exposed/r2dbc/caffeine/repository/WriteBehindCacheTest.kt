@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.r2dbc.caffeine.repository
 
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
@@ -25,6 +26,9 @@ import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -35,6 +39,7 @@ import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.select
+import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.params.ParameterizedTest
@@ -393,14 +398,137 @@ class WriteBehindCacheTest {
                     flushFailed.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
 
                     val report = awaitHealthReport(repository) { health ->
-                        health.queueDepth == 0 && health.lastFlushError != null
+                        health.queueDepth == 1 && health.lastFlushError != null
                     }
                     report.mode shouldBeEqualTo CacheWriteMode.WRITE_BEHIND
-                    report.queueDepth shouldBeEqualTo 0
+                    report.queueDepth shouldBeEqualTo 1
                     report.lastFlushError.shouldNotBeNull()
                 } finally {
                     repository.close()
                 }
+            }
+        }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `write-behind retries retained batch after transient flush failure`(
+            testDB: TestDB,
+        ) = runSuspendIO {
+            val flushFailed = CountDownLatch(1)
+            val flushSucceeded = CountDownLatch(1)
+            val repository = TransientFailingFlushR2dbcRepository(
+                config = LocalCacheConfig(
+                    keyPrefix = "r2dbc:caffeine:write-behind:transient-failure",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 10,
+                    writeBehindQueueCapacity = 16,
+                ),
+                flushFailed = flushFailed,
+                flushSucceeded = flushSucceeded,
+            )
+
+            withActorTable(testDB) {
+                val actors = ActorTable.selectAll().map { it.toActorRecord() }.toList()
+                val first = actors[0].copy(firstName = "transient-first")
+                val second = actors[1].copy(firstName = "transient-second")
+
+                try {
+                    repository.put(first.id, first)
+                    flushFailed.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
+
+                    val failedReport = awaitHealthReport(repository) { health ->
+                        health.queueDepth == 1 && health.lastFlushError != null
+                    }
+                    failedReport.queueDepth shouldBeEqualTo 1
+                    failedReport.lastFlushError.shouldNotBeNull()
+
+                    repository.put(second.id, second)
+                    flushSucceeded.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
+
+                    val recoveredReport = awaitHealthReport(repository) { health ->
+                        health.queueDepth == 0 && health.lastFlushError == null
+                    }
+                    recoveredReport.queueDepth shouldBeEqualTo 0
+                    recoveredReport.lastFlushError.shouldBeNull()
+                    commit()
+                    findActorById(first.id).shouldNotBeNull().firstName shouldBeEqualTo first.firstName
+                    findActorById(second.id).shouldNotBeNull().firstName shouldBeEqualTo second.firstName
+                } finally {
+                    repository.close()
+                }
+            }
+        }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `write-behind cancelled full-queue send does not publish dirty cache`(
+            testDB: TestDB,
+        ) = runSuspendIO {
+            val flushStarted = CountDownLatch(1)
+            val releaseFlush = CountDownLatch(1)
+            val repository = CloseWaitingActorRepository(
+                config = LocalCacheConfig(
+                    keyPrefix = "r2dbc:caffeine:write-behind:cancel-full-send",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 1,
+                    writeBehindQueueCapacity = 1,
+                ),
+                flushStarted = flushStarted,
+                releaseFlush = releaseFlush,
+            )
+
+            withActorTable(testDB) {
+                val actors = ActorTable.selectAll().map { it.toActorRecord() }.toList()
+                val blocked = actors[0].copy(firstName = "blocked-flush")
+                val queued = actors[1].copy(firstName = "queued-write")
+                val cancelled = actors[2].copy(firstName = "cancelled-write")
+
+                try {
+                    coroutineScope {
+                        repository.put(blocked.id, blocked)
+                        flushStarted.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
+
+                        repository.put(queued.id, queued)
+                        val pending = async { repository.put(cancelled.id, cancelled) }
+                        delay(100)
+
+                        pending.isActive shouldBeEqualTo true
+                        repository.cache.synchronous().getIfPresent(cancelled.id.toString()).shouldBeNull()
+
+                        pending.cancelAndJoin()
+                        repository.cache.synchronous().getIfPresent(cancelled.id.toString()).shouldBeNull()
+                    }
+                } finally {
+                    releaseFlush.countDown()
+                    repository.close()
+                }
+            }
+        }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `write-behind closed queue does not publish dirty cache`(
+            testDB: TestDB,
+        ) = runSuspendIO {
+            val repository = ActorR2dbcCaffeineRepository(
+                LocalCacheConfig(
+                    keyPrefix = "r2dbc:caffeine:write-behind:closed-queue",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 10,
+                    writeBehindQueueCapacity = 16,
+                )
+            )
+
+            withActorTable(testDB) {
+                val actor = ActorTable.selectAll().first().toActorRecord()
+                    .copy(firstName = "closed-queue")
+
+                repository.close()
+
+                assertFailsWith<IllegalStateException> {
+                    repository.put(actor.id, actor)
+                }
+                repository.cache.synchronous().getIfPresent(actor.id.toString()).shouldBeNull()
             }
         }
     }
@@ -477,6 +605,39 @@ class WriteBehindCacheTest {
         override fun UpdateStatement.updateEntity(entity: ActorRecord) {
             flushFailed.countDown()
             throw IllegalStateException("planned write-behind flush failure")
+        }
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) {
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun extractId(entity: ActorRecord): Long = entity.id
+    }
+
+    private class TransientFailingFlushR2dbcRepository(
+        config: LocalCacheConfig,
+        private val flushFailed: CountDownLatch,
+        private val flushSucceeded: CountDownLatch,
+    ): AbstractR2dbcCaffeineRepository<Long, ActorRecord>(config) {
+
+        private val updateAttempts = AtomicInteger()
+
+        override val table: IdTable<Long> = ActorTable
+
+        override suspend fun ResultRow.toEntity(): ActorRecord = toActorRecord()
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) {
+            if (updateAttempts.incrementAndGet() == 1) {
+                flushFailed.countDown()
+                throw IllegalStateException("planned transient write-behind flush failure")
+            }
+
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+            flushSucceeded.countDown()
         }
 
         override fun BatchInsertStatement.insertEntity(entity: ActorRecord) {

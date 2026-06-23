@@ -132,18 +132,20 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                     }
                     if (batch.isNotEmpty()) {
                         val flushedCount = batch.size
-                        flushBatch(batch)
-                        writeBehindQueueDepth.addAndGet(-flushedCount)
-                        batch.clear()
+                        if (flushBatch(batch)) {
+                            writeBehindQueueDepth.addAndGet(-flushedCount)
+                            batch.clear()
+                        }
                     }
                 }
             } finally {
                 // 채널 닫힌 후 남은 항목 처리
                 if (batch.isNotEmpty()) {
                     val flushedCount = batch.size
-                    flushBatch(batch)
-                    writeBehindQueueDepth.addAndGet(-flushedCount)
-                    batch.clear()
+                    if (flushBatch(batch)) {
+                        writeBehindQueueDepth.addAndGet(-flushedCount)
+                        batch.clear()
+                    }
                 }
             }
         }
@@ -161,7 +163,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
      * id allocation. [CancellationException] is a coroutine cancellation signal and must
      * be rethrown; only ordinary database errors are logged and suppressed.
      */
-    private fun flushBatch(batch: List<Pair<ID, E>>) {
+    private fun flushBatch(batch: List<Pair<ID, E>>): Boolean {
         try {
             transaction {
                 for ((id, entity) in batch) {
@@ -178,12 +180,14 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
             }
             log.debug { "Write-Behind: ${batch.size}건 DB flush 완료" }
             lastFlushError.set(null)
+            return true
         } catch (e: CancellationException) {
             // 코루틴 취소는 삼키지 않고 반드시 재전파한다
             throw e
         } catch (e: Exception) {
             lastFlushError.set(e)
             log.warn(e) { "Write-Behind: ${batch.size}건 DB flush 실패" }
+            return false
         }
     }
 
