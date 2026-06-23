@@ -152,6 +152,16 @@ class SelectTest: AbstractTrinoTest() {
     }
 
     @Test
+    fun `groupConcat - separator SQL literal escapes quote and control strings`() {
+        transaction(db) {
+            val names = Events.eventName.groupConcat(separator = "o'clock)--);")
+
+            names.toString() shouldBeEqualTo
+                "ARRAY_JOIN(ARRAY_AGG(events.event_name), 'o''clock)--);')"
+        }
+    }
+
+    @Test
     fun `locate - Trino POSITION 함수로 문자열 위치를 조회한다`() = withEventsTable {
         transaction(db) {
             insertFixtures()
@@ -163,6 +173,16 @@ class SelectTest: AbstractTrinoTest() {
                 .toList()
 
             rows.map { it[position] } shouldBeEqualTo listOf(1, 0, 4, 2, 0)
+        }
+    }
+
+    @Test
+    fun `locate - substring SQL literal escapes quote and control strings`() {
+        transaction(db) {
+            val position = Events.eventName.locate("x') OR 1=1 --;")
+
+            position.toString() shouldBeEqualTo
+                "POSITION('x'') OR 1=1 --;' IN events.event_name)"
         }
     }
 }
