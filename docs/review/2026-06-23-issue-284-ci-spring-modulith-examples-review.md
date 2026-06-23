@@ -14,6 +14,7 @@ The workflow diff adds first-class CI and Nightly coverage for the spring-moduli
 ## Review Notes
 
 - CI path filtering now exposes `spring-modulith` and `examples` outputs, which trigger targeted jobs for `spring-boot/spring-modulith/**` and `examples/**`.
+- The `spring-modulith` CI filter includes its backing JDBC/core modules and workflow/build files so this PR and future dependency-path changes actually exercise the new lane.
 - The `examples` CI filter also includes underlying example dependencies and workflow/build files: `exposed/bigquery/**`, `exposed/clickhouse/**`, `spring-boot/jdbc/**`, `spring-boot/r2dbc/**`, workflow YAML, root Gradle scripts, `gradle/**`, and `buildSrc/**`.
 - `test-spring-modulith` runs `:bluetape4k-exposed-spring-modulith:test` and uploads `test-results-spring-modulith` plus `coverage-spring-modulith`.
 - `test-examples` runs the BigQuery dry-run example, ClickHouse OLTP/OLAP example, and both Spring Boot demo tests with Testcontainers environment variables for the Docker-backed example.

@@ -10,6 +10,7 @@ Documented example and demo modules need explicit CI ownership. Compile-only cov
 ## Guidance
 
 - Add path-filter outputs, dedicated test jobs, coverage artifacts, and final status `needs` entries together when a module or example gets its own CI lane.
+- New CI lanes must include workflow/build-file paths in their filters so the PR that adds the lane can prove it on GitHub Actions.
 - Example jobs should trigger from both the example source tree and the modules/build files that the examples exercise; otherwise module changes can bypass the documented usage path.
 - Keep example/demo jobs visible in both PR CI and Nightly workflows when the examples are advertised as supported usage paths.
 - Run Docker-backed example tests serially, and separate local compile/testClasses proof from full Testcontainers proof when local Docker is unavailable.
