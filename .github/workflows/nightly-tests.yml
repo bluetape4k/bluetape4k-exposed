@@ -422,6 +422,50 @@ jobs:
           path: '**/build/reports/kover/'
           retention-days: 14
 
+  # Ktor Exposed integration (H2)
+  test-ktor-exposed:
+    name: Test / exposed-ktor (H2)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Test exposed-ktor
+        run: |
+          for attempt in 1 2 3 4 5; do
+            ./gradlew :bluetape4k-exposed-ktor:test --no-configuration-cache --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
+          done
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+      - name: Generate Kover XML report
+        if: always()
+        run: ./gradlew :bluetape4k-exposed-ktor:koverXmlReport --no-configuration-cache --no-daemon
+        continue-on-error: true
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-ktor-exposed
+          path: '**/build/test-results/test/*.xml'
+          retention-days: 14
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-ktor-exposed
+          path: '**/build/reports/kover/'
+          retention-days: 14
+
   # exposed-r2dbc (PostgreSQL, Testcontainers)
   test-r2dbc-postgresql:
     name: Test / exposed-r2dbc (PostgreSQL)
@@ -1413,6 +1457,7 @@ jobs:
             ./gradlew \
               :examples-exposed-bigquery-dry-run:test \
               :examples-exposed-clickhouse-oltp-olap:test \
+              :examples-ktor-exposed-demo:test \
               :exposed-spring-boot-jdbc-demo:test \
               :exposed-spring-boot-r2dbc-demo:test \
               --no-configuration-cache \
@@ -1430,6 +1475,7 @@ jobs:
           ./gradlew
           :examples-exposed-bigquery-dry-run:koverXmlReport
           :examples-exposed-clickhouse-oltp-olap:koverXmlReport
+          :examples-ktor-exposed-demo:koverXmlReport
           :exposed-spring-boot-jdbc-demo:koverXmlReport
           :exposed-spring-boot-r2dbc-demo:koverXmlReport
           --no-configuration-cache
@@ -1622,6 +1668,7 @@ jobs:
       - test-jdbc-postgresql
       - test-jdbc-mysql
       - test-r2dbc-h2
+      - test-ktor-exposed
       - test-r2dbc-postgresql
       - test-r2dbc-mysql
       - test-jdbc-lettuce
@@ -1683,6 +1730,7 @@ jobs:
       - test-jdbc-postgresql
       - test-jdbc-mysql
       - test-r2dbc-h2
+      - test-ktor-exposed
       - test-r2dbc-postgresql
       - test-r2dbc-mysql
       - test-jdbc-lettuce

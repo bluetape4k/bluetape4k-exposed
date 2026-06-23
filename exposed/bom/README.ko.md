@@ -29,6 +29,7 @@ BOM은 Gradle `java-platform`으로 `<dependencyManagement>` constraint만 게�
 | Column codec | `bluetape4k-exposed-jackson2`, `bluetape4k-exposed-jackson3`, `bluetape4k-exposed-fastjson2`, `bluetape4k-exposed-tink`, `bluetape4k-exposed-measured` |
 | Dialect/analytics | `bluetape4k-exposed-postgresql`, `bluetape4k-exposed-mysql8`, `bluetape4k-exposed-cockroachdb`, `bluetape4k-exposed-bigquery`, `bluetape4k-exposed-clickhouse`, `bluetape4k-exposed-trino`, `bluetape4k-exposed-starrocks`, `bluetape4k-exposed-duckdb` |
 | Persistence integration | `bluetape4k-exposed-timefold-solver-persistence` |
+| Ktor | `bluetape4k-exposed-ktor` |
 | Spring Boot | `bluetape4k-exposed-spring-boot-jdbc`, `bluetape4k-exposed-spring-boot-r2dbc`, `bluetape4k-exposed-spring-boot-batch`, `bluetape4k-exposed-spring-modulith` |
 | Utils | `bluetape4k-exposed-batch` |
 
@@ -53,6 +54,7 @@ dependencies {
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc")
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-cache")
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-redisson")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor")
 }
 ```
 

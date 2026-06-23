@@ -28,6 +28,7 @@ auto-configuration only where the application data path needs them.
 - **JSON Columns** — Jackson 2.x, Jackson 3.x, and Fastjson2 column serializers
 - **Encryption** — Google Tink-based encrypted columns
 - **Database-specific Extensions** — PostgreSQL, MySQL 8, BigQuery, ClickHouse, Trino, StarRocks, CockroachDB, DuckDB, and Timefold persistence helpers
+- **Ktor** — Explicit Ktor helpers for caller-owned Exposed JDBC/R2DBC resources, readiness routes, and safe status pages
 - **Spring Boot** — Spring Boot 4.x auto-configuration (JDBC, R2DBC, Batch, and Spring Modulith JDBC event publication integration)
 - **Measured Columns** — Exposed custom column types for `bluetape4k-measured` units
 
@@ -72,6 +73,7 @@ auto-configuration only where the application data path needs them.
 | `exposed-cockroachdb` | CockroachDB PostgreSQL-wire smoke support |
 | `exposed-duckdb` | DuckDB embedded analytics support |
 | `exposed-timefold-solver-persistence` | Timefold Solver persistence integration |
+| `exposed-ktor` | Ktor integration for explicit Exposed JDBC/R2DBC transactions, readiness routes, and status pages |
 | `exposed-spring-boot-jdbc` | Spring Boot 4.x JDBC auto-configuration |
 | `exposed-spring-boot-r2dbc` | Spring Boot 4.x R2DBC auto-configuration |
 | `exposed-spring-boot-batch` | Spring Boot 4.x batch integration |
@@ -91,6 +93,8 @@ dependencies {
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.10.0")
     // Jackson JSON columns
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.10.0")
+    // Ktor integration (available from 1.11.0)
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor:1.11.0")
     // Spring Boot auto-configuration
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.10.0")
     // Spring Modulith JDBC event publication through Exposed
@@ -266,7 +270,7 @@ class MyApplication
 // application.yml
 // spring:
 //   datasource:
-//     url: jdbc:postgresql://localhost:5432/mydb
+//     url: ${APP_JDBC_URL}
 ```
 
 ### Spring Modulith Event Publication
@@ -288,6 +292,69 @@ bluetape4k:
 
 Use Flyway or Liquibase for production schema creation. `initialize-schema`
 is intended for tests and small local applications.
+
+### Ktor Integration
+
+`exposed-ktor` adds explicit Ktor helpers around caller-owned Exposed resources.
+The default `installBluetape4kExposedKtor()` call is a no-op: status pages and
+health/readiness routes are installed only when the application opts in.
+
+```kotlin
+dependencies {
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor:1.11.0")
+}
+```
+
+```kotlin
+import io.bluetape4k.exposed.ktor.Bluetape4kExposedKtorConfig
+import io.bluetape4k.exposed.ktor.bluetape4kExposedErrors
+import io.bluetape4k.exposed.ktor.installBluetape4kExposedKtor
+import io.bluetape4k.ktor.core.Bluetape4kKtorCoreConfig
+import io.bluetape4k.ktor.core.bluetape4kErrorResponses
+import io.bluetape4k.ktor.core.installBluetape4kKtorCore
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
+import io.ktor.server.plugins.statuspages.StatusPages
+import kotlinx.coroutines.asCoroutineDispatcher
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
+import java.util.concurrent.Executors
+import kotlin.time.Duration.Companion.seconds
+
+fun Application.module(
+    jdbcDatabase: Database,
+    r2dbcDatabase: R2dbcDatabase,
+) {
+    val jdbcDispatcher = Executors.newFixedThreadPool(8).asCoroutineDispatcher()
+
+    installBluetape4kKtorCore(
+        Bluetape4kKtorCoreConfig(
+            installStatusPages = false,
+            installHealthRoutes = false,
+        )
+    )
+    install(StatusPages) {
+        bluetape4kErrorResponses()
+        bluetape4kExposedErrors()
+    }
+    installBluetape4kExposedKtor(
+        Bluetape4kExposedKtorConfig(
+            jdbcDatabase = jdbcDatabase,
+            jdbcBlockingDispatcher = jdbcDispatcher,
+            r2dbcDatabase = r2dbcDatabase,
+            installHealthRoutes = true,
+            readinessProbeTimeout = 2.seconds,
+            installStatusPages = false,
+        )
+    )
+}
+```
+
+JDBC work is blocking; pass a dedicated dispatcher and close it with the
+application-owned lifecycle. R2DBC work stays coroutine-native through
+`exposedR2dbcTransaction()` / `suspendTransaction`. See
+[ktor/exposed/README.md](ktor/exposed/README.md) for StatusPages composition,
+readiness triage, rollback, and non-goals.
 
 ## Requirements
 

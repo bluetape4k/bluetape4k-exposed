@@ -27,6 +27,7 @@ Column codec, 데이터베이스별 helper, Spring Boot 4 자동 설정을 더�
 - **JSON Column** — Jackson 2.x, Jackson 3.x, Fastjson2 Column 직렬화
 - **암호화** — Google Tink 기반 암호화 Column
 - **DB 특화 확장** — PostgreSQL, MySQL 8, BigQuery, ClickHouse, Trino, StarRocks, CockroachDB, DuckDB, Timefold persistence 헬퍼
+- **Ktor** — 호출자가 소유한 Exposed JDBC/R2DBC resource, readiness route, 안전한 status page를 위한 명시적 Ktor helper
 - **Spring Boot** — Spring Boot 4.x 자동 설정 (JDBC, R2DBC, Batch, Spring Modulith JDBC 이벤트 발행 통합)
 - **측정 단위 Column** — `bluetape4k-measured` 단위를 위한 Exposed Custom ColumnType
 
@@ -71,6 +72,7 @@ Column codec, 데이터베이스별 helper, Spring Boot 4 자동 설정을 더�
 | `exposed-cockroachdb` | CockroachDB PostgreSQL-wire smoke 지원 |
 | `exposed-duckdb` | DuckDB embedded analytics 지원 |
 | `exposed-timefold-solver-persistence` | Timefold Solver persistence 통합 |
+| `exposed-ktor` | 명시적 Exposed JDBC/R2DBC 트랜잭션, readiness route, status page용 Ktor 통합 |
 | `exposed-spring-boot-jdbc` | Spring Boot 4.x JDBC 자동 설정 |
 | `exposed-spring-boot-r2dbc` | Spring Boot 4.x R2DBC 자동 설정 |
 | `exposed-spring-boot-batch` | Spring Boot 4.x Batch 통합 |
@@ -90,6 +92,8 @@ dependencies {
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.10.0")
     // Jackson JSON Column
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.10.0")
+    // Ktor 통합 (1.11.0부터 제공)
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor:1.11.0")
     // Spring Boot 자동 설정
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.10.0")
     // Exposed 기반 Spring Modulith JDBC 이벤트 발행
@@ -261,7 +265,7 @@ class MyApplication
 // application.yml
 // spring:
 //   datasource:
-//     url: jdbc:postgresql://localhost:5432/mydb
+//     url: ${APP_JDBC_URL}
 ```
 
 ### Spring Modulith 이벤트 발행
@@ -283,6 +287,69 @@ bluetape4k:
 
 운영 스키마는 Flyway 또는 Liquibase 사용을 권장합니다. `initialize-schema`는
 테스트와 작은 로컬 애플리케이션 용도입니다.
+
+### Ktor 통합
+
+`exposed-ktor`는 호출자가 소유한 Exposed resource 위에 명시적 Ktor helper를
+추가합니다. 기본 `installBluetape4kExposedKtor()` 호출은 no-op입니다. Status
+page와 health/readiness route는 애플리케이션이 opt-in할 때만 설치됩니다.
+
+```kotlin
+dependencies {
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor:1.11.0")
+}
+```
+
+```kotlin
+import io.bluetape4k.exposed.ktor.Bluetape4kExposedKtorConfig
+import io.bluetape4k.exposed.ktor.bluetape4kExposedErrors
+import io.bluetape4k.exposed.ktor.installBluetape4kExposedKtor
+import io.bluetape4k.ktor.core.Bluetape4kKtorCoreConfig
+import io.bluetape4k.ktor.core.bluetape4kErrorResponses
+import io.bluetape4k.ktor.core.installBluetape4kKtorCore
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
+import io.ktor.server.plugins.statuspages.StatusPages
+import kotlinx.coroutines.asCoroutineDispatcher
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
+import java.util.concurrent.Executors
+import kotlin.time.Duration.Companion.seconds
+
+fun Application.module(
+    jdbcDatabase: Database,
+    r2dbcDatabase: R2dbcDatabase,
+) {
+    val jdbcDispatcher = Executors.newFixedThreadPool(8).asCoroutineDispatcher()
+
+    installBluetape4kKtorCore(
+        Bluetape4kKtorCoreConfig(
+            installStatusPages = false,
+            installHealthRoutes = false,
+        )
+    )
+    install(StatusPages) {
+        bluetape4kErrorResponses()
+        bluetape4kExposedErrors()
+    }
+    installBluetape4kExposedKtor(
+        Bluetape4kExposedKtorConfig(
+            jdbcDatabase = jdbcDatabase,
+            jdbcBlockingDispatcher = jdbcDispatcher,
+            r2dbcDatabase = r2dbcDatabase,
+            installHealthRoutes = true,
+            readinessProbeTimeout = 2.seconds,
+            installStatusPages = false,
+        )
+    )
+}
+```
+
+JDBC 작업은 blocking입니다. 전용 dispatcher를 넘기고 애플리케이션 lifecycle에서
+닫아야 합니다. R2DBC 작업은 `exposedR2dbcTransaction()` /
+`suspendTransaction`을 통해 coroutine-native로 실행됩니다. StatusPages 조합,
+readiness triage, rollback, non-goal은 [ktor/exposed/README.ko.md](ktor/exposed/README.ko.md)를
+참고하세요.
 
 ## 요구사항
 
