@@ -9,19 +9,21 @@ import org.jetbrains.exposed.v1.core.TextColumnType
 import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.core.resolveColumnType
 import org.jetbrains.exposed.v1.core.statements.StatementType
+import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.springframework.data.repository.query.RepositoryQuery
 import kotlin.coroutines.Continuation
 import kotlin.reflect.KClass
 
 /**
  * Executes raw SQL declared with [@Query][io.bluetape4k.spring.data.exposed.jdbc.annotation.Query]
- * inside the caller's active R2DBC transaction context.
+ * inside the current R2DBC transaction boundary.
  *
- * This follows the JDBC [DeclaredExposedQuery][io.bluetape4k.spring.data.exposed.jdbc.repository.query.DeclaredExposedQuery]
- * pattern: it obtains the current transaction directly through `TransactionManager.current()`
- * instead of opening a new transaction, so uncommitted caller data remains visible.
+ * If the caller already runs inside `suspendTransaction { }`, that active transaction is
+ * reused so uncommitted caller data remains visible. Otherwise this query opens the same
+ * transaction boundary used by PartTree and base R2DBC repository methods.
  *
  * Positional parameters (`?1`, `?2`, ...) are bound before execution, and entities
  * are reloaded from the id column returned by the SELECT query.
@@ -53,14 +55,14 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
         val values = parameters.withoutContinuation()
         val boundSql = bindParameters(rawSql, values)
 
-        val tx = try {
-            TransactionManager.current()
-        } catch (e: IllegalStateException) {
-            throw IllegalStateException(
-                "DeclaredExposedR2dbcQuery '${queryMethod.name}' must be called within an active R2DBC suspendTransaction { }.",
-                e
-            )
+        return TransactionManager.currentOrNull()?.let { tx ->
+            executeInTransaction(tx, boundSql)
+        } ?: suspendTransaction {
+            executeInTransaction(this, boundSql)
         }
+    }
+
+    private suspend fun executeInTransaction(tx: R2dbcTransaction, boundSql: BoundSql): Any? {
         val idColumnName = mapper.table.id.name
         val rawIds = tx.exec(boundSql.sql, boundSql.args, StatementType.SELECT) { row ->
             // Fall back to ordinal 0 when name-based lookup fails for aliases or expressions.
