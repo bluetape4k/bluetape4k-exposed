@@ -1,13 +1,16 @@
 package io.bluetape4k.exposed.core.jackson3
 
-import io.bluetape4k.support.toUtf8Bytes
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.support.toUtf8Bytes
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
-import io.bluetape4k.assertions.assertFailsWith
+import java.util.UUID
 
 /**
  * [JacksonColumnType] 및 [JacksonBColumnType]의 직렬화/역직렬화 단위 테스트입니다.
@@ -64,6 +67,28 @@ class Jackson3ColumnTypeUnitTest {
         val restored = columnType.valueFromDB(json)
 
         restored shouldBeEqualTo source
+    }
+
+    @Test
+    fun `nonNullValueToString 은 JSON SQL 리터럴 특수문자를 escape 한다`() {
+        val json = "{\"name\":\"O'Reilly\",\r\n\"count\":1}"
+        val literalColumnType = JacksonColumnType<SamplePayload>(
+            serilaize = { json },
+            deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
+        )
+        val database = Database.connect(
+            url = "jdbc:h2:mem:jackson3-literal-${UUID.randomUUID()};DB_CLOSE_DELAY=-1",
+            driver = "org.h2.Driver",
+        )
+
+        transaction(database) {
+            val rendered = literalColumnType.nonNullValueToString(SamplePayload("ignored", 1))
+
+            rendered shouldContain "O''Reilly"
+            rendered shouldContain "\\r"
+            rendered shouldContain "\\n"
+            literalColumnType.nonNullValueAsDefaultString(SamplePayload("ignored", 1)) shouldBeEqualTo rendered
+        }
     }
 
     @Test
