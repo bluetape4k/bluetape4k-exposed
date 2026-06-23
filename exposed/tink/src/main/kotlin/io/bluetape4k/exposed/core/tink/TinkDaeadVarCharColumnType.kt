@@ -1,7 +1,6 @@
 package io.bluetape4k.exposed.core.tink
 
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.tink.daead.TinkDaeads
 import io.bluetape4k.tink.daead.TinkDeterministicAead
 import org.jetbrains.exposed.v1.core.ColumnTransformer
 import org.jetbrains.exposed.v1.core.ColumnWithTransform
@@ -19,7 +18,7 @@ import org.jetbrains.exposed.v1.core.VarCharColumnType
  *
  * ```kotlin
  * object T1: IntIdTable("searchable_table") {
- *     val email = tinkDaeadVarChar("email", 512).index()
+ *     val email = tinkDaeadVarChar("email", 512, persistedDaead).index()
  * }
  * val id = T1.insertAndGetId { it[email] = "user@example.com" }
  * // WHERE 절로 검색 가능
@@ -64,7 +63,7 @@ class TinkDaeadVarCharColumnType private constructor(
  * - round-trip(`wrap(unwrap(x))`)은 원본 문자열과 동일합니다.
  *
  * ```kotlin
- * val transformer = StringTinkDaeadEncryptionTransformer(TinkDaeads.AES256_SIV)
+ * val transformer = StringTinkDaeadEncryptionTransformer(persistedDaead)
  * val source = "tink-daead-source"
  * val encrypted1 = transformer.unwrap(source)
  * val encrypted2 = transformer.unwrap(source)
@@ -82,7 +81,7 @@ class StringTinkDaeadEncryptionTransformer private constructor(
 ): ColumnTransformer<String, String> {
 
     constructor(
-        encryptor: TinkDeterministicAead = TinkDaeads.AES256_SIV,
+        encryptor: TinkDeterministicAead,
     ): this(encryptor, EMPTY_TINK_ASSOCIATED_DATA.copyOf(), true)
 
     constructor(
@@ -100,7 +99,7 @@ class StringTinkDaeadEncryptionTransformer private constructor(
      * - 동일 입력에 대해 항상 동일한 암호문이 반환됩니다 (인덱스 검색 가능).
      *
      * ```kotlin
-     * val transformer = StringTinkDaeadEncryptionTransformer(TinkDaeads.AES256_SIV)
+     * val transformer = StringTinkDaeadEncryptionTransformer(persistedDaead)
      * val e1 = transformer.unwrap("deterministic-source")
      * val e2 = transformer.unwrap("deterministic-source")
      * // e1 == e2
@@ -120,7 +119,7 @@ class StringTinkDaeadEncryptionTransformer private constructor(
      * - 암호문 형식이 아니거나 키가 맞지 않으면 Tink 예외가 전파됩니다.
      *
      * ```kotlin
-     * val transformer = StringTinkDaeadEncryptionTransformer(TinkDaeads.AES256_SIV)
+     * val transformer = StringTinkDaeadEncryptionTransformer(persistedDaead)
      * val source = "tink-daead-source"
      * val restored = transformer.wrap(transformer.unwrap(source))
      * // restored == source

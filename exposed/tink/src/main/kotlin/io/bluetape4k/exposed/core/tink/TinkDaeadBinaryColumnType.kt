@@ -18,7 +18,7 @@ import org.jetbrains.exposed.v1.core.ColumnWithTransform
  *
  * ```kotlin
  * object T1: IntIdTable("searchable_binary_table") {
- *     val fingerprint = tinkDaeadBinary("fingerprint", 128)
+ *     val fingerprint = tinkDaeadBinary("fingerprint", 128, persistedDaead)
  * }
  * val data = "fingerprint-data".toByteArray()
  * val id = T1.insertAndGetId { it[fingerprint] = data }
@@ -62,7 +62,7 @@ class TinkDaeadBinaryColumnType private constructor(
  * - round-trip(`wrap(unwrap(x))`)은 원본 바이트 배열과 동일합니다.
  *
  * ```kotlin
- * val transformer = ByteArrayTinkDaeadEncryptionTransformer(TinkDaeads.AES256_SIV)
+ * val transformer = ByteArrayTinkDaeadEncryptionTransformer(persistedDaead)
  * val source = "tink-daead-binary-source".toByteArray()
  * val e1 = transformer.unwrap(source)
  * val e2 = transformer.unwrap(source)

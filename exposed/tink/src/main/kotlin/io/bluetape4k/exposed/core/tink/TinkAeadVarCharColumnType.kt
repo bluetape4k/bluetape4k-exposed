@@ -2,7 +2,6 @@ package io.bluetape4k.exposed.core.tink
 
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.tink.aead.TinkAead
-import io.bluetape4k.tink.aead.TinkAeads
 import org.jetbrains.exposed.v1.core.ColumnTransformer
 import org.jetbrains.exposed.v1.core.ColumnWithTransform
 import org.jetbrains.exposed.v1.core.VarCharColumnType
@@ -19,7 +18,7 @@ import org.jetbrains.exposed.v1.core.VarCharColumnType
  *
  * ```kotlin
  * object T1: IntIdTable("secret_table") {
- *     val secret = tinkAeadVarChar("secret", 512)
+ *     val secret = tinkAeadVarChar("secret", 512, persistedAead)
  * }
  * val id = T1.insertAndGetId { it[secret] = "민감한 데이터" }
  * val row = T1.selectAll().where { T1.id eq id }.single()
@@ -62,7 +61,7 @@ class TinkAeadVarCharColumnType private constructor(
  * - round-trip(`wrap(unwrap(x))`)은 원본 문자열과 동일합니다.
  *
  * ```kotlin
- * val transformer = StringTinkAeadEncryptionTransformer(TinkAeads.AES256_GCM)
+ * val transformer = StringTinkAeadEncryptionTransformer(persistedAead)
  * val source = "tink-aead-source"
  * val restored = transformer.wrap(transformer.unwrap(source))
  * // restored == source
@@ -77,7 +76,7 @@ class StringTinkAeadEncryptionTransformer private constructor(
 ): ColumnTransformer<String, String> {
 
     constructor(
-        encryptor: TinkAead = TinkAeads.AES256_GCM,
+        encryptor: TinkAead,
     ): this(encryptor, EMPTY_TINK_ASSOCIATED_DATA.copyOf(), true)
 
     constructor(
@@ -95,7 +94,7 @@ class StringTinkAeadEncryptionTransformer private constructor(
      * - 비결정적 암호화이므로 동일 입력에 대해 매번 다른 결과가 반환됩니다.
      *
      * ```kotlin
-     * val transformer = StringTinkAeadEncryptionTransformer(TinkAeads.AES256_GCM)
+     * val transformer = StringTinkAeadEncryptionTransformer(persistedAead)
      * val encrypted = transformer.unwrap("tink-aead-source")
      * // encrypted != "tink-aead-source"
      * ```
@@ -114,7 +113,7 @@ class StringTinkAeadEncryptionTransformer private constructor(
      * - 암호문 형식이 아니거나 키가 맞지 않으면 Tink 예외가 전파됩니다.
      *
      * ```kotlin
-     * val transformer = StringTinkAeadEncryptionTransformer(TinkAeads.AES256_GCM)
+     * val transformer = StringTinkAeadEncryptionTransformer(persistedAead)
      * val source = "tink-aead-source"
      * val restored = transformer.wrap(transformer.unwrap(source))
      * // restored == source

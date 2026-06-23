@@ -60,28 +60,37 @@ dependencies {
 
 ```kotlin
 import io.bluetape4k.exposed.core.tink.*
+import io.bluetape4k.tink.aead.TinkAead
+import io.bluetape4k.tink.daead.TinkDeterministicAead
+import io.bluetape4k.tink.keyset.keysetHandleOf
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
+
+val persistedAead = TinkAead(keysetHandleOf(loadSecret("users-aead-keyset-json")))
+val persistedDaead = TinkDeterministicAead(keysetHandleOf(loadSecret("users-daead-keyset-json")))
 
 object Users: IntIdTable("users") {
     val name = varchar("name", 100)
 
     // ① Non-deterministic AEAD — sensitive data that doesn't need searching (password hints, notes, etc.)
-    val memo = tinkAeadVarChar("memo", 512).nullable()
+    val memo = tinkAeadVarChar("memo", 512, persistedAead).nullable()
 
     // ② Deterministic DAEAD — identifiers that need searching (email, SSN, etc.)
-    val email = tinkDaeadVarChar("email", 512).index()
+    val email = tinkDaeadVarChar("email", 512, persistedDaead).index()
 
     // ③ Binary AEAD — sensitive binary data (public keys, certificates, etc.)
-    val publicKey = tinkAeadBinary("public_key", 1024).nullable()
+    val publicKey = tinkAeadBinary("public_key", 1024, persistedAead).nullable()
 
     // ④ Binary DAEAD — searchable binary data (fingerprints, hash values, etc.)
-    val fingerprint = tinkDaeadBinary("fingerprint", 128).nullable()
+    val fingerprint = tinkDaeadBinary("fingerprint", 128, persistedDaead).nullable()
 
     // ⑤ Blob AEAD / DAEAD — large binary payloads
-    val profileBlob = tinkAeadBlob("profile_blob").nullable()
-    val searchableBlob = tinkDaeadBlob("searchable_blob").nullable()
+    val profileBlob = tinkAeadBlob("profile_blob", persistedAead).nullable()
+    val searchableBlob = tinkDaeadBlob("searchable_blob", persistedDaead).nullable()
 }
 ```
+
+Persisted database columns must receive encryptors backed by keysets loaded from durable secret storage. Do not use
+newly generated process-local keysets for data that must survive restarts or run across nodes.
 
 ### 2. Insert — Automatic Encryption
 
@@ -133,7 +142,7 @@ cannot be decrypted through another encrypted column with the same key.
 ```kotlin
 object Users: IntIdTable("users") {
     // Default: associated data = "bluetape4k-exposed-tink:v1:users:email"
-    val email = tinkDaeadVarChar("email", 512)
+    val email = tinkDaeadVarChar("email", 512, persistedDaead)
 }
 ```
 
@@ -145,7 +154,7 @@ val provider = TinkColumnAssociatedDataProvider { tableName, columnName ->
 }
 
 object Users: IntIdTable("users") {
-    val email = tinkDaeadVarChar("email", 512, associatedDataProvider = provider)
+    val email = tinkDaeadVarChar("email", 512, persistedDaead, associatedDataProvider = provider)
 }
 ```
 
@@ -165,28 +174,35 @@ ciphertext for all candidate rows.
 ### AEAD Algorithms (`tinkAeadVarChar`, `tinkAeadBinary`, `tinkAeadBlob`)
 
 ```kotlin
-import io.bluetape4k.tink.aead.TinkAeads
+import io.bluetape4k.tink.aead.TinkAead
 
-// AES-256-GCM (default) — general-purpose, hardware-accelerated
-val col1 = tinkAeadVarChar("col1", 512, TinkAeads.AES256_GCM)
+val aes256Gcm = TinkAead(keysetHandleOf(loadSecret("aes256-gcm-keyset-json")))
+val aes128Gcm = TinkAead(keysetHandleOf(loadSecret("aes128-gcm-keyset-json")))
+val chacha20Poly1305 = TinkAead(keysetHandleOf(loadSecret("chacha20-poly1305-keyset-json")))
+val xchacha20Poly1305 = TinkAead(keysetHandleOf(loadSecret("xchacha20-poly1305-keyset-json")))
+
+// AES-256-GCM — general-purpose, hardware-accelerated
+val col1 = tinkAeadVarChar("col1", 512, aes256Gcm)
 
 // AES-128-GCM — for performance-sensitive cases
-val col2 = tinkAeadVarChar("col2", 512, TinkAeads.AES128_GCM)
+val col2 = tinkAeadVarChar("col2", 512, aes128Gcm)
 
 // ChaCha20-Poly1305 — for environments without hardware AES acceleration (mobile, embedded)
-val col3 = tinkAeadVarChar("col3", 512, TinkAeads.CHACHA20_POLY1305)
+val col3 = tinkAeadVarChar("col3", 512, chacha20Poly1305)
 
 // XChaCha20-Poly1305 — larger nonce (192-bit) to minimize nonce reuse risk
-val col4 = tinkAeadVarChar("col4", 512, TinkAeads.XCHACHA20_POLY1305)
+val col4 = tinkAeadVarChar("col4", 512, xchacha20Poly1305)
 ```
 
 ### Deterministic AEAD Algorithms (`tinkDaeadVarChar`, `tinkDaeadBinary`, `tinkDaeadBlob`)
 
 ```kotlin
-import io.bluetape4k.tink.daead.TinkDaeads
+import io.bluetape4k.tink.daead.TinkDeterministicAead
 
-// AES-256-SIV (the only option; standard for deterministic AEAD)
-val col5 = tinkDaeadVarChar("col5", 512, TinkDaeads.AES256_SIV)
+val aes256Siv = TinkDeterministicAead(keysetHandleOf(loadSecret("aes256-siv-keyset-json")))
+
+// AES-256-SIV (standard for deterministic AEAD)
+val col5 = tinkDaeadVarChar("col5", 512, aes256Siv)
 ```
 
 | Algorithm          | Use Case              | Notes                                     |
@@ -209,10 +225,10 @@ Encrypted values are larger than the original plaintext, so allocate enough leng
 
 ```kotlin
 // Example: email max 254 chars → Base64(254+28) ≈ 376 chars → 512 recommended
-val email = tinkDaeadVarChar("email", 512).index()
+val email = tinkDaeadVarChar("email", 512, persistedDaead).index()
 
 // Example: SSN 14 chars → Base64(14+28) ≈ 56 chars → 128 is sufficient
-val ssn = tinkDaeadVarChar("ssn", 128)
+val ssn = tinkDaeadVarChar("ssn", 128, persistedDaead)
 ```
 
 The default length of `255` for
@@ -230,28 +246,27 @@ object UserPrivacy: IntIdTable("user_privacy") {
     val createdAt = datetime("created_at")
 
     // DAEAD — needs searching/indexing (login, duplicate check, etc.)
-    val email = tinkDaeadVarChar("email", 512).uniqueIndex()
-    val phoneNumber = tinkDaeadVarChar("phone_number", 256).nullable()
+    val email = tinkDaeadVarChar("email", 512, persistedDaead).uniqueIndex()
+    val phoneNumber = tinkDaeadVarChar("phone_number", 256, persistedDaead).nullable()
 
     // AEAD — sensitive data that doesn't need searching
-    val ssn = tinkAeadVarChar("ssn", 256).nullable()
-    val address = tinkAeadVarChar("address", 1024).nullable()
-    val profileNote = tinkAeadVarChar("profile_note", 2048).nullable()
+    val ssn = tinkAeadVarChar("ssn", 256, persistedAead).nullable()
+    val address = tinkAeadVarChar("address", 1024, persistedAead).nullable()
+    val profileNote = tinkAeadVarChar("profile_note", 2048, persistedAead).nullable()
 
     // AEAD Binary — sensitive binary data
-    val profileImage = tinkAeadBinary("profile_image", 65536).nullable()
+    val profileImage = tinkAeadBinary("profile_image", 65536, persistedAead).nullable()
 }
 ```
 
 ### Using a Custom Key (Production)
 
 ```kotlin
-import io.bluetape4k.tink.aeadKeysetHandle
 import io.bluetape4k.tink.aead.TinkAead
-import com.google.crypto.tink.aead.AesGcmKeyManager
+import io.bluetape4k.tink.keyset.keysetHandleOf
 
-// Create an instance with a specific key (can be loaded from KMS or another external key store)
-val customEncryptor = TinkAead(aeadKeysetHandle(AesGcmKeyManager.aes256GcmTemplate()))
+// Load a keyset JSON from KMS, Vault, Kubernetes Secret, or another durable secret store.
+val customEncryptor = TinkAead(keysetHandleOf(loadSecret("sensitive-data-aead-keyset-json")))
 
 object SensitiveData: IntIdTable("sensitive_data") {
     val secret = tinkAeadVarChar("secret", 512, customEncryptor)

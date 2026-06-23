@@ -60,28 +60,37 @@ dependencies {
 
 ```kotlin
 import io.bluetape4k.exposed.core.tink.*
+import io.bluetape4k.tink.aead.TinkAead
+import io.bluetape4k.tink.daead.TinkDeterministicAead
+import io.bluetape4k.tink.keyset.keysetHandleOf
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
+
+val persistedAead = TinkAead(keysetHandleOf(loadSecret("users-aead-keyset-json")))
+val persistedDaead = TinkDeterministicAead(keysetHandleOf(loadSecret("users-daead-keyset-json")))
 
 object Users: IntIdTable("users") {
     val name = varchar("name", 100)
 
     // ① 비결정적 AEAD — 검색 불필요한 민감 정보 (비밀번호 힌트, 개인 메모 등)
-    val memo = tinkAeadVarChar("memo", 512).nullable()
+    val memo = tinkAeadVarChar("memo", 512, persistedAead).nullable()
 
     // ② 결정적 DAEAD — 검색이 필요한 식별 정보 (이메일, 주민번호 등)
-    val email = tinkDaeadVarChar("email", 512).index()
+    val email = tinkDaeadVarChar("email", 512, persistedDaead).index()
 
     // ③ 바이너리 AEAD — 바이너리 민감 데이터 (공개키, 인증서 등)
-    val publicKey = tinkAeadBinary("public_key", 1024).nullable()
+    val publicKey = tinkAeadBinary("public_key", 1024, persistedAead).nullable()
 
     // ④ 바이너리 DAEAD — 검색 가능한 바이너리 (지문, 해시값 등)
-    val fingerprint = tinkDaeadBinary("fingerprint", 128).nullable()
+    val fingerprint = tinkDaeadBinary("fingerprint", 128, persistedDaead).nullable()
 
     // ⑤ Blob AEAD / DAEAD — 대용량 바이너리 payload
-    val profileBlob = tinkAeadBlob("profile_blob").nullable()
-    val searchableBlob = tinkDaeadBlob("searchable_blob").nullable()
+    val profileBlob = tinkAeadBlob("profile_blob", persistedAead).nullable()
+    val searchableBlob = tinkDaeadBlob("searchable_blob", persistedDaead).nullable()
 }
 ```
+
+DB에 저장되는 암호화 컬럼에는 durable secret 저장소에서 복원한 keyset 기반 encryptor를 넘겨야 합니다. 재시작 후 복호화하거나
+여러 노드에서 같은 데이터를 읽어야 하는 컬럼에 새로 생성한 process-local keyset을 사용하지 마세요.
 
 ### 2. 삽입 — 자동 암호화
 
@@ -134,7 +143,7 @@ Exposed의 안정적인 테이블명과 컬럼명을 사용하므로, 같은 키
 ```kotlin
 object Users: IntIdTable("users") {
     // 기본값: associated data = "bluetape4k-exposed-tink:v1:users:email"
-    val email = tinkDaeadVarChar("email", 512)
+    val email = tinkDaeadVarChar("email", 512, persistedDaead)
 }
 ```
 
@@ -146,7 +155,7 @@ val provider = TinkColumnAssociatedDataProvider { tableName, columnName ->
 }
 
 object Users: IntIdTable("users") {
-    val email = tinkDaeadVarChar("email", 512, associatedDataProvider = provider)
+    val email = tinkDaeadVarChar("email", 512, persistedDaead, associatedDataProvider = provider)
 }
 ```
 
@@ -165,28 +174,35 @@ row-scoped associated data는 암호문을 특정 row에 더 강하게 묶을 �
 ### AEAD 알고리즘 (`tinkAeadVarChar`, `tinkAeadBinary`, `tinkAeadBlob`)
 
 ```kotlin
-import io.bluetape4k.tink.aead.TinkAeads
+import io.bluetape4k.tink.aead.TinkAead
 
-// AES-256-GCM (기본값) — 범용 권장, 하드웨어 가속 지원
-val col1 = tinkAeadVarChar("col1", 512, TinkAeads.AES256_GCM)
+val aes256Gcm = TinkAead(keysetHandleOf(loadSecret("aes256-gcm-keyset-json")))
+val aes128Gcm = TinkAead(keysetHandleOf(loadSecret("aes128-gcm-keyset-json")))
+val chacha20Poly1305 = TinkAead(keysetHandleOf(loadSecret("chacha20-poly1305-keyset-json")))
+val xchacha20Poly1305 = TinkAead(keysetHandleOf(loadSecret("xchacha20-poly1305-keyset-json")))
+
+// AES-256-GCM — 범용 권장, 하드웨어 가속 지원
+val col1 = tinkAeadVarChar("col1", 512, aes256Gcm)
 
 // AES-128-GCM — 성능이 중요한 경우
-val col2 = tinkAeadVarChar("col2", 512, TinkAeads.AES128_GCM)
+val col2 = tinkAeadVarChar("col2", 512, aes128Gcm)
 
 // ChaCha20-Poly1305 — 하드웨어 AES 가속이 없는 환경 (모바일, 임베디드)
-val col3 = tinkAeadVarChar("col3", 512, TinkAeads.CHACHA20_POLY1305)
+val col3 = tinkAeadVarChar("col3", 512, chacha20Poly1305)
 
 // XChaCha20-Poly1305 — 더 큰 nonce(192bit)로 nonce 재사용 위험 최소화
-val col4 = tinkAeadVarChar("col4", 512, TinkAeads.XCHACHA20_POLY1305)
+val col4 = tinkAeadVarChar("col4", 512, xchacha20Poly1305)
 ```
 
 ### Deterministic AEAD 알고리즘 (`tinkDaeadVarChar`, `tinkDaeadBinary`, `tinkDaeadBlob`)
 
 ```kotlin
-import io.bluetape4k.tink.daead.TinkDaeads
+import io.bluetape4k.tink.daead.TinkDeterministicAead
 
-// AES-256-SIV (유일한 옵션, 결정적 AEAD 표준)
-val col5 = tinkDaeadVarChar("col5", 512, TinkDaeads.AES256_SIV)
+val aes256Siv = TinkDeterministicAead(keysetHandleOf(loadSecret("aes256-siv-keyset-json")))
+
+// AES-256-SIV (결정적 AEAD 표준)
+val col5 = tinkDaeadVarChar("col5", 512, aes256Siv)
 ```
 
 | 알고리즘               | 용도        | 특징                       |
@@ -209,10 +225,10 @@ val col5 = tinkDaeadVarChar("col5", 512, TinkDaeads.AES256_SIV)
 
 ```kotlin
 // 예: 이메일 최대 254자 → Base64(254+28) ≈ 376자 → 여유있게 512 권장
-val email = tinkDaeadVarChar("email", 512).index()
+val email = tinkDaeadVarChar("email", 512, persistedDaead).index()
 
 // 예: 주민번호 14자 → Base64(14+28) ≈ 56자 → 128 충분
-val ssn = tinkDaeadVarChar("ssn", 128)
+val ssn = tinkDaeadVarChar("ssn", 128, persistedDaead)
 ```
 
 기본 `tinkAeadVarChar(...)/tinkDaeadVarChar(...)` 길이
@@ -230,28 +246,27 @@ object UserPrivacy: IntIdTable("user_privacy") {
     val createdAt = datetime("created_at")
 
     // DAEAD — 검색/인덱스 필요 (로그인, 중복 체크 등)
-    val email = tinkDaeadVarChar("email", 512).uniqueIndex()
-    val phoneNumber = tinkDaeadVarChar("phone_number", 256).nullable()
+    val email = tinkDaeadVarChar("email", 512, persistedDaead).uniqueIndex()
+    val phoneNumber = tinkDaeadVarChar("phone_number", 256, persistedDaead).nullable()
 
     // AEAD — 검색 불필요한 민감 정보
-    val ssn = tinkAeadVarChar("ssn", 256).nullable()
-    val address = tinkAeadVarChar("address", 1024).nullable()
-    val profileNote = tinkAeadVarChar("profile_note", 2048).nullable()
+    val ssn = tinkAeadVarChar("ssn", 256, persistedAead).nullable()
+    val address = tinkAeadVarChar("address", 1024, persistedAead).nullable()
+    val profileNote = tinkAeadVarChar("profile_note", 2048, persistedAead).nullable()
 
     // AEAD Binary — 바이너리 민감 데이터
-    val profileImage = tinkAeadBinary("profile_image", 65536).nullable()
+    val profileImage = tinkAeadBinary("profile_image", 65536, persistedAead).nullable()
 }
 ```
 
 ### 커스텀 키 사용 (운영 환경)
 
 ```kotlin
-import io.bluetape4k.tink.aeadKeysetHandle
 import io.bluetape4k.tink.aead.TinkAead
-import com.google.crypto.tink.aead.AesGcmKeyManager
+import io.bluetape4k.tink.keyset.keysetHandleOf
 
-// 별도 키로 인스턴스 생성 (키를 KMS 등 외부 저장소에서 로드 가능)
-val customEncryptor = TinkAead(aeadKeysetHandle(AesGcmKeyManager.aes256GcmTemplate()))
+// KMS, Vault, Kubernetes Secret 등 durable secret 저장소에서 keyset JSON을 로드합니다.
+val customEncryptor = TinkAead(keysetHandleOf(loadSecret("sensitive-data-aead-keyset-json")))
 
 object SensitiveData: IntIdTable("sensitive_data") {
     val secret = tinkAeadVarChar("secret", 512, customEncryptor)

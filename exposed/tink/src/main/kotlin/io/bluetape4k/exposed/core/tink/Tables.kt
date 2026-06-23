@@ -3,8 +3,6 @@ package io.bluetape4k.exposed.core.tink
 import io.bluetape4k.support.requireNotBlank
 import io.bluetape4k.support.requirePositiveNumber
 import io.bluetape4k.tink.aead.TinkAead
-import io.bluetape4k.tink.aead.TinkAeads
-import io.bluetape4k.tink.daead.TinkDaeads
 import io.bluetape4k.tink.daead.TinkDeterministicAead
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.Table
@@ -23,7 +21,7 @@ import org.jetbrains.exposed.v1.core.Table
  *
  * ```kotlin
  * object T1: IntIdTable("secret_table") {
- *     val secret = tinkAeadVarChar("secret", 512).nullable()
+ *     val secret = tinkAeadVarChar("secret", 512, persistedAead).nullable()
  * }
  * val id = T1.insertAndGetId { it[secret] = "민감한 데이터" }
  * val row = T1.selectAll().where { T1.id eq id }.single()
@@ -37,8 +35,15 @@ import org.jetbrains.exposed.v1.core.Table
  */
 fun Table.tinkAeadVarChar(
     name: String,
-    cipherTextLength: Int = 255,
-    encryptor: TinkAead = TinkAeads.AES256_GCM,
+    encryptor: TinkAead,
+    associatedDataProvider: TinkColumnAssociatedDataProvider = TinkColumnAssociatedDataProvider.TableAndColumn,
+): Column<String> =
+    tinkAeadVarChar(name, 255, encryptor, associatedDataProvider)
+
+fun Table.tinkAeadVarChar(
+    name: String,
+    cipherTextLength: Int,
+    encryptor: TinkAead,
     associatedDataProvider: TinkColumnAssociatedDataProvider = TinkColumnAssociatedDataProvider.TableAndColumn,
 ): Column<String> {
     val columnName = name.requireNotBlank("name")
@@ -65,7 +70,7 @@ fun Table.tinkAeadVarChar(
  *
  * ```kotlin
  * object T1: IntIdTable("binary_secret_table") {
- *     val data = tinkAeadBinary("data", 512).nullable()
+ *     val data = tinkAeadBinary("data", 512, persistedAead).nullable()
  * }
  * val id = T1.insertAndGetId { it[data] = "민감한 데이터".toByteArray() }
  * val row = T1.selectAll().where { T1.id eq id }.single()
@@ -80,7 +85,7 @@ fun Table.tinkAeadVarChar(
 fun Table.tinkAeadBinary(
     name: String,
     cipherByteLength: Int,
-    encryptor: TinkAead = TinkAeads.AES256_GCM,
+    encryptor: TinkAead,
     associatedDataProvider: TinkColumnAssociatedDataProvider = TinkColumnAssociatedDataProvider.TableAndColumn,
 ): Column<ByteArray> {
     val columnName = name.requireNotBlank("name")
@@ -107,7 +112,7 @@ fun Table.tinkAeadBinary(
  *
  * ```kotlin
  * object T1: IntIdTable("blob_secret_table") {
- *     val data = tinkAeadBlob("data").nullable()
+ *     val data = tinkAeadBlob("data", persistedAead).nullable()
  * }
  * val id = T1.insertAndGetId { it[data] = "민감한 데이터".toByteArray() }
  * val row = T1.selectAll().where { T1.id eq id }.single()
@@ -120,7 +125,7 @@ fun Table.tinkAeadBinary(
  */
 fun Table.tinkAeadBlob(
     name: String,
-    encryptor: TinkAead = TinkAeads.AES256_GCM,
+    encryptor: TinkAead,
     associatedDataProvider: TinkColumnAssociatedDataProvider = TinkColumnAssociatedDataProvider.TableAndColumn,
 ): Column<ByteArray> {
     val columnName = name.requireNotBlank("name")
@@ -146,7 +151,7 @@ fun Table.tinkAeadBlob(
  *
  * ```kotlin
  * object T1: IntIdTable("searchable_table") {
- *     val email = tinkDaeadVarChar("email", 512).index()
+ *     val email = tinkDaeadVarChar("email", 512, persistedDaead).index()
  * }
  * val id = T1.insertAndGetId { it[email] = "user@example.com" }
  * val count = T1.selectAll().where { T1.email eq "user@example.com" }.count()
@@ -160,8 +165,15 @@ fun Table.tinkAeadBlob(
  */
 fun Table.tinkDaeadVarChar(
     name: String,
-    cipherTextLength: Int = 255,
-    encryptor: TinkDeterministicAead = TinkDaeads.AES256_SIV,
+    encryptor: TinkDeterministicAead,
+    associatedDataProvider: TinkColumnAssociatedDataProvider = TinkColumnAssociatedDataProvider.TableAndColumn,
+): Column<String> =
+    tinkDaeadVarChar(name, 255, encryptor, associatedDataProvider)
+
+fun Table.tinkDaeadVarChar(
+    name: String,
+    cipherTextLength: Int,
+    encryptor: TinkDeterministicAead,
     associatedDataProvider: TinkColumnAssociatedDataProvider = TinkColumnAssociatedDataProvider.TableAndColumn,
 ): Column<String> {
     val columnName = name.requireNotBlank("name")
@@ -188,7 +200,7 @@ fun Table.tinkDaeadVarChar(
  *
  * ```kotlin
  * object T1: IntIdTable("searchable_binary_table") {
- *     val fingerprint = tinkDaeadBinary("fingerprint", 128)
+ *     val fingerprint = tinkDaeadBinary("fingerprint", 128, persistedDaead)
  * }
  * val data = "fingerprint-data".toByteArray()
  * val id = T1.insertAndGetId { it[fingerprint] = data }
@@ -204,7 +216,7 @@ fun Table.tinkDaeadVarChar(
 fun Table.tinkDaeadBinary(
     name: String,
     cipherByteLength: Int,
-    encryptor: TinkDeterministicAead = TinkDaeads.AES256_SIV,
+    encryptor: TinkDeterministicAead,
     associatedDataProvider: TinkColumnAssociatedDataProvider = TinkColumnAssociatedDataProvider.TableAndColumn,
 ): Column<ByteArray> {
     val columnName = name.requireNotBlank("name")
@@ -231,7 +243,7 @@ fun Table.tinkDaeadBinary(
  *
  * ```kotlin
  * object T1: IntIdTable("searchable_blob_table") {
- *     val data = tinkDaeadBlob("data").nullable()
+ *     val data = tinkDaeadBlob("data", persistedDaead).nullable()
  * }
  * val bytes = "검색가능한 데이터".toByteArray()
  * val id = T1.insertAndGetId { it[data] = bytes }
@@ -245,7 +257,7 @@ fun Table.tinkDaeadBinary(
  */
 fun Table.tinkDaeadBlob(
     name: String,
-    encryptor: TinkDeterministicAead = TinkDaeads.AES256_SIV,
+    encryptor: TinkDeterministicAead,
     associatedDataProvider: TinkColumnAssociatedDataProvider = TinkColumnAssociatedDataProvider.TableAndColumn,
 ): Column<ByteArray> {
     val columnName = name.requireNotBlank("name")

@@ -1,20 +1,28 @@
 package io.bluetape4k.exposed.core.tink
 
+import com.google.crypto.tink.aead.AesGcmKeyManager
+import com.google.crypto.tink.daead.AesSivKeyManager
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.support.toUtf8Bytes
 import io.bluetape4k.support.toUtf8String
+import io.bluetape4k.tink.aead.TinkAead
 import io.bluetape4k.tink.aead.TinkAeads
+import io.bluetape4k.tink.aeadKeysetHandle
 import io.bluetape4k.tink.daead.TinkDaeads
-import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.tink.daead.TinkDeterministicAead
+import io.bluetape4k.tink.daeadKeysetHandle
+import io.bluetape4k.tink.keyset.keysetHandleOf
+import io.bluetape4k.tink.keyset.toJsonKeyset
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.update
-import io.bluetape4k.assertions.assertFailsWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
@@ -241,13 +249,13 @@ class TinkColumnTypeTest: AbstractExposedTest() {
     fun `컬럼 이름은 blank 일 수 없다`(testDB: TestDB) {
         assertFailsWith<IllegalArgumentException> {
             object: IntIdTable("invalid_name_aead_varchar_$testDB") {
-                val invalid = tinkAeadVarChar(" ", 32)
+                val invalid = tinkAeadVarChar(" ", 32, TinkAeads.AES256_GCM)
             }
         }
 
         assertFailsWith<IllegalArgumentException> {
             object: IntIdTable("invalid_name_daead_blob_$testDB") {
-                val invalid = tinkDaeadBlob("")
+                val invalid = tinkDaeadBlob("", TinkDaeads.AES256_SIV)
             }
         }
     }
@@ -299,12 +307,12 @@ class TinkColumnTypeTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `nullable 암호화 컬럼은 null 값을 저장하고 조회할 수 있다`(testDB: TestDB) {
         val nullableTable = object: IntIdTable("tink_nullable_table") {
-            val aeadSecret = tinkAeadVarChar("aead_secret", 512).nullable()
-            val daeadSecret = tinkDaeadVarChar("daead_secret", 512).nullable()
-            val aeadData = tinkAeadBinary("aead_data", 512).nullable()
-            val daeadData = tinkDaeadBinary("daead_data", 512).nullable()
-            val aeadBlob = tinkAeadBlob("aead_blob").nullable()
-            val daeadBlob = tinkDaeadBlob("daead_blob").nullable()
+            val aeadSecret = tinkAeadVarChar("aead_secret", 512, TinkAeads.AES256_GCM).nullable()
+            val daeadSecret = tinkDaeadVarChar("daead_secret", 512, TinkDaeads.AES256_SIV).nullable()
+            val aeadData = tinkAeadBinary("aead_data", 512, TinkAeads.AES256_GCM).nullable()
+            val daeadData = tinkDaeadBinary("daead_data", 512, TinkDaeads.AES256_SIV).nullable()
+            val aeadBlob = tinkAeadBlob("aead_blob", TinkAeads.AES256_GCM).nullable()
+            val daeadBlob = tinkDaeadBlob("daead_blob", TinkDaeads.AES256_SIV).nullable()
         }
 
         withTables(testDB, nullableTable) {
@@ -332,25 +340,25 @@ class TinkColumnTypeTest: AbstractExposedTest() {
     fun `컬럼 길이는 0보다 커야 한다`(testDB: TestDB) {
         assertFailsWith<IllegalArgumentException> {
             object: IntIdTable("invalid_aead_varchar_$testDB") {
-                val invalid = tinkAeadVarChar("invalid", 0)
+                val invalid = tinkAeadVarChar("invalid", 0, TinkAeads.AES256_GCM)
             }
         }
 
         assertFailsWith<IllegalArgumentException> {
             object: IntIdTable("invalid_aead_binary_$testDB") {
-                val invalid = tinkAeadBinary("invalid", 0)
+                val invalid = tinkAeadBinary("invalid", 0, TinkAeads.AES256_GCM)
             }
         }
 
         assertFailsWith<IllegalArgumentException> {
             object: IntIdTable("invalid_daead_varchar_$testDB") {
-                val invalid = tinkDaeadVarChar("invalid", 0)
+                val invalid = tinkDaeadVarChar("invalid", 0, TinkDaeads.AES256_SIV)
             }
         }
 
         assertFailsWith<IllegalArgumentException> {
             object: IntIdTable("invalid_daead_binary_$testDB") {
-                val invalid = tinkDaeadBinary("invalid", 0)
+                val invalid = tinkDaeadBinary("invalid", 0, TinkDaeads.AES256_SIV)
             }
         }
     }
@@ -385,7 +393,7 @@ class TinkColumnTypeTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `기본 AEAD VARCHAR 길이 255 는 일반적인 이메일 길이 암호문을 수용하지 못할 수 있다`(testDB: TestDB) {
         val constrainedTable = object: IntIdTable("tink_aead_default_length_$testDB") {
-            val secret = tinkAeadVarChar("secret")
+            val secret = tinkAeadVarChar("secret", TinkAeads.AES256_GCM)
         }
 
         withTables(testDB, constrainedTable) {
@@ -403,7 +411,7 @@ class TinkColumnTypeTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `AEAD VARCHAR 길이를 512 로 늘리면 일반적인 이메일 길이 암호문을 저장할 수 있다`(testDB: TestDB) {
         val roomyTable = object: IntIdTable("tink_aead_roomy_length_$testDB") {
-            val secret = tinkAeadVarChar("secret", 512)
+            val secret = tinkAeadVarChar("secret", 512, TinkAeads.AES256_GCM)
         }
 
         withTables(testDB, roomyTable) {
@@ -469,6 +477,74 @@ class TinkColumnTypeTest: AbstractExposedTest() {
             updateSearchTable.selectAll().where { updateSearchTable.email eq updated }.count() shouldBeEqualTo 1L
             // 이전 값으로 검색하면 0건
             updateSearchTable.selectAll().where { updateSearchTable.email eq original }.count() shouldBeEqualTo 0L
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `persisted AEAD keyset 으로 재구성한 컬럼만 기존 암호문을 복호화한다`(testDB: TestDB) {
+        val keysetJson = aeadKeysetHandle(AesGcmKeyManager.aes256GcmTemplate()).toJsonKeyset()
+        val writerEncryptor = TinkAead(keysetHandleOf(keysetJson))
+        val reconstructedEncryptor = TinkAead(keysetHandleOf(keysetJson))
+        val generatedEncryptor = TinkAead(aeadKeysetHandle(AesGcmKeyManager.aes256GcmTemplate()))
+        val tableName = "tink_persisted_aead_$testDB"
+
+        val writerTable = object: IntIdTable(tableName) {
+            val secret = tinkAeadVarChar("secret", 512, writerEncryptor)
+        }
+        val reconstructedTable = object: IntIdTable(tableName) {
+            val secret = tinkAeadVarChar("secret", 512, reconstructedEncryptor)
+        }
+        val generatedTable = object: IntIdTable(tableName) {
+            val secret = tinkAeadVarChar("secret", 512, generatedEncryptor)
+        }
+
+        withTables(testDB, writerTable) {
+            val plaintext = faker.lorem().sentence()
+            val id = writerTable.insertAndGetId { it[secret] = plaintext }
+
+            val restored = reconstructedTable.selectAll()
+                .where { reconstructedTable.id eq id }
+                .single()[reconstructedTable.secret]
+            restored shouldBeEqualTo plaintext
+
+            assertFailsWith<Exception> {
+                generatedTable.selectAll().where { generatedTable.id eq id }.single()[generatedTable.secret]
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `persisted DAEAD keyset 으로 재구성한 컬럼만 기존 암호문을 복호화하고 검색한다`(testDB: TestDB) {
+        val keysetJson = daeadKeysetHandle(AesSivKeyManager.aes256SivTemplate()).toJsonKeyset()
+        val writerEncryptor = TinkDeterministicAead(keysetHandleOf(keysetJson))
+        val reconstructedEncryptor = TinkDeterministicAead(keysetHandleOf(keysetJson))
+        val generatedEncryptor = TinkDeterministicAead(daeadKeysetHandle(AesSivKeyManager.aes256SivTemplate()))
+        val tableName = "tink_persisted_daead_$testDB"
+
+        val writerTable = object: IntIdTable(tableName) {
+            val email = tinkDaeadVarChar("email", 512, writerEncryptor).index()
+        }
+        val reconstructedTable = object: IntIdTable(tableName) {
+            val email = tinkDaeadVarChar("email", 512, reconstructedEncryptor).index()
+        }
+        val generatedTable = object: IntIdTable(tableName) {
+            val email = tinkDaeadVarChar("email", 512, generatedEncryptor).index()
+        }
+
+        withTables(testDB, writerTable) {
+            val email = faker.internet().emailAddress()
+            val id = writerTable.insertAndGetId { it[writerTable.email] = email }
+
+            reconstructedTable.selectAll().where { reconstructedTable.email eq email }.count() shouldBeEqualTo 1L
+            reconstructedTable.selectAll()
+                .where { reconstructedTable.id eq id }
+                .single()[reconstructedTable.email] shouldBeEqualTo email
+
+            assertFailsWith<Exception> {
+                generatedTable.selectAll().where { generatedTable.id eq id }.single()[generatedTable.email]
+            }
         }
     }
 }
