@@ -2,12 +2,13 @@ package io.bluetape4k.exposed.r2dbc
 
 import io.bluetape4k.concurrent.virtualthread.VirtualThreadExecutor
 import io.r2dbc.spi.IsolationLevel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
@@ -73,11 +74,12 @@ suspend fun <T> R2dbcTransaction.withVirtualThreadTransaction(
  * 가상 스레드 기반의 트랜잭션을 비동기로 실행합니다.
  *
  * ## 동작/계약
- * - [executor]에 맞는 dispatcher를 생성해 `async`로 트랜잭션을 실행합니다.
+ * - 호출자의 현재 coroutine context에 child `async`를 붙이고 [executor]에 맞는 dispatcher에서 실행합니다.
  * - `executor`가 null이면 [VirtualThreadExecutor] 공유 dispatcher를 사용합니다.
  * - 사용자 제공 [ExecutorService]는 호출자가 소유하므로 이 함수가 종료하거나 닫지 않습니다.
  * - 이미 종료된 [ExecutorService]를 넘기면 [IllegalArgumentException]을 던집니다.
- * - 반환값은 [Deferred]이며 호출자가 `await()`/`awaitAll()`로 완료를 제어합니다.
+ * - 반환값은 아직 완료되지 않은 live [Deferred]일 수 있으며 호출자가 `await()`/`awaitAll()`로 완료를 제어합니다.
+ * - 호출자 coroutine이 취소되면 반환된 [Deferred]도 함께 취소됩니다.
  *
  * ```kotlin
  * val jobs = List(5) { index ->
@@ -93,10 +95,11 @@ suspend fun <T> virtualThreadTransactionAsync(
     transactionIsolation: IsolationLevel? = null,
     readOnly: Boolean = false,
     statement: suspend R2dbcTransaction.() -> T,
-): Deferred<T> = coroutineScope {
+): Deferred<T> {
     val dispatcher = createDispatcher(executor)
+    val callerContext = currentCoroutineContext()
 
-    async(dispatcher) {
+    return CoroutineScope(callerContext).async(dispatcher) {
         suspendTransaction(
             db = db,
             transactionIsolation = transactionIsolation ?: db?.transactionManager?.defaultIsolationLevel,
