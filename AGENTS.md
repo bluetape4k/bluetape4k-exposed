@@ -54,6 +54,8 @@ spring-boot/
   r2dbc/
   batch-exposed/
   spring-modulith/
+ktor/
+  exposed/
 buildSrc/
 ```
 
@@ -68,6 +70,7 @@ buildSrc/
 | `exposed/r2dbc` | `:bluetape4k-exposed-r2dbc` |
 | `spring-boot/jdbc` | `:bluetape4k-exposed-spring-boot-jdbc` |
 | `spring-boot/r2dbc` | `:bluetape4k-exposed-spring-boot-r2dbc` |
+| `ktor/exposed` | `:bluetape4k-exposed-ktor` |
 | `examples/jdbc-demo` | `:exposed-spring-boot-jdbc-demo` |
 | `examples/r2dbc-demo` | `:exposed-spring-boot-r2dbc-demo` |
 | `utils/batch` | `:bluetape4k-exposed-batch` |
@@ -80,6 +83,7 @@ buildSrc/
 ./gradlew :bluetape4k-exposed-core:build
 ./gradlew :bluetape4k-exposed-jdbc:test
 ./gradlew :bluetape4k-exposed-r2dbc:test
+./gradlew :bluetape4k-exposed-ktor:test
 ./gradlew :bluetape4k-exposed-jdbc-lettuce:test
 ./gradlew test --tests "io.bluetape4k.exposed.jdbc.ExposedJdbcRepositoryTest"
 ./gradlew :bluetape4k-exposed-spring-boot-jdbc:test
@@ -96,6 +100,9 @@ buildSrc/
   delegates.
 - JSON/encryption column helpers should match existing module-specific DSL
   styles.
+- Ktor integration is explicit opt-in only. Applications own `Database`,
+  `R2dbcDatabase`, dispatchers, pools, content negotiation, status page
+  composition, metrics registries, and resource shutdown.
 - Spring Boot modules expose enable annotations and conditional auto-config.
 
 ## Test Environment

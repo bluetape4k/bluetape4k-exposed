@@ -68,6 +68,8 @@ includeModules("examples", withBaseDir = true, excludeDirNames = setOf("jdbc-dem
 includeMappedModule("utils/batch", "bluetape4k-exposed-batch")
 includeModules("benchmark", withBaseDir = true)
 
+includeMappedModule("ktor/exposed", "bluetape4k-exposed-ktor")
+
 includeMappedModule("spring-boot/jdbc", "bluetape4k-exposed-spring-boot-jdbc")
 includeMappedModule("spring-boot/r2dbc", "bluetape4k-exposed-spring-boot-r2dbc")
 includeMappedModule("spring-boot/batch-exposed", "bluetape4k-exposed-spring-boot-batch")

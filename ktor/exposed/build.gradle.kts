@@ -1,0 +1,33 @@
+val bluetape4kVersion: String by project
+
+configurations {
+    testImplementation.get().extendsFrom(compileOnly.get(), runtimeOnly.get())
+}
+
+dependencies {
+    implementation(platform(bt4k.ktor.bom))
+    implementation(platform(libs.exposed.bom))
+    implementation(platform(libs.micrometer.bom))
+
+    api(bt4k.bluetape4k.ktor.core)
+
+    api(project(":bluetape4k-exposed-jdbc"))
+    api(project(":bluetape4k-exposed-r2dbc"))
+
+    api(libs.kotlinx.coroutines.core)
+    api(libs.micrometer.core)
+
+    testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
+    testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
+
+    testImplementation(bt4k.bluetape4k.ktor.testing)
+    testImplementation(bt4k.bluetape4k.assertions)
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockk)
+
+    testImplementation(libs.exposed.java.time)
+    testImplementation(libs.h2.v2)
+    testImplementation(libs.r2dbc.h2)
+    testImplementation(libs.micrometer.test)
+}
