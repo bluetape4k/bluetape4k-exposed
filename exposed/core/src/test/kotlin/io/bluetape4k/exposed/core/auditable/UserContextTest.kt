@@ -3,13 +3,16 @@ package io.bluetape4k.exposed.core.auditable
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.assertFailsWith
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledForJreRange
 import org.junit.jupiter.api.condition.JRE
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
-import io.bluetape4k.assertions.assertFailsWith
 
 /**
  * [UserContext] 단위 테스트입니다.
@@ -57,6 +60,17 @@ class UserContextTest {
         UserContext.withThreadLocalUser("coroutineUser") {
             UserContext.getCurrentUser() shouldBeEqualTo "coroutineUser"
         }
+    }
+
+    @Test
+    fun `withCoroutineUser 는 coroutine dispatcher hop 이후에도 사용자명을 유지한다`() = runTest {
+        val currentUser = UserContext.withCoroutineUser("coroutineUser") {
+            withContext(Dispatchers.Default) {
+                UserContext.getCurrentUser()
+            }
+        }
+
+        currentUser shouldBeEqualTo "coroutineUser"
     }
 
     @Test

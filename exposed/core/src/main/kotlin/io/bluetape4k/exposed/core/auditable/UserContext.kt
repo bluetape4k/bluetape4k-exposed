@@ -6,6 +6,9 @@ import io.bluetape4k.exposed.core.auditable.UserContext.THREAD_LOCAL_USER
 import io.bluetape4k.exposed.core.auditable.UserContext.getCurrentUser
 import io.bluetape4k.exposed.core.auditable.UserContext.withThreadLocalUser
 import io.bluetape4k.exposed.core.auditable.UserContext.withUser
+import kotlinx.coroutines.ThreadContextElement
+import kotlinx.coroutines.asContextElement
+import kotlinx.coroutines.withContext
 
 
 /**
@@ -18,9 +21,9 @@ import io.bluetape4k.exposed.core.auditable.UserContext.withUser
  * - **Virtual Thread / 단일 요청 스코프**: [withUser]를 사용합니다.
  *   `ScopedValue`와 `ThreadLocal`을 동시에 설정하므로 Virtual Thread 내부에서
  *   파생된 Structured Concurrency 블록에서도 안전하게 전파됩니다.
- * - **Coroutines / 일반 Thread 환경**: [withThreadLocalUser]를 사용합니다.
- *   `ScopedValue`는 `Callable` 경계를 넘지 못하므로 Coroutines에서는
- *   `ThreadLocal` 전용 메서드를 권장합니다.
+ * - **Coroutines 환경**: [withCoroutineUser] 또는 [asContextElement]를 사용합니다.
+ *   `ThreadLocal` 값은 코루틴 재개 시점마다 복원되어 dispatcher hop 이후에도 전파됩니다.
+ * - **일반 Thread 환경**: [withThreadLocalUser]를 사용합니다.
  * - **읽기 전용**: [getCurrentUser]로 현재 사용자명을 조회합니다.
  *
  * ```kotlin
@@ -30,8 +33,10 @@ import io.bluetape4k.exposed.core.auditable.UserContext.withUser
  * }
  *
  * // Coroutines 환경
- * UserContext.withThreadLocalUser("admin") {
- *     userRepository.save(entity) // createdBy = "admin"
+ * UserContext.withCoroutineUser("admin") {
+ *     withContext(Dispatchers.IO) {
+ *         userRepository.save(entity) // createdBy = "admin"
+ *     }
  * }
  * ```
  */
@@ -49,8 +54,9 @@ object UserContext {
     val SCOPED_USER: ScopedValue<String> = ScopedValue.newInstance()
 
     /**
-     * Coroutines / 일반 Thread 환경에서 사용자명을 전파하는 [InheritableThreadLocal]입니다.
+     * 일반 Thread 환경에서 사용자명을 전파하는 [InheritableThreadLocal]입니다.
      *
+     * Coroutine에서는 [asContextElement]로 설치된 경우에만 dispatcher hop 이후 값이 복원됩니다.
      * 자식 스레드에 값이 상속되므로 `newFixedThreadPool` 등에서도 사용 가능합니다.
      */
     private val THREAD_LOCAL_USER: InheritableThreadLocal<String?> = InheritableThreadLocal()
@@ -79,9 +85,9 @@ object UserContext {
     /**
      * [ThreadLocal]만 설정하고 [block]을 실행합니다.
      *
-     * Coroutines / 일반 Thread 환경에서 권장되는 방법입니다.
-     * `ScopedValue`는 Coroutines의 재개 메커니즘과 호환되지 않으므로
-     * 이 메서드를 사용합니다. 블록 실행 후 이전 값으로 복원됩니다.
+     * 일반 Thread 환경에서 권장되는 방법입니다.
+     * Coroutine dispatcher hop 이후 값 보존이 필요하면 [withCoroutineUser] 또는
+     * [asContextElement]를 사용합니다. 블록 실행 후 이전 값으로 복원됩니다.
      *
      * @param username 이 블록 내에서 사용할 사용자명
      * @param block 사용자명 컨텍스트 내에서 실행할 코드 블록
@@ -96,6 +102,31 @@ object UserContext {
             if (prev != null) THREAD_LOCAL_USER.set(prev) else THREAD_LOCAL_USER.remove()
         }
     }
+
+    /**
+     * Returns a coroutine context element that restores the current user on every coroutine resume.
+     *
+     * Use this when composing your own coroutine context, for example:
+     *
+     * ```kotlin
+     * withContext(UserContext.asContextElement("admin") + Dispatchers.IO) {
+     *     repository.save(entity)
+     * }
+     * ```
+     */
+    fun asContextElement(username: String): ThreadContextElement<String?> =
+        THREAD_LOCAL_USER.asContextElement(username)
+
+    /**
+     * Runs [block] with [username] bound to coroutine execution, including dispatcher hops.
+     *
+     * This keeps the caller's structured concurrency intact because it only adds a
+     * [ThreadContextElement] to the current coroutine context.
+     */
+    suspend fun <T> withCoroutineUser(username: String, block: suspend () -> T): T =
+        withContext(asContextElement(username)) {
+            block()
+        }
 
     /**
      * 현재 활성화된 사용자명을 반환합니다.
