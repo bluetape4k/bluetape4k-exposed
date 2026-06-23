@@ -7,7 +7,7 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
  * R2DBC `suspendTransaction`을 사용해 DB에서 엔티티를 로드하는 추상 [SuspendedMapLoader] 구현체.
  *
  * `runBlocking` 없이 코루틴 네이티브로 동작한다.
- * [LettuceSuspendedLoadedMap]이 캐시 미스 시 이 로더를 호출하여 DB에서 엔티티를 로드한다.
+ * [ExposedR2dbcLettuceSuspendedLoadedMap]이 캐시 미스 시 이 로더를 호출하여 DB에서 엔티티를 로드한다.
  *
  * ### 사용 예시
  * ```kotlin
@@ -25,7 +25,7 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 abstract class R2dbcEntityMapLoader<ID: Any, E: Any>: SuspendedMapLoader<ID, E> {
     /**
      * [key]에 해당하는 엔티티를 `suspendTransaction` 내에서 DB에서 로드한다.
-     * 캐시 미스 시 [LettuceSuspendedLoadedMap]에 의해 호출된다.
+     * 캐시 미스 시 [ExposedR2dbcLettuceSuspendedLoadedMap]에 의해 호출된다.
      */
     override suspend fun load(key: ID): E? = suspendTransaction { loadById(key) }
 

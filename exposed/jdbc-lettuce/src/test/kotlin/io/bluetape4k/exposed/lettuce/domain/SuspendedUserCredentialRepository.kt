@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.lettuce.domain
 import io.bluetape4k.exposed.lettuce.domain.UserSchema.UserCredentialsRecord
 import io.bluetape4k.exposed.lettuce.domain.UserSchema.UserCredentialsTable
 import io.bluetape4k.exposed.lettuce.repository.AbstractSuspendedJdbcLettuceRepository
+import io.bluetape4k.exposed.lettuce.repository.ExposedLettuceCodecs
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.lettuce.core.RedisClient
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +26,11 @@ import java.util.*
 class SuspendedUserCredentialRepository(
     client: RedisClient,
     config: LettuceCacheConfig = LettuceCacheConfig.READ_WRITE_THROUGH,
-): AbstractSuspendedJdbcLettuceRepository<UUID, UserCredentialsRecord>(client, config) {
+): AbstractSuspendedJdbcLettuceRepository<UUID, UserCredentialsRecord>(
+    client,
+    config,
+    ExposedLettuceCodecs.jackson3(UserCredentialsRecord::class.java)
+) {
     override val table: IdTable<UUID> = UserCredentialsTable
 
     override fun ResultRow.toEntity(): UserCredentialsRecord =

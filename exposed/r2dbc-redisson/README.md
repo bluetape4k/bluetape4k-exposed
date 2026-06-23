@@ -76,6 +76,8 @@ class UserR2dbcRedissonRepository(
 ): AbstractR2dbcRedissonRepository<Long, UserRecord>(
     redissonClient = redissonClient,
     config = config,
+    // Required only when using Fory/Kryo/JDK-family binary codecs with trusted Redis data.
+    trustedBinaryCache = true,
 ) {
     override val table = UserTable
 
@@ -147,6 +149,14 @@ val nearCacheConfig = RedissonCacheConfig.readOnly(
 )
 ```
 
+## Redis Codec Safety
+
+`RedissonCacheConfig` constants use Fory-family binary codecs by default. Repository constructors
+reject Fory/Kryo/JDK-family binary codecs unless `trustedBinaryCache = true` is passed explicitly.
+Use that opt-in only for private Redis instances whose contents are not writable by untrusted
+clients. For dependency-facing Redis data, provide a reviewed custom codec instead of relying on
+the default binary codec.
+
 ## Cache Patterns
 
 ### Read-Through (R2DBC + suspend)
@@ -206,6 +216,7 @@ Commonly used cache mode constants are provided as named constants.
 |--------------------------------------|------------------------------------------------|
 | `R2dbcRedissonRepository.kt`         | R2DBC async cache Repository interface         |
 | `AbstractR2dbcRedissonRepository.kt` | R2DBC async cache Repository abstract class    |
+| `ExposedR2dbcRedissonCodecSafety.kt` | Repository guard for trusted binary codec opt-in |
 
 ### Map (map/)
 

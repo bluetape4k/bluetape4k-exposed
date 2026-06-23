@@ -76,6 +76,8 @@ class UserR2dbcRedissonRepository(
 ): AbstractR2dbcRedissonRepository<Long, UserRecord>(
     redissonClient = redissonClient,
     config = config,
+    // Fory/Kryo/JDK 계열 binary codec을 신뢰된 Redis 데이터에 사용할 때만 필요합니다.
+    trustedBinaryCache = true,
 ) {
     override val table = UserTable
 
@@ -147,6 +149,13 @@ val nearCacheConfig = RedissonCacheConfig.readOnly(
 )
 ```
 
+## Redis Codec 안전성
+
+`RedissonCacheConfig` 상수는 기본적으로 Fory 계열 binary codec을 사용합니다. Repository 생성자는
+`trustedBinaryCache = true`를 명시하지 않으면 Fory/Kryo/JDK 계열 binary codec을 거부합니다. 이 opt-in은
+Redis 인스턴스가 private이고, Redis 내용을 신뢰할 수 없는 클라이언트가 쓸 수 없는 경우에만 사용하세요.
+dependency 경계에 놓인 Redis 데이터에는 기본 binary codec 대신 검토된 custom codec을 제공하세요.
+
 ## 캐시 패턴
 
 ### Read-Through (R2DBC + suspend)
@@ -206,6 +215,7 @@ val nearCacheConfig = RedissonCacheConfig.readOnly(
 |--------------------------------------|------------------------------------|
 | `R2dbcRedissonRepository.kt`         | R2DBC 비동기 캐시 Repository 인터페이스      |
 | `AbstractR2dbcRedissonRepository.kt` | R2DBC 비동기 캐시 Repository 추상 클래스     |
+| `ExposedR2dbcRedissonCodecSafety.kt` | 신뢰된 binary codec opt-in guard             |
 
 ### Map (map/)
 

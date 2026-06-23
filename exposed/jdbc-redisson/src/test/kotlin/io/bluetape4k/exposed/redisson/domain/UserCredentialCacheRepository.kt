@@ -18,7 +18,8 @@ class UserCredentialCacheRepository(
     config: RedissonCacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(name = "exposed:user-credentials"),
 ): AbstractJdbcRedissonRepository<UUID, UserCredentialsRecord>(
     redissonClient,
-    config
+    config,
+    trustedBinaryCache = true
 ) {
     companion object: KLogging()
 

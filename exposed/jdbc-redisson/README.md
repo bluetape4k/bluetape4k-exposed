@@ -80,6 +80,8 @@ class UserRedissonRepository(
 ): AbstractJdbcRedissonRepository<Long, UserRecord>(
     redissonClient = redissonClient,
     config = config,
+    // Required only when using Fory/Kryo/JDK-family binary codecs with trusted Redis data.
+    trustedBinaryCache = true,
 ) {
     override val table = UserTable
 
@@ -144,6 +146,8 @@ class SuspendedUserRedissonRepository(
 ): AbstractSuspendedJdbcRedissonRepository<Long, UserRecord>(
     redissonClient = redissonClient,
     config = config,
+    // Required only when using Fory/Kryo/JDK-family binary codecs with trusted Redis data.
+    trustedBinaryCache = true,
 ) {
     override val table = UserTable
 
@@ -213,6 +217,14 @@ val deleteFromDbConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(
 )
 ```
 
+## Redis Codec Safety
+
+`RedissonCacheConfig` constants use Fory-family binary codecs by default. Repository constructors
+reject Fory/Kryo/JDK-family binary codecs unless `trustedBinaryCache = true` is passed explicitly.
+Use that opt-in only for private Redis instances whose contents are not writable by untrusted
+clients. For dependency-facing Redis data, provide a reviewed custom codec instead of relying on
+the default binary codec.
+
 ### 4. Write-Through / Write-Behind Repository implementation
 
 In Write-Through/Write-Behind mode, also implement `UpdateStatement.updateEntity` and
@@ -224,6 +236,7 @@ class UserWriteThroughRepository(
 ): AbstractJdbcRedissonRepository<Long, UserRecord>(
     redissonClient = redissonClient,
     config = RedissonCacheConfig.READ_WRITE_THROUGH.copy(name = "users:write-through"),
+    trustedBinaryCache = true,
 ) {
     override val table = UserTable
 

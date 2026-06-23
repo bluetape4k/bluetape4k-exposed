@@ -4,6 +4,7 @@ import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema.UserRecord
 import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema.UserTable
 import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema.toUserRecord
 import io.bluetape4k.exposed.r2dbc.lettuce.repository.AbstractR2dbcLettuceRepository
+import io.bluetape4k.exposed.r2dbc.lettuce.repository.ExposedR2dbcLettuceCodecs
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.lettuce.core.RedisClient
@@ -18,7 +19,11 @@ import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 class R2dbcUserLettuceRepository(
     client: RedisClient,
     config: LettuceCacheConfig = LettuceCacheConfig.READ_WRITE_THROUGH,
-): AbstractR2dbcLettuceRepository<Long, UserRecord>(client, config) {
+): AbstractR2dbcLettuceRepository<Long, UserRecord>(
+    client,
+    config,
+    ExposedR2dbcLettuceCodecs.jackson3(UserRecord::class.java)
+) {
     companion object: KLoggingChannel()
 
     override val table: IdTable<Long> = UserTable

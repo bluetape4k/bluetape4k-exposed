@@ -12,7 +12,7 @@ Exposed JDBC와 Lettuce Redis 캐시를 결합한 Read-through / Write-through /
 - **Write-through / Write-behind**: `save` 시 Redis와 DB를 동시(또는 비동기)로 반영
 - **동기 레포지토리**: `JdbcLettuceRepository` / `AbstractJdbcLettuceRepository`
 - **코루틴 레포지토리**: `SuspendedJdbcLettuceRepository` / `AbstractSuspendedJdbcLettuceRepository`
-- **MapLoader / MapWriter**: Lettuce `LettuceLoadedMap` 연동을 위한 Exposed 기반 구현체
+- **MapLoader / MapWriter**: repository loaded-map 연동을 위한 Exposed 기반 구현체
     - `loadAllKeys()`는 PK 오름차순으로 안정적으로 순회
     - writer의 `chunkSize`/loader의 `batchSize`는 0보다 커야 함
 
@@ -26,7 +26,7 @@ dependencies {
 
 ## 아키텍처 개요
 
-아키텍처 다이어그램은 동기 Repository, suspend Repository, Redis loaded-map 계층, Exposed JDBC loader/writer 경계를 나눠 보여줍니다. NearCache는 suspend 경로에만 표시합니다. 동기 Repository는 `LettuceLoadedMap`을 통해 바로 Redis loaded-map을 사용합니다.
+아키텍처 다이어그램은 동기 Repository, suspend Repository, Redis loaded-map 계층, Exposed JDBC loader/writer 경계를 나눠 보여줍니다. NearCache는 suspend 경로에만 표시합니다. 동기 Repository는 `ExposedLettuceLoadedMap`을 통해 바로 Redis loaded-map을 사용합니다.
 
 ![JDBC Lettuce Redis cache architecture diagram](../../docs/images/readme-diagrams/exposed-jdbc-lettuce-diagram-01.png)
 
@@ -40,6 +40,7 @@ dependencies {
 
 ```kotlin
 import io.bluetape4k.exposed.lettuce.repository.AbstractJdbcLettuceRepository
+import io.bluetape4k.exposed.lettuce.repository.ExposedLettuceCodecs
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.lettuce.core.RedisClient
 
@@ -49,6 +50,7 @@ class UserLettuceRepository(redisClient: RedisClient):
     AbstractJdbcLettuceRepository<Long, UserRecord>(
         client = redisClient,
         config = LettuceCacheConfig.READ_WRITE_THROUGH,
+        valueCodec = ExposedLettuceCodecs.jackson3(UserRecord::class.java),
     ) {
     override val table = UserTable
 
@@ -88,6 +90,7 @@ class UserSuspendedRepository(redisClient: RedisClient):
     AbstractSuspendedJdbcLettuceRepository<Long, UserRecord>(
         client = redisClient,
         config = LettuceCacheConfig.READ_WRITE_THROUGH,
+        valueCodec = ExposedLettuceCodecs.jackson3(UserRecord::class.java),
     ) {
     override val table = UserTable
     override fun ResultRow.toEntity() = /* ... */
@@ -128,14 +131,24 @@ suspend fun example(repo: UserSuspendedRepository) {
 | `READ_WRITE_BEHIND`  | save 시 Redis 즉시, DB는 비동기 반영   |
 | `READ_ONLY`          | Redis에만 저장, DB 쓰기 없음          |
 
+## Redis Codec 안전성
+
+Repository 생성자는 값 직렬화를 위한 `RedisCodec<String, E>`를 명시적으로 요구합니다. 기존 Lettuce
+binary loaded-map 기본값은 LZ4/Fory 계열이므로 repository 데이터에는 자동 선택하지 않습니다.
+`ExposedLettuceCodecs.jackson3(Entity::class.java)` 또는 검토된 codec을 전달하세요. Fory/Kryo 계열
+binary codec은 Redis 데이터가 완전히 신뢰되고 외부 writer와 공유되지 않는 경우에만 사용하세요.
+
 ## 주요 파일/클래스 목록
 
 | 파일                                                     | 설명                                                 |
 |--------------------------------------------------------|----------------------------------------------------|
 | `repository/JdbcLettuceRepository.kt`                  | 동기 캐시 레포지토리 인터페이스                                  |
 | `repository/SuspendedJdbcLettuceRepository.kt`         | 코루틴 캐시 레포지토리 인터페이스                                 |
-| `repository/AbstractJdbcLettuceRepository.kt`          | 동기 추상 구현체 (LettuceLoadedMap 기반)                    |
-| `repository/AbstractSuspendedJdbcLettuceRepository.kt` | 코루틴 추상 구현체 (LettuceSuspendedLoadedMap + NearCache) |
+| `repository/AbstractJdbcLettuceRepository.kt`          | 동기 추상 구현체 (ExposedLettuceLoadedMap 기반)                    |
+| `repository/AbstractSuspendedJdbcLettuceRepository.kt` | 코루틴 추상 구현체 (ExposedLettuceSuspendedLoadedMap + NearCache) |
+| `repository/ExposedLettuceCodecs.kt`                   | repository Redis 값 codec 명시 헬퍼                         |
+| `map/ExposedLettuceLoadedMap.kt`                       | 호출자가 전달한 값 codec을 쓰는 동기 loaded map             |
+| `map/ExposedLettuceSuspendedLoadedMap.kt`              | 호출자가 전달한 값 codec을 쓰는 코루틴 loaded map           |
 | `map/EntityMapLoader.kt`                               | MapLoader 추상 기반 클래스                                |
 | `map/EntityMapWriter.kt`                               | MapWriter 추상 기반 클래스 (Resilience4j Retry 내장)        |
 | `map/ExposedEntityMapLoader.kt`                        | Exposed DSL 기반 동기 MapLoader                        |

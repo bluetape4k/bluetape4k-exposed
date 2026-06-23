@@ -10,7 +10,7 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
  * R2DBC `suspendTransaction`을 사용해 DB에 엔티티를 쓰는 추상 [SuspendedMapWriter] 구현체.
  *
  * `runBlocking` 없이 코루틴 네이티브로 동작하며, Resilience4j [Retry]로 일시적 DB 오류를 자동 재시도한다.
- * [LettuceSuspendedLoadedMap]의 Write-through / Write-behind 전략에서 이 Writer가 사용된다.
+ * [ExposedR2dbcLettuceSuspendedLoadedMap]의 Write-through / Write-behind 전략에서 이 Writer가 사용된다.
  *
  * ### 사용 예시
  * ```kotlin

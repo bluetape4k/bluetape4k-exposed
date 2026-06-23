@@ -67,10 +67,15 @@ import java.time.Duration
 abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
     val redissonClient: RedissonClient,
     protected val config: RedissonCacheConfig,
+    trustedBinaryCache: Boolean = false,
 ): JdbcRedissonRepository<ID, E> {
 
     companion object: KLogging() {
         const val DEFAULT_BATCH_SIZE = JdbcCacheRepository.DEFAULT_BATCH_SIZE
+    }
+
+    init {
+        ExposedRedissonCodecSafety.requireSafe(config, trustedBinaryCache)
     }
 
     override val cacheName: String get() = config.name

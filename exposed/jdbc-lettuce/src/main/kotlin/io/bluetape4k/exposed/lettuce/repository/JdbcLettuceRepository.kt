@@ -1,9 +1,9 @@
 package io.bluetape4k.exposed.lettuce.repository
 
 import io.bluetape4k.exposed.cache.redis.JdbcRedisRepository
+import io.bluetape4k.exposed.lettuce.map.ExposedLettuceLoadedMap
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
-import io.bluetape4k.redis.lettuce.map.LettuceLoadedMap
 import io.bluetape4k.support.requirePositiveNumber
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
@@ -55,7 +55,7 @@ interface JdbcLettuceRepository<ID: Any, E: Serializable>: JdbcRedisRepository<I
     /**
      * Lettuce 기반 Read-through / Write-through 캐시 맵.
      */
-    val cache: LettuceLoadedMap<ID, E>
+    val cache: ExposedLettuceLoadedMap<ID, E>
 
     /**
      * 캐시에 해당 ID가 존재하는지 확인합니다.

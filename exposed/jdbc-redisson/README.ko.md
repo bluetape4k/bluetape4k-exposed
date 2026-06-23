@@ -78,6 +78,8 @@ class UserRedissonRepository(
 ): AbstractJdbcRedissonRepository<Long, UserRecord>(
     redissonClient = redissonClient,
     config = config,
+    // Fory/Kryo/JDK 계열 binary codec을 신뢰된 Redis 데이터에 사용할 때만 필요합니다.
+    trustedBinaryCache = true,
 ) {
     override val table = UserTable
 
@@ -142,6 +144,8 @@ class SuspendedUserRedissonRepository(
 ): AbstractSuspendedJdbcRedissonRepository<Long, UserRecord>(
     redissonClient = redissonClient,
     config = config,
+    // Fory/Kryo/JDK 계열 binary codec을 신뢰된 Redis 데이터에 사용할 때만 필요합니다.
+    trustedBinaryCache = true,
 ) {
     override val table = UserTable
 
@@ -211,6 +215,13 @@ val deleteFromDbConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(
 )
 ```
 
+## Redis Codec 안전성
+
+`RedissonCacheConfig` 상수는 기본적으로 Fory 계열 binary codec을 사용합니다. Repository 생성자는
+`trustedBinaryCache = true`를 명시하지 않으면 Fory/Kryo/JDK 계열 binary codec을 거부합니다. 이 opt-in은
+Redis 인스턴스가 private이고, Redis 내용을 신뢰할 수 없는 클라이언트가 쓸 수 없는 경우에만 사용하세요.
+dependency 경계에 놓인 Redis 데이터에는 기본 binary codec 대신 검토된 custom codec을 제공하세요.
+
 ### 4. Write-Through / Write-Behind Repository 구현
 
 Write-Through/Write-Behind 모드에서는 `UpdateStatement.updateEntity`와 `BatchInsertStatement.insertEntity`를 추가로 구현합니다.
@@ -221,6 +232,7 @@ class UserWriteThroughRepository(
 ): AbstractJdbcRedissonRepository<Long, UserRecord>(
     redissonClient = redissonClient,
     config = RedissonCacheConfig.READ_WRITE_THROUGH.copy(name = "users:write-through"),
+    trustedBinaryCache = true,
 ) {
     override val table = UserTable
 
@@ -330,6 +342,7 @@ Suspend write-behind 경로는 Redis가 값을 받은 뒤에 재개됩니다. DB
 | `AbstractJdbcRedissonRepository.kt`          | 동기식 캐시 Repository 추상 클래스            |
 | `SuspendedJdbcRedissonRepository.kt`         | 코루틴 캐시 Repository 인터페이스             |
 | `AbstractSuspendedJdbcRedissonRepository.kt` | 코루틴 캐시 Repository 추상 클래스            |
+| `ExposedRedissonCodecSafety.kt`              | 신뢰된 binary codec opt-in guard              |
 
 ### Map (map/)
 

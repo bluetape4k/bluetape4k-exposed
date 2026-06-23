@@ -16,7 +16,8 @@ class R2dbcUserRedissonRepository(
     config: RedissonCacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(name = "exposed:remote:r2dbc:users"),
 ): AbstractR2dbcRedissonRepository<Long, UserSchema.UserRecord>(
     redissonClient,
-    config
+    config,
+    trustedBinaryCache = true
 ) {
     companion object: KLoggingChannel()
 

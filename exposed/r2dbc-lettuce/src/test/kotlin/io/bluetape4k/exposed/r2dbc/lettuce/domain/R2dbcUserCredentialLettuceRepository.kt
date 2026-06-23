@@ -4,6 +4,7 @@ import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema.UserCredentialsReco
 import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema.UserCredentialsTable
 import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema.toUserCredentialsRecord
 import io.bluetape4k.exposed.r2dbc.lettuce.repository.AbstractR2dbcLettuceRepository
+import io.bluetape4k.exposed.r2dbc.lettuce.repository.ExposedR2dbcLettuceCodecs
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.lettuce.core.RedisClient
@@ -22,7 +23,11 @@ import java.util.*
 class R2dbcUserCredentialLettuceRepository(
     client: RedisClient,
     config: LettuceCacheConfig = LettuceCacheConfig.READ_WRITE_THROUGH,
-): AbstractR2dbcLettuceRepository<UUID, UserCredentialsRecord>(client, config) {
+): AbstractR2dbcLettuceRepository<UUID, UserCredentialsRecord>(
+    client,
+    config,
+    ExposedR2dbcLettuceCodecs.jackson3(UserCredentialsRecord::class.java)
+) {
     companion object: KLoggingChannel()
 
     override val table: IdTable<UUID> = UserCredentialsTable

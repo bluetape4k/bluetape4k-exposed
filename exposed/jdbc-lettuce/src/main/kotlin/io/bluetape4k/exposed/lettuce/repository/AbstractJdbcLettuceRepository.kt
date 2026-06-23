@@ -2,14 +2,15 @@ package io.bluetape4k.exposed.lettuce.repository
 
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
+import io.bluetape4k.exposed.lettuce.map.ExposedLettuceLoadedMap
 import io.bluetape4k.exposed.lettuce.map.ExposedEntityMapLoader
 import io.bluetape4k.exposed.lettuce.map.ExposedEntityMapWriter
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.warn
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
-import io.bluetape4k.redis.lettuce.map.LettuceLoadedMap
 import io.bluetape4k.redis.lettuce.map.WriteMode
 import io.lettuce.core.RedisClient
+import io.lettuce.core.codec.RedisCodec
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -57,8 +58,14 @@ import java.io.Serializable
 abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
     client: RedisClient,
     override val config: LettuceCacheConfig = LettuceCacheConfig.READ_WRITE_THROUGH,
+    private val valueCodec: RedisCodec<String, E> = ExposedLettuceCodecs.requireExplicit(),
 ): JdbcLettuceRepository<ID, E> {
     companion object: KLogging()
+
+    init {
+        ExposedLettuceCodecs.requireConfigured(valueCodec)
+    }
+
     abstract override val table: IdTable<ID>
 
     abstract override fun ResultRow.toEntity(): E
@@ -81,8 +88,8 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
             WriteMode.WRITE_BEHIND  -> CacheWriteMode.WRITE_BEHIND
         }
 
-    override val cache: LettuceLoadedMap<ID, E> by lazy {
-        LettuceLoadedMap(
+    override val cache: ExposedLettuceLoadedMap<ID, E> by lazy {
+        ExposedLettuceLoadedMap(
             client = client,
             loader =
                 ExposedEntityMapLoader(
@@ -99,7 +106,8 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
                     retryInterval = config.writeRetryInterval
                 ),
             config = config,
-            keySerializer = ::serializeKey
+            keySerializer = ::serializeKey,
+            valueCodec = valueCodec
         )
     }
 

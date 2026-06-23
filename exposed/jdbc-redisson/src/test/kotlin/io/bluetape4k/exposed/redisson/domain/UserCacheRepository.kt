@@ -18,7 +18,8 @@ class UserCacheRepository(
     config: RedissonCacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(name = "exposed:remote:users"),
 ): AbstractJdbcRedissonRepository<Long, UserRecord>(
     redissonClient,
-    config
+    config,
+    trustedBinaryCache = true
 ) {
     companion object: KLogging()
 

@@ -2,7 +2,7 @@
 
 English | [한국어](./README.ko.md)
 
-A coroutine-native Read-through / Write-through / Write-behind cache repository module that combines Exposed R2DBC with Lettuce Redis. Data-access operations use `suspendTransaction` and the suspend `LettuceSuspendedLoadedMap`; no JDBC repository path is provided.
+A coroutine-native Read-through / Write-through / Write-behind cache repository module that combines Exposed R2DBC with Lettuce Redis. Data-access operations use `suspendTransaction` and the suspend `ExposedR2dbcLettuceSuspendedLoadedMap`; no JDBC repository path is provided.
 
 ## Overview
 
@@ -13,7 +13,7 @@ A coroutine-native Read-through / Write-through / Write-behind cache repository 
 - **Write-through / Write-behind**: On `save`, reflects changes in Redis and DB simultaneously (or asynchronously)
 - **NearCache support**: Optional 2-tier cache with Caffeine local cache (front) + Redis (back)
 - **Coroutine repository**: `R2dbcLettuceRepository` / `AbstractR2dbcLettuceRepository`
-- **MapLoader / MapWriter**: R2DBC-based implementations for Lettuce `LettuceSuspendedLoadedMap` integration
+- **MapLoader / MapWriter**: R2DBC-based implementations for repository loaded-map integration
     - `loadAllKeys()` iterates stably in ascending PK order
     - `chunkSize` (writer) and `batchSize` (loader) must be greater than 0
 
@@ -41,6 +41,7 @@ dependencies {
 
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.lettuce.repository.AbstractR2dbcLettuceRepository
+import io.bluetape4k.exposed.r2dbc.lettuce.repository.ExposedR2dbcLettuceCodecs
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.lettuce.core.RedisClient
 
@@ -50,6 +51,7 @@ class UserR2dbcLettuceRepository(redisClient: RedisClient):
     AbstractR2dbcLettuceRepository<Long, UserRecord>(
         client = redisClient,
         config = LettuceCacheConfig.READ_WRITE_THROUGH,
+        valueCodec = ExposedR2dbcLettuceCodecs.jackson3(UserRecord::class.java),
     ) {
     override val table = UserTable
 
@@ -106,6 +108,14 @@ suspend fun example(repo: UserR2dbcLettuceRepository) {
 | `READ_WRITE_BEHIND`  | On save, writes to Redis immediately; R2DBC DB is updated asynchronously |
 | `READ_ONLY`          | Stores in Redis only; no DB writes                                       |
 
+## Redis Codec Safety
+
+Repository constructors require an explicit `RedisCodec<String, E>` for values. The inherited
+Lettuce binary map codec uses LZ4/Fory, so it is not selected by default for repository data.
+Use `ExposedR2dbcLettuceCodecs.jackson3(Entity::class.java)` or provide a reviewed codec for
+your entity type. Fory/Kryo-family binary codecs should be used only when Redis contents are
+fully trusted and not shared with untrusted writers.
+
 ## NearCache Configuration
 
 Enable a Caffeine local cache (front) with `LettuceCacheConfig.nearCacheEnabled = true`.
@@ -129,7 +139,7 @@ When NearCache is enabled, the lookup order is: **Caffeine (local) → Redis →
 | DB driver              | JDBC (blocking)                                    | R2DBC (non-blocking)             |
 | Transaction            | `transaction {}` / `suspendedTransactionAsync(IO)` | `suspendTransaction {}`          |
 | `toEntity`             | Regular function (`fun`)                           | Suspend function (`suspend fun`) |
-| Uses `runBlocking`     | No (`LettuceSuspendedLoadedMap`)                   | No (`LettuceSuspendedLoadedMap`) |
+| Uses `runBlocking`     | No (`ExposedLettuceSuspendedLoadedMap`)            | No (`ExposedR2dbcLettuceSuspendedLoadedMap`) |
 | Synchronous repository | `JdbcLettuceRepository` provided                   | Not provided (suspend only)      |
 
 ## Key Files / Classes
@@ -137,7 +147,9 @@ When NearCache is enabled, the lookup order is: **Caffeine (local) → Redis →
 | File                                           | Description                                                                 |
 |------------------------------------------------|-----------------------------------------------------------------------------|
 | `repository/R2dbcLettuceRepository.kt`         | Suspend cache repository interface                                          |
-| `repository/AbstractR2dbcLettuceRepository.kt` | Abstract implementation (LettuceSuspendedLoadedMap + NearCache)             |
+| `repository/AbstractR2dbcLettuceRepository.kt` | Abstract implementation (ExposedR2dbcLettuceSuspendedLoadedMap + NearCache) |
+| `repository/ExposedR2dbcLettuceCodecs.kt`      | Explicit value codec helpers for repository Redis values                    |
+| `map/ExposedR2dbcLettuceSuspendedLoadedMap.kt` | Coroutine loaded map with caller-supplied value codec                       |
 | `map/R2dbcEntityMapLoader.kt`                  | Abstract MapLoader based on R2DBC `suspendTransaction`                      |
 | `map/R2dbcEntityMapWriter.kt`                  | Abstract MapWriter based on R2DBC `suspendTransaction` + Resilience4j Retry |
 | `map/R2dbcExposedEntityMapLoader.kt`           | MapLoader implementation based on Exposed R2DBC DSL                         |
