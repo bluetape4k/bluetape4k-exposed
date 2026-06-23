@@ -66,7 +66,7 @@ class TinkAeadBlobTransformer private constructor(
      * 평문 바이트 배열을 암호화된 [ExposedBlob]으로 변환합니다.
      *
      * ```kotlin
-     * val transformer = TinkAeadBlobTransformer(TinkAeads.AES256_GCM)
+     * val transformer = TinkAeadBlobTransformer(persistedAead)
      * val blob = transformer.unwrap("tink-aead-blob-source".toByteArray())
      * // blob is ExposedBlob
      * ```
@@ -81,7 +81,7 @@ class TinkAeadBlobTransformer private constructor(
      * DB에서 읽은 [ExposedBlob]을 복호화해 원본 바이트 배열로 변환합니다.
      *
      * ```kotlin
-     * val transformer = TinkAeadBlobTransformer(TinkAeads.AES256_GCM)
+     * val transformer = TinkAeadBlobTransformer(persistedAead)
      * val source = "tink-aead-blob-source".toByteArray()
      * val restored = transformer.wrap(transformer.unwrap(source))
      * // restored.contentEquals(source) == true

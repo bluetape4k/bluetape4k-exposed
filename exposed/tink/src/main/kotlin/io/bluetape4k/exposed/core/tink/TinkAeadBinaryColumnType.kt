@@ -2,7 +2,6 @@ package io.bluetape4k.exposed.core.tink
 
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.tink.aead.TinkAead
-import io.bluetape4k.tink.aead.TinkAeads
 import org.jetbrains.exposed.v1.core.BinaryColumnType
 import org.jetbrains.exposed.v1.core.ColumnTransformer
 import org.jetbrains.exposed.v1.core.ColumnWithTransform
@@ -19,7 +18,7 @@ import org.jetbrains.exposed.v1.core.ColumnWithTransform
  *
  * ```kotlin
  * object T1: IntIdTable("binary_secret_table") {
- *     val data = tinkAeadBinary("data", 512)
+ *     val data = tinkAeadBinary("data", 512, persistedAead)
  * }
  * val id = T1.insertAndGetId { it[data] = "민감한 데이터".toByteArray() }
  * val row = T1.selectAll().where { T1.id eq id }.single()
@@ -62,7 +61,7 @@ class TinkAeadBinaryColumnType private constructor(
  * - round-trip(`wrap(unwrap(x))`)은 원본 바이트 배열과 동일합니다.
  *
  * ```kotlin
- * val transformer = ByteArrayTinkAeadEncryptionTransformer(TinkAeads.AES256_GCM)
+ * val transformer = ByteArrayTinkAeadEncryptionTransformer(persistedAead)
  * val source = "tink-aead-binary-source".toByteArray()
  * val restored = transformer.wrap(transformer.unwrap(source))
  * // restored.contentEquals(source) == true
@@ -77,7 +76,7 @@ class ByteArrayTinkAeadEncryptionTransformer private constructor(
 ): ColumnTransformer<ByteArray, ByteArray> {
 
     constructor(
-        encryptor: TinkAead = TinkAeads.AES256_GCM,
+        encryptor: TinkAead,
     ): this(encryptor, EMPTY_TINK_ASSOCIATED_DATA.copyOf(), true)
 
     constructor(

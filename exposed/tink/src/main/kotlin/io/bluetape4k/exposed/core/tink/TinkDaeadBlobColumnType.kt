@@ -66,7 +66,7 @@ class TinkDaeadBlobTransformer private constructor(
      * 평문 바이트 배열을 결정적으로 암호화한 [ExposedBlob]으로 변환합니다.
      *
      * ```kotlin
-     * val transformer = TinkDaeadBlobTransformer(TinkDaeads.AES256_SIV)
+     * val transformer = TinkDaeadBlobTransformer(persistedDaead)
      * val blob1 = transformer.unwrap("deterministic-source".toByteArray())
      * val blob2 = transformer.unwrap("deterministic-source".toByteArray())
      * // blob1.bytes.contentEquals(blob2.bytes) == true (결정적 암호화)
@@ -82,7 +82,7 @@ class TinkDaeadBlobTransformer private constructor(
      * DB에서 읽은 [ExposedBlob]을 복호화해 원본 바이트 배열로 변환합니다.
      *
      * ```kotlin
-     * val transformer = TinkDaeadBlobTransformer(TinkDaeads.AES256_SIV)
+     * val transformer = TinkDaeadBlobTransformer(persistedDaead)
      * val source = "tink-daead-blob-source".toByteArray()
      * val restored = transformer.wrap(transformer.unwrap(source))
      * // restored.contentEquals(source) == true

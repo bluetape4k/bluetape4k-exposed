@@ -105,7 +105,7 @@ class TinkDaeadColumnTypeTest: AbstractExposedTest() {
     fun `DAEAD Binary 컬럼 길이가 0 이하이면 IllegalArgumentException 이 발생한다`(testDB: TestDB) {
         assertFailsWith<IllegalArgumentException> {
             object: IntIdTable("invalid_daead_binary_len_$testDB") {
-                val data = tinkDaeadBinary("data", 0)
+                val data = tinkDaeadBinary("data", 0, TinkDaeads.AES256_SIV)
             }
         }
     }
@@ -115,7 +115,7 @@ class TinkDaeadColumnTypeTest: AbstractExposedTest() {
     fun `DAEAD Binary 컬럼 이름이 blank 이면 IllegalArgumentException 이 발생한다`(testDB: TestDB) {
         assertFailsWith<IllegalArgumentException> {
             object: IntIdTable("invalid_daead_binary_name_$testDB") {
-                val data = tinkDaeadBinary("  ", 256)
+                val data = tinkDaeadBinary("  ", 256, TinkDaeads.AES256_SIV)
             }
         }
     }
@@ -204,7 +204,7 @@ class TinkDaeadColumnTypeTest: AbstractExposedTest() {
     fun `DAEAD Blob 컬럼 이름이 blank 이면 IllegalArgumentException 이 발생한다`(testDB: TestDB) {
         assertFailsWith<IllegalArgumentException> {
             object: IntIdTable("invalid_daead_blob_name_$testDB") {
-                val data = tinkDaeadBlob("")
+                val data = tinkDaeadBlob("", TinkDaeads.AES256_SIV)
             }
         }
     }
@@ -285,7 +285,7 @@ class TinkDaeadColumnTypeTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `DAEAD VarChar nullable 컬럼에 null 을 저장하고 조회한다`(testDB: TestDB) {
         val table = object: IntIdTable("tink_daead_varchar_null_$testDB") {
-            val email = tinkDaeadVarChar("email", 512).nullable()
+            val email = tinkDaeadVarChar("email", 512, TinkDaeads.AES256_SIV).nullable()
         }
 
         withTables(testDB, table) {
@@ -302,7 +302,7 @@ class TinkDaeadColumnTypeTest: AbstractExposedTest() {
     fun `DAEAD VarChar 컬럼 길이가 0 이하이면 IllegalArgumentException 이 발생한다`(testDB: TestDB) {
         assertFailsWith<IllegalArgumentException> {
             object: IntIdTable("invalid_daead_varchar_len_$testDB") {
-                val email = tinkDaeadVarChar("email", 0)
+                val email = tinkDaeadVarChar("email", 0, TinkDaeads.AES256_SIV)
             }
         }
     }
@@ -312,7 +312,7 @@ class TinkDaeadColumnTypeTest: AbstractExposedTest() {
     fun `DAEAD VarChar 컬럼 이름이 blank 이면 IllegalArgumentException 이 발생한다`(testDB: TestDB) {
         assertFailsWith<IllegalArgumentException> {
             object: IntIdTable("invalid_daead_varchar_name_$testDB") {
-                val email = tinkDaeadVarChar("", 256)
+                val email = tinkDaeadVarChar("", 256, TinkDaeads.AES256_SIV)
             }
         }
     }
