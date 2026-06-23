@@ -7,12 +7,15 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.UserR2dbcRepository
 import kotlinx.coroutines.test.runTest
+import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
+import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.beans.factory.annotation.Autowired
@@ -58,6 +61,45 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             val found = userRepository.findByEmailNative("alice@example.com")
             found shouldHaveSize 1
             found.first().name shouldBeEqualTo "Alice"
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `@Query native - active transaction 없이 호출해도 자체 transaction 에서 조회된다`(testDB: TestDB) = runTest {
+        val previousDefaultDatabase = TransactionManager.defaultDatabase
+        try {
+            withTables(testDB, Users, dropTables = false) {
+                createUsers()
+            }
+
+            TransactionManager.defaultDatabase = testDB.db
+            val found = userRepository.findByEmailNative("alice@example.com")
+
+            found shouldHaveSize 1
+            found.first().name shouldBeEqualTo "Alice"
+        } finally {
+            TransactionManager.defaultDatabase = previousDefaultDatabase
+            withDb(testDB) {
+                runCatching { SchemaUtils.drop(Users) }
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `@Query native - active transaction 내부에서는 미커밋 row 를 조회한다`(testDB: TestDB) = runTest {
+        withTables(testDB, Users) {
+            Users.insertAndGetId { row ->
+                row[name] = "Dana"
+                row[email] = "dana@example.com"
+                row[age] = 28
+            }
+
+            val found = userRepository.findByEmailNative("dana@example.com")
+
+            found shouldHaveSize 1
+            found.first().name shouldBeEqualTo "Dana"
         }
     }
 
