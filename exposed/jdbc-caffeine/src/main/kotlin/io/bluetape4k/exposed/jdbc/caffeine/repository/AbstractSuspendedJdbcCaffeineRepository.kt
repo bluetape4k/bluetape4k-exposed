@@ -11,6 +11,7 @@ import io.bluetape4k.logging.warn
 import io.bluetape4k.support.requirePositiveNumber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
@@ -18,6 +19,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.cancellation.CancellationException
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
@@ -128,14 +130,19 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
                         batch.add(next)
                     }
                     if (batch.isNotEmpty()) {
-                        flushBatch(batch)
-                        batch.clear()
+                        if (flushBatch(batch)) {
+                            batch.clear()
+                        }
                     }
                 }
             } finally {
                 // 채널 닫힌 후 남은 항목 처리
                 if (batch.isNotEmpty()) {
-                    flushBatch(batch)
+                    withContext(NonCancellable) {
+                        if (flushBatch(batch)) {
+                            batch.clear()
+                        }
+                    }
                 }
             }
         }
@@ -149,7 +156,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
      * 일반 DB 오류만 잡아서 로깅하고, 코루틴 취소는 상위로 전파합니다.
      */
     @Suppress("DEPRECATION")
-    private suspend fun flushBatch(batch: List<Pair<ID, E>>) {
+    private suspend fun flushBatch(batch: List<Pair<ID, E>>): Boolean {
         try {
             suspendedTransactionAsync(Dispatchers.IO) {
                 for ((id, entity) in batch) {
@@ -165,11 +172,13 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
                 }
             }.await()
             log.debug { "Write-Behind: ${batch.size}건 DB flush 완료" }
+            return true
         } catch (e: CancellationException) {
             // 코루틴 취소는 삼키지 않고 반드시 재전파한다
             throw e
         } catch (e: Exception) {
             log.warn(e) { "Write-Behind: ${batch.size}건 DB flush 실패" }
+            return false
         }
     }
 
@@ -284,18 +293,25 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
 
     override suspend fun put(id: ID, entity: E) {
         val key = serializeKey(id)
-        cache.put(key, entity)
 
         when (config.writeMode) {
-            CacheWriteMode.WRITE_THROUGH -> writeToDb(id, entity)
+            CacheWriteMode.WRITE_THROUGH -> {
+                cache.put(key, entity)
+                writeToDb(id, entity)
+            }
             CacheWriteMode.WRITE_BEHIND -> {
                 // Write-Behind Job 초기화 보장
                 writeBehindJob
-                writeBehindQueue.send(id to entity)
+                try {
+                    writeBehindQueue.send(id to entity)
+                    cache.put(key, entity)
+                } catch (e: Exception) {
+                    cache.invalidate(key)
+                    throw e
+                }
             }
 
-            else -> { /* READ_ONLY: 캐시만 갱신 */
-            }
+            else -> cache.put(key, entity)  // READ_ONLY: 캐시만 갱신
         }
     }
 
