@@ -20,6 +20,8 @@ import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.r2dbc.selectAll
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
+import org.jetbrains.exposed.v1.r2dbc.update
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -49,6 +51,34 @@ class ExposedR2dbcBatchJobRepositoryTest : AbstractBatchR2dbcTest() {
 
     private val batchTables = arrayOf(BatchJobExecutionTable, BatchStepExecutionTable)
 
+    private data class UnexpectedCheckpoint(val value: Long)
+
+    private data class TamperedCheckpointCase(
+        val label: String,
+        val className: String,
+        val payload: String,
+    ) {
+        val json: String = """{"className":"$className","payload":"$payload"}"""
+    }
+
+    private val tamperedCheckpointCases = listOf(
+        TamperedCheckpointCase(
+            label = "unknown",
+            className = "com.example.DoesNotExist",
+            payload = "{}",
+        ),
+        TamperedCheckpointCase(
+            label = "disallowed",
+            className = "java.lang.Runtime",
+            payload = "{}",
+        ),
+        TamperedCheckpointCase(
+            label = "unexpected",
+            className = UnexpectedCheckpoint::class.java.name,
+            payload = """{\"value\":1}""",
+        ),
+    )
+
     private suspend fun withRepoTables(
         testDB: TestDB,
         block: suspend ExposedR2dbcBatchJobRepository.() -> Unit,
@@ -60,6 +90,14 @@ class ExposedR2dbcBatchJobRepositoryTest : AbstractBatchR2dbcTest() {
             commit()
             val repo = ExposedR2dbcBatchJobRepository(db.db.requireNotNull("db.db"), CheckpointJson.jackson3())
             repo.block()
+        }
+    }
+
+    private suspend fun tamperCheckpoint(testDB: TestDB, stepExecutionId: Long, checkpoint: String) {
+        suspendTransaction(db = testDB.db.requireNotNull("testDB.db")) {
+            BatchStepExecutionTable.update({ BatchStepExecutionTable.id eq stepExecutionId }) { row ->
+                row[BatchStepExecutionTable.checkpoint] = checkpoint
+            }
         }
     }
 
@@ -198,6 +236,28 @@ class ExposedR2dbcBatchJobRepositoryTest : AbstractBatchR2dbcTest() {
                 val se = findOrCreateStepExecution(je, "step1")
 
                 loadCheckpoint(se.id) shouldBe null
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `Checkpoint 변조 - 등록되지 않은 className 은 loadCheckpoint에서 거부`(testDB: TestDB) {
+        runSuspendIO {
+            withRepoTables(testDB) {
+                val je = findOrCreateJobExecution("tamperedCpJob", emptyMap())
+
+                tamperedCheckpointCases.forEachIndexed { index, case ->
+                    val se = findOrCreateStepExecution(je, "tampered-step-${case.label}-$index")
+
+                    tamperCheckpoint(testDB, se.id, case.json)
+
+                    val error = assertFailsWith<IllegalArgumentException> {
+                        loadCheckpoint(se.id)
+                    }
+
+                    error.message.shouldNotBeNull() shouldContain case.className
+                }
             }
         }
     }

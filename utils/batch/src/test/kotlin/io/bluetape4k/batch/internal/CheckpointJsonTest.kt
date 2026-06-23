@@ -1,11 +1,13 @@
 package io.bluetape4k.batch.internal
 
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldNotBeNull
 import org.junit.jupiter.api.Test
-import io.bluetape4k.assertions.assertFailsWith
+
+private data class KeyState(val lastId: Long, val pageIndex: Int)
 
 /**
  * [CheckpointJson] round-trip 및 classpath 오류 테스트.
@@ -58,8 +60,8 @@ class CheckpointJsonTest {
     }
 
     @Test
-    fun `data class round-trip`() {
-        data class KeyState(val lastId: Long, val pageIndex: Int)
+    fun `registered data class round-trip`() {
+        val sut = CheckpointJson.jackson3(KeyState::class)
         val original = KeyState(lastId = 999L, pageIndex = 5)
 
         val json = sut.write(original)
@@ -69,6 +71,15 @@ class CheckpointJsonTest {
         val restoredState = restored as KeyState
         restoredState.lastId shouldBeEqualTo 999L
         restoredState.pageIndex shouldBeEqualTo 5
+    }
+
+    @Test
+    fun `unregistered data class write is rejected`() {
+        val original = KeyState(lastId = 999L, pageIndex = 5)
+
+        assertFailsWith<IllegalArgumentException> {
+            sut.write(original)
+        }.shouldNotBeNull()
     }
 
     @Test
