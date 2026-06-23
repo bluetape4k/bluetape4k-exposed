@@ -252,12 +252,12 @@ abstract class AbstractR2dbcLettuceRepository<ID: Any, E: Serializable>(
     // -------------------------------------------------------------------------
 
     override suspend fun invalidate(id: ID) {
-        cache.delete(id)
+        cache.evict(id)
         nearCache?.remove(serializeKey(id))
     }
 
     override suspend fun invalidateAll(ids: Collection<ID>) {
-        cache.deleteAll(ids)
+        cache.evictAll(ids)
         nearCache?.removeAll(ids.map { serializeKey(it) }.toSet())
     }
 

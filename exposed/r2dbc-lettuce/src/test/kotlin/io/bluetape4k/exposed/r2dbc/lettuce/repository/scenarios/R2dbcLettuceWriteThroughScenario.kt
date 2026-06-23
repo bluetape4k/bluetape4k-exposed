@@ -15,7 +15,7 @@ import java.io.Serializable
  * Write-through 캐시 전략 R2DBC Lettuce 시나리오.
  *
  * - put() 시 Redis와 DB를 즉시 갱신
- * - invalidate() 시 Redis와 DB를 모두 삭제
+ * - invalidate() 시 Redis 캐시만 제거하고 DB는 유지
  */
 interface R2dbcLettuceWriteThroughScenario<ID: Any, E: Serializable>: R2DbcLettuceJCacheTestScenario<ID, E> {
     companion object: KLoggingChannel()
@@ -57,30 +57,32 @@ interface R2dbcLettuceWriteThroughScenario<ID: Any, E: Serializable>: R2DbcLettu
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `invalidate - 캐시와 DB 모두에서 삭제된다`(testDB: TestDB) =
+    fun `invalidate - 캐시에서만 삭제하고 DB는 유지된다`(testDB: TestDB) =
         runTest {
             withR2dbcEntityTable(testDB) {
                 val id = getExistingId()
-                repository.put(id, repository.findByIdFromDb(id)!!)
+                val entity = repository.findByIdFromDb(id).shouldNotBeNull()
+                repository.put(id, entity)
                 repository.invalidate(id)
 
-                repository.get(id).shouldBeNull()
-                repository.findByIdFromDb(id).shouldBeNull()
+                repository.findByIdFromDb(id) shouldBeEqualTo entity
+                repository.get(id) shouldBeEqualTo entity
             }
         }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `invalidateAll - 복수 ID를 한번에 삭제한다`(testDB: TestDB) =
+    fun `invalidateAll - 복수 ID를 캐시에서만 삭제하고 DB는 유지된다`(testDB: TestDB) =
         runTest {
             withR2dbcEntityTable(testDB) {
                 val ids = getExistingIds()
-                ids.forEach { id -> repository.put(id, repository.findByIdFromDb(id)!!) }
+                val entities = ids.associateWith { id -> repository.findByIdFromDb(id).shouldNotBeNull() }
+                entities.forEach { (id, entity) -> repository.put(id, entity) }
                 repository.invalidateAll(ids)
 
-                ids.forEach { id ->
-                    repository.get(id).shouldBeNull()
-                    repository.findByIdFromDb(id).shouldBeNull()
+                entities.forEach { (id, entity) ->
+                    repository.findByIdFromDb(id) shouldBeEqualTo entity
+                    repository.get(id) shouldBeEqualTo entity
                 }
             }
         }
