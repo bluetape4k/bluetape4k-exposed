@@ -7,6 +7,7 @@ import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.core.auditable.Auditable
 import io.bluetape4k.exposed.core.auditable.AuditableLongIdTable
 import io.bluetape4k.exposed.core.auditable.UserContext
+import io.bluetape4k.exposed.r2dbc.virtualThreadTransaction
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
@@ -163,6 +164,30 @@ class AuditableR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
             val article = ArticleRepository.findById(id)
             article.updatedBy shouldBeEqualTo UserContext.DEFAULT_USERNAME
+            article.updatedAt.shouldNotBeNull()
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `withCoroutineUser 는 virtual thread transaction 의 감사 사용자명에 전파된다`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, ArticleTable) {
+            val id = UserContext.withCoroutineUser("coroutine-editor") {
+                virtualThreadTransaction(db = this@withTables.db) {
+                    val articleId = insertArticle(title = "coroutine-created")
+
+                    ArticleRepository.auditedUpdateById(articleId) {
+                        it[title] = "coroutine-user"
+                    }
+
+                    articleId
+                }
+            }
+
+            val article = ArticleRepository.findById(id)
+            article.title shouldBeEqualTo "coroutine-user"
+            article.createdBy shouldBeEqualTo "coroutine-editor"
+            article.updatedBy shouldBeEqualTo "coroutine-editor"
             article.updatedAt.shouldNotBeNull()
         }
     }

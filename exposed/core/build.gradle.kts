@@ -8,6 +8,7 @@ dependencies {
     // Exposed
     implementation(platform(libs.exposed.bom))
     api(libs.exposed.core)
+    api(libs.kotlinx.coroutines.core)
     compileOnly(libs.exposed.jdbc)
     compileOnly(libs.exposed.dao)
     compileOnly(libs.exposed.crypt)
@@ -44,6 +45,7 @@ dependencies {
     compileOnly(libs.libphonenumber)
 
     testImplementation(libs.bluetape4k.junit5)
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.bluetape4k.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.mariadb)
