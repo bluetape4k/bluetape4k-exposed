@@ -40,6 +40,16 @@ mode:
 - `DELETE`: remove the active row after successful completion.
 - `ARCHIVE`: copy the row to `EVENT_PUBLICATION_ARCHIVE` with a savepoint, then delete the active row.
 
+## Unloadable Event Types
+
+Rows whose `EVENT_TYPE` can no longer be loaded remain visible through incomplete, failed, and status queries.
+This keeps undelivered publications available to operators after package renames, dependency drift, or classpath
+mistakes. Accessing `publication.event` for those rows throws `UnloadableEventPublicationException` with the
+publication id, listener id, and event type.
+
+Restore the event class on the classpath, migrate the event type and payload, or explicitly delete/resubmit the row
+after correcting the stored publication. Do not treat an unloadable event type as a delivered publication.
+
 ## Configuration
 
 ```yaml

@@ -39,6 +39,16 @@ Repository는 애플리케이션과 같은 `DataSource` 및 Exposed
 - `DELETE`: 완료된 active row를 제거합니다.
 - `ARCHIVE`: savepoint로 archive table에 복사한 뒤 active row를 삭제합니다.
 
+## 로드할 수 없는 이벤트 타입
+
+`EVENT_TYPE`을 더 이상 로드할 수 없는 row도 incomplete, failed, status query에서 계속 보입니다. package rename,
+dependency drift, classpath 문제 이후에도 미전달 publication을 운영자가 확인할 수 있게 하기 위해서입니다.
+이런 row에서 `publication.event`에 접근하면 publication id, listener id, event type을 담은
+`UnloadableEventPublicationException`이 발생합니다.
+
+운영자는 event class를 classpath에 복구하거나, event type과 payload를 마이그레이션하거나, 저장된 publication을
+수정한 뒤 명시적으로 삭제 또는 재전송해야 합니다. 로드할 수 없는 event type을 전달 완료로 간주하면 안 됩니다.
+
 ## 설정
 
 ```yaml
