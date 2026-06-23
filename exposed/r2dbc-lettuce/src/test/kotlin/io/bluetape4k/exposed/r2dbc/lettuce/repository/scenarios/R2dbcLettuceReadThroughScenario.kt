@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.r2dbc.lettuce.repository.scenarios
 
+import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.r2dbc.lettuce.repository.scenarios.R2DbcLettuceJCacheTestScenario.Companion.ENABLE_DIALECTS_METHOD
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.logging.coroutines.KLoggingChannel
@@ -7,6 +8,7 @@ import kotlinx.coroutines.test.runTest
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.io.Serializable
@@ -86,9 +88,11 @@ interface R2dbcLettuceReadThroughScenario<ID: Any, E: Serializable>: R2DbcLettuc
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `invalidate - 캐시 엔트리를 삭제하면 get은 null을 반환한다`(testDB: TestDB) =
+    fun `invalidate - READ_ONLY 캐시 엔트리를 제거하면 get은 null을 반환한다`(testDB: TestDB) =
         runTest {
             withR2dbcEntityTable(testDB) {
+                assumeTrue(repository.cacheWriteMode == CacheWriteMode.READ_ONLY)
+
                 val id = getNonExistentId()
                 repository.put(id, buildEntityForId(id))
                 repository.invalidate(id)

@@ -13,11 +13,13 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
+import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.select
@@ -153,12 +155,11 @@ class R2dbcLettuceRepositoryExtrasTest: AbstractR2dbcLettuceTest() {
                 // 한 번에 무효화
                 repository.invalidateAll(ids)
 
-                // READ_WRITE_THROUGH 모드에서는 invalidate 시 DB에서도 삭제되므로
-                // get 후에도 null을 반환한다
+                // READ_WRITE_THROUGH 모드에서도 invalidate 는 캐시만 제거한다.
+                // get 은 DB에서 다시 read-through 한다.
                 ids.forEach { id ->
-                    repository.get(id)
+                    repository.get(id) shouldBeEqualTo repository.findByIdFromDb(id).shouldNotBeNull()
                 }
-                // (최소한 예외 없이 정상 동작하는지 확인)
             }
         }
 

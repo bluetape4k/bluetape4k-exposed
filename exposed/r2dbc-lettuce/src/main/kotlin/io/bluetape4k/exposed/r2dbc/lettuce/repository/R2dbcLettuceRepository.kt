@@ -19,7 +19,7 @@ import java.io.Serializable
  * - `get`/`getAll(ids)` — 캐시 미스 시 DB에서 Read-through하여 Redis에 캐싱합니다.
  * - `findByIdFromDb`/`findAllFromDb` — 캐시를 우회하고 DB에서 직접 조회합니다.
  * - `put`/`putAll` — [LettuceCacheConfig.writeMode]에 따라 Redis에 저장하고, WRITE_THROUGH이면 DB에도 즉시 반영합니다.
- * - `invalidate`/`invalidateAll` — Redis와 DB를 함께 삭제합니다 (NONE 모드에서는 Redis만 삭제).
+ * - `invalidate`/`invalidateAll` — Redis 캐시만 제거하고 DB에는 영향을 주지 않습니다.
  * - `clear` — Redis에서 이 레포지토리의 키를 전부 삭제합니다.
  *
  * @param ID PK 타입 ([Comparable] 구현 필요)
