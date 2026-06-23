@@ -9,6 +9,7 @@ dependencies {
     api(libs.bluetape4k.cache.lettuce)
     api(project(":bluetape4k-exposed-r2dbc"))
     api(project(":bluetape4k-exposed-cache"))
+    api(libs.bluetape4k.jackson3)
     api(libs.bluetape4k.resilience4j)
     api(libs.resilience4j.retry)
 
