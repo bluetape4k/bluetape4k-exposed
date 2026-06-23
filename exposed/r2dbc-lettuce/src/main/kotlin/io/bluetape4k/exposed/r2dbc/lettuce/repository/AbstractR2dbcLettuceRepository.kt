@@ -4,12 +4,13 @@ import io.bluetape4k.cache.nearcache.LettuceNearCacheConfig
 import io.bluetape4k.cache.nearcache.LettuceSuspendNearCache
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
+import io.bluetape4k.exposed.r2dbc.lettuce.map.ExposedR2dbcLettuceSuspendedLoadedMap
 import io.bluetape4k.exposed.r2dbc.lettuce.map.R2dbcExposedEntityMapLoader
 import io.bluetape4k.exposed.r2dbc.lettuce.map.R2dbcExposedEntityMapWriter
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
-import io.bluetape4k.redis.lettuce.map.LettuceSuspendedLoadedMap
 import io.bluetape4k.redis.lettuce.map.WriteMode
 import io.lettuce.core.RedisClient
+import io.lettuce.core.codec.RedisCodec
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.singleOrNull
@@ -31,7 +32,7 @@ import java.io.Serializable
 /**
  * Exposed R2DBC + Lettuce Redis 캐시를 결합한 추상 레포지토리.
  *
- * `runBlocking` 없이 코루틴 네이티브 [LettuceSuspendedLoadedMap]을 사용한다.
+ * `runBlocking` 없이 코루틴 네이티브 [ExposedR2dbcLettuceSuspendedLoadedMap]을 사용한다.
  *
  * 서브클래스는 4개 추상 멤버를 구현한다:
  * - [table]: Exposed [IdTable]
@@ -47,7 +48,12 @@ import java.io.Serializable
 abstract class AbstractR2dbcLettuceRepository<ID: Any, E: Serializable>(
     private val client: RedisClient,
     override val config: LettuceCacheConfig = LettuceCacheConfig.READ_WRITE_THROUGH,
+    private val valueCodec: RedisCodec<String, E> = ExposedR2dbcLettuceCodecs.requireExplicit(),
 ): R2dbcLettuceRepository<ID, E> {
+    init {
+        ExposedR2dbcLettuceCodecs.requireConfigured(valueCodec)
+    }
+
     abstract override val table: IdTable<ID>
 
     /** [ResultRow]를 엔티티 [E]로 변환하는 suspend 함수 */
@@ -99,8 +105,8 @@ abstract class AbstractR2dbcLettuceRepository<ID: Any, E: Serializable>(
         }
     }
 
-    override val cache: LettuceSuspendedLoadedMap<ID, E> by lazy {
-        LettuceSuspendedLoadedMap(
+    override val cache: ExposedR2dbcLettuceSuspendedLoadedMap<ID, E> by lazy {
+        ExposedR2dbcLettuceSuspendedLoadedMap(
             client = client,
             loader =
                 R2dbcExposedEntityMapLoader(
@@ -117,7 +123,8 @@ abstract class AbstractR2dbcLettuceRepository<ID: Any, E: Serializable>(
                     retryInterval = config.writeRetryInterval
                 ),
             config = config,
-            keySerializer = ::serializeKey
+            keySerializer = ::serializeKey,
+            valueCodec = valueCodec
         )
     }
 

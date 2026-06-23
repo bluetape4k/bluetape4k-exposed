@@ -17,7 +17,8 @@ class SuspendedUserCacheRepository(
     config: RedissonCacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(name = "exposed:remote:suspended:users"),
 ): AbstractSuspendedJdbcRedissonRepository<Long, UserRecord>(
     redissonClient,
-    config
+    config,
+    trustedBinaryCache = true
 ) {
     companion object: KLoggingChannel()
 

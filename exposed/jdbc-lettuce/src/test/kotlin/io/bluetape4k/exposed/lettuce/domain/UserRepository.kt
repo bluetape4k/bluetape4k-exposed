@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.lettuce.domain
 import io.bluetape4k.exposed.lettuce.domain.UserSchema.UserRecord
 import io.bluetape4k.exposed.lettuce.domain.UserSchema.UserTable
 import io.bluetape4k.exposed.lettuce.repository.AbstractJdbcLettuceRepository
+import io.bluetape4k.exposed.lettuce.repository.ExposedLettuceCodecs
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.lettuce.core.RedisClient
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -20,7 +21,11 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 class UserRepository(
     client: RedisClient,
     config: LettuceCacheConfig = LettuceCacheConfig.READ_WRITE_THROUGH,
-): AbstractJdbcLettuceRepository<Long, UserRecord>(client, config) {
+): AbstractJdbcLettuceRepository<Long, UserRecord>(
+    client,
+    config,
+    ExposedLettuceCodecs.jackson3(UserRecord::class.java)
+) {
     override val table: IdTable<Long> = UserTable
 
     override fun ResultRow.toEntity(): UserRecord =

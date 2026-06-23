@@ -12,7 +12,7 @@ A Read-through / Write-through / Write-behind cache repository module that combi
 - **Write-through / Write-behind**: On `save`, reflects changes in Redis and DB simultaneously (or asynchronously)
 - **Synchronous repository**: `JdbcLettuceRepository` / `AbstractJdbcLettuceRepository`
 - **Coroutine repository**: `SuspendedJdbcLettuceRepository` / `AbstractSuspendedJdbcLettuceRepository`
-- **MapLoader / MapWriter**: Exposed-based implementations for Lettuce `LettuceLoadedMap` integration
+- **MapLoader / MapWriter**: Exposed-based implementations for repository loaded-map integration
     - `loadAllKeys()` iterates stably in ascending PK order
     - `chunkSize` (writer) and `batchSize` (loader) must be greater than 0
 
@@ -26,7 +26,7 @@ dependencies {
 
 ## Architecture Overview
 
-This architecture view separates the blocking repository, the suspend repository, the Redis loaded-map layer, and the Exposed JDBC loader/writer path. NearCache is shown only on the suspend path because the blocking repository goes straight through `LettuceLoadedMap`.
+This architecture view separates the blocking repository, the suspend repository, the Redis loaded-map layer, and the Exposed JDBC loader/writer path. NearCache is shown only on the suspend path because the blocking repository goes straight through `ExposedLettuceLoadedMap`.
 
 ![JDBC Lettuce Redis cache architecture diagram](../../docs/images/readme-diagrams/exposed-jdbc-lettuce-diagram-01.png)
 
@@ -40,6 +40,7 @@ The sequence view follows the read-through, write-through/write-behind, and inva
 
 ```kotlin
 import io.bluetape4k.exposed.lettuce.repository.AbstractJdbcLettuceRepository
+import io.bluetape4k.exposed.lettuce.repository.ExposedLettuceCodecs
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.lettuce.core.RedisClient
 
@@ -49,6 +50,7 @@ class UserLettuceRepository(redisClient: RedisClient):
     AbstractJdbcLettuceRepository<Long, UserRecord>(
         client = redisClient,
         config = LettuceCacheConfig.READ_WRITE_THROUGH,
+        valueCodec = ExposedLettuceCodecs.jackson3(UserRecord::class.java),
     ) {
     override val table = UserTable
 
@@ -88,6 +90,7 @@ class UserSuspendedRepository(redisClient: RedisClient):
     AbstractSuspendedJdbcLettuceRepository<Long, UserRecord>(
         client = redisClient,
         config = LettuceCacheConfig.READ_WRITE_THROUGH,
+        valueCodec = ExposedLettuceCodecs.jackson3(UserRecord::class.java),
     ) {
     override val table = UserTable
     override fun ResultRow.toEntity() = /* ... */
@@ -128,14 +131,25 @@ suspend fun example(repo: UserSuspendedRepository) {
 | `READ_WRITE_BEHIND`  | On save, writes to Redis immediately; DB is updated asynchronously |
 | `READ_ONLY`          | Stores in Redis only; no DB writes                                 |
 
+## Redis Codec Safety
+
+Repository constructors require an explicit `RedisCodec<String, E>` for values. The inherited
+Lettuce binary map codec uses LZ4/Fory, so it is not selected by default for repository data.
+Use `ExposedLettuceCodecs.jackson3(Entity::class.java)` or provide a reviewed codec for your
+entity type. Fory/Kryo-family binary codecs should be used only when Redis contents are fully
+trusted and not shared with untrusted writers.
+
 ## Key Files / Classes
 
 | File                                                   | Description                                                               |
 |--------------------------------------------------------|---------------------------------------------------------------------------|
 | `repository/JdbcLettuceRepository.kt`                  | Synchronous cache repository interface                                    |
 | `repository/SuspendedJdbcLettuceRepository.kt`         | Coroutine cache repository interface                                      |
-| `repository/AbstractJdbcLettuceRepository.kt`          | Synchronous abstract implementation (LettuceLoadedMap-based)              |
-| `repository/AbstractSuspendedJdbcLettuceRepository.kt` | Coroutine abstract implementation (LettuceSuspendedLoadedMap + NearCache) |
+| `repository/AbstractJdbcLettuceRepository.kt`          | Synchronous abstract implementation (ExposedLettuceLoadedMap-based)       |
+| `repository/AbstractSuspendedJdbcLettuceRepository.kt` | Coroutine abstract implementation (ExposedLettuceSuspendedLoadedMap + NearCache) |
+| `repository/ExposedLettuceCodecs.kt`                   | Explicit value codec helpers for repository Redis values                  |
+| `map/ExposedLettuceLoadedMap.kt`                       | Synchronous loaded map with caller-supplied value codec                   |
+| `map/ExposedLettuceSuspendedLoadedMap.kt`              | Coroutine loaded map with caller-supplied value codec                     |
 | `map/EntityMapLoader.kt`                               | Abstract base class for MapLoader                                         |
 | `map/EntityMapWriter.kt`                               | Abstract base class for MapWriter (with built-in Resilience4j Retry)      |
 | `map/ExposedEntityMapLoader.kt`                        | Exposed DSL-based synchronous MapLoader                                   |

@@ -4,14 +4,15 @@ import io.bluetape4k.cache.nearcache.LettuceNearCacheConfig
 import io.bluetape4k.cache.nearcache.LettuceSuspendNearCache
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
+import io.bluetape4k.exposed.lettuce.map.ExposedLettuceSuspendedLoadedMap
 import io.bluetape4k.exposed.lettuce.map.SuspendedExposedEntityMapLoader
 import io.bluetape4k.exposed.lettuce.map.SuspendedExposedEntityMapWriter
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.warn
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
-import io.bluetape4k.redis.lettuce.map.LettuceSuspendedLoadedMap
 import io.bluetape4k.redis.lettuce.map.WriteMode
 import io.lettuce.core.RedisClient
+import io.lettuce.core.codec.RedisCodec
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.core.Expression
@@ -30,7 +31,7 @@ import java.io.Serializable
 /**
  * Exposed JDBC + Lettuce Redis 캐시를 결합한 suspend(코루틴) 기반 추상 레포지토리.
  *
- * [LettuceSuspendedLoadedMap]을 사용하여 `runBlocking` 없이 코루틴 네이티브로 동작한다.
+ * [ExposedLettuceSuspendedLoadedMap]을 사용하여 `runBlocking` 없이 코루틴 네이티브로 동작한다.
  *
  * 서브클래스는 4개 추상 멤버를 구현한다:
  * - [table]: Exposed [IdTable]
@@ -63,8 +64,14 @@ import java.io.Serializable
 abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     private val client: RedisClient,
     override val config: LettuceCacheConfig = LettuceCacheConfig.READ_WRITE_THROUGH,
+    private val valueCodec: RedisCodec<String, E> = ExposedLettuceCodecs.requireExplicit(),
 ): SuspendedJdbcLettuceRepository<ID, E> {
     companion object: KLoggingChannel()
+
+    init {
+        ExposedLettuceCodecs.requireConfigured(valueCodec)
+    }
+
     abstract override val table: IdTable<ID>
 
     abstract override fun ResultRow.toEntity(): E
@@ -104,8 +111,8 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
         }
     }
 
-    override val cache: LettuceSuspendedLoadedMap<ID, E> by lazy {
-        LettuceSuspendedLoadedMap(
+    override val cache: ExposedLettuceSuspendedLoadedMap<ID, E> by lazy {
+        ExposedLettuceSuspendedLoadedMap(
             client = client,
             loader =
                 SuspendedExposedEntityMapLoader(
@@ -126,7 +133,8 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
                     retryInterval = config.writeRetryInterval
                 ),
             config = config,
-            keySerializer = ::serializeKey
+            keySerializer = ::serializeKey,
+            valueCodec = valueCodec
         )
     }
 

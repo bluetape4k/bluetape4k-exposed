@@ -1,9 +1,9 @@
 package io.bluetape4k.exposed.r2dbc.lettuce.repository
 
 import io.bluetape4k.exposed.cache.redis.R2dbcRedisRepository
+import io.bluetape4k.exposed.r2dbc.lettuce.map.ExposedR2dbcLettuceSuspendedLoadedMap
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
-import io.bluetape4k.redis.lettuce.map.LettuceSuspendedLoadedMap
 import io.bluetape4k.support.requirePositiveNumber
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
@@ -54,7 +54,7 @@ interface R2dbcLettuceRepository<ID: Any, E: Serializable>: R2dbcRedisRepository
     /**
      * Lettuce 기반 코루틴 네이티브 Read-through / Write-through 캐시 맵.
      */
-    val cache: LettuceSuspendedLoadedMap<ID, E>
+    val cache: ExposedR2dbcLettuceSuspendedLoadedMap<ID, E>
 
     /**
      * 캐시에 해당 ID가 존재하는지 확인합니다.

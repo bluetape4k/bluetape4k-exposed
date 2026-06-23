@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.lettuce.domain
 
 import io.bluetape4k.exposed.lettuce.repository.AbstractJdbcLettuceRepository
+import io.bluetape4k.exposed.lettuce.repository.ExposedLettuceCodecs
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.lettuce.core.RedisClient
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -14,7 +15,11 @@ import java.math.BigDecimal
 class ItemRepository(
     client: RedisClient,
     config: LettuceCacheConfig = LettuceCacheConfig.READ_WRITE_THROUGH,
-): AbstractJdbcLettuceRepository<Long, ItemDto>(client, config) {
+): AbstractJdbcLettuceRepository<Long, ItemDto>(
+    client,
+    config,
+    ExposedLettuceCodecs.jackson3(ItemDto::class.java)
+) {
     override val table: IdTable<Long> = ItemTable
 
     override fun ResultRow.toEntity(): ItemDto =
