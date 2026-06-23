@@ -29,13 +29,28 @@ import org.jetbrains.exposed.v1.core.ColumnWithTransform
  * @param encryptor Tink AEAD 암/복호화를 수행할 인스턴스입니다.
  * @param length 암호문 바이트를 저장할 컬럼 길이입니다.
  */
-class TinkAeadBinaryColumnType(
-    private val encryptor: TinkAead,
+class TinkAeadBinaryColumnType private constructor(
     length: Int,
+    transformer: ByteArrayTinkAeadEncryptionTransformer,
 ): ColumnWithTransform<ByteArray, ByteArray>(
     BinaryColumnType(length),
-    ByteArrayTinkAeadEncryptionTransformer(encryptor)
-)
+    transformer
+) {
+    @Deprecated(
+        message = "This constructor uses empty associated data and is retained for legacy migration only. " +
+                "Use Table.tinkAeadBinary(...) or pass explicit associatedData.",
+    )
+    constructor(
+        encryptor: TinkAead,
+        length: Int,
+    ): this(length, ByteArrayTinkAeadEncryptionTransformer(encryptor))
+
+    constructor(
+        encryptor: TinkAead,
+        length: Int,
+        associatedData: ByteArray,
+    ): this(length, ByteArrayTinkAeadEncryptionTransformer(encryptor, associatedData))
+}
 
 /**
  * 바이너리 컬럼의 저장/조회 경계에서 Tink AEAD 암복호화를 수행하는 transformer입니다.
@@ -55,9 +70,20 @@ class TinkAeadBinaryColumnType(
  *
  * @param encryptor Tink AEAD 암/복호화 인스턴스입니다.
  */
-class ByteArrayTinkAeadEncryptionTransformer(
-    private val encryptor: TinkAead = TinkAeads.AES256_GCM,
+class ByteArrayTinkAeadEncryptionTransformer private constructor(
+    private val encryptor: TinkAead,
+    private val associatedData: ByteArray,
+    @Suppress("UNUSED_PARAMETER") copyMarker: Boolean,
 ): ColumnTransformer<ByteArray, ByteArray> {
+
+    constructor(
+        encryptor: TinkAead = TinkAeads.AES256_GCM,
+    ): this(encryptor, EMPTY_TINK_ASSOCIATED_DATA.copyOf(), true)
+
+    constructor(
+        encryptor: TinkAead,
+        associatedData: ByteArray,
+    ): this(encryptor, associatedData.copyOf(), true)
 
     // ByteArrayTinkDaeadEncryptionTransformer 등 다른 Transformer 클래스와 동일하게
     // KLogging companion object를 추가해 암복호화 실패 등 이상 동작을 로그로 추적할 수 있도록 합니다.
@@ -73,7 +99,7 @@ class ByteArrayTinkAeadEncryptionTransformer(
      * @param value 암호화할 평문 바이트 배열입니다.
      */
     override fun unwrap(value: ByteArray): ByteArray {
-        return encryptor.encrypt(value)
+        return encryptor.encrypt(value, associatedData)
     }
 
     /**
@@ -86,6 +112,6 @@ class ByteArrayTinkAeadEncryptionTransformer(
      * @param value 복호화할 암호문 바이트 배열입니다.
      */
     override fun wrap(value: ByteArray): ByteArray {
-        return encryptor.decrypt(value)
+        return encryptor.decrypt(value, associatedData)
     }
 }

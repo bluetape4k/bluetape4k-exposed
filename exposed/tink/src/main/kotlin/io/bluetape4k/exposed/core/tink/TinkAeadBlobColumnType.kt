@@ -18,9 +18,22 @@ import org.jetbrains.exposed.v1.core.statements.api.ExposedBlob
  *
  * @param encryptor Tink AEAD 암/복호화를 수행할 인스턴스입니다.
  */
-class TinkAeadBlobColumnType(
-    private val encryptor: TinkAead,
-): ColumnWithTransform<ExposedBlob, ByteArray>(BlobColumnType(), TinkAeadBlobTransformer(encryptor))
+class TinkAeadBlobColumnType private constructor(
+    transformer: TinkAeadBlobTransformer,
+): ColumnWithTransform<ExposedBlob, ByteArray>(BlobColumnType(), transformer) {
+    @Deprecated(
+        message = "This constructor uses empty associated data and is retained for legacy migration only. " +
+                "Use Table.tinkAeadBlob(...) or pass explicit associatedData.",
+    )
+    constructor(
+        encryptor: TinkAead,
+    ): this(TinkAeadBlobTransformer(encryptor))
+
+    constructor(
+        encryptor: TinkAead,
+        associatedData: ByteArray,
+    ): this(TinkAeadBlobTransformer(encryptor, associatedData))
+}
 
 /**
  * `ByteArray` <-> `ExposedBlob` 저장 경계에서 Tink AEAD 암복호화를 수행하는 transformer입니다.
@@ -31,8 +44,22 @@ class TinkAeadBlobColumnType(
  *
  * @param encryptor Tink AEAD 암/복호화 인스턴스입니다.
  */
-class TinkAeadBlobTransformer(private val encryptor: TinkAead):
+class TinkAeadBlobTransformer private constructor(
+    private val encryptor: TinkAead,
+    private val associatedData: ByteArray,
+    @Suppress("UNUSED_PARAMETER") copyMarker: Boolean,
+):
     ColumnTransformer<ExposedBlob, ByteArray> {
+
+    constructor(
+        encryptor: TinkAead,
+    ): this(encryptor, EMPTY_TINK_ASSOCIATED_DATA.copyOf(), true)
+
+    constructor(
+        encryptor: TinkAead,
+        associatedData: ByteArray,
+    ): this(encryptor, associatedData.copyOf(), true)
+
     companion object: KLogging()
 
     /**
@@ -47,7 +74,7 @@ class TinkAeadBlobTransformer(private val encryptor: TinkAead):
      * @param value 암호화할 평문 바이트 배열입니다.
      */
     override fun unwrap(value: ByteArray): ExposedBlob {
-        return encryptor.encrypt(value).toExposedBlob()
+        return encryptor.encrypt(value, associatedData).toExposedBlob()
     }
 
     /**
@@ -63,6 +90,6 @@ class TinkAeadBlobTransformer(private val encryptor: TinkAead):
      * @param value 복호화할 [ExposedBlob]입니다.
      */
     override fun wrap(value: ExposedBlob): ByteArray {
-        return encryptor.decrypt(value.bytes)
+        return encryptor.decrypt(value.bytes, associatedData)
     }
 }

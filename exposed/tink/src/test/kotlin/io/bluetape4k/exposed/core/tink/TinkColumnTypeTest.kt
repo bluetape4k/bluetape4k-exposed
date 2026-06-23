@@ -123,6 +123,121 @@ class TinkColumnTypeTest: AbstractExposedTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `AEAD 암호문은 다른 컬럼에서 복호화할 수 없다`(testDB: TestDB) {
+        val tableName = "tink_aead_ad_columns_$testDB"
+        val encryptedTable = object: IntIdTable(tableName) {
+            val leftSecret = tinkAeadVarChar("left_secret", 512, TinkAeads.AES256_GCM)
+            val rightSecret = tinkAeadVarChar("right_secret", 512, TinkAeads.AES256_GCM)
+        }
+        val rawTable = object: IntIdTable(tableName) {
+            val leftSecret = varchar("left_secret", 512)
+            val rightSecret = varchar("right_secret", 512)
+        }
+
+        withTables(testDB, encryptedTable) {
+            val id = encryptedTable.insertAndGetId {
+                it[leftSecret] = faker.lorem().sentence()
+                it[rightSecret] = faker.lorem().sentence()
+            }
+
+            val leftCipherText = rawTable.selectAll().where { rawTable.id eq id }.single()[rawTable.leftSecret]
+            rawTable.update({ rawTable.id eq id }) {
+                it[rightSecret] = leftCipherText
+            }
+
+            assertFailsWith<Exception> {
+                encryptedTable.selectAll().where { encryptedTable.id eq id }.single()[encryptedTable.rightSecret]
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `DAEAD 암호문은 다른 테이블에서 복호화할 수 없다`(testDB: TestDB) {
+        val sourceTableName = "tink_daead_ad_source_$testDB"
+        val targetTableName = "tink_daead_ad_target_$testDB"
+        val sourceEncryptedTable = object: IntIdTable(sourceTableName) {
+            val email = tinkDaeadVarChar("email", 512, TinkDaeads.AES256_SIV)
+        }
+        val targetEncryptedTable = object: IntIdTable(targetTableName) {
+            val email = tinkDaeadVarChar("email", 512, TinkDaeads.AES256_SIV)
+        }
+        val sourceRawTable = object: IntIdTable(sourceTableName) {
+            val email = varchar("email", 512)
+        }
+        val targetRawTable = object: IntIdTable(targetTableName) {
+            val email = varchar("email", 512)
+        }
+
+        withTables(testDB, sourceEncryptedTable, targetEncryptedTable) {
+            val sourceId = sourceEncryptedTable.insertAndGetId {
+                it[email] = faker.internet().emailAddress()
+            }
+            val targetId = targetEncryptedTable.insertAndGetId {
+                it[email] = faker.internet().emailAddress()
+            }
+
+            val sourceCipherText = sourceRawTable.selectAll()
+                .where { sourceRawTable.id eq sourceId }
+                .single()[sourceRawTable.email]
+            targetRawTable.update({ targetRawTable.id eq targetId }) {
+                it[email] = sourceCipherText
+            }
+
+            assertFailsWith<Exception> {
+                targetEncryptedTable.selectAll()
+                    .where { targetEncryptedTable.id eq targetId }
+                    .single()[targetEncryptedTable.email]
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `직접 등록한 AEAD 컬럼도 명시적 associated data 로 암호문을 바인딩할 수 있다`(testDB: TestDB) {
+        val tableName = "tink_direct_aead_ad_$testDB"
+        val encryptedTable = object: IntIdTable(tableName) {
+            val leftSecret = registerColumn(
+                "left_secret",
+                TinkAeadVarCharColumnType(
+                    encryptor = TinkAeads.AES256_GCM,
+                    colLength = 512,
+                    associatedData = "direct:$tableName:left_secret".toUtf8Bytes()
+                )
+            )
+            val rightSecret = registerColumn(
+                "right_secret",
+                TinkAeadVarCharColumnType(
+                    encryptor = TinkAeads.AES256_GCM,
+                    colLength = 512,
+                    associatedData = "direct:$tableName:right_secret".toUtf8Bytes()
+                )
+            )
+        }
+        val rawTable = object: IntIdTable(tableName) {
+            val leftSecret = varchar("left_secret", 512)
+            val rightSecret = varchar("right_secret", 512)
+        }
+
+        withTables(testDB, encryptedTable) {
+            val id = encryptedTable.insertAndGetId {
+                it[leftSecret] = faker.lorem().sentence()
+                it[rightSecret] = faker.lorem().sentence()
+            }
+
+            val leftCipherText = rawTable.selectAll().where { rawTable.id eq id }.single()[rawTable.leftSecret]
+            rawTable.update({ rawTable.id eq id }) {
+                it[rightSecret] = leftCipherText
+            }
+
+            assertFailsWith<Exception> {
+                encryptedTable.selectAll().where { encryptedTable.id eq id }.single()[encryptedTable.rightSecret]
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `컬럼 이름은 blank 일 수 없다`(testDB: TestDB) {
         assertFailsWith<IllegalArgumentException> {
             object: IntIdTable("invalid_name_aead_varchar_$testDB") {

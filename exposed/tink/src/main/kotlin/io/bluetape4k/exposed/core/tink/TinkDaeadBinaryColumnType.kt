@@ -29,13 +29,28 @@ import org.jetbrains.exposed.v1.core.ColumnWithTransform
  * @param encryptor Tink Deterministic AEAD 암/복호화를 수행할 인스턴스입니다.
  * @param length 암호문 바이트를 저장할 컬럼 길이입니다.
  */
-class TinkDaeadBinaryColumnType(
+class TinkDaeadBinaryColumnType private constructor(
     length: Int,
-    private val encryptor: TinkDeterministicAead,
+    transformer: ByteArrayTinkDaeadEncryptionTransformer,
 ): ColumnWithTransform<ByteArray, ByteArray>(
     BinaryColumnType(length),
-    ByteArrayTinkDaeadEncryptionTransformer(encryptor)
-)
+    transformer
+) {
+    @Deprecated(
+        message = "This constructor uses empty associated data and is retained for legacy migration only. " +
+                "Use Table.tinkDaeadBinary(...) or pass explicit associatedData.",
+    )
+    constructor(
+        length: Int,
+        encryptor: TinkDeterministicAead,
+    ): this(length, ByteArrayTinkDaeadEncryptionTransformer(encryptor))
+
+    constructor(
+        length: Int,
+        encryptor: TinkDeterministicAead,
+        associatedData: ByteArray,
+    ): this(length, ByteArrayTinkDaeadEncryptionTransformer(encryptor, associatedData))
+}
 
 /**
  * 바이너리 컬럼의 저장/조회 경계에서 Tink Deterministic AEAD 암복호화를 수행하는 transformer입니다.
@@ -58,9 +73,20 @@ class TinkDaeadBinaryColumnType(
  *
  * @param encryptor Tink Deterministic AEAD 암/복호화 인스턴스입니다.
  */
-class ByteArrayTinkDaeadEncryptionTransformer(
+class ByteArrayTinkDaeadEncryptionTransformer private constructor(
     private val encryptor: TinkDeterministicAead,
+    private val associatedData: ByteArray,
+    @Suppress("UNUSED_PARAMETER") copyMarker: Boolean,
 ): ColumnTransformer<ByteArray, ByteArray> {
+
+    constructor(
+        encryptor: TinkDeterministicAead,
+    ): this(encryptor, EMPTY_TINK_ASSOCIATED_DATA.copyOf(), true)
+
+    constructor(
+        encryptor: TinkDeterministicAead,
+        associatedData: ByteArray,
+    ): this(encryptor, associatedData.copyOf(), true)
 
     companion object: KLogging()
 
@@ -74,7 +100,7 @@ class ByteArrayTinkDaeadEncryptionTransformer(
      * @param value 암호화할 평문 바이트 배열입니다.
      */
     override fun unwrap(value: ByteArray): ByteArray {
-        return encryptor.encryptDeterministically(value)
+        return encryptor.encryptDeterministically(value, associatedData)
     }
 
     /**
@@ -87,6 +113,6 @@ class ByteArrayTinkDaeadEncryptionTransformer(
      * @param value 복호화할 암호문 바이트 배열입니다.
      */
     override fun wrap(value: ByteArray): ByteArray {
-        return encryptor.decryptDeterministically(value)
+        return encryptor.decryptDeterministically(value, associatedData)
     }
 }

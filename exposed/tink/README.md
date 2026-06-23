@@ -124,6 +124,42 @@ transaction {
 > `WHERE col = value` searches do not work. Even if you re-encrypt the same plaintext, it produces
 > a new ciphertext with a new nonce that will not match. Use `tinkDaead*` variants for searchable columns.
 
+## Associated Data Binding
+
+`tinkAead*` and `tinkDaead*` table extension functions bind ciphertext to associated data by default. The default
+provider uses the stable Exposed table name and column name, so ciphertext copied from one encrypted column or table
+cannot be decrypted through another encrypted column with the same key.
+
+```kotlin
+object Users: IntIdTable("users") {
+    // Default: associated data = "bluetape4k-exposed-tink:v1:users:email"
+    val email = tinkDaeadVarChar("email", 512)
+}
+```
+
+Use `associatedDataProvider` when a stronger or compatibility-specific domain is required:
+
+```kotlin
+val provider = TinkColumnAssociatedDataProvider { tableName, columnName ->
+    "tenant-a:$tableName:$columnName".toByteArray()
+}
+
+object Users: IntIdTable("users") {
+    val email = tinkDaeadVarChar("email", 512, associatedDataProvider = provider)
+}
+```
+
+For legacy data written without associated data, use `TinkColumnAssociatedDataProvider.Empty` while migrating.
+
+Direct public column-type constructors without `associatedData` are retained only for legacy migration compatibility and
+are deprecated. Prefer the `tinkAead*`/`tinkDaead*` table extension functions, or pass explicit `associatedData` when
+registering `Tink*ColumnType` manually.
+
+Row-scoped associated data can bind ciphertext more tightly to a specific row, but it changes the searchable domain.
+DAEAD equality search works only when encryption and query binding use the same associated data. If the associated data
+contains a row id or other per-row value, ordinary `WHERE encrypted_col = value` queries cannot produce one shared
+ciphertext for all candidate rows.
+
 ## Algorithm Selection Guide
 
 ### AEAD Algorithms (`tinkAeadVarChar`, `tinkAeadBinary`, `tinkAeadBlob`)
@@ -232,6 +268,7 @@ object SensitiveData: IntIdTable("sensitive_data") {
 | `TinkDaeadVarCharColumnType.kt` | Deterministic AEAD VARCHAR encrypted column type    |
 | `TinkDaeadBinaryColumnType.kt`  | Deterministic AEAD VARBINARY encrypted column type  |
 | `TinkDaeadBlobColumnType.kt`    | Deterministic AEAD BLOB encrypted column type       |
+| `TinkColumnAssociatedDataProvider.kt` | Associated data provider contract             |
 | `Tables.kt`                     | Table extension functions (`tinkAeadVarChar`, etc.) |
 
 ## Notes
@@ -247,6 +284,9 @@ object SensitiveData: IntIdTable("sensitive_data") {
 4. **Key rotation**: Tink supports key rotation. Regular key rotation strengthens security.
 
 5. **DAEAD pattern exposure**: Deterministic AEAD still maps the same plaintext to the same ciphertext, which can reveal value distribution and patterns. It is suitable for unique values (email, SSN) but use caution with frequently repeated values.
+
+6. **Associated data domain**: The default associated data binds ciphertext to table and column identity. Changing table
+   or column names changes the cryptographic domain, so plan migrations before renaming encrypted columns.
 
 ## Testing
 
