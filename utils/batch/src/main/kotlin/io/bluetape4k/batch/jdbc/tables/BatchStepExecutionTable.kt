@@ -49,6 +49,15 @@ object BatchStepExecutionTable : LongIdTable("batch_step_execution") {
     /** 마지막 커밋 체크포인트 JSON 문자열 (재시작 시 사용) */
     val checkpoint = text("checkpoint").nullable()
 
+    /** 현재 실행 소유자 ID. null이면 아직 claim되지 않았거나 terminal 상태이다. */
+    val ownerId = varchar("owner_id", 128).nullable()
+
+    /** 실행 소유권 lease 만료 시각. */
+    val leaseUntil = timestamp("lease_until").nullable()
+
+    /** claim CAS를 위한 낙관적 버전. */
+    val version = long("version").default(0L)
+
     /** 실행 시작 시각 (UTC) */
     val startTime = timestamp("start_time")
 

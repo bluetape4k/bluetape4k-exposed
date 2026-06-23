@@ -1,5 +1,7 @@
 package io.bluetape4k.batch.api
 
+import java.time.Instant
+
 /**
  * 배치 Job/Step 실행 이력을 저장하고 재시작을 지원하는 리포지토리 인터페이스.
  *
@@ -33,6 +35,23 @@ interface BatchJobRepository {
     ): JobExecution
 
     /**
+     * [JobExecution] 실행 소유권을 원자적으로 획득한다.
+     *
+     * 이미 다른 owner가 유효 lease로 실행 중이면 null을 반환해야 한다.
+     */
+    suspend fun claimJobExecution(
+        execution: JobExecution,
+        ownerId: String,
+        leaseUntil: Instant,
+    ): JobExecution? =
+        execution.copy(
+            status = BatchStatus.RUNNING,
+            ownerId = ownerId,
+            leaseUntil = leaseUntil,
+            version = execution.version + 1,
+        )
+
+    /**
      * [JobExecution]을 완료 상태로 갱신한다.
      *
      * @param execution 갱신할 [JobExecution]
@@ -56,6 +75,23 @@ interface BatchJobRepository {
     ): StepExecution
 
     /**
+     * [StepExecution] 실행 소유권을 원자적으로 획득한다.
+     *
+     * 이미 완료된 step은 claim 대상이 아니며, 이미 다른 owner가 유효 lease로 실행 중이면 null을 반환해야 한다.
+     */
+    suspend fun claimStepExecution(
+        execution: StepExecution,
+        ownerId: String,
+        leaseUntil: Instant,
+    ): StepExecution? =
+        execution.copy(
+            status = BatchStatus.RUNNING,
+            ownerId = ownerId,
+            leaseUntil = leaseUntil,
+            version = execution.version + 1,
+        )
+
+    /**
      * [StepExecution]을 완료 상태로 갱신한다.
      *
      * @param execution 갱신할 [StepExecution]
@@ -70,6 +106,13 @@ interface BatchJobRepository {
      * @param checkpoint 저장할 체크포인트 값
      */
     suspend fun saveCheckpoint(stepExecutionId: Long, checkpoint: Any)
+
+    /**
+     * claim된 [StepExecution]의 소유권을 확인하며 체크포인트를 저장한다.
+     */
+    suspend fun saveCheckpoint(execution: StepExecution, checkpoint: Any) {
+        saveCheckpoint(execution.id, checkpoint)
+    }
 
     /**
      * 저장된 체크포인트를 조회한다.

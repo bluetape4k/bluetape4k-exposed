@@ -1,6 +1,7 @@
 package io.bluetape4k.batch.core
 
 import io.bluetape4k.batch.api.BatchJobRepository
+import io.bluetape4k.batch.api.BatchExecutionAlreadyClaimedException
 import io.bluetape4k.batch.api.BatchReport
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.StepReport
@@ -14,7 +15,9 @@ import io.bluetape4k.workflow.api.WorkReport
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
+import java.time.Duration
 import java.time.Instant
+import java.util.UUID
 
 /**
  * 배치 Job 실행기. 여러 [BatchStep]을 순차적으로 실행하며 재시작을 지원합니다.
@@ -45,6 +48,7 @@ class BatchJob(
     val params: Map<String, Any> = emptyMap(),
     val steps: List<BatchStep<*, *>>,
     val repository: BatchJobRepository,
+    private val executionLease: Duration = Duration.ofMinutes(15),
 ) : SuspendWork {
 
     companion object : KLoggingChannel()
@@ -71,6 +75,16 @@ class BatchJob(
      */
     suspend fun run(): BatchReport {
         val jobExecution = repository.findOrCreateJobExecution(name, params)
+        val ownerId = "${name}-${UUID.randomUUID()}"
+        val claimedJobExecution = repository.claimJobExecution(
+            execution = jobExecution,
+            ownerId = ownerId,
+            leaseUntil = Instant.now().plus(executionLease),
+        ) ?: return BatchReport.Failure(
+            jobExecution,
+            emptyList(),
+            BatchExecutionAlreadyClaimedException("Job", jobExecution.id, jobExecution.ownerId),
+        )
         val stepReports = mutableListOf<StepReport>()
 
         try {
@@ -78,7 +92,7 @@ class BatchJob(
                 @Suppress("UNCHECKED_CAST")
                 val runner = BatchStepRunner(
                     step = step as BatchStep<Any, Any>,
-                    jobExecution = jobExecution,
+                    jobExecution = claimedJobExecution,
                     repository = repository,
                 )
                 val report = runner.run()
@@ -92,34 +106,34 @@ class BatchJob(
 
             val hasSkips = stepReports.any { it.skipCount > 0 }
             val finalStatus = if (hasSkips) BatchStatus.COMPLETED_WITH_SKIPS else BatchStatus.COMPLETED
-            repository.completeJobExecution(jobExecution, finalStatus)
+            repository.completeJobExecution(claimedJobExecution, finalStatus)
 
             return if (hasSkips) {
                 BatchReport.PartiallyCompleted(
-                    jobExecution.copy(status = BatchStatus.COMPLETED_WITH_SKIPS),
+                    claimedJobExecution.copy(status = BatchStatus.COMPLETED_WITH_SKIPS),
                     stepReports,
                 )
             } else {
                 BatchReport.Success(
-                    jobExecution.copy(status = BatchStatus.COMPLETED),
+                    claimedJobExecution.copy(status = BatchStatus.COMPLETED),
                     stepReports,
                 )
             }
 
         } catch (e: CancellationException) {
             withContext(NonCancellable) {
-                runCatching { repository.completeJobExecution(jobExecution, BatchStatus.STOPPED) }
+                runCatching { repository.completeJobExecution(claimedJobExecution, BatchStatus.STOPPED) }
                     .onFailure { log.warn(it) { "STOPPED 상태 저장 실패 — job=$name" } }
             }
             throw e
 
         } catch (e: Throwable) {
             withContext(NonCancellable) {
-                runCatching { repository.completeJobExecution(jobExecution, BatchStatus.FAILED) }
+                runCatching { repository.completeJobExecution(claimedJobExecution, BatchStatus.FAILED) }
                     .onFailure { log.warn(it) { "FAILED 상태 저장 실패 — job=$name" } }
             }
             return BatchReport.Failure(
-                jobExecution.copy(status = BatchStatus.FAILED),
+                claimedJobExecution.copy(status = BatchStatus.FAILED),
                 stepReports,
                 e,
             )

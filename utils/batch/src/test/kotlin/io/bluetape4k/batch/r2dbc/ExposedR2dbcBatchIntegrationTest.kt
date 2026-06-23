@@ -4,8 +4,12 @@ import io.bluetape4k.batch.BatchSourceTable
 import io.bluetape4k.batch.BatchTargetTable
 import io.bluetape4k.batch.SourceRecord
 import io.bluetape4k.batch.TargetRecord
+import io.bluetape4k.batch.api.BatchExecutionAlreadyClaimedException
+import io.bluetape4k.batch.api.BatchJobRepository
+import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchReport
 import io.bluetape4k.batch.api.BatchStatus
+import io.bluetape4k.batch.api.BatchWriter
 import io.bluetape4k.batch.api.SkipPolicy
 import io.bluetape4k.batch.core.dsl.batchJob
 import io.bluetape4k.batch.internal.CheckpointJson
@@ -17,6 +21,10 @@ import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.batchInsert
@@ -24,6 +32,7 @@ import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * R2DBC 배치 엔드투엔드 통합 테스트.
@@ -71,6 +80,18 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
                 this[BatchTargetTable.transformedValue] = record.transformedValue
             })
             chunkSize(chunkSize)
+        }
+    }
+
+    private fun makeAtomicClaimJob(
+        repository: BatchJobRepository,
+        writer: SlowCountingWriter,
+    ) = batchJob("atomicClaimJob") {
+        repository(repository)
+        step<Int, Int>("slowStep") {
+            reader(SlowListReader(listOf(1, 2, 3)))
+            writer(writer)
+            chunkSize(1)
         }
     }
 
@@ -157,6 +178,33 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
         }
     }
 
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `동시 실행 - 이미 claim된 JobExecution은 두 번째 runner가 실행하지 않음`(testDB: TestDB) {
+        runSuspendIO {
+            withAllTables(testDB) {
+                val database = testDB.db!!
+                val repo = ExposedR2dbcBatchJobRepository(database, CheckpointJson.jackson3())
+                val writer = SlowCountingWriter()
+
+                val reports = coroutineScope {
+                    val first = async { makeAtomicClaimJob(repo, writer).run() }
+                    delay(50)
+                    val second = async { makeAtomicClaimJob(repo, writer).run() }
+
+                    awaitAll(first, second)
+                }
+
+                reports.count { it is BatchReport.Success } shouldBeEqualTo 1
+                reports.count { it is BatchReport.Failure } shouldBeEqualTo 1
+                val failure = reports.filterIsInstance<BatchReport.Failure>().single()
+                failure.error shouldBeInstanceOf BatchExecutionAlreadyClaimedException::class
+                writer.openCount.get() shouldBeEqualTo 1
+                writer.writeCount.get() shouldBeEqualTo 3
+            }
+        }
+    }
+
     // ─── 4. skip 있음 → COMPLETED_WITH_SKIPS ────────────────────────────────
 
     @ParameterizedTest
@@ -214,6 +262,28 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
                 stepReport.skipCount shouldBeEqualTo 5L   // 짝수 5개 skip
                 stepReport.writeCount shouldBeEqualTo 5L  // 홀수 5개 저장
             }
+        }
+    }
+
+    private class SlowListReader(
+        items: List<Int>,
+    ): BatchReader<Int> {
+        private val queue = ArrayDeque(items)
+
+        override suspend fun read(): Int? = queue.removeFirstOrNull()
+    }
+
+    private class SlowCountingWriter: BatchWriter<Int> {
+        val openCount = AtomicInteger()
+        val writeCount = AtomicInteger()
+
+        override suspend fun open() {
+            openCount.incrementAndGet()
+        }
+
+        override suspend fun write(items: List<Int>) {
+            delay(200)
+            writeCount.addAndGet(items.size)
         }
     }
 }

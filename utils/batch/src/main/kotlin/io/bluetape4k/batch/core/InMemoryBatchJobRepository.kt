@@ -44,6 +44,7 @@ class InMemoryBatchJobRepository : BatchJobRepository {
     private val jobExecutions = ConcurrentHashMap<Long, JobExecution>()
     private val stepExecutions = ConcurrentHashMap<Long, StepExecution>()
     private val checkpoints = ConcurrentHashMap<Long, Any>()
+    private val lock = Any()
 
     /**
      * jobName + params 조합의 재시작 대상 [JobExecution]을 조회하거나 신규 생성한다.
@@ -61,30 +62,72 @@ class InMemoryBatchJobRepository : BatchJobRepository {
     ): JobExecution {
         jobName.requireNotBlank("jobName")
 
-        val existing = jobExecutions.values.firstOrNull { je ->
-            je.jobName == jobName &&
-                je.params == params &&
-                je.status in setOf(BatchStatus.RUNNING, BatchStatus.FAILED, BatchStatus.STOPPED)
-        }
+        synchronized(lock) {
+            val existing = jobExecutions.values.firstOrNull { je ->
+                je.jobName == jobName &&
+                    je.params == params &&
+                    je.status in setOf(BatchStatus.RUNNING, BatchStatus.FAILED, BatchStatus.STOPPED)
+            }
 
-        if (existing != null) {
-            log.debug { "기존 JobExecution 재사용: jobName=$jobName, id=${existing.id}, status=${existing.status}" }
-            val updated = existing.copy(status = BatchStatus.RUNNING)
+            if (existing != null) {
+                log.debug { "기존 JobExecution 재사용: jobName=$jobName, id=${existing.id}, status=${existing.status}" }
+                return existing
+            }
+
+            val newId = idCounter.incrementAndGet()
+            val newExecution = JobExecution(
+                id = newId,
+                jobName = jobName,
+                params = params,
+                status = BatchStatus.RUNNING,
+                startTime = Instant.now(),
+            )
+            jobExecutions[newId] = newExecution
+            log.debug { "신규 JobExecution 생성: jobName=$jobName, id=$newId" }
+            return newExecution
+        }
+    }
+
+    override suspend fun claimJobExecution(
+        execution: JobExecution,
+        ownerId: String,
+        leaseUntil: Instant,
+    ): JobExecution? {
+        synchronized(lock) {
+            val current = jobExecutions[execution.id]
+            if (current == null) {
+                val inserted = execution.copy(
+                    status = BatchStatus.RUNNING,
+                    ownerId = ownerId,
+                    leaseUntil = leaseUntil,
+                    version = execution.version + 1,
+                    endTime = null,
+                )
+                jobExecutions[inserted.id] = inserted
+                idCounter.updateAndGet { current -> maxOf(current, inserted.id) }
+                return inserted
+            }
+            val now = Instant.now()
+            val claimable = current.version == execution.version &&
+                (
+                    current.status in setOf(BatchStatus.FAILED, BatchStatus.STOPPED) ||
+                        (
+                            current.status == BatchStatus.RUNNING &&
+                                (current.ownerId == null || current.leaseUntil == null || current.leaseUntil < now)
+                            )
+                    )
+            if (!claimable) return null
+
+            val updated = current.copy(
+                status = BatchStatus.RUNNING,
+                ownerId = ownerId,
+                leaseUntil = leaseUntil,
+                version = current.version + 1,
+                endTime = null,
+            )
             jobExecutions[updated.id] = updated
             return updated
         }
-
-        val newId = idCounter.incrementAndGet()
-        val newExecution = JobExecution(
-            id = newId,
-            jobName = jobName,
-            params = params,
-            status = BatchStatus.RUNNING,
-            startTime = Instant.now(),
-        )
-        jobExecutions[newId] = newExecution
-        log.debug { "신규 JobExecution 생성: jobName=$jobName, id=$newId" }
-        return newExecution
     }
 
     /**
@@ -94,8 +137,19 @@ class InMemoryBatchJobRepository : BatchJobRepository {
      * @param status 최종 상태 (`COMPLETED`, `COMPLETED_WITH_SKIPS`, `FAILED`, `STOPPED` 중 하나)
      */
     override suspend fun completeJobExecution(execution: JobExecution, status: BatchStatus) {
-        val updated = execution.copy(status = status, endTime = Instant.now())
-        jobExecutions[execution.id] = updated
+        val updated = execution.copy(
+            status = status,
+            ownerId = null,
+            leaseUntil = null,
+            version = execution.version + 1,
+            endTime = Instant.now(),
+        )
+        synchronized(lock) {
+            val current = jobExecutions[execution.id]
+            if (execution.ownerId == null || current?.ownerId == execution.ownerId) {
+                jobExecutions[execution.id] = updated
+            }
+        }
         log.debug { "JobExecution 완료: id=${execution.id}, status=$status" }
     }
 
@@ -115,48 +169,78 @@ class InMemoryBatchJobRepository : BatchJobRepository {
     ): StepExecution {
         stepName.requireNotBlank("stepName")
 
-        val existing = stepExecutions.values.firstOrNull { se ->
-            se.jobExecutionId == jobExecution.id && se.stepName == stepName
-        }
+        synchronized(lock) {
+            val existing = stepExecutions.values.firstOrNull { se ->
+                se.jobExecutionId == jobExecution.id && se.stepName == stepName
+            }
 
-        if (existing != null) {
-            return when (existing.status) {
-                // 완료 상태 — 변경 없이 반환. BatchStepRunner가 즉시 skip 처리
-                BatchStatus.COMPLETED,
-                BatchStatus.COMPLETED_WITH_SKIPS -> {
-                    log.debug { "StepExecution skip (이미 완료): stepName=$stepName, status=${existing.status}" }
-                    existing
-                }
+            if (existing != null) {
+                return when (existing.status) {
+                    // 완료 상태 — 변경 없이 반환. BatchStepRunner가 즉시 skip 처리
+                    BatchStatus.COMPLETED,
+                    BatchStatus.COMPLETED_WITH_SKIPS -> {
+                        log.debug { "StepExecution skip (이미 완료): stepName=$stepName, status=${existing.status}" }
+                        existing
+                    }
 
-                // 재시작 대상 — RUNNING으로 복원 후 반환
-                BatchStatus.FAILED,
-                BatchStatus.STOPPED,
-                BatchStatus.RUNNING -> {
-                    log.debug { "StepExecution 재시작: stepName=$stepName, 이전 status=${existing.status}" }
-                    val updated = existing.copy(status = BatchStatus.RUNNING)
-                    stepExecutions[updated.id] = updated
-                    updated
-                }
+                    // 재시작 대상 — claim 단계에서 RUNNING으로 복원
+                    BatchStatus.FAILED,
+                    BatchStatus.STOPPED,
+                    BatchStatus.RUNNING -> {
+                        log.debug { "StepExecution 재시작 대상: stepName=$stepName, 이전 status=${existing.status}" }
+                        existing
+                    }
 
-                // 그 외 예상치 못한 상태 — 변경 없이 반환
-                else -> {
-                    log.warn { "StepExecution 예상치 못한 상태: stepName=$stepName, status=${existing.status}" }
-                    existing
+                    // 그 외 예상치 못한 상태 — 변경 없이 반환
+                    else -> {
+                        log.warn { "StepExecution 예상치 못한 상태: stepName=$stepName, status=${existing.status}" }
+                        existing
+                    }
                 }
             }
-        }
 
-        val newId = idCounter.incrementAndGet()
-        val newExecution = StepExecution(
-            id = newId,
-            jobExecutionId = jobExecution.id,
-            stepName = stepName,
-            status = BatchStatus.RUNNING,
-            startTime = Instant.now(),
-        )
-        stepExecutions[newId] = newExecution
-        log.debug { "신규 StepExecution 생성: stepName=$stepName, id=$newId" }
-        return newExecution
+            val newId = idCounter.incrementAndGet()
+            val newExecution = StepExecution(
+                id = newId,
+                jobExecutionId = jobExecution.id,
+                stepName = stepName,
+                status = BatchStatus.RUNNING,
+                startTime = Instant.now(),
+            )
+            stepExecutions[newId] = newExecution
+            log.debug { "신규 StepExecution 생성: stepName=$stepName, id=$newId" }
+            return newExecution
+        }
+    }
+
+    override suspend fun claimStepExecution(
+        execution: StepExecution,
+        ownerId: String,
+        leaseUntil: Instant,
+    ): StepExecution? {
+        synchronized(lock) {
+            val current = stepExecutions[execution.id] ?: return null
+            val now = Instant.now()
+            val claimable = current.version == execution.version &&
+                (
+                    current.status in setOf(BatchStatus.FAILED, BatchStatus.STOPPED) ||
+                        (
+                            current.status == BatchStatus.RUNNING &&
+                                (current.ownerId == null || current.leaseUntil == null || current.leaseUntil < now)
+                            )
+                    )
+            if (!claimable) return null
+
+            val updated = current.copy(
+                status = BatchStatus.RUNNING,
+                ownerId = ownerId,
+                leaseUntil = leaseUntil,
+                version = current.version + 1,
+                endTime = null,
+            )
+            stepExecutions[updated.id] = updated
+            return updated
+        }
     }
 
     /**
@@ -177,7 +261,16 @@ class InMemoryBatchJobRepository : BatchJobRepository {
             checkpoint = report.checkpoint,
             endTime = Instant.now(),
         )
-        stepExecutions[execution.id] = updated
+        synchronized(lock) {
+            val current = stepExecutions[execution.id]
+            if (execution.ownerId == null || current?.ownerId == execution.ownerId) {
+                stepExecutions[execution.id] = updated.copy(
+                    ownerId = null,
+                    leaseUntil = null,
+                    version = execution.version + 1,
+                )
+            }
+        }
         log.debug {
             "StepExecution 완료: id=${execution.id}, stepName=${execution.stepName}, " +
                 "status=${report.status}, read=${report.readCount}, write=${report.writeCount}, skip=${report.skipCount}"
@@ -195,6 +288,16 @@ class InMemoryBatchJobRepository : BatchJobRepository {
     override suspend fun saveCheckpoint(stepExecutionId: Long, checkpoint: Any) {
         checkpoints[stepExecutionId] = checkpoint
         log.debug { "체크포인트 저장: stepExecutionId=$stepExecutionId, checkpoint=$checkpoint" }
+    }
+
+    override suspend fun saveCheckpoint(execution: StepExecution, checkpoint: Any) {
+        synchronized(lock) {
+            val current = stepExecutions[execution.id]
+            if (execution.ownerId == null || current?.ownerId == execution.ownerId) {
+                checkpoints[execution.id] = checkpoint
+            }
+        }
+        log.debug { "체크포인트 저장: stepExecutionId=${execution.id}, checkpoint=$checkpoint" }
     }
 
     /**
