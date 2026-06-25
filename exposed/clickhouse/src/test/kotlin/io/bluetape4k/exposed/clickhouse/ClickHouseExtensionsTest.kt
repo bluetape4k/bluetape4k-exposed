@@ -4,8 +4,6 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import io.bluetape4k.assertions.shouldBeEqualTo
-import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
-import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import io.bluetape4k.assertions.assertFailsWith
@@ -18,7 +16,7 @@ class ClickHouseExtensionsTest: AbstractClickHouseTest() {
     @Test
     fun `suspendTransaction - 정상 결과 반환`() = runTest(timeout = 30.seconds) {
         val result = suspendTransaction(db) {
-            (this as JdbcTransaction).exec("SELECT 1") { rs: ResultSet -> rs.next(); rs.getInt(1) }
+            exec("SELECT 1") { rs: ResultSet -> rs.next(); rs.getInt(1) }
         }
         result shouldBeEqualTo 1
     }

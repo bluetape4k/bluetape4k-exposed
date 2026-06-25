@@ -228,8 +228,8 @@ class BatchDslTest {
                     private val queue = ArrayDeque(items)
                     override suspend fun read(): String? = queue.removeFirstOrNull()
                 })
-                writer(object : BatchWriter<String> {
-                    override suspend fun write(chunks: List<String>) { collected.addAll(chunks) }
+                writer(object: BatchWriter<String> {
+                    override suspend fun write(items: List<String>) { collected.addAll(items) }
                 })
                 chunkSize(2)
             }

@@ -1,4 +1,4 @@
-val bluetape4kVersion: String by project
+val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
 tasks.test {
     // DuckDB JDBC uses System.load() for native library — required for Java 25+

@@ -1,4 +1,4 @@
-val bluetape4kVersion: String by project
+val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 val springBootVersion = libs.versions.spring.boot.get()
 
 plugins {

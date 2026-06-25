@@ -145,7 +145,7 @@ class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
                             (query as DeclaredExposedR2dbcQuery<Any, Any>).executeSuspending(args)
                         is PartTreeExposedR2dbcQuery<*, *> ->
                             (query as PartTreeExposedR2dbcQuery<Any, Any>).executeSuspending(args)
-                        else -> query.execute(args ?: emptyArray())
+                        else -> query.execute(args)
                     }
                 }.startCoroutineUninterceptedOrReturn(continuation)
             }

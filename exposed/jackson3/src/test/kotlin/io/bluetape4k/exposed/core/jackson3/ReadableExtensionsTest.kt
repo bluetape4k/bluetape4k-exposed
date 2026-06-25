@@ -116,7 +116,7 @@ class ReadableExtensionsTest {
         val jsonText = """{"user":{"name":"bytes"}}"""
         val readable = FakeReadable(valuesByIndex = mapOf(0 to jsonText.toByteArray()))
 
-        readable.getJsonNode(0).path("user").path("name").asText() shouldBeEqualTo "bytes"
+        readable.getJsonNode(0).path("user").path("name").asString() shouldBeEqualTo "bytes"
     }
 
     @Test
@@ -124,7 +124,7 @@ class ReadableExtensionsTest {
         val jsonText = """{"user":{"name":"bytes"}}"""
         val readable = FakeReadable(valuesByName = mapOf("node" to jsonText.toByteArray()))
 
-        readable.getJsonNode("node").path("user").path("name").asText() shouldBeEqualTo "bytes"
+        readable.getJsonNode("node").path("user").path("name").asString() shouldBeEqualTo "bytes"
     }
 
     @Test

@@ -27,8 +27,8 @@ class ExposedJdbcRepositoryFactory: RepositoryFactorySupport() {
 
     companion object: KLogging()
 
-    override fun <T: Any, ID: Any> getEntityInformation(domainClass: Class<T>): EntityInformation<T, ID> =
-        ExposedEntityInformationImpl(domainClass as Class<Entity<Any>>) as EntityInformation<T, ID>
+    override fun getEntityInformation(metadata: RepositoryMetadata): EntityInformation<*, *> =
+        ExposedEntityInformationImpl(metadata.domainType as Class<Entity<Any>>) as EntityInformation<*, *>
 
     override fun getTargetRepository(information: RepositoryInformation): Any {
         val entityInfo = exposedEntityInformation(information.domainType)
