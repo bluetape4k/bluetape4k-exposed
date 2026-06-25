@@ -275,6 +275,7 @@ subprojects {
             dependency("commons-logging:commons-logging:${bt4kVersion("commons-logging")}")
             dependency("org.apache.commons:commons-pool2:${bt4kVersion("commons-pool2")}")
             dependency("org.apache.fory:fory-kotlin:${bt4kVersion("fory-kotlin")}")
+            dependency("com.fasterxml.jackson.core:jackson-annotations:${bt4kVersion("jackson-annotations")}")
             dependency("com.hazelcast:hazelcast:${bt4kVersion("hazelcast")}")
             dependency("jakarta.xml.bind:jakarta.xml.bind-api:${bt4kVersion("jakarta-xml-bind")}")
             dependency("org.javamoney:moneta:${bt4kVersion("javamoney-moneta")}")
