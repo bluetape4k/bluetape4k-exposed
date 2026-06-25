@@ -37,7 +37,7 @@ internal class PartTreeExposedR2dbcQuery<R: Any, ID: Any>(
 
     override fun getQueryMethod(): ExposedR2dbcQueryMethod = queryMethod
 
-    override fun execute(parameters: Array<out Any>): Any? {
+    override fun execute(parameters: Array<out Any?>): Any? {
         val values = parameters.withoutContinuation()
         return if (isFlowQuery()) {
             executeFlow(values)

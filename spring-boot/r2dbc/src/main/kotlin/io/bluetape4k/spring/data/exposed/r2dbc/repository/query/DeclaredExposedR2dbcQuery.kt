@@ -48,7 +48,7 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
 
     override fun getQueryMethod(): ExposedR2dbcQueryMethod = queryMethod
 
-    override fun execute(parameters: Array<out Any>): Any =
+    override fun execute(parameters: Array<out Any?>): Any? =
         error("DeclaredExposedR2dbcQuery '${queryMethod.name}' must be invoked as a suspend method")
 
     suspend fun executeSuspending(parameters: Array<out Any?>): Any? {

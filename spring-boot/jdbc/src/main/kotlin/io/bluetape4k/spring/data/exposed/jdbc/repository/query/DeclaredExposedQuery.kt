@@ -40,7 +40,7 @@ class DeclaredExposedQuery<E: Entity<ID>, ID: Any>(
     override fun getQueryMethod(): ExposedQueryMethod = queryMethod
 
     @Suppress("UNCHECKED_CAST")
-    override fun execute(parameters: Array<out Any>): Any {
+    override fun execute(parameters: Array<out Any?>): Any? {
         val boundSql = bindParameters(rawSql, parameters)
         val tx = TransactionManager.current()
         tx.flushCache()
