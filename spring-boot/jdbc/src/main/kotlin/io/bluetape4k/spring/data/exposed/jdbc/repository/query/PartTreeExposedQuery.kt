@@ -43,7 +43,7 @@ class PartTreeExposedQuery<E: Entity<ID>, ID: Any>(
     override fun getQueryMethod(): ExposedQueryMethod = queryMethod
 
     @Suppress("UNCHECKED_CAST")
-    override fun execute(parameters: Array<out Any>): Any? {
+    override fun execute(parameters: Array<out Any?>): Any? {
         val provider = ParameterMetadataProvider.of(queryMethod.parameters, parameters as Array<Any?>)
         val op = ExposedQueryCreator(partTree, provider.accessor, entityInformation.table).createQuery()
 
@@ -121,6 +121,6 @@ class PartTreeExposedQuery<E: Entity<ID>, ID: Any>(
                 !queryMethod.isPageQuery &&
                 !queryMethod.isSliceQuery
 
-    private inline fun <reified T: Any> Array<out Any>.firstInstanceOrNull(): T? =
+    private inline fun <reified T: Any> Array<out Any?>.firstInstanceOrNull(): T? =
         firstOrNull { it is T } as? T
 }
