@@ -62,10 +62,10 @@ val centralSnapshotsParallelism: Int = providers
     .orElse(4)
     .get()
 
-val projectGroup: String by project
-val baseVersion: String by project
-val snapshotVersion: String by project
-val bluetape4kVersion: String by project
+val projectGroup: String = providers.gradleProperty("projectGroup").get()
+val baseVersion: String = providers.gradleProperty("baseVersion").get()
+val snapshotVersion: String = providers.gradleProperty("snapshotVersion").get()
+val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
 allprojects {
     group = projectGroup
@@ -215,7 +215,7 @@ subprojects {
             showFullStackTraces = true
         }
 
-        val reportMerge by registering(ReportMergeTask::class) {
+        val reportMerge = register<ReportMergeTask>("reportMerge") {
             val file = rootProject.layout.buildDirectory.asFile.get().resolve("reports/detekt/merged.xml")
             output.set(file)
         }
@@ -294,43 +294,38 @@ subprojects {
     }
 
     dependencies {
-        val api by configurations
-        val implementation by configurations
-        val testImplementation by configurations
-        val testRuntimeOnly by configurations
+        add("api", rootLibs.jetbrains.annotations.get())
 
-        api(rootLibs.jetbrains.annotations)
+        add("implementation", rootLibs.kotlin.stdlib.asProvider().get())
+        add("implementation", rootLibs.kotlin.reflect.get())
+        add("testImplementation", rootLibs.kotlin.test.asProvider().get())
+        add("testImplementation", rootLibs.kotlin.test.junit5.get())
 
-        implementation(rootLibs.kotlin.stdlib)
-        implementation(rootLibs.kotlin.reflect)
-        testImplementation(rootLibs.kotlin.test)
-        testImplementation(rootLibs.kotlin.test.junit5)
+        add("implementation", rootLibs.kotlinx.coroutines.core.asProvider().get())
+        add("implementation", rootLibs.kotlinx.atomicfu.get())
 
-        implementation(rootLibs.kotlinx.coroutines.core)
-        implementation(rootLibs.kotlinx.atomicfu)
+        add("api", rootLibs.slf4j.api.get())
+        add("testImplementation", rootLibs.logback.classic.get())
+        add("testImplementation", rootLibs.jcl.over.slf4j.get())
+        add("testImplementation", rootLibs.jul.to.slf4j.get())
+        add("testImplementation", rootLibs.log4j.over.slf4j.get())
 
-        api(rootLibs.slf4j.api)
-        testImplementation(rootLibs.logback.classic)
-        testImplementation(rootLibs.jcl.over.slf4j)
-        testImplementation(rootLibs.jul.to.slf4j)
-        testImplementation(rootLibs.log4j.over.slf4j)
+        add("testImplementation", rootLibs.junit.jupiter.asProvider().get())
+        add("testRuntimeOnly", rootLibs.junit.platform.engine.get())
 
-        testImplementation(rootLibs.junit.jupiter)
-        testRuntimeOnly(rootLibs.junit.platform.engine)
-
-        testImplementation(rootLibs.awaitility.kotlin)
-        testImplementation(rootLibs.mockk)
+        add("testImplementation", rootLibs.awaitility.kotlin.get())
+        add("testImplementation", rootLibs.mockk.get())
     }
 
     if (!isNonPublishedModule()) {
         publishing {
             publications {
                 create<MavenPublication>("BluetapeExposed") {
-                    val sourcesJar by tasks.registering(Jar::class) {
+                    val sourcesJar = tasks.register<Jar>("sourcesJar") {
                         archiveClassifier.set("sources")
                         from(sourceSets["main"].allSource)
                     }
-                    val javadocJar by tasks.registering(Jar::class) {
+                    val javadocJar = tasks.register<Jar>("javadocJar") {
                         archiveClassifier.set("javadoc")
                         from(layout.buildDirectory.asFile.get().resolve("javadoc"))
                     }
@@ -391,7 +386,7 @@ val publishableProjects = subprojects.filterNot { project ->
 
 dependencies {
     publishableProjects.forEach { publishableProject ->
-        add("nmcpAggregation", project(publishableProject.path))
+        add("nmcpAggregation", project(mapOf("path" to publishableProject.path)))
     }
 }
 
@@ -399,5 +394,5 @@ dependencies {
     subprojects
         .filterNot { sub -> sub.name == "bluetape4k-exposed-bom" }
         .filter { it.plugins.hasPlugin("org.jetbrains.kotlinx.kover") }
-        .forEach { sub -> kover(project(sub.path)) }
+        .forEach { sub -> add("kover", project(mapOf("path" to sub.path))) }
 }

@@ -1,4 +1,4 @@
-val bluetape4kVersion: String by project
+val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
 dependencies {
     api(libs.bluetape4k.logging)

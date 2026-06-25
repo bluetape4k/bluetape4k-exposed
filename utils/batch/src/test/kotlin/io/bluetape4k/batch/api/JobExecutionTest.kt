@@ -3,6 +3,7 @@ package io.bluetape4k.batch.api
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
 import org.junit.jupiter.api.Test
@@ -135,6 +136,6 @@ class JobExecutionTest {
     @Test
     fun `JobExecution은 Serializable을 구현한다`() {
         val exec = JobExecution(id = 1L, jobName = "job")
-        (exec is java.io.Serializable) shouldBe true
+        exec shouldBeInstanceOf java.io.Serializable::class
     }
 }

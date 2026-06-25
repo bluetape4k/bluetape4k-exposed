@@ -13,8 +13,9 @@ import kotlinx.coroutines.channels.ChannelResult
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.redisson.api.AsyncIterator
 import org.redisson.api.map.MapLoaderAsync
 import java.util.concurrent.CompletableFuture
@@ -24,7 +25,7 @@ import java.util.concurrent.CompletionStage
  * Exposed를 사용하여 DB에서 데이터를 비동기적으로 로드하는 Redisson [MapLoaderAsync] 구현입니다.
  *
  * ## 동작/계약
- * - [load]는 `newSuspendedTransaction`으로 [loadByIdFromDB]를 실행해 단건 엔티티를 읽고 [CompletionStage]로 반환합니다.
+ * - [load]는 `suspendTransaction`으로 [loadByIdFromDB]를 실행해 단건 엔티티를 읽고 [CompletionStage]로 반환합니다.
  * - [loadAllKeys]는 [Channel]을 통해 [loadAllIdsFromDB]가 생산하는 ID를 [AsyncIterator]로 스트리밍합니다.
  * - 채널 내부에서 `queryTimeout = DEFAULT_QUERY_TIMEOUT`, `withTimeoutOrNull(DEFAULT_LOAD_ALL_IDS_TIMEOUT)` 보호막을 사용합니다.
  * - DB 오류나 채널 실패는 로깅 후 예외를 그대로 전파합니다.
@@ -62,7 +63,7 @@ open class SuspendedEntityMapLoader<ID: Any, E: Any>(
     /**
      * 단건 엔티티를 DB에서 비동기적으로 로드합니다.
      *
-     * - [newSuspendedTransaction]으로 [loadByIdFromDB]를 실행합니다.
+     * - [suspendTransaction]으로 [loadByIdFromDB]를 실행합니다.
      * - [kotlinx.coroutines.CancellationException]은 반드시 재전파해 코루틴 취소가 정상 동작하도록 합니다.
      *
      * @param id 로드할 엔티티의 ID
@@ -72,18 +73,20 @@ open class SuspendedEntityMapLoader<ID: Any, E: Any>(
         scope
             .async {
                 log.debug { "DB에서 엔티티를 로딩... id=$id" }
-                newSuspendedTransaction(scope.coroutineContext) {
-                    try {
-                        loadByIdFromDB(id)
-                            .apply {
-                                log.debug { "DB로부터 엔티티를 로딩했습니다. id=$id, entity=$this" }
-                            }
-                    } catch (e: kotlinx.coroutines.CancellationException) {
-                        // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파해야 합니다.
-                        throw e
-                    } catch (e: Throwable) {
-                        log.error(e) { "DB에서 엔티티 로딩 중 오류 발생. id=$id" }
-                        throw e
+                withContext(scope.coroutineContext) {
+                    suspendTransaction {
+                        try {
+                            loadByIdFromDB(id)
+                                .apply {
+                                    log.debug { "DB로부터 엔티티를 로딩했습니다. id=$id, entity=$this" }
+                                }
+                        } catch (e: kotlinx.coroutines.CancellationException) {
+                            // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파해야 합니다.
+                            throw e
+                        } catch (e: Throwable) {
+                            log.error(e) { "DB에서 엔티티 로딩 중 오류 발생. id=$id" }
+                            throw e
+                        }
                     }
                 }
             }.asCompletableFuture()
@@ -110,11 +113,13 @@ open class SuspendedEntityMapLoader<ID: Any, E: Any>(
             //      예외 인스턴스가 필요하기 때문입니다. 단순 channel.close()는 정상 종료와 구분할 수 없습니다.
             var cause: Throwable? = null
             try {
-                newSuspendedTransaction(scope.coroutineContext) {
-                    this.queryTimeout = DEFAULT_QUERY_TIMEOUT // 30 seconds
-                    withTimeoutOrNull(DEFAULT_LOAD_ALL_IDS_TIMEOUT) {
-                        loadAllIdsFromDB(channel)
-                    } ?: log.warn { "DB에서 모든 ID를 읽는 작업 중 Timeout 이 발생했습니다. timeout=$DEFAULT_LOAD_ALL_IDS_TIMEOUT msec" }
+                withContext(scope.coroutineContext) {
+                    suspendTransaction {
+                        this.queryTimeout = DEFAULT_QUERY_TIMEOUT // 30 seconds
+                        withTimeoutOrNull(DEFAULT_LOAD_ALL_IDS_TIMEOUT) {
+                            loadAllIdsFromDB(channel)
+                        } ?: log.warn { "DB에서 모든 ID를 읽는 작업 중 Timeout 이 발생했습니다. timeout=$DEFAULT_LOAD_ALL_IDS_TIMEOUT msec" }
+                    }
                 }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파합니다.

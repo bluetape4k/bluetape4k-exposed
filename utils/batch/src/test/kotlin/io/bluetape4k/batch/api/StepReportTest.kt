@@ -3,6 +3,7 @@ package io.bluetape4k.batch.api
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
 import org.junit.jupiter.api.Test
@@ -68,8 +69,8 @@ class StepReportTest {
         )
 
         report.status shouldBeEqualTo BatchStatus.FAILED
-        report.error.shouldNotBeNull()
-        report.error!!.message shouldBeEqualTo "db write error"
+        val error = report.error.shouldNotBeNull()
+        error.message shouldBeEqualTo "db write error"
     }
 
     @Test
@@ -111,7 +112,7 @@ class StepReportTest {
     @Test
     fun `StepReport - Serializable 구현`() {
         val report = StepReport("step1", BatchStatus.COMPLETED)
-        (report is java.io.Serializable) shouldBe true
+        report shouldBeInstanceOf java.io.Serializable::class
     }
 
     @Test
@@ -226,6 +227,6 @@ class StepReportTest {
     @Test
     fun `StepExecution - Serializable 구현`() {
         val exec = StepExecution(1L, 1L, "step1")
-        (exec is java.io.Serializable) shouldBe true
+        exec shouldBeInstanceOf java.io.Serializable::class
     }
 }

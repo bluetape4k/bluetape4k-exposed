@@ -274,8 +274,8 @@ class BatchStepRunnerCheckpointTest {
 
         // BatchStepRunner.run() 은 RuntimeException 을 catch 하여 FAILED 리포트를 반환한다.
         report.status shouldBe BatchStatus.FAILED
-        report.error.shouldNotBeNull()
-        report.error!!.message shouldBeEqualTo "checkpoint save failed"
+        val error = report.error.shouldNotBeNull()
+        error.message shouldBeEqualTo "checkpoint save failed"
         // chunk 자체는 writer 까지 도달했으므로 writer 는 데이터를 받았을 수 있음
         // 단, writeCount 는 saveCheckpoint 실패 직전에는 아직 증가하지 않았다 (BatchStepRunner.run 의
         // try 블록 순서: write → onChunkCommitted → checkpoint → saveCheckpoint → writeCount += chunk.size)

@@ -70,8 +70,8 @@ class BatchStepBuilderTest {
                     override suspend fun read(): Int? = queue.removeFirstOrNull()
                 })
                 processor { item: Int -> item.toString() }
-                writer(object : BatchWriter<String> {
-                    override suspend fun write(chunks: List<String>) { collected.addAll(chunks) }
+                writer(object: BatchWriter<String> {
+                    override suspend fun write(items: List<String>) { collected.addAll(items) }
                 })
                 chunkSize(2)
             }

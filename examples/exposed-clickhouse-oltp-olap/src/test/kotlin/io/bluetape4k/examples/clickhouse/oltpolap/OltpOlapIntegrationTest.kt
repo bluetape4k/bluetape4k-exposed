@@ -18,7 +18,7 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.postgresql.PostgreSQLContainer
 
 /**
  * PostgreSQL OLTP + ClickHouse OLAP 통합 예제.
@@ -33,7 +33,7 @@ class OltpOlapIntegrationTest {
 
     companion object: KLogging()
 
-    private val postgresContainer: PostgreSQLContainer<*> =
+    private val postgresContainer: PostgreSQLContainer =
         PostgreSQLContainer("postgres:16-alpine")
 
     private val clickhouseServer: ClickHouseServer = ClickHouseServer.Launcher.clickhouse

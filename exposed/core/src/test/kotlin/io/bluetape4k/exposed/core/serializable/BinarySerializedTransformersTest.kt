@@ -49,9 +49,9 @@ class BinarySerializedTransformersTest {
     }
 
     @Test
-    fun `binary transformer 는 Jdk 직렬화로 원본을 복원한다`() {
+    fun `binary transformer 는 SnappyFory 직렬화로 원본을 복원한다`() {
         val source = SamplePayload("eve", 19)
-        val transformer = BinarySerializedBinaryTransformer<SamplePayload>(BinarySerializers.Jdk)
+        val transformer = BinarySerializedBinaryTransformer<SamplePayload>(BinarySerializers.SnappyFory)
 
         val serialized = transformer.unwrap(source)
         val restored = transformer.wrap(serialized)
@@ -106,9 +106,9 @@ class BinarySerializedTransformersTest {
     }
 
     @Test
-    fun `blob transformer 는 Jdk 직렬화로 원본을 복원한다`() {
+    fun `blob transformer 는 SnappyFory 직렬화로 원본을 복원한다`() {
         val source = SamplePayload("iris", 27)
-        val transformer = BinarySerializedBlobTransformer<SamplePayload>(BinarySerializers.Jdk)
+        val transformer = BinarySerializedBlobTransformer<SamplePayload>(BinarySerializers.SnappyFory)
 
         val serialized = transformer.unwrap(source)
         val restored = transformer.wrap(serialized)

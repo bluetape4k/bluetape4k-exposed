@@ -20,11 +20,12 @@ fun Project.isNonPublishedModule(): Boolean {
 
 dependencies {
     constraints {
-        rootProject.subprojects {
-            if (name != "bluetape4k-exposed-bom" && !isNonPublishedModule()) {
-                api(this)
+        rootProject.subprojects
+            .filter { subproject ->
+                subproject.name != "bluetape4k-exposed-bom" && !subproject.isNonPublishedModule()
+            }.forEach { subproject ->
+                api(project(mapOf("path" to subproject.path)))
             }
-        }
     }
 }
 

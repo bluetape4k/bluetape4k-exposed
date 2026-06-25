@@ -191,12 +191,12 @@ class BatchReportTest {
     @Test
     fun `Success는 BatchReport 타입이다`() {
         val report: BatchReport = BatchReport.Success(baseJobExecution, emptyList())
-        (report is BatchReport) shouldBe true
+        report shouldBeInstanceOf BatchReport::class
     }
 
     @Test
     fun `Failure는 BatchReport 타입이다`() {
         val report: BatchReport = BatchReport.Failure(baseJobExecution, emptyList(), RuntimeException())
-        (report is BatchReport) shouldBe true
+        report shouldBeInstanceOf BatchReport::class
     }
 }
