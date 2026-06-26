@@ -98,6 +98,13 @@ buildSrc/
 - R2DBC repository code uses `suspendTransaction {}`.
 - Cache-backed repositories use decorator-style wrappers around repository
   delegates.
+- DDD contracts in this repository must stay Spring-neutral and JaVers-neutral.
+  `AggregateRoot`, `DomainEvent`, and event-publishing helpers may support
+  repository lifecycle integration, but they must not depend on JaVers audit
+  types or encode JaVers commit semantics.
+- This repository owns Exposed repository execution, cache behavior,
+  transaction boundaries, and Spring Boot/Ktor adapters. Audit history and
+  JaVers snapshot persistence belong in `bluetape4k-javers`.
 - JSON/encryption column helpers should match existing module-specific DSL
   styles.
 - Ktor integration is explicit opt-in only. Applications own `Database`,

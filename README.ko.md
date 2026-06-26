@@ -78,6 +78,21 @@ Column codec, 데이터베이스별 helper, Spring Boot 4 자동 설정을 더�
 | `exposed-spring-boot-batch` | Spring Boot 4.x Batch 통합 |
 | `exposed-spring-modulith` | Exposed 기반 Spring Modulith JDBC 이벤트 발행 Repository |
 
+## JaVers와의 경계
+
+`bluetape4k-exposed`는 JetBrains Exposed 주변의 애플리케이션 데이터 경로를
+담당합니다. Repository 실행, 트랜잭션 경계, cache read/write 동작, Spring Boot와
+Ktor 통합이 이 저장소의 책임입니다. 따라서 이 저장소의 DDD 계약은 Spring에도
+JaVers에도 묶이지 않는 최소 계약이어야 합니다. Aggregate root, 보류 중인 domain
+event, after-commit 발행 hook은 다룰 수 있지만 JaVers audit 개념을 직접 담지는
+않습니다.
+
+객체 이력, diff, JaVers commit metadata가 필요하면 `bluetape4k-javers`를 사용하세요.
+그쪽의 `javers-exposed`는 Exposed JDBC로 JaVers CDO snapshot을 저장하고,
+`javers-ddd`는 aggregate/domain-event workflow를 JaVers commit으로 연결합니다. 두
+모듈은 이 저장소를 보완하지만 source-of-truth Exposed Repository나 cache decorator를
+대체하지 않습니다.
+
 ## 빠른 시작
 
 ### Gradle 의존성 추가

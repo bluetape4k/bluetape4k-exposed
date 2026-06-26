@@ -79,6 +79,21 @@ auto-configuration only where the application data path needs them.
 | `exposed-spring-boot-batch` | Spring Boot 4.x batch integration |
 | `exposed-spring-modulith` | Spring Modulith JDBC event publication repository backed by Exposed |
 
+## Boundary with JaVers
+
+`bluetape4k-exposed` owns the application data path around JetBrains Exposed:
+repository execution, transaction boundaries, cache read/write behavior, and
+Spring Boot or Ktor integration. DDD-facing contracts in this repository should
+therefore stay Spring-neutral and JaVers-neutral. They may describe aggregate
+roots, pending domain events, and after-commit publication hooks, but they
+should not encode JaVers audit concepts.
+
+Use `bluetape4k-javers` when the requirement is object history, diffing, or
+JaVers commit metadata. In that repository, `javers-exposed` stores JaVers CDO
+snapshots through Exposed JDBC, and `javers-ddd` adapts aggregate/domain-event
+workflows into JaVers commits. Those modules complement this repository; they
+do not replace the source-of-truth Exposed repositories or cache decorators.
+
 ## Quick Start
 
 ### Gradle
