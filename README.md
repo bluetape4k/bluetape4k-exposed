@@ -101,19 +101,19 @@ do not replace the source-of-truth Exposed repositories or cache decorators.
 ```kotlin
 dependencies {
     // Core
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.10.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.11.0")
     // R2DBC (coroutines)
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.10.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.11.0")
     // Redis cache
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.10.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.11.0")
     // Jackson JSON columns
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.10.0")
-    // Ktor integration (available from 1.11.0)
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.11.0")
+    // Ktor integration
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor:1.11.0")
     // Spring Boot auto-configuration
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.10.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.11.0")
     // Spring Modulith JDBC event publication through Exposed
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.10.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.11.0")
 }
 ```
 
