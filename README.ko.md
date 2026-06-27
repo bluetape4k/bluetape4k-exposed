@@ -100,19 +100,19 @@ event, after-commit 발행 hook은 다룰 수 있지만 JaVers audit 개념을 �
 ```kotlin
 dependencies {
     // 핵심 JDBC
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.10.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.11.0")
     // R2DBC (코루틴)
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.10.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.11.0")
     // Redis 캐시 (Lettuce)
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.10.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.11.0")
     // Jackson JSON Column
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.10.0")
-    // Ktor 통합 (1.11.0부터 제공)
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.11.0")
+    // Ktor 통합
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor:1.11.0")
     // Spring Boot 자동 설정
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.10.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.11.0")
     // Exposed 기반 Spring Modulith JDBC 이벤트 발행
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.10.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.11.0")
 }
 ```
 
