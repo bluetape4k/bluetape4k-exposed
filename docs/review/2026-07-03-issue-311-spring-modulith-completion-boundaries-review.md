@@ -4,7 +4,18 @@
 
 - Issue: #311
 - Module: `:bluetape4k-exposed-spring-modulith`
-- Change type: focused test hardening with one idempotency fix
+- Change type: focused test hardening with one idempotency fix and Kotlin factory helpers
+
+## bluetape4k-code-patterns Evidence
+
+| Step | Status | Evidence |
+|---|---|---|
+| Kotlin factory style | PASS | Added `targetEventPublicationOf(...)` and `publicationTargetIdentifierOf(...)`; tests no longer call Spring Modulith Java static factories directly. |
+| Validation helper | PASS | `publicationTargetIdentifierOf(...)` validates caller input with `requireNotBlank("value")` before delegating. |
+| Assertion style | PASS | Boolean checks use `shouldBeTrue()` / `shouldBeFalse()`; comparison checks use infix `shouldBeEqualTo`. |
+| Unique UUID style | PASS | Test UUID values use `Uuid.V7.nextId()` via `nextJavaUuid()` instead of legacy random UUID generation. |
+| Concurrency helper gate | PASS | No ad hoc concurrency loop was added; duplicate retry calls are deterministic idempotency boundaries, not thread-safety/race stress tests, so `MultithreadingTester`, `StructuredTaskScopeTester`, and `SuspendedJobTester` do not fit this issue scope. |
+| README locale set | PASS | Updated `README.md` and `README.ko.md` with completion idempotency behavior and Kotlin package function usage. |
 
 ## 7-Tier Review
 
@@ -20,12 +31,13 @@
    - New parameterized tests cover H2, PostgreSQL, and MySQL_V8 across UPDATE, DELETE, and ARCHIVE modes.
    - Assertions use `bluetape4k-assertions`; no JUnit/kotlin.test assertion additions.
 5. bluetape4k patterns: PASS
-   - No mocking was added.
+   - No mocking was added; no `clearMocks(...)` setup is required.
    - Test fixture data class implements `Serializable` with `serialVersionUID`.
+   - Kotlin call sites use package functions instead of Java-style Spring Modulith static factories.
 6. Documentation impact: PASS
-   - No README change required; behavior is an idempotency boundary in existing repository methods.
+   - README locale set documents idempotent completion retries and Kotlin helper usage.
 7. Verification: PASS
-   - `./gradlew :bluetape4k-exposed-spring-modulith:test`
+   - `./gradlew :bluetape4k-exposed-spring-modulith:test` expected 43 tests and passed 43 tests.
    - `git diff --check`
 
 ## Residual Risk

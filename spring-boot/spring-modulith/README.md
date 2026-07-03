@@ -40,6 +40,20 @@ mode:
 - `DELETE`: remove the active row after successful completion.
 - `ARCHIVE`: copy the row to `EVENT_PUBLICATION_ARCHIVE` with a savepoint, then delete the active row.
 
+Completion operations are idempotent for duplicate retry calls. `UPDATE` mode preserves the first
+`COMPLETION_DATE`, `DELETE` mode leaves no completed row behind, and `ARCHIVE` mode keeps a single archived row.
+Repeated `markResubmitted(...)` calls update attempts and timestamp only on the first resubmission.
+
+Kotlin callers can use package functions instead of Spring Modulith's Java-style static factories:
+
+```kotlin
+val publication = targetEventPublicationOf(
+    event = "order-1",
+    targetIdentifier = publicationTargetIdentifierOf("listener.order-submitted"),
+    publicationDate = Instant.now(),
+)
+```
+
 ## Unloadable Event Types
 
 Rows whose `EVENT_TYPE` can no longer be loaded remain visible through incomplete, failed, and status queries.

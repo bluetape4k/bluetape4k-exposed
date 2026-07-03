@@ -383,7 +383,7 @@ class ExposedEventPublicationRepository(
         override fun getEvent(): Any = eventValue
 
         override fun getTargetIdentifier(): PublicationTargetIdentifier =
-            PublicationTargetIdentifier.of(listenerId)
+            publicationTargetIdentifierOf(listenerId)
 
         override fun getPublicationDate(): Instant = publicationDate
 
