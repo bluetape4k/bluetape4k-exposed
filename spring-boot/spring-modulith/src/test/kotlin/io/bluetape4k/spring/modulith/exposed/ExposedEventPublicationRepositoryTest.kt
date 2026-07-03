@@ -13,6 +13,7 @@ import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.spring7.transaction.SpringTransactionManager
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.boot.WebApplicationType
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
@@ -29,6 +30,7 @@ import org.springframework.modulith.events.core.TargetEventPublication
 import org.springframework.modulith.events.support.CompletionMode
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
+import java.io.Serializable
 import java.time.Instant
 import java.util.UUID
 import javax.sql.DataSource
@@ -43,6 +45,12 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
 
         @JvmStatic
         fun enabledDialects(): Set<TestDB> = TestDB.enabledDialects()
+
+        @JvmStatic
+        fun dialectCompletionModes(): List<Arguments> =
+            enabledDialects().flatMap { testDB ->
+                CompletionMode.entries.map { completionMode -> Arguments.of(testDB, completionMode) }
+            }
     }
 
     @ParameterizedTest(name = "{0}")
@@ -140,6 +148,123 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
 
             repository.deleteCompletedPublicationsBefore(Instant.parse("2026-05-16T00:02:00Z"))
             repository.findCompletedPublications().size.shouldBeEqualTo(0)
+        }
+    }
+
+    @ParameterizedTest(name = "{0} {1}")
+    @MethodSource("dialectCompletionModes")
+    fun `duplicate identifier completion is idempotent`(testDB: TestDB, completionMode: CompletionMode) {
+        withApplicationContext(testDB, completionMode) { context ->
+            val repository = context.getBean(EventPublicationRepository::class.java)
+            val publication = TargetEventPublication.of(
+                TestEvent("duplicate-identifier-${completionMode.name.lowercase()}"),
+                PublicationTargetIdentifier.of("listener.duplicate.identifier"),
+                Instant.parse("2026-05-16T00:00:00Z"),
+            )
+            val firstCompletionDate = Instant.parse("2026-05-16T00:01:00Z")
+            val duplicateCompletionDate = Instant.parse("2026-05-16T00:02:00Z")
+
+            repository.create(publication)
+
+            repository.markCompleted(publication.identifier, firstCompletionDate)
+            repository.markCompleted(publication.identifier, duplicateCompletionDate)
+
+            repository.findIncompletePublications().size.shouldBeEqualTo(0)
+
+            when (completionMode) {
+                CompletionMode.DELETE ->
+                    repository.findCompletedPublications().size.shouldBeEqualTo(0)
+
+                CompletionMode.ARCHIVE,
+                CompletionMode.UPDATE -> {
+                    val completed = repository.findCompletedPublications().single()
+                    completed.identifier.shouldBeEqualTo(publication.identifier)
+                    completed.status.shouldBeEqualTo(Status.COMPLETED)
+                    completed.completionDate.orElseThrow().shouldBeEqualTo(firstCompletionDate)
+                }
+            }
+        }
+    }
+
+    @ParameterizedTest(name = "{0} {1}")
+    @MethodSource("dialectCompletionModes")
+    fun `event and listener completion handles duplicate rows idempotently`(
+        testDB: TestDB,
+        completionMode: CompletionMode,
+    ) {
+        withApplicationContext(testDB, completionMode) { context ->
+            val repository = context.getBean(EventPublicationRepository::class.java)
+            val event = TestEvent("shared-event")
+            val targetIdentifier = PublicationTargetIdentifier.of("listener.shared")
+            val first = TargetEventPublication.of(
+                event,
+                targetIdentifier,
+                Instant.parse("2026-05-16T00:00:00Z"),
+            )
+            val second = TargetEventPublication.of(
+                event,
+                targetIdentifier,
+                Instant.parse("2026-05-16T00:01:00Z"),
+            )
+            val firstCompletionDate = Instant.parse("2026-05-16T00:02:00Z")
+            val duplicateCompletionDate = Instant.parse("2026-05-16T00:03:00Z")
+
+            repository.create(first)
+            repository.create(second)
+
+            repository.markCompleted(event, targetIdentifier, firstCompletionDate)
+            repository.markCompleted(event, targetIdentifier, duplicateCompletionDate)
+
+            repository.findIncompletePublications().size.shouldBeEqualTo(0)
+
+            when (completionMode) {
+                CompletionMode.DELETE ->
+                    repository.findCompletedPublications().size.shouldBeEqualTo(0)
+
+                CompletionMode.ARCHIVE,
+                CompletionMode.UPDATE -> {
+                    val completed = repository.findCompletedPublications()
+                    completed.size.shouldBeEqualTo(2)
+                    completed.map { it.identifier }
+                        .toSet()
+                        .shouldBeEqualTo(setOf(first.identifier, second.identifier))
+                    completed.map { it.status }.toSet().shouldBeEqualTo(setOf(Status.COMPLETED))
+                    completed.map { it.completionDate.orElseThrow() }
+                        .toSet()
+                        .shouldBeEqualTo(setOf(firstCompletionDate))
+                }
+            }
+        }
+    }
+
+    @ParameterizedTest(name = "{0} {1}")
+    @MethodSource("dialectCompletionModes")
+    fun `repeated resubmission leaves attempts and timestamp unchanged`(
+        testDB: TestDB,
+        completionMode: CompletionMode,
+    ) {
+        withApplicationContext(testDB, completionMode) { context ->
+            val repository = context.getBean(EventPublicationRepository::class.java)
+            val publication = TargetEventPublication.of(
+                TestEvent("resubmission-${completionMode.name.lowercase()}"),
+                PublicationTargetIdentifier.of("listener.resubmission"),
+                Instant.parse("2026-05-16T00:00:00Z"),
+            )
+            val firstResubmissionDate = Instant.parse("2026-05-16T00:05:00Z")
+            val duplicateResubmissionDate = Instant.parse("2026-05-16T00:06:00Z")
+
+            repository.create(publication)
+            repository.markFailed(publication.identifier)
+
+            repository.markResubmitted(publication.identifier, firstResubmissionDate)
+                .shouldBeEqualTo(true)
+            repository.markResubmitted(publication.identifier, duplicateResubmissionDate)
+                .shouldBeEqualTo(false)
+
+            val resubmitted = repository.findByStatus(Status.RESUBMITTED).single()
+            resubmitted.identifier.shouldBeEqualTo(publication.identifier)
+            resubmitted.completionAttempts.shouldBeEqualTo(2)
+            resubmitted.lastResubmissionDate.shouldBeEqualTo(firstResubmissionDate)
         }
     }
 
@@ -273,7 +398,11 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
         fun eventSerializer(): EventSerializer = TestEventSerializer()
     }
 
-    data class TestEvent(val value: String)
+    data class TestEvent(val value: String) : Serializable {
+        companion object {
+            private const val serialVersionUID: Long = 7240327694587830410L
+        }
+    }
 
     private fun ExposedEventPublicationTable.insertUnknownPublication(
         id: UUID,
