@@ -14,8 +14,8 @@ Modulith store module.
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.10.0")
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.10.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.11.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.11.0")
 }
 ```
 
