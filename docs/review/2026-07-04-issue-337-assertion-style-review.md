@@ -44,3 +44,4 @@
 - `./gradlew :bluetape4k-exposed-core:test :bluetape4k-exposed-fastjson2:test :bluetape4k-exposed-jackson2:test :bluetape4k-exposed-r2dbc:test :bluetape4k-exposed-batch:test --no-configuration-cache`: pass, 355 passing, 7 pending.
 - `./gradlew :bluetape4k-exposed-jdbc-tests:test :bluetape4k-exposed-r2dbc-tests:test :exposed-spring-boot-r2dbc-demo:test --no-configuration-cache`: pass, 170 + 149 + 25 passing.
 - `./gradlew :bluetape4k-exposed-r2dbc-tests:test --no-configuration-cache`: pass, 149 passing after suspend helper cleanup.
+- `./gradlew test --no-configuration-cache`: pass, `BUILD SUCCESSFUL in 13m 6s`, 234 actionable tasks.
