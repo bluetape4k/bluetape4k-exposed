@@ -22,6 +22,7 @@ Issue #337 required normalizing repo-wide test assertions to bluetape4k assertio
 - `git diff --check` passed.
 - Full `compileTestKotlin` passed.
 - Targeted core/readable/r2dbc/batch/JDBC/R2DBC/demo tests passed.
+- Full repository `test` passed with `--no-configuration-cache`.
 
 ## Future Guidance
 
