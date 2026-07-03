@@ -48,7 +48,7 @@ class ColumnTypeUnitTest {
     fun `MeasureColumnType nonNullValueToString 은 base unit Double 문자열을 반환한다`() {
         val type = MeasureColumnType(Length.meters) { Measure(it, Length.meters) }
         val str = type.nonNullValueToString(2.0.meters())
-        str.shouldBeEqualTo("2.0")
+        str shouldBeEqualTo "2.0"
     }
 
     @Test
@@ -104,7 +104,7 @@ class ColumnTypeUnitTest {
     fun `TemperatureColumnType nonNullValueToString 은 Kelvin Double 문자열을 반환한다`() {
         val type = TemperatureColumnType()
         val str = type.nonNullValueToString(25.celsius())
-        str.shouldBeEqualTo("298.15")
+        str shouldBeEqualTo "298.15"
     }
 
     @Test
@@ -153,7 +153,7 @@ class ColumnTypeUnitTest {
     fun `TemperatureDeltaColumnType nonNullValueToString 은 Kelvin delta Double 문자열을 반환한다`() {
         val type = TemperatureDeltaColumnType()
         val str = type.nonNullValueToString(10.celsiusDelta())
-        str.shouldBeEqualTo("10.0")
+        str shouldBeEqualTo "10.0"
     }
 
     @Test

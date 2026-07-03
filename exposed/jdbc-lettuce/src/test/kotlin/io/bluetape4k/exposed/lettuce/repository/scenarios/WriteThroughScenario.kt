@@ -6,6 +6,7 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
@@ -116,7 +117,7 @@ interface WriteThroughScenario<ID: Any, E: java.io.Serializable>:
         withEntityTable(testDB) {
             val ids = getExistingIds()
             val result = repository.findAllFromDb(ids)
-            result.size shouldBeEqualTo ids.size
+            result shouldHaveSize ids.size
         }
     }
 

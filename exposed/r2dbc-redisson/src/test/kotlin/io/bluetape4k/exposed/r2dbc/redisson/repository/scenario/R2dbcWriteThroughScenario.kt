@@ -92,7 +92,7 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
                 // 캐시에서 조회한 값
                 val entityMap = repository.getAll(ids)
                 entityMap.shouldNotBeEmpty()
-                entityMap.size shouldBeEqualTo ids.size
+                entityMap shouldHaveSize ids.size
 
                 // 캐시에 갱신된 값 저장 -> DB에도 저장
                 val updatedEntityMap = entityMap.mapValues { (_, v) -> updateEntityEmail(v) }
@@ -149,7 +149,7 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
 
                 val entityMap = repository.getAll(ids)
                 entityMap.shouldNotBeEmpty()
-                entityMap.size shouldBeEqualTo ids.size
+                entityMap shouldHaveSize ids.size
 
                 val updatedEntityMap = entityMap.mapValues { (_, v) -> updateEntityEmail(v) }
                 repository.upsertAll(updatedEntityMap, batchSize = 2)

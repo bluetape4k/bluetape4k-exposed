@@ -9,6 +9,7 @@ import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -103,8 +104,7 @@ interface JdbcReadThroughScenario<ID: Any, E: Serializable>: JdbcCacheTestScenar
         withEntityTable(testDB) {
             val entities = repository.findAll()
             entities.shouldNotBeEmpty()
-            entities.size shouldBeEqualTo
-                    repository.table
+            entities shouldHaveSize repository.table
                         .selectAll()
                         .count()
                         .toInt()
@@ -120,7 +120,7 @@ interface JdbcReadThroughScenario<ID: Any, E: Serializable>: JdbcCacheTestScenar
             entities.shouldNotBeEmpty()
 
             // 존재하지 않는 ID는 결과에 포함되지 않아야 함
-            entities.size shouldBeEqualTo getExistingIds().size
+            entities shouldHaveSize getExistingIds().size
         }
     }
 

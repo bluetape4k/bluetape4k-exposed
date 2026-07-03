@@ -10,6 +10,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.greaterEq
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -51,7 +52,7 @@ class ExposedKeysetItemReaderTest : AbstractExposedBatchTest() {
                 item = reader.read()
             }
 
-            results.size shouldBeEqualTo 25
+            results shouldHaveSize 25
             results.first().id shouldBeEqualTo 1L
             results.last().id shouldBeEqualTo 25L
 
@@ -101,7 +102,7 @@ class ExposedKeysetItemReaderTest : AbstractExposedBatchTest() {
                 item = restartReader.read()
             }
 
-            remaining.size shouldBeEqualTo 35
+            remaining shouldHaveSize 35
             remaining.first().id shouldBeEqualTo 16L
 
             restartReader.close()
@@ -128,7 +129,7 @@ class ExposedKeysetItemReaderTest : AbstractExposedBatchTest() {
                 item = reader.read()
             }
 
-            results.size shouldBeEqualTo 20
+            results shouldHaveSize 20
             results.first().id shouldBeEqualTo 21L
             results.last().id shouldBeEqualTo 40L
 
@@ -170,7 +171,7 @@ class ExposedKeysetItemReaderTest : AbstractExposedBatchTest() {
                 item = reader.read()
             }
 
-            results.size shouldBeEqualTo 26  // value 25..50
+            results shouldHaveSize 26  // value 25..50
             results.all { it.value >= 25 }.shouldBeTrue()
 
             reader.close()
@@ -208,7 +209,7 @@ class ExposedKeysetItemReaderTest : AbstractExposedBatchTest() {
                 item = reader.read()
             }
 
-            results.size shouldBeEqualTo 10
+            results shouldHaveSize 10
             results.first().id shouldBeEqualTo 1L
 
             reader.close()

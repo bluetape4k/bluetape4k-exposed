@@ -20,7 +20,7 @@ class TstzRangeLiteralParsingTest {
         result.start shouldBeEqualTo Instant.parse("2024-01-01T00:00:00.123456Z")
         result.end shouldBeEqualTo Instant.parse("2024-01-01T01:02:03.987654Z")
         result.lowerInclusive.shouldBeTrue()
-        result.upperInclusive shouldBeEqualTo false
+        result.upperInclusive.shouldBeFalse()
     }
 
     @Test

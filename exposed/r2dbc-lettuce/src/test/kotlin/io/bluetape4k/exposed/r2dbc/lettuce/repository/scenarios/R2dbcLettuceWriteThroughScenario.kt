@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.runTest
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.io.Serializable
@@ -104,7 +105,7 @@ interface R2dbcLettuceWriteThroughScenario<ID: Any, E: Serializable>: R2DbcLettu
             withR2dbcEntityTable(testDB) {
                 val ids = getExistingIds()
                 val entities = repository.findAllFromDb(ids)
-                entities.size shouldBeEqualTo ids.size
+                entities shouldHaveSize ids.size
             }
         }
 

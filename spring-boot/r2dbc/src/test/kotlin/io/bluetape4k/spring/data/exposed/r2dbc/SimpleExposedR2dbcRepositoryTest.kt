@@ -108,7 +108,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
                 )
                 .run()
 
-            savedIds.distinct().size shouldBeEqualTo workerSize
+            savedIds.distinct() shouldHaveSize workerSize
             userRepository.count() shouldBeEqualTo workerSize.toLong()
         }
     }

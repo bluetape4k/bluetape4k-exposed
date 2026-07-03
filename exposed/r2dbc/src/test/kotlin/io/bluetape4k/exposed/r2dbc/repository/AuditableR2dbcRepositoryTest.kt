@@ -4,6 +4,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.core.auditable.Auditable
 import io.bluetape4k.exposed.core.auditable.AuditableLongIdTable
 import io.bluetape4k.exposed.core.auditable.UserContext
@@ -98,7 +99,7 @@ class AuditableR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             val ids = ArticleRepository.saveAll(records)
 
             ids shouldHaveSize records.size
-            ids.all { id -> id > 0L } shouldBeEqualTo true
+            ids.all { id -> id > 0L }.shouldBeTrue()
             val article = ArticleRepository.findById(ids.first())
             article.createdBy shouldBeEqualTo UserContext.DEFAULT_USERNAME
             article.createdAt.shouldNotBeNull()

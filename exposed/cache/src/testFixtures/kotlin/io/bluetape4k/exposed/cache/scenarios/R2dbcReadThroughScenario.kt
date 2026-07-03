@@ -11,6 +11,7 @@ import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -106,8 +107,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: Serializable>: R2dbcCacheTestScen
         withR2dbcEntityTable(testDB) {
             val entities = repository.findAll()
             entities.shouldNotBeEmpty()
-            entities.size shouldBeEqualTo
-                    repository.table
+            entities shouldHaveSize repository.table
                         .selectAll()
                         .count()
                         .toInt()
@@ -122,7 +122,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: Serializable>: R2dbcCacheTestScen
             val entities = repository.getAll(ids)
             entities.shouldNotBeEmpty()
 
-            entities.size shouldBeEqualTo getExistingIds().size
+            entities shouldHaveSize getExistingIds().size
         }
     }
 

@@ -8,6 +8,7 @@ import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -55,7 +56,7 @@ interface ReadThroughScenario<ID: Any, E: java.io.Serializable>:
         withEntityTable(testDB) {
             val ids = getExistingIds()
             val result = repository.getAll(ids)
-            result.size shouldBeEqualTo ids.size
+            result shouldHaveSize ids.size
         }
     }
 
@@ -65,7 +66,7 @@ interface ReadThroughScenario<ID: Any, E: java.io.Serializable>:
         withEntityTable(testDB) {
             val ids = getExistingIds() + listOf(getNonExistentId())
             val result = repository.getAll(ids)
-            result.size shouldBeEqualTo getExistingIds().size
+            result shouldHaveSize getExistingIds().size
         }
     }
 

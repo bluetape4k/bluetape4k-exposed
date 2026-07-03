@@ -2,6 +2,8 @@ package io.bluetape4k.exposed.clickhouse
 
 import io.bluetape4k.exposed.clickhouse.dialect.ClickHouseDialect
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
 import org.junit.jupiter.api.Test
 
 /**
@@ -21,12 +23,12 @@ class ClickHouseDialectTest {
     fun `dialect flags are set correctly`() {
         val dialect = ClickHouseDialect()
 
-        dialect.supportsColumnTypeChange shouldBeEqualTo false
-        dialect.supportsMultipleGeneratedKeys shouldBeEqualTo false
-        dialect.supportsCreateSequence shouldBeEqualTo false
-        dialect.supportsTernaryAffectedRowValues shouldBeEqualTo false
-        dialect.supportsRestrictReferenceOption shouldBeEqualTo false
-        dialect.supportsSetDefaultReferenceOption shouldBeEqualTo false
-        dialect.requiresAutoCommitOnCreateDrop shouldBeEqualTo true
+        dialect.supportsColumnTypeChange.shouldBeFalse()
+        dialect.supportsMultipleGeneratedKeys.shouldBeFalse()
+        dialect.supportsCreateSequence.shouldBeFalse()
+        dialect.supportsTernaryAffectedRowValues.shouldBeFalse()
+        dialect.supportsRestrictReferenceOption.shouldBeFalse()
+        dialect.supportsSetDefaultReferenceOption.shouldBeFalse()
+        dialect.requiresAutoCommitOnCreateDrop.shouldBeTrue()
     }
 }

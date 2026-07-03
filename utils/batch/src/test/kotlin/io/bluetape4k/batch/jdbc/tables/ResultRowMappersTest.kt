@@ -9,6 +9,7 @@ import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldBeTrue
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
@@ -178,9 +179,8 @@ class ResultRowMappersTest : AbstractExposedTest() {
             jobExecution.status shouldBeEqualTo BatchStatus.RUNNING
             // params 복원 검증 (키가 포함되어 있어야 함)
             jobExecution.params.shouldNotBeNull()
-            jobExecution.params.containsKey("region") shouldBeEqualTo true
-            jobExecution.params.containsKey("date") shouldBeEqualTo true
-
+            jobExecution.params.containsKey("region").shouldBeTrue()
+            jobExecution.params.containsKey("date").shouldBeTrue()
             // Step 매퍼 검증
             val stepRow = BatchStepExecutionTable
                 .selectAll()

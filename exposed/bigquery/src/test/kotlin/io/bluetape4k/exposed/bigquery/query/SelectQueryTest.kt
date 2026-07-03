@@ -10,6 +10,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.count
 import org.jetbrains.exposed.v1.core.eq
@@ -56,7 +57,7 @@ class SelectQueryTest: AbstractBigQueryTest() {
             val rows = Events.selectAll().withBigQuery().toList()
 
             rows.shouldNotBeEmpty()
-            rows.size shouldBeEqualTo 5
+            rows shouldHaveSize 5
         }
     }
 
@@ -70,7 +71,7 @@ class SelectQueryTest: AbstractBigQueryTest() {
                 .withBigQuery()
                 .toList()
 
-            rows.size shouldBeEqualTo 2
+            rows shouldHaveSize 2
             rows.all { it[Events.region] == "kr" }.shouldBeTrue()
         }
     }
@@ -164,7 +165,7 @@ class SelectQueryTest: AbstractBigQueryTest() {
                 .withBigQuery()
                 .toListSuspending()
 
-            rows.size shouldBeEqualTo 2
+            rows shouldHaveSize 2
             rows[0][Events.amount] shouldBeEqualTo BigDecimal("12.34")
             rows[0][Events.occurredAt] shouldBeEqualTo Instant.parse("2024-01-01T00:00:00Z")
             rows[1][Events.amount] shouldBeEqualTo null
@@ -175,7 +176,7 @@ class SelectQueryTest: AbstractBigQueryTest() {
                 .toFlow()
                 .toList()
 
-            streamed.size shouldBeEqualTo 2
+            streamed shouldHaveSize 2
             streamed[1][Events.occurredAt] shouldBeEqualTo Instant.parse("2024-01-02T00:00:00Z")
         }
     }

@@ -9,6 +9,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.r2dbc.insert
 import org.junit.jupiter.api.Test
@@ -117,7 +118,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
             ) { TestEntity(this[TestTable.id].value, this[TestTable.name]) }
 
             val ids = loader.loadAllKeys().toList()
-            ids.size shouldBeEqualTo 3
+            ids shouldHaveSize 3
             ids shouldBeEqualTo ids.sorted()
         }
     }

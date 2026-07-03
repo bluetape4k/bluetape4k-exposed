@@ -7,6 +7,7 @@ import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -66,7 +67,7 @@ class LowCardinalityTest: AbstractClickHouseTest() {
                 }
 
                 val rows = LcTable.selectAll().orderBy(LcTable.id).toList()
-                rows.size shouldBeEqualTo 4
+                rows shouldHaveSize 4
                 rows[0][LcTable.category] shouldBeEqualTo "ALPHA"
                 rows[1][LcTable.category] shouldBeEqualTo "BETA"
                 rows[1][LcTable.nullableCategory].shouldBeNull()

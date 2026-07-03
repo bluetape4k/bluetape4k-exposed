@@ -8,6 +8,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -196,7 +197,7 @@ class TstzRangeColumnTypeTest: AbstractExposedTest() {
             }
 
             val rows = EventTable.selectAll().toList()
-            rows.size shouldBeEqualTo 3
+            rows shouldHaveSize 3
         }
     }
 

@@ -21,6 +21,7 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldHaveSize
 
 /**
  * pgvector 컬럼 타입 및 거리 연산 통합 테스트.
@@ -99,7 +100,7 @@ class VectorColumnTypeTest: AbstractExposedTest() {
 
             val result = row[Embeddings.embedding]
             result.shouldNotBeNull()
-            result.size shouldBeEqualTo DIMENSION
+            result shouldHaveSize DIMENSION
             result[0].toDouble().shouldBeNear(1.0, 0.001)
             result[1].toDouble().shouldBeNear(2.0, 0.001)
             result[2].toDouble().shouldBeNear(3.0, 0.001)
@@ -130,7 +131,7 @@ class VectorColumnTypeTest: AbstractExposedTest() {
                 .orderBy(EmbeddingPairs.embedding.cosineDistance(EmbeddingPairs.query) to SortOrder.ASC)
                 .map { it[EmbeddingPairs.name] }
 
-            results.size shouldBeEqualTo 3
+            results shouldHaveSize 3
             results.first() shouldBeEqualTo "aligned"
             results.last() shouldBeEqualTo "orthogonal"
         }
@@ -160,7 +161,7 @@ class VectorColumnTypeTest: AbstractExposedTest() {
                 .orderBy(EmbeddingPairs.embedding.l2Distance(EmbeddingPairs.query) to SortOrder.ASC)
                 .map { it[EmbeddingPairs.name] }
 
-            results.size shouldBeEqualTo 3
+            results shouldHaveSize 3
             results.first() shouldBeEqualTo "origin"
             results.last() shouldBeEqualTo "far"
         }
@@ -263,7 +264,7 @@ class VectorColumnTypeTest: AbstractExposedTest() {
             }
 
             val results = Embeddings.selectAll().toList()
-            results.size shouldBeEqualTo 5
+            results shouldHaveSize 5
         }
     }
 }

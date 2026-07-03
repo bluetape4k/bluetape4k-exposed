@@ -6,6 +6,7 @@ import io.bluetape4k.exposed.clickhouse.engine.mergeTree
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -54,7 +55,7 @@ class Date32Test: AbstractClickHouseTest() {
                 val rows = D32Table.selectAll()
                     .where { D32Table.id eq 1L }
                     .toList()
-                rows.size shouldBeEqualTo 1
+                rows shouldHaveSize 1
                 rows[0][D32Table.date] shouldBeEqualTo today
             } finally {
                 SchemaUtils.drop(D32Table)

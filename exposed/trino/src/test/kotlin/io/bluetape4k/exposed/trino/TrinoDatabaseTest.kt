@@ -4,6 +4,7 @@ import io.bluetape4k.exposed.trino.dialect.TrinoDialect
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldBeFalse
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
 
@@ -68,11 +69,11 @@ class TrinoDatabaseTest: AbstractTrinoTest() {
 
     @Test
     fun `supportsColumnTypeChange 는 false 이다`() {
-        db.dialect.supportsColumnTypeChange shouldBeEqualTo false
+        db.dialect.supportsColumnTypeChange.shouldBeFalse()
     }
 
     @Test
     fun `supportsMultipleGeneratedKeys 는 false 이다`() {
-        db.dialect.supportsMultipleGeneratedKeys shouldBeEqualTo false
+        db.dialect.supportsMultipleGeneratedKeys.shouldBeFalse()
     }
 }

@@ -9,6 +9,7 @@ import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
@@ -87,7 +88,7 @@ class ItemRepositoryTest: AbstractJdbcLettuceTest() {
             ).run()
 
         val result = repo.getAll(items.map { it.id }.toSet())
-        result.size shouldBeEqualTo items.size
+        result shouldHaveSize items.size
         items.forEach { item ->
             result[item.id].shouldNotBeNull().name shouldBeEqualTo item.name
         }
@@ -124,7 +125,7 @@ class ItemRepositoryTest: AbstractJdbcLettuceTest() {
                 }
             ).run()
 
-        names.size shouldBeEqualTo 8
+        names shouldHaveSize 8
         names.forEach { it shouldBeEqualTo "Contended" }
     }
 
@@ -143,7 +144,7 @@ class ItemRepositoryTest: AbstractJdbcLettuceTest() {
                 names += found.name
             }.run()
 
-        names.size shouldBeEqualTo 8
+        names shouldHaveSize 8
         names.forEach { it shouldBeEqualTo "Structured" }
     }
 
@@ -183,7 +184,7 @@ class ItemRepositoryTest: AbstractJdbcLettuceTest() {
         repo.put(item2.id, item2)
 
         val result = repo.getAll(setOf(item1.id, item2.id))
-        result.size shouldBeEqualTo 2
+        result shouldHaveSize 2
         result[item1.id]?.name shouldBeEqualTo "Item1"
         result[item2.id]?.name shouldBeEqualTo "Item2"
     }

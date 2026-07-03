@@ -23,6 +23,8 @@ import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.autoIncColumnType
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
@@ -80,7 +82,7 @@ class JdbcCaffeineRepositoryExtraTest {
             ready.await(5, TimeUnit.SECONDS).shouldBeTrue()
             start.countDown()
 
-            futures.map { it.get(5, TimeUnit.SECONDS) }.toSet().size shouldBeEqualTo 1
+            futures.map { it.get(5, TimeUnit.SECONDS) }.toSet() shouldHaveSize 1
             repository.singleLoadCount.get() shouldBeEqualTo 1
         } finally {
             executor.shutdownNow()
@@ -242,7 +244,7 @@ class JdbcCaffeineRepositoryExtraTest {
                 RecordingLogbackAppender().use { appender ->
                     val entities = repository.findAll()
 
-                    entities.size shouldBeEqualTo ActorTable.selectAll().count().toInt()
+                    entities shouldHaveSize ActorTable.selectAll().count().toInt()
                     repository.cache.asMap().shouldBeEmpty()
                     appender.hasWarnContaining(
                         "Cache warming failed for entity - skipping. " +
@@ -264,7 +266,7 @@ class JdbcCaffeineRepositoryExtraTest {
                 RecordingLogbackAppender().use { appender ->
                     val entities = repository.findAll()
 
-                    entities.size shouldBeEqualTo ActorTable.selectAll().count().toInt()
+                    entities shouldHaveSize ActorTable.selectAll().count().toInt()
                     repository.cache.asMap().shouldBeEmpty()
                     appender.hasWarnContaining(
                         "Cache warming failed for entity - skipping. " +
@@ -441,7 +443,7 @@ class JdbcCaffeineRepositoryExtraTest {
             withCredentialTable(testDB) {
                 repository.close()
 
-                writeBehindJobOf(repository).isCompleted shouldBeEqualTo true
+                writeBehindJobOf(repository).isCompleted.shouldBeTrue()
             }
         }
 
@@ -468,7 +470,7 @@ class JdbcCaffeineRepositoryExtraTest {
                 CredentialTable.selectAll()
                     .where { CredentialTable.id eq entity.id }
                     .count() shouldBeEqualTo 1L
-                writeBehindJobOf(repository).isCompleted shouldBeEqualTo true
+                writeBehindJobOf(repository).isCompleted.shouldBeTrue()
             }
         }
     }
@@ -540,7 +542,7 @@ class JdbcCaffeineRepositoryExtraTest {
 
                 report.mode shouldBeEqualTo CacheWriteMode.WRITE_BEHIND
                 report.queueDepth shouldBeEqualTo 0
-                report.isFlushJobRunning shouldBeEqualTo false
+                report.isFlushJobRunning.shouldBeFalse()
                 report.lastFlushError.shouldBeNull()
             } finally {
                 repository.close()
@@ -570,12 +572,11 @@ class JdbcCaffeineRepositoryExtraTest {
 
                 try {
                     repository.put(existingId, updated)
-                    flushStarted.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
-
+                    flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
                     val report = repository.validateConsistency()
                     report.mode shouldBeEqualTo CacheWriteMode.WRITE_BEHIND
                     report.queueDepth shouldBeEqualTo 1
-                    report.isFlushJobRunning shouldBeEqualTo true
+                    report.isFlushJobRunning.shouldBeTrue()
                     report.lastFlushError.shouldBeNull()
                 } finally {
                     releaseFlush.countDown()
@@ -605,8 +606,7 @@ class JdbcCaffeineRepositoryExtraTest {
 
                 try {
                     repository.put(existingId, updated)
-                    flushFailed.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
-
+                    flushFailed.await(5, TimeUnit.SECONDS).shouldBeTrue()
                     val report = awaitHealthReport(repository) { health ->
                         health.queueDepth == 1 && health.lastFlushError != null
                     }
@@ -642,8 +642,7 @@ class JdbcCaffeineRepositoryExtraTest {
 
                 try {
                     repository.put(first.id, first)
-                    flushFailed.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
-
+                    flushFailed.await(5, TimeUnit.SECONDS).shouldBeTrue()
                     val failedReport = awaitHealthReport(repository) { health ->
                         health.queueDepth == 1 && health.lastFlushError != null
                     }
@@ -651,8 +650,7 @@ class JdbcCaffeineRepositoryExtraTest {
                     failedReport.lastFlushError.shouldNotBeNull()
 
                     repository.put(second.id, second)
-                    flushSucceeded.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
-
+                    flushSucceeded.await(5, TimeUnit.SECONDS).shouldBeTrue()
                     val recoveredReport = awaitHealthReport(repository) { health ->
                         health.queueDepth == 0 && health.lastFlushError == null
                     }
@@ -718,8 +716,7 @@ class JdbcCaffeineRepositoryExtraTest {
 
         override fun UpdateStatement.updateEntity(entity: ActorRecord) {
             flushStarted.countDown()
-            releaseFlush.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
-
+            releaseFlush.await(5, TimeUnit.SECONDS).shouldBeTrue()
             this[ActorTable.firstName] = entity.firstName
             this[ActorTable.lastName] = entity.lastName
             this[ActorTable.email] = entity.email

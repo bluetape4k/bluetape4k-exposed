@@ -6,6 +6,7 @@ import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
 import org.junit.jupiter.api.Test
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeTrue
 
 /**
  * [BigQueryResultRow] 단위 테스트 — 에뮬레이터 없이 타입 변환 로직만 검증.
@@ -25,16 +26,16 @@ class BigQueryQueryExecutorUnitTest {
         val str = row.toString()
 
         str.shouldNotBeNull()
-        (str.contains("region") && str.contains("kr")).shouldBeEqualTo(true)
+        (str.contains("region") && str.contains("kr")).shouldBeTrue()
     }
 
     @Test
     fun `BigQueryResultRow - 키는 대소문자를 구분하지 않는다`() {
         val row = BigQueryResultRow(mapOf("Region" to "kr"))
 
-        row["region"].shouldBeEqualTo("kr")
-        row["REGION"].shouldBeEqualTo("kr")
-        row["Region"].shouldBeEqualTo("kr")
+        row["region"] shouldBeEqualTo "kr"
+        row["REGION"] shouldBeEqualTo "kr"
+        row["Region"] shouldBeEqualTo "kr"
     }
 
     @Test
@@ -49,7 +50,7 @@ class BigQueryQueryExecutorUnitTest {
         val msg = "BigQuery 쿼리 오류: 테이블 없음"
         val ex = BigQueryQueryException(msg)
 
-        ex.message.shouldBeEqualTo(msg)
+        ex.message shouldBeEqualTo msg
         ex.cause.shouldBeNull()
     }
 
@@ -58,8 +59,8 @@ class BigQueryQueryExecutorUnitTest {
         val cause = RuntimeException("원본 오류")
         val ex = BigQueryQueryException("래핑된 오류", cause)
 
-        ex.message.shouldBeEqualTo("래핑된 오류")
-        ex.cause.shouldBeEqualTo(cause)
+        ex.message shouldBeEqualTo "래핑된 오류"
+        ex.cause shouldBeEqualTo cause
     }
 
     @Test

@@ -11,6 +11,7 @@ import io.bluetape4k.assertions.shouldNotBeNull
 import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.seconds
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldHaveSize
 
 /**
  * [BatchStepBuilder] 단위 테스트.
@@ -115,7 +116,7 @@ class BatchStepBuilderTest {
             }
         }
 
-        job.steps.size shouldBeEqualTo 2
+        job.steps shouldHaveSize 2
 
         // step1 검증
         job.steps[0].apply {
