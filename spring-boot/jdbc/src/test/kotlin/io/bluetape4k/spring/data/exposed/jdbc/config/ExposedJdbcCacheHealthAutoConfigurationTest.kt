@@ -1,6 +1,7 @@
 package io.bluetape4k.spring.data.exposed.jdbc.config
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.jdbc.caffeine.repository.JdbcCaffeineRepository
@@ -42,7 +43,7 @@ class ExposedJdbcCacheHealthAutoConfigurationTest {
             .withPropertyValues("bluetape4k.exposed.cache.health.enabled=false")
             .withUserConfiguration(HealthyRepositoryConfiguration::class.java)
             .run { context ->
-                context.containsBean("exposedJdbcCacheHealthIndicator") shouldBeEqualTo false
+                context.containsBean("exposedJdbcCacheHealthIndicator").shouldBeFalse()
             }
     }
 
@@ -51,7 +52,7 @@ class ExposedJdbcCacheHealthAutoConfigurationTest {
         contextRunner
             .withClassLoader(FilteredClassLoader(JdbcCaffeineRepository::class.java))
             .run { context ->
-                context.containsBean("exposedJdbcCacheHealthIndicator") shouldBeEqualTo false
+                context.containsBean("exposedJdbcCacheHealthIndicator").shouldBeFalse()
             }
     }
 

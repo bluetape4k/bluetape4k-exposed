@@ -1,9 +1,12 @@
 package io.bluetape4k.exposed.r2dbc.tests
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeEqualTo
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
-import io.bluetape4k.assertions.assertFailsWith
-import kotlin.test.fail
 
 @Suppress("UnusedReceiverParameter")
 private val Transaction.failedOn: String
@@ -12,23 +15,31 @@ private val Transaction.failedOn: String
 /**
  * 현재 테스트 방언 정보를 포함한 실패 메시지로 `true` 검증을 수행합니다.
  */
-fun Transaction.assertTrue(actual: Boolean) = kotlin.test.assertTrue(actual, "Failed on $failedOn")
+fun Transaction.assertTrue(actual: Boolean) = withDialectAssertion {
+    actual.shouldBeTrue()
+}
 
 /**
  * 현재 테스트 방언 정보를 포함한 실패 메시지로 `false` 검증을 수행합니다.
  */
-fun Transaction.assertFalse(actual: Boolean) = kotlin.test.assertFalse(actual, "Failed on $failedOn")
+fun Transaction.assertFalse(actual: Boolean) = withDialectAssertion {
+    actual.shouldBeFalse()
+}
 
 /**
  * 현재 테스트 방언 정보를 포함한 실패 메시지로 동등성 검증을 수행합니다.
  */
-fun <T> Transaction.assertEquals(exp: T, act: T) = kotlin.test.assertEquals(exp, act, "Failed on $failedOn")
+fun <T> Transaction.assertEquals(exp: T, act: T) = withDialectAssertion {
+    act shouldBeEqualTo exp
+}
 
 /**
  * 단일 원소 컬렉션과 기대값을 비교합니다.
  */
 fun <T> Transaction.assertEquals(exp: T, act: Collection<T>) =
-    kotlin.test.assertEquals(exp, act.single(), "Failed on $failedOn")
+    withDialectAssertion {
+        act.single() shouldBeEqualTo exp
+    }
 
 /**
  * 현재 테스트 방언 정보를 포함한 실패 메시지로 비동등성 검증을 수행합니다.
@@ -36,7 +47,9 @@ fun <T> Transaction.assertEquals(exp: T, act: Collection<T>) =
  * [exp]와 [act]가 같으면 assertion 실패로 처리됩니다.
  */
 fun <T> Transaction.assertNotEquals(exp: T, act: T) =
-    kotlin.test.assertNotEquals(exp, act, "Failed on $failedOn")
+    withDialectAssertion {
+        act shouldNotBeEqualTo exp
+    }
 
 /**
  * [block]이 실패하는지 확인하고, 실행 후 현재 트랜잭션을 롤백합니다.
@@ -55,14 +68,17 @@ fun <T> Transaction.assertNotEquals(exp: T, act: T) =
  */
 suspend fun R2dbcTransaction.assertFailAndRollback(message: String, block: suspend () -> Unit) {
     commit()
+    var failed = false
     try {
         block()
         commit()
-        fail("Failed on ${currentDialectTest.name}. $message")
     } catch (_: Throwable) {
-        // expected
+        failed = true
     } finally {
         rollback()
+    }
+    if (!failed) {
+        throw AssertionError("Failed on ${currentDialectTest.name}. $message")
     }
 }
 
@@ -79,12 +95,25 @@ inline fun <reified T: Throwable> expectException(crossinline body: () -> Unit) 
  * suspend 블록이 [T] 예외를 던지는지 검사합니다.
  */
 suspend inline fun <reified T: Throwable> expectExceptionSuspending(crossinline body: suspend () -> Unit) {
-    try {
+    val thrown = try {
         body()
-        fail("Failed on ${currentDialectTest.name}. Expected exception ${T::class.simpleName}.")
+        null
     } catch (ex: Throwable) {
-        if (ex !is T) {
-            throw AssertionError("Failed on ${currentDialectTest.name}. Unexpected exception type: ${ex::class}", ex)
-        }
+        ex
+    }
+
+    if (thrown == null) {
+        throw AssertionError("Failed on ${currentDialectTest.name}. Expected exception ${T::class.simpleName}.")
+    }
+    if (thrown !is T) {
+        throw AssertionError("Failed on ${currentDialectTest.name}. Unexpected exception type: ${thrown::class}", thrown)
+    }
+}
+
+private inline fun Transaction.withDialectAssertion(block: () -> Unit) {
+    try {
+        block()
+    } catch (e: AssertionError) {
+        throw AssertionError("Failed on $failedOn", e)
     }
 }

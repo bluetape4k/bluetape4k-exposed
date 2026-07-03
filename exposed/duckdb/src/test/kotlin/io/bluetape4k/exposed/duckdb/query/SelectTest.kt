@@ -6,6 +6,7 @@ import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeEmpty
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -60,7 +61,7 @@ class SelectTest: AbstractDuckDBTest() {
         }
 
         rows.shouldNotBeEmpty()
-        rows.size shouldBeEqualTo 5
+        rows shouldHaveSize 5
     }
 
     @Test
@@ -69,7 +70,7 @@ class SelectTest: AbstractDuckDBTest() {
             Events.selectAll().where { Events.region eq "kr" }.toList()
         }
 
-        rows.size shouldBeEqualTo 2
+        rows shouldHaveSize 2
         rows.all { it[Events.region] == "kr" }.shouldBeTrue()
     }
 
@@ -82,7 +83,7 @@ class SelectTest: AbstractDuckDBTest() {
                 .toList()
         }
 
-        rows.size shouldBeEqualTo 1
+        rows shouldHaveSize 1
         rows[0][Events.userId] shouldBeEqualTo 300L
     }
 

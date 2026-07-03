@@ -4,6 +4,7 @@ import io.bluetape4k.exposed.bigquery.AbstractBigQueryTest
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeEmpty
+import io.bluetape4k.assertions.shouldHaveSize
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 
@@ -36,7 +37,7 @@ class SelectTest: AbstractBigQueryTest() {
 
             val response = runRawQuery("SELECT * FROM events")
             response.rows.shouldNotBeEmpty()
-            response.rows.size shouldBeEqualTo 5
+            response.rows shouldHaveSize 5
         }
     }
 

@@ -4,6 +4,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.sql.Connection
@@ -29,14 +30,14 @@ class ClickHouseConnectionWrapperTest {
     @Test
     fun `autoCommit is always true`() {
         val wrapper = ClickHouseConnectionWrapper(mockConn)
-        wrapper.autoCommit shouldBeEqualTo true
+        wrapper.autoCommit.shouldBeTrue()
     }
 
     @Test
     fun `setAutoCommit false is ignored`() {
         val wrapper = ClickHouseConnectionWrapper(mockConn)
         wrapper.setAutoCommit(false)
-        wrapper.autoCommit shouldBeEqualTo true
+        wrapper.autoCommit.shouldBeTrue()
     }
 
     @Test

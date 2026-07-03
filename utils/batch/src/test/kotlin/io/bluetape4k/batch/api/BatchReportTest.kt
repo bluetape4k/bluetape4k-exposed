@@ -5,6 +5,7 @@ import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import kotlin.time.Duration.Companion.seconds
@@ -62,7 +63,7 @@ class BatchReportTest {
         report.shouldNotBeNull()
         report shouldBeInstanceOf BatchReport.Success::class
         report.jobExecution shouldBeEqualTo baseJobExecution
-        report.stepReports.size shouldBeEqualTo 1
+        report.stepReports shouldHaveSize 1
         report.stepReports[0].skipCount shouldBeEqualTo 0L
     }
 
@@ -73,7 +74,7 @@ class BatchReportTest {
             stepReports = emptyList(),
         )
 
-        report.stepReports.size shouldBeEqualTo 0
+        report.stepReports shouldHaveSize 0
     }
 
     @Test
@@ -90,7 +91,7 @@ class BatchReportTest {
         val copied = original.copy(stepReports = emptyList())
 
         copied.jobExecution shouldBeEqualTo original.jobExecution
-        copied.stepReports.size shouldBeEqualTo 0
+        copied.stepReports shouldHaveSize 0
     }
 
     // ─── 2. BatchReport.PartiallyCompleted ──────────────────────────────────

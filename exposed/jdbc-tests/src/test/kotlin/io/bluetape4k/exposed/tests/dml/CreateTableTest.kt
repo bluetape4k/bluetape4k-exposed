@@ -6,6 +6,7 @@ import io.bluetape4k.exposed.tests.inProperCase
 import io.bluetape4k.exposed.tests.withDb
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
@@ -19,7 +20,6 @@ import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.exists
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import kotlin.test.assertFails
 
 class CreateTableTest: AbstractExposedTest() {
 
@@ -46,13 +46,13 @@ class CreateTableTest: AbstractExposedTest() {
         val errorMessage = "Can't create a table with multiple columns having the same name"
 
         withDb(testDB) {
-            assertFails(errorMessage) {
+            assertFailsWith<Throwable>(errorMessage) {
                 SchemaUtils.create(TableWithDuplicatedColumn)
             }
-            assertFails(errorMessage) {
+            assertFailsWith<Throwable>(errorMessage) {
                 SchemaUtils.create(TableDuplicatedColumnReferenceToIntIdTable)
             }
-            assertFails(errorMessage) {
+            assertFailsWith<Throwable>(errorMessage) {
                 SchemaUtils.create(TableDuplicatedColumnReferToTable)
             }
         }

@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.runTest
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeEmpty
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.api.Test
@@ -64,7 +65,7 @@ class UpdateDeleteTest: AbstractBigQueryTest() {
             Events.execDelete(Events.region eq "us")
 
             val rows = Events.selectAll().withBigQuery().toList()
-            rows.size shouldBeEqualTo 1
+            rows shouldHaveSize 1
             rows[0][Events.region] shouldBeEqualTo "kr"
         }
     }
@@ -79,7 +80,7 @@ class UpdateDeleteTest: AbstractBigQueryTest() {
             with(bqContext) { Events.execDeleteAll() }
 
             val rows = Events.selectAll().withBigQuery().toList()
-            rows.size shouldBeEqualTo 0
+            rows shouldHaveSize 0
         }
     }
 

@@ -5,6 +5,7 @@ import com.google.api.services.bigquery.Bigquery.Jobs
 import com.google.api.services.bigquery.model.QueryRequest
 import com.google.api.services.bigquery.model.QueryResponse
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.bigquery.BigQueryQueryOptions
 import io.bluetape4k.exposed.bigquery.BigQueryQueryPriority
 import io.bluetape4k.exposed.bigquery.BigQueryContext
@@ -49,7 +50,7 @@ class BigQueryDryRunExampleTest {
             )
         )
 
-        request.captured.dryRun shouldBeEqualTo true
+        request.captured.dryRun.shouldBeTrue()
         request.captured.maximumBytesBilled shouldBeEqualTo 1_000_000L
         request.captured.labels shouldBeEqualTo mapOf("example" to "dry-run")
         request.captured.get("priority") shouldBeEqualTo "BATCH"

@@ -48,7 +48,7 @@ class MovieJdbcRepositoryTest: AbstractExposedTest() {
             movies.forEach {
                 log.debug { "movie: $it" }
             }
-            movies.size shouldBeEqualTo 2
+            movies shouldHaveSize 2
         }
     }
 

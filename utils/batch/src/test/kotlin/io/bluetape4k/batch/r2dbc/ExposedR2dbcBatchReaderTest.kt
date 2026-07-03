@@ -7,6 +7,7 @@ import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -63,7 +64,7 @@ class ExposedR2dbcBatchReaderTest : AbstractBatchR2dbcTest() {
                 }
                 reader.close()
 
-                results.size shouldBeEqualTo 25
+                results shouldHaveSize 25
                 results.map { it.id } shouldBeEqualTo (1L..25L).toList()
             }
         }
@@ -139,7 +140,7 @@ class ExposedR2dbcBatchReaderTest : AbstractBatchR2dbcTest() {
                 }
                 reader2.close()
 
-                results2.size shouldBeEqualTo 20
+                results2 shouldHaveSize 20
                 results2.first().id shouldBeEqualTo 11L
             }
         }
@@ -198,7 +199,7 @@ class ExposedR2dbcBatchReaderTest : AbstractBatchR2dbcTest() {
                 }
                 reader.close()
 
-                results.size shouldBeEqualTo 2
+                results shouldHaveSize 2
                 results.map { it.id } shouldBeEqualTo listOf(1L, 2L)
             }
         }

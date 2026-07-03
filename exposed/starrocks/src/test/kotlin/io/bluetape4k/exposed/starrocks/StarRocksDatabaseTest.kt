@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.starrocks
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.exposed.starrocks.dialect.StarRocksDialect
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
@@ -64,8 +65,8 @@ class StarRocksDatabaseTest: AbstractStarRocksTest() {
 
     @Test
     fun `dialect disables unproven schema mutation features`() {
-        db.dialect.supportsColumnTypeChange shouldBeEqualTo false
-        db.dialect.supportsCreateSequence shouldBeEqualTo false
-        db.dialect.supportsMultipleGeneratedKeys shouldBeEqualTo false
+        db.dialect.supportsColumnTypeChange.shouldBeFalse()
+        db.dialect.supportsCreateSequence.shouldBeFalse()
+        db.dialect.supportsMultipleGeneratedKeys.shouldBeFalse()
     }
 }

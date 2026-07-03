@@ -14,6 +14,7 @@ import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import org.junit.jupiter.api.Test
 
 /**
@@ -73,7 +74,7 @@ class BatchJobTest {
         val report = runSingleStepJob("testJob", step)
 
         report shouldBeInstanceOf BatchReport.Success::class
-        report.stepReports.size shouldBeEqualTo 1
+        report.stepReports shouldHaveSize 1
         report.stepReports[0].status shouldBe BatchStatus.COMPLETED
         report.stepReports[0].writeCount shouldBeEqualTo 3L
         writer.collected shouldBeEqualTo listOf("a", "b", "c")
@@ -96,7 +97,7 @@ class BatchJobTest {
         val report = job.run()
 
         report shouldBeInstanceOf BatchReport.Success::class
-        report.stepReports.size shouldBeEqualTo 2
+        report.stepReports shouldHaveSize 2
         report.stepReports[0].stepName shouldBeEqualTo "step1"
         report.stepReports[1].stepName shouldBeEqualTo "step2"
         writer1.collected shouldBeEqualTo listOf("a", "b")
@@ -121,7 +122,7 @@ class BatchJobTest {
         report shouldBeInstanceOf BatchReport.Failure::class
         val failure = report as BatchReport.Failure
         failure.error.shouldNotBeNull()
-        failure.stepReports.size shouldBeEqualTo 1  // step2 미실행
+        failure.stepReports shouldHaveSize 1  // step2 미실행
         failure.stepReports[0].stepName shouldBeEqualTo "failStep"
         writer2.collected.isEmpty() shouldBe true  // step2 미실행
     }

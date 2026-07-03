@@ -50,7 +50,7 @@ class MovieR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             movies.forEach {
                 log.debug { "movie: $it" }
             }
-            movies.size shouldBeEqualTo 2
+            movies shouldHaveSize 2
         }
     }
 

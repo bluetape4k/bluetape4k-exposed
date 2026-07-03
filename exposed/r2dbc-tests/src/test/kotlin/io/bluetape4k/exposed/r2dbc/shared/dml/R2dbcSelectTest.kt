@@ -219,7 +219,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
                 .orderBy(users.name)
                 .toList()
 
-            r1.size shouldBeEqualTo 2
+            r1 shouldHaveSize 2
             r1[0][users.name] shouldBeEqualTo "Alex"
             r1[1][users.name] shouldBeEqualTo "Andrey"
 

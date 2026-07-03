@@ -13,6 +13,7 @@ import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldBeTrue
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
@@ -135,7 +136,7 @@ class AuditableJdbcRepositoryEdgeCaseTest : AbstractExposedTest() {
             val ids = AuditableEdgeCaseRepository.saveAll(records)
 
             ids shouldHaveSize records.size
-            ids.all { id -> id > 0L } shouldBeEqualTo true
+            ids.all { id -> id > 0L }.shouldBeTrue()
             AuditableEdgeCaseTable.selectAll().count() shouldBeEqualTo records.size.toLong()
             val saved = findById(ids.first())
             saved.createdBy shouldBeEqualTo UserContext.DEFAULT_USERNAME

@@ -1,8 +1,9 @@
 package io.bluetape4k.examples.exposed.webflux
 
-import io.bluetape4k.examples.exposed.webflux.domain.ProductRecord
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.examples.exposed.webflux.domain.ProductRecord
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
@@ -14,7 +15,6 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.test.web.reactive.server.expectBodyList
 import java.math.BigDecimal
-import kotlin.test.fail
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
@@ -31,7 +31,7 @@ class ProductControllerTest {
     @Order(1)
     fun `GET products returns list`() {
         val products = awaitProducts()
-        products.size shouldBeEqualTo 3
+        products shouldHaveSize 3
     }
 
     @Test
@@ -120,6 +120,6 @@ class ProductControllerTest {
             }
             Thread.sleep(100)
         }
-        fail("seed products were not initialized in time")
+        throw AssertionError("seed products were not initialized in time")
     }
 }

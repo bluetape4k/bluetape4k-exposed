@@ -14,6 +14,8 @@ import io.bluetape4k.assertions.shouldNotBeNull
 import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.seconds
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
 
 /**
  * [batchJob] DSL 단위 테스트.
@@ -46,7 +48,7 @@ class BatchDslTest {
 
         job.shouldNotBeNull()
         job.name shouldBeEqualTo "myJob"
-        job.steps.size shouldBeEqualTo 1
+        job.steps shouldHaveSize 1
         job.steps[0].name shouldBeEqualTo "step1"
     }
 
@@ -60,7 +62,7 @@ class BatchDslTest {
             noopStep("step3")
         }
 
-        job.steps.size shouldBeEqualTo 3
+        job.steps shouldHaveSize 3
         job.steps.map { it.name } shouldBeEqualTo listOf("step1", "step2", "step3")
     }
 
@@ -85,7 +87,7 @@ class BatchDslTest {
         }
 
         job.params["k1"] shouldBeEqualTo 42
-        job.params["k2"] shouldBeEqualTo true
+        (job.params["k2"] as Boolean).shouldBeTrue()
     }
 
     // ─── 4. repository 설정 ──────────────────────────────────────────────────
@@ -238,7 +240,7 @@ class BatchDslTest {
         val report = job.run()
 
         report shouldBeInstanceOf BatchReport.Success::class
-        report.stepReports.size shouldBeEqualTo 1
+        report.stepReports shouldHaveSize 1
         report.stepReports[0].readCount shouldBeEqualTo 3L
         collected shouldBeEqualTo items
     }

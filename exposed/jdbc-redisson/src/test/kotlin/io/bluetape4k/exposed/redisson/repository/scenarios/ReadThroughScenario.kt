@@ -15,6 +15,7 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldHaveSize
 
 interface ReadThroughScenario<ID: Any, E: java.io.Serializable>: CacheTestScenario<ID, E> {
     companion object: KLogging()
@@ -95,8 +96,7 @@ interface ReadThroughScenario<ID: Any, E: java.io.Serializable>: CacheTestScenar
         withEntityTable(testDB) {
             val entities = repository.findAll()
             entities.shouldNotBeEmpty()
-            entities.size shouldBeEqualTo
-                    repository.table
+            entities shouldHaveSize repository.table
                         .selectAll()
                         .count()
                         .toInt()
@@ -111,7 +111,7 @@ interface ReadThroughScenario<ID: Any, E: java.io.Serializable>: CacheTestScenar
             val entities = repository.getAll(ids)
             entities.shouldNotBeEmpty()
 
-            entities.size shouldBeEqualTo ids.size - 1
+            entities shouldHaveSize ids.size - 1
         }
     }
 
@@ -188,11 +188,11 @@ interface ReadThroughScenario<ID: Any, E: java.io.Serializable>: CacheTestScenar
 
             val page = repository.findAll(limit = 1, offset = 0L)
             page.shouldNotBeEmpty()
-            page.size shouldBeEqualTo 1
+            page shouldHaveSize 1
 
             val page2 = repository.findAll(limit = 1, offset = 1L)
             page2.shouldNotBeEmpty()
-            page2.size shouldBeEqualTo 1
+            page2 shouldHaveSize 1
         }
     }
 }

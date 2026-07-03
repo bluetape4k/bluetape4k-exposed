@@ -13,6 +13,7 @@ import org.jetbrains.exposed.v1.jdbc.insert
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldHaveSize
 
 class ExposedEntityMapLoaderTest: AbstractExposedTest() {
 
@@ -47,7 +48,7 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
             )
 
             val ids = loader.loadAllKeys()!!.toList()
-            ids.size shouldBeEqualTo 3
+            ids shouldHaveSize 3
             ids shouldBeEqualTo ids.sorted()
         }
     }

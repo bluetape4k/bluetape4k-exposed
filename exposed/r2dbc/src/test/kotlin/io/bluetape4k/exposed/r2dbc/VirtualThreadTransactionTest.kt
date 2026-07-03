@@ -13,6 +13,7 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
+import io.bluetape4k.assertions.shouldBeTrue
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.toList
@@ -83,7 +84,7 @@ class VirtualThreadTransactionTest: AbstractExposedR2dbcTest() {
                 Thread.currentThread().isVirtual
             }
 
-            isVirtual shouldBeEqualTo true
+            isVirtual.shouldBeTrue()
         }
     }
 

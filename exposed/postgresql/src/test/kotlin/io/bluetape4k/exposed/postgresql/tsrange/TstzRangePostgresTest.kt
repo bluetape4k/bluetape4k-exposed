@@ -8,6 +8,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -100,7 +101,7 @@ class TstzRangePostgresTest: AbstractExposedTest() {
                 .where { PgOverlapTestTable.range1.overlaps(PgOverlapTestTable.range2) }
                 .toList()
 
-            rows.size shouldBeEqualTo 1
+            rows shouldHaveSize 1
             rows.first()[PgOverlapTestTable.label] shouldBeEqualTo "겹침"
         }
     }
@@ -127,7 +128,7 @@ class TstzRangePostgresTest: AbstractExposedTest() {
                 .where { PgOverlapTestTable.range1.overlaps(PgOverlapTestTable.range2) }
                 .toList()
 
-            rows.size shouldBeEqualTo 0
+            rows shouldHaveSize 0
         }
     }
 
@@ -153,7 +154,7 @@ class TstzRangePostgresTest: AbstractExposedTest() {
                 .where { PgOverlapTestTable.range1.containsRange(PgOverlapTestTable.range2) }
                 .toList()
 
-            rows.size shouldBeEqualTo 1
+            rows shouldHaveSize 1
             rows.first()[PgOverlapTestTable.label] shouldBeEqualTo "포함"
         }
     }
@@ -180,7 +181,7 @@ class TstzRangePostgresTest: AbstractExposedTest() {
                 .where { PgOverlapTestTable.range1.isAdjacentTo(PgOverlapTestTable.range2) }
                 .toList()
 
-            rows.size shouldBeEqualTo 1
+            rows shouldHaveSize 1
             rows.first()[PgOverlapTestTable.label] shouldBeEqualTo "adjacent"
         }
     }
@@ -211,7 +212,7 @@ class TstzRangePostgresTest: AbstractExposedTest() {
             }
 
             val rows = PgEventTable.selectAll().toList()
-            rows.size shouldBeEqualTo 3
+            rows shouldHaveSize 3
 
             rows.forEach { row ->
                 row[PgEventTable.period].shouldNotBeNull()

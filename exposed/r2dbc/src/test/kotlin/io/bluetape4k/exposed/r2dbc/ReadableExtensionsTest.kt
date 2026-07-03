@@ -20,6 +20,8 @@ import java.time.ZoneOffset
 import java.util.Date
 import java.util.UUID
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
 
 /**
  * [ReadableExtensions] 확장 함수 단위 테스트입니다.
@@ -137,13 +139,13 @@ class ReadableExtensionsTest {
     @Test
     fun `getBoolean은 인덱스 기반 Boolean 값을 반환한다`() {
         val readable = FakeReadable(valuesByIndex = mapOf(0 to true))
-        readable.getBoolean(0) shouldBeEqualTo true
+        readable.getBoolean(0).shouldBeTrue()
     }
 
     @Test
     fun `getBoolean은 이름 기반 Boolean 값을 반환한다`() {
         val readable = FakeReadable(valuesByName = mapOf("flag" to false))
-        readable.getBoolean("flag") shouldBeEqualTo false
+        readable.getBoolean("flag").shouldBeFalse()
     }
 
     @Test
@@ -155,7 +157,7 @@ class ReadableExtensionsTest {
     @Test
     fun `getBooleanOrNull은 이름 기반 Boolean 값을 반환한다`() {
         val readable = FakeReadable(valuesByName = mapOf("flag" to true))
-        readable.getBooleanOrNull("flag") shouldBeEqualTo true
+        readable.getBooleanOrNull("flag").shouldBeTrue()
     }
 
     // endregion

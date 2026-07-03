@@ -7,6 +7,7 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.assertions.shouldBeLessOrEqualTo
+import io.bluetape4k.assertions.shouldHaveSize
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
@@ -24,7 +25,7 @@ class ExposedRangePartitionerTest : AbstractExposedBatchTest() {
 
             val partitions = partitioner.partition(4)
 
-            partitions.size shouldBeEqualTo 1
+            partitions shouldHaveSize 1
             partitions["partition-0"]!!.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) shouldBeEqualTo 0L
             partitions["partition-0"]!!.getLong(ExposedRangePartitioner.PARTITION_MAX_ID) shouldBeEqualTo -1L
         }
@@ -44,7 +45,7 @@ class ExposedRangePartitionerTest : AbstractExposedBatchTest() {
 
             val partitions = partitioner.partition(4)
 
-            partitions.size shouldBeEqualTo 4
+            partitions shouldHaveSize 4
 
             val ranges = partitions.values.map { ctx ->
                 ctx.getLong(ExposedRangePartitioner.PARTITION_MIN_ID)..ctx.getLong(ExposedRangePartitioner.PARTITION_MAX_ID)
@@ -73,7 +74,7 @@ class ExposedRangePartitionerTest : AbstractExposedBatchTest() {
 
             val partitions = partitioner.partition(8)
 
-            partitions.size shouldBeEqualTo 1
+            partitions shouldHaveSize 1
             partitions["partition-0"]!!.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) shouldBeEqualTo 1L
             partitions["partition-0"]!!.getLong(ExposedRangePartitioner.PARTITION_MAX_ID) shouldBeEqualTo 1L
         }

@@ -5,6 +5,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import org.junit.jupiter.api.Test
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldHaveSize
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
@@ -26,7 +27,7 @@ class MySqlWkbUtilsTest {
         val parsed = MySqlWkbUtils.parseMySqlInternalGeometry(bytes)
 
         parsed.equalsExact(point, 1e-10).shouldBeTrue()
-        parsed.srid.shouldBeEqualTo(SRID_WGS84)
+        parsed.srid shouldBeEqualTo SRID_WGS84
     }
 
     @Test
@@ -45,7 +46,7 @@ class MySqlWkbUtilsTest {
         val parsed = MySqlWkbUtils.parseMySqlInternalGeometry(bytes)
 
         parsed.equalsExact(polygon, 1e-10).shouldBeTrue()
-        parsed.srid.shouldBeEqualTo(SRID_WGS84)
+        parsed.srid shouldBeEqualTo SRID_WGS84
     }
 
     @Test
@@ -56,7 +57,7 @@ class MySqlWkbUtilsTest {
         val bytes = MySqlWkbUtils.buildMySqlInternalGeometry(point, srid = customSrid)
         val parsed = MySqlWkbUtils.parseMySqlInternalGeometry(bytes)
 
-        parsed.srid.shouldBeEqualTo(customSrid)
+        parsed.srid shouldBeEqualTo customSrid
     }
 
     @Test
@@ -88,10 +89,9 @@ class MySqlWkbUtilsTest {
 
         // 첫 4바이트가 LE로 인코딩된 SRID
         val parsedSrid = ByteBuffer.wrap(bytes, 0, 4).order(ByteOrder.LITTLE_ENDIAN).int
-        parsedSrid.shouldBeEqualTo(srid)
-
+        parsedSrid shouldBeEqualTo srid
         // 5번째 바이트부터 WKB 시작 (첫 바이트는 byte order: 0x01 = LE)
-        bytes[4].shouldBeEqualTo(0x01.toByte())
+        bytes[4] shouldBeEqualTo 0x01.toByte()
     }
 
     @Test
@@ -101,7 +101,7 @@ class MySqlWkbUtilsTest {
         val bytes = MySqlWkbUtils.buildMySqlInternalGeometry(point)
 
         val parsedSrid = ByteBuffer.wrap(bytes, 0, 4).order(ByteOrder.LITTLE_ENDIAN).int
-        parsedSrid.shouldBeEqualTo(SRID_WGS84)
+        parsedSrid shouldBeEqualTo SRID_WGS84
     }
 
     @Test
@@ -118,8 +118,8 @@ class MySqlWkbUtilsTest {
         val parsed = MySqlWkbUtils.parseMySqlInternalGeometry(bytes)
 
         parsed.equalsExact(line, 1e-10).shouldBeTrue()
-        parsed.srid.shouldBeEqualTo(SRID_WGS84)
-        parsed.numPoints.shouldBeEqualTo(3)
+        parsed.srid shouldBeEqualTo SRID_WGS84
+        parsed.numPoints shouldBeEqualTo 3
     }
 
     @Test
@@ -133,8 +133,8 @@ class MySqlWkbUtilsTest {
         val parsed = MySqlWkbUtils.parseMySqlInternalGeometry(bytes)
 
         parsed.equalsExact(mp, 1e-10).shouldBeTrue()
-        parsed.srid.shouldBeEqualTo(SRID_WGS84)
-        parsed.numGeometries.shouldBeEqualTo(2)
+        parsed.srid shouldBeEqualTo SRID_WGS84
+        parsed.numGeometries shouldBeEqualTo 2
     }
 
     @Test
@@ -145,6 +145,6 @@ class MySqlWkbUtilsTest {
 
         val bytes = MySqlWkbUtils.buildMySqlInternalGeometry(point)
 
-        bytes.size.shouldBeEqualTo(4 + expectedWkbSize)
+        bytes shouldHaveSize 4 + expectedWkbSize
     }
 }

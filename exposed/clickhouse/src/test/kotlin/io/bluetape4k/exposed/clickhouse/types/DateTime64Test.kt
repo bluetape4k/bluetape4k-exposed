@@ -7,6 +7,7 @@ import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -64,7 +65,7 @@ class DateTime64Test: AbstractClickHouseTest() {
                 val rows = Dt64Table.selectAll()
                     .where { Dt64Table.id eq 1L }
                     .toList()
-                rows.size shouldBeEqualTo 1
+                rows shouldHaveSize 1
                 rows[0][Dt64Table.ts3] shouldBeEqualTo nowMillis
             } finally {
                 SchemaUtils.drop(Dt64Table)
@@ -89,7 +90,7 @@ class DateTime64Test: AbstractClickHouseTest() {
                 val rows = Dt64Table.selectAll()
                     .where { Dt64Table.id eq 2L }
                     .toList()
-                rows.size shouldBeEqualTo 1
+                rows shouldHaveSize 1
                 rows[0][Dt64Table.ts6].shouldNotBeNull()
             } finally {
                 SchemaUtils.drop(Dt64Table)
@@ -113,7 +114,7 @@ class DateTime64Test: AbstractClickHouseTest() {
                 val rows = Dt64Table.selectAll()
                     .where { Dt64Table.id eq 3L }
                     .toList()
-                rows.size shouldBeEqualTo 1
+                rows shouldHaveSize 1
                 rows[0][Dt64Table.tsNullable].shouldBeNull()
             } finally {
                 SchemaUtils.drop(Dt64Table)

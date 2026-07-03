@@ -13,6 +13,8 @@ import io.mockk.verify
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
 import io.mockk.CapturingSlot
 import io.mockk.slot
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -86,7 +88,7 @@ class BigQueryContextUnitTest {
         request.captured.location shouldBeEqualTo "US"
         (request.captured.get("destinationTable") as com.google.api.services.bigquery.model.TableReference).tableId shouldBeEqualTo "result_1"
         request.captured.timeoutMs shouldBeEqualTo 7_000L
-        request.captured.useQueryCache shouldBeEqualTo false
+        request.captured.useQueryCache.shouldBeFalse()
     }
 
     @Test
@@ -97,7 +99,7 @@ class BigQueryContextUnitTest {
 
         context.validateRawQuery("SELECT 1")
 
-        request.captured.dryRun shouldBeEqualTo true
+        request.captured.dryRun.shouldBeTrue()
     }
 
     @Test

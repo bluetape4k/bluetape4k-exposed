@@ -18,6 +18,7 @@ import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldHaveSize
 import kotlin.time.Duration.Companion.milliseconds
 
 interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCacheTestScenario<ID, E> {
@@ -107,8 +108,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
             withR2dbcEntityTable(testDB) {
                 val entities = repository.findAll()
                 entities.shouldNotBeEmpty()
-                entities.size shouldBeEqualTo
-                        repository.table
+                entities shouldHaveSize repository.table
                             .selectAll()
                             .count()
                             .toInt()
@@ -127,7 +127,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
                 val entities = repository.getAll(ids)
                 entities.shouldNotBeEmpty()
 
-                entities.size shouldBeEqualTo getExistingIds().size
+                entities shouldHaveSize getExistingIds().size
             }
         }
 
