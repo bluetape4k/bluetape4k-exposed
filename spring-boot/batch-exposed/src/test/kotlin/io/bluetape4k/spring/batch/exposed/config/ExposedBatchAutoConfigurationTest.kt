@@ -1,6 +1,8 @@
 package io.bluetape4k.spring.batch.exposed.config
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
 import org.junit.jupiter.api.Test
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
@@ -40,8 +42,8 @@ class ExposedBatchAutoConfigurationTest {
                     latch.countDown()
                 }
 
-                latch.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
-                ranOnVirtualThread.get() shouldBeEqualTo false
+                latch.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                ranOnVirtualThread.get().shouldBeFalse()
             }
     }
 
@@ -50,7 +52,7 @@ class ExposedBatchAutoConfigurationTest {
         contextRunner
             .withPropertyValues("bluetape4k.batch.executor.enabled=false")
             .run { context ->
-                context.containsBean("batchPartitionTaskExecutor") shouldBeEqualTo false
+                context.containsBean("batchPartitionTaskExecutor").shouldBeFalse()
             }
     }
 

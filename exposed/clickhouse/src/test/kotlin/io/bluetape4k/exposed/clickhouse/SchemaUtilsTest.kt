@@ -13,6 +13,7 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.AfterEach
@@ -47,7 +48,7 @@ class SchemaUtilsTest : AbstractClickHouseTest() {
     fun `Events createStatement includes ENGINE`() {
         val statements = transaction(db) { Events.createStatement() }
         // CREATE TABLE만 있어야 함 (ALTER/SEQUENCE 없음)
-        statements.size shouldBeEqualTo 1
+        statements shouldHaveSize 1
         val ddl = statements.first()
         ddl shouldContain "CREATE TABLE"
         ddl shouldContain "ENGINE = MergeTree()"

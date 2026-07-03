@@ -160,7 +160,7 @@ class GeoColumnTypeTest: AbstractExposedTest() {
             }
 
             val results = Locations.selectAll().toList()
-            results.size shouldBeEqualTo 3
+            results shouldHaveSize 3
         }
     }
 
@@ -283,7 +283,7 @@ class GeoColumnTypeTest: AbstractExposedTest() {
                 .where { Regions.point.stWithin(Regions.area) }
                 .map { it[Regions.name] }
 
-            results.size shouldBeEqualTo 1
+            results shouldHaveSize 1
             results.first() shouldBeEqualTo "서울"
         }
     }
@@ -314,7 +314,7 @@ class GeoColumnTypeTest: AbstractExposedTest() {
                 .where { Regions.point.stWithin(Regions.area) }
                 .map { it[Regions.name] }
 
-            withinResults.size shouldBeEqualTo 1
+            withinResults shouldHaveSize 1
             withinResults.contains("서울").shouldBeTrue()
         }
     }

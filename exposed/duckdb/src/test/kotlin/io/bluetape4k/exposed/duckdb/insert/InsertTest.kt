@@ -6,6 +6,7 @@ import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeEmpty
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -66,7 +67,7 @@ class InsertTest: AbstractDuckDBTest() {
             Events.selectAll().toList()
         }
 
-        rows.size shouldBeEqualTo fixtures.size
+        rows shouldHaveSize fixtures.size
     }
 
     @Test
@@ -76,13 +77,13 @@ class InsertTest: AbstractDuckDBTest() {
         val krRows = transaction(db) {
             Events.selectAll().where { Events.region eq "kr" }.toList()
         }
-        krRows.size shouldBeEqualTo 2
+        krRows shouldHaveSize 2
         krRows.all { it[Events.region] == "kr" }.shouldBeTrue()
 
         val purchaseRows = transaction(db) {
             Events.selectAll().where { Events.eventType eq "PURCHASE" }.toList()
         }
-        purchaseRows.size shouldBeEqualTo 3
+        purchaseRows shouldHaveSize 3
     }
 
     @Test
@@ -95,7 +96,7 @@ class InsertTest: AbstractDuckDBTest() {
         val nullAmountRows = allRows.filter { it[Events.amount] == null }
 
         nullAmountRows.shouldNotBeEmpty()
-        nullAmountRows.size shouldBeEqualTo 2
+        nullAmountRows shouldHaveSize 2
     }
 
     @Test

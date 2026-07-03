@@ -4,6 +4,8 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
@@ -218,9 +220,8 @@ class WriteBehindCacheTest {
                 }
 
                 try {
-                    flushStarted.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
-                    closeFuture.isDone shouldBeEqualTo false
-
+                    flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    closeFuture.isDone.shouldBeFalse()
                     releaseFlush.countDown()
                     closeFuture.get(5, TimeUnit.SECONDS)
 
@@ -248,7 +249,7 @@ class WriteBehindCacheTest {
             withActorTable(testDB) {
                 repository.close()
 
-                writeBehindJobOf(repository).isCompleted shouldBeEqualTo true
+                writeBehindJobOf(repository).isCompleted.shouldBeTrue()
             }
         }
 
@@ -274,7 +275,7 @@ class WriteBehindCacheTest {
                 repository.close()
 
                 findActorById(existingId).shouldNotBeNull().firstName shouldBeEqualTo updated.firstName
-                writeBehindJobOf(repository).isCompleted shouldBeEqualTo true
+                writeBehindJobOf(repository).isCompleted.shouldBeTrue()
             }
         }
 
@@ -289,11 +290,10 @@ class WriteBehindCacheTest {
             )
 
             withActorTable(testDB) {
-                writeBehindJobLazyOf(repository).isInitialized() shouldBeEqualTo false
-
+                writeBehindJobLazyOf(repository).isInitialized().shouldBeFalse()
                 repository.close()
 
-                writeBehindJobLazyOf(repository).isInitialized() shouldBeEqualTo false
+                writeBehindJobLazyOf(repository).isInitialized().shouldBeFalse()
             }
         }
     }
@@ -325,7 +325,7 @@ class WriteBehindCacheTest {
 
                     report.mode shouldBeEqualTo CacheWriteMode.WRITE_BEHIND
                     report.queueDepth shouldBeEqualTo 0
-                    report.isFlushJobRunning shouldBeEqualTo false
+                    report.isFlushJobRunning.shouldBeFalse()
                     report.lastFlushError.shouldBeNull()
                 } finally {
                     repository.close()
@@ -358,12 +358,11 @@ class WriteBehindCacheTest {
 
                 try {
                     repository.put(existingId, updated)
-                    flushStarted.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
-
+                    flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
                     val report = repository.validateConsistency()
                     report.mode shouldBeEqualTo CacheWriteMode.WRITE_BEHIND
                     report.queueDepth shouldBeEqualTo 1
-                    report.isFlushJobRunning shouldBeEqualTo true
+                    report.isFlushJobRunning.shouldBeTrue()
                     report.lastFlushError.shouldBeNull()
                 } finally {
                     releaseFlush.countDown()
@@ -395,8 +394,7 @@ class WriteBehindCacheTest {
 
                 try {
                     repository.put(existingId, updated)
-                    flushFailed.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
-
+                    flushFailed.await(5, TimeUnit.SECONDS).shouldBeTrue()
                     val report = awaitHealthReport(repository) { health ->
                         health.queueDepth == 1 && health.lastFlushError != null
                     }
@@ -434,8 +432,7 @@ class WriteBehindCacheTest {
 
                 try {
                     repository.put(first.id, first)
-                    flushFailed.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
-
+                    flushFailed.await(5, TimeUnit.SECONDS).shouldBeTrue()
                     val failedReport = awaitHealthReport(repository) { health ->
                         health.queueDepth == 1 && health.lastFlushError != null
                     }
@@ -443,8 +440,7 @@ class WriteBehindCacheTest {
                     failedReport.lastFlushError.shouldNotBeNull()
 
                     repository.put(second.id, second)
-                    flushSucceeded.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
-
+                    flushSucceeded.await(5, TimeUnit.SECONDS).shouldBeTrue()
                     val recoveredReport = awaitHealthReport(repository) { health ->
                         health.queueDepth == 0 && health.lastFlushError == null
                     }
@@ -486,13 +482,12 @@ class WriteBehindCacheTest {
                 try {
                     coroutineScope {
                         repository.put(blocked.id, blocked)
-                        flushStarted.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
-
+                        flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
                         repository.put(queued.id, queued)
                         val pending = async { repository.put(cancelled.id, cancelled) }
                         delay(100)
 
-                        pending.isActive shouldBeEqualTo true
+                        pending.isActive.shouldBeTrue()
                         repository.cache.synchronous().getIfPresent(cancelled.id.toString()).shouldBeNull()
 
                         pending.cancelAndJoin()
@@ -577,8 +572,7 @@ class WriteBehindCacheTest {
 
         override fun UpdateStatement.updateEntity(entity: ActorRecord) {
             flushStarted.countDown()
-            releaseFlush.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
-
+            releaseFlush.await(5, TimeUnit.SECONDS).shouldBeTrue()
             this[ActorTable.firstName] = entity.firstName
             this[ActorTable.lastName] = entity.lastName
             this[ActorTable.email] = entity.email

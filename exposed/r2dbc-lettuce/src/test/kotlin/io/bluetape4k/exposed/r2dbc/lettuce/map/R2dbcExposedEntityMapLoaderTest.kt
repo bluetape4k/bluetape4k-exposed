@@ -14,6 +14,7 @@ import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.junit.jupiter.api.Test
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldHaveSize
 
 /**
  * [R2dbcExposedEntityMapLoader] 단위 테스트.
@@ -102,7 +103,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractR2dbcLettuceTest() {
                     )
 
                 val ids = loader.loadAllKeys()
-                ids.size shouldBeEqualTo 5
+                ids shouldHaveSize 5
                 ids shouldBeEqualTo ids.sorted()
             }
         }

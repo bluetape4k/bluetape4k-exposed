@@ -7,6 +7,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeEmpty
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.count
 import org.jetbrains.exposed.v1.core.eq
@@ -54,7 +55,7 @@ class SelectTest: AbstractTrinoTest() {
 
             val rows = Events.selectAll().toList()
             rows.shouldNotBeEmpty()
-            rows.size shouldBeEqualTo 5
+            rows shouldHaveSize 5
         }
     }
 
@@ -64,7 +65,7 @@ class SelectTest: AbstractTrinoTest() {
             insertFixtures()
 
             val rows = Events.selectAll().where { Events.region eq "kr" }.toList()
-            rows.size shouldBeEqualTo 2
+            rows shouldHaveSize 2
             rows.all { it[Events.region] == "kr" }.shouldBeTrue()
         }
     }
@@ -94,7 +95,7 @@ class SelectTest: AbstractTrinoTest() {
                 .limit(2)
                 .toList()
 
-            rows.size shouldBeEqualTo 2
+            rows shouldHaveSize 2
         }
     }
 
@@ -120,7 +121,7 @@ class SelectTest: AbstractTrinoTest() {
                 .orderBy(Events.region to SortOrder.ASC)
                 .toList()
 
-            rows.size shouldBeEqualTo 3
+            rows shouldHaveSize 3
 
             val regionCounts = rows.associate { it[Events.region] to it[countExpr] }
             regionCounts["eu"] shouldBeEqualTo 1L

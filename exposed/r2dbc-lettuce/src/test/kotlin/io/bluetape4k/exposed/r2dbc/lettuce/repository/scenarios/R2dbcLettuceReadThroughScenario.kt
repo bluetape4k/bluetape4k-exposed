@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.runTest
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -58,7 +59,7 @@ interface R2dbcLettuceReadThroughScenario<ID: Any, E: Serializable>: R2DbcLettuc
             withR2dbcEntityTable(testDB) {
                 val ids = getExistingIds()
                 val result = repository.getAll(ids)
-                result.size shouldBeEqualTo ids.size
+                result shouldHaveSize ids.size
             }
         }
 
@@ -69,7 +70,7 @@ interface R2dbcLettuceReadThroughScenario<ID: Any, E: Serializable>: R2DbcLettuc
             withR2dbcEntityTable(testDB) {
                 val ids = getExistingIds() + listOf(getNonExistentId())
                 val result = repository.getAll(ids)
-                result.size shouldBeEqualTo getExistingIds().size
+                result shouldHaveSize getExistingIds().size
             }
         }
 

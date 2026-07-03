@@ -3,9 +3,10 @@ package io.bluetape4k.exposed.core
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldBeTrue
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -13,8 +14,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.math.BigDecimal
 import java.util.*
-import io.bluetape4k.assertions.assertFailsWith
-import kotlin.test.assertTrue
 
 class ResultRowExtensionsTest: AbstractExposedTest() {
 
@@ -72,8 +71,8 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
             val ex = assertFailsWith<IllegalStateException> {
                 row.getInt(ResultRowExtTable.nullableText)
             }
-            assertTrue(ex.message?.contains("nullable_text") == true)
-            assertTrue(ex.message?.contains("not convertible to Int") == true)
+            ex.message?.contains("nullable_text").shouldBeTrue()
+            ex.message?.contains("not convertible to Int").shouldBeTrue()
         }
     }
 }

@@ -22,7 +22,6 @@ import org.jetbrains.exposed.v1.r2dbc.statements.api.origin
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import kotlin.test.assertFails
 import io.bluetape4k.assertions.assertFailsWith
 
 @Suppress("DEPRECATION")
@@ -107,7 +106,7 @@ class ImplicitSelectAllTest: AbstractExposedR2dbcTest() {
 //                    it[tester.amount] shouldBeEqualTo 999
 //                }
 
-            assertFails {
+            assertFailsWith<Throwable> {
                 val row = tester.selectImplicitAll()
                     .where { tester.amount greater 100 }
                     .single()

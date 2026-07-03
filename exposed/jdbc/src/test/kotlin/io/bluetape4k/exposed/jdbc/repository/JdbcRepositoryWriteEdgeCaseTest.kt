@@ -93,7 +93,7 @@ class JdbcRepositoryWriteEdgeCaseTest : AbstractExposedTest() {
             val updated = EdgeCaseRepository.findById(result.first().id)
             updated.name     shouldBeEqualTo "Alice"
             updated.age      shouldBeEqualTo 99
-            updated.isActive shouldBeEqualTo false
+            updated.isActive.shouldBeFalse()
         }
     }
 
@@ -362,7 +362,7 @@ class JdbcRepositoryWriteEdgeCaseTest : AbstractExposedTest() {
             EdgeCaseRepository.count() shouldBeEqualTo batchCount.toLong()
 
             // 짝수 인덱스는 isActive = true
-            inserted.filter { it.isActive }.size shouldBeEqualTo batchCount / 2
+            inserted.filter { it.isActive } shouldHaveSize batchCount / 2
         }
     }
 }

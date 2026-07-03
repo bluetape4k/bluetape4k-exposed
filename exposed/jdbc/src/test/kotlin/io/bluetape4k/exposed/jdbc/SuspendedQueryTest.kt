@@ -25,6 +25,7 @@ import org.jetbrains.exposed.v1.jdbc.select
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldHaveSize
 
 /**
  * 코루틴 환경에서 다양한 쿼리를 수행합니다.
@@ -69,7 +70,7 @@ class SuspendedQueryTest: AbstractExposedTest() {
                             rows.asFlow().map { it[ProductTable.id].value }
                         }.toList()
 
-                batchedIds.size shouldBeEqualTo products.size
+                batchedIds shouldHaveSize products.size
 
                 // `fetchBatchedResultFlow` 를 사용하여 10개씩 Batch 방식으로 읽어옵니다.
                 val reversedIds =
@@ -82,7 +83,7 @@ class SuspendedQueryTest: AbstractExposedTest() {
                             rows.asFlow().map { it[ProductTable.id].value }
                         }.toList()
 
-                reversedIds.size shouldBeEqualTo products.size
+                reversedIds shouldHaveSize products.size
 
                 val query = ProductTable.select(ProductTable.id)
                 query.fetchBatchedResultFlow(10).toList()
@@ -132,7 +133,7 @@ class SuspendedQueryTest: AbstractExposedTest() {
                         }.toList()
                         .sorted()
 
-                batchedIds.size shouldBeEqualTo items.size
+                batchedIds shouldHaveSize items.size
 
                 // `fetchBatchedResultFlow` 를 사용하여 Batch 방식으로 읽어옵니다.
                 val reversedIds =
@@ -146,7 +147,7 @@ class SuspendedQueryTest: AbstractExposedTest() {
                         }.toList()
                         .sorted()
 
-                reversedIds.size shouldBeEqualTo items.size
+                reversedIds shouldHaveSize items.size
             }
         }
 
@@ -214,7 +215,7 @@ class SuspendedQueryTest: AbstractExposedTest() {
                         .flatMapConcat { rows -> rows.asFlow().map { it[ProductTable.id].value } }
                         .toList()
 
-                ids.size shouldBeEqualTo 3
+                ids shouldHaveSize 3
             }
         }
 
@@ -241,7 +242,7 @@ class SuspendedQueryTest: AbstractExposedTest() {
                         .flatMapConcat { rows -> rows.asFlow().map { it[ProductTable.id].value } }
                         .toList()
 
-                ids.size shouldBeEqualTo 3
+                ids shouldHaveSize 3
             }
         }
 

@@ -5,6 +5,7 @@ import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.batch.internal.CheckpointJson
@@ -288,8 +289,8 @@ class ExposedR2dbcBatchJobRepositoryTest : AbstractBatchR2dbcTest() {
                     )
                     .run()
 
-                executionIds.size shouldBeEqualTo 2
-                executionIds.distinct().size shouldBeEqualTo 1
+                executionIds shouldHaveSize 2
+                executionIds.distinct() shouldHaveSize 1
                 activeJobExecutionCount("raceJob", mapOf("runId" to "issue-124")) shouldBeEqualTo 1L
             }
         }

@@ -92,7 +92,7 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: Suspe
                 // 캐시에서 조회한 값
                 val entitiesMap = repository.getAll(ids)
                 entitiesMap.shouldNotBeEmpty()
-                entitiesMap.size shouldBeEqualTo ids.size
+                entitiesMap shouldHaveSize ids.size
 
                 // 캐시에 갱신된 값 저장 -> DB에도 저장
                 val updatedEntities = entitiesMap.values.map { updateEntityEmail(it) }
@@ -154,7 +154,7 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: Suspe
 
                 val entitiesMap = repository.getAll(ids)
                 entitiesMap.shouldNotBeEmpty()
-                entitiesMap.size shouldBeEqualTo ids.size
+                entitiesMap shouldHaveSize ids.size
 
                 val updatedEntities = entitiesMap.values.map { updateEntityEmail(it) }
                 repository.upsertAll(updatedEntities.associateBy { repository.extractId(it) }, batchSize = 2)

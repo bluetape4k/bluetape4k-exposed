@@ -8,6 +8,7 @@ import io.bluetape4k.spring.batch.exposed.insertTestData
 import io.bluetape4k.spring.batch.exposed.support.castToLong
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -37,7 +38,7 @@ class ExposedUpdateItemWriterTest : AbstractExposedBatchTest() {
 
             val rows = SourceTable.selectAll().toList()
             val updated = rows.filter { it[SourceTable.name].endsWith("-updated") }
-            updated.size shouldBeEqualTo 3
+            updated shouldHaveSize 3
             updated.first()[SourceTable.value] shouldBeEqualTo 10
         }
     }

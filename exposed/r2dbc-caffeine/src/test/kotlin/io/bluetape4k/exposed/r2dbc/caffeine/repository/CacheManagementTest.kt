@@ -26,6 +26,7 @@ import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
@@ -73,7 +74,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
             }
         }.awaitAll()
 
-        results.toSet().size shouldBeEqualTo 1
+        results.toSet() shouldHaveSize 1
         repository.singleLoadCount.get() shouldBeEqualTo 1
     }
 
@@ -191,7 +192,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
             // 다시 get() 호출하면 DB에서 Read-Through로 재로드해야 한다
             val reloaded = repository.getAll(ids)
             reloaded.shouldNotBeEmpty()
-            reloaded.size shouldBeEqualTo ids.size
+            reloaded shouldHaveSize ids.size
         }
     }
 
@@ -259,7 +260,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
             all.shouldNotBeEmpty()
 
             val limited = repository.findAll(limit = 1)
-            limited.size shouldBeEqualTo 1
+            limited shouldHaveSize 1
         }
     }
 
@@ -271,7 +272,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
             all.size shouldBeGreaterThan 1
 
             val withOffset = repository.findAll(offset = 1L, sortBy = ActorTable.id, sortOrder = SortOrder.ASC)
-            withOffset.size shouldBeEqualTo (all.size - 1)
+            withOffset shouldHaveSize (all.size - 1)
 
             // offset=1이면 두 번째부터 반환 — 첫 번째 엔티티가 포함되지 않아야 한다
             withOffset.none { it.id == all.first().id }.shouldBeTrue()
@@ -308,7 +309,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
             // 나머지는 캐시에 없음
             // getAll 호출 시 캐시 히트 + DB 조회를 섞어서 처리해야 한다
             val result = repository.getAll(ids)
-            result.size shouldBeEqualTo ids.size
+            result shouldHaveSize ids.size
             result.containsKey(firstId).shouldBeTrue()
         }
     }

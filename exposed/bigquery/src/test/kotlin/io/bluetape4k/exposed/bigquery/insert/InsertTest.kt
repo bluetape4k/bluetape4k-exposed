@@ -5,6 +5,7 @@ import io.bluetape4k.exposed.bigquery.domain.Events
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.api.Test
@@ -51,7 +52,7 @@ class InsertTest: AbstractBigQueryTest() {
             insertFixtures()
 
             val rows = Events.selectAll().withBigQuery().toList()
-            rows.size shouldBeEqualTo fixtures.size
+            rows shouldHaveSize fixtures.size
         }
     }
 
@@ -64,14 +65,14 @@ class InsertTest: AbstractBigQueryTest() {
                 .where { Events.region eq "kr" }
                 .withBigQuery()
                 .toList()
-            krRows.size shouldBeEqualTo 2
+            krRows shouldHaveSize 2
             krRows.all { it[Events.region] == "kr" }.shouldBeTrue()
 
             val purchaseRows = Events.selectAll()
                 .where { Events.eventType eq "PURCHASE" }
                 .withBigQuery()
                 .toList()
-            purchaseRows.size shouldBeEqualTo 3
+            purchaseRows shouldHaveSize 3
         }
     }
 }

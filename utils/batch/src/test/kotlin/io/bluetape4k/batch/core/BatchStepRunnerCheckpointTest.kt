@@ -14,6 +14,7 @@ import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
@@ -245,7 +246,7 @@ class BatchStepRunnerCheckpointTest {
 
         // 6 / 2 = 3 chunks → saveCheckpoint 3회
         countingRepo.saveCheckpointCount.get() shouldBeEqualTo 3
-        countingRepo.savedValues.size shouldBeEqualTo 3
+        countingRepo.savedValues shouldHaveSize 3
         // 저장된 checkpoint 들은 단조 증가해야 함 (인덱스 1, 3, 5)
         countingRepo.savedValues.forEachIndexed { idx, cp ->
             val cpInt = (cp as Number).toInt()

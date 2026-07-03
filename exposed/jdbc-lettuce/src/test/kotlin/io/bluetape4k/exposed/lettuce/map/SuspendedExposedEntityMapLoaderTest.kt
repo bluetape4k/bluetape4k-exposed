@@ -15,6 +15,7 @@ import org.jetbrains.exposed.v1.jdbc.insert
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldHaveSize
 
 /**
  * [SuspendedExposedEntityMapLoader] 단위 테스트.
@@ -108,7 +109,7 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
             )
 
             val ids = loader.loadAllKeys()
-            ids.size shouldBeEqualTo 5
+            ids shouldHaveSize 5
             ids shouldBeEqualTo ids.sorted()
         }
     }

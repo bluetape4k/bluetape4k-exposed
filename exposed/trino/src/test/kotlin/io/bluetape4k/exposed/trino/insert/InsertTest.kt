@@ -9,6 +9,8 @@ import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -89,7 +91,7 @@ class InsertTest: AbstractTrinoTest() {
             }
         }
 
-        returnedRows.size shouldBeEqualTo 0
+        returnedRows shouldHaveSize 0
         val count = transaction(db) {
             Events.selectAll().count()
         }
@@ -132,8 +134,8 @@ class InsertTest: AbstractTrinoTest() {
             }
         }
 
-        returnedRows.size shouldBeEqualTo 0
-        invoked shouldBeEqualTo false
+        returnedRows shouldHaveSize 0
+        invoked.shouldBeFalse()
         val count = transaction(db) {
             Events.selectAll().count()
         }

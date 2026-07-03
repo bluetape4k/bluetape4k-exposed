@@ -30,6 +30,7 @@ import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.autoIncColumnType
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
@@ -77,7 +78,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
             }
         }.awaitAll()
 
-        results.toSet().size shouldBeEqualTo 1
+        results.toSet() shouldHaveSize 1
         repository.singleLoadCount.get() shouldBeEqualTo 1
     }
 
@@ -226,7 +227,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
                 RecordingLogbackAppender().use { appender ->
                     val entities = repository.findAll()
 
-                    entities.size shouldBeEqualTo ActorTable.selectAll().count().toInt()
+                    entities shouldHaveSize ActorTable.selectAll().count().toInt()
                     repository.cache.asMap().shouldBeEmpty()
                     appender.hasWarnContaining(
                         "Cache warming failed for entity - skipping. " +
@@ -250,7 +251,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
                 RecordingLogbackAppender().use { appender ->
                     val entities = repository.findAll()
 
-                    entities.size shouldBeEqualTo ActorTable.selectAll().count().toInt()
+                    entities shouldHaveSize ActorTable.selectAll().count().toInt()
                     repository.cache.asMap().shouldBeEmpty()
                     appender.hasWarnContaining(
                         "Cache warming failed for entity - skipping. " +
@@ -429,7 +430,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
             withSuspendedCredentialTable(testDB) {
                 repository.close()
 
-                writeBehindJobOf(repository).isCompleted shouldBeEqualTo true
+                writeBehindJobOf(repository).isCompleted.shouldBeTrue()
             }
         }
 
@@ -457,7 +458,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
                 CredentialTable.selectAll()
                     .where { CredentialTable.id eq entity.id }
                     .count() shouldBeEqualTo 1L
-                writeBehindJobOf(repository).isCompleted shouldBeEqualTo true
+                writeBehindJobOf(repository).isCompleted.shouldBeTrue()
             }
         }
 
@@ -487,13 +488,12 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
                 try {
                     repository.put(blocked.id, blocked)
-                    flushStarted.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
-
+                    flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
                     repository.put(queued.id, queued)
                     val pending = async { repository.put(cancelled.id, cancelled) }
                     delay(100)
 
-                    pending.isActive shouldBeEqualTo true
+                    pending.isActive.shouldBeTrue()
                     repository.cache.getIfPresent(cancelled.id.toString()).shouldBeNull()
 
                     pending.cancelAndJoin()
@@ -583,8 +583,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         override fun UpdateStatement.updateEntity(entity: ActorRecord) {
             flushStarted.countDown()
-            releaseFlush.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
-
+            releaseFlush.await(5, TimeUnit.SECONDS).shouldBeTrue()
             this[ActorTable.firstName] = entity.firstName
             this[ActorTable.lastName] = entity.lastName
             this[ActorTable.email] = entity.email

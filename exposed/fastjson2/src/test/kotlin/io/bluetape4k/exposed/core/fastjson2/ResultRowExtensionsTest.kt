@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldHaveSize
 
 class ResultRowExtensionsTest: AbstractExposedTest() {
 
@@ -50,7 +51,7 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
             row.getFastjson<Payload>(JsonTextTable.jsonObjectText) shouldBeEqualTo payload
             row.getFastjsonObject(JsonTextTable.jsonObjectText).getJSONObject("user")
                 .getString("name") shouldBeEqualTo "tester"
-            row.getFastjsonArray(JsonTextTable.jsonArrayText).size shouldBeEqualTo 3
+            row.getFastjsonArray(JsonTextTable.jsonArrayText) shouldHaveSize 3
             row.getFastjsonOrNull<Payload>(JsonTextTable.nullableText) shouldBeEqualTo null
         }
     }
@@ -179,7 +180,7 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
 
         val arr = row.getFastjsonArrayOrNull(expr)
         arr.shouldNotBeNull()
-        arr.size shouldBeEqualTo 3
+        arr shouldHaveSize 3
     }
 
     @Test
@@ -206,7 +207,7 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
 
         val arr = row.getFastjsonArrayOrNull(expr)
         arr.shouldNotBeNull()
-        arr.size shouldBeEqualTo 3
+        arr shouldHaveSize 3
     }
 
     @Test
