@@ -4,13 +4,19 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.idgenerators.uuid.Uuid as BluetapeUuid
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.spring7.transaction.SpringTransactionManager
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -25,8 +31,6 @@ import org.springframework.core.env.Environment
 import org.springframework.modulith.events.EventPublication.Status
 import org.springframework.modulith.events.core.EventPublicationRepository
 import org.springframework.modulith.events.core.EventSerializer
-import org.springframework.modulith.events.core.PublicationTargetIdentifier
-import org.springframework.modulith.events.core.TargetEventPublication
 import org.springframework.modulith.events.support.CompletionMode
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
@@ -60,36 +64,36 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
             val repository = context.getBean(EventPublicationRepository::class.java)
             repository.shouldNotBeNull()
 
-            val created = TargetEventPublication.of(
+            val created = targetEventPublicationOf(
                 TestEvent("created"),
-                PublicationTargetIdentifier.of("listener.created"),
+                publicationTargetIdentifierOf("listener.created"),
                 Instant.parse("2026-05-16T00:00:00Z"),
             )
 
             repository.create(created)
 
             val stored = repository.findIncompletePublications().single()
-            stored.identifier.shouldBeEqualTo(created.identifier)
-            stored.event.shouldBeEqualTo(created.event)
-            stored.status.shouldBeEqualTo(Status.PUBLISHED)
-            stored.completionAttempts.shouldBeEqualTo(1)
+            stored.identifier shouldBeEqualTo created.identifier
+            stored.event shouldBeEqualTo created.event
+            stored.status shouldBeEqualTo Status.PUBLISHED
+            stored.completionAttempts shouldBeEqualTo 1
 
             repository.markProcessing(created.identifier)
-            repository.findByStatus(Status.PROCESSING).single().identifier.shouldBeEqualTo(created.identifier)
+            repository.findByStatus(Status.PROCESSING).single().identifier shouldBeEqualTo created.identifier
 
             repository.markCompleted(created.identifier, Instant.parse("2026-05-16T00:01:00Z"))
 
-            repository.findIncompletePublications().size.shouldBeEqualTo(0)
-            repository.findCompletedPublications().single().status.shouldBeEqualTo(Status.COMPLETED)
+            repository.findIncompletePublications().shouldBeEmpty()
+            repository.findCompletedPublications().single().status shouldBeEqualTo Status.COMPLETED
 
-            val oldFailed = TargetEventPublication.of(
+            val oldFailed = targetEventPublicationOf(
                 TestEvent("old"),
-                PublicationTargetIdentifier.of("listener.failed"),
+                publicationTargetIdentifierOf("listener.failed"),
                 Instant.parse("2026-05-16T00:00:00Z"),
             )
-            val newFailed = TargetEventPublication.of(
+            val newFailed = targetEventPublicationOf(
                 TestEvent("new"),
-                PublicationTargetIdentifier.of("listener.failed"),
+                publicationTargetIdentifierOf("listener.failed"),
                 Instant.parse("2026-05-16T01:00:00Z"),
             )
 
@@ -103,7 +107,25 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
                     .withPublicationsPublishedBefore(Instant.parse("2026-05-16T00:30:00Z"))
             )
 
-            failed.map { it.identifier }.shouldBeEqualTo(listOf(oldFailed.identifier))
+            failed.map { it.identifier } shouldBeEqualTo listOf(oldFailed.identifier)
+        }
+    }
+
+    @Test
+    fun `kotlin factories create publications and validate target identifiers`() {
+        val targetIdentifier = publicationTargetIdentifierOf("listener.kotlin")
+        val publication = targetEventPublicationOf(
+            TestEvent("kotlin-factory"),
+            targetIdentifier,
+            Instant.parse("2026-05-16T00:00:00Z"),
+        )
+
+        targetIdentifier.value shouldBeEqualTo "listener.kotlin"
+        publication.event shouldBeEqualTo TestEvent("kotlin-factory")
+        publication.targetIdentifier shouldBeEqualTo targetIdentifier
+
+        assertFailsWith<IllegalArgumentException> {
+            publicationTargetIdentifierOf(" ")
         }
     }
 
@@ -112,18 +134,18 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
     fun `delete completion mode removes completed publications`(testDB: TestDB) {
         withApplicationContext(testDB, CompletionMode.DELETE) { context ->
             val repository = context.getBean(EventPublicationRepository::class.java)
-            val publication = TargetEventPublication.of(
+            val publication = targetEventPublicationOf(
                 TestEvent("delete"),
-                PublicationTargetIdentifier.of("listener.delete"),
+                publicationTargetIdentifierOf("listener.delete"),
                 Instant.parse("2026-05-16T00:00:00Z"),
             )
 
             repository.create(publication)
             repository.markCompleted(publication.identifier, Instant.parse("2026-05-16T00:01:00Z"))
 
-            repository.findIncompletePublications().size.shouldBeEqualTo(0)
-            repository.findCompletedPublications().size.shouldBeEqualTo(0)
-            repository.countByStatus(Status.COMPLETED).shouldBeEqualTo(0)
+            repository.findIncompletePublications().shouldBeEmpty()
+            repository.findCompletedPublications().shouldBeEmpty()
+            repository.countByStatus(Status.COMPLETED) shouldBeEqualTo 0
         }
     }
 
@@ -132,22 +154,22 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
     fun `archive completion mode moves completed publications to archive table`(testDB: TestDB) {
         withApplicationContext(testDB, CompletionMode.ARCHIVE) { context ->
             val repository = context.getBean(EventPublicationRepository::class.java)
-            val publication = TargetEventPublication.of(
+            val publication = targetEventPublicationOf(
                 TestEvent("archive"),
-                PublicationTargetIdentifier.of("listener.archive"),
+                publicationTargetIdentifierOf("listener.archive"),
                 Instant.parse("2026-05-16T00:00:00Z"),
             )
 
             repository.create(publication)
             repository.markCompleted(publication.identifier, Instant.parse("2026-05-16T00:01:00Z"))
 
-            repository.findIncompletePublications().size.shouldBeEqualTo(0)
-            repository.findCompletedPublications().single().identifier.shouldBeEqualTo(publication.identifier)
-            repository.findByStatus(Status.COMPLETED).single().identifier.shouldBeEqualTo(publication.identifier)
-            repository.countByStatus(Status.COMPLETED).shouldBeEqualTo(1)
+            repository.findIncompletePublications().shouldBeEmpty()
+            repository.findCompletedPublications().single().identifier shouldBeEqualTo publication.identifier
+            repository.findByStatus(Status.COMPLETED).single().identifier shouldBeEqualTo publication.identifier
+            repository.countByStatus(Status.COMPLETED) shouldBeEqualTo 1
 
             repository.deleteCompletedPublicationsBefore(Instant.parse("2026-05-16T00:02:00Z"))
-            repository.findCompletedPublications().size.shouldBeEqualTo(0)
+            repository.findCompletedPublications().shouldBeEmpty()
         }
     }
 
@@ -156,9 +178,9 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
     fun `duplicate identifier completion is idempotent`(testDB: TestDB, completionMode: CompletionMode) {
         withApplicationContext(testDB, completionMode) { context ->
             val repository = context.getBean(EventPublicationRepository::class.java)
-            val publication = TargetEventPublication.of(
+            val publication = targetEventPublicationOf(
                 TestEvent("duplicate-identifier-${completionMode.name.lowercase()}"),
-                PublicationTargetIdentifier.of("listener.duplicate.identifier"),
+                publicationTargetIdentifierOf("listener.duplicate.identifier"),
                 Instant.parse("2026-05-16T00:00:00Z"),
             )
             val firstCompletionDate = Instant.parse("2026-05-16T00:01:00Z")
@@ -169,18 +191,18 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
             repository.markCompleted(publication.identifier, firstCompletionDate)
             repository.markCompleted(publication.identifier, duplicateCompletionDate)
 
-            repository.findIncompletePublications().size.shouldBeEqualTo(0)
+            repository.findIncompletePublications().shouldBeEmpty()
 
             when (completionMode) {
                 CompletionMode.DELETE ->
-                    repository.findCompletedPublications().size.shouldBeEqualTo(0)
+                    repository.findCompletedPublications().shouldBeEmpty()
 
                 CompletionMode.ARCHIVE,
                 CompletionMode.UPDATE -> {
                     val completed = repository.findCompletedPublications().single()
-                    completed.identifier.shouldBeEqualTo(publication.identifier)
-                    completed.status.shouldBeEqualTo(Status.COMPLETED)
-                    completed.completionDate.orElseThrow().shouldBeEqualTo(firstCompletionDate)
+                    completed.identifier shouldBeEqualTo publication.identifier
+                    completed.status shouldBeEqualTo Status.COMPLETED
+                    completed.completionDate.orElseThrow() shouldBeEqualTo firstCompletionDate
                 }
             }
         }
@@ -195,13 +217,13 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
         withApplicationContext(testDB, completionMode) { context ->
             val repository = context.getBean(EventPublicationRepository::class.java)
             val event = TestEvent("shared-event")
-            val targetIdentifier = PublicationTargetIdentifier.of("listener.shared")
-            val first = TargetEventPublication.of(
+            val targetIdentifier = publicationTargetIdentifierOf("listener.shared")
+            val first = targetEventPublicationOf(
                 event,
                 targetIdentifier,
                 Instant.parse("2026-05-16T00:00:00Z"),
             )
-            val second = TargetEventPublication.of(
+            val second = targetEventPublicationOf(
                 event,
                 targetIdentifier,
                 Instant.parse("2026-05-16T00:01:00Z"),
@@ -215,23 +237,21 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
             repository.markCompleted(event, targetIdentifier, firstCompletionDate)
             repository.markCompleted(event, targetIdentifier, duplicateCompletionDate)
 
-            repository.findIncompletePublications().size.shouldBeEqualTo(0)
+            repository.findIncompletePublications().shouldBeEmpty()
 
             when (completionMode) {
                 CompletionMode.DELETE ->
-                    repository.findCompletedPublications().size.shouldBeEqualTo(0)
+                    repository.findCompletedPublications().shouldBeEmpty()
 
                 CompletionMode.ARCHIVE,
                 CompletionMode.UPDATE -> {
                     val completed = repository.findCompletedPublications()
-                    completed.size.shouldBeEqualTo(2)
+                    completed shouldHaveSize 2
                     completed.map { it.identifier }
-                        .toSet()
-                        .shouldBeEqualTo(setOf(first.identifier, second.identifier))
-                    completed.map { it.status }.toSet().shouldBeEqualTo(setOf(Status.COMPLETED))
+                        .toSet() shouldBeEqualTo setOf(first.identifier, second.identifier)
+                    completed.map { it.status }.toSet() shouldBeEqualTo setOf(Status.COMPLETED)
                     completed.map { it.completionDate.orElseThrow() }
-                        .toSet()
-                        .shouldBeEqualTo(setOf(firstCompletionDate))
+                        .toSet() shouldBeEqualTo setOf(firstCompletionDate)
                 }
             }
         }
@@ -245,9 +265,9 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
     ) {
         withApplicationContext(testDB, completionMode) { context ->
             val repository = context.getBean(EventPublicationRepository::class.java)
-            val publication = TargetEventPublication.of(
+            val publication = targetEventPublicationOf(
                 TestEvent("resubmission-${completionMode.name.lowercase()}"),
-                PublicationTargetIdentifier.of("listener.resubmission"),
+                publicationTargetIdentifierOf("listener.resubmission"),
                 Instant.parse("2026-05-16T00:00:00Z"),
             )
             val firstResubmissionDate = Instant.parse("2026-05-16T00:05:00Z")
@@ -256,15 +276,13 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
             repository.create(publication)
             repository.markFailed(publication.identifier)
 
-            repository.markResubmitted(publication.identifier, firstResubmissionDate)
-                .shouldBeEqualTo(true)
-            repository.markResubmitted(publication.identifier, duplicateResubmissionDate)
-                .shouldBeEqualTo(false)
+            repository.markResubmitted(publication.identifier, firstResubmissionDate).shouldBeTrue()
+            repository.markResubmitted(publication.identifier, duplicateResubmissionDate).shouldBeFalse()
 
             val resubmitted = repository.findByStatus(Status.RESUBMITTED).single()
-            resubmitted.identifier.shouldBeEqualTo(publication.identifier)
-            resubmitted.completionAttempts.shouldBeEqualTo(2)
-            resubmitted.lastResubmissionDate.shouldBeEqualTo(firstResubmissionDate)
+            resubmitted.identifier shouldBeEqualTo publication.identifier
+            resubmitted.completionAttempts shouldBeEqualTo 2
+            resubmitted.lastResubmissionDate shouldBeEqualTo firstResubmissionDate
         }
     }
 
@@ -274,8 +292,8 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
         withApplicationContext(testDB, CompletionMode.UPDATE) { context ->
             val repository = context.getBean(EventPublicationRepository::class.java)
             val event = TestEvent("resubmit")
-            val targetIdentifier = PublicationTargetIdentifier.of("listener.resubmit")
-            val publication = TargetEventPublication.of(
+            val targetIdentifier = publicationTargetIdentifierOf("listener.resubmit")
+            val publication = targetEventPublicationOf(
                 event,
                 targetIdentifier,
                 Instant.parse("2026-05-16T00:00:00Z"),
@@ -285,20 +303,18 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
             repository.markFailed(publication.identifier)
 
             val failed = repository.findIncompletePublicationsByEventAndTargetIdentifier(event, targetIdentifier)
-            failed.isPresent.shouldBeEqualTo(true)
-            failed.get().status.shouldBeEqualTo(Status.FAILED)
+            failed.isPresent.shouldBeTrue()
+            failed.get().status shouldBeEqualTo Status.FAILED
 
-            repository.markResubmitted(publication.identifier, Instant.parse("2026-05-16T00:05:00Z"))
-                .shouldBeEqualTo(true)
-            repository.markResubmitted(publication.identifier, Instant.parse("2026-05-16T00:06:00Z"))
-                .shouldBeEqualTo(false)
+            repository.markResubmitted(publication.identifier, Instant.parse("2026-05-16T00:05:00Z")).shouldBeTrue()
+            repository.markResubmitted(publication.identifier, Instant.parse("2026-05-16T00:06:00Z")).shouldBeFalse()
 
             val resubmitted = repository.findByStatus(Status.RESUBMITTED).single()
-            resubmitted.completionAttempts.shouldBeEqualTo(2)
-            resubmitted.lastResubmissionDate.shouldBeEqualTo(Instant.parse("2026-05-16T00:05:00Z"))
+            resubmitted.completionAttempts shouldBeEqualTo 2
+            resubmitted.lastResubmissionDate shouldBeEqualTo Instant.parse("2026-05-16T00:05:00Z")
 
             repository.deletePublications(listOf(publication.identifier))
-            repository.findIncompletePublications().size.shouldBeEqualTo(0)
+            repository.findIncompletePublications().shouldBeEmpty()
         }
     }
 
@@ -310,8 +326,8 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
             val table = context.getBean("eventPublicationTable", ExposedEventPublicationTable::class.java)
             val txManager = context.getBean("springTransactionManager", PlatformTransactionManager::class.java)
             val missingEventType = "com.example.missing.LegacyEvent"
-            val publishedId = UUID.randomUUID()
-            val failedId = UUID.randomUUID()
+            val publishedId = nextJavaUuid()
+            val failedId = nextJavaUuid()
 
             TransactionTemplate(txManager).executeWithoutResult {
                 table.insertUnknownPublication(
@@ -329,10 +345,10 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
             }
 
             val incomplete = repository.findIncompletePublications()
-            incomplete.map { it.identifier }.toSet().shouldBeEqualTo(setOf(publishedId, failedId))
+            incomplete.map { it.identifier }.toSet() shouldBeEqualTo setOf(publishedId, failedId)
 
             val failed = repository.findFailedPublications(EventPublicationRepository.FailedCriteria.ALL).single()
-            failed.identifier.shouldBeEqualTo(failedId)
+            failed.identifier shouldBeEqualTo failedId
 
             assertFailsWith<UnloadableEventPublicationException> {
                 incomplete.single { it.identifier == publishedId }.event
@@ -423,6 +439,9 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
             row[lastResubmissionDate] = publicationDate
         }
     }
+
+    private fun nextJavaUuid(): UUID =
+        BluetapeUuid.V7.nextId()
 
     class TestEventSerializer : EventSerializer {
         override fun serialize(event: Any): Any =

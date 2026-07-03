@@ -39,6 +39,21 @@ Repository는 애플리케이션과 같은 `DataSource` 및 Exposed
 - `DELETE`: 완료된 active row를 제거합니다.
 - `ARCHIVE`: savepoint로 archive table에 복사한 뒤 active row를 삭제합니다.
 
+Completion 연산은 중복 retry 호출에 대해 idempotent하게 동작합니다. `UPDATE` mode는 최초
+`COMPLETION_DATE`를 보존하고, `DELETE` mode는 완료 row를 남기지 않으며, `ARCHIVE` mode는 archive row를
+하나만 유지합니다. `markResubmitted(...)`를 반복 호출해도 첫 resubmission에서만 attempts와 timestamp가
+갱신됩니다.
+
+Kotlin 코드에서는 Spring Modulith의 Java-style static factory 대신 package function을 사용할 수 있습니다.
+
+```kotlin
+val publication = targetEventPublicationOf(
+    event = "order-1",
+    targetIdentifier = publicationTargetIdentifierOf("listener.order-submitted"),
+    publicationDate = Instant.now(),
+)
+```
+
 ## 로드할 수 없는 이벤트 타입
 
 `EVENT_TYPE`을 더 이상 로드할 수 없는 row도 incomplete, failed, status query에서 계속 보입니다. package rename,
