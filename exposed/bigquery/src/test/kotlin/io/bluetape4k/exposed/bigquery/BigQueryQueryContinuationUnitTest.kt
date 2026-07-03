@@ -14,6 +14,7 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.coInvoking
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.bigquery.domain.Events
 import io.mockk.clearMocks
@@ -75,7 +76,7 @@ class BigQueryQueryContinuationUnitTest {
 
         val rows = executor().toList()
 
-        rows.size shouldBeEqualTo 2
+        rows shouldHaveSize 2
         rows[0][Events.eventId] shouldBeEqualTo 1L
         rows[0][Events.region] shouldBeEqualTo "kr"
         rows[1][Events.eventId] shouldBeEqualTo 2L
@@ -105,7 +106,7 @@ class BigQueryQueryContinuationUnitTest {
 
         val rows = executor().toFlow().toList()
 
-        rows.size shouldBeEqualTo 2
+        rows shouldHaveSize 2
         rows[0][Events.eventId] shouldBeEqualTo 10L
         rows[0][Events.region] shouldBeEqualTo "eu"
         rows[1][Events.eventId] shouldBeEqualTo 11L
@@ -133,7 +134,7 @@ class BigQueryQueryContinuationUnitTest {
 
         val rows = executor().toFlow().take(1).toList()
 
-        rows.size shouldBeEqualTo 1
+        rows shouldHaveSize 1
         rows[0][Events.eventId] shouldBeEqualTo 21L
         verify(exactly = 0) { jobs.getQueryResults(any(), any()) }
     }

@@ -18,12 +18,16 @@
   `@BeforeEach` uses `clearMocks(...)` before restubbing shared behavior.
 - Ecosystem reuse review: assertions use `bluetape4k-assertions`, including
   `assertFailsWith` and `coInvoking { ... } shouldThrow`.
+- Follow-up code-pattern review: collection cardinality assertions use
+  `shouldHaveSize` instead of `collection.size shouldBeEqualTo n`.
 
 ## Verification
 
 - `git diff --check`: PASS.
 - `./gradlew :bluetape4k-exposed-bigquery:test --tests "io.bluetape4k.exposed.bigquery.BigQueryQueryContinuationUnitTest"`:
   PASS, 5 tests.
+- `rg ".size shouldBeEqualTo|.shouldBeEqualTo\\(|shouldBeEqualTo (true|false)"`
+  against the BigQuery continuation test: PASS.
 
 ## Residual Risk
 
