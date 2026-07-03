@@ -120,7 +120,9 @@ class ExposedEventPublicationRepository(
                 table.deleteWhere { table.id eq identifier.toKotlinUuid() }
             }
 
-            CompletionMode.UPDATE -> table.update({ table.id eq identifier.toKotlinUuid() }) { row ->
+            CompletionMode.UPDATE -> table.update({
+                (table.id eq identifier.toKotlinUuid()) and table.completionDate.isNull()
+            }) { row ->
                 row[table.status] = Status.COMPLETED.name
                 row[table.completionDate] = completionDate
             }
