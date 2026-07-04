@@ -1,5 +1,6 @@
 package io.bluetape4k.batch.core
 
+import io.bluetape4k.codec.Base58
 import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchExecutionAlreadyClaimedException
 import io.bluetape4k.batch.api.BatchStatus
@@ -14,7 +15,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.time.Instant
-import java.util.UUID
 
 /**
  * [BatchStep]의 chunk 루프 실행 엔진.
@@ -60,7 +60,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
         val claimedJobExecution = if (jobExecution.ownerId != null && jobExecution.leaseUntil != null) {
             jobExecution
         } else {
-            val fallbackOwnerId = "${jobExecution.jobName}-${step.name}-${UUID.randomUUID()}"
+            val fallbackOwnerId = "${jobExecution.jobName}-${step.name}-${Base58.randomString(8)}"
             repository.claimJobExecution(
                 execution = jobExecution,
                 ownerId = fallbackOwnerId,

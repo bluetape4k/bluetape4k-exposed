@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.core
 
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
@@ -28,7 +29,7 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `ResultRow 확장으로 문자열 기반 값을 다양한 타입으로 변환한다`(testDB: TestDB) {
-        val uuid = UUID.randomUUID()
+        val uuid = Uuid.V7.nextId()
 
         withTables(testDB, ResultRowExtTable) {
             ResultRowExtTable.insert {
@@ -59,7 +60,7 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
                 it[text] = "hello"
                 it[numberText] = "123"
                 it[boolText] = "true"
-                it[uuidText] = UUID.randomUUID().toString()
+                it[uuidText] = Uuid.V7.nextId().toString()
                 it[nullableText] = null
             }
 

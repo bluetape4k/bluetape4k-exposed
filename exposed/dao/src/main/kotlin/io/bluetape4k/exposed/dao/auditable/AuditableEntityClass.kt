@@ -83,7 +83,7 @@ abstract class AuditableLongEntityClass<E: AuditableLongEntity>(
  * [AuditableUUIDTable] 기반 엔티티를 관리하는 DAO `EntityClass` 추상 클래스입니다.
  *
  * ## 동작/계약
- * - 테이블 PK는 `java.util.UUID` 타입이며 INSERT 시 `UUID.randomUUID()`로 client-side 자동 생성됩니다.
+ * - 테이블 PK는 `java.util.UUID` 타입이며 INSERT 시 `Uuid.V7.nextId()`로 client-side 자동 생성됩니다.
  * - `entityType`, `entityCtor`를 생략하면 Exposed 기본 추론(리플렉션 포함)을 사용합니다.
  *
  * ## 사용 예시

@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.redisson.repository
 
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.exposed.redisson.AbstractRedissonTest
 import io.bluetape4k.exposed.redisson.domain.SuspendedUserCacheRepository
 import io.bluetape4k.exposed.redisson.domain.SuspendedUserCredentialCacheRepository
@@ -104,7 +105,7 @@ class SuspendedWriteBehindCacheTest {
                     .map { it[UserCredentialsTable.id].value }
             }
 
-        override suspend fun getNonExistentId(): UUID = UUID.randomUUID()
+        override suspend fun getNonExistentId(): UUID = Uuid.V7.nextId()
 
         override suspend fun createNewEntity(): UserCredentialsRecord = UserSchema.newUserCredentialsRecord()
     }

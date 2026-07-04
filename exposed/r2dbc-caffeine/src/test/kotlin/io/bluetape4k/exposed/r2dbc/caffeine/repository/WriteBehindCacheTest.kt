@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.r2dbc.caffeine.repository
 
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
@@ -148,7 +149,7 @@ class WriteBehindCacheTest {
                 CredentialTable.select(CredentialTable.id).map { it[CredentialTable.id].value }.toList()
             }
 
-        override suspend fun getNonExistentId(): UUID = UUID.randomUUID()
+        override suspend fun getNonExistentId(): UUID = Uuid.V7.nextId()
 
         override suspend fun createNewEntity(): CredentialRecord =
             ActorSchema.newCredentialRecord()

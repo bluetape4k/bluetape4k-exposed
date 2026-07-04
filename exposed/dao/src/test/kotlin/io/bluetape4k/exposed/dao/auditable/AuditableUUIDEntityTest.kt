@@ -136,7 +136,7 @@ class AuditableUUIDEntityTest: AbstractExposedTest() {
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `UUID PK 는 자동 생성되며 non-null 이다`(testDB: TestDB) {
-        // UUID PK 는 client-side 에서 UUID.randomUUID() 로 생성되므로 항상 non-null
+        // UUID PK 는 client-side 에서 Uuid.V7.nextId() 로 생성되므로 항상 non-null
         withTables(testDB, Documents) {
             val doc = Document.new {
                 title = "UUID 확인 문서"

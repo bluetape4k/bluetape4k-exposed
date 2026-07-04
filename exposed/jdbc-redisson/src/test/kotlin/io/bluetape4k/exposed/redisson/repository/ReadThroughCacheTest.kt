@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.redisson.repository
 
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.exposed.redisson.AbstractRedissonTest
 import io.bluetape4k.exposed.redisson.domain.UserCacheRepository
 import io.bluetape4k.exposed.redisson.domain.UserCredentialCacheRepository
@@ -94,7 +95,7 @@ class ReadThroughCacheTest {
                     .map { it[UserCredentialsTable.id].value }
             }
 
-        override fun getNonExistentId(): UUID = UUID.randomUUID()
+        override fun getNonExistentId(): UUID = Uuid.V7.nextId()
     }
 
     @Nested

@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.lettuce.repository
 
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest
 import io.bluetape4k.exposed.lettuce.domain.SuspendedUserCredentialRepository
 import io.bluetape4k.exposed.lettuce.domain.SuspendedUserRepository
@@ -114,7 +115,7 @@ class SuspendedReadThroughCacheTest {
                     .map { it[UserCredentialsTable.id].value }
             }
 
-        override suspend fun getNonExistentId(): UUID = UUID.randomUUID()
+        override suspend fun getNonExistentId(): UUID = Uuid.V7.nextId()
 
         override suspend fun buildEntityForId(id: UUID): UserCredentialsRecord =
             UserSchema.newUserCredentialsRecord().copy(id = id)

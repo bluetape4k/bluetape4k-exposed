@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.lettuce.map
 
+import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.redis.lettuce.map.LettuceLoadedMap
@@ -18,7 +19,7 @@ class LettuceLoadedMapConsistencyTest: AbstractJdbcLettuceTest() {
             newMap(
                 config =
                     LettuceCacheConfig.READ_WRITE_THROUGH.copy(
-                        keyPrefix = "write-through-fail-${UUID.randomUUID()}"
+                        keyPrefix = "write-through-fail-${Base58.randomString(8)}"
                     ),
                 writer =
                     object: MapWriter<String, String> {
@@ -38,7 +39,7 @@ class LettuceLoadedMapConsistencyTest: AbstractJdbcLettuceTest() {
 
     @Test
     fun `WRITE_THROUGH delete 실패 시 Redis 값은 유지된다`() {
-        val keyPrefix = "delete-through-fail-${UUID.randomUUID()}"
+        val keyPrefix = "delete-through-fail-${Base58.randomString(8)}"
         newMap(config = LettuceCacheConfig.READ_ONLY.copy(keyPrefix = keyPrefix)).use { seed ->
             seed["k"] = "v"
         }

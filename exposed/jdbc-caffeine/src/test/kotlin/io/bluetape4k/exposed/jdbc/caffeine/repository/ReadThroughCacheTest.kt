@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.jdbc.caffeine.repository
 
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
@@ -92,7 +93,7 @@ class ReadThroughCacheTest {
                 CredentialTable.select(CredentialTable.id).map { it[CredentialTable.id].value }
             }
 
-        override fun getNonExistentId(): UUID = UUID.randomUUID()
+        override fun getNonExistentId(): UUID = Uuid.V7.nextId()
     }
 
     @Nested
