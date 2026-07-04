@@ -15,7 +15,7 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
  *     table = ActorTable,
  *     toEntity = { row -> ActorRecord(id = row[ActorTable.id].value, name = row[ActorTable.name]) }
  * )
- * // suspend 컨텍스트(예: runTest, coroutineScope)에서 호출한다
+ * // suspend 컨텍스트(예: runSuspendIO, coroutineScope)에서 호출한다
  * val actor = loader.load(1L)
  * ```
  *

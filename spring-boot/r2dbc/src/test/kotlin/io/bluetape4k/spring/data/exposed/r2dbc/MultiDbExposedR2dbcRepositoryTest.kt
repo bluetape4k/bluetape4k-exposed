@@ -9,7 +9,7 @@ import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.support.SimpleExposedR2dbcRepository
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
@@ -56,7 +56,7 @@ class MultiDbExposedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("enableDialects")
-    fun `save and findByIdOrNull`(testDB: TestDB) = runTest {
+    fun `save and findByIdOrNull`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val repo = createRepo()
             val saved = repo.save(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
@@ -69,7 +69,7 @@ class MultiDbExposedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("enableDialects")
-    fun `findAllAsList returns all entities`(testDB: TestDB) = runTest {
+    fun `findAllAsList returns all entities`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val repo = createRepo()
             repo.save(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
@@ -80,7 +80,7 @@ class MultiDbExposedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("enableDialects")
-    fun `count and existsById`(testDB: TestDB) = runTest {
+    fun `count and existsById`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val repo = createRepo()
             val saved = repo.save(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
@@ -92,7 +92,7 @@ class MultiDbExposedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("enableDialects")
-    fun `deleteById removes entity`(testDB: TestDB) = runTest {
+    fun `deleteById removes entity`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val repo = createRepo()
             val saved = repo.save(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
@@ -103,7 +103,7 @@ class MultiDbExposedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("enableDialects")
-    fun `deleteAll removes all entities`(testDB: TestDB) = runTest {
+    fun `deleteAll removes all entities`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val repo = createRepo()
             repo.save(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
@@ -115,7 +115,7 @@ class MultiDbExposedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("enableDialects")
-    fun `findAllById returns matching entities`(testDB: TestDB) = runTest {
+    fun `findAllById returns matching entities`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val repo = createRepo()
             val alice = repo.save(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
@@ -130,7 +130,7 @@ class MultiDbExposedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("enableDialects")
-    fun `deleteAllById removes specified entities`(testDB: TestDB) = runTest {
+    fun `deleteAllById removes specified entities`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val repo = createRepo()
             val alice = repo.save(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
@@ -145,7 +145,7 @@ class MultiDbExposedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("enableDialects")
-    fun `findAll with Sort returns sorted list`(testDB: TestDB) = runTest {
+    fun `findAll with Sort returns sorted list`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val repo = createRepo()
             repo.save(User(id = null, name = "Charlie", email = "charlie@example.com", age = 35))
@@ -159,7 +159,7 @@ class MultiDbExposedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("enableDialects")
-    fun `findAll with Pageable returns page`(testDB: TestDB) = runTest {
+    fun `findAll with Pageable returns page`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val repo = createRepo()
             repeat(5) { i ->
@@ -174,7 +174,7 @@ class MultiDbExposedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("enableDialects")
-    fun `findAll with DSL op filters correctly`(testDB: TestDB) = runTest {
+    fun `findAll with DSL op filters correctly`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val repo = createRepo()
             repo.save(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
@@ -188,7 +188,7 @@ class MultiDbExposedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("enableDialects")
-    fun `count and exists with DSL op`(testDB: TestDB) = runTest {
+    fun `count and exists with DSL op`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val repo = createRepo()
             repo.save(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
@@ -202,7 +202,7 @@ class MultiDbExposedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("enableDialects")
-    fun `streamAll streams all rows`(testDB: TestDB) = runTest {
+    fun `streamAll streams all rows`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val repo = createRepo()
             repo.save(User(id = null, name = "Alice", email = "alice@example.com", age = 30))

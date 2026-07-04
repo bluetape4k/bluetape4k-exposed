@@ -3,7 +3,7 @@ package io.bluetape4k.exposed.cache.scenarios
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.logging.coroutines.KLoggingChannel
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
@@ -34,7 +34,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: Serializable>: R2dbcCacheTestScen
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `get - ID로 조회 시 DB에서 읽어서 캐시에 저장 후 반환한다`(testDB: TestDB) = runTest {
+    fun `get - ID로 조회 시 DB에서 읽어서 캐시에 저장 후 반환한다`(testDB: TestDB) = runSuspendIO {
         withR2dbcEntityTable(testDB) {
             val id = getExistingId()
 
@@ -53,7 +53,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: Serializable>: R2dbcCacheTestScen
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `containsKey - 캐시에 해당 ID가 존재하는지 검사, 없으면 DB에서 로드한다`(testDB: TestDB) = runTest {
+    fun `containsKey - 캐시에 해당 ID가 존재하는지 검사, 없으면 DB에서 로드한다`(testDB: TestDB) = runSuspendIO {
         withR2dbcEntityTable(testDB) {
             val ids = getExistingIds()
 
@@ -67,7 +67,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: Serializable>: R2dbcCacheTestScen
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `invalidate - Read-Through에서 캐시 invalidate는 DB에 영향을 주지 않는다`(testDB: TestDB) = runTest {
+    fun `invalidate - Read-Through에서 캐시 invalidate는 DB에 영향을 주지 않는다`(testDB: TestDB) = runSuspendIO {
         withR2dbcEntityTable(testDB) {
             val id = getExistingId()
 
@@ -89,7 +89,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: Serializable>: R2dbcCacheTestScen
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `get - 존재하지 않는 ID로 캐시 조회하면 null을 반환한다`(testDB: TestDB) = runTest {
+    fun `get - 존재하지 않는 ID로 캐시 조회하면 null을 반환한다`(testDB: TestDB) = runSuspendIO {
         withR2dbcEntityTable(testDB) {
             val nonExistentId = getNonExistentId()
 
@@ -103,7 +103,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: Serializable>: R2dbcCacheTestScen
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `findAll - 전체 엔티티를 가져옵니다`(testDB: TestDB) = runTest {
+    fun `findAll - 전체 엔티티를 가져옵니다`(testDB: TestDB) = runSuspendIO {
         withR2dbcEntityTable(testDB) {
             val entities = repository.findAll()
             entities.shouldNotBeEmpty()
@@ -116,7 +116,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: Serializable>: R2dbcCacheTestScen
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `getAll - 여러 ID의 엔티티를 한 번에 조회한다`(testDB: TestDB) = runTest {
+    fun `getAll - 여러 ID의 엔티티를 한 번에 조회한다`(testDB: TestDB) = runSuspendIO {
         withR2dbcEntityTable(testDB) {
             val ids = getExistingIds() + getNonExistentId()
             val entities = repository.getAll(ids)
@@ -128,7 +128,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: Serializable>: R2dbcCacheTestScen
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `getAll - 빈 목록은 빈 결과를 반환한다`(testDB: TestDB) = runTest {
+    fun `getAll - 빈 목록은 빈 결과를 반환한다`(testDB: TestDB) = runSuspendIO {
         withR2dbcEntityTable(testDB) {
             repository.getAll(emptyList()).shouldBeEmpty()
         }

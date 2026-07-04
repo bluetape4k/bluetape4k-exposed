@@ -22,7 +22,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
@@ -69,7 +69,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
     companion object: KLogging()
 
     @Test
-    fun `get - concurrent suspended cache misses run one loader per key`() = runTest {
+    fun `get - concurrent suspended cache misses run one loader per key`() = runSuspendIO {
         val repository = CountingSuspendedActorRepository("jdbc:caffeine:s-atomic:get")
 
         val results = List(8) {
@@ -83,7 +83,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
     }
 
     @Test
-    fun `getAll - concurrent suspended cache misses run one loader per key`() = runTest {
+    fun `getAll - concurrent suspended cache misses run one loader per key`() = runSuspendIO {
         val repository = CountingSuspendedActorRepository("jdbc:caffeine:s-atomic:get-all")
         val ids = listOf(1L, 2L, 3L)
 
@@ -183,7 +183,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `countFromDb - DB 직접 카운트를 반환한다`(testDB: TestDB) = runTest(timeout = 30.seconds) {
+        fun `countFromDb - DB 직접 카운트를 반환한다`(testDB: TestDB) = runSuspendIO(timeout = 30.seconds) {
             val repository = newRepository()
             withSuspendedActorTable(testDB) {
                 // countFromDb()는 캐시를 우회해 DB에서 직접 집계해야 한다
@@ -195,7 +195,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `clear - 캐시를 비우면 다음 get은 DB에서 다시 로드된다`(testDB: TestDB) = runTest(timeout = 30.seconds) {
+        fun `clear - 캐시를 비우면 다음 get은 DB에서 다시 로드된다`(testDB: TestDB) = runSuspendIO(timeout = 30.seconds) {
             // DB 인스턴스마다 독립된 레포지토리를 사용해야 캐시 오염을 방지할 수 있다
             val repository = newRepository()
             withSuspendedActorTable(testDB) {
@@ -223,7 +223,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `invalidateAll - 여러 ID를 한 번에 캐시에서 제거한다`(testDB: TestDB) = runTest(timeout = 30.seconds) {
+        fun `invalidateAll - 여러 ID를 한 번에 캐시에서 제거한다`(testDB: TestDB) = runSuspendIO(timeout = 30.seconds) {
             val repository = newRepository()
             withSuspendedActorTable(testDB) {
                 val ids = newSuspendedTransaction(Dispatchers.IO) {
@@ -255,7 +255,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
         @MethodSource(ENABLE_DIALECTS_METHOD)
         fun `findAll - cache warming Exception is skipped without losing query result`(
             testDB: TestDB,
-        ) = runTest(timeout = 30.seconds) {
+        ) = runSuspendIO(timeout = 30.seconds) {
             val repository = FailingCacheWarmSuspendedJdbcRepository(
                 failure = IllegalStateException("cache key failure")
             )
@@ -278,7 +278,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
         @MethodSource(ENABLE_DIALECTS_METHOD)
         fun `findAll - cache key serialization Exception is warned and skipped`(
             testDB: TestDB,
-        ) = runTest(timeout = 30.seconds) {
+        ) = runSuspendIO(timeout = 30.seconds) {
             val repository = FailingCacheWarmSuspendedJdbcRepository(
                 failure = IllegalStateException("cache key serialization failure"),
                 failInSerializeKey = true,
@@ -302,7 +302,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
         @MethodSource(ENABLE_DIALECTS_METHOD)
         fun `findAll - cache warming CancellationException is not swallowed`(
             testDB: TestDB,
-        ) = runTest(timeout = 30.seconds) {
+        ) = runSuspendIO(timeout = 30.seconds) {
             val repository = FailingCacheWarmSuspendedJdbcRepository(
                 failure = CancellationException("cache warming cancelled")
             )
@@ -318,7 +318,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `findAll - cache warming Error is not swallowed`(testDB: TestDB) = runTest(timeout = 30.seconds) {
+        fun `findAll - cache warming Error is not swallowed`(testDB: TestDB) = runSuspendIO(timeout = 30.seconds) {
             val repository = FailingCacheWarmSuspendedJdbcRepository(
                 failure = AssertionError("fatal cache warming failure")
             )
@@ -347,7 +347,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `countFromDb - UUID 테이블 DB 직접 카운트를 반환한다`(testDB: TestDB) = runTest(timeout = 30.seconds) {
+        fun `countFromDb - UUID 테이블 DB 직접 카운트를 반환한다`(testDB: TestDB) = runSuspendIO(timeout = 30.seconds) {
             val repository = newRepository()
             withSuspendedCredentialTable(testDB) {
                 val count = repository.countFromDb()
@@ -358,7 +358,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `clear - UUID 테이블 캐시를 비우면 다음 get은 DB에서 다시 로드된다`(testDB: TestDB) = runTest(timeout = 30.seconds) {
+        fun `clear - UUID 테이블 캐시를 비우면 다음 get은 DB에서 다시 로드된다`(testDB: TestDB) = runSuspendIO(timeout = 30.seconds) {
             val repository = newRepository()
             withSuspendedCredentialTable(testDB) {
                 val id = newSuspendedTransaction(Dispatchers.IO) {
@@ -379,7 +379,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `invalidateAll - UUID 테이블 여러 ID를 한 번에 캐시에서 제거한다`(testDB: TestDB) = runTest(timeout = 30.seconds) {
+        fun `invalidateAll - UUID 테이블 여러 ID를 한 번에 캐시에서 제거한다`(testDB: TestDB) = runSuspendIO(timeout = 30.seconds) {
             val repository = newRepository()
             withSuspendedCredentialTable(testDB) {
                 val ids = newSuspendedTransaction(Dispatchers.IO) {
@@ -406,7 +406,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `close - Write-Behind 종료 시 큐에 남은 항목이 DB에 flush된다`(testDB: TestDB) = runTest(timeout = 60.seconds) {
+        fun `close - Write-Behind 종료 시 큐에 남은 항목이 DB에 flush된다`(testDB: TestDB) = runSuspendIO(timeout = 60.seconds) {
             // AutoInc 테이블은 새 엔티티를 DB에 삽입하지 않으므로 UUID 테이블로 검증
             val config = LocalCacheConfig(
                 keyPrefix = "jdbc:caffeine:s-extra:wb-close",
@@ -454,7 +454,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `close - write-behind put 전에도 hang 없이 종료한다`(testDB: TestDB) = runTest(timeout = 35.seconds) {
+        fun `close - write-behind put 전에도 hang 없이 종료한다`(testDB: TestDB) = runSuspendIO(timeout = 35.seconds) {
             val repository = CredentialSuspendedJdbcCaffeineRepository(
                 LocalCacheConfig(
                     keyPrefix = "jdbc:caffeine:s-extra:wb-close-before-put",
@@ -475,7 +475,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
         @MethodSource(ENABLE_DIALECTS_METHOD)
         fun `close - write-behind job 시작 후 반복 호출해도 hang 없이 종료한다`(
             testDB: TestDB,
-        ) = runTest(timeout = 35.seconds) {
+        ) = runSuspendIO(timeout = 35.seconds) {
             val repository = CredentialSuspendedJdbcCaffeineRepository(
                 LocalCacheConfig(
                     keyPrefix = "jdbc:caffeine:s-extra:wb-close-idempotent",
@@ -503,7 +503,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
         @MethodSource(ENABLE_DIALECTS_METHOD)
         fun `put - cancelled full-queue send does not publish dirty cache`(
             testDB: TestDB,
-        ) = runTest(timeout = 35.seconds) {
+        ) = runSuspendIO(timeout = 35.seconds) {
             val flushStarted = CountDownLatch(1)
             val releaseFlush = CountDownLatch(1)
             val repository = BlockingFlushSuspendedJdbcRepository(
@@ -546,7 +546,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
         @MethodSource(ENABLE_DIALECTS_METHOD)
         fun `put - closed write-behind queue does not publish dirty cache`(
             testDB: TestDB,
-        ) = runTest(timeout = 35.seconds) {
+        ) = runSuspendIO(timeout = 35.seconds) {
             val repository = ActorSuspendedJdbcCaffeineRepository(
                 LocalCacheConfig(
                     keyPrefix = "jdbc:caffeine:s-extra:wb-closed-queue",

@@ -5,7 +5,7 @@ import io.bluetape4k.exposed.bigquery.BigQueryContext
 import io.bluetape4k.exposed.bigquery.domain.Events
 import io.bluetape4k.logging.KLogging
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeEmpty
@@ -145,7 +145,7 @@ class SelectQueryTest: AbstractBigQueryTest() {
     }
 
     @Test
-    fun `toListSuspending 과 toFlow - suspend 조회 및 타입 변환 검증`() = runTest {
+    fun `toListSuspending 과 toFlow - suspend 조회 및 타입 변환 검증`() = runSuspendIO {
         withEventsDataSuspending {
             runRawQuery(
                 """
@@ -182,7 +182,7 @@ class SelectQueryTest: AbstractBigQueryTest() {
     }
 
     @Test
-    fun `create 팩토리 와 suspend DML - 권장 진입점 검증`() = runTest {
+    fun `create 팩토리 와 suspend DML - 권장 진입점 검증`() = runSuspendIO {
         val context = BigQueryContext.create(
             bigquery = bqContext.bigquery,
             projectId = bqContext.projectId,

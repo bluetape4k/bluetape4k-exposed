@@ -2,7 +2,7 @@ package io.bluetape4k.exposed.clickhouse
 
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -14,7 +14,7 @@ import kotlin.time.Duration.Companion.seconds
 class ClickHouseExtensionsTest: AbstractClickHouseTest() {
 
     @Test
-    fun `suspendTransaction - 정상 결과 반환`() = runTest(timeout = 30.seconds) {
+    fun `suspendTransaction - 정상 결과 반환`() = runSuspendIO(timeout = 30.seconds) {
         val result = suspendTransaction(db) {
             exec("SELECT 1") { rs: ResultSet -> rs.next(); rs.getInt(1) }
         }
@@ -31,7 +31,7 @@ class ClickHouseExtensionsTest: AbstractClickHouseTest() {
     }
 
     @Test
-    fun `queryFlow - 빈 결과 collect`() = runTest(timeout = 30.seconds) {
+    fun `queryFlow - 빈 결과 collect`() = runSuspendIO(timeout = 30.seconds) {
         val results = queryFlow(db) {
             emptyList<Int>()
         }.toList()

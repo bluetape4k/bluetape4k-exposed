@@ -5,7 +5,7 @@ import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest.Companion.ENABLE_DI
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
 import org.awaitility.kotlin.await
@@ -37,7 +37,7 @@ interface SuspendedWriteBehindScenario<ID: Any, E: java.io.Serializable>:
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `put - WRITE_BEHIND 저장 후 캐시에는 즉시 반영된다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withSuspendedEntityTable(testDB) {
                 val id = getExistingId()
                 val entity = repository.findByIdFromDb(id).shouldNotBeNull()
@@ -51,7 +51,7 @@ interface SuspendedWriteBehindScenario<ID: Any, E: java.io.Serializable>:
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `put - WRITE_BEHIND flush 주기 후 DB에 반영된다`(testDB: TestDB) =
-        runTest(timeout = 10.seconds) {
+        runSuspendIO(timeout = 10.seconds) {
             // MySQL/MariaDB의 REPEATABLE READ 격리 수준은 외부 트랜잭션에서 커밋된 데이터를 볼 수 없어 스킵
             Assumptions.assumeTrue(testDB !in TestDB.ALL_MYSQL_MARIADB) {
                 "${testDB}은 REPEATABLE READ 격리 수준으로 Write-Behind DB 가시성 테스트 불가"
@@ -74,7 +74,7 @@ interface SuspendedWriteBehindScenario<ID: Any, E: java.io.Serializable>:
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `putAll - 여러 레코드를 배치로 비동기 적재한다`(testDB: TestDB) =
-        runTest(timeout = 10.seconds) {
+        runSuspendIO(timeout = 10.seconds) {
             // MySQL/MariaDB의 REPEATABLE READ 격리 수준은 외부 트랜잭션에서 커밋된 데이터를 볼 수 없어 스킵
             Assumptions.assumeTrue(testDB !in TestDB.ALL_MYSQL_MARIADB) {
                 "${testDB}은 REPEATABLE READ 격리 수준으로 Write-Behind DB 가시성 테스트 불가"

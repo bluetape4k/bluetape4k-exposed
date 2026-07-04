@@ -5,7 +5,7 @@ import io.bluetape4k.logging.KLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
@@ -52,7 +52,7 @@ class DuckDBExtensionsTest: AbstractDuckDBTest() {
     }
 
     @Test
-    fun `suspendTransaction 은 DuckDB 트랜잭션 결과를 반환한다`() = runTest {
+    fun `suspendTransaction 은 DuckDB 트랜잭션 결과를 반환한다`() = runSuspendIO {
         val count = suspendTransaction(db) {
             Events.selectAll().count()
         }
@@ -61,7 +61,7 @@ class DuckDBExtensionsTest: AbstractDuckDBTest() {
     }
 
     @Test
-    fun `suspendTransaction 은 커스텀 디스패처에서도 올바르게 동작한다`() = runTest {
+    fun `suspendTransaction 은 커스텀 디스패처에서도 올바르게 동작한다`() = runSuspendIO {
         val count = suspendTransaction(db, Dispatchers.Default) {
             Events.selectAll().count()
         }
@@ -70,7 +70,7 @@ class DuckDBExtensionsTest: AbstractDuckDBTest() {
     }
 
     @Test
-    fun `suspendTransaction 은 트랜잭션 내 예외를 그대로 전파한다`() = runTest {
+    fun `suspendTransaction 은 트랜잭션 내 예외를 그대로 전파한다`() = runSuspendIO {
         assertFailsWith<IllegalStateException> {
             suspendTransaction(db) {
                 error("트랜잭션 내부 오류")
@@ -79,7 +79,7 @@ class DuckDBExtensionsTest: AbstractDuckDBTest() {
     }
 
     @Test
-    fun `queryFlow 는 lazy query 를 트랜잭션 안에서 materialize 한다`() = runTest {
+    fun `queryFlow 는 lazy query 를 트랜잭션 안에서 materialize 한다`() = runSuspendIO {
         val rows = queryFlow(db) {
             Events.selectAll()
                 .orderBy(Events.eventId to SortOrder.ASC)
@@ -90,7 +90,7 @@ class DuckDBExtensionsTest: AbstractDuckDBTest() {
     }
 
     @Test
-    fun `queryFlow 는 빈 결과를 빈 리스트로 반환한다`() = runTest {
+    fun `queryFlow 는 빈 결과를 빈 리스트로 반환한다`() = runSuspendIO {
         withEventsTable {}
 
         val rows = queryFlow(db) {
@@ -102,7 +102,7 @@ class DuckDBExtensionsTest: AbstractDuckDBTest() {
     }
 
     @Test
-    fun `queryFlow 는 where 조건으로 필터된 결과만 emit 한다`() = runTest {
+    fun `queryFlow 는 where 조건으로 필터된 결과만 emit 한다`() = runSuspendIO {
         val rows = queryFlow(db) {
             Events.selectAll().where { Events.region eq "kr" }
         }.toList()
@@ -112,7 +112,7 @@ class DuckDBExtensionsTest: AbstractDuckDBTest() {
     }
 
     @Test
-    fun `queryFlow 는 take 로 일부만 소비할 수 있다`() = runTest {
+    fun `queryFlow 는 take 로 일부만 소비할 수 있다`() = runSuspendIO {
         val rows = queryFlow(db) {
             Events.selectAll().orderBy(Events.eventId to SortOrder.ASC)
         }.take(2).toList()
@@ -122,7 +122,7 @@ class DuckDBExtensionsTest: AbstractDuckDBTest() {
     }
 
     @Test
-    fun `queryFlow 는 커스텀 디스패처에서도 결과를 반환한다`() = runTest {
+    fun `queryFlow 는 커스텀 디스패처에서도 결과를 반환한다`() = runSuspendIO {
         val rows = queryFlow(db, Dispatchers.Default) {
             Events.selectAll().orderBy(Events.eventId to SortOrder.ASC)
         }.toList()
@@ -131,7 +131,7 @@ class DuckDBExtensionsTest: AbstractDuckDBTest() {
     }
 
     @Test
-    fun `suspendTransaction 은 삽입 후 카운트가 즉시 반영된다`() = runTest {
+    fun `suspendTransaction 은 삽입 후 카운트가 즉시 반영된다`() = runSuspendIO {
         val beforeCount = suspendTransaction(db) { Events.selectAll().count() }
 
         transaction(db) {
@@ -150,7 +150,7 @@ class DuckDBExtensionsTest: AbstractDuckDBTest() {
     }
 
     @Test
-    fun `queryFlow 는 정렬 순서를 보장한다`() = runTest {
+    fun `queryFlow 는 정렬 순서를 보장한다`() = runSuspendIO {
         val ascending = queryFlow(db) {
             Events.selectAll().orderBy(Events.eventId to SortOrder.ASC)
         }.toList().map { it[Events.eventId] }

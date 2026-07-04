@@ -12,7 +12,7 @@ import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
@@ -53,7 +53,7 @@ class R2dbcLettuceRepositoryExtrasTest: AbstractR2dbcLettuceTest() {
     @ParameterizedTest
     @MethodSource("enableDialects")
     fun `containsKey - 존재하는 ID는 true를 반환한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withUserTable(testDB) {
                 repository.clear()
                 val id = suspendTransaction {
@@ -68,7 +68,7 @@ class R2dbcLettuceRepositoryExtrasTest: AbstractR2dbcLettuceTest() {
     @ParameterizedTest
     @MethodSource("enableDialects")
     fun `containsKey - 존재하지 않는 ID는 false를 반환한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withUserTable(testDB) {
                 repository.clear()
                 repository.containsKey(Long.MIN_VALUE).shouldBeFalse()
@@ -78,7 +78,7 @@ class R2dbcLettuceRepositoryExtrasTest: AbstractR2dbcLettuceTest() {
     @ParameterizedTest
     @MethodSource("enableDialects")
     fun `findAll with where - 조건에 맞는 엔티티를 반환하고 캐시에 적재한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withUserTable(testDB) {
                 repository.clear()
 
@@ -98,7 +98,7 @@ class R2dbcLettuceRepositoryExtrasTest: AbstractR2dbcLettuceTest() {
     @ParameterizedTest
     @MethodSource("enableDialects")
     fun `findAll with where - 결과가 없으면 빈 리스트를 반환한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withUserTable(testDB) {
                 repository.clear()
 
@@ -114,7 +114,7 @@ class R2dbcLettuceRepositoryExtrasTest: AbstractR2dbcLettuceTest() {
     @ParameterizedTest
     @MethodSource("enableDialects")
     fun `putAll - 여러 엔티티를 한 번에 캐시에 저장한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withUserTable(testDB) {
                 repository.clear()
 
@@ -140,7 +140,7 @@ class R2dbcLettuceRepositoryExtrasTest: AbstractR2dbcLettuceTest() {
     @ParameterizedTest
     @MethodSource("enableDialects")
     fun `invalidateAll - 복수 ID를 한번에 캐시에서 제거한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withUserTable(testDB) {
                 repository.clear()
 
@@ -166,7 +166,7 @@ class R2dbcLettuceRepositoryExtrasTest: AbstractR2dbcLettuceTest() {
     @ParameterizedTest
     @MethodSource("enableDialects")
     fun `countFromDb - DB의 전체 레코드 수를 반환한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withUserTable(testDB) {
                 val count = repository.countFromDb()
                 // 시드 데이터: Sunghyouk, Midoogi, Jehyoung — 최소 3개
@@ -177,7 +177,7 @@ class R2dbcLettuceRepositoryExtrasTest: AbstractR2dbcLettuceTest() {
     @ParameterizedTest
     @MethodSource("enableDialects")
     fun `findAllFromDb - 복수 ID를 DB에서 직접 조회한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withUserTable(testDB) {
                 val ids = suspendTransaction {
                     UserTable.select(UserTable.id).map { it[UserTable.id].value }.toList()
@@ -192,7 +192,7 @@ class R2dbcLettuceRepositoryExtrasTest: AbstractR2dbcLettuceTest() {
     @ParameterizedTest
     @MethodSource("enableDialects")
     fun `findAllFromDb - 빈 컬렉션은 빈 리스트를 반환한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withUserTable(testDB) {
                 val entities = repository.findAllFromDb(emptyList())
                 entities shouldHaveSize 0
@@ -202,7 +202,7 @@ class R2dbcLettuceRepositoryExtrasTest: AbstractR2dbcLettuceTest() {
     @ParameterizedTest
     @MethodSource("enableDialects")
     fun `invalidateByPattern - 패턴으로 캐시 키를 무효화한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withUserTable(testDB) {
                 repository.clear()
 
@@ -221,7 +221,7 @@ class R2dbcLettuceRepositoryExtrasTest: AbstractR2dbcLettuceTest() {
     @ParameterizedTest
     @MethodSource("enableDialects")
     fun `put 후 get - 저장된 엔티티를 캐시에서 반환한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withUserTable(testDB) {
                 repository.clear()
 

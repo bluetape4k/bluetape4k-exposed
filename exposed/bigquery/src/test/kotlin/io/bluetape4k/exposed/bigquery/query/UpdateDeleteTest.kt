@@ -3,7 +3,7 @@ package io.bluetape4k.exposed.bigquery.query
 import io.bluetape4k.exposed.bigquery.AbstractBigQueryTest
 import io.bluetape4k.exposed.bigquery.domain.Events
 import io.bluetape4k.logging.KLogging
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeEmpty
@@ -85,7 +85,7 @@ class UpdateDeleteTest: AbstractBigQueryTest() {
     }
 
     @Test
-    fun `execUpdateSuspending - 비동기 갱신 후 변경이 반영된다`() = runTest {
+    fun `execUpdateSuspending - 비동기 갱신 후 변경이 반영된다`() = runSuspendIO {
         withEventsDataSuspending {
             insertEvent(10L, "kr")
 
@@ -102,7 +102,7 @@ class UpdateDeleteTest: AbstractBigQueryTest() {
     }
 
     @Test
-    fun `execDeleteSuspending - 비동기 삭제 후 행이 사라진다`() = runTest {
+    fun `execDeleteSuspending - 비동기 삭제 후 행이 사라진다`() = runSuspendIO {
         withEventsDataSuspending {
             insertEvent(20L, "kr")
 

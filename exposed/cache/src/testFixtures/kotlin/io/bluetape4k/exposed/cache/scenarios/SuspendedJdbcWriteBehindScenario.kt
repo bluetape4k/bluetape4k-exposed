@@ -2,7 +2,7 @@ package io.bluetape4k.exposed.cache.scenarios
 
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.coroutines.KLoggingChannel
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeGreaterThan
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.withPollInterval
@@ -57,7 +57,7 @@ interface SuspendedJdbcWriteBehindScenario<ID: Any, E: Serializable>: SuspendedJ
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `Write-Behind로 대량의 데이터를 추가합니다`(testDB: TestDB) = runTest {
+    fun `Write-Behind로 대량의 데이터를 추가합니다`(testDB: TestDB) = runSuspendIO {
         // AutoInc 테이블은 DB가 ID를 할당하므로 Write-Behind로 신규 엔티티를 삽입하지 않는다
         Assumptions.assumeTrue(repository.table.id.autoIncColumnType == null) {
             "AutoInc 테이블은 Write-Behind로 신규 엔티티를 DB에 삽입하지 않아 이 테스트를 건너뜁니다"

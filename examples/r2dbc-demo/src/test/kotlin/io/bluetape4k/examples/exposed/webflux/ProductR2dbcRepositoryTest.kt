@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
@@ -50,7 +50,7 @@ class ProductR2dbcRepositoryTest {
         )
 
     @Test
-    fun `save and findByIdOrNull`() = runTest {
+    fun `save and findByIdOrNull`() = runSuspendIO {
         val product = createProduct("Kotlin Book", "39.99", 100)
         val id = product.id.shouldNotBeNull()
 
@@ -61,7 +61,7 @@ class ProductR2dbcRepositoryTest {
     }
 
     @Test
-    fun `findByIdOrNull returns null when not found`() = runTest {
+    fun `findByIdOrNull returns null when not found`() = runSuspendIO {
         productRepository.findByIdOrNull(-1L).shouldBeNull()
     }
 
@@ -76,7 +76,7 @@ class ProductR2dbcRepositoryTest {
     }
 
     @Test
-    fun `findAll as Flow returns all entities`() = runTest {
+    fun `findAll as Flow returns all entities`() = runSuspendIO {
         createProduct("Book A", "10.00", 10)
         createProduct("Book B", "20.00", 20)
 
@@ -85,25 +85,25 @@ class ProductR2dbcRepositoryTest {
     }
 
     @Test
-    fun `count returns total count`() = runTest {
+    fun `count returns total count`() = runSuspendIO {
         createProduct("Book A", "10.00", 10)
         createProduct("Book B", "20.00", 20)
         productRepository.count() shouldBeEqualTo 2L
     }
 
     @Test
-    fun `existsById returns true when entity exists`() = runTest {
+    fun `existsById returns true when entity exists`() = runSuspendIO {
         val product = createProduct("Kotlin Book", "39.99", 100)
         productRepository.existsById(product.id!!).shouldBeTrue()
     }
 
     @Test
-    fun `existsById returns false when entity does not exist`() = runTest {
+    fun `existsById returns false when entity does not exist`() = runSuspendIO {
         productRepository.existsById(-1L).shouldBeFalse()
     }
 
     @Test
-    fun `deleteById removes entity`() = runTest {
+    fun `deleteById removes entity`() = runSuspendIO {
         val product = createProduct("To Delete", "5.00", 1)
         val id = product.id!!
         productRepository.deleteById(id)
@@ -111,7 +111,7 @@ class ProductR2dbcRepositoryTest {
     }
 
     @Test
-    fun `deleteAll removes all entities`() = runTest {
+    fun `deleteAll removes all entities`() = runSuspendIO {
         createProduct("Book A", "10.00", 10)
         createProduct("Book B", "20.00", 20)
         productRepository.deleteAll()
@@ -119,7 +119,7 @@ class ProductR2dbcRepositoryTest {
     }
 
     @Test
-    fun `deleteAllById removes specified entities`() = runTest {
+    fun `deleteAllById removes specified entities`() = runSuspendIO {
         val a = createProduct("Book A", "10.00", 10)
         val b = createProduct("Book B", "20.00", 20)
         createProduct("Book C", "30.00", 30)
@@ -130,7 +130,7 @@ class ProductR2dbcRepositoryTest {
     }
 
     @Test
-    fun `deleteAll with Iterable removes specified entities`() = runTest {
+    fun `deleteAll with Iterable removes specified entities`() = runSuspendIO {
         val a = createProduct("Book A", "10.00", 10)
         val b = createProduct("Book B", "20.00", 20)
         createProduct("Book C", "30.00", 30)
@@ -140,7 +140,7 @@ class ProductR2dbcRepositoryTest {
     }
 
     @Test
-    fun `deleteAll with Flow removes specified entities`() = runTest {
+    fun `deleteAll with Flow removes specified entities`() = runSuspendIO {
         val a = createProduct("Book A", "10.00", 10)
         val b = createProduct("Book B", "20.00", 20)
         createProduct("Book C", "30.00", 30)
@@ -150,7 +150,7 @@ class ProductR2dbcRepositoryTest {
     }
 
     @Test
-    fun `saveAll with Iterable saves all entities`() = runTest {
+    fun `saveAll with Iterable saves all entities`() = runSuspendIO {
         val dtos = listOf(
             ProductRecord(id = null, name = "Book A", price = BigDecimal("10.00"), stock = 10),
             ProductRecord(id = null, name = "Book B", price = BigDecimal("20.00"), stock = 20),
@@ -162,7 +162,7 @@ class ProductR2dbcRepositoryTest {
     }
 
     @Test
-    fun `saveAll with Flow saves all entities`() = runTest {
+    fun `saveAll with Flow saves all entities`() = runSuspendIO {
         val dtoFlow = listOf(
             ProductRecord(id = null, name = "Book A", price = BigDecimal("10.00"), stock = 10),
             ProductRecord(id = null, name = "Book B", price = BigDecimal("20.00"), stock = 20),
@@ -174,7 +174,7 @@ class ProductR2dbcRepositoryTest {
     }
 
     @Test
-    fun `findAllById with Iterable returns matching entities`() = runTest {
+    fun `findAllById with Iterable returns matching entities`() = runSuspendIO {
         val a = createProduct("Book A", "10.00", 10)
         val b = createProduct("Book B", "20.00", 20)
         createProduct("Book C", "30.00", 30)
@@ -185,7 +185,7 @@ class ProductR2dbcRepositoryTest {
     }
 
     @Test
-    fun `findAllById with Flow returns matching entities`() = runTest {
+    fun `findAllById with Flow returns matching entities`() = runSuspendIO {
         val a = createProduct("Book A", "10.00", 10)
         val b = createProduct("Book B", "20.00", 20)
         createProduct("Book C", "30.00", 30)
@@ -196,7 +196,7 @@ class ProductR2dbcRepositoryTest {
     }
 
     @Test
-    fun `streamAll opens its own transaction and streams rows`() = runTest {
+    fun `streamAll opens its own transaction and streams rows`() = runSuspendIO {
         createProduct("Book A", "10.00", 10)
         createProduct("Book B", "20.00", 20)
 
@@ -205,13 +205,13 @@ class ProductR2dbcRepositoryTest {
     }
 
     @Test
-    fun `extractId returns null for new entity`() = runTest {
+    fun `extractId returns null for new entity`() = runSuspendIO {
         val newProduct = ProductRecord(id = null, name = "New", price = BigDecimal("9.99"), stock = 1)
         productRepository.extractId(newProduct).shouldBeNull()
     }
 
     @Test
-    fun `extractId returns id for existing entity`() = runTest {
+    fun `extractId returns id for existing entity`() = runSuspendIO {
         val saved = createProduct("Existing", "9.99", 1)
         val id = productRepository.extractId(saved)
         id.shouldNotBeNull()

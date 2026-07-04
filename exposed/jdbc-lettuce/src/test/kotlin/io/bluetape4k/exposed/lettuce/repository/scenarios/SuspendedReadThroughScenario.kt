@@ -5,7 +5,7 @@ import io.bluetape4k.exposed.cache.scenarios.SuspendedJdbcReadThroughScenario
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest.Companion.ENABLE_DIALECTS_METHOD
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.coroutines.KLoggingChannel
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
@@ -33,7 +33,7 @@ interface SuspendedReadThroughScenario<ID: Any, E: java.io.Serializable>:
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `get - 캐시 미스 시 DB에서 Read-through로 값을 로드한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withSuspendedEntityTable(testDB) {
                 val id = getExistingId()
                 val fromDb = repository.findByIdFromDb(id).shouldNotBeNull()
@@ -47,7 +47,7 @@ interface SuspendedReadThroughScenario<ID: Any, E: java.io.Serializable>:
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `get - DB에 없는 ID는 null을 반환한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withSuspendedEntityTable(testDB) {
                 repository.get(getNonExistentId()).shouldBeNull()
             }
@@ -56,7 +56,7 @@ interface SuspendedReadThroughScenario<ID: Any, E: java.io.Serializable>:
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `getAll - 여러 ID 일괄 조회 시 캐시 미스 키를 DB에서 Read-through한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withSuspendedEntityTable(testDB) {
                 val ids = getExistingIds()
                 val result = repository.getAll(ids)
@@ -67,7 +67,7 @@ interface SuspendedReadThroughScenario<ID: Any, E: java.io.Serializable>:
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `getAll - 존재하지 않는 ID는 결과에 포함되지 않는다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withSuspendedEntityTable(testDB) {
                 val ids = getExistingIds() + listOf(getNonExistentId())
                 val result = repository.getAll(ids)
@@ -78,7 +78,7 @@ interface SuspendedReadThroughScenario<ID: Any, E: java.io.Serializable>:
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `clear - 캐시를 비운 후 재조회하면 DB에서 다시 Read-through한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withSuspendedEntityTable(testDB) {
                 val id = getExistingId()
                 repository.get(id)
@@ -91,7 +91,7 @@ interface SuspendedReadThroughScenario<ID: Any, E: java.io.Serializable>:
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `invalidate - 캐시에만 저장된 엔티티를 삭제하면 get은 null을 반환한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             // WRITE_THROUGH/WRITE_BEHIND 모드에서는 put()이 DB에도 쓰므로 이 시나리오가 성립하지 않음
             Assumptions.assumeTrue(cacheWriteMode == CacheWriteMode.READ_ONLY) {
                 "READ_ONLY 모드에서만 유효: WRITE_THROUGH/WRITE_BEHIND에서는 put()이 DB에도 기록됨"

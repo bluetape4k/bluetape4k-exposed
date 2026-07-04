@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.toSet
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
@@ -70,7 +70,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `SELECT ALL - 하나의 조건`(testDB: TestDB) = runTest {
+    fun `SELECT ALL - 하나의 조건`(testDB: TestDB) = runSuspendIO {
         withCitiesAndUsers(testDB) { _, users, _ ->
             val row = users.selectAll()
                 .where { users.id eq "andrey" }
@@ -96,7 +96,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `SELECT ALL - 복수의 AND 조건`(testDB: TestDB) = runTest {
+    fun `SELECT ALL - 복수의 AND 조건`(testDB: TestDB) = runSuspendIO {
         withCitiesAndUsers(testDB) { _, users, _ ->
             val row = users.selectAll()
                 .where { users.id eq "andrey" }
@@ -135,7 +135,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `SELECT ALL - 복수 조건이 OR 인 경우`(testDB: TestDB) = runTest {
+    fun `SELECT ALL - 복수 조건이 OR 인 경우`(testDB: TestDB) = runSuspendIO {
         withCitiesAndUsers(testDB) { _, users, _ ->
             val row = users.selectAll()
                 .where { users.id.eq("andrey") or users.name.eq("Andrey") } // orWhere 를 써도 된다.
@@ -160,7 +160,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `조건절에 not equal 사용`(testDB: TestDB) = runTest {
+    fun `조건절에 not equal 사용`(testDB: TestDB) = runSuspendIO {
         withCitiesAndUsers(testDB) { _, users, _ ->
             val rows = users.selectAll()
                 .where { users.id neq "andrey" }
@@ -176,7 +176,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `SizedIterable 수형에 해당하는 쿼리 실행`(testDB: TestDB) = runTest {
+    fun `SizedIterable 수형에 해당하는 쿼리 실행`(testDB: TestDB) = runSuspendIO {
         withCitiesAndUsers(testDB) { cities, users, _ ->
 
             // SELECT cities.city_id, cities."name" FROM cities
@@ -203,7 +203,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `inList with single expression 01`(testDB: TestDB) = runTest {
+    fun `inList with single expression 01`(testDB: TestDB) = runSuspendIO {
         withCitiesAndUsers(testDB) { _, users, _ ->
             /**
              * ```sql
@@ -251,7 +251,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `inList with pair expression 02`(testDB: TestDB) = runTest {
+    fun `inList with pair expression 02`(testDB: TestDB) = runSuspendIO {
         withCitiesAndUsers(testDB) { _, users, _ ->
             val rows = users.selectAll()
                 .where {
@@ -279,7 +279,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `inSubQuery 연산자 예제 - 01`(testDB: TestDB) = runTest {
+    fun `inSubQuery 연산자 예제 - 01`(testDB: TestDB) = runSuspendIO {
         withCitiesAndUsers(testDB) { cities, _, _ ->
             val subQuery: Query = cities.select(cities.id).where { cities.id eq 2 }
             val r: Query = cities.selectAll().where { cities.id inSubQuery subQuery }
@@ -300,7 +300,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `notInSubQuery 연산자 예제`(testDB: TestDB) = runTest {
+    fun `notInSubQuery 연산자 예제`(testDB: TestDB) = runSuspendIO {
         withCitiesAndUsers(testDB) { cities, _, _ ->
             val subQuery: Query = cities.select(cities.id)
             val r: Query = cities
@@ -331,7 +331,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `inTable 연산자 예제`(testDB: TestDB) = runTest {
+    fun `inTable 연산자 예제`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in supportingInAnyAllFromTables }
 
         withSalesAndSomeAmounts(testDB) { _, sales, someAmounts ->
@@ -355,7 +355,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `notInTable example`(testDB: TestDB) = runTest {
+    fun `notInTable example`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in supportingInAnyAllFromTables }
 
         withSalesAndSomeAmounts(testDB) { _, sales, someAmounts ->
@@ -384,7 +384,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `eq AnyFrom SubQuery`(testDB: TestDB) = runTest {
+    fun `eq AnyFrom SubQuery`(testDB: TestDB) = runSuspendIO {
         withCitiesAndUsers(testDB) { cities, _, _ ->
             val subquery: Query = cities
                 .select(cities.id)
@@ -412,7 +412,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `neq AnyFrom SubQuery`(dialect: TestDB) = runTest {
+    fun `neq AnyFrom SubQuery`(dialect: TestDB) = runSuspendIO {
         withCitiesAndUsers(dialect) { cities, _, _ ->
             val subquery: Query = cities
                 .select(cities.id)
@@ -441,7 +441,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `eq AnyFrom Array`(testDB: TestDB) = runTest {
+    fun `eq AnyFrom Array`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in supportingAnyAndAllFromArrays }
 
         withCitiesAndUsers(testDB) { _, users, _ ->
@@ -474,7 +474,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `eq AnyFrom List`(testDB: TestDB) = runTest {
+    fun `eq AnyFrom List`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in supportingAnyAndAllFromArrays }
 
         withCitiesAndUsers(testDB) { _, users, _ ->
@@ -506,7 +506,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `neq AnyFrom Array`(testDB: TestDB) = runTest {
+    fun `neq AnyFrom Array`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in supportingAnyAndAllFromArrays }
 
         withCitiesAndUsers(testDB) { _, users, _ ->
@@ -535,7 +535,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `neq AnyFrom List`(testDB: TestDB) = runTest {
+    fun `neq AnyFrom List`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in supportingAnyAndAllFromArrays }
 
         withCitiesAndUsers(testDB) { _, users, _ ->
@@ -562,7 +562,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `greater eq AnyFrom Array`(testDB: TestDB) = runTest {
+    fun `greater eq AnyFrom Array`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in supportingAnyAndAllFromArrays }
 
         withSales(testDB) { _, sales ->
@@ -595,7 +595,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `greater eq AnyFrom List`(testDB: TestDB) = runTest {
+    fun `greater eq AnyFrom List`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in supportingAnyAndAllFromArrays }
 
         withSales(testDB) { _, sales ->
@@ -627,7 +627,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `Eq AnyFrom Table`(testDB: TestDB) = runTest {
+    fun `Eq AnyFrom Table`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in supportingInAnyAllFromTables }
 
         withSalesAndSomeAmounts(testDB) { _, sales, someAmounts ->
@@ -654,7 +654,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `neq AnyFrom Table`(testDB: TestDB) = runTest {
+    fun `neq AnyFrom Table`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in supportingInAnyAllFromTables }
 
         withSalesAndSomeAmounts(testDB) { _, sales, someAmounts ->
@@ -684,7 +684,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `greaterEq AllFrom SubQuery`(testDB: TestDB) = runTest {
+    fun `greaterEq AllFrom SubQuery`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in supportingAnyAndAllFromSubQueries }
         // MySQL 5.x 에서는 지원되지 않습니다.
         Assumptions.assumeTrue { testDB != TestDB.MYSQL_V5 }
@@ -723,7 +723,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `greaterEq AllFrom Array`(testDB: TestDB) = runTest {
+    fun `greaterEq AllFrom Array`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in supportingAnyAndAllFromArrays }
 
         withSales(testDB) { _, sales ->
@@ -755,7 +755,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `greaterEq AllFrom List`(testDB: TestDB) = runTest {
+    fun `greaterEq AllFrom List`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in supportingAnyAndAllFromArrays }
 
         withSales(testDB) { _, sales ->
@@ -784,7 +784,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `Greater Eq AllFrom Table`(testDB: TestDB) = runTest {
+    fun `Greater Eq AllFrom Table`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in supportingInAnyAllFromTables }
 
         withSalesAndSomeAmounts(testDB) { _, sales, someAmounts ->
@@ -803,7 +803,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `select distinct`(testDB: TestDB) = runTest {
+    fun `select distinct`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB_LIKE }
 
         val cities = DMLTestData.Cities
@@ -868,7 +868,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `compound operations`(testDB: TestDB) = runTest {
+    fun `compound operations`(testDB: TestDB) = runSuspendIO {
         withCitiesAndUsers(testDB) { _, users, _ ->
             val allUsers = setOf(
                 "Andrey", "Sergey", "Eugene", "Alex", "Something"
@@ -949,7 +949,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `select with comment`(testDB: TestDB) = runTest {
+    fun `select with comment`(testDB: TestDB) = runSuspendIO {
         val text = "additional_info"
         val updatedText = "${text}_updated"
 
@@ -997,7 +997,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `select with limit and offset`(testDB: TestDB) = runTest {
+    fun `select with limit and offset`(testDB: TestDB) = runSuspendIO {
         val alphabet = object: Table("alphabet") {
             val letter = char("letter")
         }

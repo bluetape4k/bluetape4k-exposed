@@ -7,7 +7,7 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
@@ -30,7 +30,7 @@ class MovieR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `find movie by id`(testDB: TestDB) = runTest {
+    fun `find movie by id`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val movieId = 1L
             val movie = repository.findById(movieId)
@@ -42,7 +42,7 @@ class MovieR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `search movies`(testDB: TestDB) = runTest {
+    fun `search movies`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val params = mapOf("producerName" to "Johnny")
 
@@ -56,7 +56,7 @@ class MovieR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `create movie`(testDB: TestDB) = runTest {
+    fun `create movie`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val movie = newMovieRecord()
 
@@ -72,7 +72,7 @@ class MovieR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `delete movie`(testDB: TestDB) = runTest {
+    fun `delete movie`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val newMovie = newMovieRecord()
             val savedMovie = repository.save(newMovie)
@@ -84,7 +84,7 @@ class MovieR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `get all movies and actors`(testDB: TestDB) = runTest {
+    fun `get all movies and actors`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val movieWithActors = repository.getAllMoviesWithActors().toList()
 
@@ -97,7 +97,7 @@ class MovieR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `get movie by id with actors`(testDB: TestDB) = runTest {
+    fun `get movie by id with actors`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val movieId = 1L
             val movieWithActors = repository.getMovieWithActors(movieId)
@@ -112,7 +112,7 @@ class MovieR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `get movie and actor count`(testDB: TestDB) = runTest {
+    fun `get movie and actor count`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val movieWithActors = repository.getMovieActorsCount().toList()
 
@@ -125,7 +125,7 @@ class MovieR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `find movies with acting producers`(testDB: TestDB) = runTest {
+    fun `find movies with acting producers`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val results = repository.findMoviesWithActingProducers().toList()
 

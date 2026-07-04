@@ -4,7 +4,7 @@ import io.bluetape4k.exposed.r2dbc.lettuce.repository.R2dbcLettuceRepository
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.junit.jupiter.api.BeforeEach
 import java.io.Serializable
@@ -48,6 +48,6 @@ interface R2DbcLettuceJCacheTestScenario<ID: Any, E: Serializable> {
 
     @BeforeEach
     fun clearCacheBeforeEach() {
-        runTest { repository.clear() }
+        runSuspendIO { repository.clear() }
     }
 }

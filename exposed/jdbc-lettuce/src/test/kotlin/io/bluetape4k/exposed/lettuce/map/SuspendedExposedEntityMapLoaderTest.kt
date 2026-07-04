@@ -4,7 +4,7 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTablesSuspending
 import io.bluetape4k.logging.KLogging
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
@@ -43,7 +43,7 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
         )
 
     @Test
-    fun `load - suspend 컨텍스트에서 단건 조회 성공`() = runTest {
+    fun `load - suspend 컨텍스트에서 단건 조회 성공`() = runSuspendIO {
         withTablesSuspending(TestDB.H2, SuspendedLoaderTable) {
             val insertedId =
                 SuspendedLoaderTable.insert {
@@ -65,7 +65,7 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
     }
 
     @Test
-    fun `load - 존재하지 않는 ID는 null을 반환한다`() = runTest {
+    fun `load - 존재하지 않는 ID는 null을 반환한다`() = runSuspendIO {
         withTablesSuspending(TestDB.H2, SuspendedLoaderTable) {
             val loader = SuspendedExposedEntityMapLoader(
                 table = SuspendedLoaderTable,
@@ -77,7 +77,7 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
     }
 
     @Test
-    fun `loadAllKeys - 빈 테이블은 빈 리스트를 반환한다`() = runTest {
+    fun `loadAllKeys - 빈 테이블은 빈 리스트를 반환한다`() = runSuspendIO {
         withTablesSuspending(TestDB.H2, SuspendedLoaderTable) {
             // 데이터 없이 바로 loadAllKeys 호출 — 빈 리스트 반환
             commit()
@@ -92,7 +92,7 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
     }
 
     @Test
-    fun `loadAllKeys - 배치 경계를 넘어 모든 ID를 로드한다`() = runTest {
+    fun `loadAllKeys - 배치 경계를 넘어 모든 ID를 로드한다`() = runSuspendIO {
         withTablesSuspending(TestDB.H2, SuspendedLoaderTable) {
             repeat(5) { index ->
                 SuspendedLoaderTable.insert { it[name] = "user-$index" }

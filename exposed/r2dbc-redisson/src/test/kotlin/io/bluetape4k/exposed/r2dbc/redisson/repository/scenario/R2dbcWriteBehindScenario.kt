@@ -4,7 +4,7 @@ import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest.Companion.
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.junit5.awaitility.untilSuspending
 import io.bluetape4k.logging.coroutines.KLoggingChannel
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldBeNull
 import org.awaitility.kotlin.await
@@ -30,7 +30,7 @@ interface R2dbcWriteBehindScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `Write Behind 로 대량의 데이터를 추가합니다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withR2dbcEntityTable(testDB) {
                 val entities = createNewEntities(1000)
                 repository.putAll(entities.associateBy { repository.extractId(it) })
@@ -49,7 +49,7 @@ interface R2dbcWriteBehindScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `put 단건 캐시 저장 후 Write-Behind로 DB에 비동기 반영된다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withR2dbcEntityTable(testDB) {
                 val entity = createNewEntity()
                 repository.put(repository.extractId(entity), entity)
@@ -68,7 +68,7 @@ interface R2dbcWriteBehindScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `get - 존재하지 않는 ID는 null을 반환한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withR2dbcEntityTable(testDB) {
                 val nonExistentId = getNonExistentId()
                 val result = repository.get(nonExistentId)

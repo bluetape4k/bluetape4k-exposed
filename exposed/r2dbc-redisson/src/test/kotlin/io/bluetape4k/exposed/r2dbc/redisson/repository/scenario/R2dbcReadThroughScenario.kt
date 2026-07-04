@@ -5,7 +5,7 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
@@ -29,7 +29,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `get(id) - ID로 조회 시 DB에서 읽어서 캐시에 저장 후 반환한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withR2dbcEntityTable(testDB) {
                 val id = getExistingId()
 
@@ -49,7 +49,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `exists(id) - 캐시에 해당 ID가 존재하는지 검사, 실제 없다면 DB에서 로드한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withR2dbcEntityTable(testDB) {
                 val ids = getExistingIds()
 
@@ -64,7 +64,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `invalidte(id) - Read through에서 캐시 invalidate 는 DB에 영향을 주지 않는다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withR2dbcEntityTable(testDB) {
                 val id = getExistingId()
                 log.debug { "existingId: $id" }
@@ -88,7 +88,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `존재하지 않는 ID로 캐시 조회하면, null을 반환한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withR2dbcEntityTable(testDB) {
                 // 임의의 존재하지 않는 ID 생성 방법은 구현 클래스에서 정의
                 val nonExistentId = getNonExistentId()
@@ -104,7 +104,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findAll - 전체 엔티티를 가져옵니다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withR2dbcEntityTable(testDB) {
                 val entities = repository.findAll()
                 entities.shouldNotBeEmpty()
@@ -121,7 +121,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `getAll - 여러 ID의 엔티티를 한번에 조회한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withR2dbcEntityTable(testDB) {
                 val ids = getExistingIds() + getNonExistentId()
                 val entities = repository.getAll(ids)
@@ -134,7 +134,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `getAll - 빈 목록은 빈 결과를 반환한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withR2dbcEntityTable(testDB) {
                 repository.getAll(emptyList()).shouldBeEmpty()
             }
@@ -146,7 +146,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `캐시 키 패턴으로 캐시 무효화하기`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withR2dbcEntityTable(testDB) {
                 // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
                 if (cacheConfig.isReadWrite) {
@@ -166,7 +166,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `invalidateByPattern - count 는 0보다 커야 한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withR2dbcEntityTable(testDB) {
                 assertFailsWith<IllegalArgumentException> {
                     repository.invalidateByPattern("*", count = 0)
@@ -177,7 +177,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `invalidateByPattern - 매칭되는 키가 없으면 0을 반환한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withR2dbcEntityTable(testDB) {
                 repository.invalidateByPattern("not-exists-*") shouldBeEqualTo 0L
             }

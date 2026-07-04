@@ -7,7 +7,7 @@ import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.WriteMode
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -67,7 +67,7 @@ class R2dbcExposedEntityMapWriterTest: AbstractR2dbcLettuceTest() {
 
     @Test
     fun `write - 새 엔티티를 DB에 삽입한다`() =
-        runTest {
+        runSuspendIO {
             withTables(TestDB.H2, WriterTable) {
                 val writer = newWriter()
 
@@ -82,7 +82,7 @@ class R2dbcExposedEntityMapWriterTest: AbstractR2dbcLettuceTest() {
 
     @Test
     fun `write - 기존 엔티티를 업데이트한다`() =
-        runTest {
+        runSuspendIO {
             withTables(TestDB.H2, WriterTable) {
                 val insertedId = WriterTable.insertAndGetId { it[name] = "alice" }.value
                 commit()
@@ -98,7 +98,7 @@ class R2dbcExposedEntityMapWriterTest: AbstractR2dbcLettuceTest() {
 
     @Test
     fun `write - 빈 map은 아무것도 하지 않는다`() =
-        runTest {
+        runSuspendIO {
             withTables(TestDB.H2, WriterTable) {
                 val writer = newWriter()
                 writer.write(emptyMap())
@@ -109,7 +109,7 @@ class R2dbcExposedEntityMapWriterTest: AbstractR2dbcLettuceTest() {
 
     @Test
     fun `write - NONE 모드에서는 DB에 쓰지 않는다`() =
-        runTest {
+        runSuspendIO {
             withTables(TestDB.H2, WriterTable) {
                 val writer = newWriter(WriteMode.NONE)
                 writer.write(mapOf(1L to WriterEntity(id = 1L, name = "alice")))
@@ -120,7 +120,7 @@ class R2dbcExposedEntityMapWriterTest: AbstractR2dbcLettuceTest() {
 
     @Test
     fun `delete - 엔티티를 DB에서 삭제한다`() =
-        runTest {
+        runSuspendIO {
             withTables(TestDB.H2, WriterTable) {
                 val id1 = WriterTable.insertAndGetId { it[name] = "alice" }.value
                 val id2 = WriterTable.insertAndGetId { it[name] = "bob" }.value
@@ -137,7 +137,7 @@ class R2dbcExposedEntityMapWriterTest: AbstractR2dbcLettuceTest() {
 
     @Test
     fun `delete - 빈 컬렉션은 아무것도 하지 않는다`() =
-        runTest {
+        runSuspendIO {
             withTables(TestDB.H2, WriterTable) {
                 WriterTable.insert { it[name] = "alice" }
                 commit()
@@ -151,7 +151,7 @@ class R2dbcExposedEntityMapWriterTest: AbstractR2dbcLettuceTest() {
 
     @Test
     fun `write - 신규와 기존 엔티티가 혼재할 때 각각 insert와 update를 수행한다`() =
-        runTest {
+        runSuspendIO {
             withTables(TestDB.H2, WriterTable) {
                 val existingId = WriterTable.insertAndGetId { it[name] = "alice" }.value
                 commit()
@@ -174,7 +174,7 @@ class R2dbcExposedEntityMapWriterTest: AbstractR2dbcLettuceTest() {
 
     @Test
     fun `chunkSize는 0보다 커야 한다`() =
-        runTest {
+        runSuspendIO {
             withTables(TestDB.H2, WriterTable) {
                 assertFailsWith<IllegalArgumentException> {
                     R2dbcExposedEntityMapWriter(

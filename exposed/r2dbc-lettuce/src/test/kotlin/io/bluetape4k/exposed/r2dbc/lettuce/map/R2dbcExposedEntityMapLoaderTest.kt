@@ -4,7 +4,7 @@ import io.bluetape4k.exposed.r2dbc.lettuce.AbstractR2dbcLettuceTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.logging.coroutines.KLoggingChannel
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
@@ -41,7 +41,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractR2dbcLettuceTest() {
 
     @Test
     fun `load - 단건 조회 성공`() =
-        runTest {
+        runSuspendIO {
             withTables(TestDB.H2, LoaderTable) {
                 val insertedId = LoaderTable.insertAndGetId { it[name] = "alice" }
                 commit()
@@ -60,7 +60,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractR2dbcLettuceTest() {
 
     @Test
     fun `load - 존재하지 않는 ID는 null을 반환한다`() =
-        runTest {
+        runSuspendIO {
             withTables(TestDB.H2, LoaderTable) {
                 val loader =
                     R2dbcExposedEntityMapLoader(
@@ -74,7 +74,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractR2dbcLettuceTest() {
 
     @Test
     fun `loadAllKeys - 빈 테이블은 빈 컬렉션을 반환한다`() =
-        runTest {
+        runSuspendIO {
             withTables(TestDB.H2, LoaderTable) {
                 val loader =
                     R2dbcExposedEntityMapLoader(
@@ -88,7 +88,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractR2dbcLettuceTest() {
 
     @Test
     fun `loadAllKeys - 배치 경계를 넘어 모든 ID를 로드한다`() =
-        runTest {
+        runSuspendIO {
             withTables(TestDB.H2, LoaderTable) {
                 repeat(5) { index ->
                     LoaderTable.insertAndGetId { it[name] = "user-$index" }
@@ -110,7 +110,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractR2dbcLettuceTest() {
 
     @Test
     fun `batchSize는 0보다 커야 한다`() =
-        runTest {
+        runSuspendIO {
             withTables(TestDB.H2, LoaderTable) {
                 assertFailsWith<IllegalArgumentException> {
                     R2dbcExposedEntityMapLoader(

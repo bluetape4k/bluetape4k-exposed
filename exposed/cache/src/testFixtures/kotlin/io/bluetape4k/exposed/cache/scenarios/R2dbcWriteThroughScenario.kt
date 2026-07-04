@@ -3,7 +3,7 @@ package io.bluetape4k.exposed.cache.scenarios
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
@@ -59,7 +59,7 @@ interface R2dbcWriteThroughScenario<ID: Any, E: Serializable>: R2dbcCacheTestSce
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `put - 캐시에 저장하면 DB에도 저장된다`(testDB: TestDB) = runTest {
+    fun `put - 캐시에 저장하면 DB에도 저장된다`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
 
         withR2dbcEntityTable(testDB) {
@@ -89,7 +89,7 @@ interface R2dbcWriteThroughScenario<ID: Any, E: Serializable>: R2dbcCacheTestSce
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `putAll - 캐시에 저장하면 DB에도 저장된다`(testDB: TestDB) = runTest {
+    fun `putAll - 캐시에 저장하면 DB에도 저장된다`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
 
         withR2dbcEntityTable(testDB) {
@@ -137,7 +137,7 @@ interface R2dbcWriteThroughScenario<ID: Any, E: Serializable>: R2dbcCacheTestSce
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `putAll - 새 엔티티 추가 시 AutoInc Id는 DB 저장 안 하고 Client 생성 Id는 DB에 저장된다`(testDB: TestDB) = runTest {
+    fun `putAll - 새 엔티티 추가 시 AutoInc Id는 DB 저장 안 하고 Client 생성 Id는 DB에 저장된다`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
 
         withR2dbcEntityTable(testDB) {
@@ -161,7 +161,7 @@ interface R2dbcWriteThroughScenario<ID: Any, E: Serializable>: R2dbcCacheTestSce
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `invalidate - 캐시 invalidate 시 DB에 영향을 줄 수 있다`(testDB: TestDB) = runTest {
+    fun `invalidate - 캐시 invalidate 시 DB에 영향을 줄 수 있다`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
 
         withR2dbcEntityTable(testDB) {
