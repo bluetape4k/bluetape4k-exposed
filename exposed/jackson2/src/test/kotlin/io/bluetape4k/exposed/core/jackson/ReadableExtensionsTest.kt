@@ -3,7 +3,7 @@ package io.bluetape4k.exposed.core.jackson
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.r2dbc.spi.Readable
-import kotlin.test.Test
+import org.junit.jupiter.api.Test
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull

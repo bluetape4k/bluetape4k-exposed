@@ -6,7 +6,7 @@ import io.bluetape4k.assertions.shouldBeTrue
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import io.bluetape4k.junit5.coroutines.runSuspendIO
-import kotlin.test.Test
+import org.junit.jupiter.api.Test
 
 class QueryExtensionsTest {
 

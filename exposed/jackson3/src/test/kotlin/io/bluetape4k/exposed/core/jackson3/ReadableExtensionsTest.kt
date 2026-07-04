@@ -6,7 +6,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
 import tools.jackson.databind.JsonNode
-import kotlin.test.Test
+import org.junit.jupiter.api.Test
 import io.bluetape4k.assertions.assertFailsWith
 
 class ReadableExtensionsTest {
