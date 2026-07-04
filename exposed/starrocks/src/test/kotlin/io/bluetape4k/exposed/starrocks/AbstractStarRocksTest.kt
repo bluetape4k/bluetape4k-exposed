@@ -6,12 +6,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
-import org.testcontainers.containers.GenericContainer
-import org.testcontainers.containers.wait.strategy.Wait
-import org.testcontainers.utility.DockerImageName
 import java.sql.DriverManager
-import java.time.Duration
-import java.util.Properties
 
 /**
  * Shared StarRocks container fixture for integration tests.
@@ -20,46 +15,33 @@ import java.util.Properties
 abstract class AbstractStarRocksTest {
 
     companion object: KLogging() {
-        private const val STARROCKS_QUERY_PORT = 9030
-        private const val STARROCKS_HTTP_PORT = 8030
-        private const val STARROCKS_BE_HTTP_PORT = 8040
-
-        private val starRocksContainer: GenericContainer<*> by lazy {
-            GenericContainer(DockerImageName.parse("starrocks/allin1-ubuntu"))
-                .withExposedPorts(STARROCKS_QUERY_PORT, STARROCKS_HTTP_PORT, STARROCKS_BE_HTTP_PORT)
-                .waitingFor(
-                    Wait.forListeningPort()
-                        .withStartupTimeout(Duration.ofMinutes(4))
-                )
-        }
+        private val starRocks: StarRocksTestServer by lazy { StarRocksTestServer.Launcher.starRocks }
 
         val host: String
-            get() = starRocksContainer.host
+            get() = starRocks.host
 
         val port: Int
-            get() = starRocksContainer.getMappedPort(STARROCKS_QUERY_PORT)
+            get() = starRocks.port
 
-        val databaseName: String = "bt4k_starrocks_${System.currentTimeMillis().toString(36)}"
+        val databaseName: String
+            get() = starRocks.databaseName
 
         val jdbcUrl: String
-            get() = StarRocksDatabase.buildJdbcUrl(host, port, "default_catalog", databaseName)
+            get() = starRocks.jdbcUrl
 
         val bootstrapJdbcUrl: String
-            get() = StarRocksDatabase.buildBootstrapJdbcUrl(host, port)
+            get() = starRocks.bootstrapJdbcUrl
 
-        val connectionProperties: Properties
-            get() = Properties().apply {
-                setProperty("user", "root")
-                setProperty("password", "")
-            }
+        val connectionProperties
+            get() = starRocks.connectionProperties
 
         val db: Database by lazy {
             StarRocksDatabase.connect(
                 host = host,
                 port = port,
-                catalog = "default_catalog",
+                catalog = StarRocksTestServer.CATALOG,
                 database = databaseName,
-                user = "root",
+                user = StarRocksTestServer.USER,
             )
         }
 
@@ -67,7 +49,7 @@ abstract class AbstractStarRocksTest {
         @BeforeAll
         fun startStarRocks() {
             Class.forName(StarRocksDatabase.DRIVER)
-            starRocksContainer.start()
+            starRocks.verifyHostPortMapping()
             waitForStarRocksReady()
             createDatabase()
             waitForClusterCapacity()

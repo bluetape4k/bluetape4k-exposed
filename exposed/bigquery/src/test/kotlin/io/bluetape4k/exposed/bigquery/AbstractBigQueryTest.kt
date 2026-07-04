@@ -69,7 +69,7 @@ abstract class AbstractBigQueryTest {
             val credentials = GoogleCredentials.create(AccessToken("emulator-fake-token", null))
             val requestInitializer = HttpCredentialsAdapter(credentials)
             Bigquery.Builder(transport, json, requestInitializer)
-                .setRootUrl("http://${BigQueryEmulator.host}:${BigQueryEmulator.port}/")
+                .setRootUrl(BigQueryEmulator.endpoint.rootUrl)
                 .setApplicationName("exposed-bigquery-test")
                 .build()
         }

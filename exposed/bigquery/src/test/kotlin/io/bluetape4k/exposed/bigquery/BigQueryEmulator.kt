@@ -27,29 +27,46 @@ object BigQueryEmulator: KLogging() {
         java.net.Socket("localhost", HTTP_PORT).use { true }
     }.getOrDefault(false)
 
-    val container: GenericContainer<*> by lazy {
-        GenericContainer(IMAGE)
-            .withExposedPorts(HTTP_PORT)
-            .withCommand("--project=$PROJECT_ID", "--dataset=$DATASET")
-            .waitingFor(
-                Wait.forHttp("/discovery/v1/apis/bigquery/v2/rest")
-                    .forPort(HTTP_PORT)
-                    .forStatusCode(200)
-            )
-            .also {
-                it.start()
-                ShutdownQueue.register { it.stop() }
-            }
+    data class Endpoint(
+        val projectId: String,
+        val dataset: String,
+        val host: String,
+        val port: Int,
+        val local: Boolean,
+    ) {
+        val rootUrl: String = "http://$host:$port/"
     }
 
-    private val useLocal: Boolean by lazy {
-        isLocalRunning().also { local ->
-            if (local) log.info("로컬 BigQuery 에뮬레이터 사용 (localhost:$HTTP_PORT)")
-            else log.info("Testcontainers BigQuery 에뮬레이터 시작")
+    object Launcher: KLogging() {
+        val endpoint: Endpoint by lazy {
+            if (isLocalRunning()) {
+                log.info("로컬 BigQuery 에뮬레이터 사용 (localhost:{})", HTTP_PORT)
+                Endpoint(PROJECT_ID, DATASET, "localhost", HTTP_PORT, local = true)
+            } else {
+                log.info("Testcontainers BigQuery 에뮬레이터 시작")
+                val container = GenericContainer(IMAGE)
+                    .withExposedPorts(HTTP_PORT)
+                    .withCommand("--project=$PROJECT_ID", "--dataset=$DATASET")
+                    .waitingFor(
+                        Wait.forHttp("/discovery/v1/apis/bigquery/v2/rest")
+                            .forPort(HTTP_PORT)
+                            .forStatusCode(200)
+                    )
+                    .also {
+                        it.start()
+                        ShutdownQueue.register { it.stop() }
+                    }
+
+                val mappedPort = container.getMappedPort(HTTP_PORT)
+                check(container.host.isNotBlank()) { "BigQuery emulator host must not be blank." }
+                check(mappedPort > 0) { "BigQuery emulator HTTP port must be mapped." }
+                Endpoint(PROJECT_ID, DATASET, container.host, mappedPort, local = false)
+            }
         }
     }
 
-    val host: String by lazy { if (useLocal) "localhost" else container.host }
-    val port: Int by lazy { if (useLocal) HTTP_PORT else container.getMappedPort(HTTP_PORT) }
+    val endpoint: Endpoint by lazy { Launcher.endpoint }
+    val host: String by lazy { endpoint.host }
+    val port: Int by lazy { endpoint.port }
 
 }
