@@ -1,6 +1,6 @@
 package io.bluetape4k.exposed.r2dbc.tests
 
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
@@ -25,7 +25,7 @@ class WithDbTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `withDb 는 TestDB db 필드를 초기화한다`(testDB: TestDB) = runTest {
+    fun `withDb 는 TestDB db 필드를 초기화한다`(testDB: TestDB) = runSuspendIO {
         withDb(testDB) {
             testDB.db.shouldNotBeNull()
         }
@@ -36,7 +36,7 @@ class WithDbTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `withDb 블록 내부에서 currentTestDB 가 설정된다`(testDB: TestDB) = runTest {
+    fun `withDb 블록 내부에서 currentTestDB 가 설정된다`(testDB: TestDB) = runSuspendIO {
         withDb(testDB) {
             currentTestDB shouldBeEqualTo testDB
         }
@@ -47,7 +47,7 @@ class WithDbTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `withDb 는 동일한 TestDB 에 대해 db 인스턴스를 재사용한다`(testDB: TestDB) = runTest {
+    fun `withDb 는 동일한 TestDB 에 대해 db 인스턴스를 재사용한다`(testDB: TestDB) = runSuspendIO {
         withDb(testDB) { /* 첫 번째 연결 초기화 */ }
         val firstDb = testDB.db
 
@@ -62,7 +62,7 @@ class WithDbTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `withTables 는 테이블을 생성하고 종료 시 삭제한다`(testDB: TestDB) = runTest {
+    fun `withTables 는 테이블을 생성하고 종료 시 삭제한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, SampleTable) {
             SampleTable.exists().shouldBeTrue()
 
@@ -81,7 +81,7 @@ class WithDbTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `withTables 에 dropTables false 지정 시 테이블이 유지된다`(testDB: TestDB) = runTest {
+    fun `withTables 에 dropTables false 지정 시 테이블이 유지된다`(testDB: TestDB) = runSuspendIO {
         try {
             withTables(testDB, SampleTable, dropTables = false) {
                 SampleTable.exists().shouldBeTrue()
@@ -103,7 +103,7 @@ class WithDbTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `withTables 블록 예외는 호출자에게 전파된다`(testDB: TestDB) = runTest {
+    fun `withTables 블록 예외는 호출자에게 전파된다`(testDB: TestDB) = runSuspendIO {
         assertFailsWith<IllegalStateException> {
             withTables(testDB, SampleTable) {
                 throw IllegalStateException("forced failure")
@@ -116,7 +116,7 @@ class WithDbTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `withDb 에 configure 를 전달하면 해당 호출에만 임시 적용된다`(testDB: TestDB) = runTest {
+    fun `withDb 에 configure 를 전달하면 해당 호출에만 임시 적용된다`(testDB: TestDB) = runSuspendIO {
         // 먼저 DB를 초기화
         withDb(testDB) { /* init */ }
         val originalDb = testDB.db

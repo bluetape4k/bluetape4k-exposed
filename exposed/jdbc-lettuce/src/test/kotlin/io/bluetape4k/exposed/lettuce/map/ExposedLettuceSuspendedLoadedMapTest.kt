@@ -9,7 +9,7 @@ import io.bluetape4k.redis.lettuce.map.SuspendedMapLoader
 import io.bluetape4k.redis.lettuce.map.SuspendedMapWriter
 import io.bluetape4k.redis.lettuce.map.WriteMode
 import io.lettuce.core.codec.StringCodec
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class ExposedLettuceSuspendedLoadedMapTest: AbstractJdbcLettuceTest() {
 
     @Test
-    fun `get and getAll load cache misses and pattern invalidation removes cached values`() = runTest {
+    fun `get and getAll load cache misses and pattern invalidation removes cached values`() = runSuspendIO {
         val prefix = randomName()
         val loadCalls = AtomicInteger()
         val loader =
@@ -52,7 +52,7 @@ class ExposedLettuceSuspendedLoadedMapTest: AbstractJdbcLettuceTest() {
     }
 
     @Test
-    fun `write-through set and delete keep writer and redis state aligned`() = runTest {
+    fun `write-through set and delete keep writer and redis state aligned`() = runSuspendIO {
         val prefix = randomName()
         val written = ConcurrentHashMap<String, String>()
         val deleted = mutableListOf<String>()
@@ -90,7 +90,7 @@ class ExposedLettuceSuspendedLoadedMapTest: AbstractJdbcLettuceTest() {
     }
 
     @Test
-    fun `write-behind suspendClose drains queued writes`() = runTest {
+    fun `write-behind suspendClose drains queued writes`() = runSuspendIO {
         val written = ConcurrentHashMap<String, String>()
         val map = newMap(
             prefix = randomName(),
@@ -105,7 +105,7 @@ class ExposedLettuceSuspendedLoadedMapTest: AbstractJdbcLettuceTest() {
     }
 
     @Test
-    fun `write-behind close drains queued writes from blocking boundary`() = runTest {
+    fun `write-behind close drains queued writes from blocking boundary`() = runSuspendIO {
         val written = ConcurrentHashMap<String, String>()
         val map = newMap(
             prefix = randomName(),
@@ -120,7 +120,7 @@ class ExposedLettuceSuspendedLoadedMapTest: AbstractJdbcLettuceTest() {
     }
 
     @Test
-    fun `write-behind failure is handled during suspendClose`() = runTest {
+    fun `write-behind failure is handled during suspendClose`() = runSuspendIO {
         val map = newMap(
             prefix = randomName(),
             writer =

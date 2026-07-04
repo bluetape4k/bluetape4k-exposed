@@ -11,7 +11,7 @@ import io.bluetape4k.logging.KLogging
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -155,7 +155,7 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
     }
 
     @Test
-    fun `suspendTransaction 은 Trino 트랜잭션 결과를 반환한다`() = runTest {
+    fun `suspendTransaction 은 Trino 트랜잭션 결과를 반환한다`() = runSuspendIO {
         withEventsTableSuspend {
             val count = suspendTransaction(db) {
                 Events.selectAll().count()
@@ -165,7 +165,7 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
     }
 
     @Test
-    fun `suspendTransaction 안에서 쓰기 후 읽기가 가능하다`() = runTest {
+    fun `suspendTransaction 안에서 쓰기 후 읽기가 가능하다`() = runSuspendIO {
         withEventsTableSuspend {
             suspendTransaction(db) {
                 insertFixtures()
@@ -184,7 +184,7 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
     }
 
     @Test
-    fun `queryFlow 는 Trino 쿼리 결과를 Flow 로 반환한다`() = runTest {
+    fun `queryFlow 는 Trino 쿼리 결과를 Flow 로 반환한다`() = runSuspendIO {
         withEventsTableSuspend {
             suspendTransaction(db) {
                 insertFixtures()
@@ -202,7 +202,7 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
     }
 
     @Test
-    fun `queryFlow 는 transaction 내부에서 materialize 하고 transaction 밖에서 emit 한다`() = runTest {
+    fun `queryFlow 는 transaction 내부에서 materialize 하고 transaction 밖에서 emit 한다`() = runSuspendIO {
         withEventsTableSuspend {
             suspendTransaction(db) {
                 insertFixtures()
@@ -227,7 +227,7 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
     }
 
     @Test
-    fun `queryFlow 는 빈 테이블에서 빈 리스트를 반환한다`() = runTest {
+    fun `queryFlow 는 빈 테이블에서 빈 리스트를 반환한다`() = runSuspendIO {
         withEventsTableSuspend {
             val rows = queryFlow(db) {
                 Events.selectAll()
@@ -238,7 +238,7 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
     }
 
     @Test
-    fun `pagedQueryFlow 는 page 단위로 조회하고 순서를 보존한다`() = runTest {
+    fun `pagedQueryFlow 는 page 단위로 조회하고 순서를 보존한다`() = runSuspendIO {
         withEventsTableSuspend {
             suspendTransaction(db) {
                 insertRows(PAGED_FIXTURES)
@@ -261,7 +261,7 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
     }
 
     @Test
-    fun `pagedQueryFlow 는 take 후 다음 page 를 요청하지 않는다`() = runTest {
+    fun `pagedQueryFlow 는 take 후 다음 page 를 요청하지 않는다`() = runSuspendIO {
         withEventsTableSuspend {
             suspendTransaction(db) {
                 insertRows(PAGED_FIXTURES)

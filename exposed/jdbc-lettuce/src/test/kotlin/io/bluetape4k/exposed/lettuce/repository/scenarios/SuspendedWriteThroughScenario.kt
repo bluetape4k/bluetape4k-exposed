@@ -4,7 +4,7 @@ import io.bluetape4k.exposed.cache.scenarios.SuspendedJdbcWriteThroughScenario
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest.Companion.ENABLE_DIALECTS_METHOD
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.coroutines.KLoggingChannel
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
 import org.junit.jupiter.params.ParameterizedTest
@@ -37,7 +37,7 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>:
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `put - 캐시와 DB 모두에 반영된다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withSuspendedEntityTable(testDB) {
                 val id = getExistingId()
                 val entity = repository.findByIdFromDb(id).shouldNotBeNull()
@@ -52,7 +52,7 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>:
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `putAll - Map 일괄 저장 후 캐시와 DB 모두 반영된다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withSuspendedEntityTable(testDB) {
                 val ids = getExistingIds()
                 val entities = repository.getAll(ids)
@@ -69,7 +69,7 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>:
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `invalidate - 캐시에서만 삭제되고 DB는 유지된다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withSuspendedEntityTable(testDB) {
                 val id = getExistingId()
                 val entity = repository.findByIdFromDb(id).shouldNotBeNull()
@@ -86,7 +86,7 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>:
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `invalidateAll - 복수 ID를 캐시에서만 삭제하고 DB는 유지된다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withSuspendedEntityTable(testDB) {
                 val ids = getExistingIds()
                 val entities = ids.associateWith { repository.findByIdFromDb(it).shouldNotBeNull() }
@@ -104,7 +104,7 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>:
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `countFromDb - DB 전체 레코드 수를 반환한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withSuspendedEntityTable(testDB) {
                 repository.countFromDb() shouldBeEqualTo getExistingIds().size.toLong()
             }

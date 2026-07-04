@@ -5,7 +5,7 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.junit5.awaitility.untilSuspending
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldHaveSize
@@ -38,7 +38,7 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `put - 캐시에 저장하면, DB에도 저장된다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
             Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
 
@@ -71,7 +71,7 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `putAll - 캐시에 저장하면, DB에도 저장된다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
             Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
 
@@ -129,7 +129,7 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `upsertAll - 캐시에 벌크 저장하면, DB에도 저장된다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
             Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
 
@@ -183,7 +183,7 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `putAll - 새로운 Record를 추가하면 AutoInc Id 는 DB 저장을 하지 않고, Client 생성 Id는 DB에 저장된다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
             Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
 
@@ -211,7 +211,7 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `upsertAll - 새로운 Record를 벌크 추가하면 AutoInc Id 는 DB 저장을 하지 않고, Client 생성 Id는 DB에 저장된다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
             Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
 
@@ -239,7 +239,7 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `invalidte(id) - 캐시 invalidate 시 DB에 영향을 줄 수 있다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             // NOTE: DB 삭제를 동반하는 invalidate는 MySQL/MariaDB에서 격리 수준에 민감하므로 기존처럼 제외한다.
             Assumptions.assumeFalse(testDB in TestDB.ALL_MYSQL_MARIADB && cacheConfig.deleteFromDBOnInvalidate)
 
@@ -276,7 +276,7 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `invalidateAll - 설정에 따라 캐시만 또는 DB까지 삭제한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             Assumptions.assumeFalse(testDB in TestDB.ALL_MYSQL_MARIADB && cacheConfig.deleteFromDBOnInvalidate)
 
             withR2dbcEntityTable(testDB) {

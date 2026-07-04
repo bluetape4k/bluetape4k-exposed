@@ -17,7 +17,7 @@ import io.bluetape4k.assertions.shouldBeTrue
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.r2dbc.insert
@@ -39,7 +39,7 @@ class VirtualThreadTransactionTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `virtual thread transaction uses custom executor`(testDB: TestDB) = runTest {
+    fun `virtual thread transaction uses custom executor`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, VirtualThreadTable) {
             val executor = Executors.newSingleThreadExecutor { runnable ->
                 Thread(runnable, "vt-custom-executor")
@@ -75,7 +75,7 @@ class VirtualThreadTransactionTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `virtual thread transaction은 기본 VirtualThreadExecutor를 사용한다`(testDB: TestDB) = runTest {
+    fun `virtual thread transaction은 기본 VirtualThreadExecutor를 사용한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, VirtualThreadTable) {
             val isVirtual = virtualThreadTransaction(
                 executor = VirtualThreadExecutor,
@@ -90,7 +90,7 @@ class VirtualThreadTransactionTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `virtual thread transaction에서 INSERT와 SELECT가 정상 동작한다`(testDB: TestDB) = runTest {
+    fun `virtual thread transaction에서 INSERT와 SELECT가 정상 동작한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, VirtualThreadTable) {
             val insertedId = virtualThreadTransaction(db = this.db) {
                 VirtualThreadTable.insert {
@@ -110,7 +110,7 @@ class VirtualThreadTransactionTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `virtual thread transaction은 여러 번 중첩 없이 독립 실행된다`(testDB: TestDB) = runTest {
+    fun `virtual thread transaction은 여러 번 중첩 없이 독립 실행된다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, VirtualThreadTable) {
             repeat(3) { index ->
                 virtualThreadTransaction(db = this.db) {
@@ -128,7 +128,7 @@ class VirtualThreadTransactionTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `withVirtualThreadTransaction은 외부 트랜잭션 내에서 중첩 실행된다`(testDB: TestDB) = runTest {
+    fun `withVirtualThreadTransaction은 외부 트랜잭션 내에서 중첩 실행된다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, VirtualThreadTable) {
             suspendTransaction(db = this.db) {
                 VirtualThreadTable.insert { it[name] = "outer-item" }
@@ -151,7 +151,7 @@ class VirtualThreadTransactionTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `종료된 executor 로 트랜잭션 시작 시 IllegalArgumentException 이 발생한다`(testDB: TestDB) = runTest {
+    fun `종료된 executor 로 트랜잭션 시작 시 IllegalArgumentException 이 발생한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, VirtualThreadTable) {
             val executor = Executors.newSingleThreadExecutor()
             executor.shutdown()
@@ -167,7 +167,7 @@ class VirtualThreadTransactionTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `virtualThreadTransactionAsync는 비동기로 실행되어 결과를 반환한다`(testDB: TestDB) = runTest {
+    fun `virtualThreadTransactionAsync는 비동기로 실행되어 결과를 반환한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, VirtualThreadTable) {
             val deferred = virtualThreadTransactionAsync(db = this.db) {
                 VirtualThreadTable.insert { it[name] = "async-item" }

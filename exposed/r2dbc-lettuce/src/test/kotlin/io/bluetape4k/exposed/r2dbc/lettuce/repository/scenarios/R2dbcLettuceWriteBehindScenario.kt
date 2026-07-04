@@ -4,7 +4,7 @@ import io.bluetape4k.exposed.r2dbc.lettuce.repository.scenarios.R2DbcLettuceJCac
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.junit5.awaitility.untilSuspending
 import io.bluetape4k.logging.coroutines.KLoggingChannel
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
@@ -30,7 +30,7 @@ interface R2dbcLettuceWriteBehindScenario<ID: Any, E: Serializable>: R2DbcLettuc
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `put - WRITE_BEHIND 저장 후 Redis에는 즉시 반영된다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withR2dbcEntityTable(testDB) {
                 val id = getExistingId()
                 val entity = repository.findByIdFromDb(id).shouldNotBeNull()
@@ -44,7 +44,7 @@ interface R2dbcLettuceWriteBehindScenario<ID: Any, E: Serializable>: R2DbcLettuc
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `put - WRITE_BEHIND flush 주기 후 DB에도 반영된다`(testDB: TestDB) =
-        runTest(timeout = 15.seconds) {
+        runSuspendIO(timeout = 15.seconds) {
             withR2dbcEntityTable(testDB) {
                 val id = getExistingId()
                 val entity = repository.findByIdFromDb(id).shouldNotBeNull()
@@ -63,7 +63,7 @@ interface R2dbcLettuceWriteBehindScenario<ID: Any, E: Serializable>: R2DbcLettuc
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `putAll - 여러 레코드를 배치로 비동기 적재한다`(testDB: TestDB) =
-        runTest(timeout = 15.seconds) {
+        runSuspendIO(timeout = 15.seconds) {
             withR2dbcEntityTable(testDB) {
                 val ids = getExistingIds()
                 val entities = ids.associateWith { id -> updateEmail(repository.findByIdFromDb(id)!!) }
@@ -83,7 +83,7 @@ interface R2dbcLettuceWriteBehindScenario<ID: Any, E: Serializable>: R2DbcLettuc
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `get - 존재하지 않는 ID는 null을 반환한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withR2dbcEntityTable(testDB) {
                 repository.get(getNonExistentId()).shouldBeNull()
             }

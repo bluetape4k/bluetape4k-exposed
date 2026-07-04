@@ -17,7 +17,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
@@ -65,7 +65,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
     private val repository by lazy { ActorR2dbcCaffeineRepository(config) }
 
     @Test
-    fun `get - concurrent cache misses run one async loader per key`() = runTest {
+    fun `get - concurrent cache misses run one async loader per key`() = runSuspendIO {
         val repository = CountingActorRepository("r2dbc:caffeine:atomic:get")
 
         val results = List(8) {
@@ -79,7 +79,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
     }
 
     @Test
-    fun `getAll - concurrent cache misses run one async loader per key`() = runTest {
+    fun `getAll - concurrent cache misses run one async loader per key`() = runSuspendIO {
         val repository = CountingActorRepository("r2dbc:caffeine:atomic:get-all")
         val ids = listOf(1L, 2L, 3L)
 
@@ -150,7 +150,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
 
     @ParameterizedTest
     @MethodSource("getEnabledDialects")
-    fun `clear - 캐시를 비우면 다음 get 호출 시 DB에서 다시 로드한다`(testDB: TestDB) = runTest {
+    fun `clear - 캐시를 비우면 다음 get 호출 시 DB에서 다시 로드한다`(testDB: TestDB) = runSuspendIO {
         withTable(testDB) {
             val id = getFirstId()
 
@@ -176,7 +176,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
 
     @ParameterizedTest
     @MethodSource("getEnabledDialects")
-    fun `invalidateAll - 지정한 키들을 캐시에서 일괄 제거한다`(testDB: TestDB) = runTest {
+    fun `invalidateAll - 지정한 키들을 캐시에서 일괄 제거한다`(testDB: TestDB) = runSuspendIO {
         withTable(testDB) {
             val ids = getAllIds()
 
@@ -198,7 +198,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
 
     @ParameterizedTest
     @MethodSource("getEnabledDialects")
-    fun `invalidateAll - 빈 목록은 아무 영향도 없다`(testDB: TestDB) = runTest {
+    fun `invalidateAll - 빈 목록은 아무 영향도 없다`(testDB: TestDB) = runSuspendIO {
         withTable(testDB) {
             // 예외 없이 정상 종료해야 한다
             repository.invalidateAll(emptyList())
@@ -211,7 +211,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
 
     @ParameterizedTest
     @MethodSource("getEnabledDialects")
-    fun `countFromDb - 캐시를 우회하여 DB 레코드 수를 반환한다`(testDB: TestDB) = runTest {
+    fun `countFromDb - 캐시를 우회하여 DB 레코드 수를 반환한다`(testDB: TestDB) = runSuspendIO {
         withTable(testDB) {
             // withActorTable이 3건을 삽입하므로 최소 3건 이상이어야 한다
             val count = repository.countFromDb()
@@ -225,7 +225,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
 
     @ParameterizedTest
     @MethodSource("getEnabledDialects")
-    fun `get - 두 번째 호출 시 캐시에서 반환한다`(testDB: TestDB) = runTest {
+    fun `get - 두 번째 호출 시 캐시에서 반환한다`(testDB: TestDB) = runSuspendIO {
         withTable(testDB) {
             val id = getFirstId()
 
@@ -242,7 +242,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
 
     @ParameterizedTest
     @MethodSource("getEnabledDialects")
-    fun `get - 존재하지 않는 ID는 null을 반환한다`(testDB: TestDB) = runTest {
+    fun `get - 존재하지 않는 ID는 null을 반환한다`(testDB: TestDB) = runSuspendIO {
         withTable(testDB) {
             repository.get(Long.MIN_VALUE).shouldBeNull()
         }
@@ -254,7 +254,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
 
     @ParameterizedTest
     @MethodSource("getEnabledDialects")
-    fun `findAll - limit을 지정하면 그 수만큼만 반환한다`(testDB: TestDB) = runTest {
+    fun `findAll - limit을 지정하면 그 수만큼만 반환한다`(testDB: TestDB) = runSuspendIO {
         withTable(testDB) {
             val all = repository.findAll()
             all.shouldNotBeEmpty()
@@ -266,7 +266,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
 
     @ParameterizedTest
     @MethodSource("getEnabledDialects")
-    fun `findAll - offset을 지정하면 앞 항목을 건너뛴다`(testDB: TestDB) = runTest {
+    fun `findAll - offset을 지정하면 앞 항목을 건너뛴다`(testDB: TestDB) = runSuspendIO {
         withTable(testDB) {
             val all = repository.findAll(sortBy = ActorTable.id, sortOrder = SortOrder.ASC)
             all.size shouldBeGreaterThan 1
@@ -281,7 +281,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
 
     @ParameterizedTest
     @MethodSource("getEnabledDialects")
-    fun `findAll - 결과가 없으면 빈 목록을 반환한다`(testDB: TestDB) = runTest {
+    fun `findAll - 결과가 없으면 빈 목록을 반환한다`(testDB: TestDB) = runSuspendIO {
         withTable(testDB) {
             // 존재하지 않는 조건으로 조회
             val result = repository.findAll(
@@ -297,7 +297,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
 
     @ParameterizedTest
     @MethodSource("getEnabledDialects")
-    fun `getAll - 일부는 캐시에서 일부는 DB에서 가져온다`(testDB: TestDB) = runTest {
+    fun `getAll - 일부는 캐시에서 일부는 DB에서 가져온다`(testDB: TestDB) = runSuspendIO {
         withTable(testDB) {
             val ids = getAllIds()
             ids.size shouldBeGreaterThan 1
@@ -320,7 +320,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
 
     @ParameterizedTest
     @MethodSource("getEnabledDialects")
-    fun `containsKey - 캐시와 DB 모두에 없으면 false를 반환한다`(testDB: TestDB) = runTest {
+    fun `containsKey - 캐시와 DB 모두에 없으면 false를 반환한다`(testDB: TestDB) = runSuspendIO {
         withTable(testDB) {
             repository.containsKey(Long.MIN_VALUE).shouldBeFalse()
         }
@@ -332,7 +332,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
 
     @ParameterizedTest
     @MethodSource("getEnabledDialects")
-    fun `findByIdFromDb - 캐시를 우회하여 DB에서 조회한다`(testDB: TestDB) = runTest {
+    fun `findByIdFromDb - 캐시를 우회하여 DB에서 조회한다`(testDB: TestDB) = runSuspendIO {
         withTable(testDB) {
             val id = getFirstId()
             val entity = repository.findByIdFromDb(id)
@@ -343,7 +343,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
 
     @ParameterizedTest
     @MethodSource("getEnabledDialects")
-    fun `findAllFromDb - 빈 컬렉션은 빈 목록을 반환한다`(testDB: TestDB) = runTest {
+    fun `findAllFromDb - 빈 컬렉션은 빈 목록을 반환한다`(testDB: TestDB) = runSuspendIO {
         withTable(testDB) {
             repository.findAllFromDb(emptyList()).shouldBeEmpty()
         }
@@ -351,7 +351,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
 
     @ParameterizedTest
     @MethodSource("getEnabledDialects")
-    fun `findAllFromDb - 존재하지 않는 IDs는 빈 목록을 반환한다`(testDB: TestDB) = runTest {
+    fun `findAllFromDb - 존재하지 않는 IDs는 빈 목록을 반환한다`(testDB: TestDB) = runSuspendIO {
         withTable(testDB) {
             repository.findAllFromDb(listOf(Long.MIN_VALUE, Long.MIN_VALUE + 1)).shouldBeEmpty()
         }
@@ -363,7 +363,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
 
     @ParameterizedTest
     @MethodSource("getEnabledDialects")
-    fun `close - Write-Behind 모드에서 예외 없이 정상 종료된다`(testDB: TestDB) = runTest {
+    fun `close - Write-Behind 모드에서 예외 없이 정상 종료된다`(testDB: TestDB) = runSuspendIO {
         val wbConfig = LocalCacheConfig(
             keyPrefix = "r2dbc:caffeine:close:actor",
             writeMode = CacheWriteMode.WRITE_BEHIND,

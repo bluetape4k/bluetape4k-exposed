@@ -25,7 +25,7 @@ import java.time.Duration
  *     updateEntity = { stmt, e -> stmt[ActorTable.name] = e.name },
  *     insertEntity = { stmt, e -> stmt[ActorTable.name] = e.name }
  * )
- * // suspend 컨텍스트(예: runTest, coroutineScope)에서 호출한다
+ * // suspend 컨텍스트(예: runSuspendIO, coroutineScope)에서 호출한다
  * writer.write(mapOf(1L to ActorRecord(id = 1L, name = "Alice")))
  * ```
  *

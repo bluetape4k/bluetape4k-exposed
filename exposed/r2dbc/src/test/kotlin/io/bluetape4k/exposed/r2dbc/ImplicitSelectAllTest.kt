@@ -6,7 +6,7 @@ import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.info
 import kotlinx.coroutines.flow.single
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
@@ -53,7 +53,7 @@ class ImplicitSelectAllTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `컬럼의 visibility를 변경할 수 있다`(testDB: TestDB) = runTest {
+    fun `컬럼의 visibility를 변경할 수 있다`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in columnCommentSupportedDB }
 
         val tester = object: Table("tester") {

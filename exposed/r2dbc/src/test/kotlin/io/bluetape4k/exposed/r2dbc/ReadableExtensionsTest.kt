@@ -3,7 +3,7 @@ package io.bluetape4k.exposed.r2dbc
 import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.r2dbc.spi.Readable
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldContain
@@ -681,7 +681,7 @@ class ReadableExtensionsTest {
     // region ExposedBlob
 
     @Test
-    fun `getExposedBlob은 byte array를 ExposedBlob으로 변환한다`() = runTest {
+    fun `getExposedBlob은 byte array를 ExposedBlob으로 변환한다`() = runSuspendIO {
         val bytes = "blob-value".toByteArray()
         val readable = FakeReadable(valuesByName = mapOf("blob" to bytes))
 
@@ -690,7 +690,7 @@ class ReadableExtensionsTest {
     }
 
     @Test
-    fun `getExposedBlobOrNull은 byte buffer를 변환하고 원본 position을 보존한다`() = runTest {
+    fun `getExposedBlobOrNull은 byte buffer를 변환하고 원본 position을 보존한다`() = runSuspendIO {
         val buffer = ByteBuffer.wrap("abcdef".toByteArray()).apply { position(2) }
         val readable = FakeReadable(valuesByName = mapOf("blob" to buffer))
 
@@ -701,13 +701,13 @@ class ReadableExtensionsTest {
     }
 
     @Test
-    fun `getExposedBlobOrNull은 지원하지 않는 타입이면 null을 반환한다`() = runTest {
+    fun `getExposedBlobOrNull은 지원하지 않는 타입이면 null을 반환한다`() = runSuspendIO {
         val readable = FakeReadable(valuesByName = mapOf("blob" to 123))
         readable.getExposedBlobOrNull("blob").shouldBeNull()
     }
 
     @Test
-    fun `getExposedBlob은 이름 기반 미지원 타입일 때 예외를 던진다`() = runTest {
+    fun `getExposedBlob은 이름 기반 미지원 타입일 때 예외를 던진다`() = runSuspendIO {
         val readable = FakeReadable(valuesByName = mapOf("blob" to 123))
         val ex = assertFailsWith<IllegalStateException> { readable.getExposedBlob("blob") }
         val msg = ex.message.shouldNotBeNull()
@@ -716,7 +716,7 @@ class ReadableExtensionsTest {
     }
 
     @Test
-    fun `getExposedBlobOrNull은 인덱스 기반 byte array를 변환한다`() = runTest {
+    fun `getExposedBlobOrNull은 인덱스 기반 byte array를 변환한다`() = runSuspendIO {
         val bytes = "index-blob".toByteArray()
         val readable = FakeReadable(valuesByIndex = mapOf(0 to bytes))
 
@@ -726,7 +726,7 @@ class ReadableExtensionsTest {
     }
 
     @Test
-    fun `getExposedBlob은 인덱스 기반 미지원 타입일 때 예외를 던진다`() = runTest {
+    fun `getExposedBlob은 인덱스 기반 미지원 타입일 때 예외를 던진다`() = runSuspendIO {
         val readable = FakeReadable(valuesByIndex = mapOf(0 to 42))
         val ex = assertFailsWith<IllegalStateException> { readable.getExposedBlob(0) }
         val msg = ex.message.shouldNotBeNull()
@@ -735,7 +735,7 @@ class ReadableExtensionsTest {
     }
 
     @Test
-    fun `getExposedBlob은 인덱스 기반 null일 때 예외를 던진다`() = runTest {
+    fun `getExposedBlob은 인덱스 기반 null일 때 예외를 던진다`() = runSuspendIO {
         val readable = FakeReadable(valuesByIndex = mapOf(0 to null))
         val ex = assertFailsWith<IllegalStateException> { readable.getExposedBlob(0) }
         val msg = ex.message.shouldNotBeNull()
@@ -744,7 +744,7 @@ class ReadableExtensionsTest {
     }
 
     @Test
-    fun `getExposedBlob은 이름 기반 null일 때 예외를 던진다`() = runTest {
+    fun `getExposedBlob은 이름 기반 null일 때 예외를 던진다`() = runSuspendIO {
         val readable = FakeReadable(valuesByName = mapOf("col" to null))
         val ex = assertFailsWith<IllegalStateException> { readable.getExposedBlob("col") }
         val msg = ex.message.shouldNotBeNull()

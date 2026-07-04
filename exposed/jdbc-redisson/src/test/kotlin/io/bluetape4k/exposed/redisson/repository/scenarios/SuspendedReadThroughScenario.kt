@@ -6,7 +6,6 @@ import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.runTest
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
@@ -106,7 +105,7 @@ interface SuspendedReadThroughScenario<ID: Any, E: java.io.Serializable>: Suspen
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findAll - 전체 엔티티를 가져옵니다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             withSuspendedEntityTable(testDB) {
                 val entities = repository.findAll()
                 entities.shouldNotBeEmpty()
@@ -123,7 +122,7 @@ interface SuspendedReadThroughScenario<ID: Any, E: java.io.Serializable>: Suspen
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `getAll - 여러 ID의 엔티티를 한번에 조회한다`(testDB: TestDB) =
-        runTest {
+        runSuspendIO {
             Assumptions.assumeTrue { testDB != TestDB.MYSQL_V5 }
             withSuspendedEntityTable(testDB) {
                 val ids = getExistingIds() + getNonExistentId()

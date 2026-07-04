@@ -8,7 +8,7 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
@@ -43,7 +43,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `find actor by id`(testDB: TestDB) = runTest {
+    fun `find actor by id`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val actorId = 1L
             val actor = repository.findById(actorId)
@@ -54,7 +54,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `search actors by lastName`(testDB: TestDB) = runTest {
+    fun `search actors by lastName`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val params = mapOf("lastName" to "Depp")
             val actors = repository.searchActors(params).toList()
@@ -68,7 +68,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `create new actor`(testDB: TestDB) = runTest {
+    fun `create new actor`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val actor = newActorRecord()
 
@@ -84,7 +84,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `saveAll with empty list returns empty ids`(testDB: TestDB) = runTest {
+    fun `saveAll with empty list returns empty ids`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val currentCount = repository.count()
             val ids = repository.saveAll(emptyList())
@@ -96,7 +96,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `saveAll with single entity returns one generated id`(testDB: TestDB) = runTest {
+    fun `saveAll with single entity returns one generated id`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val currentCount = repository.count()
             val ids = repository.saveAll(listOf(newActorRecord()))
@@ -110,7 +110,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `saveAll inserts 100 actors and returns generated ids`(testDB: TestDB) = runTest {
+    fun `saveAll inserts 100 actors and returns generated ids`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val currentCount = repository.count()
             val actors = List(100) { index ->
@@ -133,7 +133,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `saveAll inserts 10000 actors on H2`(testDB: TestDB) = runTest {
+    fun `saveAll inserts 10000 actors on H2`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue(testDB == TestDB.H2)
         withMovieAndActors(testDB) {
             val currentCount = repository.count()
@@ -156,7 +156,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `delete actor by id`(testDB: TestDB) = runTest {
+    fun `delete actor by id`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val actor = newActorRecord()
             val savedActor = repository.save(actor)
@@ -169,7 +169,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `count of actors`(testDB: TestDB) = runTest {
+    fun `count of actors`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val count = repository.count()
             log.debug { "count: $count" }
@@ -184,7 +184,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `count with predicate`(testDB: TestDB) = runTest {
+    fun `count with predicate`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val count = repository.countBy { ActorTable.lastName eq "Depp" }
             log.debug { "count: $count" }
@@ -199,7 +199,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `isEmpty with Actor`(testDB: TestDB) = runTest {
+    fun `isEmpty with Actor`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val isEmpty = repository.isEmpty()
             log.debug { "isEmpty: $isEmpty" }
@@ -215,7 +215,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `exists with Actor`(testDB: TestDB) = runTest {
+    fun `exists with Actor`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val exists = repository.exists(ActorTable.selectAll())
             log.debug { "exists: $exists" }
@@ -235,7 +235,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `findAll with limit and offset`(testDB: TestDB) = runTest {
+    fun `findAll with limit and offset`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             repository.findAll(limit = 2).toList() shouldHaveSize 2
             repository.findAll { ActorTable.lastName eq "Depp" }.toList() shouldHaveSize 1
@@ -246,7 +246,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `delete entity by id`(testDB: TestDB) = runTest {
+    fun `delete entity by id`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val actor = newActorRecord()
             val savedActor = repository.save(actor)
@@ -262,7 +262,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `delete all with limit`(testDB: TestDB) = runTest {
+    fun `delete all with limit`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val count = repository.count()
 
@@ -275,7 +275,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `delete all with ignore`(testDB: TestDB) = runTest {
+    fun `delete all with ignore`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in TestDB.ALL_MYSQL_MARIADB }
 
         withMovieAndActors(testDB) {
@@ -290,7 +290,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `findBy 는 findWithFilters 와 동일하게 동작한다`(testDB: TestDB) = runTest {
+    fun `findBy 는 findWithFilters 와 동일하게 동작한다`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val byLastName = repository.findBy(
                 { ActorTable.lastName eq "Depp" }
@@ -307,7 +307,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `find actor by id or null`(testDB: TestDB) = runTest {
+    fun `find actor by id or null`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             repository.findByIdOrNull(1L).shouldNotBeNull()
             repository.findByIdOrNull(Long.MAX_VALUE).shouldBeNull()
@@ -316,7 +316,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `find with filters`(testDB: TestDB) = runTest {
+    fun `find with filters`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val actors = repository.findWithFilters(
                 { ActorTable.firstName eq "Johnny" },
@@ -331,7 +331,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `findPage 는 음수 pageNumber 를 거부한다`(testDB: TestDB) = runTest {
+    fun `findPage 는 음수 pageNumber 를 거부한다`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             assertFailsWith<IllegalArgumentException> {
                 repository.findPage(pageNumber = -1, pageSize = 10)
@@ -341,7 +341,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `findPage 는 0 이하 pageSize 를 거부한다`(testDB: TestDB) = runTest {
+    fun `findPage 는 0 이하 pageSize 를 거부한다`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             assertFailsWith<IllegalArgumentException> {
                 repository.findPage(pageNumber = 0, pageSize = 0)
@@ -354,7 +354,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `find first or null`(testDB: TestDB) = runTest {
+    fun `find first or null`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val actor = repository.findFirstOrNull { ActorTable.firstName eq "Johnny" }
             actor.shouldNotBeNull()
@@ -366,7 +366,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `find last or null`(testDB: TestDB) = runTest {
+    fun `find last or null`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val actor = repository.findLastOrNull { ActorTable.firstName eq "Johnny" }
             actor.shouldNotBeNull()
@@ -378,7 +378,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `find by field`(testDB: TestDB) = runTest {
+    fun `find by field`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val actors = repository.findByField(ActorTable.firstName, "Johnny").toList()
             actors.shouldNotBeEmpty()
@@ -391,7 +391,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `update by id`(testDB: TestDB) = runTest {
+    fun `update by id`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val actor = newActorRecord()
             val savedActor = repository.save(actor)
@@ -411,7 +411,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `batch insert with entities`(testDB: TestDB) = runTest {
+    fun `batch insert with entities`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val batchCount = 10
             val entities = List(batchCount) { newActorRecord() }
@@ -429,7 +429,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `batch insert with entities as sequence`(testDB: TestDB) = runTest {
+    fun `batch insert with entities as sequence`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val batchCount = 10
             val entities = List(batchCount) { newActorRecord() }.asSequence()
@@ -447,7 +447,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `batch update with entities`(testDB: TestDB) = runTest {
+    fun `batch update with entities`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val batchCount = 10
             val entities = List(batchCount) { newActorRecord() }
@@ -476,7 +476,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `batch update with entities as sequence`(testDB: TestDB) = runTest {
+    fun `batch update with entities as sequence`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val batchCount = 10
             val entities = List(batchCount) { newActorRecord() }.asSequence()
@@ -505,7 +505,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `findAllByIds 는 여러 ID 로 엔티티를 일괄 조회한다`(testDB: TestDB) = runTest {
+    fun `findAllByIds 는 여러 ID 로 엔티티를 일괄 조회한다`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             // 기존 데이터에서 ID 목록 수집
             val all = repository.findAll().toList()
@@ -519,7 +519,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `existsById 는 존재하는 ID 에 true 를 반환한다`(testDB: TestDB) = runTest {
+    fun `existsById 는 존재하는 ID 에 true 를 반환한다`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             repository.existsById(1L).shouldBeTrue()
             repository.existsById(Long.MAX_VALUE).shouldBeFalse()
@@ -528,7 +528,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `existsBy 는 조건에 맞는 레코드가 있으면 true 를 반환한다`(testDB: TestDB) = runTest {
+    fun `existsBy 는 조건에 맞는 레코드가 있으면 true 를 반환한다`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             repository.existsBy { ActorTable.lastName eq "Depp" }.shouldBeTrue()
             repository.existsBy { ActorTable.lastName eq "NonExistent" }.shouldBeFalse()
@@ -537,7 +537,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `findByFieldOrNull 은 첫 번째 매칭 엔티티를 반환하거나 null 을 반환한다`(testDB: TestDB) = runTest {
+    fun `findByFieldOrNull 은 첫 번째 매칭 엔티티를 반환하거나 null 을 반환한다`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val actor = repository.findByFieldOrNull(ActorTable.lastName, "Depp")
             actor.shouldNotBeNull()
@@ -549,7 +549,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `updateAll 은 조건에 맞는 모든 엔티티를 수정한다`(testDB: TestDB) = runTest {
+    fun `updateAll 은 조건에 맞는 모든 엔티티를 수정한다`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val actor = newActorRecord()
             val saved = repository.save(actor)
@@ -567,7 +567,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `deleteAllByIds 는 여러 ID 를 일괄 삭제한다`(testDB: TestDB) = runTest {
+    fun `deleteAllByIds 는 여러 ID 를 일괄 삭제한다`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val actors = List(3) { repository.save(newActorRecord()) }
             val ids = actors.map { it.id }
@@ -583,7 +583,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `deleteByIdIgnore 는 존재하지 않는 ID 삭제 시 예외 없이 0 을 반환한다`(testDB: TestDB) = runTest {
+    fun `deleteByIdIgnore 는 존재하지 않는 ID 삭제 시 예외 없이 0 을 반환한다`(testDB: TestDB) = runSuspendIO {
         // deleteIgnoreWhere 는 MySQL/MariaDB 계열에서만 지원됩니다
         Assumptions.assumeTrue { testDB in TestDB.ALL_MYSQL_MARIADB }
 
@@ -596,7 +596,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `findPage 는 올바른 페이징 결과를 반환한다`(testDB: TestDB) = runTest {
+    fun `findPage 는 올바른 페이징 결과를 반환한다`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             // 기존 데이터 개수 확인 후 추가 삽입
             val existing = repository.count()

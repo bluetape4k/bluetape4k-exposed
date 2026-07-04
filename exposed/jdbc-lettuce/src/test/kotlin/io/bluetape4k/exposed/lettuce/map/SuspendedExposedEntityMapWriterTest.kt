@@ -5,7 +5,7 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTablesSuspending
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.lettuce.map.WriteMode
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.Column
@@ -65,7 +65,7 @@ class SuspendedExposedEntityMapWriterTest: AbstractExposedTest() {
         )
 
     @Test
-    fun `write - 새 엔티티를 DB에 삽입한다`() = runTest {
+    fun `write - 새 엔티티를 DB에 삽입한다`() = runSuspendIO {
         withTablesSuspending(TestDB.H2, SuspendedWriterTable) {
             val writer = newWriter()
             val entity = SuspendedWriterEntity(id = 1L, name = "alice")
@@ -79,7 +79,7 @@ class SuspendedExposedEntityMapWriterTest: AbstractExposedTest() {
     }
 
     @Test
-    fun `write - 기존 엔티티를 업데이트한다`() = runTest {
+    fun `write - 기존 엔티티를 업데이트한다`() = runSuspendIO {
         withTablesSuspending(TestDB.H2, SuspendedWriterTable) {
             SuspendedWriterTable.insert {
                 it[id] = 1L
@@ -98,7 +98,7 @@ class SuspendedExposedEntityMapWriterTest: AbstractExposedTest() {
     }
 
     @Test
-    fun `write - 빈 map은 아무것도 하지 않는다`() = runTest {
+    fun `write - 빈 map은 아무것도 하지 않는다`() = runSuspendIO {
         withTablesSuspending(TestDB.H2, SuspendedWriterTable) {
             val writer = newWriter()
             writer.write(emptyMap())
@@ -108,7 +108,7 @@ class SuspendedExposedEntityMapWriterTest: AbstractExposedTest() {
     }
 
     @Test
-    fun `write - NONE 모드에서는 DB에 쓰지 않는다`() = runTest {
+    fun `write - NONE 모드에서는 DB에 쓰지 않는다`() = runSuspendIO {
         withTablesSuspending(TestDB.H2, SuspendedWriterTable) {
             val writer = newWriter(WriteMode.NONE)
             writer.write(mapOf(1L to SuspendedWriterEntity(id = 1L, name = "alice")))
@@ -118,7 +118,7 @@ class SuspendedExposedEntityMapWriterTest: AbstractExposedTest() {
     }
 
     @Test
-    fun `delete - 엔티티를 DB에서 삭제한다`() = runTest {
+    fun `delete - 엔티티를 DB에서 삭제한다`() = runSuspendIO {
         withTablesSuspending(TestDB.H2, SuspendedWriterTable) {
             SuspendedWriterTable.insert {
                 it[id] = 1L
@@ -141,7 +141,7 @@ class SuspendedExposedEntityMapWriterTest: AbstractExposedTest() {
     }
 
     @Test
-    fun `delete - 빈 컬렉션은 아무것도 하지 않는다`() = runTest {
+    fun `delete - 빈 컬렉션은 아무것도 하지 않는다`() = runSuspendIO {
         withTablesSuspending(TestDB.H2, SuspendedWriterTable) {
             SuspendedWriterTable.insert {
                 it[id] = 1L
@@ -157,7 +157,7 @@ class SuspendedExposedEntityMapWriterTest: AbstractExposedTest() {
     }
 
     @Test
-    fun `write - 신규와 기존 엔티티가 혼재할 때 각각 insert와 update를 수행한다`() = runTest {
+    fun `write - 신규와 기존 엔티티가 혼재할 때 각각 insert와 update를 수행한다`() = runSuspendIO {
         withTablesSuspending(TestDB.H2, SuspendedWriterTable) {
             SuspendedWriterTable.insert {
                 it[id] = 1L

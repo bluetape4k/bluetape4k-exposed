@@ -10,7 +10,7 @@ import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import org.jetbrains.exposed.v1.r2dbc.select
@@ -36,7 +36,7 @@ class R2dbcRepositoryInvalidateAllTest: AbstractR2dbcRedissonTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `invalidateAll - 여러 ID를 한 번에 캐시에서 제거한다`(testDB: TestDB) = runTest {
+    fun `invalidateAll - 여러 ID를 한 번에 캐시에서 제거한다`(testDB: TestDB) = runSuspendIO {
         withUserTable(testDB, context = coroutineContext) {
             // 먼저 캐시에 로드
             val ids = UserTable
@@ -57,7 +57,7 @@ class R2dbcRepositoryInvalidateAllTest: AbstractR2dbcRedissonTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `invalidateAll - 빈 목록 전달 시 no-op으로 처리한다`(testDB: TestDB) = runTest {
+    fun `invalidateAll - 빈 목록 전달 시 no-op으로 처리한다`(testDB: TestDB) = runSuspendIO {
         withUserTable(testDB, context = coroutineContext) {
             // 예외 없이 정상 완료돼야 한다
             repository.invalidateAll(emptyList())
@@ -66,7 +66,7 @@ class R2dbcRepositoryInvalidateAllTest: AbstractR2dbcRedissonTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `invalidate - 단건 ID를 캐시에서 제거하면 다시 DB에서 로드된다`(testDB: TestDB) = runTest {
+    fun `invalidate - 단건 ID를 캐시에서 제거하면 다시 DB에서 로드된다`(testDB: TestDB) = runSuspendIO {
         withUserTable(testDB, context = coroutineContext) {
             val id = UserTable
                 .select(UserTable.id)
@@ -89,7 +89,7 @@ class R2dbcRepositoryInvalidateAllTest: AbstractR2dbcRedissonTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `clear - 캐시를 비운다`(testDB: TestDB) = runTest {
+    fun `clear - 캐시를 비운다`(testDB: TestDB) = runSuspendIO {
         withUserTable(testDB, context = coroutineContext) {
             val ids = UserTable
                 .select(UserTable.id)

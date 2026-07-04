@@ -18,7 +18,7 @@ import java.util.*
  * class MyTest: AbstractExposedR2dbcTest() {
  *     @ParameterizedTest
  *     @MethodSource(ENABLE_DIALECTS_METHOD)
- *     fun run(testDB: TestDB) = runTest { withDb(testDB) { } }
+ *     fun run(testDB: TestDB) = runSuspendIO { withDb(testDB) { } }
  * }
  * // 활성 dialect 기준으로 테스트 실행
  * ```

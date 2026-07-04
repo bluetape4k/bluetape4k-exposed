@@ -6,7 +6,7 @@ import io.bluetape4k.exposed.r2dbc.tests.inProperCase
 import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
@@ -43,7 +43,7 @@ class CreateTableTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `중복된 컬럼이 있는 테이블 생성은 예외를 발생시킵니다`(testDB: TestDB) = runTest {
+    fun `중복된 컬럼이 있는 테이블 생성은 예외를 발생시킵니다`(testDB: TestDB) = runSuspendIO {
         val errorMessage = "Can't create a table with multiple columns having the same name"
 
         withDb(testDB) {
@@ -68,7 +68,7 @@ class CreateTableTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `entityId를 이용하여 특정 컬럼을 PRIMARY KEY로 설정합니다`(testDB: TestDB) = runTest {
+    fun `entityId를 이용하여 특정 컬럼을 PRIMARY KEY로 설정합니다`(testDB: TestDB) = runSuspendIO {
         val tester = object: IdTable<String>("tester") {
             val column1: Column<String> = varchar("column_1", 30)
 
@@ -101,7 +101,7 @@ class CreateTableTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `primaryKey 함수를 이용하여 컬럼을 primary key로 지정합니다`(testDB: TestDB) = runTest {
+    fun `primaryKey 함수를 이용하여 컬럼을 primary key로 지정합니다`(testDB: TestDB) = runSuspendIO {
         val tester = object: IdTable<String>("tester") {
             val column1: Column<String> = varchar("column_1", 30)
 
@@ -168,7 +168,7 @@ class CreateTableTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `컬럼이 하나이고, PRIMARY KEY로 지정된 테이블을 생성합니다`(testDB: TestDB) = runTest {
+    fun `컬럼이 하나이고, PRIMARY KEY로 지정된 테이블을 생성합니다`(testDB: TestDB) = runSuspendIO {
         withDb(testDB) {
             val ddl = BookTable.ddl.single()
             log.debug { "DDL: $ddl" }
@@ -191,7 +191,7 @@ class CreateTableTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `2개의 컬럼이 PRIMARY KEY로 지정된 테이블을 생성합니다`(testDB: TestDB) = runTest {
+    fun `2개의 컬럼이 PRIMARY KEY로 지정된 테이블을 생성합니다`(testDB: TestDB) = runSuspendIO {
         withDb(testDB) {
             val ddl = PersonTable.ddl.single()
             log.debug { "DDL: $ddl" }
@@ -225,7 +225,7 @@ class CreateTableTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `2개의 컬럼이 Foreign Key 로 지정된 테이블을 생성합니다 - 01`(testDB: TestDB) = runTest {
+    fun `2개의 컬럼이 Foreign Key 로 지정된 테이블을 생성합니다 - 01`(testDB: TestDB) = runSuspendIO {
         val fkName = "MyForeignKey1"
         val parent = object: Table("parent1") {
             val idA = integer("id_a")
@@ -282,7 +282,7 @@ class CreateTableTest: AbstractExposedR2dbcTest() {
      */
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `2개의 컬럼이 Foreign Key 로 지정된 테이블을 생성합니다 - 02`(testDB: TestDB) = runTest {
+    fun `2개의 컬럼이 Foreign Key 로 지정된 테이블을 생성합니다 - 02`(testDB: TestDB) = runSuspendIO {
         val fkName = "MyForeignKey1"
         val parent = object: Table("parent1") {
             val pidA = integer("pid_a")
