@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.core.jackson
 
+import io.bluetape4k.codec.Base58
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
@@ -10,7 +11,6 @@ import io.bluetape4k.support.toUtf8Bytes
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
-import java.util.UUID
 
 /**
  * [JacksonColumnType] 및 [JacksonBColumnType]의 직렬화/역직렬화 단위 테스트입니다.
@@ -77,7 +77,7 @@ class JacksonColumnTypeUnitTest {
             deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
         )
         val database = Database.connect(
-            url = "jdbc:h2:mem:jackson-literal-${UUID.randomUUID()};DB_CLOSE_DELAY=-1",
+            url = "jdbc:h2:mem:jackson-literal-${Base58.randomString(8)};DB_CLOSE_DELAY=-1",
             driver = "org.h2.Driver",
         )
 

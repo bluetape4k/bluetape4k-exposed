@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.r2dbc
 
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.r2dbc.spi.Readable
 import kotlinx.coroutines.test.runTest
@@ -619,7 +620,7 @@ class ReadableExtensionsTest {
 
     @Test
     fun `getUuidOrNull은 인덱스 기반 UUID 값을 반환한다`() {
-        val uuid = UUID.randomUUID()
+        val uuid = Uuid.V7.nextId()
         val readable = FakeReadable(valuesByIndex = mapOf(0 to uuid))
         readable.getUuidOrNull(0) shouldBeEqualTo uuid
     }
@@ -632,7 +633,7 @@ class ReadableExtensionsTest {
 
     @Test
     fun `getUuidOrNull은 이름 기반 UUID 값을 반환한다`() {
-        val uuid = UUID.randomUUID()
+        val uuid = Uuid.V7.nextId()
         val readable = FakeReadable(valuesByName = mapOf("id" to uuid))
         readable.getUuidOrNull("id") shouldBeEqualTo uuid
     }
@@ -645,14 +646,14 @@ class ReadableExtensionsTest {
 
     @Test
     fun `getUuid는 인덱스 기반 UUID 값을 반환한다`() {
-        val uuid = UUID.randomUUID()
+        val uuid = Uuid.V7.nextId()
         val readable = FakeReadable(valuesByIndex = mapOf(0 to uuid))
         readable.getUuid(0) shouldBeEqualTo uuid
     }
 
     @Test
     fun `getUuid는 이름 기반 UUID 값을 반환한다`() {
-        val uuid = UUID.randomUUID()
+        val uuid = Uuid.V7.nextId()
         val readable = FakeReadable(valuesByName = mapOf("uid" to uuid))
         readable.getUuid("uid") shouldBeEqualTo uuid
     }

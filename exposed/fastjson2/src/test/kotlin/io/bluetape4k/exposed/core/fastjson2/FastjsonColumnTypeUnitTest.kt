@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.core.fastjson2
 
+import io.bluetape4k.codec.Base58
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
@@ -11,7 +12,6 @@ import io.bluetape4k.support.toUtf8Bytes
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
-import java.util.UUID
 
 /**
  * [FastjsonColumnType] 및 [FastjsonBColumnType]의 직렬화/역직렬화 단위 테스트입니다.
@@ -78,7 +78,7 @@ class FastjsonColumnTypeUnitTest {
             deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
         )
         val database = Database.connect(
-            url = "jdbc:h2:mem:fastjson-literal-${UUID.randomUUID()};DB_CLOSE_DELAY=-1",
+            url = "jdbc:h2:mem:fastjson-literal-${Base58.randomString(8)};DB_CLOSE_DELAY=-1",
             driver = "org.h2.Driver",
         )
 

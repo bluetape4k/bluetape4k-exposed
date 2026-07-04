@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.jdbc.repository
 
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.exposed.core.auditable.Auditable
 import io.bluetape4k.exposed.core.auditable.AuditableIntIdTable
 import io.bluetape4k.exposed.core.auditable.AuditableUUIDTable
@@ -88,7 +89,7 @@ class AuditableJdbcRepositoryVariantTest : AbstractExposedTest() {
     // ── UUID PK 레코드 타입 ─────────────────────────────────────────────────────
 
     data class UUIDAuditableRecord(
-        val id: UUID = UUID.randomUUID(),
+        val id: UUID = Uuid.V7.nextId(),
         val name: String,
         val category: String = "general",
         override val createdBy: String = UserContext.DEFAULT_USERNAME,

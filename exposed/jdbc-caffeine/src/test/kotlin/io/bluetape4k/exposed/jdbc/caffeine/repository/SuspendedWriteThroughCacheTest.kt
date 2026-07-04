@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.jdbc.caffeine.repository
 
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
@@ -119,7 +120,7 @@ class SuspendedWriteThroughCacheTest {
                 CredentialTable.select(CredentialTable.id).map { it[CredentialTable.id].value }
             }
 
-        override suspend fun getNonExistentId(): UUID = UUID.randomUUID()
+        override suspend fun getNonExistentId(): UUID = Uuid.V7.nextId()
 
         override suspend fun createNewEntity(): CredentialRecord =
             ActorSchema.newCredentialRecord()

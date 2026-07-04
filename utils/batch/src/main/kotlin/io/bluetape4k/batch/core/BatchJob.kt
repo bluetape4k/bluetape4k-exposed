@@ -1,5 +1,6 @@
 package io.bluetape4k.batch.core
 
+import io.bluetape4k.codec.Base58
 import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchExecutionAlreadyClaimedException
 import io.bluetape4k.batch.api.BatchReport
@@ -17,7 +18,6 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.time.Instant
-import java.util.UUID
 
 /**
  * 배치 Job 실행기. 여러 [BatchStep]을 순차적으로 실행하며 재시작을 지원합니다.
@@ -75,7 +75,7 @@ class BatchJob(
      */
     suspend fun run(): BatchReport {
         val jobExecution = repository.findOrCreateJobExecution(name, params)
-        val ownerId = "${name}-${UUID.randomUUID()}"
+        val ownerId = "${name}-${Base58.randomString(8)}"
         val claimedJobExecution = repository.claimJobExecution(
             execution = jobExecution,
             ownerId = ownerId,

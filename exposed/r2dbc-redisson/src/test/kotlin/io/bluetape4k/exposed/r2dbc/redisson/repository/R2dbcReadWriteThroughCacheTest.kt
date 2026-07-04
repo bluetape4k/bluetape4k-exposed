@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.r2dbc.redisson.repository
 
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest
 import io.bluetape4k.exposed.r2dbc.redisson.domain.R2dbcUserCredentialRedissonRepository
@@ -150,7 +151,7 @@ class R2dbcReadWriteThroughCacheTest {
                     .toList()
             }
 
-        override suspend fun getNonExistentId(): UUID = UUID.randomUUID()
+        override suspend fun getNonExistentId(): UUID = Uuid.V7.nextId()
 
         override suspend fun createNewEntity(): UserCredentialsRecord = UserSchema.newUserCredentialsRecord()
 

@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.ktor
 
+import io.bluetape4k.codec.Base58
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.ktor.core.Bluetape4kKtorCoreConfig
@@ -24,7 +25,6 @@ import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import java.util.UUID
 import java.util.concurrent.Executors
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -34,7 +34,7 @@ class ExposedKtorTransactionsTest {
     fun `jdbc transaction helper uses caller supplied dispatcher and commits`() = testApplication {
         val database = newJdbcDatabase()
         val dispatcher = Executors.newSingleThreadExecutor { command ->
-            Thread(command, "ktor-jdbc-worker-${UUID.randomUUID()}")
+            Thread(command, "ktor-jdbc-worker-${Base58.randomString(8)}")
         }.asCoroutineDispatcher()
 
         try {
@@ -111,7 +111,7 @@ class ExposedKtorTransactionsTest {
     fun `r2dbc transaction helper runs suspend transaction`() = testApplication {
         val database = R2dbcDatabase.connect(
             databaseConfig = R2dbcDatabaseConfig {
-                setUrl("r2dbc:h2:mem:///ktor-tx-r2dbc-${UUID.randomUUID()};DB_CLOSE_DELAY=-1;")
+                setUrl("r2dbc:h2:mem:///ktor-tx-r2dbc-${Base58.randomString(8)};DB_CLOSE_DELAY=-1;")
             }
         )
 
@@ -135,7 +135,7 @@ class ExposedKtorTransactionsTest {
 
     private fun newJdbcDatabase(): Database =
         Database.connect(
-            url = "jdbc:h2:mem:ktor-tx-jdbc-${UUID.randomUUID()};DB_CLOSE_DELAY=-1",
+            url = "jdbc:h2:mem:ktor-tx-jdbc-${Base58.randomString(8)};DB_CLOSE_DELAY=-1",
             driver = "org.h2.Driver",
             user = "sa",
             password = "",

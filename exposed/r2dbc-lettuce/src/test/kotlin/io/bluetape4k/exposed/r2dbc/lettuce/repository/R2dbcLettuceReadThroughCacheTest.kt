@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.r2dbc.lettuce.repository
 
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.r2dbc.lettuce.AbstractR2dbcLettuceTest
 import io.bluetape4k.exposed.r2dbc.lettuce.domain.R2dbcUserCredentialLettuceRepository
@@ -131,7 +132,7 @@ class R2dbcLettuceReadThroughCacheTest {
                     .toList()
             }
 
-        override fun getNonExistentId(): UUID = UUID.randomUUID()
+        override fun getNonExistentId(): UUID = Uuid.V7.nextId()
 
         override suspend fun buildEntityForId(id: UUID): UserCredentialsRecord =
             UserSchema.newUserCredentialsRecord().copy(

@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.core
 
+import io.bluetape4k.idgenerators.uuid.Uuid as BluetapeUuid
 import kotlin.random.Random
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
@@ -25,7 +26,7 @@ class ExposedColumnSupportsTest {
         convertToLanguageType("123456789", Long::class) shouldBeEqualTo 123456789L
         convertToLanguageType(123, String::class) shouldBeEqualTo "123"
 
-        val uuid = UUID.randomUUID()
+        val uuid = BluetapeUuid.V7.nextId()
         convertToLanguageType(uuid, UUID::class) shouldBeEqualTo uuid
 
 
@@ -49,7 +50,7 @@ class ExposedColumnSupportsTest {
     fun `mapToLanguageType 는 컬럼의 language type 을 사용해 변환하고 실패 항목은 제외한다`() {
         listOf("1", "2", "oops").mapToLanguageType(TypedTable.intCol) shouldBeEqualTo listOf(1, 2)
 
-        val uuid = UUID.randomUUID()
+        val uuid = BluetapeUuid.V7.nextId()
         listOf(uuid.toString(), "not-uuid").mapToLanguageType(TypedTable.uuidCol) shouldBeEqualTo listOf(uuid)
     }
 }

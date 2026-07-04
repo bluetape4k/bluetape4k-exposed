@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.ktor
 
+import io.bluetape4k.codec.Base58
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
@@ -30,7 +31,6 @@ import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.sql.SQLException
-import java.util.UUID
 import java.util.concurrent.Executors
 import kotlin.time.Duration.Companion.seconds
 
@@ -105,7 +105,7 @@ class Bluetape4kExposedKtorTest {
     @Test
     fun `jdbc health and readiness routes expose allowlisted details and metrics`() = testApplication {
         val database = Database.connect(
-            url = "jdbc:h2:mem:ktor-jdbc-${UUID.randomUUID()};DB_CLOSE_DELAY=-1",
+            url = "jdbc:h2:mem:ktor-jdbc-${Base58.randomString(8)};DB_CLOSE_DELAY=-1",
             driver = "org.h2.Driver",
             user = "sa",
             password = "",
@@ -159,7 +159,7 @@ class Bluetape4kExposedKtorTest {
     fun `r2dbc readiness route exposes allowlisted details`() = testApplication {
         val database = R2dbcDatabase.connect(
             databaseConfig = R2dbcDatabaseConfig {
-                setUrl("r2dbc:h2:mem:///ktor-r2dbc-${UUID.randomUUID()};DB_CLOSE_DELAY=-1;")
+                setUrl("r2dbc:h2:mem:///ktor-r2dbc-${Base58.randomString(8)};DB_CLOSE_DELAY=-1;")
             }
         )
 

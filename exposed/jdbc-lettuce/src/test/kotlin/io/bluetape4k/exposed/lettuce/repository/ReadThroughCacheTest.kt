@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.lettuce.repository
 
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest
 import io.bluetape4k.exposed.lettuce.domain.UserCredentialRepository
 import io.bluetape4k.exposed.lettuce.domain.UserRepository
@@ -102,7 +103,7 @@ class ReadThroughCacheTest {
                     .map { it[UserCredentialsTable.id].value }
             }
 
-        override fun getNonExistentId(): UUID = UUID.randomUUID()
+        override fun getNonExistentId(): UUID = Uuid.V7.nextId()
         override fun buildEntityForId(id: UUID) = UserSchema.newUserCredentialsRecord().copy(id = id)
     }
 
