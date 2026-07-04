@@ -14,11 +14,11 @@ import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSuspendedJdbcCaffeineRepo
 import io.bluetape4k.exposed.jdbc.caffeine.domain.CredentialSuspendedJdbcCaffeineRepository
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.junit5.coroutines.SuspendedJobTester
 import io.bluetape4k.logging.KLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -48,6 +48,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.Instant
+import java.util.Collections
 import kotlin.coroutines.cancellation.CancellationException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -72,11 +73,19 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
     fun `get - concurrent suspended cache misses run one loader per key`() = runSuspendIO {
         val repository = CountingSuspendedActorRepository("jdbc:caffeine:s-atomic:get")
 
-        val results = List(8) {
-            async(Dispatchers.Default) {
-                repository.get(1L)
-            }
-        }.awaitAll()
+        val results = Collections.synchronizedList(mutableListOf<ActorRecord?>())
+
+        SuspendedJobTester()
+            .workers(8)
+            .rounds(1)
+            .addAll(
+                List(8) {
+                    suspend {
+                        results += repository.get(1L)
+                    }
+                }
+            )
+            .run()
 
         results.toSet() shouldHaveSize 1
         repository.singleLoadCount.get() shouldBeEqualTo 1
@@ -87,11 +96,19 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
         val repository = CountingSuspendedActorRepository("jdbc:caffeine:s-atomic:get-all")
         val ids = listOf(1L, 2L, 3L)
 
-        val results = List(8) {
-            async(Dispatchers.Default) {
-                repository.getAll(ids)
-            }
-        }.awaitAll()
+        val results = Collections.synchronizedList(mutableListOf<Map<Long, ActorRecord>>())
+
+        SuspendedJobTester()
+            .workers(8)
+            .rounds(1)
+            .addAll(
+                List(8) {
+                    suspend {
+                        results += repository.getAll(ids)
+                    }
+                }
+            )
+            .run()
 
         results.forEach { result ->
             result.keys shouldBeEqualTo ids.toSet()

@@ -15,6 +15,7 @@ import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.withCredentialTabl
 import io.bluetape4k.exposed.jdbc.caffeine.domain.CredentialJdbcCaffeineRepository
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.junit5.concurrency.MultithreadingTester
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
@@ -46,7 +47,6 @@ import java.util.*
 import kotlinx.coroutines.Job
 import kotlin.coroutines.cancellation.CancellationException
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -64,59 +64,49 @@ class JdbcCaffeineRepositoryExtraTest {
     companion object: KLogging()
 
     @Test
-    fun `get - concurrent cache misses run one loader per key`() {
+    fun `get - MultithreadingTester cache misses run one loader per key`() {
         val repository = CountingActorRepository("jdbc:caffeine:atomic:get")
-        val executor = Executors.newFixedThreadPool(8)
-        val ready = CountDownLatch(8)
-        val start = CountDownLatch(1)
+        val results = Collections.synchronizedList(mutableListOf<ActorRecord?>())
 
-        try {
-            val futures = List(8) {
-                executor.submit<ActorRecord?> {
-                    ready.countDown()
-                    start.await()
-                    repository.get(1L)
+        MultithreadingTester()
+            .workers(8)
+            .rounds(1)
+            .addAll(
+                List(8) {
+                    {
+                        results += repository.get(1L)
+                    }
                 }
-            }
+            )
+            .run()
 
-            ready.await(5, TimeUnit.SECONDS).shouldBeTrue()
-            start.countDown()
-
-            futures.map { it.get(5, TimeUnit.SECONDS) }.toSet() shouldHaveSize 1
-            repository.singleLoadCount.get() shouldBeEqualTo 1
-        } finally {
-            executor.shutdownNow()
-        }
+        results.toSet() shouldHaveSize 1
+        repository.singleLoadCount.get() shouldBeEqualTo 1
     }
 
     @Test
-    fun `getAll - concurrent cache misses run one loader per key`() {
+    fun `getAll - MultithreadingTester cache misses run one loader per key`() {
         val repository = CountingActorRepository("jdbc:caffeine:atomic:get-all")
-        val executor = Executors.newFixedThreadPool(8)
-        val ready = CountDownLatch(8)
-        val start = CountDownLatch(1)
         val ids = listOf(1L, 2L, 3L)
+        val results = Collections.synchronizedList(mutableListOf<Map<Long, ActorRecord>>())
 
-        try {
-            val futures = List(8) {
-                executor.submit<Map<Long, ActorRecord>> {
-                    ready.countDown()
-                    start.await()
-                    repository.getAll(ids)
+        MultithreadingTester()
+            .workers(8)
+            .rounds(1)
+            .addAll(
+                List(8) {
+                    {
+                        results += repository.getAll(ids)
+                    }
                 }
-            }
+            )
+            .run()
 
-            ready.await(5, TimeUnit.SECONDS).shouldBeTrue()
-            start.countDown()
-
-            futures.forEach { future ->
-                future.get(5, TimeUnit.SECONDS).keys shouldBeEqualTo ids.toSet()
-            }
-            repository.singleLoadCount.get() shouldBeEqualTo ids.size
-            repository.bulkLoadCount.get() shouldBeEqualTo 0
-        } finally {
-            executor.shutdownNow()
+        results.forEach { result ->
+            result.keys shouldBeEqualTo ids.toSet()
         }
+        repository.singleLoadCount.get() shouldBeEqualTo ids.size
+        repository.bulkLoadCount.get() shouldBeEqualTo 0
     }
 
     private class CountingActorRepository(
