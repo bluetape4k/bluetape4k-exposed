@@ -9,10 +9,8 @@ import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.ActorRecord
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.ActorTable
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.withActorTable
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.junit5.coroutines.SuspendedJobTester
 import io.bluetape4k.logging.coroutines.KLoggingChannel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -38,6 +36,7 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.util.Collections
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 
@@ -68,11 +67,19 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
     fun `get - concurrent cache misses run one async loader per key`() = runSuspendIO {
         val repository = CountingActorRepository("r2dbc:caffeine:atomic:get")
 
-        val results = List(8) {
-            async(Dispatchers.Default) {
-                repository.get(1L)
-            }
-        }.awaitAll()
+        val results = Collections.synchronizedList(mutableListOf<ActorRecord?>())
+
+        SuspendedJobTester()
+            .workers(8)
+            .rounds(1)
+            .addAll(
+                List(8) {
+                    suspend {
+                        results += repository.get(1L)
+                    }
+                }
+            )
+            .run()
 
         results.toSet() shouldHaveSize 1
         repository.singleLoadCount.get() shouldBeEqualTo 1
@@ -83,11 +90,19 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
         val repository = CountingActorRepository("r2dbc:caffeine:atomic:get-all")
         val ids = listOf(1L, 2L, 3L)
 
-        val results = List(8) {
-            async(Dispatchers.Default) {
-                repository.getAll(ids)
-            }
-        }.awaitAll()
+        val results = Collections.synchronizedList(mutableListOf<Map<Long, ActorRecord>>())
+
+        SuspendedJobTester()
+            .workers(8)
+            .rounds(1)
+            .addAll(
+                List(8) {
+                    suspend {
+                        results += repository.getAll(ids)
+                    }
+                }
+            )
+            .run()
 
         results.forEach { result ->
             result.keys shouldBeEqualTo ids.toSet()

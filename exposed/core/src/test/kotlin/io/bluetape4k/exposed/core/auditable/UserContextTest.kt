@@ -4,14 +4,13 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.junit5.concurrency.MultithreadingTester
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledForJreRange
 import org.junit.jupiter.api.condition.JRE
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -148,28 +147,25 @@ class UserContextTest {
     fun `서로 다른 스레드는 독립적인 UserContext 값을 가진다`() {
         val user1Seen = AtomicReference<String?>(null)
         val user2Seen = AtomicReference<String?>(null)
-        val latch = CountDownLatch(2)
 
-        val executor = Executors.newFixedThreadPool(2)
-        try {
-            executor.submit {
-                UserContext.withThreadLocalUser("thread1User") {
-                    Thread.sleep(50) // 두 스레드가 겹치도록 일부러 대기
-                    user1Seen.set(UserContext.getCurrentUser())
-                }
-                latch.countDown()
-            }
-            executor.submit {
-                UserContext.withThreadLocalUser("thread2User") {
-                    Thread.sleep(50)
-                    user2Seen.set(UserContext.getCurrentUser())
-                }
-                latch.countDown()
-            }
-            latch.await()
-        } finally {
-            executor.shutdown()
-        }
+        MultithreadingTester()
+            .workers(2)
+            .rounds(1)
+            .addAll(
+                listOf(
+                    {
+                        UserContext.withThreadLocalUser("thread1User") {
+                            user1Seen.set(UserContext.getCurrentUser())
+                        }
+                    },
+                    {
+                        UserContext.withThreadLocalUser("thread2User") {
+                            user2Seen.set(UserContext.getCurrentUser())
+                        }
+                    },
+                )
+            )
+            .run()
 
         user1Seen.get() shouldBeEqualTo "thread1User"
         user2Seen.get() shouldBeEqualTo "thread2User"
