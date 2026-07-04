@@ -27,6 +27,7 @@ import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.experimental.suspendedTransactionAsync
 import java.io.Serializable
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Exposed JDBC + Lettuce Redis 캐시를 결합한 suspend(코루틴) 기반 추상 레포지토리.
@@ -293,12 +294,34 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
      * Virtual Thread에서 호출될 수 있으므로, monitor lock을 사용하지 않는다.
      */
     override fun close() {
+        closeNearCacheSafely()
+        closeCacheSafely()
+    }
+
+    protected open fun closeNearCacheBlocking() {
         // nearCache.close()는 suspend 함수이므로 AutoCloseable 경계에서만 runBlocking 사용
-        nearCache?.let { nc ->
-            runCatching { runBlocking { nc.close() } }
-                .onFailure { e -> log.warn(e) { "nearCache 종료 중 오류 발생" } }
+        nearCache?.let { nc -> runBlocking { nc.close() } }
+    }
+
+    protected open fun closeCacheResource() {
+        cache.close()
+    }
+
+    private fun closeNearCacheSafely() {
+        try {
+            closeNearCacheBlocking()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.warn(e) { "nearCache 종료 중 오류 발생" }
         }
-        runCatching { cache.close() }
-            .onFailure { e -> log.warn(e) { "cache 종료 중 오류 발생" } }
+    }
+
+    private fun closeCacheSafely() {
+        try {
+            closeCacheResource()
+        } catch (e: Exception) {
+            log.warn(e) { "cache 종료 중 오류 발생" }
+        }
     }
 }

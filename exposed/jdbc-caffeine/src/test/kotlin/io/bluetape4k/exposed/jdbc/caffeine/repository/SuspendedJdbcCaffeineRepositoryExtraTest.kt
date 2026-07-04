@@ -100,6 +100,15 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
         repository.bulkLoadCount.get() shouldBeEqualTo 0
     }
 
+    @Test
+    fun `close cancels scope when cache invalidate fails`() {
+        val repository = CloseProbeSuspendedJdbcCaffeineRepository()
+
+        repository.close()
+
+        repository.scopeCancelled.shouldBeTrue()
+    }
+
     private class CountingSuspendedActorRepository(
         keyPrefix: String,
     ): AbstractSuspendedJdbcCaffeineRepository<Long, ActorRecord>(
@@ -129,6 +138,34 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
             bulkLoadCount.incrementAndGet()
             delay(100)
             return ids.map { ActorSchema.newActorRecord().withId(it) }
+        }
+    }
+
+    private class CloseProbeSuspendedJdbcCaffeineRepository:
+        AbstractSuspendedJdbcCaffeineRepository<Long, ActorRecord>(
+            LocalCacheConfig(
+                keyPrefix = "jdbc:caffeine:s-close-probe",
+                writeMode = CacheWriteMode.READ_ONLY
+            )
+        ) {
+        var scopeCancelled: Boolean = false
+
+        override val table: IdTable<Long> = ActorTable
+
+        override fun ResultRow.toEntity(): ActorRecord = error("not used")
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) = Unit
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) = Unit
+
+        override fun extractId(entity: ActorRecord): Long = entity.id
+
+        override fun invalidateCacheOnClose() {
+            throw IllegalStateException("planned cache invalidate failure")
+        }
+
+        override fun cancelScopeOnClose() {
+            scopeCancelled = true
         }
     }
 

@@ -45,6 +45,7 @@ import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.*
@@ -64,6 +65,43 @@ import kotlin.coroutines.CoroutineContext
 class WriteBehindCacheTest {
 
     companion object: KLoggingChannel()
+
+    @Test
+    fun `close cancels scope when cache invalidate fails`() {
+        val repository = CloseProbeR2dbcCaffeineRepository()
+
+        repository.close()
+
+        repository.scopeCancelled.shouldBeTrue()
+    }
+
+    private class CloseProbeR2dbcCaffeineRepository:
+        AbstractR2dbcCaffeineRepository<Long, ActorRecord>(
+            LocalCacheConfig(
+                keyPrefix = "r2dbc:caffeine:close-probe",
+                writeMode = CacheWriteMode.READ_ONLY
+            )
+        ) {
+        var scopeCancelled: Boolean = false
+
+        override val table: IdTable<Long> = ActorTable
+
+        override suspend fun ResultRow.toEntity(): ActorRecord = error("not used")
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) = Unit
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) = Unit
+
+        override fun extractId(entity: ActorRecord): Long = entity.id
+
+        override fun invalidateCacheOnClose() {
+            throw IllegalStateException("planned cache invalidate failure")
+        }
+
+        override fun cancelScopeOnClose() {
+            scopeCancelled = true
+        }
+    }
 
     // -------------------------------------------------------------------------
     // AutoIncrement Long ID — ActorTable
