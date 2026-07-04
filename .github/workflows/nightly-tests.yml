@@ -1195,6 +1195,47 @@ jobs:
           path: '**/build/reports/kover/'
           retention-days: 14
 
+  # exposed-druid (query-only Avatica JDBC; smoke is env-gated)
+  test-druid:
+    name: Test / exposed-druid
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '3 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Test exposed-druid
+        run: ./gradlew :bluetape4k-exposed-druid:test --no-configuration-cache --no-daemon --no-parallel
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
+      - name: Generate Kover XML report
+        if: always()
+        run: ./gradlew :bluetape4k-exposed-druid:koverXmlReport --no-configuration-cache --no-daemon --no-parallel
+        continue-on-error: true
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-druid
+          path: '**/build/test-results/test/*.xml'
+          retention-days: 14
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-druid
+          path: '**/build/reports/kover/'
+          retention-days: 14
+
   # exposed-clickhouse (Testcontainers)
   test-clickhouse:
     name: Test / exposed-clickhouse
@@ -1681,6 +1722,7 @@ jobs:
       - test-spring-boot
       - test-spring-modulith
       - test-duckdb
+      - test-druid
       - test-cache
       - test-jdbc-caffeine
       - test-r2dbc-caffeine
@@ -1743,6 +1785,7 @@ jobs:
       - test-spring-boot
       - test-spring-modulith
       - test-duckdb
+      - test-druid
       - test-cache
       - test-jdbc-caffeine
       - test-r2dbc-caffeine

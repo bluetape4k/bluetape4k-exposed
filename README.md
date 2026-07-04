@@ -72,6 +72,7 @@ auto-configuration only where the application data path needs them.
 | `exposed-starrocks` | StarRocks local-first OLAP connector support |
 | `exposed-cockroachdb` | CockroachDB PostgreSQL-wire smoke support |
 | `exposed-duckdb` | DuckDB embedded analytics support |
+| `exposed-druid` | Apache Druid query-only Avatica JDBC experiment |
 | `exposed-timefold-solver-persistence` | Timefold Solver persistence integration |
 | `exposed-ktor` | Ktor integration for explicit Exposed JDBC/R2DBC transactions, readiness routes, and status pages |
 | `exposed-spring-boot-jdbc` | Spring Boot 4.x JDBC auto-configuration |

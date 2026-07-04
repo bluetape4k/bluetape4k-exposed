@@ -940,6 +940,7 @@ flyway-core = { module = "org.flywaydb:flyway-core", version = "11.20.3" }  # ht
 clickhouse-jdbc = { module = "com.clickhouse:clickhouse-jdbc", version = "0.9.8" }  # https://mvnrepository.com/artifact/com.clickhouse/clickhouse-jdbc
 duckdb-jdbc = { module = "org.duckdb:duckdb_jdbc", version = "1.1.3" }  # https://mvnrepository.com/artifact/org.duckdb/duckdb_jdbc
 trino-jdbc = { module = "io.trino:trino-jdbc", version = "480" }  # https://mvnrepository.com/artifact/io.trino/trino-jdbc
+avatica-core = { module = "org.apache.calcite.avatica:avatica-core", version = "1.27.0" }  # https://mvnrepository.com/artifact/org.apache.calcite.avatica/avatica-core
 starrocks-connector-j = { module = "com.starrocks:starrocks-connector-j", version = "1.1.1" }  # https://central.sonatype.com/artifact/com.starrocks/starrocks-connector-j/1.1.1
 oracle-ojdbc8 = { module = "com.oracle.ojdbc:ojdbc8", version = "19.3.0.0" }  # https://mvnrepository.com/artifact/com.oracle.ojdbc/ojdbc8
 
