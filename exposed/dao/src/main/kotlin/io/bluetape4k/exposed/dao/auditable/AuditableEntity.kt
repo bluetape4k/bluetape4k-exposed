@@ -72,7 +72,7 @@ abstract class AuditableEntity<ID: Any>(id: EntityID<ID>): Entity<ID>(id), Audit
      *
      * ## UserContext 안전성
      * [UserContext.getCurrentUser()]는 `ScopedValue` → `ThreadLocal` → `"system"` 순으로 폴백하므로
-     * 항상 non-null 문자열을 반환합니다. null 반환 가능성이 없어 `!!` 없이 안전하게 사용 가능합니다.
+     * 항상 non-null 문자열을 반환합니다. null 반환 가능성이 없어 force unwrap 없이 안전하게 사용 가능합니다.
      *
      * - 신규 엔티티(`createdAt == null`): `createdBy`를 [UserContext.getCurrentUser()]로 설정합니다.
      *   `createdAt`은 [io.bluetape4k.exposed.core.auditable.AuditableIdTable]의

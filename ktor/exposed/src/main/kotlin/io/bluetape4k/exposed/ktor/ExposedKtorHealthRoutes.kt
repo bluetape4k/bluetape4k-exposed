@@ -49,9 +49,12 @@ fun Route.bluetape4kExposedHealthRoutes(
     get(readinessPath) {
         val details = linkedMapOf<String, String>()
         jdbcDatabase?.let { db ->
+            val blockingDispatcher = requireNotNull(jdbcBlockingDispatcher) {
+                "jdbcBlockingDispatcher is required for JDBC readiness routes."
+            }
             details[JDBC_BACKEND] = probeJdbcReadiness(
                 db = db,
-                blockingDispatcher = jdbcBlockingDispatcher!!,
+                blockingDispatcher = blockingDispatcher,
                 readinessProbeTimeout = readinessProbeTimeout,
                 jdbcQueryTimeout = jdbcQueryTimeout,
                 meterRegistry = meterRegistry,

@@ -108,7 +108,7 @@ inline fun <reified T: Any> Table.fastjsonb(
         name,
         serialize = { serializer.serializeAsString(it) },
         deserialize = {
-            // `!!` 대신 requireNotNull을 사용: JSONB 역직렬화 결과가 null이면 DB 값과 매핑 타입 간
+            // force unwrap 대신 requireNotNull을 사용: JSONB 역직렬화 결과가 null이면 DB 값과 매핑 타입 간
             // 불일치이므로, 원인 메시지가 있는 IllegalArgumentException을 던져
             // NullPointerException보다 명확한 오류 진단을 제공합니다.
             requireNotNull(serializer.deserializeFromString<T>(it)) {

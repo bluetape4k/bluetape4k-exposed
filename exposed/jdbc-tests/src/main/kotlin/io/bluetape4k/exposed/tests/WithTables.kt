@@ -51,7 +51,7 @@ fun withTables(
                     }
                 } catch (ex: Throwable) {
                     logger.error(ex) { "Drop Tables 에서 예외가 발생했습니다. 삭제할 테이블: ${tables.joinToString { it.tableName }}" }
-                    val database = testDB.db!!
+                    val database = checkNotNull(testDB.db) { "testDB.db must be initialized for $testDB" }
                     inTopLevelTransaction(
                         db = database,
                         transactionIsolation = database.transactionManager.defaultIsolationLevel

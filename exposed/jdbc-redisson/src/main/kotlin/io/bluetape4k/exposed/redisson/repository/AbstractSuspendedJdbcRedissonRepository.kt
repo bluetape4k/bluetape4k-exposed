@@ -436,8 +436,7 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
                 .getAllAsync(chunk.toSet())
                 .await()
                 .entries
-                .filter { it.value != null }
-                .map { it.key to it.value!! }
+                .mapNotNull { (key, value) -> value?.let { key to it } }
         }.toMap()
     }
 }
