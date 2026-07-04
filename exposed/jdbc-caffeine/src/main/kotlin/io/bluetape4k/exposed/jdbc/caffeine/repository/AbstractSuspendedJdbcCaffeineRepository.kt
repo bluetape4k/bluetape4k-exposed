@@ -373,8 +373,24 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
             writeBehindQueue.close()
             awaitWriteBehindJobCompletion()
         }
+        invalidateCacheOnCloseSafely()
+        cancelScopeOnClose()
+    }
+
+    protected open fun invalidateCacheOnClose() {
         cache.invalidateAll()
+    }
+
+    protected open fun cancelScopeOnClose() {
         scope.cancel()
+    }
+
+    private fun invalidateCacheOnCloseSafely() {
+        try {
+            invalidateCacheOnClose()
+        } catch (e: Exception) {
+            log.warn(e) { "cache invalidateAll 중 오류 발생" }
+        }
     }
 
     private fun awaitWriteBehindJobCompletion() {

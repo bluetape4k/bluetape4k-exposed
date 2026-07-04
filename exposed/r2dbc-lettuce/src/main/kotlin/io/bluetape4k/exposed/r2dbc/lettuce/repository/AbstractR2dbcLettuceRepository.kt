@@ -7,6 +7,8 @@ import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.r2dbc.lettuce.map.ExposedR2dbcLettuceSuspendedLoadedMap
 import io.bluetape4k.exposed.r2dbc.lettuce.map.R2dbcExposedEntityMapLoader
 import io.bluetape4k.exposed.r2dbc.lettuce.map.R2dbcExposedEntityMapWriter
+import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.warn
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.redis.lettuce.map.WriteMode
 import io.lettuce.core.RedisClient
@@ -50,6 +52,8 @@ abstract class AbstractR2dbcLettuceRepository<ID: Any, E: Serializable>(
     override val config: LettuceCacheConfig = LettuceCacheConfig.READ_WRITE_THROUGH,
     private val valueCodec: RedisCodec<String, E> = ExposedR2dbcLettuceCodecs.requireExplicit(),
 ): R2dbcLettuceRepository<ID, E> {
+    companion object: KLoggingChannel()
+
     init {
         ExposedR2dbcLettuceCodecs.requireConfigured(valueCodec)
     }
@@ -282,7 +286,33 @@ abstract class AbstractR2dbcLettuceRepository<ID: Any, E: Serializable>(
     }
 
     override fun close() {
+        closeNearCacheSafely()
+        closeCacheSafely()
+    }
+
+    protected open fun closeNearCacheBlocking() {
         nearCache?.let { runBlocking { it.close() } }
+    }
+
+    protected open fun closeCacheResource() {
         cache.close()
+    }
+
+    private fun closeNearCacheSafely() {
+        try {
+            closeNearCacheBlocking()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.warn(e) { "nearCache 종료 중 오류 발생" }
+        }
+    }
+
+    private fun closeCacheSafely() {
+        try {
+            closeCacheResource()
+        } catch (e: Exception) {
+            log.warn(e) { "cache 종료 중 오류 발생" }
+        }
     }
 }
