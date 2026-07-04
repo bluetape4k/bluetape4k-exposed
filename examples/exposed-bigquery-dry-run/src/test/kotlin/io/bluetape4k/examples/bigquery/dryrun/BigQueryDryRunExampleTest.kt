@@ -10,25 +10,30 @@ import io.bluetape4k.exposed.bigquery.BigQueryQueryOptions
 import io.bluetape4k.exposed.bigquery.BigQueryQueryPriority
 import io.bluetape4k.exposed.bigquery.BigQueryContext
 import io.mockk.every
+import io.mockk.clearMocks
 import io.mockk.mockk
 import io.mockk.slot
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class BigQueryDryRunExampleTest {
 
+    private val queryCall = mockk<Jobs.Query>(relaxed = true)
+    private val jobs = mockk<Jobs>(relaxed = true)
+    private val bigquery = mockk<Bigquery>(relaxed = true)
+
+    @BeforeEach
+    fun setUpMocks() {
+        clearMocks(queryCall, jobs, bigquery)
+    }
+
     @Test
     fun `validate raw SQL with BigQuery dry run options`() {
         val request = slot<QueryRequest>()
-        val queryCall = mockk<Jobs.Query>(relaxed = true) {
-            every { execute() } returns QueryResponse().setJobComplete(true)
-        }
-        val jobs = mockk<Jobs>(relaxed = true) {
-            every { query(any(), capture(request)) } returns queryCall
-        }
-        val bigquery = mockk<Bigquery>(relaxed = true) {
-            every { jobs() } returns jobs
-        }
+        every { queryCall.execute() } returns QueryResponse().setJobComplete(true)
+        every { jobs.query(any(), capture(request)) } returns queryCall
+        every { bigquery.jobs() } returns jobs
         val sqlGenDb = Database.connect(
             url = "jdbc:h2:mem:bq_example;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
             driver = "org.h2.Driver",

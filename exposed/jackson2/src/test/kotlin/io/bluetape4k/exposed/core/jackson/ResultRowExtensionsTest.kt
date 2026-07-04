@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.bluetape4k.assertions.shouldBeEqualTo
@@ -15,6 +16,7 @@ import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -22,11 +24,19 @@ import io.bluetape4k.assertions.assertFailsWith
 
 class ResultRowExtensionsTest: AbstractExposedTest() {
 
+    private val expr = mockk<Expression<Any?>>()
+    private val row = mockk<ResultRow>()
+
     private data class Payload(val user: JacksonSchema.User, val active: Boolean)
 
     private object JsonTextTable: Table("jackson_result_row_test") {
         val jsonText = text("json_text")
         val nullableText = text("nullable_text").nullable()
+    }
+
+    @BeforeEach
+    fun setUpMocks() {
+        clearMocks(expr, row)
     }
 
     @ParameterizedTest
@@ -71,8 +81,6 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
         val payload = Payload(JacksonSchema.User("bytes-user", "B"), false)
         val jsonBytes = DefaultJacksonSerializer.serialize(payload)
 
-        val expr = mockk<Expression<Any?>>()
-        val row = mockk<ResultRow>()
         every { row.getOrNull(expr) } returns jsonBytes
 
         row.getJacksonOrNull<Payload>(expr) shouldBeEqualTo payload
@@ -82,8 +90,6 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
     fun `ResultRow getJacksonOrNull은 이미 T 타입인 값을 그대로 반환한다`() {
         val payload = Payload(JacksonSchema.User("direct-user", "C"), true)
 
-        val expr = mockk<Expression<Any?>>()
-        val row = mockk<ResultRow>()
         every { row.getOrNull(expr) } returns payload
 
         row.getJacksonOrNull<Payload>(expr) shouldBeEqualTo payload
@@ -97,8 +103,6 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
             override fun toString() = jsonText
         }
 
-        val expr = mockk<Expression<Any?>>()
-        val row = mockk<ResultRow>()
         every { row.getOrNull(expr) } returns customObj
 
         row.getJacksonOrNull<Payload>(expr) shouldBeEqualTo payload
@@ -106,8 +110,6 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
 
     @Test
     fun `ResultRow getJacksonOrNull은 null 값에서 null을 반환한다`() {
-        val expr = mockk<Expression<Any?>>()
-        val row = mockk<ResultRow>()
         every { row.getOrNull(expr) } returns null
 
         row.getJacksonOrNull<Payload>(expr).shouldBeNull()
@@ -117,8 +119,6 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
     fun `ResultRow getJsonNodeOrNull은 ByteArray 값을 파싱한다`() {
         val jsonBytes = """{"x":123}""".toByteArray()
 
-        val expr = mockk<Expression<Any?>>()
-        val row = mockk<ResultRow>()
         every { row.getOrNull(expr) } returns jsonBytes
 
         val node = row.getJsonNodeOrNull(expr)
@@ -131,8 +131,6 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
         val mapper = ObjectMapper()
         val jsonNode: JsonNode = mapper.readTree("""{"y":42}""")
 
-        val expr = mockk<Expression<Any?>>()
-        val row = mockk<ResultRow>()
         every { row.getOrNull(expr) } returns jsonNode
 
         row.getJsonNodeOrNull(expr) shouldBeEqualTo jsonNode
@@ -145,8 +143,6 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
             override fun toString() = jsonText
         }
 
-        val expr = mockk<Expression<Any?>>()
-        val row = mockk<ResultRow>()
         every { row.getOrNull(expr) } returns customObj
 
         val node = row.getJsonNodeOrNull(expr)
@@ -156,8 +152,6 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
 
     @Test
     fun `ResultRow getJsonNodeOrNull은 null 값에서 null을 반환한다`() {
-        val expr = mockk<Expression<Any?>>()
-        val row = mockk<ResultRow>()
         every { row.getOrNull(expr) } returns null
 
         row.getJsonNodeOrNull(expr).shouldBeNull()
@@ -165,8 +159,6 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
 
     @Test
     fun `ResultRow getJackson은 null 값에서 IllegalStateException을 던진다`() {
-        val expr = mockk<Expression<Any?>>()
-        val row = mockk<ResultRow>()
         every { row.getOrNull(expr) } returns null
 
         assertFailsWith<IllegalStateException> {
@@ -176,8 +168,6 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
 
     @Test
     fun `ResultRow getJsonNode은 null 값에서 IllegalStateException을 던진다`() {
-        val expr = mockk<Expression<Any?>>()
-        val row = mockk<ResultRow>()
         every { row.getOrNull(expr) } returns null
 
         assertFailsWith<IllegalStateException> {
