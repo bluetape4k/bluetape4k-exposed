@@ -71,6 +71,7 @@ Column codec, 데이터베이스별 helper, Spring Boot 4 자동 설정을 더�
 | `exposed-starrocks` | StarRocks local-first OLAP connector 지원 |
 | `exposed-cockroachdb` | CockroachDB PostgreSQL-wire smoke 지원 |
 | `exposed-duckdb` | DuckDB embedded analytics 지원 |
+| `exposed-druid` | Apache Druid query-only Avatica JDBC 실험 |
 | `exposed-timefold-solver-persistence` | Timefold Solver persistence 통합 |
 | `exposed-ktor` | 명시적 Exposed JDBC/R2DBC 트랜잭션, readiness route, status page용 Ktor 통합 |
 | `exposed-spring-boot-jdbc` | Spring Boot 4.x JDBC 자동 설정 |

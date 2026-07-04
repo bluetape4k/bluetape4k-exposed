@@ -42,6 +42,7 @@ exposed/
   starrocks/
   cockroachdb/
   duckdb/
+  druid/
   timefold-solver-persistence/
   bom/
 utils/
