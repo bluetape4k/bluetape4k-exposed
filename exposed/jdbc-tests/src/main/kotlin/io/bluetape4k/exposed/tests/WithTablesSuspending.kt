@@ -49,7 +49,7 @@ suspend fun withTablesSuspending(
                     commit()
                 } catch (ex: Throwable) {
                     logger.error(ex) { "Fail to drop tables, ${tables.joinToString { it.tableName }}" }
-                    val database = testDB.db!!
+                    val database = checkNotNull(testDB.db) { "testDB.db must be initialized for $testDB" }
                     inTopLevelTransaction(
                         db = database,
                         transactionIsolation = database.transactionManager.defaultIsolationLevel

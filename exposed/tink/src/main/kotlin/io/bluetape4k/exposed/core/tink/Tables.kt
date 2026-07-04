@@ -74,7 +74,7 @@ fun Table.tinkAeadVarChar(
  * }
  * val id = T1.insertAndGetId { it[data] = "민감한 데이터".toByteArray() }
  * val row = T1.selectAll().where { T1.id eq id }.single()
- * // row[T1.data]!!.toString(Charsets.UTF_8) == "민감한 데이터"
+ * // requireNotNull(row[T1.data]).toString(Charsets.UTF_8) == "민감한 데이터"
  * ```
  *
  * @param name 컬럼명입니다. blank 문자열은 허용되지 않습니다.
@@ -116,7 +116,7 @@ fun Table.tinkAeadBinary(
  * }
  * val id = T1.insertAndGetId { it[data] = "민감한 데이터".toByteArray() }
  * val row = T1.selectAll().where { T1.id eq id }.single()
- * // row[T1.data]!!.toString(Charsets.UTF_8) == "민감한 데이터"
+ * // requireNotNull(row[T1.data]).toString(Charsets.UTF_8) == "민감한 데이터"
  * ```
  *
  * @param name 컬럼명입니다. blank 문자열은 허용되지 않습니다.
@@ -248,7 +248,7 @@ fun Table.tinkDaeadBinary(
  * val bytes = "검색가능한 데이터".toByteArray()
  * val id = T1.insertAndGetId { it[data] = bytes }
  * val row = T1.selectAll().where { T1.id eq id }.single()
- * // row[T1.data]!!.toString(Charsets.UTF_8) == "검색가능한 데이터"
+ * // requireNotNull(row[T1.data]).toString(Charsets.UTF_8) == "검색가능한 데이터"
  * ```
  *
  * @param name 컬럼명입니다. blank 문자열은 허용되지 않습니다.

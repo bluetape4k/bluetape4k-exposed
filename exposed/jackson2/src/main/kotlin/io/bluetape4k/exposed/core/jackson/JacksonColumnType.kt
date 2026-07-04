@@ -150,7 +150,7 @@ inline fun <reified T: Any> Table.jackson(
     jackson(
         name,
         serialize = { jacksonSerializer.serializeAsString(it) },
-        // WHY: `!!` 대신 requireNotNull을 사용하는 이유 —
+        // WHY: force unwrap 대신 requireNotNull을 사용하는 이유 —
         //   ① null 반환은 JSON 구조 불일치 또는 타입 매핑 실패를 의미하므로 NullPointerException보다
         //      IllegalArgumentException이 원인을 더 명확하게 드러냅니다.
         //   ② 타입명과 원본 JSON을 메시지에 포함해 디버깅 시 즉시 원인을 파악할 수 있습니다.

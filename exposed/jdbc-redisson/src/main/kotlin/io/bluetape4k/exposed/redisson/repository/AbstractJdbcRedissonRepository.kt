@@ -413,8 +413,7 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
             log.debug { "캐시에서 ${chunk.size}개의 엔티티를 가져옵니다. chunk=$chunk" }
             @Suppress("UNCHECKED_CAST")
             cache.getAll(chunk.toSet()).entries
-                .filter { it.value != null }
-                .map { it.key to it.value!! }
+                .mapNotNull { (key, value) -> value?.let { key to it } }
         }.toMap()
     }
 }

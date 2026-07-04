@@ -26,7 +26,7 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
  *     batchSize = 2,
  *     toEntity = { toLoaderEntity() },
  * )
- * val ids = loader.loadAllKeys()!!.toList()
+ * val ids = requireNotNull(loader.loadAllKeys()).toList()
  * // ids.size == 3
  * ```
  *

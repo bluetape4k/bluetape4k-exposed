@@ -69,7 +69,7 @@ class ExposedEntityMapWriter<ID: Any, E: Any>(
 
         existingIds.forEach { id ->
             // WHY: existingIds는 DB에서 map.keys를 기준으로 조회된 ID 집합이므로
-            //      map에 반드시 해당 키가 존재한다. !! 연산자 대신 requireNotNull을 사용해
+            //      map에 반드시 해당 키가 존재한다. force unwrap 대신 requireNotNull을 사용해
             //      NPE 발생 시 명확한 오류 메시지를 제공한다.
             val entity = requireNotNull(map[id]) { "map에 id=$id 에 해당하는 엔티티가 없습니다" }
             table.update({ table.id eq id }) { updateEntity(it, entity) }

@@ -67,14 +67,17 @@ suspend fun withDb(
             testDB.db = testDB.connect(configure ?: {})
         }
 
-        val registeredDb = testDB.db!!
+        val registeredDb = checkNotNull(testDB.db) { "testDB.db must be initialized for $testDB" }
         try {
             if (newConfiguration) {
                 testDB.db = testDB.connect(configure)
             }
-            val database = testDB.db!!
+            val database = checkNotNull(testDB.db) { "testDB.db must be initialized for $testDB" }
+            val defaultIsolationLevel = checkNotNull(database.transactionManager.defaultIsolationLevel) {
+                "defaultIsolationLevel must be initialized for $testDB"
+            }
             suspendTransaction(
-                transactionIsolation = database.transactionManager.defaultIsolationLevel!!,
+                transactionIsolation = defaultIsolationLevel,
                 db = database,
             ) {
                 maxAttempts = 1

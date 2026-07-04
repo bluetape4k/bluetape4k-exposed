@@ -131,14 +131,14 @@ class BatchStepBuilder<I : Any, O : Any>(val name: String) {
      */
     fun build(): BatchStep<I, O> {
         name.requireNotBlank("name")
-        requireNotNull(_reader) { "reader must be set for step '$name'" }
-        requireNotNull(_writer) { "writer must be set for step '$name'" }
+        val reader = requireNotNull(_reader) { "reader must be set for step '$name'" }
+        val writer = requireNotNull(_writer) { "writer must be set for step '$name'" }
         return BatchStep(
             name = name,
             chunkSize = _chunkSize,
-            reader = _reader!!,
+            reader = reader,
             processor = _processor,
-            writer = _writer!!,
+            writer = writer,
             skipPolicy = _skipPolicy,
             retryPolicy = _retryPolicy,
             commitTimeout = _commitTimeout,

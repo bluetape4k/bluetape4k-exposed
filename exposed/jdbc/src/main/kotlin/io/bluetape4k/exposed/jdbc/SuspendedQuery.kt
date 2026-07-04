@@ -188,7 +188,7 @@ open class SuspendedQuery(
                     }
                     if (results.size < batchSize) break
 
-                    // WHY: `!!` 연산자 대신 requireNotNull 을 사용해 명확한 에러 메시지를 제공합니다.
+                    // WHY: force unwrap 대신 requireNotNull 을 사용해 명확한 에러 메시지를 제공합니다.
                     // cursorColumn 값이 null 이면 다음 배치의 시작 오프셋을 계산할 수 없어 무한루프 또는
                     // 잘못된 결과가 발생합니다. PK 컬럼은 통상 NOT NULL 이지만, nullable Column 을
                     // cursorColumn 으로 잘못 지정한 경우에도 명확한 진단 메시지로 즉시 실패시킵니다.
