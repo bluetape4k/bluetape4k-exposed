@@ -8,22 +8,31 @@ import io.bluetape4k.exposed.lettuce.domain.UserSchema.UserTable
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.lettuce.core.RedisClient
+import io.mockk.clearMocks
 import io.mockk.mockk
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
 class LettuceRepositoryCodecSafetyTest: AbstractJdbcLettuceTest() {
+
+    private val redisClient = mockk<RedisClient>()
+
+    @BeforeEach
+    fun setUpMocks() {
+        clearMocks(redisClient)
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `jdbc repository requires explicit lettuce value codec`(testDB: TestDB) {
         assertFailsWith<IllegalArgumentException> {
             object: AbstractJdbcLettuceRepository<Long, UserRecord>(
-                client = mockk<RedisClient>(),
+                client = redisClient,
                 config = LettuceCacheConfig.READ_WRITE_THROUGH
             ) {
                 override val table: IdTable<Long> = UserTable
@@ -40,7 +49,7 @@ class LettuceRepositoryCodecSafetyTest: AbstractJdbcLettuceTest() {
     fun `suspended jdbc repository requires explicit lettuce value codec`(testDB: TestDB) {
         assertFailsWith<IllegalArgumentException> {
             object: AbstractSuspendedJdbcLettuceRepository<Long, UserRecord>(
-                client = mockk<RedisClient>(),
+                client = redisClient,
                 config = LettuceCacheConfig.READ_WRITE_THROUGH
             ) {
                 override val table: IdTable<Long> = UserTable

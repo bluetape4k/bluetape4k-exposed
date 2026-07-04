@@ -7,17 +7,19 @@ import com.google.api.services.bigquery.model.QueryRequest
 import com.google.api.services.bigquery.model.QueryResponse
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
+import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeTrue
 import io.mockk.CapturingSlot
+import io.mockk.clearMocks
+import io.mockk.every
+import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 /**
@@ -25,10 +27,20 @@ import org.junit.jupiter.api.Test
  */
 class BigQueryContextUnitTest {
 
+    private val bq = mockk<Bigquery>(relaxed = true)
+    private val jobs = mockk<Jobs>(relaxed = true)
+    private val queryCall = mockk<Jobs.Query>(relaxed = true)
+
     private val sqlGenDb: Database = Database.connect(
         url = "jdbc:h2:mem:bq_unit_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
         driver = "org.h2.Driver",
     )
+
+    @BeforeEach
+    fun setUpMocks() {
+        clearMocks(bq, jobs, queryCall)
+        every { bq.jobs() } returns jobs
+    }
 
     /**
      * BigQuery REST API mock 헬퍼.
@@ -38,10 +50,6 @@ class BigQueryContextUnitTest {
         requestSlot: CapturingSlot<QueryRequest>? = null,
         responseSupplier: () -> QueryResponse,
     ): Bigquery {
-        val bq = mockk<Bigquery>(relaxed = true)
-        val jobs = mockk<Jobs>(relaxed = true)
-        val queryCall = mockk<Jobs.Query>(relaxed = true)
-        every { bq.jobs() } returns jobs
         if (requestSlot == null) {
             every { jobs.query(any(), any()) } returns queryCall
         } else {
@@ -161,8 +169,6 @@ class BigQueryContextUnitTest {
 
     @Test
     fun `create 팩토리 - BigQueryContext 인스턴스를 올바르게 생성한다`() {
-        val bq = mockk<Bigquery>(relaxed = true)
-
         val context = BigQueryContext.create(bq, projectId = "my-project", datasetId = "my-dataset")
 
         context.shouldNotBeNull()
