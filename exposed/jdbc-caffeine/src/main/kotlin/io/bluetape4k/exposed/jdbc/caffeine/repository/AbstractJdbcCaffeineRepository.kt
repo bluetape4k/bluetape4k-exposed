@@ -117,6 +117,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
 
     private val writeBehindQueueDepth = AtomicInteger(0)
     private val writeBehindJobStarted = AtomicBoolean(false)
+    private val writeBehindTerminalError = AtomicReference<Throwable?>(null)
     private val lastFlushError = AtomicReference<Throwable?>(null)
 
     private val writeBehindJob by lazy {
@@ -131,20 +132,32 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                         batch.add(next)
                     }
                     if (batch.isNotEmpty()) {
-                        val flushedCount = batch.size
+                        val persistedWrites = batch.toPersistedWrites()
+                        val flushedCount = persistedWrites.size
                         if (flushBatch(batch)) {
                             writeBehindQueueDepth.addAndGet(-flushedCount)
                             batch.clear()
+                            notifyPersisted(persistedWrites)
                         }
                     }
                 }
+            } catch (e: CancellationException) {
+                writeBehindTerminalError.set(e)
+                writeBehindQueue.close(e)
+                throw e
+            } catch (e: Throwable) {
+                writeBehindTerminalError.set(e)
+                writeBehindQueue.close(e)
+                throw e
             } finally {
                 // 채널 닫힌 후 남은 항목 처리
                 if (batch.isNotEmpty()) {
-                    val flushedCount = batch.size
+                    val persistedWrites = batch.toPersistedWrites()
+                    val flushedCount = persistedWrites.size
                     if (flushBatch(batch)) {
                         writeBehindQueueDepth.addAndGet(-flushedCount)
                         batch.clear()
+                        notifyPersisted(persistedWrites)
                     }
                 }
             }
@@ -299,10 +312,12 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
             CacheWriteMode.WRITE_THROUGH -> {
                 cache.put(key, entity)
                 writeToDb(id, entity)
+                notifyPersisted(id, entity)
             }
             CacheWriteMode.WRITE_BEHIND -> {
                 // Write-Behind Job 초기화 보장
                 startWriteBehindJob()
+                checkWriteBehindAcceptingWrites()
                 // runBlocking is avoided to prevent Virtual Thread pinning.
                 // trySend() fails immediately when the queue is full — throw to prevent silent data loss.
                 // cache.put() is intentionally deferred until after trySend() succeeds to prevent
@@ -330,6 +345,34 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     }
 
     /**
+     * Called after one accepted cache write has been committed to the database.
+     *
+     * This is a post-commit notification hook. Ordinary hook failures are logged
+     * by the repository and do not turn a successful database write into a failed
+     * cache write. [CancellationException] remains a cancellation signal and is
+     * rethrown.
+     *
+     * Subclasses should publish minimal and stable domain events from this hook.
+     * Do not expose credentials, tokens, raw secrets, or full cached records.
+     * `READ_ONLY`, invalidation, and cache clear operations do not invoke this
+     * hook.
+     */
+    protected open fun afterPersisted(id: ID, entity: E) {
+        // Default no-op.
+    }
+
+    /**
+     * Called after a write-behind batch has been committed and removed from the
+     * retained in-memory batch.
+     *
+     * [writes] preserves accepted write order, including duplicate identifiers.
+     * The default implementation delegates to [afterPersisted] once per write.
+     */
+    protected open fun afterPersisted(writes: List<CachePersistedWrite<ID, E>>) {
+        writes.forEach { write -> afterPersisted(write.id, write.entity) }
+    }
+
+    /**
      * Stores a single entity in the database for write-through mode.
      *
      * New entities are not inserted for auto-increment tables because the database owns
@@ -346,6 +389,48 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                     insertEntity(it)
                 }
             }
+        }
+    }
+
+    private fun List<Pair<ID, E>>.toPersistedWrites(): List<CachePersistedWrite<ID, E>> =
+        map { (id, entity) -> CachePersistedWrite(id, entity) }
+
+    private fun notifyPersisted(id: ID, entity: E) {
+        try {
+            afterPersisted(id, entity)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.warn(e) {
+                "Cache post-persistence hook failed. " +
+                    "cacheName=$cacheName, mode=$cacheWriteMode, writeCount=1, exceptionType=${e::class.qualifiedName}"
+            }
+        }
+    }
+
+    private fun notifyPersisted(writes: List<CachePersistedWrite<ID, E>>) {
+        if (writes.isEmpty()) return
+        try {
+            afterPersisted(writes)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.warn(e) {
+                "Cache post-persistence hook failed. " +
+                    "cacheName=$cacheName, mode=$cacheWriteMode, writeCount=${writes.size}, " +
+                    "exceptionType=${e::class.qualifiedName}"
+            }
+        }
+    }
+
+    private fun checkWriteBehindAcceptingWrites() {
+        val terminalError = writeBehindTerminalError.get()
+        check(terminalError == null) {
+            "Write-Behind worker is not accepting writes. " +
+                "cacheName=$cacheName, exceptionType=${terminalError!!::class.qualifiedName}"
+        }
+        check(writeBehindJob.isActive) {
+            "Write-Behind worker is not running. cacheName=$cacheName"
         }
     }
 

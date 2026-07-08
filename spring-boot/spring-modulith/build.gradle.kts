@@ -18,14 +18,15 @@ dependencies {
     api(libs.exposed.spring7.transaction)
     api(libs.spring.modulith.events.api)
     api(libs.spring.modulith.events.core)
+    api("org.springframework:spring-tx")
 
     api(project(":bluetape4k-exposed-spring-boot-jdbc"))
+    api(project(":bluetape4k-exposed-jdbc-caffeine"))
 
     implementation(libs.spring.modulith.events.jackson)
 
     compileOnly("org.springframework.boot:spring-boot-autoconfigure")
     compileOnly("org.springframework.boot:spring-boot-starter-jdbc")
-    compileOnly("org.springframework:spring-tx")
 
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
