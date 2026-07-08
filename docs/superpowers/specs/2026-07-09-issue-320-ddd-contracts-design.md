@@ -109,7 +109,7 @@ Exposed DAO lifecycle callbacks.
 - `val id: ID`
 - `fun domainEvents(): List<DomainEvent<ID>>`
 - `fun clearDomainEvents()`
-- `fun drainDomainEvents(): List<DomainEvent<ID>>`
+- `fun drainDomainEvents(handoff: (List<DomainEvent<ID>>) -> Unit): List<DomainEvent<ID>>`
 
 `AbstractAggregateRoot<ID : Any>`:
 
@@ -122,22 +122,24 @@ Exposed DAO lifecycle callbacks.
 - Provides protected `recordDomainEvent(event: DomainEvent<ID>)`.
 - Validates that `event.aggregateId == id` before recording; mismatches are
   caller errors and must fail with `IllegalArgumentException`.
-- Returns defensive immutable snapshots from `domainEvents()` and
-  `drainDomainEvents()`.
+- Returns defensive immutable snapshots from `domainEvents()` and hands the same
+  snapshot to `drainDomainEvents { ... }`.
 - Returns `emptyList()` without copying when no events are recorded, and copies
   only non-empty buffers.
 - Preserves event recording order in both snapshots and drains.
-- Clears events only when `clearDomainEvents()` or `drainDomainEvents()` is
-  called.
+- Clears events only when `clearDomainEvents()` is called or
+  `drainDomainEvents { ... }` invokes a handoff callback that returns
+  successfully.
 
 ## Repository Guidance
 
-Repository implementations must not treat `drainDomainEvents()` as the publish
-boundary. It is only a local buffer-clear operation. To avoid event loss,
-integrations should snapshot events with `domainEvents()`, persist the
-aggregate, wait for the transaction commit boundary, hand the snapshot to a
-publisher/durable outbox adapter, and clear or drain the aggregate buffer only
-after that adapter has accepted responsibility for the events.
+Repository implementations must not treat `drainDomainEvents { ... }` as the
+publish boundary. It is only a local buffer handoff and clear operation. To
+avoid event loss, integrations should snapshot events with `domainEvents()`,
+persist the aggregate, wait for the transaction commit boundary, hand the
+snapshot to a durable owner such as an outbox, persisted retry queue, or
+transactionally recorded handoff, and clear or drain the aggregate buffer only
+after that durable owner has accepted responsibility for the events.
 
 The normal repository sequence is:
 
@@ -145,14 +147,16 @@ The normal repository sequence is:
 2. capture a defensive snapshot with `domainEvents()`,
 3. persist the aggregate successfully,
 4. wait for the transaction commit or equivalent durability boundary,
-5. pass the snapshot to a framework-specific publisher or outbox adapter,
-6. clear or drain the aggregate buffer only after that adapter accepts the
-   events.
+5. pass the snapshot to a durable owner such as an outbox, persisted retry
+   queue, or transactionally recorded handoff,
+6. clear or drain the aggregate buffer only after that durable owner accepts
+   responsibility for the events.
 
 `clearDomainEvents()` exists for discard/rollback-style caller-owned cleanup,
-not for successful publication before handoff. `drainDomainEvents()` is safe
-only when the caller has already moved the returned events into a durable or
-otherwise retryable handoff path.
+not for successful publication before handoff. `drainDomainEvents { ... }`
+clears only after the callback returns successfully; if the callback throws, the
+aggregate keeps its events. The callback must represent durable event ownership,
+not a process-local retry queue.
 
 For write-behind cache paths, accepting a value into an in-memory queue is not a
 durability boundary. A database flush is also not sufficient if the transaction
@@ -178,7 +182,9 @@ Add focused tests under `exposed/core/src/test/kotlin/io/bluetape4k/exposed/core
 
 - A plain aggregate records a domain event.
 - `domainEvents()` returns a snapshot and does not clear events.
-- `drainDomainEvents()` returns events and clears them.
+- `drainDomainEvents { ... }` hands off events and clears them after callback
+  success.
+- `drainDomainEvents { ... }` preserves events if the callback throws.
 - A repeated drain returns an empty list.
 - Multiple events drain in recording order.
 - Recording an event whose `aggregateId` differs from the aggregate `id` fails
@@ -231,9 +237,9 @@ deprecation-based unless a new major compatibility decision is made.
 
 1. **Over-broad API:** Adding publishers or repository adapters here would
    duplicate follow-up issues. Mitigation: keep this issue to contracts only.
-2. **False durability semantics:** Consumers may treat `drainDomainEvents()` as
-   persistence. Mitigation: KDoc and README must state that repositories should
-   clear or drain only after a commit boundary and durable/retryable handoff
+2. **False durability semantics:** Consumers may treat `drainDomainEvents { ... }`
+   as persistence. Mitigation: KDoc and README must state that repositories
+   should clear or drain only after a commit boundary and durable owner
    acceptance, and that no outbox is provided.
 3. **Framework leakage:** Spring Modulith or JaVers terms could enter core API.
    Mitigation: core types use only Kotlin/JDK types.

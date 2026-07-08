@@ -95,6 +95,73 @@ snapshots through Exposed JDBC, and `javers-ddd` adapts aggregate/domain-event
 workflows into JaVers commits. Those modules complement this repository; they
 do not replace the source-of-truth Exposed repositories or cache decorators.
 
+## Spring-Neutral DDD Contracts
+
+`bluetape4k-exposed-core` provides Spring-neutral `AggregateRoot`,
+`DomainEvent`, and `AbstractAggregateRoot` contracts for aggregates that record
+domain events before repository adapters publish or persist them.
+
+These contracts are opt-in helpers. Existing repositories, cache decorators,
+Spring Modulith integration, and JaVers integration are unaffected until an
+application explicitly adopts the new aggregate base class or interfaces. They
+do not trigger automatic publication or persistence.
+
+```kotlin
+import io.bluetape4k.exposed.core.ddd.AbstractAggregateRoot
+import io.bluetape4k.exposed.core.ddd.DomainEvent
+import java.io.Serializable
+import java.time.Instant
+
+@JvmInline
+value class OrderId(val value: Long) : Serializable {
+    companion object {
+        private const val serialVersionUID: Long = 1L
+    }
+}
+
+class Order(
+    override val id: OrderId,
+) : AbstractAggregateRoot<OrderId>() {
+
+    fun place() {
+        recordDomainEvent(OrderPlaced(id))
+    }
+}
+
+data class OrderPlaced(
+    override val aggregateId: OrderId,
+    override val occurredAt: Instant = Instant.now(),
+) : DomainEvent<OrderId>, Serializable {
+    companion object {
+        private const val serialVersionUID: Long = 1L
+    }
+}
+```
+
+The contracts keep only an in-memory event buffer. They do not provide a
+durable outbox, publisher adapter, Exposed DAO lifecycle hook, Exposed DAO
+`EntityCache` event registry, in-memory event queue, or Spring Modulith
+publication store. A database flush that can still roll back is not a durable
+event boundary.
+
+Repository integrations should:
+
+1. Snapshot events with `domainEvents()`.
+2. Persist aggregate state and wait for after-transaction-commit or an
+   equivalent durability boundary.
+3. Hand the snapshot to a durable owner such as an outbox, persisted retry
+   queue, or transactionally recorded handoff.
+4. Clear or drain the aggregate buffer only after that durable owner accepts
+   responsibility for the events.
+
+The Spring Modulith and JaVers modules remain separate adapters. These core
+contracts do not encode Spring Modulith publication semantics or JaVers audit
+commit semantics.
+
+Event payloads should prefer opaque, non-sensitive identifiers and minimal
+business facts. Do not put secrets, credentials, tokens, natural keys, or
+unnecessary PII in domain events.
+
 ## Quick Start
 
 ### Gradle
