@@ -94,6 +94,70 @@ event, after-commit 발행 hook은 다룰 수 있지만 JaVers audit 개념을 �
 모듈은 이 저장소를 보완하지만 source-of-truth Exposed Repository나 cache decorator를
 대체하지 않습니다.
 
+## Spring-neutral DDD 계약
+
+`bluetape4k-exposed-core`는 aggregate가 repository adapter에 이벤트를 넘기기
+전에 domain event를 기록할 수 있도록 Spring-neutral `AggregateRoot`,
+`DomainEvent`, `AbstractAggregateRoot` contract를 제공합니다.
+
+이 계약은 선택형 helper입니다. 애플리케이션이 새 aggregate base class/interface를
+명시적으로 채택하기 전까지 기존 repository, cache decorator, Spring Modulith 통합,
+JaVers 통합의 동작은 바뀌지 않습니다. 자동 발행이나 자동 저장도 실행하지 않습니다.
+
+```kotlin
+import io.bluetape4k.exposed.core.ddd.AbstractAggregateRoot
+import io.bluetape4k.exposed.core.ddd.DomainEvent
+import java.io.Serializable
+import java.time.Instant
+
+@JvmInline
+value class OrderId(val value: Long) : Serializable {
+    companion object {
+        private const val serialVersionUID: Long = 1L
+    }
+}
+
+class Order(
+    override val id: OrderId,
+) : AbstractAggregateRoot<OrderId>() {
+
+    fun place() {
+        recordDomainEvent(OrderPlaced(id))
+    }
+}
+
+data class OrderPlaced(
+    override val aggregateId: OrderId,
+    override val occurredAt: Instant = Instant.now(),
+) : DomainEvent<OrderId>, Serializable {
+    companion object {
+        private const val serialVersionUID: Long = 1L
+    }
+}
+```
+
+이 계약은 in-memory event buffer만 다룹니다. Durable outbox, publisher
+adapter, Exposed DAO lifecycle hook, Exposed DAO `EntityCache` event registry,
+in-memory event queue, Spring Modulith publication store를 제공하지 않습니다.
+Rollback될 수 있는 database flush도 durable event boundary가 아닙니다.
+
+Repository 통합은 다음 순서를 따라야 합니다.
+
+1. `domainEvents()`로 event snapshot을 만듭니다.
+2. Aggregate 상태를 persist하고 after-transaction-commit 또는 동등한 durability
+   boundary를 기다립니다.
+3. Snapshot을 outbox, persisted retry queue, transactionally recorded handoff처럼
+   durable owner가 있는 경로에 넘깁니다.
+4. 그 durable owner가 event 책임을 인수한 뒤에만 aggregate buffer를
+   clear/drain합니다.
+
+Spring Modulith와 JaVers module은 별도 adapter로 유지됩니다. Core 계약은 Spring
+Modulith publication semantics나 JaVers audit commit semantics를 담지 않습니다.
+
+Event payload는 opaque하고 민감하지 않은 identifier와 최소 business fact 위주로
+유지하세요. Secret, credential, token, natural key, 불필요한 PII를 domain event에
+넣지 않습니다.
+
 ## 빠른 시작
 
 ### Gradle 의존성 추가

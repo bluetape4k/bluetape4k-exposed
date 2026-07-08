@@ -39,8 +39,6 @@ applies: `$bluetape4k-code-patterns`, `test-driven-development`
 package io.bluetape4k.exposed.core.ddd
 
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.assertFailsWith
@@ -56,7 +54,7 @@ class AbstractAggregateRootTest {
 
         val events = order.domainEvents()
 
-        events.shouldBeSameInstanceAs(emptyList<DomainEvent<OrderId>>())
+        events.isEmpty().shouldBeTrue()
     }
 
     @Test
@@ -97,20 +95,40 @@ class AbstractAggregateRootTest {
     }
 
     @Test
-    fun `drainDomainEvents returns ordered events and clears buffer`() {
+    fun `drainDomainEvents hands off ordered events and clears after success`() {
         val order = TestOrder(OrderId(1L))
         val placed = OrderPlaced(order.id)
         val confirmed = OrderConfirmed(order.id)
+        val handedOff = mutableListOf<List<DomainEvent<OrderId>>>()
         order.place(placed)
         order.place(confirmed)
 
-        val drained = order.drainDomainEvents()
+        val drained = order.drainDomainEvents { events ->
+            handedOff += events
+        }
 
         drained shouldBeEqualTo listOf(placed, confirmed)
-        order.recordedDomainEventsBuffer().shouldBeNull()
+        handedOff shouldBeEqualTo listOf(listOf(placed, confirmed))
         order.domainEvents().isEmpty().shouldBeTrue()
-        order.drainDomainEvents().shouldBeSameInstanceAs(emptyList<DomainEvent<OrderId>>())
-        order.domainEvents().shouldBeSameInstanceAs(emptyList<DomainEvent<OrderId>>())
+        order.drainDomainEvents {
+            error("Empty drain should not invoke handoff")
+        }.isEmpty().shouldBeTrue()
+        order.domainEvents().isEmpty().shouldBeTrue()
+    }
+
+    @Test
+    fun `drainDomainEvents keeps events when handoff fails`() {
+        val order = TestOrder(OrderId(1L))
+        val event = OrderPlaced(order.id)
+        order.place(event)
+
+        assertFailsWith<IllegalStateException> {
+            order.drainDomainEvents {
+                throw IllegalStateException("handoff failed")
+            }
+        }
+
+        order.domainEvents() shouldBeEqualTo listOf(event)
     }
 
     @Test
@@ -120,10 +138,10 @@ class AbstractAggregateRootTest {
 
         order.clearDomainEvents()
 
-        order.recordedDomainEventsBuffer().shouldBeNull()
         order.domainEvents().isEmpty().shouldBeTrue()
-        order.domainEvents().shouldBeSameInstanceAs(emptyList<DomainEvent<OrderId>>())
-        order.drainDomainEvents().shouldBeSameInstanceAs(emptyList<DomainEvent<OrderId>>())
+        order.drainDomainEvents {
+            error("Empty drain should not invoke handoff")
+        }.isEmpty().shouldBeTrue()
     }
 
     @Test
@@ -172,12 +190,6 @@ class AbstractAggregateRootTest {
         fun place(event: DomainEvent<OrderId>) {
             recordDomainEvent(event)
         }
-    }
-
-    private fun TestOrder.recordedDomainEventsBuffer(): Any? {
-        val field = AbstractAggregateRoot::class.java.getDeclaredField("recordedDomainEvents")
-        field.isAccessible = true
-        return field.get(this)
     }
 
     private data class OrderPlaced(
@@ -292,11 +304,12 @@ package io.bluetape4k.exposed.core.ddd
  * The aggregate owns an in-memory event buffer only. The buffer is not a durable
  * outbox, publisher adapter, Exposed DAO lifecycle hook, Exposed DAO
  * `EntityCache`, in-memory queue, or Spring Modulith publication store.
- * Repository adapters should snapshot events, commit the aggregate state,
- * wait for an after-transaction-commit or equivalent durability boundary, hand
- * the snapshot to a durable or retryable publisher path, and only then clear or
- * drain the buffer. Existing repositories remain unaffected unless callers
- * explicitly adopt these contracts.
+ * Repository adapters should snapshot events, commit the aggregate state, wait
+ * for an after-transaction-commit or equivalent durability boundary, hand the
+ * snapshot to a durable owner such as an outbox, persisted retry queue, or
+ * transactionally recorded handoff, and only then clear or drain the buffer.
+ * Existing repositories remain unaffected unless callers explicitly adopt these
+ * contracts.
  */
 interface AggregateRoot<ID: Any> {
 
@@ -316,19 +329,21 @@ interface AggregateRoot<ID: Any> {
      * Clears recorded domain events without returning them.
      *
      * Use this for caller-owned discard or rollback cleanup. Normal successful
-     * persistence flows should not clear events before commit and durable or
-     * retryable handoff acceptance.
+     * persistence flows should not clear events before commit and durable
+     * handoff acceptance.
      */
     fun clearDomainEvents()
 
     /**
-     * Returns recorded domain events in recording order and clears the buffer.
+     * Hands recorded domain events to [handoff] in recording order and clears
+     * the buffer only after [handoff] returns successfully.
      *
-     * Use this only after the caller has moved events into a durable or
-     * otherwise retryable handoff path. This method is a local buffer operation,
-     * not a publish or persistence boundary.
+     * Use this only after the caller is ready to move events into a durable
+     * owner such as an outbox, persisted retry queue, or transactionally
+     * recorded handoff. This method is a local buffer operation, not a publish
+     * or persistence boundary. If [handoff] throws, the buffer remains intact.
      */
-    fun drainDomainEvents(): List<DomainEvent<ID>>
+    fun drainDomainEvents(handoff: (List<DomainEvent<ID>>) -> Unit): List<DomainEvent<ID>>
 }
 ```
 
@@ -365,7 +380,7 @@ abstract class AbstractAggregateRoot<ID: Any>: AggregateRoot<ID> {
         recordedDomainEvents = null
     }
 
-    override fun drainDomainEvents(): List<DomainEvent<ID>> {
+    override fun drainDomainEvents(handoff: (List<DomainEvent<ID>>) -> Unit): List<DomainEvent<ID>> {
         val events = recordedDomainEvents ?: return emptyList()
         if (events.isEmpty()) {
             recordedDomainEvents = null
@@ -373,6 +388,7 @@ abstract class AbstractAggregateRoot<ID: Any>: AggregateRoot<ID> {
         }
 
         val snapshot = events.toList()
+        handoff(snapshot)
         recordedDomainEvents = null
         return snapshot
     }
@@ -460,8 +476,9 @@ Repository integrations should:
 1. Snapshot events with `domainEvents()`.
 2. Persist aggregate state and wait for after-transaction-commit or an
    equivalent durability boundary.
-3. Hand the snapshot to a durable or retryable publisher/outbox path.
-4. Clear or drain the aggregate buffer only after that handoff accepts
+3. Hand the snapshot to a durable owner such as an outbox, persisted retry
+   queue, or transactionally recorded handoff.
+4. Clear or drain the aggregate buffer only after that durable owner accepts
    responsibility for the events.
 
 The Spring Modulith and JaVers modules remain separate adapters. These core
@@ -519,8 +536,10 @@ Repository 통합은 다음 순서를 따라야 합니다.
 1. `domainEvents()`로 event snapshot을 만듭니다.
 2. Aggregate 상태를 persist하고 after-transaction-commit 또는 동등한 durability
    boundary를 기다립니다.
-3. Snapshot을 durable 또는 retry 가능한 publisher/outbox 경로에 넘깁니다.
-4. 해당 경로가 event 책임을 인수한 뒤에만 aggregate buffer를 clear/drain합니다.
+3. Snapshot을 outbox, persisted retry queue, transactionally recorded handoff처럼
+   durable owner가 있는 경로에 넘깁니다.
+4. 해당 durable owner가 event 책임을 인수한 뒤에만 aggregate buffer를
+   clear/drain합니다.
 
 Spring Modulith와 JaVers module은 별도 adapter로 유지됩니다. Core contract는
 Spring Modulith publication semantic이나 JaVers audit commit semantic을 encode하지
