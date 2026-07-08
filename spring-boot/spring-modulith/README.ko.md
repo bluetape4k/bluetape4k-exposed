@@ -14,8 +14,8 @@ artifact는 공식 Spring Modulith 저장소 모듈처럼 보이지 않도록
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.11.0")
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.11.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.12.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.12.0")
 }
 ```
 
@@ -53,6 +53,80 @@ val publication = targetEventPublicationOf(
     publicationDate = Instant.now(),
 )
 ```
+
+## Cache write event publication
+
+![JDBC Caffeine cache write event publication sequence diagram](../../docs/images/readme-diagrams/spring-boot-exposed-spring-modulith-cache-write-sequence-01.png)
+
+`SpringModulithJdbcCaffeineRepository`는 동기 JDBC Caffeine repository를 위한 opt-in base class입니다. 이벤트는
+cache write가 JDBC persistence boundary에 도달한 뒤에만 Spring application event로 발행됩니다.
+
+- `WRITE_THROUGH`: 동기 DB write가 성공한 뒤 발행합니다.
+- `WRITE_BEHIND`: background flush가 commit되고 queue depth 감소 및 retained batch clear가 끝난 뒤 발행합니다.
+- `READ_ONLY`, `invalidate`, `invalidateAll`, `clear`: 이벤트를 발행하지 않습니다.
+
+write-behind queue는 process-local이며 durable outbox가 아닙니다. process가 flush 전에 종료되면 queued write와
+이벤트가 유실될 수 있습니다. DB commit은 성공했지만 event publication이 실패한 경우에도 committed batch를
+재실행하지 않고 post-commit notification failure로 기록합니다. Consumer가 `@ApplicationModuleListener`를
+사용한다면, 특히 `WRITE_BEHIND` mode에서는 Spring `TransactionOperations`를 전달해 Spring application event가
+Spring Modulith가 commit 이후 완료 처리할 수 있는 transaction 안에서 발행되도록 하세요.
+
+```kotlin
+data class ActorRenamedEvent(val actorId: Long) : Serializable {
+    companion object {
+        private const val serialVersionUID: Long = 1L
+    }
+}
+
+class ActorRepository(
+    events: ApplicationEventPublisher,
+    transactions: TransactionOperations,
+) :
+    SpringModulithJdbcCaffeineRepository<Long, ActorRecord>(
+        config = LocalCacheConfig.WRITE_THROUGH,
+        eventPublisher = events,
+        transactionOperations = transactions,
+    ) {
+    override fun toDomainEvent(id: Long, entity: ActorRecord): Any =
+        ActorRenamedEvent(actorId = id)
+}
+
+@Component
+class ActorProjection {
+    @ApplicationModuleListener
+    fun on(event: ActorRenamedEvent) {
+        // projection 갱신
+    }
+}
+```
+
+event DTO는 stable package/name을 가진 public top-level type으로 두고, Jackson 직렬화가 가능한 최소 payload만
+담는 것을 권장합니다. cached entity, `Pair`, credential, token, raw secret, raw email address, full record를
+그대로 발행하지 마세요. Spring Modulith는 event type과 serialized payload를 저장하므로 package rename 또는 DTO
+shape 변경은 unloadable event row를 만들 수 있습니다.
+
+### JDBC Caffeine migration
+
+이 기능은 `1.12.0+`에서 사용할 수 있습니다. 기존 JDBC Caffeine repository는 base class를
+`AbstractJdbcCaffeineRepository`에서 `SpringModulithJdbcCaffeineRepository`로 바꾸고,
+`ApplicationEventPublisher`를 주입한 뒤 `LocalCacheConfig.WRITE_THROUGH` 또는 `WRITE_BEHIND`를 명시하고,
+transactional Modulith listener가 필요하면 `TransactionOperations`를 함께 주입하고, `toDomainEvent(...)`와
+`@ApplicationModuleListener` consumer를 추가하면 됩니다.
+
+`WRITE_BEHIND` mode에서 배포 또는 rollback 전에는 queue를 drain하고
+`validateConsistency().queueDepth == 0`, `lastFlushError == null`을 확인하세요. Rollback은
+`toDomainEvent(...)`에서 `null`을 반환하거나 repository base class를 `AbstractJdbcCaffeineRepository`로 되돌리는
+방식으로 수행할 수 있습니다. 기존 Spring Modulith publication row는 설정된 completion mode를 계속 따릅니다.
+
+### Operator runbook
+
+- Queue full: write rate를 줄이거나 `writeBehindQueueCapacity`를 늘리세요. 거부된 write는 cache에 저장되지 않고
+  event도 발행되지 않습니다.
+- Close timeout: 로그에서 flush되지 않은 write-behind entry를 확인하고, write replay 전에 DB 상태를 검증하세요.
+- write와 event coupling이 write latency보다 중요하면 `WRITE_THROUGH`를 우선 사용하세요.
+- queued write-behind entry가 process crash 이후에도 살아야 한다면 application-level durable outbox를 사용하세요.
+- 이 통합이 지원하지 않는 범위: suspended JDBC Caffeine, R2DBC Caffeine, delete/invalidation event, 기존 repository
+  bean auto-wrapping, durable write-behind queue.
 
 ## 로드할 수 없는 이벤트 타입
 
