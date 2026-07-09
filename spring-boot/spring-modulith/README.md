@@ -44,6 +44,27 @@ Completion operations are idempotent for duplicate retry calls. `UPDATE` mode pr
 `COMPLETION_DATE`, `DELETE` mode leaves no completed row behind, and `ARCHIVE` mode keeps a single archived row.
 Repeated `markResubmitted(...)` calls update attempts and timestamp only on the first resubmission.
 
+### Outstanding Publication Restart
+
+Spring Modulith can republish incomplete publications during application startup:
+
+```yaml
+spring:
+  modulith:
+    events:
+      republish-outstanding-events-on-restart: true
+```
+
+When this property is enabled, Spring Modulith reads incomplete rows from the Exposed-backed publication table and
+invokes the matching `@ApplicationModuleListener` again. Completed rows are skipped, so a listener that was already
+marked complete is not replayed during restart. The completion mode still applies after a successful restart replay:
+`UPDATE` keeps the completed row, `DELETE` removes it, and `ARCHIVE` moves it to the archive table.
+
+Republished events can repeat external side effects that happened before the previous process stopped. Keep
+`@ApplicationModuleListener` consumers idempotent, use stable listener ids, and guard outbound calls, projection writes,
+or message sends with an application-level deduplication key when duplicates are unsafe. Rows with unloadable event
+types remain incomplete until the event class is restored or the stored row is migrated.
+
 Kotlin callers can use package functions instead of Spring Modulith's Java-style static factories:
 
 ```kotlin

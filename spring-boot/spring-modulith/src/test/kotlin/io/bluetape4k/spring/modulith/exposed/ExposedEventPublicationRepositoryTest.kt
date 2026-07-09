@@ -8,6 +8,7 @@ import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.tests.AbstractExposedTest
@@ -28,6 +29,7 @@ import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.Environment
+import org.springframework.modulith.events.ApplicationModuleListener
 import org.springframework.modulith.events.EventPublication.Status
 import org.springframework.modulith.events.core.EventPublicationRepository
 import org.springframework.modulith.events.core.EventSerializer
@@ -37,6 +39,7 @@ import org.springframework.transaction.support.TransactionTemplate
 import java.io.Serializable
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.CopyOnWriteArrayList
 import javax.sql.DataSource
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -46,6 +49,11 @@ import kotlin.uuid.Uuid
 class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
 
     companion object {
+
+        private const val OUTSTANDING_LISTENER_ID =
+            "io.bluetape4k.spring.modulith.exposed.outstanding-test-listener"
+
+        private val republishedEvents = CopyOnWriteArrayList<String>()
 
         @JvmStatic
         fun enabledDialects(): Set<TestDB> = TestDB.enabledDialects()
@@ -318,6 +326,51 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
         }
     }
 
+    @ParameterizedTest(name = "{0} {1}")
+    @MethodSource("dialectCompletionModes")
+    fun `outstanding publications are republished on restart and completed publications are skipped`(
+        testDB: TestDB,
+        completionMode: CompletionMode,
+    ) {
+        val tableName = eventPublicationTableName()
+        val outstandingEvent = TestEvent("outstanding-${completionMode.name.lowercase()}")
+        val completedEvent = TestEvent("completed-${completionMode.name.lowercase()}")
+
+        republishedEvents.clear()
+
+        withApplicationContext(testDB, completionMode, tableName = tableName) { context ->
+            val repository = context.getBean(EventPublicationRepository::class.java)
+
+            context.publishEvent(outstandingEvent)
+            context.publishEvent(completedEvent)
+
+            val stored = repository.findIncompletePublications()
+            stored.map { it.event }.toSet() shouldBeEqualTo setOf(outstandingEvent, completedEvent)
+
+            val completedPublication = stored.single { it.event == completedEvent }
+            repository.markCompleted(completedPublication.identifier, Instant.parse("2026-05-16T00:02:00Z"))
+
+            repository.findIncompletePublications().map { it.event } shouldBeEqualTo listOf(outstandingEvent)
+        }
+
+        republishedEvents.clear()
+
+        withApplicationContext(
+            testDB,
+            completionMode,
+            tableName = tableName,
+            republishOutstandingOnRestart = true,
+        ) { context ->
+            val repository = context.getBean(EventPublicationRepository::class.java)
+
+            awaitCondition { republishedEvents == listOf(outstandingEvent.value) }
+            republishedEvents shouldBeEqualTo listOf(outstandingEvent.value)
+            republishedEvents shouldNotContain completedEvent.value
+            awaitCondition { repository.findIncompletePublications().isEmpty() }
+            repository.findIncompletePublications().shouldBeEmpty()
+        }
+    }
+
     @ParameterizedTest(name = "{0}")
     @MethodSource("enabledDialects")
     fun `publications with unloadable event classes remain visible and fail on event access`(testDB: TestDB) {
@@ -362,11 +415,10 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
     private fun withApplicationContext(
         testDB: TestDB,
         completionMode: CompletionMode,
+        tableName: String = eventPublicationTableName(),
+        republishOutstandingOnRestart: Boolean = false,
         block: (ConfigurableApplicationContext) -> Unit,
     ) {
-        val tableSuffix = Base58.randomString(8)
-        val tableName = "EVENT_PUBLICATION_$tableSuffix"
-
         SpringApplicationBuilder(TestConfig::class.java)
             .web(WebApplicationType.NONE)
             .properties(
@@ -380,10 +432,23 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
                     "bluetape4k.spring.modulith.exposed.archive-table-name" to "${tableName}_ARCHIVE",
                     "bluetape4k.spring.modulith.exposed.completion-mode" to completionMode.name,
                     "bluetape4k.spring.modulith.exposed.initialize-schema" to "true",
+                    "spring.modulith.events.republish-outstanding-events-on-restart" to
+                            republishOutstandingOnRestart.toString(),
                 )
             )
             .run()
             .use(block)
+    }
+
+    private fun eventPublicationTableName(): String =
+        "EVENT_PUBLICATION_${Base58.randomString(8)}"
+
+    private fun awaitCondition(predicate: () -> Boolean) {
+        repeat(100) {
+            if (predicate()) return
+            Thread.sleep(10)
+        }
+        predicate().shouldBeTrue()
     }
 
     @Configuration
@@ -412,6 +477,18 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
 
         @Bean
         fun eventSerializer(): EventSerializer = TestEventSerializer()
+
+        @Bean
+        fun outstandingTestListener(): OutstandingTestListener =
+            OutstandingTestListener()
+    }
+
+    open class OutstandingTestListener {
+
+        @ApplicationModuleListener(id = OUTSTANDING_LISTENER_ID)
+        open fun on(event: TestEvent) {
+            republishedEvents += event.value
+        }
     }
 
     data class TestEvent(val value: String) : Serializable {

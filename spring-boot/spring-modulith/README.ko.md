@@ -44,6 +44,27 @@ Completion 연산은 중복 retry 호출에 대해 idempotent하게 동작합니
 하나만 유지합니다. `markResubmitted(...)`를 반복 호출해도 첫 resubmission에서만 attempts와 timestamp가
 갱신됩니다.
 
+### Outstanding publication restart
+
+Spring Modulith는 애플리케이션 시작 시 incomplete publication을 다시 발행할 수 있습니다.
+
+```yaml
+spring:
+  modulith:
+    events:
+      republish-outstanding-events-on-restart: true
+```
+
+이 property를 켜면 Spring Modulith가 Exposed-backed publication table에서 incomplete row를 읽고, 매칭되는
+`@ApplicationModuleListener`를 다시 호출합니다. 완료된 row는 건너뛰므로 이미 완료 처리된 listener는 restart 중에
+재실행되지 않습니다. Restart replay가 성공한 뒤에도 completion mode는 그대로 적용됩니다. `UPDATE`는 완료 row를
+유지하고, `DELETE`는 제거하며, `ARCHIVE`는 archive table로 이동합니다.
+
+Republished event는 이전 process가 중단되기 전에 이미 발생한 외부 side effect를 반복할 수 있습니다.
+`@ApplicationModuleListener` consumer는 idempotent하게 작성하고, stable listener id를 사용하며, 중복이 위험한
+outbound call, projection write, message send에는 application-level deduplication key를 두세요. Event type을
+로드할 수 없는 row는 event class를 복구하거나 저장 row를 마이그레이션할 때까지 incomplete 상태로 남습니다.
+
 Kotlin 코드에서는 Spring Modulith의 Java-style static factory 대신 package function을 사용할 수 있습니다.
 
 ```kotlin
