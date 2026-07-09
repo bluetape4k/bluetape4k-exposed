@@ -77,6 +77,7 @@ includeMappedModule("spring-boot/batch-exposed", "bluetape4k-exposed-spring-boot
 includeMappedModule("spring-boot/spring-modulith", "bluetape4k-exposed-spring-modulith")
 includeMappedModule("examples/jdbc-demo", "exposed-spring-boot-jdbc-demo")
 includeMappedModule("examples/r2dbc-demo", "exposed-spring-boot-r2dbc-demo")
+includeMappedModule("examples/ddd-spring-modulith-demo", "examples-ddd-spring-modulith-demo")
 
 fun includeModules(
     baseDir: String,

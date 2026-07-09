@@ -1,0 +1,39 @@
+plugins {
+    kotlin("plugin.spring")
+    id("org.jetbrains.kotlinx.kover")
+    application
+}
+
+application {
+    mainClass.set("io.bluetape4k.exposed.examples.modulith.DddSpringModulithDemoApplicationKt")
+}
+
+configurations {
+    testImplementation.get().extendsFrom(compileOnly.get(), runtimeOnly.get())
+}
+
+dependencies {
+    implementation(platform(libs.spring.boot.dependencies))
+    implementation(platform(libs.spring.modulith.bom))
+
+    implementation(project(":bluetape4k-exposed-core"))
+    implementation(project(":bluetape4k-exposed-spring-boot-jdbc"))
+    implementation(project(":bluetape4k-exposed-spring-modulith"))
+
+    implementation(libs.exposed.core)
+    implementation(libs.exposed.jdbc)
+    implementation(libs.exposed.java.time)
+    implementation(libs.exposed.spring7.transaction)
+    implementation(libs.hikaricp)
+    implementation("org.springframework.boot:spring-boot-starter-jdbc")
+    implementation("org.springframework.modulith:spring-modulith-starter-core")
+    implementation(libs.spring.modulith.events.jackson)
+
+    runtimeOnly(libs.h2.v2)
+
+    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(bt4k.bluetape4k.assertions)
+    testImplementation(libs.awaitility.kotlin)
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.modulith:spring-modulith-starter-test")
+}
