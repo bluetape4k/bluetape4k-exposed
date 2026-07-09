@@ -27,7 +27,7 @@
 
 ## Task 1: Write RED Tests For DDD Contracts
 
-complexity: medium  
+complexity: medium
 applies: `$bluetape4k-code-patterns`, `test-driven-development`
 
 **Files:**
@@ -233,7 +233,7 @@ Expected: `compileTestKotlin` fails because `AggregateRoot`, `DomainEvent`, and 
 
 ## Task 2: Implement Minimal Spring-Neutral Contracts
 
-complexity: medium  
+complexity: medium
 applies: `$bluetape4k-code-patterns`, `test-driven-development`
 
 **Files:**
@@ -422,7 +422,7 @@ Expected: focused test class passes.
 
 ## Task 3: Add README Locale Documentation
 
-complexity: low  
+complexity: low
 applies: `$bluetape4k-code-patterns`
 
 **Files:**
@@ -566,7 +566,7 @@ and `git diff --check` passes.
 
 ## Task 4: Run Targeted Verification
 
-complexity: low  
+complexity: low
 applies: `verification-before-completion`
 
 **Files:**
@@ -603,7 +603,7 @@ plain text but must not import or depend on those types.
 
 ## Task 5: Review, Lessons, Commit, PR
 
-complexity: medium  
+complexity: medium
 applies: `$bluetape4k-code-patterns`, `verification-before-completion`
 
 **Files:**
