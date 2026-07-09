@@ -65,6 +65,33 @@ Republished event는 이전 process가 중단되기 전에 이미 발생한 외�
 outbound call, projection write, message send에는 application-level deduplication key를 두세요. Event type을
 로드할 수 없는 row는 event class를 복구하거나 저장 row를 마이그레이션할 때까지 incomplete 상태로 남습니다.
 
+## Observability
+
+Micrometer가 classpath에 있고 `MeterRegistry` bean이 있으면 module이 Exposed store gauge를 자동 등록합니다.
+같은 운영 view를 다른 component가 이미 제공한다면 끌 수 있습니다.
+
+```yaml
+bluetape4k:
+  spring:
+    modulith:
+      exposed:
+        observability:
+          enabled: true
+          include-unloadable: true
+          tags:
+            application: orders
+```
+
+주요 meter는 `bluetape4k.exposed.modulith.publications`입니다. 낮은 cardinality tag만 사용합니다.
+
+- `state`: `incomplete`, `completed`, `failed`, `unloadable`.
+- `completion.mode`: `update`, `delete`, `archive`.
+- 추가 `tags`는 모든 meter에 붙습니다. application, region, environment처럼 배포 단위로 제한된 값만 사용하세요.
+
+Spring Modulith의 기본 event publishing metric인 `module.events.published` 계열은 application event 발행을
+설명합니다. 이 Exposed gauge는 durable publication store 상태를 설명합니다. 즉 pending row, completion mode에 따른
+completed row, failed row, event type을 더 이상 로드할 수 없는 incomplete row를 운영자가 확인할 수 있게 합니다.
+
 Kotlin 코드에서는 Spring Modulith의 Java-style static factory 대신 package function을 사용할 수 있습니다.
 
 ```kotlin

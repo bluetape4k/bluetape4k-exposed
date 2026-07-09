@@ -25,12 +25,14 @@ dependencies {
 
     implementation(libs.spring.modulith.events.jackson)
 
+    compileOnly(libs.micrometer.core)
     compileOnly("org.springframework.boot:spring-boot-autoconfigure")
     compileOnly("org.springframework.boot:spring-boot-starter-jdbc")
 
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation(libs.micrometer.core)
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
     testImplementation(libs.bluetape4k.junit5)
     testImplementation(libs.h2.v2)

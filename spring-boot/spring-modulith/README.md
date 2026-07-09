@@ -65,6 +65,34 @@ Republished events can repeat external side effects that happened before the pre
 or message sends with an application-level deduplication key when duplicates are unsafe. Rows with unloadable event
 types remain incomplete until the event class is restored or the stored row is migrated.
 
+## Observability
+
+When Micrometer is on the classpath and a `MeterRegistry` bean is available, the module registers Exposed-store gauges
+automatically. Disable them if another component owns the same operational view:
+
+```yaml
+bluetape4k:
+  spring:
+    modulith:
+      exposed:
+        observability:
+          enabled: true
+          include-unloadable: true
+          tags:
+            application: orders
+```
+
+The main meter is `bluetape4k.exposed.modulith.publications`. It uses low-cardinality tags only:
+
+- `state`: `incomplete`, `completed`, `failed`, or `unloadable`.
+- `completion.mode`: `update`, `delete`, or `archive`.
+- Additional configured `tags` are appended to every meter and should stay bounded to deployment-level values such as
+  application, region, or environment.
+
+Spring Modulith's own event-publishing metrics, such as `module.events.published`, still describe application event
+emission. These Exposed gauges describe the durable publication store state: pending rows, completed rows according to
+the configured completion mode, failed rows, and incomplete rows whose event type can no longer be loaded.
+
 Kotlin callers can use package functions instead of Spring Modulith's Java-style static factories:
 
 ```kotlin
