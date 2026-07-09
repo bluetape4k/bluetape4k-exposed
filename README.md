@@ -226,6 +226,7 @@ Demo migration generation is covered by a weekly and pull-request smoke workflow
 
 | Example | Purpose | Verification |
 |---------|---------|--------------|
+| `examples-ddd-spring-modulith-demo` | DDD aggregate events, Spring Modulith module boundaries, Exposed-backed publication rows, and idempotent listeners | `./gradlew :examples-ddd-spring-modulith-demo:test` |
 | `examples-exposed-clickhouse-oltp-olap` | PostgreSQL OLTP to ClickHouse OLAP forwarding and aggregate analytics | `./gradlew :examples-exposed-clickhouse-oltp-olap:test` |
 | `examples-exposed-bigquery-dry-run` | Credential-free BigQuery REST dry-run validation with query-job options | `./gradlew :examples-exposed-bigquery-dry-run:test` |
 

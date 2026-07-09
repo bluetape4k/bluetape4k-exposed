@@ -213,3 +213,7 @@ payload, publication date, completion date, status, completion attempts, last re
 사용하므로 기본 범위는 H2, PostgreSQL, MySQL 8입니다. CI에서는
 `EXPOSED_TEST_DB=POSTGRESQL` 또는 `EXPOSED_TEST_DB=MYSQL_V8`로 매트릭스를
 줄일 수 있습니다.
+
+## 함께 보기
+
+- [DDD Spring Modulith demo](../../examples/ddd-spring-modulith-demo/README.ko.md): module-boundary verification, 최소 event payload, restart replay, idempotent listener를 포함한 실행 가능한 DDD 샘플입니다.

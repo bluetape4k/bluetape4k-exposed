@@ -28,9 +28,9 @@ Create:
 - `examples/ddd-spring-modulith-demo/src/main/kotlin/io/bluetape4k/exposed/examples/modulith/shipping/ShippingReservationHandler.kt`
 - `examples/ddd-spring-modulith-demo/src/main/kotlin/io/bluetape4k/exposed/examples/modulith/shipping/internal/ShippingReservationRepository.kt`
 - `examples/ddd-spring-modulith-demo/src/test/kotlin/io/bluetape4k/exposed/examples/modulith/DddSpringModulithDemoApplicationTest.kt`
-- `examples/ddd-spring-modulith-demo/src/test/kotlin/io/bluetape4k/exposed/examples/modulithinvalid/InvalidBoundaryApplication.kt`
-- `examples/ddd-spring-modulith-demo/src/test/kotlin/io/bluetape4k/exposed/examples/modulithinvalid/orders/**`
-- `examples/ddd-spring-modulith-demo/src/test/kotlin/io/bluetape4k/exposed/examples/modulithinvalid/shipping/**`
+- `examples/ddd-spring-modulith-demo/src/main/kotlin/io/bluetape4k/exposed/examples/modulithinvalid/InvalidBoundaryApplication.kt`
+- `examples/ddd-spring-modulith-demo/src/main/kotlin/io/bluetape4k/exposed/examples/modulithinvalid/orders/**`
+- `examples/ddd-spring-modulith-demo/src/main/kotlin/io/bluetape4k/exposed/examples/modulithinvalid/shipping/**`
 - `examples/ddd-spring-modulith-demo/src/test/resources/junit-platform.properties`
 - `examples/ddd-spring-modulith-demo/src/test/resources/logback-test.xml`
 - `docs/images/readme-diagrams/examples-ddd-spring-modulith-demo-architecture.svg`
@@ -102,6 +102,7 @@ dependencies {
   - one invalid `shipping` type that imports an `orders.internal` type
   - keep the fixture outside `io.bluetape4k.exposed.examples.modulith`
   - this fixture must compile from the first RED run because Gradle compiles all test sources before applying `--tests` filters.
+  - place it in `src/main/kotlin` under the sibling `modulithinvalid` package if Spring Modulith cannot scan the test-output package directly; the valid application scan still starts at `io.bluetape4k.exposed.examples.modulith`.
 - [ ] Write `DddSpringModulithDemoApplicationTest` first with these test names:
   - `application modules allow shipping to depend only on order events`
   - `boundary verifier rejects shipping dependency on order internals`

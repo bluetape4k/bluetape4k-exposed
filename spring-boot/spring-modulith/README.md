@@ -212,3 +212,7 @@ The integration test uses `TestDB.enabledDialects()` from
 `exposed-jdbc-tests`, so the default coverage is H2, PostgreSQL, and
 MySQL 8. CI can narrow the matrix with `EXPOSED_TEST_DB=POSTGRESQL` or
 `EXPOSED_TEST_DB=MYSQL_V8`.
+
+## See Also
+
+- [DDD Spring Modulith demo](../../examples/ddd-spring-modulith-demo/README.md) for a runnable DDD sample with module-boundary verification, minimal event payloads, restart replay, and idempotent listeners.

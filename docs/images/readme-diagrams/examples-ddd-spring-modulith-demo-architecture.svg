@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">DDD Spring Modulith Exposed demo architecture</title>
+  <desc id="desc">Orders and shipping modules communicate through a minimal OrderAcceptedEvent that is stored in Spring Modulith publication rows backed by Exposed JDBC.</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#172033" flood-opacity="0.14"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#345268"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="720" fill="#f5f7fb"/>
+  <text x="64" y="72" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="700" fill="#172033">DDD + Spring Modulith + Exposed</text>
+  <text x="64" y="110" font-family="Inter, Arial, sans-serif" font-size="18" fill="#536170">JDBC sample with explicit module boundaries, durable publication rows, and idempotent consumers</text>
+
+  <rect x="64" y="160" width="300" height="300" rx="8" fill="#ffffff" stroke="#bfd0dd" filter="url(#shadow)"/>
+  <text x="94" y="206" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#17324d">orders</text>
+  <text x="94" y="238" font-family="Inter, Arial, sans-serif" font-size="15" fill="#536170">Application service owns the command transaction.</text>
+  <rect x="94" y="270" width="240" height="56" rx="6" fill="#e9f5ee" stroke="#8ec3a5"/>
+  <text x="118" y="304" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600" fill="#1f5c3a">Order aggregate</text>
+  <rect x="94" y="346" width="240" height="56" rx="6" fill="#eef4fb" stroke="#9bb8d1"/>
+  <text x="118" y="380" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600" fill="#285173">OrderRepository</text>
+  <text x="118" y="430" font-family="Inter, Arial, sans-serif" font-size="13" fill="#536170">table: DDD_MODULITH_ORDERS</text>
+
+  <rect x="450" y="160" width="300" height="300" rx="8" fill="#ffffff" stroke="#bfd0dd" filter="url(#shadow)"/>
+  <text x="480" y="206" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#17324d">orders :: events</text>
+  <text x="480" y="238" font-family="Inter, Arial, sans-serif" font-size="15" fill="#536170">Named interface exported to other modules.</text>
+  <rect x="480" y="284" width="240" height="78" rx="6" fill="#fff7e6" stroke="#d3ad5f"/>
+  <text x="506" y="316" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#755214">OrderAcceptedEvent</text>
+  <text x="506" y="342" font-family="Inter, Arial, sans-serif" font-size="13" fill="#755214">aggregateId, eventId, occurredAt</text>
+
+  <rect x="836" y="160" width="300" height="300" rx="8" fill="#ffffff" stroke="#bfd0dd" filter="url(#shadow)"/>
+  <text x="866" y="206" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#17324d">shipping</text>
+  <text x="866" y="238" font-family="Inter, Arial, sans-serif" font-size="15" fill="#536170">Allowed dependency: orders :: events only.</text>
+  <rect x="866" y="270" width="240" height="56" rx="6" fill="#eef4fb" stroke="#9bb8d1"/>
+  <text x="890" y="304" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600" fill="#285173">Reservation listener</text>
+  <rect x="866" y="346" width="240" height="56" rx="6" fill="#e9f5ee" stroke="#8ec3a5"/>
+  <text x="890" y="380" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600" fill="#1f5c3a">Idempotent reservation</text>
+  <text x="890" y="430" font-family="Inter, Arial, sans-serif" font-size="13" fill="#536170">table: DDD_MODULITH_SHIPPING_RESERVATIONS</text>
+
+  <rect x="250" y="540" width="700" height="100" rx="8" fill="#ffffff" stroke="#bfd0dd" filter="url(#shadow)"/>
+  <text x="286" y="584" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" fill="#17324d">Exposed JDBC + Spring Modulith publication store</text>
+  <text x="286" y="614" font-family="Inter, Arial, sans-serif" font-size="15" fill="#536170">Tables: DDD_MODULITH_ORDERS, EVENT_PUBLICATION, DDD_MODULITH_SHIPPING_RESERVATIONS.</text>
+  <text x="286" y="636" font-family="Inter, Arial, sans-serif" font-size="14" fill="#536170">Incomplete publication rows are replayed on restart and completed by the stable listener id.</text>
+
+  <path d="M364 310 H450" stroke="#345268" stroke-width="3" marker-end="url(#arrow)" fill="none"/>
+  <text x="374" y="294" font-family="Inter, Arial, sans-serif" font-size="14" fill="#345268">records minimal event</text>
+
+  <path d="M750 310 H836" stroke="#345268" stroke-width="3" marker-end="url(#arrow)" fill="none"/>
+  <text x="764" y="294" font-family="Inter, Arial, sans-serif" font-size="14" fill="#345268">listener consumes DTO</text>
+
+  <path d="M214 460 V540" stroke="#345268" stroke-width="3" marker-end="url(#arrow)" fill="none"/>
+  <text x="86" y="506" font-family="Inter, Arial, sans-serif" font-size="14" fill="#345268">persist aggregate</text>
+
+  <path d="M600 460 V540" stroke="#345268" stroke-width="3" marker-end="url(#arrow)" fill="none"/>
+  <text x="622" y="506" font-family="Inter, Arial, sans-serif" font-size="14" fill="#345268">record publication</text>
+
+  <path d="M986 460 V540" stroke="#345268" stroke-width="3" marker-end="url(#arrow)" fill="none"/>
+  <text x="1004" y="506" font-family="Inter, Arial, sans-serif" font-size="14" fill="#345268">deduplicate by order id</text>
+
+  <path d="M950 590 C1080 590,1080 310,1036 310" stroke="#b46b30" stroke-width="3" stroke-dasharray="8 8" marker-end="url(#arrow)" fill="none"/>
+  <text x="968" y="572" font-family="Inter, Arial, sans-serif" font-size="14" fill="#8f4d17">restart replay of incomplete row</text>
+</svg>

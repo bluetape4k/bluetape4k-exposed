@@ -1,0 +1,6 @@
+package io.bluetape4k.exposed.examples.modulithinvalid
+
+import org.springframework.boot.autoconfigure.SpringBootApplication
+
+@SpringBootApplication
+class InvalidBoundaryApplication

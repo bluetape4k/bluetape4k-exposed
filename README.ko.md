@@ -222,6 +222,7 @@ Demo migration 생성은 weekly 및 pull request smoke workflow에서 검증합�
 
 | 예제 | 목적 | 검증 |
 |------|------|------|
+| `examples-ddd-spring-modulith-demo` | DDD aggregate event, Spring Modulith module boundary, Exposed-backed publication row, idempotent listener 검증 | `./gradlew :examples-ddd-spring-modulith-demo:test` |
 | `examples-exposed-clickhouse-oltp-olap` | PostgreSQL OLTP에서 ClickHouse OLAP으로 forwarding 후 집계 분석 | `./gradlew :examples-exposed-clickhouse-oltp-olap:test` |
 | `examples-exposed-bigquery-dry-run` | Credential 없이 BigQuery REST dry-run과 query-job option 검증 | `./gradlew :examples-exposed-bigquery-dry-run:test` |
 

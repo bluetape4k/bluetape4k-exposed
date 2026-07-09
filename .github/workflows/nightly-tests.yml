@@ -1496,6 +1496,7 @@ jobs:
         run: |
           for attempt in 1 2 3 4 5; do
             ./gradlew \
+              :examples-ddd-spring-modulith-demo:test \
               :examples-exposed-bigquery-dry-run:test \
               :examples-exposed-clickhouse-oltp-olap:test \
               :examples-ktor-exposed-demo:test \
@@ -1514,6 +1515,7 @@ jobs:
         if: always()
         run: >
           ./gradlew
+          :examples-ddd-spring-modulith-demo:koverXmlReport
           :examples-exposed-bigquery-dry-run:koverXmlReport
           :examples-exposed-clickhouse-oltp-olap:koverXmlReport
           :examples-ktor-exposed-demo:koverXmlReport
