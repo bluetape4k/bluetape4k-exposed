@@ -27,6 +27,8 @@ private val safeCorrelation = Regex("[A-Za-z0-9._:-]{1,128}")
  * only after commit. Committed completion clears the registered buffer, while rollback or unknown completion
  * preserves it. Publication, duplicate registration, or snapshot mutation poisons the transaction even when
  * caller code catches the immediate failure. Event instances and payloads must remain deeply immutable.
+ * Duplicate protection uses aggregate object identity within the current transaction; separate instances with
+ * the same aggregate id are independent registrations and require application-level idempotency.
  * Snapshot verification runs at [Ordered.LOWEST_PRECEDENCE]. Any synchronization that can mutate the aggregate
  * must use an earlier order; registering a same-order mutating synchronization after publication is unsupported.
  *

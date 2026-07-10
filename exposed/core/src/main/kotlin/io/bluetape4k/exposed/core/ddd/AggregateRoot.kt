@@ -21,11 +21,13 @@ interface AggregateRoot<ID : Any> {
     val id: ID
 
     /**
-     * Returns a side-effect-free immutable snapshot of recorded domain events.
+     * Returns a side-effect-free, read-only snapshot of recorded domain events.
      *
-     * Each call returns a distinct list in recording order. Event object
-     * references remain unchanged until [clearDomainEvents] succeeds. Calling
-     * this method does not clear or mutate the aggregate event buffer.
+     * Each non-empty call returns an independent list in recording order.
+     * Calling this method does not clear or mutate the aggregate event buffer.
+     * Implementations used with a reference-validating transaction-aware
+     * publisher must preserve event object references until
+     * [clearDomainEvents] succeeds.
      */
     fun domainEvents(): List<DomainEvent<ID>>
 
@@ -33,9 +35,8 @@ interface AggregateRoot<ID : Any> {
      * Clears recorded domain events without returning them.
      *
      * Use this for caller-owned discard or committed-completion cleanup. It is
-     * forbidden between registration with `ExposedAggregateEventPublisher` and
-     * transaction completion because rollback and unknown completion must
-     * preserve the buffer.
+     * forbidden while a transaction-aware publisher owns a registered snapshot
+     * because rollback and unknown completion must preserve the buffer.
      */
     fun clearDomainEvents()
 
@@ -45,10 +46,10 @@ interface AggregateRoot<ID : Any> {
      *
      * Use this only after the caller is ready to move events into a durable
      * owner such as an outbox or persisted retry queue. This method is
-     * incompatible with `ExposedAggregateEventPublisher`: it clears immediately
-     * after [handoff], before transaction completion. It is a local buffer
-     * operation, not a publish or persistence boundary. If [handoff] throws,
-     * the buffer remains intact.
+     * incompatible with publishers that retain snapshot ownership until
+     * transaction completion because it clears immediately after [handoff]. It
+     * is a local buffer operation, not a publish or persistence boundary. If
+     * [handoff] throws, the buffer remains intact.
      */
     fun drainDomainEvents(handoff: (List<DomainEvent<ID>>) -> Unit): List<DomainEvent<ID>>
 }
