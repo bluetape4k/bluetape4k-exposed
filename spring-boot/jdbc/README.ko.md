@@ -253,8 +253,8 @@ dependencies {
 
 ![트랜잭션 인식 애그리거트 도메인 이벤트 시퀀스](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-domain-event-sequence-01.png)
 
-`ExposedAggregateEventPublisher`는 repository 저장 직후 command transaction이 아직 활성 상태일 때
-aggregate의 불변 event snapshot을 Spring에 전달합니다. JDBC starter는 `AggregateRoot`, Spring application
+`ExposedAggregateEventPublisher`는 repository 저장 직후 command transaction이 아직 활성 상태일 때, 깊게 불변인
+event 객체를 담은 독립적인 read-only 목록을 Spring에 전달합니다. JDBC starter는 `AggregateRoot`, Spring application
 event 및 transaction synchronization API가 classpath에 있고, 여러 manager 중 하나의 `@Primary`를 포함해
 정확히 하나의 `PlatformTransactionManager`를 선택할 수 있으며, 애플리케이션이 publisher bean을 직접
 선언하지 않았을 때 이를 자동 구성합니다.

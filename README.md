@@ -154,6 +154,12 @@ Repository integrations should:
 4. Clear or drain the aggregate buffer only after that durable owner accepts
    responsibility for the events.
 
+A transaction-aware publisher uses a different sequence when its durable
+publication must participate in the command transaction: persist the aggregate
+and hand off the read-only snapshot before commit, then clear the buffer only
+after committed completion. See the [JDBC transaction-aware publisher](spring-boot/jdbc/README.md#transaction-aware-domain-events)
+for its synchronous-listener and rollback boundaries.
+
 The Spring Modulith and JaVers modules remain separate adapters. These core
 contracts do not encode Spring Modulith publication semantics or JaVers audit
 commit semantics.
