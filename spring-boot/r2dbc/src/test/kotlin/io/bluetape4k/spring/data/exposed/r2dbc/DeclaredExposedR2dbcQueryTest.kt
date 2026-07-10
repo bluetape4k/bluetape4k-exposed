@@ -186,6 +186,187 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
 
     @ParameterizedTest
     @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `@Query native - ORDER BY 와 LIMIT 순서를 보존한다`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, Users) {
+            createUsers()
+
+            val found = userRepository.findYoungestTwoNative()
+
+            found.map { it.age } shouldBeEqualTo listOf(20, 25)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `@Query native - DISTINCT ID projection 을 지원한다`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, Users) {
+            createUsers()
+
+            val found = userRepository.findDistinctIdsNative()
+
+            found shouldHaveSize 2
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `@Query native - block comment 를 SQL token separator 로 처리한다`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, Users) {
+            createUsers()
+
+            val found = userRepository.findDistinctIdsWithBlockCommentsNative()
+
+            found shouldHaveSize 2
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `@Query native - nested SELECT 가 있어도 outer ID projection 을 인식한다`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, Users) {
+            createUsers()
+
+            val found = userRepository.findIdWithNestedProjectionNative()
+
+            found shouldHaveSize 1
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `@Query native - nested SELECT 의 ID 를 outer ID 로 오인하지 않는다`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, Users) {
+            val error = assertFailsWith<IllegalArgumentException> {
+                userRepository.findOuterProjectionWithNestedIdNative()
+            }
+
+            error.message shouldBeEqualTo
+                "@Query method 'findOuterProjectionWithNestedIdNative' must select entity id column 'id'"
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `@Query native - 잘못된 ID alias 와 comment alias 를 거부한다`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, Users) {
+            val wrongAliasError = assertFailsWith<IllegalArgumentException> {
+                userRepository.findWrongIdAliasNative()
+            }
+            wrongAliasError.message shouldBeEqualTo
+                "@Query method 'findWrongIdAliasNative' must select entity id column 'id'"
+
+            val expressionAliasError = assertFailsWith<IllegalArgumentException> {
+                userRepository.findExpressionIdAliasNative()
+            }
+            expressionAliasError.message shouldBeEqualTo
+                "@Query method 'findExpressionIdAliasNative' must select entity id column 'id'"
+
+            val commentAliasError = assertFailsWith<IllegalArgumentException> {
+                userRepository.findCommentAliasProjectionNative()
+            }
+            commentAliasError.message shouldBeEqualTo
+                "@Query method 'findCommentAliasProjectionNative' must select entity id column 'id'"
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `@Query native - dialect string 과 comment 내부 SQL keyword 를 무시한다`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, Users) {
+            when (testDB) {
+                TestDB.POSTGRESQL -> {
+                    userRepository.findPostgresDollarQuoteNative().shouldBeEmpty()
+
+                    val error = assertFailsWith<IllegalArgumentException> {
+                        userRepository.findPostgresDollarQuoteIdProjectionNative()
+                    }
+                    error.message shouldBeEqualTo
+                        "@Query method 'findPostgresDollarQuoteIdProjectionNative' must select entity id column 'id'"
+                }
+                TestDB.MYSQL_V8 -> userRepository.findMySqlHashCommentNative().shouldBeEmpty()
+                else -> Unit
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `@Query native - JOIN 쿼리가 반환한 ID 순서를 보존한다`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, Users) {
+            createUsers()
+
+            val found = userRepository.findOldestJoinRowsNative()
+
+            found.map { it.age } shouldBeEqualTo listOf(35, 30, 30)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `@Query native - reload 할 수 없는 ID 는 명확히 거부한다`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, Users) {
+            createUsers()
+
+            val error = assertFailsWith<IllegalStateException> {
+                userRepository.findMissingEntityIdNative()
+            }
+
+            error.message
+                ?.startsWith("@Query method 'findMissingEntityIdNative' returned unknown entity id '")
+                .shouldBeTrue()
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `@Query native - ID 없는 projection 은 명확히 거부한다`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, Users) {
+            createUsers()
+
+            val error = assertFailsWith<IllegalArgumentException> {
+                userRepository.findEmailsProjectionNative()
+            }
+
+            error.message shouldBeEqualTo
+                "@Query method 'findEmailsProjectionNative' must select entity id column 'id'"
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `@Query native - ID 없는 grouping 은 명확히 거부한다`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, Users) {
+            createUsers()
+
+            val error = assertFailsWith<IllegalArgumentException> {
+                userRepository.groupByAgeNative()
+            }
+
+            error.message shouldBeEqualTo
+                "@Query method 'groupByAgeNative' must select entity id column 'id'"
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `@Query native - 결과가 없어도 ID 없는 query shape 을 거부한다`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, Users) {
+            val projectionError = assertFailsWith<IllegalArgumentException> {
+                userRepository.findEmailsProjectionNative()
+            }
+            projectionError.message shouldBeEqualTo
+                "@Query method 'findEmailsProjectionNative' must select entity id column 'id'"
+
+            val groupingError = assertFailsWith<IllegalArgumentException> {
+                userRepository.groupByAgeNative()
+            }
+            groupingError.message shouldBeEqualTo
+                "@Query method 'groupByAgeNative' must select entity id column 'id'"
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
     fun `@Query native - 10번째 placeholder 인덱스를 올바르게 해석한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()

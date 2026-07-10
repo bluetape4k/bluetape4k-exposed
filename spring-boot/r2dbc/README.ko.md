@@ -148,15 +148,22 @@ interface UserRepository : ExposedR2dbcRepository<User, Long> {
 
     @Query("SELECT * FROM users WHERE age BETWEEN ?1 AND ?2")
     suspend fun findByAgeRangeNative(minAge: Int, maxAge: Int): List<User>
+
+    @Query("SELECT id FROM users ORDER BY age DESC LIMIT 10")
+    suspend fun findTopTenByAgeNative(): List<User>
 }
 ```
 
 파라미터는 prepared statement 플레이스홀더로 바인딩되므로 SQL injection이 방지됩니다.
 
-> **제약**: raw SQL은 매칭되는 행의 ID를 추출하는 데만 사용됩니다. 최종 엔티티는
-> `selectAll().where { id inList ids }` 로 다시 로드되므로, raw SQL의 ORDER BY, JOIN, GROUP BY, LIMIT은
-> 최종 결과에 반영되지 않습니다.
-> 정렬이나 집계가 필요한 경우 [메서드명 기반 파생 쿼리](#5-메서드명-기반-파생-쿼리) 또는 Exposed DSL을 사용하세요.
+raw SQL은 엔티티 ID 컬럼을 매핑된 컬럼명으로 조회해야 합니다. 엔티티는 Exposed로 다시
+로드한 뒤 SQL이 반환한 ID 순서대로 정렬하므로 `ORDER BY`, `LIMIT`, JOIN 쿼리의 정렬 순서가 유지됩니다.
+JOIN에서는 필요에 따라 `SELECT u.id AS id FROM users u JOIN ...`처럼 엔티티 ID에 매핑된
+컬럼명을 alias로 지정하세요.
+
+> **제약**: 엔티티 ID를 조회하지 않는 scalar projection이나 grouping 쿼리는 엔티티 쿼리가
+> 아니므로 명확한 `IllegalArgumentException`을 던집니다. Projection이나 집계 결과가 필요하면
+> 전용 row mapper 또는 Exposed DSL을 사용하세요.
 
 ### 7. Actuator Cache Health
 

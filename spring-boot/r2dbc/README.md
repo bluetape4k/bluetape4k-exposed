@@ -148,16 +148,22 @@ interface UserRepository : ExposedR2dbcRepository<User, Long> {
 
     @Query("SELECT * FROM users WHERE age BETWEEN ?1 AND ?2")
     suspend fun findByAgeRangeNative(minAge: Int, maxAge: Int): List<User>
+
+    @Query("SELECT id FROM users ORDER BY age DESC LIMIT 10")
+    suspend fun findTopTenByAgeNative(): List<User>
 }
 ```
 
 Parameters are bound as prepared-statement placeholders, so SQL injection is prevented.
 
-> **Limitation**: The raw SQL is used only to extract matching row IDs. The final entities are
-> reloaded via `selectAll().where { id inList ids }`, so ORDER BY, JOIN, GROUP BY, and LIMIT
-> clauses in the raw SQL are silently ignored in the returned result.
-> Use [method-name derived queries](#5-method-name-derived-queries) or the Exposed DSL for
-> sorting or aggregation.
+The raw SQL must select the entity ID column under its mapped column name. Entities are reloaded
+through Exposed and returned in the exact ID order produced by the SQL, so `ORDER BY`, `LIMIT`,
+and join ordering are preserved. In joins, alias the selected entity ID to its mapped name when
+needed, for example `SELECT u.id AS id FROM users u JOIN ...`.
+
+> **Limitation**: Scalar projections and grouping queries that do not select the entity ID are not
+> entity queries and fail with a clear `IllegalArgumentException`. Use a dedicated row mapper or
+> the Exposed DSL for projection and aggregation result shapes.
 
 ### 7. Actuator Cache Health
 

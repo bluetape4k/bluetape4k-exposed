@@ -3,6 +3,7 @@ package io.bluetape4k.spring.data.exposed.r2dbc.repository.query
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.warn
 import kotlinx.coroutines.flow.toList
+import org.jetbrains.exposed.v1.core.EntityIDColumnType
 import org.jetbrains.exposed.v1.core.IColumnType
 import org.jetbrains.exposed.v1.core.InternalApi
 import org.jetbrains.exposed.v1.core.TextColumnType
@@ -25,14 +26,11 @@ import kotlin.reflect.KClass
  * reused so uncommitted caller data remains visible. Otherwise this query opens the same
  * transaction boundary used by PartTree and base R2DBC repository methods.
  *
- * Positional parameters (`?1`, `?2`, ...) are bound before execution, and entities
- * are reloaded from the id column returned by the SELECT query.
- *
- * **Two-query pattern constraint**: the raw SQL is used only to extract ids. Actual
- * entity loading is performed with `selectAll().where { id inList ids }`, so ORDER BY,
- * JOIN, GROUP BY, LIMIT, and similar semantics from the raw SQL are not preserved in
- * the final result. Use [PartTreeExposedR2dbcQuery] or direct Exposed DSL when sorting
- * or aggregation semantics must be preserved.
+ * Positional parameters (`?1`, `?2`, ...) are bound before execution. The SELECT query
+ * must expose the entity id column under its mapped name; entities are reloaded and
+ * returned in the exact id order produced by the raw SQL. This preserves `ORDER BY`,
+ * `LIMIT`, and join ordering while deliberately rejecting projection or grouping shapes
+ * that do not return entity ids.
  */
 internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
     private val queryMethod: ExposedR2dbcQueryMethod,
@@ -42,6 +40,7 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
     companion object: KLoggingChannel()
 
     private val positionalPlaceholderRegex = Regex("\\?(\\d+)")
+    private val selectModifierRegex = Regex("(?i)^\\s*(?:DISTINCT|ALL)\\s+")
 
     private val rawSql: String = queryMethod.getAnnotatedQuery()
         ?: error("@Query annotation is required for DeclaredExposedR2dbcQuery on method '${queryMethod.name}'")
@@ -52,6 +51,7 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
         error("DeclaredExposedR2dbcQuery '${queryMethod.name}' must be invoked as a suspend method")
 
     suspend fun executeSuspending(parameters: Array<out Any?>): Any? {
+        validateEntityIdSelection()
         val values = parameters.withoutContinuation()
         val boundSql = bindParameters(rawSql, values)
 
@@ -64,24 +64,264 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
 
     private suspend fun executeInTransaction(tx: R2dbcTransaction, boundSql: BoundSql): Any? {
         val idColumnName = mapper.table.id.name
-        val rawIds = tx.exec(boundSql.sql, boundSql.args, StatementType.SELECT) { row ->
-            // Fall back to ordinal 0 when name-based lookup fails for aliases or expressions.
-            try {
-                row.get(idColumnName, Any::class.java)
-            } catch (_: Exception) {
-                row.get(0, Any::class.java)
-            }
-        }?.toList().orEmpty()
+        val rawIds = try {
+            tx.exec(boundSql.sql, boundSql.args, StatementType.SELECT) { row ->
+                try {
+                    row.get(idColumnName, Any::class.java)
+                } catch (e: IllegalArgumentException) {
+                    throw UnsupportedQueryShapeException(queryMethod.name, idColumnName, e)
+                }
+            }?.toList().orEmpty()
+        } catch (e: Exception) {
+            e.findUnsupportedQueryShape()?.let { throw it }
+            throw e
+        }
 
         if (rawIds.isEmpty()) return emptyList<R>()
 
-        @Suppress("UNCHECKED_CAST")
-        val ids = rawIds.filterNotNull() as List<ID>
-        val results = mutableListOf<R>()
+        val ids = rawIds.map(::decodeId)
+        val resultsById = mutableMapOf<ID, R>()
         mapper.table.selectAll()
-            .where { mapper.table.id inList ids }
-            .collect { results.add(mapper.toDomain(it)) }
-        return results
+            .where { mapper.table.id inList ids.distinct() }
+            .collect { row ->
+                resultsById[row[mapper.table.id].value] = mapper.toDomain(row)
+            }
+        return ids.map { id ->
+            resultsById[id]
+                ?: error("@Query method '${queryMethod.name}' returned unknown entity id '$id'")
+        }
+    }
+
+    private class UnsupportedQueryShapeException(
+        methodName: String,
+        idColumnName: String,
+        cause: Throwable? = null,
+    ): IllegalArgumentException(
+        "@Query method '$methodName' must select entity id column '$idColumnName'",
+        cause,
+    )
+
+    private fun Throwable.findUnsupportedQueryShape(): UnsupportedQueryShapeException? =
+        generateSequence(this) { it.cause }
+            .filterIsInstance<UnsupportedQueryShapeException>()
+            .firstOrNull()
+
+    private fun validateEntityIdSelection() {
+        val idColumnName = mapper.table.id.name
+        val selectClauses = topLevelSelectClauses(rawSql.withoutSqlComments())
+        val hasUnsupportedClause = selectClauses.isEmpty() || selectClauses.any { selectedColumns ->
+            val normalizedColumns = selectModifierRegex.replaceFirst(selectedColumns, "")
+            projectionItems(normalizedColumns).none { it.selectsId(idColumnName) }
+        }
+        if (hasUnsupportedClause) {
+            throw UnsupportedQueryShapeException(queryMethod.name, idColumnName)
+        }
+    }
+
+    private fun String.withoutSqlComments(): String {
+        val sanitized = StringBuilder(length)
+        var quote: Char? = null
+        var dollarQuote: String? = null
+        var index = 0
+        while (index < length) {
+            val char = this[index]
+            when {
+                dollarQuote != null -> {
+                    val delimiter = requireNotNull(dollarQuote)
+                    if (startsWith(delimiter, index)) {
+                        sanitized.append(delimiter)
+                        index += delimiter.length - 1
+                        dollarQuote = null
+                    } else {
+                        sanitized.append(char)
+                    }
+                }
+                quote != null -> {
+                    sanitized.append(char)
+                    if (char == '\\' && getOrNull(index + 1) != null) {
+                        sanitized.append(this[++index])
+                    } else if (char == quote) {
+                        if (getOrNull(index + 1) == quote) {
+                            sanitized.append(char)
+                            index++
+                        } else {
+                            quote = null
+                        }
+                    }
+                }
+                char == '$' && dollarQuoteDelimiterAt(index) != null -> {
+                    val delimiter = requireNotNull(dollarQuoteDelimiterAt(index))
+                    dollarQuote = delimiter
+                    sanitized.append(delimiter)
+                    index += delimiter.length - 1
+                }
+                char == '\'' || char == '"' || char == '`' -> {
+                    quote = char
+                    sanitized.append(char)
+                }
+                (char == '-' && getOrNull(index + 1) == '-') ||
+                    (char == '#' && getOrNull(index + 1) != '>') -> {
+                    index = indexOf('\n', index + 2).takeIf { it >= 0 } ?: length
+                    sanitized.append('\n')
+                }
+                char == '/' && getOrNull(index + 1) == '*' -> {
+                    val commentEnd = indexOf("*/", index + 2)
+                    val end = if (commentEnd >= 0) commentEnd + 2 else length
+                    sanitized.append(' ')
+                    substring(index, end).forEach { if (it == '\n') sanitized.append('\n') }
+                    index = end - 1
+                }
+                else -> sanitized.append(char)
+            }
+            index++
+        }
+        return sanitized.toString()
+    }
+
+    private fun String.dollarQuoteDelimiterAt(index: Int): String? {
+        if (getOrNull(index) != '$') return null
+        val end = indexOf('$', index + 1)
+        if (end < 0) return null
+        val tag = substring(index + 1, end)
+        val validTag = tag.isEmpty() ||
+            ((tag.first().isLetter() || tag.first() == '_') && tag.drop(1).all { it.isLetterOrDigit() || it == '_' })
+        return if (validTag) substring(index, end + 1) else null
+    }
+
+    private fun topLevelSelectClauses(sql: String): List<String> {
+        val clauses = mutableListOf<String>()
+        var depth = 0
+        var quote: Char? = null
+        var dollarQuote: String? = null
+        var selectStart = -1
+        var index = 0
+
+        while (index < sql.length) {
+            val char = sql[index]
+            when {
+                dollarQuote != null -> {
+                    val delimiter = requireNotNull(dollarQuote)
+                    if (sql.startsWith(delimiter, index)) {
+                        index += delimiter.length - 1
+                        dollarQuote = null
+                    }
+                }
+                quote != null -> {
+                    if (char == '\\' && sql.getOrNull(index + 1) != null) {
+                        index++
+                    } else if (char == quote) {
+                        if (sql.getOrNull(index + 1) == quote) index++ else quote = null
+                    }
+                }
+                char == '$' && sql.dollarQuoteDelimiterAt(index) != null -> {
+                    val delimiter = requireNotNull(sql.dollarQuoteDelimiterAt(index))
+                    dollarQuote = delimiter
+                    index += delimiter.length - 1
+                }
+                char == '-' && sql.getOrNull(index + 1) == '-' -> {
+                    index = sql.indexOf('\n', index + 2).takeIf { it >= 0 } ?: sql.length
+                    continue
+                }
+                char == '/' && sql.getOrNull(index + 1) == '*' -> {
+                    val commentEnd = sql.indexOf("*/", index + 2)
+                    index = if (commentEnd >= 0) commentEnd + 2 else sql.length
+                    continue
+                }
+                char == '\'' || char == '"' || char == '`' -> quote = char
+                char == '(' -> depth++
+                char == ')' -> depth--
+                depth == 0 && sql.isKeywordAt(index, "SELECT") -> {
+                    selectStart = index + "SELECT".length
+                    index = selectStart
+                    continue
+                }
+                depth == 0 && selectStart >= 0 && sql.isKeywordAt(index, "FROM") -> {
+                    clauses += sql.substring(selectStart, index)
+                    selectStart = -1
+                    index += "FROM".length
+                    continue
+                }
+            }
+            index++
+        }
+        return clauses
+    }
+
+    private fun String.isKeywordAt(index: Int, keyword: String): Boolean {
+        if (!regionMatches(index, keyword, 0, keyword.length, ignoreCase = true)) return false
+        val before = getOrNull(index - 1)
+        val after = getOrNull(index + keyword.length)
+        return before?.isSqlIdentifierPart() != true && after?.isSqlIdentifierPart() != true
+    }
+
+    private fun Char.isSqlIdentifierPart(): Boolean = isLetterOrDigit() || this == '_' || this == '$'
+
+    private fun projectionItems(selectedColumns: String): List<String> {
+        val items = mutableListOf<String>()
+        var start = 0
+        var depth = 0
+        var quote: Char? = null
+        var dollarQuote: String? = null
+        var index = 0
+        while (index < selectedColumns.length) {
+            val char = selectedColumns[index]
+            when {
+                dollarQuote != null -> {
+                    val delimiter = requireNotNull(dollarQuote)
+                    if (selectedColumns.startsWith(delimiter, index)) {
+                        index += delimiter.length - 1
+                        dollarQuote = null
+                    }
+                }
+                quote != null && char == '\\' && selectedColumns.getOrNull(index + 1) != null -> index++
+                quote != null && char == quote -> quote = null
+                quote != null -> Unit
+                char == '$' && selectedColumns.dollarQuoteDelimiterAt(index) != null -> {
+                    val delimiter = requireNotNull(selectedColumns.dollarQuoteDelimiterAt(index))
+                    dollarQuote = delimiter
+                    index += delimiter.length - 1
+                }
+                char == '\'' || char == '"' || char == '`' -> quote = char
+                char == '(' -> depth++
+                char == ')' -> depth--
+                char == ',' && depth == 0 -> {
+                    items += selectedColumns.substring(start, index)
+                    start = index + 1
+                }
+            }
+            index++
+        }
+        items += selectedColumns.substring(start)
+        return items
+    }
+
+    private fun String.selectsId(idColumnName: String): Boolean {
+        val identifier = Regex.escape(idColumnName)
+        val quotedIdentifier = "[\"`]?${identifier}[\"`]?"
+        val qualifier = "(?:[\"`]?[A-Za-z_][A-Za-z0-9_$]*[\"`]?\\s*\\.\\s*)?"
+        val directId = Regex(
+            "(?i)^\\s*$qualifier$quotedIdentifier(?:\\s+(?:AS\\s+)?$quotedIdentifier)?\\s*$"
+        )
+        val wildcard = Regex("(?i)^\\s*$qualifier\\*\\s*$")
+        return directId.matches(this) || wildcard.matches(this)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun decodeId(rawId: Any?): ID {
+        val value = requireNotNull(rawId) {
+            "@Query method '${queryMethod.name}' returned null entity id"
+        }
+        return try {
+            val entityIdColumnType = mapper.table.id.columnType as EntityIDColumnType<ID>
+            requireNotNull(entityIdColumnType.idColumn.columnType.valueFromDB(value)) {
+                "@Query method '${queryMethod.name}' returned invalid entity id '$value'"
+            }
+        } catch (e: Exception) {
+            throw IllegalArgumentException(
+                "@Query method '${queryMethod.name}' returned invalid entity id '$value'",
+                e,
+            )
+        }
     }
 
     private data class BoundSql(
