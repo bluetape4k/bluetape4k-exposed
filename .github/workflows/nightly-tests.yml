@@ -1808,7 +1808,7 @@ jobs:
           RESULTS: ${{ join(needs.*.result, ',') }}
         run: |
           echo "Nightly results: $RESULTS"
-          if echo "$RESULTS" | grep -qE "failure|cancelled"; then
+          if printf '%s\n' "$RESULTS" | tr ',' '\n' | grep -qvE '^(success|skipped)$'; then
             echo "Nightly failed"
             exit 1
           fi
