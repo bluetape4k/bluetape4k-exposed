@@ -77,6 +77,103 @@ interface UserR2dbcRepository: ExposedR2dbcRepository<User, Long> {
     @Query("SELECT * FROM $USERS_TABLE_NAME WHERE age BETWEEN ?1 AND ?2")
     suspend fun findByAgeRangeNative(minAge: Int, maxAge: Int): List<User>
 
+    @Query("SELECT id FROM $USERS_TABLE_NAME ORDER BY age ASC LIMIT 2")
+    suspend fun findYoungestTwoNative(): List<User>
+
+    @Query("SELECT DISTINCT id FROM $USERS_TABLE_NAME ORDER BY id LIMIT 2")
+    suspend fun findDistinctIdsNative(): List<User>
+
+    @Query("SELECT/* query shape */DISTINCT/* entity key */id FROM $USERS_TABLE_NAME ORDER BY id LIMIT 2")
+    suspend fun findDistinctIdsWithBlockCommentsNative(): List<User>
+
+    @Query(
+        """
+        SELECT source.id, (SELECT MAX(nested.age) FROM $USERS_TABLE_NAME nested) AS max_age
+          FROM $USERS_TABLE_NAME source
+         ORDER BY source.id
+         LIMIT 1
+        """
+    )
+    suspend fun findIdWithNestedProjectionNative(): List<User>
+
+    @Query(
+        """
+        SELECT source.email, (SELECT MAX(nested.id) FROM $USERS_TABLE_NAME nested) AS max_id
+          FROM $USERS_TABLE_NAME source
+         WHERE 1 = 0
+        """
+    )
+    suspend fun findOuterProjectionWithNestedIdNative(): List<User>
+
+    @Query(
+        """
+        SELECT source.id AS id
+          FROM $USERS_TABLE_NAME source
+          JOIN $USERS_TABLE_NAME matched ON matched.age >= source.age
+         ORDER BY source.age DESC, matched.age ASC
+         LIMIT 3
+        """
+    )
+    suspend fun findOldestJoinRowsNative(): List<User>
+
+    @Query(
+        """
+        SELECT missing.id
+          FROM (SELECT id + 1000000 AS id FROM $USERS_TABLE_NAME) missing
+         ORDER BY missing.id
+         LIMIT 1
+        """
+    )
+    suspend fun findMissingEntityIdNative(): List<User>
+
+    @Query("SELECT email FROM $USERS_TABLE_NAME ORDER BY email")
+    suspend fun findEmailsProjectionNative(): List<User>
+
+    @Query("SELECT id AS other_id FROM $USERS_TABLE_NAME WHERE 1 = 0")
+    suspend fun findWrongIdAliasNative(): List<User>
+
+    @Query("SELECT email AS id FROM $USERS_TABLE_NAME WHERE 1 = 0")
+    suspend fun findExpressionIdAliasNative(): List<User>
+
+    @Query(
+        """
+        SELECT email -- AS id
+          FROM $USERS_TABLE_NAME
+         WHERE 1 = 0
+        """
+    )
+    suspend fun findCommentAliasProjectionNative(): List<User>
+
+    @Query(
+        """
+        SELECT id, ${'$'}${'$'} SELECT email FROM ignored ${'$'}${'$'} AS marker
+          FROM $USERS_TABLE_NAME
+         WHERE 1 = 0
+        """
+    )
+    suspend fun findPostgresDollarQuoteNative(): List<User>
+
+    @Query(
+        """
+        SELECT email, ${'$'}${'$'}x,id,y${'$'}${'$'} AS marker
+          FROM $USERS_TABLE_NAME
+         WHERE 1 = 0
+        """
+    )
+    suspend fun findPostgresDollarQuoteIdProjectionNative(): List<User>
+
+    @Query(
+        """
+        SELECT id # SELECT email FROM ignored
+          FROM $USERS_TABLE_NAME
+         WHERE 1 = 0
+        """
+    )
+    suspend fun findMySqlHashCommentNative(): List<User>
+
+    @Query("SELECT age, COUNT(*) FROM $USERS_TABLE_NAME GROUP BY age")
+    suspend fun groupByAgeNative(): List<User>
+
     @Query("SELECT * FROM $USERS_TABLE_NAME WHERE email = ?10")
     suspend fun findByEmailNativeTenthPlaceholder(
         p1: String, p2: String, p3: String, p4: String, p5: String,
