@@ -151,6 +151,11 @@ Repository 통합은 다음 순서를 따라야 합니다.
 4. 그 durable owner가 event 책임을 인수한 뒤에만 aggregate buffer를
    clear/drain합니다.
 
+Durable publication을 command transaction에 포함해야 하는 transaction-aware
+publisher는 다른 순서를 사용합니다. Commit 전에 aggregate를 저장하고 read-only
+snapshot을 인계한 뒤, commit 완료 후에만 buffer를 비웁니다. 동기 listener와 rollback
+경계는 [JDBC transaction-aware publisher](spring-boot/jdbc/README.ko.md#transaction-aware-domain-events)를 참고하세요.
+
 Spring Modulith와 JaVers module은 별도 adapter로 유지됩니다. Core 계약은 Spring
 Modulith publication semantics나 JaVers audit commit semantics를 담지 않습니다.
 

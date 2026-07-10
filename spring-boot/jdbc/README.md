@@ -253,8 +253,9 @@ Note: Use `platform()` instead of the
 
 ![Transaction-aware aggregate domain event sequence](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-domain-event-sequence-01.png)
 
-`ExposedAggregateEventPublisher` hands an aggregate's immutable event snapshot to Spring immediately after the
-repository save, while the command transaction is still active. The JDBC starter auto-configures it when
+`ExposedAggregateEventPublisher` hands an aggregate's independent read-only event list, containing deeply immutable
+event objects, to Spring immediately after the repository save while the command transaction is still active. The JDBC
+starter auto-configures it when
 `AggregateRoot`, Spring's application-event and transaction-synchronization APIs are present, exactly one
 `PlatformTransactionManager` is selectable (including one `@Primary` among several), and no publisher bean was
 declared by the application.
