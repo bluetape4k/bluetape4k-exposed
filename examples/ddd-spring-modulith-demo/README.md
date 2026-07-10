@@ -16,11 +16,28 @@ The sample has two application modules:
 
 `shipping` is allowed to depend only on `orders :: events`. The tests include a negative fixture that proves direct dependency on `orders.internal` is rejected by Spring Modulith verification.
 
+<!-- issue-323-section:start -->
 ## Transaction And Publication Boundary
 
-`OrderApplicationService.accept(...)` snapshots aggregate domain events inside the command transaction, saves the aggregate, and publishes each event through Spring's `ApplicationEventPublisher`. Spring Modulith records the publication row through `ExposedEventPublicationRepository` using the same JDBC transaction manager.
+`OrderApplicationService.accept(...)` saves the aggregate and then calls
+`ExposedAggregateEventPublisher.publishAfterSave(aggregate)` exactly once as the final aggregate operation inside
+the same command transaction. The publisher hands the immutable event snapshot to Spring immediately. Spring
+Modulith records its durable publication in that transaction, while the default module listener runs in
+`AFTER_COMMIT`.
 
-The aggregate event buffer is cleared only after the transaction callback returns successfully. If publication handoff or the command transaction fails, the in-memory event buffer remains available to the command boundary and the database rows roll back together.
+Committed completion clears the aggregate event buffer. Publication failure or transaction rollback preserves the
+buffer and rolls back the order and publication rows together. The example replaces the former manual
+`ApplicationEventPublisher` loop and manual `clearDomainEvents()` call; both paths must never run together.
+Shipping writes are idempotent by order id because restart replay or listener recovery can deliver an event again.
+This flow does not provide an application outbox or exactly-once delivery.
+
+The publication table is an application-owned trust boundary. Production deployments require least-privilege
+database access, encryption at rest and encryption in transit as infrastructure permits, integrity protection, an
+explicit retention/deletion policy, and payload minimization. Stored event class names are exposed schema metadata,
+so event packages and migrations require review. The allowlisting serializer accepts only `OrderAcceptedEvent` and
+avoids polymorphic type metadata. Audit history, snapshot persistence, and JaVers commit semantics are forbidden
+dependencies of `ExposedAggregateEventPublisher`.
+<!-- issue-323-section:end -->
 
 ## Supported
 

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added `ExposedAggregateEventPublisher` for transaction-aware JDBC aggregate event handoff, guarded
+  single-candidate auto-configuration, committed buffer cleanup, and Spring Modulith DDD example adoption
+  ([#323](https://github.com/bluetape4k/bluetape4k-exposed/issues/323)).
+
 ## [1.11.0] - 2026-06-27
 
 ### Changed

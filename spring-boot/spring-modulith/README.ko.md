@@ -216,4 +216,10 @@ payload, publication date, completion date, status, completion attempts, last re
 
 ## 함께 보기
 
-- [DDD Spring Modulith demo](../../examples/ddd-spring-modulith-demo/README.ko.md): module-boundary verification, 최소 event payload, restart replay, idempotent listener를 포함한 실행 가능한 DDD 샘플입니다.
+<!-- issue-323-section:start -->
+- [트랜잭션 인식 도메인 이벤트](../jdbc/README.ko.md#transaction-aware-domain-events)는
+  `ExposedAggregateEventPublisher`, 즉시 인계, `AFTER_COMMIT` 리스너 실행 시점, commit/rollback 이벤트 버퍼
+  소유권을 설명합니다. [DDD Spring Modulith demo](../../examples/ddd-spring-modulith-demo/README.ko.md)에서 실행
+  가능한 통합을 확인할 수 있습니다. 이 module은 내구 publication store의 생명주기만 다루며 해당 command
+  transaction 계약을 반복하지 않습니다.
+<!-- issue-323-section:end -->
