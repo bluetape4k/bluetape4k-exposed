@@ -3,6 +3,8 @@ package io.bluetape4k.spring.data.exposed.jdbc.repository.config
 import io.bluetape4k.spring.data.exposed.jdbc.annotation.ExposedEntity
 import io.bluetape4k.spring.data.exposed.jdbc.repository.ExposedJdbcRepository
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedJdbcRepositoryFactoryBean
+import org.springframework.beans.factory.support.BeanDefinitionBuilder
+import org.springframework.data.repository.config.AnnotationRepositoryConfigurationSource
 import org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport
 
 /**
@@ -23,6 +25,16 @@ class ExposedJdbcRepositoryConfigurationExtension: RepositoryConfigurationExtens
 
     override fun getRepositoryFactoryBeanClassName(): String =
         ExposedJdbcRepositoryFactoryBean::class.java.name
+
+    override fun postProcess(
+        builder: BeanDefinitionBuilder,
+        source: AnnotationRepositoryConfigurationSource,
+    ) {
+        builder.addPropertyValue(
+            "transactionManager",
+            source.attributes.getString("transactionManagerRef"),
+        )
+    }
 
     override fun getIdentifyingAnnotations(): Collection<Class<out Annotation>> =
         listOf(ExposedEntity::class.java)
