@@ -46,11 +46,8 @@ import java.util.stream.Stream
  * ```
  */
 
-/** Exposed Spring Boot Starter가 등록하는 SpringTransactionManager 빈 이름 */
-internal const val EXPOSED_TRANSACTION_MANAGER = "springTransactionManager"
-
 @Repository
-@Transactional(transactionManager = EXPOSED_TRANSACTION_MANAGER, readOnly = true)
+@Transactional(readOnly = true)
 @Suppress("UNCHECKED_CAST")
 class SimpleExposedJdbcRepository<E: Entity<ID>, ID: Any>(
     private val entityInformation: ExposedEntityInformation<E, ID>,
@@ -76,10 +73,10 @@ class SimpleExposedJdbcRepository<E: Entity<ID>, ID: Any>(
      * 생성 즉시 Exposed 캐시에 등록되며, 트랜잭션 커밋 시 INSERT SQL 이 실행됩니다.
      * 기존 엔티티의 프로퍼티 변경도 트랜잭션 커밋 시 자동으로 UPDATE 됩니다.
      */
-    @Transactional(transactionManager = EXPOSED_TRANSACTION_MANAGER)
+    @Transactional
     override fun <S: E> save(entity: S): S = entity
 
-    @Transactional(transactionManager = EXPOSED_TRANSACTION_MANAGER)
+    @Transactional
     override fun <S: E> saveAll(entities: Iterable<S>): List<S> = entities.toList()
 
     override fun findById(id: ID): Optional<E> = Optional.ofNullable(entityClass.findById(id))
@@ -104,31 +101,31 @@ class SimpleExposedJdbcRepository<E: Entity<ID>, ID: Any>(
 
     override fun count(): Long = entityClass.count()
 
-    @Transactional(transactionManager = EXPOSED_TRANSACTION_MANAGER)
+    @Transactional
     override fun deleteById(id: ID) {
         table.deleteWhere { table.id eq id }
     }
 
-    @Transactional(transactionManager = EXPOSED_TRANSACTION_MANAGER)
+    @Transactional
     override fun delete(entity: E) {
         entity.delete()
     }
 
-    @Transactional(transactionManager = EXPOSED_TRANSACTION_MANAGER)
+    @Transactional
     override fun deleteAllById(ids: Iterable<ID>) {
         val idList = ids.toList()
         if (idList.isEmpty()) return
         table.deleteWhere { table.id inList idList }
     }
 
-    @Transactional(transactionManager = EXPOSED_TRANSACTION_MANAGER)
+    @Transactional
     override fun deleteAll(entities: Iterable<E>) {
         val idList = entities.map { it.id.value }
         if (idList.isEmpty()) return
         table.deleteWhere { table.id inList idList }
     }
 
-    @Transactional(transactionManager = EXPOSED_TRANSACTION_MANAGER)
+    @Transactional
     override fun deleteAll() {
         table.deleteAll()
     }

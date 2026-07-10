@@ -1,2 +1,3 @@
 io.bluetape4k.spring.data.exposed.jdbc.config.ExposedSpringDataAutoConfiguration
+io.bluetape4k.spring.data.exposed.jdbc.config.ExposedAggregateEventPublisherAutoConfiguration
 io.bluetape4k.spring.data.exposed.jdbc.config.ExposedJdbcCacheHealthAutoConfiguration
