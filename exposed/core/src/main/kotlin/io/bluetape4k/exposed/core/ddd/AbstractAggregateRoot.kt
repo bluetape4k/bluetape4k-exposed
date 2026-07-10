@@ -6,7 +6,7 @@ package io.bluetape4k.exposed.core.ddd
  * ## Contract
  * This class is intentionally not thread-safe. One command transaction owns an
  * aggregate instance and its event buffer at a time. Concurrent use and reuse
- * across overlapping `REQUIRES_NEW` scopes are unsupported. Call
+ * across overlapping transaction ownership scopes are unsupported. Call
  * [recordDomainEvent], [domainEvents], [clearDomainEvents], and
  * [drainDomainEvents] only within that ownership boundary. The class does not
  * publish, persist, observe, or replay events, and it does not treat Exposed DAO

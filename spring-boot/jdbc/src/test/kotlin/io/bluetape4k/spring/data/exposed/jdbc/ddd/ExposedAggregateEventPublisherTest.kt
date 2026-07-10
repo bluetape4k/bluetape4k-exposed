@@ -207,6 +207,23 @@ class ExposedAggregateEventPublisherTest {
     }
 
     @Test
+    fun `separate aggregate instances with the same id are independent registrations`() {
+        val published = mutableListOf<TestEvent>()
+        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher { published += it as TestEvent })
+        val first = TestAggregate(TestId(89L)).apply { record(1) }
+        val second = TestAggregate(TestId(89L)).apply { record(2) }
+
+        transactionTemplate.executeWithoutResult {
+            publisher.publishAfterSave(first)
+            publisher.publishAfterSave(second)
+        }
+
+        published.map(TestEvent::sequence) shouldBeEqualTo listOf(1, 2)
+        first.domainEvents().shouldBeEmpty()
+        second.domainEvents().shouldBeEmpty()
+    }
+
+    @Test
     fun `clearing after registration is rejected before the empty no-op`() {
         val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
         val aggregate = TestAggregate(TestId(8L)).apply { record(1) }
