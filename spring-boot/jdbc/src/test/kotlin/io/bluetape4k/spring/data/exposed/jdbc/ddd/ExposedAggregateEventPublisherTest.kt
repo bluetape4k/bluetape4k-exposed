@@ -400,16 +400,27 @@ class ExposedAggregateEventPublisherTest {
     fun `throwing after commit listener does not retry a committed command`() {
         AnnotationConfigApplicationContext(ListenerTestConfiguration::class.java).use { context ->
             val transactionTemplate = context.getBean(TransactionTemplate::class.java)
+            val jdbcTemplate = JdbcTemplate(context.getBean(DataSource::class.java)).also {
+                it.execute("CREATE TABLE AFTER_COMMIT_COMMAND_TEST (ID BIGINT PRIMARY KEY)")
+            }
             val listener = context.getBean(AfterCommitListener::class.java)
             val publisher = ExposedAggregateEventPublisher(context)
             val aggregate = TestAggregate(TestId(82L)).apply { record(1) }
+            val commandCalls = AtomicInteger()
             listener.failure = IllegalStateException("listener failed after commit")
 
             transactionTemplate.executeWithoutResult {
+                commandCalls.incrementAndGet()
+                jdbcTemplate.update("INSERT INTO AFTER_COMMIT_COMMAND_TEST(ID) VALUES (?)", aggregate.id.value)
                 publisher.publishAfterSave(aggregate)
                 listener.events shouldHaveSize 0
             }
 
+            commandCalls.get() shouldBeEqualTo 1
+            jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM AFTER_COMMIT_COMMAND_TEST",
+                Long::class.java,
+            ) shouldBeEqualTo 1L
             listener.events shouldHaveSize 1
             aggregate.domainEvents().shouldBeEmpty()
         }
