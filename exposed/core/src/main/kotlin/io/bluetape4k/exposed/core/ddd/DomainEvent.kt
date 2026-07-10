@@ -6,10 +6,12 @@ import java.time.Instant
  * Spring-neutral domain event emitted by an [AggregateRoot].
  *
  * ## Contract
- * Implementations should carry opaque, non-sensitive identifiers and minimal
- * business facts. Do not put secrets, credentials, tokens, natural keys, or
- * unnecessary personally identifiable information into event payloads. This
- * contract does not publish, persist, replay, or observe events.
+ * Implementations should be deeply immutable after recording or publisher
+ * registration and carry only opaque, non-sensitive identifiers and minimal
+ * business facts. Do not retain mutable collections or objects that callers can
+ * change after registration. Do not put secrets, credentials, tokens, natural
+ * keys, or unnecessary personally identifiable information into event
+ * payloads. This contract does not publish, persist, replay, or observe events.
  *
  * ```kotlin
  * import io.bluetape4k.exposed.core.ddd.DomainEvent

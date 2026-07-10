@@ -57,6 +57,32 @@ class AbstractAggregateRootTest {
     }
 
     @Test
+    fun `domainEvents preserves event object references until clear`() {
+        val order = TestOrder(OrderId(1L))
+        val placed = OrderPlaced(order.id)
+        val confirmed = OrderConfirmed(order.id)
+        order.place(placed)
+        order.place(confirmed)
+
+        val first = order.domainEvents()
+        val second = order.domainEvents()
+
+        (first !== second).shouldBeTrue()
+        (first[0] === placed).shouldBeTrue()
+        (first[1] === confirmed).shouldBeTrue()
+        (second[0] === placed).shouldBeTrue()
+        (second[1] === confirmed).shouldBeTrue()
+        first shouldBeEqualTo second
+
+        @Suppress("UNCHECKED_CAST")
+        (first as MutableList<DomainEvent<OrderId>>).clear()
+        val afterMisuse = order.domainEvents()
+        afterMisuse shouldHaveSize 2
+        (afterMisuse[0] === placed).shouldBeTrue()
+        (afterMisuse[1] === confirmed).shouldBeTrue()
+    }
+
+    @Test
     fun `drainDomainEvents hands off ordered events and clears after success`() {
         val order = TestOrder(OrderId(1L))
         val placed = OrderPlaced(order.id)
