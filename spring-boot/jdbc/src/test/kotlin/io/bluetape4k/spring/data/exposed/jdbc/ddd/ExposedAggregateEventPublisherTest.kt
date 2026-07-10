@@ -596,6 +596,29 @@ class ExposedAggregateEventPublisherTest {
     }
 
     @Test
+    fun `fatal committed clear error is not swallowed`() {
+        withPublisherLogs { logs ->
+            val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
+            val aggregate = object : TestAggregate(TestId(88L)) {
+                override fun clearDomainEvents() {
+                    throw AssertionError("fatal-clear-error")
+                }
+            }.apply { record(1) }
+
+            transactionTemplate.executeWithoutResult { status ->
+                publisher.publishAfterSave(aggregate)
+                assertFailsWith<AssertionError> {
+                    currentPublisherSynchronization().afterCompletion(TransactionSynchronization.STATUS_COMMITTED)
+                }
+                status.setRollbackOnly()
+            }
+
+            logs.shouldBeEmpty()
+            aggregate.domainEvents() shouldHaveSize 1
+        }
+    }
+
+    @Test
     fun `rollback emits no completion anomaly`() {
         withPublisherLogs { logs ->
             val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})

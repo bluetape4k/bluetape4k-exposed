@@ -152,7 +152,7 @@ internal class AggregateEventTransactionSynchronization(
         registrations.values.forEach { registration ->
             try {
                 registration.aggregate.clearDomainEvents()
-            } catch (_: Throwable) {
+            } catch (_: Exception) {
                 logCompletionAnomaly("aggregate-event-cleanup-failed", registration)
             }
         }
