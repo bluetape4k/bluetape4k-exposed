@@ -215,4 +215,10 @@ MySQL 8. CI can narrow the matrix with `EXPOSED_TEST_DB=POSTGRESQL` or
 
 ## See Also
 
-- [DDD Spring Modulith demo](../../examples/ddd-spring-modulith-demo/README.md) for a runnable DDD sample with module-boundary verification, minimal event payloads, restart replay, and idempotent listeners.
+<!-- issue-323-section:start -->
+- [Transaction-Aware Domain Events](../jdbc/README.md#transaction-aware-domain-events) documents
+  `ExposedAggregateEventPublisher`, immediate handoff, `AFTER_COMMIT` listener timing, and commit/rollback buffer
+  ownership. The [DDD Spring Modulith demo](../../examples/ddd-spring-modulith-demo/README.md) shows the runnable
+  integration. This module keeps only the durable publication-store lifecycle and does not duplicate that command
+  transaction contract.
+<!-- issue-323-section:end -->

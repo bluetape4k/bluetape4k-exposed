@@ -16,11 +16,27 @@
 
 `shipping`은 `orders :: events`에만 의존할 수 있습니다. 테스트에는 `orders.internal` 직접 의존이 Spring Modulith verification에서 거부되는 negative fixture도 포함되어 있습니다.
 
+<!-- issue-323-section:start -->
 ## Transaction 및 Publication Boundary
 
-`OrderApplicationService.accept(...)`는 command transaction 안에서 aggregate domain event를 snapshot하고, aggregate를 저장한 뒤 Spring `ApplicationEventPublisher`로 event를 발행합니다. Spring Modulith는 같은 JDBC transaction manager를 통해 `ExposedEventPublicationRepository`에 publication row를 기록합니다.
+`OrderApplicationService.accept(...)`는 같은 command transaction 안에서 aggregate를 저장한 다음, aggregate의
+마지막 연산으로 `ExposedAggregateEventPublisher.publishAfterSave(aggregate)`를 정확히 한 번 호출합니다.
+Publisher는 불변 event snapshot을 Spring에 즉시 전달합니다. Spring Modulith는 그 transaction 안에서 내구
+publication을 기록하고, 기본 module listener는 `AFTER_COMMIT`에서 실행됩니다.
 
-Aggregate event buffer는 transaction callback이 성공적으로 끝난 뒤에만 비웁니다. Publication handoff 또는 command transaction이 실패하면 in-memory event buffer는 command boundary에 남고, database row는 함께 rollback됩니다.
+Commit 완료 시 aggregate event buffer를 비웁니다. Publication 실패 또는 transaction rollback 시 buffer를
+보존하고 order와 publication row를 함께 rollback합니다. 이 예제는 이전의 수동
+`ApplicationEventPublisher` loop와 수동 `clearDomainEvents()` 호출을 대체하며, 두 경로를 함께 실행하면 안
+됩니다. Restart replay나 listener recovery가 event를 다시 전달할 수 있으므로 shipping write는 order id로
+idempotent하게 처리합니다. 이 흐름은 application outbox나 exactly-once delivery를 제공하지 않습니다.
+
+Publication table은 애플리케이션이 소유하는 신뢰 경계입니다. 운영 환경에서는 최소 권한 데이터베이스 접근 제어,
+인프라가 허용하는 저장 데이터 암호화와 전송 데이터 암호화, 무결성 보호, 명시적 보존/삭제 정책, 페이로드 최소화가
+필요합니다. 저장된 이벤트 클래스 이름은 외부에 드러나는 schema metadata이므로 event package와 migration을
+검토해야 합니다. 허용 목록 방식 serializer는 `OrderAcceptedEvent`만 받아들이며 polymorphic type metadata를
+사용하지 않습니다. Audit history, snapshot persistence, JaVers commit semantics는
+`ExposedAggregateEventPublisher`의 금지된 dependency입니다.
+<!-- issue-323-section:end -->
 
 ## 지원 범위
 
