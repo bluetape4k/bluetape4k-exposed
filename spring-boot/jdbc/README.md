@@ -276,6 +276,10 @@ listeners run in the caller and default `@TransactionalEventListener` / Spring M
 transaction even if caller code catches the first exception. A synchronous listener therefore participates in the
 command failure boundary, and any irreversible side effect it performs must be deduplicated independently.
 
+Duplicate registration means the same aggregate object in the same transaction. Separate objects
+with the same aggregate id and registrations in later transactions are not deduplicated; application-level idempotency
+owns those cases.
+
 Events and their payload graphs must be deeply immutable, and callers must retain stable event object references.
 The publisher keeps the original snapshot for identity verification; it does not copy or serialize events. Do not
 append, remove, reorder, or replace events after handoff. Use one final call per aggregate. `PROPAGATION_NESTED`
