@@ -276,6 +276,10 @@ listener는 호출자 안에서 실행되고, 기본 `@TransactionalEventListene
 transaction을 poison 처리합니다. 따라서 synchronous listener는 command 실패 경계에 참여하며, irreversible
 side effect는 별도로 중복 방지해야 합니다.
 
+중복 등록은 동일 transaction에서 같은 aggregate 객체를 다시 등록하는 경우를 뜻합니다. Aggregate ID가 같아도
+객체가 다르거나 이후 transaction에서 다시 등록하면 publisher가 중복을 제거하지 않으므로, 이 경우에는
+애플리케이션 수준의 멱등성으로 처리해야 합니다.
+
 Event와 전체 payload graph는 깊은 불변이어야 하며 호출자는 안정된 event 객체 reference를 유지해야 합니다.
 Publisher는 identity 검증을 위해 원래 snapshot을 보관하며 event를 복사하거나 직렬화하지 않습니다. Handoff
 이후 event를 추가, 제거, 재정렬, 교체하지 마세요. Aggregate마다 마지막에 한 번만 호출해야 합니다.
@@ -344,7 +348,7 @@ class OrderCommandService(
 | `STATUS_UNKNOWN` | 불확정 | 보존 | 자동 재시도 금지, 먼저 대조 |
 <!-- issue-323-outcome-table:end -->
 
-완료 단계에서는 민감 정보를 제거한 두 가지 이상 로그를 기록합니다. Commit된 persistence 이후 buffer를 비우지 못하면
+완료 단계에서는 민감 정보를 제거한 완료 이상 로그 두 종류를 기록합니다. Commit된 persistence 이후 buffer를 비우지 못하면
 `aggregate-event-cleanup-failed`, Spring이 transaction 결과를 판단하지 못하면
 `aggregate-event-completion-unknown`입니다. 로그에는 aggregate/event type과 개수, 형식이 유효한 허용 목록의
 `traceId`, `spanId`, `requestId`만 포함하며 event payload나 exception message는 포함하지 않습니다.
@@ -362,7 +366,7 @@ class OrderCommandService(
 
 ### 프로덕션 롤아웃 체크리스트
 
-Canary 전에 애플리케이션 소유자를 지정해야 합니다. 두 이상 범주에 대한 alert를 설정하고, 허용 목록에 포함된
+Canary 전에 애플리케이션 소유자를 지정해야 합니다. 앞서 설명한 두 가지 이상 범주에 대한 alert를 설정하고, 허용 목록에 포함된
 correlation field를 하나 이상 전파해야 합니다. Audit record나 trace로 persistence key를 조회할 수 있어야 하며,
 데이터베이스 읽기 권한과 publication 읽기 권한도 준비합니다. Canary는 영속 aggregate 1건, 내구 발행 1건,
 listener side effect 1건, 이상 범주 로그 0건을 증명해야 합니다.

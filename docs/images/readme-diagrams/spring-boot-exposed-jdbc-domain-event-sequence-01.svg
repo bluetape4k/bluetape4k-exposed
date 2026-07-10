@@ -1,4 +1,4 @@
-<svg data-sequence-style="wiki-best-practices" data-source-read="spring-boot/jdbc/src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/ddd/ExposedAggregateEventPublisher.kt; spring-boot/jdbc/README.md; examples/ddd-spring-modulith-demo/src/main/kotlin/io/bluetape4k/exposed/examples/modulith/orders/internal/OrderApplicationService.kt" xmlns="http://www.w3.org/2000/svg" width="2180" height="1680" viewBox="0 0 2180 1680" role="img" aria-labelledby="title desc">
+<svg data-sequence-style="wiki-best-practices" data-source-read="spring-boot/jdbc/src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/ddd/ExposedAggregateEventPublisher.kt; spring-boot/jdbc/README.md; examples/ddd-spring-modulith-demo/src/main/kotlin/io/bluetape4k/exposed/examples/modulith/orders/OrderApplicationService.kt" xmlns="http://www.w3.org/2000/svg" width="2180" height="1680" viewBox="0 0 2180 1680" role="img" aria-labelledby="title desc">
   <title id="title">Transaction-aware aggregate domain event handoff</title>
   <desc id="desc">Sequence view of saving an aggregate, handing immutable domain events to Spring, optional Spring Modulith publication storage, default after-commit listener execution, committed buffer cleanup, and rollback preservation.</desc>
   <defs>
@@ -147,7 +147,7 @@
     <rect class="pill" x="1292" y="794" width="286" height="34" rx="17" stroke="#4F83BF"/>
     <circle cx="1312" cy="811" r="13" fill="#EAF4F8" stroke="#4F83BF"/>
     <text class="badgeText" x="1312" y="815" text-anchor="middle" fill="#4F83BF">6</text>
-    <text class="msg" x="1446" y="816" text-anchor="middle" fill="#4F83BF">publishEvent(event)</text>
+    <text class="msg" x="1446" y="816" text-anchor="middle" fill="#4F83BF">register AFTER_COMMIT</text>
     <path class="call" d="M 1260 840 H 1610" stroke="#4F83BF" marker-end="url(#seqArrow-blue)"/>
   </g>
 

@@ -182,13 +182,14 @@ class DddSpringModulithDemoApplicationTest {
             val reservations = context.getBean(ShippingReservationRepository::class.java)
             val publications = context.getBean(EventPublicationRepository::class.java)
 
-            assertFailsWith<IllegalStateException> {
+            val failedOrder = assertFailsWith<OrderHandoffFailedException> {
                 service.accept(
                     AcceptOrderCommand(orderKey = "rollback", customerId = "customer"),
                     failAfterPublish = true,
                 )
-            }
+            }.aggregate
 
+            failedOrder.domainEvents().size shouldBeEqualTo 1
             orders.count() shouldBeEqualTo 0L
             reservations.count() shouldBeEqualTo 0L
             publications.countByStatus(Status.PUBLISHED) shouldBeEqualTo 0
