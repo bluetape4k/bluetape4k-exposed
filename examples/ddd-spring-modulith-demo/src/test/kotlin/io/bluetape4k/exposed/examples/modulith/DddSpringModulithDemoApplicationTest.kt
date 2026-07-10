@@ -1,10 +1,16 @@
 package io.bluetape4k.exposed.examples.modulith
 
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.LoggerContext
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.classic.spi.IThrowableProxy
+import ch.qos.logback.core.read.ListAppender
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.examples.modulith.orders.AcceptOrderCommand
 import io.bluetape4k.exposed.examples.modulith.orders.OrderApplicationService
 import io.bluetape4k.exposed.examples.modulith.orders.OrderHandoffFailedException
@@ -13,6 +19,7 @@ import io.bluetape4k.exposed.examples.modulith.orders.events.OrderAcceptedEvent
 import io.bluetape4k.exposed.examples.modulith.orders.internal.OrderRepository
 import io.bluetape4k.exposed.examples.modulith.shipping.internal.ShippingReservationRepository
 import io.bluetape4k.spring.modulith.exposed.ExposedEventPublicationTable
+import io.bluetape4k.spring.data.exposed.jdbc.ddd.ExposedAggregateEventPublisher
 import org.awaitility.kotlin.await
 import org.jetbrains.exposed.v1.core.like
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -20,15 +27,19 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.slf4j.LoggerFactory
 import org.springframework.boot.WebApplicationType
 import org.springframework.boot.builder.SpringApplicationBuilder
-import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.ConfigurableApplicationContext
+import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.context.annotation.Bean
 import org.springframework.modulith.core.ApplicationModules
 import org.springframework.modulith.core.Violations
 import org.springframework.modulith.events.EventPublication.Status
 import org.springframework.modulith.events.core.EventPublicationRepository
+import org.springframework.modulith.events.ApplicationModuleListener
 import org.springframework.transaction.support.TransactionTemplate
+import java.io.Serializable
 import java.time.Duration
 import java.time.Instant
 
@@ -85,6 +96,7 @@ class DddSpringModulithDemoApplicationTest {
                 publications.countByStatus(Status.FAILED) shouldBeEqualTo 0
             }
             reservations.existsByOrderId(accepted.id) shouldBeEqualTo true
+            accepted.domainEvents().isEmpty().shouldBeTrue()
         }
     }
 
@@ -190,9 +202,11 @@ class DddSpringModulithDemoApplicationTest {
         withApplicationContext() { context ->
             val service = OrderApplicationService(
                 orderRepository = context.getBean(OrderRepository::class.java),
-                eventPublisher = ApplicationEventPublisher {
-                    throw IllegalStateException("Synthetic publication handoff failure")
-                },
+                aggregateEventPublisher = ExposedAggregateEventPublisher(
+                    org.springframework.context.ApplicationEventPublisher {
+                        throw IllegalStateException("Synthetic publication handoff failure")
+                    }
+                ),
                 transactionTemplate = context.getBean(TransactionTemplate::class.java),
             )
             val orders = context.getBean(OrderRepository::class.java)
@@ -212,12 +226,41 @@ class DddSpringModulithDemoApplicationTest {
         }
     }
 
+    @Test
+    fun `serializer rejects unsupported event type without exposing payload`() {
+        withApplicationContext(
+            additionalSources = arrayOf(UnsupportedEventListenerConfiguration::class.java),
+        ) { context ->
+            val secret = "UNSUPPORTED-SECRET-MUST-NOT-LEAK"
+            val logCapture = attachRootAndNonAdditiveLoggers()
+            val transactionTemplate = context.getBean(TransactionTemplate::class.java)
+            val publicationRepository = context.getBean(EventPublicationRepository::class.java)
+
+            try {
+                val error = assertFailsWith<IllegalArgumentException> {
+                    transactionTemplate.executeWithoutResult {
+                        context.publishEvent(UnsupportedEvent(secret))
+                    }
+                }
+                error.assertNoSecretInMessageOrCauseChain(secret)
+                Status.entries.sumOf(publicationRepository::countByStatus) shouldBeEqualTo 0
+                logCapture.allEvents().forEach { event ->
+                    event.assertNoSecretInAnyField(secret)
+                }
+            } finally {
+                logCapture.detachStopAndRestoreLoggerState()
+            }
+        }
+    }
+
     private fun <T> withApplicationContext(
         databaseName: String = "ddd_modulith_${System.nanoTime()}",
         extraProperties: Map<String, Any> = emptyMap(),
+        additionalSources: Array<Class<*>> = emptyArray(),
         block: (ConfigurableApplicationContext) -> T,
     ): T {
         return SpringApplicationBuilder(DddSpringModulithDemoApplication::class.java)
+            .sources(*additionalSources)
             .web(WebApplicationType.NONE)
             .properties(
                 mapOf(
@@ -245,5 +288,87 @@ class DddSpringModulithDemoApplicationTest {
                 it[publicationTable.status] = Status.PUBLISHED.name
             }
         }
+    }
+
+    private fun attachRootAndNonAdditiveLoggers(): LogCapture {
+        val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
+        val loggers = buildList {
+            add(loggerContext.getLogger(Logger.ROOT_LOGGER_NAME))
+            addAll(loggerContext.loggerList.filter { !it.isAdditive })
+        }.distinct()
+        val attachments = loggers.map { logger ->
+            val appender = ListAppender<ILoggingEvent>().apply {
+                context = loggerContext
+                start()
+            }
+            logger.addAppender(appender)
+            LoggerAttachment(logger, appender, logger.isAdditive)
+        }
+        return LogCapture(attachments)
+    }
+
+    private fun Throwable.assertNoSecretInMessageOrCauseChain(secret: String) {
+        var current: Throwable? = this
+        while (current != null) {
+            current.message.orEmpty() shouldNotContain secret
+            current = current.cause
+        }
+    }
+
+    private fun ILoggingEvent.assertNoSecretInAnyField(secret: String) {
+        message.orEmpty() shouldNotContain secret
+        formattedMessage.orEmpty() shouldNotContain secret
+        mdcPropertyMap.toString() shouldNotContain secret
+        argumentArray?.contentDeepToString().orEmpty() shouldNotContain secret
+        keyValuePairs?.toString().orEmpty() shouldNotContain secret
+        markerList?.toString().orEmpty() shouldNotContain secret
+        throwableProxy.flatten().shouldNotContain(secret)
+    }
+
+    private fun IThrowableProxy?.flatten(): String {
+        if (this == null) return ""
+        return buildString {
+            append(className).append(':').append(message)
+            stackTraceElementProxyArray?.forEach(::append)
+            suppressed?.forEach { append(it.flatten()) }
+            append(cause.flatten())
+        }
+    }
+
+    private class LoggerAttachment(
+        val logger: Logger,
+        val appender: ListAppender<ILoggingEvent>,
+        val additive: Boolean,
+    )
+
+    private class LogCapture(
+        private val attachments: List<LoggerAttachment>,
+    ) {
+        fun allEvents(): List<ILoggingEvent> = attachments.flatMap { it.appender.list }
+
+        fun detachStopAndRestoreLoggerState() {
+            attachments.forEach { attachment ->
+                attachment.logger.detachAppender(attachment.appender)
+                attachment.appender.stop()
+                attachment.logger.isAdditive = attachment.additive
+            }
+        }
+    }
+
+    data class UnsupportedEvent(val secret: String) : Serializable {
+        companion object {
+            private const val serialVersionUID: Long = 1L
+        }
+    }
+
+    @TestConfiguration(proxyBeanMethods = false)
+    class UnsupportedEventListenerConfiguration {
+        @Bean
+        fun unsupportedEventListener(): UnsupportedEventListener = UnsupportedEventListener()
+    }
+
+    open class UnsupportedEventListener {
+        @ApplicationModuleListener(id = "test.unsupported-event")
+        open fun on(event: UnsupportedEvent) = Unit
     }
 }

@@ -81,4 +81,4 @@ class Order(
 class OrderHandoffFailedException(
     val aggregate: Order,
     cause: Throwable,
-) : IllegalStateException("Order event handoff failed for ${aggregate.id.value}", cause)
+) : IllegalStateException("order-event-handoff-failed", cause)
