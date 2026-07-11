@@ -374,6 +374,22 @@ bluetape4k:
 운영 스키마는 Flyway 또는 Liquibase 사용을 권장합니다. `initialize-schema`는
 테스트와 작은 로컬 애플리케이션 용도입니다.
 
+### Testcontainers 수명주기
+
+모듈 테스트는 각 `XxxServer.Launcher`를 하나의 test JVM 안에서만 공유하며,
+Docker container를 프로세스 사이에서 재사용하지 않습니다. BigQuery와
+StarRocks의 직접 fixture도 같은 non-reuse 기본값을 따릅니다. 로컬 개발에서만
+재사용하려면 `~/.testcontainers.properties`에
+`testcontainers.reuse.enable=true`를 설정한 뒤, 실행할 명령에 명시적으로
+opt-in합니다.
+
+```bash
+BLUETAPE4K_TESTCONTAINERS_REUSE=true ./gradlew :bluetape4k-exposed-bigquery:test
+```
+
+`CI=true`이면 이 opt-in은 무시됩니다. 테스트와 예제는 reuse를 암묵적으로
+활성화하지 않습니다.
+
 ### Ktor 통합
 
 `exposed-ktor`는 호출자가 소유한 Exposed resource 위에 명시적 Ktor helper를

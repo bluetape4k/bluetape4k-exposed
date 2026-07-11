@@ -21,11 +21,26 @@ object BigQueryEmulator: KLogging() {
     const val DATASET = "testdb"
     const val IMAGE = "ghcr.io/goccy/bigquery-emulator:0.6.3"
     const val HTTP_PORT = 9050
+    internal const val REUSE_ENV = "BLUETAPE4K_TESTCONTAINERS_REUSE"
 
     /** brew install goccy/bigquery-emulator/bigquery-emulator 로 설치된 로컬 에뮬레이터 확인 */
     private fun isLocalRunning(): Boolean = runCatching {
         java.net.Socket("localhost", HTTP_PORT).use { true }
     }.getOrDefault(false)
+
+    internal fun shouldReuseContainer(environment: Map<String, String> = System.getenv()): Boolean =
+        !environment["CI"].toBoolean() && environment[REUSE_ENV].toBoolean()
+
+    internal fun createContainer(environment: Map<String, String> = System.getenv()): GenericContainer<*> =
+        GenericContainer(IMAGE)
+            .withExposedPorts(HTTP_PORT)
+            .withCommand("--project=$PROJECT_ID", "--dataset=$DATASET")
+            .withReuse(shouldReuseContainer(environment))
+            .waitingFor(
+                Wait.forHttp("/discovery/v1/apis/bigquery/v2/rest")
+                    .forPort(HTTP_PORT)
+                    .forStatusCode(200)
+            )
 
     data class Endpoint(
         val projectId: String,
@@ -44,14 +59,7 @@ object BigQueryEmulator: KLogging() {
                 Endpoint(PROJECT_ID, DATASET, "localhost", HTTP_PORT, local = true)
             } else {
                 log.info("Testcontainers BigQuery 에뮬레이터 시작")
-                val container = GenericContainer(IMAGE)
-                    .withExposedPorts(HTTP_PORT)
-                    .withCommand("--project=$PROJECT_ID", "--dataset=$DATASET")
-                    .waitingFor(
-                        Wait.forHttp("/discovery/v1/apis/bigquery/v2/rest")
-                            .forPort(HTTP_PORT)
-                            .forStatusCode(200)
-                    )
+                val container = createContainer()
                     .also {
                         it.start()
                         ShutdownQueue.register { it.stop() }
