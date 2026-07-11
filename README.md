@@ -395,8 +395,10 @@ development only, set `testcontainers.reuse.enable=true` in
 BLUETAPE4K_TESTCONTAINERS_REUSE=true ./gradlew :bluetape4k-exposed-bigquery:test
 ```
 
-The opt-in is ignored whenever `CI=true`; tests and examples never enable it
-implicitly.
+The opt-in is ignored whenever the `CI` or `GITHUB_ACTIONS` environment marker
+is present, regardless of its value (including `CI=1`). Reusable containers are
+not registered for JVM shutdown stop/removal; tests and examples never enable
+reuse implicitly.
 
 ### Ktor Integration
 

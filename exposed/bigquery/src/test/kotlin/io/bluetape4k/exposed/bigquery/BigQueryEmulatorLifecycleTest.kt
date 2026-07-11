@@ -24,17 +24,40 @@ class BigQueryEmulatorLifecycleTest {
 
     @Test
     fun `CI always disables container reuse`() {
-        BigQueryEmulator.shouldReuseContainer(
-            mapOf(
-                "CI" to "true",
-                BigQueryEmulator.REUSE_ENV to "true",
-            )
-        ).shouldBeFalse()
-        BigQueryEmulator.createContainer(
-            mapOf(
-                "CI" to "true",
-                BigQueryEmulator.REUSE_ENV to "true",
-            )
-        ).isShouldBeReused.shouldBeFalse()
+        listOf(
+            mapOf("CI" to "true"),
+            mapOf("CI" to "1"),
+            mapOf("CI" to "false"),
+            mapOf("GITHUB_ACTIONS" to "true"),
+            mapOf("GITHUB_ACTIONS" to "false"),
+            mapOf("GITHUB_ACTIONS" to ""),
+        ).forEach { ciMarker ->
+            val environment = ciMarker + (BigQueryEmulator.REUSE_ENV to "true")
+
+            BigQueryEmulator.shouldReuseContainer(environment).shouldBeFalse()
+            BigQueryEmulator.createContainer(environment).isShouldBeReused.shouldBeFalse()
+        }
+    }
+
+    @Test
+    fun `reusable container is not registered for shutdown`() {
+        var registered = false
+        val container = BigQueryEmulator.createContainer(
+            mapOf(BigQueryEmulator.REUSE_ENV to "true")
+        )
+
+        BigQueryEmulator.registerShutdownIfNeeded(container) { registered = true }
+
+        registered.shouldBeFalse()
+    }
+
+    @Test
+    fun `non reusable container is registered for shutdown`() {
+        var registered = false
+        val container = BigQueryEmulator.createContainer(emptyMap())
+
+        BigQueryEmulator.registerShutdownIfNeeded(container) { registered = true }
+
+        registered.shouldBeTrue()
     }
 }
