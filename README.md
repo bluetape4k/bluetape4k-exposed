@@ -383,6 +383,21 @@ bluetape4k:
 Use Flyway or Liquibase for production schema creation. `initialize-schema`
 is intended for tests and small local applications.
 
+### Testcontainers lifecycle
+
+Module tests share each `XxxServer.Launcher` only within one test JVM and do
+not reuse Docker containers across processes. The direct BigQuery and
+StarRocks fixtures follow the same non-reusable default. For explicit local
+development only, set `testcontainers.reuse.enable=true` in
+`~/.testcontainers.properties` and opt in for a single command:
+
+```bash
+BLUETAPE4K_TESTCONTAINERS_REUSE=true ./gradlew :bluetape4k-exposed-bigquery:test
+```
+
+The opt-in is ignored whenever `CI=true`; tests and examples never enable it
+implicitly.
+
 ### Ktor Integration
 
 `exposed-ktor` adds explicit Ktor helpers around caller-owned Exposed resources.

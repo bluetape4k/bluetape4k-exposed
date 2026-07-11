@@ -22,11 +22,16 @@ class StarRocksTestServer private constructor(
         const val BE_HTTP_PORT = 8040
         const val CATALOG = "default_catalog"
         const val USER = "root"
+        internal const val REUSE_ENV = "BLUETAPE4K_TESTCONTAINERS_REUSE"
 
-        fun create(): StarRocksTestServer =
+        internal fun shouldReuseContainer(environment: Map<String, String> = System.getenv()): Boolean =
+            !environment["CI"].toBoolean() && environment[REUSE_ENV].toBoolean()
+
+        fun create(environment: Map<String, String> = System.getenv()): StarRocksTestServer =
             StarRocksTestServer(
                 GenericContainer(DockerImageName.parse("starrocks/allin1-ubuntu"))
                     .withExposedPorts(QUERY_PORT, HTTP_PORT, BE_HTTP_PORT)
+                    .withReuse(shouldReuseContainer(environment))
                     .waitingFor(
                         Wait.forListeningPort()
                             .withStartupTimeout(Duration.ofMinutes(4))
@@ -35,6 +40,9 @@ class StarRocksTestServer private constructor(
     }
 
     val databaseName: String = "bt4k_starrocks_${System.currentTimeMillis().toString(36)}"
+
+    internal val reusable: Boolean
+        get() = container.isShouldBeReused
 
     val host: String
         get() = container.host
