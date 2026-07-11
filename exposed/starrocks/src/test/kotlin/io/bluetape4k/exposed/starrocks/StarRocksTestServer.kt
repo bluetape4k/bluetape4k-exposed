@@ -25,7 +25,7 @@ class StarRocksTestServer private constructor(
         internal const val REUSE_ENV = "BLUETAPE4K_TESTCONTAINERS_REUSE"
 
         internal fun shouldReuseContainer(environment: Map<String, String> = System.getenv()): Boolean =
-            !environment["CI"].toBoolean() && environment[REUSE_ENV].toBoolean()
+            "CI" !in environment && "GITHUB_ACTIONS" !in environment && environment[REUSE_ENV].toBoolean()
 
         fun create(environment: Map<String, String> = System.getenv()): StarRocksTestServer =
             StarRocksTestServer(
@@ -71,7 +71,13 @@ class StarRocksTestServer private constructor(
     fun start() {
         if (!container.isRunning) {
             container.start()
-            ShutdownQueue.register { container.stop() }
+            registerShutdownIfNeeded()
+        }
+    }
+
+    internal fun registerShutdownIfNeeded(register: (AutoCloseable) -> Unit = ShutdownQueue::register) {
+        if (!container.isShouldBeReused) {
+            register(AutoCloseable { container.stop() })
         }
     }
 

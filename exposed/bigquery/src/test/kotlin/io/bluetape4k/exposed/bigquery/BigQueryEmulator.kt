@@ -29,7 +29,7 @@ object BigQueryEmulator: KLogging() {
     }.getOrDefault(false)
 
     internal fun shouldReuseContainer(environment: Map<String, String> = System.getenv()): Boolean =
-        !environment["CI"].toBoolean() && environment[REUSE_ENV].toBoolean()
+        "CI" !in environment && "GITHUB_ACTIONS" !in environment && environment[REUSE_ENV].toBoolean()
 
     internal fun createContainer(environment: Map<String, String> = System.getenv()): GenericContainer<*> =
         GenericContainer(IMAGE)
@@ -41,6 +41,15 @@ object BigQueryEmulator: KLogging() {
                     .forPort(HTTP_PORT)
                     .forStatusCode(200)
             )
+
+    internal fun registerShutdownIfNeeded(
+        container: GenericContainer<*>,
+        register: (AutoCloseable) -> Unit = ShutdownQueue::register,
+    ) {
+        if (!container.isShouldBeReused) {
+            register(AutoCloseable { container.stop() })
+        }
+    }
 
     data class Endpoint(
         val projectId: String,
@@ -62,7 +71,7 @@ object BigQueryEmulator: KLogging() {
                 val container = createContainer()
                     .also {
                         it.start()
-                        ShutdownQueue.register { it.stop() }
+                        registerShutdownIfNeeded(it)
                     }
 
                 val mappedPort = container.getMappedPort(HTTP_PORT)

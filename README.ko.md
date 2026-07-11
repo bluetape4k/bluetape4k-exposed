@@ -387,8 +387,9 @@ opt-in합니다.
 BLUETAPE4K_TESTCONTAINERS_REUSE=true ./gradlew :bluetape4k-exposed-bigquery:test
 ```
 
-`CI=true`이면 이 opt-in은 무시됩니다. 테스트와 예제는 reuse를 암묵적으로
-활성화하지 않습니다.
+`CI` 또는 `GITHUB_ACTIONS` 환경 변수가 존재하면 값과 관계없이 이 opt-in은
+무시됩니다 (`CI=1` 포함). 재사용 컨테이너는 JVM 종료 시 stop/removal 대상으로
+등록하지 않으며, 테스트와 예제는 reuse를 암묵적으로 활성화하지 않습니다.
 
 ### Ktor 통합
 
