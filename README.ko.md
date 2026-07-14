@@ -41,6 +41,18 @@ Column codec, 데이터베이스별 helper, Spring Boot 4 자동 설정을 더�
 ![Bluetape4k Exposed module composition diagram](docs/images/readme-diagrams/root-readme-module-relationships-01.png)
 <!-- README_VISUAL_OVERVIEW:END -->
 
+## 매뉴얼
+
+저장소의 `docs/manual/`이 안정판 1.11 문서의 기준입니다.
+
+- [매뉴얼 개요](docs/manual/ko/index.md)
+- [시작하기](docs/manual/ko/getting-started.md)
+- [모듈 목록과 학습 경로](docs/manual/ko/guides/learning-path.md)
+
+배포된 Gradle 프로젝트 40개를 모두 다루며, 소유권 경계, 실행 예제, 실패 진단,
+운영 고려 사항, 배포본에 고정한 소스 링크를 영어와 한국어로 제공합니다. README는
+간단한 입구로 유지하고 상세 동작은 `docs/manual/`에서 설명합니다.
+
 ## 모듈 목록
 
 | 모듈 | 설명 |
@@ -72,7 +84,7 @@ Column codec, 데이터베이스별 helper, Spring Boot 4 자동 설정을 더�
 | `exposed-cockroachdb` | CockroachDB PostgreSQL-wire smoke 지원 |
 | `exposed-duckdb` | DuckDB embedded analytics 지원 |
 | `exposed-druid` | Apache Druid query-only Avatica JDBC 실험 |
-| `exposed-timefold-solver-persistence` | Timefold Solver persistence 통합 |
+| `exposed-timefold-solver-persistence` | Timefold Score 값을 위한 Exposed 컬럼 매핑 |
 | `exposed-ktor` | 명시적 Exposed JDBC/R2DBC 트랜잭션, readiness route, status page용 Ktor 통합 |
 | `exposed-spring-boot-jdbc` | Spring Boot 4.x JDBC 자동 설정 |
 | `exposed-spring-boot-r2dbc` | Spring Boot 4.x R2DBC 자동 설정 |
@@ -169,20 +181,21 @@ Event payload는 opaque하고 민감하지 않은 identifier와 최소 business 
 
 ```kotlin
 dependencies {
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<version>"))
     // 핵심 JDBC
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.11.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc")
     // R2DBC (코루틴)
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.11.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc")
     // Redis 캐시 (Lettuce)
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.11.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce")
     // Jackson JSON Column
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.11.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2")
     // Ktor 통합
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor:1.11.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor")
     // Spring Boot 자동 설정
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.11.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc")
     // Exposed 기반 Spring Modulith JDBC 이벤트 발행
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.11.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith")
 }
 ```
 
@@ -399,7 +412,8 @@ page와 health/readiness route는 애플리케이션이 opt-in할 때만 설치�
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor:1.11.0")
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<version>"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor")
 }
 ```
 

@@ -42,6 +42,19 @@ auto-configuration only where the application data path needs them.
 ![Bluetape4k Exposed module composition diagram](docs/images/readme-diagrams/root-readme-module-relationships-01.png)
 <!-- README_VISUAL_OVERVIEW:END -->
 
+## Manual
+
+The repository-owned manual is the source of truth for the stable 1.11 line:
+
+- [Manual overview](docs/manual/en/index.md)
+- [Getting started](docs/manual/en/getting-started.md)
+- [Module inventory and learning path](docs/manual/en/guides/learning-path.md)
+
+It covers all 40 released Gradle projects in English and Korean, including
+ownership boundaries, runnable examples, failure diagnosis, operations, and
+release-pinned source links. README files remain concise entry points; detailed
+behavior belongs in `docs/manual/`.
+
 ## Modules
 
 | Module | Description |
@@ -73,7 +86,7 @@ auto-configuration only where the application data path needs them.
 | `exposed-cockroachdb` | CockroachDB PostgreSQL-wire smoke support |
 | `exposed-duckdb` | DuckDB embedded analytics support |
 | `exposed-druid` | Apache Druid query-only Avatica JDBC experiment |
-| `exposed-timefold-solver-persistence` | Timefold Solver persistence integration |
+| `exposed-timefold-solver-persistence` | Exposed column mappings for Timefold Score values |
 | `exposed-ktor` | Ktor integration for explicit Exposed JDBC/R2DBC transactions, readiness routes, and status pages |
 | `exposed-spring-boot-jdbc` | Spring Boot 4.x JDBC auto-configuration |
 | `exposed-spring-boot-r2dbc` | Spring Boot 4.x R2DBC auto-configuration |
@@ -174,20 +187,21 @@ unnecessary PII in domain events.
 
 ```kotlin
 dependencies {
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<version>"))
     // Core
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:1.11.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc")
     // R2DBC (coroutines)
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:1.11.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc")
     // Redis cache
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce:1.11.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce")
     // Jackson JSON columns
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2:1.11.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2")
     // Ktor integration
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor:1.11.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor")
     // Spring Boot auto-configuration
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:1.11.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc")
     // Spring Modulith JDBC event publication through Exposed
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:1.11.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith")
 }
 ```
 
@@ -408,7 +422,8 @@ health/readiness routes are installed only when the application opts in.
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor:1.11.0")
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<version>"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor")
 }
 ```
 
