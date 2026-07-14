@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1200" viewBox="0 0 1800 1200" role="img" aria-labelledby="title desc">
+  <title id="title">Spring Boot JDBC ownership and auto-configuration</title>
+  <desc id="desc">A dark architecture flow from the Spring Boot application and caller-owned DataSource through conditional Exposed JDBC auto-configuration, Database connection, named transaction manager, repository scan and factory, DAO repository, and database. Schema migration remains application-owned.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L14 7 L0 14 Z" fill="#8fd3ff"/></marker>
+    <linearGradient id="canvas" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#07111f"/><stop offset="0.58" stop-color="#111d31"/><stop offset="1" stop-color="#1d2c43"/></linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1a2639"/><stop offset="1" stop-color="#0f1726"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#020617" flood-opacity="0.45"/></filter>
+  </defs>
+  <rect width="1800" height="1200" fill="url(#canvas)"/>
+  <rect x="40" y="34" width="1720" height="1128" rx="34" fill="url(#panel)" stroke="#536377" stroke-width="4"/>
+  <text x="900" y="100" text-anchor="middle" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="50" fill="#f8fafc">Spring JDBC: One Visible Transaction Owner</text>
+  <text x="900" y="143" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="19" fill="#b8c7d9">1.11 • conditional infrastructure • application-owned business boundary</text>
+
+  <g fill="none" stroke="#8fd3ff" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)">
+    <path class="connector" data-connector="app-to-datasource" d="M900 282 V320"/>
+    <path class="connector" data-connector="datasource-to-autoconfig" d="M900 412 V450"/>
+    <path class="connector" data-connector="autoconfig-to-bridge" d="M900 542 V580"/>
+    <path class="connector" data-connector="bridge-to-scan" d="M900 692 V730"/>
+    <path class="connector" data-connector="scan-to-factory" d="M900 822 V860"/>
+    <path class="connector" data-connector="factory-to-repository" d="M900 952 V990"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect class="card" x="580" y="190" width="640" height="92" rx="22" fill="#17263a" stroke="#8b6bd6" stroke-width="3"/>
+    <rect class="card" x="580" y="320" width="640" height="92" rx="22" fill="#17263a" stroke="#4d8ec9" stroke-width="3"/>
+    <rect class="card" x="580" y="450" width="640" height="92" rx="22" fill="#17263a" stroke="#159c92" stroke-width="3"/>
+    <rect class="card" x="500" y="580" width="800" height="112" rx="22" fill="#17263a" stroke="#c58b2a" stroke-width="3"/>
+    <rect class="card" x="580" y="730" width="640" height="92" rx="22" fill="#17263a" stroke="#4d8ec9" stroke-width="3"/>
+    <rect class="card" x="580" y="860" width="640" height="92" rx="22" fill="#17263a" stroke="#159c92" stroke-width="3"/>
+    <rect class="card" x="580" y="990" width="640" height="92" rx="22" fill="#17263a" stroke="#8b6bd6" stroke-width="3"/>
+    <rect class="card" x="90" y="480" width="330" height="170" rx="22" fill="#111b2c" stroke="#f6c96b" stroke-width="3"/>
+    <rect class="card" x="1380" y="480" width="330" height="170" rx="22" fill="#111b2c" stroke="#f6c96b" stroke-width="3"/>
+  </g>
+
+  <g text-anchor="middle">
+    <text x="900" y="228" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="31" fill="#d2c4ff">Spring Boot Application</text><text x="900" y="258" font-family="Comic Mono, ui-monospace, monospace" font-size="16" fill="#d8e2ee">service method owns the business transaction</text>
+    <text x="900" y="358" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="31" fill="#9ed8ff">Caller DataSource</text><text x="900" y="388" font-family="Comic Mono, ui-monospace, monospace" font-size="16" fill="#d8e2ee">driver • pool • credentials</text>
+    <text x="900" y="488" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="30" fill="#5eead4">Conditional JDBC Auto-configuration</text><text x="900" y="518" font-family="Comic Mono, ui-monospace, monospace" font-size="16" fill="#d8e2ee">activates when an Exposed entity is present</text>
+    <text x="900" y="622" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="29" fill="#f6c96b">Database.connect + springTransactionManager</text><text x="900" y="655" font-family="Comic Mono, ui-monospace, monospace" font-size="16" fill="#d8e2ee">named manager is created only when the required bean is missing</text>
+    <text x="900" y="768" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="29" fill="#9ed8ff">@EnableExposedJdbcRepositories</text><text x="900" y="798" font-family="Comic Mono, ui-monospace, monospace" font-size="16" fill="#d8e2ee">scan repository interfaces</text>
+    <text x="900" y="898" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="31" fill="#5eead4">Repository Factory</text><text x="900" y="928" font-family="Comic Mono, ui-monospace, monospace" font-size="16" fill="#d8e2ee">binds the named transaction manager</text>
+    <text x="900" y="1028" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="31" fill="#d2c4ff">DAO Repository to Database</text><text x="900" y="1058" font-family="Comic Mono, ui-monospace, monospace" font-size="16" fill="#d8e2ee">all calls execute inside the chosen Spring boundary</text>
+    <text x="255" y="525" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="27" fill="#f6c96b">Application owns</text><text x="255" y="562" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#d8e2ee">schema • migrations</text><text x="255" y="592" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#d8e2ee">multiple-TM choice</text><text x="255" y="622" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#d8e2ee">service transaction</text>
+    <text x="1545" y="525" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="27" fill="#f6c96b">Verify explicitly</text><text x="1545" y="562" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#d8e2ee">commit • rollback</text><text x="1545" y="592" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#d8e2ee">real driver path</text><text x="1545" y="622" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#d8e2ee">no event-loop blocking</text>
+  </g>
+  <text x="900" y="1125" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="17" fill="#b8c7d9">Arrows show construction and invocation ownership, not schema provisioning.</text>
+</svg>

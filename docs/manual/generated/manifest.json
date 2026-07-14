@@ -1025,7 +1025,15 @@
       "assets/cache/cache-selection.svg",
       "assets/cache/cache-selection.png",
       "assets/database/adapter-map.svg",
-      "assets/database/adapter-map.png"
+      "assets/database/adapter-map.png",
+      "assets/spring/jdbc-auto-configuration.svg",
+      "assets/spring/jdbc-auto-configuration.png",
+      "assets/spring/r2dbc-auto-configuration.svg",
+      "assets/spring/r2dbc-auto-configuration.png",
+      "assets/spring/modulith-publication.svg",
+      "assets/spring/modulith-publication.png",
+      "assets/batch/runtime.svg",
+      "assets/batch/runtime.png"
     ],
     "documents": {
       "en": [
@@ -1038,7 +1046,11 @@
         "en/guides/cache-selection.md",
         "en/guides/serialization-and-encryption.md",
         "en/guides/database-adapter-matrix.md",
-        "en/guides/oltp-vs-olap.md"
+        "en/guides/oltp-vs-olap.md",
+        "en/guides/spring-and-ktor.md",
+        "en/guides/testing-and-operations.md",
+        "en/guides/hibernate-vs-exposed.md",
+        "en/guides/audit-with-javers.md"
       ],
       "ko": [
         "ko/index.md",
@@ -1050,7 +1062,11 @@
         "ko/guides/cache-selection.md",
         "ko/guides/serialization-and-encryption.md",
         "ko/guides/database-adapter-matrix.md",
-        "ko/guides/oltp-vs-olap.md"
+        "ko/guides/oltp-vs-olap.md",
+        "ko/guides/spring-and-ktor.md",
+        "ko/guides/testing-and-operations.md",
+        "ko/guides/hibernate-vs-exposed.md",
+        "ko/guides/audit-with-javers.md"
       ]
     }
   },
