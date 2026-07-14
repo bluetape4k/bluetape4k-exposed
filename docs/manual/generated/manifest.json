@@ -966,6 +966,28 @@
       ]
     }
   ],
+  "overview": {
+    "assets": [
+      "assets/overview/repository-overview.svg",
+      "assets/overview/repository-overview.png",
+      "assets/overview/module-map.svg",
+      "assets/overview/module-map.png"
+    ],
+    "documents": {
+      "en": [
+        "en/index.md",
+        "en/getting-started.md",
+        "en/architecture/repository-map.md",
+        "en/guides/learning-path.md"
+      ],
+      "ko": [
+        "ko/index.md",
+        "ko/getting-started.md",
+        "ko/architecture/repository-map.md",
+        "ko/guides/learning-path.md"
+      ]
+    }
+  },
   "releaseCommit": "0b494a5fd1e083006046764757342b68a397e4c5",
   "releaseRef": "1.11.0",
   "repository": "bluetape4k/bluetape4k-exposed",

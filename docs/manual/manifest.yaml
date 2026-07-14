@@ -2,6 +2,23 @@ schemaVersion: 2
 repository: "bluetape4k/bluetape4k-exposed"
 releaseRef: "1.11.0"
 releaseCommit: "0b494a5fd1e083006046764757342b68a397e4c5"
+overview:
+  documents:
+    en:
+      - "en/index.md"
+      - "en/getting-started.md"
+      - "en/architecture/repository-map.md"
+      - "en/guides/learning-path.md"
+    ko:
+      - "ko/index.md"
+      - "ko/getting-started.md"
+      - "ko/architecture/repository-map.md"
+      - "ko/guides/learning-path.md"
+  assets:
+    - "assets/overview/repository-overview.svg"
+    - "assets/overview/repository-overview.png"
+    - "assets/overview/module-map.svg"
+    - "assets/overview/module-map.png"
 modules:
   - id: "benchmark-exposed-benchmark"
     title: {"en":"Exposed Repository Benchmark","ko":"Exposed 저장소 벤치마크"}

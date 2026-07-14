@@ -43,7 +43,8 @@ module ManualDocs
       errors.concat(validate_duplicates(entries))
       errors.concat(validate_inventory(entries))
       entries.each { |entry| errors.concat(validate_entry(entry)) }
-      errors.concat(validate_orphan_assets(entries))
+      errors.concat(validate_overview(manifest["overview"]))
+      errors.concat(validate_orphan_assets(entries, manifest["overview"]))
       errors
     rescue Psych::SyntaxError => error
       ["manual manifest YAML is invalid: #{error.problem}"]
@@ -239,11 +240,76 @@ module ManualDocs
       errors
     end
 
-    def validate_orphan_assets(entries)
+    def validate_overview(overview)
+      return [] if overview.nil?
+      return ["manual overview must be a mapping"] unless overview.is_a?(Hash)
+
+      errors = []
+      documents = overview["documents"]
+      unless documents.is_a?(Hash)
+        errors << "manual overview documents must be a mapping"
+      else
+        LOCALES.each do |locale, language|
+          paths = documents[locale]
+          unless paths.is_a?(Array)
+            errors << "manual overview #{language} documents must be an array"
+            next
+          end
+          paths.each do |path|
+            unless safe_relative?(path)
+              errors << "manual overview: unsafe #{language} document path #{path}"
+              next
+            end
+            absolute = File.expand_path(path, File.dirname(@manifest_path))
+            if !path_entry_exists?(absolute)
+              errors << "manual overview: missing #{language} document #{path}"
+            elsif !safe_existing_file?(absolute, File.dirname(@manifest_path))
+              errors << "manual overview: unsafe #{language} document path #{path}"
+            else
+              errors.concat(validate_markdown_references(absolute, File.read(absolute), "manual overview/#{locale}"))
+            end
+          end
+        end
+        if documents["en"].is_a?(Array) && documents["ko"].is_a?(Array)
+          english = documents["en"].map { |path| path.is_a?(String) ? path.delete_prefix("en/") : path }
+          korean = documents["ko"].map { |path| path.is_a?(String) ? path.delete_prefix("ko/") : path }
+          errors << "manual overview: English/Korean document inventory differs" unless english == korean
+        end
+      end
+
+      assets = overview["assets"]
+      unless assets.is_a?(Array)
+        errors << "manual overview assets must be an array"
+        return errors
+      end
+      root = File.dirname(@manifest_path)
+      assets.each do |asset|
+        unless safe_relative?(asset) && asset.start_with?("assets/") && MANUAL_ASSET_EXTENSIONS.include?(File.extname(asset))
+          errors << "manual overview: unsafe asset path #{asset}"
+          next
+        end
+        absolute = File.expand_path(asset, root)
+        if !path_entry_exists?(absolute)
+          errors << "manual overview: missing asset #{asset}"
+        elsif !safe_existing_file?(absolute, root)
+          errors << "manual overview: unsafe asset path #{asset}"
+        end
+      end
+      assets.grep(String).map { |asset| asset.delete_suffix(File.extname(asset)) }.uniq.each do |base|
+        MANUAL_ASSET_EXTENSIONS.each do |extension|
+          pair = "#{base}#{extension}"
+          errors << "manual overview: missing paired asset #{pair}" unless assets.include?(pair) && File.file?(File.expand_path(pair, root))
+        end
+      end
+      errors
+    end
+
+    def validate_orphan_assets(entries, overview = nil)
       root = File.dirname(@manifest_path)
       actual = MANUAL_ASSET_EXTENSIONS.flat_map { |ext| Dir.glob(File.join(root, "assets/**/*#{ext}")) }
         .map { |path| Pathname.new(path).relative_path_from(Pathname.new(root)).to_s }
       registered = entries.flat_map { |entry| entry["assets"].is_a?(Array) ? entry["assets"] : [] }
+      registered.concat(overview["assets"]) if overview.is_a?(Hash) && overview["assets"].is_a?(Array)
       (actual - registered).sort.map { |asset| "manual assets: orphan asset #{asset}" }
     end
 

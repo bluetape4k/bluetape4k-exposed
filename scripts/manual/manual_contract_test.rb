@@ -99,6 +99,47 @@ class ManualContractTest < Minitest::Test
     end
   end
 
+  def test_validates_top_level_overview_documents_and_paired_assets
+    with_repository do |root, manifest|
+      manifest["overview"] = {
+        "documents" => {
+          "en" => ["en/index.md"],
+          "ko" => ["ko/index.md"],
+        },
+        "assets" => ["assets/overview/map.svg"],
+      }
+      FileUtils.mkdir_p(File.join(root, "docs/manual/en"))
+      File.write(File.join(root, "docs/manual/en/index.md"), "# Overview\n")
+      write_manifest(root, manifest)
+
+      errors = validator(root).errors
+
+      assert_includes errors, "manual overview: missing Korean document ko/index.md"
+      assert_includes errors, "manual overview: missing asset assets/overview/map.svg"
+      assert_includes errors, "manual overview: missing paired asset assets/overview/map.png"
+    end
+  end
+
+  def test_rejects_overview_locale_inventory_drift
+    with_repository do |root, manifest|
+      manifest["overview"] = {
+        "documents" => {
+          "en" => ["en/index.md"],
+          "ko" => ["ko/getting-started.md"],
+        },
+        "assets" => [],
+      }
+      %w[en/index.md ko/getting-started.md].each do |path|
+        absolute = File.join(root, "docs/manual", path)
+        FileUtils.mkdir_p(File.dirname(absolute))
+        File.write(absolute, "# Overview\n")
+      end
+      write_manifest(root, manifest)
+
+      assert_includes validator(root).errors, "manual overview: English/Korean document inventory differs"
+    end
+  end
+
   def test_rejects_locale_chapter_and_asset_symlinks_that_escape_the_repository
     with_repository do |root, manifest|
       Dir.mktmpdir("outside-manual-contract") do |outside|
