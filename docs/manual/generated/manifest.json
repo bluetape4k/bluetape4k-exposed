@@ -1023,7 +1023,9 @@
       "assets/persistence/transaction-ownership.svg",
       "assets/persistence/transaction-ownership.png",
       "assets/cache/cache-selection.svg",
-      "assets/cache/cache-selection.png"
+      "assets/cache/cache-selection.png",
+      "assets/database/adapter-map.svg",
+      "assets/database/adapter-map.png"
     ],
     "documents": {
       "en": [
@@ -1034,7 +1036,9 @@
         "en/guides/jdbc-vs-r2dbc.md",
         "en/guides/transaction-boundaries.md",
         "en/guides/cache-selection.md",
-        "en/guides/serialization-and-encryption.md"
+        "en/guides/serialization-and-encryption.md",
+        "en/guides/database-adapter-matrix.md",
+        "en/guides/oltp-vs-olap.md"
       ],
       "ko": [
         "ko/index.md",
@@ -1044,7 +1048,9 @@
         "ko/guides/jdbc-vs-r2dbc.md",
         "ko/guides/transaction-boundaries.md",
         "ko/guides/cache-selection.md",
-        "ko/guides/serialization-and-encryption.md"
+        "ko/guides/serialization-and-encryption.md",
+        "ko/guides/database-adapter-matrix.md",
+        "ko/guides/oltp-vs-olap.md"
       ]
     }
   },

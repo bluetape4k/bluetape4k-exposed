@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1250" viewBox="0 0 2000 1250" role="img" aria-labelledby="title desc">
+  <title id="title">Exposed 1.11 database adapter map</title>
+  <desc id="desc">A dark architecture map separating transaction-oriented JDBC extensions from embedded, JDBC OLAP, coordinator, REST job, and narrow smoke analytical adapters.</desc>
+  <defs>
+    <marker id="primary-blue" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L14 7 L0 14 Z" fill="#8fd3ff" stroke="#8fd3ff"/>
+    </marker>
+    <linearGradient id="canvas" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#07111f"/>
+      <stop offset="55%" stop-color="#111d31"/>
+      <stop offset="100%" stop-color="#1d2c43"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a2639"/>
+      <stop offset="100%" stop-color="#0f1726"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="9" stdDeviation="11" flood-color="#020617" flood-opacity="0.42"/>
+    </filter>
+    <filter id="glow" filterUnits="userSpaceOnUse" x="0" y="0" width="2000" height="1250">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#67e8f9" flood-opacity="0.26"/>
+    </filter>
+  </defs>
+
+  <rect width="2000" height="1250" fill="url(#canvas)"/>
+  <rect x="42" y="34" width="1916" height="1174" rx="34" fill="url(#panel)" stroke="#536377" stroke-width="4" filter="url(#shadow)"/>
+
+  <text x="1000" y="105" text-anchor="middle" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="54" fill="#f8fafc">Choose the Commit Boundary Before the Adapter</text>
+  <text x="1000" y="151" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="20" fill="#b8c7d9">Exposed 1.11 • eight release-backed adapters • Druid intentionally absent</text>
+
+  <rect class="card" x="650" y="195" width="700" height="130" rx="28" fill="#182339" stroke="#8b6bd6" stroke-width="4" filter="url(#shadow)"/>
+  <text x="1000" y="247" text-anchor="middle" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="34" fill="#d2c4ff">Where must this work commit?</text>
+  <text x="1000" y="289" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="18" fill="#d8e2ee">request transaction or analytical execution boundary</text>
+
+  <rect x="82" y="385" width="860" height="710" rx="30" fill="#111b2c" stroke="#4d8ec9" stroke-width="4"/>
+  <rect x="1058" y="385" width="860" height="710" rx="30" fill="#111b2c" stroke="#159c92" stroke-width="4"/>
+
+  <rect class="card" x="292" y="420" width="440" height="90" rx="22" fill="#17263a" stroke="#4d8ec9" stroke-width="3"/>
+  <text x="512" y="457" text-anchor="middle" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="29" fill="#9ed8ff">Transactional State</text>
+  <text x="512" y="486" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="16" fill="#d5dfeb">JDBC commit / rollback / whole-block retry</text>
+
+  <rect class="card" x="1268" y="420" width="440" height="90" rx="22" fill="#17263a" stroke="#159c92" stroke-width="3"/>
+  <text x="1488" y="457" text-anchor="middle" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="29" fill="#5eead4">Analytical Execution</text>
+  <text x="1488" y="486" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="16" fill="#d5dfeb">embedded • JDBC OLAP • coordinator • REST job</text>
+
+  <g fill="none" stroke="#8fd3ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)">
+    <path class="connector" data-connector="decision-to-transaction" d="M850 325 V345 Q850 365 830 365 H512 Q492 365 492 385 V420" marker-end="url(#primary-blue)"/>
+    <path class="connector" data-connector="decision-to-analytical" d="M1150 325 V345 Q1150 365 1170 365 H1488 Q1508 365 1508 385 V420" marker-end="url(#primary-blue)"/>
+    <path class="connector" data-connector="transaction-to-postgresql" d="M512 510 V545 Q512 565 492 565 H252 Q232 565 232 585 V625" marker-end="url(#primary-blue)"/>
+    <path class="connector" data-connector="transaction-to-mysql" d="M512 510 V625" marker-end="url(#primary-blue)"/>
+    <path class="connector" data-connector="transaction-to-cockroach" d="M512 510 V545 Q512 565 532 565 H772 Q792 565 792 585 V625" marker-end="url(#primary-blue)"/>
+    <path class="connector" data-connector="analytical-to-duckdb" d="M1488 510 V545 Q1488 565 1468 565 H1192 Q1172 565 1172 585 V625" marker-end="url(#primary-blue)"/>
+    <path class="connector" data-connector="analytical-to-clickhouse" d="M1488 510 V545 Q1488 565 1478 565 H1448 Q1438 565 1438 585 V625" marker-end="url(#primary-blue)"/>
+    <path class="connector" data-connector="analytical-to-trino" d="M1488 510 V545 Q1488 565 1508 565 H1684 Q1704 565 1704 585 V625" marker-end="url(#primary-blue)"/>
+    <path class="connector" data-connector="analytical-to-bigquery" d="M1420 510 V545 Q1420 565 1400 565 H1322 Q1302 565 1302 585 V895" marker-end="url(#primary-blue)"/>
+    <path class="connector" data-connector="analytical-to-starrocks" d="M1650 510 V535 Q1650 555 1670 555 H1840 Q1860 555 1860 575 V830 Q1860 850 1840 850 H1654 Q1634 850 1634 870 V895" marker-end="url(#primary-blue)"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect class="card" x="112" y="625" width="240" height="250" rx="24" fill="#17263a" stroke="#4d8ec9" stroke-width="3"/>
+    <rect class="card" x="392" y="625" width="240" height="250" rx="24" fill="#17263a" stroke="#4d8ec9" stroke-width="3"/>
+    <rect class="card" x="672" y="625" width="240" height="250" rx="24" fill="#17263a" stroke="#8b6bd6" stroke-width="3"/>
+    <rect class="card" x="1072" y="625" width="200" height="180" rx="24" fill="#17263a" stroke="#c58b2a" stroke-width="3"/>
+    <rect class="card" x="1338" y="625" width="200" height="180" rx="24" fill="#17263a" stroke="#159c92" stroke-width="3"/>
+    <rect class="card" x="1604" y="625" width="200" height="180" rx="24" fill="#17263a" stroke="#159c92" stroke-width="3"/>
+    <rect class="card" x="1182" y="895" width="240" height="150" rx="24" fill="#17263a" stroke="#8b6bd6" stroke-width="3"/>
+    <rect class="card" x="1514" y="895" width="240" height="150" rx="24" fill="#17263a" stroke="#c58b2a" stroke-width="3"/>
+  </g>
+
+  <text x="232" y="680" text-anchor="middle" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="29" fill="#9ed8ff">PostgreSQL</text>
+  <text x="232" y="718" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="16" fill="#d5dfeb">JDBC extensions</text>
+  <text x="232" y="756" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#b6c4d6">pgvector • PostGIS</text>
+  <text x="232" y="785" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#b6c4d6">tstzrange</text>
+  <text x="232" y="834" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="14" fill="#f6c96b">caller supplies runtime</text>
+
+  <text x="512" y="680" text-anchor="middle" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="29" fill="#9ed8ff">MySQL 8</text>
+  <text x="512" y="718" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="16" fill="#d5dfeb">JDBC GIS extensions</text>
+  <text x="512" y="756" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#b6c4d6">JTS • SRID • WKB</text>
+  <text x="512" y="785" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#b6c4d6">spatial predicates</text>
+  <text x="512" y="834" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="14" fill="#f6c96b">caller supplies Connector/J</text>
+
+  <text x="792" y="680" text-anchor="middle" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="29" fill="#d2c4ff">CockroachDB</text>
+  <text x="792" y="718" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="16" fill="#d5dfeb">PostgreSQL JDBC</text>
+  <text x="792" y="756" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#b6c4d6">SERIALIZABLE</text>
+  <text x="792" y="785" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#b6c4d6">retry whole block</text>
+  <text x="792" y="834" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="14" fill="#f6c96b">partial PG parity</text>
+
+  <text x="1172" y="677" text-anchor="middle" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="27" fill="#f6c96b">DuckDB</text>
+  <text x="1172" y="713" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#d5dfeb">embedded JDBC</text>
+  <text x="1172" y="747" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="14" fill="#b6c4d6">memory / file</text>
+  <text x="1172" y="776" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="13" fill="#fda4af">Flow materializes</text>
+
+  <text x="1438" y="677" text-anchor="middle" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="27" fill="#5eead4">ClickHouse</text>
+  <text x="1438" y="713" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#d5dfeb">JDBC OLAP</text>
+  <text x="1438" y="747" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="14" fill="#b6c4d6">engine DDL • batch</text>
+  <text x="1438" y="776" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="13" fill="#fda4af">autocommit</text>
+
+  <text x="1704" y="677" text-anchor="middle" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="27" fill="#5eead4">Trino</text>
+  <text x="1704" y="713" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#d5dfeb">coordinator JDBC</text>
+  <text x="1704" y="747" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="14" fill="#b6c4d6">connector-specific</text>
+  <text x="1704" y="776" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="13" fill="#fda4af">no block atomicity</text>
+
+  <text x="1302" y="948" text-anchor="middle" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="28" fill="#d2c4ff">BigQuery</text>
+  <text x="1302" y="985" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#d5dfeb">SQL generator + REST job</text>
+  <text x="1302" y="1017" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="14" fill="#b6c4d6">dry run • page tokens</text>
+
+  <text x="1634" y="948" text-anchor="middle" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="28" fill="#f6c96b">StarRocks</text>
+  <text x="1634" y="985" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#d5dfeb">Connector/J smoke path</text>
+  <text x="1634" y="1017" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="14" fill="#b6c4d6">local AIO • narrow proof</text>
+
+  <text x="1000" y="1151" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="17" fill="#d8e2ee">Solid arrows show selection boundaries, not data replication • production schema and service lifecycle remain application-owned</text>
+</svg>

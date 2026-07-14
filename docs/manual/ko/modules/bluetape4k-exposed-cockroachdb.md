@@ -12,66 +12,82 @@ artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-cockroachdb
 
 # Exposed CockroachDB 어댑터
 
-> 라이브러리 모듈
+`bluetape4k-exposed-cockroachdb`는 PostgreSQL JDBC로 Exposed를 연결하고 직렬화 실패 때 전체 트랜잭션을 다시 실행하는 CockroachDB 전용 경계를 제공합니다.
 
-## 제공하는 기능 {#problem}
+## 해결하려는 문제 {#problem}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+CockroachDB는 PostgreSQL wire protocol과 호환되지만 분산 serializable 트랜잭션은 SQLSTATE `40001`을 반환할 수 있어 작업 전체를 처음부터 다시 해야 합니다. PostgreSQL 기능도 모두 같지는 않습니다.
 
-Maven 좌표: `io.github.bluetape4k.exposed:bluetape4k-exposed-cockroachdb`. API 중심의 빠른 시작: 안정판에서 확인한 가장 작은 예제부터 실행한 뒤 작업별 사용법으로 넓혀 가세요.
+## 언제 사용하는가 {#when-to-use}
 
-## 사용하기 좋은 경우 {#when-to-use}
-
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+CockroachDB의 분산성이 필요한 트랜잭션 workload에서 작업 전체를 재시도에 안전하게 만들 수 있을 때 사용합니다. PostgreSQL을 지원한다는 이유만으로 선택하지는 마세요.
 
 ## 의존성 좌표 {#coordinates}
 
-Maven 좌표: `io.github.bluetape4k.exposed:bluetape4k-exposed-cockroachdb`
+```kotlin
+dependencies {
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<version>"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-cockroachdb")
+}
+```
 
 ## 핵심 개념 {#concepts}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+`CockroachDatabase`는 host/port/database, JDBC URL, `DataSource`를 받습니다. `withCockroachTransaction`은 최상위 serializable 트랜잭션을 열고 CockroachDB restart 오류만 제한된 backoff로 재시도합니다. compatibility ledger가 검증·부분 지원·미지원 PostgreSQL 기능을 기록합니다.
 
-## 빠르게 시작하기 {#quick-start}
+## 빠른 시작 {#quick-start}
 
-안정판 API를 중심으로 가장 작은 사용 예제를 작성합니다.
+```kotlin
+val db = CockroachDatabase.connect(host = "localhost", database = "app")
+withCockroachTransaction(db) {
+    Accounts.update({ Accounts.id eq id }) { it[balance] = newBalance }
+}
+```
 
 ## 작업별 API {#api-by-task}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+| 작업 | API |
+| --- | --- |
+| 연결 | `CockroachDatabase.connect` |
+| 재시도 가능한 작업 | `withCockroachTransaction` |
+| 재시도 설정 | `CockroachTransactionRetryOptions` |
+| SQLSTATE 40001 판별 | `isCockroachRetryableTransactionError` |
 
 ## 권장 패턴 {#patterns}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+기존 Exposed 트랜잭션 밖에서 helper를 호출하세요. 블록 안의 외부 부수 효과는 중복 실행에도 안전하게 만들거나 commit 뒤로 미룹니다. batch와 keyset page를 작게 유지하면 경합과 재시도 비용이 줄어듭니다.
 
-## 연동 {#integrations}
+## 연동 모듈 {#integrations}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+PostgreSQL JDBC가 API 의존성입니다. 1.11 테스트는 Testcontainers CockroachDB에서 연결, 스키마 생성·삭제, compatibility matrix, 재시도 분류·backoff·전체 작업 재실행을 검증합니다.
 
 ## 설정 {#configuration}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+기본 port는 `26257`, DB는 `defaultdb`, 격리 수준은 `SERIALIZABLE`입니다. TLS, credential, pool 수명, 최대 시도 횟수, backoff를 배포 환경에 맞추세요.
 
-## 실패 유형과 해결 방법 {#failures}
+## 실패 방식 {#failures}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+재시도 대상이 아닌 SQL 오류는 즉시 실패하고 횟수를 다 쓰면 예외가 전달됩니다. 트랜잭션 안의 외부 호출은 반복될 수 있습니다. advisory lock과 range type은 미지원이며 다른 PostgreSQL 기능도 부분 지원일 수 있습니다.
 
 ## 운영 {#operations}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+재시도 횟수, SQLSTATE, 경합, 트랜잭션 시간, backoff, pool 대기, batch 크기를 관찰하세요. 높은 시도 횟수로 retry storm을 숨기지 마세요.
 
 ## 테스트 {#testing}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+CockroachDB 컨테이너에서 재시도 가능한 충돌을 강제로 만드세요. 블록 전체가 반복되는지, 일반 오류는 반복하지 않는지, 외부 효과가 안전한지, DDL이 ledger와 맞는지, paging 순서가 안정적인지 확인합니다.
 
-## 학습 경로와 예제 {#workshops}
+## 학습 경로 {#workshops}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+[어댑터 표](../guides/database-adapter-matrix.md)에서 PostgreSQL과 비교하고 [OLTP와 OLAP 가이드](../guides/oltp-vs-olap.md)를 읽으세요. 일반 JDBC 트랜잭션 경계를 이해한 뒤 retry helper를 붙입니다.
 
 ## 제약 사항 {#limitations}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+PostgreSQL wire 호환성은 기능 동등성이 아닙니다. helper는 문서화된 restart 오류만 처리하며 외부 부수 효과를 트랜잭션으로 만들거나 경합을 없애지 못합니다.
 
-## 근거 자료 {#sources}
+## 소스 {#sources}
 
-[Gradle 빌드 파일](../../../../exposed/cockroachdb/build.gradle.kts)
+- [`CockroachDatabase`](../../../../exposed/cockroachdb/src/main/kotlin/io/bluetape4k/exposed/cockroachdb/CockroachDatabase.kt)
+- [`CockroachTransaction`](../../../../exposed/cockroachdb/src/main/kotlin/io/bluetape4k/exposed/cockroachdb/CockroachTransaction.kt)
+- [Compatibility ledger](../../../../exposed/cockroachdb/src/main/kotlin/io/bluetape4k/exposed/cockroachdb/CockroachDbCompatibility.kt)
+- [DB 테스트](../../../../exposed/cockroachdb/src/test/kotlin/io/bluetape4k/exposed/cockroachdb/CockroachDatabaseTest.kt)
