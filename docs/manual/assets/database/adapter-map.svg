@@ -5,6 +5,18 @@
     <marker id="primary-blue" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
       <path d="M0 0 L14 7 L0 14 Z" fill="#8fd3ff" stroke="#8fd3ff"/>
     </marker>
+    <marker id="flow-teal" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L14 7 L0 14 Z" fill="#5eead4" stroke="#5eead4"/>
+    </marker>
+    <marker id="flow-cyan" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L14 7 L0 14 Z" fill="#67e8f9" stroke="#67e8f9"/>
+    </marker>
+    <marker id="flow-purple" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L14 7 L0 14 Z" fill="#c4b5fd" stroke="#c4b5fd"/>
+    </marker>
+    <marker id="flow-amber" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L14 7 L0 14 Z" fill="#f6c453" stroke="#f6c453"/>
+    </marker>
     <linearGradient id="canvas" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#07111f"/>
       <stop offset="55%" stop-color="#111d31"/>
@@ -43,17 +55,17 @@
   <text x="1488" y="457" text-anchor="middle" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="29" fill="#5eead4">Analytical Execution</text>
   <text x="1488" y="486" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="16" fill="#d5dfeb">embedded • JDBC OLAP • coordinator • REST job</text>
 
-  <g fill="none" stroke="#8fd3ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)">
-    <path class="connector" data-connector="decision-to-transaction" d="M850 325 V345 Q850 365 830 365 H512 Q492 365 492 385 V420" marker-end="url(#primary-blue)"/>
-    <path class="connector" data-connector="decision-to-analytical" d="M1150 325 V345 Q1150 365 1170 365 H1488 Q1508 365 1508 385 V420" marker-end="url(#primary-blue)"/>
-    <path class="connector" data-connector="transaction-to-postgresql" d="M512 510 V545 Q512 565 492 565 H252 Q232 565 232 585 V625" marker-end="url(#primary-blue)"/>
-    <path class="connector" data-connector="transaction-to-mysql" d="M512 510 V625" marker-end="url(#primary-blue)"/>
-    <path class="connector" data-connector="transaction-to-cockroach" d="M512 510 V545 Q512 565 532 565 H772 Q792 565 792 585 V625" marker-end="url(#primary-blue)"/>
-    <path class="connector" data-connector="analytical-to-duckdb" d="M1488 510 V545 Q1488 565 1468 565 H1192 Q1172 565 1172 585 V625" marker-end="url(#primary-blue)"/>
-    <path class="connector" data-connector="analytical-to-clickhouse" d="M1488 510 V545 Q1488 565 1478 565 H1448 Q1438 565 1438 585 V625" marker-end="url(#primary-blue)"/>
-    <path class="connector" data-connector="analytical-to-trino" d="M1488 510 V545 Q1488 565 1508 565 H1684 Q1704 565 1704 585 V625" marker-end="url(#primary-blue)"/>
-    <path class="connector" data-connector="analytical-to-bigquery" d="M1420 510 V545 Q1420 565 1400 565 H1322 Q1302 565 1302 585 V895" marker-end="url(#primary-blue)"/>
-    <path class="connector" data-connector="analytical-to-starrocks" d="M1650 510 V535 Q1650 555 1670 555 H1840 Q1860 555 1860 575 V830 Q1860 850 1840 850 H1654 Q1634 850 1634 870 V895" marker-end="url(#primary-blue)"/>
+  <g fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)">
+    <path class="connector" data-connector="decision-to-transaction" d="M850 325 V345 Q850 365 830 365 H512 Q492 365 492 385 V420" stroke="#8fd3ff" marker-end="url(#primary-blue)"/>
+    <path class="connector" data-connector="decision-to-analytical" d="M1150 325 V345 Q1150 365 1170 365 H1488 Q1508 365 1508 385 V420" stroke="#5eead4" marker-end="url(#flow-teal)"/>
+    <path class="connector" data-connector="transaction-to-postgresql" d="M430 510 V545 Q430 565 410 565 H252 Q232 565 232 585 V625" stroke="#8fd3ff" marker-end="url(#primary-blue)"/>
+    <path class="connector" data-connector="transaction-to-mysql" d="M512 510 V625" stroke="#67e8f9" marker-end="url(#flow-cyan)"/>
+    <path class="connector" data-connector="transaction-to-cockroach" d="M594 510 V545 Q594 565 614 565 H772 Q792 565 792 585 V625" stroke="#c4b5fd" marker-end="url(#flow-purple)"/>
+    <path class="connector" data-connector="analytical-to-duckdb" d="M1280 510 V535 Q1280 555 1260 555 H1192 Q1172 555 1172 575 V625" stroke="#f6c453" marker-end="url(#flow-amber)"/>
+    <path class="connector" data-connector="analytical-to-clickhouse" d="M1438 510 V625" stroke="#5eead4" marker-end="url(#flow-teal)"/>
+    <path class="connector" data-connector="analytical-to-trino" d="M1520 510 V545 Q1520 565 1540 565 H1684 Q1704 565 1704 585 V625" stroke="#67e8f9" marker-end="url(#flow-cyan)"/>
+    <path class="connector" data-connector="analytical-to-bigquery" d="M1302 510 V895" stroke="#c4b5fd" marker-end="url(#flow-purple)"/>
+    <path class="connector" data-connector="analytical-to-starrocks" d="M1650 510 V535 Q1650 555 1670 555 H1840 Q1860 555 1860 575 V830 Q1860 850 1840 850 H1654 Q1634 850 1634 870 V895" stroke="#f6c453" marker-end="url(#flow-amber)"/>
   </g>
 
   <g filter="url(#shadow)">
