@@ -1021,7 +1021,9 @@
       "assets/persistence/path-decision.svg",
       "assets/persistence/path-decision.png",
       "assets/persistence/transaction-ownership.svg",
-      "assets/persistence/transaction-ownership.png"
+      "assets/persistence/transaction-ownership.png",
+      "assets/cache/cache-selection.svg",
+      "assets/cache/cache-selection.png"
     ],
     "documents": {
       "en": [
@@ -1030,7 +1032,9 @@
         "en/architecture/repository-map.md",
         "en/guides/learning-path.md",
         "en/guides/jdbc-vs-r2dbc.md",
-        "en/guides/transaction-boundaries.md"
+        "en/guides/transaction-boundaries.md",
+        "en/guides/cache-selection.md",
+        "en/guides/serialization-and-encryption.md"
       ],
       "ko": [
         "ko/index.md",
@@ -1038,7 +1042,9 @@
         "ko/architecture/repository-map.md",
         "ko/guides/learning-path.md",
         "ko/guides/jdbc-vs-r2dbc.md",
-        "ko/guides/transaction-boundaries.md"
+        "ko/guides/transaction-boundaries.md",
+        "ko/guides/cache-selection.md",
+        "ko/guides/serialization-and-encryption.md"
       ]
     }
   },

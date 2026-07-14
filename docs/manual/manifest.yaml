@@ -11,6 +11,8 @@ overview:
       - "en/guides/learning-path.md"
       - "en/guides/jdbc-vs-r2dbc.md"
       - "en/guides/transaction-boundaries.md"
+      - "en/guides/cache-selection.md"
+      - "en/guides/serialization-and-encryption.md"
     ko:
       - "ko/index.md"
       - "ko/getting-started.md"
@@ -18,6 +20,8 @@ overview:
       - "ko/guides/learning-path.md"
       - "ko/guides/jdbc-vs-r2dbc.md"
       - "ko/guides/transaction-boundaries.md"
+      - "ko/guides/cache-selection.md"
+      - "ko/guides/serialization-and-encryption.md"
   assets:
     - "assets/overview/repository-overview.svg"
     - "assets/overview/repository-overview.png"
@@ -27,6 +31,8 @@ overview:
     - "assets/persistence/path-decision.png"
     - "assets/persistence/transaction-ownership.svg"
     - "assets/persistence/transaction-ownership.png"
+    - "assets/cache/cache-selection.svg"
+    - "assets/cache/cache-selection.png"
 modules:
   - id: "benchmark-exposed-benchmark"
     title: {"en":"Exposed Repository Benchmark","ko":"Exposed 저장소 벤치마크"}
