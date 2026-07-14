@@ -12,66 +12,78 @@ artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-tests
 
 # Exposed JDBC 테스트 지원
 
-> 라이브러리 모듈
+> JDBC 데이터베이스, 트랜잭션, 스키마, 테이블, assertion, Testcontainers fixture를 재사용할 수 있게 묶었습니다.
 
 ## 제공하는 기능 {#problem}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
-
-Maven 좌표: `io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-tests`. API 중심의 빠른 시작: 안정판에서 확인한 가장 작은 예제부터 실행한 뒤 작업별 사용법으로 넓혀 가세요.
+데이터베이스 테스트에는 연결 재사용, DB별 직렬화, 트랜잭션 준비, 스키마와 테이블 정리, 실제 dialect 검증이 필요합니다. 모듈마다 이 틀을 다시 만들면 실패를 비교하고 재현하기 어려워집니다.
 
 ## 사용하기 좋은 경우 {#when-to-use}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+Exposed JDBC 코드와 공통 테이블/매핑 계약을 테스트할 때 사용합니다. 운영 runtime 의존성에는 넣지 않습니다.
 
 ## 의존성 좌표 {#coordinates}
 
-Maven 좌표: `io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-tests`
+중앙 BOM과 함께 `testImplementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-tests")`를 선언합니다.
 
 ## 핵심 개념 {#concepts}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+`withDb`는 `TestDB`별 접근을 직렬화하고 연결을 재사용하며 `maxAttempts = 1` 트랜잭션을 엽니다. 임시 설정은 호출 뒤 원래 값으로 돌려놓습니다. `withTables`는 테이블을 만들고 top-level fallback까지 사용해 정리하며 `withSchemas`는 cascade 삭제 전에 commit합니다.
 
 ## 빠르게 시작하기 {#quick-start}
 
-안정판 API를 중심으로 가장 작은 사용 예제를 작성합니다.
+```kotlin
+withTables(TestDB.POSTGRESQL, Actors) {
+    Actors.insert { it[name] = "Ada" }
+    Actors.selectAll().count() shouldBeEqualTo 1L
+}
+```
 
 ## 작업별 API {#api-by-task}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+| 작업 | API |
+|---|---|
+| 트랜잭션 fixture | `withDb` |
+| 테이블 생명주기 | `withTables` |
+| 스키마 생명주기 | `withSchemas` |
+| auto-commit 확인 | `withAutoCommit` |
+| DB 행렬 | `TestDB`, `TestDBConfig`, container 도우미 |
+| assertion/공통 스키마 | assertion과 `shared` 패키지 |
 
 ## 권장 패턴 {#patterns}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+dialect 차이가 없는 DSL 검증만 H2에서 빠르게 실행합니다. SQL, 타입, 격리 수준, 마이그레이션은 배포할 데이터베이스를 Testcontainers로 띄워 확인하세요. 테스트끼리 변경 가능한 테이블을 공유하지 말고 fixture에 정리를 맡깁니다.
 
 ## 연동 {#integrations}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+JUnit 5, bluetape4k Testcontainers, MariaDB/MySQL/PostgreSQL container 지원을 테스트 API로 제공합니다. 드라이버는 테스트 컴파일 의존성입니다.
 
 ## 설정 {#configuration}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+호출마다 `TestDB`와 선택적인 `DatabaseConfig`를 정합니다. 임시 설정은 fixture가 끝날 때 복원됩니다.
 
 ## 실패 유형과 해결 방법 {#failures}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+같은 DB에서 fixture 없이 병렬 DDL을 실행하면 충돌합니다. 정리가 항상 성공한다고 넘기면 dialect나 연결 문제를 놓칩니다. container 시작 정책에 제한이 없으면 테스트가 불안정해집니다.
 
 ## 운영 {#operations}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+테스트 전용 모듈입니다. 실패하면 container 로그와 DB 식별 정보를 남기되 fixture 자격 증명을 테스트 프로세스 밖으로 노출하지 마세요.
 
 ## 테스트 {#testing}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+모듈 자체 테스트가 직렬화, 트랜잭션, 임시 설정 복원, 스키마/테이블 정리, assertion, DDL 동작을 검증합니다.
 
 ## 학습 경로와 예제 {#workshops}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+[트랜잭션 소유권](bluetape4k-exposed-jdbc/transaction-ownership.md)을 먼저 이해하고 [JDBC 운영과 테스트](bluetape4k-exposed-jdbc/operations-testing.md)에서 fixture를 적용하세요.
 
 ## 제약 사항 {#limitations}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+이 테스트 틀은 운영 pool 부하를 재현하지 않으며 마이그레이션이나 장애 주입 테스트를 대신하지 않습니다. DB별 semaphore는 충돌하는 fixture 작업을 의도적으로 직렬화합니다.
 
 ## 근거 자료 {#sources}
 
-[Gradle 빌드 파일](../../../../exposed/jdbc-tests/build.gradle.kts)
+- [테스트 모듈 빌드](../../../../exposed/jdbc-tests/build.gradle.kts)
+- [`withDb`](../../../../exposed/jdbc-tests/src/main/kotlin/io/bluetape4k/exposed/tests/WithDB.kt)
+- [`withTables`](../../../../exposed/jdbc-tests/src/main/kotlin/io/bluetape4k/exposed/tests/WithTables.kt)

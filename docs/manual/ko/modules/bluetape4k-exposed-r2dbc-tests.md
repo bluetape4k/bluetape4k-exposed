@@ -12,66 +12,77 @@ artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-tests
 
 # Exposed R2DBC 테스트 지원
 
-> 라이브러리 모듈
+> suspend 트랜잭션, 스키마/테이블 생명주기, R2DBC 드라이버, assertion, Testcontainers fixture를 제공합니다.
 
 ## 제공하는 기능 {#problem}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
-
-Maven 좌표: `io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-tests`. API 중심의 빠른 시작: 안정판에서 확인한 가장 작은 예제부터 실행한 뒤 작업별 사용법으로 넓혀 가세요.
+R2DBC 테스트는 coroutine 트랜잭션 전파, 드라이버 동작, suspend나 실패 뒤의 정리, 실제 dialect 차이를 검증해야 합니다. JDBC fixture만 재사용하면 R2DBC에서 가장 중요한 경계가 빠집니다.
 
 ## 사용하기 좋은 경우 {#when-to-use}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+R2DBC 저장소, 쿼리, 드라이버, 취소, 프레임워크 연동을 테스트할 때 사용합니다. 애플리케이션 runtime 모듈이 아니라 테스트 의존성입니다.
 
 ## 의존성 좌표 {#coordinates}
 
-Maven 좌표: `io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-tests`
+중앙 BOM과 함께 `testImplementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-tests")`를 선언합니다.
 
 ## 핵심 개념 {#concepts}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+`withDb`는 coroutine worker를 막지 않도록 DB별 semaphore를 획득하고 `maxAttempts = 1`인 `suspendTransaction`을 연 뒤 임시 설정을 복원합니다. `withTables`와 `withSchemas`는 fixture를 만들고 commit한 다음 정리합니다. 스키마 삭제까지 실패하면 처음 난 오류를 유지하고 삭제 오류는 suppressed 예외로 남깁니다.
 
 ## 빠르게 시작하기 {#quick-start}
 
-안정판 API를 중심으로 가장 작은 사용 예제를 작성합니다.
+```kotlin
+withTables(TestDB.POSTGRESQL, Actors) {
+    Actors.insert { it[name] = "Ada" }
+    Actors.selectAll().count() shouldBeEqualTo 1L
+}
+```
 
 ## 작업별 API {#api-by-task}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+| 작업 | API |
+|---|---|
+| suspend 트랜잭션 fixture | `withDb` |
+| 테이블/스키마 생명주기 | `withTables`, `withSchemas` |
+| auto-commit 확인 | `withAutoCommit` |
+| R2DBC DB 행렬 | `TestDB`, 설정과 container 도우미 |
+| 공통 assertion/스키마 | assertion과 `shared` 패키지 |
 
 ## 권장 패턴 {#patterns}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+데이터베이스 Flow는 fixture 트랜잭션 안에서 collect합니다. 배포할 R2DBC 드라이버와 맞는 Testcontainer를 사용하세요. 취소 테스트에는 timeout을 두고 다음 테스트가 같은 DB를 쓰기 전에 자원이 정리됐는지 확인합니다.
 
 ## 연동 {#integrations}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+테스트에서 R2DBC SPI/pool, H2/MariaDB/MySQL/PostgreSQL R2DBC 드라이버, JUnit 5, Testcontainers를 사용할 수 있게 구성했습니다.
 
 ## 설정 {#configuration}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+fixture마다 `TestDB`, 드라이버 옵션, 선택적인 `DatabaseConfig`를 정합니다. 임시 데이터베이스 참조는 실행 뒤 원래 값으로 돌아갑니다.
 
 ## 실패 유형과 해결 방법 {#failures}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+fixture가 닫힌 뒤 Flow를 collect하면 트랜잭션 문맥을 잃습니다. coroutine worker에서 semaphore 획득을 blocking으로 수행하면 테스트 동시성이 떨어지므로 fixture는 그 작업을 `Dispatchers.IO`로 옮깁니다. 정리 실패가 원래 assertion 오류를 덮어써서도 안 됩니다.
 
 ## 운영 {#operations}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+실패 시 드라이버와 container 로그, coroutine timeout, pool 상태를 남깁니다. 드라이버 취소 결함 때문에 suite 전체가 멈추지 않도록 모든 테스트에 시간 제한을 둡니다.
 
 ## 테스트 {#testing}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+모듈 자체 테스트가 트랜잭션 fixture, DDL 정리, assertion, 공통 스키마, SQL 동작을 검증합니다. 사용하는 쪽에서는 rollback, 취소, Flow 일부 수집, dialect별 사례를 추가하세요.
 
 ## 학습 경로와 예제 {#workshops}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+[코루틴 트랜잭션](bluetape4k-exposed-r2dbc/coroutine-transactions.md)을 이해한 뒤 [취소와 테스트](bluetape4k-exposed-r2dbc/cancellation-and-testing.md)의 검증 흐름을 적용하세요.
 
 ## 제약 사항 {#limitations}
 
-안정판 소스를 바탕으로 내용을 보강할 예정입니다.
+fixture가 특정 드라이버의 서버 작업 취소까지 보장하지는 않습니다. 운영 pool 부하를 재현하거나 장시간 복원력 테스트를 대신하지도 않습니다.
 
 ## 근거 자료 {#sources}
 
-[Gradle 빌드 파일](../../../../exposed/r2dbc-tests/build.gradle.kts)
+- [테스트 모듈 빌드](../../../../exposed/r2dbc-tests/build.gradle.kts)
+- [`withDb`](../../../../exposed/r2dbc-tests/src/main/kotlin/io/bluetape4k/exposed/r2dbc/tests/withDb.kt)
+- [`withTables`](../../../../exposed/r2dbc-tests/src/main/kotlin/io/bluetape4k/exposed/r2dbc/tests/withTables.kt)

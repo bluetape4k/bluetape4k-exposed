@@ -9,16 +9,24 @@ overview:
       - "en/getting-started.md"
       - "en/architecture/repository-map.md"
       - "en/guides/learning-path.md"
+      - "en/guides/jdbc-vs-r2dbc.md"
+      - "en/guides/transaction-boundaries.md"
     ko:
       - "ko/index.md"
       - "ko/getting-started.md"
       - "ko/architecture/repository-map.md"
       - "ko/guides/learning-path.md"
+      - "ko/guides/jdbc-vs-r2dbc.md"
+      - "ko/guides/transaction-boundaries.md"
   assets:
     - "assets/overview/repository-overview.svg"
     - "assets/overview/repository-overview.png"
     - "assets/overview/module-map.svg"
     - "assets/overview/module-map.png"
+    - "assets/persistence/path-decision.svg"
+    - "assets/persistence/path-decision.png"
+    - "assets/persistence/transaction-ownership.svg"
+    - "assets/persistence/transaction-ownership.png"
 modules:
   - id: "benchmark-exposed-benchmark"
     title: {"en":"Exposed Repository Benchmark","ko":"Exposed 저장소 벤치마크"}
@@ -116,6 +124,13 @@ modules:
     sourcePaths: ["exposed/core/src/main/kotlin"]
     testPaths: ["exposed/core/src/test/kotlin","exposed/core/src/test/resources"]
     workshops: []
+    chapters:
+      - id: "entity-id-model"
+        en: "en/modules/bluetape4k-exposed-core/entity-id-model.md"
+        ko: "ko/modules/bluetape4k-exposed-core/entity-id-model.md"
+      - id: "mapping-conventions"
+        en: "en/modules/bluetape4k-exposed-core/mapping-conventions.md"
+        ko: "ko/modules/bluetape4k-exposed-core/mapping-conventions.md"
   - id: "bluetape4k-exposed-dao"
     title: {"en":"Exposed DAO Extensions","ko":"Exposed DAO 확장"}
     gradlePath: ":bluetape4k-exposed-dao"
@@ -188,6 +203,16 @@ modules:
     sourcePaths: ["exposed/jdbc/src/main/kotlin"]
     testPaths: ["exposed/jdbc/src/test/kotlin","exposed/jdbc/src/test/resources"]
     workshops: []
+    chapters:
+      - id: "transaction-ownership"
+        en: "en/modules/bluetape4k-exposed-jdbc/transaction-ownership.md"
+        ko: "ko/modules/bluetape4k-exposed-jdbc/transaction-ownership.md"
+      - id: "repository-patterns"
+        en: "en/modules/bluetape4k-exposed-jdbc/repository-patterns.md"
+        ko: "ko/modules/bluetape4k-exposed-jdbc/repository-patterns.md"
+      - id: "operations-testing"
+        en: "en/modules/bluetape4k-exposed-jdbc/operations-testing.md"
+        ko: "ko/modules/bluetape4k-exposed-jdbc/operations-testing.md"
   - id: "bluetape4k-exposed-jdbc-caffeine"
     title: {"en":"Exposed JDBC Caffeine Cache","ko":"Exposed JDBC Caffeine 캐시"}
     gradlePath: ":bluetape4k-exposed-jdbc-caffeine"
@@ -296,6 +321,16 @@ modules:
     sourcePaths: ["exposed/r2dbc/src/main/kotlin"]
     testPaths: ["exposed/r2dbc/src/test/kotlin","exposed/r2dbc/src/test/resources"]
     workshops: []
+    chapters:
+      - id: "coroutine-transactions"
+        en: "en/modules/bluetape4k-exposed-r2dbc/coroutine-transactions.md"
+        ko: "ko/modules/bluetape4k-exposed-r2dbc/coroutine-transactions.md"
+      - id: "repository-patterns"
+        en: "en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md"
+        ko: "ko/modules/bluetape4k-exposed-r2dbc/repository-patterns.md"
+      - id: "cancellation-and-testing"
+        en: "en/modules/bluetape4k-exposed-r2dbc/cancellation-and-testing.md"
+        ko: "ko/modules/bluetape4k-exposed-r2dbc/cancellation-and-testing.md"
   - id: "bluetape4k-exposed-r2dbc-caffeine"
     title: {"en":"Exposed R2DBC Caffeine Cache","ko":"Exposed R2DBC Caffeine 캐시"}
     gradlePath: ":bluetape4k-exposed-r2dbc-caffeine"

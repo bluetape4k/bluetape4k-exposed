@@ -170,6 +170,18 @@
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-core",
+      "chapters": [
+        {
+          "en": "en/modules/bluetape4k-exposed-core/entity-id-model.md",
+          "id": "entity-id-model",
+          "ko": "ko/modules/bluetape4k-exposed-core/entity-id-model.md"
+        },
+        {
+          "en": "en/modules/bluetape4k-exposed-core/mapping-conventions.md",
+          "id": "mapping-conventions",
+          "ko": "ko/modules/bluetape4k-exposed-core/mapping-conventions.md"
+        }
+      ],
       "en": "en/modules/bluetape4k-exposed-core.md",
       "gradlePath": ":bluetape4k-exposed-core",
       "group": "foundation",
@@ -314,6 +326,23 @@
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc",
+      "chapters": [
+        {
+          "en": "en/modules/bluetape4k-exposed-jdbc/transaction-ownership.md",
+          "id": "transaction-ownership",
+          "ko": "ko/modules/bluetape4k-exposed-jdbc/transaction-ownership.md"
+        },
+        {
+          "en": "en/modules/bluetape4k-exposed-jdbc/repository-patterns.md",
+          "id": "repository-patterns",
+          "ko": "ko/modules/bluetape4k-exposed-jdbc/repository-patterns.md"
+        },
+        {
+          "en": "en/modules/bluetape4k-exposed-jdbc/operations-testing.md",
+          "id": "operations-testing",
+          "ko": "ko/modules/bluetape4k-exposed-jdbc/operations-testing.md"
+        }
+      ],
       "en": "en/modules/bluetape4k-exposed-jdbc.md",
       "gradlePath": ":bluetape4k-exposed-jdbc",
       "group": "jdbc",
@@ -529,6 +558,23 @@
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc",
+      "chapters": [
+        {
+          "en": "en/modules/bluetape4k-exposed-r2dbc/coroutine-transactions.md",
+          "id": "coroutine-transactions",
+          "ko": "ko/modules/bluetape4k-exposed-r2dbc/coroutine-transactions.md"
+        },
+        {
+          "en": "en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md",
+          "id": "repository-patterns",
+          "ko": "ko/modules/bluetape4k-exposed-r2dbc/repository-patterns.md"
+        },
+        {
+          "en": "en/modules/bluetape4k-exposed-r2dbc/cancellation-and-testing.md",
+          "id": "cancellation-and-testing",
+          "ko": "ko/modules/bluetape4k-exposed-r2dbc/cancellation-and-testing.md"
+        }
+      ],
       "en": "en/modules/bluetape4k-exposed-r2dbc.md",
       "gradlePath": ":bluetape4k-exposed-r2dbc",
       "group": "r2dbc",
@@ -971,20 +1017,28 @@
       "assets/overview/repository-overview.svg",
       "assets/overview/repository-overview.png",
       "assets/overview/module-map.svg",
-      "assets/overview/module-map.png"
+      "assets/overview/module-map.png",
+      "assets/persistence/path-decision.svg",
+      "assets/persistence/path-decision.png",
+      "assets/persistence/transaction-ownership.svg",
+      "assets/persistence/transaction-ownership.png"
     ],
     "documents": {
       "en": [
         "en/index.md",
         "en/getting-started.md",
         "en/architecture/repository-map.md",
-        "en/guides/learning-path.md"
+        "en/guides/learning-path.md",
+        "en/guides/jdbc-vs-r2dbc.md",
+        "en/guides/transaction-boundaries.md"
       ],
       "ko": [
         "ko/index.md",
         "ko/getting-started.md",
         "ko/architecture/repository-map.md",
-        "ko/guides/learning-path.md"
+        "ko/guides/learning-path.md",
+        "ko/guides/jdbc-vs-r2dbc.md",
+        "ko/guides/transaction-boundaries.md"
       ]
     }
   },
