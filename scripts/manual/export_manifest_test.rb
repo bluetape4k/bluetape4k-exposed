@@ -15,12 +15,14 @@ class ExportManifestTest < Minitest::Test
         repository: bluetape4k/bluetape4k-exposed
         releaseRef: 1.11.0
         schemaVersion: 2
+        title: 한국어 매뉴얼
       YAML
       exporter = ManualDocs::ManifestExporter.new(source_path: source, output_path: output)
       exporter.write
       parsed = JSON.parse(File.read(output))
-      assert_equal %w[modules releaseCommit releaseRef repository schemaVersion], parsed.keys
+      assert_equal %w[modules releaseCommit releaseRef repository schemaVersion title], parsed.keys
       assert_equal "bluetape4k/bluetape4k-exposed", parsed.fetch("repository")
+      assert_equal "한국어 매뉴얼", parsed.fetch("title")
       assert File.binread(output).end_with?("\n")
       assert exporter.current?
     end
