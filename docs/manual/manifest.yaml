@@ -13,6 +13,8 @@ overview:
       - "en/guides/transaction-boundaries.md"
       - "en/guides/cache-selection.md"
       - "en/guides/serialization-and-encryption.md"
+      - "en/guides/database-adapter-matrix.md"
+      - "en/guides/oltp-vs-olap.md"
     ko:
       - "ko/index.md"
       - "ko/getting-started.md"
@@ -22,6 +24,8 @@ overview:
       - "ko/guides/transaction-boundaries.md"
       - "ko/guides/cache-selection.md"
       - "ko/guides/serialization-and-encryption.md"
+      - "ko/guides/database-adapter-matrix.md"
+      - "ko/guides/oltp-vs-olap.md"
   assets:
     - "assets/overview/repository-overview.svg"
     - "assets/overview/repository-overview.png"
@@ -33,6 +37,8 @@ overview:
     - "assets/persistence/transaction-ownership.png"
     - "assets/cache/cache-selection.svg"
     - "assets/cache/cache-selection.png"
+    - "assets/database/adapter-map.svg"
+    - "assets/database/adapter-map.png"
 modules:
   - id: "benchmark-exposed-benchmark"
     title: {"en":"Exposed Repository Benchmark","ko":"Exposed 저장소 벤치마크"}

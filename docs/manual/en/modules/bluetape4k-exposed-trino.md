@@ -12,66 +12,90 @@ artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-trino
 
 # Exposed Trino Adapter
 
-> Library module
+`bluetape4k-exposed-trino` connects the Exposed JDBC DSL to a Trino coordinator and preserves Trino's catalog/schema and autocommit boundaries.
 
 ## Problem {#problem}
 
-This section will be completed from the stable release source.
-
-Maven coordinate: `io.github.bluetape4k.exposed:bluetape4k-exposed-trino`. API-oriented quick start: begin with the smallest stable-release API example, then expand it by task.
+Trino federates connectors rather than behaving like one transactional database. This adapter registers its JDBC dialect, validates connection options, removes unsupported primary-key DDL, and exposes coroutine bridges without pretending that a client block is atomic.
 
 ## When to use it {#when-to-use}
 
-This section will be completed from the stable release source.
+Use it to issue Exposed-built queries through Trino across catalogs. Treat supported DML and DDL as connector-specific capabilities, not guarantees of the coordinator.
 
 ## Coordinates {#coordinates}
 
-Maven coordinate: `io.github.bluetape4k.exposed:bluetape4k-exposed-trino`
+```kotlin
+dependencies {
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<version>"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-trino")
+}
+```
 
 ## Core concepts {#concepts}
 
-This section will be completed from the stable release source.
+- `TrinoDatabase.connect` accepts host/port/catalog/schema, JDBC URL, or `DataSource`.
+- `TrinoConnectionOptions` owns typed JDBC properties.
+- `TrinoConnectionWrapper` keeps autocommit on; commit/rollback are no-ops.
+- `TrinoTable` removes primary-key and explicit nullable DDL while preserving `NOT NULL`.
 
 ## Quick start {#quick-start}
 
-Start with the smallest API-oriented quick start backed by the stable release.
+```kotlin
+val db = TrinoDatabase.connect(
+    host = "localhost", port = 8080,
+    catalog = "memory", schema = "default", user = "analyst",
+)
+transaction(db) { Events.selectAll().limit(100).toList() }
+```
 
 ## API by task {#api-by-task}
 
-This section will be completed from the stable release source.
+| Task | API |
+| --- | --- |
+| Coordinator connection | `TrinoDatabase.connect(...)` |
+| Pooled connection | `TrinoDatabase.connect(dataSource)` |
+| Compatible simple DDL | extend `TrinoTable` |
+| Blocking JDBC on coroutine dispatcher | `suspendTransaction` |
+| Flow consumer API | `queryFlow` |
 
 ## Recommended patterns {#patterns}
 
-This section will be completed from the stable release source.
+Design queries around a catalog's pushdown behavior and inspect Trino query plans. Keep DML statements independent because a failure cannot roll back earlier work. Page in SQL; the adapter's Flow bridge materializes rows before emitting them.
 
 ## Integrations {#integrations}
 
-This section will be completed from the stable release source.
+The Trino JDBC driver is an API dependency. Release tests use Testcontainers Trino with the memory connector and cover sanitized DDL, selects, inserts, validation, `DataSource`, and the lack of transaction atomicity.
 
 ## Configuration {#configuration}
 
-This section will be completed from the stable release source.
+The URL shape is `jdbc:trino://host:port/catalog/schema`. Configure credentials, SSL, roles, and session properties through `TrinoConnectionOptions` only after confirming coordinator policy. The production data source and its lifecycle remain application-owned.
 
 ## Failure modes {#failures}
 
-This section will be completed from the stable release source.
+- `transaction {}` is a compatibility boundary, not an atomic unit.
+- Primary/unique/foreign-key behavior and DDL support vary by connector.
+- A query may scan more remote data than expected when predicate pushdown is unavailable.
+- Flow materialization can consume substantial heap for large results.
 
 ## Operations {#operations}
 
-This section will be completed from the stable release source.
+Track queued/running time, scanned bytes, remote read volume, retries, and coordinator errors. Set query limits and resource groups outside this adapter; cancel requests at both coroutine and Trino query levels where the application requires prompt termination.
 
 ## Testing {#testing}
 
-This section will be completed from the stable release source.
+Use a Trino container to test adapter mechanics, then add connector-specific integration tests for the production catalog. Do not infer BigQuery, Hive, or Iceberg behavior solely from the memory connector.
 
 ## Workshops and learning path {#workshops}
 
-This section will be completed from the stable release source.
+Compare the adapter in the [database matrix](../guides/database-adapter-matrix.md) and read [OLTP vs OLAP](../guides/oltp-vs-olap.md). Validate one representative query and one unsupported write against the actual production connector before broad adoption.
 
 ## Limitations {#limitations}
 
-This section will be completed from the stable release source.
+Release 1.11 does not supply transactional atomicity, universal connector DDL, or true row-streaming Flow. The `TrinoUnsupported` annotation records known gaps but cannot discover connector capabilities at compile time.
 
 ## Sources {#sources}
 
-[Gradle build file](../../../../exposed/trino/build.gradle.kts)
+- [`TrinoDatabase`](../../../../exposed/trino/src/main/kotlin/io/bluetape4k/exposed/trino/TrinoDatabase.kt)
+- [`TrinoTable`](../../../../exposed/trino/src/main/kotlin/io/bluetape4k/exposed/trino/TrinoTable.kt)
+- [`TrinoConnectionWrapper`](../../../../exposed/trino/src/main/kotlin/io/bluetape4k/exposed/trino/TrinoConnectionWrapper.kt)
+- [Database release test](../../../../exposed/trino/src/test/kotlin/io/bluetape4k/exposed/trino/TrinoDatabaseTest.kt)

@@ -12,66 +12,82 @@ artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-cockroachdb
 
 # Exposed CockroachDB Adapter
 
-> Library module
+`bluetape4k-exposed-cockroachdb` connects Exposed through PostgreSQL JDBC and adds a CockroachDB-specific top-level transaction retry boundary for serialization failures.
 
 ## Problem {#problem}
 
-This section will be completed from the stable release source.
-
-Maven coordinate: `io.github.bluetape4k.exposed:bluetape4k-exposed-cockroachdb`. API-oriented quick start: begin with the smallest stable-release API example, then expand it by task.
+CockroachDB is PostgreSQL-wire compatible, but distributed serializable transactions can return SQLSTATE `40001` and must restart the entire unit of work. PostgreSQL feature parity is also incomplete.
 
 ## When to use it {#when-to-use}
 
-This section will be completed from the stable release source.
+Use it for transactional workloads that need CockroachDB distribution and can make a whole transaction retry-safe. Do not choose it merely because an application already supports PostgreSQL.
 
 ## Coordinates {#coordinates}
 
-Maven coordinate: `io.github.bluetape4k.exposed:bluetape4k-exposed-cockroachdb`
+```kotlin
+dependencies {
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<version>"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-cockroachdb")
+}
+```
 
 ## Core concepts {#concepts}
 
-This section will be completed from the stable release source.
+`CockroachDatabase` accepts host/port/database, JDBC URL, or `DataSource`. `withCockroachTransaction` runs a top-level serializable Exposed transaction and retries only CockroachDB restart errors with bounded backoff. The compatibility ledger records verified, partial, and unsupported PostgreSQL features.
 
 ## Quick start {#quick-start}
 
-Start with the smallest API-oriented quick start backed by the stable release.
+```kotlin
+val db = CockroachDatabase.connect(host = "localhost", database = "app")
+val result = withCockroachTransaction(db) {
+    Accounts.update({ Accounts.id eq id }) { it[balance] = newBalance }
+}
+```
 
 ## API by task {#api-by-task}
 
-This section will be completed from the stable release source.
+| Task | API |
+| --- | --- |
+| Connect | `CockroachDatabase.connect(...)` |
+| Retry-safe unit | `withCockroachTransaction` |
+| Retry tuning | `CockroachTransactionRetryOptions` |
+| Classify SQLSTATE 40001 | `isCockroachRetryableTransactionError` |
 
 ## Recommended patterns {#patterns}
 
-This section will be completed from the stable release source.
+Call the helper outside any existing Exposed transaction and keep every side effect inside the retried block idempotent or deferred until commit. Use bounded keyset paging and batch sizes; a larger transaction increases contention and retry cost.
 
 ## Integrations {#integrations}
 
-This section will be completed from the stable release source.
+PostgreSQL JDBC is an API dependency. Release tests use Testcontainers CockroachDB and cover connection forms, schema create/drop, a compatibility matrix, retry classification, backoff, and whole-transaction restart.
 
 ## Configuration {#configuration}
 
-This section will be completed from the stable release source.
+Default port is `26257`, database `defaultdb`, and retry isolation is `SERIALIZABLE`. Configure TLS, credentials, pool lifecycle, maximum attempts, and backoff for the deployment environment.
 
 ## Failure modes {#failures}
 
-This section will be completed from the stable release source.
+Non-retryable SQL exceptions fail immediately; exhausted retry attempts propagate. External calls made inside the transaction may repeat. PostgreSQL advisory locks and range types are unsupported, and other features may be partial.
 
 ## Operations {#operations}
 
-This section will be completed from the stable release source.
+Measure retry count, SQLSTATE, contention, transaction duration, backoff, pool wait, and statement batch size. Alert on retry storms rather than hiding them behind a high attempt limit.
 
 ## Testing {#testing}
 
-This section will be completed from the stable release source.
+Use a CockroachDB container and force a retryable conflict. Assert the full block is repeated, non-retryable failures are not repeated, side effects remain safe, DDL matches the compatibility ledger, and paging order is stable.
 
 ## Workshops and learning path {#workshops}
 
-This section will be completed from the stable release source.
+Compare CockroachDB with PostgreSQL in the [adapter matrix](../guides/database-adapter-matrix.md), then read [OLTP vs OLAP](../guides/oltp-vs-olap.md). Add the retry helper only after the ordinary JDBC transaction boundary is understood.
 
 ## Limitations {#limitations}
 
-This section will be completed from the stable release source.
+PostgreSQL wire compatibility is not feature parity. The helper handles documented restart errors only; it cannot make external side effects transactional or remove contention.
 
 ## Sources {#sources}
 
-[Gradle build file](../../../../exposed/cockroachdb/build.gradle.kts)
+- [`CockroachDatabase`](../../../../exposed/cockroachdb/src/main/kotlin/io/bluetape4k/exposed/cockroachdb/CockroachDatabase.kt)
+- [`CockroachTransaction`](../../../../exposed/cockroachdb/src/main/kotlin/io/bluetape4k/exposed/cockroachdb/CockroachTransaction.kt)
+- [Compatibility ledger](../../../../exposed/cockroachdb/src/main/kotlin/io/bluetape4k/exposed/cockroachdb/CockroachDbCompatibility.kt)
+- [Database release test](../../../../exposed/cockroachdb/src/test/kotlin/io/bluetape4k/exposed/cockroachdb/CockroachDatabaseTest.kt)

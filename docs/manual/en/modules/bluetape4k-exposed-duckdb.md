@@ -12,66 +12,91 @@ artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-duckdb
 
 # Exposed DuckDB Adapter
 
-> Library module
+`bluetape4k-exposed-duckdb` connects the Exposed JDBC DSL to embedded DuckDB. It registers a PostgreSQL-derived dialect and compensates for generated-key `prepareStatement` overloads that DuckDB JDBC does not implement.
 
 ## Problem {#problem}
 
-This section will be completed from the stable release source.
-
-Maven coordinate: `io.github.bluetape4k.exposed:bluetape4k-exposed-duckdb`. API-oriented quick start: begin with the smallest stable-release API example, then expand it by task.
+DuckDB is useful for local analytical SQL, but its embedded connection lifecycle and JDBC metadata surface differ from a server RDBMS. This adapter keeps those differences at the module boundary instead of scattering driver workarounds through repositories.
 
 ## When to use it {#when-to-use}
 
-This section will be completed from the stable release source.
+Use it for in-process analytics, local files, repeatable data preparation, or tests that benefit from DuckDB SQL. Do not treat it as a drop-in replacement for a shared transactional service.
 
 ## Coordinates {#coordinates}
 
-Maven coordinate: `io.github.bluetape4k.exposed:bluetape4k-exposed-duckdb`
+```kotlin
+dependencies {
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<version>"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-duckdb")
+}
+```
 
 ## Core concepts {#concepts}
 
-This section will be completed from the stable release source.
+- `DuckDBDatabase.inMemory()` creates a database private to each new connection.
+- `DuckDBDatabase.file(path)` and `readOnly(path)` open persistent or read-only files.
+- `DuckDBDialect` reuses PostgreSQL SQL generation; `DuckDBDialectMetadata` skips unsupported imported-key metadata.
+- `queryFlow` materializes rows inside the transaction before emitting them; it is not row-by-row streaming.
 
 ## Quick start {#quick-start}
 
-Start with the smallest API-oriented quick start backed by the stable release.
+```kotlin
+val db = DuckDBDatabase.file("/tmp/events.duckdb")
+transaction(db) {
+    SchemaUtils.create(Events)
+    Events.insert { it[id] = 1L; it[region] = "kr" }
+    val rows = Events.selectAll().limit(100).toList()
+}
+```
 
 ## API by task {#api-by-task}
 
-This section will be completed from the stable release source.
+| Task | API |
+| --- | --- |
+| Ephemeral database | `DuckDBDatabase.inMemory()` |
+| Shared state across transactions | `DuckDBDatabase.file(path)` |
+| Read-only analysis | `DuckDBDatabase.readOnly(path)` |
+| Blocking JDBC on coroutines | `suspendTransaction(db, dispatcher)` |
+| Flow consumption | `queryFlow(db) { ... }` |
 
 ## Recommended patterns {#patterns}
 
-This section will be completed from the stable release source.
+Use a file database or a single-connection pool when multiple transactions must observe the same state. Page or aggregate large datasets in SQL; `queryFlow` first loads the complete `Iterable` into memory. Supply `Dispatchers.IO` or a virtual-thread dispatcher for blocking JDBC.
 
 ## Integrations {#integrations}
 
-This section will be completed from the stable release source.
+The DuckDB JDBC driver is an API dependency and no external service is required. Tests run directly against embedded DuckDB rather than Testcontainers. Exposed `SchemaUtils`, inserts, filters, grouping, ordering, and `limit` are covered by the release tests.
 
 ## Configuration {#configuration}
 
-This section will be completed from the stable release source.
+Java 25+ test execution needs `--enable-native-access=ALL-UNNAMED` because the driver loads native code. Treat the database file as application data: choose its location, permissions, backup, and cleanup policy explicitly.
 
 ## Failure modes {#failures}
 
-This section will be completed from the stable release source.
+- Separate in-memory connections see separate databases.
+- Generated-key overload behavior is adapted, not made equivalent to every server driver.
+- Imported-key discovery is unavailable, so do not use metadata inspection as proof that foreign keys exist.
+- A large `queryFlow` can exhaust memory before its first item is emitted.
 
 ## Operations {#operations}
 
-This section will be completed from the stable release source.
+Observe file size, query duration, memory pressure, and concurrent access. Keep read-only consumers on `readOnly(path)` and close application-owned pools or connections during shutdown.
 
 ## Testing {#testing}
 
-This section will be completed from the stable release source.
+Prefer an isolated temporary file when a test spans connections; use `inMemory()` for a single connection scope. Test the generated SQL and the real DuckDB result, especially for PostgreSQL-derived syntax and nullable/time columns.
 
 ## Workshops and learning path {#workshops}
 
-This section will be completed from the stable release source.
+Start with the [database adapter matrix](../guides/database-adapter-matrix.md), then compare the workload in [OLTP vs OLAP](../guides/oltp-vs-olap.md). Move to a server adapter only when shared availability or database-managed concurrency becomes part of the requirement.
 
 ## Limitations {#limitations}
 
-This section will be completed from the stable release source.
+Release 1.11 does not provide row-streaming Flow, imported-key metadata, or a distributed service boundary. PostgreSQL dialect inheritance covers proven tests, not every PostgreSQL extension or DuckDB feature.
 
 ## Sources {#sources}
 
-[Gradle build file](../../../../exposed/duckdb/build.gradle.kts)
+- [`DuckDBDatabase`](../../../../exposed/duckdb/src/main/kotlin/io/bluetape4k/exposed/duckdb/DuckDBDatabase.kt)
+- [`DuckDBExtensions`](../../../../exposed/duckdb/src/main/kotlin/io/bluetape4k/exposed/duckdb/DuckDBExtensions.kt)
+- [`DuckDBDialectMetadata`](../../../../exposed/duckdb/src/main/kotlin/io/bluetape4k/exposed/duckdb/dialect/DuckDBDialectMetadata.kt)
+- [Database release test](../../../../exposed/duckdb/src/test/kotlin/io/bluetape4k/exposed/duckdb/DuckDBDatabaseTest.kt)
