@@ -50,6 +50,11 @@ utils/
 examples/
   jdbc-demo/
   r2dbc-demo/
+  ktor-exposed-demo/
+benchmark/
+  exposed-benchmark/
+docs/
+  manual/
 spring-boot/
   jdbc/
   r2dbc/
@@ -88,6 +93,9 @@ buildSrc/
 ./gradlew :bluetape4k-exposed-jdbc-lettuce:test
 ./gradlew test --tests "io.bluetape4k.exposed.jdbc.ExposedJdbcRepositoryTest"
 ./gradlew :bluetape4k-exposed-spring-boot-jdbc:test
+./gradlew exportManualModuleInventory
+ruby scripts/manual/validate_manuals.rb build/manual/module-inventory-1.11.0.json docs/manual/manifest.yaml
+ruby scripts/manual/validate_release_manuals.rb 1.11.0 <release-commit>
 ./gradlew detekt
 ./gradlew publishAggregationToCentralSnapshots
 ./gradlew publishAggregationToCentralPortal
@@ -112,6 +120,14 @@ buildSrc/
   `R2dbcDatabase`, dispatchers, pools, content negotiation, status page
   composition, metrics registries, and resource shutdown.
 - Spring Boot modules expose enable annotations and conditional auto-config.
+- `docs/manual/` is the source of truth for user-facing module behavior. Keep
+  English and Korean landings in parity, pin stable manuals to an exact release
+  ref and commit, and link only files that exist in that release tree.
+- Consumers declare the `bluetape4k-dependencies` BOM version; manual and README
+  examples omit individual bluetape4k library versions.
+- Manual diagrams use the approved dark family and keep SVG/PNG pairs. Run the
+  `bluetape-diagram` checklist, CairoSVG render, connector audits, and full-size
+  PNG inspection after the final SVG change.
 
 ## Test Environment
 
