@@ -12,66 +12,81 @@ artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-bom
 
 # Exposed Bill of Materials
 
-> Library module
+> Version alignment for the published `bluetape4k-exposed` libraries. Applications should normally import the central `bluetape4k-dependencies` BOM instead of selecting this repository BOM directly.
 
 ## Problem {#problem}
 
-This section will be completed from the stable release source.
-
-Maven coordinate: `io.github.bluetape4k.exposed:bluetape4k-exposed-bom`. API-oriented quick start: begin with the smallest stable-release API example, then expand it by task.
+An application can combine core, JDBC or R2DBC, a database adapter, and framework integration modules. Declaring every version independently permits a dependency graph that was never released or tested together. This BOM publishes constraints for the repository's publishable modules.
 
 ## When to use it {#when-to-use}
 
-This section will be completed from the stable release source.
+Use the central `io.github.bluetape4k:bluetape4k-dependencies:<version>` platform for an application that consumes more than one bluetape4k repository. Import this narrower BOM only when dependency management is intentionally limited to `bluetape4k-exposed`.
 
 ## Coordinates {#coordinates}
 
-Maven coordinate: `io.github.bluetape4k.exposed:bluetape4k-exposed-bom`
+```kotlin
+dependencies {
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<version>"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc")
+}
+```
+
+Direct repository BOM: `io.github.bluetape4k.exposed:bluetape4k-exposed-bom:1.11.0`.
 
 ## Core concepts {#concepts}
 
-This section will be completed from the stable release source.
+- A BOM contributes version constraints; it adds no runtime classes.
+- The repository BOM constrains published library projects and excludes examples, demos, and benchmarks.
+- The documentation version records source provenance. The version an application selects should come from the central dependency catalog unless it deliberately owns lower-level alignment.
 
 ## Quick start {#quick-start}
 
-Start with the smallest API-oriented quick start backed by the stable release.
+Import one platform, omit versions from managed bluetape4k artifacts, and inspect Gradle's resolved dependency graph. Do not import both BOMs merely to repeat the same constraints.
 
 ## API by task {#api-by-task}
 
-This section will be completed from the stable release source.
+| Task | Gradle API |
+|---|---|
+| Accept managed versions | `implementation(platform(...))` |
+| Enforce every constraint | `implementation(enforcedPlatform(...))` |
+| Inspect one dependency | `dependencyInsight` |
+| Inspect a configuration | `dependencies --configuration runtimeClasspath` |
 
 ## Recommended patterns {#patterns}
 
-This section will be completed from the stable release source.
+Keep the central BOM version in one version catalog or convention plugin. Upgrade it as one change, then run the application's compile and integration tests before merging.
 
 ## Integrations {#integrations}
 
-This section will be completed from the stable release source.
+The BOM aligns repository artifacts; it does not install a JDBC driver, R2DBC driver, connection pool, Spring starter, or Testcontainers module. Declare those according to the selected runtime path.
 
 ## Configuration {#configuration}
 
-This section will be completed from the stable release source.
+No runtime configuration is exposed. Gradle resolves the platform during dependency graph construction.
 
 ## Failure modes {#failures}
 
-This section will be completed from the stable release source.
+- Adding explicit versions beside managed artifacts can override the tested set.
+- Treating a BOM as a library leaves required runtime modules absent.
+- Mixing central and repository BOM versions from different release lines can produce surprising constraint selection.
 
 ## Operations {#operations}
 
-This section will be completed from the stable release source.
+Record the central BOM version in deployment provenance. When diagnosing a classpath problem, capture `dependencyInsight` output rather than inferring the selected version from the build file.
 
 ## Testing {#testing}
 
-This section will be completed from the stable release source.
+Run a dependency-resolution check, compile the chosen JDBC or R2DBC path, and execute its database integration tests. The BOM itself has no behavioral test surface.
 
 ## Workshops and learning path {#workshops}
 
-This section will be completed from the stable release source.
+Continue with [Getting started](../getting-started.md), then choose [JDBC or R2DBC](../guides/jdbc-vs-r2dbc.md). Workshop repositories use the same central dependency-management entry point.
 
 ## Limitations {#limitations}
 
-This section will be completed from the stable release source.
+The BOM cannot guarantee behavioral compatibility with an independently overridden Exposed, Kotlin, driver, or framework version. It also does not select JDBC over R2DBC.
 
 ## Sources {#sources}
 
-[Gradle build file](../../../../exposed/bom/build.gradle.kts)
+- [BOM build](../../../../exposed/bom/build.gradle.kts)
+- [Repository settings](../../../../settings.gradle.kts)

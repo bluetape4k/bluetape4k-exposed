@@ -12,66 +12,78 @@ artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-tests
 
 # Exposed JDBC Test Support
 
-> Library module
+> Reusable JDBC database, transaction, schema, table, assertion, and Testcontainers fixtures.
 
 ## Problem {#problem}
 
-This section will be completed from the stable release source.
-
-Maven coordinate: `io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-tests`. API-oriented quick start: begin with the smallest stable-release API example, then expand it by task.
+Database tests need deterministic connection reuse, per-database serialization, transaction setup, schema/table cleanup, and real dialects. Reimplementing that harness in every module makes failures harder to compare.
 
 ## When to use it {#when-to-use}
 
-This section will be completed from the stable release source.
+Use it in tests for Exposed JDBC code and shared table/mapping contracts. Keep it out of production runtime dependencies.
 
 ## Coordinates {#coordinates}
 
-Maven coordinate: `io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-tests`
+`testImplementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-tests")`, managed by the central BOM.
 
 ## Core concepts {#concepts}
 
-This section will be completed from the stable release source.
+`withDb` serializes access per `TestDB`, caches the connection, opens a `maxAttempts = 1` transaction, and restores temporary configuration. `withTables` creates fixtures and attempts deterministic cleanup, including a top-level fallback. `withSchemas` commits before cascade cleanup.
 
 ## Quick start {#quick-start}
 
-Start with the smallest API-oriented quick start backed by the stable release.
+```kotlin
+withTables(TestDB.POSTGRESQL, Actors) {
+    Actors.insert { it[name] = "Ada" }
+    Actors.selectAll().count() shouldBeEqualTo 1L
+}
+```
 
 ## API by task {#api-by-task}
 
-This section will be completed from the stable release source.
+| Task | API |
+|---|---|
+| Transaction fixture | `withDb` |
+| Table lifecycle | `withTables` |
+| Schema lifecycle | `withSchemas` |
+| Auto-commit probe | `withAutoCommit` |
+| Database matrix | `TestDB`, `TestDBConfig`, container helpers |
+| Assertions/shared schemas | assertion and `shared` packages |
 
 ## Recommended patterns {#patterns}
 
-This section will be completed from the stable release source.
+Use H2 for fast DSL checks only when dialect behavior is irrelevant. Run the deployed database through Testcontainers for SQL, type, isolation, and migration behavior. Let the fixture own cleanup rather than sharing mutable tables between tests.
 
 ## Integrations {#integrations}
 
-This section will be completed from the stable release source.
+The module exposes JUnit 5, bluetape4k Testcontainers, and MariaDB/MySQL/PostgreSQL container support as test APIs. Drivers remain compile-time test dependencies.
 
 ## Configuration {#configuration}
 
-This section will be completed from the stable release source.
+Select a `TestDB` and optional `DatabaseConfig` override per call. Temporary configuration is restored after the fixture.
 
 ## Failure modes {#failures}
 
-This section will be completed from the stable release source.
+Parallel tests against the same database without the fixture can race on DDL. Assuming cleanup always succeeds hides dialect/connection failures. A container test without a bounded startup policy can make the suite flaky.
 
 ## Operations {#operations}
 
-This section will be completed from the stable release source.
+These are test-only operations. Capture container logs and database identity on failure; do not expose fixture credentials outside the test process.
 
 ## Testing {#testing}
 
-This section will be completed from the stable release source.
+The support module tests its own serialization, transaction, configuration restoration, schema/table cleanup, assertions, and DDL behavior.
 
 ## Workshops and learning path {#workshops}
 
-This section will be completed from the stable release source.
+Use it with [JDBC operations and testing](bluetape4k-exposed-jdbc/operations-testing.md) after learning [transaction ownership](bluetape4k-exposed-jdbc/transaction-ownership.md).
 
 ## Limitations {#limitations}
 
-This section will be completed from the stable release source.
+The harness does not reproduce production pool load or replace migration/chaos tests. The per-database semaphore intentionally serializes conflicting fixture work.
 
 ## Sources {#sources}
 
-[Gradle build file](../../../../exposed/jdbc-tests/build.gradle.kts)
+- [Test module build](../../../../exposed/jdbc-tests/build.gradle.kts)
+- [`withDb`](../../../../exposed/jdbc-tests/src/main/kotlin/io/bluetape4k/exposed/tests/WithDB.kt)
+- [`withTables`](../../../../exposed/jdbc-tests/src/main/kotlin/io/bluetape4k/exposed/tests/WithTables.kt)

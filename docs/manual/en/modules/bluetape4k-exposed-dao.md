@@ -12,66 +12,82 @@ artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-dao
 
 # Exposed DAO Extensions
 
-> Library module
+> Identity, string-ID, generated-ID, and audit conventions for Exposed DAO entities.
 
 ## Problem {#problem}
 
-This section will be completed from the stable release source.
-
-Maven coordinate: `io.github.bluetape4k.exposed:bluetape4k-exposed-dao`. API-oriented quick start: begin with the smallest stable-release API example, then expand it by task.
+Exposed DAO entities are transaction-bound objects. Equality, string rendering, generated-ID entity classes, and audit updates are easy to implement inconsistently. This module provides a small shared convention layer above Exposed DAO.
 
 ## When to use it {#when-to-use}
 
-This section will be completed from the stable release source.
+Use it when the domain persistence model intentionally uses Exposed `Entity`/`EntityClass`. Prefer record/DTO mapping through the JDBC or R2DBC repositories when values must leave the transaction boundary.
 
 ## Coordinates {#coordinates}
 
-Maven coordinate: `io.github.bluetape4k.exposed:bluetape4k-exposed-dao`
+`io.github.bluetape4k.exposed:bluetape4k-exposed-dao`, managed by `io.github.bluetape4k:bluetape4k-dependencies:<version>`.
 
 ## Core concepts {#concepts}
 
-This section will be completed from the stable release source.
+- `idEquals`, `idHashCode`, and entity string builders make identity handling explicit.
+- `StringEntity` and generated-ID entity families pair with core ID tables.
+- `AuditableEntity` sets actor fields, but `updatedAt` is guaranteed only by audited JDBC repository updates.
+- A DAO entity remains attached to the active Exposed transaction.
 
 ## Quick start {#quick-start}
 
-Start with the smallest API-oriented quick start backed by the stable release.
+```kotlin
+class Customer(id: EntityID<String>) : StringEntity(id) {
+    companion object : StringEntityClass<Customer>(Customers)
+    var name by Customers.name
+}
+```
+
+Read lazy relations and convert the entity to a detached DTO before the transaction closes.
 
 ## API by task {#api-by-task}
 
-This section will be completed from the stable release source.
+| Task | API |
+|---|---|
+| Identity equality/hash | `idEquals`, `idHashCode` |
+| Diagnostic text | `toStringBuilder`, `entityToStringBuilder` |
+| String IDs | `StringEntity`, `StringEntityClass` |
+| Generated IDs | KSUID, ULID, Snowflake, time-based UUID entity families |
+| Audit actor fields | `AuditableEntity` and typed variants |
 
 ## Recommended patterns {#patterns}
 
-This section will be completed from the stable release source.
+Keep DAO access and lazy traversal inside one caller-owned JDBC transaction. Map to immutable output values at that boundary. Avoid returning an `Entity` from a service and touching it later.
 
 ## Integrations {#integrations}
 
-This section will be completed from the stable release source.
+DAO builds on core and Exposed DAO, with JDBC available at runtime. The JDBC repository module can share the same table declarations.
 
 ## Configuration {#configuration}
 
-This section will be completed from the stable release source.
+No standalone configuration exists. Configure Exposed's database/transaction layer and bind `UserContext` where audit actor fields are needed.
 
 ## Failure modes {#failures}
 
-This section will be completed from the stable release source.
+Detached/lazy access can fail after the transaction closes. Generic entity updates do not guarantee `updatedAt`. Identity comparison before an entity has a stable ID must be treated carefully.
 
 ## Operations {#operations}
 
-This section will be completed from the stable release source.
+Keep transaction duration bounded and avoid logging lazy properties that trigger unexpected queries. Monitor query count when traversing relations.
 
 ## Testing {#testing}
 
-This section will be completed from the stable release source.
+Use a real transaction and database fixture. Assert detached DTO values after mapping, audit actor behavior, and ID-family persistence across the dialects you support.
 
 ## Workshops and learning path {#workshops}
 
-This section will be completed from the stable release source.
+Read [Mapping conventions](bluetape4k-exposed-core/mapping-conventions.md), then choose the [JDBC repository path](bluetape4k-exposed-jdbc.md). Exposed DAO is not the R2DBC entity model.
 
 ## Limitations {#limitations}
 
-This section will be completed from the stable release source.
+This module does not make DAO entities detached, reactive, or safe outside a transaction. It does not own transaction creation.
 
 ## Sources {#sources}
 
-[Gradle build file](../../../../exposed/dao/build.gradle.kts)
+- [DAO build](../../../../exposed/dao/build.gradle.kts)
+- [Entity extensions](../../../../exposed/dao/src/main/kotlin/io/bluetape4k/exposed/dao/EntityExtensions.kt)
+- [Auditable entity](../../../../exposed/dao/src/main/kotlin/io/bluetape4k/exposed/dao/auditable/AuditableEntity.kt)
