@@ -5,8 +5,8 @@
     <marker id="flow-blue" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
       <path d="M 0 0 L 14 7 L 0 14 Z" fill="#9ed8ff" stroke="#9ed8ff"/>
     </marker>
-    <marker id="relation-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#5eead4" stroke="#5eead4"/>
+    <marker id="relation-teal" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 14 7 L 0 14 Z" fill="#5eead4" stroke="#5eead4"/>
     </marker>
     <linearGradient id="canvas" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#111827"/><stop offset="58%" stop-color="#182331"/><stop offset="100%" stop-color="#223047"/>
@@ -57,13 +57,13 @@
   <text x="1050" y="540" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="18" fill="#d5dfeb">non-blocking driver • coroutine transaction</text>
   <text x="1050" y="566" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#b6c4d6">use when the complete call chain stays non-blocking</text>
 
-  <g fill="none" stroke="#5eead4" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-    <path class="connector" d="M 470 590 V 625 Q 470 645 450 645 H 300 Q 280 645 280 665 V 690" marker-end="url(#relation-teal)"/>
-    <path class="connector" d="M 900 590 V 615 Q 900 635 880 635 H 495 Q 475 635 475 655 V 770 Q 475 790 455 790 H 450" marker-end="url(#relation-teal)"/>
-    <path class="connector" d="M 630 590 V 625 Q 630 645 650 645 H 740 Q 760 645 760 665 V 690" marker-end="url(#relation-teal)"/>
-    <path class="connector" d="M 970 590 V 625 Q 970 645 950 645 H 860 Q 840 645 840 665 V 690" marker-end="url(#relation-teal)"/>
-    <path class="connector" d="M 1130 590 V 625 Q 1130 645 1150 645 H 1300 Q 1320 645 1320 665 V 690" marker-end="url(#relation-teal)"/>
-    <path class="connector" d="M 120 287 H 90 Q 70 287 70 307 V 750 Q 70 770 90 770 H 110" marker-end="url(#relation-teal)"/>
+  <g fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+    <path class="connector" data-connector="jdbc-to-cache" d="M 470 590 V 625 Q 470 645 450 645 H 300 Q 280 645 280 665 V 690" stroke="#9ed8ff" marker-end="url(#flow-blue)"/>
+    <path class="connector" data-connector="r2dbc-to-cache" d="M 1300 520 H 1510 Q 1530 520 1530 540 V 850 Q 1530 870 1510 870 H 490 Q 470 870 470 850 V 810 Q 470 790 460 790 H 450" stroke="#5eead4" marker-end="url(#relation-teal)"/>
+    <path class="connector" data-connector="jdbc-to-codecs" d="M 630 590 V 625 Q 630 645 650 645 H 740 Q 760 645 760 665 V 690" stroke="#9ed8ff" marker-end="url(#flow-blue)"/>
+    <path class="connector" data-connector="r2dbc-to-adapters" d="M 970 590 V 625 Q 970 645 950 645 H 860 Q 840 645 840 665 V 690" stroke="#5eead4" marker-end="url(#relation-teal)"/>
+    <path class="connector" data-connector="r2dbc-to-integrations" d="M 1130 590 V 625 Q 1130 645 1150 645 H 1300 Q 1320 645 1320 665 V 690" stroke="#5eead4" marker-end="url(#relation-teal)"/>
+    <path class="connector" data-connector="cache-to-adapters" d="M 120 287 H 90 Q 70 287 70 307 V 750 Q 70 770 90 770 H 110" stroke="#5eead4" marker-end="url(#relation-teal)"/>
   </g>
 
   <text x="120" y="670" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="27" fill="#5eead4">Refine the selected path</text>
