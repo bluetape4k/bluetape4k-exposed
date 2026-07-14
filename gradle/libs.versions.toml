@@ -80,7 +80,7 @@ blaze-persistence = "3.34.6"  # https://mvnrepository.com/artifact/com.blazebit/
 javers = "7.11.0"  # https://mvnrepository.com/artifact/org.javers/javers-core
 
 slf4j = "2.0.18"  # https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-logback = "1.5.32"  # https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
+logback = "1.5.38"  # https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
 log4j = "2.26.1"  # https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-bom
 
 prometheus = "0.16.0"  # https://mvnrepository.com/artifact/io.prometheus/simpleclient
