@@ -380,6 +380,39 @@ extensions.configure<NmcpAggregationExtension>("nmcpAggregation") {
     }
 }
 
+val manualModuleInventory = layout.buildDirectory.file("manual/module-inventory.json")
+
+tasks.register("exportManualModuleInventory") {
+    group = "documentation"
+    description = "Exports the registered Gradle project inventory for manual validation."
+
+    val repositoryRoot = project.rootDir.toPath()
+    val modules = project.subprojects.sortedBy(Project::getPath).map { module ->
+        val sourceDir = repositoryRoot.relativize(module.projectDir.toPath())
+            .toString().replace(File.separatorChar, '/')
+        val kind = when {
+            sourceDir.startsWith("examples/") -> "example"
+            sourceDir.startsWith("benchmark/") -> "benchmark"
+            else -> "library"
+        }
+        linkedMapOf(
+            "gradlePath" to module.path,
+            "projectName" to module.name,
+            "sourceDir" to sourceDir,
+            "kind" to kind,
+        )
+    }
+    val inventoryJson = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(modules)) + "\n"
+    inputs.property("inventoryJson", inventoryJson)
+    outputs.file(manualModuleInventory)
+    doLast {
+        outputs.files.singleFile.apply {
+            parentFile.mkdirs()
+            writeText(inventoryJson)
+        }
+    }
+}
+
 val publishableProjects = subprojects.filterNot { project ->
     project.isNonPublishedModule()
 }
