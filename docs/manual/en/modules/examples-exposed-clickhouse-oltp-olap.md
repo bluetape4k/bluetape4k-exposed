@@ -12,66 +12,88 @@ artifact: null
 
 # ClickHouse OLTP/OLAP Example
 
-> Runnable example
+> Observe why transactional and analytical workloads need different data paths.
 
-## Problem {#problem}
+## What you learn {#problem}
 
-This section will be completed from the stable release source.
+The example contrasts an OLTP-oriented write/read flow with a ClickHouse analytical flow. It demonstrates workload placement; it does not claim that one database replaces the other.
 
-Prerequisites: prepare the required service. Run: `./gradlew :examples-exposed-clickhouse-oltp-olap:test`. Observable result: verify the test report. Diagnosis: inspect the service state and Gradle logs when the result differs.
+## Prerequisites {#prerequisites}
+
+- JDK and repository Gradle wrapper
+- Docker for the database containers used by the tests
+- Enough local memory and free ports for both workload sides
+
+## Run {#run}
+
+```bash
+./gradlew :examples-exposed-clickhouse-oltp-olap:test
+```
+
+## Expected result {#expected-result}
+
+Testcontainers starts PostgreSQL and ClickHouse. The test commits orders to the PostgreSQL `Orders` table, forwards records into the ClickHouse `OrderEvents` `MergeTree`, and verifies regional analytics with `uniqExact`, `quantile`, and `argMax` queries.
+
+## Failure diagnosis {#failures}
+
+- Container cannot start: check Docker, memory, and port conflicts.
+- ClickHouse connection fails: wait for readiness and inspect container logs.
+- Analytical rows are missing: verify ingestion/flush timing before changing query semantics.
+- SQL dialect error: compare generated SQL with the ClickHouse adapter limitations.
+
+## Next route {#next}
+
+Read [ClickHouse adapter](bluetape4k-exposed-clickhouse.md), [OLTP vs OLAP](../guides/oltp-vs-olap.md), and the [bluetape4k workshop](https://github.com/bluetape4k/bluetape4k-workshop).
 
 ## When to use it {#when-to-use}
 
-This section will be completed from the stable release source.
+Use it when evaluating a transactional source plus analytical sink and you need to observe the handoff boundary. It is especially useful before choosing an outbox, replay ledger, or idempotent ingestion key.
 
 ## Coordinates {#coordinates}
 
-This runnable example does not publish a library coordinate.
+This example publishes no library coordinate. Consumer applications should import `io.github.bluetape4k:bluetape4k-dependencies:<version>` and omit individual library versions.
 
 ## Core concepts {#concepts}
 
-This section will be completed from the stable release source.
+PostgreSQL owns the OLTP commit. ClickHouse owns a separate analytical write. The forward step is not atomic with the PostgreSQL transaction, so a failure can leave the sink partially populated. Analytics use ClickHouse-specific functions and raw SQL where the Exposed expression API does not model them.
 
 ## Quick start {#quick-start}
 
-Complete the prerequisites, then run the example scenarios with `./gradlew :examples-exposed-clickhouse-oltp-olap:test`.
+Start Docker, run the exact Gradle command above, and inspect `OltpOlapIntegrationTest`. Success means both database containers are ready, the OLTP rows are committed, the forward completes, and the aggregation assertions pass.
 
 ## API by task {#api-by-task}
 
-This section will be completed from the stable release source.
+Follow `OrdersRepository` for PostgreSQL inserts, the forwarding step that maps committed orders to `OrderEvents`, and `AnalyticsRepository` for batch ingestion and aggregation queries. Keep these three stages visible when adapting the example.
 
 ## Recommended patterns {#patterns}
 
-This section will be completed from the stable release source.
+Use a stable event identifier in ClickHouse, make forwarding idempotent, record the last successfully forwarded position, and test replay after a mid-batch failure. Prefer a durable outbox when losing an analytical event is unacceptable.
 
 ## Integrations {#integrations}
 
-This section will be completed from the stable release source.
+The test combines the Exposed JDBC PostgreSQL path, the ClickHouse adapter, PostgreSQL Testcontainers, and ClickHouse Testcontainers. Both services are disposable test infrastructure.
 
 ## Configuration {#configuration}
 
-This section will be completed from the stable release source.
-
-## Failure modes {#failures}
-
-Verify the observable result; inspect the service state and Gradle logs for failure diagnosis.
+Keep PostgreSQL and ClickHouse connection settings separate. In production, configure ClickHouse engine, ordering key, partitioning, retention, batching, and retry policy from the actual query and ingestion workload.
 
 ## Operations {#operations}
 
-This section will be completed from the stable release source.
+Monitor source commit position, forward lag, forwarded and rejected rows, retry count, ClickHouse insert latency, and aggregation latency. Alert on a growing gap between committed OLTP rows and accepted analytical events.
 
 ## Testing {#testing}
 
-This section will be completed from the stable release source.
+Keep the clean end-to-end test, then add a failure between PostgreSQL commit and ClickHouse completion. Prove that replay neither loses nor double-counts events under the application's chosen idempotency key.
 
 ## Workshops and learning path {#workshops}
 
-This section will be completed from the stable release source.
+Continue with the [ClickHouse adapter](bluetape4k-exposed-clickhouse.md) for supported DDL and transactions, then use [OLTP vs OLAP](../guides/oltp-vs-olap.md) to design the production handoff.
 
 ## Limitations {#limitations}
 
-This section will be completed from the stable release source.
+The example proves one local two-container path. It does not provide an exactly-once pipeline, distributed transaction, production schema migration, capacity plan, replication policy, retention policy, or disaster recovery.
 
 ## Sources {#sources}
 
-[Gradle build file](../../../../examples/exposed-clickhouse-oltp-olap/build.gradle.kts)
+- [Example sources](../../../../examples/exposed-clickhouse-oltp-olap/README.md)
+- [Gradle build](../../../../examples/exposed-clickhouse-oltp-olap/build.gradle.kts)

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1150" viewBox="0 0 1800 1150" role="img" aria-labelledby="title desc">
+  <title id="title">Spring Modulith event publication lifecycle</title>
+  <desc id="desc">A dark architecture flow from the application transaction through serialization, active publication and listener delivery, then to update, delete or archive completion. An unloadable event type routes to remediation. The delivery ledger is explicitly separated from JaVers audit history.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L14 7 L0 14 Z" fill="#8fd3ff"/></marker>
+    <linearGradient id="canvas" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#07111f"/><stop offset="0.58" stop-color="#111d31"/><stop offset="1" stop-color="#1d2c43"/></linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1a2639"/><stop offset="1" stop-color="#0f1726"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#020617" flood-opacity="0.45"/></filter>
+  </defs>
+  <rect width="1800" height="1150" fill="url(#canvas)"/><rect x="40" y="34" width="1720" height="1076" rx="34" fill="url(#panel)" stroke="#536377" stroke-width="4"/>
+  <text x="900" y="100" text-anchor="middle" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="50" fill="#f8fafc">Spring Modulith: Delivery Ledger, Not Audit History</text>
+  <text x="900" y="143" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="19" fill="#b8c7d9">1.11 • same DataSource and named transaction manager • explicit completion policy</text>
+
+  <g fill="none" stroke="#8fd3ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)">
+    <path class="connector" data-connector="transaction-to-serializer" d="M900 282 V325"/>
+    <path class="connector" data-connector="serializer-to-publication" d="M900 417 V460"/>
+    <path class="connector" data-connector="publication-to-listener" d="M900 552 V595"/>
+    <path class="connector" data-connector="listener-to-update" d="M780 687 V740 Q780 760 760 760 H400 Q380 760 380 780 V820"/>
+    <path class="connector" data-connector="listener-to-delete" d="M900 687 V820"/>
+    <path class="connector" data-connector="listener-to-archive" d="M1020 687 V770 Q1020 790 1040 790 H1380 Q1400 790 1400 810 V820"/>
+    <path class="connector" data-connector="publication-to-remediation" d="M1190 506 H1270 Q1290 506 1290 526 V570 Q1290 590 1310 590 H1360"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect class="card" x="560" y="190" width="680" height="92" rx="22" fill="#17263a" stroke="#8b6bd6" stroke-width="3"/>
+    <rect class="card" x="610" y="325" width="580" height="92" rx="22" fill="#17263a" stroke="#4d8ec9" stroke-width="3"/>
+    <rect class="card" x="610" y="460" width="580" height="92" rx="22" fill="#17263a" stroke="#159c92" stroke-width="3"/>
+    <rect class="card" x="610" y="595" width="580" height="92" rx="22" fill="#17263a" stroke="#c58b2a" stroke-width="3"/>
+    <rect class="card" x="170" y="820" width="420" height="130" rx="22" fill="#17263a" stroke="#4d8ec9" stroke-width="3"/>
+    <rect class="card" x="690" y="820" width="420" height="130" rx="22" fill="#17263a" stroke="#159c92" stroke-width="3"/>
+    <rect class="card" x="1210" y="820" width="420" height="130" rx="22" fill="#17263a" stroke="#8b6bd6" stroke-width="3"/>
+    <rect class="card" x="1360" y="520" width="330" height="140" rx="22" fill="#111b2c" stroke="#fda4af" stroke-width="3"/>
+    <rect class="card" x="330" y="1000" width="1140" height="72" rx="22" fill="#111b2c" stroke="#f6c96b" stroke-width="3"/>
+  </g>
+  <g text-anchor="middle">
+    <text x="900" y="228" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="31" fill="#d2c4ff">Application Transaction</text><text x="900" y="258" font-family="Comic Mono, ui-monospace, monospace" font-size="16" fill="#d8e2ee">domain write + publication creation</text>
+    <text x="900" y="363" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="31" fill="#9ed8ff">EventSerializer</text><text x="900" y="393" font-family="Comic Mono, ui-monospace, monospace" font-size="16" fill="#d8e2ee">event type and serialized payload</text>
+    <text x="900" y="498" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="31" fill="#5eead4">Active Publication</text><text x="900" y="528" font-family="Comic Mono, ui-monospace, monospace" font-size="16" fill="#d8e2ee">stored with the application DataSource</text>
+    <text x="900" y="633" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="31" fill="#f6c96b">Listener Delivery</text><text x="900" y="663" font-family="Comic Mono, ui-monospace, monospace" font-size="16" fill="#d8e2ee">success chooses one completion policy</text>
+    <text x="380" y="865" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="30" fill="#9ed8ff">Update</text><text x="380" y="902" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#d8e2ee">mark completed in place</text><text x="380" y="928" font-family="Comic Mono, ui-monospace, monospace" font-size="14" fill="#b8c7d9">retain operational row</text>
+    <text x="900" y="865" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="30" fill="#5eead4">Delete</text><text x="900" y="902" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#d8e2ee">remove completed row</text><text x="900" y="928" font-family="Comic Mono, ui-monospace, monospace" font-size="14" fill="#b8c7d9">small active table</text>
+    <text x="1420" y="865" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="30" fill="#d2c4ff">Archive</text><text x="1420" y="902" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#d8e2ee">savepoint + idempotent copy</text><text x="1420" y="928" font-family="Comic Mono, ui-monospace, monospace" font-size="14" fill="#b8c7d9">separate operational archive</text>
+    <text x="1525" y="560" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="27" fill="#fda4af">Unloadable type</text><text x="1525" y="596" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#d8e2ee">inspect payload and class</text><text x="1525" y="625" font-family="Comic Mono, ui-monospace, monospace" font-size="15" fill="#d8e2ee">remediate explicitly</text>
+    <text x="900" y="1045" font-family="Comic Mono, ui-monospace, monospace" font-size="18" fill="#f6c96b">Delivery status answers “was the listener called?” • JaVers answers “how did domain state change?”</text>
+  </g>
+</svg>
