@@ -382,6 +382,7 @@ class SnapshotCacheStoreTest {
         override val storeInstanceToken: Any = Any()
         override val compatibilityFingerprint: String = "local:v1"
         override val limits = SnapshotCacheLimits(10, 2)
+        override val failureBuffer = snapshotCacheFailureBuffer()
         val snapshotBatches = mutableListOf<List<SnapshotCacheMutation.Put<Long, Payload>>>()
         val invalidationBatches = mutableListOf<List<Long>>()
 
@@ -430,6 +431,7 @@ class SnapshotCacheStoreTest {
         override val storeInstanceToken: Any = Any()
         override val compatibilityFingerprint: String = "remote:v1"
         override val limits = SnapshotCacheLimits(10, 2)
+        override val failureBuffer = snapshotCacheFailureBuffer()
 
         override fun measure(id: Long): MeasuredInvalidation<Long> =
             MeasuredInvalidation(id, Long.SIZE_BYTES, "b".repeat(64))

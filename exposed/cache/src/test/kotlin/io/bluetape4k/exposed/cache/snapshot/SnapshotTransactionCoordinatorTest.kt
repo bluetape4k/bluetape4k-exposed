@@ -14,6 +14,8 @@ import org.junit.jupiter.api.Test
 import java.io.Serializable
 import java.lang.ref.WeakReference
 import java.time.Duration
+import java.util.Collections
+import java.util.IdentityHashMap
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
@@ -54,7 +56,7 @@ class SnapshotTransactionCoordinatorTest {
     }
 
     @Test
-    fun `snapshot fill rejects retries before claiming and validates before mapper`() {
+    fun `snapshot fill rejects retries before registering or claiming and validates transaction before mapper`() {
         val transaction = TestTransaction()
         val retryBridge = TestBridge(maxAttempts = 2)
         val store = RecordingStore(preparedId = 1L)
@@ -64,6 +66,11 @@ class SnapshotTransactionCoordinatorTest {
             stageSnapshotMutation(transaction, retryBridge, store, miss, CacheSnapshot(Payload("one")), VALIDATOR)
         }
         store.claimCount shouldBeEqualTo 0
+        retryBridge.interceptors.size shouldBeEqualTo 0
+
+        val validBridge = TestBridge()
+        stageInvalidationMutation(transaction, validBridge, store, 1L)
+        validBridge.interceptors.size shouldBeEqualTo 1
 
         val nonCurrentBridge = TestBridge(current = false)
         var mapperCalled = false
@@ -82,6 +89,64 @@ class SnapshotTransactionCoordinatorTest {
             )
         }
         mapperCalled.shouldBeFalse()
+    }
+
+    @Test
+    fun `mapper and validator failures consume the miss token`() {
+        val mapperTransaction = TestTransaction()
+        val mapperBridge = TestBridge()
+        val mapperStore = RecordingStore()
+        val mapperMiss = miss()
+
+        assertFailsWith<MapperFailure> {
+            stageMappedSnapshotMutation(
+                mapperTransaction,
+                mapperBridge,
+                mapperStore,
+                mapperMiss,
+                Payload("source"),
+                CacheSnapshotMapper { throw MapperFailure() },
+                VALIDATOR,
+            )
+        }
+        assertFailsWith<IllegalStateException> {
+            stageSnapshotMutation(
+                mapperTransaction,
+                mapperBridge,
+                mapperStore,
+                mapperMiss,
+                CacheSnapshot(Payload("retry")),
+                VALIDATOR,
+            )
+        }
+
+        val validatorTransaction = TestTransaction()
+        val validatorBridge = TestBridge()
+        val validatorStore = RecordingStore()
+        val validatorMiss = miss()
+        assertFailsWith<ValidationFailure> {
+            stageSnapshotMutation(
+                validatorTransaction,
+                validatorBridge,
+                validatorStore,
+                validatorMiss,
+                CacheSnapshot(Payload("invalid")),
+                CacheSnapshotValueValidator { throw ValidationFailure() },
+            )
+        }
+        assertFailsWith<IllegalStateException> {
+            stageSnapshotMutation(
+                validatorTransaction,
+                validatorBridge,
+                validatorStore,
+                validatorMiss,
+                CacheSnapshot(Payload("retry")),
+                VALIDATOR,
+            )
+        }
+
+        mapperStore.claimCount shouldBeEqualTo 2
+        validatorStore.claimCount shouldBeEqualTo 2
     }
 
     @Test
@@ -181,7 +246,7 @@ class SnapshotTransactionCoordinatorTest {
     }
 
     @Test
-    fun `logical store collision rejects token or fingerprint mismatch before claim`() {
+    fun `logical store collision rejects token fingerprint or buffer mismatch before mutation`() {
         val transaction = TestTransaction()
         val bridge = TestBridge()
         val storeId = SnapshotStoreId("local", "orders:v1")
@@ -189,6 +254,12 @@ class SnapshotTransactionCoordinatorTest {
         val first = RecordingStore(storeId = storeId, token = token, fingerprint = "v1")
         val wrongToken = RecordingStore(storeId = storeId, token = Any(), fingerprint = "v1", preparedId = 2L)
         val wrongFingerprint = RecordingStore(storeId = storeId, token = token, fingerprint = "v2", preparedId = 3L)
+        val wrongFailureBuffer = RecordingStore(
+            storeId = storeId,
+            token = token,
+            fingerprint = "v1",
+            failureBuffer = snapshotCacheFailureBuffer(),
+        )
 
         stageInvalidationMutation(transaction, bridge, first, 1L)
         assertFailsWith<IllegalStateException> {
@@ -204,29 +275,42 @@ class SnapshotTransactionCoordinatorTest {
                 VALIDATOR,
             )
         }
+        assertFailsWith<IllegalStateException> {
+            stageInvalidationMutation(transaction, bridge, wrongFailureBuffer, 4L)
+        }
 
         wrongToken.claimCount shouldBeEqualTo 0
         wrongFingerprint.claimCount shouldBeEqualTo 0
+        bridge.commit(transaction)
+        first.invalidations shouldBeEqualTo listOf(listOf(1L))
+        wrongFailureBuffer.invalidations.shouldBeEqualTo(emptyList())
     }
 
     @Test
     fun `commit drains distributed then local invalidations then local puts and continues after exceptions`() {
         val events = mutableListOf<String>()
         val failures = snapshotCacheFailureBuffer(16)
-        val coordinator = SnapshotTransactionCoordinator(failures)
+        val coordinator = SnapshotTransactionCoordinator()
         val transaction = TestTransaction()
         val bridge = TestBridge()
-        val asyncFailing = RecordingAsyncStore("remote-fail", events, immediateFailure = CancellationException())
-        val asyncNext = RecordingAsyncStore("remote-next", events)
+        val asyncFailing = RecordingAsyncStore(
+            "remote-fail",
+            events,
+            failureBuffer = failures,
+            immediateFailure = CancellationException(),
+        )
+        val asyncNext = RecordingAsyncStore("remote-next", events, failureBuffer = failures)
         val localFailing = RecordingStore(
             storeId = SnapshotStoreId("local", "fail:v1"),
             events = events,
+            failureBuffer = failures,
             invalidationFailure = IllegalStateException("sensitive"),
         )
         val localNext = RecordingStore(
             storeId = SnapshotStoreId("local", "next:v1"),
             preparedId = 4L,
             events = events,
+            failureBuffer = failures,
         )
 
         coordinator.stageInvalidation(transaction, bridge, asyncFailing, 1L)
@@ -245,17 +329,19 @@ class SnapshotTransactionCoordinatorTest {
     fun `one shared deadline skips later local store after cooperative overrun`() {
         var now = 0L
         val failures = snapshotCacheFailureBuffer(8)
-        val coordinator = SnapshotTransactionCoordinator(failures) { now }
+        val coordinator = SnapshotTransactionCoordinator { now }
         val transaction = TestTransaction()
         val bridge = TestBridge()
         val first = RecordingStore(
             storeId = SnapshotStoreId("local", "first:v1"),
             limits = SnapshotCacheLimits(10, 2, localDrainBudget = Duration.ofNanos(5)),
+            failureBuffer = failures,
             afterInvalidation = { now = 6L },
         )
         val second = RecordingStore(
             storeId = SnapshotStoreId("local", "second:v1"),
             limits = SnapshotCacheLimits(10, 2, localDrainBudget = Duration.ofNanos(10)),
+            failureBuffer = failures,
         )
 
         coordinator.stageInvalidation(transaction, bridge, first, 1L)
@@ -270,10 +356,10 @@ class SnapshotTransactionCoordinatorTest {
     @Test
     fun `malformed report is isolated but fatal store error escapes`() {
         val failures = snapshotCacheFailureBuffer(8)
-        val coordinator = SnapshotTransactionCoordinator(failures)
+        val coordinator = SnapshotTransactionCoordinator()
         val malformedTransaction = TestTransaction()
         val malformedBridge = TestBridge()
-        val malformed = RecordingStore(malformedReport = true)
+        val malformed = RecordingStore(failureBuffer = failures, malformedReport = true)
         coordinator.stageInvalidation(malformedTransaction, malformedBridge, malformed, 1L)
 
         malformedBridge.commit(malformedTransaction)
@@ -284,6 +370,139 @@ class SnapshotTransactionCoordinatorTest {
         val fatal = RecordingStore(fatalError = StoreFatalError())
         coordinator.stageInvalidation(fatalTransaction, fatalBridge, fatal, 2L)
         assertFailsWith<StoreFatalError> { fatalBridge.commit(fatalTransaction) }
+    }
+
+    @Test
+    fun `caller supplied buffer identity is preserved and may be shared by participants`() {
+        val failures = snapshotCacheFailureBuffer(4)
+        val transaction = TestTransaction()
+        val bridge = TestBridge()
+        val first = RecordingStore(
+            storeId = SnapshotStoreId("local", "first:v1"),
+            failureBuffer = failures,
+            invalidationFailure = IllegalStateException(),
+        )
+        val second = RecordingStore(
+            storeId = SnapshotStoreId("local", "second:v1"),
+            failureBuffer = failures,
+            invalidationFailure = IllegalArgumentException(),
+        )
+
+        (first.failureBuffer === failures).shouldBeTrue()
+        (second.failureBuffer === failures).shouldBeTrue()
+        stageInvalidationMutation(transaction, bridge, first, 1L)
+        stageInvalidationMutation(transaction, bridge, second, 2L)
+        bridge.commit(transaction)
+
+        failures.size shouldBeEqualTo 2
+        failures.poll()?.storeId shouldBeEqualTo first.storeId
+        failures.poll()?.storeId shouldBeEqualTo second.storeId
+    }
+
+    @Test
+    fun `asynchronous completion is observed without waiting and reports every non-success outcome`() {
+        val failures = snapshotCacheFailureBuffer(8)
+        val completion = CompletableFuture<SnapshotCacheApplyReport>()
+        val transaction = TestTransaction()
+        val bridge = TestBridge()
+        val store = RecordingAsyncStore(
+            "outcomes",
+            mutableListOf(),
+            failureBuffer = failures,
+            completion = completion,
+        )
+        repeat(4) { index ->
+            stageInvalidationMutation(transaction, bridge, store, index.toLong())
+        }
+
+        bridge.commit(transaction)
+        failures.size shouldBeEqualTo 0
+
+        completion.complete(
+            SnapshotCacheApplyReport(
+                listOf(
+                    SnapshotCacheOperationResult(
+                        SnapshotCacheOperation.INVALIDATE,
+                        SnapshotCacheOutcome.SUCCESS,
+                        1,
+                    ),
+                    SnapshotCacheOperationResult(
+                        SnapshotCacheOperation.INVALIDATE,
+                        SnapshotCacheOutcome.FAILED,
+                        1,
+                        IllegalStateException::class.java.name,
+                    ),
+                    SnapshotCacheOperationResult(
+                        SnapshotCacheOperation.INVALIDATE,
+                        SnapshotCacheOutcome.REJECTED,
+                        1,
+                    ),
+                    SnapshotCacheOperationResult(
+                        SnapshotCacheOperation.INVALIDATE,
+                        SnapshotCacheOutcome.NOT_ATTEMPTED,
+                        1,
+                    ),
+                ),
+            ),
+        ).shouldBeTrue()
+
+        failures.size shouldBeEqualTo 3
+        failures.poll()?.outcome shouldBeEqualTo SnapshotCacheOutcome.FAILED
+        failures.poll()?.outcome shouldBeEqualTo SnapshotCacheOutcome.REJECTED
+        failures.poll()?.outcome shouldBeEqualTo SnapshotCacheOutcome.NOT_ATTEMPTED
+    }
+
+    @Test
+    fun `asynchronous exception cancellation and malformed completion are isolated in responsible buffers`() {
+        val exceptionalFailures = snapshotCacheFailureBuffer(2)
+        val cancellationFailures = snapshotCacheFailureBuffer(2)
+        val malformedFailures = snapshotCacheFailureBuffer(2)
+        val exceptionalCompletion = CompletableFuture<SnapshotCacheApplyReport>()
+        val cancelledCompletion = CompletableFuture<SnapshotCacheApplyReport>()
+        val malformedCompletion = CompletableFuture<SnapshotCacheApplyReport>()
+
+        val exceptionalTransaction = TestTransaction()
+        val exceptionalBridge = TestBridge()
+        val exceptionalStore = RecordingAsyncStore(
+            "exceptional",
+            mutableListOf(),
+            failureBuffer = exceptionalFailures,
+            completion = exceptionalCompletion,
+        )
+        stageInvalidationMutation(exceptionalTransaction, exceptionalBridge, exceptionalStore, 0L)
+        exceptionalBridge.commit(exceptionalTransaction)
+        exceptionalCompletion.completeExceptionally(IllegalStateException()).shouldBeTrue()
+
+        val cancelledTransaction = TestTransaction()
+        val cancelledBridge = TestBridge()
+        val cancelledStore = RecordingAsyncStore(
+            "cancelled",
+            mutableListOf(),
+            failureBuffer = cancellationFailures,
+            completion = cancelledCompletion,
+        )
+        stageInvalidationMutation(cancelledTransaction, cancelledBridge, cancelledStore, 1L)
+        cancelledBridge.commit(cancelledTransaction)
+        cancelledCompletion.cancel(false).shouldBeTrue()
+
+        val malformedTransaction = TestTransaction()
+        val malformedBridge = TestBridge()
+        val malformedStore = RecordingAsyncStore(
+            "malformed",
+            mutableListOf(),
+            failureBuffer = malformedFailures,
+            completion = malformedCompletion,
+        )
+        stageInvalidationMutation(malformedTransaction, malformedBridge, malformedStore, 2L)
+        malformedBridge.commit(malformedTransaction)
+        malformedCompletion.complete(successReport(SnapshotCacheOperation.PUT, 1)).shouldBeTrue()
+
+        exceptionalFailures.poll()?.exceptionType shouldBeEqualTo IllegalStateException::class.java.name
+        cancellationFailures.poll()?.exceptionType shouldBeEqualTo CancellationException::class.java.name
+        malformedFailures.poll()?.exceptionType shouldBeEqualTo IllegalArgumentException::class.java.name
+        exceptionalFailures.size shouldBeEqualTo 0
+        cancellationFailures.size shouldBeEqualTo 0
+        malformedFailures.size shouldBeEqualTo 0
     }
 
     @Test
@@ -315,10 +534,10 @@ class SnapshotTransactionCoordinatorTest {
     @Test
     fun `earlier third party after commit failure skips cache drain`() {
         val failures = snapshotCacheFailureBuffer(4)
-        val coordinator = SnapshotTransactionCoordinator(failures)
+        val coordinator = SnapshotTransactionCoordinator()
         val transaction = TestTransaction()
         val bridge = TestBridge()
-        val store = RecordingStore()
+        val store = RecordingStore(failureBuffer = failures)
         coordinator.stageInvalidation(transaction, bridge, store, 1L)
         val coordinatorInterceptor = bridge.interceptor()
         coordinatorInterceptor.beforeCommit(transaction)
@@ -398,6 +617,7 @@ class SnapshotTransactionCoordinatorTest {
         override val storeInstanceToken: Any = Any(),
         override val compatibilityFingerprint: String = "local:v1",
         override val limits: SnapshotCacheLimits = SnapshotCacheLimits(10, 4),
+        override val failureBuffer: SnapshotCacheFailureBuffer = snapshotCacheFailureBuffer(16),
         private val invalidationFailure: Exception? = null,
         private val malformedReport: Boolean = false,
         private val fatalError: Error? = null,
@@ -408,19 +628,25 @@ class SnapshotTransactionCoordinatorTest {
             token: Any,
             fingerprint: String,
             preparedId: Long = 1L,
+            failureBuffer: SnapshotCacheFailureBuffer = snapshotCacheFailureBuffer(16),
         ) : this(
             storeId = storeId,
             preparedId = preparedId,
             storeInstanceToken = token,
             compatibilityFingerprint = fingerprint,
+            failureBuffer = failureBuffer,
         )
 
         var claimCount = 0
+        private val claimedMisses = Collections.newSetFromMap(
+            IdentityHashMap<SnapshotCacheMiss<Long, Payload>, Boolean>(),
+        )
         val puts = mutableListOf<List<SnapshotCacheMutation.Put<Long, Payload>>>()
         val invalidations = mutableListOf<List<Long>>()
 
         override fun claimMiss(miss: SnapshotCacheMiss<Long, Payload>): ClaimedSnapshotMiss<Long, Payload> {
             claimCount++
+            check(claimedMisses.add(miss)) { "Snapshot cache miss has already been claimed." }
             return ClaimedSnapshotMiss { snapshot ->
                 SnapshotCacheMutation.Put(
                     id = preparedId,
@@ -453,7 +679,9 @@ class SnapshotTransactionCoordinatorTest {
     private class RecordingAsyncStore(
         name: String,
         private val events: MutableList<String>,
+        override val failureBuffer: SnapshotCacheFailureBuffer = snapshotCacheFailureBuffer(16),
         private val immediateFailure: Exception? = null,
+        private val completion: CompletionStage<SnapshotCacheApplyReport>? = null,
     ) : AsyncSnapshotInvalidationStore<Long> {
         override val storeId = SnapshotStoreId("remote", "$name:v1")
         override val storeInstanceToken: Any = Any()
@@ -468,13 +696,18 @@ class SnapshotTransactionCoordinatorTest {
         ): CompletionStage<SnapshotCacheApplyReport> {
             events += "async:${storeId.namespace.removeSuffix(":v1")}"
             immediateFailure?.let { throw it }
-            return CompletableFuture.completedFuture(successReport(SnapshotCacheOperation.INVALIDATE, batch.size))
+            return completion
+                ?: CompletableFuture.completedFuture(successReport(SnapshotCacheOperation.INVALIDATE, batch.size))
         }
     }
 
     private data class Payload(val text: String) : Serializable
 
     private class StoreFatalError : Error()
+
+    private class MapperFailure : RuntimeException()
+
+    private class ValidationFailure : RuntimeException()
 
     private class ThirdPartyFailure : RuntimeException()
 

@@ -90,6 +90,8 @@ fun loggingSnapshotCacheFailureObserver(): SnapshotCacheFailureObserver =
  *
  * The record deliberately retains no cache identifier, value, snapshot, exception object, message, cause,
  * stack trace, SQL, URL, endpoint, or credential.
+ *
+ * @property affectedCount number of affected inputs; use only as a measurement, never as a metrics tag
  */
 data class SnapshotCacheFailure(
     val storeId: SnapshotStoreId,

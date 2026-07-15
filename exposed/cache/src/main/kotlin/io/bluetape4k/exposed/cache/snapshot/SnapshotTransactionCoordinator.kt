@@ -10,6 +10,9 @@ import java.lang.ref.ReferenceQueue
 import java.lang.ref.WeakReference
 import java.time.Duration
 import java.util.LinkedHashMap
+import java.util.concurrent.CompletionException
+import java.util.concurrent.CompletionStage
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -95,7 +98,6 @@ fun <TX : Transaction, ID : Any, V : Serializable> stageInvalidationMutation(
 }
 
 internal class SnapshotTransactionCoordinator(
-    private val failureBuffer: SnapshotCacheFailureBuffer = snapshotCacheFailureBuffer(),
     private val nanoTimeSource: () -> Long = System::nanoTime,
 ) {
     fun <TX : Transaction, ID : Any, V : Serializable> stageSnapshot(
@@ -106,14 +108,13 @@ internal class SnapshotTransactionCoordinator(
         snapshot: CacheSnapshot<V>,
         validator: CacheSnapshotValueValidator<V>,
     ): CacheSnapshot<V> {
+        requireOpenRoot(transaction, bridge, requireSingleAttempt = true)
         val state = stateFor(transaction, bridge)
-        check(bridge.maxAttempts(transaction) == 1) {
-            "Snapshot fills require a transaction configured for exactly one database attempt."
-        }
         val participant = LocalParticipant(store)
         state.requireCompatibleOpen(participant)
+        val claimed = store.claimMiss(miss)
         validator.validate(snapshot.value)
-        val mutation = store.claimMiss(miss).prepare(snapshot)
+        val mutation = claimed.prepare(snapshot)
         state.stage(participant, LocalPutMutation(participant, mutation))
         return snapshot
     }
@@ -127,15 +128,14 @@ internal class SnapshotTransactionCoordinator(
         mapper: CacheSnapshotMapper<S, V>,
         validator: CacheSnapshotValueValidator<V>,
     ): CacheSnapshot<V> {
+        requireOpenRoot(transaction, bridge, requireSingleAttempt = true)
         val state = stateFor(transaction, bridge)
-        check(bridge.maxAttempts(transaction) == 1) {
-            "Snapshot fills require a transaction configured for exactly one database attempt."
-        }
         val participant = LocalParticipant(store)
         state.requireCompatibleOpen(participant)
+        val claimed = store.claimMiss(miss)
         val snapshot = mapper.toSnapshot(source)
         validator.validate(snapshot.value)
-        val mutation = store.claimMiss(miss).prepare(snapshot)
+        val mutation = claimed.prepare(snapshot)
         state.stage(participant, LocalPutMutation(participant, mutation))
         return snapshot
     }
@@ -146,6 +146,7 @@ internal class SnapshotTransactionCoordinator(
         store: AsyncSnapshotInvalidationStore<ID>,
         id: ID,
     ) {
+        requireOpenRoot(transaction, bridge)
         val state = stateFor(transaction, bridge)
         val participant = AsyncParticipant(store)
         state.requireCompatibleOpen(participant)
@@ -159,6 +160,7 @@ internal class SnapshotTransactionCoordinator(
         store: SnapshotCacheStore<ID, V>,
         id: ID,
     ) {
+        requireOpenRoot(transaction, bridge)
         val state = stateFor(transaction, bridge)
         val participant = LocalParticipant(store)
         state.requireCompatibleOpen(participant)
@@ -169,9 +171,6 @@ internal class SnapshotTransactionCoordinator(
         transaction: TX,
         bridge: SnapshotTransactionBridge<TX>,
     ): SnapshotTransactionState {
-        check(bridge.isCurrent(transaction)) { "Snapshot mutation requires the current Exposed transaction." }
-        check(bridge.isRoot(transaction)) { "Snapshot mutation requires the physical root Exposed transaction." }
-
         return TERMINAL_TRANSACTIONS.createStateIfOpen(transaction) {
             transaction.getUserData(SNAPSHOT_TRANSACTION_STATE_KEY)?.also {
                 it.requireOpen()
@@ -179,7 +178,7 @@ internal class SnapshotTransactionCoordinator(
             }
 
             val state = SnapshotTransactionState()
-            val interceptor = SnapshotTransactionInterceptor(state, failureBuffer, nanoTimeSource)
+            val interceptor = SnapshotTransactionInterceptor(state, nanoTimeSource)
             transaction.putUserData(SNAPSHOT_TRANSACTION_STATE_KEY, state)
             try {
                 bridge.registerInterceptor(transaction, interceptor)
@@ -190,11 +189,24 @@ internal class SnapshotTransactionCoordinator(
             state
         }
     }
+
+    private fun <TX : Transaction> requireOpenRoot(
+        transaction: TX,
+        bridge: SnapshotTransactionBridge<TX>,
+        requireSingleAttempt: Boolean = false,
+    ) {
+        check(bridge.isCurrent(transaction)) { "Snapshot mutation requires the current Exposed transaction." }
+        check(bridge.isRoot(transaction)) { "Snapshot mutation requires the physical root Exposed transaction." }
+        if (requireSingleAttempt) {
+            check(bridge.maxAttempts(transaction) == 1) {
+                "Snapshot fills require a transaction configured for exactly one database attempt."
+            }
+        }
+    }
 }
 
 private class SnapshotTransactionInterceptor(
     private val state: SnapshotTransactionState,
-    private val failureBuffer: SnapshotCacheFailureBuffer,
     private val nanoTimeSource: () -> Long,
 ) : StatementInterceptor {
     private val lock = ReentrantLock()
@@ -225,7 +237,7 @@ private class SnapshotTransactionInterceptor(
             transaction.removeUserData(SNAPSHOT_TRANSACTION_STATE_KEY)
             captured
         }
-        drain(committed, failureBuffer, nanoTimeSource)
+        drain(committed, nanoTimeSource)
     }
 
     override fun afterRollback(transaction: Transaction) {
@@ -348,6 +360,7 @@ private data class ParticipantRecord(
     val storeInstanceToken: Any,
     val compatibilityFingerprint: String,
     val limits: SnapshotCacheLimits,
+    val failureBuffer: SnapshotCacheFailureBuffer,
     val hasLocalParticipant: Boolean,
     val hasAsyncParticipant: Boolean,
 ) {
@@ -355,6 +368,7 @@ private data class ParticipantRecord(
         participant.storeInstanceToken,
         participant.compatibilityFingerprint,
         participant.limits,
+        participant.failureBuffer,
         participant is LocalParticipant<*, *>,
         participant is AsyncParticipant<*>,
     )
@@ -365,6 +379,9 @@ private data class ParticipantRecord(
         }
         check(compatibilityFingerprint == participant.compatibilityFingerprint) {
             "Snapshot store compatibility collision for ${participant.storeId}."
+        }
+        check(failureBuffer === participant.failureBuffer) {
+            "Snapshot store failure-buffer ownership collision for ${participant.storeId}."
         }
     }
 
@@ -380,6 +397,7 @@ private sealed interface SnapshotParticipant {
     val storeInstanceToken: Any
     val compatibilityFingerprint: String
     val limits: SnapshotCacheLimits
+    val failureBuffer: SnapshotCacheFailureBuffer
 }
 
 private class LocalParticipant<ID : Any, V : Serializable>(
@@ -389,6 +407,7 @@ private class LocalParticipant<ID : Any, V : Serializable>(
     override val storeInstanceToken: Any = store.storeInstanceToken
     override val compatibilityFingerprint: String = store.compatibilityFingerprint
     override val limits: SnapshotCacheLimits = store.limits
+    override val failureBuffer: SnapshotCacheFailureBuffer = store.failureBuffer
 
     @Suppress("UNCHECKED_CAST")
     fun applyInvalidations(mutations: List<BufferedSnapshotMutation>, deadline: SnapshotCacheDeadline) =
@@ -406,6 +425,7 @@ private class AsyncParticipant<ID : Any>(
     override val storeInstanceToken: Any = store.storeInstanceToken
     override val compatibilityFingerprint: String = store.compatibilityFingerprint
     override val limits: SnapshotCacheLimits = store.limits
+    override val failureBuffer: SnapshotCacheFailureBuffer = store.failureBuffer
 
     @Suppress("UNCHECKED_CAST")
     fun submit(mutations: List<BufferedSnapshotMutation>) =
@@ -458,12 +478,11 @@ private data class PendingSnapshotMutations(
 
 private fun drain(
     pending: PendingSnapshotMutations,
-    failures: SnapshotCacheFailureBuffer,
     nanoTimeSource: () -> Long,
 ) {
     if (pending.mutations.isEmpty()) return
 
-    drainAsyncInvalidations(pending.mutations.filterIsInstance<AsyncInvalidationMutation<*>>(), failures)
+    drainAsyncInvalidations(pending.mutations.filterIsInstance<AsyncInvalidationMutation<*>>())
 
     val localMutations = pending.mutations.filter { it.participant is LocalParticipant<*, *> }
     if (localMutations.isEmpty()) return
@@ -473,26 +492,24 @@ private fun drain(
         mutations = localMutations.filterIsInstance<LocalInvalidationMutation<*, *>>(),
         operation = SnapshotCacheOperation.INVALIDATE,
         deadline = deadline,
-        failures = failures,
     ) { participant, batch -> participant.applyInvalidations(batch, deadline) }
     drainLocalPhase(
         mutations = localMutations.filterIsInstance<LocalPutMutation<*, *>>(),
         operation = SnapshotCacheOperation.PUT,
         deadline = deadline,
-        failures = failures,
     ) { participant, batch -> participant.applySnapshots(batch, deadline) }
 }
 
 private fun drainAsyncInvalidations(
     mutations: List<AsyncInvalidationMutation<*>>,
-    failures: SnapshotCacheFailureBuffer,
 ) {
     mutations.groupByStore().values.forEach { group ->
         val participant = group.participant as AsyncParticipant<*>
         try {
-            participant.submit(group.mutations)
+            val completion = participant.submit(group.mutations)
+            observeAsyncCompletion(completion, participant, group.mutations.size)
         } catch (exception: Exception) {
-            failures.recordFailure(
+            participant.failureBuffer.recordFailure(
                 failureFromException(
                     participant.storeId,
                     SnapshotCacheOperation.INVALIDATE,
@@ -504,17 +521,71 @@ private fun drainAsyncInvalidations(
     }
 }
 
+private fun observeAsyncCompletion(
+    completion: CompletionStage<SnapshotCacheApplyReport>,
+    participant: AsyncParticipant<*>,
+    expectedCount: Int,
+) {
+    completion.whenComplete { report, throwable ->
+        val completionFailure = throwable?.unwrapCompletionFailure()
+        if (completionFailure != null) {
+            when (completionFailure) {
+                is Error -> throw completionFailure
+                is Exception -> participant.failureBuffer.recordFailure(
+                    failureFromException(
+                        participant.storeId,
+                        SnapshotCacheOperation.INVALIDATE,
+                        expectedCount,
+                        completionFailure,
+                    ),
+                )
+                else -> throw completionFailure
+            }
+            return@whenComplete
+        }
+
+        try {
+            val reconciled = requireNotNull(report) { "Asynchronous invalidation completed without a report." }
+                .requireReconciled(SnapshotCacheOperation.INVALIDATE, expectedCount)
+            reconciled.results.filter { it.outcome != SnapshotCacheOutcome.SUCCESS }.forEach { result ->
+                participant.failureBuffer.recordFailure(
+                    SnapshotCacheFailure(
+                        participant.storeId,
+                        result.operation,
+                        result.outcome,
+                        result.affectedCount,
+                        result.exceptionType,
+                    ),
+                )
+            }
+        } catch (exception: Exception) {
+            participant.failureBuffer.recordFailure(
+                failureFromException(
+                    participant.storeId,
+                    SnapshotCacheOperation.INVALIDATE,
+                    expectedCount,
+                    exception,
+                ),
+            )
+        }
+    }
+}
+
+private tailrec fun Throwable.unwrapCompletionFailure(): Throwable = when (this) {
+    is CompletionException, is ExecutionException -> cause?.unwrapCompletionFailure() ?: this
+    else -> this
+}
+
 private inline fun drainLocalPhase(
     mutations: List<BufferedSnapshotMutation>,
     operation: SnapshotCacheOperation,
     deadline: SnapshotCacheDeadline,
-    failures: SnapshotCacheFailureBuffer,
     apply: (LocalParticipant<*, *>, List<BufferedSnapshotMutation>) -> SnapshotCacheApplyReport,
 ) {
     mutations.groupByStore().values.forEach { group ->
         val participant = group.participant as LocalParticipant<*, *>
         if (deadline.isExpired) {
-            failures.recordFailure(
+            participant.failureBuffer.recordFailure(
                 SnapshotCacheFailure(
                     participant.storeId,
                     operation,
@@ -527,7 +598,7 @@ private inline fun drainLocalPhase(
         try {
             val report = apply(participant, group.mutations).requireReconciled(operation, group.mutations.size)
             report.results.filter { it.outcome != SnapshotCacheOutcome.SUCCESS }.forEach { result ->
-                failures.recordFailure(
+                participant.failureBuffer.recordFailure(
                     SnapshotCacheFailure(
                         participant.storeId,
                         result.operation,
@@ -538,7 +609,7 @@ private inline fun drainLocalPhase(
                 )
             }
         } catch (exception: Exception) {
-            failures.recordFailure(
+            participant.failureBuffer.recordFailure(
                 failureFromException(participant.storeId, operation, group.mutations.size, exception),
             )
         }

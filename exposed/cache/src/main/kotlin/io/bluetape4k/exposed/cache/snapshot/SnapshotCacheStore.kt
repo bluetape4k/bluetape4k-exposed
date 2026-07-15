@@ -111,6 +111,9 @@ interface SnapshotCacheStore<ID : Any, V : Serializable> {
     /** Safety limits enforced by this store. */
     val limits: SnapshotCacheLimits
 
+    /** Caller-owned bounded failure buffer that receives failures attributable to this store. */
+    val failureBuffer: SnapshotCacheFailureBuffer
+
     /**
      * Atomically consumes [miss] and returns its one-shot guarded insertion preparer.
      */
@@ -148,6 +151,9 @@ interface AsyncSnapshotInvalidationStore<ID : Any> {
     /** Safety limits enforced by this store. */
     val limits: SnapshotCacheLimits
 
+    /** Caller-owned bounded failure buffer that receives failures attributable to this store. */
+    val failureBuffer: SnapshotCacheFailureBuffer
+
     /** Measures the encoded invalidation payload for [id]. */
     fun measure(id: ID): MeasuredInvalidation<ID>
 
@@ -170,7 +176,8 @@ interface SnapshotCacheDeadline {
  * Stable identity for one logical snapshot store.
  *
  * @property backend bounded non-blank backend name
- * @property namespace bounded non-blank cache namespace
+ * @property namespace bounded non-blank cache namespace; the only permitted metrics tag candidate, and only when
+ * static and low-cardinality
  */
 data class SnapshotStoreId(
     val backend: String,
@@ -339,7 +346,8 @@ data class SnapshotCacheApplyReport(
  *
  * @property operation cache operation represented by this result
  * @property outcome operation outcome
- * @property affectedCount number of phase inputs represented by this result
+ * @property affectedCount number of phase inputs represented by this result; use only as a measurement, never as a
+ * metrics tag
  * @property exceptionType optional bounded exception class name for failed operations
  */
 data class SnapshotCacheOperationResult(
