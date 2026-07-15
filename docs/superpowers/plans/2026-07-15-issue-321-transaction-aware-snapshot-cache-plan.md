@@ -227,14 +227,16 @@ Tested: opaque miss, bounded registry, and striped fence concurrency tests
 **Files:**
 - Create: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailure.kt`
 - Create: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotTransactionCoordinator.kt`
+- Modify: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheStore.kt`
 - Create: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureTest.kt`
 - Create: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotTransactionCoordinatorTest.kt`
 - Create: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheApiContractTest.kt`
+- Create: `exposed/jdbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/SnapshotCacheCommonApiCompileTest.kt`
 
-- [ ] Write failing state-machine tests for root/current transaction checks, nested/captured/post-boundary rejection, single interceptor registration, last-mutation-wins order, rollback discard, before/after commit transfer, callback cleanup-before-cache-work, store/entry/weight limits, and observer failure accounting.
-- [ ] Add a regression test for an earlier third-party interceptor throwing before this interceptor's `afterCommit`: database completion remains independent, no cache mutation occurs, and the weak transaction entry can be reclaimed.
-- [ ] Run the two targeted test classes and confirm red.
-- [ ] Implement a classpath-safe common bridge:
+- [x] Write failing state-machine tests for root/current transaction checks, nested/captured/post-boundary rejection, single interceptor registration, last-mutation-wins order, rollback discard, before/after commit transfer, callback cleanup-before-cache-work, store/entry/weight limits, and observer failure accounting.
+- [x] Add a regression test for an earlier third-party interceptor throwing before this interceptor's `afterCommit`: database completion remains independent, no cache mutation occurs, and the weak transaction entry can be reclaimed.
+- [x] Run the two targeted test classes and confirm red.
+- [x] Implement a classpath-safe common bridge:
 
 ```kotlin
 @InternalSnapshotCacheApi
@@ -286,18 +288,18 @@ fun <TX : Transaction, ID : Any, V : Serializable> stageInvalidationMutation(
 )
 ```
 
-- [ ] Declare `@RequiresOptIn(level = RequiresOptIn.Level.ERROR) annotation class InternalSnapshotCacheApi` exactly and add a cross-module compile-facing contract test proving the opt-in `SnapshotCacheLookup.hit/miss` factories are usable by adapters, implementation hooks require explicit opt-in, both local/async invalidation overloads resolve, and common public signatures leak neither `JdbcTransaction` nor `R2dbcTransaction`.
+- [x] Declare `@RequiresOptIn(level = RequiresOptIn.Level.ERROR) annotation class InternalSnapshotCacheApi` exactly and add a cross-module compile-facing contract test proving the opt-in `SnapshotCacheLookup.hit/miss` factories are usable by adapters, implementation hooks require explicit opt-in, both local/async invalidation overloads resolve, and common public signatures leak neither `JdbcTransaction` nor `R2dbcTransaction`.
 
-- [ ] Store the registry under one private Exposed transaction user-data key and mirror only its state in a payload-free weak terminal guard protected by an explicit lock, with no strong transaction back-reference. Register participants atomically and use the strictest transaction-wide limits among participating stores.
-- [ ] Reject two facades with the same logical `SnapshotStoreId` unless their private instance token is identical by reference and their non-secret compatibility fingerprint matches; reject before buffer mutation.
-- [ ] In `beforeCommit`, detach the active buffer into interceptor-owned pending state. In `afterCommit`, remove registry/pending state before invoking cache work. In `afterRollback`, clear both states without cache work.
-- [ ] In non-throwing `beforeRollback`, mark the state terminal and clear active and pending payloads before later rollback interceptors can skip `afterRollback`; make `afterRollback` defensive/idempotent cleanup.
-- [ ] Preserve insertion order for distinct keys while replacing the effective mutation for the same `(store identity, id)`; apply replacement weight deltas before buffer mutation.
-- [ ] Drain in exact phases: attempt every distributed chunk admission/submission without awaiting; apply all local invalidations; then apply all local snapshot PUTs. Use one transaction-wide monotonic deadline derived from the smallest local budget, poll before each local entry, mark remaining entries `NOT_ATTEMPTED`, and report cooperative overrun rather than claiming hard preemption.
-- [ ] Isolate ordinary per-entry `Exception`, including post-commit `CancellationException`, and continue unrelated entries. Never convert fatal JVM `Error` into a cache health event. Reconcile every phase input exactly in the final report.
-- [ ] Implement bounded sanitized failure records and structured drain results. Retain only exception type and structural counts—never messages, causes, suppressed exceptions, stack traces, values, identifiers, credentials, SQL, URLs, endpoints, or serialized snapshots. Add a malicious exception fixture containing a URL, credential, key, and SQL. Observer callbacks run only during explicit caller-thread drain; a throwing observer consumes that event and increments `observerFailureCount`.
-- [ ] Implement and test `loggingSnapshotCacheFailureObserver()`. It logs only the sanitized failure object/type. Document that `storeId.namespace` is the only static low-cardinality tag candidate and `affectedCount` is a measurement, never a tag.
-- [ ] Implement this exact public failure API and compile source usage of `poll`, default/limited `drainTo`, the logging observer, and caller-supplied buffer identity:
+- [x] Store the registry under one private Exposed transaction user-data key and mirror only its state in a payload-free weak terminal guard protected by an explicit lock, with no strong transaction back-reference. Register participants atomically and use the strictest transaction-wide limits among participating stores.
+- [x] Reject two facades with the same logical `SnapshotStoreId` unless their private instance token is identical by reference, their caller-supplied failure buffer is identical by reference, and their non-secret compatibility fingerprint matches; reject before buffer mutation.
+- [x] In `beforeCommit`, detach the active buffer into interceptor-owned pending state. In `afterCommit`, remove registry/pending state before invoking cache work. In `afterRollback`, clear both states without cache work.
+- [x] In non-throwing `beforeRollback`, mark the state terminal and clear active and pending payloads before later rollback interceptors can skip `afterRollback`; make `afterRollback` defensive/idempotent cleanup.
+- [x] Preserve insertion order for distinct keys while replacing the effective mutation for the same `(store identity, id)`; apply replacement weight deltas before buffer mutation.
+- [x] Drain in exact phases: attempt every distributed chunk admission/submission without awaiting; apply all local invalidations; then apply all local snapshot PUTs. Use one transaction-wide monotonic deadline derived from the smallest local budget, poll before each local entry, mark remaining entries `NOT_ATTEMPTED`, and report cooperative overrun rather than claiming hard preemption.
+- [x] Isolate ordinary per-entry `Exception`, including post-commit `CancellationException`, and continue unrelated entries. Never convert fatal JVM `Error` into a cache health event. Reconcile every phase input exactly in the final report.
+- [x] Implement bounded sanitized failure records and structured drain results. Retain only exception type and structural counts—never messages, causes, suppressed exceptions, stack traces, values, identifiers, credentials, SQL, URLs, endpoints, or serialized snapshots. Add malicious, Unicode, oversized, bidi-control, and identifier-ignorable exception fixtures. Observer callbacks run only during explicit caller-thread drain; a throwing observer consumes that event and increments `observerFailureCount`.
+- [x] Implement and test `loggingSnapshotCacheFailureObserver()`. It logs only the sanitized failure object/type. Document that `storeId.namespace` is the only static low-cardinality tag candidate and `affectedCount` is a measurement, never a tag.
+- [x] Implement this exact public failure API and compile source usage of `poll`, default/limited `drainTo`, the logging observer, and caller-supplied buffer identity:
 
 ```kotlin
 sealed interface SnapshotCacheFailureBuffer {
@@ -338,8 +340,8 @@ data class SnapshotCacheFailure(
     val exceptionType: String? = null,
 )
 ```
-- [ ] Re-run targeted tests and the full `:bluetape4k-exposed-cache:test` task.
-- [ ] Commit with Lore trailers:
+- [x] Re-run targeted tests and the full `:bluetape4k-exposed-cache:test` task.
+- [x] Commit with Lore trailers:
 
 ```text
 Bind snapshot mutation visibility to one Exposed commit boundary
@@ -350,6 +352,12 @@ Confidence: high
 Scope-risk: moderate
 Tested: coordinator lifecycle, limits, ordering, cleanup, and failure tests
 ```
+
+Completion evidence: focused coordinator/failure tests 28/28, full
+`:bluetape4k-exposed-cache:test` 141/141, and the `jdbc-caffeine` cross-module
+API contract 2/2. Independent spec and code-quality reviews reported no
+remaining Critical, Important, or Minor findings. Root `detekt` succeeds with
+`NO-SOURCE`; the cache module has no module-specific detekt task.
 
 ## Task 4: Implement the JDBC Caffeine facade and transaction extensions
 
