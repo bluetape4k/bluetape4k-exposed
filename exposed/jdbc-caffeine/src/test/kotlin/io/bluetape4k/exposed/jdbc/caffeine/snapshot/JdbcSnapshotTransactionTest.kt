@@ -31,6 +31,10 @@ import java.lang.ref.WeakReference
 import java.sql.SQLException
 import java.time.Duration
 import java.util.UUID
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
@@ -247,20 +251,47 @@ class JdbcSnapshotTransactionTest {
     }
 
     @Test
-    fun `older miss cannot repopulate after newer invalidation`() {
+    fun `older miss cannot repopulate when newer invalidation wins a controlled race`() {
         val database = database()
-        val failures = io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer(4)
+        val failures = io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer(RACE_REPETITIONS)
         val cache = cache("stale-race:v1", failureBuffer = failures)
-        val oldMiss = cache.lookup(1L).miss.shouldNotBeNull()
+        val executor = TrackedExecutor(threadCount = 2)
 
-        transaction(database) { stageInvalidation(cache, 1L) }
-        transaction(database) {
-            maxAttempts = 1
-            stageSnapshot(cache, oldMiss, CacheSnapshot(Payload("stale")))
+        try {
+            repeat(RACE_REPETITIONS) { index ->
+                val id = index.toLong()
+                val oldMiss = cache.lookup(id).miss.shouldNotBeNull()
+                val ready = CountDownLatch(2)
+                val start = CountDownLatch(1)
+                val invalidated = CountDownLatch(1)
+                val newerInvalidation = executor.submit {
+                    ready.countDown()
+                    start.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    transaction(database) { stageInvalidation(cache, id) }
+                    invalidated.countDown()
+                }
+                val olderFill = executor.submit {
+                    ready.countDown()
+                    start.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    invalidated.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    transaction(database) {
+                        maxAttempts = 1
+                        stageSnapshot(cache, oldMiss, CacheSnapshot(Payload("stale-$id")))
+                    }
+                }
+
+                ready.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                start.countDown()
+                newerInvalidation.get(5, TimeUnit.SECONDS)
+                olderFill.get(5, TimeUnit.SECONDS)
+
+                cache.lookup(id).snapshot.shouldBeNull()
+                failures.poll().shouldNotBeNull().outcome shouldBeEqualTo SnapshotCacheOutcome.REJECTED
+            }
+        } finally {
+            executor.close()
         }
-
-        cache.lookup(1L).snapshot.shouldBeNull()
-        failures.poll().shouldNotBeNull().outcome shouldBeEqualTo SnapshotCacheOutcome.REJECTED
+        failures.size shouldBeEqualTo 0
     }
 
     @Test
@@ -323,6 +354,8 @@ class JdbcSnapshotTransactionTest {
     fun `earlier beforeCommit staging is captured but earlier beforeRollback staging is discarded`() {
         val database = database()
         val cache = cache("callback-order:v1")
+        populate(database, cache, 1L, "direct")
+        populate(database, cache, 2L, "callback")
 
         transaction(database) {
             registerInterceptor(object : StatementInterceptor {
@@ -400,10 +433,10 @@ class JdbcSnapshotTransactionTest {
 
         transaction(database) {
             maxAttempts = 1
-            runCatching {
+            stageSnapshot(cache, miss, CacheSnapshot(Payload("root")))
+            assertFailsWith<RollbackMarker> {
                 transaction(database) { throw RollbackMarker() }
             }
-            stageSnapshot(cache, miss, CacheSnapshot(Payload("root")))
         }
 
         cache.lookup(1L).snapshot.shouldNotBeNull().value shouldBeEqualTo Payload("root")
@@ -622,4 +655,21 @@ class JdbcSnapshotTransactionTest {
     private class ValidatorMarker : RuntimeException()
     private class CallbackMarker : RuntimeException()
     private enum class Callback { AFTER_COMMIT, BEFORE_ROLLBACK, AFTER_ROLLBACK }
+
+    private class TrackedExecutor(threadCount: Int) : AutoCloseable {
+        private val executor = Executors.newFixedThreadPool(threadCount)
+        private val futures = mutableListOf<Future<*>>()
+
+        fun <T> submit(task: () -> T): Future<T> = executor.submit<T> { task() }.also { futures += it }
+
+        override fun close() {
+            futures.forEach { it.cancel(true) }
+            executor.shutdownNow()
+            executor.awaitTermination(5, TimeUnit.SECONDS).shouldBeTrue()
+        }
+    }
+
+    companion object {
+        private const val RACE_REPETITIONS: Int = 100
+    }
 }

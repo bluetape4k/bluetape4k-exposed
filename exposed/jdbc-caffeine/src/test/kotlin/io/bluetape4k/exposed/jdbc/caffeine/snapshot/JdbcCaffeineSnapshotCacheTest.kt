@@ -7,6 +7,7 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
 import io.bluetape4k.exposed.cache.snapshot.CaffeineSnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
@@ -18,6 +19,10 @@ import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 import java.time.Duration
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 class JdbcCaffeineSnapshotCacheTest {
@@ -163,6 +168,54 @@ class JdbcCaffeineSnapshotCacheTest {
     }
 
     @Test
+    fun `concurrent weighted puts preserve maximum size after quiescent maintenance`() {
+        val executor = TrackedExecutor(CONCURRENT_PUTS)
+
+        try {
+            repeat(RACE_REPETITIONS) { iteration ->
+                val cache = jdbcCaffeineSnapshotCache<Long, Payload>(
+                    config(
+                        "weighted-concurrent-$iteration:v1",
+                        maximumWeight = 1_000L,
+                        maximumSize = CONCURRENT_MAXIMUM_SIZE,
+                        maxOutstandingMissTokens = CONCURRENT_PUTS,
+                    ),
+                    valueSizer = SnapshotValueSizer { 1L },
+                )
+                val store = cache as SnapshotCacheStore<Long, Payload>
+                val puts = (0 until CONCURRENT_PUTS).map { id ->
+                    val longId = id.toLong()
+                    store.claimMiss(cache.lookup(longId).miss.shouldNotBeNull())
+                        .prepare(CacheSnapshot(Payload("value-$id")))
+                }
+                val ready = CountDownLatch(CONCURRENT_PUTS)
+                val start = CountDownLatch(1)
+                val futures = puts.map { put ->
+                    executor.submit {
+                        ready.countDown()
+                        start.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                        store.applySnapshots(listOf(put), NeverExpiredDeadline)
+                    }
+                }
+
+                ready.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                start.countDown()
+                futures.forEach { future ->
+                    future.get(5, TimeUnit.SECONDS).results.map { it.outcome to it.affectedCount } shouldBeEqualTo
+                        listOf(SnapshotCacheOutcome.SUCCESS to 1)
+                }
+
+                val caffeine = caffeineCache(cache)
+                caffeine.cleanUp()
+                (caffeine.estimatedSize() <= CONCURRENT_MAXIMUM_SIZE).shouldBeTrue()
+                (caffeine.asMap().size <= CONCURRENT_MAXIMUM_SIZE).shouldBeTrue()
+            }
+        } finally {
+            executor.close()
+        }
+    }
+
+    @Test
     fun `maximum size and expiry settings are enforced by Caffeine`() {
         val cache = jdbcCaffeineSnapshotCache<Long, Payload>(
             config(
@@ -280,9 +333,12 @@ class JdbcCaffeineSnapshotCacheTest {
     private data class Payload(val value: String) : Serializable
 
     private fun weightedSize(cache: JdbcCaffeineSnapshotCache<Long, Payload>): Long {
+        return caffeineCache(cache).policy().eviction().orElseThrow().weightedSize().orElseThrow()
+    }
+
+    private fun caffeineCache(cache: JdbcCaffeineSnapshotCache<Long, Payload>): Cache<*, *> {
         val field = cache.javaClass.getDeclaredField("cache").apply { trySetAccessible() }
-        val caffeine = field.get(cache) as Cache<*, *>
-        return caffeine.policy().eviction().orElseThrow().weightedSize().orElseThrow()
+        return field.get(cache) as Cache<*, *>
     }
 
     private object NeverExpiredDeadline : SnapshotCacheDeadline {
@@ -301,5 +357,24 @@ class JdbcCaffeineSnapshotCacheTest {
         val pollCount: Int get() = polls.get()
         override fun remaining(): Duration = if (isExpired) Duration.ZERO else Duration.ofSeconds(1)
         override val isExpired: Boolean get() = polls.incrementAndGet() > 2
+    }
+
+    private class TrackedExecutor(threadCount: Int) : AutoCloseable {
+        private val executor = Executors.newFixedThreadPool(threadCount)
+        private val futures = mutableListOf<Future<*>>()
+
+        fun <T> submit(task: () -> T): Future<T> = executor.submit<T> { task() }.also { futures += it }
+
+        override fun close() {
+            futures.forEach { it.cancel(true) }
+            executor.shutdownNow()
+            executor.awaitTermination(5, TimeUnit.SECONDS).shouldBeTrue()
+        }
+    }
+
+    companion object {
+        private const val RACE_REPETITIONS: Int = 100
+        private const val CONCURRENT_PUTS: Int = 8
+        private const val CONCURRENT_MAXIMUM_SIZE: Long = 2L
     }
 }
