@@ -44,6 +44,7 @@ import java.io.Serializable
 import java.lang.ref.WeakReference
 import java.time.Duration
 import java.util.UUID
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -119,7 +120,8 @@ class R2dbcSnapshotTransactionTest {
 
     @Test
     fun `unknown physical commit cancellation invokes no afterCommit cache event`() = runSuspendIO {
-        val database = cancellingCommitDatabase()
+        val probe = CommitProbe()
+        val database = cancellingCommitDatabase(probe)
         val failures = io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer(4)
         val cache = cache("unknown-commit:v1", failureBuffer = failures)
         val store = cache as io.bluetape4k.exposed.cache.snapshot.SnapshotCacheStore<Long, Payload>
@@ -127,13 +129,29 @@ class R2dbcSnapshotTransactionTest {
             .prepare(CacheSnapshot(Payload("keep")))
         store.applySnapshots(listOf(prepared), NeverExpiredDeadline)
 
-        assertFailsWith<CancellationException> {
+        val cancellation = assertFailsWith<CancellationException> {
             suspendTransaction(db = database) {
                 maxAttempts = 1
+                registerInterceptor(object : StatementInterceptor {
+                    override fun beforeCommit(transaction: Transaction) {
+                        probe.record(CommitEvent.BEFORE_COMMIT)
+                    }
+
+                    override fun afterCommit(transaction: Transaction) {
+                        probe.record(CommitEvent.AFTER_COMMIT)
+                    }
+                })
                 stageInvalidation(cache, 1L)
             }
         }
 
+        cancellation.message shouldBeEqualTo "physical commit outcome unknown"
+        probe.commitEvents shouldBeEqualTo listOf(
+            CommitEvent.BEFORE_COMMIT,
+            CommitEvent.PHYSICAL_COMMIT_STARTED,
+        )
+        probe.afterCommitCount shouldBeEqualTo 0
+        probe.rollbackAttemptCount shouldBeEqualTo 1
         cache.lookup(1L).snapshot.shouldNotBeNull().value shouldBeEqualTo Payload("keep")
         failures.size shouldBeEqualTo 0
     }
@@ -674,9 +692,9 @@ class R2dbcSnapshotTransactionTest {
         return R2dbcDatabase.connect(databaseConfig = config)
     }
 
-    private fun cancellingCommitDatabase(): R2dbcDatabase {
+    private fun cancellingCommitDatabase(probe: CommitProbe): R2dbcDatabase {
         return R2dbcDatabase.connect(
-            manager = { database -> CancellingTransactionManager(TransactionManager(database)) },
+            manager = { database -> CancellingTransactionManager(TransactionManager(database), probe) },
         ) {
             setUrl("r2dbc:h2:mem:///unknown-commit-${UUID.randomUUID()};DB_CLOSE_DELAY=-1;")
         }
@@ -718,6 +736,7 @@ class R2dbcSnapshotTransactionTest {
 
     private class CancellingTransactionManager(
         private val delegate: TransactionManager,
+        private val probe: CommitProbe,
     ) : R2dbcTransactionManager by delegate {
         override fun newTransaction(
             isolation: IsolationLevel?,
@@ -730,6 +749,7 @@ class R2dbcSnapshotTransactionTest {
                 requireNotNull(isolation ?: delegate.defaultIsolationLevel),
                 readOnly == true,
                 outerTransaction,
+                probe,
             ),
         )
     }
@@ -741,18 +761,47 @@ class R2dbcSnapshotTransactionTest {
         override val transactionIsolation: IsolationLevel,
         override val readOnly: Boolean,
         override val outerTransaction: R2dbcTransaction?,
+        private val probe: CommitProbe,
     ) : R2dbcTransactionInterface {
         override suspend fun connection(): R2dbcExposedConnection<*> =
             error("The physical commit seam does not need a connection handle.")
 
-        override suspend fun commit(): Nothing = throw CancellationException("physical commit outcome unknown")
+        override suspend fun commit(): Nothing {
+            probe.record(CommitEvent.PHYSICAL_COMMIT_STARTED)
+            throw CancellationException("physical commit outcome unknown")
+        }
 
-        override suspend fun rollback() = Unit
+        override suspend fun rollback() {
+            probe.recordRollbackAttempt()
+        }
 
         override suspend fun close() = Unit
     }
 
+    private class CommitProbe {
+        private val events = CopyOnWriteArrayList<CommitEvent>()
+        private val afterCommits = AtomicInteger()
+        private val rollbacks = AtomicInteger()
+
+        val commitEvents: List<CommitEvent> get() = events.toList()
+        val afterCommitCount: Int get() = afterCommits.get()
+        val rollbackAttemptCount: Int get() = rollbacks.get()
+
+        fun record(event: CommitEvent) {
+            check(events.size < MAX_COMMIT_EVENTS) { "Commit probe exceeded its bounded event capacity." }
+            events += event
+            if (event == CommitEvent.AFTER_COMMIT) afterCommits.incrementAndGet()
+        }
+
+        fun recordRollbackAttempt() {
+            rollbacks.incrementAndGet()
+        }
+    }
+
+    private enum class CommitEvent { BEFORE_COMMIT, PHYSICAL_COMMIT_STARTED, AFTER_COMMIT }
+
     companion object {
         private const val RACE_REPETITIONS: Int = 100
+        private const val MAX_COMMIT_EVENTS: Int = 3
     }
 }
