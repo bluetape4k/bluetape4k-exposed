@@ -4,12 +4,22 @@ import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import io.bluetape4k.redis.redisson.codec.RedissonCodecs
 import org.redisson.client.codec.Codec
 
+/** Shared fail-fast policy for Redisson codecs that can deserialize executable object graphs. */
 object ExposedRedissonCodecSafety {
 
+    /** Validates the codec carried by a repository [config]. */
     fun requireSafe(config: RedissonCacheConfig, trustedBinaryCache: Boolean) {
+        requireSafe(config.codec, trustedBinaryCache)
+    }
+
+    /**
+     * Rejects Fory, Kryo, and JDK object serialization codecs unless the caller explicitly trusts every cache writer
+     * and payload in an isolated Redis data set.
+     */
+    fun requireSafe(codec: Codec, trustedBinaryCache: Boolean) {
         if (trustedBinaryCache) return
 
-        require(!config.codec.isTrustedBinaryCodec()) {
+        require(!codec.isTrustedBinaryCodec()) {
             "Redisson Redis repositories no longer accept Fory/Kryo/JDK binary codecs by default. " +
                     "Use trustedBinaryCache=true only for private, trusted Redis data, or provide a reviewed custom codec."
         }
