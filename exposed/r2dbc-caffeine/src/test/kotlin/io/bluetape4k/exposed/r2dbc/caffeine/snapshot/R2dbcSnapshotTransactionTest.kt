@@ -40,6 +40,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withTimeout
 import java.io.Serializable
 import java.lang.ref.WeakReference
 import java.time.Duration
@@ -347,8 +348,10 @@ class R2dbcSnapshotTransactionTest {
 
                 ready.await(5, TimeUnit.SECONDS).shouldBeTrue()
                 start.countDown()
-                newerInvalidation.await()
-                olderFill.await()
+                withTimeout(5_000) {
+                    newerInvalidation.await()
+                    olderFill.await()
+                }
 
                 cache.lookup(id).snapshot.shouldBeNull()
                 failures.poll().shouldNotBeNull().outcome shouldBeEqualTo SnapshotCacheOutcome.REJECTED
