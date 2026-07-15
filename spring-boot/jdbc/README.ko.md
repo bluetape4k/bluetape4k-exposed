@@ -247,7 +247,6 @@ dependencies {
 
 주의: `dependencyManagement` 플러그인은 Kotlin Gradle Plugin과 호환성 문제가 있으므로 `platform()`을 사용합니다.
 
-<!-- issue-323-section:start -->
 <a id="transaction-aware-domain-events"></a>
 ## 트랜잭션 인식 도메인 이벤트
 
@@ -389,7 +388,6 @@ Modulith publication store를 보안 및 개인정보 경계로 취급하세요.
 infrastructure가 허용하는 저장 데이터 암호화와 전송 데이터 암호화, 무결성 보호, 명시적 보존/삭제 정책,
 페이로드 최소화를 적용합니다. 저장된 이벤트 클래스 이름은 노출되는 schema metadata이므로 package 이름과 migration 계획을
 검토해야 합니다. 이 통제 때문에 publisher가 audit history, snapshot persistence, JaVers commit에 의존해서는 안 됩니다.
-<!-- issue-323-section:end -->
 
 ## 주의사항
 

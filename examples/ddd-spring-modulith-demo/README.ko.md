@@ -16,7 +16,6 @@
 
 `shipping`은 `orders :: events`에만 의존할 수 있습니다. 테스트에는 `orders.internal` 직접 의존이 Spring Modulith verification에서 거부되는 negative fixture도 포함되어 있습니다.
 
-<!-- issue-323-section:start -->
 ## Transaction 및 Publication Boundary
 
 `OrderApplicationService.accept(...)`는 같은 command transaction 안에서 aggregate를 저장한 다음, aggregate의
@@ -36,7 +35,6 @@ Publication table은 애플리케이션이 소유하는 신뢰 경계입니다. 
 검토해야 합니다. 허용 목록 방식 serializer는 `OrderAcceptedEvent`만 받아들이며 polymorphic type metadata를
 사용하지 않습니다. Audit history, snapshot persistence, JaVers commit semantics는
 `ExposedAggregateEventPublisher`의 금지된 dependency입니다.
-<!-- issue-323-section:end -->
 
 ## 지원 범위
 
