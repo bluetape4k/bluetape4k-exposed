@@ -70,9 +70,9 @@
 - Create: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfigTest.kt`
 - Create: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/CacheSnapshotDaoFreeClasspathTest.kt`
 
-- [ ] Write failing tests for a serializable immutable DTO envelope, optional revision, schema rejection, positive limits/durations, sizer requirements, payload validator behavior, and top-level `Entity` rejection. Enforce namespace syntax `[a-z][a-z0-9._-]{0,62}:v[1-9][0-9]*`; document (rather than attempt to infer lexically) that it must be an operator-owned static name and never a tenant, request, or entity identifier. Require `fenceStripes` to be a power of two in the exact inclusive range 64..65,536.
-- [ ] Run `./gradlew :bluetape4k-exposed-cache:test --tests '*CacheSnapshotTest' --tests '*SnapshotCacheConfigTest'` and confirm the tests fail because the API does not exist.
-- [ ] Implement this public surface with English KDoc on every public declaration:
+- [x] Write failing tests for a serializable immutable DTO envelope, optional revision, schema rejection, positive limits/durations, sizer requirements, payload validator behavior, and top-level `Entity` rejection. Enforce namespace syntax `[a-z][a-z0-9._-]{0,62}:v[1-9][0-9]*`; document (rather than attempt to infer lexically) that it must be an operator-owned static name and never a tenant, request, or entity identifier. Require `fenceStripes` to be a power of two in the exact inclusive range 64..65,536.
+- [x] Run `./gradlew :bluetape4k-exposed-cache:test --tests '*CacheSnapshotTest' --tests '*SnapshotCacheConfigTest'` and confirm the tests fail because the API does not exist.
+- [x] Implement this public surface with English KDoc on every public declaration:
 
 ```kotlin
 data class CacheSnapshot<V : Serializable>(
@@ -112,10 +112,10 @@ data class CaffeineSnapshotCacheConfig(
 )
 ```
 
-- [ ] Provide the exact classpath-safe `rejectDirectEntitySnapshotValues()` default validator and `maximumEstimatedPayloadBytes(sizer, limit)` for opt-in payload rejection. Resolve the DAO base class by name only when present and use assignability without a static DAO type reference; do not recursively reflect over object graphs.
-- [ ] Add `CacheSnapshotDaoFreeClasspathTest.kt` that launches a child classloader/process without Exposed DAO and proves validator construction/DTO validation do not throw `NoClassDefFoundError`.
-- [ ] Re-run the targeted tests and confirm they pass.
-- [ ] Commit with Lore trailers:
+- [x] Provide the exact classpath-safe `rejectDirectEntitySnapshotValues()` default validator and `maximumEstimatedPayloadBytes(sizer, limit)` for opt-in payload rejection. Resolve the DAO base class by name only when present and use assignability without a static DAO type reference; do not recursively reflect over object graphs.
+- [x] Add `CacheSnapshotDaoFreeClasspathTest.kt` that launches a child classloader/process without Exposed DAO and proves validator construction/DTO validation do not throw `NoClassDefFoundError`.
+- [x] Re-run the targeted tests and confirm they pass.
+- [x] Commit with Lore trailers:
 
 ```text
 Define detached snapshot values before transaction integration
