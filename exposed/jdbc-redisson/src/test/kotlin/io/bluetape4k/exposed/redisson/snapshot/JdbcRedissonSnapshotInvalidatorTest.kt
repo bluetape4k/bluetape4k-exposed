@@ -15,6 +15,7 @@ import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOutcome
 import io.bluetape4k.exposed.cache.snapshot.SnapshotStoreId
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
+import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.Test
 import org.redisson.api.RFuture
 import org.redisson.api.RLocalCachedMap
@@ -22,10 +23,12 @@ import org.redisson.api.RedissonClient
 import org.redisson.api.options.LocalCachedMapOptions
 import org.redisson.client.codec.StringCodec
 import java.io.Serializable
+import java.lang.ref.WeakReference
 import java.lang.reflect.Modifier
 import java.lang.reflect.Proxy
 import java.nio.ByteBuffer
 import java.security.MessageDigest
+import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
@@ -302,6 +305,26 @@ class JdbcRedissonSnapshotInvalidatorTest {
     }
 
     @Test
+    fun `never completing future retains no measured invalidation payload`() {
+        val never = CompletableFuture<Long>()
+        val map = RecordingLocalMap<Long>(retainSubmittedIds = false).thenReturn(rFuture(never))
+        val invalidator = newInvalidator(
+            codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy()),
+            config = config(maxBatchEncodedKeyBytes = 8, maxOutstandingChunks = 1, maxOutstandingEncodedBytes = 8),
+            map = map,
+        )
+
+        val probe = submitRetentionProbe(invalidator)
+
+        probe.completion.toCompletableFuture().isDone.shouldBeFalse()
+        invalidator.quotaHealth() shouldBeEqualTo SnapshotInvalidationQuotaHealth(1, 1, 8, 8, 0, true)
+        await().atMost(Duration.ofSeconds(5)).until {
+            System.gc()
+            probe.batch.get() == null && probe.measured.get() == null
+        }
+    }
+
+    @Test
     fun `public facade has internal constructors exact factories and no read or put surface`() {
         JdbcRedissonSnapshotInvalidator::class.constructors
             .all { it.visibility == KVisibility.INTERNAL }
@@ -345,6 +368,22 @@ class JdbcRedissonSnapshotInvalidatorTest {
         )
         return TestInvalidator(invalidator, config)
     }
+
+    private fun submitRetentionProbe(invalidator: TestInvalidator): RetentionProbe {
+        val measured = invalidator.measure(9_223_372_036_854_775_000L)
+        val batch = listOf(measured)
+        return RetentionProbe(
+            batch = WeakReference(batch),
+            measured = WeakReference(measured),
+            completion = invalidator.submitInvalidation(batch),
+        )
+    }
+
+    private data class RetentionProbe(
+        val batch: WeakReference<List<MeasuredInvalidation<Long>>>,
+        val measured: WeakReference<MeasuredInvalidation<Long>>,
+        val completion: CompletionStage<SnapshotCacheApplyReport>,
+    )
 
     private fun config(
         maxEncodedKeyBytes: Int = 8,
@@ -409,7 +448,9 @@ class JdbcRedissonSnapshotInvalidatorTest {
         } as RedissonClient
     }
 
-    private class RecordingLocalMap<ID : Any> {
+    private class RecordingLocalMap<ID : Any>(
+        private val retainSubmittedIds: Boolean = true,
+    ) {
         private val behaviors = ArrayDeque<() -> RFuture<Long>>()
         val submittedIds = mutableListOf<List<ID>>()
         val invokedMethods = mutableListOf<String>()
@@ -422,7 +463,9 @@ class JdbcRedissonSnapshotInvalidatorTest {
             when (method.name) {
                 "fastRemoveAsync" -> {
                     invokedMethods += method.name
-                    submittedIds += (args.orEmpty().single() as Array<*>).map { it as ID }
+                    if (retainSubmittedIds) {
+                        submittedIds += (args.orEmpty().single() as Array<*>).map { it as ID }
+                    }
                     check(behaviors.isNotEmpty()) { "No submission behavior configured" }
                     behaviors.removeFirst()()
                 }

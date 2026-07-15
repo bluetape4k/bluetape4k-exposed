@@ -115,16 +115,17 @@ class JdbcRedissonSnapshotInvalidator<ID : Any> internal constructor(
         chunk: List<MeasuredInvalidation<ID>>,
         collector: InvalidationResultCollector,
     ) {
+        val affectedCount = chunk.size
         val encodedBytes = try {
             verifyChunk(chunk)
         } catch (exception: Exception) {
-            collector.record(index, failedResult(chunk.size, exception))
+            collector.record(index, failedResult(affectedCount, exception))
             return
         }
 
         val lease = quota.tryAdmit(encodedBytes)
         if (lease == null) {
-            collector.record(index, result(SnapshotCacheOutcome.REJECTED, chunk.size))
+            collector.record(index, result(SnapshotCacheOutcome.REJECTED, affectedCount))
             return
         }
 
@@ -136,9 +137,9 @@ class JdbcRedissonSnapshotInvalidator<ID : Any> internal constructor(
                     if (completionClaimed.compareAndSet(false, true)) {
                         val failure = throwable?.unwrapCompletionFailure()
                         when (failure) {
-                            null -> collector.record(index, result(SnapshotCacheOutcome.SUCCESS, chunk.size))
+                            null -> collector.record(index, result(SnapshotCacheOutcome.SUCCESS, affectedCount))
                             is Error -> collector.fail(failure)
-                            else -> collector.record(index, failedResult(chunk.size, failure))
+                            else -> collector.record(index, failedResult(affectedCount, failure))
                         }
                     }
                 } finally {
@@ -151,7 +152,7 @@ class JdbcRedissonSnapshotInvalidator<ID : Any> internal constructor(
         } catch (exception: Exception) {
             lease.release()
             if (completionClaimed.compareAndSet(false, true)) {
-                collector.record(index, failedResult(chunk.size, exception))
+                collector.record(index, failedResult(affectedCount, exception))
             }
         }
     }
