@@ -76,7 +76,7 @@ enum class SnapshotNamespaceCleanupOutcome {
     /** The requested cleanup and final remote-state verification completed. */
     COMPLETED,
 
-    /** Both the map and marker were absent before cleanup began. */
+    /** Remote map and marker absence was reverified after the caller-local view was cleared. */
     ALREADY_COMPLETE,
 
     /** The map and caller-local view were cleared and the exact marker was retained. */
@@ -189,17 +189,13 @@ private fun <ID : Any> clearNamespace(
         mapAbsent = initial.mapAbsent
         markerPresent = initial.marker != RemoteMarker.ABSENT
 
-        when (initial.marker) {
+        val initiallyAlreadyComplete = when (initial.marker) {
             RemoteMarker.MISMATCH -> return failedState(mapAbsent, markerPresent)
             RemoteMarker.ABSENT -> {
                 if (!initial.mapAbsent || retainMarker) return failedState(mapAbsent, markerPresent)
-                return SnapshotNamespaceCleanupResult(
-                    SnapshotNamespaceCleanupOutcome.ALREADY_COMPLETE,
-                    mapAbsent = true,
-                    markerPresent = false,
-                )
+                true
             }
-            RemoteMarker.EXACT -> Unit
+            RemoteMarker.EXACT -> false
         }
 
         val options = LocalCachedMapOptions.name<ID, Any?>(namespace).apply { codec(codec) }
@@ -221,6 +217,15 @@ private fun <ID : Any> clearNamespace(
         markerPresent = afterMapCleanup.marker != RemoteMarker.ABSENT
         if (!mapAbsent || afterMapCleanup.marker == RemoteMarker.MISMATCH) {
             return failedState(mapAbsent, markerPresent)
+        }
+
+        if (initiallyAlreadyComplete) {
+            if (afterMapCleanup.marker != RemoteMarker.ABSENT) return failedState(mapAbsent, markerPresent)
+            return SnapshotNamespaceCleanupResult(
+                SnapshotNamespaceCleanupOutcome.ALREADY_COMPLETE,
+                mapAbsent = true,
+                markerPresent = false,
+            )
         }
 
         if (retainMarker) {

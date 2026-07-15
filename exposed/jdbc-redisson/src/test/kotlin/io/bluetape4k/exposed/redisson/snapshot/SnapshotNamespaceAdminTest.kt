@@ -74,7 +74,11 @@ class SnapshotNamespaceAdminTest {
 
     @Test
     fun `maximum nanosecond-representable timeout remains a valid bounded input`() {
-        val admin = RecordingAdmin().apply { scriptReturns(markerState(MARKER_ABSENT, mapExists = false)) }
+        val admin = RecordingAdmin().apply {
+            scriptReturns(markerState(MARKER_ABSENT, mapExists = false))
+            mapReturns(null, label = "local-clear")
+            scriptReturns(markerState(MARKER_ABSENT, mapExists = false))
+        }
 
         val result = clearSnapshotNamespace(
             admin.client,
@@ -85,7 +89,11 @@ class SnapshotNamespaceAdminTest {
         )
 
         result.outcome shouldBeEqualTo SnapshotNamespaceCleanupOutcome.ALREADY_COMPLETE
-        admin.events shouldBeEqualTo listOf("script", "wait:script-1")
+        admin.events shouldBeEqualTo listOf(
+            "script", "wait:script-1",
+            "map-access", "local-clear", "wait:local-clear",
+            "script", "wait:script-2",
+        )
     }
 
     @Test
@@ -159,8 +167,12 @@ class SnapshotNamespaceAdminTest {
     }
 
     @Test
-    fun `clear is idempotent when both map and marker are already absent`() {
-        val admin = RecordingAdmin().apply { scriptReturns(markerState(MARKER_ABSENT, mapExists = false)) }
+    fun `already absent remote state still clears caller local view and verifies terminal absence`() {
+        val admin = RecordingAdmin().apply {
+            scriptReturns(markerState(MARKER_ABSENT, mapExists = false))
+            mapReturns(null, label = "local-clear")
+            scriptReturns(markerState(MARKER_ABSENT, mapExists = false))
+        }
 
         clearSnapshotNamespace(admin.client, codec, NAMESPACE, FINGERPRINT) shouldBeEqualTo
                 SnapshotNamespaceCleanupResult(
@@ -169,7 +181,48 @@ class SnapshotNamespaceAdminTest {
                     markerPresent = false,
                 )
 
-        admin.events shouldBeEqualTo listOf("script", "wait:script-1")
+        admin.events shouldBeEqualTo listOf(
+            "script", "wait:script-1",
+            "map-access", "local-clear", "wait:local-clear",
+            "script", "wait:script-2",
+        )
+    }
+
+    @Test
+    fun `already absent remote state reports accepted unknown when caller local clear times out`() {
+        val admin = RecordingAdmin().apply {
+            scriptReturns(markerState(MARKER_ABSENT, mapExists = false))
+            mapNeverCompletes(label = "local-clear")
+        }
+
+        val result = clearSnapshotNamespace(admin.client, codec, NAMESPACE, FINGERPRINT)
+
+        result shouldBeEqualTo SnapshotNamespaceCleanupResult(
+            SnapshotNamespaceCleanupOutcome.TIMED_OUT_ACCEPTED_UNKNOWN,
+            mapAbsent = true,
+            markerPresent = false,
+            exceptionType = TimeoutException::class.java.name,
+        )
+        admin.cancelCalls.shouldBeFalse()
+    }
+
+    @Test
+    fun `already absent remote state remains unknown when terminal absence verification times out`() {
+        val admin = RecordingAdmin().apply {
+            scriptReturns(markerState(MARKER_ABSENT, mapExists = false))
+            mapReturns(null, label = "local-clear")
+            scriptNeverCompletes()
+        }
+
+        val result = clearSnapshotNamespace(admin.client, codec, NAMESPACE, FINGERPRINT)
+
+        result shouldBeEqualTo SnapshotNamespaceCleanupResult(
+            SnapshotNamespaceCleanupOutcome.TIMED_OUT_ACCEPTED_UNKNOWN,
+            mapAbsent = true,
+            markerPresent = false,
+            exceptionType = TimeoutException::class.java.name,
+        )
+        admin.cancelCalls.shouldBeFalse()
     }
 
     @Test
@@ -394,6 +447,22 @@ class SnapshotNamespaceAdminTest {
     }
 
     @Test
+    fun `synchronous client Error escapes by identity and stops before cleanup submission`() {
+        val fatal = FatalAdminError()
+        val admin = RecordingAdmin().apply {
+            scriptReturns(markerState(MARKER_EXACT, mapExists = false))
+            mapAccessFails(fatal)
+        }
+
+        val thrown = assertFailsWith<FatalAdminError> {
+            clearSnapshotNamespace(admin.client, codec, NAMESPACE, FINGERPRINT)
+        }
+
+        (thrown === fatal).shouldBeTrue()
+        admin.events shouldBeEqualTo listOf("script", "wait:script-1", "map-access")
+    }
+
+    @Test
     fun `public result outcomes remain exhaustive and delicate calls require explicit opt in`() {
         SnapshotNamespaceCleanupOutcome.entries.map(::describe) shouldBeEqualTo listOf(
             "completed",
@@ -478,6 +547,7 @@ private class RecordingAdmin {
     private val scriptBehaviors = ArrayDeque<FutureBehavior>()
     private val mapBehaviors = ArrayDeque<Pair<String, FutureBehavior>>()
     private var scriptIndex = 0
+    private var mapAccessFailure: Error? = null
 
     val client: RedissonClient = proxy { method, args ->
         when (method.name) {
@@ -487,6 +557,7 @@ private class RecordingAdmin {
             }
             "getLocalCachedMap" -> {
                 events += "map-access"
+                mapAccessFailure?.let { throw it }
                 map
             }
             else -> defaultValue(method.returnType)
@@ -515,6 +586,10 @@ private class RecordingAdmin {
 
     fun mapFails(failure: Throwable, label: String) {
         mapBehaviors += label to FutureBehavior.Failure(failure)
+    }
+
+    fun mapAccessFails(failure: Error) {
+        mapAccessFailure = failure
     }
 
     private val script: RScript = proxy { method, args ->
