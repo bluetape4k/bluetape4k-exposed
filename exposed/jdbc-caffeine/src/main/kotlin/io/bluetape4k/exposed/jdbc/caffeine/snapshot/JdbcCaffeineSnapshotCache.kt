@@ -124,6 +124,15 @@ class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
         }
         if (report.results.any { it.outcome == SnapshotCacheOutcome.SUCCESS }) {
             maintainCapacity()
+            if (report.results.none { it.outcome == SnapshotCacheOutcome.OVERRUN } && deadline.isExpired) {
+                return SnapshotCacheApplyReport(
+                    report.results + SnapshotCacheOperationResult(
+                        SnapshotCacheOperation.PUT,
+                        SnapshotCacheOutcome.OVERRUN,
+                        0,
+                    ),
+                )
+            }
         }
         return report
     }

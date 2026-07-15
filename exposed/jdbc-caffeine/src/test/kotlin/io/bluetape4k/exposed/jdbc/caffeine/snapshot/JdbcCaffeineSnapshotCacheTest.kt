@@ -235,6 +235,29 @@ class JdbcCaffeineSnapshotCacheTest {
         report.results.sumOf { it.affectedCount } shouldBeEqualTo 1
     }
 
+    @Test
+    fun `single put reports one overrun when capacity maintenance exhausts the deadline`() {
+        val cache = jdbcCaffeineSnapshotCache<Long, Payload>(
+            config("maintenance-overrun:v1", maximumSize = 1L),
+        )
+        val store = cache as SnapshotCacheStore<Long, Payload>
+        fun put(id: Long) = store.claimMiss(cache.lookup(id).miss.shouldNotBeNull())
+            .prepare(CacheSnapshot(Payload(id.toString())))
+        store.applySnapshots(listOf(put(1L)), NeverExpiredDeadline)
+        val deadline = ExpireAfterSecondPollDeadline()
+
+        val report = store.applySnapshots(listOf(put(2L)), deadline)
+
+        report.results.map { it.outcome to it.affectedCount } shouldBeEqualTo listOf(
+            SnapshotCacheOutcome.SUCCESS to 1,
+            SnapshotCacheOutcome.OVERRUN to 0,
+        )
+        report.results.count { it.outcome == SnapshotCacheOutcome.OVERRUN } shouldBeEqualTo 1
+        report.results.sumOf { it.affectedCount } shouldBeEqualTo 1
+        listOf(cache.lookup(1L).snapshot, cache.lookup(2L).snapshot).count { it != null } shouldBeEqualTo 1
+        deadline.pollCount shouldBeEqualTo 3
+    }
+
     private fun config(
         namespace: String,
         maximumWeight: Long? = null,
@@ -271,5 +294,12 @@ class JdbcCaffeineSnapshotCacheTest {
         private val polls = AtomicInteger()
         override fun remaining(): Duration = if (isExpired) Duration.ZERO else Duration.ofSeconds(1)
         override val isExpired: Boolean get() = polls.incrementAndGet() > 1
+    }
+
+    private class ExpireAfterSecondPollDeadline : SnapshotCacheDeadline {
+        private val polls = AtomicInteger()
+        val pollCount: Int get() = polls.get()
+        override fun remaining(): Duration = if (isExpired) Duration.ZERO else Duration.ofSeconds(1)
+        override val isExpired: Boolean get() = polls.incrementAndGet() > 2
     }
 }
