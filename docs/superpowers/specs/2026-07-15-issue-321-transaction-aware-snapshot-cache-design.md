@@ -289,6 +289,7 @@ interface SnapshotCacheStore<ID : Any, V : Serializable> {
     val storeInstanceToken: Any
     val compatibilityFingerprint: String
     val limits: SnapshotCacheLimits
+    val failureBuffer: SnapshotCacheFailureBuffer
 
     @InternalSnapshotCacheApi
     fun claimMiss(
@@ -317,6 +318,7 @@ interface AsyncSnapshotInvalidationStore<ID : Any> {
     val storeInstanceToken: Any
     val compatibilityFingerprint: String
     val limits: SnapshotCacheLimits
+    val failureBuffer: SnapshotCacheFailureBuffer
 
     fun measure(id: ID): MeasuredInvalidation<ID>
 
@@ -356,6 +358,8 @@ sealed interface SnapshotCacheMutation<ID : Any, V : Serializable> {
         val snapshot: CacheSnapshot<V>,
         @InternalSnapshotCacheApi
         val localFence: SnapshotLocalFence<ID>? = null,
+        @InternalSnapshotCacheApi
+        val estimatedWeight: Long? = null,
     ) : SnapshotCacheMutation<ID, V>
 
     data class Invalidate<ID : Any, V : Serializable>(
@@ -731,8 +735,9 @@ insertion-ordered map keyed by `SnapshotStoreId` and entity identifier. The
 first store registered for a `SnapshotStoreId` becomes the drain target and
 records its opaque instance token plus non-secret compatibility fingerprint.
 Another facade using the same logical identity in that process must have the
-same token by reference identity (`===`) and the same fingerprint or staging
-fails before buffer mutation. Every store creates one private token object;
+same token and caller-supplied failure buffer by reference identity (`===`) and
+the same fingerprint or staging fails before buffer mutation. Every store
+creates one private token object;
 value-equal tokens never establish store identity.
 This prevents two distinct local Caffeine instances with the same namespace
 from silently updating only the first cache. Within one registered store,
@@ -747,9 +752,10 @@ All stores in that transaction drain from the same registry. JDBC and R2DBC
 bridges share mutation and error-handling logic without leaking engine types
 from `exposed/cache`.
 
-The transaction user-data key points to a state object, while a weak identity
-guard protected by an explicit lock maps the transaction object to the same state without a
-strong back-reference. The interceptor's non-throwing `beforeCommit` changes
+The transaction user-data key points to the only state object. A separate weak
+identity terminal set, protected by an explicit lock, remembers only whether a
+transaction has crossed the coordinator boundary and holds no state or payload
+back-reference. The interceptor's non-throwing `beforeCommit` changes
 `OPEN` to `BOUNDARY_STARTED` and moves the coalesced buffer into its private
 pending field before Exposed clears user data. `beforeRollback` marks the state
 terminal and clears active/pending payloads. `afterCommit` moves pending data to
