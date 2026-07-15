@@ -362,20 +362,23 @@ remaining Critical, Important, or Minor findings. Root `detekt` succeeds with
 ## Task 4: Implement the JDBC Caffeine facade and transaction extensions
 
 **Files:**
+- Modify: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheStore.kt`
+- Modify: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotLocalFenceRegistry.kt`
 - Create: `exposed/jdbc-caffeine/src/main/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcCaffeineSnapshotCache.kt`
 - Create: `exposed/jdbc-caffeine/src/main/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcSnapshotTransaction.kt`
 - Create: `exposed/jdbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcCaffeineSnapshotCacheTest.kt`
 - Create: `exposed/jdbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcSnapshotTransactionTest.kt`
 - Create: `exposed/jdbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcSnapshotCacheApiUsageTest.kt`
+- Modify: `exposed/jdbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/SnapshotCacheCommonApiCompileTest.kt`
 
-- [ ] Write failing tests for factory configuration, hit/miss, opaque claim, weighted/unweighted construction, commit PUT, commit invalidation, rollback discard, mapper execution inside the current root transaction, captured transaction rejection, and `maxAttempts > 1` rejection for snapshot fill only. Prove invalidation remains attempt-local and allowed under Exposed retry configuration.
-- [ ] Add an H2 test that counts SQL writes and proves the cache commit callback performs zero additional database writes.
-- [ ] Add the deterministic stale-fill race test at the public facade boundary.
-- [ ] Add engine-real lifecycle tests: preceding throwing `afterCommit`, `beforeRollback`, and `afterRollback` `StatementInterceptor` callbacks; callback-time staging; commit-then-stage; rollback-then-stage; interceptor non-accumulation; nested savepoint commit followed by outer rollback; and nested rollback followed by outer commit. Earlier callback failure must produce zero cache mutation and retain payload only until transaction GC. Every invalid receiver must fail before mapping or buffer mutation.
-- [ ] Add retry tests proving a failed invalidation attempt leaks nothing and a successful retried attempt publishes exactly once; outer snapshot-fill retry must reacquire a fresh miss before each database read.
-- [ ] Prove capacity/error timing at the public facade: retained miss tokens fill the registry and the next `lookup` fails before the SQL counter changes; mapper failure consumes the token and reusing it fails before a second mapping call.
-- [ ] Run `./gradlew :bluetape4k-exposed-jdbc-caffeine:test --tests '*Jdbc*CaffeineSnapshotCacheTest' --tests '*JdbcSnapshotTransactionTest'` and confirm red.
-- [ ] Implement the exact factory and transaction extensions:
+- [x] Write failing tests for factory configuration, hit/miss, opaque claim, weighted/unweighted construction, commit PUT, commit invalidation, rollback discard, mapper execution inside the current root transaction, captured transaction rejection, and `maxAttempts > 1` rejection for snapshot fill only. Prove invalidation remains attempt-local and allowed under Exposed retry configuration.
+- [x] Add an H2 test that counts SQL writes and proves the cache commit callback performs zero additional database writes.
+- [x] Add the deterministic stale-fill race test at the public facade boundary.
+- [x] Add engine-real lifecycle tests: preceding throwing `afterCommit`, `beforeRollback`, and `afterRollback` `StatementInterceptor` callbacks; callback-time staging; commit-then-stage; rollback-then-stage; interceptor non-accumulation; nested savepoint commit followed by outer rollback; and nested rollback followed by outer commit. Earlier callback failure must produce zero cache mutation and retain payload only until transaction GC. Every invalid receiver must fail before mapping or buffer mutation.
+- [x] Add retry tests proving a failed invalidation attempt leaks nothing and a successful retried attempt publishes exactly once; outer snapshot-fill retry must reacquire a fresh miss before each database read.
+- [x] Prove capacity/error timing at the public facade: retained miss tokens fill the registry and the next `lookup` fails before the SQL counter changes; mapper failure consumes the token and reusing it fails before a second mapping call.
+- [x] Run `./gradlew :bluetape4k-exposed-jdbc-caffeine:test --tests '*Jdbc*CaffeineSnapshotCacheTest' --tests '*JdbcSnapshotTransactionTest'` and confirm red.
+- [x] Implement the exact factory and transaction extensions:
 
 ```kotlin
 fun <ID : Any, V : Serializable> jdbcCaffeineSnapshotCache(
@@ -414,13 +417,13 @@ fun <ID : Any, V : Serializable> JdbcTransaction.stageInvalidation(
 )
 ```
 
-- [ ] Keep facade constructors internal. Expose only `storeId`, the exact caller-supplied `failureBuffer` instance, and `lookup(id): SnapshotCacheLookup<ID, V>`; prove both explicit-token and reified factories preserve the supplied buffer identity without `@PublishedApi` constructor access.
-- [ ] Compile the README-equivalent JDBC usage in `JdbcSnapshotCacheApiUsageTest`; assert the exact receiver/signature surface by reflection so R2DBC engine types do not leak into this module.
-- [ ] Configure Caffeine weight/expiry exactly from `CaffeineSnapshotCacheConfig`; pass the exact non-negative `SnapshotValueSizer` estimate to Caffeine and enforce `maximumSize` independently after maintenance without synthetic weight inflation. Never silently ignore an optional setting.
-- [ ] Require a root current `JdbcTransaction`; require `maxAttempts == 1` only when consuming a miss for snapshot fill. Register one core `StatementInterceptor` via the common coordinator.
-- [ ] Keep cache callbacks cache-only and cooperatively bounded by `localDrainBudget`; after a completed operation crosses the deadline, record its normal one-count outcome followed by `OVERRUN(0)`, then mark remaining entries `NOT_ATTEMPTED`. Preserve report count reconciliation without claiming a hard latency bound or throwing into the completed transaction.
-- [ ] Re-run module tests and confirm all existing tests remain green.
-- [ ] Commit with Lore trailers:
+- [x] Keep facade constructors internal. Expose only `storeId`, the exact caller-supplied `failureBuffer` instance, and `lookup(id): SnapshotCacheLookup<ID, V>`; prove both explicit-token and reified factories preserve the supplied buffer identity without `@PublishedApi` constructor access.
+- [x] Compile the README-equivalent JDBC usage in `JdbcSnapshotCacheApiUsageTest`; assert the exact receiver/signature surface by reflection so R2DBC engine types do not leak into this module.
+- [x] Configure Caffeine weight/expiry exactly from `CaffeineSnapshotCacheConfig`; pass the exact non-negative `SnapshotValueSizer` estimate to Caffeine and enforce `maximumSize` independently after maintenance without synthetic weight inflation. Never silently ignore an optional setting.
+- [x] Require a root current `JdbcTransaction`; require `maxAttempts == 1` only when consuming a miss for snapshot fill. Register one core `StatementInterceptor` via the common coordinator.
+- [x] Keep cache callbacks cache-only and cooperatively bounded by `localDrainBudget`; after a completed operation crosses the deadline, record its normal one-count outcome followed by `OVERRUN(0)`, then mark remaining entries `NOT_ATTEMPTED`. Preserve report count reconciliation without claiming a hard latency bound or throwing into the completed transaction.
+- [x] Re-run module tests and confirm all existing tests remain green.
+- [x] Commit with Lore trailers:
 
 ```text
 Expose commit-safe JDBC Caffeine snapshot caching
@@ -431,6 +434,13 @@ Confidence: high
 Scope-risk: moderate
 Tested: JDBC Caffeine unit, transaction, H2, and concurrency tests
 ```
+
+Completion evidence: cache 141/141; JDBC Caffeine 364 passed and 22 existing
+environment-gated tests skipped, with zero failures/errors under the repository
+Ryuk-disabled test contract. Controlled weighted-capacity and stale-fill races
+passed 100 repetitions each. Independent spec and code-quality reviews reported
+no remaining Critical, Important, or Minor findings. Root `detekt` succeeds
+with `NO-SOURCE`; the module has no module-specific detekt task.
 
 ## Task 5: Review the JDBC vertical slice before duplicating it
 
