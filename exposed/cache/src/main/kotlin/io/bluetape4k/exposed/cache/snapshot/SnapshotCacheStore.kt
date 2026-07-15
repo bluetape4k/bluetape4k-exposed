@@ -244,17 +244,26 @@ sealed interface SnapshotCacheMutation<ID : Any, V : Serializable> {
     /**
      * Guarded insertion of [snapshot] for [id].
      *
-     * [localFence] is process-local concurrency state and must not be persisted or transported.
+     * [localFence] is process-local concurrency state and must not be persisted or transported. [estimatedWeight]
+     * is the optional non-negative retained-weight estimate prepared by the owning adapter.
      *
      * @property id cache identifier
      * @property snapshot detached snapshot to insert
      * @property localFence optional process-local generation fence
+     * @property estimatedWeight optional prepared retained-weight estimate
      */
     data class Put<ID : Any, V : Serializable>(
         override val id: ID,
         val snapshot: CacheSnapshot<V>,
         @InternalSnapshotCacheApi val localFence: SnapshotLocalFence<ID>? = null,
-    ) : SnapshotCacheMutation<ID, V>
+        @InternalSnapshotCacheApi val estimatedWeight: Long? = null,
+    ) : SnapshotCacheMutation<ID, V> {
+        init {
+            estimatedWeight?.let {
+                require(it >= 0L) { "estimatedWeight[$it] must not be negative." }
+            }
+        }
+    }
 
     /**
      * Invalidates [id].
