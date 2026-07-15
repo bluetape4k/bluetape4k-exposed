@@ -86,6 +86,35 @@ class SnapshotCacheFailureTest {
     }
 
     @Test
+    fun `unicode exception class names remain safe on failure and observer paths`() {
+        val failure = failureFromException(
+            storeId = STORE_ID,
+            operation = SnapshotCacheOperation.INVALIDATE,
+            affectedCount = 1,
+            exception = 사용자예외(),
+        )
+        val buffer = snapshotCacheFailureBuffer(1)
+        buffer.recordFailure(failure)
+
+        val drained = buffer.drainTo(SnapshotCacheFailureObserver { throw 사용자예외() })
+
+        failure.exceptionType shouldBeEqualTo 사용자예외::class.java.name
+        drained.observerExceptionType shouldBeEqualTo 사용자예외::class.java.name
+        drained.observerFailedCount shouldBeEqualTo 1
+    }
+
+    @Test
+    fun `exception type sanitizer accepts safe unicode and drops oversized or malformed names`() {
+        val unicodeName = "예외.사용자예외"
+        val oversizedName = "a".repeat(256) + "." + "b".repeat(256)
+
+        sanitizeExceptionType(unicodeName) shouldBeEqualTo unicodeName
+        sanitizeExceptionType(oversizedName).shouldBeNull()
+        sanitizeExceptionType("generated/Failure").shouldBeNull()
+        sanitizeExceptionType(" ").shouldBeNull()
+    }
+
+    @Test
     fun `buffer and count inputs are validated`() {
         assertFailsWith<IllegalArgumentException> { snapshotCacheFailureBuffer(0) }
         assertFailsWith<IllegalArgumentException> {
@@ -127,6 +156,8 @@ class SnapshotCacheFailureTest {
     private class MaliciousFailure(message: String) : RuntimeException(message)
 
     private class ObserverFatalError : Error()
+
+    private class 사용자예외 : RuntimeException()
 
     companion object {
         private val STORE_ID = SnapshotStoreId("local", "orders:v1")

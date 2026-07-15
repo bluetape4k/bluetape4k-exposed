@@ -755,10 +755,17 @@ normal callback sequence.
 This design intentionally supports one physical boundary per participating
 transaction object. The bridge also verifies that the receiver is the current
 Exposed transaction. Staging after `BOUNDARY_STARTED`, from a captured
-non-current transaction, or from any commit/rollback callback fails
-before mapping or buffer mutation. Manual repeated `commit()`/`rollback()` on a
+non-current transaction, or from this coordinator's commit/rollback callbacks
+fails before mapping or buffer mutation. Exposed 1.3.1 keeps the transaction
+current while invoking local interceptors in registration order, and the common
+bridge exposes no earlier-callback-entry state. An interceptor registered before
+this coordinator may therefore stage work before the coordinator receives its
+own `beforeCommit`/`beforeRollback`: commit captures that work, while rollback
+discards it. Engine-real JDBC/R2DBC verification or an adapter-owned earlier
+guard belongs to the adapter tasks. Manual repeated `commit()`/`rollback()` on a
 participating transaction is unsupported; tests cover commit-then-stage,
-rollback-then-stage, callback-time staging, and interceptor accumulation. A
+rollback-then-stage, coordinator-callback staging, earlier callback ordering,
+and interceptor accumulation. A
 first snapshot call after an earlier manual commit on a still-current reusable
 Exposed object is outside the supported contract, so documentation requires the
 snapshot API to be used only inside the ordinary single-boundary
@@ -1002,8 +1009,11 @@ Database failure and cache failure are different outcomes.
   application-owned reconciliation path. The cache buffer receives no event
   because no cache callback ran; the caller receives the commit/cancellation
   exception and owns any unknown-commit monitoring.
-- JVM-fatal `Error`s are not converted into cache health events and may escape;
-  this is the only allowed throwing path after commit.
+- Synchronous local JVM-fatal `Error`s are not converted into cache health
+  events and escape the coordinator callback. An asynchronous completion with
+  `Error` remains exceptional on its `CompletionStage` chain and is not
+  converted into a failure event; generic `CompletionStage` semantics provide
+  no synchronous caller-thread escape guarantee.
 
 Exposed invokes registered interceptors sequentially and does not isolate each
 callback. If an earlier third-party `afterCommit` interceptor throws after the
@@ -1011,8 +1021,9 @@ physical commit, this coordinator's `afterCommit` may never run: no cache
 mutation or cache failure event is emitted, cache state remains stale, the
 caller observes the third-party exception, and pending values remain only until
 the transaction object is collected. If an earlier rollback callback prevents
-this interceptor, no cache mutation occurs; `beforeRollback` normally already
-cleared payloads. The library cannot convert another interceptor's exception or
+this interceptor, no cache mutation occurs and staged payloads remain bounded by
+the transaction lifetime because this coordinator has not received
+`beforeRollback`. The library cannot convert another interceptor's exception or
 guarantee callback ordering. JDBC/R2DBC tests place a throwing interceptor
 before this one and lock these safe stale-cache/retention outcomes.
 
@@ -1055,10 +1066,15 @@ caller-thread policy.
 
 The JDBC Redisson invalidator attempts every byte-bounded async chunk and
 returns without waiting. Admitted chunks are submitted; rejected chunks are
-recorded and do not stop later attempts. Only failed completion, synchronous submission failure, or
-admission rejection is offered to the failure buffer; a never-completing future
+recorded and do not stop later attempts. Only ordinary failed completion,
+synchronous submission failure, or admission rejection is offered to the
+failure buffer; a never-completing future
 remains visible through shared quota health and is bounded by quota rather than
-a library timeout task. A late
+a library timeout task. Completion observers capture only immutable store
+identity, the caller-owned bounded failure buffer, and the expected count; they
+do not retain the adapter, store, or client. Fatal async completion errors remain
+exceptional on the dependent stage and are never converted into failure events.
+A late
 invalidation can cause an extra miss but cannot resurrect stale data. No retry,
 compensating mutation, distributed `get`, or distributed PUT is added by this
 feature. Caffeine reads are in-process; a non-fatal local read exception follows
@@ -1271,8 +1287,9 @@ Explicitly deferred:
   after-callback; cache state remains unchanged and retained payload is bounded
   by transaction lifetime;
 - participating transaction objects reject manual boundary reuse,
-  callback-time staging, and post-boundary staging without accumulating
-  interceptors;
+  coordinator-callback staging, and post-boundary staging without accumulating
+  interceptors, while the common contract records the Exposed 1.3.1 limitation
+  for callbacks registered before the coordinator;
 - captured non-current JDBC and R2DBC transaction receivers are rejected by the
   exact bridge check before mapping;
 - a later lower-limit participant is rejected atomically without changing the

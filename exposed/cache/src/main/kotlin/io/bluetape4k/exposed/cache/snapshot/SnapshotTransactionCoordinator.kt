@@ -20,7 +20,9 @@ import kotlin.concurrent.withLock
  * Adapts a concrete Exposed transaction implementation to common snapshot-cache coordination.
  *
  * Implementations must report the current physical root transaction and register the interceptor on that same
- * boundary. Snapshot fills are admitted only when [maxAttempts] returns one.
+ * boundary. Snapshot fills are admitted only when [maxAttempts] returns one. The common coordinator boundary starts
+ * when its own interceptor receives `beforeCommit` or `beforeRollback`; an interceptor registered earlier may still
+ * stage work before that point because Exposed keeps the transaction current throughout ordered callbacks.
  */
 @InternalSnapshotCacheApi
 interface SnapshotTransactionBridge<TX : Transaction> {
@@ -507,7 +509,12 @@ private fun drainAsyncInvalidations(
         val participant = group.participant as AsyncParticipant<*>
         try {
             val completion = participant.submit(group.mutations)
-            observeAsyncCompletion(completion, participant, group.mutations.size)
+            observeAsyncCompletion(
+                completion = completion,
+                storeId = participant.storeId,
+                failureBuffer = participant.failureBuffer,
+                expectedCount = group.mutations.size,
+            )
         } catch (exception: Exception) {
             participant.failureBuffer.recordFailure(
                 failureFromException(
@@ -521,25 +528,30 @@ private fun drainAsyncInvalidations(
     }
 }
 
-private fun observeAsyncCompletion(
+/**
+ * Attaches non-blocking structural failure observation and returns its dependent completion stage.
+ *
+ * Fatal errors remain exceptional on the returned stage and are never converted into failure-buffer events. This
+ * function cannot make an asynchronously completed error escape synchronously from the original caller thread.
+ */
+internal fun observeAsyncCompletion(
     completion: CompletionStage<SnapshotCacheApplyReport>,
-    participant: AsyncParticipant<*>,
+    storeId: SnapshotStoreId,
+    failureBuffer: SnapshotCacheFailureBuffer,
     expectedCount: Int,
-) {
+): CompletionStage<SnapshotCacheApplyReport> =
     completion.whenComplete { report, throwable ->
         val completionFailure = throwable?.unwrapCompletionFailure()
         if (completionFailure != null) {
-            when (completionFailure) {
-                is Error -> throw completionFailure
-                is Exception -> participant.failureBuffer.recordFailure(
+            if (completionFailure is Exception) {
+                failureBuffer.recordFailure(
                     failureFromException(
-                        participant.storeId,
+                        storeId,
                         SnapshotCacheOperation.INVALIDATE,
                         expectedCount,
                         completionFailure,
                     ),
                 )
-                else -> throw completionFailure
             }
             return@whenComplete
         }
@@ -548,9 +560,9 @@ private fun observeAsyncCompletion(
             val reconciled = requireNotNull(report) { "Asynchronous invalidation completed without a report." }
                 .requireReconciled(SnapshotCacheOperation.INVALIDATE, expectedCount)
             reconciled.results.filter { it.outcome != SnapshotCacheOutcome.SUCCESS }.forEach { result ->
-                participant.failureBuffer.recordFailure(
+                failureBuffer.recordFailure(
                     SnapshotCacheFailure(
-                        participant.storeId,
+                        storeId,
                         result.operation,
                         result.outcome,
                         result.affectedCount,
@@ -559,9 +571,9 @@ private fun observeAsyncCompletion(
                 )
             }
         } catch (exception: Exception) {
-            participant.failureBuffer.recordFailure(
+            failureBuffer.recordFailure(
                 failureFromException(
-                    participant.storeId,
+                    storeId,
                     SnapshotCacheOperation.INVALIDATE,
                     expectedCount,
                     exception,
@@ -569,7 +581,6 @@ private fun observeAsyncCompletion(
             )
         }
     }
-}
 
 private tailrec fun Throwable.unwrapCompletionFailure(): Throwable = when (this) {
     is CompletionException, is ExecutionException -> cause?.unwrapCompletionFailure() ?: this

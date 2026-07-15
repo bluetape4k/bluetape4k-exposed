@@ -12,12 +12,14 @@ import org.jetbrains.exposed.v1.core.statements.StatementInterceptor
 import org.jetbrains.exposed.v1.core.transactions.TransactionManagerApi
 import org.junit.jupiter.api.Test
 import java.io.Serializable
+import java.lang.ref.ReferenceQueue
 import java.lang.ref.WeakReference
 import java.time.Duration
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage
 
 class SnapshotTransactionCoordinatorTest {
@@ -506,6 +508,61 @@ class SnapshotTransactionCoordinatorTest {
     }
 
     @Test
+    fun `asynchronous fatal error remains exceptional and never becomes a failure event`() {
+        val failures = snapshotCacheFailureBuffer(2)
+        val completion = CompletableFuture<SnapshotCacheApplyReport>()
+        val observed = observeAsyncCompletion(completion, ASYNC_STORE_ID, failures, 1)
+        val fatal = StoreFatalError()
+
+        completion.completeExceptionally(fatal).shouldBeTrue()
+
+        val thrown = assertFailsWith<CompletionException> { observed.toCompletableFuture().join() }
+        (thrown.cause === fatal).shouldBeTrue()
+        failures.size shouldBeEqualTo 0
+    }
+
+    @Test
+    fun `never completing async observation does not retain the submitting store`() {
+        val completion = CompletableFuture<SnapshotCacheApplyReport>()
+        val reclaimedStores = ReferenceQueue<RecordingAsyncStore>()
+        val weakStore = stagePendingAsyncInvalidation(completion, reclaimedStores)
+
+        awaitReclamation(weakStore, reclaimedStores).shouldBeTrue()
+        completion.isDone.shouldBeFalse()
+    }
+
+    @Test
+    fun `earlier transaction callbacks remain outside the coordinator boundary start`() {
+        val committedStore = RecordingStore()
+        val commitTransaction = TestTransaction()
+        val commitBridge = TestBridge()
+        commitBridge.interceptors += object : StatementInterceptor {
+            override fun beforeCommit(transaction: Transaction) {
+                stageInvalidationMutation(commitTransaction, commitBridge, committedStore, 2L)
+            }
+        }
+        stageInvalidationMutation(commitTransaction, commitBridge, committedStore, 1L)
+
+        commitBridge.commitAll(commitTransaction)
+
+        committedStore.invalidations shouldBeEqualTo listOf(listOf(1L, 2L))
+
+        val rolledBackStore = RecordingStore()
+        val rollbackTransaction = TestTransaction()
+        val rollbackBridge = TestBridge()
+        rollbackBridge.interceptors += object : StatementInterceptor {
+            override fun beforeRollback(transaction: Transaction) {
+                stageInvalidationMutation(rollbackTransaction, rollbackBridge, rolledBackStore, 2L)
+            }
+        }
+        stageInvalidationMutation(rollbackTransaction, rollbackBridge, rolledBackStore, 1L)
+
+        rollbackBridge.rollbackAll(rollbackTransaction)
+
+        rolledBackStore.invalidations.shouldBeEqualTo(emptyList())
+    }
+
+    @Test
     fun `transaction state is cleaned before cache callbacks and skipped after commit retains no strong guard`() {
         val transaction = TestTransaction()
         val bridge = TestBridge()
@@ -521,13 +578,9 @@ class SnapshotTransactionCoordinatorTest {
         bridge.commit(transaction)
 
         val skippedBridge = TestBridge()
-        val weak = stageWithoutCompletion(skippedBridge, store)
-        repeat(20) {
-            System.gc()
-            if (weak.get() == null) return@repeat
-            ByteArray(128 * 1024)
-        }
-        weak.get() shouldBeEqualTo null
+        val reclaimedTransactions = ReferenceQueue<TestTransaction>()
+        val weak = stageWithoutCompletion(skippedBridge, store, reclaimedTransactions)
+        awaitReclamation(weak, reclaimedTransactions).shouldBeTrue()
         store.invalidations.flatten() shouldBeEqualTo listOf(1L)
     }
 
@@ -558,12 +611,43 @@ class SnapshotTransactionCoordinatorTest {
     private fun stageWithoutCompletion(
         bridge: TestBridge,
         store: RecordingStore,
+        reclaimedTransactions: ReferenceQueue<TestTransaction>,
     ): WeakReference<TestTransaction> {
         val transaction = TestTransaction()
-        val weak = WeakReference(transaction)
+        val weak = WeakReference(transaction, reclaimedTransactions)
         stageInvalidationMutation(transaction, bridge, store, 3L)
         bridge.interceptor().beforeCommit(transaction)
         return weak
+    }
+
+    private fun stagePendingAsyncInvalidation(
+        completion: CompletionStage<SnapshotCacheApplyReport>,
+        reclaimedStores: ReferenceQueue<RecordingAsyncStore>,
+    ): WeakReference<RecordingAsyncStore> {
+        val transaction = TestTransaction()
+        val bridge = TestBridge()
+        val store = RecordingAsyncStore(
+            "pending",
+            mutableListOf(),
+            completion = completion,
+        )
+        val weakStore = WeakReference(store, reclaimedStores)
+        stageInvalidationMutation(transaction, bridge, store, 1L)
+        bridge.commit(transaction)
+        return weakStore
+    }
+
+    private fun <T : Any> awaitReclamation(
+        reference: WeakReference<T>,
+        referenceQueue: ReferenceQueue<T>,
+    ): Boolean {
+        repeat(64) { attempt ->
+            if (referenceQueue.poll() === reference) return true
+            val pressure = Array(8) { ByteArray(256 * 1024) }
+            pressure[attempt % pressure.size][0] = attempt.toByte()
+            System.gc()
+        }
+        return referenceQueue.poll() === reference
     }
 
     private fun miss(): SnapshotCacheMiss<Long, Payload> =
@@ -596,6 +680,16 @@ class SnapshotTransactionCoordinatorTest {
         fun rollback(transaction: TestTransaction) {
             interceptor().beforeRollback(transaction)
             interceptor().afterRollback(transaction)
+        }
+
+        fun commitAll(transaction: TestTransaction) {
+            interceptors.forEach { it.beforeCommit(transaction) }
+            interceptors.forEach { it.afterCommit(transaction) }
+        }
+
+        fun rollbackAll(transaction: TestTransaction) {
+            interceptors.forEach { it.beforeRollback(transaction) }
+            interceptors.forEach { it.afterRollback(transaction) }
         }
     }
 
@@ -713,6 +807,7 @@ class SnapshotTransactionCoordinatorTest {
 
     companion object {
         private val VALIDATOR = CacheSnapshotValueValidator<Payload> {}
+        private val ASYNC_STORE_ID = SnapshotStoreId("remote", "fatal:v1")
 
         private fun successReport(operation: SnapshotCacheOperation, count: Int) =
             SnapshotCacheApplyReport(

@@ -92,6 +92,7 @@ fun loggingSnapshotCacheFailureObserver(): SnapshotCacheFailureObserver =
  * stack trace, SQL, URL, endpoint, or credential.
  *
  * @property affectedCount number of affected inputs; use only as a measurement, never as a metrics tag
+ * @property exceptionType safe bounded JVM exception class name, or `null` when unavailable or unsafe
  */
 data class SnapshotCacheFailure(
     val storeId: SnapshotStoreId,
@@ -121,8 +122,11 @@ internal fun failureFromException(
     operation = operation,
     outcome = SnapshotCacheOutcome.FAILED,
     affectedCount = affectedCount,
-    exceptionType = exception.javaClass.name,
+    exceptionType = sanitizeExceptionType(exception.javaClass.name),
 )
+
+internal fun sanitizeExceptionType(exceptionType: String): String? =
+    exceptionType.takeIf { it.length <= MAX_EXCEPTION_TYPE_LENGTH && it.isJvmClassName() }
 
 private class BoundedSnapshotCacheFailureBuffer(
     override val capacity: Int,
@@ -165,7 +169,7 @@ private class BoundedSnapshotCacheFailureBuffer(
                     deliveredCount = delivered,
                     observerFailedCount = 1,
                     remainingCount = size,
-                    observerExceptionType = exception.javaClass.name,
+                    observerExceptionType = sanitizeExceptionType(exception.javaClass.name),
                 )
             }
         }
@@ -180,10 +184,25 @@ private fun String.validateExceptionType() {
     require(length <= MAX_EXCEPTION_TYPE_LENGTH) {
         "exceptionType length[$length] must not exceed $MAX_EXCEPTION_TYPE_LENGTH."
     }
-    require(EXCEPTION_TYPE_PATTERN.matches(this)) {
+    require(isJvmClassName()) {
         "exceptionType must be a fully qualified JVM class name."
     }
 }
 
 private const val MAX_EXCEPTION_TYPE_LENGTH: Int = 512
-private val EXCEPTION_TYPE_PATTERN = Regex("[A-Za-z_$][A-Za-z0-9_$]*(\\.[A-Za-z_$][A-Za-z0-9_$]*)*")
+
+private fun String.isJvmClassName(): Boolean = split('.').all { it.isJvmIdentifier() }
+
+private fun String.isJvmIdentifier(): Boolean {
+    if (isEmpty()) return false
+    var offset = 0
+    val first = codePointAt(offset)
+    if (!Character.isJavaIdentifierStart(first)) return false
+    offset += Character.charCount(first)
+    while (offset < length) {
+        val codePoint = codePointAt(offset)
+        if (!Character.isJavaIdentifierPart(codePoint)) return false
+        offset += Character.charCount(codePoint)
+    }
+    return true
+}

@@ -157,7 +157,14 @@ interface AsyncSnapshotInvalidationStore<ID : Any> {
     /** Measures the encoded invalidation payload for [id]. */
     fun measure(id: ID): MeasuredInvalidation<ID>
 
-    /** Submits one measured invalidation [batch]. */
+    /**
+     * Submits one measured invalidation [batch].
+     *
+     * An ordinary exceptional completion is converted into a sanitized failure event. A fatal [Error] completion
+     * remains exceptional on the completion-stage chain and is never converted into a failure event. Generic
+     * [CompletionStage] semantics do not provide a synchronous caller-thread escape guarantee for asynchronous
+     * failures.
+     */
     fun submitInvalidation(batch: List<MeasuredInvalidation<ID>>): CompletionStage<SnapshotCacheApplyReport>
 }
 
