@@ -551,11 +551,11 @@ Important, or Minor findings.
 - Modify: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/repository/RedissonRepositoryCodecSafetyTest.kt`
 - Create: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotRedissonApiUsageTest.kt`
 
-- [ ] Write failing golden-vector tests: signed Long uses exactly 8 big-endian bytes; UUID uses exactly 16 bytes, most-significant then least-significant bits, big-endian. Reject String and unsupported ID types.
-- [ ] Write configuration tests for all positive caps/timeouts and `trustedBinaryCache = false` default. In separate parameterized tests, allow only `SyncStrategy.INVALIDATE` (reject `UPDATE` and multi-node `NONE`) and only `ReconnectionStrategy.CLEAR` (reject every other enum value, including `NONE`/`LOAD`). Use existing `ExposedRedissonCodecSafety`: reject Fory, Kryo, and JDK object codecs by default; permit them only with explicit trusted-binary opt-in.
-- [ ] Write fingerprint tests covering only a canonical UTF-8, line-delimited, field-name-sorted allowlist: backend, namespace, key raw class, snapshot raw class, schema version, codec class/version, sync strategy, and canonical key-encoding ID. Prove endpoints, usernames, credentials, tuning values, and arbitrary `toString()` output are excluded.
-- [ ] Run targeted tests and confirm red.
-- [ ] Implement the exact public codec API and validate `codecVersion` with `[A-Za-z0-9._-]{1,64}`:
+- [x] Write failing golden-vector tests: signed Long uses exactly 8 big-endian bytes; UUID uses exactly 16 bytes, most-significant then least-significant bits, big-endian. Reject String and unsupported ID types.
+- [x] Write configuration tests for all positive caps/timeouts and `trustedBinaryCache = false` default. In separate parameterized tests, allow only `SyncStrategy.INVALIDATE` (reject `UPDATE` and multi-node `NONE`) and only `ReconnectionStrategy.CLEAR` (reject every other enum value, including `NONE`/`LOAD`). Use existing `ExposedRedissonCodecSafety`: reject Fory, Kryo, and JDK object codecs by default; permit them only with explicit trusted-binary opt-in.
+- [x] Write fingerprint tests covering only a canonical UTF-8, line-delimited, field-name-sorted allowlist: backend, namespace, key raw class, snapshot raw class, schema version, codec class/version, sync strategy, and canonical key-encoding ID. Prove endpoints, usernames, credentials, tuning values, and arbitrary `toString()` output are excluded.
+- [x] Run targeted tests and confirm red.
+- [x] Implement the exact public codec API and validate `codecVersion` with `[A-Za-z0-9._-]{1,64}`:
 
 ```kotlin
 sealed interface SnapshotIdentifierPolicy<ID : Any>
@@ -574,10 +574,10 @@ fun <ID : Any> snapshotRedissonCodec(
 ): SnapshotRedissonCodec<ID>
 ```
 
-- [ ] Add a direct `Codec` overload to `ExposedRedissonCodecSafety` and test it. Require the same wrapper instance in the existing repository's `RedissonCacheConfig.codec` and the invalidator; `AbstractJdbcRedissonRepository`/`AbstractSuspendedJdbcRedissonRepository` already pass `config.codec` to their map construction, so add source-usage tests proving their local-cached map receives the wrapper without changing those classes unless the test reveals a gap.
-- [ ] Route every delegate codec through `ExposedRedissonCodecSafety`. Document that trusted-binary opt-in is only for isolated data where all writers and payloads are trusted.
-- [ ] Implement `JdbcRedissonSnapshotInvalidatorConfig` exactly as approved, including encoded key/batch/commit caps and outstanding chunk/byte limits.
-- [ ] Use this exact public configuration declaration and defaults:
+- [x] Add a direct `Codec` overload to `ExposedRedissonCodecSafety` and test it. Require the same wrapper instance in the existing repository's `RedissonCacheConfig.codec` and the invalidator; `AbstractJdbcRedissonRepository`/`AbstractSuspendedJdbcRedissonRepository` already pass `config.codec` to their map construction, so add source-usage tests proving their local-cached map receives the wrapper without changing those classes unless the test reveals a gap.
+- [x] Route every delegate codec through `ExposedRedissonCodecSafety`. Document that trusted-binary opt-in is only for isolated data where all writers and payloads are trusted.
+- [x] Implement `JdbcRedissonSnapshotInvalidatorConfig` exactly as approved, including encoded key/batch/commit caps and outstanding chunk/byte limits.
+- [x] Use this exact public configuration declaration and defaults:
 
 ```kotlin
 data class JdbcRedissonSnapshotInvalidatorConfig(
@@ -598,10 +598,10 @@ data class JdbcRedissonSnapshotInvalidatorConfig(
 )
 ```
 
-- [ ] Document that identifiers must be non-secret, non-credential, non-PII surrogate keys.
-- [ ] Compile `longSnapshotIdentifierPolicy`, `uuidSnapshotIdentifierPolicy`, and `snapshotRedissonCodec` source usage; include an API contract assertion that no String identifier policy/factory is present.
-- [ ] Re-run targeted tests.
-- [ ] Commit with Lore trailers:
+- [x] Document that identifiers must be non-secret, non-credential, non-PII surrogate keys.
+- [x] Compile `longSnapshotIdentifierPolicy`, `uuidSnapshotIdentifierPolicy`, and `snapshotRedissonCodec` source usage; include an API contract assertion that no String identifier policy/factory is present.
+- [x] Re-run targeted tests.
+- [x] Commit with Lore trailers:
 
 ```text
 Pin distributed invalidation to canonical identifier bytes
@@ -612,6 +612,16 @@ Confidence: high
 Scope-risk: moderate
 Tested: Redisson codec golden vectors, configuration, and fingerprint tests
 ```
+
+Task 7 evidence: commits `2382cc3`, `f89141a`, `c3c7afd`, and `bd50cc8`
+implement the exact three-argument public codec factory, canonical Long/UUID key
+bytes, deterministic allowlisted fingerprinting, and consumer-owned binary-codec
+trust. Redisson 4.6.1 repository-relevant delegate wrappers are traversed with
+identity-cycle and 64-node bounds; supported-wrapper inspection drift fails
+closed while reviewed unknown codecs remain usable. Targeted Task 7 tests passed
+78/78, the full JDBC Redisson module passed 523 tests with one existing skip,
+main/test compilation and root detekt passed, and independent spec and quality
+reviews reported P0=0, P1=0, P2=0, P3=0.
 
 ## Task 8: Implement bounded non-blocking Redisson invalidation and failure handling
 
