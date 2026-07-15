@@ -100,15 +100,19 @@ class SnapshotCacheStoreTest {
         val executor = TrackedExecutor(threadCount = 2)
 
         try {
-            val claims = List(2) {
+            val claimAttempts = List(2) {
                 executor.submit {
                     start.await()
-                    runCatching { registry.claim(miss) }.getOrNull()
+                    runCatching { registry.claim(miss) }
                 }
             }
 
             start.countDown()
-            claims.map { it.get(5, TimeUnit.SECONDS) }.count { it != null } shouldBeEqualTo 1
+            val claimResults = claimAttempts.map { it.get(5, TimeUnit.SECONDS) }
+            claimResults.count { it.isSuccess } shouldBeEqualTo 1
+            val claimFailures = claimResults.mapNotNull { it.exceptionOrNull() }
+            claimFailures.size shouldBeEqualTo 1
+            claimFailures.single().javaClass shouldBeEqualTo IllegalStateException::class.java
         } finally {
             start.countDown()
             executor.close()
@@ -125,17 +129,21 @@ class SnapshotCacheStoreTest {
         val executor = TrackedExecutor(threadCount = 2)
 
         try {
-            val mutations = List(2) { contender ->
+            val prepareAttempts = List(2) { contender ->
                 executor.submit {
                     start.await()
                     runCatching {
                         claimed.prepare(CacheSnapshot(Payload("loaded-$contender")))
-                    }.getOrNull()
+                    }
                 }
             }
 
             start.countDown()
-            mutations.map { it.get(5, TimeUnit.SECONDS) }.count { it != null } shouldBeEqualTo 1
+            val prepareResults = prepareAttempts.map { it.get(5, TimeUnit.SECONDS) }
+            prepareResults.count { it.isSuccess } shouldBeEqualTo 1
+            val prepareFailures = prepareResults.mapNotNull { it.exceptionOrNull() }
+            prepareFailures.size shouldBeEqualTo 1
+            prepareFailures.single().javaClass shouldBeEqualTo IllegalStateException::class.java
         } finally {
             start.countDown()
             executor.close()
