@@ -5,6 +5,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
+import io.bluetape4k.exposed.redisson.repository.ExposedRedissonCodecSafety
 import io.bluetape4k.redis.redisson.codec.RedissonCodecs
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -102,18 +103,24 @@ class SnapshotRedissonCodecTest {
     }
 
     @Test
-    fun `binary delegate codecs require explicit trusted isolated opt-in`() {
+    fun `binary delegate trust is decided independently at each consumer boundary`() {
         listOf(RedissonCodecs.Fory, RedissonCodecs.Kryo5, RedissonCodecs.Jdk).forEach { delegate ->
+            val codec = snapshotRedissonCodec(delegate, "v1", longSnapshotIdentifierPolicy())
+
             assertFailsWith<IllegalArgumentException> {
-                snapshotRedissonCodec(delegate, "v1", longSnapshotIdentifierPolicy())
+                ExposedRedissonCodecSafety.requireSafe(codec, trustedBinaryCache = false)
             }
-            snapshotRedissonCodec(
-                delegate = delegate,
-                codecVersion = "v1",
-                identifierPolicy = longSnapshotIdentifierPolicy(),
-                trustedBinaryCache = true,
-            ).codecVersion shouldBeEqualTo "v1"
+            ExposedRedissonCodecSafety.requireSafe(codec, trustedBinaryCache = true)
         }
+    }
+
+    @Test
+    fun `invalidator configuration revalidates wrapper delegate with its own trust authority`() {
+        val codec = snapshotRedissonCodec(RedissonCodecs.Kryo5, "kryo-v1", longSnapshotIdentifierPolicy())
+        val config = JdbcRedissonSnapshotInvalidatorConfig(snapshotConfig())
+
+        assertFailsWith<IllegalArgumentException> { config.requireSafeCodec(codec) }
+        config.copy(trustedBinaryCache = true).requireSafeCodec(codec)
     }
 
     @Test

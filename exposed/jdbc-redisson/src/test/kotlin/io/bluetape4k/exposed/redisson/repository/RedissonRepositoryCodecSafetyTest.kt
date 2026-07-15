@@ -71,6 +71,40 @@ class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
         verify(exactly = 1) { client.getLocalCachedMap(any<LocalCachedMapOptions<Long, UserRecord?>>()) }
     }
 
+    @Test
+    fun `jdbc repository independently rejects an unsafe delegate hidden by snapshot wrapper`() {
+        val codec = snapshotRedissonCodec(RedissonCodecs.Jdk, "jdk-v1", longSnapshotIdentifierPolicy())
+
+        assertFailsWith<IllegalArgumentException> {
+            TestJdbcRepository(
+                mockk<RedissonClient>(),
+                RedissonCacheConfig.READ_ONLY.copy(codec = codec),
+            )
+        }
+        TestJdbcRepository(
+            mockk<RedissonClient>(),
+            RedissonCacheConfig.READ_ONLY.copy(codec = codec),
+            trustedBinaryCache = true,
+        )
+    }
+
+    @Test
+    fun `suspended repository independently rejects an unsafe delegate hidden by snapshot wrapper`() {
+        val codec = snapshotRedissonCodec(RedissonCodecs.Fory, "fory-v1", longSnapshotIdentifierPolicy())
+
+        assertFailsWith<IllegalArgumentException> {
+            TestSuspendedRepository(
+                mockk<RedissonClient>(),
+                RedissonCacheConfig.READ_ONLY.copy(codec = codec),
+            )
+        }
+        TestSuspendedRepository(
+            mockk<RedissonClient>(),
+            RedissonCacheConfig.READ_ONLY.copy(codec = codec),
+            trustedBinaryCache = true,
+        )
+    }
+
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `jdbc repository rejects redisson binary codecs by default`(testDB: TestDB) {
@@ -108,7 +142,8 @@ class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
     private class TestJdbcRepository(
         client: RedissonClient,
         config: RedissonCacheConfig,
-    ): AbstractJdbcRedissonRepository<Long, UserRecord>(client, config) {
+        trustedBinaryCache: Boolean = false,
+    ): AbstractJdbcRedissonRepository<Long, UserRecord>(client, config, trustedBinaryCache) {
         override val table: UserTable = UserTable
         override fun ResultRow.toEntity(): UserRecord = error("not used")
         override fun extractId(entity: UserRecord): Long = entity.id
@@ -120,7 +155,8 @@ class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
     private class TestSuspendedRepository(
         client: RedissonClient,
         config: RedissonCacheConfig,
-    ): AbstractSuspendedJdbcRedissonRepository<Long, UserRecord>(client, config) {
+        trustedBinaryCache: Boolean = false,
+    ): AbstractSuspendedJdbcRedissonRepository<Long, UserRecord>(client, config, trustedBinaryCache) {
         override val table: UserTable = UserTable
         override fun ResultRow.toEntity(): UserRecord = error("not used")
         override fun extractId(entity: UserRecord): Long = entity.id

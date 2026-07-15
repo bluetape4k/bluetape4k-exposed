@@ -75,7 +75,7 @@ class SnapshotNamespaceFingerprintTest {
         val variants = listOf(
             snapshotNamespaceFingerprint("other", "orders-snapshot:v1", Long::class.java, Payload::class.java, "orders-v3", codec, LocalCachedMapOptions.SyncStrategy.INVALIDATE),
             snapshotNamespaceFingerprint("redisson", "other-snapshot:v1", Long::class.java, Payload::class.java, "orders-v3", codec, LocalCachedMapOptions.SyncStrategy.INVALIDATE),
-            snapshotNamespaceFingerprint("redisson", "orders-snapshot:v1", java.lang.Long::class.java, Payload::class.java, "orders-v3", codec, LocalCachedMapOptions.SyncStrategy.INVALIDATE),
+            snapshotNamespaceFingerprint("redisson", "orders-snapshot:v1", Class.forName("java.lang.Long"), Payload::class.java, "orders-v3", codec, LocalCachedMapOptions.SyncStrategy.INVALIDATE),
             snapshotNamespaceFingerprint("redisson", "orders-snapshot:v1", Long::class.java, OtherPayload::class.java, "orders-v3", codec, LocalCachedMapOptions.SyncStrategy.INVALIDATE),
             snapshotNamespaceFingerprint("redisson", "orders-snapshot:v1", Long::class.java, Payload::class.java, "orders-v4", codec, LocalCachedMapOptions.SyncStrategy.INVALIDATE),
             fingerprint(snapshotRedissonCodec(StringCodec(), "json-v2", longSnapshotIdentifierPolicy()), Payload::class.java),

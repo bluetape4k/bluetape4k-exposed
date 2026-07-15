@@ -1,6 +1,6 @@
 package io.bluetape4k.exposed.redisson.snapshot
 
-import io.bluetape4k.exposed.redisson.repository.ExposedRedissonCodecSafety
+import io.bluetape4k.exposed.redisson.repository.ExposedRedissonDelegatingCodec
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
 import org.redisson.client.codec.Codec
@@ -20,34 +20,19 @@ sealed interface SnapshotRedissonCodec<ID : Any> : Codec {
 }
 
 /**
- * Wraps [delegate] with canonical map-key encoding and the default untrusted-binary safety policy.
+ * Wraps [delegate] with canonical map-key encoding.
  *
  * Identifiers must be non-secret, non-credential, non-PII surrogate keys. Fory, Kryo, and JDK object serialization
- * delegates are rejected by default.
+ * delegates remain subject to each repository or invalidator consumer's independent trusted-binary safety decision.
  */
 fun <ID : Any> snapshotRedissonCodec(
     delegate: Codec,
     codecVersion: String,
     identifierPolicy: SnapshotIdentifierPolicy<ID>,
-): SnapshotRedissonCodec<ID> =
-    snapshotRedissonCodec(delegate, codecVersion, identifierPolicy, trustedBinaryCache = false)
-
-/**
- * Wraps [delegate] with canonical map-key encoding and an explicit binary-codec trust decision.
- *
- * Set [trustedBinaryCache] only for isolated cache data where every writer and every payload is trusted. This opt-in
- * does not make a binary codec safe for shared, untrusted, or externally writable Redis data.
- */
-fun <ID : Any> snapshotRedissonCodec(
-    delegate: Codec,
-    codecVersion: String,
-    identifierPolicy: SnapshotIdentifierPolicy<ID>,
-    trustedBinaryCache: Boolean,
 ): SnapshotRedissonCodec<ID> {
     require(CODEC_VERSION_PATTERN.matches(codecVersion)) {
         "codecVersion[$codecVersion] must match ${CODEC_VERSION_PATTERN.pattern}."
     }
-    ExposedRedissonCodecSafety.requireSafe(delegate, trustedBinaryCache)
     val canonicalPolicy = identifierPolicy as? CanonicalSnapshotIdentifierPolicy<ID>
         ?: throw IllegalArgumentException("Unsupported snapshot identifier policy implementation.")
     return DefaultSnapshotRedissonCodec(delegate, codecVersion, canonicalPolicy)
@@ -74,12 +59,12 @@ private fun SnapshotRedissonCodec<*>.internals(): SnapshotRedissonCodecInternals
         ?: throw IllegalArgumentException("Unsupported snapshot Redisson codec implementation.")
 
 private class DefaultSnapshotRedissonCodec<ID : Any>(
-    private val delegate: Codec,
+    override val delegateCodec: Codec,
     override val codecVersion: String,
     private val identifierPolicy: CanonicalSnapshotIdentifierPolicy<ID>,
-) : SnapshotRedissonCodec<ID>, SnapshotRedissonCodecInternals {
+) : SnapshotRedissonCodec<ID>, SnapshotRedissonCodecInternals, ExposedRedissonDelegatingCodec {
 
-    override val delegateClassName: String get() = delegate.javaClass.name
+    override val delegateClassName: String get() = delegateCodec.javaClass.name
     override val canonicalKeyEncodingId: String get() = identifierPolicy.keyEncodingId
     override fun encodeIdentifier(value: Any): ByteArray = identifierPolicy.encodeAny(value)
     override fun decodeIdentifier(bytes: ByteArray): Any = identifierPolicy.decode(bytes)
@@ -93,13 +78,13 @@ private class DefaultSnapshotRedissonCodec<ID : Any>(
         decodeIdentifier(bytes)
     }
 
-    override fun getMapValueDecoder(): Decoder<Any> = delegate.mapValueDecoder
-    override fun getMapValueEncoder(): Encoder = delegate.mapValueEncoder
+    override fun getMapValueDecoder(): Decoder<Any> = delegateCodec.mapValueDecoder
+    override fun getMapValueEncoder(): Encoder = delegateCodec.mapValueEncoder
     override fun getMapKeyDecoder(): Decoder<Any> = canonicalMapKeyDecoder
     override fun getMapKeyEncoder(): Encoder = canonicalMapKeyEncoder
-    override fun getValueDecoder(): Decoder<Any> = delegate.valueDecoder
-    override fun getValueEncoder(): Encoder = delegate.valueEncoder
-    override fun getClassLoader(): ClassLoader = delegate.classLoader
+    override fun getValueDecoder(): Decoder<Any> = delegateCodec.valueDecoder
+    override fun getValueEncoder(): Encoder = delegateCodec.valueEncoder
+    override fun getClassLoader(): ClassLoader = delegateCodec.classLoader
 }
 
 private val CODEC_VERSION_PATTERN = Regex("[A-Za-z0-9._-]{1,64}")

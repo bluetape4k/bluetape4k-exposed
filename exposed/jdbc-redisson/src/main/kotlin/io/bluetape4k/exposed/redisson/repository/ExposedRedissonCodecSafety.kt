@@ -29,7 +29,8 @@ object ExposedRedissonCodecSafety {
         this in trustedBinaryCodecs ||
                 javaClass.name.contains("Fory", ignoreCase = true) ||
                 javaClass.name.contains("Kryo", ignoreCase = true) ||
-                javaClass.name.contains("SerializationCodec", ignoreCase = true)
+                javaClass.name.contains("SerializationCodec", ignoreCase = true) ||
+                (this as? ExposedRedissonDelegatingCodec)?.delegateCodec?.isTrustedBinaryCodec() == true
 
     private val trustedBinaryCodecs: Set<Codec>
         get() =
@@ -76,4 +77,9 @@ object ExposedRedissonCodecSafety {
                 RedissonCodecs.ZstdForyComposite,
                 RedissonCodecs.ZstdJdkComposite,
             )
+}
+
+/** Internal seam that lets each consumer revalidate the preserved raw delegate with its own trust authority. */
+internal interface ExposedRedissonDelegatingCodec : Codec {
+    val delegateCodec: Codec
 }

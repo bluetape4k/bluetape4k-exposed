@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.redisson.snapshot
 
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
+import io.bluetape4k.exposed.redisson.repository.ExposedRedissonCodecSafety
 import org.redisson.api.options.LocalCachedMapOptions
 import java.io.Serializable
 import java.time.Duration
@@ -78,4 +79,9 @@ data class JdbcRedissonSnapshotInvalidatorConfig(
     companion object {
         private const val serialVersionUID: Long = 1L
     }
+}
+
+/** Applies this invalidator consumer's independent binary-codec trust authority. */
+internal fun JdbcRedissonSnapshotInvalidatorConfig.requireSafeCodec(codec: SnapshotRedissonCodec<*>) {
+    ExposedRedissonCodecSafety.requireSafe(codec, trustedBinaryCache)
 }

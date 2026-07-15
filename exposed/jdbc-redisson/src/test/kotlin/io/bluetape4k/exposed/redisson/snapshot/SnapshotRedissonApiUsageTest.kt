@@ -33,4 +33,18 @@ class SnapshotRedissonApiUsageTest {
         signatures.contains("String").shouldBeFalse()
         SnapshotIdentifierPolicy::class.isSealed.shouldBeTrue()
     }
+
+    @Test
+    fun `public codec factory exposes only the exact three-argument signature`() {
+        val factoryMethods = Class.forName(
+            "io.bluetape4k.exposed.redisson.snapshot.SnapshotRedissonCodecKt",
+        ).declaredMethods.filter { Modifier.isPublic(it.modifiers) && it.name == "snapshotRedissonCodec" }
+
+        factoryMethods.size shouldBeEqualTo 1
+        factoryMethods.single().parameterTypes.toList() shouldBeEqualTo listOf(
+            org.redisson.client.codec.Codec::class.java,
+            String::class.java,
+            SnapshotIdentifierPolicy::class.java,
+        )
+    }
 }
