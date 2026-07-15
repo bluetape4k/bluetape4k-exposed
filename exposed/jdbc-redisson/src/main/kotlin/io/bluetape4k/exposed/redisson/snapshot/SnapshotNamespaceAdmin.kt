@@ -225,7 +225,12 @@ private fun resolveSnapshotNamespaceScriptKeys(
 
 private fun redisClusterSlotTag(key: String): String {
     val open = key.indexOf('{')
-    if (open < 0) return key
+    if (open < 0) {
+        check('}' !in key) {
+            "Mapped snapshot namespace must not contain a stray Redis Cluster hash-tag closing brace."
+        }
+        return key
+    }
     val close = key.indexOf('}', startIndex = open + 1)
     check(close > open + 1) {
         "Mapped snapshot namespace must not contain an empty or malformed first Redis Cluster hash tag."

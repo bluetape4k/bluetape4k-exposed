@@ -110,6 +110,23 @@ class SnapshotNamespaceAdminTest {
     }
 
     @Test
+    fun `stray closing brace in mapped namespace fails before script and map access`() {
+        val mapper = object : NameMapper {
+            override fun map(name: String): String = if (name == NAMESPACE) "prefix}suffix" else name
+            override fun unmap(name: String): String = name
+        }
+        val admin = RecordingAdmin(mapper).apply {
+            scriptReturns(markerState(MARKER_ABSENT, mapExists = false))
+        }
+
+        assertFailsWith<IllegalStateException> {
+            verifyOrClaimSnapshotNamespace(admin.client, NAMESPACE, FINGERPRINT, Duration.ofSeconds(2))
+        }
+
+        admin.events shouldBeEqualTo emptyList()
+    }
+
+    @Test
     fun `maximum nanosecond-representable timeout remains a valid bounded input`() {
         val admin = RecordingAdmin().apply {
             scriptReturns(markerState(MARKER_ABSENT, mapExists = false))
