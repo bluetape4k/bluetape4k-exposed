@@ -32,6 +32,7 @@ import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.function.BiConsumer
 import kotlin.reflect.KClass
@@ -421,6 +422,48 @@ class JdbcRedissonSnapshotInvalidatorTest {
         )
         map.submittedIds shouldBeEqualTo listOf(listOf(1L), listOf(2L))
         invalidator.quotaHealth() shouldBeEqualTo SnapshotInvalidationQuotaHealth(1, 0, 8, 0, 0, false)
+        invalidator.failureBuffer.size shouldBeEqualTo 0
+    }
+
+    @Test
+    fun `synchronous submission error escapes unchanged releases lease and stops later chunks`() {
+        val fatal = FatalSubmissionError()
+        val map = RecordingLocalMap<Long>()
+            .thenThrow(fatal)
+            .thenReturn(completedRFuture(1L))
+        val invalidator = newInvalidator(
+            codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy()),
+            config = config(maxBatchEncodedKeyBytes = 8, maxOutstandingChunks = 1, maxOutstandingEncodedBytes = 8),
+            map = map,
+        )
+
+        val thrown = assertFailsWith<FatalSubmissionError> {
+            invalidator.submitInvalidation(listOf(invalidator.measure(1L), invalidator.measure(2L)))
+        }
+
+        (thrown === fatal).shouldBeTrue()
+        map.submittedIds shouldBeEqualTo listOf(listOf(1L))
+        invalidator.quotaHealth() shouldBeEqualTo SnapshotInvalidationQuotaHealth(1, 0, 8, 0, 0, false)
+        invalidator.failureBuffer.size shouldBeEqualTo 0
+    }
+
+    @Test
+    fun `synchronous callback registration error escapes unchanged and releases lease`() {
+        val fatal = FatalSubmissionError()
+        val map = RecordingLocalMap<Long>().thenReturn(throwingWhenCompleteRFuture(fatal))
+        val invalidator = newInvalidator(
+            codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy()),
+            config = config(maxBatchEncodedKeyBytes = 8, maxOutstandingChunks = 1, maxOutstandingEncodedBytes = 8),
+            map = map,
+        )
+
+        val thrown = assertFailsWith<FatalSubmissionError> {
+            invalidator.submitInvalidation(listOf(invalidator.measure(1L)))
+        }
+
+        (thrown === fatal).shouldBeTrue()
+        invalidator.quotaHealth() shouldBeEqualTo SnapshotInvalidationQuotaHealth(1, 0, 8, 0, 0, false)
+        invalidator.failureBuffer.size shouldBeEqualTo 0
     }
 
     @Test
@@ -443,6 +486,27 @@ class JdbcRedissonSnapshotInvalidatorTest {
             SnapshotCacheOutcome.FAILED,
             SnapshotCacheOutcome.SUCCESS,
         )
+        invalidator.quotaHealth() shouldBeEqualTo SnapshotInvalidationQuotaHealth(1, 0, 8, 0, 0, false)
+        invalidator.failureBuffer.size shouldBeEqualTo 0
+    }
+
+    @Test
+    fun `asynchronous error remains exceptional without direct failure recording`() {
+        val fatal = FatalSubmissionError()
+        val exceptional = CompletableFuture<Long>().apply { completeExceptionally(fatal) }
+        val map = RecordingLocalMap<Long>().thenReturn(rFuture(exceptional))
+        val invalidator = newInvalidator(
+            codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy()),
+            config = config(maxBatchEncodedKeyBytes = 8, maxOutstandingChunks = 1, maxOutstandingEncodedBytes = 8),
+            map = map,
+        )
+
+        val completion = invalidator.submitInvalidation(listOf(invalidator.measure(1L)))
+        val thrown = assertFailsWith<ExecutionException> {
+            completion.toCompletableFuture().get(5, TimeUnit.SECONDS)
+        }
+
+        (thrown.cause === fatal).shouldBeTrue()
         invalidator.quotaHealth() shouldBeEqualTo SnapshotInvalidationQuotaHealth(1, 0, 8, 0, 0, false)
         invalidator.failureBuffer.size shouldBeEqualTo 0
     }
@@ -650,12 +714,26 @@ class JdbcRedissonSnapshotInvalidatorTest {
             behaviors += { future }
         }
 
-        fun thenThrow(exception: RuntimeException): RecordingLocalMap<ID> = apply {
-            behaviors += { throw exception }
+        fun thenThrow(failure: Throwable): RecordingLocalMap<ID> = apply {
+            behaviors += { throw failure }
         }
     }
 
     private fun completedRFuture(value: Long): RFuture<Long> = rFuture(CompletableFuture.completedFuture(value))
+
+    @Suppress("UNCHECKED_CAST")
+    private fun throwingWhenCompleteRFuture(failure: Error): RFuture<Long> = Proxy.newProxyInstance(
+        RFuture::class.java.classLoader,
+        arrayOf(RFuture::class.java),
+    ) { instance, method, args ->
+        when (method.name) {
+            "whenComplete" -> throw failure
+            "equals" -> instance === args.orEmpty().singleOrNull()
+            "hashCode" -> System.identityHashCode(instance)
+            "toString" -> "ThrowingWhenCompleteRFuture"
+            else -> method.invoke(CompletableFuture<Long>(), *args.orEmpty())
+        }
+    } as RFuture<Long>
 
     @Suppress("UNCHECKED_CAST")
     private fun rFuture(
@@ -700,6 +778,8 @@ class JdbcRedissonSnapshotInvalidatorTest {
     private class NonSerializable
 
     private class SubmissionFailure : RuntimeException()
+
+    private class FatalSubmissionError : Error()
 
     private class MapConstructionFailure : RuntimeException()
 }

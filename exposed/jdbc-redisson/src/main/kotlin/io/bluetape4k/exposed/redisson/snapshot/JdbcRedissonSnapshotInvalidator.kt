@@ -147,7 +147,7 @@ class JdbcRedissonSnapshotInvalidator<ID : Any> internal constructor(
             }
         } catch (error: Error) {
             lease.release()
-            if (completionClaimed.compareAndSet(false, true)) collector.fail(error)
+            throw error
         } catch (exception: Exception) {
             lease.release()
             if (completionClaimed.compareAndSet(false, true)) {

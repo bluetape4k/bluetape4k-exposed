@@ -314,6 +314,79 @@ class JdbcRedissonSnapshotTransactionTest {
     }
 
     @Test
+    fun `synchronous fatal submission escapes committed drain without sanitization or later phases`() {
+        val events = mutableListOf<String>()
+        val quotaRegistry = RedissonInvalidationQuotaRegistry()
+        val fatalBuffer = snapshotCacheFailureBuffer(4)
+        val laterBuffer = snapshotCacheFailureBuffer(4)
+        val fatalError = FatalSubmissionError("redis://secret.example/identifier-1")
+        val fatalMap = RecordingLocalMap<Long>("fatal", events).thenThrow(fatalError)
+        val laterMap = RecordingLocalMap<Long>("later", events)
+        val fatal = testInvalidator(
+            "fatal:v1",
+            fatalMap,
+            RecordingRedissonClient(fatalMap.proxy).proxy,
+            quotaRegistry,
+            fatalBuffer,
+            events,
+            "fatal",
+        )
+        val later = testInvalidator(
+            "later-after-fatal:v1",
+            laterMap,
+            RecordingRedissonClient(laterMap.proxy).proxy,
+            quotaRegistry,
+            laterBuffer,
+            events,
+            "later",
+        )
+        val local = RecordingSnapshotStore(events)
+
+        val thrown = assertFailsWith<FatalSubmissionError> {
+            transaction(database()) {
+                maxAttempts = 1
+                stageInvalidation(fatal, 1L)
+                stageInvalidation(later, 2L)
+                stageInvalidationMutation(this, TestJdbcBridge, local, 3L)
+                events.clear()
+            }
+        }
+
+        (thrown === fatalError).shouldBeTrue()
+        events shouldBeEqualTo listOf("fatal:verify:1", "fatal:submit:1")
+        fatal.quotaHealth() shouldBeEqualTo SnapshotInvalidationQuotaHealth(1, 0, 8, 0, 0, false)
+        fatalBuffer.size shouldBeEqualTo 0
+        laterMap.submittedIds.shouldBeEqualTo(emptyList())
+        laterBuffer.size shouldBeEqualTo 0
+        local.failureBuffer.size shouldBeEqualTo 0
+    }
+
+    @Test
+    fun `asynchronous fatal completion remains exceptional without a failure event`() {
+        val fatalError = FatalSubmissionError("redis://secret.example/identifier-9")
+        val exceptional = CompletableFuture<Long>().apply { completeExceptionally(fatalError) }
+        val map = RecordingLocalMap<Long>().thenReturn(rFuture(exceptional))
+        val buffer = snapshotCacheFailureBuffer(4)
+        val invalidator = testInvalidator(
+            "async-fatal:v1",
+            map,
+            RecordingRedissonClient(map.proxy).proxy,
+            RedissonInvalidationQuotaRegistry(),
+            buffer,
+            mutableListOf(),
+            "async-fatal",
+        )
+
+        transaction(database()) {
+            maxAttempts = 1
+            stageInvalidation(invalidator, 9L)
+        }
+
+        invalidator.quotaHealth() shouldBeEqualTo SnapshotInvalidationQuotaHealth(1, 0, 8, 0, 0, false)
+        buffer.size shouldBeEqualTo 0
+    }
+
+    @Test
     fun `duplicate exceptional completion records one sanitized event and releases quota once`() {
         val buffer = snapshotCacheFailureBuffer(4)
         val exceptional = CompletableFuture<Long>().apply {
@@ -569,8 +642,8 @@ class JdbcRedissonSnapshotTransactionTest {
             behaviors += { future }
         }
 
-        fun thenThrow(exception: RuntimeException): RecordingLocalMap<ID> = apply {
-            behaviors += { throw exception }
+        fun thenThrow(failure: Throwable): RecordingLocalMap<ID> = apply {
+            behaviors += { throw failure }
         }
     }
 
@@ -583,6 +656,7 @@ class JdbcRedissonSnapshotTransactionTest {
     private class RollbackMarker : RuntimeException()
     private class SubmissionFailure(message: String? = null) : RuntimeException(message)
     private class ObserverFailure(message: String) : RuntimeException(message)
+    private class FatalSubmissionError(message: String) : Error(message)
 
     private companion object {
         @Suppress("UNCHECKED_CAST")
