@@ -469,13 +469,13 @@ during a forced full rerun and passed immediately in isolated rerun.
 - Create: `exposed/r2dbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcSnapshotTransactionTest.kt`
 - Create: `exposed/r2dbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcSnapshotCacheApiUsageTest.kt`
 
-- [ ] Port the JDBC contract tests first, replacing only the transaction engine and preserving the same opaque miss/fence/coordinator assertions.
-- [ ] Add H2 R2DBC commit/rollback tests and an SQL-write counter proving post-commit cache work is cache-only.
-- [ ] Repeat the engine-real lifecycle—including preceding throwing `afterCommit`, `beforeRollback`, and `afterRollback` callbacks—nesting, callback-time staging, interceptor-ordering/non-accumulation, invalidation retry, and fresh-miss outer fill retry cases from Task 4 for R2DBC. Assert zero cache mutation and transaction-GC-bounded retention when an earlier callback skips ours.
-- [ ] Repeat the public capacity/error-timing tests: full registry fails at lookup before R2DBC work and mapper failure consumes the token.
-- [ ] Add a conditional unknown-physical-commit/cancellation proof seam. If Exposed offers no injectable commit seam, capture source/bytecode evidence plus a focused contract test showing no `afterCommit`/cache event and do not label the outcome rollback.
-- [ ] Run the two targeted R2DBC tests and confirm red.
-- [ ] Implement:
+- [x] Port the JDBC contract tests first, replacing only the transaction engine and preserving the same opaque miss/fence/coordinator assertions.
+- [x] Add H2 R2DBC commit/rollback tests and an SQL-write counter proving post-commit cache work is cache-only.
+- [x] Repeat the engine-real lifecycle—including preceding throwing `afterCommit`, `beforeRollback`, and `afterRollback` callbacks—nesting, callback-time staging, interceptor-ordering/non-accumulation, invalidation retry, and fresh-miss outer fill retry cases from Task 4 for R2DBC. Assert zero cache mutation and transaction-GC-bounded retention when an earlier callback skips ours.
+- [x] Repeat the public capacity/error-timing tests: full registry fails at lookup before R2DBC work and mapper failure consumes the token.
+- [x] Add a conditional unknown-physical-commit/cancellation proof seam. If Exposed offers no injectable commit seam, capture source/bytecode evidence plus a focused contract test showing no `afterCommit`/cache event and do not label the outcome rollback.
+- [x] Run the two targeted R2DBC tests and confirm red.
+- [x] Implement:
 
 ```kotlin
 fun <ID : Any, V : Serializable> r2dbcCaffeineSnapshotCache(
@@ -514,10 +514,10 @@ fun <ID : Any, V : Serializable> R2dbcTransaction.stageInvalidation(
 )
 ```
 
-- [ ] Keep constructors internal, prove explicit-token and reified factories preserve the caller-supplied failure-buffer identity, and compile the README-equivalent usage in `R2dbcSnapshotCacheApiUsageTest`. Assert JDBC engine types do not leak into this module.
-- [ ] Use the same common coordinator and cache-only implementation; do not introduce `runBlocking`, a scheduler, or a worker thread.
-- [ ] Run `./gradlew :bluetape4k-exposed-r2dbc-caffeine:test --no-daemon` and compare API behavior with the JDBC contract.
-- [ ] Commit with Lore trailers:
+- [x] Keep constructors internal, prove explicit-token and reified factories preserve the caller-supplied failure-buffer identity, and compile the README-equivalent usage in `R2dbcSnapshotCacheApiUsageTest`. Assert JDBC engine types do not leak into this module.
+- [x] Use the same common coordinator and cache-only implementation; do not introduce `runBlocking`, a scheduler, or a worker thread.
+- [x] Run `./gradlew :bluetape4k-exposed-r2dbc-caffeine:test --no-daemon` and compare API behavior with the JDBC contract.
+- [x] Commit with Lore trailers:
 
 ```text
 Keep R2DBC snapshot visibility aligned with JDBC commits
@@ -528,6 +528,15 @@ Confidence: high
 Scope-risk: moderate
 Tested: R2DBC Caffeine unit, transaction, H2, and concurrency tests
 ```
+
+Completion evidence: targeted R2DBC contracts 40/40, cache 141/141, and full
+R2DBC Caffeine 106 passed plus one existing pending test. Main/test Kotlin
+compilation completed with zero warnings or errors. The public injected commit
+seam proves `BEFORE_COMMIT -> PHYSICAL_COMMIT_STARTED`, no `AFTER_COMMIT`, caller
+cancellation propagation, and unchanged cache/failure state without calling the
+outcome rollback. Controlled races and every coroutine wait are bounded.
+Independent spec and code-quality reviews reported no remaining Critical,
+Important, or Minor findings.
 
 ## Task 7: Define canonical Redisson identifiers, codec, configuration, and namespace fingerprint
 
