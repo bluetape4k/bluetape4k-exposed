@@ -633,11 +633,11 @@ reviews reported P0=0, P1=0, P2=0, P3=0.
 - Create: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidatorTest.kt`
 - Create: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotTransactionTest.kt`
 
-- [ ] Write failing tests for exact encoded-byte measurement at stage time, canonical re-encode/hash verification at submit time, batch/commit caps, an admission/submission attempt for every chunk before local work, pinned first-client quota configuration, mismatched factory rejection, and invalidation-only Redis commands. With quota smaller than total chunks, rejected chunks and an early synchronous failure must not suppress later stores or local phases.
-- [ ] Add completion-future tests for synchronous pre-future failure, normal completion, exceptional completion, duplicate completion notification, and never-completing future. Assert exactly-once lease release and bounded outstanding counts/bytes.
-- [ ] Add failure-buffer tests: successful completion records nothing; non-success uses non-blocking bounded offer; explicit drain calls the observer on the caller thread; observer exception consumes the event and appears in the structured drain result.
-- [ ] Run targeted tests and confirm red.
-- [ ] Implement the exact public construction/composition surface:
+- [x] Write failing tests for exact encoded-byte measurement at stage time, canonical re-encode/hash verification at submit time, batch/commit caps, an admission/submission attempt for every chunk before local work, pinned first-client quota configuration, mismatched factory rejection, and invalidation-only Redis commands. With quota smaller than total chunks, rejected chunks and an early synchronous failure must not suppress later stores or local phases.
+- [x] Add completion-future tests for synchronous pre-future failure, normal completion, exceptional completion, duplicate completion notification, and never-completing future. Assert exactly-once lease release and bounded outstanding counts/bytes.
+- [x] Add failure-buffer tests: successful completion records nothing; non-success uses non-blocking bounded offer; explicit drain calls the observer on the caller thread; observer exception consumes the event and appears in the structured drain result.
+- [x] Run targeted tests and confirm red.
+- [x] Implement the exact public construction/composition surface:
 
 ```kotlin
 fun <ID : Any, V : Serializable> jdbcRedissonSnapshotInvalidator(
@@ -681,15 +681,15 @@ fun <ID : Any> JdbcTransaction.stageInvalidation(
 )
 ```
 
-- [ ] Keep invalidator constructors internal. Expose only `storeId`, the identical caller-supplied `failureBuffer`, `quotaHealth()`, and transaction invalidation; expose no read or snapshot PUT. Compile explicit-token and reified usage and prove both preserve supplied-buffer identity.
-- [ ] Add a narrow repository-plus-invalidator contract fixture: construct the existing repository `RedissonCacheConfig` and the invalidator with the identical `SnapshotRedissonCodec` object, versioned map namespace, value-type token, caller-owned `RedissonClient`, and identical supplied failure buffer. Before map use, reject every mismatch the exact factory can observe locally: unsupported ID/value tokens, codec safety, invalid configuration, and same-client quota-cap drift. Before mutating transaction state, reject same-transaction store-token, compatibility-fingerprint, and failure-buffer collisions. The exact public factory intentionally accepts no repository contract object, so cross-transaction repository/invalidator namespace, codec, value-token, schema, and configuration mismatch is rejected by Task 9's remote namespace marker before accepting mutations rather than by a partial process-local registry. Keep example-application work for #326.
-- [ ] Implement a per-Redisson-client weak-identity quota registry. The first valid factory pins caps; later mismatches fail before constructing a facade.
-- [ ] Encode and measure every staged ID without retaining raw sensitive IDs in public health/failure reports. Re-encode and verify bytes/hash before submission.
-- [ ] For every chunk in sequence, re-encode, attempt admission, submit only when admitted, structurally record rejection/failure, and continue. Begin local phases only after all chunks/stores received an attempt; all chunks need not be admitted. Attach completion callbacks; never call `await`, `get`, `join`, `runBlocking`, cancellation, an executor, a scheduler, or a worker thread.
-- [ ] Release quota immediately on synchronous submission failure, otherwise in completion callback `finally`. A never-completing future intentionally retains its bounded lease until client replacement.
-- [ ] Expose only the exact structural quota health and the supplied `failureBuffer`; callers drain via `failureBuffer.drainTo(observer)`. Test every health counter transition and saturation/recovery state.
-- [ ] Re-run targeted tests and the full JDBC Redisson unit suite.
-- [ ] Commit with Lore trailers:
+- [x] Keep invalidator constructors internal. Expose only `storeId`, the identical caller-supplied `failureBuffer`, `quotaHealth()`, and transaction invalidation; expose no read or snapshot PUT. Compile explicit-token and reified usage and prove both preserve supplied-buffer identity.
+- [x] Add a narrow repository-plus-invalidator contract fixture: construct the existing repository `RedissonCacheConfig` and the invalidator with the identical `SnapshotRedissonCodec` object, versioned map namespace, value-type token, caller-owned `RedissonClient`, and identical supplied failure buffer. Before map use, reject every mismatch the exact factory can observe locally: unsupported ID/value tokens, codec safety, invalid configuration, and same-client quota-cap drift. Before mutating transaction state, reject same-transaction store-token, compatibility-fingerprint, and failure-buffer collisions. The exact public factory intentionally accepts no repository contract object, so cross-transaction repository/invalidator namespace, codec, value-token, schema, and configuration mismatch is rejected by Task 9's remote namespace marker before accepting mutations rather than by a partial process-local registry. Keep example-application work for #326.
+- [x] Implement a per-Redisson-client weak-identity quota registry. The first valid factory pins caps; later mismatches fail before constructing a facade.
+- [x] Encode and measure every staged ID without retaining raw sensitive IDs in public health/failure reports. Re-encode and verify bytes/hash before submission.
+- [x] For every chunk in sequence, re-encode, attempt admission, submit only when admitted, structurally record rejection/failure, and continue. Begin local phases only after all chunks/stores received an attempt; all chunks need not be admitted. Attach completion callbacks; never call `await`, `get`, `join`, `runBlocking`, cancellation, an executor, a scheduler, or a worker thread.
+- [x] Release quota immediately on synchronous submission failure, otherwise in completion callback `finally`. A never-completing future intentionally retains its bounded lease until client replacement.
+- [x] Expose only the exact structural quota health and the supplied `failureBuffer`; callers drain via `failureBuffer.drainTo(observer)`. Test every health counter transition and saturation/recovery state.
+- [x] Re-run targeted tests and the full JDBC Redisson unit suite.
+- [x] Commit with Lore trailers:
 
 ```text
 Bound distributed invalidation without blocking commit callbacks
@@ -700,6 +700,19 @@ Confidence: high
 Scope-risk: broad
 Tested: quota, submission, completion, failure buffer, and invalidation command tests
 ```
+
+Task 8 evidence: weak client-identity quota and namespace-composition reservations
+pin caps and exact local facade contracts before map access, roll back failed
+construction without retaining the client, and share one transaction identity for
+exact matches. Staging measures canonical bytes and enforces the transaction-wide
+commit cap; submission re-encodes, verifies, chunks, admits, and invokes only
+`fastRemoveAsync` before local phases. Completion paths release leases exactly
+once, retain no measured list or identifier in pending callbacks, keep ordinary
+failures structural, and rethrow synchronous fatal `Error` values unchanged.
+Focused Task 8 tests passed 37/37, `exposed/cache` passed 142/142, and the full
+JDBC Redisson module passed 560 tests with one existing skip. Main/test
+compilation, root detekt, diff/forbidden-call audits, independent spec review,
+and independent quality review all passed with P0=0, P1=0, P2=0, P3=0.
 
 ## Task 9: Add namespace administration, recovery, and two-client Redis integration
 
