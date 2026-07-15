@@ -247,7 +247,6 @@ dependencies {
 Note: Use `platform()` instead of the
 `dependencyManagement` plugin, which has compatibility issues with the Kotlin Gradle Plugin.
 
-<!-- issue-323-section:start -->
 <a id="transaction-aware-domain-events"></a>
 ## Transaction-Aware Domain Events
 
@@ -390,7 +389,6 @@ encryption at rest and encryption in transit as application infrastructure permi
 retention/deletion policy, and payload minimization. Stored event class names are exposed schema metadata; review
 package names and migration plans accordingly. These controls do not make the publisher depend on audit history,
 snapshot persistence, or JaVers commits.
-<!-- issue-323-section:end -->
 
 ## Important Notes
 

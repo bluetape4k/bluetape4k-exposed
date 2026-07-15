@@ -16,7 +16,6 @@ The sample has two application modules:
 
 `shipping` is allowed to depend only on `orders :: events`. The tests include a negative fixture that proves direct dependency on `orders.internal` is rejected by Spring Modulith verification.
 
-<!-- issue-323-section:start -->
 ## Transaction And Publication Boundary
 
 `OrderApplicationService.accept(...)` saves the aggregate and then calls
@@ -37,7 +36,6 @@ explicit retention/deletion policy, and payload minimization. Stored event class
 so event packages and migrations require review. The allowlisting serializer accepts only `OrderAcceptedEvent` and
 avoids polymorphic type metadata. Audit history, snapshot persistence, and JaVers commit semantics are forbidden
 dependencies of `ExposedAggregateEventPublisher`.
-<!-- issue-323-section:end -->
 
 ## Supported
 
