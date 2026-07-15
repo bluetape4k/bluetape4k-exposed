@@ -15,8 +15,11 @@ import io.bluetape4k.exposed.cache.snapshot.MeasuredInvalidation
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheApplyReport
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheDeadline
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheLimits
+import io.bluetape4k.exposed.cache.snapshot.SnapshotLocalFence
+import io.bluetape4k.exposed.cache.snapshot.SnapshotLocalFenceRegistry
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheLookup
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheMiss
+import io.bluetape4k.exposed.cache.snapshot.SnapshotMissCapabilityRegistry
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheMutation
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOperation
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOperationResult
@@ -91,6 +94,20 @@ class SnapshotCacheCommonApiCompileTest {
         signatures.contains("JdbcTransaction").shouldBeFalse()
         signatures.contains("R2dbcTransaction").shouldBeFalse()
         facade.declaredMethods.count { it.name == "stageInvalidationMutation" } shouldBeEqualTo 2
+    }
+
+    @Test
+    fun `adapter can use registries while capabilities remain opaque`() {
+        val fences = SnapshotLocalFenceRegistry<Long>(64)
+        val misses = SnapshotMissCapabilityRegistry<Long, Payload>(2)
+        val lookup = misses.register(1L, fences.capture(1L))
+        val prepared = misses.claim(lookup.miss.shouldNotBeNull()).prepare(CacheSnapshot(Payload("one")))
+        val fenceMethods = SnapshotLocalFence::class.java.declaredMethods.map { it.name }
+        val missMethods = SnapshotCacheMiss::class.java.declaredMethods.map { it.name }
+
+        prepared.id shouldBeEqualTo 1L
+        fenceMethods.none { it.startsWith("get") || it.startsWith("component") || it == "copy" } shouldBeEqualTo true
+        missMethods.none { it.startsWith("get") || it.startsWith("component") || it == "copy" } shouldBeEqualTo true
     }
 
     private class ConsumerBridge : SnapshotTransactionBridge<ConsumerTransaction> {

@@ -433,8 +433,14 @@ internal class MonotonicSnapshotCacheDeadline(
         get() = remaining().isZero
 }
 
-@OptIn(InternalSnapshotCacheApi::class)
-internal class SnapshotMissCapabilityRegistry<ID : Any, V : Serializable>(
+/**
+ * Owns bounded weak-identity miss capabilities for one backend adapter.
+ *
+ * Registered misses expose neither identifiers nor local fences. Claiming removes the capability atomically and
+ * returns a one-shot snapshot preparer.
+ */
+@InternalSnapshotCacheApi
+class SnapshotMissCapabilityRegistry<ID : Any, V : Serializable>(
     maxOutstandingMissTokens: Int,
 ) {
     private val maxOutstandingMissTokens = maxOutstandingMissTokens.also {
@@ -444,6 +450,7 @@ internal class SnapshotMissCapabilityRegistry<ID : Any, V : Serializable>(
     private val staleMisses = ReferenceQueue<SnapshotCacheMiss<ID, V>>()
     private val capabilities = HashMap<IdentityWeakReference<SnapshotCacheMiss<ID, V>>, MissCapability<ID>>()
 
+    /** Registers an opaque miss bound to [id] and [localFence]. */
     fun register(id: ID, localFence: SnapshotLocalFence<ID>): SnapshotCacheLookup<ID, V> = lock.withLock {
         expungeStaleMisses()
         check(capabilities.size < maxOutstandingMissTokens) {
@@ -455,6 +462,7 @@ internal class SnapshotMissCapabilityRegistry<ID : Any, V : Serializable>(
         SnapshotCacheLookup.registeredMiss(miss)
     }
 
+    /** Atomically consumes [miss] and returns its one-shot guarded insertion preparer. */
     fun claim(miss: SnapshotCacheMiss<ID, V>): ClaimedSnapshotMiss<ID, V> {
         val capability = lock.withLock {
             expungeStaleMisses()

@@ -30,8 +30,14 @@ class SnapshotLocalFence<ID : Any> internal constructor(
             this.generationToken === generationToken
 }
 
-@OptIn(InternalSnapshotCacheApi::class)
-internal class SnapshotLocalFenceRegistry<ID : Any>(
+/**
+ * Owns fixed-size process-local generation fences for one backend adapter.
+ *
+ * Adapter modules use this opt-in SPI to capture lookup ordering and to serialize cache mutation with generation
+ * advancement. Fence internals remain opaque to adapters and consumers.
+ */
+@InternalSnapshotCacheApi
+class SnapshotLocalFenceRegistry<ID : Any>(
     stripeCount: Int,
 ) {
     private val ownerToken = Any()
@@ -45,6 +51,7 @@ internal class SnapshotLocalFenceRegistry<ID : Any>(
         stripes = Array(stripeCount) { Stripe() }
     }
 
+    /** Captures the current generation fence for [id]. */
     fun capture(id: ID): SnapshotLocalFence<ID> {
         val stripeIndex = stripeIndex(id)
         val stripe = stripes[stripeIndex]
@@ -53,6 +60,7 @@ internal class SnapshotLocalFenceRegistry<ID : Any>(
         }
     }
 
+    /** Applies [mutation] only when [fence] is still current for [id]. */
     fun putIfCurrent(id: ID, fence: SnapshotLocalFence<ID>, mutation: () -> Unit): Boolean {
         val stripeIndex = stripeIndex(id)
         val stripe = stripes[stripeIndex]
@@ -67,6 +75,7 @@ internal class SnapshotLocalFenceRegistry<ID : Any>(
         }
     }
 
+    /** Advances the generation for [id] and applies [mutation] under the same stripe lock. */
     fun invalidate(id: ID, mutation: () -> Unit) {
         val stripe = stripes[stripeIndex(id)]
         stripe.lock.withLock {
