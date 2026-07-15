@@ -3,6 +3,13 @@ package io.bluetape4k.exposed.redisson.repository
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import io.bluetape4k.redis.redisson.codec.RedissonCodecs
 import org.redisson.client.codec.Codec
+import org.redisson.codec.CompositeCodec
+import org.redisson.codec.LZ4Codec
+import org.redisson.codec.ZStdCodec
+import java.lang.reflect.InaccessibleObjectException
+import java.util.ArrayDeque
+import java.util.Collections
+import java.util.IdentityHashMap
 
 /** Shared fail-fast policy for Redisson codecs that can deserialize executable object graphs. */
 object ExposedRedissonCodecSafety {
@@ -25,12 +32,72 @@ object ExposedRedissonCodecSafety {
         }
     }
 
-    private fun Codec.isTrustedBinaryCodec(): Boolean =
+    private fun Codec.isTrustedBinaryCodec(): Boolean {
+        val pending = ArrayDeque<Codec>().apply { add(this@isTrustedBinaryCodec) }
+        val visited = Collections.newSetFromMap(IdentityHashMap<Codec, Boolean>())
+        while (pending.isNotEmpty()) {
+            val current = pending.removeFirst()
+            if (!visited.add(current)) continue
+            if (visited.size > MAX_CODEC_GRAPH_NODES) return true
+            if (current.isDirectTrustedBinaryCodec()) return true
+            val children = current.childCodecsOrNull() ?: return true
+            children.forEach(pending::addLast)
+        }
+        return false
+    }
+
+    private fun Codec.isDirectTrustedBinaryCodec(): Boolean =
         this in trustedBinaryCodecs ||
                 javaClass.name.contains("Fory", ignoreCase = true) ||
                 javaClass.name.contains("Kryo", ignoreCase = true) ||
-                javaClass.name.contains("SerializationCodec", ignoreCase = true) ||
-                (this as? ExposedRedissonDelegatingCodec)?.delegateCodec?.isTrustedBinaryCodec() == true
+                javaClass.name.contains("SerializationCodec", ignoreCase = true)
+
+    private fun Codec.childCodecsOrNull(): List<Codec>? =
+        when (this) {
+            is ExposedRedissonDelegatingCodec -> listOf(delegateCodec)
+            is CompositeCodec -> readCodecFields(
+                codec = this,
+                declaringClass = CompositeCodec::class.java,
+                fieldNames = arrayOf("mapKeyCodec", "mapValueCodec", "valueCodec"),
+            )
+            is LZ4Codec -> readCodecFields(
+                codec = this,
+                declaringClass = LZ4Codec::class.java,
+                fieldNames = arrayOf("innerCodec"),
+            )
+            is ZStdCodec -> readCodecFields(
+                codec = this,
+                declaringClass = ZStdCodec::class.java,
+                fieldNames = arrayOf("innerCodec"),
+            )
+            else -> emptyList()
+        }
+
+    private fun readCodecFields(
+        codec: Codec,
+        declaringClass: Class<*>,
+        fieldNames: Array<String>,
+    ): List<Codec>? {
+        val children = ArrayList<Codec>(fieldNames.size)
+        return try {
+            fieldNames.forEach { fieldName ->
+                val field = declaringClass.getDeclaredField(fieldName)
+                if (!field.trySetAccessible()) return null
+                when (val child = field[codec]) {
+                    null -> Unit
+                    is Codec -> children += child
+                    else -> return null
+                }
+            }
+            children
+        } catch (_: ReflectiveOperationException) {
+            null
+        } catch (_: InaccessibleObjectException) {
+            null
+        } catch (_: SecurityException) {
+            null
+        }
+    }
 
     private val trustedBinaryCodecs: Set<Codec>
         get() =
@@ -77,6 +144,8 @@ object ExposedRedissonCodecSafety {
                 RedissonCodecs.ZstdForyComposite,
                 RedissonCodecs.ZstdJdkComposite,
             )
+
+    private const val MAX_CODEC_GRAPH_NODES = 64
 }
 
 /** Internal seam that lets each consumer revalidate the preserved raw delegate with its own trust authority. */

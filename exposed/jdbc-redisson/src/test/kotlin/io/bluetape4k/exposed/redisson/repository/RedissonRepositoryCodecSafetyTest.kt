@@ -20,13 +20,39 @@ import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.redisson.api.RLocalCachedMap
 import org.redisson.api.RedissonClient
 import org.redisson.api.options.LocalCachedMapOptions
+import org.redisson.client.codec.Codec
 import org.redisson.client.codec.StringCodec
+import org.redisson.client.protocol.Decoder
+import org.redisson.client.protocol.Encoder
+import org.redisson.codec.CompositeCodec
+import org.redisson.codec.LZ4Codec
+import org.redisson.codec.ZStdCodec
+import java.util.stream.Stream
 
 class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
+
+    companion object {
+        private const val UNSAFE_NESTED_CODECS_METHOD = "unsafeNestedCodecs"
+
+        @JvmStatic
+        fun unsafeNestedCodecs(): Stream<Arguments> =
+            Stream.of(
+                Arguments.of("composite-fory", CompositeCodec(StringCodec(), RedissonCodecs.Fory, StringCodec())),
+                Arguments.of("composite-kryo", CompositeCodec(StringCodec(), RedissonCodecs.Kryo5, StringCodec())),
+                Arguments.of("composite-jdk", CompositeCodec(StringCodec(), RedissonCodecs.Jdk, StringCodec())),
+                Arguments.of("lz4-fory", LZ4Codec(RedissonCodecs.Fory)),
+                Arguments.of("lz4-kryo", LZ4Codec(RedissonCodecs.Kryo5)),
+                Arguments.of("lz4-jdk", LZ4Codec(RedissonCodecs.Jdk)),
+                Arguments.of("zstd-fory", ZStdCodec(RedissonCodecs.Fory)),
+                Arguments.of("zstd-kryo", ZStdCodec(RedissonCodecs.Kryo5)),
+                Arguments.of("zstd-jdk", ZStdCodec(RedissonCodecs.Jdk)),
+            )
+    }
 
     @Test
     fun `direct codec safety overload rejects binary codecs unless explicitly trusted`() {
@@ -35,6 +61,54 @@ class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
             ExposedRedissonCodecSafety.requireSafe(RedissonCodecs.Jdk, trustedBinaryCache = false)
         }
         ExposedRedissonCodecSafety.requireSafe(RedissonCodecs.Jdk, trustedBinaryCache = true)
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource(UNSAFE_NESTED_CODECS_METHOD)
+    fun `raw custom Redisson wrappers cannot hide unsafe nested codecs`(name: String, codec: Codec) {
+        assertFailsWith<IllegalArgumentException> {
+            ExposedRedissonCodecSafety.requireSafe(codec, trustedBinaryCache = false)
+        }
+        ExposedRedissonCodecSafety.requireSafe(codec, trustedBinaryCache = true)
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource(UNSAFE_NESTED_CODECS_METHOD)
+    fun `snapshot wrapper cannot hide unsafe nested Redisson codecs`(name: String, codec: Codec) {
+        val snapshotCodec = snapshotRedissonCodec(codec, "nested-v1", longSnapshotIdentifierPolicy())
+
+        assertFailsWith<IllegalArgumentException> {
+            ExposedRedissonCodecSafety.requireSafe(snapshotCodec, trustedBinaryCache = false)
+        }
+        ExposedRedissonCodecSafety.requireSafe(snapshotCodec, trustedBinaryCache = true)
+    }
+
+    @Test
+    fun `safe reviewed custom composite codec remains accepted`() {
+        val safe = CompositeCodec(StringCodec(), StringCodec(), StringCodec())
+
+        ExposedRedissonCodecSafety.requireSafe(safe, trustedBinaryCache = false)
+        ExposedRedissonCodecSafety.requireSafe(
+            snapshotRedissonCodec(safe, "safe-v1", longSnapshotIdentifierPolicy()),
+            trustedBinaryCache = false,
+        )
+    }
+
+    @Test
+    fun `delegate traversal terminates safely on an identity cycle`() {
+        ExposedRedissonCodecSafety.requireSafe(CyclicDelegatingCodec(), trustedBinaryCache = false)
+    }
+
+    @Test
+    fun `delegate traversal fails closed when wrapper depth exceeds its bound`() {
+        var codec: Codec = StringCodec()
+        repeat(65) {
+            codec = snapshotRedissonCodec(codec, "depth-v1", longSnapshotIdentifierPolicy())
+        }
+
+        assertFailsWith<IllegalArgumentException> {
+            ExposedRedissonCodecSafety.requireSafe(codec, trustedBinaryCache = false)
+        }
     }
 
     @Test
@@ -73,7 +147,8 @@ class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
 
     @Test
     fun `jdbc repository independently rejects an unsafe delegate hidden by snapshot wrapper`() {
-        val codec = snapshotRedissonCodec(RedissonCodecs.Jdk, "jdk-v1", longSnapshotIdentifierPolicy())
+        val delegate = CompositeCodec(StringCodec(), RedissonCodecs.Kryo5, RedissonCodecs.Jdk)
+        val codec = snapshotRedissonCodec(delegate, "binary-v1", longSnapshotIdentifierPolicy())
 
         assertFailsWith<IllegalArgumentException> {
             TestJdbcRepository(
@@ -90,7 +165,7 @@ class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
 
     @Test
     fun `suspended repository independently rejects an unsafe delegate hidden by snapshot wrapper`() {
-        val codec = snapshotRedissonCodec(RedissonCodecs.Fory, "fory-v1", longSnapshotIdentifierPolicy())
+        val codec = snapshotRedissonCodec(LZ4Codec(RedissonCodecs.Fory), "fory-v1", longSnapshotIdentifierPolicy())
 
         assertFailsWith<IllegalArgumentException> {
             TestSuspendedRepository(
@@ -163,5 +238,17 @@ class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
         override fun UpdateStatement.updateEntity(entity: UserRecord) = Unit
         override fun BatchInsertStatement.insertEntity(entity: UserRecord) = Unit
         fun exposeCacheOnlyMap() = cacheOnlyMap
+    }
+
+    private class CyclicDelegatingCodec : ExposedRedissonDelegatingCodec {
+        private val safe = StringCodec()
+        override val delegateCodec: Codec get() = this
+        override fun getMapValueDecoder(): Decoder<Any> = safe.mapValueDecoder
+        override fun getMapValueEncoder(): Encoder = safe.mapValueEncoder
+        override fun getMapKeyDecoder(): Decoder<Any> = safe.mapKeyDecoder
+        override fun getMapKeyEncoder(): Encoder = safe.mapKeyEncoder
+        override fun getValueDecoder(): Decoder<Any> = safe.valueDecoder
+        override fun getValueEncoder(): Encoder = safe.valueEncoder
+        override fun getClassLoader(): ClassLoader = safe.classLoader
     }
 }
