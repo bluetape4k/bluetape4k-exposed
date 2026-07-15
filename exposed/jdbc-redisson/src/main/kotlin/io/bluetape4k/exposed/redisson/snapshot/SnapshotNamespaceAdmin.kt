@@ -159,13 +159,26 @@ internal fun verifyOrClaimSnapshotNamespace(
     timeout: Duration,
 ): SnapshotNamespaceMarkerVerification {
     val deadline = validateAdminInputs(namespace, expectedFingerprint, timeout)
-    val state = inspectWithScript(
-        redissonClient = redissonClient,
-        script = CLAIM_OR_COMPARE_NAMESPACE_SCRIPT,
-        namespace = namespace,
-        expectedFingerprint = expectedFingerprint,
-        deadline = deadline,
-    )
+    val state = try {
+        inspectWithScript(
+            redissonClient = redissonClient,
+            script = CLAIM_OR_COMPARE_NAMESPACE_SCRIPT,
+            namespace = namespace,
+            expectedFingerprint = expectedFingerprint,
+            deadline = deadline,
+        )
+    } catch (interrupted: InterruptedException) {
+        Thread.currentThread().interrupt()
+        throw interrupted
+    } catch (error: Error) {
+        throw error
+    } catch (exception: Exception) {
+        val failure = exception.unwrapFutureFailure()
+        if (failure is InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        throw failure
+    }
     return when {
         state.marker == RemoteMarker.ABSENT && state.mapAbsent -> SnapshotNamespaceMarkerVerification.CLAIMED
         state.marker == RemoteMarker.EXACT -> SnapshotNamespaceMarkerVerification.MATCHED

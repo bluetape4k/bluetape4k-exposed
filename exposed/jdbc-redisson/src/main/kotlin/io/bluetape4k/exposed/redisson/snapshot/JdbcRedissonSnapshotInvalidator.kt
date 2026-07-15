@@ -199,6 +199,21 @@ fun <ID : Any, V : Serializable> jdbcRedissonSnapshotInvalidator(
         "Snapshot value type[${valueType.java.name}] must implement Serializable."
     }
     config.requireSafeCodec(codec)
+    val compatibilityFingerprint = snapshotNamespaceFingerprint(
+        backend = REDISSON_JDBC_BACKEND,
+        namespace = config.snapshot.namespace,
+        keyRawClass = idType.supportedIdentifierRawClass(),
+        snapshotRawClass = valueType.java,
+        schemaVersion = config.snapshot.schemaVersion,
+        codec = codec,
+        synchronizationStrategy = config.synchronizationStrategy,
+    )
+    verifyOrClaimSnapshotNamespace(
+        redissonClient = redissonClient,
+        namespace = config.snapshot.namespace,
+        expectedFingerprint = compatibilityFingerprint,
+        timeout = config.namespaceVerificationTimeout,
+    )
     val reservation = redissonInvalidationQuotas.reserveComposition(
         redissonClient = redissonClient,
         descriptor = RedissonInvalidationCompositionDescriptor(

@@ -61,6 +61,14 @@ data class JdbcRedissonSnapshotInvalidatorConfig(
         require(namespaceVerificationTimeout > Duration.ZERO) {
             "namespaceVerificationTimeout[$namespaceVerificationTimeout] must be positive."
         }
+        try {
+            namespaceVerificationTimeout.toNanos()
+        } catch (exception: ArithmeticException) {
+            throw IllegalArgumentException(
+                "namespaceVerificationTimeout must be representable in nanoseconds.",
+                exception,
+            )
+        }
         require(maxBatchEncodedKeyBytes <= maxCommitEncodedKeyBytes) {
             "maxBatchEncodedKeyBytes[$maxBatchEncodedKeyBytes] must not exceed " +
                     "maxCommitEncodedKeyBytes[$maxCommitEncodedKeyBytes]."

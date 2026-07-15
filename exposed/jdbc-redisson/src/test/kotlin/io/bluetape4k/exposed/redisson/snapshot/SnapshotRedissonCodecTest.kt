@@ -158,6 +158,15 @@ class SnapshotRedissonCodecTest {
     }
 
     @Test
+    fun `invalidator configuration rejects a timeout that cannot be represented in nanoseconds`() {
+        val valid = JdbcRedissonSnapshotInvalidatorConfig(snapshotConfig())
+
+        assertFailsWith<IllegalArgumentException> {
+            valid.copy(namespaceVerificationTimeout = Duration.ofSeconds(Long.MAX_VALUE))
+        }
+    }
+
+    @Test
     fun `invalidator configuration accepts the positive lower bound for every cap and timeout`() {
         val config = JdbcRedissonSnapshotInvalidatorConfig(
             snapshot = snapshotConfig(),

@@ -35,6 +35,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
 import org.redisson.api.RFuture
 import org.redisson.api.RLocalCachedMap
+import org.redisson.api.RScript
 import org.redisson.api.RedissonClient
 import org.redisson.client.codec.StringCodec
 import java.io.Serializable
@@ -598,6 +599,7 @@ class JdbcRedissonSnapshotTransactionTest {
             arrayOf(RedissonClient::class.java),
         ) { instance, method, args ->
             when (method.name) {
+                "getScript" -> script
                 "getLocalCachedMap" -> {
                     options += args.orEmpty().single()
                     localCacheMap
@@ -608,6 +610,32 @@ class JdbcRedissonSnapshotTransactionTest {
                 else -> error("Unexpected RedissonClient call: ${method.name}")
             }
         } as RedissonClient
+
+        private val script: RScript = Proxy.newProxyInstance(
+            RScript::class.java.classLoader,
+            arrayOf(RScript::class.java),
+        ) { instance, method, args ->
+            when (method.name) {
+                "evalAsync" -> markerFuture
+                "equals" -> instance === args.orEmpty().singleOrNull()
+                "hashCode" -> System.identityHashCode(instance)
+                "toString" -> "RecordingMarkerScript"
+                else -> error("Unexpected RScript call: ${method.name}")
+            }
+        } as RScript
+
+        @Suppress("UNCHECKED_CAST")
+        private val markerFuture: RFuture<List<Long>> = Proxy.newProxyInstance(
+            RFuture::class.java.classLoader,
+            arrayOf(RFuture::class.java),
+        ) { instance, method, args ->
+            when (method.name) {
+                "equals" -> instance === args.orEmpty().singleOrNull()
+                "hashCode" -> System.identityHashCode(instance)
+                "toString" -> "ExactMarkerFuture"
+                else -> method.invoke(CompletableFuture.completedFuture(listOf(1L, 0L)), *args.orEmpty())
+            }
+        } as RFuture<List<Long>>
     }
 
     private class RecordingLocalMap<ID : Any>(

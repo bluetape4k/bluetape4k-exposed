@@ -19,6 +19,7 @@ import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.Test
 import org.redisson.api.RFuture
 import org.redisson.api.RLocalCachedMap
+import org.redisson.api.RScript
 import org.redisson.api.RedissonClient
 import org.redisson.api.options.LocalCachedMapOptions
 import org.redisson.client.codec.StringCodec
@@ -34,12 +35,161 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import java.util.function.BiConsumer
 import kotlin.reflect.KClass
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.declaredMemberFunctions
 
 class JdbcRedissonSnapshotInvalidatorTest {
+
+    @Test
+    fun `factory verifies the canonical remote marker before map access`() {
+        val map = RecordingLocalMap<Long>()
+        val client = RecordingRedissonClient(map.proxy)
+            .thenReturnMarker(markerState(MARKER_ABSENT, mapExists = false))
+        val codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy())
+        val config = config()
+        val expectedFingerprint = snapshotNamespaceFingerprint(
+            backend = "redisson-jdbc",
+            namespace = config.snapshot.namespace,
+            keyRawClass = Long::class.java,
+            snapshotRawClass = Payload::class.java,
+            schemaVersion = config.snapshot.schemaVersion,
+            codec = codec,
+            synchronizationStrategy = config.synchronizationStrategy,
+        )
+
+        val invalidator = jdbcRedissonSnapshotInvalidator(
+            client.proxy,
+            codec,
+            Long::class,
+            Payload::class,
+            config,
+        )
+
+        invalidator.compatibilityFingerprint shouldBeEqualTo expectedFingerprint
+        client.events shouldBeEqualTo listOf("script-access", "marker-eval", "marker-wait", "map-access")
+        client.scriptCalls.single().keys shouldBeEqualTo listOf(
+            snapshotNamespaceMarkerKey(config.snapshot.namespace),
+            config.snapshot.namespace,
+        )
+        client.scriptCalls.single().arguments shouldBeEqualTo listOf(expectedFingerprint)
+    }
+
+    @Test
+    fun `marker mismatch and legacy map fail before map access without reservation residue`() {
+        listOf(
+            markerState(MARKER_MISMATCH, mapExists = false),
+            markerState(MARKER_ABSENT, mapExists = true),
+        ).forEach { rejectedState ->
+            val map = RecordingLocalMap<Long>()
+            val client = RecordingRedissonClient(map.proxy)
+                .thenReturnMarker(rejectedState)
+                .thenReturnMarker(markerState(MARKER_EXACT, mapExists = false))
+            val codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy())
+            val rejectedConfig = config(maxOutstandingChunks = 1, maxOutstandingEncodedBytes = 8)
+
+            assertFailsWith<IllegalStateException> {
+                jdbcRedissonSnapshotInvalidator(
+                    client.proxy,
+                    codec,
+                    Long::class,
+                    Payload::class,
+                    rejectedConfig,
+                    snapshotCacheFailureBuffer(1),
+                )
+            }
+
+            client.options shouldBeEqualTo emptyList()
+            client.events.contains("map-access").shouldBeFalse()
+
+            val retryConfig = rejectedConfig.copy(
+                nearCacheMaximumSize = rejectedConfig.nearCacheMaximumSize + 1,
+                maxOutstandingChunks = 2,
+                maxOutstandingEncodedBytes = 16,
+            )
+            val retry = jdbcRedissonSnapshotInvalidator(
+                client.proxy,
+                codec,
+                Long::class,
+                Payload::class,
+                retryConfig,
+                snapshotCacheFailureBuffer(2),
+            )
+
+            retry.quotaHealth() shouldBeEqualTo SnapshotInvalidationQuotaHealth(2, 0, 16, 0, 0, false)
+            client.options.size shouldBeEqualTo 1
+        }
+    }
+
+    @Test
+    fun `marker timeout and connection failure fail closed before map access and unwrap the exact cause`() {
+        val codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy())
+        val map = RecordingLocalMap<Long>()
+
+        val timedOut = RecordingRedissonClient(map.proxy).thenNeverCompleteMarker()
+        assertFailsWith<TimeoutException> {
+            jdbcRedissonSnapshotInvalidator(timedOut.proxy, codec, Long::class, Payload::class, config())
+        }
+        timedOut.options shouldBeEqualTo emptyList()
+        timedOut.markerCancelCalled.shouldBeFalse()
+
+        val connectionFailure = MarkerConnectionFailure()
+        val disconnected = RecordingRedissonClient(map.proxy).thenFailMarker(connectionFailure)
+        val thrown = assertFailsWith<MarkerConnectionFailure> {
+            jdbcRedissonSnapshotInvalidator(disconnected.proxy, codec, Long::class, Payload::class, config())
+        }
+        (thrown === connectionFailure).shouldBeTrue()
+        disconnected.options shouldBeEqualTo emptyList()
+
+        val recovered = RecordingRedissonClient(map.proxy)
+            .thenReturnMarker(markerState(MARKER_EXACT, mapExists = false))
+        jdbcRedissonSnapshotInvalidator(
+            recovered.proxy,
+            codec,
+            Long::class,
+            Payload::class,
+            config(maxOutstandingChunks = 2, maxOutstandingEncodedBytes = 16),
+        ).quotaHealth() shouldBeEqualTo SnapshotInvalidationQuotaHealth(2, 0, 16, 0, 0, false)
+    }
+
+    @Test
+    fun `marker verification preserves interruption and fatal Error control semantics`() {
+        val codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy())
+        val map = RecordingLocalMap<Long>()
+        val interruption = InterruptedException("marker verification interrupted")
+        val interrupted = RecordingRedissonClient(map.proxy).thenInterruptMarker(interruption)
+        Thread.interrupted()
+
+        try {
+            val thrown = assertFailsWith<InterruptedException> {
+                jdbcRedissonSnapshotInvalidator(interrupted.proxy, codec, Long::class, Payload::class, config())
+            }
+            (thrown === interruption).shouldBeTrue()
+            Thread.currentThread().isInterrupted.shouldBeTrue()
+            interrupted.options shouldBeEqualTo emptyList()
+            interrupted.markerCancelCalled.shouldBeFalse()
+        } finally {
+            Thread.interrupted()
+        }
+
+        val asynchronousFatal = FatalMarkerError()
+        val asynchronous = RecordingRedissonClient(map.proxy).thenFailMarker(asynchronousFatal)
+        val asyncThrown = assertFailsWith<FatalMarkerError> {
+            jdbcRedissonSnapshotInvalidator(asynchronous.proxy, codec, Long::class, Payload::class, config())
+        }
+        (asyncThrown === asynchronousFatal).shouldBeTrue()
+        asynchronous.options shouldBeEqualTo emptyList()
+
+        val directFatal = FatalMarkerError()
+        val direct = RecordingRedissonClient(map.proxy).failScriptAccess(directFatal)
+        val directThrown = assertFailsWith<FatalMarkerError> {
+            jdbcRedissonSnapshotInvalidator(direct.proxy, codec, Long::class, Payload::class, config())
+        }
+        (directThrown === directFatal).shouldBeTrue()
+        direct.options shouldBeEqualTo emptyList()
+    }
 
     @Test
     fun `repository configuration and invalidator share exact codec namespace and caller contracts`() {
@@ -656,13 +806,25 @@ class JdbcRedissonSnapshotInvalidatorTest {
 
     private class RecordingRedissonClient(private val localCacheMap: RLocalCachedMap<*, *>) {
         private val mapBehaviors = ArrayDeque<() -> RLocalCachedMap<*, *>>()
+        private val markerBehaviors = ArrayDeque<MarkerBehavior>()
+        private var scriptAccessFailure: Error? = null
+        val events = mutableListOf<String>()
+        val scriptCalls = mutableListOf<MarkerScriptCall>()
         val options = mutableListOf<Any>()
+        var markerCancelCalled = false
+            private set
         val proxy: RedissonClient = Proxy.newProxyInstance(
             RedissonClient::class.java.classLoader,
             arrayOf(RedissonClient::class.java),
         ) { instance, method, args ->
             when (method.name) {
+                "getScript" -> {
+                    events += "script-access"
+                    scriptAccessFailure?.let { throw it }
+                    script
+                }
                 "getLocalCachedMap" -> {
+                    events += "map-access"
                     options += args.orEmpty().single()
                     if (mapBehaviors.isEmpty()) localCacheMap else mapBehaviors.removeFirst()()
                 }
@@ -673,12 +835,90 @@ class JdbcRedissonSnapshotInvalidatorTest {
             }
         } as RedissonClient
 
+        private val script: RScript = Proxy.newProxyInstance(
+            RScript::class.java.classLoader,
+            arrayOf(RScript::class.java),
+        ) { instance, method, args ->
+            when (method.name) {
+                "evalAsync" -> {
+                    events += "marker-eval"
+                    @Suppress("UNCHECKED_CAST")
+                    val keys = args.orEmpty().firstOrNull { it is List<*> } as? List<Any> ?: emptyList()
+                    val keyIndex = args.orEmpty().indexOfFirst { it === keys }
+                    val arguments = if (keyIndex >= 0) args.orEmpty().drop(keyIndex + 1).flatMap { value ->
+                        if (value is Array<*>) value.toList() else listOf(value)
+                    } else {
+                        emptyList()
+                    }
+                    scriptCalls += MarkerScriptCall(keys, arguments)
+                    markerFuture(
+                        if (markerBehaviors.isEmpty()) {
+                            MarkerBehavior.Value(markerState(MARKER_EXACT, mapExists = false))
+                        } else {
+                            markerBehaviors.removeFirst()
+                        },
+                    )
+                }
+                "equals" -> instance === args.orEmpty().singleOrNull()
+                "hashCode" -> System.identityHashCode(instance)
+                "toString" -> "RecordingMarkerScript"
+                else -> error("Unexpected RScript call: ${method.name}")
+            }
+        } as RScript
+
+        @Suppress("UNCHECKED_CAST")
+        private fun markerFuture(behavior: MarkerBehavior): RFuture<List<Long>> = Proxy.newProxyInstance(
+            RFuture::class.java.classLoader,
+            arrayOf(RFuture::class.java),
+        ) { instance, method, args ->
+            when (method.name) {
+                "get" -> {
+                    if (args.orEmpty().size != 2) error("Unbounded marker Future.get() is forbidden.")
+                    events += "marker-wait"
+                    when (behavior) {
+                        is MarkerBehavior.Value -> behavior.value
+                        is MarkerBehavior.Failure -> throw ExecutionException(behavior.failure)
+                        is MarkerBehavior.Interrupted -> throw behavior.interruption
+                        MarkerBehavior.Never -> throw TimeoutException("marker verification timed out")
+                    }
+                }
+                "cancel" -> {
+                    markerCancelCalled = true
+                    false
+                }
+                "equals" -> instance === args.orEmpty().singleOrNull()
+                "hashCode" -> System.identityHashCode(instance)
+                "toString" -> "RecordingMarkerFuture"
+                else -> method.invoke(CompletableFuture<List<Long>>(), *args.orEmpty())
+            }
+        } as RFuture<List<Long>>
+
         fun thenReturnMap(map: RLocalCachedMap<*, *>): RecordingRedissonClient = apply {
             mapBehaviors += { map }
         }
 
         fun thenThrowMap(exception: RuntimeException): RecordingRedissonClient = apply {
             mapBehaviors += { throw exception }
+        }
+
+        fun thenReturnMarker(value: List<Long>): RecordingRedissonClient = apply {
+            markerBehaviors += MarkerBehavior.Value(value)
+        }
+
+        fun thenFailMarker(failure: Throwable): RecordingRedissonClient = apply {
+            markerBehaviors += MarkerBehavior.Failure(failure)
+        }
+
+        fun thenInterruptMarker(interruption: InterruptedException): RecordingRedissonClient = apply {
+            markerBehaviors += MarkerBehavior.Interrupted(interruption)
+        }
+
+        fun thenNeverCompleteMarker(): RecordingRedissonClient = apply {
+            markerBehaviors += MarkerBehavior.Never
+        }
+
+        fun failScriptAccess(failure: Error): RecordingRedissonClient = apply {
+            scriptAccessFailure = failure
         }
     }
 
@@ -782,4 +1022,29 @@ class JdbcRedissonSnapshotInvalidatorTest {
     private class FatalSubmissionError : Error()
 
     private class MapConstructionFailure : RuntimeException()
+
+    private class MarkerConnectionFailure : RuntimeException()
+
+    private class FatalMarkerError : Error()
+
+    private sealed interface MarkerBehavior {
+        data class Value(val value: List<Long>) : MarkerBehavior
+        data class Failure(val failure: Throwable) : MarkerBehavior
+        data class Interrupted(val interruption: InterruptedException) : MarkerBehavior
+        data object Never : MarkerBehavior
+    }
+
+    private data class MarkerScriptCall(
+        val keys: List<Any>,
+        val arguments: List<Any?>,
+    )
+
+    private companion object {
+        const val MARKER_ABSENT = 0L
+        const val MARKER_EXACT = 1L
+        const val MARKER_MISMATCH = 2L
+
+        fun markerState(marker: Long, mapExists: Boolean): List<Long> =
+            listOf(marker, if (mapExists) 1L else 0L)
+    }
 }
