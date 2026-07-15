@@ -63,8 +63,10 @@ private val DELETE_EXACT_MARKER_SCRIPT = """
  * Marks destructive snapshot-cache namespace operations that require explicit operator review.
  *
  * These APIs are for a quiesced namespace only. They require network isolation and a dedicated namespace-scoped
- * Redis ACL identity, and they must never be exposed through request-facing application paths. The fingerprint is
- * an accident guard, not authorization.
+ * Redis ACL identity. The ACL must allow marker and map inspection and unlink, local-cache clear scoped pub/sub,
+ * and transient `${namespace}:clear:*` semaphore keys and channels, while it must deny global keyevent subscription.
+ * These APIs must never be exposed through request-facing application paths. The fingerprint is an accident guard,
+ * not authorization.
  */
 @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
 @Retention(AnnotationRetention.BINARY)
@@ -110,10 +112,12 @@ data class SnapshotNamespaceCleanupResult(
  * Clears a quiesced snapshot namespace, including its compatibility marker.
  *
  * Operators must first stop every writer, remove the namespace from every live client, and drain in-flight traffic.
- * Use network isolation and a dedicated namespace-scoped Redis ACL identity limited to inspecting and unlinking the
- * target namespace. This function must never be exposed through request-facing application paths. The expected
- * fingerprint is an accident guard, not authorization. Map unlink is accepted before marker unlink, uses one shared
- * monotonic deadline, is never cancelled, and can be resumed safely by rerunning this function.
+ * Use network isolation and a dedicated namespace-scoped Redis ACL identity. The ACL must allow marker and map
+ * inspection and unlink, local-cache clear scoped pub/sub, and transient `${namespace}:clear:*` semaphore keys and
+ * channels, while it must deny global keyevent subscription. This function must never be exposed through
+ * request-facing application paths. The expected fingerprint is an accident guard, not authorization. Map unlink is
+ * accepted before marker unlink, uses one shared monotonic deadline, is never cancelled, and can be resumed safely by
+ * rerunning this function.
  */
 @DelicateSnapshotCacheAdminApi
 fun <ID : Any> clearSnapshotNamespace(
@@ -198,66 +202,88 @@ private fun <ID : Any> clearNamespace(
             RemoteMarker.EXACT -> false
         }
 
-        val options = LocalCachedMapOptions.name<ID, Any?>(namespace).apply { codec(codec) }
+        val options = LocalCachedMapOptions.name<ID, Any?>(namespace).apply {
+            codec(codec)
+            expirationEventPolicy(LocalCachedMapOptions.ExpirationEventPolicy.DONT_SUBSCRIBE)
+        }
         val map = redissonClient.getLocalCachedMap(options)
+        var mapFailure: Throwable? = null
+        try {
+            if (!mapAbsent) {
+                val unlink = map.unlinkAsync()
+                cleanupAccepted = true
+                deadline.waitFor(unlink)
+                mapAbsent = true
+            }
 
-        if (!mapAbsent) {
-            val unlink = map.unlinkAsync()
+            val clearLocal = map.clearLocalCacheAsync()
             cleanupAccepted = true
-            deadline.waitFor(unlink)
-            mapAbsent = true
-        }
+            deadline.waitFor(clearLocal)
 
-        val clearLocal = map.clearLocalCacheAsync()
-        cleanupAccepted = true
-        deadline.waitFor(clearLocal)
+            val afterMapCleanup = inspectNamespace(redissonClient, namespace, expectedFingerprint, deadline)
+            mapAbsent = afterMapCleanup.mapAbsent
+            markerPresent = afterMapCleanup.marker != RemoteMarker.ABSENT
+            if (!mapAbsent || afterMapCleanup.marker == RemoteMarker.MISMATCH) {
+                return failedState(mapAbsent, markerPresent)
+            }
 
-        val afterMapCleanup = inspectNamespace(redissonClient, namespace, expectedFingerprint, deadline)
-        mapAbsent = afterMapCleanup.mapAbsent
-        markerPresent = afterMapCleanup.marker != RemoteMarker.ABSENT
-        if (!mapAbsent || afterMapCleanup.marker == RemoteMarker.MISMATCH) {
+            if (initiallyAlreadyComplete) {
+                if (afterMapCleanup.marker != RemoteMarker.ABSENT) return failedState(mapAbsent, markerPresent)
+                return SnapshotNamespaceCleanupResult(
+                    SnapshotNamespaceCleanupOutcome.ALREADY_COMPLETE,
+                    mapAbsent = true,
+                    markerPresent = false,
+                )
+            }
+
+            if (retainMarker) {
+                if (afterMapCleanup.marker != RemoteMarker.EXACT) return failedState(mapAbsent, markerPresent)
+                return SnapshotNamespaceCleanupResult(
+                    SnapshotNamespaceCleanupOutcome.MARKER_RETAINED,
+                    mapAbsent = true,
+                    markerPresent = true,
+                )
+            }
+
+            if (afterMapCleanup.marker == RemoteMarker.EXACT) {
+                val markerDelete = deleteExactMarker(redissonClient, namespace, expectedFingerprint)
+                cleanupAccepted = true
+                if (deadline.waitFor(markerDelete) < 0L) return failedState(mapAbsent = true, markerPresent = true)
+            }
+
+            val terminal = inspectNamespace(redissonClient, namespace, expectedFingerprint, deadline)
+            mapAbsent = terminal.mapAbsent
+            markerPresent = terminal.marker != RemoteMarker.ABSENT
+            if (terminal.mapAbsent && terminal.marker == RemoteMarker.ABSENT) {
+                return SnapshotNamespaceCleanupResult(
+                    SnapshotNamespaceCleanupOutcome.COMPLETED,
+                    mapAbsent = true,
+                    markerPresent = false,
+                )
+            }
             return failedState(mapAbsent, markerPresent)
+        } catch (failure: Throwable) {
+            mapFailure = failure
+            throw failure
+        } finally {
+            try {
+                map.destroy()
+            } catch (destroyFailure: Throwable) {
+                val primary = mapFailure ?: throw destroyFailure
+                if (primary !== destroyFailure) primary.addSuppressed(destroyFailure)
+            }
         }
-
-        if (initiallyAlreadyComplete) {
-            if (afterMapCleanup.marker != RemoteMarker.ABSENT) return failedState(mapAbsent, markerPresent)
-            return SnapshotNamespaceCleanupResult(
-                SnapshotNamespaceCleanupOutcome.ALREADY_COMPLETE,
-                mapAbsent = true,
-                markerPresent = false,
-            )
-        }
-
-        if (retainMarker) {
-            if (afterMapCleanup.marker != RemoteMarker.EXACT) return failedState(mapAbsent, markerPresent)
-            return SnapshotNamespaceCleanupResult(
-                SnapshotNamespaceCleanupOutcome.MARKER_RETAINED,
-                mapAbsent = true,
-                markerPresent = true,
-            )
-        }
-
-        if (afterMapCleanup.marker == RemoteMarker.EXACT) {
-            val markerDelete = deleteExactMarker(redissonClient, namespace, expectedFingerprint)
-            cleanupAccepted = true
-            if (deadline.waitFor(markerDelete) < 0L) return failedState(mapAbsent = true, markerPresent = true)
-        }
-
-        val terminal = inspectNamespace(redissonClient, namespace, expectedFingerprint, deadline)
-        mapAbsent = terminal.mapAbsent
-        markerPresent = terminal.marker != RemoteMarker.ABSENT
-        if (terminal.mapAbsent && terminal.marker == RemoteMarker.ABSENT) {
-            return SnapshotNamespaceCleanupResult(
-                SnapshotNamespaceCleanupOutcome.COMPLETED,
-                mapAbsent = true,
-                markerPresent = false,
-            )
-        }
-        return failedState(mapAbsent, markerPresent)
+    } catch (interrupted: InterruptedException) {
+        Thread.currentThread().interrupt()
+        throw interrupted
     } catch (error: Error) {
         throw error
     } catch (exception: Exception) {
         val failure = exception.unwrapFutureFailure()
+        if (failure is InterruptedException) {
+            Thread.currentThread().interrupt()
+            throw failure
+        }
         if (failure is Error) throw failure
         val outcome = if ((failure is TimeoutException || failure is RedisTimeoutException) && cleanupAccepted) {
             SnapshotNamespaceCleanupOutcome.TIMED_OUT_ACCEPTED_UNKNOWN
@@ -374,7 +400,12 @@ private class MonotonicDeadline(private val timeoutNanos: Long) {
 
     fun <T> waitFor(future: RFuture<T>): T {
         val remaining = remainingNanos()
-        val value = future.get(remaining, TimeUnit.NANOSECONDS)
+        val value = try {
+            future.get(remaining, TimeUnit.NANOSECONDS)
+        } catch (interrupted: InterruptedException) {
+            Thread.currentThread().interrupt()
+            throw interrupted
+        }
         remainingNanos()
         return value
     }

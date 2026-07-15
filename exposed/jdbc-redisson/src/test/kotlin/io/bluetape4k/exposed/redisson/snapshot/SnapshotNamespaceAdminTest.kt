@@ -13,6 +13,7 @@ import org.redisson.api.RFuture
 import org.redisson.api.RLocalCachedMap
 import org.redisson.api.RScript
 import org.redisson.api.RedissonClient
+import org.redisson.api.options.LocalCachedMapOptions
 import org.redisson.client.RedisTimeoutException
 import org.redisson.client.codec.StringCodec
 import java.lang.reflect.InvocationHandler
@@ -93,6 +94,7 @@ class SnapshotNamespaceAdminTest {
             "script", "wait:script-1",
             "map-access", "local-clear", "wait:local-clear",
             "script", "wait:script-2",
+            "destroy",
         )
     }
 
@@ -110,6 +112,26 @@ class SnapshotNamespaceAdminTest {
         matched.events shouldBeEqualTo listOf("script", "wait:script-1")
         claimed.scriptCalls.single().keys shouldBeEqualTo listOf(snapshotNamespaceMarkerKey(NAMESPACE), NAMESPACE)
         claimed.scriptCalls.single().arguments shouldBeEqualTo listOf(FINGERPRINT)
+    }
+
+    @Test
+    fun `atomic marker verification restores interrupt status and rethrows the same interruption`() {
+        val interruption = InterruptedException("verification interrupted")
+        val admin = RecordingAdmin().apply { scriptInterrupts(interruption) }
+        Thread.interrupted()
+
+        try {
+            val thrown = assertFailsWith<InterruptedException> {
+                verifyOrClaimSnapshotNamespace(admin.client, NAMESPACE, FINGERPRINT, Duration.ofSeconds(2))
+            }
+
+            (thrown === interruption).shouldBeTrue()
+            Thread.currentThread().isInterrupted.shouldBeTrue()
+            admin.cancelCalls.shouldBeFalse()
+            admin.destroyCount shouldBeEqualTo 0
+        } finally {
+            Thread.interrupted()
+        }
     }
 
     @Test
@@ -162,8 +184,24 @@ class SnapshotNamespaceAdminTest {
             "script", "wait:script-2",
             "script", "wait:script-3",
             "script", "wait:script-4",
+            "destroy",
         )
+        admin.destroyCount shouldBeEqualTo 1
         admin.cancelCalls.shouldBeFalse()
+    }
+
+    @Test
+    fun `admin local map disables expiration event subscription`() {
+        val admin = RecordingAdmin().apply {
+            scriptReturns(markerState(MARKER_ABSENT, mapExists = false))
+            mapReturns(null, label = "local-clear")
+            scriptReturns(markerState(MARKER_ABSENT, mapExists = false))
+        }
+
+        clearSnapshotNamespace(admin.client, codec, NAMESPACE, FINGERPRINT)
+
+        admin.localCachedMapOptions.single().option("getExpirationEventPolicy") shouldBeEqualTo
+                LocalCachedMapOptions.ExpirationEventPolicy.DONT_SUBSCRIBE
     }
 
     @Test
@@ -185,6 +223,7 @@ class SnapshotNamespaceAdminTest {
             "script", "wait:script-1",
             "map-access", "local-clear", "wait:local-clear",
             "script", "wait:script-2",
+            "destroy",
         )
     }
 
@@ -278,7 +317,9 @@ class SnapshotNamespaceAdminTest {
             "map-access", "map-unlink", "wait:map-unlink",
             "local-clear", "wait:local-clear",
             "script", "wait:script-2",
+            "destroy",
         )
+        admin.destroyCount shouldBeEqualTo 1
     }
 
     @Test
@@ -360,6 +401,77 @@ class SnapshotNamespaceAdminTest {
         accepted.markerPresent.shouldBeTrue()
         verificationTimeout.cancelCalls.shouldBeFalse()
         unlinkTimeout.cancelCalls.shouldBeFalse()
+        verificationTimeout.destroyCount shouldBeEqualTo 0
+        unlinkTimeout.destroyCount shouldBeEqualTo 1
+        unlinkTimeout.events.last() shouldBeEqualTo "destroy"
+    }
+
+    @Test
+    fun `temporary local map is destroyed after fail closed reinspection`() {
+        val admin = RecordingAdmin().apply {
+            scriptReturns(markerState(MARKER_EXACT, mapExists = true))
+            mapReturns(true, label = "map-unlink")
+            mapReturns(null, label = "local-clear")
+            scriptReturns(markerState(MARKER_MISMATCH, mapExists = false))
+        }
+
+        val result = clearSnapshotNamespace(admin.client, codec, NAMESPACE, FINGERPRINT)
+
+        result.outcome shouldBeEqualTo SnapshotNamespaceCleanupOutcome.FAILED
+        admin.destroyCount shouldBeEqualTo 1
+        admin.events.last() shouldBeEqualTo "destroy"
+    }
+
+    @Test
+    fun `temporary local map is destroyed after synchronous Exception and Error`() {
+        val exception = ConnectionFailure("map command failed")
+        val exceptionAdmin = RecordingAdmin().apply {
+            scriptReturns(markerState(MARKER_EXACT, mapExists = true))
+            mapThrows(exception, label = "map-unlink")
+        }
+        val error = FatalAdminError()
+        val errorAdmin = RecordingAdmin().apply {
+            scriptReturns(markerState(MARKER_EXACT, mapExists = true))
+            mapThrows(error, label = "map-unlink")
+        }
+
+        val failed = clearSnapshotNamespace(exceptionAdmin.client, codec, NAMESPACE, FINGERPRINT)
+        val thrown = assertFailsWith<FatalAdminError> {
+            clearSnapshotNamespace(errorAdmin.client, codec, NAMESPACE, FINGERPRINT)
+        }
+
+        failed.exceptionType shouldBeEqualTo exception.javaClass.name
+        exceptionAdmin.destroyCount shouldBeEqualTo 1
+        exceptionAdmin.events.last() shouldBeEqualTo "destroy"
+        (thrown === error).shouldBeTrue()
+        errorAdmin.destroyCount shouldBeEqualTo 1
+        errorAdmin.events.last() shouldBeEqualTo "destroy"
+    }
+
+    @Test
+    fun `accepted cleanup interruption remains primary when destroy also fails`() {
+        val interruption = InterruptedException("local clear interrupted")
+        val admin = RecordingAdmin().apply {
+            scriptReturns(markerState(MARKER_EXACT, mapExists = true))
+            mapReturns(true, label = "map-unlink")
+            mapInterrupts(interruption, label = "local-clear")
+            destroyFails(interruption)
+        }
+        Thread.interrupted()
+
+        try {
+            val thrown = assertFailsWith<InterruptedException> {
+                clearSnapshotNamespace(admin.client, codec, NAMESPACE, FINGERPRINT)
+            }
+
+            (thrown === interruption).shouldBeTrue()
+            Thread.currentThread().isInterrupted.shouldBeTrue()
+            admin.destroyCount shouldBeEqualTo 1
+            admin.events.last() shouldBeEqualTo "destroy"
+            admin.cancelCalls.shouldBeFalse()
+        } finally {
+            Thread.interrupted()
+        }
     }
 
     @Test
@@ -474,6 +586,17 @@ class SnapshotNamespaceAdminTest {
     }
 
     @Test
+    fun `both public destructive functions retain the delicate admin annotation`() {
+        val source = Files.readString(adminSource())
+
+        listOf("clearSnapshotNamespace", "clearMapRetainingMarker").forEach { functionName ->
+            Regex("""@DelicateSnapshotCacheAdminApi\s+fun\s+<ID\s*:\s*Any>\s+$functionName\s*\(""")
+                .containsMatchIn(source)
+                .shouldBeTrue()
+        }
+    }
+
+    @Test
     fun `cleanup result has a stable serializable structural contract`() {
         val expected = SnapshotNamespaceCleanupResult(
             SnapshotNamespaceCleanupOutcome.FAILED,
@@ -497,6 +620,12 @@ class SnapshotNamespaceAdminTest {
 
         source.shouldContain("quiesce")
         source.shouldContain("dedicated namespace-scoped Redis ACL")
+        source.shouldContain("marker and map inspection and unlink")
+        source.shouldContain("local-cache clear scoped pub/sub")
+        source.shouldContain("\${namespace}:clear:*")
+        source.shouldContain("semaphore keys and channels")
+        source.shouldContain("deny global keyevent subscription")
+        source.shouldNotContain("limited to inspecting and unlinking")
         source.shouldContain("network isolation")
         source.shouldContain("must never be exposed through request-facing")
         source.shouldContain("accident guard, not authorization")
@@ -518,6 +647,8 @@ class SnapshotNamespaceAdminTest {
         return Path.of("src/main/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceAdmin.kt")
     }
 
+    private fun Any.option(name: String): Any? = javaClass.getMethod(name).invoke(this)
+
     private companion object {
         const val NAMESPACE = "orders-snapshot:v1"
         const val FINGERPRINT = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
@@ -532,7 +663,15 @@ class SnapshotNamespaceAdminTest {
 private sealed interface FutureBehavior {
     data class Value(val value: Any?) : FutureBehavior
     data class Failure(val failure: Throwable) : FutureBehavior
+    data class Interrupted(val interruption: InterruptedException) : FutureBehavior
     data object Never : FutureBehavior
+}
+
+private sealed interface MapBehavior {
+    val label: String
+
+    data class Future(override val label: String, val behavior: FutureBehavior) : MapBehavior
+    data class Throws(override val label: String, val failure: Throwable) : MapBehavior
 }
 
 private data class ScriptCall(val keys: List<Any>, val arguments: List<Any?>)
@@ -541,13 +680,17 @@ private class RecordingAdmin {
     val events = mutableListOf<String>()
     val waitNanos = mutableListOf<Long>()
     val scriptCalls = mutableListOf<ScriptCall>()
+    val localCachedMapOptions = mutableListOf<LocalCachedMapOptions<*, *>>()
     var cancelCalls = false
+        private set
+    var destroyCount = 0
         private set
 
     private val scriptBehaviors = ArrayDeque<FutureBehavior>()
-    private val mapBehaviors = ArrayDeque<Pair<String, FutureBehavior>>()
+    private val mapBehaviors = ArrayDeque<MapBehavior>()
     private var scriptIndex = 0
     private var mapAccessFailure: Error? = null
+    private var destroyFailure: Throwable? = null
 
     val client: RedissonClient = proxy { method, args ->
         when (method.name) {
@@ -558,6 +701,8 @@ private class RecordingAdmin {
             "getLocalCachedMap" -> {
                 events += "map-access"
                 mapAccessFailure?.let { throw it }
+                @Suppress("UNCHECKED_CAST")
+                localCachedMapOptions += args.single() as LocalCachedMapOptions<*, *>
                 map
             }
             else -> defaultValue(method.returnType)
@@ -572,24 +717,40 @@ private class RecordingAdmin {
         scriptBehaviors += FutureBehavior.Failure(failure)
     }
 
+    fun scriptInterrupts(interruption: InterruptedException) {
+        scriptBehaviors += FutureBehavior.Interrupted(interruption)
+    }
+
     fun scriptNeverCompletes() {
         scriptBehaviors += FutureBehavior.Never
     }
 
     fun mapReturns(value: Any?, label: String) {
-        mapBehaviors += label to FutureBehavior.Value(value)
+        mapBehaviors += MapBehavior.Future(label, FutureBehavior.Value(value))
     }
 
     fun mapNeverCompletes(label: String) {
-        mapBehaviors += label to FutureBehavior.Never
+        mapBehaviors += MapBehavior.Future(label, FutureBehavior.Never)
     }
 
     fun mapFails(failure: Throwable, label: String) {
-        mapBehaviors += label to FutureBehavior.Failure(failure)
+        mapBehaviors += MapBehavior.Future(label, FutureBehavior.Failure(failure))
+    }
+
+    fun mapInterrupts(interruption: InterruptedException, label: String) {
+        mapBehaviors += MapBehavior.Future(label, FutureBehavior.Interrupted(interruption))
+    }
+
+    fun mapThrows(failure: Throwable, label: String) {
+        mapBehaviors += MapBehavior.Throws(label, failure)
     }
 
     fun mapAccessFails(failure: Error) {
         mapAccessFailure = failure
+    }
+
+    fun destroyFails(failure: Throwable) {
+        destroyFailure = failure
     }
 
     private val script: RScript = proxy { method, args ->
@@ -612,9 +773,17 @@ private class RecordingAdmin {
     private val map: RLocalCachedMap<Long, Any?> = proxy { method, _ ->
         when (method.name) {
             "unlinkAsync", "clearLocalCacheAsync" -> {
-                val (label, behavior) = mapBehaviors.removeFirst()
-                events += label
-                future(label, behavior)
+                val behavior = mapBehaviors.removeFirst()
+                events += behavior.label
+                when (behavior) {
+                    is MapBehavior.Future -> future(behavior.label, behavior.behavior)
+                    is MapBehavior.Throws -> throw behavior.failure
+                }
+            }
+            "destroy" -> {
+                events += "destroy"
+                destroyCount += 1
+                destroyFailure?.let { throw it }
             }
             else -> defaultValue(method.returnType)
         }
@@ -631,6 +800,7 @@ private class RecordingAdmin {
                 when (behavior) {
                     is FutureBehavior.Value -> behavior.value
                     is FutureBehavior.Failure -> throw ExecutionException(behavior.failure)
+                    is FutureBehavior.Interrupted -> throw behavior.interruption
                     FutureBehavior.Never -> throw TimeoutException("never completes")
                 }
             }
@@ -643,6 +813,7 @@ private class RecordingAdmin {
             "toCompletableFuture" -> when (behavior) {
                 is FutureBehavior.Value -> CompletableFuture.completedFuture(behavior.value)
                 is FutureBehavior.Failure -> CompletableFuture.failedFuture(behavior.failure)
+                is FutureBehavior.Interrupted -> CompletableFuture.failedFuture(behavior.interruption)
                 FutureBehavior.Never -> CompletableFuture<Any?>()
             }
             else -> defaultValue(method.returnType)
