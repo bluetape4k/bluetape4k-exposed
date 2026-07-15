@@ -260,8 +260,8 @@ class SnapshotCacheStoreTest {
         applyMethods.all { it.parameterTypes.firstOrNull() == List::class.java }.shouldBeTrue()
         store.snapshotBatches shouldBeEqualTo listOf(snapshots)
         store.invalidationBatches shouldBeEqualTo listOf(invalidationIds)
-        putReport.results.map { it.outcome } shouldBeEqualTo ALL_OUTCOMES
-        invalidationReport.results.map { it.outcome } shouldBeEqualTo ALL_OUTCOMES
+        putReport.results.map { it.outcome } shouldBeEqualTo PER_INPUT_OUTCOMES
+        invalidationReport.results.map { it.outcome } shouldBeEqualTo PER_INPUT_OUTCOMES
         putReport.results.sumOf { it.affectedCount } shouldBeEqualTo snapshots.size
         invalidationReport.results.sumOf { it.affectedCount } shouldBeEqualTo invalidationIds.size
     }
@@ -269,17 +269,18 @@ class SnapshotCacheStoreTest {
     @Test
     fun `report reconciliation accepts every outcome with an exact long count`() {
         val report = SnapshotCacheApplyReport(
-            ALL_OUTCOMES.mapIndexed { index, outcome ->
+            SnapshotCacheOutcome.entries.mapIndexed { index, outcome ->
                 SnapshotCacheOperationResult(
                     operation = SnapshotCacheOperation.PUT,
                     outcome = outcome,
-                    affectedCount = index + 1,
+                    affectedCount = if (outcome == SnapshotCacheOutcome.OVERRUN) 0 else index + 1,
                     exceptionType = exceptionType(outcome),
                 )
             },
         )
 
-        report.requireReconciled(SnapshotCacheOperation.PUT, expectedCount = 10) shouldBeEqualTo report
+        val expectedCount = report.results.sumOf { it.affectedCount }
+        report.requireReconciled(SnapshotCacheOperation.PUT, expectedCount) shouldBeEqualTo report
     }
 
     @Test
@@ -305,6 +306,13 @@ class SnapshotCacheStoreTest {
             SnapshotCacheApplyReport(listOf(onePut)).requireReconciled(
                 SnapshotCacheOperation.PUT,
                 expectedCount = 2,
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            SnapshotCacheOperationResult(
+                SnapshotCacheOperation.PUT,
+                SnapshotCacheOutcome.OVERRUN,
+                affectedCount = 1,
             )
         }
         assertFailsWith<IllegalArgumentException> {
@@ -375,7 +383,7 @@ class SnapshotCacheStoreTest {
 
     private class RecordingStore(
         private val outcomeFor: (Int, SnapshotCacheDeadline) -> SnapshotCacheOutcome = { index, _ ->
-            ALL_OUTCOMES[index]
+            PER_INPUT_OUTCOMES[index]
         },
     ) : SnapshotCacheStore<Long, Payload> {
         override val storeId = SnapshotStoreId("local", "orders:v1")
@@ -485,7 +493,7 @@ class SnapshotCacheStoreTest {
     }
 
     companion object {
-        private val ALL_OUTCOMES = listOf(
+        private val PER_INPUT_OUTCOMES = listOf(
             SnapshotCacheOutcome.SUCCESS,
             SnapshotCacheOutcome.FAILED,
             SnapshotCacheOutcome.REJECTED,

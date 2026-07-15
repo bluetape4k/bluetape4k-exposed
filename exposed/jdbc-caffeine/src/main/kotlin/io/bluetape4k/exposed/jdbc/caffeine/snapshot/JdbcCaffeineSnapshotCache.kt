@@ -28,7 +28,8 @@ import io.bluetape4k.exposed.cache.snapshot.SnapshotValueSizer
 import io.bluetape4k.exposed.cache.snapshot.rejectDirectEntitySnapshotValues
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
 import java.io.Serializable
-import kotlin.math.max
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 import kotlin.reflect.KClass
 
 /**
@@ -48,6 +49,7 @@ class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
     private val cache: Cache<ID, StoredSnapshot<V>> = buildCache(config)
     private val fences = SnapshotLocalFenceRegistry<ID>(config.fenceStripes)
     private val misses = SnapshotMissCapabilityRegistry<ID, V>(config.maxOutstandingMissTokens)
+    private val maintenanceLock = ReentrantLock()
 
     /** Stable logical identity for this cache. */
     override val storeId: SnapshotStoreId = SnapshotStoreId(BACKEND, config.snapshot.namespace)
@@ -121,7 +123,7 @@ class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
             }
         }
         if (report.results.any { it.outcome == SnapshotCacheOutcome.SUCCESS }) {
-            cache.cleanUp()
+            maintainCapacity()
         }
         return report
     }
@@ -164,8 +166,25 @@ class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
             }
             results += result
             index++
+            if (deadline.isExpired) {
+                results += SnapshotCacheOperationResult(operation, SnapshotCacheOutcome.OVERRUN, 0)
+            }
         }
         return SnapshotCacheApplyReport(results)
+    }
+
+    private fun maintainCapacity() = maintenanceLock.withLock {
+        cache.cleanUp()
+        val eviction = cache.policy().eviction().orElseThrow()
+        while (cache.estimatedSize() > config.maximumSize) {
+            val overflow = (cache.estimatedSize() - config.maximumSize)
+                .coerceAtMost(Int.MAX_VALUE.toLong())
+                .toInt()
+            val coldest = eviction.coldest(overflow)
+            check(coldest.isNotEmpty()) { "Caffeine did not expose entries required for maximumSize enforcement." }
+            cache.invalidateAll(coldest.keys)
+            cache.cleanUp()
+        }
     }
 
     companion object {
@@ -184,12 +203,11 @@ class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
     }
 
     private fun caffeineWeight(estimatedWeight: Long?): Int {
-        val maximumWeight = config.maximumWeight ?: return 1
+        if (config.maximumWeight == null) return 1
         val retainedWeight = requireNotNull(estimatedWeight) {
             "A prepared snapshot weight is required for a weighted Caffeine cache."
         }
-        val minimumEntryWeight = max(1L, ceilingDivide(maximumWeight, config.maximumSize))
-        return max(retainedWeight, minimumEntryWeight).toInt()
+        return retainedWeight.toInt()
     }
 }
 
@@ -204,11 +222,6 @@ fun <ID : Any, V : Serializable> jdbcCaffeineSnapshotCache(
 ): JdbcCaffeineSnapshotCache<ID, V> {
     require(valueSizer != null || config.maximumWeight == null && config.maxStagedWeight == null) {
         "A SnapshotValueSizer is required when maximumWeight or maxStagedWeight is configured."
-    }
-    config.maximumWeight?.let { maximumWeight ->
-        require(ceilingDivide(maximumWeight, config.maximumSize) <= Int.MAX_VALUE.toLong()) {
-            "maximumWeight[$maximumWeight] cannot preserve maximumSize[${config.maximumSize}] with Caffeine weights."
-        }
     }
     return JdbcCaffeineSnapshotCache.create(idType, valueType, config, valueSizer, validator, failureBuffer)
 }
@@ -235,8 +248,6 @@ private fun <ID : Any, V : Serializable> buildCache(
     }
     return base.maximumSize(config.maximumSize).build()
 }
-
-private fun ceilingDivide(dividend: Long, divisor: Long): Long = 1L + (dividend - 1L) / divisor
 
 private data class StoredSnapshot<V : Serializable>(
     val snapshot: CacheSnapshot<V>,

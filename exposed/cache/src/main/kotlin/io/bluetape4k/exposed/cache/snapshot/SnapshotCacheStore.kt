@@ -365,6 +365,9 @@ data class SnapshotCacheOperationResult(
 ) : Serializable {
     init {
         require(affectedCount >= 0) { "affectedCount[$affectedCount] must not be negative." }
+        require(outcome != SnapshotCacheOutcome.OVERRUN || affectedCount == 0) {
+            "OVERRUN must have an affectedCount of zero."
+        }
         exceptionType?.let {
             require(it.isNotBlank()) { "exceptionType must not be blank when set." }
             require(it.length <= MAX_EXCEPTION_TYPE_LENGTH) {
@@ -395,6 +398,9 @@ enum class SnapshotCacheOperation {
 enum class SnapshotCacheOutcome {
     /** Operation completed successfully. */
     SUCCESS,
+
+    /** Operation completed, but the cooperative drain deadline expired during that operation. */
+    OVERRUN,
 
     /** Operation was attempted and failed. */
     FAILED,

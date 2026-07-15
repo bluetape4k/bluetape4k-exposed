@@ -2,6 +2,7 @@
 
 package io.bluetape4k.exposed.jdbc.caffeine.snapshot
 
+import com.github.benmanes.caffeine.cache.Cache
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
@@ -93,13 +94,11 @@ class JdbcCaffeineSnapshotCacheTest {
     }
 
     @Test
-    fun `weighted factory rejects capacities and values Caffeine cannot conservatively represent`() {
-        assertFailsWith<IllegalArgumentException> {
-            jdbcCaffeineSnapshotCache<Long, Payload>(
-                config("unrepresentable-capacity:v1", maximumWeight = Long.MAX_VALUE, maximumSize = 1L),
-                valueSizer = SnapshotValueSizer { 1L },
-            )
-        }
+    fun `weighted factory accepts independent capacities but rejects values Caffeine cannot represent`() {
+        jdbcCaffeineSnapshotCache<Long, Payload>(
+            config("independent-capacity:v1", maximumWeight = Long.MAX_VALUE, maximumSize = 1L),
+            valueSizer = SnapshotValueSizer { 1L },
+        )
         val cache = jdbcCaffeineSnapshotCache<Long, Payload>(
             config("unrepresentable-value:v1", maximumWeight = Long.MAX_VALUE, maximumSize = Long.MAX_VALUE),
             valueSizer = SnapshotValueSizer { Int.MAX_VALUE.toLong() + 1L },
@@ -132,6 +131,38 @@ class JdbcCaffeineSnapshotCacheTest {
     }
 
     @Test
+    fun `weighted Caffeine receives the exact conservative value estimate`() {
+        val cache = jdbcCaffeineSnapshotCache<Long, Payload>(
+            config("exact-weight:v1", maximumWeight = 100L, maximumSize = 1L),
+            valueSizer = SnapshotValueSizer { 7L },
+        )
+        val store = cache as SnapshotCacheStore<Long, Payload>
+        val put = store.claimMiss(cache.lookup(1L).miss.shouldNotBeNull())
+            .prepare(CacheSnapshot(Payload("seven")))
+
+        store.applySnapshots(listOf(put), NeverExpiredDeadline)
+
+        weightedSize(cache) shouldBeEqualTo 7L
+    }
+
+    @Test
+    fun `weighted mode enforces maximum size independently from maximum weight`() {
+        val cache = jdbcCaffeineSnapshotCache<Long, Payload>(
+            config("weighted-count:v1", maximumWeight = 1_000L, maximumSize = 2L),
+            valueSizer = SnapshotValueSizer { 1L },
+        )
+        val store = cache as SnapshotCacheStore<Long, Payload>
+        val puts = (1L..3L).map { id ->
+            store.claimMiss(cache.lookup(id).miss.shouldNotBeNull()).prepare(CacheSnapshot(Payload("value-$id")))
+        }
+
+        store.applySnapshots(puts, NeverExpiredDeadline)
+
+        (1L..3L).count { cache.lookup(it).snapshot != null } shouldBeEqualTo 2
+        weightedSize(cache) shouldBeEqualTo 2L
+    }
+
+    @Test
     fun `maximum size and expiry settings are enforced by Caffeine`() {
         val cache = jdbcCaffeineSnapshotCache<Long, Payload>(
             config(
@@ -153,6 +184,27 @@ class JdbcCaffeineSnapshotCacheTest {
     }
 
     @Test
+    fun `non-null expire after access expires an inactive snapshot`() {
+        val cache = jdbcCaffeineSnapshotCache<Long, Payload>(
+            config(
+                "access-expiry:v1",
+                maximumSize = 4L,
+                expireAfterWrite = Duration.ofMinutes(1),
+                expireAfterAccess = Duration.ofMillis(2),
+            ),
+        )
+        val store = cache as SnapshotCacheStore<Long, Payload>
+        val put = store.claimMiss(cache.lookup(1L).miss.shouldNotBeNull())
+            .prepare(CacheSnapshot(Payload("inactive")))
+        store.applySnapshots(listOf(put), NeverExpiredDeadline)
+
+        cache.lookup(1L).snapshot.shouldNotBeNull()
+        Thread.sleep(20)
+
+        cache.lookup(1L).snapshot.shouldBeNull()
+    }
+
+    @Test
     fun `cooperative deadline reports attempted entry and remaining not attempted entries`() {
         val cache = jdbcCaffeineSnapshotCache<Long, Payload>(config("deadline:v1"))
         val store = cache as SnapshotCacheStore<Long, Payload>
@@ -162,9 +214,25 @@ class JdbcCaffeineSnapshotCacheTest {
 
         report.results.map { it.outcome } shouldBeEqualTo listOf(
             SnapshotCacheOutcome.SUCCESS,
+            SnapshotCacheOutcome.OVERRUN,
             SnapshotCacheOutcome.NOT_ATTEMPTED,
         )
         report.results.sumOf { it.affectedCount } shouldBeEqualTo 2
+    }
+
+    @Test
+    fun `single successful entry reports zero-count overrun after the operation`() {
+        val cache = jdbcCaffeineSnapshotCache<Long, Payload>(config("single-overrun:v1"))
+        val store = cache as SnapshotCacheStore<Long, Payload>
+        val deadline = ExpireAfterFirstPollDeadline()
+
+        val report = store.applyInvalidations(listOf(1L), deadline)
+
+        report.results.map { it.outcome to it.affectedCount } shouldBeEqualTo listOf(
+            SnapshotCacheOutcome.SUCCESS to 1,
+            SnapshotCacheOutcome.OVERRUN to 0,
+        )
+        report.results.sumOf { it.affectedCount } shouldBeEqualTo 1
     }
 
     private fun config(
@@ -187,6 +255,12 @@ class JdbcCaffeineSnapshotCacheTest {
     )
 
     private data class Payload(val value: String) : Serializable
+
+    private fun weightedSize(cache: JdbcCaffeineSnapshotCache<Long, Payload>): Long {
+        val field = cache.javaClass.getDeclaredField("cache").apply { trySetAccessible() }
+        val caffeine = field.get(cache) as Cache<*, *>
+        return caffeine.policy().eviction().orElseThrow().weightedSize().orElseThrow()
+    }
 
     private object NeverExpiredDeadline : SnapshotCacheDeadline {
         override fun remaining(): Duration = Duration.ofDays(1)

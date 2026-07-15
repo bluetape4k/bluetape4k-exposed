@@ -416,9 +416,9 @@ fun <ID : Any, V : Serializable> JdbcTransaction.stageInvalidation(
 
 - [ ] Keep facade constructors internal. Expose only `storeId`, the exact caller-supplied `failureBuffer` instance, and `lookup(id): SnapshotCacheLookup<ID, V>`; prove both explicit-token and reified factories preserve the supplied buffer identity without `@PublishedApi` constructor access.
 - [ ] Compile the README-equivalent JDBC usage in `JdbcSnapshotCacheApiUsageTest`; assert the exact receiver/signature surface by reflection so R2DBC engine types do not leak into this module.
-- [ ] Configure Caffeine weight/expiry exactly from `CaffeineSnapshotCacheConfig`; never silently ignore an optional setting.
+- [ ] Configure Caffeine weight/expiry exactly from `CaffeineSnapshotCacheConfig`; pass the exact non-negative `SnapshotValueSizer` estimate to Caffeine and enforce `maximumSize` independently after maintenance without synthetic weight inflation. Never silently ignore an optional setting.
 - [ ] Require a root current `JdbcTransaction`; require `maxAttempts == 1` only when consuming a miss for snapshot fill. Register one core `StatementInterceptor` via the common coordinator.
-- [ ] Keep cache callbacks cache-only and cooperatively bounded by `localDrainBudget`; record `NOT_ATTEMPTED` and overrun outcomes without claiming a hard latency bound or throwing into the completed transaction.
+- [ ] Keep cache callbacks cache-only and cooperatively bounded by `localDrainBudget`; after a completed operation crosses the deadline, record its normal one-count outcome followed by `OVERRUN(0)`, then mark remaining entries `NOT_ATTEMPTED`. Preserve report count reconciliation without claiming a hard latency bound or throwing into the completed transaction.
 - [ ] Re-run module tests and confirm all existing tests remain green.
 - [ ] Commit with Lore trailers:
 

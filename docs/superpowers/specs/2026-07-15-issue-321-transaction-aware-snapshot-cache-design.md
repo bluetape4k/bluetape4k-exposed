@@ -192,9 +192,12 @@ second is the recommended production ceiling.
 whenever serialized field meaning or nested generic shape changes.
 When `maximumWeight` or `maxStagedWeight` is set, the Caffeine factory requires
 a `SnapshotValueSizer<V>` that returns a conservative retained-byte estimate;
-it configures Caffeine's weighted capacity and enforces the staged-byte ceiling
-before buffer mutation. Without a sizer the optional weight limits must be null,
-and documentation makes clear that entry counts alone are not heap bounds. A
+it passes that exact non-negative estimate to Caffeine's weighted capacity and
+enforces the staged-byte ceiling before buffer mutation. Weighted mode enforces
+`maximumSize` independently after Caffeine maintenance by invalidating the coldest
+overflow entries; it never inflates value weights to approximate an entry limit.
+Without a sizer the optional weight limits must be null, and documentation makes
+clear that entry counts alone are not heap bounds. A
 reusable `maximumEstimatedPayloadBytes(sizer, limit)` validator is provided for
 applications that want per-value rejection.
 
@@ -402,6 +405,7 @@ data class SnapshotCacheOperationResult(
 enum class SnapshotCacheOperation { GET, PUT, INVALIDATE }
 enum class SnapshotCacheOutcome {
     SUCCESS,
+    OVERRUN,
     FAILED,
     NOT_ATTEMPTED,
     REJECTED,
@@ -448,9 +452,11 @@ composite-ID test locks the contract.
 
 The registry coalesces to one final mutation per store/id before calling the
 SPI. Local work not started before the cooperative budget expires is
-`NOT_ATTEMPTED` with its affected count. Local stores may iterate in-process and report isolated
-per-entry failures. Because the buffer already coalesces each key, grouping
-cannot reorder two mutations for the same identifier.
+`NOT_ATTEMPTED` with its affected count. An operation that completes after the
+deadline reports its normal one-count result followed by `OVERRUN` with an affected
+count of zero, so phase counts still reconcile to the input. Local stores may
+iterate in-process and report isolated per-entry failures. Because the buffer already
+coalesces each key, grouping cannot reorder two mutations for the same identifier.
 
 The public Caffeine `lookup(id)` operation acquires the stripe lock and returns
 an exactly-one result: either `snapshot` or a library-constructed opaque `miss`.
@@ -878,7 +884,9 @@ wrong-operation results, and under/over-counts using `Long` accumulation so an
 The local phases share a monotonic `SnapshotCacheDeadline` derived from the
 smallest `localDrainBudget`. This is a cooperative budget: built-in Caffeine
 stores poll it before each entry, mark the remaining work `NOT_ATTEMPTED`, and
-report an overrun if a single cache operation/listener returns after expiry.
+report a zero-count `OVERRUN` if a single cache operation/listener returns after
+expiry. The completed operation keeps its normal one-count outcome and any remaining
+entries are `NOT_ATTEMPTED`.
 The synchronous SPI cannot preempt arbitrary user code, so the design does not
 claim a hard callback-latency bound. Every report reconciles exactly to its
 phase input count by operation and outcome.

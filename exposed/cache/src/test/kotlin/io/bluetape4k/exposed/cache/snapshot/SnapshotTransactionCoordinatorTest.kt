@@ -5,6 +5,7 @@ package io.bluetape4k.exposed.cache.snapshot
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import org.jetbrains.exposed.v1.core.DatabaseApi
 import org.jetbrains.exposed.v1.core.Transaction
@@ -444,14 +445,23 @@ class SnapshotTransactionCoordinatorTest {
                         SnapshotCacheOutcome.NOT_ATTEMPTED,
                         1,
                     ),
+                    SnapshotCacheOperationResult(
+                        SnapshotCacheOperation.INVALIDATE,
+                        SnapshotCacheOutcome.OVERRUN,
+                        0,
+                    ),
                 ),
             ),
         ).shouldBeTrue()
 
-        failures.size shouldBeEqualTo 3
+        failures.size shouldBeEqualTo 4
         failures.poll()?.outcome shouldBeEqualTo SnapshotCacheOutcome.FAILED
         failures.poll()?.outcome shouldBeEqualTo SnapshotCacheOutcome.REJECTED
         failures.poll()?.outcome shouldBeEqualTo SnapshotCacheOutcome.NOT_ATTEMPTED
+        failures.poll()?.let { overrun ->
+            overrun.outcome shouldBeEqualTo SnapshotCacheOutcome.OVERRUN
+            overrun.affectedCount shouldBeEqualTo 0
+        }.shouldNotBeNull()
     }
 
     @Test
