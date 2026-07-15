@@ -461,7 +461,7 @@ private data class AsyncInvalidationMutation<ID : Any>(
     val measured: MeasuredInvalidation<ID>,
 ) : BufferedSnapshotMutation {
     override val id: ID = measured.id
-    override val weight: Long = 0L
+    override val weight: Long = measured.encodedBytes.toLong()
 }
 
 private data class MutationKey(

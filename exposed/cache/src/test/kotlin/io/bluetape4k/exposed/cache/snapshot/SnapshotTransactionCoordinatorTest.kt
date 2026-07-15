@@ -249,6 +249,31 @@ class SnapshotTransactionCoordinatorTest {
     }
 
     @Test
+    fun `async encoded weight replacement and commit cap rejection preserve prior state atomically`() {
+        val transaction = TestTransaction()
+        val bridge = TestBridge()
+        val store = RecordingAsyncStore(
+            name = "weighted",
+            events = mutableListOf(),
+            limits = SnapshotCacheLimits(2, 1, maxStagedWeight = 10L),
+            measuredBytes = ArrayDeque(listOf(6, 4, 7, 11)),
+        )
+
+        stageInvalidationMutation(transaction, bridge, store, 1L)
+        stageInvalidationMutation(transaction, bridge, store, 1L)
+        assertFailsWith<IllegalStateException> {
+            stageInvalidationMutation(transaction, bridge, store, 2L)
+        }
+        assertFailsWith<IllegalStateException> {
+            stageInvalidationMutation(transaction, bridge, store, 1L)
+        }
+        bridge.commit(transaction)
+
+        store.submittedInvalidations.single().map { it.id } shouldBeEqualTo listOf(1L)
+        store.submittedInvalidations.single().single().encodedBytes shouldBeEqualTo 4
+    }
+
+    @Test
     fun `logical store collision rejects token fingerprint or buffer mismatch before mutation`() {
         val transaction = TestTransaction()
         val bridge = TestBridge()
@@ -786,20 +811,27 @@ class SnapshotTransactionCoordinatorTest {
         override val failureBuffer: SnapshotCacheFailureBuffer = snapshotCacheFailureBuffer(16),
         private val immediateFailure: Exception? = null,
         private val completion: CompletionStage<SnapshotCacheApplyReport>? = null,
+        override val limits: SnapshotCacheLimits = SnapshotCacheLimits(10, 4),
+        private val measuredBytes: ArrayDeque<Int> = ArrayDeque(),
     ) : AsyncSnapshotInvalidationStore<Long> {
         override val storeId = SnapshotStoreId("remote", "$name:v1")
         override val storeInstanceToken: Any = Any()
         override val compatibilityFingerprint: String = "remote:v1"
-        override val limits = SnapshotCacheLimits(10, 4)
+        val submittedInvalidations = mutableListOf<List<MeasuredInvalidation<Long>>>()
 
         override fun measure(id: Long): MeasuredInvalidation<Long> =
-            MeasuredInvalidation(id, Long.SIZE_BYTES, "a".repeat(64))
+            MeasuredInvalidation(
+                id,
+                if (measuredBytes.isEmpty()) Long.SIZE_BYTES else measuredBytes.removeFirst(),
+                "a".repeat(64),
+            )
 
         override fun submitInvalidation(
             batch: List<MeasuredInvalidation<Long>>,
         ): CompletionStage<SnapshotCacheApplyReport> {
             events += "async:${storeId.namespace.removeSuffix(":v1")}"
             immediateFailure?.let { throw it }
+            submittedInvalidations += batch
             return completion
                 ?: CompletableFuture.completedFuture(successReport(SnapshotCacheOperation.INVALIDATE, batch.size))
         }
