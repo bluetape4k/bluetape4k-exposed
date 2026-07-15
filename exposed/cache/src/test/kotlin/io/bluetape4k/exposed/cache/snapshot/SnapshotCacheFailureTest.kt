@@ -115,6 +115,43 @@ class SnapshotCacheFailureTest {
     }
 
     @Test
+    fun `exception type sanitizer rejects identifier ignorable control and format characters`() {
+        val bidiOverrideName = "safe.Fail\u202Eure"
+        val backspaceName = "safe.Fail\u0008ure"
+
+        sanitizeExceptionType(bidiOverrideName).shouldBeNull()
+        sanitizeExceptionType(backspaceName).shouldBeNull()
+        sanitizeExceptionType("예외.사용자예외") shouldBeEqualTo "예외.사용자예외"
+    }
+
+    @Test
+    fun `unsafe exception types cannot enter public failure or logging metadata`() {
+        val unsafeNames = listOf("safe.Fail\u202Eure", "safe.Fail\u0008ure")
+
+        unsafeNames.forEach { unsafeName ->
+            assertFailsWith<IllegalArgumentException> {
+                SnapshotCacheFailure(
+                    storeId = STORE_ID,
+                    operation = SnapshotCacheOperation.INVALIDATE,
+                    outcome = SnapshotCacheOutcome.FAILED,
+                    affectedCount = 1,
+                    exceptionType = unsafeName,
+                )
+            }
+
+            val sanitizedFailure = SnapshotCacheFailure(
+                storeId = STORE_ID,
+                operation = SnapshotCacheOperation.INVALIDATE,
+                outcome = SnapshotCacheOutcome.FAILED,
+                affectedCount = 1,
+                exceptionType = sanitizeExceptionType(unsafeName),
+            )
+            sanitizedFailure.exceptionType.shouldBeNull()
+            loggingSnapshotCacheFailureObserver().onFailure(sanitizedFailure)
+        }
+    }
+
+    @Test
     fun `buffer and count inputs are validated`() {
         assertFailsWith<IllegalArgumentException> { snapshotCacheFailureBuffer(0) }
         assertFailsWith<IllegalArgumentException> {

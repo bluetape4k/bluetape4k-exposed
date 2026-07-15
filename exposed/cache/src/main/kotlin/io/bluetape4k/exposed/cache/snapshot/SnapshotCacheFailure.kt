@@ -197,12 +197,19 @@ private fun String.isJvmIdentifier(): Boolean {
     if (isEmpty()) return false
     var offset = 0
     val first = codePointAt(offset)
-    if (!Character.isJavaIdentifierStart(first)) return false
+    if (!Character.isJavaIdentifierStart(first) || first.isUnsafeJvmIdentifierCodePoint()) return false
     offset += Character.charCount(first)
     while (offset < length) {
         val codePoint = codePointAt(offset)
-        if (!Character.isJavaIdentifierPart(codePoint)) return false
+        if (!Character.isJavaIdentifierPart(codePoint) || codePoint.isUnsafeJvmIdentifierCodePoint()) return false
         offset += Character.charCount(codePoint)
     }
     return true
+}
+
+private fun Int.isUnsafeJvmIdentifierCodePoint(): Boolean {
+    val type = Character.getType(this)
+    return Character.isIdentifierIgnorable(this) ||
+            type == Character.CONTROL.toInt() ||
+            type == Character.FORMAT.toInt()
 }
