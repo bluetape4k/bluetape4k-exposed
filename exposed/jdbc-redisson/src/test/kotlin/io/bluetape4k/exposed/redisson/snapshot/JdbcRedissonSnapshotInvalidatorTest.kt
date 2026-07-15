@@ -14,6 +14,7 @@ import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOperationResult
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOutcome
 import io.bluetape4k.exposed.cache.snapshot.SnapshotStoreId
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
+import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import org.junit.jupiter.api.Test
 import org.redisson.api.RFuture
 import org.redisson.api.RLocalCachedMap
@@ -35,6 +36,46 @@ import kotlin.reflect.KVisibility
 import kotlin.reflect.full.declaredMemberFunctions
 
 class JdbcRedissonSnapshotInvalidatorTest {
+
+    @Test
+    fun `repository configuration and invalidator share exact codec namespace and caller contracts`() {
+        val namespace = "orders-contract:v1"
+        val codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy())
+        val repositoryConfig = RedissonCacheConfig.READ_ONLY_WITH_NEAR_CACHE.copy(
+            name = namespace,
+            codec = codec,
+        )
+        val invalidatorConfig = config().copy(
+            snapshot = SnapshotCacheConfig(namespace, "orders-v3", 32, 4),
+        )
+        val failureBuffer = snapshotCacheFailureBuffer(4)
+        val map = RecordingLocalMap<Long>()
+        val client = RecordingRedissonClient(map.proxy)
+
+        val invalidator = jdbcRedissonSnapshotInvalidator(
+            client.proxy,
+            codec,
+            Long::class,
+            Payload::class,
+            invalidatorConfig,
+            failureBuffer,
+        )
+
+        repositoryConfig.name shouldBeEqualTo invalidator.storeId.namespace
+        (repositoryConfig.codec === codec).shouldBeTrue()
+        (invalidator.failureBuffer === failureBuffer).shouldBeTrue()
+        client.options.single().option("getName") shouldBeEqualTo repositoryConfig.name
+        (client.options.single().option("getCodec") === repositoryConfig.codec).shouldBeTrue()
+        invalidator.compatibilityFingerprint shouldBeEqualTo snapshotNamespaceFingerprint(
+            backend = "redisson-jdbc",
+            namespace = namespace,
+            keyRawClass = Long::class.java,
+            snapshotRawClass = Payload::class.java,
+            schemaVersion = "orders-v3",
+            codec = codec,
+            synchronizationStrategy = invalidatorConfig.synchronizationStrategy,
+        )
+    }
 
     @Test
     fun `explicit and reified factories preserve caller identities tokens fingerprint and map options`() {

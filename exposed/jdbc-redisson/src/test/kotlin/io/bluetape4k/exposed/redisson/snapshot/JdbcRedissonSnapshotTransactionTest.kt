@@ -4,6 +4,7 @@ package io.bluetape4k.exposed.redisson.snapshot
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
@@ -11,6 +12,7 @@ import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotValueValidator
 import io.bluetape4k.exposed.cache.snapshot.ClaimedSnapshotMiss
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheDeadline
+import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheFailure
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheFailureBuffer
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheLimits
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheLookup
@@ -40,6 +42,7 @@ import java.lang.reflect.Modifier
 import java.lang.reflect.Proxy
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicReference
 
 class JdbcRedissonSnapshotTransactionTest {
 
@@ -188,7 +191,9 @@ class JdbcRedissonSnapshotTransactionTest {
         val neverBuffer = snapshotCacheFailureBuffer(8)
         val rejectedBuffer = snapshotCacheFailureBuffer(8)
         val laterBuffer = snapshotCacheFailureBuffer(8)
-        val failureMap = RecordingLocalMap<Long>("failed", events).thenThrow(SubmissionFailure())
+        val failureMap = RecordingLocalMap<Long>("failed", events).thenThrow(
+            SubmissionFailure("redis://secret.example/identifier-1"),
+        )
         val neverMap = RecordingLocalMap<Long>("never", events).thenReturn(rFuture(CompletableFuture()))
         val rejectedMap = RecordingLocalMap<Long>("rejected", events)
         val laterMap = RecordingLocalMap<Long>("later", events)
@@ -246,11 +251,102 @@ class JdbcRedissonSnapshotTransactionTest {
         rejectedMap.submittedIds.shouldBeEqualTo(emptyList())
         laterMap.submittedIds shouldBeEqualTo listOf(listOf(6L))
         pending.quotaHealth() shouldBeEqualTo SnapshotInvalidationQuotaHealth(1, 1, 8, 8, 1, true)
-        failedBuffer.size shouldBeEqualTo 1
+        val failedEvent = failedBuffer.poll().shouldNotBeNull()
+        failedEvent shouldBeEqualTo SnapshotCacheFailure(
+            SnapshotStoreId("redisson-jdbc", "failed:v1"),
+            SnapshotCacheOperation.INVALIDATE,
+            SnapshotCacheOutcome.FAILED,
+            1,
+            SubmissionFailure::class.java.name,
+        )
+        failedEvent.toString().contains("secret.example").shouldBeFalse()
         neverBuffer.size shouldBeEqualTo 0
-        rejectedBuffer.size shouldBeEqualTo 1
+        rejectedBuffer.poll() shouldBeEqualTo SnapshotCacheFailure(
+            SnapshotStoreId("redisson-jdbc", "rejected:v1"),
+            SnapshotCacheOperation.INVALIDATE,
+            SnapshotCacheOutcome.REJECTED,
+            1,
+        )
         laterBuffer.size shouldBeEqualTo 0
         local.failureBuffer.size shouldBeEqualTo 0
+    }
+
+    @Test
+    fun `duplicate exceptional completion records one sanitized event and releases quota once`() {
+        val buffer = snapshotCacheFailureBuffer(4)
+        val exceptional = CompletableFuture<Long>().apply {
+            completeExceptionally(SubmissionFailure("redis://secret.example/identifier-99"))
+        }
+        val map = RecordingLocalMap<Long>().thenReturn(rFuture(exceptional, duplicateCallback = true))
+        val invalidator = testInvalidator(
+            namespace = "exceptional:v1",
+            map = map,
+            client = RecordingRedissonClient(map.proxy).proxy,
+            quotaRegistry = RedissonInvalidationQuotaRegistry(),
+            failureBuffer = buffer,
+            events = mutableListOf(),
+            label = "exceptional",
+        )
+
+        transaction(database()) {
+            maxAttempts = 1
+            stageInvalidation(invalidator, 99L)
+        }
+
+        invalidator.quotaHealth() shouldBeEqualTo SnapshotInvalidationQuotaHealth(1, 0, 8, 0, 0, false)
+        buffer.size shouldBeEqualTo 1
+        val failure = buffer.poll().shouldNotBeNull()
+        failure shouldBeEqualTo SnapshotCacheFailure(
+            SnapshotStoreId("redisson-jdbc", "exceptional:v1"),
+            SnapshotCacheOperation.INVALIDATE,
+            SnapshotCacheOutcome.FAILED,
+            1,
+            SubmissionFailure::class.java.name,
+        )
+        failure.toString().contains("99").shouldBeFalse()
+        failure.toString().contains("secret.example").shouldBeFalse()
+        buffer.size shouldBeEqualTo 0
+    }
+
+    @Test
+    fun `caller thread drain consumes actual event and reports observer exception structurally`() {
+        val buffer = snapshotCacheFailureBuffer(4)
+        val map = RecordingLocalMap<Long>().thenThrow(
+            SubmissionFailure("redis://secret.example/identifier-7"),
+        )
+        val invalidator = testInvalidator(
+            namespace = "drain:v1",
+            map = map,
+            client = RecordingRedissonClient(map.proxy).proxy,
+            quotaRegistry = RedissonInvalidationQuotaRegistry(),
+            failureBuffer = buffer,
+            events = mutableListOf(),
+            label = "drain",
+        )
+        transaction(database()) {
+            maxAttempts = 1
+            stageInvalidation(invalidator, 7L)
+        }
+        val caller = Thread.currentThread()
+        val observedThread = AtomicReference<Thread>()
+        val observedFailure = AtomicReference<SnapshotCacheFailure>()
+
+        val result = buffer.drainTo(
+            observer = { failure ->
+                observedThread.set(Thread.currentThread())
+                observedFailure.set(failure)
+                throw ObserverFailure("do not retain this message")
+            },
+        )
+
+        (observedThread.get() === caller).shouldBeTrue()
+        observedFailure.get().shouldNotBeNull().storeId shouldBeEqualTo SnapshotStoreId("redisson-jdbc", "drain:v1")
+        result.deliveredCount shouldBeEqualTo 0
+        result.observerFailedCount shouldBeEqualTo 1
+        result.remainingCount shouldBeEqualTo 0
+        result.observerExceptionType shouldBeEqualTo ObserverFailure::class.java.name
+        buffer.size shouldBeEqualTo 0
+        buffer.observerFailureCount shouldBeEqualTo 1L
     }
 
     private fun fixture(
@@ -438,11 +534,15 @@ class JdbcRedissonSnapshotTransactionTest {
     }
 
     private class RollbackMarker : RuntimeException()
-    private class SubmissionFailure : RuntimeException()
+    private class SubmissionFailure(message: String? = null) : RuntimeException(message)
+    private class ObserverFailure(message: String) : RuntimeException(message)
 
     private companion object {
         @Suppress("UNCHECKED_CAST")
-        fun rFuture(delegate: CompletableFuture<Long>): RFuture<Long> {
+        fun rFuture(
+            delegate: CompletableFuture<Long>,
+            duplicateCallback: Boolean = false,
+        ): RFuture<Long> {
             lateinit var proxy: RFuture<Long>
             proxy = Proxy.newProxyInstance(
                 RFuture::class.java.classLoader,
@@ -451,7 +551,10 @@ class JdbcRedissonSnapshotTransactionTest {
                 when (method.name) {
                     "whenComplete" -> {
                         val callback = args.orEmpty().single() as java.util.function.BiConsumer<Long?, Throwable?>
-                        delegate.whenComplete(callback)
+                        delegate.whenComplete { value, failure ->
+                            callback.accept(value, failure)
+                            if (duplicateCallback) callback.accept(value, failure)
+                        }
                         proxy
                     }
                     "equals" -> instance === args.orEmpty().singleOrNull()
