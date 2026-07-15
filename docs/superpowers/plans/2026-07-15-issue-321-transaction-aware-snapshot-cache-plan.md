@@ -135,10 +135,10 @@ Tested: exposed cache snapshot value and configuration tests
 - Create: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheStoreTest.kt`
 - Create: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotLocalFenceRegistryTest.kt`
 
-- [ ] Write failing tests proving lookup returns exactly one of snapshot/miss; miss objects reveal no ID/fence, are not serializable, have a constant `toString`, and cannot be claimed twice.
-- [ ] Add concurrency tests using latches/barriers: lookup miss -> concurrent invalidation -> old fill must be rejected; unrelated stripe operations proceed; deliberate stripe collision may reject a safe fill but never permit stale data.
-- [ ] Run `./gradlew :bluetape4k-exposed-cache:test --tests '*SnapshotCacheStoreTest' --tests '*SnapshotLocalFenceRegistryTest'` and confirm red.
-- [ ] Implement the engine-neutral surface:
+- [x] Write failing tests proving lookup returns exactly one of snapshot/miss; miss objects reveal no ID/fence, are not serializable, have a constant `toString`, and cannot be claimed twice.
+- [x] Add concurrency tests using latches/barriers: lookup miss -> concurrent invalidation -> old fill must be rejected; unrelated stripe operations proceed; deliberate stripe collision may reject a safe fill but never permit stale data.
+- [x] Run `./gradlew :bluetape4k-exposed-cache:test --tests '*SnapshotCacheStoreTest' --tests '*SnapshotLocalFenceRegistryTest'` and confirm red.
+- [x] Implement the engine-neutral surface:
 
 ```kotlin
 class SnapshotCacheLookup<ID : Any, V : Serializable> private constructor(
@@ -201,20 +201,16 @@ interface SnapshotCacheDeadline {
 }
 
 @InternalSnapshotCacheApi
-data class SnapshotLocalFence(
-    val ownerToken: Any,
-    val stripe: Int,
-    val generationToken: Any,
-)
+class SnapshotLocalFence<ID : Any> internal constructor()
 ```
 
-- [ ] Keep `SnapshotLocalFence` and the mutation field carrying it behind `@InternalSnapshotCacheApi`; expose no public bare-ID `put` method.
-- [ ] Implement a synchronized weak-identity miss registry bounded by `maxOutstandingMissTokens`; after expunging stale weak entries, a full registry rejects `lookup` before any transaction or database read. Remove a token before mapper/preparer work and keep claimed preparers one-shot, so mapper failure requires a fresh lookup.
-- [ ] Implement a fixed power-of-two explicit-lock stripe registry using identity generation tokens. Replace the token and mutate the cache under the same lock.
-- [ ] Add `SnapshotStoreId`, `SnapshotCacheLimits`, measured invalidation, mutation, deadline, operation/outcome, and report models from the approved design. Reject two facades with the same logical `SnapshotStoreId` unless their private instance token is identical by reference and their non-secret compatibility fingerprint matches.
-- [ ] Test bulk apply rather than per-entry SPI calls: each store is invoked at most once per phase, all phase inputs reconcile exactly to success/failure/rejected/not-attempted counts, and a shared monotonic deadline can expire between entries.
-- [ ] Re-run targeted tests, including 100 repeated controlled races.
-- [ ] Commit with Lore trailers:
+- [x] Keep the ID-bound `SnapshotLocalFence` as an opaque regular class with an internal constructor and no token getters, copy, component, serialization, or structural equality surface. The owning registry alone captures and validates it. Keep the mutation field carrying it behind `@InternalSnapshotCacheApi`; expose no public bare-ID `put` method.
+- [x] Implement a weak-identity miss registry protected by an explicit lock and bounded by `maxOutstandingMissTokens`; after expunging stale weak entries, a full registry rejects `lookup` before any transaction or database read. Remove a token before mapper/preparer work and keep claimed preparers one-shot, so mapper failure requires a fresh lookup.
+- [x] Implement a fixed power-of-two explicit-lock stripe registry using identity generation tokens. Replace the token and mutate the cache under the same lock.
+- [x] Add `SnapshotStoreId`, `SnapshotCacheLimits`, measured invalidation, mutation, deadline, operation/outcome, and report models from the approved design.
+- [x] Test bulk apply rather than per-entry SPI calls: each store is invoked at most once per phase, all phase inputs pass `SnapshotCacheApplyReport.requireReconciled(operation, expectedCount)` using overflow-safe `Long` accumulation and reconcile exactly to success/failure/rejected/not-attempted counts, and a shared monotonic deadline can expire between entries.
+- [x] Re-run targeted tests, including 100 repeated controlled races.
+- [x] Commit with Lore trailers:
 
 ```text
 Make stale snapshot fills unrepresentable at the cache boundary
@@ -292,7 +288,8 @@ fun <TX : Transaction, ID : Any, V : Serializable> stageInvalidationMutation(
 
 - [ ] Declare `@RequiresOptIn(level = RequiresOptIn.Level.ERROR) annotation class InternalSnapshotCacheApi` exactly and add a cross-module compile-facing contract test proving the opt-in `SnapshotCacheLookup.hit/miss` factories are usable by adapters, implementation hooks require explicit opt-in, both local/async invalidation overloads resolve, and common public signatures leak neither `JdbcTransaction` nor `R2dbcTransaction`.
 
-- [ ] Store the registry under one private Exposed transaction user-data key and mirror only its state in a synchronized payload-free weak terminal guard with no strong transaction back-reference. Register participants atomically and use the strictest transaction-wide limits among participating stores.
+- [ ] Store the registry under one private Exposed transaction user-data key and mirror only its state in a payload-free weak terminal guard protected by an explicit lock, with no strong transaction back-reference. Register participants atomically and use the strictest transaction-wide limits among participating stores.
+- [ ] Reject two facades with the same logical `SnapshotStoreId` unless their private instance token is identical by reference and their non-secret compatibility fingerprint matches; reject before buffer mutation.
 - [ ] In `beforeCommit`, detach the active buffer into interceptor-owned pending state. In `afterCommit`, remove registry/pending state before invoking cache work. In `afterRollback`, clear both states without cache work.
 - [ ] In non-throwing `beforeRollback`, mark the state terminal and clear active and pending payloads before later rollback interceptors can skip `afterRollback`; make `afterRollback` defensive/idempotent cleanup.
 - [ ] Preserve insertion order for distinct keys while replacing the effective mutation for the same `(store identity, id)`; apply replacement weight deltas before buffer mutation.

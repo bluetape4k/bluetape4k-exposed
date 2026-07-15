@@ -352,7 +352,7 @@ sealed interface SnapshotCacheMutation<ID : Any, V : Serializable> {
         override val id: ID,
         val snapshot: CacheSnapshot<V>,
         @InternalSnapshotCacheApi
-        val localFence: SnapshotLocalFence? = null,
+        val localFence: SnapshotLocalFence<ID>? = null,
     ) : SnapshotCacheMutation<ID, V>
 
     data class Invalidate<ID : Any, V : Serializable>(
@@ -361,11 +361,7 @@ sealed interface SnapshotCacheMutation<ID : Any, V : Serializable> {
 }
 
 @InternalSnapshotCacheApi
-data class SnapshotLocalFence(
-    val ownerToken: Any,
-    val stripe: Int,
-    val generationToken: Any,
-)
+class SnapshotLocalFence<ID : Any> internal constructor()
 
 class SnapshotCacheLookup<ID : Any, V : Serializable> private constructor(
     val snapshot: CacheSnapshot<V>?,
@@ -388,7 +384,13 @@ class SnapshotCacheMiss<ID : Any, V : Serializable> internal constructor() {
 
 data class SnapshotCacheApplyReport(
     val results: List<SnapshotCacheOperationResult>,
-)
+) {
+    @InternalSnapshotCacheApi
+    fun requireReconciled(
+        operation: SnapshotCacheOperation,
+        expectedCount: Int,
+    ): SnapshotCacheApplyReport
+}
 
 data class SnapshotCacheOperationResult(
     val operation: SnapshotCacheOperation,
@@ -452,8 +454,9 @@ cannot reorder two mutations for the same identifier.
 
 The public Caffeine `lookup(id)` operation acquires the stripe lock and returns
 an exactly-one result: either `snapshot` or a library-constructed opaque `miss`.
-The facade stores the ID and `SnapshotLocalFence` in a synchronized weak-identity
-capability registry keyed by the miss object; the token has no ID/fence getter,
+The facade stores the ID and an ID-bound opaque `SnapshotLocalFence` in a
+weak-identity capability registry protected by an explicit lock and keyed by
+the miss object; neither capability has an ID/fence/token getter,
 is not `Serializable`, and has a constant sanitized `toString`. Snapshot
 staging requires that miss token; there is no public bare-id snapshot PUT
 overload. Built-in
@@ -738,8 +741,8 @@ All stores in that transaction drain from the same registry. JDBC and R2DBC
 bridges share mutation and error-handling logic without leaking engine types
 from `exposed/cache`.
 
-The transaction user-data key points to a state object, while a synchronized
-weak identity guard maps the transaction object to the same state without a
+The transaction user-data key points to a state object, while a weak identity
+guard protected by an explicit lock maps the transaction object to the same state without a
 strong back-reference. The interceptor's non-throwing `beforeCommit` changes
 `OPEN` to `BOUNDARY_STARTED` and moves the coalesced buffer into its private
 pending field before Exposed clears user data. `beforeRollback` marks the state
@@ -812,7 +815,7 @@ releases the lease in `finally` after recording the structural result. Encoding
 or admission rejection creates no lease. Repeated synchronous failures
 therefore cannot leak quota.
 
-A weak identity registry holds one quota per `RedissonClient`. The first
+A weak identity registry protected by an explicit lock holds one quota per `RedissonClient`. The first
 factory pins `maxOutstandingChunks` and `maxOutstandingEncodedBytes`; every
 later facade for that exact client must provide identical values or factory
 construction fails before map access or staging. Before each command the
@@ -841,20 +844,29 @@ observer-failed, remaining, and dropped counts are never conflated. The buffer
 is diagnostic, not durable repair storage.
 
 Each Caffeine facade owns a fixed power-of-two array of lock/generation-token
-stripes. A cache-miss lookup captures its stripe token by reference before the
-database load. After commit, a
-PUT acquires the stripe lock and applies only when the token still matches by
-identity; it replaces the token with a new private object and performs
+stripes. A cache-miss lookup captures an opaque capability that privately binds
+the store owner, logical identifier, stripe, and generation before the database
+load. The capability is a regular non-serializable class with an internal
+constructor and no data-class copy/component surface. After commit, a PUT asks
+the owning registry to acquire the stripe lock and applies only when the owner
+and generation still match by identity and the identifier matches the captured
+identifier; it replaces the token with a new private object and performs
 `cache.put` before releasing the lock. Invalidation acquires the same stripe,
 replaces the token unconditionally, and invalidates before unlock. Therefore an
 older transaction callback cannot publish after a newer PUT or invalidation on
 the same stripe. Identity tokens cannot numerically wrap. Hash collisions may
 conservatively
-skip an unrelated PUT but cannot expose stale data, and the fixed stripe array
+skip an unrelated PUT but cannot be used to retarget a capability to the
+colliding identifier, cannot expose stale data, and the fixed stripe array
 does not create an unbounded tombstone map. The captured generation is internal
 metadata and is not serialized or distributed. A fence mismatch skips the PUT
 and offers one structural `REJECTED` result; the next read remains a safe cache
 miss.
+
+Every store report crosses the coordinator boundary through
+`requireReconciled(operation, expectedCount)`. It rejects negative expectations,
+wrong-operation results, and under/over-counts using `Long` accumulation so an
+`Int` overflow cannot make a malformed report appear valid.
 
 The local phases share a monotonic `SnapshotCacheDeadline` derived from the
 smallest `localDrainBudget`. This is a cooperative budget: built-in Caffeine
