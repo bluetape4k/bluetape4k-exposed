@@ -31,6 +31,9 @@ import org.redisson.client.protocol.Decoder
 import org.redisson.client.protocol.Encoder
 import org.redisson.codec.CompositeCodec
 import org.redisson.codec.LZ4Codec
+import org.redisson.codec.LZ4CodecV2
+import org.redisson.codec.ProtobufCodec
+import org.redisson.codec.SnappyCodecV2
 import org.redisson.codec.ZStdCodec
 import java.util.stream.Stream
 
@@ -38,6 +41,7 @@ class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
 
     companion object {
         private const val UNSAFE_NESTED_CODECS_METHOD = "unsafeNestedCodecs"
+        private const val SAFE_NESTED_CODECS_METHOD = "safeNestedCodecs"
 
         @JvmStatic
         fun unsafeNestedCodecs(): Stream<Arguments> =
@@ -51,6 +55,26 @@ class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
                 Arguments.of("zstd-fory", ZStdCodec(RedissonCodecs.Fory)),
                 Arguments.of("zstd-kryo", ZStdCodec(RedissonCodecs.Kryo5)),
                 Arguments.of("zstd-jdk", ZStdCodec(RedissonCodecs.Jdk)),
+                Arguments.of("lz4-v2-default-kryo", LZ4CodecV2()),
+                Arguments.of("lz4-v2-fory", LZ4CodecV2(RedissonCodecs.Fory)),
+                Arguments.of("lz4-v2-kryo", LZ4CodecV2(RedissonCodecs.Kryo5)),
+                Arguments.of("lz4-v2-jdk", LZ4CodecV2(RedissonCodecs.Jdk)),
+                Arguments.of("snappy-v2-default-kryo", SnappyCodecV2()),
+                Arguments.of("snappy-v2-fory", SnappyCodecV2(RedissonCodecs.Fory)),
+                Arguments.of("snappy-v2-kryo", SnappyCodecV2(RedissonCodecs.Kryo5)),
+                Arguments.of("snappy-v2-jdk", SnappyCodecV2(RedissonCodecs.Jdk)),
+                Arguments.of("protobuf-fory-fallback", ProtobufCodec(String::class.java, RedissonCodecs.Fory)),
+                Arguments.of("protobuf-kryo-fallback", ProtobufCodec(String::class.java, RedissonCodecs.Kryo5)),
+                Arguments.of("protobuf-jdk-fallback", ProtobufCodec(String::class.java, RedissonCodecs.Jdk)),
+            )
+
+        @JvmStatic
+        fun safeNestedCodecs(): Stream<Arguments> =
+            Stream.of(
+                Arguments.of("composite-string", CompositeCodec(StringCodec(), StringCodec(), StringCodec())),
+                Arguments.of("lz4-v2-string", LZ4CodecV2(StringCodec())),
+                Arguments.of("snappy-v2-string", SnappyCodecV2(StringCodec())),
+                Arguments.of("protobuf-string-fallback", ProtobufCodec(String::class.java, StringCodec())),
             )
     }
 
@@ -83,10 +107,9 @@ class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
         ExposedRedissonCodecSafety.requireSafe(snapshotCodec, trustedBinaryCache = true)
     }
 
-    @Test
-    fun `safe reviewed custom composite codec remains accepted`() {
-        val safe = CompositeCodec(StringCodec(), StringCodec(), StringCodec())
-
+    @ParameterizedTest(name = "{0}")
+    @MethodSource(SAFE_NESTED_CODECS_METHOD)
+    fun `safe reviewed custom wrapper codec remains accepted`(name: String, safe: Codec) {
         ExposedRedissonCodecSafety.requireSafe(safe, trustedBinaryCache = false)
         ExposedRedissonCodecSafety.requireSafe(
             snapshotRedissonCodec(safe, "safe-v1", longSnapshotIdentifierPolicy()),

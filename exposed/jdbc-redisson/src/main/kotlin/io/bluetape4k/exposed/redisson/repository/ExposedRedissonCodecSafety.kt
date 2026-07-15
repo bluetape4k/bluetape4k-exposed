@@ -5,6 +5,9 @@ import io.bluetape4k.redis.redisson.codec.RedissonCodecs
 import org.redisson.client.codec.Codec
 import org.redisson.codec.CompositeCodec
 import org.redisson.codec.LZ4Codec
+import org.redisson.codec.LZ4CodecV2
+import org.redisson.codec.ProtobufCodec
+import org.redisson.codec.SnappyCodecV2
 import org.redisson.codec.ZStdCodec
 import java.lang.reflect.InaccessibleObjectException
 import java.util.ArrayDeque
@@ -70,6 +73,23 @@ object ExposedRedissonCodecSafety {
                 declaringClass = ZStdCodec::class.java,
                 fieldNames = arrayOf("innerCodec"),
             )
+            is LZ4CodecV2 -> readCodecFields(
+                codec = this,
+                declaringClass = LZ4CodecV2::class.java,
+                fieldNames = arrayOf("innerCodec"),
+            )
+            is SnappyCodecV2 -> readCodecFields(
+                codec = this,
+                declaringClass = SnappyCodecV2::class.java,
+                fieldNames = arrayOf("innerCodec"),
+            )
+            is ProtobufCodec -> readCodecFields(
+                codec = this,
+                declaringClass = ProtobufCodec::class.java,
+                fieldNames = arrayOf("blacklistCodec"),
+            )
+            // BaseEventCodec and MapCacheEventCodec are Redisson event decoders whose map-value encoder is unsupported;
+            // they cannot serve as a repository map-value codec and are intentionally outside this consumer gate.
             else -> emptyList()
         }
 
