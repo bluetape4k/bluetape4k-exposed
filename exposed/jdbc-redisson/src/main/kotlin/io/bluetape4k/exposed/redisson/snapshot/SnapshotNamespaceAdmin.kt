@@ -263,7 +263,7 @@ private fun <ID : Any> clearNamespace(
             }
             return failedState(mapAbsent, markerPresent)
         } catch (failure: Throwable) {
-            mapFailure = failure
+            mapFailure = failure.unwrapFutureFailure()
             throw failure
         } finally {
             try {

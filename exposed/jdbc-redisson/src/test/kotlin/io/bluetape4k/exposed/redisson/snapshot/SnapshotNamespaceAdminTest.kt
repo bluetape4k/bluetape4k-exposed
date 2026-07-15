@@ -449,6 +449,27 @@ class SnapshotNamespaceAdminTest {
     }
 
     @Test
+    fun `asynchronous terminal primary retains the distinct destroy failure`() {
+        val primary = FatalAdminError()
+        val destroyFailure = ConnectionFailure("destroy failed")
+        val admin = RecordingAdmin().apply {
+            scriptReturns(markerState(MARKER_EXACT, mapExists = true))
+            mapFails(primary, label = "map-unlink")
+            destroyFails(destroyFailure)
+        }
+
+        val thrown = assertFailsWith<FatalAdminError> {
+            clearSnapshotNamespace(admin.client, codec, NAMESPACE, FINGERPRINT)
+        }
+
+        (thrown === primary).shouldBeTrue()
+        thrown.suppressed.size shouldBeEqualTo 1
+        (thrown.suppressed.single() === destroyFailure).shouldBeTrue()
+        admin.destroyCount shouldBeEqualTo 1
+        admin.cancelCalls.shouldBeFalse()
+    }
+
+    @Test
     fun `accepted cleanup interruption remains primary when destroy also fails`() {
         val interruption = InterruptedException("local clear interrupted")
         val admin = RecordingAdmin().apply {
