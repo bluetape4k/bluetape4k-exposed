@@ -5,9 +5,12 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.withPollInterval
 import org.junit.jupiter.api.Test
 import java.io.ObjectStreamClass
 import java.io.Serializable
+import java.lang.ref.WeakReference
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
@@ -72,6 +75,53 @@ class SnapshotCacheStoreTest {
     }
 
     @Test
+    fun `collected miss releases bounded registry capacity`() {
+        val fences = SnapshotLocalFenceRegistry<Long>(stripeCount = 2)
+        val registry = SnapshotMissCapabilityRegistry<Long, Payload>(maxOutstandingMissTokens = 1)
+        val collectedMiss = registerWeakMiss(registry, fences, id = 1L)
+
+        await
+            .atMost(Duration.ofSeconds(10))
+            .withPollInterval(Duration.ofMillis(10))
+            .untilAsserted {
+                val pressure = Array(8) { ByteArray(128 * 1_024) }
+                pressure.sumOf { it.size } shouldBeEqualTo 1_048_576
+                System.gc()
+                collectedMiss.get().shouldBeNull()
+
+                val replacement = registry.register(2L, fences.capture(2L))
+                replacement.miss?.toString() shouldBeEqualTo "SnapshotCacheMiss(opaque)"
+            }
+    }
+
+    @Test
+    fun `full miss capacity fails before database read`() {
+        val fences = SnapshotLocalFenceRegistry<Long>(stripeCount = 2)
+        val registry = SnapshotMissCapabilityRegistry<Long, Payload>(maxOutstandingMissTokens = 1)
+        val retainedLookup = registry.register(1L, fences.capture(1L))
+        val dbReadCount = AtomicInteger()
+
+        assertFailsWith<IllegalStateException> {
+            registerMissBeforeDbRead(registry, fences, id = 2L) {
+                dbReadCount.incrementAndGet()
+            }
+        }
+
+        retainedLookup.miss?.toString() shouldBeEqualTo "SnapshotCacheMiss(opaque)"
+        dbReadCount.get() shouldBeEqualTo 0
+    }
+
+    @Test
+    fun `mutation base contract exposes every mutation id`() {
+        val mutations: List<SnapshotCacheMutation<Long, Payload>> = listOf(
+            SnapshotCacheMutation.Put(1L, CacheSnapshot(Payload("one"))),
+            SnapshotCacheMutation.Invalidate(2L),
+        )
+
+        mutations.map { it.id } shouldBeEqualTo listOf(1L, 2L)
+    }
+
+    @Test
     fun `store identity limits and result models validate caller input`() {
         val limits = SnapshotCacheLimits(
             maxStagedMutations = 10,
@@ -80,11 +130,12 @@ class SnapshotCacheStoreTest {
             localDrainBudget = Duration.ofMillis(50),
         )
         val storeId = SnapshotStoreId("caffeine", "orders:v1")
-        val measured = MeasuredInvalidation(1L, 16L, "a".repeat(64))
+        val measured = MeasuredInvalidation(1L, 16, "a".repeat(64))
+        val encodedBytes: Int = measured.encodedBytes
 
         limits.maxStagedMutations shouldBeEqualTo 10
         storeId shouldBeEqualTo SnapshotStoreId("caffeine", "orders:v1")
-        measured.encodedBytes shouldBeEqualTo 16L
+        encodedBytes shouldBeEqualTo 16
         assertFailsWith<IllegalArgumentException> { SnapshotStoreId(" ", "orders:v1") }
         assertFailsWith<IllegalArgumentException> { SnapshotStoreId("caffeine", " ") }
         assertFailsWith<IllegalArgumentException> { SnapshotStoreId("b".repeat(129), "orders:v1") }
@@ -97,8 +148,8 @@ class SnapshotCacheStoreTest {
         assertFailsWith<IllegalArgumentException> {
             SnapshotCacheLimits(1, 1, localDrainBudget = Duration.ZERO)
         }
-        assertFailsWith<IllegalArgumentException> { MeasuredInvalidation(1L, -1L, "a".repeat(64)) }
-        assertFailsWith<IllegalArgumentException> { MeasuredInvalidation(1L, 1L, "not-a-sha256") }
+        assertFailsWith<IllegalArgumentException> { MeasuredInvalidation(1L, -1, "a".repeat(64)) }
+        assertFailsWith<IllegalArgumentException> { MeasuredInvalidation(1L, 1, "not-a-sha256") }
         assertFailsWith<IllegalArgumentException> {
             SnapshotCacheOperationResult(
                 SnapshotCacheOperation.PUT,
@@ -137,28 +188,46 @@ class SnapshotCacheStoreTest {
     }
 
     @Test
-    fun `store is called once per phase and reports reconcile every input`() {
+    fun `store API exposes one bulk method per phase and reports every outcome`() {
         val store = RecordingStore()
+        val snapshots = (1L..4L).map { id ->
+            SnapshotCacheMutation.Put(id, CacheSnapshot(Payload("value-$id")))
+        }
+        val invalidationIds = (5L..8L).toList()
+        val deadline = MonotonicSnapshotCacheDeadline(Duration.ofSeconds(1)) { 0L }
+        val applyMethods = SnapshotCacheStore::class.java.declaredMethods.filter { it.name.startsWith("apply") }
+
+        val putReport = store.applySnapshots(snapshots, deadline)
+        val invalidationReport = store.applyInvalidations(invalidationIds, deadline)
+
+        applyMethods.map { it.name }.sorted() shouldBeEqualTo listOf("applyInvalidations", "applySnapshots")
+        applyMethods.all { it.parameterTypes.firstOrNull() == List::class.java }.shouldBeTrue()
+        store.snapshotBatches shouldBeEqualTo listOf(snapshots)
+        store.invalidationBatches shouldBeEqualTo listOf(invalidationIds)
+        putReport.results.map { it.outcome } shouldBeEqualTo ALL_OUTCOMES
+        invalidationReport.results.map { it.outcome } shouldBeEqualTo ALL_OUTCOMES
+        putReport.results.sumOf { it.affectedCount } shouldBeEqualTo snapshots.size
+        invalidationReport.results.sumOf { it.affectedCount } shouldBeEqualTo invalidationIds.size
+    }
+
+    @Test
+    fun `shared monotonic deadline expires between bulk entries`() {
         val clock = AtomicLong(0L)
         val sharedDeadline = MonotonicSnapshotCacheDeadline(Duration.ofNanos(5)) {
             clock.addAndGet(3L)
+        }
+        val store = RecordingStore { _, deadline ->
+            if (deadline.isExpired) SnapshotCacheOutcome.NOT_ATTEMPTED else SnapshotCacheOutcome.SUCCESS
         }
         val snapshots = listOf(
             SnapshotCacheMutation.Put(1L, CacheSnapshot(Payload("one"))),
             SnapshotCacheMutation.Put(2L, CacheSnapshot(Payload("two"))),
         )
 
-        val putReport = store.applySnapshots(snapshots, sharedDeadline)
-        val invalidationReport = store.applyInvalidations(
-            listOf(1L, 2L),
-            MonotonicSnapshotCacheDeadline(Duration.ofSeconds(1)) { 0L },
-        )
+        val report = store.applySnapshots(snapshots, sharedDeadline)
 
-        store.snapshotCalls.get() shouldBeEqualTo 1
-        store.invalidationCalls.get() shouldBeEqualTo 1
-        putReport.results.sumOf { it.affectedCount } shouldBeEqualTo snapshots.size
-        invalidationReport.results.sumOf { it.affectedCount } shouldBeEqualTo 2
-        putReport.results.map { it.outcome } shouldBeEqualTo listOf(
+        store.snapshotBatches shouldBeEqualTo listOf(snapshots)
+        report.results.map { it.outcome } shouldBeEqualTo listOf(
             SnapshotCacheOutcome.SUCCESS,
             SnapshotCacheOutcome.NOT_ATTEMPTED,
         )
@@ -191,13 +260,17 @@ class SnapshotCacheStoreTest {
         deadline.isExpired.shouldBeTrue()
     }
 
-    private class RecordingStore : SnapshotCacheStore<Long, Payload> {
+    private class RecordingStore(
+        private val outcomeFor: (Int, SnapshotCacheDeadline) -> SnapshotCacheOutcome = { index, _ ->
+            ALL_OUTCOMES[index]
+        },
+    ) : SnapshotCacheStore<Long, Payload> {
         override val storeId = SnapshotStoreId("local", "orders:v1")
         override val storeInstanceToken: Any = Any()
         override val compatibilityFingerprint: String = "local:v1"
         override val limits = SnapshotCacheLimits(10, 2)
-        val snapshotCalls = AtomicInteger()
-        val invalidationCalls = AtomicInteger()
+        val snapshotBatches = mutableListOf<List<SnapshotCacheMutation.Put<Long, Payload>>>()
+        val invalidationBatches = mutableListOf<List<Long>>()
 
         override fun claimMiss(miss: SnapshotCacheMiss<Long, Payload>): ClaimedSnapshotMiss<Long, Payload> =
             error("Not used by this store proof")
@@ -206,17 +279,15 @@ class SnapshotCacheStoreTest {
             snapshots: List<SnapshotCacheMutation.Put<Long, Payload>>,
             deadline: SnapshotCacheDeadline,
         ): SnapshotCacheApplyReport {
-            snapshotCalls.incrementAndGet()
+            snapshotBatches += snapshots
             return SnapshotCacheApplyReport(
-                snapshots.map {
+                snapshots.mapIndexed { index, _ ->
+                    val outcome = outcomeFor(index, deadline)
                     SnapshotCacheOperationResult(
                         operation = SnapshotCacheOperation.PUT,
-                        outcome = if (deadline.isExpired) {
-                            SnapshotCacheOutcome.NOT_ATTEMPTED
-                        } else {
-                            SnapshotCacheOutcome.SUCCESS
-                        },
+                        outcome = outcome,
                         affectedCount = 1,
+                        exceptionType = exceptionType(outcome),
                     )
                 },
             )
@@ -226,17 +297,15 @@ class SnapshotCacheStoreTest {
             ids: List<Long>,
             deadline: SnapshotCacheDeadline,
         ): SnapshotCacheApplyReport {
-            invalidationCalls.incrementAndGet()
+            invalidationBatches += ids
             return SnapshotCacheApplyReport(
-                ids.map {
+                ids.mapIndexed { index, _ ->
+                    val outcome = outcomeFor(index, deadline)
                     SnapshotCacheOperationResult(
                         operation = SnapshotCacheOperation.INVALIDATE,
-                        outcome = if (deadline.isExpired) {
-                            SnapshotCacheOutcome.NOT_ATTEMPTED
-                        } else {
-                            SnapshotCacheOutcome.SUCCESS
-                        },
+                        outcome = outcome,
                         affectedCount = 1,
+                        exceptionType = exceptionType(outcome),
                     )
                 },
             )
@@ -250,7 +319,7 @@ class SnapshotCacheStoreTest {
         override val limits = SnapshotCacheLimits(10, 2)
 
         override fun measure(id: Long): MeasuredInvalidation<Long> =
-            MeasuredInvalidation(id, Long.SIZE_BYTES.toLong(), "b".repeat(64))
+            MeasuredInvalidation(id, Long.SIZE_BYTES, "b".repeat(64))
 
         override fun submitInvalidation(
             batch: List<MeasuredInvalidation<Long>>,
@@ -275,4 +344,37 @@ class SnapshotCacheStoreTest {
     }
 
     private class MappingFailure : RuntimeException()
+
+    private fun registerWeakMiss(
+        registry: SnapshotMissCapabilityRegistry<Long, Payload>,
+        fences: SnapshotLocalFenceRegistry<Long>,
+        id: Long,
+    ): WeakReference<SnapshotCacheMiss<Long, Payload>> {
+        val lookup = registry.register(id, fences.capture(id))
+        val miss = lookup.miss ?: error("Expected registered miss")
+        return WeakReference(miss)
+    }
+
+    private fun registerMissBeforeDbRead(
+        registry: SnapshotMissCapabilityRegistry<Long, Payload>,
+        fences: SnapshotLocalFenceRegistry<Long>,
+        id: Long,
+        dbRead: () -> Unit,
+    ): SnapshotCacheLookup<Long, Payload> {
+        val lookup = registry.register(id, fences.capture(id))
+        dbRead()
+        return lookup
+    }
+
+    companion object {
+        private val ALL_OUTCOMES = listOf(
+            SnapshotCacheOutcome.SUCCESS,
+            SnapshotCacheOutcome.FAILED,
+            SnapshotCacheOutcome.REJECTED,
+            SnapshotCacheOutcome.NOT_ATTEMPTED,
+        )
+
+        private fun exceptionType(outcome: SnapshotCacheOutcome): String? =
+            if (outcome == SnapshotCacheOutcome.FAILED) IllegalStateException::class.java.name else null
+    }
 }

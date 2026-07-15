@@ -238,6 +238,9 @@ data class SnapshotCacheLimits(
  * Mutation prepared for a snapshot-cache phase.
  */
 sealed interface SnapshotCacheMutation<ID : Any, V : Serializable> {
+    /** Cache identifier affected by this mutation. */
+    val id: ID
+
     /**
      * Guarded insertion of [snapshot] for [id].
      *
@@ -248,7 +251,7 @@ sealed interface SnapshotCacheMutation<ID : Any, V : Serializable> {
      * @property localFence optional process-local generation fence
      */
     data class Put<ID : Any, V : Serializable>(
-        val id: ID,
+        override val id: ID,
         val snapshot: CacheSnapshot<V>,
         @InternalSnapshotCacheApi val localFence: SnapshotLocalFence? = null,
     ) : SnapshotCacheMutation<ID, V>
@@ -259,7 +262,7 @@ sealed interface SnapshotCacheMutation<ID : Any, V : Serializable> {
      * @property id cache identifier
      */
     data class Invalidate<ID : Any, V : Serializable>(
-        val id: ID,
+        override val id: ID,
     ) : SnapshotCacheMutation<ID, V>
 }
 
@@ -272,11 +275,11 @@ sealed interface SnapshotCacheMutation<ID : Any, V : Serializable> {
  */
 data class MeasuredInvalidation<ID : Any>(
     val id: ID,
-    val encodedBytes: Long,
+    val encodedBytes: Int,
     val encodedSha256: String,
 ) {
     init {
-        require(encodedBytes >= 0L) { "encodedBytes[$encodedBytes] must not be negative." }
+        require(encodedBytes >= 0) { "encodedBytes[$encodedBytes] must not be negative." }
         require(SHA_256_PATTERN.matches(encodedSha256)) {
             "encodedSha256 must be a 64-character lowercase hexadecimal SHA-256 digest."
         }
