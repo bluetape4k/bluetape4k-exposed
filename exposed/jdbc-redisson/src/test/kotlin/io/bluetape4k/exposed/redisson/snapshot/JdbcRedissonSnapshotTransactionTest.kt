@@ -166,6 +166,48 @@ class JdbcRedissonSnapshotTransactionTest {
     }
 
     @Test
+    fun `same transaction rejects a failure buffer mismatch before second map access`() {
+        val map = RecordingLocalMap<Long>()
+        val client = RecordingRedissonClient(map.proxy)
+        val codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy())
+        val config = JdbcRedissonSnapshotInvalidatorConfig(
+            snapshot = SnapshotCacheConfig("buffer-identity:v1", "payload-v1", 32, 4),
+            nearCacheMaximumSize = 16,
+            maxEncodedKeyBytes = Long.SIZE_BYTES,
+            maxBatchEncodedKeyBytes = Long.SIZE_BYTES,
+            maxCommitEncodedKeyBytes = 256,
+            maxOutstandingChunks = 4,
+            maxOutstandingEncodedBytes = 256,
+        )
+        val first = jdbcRedissonSnapshotInvalidator(
+            client.proxy,
+            codec,
+            Long::class,
+            Payload::class,
+            config,
+            snapshotCacheFailureBuffer(4),
+        )
+
+        transaction(database()) {
+            maxAttempts = 1
+            stageInvalidation(first, 1L)
+            assertFailsWith<IllegalArgumentException> {
+                jdbcRedissonSnapshotInvalidator(
+                    client.proxy,
+                    codec,
+                    Long::class,
+                    Payload::class,
+                    config,
+                    snapshotCacheFailureBuffer(4),
+                )
+            }
+        }
+
+        client.options.size shouldBeEqualTo 1
+        map.submittedIds shouldBeEqualTo listOf(listOf(1L))
+    }
+
+    @Test
     fun `commit byte rejection preserves prior mutation and permits a later valid replacement`() {
         val fixture = fixture("commit-cap:v1", maxCommitEncodedKeyBytes = Long.SIZE_BYTES)
 
@@ -408,6 +450,7 @@ class JdbcRedissonSnapshotTransactionTest {
                 config.maxOutstandingEncodedBytes,
             ),
             failureBuffer = failureBuffer,
+            storeInstanceToken = Any(),
             identifierEncoder = { id ->
                 events += "$label:verify:$id"
                 codec.encodeSnapshotIdentifier(id)
@@ -476,12 +519,16 @@ class JdbcRedissonSnapshotTransactionTest {
     }
 
     private class RecordingRedissonClient(localCacheMap: RLocalCachedMap<*, *>) {
+        val options = mutableListOf<Any>()
         val proxy: RedissonClient = Proxy.newProxyInstance(
             RedissonClient::class.java.classLoader,
             arrayOf(RedissonClient::class.java),
         ) { instance, method, args ->
             when (method.name) {
-                "getLocalCachedMap" -> localCacheMap
+                "getLocalCachedMap" -> {
+                    options += args.orEmpty().single()
+                    localCacheMap
+                }
                 "equals" -> instance === args.orEmpty().singleOrNull()
                 "hashCode" -> System.identityHashCode(instance)
                 "toString" -> "RecordingRedissonClient"

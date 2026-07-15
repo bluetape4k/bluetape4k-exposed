@@ -82,8 +82,11 @@ class JdbcRedissonSnapshotInvalidatorTest {
 
     @Test
     fun `explicit and reified factories preserve caller identities tokens fingerprint and map options`() {
-        val map = RecordingLocalMap<Long>()
-        val client = RecordingRedissonClient(map.proxy)
+        val firstMap = RecordingLocalMap<Long>()
+        val secondMap = RecordingLocalMap<Long>()
+        val client = RecordingRedissonClient(firstMap.proxy)
+            .thenReturnMap(firstMap.proxy)
+            .thenReturnMap(secondMap.proxy)
         val codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy())
         val config = config(maxOutstandingChunks = 4, maxOutstandingEncodedBytes = 128)
         val failureBuffer = snapshotCacheFailureBuffer(4)
@@ -116,6 +119,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
             synchronizationStrategy = LocalCachedMapOptions.SyncStrategy.INVALIDATE,
         )
         reified.compatibilityFingerprint shouldBeEqualTo explicit.compatibilityFingerprint
+        (reified.storeInstanceToken === explicit.storeInstanceToken).shouldBeTrue()
         explicit.limits.maxStagedWeight shouldBeEqualTo config.maxCommitEncodedKeyBytes.toLong()
         client.options.size shouldBeEqualTo 2
         client.options.forEach { options ->
@@ -125,6 +129,162 @@ class JdbcRedissonSnapshotInvalidatorTest {
             options.option("getSyncStrategy") shouldBeEqualTo config.synchronizationStrategy
             options.option("getReconnectionStrategy") shouldBeEqualTo config.reconnectionStrategy
         }
+    }
+
+    @Test
+    fun `same client namespace rejects every local composition mismatch before map access`() {
+        val baseCodec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy())
+        val baseConfig = config()
+        val baseBuffer = snapshotCacheFailureBuffer(4)
+
+        fun assertRejected(
+            first: (RedissonClient) -> Unit,
+            mismatch: (RedissonClient) -> Unit,
+        ) {
+            val client = RecordingRedissonClient(RecordingLocalMap<Long>().proxy)
+            first(client.proxy)
+            client.options.size shouldBeEqualTo 1
+
+            assertFailsWith<IllegalArgumentException> { mismatch(client.proxy) }
+
+            client.options.size shouldBeEqualTo 1
+        }
+
+        assertRejected(
+            first = { jdbcRedissonSnapshotInvalidator(it, baseCodec, Long::class, Payload::class, baseConfig, baseBuffer) },
+            mismatch = {
+                jdbcRedissonSnapshotInvalidator(
+                    it,
+                    snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy()),
+                    Long::class,
+                    Payload::class,
+                    baseConfig,
+                    baseBuffer,
+                )
+            },
+        )
+        assertRejected(
+            first = { jdbcRedissonSnapshotInvalidator(it, baseCodec, Long::class, Payload::class, baseConfig, baseBuffer) },
+            mismatch = {
+                jdbcRedissonSnapshotInvalidator(
+                    it,
+                    snapshotRedissonCodec(StringCodec(), "json-v1", uuidSnapshotIdentifierPolicy()),
+                    UUID::class,
+                    Payload::class,
+                    baseConfig,
+                    baseBuffer,
+                )
+            },
+        )
+        assertRejected(
+            first = { jdbcRedissonSnapshotInvalidator(it, baseCodec, Long::class, Payload::class, baseConfig, baseBuffer) },
+            mismatch = {
+                jdbcRedissonSnapshotInvalidator(
+                    it,
+                    baseCodec,
+                    Long::class,
+                    AlternatePayload::class,
+                    baseConfig,
+                    baseBuffer,
+                )
+            },
+        )
+        assertRejected(
+            first = { jdbcRedissonSnapshotInvalidator(it, baseCodec, Long::class, Payload::class, baseConfig, baseBuffer) },
+            mismatch = {
+                jdbcRedissonSnapshotInvalidator(
+                    it,
+                    baseCodec,
+                    Long::class,
+                    Payload::class,
+                    baseConfig.copy(nearCacheMaximumSize = baseConfig.nearCacheMaximumSize + 1),
+                    baseBuffer,
+                )
+            },
+        )
+        assertRejected(
+            first = { jdbcRedissonSnapshotInvalidator(it, baseCodec, Long::class, Payload::class, baseConfig, baseBuffer) },
+            mismatch = {
+                jdbcRedissonSnapshotInvalidator(
+                    it,
+                    baseCodec,
+                    Long::class,
+                    Payload::class,
+                    baseConfig,
+                    snapshotCacheFailureBuffer(4),
+                )
+            },
+        )
+    }
+
+    @Test
+    fun `same client allows a different namespace with client quota limits pinned`() {
+        val firstMap = RecordingLocalMap<Long>()
+        val secondMap = RecordingLocalMap<Long>()
+        val client = RecordingRedissonClient(firstMap.proxy)
+            .thenReturnMap(firstMap.proxy)
+            .thenReturnMap(secondMap.proxy)
+        val codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy())
+        val buffer = snapshotCacheFailureBuffer(4)
+        val firstConfig = config(maxOutstandingChunks = 4, maxOutstandingEncodedBytes = 128)
+        val secondConfig = firstConfig.copy(snapshot = firstConfig.snapshot.copy(namespace = "customers:v1"))
+
+        val first = jdbcRedissonSnapshotInvalidator(
+            client.proxy,
+            codec,
+            Long::class,
+            Payload::class,
+            firstConfig,
+            buffer,
+        )
+        val second = jdbcRedissonSnapshotInvalidator(
+            client.proxy,
+            codec,
+            Long::class,
+            Payload::class,
+            secondConfig,
+            buffer,
+        )
+
+        (first.storeInstanceToken === second.storeInstanceToken).shouldBeFalse()
+        client.options.map { it.option("getName") } shouldBeEqualTo listOf("orders:v1", "customers:v1")
+        first.quotaHealth() shouldBeEqualTo second.quotaHealth()
+    }
+
+    @Test
+    fun `failed first map construction rolls back descriptor and quota reservation`() {
+        val map = RecordingLocalMap<Long>()
+        val client = RecordingRedissonClient(map.proxy)
+            .thenThrowMap(MapConstructionFailure())
+            .thenReturnMap(map.proxy)
+        val codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy())
+        val failedConfig = config(maxOutstandingChunks = 1, maxOutstandingEncodedBytes = 8)
+        val retryConfig = failedConfig.copy(
+            nearCacheMaximumSize = failedConfig.nearCacheMaximumSize + 1,
+            maxOutstandingChunks = 2,
+            maxOutstandingEncodedBytes = 16,
+        )
+
+        assertFailsWith<MapConstructionFailure> {
+            jdbcRedissonSnapshotInvalidator(
+                client.proxy,
+                codec,
+                Long::class,
+                Payload::class,
+                failedConfig,
+                snapshotCacheFailureBuffer(4),
+            )
+        }
+        val retry = jdbcRedissonSnapshotInvalidator(
+            client.proxy,
+            codec,
+            Long::class,
+            Payload::class,
+            retryConfig,
+        )
+
+        retry.quotaHealth() shouldBeEqualTo SnapshotInvalidationQuotaHealth(2, 0, 16, 0, 0, false)
+        client.options.size shouldBeEqualTo 2
     }
 
     @Test
@@ -364,6 +524,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
             config = config,
             quota = quota,
             failureBuffer = failureBuffer,
+            storeInstanceToken = Any(),
             identifierEncoder = identifierEncoder,
         )
         return TestInvalidator(invalidator, config)
@@ -429,7 +590,8 @@ class JdbcRedissonSnapshotInvalidatorTest {
         fun quotaHealth() = delegate.quotaHealth()
     }
 
-    private class RecordingRedissonClient(localCacheMap: RLocalCachedMap<*, *>) {
+    private class RecordingRedissonClient(private val localCacheMap: RLocalCachedMap<*, *>) {
+        private val mapBehaviors = ArrayDeque<() -> RLocalCachedMap<*, *>>()
         val options = mutableListOf<Any>()
         val proxy: RedissonClient = Proxy.newProxyInstance(
             RedissonClient::class.java.classLoader,
@@ -438,7 +600,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
             when (method.name) {
                 "getLocalCachedMap" -> {
                     options += args.orEmpty().single()
-                    localCacheMap
+                    if (mapBehaviors.isEmpty()) localCacheMap else mapBehaviors.removeFirst()()
                 }
                 "equals" -> instance === args.orEmpty().singleOrNull()
                 "hashCode" -> System.identityHashCode(instance)
@@ -446,6 +608,14 @@ class JdbcRedissonSnapshotInvalidatorTest {
                 else -> error("Unexpected RedissonClient call: ${method.name}")
             }
         } as RedissonClient
+
+        fun thenReturnMap(map: RLocalCachedMap<*, *>): RecordingRedissonClient = apply {
+            mapBehaviors += { map }
+        }
+
+        fun thenThrowMap(exception: RuntimeException): RecordingRedissonClient = apply {
+            mapBehaviors += { throw exception }
+        }
     }
 
     private class RecordingLocalMap<ID : Any>(
@@ -521,7 +691,15 @@ class JdbcRedissonSnapshotInvalidatorTest {
         }
     }
 
+    private data class AlternatePayload(val value: String = "value") : Serializable {
+        companion object {
+            private const val serialVersionUID: Long = 1L
+        }
+    }
+
     private class NonSerializable
 
     private class SubmissionFailure : RuntimeException()
+
+    private class MapConstructionFailure : RuntimeException()
 }

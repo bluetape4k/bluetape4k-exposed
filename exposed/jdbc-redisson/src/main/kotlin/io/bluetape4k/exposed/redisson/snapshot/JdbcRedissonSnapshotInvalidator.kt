@@ -51,6 +51,8 @@ class JdbcRedissonSnapshotInvalidator<ID : Any> internal constructor(
     private val config: JdbcRedissonSnapshotInvalidatorConfig,
     private val quota: RedissonInvalidationQuota,
     override val failureBuffer: SnapshotCacheFailureBuffer,
+    @InternalSnapshotCacheApi
+    override val storeInstanceToken: Any,
     private val identifierEncoder: (Any) -> ByteArray = codec::encodeSnapshotIdentifier,
 ) : AsyncSnapshotInvalidationStore<ID> {
 
@@ -63,9 +65,6 @@ class JdbcRedissonSnapshotInvalidator<ID : Any> internal constructor(
     }
 
     override val storeId: SnapshotStoreId = SnapshotStoreId(REDISSON_JDBC_BACKEND, config.snapshot.namespace)
-
-    @InternalSnapshotCacheApi
-    override val storeInstanceToken: Any = localCacheMap
 
     @InternalSnapshotCacheApi
     override val compatibilityFingerprint: String = snapshotNamespaceFingerprint(
@@ -200,27 +199,38 @@ fun <ID : Any, V : Serializable> jdbcRedissonSnapshotInvalidator(
         "Snapshot value type[${valueType.java.name}] must implement Serializable."
     }
     config.requireSafeCodec(codec)
-    val quota = redissonInvalidationQuotas.quotaFor(
-        redissonClient,
-        config.maxOutstandingChunks,
-        config.maxOutstandingEncodedBytes,
+    val reservation = redissonInvalidationQuotas.reserveComposition(
+        redissonClient = redissonClient,
+        descriptor = RedissonInvalidationCompositionDescriptor(
+            codec = codec,
+            idType = idType,
+            valueType = valueType,
+            config = config,
+            failureBuffer = failureBuffer,
+        ),
     )
-    val options = LocalCachedMapOptions.name<ID, Any?>(config.snapshot.namespace).apply {
-        codec(codec)
-        cacheSize(config.nearCacheMaximumSize)
-        syncStrategy(config.synchronizationStrategy)
-        reconnectionStrategy(config.reconnectionStrategy)
+    try {
+        val options = LocalCachedMapOptions.name<ID, Any?>(config.snapshot.namespace).apply {
+            codec(codec)
+            cacheSize(config.nearCacheMaximumSize)
+            syncStrategy(config.synchronizationStrategy)
+            reconnectionStrategy(config.reconnectionStrategy)
+        }
+        val localCacheMap = redissonClient.getLocalCachedMap(options)
+        return JdbcRedissonSnapshotInvalidator(
+            localCacheMap = localCacheMap,
+            codec = codec,
+            idType = idType,
+            valueType = valueType,
+            config = config,
+            quota = reservation.quota,
+            failureBuffer = failureBuffer,
+            storeInstanceToken = reservation.storeInstanceToken,
+        ).also { reservation.commit() }
+    } catch (failure: Throwable) {
+        reservation.rollback()
+        throw failure
     }
-    val localCacheMap = redissonClient.getLocalCachedMap(options)
-    return JdbcRedissonSnapshotInvalidator(
-        localCacheMap = localCacheMap,
-        codec = codec,
-        idType = idType,
-        valueType = valueType,
-        config = config,
-        quota = quota,
-        failureBuffer = failureBuffer,
-    )
 }
 
 /** Creates a JDBC Redisson snapshot invalidator using reified runtime type tokens. */

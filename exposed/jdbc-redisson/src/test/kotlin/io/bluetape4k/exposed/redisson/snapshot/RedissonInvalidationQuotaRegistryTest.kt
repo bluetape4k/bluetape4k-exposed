@@ -6,9 +6,12 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
+import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
 import io.bluetape4k.junit5.concurrency.MultithreadingTester
 import org.junit.jupiter.api.Test
 import org.redisson.api.RedissonClient
+import org.redisson.client.codec.StringCodec
 import java.lang.ref.Reference
 import java.lang.reflect.Proxy
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -115,7 +118,21 @@ class RedissonInvalidationQuotaRegistryTest {
     fun `queued weak client identity is removed without background work`() {
         val registry = RedissonInvalidationQuotaRegistry()
         val firstClient = equalToEveryClientProxy()
-        registry.quotaFor(firstClient, maxOutstandingChunks = 1, maxOutstandingEncodedBytes = 8)
+        val codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy())
+        registry.reserveComposition(
+            firstClient,
+            RedissonInvalidationCompositionDescriptor(
+                codec,
+                Long::class,
+                String::class,
+                JdbcRedissonSnapshotInvalidatorConfig(
+                    snapshot = SnapshotCacheConfig("orders:v1", "payload-v1", 32, 4),
+                    maxOutstandingChunks = 1,
+                    maxOutstandingEncodedBytes = 8,
+                ),
+                snapshotCacheFailureBuffer(4),
+            ),
+        ).commit()
         clearAndEnqueueRegisteredWeakKey(registry)
 
         val replacementClient = equalToEveryClientProxy()
@@ -123,6 +140,49 @@ class RedissonInvalidationQuotaRegistryTest {
 
         registeredWeakKeys(registry).size shouldBeEqualTo 1
         (registeredWeakKeys(registry).single().get() === replacementClient).shouldBeTrue()
+    }
+
+    @Test
+    fun `exact in flight composition reservations share token until every reservation rolls back`() {
+        val registry = RedissonInvalidationQuotaRegistry()
+        val client = equalToEveryClientProxy()
+        val codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy())
+        val config = JdbcRedissonSnapshotInvalidatorConfig(
+            snapshot = SnapshotCacheConfig("orders:v1", "payload-v1", 32, 4),
+            maxOutstandingChunks = 2,
+            maxOutstandingEncodedBytes = 16,
+        )
+        val descriptor = RedissonInvalidationCompositionDescriptor(
+            codec,
+            Long::class,
+            String::class,
+            config,
+            snapshotCacheFailureBuffer(4),
+        )
+        val reservations = ConcurrentLinkedQueue<RedissonInvalidationCompositionReservation>()
+        MultithreadingTester()
+            .workers(2)
+            .rounds(1)
+            .addAll(List(2) { { reservations += registry.reserveComposition(client, descriptor) } })
+            .run()
+        val (first, second) = reservations.toList()
+
+        (first.storeInstanceToken === second.storeInstanceToken).shouldBeTrue()
+        first.rollback()
+        val mismatch = RedissonInvalidationCompositionDescriptor(
+            codec,
+            Long::class,
+            String::class,
+            config,
+            snapshotCacheFailureBuffer(4),
+        )
+        assertFailsWith<IllegalArgumentException> { registry.reserveComposition(client, mismatch) }
+
+        second.rollback()
+        val replacement = registry.reserveComposition(client, mismatch)
+        (replacement.storeInstanceToken === first.storeInstanceToken).shouldBeFalse()
+        replacement.rollback()
+        registeredWeakKeys(registry).size shouldBeEqualTo 0
     }
 
     private fun equalToEveryClientProxy(): RedissonClient = Proxy.newProxyInstance(
