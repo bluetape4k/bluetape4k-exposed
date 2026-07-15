@@ -821,19 +821,19 @@ failures, and zero errors. Root `detekt` completed successfully with the root ta
 - Modify: `exposed/jdbc-redisson/README.ko.md`
 - Do not modify: `docs/manual/en/**`, `docs/manual/ko/**`, `docs/manual/manifest.yaml`
 
-- [ ] Add paired sections covering detached immutable DTOs, mapper timing, `Entity` prohibition, root transaction/current transaction requirements, `maxAttempts = 1`, outer retry shape, commit/rollback semantics, last-mutation-wins, local fence behavior, limits, post-commit failure observability, and no database writes in callbacks.
-- [ ] Add Redisson guidance covering invalidation-only behavior, Long/UUID key policy, key sensitivity restrictions, canonical codec/fingerprint compatibility, quota saturation, failure drain, quiescent cleanup, and client replacement.
-- [ ] State that namespace is a static operator-owned versioned name matching `[a-z][a-z0-9._-]{0,62}:v[1-9][0-9]*`, never a tenant/request/entity identifier; unsafe binary codecs require explicit trusted isolated-cache opt-in; cleanup APIs require dedicated ACLs and must not be request-facing.
-- [ ] Document that public failure/health surfaces retain only bounded structural data and exception type, never exception text, stack traces, payloads, identifiers, SQL, URLs, endpoints, or credentials.
-- [ ] Add a paired behavior table distinguishing Exposed transaction-local `EntityCache` from this application near-cache. State explicitly that commit-safe is not database/cache atomicity, is not crash durability, and does not replace an application-owned outbox/repair path after post-commit cache failure.
-- [ ] State that the feature is opt-in with no migration of existing repository caches. Document lookup-capacity failure before database work, one-shot token consumption on mapper/staging failure, callback-order stale-cache behavior, savepoint rejection, invalidation retry support, and fresh lookup for each outer snapshot-fill retry.
-- [ ] Add exact bilingual v1-to-v2 rollout and rollback runbooks matching Task 9, including the mixed-version prohibition, verified database rebuild before v2 cleanup, shared cleanup timeout semantics, alerts/rate controls for repeated invalidations, and database load shedding for miss amplification.
-- [ ] Include equivalent runnable snippets in both languages. Mark the JDBC, R2DBC, and Redisson blocks as canonical and keep library coordinates versionless because consumers own the BOM version.
-- [ ] Extract and normalize each canonical fenced block from both English/Korean READMEs in tests (or assert exact literal equality with the compiled fixture source), then compile the canonical fixture through the source-usage tests created in Tasks 4, 6, 7, and 8. Keep API-name parity and use API reflection/ABI assertions for negative wrong-engine and no-String-policy cases without adding a compiler-testing dependency.
-- [ ] Audit all new public declarations for English KDoc and `@InternalSnapshotCacheApi` opt-in where appropriate.
-- [ ] Run a literal parity check for public type/function names across every README pair.
-- [ ] Confirm `git diff -- docs/manual docs/manual/manifest.yaml` is empty.
-- [ ] Commit with Lore trailers:
+- [x] Add paired sections covering detached immutable DTOs, mapper timing, `Entity` prohibition, root transaction/current transaction requirements, `maxAttempts = 1`, outer retry shape, commit/rollback semantics, last-mutation-wins, local fence behavior, limits, post-commit failure observability, and no database writes in callbacks.
+- [x] Add Redisson guidance covering invalidation-only behavior, Long/UUID key policy, key sensitivity restrictions, canonical codec/fingerprint compatibility, quota saturation, failure drain, quiescent cleanup, and client replacement.
+- [x] State that namespace is a static operator-owned versioned name matching `[a-z][a-z0-9._-]{0,62}:v[1-9][0-9]*`, never a tenant/request/entity identifier; unsafe binary codecs require explicit trusted isolated-cache opt-in; cleanup APIs require dedicated ACLs and must not be request-facing.
+- [x] Document that public failure/health surfaces retain only bounded structural data and exception type, never exception text, stack traces, payloads, identifiers, SQL, URLs, endpoints, or credentials.
+- [x] Add a paired behavior table distinguishing Exposed transaction-local `EntityCache` from this application near-cache. State explicitly that commit-safe is not database/cache atomicity, is not crash durability, and does not replace an application-owned outbox/repair path after post-commit cache failure.
+- [x] State that the feature is opt-in with no migration of existing repository caches. Document lookup-capacity failure before database work, one-shot token consumption on mapper/staging failure, callback-order stale-cache behavior, savepoint rejection, invalidation retry support, and fresh lookup for each outer snapshot-fill retry.
+- [x] Add exact bilingual v1-to-v2 rollout and rollback runbooks matching Task 9, including the mixed-version prohibition, verified database rebuild before v2 cleanup, shared cleanup timeout semantics, alerts/rate controls for repeated invalidations, and database load shedding for miss amplification.
+- [x] Include equivalent runnable snippets in both languages. Mark the JDBC, R2DBC, and Redisson blocks as canonical and keep library coordinates versionless because consumers own the BOM version.
+- [x] Extract and normalize each canonical fenced block from both English/Korean READMEs in tests (or assert exact literal equality with the compiled fixture source), then compile the canonical fixture through the source-usage tests created in Tasks 4, 6, 7, and 8. Keep API-name parity and use API reflection/ABI assertions for negative wrong-engine and no-String-policy cases without adding a compiler-testing dependency.
+- [x] Audit all new public declarations for English KDoc and `@InternalSnapshotCacheApi` opt-in where appropriate.
+- [x] Run a literal parity check for public type/function names across every README pair.
+- [x] Confirm `git diff -- docs/manual docs/manual/manifest.yaml` is empty.
+- [x] Commit with Lore trailers:
 
 ```text
 Explain safe snapshot caching at transaction and operator boundaries
@@ -844,6 +844,11 @@ Confidence: high
 Scope-risk: narrow
 Tested: bilingual API-name parity and stable-manual diff check
 ```
+
+**Evidence:** Forced fresh targeted verification passed 57/57 tests across cache, JDBC Caffeine, R2DBC Caffeine, and
+JDBC Redisson source-usage/admin contracts. The canonical typed JSON codec round-trips the documented immutable DTO,
+and the README gate rejects explicit Maven artifact versions. The 61 new top-level public declarations have English
+KDoc, internal SPIs retain the required opt-in boundary, and the stable manual diff is empty.
 
 ## Task 11: Extend the existing benchmark module
 

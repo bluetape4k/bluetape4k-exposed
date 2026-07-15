@@ -25,6 +25,76 @@ The sequence view follows the real message order: read-through hit and miss bran
 - **Caffeine AsyncCache**: Non-blocking cache backed by `CompletableFuture`
 - **Coroutine-native**: All DB operations use `suspendTransaction`
 
+<!-- R2DBC-SNAPSHOT-CACHE -->
+## Commit-safe R2DBC snapshot cache (opt-in)
+
+`R2dbcCaffeineSnapshotCache` is an opt-in cache-only facade, separate from the repository cache above. It accepts
+detached immutable DTOs and publishes a staged `CacheSnapshot` only after the current root `R2dbcTransaction` commits.
+Rollback discards staged work, last mutation wins for a repeated key, and a process-local fence rejects a late fill
+after a newer local mutation. Existing repository caches are not migrated.
+
+Perform `lookup` before the database read so outstanding-miss capacity fails before R2DBC work. The returned
+`SnapshotCacheMiss` is one-shot even when mapping or staging fails. `stageSnapshot` maps inside the current root
+transaction and rejects nested/savepoint transactions. Snapshot fill requires `maxAttempts = 1`; application retry must
+wrap the complete lookup + `suspendTransaction` + database-read sequence and obtain a fresh lookup each time.
+`stageInvalidation` remains attempt-local and publishes once after the successful retry.
+
+Post-transaction callbacks are non-suspending, cache-only, and perform no database writes. An earlier failing callback
+can prevent publication and leave a stale value. Observe the bounded `SnapshotCacheFailureBuffer` and keep an
+application-owned outbox or repair path. Commit-safe is not database/cache atomicity or crash durability.
+
+### Canonical R2DBC example
+
+The English and Korean blocks below are byte-for-byte equal to a compiled source-usage fixture.
+
+<!-- README-CANONICAL-R2DBC-BEGIN -->
+```kotlin
+import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
+import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotMapper
+import io.bluetape4k.exposed.cache.snapshot.CaffeineSnapshotCacheConfig
+import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
+import io.bluetape4k.exposed.r2dbc.caffeine.snapshot.R2dbcCaffeineSnapshotCache
+import io.bluetape4k.exposed.r2dbc.caffeine.snapshot.r2dbcCaffeineSnapshotCache
+import io.bluetape4k.exposed.r2dbc.caffeine.snapshot.stageInvalidation
+import io.bluetape4k.exposed.r2dbc.caffeine.snapshot.stageSnapshot
+import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
+import java.io.Serializable
+
+data class R2dbcOrderRow(val id: Long, val description: String)
+
+data class R2dbcOrderSnapshot(val id: Long, val description: String) : Serializable {
+    private companion object {
+        private const val serialVersionUID: Long = 1L
+    }
+}
+
+private val r2dbcOrderSnapshotCache = r2dbcCaffeineSnapshotCache<Long, R2dbcOrderSnapshot>(
+    CaffeineSnapshotCacheConfig(
+        snapshot = SnapshotCacheConfig(namespace = "orders:v1", schemaVersion = "order-dto-v1"),
+    ),
+)
+
+suspend fun R2dbcTransaction.cacheOrderSnapshot(
+    id: Long,
+    loadFromDatabase: suspend R2dbcTransaction.(Long) -> R2dbcOrderRow,
+): CacheSnapshot<R2dbcOrderSnapshot> {
+    val lookup = r2dbcOrderSnapshotCache.lookup(id)
+    lookup.snapshot?.let { return it }
+    val row = loadFromDatabase(id)
+    return stageSnapshot(
+        cache = r2dbcOrderSnapshotCache,
+        miss = requireNotNull(lookup.miss),
+        source = row,
+        mapper = CacheSnapshotMapper { CacheSnapshot(R2dbcOrderSnapshot(it.id, it.description)) },
+    )
+}
+
+fun R2dbcTransaction.invalidateOrderSnapshot(id: Long) {
+    stageInvalidation(r2dbcOrderSnapshotCache, id)
+}
+```
+<!-- README-CANONICAL-R2DBC-END -->
+
 ## Usage
 
 ```kotlin
@@ -71,3 +141,11 @@ behindRepo.put(1L, updatedActor)  // returns immediately
 | `exposed-cache` | `R2dbcCacheRepository`, `LocalCacheConfig`, `CacheMode` |
 | `bluetape4k-coroutines` | Coroutines utilities |
 | `com.github.ben-manes.caffeine:caffeine` | In-process async cache |
+
+```kotlin
+dependencies {
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-caffeine")
+}
+```
+
+The application owns the `bluetape4k-dependencies` BOM version, so the module coordinate is intentionally versionless.

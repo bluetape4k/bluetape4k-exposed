@@ -11,8 +11,34 @@ import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 import java.lang.reflect.Modifier
+import java.nio.file.Files
+import java.nio.file.Path
 
 class JdbcSnapshotCacheApiUsageTest {
+
+    @Test
+    fun `canonical JDBC README blocks equal the compiled fixture`() {
+        val fixture = projectFile(
+            "exposed/jdbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/" +
+                    "JdbcSnapshotReadmeFixture.kt",
+        )
+        Files.exists(fixture).shouldBeTrue()
+        val expected = extractMarkedBlock(
+            Files.readString(fixture),
+            "// README-CANONICAL-JDBC-BEGIN",
+            "// README-CANONICAL-JDBC-END",
+        )
+
+        listOf("exposed/jdbc-caffeine/README.md", "exposed/jdbc-caffeine/README.ko.md").forEach { readme ->
+            val actual = extractMarkedBlock(
+                Files.readString(projectFile(readme)),
+                "<!-- README-CANONICAL-JDBC-BEGIN -->",
+                "<!-- README-CANONICAL-JDBC-END -->",
+            ).removePrefix("```kotlin\n").removeSuffix("\n```")
+
+            actual shouldBeEqualTo expected
+        }
+    }
 
     @Test
     fun `README equivalent JDBC source compiles against the final surface`() {
@@ -62,4 +88,17 @@ class JdbcSnapshotCacheApiUsageTest {
     }
 
     private data class Payload(val value: String) : Serializable
+
+    private fun projectFile(relativePath: String): Path {
+        val rootCandidate = Path.of(relativePath)
+        if (Files.exists(rootCandidate)) return rootCandidate
+        return Path.of("../..", relativePath).normalize()
+    }
+
+    private fun extractMarkedBlock(source: String, begin: String, end: String): String {
+        val start = source.indexOf(begin)
+        val finish = source.indexOf(end, startIndex = start + begin.length)
+        check(start >= 0 && finish > start) { "Missing canonical README markers: $begin .. $end" }
+        return source.substring(start + begin.length, finish).trim('\n', '\r')
+    }
 }

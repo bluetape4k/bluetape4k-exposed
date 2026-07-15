@@ -22,10 +22,12 @@ Combines Exposed JDBC with Redisson caching to implement Read-Through/Write-Thro
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-redisson:${version}")
-    implementation("org.redisson:redisson:3.37.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-redisson")
+    implementation("org.redisson:redisson")
 }
 ```
+
+The application owns the `bluetape4k-dependencies` BOM version, so both coordinates are intentionally versionless.
 
 ## Architecture Overview
 
@@ -224,6 +226,151 @@ reject Fory/Kryo/JDK-family binary codecs unless `trustedBinaryCache = true` is 
 Use that opt-in only for private Redis instances whose contents are not writable by untrusted
 clients. For dependency-facing Redis data, provide a reviewed custom codec instead of relying on
 the default binary codec.
+
+<!-- REDISSON-SNAPSHOT-INVALIDATION -->
+## Commit-safe Redisson snapshot invalidation (opt-in)
+
+`JdbcRedissonSnapshotInvalidator` is a separate invalidation-only path for an application near-cache. It exposes no
+cache read or snapshot PUT and does not migrate an existing `JdbcRedissonRepository`. `stageInvalidation` publishes
+`fastRemoveAsync` only after the current root JDBC transaction commits; rollback publishes nothing. Its transaction
+must use `maxAttempts = 1`, so application retry wraps the whole transaction.
+
+### Key, codec, and namespace contract
+
+- Distributed identifiers are non-secret, non-credential, non-PII surrogate `Long` or `UUID` values. Use
+  `longSnapshotIdentifierPolicy()` or `uuidSnapshotIdentifierPolicy()`. There is intentionally no String policy; map
+  sensitive, composite, or domain String keys to a surrogate first.
+- Use the same `SnapshotRedissonCodec` object for repository map keys and invalidation. The remote compatibility
+  fingerprint binds the backend, namespace, key/value runtime classes, schema version, codec delegate class,
+  `codecVersion`, canonical key encoding, and synchronization strategy. An empty namespace atomically claims an absent
+  marker. An absent marker with an existing map, or an incompatible marker, fails before map access or mutation admission.
+- `SnapshotCacheConfig.namespace` is a static operator-owned versioned name matching
+  `[a-z][a-z0-9._-]{0,62}:v[1-9][0-9]*`, for example `orders:v1`. It must never contain a tenant, request, user, entity,
+  or other dynamic identifier. Never let mixed application versions share an unversioned namespace.
+- Fory, Kryo, and JDK-family binary delegates require `trustedBinaryCache = true` for each consumer. Use that opt-in
+  only for an isolated cache where every writer and payload is trusted.
+- Multi-node operation requires `SyncStrategy.INVALIDATE`; reconnect recovery always requires
+  `ReconnectionStrategy.CLEAR`.
+
+### Canonical Redisson example
+
+The English and Korean blocks below are byte-for-byte equal to a compiled source-usage fixture. The DTO is detached and
+serializable; the invalidator accepts only its key and never its payload. Create the codec once with
+`orderSnapshotCodec()` and pass that exact object to both the repository map configuration and
+`orderSnapshotInvalidator`; do not create separate wrapper instances for those consumers. Its typed JSON delegate
+round-trips the DTO without requiring the trusted-binary opt-in.
+
+<!-- README-CANONICAL-REDISSON-BEGIN -->
+```kotlin
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonProperty
+import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
+import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheFailureBuffer
+import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
+import io.bluetape4k.exposed.redisson.snapshot.JdbcRedissonSnapshotInvalidator
+import io.bluetape4k.exposed.redisson.snapshot.JdbcRedissonSnapshotInvalidatorConfig
+import io.bluetape4k.exposed.redisson.snapshot.SnapshotRedissonCodec
+import io.bluetape4k.exposed.redisson.snapshot.jdbcRedissonSnapshotInvalidator
+import io.bluetape4k.exposed.redisson.snapshot.longSnapshotIdentifierPolicy
+import io.bluetape4k.exposed.redisson.snapshot.snapshotRedissonCodec
+import io.bluetape4k.exposed.redisson.snapshot.stageInvalidation
+import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
+import org.redisson.api.RedissonClient
+import org.redisson.codec.TypedJsonJacksonCodec
+import java.io.Serializable
+
+data class RedissonOrderSnapshot @JsonCreator constructor(
+    @JsonProperty("id") val id: Long,
+    @JsonProperty("description") val description: String,
+) : Serializable {
+    private companion object {
+        private const val serialVersionUID: Long = 1L
+    }
+}
+
+private val orderInvalidationFailures: SnapshotCacheFailureBuffer = snapshotCacheFailureBuffer(capacity = 256)
+
+fun orderSnapshotCodec(): SnapshotRedissonCodec<Long> =
+    snapshotRedissonCodec(
+        delegate = TypedJsonJacksonCodec(Long::class.javaObjectType, RedissonOrderSnapshot::class.java),
+        codecVersion = "typed-json-v1",
+        identifierPolicy = longSnapshotIdentifierPolicy(),
+    )
+
+fun orderSnapshotInvalidator(
+    redissonClient: RedissonClient,
+    codec: SnapshotRedissonCodec<Long>,
+): JdbcRedissonSnapshotInvalidator<Long> {
+    val config = JdbcRedissonSnapshotInvalidatorConfig(
+        snapshot = SnapshotCacheConfig(namespace = "orders:v1", schemaVersion = "order-dto-v1"),
+    )
+    return jdbcRedissonSnapshotInvalidator<Long, RedissonOrderSnapshot>(
+        redissonClient = redissonClient,
+        codec = codec,
+        config = config,
+        failureBuffer = orderInvalidationFailures,
+    )
+}
+
+fun JdbcTransaction.invalidateOrderSnapshot(
+    invalidator: JdbcRedissonSnapshotInvalidator<Long>,
+    id: Long,
+) {
+    stageInvalidation(invalidator, id)
+}
+```
+<!-- README-CANONICAL-REDISSON-END -->
+
+### Admission, failure observation, and recovery
+
+`quotaHealth()` reports bounded chunk and encoded-byte admission state for the caller-owned `RedissonClient`. Saturated
+quota rejects a chunk without blocking or cancelling accepted futures; it cannot undo the database commit. Alert on
+rejected chunks, dropped failure events, repeated invalidations, and sustained saturation. Apply rate controls to
+repeated invalidation and shed database load when invalidation or reconnect creates miss amplification.
+
+Each accepted chunk releases its quota when its future completes. A never-completing future retains only its bounded
+lease until client replacement. Drain the caller-owned `SnapshotCacheFailureBuffer` explicitly on the caller thread.
+Public failure and health data contains bounded structural counts and exception type only—never exception text, stack
+traces, payloads, identifiers, SQL, URLs, endpoints, or credentials.
+
+For recovery, stop writers and quiesce traffic, close the old client, wait under a bounded monotonic deadline until its
+outstanding quota is zero, and drain its failure buffer. Create a distinct `RedissonClient` with fresh quota limits; do
+not reuse the closed client. The callback never writes the database, waits for Redis, cancels a Redis future, or makes
+the committed database/cache state atomic. Keep an application-owned outbox or repair path.
+
+### Namespace cleanup authority and timeout
+
+`clearSnapshotNamespace` and `clearMapRetainingMarker` are guarded by `DelicateSnapshotCacheAdminApi`. Run them only
+after every writer is stopped, traffic is quiescent, and the namespace has been removed from every live client. Use
+network isolation and a dedicated namespace-scoped Redis ACL identity that permits only marker/map inspection and
+unlink, local-cache clear scoped pub/sub, and the required temporary clear semaphore keys/channels. Deny global
+keyevent subscription. These functions must never be exposed through a request-facing path. The exact fingerprint is
+an accident guard, not authorization.
+
+One timeout is shared across marker inspection, asynchronous map unlink, each local-view clear, and terminal
+verification. An accepted server command is never cancelled. `TIMED_OUT_ACCEPTED_UNKNOWN` means the operator must
+quiesce again and rerun the same operation to inspect and resume the observed partial state.
+
+### Exact `v1` to `v2` rollout
+
+1. Deploy `v2` readers and writers on a separate `:v2` namespace, then warm it or allow natural repopulation. Keep `v1`
+   and `v2` isolated; mixed-version nodes must not share an unversioned namespace.
+2. Cut every node to `v2`. Stop all `v1` writers, drain in-flight requests, verify `v1` quota is zero, close/remove every
+   live `v1` client, and only then call `clearSnapshotNamespace` for `v1`.
+3. Require a terminal `COMPLETED` or reverified `ALREADY_COMPLETE` result. If the shared timeout expires after command
+   acceptance, keep the namespace quiescent and rerun. Keep invalidation alerts/rate controls active and shed database
+   load if cold `v2` misses amplify reads.
+
+### Exact `v2` to `v1` rollback
+
+1. Stop `v2` writers, stop old `v1` readers, quiesce traffic, drain in-flight work, verify both quotas are zero, and
+   close/remove the old application clients.
+2. Call `clearMapRetainingMarker` for `v1`. It must remove the remote map and every node's local `v1` view while
+   retaining and revalidating the exact `v1` marker. Handle the shared timeout by rerunning under quiescence.
+3. Switch every node to a fresh empty `v1` client using the exact retained configuration. Rebuild from the database,
+   verify reads against the database, and apply load shedding while misses repopulate the cache.
+4. After the rebuild is verified and the dedicated rebuild client is quiescent/closed, call `clearSnapshotNamespace`
+   for `v2`. Never clean `v2` before the verified database rebuild.
 
 ### 4. Write-Through / Write-Behind Repository implementation
 

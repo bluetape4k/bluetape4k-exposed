@@ -31,6 +31,78 @@ The sequence view focuses on the blocking repository path: read-through misses, 
 - **AutoIncrement safety**: Write-Through and Write-Behind skip INSERT for AutoInc tables (DB assigns the ID)
 - **Graceful shutdown**: `close()` drains the Write-Behind queue before cancelling the coroutine scope
 
+<!-- JDBC-SNAPSHOT-CACHE -->
+## Commit-safe JDBC snapshot cache (opt-in)
+
+`JdbcCaffeineSnapshotCache` is separate from the repository cache above. It stores only detached immutable DTOs and
+publishes staged `CacheSnapshot` values after the current root `JdbcTransaction` commits. Existing repository caches are
+not migrated. A rollback publishes nothing, repeated mutations of one key use last-mutation-wins ordering, and a local
+fence rejects a fill captured before a newer local invalidation.
+
+Call `lookup` before the database read. Capacity exhaustion then fails before database work. A returned
+`SnapshotCacheMiss` is one-shot, including when mapping or staging throws. `stageSnapshot` maps inside the current root
+transaction and rejects nested/savepoint transactions. Snapshot fill requires `maxAttempts = 1`; wrap the complete
+lookup + transaction + database-read sequence in an application retry and obtain a fresh lookup for every outer retry.
+`stageInvalidation` remains attempt-local, so a failed Exposed attempt leaks no invalidation and a successful retry
+publishes once.
+
+Transaction callbacks perform cache work only and never call repository `put` or any database writer. If an earlier
+`StatementInterceptor` callback throws, this callback may not run and an older cache value can remain. Observe the
+bounded `SnapshotCacheFailureBuffer` and keep an application-owned outbox or repair path for post-commit failures.
+Commit-safe is not database/cache atomicity or crash durability.
+
+### Canonical JDBC example
+
+The English and Korean blocks below are byte-for-byte equal to a compiled source-usage fixture.
+
+<!-- README-CANONICAL-JDBC-BEGIN -->
+```kotlin
+import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
+import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotMapper
+import io.bluetape4k.exposed.cache.snapshot.CaffeineSnapshotCacheConfig
+import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
+import io.bluetape4k.exposed.jdbc.caffeine.snapshot.JdbcCaffeineSnapshotCache
+import io.bluetape4k.exposed.jdbc.caffeine.snapshot.jdbcCaffeineSnapshotCache
+import io.bluetape4k.exposed.jdbc.caffeine.snapshot.stageInvalidation
+import io.bluetape4k.exposed.jdbc.caffeine.snapshot.stageSnapshot
+import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
+import java.io.Serializable
+
+data class JdbcOrderRow(val id: Long, val description: String)
+
+data class JdbcOrderSnapshot(val id: Long, val description: String) : Serializable {
+    private companion object {
+        private const val serialVersionUID: Long = 1L
+    }
+}
+
+private val jdbcOrderSnapshotCache = jdbcCaffeineSnapshotCache<Long, JdbcOrderSnapshot>(
+    CaffeineSnapshotCacheConfig(
+        snapshot = SnapshotCacheConfig(namespace = "orders:v1", schemaVersion = "order-dto-v1"),
+    ),
+)
+
+fun JdbcTransaction.cacheOrderSnapshot(
+    id: Long,
+    loadFromDatabase: JdbcTransaction.(Long) -> JdbcOrderRow,
+): CacheSnapshot<JdbcOrderSnapshot> {
+    val lookup = jdbcOrderSnapshotCache.lookup(id)
+    lookup.snapshot?.let { return it }
+    val row = loadFromDatabase(id)
+    return stageSnapshot(
+        cache = jdbcOrderSnapshotCache,
+        miss = requireNotNull(lookup.miss),
+        source = row,
+        mapper = CacheSnapshotMapper { CacheSnapshot(JdbcOrderSnapshot(it.id, it.description)) },
+    )
+}
+
+fun JdbcTransaction.invalidateOrderSnapshot(id: Long) {
+    stageInvalidation(jdbcOrderSnapshotCache, id)
+}
+```
+<!-- README-CANONICAL-JDBC-END -->
+
 ## Usage
 
 ### Sync repository (AbstractJdbcCaffeineRepository)
@@ -166,9 +238,11 @@ Tests run against:
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-caffeine:$version")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-caffeine")
 }
 ```
+
+The application owns the `bluetape4k-dependencies` BOM version, so the module coordinate is intentionally versionless.
 
 ## References
 
