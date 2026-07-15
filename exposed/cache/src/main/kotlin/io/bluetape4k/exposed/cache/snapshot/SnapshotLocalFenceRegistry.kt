@@ -8,18 +8,27 @@ import kotlin.concurrent.withLock
 /**
  * Process-local generation fence captured by a cache lookup.
  *
- * Tokens are compared by identity and must not be persisted, serialized, or transported outside the owning store.
- *
- * @property ownerToken identity of the local fence registry
- * @property stripe fixed stripe index selected for the cache identifier
- * @property generationToken identity of the generation observed by the lookup
+ * The capability exposes no captured identifier, stripe, or generation state. It must not be persisted,
+ * serialized, copied, or transported outside the owning store.
  */
 @InternalSnapshotCacheApi
-data class SnapshotLocalFence(
-    val ownerToken: Any,
-    val stripe: Int,
-    val generationToken: Any,
-)
+class SnapshotLocalFence<ID : Any> internal constructor(
+    private val ownerToken: Any,
+    private val stripe: Int,
+    private val capturedId: ID,
+    private val generationToken: Any,
+) {
+    internal fun isCurrentFor(
+        ownerToken: Any,
+        stripe: Int,
+        id: ID,
+        generationToken: Any,
+    ): Boolean =
+        this.ownerToken === ownerToken &&
+            this.stripe == stripe &&
+            capturedId == id &&
+            this.generationToken === generationToken
+}
 
 @OptIn(InternalSnapshotCacheApi::class)
 internal class SnapshotLocalFenceRegistry<ID : Any>(
@@ -36,21 +45,19 @@ internal class SnapshotLocalFenceRegistry<ID : Any>(
         stripes = Array(stripeCount) { Stripe() }
     }
 
-    fun capture(id: ID): SnapshotLocalFence {
+    fun capture(id: ID): SnapshotLocalFence<ID> {
         val stripeIndex = stripeIndex(id)
         val stripe = stripes[stripeIndex]
         return stripe.lock.withLock {
-            SnapshotLocalFence(ownerToken, stripeIndex, stripe.generationToken)
+            SnapshotLocalFence(ownerToken, stripeIndex, id, stripe.generationToken)
         }
     }
 
-    fun putIfCurrent(id: ID, fence: SnapshotLocalFence, mutation: () -> Unit): Boolean {
+    fun putIfCurrent(id: ID, fence: SnapshotLocalFence<ID>, mutation: () -> Unit): Boolean {
         val stripeIndex = stripeIndex(id)
-        if (fence.ownerToken !== ownerToken || fence.stripe != stripeIndex) return false
-
         val stripe = stripes[stripeIndex]
         return stripe.lock.withLock {
-            if (fence.generationToken !== stripe.generationToken) {
+            if (!fence.isCurrentFor(ownerToken, stripeIndex, id, stripe.generationToken)) {
                 false
             } else {
                 stripe.generationToken = Any()

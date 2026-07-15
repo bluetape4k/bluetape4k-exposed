@@ -253,7 +253,7 @@ sealed interface SnapshotCacheMutation<ID : Any, V : Serializable> {
     data class Put<ID : Any, V : Serializable>(
         override val id: ID,
         val snapshot: CacheSnapshot<V>,
-        @InternalSnapshotCacheApi val localFence: SnapshotLocalFence? = null,
+        @InternalSnapshotCacheApi val localFence: SnapshotLocalFence<ID>? = null,
     ) : SnapshotCacheMutation<ID, V>
 
     /**
@@ -298,6 +298,28 @@ data class MeasuredInvalidation<ID : Any>(
 data class SnapshotCacheApplyReport(
     val results: List<SnapshotCacheOperationResult>,
 ) : Serializable {
+    /**
+     * Requires this report to account exactly for one bulk [operation] input boundary.
+     *
+     * @return this validated report
+     * @throws IllegalArgumentException when an operation differs or counts do not reconcile
+     */
+    @InternalSnapshotCacheApi
+    fun requireReconciled(
+        operation: SnapshotCacheOperation,
+        expectedCount: Int,
+    ): SnapshotCacheApplyReport {
+        require(expectedCount >= 0) { "expectedCount[$expectedCount] must not be negative." }
+        require(results.all { it.operation == operation }) {
+            "Every result operation must be $operation."
+        }
+        val affectedCount = results.sumOf { it.affectedCount.toLong() }
+        require(affectedCount == expectedCount.toLong()) {
+            "Affected count[$affectedCount] must equal expectedCount[$expectedCount]."
+        }
+        return this
+    }
+
     companion object {
         private const val serialVersionUID: Long = 1L
     }
@@ -398,7 +420,7 @@ internal class SnapshotMissCapabilityRegistry<ID : Any, V : Serializable>(
     private val staleMisses = ReferenceQueue<SnapshotCacheMiss<ID, V>>()
     private val capabilities = HashMap<IdentityWeakReference<SnapshotCacheMiss<ID, V>>, MissCapability<ID>>()
 
-    fun register(id: ID, localFence: SnapshotLocalFence): SnapshotCacheLookup<ID, V> = lock.withLock {
+    fun register(id: ID, localFence: SnapshotLocalFence<ID>): SnapshotCacheLookup<ID, V> = lock.withLock {
         expungeStaleMisses()
         check(capabilities.size < maxOutstandingMissTokens) {
             "Outstanding snapshot miss token limit[$maxOutstandingMissTokens] is exhausted."
@@ -429,13 +451,13 @@ internal class SnapshotMissCapabilityRegistry<ID : Any, V : Serializable>(
 
 private data class MissCapability<ID : Any>(
     val id: ID,
-    val localFence: SnapshotLocalFence,
+    val localFence: SnapshotLocalFence<ID>,
 )
 
 @OptIn(InternalSnapshotCacheApi::class)
 private class OneShotClaimedSnapshotMiss<ID : Any, V : Serializable>(
     private val id: ID,
-    private val localFence: SnapshotLocalFence,
+    private val localFence: SnapshotLocalFence<ID>,
 ) : ClaimedSnapshotMiss<ID, V> {
     private val lock = ReentrantLock()
     private var available = true

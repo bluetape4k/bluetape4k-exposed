@@ -5,15 +5,17 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
-import org.awaitility.kotlin.await
-import org.awaitility.kotlin.withPollInterval
 import org.junit.jupiter.api.Test
 import java.io.ObjectStreamClass
 import java.io.Serializable
-import java.lang.ref.WeakReference
+import java.lang.ref.Reference
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
@@ -50,7 +52,8 @@ class SnapshotCacheStoreTest {
 
         mutation.id shouldBeEqualTo 1L
         mutation.snapshot shouldBeEqualTo CacheSnapshot(Payload("loaded"), "r-2")
-        mutation.localFence shouldBeEqualTo fences.capture(1L)
+        val localFence = mutation.localFence ?: error("Expected local fence")
+        fences.putIfCurrent(mutation.id, localFence) {}.shouldBeTrue()
         assertFailsWith<IllegalStateException> { registry.claim(miss) }
         assertFailsWith<IllegalStateException> {
             claimed.prepare(CacheSnapshot(Payload("loaded-again")))
@@ -75,23 +78,68 @@ class SnapshotCacheStoreTest {
     }
 
     @Test
-    fun `collected miss releases bounded registry capacity`() {
+    fun `queued weak miss releases bounded registry capacity`() {
         val fences = SnapshotLocalFenceRegistry<Long>(stripeCount = 2)
         val registry = SnapshotMissCapabilityRegistry<Long, Payload>(maxOutstandingMissTokens = 1)
-        val collectedMiss = registerWeakMiss(registry, fences, id = 1L)
+        val retainedLookup = registry.register(1L, fences.capture(1L))
 
-        await
-            .atMost(Duration.ofSeconds(10))
-            .withPollInterval(Duration.ofMillis(10))
-            .untilAsserted {
-                val pressure = Array(8) { ByteArray(128 * 1_024) }
-                pressure.sumOf { it.size } shouldBeEqualTo 1_048_576
-                System.gc()
-                collectedMiss.get().shouldBeNull()
+        clearAndEnqueueRegisteredWeakKey(registry)
 
-                val replacement = registry.register(2L, fences.capture(2L))
-                replacement.miss?.toString() shouldBeEqualTo "SnapshotCacheMiss(opaque)"
+        val replacement = registry.register(2L, fences.capture(2L))
+        replacement.miss?.toString() shouldBeEqualTo "SnapshotCacheMiss(opaque)"
+        val retainedMiss = retainedLookup.miss ?: error("Expected retained miss")
+        assertFailsWith<IllegalStateException> { registry.claim(retainedMiss) }
+    }
+
+    @Test
+    fun `simultaneous claim allows exactly one contender`() {
+        val fences = SnapshotLocalFenceRegistry<Long>(stripeCount = 2)
+        val registry = SnapshotMissCapabilityRegistry<Long, Payload>(maxOutstandingMissTokens = 1)
+        val miss = registry.register(1L, fences.capture(1L)).miss ?: error("Expected registered miss")
+        val start = CountDownLatch(1)
+        val executor = TrackedExecutor(threadCount = 2)
+
+        try {
+            val claims = List(2) {
+                executor.submit {
+                    start.await()
+                    runCatching { registry.claim(miss) }.getOrNull()
+                }
             }
+
+            start.countDown()
+            claims.map { it.get(5, TimeUnit.SECONDS) }.count { it != null } shouldBeEqualTo 1
+        } finally {
+            start.countDown()
+            executor.close()
+        }
+    }
+
+    @Test
+    fun `simultaneous prepare allows exactly one contender`() {
+        val fences = SnapshotLocalFenceRegistry<Long>(stripeCount = 2)
+        val registry = SnapshotMissCapabilityRegistry<Long, Payload>(maxOutstandingMissTokens = 1)
+        val miss = registry.register(1L, fences.capture(1L)).miss ?: error("Expected registered miss")
+        val claimed = registry.claim(miss)
+        val start = CountDownLatch(1)
+        val executor = TrackedExecutor(threadCount = 2)
+
+        try {
+            val mutations = List(2) { contender ->
+                executor.submit {
+                    start.await()
+                    runCatching {
+                        claimed.prepare(CacheSnapshot(Payload("loaded-$contender")))
+                    }.getOrNull()
+                }
+            }
+
+            start.countDown()
+            mutations.map { it.get(5, TimeUnit.SECONDS) }.count { it != null } shouldBeEqualTo 1
+        } finally {
+            start.countDown()
+            executor.close()
+        }
     }
 
     @Test
@@ -211,6 +259,63 @@ class SnapshotCacheStoreTest {
     }
 
     @Test
+    fun `report reconciliation accepts every outcome with an exact long count`() {
+        val report = SnapshotCacheApplyReport(
+            ALL_OUTCOMES.mapIndexed { index, outcome ->
+                SnapshotCacheOperationResult(
+                    operation = SnapshotCacheOperation.PUT,
+                    outcome = outcome,
+                    affectedCount = index + 1,
+                    exceptionType = exceptionType(outcome),
+                )
+            },
+        )
+
+        report.requireReconciled(SnapshotCacheOperation.PUT, expectedCount = 10) shouldBeEqualTo report
+    }
+
+    @Test
+    fun `report reconciliation rejects malformed operation and counts`() {
+        val onePut = SnapshotCacheOperationResult(
+            SnapshotCacheOperation.PUT,
+            SnapshotCacheOutcome.SUCCESS,
+            affectedCount = 1,
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            SnapshotCacheApplyReport(listOf(onePut)).requireReconciled(
+                SnapshotCacheOperation.PUT,
+                expectedCount = -1,
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            SnapshotCacheApplyReport(
+                listOf(onePut.copy(operation = SnapshotCacheOperation.INVALIDATE)),
+            ).requireReconciled(SnapshotCacheOperation.PUT, expectedCount = 1)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            SnapshotCacheApplyReport(listOf(onePut)).requireReconciled(
+                SnapshotCacheOperation.PUT,
+                expectedCount = 2,
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            SnapshotCacheApplyReport(listOf(onePut.copy(affectedCount = 2))).requireReconciled(
+                SnapshotCacheOperation.PUT,
+                expectedCount = 1,
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            SnapshotCacheApplyReport(
+                listOf(
+                    onePut.copy(affectedCount = Int.MAX_VALUE),
+                    onePut.copy(affectedCount = Int.MAX_VALUE),
+                ),
+            ).requireReconciled(SnapshotCacheOperation.PUT, expectedCount = Int.MAX_VALUE)
+        }
+    }
+
+    @Test
     fun `shared monotonic deadline expires between bulk entries`() {
         val clock = AtomicLong(0L)
         val sharedDeadline = MonotonicSnapshotCacheDeadline(Duration.ofNanos(5)) {
@@ -290,7 +395,7 @@ class SnapshotCacheStoreTest {
                         exceptionType = exceptionType(outcome),
                     )
                 },
-            )
+            ).requireReconciled(SnapshotCacheOperation.PUT, snapshots.size)
         }
 
         override fun applyInvalidations(
@@ -308,7 +413,7 @@ class SnapshotCacheStoreTest {
                         exceptionType = exceptionType(outcome),
                     )
                 },
-            )
+            ).requireReconciled(SnapshotCacheOperation.INVALIDATE, ids.size)
         }
     }
 
@@ -345,14 +450,17 @@ class SnapshotCacheStoreTest {
 
     private class MappingFailure : RuntimeException()
 
-    private fun registerWeakMiss(
+    private fun clearAndEnqueueRegisteredWeakKey(
         registry: SnapshotMissCapabilityRegistry<Long, Payload>,
-        fences: SnapshotLocalFenceRegistry<Long>,
-        id: Long,
-    ): WeakReference<SnapshotCacheMiss<Long, Payload>> {
-        val lookup = registry.register(id, fences.capture(id))
-        val miss = lookup.miss ?: error("Expected registered miss")
-        return WeakReference(miss)
+    ) {
+        val capabilitiesField = registry.javaClass.declaredFields.single {
+            Map::class.java.isAssignableFrom(it.type)
+        }.apply { isAccessible = true }
+        val capabilities = capabilitiesField.get(registry) as Map<*, *>
+        val weakKey = capabilities.keys.single() as Reference<*>
+
+        weakKey.clear()
+        weakKey.enqueue().shouldBeTrue()
     }
 
     private fun registerMissBeforeDbRead(
@@ -376,5 +484,18 @@ class SnapshotCacheStoreTest {
 
         private fun exceptionType(outcome: SnapshotCacheOutcome): String? =
             if (outcome == SnapshotCacheOutcome.FAILED) IllegalStateException::class.java.name else null
+    }
+
+    private class TrackedExecutor(threadCount: Int) : AutoCloseable {
+        private val executor = Executors.newFixedThreadPool(threadCount)
+        private val futures = mutableListOf<Future<*>>()
+
+        fun <T> submit(task: () -> T): Future<T> = executor.submit<T> { task() }.also { futures += it }
+
+        override fun close() {
+            futures.forEach { it.cancel(true) }
+            executor.shutdownNow()
+            executor.awaitTermination(5, TimeUnit.SECONDS).shouldBeTrue()
+        }
     }
 }
