@@ -47,6 +47,7 @@ dependencies {
     testImplementation(libs.testcontainers.mariadb)
     testImplementation(libs.testcontainers.mysql)
     testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.toxiproxy)
 
     testImplementation(bt4k.bluetape4k.idgenerators)
 

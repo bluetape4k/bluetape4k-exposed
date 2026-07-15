@@ -19,7 +19,7 @@
 - Pull request: create after all local gates and independent code review pass.
 - Merge: stop after reporting the exact merge-ready PR; obtain fresh user approval before merging.
 - Scope exclusions: no Spring Boot auto-configuration, no Ktor health route, no schema-drift tooling, no durable outbox, no direct `Entity` caching, no Lettuce adapter in this issue.
-- Dependency rule: add no dependency. Existing module dependency graphs already contain Exposed core/JDBC/R2DBC, Caffeine, Redisson, test fixtures, and benchmark dependencies needed by this plan.
+- Dependency rule: add no production dependency. Existing module dependency graphs already contain Exposed core/JDBC/R2DBC, Caffeine, Redisson, test fixtures, and benchmark dependencies needed by this plan. Task 9 adds the cataloged `testcontainers-toxiproxy` dependency only to `testImplementation`: `bluetape4k-testcontainers` exposes `ToxiproxyServer` as a public subtype, but its implementation dependency does not put the Toxiproxy container/client API on a consumer's test compile classpath; the direct test dependency is required for the peer-only disconnect fixture and has no published runtime effect.
 - Manual rule: update module READMEs and public KDoc, but do not change stable `docs/manual/{en,ko}` content pinned to 1.11.0.
 
 ## Acceptance Mapping
@@ -717,13 +717,14 @@ and independent quality review all passed with P0=0, P1=0, P2=0, P3=0.
 ## Task 9: Add namespace administration, recovery, and two-client Redis integration
 
 **Files:**
+- Modify: `exposed/jdbc-redisson/build.gradle.kts` (test-only Toxiproxy API compile dependency)
 - Create: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceAdmin.kt`
 - Create: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceAdminTest.kt`
 - Create: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidatorIntegrationTest.kt`
 
 - [x] Write unit tests for atomic marker claim/compare, mismatch rejection before cache use, map-before-marker cleanup order, bounded asynchronous unlink, ACL failure reporting, and quiescence requirement. Require an exact `expectedFingerprint`; marker-absent/map-present fails closed; map-absent/marker-present safely resumes marker deletion.
 - [x] Write a sequential Testcontainers test with two Redisson clients: populate client B near-cache, commit invalidation from client A, and poll with a bounded monotonic deadline plus deterministic timeout diagnostics until B no longer serves the stale local value. Also verify rollback sends no invalidation.
-- [x] Add a construction-options test proving positive local-cache size, `SyncStrategy.INVALIDATE`, and `ReconnectionStrategy.CLEAR` reach `RLocalCachedMap`. Add a deterministic/real reconnect test that primes stale local state, disconnects while an invalidation occurs, reconnects, and proves CLEAR runs before the next local hit under one bounded monotonic deadline with deterministic timeout diagnostics.
+- [x] Add a construction-options test proving positive local-cache size, `SyncStrategy.INVALIDATE`, and `ReconnectionStrategy.CLEAR` reach `RLocalCachedMap`. Add a deterministic peer-only reconnect test that primes client B's stale local state, disconnects only B through repo-owned Toxiproxy while A remains directly connected and invalidates the remote key, observes B transport reconnect plus invalidation-topic resubscription without a cache `get`, and proves CLEAR removed the cached key before exactly one first post-reconnect `mapB[3]` hit under bounded monotonic deadlines with deterministic timeout diagnostics.
 - [x] Add namespace marker script timeout and connection-failure tests. Facade creation must fail closed before map access, registration, or mutation on timeout, connection failure, or mismatch.
 - [x] Add incompatible fingerprint and never-completing-future recovery tests. Recovery must quiesce, close the old client, prove old quota zero after close/completion under one bounded monotonic deadline with deterministic timeout diagnostics, and drain failures before replacement. Then create facades with a distinct new `RedissonClient` identity and fresh quota registry; prove the closed old client cannot be reused. Expiry fails recovery closed.
 - [x] Run `./gradlew :bluetape4k-exposed-jdbc-redisson:test --tests '*SnapshotNamespaceAdminTest' --tests '*JdbcRedissonSnapshotInvalidatorIntegrationTest' --no-daemon` sequentially and confirm red before implementation.
@@ -786,21 +787,26 @@ Scope-risk: broad
 Tested: namespace admin unit tests and sequential two-client Redis integration tests
 ```
 
-Task 9 evidence: the sequential live fixture uses `RedisServer.Launcher.redis`, two independently owned Redisson
-clients, 2-second command/connect timeouts, one retry, a 250-millisecond retry delay, and a 500-millisecond heartbeat.
-Real Redis Lua claim persisted across clients, exact markers matched, mismatches failed closed, guarded rollback cleanup
-retained and revalidated the marker, and destructive cleanup removed map before marker. Two-client commit invalidation
-removed client B's primed stale local value under a bounded monotonic poll; rollback retained it. The reconnect proof
-deleted the remote key without Redisson pub/sub, paused the existing Redis container, observed and forced client B's
-finite-timeout disconnect, restored Redis in `finally`, and proved `CLEAR` removed stale local state before the next hit.
+Task 9 evidence: the sequential live fixture uses `RedisServer.Launcher.redis`, independently owned Redisson
+application/operator clients, 2-second command/connect timeouts, one retry, a 250-millisecond retry delay, and a
+500-millisecond heartbeat. Every random namespace is tracked; teardown restores paused transports, closes clients,
+deletes the Toxiproxy proxy, deletes both map and marker keys, and verifies no tracked Redis key remains. Real Redis Lua
+claim persisted across clients, exact markers matched, mismatches failed closed, guarded rollback cleanup retained and
+revalidated the marker, and destructive cleanup removed map before marker. Two-client commit invalidation removed client
+B's primed stale local value under a bounded monotonic poll; rollback retained it after a later committed barrier
+invalidation, without a timing sleep. The reconnect proof routes only client B through the repo-owned `ToxiproxyServer`
+while A stays directly connected. It observes B's Redisson 4.6.1 connection-listener disconnect, allows A to remove the
+key while B is isolated, restores the proxy, awaits B transport reconnect and the exact `{$namespace}:topic` local-cache
+invalidation-topic resubscription, and observes the public local-cache view clear before exactly one first `mapB[3]` read.
 Recovery committed an invalidation during the outage, observed one outstanding quota lease, bounded old-client shutdown,
 then proved quota zero plus one drainable failure before creating a distinct replacement with fresh caps; old-client reuse
-and an expired verification failed closed. Live v1/v2 marker and cleanup operations exercised destructive rollout cleanup,
-retained-marker rollback preparation, and v2 cleanup ordering; unversioned configuration was rejected. The reconnect
-regression failed first with 0/1 passing after 181 polls over 5 seconds, then passed after the fixture forced a real
-disconnect. The exact targeted suite passed 41/41; the full JDBC Redisson module ran 607 tests with 606 passing and one
-existing skip, with zero failures and zero errors. Root detekt completed
-successfully (`NO-SOURCE`), and every Redis pause was paired with `finally` unpause plus a bounded availability proof.
+and an expired verification failed closed. The live v1/v2 state machine uses separate operator and application clients,
+asserts quota quiescence and actual client shutdown before each cleanup, creates a fresh empty v1 client after retained-marker
+cleanup, rebuilds from the database, closes the rebuilt v1 client, and only then cleans v2; its trace is appended only after
+each real operation succeeds. The single-read reconnect regression failed RED with stale on the first post-reconnect hit;
+the peer-only listener/subscription/CLEAR implementation then passed three consecutive isolated reruns. The exact targeted
+suite passed 41/41. The final full JDBC Redisson module run executed 607 tests with 606 passing, one existing skip, zero
+failures, and zero errors. Root `detekt` completed successfully with the root task reported as `NO-SOURCE`.
 
 ## Task 10: Document the public contract in English and Korean
 
