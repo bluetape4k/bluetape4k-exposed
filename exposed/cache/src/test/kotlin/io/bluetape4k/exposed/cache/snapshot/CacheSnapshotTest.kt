@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.cache.snapshot
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.dao.Entity
@@ -11,20 +12,32 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
+import java.io.ObjectStreamClass
 import java.io.Serializable
 import java.lang.reflect.Modifier
 
 class CacheSnapshotTest {
 
     @Test
-    fun `snapshot is an immutable serializable value with an optional revision`() {
+    fun `snapshot envelope exposes final value and revision references`() {
         val snapshot = CacheSnapshot(value = Payload("detached"))
 
         snapshot.revision.shouldBeNull()
-        Modifier.isFinal(CacheSnapshot::class.java.getDeclaredField("value").modifiers) shouldBeEqualTo true
-        Modifier.isFinal(CacheSnapshot::class.java.getDeclaredField("revision").modifiers) shouldBeEqualTo true
-        serializeRoundTrip(snapshot) shouldBeEqualTo snapshot
+        Modifier.isFinal(CacheSnapshot::class.java.getDeclaredField("value").modifiers).shouldBeTrue()
+        Modifier.isFinal(CacheSnapshot::class.java.getDeclaredField("revision").modifiers).shouldBeTrue()
         snapshot.copy(revision = "r-1") shouldBeEqualTo CacheSnapshot(Payload("detached"), "r-1")
+    }
+
+    @Test
+    fun `snapshot declares stable serial version UID`() {
+        ObjectStreamClass.lookup(CacheSnapshot::class.java).serialVersionUID shouldBeEqualTo 1L
+    }
+
+    @Test
+    fun `snapshot preserves value and revision through Java serialization`() {
+        val snapshot = CacheSnapshot(Payload("detached"), "r-1")
+
+        serializeRoundTrip(snapshot) shouldBeEqualTo snapshot
     }
 
     @Test
@@ -122,7 +135,7 @@ class CacheSnapshotTest {
     private data class Source(
         val name: String,
         val revision: String?,
-    ): Serializable {
+    ) : Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
@@ -130,15 +143,15 @@ class CacheSnapshotTest {
 
     private data class Payload(
         val text: String,
-    ): Serializable {
+    ) : Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
     }
 
-    private object Entities: IntIdTable("snapshot_entities")
+    private object Entities : IntIdTable("snapshot_entities")
 
-    private class SerializableEntity(id: EntityID<Int>): Entity<Int>(id), Serializable {
+    private class SerializableEntity(id: EntityID<Int>) : Entity<Int>(id), Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }

@@ -4,6 +4,12 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import org.junit.jupiter.api.Test
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
+import java.io.ObjectStreamClass
+import java.io.Serializable
 import java.time.Duration
 
 class SnapshotCacheConfigTest {
@@ -19,6 +25,23 @@ class SnapshotCacheConfigTest {
         config.schemaVersion shouldBeEqualTo "order-v1"
         config.maxStagedMutations shouldBeEqualTo 10_000
         config.maxParticipatingStores shouldBeEqualTo 8
+    }
+
+    @Test
+    fun `snapshot config declares stable serial version UID`() {
+        ObjectStreamClass.lookup(SnapshotCacheConfig::class.java).serialVersionUID shouldBeEqualTo 1L
+    }
+
+    @Test
+    fun `snapshot config preserves limits through Java serialization`() {
+        val config = SnapshotCacheConfig(
+            namespace = "orders:v2",
+            schemaVersion = "order-v2",
+            maxStagedMutations = 123,
+            maxParticipatingStores = 4,
+        )
+
+        serializeRoundTrip(config) shouldBeEqualTo config
     }
 
     @Test
@@ -85,13 +108,37 @@ class SnapshotCacheConfigTest {
     }
 
     @Test
+    fun `caffeine config declares stable serial version UID`() {
+        ObjectStreamClass.lookup(CaffeineSnapshotCacheConfig::class.java).serialVersionUID shouldBeEqualTo 1L
+    }
+
+    @Test
+    fun `caffeine config preserves weighted limits and durations through Java serialization`() {
+        val config = CaffeineSnapshotCacheConfig(
+            snapshot = SnapshotCacheConfig("orders:v2", "order-v2"),
+            maximumSize = 123L,
+            maximumWeight = 456L,
+            expireAfterWrite = Duration.ofMinutes(2),
+            expireAfterAccess = Duration.ofMinutes(1),
+            maxStagedWeight = 789L,
+            localDrainBudget = Duration.ofMillis(100),
+            fenceStripes = 256,
+            maxOutstandingMissTokens = 321,
+        )
+
+        serializeRoundTrip(config) shouldBeEqualTo config
+    }
+
+    @Test
     fun `caffeine positive bounds are enforced`() {
         val snapshot = SnapshotCacheConfig("orders:v1", "schema")
 
         assertFailsWith<IllegalArgumentException> { CaffeineSnapshotCacheConfig(snapshot, maximumSize = 0L) }
         assertFailsWith<IllegalArgumentException> { CaffeineSnapshotCacheConfig(snapshot, maximumWeight = 0L) }
         assertFailsWith<IllegalArgumentException> { CaffeineSnapshotCacheConfig(snapshot, maxStagedWeight = 0L) }
-        assertFailsWith<IllegalArgumentException> { CaffeineSnapshotCacheConfig(snapshot, maxOutstandingMissTokens = 0) }
+        assertFailsWith<IllegalArgumentException> {
+            CaffeineSnapshotCacheConfig(snapshot, maxOutstandingMissTokens = 0)
+        }
     }
 
     @Test
@@ -140,5 +187,16 @@ class SnapshotCacheConfigTest {
 
         config.maximumWeight shouldBeEqualTo 100L
         config.maxStagedWeight shouldBeEqualTo 200L
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T : Serializable> serializeRoundTrip(value: T): T {
+        val bytes = ByteArrayOutputStream().use { output ->
+            ObjectOutputStream(output).use { it.writeObject(value) }
+            output.toByteArray()
+        }
+        return ByteArrayInputStream(bytes).use { input ->
+            ObjectInputStream(input).use { it.readObject() as T }
+        }
     }
 }

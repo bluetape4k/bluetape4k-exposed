@@ -3,15 +3,18 @@ package io.bluetape4k.exposed.cache.snapshot
 import java.io.Serializable
 
 /**
- * Detached, immutable value stored by a snapshot cache.
+ * Detached value envelope stored by a snapshot cache.
+ *
+ * The envelope references are immutable. The caller owns mapping persistence state to a detached value and ensuring
+ * that the complete value graph is deeply immutable when required by the cache contract.
  *
  * @property value serializable value detached from transaction-scoped persistence state
  * @property revision optional application-defined consistency revision
  */
-data class CacheSnapshot<V: Serializable>(
+data class CacheSnapshot<V : Serializable>(
     val value: V,
     val revision: String? = null,
-): Serializable {
+) : Serializable {
     companion object {
         private const val serialVersionUID: Long = 1L
     }
@@ -23,7 +26,7 @@ data class CacheSnapshot<V: Serializable>(
  * Implementations must copy persistence state into an immutable serializable value instead of retaining
  * transaction-scoped entities or request state.
  */
-fun interface CacheSnapshotMapper<S, V: Serializable> {
+fun interface CacheSnapshotMapper<S, V : Serializable> {
     /**
      * Creates a detached snapshot from [source].
      */
@@ -33,7 +36,7 @@ fun interface CacheSnapshotMapper<S, V: Serializable> {
 /**
  * Validates a detached snapshot value before it is admitted to a cache.
  */
-fun interface CacheSnapshotValueValidator<V: Serializable> {
+fun interface CacheSnapshotValueValidator<V : Serializable> {
     /**
      * Validates [value] or throws [IllegalArgumentException] when it is not cache-safe.
      */
@@ -43,7 +46,7 @@ fun interface CacheSnapshotValueValidator<V: Serializable> {
 /**
  * Estimates the retained heap size of a detached snapshot value.
  */
-fun interface SnapshotValueSizer<V: Serializable> {
+fun interface SnapshotValueSizer<V : Serializable> {
     /**
      * Returns the estimated retained size of [value] in bytes.
      *
@@ -59,7 +62,7 @@ fun interface SnapshotValueSizer<V: Serializable> {
  * when the optional Exposed DAO artifact is absent. The validator intentionally does not reflect through the value
  * graph; callers remain responsible for mapping nested state to immutable DTOs.
  */
-fun <V: Serializable> rejectDirectEntitySnapshotValues(): CacheSnapshotValueValidator<V> =
+fun <V : Serializable> rejectDirectEntitySnapshotValues(): CacheSnapshotValueValidator<V> =
     CacheSnapshotValueValidator { value ->
         val entityBaseClass = resolveExposedDaoEntityClass(value.javaClass)
         require(entityBaseClass?.isAssignableFrom(value.javaClass) != true) {
@@ -73,7 +76,7 @@ fun <V: Serializable> rejectDirectEntitySnapshotValues(): CacheSnapshotValueVali
  * @param sizer application-provided retained-size estimator
  * @param limit maximum accepted estimate in bytes; must be positive
  */
-fun <V: Serializable> maximumEstimatedPayloadBytes(
+fun <V : Serializable> maximumEstimatedPayloadBytes(
     sizer: SnapshotValueSizer<V>,
     limit: Long,
 ): CacheSnapshotValueValidator<V> {

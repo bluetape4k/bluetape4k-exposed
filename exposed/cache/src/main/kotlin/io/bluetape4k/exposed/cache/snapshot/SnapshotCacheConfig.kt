@@ -19,7 +19,7 @@ data class SnapshotCacheConfig(
     val schemaVersion: String,
     val maxStagedMutations: Int = 10_000,
     val maxParticipatingStores: Int = 8,
-): Serializable {
+) : Serializable {
 
     init {
         require(NAMESPACE_PATTERN.matches(namespace)) {
@@ -67,7 +67,7 @@ data class CaffeineSnapshotCacheConfig(
     val localDrainBudget: Duration = Duration.ofMillis(250),
     val fenceStripes: Int = 1_024,
     val maxOutstandingMissTokens: Int = 10_000,
-): Serializable {
+) : Serializable {
 
     init {
         require(maximumSize > 0L) { "maximumSize[$maximumSize] must be positive." }
