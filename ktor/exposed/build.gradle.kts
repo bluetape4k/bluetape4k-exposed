@@ -22,12 +22,12 @@ dependencies {
 
     testImplementation(bt4k.bluetape4k.ktor.testing)
     testImplementation(bt4k.bluetape4k.assertions)
-    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
 
-    testImplementation(libs.exposed.java.time)
+    testImplementation(bt4k.exposed.java.time)
     testImplementation(libs.h2.v2)
-    testImplementation(libs.r2dbc.h2)
+    testImplementation(bt4k.r2dbc.h2)
     testImplementation(libs.micrometer.test)
 }

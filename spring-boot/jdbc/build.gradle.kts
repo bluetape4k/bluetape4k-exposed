@@ -17,18 +17,18 @@ dependencies {
     api("org.springframework.data:spring-data-commons")
 
     api(libs.kotlin.reflect)
-    api(libs.bluetape4k.logging)
-    api(libs.exposed.core)
+    api(bt4k.bluetape4k.logging)
+    api(bt4k.exposed.core)
     api(libs.exposed.dao)
-    api(libs.exposed.jdbc)
-    api(libs.exposed.java.time)
-    api(libs.exposed.spring7.transaction)
+    api(bt4k.exposed.jdbc)
+    api(bt4k.exposed.java.time)
+    api(bt4k.exposed.spring7.transaction)
 
-    testImplementation(libs.exposed.migration.jdbc)
-    testImplementation(libs.flyway.core)
-    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(bt4k.exposed.migration.jdbc)
+    testImplementation(bt4k.flyway.core)
+    testImplementation(bt4k.bluetape4k.junit5)
 
-    testImplementation(libs.bluetape4k.virtualthread.jdk21)
+    testImplementation(bt4k.bluetape4k.virtualthread.jdk21)
 
     api(project(":bluetape4k-exposed-jdbc"))
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
@@ -40,10 +40,10 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation(libs.mockk)
     testImplementation(libs.h2.v2)
-    testImplementation(libs.hikaricp)
+    testImplementation(bt4k.hikaricp)
 
     // Multi-DB 테스트용 JDBC 드라이버
-    testImplementation(libs.mysql.connector.j)
+    testImplementation(bt4k.mysql.connector.j)
     testImplementation(libs.mariadb.java.client)
-    testImplementation(libs.postgresql.driver)
+    testImplementation(bt4k.postgresql)
 }

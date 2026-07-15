@@ -22,29 +22,29 @@ configurations {
 
 dependencies {
     // Bluetape4k
-    api(libs.bluetape4k.logging)
+    api(bt4k.bluetape4k.logging)
 
     // Exposed
     api(platform(libs.exposed.bom))
-    api(libs.exposed.core)
-    compileOnly(libs.exposed.jdbc)
+    api(bt4k.exposed.core)
+    compileOnly(bt4k.exposed.jdbc)
     compileOnly(libs.exposed.dao)
-    compileOnly(libs.exposed.java.time)
+    compileOnly(bt4k.exposed.java.time)
 
     // Coroutines
     compileOnly(libs.kotlinx.coroutines.core)
 
     // Test Fixtures
-    testFixturesApi(libs.bluetape4k.logging)
+    testFixturesApi(bt4k.bluetape4k.logging)
     testFixturesApi(platform(libs.exposed.bom))
-    testFixturesApi(libs.exposed.core)
-    testFixturesApi(libs.exposed.jdbc)
-    testFixturesImplementation(libs.exposed.java.time)
+    testFixturesApi(bt4k.exposed.core)
+    testFixturesApi(bt4k.exposed.jdbc)
+    testFixturesImplementation(bt4k.exposed.java.time)
 
-    testFixturesImplementation(libs.bluetape4k.junit5)
+    testFixturesImplementation(bt4k.bluetape4k.junit5)
     testFixturesImplementation(project(":bluetape4k-exposed-jdbc-tests"))
     testFixturesImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
-    testFixturesCompileOnly(libs.exposed.r2dbc)
+    testFixturesCompileOnly(bt4k.exposed.r2dbc)
 
     testFixturesImplementation(libs.kotlinx.coroutines.core)
     testFixturesImplementation(libs.kotlinx.coroutines.test)
@@ -52,5 +52,5 @@ dependencies {
     testFixturesImplementation(libs.awaitility.kotlin)
 
     // Testing
-    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(bt4k.bluetape4k.junit5)
 }

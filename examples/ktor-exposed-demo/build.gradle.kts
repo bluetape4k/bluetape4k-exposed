@@ -12,17 +12,17 @@ dependencies {
 
     implementation(project(":bluetape4k-exposed-ktor"))
     implementation(bt4k.bluetape4k.ktor.core)
-    implementation(libs.exposed.jdbc)
-    implementation(libs.exposed.r2dbc)
-    implementation(libs.hikaricp)
+    implementation(bt4k.exposed.jdbc)
+    implementation(bt4k.exposed.r2dbc)
+    implementation(bt4k.hikaricp)
     implementation(libs.r2dbc.pool)
     implementation(libs.kotlinx.coroutines.core)
     implementation("io.ktor:ktor-server-netty")
 
     runtimeOnly(libs.h2.v2)
-    runtimeOnly(libs.r2dbc.h2)
+    runtimeOnly(bt4k.r2dbc.h2)
 
     testImplementation(bt4k.bluetape4k.ktor.testing)
     testImplementation(bt4k.bluetape4k.assertions)
-    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(bt4k.bluetape4k.junit5)
 }

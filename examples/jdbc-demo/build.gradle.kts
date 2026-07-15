@@ -26,17 +26,17 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
 
-    implementation(libs.exposed.jdbc)
+    implementation(bt4k.exposed.jdbc)
     implementation(libs.exposed.dao)
-    implementation(libs.exposed.migration.jdbc)
-    implementation(libs.exposed.java.time)
+    implementation(bt4k.exposed.migration.jdbc)
+    implementation(bt4k.exposed.java.time)
     runtimeOnly(libs.h2.v2)
 
     // Jackson 3
-    implementation(libs.bluetape4k.jackson3)
+    implementation(bt4k.bluetape4k.jackson3)
     implementation(libs.jackson3.module.kotlin)
     implementation(libs.jackson3.module.blackbird)
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(bt4k.bluetape4k.junit5)
 }

@@ -7,10 +7,10 @@ configurations {
 dependencies {
     testImplementation(project(":bluetape4k-exposed-bigquery"))
 
-    testImplementation(libs.exposed.core)
-    testImplementation(libs.exposed.jdbc)
+    testImplementation(bt4k.exposed.core)
+    testImplementation(bt4k.exposed.jdbc)
     testImplementation(libs.h2.v2)
 
-    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(libs.mockk)
 }

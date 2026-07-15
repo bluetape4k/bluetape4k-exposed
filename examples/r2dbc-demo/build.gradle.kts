@@ -24,25 +24,25 @@ dependencies {
 
     implementation(project(":bluetape4k-exposed-spring-boot-r2dbc"))
 
-    implementation(libs.exposed.r2dbc)
-    implementation(libs.exposed.java.time)
+    implementation(bt4k.exposed.r2dbc)
+    implementation(bt4k.exposed.java.time)
 
     implementation(libs.r2dbc.pool)
-    runtimeOnly(libs.r2dbc.h2)
+    runtimeOnly(bt4k.r2dbc.h2)
     runtimeOnly(libs.h2.v2)   // JDBC DataSource (DataInitializer + SchemaUtils에 필요)
 
     // Jackson 3
-    implementation(libs.bluetape4k.jackson3)
+    implementation(bt4k.bluetape4k.jackson3)
     implementation(libs.jackson3.module.kotlin)
     implementation(libs.jackson3.module.blackbird)
 
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
-    implementation(libs.bluetape4k.coroutines)
+    implementation(bt4k.bluetape4k.coroutines)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.reactor)
     testImplementation(libs.kotlinx.coroutines.test)
 
-    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(bt4k.bluetape4k.junit5)
 }

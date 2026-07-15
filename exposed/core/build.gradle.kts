@@ -7,13 +7,13 @@ configurations {
 dependencies {
     // Exposed
     implementation(platform(libs.exposed.bom))
-    api(libs.exposed.core)
+    api(bt4k.exposed.core)
     api(libs.kotlinx.coroutines.core)
-    compileOnly(libs.exposed.jdbc)
+    compileOnly(bt4k.exposed.jdbc)
     compileOnly(libs.exposed.dao)
     compileOnly(libs.exposed.crypt)
     compileOnly(libs.exposed.kotlin.datetime)
-    compileOnly(libs.exposed.java.time)
+    compileOnly(bt4k.exposed.java.time)
     compileOnly(libs.exposed.json)
     compileOnly(libs.exposed.money)
 
@@ -22,7 +22,7 @@ dependencies {
     testImplementation(project(":bluetape4k-exposed-dao"))
 
     // Entity ID generators (ColumnExtensions에서 사용)
-    api(libs.bluetape4k.idgenerators)
+    api(bt4k.bluetape4k.idgenerators)
     api(libs.java.uuid.generator)
 
     //
@@ -30,33 +30,33 @@ dependencies {
     //
 
     // Compress column types
-    compileOnly(libs.bluetape4k.io)
+    compileOnly(bt4k.bluetape4k.io)
 
     // Serializer (runtime for tests)
     testRuntimeOnly(libs.kryo5)
-    testRuntimeOnly(libs.fory.kotlin)  // new Apache Fory
+    testRuntimeOnly(bt4k.fory.kotlin)  // new Apache Fory
 
     // Compressors
     testRuntimeOnly(libs.lz4.java)
     testRuntimeOnly(libs.snappy.java)
-    testRuntimeOnly(libs.zstd.jni)
+    testRuntimeOnly(bt4k.zstd.jni)
 
     // Phone number column types (compileOnly -> testImplementation 자동 전이 via extendsFrom)
     compileOnly(libs.libphonenumber)
 
-    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.bluetape4k.testcontainers)
+    testImplementation(bt4k.bluetape4k.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.mariadb)
     testImplementation(libs.testcontainers.mysql)
     testImplementation(libs.testcontainers.postgresql)
 
     // Database Drivers
-    compileOnly(libs.hikaricp)
+    compileOnly(bt4k.hikaricp)
     testRuntimeOnly(libs.h2.v2)
     testRuntimeOnly(libs.mariadb.java.client)
-    testRuntimeOnly(libs.mysql.connector.j)
-    testRuntimeOnly(libs.postgresql.driver)
+    testRuntimeOnly(bt4k.mysql.connector.j)
+    testRuntimeOnly(bt4k.postgresql)
     testRuntimeOnly(libs.pgjdbc.ng)
 }

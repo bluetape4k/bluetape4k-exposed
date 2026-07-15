@@ -1,16 +1,16 @@
 dependencies {
-    implementation(libs.bluetape4k.core)
+    implementation(bt4k.bluetape4k.core)
 
-    api(libs.bluetape4k.logging)
-    api(libs.exposed.core)
-    api(libs.exposed.jdbc)
-    api(libs.exposed.java.time)
-    api(libs.postgresql.driver)
+    api(bt4k.bluetape4k.logging)
+    api(bt4k.exposed.core)
+    api(bt4k.exposed.jdbc)
+    api(bt4k.exposed.java.time)
+    api(bt4k.postgresql)
 
-    testImplementation(libs.bluetape4k.junit5)
-    testImplementation(libs.bluetape4k.jdbc)
-    testImplementation(libs.bluetape4k.testcontainers)
-    testImplementation(libs.exposed.migration.jdbc)
-    testImplementation(libs.hikaricp)
+    testImplementation(bt4k.bluetape4k.junit5)
+    testImplementation(bt4k.bluetape4k.jdbc)
+    testImplementation(bt4k.bluetape4k.testcontainers)
+    testImplementation(bt4k.exposed.migration.jdbc)
+    testImplementation(bt4k.hikaricp)
     testImplementation(libs.testcontainers.cockroachdb)
 }
