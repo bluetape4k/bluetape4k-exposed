@@ -721,13 +721,13 @@ and independent quality review all passed with P0=0, P1=0, P2=0, P3=0.
 - Create: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceAdminTest.kt`
 - Create: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidatorIntegrationTest.kt`
 
-- [ ] Write unit tests for atomic marker claim/compare, mismatch rejection before cache use, map-before-marker cleanup order, bounded asynchronous unlink, ACL failure reporting, and quiescence requirement. Require an exact `expectedFingerprint`; marker-absent/map-present fails closed; map-absent/marker-present safely resumes marker deletion.
-- [ ] Write a sequential Testcontainers test with two Redisson clients: populate client B near-cache, commit invalidation from client A, and poll with a bounded monotonic deadline plus deterministic timeout diagnostics until B no longer serves the stale local value. Also verify rollback sends no invalidation.
-- [ ] Add a construction-options test proving positive local-cache size, `SyncStrategy.INVALIDATE`, and `ReconnectionStrategy.CLEAR` reach `RLocalCachedMap`. Add a deterministic/real reconnect test that primes stale local state, disconnects while an invalidation occurs, reconnects, and proves CLEAR runs before the next local hit under one bounded monotonic deadline with deterministic timeout diagnostics.
-- [ ] Add namespace marker script timeout and connection-failure tests. Facade creation must fail closed before map access, registration, or mutation on timeout, connection failure, or mismatch.
-- [ ] Add incompatible fingerprint and never-completing-future recovery tests. Recovery must quiesce, close the old client, prove old quota zero after close/completion under one bounded monotonic deadline with deterministic timeout diagnostics, and drain failures before replacement. Then create facades with a distinct new `RedissonClient` identity and fresh quota registry; prove the closed old client cannot be reused. Expiry fails recovery closed.
-- [ ] Run `./gradlew :bluetape4k-exposed-jdbc-redisson:test --tests '*SnapshotNamespaceAdminTest' --tests '*JdbcRedissonSnapshotInvalidatorIntegrationTest' --no-daemon` sequentially and confirm red before implementation.
-- [ ] Implement the exact guarded cleanup surface and an `@RequiresOptIn(ERROR)` delicate admin annotation:
+- [x] Write unit tests for atomic marker claim/compare, mismatch rejection before cache use, map-before-marker cleanup order, bounded asynchronous unlink, ACL failure reporting, and quiescence requirement. Require an exact `expectedFingerprint`; marker-absent/map-present fails closed; map-absent/marker-present safely resumes marker deletion.
+- [x] Write a sequential Testcontainers test with two Redisson clients: populate client B near-cache, commit invalidation from client A, and poll with a bounded monotonic deadline plus deterministic timeout diagnostics until B no longer serves the stale local value. Also verify rollback sends no invalidation.
+- [x] Add a construction-options test proving positive local-cache size, `SyncStrategy.INVALIDATE`, and `ReconnectionStrategy.CLEAR` reach `RLocalCachedMap`. Add a deterministic/real reconnect test that primes stale local state, disconnects while an invalidation occurs, reconnects, and proves CLEAR runs before the next local hit under one bounded monotonic deadline with deterministic timeout diagnostics.
+- [x] Add namespace marker script timeout and connection-failure tests. Facade creation must fail closed before map access, registration, or mutation on timeout, connection failure, or mismatch.
+- [x] Add incompatible fingerprint and never-completing-future recovery tests. Recovery must quiesce, close the old client, prove old quota zero after close/completion under one bounded monotonic deadline with deterministic timeout diagnostics, and drain failures before replacement. Then create facades with a distinct new `RedissonClient` identity and fresh quota registry; prove the closed old client cannot be reused. Expiry fails recovery closed.
+- [x] Run `./gradlew :bluetape4k-exposed-jdbc-redisson:test --tests '*SnapshotNamespaceAdminTest' --tests '*JdbcRedissonSnapshotInvalidatorIntegrationTest' --no-daemon` sequentially and confirm red before implementation.
+- [x] Implement the exact guarded cleanup surface and an `@RequiresOptIn(ERROR)` delicate admin annotation:
 
 ```kotlin
 @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
@@ -767,14 +767,14 @@ fun <ID : Any> clearMapRetainingMarker(
 ): SnapshotNamespaceCleanupResult
 ```
 
-- [ ] Compile source usage of the delicate opt-in and every cleanup result outcome. Use one shared monotonic timeout across marker verification, asynchronous map unlink, local clear, and absence verification; accepted server cleanup cannot be cancelled, and a rerun resumes from observed partial state.
-- [ ] Before any Redisson/map/script interaction, both admin helpers validate namespace against `[a-z][a-z0-9._-]{0,62}:v[1-9][0-9]*`, `expectedFingerprint` against lowercase SHA-256 `[0-9a-f]{64}`, and a positive bounded timeout. Add zero-client-interaction tests for every invalid input.
-- [ ] Delete map entries before marker and fail closed on the partial-state matrix. Mark both APIs delicate and document dedicated namespace-scoped Redis ACL credentials, network isolation, quiescence, and the prohibition on request-facing exposure. Treat the fingerprint as an accident guard, not authorization.
-- [ ] Implement remote namespace marker verification within `namespaceVerificationTimeout`. Reject incompatible namespace reuse before accepting mutations.
-- [ ] Verify integration fixtures use finite Redisson command timeout and retry policy no greater than five seconds before outage/recovery cases.
-- [ ] Add a configuration-contract test for the exact v1-to-v2 state machine. Rollout: deploy v2 readers/writers, warm or naturally repopulate v2, cut every node over, stop all v1 writers, drain in-flight requests, then clear v1 remote map, every node's v1 local view, and v1 marker. Rollback: stop v2 writers, quiesce traffic, clear the retained v1 remote map and every node's v1 local view while retaining/revalidating its marker, switch every node to an empty v1, rebuild and verify reads from the database, and only then clean v2. Reject mixed-version nodes sharing an unversioned namespace.
-- [ ] Re-run the targeted integration tests sequentially, then the full module test task sequentially.
-- [ ] Commit with Lore trailers:
+- [x] Compile source usage of the delicate opt-in and every cleanup result outcome. Use one shared monotonic timeout across marker verification, asynchronous map unlink, local clear, and absence verification; accepted server cleanup cannot be cancelled, and a rerun resumes from observed partial state.
+- [x] Before any Redisson/map/script interaction, both admin helpers validate namespace against `[a-z][a-z0-9._-]{0,62}:v[1-9][0-9]*`, `expectedFingerprint` against lowercase SHA-256 `[0-9a-f]{64}`, and a positive bounded timeout. Add zero-client-interaction tests for every invalid input.
+- [x] Delete map entries before marker and fail closed on the partial-state matrix. Mark both APIs delicate and document dedicated namespace-scoped Redis ACL credentials, network isolation, quiescence, and the prohibition on request-facing exposure. Treat the fingerprint as an accident guard, not authorization.
+- [x] Implement remote namespace marker verification within `namespaceVerificationTimeout`. Reject incompatible namespace reuse before accepting mutations.
+- [x] Verify integration fixtures use finite Redisson command timeout and retry policy no greater than five seconds before outage/recovery cases.
+- [x] Add a configuration-contract test for the exact v1-to-v2 state machine. Rollout: deploy v2 readers/writers, warm or naturally repopulate v2, cut every node over, stop all v1 writers, drain in-flight requests, then clear v1 remote map, every node's v1 local view, and v1 marker. Rollback: stop v2 writers, quiesce traffic, clear the retained v1 remote map and every node's v1 local view while retaining/revalidating its marker, switch every node to an empty v1, rebuild and verify reads from the database, and only then clean v2. Reject mixed-version nodes sharing an unversioned namespace.
+- [x] Re-run the targeted integration tests sequentially, then the full module test task sequentially.
+- [x] Commit with Lore trailers:
 
 ```text
 Make Redisson namespace compatibility and recovery explicit
@@ -785,6 +785,22 @@ Confidence: high
 Scope-risk: broad
 Tested: namespace admin unit tests and sequential two-client Redis integration tests
 ```
+
+Task 9 evidence: the sequential live fixture uses `RedisServer.Launcher.redis`, two independently owned Redisson
+clients, 2-second command/connect timeouts, one retry, a 250-millisecond retry delay, and a 500-millisecond heartbeat.
+Real Redis Lua claim persisted across clients, exact markers matched, mismatches failed closed, guarded rollback cleanup
+retained and revalidated the marker, and destructive cleanup removed map before marker. Two-client commit invalidation
+removed client B's primed stale local value under a bounded monotonic poll; rollback retained it. The reconnect proof
+deleted the remote key without Redisson pub/sub, paused the existing Redis container, observed and forced client B's
+finite-timeout disconnect, restored Redis in `finally`, and proved `CLEAR` removed stale local state before the next hit.
+Recovery committed an invalidation during the outage, observed one outstanding quota lease, bounded old-client shutdown,
+then proved quota zero plus one drainable failure before creating a distinct replacement with fresh caps; old-client reuse
+and an expired verification failed closed. Live v1/v2 marker and cleanup operations exercised destructive rollout cleanup,
+retained-marker rollback preparation, and v2 cleanup ordering; unversioned configuration was rejected. The reconnect
+regression failed first with 0/1 passing after 181 polls over 5 seconds, then passed after the fixture forced a real
+disconnect. The exact targeted suite passed 41/41; the full JDBC Redisson module ran 607 tests with 606 passing and one
+existing skip, with zero failures and zero errors. Root detekt completed
+successfully (`NO-SOURCE`), and every Redis pause was paired with `finally` unpause plus a bounded availability proof.
 
 ## Task 10: Document the public contract in English and Korean
 
