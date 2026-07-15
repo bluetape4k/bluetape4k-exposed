@@ -23,6 +23,8 @@ import org.redisson.api.RScript
 import org.redisson.api.RedissonClient
 import org.redisson.api.options.LocalCachedMapOptions
 import org.redisson.client.codec.StringCodec
+import org.redisson.config.Config
+import org.redisson.config.NameMapper
 import java.io.Serializable
 import java.lang.ref.WeakReference
 import java.lang.reflect.Modifier
@@ -42,6 +44,18 @@ import kotlin.reflect.KVisibility
 import kotlin.reflect.full.declaredMemberFunctions
 
 class JdbcRedissonSnapshotInvalidatorTest {
+
+    @Test
+    fun `direct invalidator exposes the injected fingerprint authority`() {
+        val authoritativeFingerprint = "a".repeat(64)
+        val invalidator = newInvalidator(
+            codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy()),
+            config = config(),
+            compatibilityFingerprint = authoritativeFingerprint,
+        )
+
+        invalidator.delegate.compatibilityFingerprint shouldBeEqualTo authoritativeFingerprint
+    }
 
     @Test
     fun `factory verifies the canonical remote marker before map access`() {
@@ -75,6 +89,9 @@ class JdbcRedissonSnapshotInvalidatorTest {
             config.snapshot.namespace,
         )
         client.scriptCalls.single().arguments shouldBeEqualTo listOf(expectedFingerprint)
+        client.scriptCalls.single().mode shouldBeEqualTo RScript.Mode.READ_WRITE
+        client.scriptCalls.single().returnType shouldBeEqualTo RScript.ReturnType.LIST
+        client.scriptCalls.single().script.contains("redis.call('set', KEYS[1], ARGV[1])").shouldBeTrue()
     }
 
     @Test
@@ -723,6 +740,15 @@ class JdbcRedissonSnapshotInvalidatorTest {
         config: JdbcRedissonSnapshotInvalidatorConfig,
         map: RecordingLocalMap<Long> = RecordingLocalMap(),
         identifierEncoder: (Any) -> ByteArray = codec::encodeSnapshotIdentifier,
+        compatibilityFingerprint: String = snapshotNamespaceFingerprint(
+            backend = "redisson-jdbc",
+            namespace = config.snapshot.namespace,
+            keyRawClass = Long::class.java,
+            snapshotRawClass = Payload::class.java,
+            schemaVersion = config.snapshot.schemaVersion,
+            codec = codec,
+            synchronizationStrategy = config.synchronizationStrategy,
+        ),
     ): TestInvalidator {
         val failureBuffer = snapshotCacheFailureBuffer(8)
         val quota = RedissonInvalidationQuotaRegistry().quotaFor(
@@ -738,6 +764,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
             config = config,
             quota = quota,
             failureBuffer = failureBuffer,
+            compatibilityFingerprint = compatibilityFingerprint,
             storeInstanceToken = Any(),
             identifierEncoder = identifierEncoder,
         )
@@ -804,7 +831,10 @@ class JdbcRedissonSnapshotInvalidatorTest {
         fun quotaHealth() = delegate.quotaHealth()
     }
 
-    private class RecordingRedissonClient(private val localCacheMap: RLocalCachedMap<*, *>) {
+    private class RecordingRedissonClient(
+        private val localCacheMap: RLocalCachedMap<*, *>,
+        nameMapper: NameMapper = NameMapper.direct(),
+    ) {
         private val mapBehaviors = ArrayDeque<() -> RLocalCachedMap<*, *>>()
         private val markerBehaviors = ArrayDeque<MarkerBehavior>()
         private var scriptAccessFailure: Error? = null
@@ -813,11 +843,13 @@ class JdbcRedissonSnapshotInvalidatorTest {
         val options = mutableListOf<Any>()
         var markerCancelCalled = false
             private set
+        private val config = Config().setNameMapper(nameMapper)
         val proxy: RedissonClient = Proxy.newProxyInstance(
             RedissonClient::class.java.classLoader,
             arrayOf(RedissonClient::class.java),
         ) { instance, method, args ->
             when (method.name) {
+                "getConfig" -> config
                 "getScript" -> {
                     events += "script-access"
                     scriptAccessFailure?.let { throw it }
@@ -850,7 +882,13 @@ class JdbcRedissonSnapshotInvalidatorTest {
                     } else {
                         emptyList()
                     }
-                    scriptCalls += MarkerScriptCall(keys, arguments)
+                    scriptCalls += MarkerScriptCall(
+                        mode = args.orEmpty()[0] as RScript.Mode,
+                        script = args.orEmpty()[1] as String,
+                        returnType = args.orEmpty()[2] as RScript.ReturnType,
+                        keys = keys,
+                        arguments = arguments,
+                    )
                     markerFuture(
                         if (markerBehaviors.isEmpty()) {
                             MarkerBehavior.Value(markerState(MARKER_EXACT, mapExists = false))
@@ -1035,6 +1073,9 @@ class JdbcRedissonSnapshotInvalidatorTest {
     }
 
     private data class MarkerScriptCall(
+        val mode: RScript.Mode,
+        val script: String,
+        val returnType: RScript.ReturnType,
         val keys: List<Any>,
         val arguments: List<Any?>,
     )

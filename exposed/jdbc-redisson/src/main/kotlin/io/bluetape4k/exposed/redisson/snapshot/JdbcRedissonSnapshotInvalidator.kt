@@ -52,6 +52,8 @@ class JdbcRedissonSnapshotInvalidator<ID : Any> internal constructor(
     private val quota: RedissonInvalidationQuota,
     override val failureBuffer: SnapshotCacheFailureBuffer,
     @InternalSnapshotCacheApi
+    override val compatibilityFingerprint: String,
+    @InternalSnapshotCacheApi
     override val storeInstanceToken: Any,
     private val identifierEncoder: (Any) -> ByteArray = codec::encodeSnapshotIdentifier,
 ) : AsyncSnapshotInvalidationStore<ID> {
@@ -65,17 +67,6 @@ class JdbcRedissonSnapshotInvalidator<ID : Any> internal constructor(
     }
 
     override val storeId: SnapshotStoreId = SnapshotStoreId(REDISSON_JDBC_BACKEND, config.snapshot.namespace)
-
-    @InternalSnapshotCacheApi
-    override val compatibilityFingerprint: String = snapshotNamespaceFingerprint(
-        backend = REDISSON_JDBC_BACKEND,
-        namespace = config.snapshot.namespace,
-        keyRawClass = idType.supportedIdentifierRawClass(),
-        snapshotRawClass = valueType.java,
-        schemaVersion = config.snapshot.schemaVersion,
-        codec = codec,
-        synchronizationStrategy = config.synchronizationStrategy,
-    )
 
     @InternalSnapshotCacheApi
     override val limits: SnapshotCacheLimits = SnapshotCacheLimits(
@@ -240,6 +231,7 @@ fun <ID : Any, V : Serializable> jdbcRedissonSnapshotInvalidator(
             config = config,
             quota = reservation.quota,
             failureBuffer = failureBuffer,
+            compatibilityFingerprint = compatibilityFingerprint,
             storeInstanceToken = reservation.storeInstanceToken,
         ).also { reservation.commit() }
     } catch (failure: Throwable) {

@@ -16,6 +16,8 @@ import org.redisson.api.RedissonClient
 import org.redisson.api.options.LocalCachedMapOptions
 import org.redisson.client.RedisTimeoutException
 import org.redisson.client.codec.StringCodec
+import org.redisson.config.Config
+import org.redisson.config.NameMapper
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
@@ -74,6 +76,40 @@ class SnapshotNamespaceAdminTest {
     }
 
     @Test
+    fun `non round tripping name mapper fails before script and map access`() {
+        val mapper = object : NameMapper {
+            override fun map(name: String): String = "prefix:$name"
+            override fun unmap(name: String): String = name.removePrefix("prefix:")
+        }
+        val admin = RecordingAdmin(mapper).apply {
+            scriptReturns(markerState(MARKER_ABSENT, mapExists = false))
+        }
+
+        assertFailsWith<IllegalStateException> {
+            verifyOrClaimSnapshotNamespace(admin.client, NAMESPACE, FINGERPRINT, Duration.ofSeconds(2))
+        }
+
+        admin.events shouldBeEqualTo emptyList()
+    }
+
+    @Test
+    fun `empty or malformed first mapped hash tag fails before script and map access`() {
+        listOf("{}foo{later}", "{unterminated").forEach { mappedNamespace ->
+            val mapper = object : NameMapper {
+                override fun map(name: String): String = mappedNamespace
+                override fun unmap(name: String): String = name
+            }
+            val admin = RecordingAdmin(mapper)
+
+            assertFailsWith<IllegalStateException> {
+                verifyOrClaimSnapshotNamespace(admin.client, NAMESPACE, FINGERPRINT, Duration.ofSeconds(2))
+            }
+
+            admin.events shouldBeEqualTo emptyList()
+        }
+    }
+
+    @Test
     fun `maximum nanosecond-representable timeout remains a valid bounded input`() {
         val admin = RecordingAdmin().apply {
             scriptReturns(markerState(MARKER_ABSENT, mapExists = false))
@@ -112,6 +148,30 @@ class SnapshotNamespaceAdminTest {
         matched.events shouldBeEqualTo listOf("script", "wait:script-1")
         claimed.scriptCalls.single().keys shouldBeEqualTo listOf(snapshotNamespaceMarkerKey(NAMESPACE), NAMESPACE)
         claimed.scriptCalls.single().arguments shouldBeEqualTo listOf(FINGERPRINT)
+        claimed.scriptCalls.single().mode shouldBeEqualTo RScript.Mode.READ_WRITE
+        claimed.scriptCalls.single().returnType shouldBeEqualTo RScript.ReturnType.LIST
+        claimed.scriptCalls.single().script shouldContain "redis.call('set', KEYS[1], ARGV[1])"
+        claimed.scriptCalls.single().script shouldContain "if mapExists == 1"
+    }
+
+    @Test
+    fun `hash tagged name mapper keeps marker and map in one slot with namespace unique markers`() {
+        val mapper = object : NameMapper {
+            override fun map(name: String): String = "{tenant}:$name"
+            override fun unmap(name: String): String = name.removePrefix("{tenant}:")
+        }
+        val orders = RecordingAdmin(mapper).apply { scriptReturns(markerState(MARKER_ABSENT, mapExists = false)) }
+        val customers = RecordingAdmin(mapper).apply { scriptReturns(markerState(MARKER_ABSENT, mapExists = false)) }
+
+        verifyOrClaimSnapshotNamespace(orders.client, NAMESPACE, FINGERPRINT, Duration.ofSeconds(2))
+        verifyOrClaimSnapshotNamespace(customers.client, "customers:v1", FINGERPRINT, Duration.ofSeconds(2))
+
+        val ordersKeys = orders.scriptCalls.single().keys.map { mapper.map(it as String) }
+        val customerKeys = customers.scriptCalls.single().keys.map { mapper.map(it as String) }
+        ordersKeys.map(::redisSlotTag).distinct() shouldBeEqualTo listOf("tenant")
+        customerKeys.map(::redisSlotTag).distinct() shouldBeEqualTo listOf("tenant")
+        (ordersKeys.first() != customerKeys.first()).shouldBeTrue()
+        ordersKeys.first() shouldBeEqualTo snapshotNamespaceMarkerKey(mapper.map(NAMESPACE))
     }
 
     @Test
@@ -138,7 +198,7 @@ class SnapshotNamespaceAdminTest {
     fun `marker key uses the exact map namespace as its Redis Cluster hash tag`() {
         val markerKey = snapshotNamespaceMarkerKey(NAMESPACE)
 
-        markerKey shouldBeEqualTo "{$NAMESPACE}:__bt4k_snapshot_fingerprint"
+        markerKey shouldBeEqualTo "{$NAMESPACE}:__bt4k_snapshot_fingerprint:${sha256(NAMESPACE)}"
         markerKey.substringAfter('{').substringBefore('}') shouldBeEqualTo NAMESPACE
     }
 
@@ -188,6 +248,10 @@ class SnapshotNamespaceAdminTest {
         )
         admin.destroyCount shouldBeEqualTo 1
         admin.cancelCalls.shouldBeFalse()
+        admin.scriptCalls[0].returnType shouldBeEqualTo RScript.ReturnType.LIST
+        admin.scriptCalls[0].script shouldContain "redis.call('exists', KEYS[2])"
+        admin.scriptCalls[2].returnType shouldBeEqualTo RScript.ReturnType.LONG
+        admin.scriptCalls[2].script shouldContain "redis.call('unlink', KEYS[1])"
     }
 
     @Test
@@ -678,6 +742,10 @@ class SnapshotNamespaceAdminTest {
         const val MARKER_MISMATCH = 2L
 
         fun markerState(marker: Long, mapExists: Boolean): List<Long> = listOf(marker, if (mapExists) 1L else 0L)
+
+        fun sha256(value: String): String = java.security.MessageDigest.getInstance("SHA-256")
+            .digest(value.toByteArray())
+            .joinToString("") { "%02x".format(it.toInt() and 0xff) }
     }
 }
 
@@ -695,9 +763,15 @@ private sealed interface MapBehavior {
     data class Throws(override val label: String, val failure: Throwable) : MapBehavior
 }
 
-private data class ScriptCall(val keys: List<Any>, val arguments: List<Any?>)
+private data class ScriptCall(
+    val mode: RScript.Mode,
+    val script: String,
+    val returnType: RScript.ReturnType,
+    val keys: List<Any>,
+    val arguments: List<Any?>,
+)
 
-private class RecordingAdmin {
+private class RecordingAdmin(nameMapper: NameMapper = NameMapper.direct()) {
     val events = mutableListOf<String>()
     val waitNanos = mutableListOf<Long>()
     val scriptCalls = mutableListOf<ScriptCall>()
@@ -712,9 +786,11 @@ private class RecordingAdmin {
     private var scriptIndex = 0
     private var mapAccessFailure: Error? = null
     private var destroyFailure: Throwable? = null
+    private val config = Config().setNameMapper(nameMapper)
 
     val client: RedissonClient = proxy { method, args ->
         when (method.name) {
+            "getConfig" -> config
             "getScript" -> {
                 events += "script"
                 script
@@ -784,7 +860,13 @@ private class RecordingAdmin {
                 val arguments = if (keyIndex >= 0) args.drop(keyIndex + 1).flatMap { value ->
                     if (value is Array<*>) value.toList() else listOf(value)
                 } else emptyList()
-                scriptCalls += ScriptCall(keys, arguments)
+                scriptCalls += ScriptCall(
+                    mode = args[0] as RScript.Mode,
+                    script = args[1] as String,
+                    returnType = args[2] as RScript.ReturnType,
+                    keys = keys,
+                    arguments = arguments,
+                )
                 future("script-$scriptIndex", scriptBehaviors.removeFirst())
             }
             else -> defaultValue(method.returnType)
@@ -841,6 +923,8 @@ private class RecordingAdmin {
         }
     }
 }
+
+private fun redisSlotTag(key: String): String = Regex("\\{([^{}]+)}").find(key)?.groupValues?.get(1) ?: key
 
 private inline fun <reified T : Any> proxy(
     crossinline invocation: (Method, List<Any?>) -> Any?,

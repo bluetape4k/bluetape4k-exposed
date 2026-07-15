@@ -7,6 +7,7 @@ import org.redisson.api.options.LocalCachedMapOptions
 import org.redisson.client.RedisTimeoutException
 import org.redisson.client.codec.StringCodec
 import java.io.Serializable
+import java.security.MessageDigest
 import java.time.Duration
 import java.util.concurrent.CompletionException
 import java.util.concurrent.ExecutionException
@@ -160,10 +161,11 @@ internal fun verifyOrClaimSnapshotNamespace(
 ): SnapshotNamespaceMarkerVerification {
     val deadline = validateAdminInputs(namespace, expectedFingerprint, timeout)
     val state = try {
+        val scriptKeys = resolveSnapshotNamespaceScriptKeys(redissonClient, namespace)
         inspectWithScript(
             redissonClient = redissonClient,
             script = CLAIM_OR_COMPARE_NAMESPACE_SCRIPT,
-            namespace = namespace,
+            scriptKeys = scriptKeys,
             expectedFingerprint = expectedFingerprint,
             deadline = deadline,
         )
@@ -186,7 +188,50 @@ internal fun verifyOrClaimSnapshotNamespace(
     }
 }
 
-internal fun snapshotNamespaceMarkerKey(namespace: String): String = "{$namespace}:__bt4k_snapshot_fingerprint"
+internal fun snapshotNamespaceMarkerKey(mappedNamespace: String): String {
+    val slotTag = redisClusterSlotTag(mappedNamespace)
+    val namespaceHash = MessageDigest.getInstance("SHA-256")
+        .digest(mappedNamespace.toByteArray(Charsets.UTF_8))
+        .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+    return "{$slotTag}:__bt4k_snapshot_fingerprint:$namespaceHash"
+}
+
+private class SnapshotNamespaceScriptKeys(
+    val marker: String,
+    val map: String,
+)
+
+private fun resolveSnapshotNamespaceScriptKeys(
+    redissonClient: RedissonClient,
+    namespace: String,
+): SnapshotNamespaceScriptKeys {
+    val mapper = redissonClient.config.nameMapper
+    val mappedNamespace = checkNotNull(mapper.map(namespace)) {
+        "Redisson NameMapper must not map the snapshot namespace to null."
+    }
+    check(mappedNamespace.isNotEmpty()) { "Redisson NameMapper must not map the snapshot namespace to an empty key." }
+    val physicalMarker = snapshotNamespaceMarkerKey(mappedNamespace)
+    val rawMarker = checkNotNull(mapper.unmap(physicalMarker)) {
+        "Redisson NameMapper must not unmap the snapshot namespace marker key to null."
+    }
+    val remappedMarker = checkNotNull(mapper.map(rawMarker)) {
+        "Redisson NameMapper must not remap the snapshot namespace marker key to null."
+    }
+    check(remappedMarker == physicalMarker) {
+        "Redisson NameMapper must round-trip the snapshot namespace marker key."
+    }
+    return SnapshotNamespaceScriptKeys(rawMarker, namespace)
+}
+
+private fun redisClusterSlotTag(key: String): String {
+    val open = key.indexOf('{')
+    if (open < 0) return key
+    val close = key.indexOf('}', startIndex = open + 1)
+    check(close > open + 1) {
+        "Mapped snapshot namespace must not contain an empty or malformed first Redis Cluster hash tag."
+    }
+    return key.substring(open + 1, close)
+}
 
 private fun <ID : Any> clearNamespace(
     redissonClient: RedissonClient,
@@ -202,7 +247,8 @@ private fun <ID : Any> clearNamespace(
     var cleanupAccepted = false
 
     try {
-        val initial = inspectNamespace(redissonClient, namespace, expectedFingerprint, deadline)
+        val scriptKeys = resolveSnapshotNamespaceScriptKeys(redissonClient, namespace)
+        val initial = inspectNamespace(redissonClient, scriptKeys, expectedFingerprint, deadline)
         mapAbsent = initial.mapAbsent
         markerPresent = initial.marker != RemoteMarker.ABSENT
 
@@ -233,7 +279,7 @@ private fun <ID : Any> clearNamespace(
             cleanupAccepted = true
             deadline.waitFor(clearLocal)
 
-            val afterMapCleanup = inspectNamespace(redissonClient, namespace, expectedFingerprint, deadline)
+            val afterMapCleanup = inspectNamespace(redissonClient, scriptKeys, expectedFingerprint, deadline)
             mapAbsent = afterMapCleanup.mapAbsent
             markerPresent = afterMapCleanup.marker != RemoteMarker.ABSENT
             if (!mapAbsent || afterMapCleanup.marker == RemoteMarker.MISMATCH) {
@@ -259,12 +305,12 @@ private fun <ID : Any> clearNamespace(
             }
 
             if (afterMapCleanup.marker == RemoteMarker.EXACT) {
-                val markerDelete = deleteExactMarker(redissonClient, namespace, expectedFingerprint)
+                val markerDelete = deleteExactMarker(redissonClient, scriptKeys, expectedFingerprint)
                 cleanupAccepted = true
                 if (deadline.waitFor(markerDelete) < 0L) return failedState(mapAbsent = true, markerPresent = true)
             }
 
-            val terminal = inspectNamespace(redissonClient, namespace, expectedFingerprint, deadline)
+            val terminal = inspectNamespace(redissonClient, scriptKeys, expectedFingerprint, deadline)
             mapAbsent = terminal.mapAbsent
             markerPresent = terminal.marker != RemoteMarker.ABSENT
             if (terminal.mapAbsent && terminal.marker == RemoteMarker.ABSENT) {
@@ -334,16 +380,16 @@ private fun validateAdminInputs(
 
 private fun inspectNamespace(
     redissonClient: RedissonClient,
-    namespace: String,
+    scriptKeys: SnapshotNamespaceScriptKeys,
     expectedFingerprint: String,
     deadline: MonotonicDeadline,
 ): RemoteNamespaceState =
-    inspectWithScript(redissonClient, INSPECT_NAMESPACE_SCRIPT, namespace, expectedFingerprint, deadline)
+    inspectWithScript(redissonClient, INSPECT_NAMESPACE_SCRIPT, scriptKeys, expectedFingerprint, deadline)
 
 private fun inspectWithScript(
     redissonClient: RedissonClient,
     script: String,
-    namespace: String,
+    scriptKeys: SnapshotNamespaceScriptKeys,
     expectedFingerprint: String,
     deadline: MonotonicDeadline,
 ): RemoteNamespaceState {
@@ -352,7 +398,7 @@ private fun inspectWithScript(
             RScript.Mode.READ_WRITE,
             script,
             RScript.ReturnType.LIST,
-            listOf(snapshotNamespaceMarkerKey(namespace), namespace),
+            listOf(scriptKeys.marker, scriptKeys.map),
             expectedFingerprint,
         )
     return RemoteNamespaceState.from(deadline.waitFor(result))
@@ -360,14 +406,14 @@ private fun inspectWithScript(
 
 private fun deleteExactMarker(
     redissonClient: RedissonClient,
-    namespace: String,
+    scriptKeys: SnapshotNamespaceScriptKeys,
     expectedFingerprint: String,
 ): RFuture<Long> =
     redissonClient.getScript(StringCodec()).evalAsync(
         RScript.Mode.READ_WRITE,
         DELETE_EXACT_MARKER_SCRIPT,
         RScript.ReturnType.LONG,
-        listOf(snapshotNamespaceMarkerKey(namespace)),
+        listOf(scriptKeys.marker),
         expectedFingerprint,
     )
 

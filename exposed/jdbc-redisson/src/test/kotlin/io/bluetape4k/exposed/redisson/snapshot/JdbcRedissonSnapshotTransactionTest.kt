@@ -38,6 +38,7 @@ import org.redisson.api.RLocalCachedMap
 import org.redisson.api.RScript
 import org.redisson.api.RedissonClient
 import org.redisson.client.codec.StringCodec
+import org.redisson.config.Config
 import java.io.Serializable
 import java.lang.reflect.Modifier
 import java.lang.reflect.Proxy
@@ -524,6 +525,15 @@ class JdbcRedissonSnapshotTransactionTest {
                 config.maxOutstandingEncodedBytes,
             ),
             failureBuffer = failureBuffer,
+            compatibilityFingerprint = snapshotNamespaceFingerprint(
+                backend = "redisson-jdbc",
+                namespace = config.snapshot.namespace,
+                keyRawClass = Long::class.java,
+                snapshotRawClass = Payload::class.java,
+                schemaVersion = config.snapshot.schemaVersion,
+                codec = codec,
+                synchronizationStrategy = config.synchronizationStrategy,
+            ),
             storeInstanceToken = Any(),
             identifierEncoder = { id ->
                 events += "$label:verify:$id"
@@ -594,11 +604,13 @@ class JdbcRedissonSnapshotTransactionTest {
 
     private class RecordingRedissonClient(localCacheMap: RLocalCachedMap<*, *>) {
         val options = mutableListOf<Any>()
+        private val config = Config()
         val proxy: RedissonClient = Proxy.newProxyInstance(
             RedissonClient::class.java.classLoader,
             arrayOf(RedissonClient::class.java),
         ) { instance, method, args ->
             when (method.name) {
+                "getConfig" -> config
                 "getScript" -> script
                 "getLocalCachedMap" -> {
                     options += args.orEmpty().single()
