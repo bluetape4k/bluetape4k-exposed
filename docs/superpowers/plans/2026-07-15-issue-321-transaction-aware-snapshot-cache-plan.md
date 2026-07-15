@@ -447,11 +447,18 @@ with `NO-SOURCE`; the module has no module-specific detekt task.
 **Files:**
 - Modify only files from Tasks 1-4 when findings require changes.
 
-- [ ] Run `./gradlew :bluetape4k-exposed-cache:test :bluetape4k-exposed-jdbc-caffeine:test --no-daemon`.
-- [ ] Inspect the public API for accidental ID/fence exposure, direct PUT, strong transaction references, database access from callbacks, blocking primitives, and missing KDoc.
-- [ ] Run `git diff --check` and a Kotlin diagnostics/compile pass on touched modules.
-- [ ] Fix every P0/P1 finding before proceeding; fix P2/P3 findings unless a concrete deferral issue is created.
-- [ ] Commit only if the review changes code, using an intent-first Lore message.
+- [x] Run `./gradlew :bluetape4k-exposed-cache:test :bluetape4k-exposed-jdbc-caffeine:test --no-daemon`.
+- [x] Inspect the public API for accidental ID/fence exposure, direct PUT, strong transaction references, database access from callbacks, blocking primitives, and missing KDoc.
+- [x] Run `git diff --check` and a Kotlin diagnostics/compile pass on touched modules.
+- [x] Fix every P0/P1 finding before proceeding; fix P2/P3 findings unless a concrete deferral issue is created.
+- [x] Commit only if the review changes code, using an intent-first Lore message.
+
+Completion evidence: independent vertical review reported P0=P1=P2=P3=0 after
+aligning the design SPI with the verified implementation. The exact two-module
+gate passed with cache 141/141 and JDBC Caffeine 364 passed plus 22 existing
+environment-gated skips. Forced Kotlin main/test compilation passed without
+warnings or errors. One pre-existing non-snapshot H2 timing assertion flaked
+during a forced full rerun and passed immediately in isolated rerun.
 
 ## Task 6: Implement the R2DBC Caffeine facade and transaction extensions
 
