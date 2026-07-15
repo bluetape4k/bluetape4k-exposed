@@ -1,5 +1,5 @@
 val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
-val springBootVersion = libs.versions.spring.boot.get()
+val springBootVersion = bt4k.versions.spring.boot.get()
 
 plugins {
     kotlin("plugin.spring")
@@ -52,32 +52,32 @@ dependencies {
     api(libs.kotlin.reflect)
     api(project(":bluetape4k-exposed-jdbc"))
     api(project(":bluetape4k-exposed-core"))
-    api(libs.bluetape4k.virtualthread.api)
+    api(bt4k.bluetape4k.virtualthread.api)
 
     // Exposed
-    api(libs.exposed.spring7.transaction)
-    api(libs.exposed.core)
-    api(libs.exposed.jdbc)
-    api(libs.exposed.java.time)
+    api(bt4k.exposed.spring7.transaction)
+    api(bt4k.exposed.core)
+    api(bt4k.exposed.jdbc)
+    api(bt4k.exposed.java.time)
 
     // Spring Batch (Spring Boot BOM 버전 관리)
     api("org.springframework.boot:spring-boot-starter-batch")
     compileOnly("org.springframework.boot:spring-boot-autoconfigure")
 
     // Test
-    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(bt4k.bluetape4k.junit5)
     // 테스트 fixture의 Exposed starter 대신 이 모듈의 Spring Boot platform/starter 조합을 사용한다.
     testImplementation(project(":bluetape4k-exposed-jdbc-tests")) {
         exclude(group = "org.jetbrains.exposed", module = "exposed-spring-boot-starter")
     }
-    testImplementation(libs.bluetape4k.virtualthread.jdk21)
+    testImplementation(bt4k.bluetape4k.virtualthread.jdk21)
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-jdbc")  // DataSource auto-configuration (Spring Boot 분리 모듈)
     testImplementation(libs.spring.batch.test)
     testImplementation(libs.h2.v2)
-    testImplementation(libs.hikaricp)
+    testImplementation(bt4k.hikaricp)
     testImplementation(libs.testcontainers.postgresql)
-    testImplementation(libs.postgresql.driver)
+    testImplementation(bt4k.postgresql)
     testImplementation(libs.testcontainers.mysql)
-    testImplementation(libs.mysql.connector.j)
+    testImplementation(bt4k.mysql.connector.j)
 }

@@ -5,25 +5,25 @@ configurations {
 }
 
 dependencies {
-    implementation(platform(libs.timefold.solver.bom))
+    implementation(platform(bt4k.timefold.solver.bom))
 
     api(libs.timefold.solver.core)
 
-    api(libs.exposed.core)
+    api(bt4k.exposed.core)
     compileOnly(project(":bluetape4k-exposed-jdbc"))
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
 
     // JDBC Drivers
-    testImplementation(libs.hikaricp)
+    testImplementation(bt4k.hikaricp)
     testRuntimeOnly(libs.h2.v2)
     testRuntimeOnly(libs.mariadb.java.client)
-    testRuntimeOnly(libs.mysql.connector.j)
-    testRuntimeOnly(libs.postgresql.driver)
+    testRuntimeOnly(bt4k.mysql.connector.j)
+    testRuntimeOnly(bt4k.postgresql)
     testRuntimeOnly(libs.pgjdbc.ng)
 
     // Bluetape4k Modules for Testing
-    testImplementation(libs.bluetape4k.junit5)
-    testImplementation(libs.bluetape4k.testcontainers)
+    testImplementation(bt4k.bluetape4k.junit5)
+    testImplementation(bt4k.bluetape4k.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.mariadb)
     testImplementation(libs.testcontainers.mysql)

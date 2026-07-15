@@ -3,7 +3,7 @@ val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").ge
 plugins {
     kotlin("plugin.allopen")
     alias(libs.plugins.kotlinx.benchmark)
-    alias(libs.plugins.kover)
+    alias(bt4k.plugins.kover)
 }
 
 kover {
@@ -131,49 +131,49 @@ tasks.register<JavaExec>("generateBenchmarkDocs") {
 }
 
 dependencies {
-    api(libs.bluetape4k.core)
-    api(libs.bluetape4k.coroutines)
-    api(libs.bluetape4k.logging)
-    api(libs.bluetape4k.workflow)
+    api(bt4k.bluetape4k.core)
+    api(bt4k.bluetape4k.coroutines)
+    api(bt4k.bluetape4k.logging)
+    api(bt4k.bluetape4k.workflow)
 
-    implementation(libs.bluetape4k.virtualthread.api)
-    runtimeOnly(libs.bluetape4k.virtualthread.jdk21)
+    implementation(bt4k.bluetape4k.virtualthread.api)
+    runtimeOnly(bt4k.bluetape4k.virtualthread.jdk21)
 
     // Exposed JDBC/R2DBC
     compileOnly(project(":bluetape4k-exposed-jdbc"))
     compileOnly(project(":bluetape4k-exposed-r2dbc"))
-    compileOnly(libs.exposed.java.time)
+    compileOnly(bt4k.exposed.java.time)
 
     // Checkpoint JSON 직렬화
-    compileOnly(libs.bluetape4k.jackson3)
+    compileOnly(bt4k.bluetape4k.jackson3)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
 
     // Test
-    testImplementation(libs.bluetape4k.junit5)
-    testImplementation(libs.bluetape4k.jackson3)
+    testImplementation(bt4k.bluetape4k.junit5)
+    testImplementation(bt4k.bluetape4k.jackson3)
     testImplementation(libs.kotlinx.coroutines.test)
 
     // JDBC/R2DBC 통합 테스트 인프라
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
     testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
-    testImplementation(libs.bluetape4k.virtualthread.jdk21)
+    testImplementation(bt4k.bluetape4k.virtualthread.jdk21)
 
     // Test DB — H2 (내장)
     testImplementation(libs.h2.v2)
-    testImplementation(libs.hikaricp)
-    testImplementation(libs.r2dbc.h2)
+    testImplementation(bt4k.hikaricp)
+    testImplementation(bt4k.r2dbc.h2)
     testImplementation(libs.r2dbc.pool)
 
     // Test DB — PostgreSQL (Testcontainers)
     testImplementation(libs.testcontainers.postgresql)
-    testImplementation(libs.postgresql.driver)
+    testImplementation(bt4k.postgresql)
     testImplementation(libs.r2dbc.postgresql)
 
     // Test DB — MySQL (Testcontainers)
     testImplementation(libs.testcontainers.mysql)
-    testImplementation(libs.mysql.connector.j)
+    testImplementation(bt4k.mysql.connector.j)
     testImplementation(libs.r2dbc.mysql)
 
     // Benchmark

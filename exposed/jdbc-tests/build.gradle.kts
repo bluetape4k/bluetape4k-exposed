@@ -7,24 +7,24 @@ configurations {
 dependencies {
     // Exposed
     implementation(platform(libs.exposed.bom))
-    api(libs.exposed.core)
-    api(libs.exposed.jdbc)
+    api(bt4k.exposed.core)
+    api(bt4k.exposed.jdbc)
     api(libs.exposed.dao)
     implementation(libs.exposed.crypt)
     implementation(libs.exposed.kotlin.datetime)
-    implementation(libs.exposed.java.time)
+    implementation(bt4k.exposed.java.time)
     implementation(libs.exposed.json)
     implementation(libs.exposed.money)
-    implementation(libs.exposed.migration.jdbc)
-    implementation(libs.exposed.spring.boot.starter)
+    implementation(bt4k.exposed.migration.jdbc)
+    implementation(bt4k.exposed.spring.boot4.starter)
 
     // Bluetape4k
-    compileOnly(libs.bluetape4k.jdbc)
-    compileOnly(libs.bluetape4k.io)
+    compileOnly(bt4k.bluetape4k.jdbc)
+    compileOnly(bt4k.bluetape4k.io)
     
 
-    api(libs.bluetape4k.junit5)
-    api(libs.bluetape4k.testcontainers)
+    api(bt4k.bluetape4k.junit5)
+    api(bt4k.bluetape4k.testcontainers)
     api(libs.testcontainers)
     api(libs.testcontainers.mariadb)
     api(libs.testcontainers.mysql)
@@ -32,22 +32,22 @@ dependencies {
     // compileOnly(libs.testcontainers.cockroachdb)
 
     // Database Drivers
-    compileOnly(libs.hikaricp)
+    compileOnly(bt4k.hikaricp)
 
     // Database Drivers
     compileOnly(libs.h2.v2)
     compileOnly(libs.mariadb.java.client)
-    compileOnly(libs.mysql.connector.j)
-    compileOnly(libs.postgresql.driver)
+    compileOnly(bt4k.mysql.connector.j)
+    compileOnly(bt4k.postgresql)
     compileOnly(libs.pgjdbc.ng)
 
     // Coroutines
-    implementation(libs.bluetape4k.coroutines)
+    implementation(bt4k.bluetape4k.coroutines)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.debug)
     implementation(libs.kotlinx.coroutines.test)
 
     // Id Generators
-    implementation(libs.bluetape4k.idgenerators)
+    implementation(bt4k.bluetape4k.idgenerators)
     implementation(libs.java.uuid.generator)
 }

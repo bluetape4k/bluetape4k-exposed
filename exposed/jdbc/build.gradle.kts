@@ -30,30 +30,30 @@ dependencies {
     implementation(platform(libs.exposed.bom))
     api(project(":bluetape4k-exposed-core"))
     api(project(":bluetape4k-exposed-dao"))
-    api(libs.exposed.jdbc)
-    compileOnly(libs.exposed.migration.jdbc)
-    compileOnly(libs.exposed.spring.boot.starter)
-    compileOnly(libs.exposed.java.time)
+    api(bt4k.exposed.jdbc)
+    compileOnly(bt4k.exposed.migration.jdbc)
+    compileOnly(bt4k.exposed.spring.boot4.starter)
+    compileOnly(bt4k.exposed.java.time)
     compileOnly(libs.exposed.kotlin.datetime)
 
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
 
     // Entity ID generators
-    implementation(libs.bluetape4k.idgenerators)
+    implementation(bt4k.bluetape4k.idgenerators)
     implementation(libs.java.uuid.generator)
 
     // JDBC
-    api(libs.bluetape4k.jdbc)
-    compileOnly(libs.hikaricp)
+    api(bt4k.bluetape4k.jdbc)
+    compileOnly(bt4k.hikaricp)
 
     // Coroutines
-    compileOnly(libs.bluetape4k.coroutines)
+    compileOnly(bt4k.bluetape4k.coroutines)
     compileOnly(libs.kotlinx.coroutines.core)
     compileOnly(libs.kotlinx.coroutines.reactor)
     testImplementation(libs.kotlinx.coroutines.test)
 
-    testImplementation(libs.bluetape4k.junit5)
-    testImplementation(libs.bluetape4k.testcontainers)
+    testImplementation(bt4k.bluetape4k.junit5)
+    testImplementation(bt4k.bluetape4k.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.mariadb)
     testImplementation(libs.testcontainers.mysql)
@@ -70,8 +70,8 @@ dependencies {
     // Database Drivers
     testRuntimeOnly(libs.h2.v2)
     testRuntimeOnly(libs.mariadb.java.client)
-    testRuntimeOnly(libs.mysql.connector.j)
-    testRuntimeOnly(libs.postgresql.driver)
+    testRuntimeOnly(bt4k.mysql.connector.j)
+    testRuntimeOnly(bt4k.postgresql)
     testRuntimeOnly(libs.pgjdbc.ng)
 
     // Benchmark (JMH for exposed-jdbc CRUD/pool 측정)

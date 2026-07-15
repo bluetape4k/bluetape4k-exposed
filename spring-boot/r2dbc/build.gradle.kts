@@ -20,20 +20,20 @@ dependencies {
     api(project(":bluetape4k-exposed-spring-boot-jdbc"))
 
     api(libs.kotlin.reflect)
-    api(libs.exposed.core)
-    api(libs.exposed.r2dbc)
-    api(libs.exposed.java.time)
+    api(bt4k.exposed.core)
+    api(bt4k.exposed.r2dbc)
+    api(bt4k.exposed.java.time)
 
     testImplementation(libs.exposed.migration.r2dbc)
-    testImplementation(libs.flyway.core)
-    testImplementation(libs.bluetape4k.junit5)
+    testImplementation(bt4k.flyway.core)
+    testImplementation(bt4k.bluetape4k.junit5)
 
     api(project(":bluetape4k-exposed-r2dbc"))
     testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
 
-    testImplementation(libs.bluetape4k.virtualthread.jdk21)
+    testImplementation(bt4k.bluetape4k.virtualthread.jdk21)
 
-    api(libs.bluetape4k.coroutines)
+    api(bt4k.bluetape4k.coroutines)
     api(libs.kotlinx.coroutines.core)
     api(libs.kotlinx.coroutines.reactor)  // Spring Data 코루틴 지원 요구사항
     testImplementation(libs.kotlinx.coroutines.test)
@@ -46,8 +46,8 @@ dependencies {
     testImplementation(libs.mockk)
 
     testImplementation(libs.h2.v2)
-    testImplementation(libs.r2dbc.h2)
-    testImplementation(libs.hikaricp)
+    testImplementation(bt4k.r2dbc.h2)
+    testImplementation(bt4k.hikaricp)
 
     // Multi-DB 테스트용 R2DBC 드라이버
     testImplementation(libs.r2dbc.mysql)
@@ -55,7 +55,7 @@ dependencies {
     testImplementation(libs.r2dbc.postgresql)
 
     // Multi-DB 테스트용 JDBC 드라이버 (Testcontainers 컨테이너 연결용)
-    testImplementation(libs.mysql.connector.j)
+    testImplementation(bt4k.mysql.connector.j)
     testImplementation(libs.mariadb.java.client)
-    testImplementation(libs.postgresql.driver)
+    testImplementation(bt4k.postgresql)
 }
