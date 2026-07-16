@@ -208,33 +208,199 @@ repositories {
 }
 ```
 
-### Exposed Gradle Plugin
+<!-- migration-guide:start -->
+<!-- migration-guide:heading:migration-generation -->
+### Migration 생성과 Schema Drift
 
-Exposed table 정의에서 migration script를 생성하는 application 또는 example
-module에는 JetBrains 공식 Exposed Gradle plugin을 사용합니다. Plugin 버전은
-프로젝트가 사용하는 JetBrains Exposed 버전과 맞춥니다. bluetape4k repo에서는
-중앙 `bluetape4k-dependencies` catalog에서 plugin alias를 가져와, plugin 버전이
-공유 `exposed` 호환 라인을 따르도록 합니다.
+<!-- migration-guide:heading:availability -->
+#### 제공 범위
 
-```kotlin
-plugins {
-    alias(bt4k.plugins.exposed.plugin)
-}
-```
-
-이 plugin은 `generateMigrations` workflow를 추가하며, `exposed.migrations`
-block에서 table package와 대상 database 또는 Testcontainers image를 설정합니다.
-자세한 내용은
-[Exposed Gradle plugin 문서](https://www.jetbrains.com/help/exposed/exposed-gradle-plugin.html)와
+JetBrains Exposed 1.3.1은 Gradle migration plugin과 JDBC/R2DBC
+`MigrationUtils` API를 제공합니다. 여기서 설명하는 `migrationDriftTest` task와
+CI 검증은 `develop`에서 사용할 수 있고 bluetape4k-exposed 1.12.0부터
+배포됩니다. 자세한 내용은
+[Exposed Gradle plugin documentation](https://www.jetbrains.com/help/exposed/exposed-gradle-plugin.html),
+[Exposed migration documentation](https://www.jetbrains.com/help/exposed/migrations.html),
 [Gradle Plugin Portal entry](https://plugins.gradle.org/plugin/org.jetbrains.exposed.plugin)를
 참고하세요.
 
-Demo migration 생성은 weekly 및 pull request smoke workflow에서 검증합니다:
+<!-- migration-guide:heading:application-users -->
+#### Application 사용자
+
+Gradle plugin은 Exposed table 정의와 database metadata를 비교해 검토 가능한 SQL
+파일을 만듭니다. 출력 directory, credential, filename 순서, SQL 검토, Flyway나
+Liquibase 같은 migration runner로 실행하는 과정은 application이 책임집니다.
+
+아래 PostgreSQL 예제는 upstream plugin을 직접 고정해 그대로 사용할 수 있고,
+모든 접속 정보를 build file 밖에서 읽으며 `MIGRATION_JDBC_URL`에 맞는 JDBC
+driver를 포함합니다. 중앙 `bluetape4k-dependencies` catalog를 이미 가져온
+application은 직접 선언한 plugin 줄을 `alias(bt4k.plugins.exposed.plugin)`으로
+바꿀 수 있습니다.
+
+```kotlin
+plugins {
+    id("org.jetbrains.exposed.plugin") version "1.3.1"
+}
+
+val migrationJdbcUrl = providers.environmentVariable("MIGRATION_JDBC_URL")
+val migrationDbUser = providers.environmentVariable("MIGRATION_DB_USER")
+val migrationDbPassword = providers.environmentVariable("MIGRATION_DB_PASSWORD")
+
+exposed {
+    migrations {
+        tablesPackage.set("com.example.app.persistence")
+        fileDirectory.set(layout.projectDirectory.dir("src/main/resources/db/migration"))
+        databaseUrl.set(migrationJdbcUrl)
+        databaseUser.set(migrationDbUser)
+        databasePassword.set(migrationDbPassword)
+    }
+}
+
+dependencies {
+    runtimeOnly("org.postgresql:postgresql")
+}
+```
+
+변경할 때마다 단조 증가하는 새 filename을 사용하고, 이미 같은 파일이 있으면
+생성 전에 실패하게 만듭니다.
 
 ```bash
-./gradlew :exposed-spring-boot-jdbc-demo:generateMigrations --filename=V1__create_products.sql
-./gradlew :exposed-spring-boot-r2dbc-demo:generateMigrations --filename=V1__create_webflux_products.sql
+MIGRATION_FILE=V202607170001__add_description.sql
+test ! -e "src/main/resources/db/migration/$MIGRATION_FILE" &&
+  ./gradlew generateMigrations --filename="$MIGRATION_FILE"
 ```
+
+<!-- migration-guide:warning:credentials -->
+> Migration credential을 commit하거나 shared/production database를 생성 대상으로
+> 지정하지 마세요. Production과 비슷한 metadata를 가진 disposable 또는 staging
+> 복사본을 사용하고, 생성된 SQL을 승격하기 전에 검토합니다.
+
+<!-- migration-guide:warning:r2dbc-jdbc-boundary -->
+> R2DBC application도 Gradle plugin을 실행할 때는 build-time JDBC URL과 그에 맞는
+> JDBC driver가 필요합니다. R2DBC URL이나 R2DBC runtime driver만으로는 plugin이
+> migration을 생성할 수 없습니다.
+
+<!-- migration-guide:warning:no-runtime-management -->
+> Application startup이나 request path에서 plugin 생성 또는 `MigrationUtils`
+> 비교를 실행하지 마세요. 어느 API도 production migration runner가 아닙니다.
+
+<!-- migration-guide:warning:immutable-migrations -->
+> 이미 적용했을 수 있는 migration은 절대 덮어쓰지 마세요. 이 repository의 demo에
+> 들어 있는 V1 파일은 교체 가능한 test fixture일 뿐, application filename 규칙이
+> 아닙니다.
+
+<!-- migration-guide:heading:surface-boundaries -->
+#### 기능별 경계
+
+<!-- migration-guide:table:surface-boundaries -->
+| 기능 | 연결 방식과 용도 | 보장하지 않는 것 |
+|---|---|---|
+| `Gradle plugin` | Build-time JDBC metadata 연결과 script 생성 | R2DBC로 연결하지 않으며 production migration을 적용하지 않음 |
+| `JDBC MigrationUtils` | Programmatic 또는 test-time JDBC schema 비교 | Startup이나 request path의 schema 관리에 사용하면 안 됨 |
+| `R2DBC MigrationUtils` | Programmatic 또는 test-time R2DBC schema 비교 | Startup이나 request path의 schema 관리에 사용하면 안 됨 |
+
+<!-- migration-guide:heading:repository-contributors -->
+#### Repository 기여자
+
+Demo V1 파일은 이름을 고정한 repository fixture입니다. 기여자는 의도적으로
+다시 생성하고 교체할 수 있지만, application에서 이 naming 정책을 따라서는 안
+됩니다. Demo 검증에는 Gradle wrapper와 H2 JDBC driver만 필요하며 결과는 두 demo
+migration directory에 기록됩니다. 제한된 directory의 status가 깨끗하면 Exposed
+1.3.1이 repository drift 없이 fixture를 다시 만들었다는 뜻입니다. 임의의
+application migration이 안전하다는 뜻은 아닙니다.
+
+```bash
+./gradlew :exposed-spring-boot-jdbc-demo:generateMigrations --filename=V1__create_products.sql --rerun --no-build-cache --no-configuration-cache --no-daemon
+./gradlew :exposed-spring-boot-r2dbc-demo:generateMigrations --filename=V1__create_webflux_products.sql --rerun --no-build-cache --no-configuration-cache --no-daemon
+git status --short --untracked-files=all -- examples/jdbc-demo/src/main/resources/db/migration examples/r2dbc-demo/src/main/resources/db/migration
+```
+
+H2 집중 검증에는 외부 database가 필요하지 않습니다. JUnit XML은
+`exposed/jdbc-tests/build/test-results/migrationDriftTest`와
+`exposed/r2dbc-tests/build/test-results/migrationDriftTest`에 기록되고, CI는
+정제한 status와 XML을 `build/migration-drift-reports/h2/<api>`에 모읍니다. 통과하면
+두 API의 H2 nullable column 추가 계약을 확인한 것입니다. Schema 동등성이나 rollout
+안전성을 증명하지는 않습니다.
+
+```bash
+EXPOSED_TEST_DB=H2 ./gradlew \
+  :bluetape4k-exposed-jdbc-tests:migrationDriftTest \
+  :bluetape4k-exposed-r2dbc-tests:migrationDriftTest \
+  --no-configuration-cache \
+  --no-parallel --max-workers=1 --no-daemon
+```
+
+실제 database 검증을 실행하려면 Testcontainers가 사용할 수 있는 Docker 호환
+runtime이 필요합니다. 아래 명령은 순서대로 실행합니다. 각 명령은 해당 module의
+`build/test-results/migrationDriftTest`에 XML을 기록하고, CI는 정제한 증거를
+`build/migration-drift-reports/<api>-<database>`에 모읍니다. 통과하면 선택한
+dialect에서 같은 nullable column 추가 계약을 확인한 것입니다. Type 변경,
+destructive DDL, production data 처리, lock, rollout 순서를 승인하는 검증은
+아닙니다.
+
+```bash
+EXPOSED_TEST_DB=POSTGRESQL ./gradlew \
+  :bluetape4k-exposed-jdbc-tests:migrationDriftTest \
+  --no-configuration-cache \
+  --no-parallel --max-workers=1 --no-daemon
+
+EXPOSED_TEST_DB=POSTGRESQL ./gradlew \
+  :bluetape4k-exposed-r2dbc-tests:migrationDriftTest \
+  --no-configuration-cache \
+  --no-parallel --max-workers=1 --no-daemon
+
+EXPOSED_TEST_DB=MYSQL_V8 ./gradlew \
+  :bluetape4k-exposed-jdbc-tests:migrationDriftTest \
+  --no-configuration-cache \
+  --no-parallel --max-workers=1 --no-daemon
+
+EXPOSED_TEST_DB=MYSQL_V8 ./gradlew \
+  :bluetape4k-exposed-r2dbc-tests:migrationDriftTest \
+  --no-configuration-cache \
+  --no-parallel --max-workers=1 --no-daemon
+```
+
+<!-- migration-guide:heading:failure-diagnostics -->
+#### 실패 진단
+
+<!-- migration-guide:table:failure-diagnostics -->
+| 실패 지점 | 첫 진단과 증거 확인 순서 |
+|---|---|
+| `Gradle plugin` | 고정 filename 명령에 `--stacktrace --info`를 붙여 다시 실행하고 제한된 migration directory status를 확인 |
+| `H2 JDBC drift` | `EXPOSED_TEST_DB=H2 ./gradlew :bluetape4k-exposed-jdbc-tests:migrationDriftTest --tests '*JdbcMigrationDriftTest*' --stacktrace --info`를 실행하고, local에서는 module의 `build/test-results/migrationDriftTest`, CI에서는 staged status와 정제된 XML 순서로 확인 |
+| `H2 R2DBC drift` | `EXPOSED_TEST_DB=H2 ./gradlew :bluetape4k-exposed-r2dbc-tests:migrationDriftTest --tests '*R2dbcMigrationDriftTest*' --stacktrace --info`를 실행하고, local에서는 module의 `build/test-results/migrationDriftTest`, CI에서는 staged status와 정제된 XML 순서로 확인 |
+| `PostgreSQL/MySQL 8` | Docker를 먼저 확인하고, local에서는 선택한 module의 `build/test-results/migrationDriftTest`, CI에서는 `command-summary.log`, `status.txt`, 정제된 JUnit XML 순서로 확인 |
+
+<!-- migration-guide:heading:support-matrix -->
+#### 지원 범위
+
+<!-- migration-guide:table:support-matrix -->
+| 변경 | 증거 수준 | 의미 |
+|---|---|---|
+| `Add nullable column` | H2 PR lane과 PostgreSQL/MySQL 8 full Nightly/manual lane | JDBC/R2DBC 집중 검증이 정확한 nullable column 추가문 하나와 두 번째 비교 결과가 깨끗한지 확인 |
+| `Change column type on H2` | 현재 동작만 기록 | Regression이 현재 출력을 기록할 뿐, 변경을 승인하지 않음 |
+| `Change column type on PostgreSQL/MySQL 8` | 보장하지 않음 | 대상 dialect에서 생성된 SQL을 검토하고 test해야 함 |
+| `Rename or remove column` | 보장하지 않음 | Destructive 변경으로 보고 별도 data migration을 설계해야 함 |
+| `Defaults and indexes` | 보장하지 않음 | Expression, 순서, locking, 기존 row 영향을 검토해야 함 |
+| `Foreign/unique/check constraints` | 보장하지 않음 | 기존 data와 enforcement/locking 동작을 검증해야 함 |
+| `Vendor-specific DDL` | 보장하지 않음 | 정확한 database 버전과 운영 정책에 맞춰 test해야 함 |
+
+빈 diff는 "이 API와 버전이 차이를 찾지 못했다"는 뜻일 뿐입니다. 두 schema가
+같다는 증거는 아닙니다.
+
+<!-- migration-guide:heading:promotion-review -->
+#### 승격 전 검토
+
+<!-- migration-guide:table:promotion-review -->
+| 검토 영역 | 필수 확인 항목 |
+|---|---|
+| `Schema safety` | `DROP`/`TRUNCATE`, 삭제, rename, type 변경, `NOT NULL`, default, index, unique/foreign/check constraint, statement 순서를 검토 |
+| `Data safety` | Backfill 정확성, production과 비슷한 row 수, table rewrite, data 재해석 위험을 검증 |
+| `Rollout safety` | Lock 시간, nullable column 추가/backfill/constraint 적용을 나눈 단계, database transaction 지원, backup, rollback, migration runner ownership을 확인 |
+
+Application의 migration runner에 넘기기 전에 disposable 또는 staging 복사본에서
+raw SQL을 검토합니다.
+<!-- migration-guide:end -->
 
 ### Database 예제
 

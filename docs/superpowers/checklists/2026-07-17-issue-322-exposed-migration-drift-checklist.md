@@ -69,24 +69,27 @@
     runs executed both tasks without `UP-TO-DATE` or `FROM-CACHE`.
   - **Failure:** Return to the failing behavior; do not weaken assertions.
 
-- [ ] **A-07 — Verify tests, spec, plan, and repository hazards**
+- [x] **A-07 — Verify tests, spec, plan, and repository hazards**
   - **Action:** Run H2 then sequential PostgreSQL/MySQL 8 tests, deterministic
     generation, README parity/link validation, actionlint, Detekt, and diff
     checks; verify
     exact spec/plan acceptance.
-  - **Evidence:** Fresh command results and verifier PASS.
+  - **Evidence:** JDBC 7/7 and R2DBC 8/8 focused H2 tests, normal module
+    tests, fixed-file regeneration, invalid-selector failure, README parity,
+    stable-manual no-diff, `actionlint`, Detekt, and diff checks passed.
   - **Failure:** Return to implementation or reopen the approved artifact.
 
-- [ ] **A-08 — Converge the final pre-PR review**
+- [x] **A-08 — Converge the final pre-PR review**
   - **Action:** Run Kotlin/document/workflow checklists and six implemented-diff
     review lenses plus integration.
-  - **Evidence:** Current diff, review artifact, P0=0/P1=0, and refreshed tests.
+  - **Evidence:** Final review artifact records all six lenses plus main
+    integration at P0=0/P1=0/P2=0/P3=0; refreshed tests passed.
   - **Failure:** Keep PR creation blocked until repaired.
 
-- [ ] **A-09 — Commit durable learning**
+- [x] **A-09 — Commit durable learning**
   - **Action:** Commit a lesson covering fixed filenames and the build-time
     plugin versus programmatic migration API boundary.
-  - **Evidence:** Tracked lesson and Lore-compliant commit.
+  - **Evidence:** Tracked migration-drift lesson and candidate Lore commit.
   - **Failure:** PR creation remains blocked.
 
 - [ ] **A-10 — Deliver PR through live CI and review**
@@ -112,36 +115,36 @@
 
 ## Conditional Kotlin and Documentation Gates
 
-- [ ] **KT-01 — Load triggered Kotlin guidance**
+- [x] **KT-01 — Load triggered Kotlin guidance**
   - **Action:** Apply Exposed and Kotlin testing guidance to the new JDBC/R2DBC
     tests.
   - **Evidence:** Trigger-to-reference map in the plan and final review.
   - **Failure:** Block Kotlin implementation or review.
 
-- [ ] **KT-02 — Inspect impact and reuse**
+- [x] **KT-02 — Inspect impact and reuse**
   - **Action:** Reuse existing database selectors, transactions,
     Testcontainers launchers, and assertions instead of adding infrastructure.
   - **Evidence:** Exact fixture anchors and raw-fallback rationale.
   - **Failure:** Remove duplicate or unsafe infrastructure.
 
-- [ ] **KT-03 — Enforce Kotlin and Exposed contracts**
+- [x] **KT-03 — Enforce Kotlin and Exposed contracts**
   - **Action:** Verify transaction type, cleanup, dialect-neutral assertions,
     coroutine behavior, and no public API impact.
   - **Evidence:** Current-file review with P0=0/P1=0.
   - **Failure:** Repair before validation.
 
-- [ ] **KT-04 — Prove behavior with Kotlin validation**
+- [x] **KT-04 — Prove behavior with Kotlin validation**
   - **Action:** Run diagnostics, targeted compiles/tests, sequential container
     tests, and diff checks.
   - **Evidence:** Fresh commands and results.
   - **Failure:** Kotlin verdict remains pending.
 
-- [ ] **KT-05 — Render the final Kotlin checklist**
+- [x] **KT-05 — Render the final Kotlin checklist**
   - **Action:** Complete the Kotlin and testing reference rows with counts.
   - **Evidence:** Checklist totals and zero blockers.
   - **Failure:** Expose the unchecked row instead of claiming completion.
 
-- [ ] **DOC-01 — Preserve bilingual current-documentation parity**
+- [x] **DOC-01 — Preserve bilingual current-documentation parity**
   - **Action:** Add and validate equivalent English and Korean README migration
     sections with a focused parity validator and self-test. Keep the stable
     1.11 manual and manifest unchanged; create a separate pending 1.12 manual
@@ -150,7 +153,7 @@
     self-test, promotion tracker, and proof that manual metadata did not change.
   - **Failure:** PR readiness remains blocked on missing or drifted locale.
 
-- [ ] **CI-01 — Validate the dedicated workflow extension**
+- [x] **CI-01 — Validate the dedicated workflow extension**
   - **Action:** Keep independent fast H2 checks path-scoped, exclude tagged
     drift tests from retried bulk tests, run real DB drift checks in one
     scheduled/manual no-retry sequential job, preserve per-dialect artifacts,

@@ -198,8 +198,9 @@ repository's existing database fixture:
 2. request migration statements for the evolved model;
 3. require exactly one generated statement and validate the whole statement
    with a test-only additive-DDL validator before execution;
-4. after case, whitespace, and H2/PostgreSQL/MySQL identifier-quote
-   normalization, accept only
+4. after case and whitespace normalization, require the unquoted,
+   double-quoted, or backtick-quoted table and column tokens to match exactly,
+   then accept only
    `ALTER TABLE <fixture> ADD [COLUMN] <expected-column> VARCHAR(255) NULL`;
 5. reject comments, multiple or trailing semicolons, compound clauses,
    additional operations, another table/column, `DROP`, `TRUNCATE`, `DELETE`,
@@ -266,6 +267,9 @@ and `build/test-results/migrationDriftTest` as its XML output directory. Normal
 `test` explicitly excludes the tag. Dedicated JUnit XML is required, HTML is disabled, and
 `reports.junitXml.includeSystemOutLog` plus `includeSystemErrLog` are both
 false so workflow staging has one well-defined sanitized report source.
+The task accepts only `H2`, `POSTGRESQL`, or `MYSQL_V8`, fails fast on every
+other nonblank value, participates in the repository-wide Test mutex, and caps
+its focused test worker heap at 2 GiB.
 
 Refine verification into two complementary proof levels:
 
@@ -285,8 +289,8 @@ Refine verification into two complementary proof levels:
   paths cover the local plugin declaration, catalog import/tag authority, task
   defaults, and wrapper/build configuration now that no weekly smoke exists.
 - Preserve the untrusted-PR boundary: use `pull_request`, never
-  `pull_request_target`; keep job permissions at `contents: read` plus
-  `packages: read`; expose no secrets or production/shared endpoints; and configure
+  `pull_request_target`; keep workflow and job permissions at
+  `contents: read` only; expose no secrets or production/shared endpoints; and configure
   `gradle/actions/setup-gradle` in both jobs with
   `cache-read-only: ${{ github.event_name == 'pull_request' }}`. Every checkout
   uses `persist-credentials: false`.
@@ -329,8 +333,8 @@ Refine verification into two complementary proof levels:
   shell uses the exact failure-safe pattern: `set -o pipefail`, `set +e`, pipe
   Gradle stdout/stderr through `tee` to a runner-temporary raw log while
   suppressing `tee` output from the Actions console, capture
-  `gradle_status=${PIPESTATUS[0]}`, restore `set -e`, then stage evidence under
-  a separately captured `evidence_status`. Write both statuses and exit with
+  `gradle_status=${PIPESTATUS[0]}`, then keep evidence assembly in the guarded
+  non-errexit section under a separately captured `evidence_status`. Write both statuses and exit with
   the nonzero Gradle status first, otherwise the evidence status. The final
   aggregate treats either status as failure. This prevents `tee` or evidence
   assembly from replacing or hiding the Gradle result and prevents `errexit`
@@ -397,14 +401,17 @@ matrix, upstream links, and review checklist, split by audience:
    are repository fixtures, not an application migration naming example.
 
 The application-user path includes a copy-pastable `exposed.migrations`
-Kotlin DSL configuration with `alias(bt4k.plugins.exposed.plugin)` (upstream
-plugin ID `org.jetbrains.exposed.plugin`), `tablesPackage`, `fileDirectory`,
+Kotlin DSL configuration with a self-contained direct
+`org.jetbrains.exposed.plugin` 1.3.1 declaration and the equivalent optional
+`alias(bt4k.plugins.exposed.plugin)` for catalog-importing applications,
+`tablesPackage`, `fileDirectory`,
 matching JDBC `runtimeOnly`, and providers named
 `MIGRATION_JDBC_URL`, `MIGRATION_DB_USER`, and `MIGRATION_DB_PASSWORD`. It
 writes into an application-controlled directory and uses a new immutable
 monotonically ordered filename rather than either repository V1 fixture. The
 shell example first sets `MIGRATION_FILE`, proves the target does not exist
-with `test ! -e`, and only then passes `--filename="$MIGRATION_FILE"`. A
+with a short-circuiting `test ! -e ... &&` guard, and only then passes
+`--filename="$MIGRATION_FILE"`. A
 companion note for R2DBC applications states that build-time plugin comparison
 still requires a JDBC URL and JDBC driver; an R2DBC URL or runtime driver is
 not sufficient. Examples forbid committed credentials and production/shared

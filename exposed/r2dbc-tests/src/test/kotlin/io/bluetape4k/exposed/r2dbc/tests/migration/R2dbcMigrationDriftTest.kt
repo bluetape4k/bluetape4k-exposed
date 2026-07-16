@@ -5,8 +5,12 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.yield
 import kotlinx.coroutines.withContext
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -85,7 +89,7 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
                     )
 
                     assertTrue(statements.isNotEmpty())
-                    assertTrue(statements.any { "ALTER" in it.uppercase(Locale.ROOT) })
+                    assertTrue(statements.any { isExpectedH2TypeChange(it, R2dbcTypeChangeEvolved.tableName, "value") })
                 }
             },
             cleanup = {
@@ -140,6 +144,10 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
                 "ALTER TABLE r2dbc_migration_drift ADD description VARCHAR(255) NULL UNIQUE",
                 "ALTER TABLE r2dbc_migration_drift ADD description VARCHAR(255) NULL PRIMARY KEY",
                 "ALTER TABLE r2dbc_migration_drift ADD description VARCHAR(255) NULL COLLATE utf8mb4_bin",
+                "ALTER TABLE \"r2dbc_migration_drift \" ADD \"description \" VARCHAR(255) NULL",
+                "ALTER TABLE \" r2dbc_migration_drift\" ADD \" description\" VARCHAR(255) NULL",
+                "ALTER TABLE \"R2DBC_MIGRATION_DRIFT\" ADD \"description\" VARCHAR(255) NULL",
+                "ALTER TABLE \"r2dbc_migration_drift\" ADD \"DESCRIPTION\" VARCHAR(255) NULL",
             )
 
             rejected.forEach { statement ->
@@ -199,18 +207,28 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
         }
 
         @Test
-        fun `runs cleanup in a non-cancellable context`() = runSuspendIO {
+        fun `runs cleanup after real coroutine cancellation`() = runSuspendIO {
             val primary = CancellationException("cancelled")
             var cleaned = false
 
-            val thrown = runCatching {
-                preservingFailure(
-                    block = { throw primary },
-                    cleanup = { cleaned = true },
-                )
-            }.exceptionOrNull()
+            val thrown = coroutineScope {
+                val cancelled = async {
+                    preservingFailure(
+                        block = {
+                            currentCoroutineContext().cancel(primary)
+                            yield()
+                        },
+                        cleanup = {
+                            yield()
+                            cleaned = true
+                        },
+                    )
+                }
+                runCatching { cancelled.await() }.exceptionOrNull()
+            }
 
-            assertSame(primary, thrown)
+            assertTrue(thrown is CancellationException)
+            assertEquals(primary.message, thrown?.message)
             assertTrue(cleaned)
         }
     }
@@ -228,20 +246,37 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
         }
 
         val normalized = statement
-            .replace(IDENTIFIER_QUOTES, "")
             .replace(WHITESPACE, " ")
             .trim()
-            .uppercase(Locale.ROOT)
-        val expected = Regex(
-            "^ALTER TABLE ${Regex.escape(expectedTable.uppercase(Locale.ROOT))} " +
-                    "ADD(?: COLUMN)? ${Regex.escape(expectedColumn.uppercase(Locale.ROOT))} " +
-                    "VARCHAR\\s*\\(\\s*255\\s*\\) NULL$",
-        )
+        val match = ADDITIVE_STATEMENT.matchEntire(normalized)
 
-        require(expected.matches(normalized)) {
+        require(
+            match != null &&
+                    matchesExpectedIdentifier(match.groupValues[1], expectedTable) &&
+                    matchesExpectedIdentifier(match.groupValues[2], expectedColumn),
+        ) {
             "Only the reviewed additive migration statement is allowed"
         }
         return statement
+    }
+
+    private fun matchesExpectedIdentifier(token: String, expected: String): Boolean {
+        return when {
+            token.startsWith('"') && token.endsWith('"') -> token.substring(1, token.lastIndex) == expected
+            token.startsWith('`') && token.endsWith('`') -> token.substring(1, token.lastIndex) == expected
+            else -> token.equals(expected, ignoreCase = true)
+        }
+    }
+
+    private fun isExpectedH2TypeChange(statement: String, expectedTable: String, expectedColumn: String): Boolean {
+        val normalized = statement
+            .replace(Regex("[\"`]"), "")
+            .replace(WHITESPACE, " ")
+            .trim()
+            .uppercase(Locale.ROOT)
+        return normalized.startsWith("ALTER TABLE ${expectedTable.uppercase(Locale.ROOT)} ") &&
+                Regex("\\b${Regex.escape(expectedColumn.uppercase(Locale.ROOT))}\\b").containsMatchIn(normalized) &&
+                Regex("\\b(TEXT|CLOB)\\b").containsMatchIn(normalized)
     }
 
     private suspend fun preservingFailure(
@@ -271,7 +306,12 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
     }
 
     companion object {
-        private val IDENTIFIER_QUOTES = Regex("[\"`]")
+        private const val IDENTIFIER_TOKEN = "(?:\"[^\"]+\"|`[^`]+`|[A-Za-z_][A-Za-z0-9_]*)"
+        private val ADDITIVE_STATEMENT = Regex(
+            "^ALTER TABLE ($IDENTIFIER_TOKEN) ADD(?: COLUMN)? ($IDENTIFIER_TOKEN) " +
+                    "VARCHAR\\s*\\(\\s*255\\s*\\) NULL$",
+            RegexOption.IGNORE_CASE,
+        )
         private val WHITESPACE = Regex("\\s+")
 
         private object R2dbcMigrationBaseline: Table("r2dbc_migration_drift") {

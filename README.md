@@ -214,33 +214,198 @@ repositories {
 }
 ```
 
-### Exposed Gradle Plugin
+<!-- migration-guide:start -->
+<!-- migration-guide:heading:migration-generation -->
+### Migration Generation and Schema Drift
 
-Use JetBrains' official Exposed Gradle plugin in application or example modules
-that generate migration scripts from Exposed table definitions. Keep its version
-aligned with the JetBrains Exposed version used by the project. In bluetape4k
-repositories, consume the plugin from the central `bluetape4k-dependencies`
-catalog so the plugin version follows the shared `exposed` compatibility line.
+<!-- migration-guide:heading:availability -->
+#### Availability
+
+JetBrains Exposed 1.3.1 provides the Gradle migration plugin and the JDBC and
+R2DBC `MigrationUtils` APIs. The dedicated `migrationDriftTest` tasks and CI
+checks described here are available on `develop` and first ship with
+bluetape4k-exposed 1.12.0. See the
+[Exposed Gradle plugin documentation](https://www.jetbrains.com/help/exposed/exposed-gradle-plugin.html),
+[Exposed migration documentation](https://www.jetbrains.com/help/exposed/migrations.html),
+and [Gradle Plugin Portal entry](https://plugins.gradle.org/plugin/org.jetbrains.exposed.plugin).
+
+<!-- migration-guide:heading:application-users -->
+#### Application Users
+
+Use the Gradle plugin to compare Exposed table definitions with database
+metadata and generate a reviewable SQL file. The application owns the output
+directory, credentials, filename sequence, SQL review, and execution through
+Flyway, Liquibase, or another migration runner.
+
+This self-contained PostgreSQL example pins the upstream plugin directly,
+keeps every connection value outside the build file, and includes the JDBC
+driver that matches `MIGRATION_JDBC_URL`. Applications that already import the
+central `bluetape4k-dependencies` catalog may replace the direct plugin line
+with `alias(bt4k.plugins.exposed.plugin)`:
 
 ```kotlin
 plugins {
-    alias(bt4k.plugins.exposed.plugin)
+    id("org.jetbrains.exposed.plugin") version "1.3.1"
+}
+
+val migrationJdbcUrl = providers.environmentVariable("MIGRATION_JDBC_URL")
+val migrationDbUser = providers.environmentVariable("MIGRATION_DB_USER")
+val migrationDbPassword = providers.environmentVariable("MIGRATION_DB_PASSWORD")
+
+exposed {
+    migrations {
+        tablesPackage.set("com.example.app.persistence")
+        fileDirectory.set(layout.projectDirectory.dir("src/main/resources/db/migration"))
+        databaseUrl.set(migrationJdbcUrl)
+        databaseUser.set(migrationDbUser)
+        databasePassword.set(migrationDbPassword)
+    }
+}
+
+dependencies {
+    runtimeOnly("org.postgresql:postgresql")
 }
 ```
 
-The plugin adds the `generateMigrations` workflow and uses the
-`exposed.migrations` block to configure the table package and the target
-database or Testcontainers image. See the
-[Exposed Gradle plugin documentation](https://www.jetbrains.com/help/exposed/exposed-gradle-plugin.html)
-and the
-[Gradle Plugin Portal entry](https://plugins.gradle.org/plugin/org.jetbrains.exposed.plugin).
-
-Demo migration generation is covered by a weekly and pull-request smoke workflow:
+Create a new monotonically ordered filename for every change and fail before
+generation if it already exists:
 
 ```bash
-./gradlew :exposed-spring-boot-jdbc-demo:generateMigrations --filename=V1__create_products.sql
-./gradlew :exposed-spring-boot-r2dbc-demo:generateMigrations --filename=V1__create_webflux_products.sql
+MIGRATION_FILE=V202607170001__add_description.sql
+test ! -e "src/main/resources/db/migration/$MIGRATION_FILE" &&
+  ./gradlew generateMigrations --filename="$MIGRATION_FILE"
 ```
+
+<!-- migration-guide:warning:credentials -->
+> Do not commit migration credentials or point generation at a shared or
+> production database. Use a disposable or staging copy with production-shaped
+> metadata and review the generated SQL before promotion.
+
+<!-- migration-guide:warning:r2dbc-jdbc-boundary -->
+> An R2DBC application still needs a build-time JDBC URL and matching JDBC
+> driver for the Gradle plugin. An R2DBC URL or R2DBC runtime driver is not
+> sufficient for plugin generation.
+
+<!-- migration-guide:warning:no-runtime-management -->
+> Do not run plugin generation or `MigrationUtils` comparison during application
+> startup or on a request path. Neither API is a production migration runner.
+
+<!-- migration-guide:warning:immutable-migrations -->
+> Never overwrite a migration that may have been applied. The checked-in V1
+> files under this repository's demos are replaceable test fixtures, not an
+> application filename convention.
+
+<!-- migration-guide:heading:surface-boundaries -->
+#### Surface Boundaries
+
+<!-- migration-guide:table:surface-boundaries -->
+| Surface | Connection and purpose | Do not infer |
+|---|---|---|
+| `Gradle plugin` | Build-time JDBC metadata connection and script generation | It neither connects over R2DBC nor applies production migrations |
+| `JDBC MigrationUtils` | Programmatic or test-time JDBC schema comparison | Do not use it for startup or request-path schema management |
+| `R2DBC MigrationUtils` | Programmatic or test-time R2DBC schema comparison | Do not use it for startup or request-path schema management |
+
+<!-- migration-guide:heading:repository-contributors -->
+#### Repository Contributors
+
+The demo V1 files are fixed-name repository fixtures. Contributors may
+regenerate and replace them intentionally; applications must not copy that
+naming policy. The demo proof requires only the Gradle wrapper and its H2 JDBC
+driver. It writes into the two demo migration directories. A clean bounded
+status proves that Exposed 1.3.1 regenerated those fixtures without repository
+drift; it does not prove that arbitrary application migrations are safe.
+
+```bash
+./gradlew :exposed-spring-boot-jdbc-demo:generateMigrations --filename=V1__create_products.sql --rerun --no-build-cache --no-configuration-cache --no-daemon
+./gradlew :exposed-spring-boot-r2dbc-demo:generateMigrations --filename=V1__create_webflux_products.sql --rerun --no-build-cache --no-configuration-cache --no-daemon
+git status --short --untracked-files=all -- examples/jdbc-demo/src/main/resources/db/migration examples/r2dbc-demo/src/main/resources/db/migration
+```
+
+The focused H2 proof needs no external database. It writes JUnit XML under
+`exposed/jdbc-tests/build/test-results/migrationDriftTest` and
+`exposed/r2dbc-tests/build/test-results/migrationDriftTest`; CI stages sanitized
+status and XML under `build/migration-drift-reports/h2/<api>`. A pass proves the
+additive-column contract for both APIs on H2, not schema equivalence or rollout
+safety.
+
+```bash
+EXPOSED_TEST_DB=H2 ./gradlew \
+  :bluetape4k-exposed-jdbc-tests:migrationDriftTest \
+  :bluetape4k-exposed-r2dbc-tests:migrationDriftTest \
+  --no-configuration-cache \
+  --no-parallel --max-workers=1 --no-daemon
+```
+
+Real-database proof requires a working Docker-compatible runtime for
+Testcontainers. Run the commands sequentially. Each command writes its module's
+`build/test-results/migrationDriftTest` XML; CI stages sanitized evidence under
+`build/migration-drift-reports/<api>-<database>`. A pass proves the same focused
+additive-column contract on the selected dialects. It does not approve type
+changes, destructive DDL, production data handling, locks, or rollout order.
+
+```bash
+EXPOSED_TEST_DB=POSTGRESQL ./gradlew \
+  :bluetape4k-exposed-jdbc-tests:migrationDriftTest \
+  --no-configuration-cache \
+  --no-parallel --max-workers=1 --no-daemon
+
+EXPOSED_TEST_DB=POSTGRESQL ./gradlew \
+  :bluetape4k-exposed-r2dbc-tests:migrationDriftTest \
+  --no-configuration-cache \
+  --no-parallel --max-workers=1 --no-daemon
+
+EXPOSED_TEST_DB=MYSQL_V8 ./gradlew \
+  :bluetape4k-exposed-jdbc-tests:migrationDriftTest \
+  --no-configuration-cache \
+  --no-parallel --max-workers=1 --no-daemon
+
+EXPOSED_TEST_DB=MYSQL_V8 ./gradlew \
+  :bluetape4k-exposed-r2dbc-tests:migrationDriftTest \
+  --no-configuration-cache \
+  --no-parallel --max-workers=1 --no-daemon
+```
+
+<!-- migration-guide:heading:failure-diagnostics -->
+#### Failure Diagnostics
+
+<!-- migration-guide:table:failure-diagnostics -->
+| Failure surface | First diagnostic and evidence order |
+|---|---|
+| `Gradle plugin` | Rerun the fixed-filename command with `--stacktrace --info`; inspect bounded migration-directory status |
+| `H2 JDBC drift` | Run `EXPOSED_TEST_DB=H2 ./gradlew :bluetape4k-exposed-jdbc-tests:migrationDriftTest --tests '*JdbcMigrationDriftTest*' --stacktrace --info`; locally inspect module `build/test-results/migrationDriftTest`, or in CI inspect staged status then sanitized XML |
+| `H2 R2DBC drift` | Run `EXPOSED_TEST_DB=H2 ./gradlew :bluetape4k-exposed-r2dbc-tests:migrationDriftTest --tests '*R2dbcMigrationDriftTest*' --stacktrace --info`; locally inspect module `build/test-results/migrationDriftTest`, or in CI inspect staged status then sanitized XML |
+| `PostgreSQL/MySQL 8` | Verify Docker first; locally inspect the selected module's `build/test-results/migrationDriftTest`, or in CI inspect `command-summary.log`, `status.txt`, then sanitized JUnit XML |
+
+<!-- migration-guide:heading:support-matrix -->
+#### Support Matrix
+
+<!-- migration-guide:table:support-matrix -->
+| Change | Evidence level | Meaning |
+|---|---|---|
+| `Add nullable column` | H2 PR lane plus PostgreSQL/MySQL 8 full Nightly/manual lane | Focused JDBC and R2DBC regressions validate one exact additive statement and a clean second comparison |
+| `Change column type on H2` | Characterized only | Regression records current output; it does not approve the change |
+| `Change column type on PostgreSQL/MySQL 8` | Not guaranteed | Inspect and test generated SQL for the target dialect |
+| `Rename or remove column` | Not guaranteed | Treat as potentially destructive and design an explicit data migration |
+| `Defaults and indexes` | Not guaranteed | Review expression, ordering, locking, and existing-row effects |
+| `Foreign/unique/check constraints` | Not guaranteed | Validate existing data and enforcement/locking behavior |
+| `Vendor-specific DDL` | Not guaranteed | Test against the exact database version and operational policy |
+
+An empty diff means only "no difference detected by this API and version." It
+does not prove that two schemas are equal.
+
+<!-- migration-guide:heading:promotion-review -->
+#### Promotion Review
+
+<!-- migration-guide:table:promotion-review -->
+| Review area | Required checks |
+|---|---|
+| `Schema safety` | Review `DROP`/`TRUNCATE`, removal, rename, type changes, `NOT NULL`, defaults, indexes, unique/foreign/check constraints, and statement order |
+| `Data safety` | Validate backfill correctness, production-shaped row volume, table rewrites, and data reinterpretation risk |
+| `Rollout safety` | Check lock duration, phased nullable-add/backfill/constraint enforcement, database transaction support, backup, rollback, and migration-runner ownership |
+
+Review raw SQL against a disposable or staging copy before handing it to the
+application's migration runner.
+<!-- migration-guide:end -->
 
 ### Database Examples
 

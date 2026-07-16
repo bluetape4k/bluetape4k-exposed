@@ -26,6 +26,7 @@ Testcontainers, GitHub Actions, `actionlint`.
 
 ### Build and tests
 
+- Modify `build.gradle.kts`
 - Modify `exposed/jdbc-tests/build.gradle.kts`
 - Create
   `exposed/jdbc-tests/src/test/kotlin/io/bluetape4k/exposed/tests/migration/JdbcMigrationDriftTest.kt`
@@ -151,16 +152,21 @@ Expected: `migrationDriftTest` is absent before the edit.
 For each module:
 
 - make normal `test` exclude JUnit tag `migration-drift`;
+- attach every `Test` task, including the two dedicated tasks, to the existing
+  repository-wide shared Test mutex;
 - register `migrationDriftTest` over the normal `SourceSet` test output and
   runtime classpath;
 - include only tag `migration-drift`;
 - set verification group and a precise description;
 - declare `EXPOSED_TEST_DB` from an environment provider, defaulting to `H2`,
-  normalize it once, use that provider as a task input, and explicitly forward
-  the same value into the test worker environment;
+  normalize it once, reject values outside `H2`, `POSTGRESQL`, and `MYSQL_V8`,
+  use that provider as a task input, and explicitly forward the same value into
+  the test worker environment;
 - set `outputs.upToDateWhen { false }` and `outputs.cacheIf { false }`;
 - set `maxParallelForks = 1` and disable JUnit parallel execution;
 - carry the JVM options required by repository tests, including preview;
+- cap the focused test worker heap at 2 GiB and bound the H2/real-database CI
+  Gradle and Kotlin daemon heaps explicitly;
 - configure the task explicitly with
   `useJUnitPlatform { includeTags("migration-drift") }`, while normal `test`
   uses `excludeTags("migration-drift")`;
@@ -213,10 +219,12 @@ Under class tag `migration-drift`, add tests for:
   varchar(255) definition;
 - primary-only, cleanup-only, and dual-failure propagation/suppression.
 
-After case/whitespace/identifier-quote normalization, accept only the complete
+After case/whitespace normalization, require each unquoted, double-quoted, or
+backtick-quoted identifier token to match exactly, then accept only the complete
 dialect-approved tail `VARCHAR(255) NULL` for H2, PostgreSQL, and MySQL 8. The
-validator must reject comments, extra semicolons, multiple statements, commas,
-trailing operations, unexpected identifiers, and every form containing
+validator must reject quoted identifiers with leading/trailing whitespace,
+comments, extra semicolons, multiple statements, commas, trailing operations,
+unexpected identifiers, and every form containing
 `DEFAULT`, `NOT NULL`, `GENERATED`, `REFERENCES`, `CONSTRAINT`, `CHECK`,
 `UNIQUE`, `PRIMARY KEY`, or `COLLATE`. If current Exposed output differs, stop
 and reopen the reviewed plan instead of broadening the allowlist silently.
@@ -378,19 +386,19 @@ standalone compile is diagnostic fallback only if a test task cannot start.
 
 - Modify `.github/workflows/migration-smoke.yml`
 
-- [ ] **Step 1: Preserve trigger and trust boundaries**
+- [x] **Step 1: Preserve trigger and trust boundaries**
 
 - remove only the weekly schedule;
 - retain `workflow_dispatch` and `pull_request`, never
   `pull_request_target`;
-- keep job permissions at `contents: read` plus `packages: read` and keep PR
-  Gradle caches read-only;
+- keep workflow and job permissions at `contents: read` only and keep PR Gradle
+  caches read-only;
 - set `persist-credentials: false` on every checkout and verify no secrets or
   OIDC permission is available;
 - include demo/test/README/workflow paths plus root build/settings,
   `gradle.properties`, and `gradle/**` authority paths.
 
-- [ ] **Step 2: Harden `demo-migrations`**
+- [x] **Step 2: Harden `demo-migrations`**
 
 Keep a 15-minute timeout. Confirm `help --task generateMigrations` exposes the
 plugin-specific `--rerun` option. Remove only the two expected V1 fixture files,
@@ -398,7 +406,7 @@ run both fixed-filename tasks with `--rerun --no-build-cache --no-daemon`,
 require both files to exist, then fail on any bounded tracked or untracked
 migration-directory status.
 
-- [ ] **Step 3: Add bounded `h2-drift`**
+- [x] **Step 3: Add bounded `h2-drift`**
 
 Use a 30-minute job timeout and two stable-ID, 10-minute,
 `continue-on-error: true` steps. Run JDBC then R2DBC with
@@ -421,7 +429,7 @@ Each keeps safe staged evidence for 14 days with `if-no-files-found: error`.
 Finish
 with an always-run aggregate step that fails if either API outcome failed.
 
-- [ ] **Step 4: Validate YAML and generated file proof locally**
+- [x] **Step 4: Validate YAML and generated file proof locally**
 
 Run `actionlint`, both plugin-specific `--rerun` generation tasks without
 deleting local fixtures, file existence assertions, and the bounded porcelain
@@ -439,15 +447,15 @@ change, which is outside this issue.
 
 - Modify `.github/workflows/nightly-tests.yml`
 
-- [ ] **Step 1: Add the exact full-only job boundary**
+- [x] **Step 1: Add the exact full-only job boundary**
 
 Add `migration-drift-real-databases` after `build` with job-level
-`permissions` containing `contents: read` and `packages: read`, the exact
+`permissions` containing only `contents: read`, the exact
 existing Sunday-full/manual-full
 condition, `timeout-minutes: 60`, repository Testcontainers environment, and
 no retry loop.
 
-- [ ] **Step 2: Implement four bounded selection steps**
+- [x] **Step 2: Implement four bounded selection steps**
 
 Run JDBC PostgreSQL, R2DBC PostgreSQL, JDBC MySQL 8, R2DBC MySQL 8 in order.
 Each step:
@@ -456,8 +464,9 @@ Each step:
 - sets the exact `EXPOSED_TEST_DB` value;
 - precreates `build/migration-drift-reports/<api>-<database>` metadata;
 - uses `set -o pipefail`, `set +e`, `tee` to a runner-temporary raw log with
-  console output suppressed, `gradle_status=${PIPESTATUS[0]}`, then restores
-  `set -e`;
+  console output suppressed, captures `gradle_status=${PIPESTATUS[0]}`, and
+  keeps evidence assembly in a guarded non-errexit section so the original
+  Gradle status cannot be replaced;
 - stages JUnit XML with system streams disabled and an allowlisted/redacted
   `command-summary.log` while
   separately capturing `evidence_status`;
@@ -475,16 +484,18 @@ After all steps, write GitHub step outcomes into each status record, upload one
 `if-no-files-found: error`, then fail on any non-success outcome or recorded
 Gradle/evidence status.
 
-- [ ] **Step 3: Validate shell failure preservation**
+- [x] **Step 3: Validate shell failure preservation**
 
 Run an isolated local shell harness using a deliberately failing command piped
 through `tee`. Assert original nonzero exit, summary/status creation, and no raw
 log in the upload directory. Add a second case where Gradle succeeds but
 evidence staging fails; assert the evidence failure becomes the step result.
-Add sensitive-pattern fixtures proving staged upload is rejected, raw output is
-absent from console capture, and raw temp files are deleted. Run `actionlint`.
+Add sensitive-pattern fixtures proving staged upload is rejected for URL
+schemes, userinfo, query strings, and bare DNS/IPv4/IPv6 host-port authorities;
+prove raw output is absent from console capture and raw temp files are deleted.
+Run `actionlint`.
 
-- [ ] **Step 4: Review privacy and schedule conditions**
+- [x] **Step 4: Review privacy and schedule conditions**
 
 Prove the job is absent from weekday smoke schedules, present for Sunday/full
 dispatch, uses no secret/production endpoint, and cannot upload URL authority,
@@ -504,12 +515,13 @@ behavior remain unchanged.
 - Create
   `docs/superpowers/checklists/2026-07-17-exposed-1.12-manual-promotion-checklist.md`
 
-- [ ] **Step 1: Write matching application-user guidance**
+- [x] **Step 1: Write matching application-user guidance**
 
 Add equivalent 1.12 availability callouts, a three-surface boundary table, and
-a copy-pastable Kotlin DSL example with
-`alias(bt4k.plugins.exposed.plugin)` (upstream plugin ID
-`org.jetbrains.exposed.plugin`),
+a self-contained copy-pastable Kotlin DSL example with the direct upstream
+`org.jetbrains.exposed.plugin` version plus the equivalent optional
+`alias(bt4k.plugins.exposed.plugin)` for applications that already import the
+central catalog,
 `tablesPackage`, `fileDirectory`, matching JDBC `runtimeOnly`, and providers
 for `MIGRATION_JDBC_URL`, `MIGRATION_DB_USER`, and
 `MIGRATION_DB_PASSWORD`. Use an application-controlled output directory and a
@@ -517,15 +529,15 @@ new immutable versioned filename, with a collision preflight before generation:
 
 ```bash
 MIGRATION_FILE=V202607170001__add_description.sql
-test ! -e "src/main/resources/db/migration/$MIGRATION_FILE"
-./gradlew generateMigrations --filename="$MIGRATION_FILE"
+test ! -e "src/main/resources/db/migration/$MIGRATION_FILE" &&
+  ./gradlew generateMigrations --filename="$MIGRATION_FILE"
 ```
 
 State that R2DBC applications still need a build-time JDBC URL and driver.
 Forbid committed credentials, shared/production endpoints, startup or
 request-path comparison, and overwriting an applied migration.
 
-- [ ] **Step 2: Write matching contributor guidance**
+- [x] **Step 2: Write matching contributor guidance**
 
 Explain that checked-in V1 files are replaceable repository fixtures, not an
 application convention. Document combined H2 and sequential real-database
@@ -539,13 +551,13 @@ exact diagnostics table below.
 | H2 R2DBC drift | Run `:bluetape4k-exposed-r2dbc-tests:migrationDriftTest --tests '*R2dbcMigrationDriftTest*' --stacktrace --info`; inspect staged status, then sanitized XML |
 | PostgreSQL/MySQL 8 | Verify Docker first; inspect `command-summary.log`, then `status.txt`, then sanitized JUnit XML |
 
-- [ ] **Step 3: Add support and review matrices**
+- [x] **Step 3: Add support and review matrices**
 
 Match headings, commands, warnings, upstream links, support rows, and
 schema/data/rollout safety checks across both languages. State that empty diff
 means only "no difference detected".
 
-- [ ] **Step 4: Validate parity and stable-manual ownership**
+- [x] **Step 4: Validate parity and stable-manual ownership**
 
 Create a focused Ruby validator and self-test that extract and normalize the
 marked migration section headings, shell/Kotlin fences, table row keys,
@@ -572,19 +584,19 @@ Rollback: remove both README sections together; never leave one locale ahead.
 
 **Files:** all changed implementation files
 
-- [ ] **Step 1: Run preliminary fast proof**
+- [x] **Step 1: Run preliminary fast proof**
 
 Run one fresh combined H2 drift pass, default H2 tests, forced fixed-file
 generation without local fixture deletion, bounded status, Detekt,
 `actionlint`, shell-contract test, link/parity checks, and `git diff --check`.
 
-- [ ] **Step 2: Run six implemented-diff reviews**
+- [x] **Step 2: Run six implemented-diff reviews**
 
 Review performance, stability, security, Ops, developer/API, and user/docs.
 Repair all P0/P1 findings and rerun affected tests. Record final counts in
 `docs/review/2026-07-17-issue-322-exposed-migration-drift-review.md`.
 
-- [ ] **Step 3: Record the lesson and reconcile evidence**
+- [x] **Step 3: Record the lesson and reconcile evidence**
 
 Create `docs/lessons/2026-07-17-issue-322-exposed-migration-drift.md` explaining
 fixed filenames versus timestamp defaults, why fixed V1 is only a repo fixture,
@@ -593,7 +605,7 @@ empty diff is not schema equality. Map each issue acceptance criterion and
 design DoD to evidence, and update plan/checklist/review artifacts through the
 pre-PR gate.
 
-- [ ] **Step 4: Commit and push the candidate final head**
+- [x] **Step 4: Commit and push the candidate final head**
 
 Confirm no public API, dependency version, checked-in SQL, or stable-manual
 drift. Use Lore-compliant commits, push the candidate SHA, verify upstream

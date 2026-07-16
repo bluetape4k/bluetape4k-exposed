@@ -76,6 +76,223 @@ jobs:
           path: 'build/reports/detekt/*.xml'
           retention-days: 14
 
+  migration-drift-real-databases:
+    name: Migration Drift / PostgreSQL + MySQL 8
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '3 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: build
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xms256m -Xmx2g -Dorg.gradle.daemon=false -Dkotlin.daemon.jvm.options=-Xms256m,-Xmx1g"
+      TESTCONTAINERS_RYUK_DISABLED: "true"
+      DOCKER_HOST: "unix:///var/run/docker.sock"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Prepare bounded migration evidence runner
+        shell: bash
+        run: |
+          install -m 700 /dev/stdin "$RUNNER_TEMP/run-migration-drift-selection" <<'SCRIPT'
+          #!/usr/bin/env bash
+          set -Eeuo pipefail
+
+          report="build/migration-drift-reports/$MIGRATION_REPORT_KEY"
+          raw_log="$RUNNER_TEMP/migration-drift-$MIGRATION_REPORT_KEY.log"
+          trap 'rm -f "$raw_log"' EXIT
+          rm -rf "$report" "$MIGRATION_XML_SOURCE"
+          mkdir -p "$report"
+          {
+            printf 'state=started\n'
+            printf 'selection=%s\n' "$MIGRATION_API-$EXPOSED_TEST_DB"
+            printf 'expected-dialect=%s\n' "$MIGRATION_EXPECTED_DIALECT"
+          } > "$report/status.txt"
+
+          set +e
+          ./gradlew "$MIGRATION_TASK" \
+            --tests "$MIGRATION_TEST_FILTER" \
+            --no-parallel \
+            --max-workers=1 \
+            --no-configuration-cache \
+            --no-daemon 2>&1 | tee "$raw_log" >/dev/null
+          gradle_status=${PIPESTATUS[0]}
+          set +e
+
+          evidence_status=0
+          {
+            printf 'selection=%s\n' "$MIGRATION_API-$EXPOSED_TEST_DB"
+            printf 'task=%s\n' "$MIGRATION_TASK"
+            printf 'test-filter=%s\n' "$MIGRATION_TEST_FILTER"
+            grep -E '^(> Task |BUILD (SUCCESSFUL|FAILED)|[0-9]+ tests? completed)' "$raw_log" | tail -n 200 || true
+          } | sed -E \
+            -e 's#[[:alpha:]][[:alnum:]+.-]*://[^[:space:]]+#[URL_REDACTED]#g' \
+            -e 's#(localhost|[[:alnum:]][[:alnum:]-]*|([[:alnum:]-]+\.)+[[:alpha:]][[:alpha:]-]*|([0-9]{1,3}\.){3}[0-9]{1,3}|\[[0-9A-Fa-f:]+\]):[0-9]{1,5}#[HOST_REDACTED]#g' \
+            -e 's#/(home|Users)/[^[:space:]]+#[HOME_REDACTED]#g' \
+            -e 's#/root/[^[:space:]]+#[HOME_REDACTED]#g' \
+            > "$report/command-summary.log" || evidence_status=1
+
+          xml_count=0
+          while IFS= read -r -d '' xml; do
+            sed -E \
+              -e 's/ hostname="[^"]*"/ hostname="[REDACTED]"/g' \
+              -e 's#(localhost|[[:alnum:]][[:alnum:]-]*|([[:alnum:]-]+\.)+[[:alpha:]][[:alpha:]-]*|([0-9]{1,3}\.){3}[0-9]{1,3}|\[[0-9A-Fa-f:]+\]):[0-9]{1,5}#[HOST_REDACTED]#g' \
+              "$xml" > "$report/$(basename "$xml")"
+            xml_count=$((xml_count + 1))
+          done < <(find "$MIGRATION_XML_SOURCE" -maxdepth 1 -type f -name 'TEST-*.xml' -print0 2>/dev/null)
+          if ((xml_count == 0)); then
+            evidence_status=1
+          fi
+          if ! grep -Rqs "additive drift converges on H2" "$report" --include='TEST-*.xml'; then
+            evidence_status=1
+          fi
+          if ! grep -Rqs "additive drift converges on $MIGRATION_EXPECTED_DIALECT" "$report" --include='TEST-*.xml'; then
+            evidence_status=1
+          fi
+
+          sensitive='[[:alpha:]][[:alnum:]+.-]*://|(localhost|[[:alnum:]][[:alnum:]-]*|([[:alnum:]-]+\.)+[[:alpha:]][[:alpha:]-]*|([0-9]{1,3}\.){3}[0-9]{1,3}|\[[0-9A-Fa-f:]+\]):[0-9]{1,5}|[^[:space:]/:@]+:[^[:space:]/@]+@|[?&][[:alnum:]_.~-]+=|/(home|Users)/|/root/|(^|[^[:alnum:]_])(password|passwd|pwd|secret|token|authorization|bearer|api[_-]?key)([^[:alnum:]_]|$)'
+          while IFS= read -r -d '' staged; do
+            if LC_ALL=C grep -Eqi "$sensitive" "$staged"; then
+              rm -f "$staged"
+              evidence_status=1
+            fi
+          done < <(find "$report" -maxdepth 1 -type f \( -name '*.xml' -o -name '*.log' \) -print0)
+
+          {
+            printf 'state=completed\n'
+            printf 'selection=%s\n' "$MIGRATION_API-$EXPOSED_TEST_DB"
+            printf 'expected-dialect=%s\n' "$MIGRATION_EXPECTED_DIALECT"
+            printf 'gradle-status=%s\n' "$gradle_status"
+            printf 'evidence-status=%s\n' "$evidence_status"
+          } > "$report/status.txt"
+          if LC_ALL=C grep -Eqi "$sensitive" "$report/status.txt"; then
+            evidence_status=1
+            printf '%s\n' \
+              'state=completed' \
+              "selection=$MIGRATION_API-$EXPOSED_TEST_DB" \
+              "expected-dialect=$MIGRATION_EXPECTED_DIALECT" \
+              "gradle-status=$gradle_status" \
+              'evidence-status=1' > "$report/status.txt"
+          fi
+
+          rm -f "$raw_log"
+          if [[ -f "$report/command-summary.log" ]]; then
+            sed -n '1,200p' "$report/command-summary.log"
+          fi
+
+          if ((gradle_status != 0)); then
+            exit "$gradle_status"
+          fi
+          exit "$evidence_status"
+          SCRIPT
+      - name: Run JDBC PostgreSQL migration drift
+        id: jdbc_postgresql
+        timeout-minutes: 12
+        continue-on-error: true
+        env:
+          EXPOSED_TEST_DB: POSTGRESQL
+          MIGRATION_API: jdbc
+          MIGRATION_TASK: ':bluetape4k-exposed-jdbc-tests:migrationDriftTest'
+          MIGRATION_TEST_FILTER: '*JdbcMigrationDriftTest*'
+          MIGRATION_XML_SOURCE: exposed/jdbc-tests/build/test-results/migrationDriftTest
+          MIGRATION_REPORT_KEY: jdbc-postgresql
+          MIGRATION_EXPECTED_DIALECT: POSTGRESQL
+        run: |
+          "$RUNNER_TEMP/run-migration-drift-selection"
+      - name: Run R2DBC PostgreSQL migration drift
+        id: r2dbc_postgresql
+        timeout-minutes: 12
+        continue-on-error: true
+        env:
+          EXPOSED_TEST_DB: POSTGRESQL
+          MIGRATION_API: r2dbc
+          MIGRATION_TASK: ':bluetape4k-exposed-r2dbc-tests:migrationDriftTest'
+          MIGRATION_TEST_FILTER: '*R2dbcMigrationDriftTest*'
+          MIGRATION_XML_SOURCE: exposed/r2dbc-tests/build/test-results/migrationDriftTest
+          MIGRATION_REPORT_KEY: r2dbc-postgresql
+          MIGRATION_EXPECTED_DIALECT: POSTGRESQL
+        run: |
+          "$RUNNER_TEMP/run-migration-drift-selection"
+      - name: Run JDBC MySQL 8 migration drift
+        id: jdbc_mysql_v8
+        timeout-minutes: 12
+        continue-on-error: true
+        env:
+          EXPOSED_TEST_DB: MYSQL_V8
+          MIGRATION_API: jdbc
+          MIGRATION_TASK: ':bluetape4k-exposed-jdbc-tests:migrationDriftTest'
+          MIGRATION_TEST_FILTER: '*JdbcMigrationDriftTest*'
+          MIGRATION_XML_SOURCE: exposed/jdbc-tests/build/test-results/migrationDriftTest
+          MIGRATION_REPORT_KEY: jdbc-mysql-v8
+          MIGRATION_EXPECTED_DIALECT: MYSQL_V8
+        run: |
+          "$RUNNER_TEMP/run-migration-drift-selection"
+      - name: Run R2DBC MySQL 8 migration drift
+        id: r2dbc_mysql_v8
+        timeout-minutes: 12
+        continue-on-error: true
+        env:
+          EXPOSED_TEST_DB: MYSQL_V8
+          MIGRATION_API: r2dbc
+          MIGRATION_TASK: ':bluetape4k-exposed-r2dbc-tests:migrationDriftTest'
+          MIGRATION_TEST_FILTER: '*R2dbcMigrationDriftTest*'
+          MIGRATION_XML_SOURCE: exposed/r2dbc-tests/build/test-results/migrationDriftTest
+          MIGRATION_REPORT_KEY: r2dbc-mysql-v8
+          MIGRATION_EXPECTED_DIALECT: MYSQL_V8
+        run: |
+          "$RUNNER_TEMP/run-migration-drift-selection"
+      - name: Record real-database selection outcomes
+        if: always()
+        env:
+          JDBC_POSTGRESQL_OUTCOME: ${{ steps.jdbc_postgresql.outcome }}
+          R2DBC_POSTGRESQL_OUTCOME: ${{ steps.r2dbc_postgresql.outcome }}
+          JDBC_MYSQL_V8_OUTCOME: ${{ steps.jdbc_mysql_v8.outcome }}
+          R2DBC_MYSQL_V8_OUTCOME: ${{ steps.r2dbc_mysql_v8.outcome }}
+        run: |
+          printf 'github-outcome=%s\n' "$JDBC_POSTGRESQL_OUTCOME" >> build/migration-drift-reports/jdbc-postgresql/status.txt
+          printf 'github-outcome=%s\n' "$R2DBC_POSTGRESQL_OUTCOME" >> build/migration-drift-reports/r2dbc-postgresql/status.txt
+          printf 'github-outcome=%s\n' "$JDBC_MYSQL_V8_OUTCOME" >> build/migration-drift-reports/jdbc-mysql-v8/status.txt
+          printf 'github-outcome=%s\n' "$R2DBC_MYSQL_V8_OUTCOME" >> build/migration-drift-reports/r2dbc-mysql-v8/status.txt
+      - name: Upload real-database migration evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: migration-drift-real-databases
+          path: build/migration-drift-reports/**
+          retention-days: 14
+          if-no-files-found: error
+      - name: Require all real-database migration selections
+        if: always()
+        env:
+          JDBC_POSTGRESQL_OUTCOME: ${{ steps.jdbc_postgresql.outcome }}
+          R2DBC_POSTGRESQL_OUTCOME: ${{ steps.r2dbc_postgresql.outcome }}
+          JDBC_MYSQL_V8_OUTCOME: ${{ steps.jdbc_mysql_v8.outcome }}
+          R2DBC_MYSQL_V8_OUTCOME: ${{ steps.r2dbc_mysql_v8.outcome }}
+        run: |
+          failed=0
+          for key in jdbc-postgresql r2dbc-postgresql jdbc-mysql-v8 r2dbc-mysql-v8; do
+            status="build/migration-drift-reports/$key/status.txt"
+            grep -qx 'gradle-status=0' "$status" || failed=1
+            grep -qx 'evidence-status=0' "$status" || failed=1
+          done
+          for outcome in \
+            "$JDBC_POSTGRESQL_OUTCOME" \
+            "$R2DBC_POSTGRESQL_OUTCOME" \
+            "$JDBC_MYSQL_V8_OUTCOME" \
+            "$R2DBC_MYSQL_V8_OUTCOME"; do
+            [[ "$outcome" == success ]] || failed=1
+          done
+          exit "$failed"
+
   # exposed-core + exposed-dao (H2)
   test-core:
     name: Test / exposed-core + exposed-dao (H2)
@@ -1801,6 +2018,7 @@ jobs:
       - test-spring-boot-batch
       - test-utils-batch
       - coverage-report
+      - migration-drift-real-databases
     if: always()
     steps:
       - name: Check all jobs
