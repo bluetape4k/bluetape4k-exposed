@@ -1,5 +1,6 @@
 package io.bluetape4k.examples.exposed.ktor.order
 
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.core.ddd.DomainEvent
 import io.bluetape4k.exposed.r2dbc.caffeine.repository.R2dbcCaffeineRepository
@@ -21,7 +22,6 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.seconds
 
 class OrderCommandServiceTest {

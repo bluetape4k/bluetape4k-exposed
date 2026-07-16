@@ -9,6 +9,7 @@ import io.bluetape4k.ktor.core.HealthResponse
 import io.bluetape4k.ktor.testing.bluetape4kJsonClient
 import io.bluetape4k.ktor.testing.decodeJsonBody
 import io.bluetape4k.ktor.testing.shouldHaveStatus
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -16,7 +17,6 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.testApplication
 import kotlinx.coroutines.flow.single
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
@@ -168,21 +168,21 @@ class KtorExposedDemoPostgresIntegrationTest {
 
     @Test
     fun `closing restores previous default and a second lifecycle does not reuse the closed pool`() =
-        runTest(timeout = 30.seconds) {
-        val previousDefault = TransactionManager.defaultDatabase
+        runSuspendIO(timeout = 30.seconds) {
+            val previousDefault = TransactionManager.defaultDatabase
 
-        val first = KtorExposedDemoResources.create(postgres.config())
-        val existingRows = first.orderRepository.countFromDb()
-        first.closeReport().isClean shouldBeEqualTo true
-        TransactionManager.defaultDatabase shouldBeEqualTo previousDefault
+            val first = KtorExposedDemoResources.create(postgres.config())
+            val existingRows = first.orderRepository.countFromDb()
+            first.closeReport().isClean shouldBeEqualTo true
+            TransactionManager.defaultDatabase shouldBeEqualTo previousDefault
 
-        val second = KtorExposedDemoResources.create(postgres.config())
-        try {
-            second.orderRepository.countFromDb() shouldBeEqualTo existingRows
-        } finally {
-            second.closeReport().isClean shouldBeEqualTo true
-        }
-        TransactionManager.defaultDatabase shouldBeEqualTo previousDefault
+            val second = KtorExposedDemoResources.create(postgres.config())
+            try {
+                second.orderRepository.countFromDb() shouldBeEqualTo existingRows
+            } finally {
+                second.closeReport().isClean shouldBeEqualTo true
+            }
+            TransactionManager.defaultDatabase shouldBeEqualTo previousDefault
         }
 
     private fun PostgreSQLContainer.config() = KtorExposedDemoConfig(
