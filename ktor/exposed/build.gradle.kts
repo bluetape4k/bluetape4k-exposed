@@ -11,6 +11,7 @@ dependencies {
 
     api(bt4k.bluetape4k.ktor.core)
 
+    api(project(":bluetape4k-exposed-cache"))
     api(project(":bluetape4k-exposed-jdbc"))
     api(project(":bluetape4k-exposed-r2dbc"))
 
