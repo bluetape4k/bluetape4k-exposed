@@ -853,15 +853,32 @@ KDoc, internal SPIs retain the required opt-in boundary, and the stable manual d
 ## Task 11: Extend the existing benchmark module
 
 **Files:**
-- Create: `benchmark/exposed-benchmark/src/jmh/kotlin/io/bluetape4k/exposed/benchmark/cache/SnapshotCacheBenchmark.kt`
+- Create: `benchmark/exposed-benchmark/src/benchmark/kotlin/io/bluetape4k/exposed/benchmark/cache/SnapshotCacheBenchmark.kt`
 - Modify: `benchmark/exposed-benchmark/build.gradle.kts`
 
-- [ ] Add benchmarks for local hit, miss capability creation/claim, one-key and maximum count/weight buffers, repeated-key coalescing, multi-store phase partitioning, peak drain allocation, commit drain, striped lookup/fence contention, Redisson key encoding/chunk submission through a fake async-store seam, failure-buffer saturation, and timeout/outage connection-hold behavior. Use bounded in-memory fixtures; do not require Redis for the default benchmark task.
-- [ ] Extend the existing `cacheBenchmark` include pattern to compile and optionally execute the new class. Do not add a module or dependency.
-- [ ] Run `./gradlew :benchmark-exposed-benchmark:benchmarkClasses --no-daemon`.
-- [ ] Run `./gradlew :benchmark-exposed-benchmark:smokeBenchmark --no-daemon`; the existing smoke configuration provides one warmup, one measurement, and 100 ms iterations. Treat numbers as diagnostic, not a release gate.
-- [ ] Inspect allocations/latency for accidental per-entry thread, scheduler, unbounded collection, reflection traversal, repeated serialization, lock hot spots, and retained connection/future state. Fix structural regressions; record environment-sensitive numbers only in the PR body. Keep deterministic tests as the gate for retained count/weight, submission counts, and proof that callbacks never await Redis.
-- [ ] Commit with Lore trailers:
+- [x] Add benchmarks for local hit, miss capability creation/claim, one-key and maximum count/weight buffers, repeated-key coalescing, multi-store phase partitioning, peak drain allocation, commit drain, striped lookup/fence contention, Redisson key encoding/chunk submission through a fake async-store seam, failure-buffer saturation, and timeout/outage connection-hold behavior. Use bounded in-memory fixtures; do not require Redis for the default benchmark task.
+- [x] Extend the existing `cacheBenchmark` include pattern to compile and optionally execute the new class. Do not add a module or dependency.
+- [x] Run `./gradlew :benchmark-exposed-benchmark:benchmarkClasses --no-daemon`.
+- [x] Run `./gradlew :benchmark-exposed-benchmark:smokeBenchmark --no-daemon`; the existing smoke configuration provides one warmup, one measurement, and 100 ms iterations. Treat numbers as diagnostic, not a release gate.
+- [x] Inspect allocations/latency for accidental per-entry thread, scheduler, unbounded collection, reflection traversal, repeated serialization, lock hot spots, and retained connection/future state. Fix structural regressions; record environment-sensitive numbers only in the PR body. Keep deterministic tests as the gate for retained count/weight, submission counts, and proof that callbacks never await Redis.
+
+Task 11 evidence: the existing benchmark module declares `src/benchmark/kotlin` as its source set, so the planned
+`src/jmh/kotlin` path was corrected to the repository's established source-set convention. The compile-oriented RED
+failed on the intentionally absent coverage seam before implementation. `benchmarkClasses` then compiled the new
+class, and the Redis-free smoke run discovered and executed all 12 snapshot-cache methods with one bounded warmup and
+measurement. The fixtures retain a fixed store set, one H2 pool connection, bounded buffers/chunks, no worker threads
+or schedulers, and at most one never-completing future. Fast paths have no class-wide invocation setup or teardown;
+fixed-memory monotonic counters use before/after deltas, while failure saturation and outage cleanup are isolated to
+the two benchmark methods whose lifecycle costs are intentionally measured. The four-thread fence benchmark therefore
+does not race shared cleanup. A review RED made the old one-encode/fixed-count path fail its structural assertion. The
+replacement fake seam partitions by measured encoded bytes, re-encodes and verifies every identifier digest per chunk,
+materializes and consumes reflective boxed-Long arrays, and accounts for bounded chunks and submitted identifiers.
+Canonical hex conversion uses a fixed-size character array rather than formatter traversal. The outage benchmark also
+requires the H2/Hikari active-connection count to be zero while its one bounded future remains incomplete, then releases
+that future in method-local cleanup. Forced-fresh benchmark compilation and the Redis-free smoke run pass with all 12
+methods and no JMH exception output. Smoke throughput remains diagnostic only; deterministic adapter tests remain the
+correctness gate for count/weight retention, submission accounting, and non-awaiting callbacks.
+- [x] Commit with Lore trailers:
 
 ```text
 Make snapshot cache coordination costs observable
