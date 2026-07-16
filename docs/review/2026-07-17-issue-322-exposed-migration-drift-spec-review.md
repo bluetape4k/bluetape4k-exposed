@@ -80,3 +80,18 @@ Every affected perspective was rerun after its repair.
 **PASS: P0 = 0, P1 = 0.** The user-approved design is ready for a separate,
 reviewed implementation plan. No implementation may widen the stable-manual,
 public-API, dependency-version, or production-migration boundary.
+
+## Plan-Driven Design Addendum
+
+The implementation-plan review tightened the approved design without changing
+its outcome or scope. It pinned plugin-specific `--rerun`, exact experimental
+API imports/calls, the complete additive `VARCHAR(255) NULL` grammar,
+failure-preserving cleanup, task-owned JUnit XML paths/privacy, exact helper
+filters, environment/cache inputs, per-step CI failure precedence, deterministic
+README parity validation, and a separately owned 1.12 manual-promotion gate.
+
+The affected developer/API, user/caller, security/privacy,
+stability/reliability, performance/cost, and operator/Ops lenses were rerun.
+All remain **PASS: P0 = 0, P1 = 0**, with no residual P2/P3 finding. The
+written-spec approval still applies because these refinements narrow proof and
+safety contracts rather than changing the user-visible direction.

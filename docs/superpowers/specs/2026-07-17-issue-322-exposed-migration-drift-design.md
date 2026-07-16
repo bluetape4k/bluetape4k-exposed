@@ -162,10 +162,10 @@ This is the chosen approach.
 
 The two demo modules remain the plugin examples. CI always invokes
 `generateMigrations` with the existing fixed V1 filenames. Before invocation,
-it removes only those two expected files; both tasks run with `--rerun-tasks`,
-`--no-build-cache`, and `--no-daemon`, and CI requires both files to be
-recreated. It then checks only the two migration directories. It fails on
-tracked changes and on every
+it removes only those two expected files; both tasks use the plugin-specific
+`--rerun` option with `--no-build-cache` and `--no-daemon`, and CI requires both
+files to be recreated. It then checks only the two migration directories. It
+fails on tracked changes and on every
 untracked file using a bounded `git status --porcelain --untracked-files=all`
 check, so an unexpected timestamped or second SQL file cannot pass unnoticed.
 
@@ -198,11 +198,15 @@ repository's existing database fixture:
 2. request migration statements for the evolved model;
 3. require exactly one generated statement and validate the whole statement
    with a test-only additive-DDL validator before execution;
-4. accept only `ALTER TABLE <fixture> ADD [COLUMN] <expected-column> <type>`
-   after dialect-aware removal of H2/PostgreSQL/MySQL identifier quotes;
+4. after case, whitespace, and H2/PostgreSQL/MySQL identifier-quote
+   normalization, accept only
+   `ALTER TABLE <fixture> ADD [COLUMN] <expected-column> VARCHAR(255) NULL`;
 5. reject comments, multiple or trailing semicolons, compound clauses,
    additional operations, another table/column, `DROP`, `TRUNCATE`, `DELETE`,
-   removal/rename/type change, and every statement targeting another object;
+   removal/rename/type change, `DEFAULT`, `NOT NULL`, `GENERATED`,
+   `REFERENCES`, `CONSTRAINT`, `CHECK`, `UNIQUE`, `PRIMARY KEY`, `COLLATE`, a
+   comma, any trailing operation, and every statement targeting another
+   object;
 6. execute the allowed statement inside the matching JDBC or R2DBC
    transaction;
 7. request migration statements again;
@@ -216,6 +220,17 @@ unexpected identifiers, and destructive verbs. Assertions otherwise avoid
 requiring exact vendor SQL text and prove the observable lifecycle: drift
 exists before application and disappears after application.
 
+Both test classes import
+`org.jetbrains.exposed.v1.core.ExperimentalDatabaseMigrationApi` and opt into
+it. JDBC imports
+`org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils`, R2DBC imports
+`org.jetbrains.exposed.v1.migration.r2dbc.MigrationUtils`, and both call
+`statementsRequiredForDatabaseMigration(EvolvedTable, withLogs = false)`.
+Only the exact validated string reaches `JdbcTransaction.exec` or suspending
+`R2dbcTransaction.exec`. If Exposed 1.3.1 emits a different additive type tail
+for a selected dialect, implementation stops for review instead of silently
+broadening the allowlist.
+
 Cleanup never relies on transaction rollback because DDL rollback semantics
 differ across H2, PostgreSQL, and MySQL. A private test helper captures the
 primary throwable, performs cleanup through a second database-fixture call,
@@ -226,7 +241,9 @@ failure behavior. Cleanup-only failure is thrown directly.
 An H2-only characterization additionally changes a column from bounded varchar
 to text and asserts that a type-altering statement is produced. PostgreSQL and
 MySQL do not receive that hard assertion because Exposed 1.3.1 does not promise
-full type-change detection there.
+full type-change detection there. The separate type-change table uses the same
+failure-preserving top-level cleanup contract and post-cleanup absence
+assertion as the additive fixture.
 
 ### Layer 3: opt-in verification workflow
 
@@ -238,6 +255,14 @@ an input, and is intrinsically live-only with both
 `outputs.upToDateWhen { false }` and `outputs.cacheIf { false }`. Every
 invocation therefore executes fresh migration tests while dependent compile
 and resource tasks may remain up-to-date or use their normal cache.
+
+Each dedicated task uses the normal test `SourceSet`, explicitly configures
+`useJUnitPlatform { includeTags("migration-drift") }`, and assigns
+`build/test-results/migrationDriftTest/binary` as its binary-results directory
+and `build/test-results/migrationDriftTest` as its XML output directory. Normal
+`test` explicitly excludes the tag. Dedicated JUnit XML is required, HTML is disabled, and
+`reports.junitXml.includeSystemOutLog` plus `includeSystemErrLog` are both
+false so workflow staging has one well-defined sanitized report source.
 
 Refine verification into two complementary proof levels:
 
@@ -257,16 +282,21 @@ Refine verification into two complementary proof levels:
   paths cover the local plugin declaration, catalog import/tag authority, task
   defaults, and wrapper/build configuration now that no weekly smoke exists.
 - Preserve the untrusted-PR boundary: use `pull_request`, never
-  `pull_request_target`; keep workflow permissions at `contents: read`; expose
-  no secrets or production/shared endpoints; and configure
+  `pull_request_target`; keep job permissions at `contents: read` plus
+  `packages: read`; expose no secrets or production/shared endpoints; and configure
   `gradle/actions/setup-gradle` in both jobs with
-  `cache-read-only: ${{ github.event_name == 'pull_request' }}`.
-- H2 jobs upload artifacts with `if: always()`, `retention-days: 14`, and
-  `if-no-files-found: error`. JDBC uses artifact
-  `migration-drift-jdbc-h2` from
-  `exposed/jdbc-tests/build/test-results/migrationDriftTest/*.xml` and
-  `exposed/jdbc-tests/build/reports/tests/migrationDriftTest/**`; R2DBC uses
-  `migration-drift-r2dbc-h2` and the matching `exposed/r2dbc-tests` paths.
+  `cache-read-only: ${{ github.event_name == 'pull_request' }}`. Every checkout
+  uses `persist-credentials: false`.
+- H2 steps disable JUnit XML system-out/system-err capture and stage status,
+  sanitized command summary, and XML only; raw HTML and raw command logs are
+  not uploaded. Pre-test setup creates an API-specific `status.txt=started`
+  marker, and an always-run outcome collector records both GitHub step outcomes
+  after the bounded attempts, including timeout/cancelled states. A fail-closed
+  sensitive-pattern scan covers staged XML and summary before upload. Jobs
+  upload artifacts with `if: always()`,
+  `retention-days: 14`, and `if-no-files-found: error`: JDBC uses
+  `migration-drift-jdbc-h2`, R2DBC uses `migration-drift-r2dbc-h2`, each from a
+  distinct `build/migration-drift-reports/h2/<api>/**` staging directory.
 - The full Nightly scope adds one dedicated
   `migration-drift-real-databases` job after `build`. A single runner executes
   JDBC PostgreSQL, R2DBC PostgreSQL, JDBC MySQL 8, and R2DBC MySQL 8 in that
@@ -288,18 +318,23 @@ Refine verification into two complementary proof levels:
   memory settings. Each selection step sets its exact
   `EXPOSED_TEST_DB=POSTGRESQL` or `EXPOSED_TEST_DB=MYSQL_V8` value.
 - Implement the four selections as independent steps with stable IDs and
-  `continue-on-error: true`. Each step captures the Gradle status, stages its
-  XML and HTML into
-  `build/migration-drift-reports/<api>-<database>/{xml,html}` even after a test
-  failure, and exits with the captured status. Before Gradle starts, the step
-  creates its report directory and records command/selection metadata. Each
+  `continue-on-error: true`. Each step captures the Gradle status and stages
+  sanitized JUnit XML, status, and `command-summary.log` under
+  `build/migration-drift-reports/<api>-<database>` even after a test failure;
+  HTML is never staged. Before Gradle starts, the step creates its report
+  directory and records command/selection metadata. Each
   shell uses the exact failure-safe pattern: `set -o pipefail`, `set +e`, pipe
-  Gradle stdout/stderr through `tee` to a runner-temporary raw log, capture
-  `status=${PIPESTATUS[0]}`, restore `set -e`, stage reports/status, then
-  `exit "$status"`. This prevents `tee` from replacing the Gradle result and
-  prevents `errexit` from skipping evidence staging.
-- Raw Gradle/driver logs are never uploaded. Before removing the temporary raw
-  log, produce `command-summary.log` from an allowlist of task outcomes, build
+  Gradle stdout/stderr through `tee` to a runner-temporary raw log while
+  suppressing `tee` output from the Actions console, capture
+  `gradle_status=${PIPESTATUS[0]}`, restore `set -e`, then stage evidence under
+  a separately captured `evidence_status`. Write both statuses and exit with
+  the nonzero Gradle status first, otherwise the evidence status. The final
+  aggregate treats either status as failure. This prevents `tee` or evidence
+  assembly from replacing or hiding the Gradle result and prevents `errexit`
+  from skipping evidence staging.
+- Raw Gradle/driver logs are never uploaded or printed to the Actions console.
+  A trap and the normal path delete the temporary raw log. Before deletion,
+  produce `command-summary.log` from an allowlist of task outcomes, build
   result, test counts, and wrapper-emitted lifecycle labels. Redact JDBC/R2DBC
   URL authority/userinfo/query values, user/password properties, tokens, and
   home-directory paths before staging even allowlisted text. `status.txt` and
@@ -331,8 +366,11 @@ The workflow remains path-scoped and non-required. It is evidence for migration
 compatibility, not a repository-wide mandatory migration policy. PR readiness
 includes a live ruleset/branch-protection check confirming that the Migration
 Smoke checks are not required checks. Query both `develop` branch protection
-required-status contexts and every active repository ruleset, then record the
-query time, returned contexts, ruleset identities, and exact PR head checks in
+required-status contexts and every paginated repository ruleset; fetch each
+ruleset detail, filter to active enforcement whose target conditions apply to
+`develop`, and extract status-check rules. Treat classic branch-protection 404
+as explicit absence. Record query time, endpoints, ruleset IDs/enforcement/
+conditions, returned contexts, and exact PR head checks in
 `docs/review/2026-07-17-issue-322-exposed-migration-drift-review.md`.
 
 ## Documentation Design
@@ -356,14 +394,18 @@ matrix, upstream links, and review checklist, split by audience:
    are repository fixtures, not an application migration naming example.
 
 The application-user path includes a copy-pastable `exposed.migrations`
-configuration that writes into an application-controlled directory, reads the
-build-time JDBC URL/user/password from environment-backed Gradle providers, and
-declares the matching JDBC driver on the plugin task classpath. It uses a new
-immutable monotonically ordered filename rather than either repository V1
-fixture. A companion note for R2DBC applications states that build-time plugin
-comparison still requires a JDBC URL and JDBC driver; an R2DBC URL or runtime
-driver is not sufficient. Examples forbid committed credentials and
-production/shared endpoints.
+Kotlin DSL configuration with `alias(bt4k.plugins.exposed.plugin)` (upstream
+plugin ID `org.jetbrains.exposed.plugin`), `tablesPackage`, `fileDirectory`,
+matching JDBC `runtimeOnly`, and providers named
+`MIGRATION_JDBC_URL`, `MIGRATION_DB_USER`, and `MIGRATION_DB_PASSWORD`. It
+writes into an application-controlled directory and uses a new immutable
+monotonically ordered filename rather than either repository V1 fixture. The
+shell example first sets `MIGRATION_FILE`, proves the target does not exist
+with `test ! -e`, and only then passes `--filename="$MIGRATION_FILE"`. A
+companion note for R2DBC applications states that build-time plugin comparison
+still requires a JDBC URL and JDBC driver; an R2DBC URL or runtime driver is
+not sufficient. Examples forbid committed credentials and production/shared
+endpoints.
 
 An adjacent availability callout distinguishes upstream Exposed 1.3.1 plugin
 capability from this repository's dedicated `migrationDriftTest` tasks and CI:
@@ -397,6 +439,16 @@ The review checklist has three categories:
 Every command includes prerequisites, produced file/report location, what a
 pass proves, what it does not prove, and the first diagnostic command. Raw SQL
 is reviewed against a disposable or staging copy before promotion.
+
+A focused Ruby parity validator and its self-test extract and normalize the
+marked migration-section headings, shell/Kotlin fences, table row keys,
+commands, and URLs from both READMEs. Any semantic mismatch fails validation.
+A separate
+`docs/superpowers/checklists/2026-07-17-exposed-1.12-manual-promotion-checklist.md`
+is owned by the 1.12 release/publish workflow and remains pending until an
+exact release ref and commit exist. That later gate promotes English and
+Korean manuals together and runs manifest, inventory, parity, and
+release-manual validation; the promotion itself is outside issue #322.
 
 ## Failure Handling
 
@@ -473,18 +525,15 @@ EXPOSED_TEST_DB=H2 ./gradlew \
   --no-configuration-cache \
   --no-parallel --max-workers=1 --no-daemon
 
-rm examples/jdbc-demo/src/main/resources/db/migration/V1__create_products.sql
-rm examples/r2dbc-demo/src/main/resources/db/migration/V1__create_webflux_products.sql
-
 ./gradlew \
   :exposed-spring-boot-jdbc-demo:generateMigrations \
   --filename=V1__create_products.sql \
-  --rerun-tasks --no-build-cache --no-configuration-cache --no-daemon
+  --rerun --no-build-cache --no-configuration-cache --no-daemon
 
 ./gradlew \
   :exposed-spring-boot-r2dbc-demo:generateMigrations \
   --filename=V1__create_webflux_products.sql \
-  --rerun-tasks --no-build-cache --no-configuration-cache --no-daemon
+  --rerun --no-build-cache --no-configuration-cache --no-daemon
 
 if [[ -n "$(git status --porcelain --untracked-files=all -- \
   examples/jdbc-demo/src/main/resources/db/migration \
@@ -495,6 +544,10 @@ if [[ -n "$(git status --porcelain --untracked-files=all -- \
   exit 1
 fi
 ```
+
+Local proof does not delete tracked fixtures; the plugin-specific `--rerun`
+forces generation while preserving the worktree on failure. The stronger
+remove-and-recreate assertion runs only in the ephemeral Migration Smoke job.
 
 ### Real-database proof
 
