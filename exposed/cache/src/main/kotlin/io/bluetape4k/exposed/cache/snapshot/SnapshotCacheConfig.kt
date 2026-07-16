@@ -23,7 +23,7 @@ data class SnapshotCacheConfig(
 
     init {
         require(NAMESPACE_PATTERN.matches(namespace)) {
-            "namespace[$namespace] must match ${NAMESPACE_PATTERN.pattern}."
+            "namespace must match ${NAMESPACE_PATTERN.pattern}."
         }
         require(schemaVersion.isNotBlank()) { "schemaVersion must not be blank." }
         require(maxStagedMutations > 0) {

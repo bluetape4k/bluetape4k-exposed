@@ -406,14 +406,13 @@ private class CanonicalChunkingAsyncSnapshotStore(
     failureBuffer: SnapshotCacheFailureBuffer,
 ) : CompletedAsyncSnapshotStore("canonical:v1", limits, failureBuffer) {
     private val codec = snapshotRedissonCodec(StringCodec(), "benchmark-v1", longSnapshotIdentifierPolicy())
-    private val digest = ThreadLocal.withInitial { MessageDigest.getInstance("SHA-256") }
     private val encodings = AtomicLong()
     private val typedArrays = AtomicLong()
     private val chunkSubmissions = AtomicLong()
 
     override fun measure(id: Long): MeasuredInvalidation<Long> {
         val bytes = encodeCanonical(id)
-        return MeasuredInvalidation(id, bytes.size, digest.get().digest(bytes).toHex())
+        return MeasuredInvalidation(id, bytes.size, bytes.sha256())
     }
 
     override fun submitInvalidation(
@@ -445,7 +444,7 @@ private class CanonicalChunkingAsyncSnapshotStore(
         var totalBytes = 0
         chunk.forEach { measured ->
             val encoded = encodeCanonical(measured.id)
-            check(encoded.size == measured.encodedBytes && digest.get().digest(encoded).toHex() == measured.encodedSha256) {
+            check(encoded.size == measured.encodedBytes && encoded.sha256() == measured.encodedSha256) {
                 "Measured canonical identifier changed before bounded chunk submission."
             }
             totalBytes += encoded.size
@@ -548,7 +547,11 @@ private fun List<MeasuredInvalidation<Long>>.partitionByEncodedBytes(
     return chunks
 }
 
-private fun ByteArray.toHex(): String {
+private fun ByteArray.sha256(): String = MessageDigest.getInstance("SHA-256")
+    .digest(this)
+    .toLowerHex()
+
+private fun ByteArray.toLowerHex(): String {
     val encoded = CharArray(size * 2)
     forEachIndexed { index, byte ->
         val value = byte.toInt() and 0xff

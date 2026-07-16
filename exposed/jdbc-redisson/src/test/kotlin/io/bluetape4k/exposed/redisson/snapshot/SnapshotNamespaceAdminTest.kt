@@ -76,6 +76,33 @@ class SnapshotNamespaceAdminTest {
     }
 
     @Test
+    fun `admin validation never reflects raw invalid namespace input`() {
+        val invalid = "tenant-secret:${"x".repeat(256)}"
+        val admin = RecordingAdmin()
+
+        val thrown = assertFailsWith<IllegalArgumentException> {
+            clearSnapshotNamespace(admin.client, codec, invalid, FINGERPRINT)
+        }
+
+        thrown.message.orEmpty().shouldNotContain(invalid)
+        admin.events shouldBeEqualTo emptyList()
+    }
+
+    @Test
+    fun `cleanup result rejects unsafe exception type metadata`() {
+        listOf("safe.Fail\u202Eure", "safe.Fail\u0008ure", "generated/Failure").forEach { unsafeType ->
+            assertFailsWith<IllegalArgumentException> {
+                SnapshotNamespaceCleanupResult(
+                    outcome = SnapshotNamespaceCleanupOutcome.FAILED,
+                    mapAbsent = false,
+                    markerPresent = true,
+                    exceptionType = unsafeType,
+                )
+            }
+        }
+    }
+
+    @Test
     fun `non round tripping name mapper fails before script and map access`() {
         val mapper = object : NameMapper {
             override fun map(name: String): String = "prefix:$name"

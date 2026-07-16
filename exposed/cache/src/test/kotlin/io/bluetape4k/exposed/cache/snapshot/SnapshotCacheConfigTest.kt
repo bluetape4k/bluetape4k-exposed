@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.cache.snapshot
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -67,6 +68,17 @@ class SnapshotCacheConfigTest {
                 SnapshotCacheConfig(namespace, "schema")
             }
         }
+    }
+
+    @Test
+    fun `namespace validation never reflects raw invalid input`() {
+        val invalid = "tenant-secret:${"x".repeat(256)}"
+
+        val thrown = assertFailsWith<IllegalArgumentException> {
+            SnapshotCacheConfig(invalid, "schema")
+        }
+
+        thrown.message.orEmpty().shouldNotContain(invalid)
     }
 
     @Test

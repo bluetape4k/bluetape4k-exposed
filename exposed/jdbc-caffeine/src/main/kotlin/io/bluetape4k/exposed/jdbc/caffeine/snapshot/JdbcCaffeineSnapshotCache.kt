@@ -26,6 +26,7 @@ import io.bluetape4k.exposed.cache.snapshot.SnapshotMissCapabilityRegistry
 import io.bluetape4k.exposed.cache.snapshot.SnapshotStoreId
 import io.bluetape4k.exposed.cache.snapshot.SnapshotValueSizer
 import io.bluetape4k.exposed.cache.snapshot.rejectDirectEntitySnapshotValues
+import io.bluetape4k.exposed.cache.snapshot.sanitizeSnapshotCacheExceptionType
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
 import java.io.Serializable
 import java.util.concurrent.locks.ReentrantLock
@@ -170,7 +171,7 @@ class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
                     operation,
                     SnapshotCacheOutcome.FAILED,
                     1,
-                    exception.javaClass.name.takeIf { it.length <= 512 },
+                    sanitizeSnapshotCacheExceptionType(exception.javaClass.name),
                 )
             }
             results += result

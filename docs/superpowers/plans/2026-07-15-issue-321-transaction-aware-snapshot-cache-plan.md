@@ -895,52 +895,70 @@ Tested: benchmark class compilation and bounded local smoke run
 **Files:**
 - Modify only files needed to resolve verified findings.
 
-- [ ] Run fast deterministic gates:
+- [x] Run fast deterministic gates:
 
 ```bash
-./gradlew :bluetape4k-exposed-cache:test --no-daemon
-./gradlew :bluetape4k-exposed-jdbc-caffeine:test --no-daemon
-./gradlew :bluetape4k-exposed-r2dbc-caffeine:test --no-daemon
-./gradlew :benchmark-exposed-benchmark:benchmarkClasses --no-daemon
+./gradlew :bluetape4k-exposed-cache:test \
+  :bluetape4k-exposed-jdbc-caffeine:test \
+  :bluetape4k-exposed-r2dbc-caffeine:test \
+  :benchmark-exposed-benchmark:benchmarkClasses \
+  :benchmark-exposed-benchmark:smokeBenchmark \
+  --no-daemon --no-parallel --rerun-tasks -Pkotlin.incremental=false
 ```
 
-- [ ] Run the Testcontainers-backed Redisson gate by itself:
+- [x] Run the Testcontainers-backed Redisson gate by itself:
 
 ```bash
-./gradlew :bluetape4k-exposed-jdbc-redisson:test --no-daemon
+TESTCONTAINERS_RYUK_DISABLED=true ./gradlew :bluetape4k-exposed-jdbc-redisson:test \
+  --no-daemon --no-parallel --rerun-tasks -Pkotlin.incremental=false
 ```
 
-- [ ] Validate the stable manual inventory without changing pinned manual content:
+- [x] Validate the stable manual inventory without changing pinned manual content:
 
 ```bash
 ./gradlew exportManualModuleInventory --no-daemon
-ruby scripts/manual/validate_manuals.rb build/manual/module-inventory.json docs/manual/manifest.yaml
+ruby -Itest scripts/manual/release_inventory_test.rb
+ruby scripts/manual/release_inventory.rb \
+  1.11.0 0b494a5fd1e083006046764757342b68a397e4c5 \
+  build/manual/module-inventory.json build/manual/module-inventory-1.11.0.json 40
+ruby scripts/manual/validate_manuals.rb build/manual/module-inventory-1.11.0.json docs/manual/manifest.yaml
 ```
 
-- [ ] Run repository static gates:
+- [x] Run repository static gates:
 
 ```bash
 ./gradlew detekt --no-daemon
 git diff --check
 ```
 
-- [ ] Perform independent reviews for performance, stability/concurrency, security, operator/Ops, developer/API, and user/caller behavior. Integrate findings in the main session. Require `P0=0` and `P1=0`; resolve P2/P3 or create a clearly justified follow-up issue.
-- [ ] Re-run every gate affected by review fixes and record exact results.
-- [ ] Verify the final diff contains no `settings.gradle.kts`, stable manual, dependency catalog, Spring Boot, Ktor, Lettuce, or issue #322 schema-drift changes.
+- [x] Perform independent reviews for performance, stability/concurrency, security, operator/Ops, developer/API, and user/caller behavior. Integrate findings in the main session. Require `P0=0` and `P1=0`; resolve P2/P3 or create a clearly justified follow-up issue.
+- [x] Re-run every gate affected by review fixes and record exact results.
+- [x] Verify the final diff contains no `settings.gradle.kts`, stable manual, dependency catalog, Spring Boot, Ktor, Lettuce, or issue #322 schema-drift changes.
 - [ ] Push `feat/issue-321-transaction-aware-snapshot-cache` and open an English PR against `develop` referencing `Closes #321`. Include design decisions, test evidence, benchmark environment caveat, distributed failure semantics, and known non-goals.
 - [ ] Wait for GitHub checks and current review/thread status. Report the exact PR/head as merge-ready and stop for fresh user merge approval.
 
+**Final evidence (rebased on `origin/develop` `0907513a4dfb358a39f2b79002ec6ccd049635c6`):**
+
+- Cache: 149 tests, 0 failures/errors/skips.
+- JDBC Caffeine: 387 tests, 0 failures/errors, 22 skips.
+- R2DBC Caffeine: 108 tests, 0 failures/errors, 1 skip.
+- JDBC Redisson: 612 tests, 0 failures/errors, 1 skip, run separately with Ryuk disabled.
+- Benchmark: `benchmarkClasses` plus 32 smoke benchmarks; all 12 `SnapshotCacheBenchmark` methods emitted finite scores with no structural exception.
+- Stable manuals: the current inventory was filtered against immutable release `1.11.0` at commit `0b494a5fd1e083006046764757342b68a397e4c5`; 40 projects aligned.
+- Static/scope: `detekt` succeeded (`:detekt NO-SOURCE`), `git diff --check` passed, and forbidden surfaces were absent.
+- Independent re-review after fixes: performance/stability, security/Ops, and developer/API/user perspectives each reported `P0=0`, `P1=0`, `P2=0`, `P3=0`, `COMPLETE=YES`.
+
 ## Completion Checklist
 
-- [ ] Every acceptance criterion maps to passing evidence.
-- [ ] No cache callback can write the database.
-- [ ] Rollback and retry behavior are explicit and tested for JDBC and R2DBC.
-- [ ] Public miss tokens expose no identifier or generation state.
-- [ ] Caffeine ordering fences reject stale fills under controlled concurrency.
-- [ ] Redisson is invalidation-only, bounded, non-blocking, and namespace-compatible.
-- [ ] Failure buffers and recovery remain bounded even for never-completing futures.
-- [ ] English/Korean README APIs match and public KDoc is complete.
-- [ ] Stable manuals remain unchanged and validate against the pinned release inventory.
-- [ ] Benchmark sources compile and the bounded smoke run has no structural regression.
-- [ ] Independent review reports `P0=0`, `P1=0`.
+- [x] Every acceptance criterion maps to passing evidence.
+- [x] No cache callback can write the database.
+- [x] Rollback and retry behavior are explicit and tested for JDBC and R2DBC.
+- [x] Public miss tokens expose no identifier or generation state.
+- [x] Caffeine ordering fences reject stale fills under controlled concurrency.
+- [x] Redisson is invalidation-only, bounded, non-blocking, and namespace-compatible.
+- [x] Failure buffers and recovery remain bounded even for never-completing futures.
+- [x] English/Korean README APIs match and public KDoc is complete.
+- [x] Stable manuals remain unchanged and validate against the pinned release inventory.
+- [x] Benchmark sources compile and the bounded smoke run has no structural regression.
+- [x] Independent review reports `P0=0`, `P1=0`.
 - [ ] PR is open against `develop`; merge waits for fresh user approval.

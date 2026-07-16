@@ -13,6 +13,7 @@ import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOperationResult
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOutcome
 import io.bluetape4k.exposed.cache.snapshot.SnapshotStoreId
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
+import io.bluetape4k.exposed.cache.snapshot.sanitizeSnapshotCacheExceptionType
 import org.redisson.api.RLocalCachedMap
 import org.redisson.api.RedissonClient
 import org.redisson.api.options.LocalCachedMapOptions
@@ -33,7 +34,6 @@ import kotlin.reflect.KClass
 private const val REDISSON_JDBC_BACKEND = "redisson-jdbc"
 private const val LONG_KEY_ENCODING = "bt4k-long-be-v1"
 private const val UUID_KEY_ENCODING = "bt4k-uuid-be-v1"
-private const val MAX_EXCEPTION_TYPE_LENGTH = 512
 
 private val redissonInvalidationQuotas = RedissonInvalidationQuotaRegistry()
 
@@ -293,7 +293,17 @@ private fun <ID : Any> List<MeasuredInvalidation<ID>>.partitionByEncodedBytes(
 
 private fun ByteArray.sha256(): String = MessageDigest.getInstance("SHA-256")
     .digest(this)
-    .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+    .toLowerHex()
+
+private fun ByteArray.toLowerHex(): String {
+    val encoded = CharArray(size * 2)
+    forEachIndexed { index, byte ->
+        val value = byte.toInt() and 0xff
+        encoded[index * 2] = HEX_DIGITS[value ushr 4]
+        encoded[index * 2 + 1] = HEX_DIGITS[value and 0x0f]
+    }
+    return encoded.concatToString()
+}
 
 private tailrec fun Throwable.unwrapCompletionFailure(): Throwable = when (this) {
     is CompletionException, is ExecutionException -> cause?.unwrapCompletionFailure() ?: this
@@ -310,8 +320,10 @@ private fun failedResult(affectedCount: Int, failure: Throwable) = SnapshotCache
     operation = SnapshotCacheOperation.INVALIDATE,
     outcome = SnapshotCacheOutcome.FAILED,
     affectedCount = affectedCount,
-    exceptionType = failure.javaClass.name.takeIf { it.length <= MAX_EXCEPTION_TYPE_LENGTH },
+    exceptionType = sanitizeSnapshotCacheExceptionType(failure.javaClass.name),
 )
+
+private const val HEX_DIGITS = "0123456789abcdef"
 
 private class InvalidationResultCollector(expectedResults: Int) {
     private val lock = ReentrantLock()

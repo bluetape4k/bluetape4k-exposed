@@ -320,9 +320,10 @@ fun JdbcTransaction.invalidateOrderSnapshot(
 
 ### 진입 제한, 실패 관찰, 복구
 
-`quotaHealth()`는 호출자가 소유한 `RedissonClient`의 chunk 수와 encoded-byte quota 상태를 제한된 구조 정보로
-보여줍니다. quota가 포화되면 이미 받은 future를 막거나 취소하지 않고 해당 chunk를 거부합니다. 이미 커밋된 DB를
-되돌리지는 못합니다. 거부된 chunk, 버려진 failure event, 반복 무효화, 지속적인 포화를 alert로 감시하세요.
+`quotaHealth()`는 `SnapshotInvalidationQuotaHealth`를 반환하며, 호출자가 소유한 `RedissonClient`의 chunk 수와
+encoded-byte quota 상태를 제한된 구조 정보로 보여줍니다. quota가 포화되면 이미 받은 future를 막거나 취소하지 않고
+해당 chunk를 거부합니다. 이미 커밋된 DB를 되돌리지는 못합니다. 거부된 chunk, 버려진 failure event, 반복 무효화,
+지속적인 포화를 alert로 감시하세요.
 반복 무효화에는 rate control을 적용하고, 무효화나 reconnect로 miss가 늘어나면 DB load shedding을 적용해야 합니다.
 
 받아들인 chunk는 future가 끝나면 quota를 반환합니다. 끝나지 않는 future는 client를 교체할 때까지 제한된 lease만
@@ -345,19 +346,35 @@ unlink, local-cache clear용 제한된 pub/sub, 임시 clear semaphore key/chann
 subscription은 거부해야 합니다. 이 함수를 request-facing path에 노출하면 안 됩니다. exact fingerprint는 실수
 방지 장치이지 authorization이 아닙니다.
 
+두 함수 모두 `SnapshotNamespaceCleanupResult`를 반환합니다. rollout이나 rollback의 다음 단계로 넘어가기 전에
+`SnapshotNamespaceCleanupOutcome`을 확인하세요.
+
 하나의 timeout을 marker inspect, asynchronous map unlink, 각 local view clear, 마지막 검증이 공유합니다. 서버가
 받은 command는 취소하지 않습니다. `TIMED_OUT_ACCEPTED_UNKNOWN`이면 다시 quiesce한 상태에서 같은 작업을 실행해
 관찰된 partial state를 확인하고 이어서 정리해야 합니다.
 
 ### 정확한 `v1` → `v2` rollout
 
-1. 별도 `:v2` namespace에 `v2` 읽기/쓰기 node를 배포하고 미리 채우거나 자연스럽게 채웁니다. `v1`과 `v2`는
+<!-- SNAPSHOT-ROLLOUT-CONTRACT: shadow-warm-only; no-v2-user-reads-or-writes; write-quiesced-cutover; rebuild-v2-from-db; switch-all-traffic; no-overlapping-user-traffic; resume-writes; no-cross-namespace-invalidation -->
+
+`v1` 무효화는 `v2`에 전달되지 않고 `v2` 무효화도 `v1`에 전달되지 않습니다. `v1`이 서비스하는 동안 `v2`를
+shadow cache로 배포해 DB에서 미리 채울 수는 있지만, `v2`가 사용자 읽기에 응답하거나 사용자 쓰기를 받아서는 안
+됩니다. 활성 `v1` 쓰기로 shadow가 오래된 상태가 될 수 있으므로, 두 버전의 사용자 트래픽을 겹치는 방식은 안전한
+전환 절차가 아닙니다.
+
+1. 별도 `:v2` namespace에 `v2`를 shadow-only로 배포하고 운영 진단을 위해 DB에서 미리 채웁니다. `v1`과 `v2`는
    격리해야 하며, 서로 다른 버전의 node가 version 없는 namespace를 공유하면 안 됩니다.
-2. 모든 node를 `v2`로 전환합니다. 모든 `v1` 쓰기 작업을 중지하고 처리 중인 요청을 drain한 뒤 `v1` quota가 0인지
-   확인합니다. 사용 중인 모든 `v1` client를 닫고 제거한 다음에만 `v1`에 `clearSnapshotNamespace`를 호출합니다.
-3. 마지막 결과가 `COMPLETED`이거나 재검증한 `ALREADY_COMPLETE`여야 합니다. command를 받은 뒤 shared timeout이
-   끝났다면 namespace를 quiesce한 채 다시 실행하세요. invalidation alert/rate control을 유지하고, 차가운 `v2`
-   miss가 DB read를 증폭하면 load shedding을 적용합니다.
+2. 전환 구간을 시작하면 **모든 사용자 읽기와 쓰기**를 중지하고 처리 중인 작업을 drain한 뒤 두 quota가 모두 0인지
+   확인합니다. 모든 shadow `v2` client를 닫고 제거한 다음 `v2`에 `clearMapRetainingMarker`를 호출합니다. 새 `v2`
+   client를 만들고 트래픽을 계속 멈춘 상태에서 DB로부터 `v2`를 다시 채운 뒤, DB 기준 읽기 결과와 일치하는지
+   검증합니다.
+3. 재구축 결과를 검증한 뒤 모든 `v1` application client를 닫고 제거하고, 모든 node와 traffic route를 한 번에
+   `v2`로 전환합니다. 모든 트래픽이 `v2`를 향하는 것을 확인한 뒤에만 사용자 읽기와 쓰기를 재개하세요. `v1`과
+   `v2` 사용자 트래픽을 동시에 운영하면 안 됩니다.
+4. `v2`가 서비스를 시작하고 `v1` client가 하나도 남지 않은 뒤에만 `v1`에 `clearSnapshotNamespace`를 호출합니다.
+   마지막 결과가 `COMPLETED`이거나 재검증한 `ALREADY_COMPLETE`여야 합니다. command를 받은 뒤 shared timeout이
+   끝났다면 namespace를 quiesce한 채 다시 실행하세요. invalidation alert/rate control을 유지하고, 차가운 miss가
+   DB read를 증폭하면 load shedding을 적용합니다.
 
 ### 정확한 `v2` → `v1` rollback
 

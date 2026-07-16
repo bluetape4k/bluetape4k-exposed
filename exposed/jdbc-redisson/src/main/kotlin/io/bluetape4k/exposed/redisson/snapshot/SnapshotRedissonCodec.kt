@@ -31,7 +31,7 @@ fun <ID : Any> snapshotRedissonCodec(
     identifierPolicy: SnapshotIdentifierPolicy<ID>,
 ): SnapshotRedissonCodec<ID> {
     require(CODEC_VERSION_PATTERN.matches(codecVersion)) {
-        "codecVersion[$codecVersion] must match ${CODEC_VERSION_PATTERN.pattern}."
+        "codecVersion must match ${CODEC_VERSION_PATTERN.pattern}."
     }
     val canonicalPolicy = identifierPolicy as? CanonicalSnapshotIdentifierPolicy<ID>
         ?: throw IllegalArgumentException("Unsupported snapshot identifier policy implementation.")

@@ -4,6 +4,7 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
 import io.bluetape4k.exposed.redisson.repository.ExposedRedissonCodecSafety
 import io.bluetape4k.redis.redisson.codec.RedissonCodecs
@@ -100,6 +101,17 @@ class SnapshotRedissonCodecTest {
                 snapshotRedissonCodec(StringCodec(), version, longSnapshotIdentifierPolicy())
             }
         }
+    }
+
+    @Test
+    fun `codec version validation never reflects raw invalid input`() {
+        val invalid = "credential/${"x".repeat(128)}"
+
+        val thrown = assertFailsWith<IllegalArgumentException> {
+            snapshotRedissonCodec(StringCodec(), invalid, longSnapshotIdentifierPolicy())
+        }
+
+        thrown.message.orEmpty().shouldNotContain(invalid)
     }
 
     @Test

@@ -229,6 +229,16 @@ class SnapshotCacheStoreTest {
                 exceptionType = "e".repeat(513),
             )
         }
+        listOf("safe.Fail\u202Eure", "safe.Fail\u0008ure", "generated/Failure").forEach { unsafeType ->
+            assertFailsWith<IllegalArgumentException> {
+                SnapshotCacheOperationResult(
+                    SnapshotCacheOperation.PUT,
+                    SnapshotCacheOutcome.FAILED,
+                    affectedCount = 1,
+                    exceptionType = unsafeType,
+                )
+            }
+        }
     }
 
     @Test

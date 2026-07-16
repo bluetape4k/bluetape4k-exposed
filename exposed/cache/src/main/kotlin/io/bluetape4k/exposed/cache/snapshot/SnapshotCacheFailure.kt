@@ -1,3 +1,5 @@
+@file:OptIn(InternalSnapshotCacheApi::class)
+
 package io.bluetape4k.exposed.cache.snapshot
 
 import io.bluetape4k.logging.KLogging
@@ -122,11 +124,22 @@ internal fun failureFromException(
     operation = operation,
     outcome = SnapshotCacheOutcome.FAILED,
     affectedCount = affectedCount,
-    exceptionType = sanitizeExceptionType(exception.javaClass.name),
+    exceptionType = sanitizeSnapshotCacheExceptionType(exception.javaClass.name),
 )
 
-internal fun sanitizeExceptionType(exceptionType: String): String? =
+/** Returns [exceptionType] only when it is safe bounded JVM class-name metadata. */
+@InternalSnapshotCacheApi
+fun sanitizeSnapshotCacheExceptionType(exceptionType: String): String? =
     exceptionType.takeIf { it.length <= MAX_EXCEPTION_TYPE_LENGTH && it.isJvmClassName() }
+
+/** Rejects exception-type metadata that is not a safe bounded JVM class name. */
+@InternalSnapshotCacheApi
+fun requireSafeSnapshotCacheExceptionType(exceptionType: String) {
+    exceptionType.validateExceptionType()
+}
+
+internal fun sanitizeExceptionType(exceptionType: String): String? =
+    sanitizeSnapshotCacheExceptionType(exceptionType)
 
 private class BoundedSnapshotCacheFailureBuffer(
     override val capacity: Int,
@@ -169,7 +182,7 @@ private class BoundedSnapshotCacheFailureBuffer(
                     deliveredCount = delivered,
                     observerFailedCount = 1,
                     remainingCount = size,
-                    observerExceptionType = sanitizeExceptionType(exception.javaClass.name),
+                    observerExceptionType = sanitizeSnapshotCacheExceptionType(exception.javaClass.name),
                 )
             }
         }

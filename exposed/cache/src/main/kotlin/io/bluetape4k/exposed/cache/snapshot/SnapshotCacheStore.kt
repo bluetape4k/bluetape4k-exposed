@@ -368,17 +368,11 @@ data class SnapshotCacheOperationResult(
         require(outcome != SnapshotCacheOutcome.OVERRUN || affectedCount == 0) {
             "OVERRUN must have an affectedCount of zero."
         }
-        exceptionType?.let {
-            require(it.isNotBlank()) { "exceptionType must not be blank when set." }
-            require(it.length <= MAX_EXCEPTION_TYPE_LENGTH) {
-                "exceptionType length[${it.length}] must not exceed $MAX_EXCEPTION_TYPE_LENGTH."
-            }
-        }
+        exceptionType?.let(::requireSafeSnapshotCacheExceptionType)
     }
 
     companion object {
         private const val serialVersionUID: Long = 1L
-        private const val MAX_EXCEPTION_TYPE_LENGTH: Int = 512
     }
 }
 

@@ -323,8 +323,9 @@ fun JdbcTransaction.invalidateOrderSnapshot(
 
 ### Admission, failure observation, and recovery
 
-`quotaHealth()` reports bounded chunk and encoded-byte admission state for the caller-owned `RedissonClient`. Saturated
-quota rejects a chunk without blocking or cancelling accepted futures; it cannot undo the database commit. Alert on
+`quotaHealth()` returns `SnapshotInvalidationQuotaHealth`, which reports bounded chunk and encoded-byte admission state
+for the caller-owned `RedissonClient`. Saturated quota rejects a chunk without blocking or cancelling accepted futures;
+it cannot undo the database commit. Alert on
 rejected chunks, dropped failure events, repeated invalidations, and sustained saturation. Apply rate controls to
 repeated invalidation and shed database load when invalidation or reconnect creates miss amplification.
 
@@ -347,19 +348,34 @@ unlink, local-cache clear scoped pub/sub, and the required temporary clear semap
 keyevent subscription. These functions must never be exposed through a request-facing path. The exact fingerprint is
 an accident guard, not authorization.
 
+Both functions return `SnapshotNamespaceCleanupResult`; inspect its `SnapshotNamespaceCleanupOutcome` before advancing
+the rollout or rollback runbook.
+
 One timeout is shared across marker inspection, asynchronous map unlink, each local-view clear, and terminal
 verification. An accepted server command is never cancelled. `TIMED_OUT_ACCEPTED_UNKNOWN` means the operator must
 quiesce again and rerun the same operation to inspect and resume the observed partial state.
 
 ### Exact `v1` to `v2` rollout
 
-1. Deploy `v2` readers and writers on a separate `:v2` namespace, then warm it or allow natural repopulation. Keep `v1`
+<!-- SNAPSHOT-ROLLOUT-CONTRACT: shadow-warm-only; no-v2-user-reads-or-writes; write-quiesced-cutover; rebuild-v2-from-db; switch-all-traffic; no-overlapping-user-traffic; resume-writes; no-cross-namespace-invalidation -->
+
+`v1` invalidation never reaches `v2`, and `v2` invalidation never reaches `v1`. A `v2` deployment may warm a shadow
+cache from the database while `v1` serves, but it must not serve user reads or accept user writes. Active `v1` writes
+can make that shadow stale, so overlapping user traffic is not a safe cutover mechanism.
+
+1. Deploy `v2` on a separate `:v2` namespace as shadow-only and warm it from the database for diagnostics. Keep `v1`
    and `v2` isolated; mixed-version nodes must not share an unversioned namespace.
-2. Cut every node to `v2`. Stop all `v1` writers, drain in-flight requests, verify `v1` quota is zero, close/remove every
-   live `v1` client, and only then call `clearSnapshotNamespace` for `v1`.
-3. Require a terminal `COMPLETED` or reverified `ALREADY_COMPLETE` result. If the shared timeout expires after command
-   acceptance, keep the namespace quiescent and rerun. Keep invalidation alerts/rate controls active and shed database
-   load if cold `v2` misses amplify reads.
+2. Start a cutover window by quiescing **all user reads and writes**, draining in-flight work, and verifying both quotas
+   are zero. Close/remove every shadow `v2` client, call `clearMapRetainingMarker` for `v2`, then create fresh `v2`
+   clients and rebuild/warm `v2` from the database while traffic remains quiescent. Verify the rebuilt reads against
+   the database.
+3. After the rebuild is verified, close/remove every `v1` application client and switch every node and traffic route to
+   `v2` in one cutover. Resume user reads and writes only after all traffic targets `v2`; never run `v1` and `v2` user
+   traffic concurrently.
+4. Only after `v2` is serving and `v1` has no live client, call `clearSnapshotNamespace` for `v1`. Require a terminal
+   `COMPLETED` or reverified `ALREADY_COMPLETE` result. If the shared timeout expires after command acceptance, keep the
+   namespace quiescent and rerun. Keep invalidation alerts/rate controls active and shed database load if cold misses
+   amplify reads.
 
 ### Exact `v2` to `v1` rollback
 

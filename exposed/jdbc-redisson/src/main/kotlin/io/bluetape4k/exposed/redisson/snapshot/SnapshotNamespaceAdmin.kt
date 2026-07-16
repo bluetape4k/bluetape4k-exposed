@@ -1,5 +1,9 @@
+@file:OptIn(io.bluetape4k.exposed.cache.snapshot.InternalSnapshotCacheApi::class)
+
 package io.bluetape4k.exposed.redisson.snapshot
 
+import io.bluetape4k.exposed.cache.snapshot.requireSafeSnapshotCacheExceptionType
+import io.bluetape4k.exposed.cache.snapshot.sanitizeSnapshotCacheExceptionType
 import org.redisson.api.RFuture
 import org.redisson.api.RScript
 import org.redisson.api.RedissonClient
@@ -104,6 +108,10 @@ data class SnapshotNamespaceCleanupResult(
     val markerPresent: Boolean,
     val exceptionType: String? = null,
 ) : Serializable {
+    init {
+        exceptionType?.let(::requireSafeSnapshotCacheExceptionType)
+    }
+
     private companion object {
         private const val serialVersionUID: Long = 1L
     }
@@ -358,7 +366,7 @@ private fun <ID : Any> clearNamespace(
             outcome = outcome,
             mapAbsent = mapAbsent,
             markerPresent = markerPresent,
-            exceptionType = failure.javaClass.name,
+            exceptionType = sanitizeSnapshotCacheExceptionType(failure.javaClass.name),
         )
     }
 }
