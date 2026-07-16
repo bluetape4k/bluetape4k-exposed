@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1050" viewBox="0 0 1680 1050" role="img" aria-labelledby="title desc">
+  <title id="title">Ktor Order Confirmation Architecture</title>
+  <desc id="desc">Architecture B for the Ktor Exposed demo: routes call an order command service, a domain aggregate records an event, a write-through R2DBC Caffeine repository writes local cache then PostgreSQL, and the application owns publishing and shutdown.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 1 L 9 5 L 0 9 Z" fill="#327d91"/>
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 1 L 9 5 L 0 9 Z" fill="#7d6ab0"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#20303a" flood-opacity="0.13"/>
+    </filter>
+    <style>
+      .canvas { fill: #f6f0e8; }
+      .frame { fill: #fffaf2; stroke: #28485a; stroke-width: 4; }
+      .boundary { fill: #eef4f5; stroke: #527f8d; stroke-width: 3; stroke-dasharray: 12 8; }
+      .card { fill: #fffdf8; stroke: #8db7c2; stroke-width: 2.4; }
+      .domain { fill: #eef4e6; stroke: #8dad6e; }
+      .data { fill: #fff0d8; stroke: #d0a159; }
+      .event { fill: #f3eefb; stroke: #8f79bd; }
+      .title { font-family: "Architects Daughter", "Comic Mono", monospace; font-size: 46px; fill: #21343f; }
+      .subtitle, .boundaryTitle, .cardTitle, .cardText, .label, .note { font-family: "Comic Mono", "Noto Sans KR", monospace; }
+      .subtitle { font-size: 20px; fill: #51636f; }
+      .boundaryTitle { font-size: 25px; font-weight: 700; fill: #274854; }
+      .cardTitle { font-size: 22px; font-weight: 700; fill: #20323d; }
+      .cardText { font-size: 18px; fill: #40515b; }
+      .label { font-size: 17px; font-weight: 700; fill: #315664; }
+      .note { font-size: 18px; fill: #40515b; }
+      .flow { fill: none; stroke: #327d91; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; marker-end: url(#arrow); }
+      .side { fill: none; stroke: #7d6ab0; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; marker-end: url(#arrow-purple); }
+      .shutdown { fill: none; stroke: #9b7d54; stroke-width: 3.5; stroke-linecap: round; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect class="canvas" width="1680" height="1050"/>
+  <rect class="frame" x="42" y="34" width="1596" height="972" rx="24" filter="url(#shadow)"/>
+  <text class="title" x="84" y="94">Ktor Order Confirmation — Architecture B</text>
+  <text class="subtitle" x="86" y="132">The application owns the command service, local event handoff, PostgreSQL pool, and Exposed lifecycle.</text>
+
+  <rect class="card" x="82" y="250" width="220" height="116" rx="16"/>
+  <text class="cardTitle" x="192" y="292" text-anchor="middle">HTTP client</text>
+  <text class="cardText" x="192" y="326" text-anchor="middle">POST /confirm</text>
+  <text class="cardText" x="192" y="352" text-anchor="middle">GET /orders/{id}</text>
+
+  <rect class="boundary" x="342" y="178" width="1014" height="610" rx="22"/>
+  <text class="boundaryTitle" x="378" y="220">Ktor application-owned boundary</text>
+
+  <rect class="card" x="388" y="258" width="220" height="116" rx="16"/>
+  <text class="cardTitle" x="498" y="300" text-anchor="middle">Order routes</text>
+  <text class="cardText" x="498" y="334" text-anchor="middle">header + UUID guard</text>
+  <text class="cardText" x="498" y="360" text-anchor="middle">sanitized JSON</text>
+
+  <rect class="card" x="672" y="258" width="260" height="116" rx="16"/>
+  <text class="cardTitle" x="802" y="300" text-anchor="middle">OrderCommandService</text>
+  <text class="cardText" x="802" y="334" text-anchor="middle">persist before publish</text>
+  <text class="cardText" x="802" y="360" text-anchor="middle">cancel then invalidate</text>
+
+  <rect class="card domain" x="996" y="258" width="300" height="116" rx="16"/>
+  <text class="cardTitle" x="1146" y="300" text-anchor="middle">DemoOrder aggregate</text>
+  <text class="cardText" x="1146" y="334" text-anchor="middle">PENDING to CONFIRMED</text>
+  <text class="cardText" x="1146" y="360" text-anchor="middle">records OrderConfirmed</text>
+
+  <rect class="card" x="672" y="466" width="260" height="126" rx="16"/>
+  <text class="cardTitle" x="802" y="506" text-anchor="middle">R2DBC repository</text>
+  <text class="cardText" x="802" y="540" text-anchor="middle">WRITE_THROUGH</text>
+  <text class="cardText" x="802" y="568" text-anchor="middle">update, then insert</text>
+
+  <rect class="card data" x="996" y="466" width="300" height="126" rx="16"/>
+  <text class="cardTitle" x="1146" y="506" text-anchor="middle">Caffeine AsyncCache</text>
+  <text class="cardText" x="1146" y="540" text-anchor="middle">process-local, 10 min</text>
+  <text class="cardText" x="1146" y="568" text-anchor="middle">mutates before SQL</text>
+
+  <rect class="card event" x="996" y="650" width="300" height="100" rx="16"/>
+  <text class="cardTitle" x="1146" y="690" text-anchor="middle">Spring-free publisher</text>
+  <text class="cardText" x="1146" y="724" text-anchor="middle">request-local, non-durable</text>
+
+  <rect class="card" x="388" y="650" width="220" height="100" rx="16"/>
+  <text class="cardTitle" x="498" y="690" text-anchor="middle">Readiness</text>
+  <text class="cardText" x="498" y="724" text-anchor="middle">cache.orders</text>
+
+  <rect class="card data" x="1410" y="466" width="208" height="126" rx="16"/>
+  <text class="cardTitle" x="1514" y="506" text-anchor="middle">PostgreSQL</text>
+  <text class="cardText" x="1514" y="540" text-anchor="middle">DemoOrders</text>
+  <text class="cardText" x="1514" y="568" text-anchor="middle">R2DBC pool (2)</text>
+
+  <path class="flow" d="M302 308 H388"/>
+  <text class="label" x="314" y="290">HTTP</text>
+  <path class="flow" d="M608 316 H672"/>
+  <text class="label" x="616" y="298">command</text>
+  <path class="flow" d="M932 316 H996"/>
+  <text class="label" x="944" y="298">confirm</text>
+  <path class="flow" d="M802 374 V466"/>
+  <text class="label" x="820" y="424">put</text>
+  <path class="flow" d="M932 529 H996"/>
+  <text class="label" x="946" y="510">cache</text>
+  <path class="flow" d="M1296 529 H1410"/>
+  <text class="label" x="1332" y="510">SQL</text>
+  <path class="side" d="M802 374 V700 H996"/>
+  <text class="label" x="820" y="674">event handoff</text>
+  <path class="side" d="M608 700 H636 V560 H672"/>
+  <text class="label" x="620" y="628">health snapshot</text>
+
+  <text class="boundaryTitle" x="86" y="850">Safe shutdown order</text>
+  <rect class="card" x="86" y="878" width="260" height="76" rx="14"/>
+  <text class="cardTitle" x="216" y="924" text-anchor="middle">1. Repository close</text>
+  <rect class="card" x="422" y="878" width="300" height="76" rx="14"/>
+  <text class="cardTitle" x="572" y="910" text-anchor="middle">2. Unregister database</text>
+  <text class="cardText" x="572" y="938" text-anchor="middle">restore previous default</text>
+  <rect class="card" x="798" y="878" width="260" height="76" rx="14"/>
+  <text class="cardTitle" x="928" y="924" text-anchor="middle">3. Dispose pool</text>
+  <rect class="card" x="1134" y="878" width="420" height="76" rx="14"/>
+  <text class="cardTitle" x="1344" y="910" text-anchor="middle">4. JDBC + dispatcher + lease</text>
+  <text class="cardText" x="1344" y="938" text-anchor="middle">cleanup continues after failures</text>
+  <path class="shutdown" d="M346 916 H422"/>
+  <path class="shutdown" d="M722 916 H798"/>
+  <path class="shutdown" d="M1058 916 H1134"/>
+
+  <text class="note" x="86" y="990">Teaching boundary: Caffeine then PostgreSQL is intentionally non-atomic; production needs durable event and migration boundaries.</text>
+</svg>
