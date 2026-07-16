@@ -934,7 +934,7 @@ git diff --check
 - [x] Perform independent reviews for performance, stability/concurrency, security, operator/Ops, developer/API, and user/caller behavior. Integrate findings in the main session. Require `P0=0` and `P1=0`; resolve P2/P3 or create a clearly justified follow-up issue.
 - [x] Re-run every gate affected by review fixes and record exact results.
 - [x] Verify the final diff contains no `settings.gradle.kts`, stable manual, dependency catalog, Spring Boot, Ktor, Lettuce, or issue #322 schema-drift changes.
-- [ ] Push `feat/issue-321-transaction-aware-snapshot-cache` and open an English PR against `develop` referencing `Closes #321`. Include design decisions, test evidence, benchmark environment caveat, distributed failure semantics, and known non-goals.
+- [x] Push `feat/issue-321-transaction-aware-snapshot-cache` and open English PR #381 against `develop` referencing `Closes #321`. Include design decisions, test evidence, benchmark environment caveat, distributed failure semantics, and known non-goals.
 - [ ] Wait for GitHub checks and current review/thread status. Report the exact PR/head as merge-ready and stop for fresh user merge approval.
 
 **Final evidence (rebased on `origin/develop` `0907513a4dfb358a39f2b79002ec6ccd049635c6`):**
@@ -961,4 +961,4 @@ git diff --check
 - [x] Stable manuals remain unchanged and validate against the pinned release inventory.
 - [x] Benchmark sources compile and the bounded smoke run has no structural regression.
 - [x] Independent review reports `P0=0`, `P1=0`.
-- [ ] PR is open against `develop`; merge waits for fresh user approval.
+- [x] PR #381 is open against `develop`; merge waits for fresh user approval.
