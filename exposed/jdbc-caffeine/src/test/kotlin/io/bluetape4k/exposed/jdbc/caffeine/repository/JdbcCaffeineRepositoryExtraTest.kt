@@ -744,6 +744,7 @@ class JdbcCaffeineRepositoryExtraTest {
             val cacheValuePublished = Semaphore(0)
             val releaseCachePutAfterPublish = Semaphore(0)
             val cachePutCompleted = Semaphore(0)
+            val dbWriteCompleted = CountDownLatch(1)
             val putFailure = AtomicReference<Throwable?>()
             val readValue = AtomicReference<ActorRecord?>()
             val readCompleted = CountDownLatch(1)
@@ -759,6 +760,7 @@ class JdbcCaffeineRepositoryExtraTest {
                 cacheValuePublished = cacheValuePublished,
                 releaseCachePutAfterPublish = releaseCachePutAfterPublish,
                 cachePutCompleted = cachePutCompleted,
+                dbWriteCompleted = dbWriteCompleted,
                 writeBehindCloseWaitDuration = Duration.ofMillis(50),
             )
 
@@ -786,6 +788,7 @@ class JdbcCaffeineRepositoryExtraTest {
 
                     releaseCachePut.release()
                     cacheValuePublished.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
+                    dbWriteCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
 
                     readThread = Thread {
                         try {
@@ -796,7 +799,7 @@ class JdbcCaffeineRepositoryExtraTest {
                     }.apply { start() }
 
                     readCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
-                    readValue.get().shouldBeNull()
+                    readValue.get() shouldBeEqualTo updated
 
                     releaseCachePutAfterPublish.release()
                     cachePutCompleted.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
@@ -1213,6 +1216,7 @@ class JdbcCaffeineRepositoryExtraTest {
         cacheValuePublished: Semaphore,
         releaseCachePutAfterPublish: Semaphore,
         cachePutCompleted: Semaphore,
+        private val dbWriteCompleted: CountDownLatch,
         override val writeBehindCloseWaitDuration: Duration,
     ): AbstractJdbcCaffeineRepository<Long, ActorRecord>(config) {
 
@@ -1223,7 +1227,7 @@ class JdbcCaffeineRepositoryExtraTest {
                 cachePutEntered.countDown()
                 try {
                     releaseCachePut.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
-                    delegateCache.put(key, value)
+                    delegateCache.put(key, value.copy(firstName = "dirty-cache-publication"))
                     cacheValuePublished.release()
                     releaseCachePutAfterPublish.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
                 } finally {
@@ -1249,6 +1253,10 @@ class JdbcCaffeineRepositoryExtraTest {
         }
 
         override fun extractId(entity: ActorRecord): Long = entity.id
+
+        override fun afterPersisted(id: Long, entity: ActorRecord) {
+            dbWriteCompleted.countDown()
+        }
     }
 
     private class BlockingCachePutCredentialRepository(
