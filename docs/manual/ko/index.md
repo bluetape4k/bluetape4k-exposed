@@ -11,6 +11,15 @@ releaseRef: "1.11.0"
 
 ![Exposed 저장소 구성 개요](../assets/overview/repository-overview.png)
 
+## 핵심 기능
+
+- **저장소 기반 기능:** [Core](modules/bluetape4k-exposed-core.md), [DAO](modules/bluetape4k-exposed-dao.md), 저장소 규칙을 이용해 Exposed 테이블과 엔티티를 재사용 가능한 Kotlin 데이터 접근 구성 요소로 만듭니다.
+- **JDBC와 R2DBC:** 블로킹 트랜잭션에는 [JDBC](modules/bluetape4k-exposed-jdbc.md), 코루틴 중심의 논블로킹 접근에는 [R2DBC](modules/bluetape4k-exposed-r2dbc.md)를 사용합니다. 두 경로의 트랜잭션 소유권과 취소 규칙은 서로 다릅니다.
+- **트랜잭션과 배치:** [트랜잭션 경계](guides/transaction-boundaries.md)와 [배치 유틸리티](modules/bluetape4k-exposed-batch.md)에서 작업 조합, 일괄 처리, 실패 동작을 설명합니다.
+- **캐시:** [캐시 선택 가이드](guides/cache-selection.md)를 따라 JDBC·R2DBC 저장소에 공통 캐시 계약과 Caffeine, Lettuce, Redisson 구현을 연결할 수 있습니다.
+- **데이터베이스와 데이터 형식 확장:** [데이터베이스 어댑터 표](guides/database-adapter-matrix.md)와 [직렬화·암호화 가이드](guides/serialization-and-encryption.md)에서 DB별 SQL, JSON, 측정값, 암호화 컬럼을 다룹니다.
+- **애플리케이션 연동:** [Spring Boot와 Ktor](guides/spring-and-ktor.md) 모듈이 설정, 생명 주기, 프레임워크별 트랜잭션 연결을 맡습니다.
+
 ## 버전 기준
 
 사용자가 직접 선택하는 버전은 `bluetape4k-exposed`의 저장소 버전이 아니라 중앙 BOM인 `io.github.bluetape4k:bluetape4k-dependencies:<version>`이다. 이 문서의 기술 기준은 `bluetape4k-exposed 1.11.0`이며, 안정 릴리스에 포함된 Gradle 프로젝트 40개만 설명한다.
