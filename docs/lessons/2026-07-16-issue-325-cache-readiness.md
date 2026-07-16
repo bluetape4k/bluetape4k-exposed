@@ -31,6 +31,9 @@ its management-specific `OUT_OF_SERVICE` distinction, while Ktor intentionally
 maps draining and stopped repositories to traffic-readiness `DOWN`. Timeout,
 cancellation, and error metrics are mutually exclusive, and registry identity
 collisions fail installation before a second route can claim the same meters.
+Worker completion callbacks publish a non-null terminal cause immediately,
+before waiting for accepted cache publications to settle, so cancellation
+before the coroutine body starts cannot leave readiness stuck at `RUNNING`.
 
 ## Verification Expectations
 
