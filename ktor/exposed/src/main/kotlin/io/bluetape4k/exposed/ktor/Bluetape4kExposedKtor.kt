@@ -15,6 +15,34 @@ import io.ktor.server.routing.routing
 fun Application.installBluetape4kExposedKtor(
     config: Bluetape4kExposedKtorConfig = Bluetape4kExposedKtorConfig(),
 ) {
+    installBluetape4kExposedKtorInternal(config, cacheReadiness = null)
+}
+
+/**
+ * Installs Exposed-specific Ktor helpers with explicit cache readiness contributors.
+ *
+ * When [Bluetape4kExposedKtorConfig.installHealthRoutes] is `true`, this overload supports cache-only readiness
+ * with no JDBC or R2DBC database. Database probes run first, then cache contributors run sequentially under one
+ * shared monotonic readiness deadline. Setting `installHealthRoutes` to `false` installs no route and invokes no
+ * contributor, so callers can place the direct route overload inside caller-owned authentication and security.
+ *
+ * The caller owns authentication, authorization, request concurrency, rate limiting, databases, dispatchers,
+ * repositories, meter registries, caches, and shutdown. This installer creates or closes no thread, dispatcher,
+ * scope, worker, database, repository, registry, or cache. Contributor probes must be side-effect-free O(1)
+ * in-memory reads that are non-blocking and cancellation-cooperative; blocking and backend-I/O probes are
+ * unsupported and may outlive the coroutine deadline.
+ */
+fun Application.installBluetape4kExposedKtor(
+    config: Bluetape4kExposedKtorConfig,
+    cacheReadiness: ExposedKtorCacheReadinessConfig,
+) {
+    installBluetape4kExposedKtorInternal(config, cacheReadiness = cacheReadiness)
+}
+
+private fun Application.installBluetape4kExposedKtorInternal(
+    config: Bluetape4kExposedKtorConfig,
+    cacheReadiness: ExposedKtorCacheReadinessConfig?,
+) {
     if (config.installStatusPages) {
         require(pluginOrNull(StatusPages) == null) {
             "StatusPages is already installed. Compose mappings in one block: " +
@@ -26,18 +54,32 @@ fun Application.installBluetape4kExposedKtor(
     }
 
     if (config.installHealthRoutes) {
-        config.validateHealthRoutes()
+        config.validateHealthRoutes(hasCacheContributors = cacheReadiness != null)
         routing {
-            bluetape4kExposedHealthRoutes(
-                jdbcDatabase = config.jdbcDatabase,
-                jdbcBlockingDispatcher = config.jdbcBlockingDispatcher,
-                r2dbcDatabase = config.r2dbcDatabase,
-                healthPath = config.healthPath,
-                readinessPath = config.readinessPath,
-                readinessProbeTimeout = config.readinessProbeTimeout,
-                jdbcQueryTimeout = config.jdbcQueryTimeout,
-                meterRegistry = config.meterRegistry,
-            )
+            if (cacheReadiness == null) {
+                bluetape4kExposedHealthRoutes(
+                    jdbcDatabase = config.jdbcDatabase,
+                    jdbcBlockingDispatcher = config.jdbcBlockingDispatcher,
+                    r2dbcDatabase = config.r2dbcDatabase,
+                    healthPath = config.healthPath,
+                    readinessPath = config.readinessPath,
+                    readinessProbeTimeout = config.readinessProbeTimeout,
+                    jdbcQueryTimeout = config.jdbcQueryTimeout,
+                    meterRegistry = config.meterRegistry,
+                )
+            } else {
+                bluetape4kExposedHealthRoutes(
+                    jdbcDatabase = config.jdbcDatabase,
+                    jdbcBlockingDispatcher = config.jdbcBlockingDispatcher,
+                    r2dbcDatabase = config.r2dbcDatabase,
+                    healthPath = config.healthPath,
+                    readinessPath = config.readinessPath,
+                    readinessProbeTimeout = config.readinessProbeTimeout,
+                    jdbcQueryTimeout = config.jdbcQueryTimeout,
+                    meterRegistry = config.meterRegistry,
+                    cacheReadiness = cacheReadiness,
+                )
+            }
         }
     }
 }

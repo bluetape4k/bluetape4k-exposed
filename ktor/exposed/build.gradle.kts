@@ -24,6 +24,7 @@ dependencies {
     testImplementation(bt4k.bluetape4k.ktor.testing)
     testImplementation(bt4k.bluetape4k.assertions)
     testImplementation(bt4k.bluetape4k.junit5)
+    testImplementation("io.ktor:ktor-server-auth")
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
 
