@@ -1,10 +1,13 @@
 package io.bluetape4k.exposed.jdbc.caffeine.repository
 
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.cache.CacheHealthReport
+import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
 import io.bluetape4k.exposed.jdbc.caffeine.AbstractJdbcCaffeineTest
@@ -190,9 +193,13 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
                 repository.put(first.id, first)
                 hookCancelled.await(5, TimeUnit.SECONDS).shouldBeTrue()
 
-                awaitHealthReport(repository) { !it.isFlushJobRunning }
-                runCatching { repository.put(second.id, second) }.isFailure.shouldBeTrue()
-                repository.cache.getIfPresent(repository.serializeKey(second.id)) shouldBeEqualTo null
+                val failedReport = awaitHealthReport(repository) { it.workerState == CacheWorkerState.FAILED }
+                failedReport.workerState shouldBeEqualTo CacheWorkerState.FAILED
+                failedReport.lastFlushError.shouldBeNull()
+                assertFailsWith<IllegalStateException> {
+                    repository.put(second.id, second)
+                }
+                repository.cache.getIfPresent(repository.serializeKey(second.id)).shouldBeNull()
             } finally {
                 repository.close()
             }
