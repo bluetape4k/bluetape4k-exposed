@@ -1,7 +1,7 @@
 package io.bluetape4k.spring.data.exposed.jdbc.config
 
 import io.bluetape4k.exposed.cache.CacheHealthReport
-import io.bluetape4k.exposed.cache.CacheWriteMode
+import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.jdbc.caffeine.repository.JdbcCaffeineRepository
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.boot.autoconfigure.AutoConfiguration
@@ -63,12 +63,14 @@ class ExposedJdbcCacheHealthIndicator(
             .map { it.validateConsistency() }
             .toList()
 
-        val failure = reports.firstNotNullOfOrNull { it.lastFlushError }
-        val stalled = reports.firstOrNull { it.isWriteBehindStalled() }
+        val failure = reports.selectFlushError()
+        val failed = reports.any { it.workerState == CacheWorkerState.FAILED }
+        val unavailable = reports.any { it.workerState.isUnavailable() }
 
         val builder = when {
             failure != null -> Health.down(failure)
-            stalled != null -> Health.outOfService()
+            failed          -> Health.down()
+            unavailable     -> Health.outOfService()
             else            -> Health.up()
         }
 
@@ -79,13 +81,24 @@ class ExposedJdbcCacheHealthIndicator(
     }
 }
 
-private fun CacheHealthReport.isWriteBehindStalled(): Boolean =
-    mode == CacheWriteMode.WRITE_BEHIND && queueDepth > 0 && !isFlushJobRunning
+/** Selects a failure by observable exception data instead of repository discovery order. */
+private fun List<CacheHealthReport>.selectFlushError(): Throwable? =
+    mapNotNull { it.lastFlushError }
+        .minWithOrNull(
+            compareBy(
+                { it.javaClass.name },
+                { it.message.orEmpty() },
+                { it.toString() },
+            )
+        )
+
+private fun CacheWorkerState.isUnavailable(): Boolean =
+    this == CacheWorkerState.DRAINING || this == CacheWorkerState.STOPPED
 
 private fun CacheHealthReport.toDetails(): Map<String, Any?> =
-    mapOf(
-        "mode" to mode.name,
-        "queueDepth" to queueDepth,
-        "flushJobRunning" to isFlushJobRunning,
-        "lastFlushError" to lastFlushError?.message,
-    )
+    buildMap {
+        put("mode", mode.name)
+        put("queueDepth", queueDepth)
+        put("workerState", workerState.name)
+        lastFlushError?.message?.let { put("lastFlushError", it) }
+    }
