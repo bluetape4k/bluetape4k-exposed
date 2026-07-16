@@ -236,7 +236,10 @@ differ across H2, PostgreSQL, and MySQL. A private test helper captures the
 primary throwable, performs cleanup through a second database-fixture call,
 adds cleanup failure with `primary.addSuppressed(cleanup)`, and rethrows the
 primary. Non-database unit cases prove primary-only, cleanup-only, and dual
-failure behavior. Cleanup-only failure is thrown directly.
+failure behavior. Cleanup-only failure is thrown directly. The suspending
+variant enters `NonCancellable` only for cancellation/inactive-context cleanup,
+so cancellation cannot skip the second fixture call while ordinary throwable
+identity remains intact.
 
 An H2-only characterization additionally changes a column from bounded varchar
 to text and asserts that a type-altering statement is produced. PostgreSQL and

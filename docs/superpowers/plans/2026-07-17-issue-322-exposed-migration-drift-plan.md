@@ -135,7 +135,7 @@ plan/checklist are committed with a Lore-compliant decision message.
 - Modify `exposed/jdbc-tests/build.gradle.kts`
 - Modify `exposed/r2dbc-tests/build.gradle.kts`
 
-- [ ] **Step 1: Capture the current task baseline**
+- [x] **Step 1: Capture the current task baseline**
 
 ```bash
 ./gradlew \
@@ -146,7 +146,7 @@ plan/checklist are committed with a Lore-compliant decision message.
 
 Expected: `migrationDriftTest` is absent before the edit.
 
-- [ ] **Step 2: Register the dedicated task in each module**
+- [x] **Step 2: Register the dedicated task in each module**
 
 For each module:
 
@@ -174,7 +174,7 @@ For each module:
   source;
 - do not add a dependency from normal `test` to the dedicated task.
 
-- [ ] **Step 3: Prove the task shape**
+- [x] **Step 3: Prove the task shape**
 
 ```bash
 ./gradlew \
@@ -200,7 +200,7 @@ Rollback: revert only the two module build files.
 - Create
   `exposed/jdbc-tests/src/test/kotlin/io/bluetape4k/exposed/tests/migration/JdbcMigrationDriftTest.kt`
 
-- [ ] **Step 1: Write RED validator and cleanup unit cases**
+- [x] **Step 1: Write RED validator and cleanup unit cases**
 
 Under class tag `migration-drift`, add tests for:
 
@@ -233,14 +233,14 @@ EXPOSED_TEST_DB=H2 ./gradlew \
 Expected RED: compilation or assertions fail because the helper behavior does
 not exist yet. Preserve the failure excerpt in the checklist.
 
-- [ ] **Step 2: Implement the narrow private helpers**
+- [x] **Step 2: Implement the narrow private helpers**
 
 Implement a whole-statement additive validator and a synchronous cleanup
 wrapper. Do not use a broad substring allowlist. Keep unexpected SQL out of
 normal logs; assertion messages may report normalized synthetic identifiers
 and statement count.
 
-- [ ] **Step 3: Reach helper-only GREEN**
+- [x] **Step 3: Reach helper-only GREEN**
 
 Keep the non-database cases in `@Nested inner class HelperContract` and run
 only that nested class:
@@ -255,7 +255,7 @@ EXPOSED_TEST_DB=H2 ./gradlew \
 Expected: validator and primary/cleanup/dual failure cases pass without any
 database or container lifecycle output.
 
-- [ ] **Step 4: Write the JDBC lifecycle regression**
+- [x] **Step 4: Write the JDBC lifecycle regression**
 
 Make `JdbcMigrationDriftTest` extend `AbstractExposedTest` and use
 `@ParameterizedTest` plus `@MethodSource(ENABLE_DIALECTS_METHOD)`. Use plain
@@ -279,7 +279,7 @@ an altering statement is proposed but does not feed the additive executor.
 Run it through the same failure-preserving top-level cleanup wrapper and assert
 that the type-change table is absent afterward.
 
-- [ ] **Step 5: Reach GREEN**
+- [x] **Step 5: Reach GREEN**
 
 Run the JDBC command once. Expected: GREEN; display names show the actual
 dialect; the cleanup assertion passes. Task 4 owns the repeated live/cleanup
@@ -295,7 +295,7 @@ main source.
 - Create
   `exposed/r2dbc-tests/src/test/kotlin/io/bluetape4k/exposed/r2dbc/tests/migration/R2dbcMigrationDriftTest.kt`
 
-- [ ] **Step 1: Write the matching RED unit cases**
+- [x] **Step 1: Write the matching RED unit cases**
 
 Mirror the JDBC validator matrix and use a suspending cleanup wrapper whose
 cleanup runs in a second R2DBC `withDb` call. Run:
@@ -309,11 +309,13 @@ EXPOSED_TEST_DB=H2 ./gradlew \
 
 Expected RED, captured before helper implementation.
 
-- [ ] **Step 2: Implement private suspending helpers**
+- [x] **Step 2: Implement private suspending helpers**
 
 Implement the same exact `VARCHAR(255) NULL` whole-statement validator and a
-suspending cleanup wrapper, then run only `@Nested inner class HelperContract`
-to GREEN before adding database behavior:
+suspending cleanup wrapper. Run cleanup in `NonCancellable` only when the
+primary failure is cancellation or the current context is inactive, preserving
+ordinary primary/cleanup throwable identity. Then run only
+`@Nested inner class HelperContract` to GREEN before adding database behavior:
 
 ```bash
 EXPOSED_TEST_DB=H2 ./gradlew \
@@ -324,7 +326,7 @@ EXPOSED_TEST_DB=H2 ./gradlew \
 
 Expected: no database or container lifecycle output.
 
-- [ ] **Step 3: Implement the R2DBC lifecycle**
+- [x] **Step 3: Implement the R2DBC lifecycle**
 
 Make `R2dbcMigrationDriftTest` extend `AbstractExposedR2dbcTest`, use
 `@ParameterizedTest` plus `@MethodSource(ENABLE_DIALECTS_METHOD)`, and enter
@@ -339,7 +341,7 @@ while using a distinct R2DBC physical table and separate H2 type-change table.
 Both additive and type-change fixtures use failure-preserving top-level cleanup
 and post-cleanup absence assertions.
 
-- [ ] **Step 4: Reach GREEN**
+- [x] **Step 4: Reach GREEN**
 
 Run the R2DBC command once. Expected: GREEN with actual dialect display,
 convergence, and cleanup assertion. Task 4 owns the repeated proof.
@@ -352,13 +354,13 @@ Rollback: remove the R2DBC test file.
 
 - Test/build files from Tasks 1–3
 
-- [ ] **Step 1: Prove default tests exclude drift**
+- [x] **Step 1: Prove default tests exclude drift**
 
 Remove only the normal-task result directories, run both normal H2 module tests,
 and assert that no `MigrationDriftTest` XML exists under
 `build/test-results/test`.
 
-- [ ] **Step 2: Prove the dedicated tasks execute live twice**
+- [x] **Step 2: Prove the dedicated tasks execute live twice**
 
 Run the combined H2 command twice with `--build-cache --info`, capture logs,
 and verify both dedicated tasks execute on both runs and neither reports
