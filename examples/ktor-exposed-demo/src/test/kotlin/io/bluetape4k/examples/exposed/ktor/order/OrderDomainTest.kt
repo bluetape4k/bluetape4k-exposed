@@ -3,6 +3,9 @@ package io.bluetape4k.examples.exposed.ktor.order
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import org.junit.jupiter.api.Test
+import org.jetbrains.exposed.v1.core.Column
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import java.io.ObjectStreamClass
 import java.time.Instant
 import java.util.UUID
 
@@ -47,5 +50,13 @@ class OrderDomainTest {
         order.updatedAt shouldBeEqualTo confirmedAt
         order.domainEvents() shouldBeEqualTo emptyList()
         order.toRecord() shouldBeEqualTo record
+    }
+
+    @Test
+    fun `record serialization id is stable and table uses client UUID`() {
+        ObjectStreamClass.lookup(OrderRecord::class.java).serialVersionUID shouldBeEqualTo 1L
+        val idColumn: Column<EntityID<UUID>> = DemoOrders.id
+        idColumn.name shouldBeEqualTo "id"
+        DemoOrders.tableName shouldBeEqualTo "ktor_demo_orders"
     }
 }
