@@ -58,11 +58,15 @@
   - **Failure:** Stop implementation until each risk has a proving command or
     explicit containment.
 
-- [ ] **A-06 — Implement with test-first proof**
+- [x] **A-06 — Implement with test-first proof**
   - **Action:** Observe RED then GREEN for JDBC and R2DBC migration drift
     behavior before workflow or documentation claims are finalized.
-  - **Evidence:** Fresh failing and passing focused test commands, scoped diff,
-    diagnostics, and integrated status.
+  - **Evidence:** JDBC and R2DBC helper filters first failed on unresolved
+    private helpers (`gradle_exit=1`), then JDBC passed five helper cases and
+    R2DBC passed six, including non-cancellable cleanup after cancellation;
+    full H2 runs passed additive convergence plus type-change characterization.
+    Normal module tests produced no drift XML, and two cached-mode dedicated
+    runs executed both tasks without `UP-TO-DATE` or `FROM-CACHE`.
   - **Failure:** Return to the failing behavior; do not weaken assertions.
 
 - [ ] **A-07 — Verify tests, spec, plan, and repository hazards**

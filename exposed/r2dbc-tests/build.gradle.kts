@@ -1,5 +1,52 @@
 val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
+val migrationDriftDatabase = providers.environmentVariable("EXPOSED_TEST_DB")
+    .map { it.trim().uppercase() }
+    .orElse("H2")
+
+tasks.named<Test>("test") {
+    useJUnitPlatform {
+        excludeTags("migration-drift")
+    }
+}
+
+tasks.register<Test>("migrationDriftTest") {
+    group = "verification"
+    description = "Runs live R2DBC schema migration drift tests."
+
+    val testSourceSet = sourceSets.named("test").get()
+    testClassesDirs = testSourceSet.output.classesDirs
+    classpath = testSourceSet.runtimeClasspath
+
+    inputs.property("exposedTestDb", migrationDriftDatabase)
+    environment("EXPOSED_TEST_DB", migrationDriftDatabase.get())
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+
+    maxParallelForks = 1
+    systemProperty("junit.jupiter.execution.parallel.enabled", "false")
+    useJUnitPlatform {
+        includeTags("migration-drift")
+    }
+    jvmArgs(
+        "-Xshare:off",
+        "-Xms2M",
+        "-Xmx4G",
+        "-XX:+UseG1GC",
+        "-XX:+UnlockExperimentalVMOptions",
+        "-XX:+EnableDynamicAgentLoading",
+        "--enable-preview",
+        "-Didea.io.use.nio2=true",
+    )
+
+    binaryResultsDirectory.set(layout.buildDirectory.dir("test-results/migrationDriftTest/binary"))
+    reports.junitXml.required.set(true)
+    reports.junitXml.outputLocation.set(layout.buildDirectory.dir("test-results/migrationDriftTest"))
+    reports.junitXml.includeSystemOutLog.set(false)
+    reports.junitXml.includeSystemErrLog.set(false)
+    reports.html.required.set(false)
+}
+
 configurations {
     testImplementation.get().extendsFrom(compileOnly.get(), runtimeOnly.get())
 }
