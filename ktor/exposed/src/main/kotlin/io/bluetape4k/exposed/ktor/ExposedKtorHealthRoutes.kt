@@ -56,6 +56,8 @@ fun Route.bluetape4kExposedHealthRoutes(
  * probes are unsupported and can outlive the coroutine deadline. The caller owns route authentication, request
  * concurrency and rate limiting, databases, dispatchers, repositories, registries, and their complete lifecycle.
  * This helper creates or closes no thread, dispatcher, scope, worker, database, repository, registry, or cache.
+ * A supplier-thrown [CancellationException] becomes one sanitized `DOWN` result while an active request continues;
+ * cancellation of the request context is rethrown and terminates readiness processing.
  * Responses expose only validated component names and finite `UP`, `DOWN`, or `timeout` values; supplier exception
  * messages, causes, cache keys, SQL, URLs, namespaces, credentials, and measurements are never returned or logged.
  */

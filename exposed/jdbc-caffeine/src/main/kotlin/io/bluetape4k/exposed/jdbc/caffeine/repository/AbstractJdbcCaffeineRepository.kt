@@ -657,7 +657,8 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                 return@withLock writeBehindCloseOutcome
             }
 
-            if (!writeBehindCloseStarted) {
+            val ownsCloseOutcomeArbitration = !writeBehindCloseStarted
+            if (ownsCloseOutcomeArbitration) {
                 writeBehindCloseStarted = true
                 writeBehindCloseStartedAtNanos = System.nanoTime()
                 writeBehindCloseWaitBudgetNanos = writeBehindCloseWaitNanos()
@@ -672,6 +673,19 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                     writeBehindWorkerState.set(CacheWorkerState.DRAINING)
                 }
                 writeBehindQueue.close()
+            }
+
+            if (!ownsCloseOutcomeArbitration) {
+                while (writeBehindCloseOutcome == null) {
+                    try {
+                        writeBehindLifecycleChanged.await()
+                    } catch (_: InterruptedException) {
+                        // A follower never arbitrates the shared outcome. Preserve its interrupt
+                        // after the owner publishes the one immutable result.
+                        restoreInterrupt = true
+                    }
+                }
+                return@withLock writeBehindCloseOutcome
             }
 
             publishWriteBehindCompletionLocked()

@@ -244,6 +244,9 @@ blocking 없이 cancellation에 협력해야 합니다. Blocking, cancellation-i
 database, cache, network, file I/O는 지원하지 않습니다. Coroutine timeout은 blocking
 thread나 process를 종료할 수 없으므로 이런 supplier는 request deadline 뒤에도 남을 수
 있습니다.
+Request가 여전히 active인 동안 supplier가 `CancellationException`을 던지면 `DOWN`으로
+정제하고 다음 contributor를 계속 실행합니다. Request context 자체가 취소되면 예외를 다시
+던지고 readiness 처리를 중단합니다.
 
 ## 설치와 보안
 
