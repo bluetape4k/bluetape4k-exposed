@@ -121,7 +121,13 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
                 flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
                 repository.put(second.id, second)
 
-                runCatching { repository.put(rejected.id, rejected) }.isFailure.shouldBeTrue()
+                val failure = assertFailsWith<IllegalStateException> {
+                    repository.put(rejected.id, rejected)
+                }
+                failure.message.orEmpty().contains("queue is full").shouldBeTrue()
+                failure.message.orEmpty().contains("capacity=1").shouldBeTrue()
+                repository.validateConsistency().queueDepth shouldBeEqualTo 2
+                repository.cache.getIfPresent(repository.serializeKey(rejected.id)).shouldBeNull()
                 releaseFlush.countDown()
                 awaitHealthReport(repository) { it.queueDepth == 0 }
 
@@ -190,15 +196,20 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
             val second = actors[1].copy(firstName = "hook-cancel-second")
 
             try {
-                repository.put(first.id, first)
+                val admittedFailure = runCatching { repository.put(first.id, first) }.exceptionOrNull()
+                if (admittedFailure != null) {
+                    (admittedFailure is IllegalStateException).shouldBeTrue()
+                    admittedFailure.message.orEmpty().contains("CancellationException").shouldBeTrue()
+                }
                 hookCancelled.await(5, TimeUnit.SECONDS).shouldBeTrue()
 
                 val failedReport = awaitHealthReport(repository) { it.workerState == CacheWorkerState.FAILED }
                 failedReport.workerState shouldBeEqualTo CacheWorkerState.FAILED
                 failedReport.lastFlushError.shouldBeNull()
-                assertFailsWith<IllegalStateException> {
+                val rejection = assertFailsWith<IllegalStateException> {
                     repository.put(second.id, second)
                 }
+                rejection.message.orEmpty().contains("CancellationException").shouldBeTrue()
                 repository.cache.getIfPresent(repository.serializeKey(second.id)).shouldBeNull()
             } finally {
                 repository.close()
