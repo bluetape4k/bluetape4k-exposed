@@ -41,18 +41,20 @@
     containing this checklist row.
   - **Failure:** Revise the spec and rerun affected lenses; stop planning.
 
-- [ ] **A-04 — Approve and review the implementation plan**
+- [x] **A-04 — Approve and review the implementation plan**
   - **Action:** Write an ordered TDD plan with exact files, commands, hazards,
     rollback points, and complete spec traceability; run six plan lenses.
-  - **Evidence:** Plan path, P0=0/P1=0 review result, and committed spec/plan.
+  - **Evidence:** Implementation plan and plan-review artifacts; six
+    perspectives plus main integration at P0=0/P1=0; committed spec/plan.
   - **Failure:** Repair missing order, proof, ownership, or acceptance mapping
     before implementation.
 
-- [ ] **A-05 — Predict triggered risks**
+- [x] **A-05 — Predict triggered risks**
   - **Action:** Record Testcontainers lifecycle, dialect variance, generated SQL
     safety, workflow duration, and nondeterministic filename risks with signals
     and rollback points.
-  - **Evidence:** Risk entries attached to implementation tasks.
+  - **Evidence:** Ten triggered-risk entries with earliest signals,
+    prevention/proof, owning tasks, and rollback points in the reviewed plan.
   - **Failure:** Stop implementation until each risk has a proving command or
     explicit containment.
 
@@ -137,10 +139,11 @@
 
 - [ ] **DOC-01 — Preserve bilingual current-documentation parity**
   - **Action:** Add and validate equivalent English and Korean README migration
-    sections. Keep the stable 1.11 manual and manifest unchanged until 1.12
-    release closeout can pin an exact ref and commit.
-  - **Evidence:** README heading/command/warning/matrix/link parity review and
-    proof that manual metadata did not change.
+    sections with a focused parity validator and self-test. Keep the stable
+    1.11 manual and manifest unchanged; create a separate pending 1.12 manual
+    promotion tracker owned by release closeout after an exact ref and commit.
+  - **Evidence:** README heading/command/warning/matrix/link parity script and
+    self-test, promotion tracker, and proof that manual metadata did not change.
   - **Failure:** PR readiness remains blocked on missing or drifted locale.
 
 - [ ] **CI-01 — Validate the dedicated workflow extension**
