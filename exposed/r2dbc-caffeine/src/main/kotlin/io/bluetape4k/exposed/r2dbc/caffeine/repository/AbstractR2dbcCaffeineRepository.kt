@@ -205,6 +205,7 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
             }
         }.also { job ->
             job.invokeOnCompletion { cause ->
+                cause?.let(::markWriteBehindFailed)
                 writeBehindJobCompletion.compareAndSet(
                     null,
                     WriteBehindJobCompletion(cause, System.nanoTime()),
