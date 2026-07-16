@@ -1,5 +1,6 @@
 package io.bluetape4k.examples.exposed.ktor
 
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.examples.exposed.ktor.order.InMemoryOrderEventPublisher
 import io.bluetape4k.examples.exposed.ktor.order.OrderCommandService
@@ -18,7 +19,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.test.assertFailsWith
 
 class KtorExposedDemoLifecycleTest {
 
