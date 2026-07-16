@@ -169,15 +169,24 @@ needed, for example `SELECT u.id AS id FROM users u JOIN ...`.
 
 When Spring Boot Actuator and `bluetape4k-exposed-r2dbc-caffeine` are on the
 classpath, auto-configuration registers `exposedR2dbcCacheHealthIndicator` as a
-reactive health indicator. It reports cache mode, queue depth, flush job state,
+reactive health indicator. It reports cache mode, queue depth, `workerState`,
 and the last flush error from suspend cache consistency checks.
 
 ```properties
 bluetape4k.exposed.cache.health.enabled=true
 ```
 
-Flush failures map to `DOWN`; a write-behind queue with no running flush job
-maps to `OUT_OF_SERVICE`. Set the property to `false` to disable the indicator.
+| Report | Actuator status |
+|---|---|
+| No flush error and `workerState=NOT_APPLICABLE|IDLE|RUNNING` | `UP` |
+| No flush error and `workerState=DRAINING|STOPPED` | `OUT_OF_SERVICE` |
+| Flush error or `workerState=FAILED` | `DOWN` |
+
+Set the property to `false` to disable the indicator. Spring Boot discovers the
+reactive indicator automatically. Ktor requires an explicit
+`ExposedKtorCacheContributor` and maps `DRAINING`, `FAILED`, and `STOPPED` to
+readiness `DOWN` with redacted details. Keep Actuator management-endpoint access
+policy separate from the Ktor route security policy.
 
 ### 8. Paginated Retrieval
 

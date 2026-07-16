@@ -195,28 +195,205 @@ suspendTransaction(db = r2dbcDatabase) {
 }
 ```
 
-## Readiness
+## Cache Readiness Contributor
 
-`installHealthRoutes = true`일 때 다음 route를 설치합니다.
+고정된 운영용 component 이름을 사용하세요. 이름은
+`[a-z][a-z0-9_-]{0,62}`와 일치해야 하며, 설정 하나에는 서로 다른 contributor를
+`1..16`개 넣을 수 있습니다. Tenant, cache key, URL, endpoint, namespace,
+credential, secret을 component에 넣으면 안 됩니다. Supplier는 기존 메모리 상태를
+읽기만 하는 side-effect-free O(1) 함수여야 합니다.
 
-| Path | 성공 응답 |
+<!-- example:jdbc-report:start -->
+```kotlin
+fun jdbcCacheContributor(
+    report: () -> CacheHealthReport,
+): ExposedKtorCacheContributor =
+    ExposedKtorCacheContributor.jdbcRepository("orders", report)
+```
+<!-- example:jdbc-report:end -->
+
+<!-- example:r2dbc-report:start -->
+```kotlin
+fun r2dbcCacheContributor(
+    report: suspend () -> CacheHealthReport,
+): ExposedKtorCacheContributor =
+    ExposedKtorCacheContributor.r2dbcRepository("sessions", report)
+```
+<!-- example:r2dbc-report:end -->
+
+<!-- example:snapshot:start -->
+```kotlin
+fun snapshotContributor(
+    failureBuffer: SnapshotCacheFailureBuffer,
+): ExposedKtorCacheContributor =
+    ExposedKtorCacheContributor.snapshot("snapshots", failureBuffer)
+```
+<!-- example:snapshot:end -->
+
+<!-- example:custom-status:start -->
+```kotlin
+fun customContributor(
+    probe: suspend () -> ExposedKtorCacheStatus,
+): ExposedKtorCacheContributor =
+    ExposedKtorCacheContributor.custom("redis", probe)
+```
+<!-- example:custom-status:end -->
+
+JDBC report는 일반 메모리 조회입니다. R2DBC와 custom supplier는 suspend 함수이며
+blocking 없이 cancellation에 협력해야 합니다. Blocking, cancellation-insensitive,
+database, cache, network, file I/O는 지원하지 않습니다. Coroutine timeout은 blocking
+thread나 process를 종료할 수 없으므로 이런 supplier는 request deadline 뒤에도 남을 수
+있습니다.
+
+## 설치와 보안
+
+Cache-only 설치에는 database가 필요하지 않습니다.
+
+<!-- example:cache-only-installer:start -->
+```kotlin
+fun Application.installCacheOnlyReadiness(
+    cacheReadiness: ExposedKtorCacheReadinessConfig,
+) {
+    installBluetape4kExposedKtor(
+        config = Bluetape4kExposedKtorConfig(installHealthRoutes = true),
+        cacheReadiness = cacheReadiness,
+    )
+}
+```
+<!-- example:cache-only-installer:end -->
+
+Installer는 애플리케이션 routing tree의 root에 route를 넣습니다. Ingress 또는 network
+policy가 probe path를 제한할 때만 다음 형태를 사용하세요.
+
+<!-- example:ingress-root-route:start -->
+```kotlin
+fun Application.installIngressProtectedReadiness(
+    cacheReadiness: ExposedKtorCacheReadinessConfig,
+) {
+    // Restrict /healthz/exposed and /readyz/exposed with ingress or network policy.
+    installBluetape4kExposedKtor(
+        config = Bluetape4kExposedKtorConfig(installHealthRoutes = true),
+        cacheReadiness = cacheReadiness,
+    )
+}
+```
+<!-- example:ingress-root-route:end -->
+
+애플리케이션 인증을 적용하려면 installer route를 끄고 direct overload를 호출자 소유
+인증 block 안에 한 번만 설치합니다.
+
+<!-- example:authenticated-direct-route:start -->
+```kotlin
+fun Application.installAuthenticatedReadiness(
+    cacheReadiness: ExposedKtorCacheReadinessConfig,
+) {
+    installBluetape4kExposedKtor(
+        config = Bluetape4kExposedKtorConfig(installHealthRoutes = false),
+        cacheReadiness = cacheReadiness,
+    )
+    routing {
+        authenticate("ops") {
+            bluetape4kExposedHealthRoutes(
+                jdbcDatabase = null,
+                jdbcBlockingDispatcher = null,
+                r2dbcDatabase = null,
+                cacheReadiness = cacheReadiness,
+            )
+        }
+    }
+}
+```
+<!-- example:authenticated-direct-route:end -->
+
+인증되지 않은 두 번째 route를 설치하면 안 됩니다. 인증, 인가, request concurrency,
+rate limiting은 호출자가 담당합니다.
+
+## Readiness 의미와 시간 예산
+
+| Path 또는 상태 | Ktor 결과 |
 |---|---|
-| `/healthz/exposed` | `{"status":"UP","details":{"exposed":"UP"}}` |
-| `/readyz/exposed` | 설정된 backend가 통과하면 `{"status":"UP","details":{"jdbc":"UP","r2dbc":"UP"}}` |
+| `/healthz/exposed` | Probe를 실행하지 않는 liveness입니다. `exposed=UP`을 반환하며 database나 cache supplier를 호출하지 않습니다. |
+| `/readyz/exposed` | Traffic readiness입니다. JDBC, R2DBC, cache contributor 설정 순서로 실행합니다. |
+| Flush error가 없는 repository `NOT_APPLICABLE`, `IDLE`, `RUNNING` | `cache.<component>=UP` |
+| Repository `DRAINING`, `FAILED`, `STOPPED` 또는 flush error | `cache.<component>=DOWN`, 전체 응답 HTTP 503 |
+| Snapshot pending, dropped, observer-failure count | 측정값일 뿐이며 이 값만으로 readiness를 실패시키지 않습니다. |
 
-설정된 backend 중 하나라도 `DOWN` 또는 `timeout`이면 `/readyz/exposed`는 HTTP
-503과 `status = "DOWN"`을 반환합니다.
+Ktor 응답에는 `OUT_OF_SERVICE` 상태가 없습니다. `DRAINING`과 `STOPPED` repository는
+traffic을 받을 준비가 되지 않았으므로 `DOWN`으로 매핑합니다. Spring Actuator는
+`DRAINING`과 `STOPPED`에 management 전용 `OUT_OF_SERVICE` 구분을 유지합니다.
+
+응답 detail은 허용된 `jdbc`, `r2dbc`, `cache.<component>`와 `UP`, `DOWN`,
+`timeout`만 담습니다. Supplier exception, message, cause, key, SQL, URL,
+credential은 반환하지 않습니다.
+
+`R`을 `readinessProbeTimeout`이라고 하겠습니다. Cache contributor는 각자 `R`을
+받지 않고 cache phase 하나의 deadline을 공유합니다. 다음 식을 보수적인 계획값으로
+사용하세요.
+
+```text
+T_endpoint = I_jdbc * (R + J_effective) + I_r2dbc * R + I_cache * R + overhead
+```
+
+JDBC query timeout은 초 단위로 버린 뒤 최소 1초를 적용합니다.
+`J_effective = max(1 second, jdbcQueryTimeout.inWholeSeconds)`입니다. 세 phase를
+모두 사용하고 `R=2s`, `jdbcQueryTimeout=1500ms`라면 계획값은
+`(2+1)+2+2 = 7s`에 overhead를 더한 값입니다. Driver가 포화됐거나 지원하지 않는
+blocking probe를 사용하면 이 식은 보장값이 아닙니다.
+
+```yaml
+readinessProbe:
+  httpGet:
+    path: /readyz/exposed
+    port: 8080
+  timeoutSeconds: 10
+  periodSeconds: 15
+  failureThreshold: 3
+```
+
+계획값을 올림하고 여유를 더하세요. 한 번 느린 probe 때문에 곧바로 traffic을 빼지
+않도록 `periodSeconds > timeoutSeconds`, `failureThreshold >= 3`을 유지합니다.
+
+## Metrics
+
+다음 dotted name은 Micrometer meter ID입니다. 고정된 Prometheus 또는 OpenTelemetry
+series 이름이 아닙니다.
+
+| Meter ID | Tag | Base unit / 의미 |
+|---|---|---|
+| `bluetape4k.exposed.ktor.cache.readiness` | `component`, `kind`, `operation=readiness`, `outcome=success|error|timeout|cancelled` | timer |
+| `bluetape4k.exposed.ktor.cache.queue.depth` | `component`, `kind` | `entries` |
+| `bluetape4k.exposed.ktor.cache.snapshot.pending` | `component`, `kind` | `events` |
+| `bluetape4k.exposed.ktor.cache.snapshot.dropped` | `component`, `kind` | 누적 `events` |
+| `bluetape4k.exposed.ktor.cache.snapshot.observer.failures` | `component`, `kind` | 누적 `events` |
+
+Contributor 하나는 gauge 4개와 유한 outcome timer 4개를 등록하므로 최대 meter ID는
+`16 * 8 = 128`개입니다. Export된 time-series 수와 suffix는 registry와 distribution
+설정에 따라 달라집니다. Query를 쓰기 전에 실제 exporter 결과를 확인하세요. 누락되거나
+생략됐거나 `NaN`인 gauge는 0이 아니라 unavailable입니다. Readiness와 timer outcome을
+함께 확인해야 합니다. 누적 dropped/observer-failure counter에 `rate`/`increase`를
+적용할 때는 process restart/reset도 고려하세요.
+
+Meter identity는 registry lifecycle 동안 유지됩니다. 같은 identity가 있으면 설치는
+`reason=identity_collision`으로 거부되고 새로 잡은 meter를 rollback합니다. Registry
+하나에는 route 하나를 권장하며, 재설치하려면 새 registry를 사용하세요. 이전 route가
+request를 처리할 수 있는 동안 colliding meter를 제거하면 안 됩니다.
 
 ## Runbook
 
 | 상황 | 조치 |
 |---|---|
+| Database `DOWN` | 호출자 소유 pool의 연결과 credential, schema 상태, SQL 오류를 확인합니다. 응답은 유한한 `jdbc` / `r2dbc` 상태만 노출합니다. |
+| Database `timeout` | Pool 고갈, network latency, 느린 `SELECT 1`, 막힌 JDBC dispatcher thread, `readinessProbeTimeout`, `jdbcQueryTimeout`을 확인합니다. |
+| Repository `DOWN` | `workerState`, queue depth, 호출자 소유 repository telemetry를 확인합니다. `DRAINING`은 traffic 회수 중 예상 상태이고, `FAILED`는 worker 장애, `STOPPED`는 종료 상태입니다. Exception message는 Ktor로 노출하지 않습니다. |
+| Cache `timeout` | 공유 `R` 예산과 supplier의 cancellation 협력을 확인합니다. Backend I/O와 blocking 작업을 제거하세요. Helper는 이를 종료할 수 없습니다. |
+| Snapshot 누적 counter 증가 | 호출자 소유 drain/observer 처리를 확인합니다. Counter는 측정값이며 restart/reset을 고려한 rate 또는 increase query를 사용합니다. |
+| Gauge 누락, 생략, `NaN` | 0이 아니라 unavailable로 보고 최신 readiness와 timer outcome을 함께 확인합니다. |
+| 잘못된 설정 | Component regex, 중복, 개수, unsafe data를 바로잡습니다. Runtime 값으로 component를 만들지 않습니다. |
+| 지원하지 않는 custom probe | Side-effect-free O(1) 메모리 상태 조회로 바꾸고 backend 진단은 호출자 telemetry에 남깁니다. |
+| Meter collision | 이전 route의 traffic을 먼저 회수한 뒤 application/registry를 닫거나 새 registry를 사용해 재설치합니다. |
 | Exposed status mapping 비활성화 | `installStatusPages = false`를 유지하고 공유 `StatusPages` block에서 `bluetape4kExposedErrors()`를 제거합니다. |
-| Exposed readiness route 비활성화 | `installHealthRoutes = false`를 유지하거나 Exposed Ktor config에서 `jdbcDatabase` / `r2dbcDatabase`를 제거합니다. |
-| Route helper rollback | `call.exposedJdbcTransaction()`을 `withContext(jdbcDispatcher) { transaction(db = jdbcDatabase) { ... } }`로, `call.exposedR2dbcTransaction()`을 `suspendTransaction(db = r2dbcDatabase) { ... }`로 교체합니다. |
-| `/readyz/exposed`가 `DOWN` 반환 | Database 연결, 호출자 소유 pool의 credential, schema 상태, SQL 오류를 확인합니다. 응답은 의도적으로 `jdbc` / `r2dbc` 상태만 노출합니다. |
-| `/readyz/exposed`가 `timeout` 반환 | Pool 고갈, network latency, 느린 `SELECT 1`, 막힌 JDBC dispatcher thread, `readinessProbeTimeout` / `jdbcQueryTimeout`을 확인합니다. |
-| 애플리케이션 종료 | 호출자 소유 pool, `R2dbcDatabase` resource, dispatcher, metric registry를 애플리케이션 lifecycle에서 닫습니다. |
+| Route helper rollback | Ktor helper를 호출자 소유 raw Exposed transaction 호출로 교체합니다. |
+| 종료 | Traffic을 회수하고 repository drain/close를 시작한 뒤 readiness가 `DRAINING`, 이어서 `STOPPED`가 되는지 확인합니다. 그다음 application을 멈추고 registry와 호출자 소유 pool/dispatcher를 닫습니다. Route probe는 관찰만 하며 아무것도 닫지 않습니다. |
 
 ## Non-goals
 

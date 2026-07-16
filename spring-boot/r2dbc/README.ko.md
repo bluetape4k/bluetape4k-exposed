@@ -170,15 +170,23 @@ JOIN에서는 필요에 따라 `SELECT u.id AS id FROM users u JOIN ...`처럼 �
 Spring Boot Actuator와 `bluetape4k-exposed-r2dbc-caffeine`이 classpath에 있으면
 `exposedR2dbcCacheHealthIndicator`가 reactive health indicator로 자동 등록됩니다.
 이 indicator는 suspend cache consistency check 결과에서 cache mode, queue depth,
-flush job 상태, 마지막 flush error를 노출합니다.
+`workerState`, 마지막 flush error를 노출합니다.
 
 ```properties
 bluetape4k.exposed.cache.health.enabled=true
 ```
 
-Flush 실패는 `DOWN`, write-behind queue가 남아 있는데 flush job이 동작하지 않는
-상태는 `OUT_OF_SERVICE`로 매핑됩니다. 비활성화하려면 이 property를 `false`로
-설정하세요.
+| Report | Actuator status |
+|---|---|
+| Flush error가 없고 `workerState=NOT_APPLICABLE|IDLE|RUNNING` | `UP` |
+| Flush error가 없고 `workerState=DRAINING|STOPPED` | `OUT_OF_SERVICE` |
+| Flush error 또는 `workerState=FAILED` | `DOWN` |
+
+비활성화하려면 이 property를 `false`로 설정하세요. Spring Boot는 reactive
+indicator를 자동으로 찾습니다. Ktor는 `ExposedKtorCacheContributor`를 명시적으로
+등록해야 하며, `DRAINING`, `FAILED`, `STOPPED`를 redacted detail의 readiness
+`DOWN`으로 매핑합니다. Actuator management endpoint 접근 정책과 Ktor route 보안
+정책은 별도로 관리하세요.
 
 ### 8. 페이징 조회
 
