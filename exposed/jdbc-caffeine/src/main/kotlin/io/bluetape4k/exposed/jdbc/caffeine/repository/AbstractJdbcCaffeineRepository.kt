@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheMode
+import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
 import io.bluetape4k.logging.KLogging
@@ -35,7 +36,6 @@ import org.jetbrains.exposed.v1.jdbc.update
 import java.io.Serializable
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
@@ -116,7 +116,13 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     }
 
     private val writeBehindQueueDepth = AtomicInteger(0)
-    private val writeBehindJobStarted = AtomicBoolean(false)
+    private val writeBehindWorkerState = AtomicReference(
+        if (config.writeMode == CacheWriteMode.WRITE_BEHIND) {
+            CacheWorkerState.IDLE
+        } else {
+            CacheWorkerState.NOT_APPLICABLE
+        }
+    )
     private val writeBehindTerminalError = AtomicReference<Throwable?>(null)
     private val lastFlushError = AtomicReference<Throwable?>(null)
 
@@ -142,11 +148,11 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                     }
                 }
             } catch (e: CancellationException) {
-                writeBehindTerminalError.set(e)
+                markWriteBehindFailed(e)
                 writeBehindQueue.close(e)
                 throw e
             } catch (e: Throwable) {
-                writeBehindTerminalError.set(e)
+                markWriteBehindFailed(e)
                 writeBehindQueue.close(e)
                 throw e
             } finally {
@@ -161,12 +167,36 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                     }
                 }
             }
+        }.also { job ->
+            job.invokeOnCompletion(::publishWriteBehindCompletion)
         }
     }
 
-    private fun startWriteBehindJob(): Job {
-        writeBehindJobStarted.set(true)
-        return writeBehindJob
+    private fun startWriteBehindJob(): Job = writeBehindJob
+
+    private fun markWriteBehindFailed(error: Throwable) {
+        writeBehindTerminalError.set(error)
+        writeBehindWorkerState.set(CacheWorkerState.FAILED)
+    }
+
+    private fun publishWriteBehindCompletion(cause: Throwable?) {
+        if (cause != null) {
+            writeBehindTerminalError.compareAndSet(null, cause)
+        }
+
+        if (cause != null || lastFlushError.get() != null || writeBehindQueueDepth.get() != 0) {
+            while (true) {
+                when (val current = writeBehindWorkerState.get()) {
+                    CacheWorkerState.FAILED,
+                    CacheWorkerState.STOPPED,
+                    -> return
+
+                    else -> if (writeBehindWorkerState.compareAndSet(current, CacheWorkerState.FAILED)) return
+                }
+            }
+        }
+
+        writeBehindWorkerState.compareAndSet(CacheWorkerState.DRAINING, CacheWorkerState.STOPPED)
     }
 
     /**
@@ -332,6 +362,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                             "Increase LocalCacheConfig.writeBehindQueueCapacity or reduce the write rate."
                     )
                 }
+                writeBehindWorkerState.compareAndSet(CacheWorkerState.IDLE, CacheWorkerState.RUNNING)
                 cache.put(key, entity)
             }
 
@@ -425,9 +456,11 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
 
     private fun checkWriteBehindAcceptingWrites() {
         val terminalError = writeBehindTerminalError.get()
-        check(terminalError == null) {
-            "Write-Behind worker is not accepting writes. " +
-                "cacheName=$cacheName, exceptionType=${terminalError!!::class.qualifiedName}"
+        if (terminalError != null) {
+            throw IllegalStateException(
+                "Write-Behind worker is not accepting writes. " +
+                    "cacheName=$cacheName, exceptionType=${terminalError::class.qualifiedName}"
+            )
         }
         check(writeBehindJob.isActive) {
             "Write-Behind worker is not running. cacheName=$cacheName"
@@ -459,14 +492,9 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
         CacheHealthReport(
             mode = cacheWriteMode,
             queueDepth = writeBehindQueueDepth.get().coerceAtLeast(0),
-            isFlushJobRunning = isWriteBehindJobRunning(),
+            workerState = writeBehindWorkerState.get(),
             lastFlushError = lastFlushError.get(),
         )
-
-    private fun isWriteBehindJobRunning(): Boolean =
-        config.writeMode == CacheWriteMode.WRITE_BEHIND &&
-            writeBehindJobStarted.get() &&
-            writeBehindJob.isActive
 
     /**
      * Closes the repository and releases its resources.
@@ -479,6 +507,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
      */
     override fun close() {
         if (config.writeMode == CacheWriteMode.WRITE_BEHIND) {
+            transitionWriteBehindToDraining()
             writeBehindQueue.close()
             awaitWriteBehindJobCompletion()
         }
@@ -491,6 +520,18 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
             scope.cancel()
         } catch (e: Exception) {
             log.warn(e) { "Failed to cancel scope on close" }
+        }
+    }
+
+    private fun transitionWriteBehindToDraining() {
+        while (true) {
+            when (val current = writeBehindWorkerState.get()) {
+                CacheWorkerState.IDLE,
+                CacheWorkerState.RUNNING,
+                -> if (writeBehindWorkerState.compareAndSet(current, CacheWorkerState.DRAINING)) return
+
+                else -> return
+            }
         }
     }
 

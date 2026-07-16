@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.jdbc.caffeine.repository
 
 import io.bluetape4k.exposed.cache.CacheHealthReport
+import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
 import io.bluetape4k.exposed.jdbc.caffeine.AbstractJdbcCaffeineTest
@@ -434,6 +435,7 @@ class JdbcCaffeineRepositoryExtraTest {
                 repository.close()
 
                 writeBehindJobOf(repository).isCompleted.shouldBeTrue()
+                repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.STOPPED
             }
         }
 
@@ -461,6 +463,52 @@ class JdbcCaffeineRepositoryExtraTest {
                     .where { CredentialTable.id eq entity.id }
                     .count() shouldBeEqualTo 1L
                 writeBehindJobOf(repository).isCompleted.shouldBeTrue()
+                repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.STOPPED
+            }
+        }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `close - blocked write-behind drain exposes draining then stopped`(testDB: TestDB) {
+            val flushStarted = CountDownLatch(1)
+            val releaseFlush = CountDownLatch(1)
+            val closeCompleted = CountDownLatch(1)
+            val repository = BlockingFlushJdbcRepository(
+                config = LocalCacheConfig(
+                    keyPrefix = "jdbc:caffeine:extra:wb-close-draining",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 10,
+                    writeBehindQueueCapacity = 16,
+                ),
+                flushStarted = flushStarted,
+                releaseFlush = releaseFlush,
+            )
+
+            withActorTable(testDB) {
+                val existing = ActorTable.selectAll().first().toActorRecord()
+                val updated = existing.copy(firstName = "close-draining")
+                repository.put(existing.id, updated)
+                flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+
+                val closeThread = Thread {
+                    try {
+                        repository.close()
+                    } finally {
+                        closeCompleted.countDown()
+                    }
+                }.apply { start() }
+
+                try {
+                    awaitHealthReport(repository) { it.workerState == CacheWorkerState.DRAINING }
+                        .workerState shouldBeEqualTo CacheWorkerState.DRAINING
+                } finally {
+                    releaseFlush.countDown()
+                    closeCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    closeThread.join()
+                }
+
+                closeThread.isAlive.shouldBeFalse()
+                repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.STOPPED
             }
         }
     }
@@ -517,6 +565,27 @@ class JdbcCaffeineRepositoryExtraTest {
     inner class WriteBehindHealthReportTest: AbstractJdbcCaffeineTest() {
 
         @Test
+        fun `validateConsistency - non-write-behind repository reports not applicable`() {
+            val repository = CredentialJdbcCaffeineRepository(
+                LocalCacheConfig(
+                    keyPrefix = "jdbc:caffeine:extra:read-only-health",
+                    writeMode = CacheWriteMode.READ_ONLY,
+                )
+            )
+
+            try {
+                val report = repository.validateConsistency()
+
+                report.mode shouldBeEqualTo CacheWriteMode.READ_ONLY
+                report.queueDepth shouldBeEqualTo 0
+                report.workerState shouldBeEqualTo CacheWorkerState.NOT_APPLICABLE
+                report.lastFlushError.shouldBeNull()
+            } finally {
+                repository.close()
+            }
+        }
+
+        @Test
         fun `validateConsistency - write-behind idle repository does not start flush job`() {
             val repository = CredentialJdbcCaffeineRepository(
                 LocalCacheConfig(
@@ -528,12 +597,14 @@ class JdbcCaffeineRepositoryExtraTest {
             )
 
             try {
+                isWriteBehindJobInitialized(repository).shouldBeFalse()
                 val report = repository.validateConsistency()
 
                 report.mode shouldBeEqualTo CacheWriteMode.WRITE_BEHIND
                 report.queueDepth shouldBeEqualTo 0
-                report.isFlushJobRunning.shouldBeFalse()
+                report.workerState shouldBeEqualTo CacheWorkerState.IDLE
                 report.lastFlushError.shouldBeNull()
+                isWriteBehindJobInitialized(repository).shouldBeFalse()
             } finally {
                 repository.close()
             }
@@ -566,7 +637,7 @@ class JdbcCaffeineRepositoryExtraTest {
                     val report = repository.validateConsistency()
                     report.mode shouldBeEqualTo CacheWriteMode.WRITE_BEHIND
                     report.queueDepth shouldBeEqualTo 1
-                    report.isFlushJobRunning.shouldBeTrue()
+                    report.workerState shouldBeEqualTo CacheWorkerState.RUNNING
                     report.lastFlushError.shouldBeNull()
                 } finally {
                     releaseFlush.countDown()
@@ -602,6 +673,7 @@ class JdbcCaffeineRepositoryExtraTest {
                     }
                     report.mode shouldBeEqualTo CacheWriteMode.WRITE_BEHIND
                     report.queueDepth shouldBeEqualTo 1
+                    report.workerState shouldBeEqualTo CacheWorkerState.RUNNING
                     report.lastFlushError.shouldNotBeNull()
                 } finally {
                     repository.close()
@@ -637,6 +709,7 @@ class JdbcCaffeineRepositoryExtraTest {
                         health.queueDepth == 1 && health.lastFlushError != null
                     }
                     failedReport.queueDepth shouldBeEqualTo 1
+                    failedReport.workerState shouldBeEqualTo CacheWorkerState.RUNNING
                     failedReport.lastFlushError.shouldNotBeNull()
 
                     repository.put(second.id, second)
@@ -645,6 +718,7 @@ class JdbcCaffeineRepositoryExtraTest {
                         health.queueDepth == 0 && health.lastFlushError == null
                     }
                     recoveredReport.queueDepth shouldBeEqualTo 0
+                    recoveredReport.workerState shouldBeEqualTo CacheWorkerState.RUNNING
                     recoveredReport.lastFlushError.shouldBeNull()
                     commit()
                     ActorSchema.findActorById(first.id).shouldNotBeNull().firstName shouldBeEqualTo first.firstName
@@ -797,5 +871,13 @@ class JdbcCaffeineRepositoryExtraTest {
         field.isAccessible = true
 
         return (field.get(repository) as Lazy<Job>).value
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun isWriteBehindJobInitialized(repository: AbstractJdbcCaffeineRepository<*, *>): Boolean {
+        val field = AbstractJdbcCaffeineRepository::class.java.getDeclaredField("writeBehindJob\$delegate")
+        field.isAccessible = true
+
+        return (field.get(repository) as Lazy<Job>).isInitialized()
     }
 }
