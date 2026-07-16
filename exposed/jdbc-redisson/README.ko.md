@@ -21,10 +21,12 @@ Exposed JDBC와 Redisson 캐시를 결합해 Read-Through/Write-Through 캐시 �
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-redisson:${version}")
-    implementation("org.redisson:redisson:3.37.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-redisson")
+    implementation("org.redisson:redisson")
 }
 ```
+
+애플리케이션이 `bluetape4k-dependencies` BOM 버전을 소유하므로 두 좌표 모두 버전을 쓰지 않습니다.
 
 ## 아키텍처 개요
 
@@ -221,6 +223,169 @@ val deleteFromDbConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(
 `trustedBinaryCache = true`를 명시하지 않으면 Fory/Kryo/JDK 계열 binary codec을 거부합니다. 이 opt-in은
 Redis 인스턴스가 private이고, Redis 내용을 신뢰할 수 없는 클라이언트가 쓸 수 없는 경우에만 사용하세요.
 dependency 경계에 놓인 Redis 데이터에는 기본 binary codec 대신 검토된 custom codec을 제공하세요.
+
+<!-- REDISSON-SNAPSHOT-INVALIDATION -->
+## 커밋에 맞춘 Redisson 스냅샷 무효화 (opt-in)
+
+`JdbcRedissonSnapshotInvalidator`는 애플리케이션 Near Cache만 무효화하는 별도 opt-in 경로입니다. 캐시 read나
+snapshot PUT을 노출하지 않고, 기존 `JdbcRedissonRepository`의 데이터도 옮기지 않습니다. `stageInvalidation`은
+현재 최상위 JDBC 트랜잭션이 커밋된 뒤 `fastRemoveAsync`만 호출합니다. 롤백하면 아무것도 공개하지 않습니다.
+이 transaction은 `maxAttempts = 1`이어야 하므로 애플리케이션 재시도는 transaction 전체를 감쌉니다.
+
+### Key, codec, namespace 계약
+
+- 분산 identifier에는 secret, credential, PII가 아닌 surrogate `Long` 또는 `UUID`만 사용합니다.
+  `longSnapshotIdentifierPolicy()`나 `uuidSnapshotIdentifierPolicy()`를 선택하세요. String policy는 의도적으로
+  제공하지 않습니다. 민감한 key, composite key, domain String key는 먼저 surrogate로 바꿔야 합니다.
+- Repository map key와 무효화에는 같은 `SnapshotRedissonCodec` 객체를 사용합니다. 원격 compatibility fingerprint는
+  backend, namespace, key/value runtime class, schema version, codec delegate class, `codecVersion`, canonical key
+  encoding, synchronization strategy를 묶습니다. 비어 있는 namespace는 marker가 없으면 원자적으로 선점합니다.
+  map이 이미 있는데 marker가 없거나, marker가 호환되지 않으면 map 접근이나 mutation 허용 전에 실패합니다.
+- `SnapshotCacheConfig.namespace`는 `[a-z][a-z0-9._-]{0,62}:v[1-9][0-9]*`에 맞고, 운영자가 소유하는 정적인
+  버전 이름이어야 합니다. 예: `orders:v1`. tenant, request, user, entity 같은 동적 identifier를 넣으면 안
+  됩니다. 서로 다른 애플리케이션 버전이 version 없는 namespace를 공유하게 두지 마세요.
+- Fory, Kryo, JDK 계열 binary delegate는 consumer마다 `trustedBinaryCache = true`를 명시해야 합니다. 모든 writer와
+  payload를 신뢰할 수 있는 격리 캐시에서만 이 opt-in을 사용하세요.
+- 여러 노드에서 사용할 때는 `SyncStrategy.INVALIDATE`가 필요하고, reconnect 복구에는 항상
+  `ReconnectionStrategy.CLEAR`가 필요합니다.
+
+### Canonical Redisson 예제
+
+아래 코드는 English README의 블록과 byte-for-byte로 같으며 source-usage fixture로 실제 컴파일합니다. DTO는
+분리된 직렬화 가능 값이고, invalidator에는 payload가 아니라 key만 전달합니다. `orderSnapshotCodec()`은 한 번만
+호출하고, 그때 만든 객체 하나를 Repository map 설정과 `orderSnapshotInvalidator` 양쪽에 그대로 전달하세요.
+consumer마다 wrapper를 따로 만들면 안 됩니다. 이 typed JSON delegate는 trusted-binary opt-in 없이도 DTO를
+왕복 직렬화합니다.
+
+<!-- README-CANONICAL-REDISSON-BEGIN -->
+```kotlin
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonProperty
+import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
+import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheFailureBuffer
+import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
+import io.bluetape4k.exposed.redisson.snapshot.JdbcRedissonSnapshotInvalidator
+import io.bluetape4k.exposed.redisson.snapshot.JdbcRedissonSnapshotInvalidatorConfig
+import io.bluetape4k.exposed.redisson.snapshot.SnapshotRedissonCodec
+import io.bluetape4k.exposed.redisson.snapshot.jdbcRedissonSnapshotInvalidator
+import io.bluetape4k.exposed.redisson.snapshot.longSnapshotIdentifierPolicy
+import io.bluetape4k.exposed.redisson.snapshot.snapshotRedissonCodec
+import io.bluetape4k.exposed.redisson.snapshot.stageInvalidation
+import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
+import org.redisson.api.RedissonClient
+import org.redisson.codec.TypedJsonJacksonCodec
+import java.io.Serializable
+
+data class RedissonOrderSnapshot @JsonCreator constructor(
+    @JsonProperty("id") val id: Long,
+    @JsonProperty("description") val description: String,
+) : Serializable {
+    private companion object {
+        private const val serialVersionUID: Long = 1L
+    }
+}
+
+private val orderInvalidationFailures: SnapshotCacheFailureBuffer = snapshotCacheFailureBuffer(capacity = 256)
+
+fun orderSnapshotCodec(): SnapshotRedissonCodec<Long> =
+    snapshotRedissonCodec(
+        delegate = TypedJsonJacksonCodec(Long::class.javaObjectType, RedissonOrderSnapshot::class.java),
+        codecVersion = "typed-json-v1",
+        identifierPolicy = longSnapshotIdentifierPolicy(),
+    )
+
+fun orderSnapshotInvalidator(
+    redissonClient: RedissonClient,
+    codec: SnapshotRedissonCodec<Long>,
+): JdbcRedissonSnapshotInvalidator<Long> {
+    val config = JdbcRedissonSnapshotInvalidatorConfig(
+        snapshot = SnapshotCacheConfig(namespace = "orders:v1", schemaVersion = "order-dto-v1"),
+    )
+    return jdbcRedissonSnapshotInvalidator<Long, RedissonOrderSnapshot>(
+        redissonClient = redissonClient,
+        codec = codec,
+        config = config,
+        failureBuffer = orderInvalidationFailures,
+    )
+}
+
+fun JdbcTransaction.invalidateOrderSnapshot(
+    invalidator: JdbcRedissonSnapshotInvalidator<Long>,
+    id: Long,
+) {
+    stageInvalidation(invalidator, id)
+}
+```
+<!-- README-CANONICAL-REDISSON-END -->
+
+### 진입 제한, 실패 관찰, 복구
+
+`quotaHealth()`는 `SnapshotInvalidationQuotaHealth`를 반환하며, 호출자가 소유한 `RedissonClient`의 chunk 수와
+encoded-byte quota 상태를 제한된 구조 정보로 보여줍니다. quota가 포화되면 이미 받은 future를 막거나 취소하지 않고
+해당 chunk를 거부합니다. 이미 커밋된 DB를 되돌리지는 못합니다. 거부된 chunk, 버려진 failure event, 반복 무효화,
+지속적인 포화를 alert로 감시하세요.
+반복 무효화에는 rate control을 적용하고, 무효화나 reconnect로 miss가 늘어나면 DB load shedding을 적용해야 합니다.
+
+받아들인 chunk는 future가 끝나면 quota를 반환합니다. 끝나지 않는 future는 client를 교체할 때까지 제한된 lease만
+유지합니다. 호출자가 소유한 `SnapshotCacheFailureBuffer`는 호출한 thread에서 명시적으로 drain하세요. 공개
+failure/health 데이터에는 제한된 구조 count와 exception type만 남습니다. exception text, stack trace, payload,
+identifier, SQL, URL, endpoint, credential은 남기지 않습니다.
+
+복구할 때는 쓰기 작업을 중지하고 트래픽을 멈춰 변경이 없는 상태로 만든 뒤 기존 client를 닫습니다. 제한된
+monotonic deadline 안에서 처리 중인 quota가 0이 될 때까지 확인하고 failure buffer를 drain하세요. 새 quota
+limit을 적용한 별도 `RedissonClient`를 만들고, 닫은 client는 다시 사용하지 않습니다. 무효화 후처리는 DB에 쓰거나
+Redis를 기다리거나 Redis future를 취소하지 않습니다. 커밋된 DB/캐시 상태를 원자적으로 만들 수도 없습니다. 애플리케이션 소유
+outbox나 repair path가 따로 필요합니다.
+
+### Namespace 정리 권한과 제한 시간
+
+`clearSnapshotNamespace`와 `clearMapRetainingMarker`에는 `DelicateSnapshotCacheAdminApi`가 붙어 있습니다. 모든
+쓰기 작업을 중지하고 트래픽을 멈춘 뒤, 사용 중인 모든 client에서 해당 namespace를 제거해야 실행할 수 있습니다.
+network isolation과 dedicated namespace-scoped Redis ACL identity가 필요합니다. 이 ACL은 marker/map inspect와
+unlink, local-cache clear용 제한된 pub/sub, 임시 clear semaphore key/channel만 허용하고 global keyevent
+subscription은 거부해야 합니다. 이 함수를 request-facing path에 노출하면 안 됩니다. exact fingerprint는 실수
+방지 장치이지 authorization이 아닙니다.
+
+두 함수 모두 `SnapshotNamespaceCleanupResult`를 반환합니다. rollout이나 rollback의 다음 단계로 넘어가기 전에
+`SnapshotNamespaceCleanupOutcome`을 확인하세요.
+
+하나의 timeout을 marker inspect, asynchronous map unlink, 각 local view clear, 마지막 검증이 공유합니다. 서버가
+받은 command는 취소하지 않습니다. `TIMED_OUT_ACCEPTED_UNKNOWN`이면 다시 quiesce한 상태에서 같은 작업을 실행해
+관찰된 partial state를 확인하고 이어서 정리해야 합니다.
+
+### 정확한 `v1` → `v2` rollout
+
+<!-- SNAPSHOT-ROLLOUT-CONTRACT: shadow-warm-only; no-v2-user-reads-or-writes; write-quiesced-cutover; rebuild-v2-from-db; switch-all-traffic; no-overlapping-user-traffic; resume-writes; no-cross-namespace-invalidation -->
+
+`v1` 무효화는 `v2`에 전달되지 않고 `v2` 무효화도 `v1`에 전달되지 않습니다. `v1`이 서비스하는 동안 `v2`를
+shadow cache로 배포해 DB에서 미리 채울 수는 있지만, `v2`가 사용자 읽기에 응답하거나 사용자 쓰기를 받아서는 안
+됩니다. 활성 `v1` 쓰기로 shadow가 오래된 상태가 될 수 있으므로, 두 버전의 사용자 트래픽을 겹치는 방식은 안전한
+전환 절차가 아닙니다.
+
+1. 별도 `:v2` namespace에 `v2`를 shadow-only로 배포하고 운영 진단을 위해 DB에서 미리 채웁니다. `v1`과 `v2`는
+   격리해야 하며, 서로 다른 버전의 node가 version 없는 namespace를 공유하면 안 됩니다.
+2. 전환 구간을 시작하면 **모든 사용자 읽기와 쓰기**를 중지하고 처리 중인 작업을 drain한 뒤 두 quota가 모두 0인지
+   확인합니다. 모든 shadow `v2` client를 닫고 제거한 다음 `v2`에 `clearMapRetainingMarker`를 호출합니다. 새 `v2`
+   client를 만들고 트래픽을 계속 멈춘 상태에서 DB로부터 `v2`를 다시 채운 뒤, DB 기준 읽기 결과와 일치하는지
+   검증합니다.
+3. 재구축 결과를 검증한 뒤 모든 `v1` application client를 닫고 제거하고, 모든 node와 traffic route를 한 번에
+   `v2`로 전환합니다. 모든 트래픽이 `v2`를 향하는 것을 확인한 뒤에만 사용자 읽기와 쓰기를 재개하세요. `v1`과
+   `v2` 사용자 트래픽을 동시에 운영하면 안 됩니다.
+4. `v2`가 서비스를 시작하고 `v1` client가 하나도 남지 않은 뒤에만 `v1`에 `clearSnapshotNamespace`를 호출합니다.
+   마지막 결과가 `COMPLETED`이거나 재검증한 `ALREADY_COMPLETE`여야 합니다. command를 받은 뒤 shared timeout이
+   끝났다면 namespace를 quiesce한 채 다시 실행하세요. invalidation alert/rate control을 유지하고, 차가운 miss가
+   DB read를 증폭하면 load shedding을 적용합니다.
+
+### 정확한 `v2` → `v1` rollback
+
+1. `v2` 쓰기 작업과 기존 `v1` 읽기 작업을 중지하고 트래픽을 멈춰 변경이 없는 상태로 만듭니다. 처리 중인 작업을
+   drain하고 두 quota가 모두 0인지 확인한 뒤 기존 application client를 닫고 제거합니다.
+2. `v1`에 `clearMapRetainingMarker`를 호출합니다. remote map과 모든 node의 local `v1` view를 지우되 정확히 일치하는
+   `v1` marker는 유지하고 다시 검증해야 합니다. shared timeout이 끝나면 트래픽을 멈춘 상태에서 다시 실행합니다.
+3. 모든 node를 보존한 설정과 정확히 같은 설정을 쓰는 새 빈 `v1` client로 전환합니다. DB에서 다시 채우고 DB
+   기준 read 결과를 검증하세요. miss가 캐시를 다시 채우는 동안 load shedding을 적용합니다.
+4. 다시 채운 결과를 검증하고 전용 client의 작업을 멈춰 닫은 뒤에만 `v2`에 `clearSnapshotNamespace`를 호출합니다.
+   검증된 DB rebuild 전에 `v2`를 정리하면 안 됩니다.
 
 ### 4. Write-Through / Write-Behind Repository 구현
 

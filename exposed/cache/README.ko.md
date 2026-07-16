@@ -91,6 +91,55 @@ Redis 기반 저장소의 선택적 Resilience 설정입니다. `null`(기본값
 
 ![Cache write strategy flow diagram](../../docs/images/readme-diagrams/exposed-cache-sequence-01.png)
 
+<!-- SNAPSHOT-CACHE-CONTRACT -->
+## 트랜잭션 인식 스냅샷 캐시 (opt-in)
+
+스냅샷 캐시 API는 캐시만 다루는 opt-in 경로입니다. 기존 `JdbcCacheRepository`, `R2dbcCacheRepository`,
+Caffeine Repository, Redis Repository의 동작을 바꾸거나 데이터를 이전하지 않습니다. 조회 결과를 분리된 불변
+DTO로 복사하고, 바깥쪽 Exposed 트랜잭션이 커밋된 뒤에만 공개할 수 있을 때 사용합니다.
+
+| 경계 | Exposed 트랜잭션 로컬 `EntityCache` | 애플리케이션 스냅샷 Near Cache |
+|---|---|---|
+| 수명 | Exposed 트랜잭션 하나 | 한 프로세스의 여러 트랜잭션. 무효화를 붙이면 여러 노드 |
+| 값 | 관리 중인 DAO `Entity` 상태 | 분리된 직렬화 가능 DTO를 담은 `CacheSnapshot` |
+| 공개 시점 | 트랜잭션 내부 | 커밋하면 공개하고 롤백하면 폐기 |
+| 일관성 역할 | Exposed 안에서 같은 엔티티를 추적하고 변경 사항을 관리 | 복구 책임을 애플리케이션이 맡는 읽기 최적화 |
+
+`CacheSnapshotMapper`는 현재 최상위 트랜잭션에서 실행됩니다. 필요한 필드는 이때 모두 복사해야 합니다.
+DAO `Entity`, 트랜잭션, 요청 객체, 지연 로딩 관계, 변경 가능한 영속성 객체를 보관하면 안 됩니다.
+기본 `rejectDirectEntitySnapshotValues()` validator는 최상위 값으로 직접 전달한 `Entity`를 거부합니다. 값 전체를
+깊은 불변 상태로 만드는 책임은 애플리케이션에 있습니다. 캐시 작업을 적용하는 후처리에서는 DB에 쓰지 않습니다.
+
+`SnapshotCacheConfig`에는 스냅샷 저장소가 공유할 namespace와 transaction 제한, schema version
+(Redisson compatibility fingerprint에 포함됨)을 지정합니다.
+로컬 Caffeine 저장소의 용량과 만료 정책은 `CaffeineSnapshotCacheConfig`에 추가로 지정합니다. 호출자가 소유할 실패
+queue는 `snapshotCacheFailureBuffer(capacity)`로 만들고 `SnapshotCacheFailureBuffer`로 노출합니다.
+
+안전한 miss 경로에서는 조회 실패 시 받은 권한을 한 번만 쓸 수 있습니다.
+
+1. DB 작업 전에 `lookup(id)`를 호출합니다. `maxOutstandingMissTokens`가 소진되면 DB 읽기를 시작하기 전에 실패합니다.
+2. miss라면 현재 최상위 트랜잭션에서 DB를 읽고 `stageSnapshot`을 호출합니다. 불투명한 `SnapshotCacheMiss`는
+   일회용입니다. 값 변환, 검증, 준비 작업이 실패해도 다시 쓸 수 없습니다.
+3. 스냅샷을 채우는 트랜잭션은 `maxAttempts = 1`이어야 합니다. 일시적인 DB 장애 재시도는 트랜잭션 바깥에 두고,
+   바깥쪽 시도마다 새로 `lookup`해야 합니다. 중첩 트랜잭션과 savepoint를 쓰는 트랜잭션은 거부됩니다.
+4. 커밋하면 준비한 작업을 적용하고, 롤백하거나 Exposed 시도가 실패하면 폐기합니다. 무효화도 시도별로 분리되므로
+   Exposed 재시도가 성공한 한 번만 공개됩니다. 같은 key를 여러 번 바꾸면 마지막 변경만 반영합니다.
+5. 프로세스 로컬 fence는 더 새로운 로컬 mutation 뒤에 도착한 늦은 fill을 거부합니다. 분산 lock이 아니며
+   직렬화하지 않습니다.
+
+앞서 등록된 트랜잭션 후처리가 예외를 던지면 캐시 후처리가 실행되지 않아 이전 캐시 값이 남을 수 있습니다.
+`maxStagedMutations`, `maxParticipatingStores`, 선택적 staged weight, `localDrainBudget`, 처리 중인 miss 용량으로
+보관 작업을 제한합니다. 커밋 뒤 캐시 실패는 호출자가 소유하고 용량이 제한된 `SnapshotCacheFailureBuffer`에 들어가며
+`drainTo`로 꺼냅니다. 이미 커밋된 DB 결과는 바뀌지 않습니다.
+
+공개 실패/상태 정보에는 크기가 제한된 구조 정보와, 안전할 때 exception type만 남습니다. exception text,
+stack trace, payload, identifier, SQL, URL, endpoint, credential은 보관하지 않습니다. identifier나 payload에서 만든
+값을 metric tag로 사용하면 안 됩니다.
+
+commit-safe는 롤백할 때 공개하지 않고 커밋을 공개 경계로 삼는다는 뜻입니다. DB와 캐시의 원자성을 보장하지 않고,
+crash durability도 제공하지 않습니다. 커밋 뒤 캐시 실패를 처리하는 애플리케이션 소유 outbox나 repair path를
+대체하지도 않습니다.
+
 ## testFixtures 시나리오
 
 `exposed-cache`는 모든 구현 모듈이 재사용할 수 있는 테스트 시나리오 클래스를 testFixtures로 제공합니다.
@@ -114,7 +163,7 @@ Redis 기반 저장소의 선택적 Resilience 설정입니다. `null`(기본값
 
 ```kotlin
 // build.gradle.kts
-testImplementation(testFixtures("io.github.bluetape4k.exposed:bluetape4k-exposed-cache:$version"))
+testImplementation(testFixtures("io.github.bluetape4k.exposed:bluetape4k-exposed-cache"))
 
 // 모듈 테스트에서 시나리오 상속
 class MyCaffeineReadThroughTest : JdbcReadThroughScenario() {
@@ -144,6 +193,8 @@ class MyCaffeineReadThroughTest : JdbcReadThroughScenario() {
 
 ```kotlin
 dependencies {
-    api("io.github.bluetape4k.exposed:bluetape4k-exposed-cache:$version")
+    api("io.github.bluetape4k.exposed:bluetape4k-exposed-cache")
 }
 ```
+
+애플리케이션이 `bluetape4k-dependencies` BOM 버전을 소유하므로 모듈 좌표에는 버전을 쓰지 않습니다.

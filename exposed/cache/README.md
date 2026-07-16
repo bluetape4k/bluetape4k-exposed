@@ -91,6 +91,56 @@ Optional resilience configuration for Redis-backed repositories. Pass `null` (th
 
 ![Write Strategy Patterns diagram](../../docs/images/readme-diagrams/exposed-cache-sequence-01.png)
 
+<!-- SNAPSHOT-CACHE-CONTRACT -->
+## Transaction-aware snapshot cache (opt-in)
+
+The snapshot-cache API is an opt-in cache-only path. It does not change or migrate existing `JdbcCacheRepository`,
+`R2dbcCacheRepository`, Caffeine repository, or Redis repository behavior. Use it when a read result can be copied to a
+detached immutable DTO and published only after the surrounding Exposed transaction commits.
+
+| Boundary | Exposed transaction-local `EntityCache` | Application snapshot near-cache |
+|---|---|---|
+| Lifetime | One Exposed transaction | Across transactions in one process, or across nodes when paired with invalidation |
+| Value | Managed DAO `Entity` state | `CacheSnapshot` containing a detached serializable DTO |
+| Visibility | Transaction-scoped | Commit publishes; rollback discards |
+| Consistency role | Identity/change tracking inside Exposed | Application-owned read optimization with explicit repair obligations |
+
+`CacheSnapshotMapper` runs inside the current root transaction. Copy every required field there; never retain a DAO
+`Entity`, transaction, request object, lazy relation, or mutable persistence object. The default
+`rejectDirectEntitySnapshotValues()` validator rejects a direct top-level `Entity`, and applications remain responsible
+for deep immutability. Cache callbacks perform no database writes.
+
+`SnapshotCacheConfig` defines the namespace, schema version (included in the Redisson compatibility fingerprint), and
+transaction limits shared by snapshot stores.
+Local Caffeine stores add capacity and expiry through `CaffeineSnapshotCacheConfig`. Create the caller-owned failure
+queue with `snapshotCacheFailureBuffer(capacity)` and expose it as a `SnapshotCacheFailureBuffer`.
+
+The safe miss path is deliberately capability-based:
+
+1. Call `lookup(id)` before database work. If `maxOutstandingMissTokens` is exhausted, lookup fails before the database
+   read starts.
+2. On a miss, read from the database in the current root transaction and call `stageSnapshot`. The opaque
+   `SnapshotCacheMiss` is one-shot; mapper, validation, or staging failure still consumes it.
+3. Snapshot fill requires `maxAttempts = 1`. Put transient-database retry outside the transaction and perform a fresh
+   `lookup` for every outer attempt. Nested/savepoint transactions are rejected.
+4. Commit applies staged work; rollback and a failed Exposed attempt discard it. Staged invalidation is attempt-local, so
+   a successful Exposed retry publishes it once. For repeated mutations of one key, the last staged mutation wins.
+5. A process-local fence rejects a late fill after a newer local mutation. It is not a distributed lock and is never
+   serialized.
+
+An earlier failing transaction callback can prevent this cache callback from running, leaving an older cache value in
+place. `maxStagedMutations`, `maxParticipatingStores`, optional staged weight, `localDrainBudget`, and outstanding miss
+capacity bound retained work. Post-commit cache failures go to the caller-owned bounded `SnapshotCacheFailureBuffer` and
+can be drained with `drainTo`; they do not change the already committed database result.
+
+Public failure and health surfaces retain bounded structural fields and, when safe, the exception type. They never retain
+exception text, stack traces, payloads, identifiers, SQL, URLs, endpoints, or credentials. Do not use identifiers or
+payload-derived values as metric tags.
+
+Commit-safe means only that rollback does not publish and commit is the publication boundary. It is not database/cache
+atomicity, does not provide crash durability, and does not replace an application-owned outbox or repair path for a
+post-commit cache failure.
+
 ## testFixtures Scenarios
 
 `exposed-cache` ships testFixtures with reusable scenario classes that all implementing modules inherit for consistency.
@@ -114,7 +164,7 @@ Optional resilience configuration for Redis-backed repositories. Pass `null` (th
 
 ```kotlin
 // testFixtures dependency in build.gradle.kts
-testImplementation(testFixtures("io.github.bluetape4k.exposed:bluetape4k-exposed-cache:$version"))
+testImplementation(testFixtures("io.github.bluetape4k.exposed:bluetape4k-exposed-cache"))
 
 // Extend the scenario in your module test
 class MyCaffeineReadThroughTest : JdbcReadThroughScenario() {
@@ -144,6 +194,8 @@ class MyCaffeineReadThroughTest : JdbcReadThroughScenario() {
 
 ```kotlin
 dependencies {
-    api("io.github.bluetape4k.exposed:bluetape4k-exposed-cache:$version")
+    api("io.github.bluetape4k.exposed:bluetape4k-exposed-cache")
 }
 ```
+
+The application owns the `bluetape4k-dependencies` BOM version, so the module coordinate is intentionally versionless.

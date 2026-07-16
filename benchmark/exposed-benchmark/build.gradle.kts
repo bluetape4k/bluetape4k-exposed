@@ -74,6 +74,7 @@ benchmark {
         }
         register("cache") {
             include("io.bluetape4k.exposed.benchmark.cache.CacheStrategyBenchmark.*")
+            include("io.bluetape4k.exposed.benchmark.cache.SnapshotCacheBenchmark.*")
             warmups = 1
             iterations = 3
             iterationTime = 1
