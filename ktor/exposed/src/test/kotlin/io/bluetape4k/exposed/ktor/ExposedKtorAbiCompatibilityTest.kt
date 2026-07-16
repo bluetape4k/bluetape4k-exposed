@@ -1,5 +1,10 @@
 package io.bluetape4k.exposed.ktor
 
+import io.ktor.server.application.Application
+import io.ktor.server.routing.Route
+import kotlinx.coroutines.CoroutineDispatcher
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions.assumeTrue
@@ -13,7 +18,7 @@ import java.util.concurrent.TimeUnit
 class ExposedKtorAbiCompatibilityTest {
 
     @Test
-    fun `compiled production output retains database-only JVM descriptors`() {
+    fun `compiled production output retains old and new JVM descriptors`() {
         val productionLocation = Path.of(
             requireNotNull(Bluetape4kExposedKtorConfig::class.java.protectionDomain.codeSource) {
                 "Bluetape4kExposedKtorConfig has no code source; cannot locate compiled production output."
@@ -285,6 +290,13 @@ class ExposedKtorAbiCompatibilityTest {
                     "Lio/bluetape4k/exposed/ktor/Bluetape4kExposedKtorConfig;ILjava/lang/Object;)V",
             ),
             AbiMember(
+                INSTALLER_CLASS,
+                "installBluetape4kExposedKtor",
+                "(Lio/ktor/server/application/Application;" +
+                    "Lio/bluetape4k/exposed/ktor/Bluetape4kExposedKtorConfig;" +
+                    "Lio/bluetape4k/exposed/ktor/ExposedKtorCacheReadinessConfig;)V",
+            ),
+            AbiMember(
                 ROUTES_CLASS,
                 "bluetape4kExposedHealthRoutes-021xcDE",
                 "(Lio/ktor/server/routing/Route;Lorg/jetbrains/exposed/v1/jdbc/Database;" +
@@ -299,6 +311,48 @@ class ExposedKtorAbiCompatibilityTest {
                     "Ljava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;" +
                     "ILjava/lang/Object;)V",
             ),
+            AbiMember(
+                ROUTES_CLASS,
+                "bluetape4kExposedHealthRoutes-PLKeYGg",
+                "(Lio/ktor/server/routing/Route;Lorg/jetbrains/exposed/v1/jdbc/Database;" +
+                    "Lkotlinx/coroutines/CoroutineDispatcher;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;" +
+                    "Ljava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;" +
+                    "Lio/bluetape4k/exposed/ktor/ExposedKtorCacheReadinessConfig;)V",
+            ),
+            AbiMember(
+                ROUTES_CLASS,
+                "bluetape4kExposedHealthRoutes-PLKeYGg\$default",
+                "(Lio/ktor/server/routing/Route;Lorg/jetbrains/exposed/v1/jdbc/Database;" +
+                    "Lkotlinx/coroutines/CoroutineDispatcher;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;" +
+                    "Ljava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;" +
+                    "Lio/bluetape4k/exposed/ktor/ExposedKtorCacheReadinessConfig;ILjava/lang/Object;)V",
+            ),
         )
     }
+}
+
+@Suppress("unused")
+private fun Application.compileInstallerSourceCalls(
+    config: Bluetape4kExposedKtorConfig,
+    cacheReadiness: ExposedKtorCacheReadinessConfig,
+) {
+    installBluetape4kExposedKtor()
+    installBluetape4kExposedKtor(config)
+    installBluetape4kExposedKtor(config = config, cacheReadiness = cacheReadiness)
+}
+
+@Suppress("unused")
+private fun Route.compileRouteSourceCalls(
+    jdbcDatabase: Database?,
+    jdbcBlockingDispatcher: CoroutineDispatcher?,
+    r2dbcDatabase: R2dbcDatabase?,
+    cacheReadiness: ExposedKtorCacheReadinessConfig,
+) {
+    bluetape4kExposedHealthRoutes(jdbcDatabase, jdbcBlockingDispatcher, r2dbcDatabase)
+    bluetape4kExposedHealthRoutes(
+        jdbcDatabase = null,
+        jdbcBlockingDispatcher = null,
+        r2dbcDatabase = null,
+        cacheReadiness = cacheReadiness,
+    )
 }

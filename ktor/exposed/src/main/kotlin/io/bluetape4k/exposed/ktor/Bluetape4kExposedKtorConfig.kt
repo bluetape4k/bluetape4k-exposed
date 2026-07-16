@@ -37,9 +37,13 @@ class Bluetape4kExposedKtorConfig(
         }
     }
 
-    internal fun validateHealthRoutes() {
-        require(jdbcDatabase != null || r2dbcDatabase != null) {
-            "At least one of jdbcDatabase or r2dbcDatabase is required when installHealthRoutes is true."
+    internal fun validateHealthRoutes(hasCacheContributors: Boolean) {
+        require(jdbcDatabase != null || r2dbcDatabase != null || hasCacheContributors) {
+            if (hasCacheContributors) {
+                "At least one database or cache contributor is required when installHealthRoutes is true."
+            } else {
+                "At least one of jdbcDatabase or r2dbcDatabase is required when installHealthRoutes is true."
+            }
         }
         require(jdbcDatabase == null || jdbcBlockingDispatcher != null) {
             "jdbcBlockingDispatcher is required when JDBC readiness routes are installed."
