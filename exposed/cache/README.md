@@ -183,6 +183,26 @@ class MyCaffeineReadThroughTest : JdbcReadThroughScenario() {
 | Pattern-based cache invalidation needed | Any Redis module (`invalidateByPattern`) |
 | Redisson features (distributed locks, etc.) | `exposed-jdbc-redisson` / `exposed-r2dbc-redisson` |
 
+## Cache Worker State Migration
+
+`CacheHealthReport.isFlushJobRunning` was removed before the stable release.
+Read `workerState` directly; there is no ambiguous compatibility alias.
+
+```kotlin
+val healthy = report.lastFlushError == null && report.workerState in setOf(
+    CacheWorkerState.NOT_APPLICABLE,
+    CacheWorkerState.IDLE,
+    CacheWorkerState.RUNNING,
+)
+```
+
+`NOT_APPLICABLE` means the configured mode has no background worker. A fresh
+`IDLE` worker is healthy even though no flush is running; `RUNNING` means it is
+available after accepting work. `DRAINING` is finishing accepted writes,
+`FAILED` is a terminal worker failure, and `STOPPED` will accept no more work.
+The old Boolean could not distinguish those states, so retaining an alias would
+recreate the shutdown and failure ambiguity this lifecycle model removes.
+
 ## Module Links
 
 - [exposed-jdbc-caffeine](../exposed-jdbc-caffeine/README.md) — JDBC + Caffeine local cache

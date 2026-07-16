@@ -98,15 +98,23 @@ spring.data.exposed-jdbc.repositories.base-packages=com.example.repository
 Spring Boot Actuator와 `bluetape4k-exposed-jdbc-caffeine`이 classpath에 있으면
 `exposedJdbcCacheHealthIndicator`가 자동 등록됩니다. 이 indicator는 Caffeine
 write-through/write-behind 상태를 Boot health detail로 노출합니다: cache mode,
-queue depth, flush job 상태, 마지막 flush error.
+queue depth, `workerState`, 마지막 flush error.
 
 ```properties
 bluetape4k.exposed.cache.health.enabled=true
 ```
 
-Flush 실패는 `DOWN`, write-behind queue가 남아 있는데 flush job이 동작하지 않는
-상태는 `OUT_OF_SERVICE`로 매핑됩니다. 비활성화하려면 이 property를 `false`로
-설정하세요.
+| Report | Actuator status |
+|---|---|
+| Flush error가 없고 `workerState=NOT_APPLICABLE|IDLE|RUNNING` | `UP` |
+| Flush error가 없고 `workerState=DRAINING|STOPPED` | `OUT_OF_SERVICE` |
+| Flush error 또는 `workerState=FAILED` | `DOWN` |
+
+비활성화하려면 이 property를 `false`로 설정하세요. Spring Boot는 indicator를
+자동으로 찾습니다. Ktor는 자동으로 찾지 않습니다. 애플리케이션이
+`ExposedKtorCacheContributor`를 명시적으로 만들며, Ktor는 `DRAINING`, `FAILED`,
+`STOPPED`를 redacted detail의 readiness `DOWN`으로 매핑합니다. Actuator management
+endpoint 접근 정책과 Ktor route 보안 정책은 별도로 관리하세요.
 
 ## 사용 예시
 

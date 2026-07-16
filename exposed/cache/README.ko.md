@@ -182,6 +182,26 @@ class MyCaffeineReadThroughTest : JdbcReadThroughScenario() {
 | 패턴 기반 캐시 무효화 필요 | Redis 계열 (`invalidateByPattern`) |
 | Redisson 기능(분산 락 등) 필요 | `exposed-jdbc-redisson` / `exposed-r2dbc-redisson` |
 
+## Cache Worker State Migration
+
+`CacheHealthReport.isFlushJobRunning`은 stable release 전에 제거됐습니다.
+호환 alias 없이 `workerState`를 직접 읽으세요.
+
+```kotlin
+val healthy = report.lastFlushError == null && report.workerState in setOf(
+    CacheWorkerState.NOT_APPLICABLE,
+    CacheWorkerState.IDLE,
+    CacheWorkerState.RUNNING,
+)
+```
+
+`NOT_APPLICABLE`은 설정된 mode에 background worker가 없다는 뜻입니다. 새로 만든
+`IDLE` worker는 flush를 실행하지 않아도 정상이고, `RUNNING`은 작업을 받은 뒤에도
+사용할 수 있는 상태입니다. `DRAINING`은 받은 write를 마무리하는 중이고, `FAILED`는
+worker의 terminal failure, `STOPPED`는 더 이상 작업을 받지 않는 종료 상태입니다.
+기존 Boolean으로는 이 상태들을 구분할 수 없습니다. 호환 alias를 남기면 lifecycle
+모델이 없애려던 종료와 장애의 모호함이 다시 생깁니다.
+
 ## 모듈 링크
 
 - [exposed-jdbc-caffeine](../exposed-jdbc-caffeine/README.ko.md) — JDBC + Caffeine 로컬 캐시
