@@ -15,7 +15,9 @@ enum class ExposedKtorCacheStatus { UP, DOWN }
  * tenant, key, URL, endpoint, namespace, secret, or other data-bearing values. Repository report suppliers
  * must be side-effect-free O(1) reads of existing in-memory state; database, cache, network, file, blocking,
  * and other backend I/O are unsupported. Suspending R2DBC and custom suppliers must be non-blocking and
- * cooperate with cancellation. The library creates no isolation thread, dispatcher, scope, or worker.
+ * cooperate with cancellation. A supplier-thrown cancellation while the request remains active is sanitized as
+ * `DOWN`; cancellation of the request context is rethrown. The library creates no isolation thread, dispatcher,
+ * scope, or worker.
  */
 class ExposedKtorCacheContributor private constructor(
     internal val component: String,

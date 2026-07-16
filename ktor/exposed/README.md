@@ -247,6 +247,9 @@ suspending, non-blocking, and cancellation-cooperative. Blocking,
 cancellation-insensitive, database, cache, network, or file I/O is unsupported.
 A coroutine timeout cannot terminate a blocking thread or process, so such a
 supplier may outlive the request deadline.
+A supplier that throws `CancellationException` while the request is still active
+is sanitized as `DOWN`, and later contributors continue. Cancellation of the
+request context is rethrown and stops readiness processing.
 
 ## Installation and Security
 

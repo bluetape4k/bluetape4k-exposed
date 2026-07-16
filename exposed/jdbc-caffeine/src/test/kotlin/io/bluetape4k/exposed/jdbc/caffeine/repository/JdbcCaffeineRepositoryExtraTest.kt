@@ -676,6 +676,68 @@ class JdbcCaffeineRepositoryExtraTest {
 
         @Test
         @Timeout(5, unit = TimeUnit.SECONDS)
+        fun `close - interrupted follower preserves flag without overriding owner completion`() {
+            val flushStarted = CountDownLatch(1)
+            val releaseFlush = CountDownLatch(1)
+            val ownerCompleted = CountDownLatch(1)
+            val followerCompleted = CountDownLatch(1)
+            val followerInterrupted = AtomicBoolean(false)
+            val repository = BlockingFlushJdbcRepository(
+                config = LocalCacheConfig(
+                    keyPrefix = "jdbc:caffeine:extra:wb-close-follower",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 1,
+                    writeBehindQueueCapacity = 1,
+                ),
+                flushStarted = flushStarted,
+                releaseFlush = releaseFlush,
+            )
+
+            withActorTable(TestDB.H2_MYSQL) {
+                val actor = ActorTable.selectAll().first().toActorRecord()
+                repository.put(actor.id, actor.copy(firstName = "close-follower"))
+                flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                val owner = Thread {
+                    try {
+                        repository.close()
+                    } finally {
+                        ownerCompleted.countDown()
+                    }
+                }.apply { start() }
+                awaitHealthReport(repository) { it.workerState == CacheWorkerState.DRAINING }
+                val follower = Thread {
+                    try {
+                        repository.close()
+                        followerInterrupted.set(Thread.currentThread().isInterrupted)
+                    } finally {
+                        followerCompleted.countDown()
+                    }
+                }.apply { start() }
+
+                try {
+                    awaitThreadWaiting(follower).shouldBeTrue()
+                    follower.interrupt()
+                    Thread.sleep(50)
+                    followerCompleted.await(50, TimeUnit.MILLISECONDS).shouldBeFalse()
+                    releaseFlush.countDown()
+                    ownerCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
+                    followerCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
+                } finally {
+                    releaseFlush.countDown()
+                    owner.interrupt()
+                    follower.interrupt()
+                    owner.join(5_000)
+                    follower.join(5_000)
+                    repository.close()
+                }
+
+                followerInterrupted.get().shouldBeTrue()
+                repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.STOPPED
+            }
+        }
+
+        @Test
+        @Timeout(5, unit = TimeUnit.SECONDS)
         fun `close - accepted put blocked before cache mutation cannot repopulate after timeout`() {
             val cachePutEntered = CountDownLatch(1)
             val releaseCachePut = Semaphore(0)
@@ -1332,6 +1394,14 @@ class JdbcCaffeineRepositoryExtraTest {
             Thread.sleep(10)
         }
         return repository.validateConsistency()
+    }
+
+    private fun awaitThreadWaiting(thread: Thread): Boolean {
+        repeat(100) {
+            if (thread.state == Thread.State.WAITING || thread.state == Thread.State.TIMED_WAITING) return true
+            Thread.sleep(10)
+        }
+        return thread.state == Thread.State.WAITING || thread.state == Thread.State.TIMED_WAITING
     }
 
     @Suppress("UNCHECKED_CAST")
