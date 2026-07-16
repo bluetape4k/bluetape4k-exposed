@@ -1,7 +1,14 @@
 val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
+val supportedMigrationDriftDatabases = setOf("H2", "POSTGRESQL", "MYSQL_V8")
 val migrationDriftDatabase = providers.environmentVariable("EXPOSED_TEST_DB")
-    .map { it.trim().uppercase() }
+    .map {
+        val selected = it.trim().uppercase().ifEmpty { "H2" }
+        require(selected in supportedMigrationDriftDatabases) {
+            "EXPOSED_TEST_DB must be one of ${supportedMigrationDriftDatabases.joinToString()}"
+        }
+        selected
+    }
     .orElse("H2")
 
 tasks.named<Test>("test") {
@@ -31,7 +38,7 @@ tasks.register<Test>("migrationDriftTest") {
     jvmArgs(
         "-Xshare:off",
         "-Xms2M",
-        "-Xmx4G",
+        "-Xmx2G",
         "-XX:+UseG1GC",
         "-XX:+UnlockExperimentalVMOptions",
         "-XX:+EnableDynamicAgentLoading",

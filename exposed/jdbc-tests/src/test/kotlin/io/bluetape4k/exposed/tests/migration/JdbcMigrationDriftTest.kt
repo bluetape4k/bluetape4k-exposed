@@ -79,7 +79,7 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
                     )
 
                     assertTrue(statements.isNotEmpty())
-                    assertTrue(statements.any { "ALTER" in it.uppercase(Locale.ROOT) })
+                    assertTrue(statements.any { isExpectedH2TypeChange(it, JdbcTypeChangeEvolved.tableName, "value") })
                 }
             },
             cleanup = {
@@ -134,6 +134,10 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
                 "ALTER TABLE jdbc_migration_drift ADD description VARCHAR(255) NULL UNIQUE",
                 "ALTER TABLE jdbc_migration_drift ADD description VARCHAR(255) NULL PRIMARY KEY",
                 "ALTER TABLE jdbc_migration_drift ADD description VARCHAR(255) NULL COLLATE utf8mb4_bin",
+                "ALTER TABLE \"jdbc_migration_drift \" ADD \"description \" VARCHAR(255) NULL",
+                "ALTER TABLE \" jdbc_migration_drift\" ADD \" description\" VARCHAR(255) NULL",
+                "ALTER TABLE \"JDBC_MIGRATION_DRIFT\" ADD \"description\" VARCHAR(255) NULL",
+                "ALTER TABLE \"jdbc_migration_drift\" ADD \"DESCRIPTION\" VARCHAR(255) NULL",
             )
 
             rejected.forEach { statement ->
@@ -206,20 +210,37 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
         }
 
         val normalized = statement
-            .replace(IDENTIFIER_QUOTES, "")
             .replace(WHITESPACE, " ")
             .trim()
-            .uppercase(Locale.ROOT)
-        val expected = Regex(
-            "^ALTER TABLE ${Regex.escape(expectedTable.uppercase(Locale.ROOT))} " +
-                    "ADD(?: COLUMN)? ${Regex.escape(expectedColumn.uppercase(Locale.ROOT))} " +
-                    "VARCHAR\\s*\\(\\s*255\\s*\\) NULL$",
-        )
+        val match = ADDITIVE_STATEMENT.matchEntire(normalized)
 
-        require(expected.matches(normalized)) {
+        require(
+            match != null &&
+                    matchesExpectedIdentifier(match.groupValues[1], expectedTable) &&
+                    matchesExpectedIdentifier(match.groupValues[2], expectedColumn),
+        ) {
             "Only the reviewed additive migration statement is allowed"
         }
         return statement
+    }
+
+    private fun matchesExpectedIdentifier(token: String, expected: String): Boolean {
+        return when {
+            token.startsWith('"') && token.endsWith('"') -> token.substring(1, token.lastIndex) == expected
+            token.startsWith('`') && token.endsWith('`') -> token.substring(1, token.lastIndex) == expected
+            else -> token.equals(expected, ignoreCase = true)
+        }
+    }
+
+    private fun isExpectedH2TypeChange(statement: String, expectedTable: String, expectedColumn: String): Boolean {
+        val normalized = statement
+            .replace(Regex("[\"`]"), "")
+            .replace(WHITESPACE, " ")
+            .trim()
+            .uppercase(Locale.ROOT)
+        return normalized.startsWith("ALTER TABLE ${expectedTable.uppercase(Locale.ROOT)} ") &&
+                Regex("\\b${Regex.escape(expectedColumn.uppercase(Locale.ROOT))}\\b").containsMatchIn(normalized) &&
+                Regex("\\b(TEXT|CLOB)\\b").containsMatchIn(normalized)
     }
 
     private inline fun preservingFailure(
@@ -243,7 +264,12 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
     }
 
     companion object {
-        private val IDENTIFIER_QUOTES = Regex("[\"`]")
+        private const val IDENTIFIER_TOKEN = "(?:\"[^\"]+\"|`[^`]+`|[A-Za-z_][A-Za-z0-9_]*)"
+        private val ADDITIVE_STATEMENT = Regex(
+            "^ALTER TABLE ($IDENTIFIER_TOKEN) ADD(?: COLUMN)? ($IDENTIFIER_TOKEN) " +
+                    "VARCHAR\\s*\\(\\s*255\\s*\\) NULL$",
+            RegexOption.IGNORE_CASE,
+        )
         private val WHITESPACE = Regex("\\s+")
 
         private object JdbcMigrationBaseline: Table("jdbc_migration_drift") {

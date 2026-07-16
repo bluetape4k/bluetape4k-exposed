@@ -5,16 +5,21 @@ permissions:
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '30 19 * * 0'  # Weekly after Sunday nightly, UTC 19:30 (KST 04:30 Monday)
   pull_request:
     branches: [develop, main]
     paths:
-      - 'examples/*-demo/**'
+      - 'examples/jdbc-demo/**'
+      - 'examples/r2dbc-demo/**'
+      - 'exposed/jdbc-tests/**'
+      - 'exposed/r2dbc-tests/**'
+      - 'README.md'
+      - 'README.ko.md'
       - 'settings.gradle.kts'
       - 'build.gradle.kts'
-      - 'gradle/libs.versions.toml'
+      - 'gradle.properties'
+      - 'gradle/**'
       - '.github/workflows/migration-smoke.yml'
+      - '.github/workflows/nightly-tests.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -28,10 +33,14 @@ env:
 jobs:
   demo-migrations:
     name: Demo Migration Generation
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-java@v5
         with:
           java-version: ${{ env.JAVA_VERSION }}
@@ -40,17 +49,274 @@ jobs:
         with:
           gradle-version: wrapper
           cache-read-only: ${{ github.event_name == 'pull_request' }}
-      - name: Generate JDBC demo migrations
-        run: >
-          ./gradlew
-          :exposed-spring-boot-jdbc-demo:generateMigrations
-          --filename=V1__create_products.sql
-          --no-daemon
-      - name: Generate R2DBC demo migrations
-        run: >
-          ./gradlew
-          :exposed-spring-boot-r2dbc-demo:generateMigrations
-          --filename=V1__create_webflux_products.sql
-          --no-daemon
-      - name: Verify generated migrations are checked in intentionally
-        run: git diff --exit-code -- examples/jdbc-demo/src/main/resources/db/migration examples/r2dbc-demo/src/main/resources/db/migration
+      - name: Verify migration task supports forced regeneration
+        run: |
+          ./gradlew :exposed-spring-boot-jdbc-demo:help --task generateMigrations --no-daemon | grep -F -- '--rerun'
+          ./gradlew :exposed-spring-boot-r2dbc-demo:help --task generateMigrations --no-daemon | grep -F -- '--rerun'
+      - name: Regenerate fixed demo migrations
+        run: |
+          jdbc_file='examples/jdbc-demo/src/main/resources/db/migration/V1__create_products.sql'
+          r2dbc_file='examples/r2dbc-demo/src/main/resources/db/migration/V1__create_webflux_products.sql'
+
+          rm -f "$jdbc_file" "$r2dbc_file"
+          ./gradlew \
+            :exposed-spring-boot-jdbc-demo:generateMigrations \
+            --filename=V1__create_products.sql \
+            --rerun \
+            --no-build-cache \
+            --no-daemon
+          ./gradlew \
+            :exposed-spring-boot-r2dbc-demo:generateMigrations \
+            --filename=V1__create_webflux_products.sql \
+            --rerun \
+            --no-build-cache \
+            --no-daemon
+
+          test -f "$jdbc_file"
+          test -f "$r2dbc_file"
+      - name: Verify migration directories are unchanged
+        run: |
+          status=$(git status --porcelain=v1 --untracked-files=all -- \
+            examples/jdbc-demo/src/main/resources/db/migration \
+            examples/r2dbc-demo/src/main/resources/db/migration)
+          if [[ -n "$status" ]]; then
+            echo 'Generated migration fixtures differ from the checked-in files.' >&2
+            exit 1
+          fi
+
+  h2-drift:
+    name: H2 Migration Drift
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xms256m -Xmx2g -Dkotlin.daemon.jvm.options=-Xms256m,-Xmx1g"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: wrapper
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+      - name: Prepare bounded evidence directories
+        run: |
+          for api in jdbc r2dbc; do
+            report="build/migration-drift-reports/h2/$api"
+            mkdir -p "$report"
+            printf '%s\n' 'state=started' > "$report/status.txt"
+          done
+      - name: Run JDBC H2 migration drift
+        id: jdbc_h2
+        timeout-minutes: 10
+        continue-on-error: true
+        env:
+          EXPOSED_TEST_DB: H2
+          MIGRATION_API: jdbc
+          MIGRATION_TASK: ':bluetape4k-exposed-jdbc-tests:migrationDriftTest'
+          MIGRATION_TEST_FILTER: '*JdbcMigrationDriftTest*'
+          MIGRATION_XML_SOURCE: exposed/jdbc-tests/build/test-results/migrationDriftTest
+        run: |
+          set -Eeuo pipefail
+          report="build/migration-drift-reports/h2/$MIGRATION_API"
+          raw_log="$RUNNER_TEMP/migration-drift-$MIGRATION_API-h2.log"
+          trap 'rm -f "$raw_log"' EXIT
+          rm -rf "$MIGRATION_XML_SOURCE"
+
+          set +e
+          ./gradlew "$MIGRATION_TASK" \
+            --tests "$MIGRATION_TEST_FILTER" \
+            --no-parallel \
+            --max-workers=1 \
+            --no-configuration-cache \
+            --no-daemon 2>&1 | tee "$raw_log" >/dev/null
+          gradle_status=${PIPESTATUS[0]}
+          set +e
+
+          evidence_status=0
+          {
+            printf 'selection=%s\n' "$MIGRATION_API-h2"
+            printf 'task=%s\n' "$MIGRATION_TASK"
+            grep -E '^(> Task |BUILD (SUCCESSFUL|FAILED)|[0-9]+ tests? completed)' "$raw_log" | tail -n 200 || true
+          } | sed -E \
+            -e 's#[[:alpha:]][[:alnum:]+.-]*://[^[:space:]]+#[URL_REDACTED]#g' \
+            -e 's#(localhost|[[:alnum:]][[:alnum:]-]*|([[:alnum:]-]+\.)+[[:alpha:]][[:alpha:]-]*|([0-9]{1,3}\.){3}[0-9]{1,3}|\[[0-9A-Fa-f:]+\]):[0-9]{1,5}#[HOST_REDACTED]#g' \
+            -e 's#/(home|Users)/[^[:space:]]+#[HOME_REDACTED]#g' \
+            -e 's#/root/[^[:space:]]+#[HOME_REDACTED]#g' \
+            > "$report/command-summary.log" || evidence_status=1
+
+          xml_count=0
+          while IFS= read -r -d '' xml; do
+            sed -E \
+              -e 's/ hostname="[^"]*"/ hostname="[REDACTED]"/g' \
+              -e 's#(localhost|[[:alnum:]][[:alnum:]-]*|([[:alnum:]-]+\.)+[[:alpha:]][[:alpha:]-]*|([0-9]{1,3}\.){3}[0-9]{1,3}|\[[0-9A-Fa-f:]+\]):[0-9]{1,5}#[HOST_REDACTED]#g' \
+              "$xml" > "$report/$(basename "$xml")"
+            xml_count=$((xml_count + 1))
+          done < <(find "$MIGRATION_XML_SOURCE" -maxdepth 1 -type f -name 'TEST-*.xml' -print0 2>/dev/null)
+          if ((xml_count == 0)); then
+            evidence_status=1
+          fi
+          if ! grep -Rqs 'additive drift converges on H2' "$report" --include='TEST-*.xml'; then
+            evidence_status=1
+          fi
+
+          sensitive='[[:alpha:]][[:alnum:]+.-]*://|(localhost|[[:alnum:]][[:alnum:]-]*|([[:alnum:]-]+\.)+[[:alpha:]][[:alpha:]-]*|([0-9]{1,3}\.){3}[0-9]{1,3}|\[[0-9A-Fa-f:]+\]):[0-9]{1,5}|[^[:space:]/:@]+:[^[:space:]/@]+@|[?&][[:alnum:]_.~-]+=|/(home|Users)/|/root/|(^|[^[:alnum:]_])(password|passwd|pwd|secret|token|authorization|bearer|api[_-]?key)([^[:alnum:]_]|$)'
+          while IFS= read -r -d '' staged; do
+            if LC_ALL=C grep -Eqi "$sensitive" "$staged"; then
+              rm -f "$staged"
+              evidence_status=1
+            fi
+          done < <(find "$report" -maxdepth 1 -type f \( -name '*.xml' -o -name '*.log' \) -print0)
+
+          {
+            printf 'state=completed\n'
+            printf 'selection=%s\n' "$MIGRATION_API-h2"
+            printf 'gradle-status=%s\n' "$gradle_status"
+            printf 'evidence-status=%s\n' "$evidence_status"
+          } > "$report/status.txt"
+          if LC_ALL=C grep -Eqi "$sensitive" "$report/status.txt"; then
+            evidence_status=1
+            printf '%s\n' \
+              'state=completed' \
+              "selection=$MIGRATION_API-h2" \
+              "gradle-status=$gradle_status" \
+              'evidence-status=1' > "$report/status.txt"
+          fi
+          rm -f "$raw_log"
+          if [[ -f "$report/command-summary.log" ]]; then
+            sed -n '1,200p' "$report/command-summary.log"
+          fi
+
+          if ((gradle_status != 0)); then
+            exit "$gradle_status"
+          fi
+          exit "$evidence_status"
+      - name: Run R2DBC H2 migration drift
+        id: r2dbc_h2
+        timeout-minutes: 10
+        continue-on-error: true
+        env:
+          EXPOSED_TEST_DB: H2
+          MIGRATION_API: r2dbc
+          MIGRATION_TASK: ':bluetape4k-exposed-r2dbc-tests:migrationDriftTest'
+          MIGRATION_TEST_FILTER: '*R2dbcMigrationDriftTest*'
+          MIGRATION_XML_SOURCE: exposed/r2dbc-tests/build/test-results/migrationDriftTest
+        run: |
+          set -Eeuo pipefail
+          report="build/migration-drift-reports/h2/$MIGRATION_API"
+          raw_log="$RUNNER_TEMP/migration-drift-$MIGRATION_API-h2.log"
+          trap 'rm -f "$raw_log"' EXIT
+          rm -rf "$MIGRATION_XML_SOURCE"
+
+          set +e
+          ./gradlew "$MIGRATION_TASK" \
+            --tests "$MIGRATION_TEST_FILTER" \
+            --no-parallel \
+            --max-workers=1 \
+            --no-configuration-cache \
+            --no-daemon 2>&1 | tee "$raw_log" >/dev/null
+          gradle_status=${PIPESTATUS[0]}
+          set +e
+
+          evidence_status=0
+          {
+            printf 'selection=%s\n' "$MIGRATION_API-h2"
+            printf 'task=%s\n' "$MIGRATION_TASK"
+            grep -E '^(> Task |BUILD (SUCCESSFUL|FAILED)|[0-9]+ tests? completed)' "$raw_log" | tail -n 200 || true
+          } | sed -E \
+            -e 's#[[:alpha:]][[:alnum:]+.-]*://[^[:space:]]+#[URL_REDACTED]#g' \
+            -e 's#(localhost|[[:alnum:]][[:alnum:]-]*|([[:alnum:]-]+\.)+[[:alpha:]][[:alpha:]-]*|([0-9]{1,3}\.){3}[0-9]{1,3}|\[[0-9A-Fa-f:]+\]):[0-9]{1,5}#[HOST_REDACTED]#g' \
+            -e 's#/(home|Users)/[^[:space:]]+#[HOME_REDACTED]#g' \
+            -e 's#/root/[^[:space:]]+#[HOME_REDACTED]#g' \
+            > "$report/command-summary.log" || evidence_status=1
+
+          xml_count=0
+          while IFS= read -r -d '' xml; do
+            sed -E \
+              -e 's/ hostname="[^"]*"/ hostname="[REDACTED]"/g' \
+              -e 's#(localhost|[[:alnum:]][[:alnum:]-]*|([[:alnum:]-]+\.)+[[:alpha:]][[:alpha:]-]*|([0-9]{1,3}\.){3}[0-9]{1,3}|\[[0-9A-Fa-f:]+\]):[0-9]{1,5}#[HOST_REDACTED]#g' \
+              "$xml" > "$report/$(basename "$xml")"
+            xml_count=$((xml_count + 1))
+          done < <(find "$MIGRATION_XML_SOURCE" -maxdepth 1 -type f -name 'TEST-*.xml' -print0 2>/dev/null)
+          if ((xml_count == 0)); then
+            evidence_status=1
+          fi
+          if ! grep -Rqs 'additive drift converges on H2' "$report" --include='TEST-*.xml'; then
+            evidence_status=1
+          fi
+
+          sensitive='[[:alpha:]][[:alnum:]+.-]*://|(localhost|[[:alnum:]][[:alnum:]-]*|([[:alnum:]-]+\.)+[[:alpha:]][[:alpha:]-]*|([0-9]{1,3}\.){3}[0-9]{1,3}|\[[0-9A-Fa-f:]+\]):[0-9]{1,5}|[^[:space:]/:@]+:[^[:space:]/@]+@|[?&][[:alnum:]_.~-]+=|/(home|Users)/|/root/|(^|[^[:alnum:]_])(password|passwd|pwd|secret|token|authorization|bearer|api[_-]?key)([^[:alnum:]_]|$)'
+          while IFS= read -r -d '' staged; do
+            if LC_ALL=C grep -Eqi "$sensitive" "$staged"; then
+              rm -f "$staged"
+              evidence_status=1
+            fi
+          done < <(find "$report" -maxdepth 1 -type f \( -name '*.xml' -o -name '*.log' \) -print0)
+
+          {
+            printf 'state=completed\n'
+            printf 'selection=%s\n' "$MIGRATION_API-h2"
+            printf 'gradle-status=%s\n' "$gradle_status"
+            printf 'evidence-status=%s\n' "$evidence_status"
+          } > "$report/status.txt"
+          if LC_ALL=C grep -Eqi "$sensitive" "$report/status.txt"; then
+            evidence_status=1
+            printf '%s\n' \
+              'state=completed' \
+              "selection=$MIGRATION_API-h2" \
+              "gradle-status=$gradle_status" \
+              'evidence-status=1' > "$report/status.txt"
+          fi
+          rm -f "$raw_log"
+          if [[ -f "$report/command-summary.log" ]]; then
+            sed -n '1,200p' "$report/command-summary.log"
+          fi
+
+          if ((gradle_status != 0)); then
+            exit "$gradle_status"
+          fi
+          exit "$evidence_status"
+      - name: Record bounded H2 outcomes
+        if: always()
+        env:
+          JDBC_OUTCOME: ${{ steps.jdbc_h2.outcome }}
+          R2DBC_OUTCOME: ${{ steps.r2dbc_h2.outcome }}
+        run: |
+          printf 'github-outcome=%s\n' "$JDBC_OUTCOME" >> build/migration-drift-reports/h2/jdbc/status.txt
+          printf 'github-outcome=%s\n' "$R2DBC_OUTCOME" >> build/migration-drift-reports/h2/r2dbc/status.txt
+      - name: Upload JDBC H2 migration evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: migration-drift-jdbc-h2
+          path: build/migration-drift-reports/h2/jdbc/**
+          retention-days: 14
+          if-no-files-found: error
+      - name: Upload R2DBC H2 migration evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: migration-drift-r2dbc-h2
+          path: build/migration-drift-reports/h2/r2dbc/**
+          retention-days: 14
+          if-no-files-found: error
+      - name: Require both H2 migration selections
+        if: always()
+        env:
+          JDBC_OUTCOME: ${{ steps.jdbc_h2.outcome }}
+          R2DBC_OUTCOME: ${{ steps.r2dbc_h2.outcome }}
+        run: |
+          failed=0
+          for api in jdbc r2dbc; do
+            status="build/migration-drift-reports/h2/$api/status.txt"
+            grep -qx 'gradle-status=0' "$status" || failed=1
+            grep -qx 'evidence-status=0' "$status" || failed=1
+          done
+          [[ "$JDBC_OUTCOME" == success ]] || failed=1
+          [[ "$R2DBC_OUTCOME" == success ]] || failed=1
+          exit "$failed"

@@ -183,11 +183,14 @@ subprojects {
             maxParallelUsages.set(1)
         }
 
+        withType<Test>().configureEach {
+            usesService(testMutex)
+        }
+
         compileJava { options.isIncremental = true }
         compileKotlin { compilerOptions { incremental = true } }
 
         test {
-            usesService(testMutex)
             useJUnitPlatform()
             jvmArgs(
                 "-Xshare:off",
