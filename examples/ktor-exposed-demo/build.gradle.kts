@@ -7,7 +7,7 @@ application {
     mainClass.set("io.bluetape4k.examples.exposed.ktor.KtorExposedDemoApplicationKt")
 }
 
-val postgresIntegrationTest by sourceSets.creating {
+val postgresIntegrationTest = sourceSets.create("postgresIntegrationTest") {
     compileClasspath += sourceSets.main.get().output
     runtimeClasspath += output + compileClasspath
 }
@@ -38,7 +38,6 @@ dependencies {
     implementation("io.ktor:ktor-server-netty")
 
     runtimeOnly(libs.h2.v2)
-    runtimeOnly(bt4k.r2dbc.h2)
     runtimeOnly(libs.r2dbc.postgresql)
 
     testImplementation(bt4k.bluetape4k.ktor.testing)
