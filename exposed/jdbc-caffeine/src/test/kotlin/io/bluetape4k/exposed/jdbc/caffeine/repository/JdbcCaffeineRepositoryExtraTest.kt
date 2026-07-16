@@ -1,5 +1,7 @@
 package io.bluetape4k.exposed.jdbc.caffeine.repository
 
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
 import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
@@ -11,6 +13,7 @@ import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.ActorRecord
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.ActorTable
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.CredentialTable
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.toActorRecord
+import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.toCredentialRecord
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.withActorTable
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.withCredentialTable
 import io.bluetape4k.exposed.jdbc.caffeine.domain.CredentialJdbcCaffeineRepository
@@ -43,13 +46,17 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.time.Duration
 import java.time.Instant
 import java.util.*
 import kotlinx.coroutines.Job
 import kotlin.coroutines.cancellation.CancellationException
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * JDBC Caffeine 레포지토리 추가 커버리지 테스트.
@@ -371,6 +378,22 @@ class JdbcCaffeineRepositoryExtraTest {
     @Nested
     inner class WriteBehindCloseFlushTest: AbstractJdbcCaffeineTest() {
 
+        @Test
+        fun `close - production wait default remains thirty seconds`() {
+            val repository = CredentialJdbcCaffeineRepository(
+                LocalCacheConfig(
+                    keyPrefix = "jdbc:caffeine:extra:wb-close-default",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                )
+            )
+
+            try {
+                repository.writeBehindCloseWaitDuration shouldBeEqualTo Duration.ofSeconds(30)
+            } finally {
+                repository.close()
+            }
+        }
+
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
         fun `close - Write-Behind 종료 시 큐에 남은 항목이 DB에 flush된다`(testDB: TestDB) {
@@ -511,6 +534,231 @@ class JdbcCaffeineRepositoryExtraTest {
                 repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.STOPPED
             }
         }
+
+        @Test
+        @Timeout(5, unit = TimeUnit.SECONDS)
+        fun `close - blocked write-behind drain times out as failed and late completion stays failed`() {
+            val flushStarted = CountDownLatch(1)
+            val releaseFlush = CountDownLatch(1)
+            val closeCompleted = CountDownLatch(1)
+            val repository = BlockingFlushJdbcRepository(
+                config = LocalCacheConfig(
+                    keyPrefix = "jdbc:caffeine:extra:wb-close-timeout",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 1,
+                    writeBehindQueueCapacity = 1,
+                ),
+                flushStarted = flushStarted,
+                releaseFlush = releaseFlush,
+                writeBehindCloseWaitDuration = Duration.ofMillis(50),
+            )
+
+            withActorTable(TestDB.H2_MYSQL) {
+                val existing = ActorTable.selectAll().first().toActorRecord()
+                repository.put(existing.id, existing.copy(firstName = "close-timeout"))
+                flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                val workerCompleted = CountDownLatch(1)
+                writeBehindJobOf(repository).invokeOnCompletion { workerCompleted.countDown() }
+
+                val closeThread = Thread {
+                    try {
+                        repository.close()
+                    } finally {
+                        closeCompleted.countDown()
+                    }
+                }.apply { start() }
+
+                try {
+                    closeCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
+                    repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.FAILED
+                } finally {
+                    releaseFlush.countDown()
+                    closeThread.interrupt()
+                    closeThread.join(5_000)
+                }
+
+                closeThread.isAlive.shouldBeFalse()
+                workerCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.FAILED
+            }
+        }
+
+        @Test
+        fun `close - deadline outcome uses readiness event time rather than later lock acquisition`() {
+            val repository = ActorJdbcCaffeineRepository(LocalCacheConfig.READ_ONLY)
+            val startedAt = 1_000L
+            val budget = 100L
+
+            try {
+                setPrivateLong(repository, "writeBehindCloseStartedAtNanos", startedAt)
+                setPrivateLong(repository, "writeBehindCloseWaitBudgetNanos", budget)
+
+                setWriteBehindAdmissions(repository, drainedAtNanos = startedAt + budget)
+                setWriteBehindJobCompletionAt(repository, startedAt + budget + 1L)
+                writeBehindReadinessWasWithinCloseBudget(repository).shouldBeFalse()
+
+                setWriteBehindAdmissions(repository, drainedAtNanos = startedAt + budget - 1L)
+                setWriteBehindJobCompletionAt(repository, startedAt + budget)
+                writeBehindReadinessWasWithinCloseBudget(repository).shouldBeTrue()
+            } finally {
+                repository.close()
+            }
+        }
+
+        @Test
+        @Timeout(5, unit = TimeUnit.SECONDS)
+        fun `close - interrupt publishes failed restores flag and late completion stays failed`() {
+            val flushStarted = CountDownLatch(1)
+            val releaseFlush = CountDownLatch(1)
+            val closeCompleted = CountDownLatch(1)
+            val interruptedAfterClose = AtomicBoolean(false)
+            val repository = BlockingFlushJdbcRepository(
+                config = LocalCacheConfig(
+                    keyPrefix = "jdbc:caffeine:extra:wb-close-interrupted",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 1,
+                    writeBehindQueueCapacity = 1,
+                ),
+                flushStarted = flushStarted,
+                releaseFlush = releaseFlush,
+            )
+
+            withActorTable(TestDB.H2_MYSQL) {
+                val actors = ActorTable.selectAll().map { it.toActorRecord() }
+                val blocked = actors[0].copy(firstName = "close-interrupted")
+                val rejected = actors[1].copy(firstName = "close-interrupted-rejected")
+                repository.put(blocked.id, blocked)
+                flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                val workerCompleted = CountDownLatch(1)
+                writeBehindJobOf(repository).invokeOnCompletion { workerCompleted.countDown() }
+
+                val closeThread = Thread {
+                    try {
+                        repository.close()
+                        interruptedAfterClose.set(Thread.currentThread().isInterrupted)
+                    } finally {
+                        closeCompleted.countDown()
+                    }
+                }.apply { start() }
+
+                try {
+                    awaitHealthReport(repository) { it.workerState == CacheWorkerState.DRAINING }
+                        .workerState shouldBeEqualTo CacheWorkerState.DRAINING
+                    closeThread.interrupt()
+                    closeCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
+
+                    interruptedAfterClose.get().shouldBeTrue()
+                    repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.FAILED
+                    val failure = assertFailsWith<IllegalStateException> {
+                        repository.put(rejected.id, rejected)
+                    }
+                    failure.message.orEmpty().contains("INTERRUPTED").shouldBeTrue()
+                    repository.cache.getIfPresent(repository.serializeKey(rejected.id)).shouldBeNull()
+
+                    val repeatedCloseCompleted = CountDownLatch(1)
+                    val repeatedCloseThread = Thread {
+                        repository.close()
+                        repeatedCloseCompleted.countDown()
+                    }.apply { start() }
+                    repeatedCloseCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
+                    repeatedCloseThread.join(5_000)
+                    repeatedCloseThread.isAlive.shouldBeFalse()
+                } finally {
+                    releaseFlush.countDown()
+                    closeThread.interrupt()
+                    closeThread.join(5_000)
+                }
+
+                workerCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.FAILED
+            }
+        }
+
+        @Test
+        @Timeout(5, unit = TimeUnit.SECONDS)
+        fun `close - accepted put blocked before cache mutation cannot repopulate after timeout`() {
+            val cachePutEntered = CountDownLatch(1)
+            val releaseCachePut = Semaphore(0)
+            val cacheValuePublished = Semaphore(0)
+            val releaseCachePutAfterPublish = Semaphore(0)
+            val cachePutCompleted = Semaphore(0)
+            val putFailure = AtomicReference<Throwable?>()
+            val readValue = AtomicReference<ActorRecord?>()
+            val readCompleted = CountDownLatch(1)
+            val repository = BlockingCachePutJdbcRepository(
+                config = LocalCacheConfig(
+                    keyPrefix = "jdbc:caffeine:extra:wb-close-admission-timeout",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 1,
+                    writeBehindQueueCapacity = 1,
+                ),
+                cachePutEntered = cachePutEntered,
+                releaseCachePut = releaseCachePut,
+                cacheValuePublished = cacheValuePublished,
+                releaseCachePutAfterPublish = releaseCachePutAfterPublish,
+                cachePutCompleted = cachePutCompleted,
+                writeBehindCloseWaitDuration = Duration.ofMillis(50),
+            )
+
+            withActorTable(TestDB.H2_MYSQL) {
+                val existing = ActorTable.selectAll().first().toActorRecord()
+                val updated = existing.copy(firstName = "close-admission-timeout")
+                commit()
+
+                val putThread = Thread {
+                    try {
+                        repository.put(updated.id, updated)
+                    } catch (cause: Throwable) {
+                        putFailure.set(cause)
+                    }
+                }.apply { start() }
+                var readThread: Thread? = null
+
+                try {
+                    cachePutEntered.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    val workerCompleted = CountDownLatch(1)
+                    writeBehindJobOf(repository).invokeOnCompletion { workerCompleted.countDown() }
+                    repository.close()
+                    val reportAfterClose = repository.validateConsistency()
+                    reportAfterClose.workerState shouldBeEqualTo CacheWorkerState.FAILED
+
+                    releaseCachePut.release()
+                    cacheValuePublished.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
+
+                    readThread = Thread {
+                        try {
+                            readValue.set(repository.get(updated.id))
+                        } finally {
+                            readCompleted.countDown()
+                        }
+                    }.apply { start() }
+
+                    readCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
+                    readValue.get().shouldBeNull()
+
+                    releaseCachePutAfterPublish.release()
+                    cachePutCompleted.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
+                    putThread.join(5_000)
+                    readCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    readThread.join(5_000)
+
+                    putThread.isAlive.shouldBeFalse()
+                    readThread.isAlive.shouldBeFalse()
+                    workerCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    val failure = putFailure.get().shouldNotBeNull()
+                    (failure is IllegalStateException).shouldBeTrue()
+                    failure.message.orEmpty().contains("TIMEOUT").shouldBeTrue()
+                    repository.cache.getIfPresent(repository.serializeKey(updated.id)).shouldBeNull()
+                    repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.FAILED
+                } finally {
+                    releaseCachePut.release()
+                    releaseCachePutAfterPublish.release()
+                    putThread.join(5_000)
+                    readThread?.join(5_000)
+                    repository.close()
+                }
+            }
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -520,39 +768,139 @@ class JdbcCaffeineRepositoryExtraTest {
     @Nested
     inner class WriteBehindOverflowTest: AbstractJdbcCaffeineTest() {
 
+        @Test
+        fun `put - closed write-behind rejects as terminal without queue-full classification`() {
+            val repository = CredentialJdbcCaffeineRepository(
+                LocalCacheConfig(
+                    keyPrefix = "jdbc:caffeine:extra:wb-closed",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 1,
+                    writeBehindQueueCapacity = 1,
+                )
+            )
+            val rejected = ActorSchema.newCredentialRecord()
+
+            repository.close()
+
+            val failure = assertFailsWith<IllegalStateException> {
+                repository.put(rejected.id, rejected)
+            }
+            failure.message.orEmpty().contains("STOPPED").shouldBeTrue()
+            failure.message.orEmpty().contains("queue is full").shouldBeFalse()
+            repository.validateConsistency().queueDepth shouldBeEqualTo 0
+            repository.cache.getIfPresent(repository.serializeKey(rejected.id)).shouldBeNull()
+        }
+
+        @Test
+        @Timeout(15, unit = TimeUnit.SECONDS)
+        fun `put versus close gate tracks multiple accepted admissions and rejects later writes`() {
+            withCredentialTable(TestDB.H2_MYSQL) {
+                commit()
+
+                val admissionCount = 3
+                val cachePutsEntered = CountDownLatch(admissionCount)
+                val releaseCachePuts = Semaphore(0)
+                val cachePutsCompleted = Semaphore(0)
+                val repository = BlockingCachePutCredentialRepository(
+                    config = LocalCacheConfig(
+                        keyPrefix = "jdbc:caffeine:extra:wb-close-admissions",
+                        writeMode = CacheWriteMode.WRITE_BEHIND,
+                        writeBehindBatchSize = admissionCount,
+                        writeBehindQueueCapacity = 16,
+                    ),
+                    cachePutEntered = cachePutsEntered,
+                    releaseCachePut = releaseCachePuts,
+                    cachePutCompleted = cachePutsCompleted,
+                )
+                val accepted = List(admissionCount) { index ->
+                    ActorSchema.newCredentialRecord().copy(loginId = "close-admitted-$index")
+                }
+                val putFailures = List(admissionCount) { AtomicReference<Throwable?>() }
+                val putThreads = accepted.mapIndexed { index, entity ->
+                    Thread {
+                        try {
+                            repository.put(entity.id, entity)
+                        } catch (cause: Throwable) {
+                            putFailures[index].set(cause)
+                        }
+                    }.apply { start() }
+                }
+                val closeCompleted = CountDownLatch(1)
+                val closeThread = Thread {
+                    repository.close()
+                    closeCompleted.countDown()
+                }
+
+                try {
+                    cachePutsEntered.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    closeThread.start()
+                    awaitHealthReport(repository) { it.workerState == CacheWorkerState.DRAINING }
+                        .workerState shouldBeEqualTo CacheWorkerState.DRAINING
+
+                    val rejected = ActorSchema.newCredentialRecord().copy(loginId = "close-rejected")
+                    val rejection = assertFailsWith<IllegalStateException> {
+                        repository.put(rejected.id, rejected)
+                    }
+                    rejection.message.orEmpty().contains("queue is full").shouldBeFalse()
+                    rejection.message.orEmpty().contains("closing, closed, or terminal").shouldBeTrue()
+                    repository.cache.getIfPresent(repository.serializeKey(rejected.id)).shouldBeNull()
+
+                    releaseCachePuts.release(2)
+                    cachePutsCompleted.tryAcquire(2, 5, TimeUnit.SECONDS).shouldBeTrue()
+                    closeCompleted.await(100, TimeUnit.MILLISECONDS).shouldBeFalse()
+                    repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.DRAINING
+
+                    releaseCachePuts.release()
+                    cachePutsCompleted.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
+                    closeCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                } finally {
+                    releaseCachePuts.release(admissionCount)
+                    putThreads.forEach { it.join(5_000) }
+                    closeThread.interrupt()
+                    closeThread.join(5_000)
+                    repository.close()
+                }
+
+                putThreads.forEach { it.isAlive.shouldBeFalse() }
+                closeThread.isAlive.shouldBeFalse()
+                putFailures.forEach { it.get().shouldBeNull() }
+                repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.STOPPED
+                repository.validateConsistency().queueDepth shouldBeEqualTo 0
+            }
+        }
+
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
         fun `put - Write-Behind queue overflow throws IllegalStateException`(testDB: TestDB) {
-            // Use a capacity large enough that we can fill it synchronously before the worker drains it.
-            // The worker needs a full DB batch transaction to drain, which takes far longer than
-            // filling the queue in a CPU-bound loop.
-            val capacity = 500
+            val flushStarted = CountDownLatch(1)
+            val releaseFlush = CountDownLatch(1)
             val config = LocalCacheConfig(
                 keyPrefix = "jdbc:caffeine:extra:wb-overflow",
                 writeMode = CacheWriteMode.WRITE_BEHIND,
-                writeBehindBatchSize = capacity,
-                writeBehindQueueCapacity = capacity,
+                writeBehindBatchSize = 1,
+                writeBehindQueueCapacity = 1,
             )
-            val repository = CredentialJdbcCaffeineRepository(config)
-            // Pre-generate entities in memory — no DB insert needed
-            val entities = List(capacity * 2) { ActorSchema.newCredentialRecord() }
+            val repository = BlockingFlushCredentialRepository(
+                config = config,
+                flushStarted = flushStarted,
+                releaseFlush = releaseFlush,
+            )
+            val entities = List(3) { ActorSchema.newCredentialRecord() }
 
             withCredentialTable(testDB) {
-                var overflowSeen = false
                 try {
-                    for (entity in entities) {
-                        try {
-                            repository.put(entity.id, entity)
-                        } catch (e: IllegalStateException) {
-                            overflowSeen = true
-                            break
-                        }
+                    repository.put(entities[0].id, entities[0])
+                    flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    repository.put(entities[1].id, entities[1])
+
+                    val failure = assertFailsWith<IllegalStateException> {
+                        repository.put(entities[2].id, entities[2])
                     }
+                    failure.message.orEmpty().contains("queue is full").shouldBeTrue()
                 } finally {
+                    releaseFlush.countDown()
                     repository.close()
                 }
-                // At least one put must have thrown — data must NOT be silently dropped
-                overflowSeen.shouldBeTrue()
             }
         }
     }
@@ -772,6 +1120,7 @@ class JdbcCaffeineRepositoryExtraTest {
         config: LocalCacheConfig,
         private val flushStarted: CountDownLatch,
         private val releaseFlush: CountDownLatch,
+        override val writeBehindCloseWaitDuration: Duration = Duration.ofSeconds(30),
     ): AbstractJdbcCaffeineRepository<Long, ActorRecord>(config) {
 
         override val table: IdTable<Long> = ActorTable
@@ -793,6 +1142,126 @@ class JdbcCaffeineRepositoryExtraTest {
         }
 
         override fun extractId(entity: ActorRecord): Long = entity.id
+    }
+
+    private class BlockingCachePutJdbcRepository(
+        config: LocalCacheConfig,
+        cachePutEntered: CountDownLatch,
+        releaseCachePut: Semaphore,
+        cacheValuePublished: Semaphore,
+        releaseCachePutAfterPublish: Semaphore,
+        cachePutCompleted: Semaphore,
+        override val writeBehindCloseWaitDuration: Duration,
+    ): AbstractJdbcCaffeineRepository<Long, ActorRecord>(config) {
+
+        private val delegateCache = Caffeine.newBuilder().build<String, ActorRecord>()
+
+        override val cache: Cache<String, ActorRecord> = object: Cache<String, ActorRecord> by delegateCache {
+            override fun put(key: String, value: ActorRecord) {
+                cachePutEntered.countDown()
+                try {
+                    releaseCachePut.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
+                    delegateCache.put(key, value)
+                    cacheValuePublished.release()
+                    releaseCachePutAfterPublish.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
+                } finally {
+                    cachePutCompleted.release()
+                }
+            }
+        }
+
+        override val table: IdTable<Long> = ActorTable
+
+        override fun ResultRow.toEntity(): ActorRecord = toActorRecord()
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) {
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) {
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun extractId(entity: ActorRecord): Long = entity.id
+    }
+
+    private class BlockingCachePutCredentialRepository(
+        config: LocalCacheConfig,
+        cachePutEntered: CountDownLatch,
+        releaseCachePut: Semaphore,
+        cachePutCompleted: Semaphore,
+    ): AbstractJdbcCaffeineRepository<UUID, ActorSchema.CredentialRecord>(config) {
+
+        private val delegateCache = Caffeine.newBuilder().build<String, ActorSchema.CredentialRecord>()
+
+        override val cache: Cache<String, ActorSchema.CredentialRecord> =
+            object: Cache<String, ActorSchema.CredentialRecord> by delegateCache {
+                override fun put(key: String, value: ActorSchema.CredentialRecord) {
+                    cachePutEntered.countDown()
+                    try {
+                        releaseCachePut.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
+                        delegateCache.put(key, value)
+                    } finally {
+                        cachePutCompleted.release()
+                    }
+                }
+            }
+
+        override val table: IdTable<UUID> = CredentialTable
+
+        override fun ResultRow.toEntity(): ActorSchema.CredentialRecord = toCredentialRecord()
+
+        override fun UpdateStatement.updateEntity(entity: ActorSchema.CredentialRecord) {
+            this[CredentialTable.loginId] = entity.loginId
+            this[CredentialTable.email] = entity.email
+            this[CredentialTable.lastLoginAt] = entity.lastLoginAt
+        }
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorSchema.CredentialRecord) {
+            this[CredentialTable.id] = entity.id
+            this[CredentialTable.loginId] = entity.loginId
+            this[CredentialTable.email] = entity.email
+            this[CredentialTable.lastLoginAt] = entity.lastLoginAt
+        }
+
+        override fun extractId(entity: ActorSchema.CredentialRecord): UUID = entity.id
+    }
+
+    private class BlockingFlushCredentialRepository(
+        config: LocalCacheConfig,
+        private val flushStarted: CountDownLatch,
+        private val releaseFlush: CountDownLatch,
+    ): AbstractJdbcCaffeineRepository<UUID, ActorSchema.CredentialRecord>(config) {
+
+        override val table: IdTable<UUID> = CredentialTable
+
+        override fun ResultRow.toEntity(): ActorSchema.CredentialRecord = toCredentialRecord()
+
+        override fun UpdateStatement.updateEntity(entity: ActorSchema.CredentialRecord) {
+            awaitFlushRelease()
+            this[CredentialTable.loginId] = entity.loginId
+            this[CredentialTable.email] = entity.email
+            this[CredentialTable.lastLoginAt] = entity.lastLoginAt
+        }
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorSchema.CredentialRecord) {
+            awaitFlushRelease()
+            this[CredentialTable.id] = entity.id
+            this[CredentialTable.loginId] = entity.loginId
+            this[CredentialTable.email] = entity.email
+            this[CredentialTable.lastLoginAt] = entity.lastLoginAt
+        }
+
+        override fun extractId(entity: ActorSchema.CredentialRecord): UUID = entity.id
+
+        private fun awaitFlushRelease() {
+            flushStarted.countDown()
+            releaseFlush.await(5, TimeUnit.SECONDS).shouldBeTrue()
+        }
     }
 
     private class FailingFlushJdbcRepository(
@@ -871,6 +1340,58 @@ class JdbcCaffeineRepositoryExtraTest {
         field.isAccessible = true
 
         return (field.get(repository) as Lazy<Job>).value
+    }
+
+    private fun setPrivateLong(
+        repository: AbstractJdbcCaffeineRepository<*, *>,
+        fieldName: String,
+        value: Long,
+    ) {
+        val field = AbstractJdbcCaffeineRepository::class.java.getDeclaredField(fieldName)
+        field.isAccessible = true
+        field.setLong(repository, value)
+    }
+
+    private fun setWriteBehindAdmissions(
+        repository: AbstractJdbcCaffeineRepository<*, *>,
+        inProgress: Int = 0,
+        drainedAtNanos: Long,
+    ) {
+        val admissionsClass = AbstractJdbcCaffeineRepository::class.java.declaredClasses
+            .single { it.simpleName == "WriteBehindAdmissions" }
+        val constructor = admissionsClass.declaredConstructors.single { it.parameterCount == 2 }
+        constructor.isAccessible = true
+        val admissions = constructor.newInstance(inProgress, drainedAtNanos)
+
+        val field = AbstractJdbcCaffeineRepository::class.java.getDeclaredField("writeBehindAdmissions")
+        field.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        (field.get(repository) as AtomicReference<Any?>).set(admissions)
+    }
+
+    private fun setWriteBehindJobCompletionAt(
+        repository: AbstractJdbcCaffeineRepository<*, *>,
+        completedAtNanos: Long,
+    ) {
+        val completionClass = AbstractJdbcCaffeineRepository::class.java.declaredClasses
+            .single { it.simpleName == "WriteBehindJobCompletion" }
+        val constructor = completionClass.declaredConstructors.single { it.parameterCount == 2 }
+        constructor.isAccessible = true
+        val completion = constructor.newInstance(null, completedAtNanos)
+
+        val field = AbstractJdbcCaffeineRepository::class.java.getDeclaredField("writeBehindJobCompletion")
+        field.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        (field.get(repository) as AtomicReference<Any?>).set(completion)
+    }
+
+    private fun writeBehindReadinessWasWithinCloseBudget(
+        repository: AbstractJdbcCaffeineRepository<*, *>,
+    ): Boolean {
+        val method = AbstractJdbcCaffeineRepository::class.java
+            .getDeclaredMethod("writeBehindReadinessWasWithinCloseBudgetLocked")
+        method.isAccessible = true
+        return method.invoke(repository) as Boolean
     }
 
     @Suppress("UNCHECKED_CAST")
