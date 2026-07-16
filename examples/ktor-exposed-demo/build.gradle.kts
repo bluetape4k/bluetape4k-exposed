@@ -1,9 +1,25 @@
 plugins {
     application
+    alias(bt4k.plugins.kotlin.serialization)
 }
 
 application {
     mainClass.set("io.bluetape4k.examples.exposed.ktor.KtorExposedDemoApplicationKt")
+}
+
+val postgresIntegrationTest by sourceSets.creating {
+    compileClasspath += sourceSets.main.get().output
+    runtimeClasspath += output + compileClasspath
+}
+
+kotlin.target.compilations.getByName(postgresIntegrationTest.name)
+    .associateWith(kotlin.target.compilations.getByName("main"))
+
+configurations.named(postgresIntegrationTest.implementationConfigurationName) {
+    extendsFrom(configurations.implementation.get(), configurations.testImplementation.get())
+}
+configurations.named(postgresIntegrationTest.runtimeOnlyConfigurationName) {
+    extendsFrom(configurations.runtimeOnly.get(), configurations.testRuntimeOnly.get())
 }
 
 dependencies {
@@ -11,9 +27,11 @@ dependencies {
     implementation(platform(libs.exposed.bom))
 
     implementation(project(":bluetape4k-exposed-ktor"))
+    implementation(project(":bluetape4k-exposed-r2dbc-caffeine"))
     implementation(bt4k.bluetape4k.ktor.core)
     implementation(bt4k.exposed.jdbc)
     implementation(bt4k.exposed.r2dbc)
+    implementation(bt4k.exposed.java.time)
     implementation(bt4k.hikaricp)
     implementation(libs.r2dbc.pool)
     implementation(libs.kotlinx.coroutines.core)
@@ -21,8 +39,22 @@ dependencies {
 
     runtimeOnly(libs.h2.v2)
     runtimeOnly(bt4k.r2dbc.h2)
+    runtimeOnly(libs.r2dbc.postgresql)
 
     testImplementation(bt4k.bluetape4k.ktor.testing)
     testImplementation(bt4k.bluetape4k.assertions)
     testImplementation(bt4k.bluetape4k.junit5)
+
+    add(postgresIntegrationTest.implementationConfigurationName, libs.testcontainers.postgresql)
+}
+
+tasks.register<Test>("postgresIntegrationTest") {
+    description = "Runs the sequential PostgreSQL Ktor demo integration tests."
+    group = "verification"
+    testClassesDirs = postgresIntegrationTest.output.classesDirs
+    classpath = postgresIntegrationTest.runtimeClasspath
+    shouldRunAfter(tasks.test)
+    maxParallelForks = 1
+    systemProperty("junit.jupiter.execution.parallel.enabled", "false")
+    useJUnitPlatform()
 }
