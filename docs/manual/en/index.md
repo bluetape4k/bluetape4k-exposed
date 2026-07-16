@@ -11,6 +11,15 @@ releaseRef: "1.11.0"
 
 ![Exposed repository overview](../assets/overview/repository-overview.png)
 
+## Core capabilities
+
+- **Repository foundations:** [Core](modules/bluetape4k-exposed-core.md), [DAO](modules/bluetape4k-exposed-dao.md), and repository conventions turn Exposed tables and entities into reusable Kotlin data-access components.
+- **JDBC and R2DBC:** Choose [JDBC](modules/bluetape4k-exposed-jdbc.md) for blocking transactions or [R2DBC](modules/bluetape4k-exposed-r2dbc.md) for coroutine-first non-blocking access, with separate ownership and cancellation contracts.
+- **Transactions and batch work:** The [transaction boundary guide](guides/transaction-boundaries.md) and [batch utilities](modules/bluetape4k-exposed-batch.md) cover composition, batching, and failure behavior.
+- **Caching:** The [cache selection guide](guides/cache-selection.md) connects shared cache contracts to Caffeine, Lettuce, and Redisson for JDBC and R2DBC repositories.
+- **Database and data-format extensions:** The [database adapter matrix](guides/database-adapter-matrix.md) and [serialization/encryption guide](guides/serialization-and-encryption.md) cover vendor-specific SQL, JSON, measured values, and encrypted columns.
+- **Application integration:** [Spring Boot and Ktor](guides/spring-and-ktor.md) modules own configuration, lifecycle, and framework-specific transaction wiring.
+
 ## Version baseline
 
 Consumers select the central `io.github.bluetape4k:bluetape4k-dependencies:<version>` BOM version, not the repository release documented here. The technical baseline for this manual is `bluetape4k-exposed 1.11.0`, limited to the 40 Gradle projects present in that stable release.
