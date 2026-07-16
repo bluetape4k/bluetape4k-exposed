@@ -321,7 +321,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
             writeBehindWorkerState.get() == CacheWorkerState.FAILED &&
             writeBehindCachePublicationsInProgress.containsKey(key)
         ) {
-            return null
+            return findByIdFromDb(id)
         }
         return cache.getNullable(key) {
             findByIdFromDb(id)

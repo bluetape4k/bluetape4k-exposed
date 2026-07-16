@@ -37,6 +37,9 @@ before the coroutine body starts cannot leave readiness stuck at `RUNNING`.
 Concurrent shutdown also has one outcome owner: interrupted follower callers
 restore their own interrupt flag only after the owner publishes the immutable
 drain result, so they cannot turn another caller's successful drain into failure.
+If terminal shutdown overlaps cache publication, reads bypass that dirty cache
+entry and keep the public read-through contract by consulting the authoritative
+database instead of returning a false `null`.
 
 ## Verification Expectations
 
