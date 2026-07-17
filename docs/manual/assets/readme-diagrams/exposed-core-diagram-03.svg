@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1580" height="1060" viewBox="0 0 1580 1060" role="img" aria-labelledby="title desc">
+  <title id="title">exposed-core IdTable Selection Matrix</title>
+  <desc id="desc">Selection matrix for exposed-core IdTable bases by ID value type, generator, length, and database behavior.</desc>
+  <defs>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%">
+      <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#203040" flood-opacity="0.12"/>
+    </filter>
+    <style>
+      .canvas{fill:#F6F9FC}
+      .panel{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3;filter:url(#shadow)}
+      .title{font-family:"Architects Daughter";font-size:44px;fill:#22344A;font-weight:400}
+      .subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476}
+      .head{fill:#EAF7EF;stroke:#58A978;stroke-width:2}
+      .row-a{fill:#FBFDFF;stroke:#D7E2EC;stroke-width:1.5}
+      .row-b{fill:#F6F9FC;stroke:#D7E2EC;stroke-width:1.5}
+      .cell{font-family:"Comic Mono";font-size:15px;fill:#34485E}
+      .cell-strong{font-family:"Architects Daughter";font-size:21px;fill:#22344A;font-weight:400}
+      .header{font-family:"Architects Daughter";font-size:20px;fill:#22344A;font-weight:400}
+      .badge{font-family:"Comic Mono";font-size:13px;fill:#34485E}
+      .small{font-family:"Comic Mono";font-size:13px;fill:#627184}
+      .tag-blue{fill:#E8F3FF;stroke:#4F83BF}
+      .tag-purple{fill:#F1ECFF;stroke:#755BC6}
+      .tag-green{fill:#EAF7EF;stroke:#58A978}
+      .tag-gold{fill:#FFF3D9;stroke:#D6A441}
+      .tag-red{fill:#FDECEF;stroke:#DC6B82}
+    </style>
+  </defs>
+
+  <rect class="canvas" width="1580" height="1060"/>
+  <rect class="panel" x="42" y="36" width="1496" height="988" rx="30"/>
+  <text class="title" x="72" y="88">IdTable Selection Matrix</text>
+  <text class="subtitle" x="76" y="121">Pick the table base by ID value type and operational property, not by class-tree position.</text>
+
+  <g transform="translate(90 170)">
+    <rect class="head" x="0" y="0" width="1400" height="58" rx="12"/>
+    <text class="header" x="130" y="36" text-anchor="middle">Table base</text>
+    <text class="header" x="385" y="36" text-anchor="middle">ID type</text>
+    <text class="header" x="660" y="36" text-anchor="middle">Generator / behavior</text>
+    <text class="header" x="960" y="36" text-anchor="middle">Storage</text>
+    <text class="header" x="1240" y="36" text-anchor="middle">When to choose</text>
+
+    <g transform="translate(0 78)">
+      <rect class="row-a" x="0" y="0" width="1400" height="92" rx="10"/>
+      <text class="cell-strong" x="130" y="34" text-anchor="middle">KsuidTable</text>
+      <text class="cell" x="130" y="60" text-anchor="middle">KsuidMillisTable</text>
+      <rect class="tag-blue" x="285" y="23" width="200" height="42" rx="21"/>
+      <text class="badge" x="385" y="50" text-anchor="middle">String</text>
+      <text class="cell" x="660" y="34" text-anchor="middle">ksuidGenerated()</text>
+      <text class="cell" x="660" y="60" text-anchor="middle">or ksuidMillisGenerated()</text>
+      <text class="cell" x="960" y="50" text-anchor="middle">varchar(27)</text>
+      <text class="cell" x="1240" y="40" text-anchor="middle">sortable opaque string IDs</text>
+      <text class="cell" x="1240" y="62" text-anchor="middle">with broad service compatibility</text>
+    </g>
+
+    <g transform="translate(0 190)">
+      <rect class="row-b" x="0" y="0" width="1400" height="92" rx="10"/>
+      <text class="cell-strong" x="130" y="50" text-anchor="middle">UlidTable</text>
+      <rect class="tag-purple" x="285" y="23" width="200" height="42" rx="21"/>
+      <text class="badge" x="385" y="50" text-anchor="middle">String</text>
+      <text class="cell" x="660" y="40" text-anchor="middle">ulidGenerated()</text>
+      <text class="cell" x="660" y="62" text-anchor="middle">stateful monotonic ULID</text>
+      <text class="cell" x="960" y="50" text-anchor="middle">varchar(26)</text>
+      <text class="cell" x="1240" y="40" text-anchor="middle">time-sortable string IDs</text>
+      <text class="cell" x="1240" y="62" text-anchor="middle">with same-ms monotonicity</text>
+    </g>
+
+    <g transform="translate(0 302)">
+      <rect class="row-a" x="0" y="0" width="1400" height="92" rx="10"/>
+      <text class="cell-strong" x="130" y="50" text-anchor="middle">SnowflakeIdTable</text>
+      <rect class="tag-green" x="285" y="23" width="200" height="42" rx="21"/>
+      <text class="badge" x="385" y="50" text-anchor="middle">Long</text>
+      <text class="cell" x="660" y="50" text-anchor="middle">snowflakeGenerated()</text>
+      <text class="cell" x="960" y="50" text-anchor="middle">long</text>
+      <text class="cell" x="1240" y="40" text-anchor="middle">compact numeric IDs</text>
+      <text class="cell" x="1240" y="62" text-anchor="middle">generated before insert</text>
+    </g>
+
+    <g transform="translate(0 414)">
+      <rect class="row-b" x="0" y="0" width="1400" height="92" rx="10"/>
+      <text class="cell-strong" x="130" y="38" text-anchor="middle">Timebased</text>
+      <text class="cell-strong" x="130" y="64" text-anchor="middle">UUIDTable</text>
+      <rect class="tag-gold" x="285" y="23" width="200" height="42" rx="21"/>
+      <text class="badge" x="385" y="50" text-anchor="middle">UUID</text>
+      <text class="cell" x="660" y="50" text-anchor="middle">timebasedGenerated()</text>
+      <text class="cell" x="960" y="50" text-anchor="middle">javaUUID</text>
+      <text class="cell" x="1240" y="40" text-anchor="middle">native UUID column</text>
+      <text class="cell" x="1240" y="62" text-anchor="middle">with UUIDv7 ordering</text>
+    </g>
+
+    <g transform="translate(0 526)">
+      <rect class="row-a" x="0" y="0" width="1400" height="112" rx="10"/>
+      <text class="cell-strong" x="130" y="38" text-anchor="middle">TimebasedUUID</text>
+      <text class="cell-strong" x="130" y="64" text-anchor="middle">Base62Table</text>
+      <text class="cell" x="130" y="88" text-anchor="middle">+ MySQL variant</text>
+      <rect class="tag-gold" x="285" y="35" width="200" height="42" rx="21"/>
+      <text class="badge" x="385" y="62" text-anchor="middle">String</text>
+      <text class="cell" x="660" y="52" text-anchor="middle">timebasedGenerated()</text>
+      <text class="cell" x="660" y="74" text-anchor="middle">UUIDv7 encoded Base62</text>
+      <text class="cell" x="960" y="52" text-anchor="middle">varchar(24)</text>
+      <text class="cell" x="960" y="74" text-anchor="middle">utf8mb4_bin on MySQL</text>
+      <text class="cell" x="1240" y="52" text-anchor="middle">short URL-safe IDs</text>
+      <text class="cell" x="1240" y="74" text-anchor="middle">case-sensitive MySQL storage</text>
+    </g>
+
+    <g transform="translate(0 658)">
+      <rect class="row-b" x="0" y="0" width="1400" height="92" rx="10"/>
+      <text class="cell-strong" x="130" y="50" text-anchor="middle">SoftDeletedIdTable</text>
+      <rect class="tag-red" x="285" y="23" width="200" height="42" rx="21"/>
+      <text class="badge" x="385" y="50" text-anchor="middle">Any ID</text>
+      <text class="cell" x="660" y="50" text-anchor="middle">does not generate ID</text>
+      <text class="cell" x="960" y="50" text-anchor="middle">adds is_deleted</text>
+      <text class="cell" x="1240" y="40" text-anchor="middle">soft-delete contract</text>
+      <text class="cell" x="1240" y="62" text-anchor="middle">combined by subclassing</text>
+    </g>
+  </g>
+
+  <g transform="translate(76 940)">
+    <rect x="0" y="0" width="1428" height="48" rx="10" fill="#FFFFFF" stroke="#D7E2EC"/>
+    <text class="small" x="714" y="19" text-anchor="middle">This is a selection matrix: the rows compare supported table bases instead of drawing inheritance.</text>
+    <text class="small" x="714" y="36" text-anchor="middle">Every listed table keeps Exposed's single primary-key shape; only generator and storage behavior differ.</text>
+  </g>
+</svg>

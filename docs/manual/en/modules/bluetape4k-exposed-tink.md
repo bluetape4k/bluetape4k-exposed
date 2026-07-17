@@ -108,6 +108,25 @@ Read the [serialization and encryption guide](../guides/serialization-and-encryp
 
 This is field encryption, not a key-management system, authorization layer, searchable-encryption scheme, or database-wide encryption replacement. It supports equality only through deterministic encryption; range, prefix, ordering, and substring queries are not preserved. Key loss is not recoverable by this module.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### Tink encrypted column boundary diagram
+
+[![Tink encrypted column boundary diagram](../../assets/readme-diagrams/exposed-tink-diagram-01.png)](../../assets/readme-diagrams/exposed-tink-diagram-01.svg)
+
+_Release README: [`exposed/tink/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/tink/README.md)_
+
+### AEAD and DAEAD behavior flow diagram
+
+[![AEAD and DAEAD behavior flow diagram](../../assets/readme-diagrams/exposed-tink-diagram-02.png)](../../assets/readme-diagrams/exposed-tink-diagram-02.svg)
+
+_Release README: [`exposed/tink/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/tink/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [Gradle build file](../../../../exposed/tink/build.gradle.kts)

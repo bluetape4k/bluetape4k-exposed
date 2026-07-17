@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1540" height="1040" viewBox="0 0 1540 1040" role="img" aria-labelledby="title desc">
+  <title id="title">exposed-dao Entity Helper Pairing Map</title>
+  <desc id="desc">Pairing map showing how a table base, DAO entity, and EntityClass helper are combined in application code.</desc>
+  <defs>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#203040" flood-opacity="0.12"/></filter>
+    <marker id="arrow" viewBox="0 0 12 10" markerWidth="14" markerHeight="14" refX="11" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 6.5 3.2 Q 11 5 6.5 6.8 L 1 9" fill="#536C85" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <style>
+      .canvas{fill:#F6F9FC}.panel{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3;filter:url(#shadow)}
+      .title{font-family:"Architects Daughter";font-size:44px;fill:#22344A;font-weight:400}.subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476}
+      .lane{fill:#F3F7FB;stroke:#D9E4EF;stroke-width:2}.lane-title{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .box{stroke-width:2;filter:url(#shadow)}.table{fill:#EAF7EF;stroke:#58A978}.entity{fill:#F1ECFF;stroke:#755BC6}.factory{fill:#E8F3FF;stroke:#4F83BF}.util{fill:#FFF3D9;stroke:#D6A441}
+      .label{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}.text{font-family:"Comic Mono";font-size:14px;fill:#34485E}.small{font-family:"Comic Mono";font-size:13px;fill:#627184}
+      .line{fill:none;stroke:#536C85;stroke-width:2.4;marker-end:url(#arrow);stroke-linecap:round;stroke-linejoin:round}.dash{stroke-dasharray:7 6}
+    </style>
+    <marker id="arrow-536c85" viewBox="0 0 12 10" markerWidth="14" markerHeight="14" refX="11" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 6.5 3.2 Q 11 5 6.5 6.8 L 1 9" fill="#536C85" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+  </defs>
+  <rect class="canvas" width="1540" height="1040"/>
+  <rect class="panel" x="42" y="36" width="1456" height="968" rx="30"/>
+  <text class="title" x="72" y="88">Entity Helper Pairing Map</text>
+  <text class="subtitle" x="76" y="121">The diagram shows how application code pairs a core table with the matching DAO entity and factory helper.</text>
+
+  <rect class="lane" x="92" y="170" width="1356" height="210" rx="18"/>
+  <text class="lane-title" x="122" y="202">String primary-key helpers</text>
+  <path class="line" d="M455 276 L570 276" style="marker-end:url(#arrow-536c85)"/>
+  <path class="line" d="M865 276 L980 276" style="marker-end:url(#arrow-536c85)"/>
+  <g transform="translate(150 230)"><rect class="box table" x="0" y="0" width="305" height="92" rx="10"/><text class="label" x="152.5" y="30" text-anchor="middle">IdTable&lt;String&gt;</text><text class="text" x="152.5" y="56" text-anchor="middle">custom string table</text></g>
+  <g transform="translate(570 230)"><rect class="box entity" x="0" y="0" width="295" height="92" rx="10"/><text class="label" x="147.5" y="30" text-anchor="middle">StringEntity</text><text class="text" x="147.5" y="56" text-anchor="middle">Entity&lt;String&gt; base</text></g>
+  <g transform="translate(980 230)"><rect class="box factory" x="0" y="0" width="330" height="92" rx="10"/><text class="label" x="165" y="30" text-anchor="middle">StringEntityClass</text><text class="text" x="165" y="56" text-anchor="middle">factory/query helper</text></g>
+
+  <rect class="lane" x="92" y="420" width="1356" height="250" rx="18"/>
+  <text class="lane-title" x="122" y="452">Generated-ID wrappers</text>
+  <path class="line" d="M455 535 L570 535" style="marker-end:url(#arrow-536c85)"/>
+  <path class="line" d="M865 535 L980 535" style="marker-end:url(#arrow-536c85)"/>
+  <g transform="translate(150 490)"><rect class="box table" x="0" y="0" width="305" height="110" rx="10"/><text class="label" x="152.5" y="30" text-anchor="middle">Generated IdTable</text><text class="text" x="152.5" y="56" text-anchor="middle">KSUID / ULID</text><text class="text" x="152.5" y="78" text-anchor="middle">Snowflake / UUIDv7</text></g>
+  <g transform="translate(570 490)"><rect class="box entity" x="0" y="0" width="295" height="110" rx="10"/><text class="label" x="147.5" y="30" text-anchor="middle">Typed Entity</text><text class="text" x="147.5" y="56" text-anchor="middle">KsuidEntity</text><text class="text" x="147.5" y="78" text-anchor="middle">SnowflakeIdEntity, ...</text></g>
+  <g transform="translate(980 490)"><rect class="box factory" x="0" y="0" width="330" height="110" rx="10"/><text class="label" x="165" y="30" text-anchor="middle">Typed EntityClass</text><text class="text" x="165" y="56" text-anchor="middle">binds table to entity</text><text class="text" x="165" y="78" text-anchor="middle">used in companion object</text></g>
+
+  <rect class="lane" x="92" y="710" width="1356" height="160" rx="18"/>
+  <text class="lane-title" x="122" y="742">Common Entity behavior</text>
+  <path class="line dash" d="M505 790 L625 790" style=""/>
+<polygon points="625,790 615,785 615,795" fill="#64748B" stroke="#64748B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="true"/>
+  <path class="line dash" d="M915 790 L1035 790" style=""/>
+<polygon points="1035,790 1025,785 1025,795" fill="#64748B" stroke="#64748B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="true"/>
+  <g transform="translate(175 765)"><rect class="box util" x="0" y="0" width="330" height="70" rx="10"/><text class="label" x="165" y="27" text-anchor="middle">idEquals / idHashCode</text><text class="text" x="165" y="50" text-anchor="middle">ID-based identity helpers</text></g>
+  <g transform="translate(625 765)"><rect class="box util" x="0" y="0" width="290" height="70" rx="10"/><text class="label" x="145" y="27" text-anchor="middle">idValue</text><text class="text" x="145" y="50" text-anchor="middle">unwraps EntityID</text></g>
+  <g transform="translate(1035 765)"><rect class="box util" x="0" y="0" width="310" height="70" rx="10"/><text class="label" x="155" y="27" text-anchor="middle">entityToStringBuilder</text><text class="text" x="155" y="50" text-anchor="middle">consistent toString basis</text></g>
+
+  <g transform="translate(76 930)">
+    <rect x="0" y="0" width="1388" height="48" rx="10" fill="#FFFFFF" stroke="#D7E2EC"/>
+    <text class="small" x="694" y="19" text-anchor="middle">This is a pairing map: choose a table base, extend the matching entity, then expose the matching EntityClass companion.</text>
+    <text class="small" x="694" y="36" text-anchor="middle">Common helpers are extension functions; they are not part of the generated-ID inheritance tree.</text>
+  </g>
+</svg>

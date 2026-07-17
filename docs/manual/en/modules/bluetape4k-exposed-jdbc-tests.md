@@ -82,6 +82,25 @@ Use it with [JDBC operations and testing](bluetape4k-exposed-jdbc/operations-tes
 
 The harness does not reproduce production pool load or replace migration/chaos tests. The per-database semaphore intentionally serializes conflicting fixture work.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### JDBC test dialect coverage
+
+[![JDBC test dialect coverage](../../assets/readme-diagrams/exposed-jdbc-tests-diagram-01.png)](../../assets/readme-diagrams/exposed-jdbc-tests-diagram-01.svg)
+
+_Release README: [`exposed/jdbc-tests/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-tests/README.md)_
+
+### JDBC test lifecycle
+
+[![JDBC test lifecycle](../../assets/readme-diagrams/exposed-jdbc-tests-sequence-01.png)](../../assets/readme-diagrams/exposed-jdbc-tests-sequence-01.svg)
+
+_Release README: [`exposed/jdbc-tests/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-tests/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [Test module build](../../../../exposed/jdbc-tests/build.gradle.kts)

@@ -101,6 +101,49 @@ Start with [Transaction ownership](bluetape4k-exposed-jdbc/transaction-ownership
 
 JDBC remains blocking even when invoked from a suspending function. This library does not provide a driver, pool, automatic transaction, or universal retry policy.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### JDBC Architecture Overview diagram
+
+[![JDBC Architecture Overview diagram](../../assets/readme-diagrams/exposed-jdbc-diagram-01.png)](../../assets/readme-diagrams/exposed-jdbc-diagram-01.svg)
+
+_Release README: [`exposed/jdbc/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc/README.md)_
+
+### Repository Contract Map diagram
+
+[![Repository Contract Map diagram](../../assets/readme-diagrams/exposed-jdbc-diagram-02.png)](../../assets/readme-diagrams/exposed-jdbc-diagram-02.svg)
+
+_Release README: [`exposed/jdbc/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc/README.md)_
+
+### VirtualThread transaction helper diagram
+
+[![VirtualThread transaction helper diagram](../../assets/readme-diagrams/exposed-jdbc-sequence-01.png)](../../assets/readme-diagrams/exposed-jdbc-sequence-01.svg)
+
+_Release README: [`exposed/jdbc/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc/README.md)_
+
+### findById — Single record lookup diagram
+
+[![findById — Single record lookup diagram](../../assets/readme-diagrams/exposed-jdbc-sequence-02.png)](../../assets/readme-diagrams/exposed-jdbc-sequence-02.svg)
+
+_Release README: [`exposed/jdbc/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc/README.md)_
+
+### save + findPage — Save then paginate diagram
+
+[![save + findPage — Save then paginate diagram](../../assets/readme-diagrams/exposed-jdbc-sequence-03.png)](../../assets/readme-diagrams/exposed-jdbc-sequence-03.svg)
+
+_Release README: [`exposed/jdbc/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc/README.md)_
+
+### softDeleteById / restoreById — Soft delete and restore diagram
+
+[![softDeleteById / restoreById — Soft delete and restore diagram](../../assets/readme-diagrams/exposed-jdbc-sequence-04.png)](../../assets/readme-diagrams/exposed-jdbc-sequence-04.svg)
+
+_Release README: [`exposed/jdbc/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [JDBC build](../../../../exposed/jdbc/build.gradle.kts)

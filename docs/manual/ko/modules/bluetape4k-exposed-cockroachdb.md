@@ -91,3 +91,22 @@ PostgreSQL wire 호환성은 기능 동등성이 아닙니다. helper는 문서�
 - [`CockroachTransaction`](../../../../exposed/cockroachdb/src/main/kotlin/io/bluetape4k/exposed/cockroachdb/CockroachTransaction.kt)
 - [Compatibility ledger](../../../../exposed/cockroachdb/src/main/kotlin/io/bluetape4k/exposed/cockroachdb/CockroachDbCompatibility.kt)
 - [DB 테스트](../../../../exposed/cockroachdb/src/test/kotlin/io/bluetape4k/exposed/cockroachdb/CockroachDatabaseTest.kt)
+
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### CockroachDB helper boundary
+
+[![CockroachDB helper boundary](../../assets/readme-diagrams/exposed-cockroachdb-diagram-01.png)](../../assets/readme-diagrams/exposed-cockroachdb-diagram-01.svg)
+
+_배포본 README: [`exposed/cockroachdb/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/cockroachdb/README.ko.md)_
+
+### CockroachDB transaction retry 흐름
+
+[![CockroachDB transaction retry 흐름](../../assets/readme-diagrams/exposed-cockroachdb-flow-02.png)](../../assets/readme-diagrams/exposed-cockroachdb-flow-02.svg)
+
+_배포본 README: [`exposed/cockroachdb/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/cockroachdb/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->

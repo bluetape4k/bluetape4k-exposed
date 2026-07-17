@@ -86,6 +86,19 @@ Continue with [Getting started](../getting-started.md), then choose [JDBC or R2D
 
 The BOM cannot guarantee behavioral compatibility with an independently overridden Exposed, Kotlin, driver, or framework version. It also does not select JDBC over R2DBC.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### Exposed BOM managed artifact map
+
+[![Exposed BOM managed artifact map](../../assets/readme-diagrams/exposed-bom-diagram-01.png)](../../assets/readme-diagrams/exposed-bom-diagram-01.svg)
+
+_Release README: [`exposed/bom/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/bom/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [BOM build](../../../../exposed/bom/build.gradle.kts)

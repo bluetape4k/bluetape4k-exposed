@@ -94,6 +94,25 @@ Start with the [database adapter matrix](../guides/database-adapter-matrix.md), 
 
 Release 1.11 does not provide row-streaming Flow, imported-key metadata, or a distributed service boundary. PostgreSQL dialect inheritance covers proven tests, not every PostgreSQL extension or DuckDB feature.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### DuckDB Exposed integration boundary
+
+[![DuckDB Exposed integration boundary](../../assets/readme-diagrams/exposed-duckdb-diagram-01.png)](../../assets/readme-diagrams/exposed-duckdb-diagram-01.svg)
+
+_Release README: [`exposed/duckdb/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/duckdb/README.md)_
+
+### DuckDB query flow materialization
+
+[![DuckDB query flow materialization](../../assets/readme-diagrams/exposed-duckdb-flow-02.png)](../../assets/readme-diagrams/exposed-duckdb-flow-02.svg)
+
+_Release README: [`exposed/duckdb/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/duckdb/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [`DuckDBDatabase`](../../../../exposed/duckdb/src/main/kotlin/io/bluetape4k/exposed/duckdb/DuckDBDatabase.kt)

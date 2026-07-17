@@ -1,0 +1,260 @@
+<svg data-sequence-spacing-scale="1.16" xmlns="http://www.w3.org/2000/svg" width="1740" height="3271.2" viewBox="0 0 1740 3271.2" role="img" aria-labelledby="title desc">
+  <title id="t t l">DAO Audit Field Assignment Sequence</title>
+  <desc id="s c">Sequence diagram rebuilt from exposed-dao AuditableEntity source, DAO README audit section, and audit tests.</desc>
+  <defs>
+    <marker id="seqArrow-4F83BF" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#4f83bf" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#4f83bf" /></marker>
+    <marker id="seqArrow-755BC6" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#755bc6" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#755bc6" /></marker>
+    <marker id="seqArrow-2E8F89" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#2e8f89" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#2e8f89" /></marker>
+    <marker id="seqArrow-3E9868" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#3e9868" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#3e9868" /></marker>
+    <marker id="seqArrow-B9851B" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#b9851b" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#b9851b" /></marker>
+    <marker id="seqArrow-C94D68" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#c94d68" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#c94d68" /></marker>
+    <marker id="seqArrow-758297" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#758297" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#758297" /></marker>
+    <filter id="s h a" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <style>
+      .canvas{fill:#F7FAFC}.frame{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:2.6;filter:url(#shadow)}
+      .title{font-family:"Architects Daughter";font-size:44px;fill:#22344A;font-weight:400}.subtitle{font-family:"Comic Mono";font-size:16px;fill:#536476;font-weight:400}
+      .actor{filter:url(#shadow);stroke-width:2}.actorTitle{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .actorNote{font-family:"Comic Mono";font-size:13px;fill:#42556B;font-weight:400}.small{font-family:"Comic Mono";font-size:12px;fill:#627184;font-weight:400}
+      .activation{fill:#E9F7EF;stroke:#66A783;stroke-width:1.2;opacity:.72}.seq{fill:none;stroke-width:3;stroke-linecap:round}.ret{fill:none;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:8 7}
+      .lifeline{stroke:#A7B4C3;stroke-width:1.8;stroke-dasharray:8 8}.pill{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
+      .alt{fill:#FFFFFF;fill-opacity:0.12;stroke:#D6A441;stroke-width:1.8;stroke-dasharray:8 8}.note{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
+    </style>
+  </defs>
+  <rect class="canvas" width="1740" height="3271.2"/>
+  <rect class="frame" x="32" y="32.48" width="1676" height="3206.24" rx="28"/>
+  <text class="title" x="66" y="95.12">DAO Audit Field Assignment Sequence</text>
+  <text class="subtitle" x="70" y="134.56">AuditableEntity.flush() sets createdBy or updatedBy from UserContext; updatedAt is repository-update responsibility.</text>
+<g id="a t c a t c a l l">
+  <rect class="actor" x="96" y="191.4" width="250" height="88.16" rx="10" fill="#E8F3FF" stroke="#5B8DEF"/>
+  <text class="actorTitle" x="221" y="228.52" text-anchor="middle">DAO transaction</text>
+  <text class="actorTitle" x="221" y="255.2" text-anchor="middle">block</text>
+  <line class="lifeline" x1="221" y1="279.56" x2="221" y2="3162.16"/>
+</g>
+<g id="a t c a t t t">
+  <rect class="actor" x="355.6" y="191.4" width="250" height="88.16" rx="10" fill="#EAF7EF" stroke="#58A978"/>
+  <text class="actorTitle" x="480.6" y="243.6" text-anchor="middle">AuditableEntity.flush</text>
+  <line class="lifeline" x1="480.6" y1="279.56" x2="480.6" y2="3162.16"/>
+</g>
+<g id="a t c a t c t t">
+  <rect class="actor" x="615.2" y="191.4" width="250" height="88.16" rx="10" fill="#F1ECFF" stroke="#8A72D6"/>
+  <text class="actorTitle" x="740.2" y="243.6" text-anchor="middle">UserContext</text>
+  <line class="lifeline" x1="740.2" y1="279.56" x2="740.2" y2="3162.16"/>
+</g>
+<g id="a t c a t c l m s">
+  <rect class="actor" x="874.8000000000001" y="191.4" width="250" height="88.16" rx="10" fill="#FFF3D9" stroke="#D6A441"/>
+  <text class="actorTitle" x="999.8000000000001" y="243.6" text-anchor="middle">Audit columns</text>
+  <line class="lifeline" x1="999.8000000000001" y1="279.56" x2="999.8000000000001" y2="3162.16"/>
+</g>
+<g id="a t c a t t">
+  <rect class="actor" x="1134.4" y="191.4" width="250" height="88.16" rx="10" fill="#E9F7F6" stroke="#45A7A1"/>
+  <text class="actorTitle" x="1259.4" y="243.6" text-anchor="middle">Exposed write</text>
+  <line class="lifeline" x1="1259.4" y1="279.56" x2="1259.4" y2="3162.16"/>
+</g>
+<g id="a t c a t">
+  <rect class="actor" x="1394" y="191.4" width="250" height="88.16" rx="10" fill="#F2F5F9" stroke="#9AA8B8"/>
+  <text class="actorTitle" x="1519" y="228.52" text-anchor="middle">Auditable JDBC</text>
+  <text class="actorTitle" x="1519" y="255.2" text-anchor="middle">repository</text>
+  <line class="lifeline" x1="1519" y1="279.56" x2="1519" y2="3162.16"/>
+  <rect class="activation" x="214" y="381.64" width="14" height="603.2" rx="6"/>
+  <rect class="activation" x="473.6" y="381.64" width="14" height="603.2" rx="6"/>
+  <rect class="activation" x="733.2" y="381.64" width="14" height="603.2" rx="6"/>
+  <rect class="activation" x="992.8" y="381.64" width="14" height="603.2" rx="6"/>
+  <rect class="activation" x="1252.4" y="381.64" width="14" height="603.2" rx="6"/>
+  <rect class="activation" x="1512" y="381.64" width="14" height="603.2" rx="6"/>
+</g>
+<g>
+  <rect class="alt" x="74" y="338.72" width="1592" height="55.68" rx="15"/>
+  <rect class="pill" x="241.3" y="331.76" width="219" height="34.8" rx="8"/>
+  <text class="actorNote" x="350.8" y="350.32" text-anchor="middle" dominant-baseline="middle">New entity insert path</text>
+</g>
+<g id="m 2">
+  <rect class="pill" x="225.8" y="408.32" width="250" height="48.72" rx="7"/>
+  <circle cx="244.8" cy="432.68" r="12" fill="#4F83BF"/>
+  <text class="actorNote" x="244.8" y="433.84" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">2</text>
+  <text class="actorNote" x="368.8" y="423.4" text-anchor="middle" dominant-baseline="middle">Article.new { ... }</text>
+  <text class="actorNote" x="368.8" y="440.8" text-anchor="middle" dominant-baseline="middle">creates auditable entity</text>
+  <path class="seq" d="M 221 477.92 L 480.6 477.92" stroke="#4F83BF" marker-end="url(#seqArrow-4F83BF)"/>
+</g>
+<g id="m 3">
+  <rect class="pill" x="225.8" y="517.36" width="250" height="34.8" rx="7"/>
+  <circle cx="244.8" cy="534.76" r="12" fill="#4F83BF"/>
+  <text class="actorNote" x="244.8" y="535.92" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">3</text>
+  <text class="actorNote" x="368.8" y="535.92" text-anchor="middle" dominant-baseline="middle">flush(batch) before insert</text>
+  <path class="seq" d="M 221 573.04 L 480.6 573.04" stroke="#4F83BF" marker-end="url(#seqArrow-4F83BF)"/>
+</g>
+<g id="m 4">
+  <rect class="pill" x="485.4000000000001" y="598.56" width="250" height="48.72" rx="7"/>
+  <circle cx="504.4000000000001" cy="622.92" r="12" fill="#755BC6"/>
+  <text class="actorNote" x="504.4000000000001" y="624.08" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">4</text>
+  <text class="actorNote" x="628.4000000000001" y="613.64" text-anchor="middle" dominant-baseline="middle">getCurrentUser() because</text>
+  <text class="actorNote" x="628.4000000000001" y="631.04" text-anchor="middle" dominant-baseline="middle">createdAt is null</text>
+  <path class="seq" d="M 480.6 668.16 L 740.2 668.16" stroke="#755BC6" marker-end="url(#seqArrow-755BC6)"/>
+</g>
+<g id="m 5">
+  <rect class="pill" x="485.4000000000001" y="693.68" width="250" height="48.72" rx="7"/>
+  <circle cx="504.4000000000001" cy="718.04" r="12" fill="#755BC6"/>
+  <text class="actorNote" x="504.4000000000001" y="719.2" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">5</text>
+  <text class="actorNote" x="628.4000000000001" y="708.76" text-anchor="middle" dominant-baseline="middle">return scoped,</text>
+  <text class="actorNote" x="628.4000000000001" y="726.16" text-anchor="middle" dominant-baseline="middle">thread-local, or system</text>
+  <path class="ret" d="M 740.2 763.28 L 480.6 763.28" stroke="#755BC6"/>
+<polygon points="480.6,763.28 496.6,755.28 496.6,771.28" fill="#755BC6" stroke="#755BC6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g id="m 6">
+  <rect class="pill" x="572.6" y="802.72" width="335.20000000000005" height="34.8" rx="7"/>
+  <circle cx="591.6" cy="820.12" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="591.6" y="821.28" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">6</text>
+  <text class="actorNote" x="758.2" y="821.28" text-anchor="middle" dominant-baseline="middle">assign createdBy = current user</text>
+  <path class="seq" d="M 480.6 858.4 L 999.8000000000001 858.4" stroke="#C94D68" marker-end="url(#seqArrow-C94D68)"/>
+</g>
+<g id="m 7">
+  <rect class="pill" x="747.5" y="897.84" width="245" height="34.8" rx="7"/>
+  <circle cx="766.5" cy="915.24" r="12" fill="#2E8F89"/>
+  <text class="actorNote" x="766.5" y="916.4" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">7</text>
+  <text class="actorNote" x="888" y="916.4" text-anchor="middle" dominant-baseline="middle">super.flush(batch)</text>
+  <path class="seq" d="M 480.6 953.52 L 1259.4 953.52" stroke="#2E8F89" marker-end="url(#seqArrow-2E8F89)"/>
+</g>
+<g id="m 8">
+  <rect class="pill" x="1004.6000000000001" y="979.04" width="250" height="48.72" rx="7"/>
+  <circle cx="1023.6000000000001" cy="1003.4" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="1023.6000000000001" y="1004.56" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">8</text>
+  <text class="actorNote" x="1147.6000000000001" y="994.12" text-anchor="middle" dominant-baseline="middle">INSERT; DB default fills</text>
+  <text class="actorNote" x="1147.6000000000001" y="1011.52" text-anchor="middle" dominant-baseline="middle">createdAt</text>
+  <path class="seq" d="M 1259.4 1048.64 L 999.8000000000001 1048.64" stroke="#C94D68" marker-end="url(#seqArrow-C94D68)"/>
+</g>
+<g>
+  <rect class="alt" x="74" y="1099.68" width="1592" height="55.68" rx="15"/>
+  <rect class="pill" x="177.55" y="1092.72" width="346.5" height="34.8" rx="8"/>
+  <text class="actorNote" x="350.8" y="1111.28" text-anchor="middle" dominant-baseline="middle">Existing entity with changed properties</text>
+</g>
+<g id="m 10">
+  <rect class="pill" x="225.8" y="1183.2" width="250" height="34.8" rx="7"/>
+  <circle cx="244.8" cy="1200.6" r="12" fill="#4F83BF"/>
+  <text class="actorNote" x="244.8" y="1201.76" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">10</text>
+  <text class="actorNote" x="368.8" y="1201.76" text-anchor="middle" dominant-baseline="middle">modify entity properties</text>
+  <path class="seq" d="M 221 1238.88 L 480.6 1238.88" stroke="#4F83BF" marker-end="url(#seqArrow-4F83BF)"/>
+</g>
+<g id="m 11">
+  <rect class="pill" x="228.3" y="1264.4" width="245" height="48.72" rx="7"/>
+  <circle cx="247.3" cy="1288.76" r="12" fill="#4F83BF"/>
+  <text class="actorNote" x="247.3" y="1289.92" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">11</text>
+  <text class="actorNote" x="368.8" y="1279.48" text-anchor="middle" dominant-baseline="middle">flush(batch) sees</text>
+  <text class="actorNote" x="368.8" y="1296.88" text-anchor="middle" dominant-baseline="middle">writeValues</text>
+  <path class="seq" d="M 221 1334 L 480.6 1334" stroke="#4F83BF" marker-end="url(#seqArrow-4F83BF)"/>
+</g>
+<g id="m 12">
+  <rect class="pill" x="485.4000000000001" y="1359.52" width="250" height="48.72" rx="7"/>
+  <circle cx="504.4000000000001" cy="1383.88" r="12" fill="#755BC6"/>
+  <text class="actorNote" x="504.4000000000001" y="1385.04" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">12</text>
+  <text class="actorNote" x="628.4000000000001" y="1374.6" text-anchor="middle" dominant-baseline="middle">getCurrentUser() for</text>
+  <text class="actorNote" x="628.4000000000001" y="1392" text-anchor="middle" dominant-baseline="middle">update</text>
+  <path class="seq" d="M 480.6 1429.12 L 740.2 1429.12" stroke="#755BC6" marker-end="url(#seqArrow-755BC6)"/>
+</g>
+<g id="m 13">
+  <rect class="pill" x="486.0000000000001" y="1468.56" width="248.8" height="34.8" rx="7"/>
+  <circle cx="505.0000000000001" cy="1485.96" r="12" fill="#755BC6"/>
+  <text class="actorNote" x="505.0000000000001" y="1487.12" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">13</text>
+  <text class="actorNote" x="628.4000000000001" y="1487.12" text-anchor="middle" dominant-baseline="middle">return current user</text>
+  <path class="ret" d="M 740.2 1524.24 L 480.6 1524.24" stroke="#755BC6"/>
+<polygon points="480.6,1524.24 496.6,1516.24 496.6,1532.24" fill="#755BC6" stroke="#755BC6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g id="m 14">
+  <rect class="pill" x="572.6" y="1563.68" width="335.20000000000005" height="34.8" rx="7"/>
+  <circle cx="591.6" cy="1581.08" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="591.6" y="1582.24" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">14</text>
+  <text class="actorNote" x="758.2" y="1582.24" text-anchor="middle" dominant-baseline="middle">assign updatedBy = current user</text>
+  <path class="seq" d="M 480.6 1619.36 L 999.8000000000001 1619.36" stroke="#C94D68" marker-end="url(#seqArrow-C94D68)"/>
+</g>
+<g id="m 15">
+  <rect class="pill" x="747.5" y="1658.8" width="245" height="34.8" rx="7"/>
+  <circle cx="766.5" cy="1676.2" r="12" fill="#2E8F89"/>
+  <text class="actorNote" x="766.5" y="1677.36" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">15</text>
+  <text class="actorNote" x="888" y="1677.36" text-anchor="middle" dominant-baseline="middle">super.flush(batch)</text>
+  <path class="seq" d="M 480.6 1714.48 L 1259.4 1714.48" stroke="#2E8F89" marker-end="url(#seqArrow-2E8F89)"/>
+</g>
+<g id="m 16">
+  <rect class="pill" x="1004.6000000000001" y="1740" width="250" height="48.72" rx="7"/>
+  <circle cx="1023.6000000000001" cy="1764.36" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="1023.6000000000001" y="1765.52" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">16</text>
+  <text class="actorNote" x="1147.6000000000001" y="1755.08" text-anchor="middle" dominant-baseline="middle">UPDATE changed fields and</text>
+  <text class="actorNote" x="1147.6000000000001" y="1772.48" text-anchor="middle" dominant-baseline="middle">updatedBy</text>
+  <path class="seq" d="M 1259.4 1809.6 L 999.8000000000001 1809.6" stroke="#C94D68" marker-end="url(#seqArrow-C94D68)"/>
+</g>
+<g>
+  <rect class="alt" x="74" y="1860.64" width="1592" height="55.68" rx="15"/>
+  <rect class="pill" x="207.55" y="1853.68" width="286.5" height="34.8" rx="8"/>
+  <text class="actorNote" x="350.8" y="1872.24" text-anchor="middle" dominant-baseline="middle">Existing entity without changes</text>
+</g>
+<g id="m 18">
+  <rect class="pill" x="225.8" y="1930.24" width="250" height="48.72" rx="7"/>
+  <circle cx="244.8" cy="1954.6" r="12" fill="#4F83BF"/>
+  <text class="actorNote" x="244.8" y="1955.76" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">18</text>
+  <text class="actorNote" x="368.8" y="1945.32" text-anchor="middle" dominant-baseline="middle">flush(batch) on unchanged</text>
+  <text class="actorNote" x="368.8" y="1962.72" text-anchor="middle" dominant-baseline="middle">entity</text>
+  <path class="seq" d="M 221 1999.84 L 480.6 1999.84" stroke="#4F83BF" marker-end="url(#seqArrow-4F83BF)"/>
+</g>
+<g id="m 19">
+  <rect class="pill" x="684.4" y="2039.28" width="371.2" height="34.8" rx="7"/>
+  <circle cx="703.4" cy="2056.68" r="12" fill="#B9851B"/>
+  <text class="actorNote" x="703.4" y="2057.84" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">19</text>
+  <text class="actorNote" x="888" y="2057.84" text-anchor="middle" dominant-baseline="middle">writeValues empty; no audit mutation</text>
+  <path class="seq" d="M 480.6 2094.96 L 1259.4 2094.96" stroke="#B9851B" marker-end="url(#seqArrow-B9851B)"/>
+</g>
+<g id="m 20">
+  <rect class="pill" x="594.2" y="2134.4" width="292" height="34.8" rx="7"/>
+  <circle cx="613.2" cy="2151.8" r="12" fill="#B9851B"/>
+  <text class="actorNote" x="613.2" y="2152.96" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">20</text>
+  <text class="actorNote" x="758.2" y="2152.96" text-anchor="middle" dominant-baseline="middle">return false; no DB write</text>
+  <path class="ret" d="M 1259.4 2190.08 L 221 2190.08" stroke="#B9851B"/>
+<polygon points="221,2190.08 237,2182.08 237,2198.08" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g>
+  <rect class="alt" x="74" y="2241.12" width="1592" height="55.68" rx="15"/>
+  <rect class="pill" x="230.05" y="2234.16" width="241.5" height="34.8" rx="8"/>
+  <text class="actorNote" x="350.8" y="2252.72" text-anchor="middle" dominant-baseline="middle">updatedAt repository path</text>
+</g>
+<g id="m 22">
+  <rect class="pill" x="709.6" y="2324.64" width="320.8" height="34.8" rx="7"/>
+  <circle cx="728.6" cy="2342.04" r="12" fill="#4F83BF"/>
+  <text class="actorNote" x="728.6" y="2343.2" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">22</text>
+  <text class="actorNote" x="888" y="2343.2" text-anchor="middle" dominant-baseline="middle">auditedUpdateById(id) { ... }</text>
+  <path class="seq" d="M 221 2380.32 L 1519 2380.32" stroke="#4F83BF" marker-end="url(#seqArrow-4F83BF)"/>
+</g>
+<g id="m 23">
+  <rect class="pill" x="1007.0999999999999" y="2419.76" width="245" height="34.8" rx="7"/>
+  <circle cx="1026.1" cy="2437.16" r="12" fill="#755BC6"/>
+  <text class="actorNote" x="1026.1" y="2438.32" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">23</text>
+  <text class="actorNote" x="1147.6" y="2438.32" text-anchor="middle" dominant-baseline="middle">getCurrentUser()</text>
+  <path class="seq" d="M 1519 2475.44 L 740.2 2475.44" stroke="#755BC6" marker-end="url(#seqArrow-755BC6)"/>
+</g>
+<g id="m 24">
+  <rect class="pill" x="1005.1999999999999" y="2514.88" width="248.8" height="34.8" rx="7"/>
+  <circle cx="1024.1999999999998" cy="2532.28" r="12" fill="#755BC6"/>
+  <text class="actorNote" x="1024.1999999999998" y="2533.44" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">24</text>
+  <text class="actorNote" x="1147.6" y="2533.44" text-anchor="middle" dominant-baseline="middle">return current user</text>
+  <path class="ret" d="M 740.2 2570.56 L 1519 2570.56" stroke="#755BC6"/>
+<polygon points="1519,2570.56 1503,2562.56 1503,2578.56" fill="#755BC6" stroke="#755BC6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g id="m 25">
+  <rect class="pill" x="1034.2" y="2610" width="450.40000000000003" height="34.8" rx="7"/>
+  <circle cx="1053.2" cy="2627.4" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="1053.2" y="2628.56" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">25</text>
+  <text class="actorNote" x="1277.4" y="2628.56" text-anchor="middle" dominant-baseline="middle">set updatedBy and updatedAt = CURRENT_TIMESTAMP</text>
+  <path class="seq" d="M 1519 2665.68 L 999.8000000000001 2665.68" stroke="#C94D68" marker-end="url(#seqArrow-C94D68)"/>
+</g>
+<g id="m 26">
+  <rect class="pill" x="1264.2" y="2705.12" width="250" height="34.8" rx="7"/>
+  <circle cx="1283.2" cy="2722.52" r="12" fill="#2E8F89"/>
+  <text class="actorNote" x="1283.2" y="2723.68" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">26</text>
+  <text class="actorNote" x="1407.2" y="2723.68" text-anchor="middle" dominant-baseline="middle">execute UPDATE by id</text>
+  <path class="seq" d="M 1519 2760.8 L 1259.4 2760.8" stroke="#2E8F89" marker-end="url(#seqArrow-2E8F89)"/>
+</g>
+<g id="m 27">
+  <rect class="pill" x="1004.6000000000001" y="2786.32" width="250" height="48.72" rx="7"/>
+  <circle cx="1023.6000000000001" cy="2810.68" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="1023.6000000000001" y="2811.84" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">27</text>
+  <text class="actorNote" x="1147.6000000000001" y="2801.4" text-anchor="middle" dominant-baseline="middle">persist repository audit</text>
+  <text class="actorNote" x="1147.6000000000001" y="2818.8" text-anchor="middle" dominant-baseline="middle">columns</text>
+  <path class="seq" d="M 1259.4 2855.92 L 999.8000000000001 2855.92" stroke="#C94D68" marker-end="url(#seqArrow-C94D68)"/>
+</g>
+<g data-footer="reader-contract"><rect class="note" x="110" y="3134.32" width="1520" height="55.68" rx="12"/><text class="small" x="870" y="3154.04" text-anchor="middle" dominant-baseline="middle">flush assigns createdBy on insert and updatedBy on dirty updates; unchanged entities do not mutate audit fields.</text><text class="small" x="870" y="3173.76" text-anchor="middle" dominant-baseline="middle">Use repository audited update paths when updatedAt must be written with CURRENT_TIMESTAMP.</text></g>
+</svg>

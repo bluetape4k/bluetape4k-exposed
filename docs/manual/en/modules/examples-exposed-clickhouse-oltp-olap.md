@@ -93,6 +93,25 @@ Continue with the [ClickHouse adapter](bluetape4k-exposed-clickhouse.md) for sup
 
 The example proves one local two-container path. It does not provide an exactly-once pipeline, distributed transaction, production schema migration, capacity plan, replication policy, retention policy, or disaster recovery.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### PostgreSQL OLTP and ClickHouse OLAP example topology
+
+[![PostgreSQL OLTP and ClickHouse OLAP example topology](../../assets/readme-diagrams/examples-exposed-clickhouse-oltp-olap-diagram-01.png)](../../assets/readme-diagrams/examples-exposed-clickhouse-oltp-olap-diagram-01.svg)
+
+_Release README: [`examples/exposed-clickhouse-oltp-olap/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/examples/exposed-clickhouse-oltp-olap/README.md)_
+
+### OLTP to OLAP integration test flow
+
+[![OLTP to OLAP integration test flow](../../assets/readme-diagrams/examples-exposed-clickhouse-oltp-olap-flow-02.png)](../../assets/readme-diagrams/examples-exposed-clickhouse-oltp-olap-flow-02.svg)
+
+_Release README: [`examples/exposed-clickhouse-oltp-olap/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/examples/exposed-clickhouse-oltp-olap/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [Example sources](../../../../examples/exposed-clickhouse-oltp-olap/README.md)

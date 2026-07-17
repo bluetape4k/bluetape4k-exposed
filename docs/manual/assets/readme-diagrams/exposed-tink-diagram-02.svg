@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1212" viewBox="0 0 1700 1212" role="img" aria-labelledby="title desc">
+  <title id="title">AEAD and DAEAD Column Behavior</title>
+  <desc id="desc">Flow diagram showing how exposed-tink encrypts values on write, decrypts values on read, and why only deterministic AEAD supports equality search.</desc>
+  <defs>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#3f7d9c" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#6e8f4f" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#b9851b" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#755bc6" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#bd5d6b" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="8" stdDeviation="11" flood-color="#20303a" flood-opacity="0.12"/></filter>
+    <style>
+      .canvas{fill:#f6f0e8}.frame{fill:#fffaf2;stroke:#28485a;stroke-width:4}.title{font-family:"Architects Daughter","Comic Mono",monospace;font-size:48px;fill:#21343f}.subtitle,.cardText,.small,.label,.step{font-family:"Comic Mono",monospace;fill:#51636f}.subtitle{font-size:18px}.laneTitle{font-family:"Architects Daughter","Comic Mono",monospace;font-size:27px;fill:#21343f}.cardTitle{font-family:"Comic Mono",monospace;font-size:17px;font-weight:700;fill:#20323d}.cardText{font-size:13px}.small{font-size:13px}.label{font-size:12px;fill:#315664}.step{font-size:12px;font-weight:700}.lane{stroke-width:2.5}.card{fill:#fffdf8;stroke-width:2.2}.blue{stroke:#8db7c2}.green{stroke:#a9c58b}.gold{stroke:#d3a663}.purple{stroke:#b2a1dc}.red{stroke:#d58b96}.line{fill:none;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}.lineBlue{stroke:#3f7d9c;marker-end:url(#arrow-blue)}.lineGreen{stroke:#6e8f4f;marker-end:url(#arrow-green)}.lineGold{stroke:#b9851b;marker-end:url(#arrow-gold)}.linePurple{stroke:#755bc6;marker-end:url(#arrow-purple)}.lineRed{stroke:#bd5d6b;marker-end:url(#arrow-red)}.dash{stroke-dasharray:10 8}.code{fill:#9b3d5a;font-weight:700}.type{fill:#176f7a;font-weight:700}.warn{fill:#8a5b00;font-weight:700}.fail{fill:#a94452;font-weight:700}
+    </style>
+  </defs>
+
+  <rect class="canvas" width="1700" height="1212"/>
+  <rect class="frame" x="42" y="34" width="1616" height="1140" rx="24" filter="url(#shadow)"/>
+  <text class="title" x="84" y="92">AEAD and DAEAD Column Behavior</text>
+  <text class="subtitle" x="86" y="128">Both modes decrypt transparently on reads; equality search works only when ciphertext is deterministic.</text>
+
+  <rect class="lane" x="92" y="176" width="1516" height="328" rx="18" fill="#e7f1f4" stroke="#9dbbc4"/>
+  <text class="laneTitle" x="124" y="222">Write path</text>
+  <g transform="translate(156 312)">
+    <rect class="card blue" width="286" height="94" rx="12"/>
+    <text class="step" x="22" y="27">1</text>
+    <text class="cardTitle" x="156" y="32" text-anchor="middle">Plain value</text>
+    <text class="cardText" x="156" y="58" text-anchor="middle">String or ByteArray</text>
+    <text class="cardText" x="156" y="78" text-anchor="middle">assigned through Exposed DSL</text>
+  </g>
+  <g transform="translate(542 278)">
+    <rect class="card green" width="330" height="110" rx="12"/>
+    <text class="step" x="22" y="27">2A</text>
+    <text class="cardTitle code" x="178" y="34" text-anchor="middle">AEAD unwrap()</text>
+    <text class="cardText" x="178" y="62" text-anchor="middle">encrypt(value)</text>
+    <text class="cardText warn" x="178" y="84" text-anchor="middle">nonce makes each write different</text>
+  </g>
+  <g transform="translate(542 394)">
+    <rect class="card purple" width="330" height="82" rx="12"/>
+    <text class="step" x="22" y="27">2B</text>
+    <text class="cardTitle code" x="178" y="32" text-anchor="middle">DAEAD unwrap()</text>
+    <text class="cardText type" x="178" y="58" text-anchor="middle">encryptDeterministically(value)</text>
+  </g>
+  <g transform="translate(1002 312)">
+    <rect class="card gold" width="286" height="94" rx="12"/>
+    <text class="step" x="22" y="27">3</text>
+    <text class="cardTitle" x="156" y="32" text-anchor="middle">Ciphertext stored</text>
+    <text class="cardText" x="156" y="58" text-anchor="middle">Base64 for VARCHAR</text>
+    <text class="cardText" x="156" y="78" text-anchor="middle">bytes for Binary or Blob</text>
+  </g>
+  <g transform="translate(1382 312)">
+    <rect class="card blue" width="166" height="94" rx="12"/>
+    <text class="step" x="22" y="27">4</text>
+    <text class="cardTitle" x="96" y="34" text-anchor="middle">DB</text>
+    <text class="cardText" x="96" y="62" text-anchor="middle">encrypted</text>
+    <text class="cardText" x="96" y="80" text-anchor="middle">only</text>
+  </g>
+
+  <rect class="lane" x="92" y="560" width="1516" height="248" rx="18" fill="#eef4e6" stroke="#a9c58b"/>
+  <text class="laneTitle" x="124" y="604">Read path</text>
+  <g transform="translate(196 674)">
+    <rect class="card gold" width="330" height="82" rx="12"/>
+    <text class="step" x="22" y="27">5</text>
+    <text class="cardTitle" x="178" y="32" text-anchor="middle">Ciphertext from DB</text>
+    <text class="cardText" x="178" y="58" text-anchor="middle">same column storage format</text>
+  </g>
+  <g transform="translate(684 660)">
+    <rect class="card green" width="350" height="110" rx="12"/>
+    <text class="step" x="22" y="27">6</text>
+    <text class="cardTitle code" x="188" y="34" text-anchor="middle">wrap()</text>
+    <text class="cardText" x="188" y="62" text-anchor="middle">decrypt or decryptDeterministically</text>
+    <text class="cardText" x="188" y="84" text-anchor="middle">Tink validates authenticity</text>
+  </g>
+  <g transform="translate(1190 674)">
+    <rect class="card blue" width="330" height="82" rx="12"/>
+    <text class="step" x="22" y="27">7</text>
+    <text class="cardTitle" x="178" y="32" text-anchor="middle">Plain value returned</text>
+    <text class="cardText" x="178" y="58" text-anchor="middle">row[column] exposes original type</text>
+  </g>
+
+  <rect class="lane" x="92" y="864" width="1516" height="238" rx="18" fill="#fff0d8" stroke="#d3a663"/>
+  <text class="laneTitle" x="124" y="908">Equality search decision</text>
+  <g transform="translate(150 984)">
+    <rect class="card red" width="390" height="74" rx="12"/>
+    <text class="cardTitle code" x="195" y="30" text-anchor="middle">AEAD WHERE value</text>
+    <text class="cardText fail" x="195" y="56" text-anchor="middle">encrypts to a new ciphertext, so no match</text>
+  </g>
+  <g transform="translate(655 964)">
+    <rect class="card gold" width="390" height="112" rx="12"/>
+    <text class="cardTitle" x="195" y="30" text-anchor="middle">Reader choice</text>
+    <text class="cardText" x="195" y="56" text-anchor="middle">Use AEAD for notes, tokens, payloads</text>
+    <text class="cardText" x="195" y="78" text-anchor="middle">Use DAEAD for email, SSN, fingerprints</text>
+    <text class="cardText warn" x="195" y="100" text-anchor="middle">DAEAD may expose value distribution</text>
+  </g>
+  <g transform="translate(1160 984)">
+    <rect class="card purple" width="390" height="74" rx="12"/>
+    <text class="cardTitle code" x="195" y="30" text-anchor="middle">DAEAD WHERE value</text>
+    <text class="cardText type" x="195" y="56" text-anchor="middle">same ciphertext, equality search works</text>
+  </g>
+
+  <path class="line lineBlue" d="M 442 359 H 542"/>
+  <path class="line lineBlue" d="M 442 388 L 484 388 Q 496 388 496 400 L 496 423 Q 496 435 508 435 L 542 435"/>
+  <path class="line lineGreen" d="M 872 333 H 1002"/>
+  <path class="line linePurple" d="M 872 435 L 924 435 Q 936 435 936 423 L 936 371 Q 936 359 948 359 L 1002 359"/>
+  <path class="line lineGold" d="M 1288 359 H 1382"/>
+  <path class="line lineGold" d="M 526 715 H 684"/>
+  <path class="line lineGreen" d="M 1034 715 H 1190"/>
+  <path class="line lineRed dash" d="M 540 1021 H 655"/>
+  <path class="line linePurple" d="M 1160 1021 H 1045"/>
+  <text class="label" x="468" y="343">write</text>
+  <text class="label" x="908" y="320">randomized</text>
+  <text class="label" x="908" y="418">deterministic</text>
+  <text class="label" x="560" y="700">read</text>
+  <text class="label" x="1060" y="700">decrypt</text>
+  <text class="label" x="578" y="1004">fails</text>
+  <text class="label" x="1082" y="1004">matches</text>
+
+  <rect x="126" y="1144" width="1448" height="24" rx="10" fill="#eef3f4" stroke="#c2d1d4" stroke-width="1.8"/>
+  <text class="small" x="850" y="1161" text-anchor="middle">Tests cover round-trip reads, null handling, invalid arguments, AEAD non-searchability, and DAEAD equality search.</text>
+</svg>

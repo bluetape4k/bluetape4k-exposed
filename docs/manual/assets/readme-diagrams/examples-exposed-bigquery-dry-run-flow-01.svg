@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="760" viewBox="0 0 1600 760" role="img" aria-labelledby="title desc">
+  <title id="title">BigQuery Dry-Run Example Flow</title>
+  <desc id="desc">Flow diagram for the examples-exposed-bigquery-dry-run test: H2 builds SQL locally, BigQueryContext sends a dry-run QueryRequest to a mocked BigQuery REST client, and assertions inspect captured job options.</desc>
+  <defs>
+    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#4F83BF" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#2E8F89" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#B9851B" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#C94D68" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity=".10"/></filter>
+    <style>
+      .canvas{fill:#F7FAFC}.frame{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:2.4;filter:url(#shadow)}
+      .title{font-family:"Architects Daughter";font-size:42px;fill:#22344A;font-weight:400}.subtitle{font-family:"Comic Mono";font-size:15px;fill:#536476;font-weight:400}
+      .laneTitle{font-family:"Architects Daughter";font-size:24px;fill:#22344A;font-weight:400}.cardTitle{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}
+      .detail{font-family:"Comic Mono";font-size:13px;fill:#42556B;font-weight:400}.small{font-family:"Comic Mono";font-size:12px;fill:#627184;font-weight:400}.label{font-family:"Comic Mono";font-size:12px;fill:#315664;font-weight:400}
+      .lane{stroke-width:2}.card{stroke-width:2;filter:url(#shadow)}.line{fill:none;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+      .blue{stroke:#75A9E8}.green{stroke:#55B5AF}.gold{stroke:#D9AA4D}.red{stroke:#DB7890}.neutral{stroke:#9FB0BC}
+      .lineBlue{stroke:#4F83BF;marker-end:url(#arrow-blue)}.lineGreen{stroke:#2E8F89;marker-end:url(#arrow-green)}.lineGold{stroke:#B9851B;marker-end:url(#arrow-gold)}.lineRed{stroke:#C94D68;marker-end:url(#arrow-red)}
+    </style>
+  </defs>
+  <rect class="canvas" width="1600" height="760"/>
+  <rect class="frame" x="28" y="24" width="1544" height="712" rx="26"/>
+  <text class="title" x="64" y="82">BigQuery Dry-Run Example Flow</text>
+  <text class="subtitle" x="68" y="112">The example validates SQL and query-job options without Google Cloud credentials.</text>
+
+  <rect class="lane neutral" x="64" y="154" width="1472" height="416" rx="18" fill="#F0F5F8"/>
+  <text class="laneTitle" x="92" y="198">Credential-free validation path</text>
+
+  <g id="test" transform="translate(94 244)">
+    <rect class="card blue" width="260" height="118" rx="12" fill="#E8F3FF"/>
+    <text class="cardTitle" x="130" y="32" text-anchor="middle">Example test</text>
+    <text class="detail" x="130" y="62" text-anchor="middle">creates QueryRequest slot</text>
+    <text class="detail" x="130" y="82" text-anchor="middle">mocks jobs().query()</text>
+    <text class="detail" x="130" y="102" text-anchor="middle">expects QueryResponse</text>
+  </g>
+
+  <g id="context" transform="translate(424 244)">
+    <rect class="card green" width="310" height="118" rx="12" fill="#E9F7F6"/><image data-bluetape4k-icon="google.bigquery" x="18" y="14" width="28" height="28" href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0ic3RhbmRhcmRfcHJvZHVjdF9pY29uIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDUxMiA1MTIiPgogIDwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyOS4xLjAsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiAyLjEuMCBCdWlsZCAxNDIpICAtLT4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgLnN0MCB7CiAgICAgICAgZmlsbDogbm9uZTsKICAgICAgfQoKICAgICAgLnN0MSB7CiAgICAgICAgZmlsbDogIzQyODVmNDsKICAgICAgfQoKICAgICAgLnN0MiB7CiAgICAgICAgZmlsbDogIzM0YTg1MzsKICAgICAgfQoKICAgICAgLnN0MyB7CiAgICAgICAgZmlsbDogI2ZiYmMwNDsKICAgICAgfQoKICAgICAgLnN0NCB7CiAgICAgICAgZmlsbDogI2VhNDMzNTsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPGcgaWQ9ImJvdW5kaW5nX2JveCI+CiAgICA8cmVjdCBjbGFzcz0ic3QwIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIvPgogIDwvZz4KICA8ZyBpZD0iYXJ0Ij4KICAgIDxwYXRoIGNsYXNzPSJzdDIiIGQ9Ik0zMTEuOSw0MTguOWMtOC44LDAtMTYtNy4yLTE2LTE2di0xNDUuOGMwLTguOCw3LjItMTYsMTYtMTZzMTYsNy4yLDE2LDE2djE0NS44YzAsOC44LTcuMiwxNi0xNiwxNmgwWiIvPgogICAgPHBhdGggY2xhc3M9InN0MiIgZD0iTTE0Ny42LDQxOC45Yy04LjgsMC0xNi03LjItMTYtMTZ2LTIwMC41YzAtOC44LDcuMi0xNiwxNi0xNnMxNiw3LjIsMTYsMTZ2MjAwLjVjMCw4LjgtNy4yLDE2LTE2LDE2WiIvPgogICAgPHBhdGggY2xhc3M9InN0MiIgZD0iTTIyOS44LDQzNy40Yy04LjgsMC0xNi03LjItMTYtMTZWMTQ3LjZjMC04LjgsNy4yLTE2LDE2LTE2czE2LDcuMiwxNiwxNnYyNzMuN2MwLDguOC03LjIsMTYtMTYsMTZoMFoiLz4KICAgIDxwYXRoIGNsYXNzPSJzdDMiIGQ9Ik0yMjkuOCw0MzcuNGMtMTE0LjUsMC0yMDcuNi05My4xLTIwNy42LTIwNy42aDMyYzAsOTYuOCw3OC44LDE3NS42LDE3NS42LDE3NS42czE3NS42LTc4LjgsMTc1LjYtMTc1LjZoMzJjMCwxMTQuNS05My4xLDIwNy42LTIwNy42LDIwNy42aDBaIi8+CiAgICA8cGF0aCBjbGFzcz0ic3Q0IiBkPSJNNDM3LjQsMjI5LjhoLTMyYzAtOTYuOC03OC44LTE3NS42LTE3NS42LTE3NS42UzU0LjEsMTMyLjksNTQuMSwyMjkuOEgyMi4xYzAtMTE0LjUsOTMuMi0yMDcuNywyMDcuNy0yMDcuN3MyMDcuNiw5My4xLDIwNy42LDIwNy42aDBaIi8+CiAgICA8cGF0aCBjbGFzcz0ic3QxIiBkPSJNNDg3LjQsNDY0LjhsLTEwMC0xMDBjMzIuMy0zNy42LDQ5LjktODUsNDkuOS0xMzUuMXMtMjEuNi0xMDcuNi02MC44LTE0Ni44bC0yMi42LDIyLjZjMzMuMiwzMy4yLDUxLjQsNzcuMyw1MS40LDEyNC4ycy0xOC4zLDkwLjktNTEuNSwxMjQuMWgwYy01LDUtNy41LDctMTEuOCwxMC44bDEyMi44LDEyMi44YzMuMSwzLjEsNy4yLDQuNywxMS4zLDQuN2gwYzQuMSwwLDguMi0xLjYsMTEuMy00LjcsNi4yLTYuMiw2LjItMTYuNCwwLTIyLjZoMFoiLz4KICA8L2c+Cjwvc3ZnPgo=" preserveAspectRatio="xMidYMid meet"/>
+    <text class="cardTitle" x="176" y="32" text-anchor="middle">BigQueryContext</text>
+    <text class="detail" x="176" y="62" text-anchor="middle">project analytics-project</text>
+    <text class="detail" x="176" y="82" text-anchor="middle">dataset events</text>
+    <text class="detail" x="176" y="102" text-anchor="middle">validateRawQuery()</text>
+  </g>
+
+  <g id="h2" transform="translate(424 408)">
+    <rect class="card gold" width="310" height="88" rx="12" fill="#FFF3D9"/><image data-bluetape4k-icon="database.h2" x="18" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjMDk0NzZCIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+SDIgRGF0YWJhc2U8L3RpdGxlPjxwYXRoIGQ9Ik0xNy4xNyAxMy4yN2MuMTQtLjAxNS4yOC0uMDIzLjQxNi0uMDIzLjcgMCAxLjIyOC4xNTkgMS41OTkuNDY5LjM3LjMxNC41NTUuNzU2LjU1NSAxLjMzNGEyLjg2MSAyLjg2MSAwIDAgMS0uNDMgMS40NTVjLS4yOTEuNDkyLS43NzUgMS4wNjYtMS40NiAxLjcyNy0uNDUzLjQ0Ni0xLjA2MS45NzYtMS44MjEgMS41OTJhNDguMDIgNDguMDIgMCAwIDEtMi4yNzUgMS43NDJ2Mi4wODNoOS44OTVWMjEuMjRIMTcuOTljLjIxOS0uMTU5LjU5LS40MzUgMS4xMS0uODMyLjUxOS0uNCAxLjAzMy0uODM1IDEuNTUtMS4zMTEuODE3LS43NiAxLjQyNS0xLjUgMS44MjItMi4yMTVhNC42MjQgNC42MjQgMCAwIDAgLjU5Ny0yLjI2OGMwLTEuMjEzLS40MTYtMi4xNTQtMS4yNDctMi44MTUtLjgyOC0uNjYyLTIuMDMzLS45OTQtMy42MTMtLjk5NC0uMzQ0IDAtLjY5Mi4wMTUtMS4wMzYuMDQ5VjYuMDRIMTMuODZ2NC43MDFIOC45NjVWNi4wNEg1LjY1djEyLjg0NmgzLjMxNXYtNS42NjFoNC44OXY1LjY2MWguMDM5Yy4zMS0uMjQyLjYyMy0uNDg3LjkzMy0uNzRhMjguNTY0IDI4LjU2NCAwIDAgMCAxLjgyNi0xLjU4OCAxNC44NTQgMTQuODU0IDAgMCAwIC41MTctLjUyOXpNMTIuMDExIDIzLjNBMTEuMzI3IDExLjMyNyAwIDAgMSAuNyAxMS45OSAxMS4zMDUgMTEuMzA1IDAgMCAxIDEyLjAxMS42OTlhMTEuMjg2IDExLjI4NiAwIDAgMSAxMS4yOSAxMS4yOXYuMzUxSDI0di0uMzUxQTExLjk4NSAxMS45ODUgMCAwIDAgMTIuMDExIDAgMTIuMDA4IDEyLjAwOCAwIDAgMCAwIDExLjk4OSAxMi4wMjYgMTIuMDI2IDAgMCAwIDEyLjAxMSAyNGguMzUydi0uN3oiLz48L3N2Zz4=" preserveAspectRatio="xMidYMid meet"/>
+    <text class="cardTitle" x="176" y="32" text-anchor="middle">H2 SQL generator</text>
+    <text class="detail" x="176" y="60" text-anchor="middle">PostgreSQL mode only</text>
+  </g>
+
+  <g id="request" transform="translate(800 244)">
+    <rect class="card gold" width="280" height="118" rx="12" fill="#FFF7E5"/>
+    <text class="cardTitle" x="140" y="32" text-anchor="middle">QueryRequest</text>
+    <text class="detail" x="140" y="62" text-anchor="middle">dryRun = true</text>
+    <text class="detail" x="140" y="82" text-anchor="middle">max bytes, labels, BATCH</text>
+    <text class="detail" x="140" y="102" text-anchor="middle">US location, timeout</text>
+  </g>
+
+  <g id="mock" transform="translate(1140 244)">
+    <rect class="card red" width="300" height="118" rx="12" fill="#FDECEF"/><image data-bluetape4k-icon="google.bigquery" x="18" y="14" width="28" height="28" href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0ic3RhbmRhcmRfcHJvZHVjdF9pY29uIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDUxMiA1MTIiPgogIDwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyOS4xLjAsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiAyLjEuMCBCdWlsZCAxNDIpICAtLT4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgLnN0MCB7CiAgICAgICAgZmlsbDogbm9uZTsKICAgICAgfQoKICAgICAgLnN0MSB7CiAgICAgICAgZmlsbDogIzQyODVmNDsKICAgICAgfQoKICAgICAgLnN0MiB7CiAgICAgICAgZmlsbDogIzM0YTg1MzsKICAgICAgfQoKICAgICAgLnN0MyB7CiAgICAgICAgZmlsbDogI2ZiYmMwNDsKICAgICAgfQoKICAgICAgLnN0NCB7CiAgICAgICAgZmlsbDogI2VhNDMzNTsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPGcgaWQ9ImJvdW5kaW5nX2JveCI+CiAgICA8cmVjdCBjbGFzcz0ic3QwIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIvPgogIDwvZz4KICA8ZyBpZD0iYXJ0Ij4KICAgIDxwYXRoIGNsYXNzPSJzdDIiIGQ9Ik0zMTEuOSw0MTguOWMtOC44LDAtMTYtNy4yLTE2LTE2di0xNDUuOGMwLTguOCw3LjItMTYsMTYtMTZzMTYsNy4yLDE2LDE2djE0NS44YzAsOC44LTcuMiwxNi0xNiwxNmgwWiIvPgogICAgPHBhdGggY2xhc3M9InN0MiIgZD0iTTE0Ny42LDQxOC45Yy04LjgsMC0xNi03LjItMTYtMTZ2LTIwMC41YzAtOC44LDcuMi0xNiwxNi0xNnMxNiw3LjIsMTYsMTZ2MjAwLjVjMCw4LjgtNy4yLDE2LTE2LDE2WiIvPgogICAgPHBhdGggY2xhc3M9InN0MiIgZD0iTTIyOS44LDQzNy40Yy04LjgsMC0xNi03LjItMTYtMTZWMTQ3LjZjMC04LjgsNy4yLTE2LDE2LTE2czE2LDcuMiwxNiwxNnYyNzMuN2MwLDguOC03LjIsMTYtMTYsMTZoMFoiLz4KICAgIDxwYXRoIGNsYXNzPSJzdDMiIGQ9Ik0yMjkuOCw0MzcuNGMtMTE0LjUsMC0yMDcuNi05My4xLTIwNy42LTIwNy42aDMyYzAsOTYuOCw3OC44LDE3NS42LDE3NS42LDE3NS42czE3NS42LTc4LjgsMTc1LjYtMTc1LjZoMzJjMCwxMTQuNS05My4xLDIwNy42LTIwNy42LDIwNy42aDBaIi8+CiAgICA8cGF0aCBjbGFzcz0ic3Q0IiBkPSJNNDM3LjQsMjI5LjhoLTMyYzAtOTYuOC03OC44LTE3NS42LTE3NS42LTE3NS42UzU0LjEsMTMyLjksNTQuMSwyMjkuOEgyMi4xYzAtMTE0LjUsOTMuMi0yMDcuNywyMDcuNy0yMDcuN3MyMDcuNiw5My4xLDIwNy42LDIwNy42aDBaIi8+CiAgICA8cGF0aCBjbGFzcz0ic3QxIiBkPSJNNDg3LjQsNDY0LjhsLTEwMC0xMDBjMzIuMy0zNy42LDQ5LjktODUsNDkuOS0xMzUuMXMtMjEuNi0xMDcuNi02MC44LTE0Ni44bC0yMi42LDIyLjZjMzMuMiwzMy4yLDUxLjQsNzcuMyw1MS40LDEyNC4ycy0xOC4zLDkwLjktNTEuNSwxMjQuMWgwYy01LDUtNy41LDctMTEuOCwxMC44bDEyMi44LDEyMi44YzMuMSwzLjEsNy4yLDQuNywxMS4zLDQuN2gwYzQuMSwwLDguMi0xLjYsMTEuMy00LjcsNi4yLTYuMiw2LjItMTYuNCwwLTIyLjZoMFoiLz4KICA8L2c+Cjwvc3ZnPgo=" preserveAspectRatio="xMidYMid meet"/>
+    <text class="cardTitle" x="168" y="32" text-anchor="middle">Mock BigQuery REST</text>
+    <text class="detail" x="168" y="62" text-anchor="middle">jobs.query(project, request)</text>
+    <text class="detail" x="168" y="82" text-anchor="middle">captures request</text>
+    <text class="detail" x="168" y="102" text-anchor="middle">returns jobComplete</text>
+  </g>
+
+  <g id="assertions" transform="translate(800 408)">
+    <rect class="card blue" width="640" height="88" rx="12" fill="#EDF5FF"/>
+    <text class="cardTitle" x="320" y="32" text-anchor="middle">Assertions</text>
+    <text class="detail" x="320" y="54" text-anchor="middle">captured request carries dryRun, byte cap, labels,</text>
+    <text class="detail" x="320" y="74" text-anchor="middle">priority, location, and timeout</text>
+  </g>
+
+  <path id="edge-test-context" data-edge="test-&gt;context" class="line lineBlue" d="M354 303 L424 303"/>
+  <path id="edge-context-h2" data-edge="context-&gt;h2" class="line lineGold" d="M579 362 L579 408"/>
+  <path id="edge-context-request" data-edge="context-&gt;request" class="line lineGreen" d="M734 303 L800 303"/>
+  <path id="edge-request-mock" data-edge="request-&gt;mock" class="line lineRed" d="M1080 303 L1140 303"/>
+  <path id="edge-mock-assertions" data-edge="mock-&gt;assertions" class="line lineRed" d="M1290 362 L1290 408"/>
+  <path id="edge-request-assertions" data-edge="request-&gt;assertions" class="line lineBlue" d="M940 362 L940 408"/>
+  <text class="label" x="372" y="288">context</text>
+  <text class="label" x="604" y="386">local SQL</text>
+  <text class="label" x="748" y="288">options</text>
+  <text class="label" x="1094" y="288">dry-run</text>
+  <text class="label" x="960" y="386">captured options</text>
+
+  <rect x="96" y="638" width="1344" height="32" rx="11" fill="#FFFFFF" stroke="#D6E3EF" stroke-width="1.5"/>
+  <text class="small" x="768" y="659" text-anchor="middle">Reader contract: this is a test fixture for BigQuery REST query-job option mapping, not a live BigQuery execution guide.</text>
+</svg>

@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="980" viewBox="0 0 1680 980" role="img" aria-labelledby="title desc">
+  <title id="title">R2DBC Caffeine Repository Boundary</title>
+  <desc id="desc">Architecture diagram for exposed-r2dbc-caffeine showing coroutine callers, local AsyncCache, repository mapping, write-behind worker, and Exposed R2DBC transaction boundary.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#327d91" stroke-dasharray="none" style="stroke-dasharray:none!important"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="9" stdDeviation="12" flood-color="#20303a" flood-opacity="0.14"/>
+    </filter>
+    <style>
+      .canvas { fill: #f6f0e8; }
+      .frame { fill: #fffaf2; stroke: #28485a; stroke-width: 4; }
+      .title { font-family: "Architects Daughter", "Comic Mono", monospace; font-size: 46px; fill: #21343f; }
+      .subtitle { font-family: "Comic Mono", monospace; font-size: 19px; fill: #51636f; }
+      .zoneTitle { font-family: "Architects Daughter", "Comic Mono", monospace; font-size: 28px; fill: #21343f; }
+      .cardTitle { font-family: "Comic Mono", monospace; font-size: 20px; font-weight: 700; fill: #20323d; }
+      .cardText { font-family: "Comic Mono", monospace; font-size: 16px; fill: #33454f; }
+      .small { font-family: "Comic Mono", monospace; font-size: 14px; fill: #52636f; }
+      .label { font-family: "Comic Mono", monospace; font-size: 14px; fill: #315664; }
+      .flow { stroke: #327d91; stroke-width: 4.4; marker-end: url(#arrow); fill: none; }
+      .side { stroke: #7d6ab0; stroke-width: 4.2; marker-end: url(#arrow); fill: none; }
+      .code { fill: #9b3d5a; font-weight: 700; }
+      .type { fill: #176f7a; font-weight: 700; }
+      .keyword { fill: #8a5b00; font-weight: 700; }
+    </style>
+  </defs>
+
+  <rect class="canvas" width="1680" height="980"/>
+  <rect class="frame" x="42" y="34" width="1596" height="908" rx="24" filter="url(#shadow)"/>
+  <text class="title" x="84" y="91">R2DBC Caffeine Repository Boundary</text>
+  <text class="subtitle" x="86" y="126">A coroutine repository keeps Caffeine local, delegates database work through suspendTransaction, and batches write-behind safely.</text>
+
+  <g transform="translate(92 168)">
+    <rect x="0" y="0" width="1496" height="150" rx="18" fill="#e7f1f4" stroke="#9dbbc4" stroke-width="2.5"/><image data-bluetape4k-icon="cache.caffeine" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjOEI1QTJCIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2FmZmVpbmU8L3RpdGxlPjxwYXRoIGQ9Ik02LjE2MiAxLjU1N2MtLjE4LjAwNi0uMjYzLjEzNy0uMjkzLjE4TC4wNSAxMS44MmMtLjA3LjE0Mi0uMDYuMjctLjAwNC4zNTYgMS45NDIgMy4zNiAzLjg4MiA2LjcyMyA1LjgyMiAxMC4wODVhLjMzNy4zMzcgMCAwMC4zMDUuMTgyaDExLjY1Yy4xMzguMDAzLjI2LS4wOS4zMS0uMTgyIDEuOTQtMy4zNiAzLjg3OC02LjcyMSA1LjgyLTEwLjA4YS4zNjEuMzYxIDAgMDAwLS4zNThsLTUuODItMTAuMDg1Yy0uMTEyLS4xOTMtLjMwOC0uMTgxLS4zMDgtLjE4MXptLjgwNC43MTloOS41MTNMMTAuMTM2IDUuOTR6bS0uNDI3LjYwM2wyLjk2NCAzLjQyNkw2LjU0IDguMDE4em0xMC4zLjAxOGwtMy44NiA2LjY4NUw3LjE5IDguNDY5em0xLjM0MS4zNTdsNC43NTYgOC4yNDYtNC43NTYtLjkxNnptLTEyLjM2LjAwMnY1LjE3NmwtNC40OCAyLjU4N3ptMTEuNjQgMHYxMS4xNDJsLTMuODU3LTQuNDU3ek03LjEyNyA5LjE4Nmw1Ljg0NyAxLjEyNiAzLjg5OCA0LjUwMi01Ljg0Mi0xLjEyNXpNNS44MiA5LjI2djMuNDI1bC00LjQ1LS44NTV6bS43Mi4zNDFsMy44NTYgNC40NTctMy44NTcgNi42ODV6bTExLjY0IDEuNzEzbDQuNDQ3Ljg1Ni00LjQ0NyAyLjU3ek0xLjA2MiAxMi41bDQuNzYuOTE2djcuMzN6bTIxLjU5Ny40OGwtNC40NzkgNy43NjN2LTUuMTc1em0tMTEuNjQgMS40MzdsNS43OSAxLjExNC05LjY0OSA1LjU3MnptNi40NCAxLjU2NXY1LjEzOGwtMi45NjQtMy40MjV6bS0zLjU5NyAyLjA3OGwzLjE3MiAzLjY2NEg3LjUyeiIvPjwvc3ZnPg==" preserveAspectRatio="xMidYMid meet"/>
+    <text class="zoneTitle" x="28" y="46">Coroutine caller boundary</text>
+    <rect x="372" y="32" width="318" height="88" rx="14" fill="#fffdf8" stroke="#8db7c2" stroke-width="2"/>
+    <text class="cardTitle" x="400" y="66">Caller coroutine</text>
+    <text class="cardText" x="400" y="96"><tspan class="code">get</tspan>, <tspan class="code">put</tspan>, <tspan class="code">putAll</tspan>, <tspan class="code">close</tspan></text>
+    <rect x="768" y="32" width="390" height="88" rx="14" fill="#fffdf8" stroke="#8db7c2" stroke-width="2"/>
+    <text class="cardTitle type" x="796" y="66">R2dbcCaffeineRepository</text>
+    <text class="cardText" x="796" y="96">implements <tspan class="type">R2dbcCacheRepository</tspan></text>
+  </g>
+
+  <path class="flow" d="M856 318 V378"/>
+  <text class="label" x="878" y="354">repository operation</text>
+
+  <g transform="translate(92 378)">
+    <rect x="0" y="0" width="1496" height="252" rx="18" fill="#eef4e6" stroke="#a9c58b" stroke-width="2.5"/><image data-bluetape4k-icon="cache.caffeine" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjOEI1QTJCIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2FmZmVpbmU8L3RpdGxlPjxwYXRoIGQ9Ik02LjE2MiAxLjU1N2MtLjE4LjAwNi0uMjYzLjEzNy0uMjkzLjE4TC4wNSAxMS44MmMtLjA3LjE0Mi0uMDYuMjctLjAwNC4zNTYgMS45NDIgMy4zNiAzLjg4MiA2LjcyMyA1LjgyMiAxMC4wODVhLjMzNy4zMzcgMCAwMC4zMDUuMTgyaDExLjY1Yy4xMzguMDAzLjI2LS4wOS4zMS0uMTgyIDEuOTQtMy4zNiAzLjg3OC02LjcyMSA1LjgyLTEwLjA4YS4zNjEuMzYxIDAgMDAwLS4zNThsLTUuODItMTAuMDg1Yy0uMTEyLS4xOTMtLjMwOC0uMTgxLS4zMDgtLjE4MXptLjgwNC43MTloOS41MTNMMTAuMTM2IDUuOTR6bS0uNDI3LjYwM2wyLjk2NCAzLjQyNkw2LjU0IDguMDE4em0xMC4zLjAxOGwtMy44NiA2LjY4NUw3LjE5IDguNDY5em0xLjM0MS4zNTdsNC43NTYgOC4yNDYtNC43NTYtLjkxNnptLTEyLjM2LjAwMnY1LjE3NmwtNC40OCAyLjU4N3ptMTEuNjQgMHYxMS4xNDJsLTMuODU3LTQuNDU3ek03LjEyNyA5LjE4Nmw1Ljg0NyAxLjEyNiAzLjg5OCA0LjUwMi01Ljg0Mi0xLjEyNXpNNS44MiA5LjI2djMuNDI1bC00LjQ1LS44NTV6bS43Mi4zNDFsMy44NTYgNC40NTctMy44NTcgNi42ODV6bTExLjY0IDEuNzEzbDQuNDQ3Ljg1Ni00LjQ0NyAyLjU3ek0xLjA2MiAxMi41bDQuNzYuOTE2djcuMzN6bTIxLjU5Ny40OGwtNC40NzkgNy43NjN2LTUuMTc1em0tMTEuNjQgMS40MzdsNS43OSAxLjExNC05LjY0OSA1LjU3MnptNi40NCAxLjU2NXY1LjEzOGwtMi45NjQtMy40MjV6bS0zLjU5NyAyLjA3OGwzLjE3MiAzLjY2NEg3LjUyeiIvPjwvc3ZnPg==" preserveAspectRatio="xMidYMid meet"/>
+    <text class="zoneTitle" x="28" y="46">Local cache and write policy</text>
+    <rect x="160" y="82" width="336" height="116" rx="14" fill="#fffdf8" stroke="#a7c481" stroke-width="2"/>
+    <text class="cardTitle type" x="188" y="116">AsyncCache&lt;String, E&gt;</text>
+    <text class="cardText" x="188" y="146">key from <tspan class="code">serializeKey(id)</tspan></text>
+    <text class="cardText" x="188" y="176">local, in-process Caffeine</text>
+
+    <rect x="580" y="82" width="332" height="116" rx="14" fill="#fffdf8" stroke="#a7c481" stroke-width="2"/>
+    <text class="cardTitle type" x="608" y="116">LocalCacheConfig</text>
+    <text class="cardText" x="608" y="146"><tspan class="type">READ_ONLY</tspan> / <tspan class="type">WRITE_THROUGH</tspan></text>
+    <text class="cardText" x="608" y="176"><tspan class="type">WRITE_BEHIND</tspan> batching</text>
+
+    <rect x="996" y="82" width="340" height="130" rx="14" fill="#fffdf8" stroke="#a7c481" stroke-width="2"/>
+    <text class="cardTitle" x="1024" y="116">Write-behind worker</text>
+    <text class="cardText" x="1024" y="146"><tspan class="type">Channel&lt;Pair&lt;ID,E&gt;&gt;</tspan></text>
+    <text class="cardText" x="1024" y="176"><tspan class="code">close()</tspan> waits final flush</text>
+    <text class="small" x="1024" y="198">health: depth + last error</text>
+  </g>
+
+  <path class="flow" d="M856 630 V690"/>
+  <text class="label" x="878" y="666">DB path</text>
+
+  <g transform="translate(92 690)">
+    <rect x="0" y="0" width="1496" height="160" rx="18" fill="#fff0d8" stroke="#d8ad68" stroke-width="2.5"/>
+    <text class="zoneTitle" x="28" y="46">Exposed R2DBC transaction boundary</text>
+    <rect x="270" y="64" width="322" height="72" rx="14" fill="#fffdf8" stroke="#d8ad68" stroke-width="2"/>
+    <text class="cardTitle code" x="298" y="98">suspendTransaction</text>
+    <text class="cardText" x="298" y="124">all DB access enters here</text>
+    <rect x="686" y="64" width="326" height="72" rx="14" fill="#fffdf8" stroke="#d8ad68" stroke-width="2"/>
+    <text class="cardTitle type" x="714" y="98">IdTable + ResultRow</text>
+    <text class="cardText" x="714" y="124"><tspan class="code">toEntity()</tspan> maps rows</text>
+    <rect x="1106" y="64" width="260" height="72" rx="14" fill="#fffdf8" stroke="#d8ad68" stroke-width="2"/>
+    <text class="cardTitle" x="1134" y="98">Database rows</text>
+    <text class="cardText" x="1134" y="124"><tspan class="keyword">update</tspan> then <tspan class="keyword">batchInsert</tspan></text>
+  </g>
+
+  <g transform="translate(126 884)">
+    <rect x="0" y="0" width="1428" height="46" rx="14" fill="#eef3f4" stroke="#c2d1d4" stroke-width="2"/>
+    <text class="small" x="28" y="30">Auto-increment tables are update-only for new IDs; client-generated IDs may be inserted after a missed update.</text>
+  </g>
+</svg>

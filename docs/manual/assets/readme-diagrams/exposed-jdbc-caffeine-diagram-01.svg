@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1280" viewBox="0 0 1680 1280" role="img" aria-labelledby="title desc">
+  <title id="title">JDBC Caffeine Local Cache Architecture</title>
+  <desc id="desc">JDBC Caffeine architecture rebuilt from exposed-jdbc-caffeine README, AbstractJdbcCaffeineRepository, AbstractSuspendedJdbcCaffeineRepository, JdbcCacheRepository, and LocalCacheConfig source.</desc>
+  <defs>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <marker id="arrow" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#536C85" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="generalizationArrow" viewBox="0 0 10 10" markerWidth="18" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 9 5 L 1 9" fill="#FFFFFF" stroke="#536C85" stroke-width="1.2" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <style>
+      .canvas{fill:#F6F9FC}.decor{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
+      .innerFrame{fill:#FBFDFF;stroke:#D9E4EF;stroke-width:2}
+      .title{font-family:"Architects Daughter";font-size:46px;fill:#22344A;font-weight:400}
+      .subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476;font-weight:400}
+      .group{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}.group-title{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .card-title{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}.detail{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}
+      .small{font-family:"Comic Mono";font-size:13px;fill:#627184;font-weight:400}.shape{filter:url(#shadow);stroke-width:2}
+      .connector{fill:none;stroke-width:2.6;marker-end:url(#arrow);stroke-linejoin:round;stroke-linecap:round}.generalization{marker-end:url(#generalizationArrow)}.dashed{stroke-dasharray:7 6}
+      .pill{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1}
+    </style>
+    <marker id="arrow-3e9868" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#3E9868" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+    <marker id="arrow-755bc6" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#755BC6" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+    <marker id="arrow-4f83bf" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#4F83BF" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+    <marker id="arrow-2e8f89" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#2E8F89" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+    <marker id="arrow-c94d68" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#C94D68" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+    <marker id="arrow-b9851b" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#B9851B" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+    <marker id="arrow-758297" viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#758297" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+  </defs>
+  <rect class="canvas" width="1680" height="1280"/>
+  <rect class="decor" x="44" y="36" width="1592" height="1208" rx="34"/>
+  <rect class="innerFrame" x="82" y="154" width="1516" height="984" rx="24"/>
+  <text class="title" x="72" y="88">JDBC Caffeine Local Cache Architecture</text>
+  <text class="subtitle" x="76" y="121">Sync and suspend JDBC repositories wrap Exposed table access with an in-process Caffeine cache; Redis is not part of this module.</text>
+  <g id="group-api">
+    <rect class="group" x="92" y="156" width="1496" height="210" rx="18"/>
+    <text class="group-title" x="122" y="180" dominant-baseline="middle">Reader-facing repository surface</text>
+  </g>
+  <g id="group-cache">
+    <rect class="group" x="92" y="406" width="1496" height="265" rx="18"/>
+    <text class="group-title" x="122" y="430" dominant-baseline="middle">Local Caffeine wrapper</text>
+  </g>
+  <g id="group-persistence">
+    <rect class="group" x="92" y="711" width="1496" height="240" rx="18"/>
+    <text class="group-title" x="122" y="735" dominant-baseline="middle">Exposed JDBC persistence path</text>
+  </g>
+  <g id="group-ops">
+    <rect class="group" x="92" y="991" width="1496" height="165" rx="18"/>
+    <text class="group-title" x="122" y="1015" dominant-baseline="middle">Write-behind and cache operations</text>
+  </g>
+  <path id="route-caller-sync-repo" data-edge="caller-&gt;sync-repo" data-label="blocking calls" class="connector" d="M 445 293 L 560 293" stroke="#3E9868" style="marker-end:url(#arrow-3e9868)"/>
+  <path id="route-caller-suspend-repo" data-edge="caller-&gt;suspend-repo" data-label="suspend calls" class="connector" d="M 290 336 L 290 368 Q 290 380 302 380 L 1258 380 Q 1270 380 1270 368 L 1270 339" stroke="#755BC6" style="marker-end:url(#arrow-755bc6)"/>
+  <path id="route-sync-repo-contract" data-edge="sync-repo-&gt;contract" data-label="implements cache contract" class="connector" d="M 650 339 L 650 444 Q 650 456 638 456 L 322 456 Q 310 456 310 468 L 310 500" stroke="#4F83BF" style="marker-end:url(#arrow-4f83bf)"/>
+  <path id="route-suspend-repo-contract" data-edge="suspend-repo-&gt;contract" data-label="suspend variant mirrors contract" class="connector" d="M 1170 339 L 1170 444 Q 1170 456 1158 456 L 322 456 Q 310 456 310 468 L 310 500" stroke="#755BC6" style="marker-end:url(#arrow-755bc6)"/>
+  <path id="route-config-caffeine" data-edge="config-&gt;caffeine" data-label="builds local cache" class="connector" d="M 930 548 L 1035 548" stroke="#3E9868" style="marker-end:url(#arrow-3e9868)"/>
+  <path id="route-contract-caffeine" data-edge="contract-&gt;caffeine" data-label="get/put/invalidate" class="connector" d="M 480 580 L 512 580 Q 524 580 524 592 L 524 636 Q 524 648 536 648 L 1248 648 Q 1260 648 1260 636 L 1260 612" stroke="#3E9868" style="marker-end:url(#arrow-3e9868)"/>
+  <path id="route-contract-jdbc-tx" data-edge="contract-&gt;jdbc-tx" data-label="misses and writes delegate" class="connector" d="M 310 596 L 310 678 Q 310 690 322 690 L 774 690 Q 786 690 786 702 L 786 790" stroke="#2E8F89" style="marker-end:url(#arrow-2e8f89)"/>
+  <path id="route-table-jdbc-tx" data-edge="table-&gt;jdbc-tx" data-label="table + mapper" class="connector" d="M 470 848 L 590 848" stroke="#755BC6" style="marker-end:url(#arrow-755bc6)"/>
+  <path id="route-jdbc-tx-database" data-edge="jdbc-tx-&gt;database" data-label="JDBC statements" class="connector" d="M 980 846 L 1110 846" stroke="#C94D68" style="marker-end:url(#arrow-c94d68)"/>
+  <path id="route-write-through-jdbc-tx" data-edge="write-through-&gt;jdbc-tx" data-label="sync DB update" class="connector" d="M 660 1070 L 660 902" stroke="#2E8F89" style="marker-end:url(#arrow-2e8f89)"/>
+  <path id="route-write-behind-jdbc-tx" data-edge="write-behind-&gt;jdbc-tx" data-label="batch flush" class="connector" d="M 1055 1070 L 1055 952 Q 1055 940 1043 940 L 797 940 Q 785 940 785 928 L 785 902" stroke="#B9851B" style="marker-end:url(#arrow-b9851b)"/>
+  <path id="route-evict-caffeine" data-edge="evict-&gt;caffeine" data-label="cache removal only" class="connector" d="M 1520 1105 L 1536.7 1105 Q 1545 1105 1545 1096.7 L 1545 560 Q 1545 548 1533 548 L 1415 548" stroke="#758297" style="marker-end:url(#arrow-758297)"/>
+  <g id="node-caller" data-node="caller" transform="translate(135,250)">
+    <rect class="shape" x="0" y="0" width="310" height="86" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <text class="card-title" x="155" y="24" text-anchor="middle" dominant-baseline="middle">Application code</text>
+    <text class="detail" x="155" y="43" text-anchor="middle" dominant-baseline="middle">get, put, putAll</text>
+    <text class="detail" x="155" y="62" text-anchor="middle" dominant-baseline="middle">invalidate, clear</text>
+  </g>
+  <g id="node-sync-repo" data-node="sync-repo" transform="translate(560,235)">
+    <rect class="shape" x="0" y="0" width="390" height="104" rx="12" fill="#EAF7EF" stroke="#58A978"/><image data-bluetape4k-icon="cache.caffeine" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjOEI1QTJCIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2FmZmVpbmU8L3RpdGxlPjxwYXRoIGQ9Ik02LjE2MiAxLjU1N2MtLjE4LjAwNi0uMjYzLjEzNy0uMjkzLjE4TC4wNSAxMS44MmMtLjA3LjE0Mi0uMDYuMjctLjAwNC4zNTYgMS45NDIgMy4zNiAzLjg4MiA2LjcyMyA1LjgyMiAxMC4wODVhLjMzNy4zMzcgMCAwMC4zMDUuMTgyaDExLjY1Yy4xMzguMDAzLjI2LS4wOS4zMS0uMTgyIDEuOTQtMy4zNiAzLjg3OC02LjcyMSA1LjgyLTEwLjA4YS4zNjEuMzYxIDAgMDAwLS4zNThsLTUuODItMTAuMDg1Yy0uMTEyLS4xOTMtLjMwOC0uMTgxLS4zMDgtLjE4MXptLjgwNC43MTloOS41MTNMMTAuMTM2IDUuOTR6bS0uNDI3LjYwM2wyLjk2NCAzLjQyNkw2LjU0IDguMDE4em0xMC4zLjAxOGwtMy44NiA2LjY4NUw3LjE5IDguNDY5em0xLjM0MS4zNTdsNC43NTYgOC4yNDYtNC43NTYtLjkxNnptLTEyLjM2LjAwMnY1LjE3NmwtNC40OCAyLjU4N3ptMTEuNjQgMHYxMS4xNDJsLTMuODU3LTQuNDU3ek03LjEyNyA5LjE4Nmw1Ljg0NyAxLjEyNiAzLjg5OCA0LjUwMi01Ljg0Mi0xLjEyNXpNNS44MiA5LjI2djMuNDI1bC00LjQ1LS44NTV6bS43Mi4zNDFsMy44NTYgNC40NTctMy44NTcgNi42ODV6bTExLjY0IDEuNzEzbDQuNDQ3Ljg1Ni00LjQ0NyAyLjU3ek0xLjA2MiAxMi41bDQuNzYuOTE2djcuMzN6bTIxLjU5Ny40OGwtNC40NzkgNy43NjN2LTUuMTc1em0tMTEuNjQgMS40MzdsNS43OSAxLjExNC05LjY0OSA1LjU3MnptNi40NCAxLjU2NXY1LjEzOGwtMi45NjQtMy40MjV6bS0zLjU5NyAyLjA3OGwzLjE3MiAzLjY2NEg3LjUyeiIvPjwvc3ZnPg==" preserveAspectRatio="xMidYMid meet"/>
+    <text class="card-title" x="195" y="33" text-anchor="middle" dominant-baseline="middle">Sync Caffeine repository</text>
+    <text class="detail" x="195" y="52" text-anchor="middle" dominant-baseline="middle">AbstractJdbcCaffeineRepository</text>
+    <text class="detail" x="195" y="71" text-anchor="middle" dominant-baseline="middle">blocking transaction {}</text>
+  </g>
+  <g id="node-suspend-repo" data-node="suspend-repo" transform="translate(1070,235)">
+    <rect class="shape" x="0" y="0" width="400" height="104" rx="12" fill="#F1ECFF" stroke="#8A72D6"/><image data-bluetape4k-icon="cache.caffeine" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjOEI1QTJCIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2FmZmVpbmU8L3RpdGxlPjxwYXRoIGQ9Ik02LjE2MiAxLjU1N2MtLjE4LjAwNi0uMjYzLjEzNy0uMjkzLjE4TC4wNSAxMS44MmMtLjA3LjE0Mi0uMDYuMjctLjAwNC4zNTYgMS45NDIgMy4zNiAzLjg4MiA2LjcyMyA1LjgyMiAxMC4wODVhLjMzNy4zMzcgMCAwMC4zMDUuMTgyaDExLjY1Yy4xMzguMDAzLjI2LS4wOS4zMS0uMTgyIDEuOTQtMy4zNiAzLjg3OC02LjcyMSA1LjgyLTEwLjA4YS4zNjEuMzYxIDAgMDAwLS4zNThsLTUuODItMTAuMDg1Yy0uMTEyLS4xOTMtLjMwOC0uMTgxLS4zMDgtLjE4MXptLjgwNC43MTloOS41MTNMMTAuMTM2IDUuOTR6bS0uNDI3LjYwM2wyLjk2NCAzLjQyNkw2LjU0IDguMDE4em0xMC4zLjAxOGwtMy44NiA2LjY4NUw3LjE5IDguNDY5em0xLjM0MS4zNTdsNC43NTYgOC4yNDYtNC43NTYtLjkxNnptLTEyLjM2LjAwMnY1LjE3NmwtNC40OCAyLjU4N3ptMTEuNjQgMHYxMS4xNDJsLTMuODU3LTQuNDU3ek03LjEyNyA5LjE4Nmw1Ljg0NyAxLjEyNiAzLjg5OCA0LjUwMi01Ljg0Mi0xLjEyNXpNNS44MiA5LjI2djMuNDI1bC00LjQ1LS44NTV6bS43Mi4zNDFsMy44NTYgNC40NTctMy44NTcgNi42ODV6bTExLjY0IDEuNzEzbDQuNDQ3Ljg1Ni00LjQ0NyAyLjU3ek0xLjA2MiAxMi41bDQuNzYuOTE2djcuMzN6bTIxLjU5Ny40OGwtNC40NzkgNy43NjN2LTUuMTc1em0tMTEuNjQgMS40MzdsNS43OSAxLjExNC05LjY0OSA1LjU3MnptNi40NCAxLjU2NXY1LjEzOGwtMi45NjQtMy40MjV6bS0zLjU5NyAyLjA3OGwzLjE3MiAzLjY2NEg3LjUyeiIvPjwvc3ZnPg==" preserveAspectRatio="xMidYMid meet"/>
+    <text class="card-title" x="200" y="33" text-anchor="middle" dominant-baseline="middle">Suspend Caffeine repository</text>
+    <text class="detail" x="200" y="52" text-anchor="middle" dominant-baseline="middle">AbstractSuspendedJdbcCaffeineRepository</text>
+    <text class="detail" x="200" y="71" text-anchor="middle" dominant-baseline="middle">suspendedTransactionAsync</text>
+  </g>
+  <g id="node-contract" data-node="contract" transform="translate(140,500)">
+    <rect class="shape" x="0" y="0" width="340" height="96" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <text class="card-title" x="170" y="29" text-anchor="middle" dominant-baseline="middle">JdbcCacheRepository contract</text>
+    <text class="detail" x="170" y="48" text-anchor="middle" dominant-baseline="middle">read-through lookup</text>
+    <text class="detail" x="170" y="67" text-anchor="middle" dominant-baseline="middle">write mode dispatch</text>
+  </g>
+  <g id="node-config" data-node="config" transform="translate(570,494)">
+    <rect class="shape" x="0" y="0" width="360" height="108" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <text class="card-title" x="180" y="35" text-anchor="middle" dominant-baseline="middle">LocalCacheConfig</text>
+    <text class="detail" x="180" y="54" text-anchor="middle" dominant-baseline="middle">keyPrefix, maximumSize, TTL</text>
+    <text class="detail" x="180" y="73" text-anchor="middle" dominant-baseline="middle">READ_ONLY / THROUGH / BEHIND</text>
+  </g>
+  <g id="node-caffeine" data-node="caffeine" transform="translate(1035,494)">
+    <rect class="shape" x="0" y="0" width="380" height="118" rx="12" fill="#EAF7EF" stroke="#58A978"/><image data-bluetape4k-icon="cache.caffeine" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjOEI1QTJCIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2FmZmVpbmU8L3RpdGxlPjxwYXRoIGQ9Ik02LjE2MiAxLjU1N2MtLjE4LjAwNi0uMjYzLjEzNy0uMjkzLjE4TC4wNSAxMS44MmMtLjA3LjE0Mi0uMDYuMjctLjAwNC4zNTYgMS45NDIgMy4zNiAzLjg4MiA2LjcyMyA1LjgyMiAxMC4wODVhLjMzNy4zMzcgMCAwMC4zMDUuMTgyaDExLjY1Yy4xMzguMDAzLjI2LS4wOS4zMS0uMTgyIDEuOTQtMy4zNiAzLjg3OC02LjcyMSA1LjgyLTEwLjA4YS4zNjEuMzYxIDAgMDAwLS4zNThsLTUuODItMTAuMDg1Yy0uMTEyLS4xOTMtLjMwOC0uMTgxLS4zMDgtLjE4MXptLjgwNC43MTloOS41MTNMMTAuMTM2IDUuOTR6bS0uNDI3LjYwM2wyLjk2NCAzLjQyNkw2LjU0IDguMDE4em0xMC4zLjAxOGwtMy44NiA2LjY4NUw3LjE5IDguNDY5em0xLjM0MS4zNTdsNC43NTYgOC4yNDYtNC43NTYtLjkxNnptLTEyLjM2LjAwMnY1LjE3NmwtNC40OCAyLjU4N3ptMTEuNjQgMHYxMS4xNDJsLTMuODU3LTQuNDU3ek03LjEyNyA5LjE4Nmw1Ljg0NyAxLjEyNiAzLjg5OCA0LjUwMi01Ljg0Mi0xLjEyNXpNNS44MiA5LjI2djMuNDI1bC00LjQ1LS44NTV6bS43Mi4zNDFsMy44NTYgNC40NTctMy44NTcgNi42ODV6bTExLjY0IDEuNzEzbDQuNDQ3Ljg1Ni00LjQ0NyAyLjU3ek0xLjA2MiAxMi41bDQuNzYuOTE2djcuMzN6bTIxLjU5Ny40OGwtNC40NzkgNy43NjN2LTUuMTc1em0tMTEuNjQgMS40MzdsNS43OSAxLjExNC05LjY0OSA1LjU3MnptNi40NCAxLjU2NXY1LjEzOGwtMi45NjQtMy40MjV6bS0zLjU5NyAyLjA3OGwzLjE3MiAzLjY2NEg3LjUyeiIvPjwvc3ZnPg==" preserveAspectRatio="xMidYMid meet"/>
+    <text class="card-title" x="190" y="30.5" text-anchor="middle" dominant-baseline="middle">Caffeine Cache&lt;String,E&gt;</text>
+    <text class="detail" x="190" y="49.5" text-anchor="middle" dominant-baseline="middle">in-process local cache</text>
+    <text class="detail" x="190" y="68.5" text-anchor="middle" dominant-baseline="middle">CacheMode.LOCAL only</text>
+    <text class="detail" x="190" y="87.5" text-anchor="middle" dominant-baseline="middle">no Redis/network cache</text>
+  </g>
+  <g id="node-table" data-node="table" transform="translate(140,805)">
+    <rect class="shape" x="0" y="0" width="330" height="86" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="165" y="24" text-anchor="middle" dominant-baseline="middle">Exposed IdTable&lt;ID&gt;</text>
+    <text class="detail" x="165" y="43" text-anchor="middle" dominant-baseline="middle">repository table</text>
+    <text class="detail" x="165" y="62" text-anchor="middle" dominant-baseline="middle">ResultRow.toEntity</text>
+  </g>
+  <g id="node-jdbc-tx" data-node="jdbc-tx" transform="translate(590,790)">
+    <rect class="shape" x="0" y="0" width="390" height="112" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="195" y="37" text-anchor="middle" dominant-baseline="middle">JDBC transaction path</text>
+    <text class="detail" x="195" y="56" text-anchor="middle" dominant-baseline="middle">selectAll/update/batchInsert</text>
+    <text class="detail" x="195" y="75" text-anchor="middle" dominant-baseline="middle">auto-increment insert skip</text>
+  </g>
+  <g id="node-database" data-node="database" transform="translate(1110,805)">
+    <rect class="shape" x="0" y="0" width="330" height="86" rx="12" fill="#FDECEF" stroke="#DC6B82"/><image data-bluetape4k-icon="generic.database" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSI2NCIgY3k9IjM2IiByeD0iMzQiIHJ5PSIxMyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiLz4KICA8cGF0aCBkPSJNMzAgNThjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMzAgODBjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==" preserveAspectRatio="xMidYMid meet"/>
+    <text class="card-title" x="165" y="24" text-anchor="middle" dominant-baseline="middle">SQL database</text>
+    <text class="detail" x="165" y="43" text-anchor="middle" dominant-baseline="middle">H2, PostgreSQL, MySQL</text>
+    <text class="detail" x="165" y="62" text-anchor="middle" dominant-baseline="middle">Testcontainers verified</text>
+  </g>
+  <g id="node-read" data-node="read" transform="translate(140,1070)">
+    <rect class="shape" x="0" y="0" width="280" height="70" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="140" y="16" text-anchor="middle" dominant-baseline="middle">Read-through</text>
+    <text class="detail" x="140" y="35" text-anchor="middle" dominant-baseline="middle">miss loads from DB</text>
+    <text class="detail" x="140" y="54" text-anchor="middle" dominant-baseline="middle">findAll warms cache</text>
+  </g>
+  <g id="node-write-through" data-node="write-through" transform="translate(510,1070)">
+    <rect class="shape" x="0" y="0" width="300" height="70" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="150" y="16" text-anchor="middle" dominant-baseline="middle">Write-through</text>
+    <text class="detail" x="150" y="35" text-anchor="middle" dominant-baseline="middle">cache + DB together</text>
+    <text class="detail" x="150" y="54" text-anchor="middle" dominant-baseline="middle">synchronous consistency</text>
+  </g>
+  <g id="node-write-behind" data-node="write-behind" transform="translate(900,1070)">
+    <rect class="shape" x="0" y="0" width="310" height="70" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <text class="card-title" x="155" y="16" text-anchor="middle" dominant-baseline="middle">Write-behind</text>
+    <text class="detail" x="155" y="35" text-anchor="middle" dominant-baseline="middle">bounded Channel</text>
+    <text class="detail" x="155" y="54" text-anchor="middle" dominant-baseline="middle">background batch flush</text>
+  </g>
+  <g id="node-evict" data-node="evict" transform="translate(1300,1070)">
+    <rect class="shape" x="0" y="0" width="220" height="70" rx="12" fill="#F2F5F9" stroke="#9AA8B8"/>
+    <text class="card-title" x="110" y="16" text-anchor="middle" dominant-baseline="middle">Evict only</text>
+    <text class="detail" x="110" y="35" text-anchor="middle" dominant-baseline="middle">invalidate / clear</text>
+    <text class="detail" x="110" y="54" text-anchor="middle" dominant-baseline="middle">DB unchanged</text>
+  </g>
+  <g transform="translate(76,1188)" data-footer="reader-note">
+    <rect class="pill" x="0" y="0" width="1528" height="48" rx="10"/>
+    <text class="small" x="764" y="18" text-anchor="middle" dominant-baseline="middle">This architecture view shows local cache ownership and JDBC transaction boundaries, not a class hierarchy.</text>
+    <text class="small" x="764" y="35" text-anchor="middle" dominant-baseline="middle">Caffeine is in-process only; write-behind uses a bounded Channel and background batch flush.</text>
+  </g>
+</svg>

@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1120" viewBox="0 0 1680 1120" role="img" aria-labelledby="title desc">
+  <title id="title">JDBC Test Dialect Coverage</title>
+  <desc id="desc">Coverage chart for exposed-jdbc-tests showing fast H2 execution, compatibility modes, real database coverage through Testcontainers or local servers, and the active TestDB selector.</desc>
+  <defs>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%">
+      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/>
+    </filter>
+    <style>
+      .canvas{fill:#F6F9FC}
+      .frame{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
+      .panel{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}
+      .cell{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1.6}
+      .head{fill:#E8F3FF;stroke:#AFC9E8;stroke-width:1.8}
+      .h2{fill:#EAF7EF;stroke:#58A978;stroke-width:2}
+      .mysql{fill:#FFF3D9;stroke:#D6A441;stroke-width:2}
+      .pg{fill:#F1ECFF;stroke:#8A72D6;stroke-width:2}
+      .note{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1.4}
+      .stable{fill:#E9F7F6;stroke:#45A7A1;stroke-width:1.5}
+      .planned{fill:#FDF4E0;stroke:#D6A441;stroke-width:1.5}
+      .limited{fill:#FDECEF;stroke:#DC6B82;stroke-width:1.5}
+      .title{font-family:"Architects Daughter";font-size:46px;fill:#22344A;font-weight:400}
+      .subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476;font-weight:400}
+      .section-title{font-family:"Architects Daughter";font-size:25px;fill:#22344A;font-weight:400}
+      .label{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}
+      .detail{font-family:"Comic Mono";font-size:15px;fill:#42556B;font-weight:400}
+      .small{font-family:"Comic Mono";font-size:13px;fill:#627184;font-weight:400}
+      .badge-text{font-family:"Comic Mono";font-size:13px;fill:#31465E;font-weight:400}
+    </style>
+  </defs>
+  <rect class="canvas" width="1680" height="1120"/>
+  <rect class="frame" x="44" y="36" width="1592" height="1048" rx="34"/>
+  <text class="title" x="72" y="88">JDBC Test Dialect Coverage</text>
+  <text class="subtitle" x="76" y="121">Test authors choose a TestDB set; the module maps that choice to fast H2, compatibility modes, or real JDBC databases.</text>
+
+  <rect class="panel" x="82" y="160" width="1516" height="730" rx="20"/>
+  <text class="section-title" x="112" y="196">Supported targets vs execution mode</text>
+
+  <rect class="head" x="112" y="230" width="310" height="70" rx="12"/>
+  <rect class="head" x="422" y="230" width="270" height="70" rx="12"/>
+  <rect class="head" x="692" y="230" width="270" height="70" rx="12"/>
+  <rect class="head" x="962" y="230" width="300" height="70" rx="12"/>
+  <rect class="head" x="1262" y="230" width="286" height="70" rx="12"/>
+  <text class="label" x="267" y="258" text-anchor="middle" dominant-baseline="middle">Target family</text>
+  <text class="detail" x="557" y="258" text-anchor="middle" dominant-baseline="middle">Fast local</text>
+  <text class="detail" x="827" y="258" text-anchor="middle" dominant-baseline="middle">Compatibility mode</text>
+  <text class="detail" x="1112" y="258" text-anchor="middle" dominant-baseline="middle">Real database</text>
+  <text class="detail" x="1405" y="258" text-anchor="middle" dominant-baseline="middle">Selection helpers</text>
+  <text class="small" x="557" y="281" text-anchor="middle" dominant-baseline="middle">useFastDB=true</text>
+  <text class="small" x="827" y="281" text-anchor="middle" dominant-baseline="middle">H2 dialect modes</text>
+  <text class="small" x="1112" y="281" text-anchor="middle" dominant-baseline="middle">Docker or local server</text>
+  <text class="small" x="1405" y="281" text-anchor="middle" dominant-baseline="middle">sets on TestDB</text>
+
+  <g id="row-h2">
+    <rect class="cell" x="112" y="320" width="310" height="118" rx="12"/>
+    <rect class="h2" x="136" y="344" width="262" height="70" rx="12"/>
+    <text class="label" x="267" y="370" text-anchor="middle" dominant-baseline="middle">H2 baseline</text>
+    <text class="detail" x="267" y="395" text-anchor="middle" dominant-baseline="middle">H2 and legacy H2_V1</text>
+    <rect class="stable" x="452" y="344" width="210" height="70" rx="12"/>
+    <text class="badge-text" x="557" y="371" text-anchor="middle" dominant-baseline="middle">stable</text>
+    <text class="small" x="557" y="393" text-anchor="middle" dominant-baseline="middle">default fast feedback</text>
+    <rect class="cell" x="714" y="344" width="226" height="70" rx="12"/>
+    <text class="small" x="827" y="371" text-anchor="middle" dominant-baseline="middle">not needed</text>
+    <text class="small" x="827" y="393" text-anchor="middle" dominant-baseline="middle">baseline dialect</text>
+    <rect class="cell" x="994" y="344" width="236" height="70" rx="12"/>
+    <text class="small" x="1112" y="371" text-anchor="middle" dominant-baseline="middle">none</text>
+    <text class="small" x="1112" y="393" text-anchor="middle" dominant-baseline="middle">in-memory JDBC</text>
+    <rect class="stable" x="1292" y="344" width="226" height="70" rx="12"/>
+    <text class="badge-text" x="1405" y="371" text-anchor="middle" dominant-baseline="middle">enabledDialects()</text>
+    <text class="small" x="1405" y="393" text-anchor="middle" dominant-baseline="middle">always included</text>
+  </g>
+
+  <g id="row-mysql">
+    <rect class="cell" x="112" y="458" width="310" height="118" rx="12"/>
+    <rect class="mysql" x="136" y="482" width="262" height="70" rx="12"/>
+    <text class="label" x="267" y="508" text-anchor="middle" dominant-baseline="middle">MySQL-like</text>
+    <text class="detail" x="267" y="533" text-anchor="middle" dominant-baseline="middle">MySQL and MariaDB</text>
+    <rect class="cell" x="452" y="482" width="210" height="70" rx="12"/>
+    <text class="small" x="557" y="509" text-anchor="middle" dominant-baseline="middle">off by default</text>
+    <text class="small" x="557" y="531" text-anchor="middle" dominant-baseline="middle">unless selected</text>
+    <rect class="stable" x="714" y="482" width="226" height="70" rx="12"/>
+    <text class="badge-text" x="827" y="509" text-anchor="middle" dominant-baseline="middle">stable</text>
+    <text class="small" x="827" y="531" text-anchor="middle" dominant-baseline="middle">H2_MYSQL, H2_MARIADB</text>
+    <rect class="stable" x="994" y="482" width="236" height="70" rx="12"/>
+    <text class="badge-text" x="1112" y="509" text-anchor="middle" dominant-baseline="middle">stable</text>
+    <text class="small" x="1112" y="531" text-anchor="middle" dominant-baseline="middle">MYSQL_V5, MYSQL_V8, MARIADB</text>
+    <rect class="planned" x="1292" y="482" width="226" height="70" rx="12"/>
+    <text class="badge-text" x="1405" y="509" text-anchor="middle" dominant-baseline="middle">ALL_MYSQL_LIKE</text>
+    <text class="small" x="1405" y="531" text-anchor="middle" dominant-baseline="middle">CI uses MYSQL_V8</text>
+  </g>
+
+  <g id="row-pg">
+    <rect class="cell" x="112" y="596" width="310" height="118" rx="12"/>
+    <rect class="pg" x="136" y="620" width="262" height="70" rx="12"/>
+    <text class="label" x="267" y="646" text-anchor="middle" dominant-baseline="middle">PostgreSQL-like</text>
+    <text class="detail" x="267" y="671" text-anchor="middle" dominant-baseline="middle">standard and pgjdbc-ng</text>
+    <rect class="cell" x="452" y="620" width="210" height="70" rx="12"/>
+    <text class="small" x="557" y="647" text-anchor="middle" dominant-baseline="middle">off by default</text>
+    <text class="small" x="557" y="669" text-anchor="middle" dominant-baseline="middle">unless selected</text>
+    <rect class="stable" x="714" y="620" width="226" height="70" rx="12"/>
+    <text class="badge-text" x="827" y="647" text-anchor="middle" dominant-baseline="middle">stable</text>
+    <text class="small" x="827" y="669" text-anchor="middle" dominant-baseline="middle">H2_PSQL</text>
+    <rect class="stable" x="994" y="620" width="236" height="70" rx="12"/>
+    <text class="badge-text" x="1112" y="647" text-anchor="middle" dominant-baseline="middle">stable</text>
+    <text class="small" x="1112" y="669" text-anchor="middle" dominant-baseline="middle">POSTGRESQL, POSTGRESQLNG</text>
+    <rect class="planned" x="1292" y="620" width="226" height="70" rx="12"/>
+    <text class="badge-text" x="1405" y="647" text-anchor="middle" dominant-baseline="middle">ALL_POSTGRES_LIKE</text>
+    <text class="small" x="1405" y="669" text-anchor="middle" dominant-baseline="middle">CI uses POSTGRESQL</text>
+  </g>
+
+  <g id="row-runtime">
+    <rect class="cell" x="112" y="734" width="1436" height="108" rx="12"/>
+    <text class="label" x="248" y="772" text-anchor="middle" dominant-baseline="middle">Runtime selector</text>
+    <text class="detail" x="520" y="762" text-anchor="middle" dominant-baseline="middle">useFastDB=true returns H2 only</text>
+    <text class="detail" x="875" y="762" text-anchor="middle" dominant-baseline="middle">EXPOSED_TEST_DB adds the selected real DB</text>
+    <text class="detail" x="1260" y="762" text-anchor="middle" dominant-baseline="middle">fallback is H2 + PostgreSQL + MySQL 8</text>
+    <text class="small" x="520" y="798" text-anchor="middle" dominant-baseline="middle">fast local loop</text>
+    <text class="small" x="875" y="798" text-anchor="middle" dominant-baseline="middle">CI matrix: H2, POSTGRESQL, MYSQL_V8</text>
+    <text class="small" x="1260" y="798" text-anchor="middle" dominant-baseline="middle">Docker-backed local coverage</text>
+  </g>
+
+  <g id="legend" transform="translate(112,918)">
+    <rect class="note" x="0" y="0" width="1436" height="104" rx="14"/>
+    <rect class="stable" x="34" y="25" width="120" height="28" rx="8"/>
+    <text class="badge-text" x="94" y="40" text-anchor="middle" dominant-baseline="middle">stable</text>
+    <rect class="planned" x="190" y="25" width="120" height="28" rx="8"/>
+    <text class="badge-text" x="250" y="40" text-anchor="middle" dominant-baseline="middle">selector</text>
+    <text class="detail" x="910" y="38" text-anchor="middle" dominant-baseline="middle">Testcontainers are lazy and only needed for real MariaDB, MySQL, and PostgreSQL paths.</text>
+    <text class="small" x="910" y="72" text-anchor="middle" dominant-baseline="middle">The module exposes sets such as ALL_MYSQL_LIKE and ALL_POSTGRES_LIKE so tests can choose semantics instead of hard-coding one driver.</text>
+  </g>
+</svg>

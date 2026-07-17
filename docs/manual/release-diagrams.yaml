@@ -1,0 +1,877 @@
+---
+schemaVersion: 1
+sourcePolicy: release-readme
+diagrams:
+- id: examples-exposed-bigquery-dry-run-flow-01
+  canonical: examples-exposed-bigquery-dry-run-flow-01
+  target: examples-exposed-bigquery-dry-run
+  manualPages:
+    en: docs/manual/en/modules/examples-exposed-bigquery-dry-run.md
+    ko: docs/manual/ko/modules/examples-exposed-bigquery-dry-run.md
+  releaseReadmes:
+  - examples/exposed-bigquery-dry-run/README.ko.md
+  - examples/exposed-bigquery-dry-run/README.md
+- id: examples-exposed-clickhouse-oltp-olap-diagram-01
+  canonical: examples-exposed-clickhouse-oltp-olap-diagram-01
+  target: examples-exposed-clickhouse-oltp-olap
+  manualPages:
+    en: docs/manual/en/modules/examples-exposed-clickhouse-oltp-olap.md
+    ko: docs/manual/ko/modules/examples-exposed-clickhouse-oltp-olap.md
+  releaseReadmes:
+  - examples/exposed-clickhouse-oltp-olap/README.ko.md
+  - examples/exposed-clickhouse-oltp-olap/README.md
+- id: examples-exposed-clickhouse-oltp-olap-flow-02
+  canonical: examples-exposed-clickhouse-oltp-olap-flow-02
+  target: examples-exposed-clickhouse-oltp-olap
+  manualPages:
+    en: docs/manual/en/modules/examples-exposed-clickhouse-oltp-olap.md
+    ko: docs/manual/ko/modules/examples-exposed-clickhouse-oltp-olap.md
+  releaseReadmes:
+  - examples/exposed-clickhouse-oltp-olap/README.ko.md
+  - examples/exposed-clickhouse-oltp-olap/README.md
+- id: exposed-bigquery-diagram-01
+  canonical: exposed-bigquery-diagram-01
+  target: bluetape4k-exposed-bigquery
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-bigquery.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-bigquery.md
+  releaseReadmes:
+  - exposed/bigquery/README.ko.md
+  - exposed/bigquery/README.md
+- id: exposed-bigquery-flow-02
+  canonical: exposed-bigquery-flow-02
+  target: bluetape4k-exposed-bigquery
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-bigquery.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-bigquery.md
+  releaseReadmes:
+  - exposed/bigquery/README.ko.md
+  - exposed/bigquery/README.md
+- id: exposed-bom-diagram-01
+  canonical: exposed-bom-diagram-01
+  target: bluetape4k-exposed-bom
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-bom.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-bom.md
+  releaseReadmes:
+  - exposed/bom/README.ko.md
+  - exposed/bom/README.md
+- id: exposed-cache-diagram-01
+  canonical: exposed-cache-diagram-01
+  target: bluetape4k-exposed-cache
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-cache.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-cache.md
+  releaseReadmes:
+  - exposed/cache/README.ko.md
+  - exposed/cache/README.md
+- id: exposed-cache-diagram-02
+  canonical: exposed-cache-diagram-02
+  target: bluetape4k-exposed-cache
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-cache.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-cache.md
+  releaseReadmes:
+  - exposed/cache/README.ko.md
+  - exposed/cache/README.md
+- id: exposed-cache-sequence-01
+  canonical: exposed-cache-sequence-01
+  target: bluetape4k-exposed-cache
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-cache.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-cache.md
+  releaseReadmes:
+  - exposed/cache/README.ko.md
+  - exposed/cache/README.md
+- id: exposed-clickhouse-diagram-01
+  canonical: exposed-clickhouse-diagram-01
+  target: bluetape4k-exposed-clickhouse
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-clickhouse.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-clickhouse.md
+  releaseReadmes:
+  - exposed/clickhouse/README.ko.md
+  - exposed/clickhouse/README.md
+- id: exposed-clickhouse-flow-02
+  canonical: exposed-clickhouse-flow-02
+  target: bluetape4k-exposed-clickhouse
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-clickhouse.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-clickhouse.md
+  releaseReadmes:
+  - exposed/clickhouse/README.ko.md
+  - exposed/clickhouse/README.md
+- id: exposed-cockroachdb-diagram-01
+  canonical: exposed-cockroachdb-diagram-01
+  target: bluetape4k-exposed-cockroachdb
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-cockroachdb.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-cockroachdb.md
+  releaseReadmes:
+  - exposed/cockroachdb/README.ko.md
+  - exposed/cockroachdb/README.md
+- id: exposed-cockroachdb-flow-02
+  canonical: exposed-cockroachdb-flow-02
+  target: bluetape4k-exposed-cockroachdb
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-cockroachdb.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-cockroachdb.md
+  releaseReadmes:
+  - exposed/cockroachdb/README.ko.md
+  - exposed/cockroachdb/README.md
+- id: exposed-core-diagram-01
+  canonical: exposed-core-diagram-01
+  target: bluetape4k-exposed-core
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-core.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-core.md
+  releaseReadmes:
+  - exposed/core/README.ko.md
+  - exposed/core/README.md
+- id: exposed-core-diagram-02
+  canonical: exposed-core-diagram-02
+  target: bluetape4k-exposed-core
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-core.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-core.md
+  releaseReadmes:
+  - exposed/core/README.ko.md
+  - exposed/core/README.md
+- id: exposed-core-diagram-03
+  canonical: exposed-core-diagram-03
+  target: bluetape4k-exposed-core
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-core.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-core.md
+  releaseReadmes:
+  - exposed/core/README.ko.md
+  - exposed/core/README.md
+- id: exposed-core-diagram-04
+  canonical: exposed-core-diagram-04
+  target: bluetape4k-exposed-core
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-core.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-core.md
+  releaseReadmes:
+  - exposed/core/README.ko.md
+  - exposed/core/README.md
+- id: exposed-core-sequence-01
+  canonical: exposed-core-sequence-01
+  target: bluetape4k-exposed-core
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-core.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-core.md
+  releaseReadmes:
+  - exposed/core/README.ko.md
+  - exposed/core/README.md
+- id: exposed-dao-diagram-01
+  canonical: exposed-dao-diagram-01
+  target: bluetape4k-exposed-dao
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-dao.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-dao.md
+  releaseReadmes:
+  - exposed/dao/README.ko.md
+  - exposed/dao/README.md
+- id: exposed-dao-diagram-02
+  canonical: exposed-dao-diagram-02
+  target: bluetape4k-exposed-dao
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-dao.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-dao.md
+  releaseReadmes:
+  - exposed/dao/README.ko.md
+  - exposed/dao/README.md
+- id: exposed-dao-diagram-03
+  canonical: exposed-dao-diagram-03
+  target: bluetape4k-exposed-dao
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-dao.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-dao.md
+  releaseReadmes:
+  - exposed/dao/README.ko.md
+  - exposed/dao/README.md
+- id: exposed-dao-sequence-01
+  canonical: exposed-dao-sequence-01
+  target: bluetape4k-exposed-dao
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-dao.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-dao.md
+  releaseReadmes:
+  - exposed/dao/README.ko.md
+  - exposed/dao/README.md
+- id: exposed-duckdb-diagram-01
+  canonical: exposed-duckdb-diagram-01
+  target: bluetape4k-exposed-duckdb
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-duckdb.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-duckdb.md
+  releaseReadmes:
+  - exposed/duckdb/README.ko.md
+  - exposed/duckdb/README.md
+- id: exposed-duckdb-flow-02
+  canonical: exposed-duckdb-flow-02
+  target: bluetape4k-exposed-duckdb
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-duckdb.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-duckdb.md
+  releaseReadmes:
+  - exposed/duckdb/README.ko.md
+  - exposed/duckdb/README.md
+- id: exposed-fastjson2-diagram-01
+  canonical: exposed-fastjson2-diagram-01
+  target: bluetape4k-exposed-fastjson2
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-fastjson2.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-fastjson2.md
+  releaseReadmes:
+  - exposed/fastjson2/README.ko.md
+  - exposed/fastjson2/README.md
+- id: exposed-fastjson2-flow-02
+  canonical: exposed-fastjson2-flow-02
+  target: bluetape4k-exposed-fastjson2
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-fastjson2.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-fastjson2.md
+  releaseReadmes:
+  - exposed/fastjson2/README.ko.md
+  - exposed/fastjson2/README.md
+- id: exposed-jackson2-diagram-01
+  canonical: exposed-jackson2-diagram-01
+  target: bluetape4k-exposed-jackson2
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jackson2.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jackson2.md
+  releaseReadmes:
+  - exposed/jackson2/README.ko.md
+  - exposed/jackson2/README.md
+- id: exposed-jackson2-flow-02
+  canonical: exposed-jackson2-flow-02
+  target: bluetape4k-exposed-jackson2
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jackson2.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jackson2.md
+  releaseReadmes:
+  - exposed/jackson2/README.ko.md
+  - exposed/jackson2/README.md
+- id: exposed-jackson3-diagram-01
+  canonical: exposed-jackson3-diagram-01
+  target: bluetape4k-exposed-jackson3
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jackson3.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jackson3.md
+  releaseReadmes:
+  - exposed/jackson3/README.ko.md
+  - exposed/jackson3/README.md
+- id: exposed-jackson3-flow-02
+  canonical: exposed-jackson3-flow-02
+  target: bluetape4k-exposed-jackson3
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jackson3.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jackson3.md
+  releaseReadmes:
+  - exposed/jackson3/README.ko.md
+  - exposed/jackson3/README.md
+- id: exposed-jdbc-caffeine-diagram-01
+  canonical: exposed-jdbc-caffeine-diagram-01
+  target: bluetape4k-exposed-jdbc-caffeine
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc-caffeine.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc-caffeine.md
+  releaseReadmes:
+  - exposed/jdbc-caffeine/README.ko.md
+  - exposed/jdbc-caffeine/README.md
+- id: exposed-jdbc-caffeine-sequence-01
+  canonical: exposed-jdbc-caffeine-sequence-01
+  target: bluetape4k-exposed-jdbc-caffeine
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc-caffeine.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc-caffeine.md
+  releaseReadmes:
+  - exposed/jdbc-caffeine/README.ko.md
+  - exposed/jdbc-caffeine/README.md
+- id: exposed-jdbc-diagram-01
+  canonical: exposed-jdbc-diagram-01
+  target: bluetape4k-exposed-jdbc
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc.md
+  releaseReadmes:
+  - exposed/jdbc/README.ko.md
+  - exposed/jdbc/README.md
+- id: exposed-jdbc-diagram-02
+  canonical: exposed-jdbc-diagram-02
+  target: bluetape4k-exposed-jdbc
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc.md
+  releaseReadmes:
+  - exposed/jdbc/README.ko.md
+  - exposed/jdbc/README.md
+- id: exposed-jdbc-lettuce-diagram-01
+  canonical: exposed-jdbc-lettuce-diagram-01
+  target: bluetape4k-exposed-jdbc-lettuce
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc-lettuce.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc-lettuce.md
+  releaseReadmes:
+  - exposed/jdbc-lettuce/README.ko.md
+  - exposed/jdbc-lettuce/README.md
+- id: exposed-jdbc-lettuce-sequence-01
+  canonical: exposed-jdbc-lettuce-sequence-01
+  target: bluetape4k-exposed-jdbc-lettuce
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc-lettuce.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc-lettuce.md
+  releaseReadmes:
+  - exposed/jdbc-lettuce/README.ko.md
+  - exposed/jdbc-lettuce/README.md
+- id: exposed-jdbc-redisson-diagram-01
+  canonical: exposed-jdbc-redisson-diagram-01
+  target: bluetape4k-exposed-jdbc-redisson
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc-redisson.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc-redisson.md
+  releaseReadmes:
+  - exposed/jdbc-redisson/README.ko.md
+  - exposed/jdbc-redisson/README.md
+- id: exposed-jdbc-redisson-diagram-02
+  canonical: exposed-jdbc-redisson-diagram-02
+  target: bluetape4k-exposed-jdbc-redisson
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc-redisson.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc-redisson.md
+  releaseReadmes:
+  - exposed/jdbc-redisson/README.ko.md
+  - exposed/jdbc-redisson/README.md
+- id: exposed-jdbc-redisson-sequence-01
+  canonical: exposed-jdbc-redisson-sequence-01
+  target: bluetape4k-exposed-jdbc-redisson
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc-redisson.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc-redisson.md
+  releaseReadmes:
+  - exposed/jdbc-redisson/README.ko.md
+  - exposed/jdbc-redisson/README.md
+- id: exposed-jdbc-redisson-sequence-02
+  canonical: exposed-jdbc-redisson-sequence-02
+  target: bluetape4k-exposed-jdbc-redisson
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc-redisson.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc-redisson.md
+  releaseReadmes:
+  - exposed/jdbc-redisson/README.ko.md
+  - exposed/jdbc-redisson/README.md
+- id: exposed-jdbc-redisson-sequence-03
+  canonical: exposed-jdbc-redisson-sequence-03
+  target: bluetape4k-exposed-jdbc-redisson
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc-redisson.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc-redisson.md
+  releaseReadmes:
+  - exposed/jdbc-redisson/README.ko.md
+  - exposed/jdbc-redisson/README.md
+- id: exposed-jdbc-redisson-sequence-04
+  canonical: exposed-jdbc-redisson-sequence-04
+  target: bluetape4k-exposed-jdbc-redisson
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc-redisson.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc-redisson.md
+  releaseReadmes:
+  - exposed/jdbc-redisson/README.ko.md
+  - exposed/jdbc-redisson/README.md
+- id: exposed-jdbc-redisson-sequence-05
+  canonical: exposed-jdbc-redisson-sequence-05
+  target: bluetape4k-exposed-jdbc-redisson
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc-redisson.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc-redisson.md
+  releaseReadmes:
+  - exposed/jdbc-redisson/README.ko.md
+  - exposed/jdbc-redisson/README.md
+- id: exposed-jdbc-redisson-sequence-06
+  canonical: exposed-jdbc-redisson-sequence-06
+  target: bluetape4k-exposed-jdbc-redisson
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc-redisson.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc-redisson.md
+  releaseReadmes:
+  - exposed/jdbc-redisson/README.ko.md
+  - exposed/jdbc-redisson/README.md
+- id: exposed-jdbc-sequence-01
+  canonical: exposed-jdbc-sequence-01
+  target: bluetape4k-exposed-jdbc
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc.md
+  releaseReadmes:
+  - exposed/jdbc/README.ko.md
+  - exposed/jdbc/README.md
+- id: exposed-jdbc-sequence-02
+  canonical: exposed-jdbc-sequence-02
+  target: bluetape4k-exposed-jdbc
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc.md
+  releaseReadmes:
+  - exposed/jdbc/README.ko.md
+  - exposed/jdbc/README.md
+- id: exposed-jdbc-sequence-03
+  canonical: exposed-jdbc-sequence-03
+  target: bluetape4k-exposed-jdbc
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc.md
+  releaseReadmes:
+  - exposed/jdbc/README.ko.md
+  - exposed/jdbc/README.md
+- id: exposed-jdbc-sequence-04
+  canonical: exposed-jdbc-sequence-04
+  target: bluetape4k-exposed-jdbc
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc.md
+  releaseReadmes:
+  - exposed/jdbc/README.ko.md
+  - exposed/jdbc/README.md
+- id: exposed-jdbc-tests-diagram-01
+  canonical: exposed-jdbc-tests-diagram-01
+  target: bluetape4k-exposed-jdbc-tests
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc-tests.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc-tests.md
+  releaseReadmes:
+  - exposed/jdbc-tests/README.ko.md
+  - exposed/jdbc-tests/README.md
+- id: exposed-jdbc-tests-sequence-01
+  canonical: exposed-jdbc-tests-sequence-01
+  target: bluetape4k-exposed-jdbc-tests
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-jdbc-tests.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-jdbc-tests.md
+  releaseReadmes:
+  - exposed/jdbc-tests/README.ko.md
+  - exposed/jdbc-tests/README.md
+- id: exposed-measured-diagram-01
+  canonical: exposed-measured-diagram-01
+  target: bluetape4k-exposed-measured
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-measured.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-measured.md
+  releaseReadmes:
+  - exposed/measured/README.ko.md
+  - exposed/measured/README.md
+- id: exposed-measured-diagram-02
+  canonical: exposed-measured-diagram-02
+  target: bluetape4k-exposed-measured
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-measured.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-measured.md
+  releaseReadmes:
+  - exposed/measured/README.ko.md
+  - exposed/measured/README.md
+- id: exposed-measured-sequence-01
+  canonical: exposed-measured-sequence-01
+  target: bluetape4k-exposed-measured
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-measured.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-measured.md
+  releaseReadmes:
+  - exposed/measured/README.ko.md
+  - exposed/measured/README.md
+- id: exposed-mysql8-diagram-01
+  canonical: exposed-mysql8-diagram-01
+  target: bluetape4k-exposed-mysql8
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-mysql8.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-mysql8.md
+  releaseReadmes:
+  - exposed/mysql8/README.ko.md
+  - exposed/mysql8/README.md
+- id: exposed-mysql8-diagram-02
+  canonical: exposed-mysql8-diagram-02
+  target: bluetape4k-exposed-mysql8
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-mysql8.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-mysql8.md
+  releaseReadmes:
+  - exposed/mysql8/README.ko.md
+  - exposed/mysql8/README.md
+- id: exposed-postgresql-diagram-01
+  canonical: exposed-postgresql-diagram-01
+  target: bluetape4k-exposed-postgresql
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-postgresql.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-postgresql.md
+  releaseReadmes:
+  - exposed/postgresql/README.ko.md
+  - exposed/postgresql/README.md
+- id: exposed-postgresql-diagram-02
+  canonical: exposed-postgresql-diagram-02
+  target: bluetape4k-exposed-postgresql
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-postgresql.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-postgresql.md
+  releaseReadmes:
+  - exposed/postgresql/README.ko.md
+  - exposed/postgresql/README.md
+- id: exposed-r2dbc-caffeine-diagram-01
+  canonical: exposed-r2dbc-caffeine-diagram-01
+  target: bluetape4k-exposed-r2dbc-caffeine
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-r2dbc-caffeine.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-r2dbc-caffeine.md
+  releaseReadmes:
+  - exposed/r2dbc-caffeine/README.ko.md
+  - exposed/r2dbc-caffeine/README.md
+- id: exposed-r2dbc-caffeine-sequence-01
+  canonical: exposed-r2dbc-caffeine-sequence-01
+  target: bluetape4k-exposed-r2dbc-caffeine
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-r2dbc-caffeine.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-r2dbc-caffeine.md
+  releaseReadmes:
+  - exposed/r2dbc-caffeine/README.ko.md
+  - exposed/r2dbc-caffeine/README.md
+- id: exposed-r2dbc-diagram-01
+  canonical: exposed-r2dbc-diagram-01
+  target: bluetape4k-exposed-r2dbc
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-r2dbc.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-r2dbc.md
+  releaseReadmes:
+  - exposed/r2dbc/README.ko.md
+  - exposed/r2dbc/README.md
+- id: exposed-r2dbc-diagram-02
+  canonical: exposed-r2dbc-diagram-02
+  target: bluetape4k-exposed-r2dbc
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-r2dbc.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-r2dbc.md
+  releaseReadmes:
+  - exposed/r2dbc/README.ko.md
+  - exposed/r2dbc/README.md
+- id: exposed-r2dbc-lettuce-diagram-01
+  canonical: exposed-r2dbc-lettuce-diagram-01
+  target: bluetape4k-exposed-r2dbc-lettuce
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-r2dbc-lettuce.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-r2dbc-lettuce.md
+  releaseReadmes:
+  - exposed/r2dbc-lettuce/README.ko.md
+  - exposed/r2dbc-lettuce/README.md
+- id: exposed-r2dbc-lettuce-sequence-01
+  canonical: exposed-r2dbc-lettuce-sequence-01
+  target: bluetape4k-exposed-r2dbc-lettuce
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-r2dbc-lettuce.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-r2dbc-lettuce.md
+  releaseReadmes:
+  - exposed/r2dbc-lettuce/README.ko.md
+  - exposed/r2dbc-lettuce/README.md
+- id: exposed-r2dbc-redisson-diagram-01
+  canonical: exposed-r2dbc-redisson-diagram-01
+  target: bluetape4k-exposed-r2dbc-redisson
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-r2dbc-redisson.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-r2dbc-redisson.md
+  releaseReadmes:
+  - exposed/r2dbc-redisson/README.ko.md
+  - exposed/r2dbc-redisson/README.md
+- id: exposed-r2dbc-redisson-diagram-02
+  canonical: exposed-r2dbc-redisson-diagram-02
+  target: bluetape4k-exposed-r2dbc-redisson
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-r2dbc-redisson.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-r2dbc-redisson.md
+  releaseReadmes:
+  - exposed/r2dbc-redisson/README.ko.md
+  - exposed/r2dbc-redisson/README.md
+- id: exposed-r2dbc-redisson-sequence-01
+  canonical: exposed-r2dbc-redisson-sequence-01
+  target: bluetape4k-exposed-r2dbc-redisson
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-r2dbc-redisson.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-r2dbc-redisson.md
+  releaseReadmes:
+  - exposed/r2dbc-redisson/README.ko.md
+  - exposed/r2dbc-redisson/README.md
+- id: exposed-r2dbc-redisson-sequence-02
+  canonical: exposed-r2dbc-redisson-sequence-02
+  target: bluetape4k-exposed-r2dbc-redisson
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-r2dbc-redisson.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-r2dbc-redisson.md
+  releaseReadmes:
+  - exposed/r2dbc-redisson/README.ko.md
+  - exposed/r2dbc-redisson/README.md
+- id: exposed-r2dbc-redisson-sequence-03
+  canonical: exposed-r2dbc-redisson-sequence-03
+  target: bluetape4k-exposed-r2dbc-redisson
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-r2dbc-redisson.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-r2dbc-redisson.md
+  releaseReadmes:
+  - exposed/r2dbc-redisson/README.ko.md
+  - exposed/r2dbc-redisson/README.md
+- id: exposed-r2dbc-sequence-01
+  canonical: exposed-r2dbc-sequence-01
+  target: bluetape4k-exposed-r2dbc
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-r2dbc.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-r2dbc.md
+  releaseReadmes:
+  - exposed/r2dbc/README.ko.md
+  - exposed/r2dbc/README.md
+- id: exposed-r2dbc-sequence-02
+  canonical: exposed-r2dbc-sequence-02
+  target: bluetape4k-exposed-r2dbc
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-r2dbc.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-r2dbc.md
+  releaseReadmes:
+  - exposed/r2dbc/README.ko.md
+  - exposed/r2dbc/README.md
+- id: exposed-r2dbc-tests-diagram-01
+  canonical: exposed-r2dbc-tests-diagram-01
+  target: bluetape4k-exposed-r2dbc-tests
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-r2dbc-tests.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-r2dbc-tests.md
+  releaseReadmes:
+  - exposed/r2dbc-tests/README.ko.md
+  - exposed/r2dbc-tests/README.md
+- id: exposed-r2dbc-tests-diagram-02
+  canonical: exposed-r2dbc-tests-diagram-02
+  target: bluetape4k-exposed-r2dbc-tests
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-r2dbc-tests.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-r2dbc-tests.md
+  releaseReadmes:
+  - exposed/r2dbc-tests/README.ko.md
+  - exposed/r2dbc-tests/README.md
+- id: exposed-starrocks-diagram-01
+  canonical: exposed-starrocks-diagram-01
+  target: bluetape4k-exposed-starrocks
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-starrocks.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-starrocks.md
+  releaseReadmes:
+  - exposed/starrocks/README.ko.md
+  - exposed/starrocks/README.md
+- id: exposed-starrocks-flow-02
+  canonical: exposed-starrocks-flow-02
+  target: bluetape4k-exposed-starrocks
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-starrocks.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-starrocks.md
+  releaseReadmes:
+  - exposed/starrocks/README.ko.md
+  - exposed/starrocks/README.md
+- id: exposed-timefold-solver-persistence-diagram-01
+  canonical: exposed-timefold-solver-persistence-diagram-01
+  target: bluetape4k-exposed-timefold-solver-persistence
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-timefold-solver-persistence.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-timefold-solver-persistence.md
+  releaseReadmes:
+  - exposed/timefold-solver-persistence/README.ko.md
+  - exposed/timefold-solver-persistence/README.md
+- id: exposed-timefold-solver-persistence-flow-02
+  canonical: exposed-timefold-solver-persistence-flow-02
+  target: bluetape4k-exposed-timefold-solver-persistence
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-timefold-solver-persistence.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-timefold-solver-persistence.md
+  releaseReadmes:
+  - exposed/timefold-solver-persistence/README.ko.md
+  - exposed/timefold-solver-persistence/README.md
+- id: exposed-tink-diagram-01
+  canonical: exposed-tink-diagram-01
+  target: bluetape4k-exposed-tink
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-tink.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-tink.md
+  releaseReadmes:
+  - exposed/tink/README.ko.md
+  - exposed/tink/README.md
+- id: exposed-tink-diagram-02
+  canonical: exposed-tink-diagram-02
+  target: bluetape4k-exposed-tink
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-tink.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-tink.md
+  releaseReadmes:
+  - exposed/tink/README.ko.md
+  - exposed/tink/README.md
+- id: exposed-trino-diagram-01
+  canonical: exposed-trino-diagram-01
+  target: bluetape4k-exposed-trino
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-trino.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-trino.md
+  releaseReadmes:
+  - exposed/trino/README.ko.md
+  - exposed/trino/README.md
+- id: exposed-trino-flow-02
+  canonical: exposed-trino-flow-02
+  target: bluetape4k-exposed-trino
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-trino.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-trino.md
+  releaseReadmes:
+  - exposed/trino/README.ko.md
+  - exposed/trino/README.md
+- id: root-readme-module-relationships-01
+  canonical: root-readme-module-relationships-01
+  target: overview
+  manualPages:
+    en: docs/manual/en/architecture/repository-map.md
+    ko: docs/manual/ko/architecture/repository-map.md
+  releaseReadmes:
+  - README.ko.md
+  - README.md
+- id: root-readme-overview-01
+  canonical: root-readme-overview-01
+  target: overview
+  manualPages:
+    en: docs/manual/en/architecture/repository-map.md
+    ko: docs/manual/ko/architecture/repository-map.md
+  releaseReadmes:
+  - README.ko.md
+  - README.md
+- id: spring-boot-batch-exposed-diagram-01
+  canonical: spring-boot-batch-exposed-diagram-01
+  target: bluetape4k-exposed-spring-boot-batch
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-spring-boot-batch.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-spring-boot-batch.md
+  releaseReadmes:
+  - spring-boot/batch-exposed/README.ko.md
+  - spring-boot/batch-exposed/README.md
+- id: spring-boot-batch-exposed-sequence-01
+  canonical: spring-boot-batch-exposed-sequence-01
+  target: bluetape4k-exposed-spring-boot-batch
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-spring-boot-batch.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-spring-boot-batch.md
+  releaseReadmes:
+  - spring-boot/batch-exposed/README.ko.md
+  - spring-boot/batch-exposed/README.md
+- id: spring-boot-exposed-jdbc-demo-diagram-01
+  canonical: spring-boot-exposed-jdbc-demo-diagram-01
+  target: exposed-spring-boot-jdbc-demo
+  manualPages:
+    en: docs/manual/en/modules/exposed-spring-boot-jdbc-demo.md
+    ko: docs/manual/ko/modules/exposed-spring-boot-jdbc-demo.md
+  releaseReadmes:
+  - examples/jdbc-demo/README.ko.md
+  - examples/jdbc-demo/README.md
+- id: spring-boot-exposed-jdbc-demo-diagram-02
+  canonical: spring-boot-exposed-jdbc-demo-diagram-02
+  target: exposed-spring-boot-jdbc-demo
+  manualPages:
+    en: docs/manual/en/modules/exposed-spring-boot-jdbc-demo.md
+    ko: docs/manual/ko/modules/exposed-spring-boot-jdbc-demo.md
+  releaseReadmes:
+  - examples/jdbc-demo/README.ko.md
+  - examples/jdbc-demo/README.md
+- id: spring-boot-exposed-jdbc-diagram-01
+  canonical: spring-boot-exposed-jdbc-diagram-01
+  target: bluetape4k-exposed-spring-boot-jdbc
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-spring-boot-jdbc.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-spring-boot-jdbc.md
+  releaseReadmes:
+  - spring-boot/jdbc/README.ko.md
+  - spring-boot/jdbc/README.md
+- id: spring-boot-exposed-jdbc-diagram-02
+  canonical: spring-boot-exposed-jdbc-diagram-02
+  target: bluetape4k-exposed-spring-boot-jdbc
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-spring-boot-jdbc.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-spring-boot-jdbc.md
+  releaseReadmes:
+  - spring-boot/jdbc/README.ko.md
+  - spring-boot/jdbc/README.md
+- id: spring-boot-exposed-r2dbc-demo-diagram-01
+  canonical: spring-boot-exposed-r2dbc-demo-diagram-01
+  target: exposed-spring-boot-r2dbc-demo
+  manualPages:
+    en: docs/manual/en/modules/exposed-spring-boot-r2dbc-demo.md
+    ko: docs/manual/ko/modules/exposed-spring-boot-r2dbc-demo.md
+  releaseReadmes:
+  - examples/r2dbc-demo/README.ko.md
+  - examples/r2dbc-demo/README.md
+- id: spring-boot-exposed-r2dbc-demo-diagram-02
+  canonical: spring-boot-exposed-r2dbc-demo-diagram-02
+  target: exposed-spring-boot-r2dbc-demo
+  manualPages:
+    en: docs/manual/en/modules/exposed-spring-boot-r2dbc-demo.md
+    ko: docs/manual/ko/modules/exposed-spring-boot-r2dbc-demo.md
+  releaseReadmes:
+  - examples/r2dbc-demo/README.ko.md
+  - examples/r2dbc-demo/README.md
+- id: spring-boot-exposed-r2dbc-diagram-01
+  canonical: spring-boot-exposed-r2dbc-diagram-01
+  target: bluetape4k-exposed-spring-boot-r2dbc
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-spring-boot-r2dbc.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-spring-boot-r2dbc.md
+  releaseReadmes:
+  - spring-boot/r2dbc/README.ko.md
+  - spring-boot/r2dbc/README.md
+- id: spring-boot-exposed-r2dbc-diagram-02
+  canonical: spring-boot-exposed-r2dbc-diagram-02
+  target: bluetape4k-exposed-spring-boot-r2dbc
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-spring-boot-r2dbc.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-spring-boot-r2dbc.md
+  releaseReadmes:
+  - spring-boot/r2dbc/README.ko.md
+  - spring-boot/r2dbc/README.md
+- id: spring-boot-exposed-spring-modulith-diagram-01
+  canonical: spring-boot-exposed-spring-modulith-diagram-01
+  target: bluetape4k-exposed-spring-modulith
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-spring-modulith.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-spring-modulith.md
+  releaseReadmes:
+  - spring-boot/spring-modulith/README.ko.md
+  - spring-boot/spring-modulith/README.md
+- id: spring-boot-exposed-spring-modulith-sequence-01
+  canonical: spring-boot-exposed-spring-modulith-sequence-01
+  target: bluetape4k-exposed-spring-modulith
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-spring-modulith.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-spring-modulith.md
+  releaseReadmes:
+  - spring-boot/spring-modulith/README.ko.md
+  - spring-boot/spring-modulith/README.md
+- id: utils-batch-benchmark-map-01
+  canonical: utils-batch-benchmark-map-01
+  target: bluetape4k-exposed-batch
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-batch.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-batch.md
+  releaseReadmes:
+  - utils/batch/benchmark/README.ko.md
+  - utils/batch/benchmark/README.md
+- id: utils-batch-diagram-01
+  canonical: utils-batch-diagram-01
+  target: bluetape4k-exposed-batch
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-batch.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-batch.md
+  releaseReadmes:
+  - utils/batch/README.ko.md
+  - utils/batch/README.md
+- id: utils-batch-sequence-01
+  canonical: utils-batch-sequence-01
+  target: bluetape4k-exposed-batch
+  manualPages:
+    en: docs/manual/en/modules/bluetape4k-exposed-batch.md
+    ko: docs/manual/ko/modules/bluetape4k-exposed-batch.md
+  releaseReadmes:
+  - utils/batch/README.ko.md
+  - utils/batch/README.md

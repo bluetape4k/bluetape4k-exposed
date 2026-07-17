@@ -81,6 +81,25 @@ Apply it after [Coroutine transactions](bluetape4k-exposed-r2dbc/coroutine-trans
 
 The fixture cannot guarantee that a particular driver cancels server-side work. It does not model production pool load or replace long-running resilience tests.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### Test Infrastructure Structure diagram
+
+[![Test Infrastructure Structure diagram](../../assets/readme-diagrams/exposed-r2dbc-tests-diagram-01.png)](../../assets/readme-diagrams/exposed-r2dbc-tests-diagram-01.svg)
+
+_Release README: [`exposed/r2dbc-tests/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/r2dbc-tests/README.md)_
+
+### withTables R2DBC test lifecycle diagram
+
+[![withTables R2DBC test lifecycle diagram](../../assets/readme-diagrams/exposed-r2dbc-tests-diagram-02.png)](../../assets/readme-diagrams/exposed-r2dbc-tests-diagram-02.svg)
+
+_Release README: [`exposed/r2dbc-tests/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/r2dbc-tests/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [Test module build](../../../../exposed/r2dbc-tests/build.gradle.kts)

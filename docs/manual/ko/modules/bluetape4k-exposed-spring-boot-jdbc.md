@@ -99,6 +99,25 @@ Testcontainers로 운영과 같은 데이터베이스 계열을 사용합니다.
 
 이 모듈은 `DataSource`를 만들거나 여러 트랜잭션 관리자 중 하나를 선택하지 않으며 모든 Spring Data 파생 질의 연산자를 지원하지도 않습니다. DAO 엔티티의 식별성과 변경 추적에는 활성 Exposed 트랜잭션이 필요합니다. 데모처럼 트랜잭션 관리자를 명시적으로 교체할 수 있으므로 기본 관리자가 언제나 자동 생성된다고 가정하면 안 됩니다.
 
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### Spring Boot Exposed JDBC repository wiring 다이어그램
+
+[![Spring Boot Exposed JDBC repository wiring 다이어그램](../../assets/readme-diagrams/spring-boot-exposed-jdbc-diagram-01.png)](../../assets/readme-diagrams/spring-boot-exposed-jdbc-diagram-01.svg)
+
+_배포본 README: [`spring-boot/jdbc/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/spring-boot/jdbc/README.ko.md)_
+
+### Spring Boot Exposed JDBC query resolution 처리 흐름
+
+[![Spring Boot Exposed JDBC query resolution 처리 흐름](../../assets/readme-diagrams/spring-boot-exposed-jdbc-diagram-02.png)](../../assets/readme-diagrams/spring-boot-exposed-jdbc-diagram-02.svg)
+
+_배포본 README: [`spring-boot/jdbc/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/spring-boot/jdbc/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## 근거 자료 {#sources}
 
 - [`ExposedSpringDataAutoConfiguration.kt`](../../../../spring-boot/jdbc/src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/config/ExposedSpringDataAutoConfiguration.kt)

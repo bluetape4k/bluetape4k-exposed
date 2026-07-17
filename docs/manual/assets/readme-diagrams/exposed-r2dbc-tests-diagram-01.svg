@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1120" viewBox="0 0 1700 1120" role="img" aria-labelledby="title desc">
+  <title id="title">R2DBC Test Support Structure</title>
+  <desc id="desc">Source-backed architecture map for exposed-r2dbc-tests: test classes call coroutine helpers, helpers share withDb and TestDB, Testcontainers starts real databases, and shared fixtures feed test statements.</desc>
+  <defs>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#3f7d9c" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#6e8f4f" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#b9851b" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#755bc6" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#758297" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="8" stdDeviation="11" flood-color="#20303a" flood-opacity="0.12"/></filter>
+    <style>
+      .canvas{fill:#f6f0e8}.frame{fill:#fffaf2;stroke:#28485a;stroke-width:4}.band{stroke-width:2.5}.title{font-family:"Architects Daughter","Comic Mono",monospace;font-size:46px;fill:#21343f}.subtitle,.cardText,.small,.label{font-family:"Comic Mono",monospace;fill:#51636f}.subtitle{font-size:18px}.bandTitle{font-family:"Architects Daughter","Comic Mono",monospace;font-size:25px;fill:#21343f}.cardTitle{font-family:"Comic Mono",monospace;font-size:17px;font-weight:700;fill:#20323d}.cardText{font-size:13px}.small{font-size:13px}.label{font-size:12px;fill:#315664}.card{fill:#fffdf8;stroke-width:2.2}.blue{stroke:#8db7c2}.green{stroke:#a9c58b}.gold{stroke:#d3a663}.purple{stroke:#b2a1dc}.gray{stroke:#9fb0bc}.line{fill:none;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}.lineBlue{stroke:#3f7d9c;marker-end:url(#arrow-blue)}.lineGreen{stroke:#6e8f4f;marker-end:url(#arrow-green)}.lineGold{stroke:#b9851b;marker-end:url(#arrow-gold)}.linePurple{stroke:#755bc6;marker-end:url(#arrow-purple)}.lineGray{stroke:#758297;marker-end:url(#arrow-gray)}.dash{stroke-dasharray:9 7}.code{fill:#9b3d5a;font-weight:700}.type{fill:#176f7a;font-weight:700}.keyword{fill:#8a5b00;font-weight:700}
+    </style>
+  </defs>
+  <rect class="canvas" width="1700" height="1120"/>
+  <rect class="frame" x="42" y="34" width="1616" height="1048" rx="24" filter="url(#shadow)"/>
+  <text class="title" x="84" y="91">R2DBC Test Support Structure</text>
+  <text class="subtitle" x="86" y="126">Tests enter through coroutine helpers; TestDB selects H2 or real R2DBC databases while shared fixtures keep examples reusable.</text>
+
+  <rect class="band" x="92" y="164" width="1516" height="202" rx="18" fill="#e7f1f4" stroke="#9dbbc4"/>
+  <text class="bandTitle" x="124" y="208">Test entry</text>
+  <g transform="translate(155 242)">
+    <rect class="card blue" width="320" height="92" rx="12"/>
+    <text class="cardTitle" x="160" y="30" text-anchor="middle">Parameterized test</text>
+    <text class="cardText" x="160" y="56" text-anchor="middle">@MethodSource</text>
+    <text class="cardText" x="160" y="76" text-anchor="middle">runTest body</text>
+  </g>
+  <g transform="translate(620 222)">
+    <rect class="card green" width="460" height="132" rx="12"/>
+    <text class="cardTitle code" x="230" y="32" text-anchor="middle">AbstractExposedR2dbcTest</text>
+    <line x1="0" y1="50" x2="460" y2="50" stroke="#c8d7dd"/>
+    <text class="cardText" x="230" y="78" text-anchor="middle">UTC timezone, faker</text>
+    <text class="cardText" x="230" y="100" text-anchor="middle">ENABLE_DIALECTS_METHOD</text>
+  </g>
+  <g transform="translate(1220 242)">
+    <rect class="card gold" width="330" height="92" rx="12"/>
+    <text class="cardTitle code" x="165" y="30" text-anchor="middle">enabledDialects()</text>
+    <text class="cardText" x="165" y="56" text-anchor="middle">useFastDB gate</text>
+    <text class="cardText" x="165" y="76" text-anchor="middle">EXPOSED_TEST_DB matrix</text>
+  </g>
+
+  <rect class="band" x="92" y="420" width="1516" height="224" rx="18" fill="#eef4e6" stroke="#a9c58b"/>
+  <text class="bandTitle" x="124" y="464">Coroutine helpers</text>
+  <g transform="translate(152 506)">
+    <rect class="card purple" width="360" height="96" rx="12"/>
+    <text class="cardTitle code" x="180" y="30" text-anchor="middle">withSchemas()</text>
+    <text class="cardText" x="180" y="56" text-anchor="middle">create/drop schema</text>
+    <text class="cardText" x="180" y="76" text-anchor="middle">only if dialect supports it</text>
+  </g>
+  <g transform="translate(670 494)">
+    <rect class="card green" width="360" height="110" rx="12"/>
+    <text class="cardTitle code" x="180" y="30" text-anchor="middle">withDb()</text>
+    <text class="cardText" x="180" y="58" text-anchor="middle">per-TestDB semaphore</text>
+    <text class="cardText" x="180" y="80" text-anchor="middle">suspendTransaction maxAttempts=1</text>
+  </g>
+  <g transform="translate(1218 494)">
+    <rect class="card gold" width="360" height="110" rx="12"/>
+    <text class="cardTitle code" x="180" y="30" text-anchor="middle">withTables()</text>
+    <text class="cardText" x="180" y="58" text-anchor="middle">drop/create before statement</text>
+    <text class="cardText" x="180" y="80" text-anchor="middle">cleanup retry on failure</text>
+  </g>
+
+  <rect class="band" x="92" y="692" width="1516" height="220" rx="18" fill="#fff0d8" stroke="#d3a663"/>
+  <text class="bandTitle" x="124" y="736">Dialect and runtime</text>
+  <g transform="translate(150 780)">
+    <rect class="card gold" width="350" height="96" rx="12"/>
+    <text class="cardTitle code" x="175" y="30" text-anchor="middle">TestDBConfig</text>
+    <text class="cardText" x="175" y="56" text-anchor="middle">useTestcontainers = true</text>
+    <text class="cardText" x="175" y="76" text-anchor="middle">useFastDB = false</text>
+  </g>
+  <g transform="translate(636 752)">
+    <rect class="card green" width="468" height="142" rx="12"/><image data-bluetape4k-icon="generic.database" x="24" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSI2NCIgY3k9IjM2IiByeD0iMzQiIHJ5PSIxMyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiLz4KICA8cGF0aCBkPSJNMzAgNThjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMzAgODBjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==" preserveAspectRatio="xMidYMid meet"/>
+    <text class="cardTitle code" x="234" y="30" text-anchor="middle">TestDB</text>
+    <text class="cardText" x="234" y="56" text-anchor="middle">H2, H2_MYSQL, H2_MARIADB, H2_PSQL</text>
+    <text class="cardText" x="234" y="78" text-anchor="middle">MARIADB, MYSQL_V8, POSTGRESQL</text>
+    <text class="cardText" x="234" y="100" text-anchor="middle">connect() builds R2dbcDatabaseConfig</text>
+    <text class="cardText" x="234" y="122" text-anchor="middle">MYSQL_V5 exists but is excluded</text>
+  </g>
+  <g transform="translate(1218 752)">
+    <rect class="card blue" width="330" height="142" rx="12"/><image data-bluetape4k-icon="generic.database" x="24" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSI2NCIgY3k9IjM2IiByeD0iMzQiIHJ5PSIxMyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiLz4KICA8cGF0aCBkPSJNMzAgNThjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMzAgODBjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==" preserveAspectRatio="xMidYMid meet"/>
+
+    <text class="cardTitle" x="196" y="34" text-anchor="middle">Testcontainers</text>
+    <text class="cardText" x="196" y="60" text-anchor="middle">MySQL8, PostgreSQL</text>
+    <text class="cardText" x="196" y="82" text-anchor="middle">MariaDB available</text>
+    <text class="cardText" x="196" y="104" text-anchor="middle">lazy start + shutdown hook</text>
+  </g>
+
+  <rect class="band" x="92" y="956" width="1516" height="92" rx="18" fill="#edf4f8" stroke="#9fb0bc"/>
+  <text class="bandTitle" x="124" y="1004">Shared fixtures</text>
+  <g transform="translate(430 972)">
+    <rect class="card gray" width="340" height="58" rx="12"/>
+    <text class="cardTitle" x="170" y="36" text-anchor="middle">Board / Person / Order / Bank</text>
+  </g>
+  <g transform="translate(930 972)">
+    <rect class="card gray" width="340" height="58" rx="12"/>
+    <text class="cardTitle" x="170" y="36" text-anchor="middle">SchemaUtils + R2DBC DSL</text>
+  </g>
+
+  <path class="line lineBlue" d="M475 288 H620"/>
+  <path class="line lineGold" d="M1080 288 H1220"/>
+  <path class="line lineBlue" d="M850 354 V420"/>
+  <path class="line linePurple" d="M512 554 H670"/>
+  <path class="line lineGold" d="M1218 554 H1030"/>
+  <path class="line lineGreen" d="M850 604 V752"/>
+  <path class="line lineGold" d="M500 828 H636"/>
+  <path class="line lineBlue" d="M1104 824 H1218"/>
+  <path class="line lineGray dash" d="M830 894 V972"/>
+  <path class="line lineGray dash" d="M1010 894 V972"/>
+  <text class="label" x="872" y="392">helper calls</text>
+  <text class="label" x="530" y="812">settings</text>
+  <text class="label" x="1130" y="808">real DB</text>
+  <text class="label" x="848" y="936">test data</text>
+  <text class="label" x="1028" y="936">transactions</text>
+
+  <rect x="126" y="1062" width="1448" height="24" rx="10" fill="#eef3f4" stroke="#c2d1d4" stroke-width="1.8"/>
+  <text class="small" x="850" y="1079" text-anchor="middle">Default module setting runs H2, PostgreSQL, and MySQL8 unless useFastDB or EXPOSED_TEST_DB narrows the matrix.</text>
+</svg>

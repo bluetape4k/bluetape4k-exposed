@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1010" viewBox="0 0 1680 1010" role="img" aria-labelledby="title desc">
+  <title id="title">PostgreSQL Extension Feature Coverage</title>
+  <desc id="desc">Coverage chart for PostGIS, pgvector, and TSTZRANGE support in the exposed-postgresql module.</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#1d2a34" flood-opacity="0.15"/>
+    </filter>
+    <style>
+      .canvas { fill: #f6f0e8; }
+      .frame { fill: #fffaf2; stroke: #28485a; stroke-width: 4; }
+      .title { font-family: "Architects Daughter", "Comic Mono", monospace; font-size: 46px; fill: #21343f; }
+      .subtitle { font-family: "Comic Mono", monospace; font-size: 19px; fill: #51636f; }
+      .head { font-family: "Comic Mono", monospace; font-size: 18px; font-weight: 700; fill: #21343f; }
+      .family { font-family: "Architects Daughter", "Comic Mono", monospace; font-size: 29px; fill: #21343f; }
+      .text { font-family: "Comic Mono", monospace; font-size: 18px; fill: #283944; }
+      .small { font-family: "Comic Mono", monospace; font-size: 15px; fill: #435360; }
+      .tiny { font-family: "Comic Mono", monospace; font-size: 14px; fill: #51636f; }
+      .typeSmall { font-family: "Comic Mono", monospace; font-size: 14px; fill: #263844; }
+      .muted { fill: #667783; }
+      .grid { stroke: #d4cbc0; stroke-width: 2; }
+      .badge { font-family: "Comic Mono", monospace; font-size: 15px; font-weight: 700; fill: #20323d; }
+      .typeText { font-family: "Comic Mono", monospace; font-size: 16px; fill: #263844; }
+    </style>
+  </defs>
+
+  <rect class="canvas" width="1680" height="1010"/>
+  <rect class="frame" x="42" y="34" width="1596" height="938" rx="24" filter="url(#shadow)"/>
+
+  <text class="title" x="84" y="91">PostgreSQL Extension Feature Coverage</text>
+  <text class="subtitle" x="86" y="126">Choose the helper family by PostgreSQL feature: spatial geometry, vector similarity, or timestamp range queries.</text>
+
+  <g transform="translate(82 164)">
+    <rect x="0" y="0" width="1516" height="632" rx="18" fill="#fffdf8" stroke="#28485a" stroke-width="3"/>
+    <rect x="0" y="0" width="1516" height="62" rx="18" fill="#e4f0ed"/>
+    <path d="M0 46 Q0 62 18 62 H1498 Q1516 62 1516 46 V62 H0 Z" fill="#e4f0ed"/>
+
+    <text class="head" x="26" y="39">Feature family</text>
+    <text class="head" x="302" y="39">Table helpers</text>
+    <text class="head" x="564" y="39">ColumnType and SQL type</text>
+    <text class="head" x="930" y="39">Setup boundary</text>
+    <text class="head" x="1188" y="39">Query operations</text>
+
+    <line class="grid" x1="270" y1="0" x2="270" y2="632"/>
+    <line class="grid" x1="530" y1="0" x2="530" y2="632"/>
+    <line class="grid" x1="900" y1="0" x2="900" y2="632"/>
+    <line class="grid" x1="1158" y1="0" x2="1158" y2="632"/>
+    <line class="grid" x1="0" y1="62" x2="1516" y2="62"/>
+    <line class="grid" x1="0" y1="252" x2="1516" y2="252"/>
+    <line class="grid" x1="0" y1="442" x2="1516" y2="442"/>
+
+    <g transform="translate(0 62)">
+      <rect x="0" y="0" width="270" height="190" fill="#e2f3ef"/>
+      <circle cx="45" cy="54" r="23" fill="#55a798"/>
+      <text class="family" x="82" y="63">PostGIS</text>
+      <text class="small" x="28" y="104">Spatial data</text>
+      <text class="small" x="28" y="132">SRID 4326 WGS 84</text>
+
+      <text class="text" x="296" y="45">geoPoint(name)</text>
+      <text class="text" x="296" y="84">geoPolygon(name)</text>
+      <text class="text" x="296" y="123">geoGeometry(name)</text>
+
+      <rect x="554" y="24" width="318" height="132" rx="12" fill="#f0fbf8" stroke="#86beb3" stroke-width="2"/>
+      <text class="typeSmall" x="574" y="57">GeoPoint -> GEOMETRY(POINT, 4326)</text>
+      <text class="typeSmall" x="574" y="92">GeoPolygon -> GEOMETRY(POLYGON, 4326)</text>
+      <text class="typeSmall" x="574" y="127">GeoGeometry -> GEOMETRY(GEOMETRY, 4326)</text>
+
+      <text class="text" x="928" y="55">PostgreSQL dialect</text>
+      <text class="small" x="928" y="89">postgis extension</text>
+      <text class="small" x="928" y="121">postgis-jdbc runtime</text>
+
+      <text class="text" x="1184" y="45">ST_Distance / ST_DWithin</text>
+      <text class="text" x="1184" y="84">ST_Within / ST_Contains</text>
+      <text class="text" x="1184" y="119">ST_Overlaps / ST_Intersects</text>
+      <text class="text" x="1184" y="150">ST_Disjoint / ST_Area</text>
+      <text class="small" x="1184" y="176">Generic Geometry variants included</text>
+    </g>
+
+    <g transform="translate(0 252)">
+      <rect x="0" y="0" width="270" height="190" fill="#ece8fb"/>
+      <circle cx="45" cy="54" r="23" fill="#8f72cf"/>
+      <text class="family" x="82" y="63">pgvector</text>
+      <text class="small" x="28" y="104">Similarity search</text>
+      <text class="small" x="28" y="132">FloatArray vectors</text>
+
+      <text class="text" x="296" y="48">vector(name,</text>
+      <text class="text" x="296" y="79">dimension)</text>
+      <text class="small" x="296" y="116">dimension must be positive</text>
+      <text class="small" x="296" y="148">stored size is checked</text>
+
+      <rect x="554" y="34" width="318" height="112" rx="12" fill="#f7f3ff" stroke="#b6a5e4" stroke-width="2"/>
+      <text class="typeText" x="576" y="72">VectorColumnType</text>
+      <text class="typeText" x="576" y="107">SQL type: VECTOR(n)</text>
+
+      <text class="text" x="928" y="52">vector extension</text>
+      <text class="small" x="928" y="87">pgvector runtime</text>
+      <text class="small" x="928" y="119">registerVectorType()</text>
+
+      <text class="text" x="1184" y="54">cosineDistance: &lt;=&gt;</text>
+      <text class="text" x="1184" y="93">l2Distance: &lt;-&gt;</text>
+      <text class="text" x="1184" y="132">innerProduct: &lt;#&gt;</text>
+    </g>
+
+    <g transform="translate(0 442)">
+      <rect x="0" y="0" width="270" height="190" fill="#fff0d4"/>
+      <circle cx="45" cy="54" r="23" fill="#d69238"/>
+      <text class="family" x="78" y="63">TSTZRANGE</text>
+      <text class="small" x="28" y="104">Instant ranges</text>
+      <text class="small" x="28" y="132">Kotlin value object</text>
+
+      <text class="text" x="296" y="58">tstzRange(name)</text>
+      <text class="small" x="296" y="98">TimestampRange(start, end)</text>
+      <text class="small" x="296" y="130">inclusive lower,</text>
+      <text class="small" x="296" y="158">exclusive upper default</text>
+
+      <rect x="554" y="34" width="318" height="112" rx="12" fill="#fff8e9" stroke="#deb46d" stroke-width="2"/>
+      <text class="typeText" x="576" y="68">TstzRangeColumnType</text>
+      <text class="typeText" x="576" y="102">TSTZRANGE native</text>
+      <text class="typeText" x="576" y="132">VARCHAR(120) fallback</text>
+
+      <text class="text" x="928" y="47">Native range</text>
+      <text class="text" x="928" y="78">on PostgreSQL</text>
+      <text class="small" x="928" y="112">?::tstzrange binding</text>
+      <text class="small" x="928" y="144">JDBC timestamp parser</text>
+
+      <text class="text" x="1184" y="54">overlaps: &amp;&amp;</text>
+      <text class="text" x="1184" y="93">contains instant/range: @&gt;</text>
+      <text class="text" x="1184" y="132">adjacent: -|-</text>
+    </g>
+  </g>
+
+  <g transform="translate(96 836)">
+    <rect x="0" y="0" width="1488" height="94" rx="16" fill="#eef3f4" stroke="#c2d1d4" stroke-width="2"/>
+    <text class="head" x="26" y="37">Reader contract</text>
+    <text class="text" x="246" y="37">PostGIS and pgvector need PostgreSQL extensions plus their runtime JDBC libraries.</text>
+    <text class="text" x="246" y="72">TSTZRANGE can store literals outside PostgreSQL, but SQL range operators remain PostgreSQL-only.</text>
+  </g>
+</svg>

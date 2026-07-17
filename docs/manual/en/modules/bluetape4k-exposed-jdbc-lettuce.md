@@ -100,6 +100,25 @@ Use isolated cache and database fixtures with unique namespaces. Prove miss load
 
 The adapter does not create a distributed transaction, provision the backend, migrate stored cache values, or decide whether stale data is safe. It is the blocking repository uses the remote map; the suspended repository can add a configured Caffeine near cache.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### JDBC Lettuce Redis cache architecture diagram
+
+[![JDBC Lettuce Redis cache architecture diagram](../../assets/readme-diagrams/exposed-jdbc-lettuce-diagram-01.png)](../../assets/readme-diagrams/exposed-jdbc-lettuce-diagram-01.svg)
+
+_Release README: [`exposed/jdbc-lettuce/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-lettuce/README.md)_
+
+### JDBC Lettuce cache flow diagram
+
+[![JDBC Lettuce cache flow diagram](../../assets/readme-diagrams/exposed-jdbc-lettuce-sequence-01.png)](../../assets/readme-diagrams/exposed-jdbc-lettuce-sequence-01.svg)
+
+_Release README: [`exposed/jdbc-lettuce/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-lettuce/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [Module README](../../../../exposed/jdbc-lettuce/README.md)

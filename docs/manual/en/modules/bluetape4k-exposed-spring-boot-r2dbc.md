@@ -94,6 +94,25 @@ Run the [Spring Boot R2DBC example](exposed-spring-boot-r2dbc-demo.md), then rea
 
 This module does not provision connections, manage `R2dbcDatabase` lifecycle, create schema, or supply Spring reactive transaction management. Derived-query support is bounded by the release implementation. A flow-returning method is not necessarily a streaming database cursor; `streamAll()` is the explicit streaming path.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### Spring Boot Exposed R2DBC coroutine repository wiring diagram
+
+[![Spring Boot Exposed R2DBC coroutine repository wiring diagram](../../assets/readme-diagrams/spring-boot-exposed-r2dbc-diagram-01.png)](../../assets/readme-diagrams/spring-boot-exposed-r2dbc-diagram-01.svg)
+
+_Release README: [`spring-boot/r2dbc/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/spring-boot/r2dbc/README.md)_
+
+### Spring Boot Exposed R2DBC suspend query flow diagram
+
+[![Spring Boot Exposed R2DBC suspend query flow diagram](../../assets/readme-diagrams/spring-boot-exposed-r2dbc-diagram-02.png)](../../assets/readme-diagrams/spring-boot-exposed-r2dbc-diagram-02.svg)
+
+_Release README: [`spring-boot/r2dbc/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/spring-boot/r2dbc/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [`ExposedR2dbcSpringDataAutoConfiguration.kt`](../../../../spring-boot/r2dbc/src/main/kotlin/io/bluetape4k/spring/data/exposed/r2dbc/config/ExposedR2dbcSpringDataAutoConfiguration.kt)

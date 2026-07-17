@@ -82,6 +82,25 @@ JUnit 5, bluetape4k Testcontainers, MariaDB/MySQL/PostgreSQL container 지원을
 
 이 테스트 틀은 운영 pool 부하를 재현하지 않으며 마이그레이션이나 장애 주입 테스트를 대신하지 않습니다. DB별 semaphore는 충돌하는 fixture 작업을 의도적으로 직렬화합니다.
 
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### JDBC test dialect coverage
+
+[![JDBC test dialect coverage](../../assets/readme-diagrams/exposed-jdbc-tests-diagram-01.png)](../../assets/readme-diagrams/exposed-jdbc-tests-diagram-01.svg)
+
+_배포본 README: [`exposed/jdbc-tests/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-tests/README.ko.md)_
+
+### JDBC test 수명 주기
+
+[![JDBC test 수명 주기](../../assets/readme-diagrams/exposed-jdbc-tests-sequence-01.png)](../../assets/readme-diagrams/exposed-jdbc-tests-sequence-01.svg)
+
+_배포본 README: [`exposed/jdbc-tests/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-tests/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## 근거 자료 {#sources}
 
 - [테스트 모듈 빌드](../../../../exposed/jdbc-tests/build.gradle.kts)

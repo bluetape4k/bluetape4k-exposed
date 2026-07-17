@@ -1,0 +1,195 @@
+<svg data-sequence-spacing-scale="1.16" xmlns="http://www.w3.org/2000/svg" width="1740" height="2204" viewBox="0 0 1740 2204" role="img" aria-labelledby="title desc">
+  <title id="t t l">Suspended JDBC Redisson Write-Through Flow</title>
+  <desc id="s c">Sequence diagram rebuilt from exposed-jdbc-redisson README, SuspendedJdbcRedissonRepository, AbstractSuspendedJdbcRedissonRepository, SuspendedEntityMapWriter, and suspended write-through tests.</desc>
+  <defs>
+    <marker id="seqArrow-4F83BF" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#4f83bf" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#4f83bf" /></marker>
+    <marker id="seqArrow-755BC6" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#755bc6" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#755bc6" /></marker>
+    <marker id="seqArrow-2E8F89" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#2e8f89" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#2e8f89" /></marker>
+    <marker id="seqArrow-3E9868" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#3e9868" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#3e9868" /></marker>
+    <marker id="seqArrow-B9851B" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#b9851b" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#b9851b" /></marker>
+    <marker id="seqArrow-C94D68" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#c94d68" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#c94d68" /></marker>
+    <marker id="seqArrow-758297" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#758297" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#758297" /></marker>
+    <filter id="s h a" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <style>
+      .canvas{fill:#F7FAFC}.frame{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:2.6;filter:url(#shadow)}
+      .title{font-family:"Architects Daughter";font-size:44px;fill:#22344A;font-weight:400}.subtitle{font-family:"Comic Mono";font-size:16px;fill:#536476;font-weight:400}
+      .actor{filter:url(#shadow);stroke-width:2}.actorTitle{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .actorNote{font-family:"Comic Mono";font-size:13px;fill:#42556B;font-weight:400}.small{font-family:"Comic Mono";font-size:12px;fill:#627184;font-weight:400}
+      .activation{fill:#E9F7EF;stroke:#66A783;stroke-width:1.2;opacity:.72}.seq{fill:none;stroke-width:3;stroke-linecap:round}.ret{fill:none;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:8 7}
+      .lifeline{stroke:#A7B4C3;stroke-width:1.8;stroke-dasharray:8 8}.pill{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
+      .alt{fill:#FFFFFF;fill-opacity:0.12;stroke:#D6A441;stroke-width:1.8;stroke-dasharray:8 8}.note{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
+    </style>
+  </defs>
+  <rect class="canvas" width="1740" height="2204"/>
+  <rect class="frame" x="32" y="32.48" width="1676" height="2139.04" rx="28"/>
+  <text class="title" x="66" y="95.12">Suspended JDBC Redisson Write-Through Flow</text>
+  <text class="subtitle" x="70" y="134.56">Suspended write-through awaits Redisson async cache writes and writerAsync persists inside newSuspendedTransaction before the call resumes.</text>
+<g id="a t c a t c a l l">
+  <rect class="actor" x="96" y="191.4" width="250" height="88.16" rx="10" fill="#E8F3FF" stroke="#5B8DEF"/>
+  <text class="actorTitle" x="221" y="243.6" text-anchor="middle">Suspend caller</text>
+  <line class="lifeline" x1="221" y1="279.56" x2="221" y2="2094.96"/>
+</g>
+<g id="a t c a t">
+  <rect class="actor" x="355.6" y="191.4" width="250" height="88.16" rx="10" fill="#EAF7EF" stroke="#58A978"/>
+  <text class="actorTitle" x="480.6" y="243.6" text-anchor="middle">Suspended repo</text>
+  <line class="lifeline" x1="480.6" y1="279.56" x2="480.6" y2="2094.96"/>
+</g>
+<g id="a t c a t m a">
+  <rect class="actor" x="615.2" y="191.4" width="250" height="76" rx="10" fill="#F2F5F9" stroke="#9AA8B8"/><image data-bluetape4k-icon="redis.icon" x="627.2" y="205.32" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiBoZWlnaHQ9IjY0IiB2aWV3Qm94PSIwIDAgMzIgMzIiIHdpZHRoPSI2NCI+PGcgdHJhbnNmb3JtPSJtYXRyaXgoLjg0ODMyNyAwIDAgLjg0ODMyNyAtNy44ODM1NzMgLTkuNDQ5NjkxKSI+PHVzZSB4bGluazpocmVmPSIjQiIgZmlsbD0iI2E0MWUxMSIvPjxwYXRoIGQ9Ik00NS41MzYgMzQuOTVjLTIuMDEzIDEuMDUtMTIuNDQgNS4zMzctMTQuNjYgNi40OTRzLTMuNDUzIDEuMTQ2LTUuMjA3LjMwOC0xMi44NS01LjMyLTE0Ljg1LTYuMjc2LTIuMDQtMS42MTMtLjA3Ny0yLjM4MmwxNS4zMzItNS45MzZjMi4zMzItLjgzNiAzLjE0LS44NjcgNS4xMjYtLjE0UzQzLjU1IDMxLjg3IDQ1LjUxIDMyLjZzMi4wMzcgMS4zMS4wMjQgMi4zNnoiIGZpbGw9IiNkODJjMjAiLz48dXNlIHhsaW5rOmhyZWY9IiNCIiB5PSItNi4yMTgiIGZpbGw9IiNhNDFlMTEiLz48dXNlIHhsaW5rOmhyZWY9IiNDIiBmaWxsPSIjZDgyYzIwIi8+PHBhdGggZD0iTTQ1LjUzNiAyNi4wOThjLTIuMDEzIDEuMDUtMTIuNDQgNS4zMzctMTQuNjYgNi40OTVzLTMuNDUzIDEuMTQ2LTUuMjA3LjMwOC0xMi44NS01LjMyLTE0Ljg1LTYuMjc2Yy0xLS40NzgtMS41MjQtLjg4LTEuNTI0LTEuMjZWMjEuNTVzMTQuNDQ3LTMuMTQ1IDE2Ljc4LTMuOTgyIDMuMTQtLjg2NyA1LjEyNi0uMTQgMTMuODUzIDIuODY4IDE1LjgxNCAzLjU4N3YzLjc2YzAgLjM3Ny0uNDUyLjgtMS40NzcgMS4zMjR6IiBmaWxsPSIjYTQxZTExIi8+PHVzZSB4bGluazpocmVmPSIjQyIgeT0iLTYuNDQ5IiBmaWxsPSIjZDgyYzIwIi8+PGcgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTI5LjA5NiAyMC43MTJsLTEuMTgyLTEuOTY1LTMuNzc0LS4zNCAyLjgxNi0xLjAxNi0uODQ1LTEuNTYgMi42MzYgMS4wMyAyLjQ4Ni0uODE0LS42NzIgMS42MTIgMi41MzQuOTUtMy4yNjguMzR6TTIyLjggMjQuNjI0bDguNzQtMS4zNDItMi42NCAzLjg3MnoiLz48ZWxsaXBzZSBjeD0iMjAuNDQ0IiByeD0iNC42NzIiIHJ5PSIxLjgxMSIgY3k9IjIxLjQwMiIvPjwvZz48cGF0aCBkPSJNNDIuMTMyIDIxLjEzOGwtNS4xNyAyLjA0Mi0uMDA0LTQuMDg3eiIgZmlsbD0iIzdhMGMwMCIvPjxwYXRoIGQ9Ik0zNi45NjMgMjMuMThsLS41Ni4yMi01LjE2Ni0yLjA0MiA1LjcyMy0yLjI2NHoiIGZpbGw9IiNhZDIxMTUiLz48L2c+PGRlZnMgPjxwYXRoIGlkPSJCIiBkPSJNNDUuNTM2IDM4Ljc2NGMtMi4wMTMgMS4wNS0xMi40NCA1LjMzNy0xNC42NiA2LjQ5NHMtMy40NTMgMS4xNDYtNS4yMDcuMzA4LTEyLjg1LTUuMzItMTQuODUtNi4yNzZjLTEtLjQ3OC0xLjUyNC0uODgtMS41MjQtMS4yNnYtMy44MTNzMTQuNDQ3LTMuMTQ1IDE2Ljc4LTMuOTgyIDMuMTQtLjg2NyA1LjEyNi0uMTQgMTMuODUzIDIuODY4IDE1LjgxNCAzLjU4N3YzLjc2YzAgLjM3Ny0uNDUyLjgtMS40NzcgMS4zMjR6Ii8+PHBhdGggaWQ9IkMiIGQ9Ik00NS41MzYgMjguNzMzYy0yLjAxMyAxLjA1LTEyLjQ0IDUuMzM3LTE0LjY2IDYuNDk0cy0zLjQ1MyAxLjE0Ni01LjIwNy4zMDgtMTIuODUtNS4zMi0xNC44NS02LjI3Ni0yLjA0LTEuNjEzLS4wNzctMi4zODJsMTUuMzMyLTUuOTM1YzIuMzMyLS44MzcgMy4xNC0uODY3IDUuMTI2LS4xNHMxMi4zNSA0Ljg1MyAxNC4zMTIgNS41NyAyLjAzNyAxLjMxLjAyNCAyLjM2eiIvPjwvZGVmcz48L3N2Zz4=" preserveAspectRatio="xMidYMid meet"/>
+  <text class="actorTitle" x="740.2" y="243.6" text-anchor="middle">Async Redisson map</text>
+  <line class="lifeline" x1="740.2" y1="279.56" x2="740.2" y2="2094.96"/>
+</g>
+<g id="a t c a t t">
+  <rect class="actor" x="874.8000000000001" y="191.4" width="250" height="88.16" rx="10" fill="#E9F7F6" stroke="#45A7A1"/>
+  <text class="actorTitle" x="999.8000000000001" y="243.6" text-anchor="middle">WriterAsync</text>
+  <line class="lifeline" x1="999.8000000000001" y1="279.56" x2="999.8000000000001" y2="2094.96"/>
+</g>
+<g id="a t c a t t">
+  <rect class="actor" x="1134.4" y="191.4" width="250" height="88.16" rx="10" fill="#F1ECFF" stroke="#8A72D6"/>
+  <text class="actorTitle" x="1259.4" y="243.6" text-anchor="middle">Coroutine tx</text>
+  <line class="lifeline" x1="1259.4" y1="279.56" x2="1259.4" y2="2094.96"/>
+</g>
+<g id="a t c a t a t a a s">
+  <rect class="actor" x="1394" y="191.4" width="250" height="76" rx="10" fill="#FDECEF" stroke="#DC6B82"/><image data-bluetape4k-icon="generic.database" x="1406" y="205.32" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSI2NCIgY3k9IjM2IiByeD0iMzQiIHJ5PSIxMyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiLz4KICA8cGF0aCBkPSJNMzAgNThjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMzAgODBjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==" preserveAspectRatio="xMidYMid meet"/>
+  <text class="actorTitle" x="1519" y="243.6" text-anchor="middle">JDBC database</text>
+  <line class="lifeline" x1="1519" y1="279.56" x2="1519" y2="2094.96"/>
+  <rect class="activation" x="214" y="381.64" width="14" height="603.2" rx="6"/>
+  <rect class="activation" x="473.6" y="381.64" width="14" height="603.2" rx="6"/>
+  <rect class="activation" x="733.2" y="381.64" width="14" height="603.2" rx="6"/>
+  <rect class="activation" x="992.8" y="381.64" width="14" height="603.2" rx="6"/>
+  <rect class="activation" x="1252.4" y="381.64" width="14" height="603.2" rx="6"/>
+  <rect class="activation" x="1512" y="381.64" width="14" height="603.2" rx="6"/>
+</g>
+<g>
+  <rect class="alt" x="74" y="338.72" width="1592" height="55.68" rx="15"/>
+  <rect class="pill" x="255.8" y="331.76" width="190" height="34.8" rx="8"/>
+  <text class="actorNote" x="350.8" y="350.32" text-anchor="middle" dominant-baseline="middle">Awaited put</text>
+</g>
+<g id="m 2">
+  <rect class="pill" x="225.8" y="422.24" width="250" height="34.8" rx="7"/>
+  <circle cx="244.8" cy="439.64" r="12" fill="#4F83BF"/>
+  <text class="actorNote" x="244.8" y="440.8" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">2</text>
+  <text class="actorNote" x="368.8" y="440.8" text-anchor="middle" dominant-baseline="middle">put(id, entity) suspends</text>
+  <path class="seq" d="M 221 477.92 L 480.6 477.92" stroke="#4F83BF" marker-end="url(#seqArrow-4F83BF)"/>
+</g>
+<g id="m 3">
+  <rect class="pill" x="487.9000000000001" y="503.44" width="245" height="48.72" rx="7"/>
+  <circle cx="506.9000000000001" cy="527.8" r="12" fill="#2E8F89"/>
+  <text class="actorNote" x="506.9000000000001" y="528.96" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">3</text>
+  <text class="actorNote" x="628.4000000000001" y="518.52" text-anchor="middle" dominant-baseline="middle">fastPutAsync(id,</text>
+  <text class="actorNote" x="628.4000000000001" y="535.92" text-anchor="middle" dominant-baseline="middle">entity).await()</text>
+  <path class="seq" d="M 480.6 573.04 L 740.2 573.04" stroke="#2E8F89" marker-end="url(#seqArrow-2E8F89)"/>
+</g>
+<g id="m 4">
+  <rect class="pill" x="745" y="612.48" width="250" height="34.8" rx="7"/>
+  <circle cx="764" cy="629.88" r="12" fill="#755BC6"/>
+  <text class="actorNote" x="764" y="631.04" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">4</text>
+  <text class="actorNote" x="888" y="631.04" text-anchor="middle" dominant-baseline="middle">writerAsync.write(map)</text>
+  <path class="seq" d="M 740.2 668.16 L 999.8000000000001 668.16" stroke="#755BC6" marker-end="url(#seqArrow-755BC6)"/>
+</g>
+<g id="m 5">
+  <rect class="pill" x="1004.6000000000001" y="707.6" width="250" height="34.8" rx="7"/>
+  <circle cx="1023.6000000000001" cy="725" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="1023.6000000000001" y="726.16" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">5</text>
+  <text class="actorNote" x="1147.6000000000001" y="726.16" text-anchor="middle" dominant-baseline="middle">newSuspendedTransaction</text>
+  <path class="seq" d="M 999.8000000000001 763.28 L 1259.4 763.28" stroke="#C94D68" marker-end="url(#seqArrow-C94D68)"/>
+</g>
+<g id="m 6">
+  <rect class="pill" x="1264.8" y="802.72" width="248.8" height="34.8" rx="7"/>
+  <circle cx="1283.8" cy="820.12" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="1283.8" y="821.28" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">6</text>
+  <text class="actorNote" x="1407.2" y="821.28" text-anchor="middle" dominant-baseline="middle">SELECT existing IDs</text>
+  <path class="seq" d="M 1259.4 858.4 L 1519 858.4" stroke="#C94D68" marker-end="url(#seqArrow-C94D68)"/>
+</g>
+<g id="m 7">
+  <rect class="pill" x="1266.7" y="897.84" width="245" height="34.8" rx="7"/>
+  <circle cx="1285.7" cy="915.24" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="1285.7" y="916.4" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">7</text>
+  <text class="actorNote" x="1407.2" y="916.4" text-anchor="middle" dominant-baseline="middle">existingIds</text>
+  <path class="ret" d="M 1519 953.52 L 1259.4 953.52" stroke="#C94D68"/>
+<polygon points="1259.4,953.52 1275.4,945.52 1275.4,961.52" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g id="m 8">
+  <rect class="pill" x="1264.2" y="979.04" width="250" height="48.72" rx="7"/>
+  <circle cx="1283.2" cy="1003.4" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="1283.2" y="1004.56" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">8</text>
+  <text class="actorNote" x="1407.2" y="994.12" text-anchor="middle" dominant-baseline="middle">UPDATE rows or batchInsert</text>
+  <text class="actorNote" x="1407.2" y="1011.52" text-anchor="middle" dominant-baseline="middle">client IDs</text>
+  <path class="seq" d="M 1259.4 1048.64 L 1519 1048.64" stroke="#C94D68" marker-end="url(#seqArrow-C94D68)"/>
+</g>
+<g id="m 9">
+  <rect class="pill" x="1266.7" y="1088.08" width="245" height="34.8" rx="7"/>
+  <circle cx="1285.7" cy="1105.48" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="1285.7" y="1106.64" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">9</text>
+  <text class="actorNote" x="1407.2" y="1106.64" text-anchor="middle" dominant-baseline="middle">commit</text>
+  <path class="ret" d="M 1519 1143.76 L 1259.4 1143.76" stroke="#C94D68"/>
+<polygon points="1259.4,1143.76 1275.4,1135.76 1275.4,1151.76" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g id="m 10">
+  <rect class="pill" x="1007.1000000000001" y="1183.2" width="245" height="34.8" rx="7"/>
+  <circle cx="1026.1000000000001" cy="1200.6" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="1026.1000000000001" y="1201.76" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">10</text>
+  <text class="actorNote" x="1147.6000000000001" y="1201.76" text-anchor="middle" dominant-baseline="middle">write complete</text>
+  <path class="ret" d="M 1259.4 1238.88 L 999.8000000000001 1238.88" stroke="#C94D68"/>
+<polygon points="999.8,1238.88 1015.8,1230.88 1015.8,1246.88" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g id="m 11">
+  <rect class="pill" x="747.5" y="1278.32" width="245" height="34.8" rx="7"/>
+  <circle cx="766.5" cy="1295.72" r="12" fill="#755BC6"/>
+  <text class="actorNote" x="766.5" y="1296.88" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">11</text>
+  <text class="actorNote" x="888" y="1296.88" text-anchor="middle" dominant-baseline="middle">future completes</text>
+  <path class="ret" d="M 999.8000000000001 1334 L 740.2 1334" stroke="#755BC6"/>
+<polygon points="740.2,1334 756.2,1326 756.2,1342" fill="#755BC6" stroke="#755BC6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g id="m 12">
+  <rect class="pill" x="487.9000000000001" y="1373.44" width="245" height="34.8" rx="7"/>
+  <circle cx="506.9000000000001" cy="1390.84" r="12" fill="#2E8F89"/>
+  <text class="actorNote" x="506.9000000000001" y="1392" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">12</text>
+  <text class="actorNote" x="628.4000000000001" y="1392" text-anchor="middle" dominant-baseline="middle">await resumes</text>
+  <path class="ret" d="M 740.2 1429.12 L 480.6 1429.12" stroke="#2E8F89"/>
+<polygon points="480.6,1429.12 496.6,1421.12 496.6,1437.12" fill="#2E8F89" stroke="#2E8F89" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g id="m 13">
+  <rect class="pill" x="225.8" y="1468.56" width="250" height="34.8" rx="7"/>
+  <circle cx="244.8" cy="1485.96" r="12" fill="#B9851B"/>
+  <text class="actorNote" x="244.8" y="1487.12" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">13</text>
+  <text class="actorNote" x="368.8" y="1487.12" text-anchor="middle" dominant-baseline="middle">return after DB write</text>
+  <path class="ret" d="M 480.6 1524.24 L 221 1524.24" stroke="#B9851B"/>
+<polygon points="221,1524.24 237,1516.24 237,1532.24" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g>
+  <rect class="alt" x="74" y="1575.28" width="1592" height="55.68" rx="15"/>
+  <rect class="pill" x="215.05" y="1568.32" width="271.5" height="34.8" rx="8"/>
+  <text class="actorNote" x="350.8" y="1586.88" text-anchor="middle" dominant-baseline="middle">Optional delete on invalidate</text>
+</g>
+<g id="m 15">
+  <rect class="pill" x="228.3" y="1658.8" width="245" height="34.8" rx="7"/>
+  <circle cx="247.3" cy="1676.2" r="12" fill="#4F83BF"/>
+  <text class="actorNote" x="247.3" y="1677.36" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">15</text>
+  <text class="actorNote" x="368.8" y="1677.36" text-anchor="middle" dominant-baseline="middle">invalidate(id)</text>
+  <path class="seq" d="M 221 1714.48 L 480.6 1714.48" stroke="#4F83BF" marker-end="url(#seqArrow-4F83BF)"/>
+</g>
+<g id="m 16">
+  <rect class="pill" x="485.4000000000001" y="1753.92" width="250" height="34.8" rx="7"/>
+  <circle cx="504.4000000000001" cy="1771.32" r="12" fill="#2E8F89"/>
+  <text class="actorNote" x="504.4000000000001" y="1772.48" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">16</text>
+  <text class="actorNote" x="628.4000000000001" y="1772.48" text-anchor="middle" dominant-baseline="middle">fastRemoveAsync(id).await()</text>
+  <path class="seq" d="M 480.6 1809.6 L 740.2 1809.6" stroke="#2E8F89" marker-end="url(#seqArrow-2E8F89)"/>
+</g>
+<g id="m 17">
+  <rect class="pill" x="745" y="1835.12" width="250" height="48.72" rx="7"/>
+  <circle cx="764" cy="1859.48" r="12" fill="#755BC6"/>
+  <text class="actorNote" x="764" y="1860.64" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">17</text>
+  <text class="actorNote" x="888" y="1850.2" text-anchor="middle" dominant-baseline="middle">writerAsync.delete(keys)</text>
+  <text class="actorNote" x="888" y="1867.6" text-anchor="middle" dominant-baseline="middle">when enabled</text>
+  <path class="seq" d="M 740.2 1904.72 L 999.8000000000001 1904.72" stroke="#755BC6" marker-end="url(#seqArrow-755BC6)"/>
+</g>
+<g id="m 18">
+  <rect class="pill" x="1136.9" y="1944.16" width="245" height="34.8" rx="7"/>
+  <circle cx="1155.9" cy="1961.56" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="1155.9" y="1962.72" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">18</text>
+  <text class="actorNote" x="1277.4" y="1962.72" text-anchor="middle" dominant-baseline="middle">DELETE by ids</text>
+  <path class="seq" d="M 999.8000000000001 1999.84 L 1519 1999.84" stroke="#C94D68" marker-end="url(#seqArrow-C94D68)"/>
+</g>
+<g><rect class="note" x="110" y="2067.12" width="1520" height="55.68" rx="12"/><text class="small" x="870" y="2086.84" text-anchor="middle" dominant-baseline="middle">Suspend WRITE_THROUGH resumes after the async Redisson write and suspended JDBC writer complete successfully.</text><text class="small" x="870" y="2106.56" text-anchor="middle" dominant-baseline="middle">The writer decides update versus insert by existing IDs and skips DB work when the cache mode is READ_ONLY.</text></g>
+</svg>

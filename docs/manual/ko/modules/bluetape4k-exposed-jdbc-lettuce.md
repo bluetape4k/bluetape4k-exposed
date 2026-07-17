@@ -105,3 +105,22 @@ Redis 타임아웃·재시도와 DB 실패는 서로 다른 상태입니다. Wri
 - [모듈 README](../../../../exposed/jdbc-lettuce/README.md)
 - [추상 저장소](../../../../exposed/jdbc-lettuce/src/main/kotlin/io/bluetape4k/exposed/lettuce/repository/AbstractJdbcLettuceRepository.kt)
 - [모듈 빌드](../../../../exposed/jdbc-lettuce/build.gradle.kts)
+
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### JDBC Lettuce Redis cache 아키텍처
+
+[![JDBC Lettuce Redis cache 아키텍처](../../assets/readme-diagrams/exposed-jdbc-lettuce-diagram-01.png)](../../assets/readme-diagrams/exposed-jdbc-lettuce-diagram-01.svg)
+
+_배포본 README: [`exposed/jdbc-lettuce/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-lettuce/README.ko.md)_
+
+### JDBC Lettuce cache 처리 흐름
+
+[![JDBC Lettuce cache 처리 흐름](../../assets/readme-diagrams/exposed-jdbc-lettuce-sequence-01.png)](../../assets/readme-diagrams/exposed-jdbc-lettuce-sequence-01.svg)
+
+_배포본 README: [`exposed/jdbc-lettuce/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-lettuce/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->

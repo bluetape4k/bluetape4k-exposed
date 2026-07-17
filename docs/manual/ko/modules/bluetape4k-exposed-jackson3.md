@@ -105,6 +105,25 @@ Exposed core와 JDBC·DAO·R2DBC 행 경로에 연동됩니다. `com.fasterxml.j
 
 Jackson 2 마이그레이션, 저장 JSON 재작성, 두 패키지 생태계의 상호 변환을 자동화하지 않습니다. 문서 버전 관리나 Dialect 간 JSON 함수 이식성도 제공하지 않습니다. 1.11 태그 뒤 develop에 추가된 API는 의도적으로 제외했습니다.
 
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### Jackson 3 JSON column boundary
+
+[![Jackson 3 JSON column boundary](../../assets/readme-diagrams/exposed-jackson3-diagram-01.png)](../../assets/readme-diagrams/exposed-jackson3-diagram-01.svg)
+
+_배포본 README: [`exposed/jackson3/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jackson3/README.ko.md)_
+
+### Jackson 3 JSON round trip
+
+[![Jackson 3 JSON round trip](../../assets/readme-diagrams/exposed-jackson3-flow-02.png)](../../assets/readme-diagrams/exposed-jackson3-flow-02.svg)
+
+_배포본 README: [`exposed/jackson3/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jackson3/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## 근거 자료 {#sources}
 
 - [Gradle 빌드 파일](../../../../exposed/jackson3/build.gradle.kts)

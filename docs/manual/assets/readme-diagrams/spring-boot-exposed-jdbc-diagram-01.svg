@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1640" height="980" viewBox="0 0 1640 980" role="img" aria-labelledby="title desc">
+<title id="title">Spring Boot Exposed JDBC repository wiring</title>
+<desc id="desc">Spring Boot auto-configuration, repository factory, query lookup, Exposed DAO runtime, and optional cache health wiring.</desc>
+<defs>
+  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
+  <marker id="arrow" markerWidth="14" markerHeight="14" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#5d6f83" stroke="#5d6f83" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+  <marker id="arrow-5d6f83" markerWidth="14" markerHeight="14" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#5d6f83" stroke="#5d6f83" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+  <marker id="arrow-8a72d6" markerWidth="14" markerHeight="14" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#8a72d6" stroke="#8a72d6" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+  <style>
+    .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}
+    .layer{fill:#fbfdff;stroke:#d8e0ea;stroke-width:1.4}
+    .layerTitle{font-family:"Architects Daughter","Comic Mono",monospace;font-size:25px;fill:#243447}
+    .title{font-family:"Architects Daughter","Comic Mono",monospace;font-size:44px;fill:#102033}
+    .subtitle{font-family:"Comic Mono",monospace;font-size:17px;fill:#536273}
+    .card{stroke-width:2.2;filter:url(#shadow)}
+    .label{font-family:"Architects Daughter","Comic Mono",monospace;font-size:22px;fill:#102033}
+    .small{font-family:"Comic Mono",monospace;font-size:14px;fill:#536273}
+    .mono{font-family:"Comic Mono",monospace;font-size:13px;fill:#102033}
+    .line{stroke:#5d6f83;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
+    .dash{stroke:#8a72d6;stroke-width:2.5;stroke-dasharray:8 7;fill:none}
+  </style>
+</defs>
+<rect class="canvas" width="1640" height="980"/>
+<rect class="frame" x="32" y="28" width="1576" height="924" rx="26"/>
+<text class="title" x="68" y="86">Spring Boot Exposed JDBC Repository Wiring</text>
+<text class="subtitle" x="72" y="120">How Spring Data repository infrastructure becomes an Exposed DAO backed repository.</text>
+
+<rect class="layer" x="64" y="156" width="1512" height="168" rx="18"/>
+<text class="layerTitle" x="90" y="198">Application opt-in</text>
+<rect class="layer" x="64" y="374" width="1512" height="198" rx="18"/>
+<text class="layerTitle" x="90" y="416">Spring Data bridge</text>
+<rect class="layer" x="64" y="632" width="1512" height="238" rx="18"/>
+<text class="layerTitle" x="90" y="674">Runtime boundary</text>
+
+<path class="line" d="M245 286 V444" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M656 286 V444" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M1067 286 V444" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M390 506 H474" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M740 506 H824" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M1090 506 H1174" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M974 568 V704" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M390 764 H474" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M740 764 H824" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="line" d="M1090 764 H1174" style="marker-end:url(#arrow-5d6f83)"/>
+<path class="dash" d="M1390 568 V704" style="marker-end:none"/>
+<polygon points="1390,704 1385,694 1395,694" fill="#8a72d6" stroke="#8a72d6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="true"/>
+<path class="line" d="M 656 568 L 656 608 Q 656 620 668 620 L 962 620 Q 974 620 974 632 L 974 704" style="marker-end:url(#arrow-5d6f83)"/>
+
+<g transform="translate(96,214)">
+  <rect class="card" x="0" y="0" width="298" height="72" rx="8" fill="#e8f3ff" stroke="#5b8def"/>
+  <text class="label" x="149" y="28" text-anchor="middle">@EnableExposed</text>
+  <text class="label" x="149" y="54" text-anchor="middle">JdbcRepositories</text>
+</g>
+<g transform="translate(507,214)">
+  <rect class="card" x="0" y="0" width="298" height="72" rx="8" fill="#eaf7ef" stroke="#58a978"/>
+  <text class="label" x="149" y="30" text-anchor="middle">Auto Configuration</text>
+  <text class="small" x="149" y="55" text-anchor="middle">mapping context + tx manager</text>
+</g>
+<g transform="translate(918,214)">
+  <rect class="card" x="0" y="0" width="298" height="72" rx="8" fill="#fff3d9" stroke="#d6a441"/>
+  <text class="label" x="149" y="30" text-anchor="middle">Repository Interface</text>
+  <text class="mono" x="149" y="55" text-anchor="middle">ExposedJdbcRepository&lt;E,ID&gt;</text>
+</g>
+
+<g transform="translate(96,444)">
+  <rect class="card" x="0" y="0" width="298" height="124" rx="8" fill="#f1ecff" stroke="#8a72d6"/>
+  <text class="label" x="149" y="32" text-anchor="middle">Repository Registrar</text>
+  <text class="small" x="149" y="62" text-anchor="middle">scans repository packages</text>
+  <text class="mono" x="149" y="90" text-anchor="middle">ExposedJdbcRepositories...</text>
+</g>
+<g transform="translate(474,444)">
+  <rect class="card" x="0" y="0" width="266" height="124" rx="8" fill="#e9f7f6" stroke="#45a7a1"/>
+  <text class="label" x="133" y="32" text-anchor="middle">FactoryBean</text>
+  <text class="small" x="133" y="62" text-anchor="middle">integrates Spring transactions</text>
+  <text class="mono" x="133" y="90" text-anchor="middle">TransactionalRepository...</text>
+</g>
+<g transform="translate(824,444)">
+  <rect class="card" x="0" y="0" width="266" height="124" rx="8" fill="#fdecef" stroke="#dc6b82"/>
+  <text class="label" x="133" y="32" text-anchor="middle">Repository Factory</text>
+  <text class="small" x="133" y="62" text-anchor="middle">creates proxy target</text>
+  <text class="mono" x="133" y="90" text-anchor="middle">SimpleExposedJdbcRepo</text>
+</g>
+<g transform="translate(1174,444)">
+  <rect class="card" x="0" y="0" width="298" height="124" rx="8" fill="#fff7e8" stroke="#d99a36"/>
+  <text class="label" x="149" y="32" text-anchor="middle">Query Lookup Strategy</text>
+  <text class="small" x="149" y="62" text-anchor="middle">@Query first, then PartTree</text>
+  <text class="mono" x="149" y="90" text-anchor="middle">CREATE_IF_NOT_FOUND</text>
+</g>
+
+<g transform="translate(96,704)">
+  <rect class="card" x="0" y="0" width="298" height="120" rx="8" fill="#e8f3ff" stroke="#5b8def"/>
+  <text class="label" x="149" y="32" text-anchor="middle">Repository Runtime</text>
+  <text class="small" x="149" y="62" text-anchor="middle">CRUD, paging, sorting, QBE</text>
+  <text class="mono" x="149" y="90" text-anchor="middle">findAll { Op&lt;Boolean&gt; }</text>
+</g>
+<g transform="translate(474,704)">
+  <rect class="card" x="0" y="0" width="266" height="120" rx="8" fill="#eaf7ef" stroke="#58a978"/>
+  <text class="label" x="133" y="32" text-anchor="middle">Entity Metadata</text>
+  <text class="small" x="133" y="62" text-anchor="middle">EntityClass + IdTable</text>
+  <text class="mono" x="133" y="90" text-anchor="middle">extractId(entity)</text>
+</g>
+<g transform="translate(824,704)">
+  <rect class="card" x="0" y="0" width="266" height="120" rx="8" fill="#fff3d9" stroke="#d6a441"/>
+  <text class="label" x="133" y="32" text-anchor="middle">Transaction Manager</text>
+  <text class="small" x="133" y="62" text-anchor="middle">SpringTransactionManager</text>
+  <text class="mono" x="133" y="90" text-anchor="middle">Database.connect(ds)</text>
+</g>
+<g transform="translate(1174,704)">
+  <rect class="card" x="0" y="0" width="298" height="120" rx="8" fill="#f8fbff" stroke="#6b7f93"/><image data-bluetape4k-icon="generic.database" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSI2NCIgY3k9IjM2IiByeD0iMzQiIHJ5PSIxMyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiLz4KICA8cGF0aCBkPSJNMzAgNThjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMzAgODBjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==" preserveAspectRatio="xMidYMid meet"/>
+  <text class="label" x="186" y="32" text-anchor="middle">DataSource / RDBMS</text>
+  <text class="small" x="184" y="62" text-anchor="middle">JDBC database boundary</text>
+  <text class="mono" x="184" y="90" text-anchor="middle">tables + rows</text>
+</g>
+<g transform="translate(1174,842)">
+  <rect class="card" x="0" y="0" width="298" height="72" rx="8" fill="#f7eef8" stroke="#b879bd"/><image data-bluetape4k-icon="cache.caffeine" x="12" y="12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjOEI1QTJCIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2FmZmVpbmU8L3RpdGxlPjxwYXRoIGQ9Ik02LjE2MiAxLjU1N2MtLjE4LjAwNi0uMjYzLjEzNy0uMjkzLjE4TC4wNSAxMS44MmMtLjA3LjE0Mi0uMDYuMjctLjAwNC4zNTYgMS45NDIgMy4zNiAzLjg4MiA2LjcyMyA1LjgyMiAxMC4wODVhLjMzNy4zMzcgMCAwMC4zMDUuMTgyaDExLjY1Yy4xMzguMDAzLjI2LS4wOS4zMS0uMTgyIDEuOTQtMy4zNiAzLjg3OC02LjcyMSA1LjgyLTEwLjA4YS4zNjEuMzYxIDAgMDAwLS4zNThsLTUuODItMTAuMDg1Yy0uMTEyLS4xOTMtLjMwOC0uMTgxLS4zMDgtLjE4MXptLjgwNC43MTloOS41MTNMMTAuMTM2IDUuOTR6bS0uNDI3LjYwM2wyLjk2NCAzLjQyNkw2LjU0IDguMDE4em0xMC4zLjAxOGwtMy44NiA2LjY4NUw3LjE5IDguNDY5em0xLjM0MS4zNTdsNC43NTYgOC4yNDYtNC43NTYtLjkxNnptLTEyLjM2LjAwMnY1LjE3NmwtNC40OCAyLjU4N3ptMTEuNjQgMHYxMS4xNDJsLTMuODU3LTQuNDU3ek03LjEyNyA5LjE4Nmw1Ljg0NyAxLjEyNiAzLjg5OCA0LjUwMi01Ljg0Mi0xLjEyNXpNNS44MiA5LjI2djMuNDI1bC00LjQ1LS44NTV6bS43Mi4zNDFsMy44NTYgNC40NTctMy44NTcgNi42ODV6bTExLjY0IDEuNzEzbDQuNDQ3Ljg1Ni00LjQ0NyAyLjU3ek0xLjA2MiAxMi41bDQuNzYuOTE2djcuMzN6bTIxLjU5Ny40OGwtNC40NzkgNy43NjN2LTUuMTc1em0tMTEuNjQgMS40MzdsNS43OSAxLjExNC05LjY0OSA1LjU3MnptNi40NCAxLjU2NXY1LjEzOGwtMi45NjQtMy40MjV6bS0zLjU5NyAyLjA3OGwzLjE3MiAzLjY2NEg3LjUyeiIvPjwvc3ZnPg==" preserveAspectRatio="xMidYMid meet"/>
+  <text class="label" x="170" y="22" text-anchor="middle">Optional Cache</text>
+  <text class="label" x="170" y="42" text-anchor="middle">Health</text>
+  <text class="small" x="170" y="62" text-anchor="middle">Caffeine write-behind status</text>
+</g>
+</svg>

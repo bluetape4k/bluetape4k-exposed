@@ -86,6 +86,19 @@ BOM은 라이브러리 버전을 맞출 뿐 JDBC/R2DBC 드라이버, 커넥션 �
 
 Exposed, Kotlin, 드라이버, 프레임워크 버전을 애플리케이션이 따로 덮어쓰면 BOM만으로 호환성을 보장할 수 없습니다. JDBC와 R2DBC 중 어느 쪽을 쓸지도 BOM이 결정하지 않습니다.
 
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### Exposed BOM managed artifact 지도
+
+[![Exposed BOM managed artifact 지도](../../assets/readme-diagrams/exposed-bom-diagram-01.png)](../../assets/readme-diagrams/exposed-bom-diagram-01.svg)
+
+_배포본 README: [`exposed/bom/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/bom/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## 근거 자료 {#sources}
 
 - [BOM 빌드](../../../../exposed/bom/build.gradle.kts)

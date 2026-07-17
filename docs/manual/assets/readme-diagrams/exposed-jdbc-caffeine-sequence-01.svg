@@ -1,0 +1,284 @@
+<svg data-sequence-spacing-scale="1.16" xmlns="http://www.w3.org/2000/svg" width="1740" height="3503.2" viewBox="0 0 1740 3503.2" role="img" aria-labelledby="title desc">
+  <title id="t t l">JDBC Caffeine Write Strategy Sequence</title>
+  <desc id="s c">Sequence diagram rebuilt from exposed-jdbc-caffeine README, AbstractJdbcCaffeineRepository source, LocalCacheConfig, and read/write strategy tests.</desc>
+  <defs>
+    <marker id="seqArrow-4F83BF" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#4f83bf" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#4f83bf" /></marker>
+    <marker id="seqArrow-755BC6" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#755bc6" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#755bc6" /></marker>
+    <marker id="seqArrow-2E8F89" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#2e8f89" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#2e8f89" /></marker>
+    <marker id="seqArrow-3E9868" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#3e9868" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#3e9868" /></marker>
+    <marker id="seqArrow-B9851B" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#b9851b" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#b9851b" /></marker>
+    <marker id="seqArrow-C94D68" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#c94d68" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#c94d68" /></marker>
+    <marker id="seqArrow-758297" viewBox="0 0 10 10" markerWidth="16" markerHeight="16" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 3.132 Q 10 5.8 5.4 8.468 L 0 11.6" fill="#758297" style="stroke-dasharray:none!important" stroke-dasharray="none" stroke="#758297" /></marker>
+    <filter id="s h a" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <style>
+      .canvas{fill:#F7FAFC}.frame{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:2.6;filter:url(#shadow)}
+      .title{font-family:"Architects Daughter";font-size:44px;fill:#22344A;font-weight:400}.subtitle{font-family:"Comic Mono";font-size:16px;fill:#536476;font-weight:400}
+      .actor{filter:url(#shadow);stroke-width:2}.actorTitle{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .actorNote{font-family:"Comic Mono";font-size:13px;fill:#42556B;font-weight:400}.small{font-family:"Comic Mono";font-size:12px;fill:#627184;font-weight:400}
+      .activation{fill:#E9F7EF;stroke:#66A783;stroke-width:1.2;opacity:.72}.seq{fill:none;stroke-width:3;stroke-linecap:round}.ret{fill:none;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:8 7}
+      .lifeline{stroke:#A7B4C3;stroke-width:1.8;stroke-dasharray:8 8}.pill{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
+      .alt{fill:#FFFFFF;fill-opacity:0.12;stroke:#D6A441;stroke-width:1.8;stroke-dasharray:8 8}.note{fill:#FFFFFF;stroke:#D6E3EF;stroke-width:1.4}
+    </style>
+  </defs>
+  <rect class="canvas" width="1740" height="3503.2"/>
+  <rect class="frame" x="32" y="32.48" width="1676" height="3438.24" rx="28"/>
+  <text class="title" x="66" y="95.12">JDBC Caffeine Write Strategy Sequence</text>
+  <text class="subtitle" x="70" y="134.56">Read-through loads misses from JDBC; write-through persists in-line; write-behind queues a bounded background batch.</text>
+<g id="a t c a t c a l l">
+  <rect class="actor" x="96" y="191.4" width="250" height="88.16" rx="10" fill="#E8F3FF" stroke="#5B8DEF"/>
+  <text class="actorTitle" x="221" y="243.6" text-anchor="middle">Application caller</text>
+  <line class="lifeline" x1="221" y1="279.56" x2="221" y2="3394.16"/>
+</g>
+<g id="a t c a t">
+  <rect class="actor" x="355.6" y="191.4" width="250" height="76" rx="10" fill="#EAF7EF" stroke="#58A978"/><image data-bluetape4k-icon="cache.caffeine" x="367.6" y="205.32" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjOEI1QTJCIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2FmZmVpbmU8L3RpdGxlPjxwYXRoIGQ9Ik02LjE2MiAxLjU1N2MtLjE4LjAwNi0uMjYzLjEzNy0uMjkzLjE4TC4wNSAxMS44MmMtLjA3LjE0Mi0uMDYuMjctLjAwNC4zNTYgMS45NDIgMy4zNiAzLjg4MiA2LjcyMyA1LjgyMiAxMC4wODVhLjMzNy4zMzcgMCAwMC4zMDUuMTgyaDExLjY1Yy4xMzguMDAzLjI2LS4wOS4zMS0uMTgyIDEuOTQtMy4zNiAzLjg3OC02LjcyMSA1LjgyLTEwLjA4YS4zNjEuMzYxIDAgMDAwLS4zNThsLTUuODItMTAuMDg1Yy0uMTEyLS4xOTMtLjMwOC0uMTgxLS4zMDgtLjE4MXptLjgwNC43MTloOS41MTNMMTAuMTM2IDUuOTR6bS0uNDI3LjYwM2wyLjk2NCAzLjQyNkw2LjU0IDguMDE4em0xMC4zLjAxOGwtMy44NiA2LjY4NUw3LjE5IDguNDY5em0xLjM0MS4zNTdsNC43NTYgOC4yNDYtNC43NTYtLjkxNnptLTEyLjM2LjAwMnY1LjE3NmwtNC40OCAyLjU4N3ptMTEuNjQgMHYxMS4xNDJsLTMuODU3LTQuNDU3ek03LjEyNyA5LjE4Nmw1Ljg0NyAxLjEyNiAzLjg5OCA0LjUwMi01Ljg0Mi0xLjEyNXpNNS44MiA5LjI2djMuNDI1bC00LjQ1LS44NTV6bS43Mi4zNDFsMy44NTYgNC40NTctMy44NTcgNi42ODV6bTExLjY0IDEuNzEzbDQuNDQ3Ljg1Ni00LjQ0NyAyLjU3ek0xLjA2MiAxMi41bDQuNzYuOTE2djcuMzN6bTIxLjU5Ny40OGwtNC40NzkgNy43NjN2LTUuMTc1em0tMTEuNjQgMS40MzdsNS43OSAxLjExNC05LjY0OSA1LjU3MnptNi40NCAxLjU2NXY1LjEzOGwtMi45NjQtMy40MjV6bS0zLjU5NyAyLjA3OGwzLjE3MiAzLjY2NEg3LjUyeiIvPjwvc3ZnPg==" preserveAspectRatio="xMidYMid meet"/>
+  <text class="actorTitle" x="480.6" y="243.6" text-anchor="middle">JdbcCaffeineRepository</text>
+  <line class="lifeline" x1="480.6" y1="279.56" x2="480.6" y2="3394.16"/>
+</g>
+<g id="a t c a t c a c h">
+  <rect class="actor" x="615.2" y="191.4" width="250" height="76" rx="10" fill="#E9F7F6" stroke="#45A7A1"/><image data-bluetape4k-icon="cache.caffeine" x="627.2" y="205.32" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjOEI1QTJCIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2FmZmVpbmU8L3RpdGxlPjxwYXRoIGQ9Ik02LjE2MiAxLjU1N2MtLjE4LjAwNi0uMjYzLjEzNy0uMjkzLjE4TC4wNSAxMS44MmMtLjA3LjE0Mi0uMDYuMjctLjAwNC4zNTYgMS45NDIgMy4zNiAzLjg4MiA2LjcyMyA1LjgyMiAxMC4wODVhLjMzNy4zMzcgMCAwMC4zMDUuMTgyaDExLjY1Yy4xMzguMDAzLjI2LS4wOS4zMS0uMTgyIDEuOTQtMy4zNiAzLjg3OC02LjcyMSA1LjgyLTEwLjA4YS4zNjEuMzYxIDAgMDAwLS4zNThsLTUuODItMTAuMDg1Yy0uMTEyLS4xOTMtLjMwOC0uMTgxLS4zMDgtLjE4MXptLjgwNC43MTloOS41MTNMMTAuMTM2IDUuOTR6bS0uNDI3LjYwM2wyLjk2NCAzLjQyNkw2LjU0IDguMDE4em0xMC4zLjAxOGwtMy44NiA2LjY4NUw3LjE5IDguNDY5em0xLjM0MS4zNTdsNC43NTYgOC4yNDYtNC43NTYtLjkxNnptLTEyLjM2LjAwMnY1LjE3NmwtNC40OCAyLjU4N3ptMTEuNjQgMHYxMS4xNDJsLTMuODU3LTQuNDU3ek03LjEyNyA5LjE4Nmw1Ljg0NyAxLjEyNiAzLjg5OCA0LjUwMi01Ljg0Mi0xLjEyNXpNNS44MiA5LjI2djMuNDI1bC00LjQ1LS44NTV6bS43Mi4zNDFsMy44NTYgNC40NTctMy44NTcgNi42ODV6bTExLjY0IDEuNzEzbDQuNDQ3Ljg1Ni00LjQ0NyAyLjU3ek0xLjA2MiAxMi41bDQuNzYuOTE2djcuMzN6bTIxLjU5Ny40OGwtNC40NzkgNy43NjN2LTUuMTc1em0tMTEuNjQgMS40MzdsNS43OSAxLjExNC05LjY0OSA1LjU3MnptNi40NCAxLjU2NXY1LjEzOGwtMi45NjQtMy40MjV6bS0zLjU5NyAyLjA3OGwzLjE3MiAzLjY2NEg3LjUyeiIvPjwvc3ZnPg==" preserveAspectRatio="xMidYMid meet"/>r7.27" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjOEI1QTJCIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2FmZmVpbmU8L3RpdGxlPjxwYXRoIGQ9Ik02LjE2MiAxLjU1N2MtLjE4LjAwNi0uMjYzLjEzNy0uMjkzLjE4TC4wNSAxMS44MmMtLjA3LjE0Mi0uMDYuMjctLjAwNC4zNTYgMS45NDIgMy4zNiAzLjg4MiA2LjcyMyA1LjgyMiAxMC4wODVhLjMzNy4zMzcgMCAwMC4zMDUuMTgyaDExLjY1Yy4xMzguMDAzLjI2LS4wOS4zMS0uMTgyIDEuOTQtMy4zNiAzLjg3OC02LjcyMSA1LjgyLTEwLjA4YS4zNjEuMzYxIDAgMDAwLS4zNThsLTUuODItMTAuMDg1Yy0uMTEyLS4xOTMtLjMwOC0uMTgxLS4zMDgtLjE4MXptLjgwNC43MTloOS41MTNMMTAuMTM2IDUuOTR6bS0uNDI3LjYwM2wyLjk2NCAzLjQyNkw2LjU0IDguMDE4em0xMC4zLjAxOGwtMy44NiA2LjY4NUw3LjE5IDguNDY5em0xLjM0MS4zNTdsNC43NTYgOC4yNDYtNC43NTYtLjkxNnptLTEyLjM2LjAwMnY1LjE3NmwtNC40OCAyLjU4N3ptMTEuNjQgMHYxMS4xNDJsLTMuODU3LTQuNDU3ek03LjEyNyA5LjE4Nmw1Ljg0NyAxLjEyNiAzLjg5OCA0LjUwMi01Ljg0Mi0xLjEyNXpNNS44MiA5LjI2djMuNDI1bC00LjQ1LS44NTV6bS43Mi4zNDFsMy44NTYgNC40NTctMy44NTcgNi42ODV6bTExLjY0IDEuNzEzbDQuNDQ3Ljg1Ni00LjQ0NyAyLjU3ek0xLjA2MiAxMi41bDQuNzYuOTE2djcuMzN6bTIxLjU5Ny40OGwtNC40NzkgNy43NjN2LTUuMTc1em0tMTEuNjQgMS40MzdsNS43OSAxLjExNC05LjY0OSA1LjU3MnptNi40NCAxLjU2NXY1LjEzOGwtMi45NjQtMy40MjV6bS0zLjU5NyAyLjA3OGwzLjE3MiAzLjY2NEg3LjUyeiIvPjwvc3ZnPg==" preserveAspectRatio="xMidYMid meet"/>
+  <text class="actorTitle" x="740.2" y="243.6" text-anchor="middle">Caffeine Cache</text>
+  <line class="lifeline" x1="740.2" y1="279.56" x2="740.2" y2="3394.16"/>
+</g>
+<g id="a t c a t t">
+  <rect class="actor" x="874.8000000000001" y="191.4" width="250" height="88.16" rx="10" fill="#F1ECFF" stroke="#8A72D6"/>
+  <text class="actorTitle" x="999.8000000000001" y="228.52" text-anchor="middle">Exposed</text>
+  <text class="actorTitle" x="999.8000000000001" y="255.2" text-anchor="middle">transaction</text>
+  <line class="lifeline" x1="999.8000000000001" y1="279.56" x2="999.8000000000001" y2="3394.16"/>
+</g>
+<g id="a t c a t a t a a s">
+  <rect class="actor" x="1134.4" y="191.4" width="250" height="76" rx="10" fill="#FDECEF" stroke="#DC6B82"/><image data-bluetape4k-icon="generic.database" x="1146.4" y="205.32" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSI2NCIgY3k9IjM2IiByeD0iMzQiIHJ5PSIxMyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiLz4KICA8cGF0aCBkPSJNMzAgNThjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMzAgODBjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==" preserveAspectRatio="xMidYMid meet"/>I46.47" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSI2NCIgY3k9IjM2IiByeD0iMzQiIHJ5PSIxMyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiLz4KICA8cGF0aCBkPSJNMzAgNThjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMzAgODBjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==" preserveAspectRatio="xMidYMid meet"/>
+  <text class="actorTitle" x="1259.4" y="243.6" text-anchor="middle">SQL database</text>
+  <line class="lifeline" x1="1259.4" y1="279.56" x2="1259.4" y2="3394.16"/>
+</g>
+<g id="a t c a t">
+  <rect class="actor" x="1394" y="191.4" width="250" height="88.16" rx="10" fill="#FFF3D9" stroke="#D6A441"/>
+  <text class="actorTitle" x="1519" y="228.52" text-anchor="middle">Write-behind</text>
+  <text class="actorTitle" x="1519" y="255.2" text-anchor="middle">worker</text>
+  <line class="lifeline" x1="1519" y1="279.56" x2="1519" y2="3394.16"/>
+  <rect class="activation" x="214" y="381.64" width="14" height="603.2" rx="6"/>
+  <rect class="activation" x="473.6" y="381.64" width="14" height="603.2" rx="6"/>
+  <rect class="activation" x="733.2" y="381.64" width="14" height="603.2" rx="6"/>
+  <rect class="activation" x="992.8" y="381.64" width="14" height="603.2" rx="6"/>
+  <rect class="activation" x="1252.4" y="381.64" width="14" height="603.2" rx="6"/>
+  <rect class="activation" x="1512" y="381.64" width="14" height="603.2" rx="6"/>
+</g>
+<g>
+  <rect class="alt" x="74" y="338.72" width="1592" height="55.68" rx="15"/>
+  <rect class="pill" x="222.55" y="331.76" width="256.5" height="34.8" rx="8"/>
+  <text class="actorNote" x="350.8" y="350.32" text-anchor="middle" dominant-baseline="middle">READ_ONLY read-through miss</text>
+</g>
+<g id="m 2">
+  <rect class="pill" x="228.3" y="422.24" width="245" height="34.8" rx="7"/>
+  <circle cx="247.3" cy="439.64" r="12" fill="#4F83BF"/>
+  <text class="actorNote" x="247.3" y="440.8" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">2</text>
+  <text class="actorNote" x="368.8" y="440.8" text-anchor="middle" dominant-baseline="middle">get(id)</text>
+  <path class="seq" d="M 221 477.92 L 480.6 477.92" stroke="#4F83BF" marker-end="url(#seqArrow-4F83BF)"/>
+</g>
+<g id="m 3">
+  <rect class="pill" x="485.4000000000001" y="517.36" width="250" height="34.8" rx="7"/>
+  <circle cx="504.4000000000001" cy="534.76" r="12" fill="#2E8F89"/>
+  <text class="actorNote" x="504.4000000000001" y="535.92" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">3</text>
+  <text class="actorNote" x="628.4000000000001" y="535.92" text-anchor="middle" dominant-baseline="middle">cache.getNullable(key)</text>
+  <path class="seq" d="M 480.6 573.04 L 740.2 573.04" stroke="#2E8F89" marker-end="url(#seqArrow-2E8F89)"/>
+</g>
+<g id="m 4">
+  <rect class="pill" x="487.9000000000001" y="612.48" width="245" height="34.8" rx="7"/>
+  <circle cx="506.9000000000001" cy="629.88" r="12" fill="#2E8F89"/>
+  <text class="actorNote" x="506.9000000000001" y="631.04" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">4</text>
+  <text class="actorNote" x="628.4000000000001" y="631.04" text-anchor="middle" dominant-baseline="middle">cache miss</text>
+  <path class="ret" d="M 740.2 668.16 L 480.6 668.16" stroke="#2E8F89"/>
+<polygon points="480.6,668.16 496.6,660.16 496.6,676.16" fill="#2E8F89" stroke="#2E8F89" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g id="m 5">
+  <rect class="pill" x="617.7" y="707.6" width="245" height="34.8" rx="7"/>
+  <circle cx="636.7" cy="725" r="12" fill="#755BC6"/>
+  <text class="actorNote" x="636.7" y="726.16" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">5</text>
+  <text class="actorNote" x="758.2" y="726.16" text-anchor="middle" dominant-baseline="middle">findByIdFromDb(id)</text>
+  <path class="seq" d="M 480.6 763.28 L 999.8000000000001 763.28" stroke="#755BC6" marker-end="url(#seqArrow-755BC6)"/>
+</g>
+<g id="m 6">
+  <rect class="pill" x="1007.1000000000001" y="802.72" width="245" height="34.8" rx="7"/>
+  <circle cx="1026.1000000000001" cy="820.12" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="1026.1000000000001" y="821.28" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">6</text>
+  <text class="actorNote" x="1147.6000000000001" y="821.28" text-anchor="middle" dominant-baseline="middle">SELECT row by id</text>
+  <path class="seq" d="M 999.8000000000001 858.4 L 1259.4 858.4" stroke="#C94D68" marker-end="url(#seqArrow-C94D68)"/>
+</g>
+<g id="m 7">
+  <rect class="pill" x="1007.1000000000001" y="897.84" width="245" height="34.8" rx="7"/>
+  <circle cx="1026.1000000000001" cy="915.24" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="1026.1000000000001" y="916.4" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">7</text>
+  <text class="actorNote" x="1147.6000000000001" y="916.4" text-anchor="middle" dominant-baseline="middle">ResultRow</text>
+  <path class="ret" d="M 1259.4 953.52 L 999.8000000000001 953.52" stroke="#C94D68"/>
+<polygon points="999.8,953.52 1015.8,945.52 1015.8,961.52" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g id="m 8">
+  <rect class="pill" x="576.2" y="992.96" width="328" height="34.8" rx="7"/>
+  <circle cx="595.2" cy="1010.36" r="12" fill="#755BC6"/>
+  <text class="actorNote" x="595.2" y="1011.52" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">8</text>
+  <text class="actorNote" x="758.2" y="1011.52" text-anchor="middle" dominant-baseline="middle">toEntity(); cache stores value</text>
+  <path class="ret" d="M 999.8000000000001 1048.64 L 480.6 1048.64" stroke="#755BC6"/>
+<polygon points="480.6,1048.64 496.6,1040.64 496.6,1056.64" fill="#755BC6" stroke="#755BC6" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g id="m 9">
+  <rect class="pill" x="228.3" y="1088.08" width="245" height="34.8" rx="7"/>
+  <circle cx="247.3" cy="1105.48" r="12" fill="#B9851B"/>
+  <text class="actorNote" x="247.3" y="1106.64" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">9</text>
+  <text class="actorNote" x="368.8" y="1106.64" text-anchor="middle" dominant-baseline="middle">entity or null</text>
+  <path class="ret" d="M 480.6 1143.76 L 221 1143.76" stroke="#B9851B"/>
+<polygon points="221,1143.76 237,1135.76 237,1151.76" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g>
+  <rect class="alt" x="74" y="1194.8" width="1592" height="55.68" rx="15"/>
+  <rect class="pill" x="255.8" y="1187.84" width="190" height="34.8" rx="8"/>
+  <text class="actorNote" x="350.8" y="1206.4" text-anchor="middle" dominant-baseline="middle">WRITE_THROUGH put</text>
+</g>
+<g id="m 11">
+  <rect class="pill" x="228.3" y="1278.32" width="245" height="34.8" rx="7"/>
+  <circle cx="247.3" cy="1295.72" r="12" fill="#4F83BF"/>
+  <text class="actorNote" x="247.3" y="1296.88" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">11</text>
+  <text class="actorNote" x="368.8" y="1296.88" text-anchor="middle" dominant-baseline="middle">put(id, entity)</text>
+  <path class="seq" d="M 221 1334 L 480.6 1334" stroke="#4F83BF" marker-end="url(#seqArrow-4F83BF)"/>
+</g>
+<g id="m 12">
+  <rect class="pill" x="485.4000000000001" y="1373.44" width="250" height="34.8" rx="7"/>
+  <circle cx="504.4000000000001" cy="1390.84" r="12" fill="#2E8F89"/>
+  <text class="actorNote" x="504.4000000000001" y="1392" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">12</text>
+  <text class="actorNote" x="628.4000000000001" y="1392" text-anchor="middle" dominant-baseline="middle">cache.put(key, entity)</text>
+  <path class="seq" d="M 480.6 1429.12 L 740.2 1429.12" stroke="#2E8F89" marker-end="url(#seqArrow-2E8F89)"/>
+</g>
+<g id="m 13">
+  <rect class="pill" x="608.6" y="1468.56" width="263.20000000000005" height="34.8" rx="7"/>
+  <circle cx="627.6" cy="1485.96" r="12" fill="#755BC6"/>
+  <text class="actorNote" x="627.6" y="1487.12" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">13</text>
+  <text class="actorNote" x="758.2" y="1487.12" text-anchor="middle" dominant-baseline="middle">writeToDb(id, entity)</text>
+  <path class="seq" d="M 480.6 1524.24 L 999.8000000000001 1524.24" stroke="#755BC6" marker-end="url(#seqArrow-755BC6)"/>
+</g>
+<g id="m 14">
+  <rect class="pill" x="1007.1000000000001" y="1549.76" width="245" height="48.72" rx="7"/>
+  <circle cx="1026.1000000000001" cy="1574.12" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="1026.1000000000001" y="1575.28" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">14</text>
+  <text class="actorNote" x="1147.6000000000001" y="1564.84" text-anchor="middle" dominant-baseline="middle">UPDATE; optional</text>
+  <text class="actorNote" x="1147.6000000000001" y="1582.24" text-anchor="middle" dominant-baseline="middle">batchInsert</text>
+  <path class="seq" d="M 999.8000000000001 1619.36 L 1259.4 1619.36" stroke="#C94D68" marker-end="url(#seqArrow-C94D68)"/>
+</g>
+<g id="m 15">
+  <rect class="pill" x="1007.1000000000001" y="1644.88" width="245" height="48.72" rx="7"/>
+  <circle cx="1026.1000000000001" cy="1669.24" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="1026.1000000000001" y="1670.4" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">15</text>
+  <text class="actorNote" x="1147.6000000000001" y="1659.96" text-anchor="middle" dominant-baseline="middle">write committed in</text>
+  <text class="actorNote" x="1147.6000000000001" y="1677.36" text-anchor="middle" dominant-baseline="middle">transaction</text>
+  <path class="ret" d="M 1259.4 1714.48 L 999.8000000000001 1714.48" stroke="#C94D68"/>
+<polygon points="999.8,1714.48 1015.8,1706.48 1015.8,1722.48" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g id="m 16">
+  <rect class="pill" x="225.8" y="1753.92" width="250" height="34.8" rx="7"/>
+  <circle cx="244.8" cy="1771.32" r="12" fill="#B9851B"/>
+  <text class="actorNote" x="244.8" y="1772.48" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">16</text>
+  <text class="actorNote" x="368.8" y="1772.48" text-anchor="middle" dominant-baseline="middle">return after DB write</text>
+  <path class="ret" d="M 480.6 1809.6 L 221 1809.6" stroke="#B9851B"/>
+<polygon points="221,1809.6 237,1801.6 237,1817.6" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g>
+  <rect class="alt" x="74" y="1860.64" width="1592" height="55.68" rx="15"/>
+  <rect class="pill" x="255.8" y="1853.68" width="190" height="34.8" rx="8"/>
+  <text class="actorNote" x="350.8" y="1872.24" text-anchor="middle" dominant-baseline="middle">WRITE_BEHIND put</text>
+</g>
+<g id="m 18">
+  <rect class="pill" x="228.3" y="1944.16" width="245" height="34.8" rx="7"/>
+  <circle cx="247.3" cy="1961.56" r="12" fill="#4F83BF"/>
+  <text class="actorNote" x="247.3" y="1962.72" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">18</text>
+  <text class="actorNote" x="368.8" y="1962.72" text-anchor="middle" dominant-baseline="middle">put(id, entity)</text>
+  <path class="seq" d="M 221 1999.84 L 480.6 1999.84" stroke="#4F83BF" marker-end="url(#seqArrow-4F83BF)"/>
+</g>
+<g id="m 19">
+  <rect class="pill" x="835.8" y="2039.28" width="328" height="34.8" rx="7"/>
+  <circle cx="854.8" cy="2056.68" r="12" fill="#755BC6"/>
+  <text class="actorNote" x="854.8" y="2057.84" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">19</text>
+  <text class="actorNote" x="1017.8" y="2057.84" text-anchor="middle" dominant-baseline="middle">start writeBehindJob if needed</text>
+  <path class="seq" d="M 480.6 2094.96 L 1519 2094.96" stroke="#755BC6" marker-end="url(#seqArrow-755BC6)"/>
+</g>
+<g id="m 20">
+  <rect class="pill" x="868.1999999999999" y="2134.4" width="263.20000000000005" height="34.8" rx="7"/>
+  <circle cx="887.1999999999999" cy="2151.8" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="887.1999999999999" y="2152.96" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">20</text>
+  <text class="actorNote" x="1017.8" y="2152.96" text-anchor="middle" dominant-baseline="middle">trySend(id to entity)</text>
+  <path class="seq" d="M 480.6 2190.08 L 1519 2190.08" stroke="#C94D68" marker-end="url(#seqArrow-C94D68)"/>
+</g>
+<g id="m 21">
+  <rect class="pill" x="828.5999999999999" y="2229.52" width="342.4" height="34.8" rx="7"/>
+  <circle cx="847.5999999999999" cy="2246.92" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="847.5999999999999" y="2248.08" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">21</text>
+  <text class="actorNote" x="1017.8" y="2248.08" text-anchor="middle" dominant-baseline="middle">queue accepted; depth increments</text>
+  <path class="ret" d="M 1519 2285.2 L 480.6 2285.2" stroke="#C94D68"/>
+<polygon points="480.6,2285.2 496.6,2277.2 496.6,2293.2" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g id="m 22">
+  <rect class="pill" x="485.4000000000001" y="2310.72" width="250" height="48.72" rx="7"/>
+  <circle cx="504.4000000000001" cy="2335.08" r="12" fill="#2E8F89"/>
+  <text class="actorNote" x="504.4000000000001" y="2336.24" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">22</text>
+  <text class="actorNote" x="628.4000000000001" y="2325.8" text-anchor="middle" dominant-baseline="middle">cache.put after enqueue</text>
+  <text class="actorNote" x="628.4000000000001" y="2343.2" text-anchor="middle" dominant-baseline="middle">succeeds</text>
+  <path class="seq" d="M 480.6 2380.32 L 740.2 2380.32" stroke="#2E8F89" marker-end="url(#seqArrow-2E8F89)"/>
+</g>
+<g id="m 23">
+  <rect class="pill" x="228.3" y="2419.76" width="245" height="34.8" rx="7"/>
+  <circle cx="247.3" cy="2437.16" r="12" fill="#B9851B"/>
+  <text class="actorNote" x="247.3" y="2438.32" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">23</text>
+  <text class="actorNote" x="368.8" y="2438.32" text-anchor="middle" dominant-baseline="middle">return immediately</text>
+  <path class="ret" d="M 480.6 2475.44 L 221 2475.44" stroke="#B9851B"/>
+<polygon points="221,2475.44 237,2467.44 237,2483.44" fill="#B9851B" stroke="#B9851B" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g id="m 24">
+  <rect class="pill" x="1136.9" y="2514.88" width="245" height="34.8" rx="7"/>
+  <circle cx="1155.9" cy="2532.28" r="12" fill="#755BC6"/>
+  <text class="actorNote" x="1155.9" y="2533.44" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">24</text>
+  <text class="actorNote" x="1277.4" y="2533.44" text-anchor="middle" dominant-baseline="middle">flushBatch(batch)</text>
+  <path class="seq" d="M 1519 2570.56 L 999.8000000000001 2570.56" stroke="#755BC6" marker-end="url(#seqArrow-755BC6)"/>
+</g>
+<g id="m 25">
+  <rect class="pill" x="1007.1000000000001" y="2596.08" width="245" height="48.72" rx="7"/>
+  <circle cx="1026.1000000000001" cy="2620.44" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="1026.1000000000001" y="2621.6" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">25</text>
+  <text class="actorNote" x="1147.6000000000001" y="2611.16" text-anchor="middle" dominant-baseline="middle">UPDATE; optional</text>
+  <text class="actorNote" x="1147.6000000000001" y="2628.56" text-anchor="middle" dominant-baseline="middle">batchInsert</text>
+  <path class="seq" d="M 999.8000000000001 2665.68 L 1259.4 2665.68" stroke="#C94D68" marker-end="url(#seqArrow-C94D68)"/>
+</g>
+<g id="m 26">
+  <rect class="pill" x="1264.2" y="2691.2" width="250" height="48.72" rx="7"/>
+  <circle cx="1283.2" cy="2715.56" r="12" fill="#C94D68"/>
+  <text class="actorNote" x="1283.2" y="2716.72" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">26</text>
+  <text class="actorNote" x="1407.2" y="2706.28" text-anchor="middle" dominant-baseline="middle">batch flushed; depth</text>
+  <text class="actorNote" x="1407.2" y="2723.68" text-anchor="middle" dominant-baseline="middle">decreases</text>
+  <path class="ret" d="M 1259.4 2760.8 L 1519 2760.8" stroke="#C94D68"/>
+<polygon points="1519,2760.8 1503,2752.8 1503,2768.8" fill="#C94D68" stroke="#C94D68" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g>
+  <rect class="alt" x="74" y="2811.84" width="1592" height="55.68" rx="15"/>
+  <rect class="pill" x="222.55" y="2804.88" width="256.5" height="34.8" rx="8"/>
+  <text class="actorNote" x="350.8" y="2823.44" text-anchor="middle" dominant-baseline="middle">Evict-only cache operations</text>
+</g>
+<g id="m 28">
+  <rect class="pill" x="225.8" y="2895.36" width="250" height="34.8" rx="7"/>
+  <circle cx="244.8" cy="2912.76" r="12" fill="#4F83BF"/>
+  <text class="actorNote" x="244.8" y="2913.92" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">28</text>
+  <text class="actorNote" x="368.8" y="2913.92" text-anchor="middle" dominant-baseline="middle">invalidate(id) or clear()</text>
+  <path class="seq" d="M 221 2951.04 L 480.6 2951.04" stroke="#4F83BF" marker-end="url(#seqArrow-4F83BF)"/>
+</g>
+<g id="m 29">
+  <rect class="pill" x="487.9000000000001" y="2976.56" width="245" height="48.72" rx="7"/>
+  <circle cx="506.9000000000001" cy="3000.92" r="12" fill="#2E8F89"/>
+  <text class="actorNote" x="506.9000000000001" y="3002.08" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">29</text>
+  <text class="actorNote" x="628.4000000000001" y="2991.64" text-anchor="middle" dominant-baseline="middle">cache.invalidate /</text>
+  <text class="actorNote" x="628.4000000000001" y="3009.04" text-anchor="middle" dominant-baseline="middle">invalidateAll</text>
+  <path class="seq" d="M 480.6 3046.16 L 740.2 3046.16" stroke="#2E8F89" marker-end="url(#seqArrow-2E8F89)"/>
+</g>
+<g id="m 30">
+  <rect class="pill" x="486.0000000000001" y="3085.6" width="248.8" height="34.8" rx="7"/>
+  <circle cx="505.0000000000001" cy="3103" r="12" fill="#2E8F89"/>
+  <text class="actorNote" x="505.0000000000001" y="3104.16" text-anchor="middle" dominant-baseline="middle" style="fill:#fff;font-size:12px">30</text>
+  <text class="actorNote" x="628.4000000000001" y="3104.16" text-anchor="middle" dominant-baseline="middle">cache entry removed</text>
+  <path class="ret" d="M 740.2 3141.28 L 480.6 3141.28" stroke="#2E8F89"/>
+<polygon points="480.6,3141.28 496.6,3133.28 496.6,3149.28" fill="#2E8F89" stroke="#2E8F89" stroke-width="1" stroke-linejoin="round" stroke-dasharray="none" style="stroke-dasharray:none!important" data-direct-solid-head="t"/>
+</g>
+<g data-footer="reader-note"><rect class="note" x="110" y="3366.32" width="1520" height="55.68" rx="12"/><text class="small" x="870" y="3386.04" text-anchor="middle" dominant-baseline="middle">This sequence follows the blocking JdbcCaffeineRepository path; suspend repositories mirror the strategy with suspend DB calls.</text><text class="small" x="870" y="3405.76" text-anchor="middle" dominant-baseline="middle">Write-behind accepts the queue before exposing the cache update, then flushes JDBC batches in the worker.</text></g>
+</svg>

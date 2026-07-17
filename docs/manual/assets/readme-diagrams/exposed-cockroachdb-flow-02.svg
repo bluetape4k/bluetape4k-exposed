@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1440" viewBox="0 0 1680 1440" role="img" aria-labelledby="title desc">
+  <title id="title">CockroachDB Transaction Retry Flow</title>
+  <desc id="desc">Vertical flow diagram for withCockroachTransaction showing entry guard, one Exposed transaction attempt, CockroachDB retryable SQLException classification, bounded backoff, retry, cancellation, success, and terminal failure paths.</desc>
+  <defs>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%">
+      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/>
+    </filter>
+    <marker id="arrow-blue" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#4F83BF" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#2E8F89" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#B9851B" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#C94D68" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" markerWidth="14" markerHeight="14" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#755BC6" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <style>
+      .canvas{fill:#F6F9FC}.frame{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
+      .layer{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}
+      .title{font-family:"Architects Daughter";font-size:45px;fill:#22344A;font-weight:400}
+      .subtitle{font-family:"Comic Mono";font-size:17px;fill:#536476;font-weight:400}
+      .layer-title{font-family:"Architects Daughter";font-size:23px;fill:#22344A;font-weight:400}
+      .card-title{font-family:"Architects Daughter";font-size:22px;fill:#22344A;font-weight:400}
+      .detail{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}
+      .small{font-family:"Comic Mono";font-size:13px;fill:#627184;font-weight:400}
+      .card{filter:url(#shadow);stroke-width:2}
+      .connector{fill:none;stroke-width:2.7;stroke-linejoin:round;stroke-linecap:round}
+      .constraint{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1.4}
+    </style>
+  </defs>
+
+  <rect class="canvas" width="1680" height="1440"/>
+  <rect class="frame" x="44" y="36" width="1592" height="1368" rx="34"/>
+  <text class="title" x="72" y="88">CockroachDB Transaction Retry Flow</text>
+  <text class="subtitle" x="76" y="121">Retries are limited to CockroachDB's documented serializable transaction retry signature, not every JDBC failure.</text>
+
+  <g id="layer-entry">
+    <rect class="layer" x="82" y="160" width="1516" height="230" rx="18"/>
+    <text class="layer-title" x="112" y="188" dominant-baseline="middle">1. Entry guard</text>
+  </g>
+  <g id="layer-attempt">
+    <rect class="layer" x="82" y="430" width="1516" height="360" rx="18"/>
+    <text class="layer-title" x="112" y="458" dominant-baseline="middle">2. One Exposed transaction attempt</text>
+  </g>
+  <g id="layer-classify">
+    <rect class="layer" x="82" y="830" width="1516" height="390" rx="18"/>
+    <text class="layer-title" x="112" y="858" dominant-baseline="middle">3. Failure classification</text>
+  </g>
+  <g id="layer-retry">
+    <rect class="layer" x="82" y="1244" width="1516" height="122" rx="18"/>
+    <text class="layer-title" x="112" y="1272" dominant-baseline="middle">4. Retry contract</text>
+  </g>
+
+  <path data-edge="call-&gt;guard" class="connector" d="M 680 252 L 780 252" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
+  <path data-edge="guard-&gt;reject" class="connector" d="M 900 252 L 1030 252" stroke="#C94D68" marker-end="url(#arrow-red)"/>
+  <path data-edge="guard-&gt;options" class="connector" d="M 840 322 L 840 500" stroke="#4F83BF" marker-end="url(#arrow-blue)"/>
+  <path data-edge="options-&gt;execute" class="connector" d="M 840 620 L 840 700" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+  <path data-edge="execute-&gt;success" class="connector" d="M 1000 740 L 1140 740" stroke="#2E8F89" marker-end="url(#arrow-teal)"/>
+  <path data-edge="execute-&gt;failure" class="connector" d="M 840 780 L 840 910" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
+  <path data-edge="failure-&gt;cancel" class="connector" d="M 660 966 L 480 966" stroke="#C94D68" marker-end="url(#arrow-red)"/>
+  <path data-edge="failure-&gt;classify" class="connector" d="M 1020 966 L 1200 966" stroke="#B9851B" marker-end="url(#arrow-gold)"/>
+  <path data-edge="classify-&gt;terminal" class="connector" d="M 1280 1022 L 1280 1070 Q 1280 1082 1268 1082 L 902 1082 Q 890 1082 890 1094 L 890 1112" stroke="#C94D68" marker-end="url(#arrow-red)"/>
+  <path data-edge="classify-&gt;delay" class="connector" d="M 1350 1022 L 1350 1112" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+  <path data-edge="delay-&gt;options" class="connector" d="M 1480 1156 L 1548 1156 Q 1560 1156 1560 1144 L 1560 572 Q 1560 560 1548 560 L 1080 560" stroke="#755BC6" marker-end="url(#arrow-purple)"/>
+
+  <g id="node-call" data-node="call" transform="translate(520,212)">
+    <rect class="card" x="0" y="0" width="160" height="80" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <text class="card-title" x="80" y="28" text-anchor="middle" dominant-baseline="middle">Caller</text>
+    <text class="detail" x="80" y="54" text-anchor="middle" dominant-baseline="middle">top-level unit</text>
+  </g>
+  <g id="node-guard" data-node="guard" transform="translate(780,182)">
+    <rect class="card" x="0" y="0" width="120" height="140" rx="12" fill="#E8F3FF" stroke="#5B8DEF"/>
+    <text class="card-title" x="60" y="34" text-anchor="middle" dominant-baseline="middle">Guard</text>
+    <text class="detail" x="60" y="62" text-anchor="middle" dominant-baseline="middle">no active</text>
+    <text class="detail" x="60" y="84" text-anchor="middle" dominant-baseline="middle">Exposed</text>
+    <text class="detail" x="60" y="106" text-anchor="middle" dominant-baseline="middle">transaction</text>
+  </g>
+  <g id="node-reject" data-node="reject" transform="translate(1030,212)">
+    <rect class="card" x="0" y="0" width="260" height="80" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
+    <text class="card-title" x="130" y="28" text-anchor="middle" dominant-baseline="middle">Reject nested call</text>
+    <text class="detail" x="130" y="54" text-anchor="middle" dominant-baseline="middle">IllegalStateException</text>
+  </g>
+
+  <g id="node-options" data-node="options" transform="translate(600,500)">
+    <rect class="card" x="0" y="0" width="480" height="120" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="240" y="30" text-anchor="middle" dominant-baseline="middle">CockroachTransactionRetryOptions</text>
+    <text class="detail" x="240" y="56" text-anchor="middle" dominant-baseline="middle">maxAttempts + bounded exponential delay</text>
+    <text class="detail" x="240" y="78" text-anchor="middle" dominant-baseline="middle">queryTimeoutSeconds</text>
+    <text class="detail" x="240" y="100" text-anchor="middle" dominant-baseline="middle">SERIALIZABLE by default</text>
+  </g>
+  <g id="node-execute" data-node="execute" transform="translate(680,700)">
+    <rect class="card" x="0" y="0" width="320" height="80" rx="12" fill="#E9F7F6" stroke="#45A7A1"/>
+    <text class="card-title" x="160" y="27" text-anchor="middle" dominant-baseline="middle">Exposed transaction</text>
+    <text class="detail" x="160" y="52" text-anchor="middle" dominant-baseline="middle">maxAttempts = 1, run statement</text>
+  </g>
+  <g id="node-success" data-node="success" transform="translate(1140,700)">
+    <rect class="card" x="0" y="0" width="220" height="80" rx="12" fill="#EAF7EF" stroke="#58A978"/>
+    <text class="card-title" x="110" y="27" text-anchor="middle" dominant-baseline="middle">Return result</text>
+    <text class="detail" x="110" y="52" text-anchor="middle" dominant-baseline="middle">normal commit path</text>
+  </g>
+
+  <g id="node-failure" data-node="failure" transform="translate(660,910)">
+    <rect class="card" x="0" y="0" width="360" height="112" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <text class="card-title" x="180" y="29" text-anchor="middle" dominant-baseline="middle">Failure from statement</text>
+    <text class="detail" x="180" y="55" text-anchor="middle" dominant-baseline="middle">CancellationException is preserved</text>
+    <text class="detail" x="180" y="77" text-anchor="middle" dominant-baseline="middle">SQLException enters classification</text>
+  </g>
+  <g id="node-cancel" data-node="cancel" transform="translate(250,910)">
+    <rect class="card" x="0" y="0" width="230" height="112" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
+    <text class="card-title" x="115" y="40" text-anchor="middle" dominant-baseline="middle">Rethrow cancel</text>
+    <text class="detail" x="115" y="70" text-anchor="middle" dominant-baseline="middle">no retry attempt</text>
+  </g>
+  <g id="node-classify" data-node="classify" transform="translate(1200,910)">
+    <rect class="card" x="0" y="0" width="320" height="112" rx="12" fill="#FFF3D9" stroke="#D6A441"/>
+    <text class="card-title" x="160" y="29" text-anchor="middle" dominant-baseline="middle">Retryable SQLException?</text>
+    <text class="detail" x="160" y="55" text-anchor="middle" dominant-baseline="middle">SQLSTATE 40001</text>
+    <text class="detail" x="160" y="77" text-anchor="middle" dominant-baseline="middle">message starts restart transaction</text>
+  </g>
+  <g id="node-terminal" data-node="terminal" transform="translate(760,1112)">
+    <rect class="card" x="0" y="0" width="260" height="88" rx="12" fill="#FDECEF" stroke="#DC6B82"/>
+    <text class="card-title" x="130" y="28" text-anchor="middle" dominant-baseline="middle">Throw failure</text>
+    <text class="detail" x="130" y="54" text-anchor="middle" dominant-baseline="middle">non-retryable or exhausted</text>
+    <text class="detail" x="130" y="74" text-anchor="middle" dominant-baseline="middle">suppressed attempts kept</text>
+  </g>
+  <g id="node-delay" data-node="delay" transform="translate(1220,1112)">
+    <rect class="card" x="0" y="0" width="260" height="88" rx="12" fill="#F1ECFF" stroke="#8A72D6"/>
+    <text class="card-title" x="130" y="28" text-anchor="middle" dominant-baseline="middle">Delay then retry</text>
+    <text class="detail" x="130" y="54" text-anchor="middle" dominant-baseline="middle">bounded backoff</text>
+    <text class="detail" x="130" y="74" text-anchor="middle" dominant-baseline="middle">while attempts remain</text>
+  </g>
+
+  <g transform="translate(112,1300)">
+    <rect class="constraint" x="0" y="0" width="1456" height="34" rx="10"/>
+    <text class="small" x="728" y="18" text-anchor="middle" dominant-baseline="middle">The helper owns the outer retry loop and forces Exposed to one internal attempt, so retry policy stays CockroachDB-specific.</text>
+  </g>
+</svg>

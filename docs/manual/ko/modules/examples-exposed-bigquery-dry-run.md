@@ -94,6 +94,19 @@ SQL 생성 테스트는 결정적으로 유지하고, 최대 청구 byte와 loca
 
 이 mock은 요청 구성만 증명합니다. IAM, 프로젝트·데이터셋 존재 여부, 지역 호환성, quota, 실제 byte 추정치, 결과 정확성, 실서비스 paging, 운영 비용 제한은 증명하지 않습니다.
 
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### BigQuery dry-run example 흐름
+
+[![BigQuery dry-run example 흐름](../../assets/readme-diagrams/examples-exposed-bigquery-dry-run-flow-01.png)](../../assets/readme-diagrams/examples-exposed-bigquery-dry-run-flow-01.svg)
+
+_배포본 README: [`examples/exposed-bigquery-dry-run/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/examples/exposed-bigquery-dry-run/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## 근거 자료 {#sources}
 
 - [예제 소스](../../../../examples/exposed-bigquery-dry-run/README.ko.md)

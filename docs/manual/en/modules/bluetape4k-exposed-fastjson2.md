@@ -103,6 +103,25 @@ Start with the [serialization and encryption guide](../guides/serialization-and-
 
 The module does not version JSON documents, migrate stored rows, choose indexes, or guarantee that JSON functions behave identically across dialects. Fastjson2, Jackson 2, and Jackson 3 modules are alternatives for a column contract; switching one for another requires stored-data compatibility proof.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### Fastjson2 JSON column boundary
+
+[![Fastjson2 JSON column boundary](../../assets/readme-diagrams/exposed-fastjson2-diagram-01.png)](../../assets/readme-diagrams/exposed-fastjson2-diagram-01.svg)
+
+_Release README: [`exposed/fastjson2/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/fastjson2/README.md)_
+
+### Fastjson2 JSON round trip
+
+[![Fastjson2 JSON round trip](../../assets/readme-diagrams/exposed-fastjson2-flow-02.png)](../../assets/readme-diagrams/exposed-fastjson2-flow-02.svg)
+
+_Release README: [`exposed/fastjson2/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/fastjson2/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [Gradle build file](../../../../exposed/fastjson2/build.gradle.kts)

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1120" viewBox="0 0 1680 1120" role="img" aria-labelledby="title desc">
+  <title id="title">Measured Column DSL Coverage</title>
+  <desc id="desc">Coverage chart for exposed-measured showing each Table DSL helper, the measured type it stores, and the base unit written to the DOUBLE database column.</desc>
+  <defs>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <style>
+      .canvas{fill:#F6F9FC}.frame{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
+      .panel{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}.head{fill:#E8F3FF;stroke:#AFC9E8;stroke-width:1.8}
+      .cell{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1.5}.measure{fill:#E9F7F6;stroke:#45A7A1;stroke-width:2}
+      .temp{fill:#F1ECFF;stroke:#8A72D6;stroke-width:2}.note{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1.4}
+      .title{font-family:"Architects Daughter";font-size:46px;fill:#22344A;font-weight:400}
+      .subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476;font-weight:400}
+      .section{font-family:"Architects Daughter";font-size:25px;fill:#22344A;font-weight:400}
+      .label{font-family:"Architects Daughter";font-size:21px;fill:#22344A;font-weight:400}
+      .detail{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}
+      .small{font-family:"Comic Mono";font-size:13px;fill:#627184;font-weight:400}
+    </style>
+  </defs>
+  <rect class="canvas" width="1680" height="1120"/>
+  <rect class="frame" x="44" y="36" width="1592" height="1048" rx="34"/>
+  <text class="title" x="72" y="88">Measured Column DSL Coverage</text>
+  <text class="subtitle" x="76" y="121">Every helper stores a measured value as a DOUBLE in its base unit; Temperature has dedicated Kelvin column types.</text>
+
+  <rect class="panel" x="82" y="160" width="1516" height="764" rx="20"/>
+  <text class="section" x="112" y="198">Table DSL helper vs stored base unit</text>
+
+  <rect class="head" x="120" y="230" width="250" height="62" rx="12"/>
+  <rect class="head" x="370" y="230" width="330" height="62" rx="12"/>
+  <rect class="head" x="700" y="230" width="330" height="62" rx="12"/>
+  <rect class="head" x="1030" y="230" width="510" height="62" rx="12"/>
+  <text class="label" x="245" y="262" text-anchor="middle" dominant-baseline="middle">DSL</text>
+  <text class="label" x="535" y="262" text-anchor="middle" dominant-baseline="middle">Measured type</text>
+  <text class="label" x="865" y="262" text-anchor="middle" dominant-baseline="middle">Base unit in DB</text>
+  <text class="label" x="1285" y="262" text-anchor="middle" dominant-baseline="middle">Column type behavior</text>
+
+  <g id="rows">
+    <rect class="measure" x="120" y="322" width="250" height="78" rx="12"/><text class="detail" x="245" y="350" text-anchor="middle">length, area, volume</text><text class="small" x="245" y="374" text-anchor="middle">spatial helpers</text>
+    <rect class="cell" x="390" y="322" width="290" height="78" rx="12"/><text class="detail" x="535" y="350" text-anchor="middle">Measure&lt;Length / Area / Volume&gt;</text><text class="small" x="535" y="374" text-anchor="middle">generic MeasureColumnType</text>
+    <rect class="cell" x="720" y="322" width="290" height="78" rx="12"/><text class="detail" x="865" y="350" text-anchor="middle">meter, meter2, cubic meter</text><text class="small" x="865" y="374" text-anchor="middle">converted with value in baseUnit</text>
+    <rect class="cell" x="1050" y="322" width="470" height="78" rx="12"/><text class="detail" x="1285" y="350" text-anchor="middle">Number becomes Measure(base, unit)</text><text class="small" x="1285" y="374" text-anchor="middle">existing Measure passes through</text>
+
+    <rect class="measure" x="120" y="424" width="250" height="78" rx="12"/><text class="detail" x="245" y="452" text-anchor="middle">mass, time, angle</text><text class="small" x="245" y="476" text-anchor="middle">physical dimensions</text>
+    <rect class="cell" x="390" y="424" width="290" height="78" rx="12"/><text class="detail" x="535" y="452" text-anchor="middle">Measure&lt;Mass / Time / Angle&gt;</text><text class="small" x="535" y="476" text-anchor="middle">typed column values</text>
+    <rect class="cell" x="720" y="424" width="290" height="78" rx="12"/><text class="detail" x="865" y="452" text-anchor="middle">kilogram, second, radian</text><text class="small" x="865" y="476" text-anchor="middle">stored as Double</text>
+    <rect class="cell" x="1050" y="424" width="470" height="78" rx="12"/><text class="detail" x="1285" y="452" text-anchor="middle">invalid DB value type fails fast</text><text class="small" x="1285" y="476" text-anchor="middle">error message includes column type</text>
+
+    <rect class="measure" x="120" y="526" width="250" height="78" rx="12"/><text class="detail" x="245" y="554" text-anchor="middle">pressure, frequency</text><text class="small" x="245" y="578" text-anchor="middle">rate-like values</text>
+    <rect class="cell" x="390" y="526" width="290" height="78" rx="12"/><text class="detail" x="535" y="554" text-anchor="middle">Measure&lt;Pressure / Frequency&gt;</text><text class="small" x="535" y="578" text-anchor="middle">same generic mapping</text>
+    <rect class="cell" x="720" y="526" width="290" height="78" rx="12"/><text class="detail" x="865" y="554" text-anchor="middle">pascal, hertz</text><text class="small" x="865" y="578" text-anchor="middle">base scalar only</text>
+    <rect class="cell" x="1050" y="526" width="470" height="78" rx="12"/><text class="detail" x="1285" y="554" text-anchor="middle">SQL type delegates to DoubleColumnType</text><text class="small" x="1285" y="578" text-anchor="middle">portable across JDBC dialects</text>
+
+    <rect class="measure" x="120" y="628" width="250" height="78" rx="12"/><text class="detail" x="245" y="656" text-anchor="middle">storage, binarySize</text><text class="small" x="245" y="680" text-anchor="middle">data-size helpers</text>
+    <rect class="cell" x="390" y="628" width="290" height="78" rx="12"/><text class="detail" x="535" y="656" text-anchor="middle">Measure&lt;Storage / BinarySize&gt;</text><text class="small" x="535" y="680" text-anchor="middle">two byte-based domains</text>
+    <rect class="cell" x="720" y="628" width="290" height="78" rx="12"/><text class="detail" x="865" y="656" text-anchor="middle">byte</text><text class="small" x="865" y="680" text-anchor="middle">decimal or binary source values</text>
+    <rect class="cell" x="1050" y="628" width="470" height="78" rx="12"/><text class="detail" x="1285" y="656" text-anchor="middle">DB stores only the base value</text><text class="small" x="1285" y="680" text-anchor="middle">unit metadata stays in column definition</text>
+
+    <rect class="measure" x="120" y="730" width="250" height="78" rx="12"/><text class="detail" x="245" y="758" text-anchor="middle">energy, power</text><text class="small" x="245" y="782" text-anchor="middle">work and rate</text>
+    <rect class="cell" x="390" y="730" width="290" height="78" rx="12"/><text class="detail" x="535" y="758" text-anchor="middle">Measure&lt;Energy / Power&gt;</text><text class="small" x="535" y="782" text-anchor="middle">generic MeasureColumnType</text>
+    <rect class="cell" x="720" y="730" width="290" height="78" rx="12"/><text class="detail" x="865" y="758" text-anchor="middle">joule, watt</text><text class="small" x="865" y="782" text-anchor="middle">conversion tested by round-trip</text>
+    <rect class="cell" x="1050" y="730" width="470" height="78" rx="12"/><text class="detail" x="1285" y="758" text-anchor="middle">query result restores typed Measure</text><text class="small" x="1285" y="782" text-anchor="middle">ResultRow exposes measured object</text>
+
+    <rect class="temp" x="120" y="832" width="250" height="58" rx="12"/><text class="detail" x="245" y="866" text-anchor="middle">temperature, temperatureDelta</text>
+    <rect class="cell" x="390" y="832" width="290" height="58" rx="12"/><text class="detail" x="535" y="866" text-anchor="middle">Temperature / TemperatureDelta</text>
+    <rect class="cell" x="720" y="832" width="290" height="58" rx="12"/><text class="detail" x="865" y="866" text-anchor="middle">Kelvin, Kelvin delta</text>
+    <rect class="cell" x="1050" y="832" width="470" height="58" rx="12"/><text class="detail" x="1285" y="866" text-anchor="middle">dedicated column types use inKelvin()</text>
+  </g>
+
+  <g transform="translate(112,960)">
+    <rect class="note" x="0" y="0" width="1456" height="58" rx="12"/>
+    <text class="small" x="728" y="23" text-anchor="middle" dominant-baseline="middle">The database column does not store the display unit. The Table DSL fixes the base unit, and conversion happens at the Exposed ColumnType boundary.</text>
+    <text class="small" x="728" y="42" text-anchor="middle" dominant-baseline="middle">Use measure(name, baseUnit) for custom measured domains; use the typed helpers when the standard base unit is enough.</text>
+  </g>
+</svg>

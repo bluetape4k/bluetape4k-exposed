@@ -104,6 +104,25 @@ bluetape4k:
 
 이 저장소는 JDBC 전용이며 이름이 `springTransactionManager`인 관리자에 고정됩니다. broker 전달, 분산 트랜잭션, listener 부수 효과의 exactly-once, 스키마 migration, 도메인 감사 이력을 제공하지 않습니다. 저장한 이벤트 타입은 발행을 완료하거나 명시적으로 복구할 때까지 호환성을 유지해야 합니다.
 
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### Spring Modulith Exposed JDBC wiring 다이어그램
+
+[![Spring Modulith Exposed JDBC wiring 다이어그램](../../assets/readme-diagrams/spring-boot-exposed-spring-modulith-diagram-01.png)](../../assets/readme-diagrams/spring-boot-exposed-spring-modulith-diagram-01.svg)
+
+_배포본 README: [`spring-boot/spring-modulith/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/spring-boot/spring-modulith/README.ko.md)_
+
+### Spring Modulith publication 수명 주기 시퀀스 다이어그램
+
+[![Spring Modulith publication 수명 주기 시퀀스 다이어그램](../../assets/readme-diagrams/spring-boot-exposed-spring-modulith-sequence-01.png)](../../assets/readme-diagrams/spring-boot-exposed-spring-modulith-sequence-01.svg)
+
+_배포본 README: [`spring-boot/spring-modulith/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/spring-boot/spring-modulith/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## 근거 자료 {#sources}
 
 - [`ExposedEventPublicationRepository.kt`](../../../../spring-boot/spring-modulith/src/main/kotlin/io/bluetape4k/spring/modulith/exposed/ExposedEventPublicationRepository.kt)

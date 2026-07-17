@@ -95,6 +95,43 @@ core에는 연결 설정이 없습니다. ID 생성기와 선택형 codec은 애
 
 core는 트랜잭션, 연결, Spring bean, 드라이버 선택, 저장소 생명주기를 소유하지 않습니다. 1.11 매뉴얼에서는 이후 develop 브랜치에 추가된 DDD API를 사용할 수 없습니다.
 
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### Auditable UML 클래스 다이어그램
+
+[![Auditable UML 클래스 다이어그램](../../assets/readme-diagrams/exposed-core-diagram-01.png)](../../assets/readme-diagrams/exposed-core-diagram-01.svg)
+
+_배포본 README: [`exposed/core/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/core/README.ko.md)_
+
+### Column Type 파이프라인 지도
+
+[![Column Type 파이프라인 지도](../../assets/readme-diagrams/exposed-core-diagram-02.png)](../../assets/readme-diagrams/exposed-core-diagram-02.svg)
+
+_배포본 README: [`exposed/core/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/core/README.ko.md)_
+
+### IdTable 선택 기준표
+
+[![IdTable 선택 기준표](../../assets/readme-diagrams/exposed-core-diagram-03.png)](../../assets/readme-diagrams/exposed-core-diagram-03.svg)
+
+_배포본 README: [`exposed/core/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/core/README.ko.md)_
+
+### ExposedPage Data Model
+
+[![ExposedPage Data Model](../../assets/readme-diagrams/exposed-core-diagram-04.png)](../../assets/readme-diagrams/exposed-core-diagram-04.svg)
+
+_배포본 README: [`exposed/core/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/core/README.ko.md)_
+
+### UserContext — 다이어그램
+
+[![UserContext — 다이어그램](../../assets/readme-diagrams/exposed-core-sequence-01.png)](../../assets/readme-diagrams/exposed-core-sequence-01.svg)
+
+_배포본 README: [`exposed/core/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/core/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## 근거 자료 {#sources}
 
 - [core 빌드](../../../../exposed/core/build.gradle.kts)

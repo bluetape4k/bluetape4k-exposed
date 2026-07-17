@@ -101,6 +101,37 @@ Read [Coroutine transactions](bluetape4k-exposed-r2dbc/coroutine-transactions.md
 
 R2DBC is not an automatic performance upgrade and does not make blocking dependencies non-blocking. The library supplies no driver, universal cancellation guarantee, or implicit transaction.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### Core R2DBC repository structure diagram
+
+[![Core R2DBC repository structure diagram](../../assets/readme-diagrams/exposed-r2dbc-diagram-01.png)](../../assets/readme-diagrams/exposed-r2dbc-diagram-01.svg)
+
+_Release README: [`exposed/r2dbc/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/r2dbc/README.md)_
+
+### R2DBC repository capability map
+
+[![R2DBC repository capability map](../../assets/readme-diagrams/exposed-r2dbc-diagram-02.png)](../../assets/readme-diagrams/exposed-r2dbc-diagram-02.svg)
+
+_Release README: [`exposed/r2dbc/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/r2dbc/README.md)_
+
+### R2DBC suspend transaction sequence diagram
+
+[![R2DBC suspend transaction sequence diagram](../../assets/readme-diagrams/exposed-r2dbc-sequence-01.png)](../../assets/readme-diagrams/exposed-r2dbc-sequence-01.svg)
+
+_Release README: [`exposed/r2dbc/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/r2dbc/README.md)_
+
+### R2DBC soft-delete visibility flow diagram
+
+[![R2DBC soft-delete visibility flow diagram](../../assets/readme-diagrams/exposed-r2dbc-sequence-02.png)](../../assets/readme-diagrams/exposed-r2dbc-sequence-02.svg)
+
+_Release README: [`exposed/r2dbc/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/r2dbc/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [R2DBC build](../../../../exposed/r2dbc/build.gradle.kts)
