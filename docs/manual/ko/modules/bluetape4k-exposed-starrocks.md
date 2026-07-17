@@ -103,17 +103,17 @@ All-in-One 컨테이너 테스트는 어댑터 회귀 검증에 유지하고 운
 <!-- release-readme-diagrams:start -->
 ## 배포본 다이어그램 {#release-diagrams}
 
-아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+아래 그림은 `1.11.0` 배포본의 README 자산을 해당 배포 커밋에서 직접 불러옵니다. 이후 SNAPSHOT이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 같은 배포 커밋의 SVG 원본이 열립니다.
 
 ### StarRocks local OLAP integration boundary 다이어그램
 
-[![StarRocks local OLAP integration boundary 다이어그램](../../assets/readme-diagrams/exposed-starrocks-diagram-01.png)](../../assets/readme-diagrams/exposed-starrocks-diagram-01.svg)
+[![StarRocks local OLAP integration boundary 다이어그램](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-starrocks-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-starrocks-diagram-01.svg)
 
 _배포본 README: [`exposed/starrocks/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/starrocks/README.ko.md)_
 
 ### StarRocks local smoke 수명 주기 다이어그램
 
-[![StarRocks local smoke 수명 주기 다이어그램](../../assets/readme-diagrams/exposed-starrocks-flow-02.png)](../../assets/readme-diagrams/exposed-starrocks-flow-02.svg)
+[![StarRocks local smoke 수명 주기 다이어그램](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-starrocks-flow-02.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-starrocks-flow-02.svg)
 
 _배포본 README: [`exposed/starrocks/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/starrocks/README.ko.md)_
 

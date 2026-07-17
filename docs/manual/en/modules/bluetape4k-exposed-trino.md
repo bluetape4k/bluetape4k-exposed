@@ -96,17 +96,17 @@ Release 1.11 does not supply transactional atomicity, universal connector DDL, o
 <!-- release-readme-diagrams:start -->
 ## Release diagrams {#release-diagrams}
 
-These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+These diagrams are loaded directly from README assets published with the `1.11.0` release and pinned to its immutable commit. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG at the same release commit.
 
 ### Trino JDBC compatibility boundary diagram
 
-[![Trino JDBC compatibility boundary diagram](../../assets/readme-diagrams/exposed-trino-diagram-01.png)](../../assets/readme-diagrams/exposed-trino-diagram-01.svg)
+[![Trino JDBC compatibility boundary diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-trino-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-trino-diagram-01.svg)
 
 _Release README: [`exposed/trino/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/trino/README.md)_
 
 ### Trino Flow materialization contract diagram
 
-[![Trino Flow materialization contract diagram](../../assets/readme-diagrams/exposed-trino-flow-02.png)](../../assets/readme-diagrams/exposed-trino-flow-02.svg)
+[![Trino Flow materialization contract diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-trino-flow-02.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-trino-flow-02.svg)
 
 _Release README: [`exposed/trino/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/trino/README.md)_
 

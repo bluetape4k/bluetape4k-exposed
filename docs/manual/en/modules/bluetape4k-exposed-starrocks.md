@@ -96,17 +96,17 @@ Release 1.11 proves a narrow local AIO smoke scope. It does not promise full Con
 <!-- release-readme-diagrams:start -->
 ## Release diagrams {#release-diagrams}
 
-These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+These diagrams are loaded directly from README assets published with the `1.11.0` release and pinned to its immutable commit. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG at the same release commit.
 
 ### StarRocks local OLAP integration boundary diagram
 
-[![StarRocks local OLAP integration boundary diagram](../../assets/readme-diagrams/exposed-starrocks-diagram-01.png)](../../assets/readme-diagrams/exposed-starrocks-diagram-01.svg)
+[![StarRocks local OLAP integration boundary diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-starrocks-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-starrocks-diagram-01.svg)
 
 _Release README: [`exposed/starrocks/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/starrocks/README.md)_
 
 ### StarRocks local smoke lifecycle diagram
 
-[![StarRocks local smoke lifecycle diagram](../../assets/readme-diagrams/exposed-starrocks-flow-02.png)](../../assets/readme-diagrams/exposed-starrocks-flow-02.svg)
+[![StarRocks local smoke lifecycle diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-starrocks-flow-02.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-starrocks-flow-02.svg)
 
 _Release README: [`exposed/starrocks/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/starrocks/README.md)_
 

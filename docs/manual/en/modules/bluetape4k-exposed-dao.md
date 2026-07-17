@@ -89,29 +89,29 @@ This module does not make DAO entities detached, reactive, or safe outside a tra
 <!-- release-readme-diagrams:start -->
 ## Release diagrams {#release-diagrams}
 
-These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+These diagrams are loaded directly from README assets published with the `1.11.0` release and pinned to its immutable commit. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG at the same release commit.
 
 ### AuditableEntity UML Class Diagram
 
-[![AuditableEntity UML Class Diagram](../../assets/readme-diagrams/exposed-dao-diagram-01.png)](../../assets/readme-diagrams/exposed-dao-diagram-01.svg)
+[![AuditableEntity UML Class Diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-dao-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-dao-diagram-01.svg)
 
 _Release README: [`exposed/dao/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/dao/README.md)_
 
 ### Generated-ID DAO Support Matrix
 
-[![Generated-ID DAO Support Matrix](../../assets/readme-diagrams/exposed-dao-diagram-02.png)](../../assets/readme-diagrams/exposed-dao-diagram-02.svg)
+[![Generated-ID DAO Support Matrix](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-dao-diagram-02.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-dao-diagram-02.svg)
 
 _Release README: [`exposed/dao/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/dao/README.md)_
 
 ### Entity Helper Pairing Map
 
-[![Entity Helper Pairing Map](../../assets/readme-diagrams/exposed-dao-diagram-03.png)](../../assets/readme-diagrams/exposed-dao-diagram-03.svg)
+[![Entity Helper Pairing Map](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-dao-diagram-03.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-dao-diagram-03.svg)
 
 _Release README: [`exposed/dao/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/dao/README.md)_
 
 ### Automatic field assignment diagram
 
-[![Automatic field assignment diagram](../../assets/readme-diagrams/exposed-dao-sequence-01.png)](../../assets/readme-diagrams/exposed-dao-sequence-01.svg)
+[![Automatic field assignment diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-dao-sequence-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-dao-sequence-01.svg)
 
 _Release README: [`exposed/dao/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/dao/README.md)_
 
