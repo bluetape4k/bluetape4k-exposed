@@ -20,7 +20,7 @@ configurations {
 
 dependencies {
     // Spring Boot BOM: platform() 방식 필수 (dependencyManagement 사용 금지 - KGP 2.3 충돌)
-    implementation(platform(libs.spring.boot.dependencies))
+    implementation(platform(bt4k.spring.boot4.dependencies))
 
     implementation(project(":bluetape4k-exposed-spring-boot-r2dbc"))
 

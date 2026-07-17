@@ -13,7 +13,7 @@ configurations {
 }
 
 dependencies {
-    implementation(platform(libs.spring.boot.dependencies))
+    implementation(platform(bt4k.spring.boot4.dependencies))
     implementation(platform(libs.spring.modulith.bom))
 
     implementation(project(":bluetape4k-exposed-core"))

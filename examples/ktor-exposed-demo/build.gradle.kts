@@ -24,7 +24,7 @@ configurations.named(postgresIntegrationTest.runtimeOnlyConfigurationName) {
 
 dependencies {
     implementation(platform(bt4k.ktor.bom))
-    implementation(platform(libs.exposed.bom))
+    implementation(platform(bt4k.exposed.bom))
 
     implementation(project(":bluetape4k-exposed-ktor"))
     implementation(project(":bluetape4k-exposed-r2dbc-caffeine"))

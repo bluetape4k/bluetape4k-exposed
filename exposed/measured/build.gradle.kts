@@ -5,7 +5,7 @@ configurations {
 }
 
 dependencies {
-    implementation(platform(libs.exposed.bom))
+    implementation(platform(bt4k.exposed.bom))
     api(bt4k.exposed.core)
     compileOnly(bt4k.exposed.jdbc)
     compileOnly(libs.exposed.dao)

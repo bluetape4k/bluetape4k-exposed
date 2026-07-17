@@ -46,7 +46,7 @@ dependencies {
     // Spring Boot BOM: platform()을 사용하면 compileClasspath/runtimeClasspath에만 적용되고
     // kotlinBuildToolsApiClasspath 같은 내부 Gradle 설정에는 영향을 주지 않음
     // (dependencyManagement 플러그인은 ALL configurations에 적용되어 kotlin-stdlib 버전 충돌 유발)
-    implementation(platform(libs.spring.boot.dependencies))
+    implementation(platform(bt4k.spring.boot4.dependencies))
 
     // Core
     api(libs.kotlin.reflect)
