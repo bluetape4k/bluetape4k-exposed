@@ -107,17 +107,17 @@ The repository is JDBC-only and fixed to the named `springTransactionManager`. I
 <!-- release-readme-diagrams:start -->
 ## Release diagrams {#release-diagrams}
 
-These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+These diagrams are loaded directly from README assets published with the `1.11.0` release and pinned to its immutable commit. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG at the same release commit.
 
 ### Spring Modulith Exposed JDBC wiring diagram
 
-[![Spring Modulith Exposed JDBC wiring diagram](../../assets/readme-diagrams/spring-boot-exposed-spring-modulith-diagram-01.png)](../../assets/readme-diagrams/spring-boot-exposed-spring-modulith-diagram-01.svg)
+[![Spring Modulith Exposed JDBC wiring diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-exposed-spring-modulith-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-exposed-spring-modulith-diagram-01.svg)
 
 _Release README: [`spring-boot/spring-modulith/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/spring-boot/spring-modulith/README.md)_
 
 ### Spring Modulith publication lifecycle sequence diagram
 
-[![Spring Modulith publication lifecycle sequence diagram](../../assets/readme-diagrams/spring-boot-exposed-spring-modulith-sequence-01.png)](../../assets/readme-diagrams/spring-boot-exposed-spring-modulith-sequence-01.svg)
+[![Spring Modulith publication lifecycle sequence diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-exposed-spring-modulith-sequence-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-exposed-spring-modulith-sequence-01.svg)
 
 _Release README: [`spring-boot/spring-modulith/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/spring-boot/spring-modulith/README.md)_
 

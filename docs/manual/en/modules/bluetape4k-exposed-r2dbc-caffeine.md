@@ -103,17 +103,17 @@ The adapter does not create a distributed transaction, provision the backend, mi
 <!-- release-readme-diagrams:start -->
 ## Release diagrams {#release-diagrams}
 
-These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+These diagrams are loaded directly from README assets published with the `1.11.0` release and pinned to its immutable commit. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG at the same release commit.
 
 ### R2DBC Caffeine local cache architecture diagram
 
-[![R2DBC Caffeine local cache architecture diagram](../../assets/readme-diagrams/exposed-r2dbc-caffeine-diagram-01.png)](../../assets/readme-diagrams/exposed-r2dbc-caffeine-diagram-01.svg)
+[![R2DBC Caffeine local cache architecture diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-r2dbc-caffeine-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-r2dbc-caffeine-diagram-01.svg)
 
 _Release README: [`exposed/r2dbc-caffeine/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/r2dbc-caffeine/README.md)_
 
 ### R2DBC Caffeine cache sequence diagram
 
-[![R2DBC Caffeine cache sequence diagram](../../assets/readme-diagrams/exposed-r2dbc-caffeine-sequence-01.png)](../../assets/readme-diagrams/exposed-r2dbc-caffeine-sequence-01.svg)
+[![R2DBC Caffeine cache sequence diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-r2dbc-caffeine-sequence-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-r2dbc-caffeine-sequence-01.svg)
 
 _Release README: [`exposed/r2dbc-caffeine/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/r2dbc-caffeine/README.md)_
 

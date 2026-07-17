@@ -88,17 +88,17 @@ PostgreSQL wire compatibility is not feature parity. The helper handles document
 <!-- release-readme-diagrams:start -->
 ## Release diagrams {#release-diagrams}
 
-These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+These diagrams are loaded directly from README assets published with the `1.11.0` release and pinned to its immutable commit. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG at the same release commit.
 
 ### CockroachDB helper boundary
 
-[![CockroachDB helper boundary](../../assets/readme-diagrams/exposed-cockroachdb-diagram-01.png)](../../assets/readme-diagrams/exposed-cockroachdb-diagram-01.svg)
+[![CockroachDB helper boundary](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-cockroachdb-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-cockroachdb-diagram-01.svg)
 
 _Release README: [`exposed/cockroachdb/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/cockroachdb/README.md)_
 
 ### CockroachDB transaction retry flow
 
-[![CockroachDB transaction retry flow](../../assets/readme-diagrams/exposed-cockroachdb-flow-02.png)](../../assets/readme-diagrams/exposed-cockroachdb-flow-02.svg)
+[![CockroachDB transaction retry flow](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-cockroachdb-flow-02.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-cockroachdb-flow-02.svg)
 
 _Release README: [`exposed/cockroachdb/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/cockroachdb/README.md)_
 

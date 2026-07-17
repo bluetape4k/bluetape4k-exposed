@@ -109,17 +109,17 @@ Range partitioning assumes a `Long`-compatible, unique, monotonic key and is bes
 <!-- release-readme-diagrams:start -->
 ## Release diagrams {#release-diagrams}
 
-These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+These diagrams are loaded directly from README assets published with the `1.11.0` release and pinned to its immutable commit. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG at the same release commit.
 
 ### Spring Batch Exposed integration map
 
-[![Spring Batch Exposed integration map](../../assets/readme-diagrams/spring-boot-batch-exposed-diagram-01.png)](../../assets/readme-diagrams/spring-boot-batch-exposed-diagram-01.svg)
+[![Spring Batch Exposed integration map](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-batch-exposed-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-batch-exposed-diagram-01.svg)
 
 _Release README: [`spring-boot/batch-exposed/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/spring-boot/batch-exposed/README.md)_
 
 ### Partitioned keyset restart flow
 
-[![Partitioned keyset restart flow](../../assets/readme-diagrams/spring-boot-batch-exposed-sequence-01.png)](../../assets/readme-diagrams/spring-boot-batch-exposed-sequence-01.svg)
+[![Partitioned keyset restart flow](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-batch-exposed-sequence-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-batch-exposed-sequence-01.svg)
 
 _Release README: [`spring-boot/batch-exposed/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/spring-boot/batch-exposed/README.md)_
 

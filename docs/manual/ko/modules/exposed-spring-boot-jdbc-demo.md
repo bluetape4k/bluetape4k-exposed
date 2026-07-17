@@ -141,17 +141,17 @@ Spring Boot Web/JDBC Starter, bluetape4k Exposed Spring Boot JDBC 모듈, Expose
 <!-- release-readme-diagrams:start -->
 ## 배포본 다이어그램 {#release-diagrams}
 
-아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+아래 그림은 `1.11.0` 배포본의 README 자산을 해당 배포 커밋에서 직접 불러옵니다. 이후 SNAPSHOT이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 같은 배포 커밋의 SVG 원본이 열립니다.
 
 ### Spring Boot JDBC 예제 구조도
 
-[![Spring Boot JDBC 예제 구조도](../../assets/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-01.png)](../../assets/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-01.svg)
+[![Spring Boot JDBC 예제 구조도](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-01.svg)
 
 _배포본 README: [`examples/jdbc-demo/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/examples/jdbc-demo/README.ko.md)_
 
 ### Spring Boot JDBC 예제 request transaction 처리 흐름
 
-[![Spring Boot JDBC 예제 request transaction 처리 흐름](../../assets/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-02.png)](../../assets/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-02.svg)
+[![Spring Boot JDBC 예제 request transaction 처리 흐름](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-02.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-02.svg)
 
 _배포본 README: [`examples/jdbc-demo/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/examples/jdbc-demo/README.ko.md)_
 
