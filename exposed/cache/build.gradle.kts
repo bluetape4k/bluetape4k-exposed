@@ -25,7 +25,7 @@ dependencies {
     api(bt4k.bluetape4k.logging)
 
     // Exposed
-    api(platform(libs.exposed.bom))
+    api(platform(bt4k.exposed.bom))
     api(bt4k.exposed.core)
     compileOnly(bt4k.exposed.jdbc)
     compileOnly(libs.exposed.dao)
@@ -36,7 +36,7 @@ dependencies {
 
     // Test Fixtures
     testFixturesApi(bt4k.bluetape4k.logging)
-    testFixturesApi(platform(libs.exposed.bom))
+    testFixturesApi(platform(bt4k.exposed.bom))
     testFixturesApi(bt4k.exposed.core)
     testFixturesApi(bt4k.exposed.jdbc)
     testFixturesImplementation(bt4k.exposed.java.time)

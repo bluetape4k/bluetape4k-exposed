@@ -6,7 +6,7 @@ configurations {
 
 dependencies {
     implementation(platform(bt4k.ktor.bom))
-    implementation(platform(libs.exposed.bom))
+    implementation(platform(bt4k.exposed.bom))
     implementation(platform(libs.micrometer.bom))
 
     api(bt4k.bluetape4k.ktor.core)

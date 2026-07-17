@@ -25,9 +25,9 @@ configurations {
 }
 
 dependencies {
-    implementation(platform(libs.spring.boot.dependencies))
+    implementation(platform(bt4k.spring.boot4.dependencies))
     // Exposed
-    implementation(platform(libs.exposed.bom))
+    implementation(platform(bt4k.exposed.bom))
     api(project(":bluetape4k-exposed-core"))
     api(project(":bluetape4k-exposed-dao"))
     api(bt4k.exposed.jdbc)

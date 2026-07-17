@@ -59,9 +59,9 @@ configurations {
 }
 
 dependencies {
-    implementation(platform(libs.spring.boot.dependencies))
+    implementation(platform(bt4k.spring.boot4.dependencies))
     // Exposed
-    implementation(platform(libs.exposed.bom))
+    implementation(platform(bt4k.exposed.bom))
 
     api(bt4k.exposed.core)
     api(bt4k.exposed.r2dbc)

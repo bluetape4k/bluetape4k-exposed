@@ -6,7 +6,7 @@ configurations {
 
 dependencies {
     // Exposed
-    implementation(platform(libs.exposed.bom))
+    implementation(platform(bt4k.exposed.bom))
     api(project(":bluetape4k-exposed-core"))
     compileOnly(bt4k.exposed.jdbc)
     compileOnly(bt4k.exposed.java.time)  // 현재 미사용, exposed-postgresql 패턴과 일관성 위해 포함

@@ -6,7 +6,7 @@ configurations {
 
 dependencies {
     // Exposed
-    implementation(platform(libs.exposed.bom))
+    implementation(platform(bt4k.exposed.bom))
     api(project(":bluetape4k-exposed-core"))
     api(libs.exposed.dao)
     compileOnly(bt4k.exposed.jdbc)

@@ -278,6 +278,12 @@ jobs:
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
+      - name: Validate publication POMs
+        run: |
+          ./gradlew generatePomFileForBluetapeExposedPublication -PsnapshotVersion=-SNAPSHOT \
+            --no-daemon --no-configuration-cache --no-build-cache
+          ruby scripts/publication/validate_poms.rb
+
   # exposed-core + exposed-dao (H2)
   test-core:
     name: Test / exposed-core + exposed-dao (H2)
