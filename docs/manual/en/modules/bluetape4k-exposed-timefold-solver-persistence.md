@@ -125,6 +125,25 @@ Start with `SimpleScoreTest`, then compare one string-backed test such as `HardS
 
 This library is a score-column adapter. It does not persist planning entities, rebuild a `Solution`, coordinate solver jobs, provide optimistic locking, or define a database-portable semantic ordering for string-backed scores.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### Timefold Score column families diagram
+
+[![Timefold Score column families diagram](../../assets/readme-diagrams/exposed-timefold-solver-persistence-diagram-01.png)](../../assets/readme-diagrams/exposed-timefold-solver-persistence-diagram-01.svg)
+
+_Release README: [`exposed/timefold-solver-persistence/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/timefold-solver-persistence/README.md)_
+
+### Score persistence round trip diagram
+
+[![Score persistence round trip diagram](../../assets/readme-diagrams/exposed-timefold-solver-persistence-flow-02.png)](../../assets/readme-diagrams/exposed-timefold-solver-persistence-flow-02.svg)
+
+_Release README: [`exposed/timefold-solver-persistence/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/timefold-solver-persistence/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [Supported score column families](../../../../exposed/timefold-solver-persistence/README.md)

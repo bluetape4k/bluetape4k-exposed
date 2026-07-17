@@ -125,6 +125,25 @@ Spring 프로퍼티나 런타임 서비스 빈은 없습니다. SQL 타입, null
 
 이 라이브러리는 Score 컬럼 어댑터입니다. 계획 엔티티 저장, `Solution` 복원, Solver 작업 조정, 낙관적 잠금, 문자열 Score의 데이터베이스 공통 의미상 정렬은 제공하지 않습니다.
 
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### Timefold Score column families 다이어그램
+
+[![Timefold Score column families 다이어그램](../../assets/readme-diagrams/exposed-timefold-solver-persistence-diagram-01.png)](../../assets/readme-diagrams/exposed-timefold-solver-persistence-diagram-01.svg)
+
+_배포본 README: [`exposed/timefold-solver-persistence/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/timefold-solver-persistence/README.ko.md)_
+
+### Score persistence round trip 다이어그램
+
+[![Score persistence round trip 다이어그램](../../assets/readme-diagrams/exposed-timefold-solver-persistence-flow-02.png)](../../assets/readme-diagrams/exposed-timefold-solver-persistence-flow-02.svg)
+
+_배포본 README: [`exposed/timefold-solver-persistence/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/timefold-solver-persistence/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## 근거 자료 {#sources}
 
 - [지원하는 Score 컬럼 계열](../../../../exposed/timefold-solver-persistence/README.ko.md)

@@ -88,6 +88,25 @@ Start with the [adapter matrix](../guides/database-adapter-matrix.md), then add 
 
 The module does not manage connections, install extensions, choose indexes, or bundle optional PostgreSQL/pgvector/PostGIS drivers at runtime. It covers the types and operators present in release 1.11 only.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### PostgreSQL extension feature coverage
+
+[![PostgreSQL extension feature coverage](../../assets/readme-diagrams/exposed-postgresql-diagram-01.png)](../../assets/readme-diagrams/exposed-postgresql-diagram-01.svg)
+
+_Release README: [`exposed/postgresql/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/postgresql/README.md)_
+
+### PostgreSQL column conversion flow
+
+[![PostgreSQL column conversion flow](../../assets/readme-diagrams/exposed-postgresql-diagram-02.png)](../../assets/readme-diagrams/exposed-postgresql-diagram-02.svg)
+
+_Release README: [`exposed/postgresql/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/postgresql/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [pgvector extensions](../../../../exposed/postgresql/src/main/kotlin/io/bluetape4k/exposed/postgresql/pgvector/VectorExtensions.kt)

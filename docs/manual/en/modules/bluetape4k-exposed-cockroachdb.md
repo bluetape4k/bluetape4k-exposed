@@ -85,6 +85,25 @@ Compare CockroachDB with PostgreSQL in the [adapter matrix](../guides/database-a
 
 PostgreSQL wire compatibility is not feature parity. The helper handles documented restart errors only; it cannot make external side effects transactional or remove contention.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### CockroachDB helper boundary
+
+[![CockroachDB helper boundary](../../assets/readme-diagrams/exposed-cockroachdb-diagram-01.png)](../../assets/readme-diagrams/exposed-cockroachdb-diagram-01.svg)
+
+_Release README: [`exposed/cockroachdb/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/cockroachdb/README.md)_
+
+### CockroachDB transaction retry flow
+
+[![CockroachDB transaction retry flow](../../assets/readme-diagrams/exposed-cockroachdb-flow-02.png)](../../assets/readme-diagrams/exposed-cockroachdb-flow-02.svg)
+
+_Release README: [`exposed/cockroachdb/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/cockroachdb/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [`CockroachDatabase`](../../../../exposed/cockroachdb/src/main/kotlin/io/bluetape4k/exposed/cockroachdb/CockroachDatabase.kt)

@@ -106,6 +106,25 @@ Compare [Exposed Batch Utilities](bluetape4k-exposed-batch.md) before choosing a
 
 Range partitioning assumes a `Long`-compatible, unique, monotonic key and is best when large inserts or deletes do not reshape the range during execution. `lastKey` records read progress at Spring Batch checkpoints; it does not make external side effects atomic. The default virtual-thread executor is optional and replaceable, and must still respect database pool limits.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### Spring Batch Exposed integration map
+
+[![Spring Batch Exposed integration map](../../assets/readme-diagrams/spring-boot-batch-exposed-diagram-01.png)](../../assets/readme-diagrams/spring-boot-batch-exposed-diagram-01.svg)
+
+_Release README: [`spring-boot/batch-exposed/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/spring-boot/batch-exposed/README.md)_
+
+### Partitioned keyset restart flow
+
+[![Partitioned keyset restart flow](../../assets/readme-diagrams/spring-boot-batch-exposed-sequence-01.png)](../../assets/readme-diagrams/spring-boot-batch-exposed-sequence-01.svg)
+
+_Release README: [`spring-boot/batch-exposed/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/spring-boot/batch-exposed/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [`ExposedBatchAutoConfiguration.kt`](../../../../spring-boot/batch-exposed/src/main/kotlin/io/bluetape4k/spring/batch/exposed/config/ExposedBatchAutoConfiguration.kt)

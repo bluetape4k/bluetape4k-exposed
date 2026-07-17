@@ -100,6 +100,25 @@ Use isolated cache and database fixtures with unique namespaces. Prove miss load
 
 The adapter does not create a distributed transaction, provision the backend, migrate stored cache values, or decide whether stale data is safe. It is local-only; it does not synchronize entries across JVMs.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### JDBC Caffeine local cache architecture diagram
+
+[![JDBC Caffeine local cache architecture diagram](../../assets/readme-diagrams/exposed-jdbc-caffeine-diagram-01.png)](../../assets/readme-diagrams/exposed-jdbc-caffeine-diagram-01.svg)
+
+_Release README: [`exposed/jdbc-caffeine/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-caffeine/README.md)_
+
+### Write Strategy Flows diagram
+
+[![Write Strategy Flows diagram](../../assets/readme-diagrams/exposed-jdbc-caffeine-sequence-01.png)](../../assets/readme-diagrams/exposed-jdbc-caffeine-sequence-01.svg)
+
+_Release README: [`exposed/jdbc-caffeine/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-caffeine/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [Module README](../../../../exposed/jdbc-caffeine/README.md)

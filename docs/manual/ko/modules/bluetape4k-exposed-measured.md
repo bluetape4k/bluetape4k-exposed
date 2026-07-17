@@ -105,6 +105,31 @@ DB에는 각각 약 `1.5` metre와 `298.15` Kelvin이 저장됩니다.
 
 단위 metadata, 측정 출처, 불확도, 유효 숫자, 임의 정밀도 십진수를 저장하지 않습니다. 도메인 범위도 검증하지 않습니다. 기준 단위나 숫자 표현을 바꾸려면 스키마와 데이터를 명시적으로 마이그레이션해야 합니다.
 
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### Measured column DSL coverage
+
+[![Measured column DSL coverage](../../assets/readme-diagrams/exposed-measured-diagram-01.png)](../../assets/readme-diagrams/exposed-measured-diagram-01.svg)
+
+_배포본 README: [`exposed/measured/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/measured/README.ko.md)_
+
+### Measured column conversion 흐름
+
+[![Measured column conversion 흐름](../../assets/readme-diagrams/exposed-measured-diagram-02.png)](../../assets/readme-diagrams/exposed-measured-diagram-02.svg)
+
+_배포본 README: [`exposed/measured/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/measured/README.ko.md)_
+
+### Measured column round trip
+
+[![Measured column round trip](../../assets/readme-diagrams/exposed-measured-sequence-01.png)](../../assets/readme-diagrams/exposed-measured-sequence-01.svg)
+
+_배포본 README: [`exposed/measured/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/measured/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## 근거 자료 {#sources}
 
 - [Gradle 빌드 파일](../../../../exposed/measured/build.gradle.kts)

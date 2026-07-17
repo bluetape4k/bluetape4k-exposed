@@ -100,6 +100,61 @@ Use isolated cache and database fixtures with unique namespaces. Prove miss load
 
 The adapter does not create a distributed transaction, provision the backend, migrate stored cache values, or decide whether stale data is safe. It is the config can choose an `RMapCache` or `RLocalCachedMap`; near-cache synchronization is part of correctness.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### JDBC Redisson Redis cache architecture diagram
+
+[![JDBC Redisson Redis cache architecture diagram](../../assets/readme-diagrams/exposed-jdbc-redisson-diagram-01.png)](../../assets/readme-diagrams/exposed-jdbc-redisson-diagram-01.svg)
+
+_Release README: [`exposed/jdbc-redisson/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-redisson/README.md)_
+
+### JDBC Redisson synchronous repository hierarchy diagram
+
+[![JDBC Redisson synchronous repository hierarchy diagram](../../assets/readme-diagrams/exposed-jdbc-redisson-diagram-02.png)](../../assets/readme-diagrams/exposed-jdbc-redisson-diagram-02.svg)
+
+_Release README: [`exposed/jdbc-redisson/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-redisson/README.md)_
+
+### JDBC Redisson read-through sequence diagram
+
+[![JDBC Redisson read-through sequence diagram](../../assets/readme-diagrams/exposed-jdbc-redisson-sequence-01.png)](../../assets/readme-diagrams/exposed-jdbc-redisson-sequence-01.svg)
+
+_Release README: [`exposed/jdbc-redisson/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-redisson/README.md)_
+
+### JDBC Redisson write-through sequence diagram
+
+[![JDBC Redisson write-through sequence diagram](../../assets/readme-diagrams/exposed-jdbc-redisson-sequence-02.png)](../../assets/readme-diagrams/exposed-jdbc-redisson-sequence-02.svg)
+
+_Release README: [`exposed/jdbc-redisson/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-redisson/README.md)_
+
+### JDBC Redisson write-behind sequence diagram
+
+[![JDBC Redisson write-behind sequence diagram](../../assets/readme-diagrams/exposed-jdbc-redisson-sequence-03.png)](../../assets/readme-diagrams/exposed-jdbc-redisson-sequence-03.svg)
+
+_Release README: [`exposed/jdbc-redisson/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-redisson/README.md)_
+
+### Suspended JDBC Redisson read-through sequence diagram
+
+[![Suspended JDBC Redisson read-through sequence diagram](../../assets/readme-diagrams/exposed-jdbc-redisson-sequence-04.png)](../../assets/readme-diagrams/exposed-jdbc-redisson-sequence-04.svg)
+
+_Release README: [`exposed/jdbc-redisson/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-redisson/README.md)_
+
+### Suspended JDBC Redisson write-through sequence diagram
+
+[![Suspended JDBC Redisson write-through sequence diagram](../../assets/readme-diagrams/exposed-jdbc-redisson-sequence-05.png)](../../assets/readme-diagrams/exposed-jdbc-redisson-sequence-05.svg)
+
+_Release README: [`exposed/jdbc-redisson/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-redisson/README.md)_
+
+### Suspended JDBC Redisson write-behind sequence diagram
+
+[![Suspended JDBC Redisson write-behind sequence diagram](../../assets/readme-diagrams/exposed-jdbc-redisson-sequence-06.png)](../../assets/readme-diagrams/exposed-jdbc-redisson-sequence-06.svg)
+
+_Release README: [`exposed/jdbc-redisson/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-redisson/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [Module README](../../../../exposed/jdbc-redisson/README.md)

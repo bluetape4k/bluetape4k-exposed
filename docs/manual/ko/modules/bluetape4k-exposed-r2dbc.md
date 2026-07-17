@@ -101,6 +101,37 @@ R2DBC 드라이버와 Testcontainers, `bluetape4k-exposed-r2dbc-tests`를 사용
 
 R2DBC는 자동 성능 개선 수단이 아니며 blocking 의존성을 non-blocking으로 바꾸지도 않습니다. 드라이버, 보편적인 취소 보장, 암묵적인 트랜잭션은 이 라이브러리가 제공하지 않습니다.
 
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### Core R2DBC repository 구조도
+
+[![Core R2DBC repository 구조도](../../assets/readme-diagrams/exposed-r2dbc-diagram-01.png)](../../assets/readme-diagrams/exposed-r2dbc-diagram-01.svg)
+
+_배포본 README: [`exposed/r2dbc/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/r2dbc/README.ko.md)_
+
+### R2DBC repository capability 지도
+
+[![R2DBC repository capability 지도](../../assets/readme-diagrams/exposed-r2dbc-diagram-02.png)](../../assets/readme-diagrams/exposed-r2dbc-diagram-02.svg)
+
+_배포본 README: [`exposed/r2dbc/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/r2dbc/README.ko.md)_
+
+### R2DBC suspend transaction 시퀀스 다이어그램
+
+[![R2DBC suspend transaction 시퀀스 다이어그램](../../assets/readme-diagrams/exposed-r2dbc-sequence-01.png)](../../assets/readme-diagrams/exposed-r2dbc-sequence-01.svg)
+
+_배포본 README: [`exposed/r2dbc/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/r2dbc/README.ko.md)_
+
+### R2DBC soft-delete visibility 처리 흐름
+
+[![R2DBC soft-delete visibility 처리 흐름](../../assets/readme-diagrams/exposed-r2dbc-sequence-02.png)](../../assets/readme-diagrams/exposed-r2dbc-sequence-02.svg)
+
+_배포본 README: [`exposed/r2dbc/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/r2dbc/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## 근거 자료 {#sources}
 
 - [R2DBC 빌드](../../../../exposed/r2dbc/build.gradle.kts)

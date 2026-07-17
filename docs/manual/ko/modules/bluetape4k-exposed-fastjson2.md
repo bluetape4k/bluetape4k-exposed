@@ -103,6 +103,25 @@ codec 오류를 기록할 때는 테이블·컬럼·레코드 식별자까지만
 
 이 모듈은 JSON 문서 버전을 관리하거나 기존 행을 변환하지 않습니다. 인덱스를 정해 주지도 않고 JSON 함수의 Dialect 간 동일 동작도 보장하지 않습니다. Fastjson2, Jackson 2, Jackson 3은 컬럼별 대안이며, 바꾸려면 기존 데이터가 호환된다는 증거가 필요합니다.
 
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### Fastjson2 JSON column boundary
+
+[![Fastjson2 JSON column boundary](../../assets/readme-diagrams/exposed-fastjson2-diagram-01.png)](../../assets/readme-diagrams/exposed-fastjson2-diagram-01.svg)
+
+_배포본 README: [`exposed/fastjson2/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/fastjson2/README.ko.md)_
+
+### Fastjson2 JSON round trip
+
+[![Fastjson2 JSON round trip](../../assets/readme-diagrams/exposed-fastjson2-flow-02.png)](../../assets/readme-diagrams/exposed-fastjson2-flow-02.svg)
+
+_배포본 README: [`exposed/fastjson2/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/fastjson2/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## 근거 자료 {#sources}
 
 - [Gradle 빌드 파일](../../../../exposed/fastjson2/build.gradle.kts)

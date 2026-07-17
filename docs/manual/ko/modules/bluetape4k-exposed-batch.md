@@ -98,6 +98,31 @@ dependencies {
 
 쓰기와 checkpoint 사이의 경계는 at-least-once이며 exactly-once가 아닙니다. `InMemoryBatchJobRepository`는 재시작 상태를 영속화하지 않고 여러 프로세스를 조정할 수도 없습니다. 이 런타임은 스케줄러, 큐, Spring Batch 대체재가 아닙니다. 올바른 복구에는 원자적 lease 구현, 영속 checkpoint, 안정된 reader 정렬, 멱등 writer가 필요합니다.
 
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### Batch benchmark comparison 지도
+
+[![Batch benchmark comparison 지도](../../assets/readme-diagrams/utils-batch-benchmark-map-01.png)](../../assets/readme-diagrams/utils-batch-benchmark-map-01.svg)
+
+_배포본 README: [`utils/batch/benchmark/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/utils/batch/benchmark/README.ko.md)_
+
+### Batch 런타임 role 지도
+
+[![Batch 런타임 role 지도](../../assets/readme-diagrams/utils-batch-diagram-01.png)](../../assets/readme-diagrams/utils-batch-diagram-01.svg)
+
+_배포본 README: [`utils/batch/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/utils/batch/README.ko.md)_
+
+### Batch chunk checkpoint 흐름
+
+[![Batch chunk checkpoint 흐름](../../assets/readme-diagrams/utils-batch-sequence-01.png)](../../assets/readme-diagrams/utils-batch-sequence-01.svg)
+
+_배포본 README: [`utils/batch/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/utils/batch/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## 근거 자료 {#sources}
 
 - [`BatchStepRunner.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/core/BatchStepRunner.kt)

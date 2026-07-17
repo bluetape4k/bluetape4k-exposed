@@ -99,6 +99,25 @@ Run the [Spring Boot JDBC example](exposed-spring-boot-jdbc-demo.md), then read 
 
 The module does not create a `DataSource`, choose among multiple transaction managers, or support every Spring Data derived-query operator. It is DAO-entity oriented: identity and change tracking require an active Exposed transaction. The demo's explicit transaction-manager override is a supported configuration, so applications must not assume the default manager is always auto-created.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### Spring Boot Exposed JDBC repository wiring diagram
+
+[![Spring Boot Exposed JDBC repository wiring diagram](../../assets/readme-diagrams/spring-boot-exposed-jdbc-diagram-01.png)](../../assets/readme-diagrams/spring-boot-exposed-jdbc-diagram-01.svg)
+
+_Release README: [`spring-boot/jdbc/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/spring-boot/jdbc/README.md)_
+
+### Spring Boot Exposed JDBC query resolution flow diagram
+
+[![Spring Boot Exposed JDBC query resolution flow diagram](../../assets/readme-diagrams/spring-boot-exposed-jdbc-diagram-02.png)](../../assets/readme-diagrams/spring-boot-exposed-jdbc-diagram-02.svg)
+
+_Release README: [`spring-boot/jdbc/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/spring-boot/jdbc/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [`ExposedSpringDataAutoConfiguration.kt`](../../../../spring-boot/jdbc/src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/config/ExposedSpringDataAutoConfiguration.kt)

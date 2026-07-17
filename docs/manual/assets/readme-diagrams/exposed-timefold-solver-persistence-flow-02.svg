@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1760" height="980" viewBox="0 0 1760 980" role="img" aria-labelledby="title desc">
+  <title id="title">Score Persistence Round Trip</title>
+  <desc id="desc">Flow diagram for exposed-timefold-solver-persistence showing table definition, Exposed insert, ColumnTransformer unwrap, relational storage, query, wrap, and DAO/DSL readback.</desc>
+  <defs>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#3f7d9c" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#6e8f4f" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#b9851b" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#755bc6" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <style>
+      .canvas{fill:#f6f0e8}.frame{fill:#fffaf2;stroke:#28485a;stroke-width:4}.title{font-family:"Architects Daughter","Comic Mono",monospace;font-size:48px;fill:#21343f}.subtitle,.cardText,.small,.label,.step{font-family:"Comic Mono",monospace;fill:#51636f}.subtitle{font-size:18px}.laneTitle{font-family:"Architects Daughter","Comic Mono",monospace;font-size:27px;fill:#21343f}.cardTitle{font-family:"Comic Mono",monospace;font-size:17px;font-weight:700;fill:#20323d}.cardText{font-size:13px}.small{font-size:13px}.label{font-size:12px;fill:#315664}.step{font-size:12px;font-weight:700}.lane{stroke-width:2.5}.card{fill:#fffdf8;stroke-width:2.2}.blue{stroke:#8db7c2}.green{stroke:#a9c58b}.gold{stroke:#d3a663}.purple{stroke:#b2a1dc}.line{fill:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}.lineBlue{stroke:#3f7d9c;marker-end:url(#arrow-blue)}.lineGreen{stroke:#6e8f4f;marker-end:url(#arrow-green)}.lineGold{stroke:#b9851b;marker-end:url(#arrow-gold)}.linePurple{stroke:#755bc6;marker-end:url(#arrow-purple)}.code{fill:#9b3d5a;font-weight:700}.type{fill:#176f7a;font-weight:700}.warn{fill:#8a5b00;font-weight:700}
+    </style>
+  </defs>
+
+  <rect class="canvas" width="1760" height="980"/>
+  <rect class="frame" x="38" y="32" width="1684" height="910" rx="24"/>
+  <text class="title" x="86" y="96">Score Persistence Round Trip</text>
+  <text class="subtitle" x="90" y="132">Exposed ColumnTransformer keeps Score values typed at Kotlin boundaries and parseable at database boundaries.</text>
+
+  <rect class="lane" x="92" y="176" width="490" height="660" rx="18" fill="#e7f1f4" stroke="#9dbbc4"/>
+  <text class="laneTitle" x="124" y="224">Define and write</text>
+  <g transform="translate(192 274)">
+    <rect class="card blue" width="290" height="92" rx="12"/>
+    <text class="step" x="22" y="27">1</text>
+    <text class="cardTitle code" x="160" y="32" text-anchor="middle">Table extension</text>
+    <text class="cardText" x="160" y="58" text-anchor="middle">hardSoftScore("score")</text>
+    <text class="cardText" x="160" y="76" text-anchor="middle">or bendableScore(length)</text>
+  </g>
+  <g transform="translate(187 414)">
+    <rect class="card green" width="300" height="92" rx="12"/>
+    <text class="step" x="22" y="27">2</text>
+    <text class="cardTitle type" x="160" y="32" text-anchor="middle">Insert / DAO write</text>
+    <text class="cardText" x="160" y="58" text-anchor="middle">score = HardSoftScore.of(...)</text>
+    <text class="cardText" x="160" y="76" text-anchor="middle">typed value at Kotlin boundary</text>
+  </g>
+  <g transform="translate(187 554)">
+    <rect class="card gold" width="300" height="92" rx="12"/>
+    <text class="step" x="22" y="27">3</text>
+    <text class="cardTitle warn" x="160" y="32" text-anchor="middle">unwrap()</text>
+    <text class="cardText" x="160" y="58" text-anchor="middle">SimpleScore -> Long</text>
+    <text class="cardText" x="160" y="76" text-anchor="middle">other Score -> toString()</text>
+  </g>
+  <g transform="translate(242 694)">
+    <rect class="card purple" width="190" height="92" rx="12"/>
+    <image data-bluetape4k-icon="database.generic" x="75" y="17" width="40" height="40" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K"/>
+    <text class="step" x="22" y="27">4</text>
+    <text class="cardTitle" x="95" y="70" text-anchor="middle">DB cell</text>
+  </g>
+
+  <rect class="lane" x="635" y="176" width="490" height="660" rx="18" fill="#eef4e6" stroke="#a9c58b"/>
+  <text class="laneTitle" x="667" y="224">Read and restore</text>
+  <g transform="translate(745 300)">
+    <rect class="card purple" width="270" height="112" rx="12"/>
+    <text class="cardTitle" x="135" y="31" text-anchor="middle">Query row</text>
+    <text class="cardText" x="135" y="58" text-anchor="middle">selectAll / Entity find</text>
+    <text class="cardText" x="135" y="78" text-anchor="middle">DB value reaches column type</text>
+    <text class="cardText" x="135" y="98" text-anchor="middle">same table column metadata</text>
+  </g>
+  <g transform="translate(730 458)">
+    <rect class="card gold" width="300" height="112" rx="12"/>
+    <text class="cardTitle warn" x="150" y="31" text-anchor="middle">wrap()</text>
+    <text class="cardText" x="150" y="58" text-anchor="middle">Long -> SimpleScore.of()</text>
+    <text class="cardText" x="150" y="78" text-anchor="middle">String -> parseScore()</text>
+    <text class="cardText" x="150" y="98" text-anchor="middle">invalid text fails at parser</text>
+  </g>
+  <g transform="translate(730 616)">
+    <rect class="card green" width="300" height="112" rx="12"/>
+    <text class="cardTitle type" x="150" y="31" text-anchor="middle">Typed readback</text>
+    <text class="cardText" x="150" y="58" text-anchor="middle">row[score] returns Score</text>
+    <text class="cardText" x="150" y="78" text-anchor="middle">DAO property returns Score</text>
+    <text class="cardText" x="150" y="98" text-anchor="middle">round-trip equality in tests</text>
+  </g>
+
+  <rect class="lane" x="1178" y="176" width="490" height="660" rx="18" fill="#fff0d8" stroke="#d3a663"/>
+  <text class="laneTitle" x="1210" y="224">Reader-facing result</text>
+  <g transform="translate(1258 317)">
+    <rect class="card gold" width="330" height="78" rx="12"/>
+    <text class="cardTitle" x="165" y="30" text-anchor="middle">Storage is portable</text>
+    <text class="cardText" x="165" y="56" text-anchor="middle">BIGINT or VARCHAR across test DBs</text>
+  </g>
+  <g transform="translate(1258 475)">
+    <rect class="card gold" width="330" height="78" rx="12"/>
+    <text class="cardTitle" x="165" y="30" text-anchor="middle">Length remains caller choice</text>
+    <text class="cardText" x="165" y="56" text-anchor="middle">Bendable scores may need larger VARCHAR</text>
+  </g>
+  <g transform="translate(1258 633)">
+    <rect class="card gold" width="330" height="78" rx="12"/>
+    <text class="cardTitle" x="165" y="30" text-anchor="middle">Kotlin stays typed</text>
+    <text class="cardText" x="165" y="56" text-anchor="middle">callers never handle raw DB text</text>
+  </g>
+
+  <path class="line lineBlue" d="M337 366 V414"/>
+  <path class="line lineGreen" d="M337 506 V554"/>
+  <path class="line lineGold" d="M337 646 V694"/>
+  <path class="line linePurple" d="M 432 740 H 594 Q 606 740 606 728 V 368 Q 606 356 618 356 H 745"/>
+  <path class="line lineGold" d="M880 412 V458"/>
+  <path class="line lineGold" d="M880 570 V616"/>
+  <path class="line linePurple" d="M1015 356 H1258"/>
+  <path class="line lineGold" d="M1030 514 H1258"/>
+  <path class="line lineGreen" d="M1030 672 H1258"/>
+
+  <text class="label" x="360" y="398">Column</text>
+  <text class="label" x="360" y="538">typed value</text>
+  <text class="label" x="360" y="678">raw value</text>
+  <text class="label" x="902" y="442">DB read</text>
+  <text class="label" x="902" y="600">Score</text>
+
+  <rect x="126" y="880" width="1508" height="28" rx="10" fill="#eef3f4" stroke="#c2d1d4" stroke-width="1.8"/>
+  <text class="small" x="880" y="899" text-anchor="middle">The storage format is intentionally simple: only the transformer knows how to unwrap and parse Timefold Score values.</text>
+</svg>

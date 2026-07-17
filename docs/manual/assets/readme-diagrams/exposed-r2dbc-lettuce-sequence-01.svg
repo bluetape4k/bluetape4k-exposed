@@ -1,0 +1,137 @@
+<svg data-sequence-spacing-scale="1.16" xmlns="http://www.w3.org/2000/svg" width="1680" height="1832.8" viewBox="0 0 1680 1832.8" role="img" aria-labelledby="title desc">
+  <title id="title">R2DBC Lettuce Cache Sequence</title>
+  <desc id="desc">Sequence diagram for NearCache, Redis loaded map, R2DBC loader, write-through or write-behind writer, and delete or clear cache behavior.</desc>
+  <defs>
+    <marker id="seqArrow-3F7D9C" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="16" markerHeight="16" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#3f7d9c" stroke-dasharray="none" style="stroke-dasharray:none!important" stroke="#3f7d9c" /></marker>
+    <marker id="seqArrow-6E8F4F" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="16" markerHeight="16" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#6e8f4f" stroke-dasharray="none" style="stroke-dasharray:none!important" stroke="#6e8f4f" /></marker>
+    <marker id="seqArrow-7E6AB8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="16" markerHeight="16" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#7e6ab8" stroke-dasharray="none" style="stroke-dasharray:none!important" stroke="#7e6ab8" /></marker>
+    <marker id="seqArrow-9B7D54" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="16" markerHeight="16" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 5.4 2.7 Q 10 5 5.4 7.3 L 0 10" fill="#9b7d54" stroke-dasharray="none" style="stroke-dasharray:none!important" stroke="#9b7d54" /></marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="8" stdDeviation="11" flood-color="#20303a" flood-opacity="0.12"/></filter>
+    <style>
+      .canvas { fill: #f6f0e8; }
+      .frame { fill: #fffaf2; stroke: #28485a; stroke-width: 4; }
+      .title { font-family: "Architects Daughter", "Comic Mono", monospace; font-size: 46px; fill: #21343f; }
+      .subtitle, .role, .msg, .note, .footer { font-family: "Comic Mono", monospace; fill: #52636f; }
+      .subtitle { font-size: 18px; }
+      .actorTitle { font-family: "Architects Daughter", "Comic Mono", monospace; font-size: 20px; fill: #1f3138; }
+      .role { font-size: 13px; }
+      .seqText { font-size: 13px; }
+      .note { font-size: 13px; fill: #40515b; }
+      .footer { font-size: 14px; }
+      .actor { fill: #ffffff; stroke: #8db7c2; stroke-width: 2.2; }
+      .lifeline { stroke: #9aaab1; stroke-width: 2; stroke-dasharray: 7 8; }
+      .activation { fill: #eef7f0; stroke: #6e8f4f; stroke-width: 1.5; }
+      .call { fill: none; stroke: #3f7d9c; stroke-width: 3.2; stroke-linecap: round;stroke-linejoin:round; marker-end: url(#seqArrow-3F7D9C); }
+      .cache { fill: none; stroke: #6e8f4f; stroke-width: 3.2; stroke-linecap: round; marker-end: url(#seqArrow-6E8F4F); }
+      .db { fill: none; stroke: #7e6ab8; stroke-width: 3.2; stroke-linecap: round; marker-end: url(#seqArrow-7E6AB8); }
+      .return { fill: none; stroke: #9b7d54; stroke-width: 2.7; stroke-linecap: round;stroke-linejoin:round; stroke-dasharray: 8 6; marker-end: url(#seqArrow-9B7D54); }
+      .alt { fill:#FFFFFF; fill-opacity:0.12; stroke: #78909c; stroke-width: 2.5; stroke-dasharray: 11 7; }
+      .opt { fill: none; stroke: #7e6ab8; stroke-width: 2.5; stroke-dasharray: 11 7; }
+      .branchDivider { stroke: #78909c; stroke-width: 2.5; stroke-dasharray: 11 7; }
+      .branchHit { fill: #eef7f0; stroke: #6e8f4f; stroke-width: 1.6; }
+      .branchMiss { fill: #eaf4f8; stroke: #3f7d9c; stroke-width: 1.6; }
+      .branchDb { fill: #f3eefb; stroke: #7e6ab8; stroke-width: 1.6; }
+      .pill { fill: #ffffff; stroke: #cbd9e7; stroke-width: 1.5; }
+      .callLabel { stroke: #9cc2d1; }
+      .cacheLabel { stroke: #b6c9a4; }
+      .dbLabel { stroke: #b9addd; }
+      .returnLabel { stroke: #c8b38f; }
+      .badge { stroke-width: 1.7; }
+      .callBadge { fill: #eaf4f8; stroke: #3f7d9c; }
+      .cacheBadge { fill: #eef7f0; stroke: #6e8f4f; }
+      .dbBadge { fill: #f3eefb; stroke: #7e6ab8; }
+      .returnBadge { fill: #fff7e8; stroke: #9b7d54; }
+      .badgeText { font-family: "Comic Mono", monospace; font-size: 11px; font-weight: 700; }
+      .callText { fill: #2f6f8e; }
+      .cacheText { fill: #55783f; }
+      .dbText { fill: #6d58a8; }
+      .returnText { fill: #7f6038; }
+      .code { fill: #9b3d5a; font-weight: 700; }
+      .type { fill: #176f7a; font-weight: 700; }
+      .keyword { fill: #8a5b00; font-weight: 700; }
+    </style>
+  </defs>
+
+  <rect class="canvas" width="1680" height="1832.8"/>
+  <rect class="frame" x="42" y="39.44" width="1596" height="1733.04" rx="24" filter="url(#shadow)"/>
+  <text class="title" x="84" y="105.56">R2DBC Lettuce Cache Sequence</text>
+  <text class="subtitle" x="86" y="146.16">Reads short-circuit from NearCache or Redis; misses and DB writes pass through Exposed R2DBC loader/writer transactions.</text>
+
+  <g id="a t c a t s">
+    <rect class="actor" x="72" y="197.2" width="168" height="78.88" rx="10"/><text class="actorTitle" x="156" y="229.68" text-anchor="middle">Caller</text><text class="role" x="156" y="255.2" text-anchor="middle">coroutine</text>
+    <rect class="actor" x="294" y="197.2" width="218" height="78.88" rx="10"/><text class="actorTitle" x="403" y="229.68" text-anchor="middle">Repository</text><text class="role" x="403" y="255.2" text-anchor="middle">R2dbcLettuce</text>
+    <rect class="actor" x="566" y="197.2" width="208" height="68" rx="10"/><image data-bluetape4k-icon="cache.caffeine" x="578" y="211.12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjOEI1QTJCIiByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2FmZmVpbmU8L3RpdGxlPjxwYXRoIGQ9Ik02LjE2MiAxLjU1N2MtLjE4LjAwNi0uMjYzLjEzNy0uMjkzLjE4TC4wNSAxMS44MmMtLjA3LjE0Mi0uMDYuMjctLjAwNC4zNTYgMS45NDIgMy4zNiAzLjg4MiA2LjcyMyA1LjgyMiAxMC4wODVhLjMzNy4zMzcgMCAwMC4zMDUuMTgyaDExLjY1Yy4xMzguMDAzLjI2LS4wOS4zMS0uMTgyIDEuOTQtMy4zNiAzLjg3OC02LjcyMSA1LjgyLTEwLjA4YS4zNjEuMzYxIDAgMDAwLS4zNThsLTUuODItMTAuMDg1Yy0uMTEyLS4xOTMtLjMwOC0uMTgxLS4zMDgtLjE4MXptLjgwNC43MTloOS41MTNMMTAuMTM2IDUuOTR6bS0uNDI3LjYwM2wyLjk2NCAzLjQyNkw2LjU0IDguMDE4em0xMC4zLjAxOGwtMy44NiA2LjY4NUw3LjE5IDguNDY5em0xLjM0MS4zNTdsNC43NTYgOC4yNDYtNC43NTYtLjkxNnptLTEyLjM2LjAwMnY1LjE3NmwtNC40OCAyLjU4N3ptMTEuNjQgMHYxMS4xNDJsLTMuODU3LTQuNDU3ek03LjEyNyA5LjE4Nmw1Ljg0NyAxLjEyNiAzLjg5OCA0LjUwMi01Ljg0Mi0xLjEyNXpNNS44MiA5LjI2djMuNDI1bC00LjQ1LS44NTV6bS43Mi4zNDFsMy44NTYgNC40NTctMy44NTcgNi42ODV6bTExLjY0IDEuNzEzbDQuNDQ3Ljg1Ni00LjQ0NyAyLjU3ek0xLjA2MiAxMi41bDQuNzYuOTE2djcuMzN6bTIxLjU5Ny40OGwtNC40NzkgNy43NjN2LTUuMTc1em0tMTEuNjQgMS40MzdsNS43OSAxLjExNC05LjY0OSA1LjU3MnptNi40NCAxLjU2NXY1LjEzOGwtMi45NjQtMy40MjV6bS0zLjU5NyAyLjA3OGwzLjE3MiAzLjY2NEg3LjUyeiIvPjwvc3ZnPg==" preserveAspectRatio="xMidYMid meet"/><text class="actorTitle" x="670" y="229.68" text-anchor="middle">NearCache</text><text class="role" x="670" y="255.2" text-anchor="middle">optional Caffeine</text>
+    <rect class="actor" x="828" y="197.2" width="224" height="68" rx="10"/><image data-bluetape4k-icon="redis.icon" x="840" y="211.12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiBoZWlnaHQ9IjY0IiB2aWV3Qm94PSIwIDAgMzIgMzIiIHdpZHRoPSI2NCI+PGcgdHJhbnNmb3JtPSJtYXRyaXgoLjg0ODMyNyAwIDAgLjg0ODMyNyAtNy44ODM1NzMgLTkuNDQ5NjkxKSI+PHVzZSB4bGluazpocmVmPSIjQiIgZmlsbD0iI2E0MWUxMSIvPjxwYXRoIGQ9Ik00NS41MzYgMzQuOTVjLTIuMDEzIDEuMDUtMTIuNDQgNS4zMzctMTQuNjYgNi40OTRzLTMuNDUzIDEuMTQ2LTUuMjA3LjMwOC0xMi44NS01LjMyLTE0Ljg1LTYuMjc2LTIuMDQtMS42MTMtLjA3Ny0yLjM4MmwxNS4zMzItNS45MzZjMi4zMzItLjgzNiAzLjE0LS44NjcgNS4xMjYtLjE0UzQzLjU1IDMxLjg3IDQ1LjUxIDMyLjZzMi4wMzcgMS4zMS4wMjQgMi4zNnoiIGZpbGw9IiNkODJjMjAiLz48dXNlIHhsaW5rOmhyZWY9IiNCIiB5PSItNi4yMTgiIGZpbGw9IiNhNDFlMTEiLz48dXNlIHhsaW5rOmhyZWY9IiNDIiBmaWxsPSIjZDgyYzIwIi8+PHBhdGggZD0iTTQ1LjUzNiAyNi4wOThjLTIuMDEzIDEuMDUtMTIuNDQgNS4zMzctMTQuNjYgNi40OTVzLTMuNDUzIDEuMTQ2LTUuMjA3LjMwOC0xMi44NS01LjMyLTE0Ljg1LTYuMjc2Yy0xLS40NzgtMS41MjQtLjg4LTEuNTI0LTEuMjZWMjEuNTVzMTQuNDQ3LTMuMTQ1IDE2Ljc4LTMuOTgyIDMuMTQtLjg2NyA1LjEyNi0uMTQgMTMuODUzIDIuODY4IDE1LjgxNCAzLjU4N3YzLjc2YzAgLjM3Ny0uNDUyLjgtMS40NzcgMS4zMjR6IiBmaWxsPSIjYTQxZTExIi8+PHVzZSB4bGluazpocmVmPSIjQyIgeT0iLTYuNDQ5IiBmaWxsPSIjZDgyYzIwIi8+PGcgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTI5LjA5NiAyMC43MTJsLTEuMTgyLTEuOTY1LTMuNzc0LS4zNCAyLjgxNi0xLjAxNi0uODQ1LTEuNTYgMi42MzYgMS4wMyAyLjQ4Ni0uODE0LS42NzIgMS42MTIgMi41MzQuOTUtMy4yNjguMzR6TTIyLjggMjQuNjI0bDguNzQtMS4zNDItMi42NCAzLjg3MnoiLz48ZWxsaXBzZSBjeD0iMjAuNDQ0IiByeD0iNC42NzIiIHJ5PSIxLjgxMSIgY3k9IjIxLjQwMiIvPjwvZz48cGF0aCBkPSJNNDIuMTMyIDIxLjEzOGwtNS4xNyAyLjA0Mi0uMDA0LTQuMDg3eiIgZmlsbD0iIzdhMGMwMCIvPjxwYXRoIGQ9Ik0zNi45NjMgMjMuMThsLS41Ni4yMi01LjE2Ni0yLjA0MiA1LjcyMy0yLjI2NHoiIGZpbGw9IiNhZDIxMTUiLz48L2c+PGRlZnMgPjxwYXRoIGlkPSJCIiBkPSJNNDUuNTM2IDM4Ljc2NGMtMi4wMTMgMS4wNS0xMi40NCA1LjMzNy0xNC42NiA2LjQ5NHMtMy40NTMgMS4xNDYtNS4yMDcuMzA4LTEyLjg1LTUuMzItMTQuODUtNi4yNzZjLTEtLjQ3OC0xLjUyNC0uODgtMS41MjQtMS4yNnYtMy44MTNzMTQuNDQ3LTMuMTQ1IDE2Ljc4LTMuOTgyIDMuMTQtLjg2NyA1LjEyNi0uMTQgMTMuODUzIDIuODY4IDE1LjgxNCAzLjU4N3YzLjc2YzAgLjM3Ny0uNDUyLjgtMS40NzcgMS4zMjR6Ii8+PHBhdGggaWQ9IkMiIGQ9Ik00NS41MzYgMjguNzMzYy0yLjAxMyAxLjA1LTEyLjQ0IDUuMzM3LTE0LjY2IDYuNDk0cy0zLjQ1MyAxLjE0Ni01LjIwNy4zMDgtMTIuODUtNS4zMi0xNC44NS02LjI3Ni0yLjA0LTEuNjEzLS4wNzctMi4zODJsMTUuMzMyLTUuOTM1YzIuMzMyLS44MzcgMy4xNC0uODY3IDUuMTI2LS4xNHMxMi4zNSA0Ljg1MyAxNC4zMTIgNS41NyAyLjAzNyAxLjMxLjAyNCAyLjM2eiIvPjwvZGVmcz48L3N2Zz4=" preserveAspectRatio="xMidYMid meet"/><text class="actorTitle" x="940" y="229.68" text-anchor="middle">Redis map</text><text class="role" x="940" y="255.2" text-anchor="middle">Lettuce loaded map</text>
+    <rect class="actor" x="1108" y="197.2" width="242" height="78.88" rx="10"/><text class="actorTitle" x="1229" y="229.68" text-anchor="middle">Loader / Writer</text><text class="role code" x="1229" y="255.2" text-anchor="middle">suspendTransaction</text>
+    <rect class="actor" x="1460" y="197.2" width="130" height="68" rx="10"/><image data-bluetape4k-icon="generic.database" x="1472" y="211.12" width="24" height="24" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPkdlbmVyaWMgZGF0YWJhc2Ugc2VydmVyIGljb248L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5HZW5lcmljIGRhdGFiYXNlIHNlcnZlciBpY29uIGZvciBibHVldGFwZTRrIGRpYWdyYW1zLjwvZGVzYz4KICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8ZWxsaXBzZSBjeD0iNjQiIGN5PSIzNiIgcng9IjM0IiByeT0iMTMiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTMwIDM2djQ0YzAgOCAxNSAxNCAzNCAxNHMzNC02IDM0LTE0VjM2IiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSI2NCIgY3k9IjM2IiByeD0iMzQiIHJ5PSIxMyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiLz4KICA8cGF0aCBkPSJNMzAgNThjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMzAgODBjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==" preserveAspectRatio="xMidYMid meet"/><text class="actorTitle" x="1525" y="229.68" text-anchor="middle">DB</text><text class="role" x="1525" y="255.2" text-anchor="middle">rows</text>
+  </g>
+
+  <line class="lifeline" x1="156" y1="276.08" x2="156" y2="1682"/>
+  <line class="lifeline" x1="403" y1="276.08" x2="403" y2="1682"/>
+  <line class="lifeline" x1="670" y1="276.08" x2="670" y2="1682"/>
+  <line class="lifeline" x1="940" y1="276.08" x2="940" y2="1682"/>
+  <line class="lifeline" x1="1229" y1="276.08" x2="1229" y2="1682"/>
+  <line class="lifeline" x1="1525" y1="276.08" x2="1525" y2="1682"/>
+  <rect class="activation" x="396" y="359.6" width="14" height="1132.16" rx="6"/>
+  <rect class="activation" x="933" y="526.64" width="14" height="816.64" rx="6"/>
+  <rect class="activation" x="1222" y="751.68" width="14" height="707.6" rx="6"/>
+
+  <rect x="66" y="331.76" width="1548" height="487.2" rx="14" class="alt"/>
+  <rect x="90" y="354.96" width="280" height="34.8" rx="15" class="branchHit"/><text class="note" x="114" y="378.16">alt NearCache hit</text>
+  <line class="branchDivider" x1="66" y1="498.8" x2="1614" y2="498.8"/>
+  <rect x="90" y="519.68" width="272" height="34.8" rx="15" class="branchMiss"/><text class="note" x="114" y="542.88">else Redis hit</text>
+  <line class="branchDivider" x1="66" y1="663.52" x2="1614" y2="663.52"/>
+  <rect x="90" y="684.4" width="302" height="34.8" rx="15" class="branchDb"/><text class="note" x="114" y="707.6">else Redis miss</text>
+
+  <rect x="88" y="308.56" width="218" height="37.12" rx="16" class="pill callLabel"/><circle cx="111" cy="327.12" r="12" class="badge callBadge"/><text x="111" y="331.76" text-anchor="middle" class="badgeText callText">1</text><text x="138" y="332.92" class="seqText callText"><tspan class="code">findById(id)</tspan></text>
+  <path class="seq call" d="M 156 366.56 L 403 366.56"/>
+  <rect x="430" y="378.16" width="254" height="37.12" rx="16" class="pill cacheLabel"/><circle cx="453" cy="396.72" r="12" class="badge cacheBadge"/><text x="453" y="401.36" text-anchor="middle" class="badgeText cacheText">2</text><text x="480" y="402.52" class="seqText cacheText"><tspan class="code">nearCache.get(key)</tspan></text>
+  <path class="cache" d="M 403 433.84 L 670 433.84"/>
+  <rect x="432" y="447.76" width="190" height="37.12" rx="16" class="pill returnLabel"/><circle cx="455" cy="466.32" r="12" class="badge returnBadge"/><text x="455" y="470.96" text-anchor="middle" class="badgeText returnText">3</text><text x="482" y="472.12" class="seqText returnText">return <tspan class="type">E</tspan></text>
+  <path class="ret return" d="M 670 484.88 L 403 484.88"/>
+
+  <rect x="596" y="542.88" width="270" height="37.12" rx="16" class="pill cacheLabel"/><circle cx="619" cy="561.44" r="12" class="badge cacheBadge"/><text x="619" y="566.08" text-anchor="middle" class="badgeText cacheText">4</text><text x="646" y="567.24" class="seqText cacheText"><tspan class="code">cache.get(id)</tspan> on Redis</text>
+  <path class="cache" d="M 403 603.2 L 940 603.2"/>
+  <rect x="598" y="610.16" width="226" height="37.12" rx="16" class="pill returnLabel"/><circle cx="621" cy="628.72" r="12" class="badge returnBadge"/><text x="621" y="633.36" text-anchor="middle" class="badgeText returnText">5</text><text x="648" y="634.52" class="seqText returnText">Redis cached <tspan class="type">E</tspan></text>
+  <path class="ret return" d="M 940 647.28 L 403 647.28"/>
+
+  <rect x="758" y="714.56" width="306" height="37.12" rx="16" class="pill dbLabel"/><circle cx="781" cy="733.12" r="12" class="badge dbBadge"/><text x="781" y="737.76" text-anchor="middle" class="badgeText dbText">6</text><text x="808" y="738.92" class="seqText dbText">loader.load via R2DBC</text>
+  <path class="db" d="M 940 767.92 L 1229 767.92"/>
+  <rect x="1260" y="784.16" width="230" height="37.12" rx="16" class="pill dbLabel"/><circle cx="1283" cy="802.72" r="12" class="badge dbBadge"/><text x="1283" y="807.36" text-anchor="middle" class="badgeText dbText">7</text><text x="1310" y="808.52" class="seqText dbText"><tspan class="keyword">SELECT</tspan> by id</text>
+  <path class="db" d="M 1229 828.24 L 1525 828.24"/>
+  <rect x="1266" y="844.48" width="204" height="37.12" rx="16" class="pill returnLabel"/><circle cx="1289" cy="863.04" r="12" class="badge returnBadge"/><text x="1289" y="867.68" text-anchor="middle" class="badgeText returnText">8</text><text x="1316" y="868.84" class="seqText returnText"><tspan class="type">ResultRow?</tspan></text>
+  <path class="ret return" d="M 1525 888.56 L 1229 888.56"/>
+  <rect x="692" y="895.52" width="312" height="37.12" rx="16" class="pill returnLabel"/><circle cx="715" cy="914.08" r="12" class="badge returnBadge"/><text x="715" y="918.72" text-anchor="middle" class="badgeText returnText">9</text><text x="742" y="919.88" class="seqText returnText"><tspan class="code">toEntity()</tspan>, cache value</text>
+  <path class="ret return" d="M 1229 946.56 L 403 946.56"/>
+
+  <rect x="66" y="881.6" width="1548" height="350.32" rx="14" class="alt"/>
+  <rect x="330" y="904.8" width="330" height="34.8" rx="15" class="branchHit"/><text class="note" x="354" y="928">save with write mode</text>
+  <rect x="88" y="969.76" width="226" height="37.12" rx="16" class="pill callLabel"/><circle cx="111" cy="988.32" r="12" class="badge callBadge"/><text x="111" y="992.96" text-anchor="middle" class="badgeText callText">10</text><text x="138" y="994.12" class="seqText callText"><tspan class="code">save(id, entity)</tspan></text>
+  <path class="seq call" d="M 156 1027.76 L 403 1027.76"/>
+  <rect x="610" y="1025.44" width="256" height="37.12" rx="16" class="pill cacheLabel"/><circle cx="633" cy="1044" r="12" class="badge cacheBadge"/><text x="633" y="1048.64" text-anchor="middle" class="badgeText cacheText">11</text><text x="660" y="1049.8" class="seqText cacheText"><tspan class="code">cache.set(id, entity)</tspan></text>
+  <path class="cache" d="M 403 1074.16 L 940 1074.16"/>
+  <rect x="430" y="1078.8" width="268" height="37.12" rx="16" class="pill cacheLabel"/><circle cx="453" cy="1097.36" r="12" class="badge cacheBadge"/><text x="453" y="1102" text-anchor="middle" class="badgeText cacheText">12</text><text x="480" y="1103.16" class="seqText cacheText"><tspan class="code">nearCache.put</tspan> if enabled</text>
+  <path class="cache" d="M 403 1132.16 L 670 1132.16"/>
+  <rect x="982" y="1143.76" width="330" height="37.12" rx="16" class="pill dbLabel"/><circle cx="1005" cy="1162.32" r="12" class="badge dbBadge"/><text x="1005" y="1166.96" text-anchor="middle" class="badgeText dbText">13</text><text x="1032" y="1168.12" class="seqText dbText">writer.write by <tspan class="type">WriteMode</tspan></text>
+  <path class="db" d="M 940 1197.12 L 1229 1197.12"/>
+  <rect x="1262" y="1180.88" width="304" height="37.12" rx="16" class="pill dbLabel"/><circle cx="1285" cy="1199.44" r="12" class="badge dbBadge"/><text x="1285" y="1204.08" text-anchor="middle" class="badgeText dbText">14</text><text x="1312" y="1205.24" class="seqText dbText"><tspan class="keyword">UPDATE</tspan>/<tspan class="keyword">INSERT</tspan> or queued write</text>
+  <path class="db" d="M 1229 1250.48 L 1525 1250.48"/>
+  <rect x="188" y="1173.92" width="286" height="37.12" rx="16" class="pill returnLabel"/><circle cx="211" cy="1192.48" r="12" class="badge returnBadge"/><text x="211" y="1197.12" text-anchor="middle" class="badgeText returnText">15</text><text x="238" y="1198.28" class="seqText returnText">return by write mode</text>
+  <path class="ret return" d="M 403 1285.28 L 156 1285.28"/>
+
+  <rect x="66" y="1308.48" width="1548" height="290" rx="14" class="opt"/>
+  <rect x="90" y="1331.68" width="310" height="34.8" rx="15" class="branchDb"/><text class="note" x="114" y="1354.88">delete / invalidate / clear</text>
+  <rect x="88" y="1392" width="292" height="37.12" rx="16" class="pill callLabel"/><circle cx="111" cy="1410.56" r="12" class="badge callBadge"/><text x="111" y="1415.2" text-anchor="middle" class="badgeText callText">16</text><text x="138" y="1416.36" class="seqText callText"><tspan class="code">delete</tspan>, <tspan class="code">invalidate</tspan>, <tspan class="code">clear</tspan></text>
+  <path class="seq call" d="M 156 1450 L 403 1450"/>
+  <rect x="610" y="1417.52" width="284" height="37.12" rx="16" class="pill cacheLabel"/><circle cx="633" cy="1436.08" r="12" class="badge cacheBadge"/><text x="633" y="1440.72" text-anchor="middle" class="badgeText cacheText">17</text><text x="660" y="1441.88" class="seqText cacheText">delete/evict Redis keys</text>
+  <path class="cache" d="M 403 1489.44 L 940 1489.44"/>
+  <rect x="430" y="1496.4" width="272" height="37.12" rx="16" class="pill cacheLabel"/><circle cx="453" cy="1514.96" r="12" class="badge cacheBadge"/><text x="453" y="1519.6" text-anchor="middle" class="badgeText cacheText">18</text><text x="480" y="1520.76" class="seqText cacheText">remove local keys</text>
+  <path class="cache" d="M 403 1552.08 L 670 1552.08"/>
+  <rect x="980" y="1519.6" width="366" height="37.12" rx="16" class="pill dbLabel"/><circle cx="1003" cy="1538.16" r="12" class="badge dbBadge"/><text x="1003" y="1542.8" text-anchor="middle" class="badgeText dbText">19</text><text x="1030" y="1543.96" class="seqText dbText">writer.delete for repository delete</text>
+  <path class="db" d="M 940 1582.24 L 1229 1582.24"/>
+  <rect x="1264" y="1584.56" width="208" height="37.12" rx="16" class="pill dbLabel"/><circle cx="1287" cy="1603.12" r="12" class="badge dbBadge"/><text x="1287" y="1607.76" text-anchor="middle" class="badgeText dbText">20</text><text x="1314" y="1608.92" class="seqText dbText"><tspan class="keyword">DELETE</tspan> rows</text>
+  <path class="db" d="M 1229 1640.24 L 1525 1640.24"/>
+
+  <rect x="128" y="1705.2" width="1424" height="48.72" rx="13" fill="#eef3f4" stroke="#c2d1d4" stroke-width="2"/>
+  <text class="footer" x="152" y="1735.36">Boundary rule: clearCache clears NearCache and Redis only; DB row changes happen through R2DBC writer paths.</text>
+</svg>

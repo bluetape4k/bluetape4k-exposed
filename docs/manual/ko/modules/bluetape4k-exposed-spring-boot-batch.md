@@ -106,6 +106,25 @@ spring:
 
 범위 파티션은 `Long`으로 비교할 수 있는 고유 단조 증가 키를 전제로 하며 실행 중 대량 삽입·삭제로 범위가 크게 바뀌지 않을 때 적합합니다. `lastKey`는 Spring Batch checkpoint의 읽기 진행 상태이며 외부 부수 효과까지 원자적으로 만들지 않습니다. 기본 virtual-thread executor는 선택적이고 교체할 수 있으며 데이터베이스 풀 한도를 지켜야 합니다.
 
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### Spring Batch Exposed integration 지도
+
+[![Spring Batch Exposed integration 지도](../../assets/readme-diagrams/spring-boot-batch-exposed-diagram-01.png)](../../assets/readme-diagrams/spring-boot-batch-exposed-diagram-01.svg)
+
+_배포본 README: [`spring-boot/batch-exposed/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/spring-boot/batch-exposed/README.ko.md)_
+
+### Partitioned keyset restart 흐름
+
+[![Partitioned keyset restart 흐름](../../assets/readme-diagrams/spring-boot-batch-exposed-sequence-01.png)](../../assets/readme-diagrams/spring-boot-batch-exposed-sequence-01.svg)
+
+_배포본 README: [`spring-boot/batch-exposed/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/spring-boot/batch-exposed/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## 근거 자료 {#sources}
 
 - [`ExposedBatchAutoConfiguration.kt`](../../../../spring-boot/batch-exposed/src/main/kotlin/io/bluetape4k/spring/batch/exposed/config/ExposedBatchAutoConfiguration.kt)

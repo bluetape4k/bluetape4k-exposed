@@ -89,6 +89,25 @@ Read the [database adapter matrix](../guides/database-adapter-matrix.md), implem
 
 The module does not bundle Connector/J at runtime, manage schema/indexes, or make spatial functions portable to PostgreSQL/PostGIS. It is a MySQL 8 GIS extension, not a general MySQL adapter.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### MySQL8 GIS column DSL coverage
+
+[![MySQL8 GIS column DSL coverage](../../assets/readme-diagrams/exposed-mysql8-diagram-01.png)](../../assets/readme-diagrams/exposed-mysql8-diagram-01.svg)
+
+_Release README: [`exposed/mysql8/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/mysql8/README.md)_
+
+### MySQL8 GIS serialization flow
+
+[![MySQL8 GIS serialization flow](../../assets/readme-diagrams/exposed-mysql8-diagram-02.png)](../../assets/readme-diagrams/exposed-mysql8-diagram-02.svg)
+
+_Release README: [`exposed/mysql8/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/mysql8/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [Geometry column types](../../../../exposed/mysql8/src/main/kotlin/io/bluetape4k/exposed/mysql8/gis/GeoColumnTypes.kt)

@@ -95,6 +95,25 @@ Begin with [the BigQuery dry-run example](../../../../examples/exposed-bigquery-
 
 This module does not provide JDBC transaction semantics, full DAO compatibility, universal SchemaUtils DDL, or rollback across REST jobs. Join/alias result access and all schema translations should be verified against the actual query.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### BigQuery REST execution boundary diagram
+
+[![BigQuery REST execution boundary diagram](../../assets/readme-diagrams/exposed-bigquery-diagram-01.png)](../../assets/readme-diagrams/exposed-bigquery-diagram-01.svg)
+
+_Release README: [`exposed/bigquery/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/bigquery/README.md)_
+
+### BigQuery query job lifecycle flow diagram
+
+[![BigQuery query job lifecycle flow diagram](../../assets/readme-diagrams/exposed-bigquery-flow-02.png)](../../assets/readme-diagrams/exposed-bigquery-flow-02.svg)
+
+_Release README: [`exposed/bigquery/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/bigquery/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [`BigQueryContext`](../../../../exposed/bigquery/src/main/kotlin/io/bluetape4k/exposed/bigquery/BigQueryContext.kt)

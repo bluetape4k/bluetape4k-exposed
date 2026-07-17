@@ -94,6 +94,25 @@ R2DBC 드라이버, 풀 크기, 연결 획득 제한 시간, 검증, 종료 방�
 
 이 모듈은 연결을 준비하거나 `R2dbcDatabase` 생명주기를 관리하거나 스키마를 만들지 않으며 Spring reactive 트랜잭션 관리도 제공하지 않습니다. 파생 질의 지원 범위는 배포본 구현에 한정됩니다. Flow를 반환한다고 모두 데이터베이스 커서를 스트리밍하는 것은 아니며 명시적인 스트리밍 경로는 `streamAll()`입니다.
 
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### Spring Boot Exposed R2DBC coroutine repository wiring 다이어그램
+
+[![Spring Boot Exposed R2DBC coroutine repository wiring 다이어그램](../../assets/readme-diagrams/spring-boot-exposed-r2dbc-diagram-01.png)](../../assets/readme-diagrams/spring-boot-exposed-r2dbc-diagram-01.svg)
+
+_배포본 README: [`spring-boot/r2dbc/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/spring-boot/r2dbc/README.ko.md)_
+
+### Spring Boot Exposed R2DBC suspend query 처리 흐름
+
+[![Spring Boot Exposed R2DBC suspend query 처리 흐름](../../assets/readme-diagrams/spring-boot-exposed-r2dbc-diagram-02.png)](../../assets/readme-diagrams/spring-boot-exposed-r2dbc-diagram-02.svg)
+
+_배포본 README: [`spring-boot/r2dbc/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/spring-boot/r2dbc/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## 근거 자료 {#sources}
 
 - [`ExposedR2dbcSpringDataAutoConfiguration.kt`](../../../../spring-boot/r2dbc/src/main/kotlin/io/bluetape4k/spring/data/exposed/r2dbc/config/ExposedR2dbcSpringDataAutoConfiguration.kt)

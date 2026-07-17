@@ -101,6 +101,49 @@ pool 대기 시간, 쿼리와 트랜잭션 시간, timeout/rollback 횟수, 느�
 
 JDBC 호출을 suspend 함수 안에 넣어도 blocking이라는 사실은 바뀌지 않습니다. 이 라이브러리는 드라이버, pool, 자동 트랜잭션, 보편적인 재시도 정책을 제공하지 않습니다.
 
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### JDBC 아키텍처 개요
+
+[![JDBC 아키텍처 개요](../../assets/readme-diagrams/exposed-jdbc-diagram-01.png)](../../assets/readme-diagrams/exposed-jdbc-diagram-01.svg)
+
+_배포본 README: [`exposed/jdbc/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc/README.ko.md)_
+
+### Repository Contract 지도 다이어그램
+
+[![Repository Contract 지도 다이어그램](../../assets/readme-diagrams/exposed-jdbc-diagram-02.png)](../../assets/readme-diagrams/exposed-jdbc-diagram-02.svg)
+
+_배포본 README: [`exposed/jdbc/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc/README.ko.md)_
+
+### VirtualThread transaction helper 다이어그램
+
+[![VirtualThread transaction helper 다이어그램](../../assets/readme-diagrams/exposed-jdbc-sequence-01.png)](../../assets/readme-diagrams/exposed-jdbc-sequence-01.svg)
+
+_배포본 README: [`exposed/jdbc/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc/README.ko.md)_
+
+### findById — 다이어그램
+
+[![findById — 다이어그램](../../assets/readme-diagrams/exposed-jdbc-sequence-02.png)](../../assets/readme-diagrams/exposed-jdbc-sequence-02.svg)
+
+_배포본 README: [`exposed/jdbc/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc/README.ko.md)_
+
+### save + findPage — 다이어그램
+
+[![save + findPage — 다이어그램](../../assets/readme-diagrams/exposed-jdbc-sequence-03.png)](../../assets/readme-diagrams/exposed-jdbc-sequence-03.svg)
+
+_배포본 README: [`exposed/jdbc/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc/README.ko.md)_
+
+### softDeleteById / restoreById — 다이어그램
+
+[![softDeleteById / restoreById — 다이어그램](../../assets/readme-diagrams/exposed-jdbc-sequence-04.png)](../../assets/readme-diagrams/exposed-jdbc-sequence-04.svg)
+
+_배포본 README: [`exposed/jdbc/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## 근거 자료 {#sources}
 
 - [JDBC 빌드](../../../../exposed/jdbc/build.gradle.kts)

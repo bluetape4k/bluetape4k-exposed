@@ -23,3 +23,22 @@ releaseRef: "1.11.0"
 ## 릴리스 범위
 
 이 지도에는 `1.11.0` 태그에 있는 모듈만 표시한다. 현재 개발 브랜치에만 있는 모듈은 다음 안정 마이너 버전의 문서가 나올 때까지 포함하지 않는다. 정확한 프로젝트 목록과 소스 경로는 [모듈 매뉴얼](../modules/bluetape4k-exposed-bom.md)에서 확인할 수 있다.
+
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### Bluetape4k Exposed 모듈 구성도
+
+[![Bluetape4k Exposed 모듈 구성도](../../assets/readme-diagrams/root-readme-module-relationships-01.png)](../../assets/readme-diagrams/root-readme-module-relationships-01.svg)
+
+_배포본 README: [`README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/README.ko.md)_
+
+### Bluetape4k Exposed 개요
+
+[![Bluetape4k Exposed 개요](../../assets/readme-diagrams/root-readme-overview-01.png)](../../assets/readme-diagrams/root-readme-overview-01.svg)
+
+_배포본 README: [`README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->

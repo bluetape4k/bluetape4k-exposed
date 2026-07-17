@@ -103,6 +103,25 @@ Use the [serialization and encryption guide](../guides/serialization-and-encrypt
 
 The module does not version documents, migrate rows, select indexes, or make dialect JSON functions portable. Jackson 2 and Jackson 3 have different package/type ecosystems; source similarity is not proof of stored-data or application compatibility.
 
+<!-- release-readme-diagrams:start -->
+## Release diagrams {#release-diagrams}
+
+These diagrams are copied byte-for-byte from README assets in the `1.11.0` release tag. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG source.
+
+### Jackson 2 JSON column boundary
+
+[![Jackson 2 JSON column boundary](../../assets/readme-diagrams/exposed-jackson2-diagram-01.png)](../../assets/readme-diagrams/exposed-jackson2-diagram-01.svg)
+
+_Release README: [`exposed/jackson2/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jackson2/README.md)_
+
+### Jackson 2 JSON round trip
+
+[![Jackson 2 JSON round trip](../../assets/readme-diagrams/exposed-jackson2-flow-02.png)](../../assets/readme-diagrams/exposed-jackson2-flow-02.svg)
+
+_Release README: [`exposed/jackson2/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jackson2/README.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## Sources {#sources}
 
 - [Gradle build file](../../../../exposed/jackson2/build.gradle.kts)

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1060" viewBox="0 0 1680 1060" role="img" aria-labelledby="title desc">
+  <title id="title">MySQL8 GIS Column DSL Coverage</title>
+  <desc id="desc">Coverage chart for exposed-mysql8 table helpers, JTS geometry types, MySQL SQL types, and SRID behavior.</desc>
+  <defs>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
+    <style>
+      .canvas{fill:#F6F9FC}.frame{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
+      .panel{fill:#F3F7FB;stroke:#D7E2EC;stroke-width:2}.head{fill:#E8F3FF;stroke:#AFC9E8;stroke-width:2}
+      .rowA{fill:#FFFFFF}.rowB{fill:#F8FBFD}.cell{stroke:#D7E2EC;stroke-width:1.4}.type{fill:#E9F7F6;stroke:#9ED2CD;stroke-width:1.8}
+      .warn{fill:#FFF3D9;stroke:#D6A441;stroke-width:1.8}.note{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1.4}
+      .title{font-family:"Architects Daughter";font-size:46px;fill:#22344A;font-weight:400}.subtitle{font-family:"Comic Mono";font-size:18px;fill:#536476;font-weight:400}
+      .section{font-family:"Architects Daughter";font-size:24px;fill:#22344A;font-weight:400}.hdr{font-family:"Comic Mono";font-size:15px;fill:#34506D;font-weight:700}
+      .txt{font-family:"Comic Mono";font-size:14px;fill:#42556B;font-weight:400}.mono{font-family:"Comic Mono";font-size:13px;fill:#42556B;font-weight:400}
+      .small{font-family:"Comic Mono";font-size:12px;fill:#627184;font-weight:400}.typeText{font-family:"Comic Mono";font-size:13px;fill:#247B77;font-weight:700}
+      .warnText{font-family:"Comic Mono";font-size:13px;fill:#8A6417;font-weight:700}
+    </style>
+  </defs>
+  <rect class="canvas" width="1680" height="1060"/>
+  <rect class="frame" x="44" y="36" width="1592" height="988" rx="34"/>
+  <text class="title" x="76" y="90">MySQL8 GIS Column DSL Coverage</text>
+  <text class="subtitle" x="80" y="124">Table helpers register JTS geometry columns as MySQL 8.0 spatial types with an explicit SRID.</text>
+
+  <rect class="panel" x="82" y="166" width="1516" height="704" rx="20"/>
+  <text class="section" x="112" y="214">Geometry helper map</text>
+
+  <g transform="translate(112,242)">
+    <rect class="head cell" x="0" y="0" width="292" height="48" rx="8"/>
+    <rect class="head cell" x="292" y="0" width="338" height="48" rx="8"/>
+    <rect class="head cell" x="630" y="0" width="292" height="48" rx="8"/>
+    <rect class="head cell" x="922" y="0" width="276" height="48" rx="8"/>
+    <rect class="head cell" x="1198" y="0" width="268" height="48" rx="8"/>
+    <text class="hdr" x="146" y="30" text-anchor="middle">Table helper</text>
+    <text class="hdr" x="461" y="30" text-anchor="middle">JTS column type</text>
+    <text class="hdr" x="776" y="30" text-anchor="middle">MySQL SQL type</text>
+    <text class="hdr" x="1060" y="30" text-anchor="middle">Typical use</text>
+    <text class="hdr" x="1332" y="30" text-anchor="middle">SRID contract</text>
+
+    <g transform="translate(0,48)">
+      <rect class="rowA cell" x="0" y="0" width="1466" height="70"/><rect class="type" x="22" y="16" width="246" height="38" rx="9"/><text class="typeText" x="145" y="40" text-anchor="middle">geoPoint(name)</text><text class="txt" x="461" y="31" text-anchor="middle">Point</text><text class="mono" x="776" y="31" text-anchor="middle">POINT SRID n</text><text class="txt" x="1060" y="31" text-anchor="middle">location, marker</text><text class="small" x="1332" y="26" text-anchor="middle">default 4326</text><text class="small" x="1332" y="43" text-anchor="middle">override per helper</text>
+      <rect class="rowB cell" x="0" y="70" width="1466" height="70"/><rect class="type" x="22" y="86" width="246" height="38" rx="9"/><text class="typeText" x="145" y="110" text-anchor="middle">geoLineString(name)</text><text class="txt" x="461" y="101" text-anchor="middle">LineString</text><text class="mono" x="776" y="101" text-anchor="middle">LINESTRING SRID n</text><text class="txt" x="1060" y="101" text-anchor="middle">route, segment</text><text class="small" x="1332" y="96" text-anchor="middle">lng, lat order</text><text class="small" x="1332" y="113" text-anchor="middle">WGS84 helper aligned</text>
+      <rect class="rowA cell" x="0" y="140" width="1466" height="70"/><rect class="type" x="22" y="156" width="246" height="38" rx="9"/><text class="typeText" x="145" y="180" text-anchor="middle">geoPolygon(name)</text><text class="txt" x="461" y="171" text-anchor="middle">Polygon</text><text class="mono" x="776" y="171" text-anchor="middle">POLYGON SRID n</text><text class="txt" x="1060" y="171" text-anchor="middle">zone, area</text><text class="small" x="1332" y="166" text-anchor="middle">auto-close helpers</text><text class="small" x="1332" y="183" text-anchor="middle">need valid rings</text>
+      <rect class="rowB cell" x="0" y="210" width="1466" height="70"/><rect class="type" x="22" y="226" width="246" height="38" rx="9"/><text class="typeText" x="145" y="250" text-anchor="middle">geoMultiPoint(name)</text><text class="txt" x="461" y="241" text-anchor="middle">MultiPoint</text><text class="mono" x="776" y="241" text-anchor="middle">MULTIPOINT SRID n</text><text class="txt" x="1060" y="241" text-anchor="middle">clustered points</text><text class="small" x="1332" y="236" text-anchor="middle">same SRID per column</text><text class="small" x="1332" y="253" text-anchor="middle">no mixed metadata</text>
+      <rect class="rowA cell" x="0" y="280" width="1466" height="70"/><rect class="type" x="22" y="296" width="246" height="38" rx="9"/><text class="typeText" x="145" y="320" text-anchor="middle">geoMultiLineString(name)</text><text class="txt" x="461" y="311" text-anchor="middle">MultiLineString</text><text class="mono" x="776" y="311" text-anchor="middle">MULTILINESTRING SRID n</text><text class="txt" x="1060" y="311" text-anchor="middle">route collection</text><text class="small" x="1332" y="306" text-anchor="middle">stored by MySQL GIS</text><text class="small" x="1332" y="323" text-anchor="middle">read as JTS type</text>
+      <rect class="rowB cell" x="0" y="350" width="1466" height="70"/><rect class="type" x="22" y="366" width="246" height="38" rx="9"/><text class="typeText" x="145" y="390" text-anchor="middle">geoMultiPolygon(name)</text><text class="txt" x="461" y="381" text-anchor="middle">MultiPolygon</text><text class="mono" x="776" y="381" text-anchor="middle">MULTIPOLYGON SRID n</text><text class="txt" x="1060" y="381" text-anchor="middle">region set</text><text class="small" x="1332" y="376" text-anchor="middle">distance/area funcs</text><text class="small" x="1332" y="393" text-anchor="middle">operate in MySQL</text>
+      <rect class="rowA cell" x="0" y="420" width="1466" height="70"/><rect class="type" x="22" y="436" width="246" height="38" rx="9"/><text class="typeText" x="145" y="460" text-anchor="middle">geoGeometryCollection</text><text class="txt" x="461" y="451" text-anchor="middle">GeometryCollection</text><text class="mono" x="776" y="451" text-anchor="middle">GEOMETRYCOLLECTION SRID n</text><text class="txt" x="1060" y="451" text-anchor="middle">mixed features</text><text class="small" x="1332" y="446" text-anchor="middle">runtime type checked</text><text class="small" x="1332" y="463" text-anchor="middle">against SQL type</text>
+      <rect class="rowB cell" x="0" y="490" width="1466" height="70"/><rect class="type" x="22" y="506" width="246" height="38" rx="9"/><text class="typeText" x="145" y="530" text-anchor="middle">geoGeometry(name)</text><text class="txt" x="461" y="521" text-anchor="middle">Geometry</text><text class="mono" x="776" y="521" text-anchor="middle">GEOMETRY SRID n</text><text class="txt" x="1060" y="521" text-anchor="middle">generic fallback</text><text class="small" x="1332" y="516" text-anchor="middle">skips subtype check</text><text class="small" x="1332" y="533" text-anchor="middle">still stores SRID</text>
+    </g>
+  </g>
+
+  <g transform="translate(112,912)">
+    <rect class="note" x="0" y="0" width="702" height="58" rx="12"/>
+    <rect class="warn" x="20" y="14" width="184" height="30" rx="15"/><text class="warnText" x="112" y="34" text-anchor="middle">MySQL dialect only</text>
+    <text class="small" x="230" y="24">Helpers check MysqlDialect while registering columns.</text>
+    <text class="small" x="230" y="43">Instantiate tables inside a transaction so the dialect is available.</text>
+    <rect class="note" x="744" y="0" width="722" height="58" rx="12"/>
+    <rect class="warn" x="764" y="14" width="160" height="30" rx="15"/><text class="warnText" x="844" y="34" text-anchor="middle">Serialization</text>
+    <text class="small" x="950" y="24">JDBC binding uses 4-byte little-endian SRID plus WKB.</text>
+    <text class="small" x="950" y="43">SQL literals use ST_GeomFromWKB(..., 'axis-order=long-lat').</text>
+  </g>
+</svg>

@@ -93,6 +93,25 @@ PostgreSQL과 ClickHouse 연결 설정을 분리합니다. 운영에서는 실�
 
 이 예제는 로컬의 두 컨테이너를 연결한 한 경로만 증명합니다. exactly-once pipeline, 분산 트랜잭션, 운영 schema migration, 용량, replication, retention, 재해 복구 정책은 제공하지 않습니다.
 
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### PostgreSQL OLTP and ClickHouse OLAP example topology
+
+[![PostgreSQL OLTP and ClickHouse OLAP example topology](../../assets/readme-diagrams/examples-exposed-clickhouse-oltp-olap-diagram-01.png)](../../assets/readme-diagrams/examples-exposed-clickhouse-oltp-olap-diagram-01.svg)
+
+_배포본 README: [`examples/exposed-clickhouse-oltp-olap/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/examples/exposed-clickhouse-oltp-olap/README.ko.md)_
+
+### OLTP to OLAP integration test 흐름
+
+[![OLTP to OLAP integration test 흐름](../../assets/readme-diagrams/examples-exposed-clickhouse-oltp-olap-flow-02.png)](../../assets/readme-diagrams/examples-exposed-clickhouse-oltp-olap-flow-02.svg)
+
+_배포본 README: [`examples/exposed-clickhouse-oltp-olap/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/examples/exposed-clickhouse-oltp-olap/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->
+
 ## 근거 자료 {#sources}
 
 - [예제 소스](../../../../examples/exposed-clickhouse-oltp-olap/README.ko.md)

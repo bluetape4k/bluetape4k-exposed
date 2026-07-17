@@ -101,3 +101,22 @@ JDBC 트랜잭션, 완전한 DAO 호환, 모든 SchemaUtils DDL, REST Job 사이
 - [`BigQueryQueryExecutor`](../../../../exposed/bigquery/src/main/kotlin/io/bluetape4k/exposed/bigquery/BigQueryQueryExecutor.kt)
 - [`BigQueryQueryOptions`](../../../../exposed/bigquery/src/main/kotlin/io/bluetape4k/exposed/bigquery/BigQueryQueryOptions.kt)
 - [Context 테스트](../../../../exposed/bigquery/src/test/kotlin/io/bluetape4k/exposed/bigquery/BigQueryContextUnitTest.kt)
+
+<!-- release-readme-diagrams:start -->
+## 배포본 다이어그램 {#release-diagrams}
+
+아래 그림은 현재 개발 브랜치가 아니라 `1.11.0` 배포 태그의 README 자산을 바이트 단위로 그대로 옮긴 것입니다. 따라서 이후 SNAPSHOT 변경이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 SVG 원본이 열립니다.
+
+### BigQuery REST execution boundary 다이어그램
+
+[![BigQuery REST execution boundary 다이어그램](../../assets/readme-diagrams/exposed-bigquery-diagram-01.png)](../../assets/readme-diagrams/exposed-bigquery-diagram-01.svg)
+
+_배포본 README: [`exposed/bigquery/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/bigquery/README.ko.md)_
+
+### BigQuery query job 수명 주기 처리 흐름
+
+[![BigQuery query job 수명 주기 처리 흐름](../../assets/readme-diagrams/exposed-bigquery-flow-02.png)](../../assets/readme-diagrams/exposed-bigquery-flow-02.svg)
+
+_배포본 README: [`exposed/bigquery/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/bigquery/README.ko.md)_
+
+<!-- release-readme-diagrams:end -->
