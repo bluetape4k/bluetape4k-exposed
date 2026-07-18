@@ -65,6 +65,11 @@ Republished event는 이전 process가 중단되기 전에 이미 발생한 외�
 outbound call, projection write, message send에는 application-level deduplication key를 두세요. Event type을
 로드할 수 없는 row는 event class를 복구하거나 저장 row를 마이그레이션할 때까지 incomplete 상태로 남습니다.
 
+이 repository는 Spring Modulith publication store이지 범용 transactional-outbox framework가 아닙니다. Listener
+publication과 completion state는 저장하지만, domain reconciliation, broker topology, outbound message delivery,
+외부 side effect를 idempotent하게 만드는 deduplication record는 application이 소유합니다. 이 store는
+at-least-once replay 근거를 제공할 뿐 end-to-end exactly-once delivery를 보장하지 않습니다.
+
 ## Observability
 
 Micrometer가 classpath에 있고 `MeterRegistry` bean이 있으면 module이 Exposed store gauge를 자동 등록합니다.
@@ -87,6 +92,10 @@ bluetape4k:
 - `state`: `incomplete`, `completed`, `failed`, `unloadable`.
 - `completion.mode`: `update`, `delete`, `archive`.
 - 추가 `tags`는 모든 meter에 붙습니다. application, region, environment처럼 배포 단위로 제한된 값만 사용하세요.
+
+기본 gauge는 event id, listener id, event type, serialized payload value 또는 그 밖의 publication content를
+label로 사용하지 않습니다. 특정 pending/failed publication은 unbounded하거나 민감한 metric tag를 추가하지 말고
+repository data와 application log로 진단하세요.
 
 Spring Modulith의 기본 event publishing metric인 `module.events.published` 계열은 application event 발행을
 설명합니다. 이 Exposed gauge는 durable publication store 상태를 설명합니다. 즉 pending row, completion mode에 따른

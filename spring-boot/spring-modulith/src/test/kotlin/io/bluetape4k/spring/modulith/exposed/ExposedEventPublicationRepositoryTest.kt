@@ -39,7 +39,9 @@ import org.springframework.transaction.support.TransactionTemplate
 import java.io.Serializable
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.sql.DataSource
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -53,7 +55,20 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
         private const val OUTSTANDING_LISTENER_ID =
             "io.bluetape4k.spring.modulith.exposed.outstanding-test-listener"
 
+        private const val REPLAY_BOUNDARY_LISTENER_ID =
+            "io.bluetape4k.spring.modulith.exposed.replay-boundary-test-listener"
+
+        private const val REPLAY_EVENT_SEPARATOR = "\u001F"
+
         private val republishedEvents = CopyOnWriteArrayList<String>()
+
+        private val replayDeliveryIds = CopyOnWriteArrayList<String>()
+
+        private val replayDeduplicationKeys = ConcurrentHashMap.newKeySet<String>()
+
+        private val replayAppliedSideEffectIds = CopyOnWriteArrayList<String>()
+
+        private val failReplayAfterSideEffect = AtomicBoolean()
 
         @JvmStatic
         fun enabledDialects(): Set<TestDB> = TestDB.enabledDialects()
@@ -371,6 +386,67 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
         }
     }
 
+    @ParameterizedTest(name = "{0} {1}")
+    @MethodSource("dialectCompletionModes")
+    fun `processing publication replays with stable identity after crash window`(
+        testDB: TestDB,
+        completionMode: CompletionMode,
+    ) {
+        val tableName = eventPublicationTableName()
+        val event = ReplayBoundaryEvent(
+            eventId = "event-${completionMode.name.lowercase()}-${Base58.randomString(8)}",
+            value = "sensitive-order-payload",
+        )
+
+        replayDeliveryIds.clear()
+        replayDeduplicationKeys.clear()
+        replayAppliedSideEffectIds.clear()
+        failReplayAfterSideEffect.set(true)
+
+        withApplicationContext(testDB, completionMode, tableName = tableName) { context ->
+            val repository = context.getBean(EventPublicationRepository::class.java)
+            val txManager = context.getBean("springTransactionManager", PlatformTransactionManager::class.java)
+
+            TransactionTemplate(txManager).executeWithoutResult {
+                context.publishEvent(event)
+            }
+
+            awaitCondition { replayDeliveryIds == listOf(event.eventId) }
+            val failed = repository.findIncompletePublications().single()
+            failed.event shouldBeEqualTo event
+            failed.status shouldBeEqualTo Status.FAILED
+            replayDeliveryIds shouldBeEqualTo listOf(event.eventId)
+            replayAppliedSideEffectIds shouldBeEqualTo listOf(event.eventId)
+        }
+
+        withApplicationContext(
+            testDB,
+            completionMode,
+            tableName = tableName,
+            republishOutstandingOnRestart = true,
+        ) { context ->
+            val repository = context.getBean(EventPublicationRepository::class.java)
+
+            awaitCondition { replayDeliveryIds.size == 2 }
+            awaitCondition { repository.findIncompletePublications().isEmpty() }
+
+            replayDeliveryIds shouldBeEqualTo listOf(event.eventId, event.eventId)
+            replayAppliedSideEffectIds shouldBeEqualTo listOf(event.eventId)
+
+            when (completionMode) {
+                CompletionMode.DELETE ->
+                    repository.findCompletedPublications().shouldBeEmpty()
+
+                CompletionMode.ARCHIVE,
+                CompletionMode.UPDATE -> {
+                    val completed = repository.findCompletedPublications().single()
+                    completed.event shouldBeEqualTo event
+                    completed.status shouldBeEqualTo Status.COMPLETED
+                }
+            }
+        }
+    }
+
     @ParameterizedTest(name = "{0}")
     @MethodSource("enabledDialects")
     fun `publications with unloadable event classes remain visible and fail on event access`(testDB: TestDB) {
@@ -489,11 +565,33 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
         open fun on(event: TestEvent) {
             republishedEvents += event.value
         }
+
+        @ApplicationModuleListener(id = REPLAY_BOUNDARY_LISTENER_ID)
+        open fun onReplayBoundary(event: ReplayBoundaryEvent) {
+            replayDeliveryIds += event.eventId
+
+            if (replayDeduplicationKeys.add(event.eventId)) {
+                replayAppliedSideEffectIds += event.eventId
+            }
+
+            check(!failReplayAfterSideEffect.getAndSet(false)) {
+                "Simulated process failure after side effect and before durable completion"
+            }
+        }
     }
 
     data class TestEvent(val value: String) : Serializable {
         companion object {
             private const val serialVersionUID: Long = 7240327694587830410L
+        }
+    }
+
+    data class ReplayBoundaryEvent(
+        val eventId: String,
+        val value: String,
+    ) : Serializable {
+        companion object {
+            private const val serialVersionUID: Long = -508289256945556177L
         }
     }
 
@@ -522,10 +620,24 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
 
     class TestEventSerializer : EventSerializer {
         override fun serialize(event: Any): Any =
-            (event as TestEvent).value
+            when (event) {
+                is ReplayBoundaryEvent -> event.eventId + REPLAY_EVENT_SEPARATOR + event.value
+                is TestEvent -> event.value
+                else -> error("Unsupported test event type: ${event.javaClass.name}")
+            }
 
         @Suppress("UNCHECKED_CAST")
-        override fun <T : Any> deserialize(serialized: Any, type: Class<T>): T =
-            TestEvent(serialized.toString()) as T
+        override fun <T : Any> deserialize(serialized: Any, type: Class<T>): T {
+            val event = when (type) {
+                ReplayBoundaryEvent::class.java -> {
+                    val (eventId, value) = serialized.toString().split(REPLAY_EVENT_SEPARATOR, limit = 2)
+                    ReplayBoundaryEvent(eventId, value)
+                }
+
+                TestEvent::class.java -> TestEvent(serialized.toString())
+                else -> error("Unsupported test event type: ${type.name}")
+            }
+            return event as T
+        }
     }
 }

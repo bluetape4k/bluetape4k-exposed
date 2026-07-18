@@ -31,7 +31,7 @@ class ExposedModulithObservabilityAutoConfigurationTest {
     @Test
     fun `registers Exposed Modulith gauges when meter registry is present`() {
         contextRunner
-            .withUserConfiguration(MeteredRepositoryConfiguration::class.java)
+            .withUserConfiguration<MeteredRepositoryConfiguration>()
             .run { context ->
                 context.containsBean("exposedModulithEventPublicationMetrics").shouldBeTrue()
 
@@ -45,10 +45,28 @@ class ExposedModulithObservabilityAutoConfigurationTest {
     }
 
     @Test
+    fun `registers only low cardinality publication state tags`() {
+        contextRunner
+            .withUserConfiguration<MeteredRepositoryConfiguration>()
+            .run { context ->
+                val registry = context.getBean(MeterRegistry::class.java)
+                val publicationMeters = registry.find(ExposedEventPublicationMetrics.METER_NAME).meters()
+                val tagMaps = publicationMeters.map { meter ->
+                    meter.id.tags.associate { tag -> tag.key to tag.value }
+                }
+
+                tagMaps.map { it.keys }.toSet() shouldBeEqualTo
+                    setOf(setOf("completion.mode", "state"))
+                tagMaps.flatMap { it.values }.toSet() shouldBeEqualTo
+                    setOf("update", "incomplete", "completed", "failed", "unloadable")
+            }
+    }
+
+    @Test
     fun `does not register Exposed Modulith gauges when disabled`() {
         contextRunner
             .withPropertyValues("bluetape4k.spring.modulith.exposed.observability.enabled=false")
-            .withUserConfiguration(MeteredRepositoryConfiguration::class.java)
+            .withUserConfiguration<MeteredRepositoryConfiguration>()
             .run { context ->
                 context.containsBean("exposedModulithEventPublicationMetrics").shouldBeFalse()
             }
@@ -58,7 +76,7 @@ class ExposedModulithObservabilityAutoConfigurationTest {
     fun `does not register Exposed Modulith gauges when Micrometer is missing`() {
         contextRunner
             .withClassLoader(FilteredClassLoader(MeterRegistry::class.java))
-            .withUserConfiguration(RepositoryOnlyConfiguration::class.java)
+            .withUserConfiguration<RepositoryOnlyConfiguration>()
             .run { context ->
                 context.containsBean("exposedModulithEventPublicationMetrics").shouldBeFalse()
             }
@@ -67,7 +85,7 @@ class ExposedModulithObservabilityAutoConfigurationTest {
     @Test
     fun `does not register Exposed Modulith gauges without meter registry`() {
         contextRunner
-            .withUserConfiguration(RepositoryOnlyConfiguration::class.java)
+            .withUserConfiguration<RepositoryOnlyConfiguration>()
             .run { context ->
                 context.containsBean("exposedModulithEventPublicationMetrics").shouldBeFalse()
             }
@@ -76,7 +94,7 @@ class ExposedModulithObservabilityAutoConfigurationTest {
     @Test
     fun `does not register Exposed Modulith gauges without repository`() {
         contextRunner
-            .withUserConfiguration(MeterRegistryOnlyConfiguration::class.java)
+            .withUserConfiguration<MeterRegistryOnlyConfiguration>()
             .run { context ->
                 context.containsBean("exposedModulithEventPublicationMetrics").shouldBeFalse()
             }
@@ -86,7 +104,7 @@ class ExposedModulithObservabilityAutoConfigurationTest {
     fun `can disable unloadable publication gauge`() {
         contextRunner
             .withPropertyValues("bluetape4k.spring.modulith.exposed.observability.include-unloadable=false")
-            .withUserConfiguration(MeteredRepositoryConfiguration::class.java)
+            .withUserConfiguration<MeteredRepositoryConfiguration>()
             .run { context ->
                 val registry = context.getBean(MeterRegistry::class.java)
 
@@ -104,7 +122,7 @@ class ExposedModulithObservabilityAutoConfigurationTest {
                 "bluetape4k.spring.modulith.exposed.observability.tags.application=orders",
                 "bluetape4k.spring.modulith.exposed.observability.tags.environment=test",
             )
-            .withUserConfiguration(MeteredRepositoryConfiguration::class.java)
+            .withUserConfiguration<MeteredRepositoryConfiguration>()
             .run { context ->
                 val registry = context.getBean(MeterRegistry::class.java)
 
@@ -195,3 +213,6 @@ class ExposedModulithObservabilityAutoConfigurationTest {
         }
     }
 }
+
+private inline fun <reified T : Any> ApplicationContextRunner.withUserConfiguration(): ApplicationContextRunner =
+    withUserConfiguration(T::class.java)
