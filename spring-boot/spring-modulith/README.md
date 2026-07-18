@@ -65,6 +65,11 @@ Republished events can repeat external side effects that happened before the pre
 or message sends with an application-level deduplication key when duplicates are unsafe. Rows with unloadable event
 types remain incomplete until the event class is restored or the stored row is migrated.
 
+This repository is a Spring Modulith publication store, not a general transactional-outbox framework. It persists
+listener publications and their completion state, but the application still owns domain reconciliation, broker
+topology, outbound message delivery, and any deduplication record used to make external side effects idempotent. The
+store provides at-least-once replay evidence; it does not claim end-to-end exactly-once delivery.
+
 ## Observability
 
 When Micrometer is on the classpath and a `MeterRegistry` bean is available, the module registers Exposed-store gauges
@@ -88,6 +93,10 @@ The main meter is `bluetape4k.exposed.modulith.publications`. It uses low-cardin
 - `completion.mode`: `update`, `delete`, or `archive`.
 - Additional configured `tags` are appended to every meter and should stay bounded to deployment-level values such as
   application, region, or environment.
+
+The built-in gauges never use event ids, listener ids, event types, serialized payload values, or other publication
+content as labels. Diagnose a specific pending or failed publication through the repository data and application logs,
+not by adding unbounded or sensitive metric tags.
 
 Spring Modulith's own event-publishing metrics, such as `module.events.published`, still describe application event
 emission. These Exposed gauges describe the durable publication store state: pending rows, completed rows according to
