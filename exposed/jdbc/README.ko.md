@@ -489,6 +489,17 @@ transaction {
 
 ## 테스트
 
+### 애플리케이션 소유 멱등성 경계
+
+PostgreSQL 통합 fixture인
+[`ApplicationOwnedIdempotencyRecordJdbcTest`](src/test/kotlin/io/bluetape4k/exposed/jdbc/idempotency/ApplicationOwnedIdempotencyRecordJdbcTest.kt)는
+테스트 전용 멱등성 레코드를 증명하며, 이 모듈은 공개 idempotency repository API를 제공하지 않습니다.
+
+- 데이터베이스는 `(scope, idempotency_key)` 레코드의 단일성과 owner token 기반 종료 처리 및 stale owner 교체를 위한 compare-and-set 갱신을 보장합니다.
+- 애플리케이션은 scope 선택, request fingerprint 계산, stale timeout, 재시도 동작, result reference 보존 정책을 소유합니다.
+- 원본 payload나 PII 대신 hash와 불투명한 result reference만 저장하고, metric/log label은 state와 policy 같은 제한된 값만 사용합니다.
+- 이 경계는 중단된 owner를 진단하고 해소하지만 exactly-once delivery를 보장한다고 주장하지 않으며 outbox를 대체하지 않습니다.
+
 ```bash
 ./gradlew :exposed-jdbc:test
 ```

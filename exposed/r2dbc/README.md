@@ -466,6 +466,17 @@ val rows = ActorTable.selectImplicitAll()
 
 ## Testing
 
+### Application-owned idempotency boundary
+
+The PostgreSQL integration fixture in
+[`ApplicationOwnedIdempotencyRecordR2dbcTest`](src/test/kotlin/io/bluetape4k/exposed/r2dbc/idempotency/ApplicationOwnedIdempotencyRecordR2dbcTest.kt)
+demonstrates a test-local idempotency record; this module does not expose a public idempotency repository API.
+
+- The database enforces one `(scope, idempotency_key)` record and compare-and-set updates for owner-token finalization and stale-owner replacement.
+- The application owns scope selection, request-fingerprint calculation, stale timeout, retry behavior, and result-reference retention.
+- Persist hashes and opaque result references rather than raw payloads or PII. Keep metric and log labels bounded to values such as state and policy.
+- These boundaries diagnose and resolve interrupted owners; they do not claim exactly-once delivery and do not replace an outbox.
+
 ```bash
 ./gradlew :bluetape4k-exposed-r2dbc:test
 ```
