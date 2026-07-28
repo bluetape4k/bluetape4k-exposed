@@ -8,25 +8,25 @@ import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * A bounded, sanitized buffer of snapshot-cache failures.
+ * Snapshot-cache failure를 정제된 형태로 보관하는 bounded buffer입니다.
  *
- * Events are removed before observer delivery. An ordinary observer exception consumes the current event,
- * increments [observerFailureCount], and stops the drain. Fatal errors propagate on the caller thread.
+ * event는 observer 전달 전에 buffer에서 제거됩니다. 일반 observer 예외는 현재 event를 소비하고
+ * [observerFailureCount]를 증가시킨 뒤 drain을 중단합니다. 치명적 error는 caller thread로 전파됩니다.
  */
 sealed interface SnapshotCacheFailureBuffer {
-    /** Maximum number of retained failures. */
+    /** 보관 가능한 failure event 최대 개수입니다. */
     val capacity: Int
 
-    /** Current number of retained failures. */
+    /** 현재 보관 중인 failure event 개수입니다. */
     val size: Int
 
-    /** Number of failures discarded because the buffer was full. */
+    /** buffer 포화로 버려진 failure event 누적 개수입니다. */
     val droppedCount: Long
 
-    /** Number of ordinary observer exceptions encountered while draining. */
+    /** drain 중 관찰된 일반 observer 예외 누적 개수입니다. */
     val observerFailureCount: Long
 
-    /** Removes and returns the oldest retained failure, or `null` when empty. */
+    /** 가장 오래된 failure를 제거해 반환하거나, 비어 있으면 `null`을 반환합니다. */
     fun poll(): SnapshotCacheFailure?
 
     /**
@@ -41,17 +41,22 @@ sealed interface SnapshotCacheFailureBuffer {
 }
 
 /**
- * Summarizes one caller-thread failure-buffer drain.
+ * caller thread에서 수행한 failure-buffer drain 결과를 요약합니다.
  *
- * @property deliveredCount events delivered successfully
- * @property observerFailedCount events consumed by an ordinary observer exception
- * @property remainingCount events still retained after the drain
- * @property observerExceptionType sanitized observer exception class name, when delivery stopped
+ * @property deliveredCount observer에 성공적으로 전달된 event 개수입니다.
+ * @property observerFailedCount 일반 observer 예외 때문에 소비되고 전달 실패한 event 개수입니다. 한 번 실패하면
+ * drain을 중단하므로 0 또는 1이어야 합니다.
+ * @property remainingCount drain 이후 buffer에 남아 있는 event 개수입니다.
+ * @property observerExceptionType delivery 중단 원인이 된 observer 예외의 정제된 class name입니다.
  */
 data class SnapshotCacheDrainResult(
+    /** observer에 성공적으로 전달된 failure event 개수입니다. */
     val deliveredCount: Int,
+    /** observer 예외로 소비된 failure event 개수입니다. */
     val observerFailedCount: Int,
+    /** drain 이후 buffer에 남은 failure event 개수입니다. */
     val remainingCount: Int,
+    /** observer 예외의 안전하게 정제된 JVM class name입니다. */
     val observerExceptionType: String? = null,
 ) {
     init {
@@ -88,19 +93,24 @@ fun loggingSnapshotCacheFailureObserver(): SnapshotCacheFailureObserver =
     }
 
 /**
- * Sanitized structural description of one snapshot-cache failure.
+ * 하나의 snapshot-cache failure를 정제된 구조 정보로 표현합니다.
  *
- * The record deliberately retains no cache identifier, value, snapshot, exception object, message, cause,
- * stack trace, SQL, URL, endpoint, or credential.
+ * 이 record는 cache identifier, value, snapshot, exception 객체, message, cause, stack trace, SQL, URL, endpoint,
+ * credential을 의도적으로 보관하지 않습니다.
  *
- * @property affectedCount number of affected inputs; use only as a measurement, never as a metrics tag
- * @property exceptionType safe bounded JVM exception class name, or `null` when unavailable or unsafe
+ * @property affectedCount 영향을 받은 input 개수입니다. 측정값으로만 사용하고 metrics tag로 사용하지 않아야 합니다.
+ * @property exceptionType 안전하게 정제된 bounded JVM exception class name입니다. 없거나 unsafe이면 `null`입니다.
  */
 data class SnapshotCacheFailure(
+    /** failure가 발생한 logical snapshot store identity입니다. */
     val storeId: SnapshotStoreId,
+    /** 실패하거나 비정상 outcome을 반환한 cache operation입니다. */
     val operation: SnapshotCacheOperation,
+    /** operation의 구조적 outcome입니다. */
     val outcome: SnapshotCacheOutcome,
+    /** 이 failure event가 대표하는 input 개수입니다. high-cardinality tag로 쓰지 않습니다. */
     val affectedCount: Int,
+    /** 정제된 exception class metadata입니다. 민감한 message/cause/stack trace는 포함하지 않습니다. */
     val exceptionType: String? = null,
 ) {
     init {
@@ -142,10 +152,14 @@ internal fun sanitizeExceptionType(exceptionType: String): String? =
     sanitizeSnapshotCacheExceptionType(exceptionType)
 
 private class BoundedSnapshotCacheFailureBuffer(
+    /** buffer가 보관할 수 있는 failure event 최대 개수입니다. */
     override val capacity: Int,
 ) : SnapshotCacheFailureBuffer {
+    /** non-blocking admission을 제공하는 bounded failure queue입니다. */
     private val failures = ArrayBlockingQueue<SnapshotCacheFailure>(capacity)
+    /** capacity 초과로 drop된 failure event 누적 개수입니다. */
     private val dropped = AtomicLong()
+    /** observer 예외가 발생한 drain 시도 누적 개수입니다. */
     private val observerFailures = AtomicLong()
 
     override val size: Int

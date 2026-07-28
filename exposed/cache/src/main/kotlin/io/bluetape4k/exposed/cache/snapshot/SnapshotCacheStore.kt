@@ -29,17 +29,19 @@ import kotlin.concurrent.withLock
 annotation class InternalSnapshotCacheApi
 
 /**
- * Represents either a cached [snapshot] or an opaque cache [miss].
+ * Cache hit [snapshot] 또는 opaque cache [miss] 중 하나를 표현합니다.
  *
- * Exactly one of [snapshot] and [miss] is non-null. Instances are created through [hit] and [miss].
+ * [snapshot]과 [miss] 중 정확히 하나만 `null`이 아닙니다. 인스턴스는 [hit]와 [miss] factory를 통해 생성됩니다.
  *
- * @property snapshot cached detached snapshot, or `null` for a miss
- * @property miss opaque miss capability, or `null` for a hit
+ * @property snapshot cache hit일 때 반환되는 분리 snapshot입니다. miss일 때는 `null`이며 caller는 이 값을 직접
+ * 수정하거나 영속성 상태와 다시 연결하면 안 됩니다.
+ * @property miss cache miss일 때 backend adapter가 발급하는 opaque capability입니다. hit일 때는 `null`이며
+ * capability 내부의 key/fence 상태는 외부에 노출되지 않습니다.
  */
 class SnapshotCacheLookup<ID : Any, V : Serializable> private constructor(
-    /** Cached detached snapshot, or `null` for a miss. */
+    /** Cache hit일 때의 분리 snapshot입니다. miss이면 `null`입니다. */
     val snapshot: CacheSnapshot<V>?,
-    /** Opaque miss capability, or `null` for a hit. */
+    /** Cache miss를 claim하기 위한 opaque capability입니다. hit이면 `null`입니다. */
     val miss: SnapshotCacheMiss<ID, V>?,
 ) {
     init {
@@ -99,19 +101,19 @@ fun interface ClaimedSnapshotMiss<ID : Any, V : Serializable> {
  */
 @InternalSnapshotCacheApi
 interface SnapshotCacheStore<ID : Any, V : Serializable> {
-    /** Stable logical store identity. */
+    /** 안정적인 logical store identity입니다. */
     val storeId: SnapshotStoreId
 
-    /** Process-local identity token for this concrete store instance. */
+    /** concrete store instance를 구분하는 process-local identity token입니다. */
     val storeInstanceToken: Any
 
-    /** Stable compatibility fingerprint for participant collision checks. */
+    /** participant collision 검사용 안정 compatibility fingerprint입니다. */
     val compatibilityFingerprint: String
 
-    /** Safety limits enforced by this store. */
+    /** 이 store가 강제하는 staging/drain 안전 한계입니다. */
     val limits: SnapshotCacheLimits
 
-    /** Caller-owned bounded failure buffer that receives failures attributable to this store. */
+    /** 이 store에 귀속되는 failure를 수신하는 caller-owned bounded failure buffer입니다. */
     val failureBuffer: SnapshotCacheFailureBuffer
 
     /**
@@ -139,19 +141,19 @@ interface SnapshotCacheStore<ID : Any, V : Serializable> {
  */
 @InternalSnapshotCacheApi
 interface AsyncSnapshotInvalidationStore<ID : Any> {
-    /** Stable logical store identity. */
+    /** 안정적인 logical store identity입니다. */
     val storeId: SnapshotStoreId
 
-    /** Process-local identity token for this concrete store instance. */
+    /** concrete store instance를 구분하는 process-local identity token입니다. */
     val storeInstanceToken: Any
 
-    /** Stable compatibility fingerprint for participant collision checks. */
+    /** participant collision 검사용 안정 compatibility fingerprint입니다. */
     val compatibilityFingerprint: String
 
-    /** Safety limits enforced by this store. */
+    /** 이 store가 강제하는 staging/drain 안전 한계입니다. */
     val limits: SnapshotCacheLimits
 
-    /** Caller-owned bounded failure buffer that receives failures attributable to this store. */
+    /** 이 store에 귀속되는 failure를 수신하는 caller-owned bounded failure buffer입니다. */
     val failureBuffer: SnapshotCacheFailureBuffer
 
     /** Measures the encoded invalidation payload for [id]. */
@@ -180,14 +182,17 @@ interface SnapshotCacheDeadline {
 }
 
 /**
- * Stable identity for one logical snapshot store.
+ * 하나의 논리적 snapshot store를 식별하는 안정적인 identity입니다.
  *
- * @property backend bounded non-blank backend name
- * @property namespace bounded non-blank cache namespace; the only permitted metrics tag candidate, and only when
- * static and low-cardinality
+ * @property backend 제한 길이의 non-blank backend 이름입니다. adapter 종류나 저장소 계층을 구분하는 낮은
+ * cardinality 값이어야 합니다.
+ * @property namespace 제한 길이의 non-blank cache namespace입니다. 정적이고 낮은 cardinality일 때만 metrics tag
+ * 후보로 사용할 수 있습니다.
  */
 data class SnapshotStoreId(
+    /** Backend 종류를 나타내는 안정적인 낮은 cardinality 이름입니다. */
     val backend: String,
+    /** 논리 cache namespace입니다. request/user/entity 값 같은 동적 식별자를 포함하지 않아야 합니다. */
     val namespace: String,
 ) : Serializable {
     init {
@@ -209,17 +214,21 @@ data class SnapshotStoreId(
 }
 
 /**
- * Safety limits shared by snapshot-cache stores and transaction coordination.
+ * Snapshot-cache store와 transaction coordination이 공유하는 안전 한계입니다.
  *
- * @property maxStagedMutations maximum mutations staged by one transaction
- * @property maxParticipatingStores maximum stores participating in one transaction
- * @property maxStagedWeight optional maximum total staged weight
- * @property localDrainBudget optional local post-transaction drain budget
+ * @property maxStagedMutations 한 transaction에서 stage할 수 있는 mutation 최대 개수입니다.
+ * @property maxParticipatingStores 한 transaction에 참여할 수 있는 store 최대 개수입니다.
+ * @property maxStagedWeight 한 transaction에서 stage할 수 있는 총 추정 weight 상한입니다.
+ * @property localDrainBudget commit 후 로컬 drain phase에 부여할 선택적 시간 예산입니다.
  */
 data class SnapshotCacheLimits(
+    /** transaction staging 단계의 mutation 개수 상한입니다. */
     val maxStagedMutations: Int,
+    /** transaction에 동시에 참여할 수 있는 store 개수 상한입니다. */
     val maxParticipatingStores: Int,
+    /** staged snapshot payload의 총 추정 weight 상한입니다. 설정하지 않으면 weight 제한을 적용하지 않습니다. */
     val maxStagedWeight: Long? = null,
+    /** 로컬 cache backend의 commit 이후 drain 시간 예산입니다. 설정하지 않으면 deadline 없이 drain합니다. */
     val localDrainBudget: Duration? = null,
 ) : Serializable {
     init {
@@ -256,20 +265,23 @@ sealed interface SnapshotCacheMutation<ID : Any, V : Serializable> {
     val id: ID
 
     /**
-     * Guarded insertion of [snapshot] for [id].
-     *
-     * [localFence] is process-local concurrency state and must not be persisted or transported. [estimatedWeight]
-     * is the optional non-negative retained-weight estimate prepared by the owning adapter.
-     *
-     * @property id cache identifier
-     * @property snapshot detached snapshot to insert
-     * @property localFence optional process-local generation fence
-     * @property estimatedWeight optional prepared retained-weight estimate
+     * [id]에 대한 [snapshot]의 guarded insertion입니다.
+ *
+     * [localFence]는 process-local concurrency 상태이므로 저장하거나 전송하면 안 됩니다. [estimatedWeight]는 owning
+     * adapter가 준비한 non-negative retained-weight 추정치입니다.
+ *
+     * @property id cache identifier입니다.
+     * @property snapshot cache에 삽입할 분리 snapshot입니다.
+     * @property localFence 선택적 process-local generation fence입니다.
+     * @property estimatedWeight 선택적 retained-weight 추정치입니다.
      */
     data class Put<ID : Any, V : Serializable>(
         override val id: ID,
+        /** Cache backend에 삽입할 불변 분리 snapshot입니다. */
         val snapshot: CacheSnapshot<V>,
+        /** 동일 process 안에서 miss 관찰 이후 경쟁 write를 막는 local fence입니다. */
         @InternalSnapshotCacheApi val localFence: SnapshotLocalFence<ID>? = null,
+        /** transaction limit과 backend eviction 판단에 쓰는 추정 retained weight입니다. */
         @InternalSnapshotCacheApi val estimatedWeight: Long? = null,
     ) : SnapshotCacheMutation<ID, V> {
         init {
@@ -280,25 +292,30 @@ sealed interface SnapshotCacheMutation<ID : Any, V : Serializable> {
     }
 
     /**
-     * Invalidates [id].
-     *
-     * @property id cache identifier
+     * [id]를 invalidate합니다.
+ *
+     * @property id invalidate 대상 cache identifier입니다.
      */
     data class Invalidate<ID : Any, V : Serializable>(
+        /** invalidate 대상 cache identifier입니다. */
         override val id: ID,
     ) : SnapshotCacheMutation<ID, V>
 }
 
 /**
- * Encoded invalidation measurement used before asynchronous submission.
+ * 비동기 invalidation 제출 전에 계산한 encoded payload 측정값입니다.
  *
- * @property id invalidated cache identifier
- * @property encodedBytes encoded payload size in bytes
- * @property encodedSha256 lowercase hexadecimal SHA-256 digest of the encoded payload
+ * @property id invalidate 대상 cache identifier입니다.
+ * @property encodedBytes encoded payload 크기입니다. async batching weight 계산에 사용합니다.
+ * @property encodedSha256 encoded payload의 lowercase hexadecimal SHA-256 digest입니다. payload 본문 없이 구조적
+ * 식별과 진단을 남기기 위한 bounded metadata입니다.
  */
 data class MeasuredInvalidation<ID : Any>(
+    /** invalidate 대상 cache identifier입니다. */
     val id: ID,
+    /** async invalidation payload의 encoded byte 크기입니다. */
     val encodedBytes: Int,
+    /** payload 본문을 노출하지 않는 lowercase SHA-256 digest입니다. */
     val encodedSha256: String,
 ) {
     init {
@@ -314,11 +331,12 @@ data class MeasuredInvalidation<ID : Any>(
 }
 
 /**
- * Report returned by one cache phase.
+ * 하나의 cache phase가 반환하는 적용 보고서입니다.
  *
- * @property results per-outcome operation counts that reconcile to the phase input count
+ * @property results phase input count와 reconcile되어야 하는 operation/outcome별 count 목록입니다.
  */
 data class SnapshotCacheApplyReport(
+    /** 적용 결과를 operation/outcome 단위로 집계한 목록입니다. */
     val results: List<SnapshotCacheOperationResult>,
 ) : Serializable {
     /**
@@ -349,18 +367,22 @@ data class SnapshotCacheApplyReport(
 }
 
 /**
- * Counted result for one cache operation and outcome.
+ * 하나의 cache operation/outcome 조합에 대한 집계 결과입니다.
  *
- * @property operation cache operation represented by this result
- * @property outcome operation outcome
- * @property affectedCount number of phase inputs represented by this result; use only as a measurement, never as a
- * metrics tag
- * @property exceptionType optional bounded exception class name for failed operations
+ * @property operation 이 결과가 표현하는 cache operation입니다.
+ * @property outcome operation outcome입니다.
+ * @property affectedCount 이 결과가 대표하는 phase input 개수입니다. 측정값으로만 사용하고 metrics tag로 사용하지
+ * 않아야 합니다.
+ * @property exceptionType 실패 operation에 대한 선택적 bounded exception class name입니다.
  */
 data class SnapshotCacheOperationResult(
+    /** 결과가 집계하는 cache operation입니다. */
     val operation: SnapshotCacheOperation,
+    /** operation의 구조적 outcome입니다. */
     val outcome: SnapshotCacheOutcome,
+    /** 이 결과가 설명하는 input 개수입니다. high-cardinality tag로 사용하지 않습니다. */
     val affectedCount: Int,
+    /** 실패 원인의 안전하게 정제된 JVM exception class name입니다. 없거나 unsafe이면 `null`입니다. */
     val exceptionType: String? = null,
 ) : Serializable {
     init {
@@ -406,11 +428,19 @@ enum class SnapshotCacheOutcome {
     REJECTED,
 }
 
+/**
+ * 단조 시간 기반 snapshot-cache deadline 구현입니다.
+ *
+ * @param timeout deadline 전체 시간입니다. 양수여야 하며 nanosecond 변환 가능 범위여야 합니다.
+ * @param nanoTimeSource 테스트와 deterministic 검증을 위해 주입하는 단조 시간 source입니다.
+ */
 internal class MonotonicSnapshotCacheDeadline(
     timeout: Duration,
     private val nanoTimeSource: () -> Long = System::nanoTime,
 ) : SnapshotCacheDeadline {
+    /** [timeout]을 nanosecond 단위로 변환한 deadline 폭입니다. */
     private val timeoutNanos: Long
+    /** deadline 계산의 기준이 되는 시작 시각입니다. */
     private val startedAtNanos: Long
 
     init {
@@ -482,16 +512,22 @@ class SnapshotMissCapabilityRegistry<ID : Any, V : Serializable>(
 }
 
 private data class MissCapability<ID : Any>(
+    /** miss를 관찰한 cache identifier입니다. capability 밖으로 직접 노출하지 않습니다. */
     val id: ID,
+    /** miss 관찰 이후 같은 process에서 경쟁 write를 감지하기 위한 local fence입니다. */
     val localFence: SnapshotLocalFence<ID>,
 )
 
 @OptIn(InternalSnapshotCacheApi::class)
 private class OneShotClaimedSnapshotMiss<ID : Any, V : Serializable>(
+    /** claim된 miss가 삽입하려는 cache identifier입니다. */
     private val id: ID,
+    /** guarded insertion에 포함할 process-local generation fence입니다. */
     private val localFence: SnapshotLocalFence<ID>,
 ) : ClaimedSnapshotMiss<ID, V> {
+    /** one-shot prepare 상태를 보호하는 lock입니다. */
     private val lock = ReentrantLock()
+    /** 아직 [prepare]를 호출할 수 있는지 나타내는 one-shot flag입니다. */
     private var available = true
 
     override fun prepare(snapshot: CacheSnapshot<V>): SnapshotCacheMutation.Put<ID, V> = lock.withLock {
@@ -505,6 +541,7 @@ private class IdentityWeakReference<T : Any>(
     referent: T,
     queue: ReferenceQueue<T>? = null,
 ) : WeakReference<T>(referent, queue) {
+    /** referent가 사라진 뒤에도 hash bucket을 안정적으로 찾기 위한 identity hash입니다. */
     private val identityHashCode = System.identityHashCode(referent)
 
     override fun hashCode(): Int = identityHashCode

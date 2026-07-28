@@ -14,6 +14,9 @@ import java.sql.PreparedStatement
  * 위 메서드들을 `prepareStatement(sql)` 로 위임하여 Exposed ORM과의 호환성을 보장합니다.
  * 이 래퍼는 generated key 관련 JDBC 호환성만 보정하며,
  * DuckDB의 트랜잭션 의미론이나 autocommit 동작은 변경하지 않습니다.
+ *
+ * @param conn 실제 DuckDB JDBC 연결입니다. generated key 관련 `prepareStatement` 오버로드만 보정하고,
+ * 나머지 [Connection] 호출은 원본 연결의 의미론을 그대로 유지합니다.
  */
 @Suppress("JavaDefaultMethodsNotOverriddenByDelegation")
 internal class DuckDBConnectionWrapper(private val conn: Connection): Connection by conn {

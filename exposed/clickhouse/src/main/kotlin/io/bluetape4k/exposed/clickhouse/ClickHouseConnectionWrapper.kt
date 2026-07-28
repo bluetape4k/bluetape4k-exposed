@@ -19,6 +19,9 @@ import java.sql.PreparedStatement
  * - [rollback] no-op — Exposed 프레임워크 인터페이스 호환을 위한 어댑터입니다.
  * - Nested transaction / Savepoint 미지원 — 호출은 허용되나 원자성 없습니다.
  * - Multi-statement 쓰기 블록 사용 시 부분 반영 위험을 인지해야 합니다.
+ *
+ * @param conn 실제 ClickHouse JDBC 연결입니다. 모든 표준 [Connection] 동작은 이 연결에 위임하되,
+ * Exposed가 호출하는 일부 트랜잭션/statement 오버로드만 ClickHouse 제약에 맞게 보정합니다.
  */
 @Suppress("JavaDefaultMethodsNotOverriddenByDelegation")
 internal class ClickHouseConnectionWrapper(private val conn: Connection): Connection by conn {
