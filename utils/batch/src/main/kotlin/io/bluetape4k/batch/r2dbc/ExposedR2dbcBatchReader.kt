@@ -19,18 +19,18 @@ import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 
 /**
- * [BatchReader] implementation using Exposed R2DBC with keyset pagination.
+ * Exposed R2DBC와 keyset pagination을 사용해 데이터를 읽는 [BatchReader] 구현체입니다.
  *
- * Follows the same keyset pagination pattern as [io.bluetape4k.batch.jdbc.ExposedJdbcBatchReader]
- * but uses `suspendTransaction` for native coroutine support.
+ * [io.bluetape4k.batch.jdbc.ExposedJdbcBatchReader]와 같은 keyset pagination 패턴을 따르지만,
+ * native coroutine 지원을 위해 `suspendTransaction`을 사용합니다.
  *
  * ## Keyset pagination
- * Each page uses `WHERE keyColumn > lastFetchedKey ORDER BY keyColumn ASC LIMIT pageSize`,
- * which is more stable under large data sets than offset-based approaches.
+ * 각 page는 `WHERE keyColumn > lastFetchedKey ORDER BY keyColumn ASC LIMIT pageSize` 형태로 조회합니다.
+ * 대용량 데이터셋에서는 offset 기반 접근보다 안정적입니다.
  *
- * ## Checkpoint semantics
- * - Calling [onChunkCommitted] advances `lastCommittedKey` to `lastReadKey`.
- * - Calling [restoreFrom] resumes reading from that key onward.
+ * ## Checkpoint 의미
+ * - [onChunkCommitted] 호출은 `lastCommittedKey`를 `lastReadKey`까지 전진시킵니다.
+ * - [restoreFrom] 호출은 저장된 key 이후부터 읽기를 재개합니다.
  *
  * ```kotlin
  * val reader = ExposedR2dbcBatchReader(
@@ -43,16 +43,18 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
  * )
  * ```
  *
- * @param K Keyset key type (Comparable — typically Long, Int, or UUID)
- * @param T Item type being read
- * @param database Exposed R2DBC database
- * @param table Target Exposed table
- * @param keyColumn Keyset sort column (PK recommended)
- * @param pageSize Number of rows per page (must be positive)
- * @param rowMapper Converts [ResultRow] to [T]
- * @param keyExtractor Extracts [K] from [T]
- * @param minKey Partition start key (exclusive) — null means read from the beginning; use for parallel partitioning
- * @param maxKey Partition end key (inclusive) — null means read to the end; use for parallel partitioning
+ * @param K keyset key 타입입니다. [Comparable]이어야 하며 일반적으로 `Long`, `Int`, `UUID` 등을 사용합니다.
+ * @param T 읽어올 item 타입입니다.
+ * @param database Exposed R2DBC database입니다.
+ * @param table 조회 대상 Exposed table입니다.
+ * @param keyColumn keyset 정렬에 사용할 column입니다. primary key 사용을 권장합니다.
+ * @param pageSize page마다 조회할 row 수입니다. 0보다 커야 합니다.
+ * @param rowMapper [ResultRow]를 [T]로 변환합니다.
+ * @param keyExtractor [T]에서 [K]를 추출합니다.
+ * @param minKey partition 시작 key입니다. exclusive boundary이며, `null`이면 처음부터 읽습니다.
+ * parallel partitioning에 사용할 수 있습니다.
+ * @param maxKey partition 종료 key입니다. inclusive boundary이며, `null`이면 끝까지 읽습니다.
+ * parallel partitioning에 사용할 수 있습니다.
  */
 class ExposedR2dbcBatchReader<K : Comparable<K>, T : Any>(
     private val database: R2dbcDatabase,
@@ -126,7 +128,7 @@ class ExposedR2dbcBatchReader<K : Comparable<K>, T : Any>(
     }
 
     /**
-     * Clears buffered items and restores the reader to its initial partition boundary.
+     * buffer를 비우고 reader를 최초 partition boundary 상태로 되돌립니다.
      */
     override suspend fun close() {
         resetState()

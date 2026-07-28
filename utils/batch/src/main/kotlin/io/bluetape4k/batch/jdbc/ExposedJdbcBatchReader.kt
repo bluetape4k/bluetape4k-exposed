@@ -21,22 +21,22 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 /**
- * [BatchReader] implementation using Exposed JDBC with keyset pagination.
+ * Exposed JDBC와 keyset pagination을 사용해 데이터를 읽는 [BatchReader] 구현체입니다.
  *
  * ## Keyset pagination
- * Each page uses `WHERE keyColumn > lastFetchedKey ORDER BY keyColumn ASC LIMIT pageSize`,
- * which is more efficient than offset-based pagination for large data sets.
+ * 각 page는 `WHERE keyColumn > lastFetchedKey ORDER BY keyColumn ASC LIMIT pageSize` 형태로 조회합니다.
+ * 대용량 데이터셋에서는 offset 기반 pagination보다 안정적이고 효율적입니다.
  *
- * ## Checkpoint semantics
- * - [checkpoint]: returns `lastCommittedKey` (the key of the last successfully committed chunk)
- * - [onChunkCommitted]: advances `lastCommittedKey` to `lastReadKey`
- * - [restoreFrom]: resumes from the stored key — call after [open] and before the first [read]
+ * ## Checkpoint 의미
+ * - [checkpoint]: 마지막으로 성공적으로 commit된 chunk의 key인 `lastCommittedKey`를 반환합니다.
+ * - [onChunkCommitted]: `lastCommittedKey`를 `lastReadKey`까지 전진시킵니다.
+ * - [restoreFrom]: 저장된 key부터 읽기를 재개합니다. [open] 이후, 첫 [read] 이전에 호출해야 합니다.
  *
- * ## Concurrency
- * Internal state (`buffer`, `lastFetchedKey`, `lastReadKey`, `lastCommittedKey`, `exhausted`)
- * is designed for single-threaded (runner) access only.
+ * ## 동시성
+ * 내부 상태(`buffer`, `lastFetchedKey`, `lastReadKey`, `lastCommittedKey`, `exhausted`)는
+ * 단일 runner thread/coroutine에서만 접근하는 것을 전제로 합니다.
  *
- * ## Usage
+ * ## 사용 예
  * ```kotlin
  * val reader = ExposedJdbcBatchReader<Long, OrderRecord>(
  *     database = db,
@@ -47,16 +47,18 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
  * )
  * ```
  *
- * @param K Key type (must be Comparable)
- * @param T Item type
- * @param database Exposed JDBC [Database]
- * @param table Target [Table]
- * @param keyColumn Keyset column of type [K]
- * @param pageSize Number of rows to fetch per page (must be > 0)
- * @param rowMapper Converts a [ResultRow] to [T]
- * @param keyExtractor Extracts [K] from [T] — used to advance page and commit pointers
- * @param minKey Partition start key (exclusive) — null means read from the beginning; use for parallel partitioning
- * @param maxKey Partition end key (inclusive) — null means read to the end; use for parallel partitioning
+ * @param K keyset key 타입입니다. [Comparable]이어야 합니다.
+ * @param T 읽어올 item 타입입니다.
+ * @param database Exposed JDBC [Database]입니다.
+ * @param table 조회 대상 [Table]입니다.
+ * @param keyColumn keyset pagination에 사용할 [K] 타입 column입니다.
+ * @param pageSize page마다 조회할 row 수입니다. 0보다 커야 합니다.
+ * @param rowMapper [ResultRow]를 [T]로 변환합니다.
+ * @param keyExtractor [T]에서 [K]를 추출합니다. page pointer와 commit pointer를 전진시키는 데 사용합니다.
+ * @param minKey partition 시작 key입니다. exclusive boundary이며, `null`이면 처음부터 읽습니다.
+ * parallel partitioning에 사용할 수 있습니다.
+ * @param maxKey partition 종료 key입니다. inclusive boundary이며, `null`이면 끝까지 읽습니다.
+ * parallel partitioning에 사용할 수 있습니다.
  */
 class ExposedJdbcBatchReader<K: Comparable<K>, T: Any>(
     private val database: Database,
@@ -132,7 +134,7 @@ class ExposedJdbcBatchReader<K: Comparable<K>, T: Any>(
     }
 
     /**
-     * Clears buffered items and restores the reader to its initial partition boundary.
+     * buffer를 비우고 reader를 최초 partition boundary 상태로 되돌립니다.
      */
     override suspend fun close() {
         resetState()

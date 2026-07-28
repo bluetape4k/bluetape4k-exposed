@@ -12,19 +12,19 @@ import java.time.Instant
 import java.util.*
 
 /**
- * Executes an Exposed [Query] against the BigQuery REST API.
+ * Exposed [Query]를 BigQuery REST API를 통해 실행합니다.
  *
- * Created via [BigQueryContext.withBigQuery].
+ * 이 실행기는 [BigQueryContext.withBigQuery]로 생성합니다.
  *
  * ```kotlin
  * with(context) {
- *     // Synchronous
+ *     // 동기 실행
  *     val rows = Events.selectAll().where { Events.region eq "kr" }.withBigQuery().toList()
  *
- *     // Asynchronous (suspend)
+ *     // 비동기 실행(suspend)
  *     val rows = Events.selectAll().withBigQuery().toListSuspending()
  *
- *     // Streaming (suitable for large result sets)
+ *     // 스트리밍 실행(대용량 result set에 적합)
  *     Events.selectAll().withBigQuery().toFlow().collect { row -> ... }
  * }
  * ```
@@ -36,36 +36,36 @@ class BigQueryQueryExecutor(
 ) {
     private fun sql(): String = transaction(context.sqlGenDb) { query.prepareSQL(this, prepared = false) }
 
-    /** Executes the query and returns all result rows (following BigQuery page tokens) as a list. */
+    /** BigQuery page token을 따라가며 query를 실행하고 모든 result row를 list로 반환합니다. */
     fun toList(): List<BigQueryResultRow> = context.collectAllRows(sql(), options)
 
-    /** Executes the query asynchronously on [BigQueryContext.dispatcher] and returns all rows. */
+    /** [BigQueryContext.dispatcher]에서 query를 비동기로 실행하고 모든 row를 반환합니다. */
     suspend fun toListSuspending(): List<BigQueryResultRow> = withContext(context.dispatcher) { toList() }
 
-    /** Returns a [Flow] that emits rows page by page without loading the entire result set into memory. */
+    /** 전체 result set을 메모리에 올리지 않고 page 단위로 row를 방출하는 [Flow]를 반환합니다. */
     fun toFlow(): Flow<BigQueryResultRow> = context.collectRowsFlow(sql(), options)
 
-    /** Validates the generated SQL with a BigQuery dry run. */
+    /** 생성된 SQL을 BigQuery dry run으로 검증합니다. */
     fun dryRun() = context.validateRawQuery(sql(), options)
 
-    /** Asynchronously validates the generated SQL with a BigQuery dry run. */
+    /** 생성된 SQL을 BigQuery dry run으로 비동기 검증합니다. */
     suspend fun dryRunSuspending() = withContext(context.dispatcher) { dryRun() }
 
-    /** Returns the single result row; throws if there are zero or more than one rows. */
+    /** result row가 정확히 하나일 때 그 row를 반환하고, 0개이거나 2개 이상이면 예외를 던집니다. */
     fun single(): BigQueryResultRow = toList().single()
 
-    /** Returns the single result row, or null if there are zero rows; throws if there are more than one. */
+    /** result row가 하나이면 반환하고, 0개이면 `null`, 2개 이상이면 예외를 던집니다. */
     fun singleOrNull(): BigQueryResultRow? = toList().singleOrNull()
 
-    /** Returns the first result row, or null if the result is empty. */
+    /** 첫 번째 result row를 반환하고, result가 비어 있으면 `null`을 반환합니다. */
     fun firstOrNull(): BigQueryResultRow? = toList().firstOrNull()
 }
 
 /**
- * A single row from a BigQuery REST API response.
+ * BigQuery REST API 응답에서 얻은 단일 row입니다.
  *
- * Values are read in a type-safe way using Exposed [Column] references.
- * Internal map keys are normalized to lowercase, so column name lookups are case-insensitive.
+ * Exposed [Column] 참조를 사용해 값을 type-safe하게 읽을 수 있습니다.
+ * 내부 map key는 lowercase로 정규화되므로 column 이름 조회는 대소문자를 구분하지 않습니다.
  *
  * ```kotlin
  * val row: BigQueryResultRow = ...
@@ -77,12 +77,12 @@ class BigQueryQueryExecutor(
 class BigQueryResultRow(private val data: Map<String, Any?>) {
     private val normalizedData: Map<String, Any?> = data.mapKeys { (name, _) -> name.lowercase(Locale.ROOT) }
 
-    /** Returns the value for the given Exposed [Column], converted to type [T]. */
+    /** 지정한 Exposed [Column]의 값을 [T] 타입으로 변환해 반환합니다. */
     @Suppress("UNCHECKED_CAST")
     operator fun <T> get(column: Column<T>): T =
         convertValue(normalizedData[column.name.lowercase(Locale.ROOT)], column) as T
 
-    /** Returns the raw value for the given column name. */
+    /** 지정한 column 이름의 raw value를 반환합니다. */
     operator fun get(name: String): Any? = normalizedData[name.lowercase(Locale.ROOT)]
 
     @Suppress("UNCHECKED_CAST")
