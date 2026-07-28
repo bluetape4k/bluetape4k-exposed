@@ -1,26 +1,26 @@
-# Issue 340 Testcontainer Launcher Review
+# Issue 340 Testcontainer Launcher 리뷰
 
-## Scope
+## 범위
 
 - Issue: #340 `test: centralize BigQuery and StarRocks containers behind launchers`
 - Branch: `test/issue-340-testcontainer-launchers`
 - Review type: Type B 6-R lite, Tier 4 code correctness + Tier 5 test/evidence
 
-## Evidence
+## 근거
 
-- Baseline `compileTestKotlin` for BigQuery and StarRocks: `BUILD SUCCESSFUL`.
+- BigQuery와 StarRocks의 baseline `compileTestKotlin`: `BUILD SUCCESSFUL`.
 - `git diff --check`: clean.
-- Targeted scan: raw `GenericContainer` setup is isolated behind `BigQueryEmulator.Launcher` and `StarRocksTestServer.Launcher`.
-- Serial targeted tests: `./gradlew --no-parallel :bluetape4k-exposed-bigquery:test :bluetape4k-exposed-starrocks:test` passed with BigQuery 46 passing and StarRocks 21 passing.
+- targeted scan: raw `GenericContainer` setup은 `BigQueryEmulator.Launcher`와 `StarRocksTestServer.Launcher` 뒤로 격리되어 있습니다.
+- serial targeted test: `./gradlew --no-parallel :bluetape4k-exposed-bigquery:test :bluetape4k-exposed-starrocks:test`가 통과했고, BigQuery 46개와 StarRocks 21개 test가 통과했습니다.
 
-## Findings
+## 발견 사항
 
 | Severity | Finding | Evidence | Status |
 |---|---|---|---|
-| P0 | None | Review of fixture extraction and targeted tests | PASS |
-| P1 | None | Launcher helpers expose endpoint/credentials/ports and preserve singleton lifecycle | PASS |
-| P2 | BigQuery helper remains module-local test fixture | No shared bluetape4k BigQuery emulator server exists in current dependency boundary | Accepted exception |
+| P0 | 없음 | fixture extraction과 targeted test 검토 | PASS |
+| P1 | 없음 | launcher helper는 endpoint/credentials/port를 노출하고 singleton lifecycle을 보존합니다 | PASS |
+| P2 | BigQuery helper는 module-local test fixture로 유지 | 현재 dependency boundary 안에는 shared bluetape4k BigQuery emulator server가 없습니다 | 허용된 예외 |
 
-## Verdict
+## 판정
 
-P0/P1 = 0. The implementation is ready for PR creation after final verification.
+P0/P1 = 0. 최종 검증 뒤 PR 생성 가능한 상태입니다.
