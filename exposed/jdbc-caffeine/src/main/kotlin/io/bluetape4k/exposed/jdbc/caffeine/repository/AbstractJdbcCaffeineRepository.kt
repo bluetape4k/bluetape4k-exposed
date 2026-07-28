@@ -43,22 +43,21 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /**
- * Abstract repository combining Exposed JDBC with a Caffeine in-process local cache.
+ * Exposed JDBC와 Caffeine in-process local cache를 결합하는 추상 repository입니다.
  *
- * Uses a Caffeine [Cache] for in-process caching. All database access is synchronous
- * via JDBC `transaction {}`.
- * Lifecycle guards apply through repository operations; direct [cache] access after
- * shutdown or terminal worker failure is unsupported.
+ * 캐시 저장소로 Caffeine [Cache]를 사용하며, 모든 데이터베이스 접근은 JDBC `transaction {}` 안에서
+ * 동기적으로 실행됩니다. repository operation에는 lifecycle guard가 적용되지만, shutdown 이후나
+ * write-behind worker가 terminal failure 상태가 된 이후 [cache]를 직접 접근하는 사용 방식은 지원하지 않습니다.
  *
- * Subclasses must implement four abstract members:
- * - [table]: the Exposed [IdTable]
- * - [ResultRow.toEntity]: converts a [ResultRow] to entity [E]
- * - [UpdateStatement.updateEntity]: maps entity fields for UPDATE
- * - [BatchInsertStatement.insertEntity]: maps entity fields for INSERT
+ * 하위 클래스는 다음 네 가지 추상 멤버를 구현해야 합니다.
+ * - [table]: 대상 Exposed [IdTable]
+ * - [ResultRow.toEntity]: [ResultRow]를 entity [E]로 변환
+ * - [UpdateStatement.updateEntity]: UPDATE statement에 entity field 매핑
+ * - [BatchInsertStatement.insertEntity]: INSERT statement에 entity field 매핑
  *
- * @param ID Primary key type
- * @param E Entity (DTO) type — must implement [Serializable] for cache storage
- * @param config [LocalCacheConfig] settings
+ * @param ID primary key 타입입니다.
+ * @param E cache에 저장할 entity/DTO 타입입니다. cache serialization을 위해 [Serializable]을 구현해야 합니다.
+ * @param config local cache 용량, TTL, write mode 등을 담은 [LocalCacheConfig] 설정입니다.
  */
 abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     override val config: LocalCacheConfig = LocalCacheConfig.READ_ONLY,
@@ -73,31 +72,31 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
 
     abstract override val table: IdTable<ID>
 
-    /** Converts a [ResultRow] into entity [E]. */
+    /** [ResultRow]를 repository가 반환할 entity [E]로 변환합니다. */
     abstract override fun ResultRow.toEntity(): E
 
-    /** Maps entity fields when updating an existing row. */
+    /** 기존 row를 갱신할 때 entity field를 [UpdateStatement]에 매핑합니다. */
     abstract fun UpdateStatement.updateEntity(entity: E)
 
-    /** Maps entity fields when inserting a new row. */
+    /** 새 row를 삽입할 때 entity field를 [BatchInsertStatement]에 매핑합니다. */
     abstract fun BatchInsertStatement.insertEntity(entity: E)
 
-    /** Serializes an entity id to a cache key string. The default uses [toString]. */
+    /** entity id를 cache key 문자열로 직렬화합니다. 기본 구현은 [toString]을 사용합니다. */
     open fun serializeKey(id: ID): String = id.toString()
 
     // -------------------------------------------------------------------------
     // JdbcCacheRepository 필수 프로퍼티 구현
     // -------------------------------------------------------------------------
 
-    /** Cache name used as the key prefix. */
+    /** cache key prefix로 사용하는 cache 이름입니다. */
     override val cacheName: String
         get() = config.keyPrefix
 
-    /** Cache storage mode. Caffeine repositories are always local. */
+    /** cache 저장소 모드입니다. Caffeine repository는 항상 local cache입니다. */
     override val cacheMode: CacheMode
         get() = CacheMode.LOCAL
 
-    /** Cache write strategy configured for this repository. */
+    /** 이 repository에 설정된 cache write 전략입니다. */
     override val cacheWriteMode: CacheWriteMode
         get() = config.writeMode
 
