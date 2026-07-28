@@ -1,27 +1,25 @@
-# Review - Issue 350 JDBC Lettuce Coverage (2026-07-05)
+# 리뷰 - Issue 350 JDBC Lettuce Coverage (2026-07-05)
 
-## Scope
+## 범위
 
 - Issue: #350
-- Module: `:bluetape4k-exposed-jdbc-lettuce`
-- Focus: `ExposedLettuceSuspendedLoadedMap`
+- 모듈: `:bluetape4k-exposed-jdbc-lettuce`
+- 초점: `ExposedLettuceSuspendedLoadedMap`
 
-## Findings
+## 발견 사항
 
-- P0: none.
-- P1: none.
+- P0: 없음.
+- P1: 없음.
 
-## Evidence
+## 근거
 
-- Baseline Kover XML showed `jdbc-lettuce` instruction coverage at 74.78%.
-- The largest missed source file was `ExposedLettuceSuspendedLoadedMap.kt`.
-- Added direct Redis-backed tests for suspended map read-through, write-through,
-  write-behind close, suspend close, and write failure handling.
+- baseline Kover XML에서 `jdbc-lettuce` instruction coverage는 74.78%였습니다.
+- 가장 큰 missed source file은 `ExposedLettuceSuspendedLoadedMap.kt`였습니다.
+- suspended map read-through, write-through, write-behind close, suspend close, write failure handling에 대한 direct Redis-backed test를 추가했습니다.
 
-## Verification
+## 검증
 
-- New focused test class: PASS, 5 passing.
-- Module test plus Kover XML/log: PASS, 803 passing and 72 pending.
-- Final `jdbc-lettuce` instruction coverage: 85.08%.
-- Final Kover line coverage: 84.6626%.
-
+- 새 focused test class: PASS, 5 passing.
+- module test와 Kover XML/log: PASS, 803 passing 및 72 pending.
+- 최종 `jdbc-lettuce` instruction coverage: 85.08%.
+- 최종 Kover line coverage: 84.6626%.

@@ -1,26 +1,26 @@
-# Issue 338 MockK Fixture Review
+# Issue 338 MockK Fixture 리뷰
 
-## Scope
+## 범위
 
 - Issue: #338 `test: move repeated MockK setup to fields reset with clearMocks`
 - Branch: `test/issue-338-mockk-fields`
 - Review type: Type B 6-R lite, Tier 4 code correctness + Tier 5 test/evidence
 
-## Evidence
+## 근거
 
-- Baseline targeted tests before edits: `BUILD SUCCESSFUL`.
+- 수정 전 baseline targeted test: `BUILD SUCCESSFUL`.
 - `git diff --check`: clean.
-- Touched-file MockK scan: remaining `mockk` calls are class-level fixture declarations in touched files.
-- Targeted tests after edits: first run hit Gradle shutdown race after tests reported passing; rerun passed with `BUILD SUCCESSFUL in 36s`.
+- 수정 파일 MockK scan: 남은 `mockk` 호출은 수정 파일의 class-level fixture declaration입니다.
+- 수정 후 targeted test: 첫 실행은 test 통과 보고 뒤 Gradle shutdown race에 걸렸고, 재실행은 `BUILD SUCCESSFUL in 36s`로 통과했습니다.
 
-## Findings
+## 발견 사항
 
 | Severity | Finding | Evidence | Status |
 |---|---|---|---|
-| P0 | None | Review of diff, compile/test execution, and touched-file MockK scan | PASS |
-| P1 | None | Stable collaborators are class-level fields and reset with `clearMocks(...)` in `@BeforeEach` | PASS |
-| P2 | Scenario data and capture slots remain method-local | Slots and per-test payloads are scenario-specific values, not reusable collaborators | Accepted exception |
+| P0 | 없음 | diff, compile/test 실행, 수정 파일 MockK scan 검토 | PASS |
+| P1 | 없음 | stable collaborator는 class-level field이고 `@BeforeEach`에서 `clearMocks(...)`로 reset됩니다 | PASS |
+| P2 | scenario data와 capture slot은 method-local로 유지 | slot과 per-test payload는 재사용 collaborator가 아니라 scenario-specific 값입니다 | 허용된 예외 |
 
-## Verdict
+## 판정
 
-P0/P1 = 0. The implementation is ready for PR creation after final verification.
+P0/P1 = 0. 최종 검증 뒤 PR 생성 가능한 상태입니다.
