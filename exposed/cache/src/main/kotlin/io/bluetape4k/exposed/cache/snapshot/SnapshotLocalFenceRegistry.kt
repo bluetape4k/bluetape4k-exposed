@@ -6,16 +6,25 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /**
- * Process-local generation fence captured by a cache lookup.
+ * Cache lookup 시점에 capture한 process-local generation fence입니다.
  *
- * The capability exposes no captured identifier, stripe, or generation state. It must not be persisted,
- * serialized, copied, or transported outside the owning store.
+ * 이 capability는 capture된 identifier, stripe, generation state를 노출하지 않습니다. owning store 밖으로
+ * persist, serialize, copy, transport하면 안 됩니다.
+ *
+ * @param ownerToken fence를 발급한 registry instance를 식별하는 process-local token입니다.
+ * @param stripe identifier hash가 매핑된 stripe index입니다.
+ * @param capturedId lookup 시점에 capture한 cache identifier입니다.
+ * @param generationToken lookup 시점의 stripe generation token입니다.
  */
 @InternalSnapshotCacheApi
 class SnapshotLocalFence<ID : Any> internal constructor(
+    /** fence를 발급한 registry instance의 process-local owner token입니다. */
     private val ownerToken: Any,
+    /** cache identifier가 배정된 stripe index입니다. */
     private val stripe: Int,
+    /** lookup 시점에 capture한 cache identifier입니다. */
     private val capturedId: ID,
+    /** lookup 시점의 stripe generation token입니다. */
     private val generationToken: Any,
 ) {
     internal fun isCurrentFor(
@@ -31,17 +40,22 @@ class SnapshotLocalFence<ID : Any> internal constructor(
 }
 
 /**
- * Owns fixed-size process-local generation fences for one backend adapter.
+ * 하나의 backend adapter가 사용할 고정 크기 process-local generation fence를 소유합니다.
  *
- * Adapter modules use this opt-in SPI to capture lookup ordering and to serialize cache mutation with generation
- * advancement. Fence internals remain opaque to adapters and consumers.
+ * adapter module은 이 opt-in SPI로 lookup 순서를 capture하고 generation advance와 cache mutation을 직렬화합니다.
+ * fence 내부 상태는 adapter와 consumer에게 opaque하게 유지됩니다.
+ *
+ * @param stripeCount local fence를 분산할 stripe 개수입니다. 양수인 2의 거듭제곱이어야 합니다.
  */
 @InternalSnapshotCacheApi
 class SnapshotLocalFenceRegistry<ID : Any>(
     stripeCount: Int,
 ) {
+    /** 이 registry가 발급한 fence인지 확인하는 process-local owner token입니다. */
     private val ownerToken = Any()
+    /** hash를 stripe index로 접기 위한 bit mask입니다. */
     private val stripeMask: Int
+    /** identifier별 generation을 분산 관리하는 stripe 배열입니다. */
     private val stripes: Array<Stripe>
 
     init {
@@ -90,7 +104,9 @@ class SnapshotLocalFenceRegistry<ID : Any>(
     }
 
     private class Stripe {
+        /** stripe 안의 generation token advance와 mutation을 직렬화하는 lock입니다. */
         val lock = ReentrantLock()
+        /** 이 stripe의 현재 generation을 나타내는 opaque process-local token입니다. */
         var generationToken: Any = Any()
     }
 

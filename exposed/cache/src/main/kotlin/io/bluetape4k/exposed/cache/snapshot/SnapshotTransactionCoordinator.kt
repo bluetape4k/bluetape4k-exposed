@@ -99,6 +99,11 @@ fun <TX : Transaction, ID : Any, V : Serializable> stageInvalidationMutation(
     DEFAULT_SNAPSHOT_TRANSACTION_COORDINATOR.stageInvalidation(transaction, bridge, store, id)
 }
 
+/**
+ * Exposed root transaction에 snapshot-cache mutation을 stage하고 commit/rollback 경계에서 drain을 조정합니다.
+ *
+ * @param nanoTimeSource commit 이후 local drain deadline을 계산할 때 사용하는 단조 시간 source입니다.
+ */
 internal class SnapshotTransactionCoordinator(
     private val nanoTimeSource: () -> Long = System::nanoTime,
 ) {
@@ -207,11 +212,21 @@ internal class SnapshotTransactionCoordinator(
     }
 }
 
+/**
+ * Exposed statement lifecycle callback을 snapshot transaction state transition으로 연결합니다.
+ *
+ * @param state transaction user-data에 저장된 staging 상태입니다.
+ * @param nanoTimeSource commit 후 drain deadline 계산에 사용할 단조 시간 source입니다.
+ */
 private class SnapshotTransactionInterceptor(
+    /** 이 interceptor가 관리하는 snapshot transaction state입니다. */
     private val state: SnapshotTransactionState,
+    /** commit 후 drain phase deadline 계산용 단조 시간 source입니다. */
     private val nanoTimeSource: () -> Long,
 ) : StatementInterceptor {
+    /** Exposed callback 중복/순서 경합에서 [pending]과 [state] 전이를 직렬화합니다. */
     private val lock = ReentrantLock()
+    /** `beforeCommit`에서 확정해 `afterCommit`에서 drain할 mutation 묶음입니다. */
     private var pending = PendingSnapshotMutations.EMPTY
 
     override fun beforeCommit(transaction: Transaction) {
@@ -253,10 +268,15 @@ private class SnapshotTransactionInterceptor(
 }
 
 private class SnapshotTransactionState {
+    /** staging 상태와 lifecycle 전이를 보호하는 transaction-local lock입니다. */
     private val lock = ReentrantLock()
+    /** 현재 transaction 경계의 staging lifecycle입니다. */
     private var lifecycle = SnapshotTransactionLifecycle.OPEN
+    /** store identity별 참여자 호환성/limit/failure-buffer 소유권 기록입니다. */
     private val participants = LinkedHashMap<SnapshotStoreId, ParticipantRecord>()
+    /** store/id별 최종 mutation을 보관합니다. 같은 key의 mutation은 마지막 값으로 대체됩니다. */
     private val mutations = LinkedHashMap<MutationKey, BufferedSnapshotMutation>()
+    /** staged mutation들의 추정 weight 합계입니다. replacement 시 이전 weight를 차감합니다. */
     private var totalWeight = 0L
 
     fun requireOpen() = lock.withLock {
@@ -359,11 +379,17 @@ private enum class SnapshotTransactionLifecycle {
 }
 
 private data class ParticipantRecord(
+    /** 동일 logical store identity에 대해 같은 concrete store instance인지 확인하는 process-local token입니다. */
     val storeInstanceToken: Any,
+    /** adapter 호환성 충돌을 감지하기 위한 안정 fingerprint입니다. */
     val compatibilityFingerprint: String,
+    /** 참여 store들의 effective limit 계산에 쓰이는 안전 한계입니다. */
     val limits: SnapshotCacheLimits,
+    /** 이 store에 귀속된 failure event를 받을 caller-owned buffer입니다. */
     val failureBuffer: SnapshotCacheFailureBuffer,
+    /** 이 identity가 local snapshot store participant로 참여했는지 여부입니다. */
     val hasLocalParticipant: Boolean,
+    /** 이 identity가 async invalidation participant로 참여했는지 여부입니다. */
     val hasAsyncParticipant: Boolean,
 ) {
     constructor(participant: SnapshotParticipant) : this(
@@ -403,6 +429,7 @@ private sealed interface SnapshotParticipant {
 }
 
 private class LocalParticipant<ID : Any, V : Serializable>(
+    /** local put/invalidation을 실제로 적용할 synchronous snapshot store입니다. */
     val store: SnapshotCacheStore<ID, V>,
 ) : SnapshotParticipant {
     override val storeId: SnapshotStoreId = store.storeId
@@ -421,6 +448,7 @@ private class LocalParticipant<ID : Any, V : Serializable>(
 }
 
 private class AsyncParticipant<ID : Any>(
+    /** async invalidation을 제출할 backend store입니다. */
     val store: AsyncSnapshotInvalidationStore<ID>,
 ) : SnapshotParticipant {
     override val storeId: SnapshotStoreId = store.storeId
@@ -441,23 +469,30 @@ private sealed interface BufferedSnapshotMutation {
 }
 
 private data class LocalPutMutation<ID : Any, V : Serializable>(
+    /** mutation을 drain할 local participant입니다. */
     override val participant: LocalParticipant<ID, V>,
+    /** claim된 miss에서 준비된 guarded put mutation입니다. */
     val put: SnapshotCacheMutation.Put<ID, V>,
 ) : BufferedSnapshotMutation {
     override val id: ID = put.id
+    /** adapter가 계산한 retained weight 추정치입니다. 없으면 weight 제한 계산에서 0으로 취급합니다. */
     val estimatedWeight: Long? = put.estimatedWeight
     override val weight: Long = estimatedWeight ?: 0L
 }
 
 private data class LocalInvalidationMutation<ID : Any, V : Serializable>(
+    /** invalidation을 drain할 local participant입니다. */
     override val participant: LocalParticipant<ID, V>,
+    /** local cache에서 invalidate할 cache identifier입니다. */
     override val id: ID,
 ) : BufferedSnapshotMutation {
     override val weight: Long = 0L
 }
 
 private data class AsyncInvalidationMutation<ID : Any>(
+    /** invalidation을 submit할 async participant입니다. */
     override val participant: AsyncParticipant<ID>,
+    /** backend 제출 전에 측정된 encoded invalidation payload입니다. */
     val measured: MeasuredInvalidation<ID>,
 ) : BufferedSnapshotMutation {
     override val id: ID = measured.id
@@ -465,12 +500,16 @@ private data class AsyncInvalidationMutation<ID : Any>(
 }
 
 private data class MutationKey(
+    /** mutation을 소유한 logical store identity입니다. */
     val storeId: SnapshotStoreId,
+    /** store 안에서 mutation이 대상으로 삼는 cache identifier입니다. */
     val id: Any,
 )
 
 private data class PendingSnapshotMutations(
+    /** commit 이후 drain할 최종 mutation 목록입니다. */
     val mutations: List<BufferedSnapshotMutation>,
+    /** local participant drain에 적용할 최소 시간 예산입니다. 없으면 deadline 없이 drain합니다. */
     val localDrainBudget: Duration?,
 ) {
     companion object {
@@ -628,7 +667,9 @@ private inline fun drainLocalPhase(
 }
 
 private data class StoreMutationGroup(
+    /** 같은 store identity로 묶인 mutation을 처리할 participant입니다. */
     val participant: SnapshotParticipant,
+    /** 같은 store identity에 속하는 mutation 목록입니다. */
     val mutations: MutableList<BufferedSnapshotMutation>,
 )
 
@@ -655,8 +696,11 @@ private fun SnapshotCacheLimits.minimum(other: SnapshotCacheLimits): SnapshotCac
 )
 
 private class WeakIdentityTerminalTransactions {
+    /** weak-reference set과 reference queue 정리를 직렬화합니다. */
     private val lock = ReentrantLock()
+    /** GC된 terminal transaction reference를 수거하는 queue입니다. */
     private val staleTransactions = ReferenceQueue<Transaction>()
+    /** 이미 terminal 경계에 도달한 root transaction들의 weak identity set입니다. */
     private val terminalTransactions = HashSet<IdentityWeakTransactionReference>()
 
     fun <T> createStateIfOpen(transaction: Transaction, block: () -> T): T = lock.withLock {
@@ -685,6 +729,7 @@ private class IdentityWeakTransactionReference(
     transaction: Transaction,
     queue: ReferenceQueue<Transaction>? = null,
 ) : WeakReference<Transaction>(transaction, queue) {
+    /** referent가 GC된 뒤에도 hash set 위치를 유지하기 위한 identity hash입니다. */
     private val identityHashCode = System.identityHashCode(transaction)
 
     override fun hashCode(): Int = identityHashCode

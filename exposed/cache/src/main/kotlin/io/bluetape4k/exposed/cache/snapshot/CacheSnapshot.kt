@@ -3,16 +3,20 @@ package io.bluetape4k.exposed.cache.snapshot
 import java.io.Serializable
 
 /**
- * Detached value envelope stored by a snapshot cache.
+ * Snapshot cache가 저장하는 분리된 값 봉투입니다.
  *
- * The envelope references are immutable. The caller owns mapping persistence state to a detached value and ensuring
- * that the complete value graph is deeply immutable when required by the cache contract.
+ * 봉투의 참조는 불변입니다. 호출자는 영속성 상태를 트랜잭션 범위 밖의 값으로 매핑하고,
+ * cache 계약이 요구하는 경우 전체 값 그래프가 깊은 불변성을 갖도록 보장해야 합니다.
  *
- * @property value serializable value detached from transaction-scoped persistence state
- * @property revision optional application-defined consistency revision
+ * @property value 트랜잭션 범위의 영속성 상태에서 분리된 직렬화 가능 값입니다. DAO entity나 요청 상태를
+ * 직접 보관하지 않고 cache backend가 안전하게 보유할 수 있는 DTO/값 객체여야 합니다.
+ * @property revision 선택적인 애플리케이션 정의 일관성 revision입니다. optimistic consistency, schema
+ * evolution, stale-read 판별에 사용할 수 있으며, cache 계층은 값을 해석하지 않습니다.
  */
 data class CacheSnapshot<V : Serializable>(
+    /** Cache backend에 저장될 실제 분리 값입니다. */
     val value: V,
+    /** 호출자가 정의한 consistency/version metadata이며, 없으면 `null`입니다. */
     val revision: String? = null,
 ) : Serializable {
     companion object {

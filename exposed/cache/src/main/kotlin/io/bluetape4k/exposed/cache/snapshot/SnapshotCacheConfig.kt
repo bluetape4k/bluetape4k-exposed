@@ -4,20 +4,28 @@ import java.io.Serializable
 import java.time.Duration
 
 /**
- * Common safety limits and identity for a transaction-aware snapshot cache.
+ * 트랜잭션 인식 snapshot cache의 공통 안전 한계와 식별자입니다.
  *
- * [namespace] is an operator-owned, static, non-tenant identifier. It must not contain request, entity, user, or
- * other dynamically derived identifiers. Only the namespace syntax is enforced mechanically.
+ * [namespace]는 운영자가 소유하는 정적 non-tenant 식별자입니다. request, entity, user 같은 동적 식별자를
+ * 포함하면 안 됩니다. 생성자는 namespace 문법만 강제하므로 cardinality 의미론은 호출자가 보장합니다.
  *
- * @property namespace stable cache namespace using the form `name:v1`
- * @property schemaVersion application-defined snapshot payload schema version
- * @property maxStagedMutations maximum mutations staged by one transaction
- * @property maxParticipatingStores maximum snapshot stores participating in one transaction
+ * @property namespace `name:v1` 형식의 안정적인 cache namespace입니다. metrics tag 후보가 될 수 있으므로
+ * 배포 단위에서 정적으로 고정되어야 합니다.
+ * @property schemaVersion 애플리케이션이 정의한 snapshot payload schema version입니다. 저장된 값의
+ * 역직렬화/마이그레이션 판단에 사용되며 library는 값을 해석하지 않습니다.
+ * @property maxStagedMutations 한 transaction에서 stage할 수 있는 mutation 최대 개수입니다. 과도한 메모리
+ * 점유와 commit 후 drain 폭주를 제한합니다.
+ * @property maxParticipatingStores 한 transaction에 참여할 수 있는 snapshot store 최대 개수입니다. store
+ * 충돌 검사와 per-store limit 병합 비용을 제한합니다.
  */
 data class SnapshotCacheConfig(
+    /** 안정적인 cache namespace입니다. 동적 identifier를 포함하지 않는 정적 값이어야 합니다. */
     val namespace: String,
+    /** snapshot payload의 애플리케이션 schema version입니다. */
     val schemaVersion: String,
+    /** 한 transaction에 stage 가능한 mutation 개수 상한입니다. */
     val maxStagedMutations: Int = 10_000,
+    /** 한 transaction에 참여 가능한 store 개수 상한입니다. */
     val maxParticipatingStores: Int = 8,
 ) : Serializable {
 
@@ -41,31 +49,39 @@ data class SnapshotCacheConfig(
 }
 
 /**
- * Safety limits and expiry policy for a local Caffeine snapshot cache adapter.
+ * 로컬 Caffeine snapshot cache adapter의 안전 한계와 만료 정책입니다.
  *
- * A non-null [maximumWeight] or [maxStagedWeight] requires a [SnapshotValueSizer] when an adapter is constructed.
- * Configuration construction intentionally does not require the sizer so immutable configuration remains separate
- * from runtime adapter collaborators.
+ * [maximumWeight] 또는 [maxStagedWeight]가 `null`이 아니면 adapter 생성 시 [SnapshotValueSizer]가 필요합니다.
+ * configuration 객체는 불변 설정과 runtime collaborator를 분리하기 위해 sizer 자체를 요구하지 않습니다.
  *
- * @property snapshot common snapshot cache identity and transaction staging limits
- * @property maximumSize maximum number of locally cached entries
- * @property maximumWeight optional maximum estimated retained weight for locally cached entries
- * @property expireAfterWrite expiry duration measured from the last write
- * @property expireAfterAccess optional expiry duration measured from the last access
- * @property maxStagedWeight optional maximum estimated retained weight staged by one transaction
- * @property localDrainBudget maximum time budget for draining local post-transaction work
- * @property fenceStripes power-of-two count of local concurrency fence stripes
- * @property maxOutstandingMissTokens maximum number of outstanding local cache-miss tokens
+ * @property snapshot 공통 snapshot cache 식별자와 transaction staging 한계입니다.
+ * @property maximumSize 로컬에 보관할 cache entry 최대 개수입니다.
+ * @property maximumWeight 로컬 entry의 추정 retained weight 상한입니다. 설정하면 sizer 기반 eviction을 사용합니다.
+ * @property expireAfterWrite 마지막 write 이후 entry가 유지되는 시간입니다.
+ * @property expireAfterAccess 마지막 access 이후 entry가 유지되는 선택적 시간입니다.
+ * @property maxStagedWeight 한 transaction에 stage할 수 있는 추정 retained weight 상한입니다.
+ * @property localDrainBudget commit 후 로컬 put/invalidation drain에 사용할 최대 시간 예산입니다.
+ * @property fenceStripes local concurrency fence stripe 개수입니다. lock 분산을 위해 2의 거듭제곱이어야 합니다.
+ * @property maxOutstandingMissTokens 아직 claim되지 않은 cache-miss token의 최대 보유 개수입니다.
  */
 data class CaffeineSnapshotCacheConfig(
+    /** 공통 snapshot cache identity와 staging limit입니다. */
     val snapshot: SnapshotCacheConfig,
+    /** 로컬 Caffeine cache에 보관할 entry 개수 상한입니다. */
     val maximumSize: Long = 10_000,
+    /** 로컬 Caffeine cache의 추정 retained weight 상한입니다. */
     val maximumWeight: Long? = null,
+    /** write 시점 기준 entry 만료 시간입니다. */
     val expireAfterWrite: Duration = Duration.ofMinutes(10),
+    /** access 시점 기준 entry 만료 시간입니다. 설정하지 않으면 access 기반 만료를 사용하지 않습니다. */
     val expireAfterAccess: Duration? = null,
+    /** transaction staging 단계의 추정 retained weight 상한입니다. */
     val maxStagedWeight: Long? = null,
+    /** commit 이후 로컬 drain 단계에 허용되는 시간 예산입니다. */
     val localDrainBudget: Duration = Duration.ofMillis(250),
+    /** local fence를 분산할 stripe 수입니다. */
     val fenceStripes: Int = 1_024,
+    /** 동시에 유지할 수 있는 opaque miss token 상한입니다. */
     val maxOutstandingMissTokens: Int = 10_000,
 ) : Serializable {
 
