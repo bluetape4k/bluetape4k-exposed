@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import { buildRepository } from '../../scripts/visual-companions/build.mjs';
@@ -42,6 +43,31 @@ test('transaction companion compares JPA with Exposed before the Exposed detail 
     model.architecture.map(({ id }) => id),
     ['jpa-exposed-comparison', 'transaction-ownership'],
   );
+});
+
+test('comparison diagrams connect application ownership to the outer persistence lanes', async () => {
+  const [model] = await loadCompanionModels(root);
+
+  for (const locale of ['en', 'ko']) {
+    const source = localizedArchitectureValue(
+      model.architecture[0].source,
+      locale,
+      'source',
+    );
+    const svg = await readFile(new URL(`../../${source}`, import.meta.url), 'utf8');
+    const connectors = [...svg.matchAll(
+      /<path data-connector="application-to-([^"]+)" d="([^"]+)"/g,
+    )].map((match) => [match[1], match[2]]);
+
+    assert.deepEqual(connectors, [
+      ['jpa-hibernate-lane', 'M520 254 V330'],
+      ['exposed-lane', 'M1480 254 V330'],
+    ]);
+    assert.match(svg, /data-card="application-service"/);
+    assert.match(svg, /data-card="jpa-hibernate-lane"/);
+    assert.match(svg, /data-card="exposed-lane"/);
+    assert.doesNotMatch(svg, /data-connector="application-to-[^"]+"[^>]*V450/);
+  }
 });
 
 test('localized architecture values select the requested locale and preserve shared assets', () => {

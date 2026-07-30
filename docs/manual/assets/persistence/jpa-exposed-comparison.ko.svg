@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1350" viewBox="0 0 2000 1350" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1390" viewBox="0 0 2000 1390" role="img" aria-labelledby="title desc">
   <title id="title">JPA Hibernate와 Exposed 책임 구조 비교</title>
   <desc id="desc">전형적인 Spring Data JPA 및 Hibernate 구조를 Exposed JDBC와 R2DBC 구조와 비교합니다. 두 방식 모두 애플리케이션 서비스가 유스케이스 트랜잭션을 소유합니다. JPA는 트랜잭션에 연결된 영속성 컨텍스트와 관리 엔티티를 사용하고, Exposed는 명시적인 트랜잭션 문맥과 저장소 및 SQL 연산을 사용합니다.</desc>
   <defs>
@@ -43,27 +43,33 @@
     </style>
   </defs>
 
-  <rect width="2000" height="1350" fill="url(#canvas)"/>
-  <rect x="42" y="36" width="1916" height="1278" rx="34" fill="url(#panel)" stroke="#536377" stroke-width="4" filter="url(#shadow)"/>
+  <rect width="2000" height="1390" fill="url(#canvas)"/>
+  <rect x="42" y="36" width="1916" height="1318" rx="34" fill="url(#panel)" stroke="#536377" stroke-width="4" filter="url(#shadow)"/>
 
   <text class="title" x="86" y="112">JPA / Hibernate와 Exposed 비교</text>
   <text class="subtitle" x="88" y="154">프레임워크 이름이 아니라 책임, 상태, 데이터베이스 I/O를 비교한다</text>
 
   <g filter="url(#shadow)">
-    <rect class="card" x="280" y="190" width="1440" height="104" rx="24" stroke="#c58b2a"/>
+    <rect data-card="application-service" class="card" x="280" y="190" width="1440" height="104" rx="24" stroke="#c58b2a"/>
   </g>
   <text x="1000" y="232" text-anchor="middle" class="card-title">애플리케이션 서비스가 유스케이스 트랜잭션을 소유한다</text>
   <text x="1000" y="267" text-anchor="middle" class="card-copy">업무 작업 하나 | 원자적 경계 하나 | 저장소는 경계에 참여</text>
 
-  <rect x="70" y="330" width="900" height="760" rx="28" fill="#111827" stroke="#8b6bd6" stroke-width="3"/>
-  <rect x="1030" y="330" width="900" height="760" rx="28" fill="#111827" stroke="#4c8cc8" stroke-width="3"/>
+  <g transform="translate(0 40)">
+    <rect data-card="jpa-hibernate-lane" x="70" y="330" width="900" height="760" rx="28" fill="#111827" stroke="#8b6bd6" stroke-width="3"/>
+    <rect data-card="exposed-lane" x="1030" y="330" width="900" height="760" rx="28" fill="#111827" stroke="#4c8cc8" stroke-width="3"/>
 
-  <text class="lane-title" x="112" y="382">JPA / Hibernate</text>
-  <text class="lane-note" x="112" y="414">Spring Data JPA + Hibernate</text>
-  <text class="lane-title" x="1072" y="382">JetBrains Exposed</text>
-  <text class="lane-note" x="1072" y="414">JDBC와 R2DBC 실행 경로</text>
+    <g class="connector">
+      <path data-connector="application-to-jpa-hibernate-lane" d="M520 254 V330" stroke="#f4c56a" marker-end="url(#arrow-amber)"/>
+      <path data-connector="application-to-exposed-lane" d="M1480 254 V330" stroke="#f4c56a" marker-end="url(#arrow-amber)"/>
+    </g>
 
-  <g filter="url(#shadow)">
+    <text class="lane-title" x="112" y="382">JPA / Hibernate</text>
+    <text class="lane-note" x="112" y="414">Spring Data JPA + Hibernate</text>
+    <text class="lane-title" x="1072" y="382">JetBrains Exposed</text>
+    <text class="lane-note" x="1072" y="414">JDBC와 R2DBC 실행 경로</text>
+
+    <g filter="url(#shadow)">
     <rect class="card" x="120" y="450" width="800" height="100" rx="22" stroke="#c58b2a"/>
     <rect class="card" x="120" y="610" width="360" height="128" rx="22" stroke="#8b6bd6"/>
     <rect class="card" x="560" y="610" width="360" height="128" rx="22" stroke="#8b6bd6"/>
@@ -78,9 +84,9 @@
     <rect class="card" x="1500" y="774" width="380" height="118" rx="22" stroke="#159c92"/>
     <rect class="card" x="1080" y="952" width="380" height="86" rx="22" stroke="#4c8cc8"/>
     <rect class="card" x="1500" y="952" width="380" height="86" rx="22" stroke="#159c92"/>
-  </g>
+    </g>
 
-  <g text-anchor="middle">
+    <g text-anchor="middle">
     <text class="card-code" x="520" y="489">@Transactional 경계</text>
     <text class="card-copy" x="520" y="522">Spring이 EntityManager를 트랜잭션에 연결</text>
 
@@ -121,39 +127,38 @@
     <text class="card-copy" x="1270" y="1017">블로킹 I/O</text>
     <text class="card-title" x="1690" y="988">R2DBC 드라이버</text>
     <text class="card-copy" x="1690" y="1017">논블로킹 I/O</text>
+    </g>
+
+    <g class="connector">
+      <path d="M300 550 V610" stroke="#c4b5fd" marker-end="url(#arrow-purple)"/>
+      <path d="M740 550 V610" stroke="#c4b5fd" marker-end="url(#arrow-purple)"/>
+      <path d="M300 738 V798" stroke="#c4b5fd" marker-end="url(#arrow-purple)"/>
+      <path d="M740 738 V798" stroke="#c4b5fd" marker-end="url(#arrow-purple)"/>
+      <path d="M520 948 V988" stroke="#9ed8ff" marker-end="url(#arrow-blue)"/>
+
+      <path d="M1270 550 V610" stroke="#9ed8ff" marker-end="url(#arrow-blue)"/>
+      <path d="M1690 550 V610" stroke="#5eead4" marker-end="url(#arrow-teal)"/>
+      <path d="M1270 714 V774" stroke="#9ed8ff" marker-end="url(#arrow-blue)"/>
+      <path d="M1690 714 V774" stroke="#5eead4" marker-end="url(#arrow-teal)"/>
+      <path d="M1270 892 V952" stroke="#9ed8ff" marker-end="url(#arrow-blue)"/>
+      <path d="M1690 892 V952" stroke="#5eead4" marker-end="url(#arrow-teal)"/>
+    </g>
   </g>
 
-  <g class="connector">
-    <path d="M520 294 V306 Q520 314 528 314 H880 Q888 314 888 322 V450" stroke="#f4c56a" marker-end="url(#arrow-amber)"/>
-    <path d="M1270 294 V306 Q1270 314 1278 314 H1420 Q1428 314 1428 322 V450" stroke="#9ed8ff" marker-end="url(#arrow-blue)"/>
-    <path d="M1690 294 V306 Q1690 314 1698 314 H1840 Q1848 314 1848 322 V450" stroke="#5eead4" marker-end="url(#arrow-teal)"/>
-
-    <path d="M300 550 V610" stroke="#c4b5fd" marker-end="url(#arrow-purple)"/>
-    <path d="M740 550 V610" stroke="#c4b5fd" marker-end="url(#arrow-purple)"/>
-    <path d="M300 738 V798" stroke="#c4b5fd" marker-end="url(#arrow-purple)"/>
-    <path d="M740 738 V798" stroke="#c4b5fd" marker-end="url(#arrow-purple)"/>
-    <path d="M520 948 V988" stroke="#9ed8ff" marker-end="url(#arrow-blue)"/>
-
-    <path d="M1270 550 V610" stroke="#9ed8ff" marker-end="url(#arrow-blue)"/>
-    <path d="M1690 550 V610" stroke="#5eead4" marker-end="url(#arrow-teal)"/>
-    <path d="M1270 714 V774" stroke="#9ed8ff" marker-end="url(#arrow-blue)"/>
-    <path d="M1690 714 V774" stroke="#5eead4" marker-end="url(#arrow-teal)"/>
-    <path d="M1270 892 V952" stroke="#9ed8ff" marker-end="url(#arrow-blue)"/>
-    <path d="M1690 892 V952" stroke="#5eead4" marker-end="url(#arrow-teal)"/>
+  <g transform="translate(0 40)">
+    <g filter="url(#shadow)">
+      <rect class="card" x="220" y="1120" width="1560" height="92" rx="24" stroke="#2ca36b"/>
+    </g>
+    <g class="connector">
+      <path d="M520 1074 V1120" stroke="#86efac" marker-end="url(#arrow-green)"/>
+      <path d="M1270 1038 V1120" stroke="#86efac" marker-end="url(#arrow-green)"/>
+      <path d="M1690 1038 V1120" stroke="#86efac" marker-end="url(#arrow-green)"/>
+    </g>
+    <text x="1000" y="1158" text-anchor="middle" class="card-title">관계형 데이터베이스</text>
+    <text x="1000" y="1190" text-anchor="middle" class="card-copy">제약 조건 | 잠금 | 격리 수준 | commit 또는 rollback</text>
   </g>
 
-  <g filter="url(#shadow)">
-    <rect class="card" x="220" y="1120" width="1560" height="92" rx="24" stroke="#2ca36b"/>
-  </g>
-  <g class="connector">
-    <path d="M520 1074 V1120" stroke="#86efac" marker-end="url(#arrow-green)"/>
-    <path d="M1270 1038 V1120" stroke="#86efac" marker-end="url(#arrow-green)"/>
-    <path d="M1690 1038 V1120" stroke="#86efac" marker-end="url(#arrow-green)"/>
-  </g>
-  <text x="1000" y="1158" text-anchor="middle" class="card-title">관계형 데이터베이스</text>
-  <text x="1000" y="1190" text-anchor="middle" class="card-copy">제약 조건 | 잠금 | 격리 수준 | commit 또는 rollback</text>
-
-  <g transform="translate(222 1260)">
+  <g transform="translate(222 1300)">
     <circle cx="8" cy="0" r="7" fill="#f4c56a"/><text class="legend" x="24" y="6">경계 소유자</text>
     <circle cx="250" cy="0" r="7" fill="#c4b5fd"/><text class="legend" x="266" y="6">JPA 영속성 계층</text>
     <circle cx="600" cy="0" r="7" fill="#9ed8ff"/><text class="legend" x="616" y="6">JDBC 경로</text>
