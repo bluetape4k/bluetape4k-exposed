@@ -104,6 +104,13 @@ test('transaction companion preserves the source-backed execution claims', async
   }
 });
 
+test('transaction companion is approved for public publication', async () => {
+  const manifest = JSON.parse(await read(manifestRelativePath));
+  const transaction = manifest.documents.find(({ id }) => id === 'jdbc-r2dbc-transaction-boundaries');
+  assert.equal(transaction.status, 'approved');
+  assert.equal(transaction.public, true);
+});
+
 test('activation companion stays private while its deep redesign is gated', async () => {
   const manifest = JSON.parse(await read(manifestRelativePath));
   const activation = manifest.documents.find(({ id }) => id === 'spring-boot-exposed-activation');
