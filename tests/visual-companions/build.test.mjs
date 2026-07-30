@@ -6,6 +6,10 @@ import {
   loadCompanionModels,
   structuralFingerprint,
 } from '../../scripts/visual-companions/lib/model.mjs';
+import {
+  renderDocument,
+  renderSequence,
+} from '../../scripts/visual-companions/lib/render.mjs';
 
 const root = new URL('../../', import.meta.url);
 
@@ -40,4 +44,32 @@ test('locale prose changes do not alter the structural fingerprint', async () =>
 
 test('build check accepts generated files that match their models', async () => {
   await assert.doesNotReject(buildRepository({ root, check: true }));
+});
+
+test('sequence messages connect participant centers with direction-aware arrowheads', async () => {
+  const [model] = await loadCompanionModels(root);
+  const scenario = model.scenarios[0];
+  const sequence = renderSequence({ scenario, locale: 'ko', active: true });
+  const document = renderDocument({
+    model,
+    locale: 'ko',
+    architectureAssets: model.architecture.map((asset) => ({
+      ...asset,
+      dataUri: 'data:image/png;base64,AA==',
+    })),
+  });
+
+  assert.match(
+    sequence,
+    /data-message-kind="call"[\s\S]*data-direction="forward"[\s\S]*--line-start:12\.5%;--line-end:37\.5%/,
+  );
+  assert.match(
+    sequence,
+    /data-message-kind="return"[\s\S]*data-direction="reverse"[\s\S]*--line-start:62\.5%;--line-end:37\.5%/,
+  );
+  assert.match(document, /\.message-line \{[^}]*color: var\(--message-color\)[^}]*border-top: 2px solid currentColor/);
+  assert.match(document, /\.message-forward \.message-line::after \{[^}]*border-left-color: currentColor/);
+  assert.match(document, /\.message-reverse \.message-line::after \{[^}]*border-right-color: currentColor/);
+  assert.doesNotMatch(document, /\.message-line::after \{[^}]*var\(--cyan\)/);
+  assert.doesNotMatch(document, /message-return message-forward/);
 });

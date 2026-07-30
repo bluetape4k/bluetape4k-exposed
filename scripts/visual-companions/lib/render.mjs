@@ -70,13 +70,24 @@ export function renderSequence({ scenario, locale, active }) {
   const messages = scenario.messages.map((message, index) => {
     const from = participantIndex(scenario, message.from);
     const to = participantIndex(scenario, message.to);
+    const participantCount = scenario.participants.length;
+    const start = ((from - 0.5) / participantCount) * 100;
+    const end = ((to - 0.5) / participantCount) * 100;
+    const left = Math.min(start, end);
+    const right = Math.max(start, end);
+    const direction = end >= start ? 'forward' : 'reverse';
     return `
-      <li class="message message-${escapeHtml(message.kind)}"
+      <li class="message message-${escapeHtml(message.kind)} message-${direction}"
           data-message-kind="${escapeHtml(message.kind)}"
-          style="--from:${from};--to:${to};--row:${index + 1}">
-        <span class="message-number">${index + 1}</span>
-        <span class="message-kind">${escapeHtml(message.kind.replace('-', ' ').toUpperCase())}</span>
-        <span class="message-label">${escapeHtml(message.locales[locale].label)}</span>
+          data-direction="${direction}"
+          data-from="${escapeHtml(message.from)}"
+          data-to="${escapeHtml(message.to)}"
+          style="--line-start:${start}%;--line-end:${end}%;--line-left:${left}%;--line-right:${right}%;--row:${index + 1}">
+        <span class="message-copy">
+          <span class="message-number">${index + 1}</span>
+          <span class="message-kind">${escapeHtml(message.kind.replace('-', ' ').toUpperCase())}</span>
+          <span class="message-label">${escapeHtml(message.locales[locale].label)}</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>`;
   }).join('');
@@ -92,7 +103,7 @@ export function renderSequence({ scenario, locale, active }) {
           <p>${escapeHtml(scenario.locales[locale].summary)}</p>
         </div>
         <dl>
-          <div><dt>${locale === 'ko' ? '경계 소유자' : 'Boundary owner'}</dt><dd><code>${escapeHtml(scenario.owner)}</code></dd></div>
+          <div><dt>${locale === 'ko' ? '경계 소유자' : 'Boundary owner'}</dt><dd><code>${escapeHtml(scenario.locales[locale].owner ?? scenario.owner)}</code></dd></div>
           <div><dt>${locale === 'ko' ? '근거 항목' : 'Evidence entry'}</dt><dd><a href="#source-${escapeHtml(scenario.sourceRef)}">${escapeHtml(scenario.sourceRef)}</a></dd></div>
         </dl>
       </header>
@@ -146,7 +157,7 @@ function renderMentalModel(model, locale) {
         <p class="strength">${escapeHtml(copy.jpaStrength)}</p>
         <p class="cost">${escapeHtml(copy.jpaCost)}</p>
       </article>
-      <div class="trade-arrow" aria-hidden="true"><span>TRADE</span><b>⇄</b></div>
+      <div class="trade-arrow" aria-hidden="true"><span>${locale === 'ko' ? '전환' : 'TRADE'}</span><b>⇄</b></div>
       <article class="mental-card exposed-card">
         <span class="badge">JetBrains Exposed</span>
         <h3>${escapeHtml(copy.exposedTitle)}</h3>
@@ -163,6 +174,25 @@ function renderMentalModel(model, locale) {
 
 function renderTransactionDocument({ model, locale, architectureAssets }) {
   const copy = model.locales[locale];
+  const labels = locale === 'ko'
+    ? {
+      sourceDiagram: '원본 다이어그램',
+      boundaryLab: '경계 시나리오',
+      sequence: '호출 → 반환 → 종료',
+      responsibility: '책임',
+      migrationMap: '마이그레이션 대응',
+      decisionGuide: '선택 기준',
+      traceableClaims: '검증 근거',
+    }
+    : {
+      sourceDiagram: 'SOURCE DIAGRAM',
+      boundaryLab: 'BOUNDARY LAB',
+      sequence: 'CALL → RETURN → TERMINAL',
+      responsibility: 'RESPONSIBILITY',
+      migrationMap: 'MIGRATION MAP',
+      decisionGuide: 'DECISION GUIDE',
+      traceableClaims: 'TRACEABLE CLAIMS',
+    };
   const sequences = model.scenarios.map((scenario, index) =>
     renderSequence({ scenario, locale, active: index === 0 })).join('');
   return renderStandaloneShell({
@@ -171,31 +201,31 @@ function renderTransactionDocument({ model, locale, architectureAssets }) {
     body: `
       <section id="mental-model">${renderMentalModel(model, locale)}</section>
       <section id="architecture">
-        <div class="section-heading"><span class="section-number">02</span><div><p class="kicker">SOURCE DIAGRAM</p><h2>${escapeHtml(copy.architectureHeading)}</h2><p>${escapeHtml(copy.architectureIntro)}</p></div></div>
+        <div class="section-heading"><span class="section-number">02</span><div><p class="kicker">${labels.sourceDiagram}</p><h2>${escapeHtml(copy.architectureHeading)}</h2><p>${escapeHtml(copy.architectureIntro)}</p></div></div>
         ${renderArchitecture({ model, locale, architectureAssets })}
       </section>
       <section id="scenario-explorer">
-        <div class="section-heading"><span class="section-number">03</span><div><p class="kicker">BOUNDARY LAB</p><h2>${escapeHtml(copy.scenarioHeading)}</h2><p>${escapeHtml(copy.scenarioIntro)}</p></div></div>
+        <div class="section-heading"><span class="section-number">03</span><div><p class="kicker">${labels.boundaryLab}</p><h2>${escapeHtml(copy.scenarioHeading)}</h2><p>${escapeHtml(copy.scenarioIntro)}</p></div></div>
         <div class="scenario-tabs" role="group" aria-label="${escapeHtml(copy.scenarioHeading)}">${renderScenarioExplorer({ model, locale })}</div>
       </section>
       <section id="sequence">
-        <div class="section-heading"><span class="section-number">04</span><div><p class="kicker">CALL → RETURN → TERMINAL</p><h2>${escapeHtml(copy.sequenceHeading)}</h2></div></div>
+        <div class="section-heading"><span class="section-number">04</span><div><p class="kicker">${labels.sequence}</p><h2>${escapeHtml(copy.sequenceHeading)}</h2></div></div>
         <div class="sequence-stack">${sequences}</div>
       </section>
       <section id="ownership-matrix">
-        <div class="section-heading"><span class="section-number">05</span><div><p class="kicker">RESPONSIBILITY</p><h2>${escapeHtml(copy.ownershipHeading)}</h2></div></div>
+        <div class="section-heading"><span class="section-number">05</span><div><p class="kicker">${labels.responsibility}</p><h2>${escapeHtml(copy.ownershipHeading)}</h2></div></div>
         ${renderTable(copy.matrixHeaders, copy.matrix)}
       </section>
       <section id="code-mapping">
-        <div class="section-heading"><span class="section-number">06</span><div><p class="kicker">MIGRATION MAP</p><h2>${escapeHtml(copy.mappingHeading)}</h2></div></div>
+        <div class="section-heading"><span class="section-number">06</span><div><p class="kicker">${labels.migrationMap}</p><h2>${escapeHtml(copy.mappingHeading)}</h2></div></div>
         ${renderTable(copy.mappingHeaders, copy.mapping, 'mapping-table')}
       </section>
       <section id="tradeoffs">
-        <div class="section-heading"><span class="section-number">07</span><div><p class="kicker">DECISION GUIDE</p><h2>${escapeHtml(copy.tradeoffHeading)}</h2></div></div>
+        <div class="section-heading"><span class="section-number">07</span><div><p class="kicker">${labels.decisionGuide}</p><h2>${escapeHtml(copy.tradeoffHeading)}</h2></div></div>
         ${renderTable(copy.tradeoffHeaders, copy.tradeoffs, 'tradeoff-table')}
       </section>
       <section id="evidence">
-        <div class="section-heading"><span class="section-number">08</span><div><p class="kicker">TRACEABLE CLAIMS</p><h2>${escapeHtml(copy.evidenceHeading)}</h2></div></div>
+        <div class="section-heading"><span class="section-number">08</span><div><p class="kicker">${labels.traceableClaims}</p><h2>${escapeHtml(copy.evidenceHeading)}</h2></div></div>
         ${renderEvidenceLedger({ model, locale })}
       </section>`,
   });
@@ -246,7 +276,7 @@ function renderStandaloneShell({ model, locale, body }) {
       --bg: #f3f6fa; --surface: #ffffff; --surface-2: #e9eef5; --ink: #142033;
       --muted: #526176; --line: #c9d3df; --navy: #132a46; --cyan: #007f91;
       --cyan-soft: #d8f3f6; --amber: #a65d00; --amber-soft: #fff0cc;
-      --red: #a33a3a; --red-soft: #ffe4e4; --green: #1d7b52; --green-soft: #dcf5e8;
+      --teal: #167c73; --red: #a33a3a; --red-soft: #ffe4e4; --green: #1d7b52; --green-soft: #dcf5e8;
       --shadow: 0 18px 50px rgb(20 32 51 / .12); --radius: 20px;
       color-scheme: light;
     }
@@ -255,7 +285,7 @@ function renderStandaloneShell({ model, locale, body }) {
       --bg: #07111f; --surface: #0e1d2e; --surface-2: #17293c; --ink: #edf5ff;
       --muted: #a8bbcf; --line: #31475f; --navy: #dcecff; --cyan: #55d6e8;
       --cyan-soft: #103c47; --amber: #ffbd5c; --amber-soft: #49351a;
-      --red: #ff9898; --red-soft: #4a2529; --green: #6ee7ae; --green-soft: #163c2d;
+      --teal: #5ee0d3; --red: #ff9898; --red-soft: #4a2529; --green: #6ee7ae; --green-soft: #163c2d;
       --shadow: 0 20px 60px rgb(0 0 0 / .38); color-scheme: dark;
     }
     @media (prefers-color-scheme: dark) {
@@ -263,7 +293,7 @@ function renderStandaloneShell({ model, locale, body }) {
         --bg: #07111f; --surface: #0e1d2e; --surface-2: #17293c; --ink: #edf5ff;
         --muted: #a8bbcf; --line: #31475f; --navy: #dcecff; --cyan: #55d6e8;
         --cyan-soft: #103c47; --amber: #ffbd5c; --amber-soft: #49351a;
-        --red: #ff9898; --red-soft: #4a2529; --green: #6ee7ae; --green-soft: #163c2d;
+        --teal: #5ee0d3; --red: #ff9898; --red-soft: #4a2529; --green: #6ee7ae; --green-soft: #163c2d;
         --shadow: 0 20px 60px rgb(0 0 0 / .38); color-scheme: dark;
       }
     }
@@ -333,22 +363,26 @@ function renderStandaloneShell({ model, locale, body }) {
     .outcome-commit { background: var(--green-soft); color: var(--green); }
     .outcome-rollback, .outcome-boundary-error { background: var(--red-soft); color: var(--red); }
     .sequence-canvas { position: relative; min-width: 760px; padding: 22px 26px 32px; overflow: hidden; }
-    .sequence-participants { display: grid; grid-template-columns: repeat(var(--participants), 1fr); gap: 10px; min-height: 350px; }
+    .sequence-participants { display: grid; grid-template-columns: repeat(var(--participants), 1fr); min-height: 350px; }
     .sequence-participant { position: relative; text-align: center; }
-    .sequence-participant strong { position: relative; z-index: 2; display: block; min-height: 54px; padding: 9px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font-size: .86rem; }
+    .sequence-participant strong { position: relative; z-index: 2; display: block; min-height: 54px; margin: 0 5px; padding: 9px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font-size: .86rem; }
     .lifeline { position: absolute; top: 54px; bottom: 0; left: 50%; border-left: 2px dashed var(--line); }
     .activation { position: absolute; top: 82px; bottom: 34px; left: calc(50% - 5px); width: 10px; border: 1px solid var(--cyan); border-radius: 5px; background: var(--cyan-soft); }
-    .sequence-messages { position: absolute; inset: 92px 26px 28px; display: grid; grid-template-columns: repeat(calc(var(--participants) * 2), 1fr); grid-template-rows: repeat(4, 1fr); margin: 0; padding: 0; list-style: none; pointer-events: none; }
-    .message { position: relative; grid-row: var(--row); grid-column: calc(min(var(--from), var(--to)) * 2 - 1) / calc(max(var(--from), var(--to)) * 2); align-self: center; min-height: 45px; }
-    .message-line { position: absolute; top: 29px; left: 5%; right: 5%; border-top: 2px solid var(--cyan); }
-    .message-line::after { content: ""; position: absolute; top: -5px; right: -1px; width: 8px; height: 8px; border-top: 2px solid var(--cyan); border-right: 2px solid var(--cyan); transform: rotate(45deg); }
+    .sequence-messages { position: absolute; inset: 92px 26px 28px; display: grid; grid-template-rows: repeat(4, 1fr); margin: 0; padding: 0; list-style: none; pointer-events: none; }
+    .message { --message-color: var(--cyan); position: relative; grid-row: var(--row); align-self: center; min-height: 48px; color: var(--message-color); }
+    .message-return { --message-color: var(--teal); }
+    .message-commit { --message-color: var(--green); }
+    .message-rollback, .message-boundary-error { --message-color: var(--red); }
+    .message-copy { position: absolute; z-index: 2; top: 0; left: var(--line-left); width: calc(var(--line-right) - var(--line-left)); display: flex; align-items: center; justify-content: center; min-width: max-content; }
+    .message-line { position: absolute; top: 34px; left: var(--line-left); right: calc(100% - var(--line-right)); color: var(--message-color); border-top: 2px solid currentColor; }
+    .message-line::after { content: ""; position: absolute; top: -7px; width: 0; height: 0; border: 6px solid transparent; }
+    .message-forward .message-line::after { right: -12px; border-left-width: 10px; border-left-color: currentColor; }
+    .message-reverse .message-line::after { left: -12px; border-right-width: 10px; border-right-color: currentColor; }
     .message-return .message-line { border-top-style: dashed; }
-    .message-rollback .message-line, .message-boundary-error .message-line { border-color: var(--red); }
-    .message-number, .message-kind, .message-label { position: relative; z-index: 2; background: var(--surface); }
-    .message-number { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--navy); color: var(--bg); font: 800 .68rem monospace; }
-    .message-kind { margin-left: 6px; color: var(--cyan); font: 800 .67rem monospace; letter-spacing: .06em; }
+    .message-number, .message-kind, .message-label { background: var(--surface); }
+    .message-number { display: inline-grid; flex: 0 0 auto; place-items: center; width: 24px; height: 24px; border: 2px solid currentColor; border-radius: 50%; color: var(--message-color); font: 800 .68rem monospace; }
+    .message-kind { margin-left: 6px; color: var(--message-color); font: 800 .67rem monospace; letter-spacing: .06em; }
     .message-label { margin-left: 5px; padding-right: 6px; font-size: .78rem; color: var(--muted); }
-    .message-rollback .message-kind, .message-boundary-error .message-kind { color: var(--red); }
     .sequence-alt { display: flex; gap: 12px; align-items: baseline; padding: 16px 26px; border-top: 1px solid var(--line); }
     .sequence-alt strong { font: 850 .78rem monospace; }
     .sequence-alt span { color: var(--muted); }
@@ -411,8 +445,8 @@ function renderStandaloneShell({ model, locale, body }) {
   </header>
   <main>${body}</main>
   <footer>
-    <span>Offline standalone HTML · <span id="status" aria-live="polite">${escapeHtml(copy.statusPrefix ?? copy.title)}</span></span>
-    <span><a data-source-link href="${repositoryBlob}${manual}">${escapeHtml(manual)}</a> · <a href="${repositoryBlob}${source}">design source</a></span>
+    <span>${locale === 'ko' ? '오프라인 단일 HTML' : 'Offline standalone HTML'} · <span id="status" aria-live="polite">${escapeHtml(copy.statusPrefix ?? copy.title)}</span></span>
+    <span><a data-source-link href="${repositoryBlob}${manual}">${escapeHtml(manual)}</a> · <a href="${repositoryBlob}${source}">${locale === 'ko' ? '설계 문서' : 'design source'}</a></span>
   </footer>
   <script>
     (() => {

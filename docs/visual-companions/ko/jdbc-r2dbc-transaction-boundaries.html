@@ -10,7 +10,7 @@
       --bg: #f3f6fa; --surface: #ffffff; --surface-2: #e9eef5; --ink: #142033;
       --muted: #526176; --line: #c9d3df; --navy: #132a46; --cyan: #007f91;
       --cyan-soft: #d8f3f6; --amber: #a65d00; --amber-soft: #fff0cc;
-      --red: #a33a3a; --red-soft: #ffe4e4; --green: #1d7b52; --green-soft: #dcf5e8;
+      --teal: #167c73; --red: #a33a3a; --red-soft: #ffe4e4; --green: #1d7b52; --green-soft: #dcf5e8;
       --shadow: 0 18px 50px rgb(20 32 51 / .12); --radius: 20px;
       color-scheme: light;
     }
@@ -19,7 +19,7 @@
       --bg: #07111f; --surface: #0e1d2e; --surface-2: #17293c; --ink: #edf5ff;
       --muted: #a8bbcf; --line: #31475f; --navy: #dcecff; --cyan: #55d6e8;
       --cyan-soft: #103c47; --amber: #ffbd5c; --amber-soft: #49351a;
-      --red: #ff9898; --red-soft: #4a2529; --green: #6ee7ae; --green-soft: #163c2d;
+      --teal: #5ee0d3; --red: #ff9898; --red-soft: #4a2529; --green: #6ee7ae; --green-soft: #163c2d;
       --shadow: 0 20px 60px rgb(0 0 0 / .38); color-scheme: dark;
     }
     @media (prefers-color-scheme: dark) {
@@ -27,7 +27,7 @@
         --bg: #07111f; --surface: #0e1d2e; --surface-2: #17293c; --ink: #edf5ff;
         --muted: #a8bbcf; --line: #31475f; --navy: #dcecff; --cyan: #55d6e8;
         --cyan-soft: #103c47; --amber: #ffbd5c; --amber-soft: #49351a;
-        --red: #ff9898; --red-soft: #4a2529; --green: #6ee7ae; --green-soft: #163c2d;
+        --teal: #5ee0d3; --red: #ff9898; --red-soft: #4a2529; --green: #6ee7ae; --green-soft: #163c2d;
         --shadow: 0 20px 60px rgb(0 0 0 / .38); color-scheme: dark;
       }
     }
@@ -97,22 +97,26 @@
     .outcome-commit { background: var(--green-soft); color: var(--green); }
     .outcome-rollback, .outcome-boundary-error { background: var(--red-soft); color: var(--red); }
     .sequence-canvas { position: relative; min-width: 760px; padding: 22px 26px 32px; overflow: hidden; }
-    .sequence-participants { display: grid; grid-template-columns: repeat(var(--participants), 1fr); gap: 10px; min-height: 350px; }
+    .sequence-participants { display: grid; grid-template-columns: repeat(var(--participants), 1fr); min-height: 350px; }
     .sequence-participant { position: relative; text-align: center; }
-    .sequence-participant strong { position: relative; z-index: 2; display: block; min-height: 54px; padding: 9px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font-size: .86rem; }
+    .sequence-participant strong { position: relative; z-index: 2; display: block; min-height: 54px; margin: 0 5px; padding: 9px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font-size: .86rem; }
     .lifeline { position: absolute; top: 54px; bottom: 0; left: 50%; border-left: 2px dashed var(--line); }
     .activation { position: absolute; top: 82px; bottom: 34px; left: calc(50% - 5px); width: 10px; border: 1px solid var(--cyan); border-radius: 5px; background: var(--cyan-soft); }
-    .sequence-messages { position: absolute; inset: 92px 26px 28px; display: grid; grid-template-columns: repeat(calc(var(--participants) * 2), 1fr); grid-template-rows: repeat(4, 1fr); margin: 0; padding: 0; list-style: none; pointer-events: none; }
-    .message { position: relative; grid-row: var(--row); grid-column: calc(min(var(--from), var(--to)) * 2 - 1) / calc(max(var(--from), var(--to)) * 2); align-self: center; min-height: 45px; }
-    .message-line { position: absolute; top: 29px; left: 5%; right: 5%; border-top: 2px solid var(--cyan); }
-    .message-line::after { content: ""; position: absolute; top: -5px; right: -1px; width: 8px; height: 8px; border-top: 2px solid var(--cyan); border-right: 2px solid var(--cyan); transform: rotate(45deg); }
+    .sequence-messages { position: absolute; inset: 92px 26px 28px; display: grid; grid-template-rows: repeat(4, 1fr); margin: 0; padding: 0; list-style: none; pointer-events: none; }
+    .message { --message-color: var(--cyan); position: relative; grid-row: var(--row); align-self: center; min-height: 48px; color: var(--message-color); }
+    .message-return { --message-color: var(--teal); }
+    .message-commit { --message-color: var(--green); }
+    .message-rollback, .message-boundary-error { --message-color: var(--red); }
+    .message-copy { position: absolute; z-index: 2; top: 0; left: var(--line-left); width: calc(var(--line-right) - var(--line-left)); display: flex; align-items: center; justify-content: center; min-width: max-content; }
+    .message-line { position: absolute; top: 34px; left: var(--line-left); right: calc(100% - var(--line-right)); color: var(--message-color); border-top: 2px solid currentColor; }
+    .message-line::after { content: ""; position: absolute; top: -7px; width: 0; height: 0; border: 6px solid transparent; }
+    .message-forward .message-line::after { right: -12px; border-left-width: 10px; border-left-color: currentColor; }
+    .message-reverse .message-line::after { left: -12px; border-right-width: 10px; border-right-color: currentColor; }
     .message-return .message-line { border-top-style: dashed; }
-    .message-rollback .message-line, .message-boundary-error .message-line { border-color: var(--red); }
-    .message-number, .message-kind, .message-label { position: relative; z-index: 2; background: var(--surface); }
-    .message-number { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--navy); color: var(--bg); font: 800 .68rem monospace; }
-    .message-kind { margin-left: 6px; color: var(--cyan); font: 800 .67rem monospace; letter-spacing: .06em; }
+    .message-number, .message-kind, .message-label { background: var(--surface); }
+    .message-number { display: inline-grid; flex: 0 0 auto; place-items: center; width: 24px; height: 24px; border: 2px solid currentColor; border-radius: 50%; color: var(--message-color); font: 800 .68rem monospace; }
+    .message-kind { margin-left: 6px; color: var(--message-color); font: 800 .67rem monospace; letter-spacing: .06em; }
     .message-label { margin-left: 5px; padding-right: 6px; font-size: .78rem; color: var(--muted); }
-    .message-rollback .message-kind, .message-boundary-error .message-kind { color: var(--red); }
     .sequence-alt { display: flex; gap: 12px; align-items: baseline; padding: 16px 26px; border-top: 1px solid var(--line); }
     .sequence-alt strong { font: 850 .78rem monospace; }
     .sequence-alt span { color: var(--muted); }
@@ -166,7 +170,7 @@
     <div>
       <p class="eyebrow">대화형 아키텍처 해설 · Issue #410</p>
       <h1>JPA에서 Exposed로: 트랜잭션 소유권을 드러내기</h1>
-      <p class="lede">Exposed는 JPA/Hibernate의 객체 그래프 자동화 일부를 명시적인 SQL 의도와 맞바꾼다. 마이그레이션의 핵심 질문은 어느 저장소가 트랜잭션을 여느냐가 아니라, 어느 애플리케이션 경계가 전체 작업 단위를 소유하느냐이다.</p>
+      <p class="lede">Exposed는 JPA/Hibernate가 제공하는 객체 그래프 자동화 일부를 명시적인 SQL 의도와 실행 경계로 바꾼다. 마이그레이션의 핵심 질문은 어느 저장소가 트랜잭션을 여느냐가 아니라, 어느 애플리케이션 경계가 전체 작업 단위를 소유하느냐이다.</p>
     </div>
     <aside class="hero-aside">
       <strong>JPA → EXPOSED</strong>
@@ -177,23 +181,23 @@
       <section id="mental-model">
     <div class="section-heading">
       <span class="section-number">01</span>
-      <div><p class="kicker">불변 규칙</p><h2>먼저 정신 모형을 바꾼다</h2></div>
+      <div><p class="kicker">불변 규칙</p><h2>먼저 사고 구조를 바꾼다</h2></div>
     </div>
     <div class="mental-grid">
       <article class="mental-card jpa-card">
         <span class="badge">JPA / Hibernate</span>
-        <h3>JPA / Hibernate 기본 모형</h3>
-        <p class="flow-line">관리 엔티티 → dirty checking → flush</p>
-        <p class="strength">장점: 생산적인 객체 그래프, 성숙한 생태계, 풍부한 persistence context.</p>
-        <p class="cost">비용: proxy, N+1 순회, flush 시점, 엔티티 생명주기 뒤에 I/O가 숨을 수 있다.</p>
+        <h3>JPA / Hibernate의 기본 사고 구조</h3>
+        <p class="flow-line">관리 엔티티 → 변경 감지(dirty checking) → flush</p>
+        <p class="strength">장점: 객체 그래프 중심의 개발 생산성이 높고, 생태계와 영속성 컨텍스트 기능이 성숙하다.</p>
+        <p class="cost">비용: 프록시, N+1 관계 탐색, 플러시 시점, 엔티티 생명주기 뒤에 I/O가 숨을 수 있다.</p>
       </article>
-      <div class="trade-arrow" aria-hidden="true"><span>TRADE</span><b>⇄</b></div>
+      <div class="trade-arrow" aria-hidden="true"><span>전환</span><b>⇄</b></div>
       <article class="mental-card exposed-card">
         <span class="badge">JetBrains Exposed</span>
         <h3>Exposed DSL / 저장소</h3>
         <p class="flow-line">명시적 select / join / map → 명시적 insert / update / delete</p>
         <p class="strength">장점: SQL 의도와 실행 지점이 애플리케이션 코드에 드러난다.</p>
-        <p class="cost">비용: 쿼리 형태, 매핑, 쓰기, 트랜잭션 경계를 명시적으로 설계해야 한다.</p>
+        <p class="cost">비용: 쿼리 구조, 매핑, 저장 연산, 트랜잭션 경계를 명시적으로 설계해야 한다.</p>
       </article>
     </div>
     <aside class="invariant-callout">
@@ -201,28 +205,28 @@
       <p>저장소는 데이터베이스 연산을 조합하고, 서비스 또는 컨트롤러 경계가 전체 유스케이스의 원자성을 소유한다.</p>
     </aside></section>
       <section id="architecture">
-        <div class="section-heading"><span class="section-number">02</span><div><p class="kicker">SOURCE DIAGRAM</p><h2>기존 Architecture Diagram에서 시작한다</h2><p>저장소가 이미 승인해 둔 트랜잭션 소유권 그림을 재해석 없이 내장했다. 아래 탐색기는 각 lane을 실행 가능한 이야기로 풀어낸다.</p></div></div>
+        <div class="section-heading"><span class="section-number">02</span><div><p class="kicker">원본 다이어그램</p><h2>기존 아키텍처 다이어그램에서 출발한다</h2><p>이 저장소에서 승인한 트랜잭션 소유권 다이어그램을 재해석하지 않고 그대로 사용했다. 아래 탐색기에서는 각 실행 경로의 트랜잭션 흐름을 단계별로 확인할 수 있다.</p></div></div>
         
     <figure class="architecture-card" data-architecture-id="transaction-ownership"
             data-architecture-sha256="1d7336238d24a63bde89c86cbc641bd4e1bda820cc327be258e323506f7a3597">
       <button class="architecture-open" type="button" data-lightbox-open="transaction-ownership">
-        <span aria-hidden="true">↗</span> 기존 Architecture Diagram 크게 보기
+        <span aria-hidden="true">↗</span> 기존 아키텍처 다이어그램 크게 보기
       </button>
-      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAwIiBoZWlnaHQ9IjExMDAiIHZpZXdCb3g9IjAgMCAyMDAwIDExMDAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSBkZXNjIj4KICA8dGl0bGUgaWQ9InRpdGxlIj5KREJDIGFuZCBSMkRCQyB0cmFuc2FjdGlvbiBvd25lcnNoaXA8L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5Ud28gcGFyYWxsZWwgcmVzcG9uc2liaWxpdHkgbGFuZXMgc2hvdyBhcHBsaWNhdGlvbiBvciBmcmFtZXdvcmsgb3duZXJzaGlwIGZsb3dpbmcgdGhyb3VnaCB0cmFuc2FjdGlvbiBjb250ZXh0LCByZXBvc2l0b3J5LCBkcml2ZXIsIGFuZCBkYXRhYmFzZS4gUmVwb3NpdG9yaWVzIHBhcnRpY2lwYXRlIGluIGJ1dCBkbyBub3QgY3JlYXRlIHRyYW5zYWN0aW9ucy48L2Rlc2M+CiAgPGRlZnM+CiAgICA8bWFya2VyIGlkPSJhcnJvdy1ibHVlIiB2aWV3Qm94PSIwIDAgMTQgMTQiIHJlZlg9IjEzIiByZWZZPSI3IiBtYXJrZXJXaWR0aD0iMTQiIG1hcmtlckhlaWdodD0iMTQiIG9yaWVudD0iYXV0byIgbWFya2VyVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNMCAwIEwxNCA3IEwwIDE0IFoiIGZpbGw9IiM5ZWQ4ZmYiIHN0cm9rZT0iIzllZDhmZiIvPjwvbWFya2VyPgogICAgPG1hcmtlciBpZD0iYXJyb3ctdGVhbCIgdmlld0JveD0iMCAwIDE0IDE0IiByZWZYPSIxMyIgcmVmWT0iNyIgbWFya2VyV2lkdGg9IjE0IiBtYXJrZXJIZWlnaHQ9IjE0IiBvcmllbnQ9ImF1dG8iIG1hcmtlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMCBMMTQgNyBMMCAxNCBaIiBmaWxsPSIjNWVlYWQ0IiBzdHJva2U9IiM1ZWVhZDQiLz48L21hcmtlcj4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iY2FudmFzIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzExMTgyNyIvPjxzdG9wIG9mZnNldD0iNTglIiBzdG9wLWNvbG9yPSIjMTgyMzMxIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMjIzMDQ3Ii8+PC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0icGFuZWwiIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMWYyOTM3Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMTExODI3Ii8+PC9saW5lYXJHcmFkaWVudD4KICAgIDxmaWx0ZXIgaWQ9InNoYWRvdyIgeD0iLTIwJSIgeT0iLTIwJSIgd2lkdGg9IjE0MCUiIGhlaWdodD0iMTQwJSI+PGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjEwIiBzdGREZXZpYXRpb249IjEyIiBmbG9vZC1jb2xvcj0iIzAyMDYxNyIgZmxvb2Qtb3BhY2l0eT0iMC4zMiIvPjwvZmlsdGVyPgogICAgPHN5bWJvbCBpZD0iZGF0YWJhc2UtaWNvbiIgdmlld0JveD0iMCAwIDEyOCAxMjgiPgogICAgICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICAgICAgPGVsbGlwc2UgY3g9IjY0IiBjeT0iMzYiIHJ4PSIzNCIgcnk9IjEzIiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIvPgogICAgICA8cGF0aCBkPSJNMzAgMzZ2NDRjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTRWMzYiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgICAgIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNE0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogICAgPC9zeW1ib2w+CiAgPC9kZWZzPgogIDxyZWN0IHdpZHRoPSIyMDAwIiBoZWlnaHQ9IjExMDAiIGZpbGw9InVybCgjY2FudmFzKSIvPgogIDxyZWN0IHg9IjQyIiB5PSIzNiIgd2lkdGg9IjE5MTYiIGhlaWdodD0iMTAyOCIgcng9IjM0IiBmaWxsPSJ1cmwoI3BhbmVsKSIgc3Ryb2tlPSIjNTM2Mzc3IiBzdHJva2Utd2lkdGg9IjQiIGZpbHRlcj0idXJsKCNzaGFkb3cpIi8+CiAgPHRleHQgeD0iMTAwMCIgeT0iMTAyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSI1MiIgZmlsbD0iI2Y4ZmFmYyI+VGhlIENhbGxlciBPd25zIHRoZSBUcmFuc2FjdGlvbiBCb3VuZGFyeTwvdGV4dD4KICA8dGV4dCB4PSIxMDAwIiB5PSIxNDYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxOSIgZmlsbD0iI2I2YzRkNiI+UmVwb3NpdG9yaWVzIGpvaW4gdGhlIGN1cnJlbnQgY29udGV4dDsgdGhleSBkbyBub3Qgb3BlbiBhIGhpZGRlbiB0cmFuc2FjdGlvbjwvdGV4dD4KCiAgPHJlY3QgeD0iNzAiIHk9IjE5NSIgd2lkdGg9IjE4NjAiIGhlaWdodD0iMzIwIiByeD0iMjgiIGZpbGw9IiMxMTE4MjciIHN0cm9rZT0iIzRjOGNjOCIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHRleHQgeD0iMTEwIiB5PSIyNDIiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjMyIiBmaWxsPSIjOWVkOGZmIj5KREJDIG93bmVyc2hpcCBsYW5lPC90ZXh0PgogIDxyZWN0IHg9IjcwIiB5PSI1NTUiIHdpZHRoPSIxODYwIiBoZWlnaHQ9IjMyMCIgcng9IjI4IiBmaWxsPSIjMTExODI3IiBzdHJva2U9IiMxNTljOTIiIHN0cm9rZS13aWR0aD0iMyIvPgogIDx0ZXh0IHg9IjExMCIgeT0iNjAyIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIzMiIgZmlsbD0iIzVlZWFkNCI+UjJEQkMgb3duZXJzaGlwIGxhbmU8L3RleHQ+CgogIDxnIGZpbHRlcj0idXJsKCNzaGFkb3cpIj4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxMDAiIHk9IjI4NSIgd2lkdGg9IjI4MCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjYzU4YjJhIiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSI0NTUiIHk9IjI4NSIgd2lkdGg9IjMyMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjOGI2YmQ2IiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSI4NTAiIHk9IjI4NSIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjNGM4Y2M4IiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxMjI1IiB5PSIyODUiIHdpZHRoPSIzMDAiIGhlaWdodD0iMTcwIiByeD0iMjQiIGZpbGw9IiMxNzIwMzMiIHN0cm9rZT0iIzRjOGNjOCIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgICA8cmVjdCBjbGFzcz0iY2FyZCIgeD0iMTYwMCIgeT0iMjg1IiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiNjNThiMmEiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjEwMCIgeT0iNjQ1IiB3aWR0aD0iMjgwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiNjNThiMmEiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjQ1NSIgeT0iNjQ1IiB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiM4YjZiZDYiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9Ijg1MCIgeT0iNjQ1IiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiMxNTljOTIiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjEyMjUiIHk9IjY0NSIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjMTU5YzkyIiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxNjAwIiB5PSI2NDUiIHdpZHRoPSIzMDAiIGhlaWdodD0iMTcwIiByeD0iMjQiIGZpbGw9IiMxNzIwMzMiIHN0cm9rZT0iI2M1OGIyYSIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgPC9nPgoKICA8ZyB0ZXh0LWFuY2hvcj0ibWlkZGxlIj4KICAgIDx0ZXh0IHg9IjI0MCIgeT0iMzQwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iI2Y2Yzk2YiI+QXBwbGljYXRpb24gLyBTcHJpbmc8L3RleHQ+PHRleHQgeD0iMjQwIiB5PSIzODAiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNiIgZmlsbD0iI2Q1ZGZlYiI+b3ducyB1c2UtY2FzZSBzY29wZTwvdGV4dD48dGV4dCB4PSIyNDAiIHk9IjQxMiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb21taXQg4oCiIHJvbGxiYWNrPC90ZXh0PgogICAgPHRleHQgeD0iNjE1IiB5PSIzNDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI3IiBmaWxsPSIjYzRiNWZkIj50cmFuc2FjdGlvbiB7IH08L3RleHQ+PHRleHQgeD0iNjE1IiB5PSIzODAiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNiIgZmlsbD0iI2Q1ZGZlYiI+SmRiY1RyYW5zYWN0aW9uIGNvbnRleHQ8L3RleHQ+PHRleHQgeD0iNjE1IiB5PSI0MTIiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNSIgZmlsbD0iI2I2YzRkNiI+Y29ubmVjdGlvbiArIGlzb2xhdGlvbjwvdGV4dD4KICAgIDx0ZXh0IHg9IjEwMDAiIHk9IjM0MCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiM5ZWQ4ZmYiPkpkYmNSZXBvc2l0b3J5PC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9IjM4MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj51c2VzIGN1cnJlbnQgY29udGV4dDwvdGV4dD48dGV4dCB4PSIxMDAwIiB5PSI0MTIiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNSIgZmlsbD0iI2ZkYTRhZiI+bmV2ZXIgY3JlYXRlcyB0cmFuc2FjdGlvbjwvdGV4dD4KICAgIDx0ZXh0IHg9IjEzNzUiIHk9IjM0MCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiM5ZWQ4ZmYiPkpEQkMgZHJpdmVyPC90ZXh0Pjx0ZXh0IHg9IjEzNzUiIHk9IjM4MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5ibG9ja2luZyBjb25uZWN0aW9uIEkvTzwvdGV4dD4KICAgIDx1c2UgaHJlZj0iI2RhdGFiYXNlLWljb24iIHg9IjE2MTgiIHk9IjMwMyIgd2lkdGg9IjkwIiBoZWlnaHQ9IjkwIi8+PHRleHQgeD0iMTc5NSIgeT0iMzUwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iI2Y2Yzk2YiI+RGF0YWJhc2U8L3RleHQ+PHRleHQgeD0iMTc5NSIgeT0iMzg4IiBmb250LWZhbWlseT0iQ29taWMgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNkNWRmZWIiPmR1cmFibGUgc3RhdGU8L3RleHQ+CgogICAgPHRleHQgeD0iMjQwIiB5PSI3MDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI3IiBmaWxsPSIjZjZjOTZiIj5BcHBsaWNhdGlvbiAvIFNwcmluZzwvdGV4dD48dGV4dCB4PSIyNDAiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5vd25zIGNvcm91dGluZSBzY29wZTwvdGV4dD48dGV4dCB4PSIyNDAiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb21taXQg4oCiIHJvbGxiYWNrPC90ZXh0PgogICAgPHRleHQgeD0iNjE1IiB5PSI3MDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI1IiBmaWxsPSIjYzRiNWZkIj5zdXNwZW5kVHJhbnNhY3Rpb24geyB9PC90ZXh0Pjx0ZXh0IHg9IjYxNSIgeT0iNzQwIiBmb250LWZhbWlseT0iQ29taWMgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiNkNWRmZWIiPlIyZGJjVHJhbnNhY3Rpb24gY29udGV4dDwvdGV4dD48dGV4dCB4PSI2MTUiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb25uZWN0aW9uICsgY2FuY2VsbGF0aW9uPC90ZXh0PgogICAgPHRleHQgeD0iMTAwMCIgeT0iNzAwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iIzVlZWFkNCI+UjJkYmNSZXBvc2l0b3J5PC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5GbG93IGNvbGxlY3RlZCBoZXJlPC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZmRhNGFmIj5uZXZlciBjcmVhdGVzIHRyYW5zYWN0aW9uPC90ZXh0PgogICAgPHRleHQgeD0iMTM3NSIgeT0iNzAwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iIzVlZWFkNCI+UjJEQkMgZHJpdmVyPC90ZXh0Pjx0ZXh0IHg9IjEzNzUiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5ub24tYmxvY2tpbmcgY29ubmVjdGlvbiBJL088L3RleHQ+CiAgICA8dXNlIGhyZWY9IiNkYXRhYmFzZS1pY29uIiB4PSIxNjE4IiB5PSI2NjMiIHdpZHRoPSI5MCIgaGVpZ2h0PSI5MCIvPjx0ZXh0IHg9IjE3OTUiIHk9IjcxMCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiNmNmM5NmIiPkRhdGFiYXNlPC90ZXh0Pjx0ZXh0IHg9IjE3OTUiIHk9Ijc0OCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZDVkZmViIj5kdXJhYmxlIHN0YXRlPC90ZXh0PgogIDwvZz4KCiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPgogICAgPHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTM4MCAzNzAgSDQ1NSIgc3Ryb2tlPSIjOWVkOGZmIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LWJsdWUpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTc3NSAzNzAgSDg1MCIgc3Ryb2tlPSIjOWVkOGZmIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LWJsdWUpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTExNTAgMzcwIEgxMjI1IiBzdHJva2U9IiM5ZWQ4ZmYiIG1hcmtlci1lbmQ9InVybCgjYXJyb3ctYmx1ZSkiLz48cGF0aCBjbGFzcz0iY29ubmVjdG9yIiBkPSJNMTUyNSAzNzAgSDE2MDAiIHN0cm9rZT0iIzllZDhmZiIgbWFya2VyLWVuZD0idXJsKCNhcnJvdy1ibHVlKSIvPgogICAgPHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTM4MCA3MzAgSDQ1NSIgc3Ryb2tlPSIjNWVlYWQ0IiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LXRlYWwpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTc3NSA3MzAgSDg1MCIgc3Ryb2tlPSIjNWVlYWQ0IiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LXRlYWwpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTExNTAgNzMwIEgxMjI1IiBzdHJva2U9IiM1ZWVhZDQiIG1hcmtlci1lbmQ9InVybCgjYXJyb3ctdGVhbCkiLz48cGF0aCBjbGFzcz0iY29ubmVjdG9yIiBkPSJNMTUyNSA3MzAgSDE2MDAiIHN0cm9rZT0iIzVlZWFkNCIgbWFya2VyLWVuZD0idXJsKCNhcnJvdy10ZWFsKSIvPgogIDwvZz4KCiAgPHJlY3QgeD0iMjIwIiB5PSI5MjUiIHdpZHRoPSIxNTYwIiBoZWlnaHQ9Ijc0IiByeD0iMjIiIGZpbGw9IiMyMDE5MjMiIHN0cm9rZT0iI2QxNmY3NSIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHRleHQgeD0iMTAwMCIgeT0iOTU4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNCIgZmlsbD0iI2ZkYTRhZiI+T25lIGJ1c2luZXNzIG9wZXJhdGlvbiwgb25lIG93bmVyLCBvbmUgcHJvcGFnYXRlZCB0cmFuc2FjdGlvbiBjb250ZXh0PC90ZXh0PgogIDx0ZXh0IHg9IjEwMDAiIHk9Ijk4NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5SZXR1cm5pbmcgYSBEQU8gZW50aXR5IG9yIHVuY29sbGVjdGVkIGRhdGFiYXNlIEZsb3cgY3Jvc3NlcyB0aGUgYm91bmRhcnkgYmVmb3JlIHRoZSB3b3JrIGlzIGNvbXBsZXRlLjwvdGV4dD4KPC9zdmc+Cg==" alt="서비스 또는 컨트롤러 경계가 JDBC transaction 블록과 R2DBC suspendTransaction 블록을 열고, 그 안에서 저장소 호출이 데이터베이스로 이어지는 트랜잭션 소유권 아키텍처">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAwIiBoZWlnaHQ9IjExMDAiIHZpZXdCb3g9IjAgMCAyMDAwIDExMDAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSBkZXNjIj4KICA8dGl0bGUgaWQ9InRpdGxlIj5KREJDIGFuZCBSMkRCQyB0cmFuc2FjdGlvbiBvd25lcnNoaXA8L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5Ud28gcGFyYWxsZWwgcmVzcG9uc2liaWxpdHkgbGFuZXMgc2hvdyBhcHBsaWNhdGlvbiBvciBmcmFtZXdvcmsgb3duZXJzaGlwIGZsb3dpbmcgdGhyb3VnaCB0cmFuc2FjdGlvbiBjb250ZXh0LCByZXBvc2l0b3J5LCBkcml2ZXIsIGFuZCBkYXRhYmFzZS4gUmVwb3NpdG9yaWVzIHBhcnRpY2lwYXRlIGluIGJ1dCBkbyBub3QgY3JlYXRlIHRyYW5zYWN0aW9ucy48L2Rlc2M+CiAgPGRlZnM+CiAgICA8bWFya2VyIGlkPSJhcnJvdy1ibHVlIiB2aWV3Qm94PSIwIDAgMTQgMTQiIHJlZlg9IjEzIiByZWZZPSI3IiBtYXJrZXJXaWR0aD0iMTQiIG1hcmtlckhlaWdodD0iMTQiIG9yaWVudD0iYXV0byIgbWFya2VyVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNMCAwIEwxNCA3IEwwIDE0IFoiIGZpbGw9IiM5ZWQ4ZmYiIHN0cm9rZT0iIzllZDhmZiIvPjwvbWFya2VyPgogICAgPG1hcmtlciBpZD0iYXJyb3ctdGVhbCIgdmlld0JveD0iMCAwIDE0IDE0IiByZWZYPSIxMyIgcmVmWT0iNyIgbWFya2VyV2lkdGg9IjE0IiBtYXJrZXJIZWlnaHQ9IjE0IiBvcmllbnQ9ImF1dG8iIG1hcmtlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMCBMMTQgNyBMMCAxNCBaIiBmaWxsPSIjNWVlYWQ0IiBzdHJva2U9IiM1ZWVhZDQiLz48L21hcmtlcj4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iY2FudmFzIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzExMTgyNyIvPjxzdG9wIG9mZnNldD0iNTglIiBzdG9wLWNvbG9yPSIjMTgyMzMxIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMjIzMDQ3Ii8+PC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0icGFuZWwiIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMWYyOTM3Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMTExODI3Ii8+PC9saW5lYXJHcmFkaWVudD4KICAgIDxmaWx0ZXIgaWQ9InNoYWRvdyIgeD0iLTIwJSIgeT0iLTIwJSIgd2lkdGg9IjE0MCUiIGhlaWdodD0iMTQwJSI+PGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjEwIiBzdGREZXZpYXRpb249IjEyIiBmbG9vZC1jb2xvcj0iIzAyMDYxNyIgZmxvb2Qtb3BhY2l0eT0iMC4zMiIvPjwvZmlsdGVyPgogICAgPHN5bWJvbCBpZD0iZGF0YWJhc2UtaWNvbiIgdmlld0JveD0iMCAwIDEyOCAxMjgiPgogICAgICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICAgICAgPGVsbGlwc2UgY3g9IjY0IiBjeT0iMzYiIHJ4PSIzNCIgcnk9IjEzIiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIvPgogICAgICA8cGF0aCBkPSJNMzAgMzZ2NDRjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTRWMzYiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgICAgIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNE0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogICAgPC9zeW1ib2w+CiAgPC9kZWZzPgogIDxyZWN0IHdpZHRoPSIyMDAwIiBoZWlnaHQ9IjExMDAiIGZpbGw9InVybCgjY2FudmFzKSIvPgogIDxyZWN0IHg9IjQyIiB5PSIzNiIgd2lkdGg9IjE5MTYiIGhlaWdodD0iMTAyOCIgcng9IjM0IiBmaWxsPSJ1cmwoI3BhbmVsKSIgc3Ryb2tlPSIjNTM2Mzc3IiBzdHJva2Utd2lkdGg9IjQiIGZpbHRlcj0idXJsKCNzaGFkb3cpIi8+CiAgPHRleHQgeD0iMTAwMCIgeT0iMTAyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSI1MiIgZmlsbD0iI2Y4ZmFmYyI+VGhlIENhbGxlciBPd25zIHRoZSBUcmFuc2FjdGlvbiBCb3VuZGFyeTwvdGV4dD4KICA8dGV4dCB4PSIxMDAwIiB5PSIxNDYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxOSIgZmlsbD0iI2I2YzRkNiI+UmVwb3NpdG9yaWVzIGpvaW4gdGhlIGN1cnJlbnQgY29udGV4dDsgdGhleSBkbyBub3Qgb3BlbiBhIGhpZGRlbiB0cmFuc2FjdGlvbjwvdGV4dD4KCiAgPHJlY3QgeD0iNzAiIHk9IjE5NSIgd2lkdGg9IjE4NjAiIGhlaWdodD0iMzIwIiByeD0iMjgiIGZpbGw9IiMxMTE4MjciIHN0cm9rZT0iIzRjOGNjOCIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHRleHQgeD0iMTEwIiB5PSIyNDIiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjMyIiBmaWxsPSIjOWVkOGZmIj5KREJDIG93bmVyc2hpcCBsYW5lPC90ZXh0PgogIDxyZWN0IHg9IjcwIiB5PSI1NTUiIHdpZHRoPSIxODYwIiBoZWlnaHQ9IjMyMCIgcng9IjI4IiBmaWxsPSIjMTExODI3IiBzdHJva2U9IiMxNTljOTIiIHN0cm9rZS13aWR0aD0iMyIvPgogIDx0ZXh0IHg9IjExMCIgeT0iNjAyIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIzMiIgZmlsbD0iIzVlZWFkNCI+UjJEQkMgb3duZXJzaGlwIGxhbmU8L3RleHQ+CgogIDxnIGZpbHRlcj0idXJsKCNzaGFkb3cpIj4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxMDAiIHk9IjI4NSIgd2lkdGg9IjI4MCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjYzU4YjJhIiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSI0NTUiIHk9IjI4NSIgd2lkdGg9IjMyMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjOGI2YmQ2IiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSI4NTAiIHk9IjI4NSIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjNGM4Y2M4IiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxMjI1IiB5PSIyODUiIHdpZHRoPSIzMDAiIGhlaWdodD0iMTcwIiByeD0iMjQiIGZpbGw9IiMxNzIwMzMiIHN0cm9rZT0iIzRjOGNjOCIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgICA8cmVjdCBjbGFzcz0iY2FyZCIgeD0iMTYwMCIgeT0iMjg1IiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiNjNThiMmEiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjEwMCIgeT0iNjQ1IiB3aWR0aD0iMjgwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiNjNThiMmEiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjQ1NSIgeT0iNjQ1IiB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiM4YjZiZDYiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9Ijg1MCIgeT0iNjQ1IiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiMxNTljOTIiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjEyMjUiIHk9IjY0NSIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjMTU5YzkyIiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxNjAwIiB5PSI2NDUiIHdpZHRoPSIzMDAiIGhlaWdodD0iMTcwIiByeD0iMjQiIGZpbGw9IiMxNzIwMzMiIHN0cm9rZT0iI2M1OGIyYSIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgPC9nPgoKICA8ZyB0ZXh0LWFuY2hvcj0ibWlkZGxlIj4KICAgIDx0ZXh0IHg9IjI0MCIgeT0iMzQwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iI2Y2Yzk2YiI+QXBwbGljYXRpb24gLyBTcHJpbmc8L3RleHQ+PHRleHQgeD0iMjQwIiB5PSIzODAiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNiIgZmlsbD0iI2Q1ZGZlYiI+b3ducyB1c2UtY2FzZSBzY29wZTwvdGV4dD48dGV4dCB4PSIyNDAiIHk9IjQxMiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb21taXQg4oCiIHJvbGxiYWNrPC90ZXh0PgogICAgPHRleHQgeD0iNjE1IiB5PSIzNDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI3IiBmaWxsPSIjYzRiNWZkIj50cmFuc2FjdGlvbiB7IH08L3RleHQ+PHRleHQgeD0iNjE1IiB5PSIzODAiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNiIgZmlsbD0iI2Q1ZGZlYiI+SmRiY1RyYW5zYWN0aW9uIGNvbnRleHQ8L3RleHQ+PHRleHQgeD0iNjE1IiB5PSI0MTIiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNSIgZmlsbD0iI2I2YzRkNiI+Y29ubmVjdGlvbiArIGlzb2xhdGlvbjwvdGV4dD4KICAgIDx0ZXh0IHg9IjEwMDAiIHk9IjM0MCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiM5ZWQ4ZmYiPkpkYmNSZXBvc2l0b3J5PC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9IjM4MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj51c2VzIGN1cnJlbnQgY29udGV4dDwvdGV4dD48dGV4dCB4PSIxMDAwIiB5PSI0MTIiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNSIgZmlsbD0iI2ZkYTRhZiI+bmV2ZXIgY3JlYXRlcyB0cmFuc2FjdGlvbjwvdGV4dD4KICAgIDx0ZXh0IHg9IjEzNzUiIHk9IjM0MCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiM5ZWQ4ZmYiPkpEQkMgZHJpdmVyPC90ZXh0Pjx0ZXh0IHg9IjEzNzUiIHk9IjM4MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5ibG9ja2luZyBjb25uZWN0aW9uIEkvTzwvdGV4dD4KICAgIDx1c2UgaHJlZj0iI2RhdGFiYXNlLWljb24iIHg9IjE2MTgiIHk9IjMwMyIgd2lkdGg9IjkwIiBoZWlnaHQ9IjkwIi8+PHRleHQgeD0iMTc5NSIgeT0iMzUwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iI2Y2Yzk2YiI+RGF0YWJhc2U8L3RleHQ+PHRleHQgeD0iMTc5NSIgeT0iMzg4IiBmb250LWZhbWlseT0iQ29taWMgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNkNWRmZWIiPmR1cmFibGUgc3RhdGU8L3RleHQ+CgogICAgPHRleHQgeD0iMjQwIiB5PSI3MDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI3IiBmaWxsPSIjZjZjOTZiIj5BcHBsaWNhdGlvbiAvIFNwcmluZzwvdGV4dD48dGV4dCB4PSIyNDAiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5vd25zIGNvcm91dGluZSBzY29wZTwvdGV4dD48dGV4dCB4PSIyNDAiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb21taXQg4oCiIHJvbGxiYWNrPC90ZXh0PgogICAgPHRleHQgeD0iNjE1IiB5PSI3MDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI1IiBmaWxsPSIjYzRiNWZkIj5zdXNwZW5kVHJhbnNhY3Rpb24geyB9PC90ZXh0Pjx0ZXh0IHg9IjYxNSIgeT0iNzQwIiBmb250LWZhbWlseT0iQ29taWMgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiNkNWRmZWIiPlIyZGJjVHJhbnNhY3Rpb24gY29udGV4dDwvdGV4dD48dGV4dCB4PSI2MTUiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb25uZWN0aW9uICsgY2FuY2VsbGF0aW9uPC90ZXh0PgogICAgPHRleHQgeD0iMTAwMCIgeT0iNzAwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iIzVlZWFkNCI+UjJkYmNSZXBvc2l0b3J5PC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5GbG93IGNvbGxlY3RlZCBoZXJlPC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZmRhNGFmIj5uZXZlciBjcmVhdGVzIHRyYW5zYWN0aW9uPC90ZXh0PgogICAgPHRleHQgeD0iMTM3NSIgeT0iNzAwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iIzVlZWFkNCI+UjJEQkMgZHJpdmVyPC90ZXh0Pjx0ZXh0IHg9IjEzNzUiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5ub24tYmxvY2tpbmcgY29ubmVjdGlvbiBJL088L3RleHQ+CiAgICA8dXNlIGhyZWY9IiNkYXRhYmFzZS1pY29uIiB4PSIxNjE4IiB5PSI2NjMiIHdpZHRoPSI5MCIgaGVpZ2h0PSI5MCIvPjx0ZXh0IHg9IjE3OTUiIHk9IjcxMCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiNmNmM5NmIiPkRhdGFiYXNlPC90ZXh0Pjx0ZXh0IHg9IjE3OTUiIHk9Ijc0OCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZDVkZmViIj5kdXJhYmxlIHN0YXRlPC90ZXh0PgogIDwvZz4KCiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPgogICAgPHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTM4MCAzNzAgSDQ1NSIgc3Ryb2tlPSIjOWVkOGZmIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LWJsdWUpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTc3NSAzNzAgSDg1MCIgc3Ryb2tlPSIjOWVkOGZmIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LWJsdWUpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTExNTAgMzcwIEgxMjI1IiBzdHJva2U9IiM5ZWQ4ZmYiIG1hcmtlci1lbmQ9InVybCgjYXJyb3ctYmx1ZSkiLz48cGF0aCBjbGFzcz0iY29ubmVjdG9yIiBkPSJNMTUyNSAzNzAgSDE2MDAiIHN0cm9rZT0iIzllZDhmZiIgbWFya2VyLWVuZD0idXJsKCNhcnJvdy1ibHVlKSIvPgogICAgPHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTM4MCA3MzAgSDQ1NSIgc3Ryb2tlPSIjNWVlYWQ0IiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LXRlYWwpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTc3NSA3MzAgSDg1MCIgc3Ryb2tlPSIjNWVlYWQ0IiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LXRlYWwpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTExNTAgNzMwIEgxMjI1IiBzdHJva2U9IiM1ZWVhZDQiIG1hcmtlci1lbmQ9InVybCgjYXJyb3ctdGVhbCkiLz48cGF0aCBjbGFzcz0iY29ubmVjdG9yIiBkPSJNMTUyNSA3MzAgSDE2MDAiIHN0cm9rZT0iIzVlZWFkNCIgbWFya2VyLWVuZD0idXJsKCNhcnJvdy10ZWFsKSIvPgogIDwvZz4KCiAgPHJlY3QgeD0iMjIwIiB5PSI5MjUiIHdpZHRoPSIxNTYwIiBoZWlnaHQ9Ijc0IiByeD0iMjIiIGZpbGw9IiMyMDE5MjMiIHN0cm9rZT0iI2QxNmY3NSIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHRleHQgeD0iMTAwMCIgeT0iOTU4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNCIgZmlsbD0iI2ZkYTRhZiI+T25lIGJ1c2luZXNzIG9wZXJhdGlvbiwgb25lIG93bmVyLCBvbmUgcHJvcGFnYXRlZCB0cmFuc2FjdGlvbiBjb250ZXh0PC90ZXh0PgogIDx0ZXh0IHg9IjEwMDAiIHk9Ijk4NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5SZXR1cm5pbmcgYSBEQU8gZW50aXR5IG9yIHVuY29sbGVjdGVkIGRhdGFiYXNlIEZsb3cgY3Jvc3NlcyB0aGUgYm91bmRhcnkgYmVmb3JlIHRoZSB3b3JrIGlzIGNvbXBsZXRlLjwvdGV4dD4KPC9zdmc+Cg==" alt="서비스 또는 컨트롤러 경계가 JDBC transaction {} 블록과 R2DBC suspendTransaction {} 블록을 열고, 그 안에서 저장소 호출이 데이터베이스로 이어지는 트랜잭션 소유권 아키텍처">
       <figcaption><code>docs/manual/assets/persistence/transaction-ownership.svg</code><span>SHA-256 1d7336238d24…</span></figcaption>
-      <dialog id="architecture-transaction-ownership" aria-label="서비스 또는 컨트롤러 경계가 JDBC transaction 블록과 R2DBC suspendTransaction 블록을 열고, 그 안에서 저장소 호출이 데이터베이스로 이어지는 트랜잭션 소유권 아키텍처">
+      <dialog id="architecture-transaction-ownership" aria-label="서비스 또는 컨트롤러 경계가 JDBC transaction {} 블록과 R2DBC suspendTransaction {} 블록을 열고, 그 안에서 저장소 호출이 데이터베이스로 이어지는 트랜잭션 소유권 아키텍처">
         <div class="dialog-bar">
-          <strong>서비스 또는 컨트롤러 경계가 JDBC transaction 블록과 R2DBC suspendTransaction 블록을 열고, 그 안에서 저장소 호출이 데이터베이스로 이어지는 트랜잭션 소유권 아키텍처</strong>
+          <strong>서비스 또는 컨트롤러 경계가 JDBC transaction {} 블록과 R2DBC suspendTransaction {} 블록을 열고, 그 안에서 저장소 호출이 데이터베이스로 이어지는 트랜잭션 소유권 아키텍처</strong>
           <button type="button" data-lightbox-close="transaction-ownership">닫기 <kbd>Esc</kbd></button>
         </div>
-        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAwIiBoZWlnaHQ9IjExMDAiIHZpZXdCb3g9IjAgMCAyMDAwIDExMDAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSBkZXNjIj4KICA8dGl0bGUgaWQ9InRpdGxlIj5KREJDIGFuZCBSMkRCQyB0cmFuc2FjdGlvbiBvd25lcnNoaXA8L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5Ud28gcGFyYWxsZWwgcmVzcG9uc2liaWxpdHkgbGFuZXMgc2hvdyBhcHBsaWNhdGlvbiBvciBmcmFtZXdvcmsgb3duZXJzaGlwIGZsb3dpbmcgdGhyb3VnaCB0cmFuc2FjdGlvbiBjb250ZXh0LCByZXBvc2l0b3J5LCBkcml2ZXIsIGFuZCBkYXRhYmFzZS4gUmVwb3NpdG9yaWVzIHBhcnRpY2lwYXRlIGluIGJ1dCBkbyBub3QgY3JlYXRlIHRyYW5zYWN0aW9ucy48L2Rlc2M+CiAgPGRlZnM+CiAgICA8bWFya2VyIGlkPSJhcnJvdy1ibHVlIiB2aWV3Qm94PSIwIDAgMTQgMTQiIHJlZlg9IjEzIiByZWZZPSI3IiBtYXJrZXJXaWR0aD0iMTQiIG1hcmtlckhlaWdodD0iMTQiIG9yaWVudD0iYXV0byIgbWFya2VyVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNMCAwIEwxNCA3IEwwIDE0IFoiIGZpbGw9IiM5ZWQ4ZmYiIHN0cm9rZT0iIzllZDhmZiIvPjwvbWFya2VyPgogICAgPG1hcmtlciBpZD0iYXJyb3ctdGVhbCIgdmlld0JveD0iMCAwIDE0IDE0IiByZWZYPSIxMyIgcmVmWT0iNyIgbWFya2VyV2lkdGg9IjE0IiBtYXJrZXJIZWlnaHQ9IjE0IiBvcmllbnQ9ImF1dG8iIG1hcmtlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMCBMMTQgNyBMMCAxNCBaIiBmaWxsPSIjNWVlYWQ0IiBzdHJva2U9IiM1ZWVhZDQiLz48L21hcmtlcj4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iY2FudmFzIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzExMTgyNyIvPjxzdG9wIG9mZnNldD0iNTglIiBzdG9wLWNvbG9yPSIjMTgyMzMxIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMjIzMDQ3Ii8+PC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0icGFuZWwiIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMWYyOTM3Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMTExODI3Ii8+PC9saW5lYXJHcmFkaWVudD4KICAgIDxmaWx0ZXIgaWQ9InNoYWRvdyIgeD0iLTIwJSIgeT0iLTIwJSIgd2lkdGg9IjE0MCUiIGhlaWdodD0iMTQwJSI+PGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjEwIiBzdGREZXZpYXRpb249IjEyIiBmbG9vZC1jb2xvcj0iIzAyMDYxNyIgZmxvb2Qtb3BhY2l0eT0iMC4zMiIvPjwvZmlsdGVyPgogICAgPHN5bWJvbCBpZD0iZGF0YWJhc2UtaWNvbiIgdmlld0JveD0iMCAwIDEyOCAxMjgiPgogICAgICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICAgICAgPGVsbGlwc2UgY3g9IjY0IiBjeT0iMzYiIHJ4PSIzNCIgcnk9IjEzIiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIvPgogICAgICA8cGF0aCBkPSJNMzAgMzZ2NDRjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTRWMzYiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgICAgIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNE0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogICAgPC9zeW1ib2w+CiAgPC9kZWZzPgogIDxyZWN0IHdpZHRoPSIyMDAwIiBoZWlnaHQ9IjExMDAiIGZpbGw9InVybCgjY2FudmFzKSIvPgogIDxyZWN0IHg9IjQyIiB5PSIzNiIgd2lkdGg9IjE5MTYiIGhlaWdodD0iMTAyOCIgcng9IjM0IiBmaWxsPSJ1cmwoI3BhbmVsKSIgc3Ryb2tlPSIjNTM2Mzc3IiBzdHJva2Utd2lkdGg9IjQiIGZpbHRlcj0idXJsKCNzaGFkb3cpIi8+CiAgPHRleHQgeD0iMTAwMCIgeT0iMTAyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSI1MiIgZmlsbD0iI2Y4ZmFmYyI+VGhlIENhbGxlciBPd25zIHRoZSBUcmFuc2FjdGlvbiBCb3VuZGFyeTwvdGV4dD4KICA8dGV4dCB4PSIxMDAwIiB5PSIxNDYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxOSIgZmlsbD0iI2I2YzRkNiI+UmVwb3NpdG9yaWVzIGpvaW4gdGhlIGN1cnJlbnQgY29udGV4dDsgdGhleSBkbyBub3Qgb3BlbiBhIGhpZGRlbiB0cmFuc2FjdGlvbjwvdGV4dD4KCiAgPHJlY3QgeD0iNzAiIHk9IjE5NSIgd2lkdGg9IjE4NjAiIGhlaWdodD0iMzIwIiByeD0iMjgiIGZpbGw9IiMxMTE4MjciIHN0cm9rZT0iIzRjOGNjOCIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHRleHQgeD0iMTEwIiB5PSIyNDIiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjMyIiBmaWxsPSIjOWVkOGZmIj5KREJDIG93bmVyc2hpcCBsYW5lPC90ZXh0PgogIDxyZWN0IHg9IjcwIiB5PSI1NTUiIHdpZHRoPSIxODYwIiBoZWlnaHQ9IjMyMCIgcng9IjI4IiBmaWxsPSIjMTExODI3IiBzdHJva2U9IiMxNTljOTIiIHN0cm9rZS13aWR0aD0iMyIvPgogIDx0ZXh0IHg9IjExMCIgeT0iNjAyIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIzMiIgZmlsbD0iIzVlZWFkNCI+UjJEQkMgb3duZXJzaGlwIGxhbmU8L3RleHQ+CgogIDxnIGZpbHRlcj0idXJsKCNzaGFkb3cpIj4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxMDAiIHk9IjI4NSIgd2lkdGg9IjI4MCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjYzU4YjJhIiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSI0NTUiIHk9IjI4NSIgd2lkdGg9IjMyMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjOGI2YmQ2IiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSI4NTAiIHk9IjI4NSIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjNGM4Y2M4IiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxMjI1IiB5PSIyODUiIHdpZHRoPSIzMDAiIGhlaWdodD0iMTcwIiByeD0iMjQiIGZpbGw9IiMxNzIwMzMiIHN0cm9rZT0iIzRjOGNjOCIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgICA8cmVjdCBjbGFzcz0iY2FyZCIgeD0iMTYwMCIgeT0iMjg1IiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiNjNThiMmEiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjEwMCIgeT0iNjQ1IiB3aWR0aD0iMjgwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiNjNThiMmEiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjQ1NSIgeT0iNjQ1IiB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiM4YjZiZDYiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9Ijg1MCIgeT0iNjQ1IiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiMxNTljOTIiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjEyMjUiIHk9IjY0NSIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjMTU5YzkyIiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxNjAwIiB5PSI2NDUiIHdpZHRoPSIzMDAiIGhlaWdodD0iMTcwIiByeD0iMjQiIGZpbGw9IiMxNzIwMzMiIHN0cm9rZT0iI2M1OGIyYSIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgPC9nPgoKICA8ZyB0ZXh0LWFuY2hvcj0ibWlkZGxlIj4KICAgIDx0ZXh0IHg9IjI0MCIgeT0iMzQwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iI2Y2Yzk2YiI+QXBwbGljYXRpb24gLyBTcHJpbmc8L3RleHQ+PHRleHQgeD0iMjQwIiB5PSIzODAiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNiIgZmlsbD0iI2Q1ZGZlYiI+b3ducyB1c2UtY2FzZSBzY29wZTwvdGV4dD48dGV4dCB4PSIyNDAiIHk9IjQxMiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb21taXQg4oCiIHJvbGxiYWNrPC90ZXh0PgogICAgPHRleHQgeD0iNjE1IiB5PSIzNDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI3IiBmaWxsPSIjYzRiNWZkIj50cmFuc2FjdGlvbiB7IH08L3RleHQ+PHRleHQgeD0iNjE1IiB5PSIzODAiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNiIgZmlsbD0iI2Q1ZGZlYiI+SmRiY1RyYW5zYWN0aW9uIGNvbnRleHQ8L3RleHQ+PHRleHQgeD0iNjE1IiB5PSI0MTIiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNSIgZmlsbD0iI2I2YzRkNiI+Y29ubmVjdGlvbiArIGlzb2xhdGlvbjwvdGV4dD4KICAgIDx0ZXh0IHg9IjEwMDAiIHk9IjM0MCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiM5ZWQ4ZmYiPkpkYmNSZXBvc2l0b3J5PC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9IjM4MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj51c2VzIGN1cnJlbnQgY29udGV4dDwvdGV4dD48dGV4dCB4PSIxMDAwIiB5PSI0MTIiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNSIgZmlsbD0iI2ZkYTRhZiI+bmV2ZXIgY3JlYXRlcyB0cmFuc2FjdGlvbjwvdGV4dD4KICAgIDx0ZXh0IHg9IjEzNzUiIHk9IjM0MCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiM5ZWQ4ZmYiPkpEQkMgZHJpdmVyPC90ZXh0Pjx0ZXh0IHg9IjEzNzUiIHk9IjM4MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5ibG9ja2luZyBjb25uZWN0aW9uIEkvTzwvdGV4dD4KICAgIDx1c2UgaHJlZj0iI2RhdGFiYXNlLWljb24iIHg9IjE2MTgiIHk9IjMwMyIgd2lkdGg9IjkwIiBoZWlnaHQ9IjkwIi8+PHRleHQgeD0iMTc5NSIgeT0iMzUwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iI2Y2Yzk2YiI+RGF0YWJhc2U8L3RleHQ+PHRleHQgeD0iMTc5NSIgeT0iMzg4IiBmb250LWZhbWlseT0iQ29taWMgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNkNWRmZWIiPmR1cmFibGUgc3RhdGU8L3RleHQ+CgogICAgPHRleHQgeD0iMjQwIiB5PSI3MDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI3IiBmaWxsPSIjZjZjOTZiIj5BcHBsaWNhdGlvbiAvIFNwcmluZzwvdGV4dD48dGV4dCB4PSIyNDAiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5vd25zIGNvcm91dGluZSBzY29wZTwvdGV4dD48dGV4dCB4PSIyNDAiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb21taXQg4oCiIHJvbGxiYWNrPC90ZXh0PgogICAgPHRleHQgeD0iNjE1IiB5PSI3MDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI1IiBmaWxsPSIjYzRiNWZkIj5zdXNwZW5kVHJhbnNhY3Rpb24geyB9PC90ZXh0Pjx0ZXh0IHg9IjYxNSIgeT0iNzQwIiBmb250LWZhbWlseT0iQ29taWMgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiNkNWRmZWIiPlIyZGJjVHJhbnNhY3Rpb24gY29udGV4dDwvdGV4dD48dGV4dCB4PSI2MTUiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb25uZWN0aW9uICsgY2FuY2VsbGF0aW9uPC90ZXh0PgogICAgPHRleHQgeD0iMTAwMCIgeT0iNzAwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iIzVlZWFkNCI+UjJkYmNSZXBvc2l0b3J5PC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5GbG93IGNvbGxlY3RlZCBoZXJlPC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZmRhNGFmIj5uZXZlciBjcmVhdGVzIHRyYW5zYWN0aW9uPC90ZXh0PgogICAgPHRleHQgeD0iMTM3NSIgeT0iNzAwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iIzVlZWFkNCI+UjJEQkMgZHJpdmVyPC90ZXh0Pjx0ZXh0IHg9IjEzNzUiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5ub24tYmxvY2tpbmcgY29ubmVjdGlvbiBJL088L3RleHQ+CiAgICA8dXNlIGhyZWY9IiNkYXRhYmFzZS1pY29uIiB4PSIxNjE4IiB5PSI2NjMiIHdpZHRoPSI5MCIgaGVpZ2h0PSI5MCIvPjx0ZXh0IHg9IjE3OTUiIHk9IjcxMCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiNmNmM5NmIiPkRhdGFiYXNlPC90ZXh0Pjx0ZXh0IHg9IjE3OTUiIHk9Ijc0OCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZDVkZmViIj5kdXJhYmxlIHN0YXRlPC90ZXh0PgogIDwvZz4KCiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPgogICAgPHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTM4MCAzNzAgSDQ1NSIgc3Ryb2tlPSIjOWVkOGZmIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LWJsdWUpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTc3NSAzNzAgSDg1MCIgc3Ryb2tlPSIjOWVkOGZmIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LWJsdWUpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTExNTAgMzcwIEgxMjI1IiBzdHJva2U9IiM5ZWQ4ZmYiIG1hcmtlci1lbmQ9InVybCgjYXJyb3ctYmx1ZSkiLz48cGF0aCBjbGFzcz0iY29ubmVjdG9yIiBkPSJNMTUyNSAzNzAgSDE2MDAiIHN0cm9rZT0iIzllZDhmZiIgbWFya2VyLWVuZD0idXJsKCNhcnJvdy1ibHVlKSIvPgogICAgPHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTM4MCA3MzAgSDQ1NSIgc3Ryb2tlPSIjNWVlYWQ0IiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LXRlYWwpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTc3NSA3MzAgSDg1MCIgc3Ryb2tlPSIjNWVlYWQ0IiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LXRlYWwpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTExNTAgNzMwIEgxMjI1IiBzdHJva2U9IiM1ZWVhZDQiIG1hcmtlci1lbmQ9InVybCgjYXJyb3ctdGVhbCkiLz48cGF0aCBjbGFzcz0iY29ubmVjdG9yIiBkPSJNMTUyNSA3MzAgSDE2MDAiIHN0cm9rZT0iIzVlZWFkNCIgbWFya2VyLWVuZD0idXJsKCNhcnJvdy10ZWFsKSIvPgogIDwvZz4KCiAgPHJlY3QgeD0iMjIwIiB5PSI5MjUiIHdpZHRoPSIxNTYwIiBoZWlnaHQ9Ijc0IiByeD0iMjIiIGZpbGw9IiMyMDE5MjMiIHN0cm9rZT0iI2QxNmY3NSIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHRleHQgeD0iMTAwMCIgeT0iOTU4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNCIgZmlsbD0iI2ZkYTRhZiI+T25lIGJ1c2luZXNzIG9wZXJhdGlvbiwgb25lIG93bmVyLCBvbmUgcHJvcGFnYXRlZCB0cmFuc2FjdGlvbiBjb250ZXh0PC90ZXh0PgogIDx0ZXh0IHg9IjEwMDAiIHk9Ijk4NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5SZXR1cm5pbmcgYSBEQU8gZW50aXR5IG9yIHVuY29sbGVjdGVkIGRhdGFiYXNlIEZsb3cgY3Jvc3NlcyB0aGUgYm91bmRhcnkgYmVmb3JlIHRoZSB3b3JrIGlzIGNvbXBsZXRlLjwvdGV4dD4KPC9zdmc+Cg==" alt="서비스 또는 컨트롤러 경계가 JDBC transaction 블록과 R2DBC suspendTransaction 블록을 열고, 그 안에서 저장소 호출이 데이터베이스로 이어지는 트랜잭션 소유권 아키텍처">
+        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAwIiBoZWlnaHQ9IjExMDAiIHZpZXdCb3g9IjAgMCAyMDAwIDExMDAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSBkZXNjIj4KICA8dGl0bGUgaWQ9InRpdGxlIj5KREJDIGFuZCBSMkRCQyB0cmFuc2FjdGlvbiBvd25lcnNoaXA8L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5Ud28gcGFyYWxsZWwgcmVzcG9uc2liaWxpdHkgbGFuZXMgc2hvdyBhcHBsaWNhdGlvbiBvciBmcmFtZXdvcmsgb3duZXJzaGlwIGZsb3dpbmcgdGhyb3VnaCB0cmFuc2FjdGlvbiBjb250ZXh0LCByZXBvc2l0b3J5LCBkcml2ZXIsIGFuZCBkYXRhYmFzZS4gUmVwb3NpdG9yaWVzIHBhcnRpY2lwYXRlIGluIGJ1dCBkbyBub3QgY3JlYXRlIHRyYW5zYWN0aW9ucy48L2Rlc2M+CiAgPGRlZnM+CiAgICA8bWFya2VyIGlkPSJhcnJvdy1ibHVlIiB2aWV3Qm94PSIwIDAgMTQgMTQiIHJlZlg9IjEzIiByZWZZPSI3IiBtYXJrZXJXaWR0aD0iMTQiIG1hcmtlckhlaWdodD0iMTQiIG9yaWVudD0iYXV0byIgbWFya2VyVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNMCAwIEwxNCA3IEwwIDE0IFoiIGZpbGw9IiM5ZWQ4ZmYiIHN0cm9rZT0iIzllZDhmZiIvPjwvbWFya2VyPgogICAgPG1hcmtlciBpZD0iYXJyb3ctdGVhbCIgdmlld0JveD0iMCAwIDE0IDE0IiByZWZYPSIxMyIgcmVmWT0iNyIgbWFya2VyV2lkdGg9IjE0IiBtYXJrZXJIZWlnaHQ9IjE0IiBvcmllbnQ9ImF1dG8iIG1hcmtlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMCBMMTQgNyBMMCAxNCBaIiBmaWxsPSIjNWVlYWQ0IiBzdHJva2U9IiM1ZWVhZDQiLz48L21hcmtlcj4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iY2FudmFzIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzExMTgyNyIvPjxzdG9wIG9mZnNldD0iNTglIiBzdG9wLWNvbG9yPSIjMTgyMzMxIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMjIzMDQ3Ii8+PC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0icGFuZWwiIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMWYyOTM3Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMTExODI3Ii8+PC9saW5lYXJHcmFkaWVudD4KICAgIDxmaWx0ZXIgaWQ9InNoYWRvdyIgeD0iLTIwJSIgeT0iLTIwJSIgd2lkdGg9IjE0MCUiIGhlaWdodD0iMTQwJSI+PGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjEwIiBzdGREZXZpYXRpb249IjEyIiBmbG9vZC1jb2xvcj0iIzAyMDYxNyIgZmxvb2Qtb3BhY2l0eT0iMC4zMiIvPjwvZmlsdGVyPgogICAgPHN5bWJvbCBpZD0iZGF0YWJhc2UtaWNvbiIgdmlld0JveD0iMCAwIDEyOCAxMjgiPgogICAgICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICAgICAgPGVsbGlwc2UgY3g9IjY0IiBjeT0iMzYiIHJ4PSIzNCIgcnk9IjEzIiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIvPgogICAgICA8cGF0aCBkPSJNMzAgMzZ2NDRjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTRWMzYiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgICAgIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNE0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogICAgPC9zeW1ib2w+CiAgPC9kZWZzPgogIDxyZWN0IHdpZHRoPSIyMDAwIiBoZWlnaHQ9IjExMDAiIGZpbGw9InVybCgjY2FudmFzKSIvPgogIDxyZWN0IHg9IjQyIiB5PSIzNiIgd2lkdGg9IjE5MTYiIGhlaWdodD0iMTAyOCIgcng9IjM0IiBmaWxsPSJ1cmwoI3BhbmVsKSIgc3Ryb2tlPSIjNTM2Mzc3IiBzdHJva2Utd2lkdGg9IjQiIGZpbHRlcj0idXJsKCNzaGFkb3cpIi8+CiAgPHRleHQgeD0iMTAwMCIgeT0iMTAyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSI1MiIgZmlsbD0iI2Y4ZmFmYyI+VGhlIENhbGxlciBPd25zIHRoZSBUcmFuc2FjdGlvbiBCb3VuZGFyeTwvdGV4dD4KICA8dGV4dCB4PSIxMDAwIiB5PSIxNDYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxOSIgZmlsbD0iI2I2YzRkNiI+UmVwb3NpdG9yaWVzIGpvaW4gdGhlIGN1cnJlbnQgY29udGV4dDsgdGhleSBkbyBub3Qgb3BlbiBhIGhpZGRlbiB0cmFuc2FjdGlvbjwvdGV4dD4KCiAgPHJlY3QgeD0iNzAiIHk9IjE5NSIgd2lkdGg9IjE4NjAiIGhlaWdodD0iMzIwIiByeD0iMjgiIGZpbGw9IiMxMTE4MjciIHN0cm9rZT0iIzRjOGNjOCIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHRleHQgeD0iMTEwIiB5PSIyNDIiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjMyIiBmaWxsPSIjOWVkOGZmIj5KREJDIG93bmVyc2hpcCBsYW5lPC90ZXh0PgogIDxyZWN0IHg9IjcwIiB5PSI1NTUiIHdpZHRoPSIxODYwIiBoZWlnaHQ9IjMyMCIgcng9IjI4IiBmaWxsPSIjMTExODI3IiBzdHJva2U9IiMxNTljOTIiIHN0cm9rZS13aWR0aD0iMyIvPgogIDx0ZXh0IHg9IjExMCIgeT0iNjAyIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIzMiIgZmlsbD0iIzVlZWFkNCI+UjJEQkMgb3duZXJzaGlwIGxhbmU8L3RleHQ+CgogIDxnIGZpbHRlcj0idXJsKCNzaGFkb3cpIj4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxMDAiIHk9IjI4NSIgd2lkdGg9IjI4MCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjYzU4YjJhIiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSI0NTUiIHk9IjI4NSIgd2lkdGg9IjMyMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjOGI2YmQ2IiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSI4NTAiIHk9IjI4NSIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjNGM4Y2M4IiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxMjI1IiB5PSIyODUiIHdpZHRoPSIzMDAiIGhlaWdodD0iMTcwIiByeD0iMjQiIGZpbGw9IiMxNzIwMzMiIHN0cm9rZT0iIzRjOGNjOCIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgICA8cmVjdCBjbGFzcz0iY2FyZCIgeD0iMTYwMCIgeT0iMjg1IiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiNjNThiMmEiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjEwMCIgeT0iNjQ1IiB3aWR0aD0iMjgwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiNjNThiMmEiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjQ1NSIgeT0iNjQ1IiB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiM4YjZiZDYiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9Ijg1MCIgeT0iNjQ1IiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiMxNTljOTIiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjEyMjUiIHk9IjY0NSIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjMTU5YzkyIiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxNjAwIiB5PSI2NDUiIHdpZHRoPSIzMDAiIGhlaWdodD0iMTcwIiByeD0iMjQiIGZpbGw9IiMxNzIwMzMiIHN0cm9rZT0iI2M1OGIyYSIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgPC9nPgoKICA8ZyB0ZXh0LWFuY2hvcj0ibWlkZGxlIj4KICAgIDx0ZXh0IHg9IjI0MCIgeT0iMzQwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iI2Y2Yzk2YiI+QXBwbGljYXRpb24gLyBTcHJpbmc8L3RleHQ+PHRleHQgeD0iMjQwIiB5PSIzODAiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNiIgZmlsbD0iI2Q1ZGZlYiI+b3ducyB1c2UtY2FzZSBzY29wZTwvdGV4dD48dGV4dCB4PSIyNDAiIHk9IjQxMiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb21taXQg4oCiIHJvbGxiYWNrPC90ZXh0PgogICAgPHRleHQgeD0iNjE1IiB5PSIzNDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI3IiBmaWxsPSIjYzRiNWZkIj50cmFuc2FjdGlvbiB7IH08L3RleHQ+PHRleHQgeD0iNjE1IiB5PSIzODAiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNiIgZmlsbD0iI2Q1ZGZlYiI+SmRiY1RyYW5zYWN0aW9uIGNvbnRleHQ8L3RleHQ+PHRleHQgeD0iNjE1IiB5PSI0MTIiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNSIgZmlsbD0iI2I2YzRkNiI+Y29ubmVjdGlvbiArIGlzb2xhdGlvbjwvdGV4dD4KICAgIDx0ZXh0IHg9IjEwMDAiIHk9IjM0MCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiM5ZWQ4ZmYiPkpkYmNSZXBvc2l0b3J5PC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9IjM4MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj51c2VzIGN1cnJlbnQgY29udGV4dDwvdGV4dD48dGV4dCB4PSIxMDAwIiB5PSI0MTIiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNSIgZmlsbD0iI2ZkYTRhZiI+bmV2ZXIgY3JlYXRlcyB0cmFuc2FjdGlvbjwvdGV4dD4KICAgIDx0ZXh0IHg9IjEzNzUiIHk9IjM0MCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiM5ZWQ4ZmYiPkpEQkMgZHJpdmVyPC90ZXh0Pjx0ZXh0IHg9IjEzNzUiIHk9IjM4MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5ibG9ja2luZyBjb25uZWN0aW9uIEkvTzwvdGV4dD4KICAgIDx1c2UgaHJlZj0iI2RhdGFiYXNlLWljb24iIHg9IjE2MTgiIHk9IjMwMyIgd2lkdGg9IjkwIiBoZWlnaHQ9IjkwIi8+PHRleHQgeD0iMTc5NSIgeT0iMzUwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iI2Y2Yzk2YiI+RGF0YWJhc2U8L3RleHQ+PHRleHQgeD0iMTc5NSIgeT0iMzg4IiBmb250LWZhbWlseT0iQ29taWMgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNkNWRmZWIiPmR1cmFibGUgc3RhdGU8L3RleHQ+CgogICAgPHRleHQgeD0iMjQwIiB5PSI3MDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI3IiBmaWxsPSIjZjZjOTZiIj5BcHBsaWNhdGlvbiAvIFNwcmluZzwvdGV4dD48dGV4dCB4PSIyNDAiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5vd25zIGNvcm91dGluZSBzY29wZTwvdGV4dD48dGV4dCB4PSIyNDAiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb21taXQg4oCiIHJvbGxiYWNrPC90ZXh0PgogICAgPHRleHQgeD0iNjE1IiB5PSI3MDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI1IiBmaWxsPSIjYzRiNWZkIj5zdXNwZW5kVHJhbnNhY3Rpb24geyB9PC90ZXh0Pjx0ZXh0IHg9IjYxNSIgeT0iNzQwIiBmb250LWZhbWlseT0iQ29taWMgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiNkNWRmZWIiPlIyZGJjVHJhbnNhY3Rpb24gY29udGV4dDwvdGV4dD48dGV4dCB4PSI2MTUiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb25uZWN0aW9uICsgY2FuY2VsbGF0aW9uPC90ZXh0PgogICAgPHRleHQgeD0iMTAwMCIgeT0iNzAwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iIzVlZWFkNCI+UjJkYmNSZXBvc2l0b3J5PC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5GbG93IGNvbGxlY3RlZCBoZXJlPC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZmRhNGFmIj5uZXZlciBjcmVhdGVzIHRyYW5zYWN0aW9uPC90ZXh0PgogICAgPHRleHQgeD0iMTM3NSIgeT0iNzAwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iIzVlZWFkNCI+UjJEQkMgZHJpdmVyPC90ZXh0Pjx0ZXh0IHg9IjEzNzUiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5ub24tYmxvY2tpbmcgY29ubmVjdGlvbiBJL088L3RleHQ+CiAgICA8dXNlIGhyZWY9IiNkYXRhYmFzZS1pY29uIiB4PSIxNjE4IiB5PSI2NjMiIHdpZHRoPSI5MCIgaGVpZ2h0PSI5MCIvPjx0ZXh0IHg9IjE3OTUiIHk9IjcxMCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiNmNmM5NmIiPkRhdGFiYXNlPC90ZXh0Pjx0ZXh0IHg9IjE3OTUiIHk9Ijc0OCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZDVkZmViIj5kdXJhYmxlIHN0YXRlPC90ZXh0PgogIDwvZz4KCiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPgogICAgPHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTM4MCAzNzAgSDQ1NSIgc3Ryb2tlPSIjOWVkOGZmIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LWJsdWUpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTc3NSAzNzAgSDg1MCIgc3Ryb2tlPSIjOWVkOGZmIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LWJsdWUpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTExNTAgMzcwIEgxMjI1IiBzdHJva2U9IiM5ZWQ4ZmYiIG1hcmtlci1lbmQ9InVybCgjYXJyb3ctYmx1ZSkiLz48cGF0aCBjbGFzcz0iY29ubmVjdG9yIiBkPSJNMTUyNSAzNzAgSDE2MDAiIHN0cm9rZT0iIzllZDhmZiIgbWFya2VyLWVuZD0idXJsKCNhcnJvdy1ibHVlKSIvPgogICAgPHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTM4MCA3MzAgSDQ1NSIgc3Ryb2tlPSIjNWVlYWQ0IiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LXRlYWwpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTc3NSA3MzAgSDg1MCIgc3Ryb2tlPSIjNWVlYWQ0IiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LXRlYWwpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTExNTAgNzMwIEgxMjI1IiBzdHJva2U9IiM1ZWVhZDQiIG1hcmtlci1lbmQ9InVybCgjYXJyb3ctdGVhbCkiLz48cGF0aCBjbGFzcz0iY29ubmVjdG9yIiBkPSJNMTUyNSA3MzAgSDE2MDAiIHN0cm9rZT0iIzVlZWFkNCIgbWFya2VyLWVuZD0idXJsKCNhcnJvdy10ZWFsKSIvPgogIDwvZz4KCiAgPHJlY3QgeD0iMjIwIiB5PSI5MjUiIHdpZHRoPSIxNTYwIiBoZWlnaHQ9Ijc0IiByeD0iMjIiIGZpbGw9IiMyMDE5MjMiIHN0cm9rZT0iI2QxNmY3NSIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHRleHQgeD0iMTAwMCIgeT0iOTU4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNCIgZmlsbD0iI2ZkYTRhZiI+T25lIGJ1c2luZXNzIG9wZXJhdGlvbiwgb25lIG93bmVyLCBvbmUgcHJvcGFnYXRlZCB0cmFuc2FjdGlvbiBjb250ZXh0PC90ZXh0PgogIDx0ZXh0IHg9IjEwMDAiIHk9Ijk4NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5SZXR1cm5pbmcgYSBEQU8gZW50aXR5IG9yIHVuY29sbGVjdGVkIGRhdGFiYXNlIEZsb3cgY3Jvc3NlcyB0aGUgYm91bmRhcnkgYmVmb3JlIHRoZSB3b3JrIGlzIGNvbXBsZXRlLjwvdGV4dD4KPC9zdmc+Cg==" alt="서비스 또는 컨트롤러 경계가 JDBC transaction {} 블록과 R2DBC suspendTransaction {} 블록을 열고, 그 안에서 저장소 호출이 데이터베이스로 이어지는 트랜잭션 소유권 아키텍처">
       </dialog>
     </figure>
   
       </section>
       <section id="scenario-explorer">
-        <div class="section-heading"><span class="section-number">03</span><div><p class="kicker">BOUNDARY LAB</p><h2>여섯 가지 경계 결정을 재생해 보기</h2><p>경로를 선택하면 시퀀스, 소유자, 종료 신호, 코드 매핑, 위험 설명이 함께 바뀐다.</p></div></div>
-        <div class="scenario-tabs" role="group" aria-label="여섯 가지 경계 결정을 재생해 보기">
+        <div class="section-heading"><span class="section-number">03</span><div><p class="kicker">경계 시나리오</p><h2>여섯 가지 트랜잭션 경계 시나리오 비교</h2><p>시나리오를 선택하면 실행 순서, 경계 소유자, 종료 결과, 코드 대응 관계, 주의 사항이 함께 바뀐다.</p></div></div>
+        <div class="scenario-tabs" role="group" aria-label="여섯 가지 트랜잭션 경계 시나리오 비교">
     <button type="button"
             id="scenario-jdbc-single"
             class="scenario-tab"
@@ -270,7 +274,7 @@
             aria-controls="sequence-r2dbc-flow-escape"
             aria-pressed="false">
       <span>05</span>
-      R2DBC Flow · 경계 밖으로 탈출
+      R2DBC Flow · 경계 밖으로 반환
     </button>
   
     <button type="button"
@@ -285,7 +289,7 @@
   </div>
       </section>
       <section id="sequence">
-        <div class="section-heading"><span class="section-number">04</span><div><p class="kicker">CALL → RETURN → TERMINAL</p><h2>실행 시퀀스</h2></div></div>
+        <div class="section-heading"><span class="section-number">04</span><div><p class="kicker">호출 → 반환 → 종료</p><h2>실행 시퀀스</h2></div></div>
         <div class="sequence-stack">
     <article class="sequence-panel" id="sequence-jdbc-single"
              data-sequence="jdbc-single"
@@ -295,10 +299,10 @@
         <div>
           <span class="scenario-outcome outcome-commit">COMMIT</span>
           <h3>JDBC · 단일 저장소</h3>
-          <p>하나의 동기 경계가 조회, 매핑, commit을 감싼다.</p>
+          <p>하나의 동기 경계가 조회, 매핑, 커밋을 감싼다.</p>
         </div>
         <dl>
-          <div><dt>경계 소유자</dt><dd><code>Controller / service `transaction {}`</code></dd></div>
+          <div><dt>경계 소유자</dt><dd><code>컨트롤러 / 서비스 transaction {}</code></dd></div>
           <div><dt>근거 항목</dt><dd><a href="#source-jdbc-controller">jdbc-controller</a></dd></div>
         </dl>
       </header>
@@ -329,42 +333,62 @@
     </div>
   </div>
         <ol class="sequence-messages">
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:1;--to:2;--row:1">
-        <span class="message-number">1</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL 유스케이스</span>
+          data-direction="forward"
+          data-from="client"
+          data-to="boundary"
+          style="--line-start:12.5%;--line-end:37.5%;--line-left:12.5%;--line-right:37.5%;--row:1">
+        <span class="message-copy">
+          <span class="message-number">1</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">유스케이스 실행</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:2;--to:3;--row:2">
-        <span class="message-number">2</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL transaction { findAll() }</span>
+          data-direction="forward"
+          data-from="boundary"
+          data-to="repository"
+          style="--line-start:37.5%;--line-end:62.5%;--line-left:37.5%;--line-right:62.5%;--row:2">
+        <span class="message-copy">
+          <span class="message-number">2</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">transaction { findAll() }</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-return"
+      <li class="message message-return message-reverse"
           data-message-kind="return"
-          style="--from:3;--to:2;--row:3">
-        <span class="message-number">3</span>
-        <span class="message-kind">RETURN</span>
-        <span class="message-label">RETURN 매핑된 레코드</span>
+          data-direction="reverse"
+          data-from="repository"
+          data-to="boundary"
+          style="--line-start:62.5%;--line-end:37.5%;--line-left:37.5%;--line-right:62.5%;--row:3">
+        <span class="message-copy">
+          <span class="message-number">3</span>
+          <span class="message-kind">RETURN</span>
+          <span class="message-label">매핑된 레코드</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-commit"
+      <li class="message message-commit message-forward"
           data-message-kind="commit"
-          style="--from:2;--to:4;--row:4">
-        <span class="message-number">4</span>
-        <span class="message-kind">COMMIT</span>
-        <span class="message-label">COMMIT 경계</span>
+          data-direction="forward"
+          data-from="boundary"
+          data-to="database"
+          style="--line-start:37.5%;--line-end:87.5%;--line-left:37.5%;--line-right:87.5%;--row:4">
+        <span class="message-copy">
+          <span class="message-number">4</span>
+          <span class="message-kind">COMMIT</span>
+          <span class="message-label">트랜잭션 경계</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
       </div>
       <div class="sequence-alt outcome-commit" data-outcome="commit">
         <strong>COMMIT</strong>
-        <span>블록이 정상 반환한다.</span>
+        <span>블록이 정상적으로 종료된다.</span>
       </div>
     </article>
     <article class="sequence-panel" id="sequence-jdbc-multi-repository"
@@ -375,10 +399,10 @@
         <div>
           <span class="scenario-outcome outcome-commit">COMMIT</span>
           <h3>JDBC · 여러 저장소</h3>
-          <p>하나의 서비스 경계가 호출을 조합해 부분 성공이 새지 않게 한다.</p>
+          <p>하나의 서비스 경계가 호출을 조합해 부분 성공이 외부로 드러나지 않게 한다.</p>
         </div>
         <dl>
-          <div><dt>경계 소유자</dt><dd><code>Service `transaction {}`</code></dd></div>
+          <div><dt>경계 소유자</dt><dd><code>서비스 transaction {}</code></dd></div>
           <div><dt>근거 항목</dt><dd><a href="#source-jdbc-repository">jdbc-repository</a></dd></div>
         </dl>
       </header>
@@ -409,42 +433,62 @@
     </div>
   </div>
         <ol class="sequence-messages">
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:1;--to:2;--row:1">
-        <span class="message-number">1</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL 재고 예약</span>
+          data-direction="forward"
+          data-from="service"
+          data-to="repo-a"
+          style="--line-start:12.5%;--line-end:37.5%;--line-left:12.5%;--line-right:37.5%;--row:1">
+        <span class="message-copy">
+          <span class="message-number">1</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">재고 예약</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-return"
+      <li class="message message-return message-reverse"
           data-message-kind="return"
-          style="--from:2;--to:1;--row:2">
-        <span class="message-number">2</span>
-        <span class="message-kind">RETURN</span>
-        <span class="message-label">RETURN 예약 결과</span>
+          data-direction="reverse"
+          data-from="repo-a"
+          data-to="service"
+          style="--line-start:37.5%;--line-end:12.5%;--line-left:12.5%;--line-right:37.5%;--row:2">
+        <span class="message-copy">
+          <span class="message-number">2</span>
+          <span class="message-kind">RETURN</span>
+          <span class="message-label">예약 결과</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:1;--to:3;--row:3">
-        <span class="message-number">3</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL 주문 기록</span>
+          data-direction="forward"
+          data-from="service"
+          data-to="repo-b"
+          style="--line-start:12.5%;--line-end:62.5%;--line-left:12.5%;--line-right:62.5%;--row:3">
+        <span class="message-copy">
+          <span class="message-number">3</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">주문 기록</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-commit"
+      <li class="message message-commit message-forward"
           data-message-kind="commit"
-          style="--from:1;--to:4;--row:4">
-        <span class="message-number">4</span>
-        <span class="message-kind">COMMIT</span>
-        <span class="message-label">COMMIT 하나의 작업 단위</span>
+          data-direction="forward"
+          data-from="service"
+          data-to="database"
+          style="--line-start:12.5%;--line-end:87.5%;--line-left:12.5%;--line-right:87.5%;--row:4">
+        <span class="message-copy">
+          <span class="message-number">4</span>
+          <span class="message-kind">COMMIT</span>
+          <span class="message-label">하나의 작업 단위</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
       </div>
       <div class="sequence-alt outcome-commit" data-outcome="commit">
         <strong>COMMIT</strong>
-        <span>두 저장소 효과가 함께 보인다.</span>
+        <span>두 저장소의 변경이 함께 반영된다.</span>
       </div>
     </article>
     <article class="sequence-panel" id="sequence-r2dbc-single"
@@ -455,10 +499,10 @@
         <div>
           <span class="scenario-outcome outcome-commit">COMMIT</span>
           <h3>R2DBC · 단일 저장소</h3>
-          <p>코루틴 context가 suspend 저장소 작업 전체에 트랜잭션을 전달한다.</p>
+          <p>코루틴 컨텍스트가 일시 중단 가능한 저장소 작업 전체에 트랜잭션을 전달한다.</p>
         </div>
         <dl>
-          <div><dt>경계 소유자</dt><dd><code>Coroutine `suspendTransaction {}`</code></dd></div>
+          <div><dt>경계 소유자</dt><dd><code>코루틴 suspendTransaction {}</code></dd></div>
           <div><dt>근거 항목</dt><dd><a href="#source-r2dbc-controller">r2dbc-controller</a></dd></div>
         </dl>
       </header>
@@ -483,42 +527,62 @@
     </div>
   
     <div class="sequence-participant" data-participant="database">
-      <strong>R2DBC Database</strong>
+      <strong>R2DBC 데이터베이스</strong>
       <span class="lifeline" aria-hidden="true"></span>
       <span class="activation" aria-hidden="true"></span>
     </div>
   </div>
         <ol class="sequence-messages">
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:1;--to:2;--row:1">
-        <span class="message-number">1</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL suspendTransaction</span>
+          data-direction="forward"
+          data-from="handler"
+          data-to="boundary"
+          style="--line-start:12.5%;--line-end:37.5%;--line-left:12.5%;--line-right:37.5%;--row:1">
+        <span class="message-copy">
+          <span class="message-number">1</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">suspendTransaction</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:2;--to:3;--row:2">
-        <span class="message-number">2</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL suspend findAll()</span>
+          data-direction="forward"
+          data-from="boundary"
+          data-to="repository"
+          style="--line-start:37.5%;--line-end:62.5%;--line-left:37.5%;--line-right:62.5%;--row:2">
+        <span class="message-copy">
+          <span class="message-number">2</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">suspend findAll()</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-return"
+      <li class="message message-return message-reverse"
           data-message-kind="return"
-          style="--from:3;--to:2;--row:3">
-        <span class="message-number">3</span>
-        <span class="message-kind">RETURN</span>
-        <span class="message-label">RETURN 엔티티</span>
+          data-direction="reverse"
+          data-from="repository"
+          data-to="boundary"
+          style="--line-start:62.5%;--line-end:37.5%;--line-left:37.5%;--line-right:62.5%;--row:3">
+        <span class="message-copy">
+          <span class="message-number">3</span>
+          <span class="message-kind">RETURN</span>
+          <span class="message-label">엔티티</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-commit"
+      <li class="message message-commit message-forward"
           data-message-kind="commit"
-          style="--from:2;--to:4;--row:4">
-        <span class="message-number">4</span>
-        <span class="message-kind">COMMIT</span>
-        <span class="message-label">COMMIT 코루틴 경계</span>
+          data-direction="forward"
+          data-from="boundary"
+          data-to="database"
+          style="--line-start:37.5%;--line-end:87.5%;--line-left:37.5%;--line-right:87.5%;--row:4">
+        <span class="message-copy">
+          <span class="message-number">4</span>
+          <span class="message-kind">COMMIT</span>
+          <span class="message-label">코루틴 경계</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
       </div>
@@ -535,10 +599,10 @@
         <div>
           <span class="scenario-outcome outcome-commit">COMMIT</span>
           <h3>R2DBC Flow · 경계 안에서 collect</h3>
-          <p>cold Flow 또는 channelFlow를 트랜잭션 블록이 끝나기 전에 collect한다.</p>
+          <p>콜드 Flow 또는 channelFlow를 트랜잭션 블록이 끝나기 전에 collect한다.</p>
         </div>
         <dl>
-          <div><dt>경계 소유자</dt><dd><code>Collector inside `suspendTransaction {}`</code></dd></div>
+          <div><dt>경계 소유자</dt><dd><code>suspendTransaction {} 안의 수집자</code></dd></div>
           <div><dt>근거 항목</dt><dd><a href="#source-r2dbc-test">r2dbc-test</a></dd></div>
         </dl>
       </header>
@@ -557,7 +621,7 @@
     </div>
   
     <div class="sequence-participant" data-participant="flow">
-      <strong>Cold Flow</strong>
+      <strong>콜드 Flow</strong>
       <span class="lifeline" aria-hidden="true"></span>
       <span class="activation" aria-hidden="true"></span>
     </div>
@@ -569,42 +633,62 @@
     </div>
   </div>
         <ol class="sequence-messages">
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:1;--to:2;--row:1">
-        <span class="message-number">1</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL Flow 쿼리</span>
+          data-direction="forward"
+          data-from="boundary"
+          data-to="repository"
+          style="--line-start:12.5%;--line-end:37.5%;--line-left:12.5%;--line-right:37.5%;--row:1">
+        <span class="message-copy">
+          <span class="message-number">1</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">Flow 조회</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-return"
+      <li class="message message-return message-reverse"
           data-message-kind="return"
-          style="--from:2;--to:3;--row:2">
-        <span class="message-number">2</span>
-        <span class="message-kind">RETURN</span>
-        <span class="message-label">RETURN cold pipeline</span>
+          data-direction="reverse"
+          data-from="repository"
+          data-to="boundary"
+          style="--line-start:37.5%;--line-end:12.5%;--line-left:12.5%;--line-right:37.5%;--row:2">
+        <span class="message-copy">
+          <span class="message-number">2</span>
+          <span class="message-kind">RETURN</span>
+          <span class="message-label">콜드 Flow</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:1;--to:3;--row:3">
-        <span class="message-number">3</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL 경계 안에서 collect</span>
+          data-direction="forward"
+          data-from="boundary"
+          data-to="flow"
+          style="--line-start:12.5%;--line-end:62.5%;--line-left:12.5%;--line-right:62.5%;--row:3">
+        <span class="message-copy">
+          <span class="message-number">3</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">경계 안에서 collect</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-commit"
+      <li class="message message-commit message-forward"
           data-message-kind="commit"
-          style="--from:1;--to:4;--row:4">
-        <span class="message-number">4</span>
-        <span class="message-kind">COMMIT</span>
-        <span class="message-label">COMMIT collect 완료 후</span>
+          data-direction="forward"
+          data-from="boundary"
+          data-to="database"
+          style="--line-start:12.5%;--line-end:87.5%;--line-left:12.5%;--line-right:87.5%;--row:4">
+        <span class="message-copy">
+          <span class="message-number">4</span>
+          <span class="message-kind">COMMIT</span>
+          <span class="message-label">collect 완료 후</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
       </div>
       <div class="sequence-alt outcome-commit" data-outcome="commit">
         <strong>COMMIT</strong>
-        <span>모든 emission이 경계 안에서 소비된다.</span>
+        <span>모든 방출값을 경계 안에서 소비한다.</span>
       </div>
     </article>
     <article class="sequence-panel" id="sequence-r2dbc-flow-escape"
@@ -614,11 +698,11 @@
       <header class="sequence-summary">
         <div>
           <span class="scenario-outcome outcome-boundary-error">BOUNDARY ERROR</span>
-          <h3>R2DBC Flow · 경계 밖으로 탈출</h3>
-          <p>cold Flow를 반환하면 collect가 시작되기 전에 트랜잭션이 닫힌다.</p>
+          <h3>R2DBC Flow · 경계 밖으로 반환</h3>
+          <p>콜드 Flow를 반환하면 collect가 시작되기 전에 트랜잭션이 닫힌다.</p>
         </div>
         <dl>
-          <div><dt>경계 소유자</dt><dd><code>Caller mistakenly outlives the transaction</code></dd></div>
+          <div><dt>경계 소유자</dt><dd><code>트랜잭션보다 오래 유지되는 호출자</code></dd></div>
           <div><dt>근거 항목</dt><dd><a href="#source-r2dbc-manual">r2dbc-manual</a></dd></div>
         </dl>
       </header>
@@ -637,7 +721,7 @@
     </div>
   
     <div class="sequence-participant" data-participant="flow">
-      <strong>탈출한 Flow</strong>
+      <strong>경계 밖으로 반환된 Flow</strong>
       <span class="lifeline" aria-hidden="true"></span>
       <span class="activation" aria-hidden="true"></span>
     </div>
@@ -649,42 +733,62 @@
     </div>
   </div>
         <ol class="sequence-messages">
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:1;--to:2;--row:1">
-        <span class="message-number">1</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL Flow 생성</span>
+          data-direction="forward"
+          data-from="caller"
+          data-to="boundary"
+          style="--line-start:12.5%;--line-end:37.5%;--line-left:12.5%;--line-right:37.5%;--row:1">
+        <span class="message-copy">
+          <span class="message-number">1</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">Flow 생성</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-return"
+      <li class="message message-return message-reverse"
           data-message-kind="return"
-          style="--from:2;--to:1;--row:2">
-        <span class="message-number">2</span>
-        <span class="message-kind">RETURN</span>
-        <span class="message-label">RETURN cold Flow를 너무 일찍 반환</span>
+          data-direction="reverse"
+          data-from="boundary"
+          data-to="caller"
+          style="--line-start:37.5%;--line-end:12.5%;--line-left:12.5%;--line-right:37.5%;--row:2">
+        <span class="message-copy">
+          <span class="message-number">2</span>
+          <span class="message-kind">RETURN</span>
+          <span class="message-label">콜드 Flow 조기 반환</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-boundary-error"
+      <li class="message message-boundary-error message-forward"
           data-message-kind="boundary-error"
-          style="--from:1;--to:3;--row:3">
-        <span class="message-number">3</span>
-        <span class="message-kind">BOUNDARY ERROR</span>
-        <span class="message-label">BOUNDARY ERROR collect 시점</span>
+          data-direction="forward"
+          data-from="caller"
+          data-to="flow"
+          style="--line-start:12.5%;--line-end:62.5%;--line-left:12.5%;--line-right:62.5%;--row:3">
+        <span class="message-copy">
+          <span class="message-number">3</span>
+          <span class="message-kind">BOUNDARY ERROR</span>
+          <span class="message-label">collect 시점</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-rollback"
+      <li class="message message-rollback message-forward"
           data-message-kind="rollback"
-          style="--from:3;--to:4;--row:4">
-        <span class="message-number">4</span>
-        <span class="message-kind">ROLLBACK</span>
-        <span class="message-label">ROLLBACK / 닫힌 context</span>
+          data-direction="forward"
+          data-from="flow"
+          data-to="database"
+          style="--line-start:62.5%;--line-end:87.5%;--line-left:62.5%;--line-right:87.5%;--row:4">
+        <span class="message-copy">
+          <span class="message-number">4</span>
+          <span class="message-kind">ROLLBACK</span>
+          <span class="message-label">닫힌 컨텍스트</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
       </div>
       <div class="sequence-alt outcome-boundary-error" data-outcome="boundary-error">
         <strong>BOUNDARY ERROR</strong>
-        <span>나중의 collect에는 유효한 트랜잭션 context가 없다.</span>
+        <span>이후 collect 시점에는 유효한 트랜잭션 컨텍스트가 없다.</span>
       </div>
     </article>
     <article class="sequence-panel" id="sequence-rollback-or-cancellation"
@@ -695,10 +799,10 @@
         <div>
           <span class="scenario-outcome outcome-rollback">ROLLBACK</span>
           <h3>실패 또는 취소</h3>
-          <p>예외나 코루틴 취소는 저장소 호출 하나가 아니라 전체 작업 단위를 끝내야 한다.</p>
+          <p>예외나 코루틴 취소가 발생하면 저장소 호출 하나가 아니라 전체 작업 단위를 종료해야 한다.</p>
         </div>
         <dl>
-          <div><dt>경계 소유자</dt><dd><code>Transaction block / coroutine scope</code></dd></div>
+          <div><dt>경계 소유자</dt><dd><code>트랜잭션 블록 / 코루틴 스코프</code></dd></div>
           <div><dt>근거 항목</dt><dd><a href="#source-r2dbc-test">r2dbc-test</a></dd></div>
         </dl>
       </header>
@@ -729,90 +833,110 @@
     </div>
   </div>
         <ol class="sequence-messages">
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:1;--to:2;--row:1">
-        <span class="message-number">1</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL 쓰기</span>
+          data-direction="forward"
+          data-from="boundary"
+          data-to="repository"
+          style="--line-start:12.5%;--line-end:37.5%;--line-left:12.5%;--line-right:37.5%;--row:1">
+        <span class="message-copy">
+          <span class="message-number">1</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">저장 연산</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:2;--to:3;--row:2">
-        <span class="message-number">2</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL 실패 또는 취소</span>
+          data-direction="forward"
+          data-from="repository"
+          data-to="failure"
+          style="--line-start:37.5%;--line-end:62.5%;--line-left:37.5%;--line-right:62.5%;--row:2">
+        <span class="message-copy">
+          <span class="message-number">2</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">실패 또는 취소 발생</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-return"
+      <li class="message message-return message-reverse"
           data-message-kind="return"
-          style="--from:3;--to:1;--row:3">
-        <span class="message-number">3</span>
-        <span class="message-kind">RETURN</span>
-        <span class="message-label">RETURN 예외 완료</span>
+          data-direction="reverse"
+          data-from="failure"
+          data-to="boundary"
+          style="--line-start:62.5%;--line-end:12.5%;--line-left:12.5%;--line-right:62.5%;--row:3">
+        <span class="message-copy">
+          <span class="message-number">3</span>
+          <span class="message-kind">RETURN</span>
+          <span class="message-label">예외 전파</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-rollback"
+      <li class="message message-rollback message-forward"
           data-message-kind="rollback"
-          style="--from:1;--to:4;--row:4">
-        <span class="message-number">4</span>
-        <span class="message-kind">ROLLBACK</span>
-        <span class="message-label">ROLLBACK 전체 작업 단위</span>
+          data-direction="forward"
+          data-from="boundary"
+          data-to="database"
+          style="--line-start:12.5%;--line-end:87.5%;--line-left:12.5%;--line-right:87.5%;--row:4">
+        <span class="message-copy">
+          <span class="message-number">4</span>
+          <span class="message-kind">ROLLBACK</span>
+          <span class="message-label">전체 작업 단위</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
       </div>
       <div class="sequence-alt outcome-rollback" data-outcome="rollback">
         <strong>ROLLBACK</strong>
-        <span>부분 쓰기가 경계를 넘지 않는다.</span>
+        <span>부분 변경이 경계를 넘지 않는다.</span>
       </div>
     </article></div>
       </section>
       <section id="ownership-matrix">
-        <div class="section-heading"><span class="section-number">05</span><div><p class="kicker">RESPONSIBILITY</p><h2>누가 무엇을 소유하는가?</h2></div></div>
+        <div class="section-heading"><span class="section-number">05</span><div><p class="kicker">책임</p><h2>누가 무엇을 소유하는가?</h2></div></div>
         
     <div class="table-wrap">
       <table class="">
         <thead><tr><th scope="col">주체</th><th scope="col">소유 책임</th><th scope="col">이유</th></tr></thead>
-        <tbody><tr><th scope="row">애플리케이션 경계</th><td>업무 트랜잭션을 시작하고 끝낸다</td><td>여러 저장소 호출을 하나의 원자적 작업으로 묶는다</td></tr><tr><th scope="row">저장소</th><td>쿼리, 매핑, 쓰기를 표현한다</td><td>유스케이스 경계를 몰래 넓히지 않는다</td></tr><tr><th scope="row">Exposed 런타임</th><td>JDBC 스레드 또는 R2DBC 코루틴 context에 트랜잭션 상태를 결합한다</td><td>경계 밖으로 빠져나간 작업이 정확성 문제가 되는 이유다</td></tr><tr><th scope="row">데이터베이스</th><td>작업 단위를 commit 또는 rollback 한다</td><td>하나의 최종 결과만 본다</td></tr></tbody>
+        <tbody><tr><th scope="row">애플리케이션 경계</th><td>업무 트랜잭션을 시작하고 끝낸다</td><td>여러 저장소 호출을 하나의 원자적 작업으로 묶는다</td></tr><tr><th scope="row">저장소</th><td>쿼리, 매핑, 저장 연산을 표현한다</td><td>유스케이스 경계를 몰래 넓히지 않는다</td></tr><tr><th scope="row">Exposed 런타임</th><td>JDBC 스레드 또는 R2DBC 코루틴 컨텍스트에 트랜잭션 상태를 결합한다</td><td>경계를 벗어난 작업은 트랜잭션 일관성을 깨뜨릴 수 있다</td></tr><tr><th scope="row">데이터베이스</th><td>작업 단위를 커밋하거나 롤백한다</td><td>커밋 또는 롤백 중 하나의 최종 결과만 반영한다</td></tr></tbody>
       </table>
     </div>
       </section>
       <section id="code-mapping">
-        <div class="section-heading"><span class="section-number">06</span><div><p class="kicker">MIGRATION MAP</p><h2>JPA 습관을 Exposed 코드로 옮기기</h2></div></div>
+        <div class="section-heading"><span class="section-number">06</span><div><p class="kicker">마이그레이션 대응</p><h2>JPA 사용 방식을 Exposed 코드로 옮기기</h2></div></div>
         
     <div class="table-wrap">
       <table class="mapping-table">
         <thead><tr><th scope="col">JPA 습관</th><th scope="col">Exposed 매핑</th></tr></thead>
-        <tbody><tr><th scope="row"><code>@Transactional</code> 서비스 메서드</th><td>애플리케이션 경계의 <code>transaction { ... }</code> 또는 <code>suspendTransaction { ... }</code></td></tr><tr><th scope="row">관리 엔티티 변경</th><td>명시적인 <code>update</code>, <code>insert</code>, <code>delete</code> 저장소 연산</td></tr><tr><th scope="row">지연 관계 순회</th><td>동일 경계 안의 명시적 join 또는 후속 쿼리</td></tr><tr><th scope="row">flush 시점 SQL</th><td>Exposed DSL 또는 저장소 호출이 실행되는 지점의 SQL</td></tr><tr><th scope="row">persistence context 수명</th><td>트랜잭션 블록 / 코루틴 context 수명</td></tr></tbody>
+        <tbody><tr><th scope="row"><code>@Transactional</code> 서비스 메서드</th><td>애플리케이션 경계의 <code>transaction { ... }</code> 또는 <code>suspendTransaction { ... }</code></td></tr><tr><th scope="row">관리 엔티티 변경</th><td>명시적인 <code>update</code>, <code>insert</code>, <code>delete</code> 저장소 연산</td></tr><tr><th scope="row">지연 관계 순회</th><td>동일 경계 안의 명시적 join 또는 후속 쿼리</td></tr><tr><th scope="row">flush 시점 SQL</th><td>Exposed DSL 또는 저장소 호출이 실행되는 지점의 SQL</td></tr><tr><th scope="row">영속성 컨텍스트 수명</th><td>트랜잭션 블록 / 코루틴 컨텍스트 수명</td></tr></tbody>
       </table>
     </div>
       </section>
       <section id="tradeoffs">
-        <div class="section-heading"><span class="section-number">07</span><div><p class="kicker">DECISION GUIDE</p><h2>비용까지 보고 선택하기</h2></div></div>
+        <div class="section-heading"><span class="section-number">07</span><div><p class="kicker">선택 기준</p><h2>비용까지 보고 선택하기</h2></div></div>
         
     <div class="table-wrap">
       <table class="tradeoff-table">
         <thead><tr><th scope="col">선택</th><th scope="col">판단 신호</th></tr></thead>
-        <tbody><tr><th scope="row">JPA/Hibernate가 유리한 경우</th><td>복잡한 객체 그래프, 도메인 탐색, 생태계 통합의 가치가 숨은 I/O 위험보다 크다.</td></tr><tr><th scope="row">Exposed가 유리한 경우</th><td>SQL 형태, 예측 가능한 I/O, Kotlin DSL 조합, 명시적 경계가 우선이다.</td></tr><tr><th scope="row">이름만 바꾸는 마이그레이션은 피한다</th><td>정신 모형을 바꾸지 않고 저장소 이름만 옮기면 경계와 N+1 실수도 그대로 남는다.</td></tr><tr><th scope="row">둘을 의도적으로 함께 쓴다</th><td>bounded context별로 선택하되 한 유스케이스 안에서 트랜잭션 소유권을 섞지 않는다.</td></tr></tbody>
+        <tbody><tr><th scope="row">JPA/Hibernate가 유리한 경우</th><td>복잡한 객체 그래프, 도메인 탐색, 생태계 통합의 가치가 숨은 I/O 위험보다 크다.</td></tr><tr><th scope="row">Exposed가 유리한 경우</th><td>SQL 형태, 예측 가능한 I/O, Kotlin DSL 조합, 명시적 경계가 우선이다.</td></tr><tr><th scope="row">이름만 바꾸는 마이그레이션은 피한다</th><td>사고 구조를 바꾸지 않고 저장소 이름만 옮기면 경계와 N+1 문제도 그대로 남는다.</td></tr><tr><th scope="row">둘을 의도적으로 함께 쓴다</th><td>바운디드 컨텍스트별로 선택하되 한 유스케이스 안에서 트랜잭션 소유권을 섞지 않는다.</td></tr></tbody>
       </table>
     </div>
       </section>
       <section id="evidence">
-        <div class="section-heading"><span class="section-number">08</span><div><p class="kicker">TRACEABLE CLAIMS</p><h2>소스 및 테스트 검증 원장</h2></div></div>
+        <div class="section-heading"><span class="section-number">08</span><div><p class="kicker">검증 근거</p><h2>소스·테스트 근거</h2></div></div>
         
     <div class="table-wrap evidence-table">
       <table>
         <thead><tr>
-          <th scope="col">중요한 이유</th>
-          <th scope="col">프로덕션 소스</th>
+          <th scope="col">검증 내용</th>
+          <th scope="col">구현 소스</th>
           <th scope="col">테스트 또는 실행 예제</th>
           <th scope="col">검증 방법</th>
         </tr></thead>
         <tbody>
           
             <tr id="source-jdbc-repository" data-source-anchor="jdbc-repository">
-              <th scope="row">JDBC 저장소 호출은 호출자가 소유한 transaction 블록 안에서 실행된다.</th>
+              <th scope="row">JDBC 저장소 호출은 호출자가 소유한 transaction {} 블록 안에서 실행된다.</th>
               <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/exposed/jdbc/src/main/kotlin/io/bluetape4k/exposed/jdbc/repository/JdbcRepository.kt"><code>exposed/jdbc/src/main/kotlin/io/bluetape4k/exposed/jdbc/repository/JdbcRepository.kt</code></a></td>
               <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/examples/jdbc-demo/src/main/kotlin/io/bluetape4k/examples/exposed/mvc/controller/ProductController.kt"><code>examples/jdbc-demo/src/main/kotlin/io/bluetape4k/examples/exposed/mvc/controller/ProductController.kt</code></a></td>
               <td><code>rg -n &quot;transaction \\{&quot; examples/jdbc-demo/src/main/kotlin</code></td>
@@ -824,25 +948,25 @@
               <td><code>rg -n &quot;transaction \\{&quot; examples/jdbc-demo/src/main/kotlin</code></td>
             </tr>
             <tr id="source-r2dbc-repository" data-source-anchor="r2dbc-repository">
-              <th scope="row">R2DBC 연산은 suspendTransaction 코루틴 context에 의존한다.</th>
+              <th scope="row">R2DBC 연산은 suspendTransaction이 제공하는 코루틴 컨텍스트에 의존한다.</th>
               <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/exposed/r2dbc/src/main/kotlin/io/bluetape4k/exposed/r2dbc/repository/R2dbcRepository.kt"><code>exposed/r2dbc/src/main/kotlin/io/bluetape4k/exposed/r2dbc/repository/R2dbcRepository.kt</code></a></td>
               <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/exposed/r2dbc/src/test/kotlin/io/bluetape4k/exposed/r2dbc/repository/MovieR2dbcRepositoryTest.kt"><code>exposed/r2dbc/src/test/kotlin/io/bluetape4k/exposed/r2dbc/repository/MovieR2dbcRepositoryTest.kt</code></a></td>
               <td><code>./gradlew :bluetape4k-exposed-r2dbc:test</code></td>
             </tr>
             <tr id="source-r2dbc-controller" data-source-anchor="r2dbc-controller">
-              <th scope="row">R2DBC 데모는 저장소 작업 전에 suspend 경계를 연다.</th>
+              <th scope="row">R2DBC 데모는 저장소 작업 전에 suspendTransaction 경계를 연다.</th>
               <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/examples/r2dbc-demo/src/main/kotlin/io/bluetape4k/examples/exposed/webflux/controller/ProductController.kt"><code>examples/r2dbc-demo/src/main/kotlin/io/bluetape4k/examples/exposed/webflux/controller/ProductController.kt</code></a></td>
               <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md"><code>docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md</code></a></td>
               <td><code>rg -n &quot;suspendTransaction&quot; examples/r2dbc-demo/src/main/kotlin</code></td>
             </tr>
             <tr id="source-r2dbc-test" data-source-anchor="r2dbc-test">
-              <th scope="row">저장소 테스트가 suspend 쿼리와 트랜잭션 동작을 실행한다.</th>
+              <th scope="row">저장소 테스트는 일시 중단 가능한 쿼리와 트랜잭션 동작을 검증한다.</th>
               <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/exposed/r2dbc/src/test/kotlin/io/bluetape4k/exposed/r2dbc/repository/MovieR2dbcRepositoryTest.kt"><code>exposed/r2dbc/src/test/kotlin/io/bluetape4k/exposed/r2dbc/repository/MovieR2dbcRepositoryTest.kt</code></a></td>
               <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/docs/manual/en/modules/bluetape4k-exposed-r2dbc/coroutine-transactions.md"><code>docs/manual/en/modules/bluetape4k-exposed-r2dbc/coroutine-transactions.md</code></a></td>
               <td><code>./gradlew :bluetape4k-exposed-r2dbc:test --tests &quot;*MovieR2dbcRepositoryTest&quot;</code></td>
             </tr>
             <tr id="source-r2dbc-manual" data-source-anchor="r2dbc-manual">
-              <th scope="row">매뉴얼은 코루틴 수명과 cold Flow collect 시점을 명시한다.</th>
+              <th scope="row">매뉴얼은 코루틴 수명과 콜드 Flow의 collect 시점을 명시한다.</th>
               <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/docs/manual/en/modules/bluetape4k-exposed-r2dbc/coroutine-transactions.md"><code>docs/manual/en/modules/bluetape4k-exposed-r2dbc/coroutine-transactions.md</code></a></td>
               <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md"><code>docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md</code></a></td>
               <td><code>ruby scripts/manual/validate_manuals.rb build/manual/module-inventory-1.11.0.json docs/manual/manifest.yaml</code></td>
@@ -852,8 +976,8 @@
     </div>
       </section></main>
   <footer>
-    <span>Offline standalone HTML · <span id="status" aria-live="polite">선택한 시나리오:</span></span>
-    <span><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/docs/manual/ko/guides/transaction-boundaries.md">docs/manual/ko/guides/transaction-boundaries.md</a> · <a href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/docs/superpowers/specs/2026-07-30-issue-410-exposed-visual-companions-design.md">design source</a></span>
+    <span>오프라인 단일 HTML · <span id="status" aria-live="polite">선택한 시나리오:</span></span>
+    <span><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/docs/manual/ko/guides/transaction-boundaries.md">docs/manual/ko/guides/transaction-boundaries.md</a> · <a href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/docs/superpowers/specs/2026-07-30-issue-410-exposed-visual-companions-design.md">설계 문서</a></span>
   </footer>
   <script>
     (() => {

@@ -10,7 +10,7 @@
       --bg: #f3f6fa; --surface: #ffffff; --surface-2: #e9eef5; --ink: #142033;
       --muted: #526176; --line: #c9d3df; --navy: #132a46; --cyan: #007f91;
       --cyan-soft: #d8f3f6; --amber: #a65d00; --amber-soft: #fff0cc;
-      --red: #a33a3a; --red-soft: #ffe4e4; --green: #1d7b52; --green-soft: #dcf5e8;
+      --teal: #167c73; --red: #a33a3a; --red-soft: #ffe4e4; --green: #1d7b52; --green-soft: #dcf5e8;
       --shadow: 0 18px 50px rgb(20 32 51 / .12); --radius: 20px;
       color-scheme: light;
     }
@@ -19,7 +19,7 @@
       --bg: #07111f; --surface: #0e1d2e; --surface-2: #17293c; --ink: #edf5ff;
       --muted: #a8bbcf; --line: #31475f; --navy: #dcecff; --cyan: #55d6e8;
       --cyan-soft: #103c47; --amber: #ffbd5c; --amber-soft: #49351a;
-      --red: #ff9898; --red-soft: #4a2529; --green: #6ee7ae; --green-soft: #163c2d;
+      --teal: #5ee0d3; --red: #ff9898; --red-soft: #4a2529; --green: #6ee7ae; --green-soft: #163c2d;
       --shadow: 0 20px 60px rgb(0 0 0 / .38); color-scheme: dark;
     }
     @media (prefers-color-scheme: dark) {
@@ -27,7 +27,7 @@
         --bg: #07111f; --surface: #0e1d2e; --surface-2: #17293c; --ink: #edf5ff;
         --muted: #a8bbcf; --line: #31475f; --navy: #dcecff; --cyan: #55d6e8;
         --cyan-soft: #103c47; --amber: #ffbd5c; --amber-soft: #49351a;
-        --red: #ff9898; --red-soft: #4a2529; --green: #6ee7ae; --green-soft: #163c2d;
+        --teal: #5ee0d3; --red: #ff9898; --red-soft: #4a2529; --green: #6ee7ae; --green-soft: #163c2d;
         --shadow: 0 20px 60px rgb(0 0 0 / .38); color-scheme: dark;
       }
     }
@@ -97,22 +97,26 @@
     .outcome-commit { background: var(--green-soft); color: var(--green); }
     .outcome-rollback, .outcome-boundary-error { background: var(--red-soft); color: var(--red); }
     .sequence-canvas { position: relative; min-width: 760px; padding: 22px 26px 32px; overflow: hidden; }
-    .sequence-participants { display: grid; grid-template-columns: repeat(var(--participants), 1fr); gap: 10px; min-height: 350px; }
+    .sequence-participants { display: grid; grid-template-columns: repeat(var(--participants), 1fr); min-height: 350px; }
     .sequence-participant { position: relative; text-align: center; }
-    .sequence-participant strong { position: relative; z-index: 2; display: block; min-height: 54px; padding: 9px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font-size: .86rem; }
+    .sequence-participant strong { position: relative; z-index: 2; display: block; min-height: 54px; margin: 0 5px; padding: 9px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font-size: .86rem; }
     .lifeline { position: absolute; top: 54px; bottom: 0; left: 50%; border-left: 2px dashed var(--line); }
     .activation { position: absolute; top: 82px; bottom: 34px; left: calc(50% - 5px); width: 10px; border: 1px solid var(--cyan); border-radius: 5px; background: var(--cyan-soft); }
-    .sequence-messages { position: absolute; inset: 92px 26px 28px; display: grid; grid-template-columns: repeat(calc(var(--participants) * 2), 1fr); grid-template-rows: repeat(4, 1fr); margin: 0; padding: 0; list-style: none; pointer-events: none; }
-    .message { position: relative; grid-row: var(--row); grid-column: calc(min(var(--from), var(--to)) * 2 - 1) / calc(max(var(--from), var(--to)) * 2); align-self: center; min-height: 45px; }
-    .message-line { position: absolute; top: 29px; left: 5%; right: 5%; border-top: 2px solid var(--cyan); }
-    .message-line::after { content: ""; position: absolute; top: -5px; right: -1px; width: 8px; height: 8px; border-top: 2px solid var(--cyan); border-right: 2px solid var(--cyan); transform: rotate(45deg); }
+    .sequence-messages { position: absolute; inset: 92px 26px 28px; display: grid; grid-template-rows: repeat(4, 1fr); margin: 0; padding: 0; list-style: none; pointer-events: none; }
+    .message { --message-color: var(--cyan); position: relative; grid-row: var(--row); align-self: center; min-height: 48px; color: var(--message-color); }
+    .message-return { --message-color: var(--teal); }
+    .message-commit { --message-color: var(--green); }
+    .message-rollback, .message-boundary-error { --message-color: var(--red); }
+    .message-copy { position: absolute; z-index: 2; top: 0; left: var(--line-left); width: calc(var(--line-right) - var(--line-left)); display: flex; align-items: center; justify-content: center; min-width: max-content; }
+    .message-line { position: absolute; top: 34px; left: var(--line-left); right: calc(100% - var(--line-right)); color: var(--message-color); border-top: 2px solid currentColor; }
+    .message-line::after { content: ""; position: absolute; top: -7px; width: 0; height: 0; border: 6px solid transparent; }
+    .message-forward .message-line::after { right: -12px; border-left-width: 10px; border-left-color: currentColor; }
+    .message-reverse .message-line::after { left: -12px; border-right-width: 10px; border-right-color: currentColor; }
     .message-return .message-line { border-top-style: dashed; }
-    .message-rollback .message-line, .message-boundary-error .message-line { border-color: var(--red); }
-    .message-number, .message-kind, .message-label { position: relative; z-index: 2; background: var(--surface); }
-    .message-number { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--navy); color: var(--bg); font: 800 .68rem monospace; }
-    .message-kind { margin-left: 6px; color: var(--cyan); font: 800 .67rem monospace; letter-spacing: .06em; }
+    .message-number, .message-kind, .message-label { background: var(--surface); }
+    .message-number { display: inline-grid; flex: 0 0 auto; place-items: center; width: 24px; height: 24px; border: 2px solid currentColor; border-radius: 50%; color: var(--message-color); font: 800 .68rem monospace; }
+    .message-kind { margin-left: 6px; color: var(--message-color); font: 800 .67rem monospace; letter-spacing: .06em; }
     .message-label { margin-left: 5px; padding-right: 6px; font-size: .78rem; color: var(--muted); }
-    .message-rollback .message-kind, .message-boundary-error .message-kind { color: var(--red); }
     .sequence-alt { display: flex; gap: 12px; align-items: baseline; padding: 16px 26px; border-top: 1px solid var(--line); }
     .sequence-alt strong { font: 850 .78rem monospace; }
     .sequence-alt span { color: var(--muted); }
@@ -298,7 +302,7 @@
           <p>One synchronous boundary encloses query, mapping, and commit.</p>
         </div>
         <dl>
-          <div><dt>Boundary owner</dt><dd><code>Controller / service `transaction {}`</code></dd></div>
+          <div><dt>Boundary owner</dt><dd><code>Controller / service transaction {}</code></dd></div>
           <div><dt>Evidence entry</dt><dd><a href="#source-jdbc-controller">jdbc-controller</a></dd></div>
         </dl>
       </header>
@@ -329,36 +333,56 @@
     </div>
   </div>
         <ol class="sequence-messages">
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:1;--to:2;--row:1">
-        <span class="message-number">1</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL use case</span>
+          data-direction="forward"
+          data-from="client"
+          data-to="boundary"
+          style="--line-start:12.5%;--line-end:37.5%;--line-left:12.5%;--line-right:37.5%;--row:1">
+        <span class="message-copy">
+          <span class="message-number">1</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">Use case</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:2;--to:3;--row:2">
-        <span class="message-number">2</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL transaction { findAll() }</span>
+          data-direction="forward"
+          data-from="boundary"
+          data-to="repository"
+          style="--line-start:37.5%;--line-end:62.5%;--line-left:37.5%;--line-right:62.5%;--row:2">
+        <span class="message-copy">
+          <span class="message-number">2</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">transaction { findAll() }</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-return"
+      <li class="message message-return message-reverse"
           data-message-kind="return"
-          style="--from:3;--to:2;--row:3">
-        <span class="message-number">3</span>
-        <span class="message-kind">RETURN</span>
-        <span class="message-label">RETURN mapped records</span>
+          data-direction="reverse"
+          data-from="repository"
+          data-to="boundary"
+          style="--line-start:62.5%;--line-end:37.5%;--line-left:37.5%;--line-right:62.5%;--row:3">
+        <span class="message-copy">
+          <span class="message-number">3</span>
+          <span class="message-kind">RETURN</span>
+          <span class="message-label">Mapped records</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-commit"
+      <li class="message message-commit message-forward"
           data-message-kind="commit"
-          style="--from:2;--to:4;--row:4">
-        <span class="message-number">4</span>
-        <span class="message-kind">COMMIT</span>
-        <span class="message-label">COMMIT boundary</span>
+          data-direction="forward"
+          data-from="boundary"
+          data-to="database"
+          style="--line-start:37.5%;--line-end:87.5%;--line-left:37.5%;--line-right:87.5%;--row:4">
+        <span class="message-copy">
+          <span class="message-number">4</span>
+          <span class="message-kind">COMMIT</span>
+          <span class="message-label">Transaction boundary</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
       </div>
@@ -378,7 +402,7 @@
           <p>One service boundary composes calls so partial success cannot leak.</p>
         </div>
         <dl>
-          <div><dt>Boundary owner</dt><dd><code>Service `transaction {}`</code></dd></div>
+          <div><dt>Boundary owner</dt><dd><code>Service transaction {}</code></dd></div>
           <div><dt>Evidence entry</dt><dd><a href="#source-jdbc-repository">jdbc-repository</a></dd></div>
         </dl>
       </header>
@@ -409,36 +433,56 @@
     </div>
   </div>
         <ol class="sequence-messages">
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:1;--to:2;--row:1">
-        <span class="message-number">1</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL reserve stock</span>
+          data-direction="forward"
+          data-from="service"
+          data-to="repo-a"
+          style="--line-start:12.5%;--line-end:37.5%;--line-left:12.5%;--line-right:37.5%;--row:1">
+        <span class="message-copy">
+          <span class="message-number">1</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">Reserve stock</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-return"
+      <li class="message message-return message-reverse"
           data-message-kind="return"
-          style="--from:2;--to:1;--row:2">
-        <span class="message-number">2</span>
-        <span class="message-kind">RETURN</span>
-        <span class="message-label">RETURN reservation</span>
+          data-direction="reverse"
+          data-from="repo-a"
+          data-to="service"
+          style="--line-start:37.5%;--line-end:12.5%;--line-left:12.5%;--line-right:37.5%;--row:2">
+        <span class="message-copy">
+          <span class="message-number">2</span>
+          <span class="message-kind">RETURN</span>
+          <span class="message-label">Reservation</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:1;--to:3;--row:3">
-        <span class="message-number">3</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL write order</span>
+          data-direction="forward"
+          data-from="service"
+          data-to="repo-b"
+          style="--line-start:12.5%;--line-end:62.5%;--line-left:12.5%;--line-right:62.5%;--row:3">
+        <span class="message-copy">
+          <span class="message-number">3</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">Write order</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-commit"
+      <li class="message message-commit message-forward"
           data-message-kind="commit"
-          style="--from:1;--to:4;--row:4">
-        <span class="message-number">4</span>
-        <span class="message-kind">COMMIT</span>
-        <span class="message-label">COMMIT one unit</span>
+          data-direction="forward"
+          data-from="service"
+          data-to="database"
+          style="--line-start:12.5%;--line-end:87.5%;--line-left:12.5%;--line-right:87.5%;--row:4">
+        <span class="message-copy">
+          <span class="message-number">4</span>
+          <span class="message-kind">COMMIT</span>
+          <span class="message-label">One unit of work</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
       </div>
@@ -458,7 +502,7 @@
           <p>The coroutine context carries the transaction through suspending repository work.</p>
         </div>
         <dl>
-          <div><dt>Boundary owner</dt><dd><code>Coroutine `suspendTransaction {}`</code></dd></div>
+          <div><dt>Boundary owner</dt><dd><code>Coroutine suspendTransaction {}</code></dd></div>
           <div><dt>Evidence entry</dt><dd><a href="#source-r2dbc-controller">r2dbc-controller</a></dd></div>
         </dl>
       </header>
@@ -489,36 +533,56 @@
     </div>
   </div>
         <ol class="sequence-messages">
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:1;--to:2;--row:1">
-        <span class="message-number">1</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL suspendTransaction</span>
+          data-direction="forward"
+          data-from="handler"
+          data-to="boundary"
+          style="--line-start:12.5%;--line-end:37.5%;--line-left:12.5%;--line-right:37.5%;--row:1">
+        <span class="message-copy">
+          <span class="message-number">1</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">suspendTransaction</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:2;--to:3;--row:2">
-        <span class="message-number">2</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL suspend findAll()</span>
+          data-direction="forward"
+          data-from="boundary"
+          data-to="repository"
+          style="--line-start:37.5%;--line-end:62.5%;--line-left:37.5%;--line-right:62.5%;--row:2">
+        <span class="message-copy">
+          <span class="message-number">2</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">suspend findAll()</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-return"
+      <li class="message message-return message-reverse"
           data-message-kind="return"
-          style="--from:3;--to:2;--row:3">
-        <span class="message-number">3</span>
-        <span class="message-kind">RETURN</span>
-        <span class="message-label">RETURN entities</span>
+          data-direction="reverse"
+          data-from="repository"
+          data-to="boundary"
+          style="--line-start:62.5%;--line-end:37.5%;--line-left:37.5%;--line-right:62.5%;--row:3">
+        <span class="message-copy">
+          <span class="message-number">3</span>
+          <span class="message-kind">RETURN</span>
+          <span class="message-label">Entities</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-commit"
+      <li class="message message-commit message-forward"
           data-message-kind="commit"
-          style="--from:2;--to:4;--row:4">
-        <span class="message-number">4</span>
-        <span class="message-kind">COMMIT</span>
-        <span class="message-label">COMMIT coroutine boundary</span>
+          data-direction="forward"
+          data-from="boundary"
+          data-to="database"
+          style="--line-start:37.5%;--line-end:87.5%;--line-left:37.5%;--line-right:87.5%;--row:4">
+        <span class="message-copy">
+          <span class="message-number">4</span>
+          <span class="message-kind">COMMIT</span>
+          <span class="message-label">Coroutine boundary</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
       </div>
@@ -538,7 +602,7 @@
           <p>A cold Flow or channelFlow is collected before the transaction block exits.</p>
         </div>
         <dl>
-          <div><dt>Boundary owner</dt><dd><code>Collector inside `suspendTransaction {}`</code></dd></div>
+          <div><dt>Boundary owner</dt><dd><code>Collector inside suspendTransaction {}</code></dd></div>
           <div><dt>Evidence entry</dt><dd><a href="#source-r2dbc-test">r2dbc-test</a></dd></div>
         </dl>
       </header>
@@ -569,36 +633,56 @@
     </div>
   </div>
         <ol class="sequence-messages">
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:1;--to:2;--row:1">
-        <span class="message-number">1</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL query as Flow</span>
+          data-direction="forward"
+          data-from="boundary"
+          data-to="repository"
+          style="--line-start:12.5%;--line-end:37.5%;--line-left:12.5%;--line-right:37.5%;--row:1">
+        <span class="message-copy">
+          <span class="message-number">1</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">Query as Flow</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-return"
+      <li class="message message-return message-reverse"
           data-message-kind="return"
-          style="--from:2;--to:3;--row:2">
-        <span class="message-number">2</span>
-        <span class="message-kind">RETURN</span>
-        <span class="message-label">RETURN cold pipeline</span>
+          data-direction="reverse"
+          data-from="repository"
+          data-to="boundary"
+          style="--line-start:37.5%;--line-end:12.5%;--line-left:12.5%;--line-right:37.5%;--row:2">
+        <span class="message-copy">
+          <span class="message-number">2</span>
+          <span class="message-kind">RETURN</span>
+          <span class="message-label">Cold Flow</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:1;--to:3;--row:3">
-        <span class="message-number">3</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL collect inside</span>
+          data-direction="forward"
+          data-from="boundary"
+          data-to="flow"
+          style="--line-start:12.5%;--line-end:62.5%;--line-left:12.5%;--line-right:62.5%;--row:3">
+        <span class="message-copy">
+          <span class="message-number">3</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">Collect inside</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-commit"
+      <li class="message message-commit message-forward"
           data-message-kind="commit"
-          style="--from:1;--to:4;--row:4">
-        <span class="message-number">4</span>
-        <span class="message-kind">COMMIT</span>
-        <span class="message-label">COMMIT after collection</span>
+          data-direction="forward"
+          data-from="boundary"
+          data-to="database"
+          style="--line-start:12.5%;--line-end:87.5%;--line-left:12.5%;--line-right:87.5%;--row:4">
+        <span class="message-copy">
+          <span class="message-number">4</span>
+          <span class="message-kind">COMMIT</span>
+          <span class="message-label">After collection</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
       </div>
@@ -649,36 +733,56 @@
     </div>
   </div>
         <ol class="sequence-messages">
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:1;--to:2;--row:1">
-        <span class="message-number">1</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL create Flow</span>
+          data-direction="forward"
+          data-from="caller"
+          data-to="boundary"
+          style="--line-start:12.5%;--line-end:37.5%;--line-left:12.5%;--line-right:37.5%;--row:1">
+        <span class="message-copy">
+          <span class="message-number">1</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">Create Flow</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-return"
+      <li class="message message-return message-reverse"
           data-message-kind="return"
-          style="--from:2;--to:1;--row:2">
-        <span class="message-number">2</span>
-        <span class="message-kind">RETURN</span>
-        <span class="message-label">RETURN cold Flow too early</span>
+          data-direction="reverse"
+          data-from="boundary"
+          data-to="caller"
+          style="--line-start:37.5%;--line-end:12.5%;--line-left:12.5%;--line-right:37.5%;--row:2">
+        <span class="message-copy">
+          <span class="message-number">2</span>
+          <span class="message-kind">RETURN</span>
+          <span class="message-label">Cold Flow too early</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-boundary-error"
+      <li class="message message-boundary-error message-forward"
           data-message-kind="boundary-error"
-          style="--from:1;--to:3;--row:3">
-        <span class="message-number">3</span>
-        <span class="message-kind">BOUNDARY ERROR</span>
-        <span class="message-label">BOUNDARY ERROR on collect</span>
+          data-direction="forward"
+          data-from="caller"
+          data-to="flow"
+          style="--line-start:12.5%;--line-end:62.5%;--line-left:12.5%;--line-right:62.5%;--row:3">
+        <span class="message-copy">
+          <span class="message-number">3</span>
+          <span class="message-kind">BOUNDARY ERROR</span>
+          <span class="message-label">On collect</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-rollback"
+      <li class="message message-rollback message-forward"
           data-message-kind="rollback"
-          style="--from:3;--to:4;--row:4">
-        <span class="message-number">4</span>
-        <span class="message-kind">ROLLBACK</span>
-        <span class="message-label">ROLLBACK / closed context</span>
+          data-direction="forward"
+          data-from="flow"
+          data-to="database"
+          style="--line-start:62.5%;--line-end:87.5%;--line-left:62.5%;--line-right:87.5%;--row:4">
+        <span class="message-copy">
+          <span class="message-number">4</span>
+          <span class="message-kind">ROLLBACK</span>
+          <span class="message-label">Closed context</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
       </div>
@@ -729,36 +833,56 @@
     </div>
   </div>
         <ol class="sequence-messages">
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:1;--to:2;--row:1">
-        <span class="message-number">1</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL write</span>
+          data-direction="forward"
+          data-from="boundary"
+          data-to="repository"
+          style="--line-start:12.5%;--line-end:37.5%;--line-left:12.5%;--line-right:37.5%;--row:1">
+        <span class="message-copy">
+          <span class="message-number">1</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">Write operation</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-call"
+      <li class="message message-call message-forward"
           data-message-kind="call"
-          style="--from:2;--to:3;--row:2">
-        <span class="message-number">2</span>
-        <span class="message-kind">CALL</span>
-        <span class="message-label">CALL fails or is cancelled</span>
+          data-direction="forward"
+          data-from="repository"
+          data-to="failure"
+          style="--line-start:37.5%;--line-end:62.5%;--line-left:37.5%;--line-right:62.5%;--row:2">
+        <span class="message-copy">
+          <span class="message-number">2</span>
+          <span class="message-kind">CALL</span>
+          <span class="message-label">Fails or is cancelled</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-return"
+      <li class="message message-return message-reverse"
           data-message-kind="return"
-          style="--from:3;--to:1;--row:3">
-        <span class="message-number">3</span>
-        <span class="message-kind">RETURN</span>
-        <span class="message-label">RETURN exceptional completion</span>
+          data-direction="reverse"
+          data-from="failure"
+          data-to="boundary"
+          style="--line-start:62.5%;--line-end:12.5%;--line-left:12.5%;--line-right:62.5%;--row:3">
+        <span class="message-copy">
+          <span class="message-number">3</span>
+          <span class="message-kind">RETURN</span>
+          <span class="message-label">Exceptional completion</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li>
-      <li class="message message-rollback"
+      <li class="message message-rollback message-forward"
           data-message-kind="rollback"
-          style="--from:1;--to:4;--row:4">
-        <span class="message-number">4</span>
-        <span class="message-kind">ROLLBACK</span>
-        <span class="message-label">ROLLBACK whole unit</span>
+          data-direction="forward"
+          data-from="boundary"
+          data-to="database"
+          style="--line-start:12.5%;--line-end:87.5%;--line-left:12.5%;--line-right:87.5%;--row:4">
+        <span class="message-copy">
+          <span class="message-number">4</span>
+          <span class="message-kind">ROLLBACK</span>
+          <span class="message-label">Whole unit</span>
+        </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
       </div>

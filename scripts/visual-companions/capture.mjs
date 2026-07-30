@@ -159,12 +159,50 @@ async function captureOne({ root, documentId, locale, theme, audit = false }) {
       const desktop = await client.send('Runtime.evaluate', {
         expression: `(() => {
           const tabs = [...document.querySelectorAll('[data-scenario]')];
+          const geometry = [];
+          for (const tab of tabs) {
+            tab.click();
+            const panel = document.querySelector(\`[data-sequence="\${tab.dataset.scenario}"]\`);
+            const participantCenters = new Map(
+              [...panel.querySelectorAll('[data-participant]')].map((participant) => {
+                const lifeline = participant.querySelector('.lifeline').getBoundingClientRect();
+                return [participant.dataset.participant, lifeline.left];
+              }),
+            );
+            for (const message of panel.querySelectorAll('[data-message-kind]')) {
+              const line = message.querySelector('.message-line');
+              const lineBounds = line.getBoundingClientRect();
+              const direction = message.dataset.direction;
+              const from = participantCenters.get(message.dataset.from);
+              const to = participantCenters.get(message.dataset.to);
+              const lineStart = direction === 'forward' ? lineBounds.left : lineBounds.right;
+              const lineEnd = direction === 'forward' ? lineBounds.right : lineBounds.left;
+              const lineStyle = getComputedStyle(line);
+              const arrowStyle = getComputedStyle(line, '::after');
+              const arrowColor = direction === 'forward'
+                ? arrowStyle.borderLeftColor
+                : arrowStyle.borderRightColor;
+              geometry.push({
+                kind: message.dataset.messageKind,
+                direction,
+                startDelta: Math.abs(lineStart - from),
+                endDelta: Math.abs(lineEnd - to),
+                colorMatches: lineStyle.color === arrowColor,
+              });
+            }
+          }
           const target = tabs.find((button) => button.dataset.scenario === 'r2dbc-flow-escape');
           target.click();
           const clicked = {
             scenarioCount: tabs.length,
             selectedScenario: target.getAttribute('aria-pressed'),
             selectedPanelVisible: !document.querySelector('[data-sequence="r2dbc-flow-escape"]').hidden,
+            sequenceGeometry: {
+              messageCount: geometry.length,
+              maximumEndpointDelta: Math.max(...geometry.flatMap(({ startDelta, endDelta }) => [startDelta, endDelta])),
+              arrowColorMismatchCount: geometry.filter(({ colorMatches }) => !colorMatches).length,
+              invalidReturnDirectionCount: geometry.filter(({ kind, direction }) => kind === 'return' && direction !== 'reverse').length,
+            },
           };
           tabs[0].focus();
           tabs[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
