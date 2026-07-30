@@ -231,6 +231,24 @@ export async function validateRepository(
         oppositeLocale: locale === 'en' ? 'ko' : 'en',
         errors,
       });
+      for (const sourceHref of values(
+        content,
+        /<a\b[^>]*\bdata-source-link\b[^>]*\bhref=["']([^"']+)["']/gi,
+      )) {
+        const match = sourceHref.match(
+          /^https:\/\/github\.com\/bluetape4k\/bluetape4k-exposed\/blob\/develop\/(.+)$/,
+        );
+        if (!match) {
+          errors.push(`${document.id}.${locale} source link must target the develop tree: ${sourceHref}`);
+          continue;
+        }
+        await readContained(
+          root,
+          decodeURIComponent(match[1]),
+          errors,
+          `${document.id}.${locale} source link does not resolve: ${sourceHref}`,
+        );
+      }
     }
 
     if (localeContents.en && localeContents.ko) {
