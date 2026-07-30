@@ -155,6 +155,8 @@ MultiManagerDocumentationExample.kt
 - Modify: `scripts/visual-companions/lib/render.mjs`
 - Generate: `docs/visual-companions/en/spring-boot-exposed-activation.html`
 - Generate: `docs/visual-companions/ko/spring-boot-exposed-activation.html`
+- Delete: `docs/visual-companions/spring-boot-exposed-activation.html`
+- Delete: `docs/visual-companions/spring-boot-exposed-activation.ko.html`
 
 - [ ] **Step 1: placeholder renderer를 activation renderer로 교체한다**
 
@@ -185,6 +187,8 @@ participant header와 lifeline은 `--role-line`, call은 `--call-line`, return�
 넓은 화면에서는 JDBC/R2DBC 두 diagram을 같은 높이의 비교 grid에 놓고, 좁은 화면에서는 의미가 유지되는 세로 배치로 바꾼다. 각 diagram은 독립적인 확대 button과 dialog를 사용한다.
 
 - [ ] **Step 5: 한·영 HTML을 생성하고 검증한다**
+
+Generator가 소유하지 않는 root-level legacy HTML 두 개를 삭제하고, canonical locale 경로만 남긴다.
 
 Run:
 
@@ -370,4 +374,3 @@ PR은 `debop`에게 assign하고 issue #415의 `documentation`, `enhancement`, m
 - [ ] **Step 5: live PR과 CI를 확인하고 merge gate에서 멈춘다**
 
 PR URL, exact head SHA, checks, reviews, threads, mergeability, DoD body를 live로 다시 읽는다. merge-ready 증거를 사용자에게 보고한 뒤 fresh merge approval을 기다리며, 자동 merge는 설정하지 않는다.
-
