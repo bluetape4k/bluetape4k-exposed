@@ -273,7 +273,7 @@ test('activation evidence uses concise source labels without discarding link tar
 
   assert.match(
     document,
-    /href="[^"]*ExposedSpringDataAutoConfiguration\.kt"><code>ExposedSpringDataAutoConfiguration<\/code>/,
+    /href="[^"]*ExposedSpringDataAutoConfiguration\.kt"><code>Exposed<wbr>Spring<wbr>Data<wbr>Auto<wbr>Configuration<\/code>/,
   );
   assert.match(
     document,
@@ -282,12 +282,67 @@ test('activation evidence uses concise source labels without discarding link tar
   assert.doesNotMatch(document, /<code>spring-boot\/jdbc\/src\/main\/kotlin/);
 });
 
+test('activation evidence keeps only reader-facing source and verification links', async () => {
+  const models = await loadCompanionModels(root);
+  const model = models.find(({ id }) => id === 'spring-boot-exposed-activation');
+  const document = renderDocument({
+    model,
+    locale: 'ko',
+    architectureAssets: model.architecture.map((asset) => ({
+      ...asset,
+      dataUri: 'data:image/png;base64,AA==',
+    })),
+  });
+
+  const evidenceHeader = document.match(
+    /<div class="table-wrap evidence-table">[\s\S]*?<thead><tr>([\s\S]*?)<\/tr><\/thead>/,
+  )?.[1];
+  assert.ok(evidenceHeader);
+  assert.equal((evidenceHeader.match(/<th scope="col">/g) ?? []).length, 2);
+  assert.match(evidenceHeader, />주장<\/th>[\s\S]*>근거 파일<\/th>/);
+  assert.doesNotMatch(evidenceHeader, />운영 소스<\/th>|>테스트·매뉴얼<\/th>|>검증<\/th>/);
+  assert.match(document, /<table class="grouped-evidence-table">/);
+
+  const firstEvidenceFiles = document.match(
+    /<td class="evidence-files">([\s\S]*?)<\/td>/,
+  )?.[1];
+  assert.ok(firstEvidenceFiles);
+  assert.equal((firstEvidenceFiles.match(/class="evidence-file-row"/g) ?? []).length, 2);
+  assert.match(firstEvidenceFiles, /class="evidence-file-kind">소스<\/span>/);
+  assert.match(firstEvidenceFiles, /class="evidence-file-kind">검증<\/span>/);
+  assert.match(firstEvidenceFiles, /data-source-link[\s\S]*data-source-link/);
+  assert.match(
+    document,
+    /\.evidence-table td\.evidence-files a \{[^}]*white-space: normal;[^}]*overflow-wrap: normal;/,
+  );
+  assert.match(document, /\.grouped-evidence-table tbody th \{ width: 50%; \}/);
+  assert.match(
+    document,
+    /@media \(max-width: 800px\)[\s\S]*\.grouped-evidence-table \{[^}]*min-width: 0;[^}]*table-layout: fixed;/,
+  );
+  assert.match(
+    document,
+    /@media \(max-width: 800px\)[\s\S]*\.grouped-evidence-table thead th:first-child \{ width: 38%; \}/,
+  );
+  assert.doesNotMatch(document, /node scripts\/visual-companions\/validate\.mjs/);
+  assert.doesNotMatch(document, /<td><code>\.\/gradlew /);
+});
+
 test('activation sequences begin at application input and return framework results with localized labels', async () => {
   const models = await loadCompanionModels(root);
   const model = models.find(({ id }) => id === 'spring-boot-exposed-activation');
 
   for (const scenario of model.scenarios) {
     assert.equal(scenario.participants[0].id, 'application', scenario.id);
+    const participantIndex = new Map(
+      scenario.participants.map(({ id }, index) => [id, index]),
+    );
+    for (const message of scenario.messages.filter(({ kind }) => kind === 'return')) {
+      assert.ok(
+        participantIndex.get(message.from) > participantIndex.get(message.to),
+        `${scenario.id} return must point to an earlier participant`,
+      );
+    }
   }
 
   const scenario = model.scenarios.find(({ id }) => id === 'jdbc-ready');

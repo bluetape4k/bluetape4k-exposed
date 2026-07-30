@@ -5,13 +5,13 @@
     {
       "id": "jdbc-auto-configuration",
       "source": "docs/manual/assets/spring/jdbc-auto-configuration.svg",
-      "fallback": "docs/manual/assets/spring/jdbc-auto-configuration.png",
+      "fallback": "docs/visual-companions/assets/architecture/jdbc-auto-configuration.png",
       "sha256": "8a737961a5c61f1818d75203a19d6bbe555334fb0c08a8ddddb97a4baba21808"
     },
     {
       "id": "r2dbc-auto-configuration",
       "source": "docs/manual/assets/spring/r2dbc-auto-configuration.svg",
-      "fallback": "docs/manual/assets/spring/r2dbc-auto-configuration.png",
+      "fallback": "docs/visual-companions/assets/architecture/r2dbc-auto-configuration.png",
       "sha256": "7dcb3984c5237511ff6002173b64922fd0142ea5c9c230a6de2a15d21b4f8ec3"
     }
   ],
@@ -128,8 +128,9 @@
       ],
       "evidenceHeading": "Claims are traceable to production code and focused tests",
       "whyLabel": "Claim",
-      "sourceLabel": "Production source",
-      "testLabel": "Test or manual",
+      "evidenceFilesLabel": "Evidence files",
+      "sourceLabel": "Source",
+      "testLabel": "Verification",
       "verifyLabel": "Verification",
       "openArchitecture": "Open full diagram",
       "close": "Close",
@@ -238,8 +239,9 @@
       ],
       "evidenceHeading": "모든 주장은 운영 코드와 집중 테스트로 추적할 수 있습니다",
       "whyLabel": "주장",
-      "sourceLabel": "운영 소스",
-      "testLabel": "테스트·매뉴얼",
+      "evidenceFilesLabel": "근거 파일",
+      "sourceLabel": "소스",
+      "testLabel": "검증",
       "verifyLabel": "검증",
       "openArchitecture": "전체 다이어그램 열기",
       "close": "닫기",
@@ -339,7 +341,7 @@
         { "from": "application", "to": "jdbc", "kind": "call", "locales": { "en": { "label": "Enable JDBC repository package" }, "ko": { "label": "JDBC 저장소 패키지 활성화" } } },
         { "from": "jdbc", "to": "r2dbc", "kind": "reused", "locales": { "en": { "label": "Expose mapping context before R2DBC" }, "ko": { "label": "R2DBC보다 먼저 매핑 컨텍스트 제공" } } },
         { "from": "application", "to": "r2dbc", "kind": "call", "locales": { "en": { "label": "Enable R2DBC repository package" }, "ko": { "label": "R2DBC 저장소 패키지 활성화" } } },
-        { "from": "r2dbc", "to": "repositories", "kind": "return", "locales": { "en": { "label": "Reuse mapping; keep execution paths split" }, "ko": { "label": "매핑 재사용, 실행 경로 분리" } } }
+        { "from": "r2dbc", "to": "repositories", "kind": "reused", "locales": { "en": { "label": "Reuse mapping; keep execution paths split" }, "ko": { "label": "매핑 재사용, 실행 경로 분리" } } }
       ]
     },
     {

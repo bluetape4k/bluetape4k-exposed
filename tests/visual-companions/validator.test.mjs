@@ -111,13 +111,19 @@ test('transaction companion is approved for public publication', async () => {
   assert.equal(transaction.public, true);
 });
 
-test('activation companion stays private while its deep redesign is gated', async () => {
+test('activation companion is approved for public publication', async () => {
   const manifest = JSON.parse(await read(manifestRelativePath));
   const activation = manifest.documents.find(({ id }) => id === 'spring-boot-exposed-activation');
-  assert.equal(activation.status, 'pending-review');
-  assert.equal(activation.public, false);
-  assert.equal(activation.locales.en.captures, undefined);
-  assert.equal(activation.locales.ko.captures, undefined);
+  assert.equal(activation.status, 'approved');
+  assert.equal(activation.public, true);
+  assert.deepEqual(activation.locales.en.captures, {
+    light: 'docs/visual-companions/assets/spring-boot-exposed-activation.en.light.png',
+    dark: 'docs/visual-companions/assets/spring-boot-exposed-activation.en.dark.png',
+  });
+  assert.deepEqual(activation.locales.ko.captures, {
+    light: 'docs/visual-companions/assets/spring-boot-exposed-activation.ko.light.png',
+    dark: 'docs/visual-companions/assets/spring-boot-exposed-activation.ko.dark.png',
+  });
 });
 
 test('activation companion exposes condition, ownership, recipe, and failure surfaces', async () => {
