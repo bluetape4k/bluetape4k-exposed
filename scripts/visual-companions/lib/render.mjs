@@ -373,7 +373,7 @@ function renderStandaloneShell({ model, locale, body }) {
     .sequence-canvas { position: relative; min-width: 760px; padding: 22px 26px 32px; overflow: hidden; }
     .sequence-participants { display: grid; grid-template-columns: repeat(var(--participants), 1fr); min-height: 350px; }
     .sequence-participant { position: relative; text-align: center; }
-    .sequence-participant strong { position: relative; z-index: 2; display: block; min-height: 54px; margin: 0 5px; padding: 9px 8px; border: 1px solid var(--role-line); border-radius: 10px; background: var(--surface-2); font-size: .86rem; }
+    .sequence-participant strong { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; min-height: 54px; margin: 0 5px; padding: 9px 8px; border: 1px solid var(--role-line); border-radius: 10px; background: var(--surface-2); font-size: .86rem; }
     .lifeline { position: absolute; top: 54px; bottom: 0; left: 50%; border-left: 2px dashed var(--role-line); }
     .activation { position: absolute; top: 82px; bottom: 34px; left: calc(50% - 5px); width: 10px; border: 2px solid var(--role-active); border-radius: 5px; background: var(--role-active-soft); }
     .sequence-messages { position: absolute; inset: 92px 26px 28px; display: grid; grid-template-rows: repeat(4, 1fr); margin: 0; padding: 0; list-style: none; pointer-events: none; }

@@ -203,6 +203,18 @@ async function captureOne({ root, documentId, locale, theme, audit = false }) {
           const roleActivationColor = getComputedStyle(
             selectedPanel.querySelector('.activation'),
           ).borderLeftColor;
+          const participantCardAlignment = [
+            ...selectedPanel.querySelectorAll('.sequence-participant strong'),
+          ].map((card) => {
+            const cardBounds = card.getBoundingClientRect();
+            const textRange = document.createRange();
+            textRange.selectNodeContents(card);
+            const textBounds = textRange.getBoundingClientRect();
+            return Math.abs(
+              (cardBounds.top + cardBounds.height / 2)
+                - (textBounds.top + textBounds.height / 2),
+            );
+          });
           const clicked = {
             scenarioCount: tabs.length,
             selectedScenario: target.getAttribute('aria-pressed'),
@@ -217,6 +229,8 @@ async function captureOne({ root, documentId, locale, theme, audit = false }) {
               roleActivationColor,
               callRoleColorDistinct: callLineColor !== roleLineColor
                 && callLineColor !== roleActivationColor,
+              participantCardCount: participantCardAlignment.length,
+              maximumParticipantTextCenterDelta: Math.max(...participantCardAlignment),
             },
           };
           tabs[0].focus();

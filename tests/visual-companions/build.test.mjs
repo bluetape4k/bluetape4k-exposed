@@ -73,6 +73,10 @@ test('sequence messages connect participant centers with direction-aware arrowhe
   assert.match(document, /\.lifeline \{[^}]*var\(--role-line\)/);
   assert.match(document, /\.activation \{[^}]*var\(--role-active\)[^}]*var\(--role-active-soft\)/);
   assert.match(document, /\.message \{[^}]*--message-color: var\(--call-line\)/);
+  assert.match(
+    document,
+    /\.sequence-participant strong \{[^}]*display: flex[^}]*align-items: center[^}]*justify-content: center/,
+  );
   assert.doesNotMatch(document, /\.lifeline \{[^}]*var\(--call-line\)/);
   assert.doesNotMatch(document, /\.message-line::after \{[^}]*var\(--cyan\)/);
   assert.doesNotMatch(document, /message-return message-forward/);
