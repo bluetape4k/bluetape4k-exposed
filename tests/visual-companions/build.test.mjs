@@ -73,3 +73,29 @@ test('sequence messages connect participant centers with direction-aware arrowhe
   assert.doesNotMatch(document, /\.message-line::after \{[^}]*var\(--cyan\)/);
   assert.doesNotMatch(document, /message-return message-forward/);
 });
+
+test('evidence links keep full targets but display concise source names', async () => {
+  const [model] = await loadCompanionModels(root);
+  const document = renderDocument({
+    model,
+    locale: 'ko',
+    architectureAssets: model.architecture.map((asset) => ({
+      ...asset,
+      dataUri: 'data:image/png;base64,AA==',
+    })),
+  });
+
+  assert.match(
+    document,
+    /href="[^"]*exposed\/jdbc\/src\/main\/kotlin\/io\/bluetape4k\/exposed\/jdbc\/repository\/JdbcRepository\.kt"><code>JdbcRepository<\/code>/,
+  );
+  assert.match(
+    document,
+    /href="[^"]*ProductController\.kt"><code>ProductController<\/code>/,
+  );
+  assert.match(
+    document,
+    /href="[^"]*coroutine-transactions\.md"><code>coroutine-transactions\.md<\/code>/,
+  );
+  assert.doesNotMatch(document, /<code>exposed\/jdbc\/src\/main\/kotlin/);
+});
