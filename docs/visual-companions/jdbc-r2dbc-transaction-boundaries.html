@@ -164,7 +164,7 @@
     <header>
       <div class="topbar">
         <a class="locale-link" href="jdbc-r2dbc-transaction-boundaries.ko.html" hreflang="ko">한국어</a>
-        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle light and dark theme">Theme</button>
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light theme" aria-pressed="true">Theme</button>
       </div>
       <div class="eyebrow">bluetape4k · Exposed field guide</div>
       <h1>One operation.<br>One transaction owner.</h1>
@@ -214,8 +214,8 @@
           <div class="path">
             <div class="step" data-owner="caller"><strong>Application service</strong><small>Owns the transfer or other business invariant.</small></div>
             <div class="step" data-owner="caller"><strong>Caller boundary</strong><small>Defines one atomic unit before repository calls.</small></div>
-            <div class="step" data-owner="jdbc"><strong>Repository A</strong><small>Debit or first state change.</small></div>
-            <div class="step" data-owner="r2dbc"><strong>Repository B</strong><small>Credit or second state change.</small></div>
+            <div class="step" data-owner="caller"><strong>Repository call A</strong><small>First state change in the selected JDBC or R2DBC stack.</small></div>
+            <div class="step" data-owner="caller"><strong>Repository call B</strong><small>Second state change in that same selected stack.</small></div>
             <div class="step" data-owner="caller"><strong>Invariant check</strong><small>All statements succeed or the unit fails.</small></div>
             <div class="step" data-owner="caller"><strong>Commit</strong><small>One caller-owned business outcome.</small></div>
           </div>
@@ -269,11 +269,18 @@
     (() => {
       const themeStorageKey = 'starlight-theme';
       const themeToggle = document.getElementById('theme-toggle');
+      const syncThemeControl = () => {
+        const dark = document.documentElement.dataset.theme === 'dark';
+        themeToggle.setAttribute('aria-pressed', String(dark));
+        themeToggle.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+      };
       themeToggle.addEventListener('click', () => {
         const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
         document.documentElement.dataset.theme = next;
         localStorage.setItem(themeStorageKey, next);
+        syncThemeControl();
       });
+      syncThemeControl();
 
       const summaries = {
         jdbc: 'Spring opens the JDBC transaction around the proxied repository call; the repository participates in that active context.',

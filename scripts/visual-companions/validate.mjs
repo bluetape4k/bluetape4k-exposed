@@ -9,14 +9,15 @@ const REQUIRED_LOCALES = ['en', 'ko'];
 const forbiddenRuntimePatterns = [
   /<script\b[^>]*\bsrc\s*=/i,
   /<link\b[^>]*\brel\s*=\s*["']?stylesheet\b/i,
-  /<(?:img|iframe|audio|video|source)\b[^>]*\bsrc\s*=\s*["'](?!data:|#)[^"']+["']/i,
   /@import\b/i,
-  /url\(\s*["']?https?:/i,
+  /url\(\s*["']?(?!data:|#)/i,
   /<form\b/i,
   /\bfetch\s*\(/,
   /\bXMLHttpRequest\b/,
   /\bWebSocket\s*\(/,
   /\bnavigator\.sendBeacon\s*\(/,
+  /\bimport\s*(?:\(|[^;]*?\bfrom\b)/,
+  /\bnew\s+(?:Worker|SharedWorker|EventSource)\s*\(/,
 ];
 
 function requireMatch(errors, content, pattern, message) {
@@ -29,6 +30,33 @@ function values(content, pattern) {
 
 function sameValues(left, right) {
   return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+function containsForbiddenRuntimeDependency(content) {
+  if (forbiddenRuntimePatterns.some((pattern) => pattern.test(content))) return true;
+
+  for (const match of content.matchAll(/<(script|link|img|iframe|audio|video|source|object|embed)\b([^>]*)>/gi)) {
+    const tag = match[1].toLowerCase();
+    const attributes = new Map(
+      [...match[2].matchAll(/\b([:\w-]+)\s*=\s*(["'])(.*?)\2/gi)]
+        .map((attribute) => [attribute[1].toLowerCase(), attribute[3]]),
+    );
+
+    if (tag === 'object' || tag === 'embed') return true;
+    if (tag === 'script' && attributes.has('src')) return true;
+    if (tag === 'link' && attributes.has('href')) {
+      const rel = (attributes.get('rel') ?? '').toLowerCase().split(/\s+/);
+      const href = attributes.get('href');
+      if (!(rel.includes('icon') && href.startsWith('data:'))) return true;
+    }
+    if (attributes.has('srcset')) return true;
+    for (const attribute of ['src', 'data', 'poster']) {
+      const value = attributes.get(attribute);
+      if (value && !value.startsWith('data:') && !value.startsWith('#')) return true;
+    }
+  }
+
+  return false;
 }
 
 function safePath(root, relativePath) {
@@ -106,6 +134,12 @@ function validateStandaloneHtml({
   requireMatch(
     errors,
     content,
+    /<button\b[^>]*\bclass=["'][^"']*theme-toggle[^"']*["'][^>]*\baria-pressed=["'](?:true|false)["']/i,
+    `${prefix} theme toggle must expose aria-pressed`,
+  );
+  requireMatch(
+    errors,
+    content,
     /\baria-live=["']polite["']/i,
     `${prefix} must expose a polite live region`,
   );
@@ -137,7 +171,7 @@ function validateStandaloneHtml({
     );
   }
 
-  if (forbiddenRuntimePatterns.some((pattern) => pattern.test(content))) {
+  if (containsForbiddenRuntimeDependency(content)) {
     errors.push(`${prefix} contains a forbidden runtime dependency`);
   }
 }
@@ -194,6 +228,10 @@ export async function validateRepository(
       || !document.presentation.views.includes(document.presentation.defaultView)
     ) {
       errors.push(`${field}.presentation is invalid`);
+    }
+    const localeKeys = Object.keys(document.locales ?? {}).sort();
+    if (!sameValues(localeKeys, REQUIRED_LOCALES)) {
+      errors.push(`${field}.locales must contain exactly en and ko`);
     }
 
     await readContained(root, document.source, errors, `${field}.source does not exist`);
@@ -275,7 +313,10 @@ export async function validateRepository(
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
   try {
-    const result = await validateRepository();
+    const result = await validateRepository(
+      process.cwd(),
+      process.argv[2] ?? 'docs/visual-companions/manifest.json',
+    );
     console.log(
       `Visual companion validation passed: ${result.documentCount} documents / ${result.localeFileCount} locale files`,
     );
