@@ -201,6 +201,8 @@ test('sequence messages connect participant centers with direction-aware arrowhe
   assert.match(document, /\.lifeline \{[^}]*var\(--role-line\)/);
   assert.match(document, /\.activation \{[^}]*var\(--role-active\)[^}]*var\(--role-active-soft\)/);
   assert.match(document, /\.message \{[^}]*--message-color: var\(--call-line\)/);
+  assert.match(document, /class="sequence-scroll" tabindex="0"/);
+  assert.match(document, /@media \(max-width: 800px\)[\s\S]*\.sequence-scroll \{ overflow-x: auto;/);
   assert.match(
     document,
     /\.sequence-participant strong \{[^}]*display: flex[^}]*align-items: center[^}]*justify-content: center/,

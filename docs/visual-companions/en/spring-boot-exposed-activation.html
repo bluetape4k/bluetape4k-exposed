@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>Spring Boot Exposed Activation, Without Hidden Ownership</title>
+  <title>Spring Boot Exposed Activation and Ownership</title>
   <style>
     :root {
       --bg: #f3f6fa; --surface: #ffffff; --surface-2: #e9eef5; --ink: #142033;
@@ -120,6 +120,7 @@
     .outcome-application-owned, .outcome-mixed { background: var(--cyan-soft); color: var(--cyan); }
     .outcome-backed-off { background: var(--amber-soft); color: var(--amber); }
     .outcome-unavailable, .outcome-inactive { background: var(--red-soft); color: var(--red); }
+    .sequence-scroll { overflow-x: hidden; }
     .sequence-canvas { position: relative; min-width: 760px; padding: 22px 26px 32px; overflow: hidden; }
     .sequence-participants { display: grid; grid-template-columns: repeat(var(--participants), 1fr); min-height: 350px; }
     .sequence-participant { position: relative; text-align: center; }
@@ -167,7 +168,7 @@
       .scenario-tabs { grid-template-columns: 1fr 1fr; }
       .scenario-detail { grid-template-columns: 1fr; }
       .sequence-summary { grid-template-columns: 1fr; }
-      .sequence-canvas { overflow-x: auto; }
+      .sequence-scroll { overflow-x: auto; overscroll-behavior-inline: contain; }
       footer { flex-direction: column; }
     }
     @media (max-width: 480px) {
@@ -201,7 +202,7 @@
   <header class="hero" id="top">
     <div>
       <p class="eyebrow">AUTO-CONFIGURATION · CONDITIONS · OWNERSHIP</p>
-      <h1>Spring Boot Exposed Activation, Without Hidden Ownership</h1>
+      <h1>Spring Boot Exposed Activation and Ownership</h1>
       <p class="lede">JDBC activation can connect Exposed to a Spring DataSource and supply one specifically named transaction manager. R2DBC activation is intentionally thinner: the application still owns the pool, R2dbcDatabase, transaction scope, and shutdown.</p>
     </div>
     <aside class="hero-aside">
@@ -647,8 +648,9 @@
           <div><dt>Boundary owner</dt><dd><code>Spring Boot contributes; application owns DataSource</code></dd></div>
         </dl>
       </header>
-      <div class="sequence-canvas" style="--participants:4">
-        <div class="sequence-participants">
+      <div class="sequence-scroll" tabindex="0" aria-label="JDBC ready">
+        <div class="sequence-canvas" style="--participants:4">
+          <div class="sequence-participants">
     <div class="sequence-participant" data-participant="application">
       <strong>Application configuration</strong>
       <span class="lifeline" aria-hidden="true"></span>
@@ -673,7 +675,7 @@
       <span class="activation" aria-hidden="true"></span>
     </div>
   </div>
-        <ol class="sequence-messages">
+          <ol class="sequence-messages">
       <li class="message message-call message-forward"
           data-message-kind="call"
           data-direction="forward"
@@ -726,6 +728,7 @@
         </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
+        </div>
       </div>
       <div class="sequence-alt outcome-created" data-outcome="created">
         <strong>CREATED</strong>
@@ -746,8 +749,9 @@
           <div><dt>Boundary owner</dt><dd><code>Application owns pool, database, and coroutine scope</code></dd></div>
         </dl>
       </header>
-      <div class="sequence-canvas" style="--participants:4">
-        <div class="sequence-participants">
+      <div class="sequence-scroll" tabindex="0" aria-label="R2DBC ready">
+        <div class="sequence-canvas" style="--participants:4">
+          <div class="sequence-participants">
     <div class="sequence-participant" data-participant="application">
       <strong>Application configuration</strong>
       <span class="lifeline" aria-hidden="true"></span>
@@ -772,7 +776,7 @@
       <span class="activation" aria-hidden="true"></span>
     </div>
   </div>
-        <ol class="sequence-messages">
+          <ol class="sequence-messages">
       <li class="message message-call message-forward"
           data-message-kind="call"
           data-direction="forward"
@@ -825,6 +829,7 @@
         </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
+        </div>
       </div>
       <div class="sequence-alt outcome-application-owned" data-outcome="application-owned">
         <strong>APPLICATION OWNED</strong>
@@ -845,8 +850,9 @@
           <div><dt>Boundary owner</dt><dd><code>Shared metadata; split execution ownership</code></dd></div>
         </dl>
       </header>
-      <div class="sequence-canvas" style="--participants:4">
-        <div class="sequence-participants">
+      <div class="sequence-scroll" tabindex="0" aria-label="JDBC + R2DBC">
+        <div class="sequence-canvas" style="--participants:4">
+          <div class="sequence-participants">
     <div class="sequence-participant" data-participant="application">
       <strong>Application configuration</strong>
       <span class="lifeline" aria-hidden="true"></span>
@@ -871,7 +877,7 @@
       <span class="activation" aria-hidden="true"></span>
     </div>
   </div>
-        <ol class="sequence-messages">
+          <ol class="sequence-messages">
       <li class="message message-call message-forward"
           data-message-kind="call"
           data-direction="forward"
@@ -924,6 +930,7 @@
         </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
+        </div>
       </div>
       <div class="sequence-alt outcome-mixed" data-outcome="mixed">
         <strong>MIXED</strong>
@@ -944,8 +951,9 @@
           <div><dt>Boundary owner</dt><dd><code>Application owns manager selection</code></dd></div>
         </dl>
       </header>
-      <div class="sequence-canvas" style="--participants:4">
-        <div class="sequence-participants">
+      <div class="sequence-scroll" tabindex="0" aria-label="Custom JDBC manager">
+        <div class="sequence-canvas" style="--participants:4">
+          <div class="sequence-participants">
     <div class="sequence-participant" data-participant="application">
       <strong>Application configuration</strong>
       <span class="lifeline" aria-hidden="true"></span>
@@ -970,7 +978,7 @@
       <span class="activation" aria-hidden="true"></span>
     </div>
   </div>
-        <ol class="sequence-messages">
+          <ol class="sequence-messages">
       <li class="message message-call message-forward"
           data-message-kind="call"
           data-direction="forward"
@@ -1023,6 +1031,7 @@
         </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
+        </div>
       </div>
       <div class="sequence-alt outcome-reused" data-outcome="reused">
         <strong>REUSED</strong>
@@ -1043,8 +1052,9 @@
           <div><dt>Boundary owner</dt><dd><code>Application owns mapping customization</code></dd></div>
         </dl>
       </header>
-      <div class="sequence-canvas" style="--participants:4">
-        <div class="sequence-participants">
+      <div class="sequence-scroll" tabindex="0" aria-label="Custom mapping context">
+        <div class="sequence-canvas" style="--participants:4">
+          <div class="sequence-participants">
     <div class="sequence-participant" data-participant="application">
       <strong>Application configuration</strong>
       <span class="lifeline" aria-hidden="true"></span>
@@ -1069,7 +1079,7 @@
       <span class="activation" aria-hidden="true"></span>
     </div>
   </div>
-        <ol class="sequence-messages">
+          <ol class="sequence-messages">
       <li class="message message-call message-forward"
           data-message-kind="call"
           data-direction="forward"
@@ -1122,6 +1132,7 @@
         </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
+        </div>
       </div>
       <div class="sequence-alt outcome-backed-off" data-outcome="backed-off">
         <strong>BACKED OFF</strong>
@@ -1142,8 +1153,9 @@
           <div><dt>Boundary owner</dt><dd><code>Application failed to satisfy its infrastructure boundary</code></dd></div>
         </dl>
       </header>
-      <div class="sequence-canvas" style="--participants:4">
-        <div class="sequence-participants">
+      <div class="sequence-scroll" tabindex="0" aria-label="Missing R2DBC infrastructure">
+        <div class="sequence-canvas" style="--participants:4">
+          <div class="sequence-participants">
     <div class="sequence-participant" data-participant="application">
       <strong>Application configuration</strong>
       <span class="lifeline" aria-hidden="true"></span>
@@ -1168,7 +1180,7 @@
       <span class="activation" aria-hidden="true"></span>
     </div>
   </div>
-        <ol class="sequence-messages">
+          <ol class="sequence-messages">
       <li class="message message-call message-forward"
           data-message-kind="call"
           data-direction="forward"
@@ -1221,6 +1233,7 @@
         </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
+        </div>
       </div>
       <div class="sequence-alt outcome-unavailable" data-outcome="unavailable">
         <strong>UNAVAILABLE</strong>
@@ -1241,8 +1254,9 @@
           <div><dt>Boundary owner</dt><dd><code>Dependency graph controls activation</code></dd></div>
         </dl>
       </header>
-      <div class="sequence-canvas" style="--participants:4">
-        <div class="sequence-participants">
+      <div class="sequence-scroll" tabindex="0" aria-label="EntityClass absent">
+        <div class="sequence-canvas" style="--participants:4">
+          <div class="sequence-participants">
     <div class="sequence-participant" data-participant="application">
       <strong>Application classpath</strong>
       <span class="lifeline" aria-hidden="true"></span>
@@ -1267,7 +1281,7 @@
       <span class="activation" aria-hidden="true"></span>
     </div>
   </div>
-        <ol class="sequence-messages">
+          <ol class="sequence-messages">
       <li class="message message-call message-forward"
           data-message-kind="call"
           data-direction="forward"
@@ -1320,6 +1334,7 @@
         </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
+        </div>
       </div>
       <div class="sequence-alt outcome-inactive" data-outcome="inactive">
         <strong>INACTIVE</strong>

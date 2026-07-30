@@ -120,6 +120,7 @@
     .outcome-application-owned, .outcome-mixed { background: var(--cyan-soft); color: var(--cyan); }
     .outcome-backed-off { background: var(--amber-soft); color: var(--amber); }
     .outcome-unavailable, .outcome-inactive { background: var(--red-soft); color: var(--red); }
+    .sequence-scroll { overflow-x: hidden; }
     .sequence-canvas { position: relative; min-width: 760px; padding: 22px 26px 32px; overflow: hidden; }
     .sequence-participants { display: grid; grid-template-columns: repeat(var(--participants), 1fr); min-height: 350px; }
     .sequence-participant { position: relative; text-align: center; }
@@ -167,7 +168,7 @@
       .scenario-tabs { grid-template-columns: 1fr 1fr; }
       .scenario-detail { grid-template-columns: 1fr; }
       .sequence-summary { grid-template-columns: 1fr; }
-      .sequence-canvas { overflow-x: auto; }
+      .sequence-scroll { overflow-x: auto; overscroll-behavior-inline: contain; }
       footer { flex-direction: column; }
     }
     @media (max-width: 480px) {
@@ -361,8 +362,9 @@
           <div><dt>Boundary owner</dt><dd><code>Controller / service transaction {}</code></dd></div>
         </dl>
       </header>
-      <div class="sequence-canvas" style="--participants:4">
-        <div class="sequence-participants">
+      <div class="sequence-scroll" tabindex="0" aria-label="JDBC · one repository">
+        <div class="sequence-canvas" style="--participants:4">
+          <div class="sequence-participants">
     <div class="sequence-participant" data-participant="client">
       <strong>Client</strong>
       <span class="lifeline" aria-hidden="true"></span>
@@ -387,7 +389,7 @@
       <span class="activation" aria-hidden="true"></span>
     </div>
   </div>
-        <ol class="sequence-messages">
+          <ol class="sequence-messages">
       <li class="message message-call message-forward"
           data-message-kind="call"
           data-direction="forward"
@@ -440,6 +442,7 @@
         </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
+        </div>
       </div>
       <div class="sequence-alt outcome-commit" data-outcome="commit">
         <strong>COMMIT</strong>
@@ -460,8 +463,9 @@
           <div><dt>Boundary owner</dt><dd><code>Service transaction {}</code></dd></div>
         </dl>
       </header>
-      <div class="sequence-canvas" style="--participants:4">
-        <div class="sequence-participants">
+      <div class="sequence-scroll" tabindex="0" aria-label="JDBC · multiple repositories">
+        <div class="sequence-canvas" style="--participants:4">
+          <div class="sequence-participants">
     <div class="sequence-participant" data-participant="service">
       <strong>Service</strong>
       <span class="lifeline" aria-hidden="true"></span>
@@ -486,7 +490,7 @@
       <span class="activation" aria-hidden="true"></span>
     </div>
   </div>
-        <ol class="sequence-messages">
+          <ol class="sequence-messages">
       <li class="message message-call message-forward"
           data-message-kind="call"
           data-direction="forward"
@@ -539,6 +543,7 @@
         </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
+        </div>
       </div>
       <div class="sequence-alt outcome-commit" data-outcome="commit">
         <strong>COMMIT</strong>
@@ -559,8 +564,9 @@
           <div><dt>Boundary owner</dt><dd><code>Coroutine suspendTransaction {}</code></dd></div>
         </dl>
       </header>
-      <div class="sequence-canvas" style="--participants:4">
-        <div class="sequence-participants">
+      <div class="sequence-scroll" tabindex="0" aria-label="R2DBC · one repository">
+        <div class="sequence-canvas" style="--participants:4">
+          <div class="sequence-participants">
     <div class="sequence-participant" data-participant="handler">
       <strong>WebFlux Handler</strong>
       <span class="lifeline" aria-hidden="true"></span>
@@ -585,7 +591,7 @@
       <span class="activation" aria-hidden="true"></span>
     </div>
   </div>
-        <ol class="sequence-messages">
+          <ol class="sequence-messages">
       <li class="message message-call message-forward"
           data-message-kind="call"
           data-direction="forward"
@@ -638,6 +644,7 @@
         </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
+        </div>
       </div>
       <div class="sequence-alt outcome-commit" data-outcome="commit">
         <strong>COMMIT</strong>
@@ -658,8 +665,9 @@
           <div><dt>Boundary owner</dt><dd><code>Collector inside suspendTransaction {}</code></dd></div>
         </dl>
       </header>
-      <div class="sequence-canvas" style="--participants:4">
-        <div class="sequence-participants">
+      <div class="sequence-scroll" tabindex="0" aria-label="R2DBC Flow · collect inside">
+        <div class="sequence-canvas" style="--participants:4">
+          <div class="sequence-participants">
     <div class="sequence-participant" data-participant="boundary">
       <strong>suspendTransaction</strong>
       <span class="lifeline" aria-hidden="true"></span>
@@ -684,7 +692,7 @@
       <span class="activation" aria-hidden="true"></span>
     </div>
   </div>
-        <ol class="sequence-messages">
+          <ol class="sequence-messages">
       <li class="message message-call message-forward"
           data-message-kind="call"
           data-direction="forward"
@@ -737,6 +745,7 @@
         </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
+        </div>
       </div>
       <div class="sequence-alt outcome-commit" data-outcome="commit">
         <strong>COMMIT</strong>
@@ -757,8 +766,9 @@
           <div><dt>Boundary owner</dt><dd><code>Caller mistakenly outlives the transaction</code></dd></div>
         </dl>
       </header>
-      <div class="sequence-canvas" style="--participants:4">
-        <div class="sequence-participants">
+      <div class="sequence-scroll" tabindex="0" aria-label="R2DBC Flow · escapes">
+        <div class="sequence-canvas" style="--participants:4">
+          <div class="sequence-participants">
     <div class="sequence-participant" data-participant="caller">
       <strong>Caller</strong>
       <span class="lifeline" aria-hidden="true"></span>
@@ -783,7 +793,7 @@
       <span class="activation" aria-hidden="true"></span>
     </div>
   </div>
-        <ol class="sequence-messages">
+          <ol class="sequence-messages">
       <li class="message message-call message-forward"
           data-message-kind="call"
           data-direction="forward"
@@ -836,6 +846,7 @@
         </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
+        </div>
       </div>
       <div class="sequence-alt outcome-boundary-error" data-outcome="boundary-error">
         <strong>BOUNDARY ERROR</strong>
@@ -856,8 +867,9 @@
           <div><dt>Boundary owner</dt><dd><code>Transaction block / coroutine scope</code></dd></div>
         </dl>
       </header>
-      <div class="sequence-canvas" style="--participants:4">
-        <div class="sequence-participants">
+      <div class="sequence-scroll" tabindex="0" aria-label="Failure or cancellation">
+        <div class="sequence-canvas" style="--participants:4">
+          <div class="sequence-participants">
     <div class="sequence-participant" data-participant="boundary">
       <strong>Boundary</strong>
       <span class="lifeline" aria-hidden="true"></span>
@@ -882,7 +894,7 @@
       <span class="activation" aria-hidden="true"></span>
     </div>
   </div>
-        <ol class="sequence-messages">
+          <ol class="sequence-messages">
       <li class="message message-call message-forward"
           data-message-kind="call"
           data-direction="forward"
@@ -935,6 +947,7 @@
         </span>
         <span class="message-line" aria-hidden="true"></span>
       </li></ol>
+        </div>
       </div>
       <div class="sequence-alt outcome-rollback" data-outcome="rollback">
         <strong>ROLLBACK</strong>

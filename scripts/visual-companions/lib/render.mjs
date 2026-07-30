@@ -120,9 +120,11 @@ export function renderSequence({ scenario, locale, active, labels = {} }) {
           <div><dt>${locale === 'ko' ? '경계 소유자' : 'Boundary owner'}</dt><dd><code>${escapeHtml(scenario.locales[locale].owner ?? scenario.owner)}</code></dd></div>
         </dl>
       </header>
-      <div class="sequence-canvas" style="--participants:${scenario.participants.length}">
-        <div class="sequence-participants">${participants}</div>
-        <ol class="sequence-messages">${messages}</ol>
+      <div class="sequence-scroll" tabindex="0" aria-label="${escapeHtml(scenario.locales[locale].label)}">
+        <div class="sequence-canvas" style="--participants:${scenario.participants.length}">
+          <div class="sequence-participants">${participants}</div>
+          <ol class="sequence-messages">${messages}</ol>
+        </div>
       </div>
       <div class="sequence-alt outcome-${escapeHtml(scenario.outcome)}" data-outcome="${escapeHtml(scenario.outcome)}">
         <strong>${escapeHtml(scenario.locales[locale].outcome.split(' · ')[0])}</strong>
@@ -474,6 +476,7 @@ function renderStandaloneShell({ model, locale, body }) {
     .outcome-application-owned, .outcome-mixed { background: var(--cyan-soft); color: var(--cyan); }
     .outcome-backed-off { background: var(--amber-soft); color: var(--amber); }
     .outcome-unavailable, .outcome-inactive { background: var(--red-soft); color: var(--red); }
+    .sequence-scroll { overflow-x: hidden; }
     .sequence-canvas { position: relative; min-width: 760px; padding: 22px 26px 32px; overflow: hidden; }
     .sequence-participants { display: grid; grid-template-columns: repeat(var(--participants), 1fr); min-height: 350px; }
     .sequence-participant { position: relative; text-align: center; }
@@ -521,7 +524,7 @@ function renderStandaloneShell({ model, locale, body }) {
       .scenario-tabs { grid-template-columns: 1fr 1fr; }
       .scenario-detail { grid-template-columns: 1fr; }
       .sequence-summary { grid-template-columns: 1fr; }
-      .sequence-canvas { overflow-x: auto; }
+      .sequence-scroll { overflow-x: auto; overscroll-behavior-inline: contain; }
       footer { flex-direction: column; }
     }
     @media (max-width: 480px) {
