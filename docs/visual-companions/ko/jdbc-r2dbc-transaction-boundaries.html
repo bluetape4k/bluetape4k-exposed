@@ -10,6 +10,7 @@
       --bg: #f3f6fa; --surface: #ffffff; --surface-2: #e9eef5; --ink: #142033;
       --muted: #526176; --line: #c9d3df; --navy: #132a46; --cyan: #007f91;
       --cyan-soft: #d8f3f6; --amber: #a65d00; --amber-soft: #fff0cc;
+      --call-line: #007f91; --role-line: #7d6fb2; --role-active: #6e59b8; --role-active-soft: #eee9ff;
       --teal: #167c73; --red: #a33a3a; --red-soft: #ffe4e4; --green: #1d7b52; --green-soft: #dcf5e8;
       --shadow: 0 18px 50px rgb(20 32 51 / .12); --radius: 20px;
       color-scheme: light;
@@ -19,6 +20,7 @@
       --bg: #07111f; --surface: #0e1d2e; --surface-2: #17293c; --ink: #edf5ff;
       --muted: #a8bbcf; --line: #31475f; --navy: #dcecff; --cyan: #55d6e8;
       --cyan-soft: #103c47; --amber: #ffbd5c; --amber-soft: #49351a;
+      --call-line: #55d6e8; --role-line: #a99ad6; --role-active: #b9a7ff; --role-active-soft: #2a254b;
       --teal: #5ee0d3; --red: #ff9898; --red-soft: #4a2529; --green: #6ee7ae; --green-soft: #163c2d;
       --shadow: 0 20px 60px rgb(0 0 0 / .38); color-scheme: dark;
     }
@@ -27,6 +29,7 @@
         --bg: #07111f; --surface: #0e1d2e; --surface-2: #17293c; --ink: #edf5ff;
         --muted: #a8bbcf; --line: #31475f; --navy: #dcecff; --cyan: #55d6e8;
         --cyan-soft: #103c47; --amber: #ffbd5c; --amber-soft: #49351a;
+        --call-line: #55d6e8; --role-line: #a99ad6; --role-active: #b9a7ff; --role-active-soft: #2a254b;
         --teal: #5ee0d3; --red: #ff9898; --red-soft: #4a2529; --green: #6ee7ae; --green-soft: #163c2d;
         --shadow: 0 20px 60px rgb(0 0 0 / .38); color-scheme: dark;
       }
@@ -34,6 +37,7 @@
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.65 Inter, Pretendard, ui-sans-serif, system-ui, sans-serif; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
     body::before { content: ""; position: fixed; inset: 0 0 auto; height: 320px; z-index: -1; background: radial-gradient(circle at 75% 0%, rgb(0 173 194 / .18), transparent 42%), linear-gradient(135deg, var(--surface), transparent); }
     a { color: var(--cyan); text-underline-offset: 3px; overflow-wrap: anywhere; }
     button { font: inherit; }
@@ -75,7 +79,6 @@
     .architecture-card { position: relative; margin: 0 0 22px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
     .architecture-card > img { display: block; width: 100%; height: auto; border-radius: 12px; background: #07111f; }
     .architecture-open { position: absolute; z-index: 2; top: 28px; right: 28px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 999px; background: rgb(7 17 31 / .88); color: #f2f8ff; cursor: pointer; }
-    figcaption { display: flex; justify-content: space-between; gap: 18px; color: var(--muted); padding: 12px 4px 0; font-size: .78rem; }
     dialog { width: min(96vw, 1500px); max-height: 94vh; padding: 0; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); color: var(--ink); box-shadow: 0 30px 100px #0009; }
     dialog::backdrop { background: rgb(0 7 17 / .84); backdrop-filter: blur(4px); }
     dialog img { display: block; width: 100%; height: auto; }
@@ -99,11 +102,11 @@
     .sequence-canvas { position: relative; min-width: 760px; padding: 22px 26px 32px; overflow: hidden; }
     .sequence-participants { display: grid; grid-template-columns: repeat(var(--participants), 1fr); min-height: 350px; }
     .sequence-participant { position: relative; text-align: center; }
-    .sequence-participant strong { position: relative; z-index: 2; display: block; min-height: 54px; margin: 0 5px; padding: 9px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font-size: .86rem; }
-    .lifeline { position: absolute; top: 54px; bottom: 0; left: 50%; border-left: 2px dashed var(--line); }
-    .activation { position: absolute; top: 82px; bottom: 34px; left: calc(50% - 5px); width: 10px; border: 1px solid var(--cyan); border-radius: 5px; background: var(--cyan-soft); }
+    .sequence-participant strong { position: relative; z-index: 2; display: block; min-height: 54px; margin: 0 5px; padding: 9px 8px; border: 1px solid var(--role-line); border-radius: 10px; background: var(--surface-2); font-size: .86rem; }
+    .lifeline { position: absolute; top: 54px; bottom: 0; left: 50%; border-left: 2px dashed var(--role-line); }
+    .activation { position: absolute; top: 82px; bottom: 34px; left: calc(50% - 5px); width: 10px; border: 2px solid var(--role-active); border-radius: 5px; background: var(--role-active-soft); }
     .sequence-messages { position: absolute; inset: 92px 26px 28px; display: grid; grid-template-rows: repeat(4, 1fr); margin: 0; padding: 0; list-style: none; pointer-events: none; }
-    .message { --message-color: var(--cyan); position: relative; grid-row: var(--row); align-self: center; min-height: 48px; color: var(--message-color); }
+    .message { --message-color: var(--call-line); position: relative; grid-row: var(--row); align-self: center; min-height: 48px; color: var(--message-color); }
     .message-return { --message-color: var(--teal); }
     .message-commit { --message-color: var(--green); }
     .message-rollback, .message-boundary-error { --message-color: var(--red); }
@@ -129,7 +132,7 @@
     tr:last-child th, tr:last-child td { border-bottom: 0; }
     .evidence-table code { font-size: .72rem; }
     .evidence-table td:nth-child(2) a, .evidence-table td:nth-child(3) a { white-space: nowrap; }
-    footer { width: min(1180px, calc(100% - 32px)); margin: 0 auto 50px; padding-top: 22px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 20px; color: var(--muted); font-size: .82rem; }
+    footer { width: min(1180px, calc(100% - 32px)); margin: 0 auto 50px; padding-top: 22px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 20px; color: var(--muted); font-size: .82rem; }
     [hidden] { display: none !important; }
     @media (max-width: 800px) {
       .hero { grid-template-columns: 1fr; margin-top: 48px; }
@@ -139,7 +142,7 @@
       .scenario-tabs { grid-template-columns: 1fr 1fr; }
       .sequence-summary { grid-template-columns: 1fr; }
       .sequence-canvas { overflow-x: auto; }
-      figcaption, footer { flex-direction: column; }
+      footer { flex-direction: column; }
     }
     @media (max-width: 480px) {
       .topbar, .hero, main, footer { width: min(100% - 22px, 1180px); }
@@ -169,7 +172,7 @@
   </nav>
   <header class="hero" id="top">
     <div>
-      <p class="eyebrow">대화형 아키텍처 해설 · Issue #410</p>
+      <p class="eyebrow">대화형 아키텍처 해설</p>
       <h1>JPA에서 Exposed로: 트랜잭션 소유권을 드러내기</h1>
       <p class="lede">Exposed는 JPA/Hibernate가 제공하는 객체 그래프 자동화 일부를 명시적인 SQL 의도와 실행 경계로 바꾼다. 마이그레이션의 핵심 질문은 어느 저장소가 트랜잭션을 여느냐가 아니라, 어느 애플리케이션 경계가 전체 작업 단위를 소유하느냐이다.</p>
     </div>
@@ -214,7 +217,6 @@
         <span aria-hidden="true">↗</span> 기존 아키텍처 다이어그램 크게 보기
       </button>
       <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAwIiBoZWlnaHQ9IjExMDAiIHZpZXdCb3g9IjAgMCAyMDAwIDExMDAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSBkZXNjIj4KICA8dGl0bGUgaWQ9InRpdGxlIj5KREJDIGFuZCBSMkRCQyB0cmFuc2FjdGlvbiBvd25lcnNoaXA8L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5Ud28gcGFyYWxsZWwgcmVzcG9uc2liaWxpdHkgbGFuZXMgc2hvdyBhcHBsaWNhdGlvbiBvciBmcmFtZXdvcmsgb3duZXJzaGlwIGZsb3dpbmcgdGhyb3VnaCB0cmFuc2FjdGlvbiBjb250ZXh0LCByZXBvc2l0b3J5LCBkcml2ZXIsIGFuZCBkYXRhYmFzZS4gUmVwb3NpdG9yaWVzIHBhcnRpY2lwYXRlIGluIGJ1dCBkbyBub3QgY3JlYXRlIHRyYW5zYWN0aW9ucy48L2Rlc2M+CiAgPGRlZnM+CiAgICA8bWFya2VyIGlkPSJhcnJvdy1ibHVlIiB2aWV3Qm94PSIwIDAgMTQgMTQiIHJlZlg9IjEzIiByZWZZPSI3IiBtYXJrZXJXaWR0aD0iMTQiIG1hcmtlckhlaWdodD0iMTQiIG9yaWVudD0iYXV0byIgbWFya2VyVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNMCAwIEwxNCA3IEwwIDE0IFoiIGZpbGw9IiM5ZWQ4ZmYiIHN0cm9rZT0iIzllZDhmZiIvPjwvbWFya2VyPgogICAgPG1hcmtlciBpZD0iYXJyb3ctdGVhbCIgdmlld0JveD0iMCAwIDE0IDE0IiByZWZYPSIxMyIgcmVmWT0iNyIgbWFya2VyV2lkdGg9IjE0IiBtYXJrZXJIZWlnaHQ9IjE0IiBvcmllbnQ9ImF1dG8iIG1hcmtlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMCBMMTQgNyBMMCAxNCBaIiBmaWxsPSIjNWVlYWQ0IiBzdHJva2U9IiM1ZWVhZDQiLz48L21hcmtlcj4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iY2FudmFzIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzExMTgyNyIvPjxzdG9wIG9mZnNldD0iNTglIiBzdG9wLWNvbG9yPSIjMTgyMzMxIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMjIzMDQ3Ii8+PC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0icGFuZWwiIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMWYyOTM3Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMTExODI3Ii8+PC9saW5lYXJHcmFkaWVudD4KICAgIDxmaWx0ZXIgaWQ9InNoYWRvdyIgeD0iLTIwJSIgeT0iLTIwJSIgd2lkdGg9IjE0MCUiIGhlaWdodD0iMTQwJSI+PGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjEwIiBzdGREZXZpYXRpb249IjEyIiBmbG9vZC1jb2xvcj0iIzAyMDYxNyIgZmxvb2Qtb3BhY2l0eT0iMC4zMiIvPjwvZmlsdGVyPgogICAgPHN5bWJvbCBpZD0iZGF0YWJhc2UtaWNvbiIgdmlld0JveD0iMCAwIDEyOCAxMjgiPgogICAgICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICAgICAgPGVsbGlwc2UgY3g9IjY0IiBjeT0iMzYiIHJ4PSIzNCIgcnk9IjEzIiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIvPgogICAgICA8cGF0aCBkPSJNMzAgMzZ2NDRjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTRWMzYiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgICAgIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNE0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogICAgPC9zeW1ib2w+CiAgPC9kZWZzPgogIDxyZWN0IHdpZHRoPSIyMDAwIiBoZWlnaHQ9IjExMDAiIGZpbGw9InVybCgjY2FudmFzKSIvPgogIDxyZWN0IHg9IjQyIiB5PSIzNiIgd2lkdGg9IjE5MTYiIGhlaWdodD0iMTAyOCIgcng9IjM0IiBmaWxsPSJ1cmwoI3BhbmVsKSIgc3Ryb2tlPSIjNTM2Mzc3IiBzdHJva2Utd2lkdGg9IjQiIGZpbHRlcj0idXJsKCNzaGFkb3cpIi8+CiAgPHRleHQgeD0iMTAwMCIgeT0iMTAyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSI1MiIgZmlsbD0iI2Y4ZmFmYyI+VGhlIENhbGxlciBPd25zIHRoZSBUcmFuc2FjdGlvbiBCb3VuZGFyeTwvdGV4dD4KICA8dGV4dCB4PSIxMDAwIiB5PSIxNDYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxOSIgZmlsbD0iI2I2YzRkNiI+UmVwb3NpdG9yaWVzIGpvaW4gdGhlIGN1cnJlbnQgY29udGV4dDsgdGhleSBkbyBub3Qgb3BlbiBhIGhpZGRlbiB0cmFuc2FjdGlvbjwvdGV4dD4KCiAgPHJlY3QgeD0iNzAiIHk9IjE5NSIgd2lkdGg9IjE4NjAiIGhlaWdodD0iMzIwIiByeD0iMjgiIGZpbGw9IiMxMTE4MjciIHN0cm9rZT0iIzRjOGNjOCIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHRleHQgeD0iMTEwIiB5PSIyNDIiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjMyIiBmaWxsPSIjOWVkOGZmIj5KREJDIG93bmVyc2hpcCBsYW5lPC90ZXh0PgogIDxyZWN0IHg9IjcwIiB5PSI1NTUiIHdpZHRoPSIxODYwIiBoZWlnaHQ9IjMyMCIgcng9IjI4IiBmaWxsPSIjMTExODI3IiBzdHJva2U9IiMxNTljOTIiIHN0cm9rZS13aWR0aD0iMyIvPgogIDx0ZXh0IHg9IjExMCIgeT0iNjAyIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIzMiIgZmlsbD0iIzVlZWFkNCI+UjJEQkMgb3duZXJzaGlwIGxhbmU8L3RleHQ+CgogIDxnIGZpbHRlcj0idXJsKCNzaGFkb3cpIj4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxMDAiIHk9IjI4NSIgd2lkdGg9IjI4MCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjYzU4YjJhIiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSI0NTUiIHk9IjI4NSIgd2lkdGg9IjMyMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjOGI2YmQ2IiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSI4NTAiIHk9IjI4NSIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjNGM4Y2M4IiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxMjI1IiB5PSIyODUiIHdpZHRoPSIzMDAiIGhlaWdodD0iMTcwIiByeD0iMjQiIGZpbGw9IiMxNzIwMzMiIHN0cm9rZT0iIzRjOGNjOCIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgICA8cmVjdCBjbGFzcz0iY2FyZCIgeD0iMTYwMCIgeT0iMjg1IiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiNjNThiMmEiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjEwMCIgeT0iNjQ1IiB3aWR0aD0iMjgwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiNjNThiMmEiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjQ1NSIgeT0iNjQ1IiB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiM4YjZiZDYiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9Ijg1MCIgeT0iNjQ1IiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiMxNTljOTIiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjEyMjUiIHk9IjY0NSIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjMTU5YzkyIiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxNjAwIiB5PSI2NDUiIHdpZHRoPSIzMDAiIGhlaWdodD0iMTcwIiByeD0iMjQiIGZpbGw9IiMxNzIwMzMiIHN0cm9rZT0iI2M1OGIyYSIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgPC9nPgoKICA8ZyB0ZXh0LWFuY2hvcj0ibWlkZGxlIj4KICAgIDx0ZXh0IHg9IjI0MCIgeT0iMzQwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iI2Y2Yzk2YiI+QXBwbGljYXRpb24gLyBTcHJpbmc8L3RleHQ+PHRleHQgeD0iMjQwIiB5PSIzODAiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNiIgZmlsbD0iI2Q1ZGZlYiI+b3ducyB1c2UtY2FzZSBzY29wZTwvdGV4dD48dGV4dCB4PSIyNDAiIHk9IjQxMiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb21taXQg4oCiIHJvbGxiYWNrPC90ZXh0PgogICAgPHRleHQgeD0iNjE1IiB5PSIzNDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI3IiBmaWxsPSIjYzRiNWZkIj50cmFuc2FjdGlvbiB7IH08L3RleHQ+PHRleHQgeD0iNjE1IiB5PSIzODAiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNiIgZmlsbD0iI2Q1ZGZlYiI+SmRiY1RyYW5zYWN0aW9uIGNvbnRleHQ8L3RleHQ+PHRleHQgeD0iNjE1IiB5PSI0MTIiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNSIgZmlsbD0iI2I2YzRkNiI+Y29ubmVjdGlvbiArIGlzb2xhdGlvbjwvdGV4dD4KICAgIDx0ZXh0IHg9IjEwMDAiIHk9IjM0MCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiM5ZWQ4ZmYiPkpkYmNSZXBvc2l0b3J5PC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9IjM4MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj51c2VzIGN1cnJlbnQgY29udGV4dDwvdGV4dD48dGV4dCB4PSIxMDAwIiB5PSI0MTIiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNSIgZmlsbD0iI2ZkYTRhZiI+bmV2ZXIgY3JlYXRlcyB0cmFuc2FjdGlvbjwvdGV4dD4KICAgIDx0ZXh0IHg9IjEzNzUiIHk9IjM0MCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiM5ZWQ4ZmYiPkpEQkMgZHJpdmVyPC90ZXh0Pjx0ZXh0IHg9IjEzNzUiIHk9IjM4MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5ibG9ja2luZyBjb25uZWN0aW9uIEkvTzwvdGV4dD4KICAgIDx1c2UgaHJlZj0iI2RhdGFiYXNlLWljb24iIHg9IjE2MTgiIHk9IjMwMyIgd2lkdGg9IjkwIiBoZWlnaHQ9IjkwIi8+PHRleHQgeD0iMTc5NSIgeT0iMzUwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iI2Y2Yzk2YiI+RGF0YWJhc2U8L3RleHQ+PHRleHQgeD0iMTc5NSIgeT0iMzg4IiBmb250LWZhbWlseT0iQ29taWMgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNkNWRmZWIiPmR1cmFibGUgc3RhdGU8L3RleHQ+CgogICAgPHRleHQgeD0iMjQwIiB5PSI3MDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI3IiBmaWxsPSIjZjZjOTZiIj5BcHBsaWNhdGlvbiAvIFNwcmluZzwvdGV4dD48dGV4dCB4PSIyNDAiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5vd25zIGNvcm91dGluZSBzY29wZTwvdGV4dD48dGV4dCB4PSIyNDAiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb21taXQg4oCiIHJvbGxiYWNrPC90ZXh0PgogICAgPHRleHQgeD0iNjE1IiB5PSI3MDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI1IiBmaWxsPSIjYzRiNWZkIj5zdXNwZW5kVHJhbnNhY3Rpb24geyB9PC90ZXh0Pjx0ZXh0IHg9IjYxNSIgeT0iNzQwIiBmb250LWZhbWlseT0iQ29taWMgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiNkNWRmZWIiPlIyZGJjVHJhbnNhY3Rpb24gY29udGV4dDwvdGV4dD48dGV4dCB4PSI2MTUiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb25uZWN0aW9uICsgY2FuY2VsbGF0aW9uPC90ZXh0PgogICAgPHRleHQgeD0iMTAwMCIgeT0iNzAwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iIzVlZWFkNCI+UjJkYmNSZXBvc2l0b3J5PC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5GbG93IGNvbGxlY3RlZCBoZXJlPC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZmRhNGFmIj5uZXZlciBjcmVhdGVzIHRyYW5zYWN0aW9uPC90ZXh0PgogICAgPHRleHQgeD0iMTM3NSIgeT0iNzAwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iIzVlZWFkNCI+UjJEQkMgZHJpdmVyPC90ZXh0Pjx0ZXh0IHg9IjEzNzUiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5ub24tYmxvY2tpbmcgY29ubmVjdGlvbiBJL088L3RleHQ+CiAgICA8dXNlIGhyZWY9IiNkYXRhYmFzZS1pY29uIiB4PSIxNjE4IiB5PSI2NjMiIHdpZHRoPSI5MCIgaGVpZ2h0PSI5MCIvPjx0ZXh0IHg9IjE3OTUiIHk9IjcxMCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiNmNmM5NmIiPkRhdGFiYXNlPC90ZXh0Pjx0ZXh0IHg9IjE3OTUiIHk9Ijc0OCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZDVkZmViIj5kdXJhYmxlIHN0YXRlPC90ZXh0PgogIDwvZz4KCiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPgogICAgPHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTM4MCAzNzAgSDQ1NSIgc3Ryb2tlPSIjOWVkOGZmIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LWJsdWUpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTc3NSAzNzAgSDg1MCIgc3Ryb2tlPSIjOWVkOGZmIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LWJsdWUpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTExNTAgMzcwIEgxMjI1IiBzdHJva2U9IiM5ZWQ4ZmYiIG1hcmtlci1lbmQ9InVybCgjYXJyb3ctYmx1ZSkiLz48cGF0aCBjbGFzcz0iY29ubmVjdG9yIiBkPSJNMTUyNSAzNzAgSDE2MDAiIHN0cm9rZT0iIzllZDhmZiIgbWFya2VyLWVuZD0idXJsKCNhcnJvdy1ibHVlKSIvPgogICAgPHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTM4MCA3MzAgSDQ1NSIgc3Ryb2tlPSIjNWVlYWQ0IiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LXRlYWwpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTc3NSA3MzAgSDg1MCIgc3Ryb2tlPSIjNWVlYWQ0IiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LXRlYWwpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTExNTAgNzMwIEgxMjI1IiBzdHJva2U9IiM1ZWVhZDQiIG1hcmtlci1lbmQ9InVybCgjYXJyb3ctdGVhbCkiLz48cGF0aCBjbGFzcz0iY29ubmVjdG9yIiBkPSJNMTUyNSA3MzAgSDE2MDAiIHN0cm9rZT0iIzVlZWFkNCIgbWFya2VyLWVuZD0idXJsKCNhcnJvdy10ZWFsKSIvPgogIDwvZz4KCiAgPHJlY3QgeD0iMjIwIiB5PSI5MjUiIHdpZHRoPSIxNTYwIiBoZWlnaHQ9Ijc0IiByeD0iMjIiIGZpbGw9IiMyMDE5MjMiIHN0cm9rZT0iI2QxNmY3NSIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHRleHQgeD0iMTAwMCIgeT0iOTU4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNCIgZmlsbD0iI2ZkYTRhZiI+T25lIGJ1c2luZXNzIG9wZXJhdGlvbiwgb25lIG93bmVyLCBvbmUgcHJvcGFnYXRlZCB0cmFuc2FjdGlvbiBjb250ZXh0PC90ZXh0PgogIDx0ZXh0IHg9IjEwMDAiIHk9Ijk4NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5SZXR1cm5pbmcgYSBEQU8gZW50aXR5IG9yIHVuY29sbGVjdGVkIGRhdGFiYXNlIEZsb3cgY3Jvc3NlcyB0aGUgYm91bmRhcnkgYmVmb3JlIHRoZSB3b3JrIGlzIGNvbXBsZXRlLjwvdGV4dD4KPC9zdmc+Cg==" alt="서비스 또는 컨트롤러 경계가 JDBC transaction {} 블록과 R2DBC suspendTransaction {} 블록을 열고, 그 안에서 저장소 호출이 데이터베이스로 이어지는 트랜잭션 소유권 아키텍처">
-      <figcaption><code>docs/manual/assets/persistence/transaction-ownership.svg</code><span>SHA-256 1d7336238d24…</span></figcaption>
       <dialog id="architecture-transaction-ownership" aria-label="서비스 또는 컨트롤러 경계가 JDBC transaction {} 블록과 R2DBC suspendTransaction {} 블록을 열고, 그 안에서 저장소 호출이 데이터베이스로 이어지는 트랜잭션 소유권 아키텍처">
         <div class="dialog-bar">
           <strong>서비스 또는 컨트롤러 경계가 JDBC transaction {} 블록과 R2DBC suspendTransaction {} 블록을 열고, 그 안에서 저장소 호출이 데이터베이스로 이어지는 트랜잭션 소유권 아키텍처</strong>
@@ -304,7 +306,6 @@
         </div>
         <dl>
           <div><dt>경계 소유자</dt><dd><code>컨트롤러 / 서비스 transaction {}</code></dd></div>
-          <div><dt>근거 항목</dt><dd><a href="#source-jdbc-controller">jdbc-controller</a></dd></div>
         </dl>
       </header>
       <div class="sequence-canvas" style="--participants:4">
@@ -404,7 +405,6 @@
         </div>
         <dl>
           <div><dt>경계 소유자</dt><dd><code>서비스 transaction {}</code></dd></div>
-          <div><dt>근거 항목</dt><dd><a href="#source-jdbc-repository">jdbc-repository</a></dd></div>
         </dl>
       </header>
       <div class="sequence-canvas" style="--participants:4">
@@ -504,7 +504,6 @@
         </div>
         <dl>
           <div><dt>경계 소유자</dt><dd><code>코루틴 suspendTransaction {}</code></dd></div>
-          <div><dt>근거 항목</dt><dd><a href="#source-r2dbc-controller">r2dbc-controller</a></dd></div>
         </dl>
       </header>
       <div class="sequence-canvas" style="--participants:4">
@@ -604,7 +603,6 @@
         </div>
         <dl>
           <div><dt>경계 소유자</dt><dd><code>suspendTransaction {} 안의 수집자</code></dd></div>
-          <div><dt>근거 항목</dt><dd><a href="#source-r2dbc-test">r2dbc-test</a></dd></div>
         </dl>
       </header>
       <div class="sequence-canvas" style="--participants:4">
@@ -704,7 +702,6 @@
         </div>
         <dl>
           <div><dt>경계 소유자</dt><dd><code>트랜잭션보다 오래 유지되는 호출자</code></dd></div>
-          <div><dt>근거 항목</dt><dd><a href="#source-r2dbc-manual">r2dbc-manual</a></dd></div>
         </dl>
       </header>
       <div class="sequence-canvas" style="--participants:4">
@@ -804,7 +801,6 @@
         </div>
         <dl>
           <div><dt>경계 소유자</dt><dd><code>트랜잭션 블록 / 코루틴 스코프</code></dd></div>
-          <div><dt>근거 항목</dt><dd><a href="#source-r2dbc-test">r2dbc-test</a></dd></div>
         </dl>
       </header>
       <div class="sequence-canvas" style="--participants:4">
@@ -976,9 +972,9 @@
       </table>
     </div>
       </section></main>
+  <span id="status" class="sr-only" aria-live="polite">선택한 시나리오:</span>
   <footer>
-    <span>오프라인 단일 HTML · <span id="status" aria-live="polite">선택한 시나리오:</span></span>
-    <span><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/docs/manual/ko/guides/transaction-boundaries.md">docs/manual/ko/guides/transaction-boundaries.md</a> · <a href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/docs/superpowers/specs/2026-07-30-issue-410-exposed-visual-companions-design.md">설계 문서</a></span>
+    <span><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/docs/manual/ko/guides/transaction-boundaries.md">트랜잭션 경계 매뉴얼</a></span>
   </footer>
   <script>
     (() => {

@@ -193,15 +193,30 @@ async function captureOne({ root, documentId, locale, theme, audit = false }) {
           }
           const target = tabs.find((button) => button.dataset.scenario === 'r2dbc-flow-escape');
           target.click();
+          const selectedPanel = document.querySelector('[data-sequence="r2dbc-flow-escape"]');
+          const callLineColor = getComputedStyle(
+            selectedPanel.querySelector('.message-call .message-line'),
+          ).color;
+          const roleLineColor = getComputedStyle(
+            selectedPanel.querySelector('.lifeline'),
+          ).borderLeftColor;
+          const roleActivationColor = getComputedStyle(
+            selectedPanel.querySelector('.activation'),
+          ).borderLeftColor;
           const clicked = {
             scenarioCount: tabs.length,
             selectedScenario: target.getAttribute('aria-pressed'),
-            selectedPanelVisible: !document.querySelector('[data-sequence="r2dbc-flow-escape"]').hidden,
+            selectedPanelVisible: !selectedPanel.hidden,
             sequenceGeometry: {
               messageCount: geometry.length,
               maximumEndpointDelta: Math.max(...geometry.flatMap(({ startDelta, endDelta }) => [startDelta, endDelta])),
               arrowColorMismatchCount: geometry.filter(({ colorMatches }) => !colorMatches).length,
               invalidReturnDirectionCount: geometry.filter(({ kind, direction }) => kind === 'return' && direction !== 'reverse').length,
+              callLineColor,
+              roleLineColor,
+              roleActivationColor,
+              callRoleColorDistinct: callLineColor !== roleLineColor
+                && callLineColor !== roleActivationColor,
             },
           };
           tabs[0].focus();

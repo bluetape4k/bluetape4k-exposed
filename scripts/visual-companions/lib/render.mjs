@@ -33,7 +33,6 @@ export function renderArchitecture({ model, locale, architectureAssets }) {
         <span aria-hidden="true">↗</span> ${escapeHtml(copy.openArchitecture)}
       </button>
       <img src="${asset.dataUri}" alt="${escapeHtml(copy.architectureAlt[asset.id])}">
-      <figcaption><code>${escapeHtml(asset.source)}</code><span>SHA-256 ${escapeHtml(asset.sha256.slice(0, 12))}…</span></figcaption>
       <dialog id="architecture-${escapeHtml(asset.id)}" aria-label="${escapeHtml(copy.architectureAlt[asset.id])}">
         <div class="dialog-bar">
           <strong>${escapeHtml(copy.architectureAlt[asset.id])}</strong>
@@ -108,7 +107,6 @@ export function renderSequence({ scenario, locale, active }) {
         </div>
         <dl>
           <div><dt>${locale === 'ko' ? '경계 소유자' : 'Boundary owner'}</dt><dd><code>${escapeHtml(scenario.locales[locale].owner ?? scenario.owner)}</code></dd></div>
-          <div><dt>${locale === 'ko' ? '근거 항목' : 'Evidence entry'}</dt><dd><a href="#source-${escapeHtml(scenario.sourceRef)}">${escapeHtml(scenario.sourceRef)}</a></dd></div>
         </dl>
       </header>
       <div class="sequence-canvas" style="--participants:${scenario.participants.length}">
@@ -267,6 +265,9 @@ function renderStandaloneShell({ model, locale, body }) {
   const manual = model.kind === 'transaction'
     ? `docs/manual/${locale}/guides/transaction-boundaries.md`
     : `docs/manual/${locale}/guides/spring-and-ktor.md`;
+  const manualLabel = model.kind === 'transaction'
+    ? (locale === 'ko' ? '트랜잭션 경계 매뉴얼' : 'Transaction boundary manual')
+    : (locale === 'ko' ? 'Spring Boot 및 Ktor 통합 매뉴얼' : 'Spring Boot and Ktor integration manual');
   const source = 'docs/superpowers/specs/2026-07-30-issue-410-exposed-visual-companions-design.md';
   return `<!doctype html>
 <html lang="${locale}" data-theme="auto">
@@ -280,6 +281,7 @@ function renderStandaloneShell({ model, locale, body }) {
       --bg: #f3f6fa; --surface: #ffffff; --surface-2: #e9eef5; --ink: #142033;
       --muted: #526176; --line: #c9d3df; --navy: #132a46; --cyan: #007f91;
       --cyan-soft: #d8f3f6; --amber: #a65d00; --amber-soft: #fff0cc;
+      --call-line: #007f91; --role-line: #7d6fb2; --role-active: #6e59b8; --role-active-soft: #eee9ff;
       --teal: #167c73; --red: #a33a3a; --red-soft: #ffe4e4; --green: #1d7b52; --green-soft: #dcf5e8;
       --shadow: 0 18px 50px rgb(20 32 51 / .12); --radius: 20px;
       color-scheme: light;
@@ -289,6 +291,7 @@ function renderStandaloneShell({ model, locale, body }) {
       --bg: #07111f; --surface: #0e1d2e; --surface-2: #17293c; --ink: #edf5ff;
       --muted: #a8bbcf; --line: #31475f; --navy: #dcecff; --cyan: #55d6e8;
       --cyan-soft: #103c47; --amber: #ffbd5c; --amber-soft: #49351a;
+      --call-line: #55d6e8; --role-line: #a99ad6; --role-active: #b9a7ff; --role-active-soft: #2a254b;
       --teal: #5ee0d3; --red: #ff9898; --red-soft: #4a2529; --green: #6ee7ae; --green-soft: #163c2d;
       --shadow: 0 20px 60px rgb(0 0 0 / .38); color-scheme: dark;
     }
@@ -297,6 +300,7 @@ function renderStandaloneShell({ model, locale, body }) {
         --bg: #07111f; --surface: #0e1d2e; --surface-2: #17293c; --ink: #edf5ff;
         --muted: #a8bbcf; --line: #31475f; --navy: #dcecff; --cyan: #55d6e8;
         --cyan-soft: #103c47; --amber: #ffbd5c; --amber-soft: #49351a;
+        --call-line: #55d6e8; --role-line: #a99ad6; --role-active: #b9a7ff; --role-active-soft: #2a254b;
         --teal: #5ee0d3; --red: #ff9898; --red-soft: #4a2529; --green: #6ee7ae; --green-soft: #163c2d;
         --shadow: 0 20px 60px rgb(0 0 0 / .38); color-scheme: dark;
       }
@@ -304,6 +308,7 @@ function renderStandaloneShell({ model, locale, body }) {
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.65 Inter, Pretendard, ui-sans-serif, system-ui, sans-serif; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
     body::before { content: ""; position: fixed; inset: 0 0 auto; height: 320px; z-index: -1; background: radial-gradient(circle at 75% 0%, rgb(0 173 194 / .18), transparent 42%), linear-gradient(135deg, var(--surface), transparent); }
     a { color: var(--cyan); text-underline-offset: 3px; overflow-wrap: anywhere; }
     button { font: inherit; }
@@ -345,7 +350,6 @@ function renderStandaloneShell({ model, locale, body }) {
     .architecture-card { position: relative; margin: 0 0 22px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
     .architecture-card > img { display: block; width: 100%; height: auto; border-radius: 12px; background: #07111f; }
     .architecture-open { position: absolute; z-index: 2; top: 28px; right: 28px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 999px; background: rgb(7 17 31 / .88); color: #f2f8ff; cursor: pointer; }
-    figcaption { display: flex; justify-content: space-between; gap: 18px; color: var(--muted); padding: 12px 4px 0; font-size: .78rem; }
     dialog { width: min(96vw, 1500px); max-height: 94vh; padding: 0; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); color: var(--ink); box-shadow: 0 30px 100px #0009; }
     dialog::backdrop { background: rgb(0 7 17 / .84); backdrop-filter: blur(4px); }
     dialog img { display: block; width: 100%; height: auto; }
@@ -369,11 +373,11 @@ function renderStandaloneShell({ model, locale, body }) {
     .sequence-canvas { position: relative; min-width: 760px; padding: 22px 26px 32px; overflow: hidden; }
     .sequence-participants { display: grid; grid-template-columns: repeat(var(--participants), 1fr); min-height: 350px; }
     .sequence-participant { position: relative; text-align: center; }
-    .sequence-participant strong { position: relative; z-index: 2; display: block; min-height: 54px; margin: 0 5px; padding: 9px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font-size: .86rem; }
-    .lifeline { position: absolute; top: 54px; bottom: 0; left: 50%; border-left: 2px dashed var(--line); }
-    .activation { position: absolute; top: 82px; bottom: 34px; left: calc(50% - 5px); width: 10px; border: 1px solid var(--cyan); border-radius: 5px; background: var(--cyan-soft); }
+    .sequence-participant strong { position: relative; z-index: 2; display: block; min-height: 54px; margin: 0 5px; padding: 9px 8px; border: 1px solid var(--role-line); border-radius: 10px; background: var(--surface-2); font-size: .86rem; }
+    .lifeline { position: absolute; top: 54px; bottom: 0; left: 50%; border-left: 2px dashed var(--role-line); }
+    .activation { position: absolute; top: 82px; bottom: 34px; left: calc(50% - 5px); width: 10px; border: 2px solid var(--role-active); border-radius: 5px; background: var(--role-active-soft); }
     .sequence-messages { position: absolute; inset: 92px 26px 28px; display: grid; grid-template-rows: repeat(4, 1fr); margin: 0; padding: 0; list-style: none; pointer-events: none; }
-    .message { --message-color: var(--cyan); position: relative; grid-row: var(--row); align-self: center; min-height: 48px; color: var(--message-color); }
+    .message { --message-color: var(--call-line); position: relative; grid-row: var(--row); align-self: center; min-height: 48px; color: var(--message-color); }
     .message-return { --message-color: var(--teal); }
     .message-commit { --message-color: var(--green); }
     .message-rollback, .message-boundary-error { --message-color: var(--red); }
@@ -399,7 +403,7 @@ function renderStandaloneShell({ model, locale, body }) {
     tr:last-child th, tr:last-child td { border-bottom: 0; }
     .evidence-table code { font-size: .72rem; }
     .evidence-table td:nth-child(2) a, .evidence-table td:nth-child(3) a { white-space: nowrap; }
-    footer { width: min(1180px, calc(100% - 32px)); margin: 0 auto 50px; padding-top: 22px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 20px; color: var(--muted); font-size: .82rem; }
+    footer { width: min(1180px, calc(100% - 32px)); margin: 0 auto 50px; padding-top: 22px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 20px; color: var(--muted); font-size: .82rem; }
     [hidden] { display: none !important; }
     @media (max-width: 800px) {
       .hero { grid-template-columns: 1fr; margin-top: 48px; }
@@ -409,7 +413,7 @@ function renderStandaloneShell({ model, locale, body }) {
       .scenario-tabs { grid-template-columns: 1fr 1fr; }
       .sequence-summary { grid-template-columns: 1fr; }
       .sequence-canvas { overflow-x: auto; }
-      figcaption, footer { flex-direction: column; }
+      footer { flex-direction: column; }
     }
     @media (max-width: 480px) {
       .topbar, .hero, main, footer { width: min(100% - 22px, 1180px); }
@@ -449,9 +453,9 @@ function renderStandaloneShell({ model, locale, body }) {
     </aside>
   </header>
   <main>${body}</main>
+  <span id="status" class="sr-only" aria-live="polite">${escapeHtml(copy.statusPrefix ?? copy.title)}</span>
   <footer>
-    <span>${locale === 'ko' ? '오프라인 단일 HTML' : 'Offline standalone HTML'} · <span id="status" aria-live="polite">${escapeHtml(copy.statusPrefix ?? copy.title)}</span></span>
-    <span><a data-source-link href="${repositoryBlob}${manual}">${escapeHtml(manual)}</a> · <a href="${repositoryBlob}${source}">${locale === 'ko' ? '설계 문서' : 'design source'}</a></span>
+    <span><a data-source-link href="${repositoryBlob}${manual}">${manualLabel}</a></span>
   </footer>
   <script>
     (() => {

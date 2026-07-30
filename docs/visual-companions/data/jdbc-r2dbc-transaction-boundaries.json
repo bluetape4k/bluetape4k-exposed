@@ -22,7 +22,7 @@
   "locales": {
     "en": {
       "title": "JPA to Exposed: Make Transaction Ownership Visible",
-      "eyebrow": "Interactive architecture companion · Issue #410",
+      "eyebrow": "Interactive architecture companion",
       "lede": "Exposed trades part of JPA/Hibernate's object-graph automation for explicit SQL intent. The decisive migration question is not which repository opens a transaction, but which application boundary owns the complete unit of work.",
       "openArchitecture": "Open the original architecture diagram",
       "architectureAlt": {
@@ -84,7 +84,7 @@
     },
     "ko": {
       "title": "JPA에서 Exposed로: 트랜잭션 소유권을 드러내기",
-      "eyebrow": "대화형 아키텍처 해설 · Issue #410",
+      "eyebrow": "대화형 아키텍처 해설",
       "lede": "Exposed는 JPA/Hibernate가 제공하는 객체 그래프 자동화 일부를 명시적인 SQL 의도와 실행 경계로 바꾼다. 마이그레이션의 핵심 질문은 어느 저장소가 트랜잭션을 여느냐가 아니라, 어느 애플리케이션 경계가 전체 작업 단위를 소유하느냐이다.",
       "openArchitecture": "기존 아키텍처 다이어그램 크게 보기",
       "architectureAlt": {
