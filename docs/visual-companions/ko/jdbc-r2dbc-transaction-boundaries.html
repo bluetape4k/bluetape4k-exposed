@@ -77,6 +77,8 @@
     @media (prefers-color-scheme: dark) { :root[data-theme="auto"] .invariant-callout { color: #07111f; } }
     .invariant-callout p { margin: 0; }
     .architecture-card { position: relative; margin: 0 0 22px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+    .architecture-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+    .architecture-compare .architecture-card { margin: 0; }
     .architecture-card figcaption { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
     .architecture-card figcaption strong { display: block; margin-bottom: 4px; font-size: 1.05rem; }
     .architecture-card figcaption span { display: block; color: var(--muted); font-size: .88rem; }
@@ -91,6 +93,18 @@
     .scenario-tab { min-height: 66px; display: flex; align-items: center; gap: 12px; text-align: left; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); color: var(--ink); padding: 12px 15px; cursor: pointer; }
     .scenario-tab span { font: 700 .74rem monospace; color: var(--muted); }
     .scenario-tab[aria-pressed="true"] { border-color: var(--cyan); background: var(--cyan-soft); box-shadow: inset 0 0 0 1px var(--cyan); }
+    .scenario-detail-stack { margin-top: 18px; }
+    .scenario-detail { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--line); box-shadow: var(--shadow); }
+    .scenario-detail-column { padding: 24px; background: var(--surface); }
+    .scenario-detail-column h3 { margin: 0 0 16px; font-size: 1rem; letter-spacing: .02em; }
+    .condition-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+    .condition-list li { min-height: 92px; display: grid; grid-template-columns: minmax(92px, auto) 1fr; gap: 14px; align-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-2); }
+    .condition-list strong { display: block; color: var(--ink); }
+    .condition-list p { margin: 4px 0 0; color: var(--muted); font-size: .86rem; }
+    .state-badge { display: inline-flex; justify-content: center; padding: 5px 8px; border-radius: 999px; background: var(--cyan-soft); color: var(--cyan); font: 800 .66rem/1.2 monospace; letter-spacing: .04em; text-align: center; }
+    .state-created, .state-matched, .state-reused { background: var(--green-soft); color: var(--green); }
+    .state-missing, .state-unavailable, .state-inactive { background: var(--red-soft); color: var(--red); }
+    .state-backed-off, .state-present, .state-required, .state-irrelevant { background: var(--amber-soft); color: var(--amber); }
     .sequence-panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; box-shadow: var(--shadow); }
     .sequence-summary { display: grid; grid-template-columns: 1.2fr .8fr; gap: 30px; padding: 26px; border-bottom: 1px solid var(--line); }
     .sequence-summary h3 { font-size: 1.6rem; margin: 10px 0 3px; }
@@ -102,6 +116,10 @@
     .scenario-outcome { display: inline-flex; border-radius: 999px; padding: 4px 9px; font: 800 .72rem monospace; letter-spacing: .05em; }
     .outcome-commit { background: var(--green-soft); color: var(--green); }
     .outcome-rollback, .outcome-boundary-error { background: var(--red-soft); color: var(--red); }
+    .outcome-created, .outcome-reused { background: var(--green-soft); color: var(--green); }
+    .outcome-application-owned, .outcome-mixed { background: var(--cyan-soft); color: var(--cyan); }
+    .outcome-backed-off { background: var(--amber-soft); color: var(--amber); }
+    .outcome-unavailable, .outcome-inactive { background: var(--red-soft); color: var(--red); }
     .sequence-canvas { position: relative; min-width: 760px; padding: 22px 26px 32px; overflow: hidden; }
     .sequence-participants { display: grid; grid-template-columns: repeat(var(--participants), 1fr); min-height: 350px; }
     .sequence-participant { position: relative; text-align: center; }
@@ -113,6 +131,9 @@
     .message-return { --message-color: var(--teal); }
     .message-commit { --message-color: var(--green); }
     .message-rollback, .message-boundary-error { --message-color: var(--red); }
+    .message-created, .message-reused { --message-color: var(--green); }
+    .message-back-off { --message-color: var(--amber); }
+    .message-unavailable { --message-color: var(--red); }
     .message-copy { position: absolute; z-index: 2; top: 0; left: var(--line-left); width: calc(var(--line-right) - var(--line-left)); display: flex; align-items: center; justify-content: center; min-width: max-content; }
     .message-line { position: absolute; top: 34px; left: var(--line-left); right: calc(100% - var(--line-right)); color: var(--message-color); border-top: 2px solid currentColor; }
     .message-line::after { content: ""; position: absolute; top: -7px; width: 0; height: 0; border: 6px solid transparent; }
@@ -141,8 +162,10 @@
       .hero { grid-template-columns: 1fr; margin-top: 48px; }
       .hero-aside { display: none; }
       .mental-grid { grid-template-columns: 1fr; }
+      .architecture-compare { grid-template-columns: 1fr; }
       .trade-arrow { min-height: 54px; transform: rotate(90deg); }
       .scenario-tabs { grid-template-columns: 1fr 1fr; }
+      .scenario-detail { grid-template-columns: 1fr; }
       .sequence-summary { grid-template-columns: 1fr; }
       .sequence-canvas { overflow-x: auto; }
       footer { flex-direction: column; }
@@ -156,6 +179,7 @@
       .section-heading { grid-template-columns: 42px 1fr; gap: 10px; }
       .section-number { width: 38px; height: 38px; }
       .scenario-tabs { grid-template-columns: 1fr; }
+      .condition-list li { grid-template-columns: 1fr; }
       .invariant-callout { grid-template-columns: 1fr; }
       .architecture-card figcaption { align-items: stretch; flex-direction: column; gap: 12px; }
       .architecture-open { width: 100%; }
@@ -1031,6 +1055,9 @@
         }
         for (const panel of document.querySelectorAll('[data-sequence]')) {
           panel.hidden = panel.dataset.sequence !== id;
+        }
+        for (const panel of document.querySelectorAll('[data-scenario-detail]')) {
+          panel.hidden = panel.dataset.scenarioDetail !== id;
         }
         const selected = scenarioButtons.find((button) => button.dataset.scenario === id);
         if (selected && announce) status.textContent = '선택한 시나리오:' + ' ' + selected.textContent.trim();

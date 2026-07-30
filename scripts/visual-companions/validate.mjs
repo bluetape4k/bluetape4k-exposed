@@ -142,6 +142,18 @@ function validateStandaloneHtml({ content, document, model, locale, errors }) {
       requireMatch(errors, content, pattern, `${prefix} must contain ${message}`);
     }
   }
+  if (model.kind === 'activation') {
+    for (const [pattern, message] of [
+      [/data-scenario-detail=/, 'scenario condition/result panel'],
+      [/data-condition-state=/, 'condition state ledger'],
+      [/data-result-state=/, 'result ownership ledger'],
+      [/class=["'][^"']*architecture-compare/, 'side-by-side architecture comparison'],
+      [/id=["']configuration-recipes["']/, 'configuration recipes'],
+      [/id=["']failure-diagnostics["']/, 'failure diagnostics'],
+    ]) {
+      requireMatch(errors, content, pattern, `${prefix} must contain ${message}`);
+    }
+  }
   if (containsForbiddenRuntimeDependency(content)) {
     errors.push(`${prefix} contains a forbidden runtime dependency`);
   }

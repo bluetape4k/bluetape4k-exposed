@@ -61,7 +61,7 @@ export function renderScenarioExplorer({ model, locale }) {
             id="scenario-${escapeHtml(scenario.id)}"
             class="scenario-tab"
             data-scenario="${escapeHtml(scenario.id)}"
-            aria-controls="sequence-${escapeHtml(scenario.id)}"
+            aria-controls="${model.kind === 'activation' ? 'scenario-detail' : 'sequence'}-${escapeHtml(scenario.id)}"
             aria-pressed="${index === 0}">
       <span>${String(index + 1).padStart(2, '0')}</span>
       ${escapeHtml(scenario.locales[locale].label)}
@@ -73,7 +73,7 @@ function participantIndex(scenario, id) {
   return scenario.participants.findIndex((participant) => participant.id === id) + 1;
 }
 
-export function renderSequence({ scenario, locale, active }) {
+export function renderSequence({ scenario, locale, active, labels = {} }) {
   const participants = scenario.participants.map((participant) => `
     <div class="sequence-participant" data-participant="${escapeHtml(participant.id)}">
       <strong>${escapeHtml(participant.locales[locale].label)}</strong>
@@ -99,7 +99,7 @@ export function renderSequence({ scenario, locale, active }) {
           style="--line-start:${start}%;--line-end:${end}%;--line-left:${left}%;--line-right:${right}%;--row:${index + 1}">
         <span class="message-copy">
           <span class="message-number">${index + 1}</span>
-          <span class="message-kind">${escapeHtml(message.kind.replace('-', ' ').toUpperCase())}</span>
+          <span class="message-kind">${escapeHtml(labels.messageKindLabels?.[message.kind] ?? message.kind.replace('-', ' ').toUpperCase())}</span>
           <span class="message-label">${escapeHtml(message.locales[locale].label)}</span>
         </span>
         <span class="message-line" aria-hidden="true"></span>
@@ -112,7 +112,7 @@ export function renderSequence({ scenario, locale, active }) {
              ${active ? '' : 'hidden'}>
       <header class="sequence-summary">
         <div>
-          <span class="scenario-outcome outcome-${escapeHtml(scenario.outcome)}">${escapeHtml(scenario.outcome.replace('-', ' ').toUpperCase())}</span>
+          <span class="scenario-outcome outcome-${escapeHtml(scenario.outcome)}">${escapeHtml(labels.outcomeLabels?.[scenario.outcome] ?? scenario.outcome.replace('-', ' ').toUpperCase())}</span>
           <h3>${escapeHtml(scenario.locales[locale].label)}</h3>
           <p>${escapeHtml(scenario.locales[locale].summary)}</p>
         </div>
@@ -129,6 +129,36 @@ export function renderSequence({ scenario, locale, active }) {
         <span>${escapeHtml(scenario.locales[locale].outcome.split(' · ')[1] ?? '')}</span>
       </div>
     </article>`;
+}
+
+function renderActivationScenarioDetails({ model, locale }) {
+  const copy = model.locales[locale];
+  return model.scenarios.map((scenario, index) => `
+    <article class="scenario-detail"
+             id="scenario-detail-${escapeHtml(scenario.id)}"
+             data-scenario-detail="${escapeHtml(scenario.id)}"
+             ${index === 0 ? '' : 'hidden'}>
+      <div class="scenario-detail-column">
+        <h3>${escapeHtml(copy.conditionHeading)}</h3>
+        <ol class="condition-list">
+          ${scenario.conditions.map((condition) => `
+            <li data-condition-state="${escapeHtml(condition.state)}">
+              <span class="state-badge state-${escapeHtml(condition.state)}">${escapeHtml(copy.stateLabels?.[condition.state] ?? condition.state.replace('-', ' ').toUpperCase())}</span>
+              <div><strong>${inlineCode(condition.locales[locale].label)}</strong><p>${inlineCode(condition.locales[locale].detail)}</p></div>
+            </li>`).join('')}
+        </ol>
+      </div>
+      <div class="scenario-detail-column">
+        <h3>${escapeHtml(copy.resultHeading)}</h3>
+        <ol class="condition-list result-list">
+          ${scenario.results.map((result) => `
+            <li data-result-state="${escapeHtml(result.state)}">
+              <span class="state-badge state-${escapeHtml(result.state)}">${escapeHtml(copy.stateLabels?.[result.state] ?? result.state.replace('-', ' ').toUpperCase())}</span>
+              <div><strong>${inlineCode(result.locales[locale].label)}</strong><p>${inlineCode(result.locales[locale].detail)}</p></div>
+            </li>`).join('')}
+        </ol>
+      </div>
+    </article>`).join('');
 }
 
 export function renderEvidenceLedger({ model, locale }) {
@@ -207,7 +237,7 @@ function renderTransactionDocument({ model, locale, architectureAssets }) {
       traceableClaims: 'TRACEABLE CLAIMS',
     };
   const sequences = model.scenarios.map((scenario, index) =>
-    renderSequence({ scenario, locale, active: index === 0 })).join('');
+    renderSequence({ scenario, locale, active: index === 0, labels: copy })).join('');
   return renderStandaloneShell({
     model,
     locale,
@@ -244,29 +274,71 @@ function renderTransactionDocument({ model, locale, architectureAssets }) {
   });
 }
 
-function renderActivationPlaceholder({ model, locale, architectureAssets }) {
+function renderActivationDocument({ model, locale, architectureAssets }) {
   const copy = model.locales[locale];
+  const sequences = model.scenarios.map((scenario, index) =>
+    renderSequence({ scenario, locale, active: index === 0, labels: copy })).join('');
+  const labels = locale === 'ko'
+    ? {
+      architecture: '원본 아키텍처',
+      conditionLab: '조건 실험실',
+      sequence: '호출 → 평가 → 결과',
+      responsibility: '소유권',
+      recipe: '구성 레시피',
+      diagnosis: '실패 진단',
+      decision: '선택 기준',
+      evidence: '검증 근거',
+    }
+    : {
+      architecture: 'SOURCE ARCHITECTURE',
+      conditionLab: 'CONDITION LAB',
+      sequence: 'CALL → EVALUATE → RESULT',
+      responsibility: 'OWNERSHIP',
+      recipe: 'CONFIGURATION RECIPES',
+      diagnosis: 'FAILURE DIAGNOSTICS',
+      decision: 'DECISION GUIDE',
+      evidence: 'TRACEABLE CLAIMS',
+    };
+  const body = `
+      <section id="mental-model">${renderMentalModel(model, locale)}</section>
+      <section id="architecture">
+        <div class="section-heading"><span class="section-number">02</span><div><p class="kicker">${labels.architecture}</p><h2>${escapeHtml(copy.architectureHeading)}</h2><p>${escapeHtml(copy.architectureIntro)}</p></div></div>
+        <div class="architecture-compare">${renderArchitecture({ model, locale, architectureAssets })}</div>
+      </section>
+      <section id="scenario-explorer">
+        <div class="section-heading"><span class="section-number">03</span><div><p class="kicker">${labels.conditionLab}</p><h2>${escapeHtml(copy.scenarioHeading)}</h2><p>${escapeHtml(copy.scenarioIntro)}</p></div></div>
+        <div class="scenario-tabs" role="group" aria-label="${escapeHtml(copy.scenarioHeading)}">${renderScenarioExplorer({ model, locale })}</div>
+        <div class="scenario-detail-stack">${renderActivationScenarioDetails({ model, locale })}</div>
+      </section>
+      <section id="sequence">
+        <div class="section-heading"><span class="section-number">04</span><div><p class="kicker">${labels.sequence}</p><h2>${escapeHtml(copy.sequenceHeading)}</h2></div></div>
+        <div class="sequence-stack">${sequences}</div>
+      </section>
+      <section id="ownership-matrix">
+        <div class="section-heading"><span class="section-number">05</span><div><p class="kicker">${labels.responsibility}</p><h2>${escapeHtml(copy.ownershipHeading)}</h2></div></div>
+        ${renderTable(copy.matrixHeaders, copy.matrix)}
+      </section>
+      <section id="configuration-recipes">
+        <div class="section-heading"><span class="section-number">06</span><div><p class="kicker">${labels.recipe}</p><h2>${escapeHtml(copy.recipeHeading)}</h2></div></div>
+        ${renderTable(copy.recipeHeaders, copy.recipes, 'recipe-table')}
+      </section>
+      <section id="failure-diagnostics">
+        <div class="section-heading"><span class="section-number">07</span><div><p class="kicker">${labels.diagnosis}</p><h2>${escapeHtml(copy.failureHeading)}</h2></div></div>
+        ${renderTable(copy.failureHeaders, copy.failures, 'failure-table')}
+      </section>
+      <section id="tradeoffs">
+        <div class="section-heading"><span class="section-number">08</span><div><p class="kicker">${labels.decision}</p><h2>${escapeHtml(copy.tradeoffHeading)}</h2></div></div>
+        ${renderTable(copy.tradeoffHeaders, copy.tradeoffs, 'tradeoff-table')}
+      </section>
+      <section id="evidence">
+        <div class="section-heading"><span class="section-number">09</span><div><p class="kicker">${labels.evidence}</p><h2>${escapeHtml(copy.evidenceHeading)}</h2></div></div>
+        ${renderEvidenceLedger({ model, locale })}
+      </section>
+    `.replaceAll(/[ \t]+$/gm, '');
   return renderStandaloneShell({
     model,
     locale,
-    body: `
-      <section id="mental-model" class="pending-card">
-        <p class="kicker">USER REVIEW GATE</p>
-        <h2>${escapeHtml(copy.title)}</h2>
-        <p>${escapeHtml(copy.lede)}</p>
-      </section>
-      <section id="architecture">
-        <div class="section-heading"><span class="section-number">01</span><div><p class="kicker">SOURCE DIAGRAMS</p><h2>${escapeHtml(copy.openArchitecture)}</h2></div></div>
-        ${renderArchitecture({ model, locale, architectureAssets })}
-      </section>
-      <section id="scenario-explorer"><span data-view="conditions"></span></section>
-      <section id="sequence"></section>
-      <section id="ownership-matrix"></section>
-      <section id="code-mapping"></section>
-      <section id="configuration-recipes"></section>
-      <section id="failure-diagnostics"></section>
-      <section id="tradeoffs"></section>
-      <section id="evidence">${renderEvidenceLedger({ model, locale })}</section>`,
+    body,
   });
 }
 
@@ -359,6 +431,8 @@ function renderStandaloneShell({ model, locale, body }) {
     @media (prefers-color-scheme: dark) { :root[data-theme="auto"] .invariant-callout { color: #07111f; } }
     .invariant-callout p { margin: 0; }
     .architecture-card { position: relative; margin: 0 0 22px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+    .architecture-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+    .architecture-compare .architecture-card { margin: 0; }
     .architecture-card figcaption { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
     .architecture-card figcaption strong { display: block; margin-bottom: 4px; font-size: 1.05rem; }
     .architecture-card figcaption span { display: block; color: var(--muted); font-size: .88rem; }
@@ -373,6 +447,18 @@ function renderStandaloneShell({ model, locale, body }) {
     .scenario-tab { min-height: 66px; display: flex; align-items: center; gap: 12px; text-align: left; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); color: var(--ink); padding: 12px 15px; cursor: pointer; }
     .scenario-tab span { font: 700 .74rem monospace; color: var(--muted); }
     .scenario-tab[aria-pressed="true"] { border-color: var(--cyan); background: var(--cyan-soft); box-shadow: inset 0 0 0 1px var(--cyan); }
+    .scenario-detail-stack { margin-top: 18px; }
+    .scenario-detail { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--line); box-shadow: var(--shadow); }
+    .scenario-detail-column { padding: 24px; background: var(--surface); }
+    .scenario-detail-column h3 { margin: 0 0 16px; font-size: 1rem; letter-spacing: .02em; }
+    .condition-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+    .condition-list li { min-height: 92px; display: grid; grid-template-columns: minmax(92px, auto) 1fr; gap: 14px; align-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-2); }
+    .condition-list strong { display: block; color: var(--ink); }
+    .condition-list p { margin: 4px 0 0; color: var(--muted); font-size: .86rem; }
+    .state-badge { display: inline-flex; justify-content: center; padding: 5px 8px; border-radius: 999px; background: var(--cyan-soft); color: var(--cyan); font: 800 .66rem/1.2 monospace; letter-spacing: .04em; text-align: center; }
+    .state-created, .state-matched, .state-reused { background: var(--green-soft); color: var(--green); }
+    .state-missing, .state-unavailable, .state-inactive { background: var(--red-soft); color: var(--red); }
+    .state-backed-off, .state-present, .state-required, .state-irrelevant { background: var(--amber-soft); color: var(--amber); }
     .sequence-panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; box-shadow: var(--shadow); }
     .sequence-summary { display: grid; grid-template-columns: 1.2fr .8fr; gap: 30px; padding: 26px; border-bottom: 1px solid var(--line); }
     .sequence-summary h3 { font-size: 1.6rem; margin: 10px 0 3px; }
@@ -384,6 +470,10 @@ function renderStandaloneShell({ model, locale, body }) {
     .scenario-outcome { display: inline-flex; border-radius: 999px; padding: 4px 9px; font: 800 .72rem monospace; letter-spacing: .05em; }
     .outcome-commit { background: var(--green-soft); color: var(--green); }
     .outcome-rollback, .outcome-boundary-error { background: var(--red-soft); color: var(--red); }
+    .outcome-created, .outcome-reused { background: var(--green-soft); color: var(--green); }
+    .outcome-application-owned, .outcome-mixed { background: var(--cyan-soft); color: var(--cyan); }
+    .outcome-backed-off { background: var(--amber-soft); color: var(--amber); }
+    .outcome-unavailable, .outcome-inactive { background: var(--red-soft); color: var(--red); }
     .sequence-canvas { position: relative; min-width: 760px; padding: 22px 26px 32px; overflow: hidden; }
     .sequence-participants { display: grid; grid-template-columns: repeat(var(--participants), 1fr); min-height: 350px; }
     .sequence-participant { position: relative; text-align: center; }
@@ -395,6 +485,9 @@ function renderStandaloneShell({ model, locale, body }) {
     .message-return { --message-color: var(--teal); }
     .message-commit { --message-color: var(--green); }
     .message-rollback, .message-boundary-error { --message-color: var(--red); }
+    .message-created, .message-reused { --message-color: var(--green); }
+    .message-back-off { --message-color: var(--amber); }
+    .message-unavailable { --message-color: var(--red); }
     .message-copy { position: absolute; z-index: 2; top: 0; left: var(--line-left); width: calc(var(--line-right) - var(--line-left)); display: flex; align-items: center; justify-content: center; min-width: max-content; }
     .message-line { position: absolute; top: 34px; left: var(--line-left); right: calc(100% - var(--line-right)); color: var(--message-color); border-top: 2px solid currentColor; }
     .message-line::after { content: ""; position: absolute; top: -7px; width: 0; height: 0; border: 6px solid transparent; }
@@ -423,8 +516,10 @@ function renderStandaloneShell({ model, locale, body }) {
       .hero { grid-template-columns: 1fr; margin-top: 48px; }
       .hero-aside { display: none; }
       .mental-grid { grid-template-columns: 1fr; }
+      .architecture-compare { grid-template-columns: 1fr; }
       .trade-arrow { min-height: 54px; transform: rotate(90deg); }
       .scenario-tabs { grid-template-columns: 1fr 1fr; }
+      .scenario-detail { grid-template-columns: 1fr; }
       .sequence-summary { grid-template-columns: 1fr; }
       .sequence-canvas { overflow-x: auto; }
       footer { flex-direction: column; }
@@ -438,6 +533,7 @@ function renderStandaloneShell({ model, locale, body }) {
       .section-heading { grid-template-columns: 42px 1fr; gap: 10px; }
       .section-number { width: 38px; height: 38px; }
       .scenario-tabs { grid-template-columns: 1fr; }
+      .condition-list li { grid-template-columns: 1fr; }
       .invariant-callout { grid-template-columns: 1fr; }
       .architecture-card figcaption { align-items: stretch; flex-direction: column; gap: 12px; }
       .architecture-open { width: 100%; }
@@ -499,6 +595,9 @@ function renderStandaloneShell({ model, locale, body }) {
         for (const panel of document.querySelectorAll('[data-sequence]')) {
           panel.hidden = panel.dataset.sequence !== id;
         }
+        for (const panel of document.querySelectorAll('[data-scenario-detail]')) {
+          panel.hidden = panel.dataset.scenarioDetail !== id;
+        }
         const selected = scenarioButtons.find((button) => button.dataset.scenario === id);
         if (selected && announce) status.textContent = '${escapeHtml(copy.statusPrefix ?? 'Selected')}' + ' ' + selected.textContent.trim();
       };
@@ -536,5 +635,5 @@ function renderStandaloneShell({ model, locale, body }) {
 export function renderDocument({ model, locale, architectureAssets }) {
   return model.kind === 'transaction'
     ? renderTransactionDocument({ model, locale, architectureAssets })
-    : renderActivationPlaceholder({ model, locale, architectureAssets });
+    : renderActivationDocument({ model, locale, architectureAssets });
 }

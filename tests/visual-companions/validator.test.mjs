@@ -120,6 +120,34 @@ test('activation companion stays private while its deep redesign is gated', asyn
   assert.equal(activation.locales.ko.captures, undefined);
 });
 
+test('activation companion exposes condition, ownership, recipe, and failure surfaces', async () => {
+  for (const relativePath of [
+    'docs/visual-companions/en/spring-boot-exposed-activation.html',
+    'docs/visual-companions/ko/spring-boot-exposed-activation.html',
+  ]) {
+    const content = await read(relativePath);
+    for (const marker of [
+      'data-scenario-detail="jdbc-ready"',
+      'data-condition-state="matched"',
+      'data-result-state="created"',
+      'class="architecture-compare"',
+      'id="configuration-recipes"',
+      'id="failure-diagnostics"',
+      'data-sequence="entity-class-absent"',
+      'ExposedMappingContext',
+      'transactionManagerRef',
+      'R2dbcDatabase',
+    ]) {
+      assert.match(content, new RegExp(marker));
+    }
+  }
+});
+
+test('generator owns only locale-specific activation documents', async () => {
+  await assert.rejects(read('docs/visual-companions/spring-boot-exposed-activation.html'), /ENOENT/);
+  await assert.rejects(read('docs/visual-companions/spring-boot-exposed-activation.ko.html'), /ENOENT/);
+});
+
 test('duplicate document ids are rejected', async () => {
   await expectInvalid(async ({ root, manifest }) => {
     manifest.documents[1].id = manifest.documents[0].id;
