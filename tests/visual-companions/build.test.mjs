@@ -34,6 +34,60 @@ test('models expose the approved document and scenario ids', async () => {
       'rollback-or-cancellation',
     ],
   );
+  assert.deepEqual(
+    models[1].scenarios.map(({ id }) => id),
+    [
+      'jdbc-ready',
+      'r2dbc-ready',
+      'dual-stack',
+      'custom-jdbc-manager',
+      'custom-mapping-context',
+      'missing-infrastructure',
+      'entity-class-absent',
+    ],
+  );
+  assert.deepEqual(
+    models[1].sections.map(({ id }) => id),
+    [
+      'mental-model',
+      'architecture',
+      'scenario-explorer',
+      'sequence',
+      'ownership-matrix',
+      'configuration-recipes',
+      'failure-diagnostics',
+      'tradeoffs',
+      'evidence',
+    ],
+  );
+});
+
+test('activation companion models conditions, results, sequences, and source evidence', async () => {
+  const models = await loadCompanionModels(root);
+  const activation = models.find(({ id }) => id === 'spring-boot-exposed-activation');
+
+  assert.equal(activation.kind, 'activation');
+  assert.equal(activation.scenarios.length, 7);
+  assert.ok(activation.sources.length >= 10);
+  for (const scenario of activation.scenarios) {
+    assert.ok(scenario.conditions.length >= 2, `${scenario.id} conditions`);
+    assert.ok(scenario.results.length >= 2, `${scenario.id} results`);
+    assert.ok(scenario.participants.length >= 4, `${scenario.id} participants`);
+    assert.ok(scenario.messages.length >= 4, `${scenario.id} messages`);
+    assert.ok(scenario.locales.en.label);
+    assert.ok(scenario.locales.ko.label);
+    assert.ok(scenario.locales.en.summary);
+    assert.ok(scenario.locales.ko.summary);
+    assert.ok(scenario.locales.en.outcome);
+    assert.ok(scenario.locales.ko.outcome);
+  }
+  for (const source of activation.sources) {
+    assert.ok(source.sourcePath);
+    assert.ok(source.testPath);
+    assert.ok(source.verificationCommand);
+    assert.ok(source.locales.en.claim);
+    assert.ok(source.locales.ko.claim);
+  }
 });
 
 test('transaction companion compares JPA with Exposed before the Exposed detail diagram', async () => {
@@ -201,4 +255,49 @@ test('evidence links keep full targets but display concise source names', async 
     /href="[^"]*coroutine-transactions\.md"><code>coroutine-transactions\.md<\/code>/,
   );
   assert.doesNotMatch(document, /<code>exposed\/jdbc\/src\/main\/kotlin/);
+});
+
+test('activation evidence uses concise source labels without discarding link targets', async () => {
+  const models = await loadCompanionModels(root);
+  const model = models.find(({ id }) => id === 'spring-boot-exposed-activation');
+  const document = renderDocument({
+    model,
+    locale: 'ko',
+    architectureAssets: model.architecture.map((asset) => ({
+      ...asset,
+      dataUri: 'data:image/png;base64,AA==',
+    })),
+  });
+
+  assert.match(
+    document,
+    /href="[^"]*ExposedSpringDataAutoConfiguration\.kt"><code>ExposedSpringDataAutoConfiguration<\/code>/,
+  );
+  assert.match(
+    document,
+    /href="[^"]*spring-and-ktor\.md"><code>spring-and-ktor\.md<\/code>/,
+  );
+  assert.doesNotMatch(document, /<code>spring-boot\/jdbc\/src\/main\/kotlin/);
+});
+
+test('activation sequences begin at application input and return framework results with localized labels', async () => {
+  const models = await loadCompanionModels(root);
+  const model = models.find(({ id }) => id === 'spring-boot-exposed-activation');
+
+  for (const scenario of model.scenarios) {
+    assert.equal(scenario.participants[0].id, 'application', scenario.id);
+  }
+
+  const scenario = model.scenarios.find(({ id }) => id === 'jdbc-ready');
+  const sequence = renderSequence({
+    scenario,
+    locale: 'ko',
+    active: true,
+    labels: model.locales.ko,
+  });
+  assert.match(sequence, /data-from="application"[\s\S]*data-to="spring-boot"/);
+  assert.match(sequence, /data-from="integration"[\s\S]*data-to="application"/);
+  assert.match(sequence, /class="message-kind">호출<\/span>/);
+  assert.match(sequence, /class="message-kind">반환<\/span>/);
+  assert.match(sequence, /outcome-created">생성됨<\/span>/);
 });

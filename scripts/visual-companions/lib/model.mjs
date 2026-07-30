@@ -49,6 +49,19 @@ function assertUniqueIds(model, field) {
   }
 }
 
+function assertLocalizedCopy(owner, field, required = ['label']) {
+  if (Object.keys(owner.locales ?? {}).sort().join(',') !== locales.join(',')) {
+    throw new Error(`${field}: locales must be exactly en and ko`);
+  }
+  for (const locale of locales) {
+    for (const key of required) {
+      if (!owner.locales[locale]?.[key]) {
+        throw new Error(`${field}: missing ${locale} ${key}`);
+      }
+    }
+  }
+}
+
 export function validateCompanionModel(model) {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(model.id ?? '')) {
     throw new Error(`invalid companion id: ${model.id}`);
@@ -83,8 +96,45 @@ export function validateCompanionModel(model) {
     }
   }
   for (const source of model.sources) {
-    if (!source.sourcePath || !source.testPath) {
-      throw new Error(`${model.id}.${source.id}: sourcePath and testPath are required`);
+    if (!source.sourcePath || !source.testPath || !source.verificationCommand) {
+      throw new Error(`${model.id}.${source.id}: sourcePath, testPath, and verificationCommand are required`);
+    }
+    assertLocalizedCopy(source, `${model.id}.${source.id}`, ['claim']);
+  }
+  for (const scenario of model.scenarios) {
+    assertLocalizedCopy(scenario, `${model.id}.${scenario.id}`, ['label', 'summary', 'outcome']);
+    if (!Array.isArray(scenario.participants) || scenario.participants.length < 2) {
+      throw new Error(`${model.id}.${scenario.id}: participants must contain at least two entries`);
+    }
+    if (!Array.isArray(scenario.messages) || scenario.messages.length === 0) {
+      throw new Error(`${model.id}.${scenario.id}: messages must not be empty`);
+    }
+    const participantIds = new Set();
+    for (const participant of scenario.participants) {
+      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(participant.id ?? '')) {
+        throw new Error(`${model.id}.${scenario.id}: invalid participant id`);
+      }
+      if (participantIds.has(participant.id)) {
+        throw new Error(`${model.id}.${scenario.id}: duplicate participant id`);
+      }
+      participantIds.add(participant.id);
+      assertLocalizedCopy(participant, `${model.id}.${scenario.id}.${participant.id}`);
+    }
+    for (const [index, message] of scenario.messages.entries()) {
+      if (!participantIds.has(message.from) || !participantIds.has(message.to)) {
+        throw new Error(`${model.id}.${scenario.id}.messages[${index}]: unknown participant`);
+      }
+      assertLocalizedCopy(message, `${model.id}.${scenario.id}.messages[${index}]`);
+    }
+    if (model.kind === 'activation') {
+      for (const field of ['conditions', 'results']) {
+        if (!Array.isArray(scenario[field]) || scenario[field].length < 2) {
+          throw new Error(`${model.id}.${scenario.id}: ${field} must contain at least two entries`);
+        }
+        for (const entry of scenario[field]) {
+          assertLocalizedCopy(entry, `${model.id}.${scenario.id}.${field}.${entry.id}`, ['label', 'detail']);
+        }
+      }
     }
   }
   return model;
