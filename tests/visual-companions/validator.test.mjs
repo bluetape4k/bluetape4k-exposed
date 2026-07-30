@@ -1,14 +1,17 @@
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
 import { validateRepository } from '../../scripts/visual-companions/validate.mjs';
 
 const repositoryRoot = path.resolve(fileURLToPath(new URL('../../', import.meta.url)));
 const manifestRelativePath = 'docs/visual-companions/manifest.json';
+const execute = promisify(execFile);
 
 async function read(relativePath) {
   return readFile(path.join(repositoryRoot, relativePath), 'utf8');
@@ -71,6 +74,9 @@ test('transaction companion preserves the source-backed execution claims', async
     ]) {
       assert.match(content, new RegExp(marker));
     }
+    const multiCall = content.match(/<div id="panel-multi-call"[\s\S]*?<\/div>\s*<div class="legend"/)?.[0];
+    assert.ok(multiCall, `${relativePath} must contain the multi-call panel`);
+    assert.doesNotMatch(multiCall, /data-owner="(?:jdbc|r2dbc)"/);
   }
 });
 
@@ -95,6 +101,8 @@ test('activation companion preserves conditions, back-off, and R2DBC ownership',
       assert.match(content, new RegExp(marker));
     }
     assert.match(content, /R2DBC[^<]*(?:pool|풀)[\s\S]*(?:is created|does not create|만들지 않)/i);
+    assert.match(content, /(?:Only the R2DBC mapping bean backs off|R2DBC 매핑 빈만 Back-off)/);
+    assert.match(content, /themeToggle\.setAttribute\('aria-pressed'/);
   }
 });
 
@@ -105,12 +113,38 @@ test('duplicate document ids are rejected', async () => {
   }, /documents\[1\]\.id is duplicated/);
 });
 
+test('documents must declare exactly the en and ko locales', async () => {
+  await expectInvalid(async ({ root, manifest }) => {
+    manifest.documents[0].locales.fr = manifest.documents[0].locales.en;
+    await writeFile(path.join(root, manifestRelativePath), `${JSON.stringify(manifest, null, 2)}\n`);
+  }, /locales must contain exactly en and ko/);
+});
+
 test('external runtime dependencies are rejected', async () => {
   await expectInvalid(async ({ root, manifest }) => {
     const htmlPath = path.join(root, manifest.documents[0].locales.en.html);
     const html = await readFile(htmlPath, 'utf8');
     await writeFile(htmlPath, html.replace('</head>', '<script src="https://example.com/app.js"></script></head>'));
   }, /contains a forbidden runtime dependency/);
+});
+
+test('offline runtime validation rejects alternate network-loading surfaces', async () => {
+  const injections = [
+    '<script type="module">import("https://example.com/app.js")</script>',
+    '<object data="https://example.com/object"></object>',
+    '<embed src="https://example.com/embed">',
+    '<img srcset="https://example.com/image.png 1x" alt="">',
+    '<link rel="preload" href="https://example.com/font.woff2">',
+    '<style>@font-face{src:url(font.woff2)}</style>',
+  ];
+
+  for (const injection of injections) {
+    await expectInvalid(async ({ root, manifest }) => {
+      const htmlPath = path.join(root, manifest.documents[0].locales.en.html);
+      const html = await readFile(htmlPath, 'utf8');
+      await writeFile(htmlPath, html.replace('</head>', `${injection}</head>`));
+    }, /contains a forbidden runtime dependency/);
+  }
 });
 
 test('source links must resolve inside the develop tree', async () => {
@@ -200,4 +234,19 @@ test('locale documents link to their matching manual source', async () => {
   for (const [relativePath, sourcePath] of expectations) {
     assert.match(await read(relativePath), new RegExp(sourcePath.replaceAll('/', '\\/')));
   }
+});
+
+test('CLI accepts an explicit manifest path', async () => {
+  await withFixture(async ({ root, manifest }) => {
+    manifest.documents[1].id = manifest.documents[0].id;
+    await writeFile(path.join(root, 'custom-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+    await assert.rejects(
+      execute(
+        'node',
+        [path.join(repositoryRoot, 'scripts/visual-companions/validate.mjs'), 'custom-manifest.json'],
+        { cwd: root },
+      ),
+      /documents\[1\]\.id is duplicated/,
+    );
+  });
 });

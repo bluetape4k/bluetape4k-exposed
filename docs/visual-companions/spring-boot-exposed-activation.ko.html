@@ -159,7 +159,7 @@
     <header>
       <div class="topbar">
         <a class="locale-link" href="spring-boot-exposed-activation.html" hreflang="en">English</a>
-        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="밝은 테마와 어두운 테마 전환">테마</button>
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="밝은 테마로 전환" aria-pressed="true">테마</button>
       </div>
       <div class="eyebrow">bluetape4k · Spring Boot 조건 탐색기</div>
       <h1>무엇이 활성화되고<br>누가 계속 소유하는가?</h1>
@@ -197,18 +197,18 @@
               <span><strong><code>@EnableExposedR2dbcRepositories</code></strong><small>R2DBC 저장소 registrar만 가져옵니다.</small></span>
             </label>
             <label class="condition">
-              <input id="condition-mapping-context" data-condition="mapping-context" type="checkbox">
-              <span><strong>기존 <code>ExposedMappingContext</code></strong><small>자동 구성은 새로 만들지 않고 재사용합니다.</small></span>
+              <input id="condition-mapping-context" data-condition="mapping-context" type="checkbox" checked>
+              <span><strong>R2DBC 단계에서 사용할 수 있는 매핑 컨텍스트</strong><small>R2DBC 매핑 빈만 Back-off하며 JDBC는 매핑 빈을 조건 없이 선언합니다.</small></span>
             </label>
           </div>
 
           <div class="result">
-            <p id="live-summary" class="summary" aria-live="polite">JDBC와 R2DBC 저장소를 검색할 수 있습니다. JDBC 트랜잭션 매니저와 공유 매핑 컨텍스트가 자동 구성됩니다.</p>
+            <p id="live-summary" class="summary" aria-live="polite">JDBC와 R2DBC 저장소를 검색할 수 있습니다. JDBC가 트랜잭션 매니저와 매핑 컨텍스트를 선언하고 R2DBC 매핑 빈은 Back-off합니다.</p>
             <div class="path" aria-label="활성화 결과">
               <div id="path-classpath" class="path-step"><strong>1 · 클래스패스 조건</strong><small id="path-classpath-text"><code>EntityClass</code>가 있으므로 Exposed 자동 구성을 적용할 수 있습니다.</small></div>
               <div id="path-jdbc" class="path-step" data-kind="jdbc"><strong>2 · JDBC 경로</strong><small id="path-jdbc-text">Registrar가 활성화되고 <code>DataSource</code>로 Exposed를 연결해 <code>springTransactionManager</code>를 만듭니다.</small></div>
               <div id="path-r2dbc" class="path-step" data-kind="r2dbc"><strong>3 · R2DBC 경로</strong><small id="path-r2dbc-text">Registrar만 활성화하며 R2DBC 풀, 데이터베이스, 트랜잭션 매니저는 만들지 않습니다.</small></div>
-              <div id="path-mapping" class="path-step"><strong>4 · 공유 매핑</strong><small id="path-mapping-text">자동 구성이 <code>ExposedMappingContext</code>를 만듭니다.</small></div>
+              <div id="path-mapping" class="path-step"><strong>4 · R2DBC 매핑 단계</strong><small id="path-mapping-text">사용할 수 있는 <code>ExposedMappingContext</code>가 있으므로 R2DBC 빈이 Back-off합니다.</small></div>
             </div>
 
             <div class="table-wrap">
@@ -219,7 +219,8 @@
                   <tr><td><code>springTransactionManager</code></td><td id="status-jdbc-manager" data-status="active">생성</td><td>JDBC 자동 구성</td></tr>
                   <tr><td>R2DBC 저장소 검색</td><td id="status-r2dbc-scan" data-status="active">활성</td><td>활성화 애너테이션 + registrar</td></tr>
                   <tr><td><code>ConnectionPool</code> / <code>R2dbcDatabase</code></td><td id="status-r2dbc-infra" data-status="backoff">생성 안 함</td><td>애플리케이션</td></tr>
-                  <tr><td><code>ExposedMappingContext</code></td><td id="status-mapping" data-status="active">생성</td><td>기존 빈이 없을 때 자동 구성</td></tr>
+                  <tr><td>JDBC <code>ExposedMappingContext</code></td><td id="status-jdbc-mapping" data-status="active">선언</td><td>JDBC 자동 구성</td></tr>
+                  <tr><td>R2DBC 매핑 빈</td><td id="status-r2dbc-mapping" data-status="backoff">Back-off</td><td>R2DBC 자동 구성</td></tr>
                 </tbody>
               </table>
             </div>
@@ -245,11 +246,19 @@
   <script>
     (() => {
       const themeStorageKey = 'starlight-theme';
-      document.getElementById('theme-toggle').addEventListener('click', () => {
+      const themeToggle = document.getElementById('theme-toggle');
+      const syncThemeControl = () => {
+        const dark = document.documentElement.dataset.theme === 'dark';
+        themeToggle.setAttribute('aria-pressed', String(dark));
+        themeToggle.setAttribute('aria-label', dark ? '밝은 테마로 전환' : '어두운 테마로 전환');
+      };
+      themeToggle.addEventListener('click', () => {
         const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
         document.documentElement.dataset.theme = next;
         localStorage.setItem(themeStorageKey, next);
+        syncThemeControl();
       });
+      syncThemeControl();
 
       const inputs = Object.fromEntries(
         [...document.querySelectorAll('[data-condition]')].map((input) => [input.dataset.condition, input]),
@@ -269,24 +278,26 @@
         const jdbcScan = classpath && inputs['enable-jdbc'].checked;
         const r2dbcScan = classpath && inputs['enable-r2dbc'].checked;
         const createManager = classpath && inputs['data-source'].checked && !inputs['transaction-manager'].checked;
-        const createMapping = classpath && !inputs['mapping-context'].checked;
+        const mappingAvailable = inputs['mapping-context'].checked;
+        const createR2dbcMapping = classpath && !mappingAvailable;
 
         path('path-classpath', classpath ? '<code>EntityClass</code>가 있으므로 Exposed 자동 구성을 적용할 수 있습니다.' : '<code>EntityClass</code>가 없으므로 두 자동 구성 경로가 모두 비활성화됩니다.', classpath);
         path('path-jdbc', jdbcScan ? (createManager ? 'Registrar가 활성화되고 <code>DataSource</code>로 Exposed를 연결해 <code>springTransactionManager</code>를 만듭니다.' : 'Registrar는 활성화되지만 트랜잭션 매니저를 만들 수 없거나 이미 있으므로 생성이 Back-off됩니다.') : 'JDBC 저장소 검색이 활성화되지 않았습니다.', jdbcScan);
         path('path-r2dbc', r2dbcScan ? 'Registrar만 활성화하며 R2DBC 풀, 데이터베이스, 트랜잭션 매니저는 만들지 않습니다.' : 'R2DBC 저장소 검색이 활성화되지 않았습니다.', r2dbcScan);
-        path('path-mapping', createMapping ? '자동 구성이 <code>ExposedMappingContext</code>를 만듭니다.' : '기존 매핑 컨텍스트를 재사용하거나 자동 구성이 비활성 상태입니다.', classpath);
+        path('path-mapping', createR2dbcMapping ? '사용할 수 있는 컨텍스트가 없어 R2DBC 단계가 <code>ExposedMappingContext</code>를 만듭니다.' : (classpath ? '사용할 수 있는 <code>ExposedMappingContext</code>가 있으므로 R2DBC 빈이 Back-off합니다.' : 'R2DBC 매핑 단계가 비활성 상태입니다.'), classpath);
 
         status('status-jdbc-scan', jdbcScan ? '활성' : '비활성', jdbcScan);
         status('status-jdbc-manager', createManager ? '생성' : 'Back-off', createManager);
         status('status-r2dbc-scan', r2dbcScan ? '활성' : '비활성', r2dbcScan);
         status('status-r2dbc-infra', '생성 안 함', false);
-        status('status-mapping', createMapping ? '생성' : '재사용 / 비활성', createMapping);
+        status('status-jdbc-mapping', classpath ? '선언' : '비활성', classpath);
+        status('status-r2dbc-mapping', createR2dbcMapping ? '생성' : (classpath ? 'Back-off' : '비활성'), createR2dbcMapping);
 
         const activeScans = [jdbcScan && 'JDBC', r2dbcScan && 'R2DBC'].filter(Boolean).join('와 ') || '어떤';
         document.getElementById('live-summary').textContent =
           `${activeScans} 저장소를 검색할 수 있습니다. ` +
           `${createManager ? 'JDBC가 springTransactionManager를 만듭니다.' : 'JDBC 트랜잭션 매니저 생성은 Back-off됩니다.'} ` +
-          `${createMapping ? '공유 매핑 컨텍스트를 만듭니다.' : '매핑 컨텍스트를 재사용하거나 비활성 상태입니다.'}`;
+          `${createR2dbcMapping ? 'R2DBC가 매핑 빈을 만듭니다.' : (classpath ? 'R2DBC 매핑 빈이 사용 가능한 컨텍스트에 Back-off합니다.' : '매핑 자동 구성이 비활성 상태입니다.')}`;
       };
       for (const input of Object.values(inputs)) input.addEventListener('change', update);
       update();

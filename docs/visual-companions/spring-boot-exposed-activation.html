@@ -159,7 +159,7 @@
     <header>
       <div class="topbar">
         <a class="locale-link" href="spring-boot-exposed-activation.ko.html" hreflang="ko">한국어</a>
-        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle light and dark theme">Theme</button>
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light theme" aria-pressed="true">Theme</button>
       </div>
       <div class="eyebrow">bluetape4k · Spring Boot condition explorer</div>
       <h1>What activates?<br>Who still owns it?</h1>
@@ -197,18 +197,18 @@
               <span><strong><code>@EnableExposedR2dbcRepositories</code></strong><small>Imports only the R2DBC repository registrar.</small></span>
             </label>
             <label class="condition">
-              <input id="condition-mapping-context" data-condition="mapping-context" type="checkbox">
-              <span><strong>Existing <code>ExposedMappingContext</code></strong><small>Auto-configuration reuses it instead of creating another.</small></span>
+              <input id="condition-mapping-context" data-condition="mapping-context" type="checkbox" checked>
+              <span><strong>Mapping context available to the R2DBC phase</strong><small>Only the R2DBC mapping bean backs off; JDBC declares its mapping bean unconditionally.</small></span>
             </label>
           </div>
 
           <div class="result">
-            <p id="live-summary" class="summary" aria-live="polite">JDBC and R2DBC repositories can be scanned. JDBC creates its transaction manager and the shared mapping context is auto-configured.</p>
+            <p id="live-summary" class="summary" aria-live="polite">JDBC and R2DBC repositories can be scanned. JDBC creates its transaction manager and declares the mapping context; the R2DBC mapping bean backs off.</p>
             <div class="path" aria-label="Activation result">
               <div id="path-classpath" class="path-step"><strong>1 · Classpath condition</strong><small id="path-classpath-text"><code>EntityClass</code> is present, so Exposed auto-configuration is eligible.</small></div>
               <div id="path-jdbc" class="path-step" data-kind="jdbc"><strong>2 · JDBC path</strong><small id="path-jdbc-text">Registrar active; <code>DataSource</code> connects Exposed and creates <code>springTransactionManager</code>.</small></div>
               <div id="path-r2dbc" class="path-step" data-kind="r2dbc"><strong>3 · R2DBC path</strong><small id="path-r2dbc-text">Registrar active; no R2DBC pool, database, or transaction manager is created.</small></div>
-              <div id="path-mapping" class="path-step"><strong>4 · Shared mapping</strong><small id="path-mapping-text">Auto-configuration creates <code>ExposedMappingContext</code>.</small></div>
+              <div id="path-mapping" class="path-step"><strong>4 · R2DBC mapping phase</strong><small id="path-mapping-text">The R2DBC bean backs off because an <code>ExposedMappingContext</code> is already available.</small></div>
             </div>
 
             <div class="table-wrap">
@@ -219,7 +219,8 @@
                   <tr><td><code>springTransactionManager</code></td><td id="status-jdbc-manager" data-status="active">Created</td><td>JDBC auto-configuration</td></tr>
                   <tr><td>R2DBC repository scan</td><td id="status-r2dbc-scan" data-status="active">Active</td><td>Enable annotation + registrar</td></tr>
                   <tr><td><code>ConnectionPool</code> / <code>R2dbcDatabase</code></td><td id="status-r2dbc-infra" data-status="backoff">Not created</td><td>Application</td></tr>
-                  <tr><td><code>ExposedMappingContext</code></td><td id="status-mapping" data-status="active">Created</td><td>Auto-configuration unless one exists</td></tr>
+                  <tr><td>JDBC <code>ExposedMappingContext</code></td><td id="status-jdbc-mapping" data-status="active">Declared</td><td>JDBC auto-configuration</td></tr>
+                  <tr><td>R2DBC mapping bean</td><td id="status-r2dbc-mapping" data-status="backoff">Backed off</td><td>R2DBC auto-configuration</td></tr>
                 </tbody>
               </table>
             </div>
@@ -245,11 +246,19 @@
   <script>
     (() => {
       const themeStorageKey = 'starlight-theme';
-      document.getElementById('theme-toggle').addEventListener('click', () => {
+      const themeToggle = document.getElementById('theme-toggle');
+      const syncThemeControl = () => {
+        const dark = document.documentElement.dataset.theme === 'dark';
+        themeToggle.setAttribute('aria-pressed', String(dark));
+        themeToggle.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+      };
+      themeToggle.addEventListener('click', () => {
         const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
         document.documentElement.dataset.theme = next;
         localStorage.setItem(themeStorageKey, next);
+        syncThemeControl();
       });
+      syncThemeControl();
 
       const inputs = Object.fromEntries(
         [...document.querySelectorAll('[data-condition]')].map((input) => [input.dataset.condition, input]),
@@ -269,24 +278,26 @@
         const jdbcScan = classpath && inputs['enable-jdbc'].checked;
         const r2dbcScan = classpath && inputs['enable-r2dbc'].checked;
         const createManager = classpath && inputs['data-source'].checked && !inputs['transaction-manager'].checked;
-        const createMapping = classpath && !inputs['mapping-context'].checked;
+        const mappingAvailable = inputs['mapping-context'].checked;
+        const createR2dbcMapping = classpath && !mappingAvailable;
 
         path('path-classpath', classpath ? '<code>EntityClass</code> is present, so Exposed auto-configuration is eligible.' : '<code>EntityClass</code> is absent, so both auto-configuration paths are inactive.', classpath);
         path('path-jdbc', jdbcScan ? (createManager ? 'Registrar active; <code>DataSource</code> connects Exposed and creates <code>springTransactionManager</code>.' : 'Registrar active; the transaction manager is unavailable or already exists, so creation backs off.') : 'JDBC repository scanning is not enabled.', jdbcScan);
         path('path-r2dbc', r2dbcScan ? 'Registrar active; no R2DBC pool, database, or transaction manager is created.' : 'R2DBC repository scanning is not enabled.', r2dbcScan);
-        path('path-mapping', createMapping ? 'Auto-configuration creates <code>ExposedMappingContext</code>.' : 'The existing mapping context is reused, or auto-configuration is inactive.', classpath);
+        path('path-mapping', createR2dbcMapping ? 'The R2DBC phase creates <code>ExposedMappingContext</code> because none is available.' : (classpath ? 'The R2DBC bean backs off because an <code>ExposedMappingContext</code> is already available.' : 'The R2DBC mapping phase is inactive.'), classpath);
 
         status('status-jdbc-scan', jdbcScan ? 'Active' : 'Inactive', jdbcScan);
         status('status-jdbc-manager', createManager ? 'Created' : 'Backed off', createManager);
         status('status-r2dbc-scan', r2dbcScan ? 'Active' : 'Inactive', r2dbcScan);
         status('status-r2dbc-infra', 'Not created', false);
-        status('status-mapping', createMapping ? 'Created' : 'Reused / inactive', createMapping);
+        status('status-jdbc-mapping', classpath ? 'Declared' : 'Inactive', classpath);
+        status('status-r2dbc-mapping', createR2dbcMapping ? 'Created' : (classpath ? 'Backed off' : 'Inactive'), createR2dbcMapping);
 
         const activeScans = [jdbcScan && 'JDBC', r2dbcScan && 'R2DBC'].filter(Boolean).join(' and ') || 'No';
         document.getElementById('live-summary').textContent =
           `${activeScans} repositories can be scanned. ` +
           `${createManager ? 'JDBC creates springTransactionManager.' : 'JDBC transaction-manager creation backs off.'} ` +
-          `${createMapping ? 'A shared mapping context is created.' : 'The mapping context is reused or inactive.'}`;
+          `${createR2dbcMapping ? 'R2DBC creates its mapping bean.' : (classpath ? 'The R2DBC mapping bean backs off to the available context.' : 'Mapping auto-configuration is inactive.')}`;
       };
       for (const input of Object.values(inputs)) input.addEventListener('change', update);
       update();

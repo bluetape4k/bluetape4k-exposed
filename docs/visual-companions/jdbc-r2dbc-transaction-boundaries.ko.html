@@ -164,7 +164,7 @@
     <header>
       <div class="topbar">
         <a class="locale-link" href="jdbc-r2dbc-transaction-boundaries.html" hreflang="en">English</a>
-        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="밝은 테마와 어두운 테마 전환">테마</button>
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="밝은 테마로 전환" aria-pressed="true">테마</button>
       </div>
       <div class="eyebrow">bluetape4k · Exposed 실전 안내서</div>
       <h1>하나의 작업.<br>하나의 트랜잭션 소유자.</h1>
@@ -214,8 +214,8 @@
           <div class="path">
             <div class="step" data-owner="caller"><strong>애플리케이션 서비스</strong><small>이체 같은 비즈니스 불변식을 소유합니다.</small></div>
             <div class="step" data-owner="caller"><strong>호출자 경계</strong><small>저장소 호출 전에 하나의 원자적 단위를 정의합니다.</small></div>
-            <div class="step" data-owner="jdbc"><strong>저장소 A</strong><small>차감 또는 첫 번째 상태 변경입니다.</small></div>
-            <div class="step" data-owner="r2dbc"><strong>저장소 B</strong><small>입금 또는 두 번째 상태 변경입니다.</small></div>
+            <div class="step" data-owner="caller"><strong>저장소 호출 A</strong><small>선택한 JDBC 또는 R2DBC 스택의 첫 번째 상태 변경입니다.</small></div>
+            <div class="step" data-owner="caller"><strong>저장소 호출 B</strong><small>동일하게 선택한 스택의 두 번째 상태 변경입니다.</small></div>
             <div class="step" data-owner="caller"><strong>불변식 확인</strong><small>모든 문장이 성공하거나 작업 전체가 실패합니다.</small></div>
             <div class="step" data-owner="caller"><strong>커밋</strong><small>호출자가 소유하는 하나의 비즈니스 결과입니다.</small></div>
           </div>
@@ -269,11 +269,18 @@
     (() => {
       const themeStorageKey = 'starlight-theme';
       const themeToggle = document.getElementById('theme-toggle');
+      const syncThemeControl = () => {
+        const dark = document.documentElement.dataset.theme === 'dark';
+        themeToggle.setAttribute('aria-pressed', String(dark));
+        themeToggle.setAttribute('aria-label', dark ? '밝은 테마로 전환' : '어두운 테마로 전환');
+      };
       themeToggle.addEventListener('click', () => {
         const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
         document.documentElement.dataset.theme = next;
         localStorage.setItem(themeStorageKey, next);
+        syncThemeControl();
       });
+      syncThemeControl();
 
       const summaries = {
         jdbc: 'Spring이 프록시를 통과하는 저장소 호출 주위에 JDBC 트랜잭션을 열고 저장소는 활성 컨텍스트에 참여합니다.',
