@@ -88,7 +88,7 @@ spring-boot-exposed-activation
 - Test: `tests/visual-companions/capture.test.mjs`
 - Test: `tests/visual-companions/validator.test.mjs`
 
-- [ ] **Step 1: 모델과 생성기 API에 대한 실패 테스트를 작성한다**
+- [x] **Step 1: 모델과 생성기 API에 대한 실패 테스트를 작성한다**
 
 `tests/visual-companions/build.test.mjs`에서 다음 contract를 고정한다.
 
@@ -127,7 +127,7 @@ test('build check reports stale or missing generated files', async () => {
 });
 ```
 
-- [ ] **Step 2: 캡처 matrix 실패 테스트를 작성한다**
+- [x] **Step 2: 캡처 matrix 실패 테스트를 작성한다**
 
 ```js
 import assert from 'node:assert/strict';
@@ -155,7 +155,7 @@ test('chrome runs without background network or animation drift', () => {
 });
 ```
 
-- [ ] **Step 3: validator 거부 테스트를 새 구조에 맞게 바꾼다**
+- [x] **Step 3: validator 거부 테스트를 새 구조에 맞게 바꾼다**
 
 다음 실패를 각각 독립 fixture로 검증한다.
 
@@ -175,7 +175,7 @@ missing architecture lightbox control
 missing sequence participant, lifeline, activation, numbered message, or alt frame
 ```
 
-- [ ] **Step 4: 세 테스트를 실행해 RED를 확인한다**
+- [x] **Step 4: 세 테스트를 실행해 RED를 확인한다**
 
 Run:
 
@@ -188,7 +188,7 @@ node --test \
 
 Expected: `ERR_MODULE_NOT_FOUND` for `build.mjs`, `model.mjs`, or `capture.mjs`; 기존 validator 테스트는 새 manifest/data contract가 없어 실패한다.
 
-- [ ] **Step 5: RED contract를 커밋한다**
+- [x] **Step 5: RED contract를 커밋한다**
 
 ```bash
 git add tests/visual-companions
@@ -210,7 +210,7 @@ Commit intent: `Lock the depth and determinism contract before rebuilding the co
 - Create: `docs/visual-companions/data/spring-boot-exposed-activation.json`
 - Modify: `tests/visual-companions/build.test.mjs`
 
-- [ ] **Step 1: 모델 스키마의 최소 공통 shape를 구현한다**
+- [x] **Step 1: 모델 스키마의 최소 공통 shape를 구현한다**
 
 `model.mjs`가 다음 API를 export한다.
 
@@ -312,7 +312,7 @@ export function structuralFingerprint(model) {
 
 `validateCompanionModel`은 kebab-case ID, 정확한 `en`/`ko`, 중복 없는 section/scenario/source ID, 존재하는 architecture/source/test 경로를 검사한다.
 
-- [ ] **Step 2: Architecture Diagram을 해시와 data URI로 고정한다**
+- [x] **Step 2: Architecture Diagram을 해시와 data URI로 고정한다**
 
 `loadArchitectureAsset`은 다음 값을 반환한다.
 
@@ -328,7 +328,7 @@ export function structuralFingerprint(model) {
 
 HTML은 외부 파일을 runtime에 읽지 않고 `dataUri`를 `<img>`의 `src`로 사용한다. 구조화 모델의 `hotspots`는 percentage 좌표를 가진 native `<button>` overlay로 렌더링한다.
 
-- [ ] **Step 3: 공통 renderer를 구현한다**
+- [x] **Step 3: 공통 renderer를 구현한다**
 
 `render.mjs`가 다음 API를 export한다.
 
@@ -441,7 +441,7 @@ const sectionIds = [
 
 Spring Boot 모델은 `configuration-recipes`와 `failure-diagnostics`를 `tradeoffs` 앞에 추가한다. 공통 shell은 locale 전환 링크, `auto/light/dark` theme 선택, `<main>`, skip link, visible focus, `prefers-reduced-motion`, `aria-live="polite"` 상태 요약을 포함한다.
 
-- [ ] **Step 4: builder와 `--check`를 구현한다**
+- [x] **Step 4: builder와 `--check`를 구현한다**
 
 ```js
 export async function buildRepository({ root, check = false }) {
@@ -464,7 +464,7 @@ export async function buildRepository({ root, check = false }) {
 
 `writeOrCheckOutputs`은 LF와 마지막 newline을 고정한다. `--check`에서는 어떤 파일도 쓰지 않고 첫 차이 경로와 함께 실패한다.
 
-- [ ] **Step 5: build 테스트를 GREEN으로 만든다**
+- [x] **Step 5: build 테스트를 GREEN으로 만든다**
 
 Run:
 
@@ -476,7 +476,7 @@ node --test tests/visual-companions/build.test.mjs
 
 Expected: generated file 4개, `--check` exit 0, build tests PASS.
 
-- [ ] **Step 6: 모델·builder를 커밋한다**
+- [x] **Step 6: 모델·builder를 커밋한다**
 
 ```bash
 git add docs/visual-companions/data scripts/visual-companions/lib scripts/visual-companions/build.mjs tests/visual-companions/build.test.mjs
@@ -496,7 +496,7 @@ Commit intent: `Make one source of truth govern every visual state and locale`
 - Modify: `tests/visual-companions/validator.test.mjs`
 - Modify: `tests/visual-companions/capture.test.mjs`
 
-- [ ] **Step 1: validator를 manifest→model→generated artifact 순서로 재구성한다**
+- [x] **Step 1: validator를 manifest→model→generated artifact 순서로 재구성한다**
 
 `validateRepository`는 다음 순서로 검사한다.
 
@@ -514,7 +514,7 @@ const checks = [
 
 기존 path containment, external dependency, reciprocal locale, section/control fingerprint 검사는 유지한다. 새 검사는 model scenario ID, source ledger, architecture digest, sequence visual signal, `window.__VISUAL_COMPANION_READY__ === true`를 추가한다.
 
-- [ ] **Step 2: Node built-in WebSocket을 사용하는 CDP client를 구현한다**
+- [x] **Step 2: Node built-in WebSocket을 사용하는 CDP client를 구현한다**
 
 `capture.mjs`가 다음 API를 export한다.
 
@@ -598,7 +598,7 @@ Page.getLayoutMetrics
 Page.captureScreenshot(full content clip)
 ```
 
-- [ ] **Step 3: 같은 입력을 두 번 캡처해 hash equality를 검사한다**
+- [x] **Step 3: 같은 입력을 두 번 캡처해 hash equality를 검사한다**
 
 각 target을 임시 경로에 두 번 캡처하고 다음을 비교한다.
 
@@ -610,7 +610,7 @@ assert.equal(sha256(first.png), sha256(second.png));
 
 일치할 때만 `docs/visual-companions/assets/<target>`에 쓴다. `--check`는 기존 PNG와 새 PNG의 SHA-256이 다르면 실패한다.
 
-- [ ] **Step 4: validator와 capture 단위 테스트를 GREEN으로 만든다**
+- [x] **Step 4: validator와 capture 단위 테스트를 GREEN으로 만든다**
 
 Run:
 
@@ -622,7 +622,7 @@ node --test \
 
 Expected: fixture rejection diagnostics를 포함해 PASS.
 
-- [ ] **Step 5: validator와 capture 도구를 커밋한다**
+- [x] **Step 5: validator와 capture 도구를 커밋한다**
 
 ```bash
 git add scripts/visual-companions tests/visual-companions
@@ -646,7 +646,7 @@ Commit intent: `Fail publication when visuals drift from source or replay`
 - Test: `tests/visual-companions/build.test.mjs`
 - Test: `tests/visual-companions/validator.test.mjs`
 
-- [ ] **Step 1: 6개 시나리오와 정확한 source ledger를 채운다**
+- [x] **Step 1: 6개 시나리오와 정확한 source ledger를 채운다**
 
 시나리오 ID와 결과를 다음으로 고정한다.
 
@@ -674,7 +674,7 @@ docs/manual/en/modules/bluetape4k-exposed-r2dbc/coroutine-transactions.md
 docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md
 ```
 
-- [ ] **Step 2: JPA 대비 정신 모형과 실제 코드 mapping을 채운다**
+- [x] **Step 2: JPA 대비 정신 모형과 실제 코드 mapping을 채운다**
 
 다음 내용을 영어와 한국어에 의미 동등하게 제공한다.
 
@@ -689,11 +689,11 @@ Exposed cost: explicit query, mapping, write, and boundary code
 
 “Exposed는 ORM이 아니다”, “JPA 저장소가 업무 트랜잭션을 소유한다”, “Exposed는 schema 도구가 없다”는 문구는 금지한다.
 
-- [ ] **Step 3: 기존 Architecture Diagram을 기본 주인공으로 배치한다**
+- [x] **Step 3: 기존 Architecture Diagram을 기본 주인공으로 배치한다**
 
 `transaction-ownership.svg`를 data URI로 내장하고, JDBC/R2DBC lane을 선택하는 hotspot과 확대 dialog를 제공한다. dialog는 native `<dialog>`, 열기 `<button>`, 닫기 `<button>`, `Escape`를 사용한다.
 
-- [ ] **Step 4: 시나리오에 따라 정식 sequence view를 갱신한다**
+- [x] **Step 4: 시나리오에 따라 정식 sequence view를 갱신한다**
 
 모든 시나리오는 다음 요소를 포함한다.
 
@@ -708,7 +708,7 @@ commit or rollback terminal result
 
 색만으로 결과를 구분하지 않고 `CALL`, `RETURN`, `COMMIT`, `ROLLBACK`, `BOUNDARY ERROR` label을 함께 표시한다.
 
-- [ ] **Step 5: 책임 행렬, trade-off, 선택 가이드, 검증 원장을 채운다**
+- [x] **Step 5: 책임 행렬, trade-off, 선택 가이드, 검증 원장을 채운다**
 
 문서가 다음 질문에 모두 답하는지 build test로 검사한다.
 
@@ -723,7 +723,7 @@ which source and test prove the claim
 when to choose or avoid each approach
 ```
 
-- [ ] **Step 6: 생성·정적 검증을 실행한다**
+- [x] **Step 6: 생성·정적 검증을 실행한다**
 
 Run:
 
@@ -736,7 +736,7 @@ node --test tests/visual-companions/build.test.mjs tests/visual-companions/valid
 
 Expected: transaction pair와 source contract PASS.
 
-- [ ] **Step 7: 트랜잭션 해설서를 커밋한다**
+- [x] **Step 7: 트랜잭션 해설서를 커밋한다**
 
 ```bash
 git add docs/visual-companions scripts/visual-companions tests/visual-companions
@@ -755,7 +755,7 @@ Commit intent: `Teach transaction ownership through the JPA migration mental mod
 - Verify: `docs/visual-companions/ko/jdbc-r2dbc-transaction-boundaries.html`
 - Generate: `docs/visual-companions/assets/jdbc-r2dbc-transaction-boundaries.*.png`
 
-- [ ] **Step 1: 결정적 fallback matrix를 두 번 캡처한다**
+- [x] **Step 1: 결정적 fallback matrix를 두 번 캡처한다**
 
 Run:
 
@@ -766,7 +766,7 @@ node scripts/visual-companions/capture.mjs jdbc-r2dbc-transaction-boundaries --c
 
 Expected: 4개 PNG, 각 반복 capture dimensions/hash equality PASS.
 
-- [ ] **Step 2: desktop/narrow, keyboard, reduced motion, console을 검사한다**
+- [x] **Step 2: desktop/narrow, keyboard, reduced motion, console을 검사한다**
 
 검사 matrix:
 
@@ -782,7 +782,7 @@ failed requests = 0
 page horizontal overflow = 0
 ```
 
-- [ ] **Step 3: full-size PNG를 직접 검사한다**
+- [x] **Step 3: full-size PNG를 직접 검사한다**
 
 다음 4개를 원본 크기로 열어 typography, sequence label, architecture readability, clipping, whitespace를 확인한다.
 
@@ -793,7 +793,7 @@ docs/visual-companions/assets/jdbc-r2dbc-transaction-boundaries.ko.light.png
 docs/visual-companions/assets/jdbc-r2dbc-transaction-boundaries.ko.dark.png
 ```
 
-- [ ] **Step 4: 로컬 HTTP 서버에서 실제 한국어 HTML을 사용자 브라우저로 연다**
+- [x] **Step 4: 로컬 HTTP 서버에서 실제 한국어 HTML을 사용자 브라우저로 연다**
 
 Run:
 

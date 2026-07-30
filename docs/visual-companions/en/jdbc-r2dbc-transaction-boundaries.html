@@ -1,0 +1,915 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>JPA to Exposed: Make Transaction Ownership Visible</title>
+  <style>
+    :root {
+      --bg: #f3f6fa; --surface: #ffffff; --surface-2: #e9eef5; --ink: #142033;
+      --muted: #526176; --line: #c9d3df; --navy: #132a46; --cyan: #007f91;
+      --cyan-soft: #d8f3f6; --amber: #a65d00; --amber-soft: #fff0cc;
+      --red: #a33a3a; --red-soft: #ffe4e4; --green: #1d7b52; --green-soft: #dcf5e8;
+      --shadow: 0 18px 50px rgb(20 32 51 / .12); --radius: 20px;
+      color-scheme: light;
+    }
+    :root[data-theme="light"] { color-scheme: light; }
+    :root[data-theme="dark"] {
+      --bg: #07111f; --surface: #0e1d2e; --surface-2: #17293c; --ink: #edf5ff;
+      --muted: #a8bbcf; --line: #31475f; --navy: #dcecff; --cyan: #55d6e8;
+      --cyan-soft: #103c47; --amber: #ffbd5c; --amber-soft: #49351a;
+      --red: #ff9898; --red-soft: #4a2529; --green: #6ee7ae; --green-soft: #163c2d;
+      --shadow: 0 20px 60px rgb(0 0 0 / .38); color-scheme: dark;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root[data-theme="auto"] {
+        --bg: #07111f; --surface: #0e1d2e; --surface-2: #17293c; --ink: #edf5ff;
+        --muted: #a8bbcf; --line: #31475f; --navy: #dcecff; --cyan: #55d6e8;
+        --cyan-soft: #103c47; --amber: #ffbd5c; --amber-soft: #49351a;
+        --red: #ff9898; --red-soft: #4a2529; --green: #6ee7ae; --green-soft: #163c2d;
+        --shadow: 0 20px 60px rgb(0 0 0 / .38); color-scheme: dark;
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.65 Inter, Pretendard, ui-sans-serif, system-ui, sans-serif; }
+    body::before { content: ""; position: fixed; inset: 0 0 auto; height: 320px; z-index: -1; background: radial-gradient(circle at 75% 0%, rgb(0 173 194 / .18), transparent 42%), linear-gradient(135deg, var(--surface), transparent); }
+    a { color: var(--cyan); text-underline-offset: 3px; overflow-wrap: anywhere; }
+    button { font: inherit; }
+    button:focus-visible, a:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    code, kbd { font-family: "SFMono-Regular", Consolas, monospace; font-size: .86em; }
+    code { overflow-wrap: anywhere; }
+    .skip-link { position: fixed; left: 1rem; top: -5rem; z-index: 100; padding: .7rem 1rem; background: var(--surface); border: 2px solid var(--cyan); border-radius: 8px; }
+    .skip-link:focus { top: 1rem; }
+    .topbar { width: min(1180px, calc(100% - 32px)); margin: 18px auto 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .brand { display: flex; gap: 10px; align-items: center; color: var(--ink); text-decoration: none; font-weight: 800; letter-spacing: -.02em; }
+    .brand-mark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: var(--cyan); color: #04141a; }
+    .toolbar { display: flex; align-items: center; gap: 8px; }
+    .theme-toggle, .locale-link { min-height: 42px; border: 1px solid var(--line); border-radius: 999px; padding: 8px 13px; color: var(--ink); background: var(--surface); text-decoration: none; cursor: pointer; }
+    .hero { width: min(1180px, calc(100% - 32px)); margin: 70px auto 50px; display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(250px, .5fr); gap: 42px; align-items: end; }
+    .hero h1 { font-size: clamp(2.45rem, 7vw, 5.4rem); line-height: .98; letter-spacing: -.065em; margin: 12px 0 24px; max-width: 960px; }
+    .eyebrow, .kicker { margin: 0; color: var(--cyan); font-size: .76rem; font-weight: 850; letter-spacing: .14em; text-transform: uppercase; }
+    .lede { font-size: clamp(1.05rem, 2vw, 1.28rem); color: var(--muted); max-width: 860px; }
+    .hero-aside { border-left: 3px solid var(--cyan); padding-left: 20px; color: var(--muted); }
+    .hero-aside strong { color: var(--ink); display: block; margin-bottom: 6px; }
+    main { width: min(1180px, calc(100% - 32px)); margin: 0 auto 100px; }
+    section { scroll-margin-top: 24px; margin: 0 0 70px; }
+    .section-heading { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 18px; margin-bottom: 24px; align-items: start; }
+    .section-heading h2, .pending-card h2 { margin: 1px 0 6px; font-size: clamp(1.65rem, 4vw, 2.7rem); line-height: 1.1; letter-spacing: -.04em; }
+    .section-heading p { color: var(--muted); max-width: 820px; margin: 8px 0 0; }
+    .section-number { width: 45px; height: 45px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; font: 700 .78rem/1 monospace; color: var(--cyan); }
+    .mental-grid { display: grid; grid-template-columns: 1fr 90px 1fr; gap: 18px; align-items: stretch; }
+    .mental-card, .pending-card { border: 1px solid var(--line); border-radius: var(--radius); padding: clamp(22px, 4vw, 38px); background: var(--surface); box-shadow: var(--shadow); }
+    .mental-card h3 { font-size: 1.45rem; margin: 15px 0 5px; }
+    .badge { display: inline-flex; padding: 4px 9px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font: 750 .75rem/1.5 monospace; }
+    .flow-line { padding: 18px; border-radius: 13px; background: var(--surface-2); font-family: monospace; }
+    .strength { color: var(--green); }
+    .cost { color: var(--amber); }
+    .trade-arrow { display: grid; place-content: center; text-align: center; color: var(--muted); font: 700 .7rem/1.2 monospace; letter-spacing: .12em; }
+    .trade-arrow b { font-size: 2rem; color: var(--cyan); }
+    .invariant-callout { display: grid; grid-template-columns: 140px 1fr; gap: 18px; margin-top: 18px; padding: 22px; border-radius: 14px; background: var(--navy); color: var(--bg); }
+    :root[data-theme="dark"] .invariant-callout { color: #07111f; }
+    @media (prefers-color-scheme: dark) { :root[data-theme="auto"] .invariant-callout { color: #07111f; } }
+    .invariant-callout p { margin: 0; }
+    .architecture-card { position: relative; margin: 0 0 22px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+    .architecture-card > img { display: block; width: 100%; height: auto; border-radius: 12px; background: #07111f; }
+    .architecture-open { position: absolute; z-index: 2; top: 28px; right: 28px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 999px; background: rgb(7 17 31 / .88); color: #f2f8ff; cursor: pointer; }
+    figcaption { display: flex; justify-content: space-between; gap: 18px; color: var(--muted); padding: 12px 4px 0; font-size: .78rem; }
+    dialog { width: min(96vw, 1500px); max-height: 94vh; padding: 0; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); color: var(--ink); box-shadow: 0 30px 100px #0009; }
+    dialog::backdrop { background: rgb(0 7 17 / .84); backdrop-filter: blur(4px); }
+    dialog img { display: block; width: 100%; height: auto; }
+    .dialog-bar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
+    .dialog-bar button { border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px; background: var(--surface-2); color: var(--ink); cursor: pointer; }
+    .scenario-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .scenario-tab { min-height: 66px; display: flex; align-items: center; gap: 12px; text-align: left; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); color: var(--ink); padding: 12px 15px; cursor: pointer; }
+    .scenario-tab span { font: 700 .74rem monospace; color: var(--muted); }
+    .scenario-tab[aria-pressed="true"] { border-color: var(--cyan); background: var(--cyan-soft); box-shadow: inset 0 0 0 1px var(--cyan); }
+    .sequence-panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; box-shadow: var(--shadow); }
+    .sequence-summary { display: grid; grid-template-columns: 1.2fr .8fr; gap: 30px; padding: 26px; border-bottom: 1px solid var(--line); }
+    .sequence-summary h3 { font-size: 1.6rem; margin: 10px 0 3px; }
+    .sequence-summary p { margin: 0; color: var(--muted); }
+    .sequence-summary dl { margin: 0; }
+    .sequence-summary dl div { margin-bottom: 12px; }
+    .sequence-summary dt { font-size: .74rem; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); }
+    .sequence-summary dd { margin: 3px 0 0; }
+    .scenario-outcome { display: inline-flex; border-radius: 999px; padding: 4px 9px; font: 800 .72rem monospace; letter-spacing: .05em; }
+    .outcome-commit { background: var(--green-soft); color: var(--green); }
+    .outcome-rollback, .outcome-boundary-error { background: var(--red-soft); color: var(--red); }
+    .sequence-canvas { position: relative; min-width: 760px; padding: 22px 26px 32px; overflow: hidden; }
+    .sequence-participants { display: grid; grid-template-columns: repeat(var(--participants), 1fr); gap: 10px; min-height: 350px; }
+    .sequence-participant { position: relative; text-align: center; }
+    .sequence-participant strong { position: relative; z-index: 2; display: block; min-height: 54px; padding: 9px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font-size: .86rem; }
+    .lifeline { position: absolute; top: 54px; bottom: 0; left: 50%; border-left: 2px dashed var(--line); }
+    .activation { position: absolute; top: 82px; bottom: 34px; left: calc(50% - 5px); width: 10px; border: 1px solid var(--cyan); border-radius: 5px; background: var(--cyan-soft); }
+    .sequence-messages { position: absolute; inset: 92px 26px 28px; display: grid; grid-template-columns: repeat(calc(var(--participants) * 2), 1fr); grid-template-rows: repeat(4, 1fr); margin: 0; padding: 0; list-style: none; pointer-events: none; }
+    .message { position: relative; grid-row: var(--row); grid-column: calc(min(var(--from), var(--to)) * 2 - 1) / calc(max(var(--from), var(--to)) * 2); align-self: center; min-height: 45px; }
+    .message-line { position: absolute; top: 29px; left: 5%; right: 5%; border-top: 2px solid var(--cyan); }
+    .message-line::after { content: ""; position: absolute; top: -5px; right: -1px; width: 8px; height: 8px; border-top: 2px solid var(--cyan); border-right: 2px solid var(--cyan); transform: rotate(45deg); }
+    .message-return .message-line { border-top-style: dashed; }
+    .message-rollback .message-line, .message-boundary-error .message-line { border-color: var(--red); }
+    .message-number, .message-kind, .message-label { position: relative; z-index: 2; background: var(--surface); }
+    .message-number { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--navy); color: var(--bg); font: 800 .68rem monospace; }
+    .message-kind { margin-left: 6px; color: var(--cyan); font: 800 .67rem monospace; letter-spacing: .06em; }
+    .message-label { margin-left: 5px; padding-right: 6px; font-size: .78rem; color: var(--muted); }
+    .message-rollback .message-kind, .message-boundary-error .message-kind { color: var(--red); }
+    .sequence-alt { display: flex; gap: 12px; align-items: baseline; padding: 16px 26px; border-top: 1px solid var(--line); }
+    .sequence-alt strong { font: 850 .78rem monospace; }
+    .sequence-alt span { color: var(--muted); }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+    table { width: 100%; border-collapse: collapse; min-width: 720px; }
+    th, td { padding: 15px 17px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+    thead th { color: var(--muted); background: var(--surface-2); font: 800 .72rem monospace; letter-spacing: .08em; text-transform: uppercase; }
+    tbody th { width: 24%; color: var(--ink); }
+    tbody td { color: var(--muted); }
+    tr:last-child th, tr:last-child td { border-bottom: 0; }
+    .evidence-table code { font-size: .72rem; }
+    footer { width: min(1180px, calc(100% - 32px)); margin: 0 auto 50px; padding-top: 22px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 20px; color: var(--muted); font-size: .82rem; }
+    [hidden] { display: none !important; }
+    @media (max-width: 800px) {
+      .hero { grid-template-columns: 1fr; margin-top: 48px; }
+      .hero-aside { display: none; }
+      .mental-grid { grid-template-columns: 1fr; }
+      .trade-arrow { min-height: 54px; transform: rotate(90deg); }
+      .scenario-tabs { grid-template-columns: 1fr 1fr; }
+      .sequence-summary { grid-template-columns: 1fr; }
+      .sequence-canvas { overflow-x: auto; }
+      figcaption, footer { flex-direction: column; }
+    }
+    @media (max-width: 480px) {
+      .topbar, .hero, main, footer { width: min(100% - 22px, 1180px); }
+      .brand span:last-child { display: none; }
+      .toolbar { gap: 4px; }
+      .theme-toggle, .locale-link { padding: 7px 9px; font-size: .78rem; }
+      .hero h1 { font-size: 2.55rem; }
+      .section-heading { grid-template-columns: 42px 1fr; gap: 10px; }
+      .section-number { width: 38px; height: 38px; }
+      .scenario-tabs { grid-template-columns: 1fr; }
+      .invariant-callout { grid-template-columns: 1fr; }
+      .architecture-open { position: static; width: 100%; margin-bottom: 10px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body data-source="docs/superpowers/specs/2026-07-30-issue-410-exposed-visual-companions-design.md">
+  <a class="skip-link" href="#scenario-explorer">Skip to the scenario explorer</a>
+  <nav class="topbar" aria-label="Document controls">
+    <a class="brand" href="#top"><span class="brand-mark">E</span><span>bluetape4k · Exposed</span></a>
+    <div class="toolbar">
+      <button type="button" class="theme-toggle" aria-label="Theme" aria-pressed="false" data-theme-control>◐ <span>auto</span></button>
+      <a class="locale-link" href="../ko/jdbc-r2dbc-transaction-boundaries.html" hreflang="ko">한국어</a>
+    </div>
+  </nav>
+  <header class="hero" id="top">
+    <div>
+      <p class="eyebrow">Interactive architecture companion · Issue #410</p>
+      <h1>JPA to Exposed: Make Transaction Ownership Visible</h1>
+      <p class="lede">Exposed trades part of JPA/Hibernate's object-graph automation for explicit SQL intent. The decisive migration question is not which repository opens a transaction, but which application boundary owns the complete unit of work.</p>
+    </div>
+    <aside class="hero-aside">
+      <strong>JPA → EXPOSED</strong>
+      Repositories compose database operations; the service or controller boundary owns atomicity across the whole use case.
+    </aside>
+  </header>
+  <main>
+      <section id="mental-model">
+    <div class="section-heading">
+      <span class="section-number">01</span>
+      <div><p class="kicker">Invariant</p><h2>First, change the mental model</h2></div>
+    </div>
+    <div class="mental-grid">
+      <article class="mental-card jpa-card">
+        <span class="badge">JPA / Hibernate</span>
+        <h3>JPA / Hibernate default</h3>
+        <p class="flow-line">managed entity → dirty checking → flush</p>
+        <p class="strength">Strength: productive object graphs, mature ecosystem, rich persistence context.</p>
+        <p class="cost">Cost: I/O can hide behind proxies, N+1 traversal, flush timing, and entity lifecycle.</p>
+      </article>
+      <div class="trade-arrow" aria-hidden="true"><span>TRADE</span><b>⇄</b></div>
+      <article class="mental-card exposed-card">
+        <span class="badge">JetBrains Exposed</span>
+        <h3>Exposed DSL / repository</h3>
+        <p class="flow-line">explicit select / join / map → explicit insert / update / delete</p>
+        <p class="strength">Strength: SQL intent and execution points stay visible in application code.</p>
+        <p class="cost">Cost: query shape, mapping, writes, and transaction boundaries require explicit design.</p>
+      </article>
+    </div>
+    <aside class="invariant-callout">
+      <strong>Invariant</strong>
+      <p>Repositories compose database operations; the service or controller boundary owns atomicity across the whole use case.</p>
+    </aside></section>
+      <section id="architecture">
+        <div class="section-heading"><span class="section-number">02</span><div><p class="kicker">SOURCE DIAGRAM</p><h2>Start with the existing architecture</h2><p>This is the repository's approved transaction-ownership diagram, embedded without reinterpretation. The explorer below turns each lane into an executable story.</p></div></div>
+        
+    <figure class="architecture-card" data-architecture-id="transaction-ownership"
+            data-architecture-sha256="1d7336238d24a63bde89c86cbc641bd4e1bda820cc327be258e323506f7a3597">
+      <button class="architecture-open" type="button" data-lightbox-open="transaction-ownership">
+        <span aria-hidden="true">↗</span> Open the original architecture diagram
+      </button>
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAwIiBoZWlnaHQ9IjExMDAiIHZpZXdCb3g9IjAgMCAyMDAwIDExMDAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSBkZXNjIj4KICA8dGl0bGUgaWQ9InRpdGxlIj5KREJDIGFuZCBSMkRCQyB0cmFuc2FjdGlvbiBvd25lcnNoaXA8L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5Ud28gcGFyYWxsZWwgcmVzcG9uc2liaWxpdHkgbGFuZXMgc2hvdyBhcHBsaWNhdGlvbiBvciBmcmFtZXdvcmsgb3duZXJzaGlwIGZsb3dpbmcgdGhyb3VnaCB0cmFuc2FjdGlvbiBjb250ZXh0LCByZXBvc2l0b3J5LCBkcml2ZXIsIGFuZCBkYXRhYmFzZS4gUmVwb3NpdG9yaWVzIHBhcnRpY2lwYXRlIGluIGJ1dCBkbyBub3QgY3JlYXRlIHRyYW5zYWN0aW9ucy48L2Rlc2M+CiAgPGRlZnM+CiAgICA8bWFya2VyIGlkPSJhcnJvdy1ibHVlIiB2aWV3Qm94PSIwIDAgMTQgMTQiIHJlZlg9IjEzIiByZWZZPSI3IiBtYXJrZXJXaWR0aD0iMTQiIG1hcmtlckhlaWdodD0iMTQiIG9yaWVudD0iYXV0byIgbWFya2VyVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNMCAwIEwxNCA3IEwwIDE0IFoiIGZpbGw9IiM5ZWQ4ZmYiIHN0cm9rZT0iIzllZDhmZiIvPjwvbWFya2VyPgogICAgPG1hcmtlciBpZD0iYXJyb3ctdGVhbCIgdmlld0JveD0iMCAwIDE0IDE0IiByZWZYPSIxMyIgcmVmWT0iNyIgbWFya2VyV2lkdGg9IjE0IiBtYXJrZXJIZWlnaHQ9IjE0IiBvcmllbnQ9ImF1dG8iIG1hcmtlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMCBMMTQgNyBMMCAxNCBaIiBmaWxsPSIjNWVlYWQ0IiBzdHJva2U9IiM1ZWVhZDQiLz48L21hcmtlcj4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iY2FudmFzIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzExMTgyNyIvPjxzdG9wIG9mZnNldD0iNTglIiBzdG9wLWNvbG9yPSIjMTgyMzMxIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMjIzMDQ3Ii8+PC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0icGFuZWwiIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMWYyOTM3Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMTExODI3Ii8+PC9saW5lYXJHcmFkaWVudD4KICAgIDxmaWx0ZXIgaWQ9InNoYWRvdyIgeD0iLTIwJSIgeT0iLTIwJSIgd2lkdGg9IjE0MCUiIGhlaWdodD0iMTQwJSI+PGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjEwIiBzdGREZXZpYXRpb249IjEyIiBmbG9vZC1jb2xvcj0iIzAyMDYxNyIgZmxvb2Qtb3BhY2l0eT0iMC4zMiIvPjwvZmlsdGVyPgogICAgPHN5bWJvbCBpZD0iZGF0YWJhc2UtaWNvbiIgdmlld0JveD0iMCAwIDEyOCAxMjgiPgogICAgICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICAgICAgPGVsbGlwc2UgY3g9IjY0IiBjeT0iMzYiIHJ4PSIzNCIgcnk9IjEzIiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIvPgogICAgICA8cGF0aCBkPSJNMzAgMzZ2NDRjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTRWMzYiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgICAgIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNE0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogICAgPC9zeW1ib2w+CiAgPC9kZWZzPgogIDxyZWN0IHdpZHRoPSIyMDAwIiBoZWlnaHQ9IjExMDAiIGZpbGw9InVybCgjY2FudmFzKSIvPgogIDxyZWN0IHg9IjQyIiB5PSIzNiIgd2lkdGg9IjE5MTYiIGhlaWdodD0iMTAyOCIgcng9IjM0IiBmaWxsPSJ1cmwoI3BhbmVsKSIgc3Ryb2tlPSIjNTM2Mzc3IiBzdHJva2Utd2lkdGg9IjQiIGZpbHRlcj0idXJsKCNzaGFkb3cpIi8+CiAgPHRleHQgeD0iMTAwMCIgeT0iMTAyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSI1MiIgZmlsbD0iI2Y4ZmFmYyI+VGhlIENhbGxlciBPd25zIHRoZSBUcmFuc2FjdGlvbiBCb3VuZGFyeTwvdGV4dD4KICA8dGV4dCB4PSIxMDAwIiB5PSIxNDYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxOSIgZmlsbD0iI2I2YzRkNiI+UmVwb3NpdG9yaWVzIGpvaW4gdGhlIGN1cnJlbnQgY29udGV4dDsgdGhleSBkbyBub3Qgb3BlbiBhIGhpZGRlbiB0cmFuc2FjdGlvbjwvdGV4dD4KCiAgPHJlY3QgeD0iNzAiIHk9IjE5NSIgd2lkdGg9IjE4NjAiIGhlaWdodD0iMzIwIiByeD0iMjgiIGZpbGw9IiMxMTE4MjciIHN0cm9rZT0iIzRjOGNjOCIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHRleHQgeD0iMTEwIiB5PSIyNDIiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjMyIiBmaWxsPSIjOWVkOGZmIj5KREJDIG93bmVyc2hpcCBsYW5lPC90ZXh0PgogIDxyZWN0IHg9IjcwIiB5PSI1NTUiIHdpZHRoPSIxODYwIiBoZWlnaHQ9IjMyMCIgcng9IjI4IiBmaWxsPSIjMTExODI3IiBzdHJva2U9IiMxNTljOTIiIHN0cm9rZS13aWR0aD0iMyIvPgogIDx0ZXh0IHg9IjExMCIgeT0iNjAyIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIzMiIgZmlsbD0iIzVlZWFkNCI+UjJEQkMgb3duZXJzaGlwIGxhbmU8L3RleHQ+CgogIDxnIGZpbHRlcj0idXJsKCNzaGFkb3cpIj4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxMDAiIHk9IjI4NSIgd2lkdGg9IjI4MCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjYzU4YjJhIiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSI0NTUiIHk9IjI4NSIgd2lkdGg9IjMyMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjOGI2YmQ2IiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSI4NTAiIHk9IjI4NSIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjNGM4Y2M4IiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxMjI1IiB5PSIyODUiIHdpZHRoPSIzMDAiIGhlaWdodD0iMTcwIiByeD0iMjQiIGZpbGw9IiMxNzIwMzMiIHN0cm9rZT0iIzRjOGNjOCIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgICA8cmVjdCBjbGFzcz0iY2FyZCIgeD0iMTYwMCIgeT0iMjg1IiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiNjNThiMmEiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjEwMCIgeT0iNjQ1IiB3aWR0aD0iMjgwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiNjNThiMmEiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjQ1NSIgeT0iNjQ1IiB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiM4YjZiZDYiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9Ijg1MCIgeT0iNjQ1IiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiMxNTljOTIiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjEyMjUiIHk9IjY0NSIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjMTU5YzkyIiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxNjAwIiB5PSI2NDUiIHdpZHRoPSIzMDAiIGhlaWdodD0iMTcwIiByeD0iMjQiIGZpbGw9IiMxNzIwMzMiIHN0cm9rZT0iI2M1OGIyYSIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgPC9nPgoKICA8ZyB0ZXh0LWFuY2hvcj0ibWlkZGxlIj4KICAgIDx0ZXh0IHg9IjI0MCIgeT0iMzQwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iI2Y2Yzk2YiI+QXBwbGljYXRpb24gLyBTcHJpbmc8L3RleHQ+PHRleHQgeD0iMjQwIiB5PSIzODAiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNiIgZmlsbD0iI2Q1ZGZlYiI+b3ducyB1c2UtY2FzZSBzY29wZTwvdGV4dD48dGV4dCB4PSIyNDAiIHk9IjQxMiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb21taXQg4oCiIHJvbGxiYWNrPC90ZXh0PgogICAgPHRleHQgeD0iNjE1IiB5PSIzNDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI3IiBmaWxsPSIjYzRiNWZkIj50cmFuc2FjdGlvbiB7IH08L3RleHQ+PHRleHQgeD0iNjE1IiB5PSIzODAiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNiIgZmlsbD0iI2Q1ZGZlYiI+SmRiY1RyYW5zYWN0aW9uIGNvbnRleHQ8L3RleHQ+PHRleHQgeD0iNjE1IiB5PSI0MTIiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNSIgZmlsbD0iI2I2YzRkNiI+Y29ubmVjdGlvbiArIGlzb2xhdGlvbjwvdGV4dD4KICAgIDx0ZXh0IHg9IjEwMDAiIHk9IjM0MCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiM5ZWQ4ZmYiPkpkYmNSZXBvc2l0b3J5PC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9IjM4MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj51c2VzIGN1cnJlbnQgY29udGV4dDwvdGV4dD48dGV4dCB4PSIxMDAwIiB5PSI0MTIiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNSIgZmlsbD0iI2ZkYTRhZiI+bmV2ZXIgY3JlYXRlcyB0cmFuc2FjdGlvbjwvdGV4dD4KICAgIDx0ZXh0IHg9IjEzNzUiIHk9IjM0MCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiM5ZWQ4ZmYiPkpEQkMgZHJpdmVyPC90ZXh0Pjx0ZXh0IHg9IjEzNzUiIHk9IjM4MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5ibG9ja2luZyBjb25uZWN0aW9uIEkvTzwvdGV4dD4KICAgIDx1c2UgaHJlZj0iI2RhdGFiYXNlLWljb24iIHg9IjE2MTgiIHk9IjMwMyIgd2lkdGg9IjkwIiBoZWlnaHQ9IjkwIi8+PHRleHQgeD0iMTc5NSIgeT0iMzUwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iI2Y2Yzk2YiI+RGF0YWJhc2U8L3RleHQ+PHRleHQgeD0iMTc5NSIgeT0iMzg4IiBmb250LWZhbWlseT0iQ29taWMgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNkNWRmZWIiPmR1cmFibGUgc3RhdGU8L3RleHQ+CgogICAgPHRleHQgeD0iMjQwIiB5PSI3MDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI3IiBmaWxsPSIjZjZjOTZiIj5BcHBsaWNhdGlvbiAvIFNwcmluZzwvdGV4dD48dGV4dCB4PSIyNDAiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5vd25zIGNvcm91dGluZSBzY29wZTwvdGV4dD48dGV4dCB4PSIyNDAiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb21taXQg4oCiIHJvbGxiYWNrPC90ZXh0PgogICAgPHRleHQgeD0iNjE1IiB5PSI3MDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI1IiBmaWxsPSIjYzRiNWZkIj5zdXNwZW5kVHJhbnNhY3Rpb24geyB9PC90ZXh0Pjx0ZXh0IHg9IjYxNSIgeT0iNzQwIiBmb250LWZhbWlseT0iQ29taWMgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiNkNWRmZWIiPlIyZGJjVHJhbnNhY3Rpb24gY29udGV4dDwvdGV4dD48dGV4dCB4PSI2MTUiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb25uZWN0aW9uICsgY2FuY2VsbGF0aW9uPC90ZXh0PgogICAgPHRleHQgeD0iMTAwMCIgeT0iNzAwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iIzVlZWFkNCI+UjJkYmNSZXBvc2l0b3J5PC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5GbG93IGNvbGxlY3RlZCBoZXJlPC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZmRhNGFmIj5uZXZlciBjcmVhdGVzIHRyYW5zYWN0aW9uPC90ZXh0PgogICAgPHRleHQgeD0iMTM3NSIgeT0iNzAwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iIzVlZWFkNCI+UjJEQkMgZHJpdmVyPC90ZXh0Pjx0ZXh0IHg9IjEzNzUiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5ub24tYmxvY2tpbmcgY29ubmVjdGlvbiBJL088L3RleHQ+CiAgICA8dXNlIGhyZWY9IiNkYXRhYmFzZS1pY29uIiB4PSIxNjE4IiB5PSI2NjMiIHdpZHRoPSI5MCIgaGVpZ2h0PSI5MCIvPjx0ZXh0IHg9IjE3OTUiIHk9IjcxMCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiNmNmM5NmIiPkRhdGFiYXNlPC90ZXh0Pjx0ZXh0IHg9IjE3OTUiIHk9Ijc0OCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZDVkZmViIj5kdXJhYmxlIHN0YXRlPC90ZXh0PgogIDwvZz4KCiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPgogICAgPHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTM4MCAzNzAgSDQ1NSIgc3Ryb2tlPSIjOWVkOGZmIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LWJsdWUpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTc3NSAzNzAgSDg1MCIgc3Ryb2tlPSIjOWVkOGZmIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LWJsdWUpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTExNTAgMzcwIEgxMjI1IiBzdHJva2U9IiM5ZWQ4ZmYiIG1hcmtlci1lbmQ9InVybCgjYXJyb3ctYmx1ZSkiLz48cGF0aCBjbGFzcz0iY29ubmVjdG9yIiBkPSJNMTUyNSAzNzAgSDE2MDAiIHN0cm9rZT0iIzllZDhmZiIgbWFya2VyLWVuZD0idXJsKCNhcnJvdy1ibHVlKSIvPgogICAgPHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTM4MCA3MzAgSDQ1NSIgc3Ryb2tlPSIjNWVlYWQ0IiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LXRlYWwpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTc3NSA3MzAgSDg1MCIgc3Ryb2tlPSIjNWVlYWQ0IiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LXRlYWwpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTExNTAgNzMwIEgxMjI1IiBzdHJva2U9IiM1ZWVhZDQiIG1hcmtlci1lbmQ9InVybCgjYXJyb3ctdGVhbCkiLz48cGF0aCBjbGFzcz0iY29ubmVjdG9yIiBkPSJNMTUyNSA3MzAgSDE2MDAiIHN0cm9rZT0iIzVlZWFkNCIgbWFya2VyLWVuZD0idXJsKCNhcnJvdy10ZWFsKSIvPgogIDwvZz4KCiAgPHJlY3QgeD0iMjIwIiB5PSI5MjUiIHdpZHRoPSIxNTYwIiBoZWlnaHQ9Ijc0IiByeD0iMjIiIGZpbGw9IiMyMDE5MjMiIHN0cm9rZT0iI2QxNmY3NSIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHRleHQgeD0iMTAwMCIgeT0iOTU4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNCIgZmlsbD0iI2ZkYTRhZiI+T25lIGJ1c2luZXNzIG9wZXJhdGlvbiwgb25lIG93bmVyLCBvbmUgcHJvcGFnYXRlZCB0cmFuc2FjdGlvbiBjb250ZXh0PC90ZXh0PgogIDx0ZXh0IHg9IjEwMDAiIHk9Ijk4NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5SZXR1cm5pbmcgYSBEQU8gZW50aXR5IG9yIHVuY29sbGVjdGVkIGRhdGFiYXNlIEZsb3cgY3Jvc3NlcyB0aGUgYm91bmRhcnkgYmVmb3JlIHRoZSB3b3JrIGlzIGNvbXBsZXRlLjwvdGV4dD4KPC9zdmc+Cg==" alt="Transaction ownership architecture: a service or controller boundary encloses JDBC transaction blocks and R2DBC suspend transaction blocks before repository calls reach the database.">
+      <figcaption><code>docs/manual/assets/persistence/transaction-ownership.svg</code><span>SHA-256 1d7336238d24…</span></figcaption>
+      <dialog id="architecture-transaction-ownership" aria-label="Transaction ownership architecture: a service or controller boundary encloses JDBC transaction blocks and R2DBC suspend transaction blocks before repository calls reach the database.">
+        <div class="dialog-bar">
+          <strong>Transaction ownership architecture: a service or controller boundary encloses JDBC transaction blocks and R2DBC suspend transaction blocks before repository calls reach the database.</strong>
+          <button type="button" data-lightbox-close="transaction-ownership">Close <kbd>Esc</kbd></button>
+        </div>
+        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAwIiBoZWlnaHQ9IjExMDAiIHZpZXdCb3g9IjAgMCAyMDAwIDExMDAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSBkZXNjIj4KICA8dGl0bGUgaWQ9InRpdGxlIj5KREJDIGFuZCBSMkRCQyB0cmFuc2FjdGlvbiBvd25lcnNoaXA8L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5Ud28gcGFyYWxsZWwgcmVzcG9uc2liaWxpdHkgbGFuZXMgc2hvdyBhcHBsaWNhdGlvbiBvciBmcmFtZXdvcmsgb3duZXJzaGlwIGZsb3dpbmcgdGhyb3VnaCB0cmFuc2FjdGlvbiBjb250ZXh0LCByZXBvc2l0b3J5LCBkcml2ZXIsIGFuZCBkYXRhYmFzZS4gUmVwb3NpdG9yaWVzIHBhcnRpY2lwYXRlIGluIGJ1dCBkbyBub3QgY3JlYXRlIHRyYW5zYWN0aW9ucy48L2Rlc2M+CiAgPGRlZnM+CiAgICA8bWFya2VyIGlkPSJhcnJvdy1ibHVlIiB2aWV3Qm94PSIwIDAgMTQgMTQiIHJlZlg9IjEzIiByZWZZPSI3IiBtYXJrZXJXaWR0aD0iMTQiIG1hcmtlckhlaWdodD0iMTQiIG9yaWVudD0iYXV0byIgbWFya2VyVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNMCAwIEwxNCA3IEwwIDE0IFoiIGZpbGw9IiM5ZWQ4ZmYiIHN0cm9rZT0iIzllZDhmZiIvPjwvbWFya2VyPgogICAgPG1hcmtlciBpZD0iYXJyb3ctdGVhbCIgdmlld0JveD0iMCAwIDE0IDE0IiByZWZYPSIxMyIgcmVmWT0iNyIgbWFya2VyV2lkdGg9IjE0IiBtYXJrZXJIZWlnaHQ9IjE0IiBvcmllbnQ9ImF1dG8iIG1hcmtlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMCBMMTQgNyBMMCAxNCBaIiBmaWxsPSIjNWVlYWQ0IiBzdHJva2U9IiM1ZWVhZDQiLz48L21hcmtlcj4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iY2FudmFzIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzExMTgyNyIvPjxzdG9wIG9mZnNldD0iNTglIiBzdG9wLWNvbG9yPSIjMTgyMzMxIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMjIzMDQ3Ii8+PC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0icGFuZWwiIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMWYyOTM3Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMTExODI3Ii8+PC9saW5lYXJHcmFkaWVudD4KICAgIDxmaWx0ZXIgaWQ9InNoYWRvdyIgeD0iLTIwJSIgeT0iLTIwJSIgd2lkdGg9IjE0MCUiIGhlaWdodD0iMTQwJSI+PGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjEwIiBzdGREZXZpYXRpb249IjEyIiBmbG9vZC1jb2xvcj0iIzAyMDYxNyIgZmxvb2Qtb3BhY2l0eT0iMC4zMiIvPjwvZmlsdGVyPgogICAgPHN5bWJvbCBpZD0iZGF0YWJhc2UtaWNvbiIgdmlld0JveD0iMCAwIDEyOCAxMjgiPgogICAgICA8cmVjdCB4PSIxMCIgeT0iOCIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZmFmMiIgc3Ryb2tlPSIjMjg0ODVhIiBzdHJva2Utd2lkdGg9IjYiLz4KICAgICAgPGVsbGlwc2UgY3g9IjY0IiBjeT0iMzYiIHJ4PSIzNCIgcnk9IjEzIiBmaWxsPSIjZmZmMGQ4IiBzdHJva2U9IiM4YzZmMzMiIHN0cm9rZS13aWR0aD0iNiIvPgogICAgICA8cGF0aCBkPSJNMzAgMzZ2NDRjMCA4IDE1IDE0IDM0IDE0czM0LTYgMzQtMTRWMzYiIGZpbGw9IiNmZmYwZDgiIHN0cm9rZT0iIzhjNmYzMyIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgICAgIDxwYXRoIGQ9Ik0zMCA1OGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNE0zMCA4MGMwIDggMTUgMTQgMzQgMTRzMzQtNiAzNC0xNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGM2ZjMzIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogICAgPC9zeW1ib2w+CiAgPC9kZWZzPgogIDxyZWN0IHdpZHRoPSIyMDAwIiBoZWlnaHQ9IjExMDAiIGZpbGw9InVybCgjY2FudmFzKSIvPgogIDxyZWN0IHg9IjQyIiB5PSIzNiIgd2lkdGg9IjE5MTYiIGhlaWdodD0iMTAyOCIgcng9IjM0IiBmaWxsPSJ1cmwoI3BhbmVsKSIgc3Ryb2tlPSIjNTM2Mzc3IiBzdHJva2Utd2lkdGg9IjQiIGZpbHRlcj0idXJsKCNzaGFkb3cpIi8+CiAgPHRleHQgeD0iMTAwMCIgeT0iMTAyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSI1MiIgZmlsbD0iI2Y4ZmFmYyI+VGhlIENhbGxlciBPd25zIHRoZSBUcmFuc2FjdGlvbiBCb3VuZGFyeTwvdGV4dD4KICA8dGV4dCB4PSIxMDAwIiB5PSIxNDYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxOSIgZmlsbD0iI2I2YzRkNiI+UmVwb3NpdG9yaWVzIGpvaW4gdGhlIGN1cnJlbnQgY29udGV4dDsgdGhleSBkbyBub3Qgb3BlbiBhIGhpZGRlbiB0cmFuc2FjdGlvbjwvdGV4dD4KCiAgPHJlY3QgeD0iNzAiIHk9IjE5NSIgd2lkdGg9IjE4NjAiIGhlaWdodD0iMzIwIiByeD0iMjgiIGZpbGw9IiMxMTE4MjciIHN0cm9rZT0iIzRjOGNjOCIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHRleHQgeD0iMTEwIiB5PSIyNDIiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjMyIiBmaWxsPSIjOWVkOGZmIj5KREJDIG93bmVyc2hpcCBsYW5lPC90ZXh0PgogIDxyZWN0IHg9IjcwIiB5PSI1NTUiIHdpZHRoPSIxODYwIiBoZWlnaHQ9IjMyMCIgcng9IjI4IiBmaWxsPSIjMTExODI3IiBzdHJva2U9IiMxNTljOTIiIHN0cm9rZS13aWR0aD0iMyIvPgogIDx0ZXh0IHg9IjExMCIgeT0iNjAyIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIzMiIgZmlsbD0iIzVlZWFkNCI+UjJEQkMgb3duZXJzaGlwIGxhbmU8L3RleHQ+CgogIDxnIGZpbHRlcj0idXJsKCNzaGFkb3cpIj4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxMDAiIHk9IjI4NSIgd2lkdGg9IjI4MCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjYzU4YjJhIiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSI0NTUiIHk9IjI4NSIgd2lkdGg9IjMyMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjOGI2YmQ2IiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSI4NTAiIHk9IjI4NSIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjNGM4Y2M4IiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxMjI1IiB5PSIyODUiIHdpZHRoPSIzMDAiIGhlaWdodD0iMTcwIiByeD0iMjQiIGZpbGw9IiMxNzIwMzMiIHN0cm9rZT0iIzRjOGNjOCIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgICA8cmVjdCBjbGFzcz0iY2FyZCIgeD0iMTYwMCIgeT0iMjg1IiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiNjNThiMmEiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjEwMCIgeT0iNjQ1IiB3aWR0aD0iMjgwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiNjNThiMmEiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjQ1NSIgeT0iNjQ1IiB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiM4YjZiZDYiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9Ijg1MCIgeT0iNjQ1IiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE3MCIgcng9IjI0IiBmaWxsPSIjMTcyMDMzIiBzdHJva2U9IiMxNTljOTIiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjEyMjUiIHk9IjY0NSIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNzAiIHJ4PSIyNCIgZmlsbD0iIzE3MjAzMyIgc3Ryb2tlPSIjMTU5YzkyIiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxyZWN0IGNsYXNzPSJjYXJkIiB4PSIxNjAwIiB5PSI2NDUiIHdpZHRoPSIzMDAiIGhlaWdodD0iMTcwIiByeD0iMjQiIGZpbGw9IiMxNzIwMzMiIHN0cm9rZT0iI2M1OGIyYSIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgPC9nPgoKICA8ZyB0ZXh0LWFuY2hvcj0ibWlkZGxlIj4KICAgIDx0ZXh0IHg9IjI0MCIgeT0iMzQwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iI2Y2Yzk2YiI+QXBwbGljYXRpb24gLyBTcHJpbmc8L3RleHQ+PHRleHQgeD0iMjQwIiB5PSIzODAiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNiIgZmlsbD0iI2Q1ZGZlYiI+b3ducyB1c2UtY2FzZSBzY29wZTwvdGV4dD48dGV4dCB4PSIyNDAiIHk9IjQxMiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb21taXQg4oCiIHJvbGxiYWNrPC90ZXh0PgogICAgPHRleHQgeD0iNjE1IiB5PSIzNDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI3IiBmaWxsPSIjYzRiNWZkIj50cmFuc2FjdGlvbiB7IH08L3RleHQ+PHRleHQgeD0iNjE1IiB5PSIzODAiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNiIgZmlsbD0iI2Q1ZGZlYiI+SmRiY1RyYW5zYWN0aW9uIGNvbnRleHQ8L3RleHQ+PHRleHQgeD0iNjE1IiB5PSI0MTIiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNSIgZmlsbD0iI2I2YzRkNiI+Y29ubmVjdGlvbiArIGlzb2xhdGlvbjwvdGV4dD4KICAgIDx0ZXh0IHg9IjEwMDAiIHk9IjM0MCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiM5ZWQ4ZmYiPkpkYmNSZXBvc2l0b3J5PC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9IjM4MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj51c2VzIGN1cnJlbnQgY29udGV4dDwvdGV4dD48dGV4dCB4PSIxMDAwIiB5PSI0MTIiIGZvbnQtZmFtaWx5PSJDb21pYyBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNSIgZmlsbD0iI2ZkYTRhZiI+bmV2ZXIgY3JlYXRlcyB0cmFuc2FjdGlvbjwvdGV4dD4KICAgIDx0ZXh0IHg9IjEzNzUiIHk9IjM0MCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiM5ZWQ4ZmYiPkpEQkMgZHJpdmVyPC90ZXh0Pjx0ZXh0IHg9IjEzNzUiIHk9IjM4MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5ibG9ja2luZyBjb25uZWN0aW9uIEkvTzwvdGV4dD4KICAgIDx1c2UgaHJlZj0iI2RhdGFiYXNlLWljb24iIHg9IjE2MTgiIHk9IjMwMyIgd2lkdGg9IjkwIiBoZWlnaHQ9IjkwIi8+PHRleHQgeD0iMTc5NSIgeT0iMzUwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iI2Y2Yzk2YiI+RGF0YWJhc2U8L3RleHQ+PHRleHQgeD0iMTc5NSIgeT0iMzg4IiBmb250LWZhbWlseT0iQ29taWMgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNkNWRmZWIiPmR1cmFibGUgc3RhdGU8L3RleHQ+CgogICAgPHRleHQgeD0iMjQwIiB5PSI3MDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI3IiBmaWxsPSIjZjZjOTZiIj5BcHBsaWNhdGlvbiAvIFNwcmluZzwvdGV4dD48dGV4dCB4PSIyNDAiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5vd25zIGNvcm91dGluZSBzY29wZTwvdGV4dD48dGV4dCB4PSIyNDAiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb21taXQg4oCiIHJvbGxiYWNrPC90ZXh0PgogICAgPHRleHQgeD0iNjE1IiB5PSI3MDAiIGZvbnQtZmFtaWx5PSJBcmNoaXRlY3RzIERhdWdodGVyLCBDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjI1IiBmaWxsPSIjYzRiNWZkIj5zdXNwZW5kVHJhbnNhY3Rpb24geyB9PC90ZXh0Pjx0ZXh0IHg9IjYxNSIgeT0iNzQwIiBmb250LWZhbWlseT0iQ29taWMgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiNkNWRmZWIiPlIyZGJjVHJhbnNhY3Rpb24gY29udGV4dDwvdGV4dD48dGV4dCB4PSI2MTUiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5jb25uZWN0aW9uICsgY2FuY2VsbGF0aW9uPC90ZXh0PgogICAgPHRleHQgeD0iMTAwMCIgeT0iNzAwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iIzVlZWFkNCI+UjJkYmNSZXBvc2l0b3J5PC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5GbG93IGNvbGxlY3RlZCBoZXJlPC90ZXh0Pjx0ZXh0IHg9IjEwMDAiIHk9Ijc3MiIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZmRhNGFmIj5uZXZlciBjcmVhdGVzIHRyYW5zYWN0aW9uPC90ZXh0PgogICAgPHRleHQgeD0iMTM3NSIgeT0iNzAwIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNyIgZmlsbD0iIzVlZWFkNCI+UjJEQkMgZHJpdmVyPC90ZXh0Pjx0ZXh0IHg9IjEzNzUiIHk9Ijc0MCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjZDVkZmViIj5ub24tYmxvY2tpbmcgY29ubmVjdGlvbiBJL088L3RleHQ+CiAgICA8dXNlIGhyZWY9IiNkYXRhYmFzZS1pY29uIiB4PSIxNjE4IiB5PSI2NjMiIHdpZHRoPSI5MCIgaGVpZ2h0PSI5MCIvPjx0ZXh0IHg9IjE3OTUiIHk9IjcxMCIgZm9udC1mYW1pbHk9IkFyY2hpdGVjdHMgRGF1Z2h0ZXIsIENvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjciIGZpbGw9IiNmNmM5NmIiPkRhdGFiYXNlPC90ZXh0Pjx0ZXh0IHg9IjE3OTUiIHk9Ijc0OCIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZDVkZmViIj5kdXJhYmxlIHN0YXRlPC90ZXh0PgogIDwvZz4KCiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPgogICAgPHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTM4MCAzNzAgSDQ1NSIgc3Ryb2tlPSIjOWVkOGZmIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LWJsdWUpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTc3NSAzNzAgSDg1MCIgc3Ryb2tlPSIjOWVkOGZmIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LWJsdWUpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTExNTAgMzcwIEgxMjI1IiBzdHJva2U9IiM5ZWQ4ZmYiIG1hcmtlci1lbmQ9InVybCgjYXJyb3ctYmx1ZSkiLz48cGF0aCBjbGFzcz0iY29ubmVjdG9yIiBkPSJNMTUyNSAzNzAgSDE2MDAiIHN0cm9rZT0iIzllZDhmZiIgbWFya2VyLWVuZD0idXJsKCNhcnJvdy1ibHVlKSIvPgogICAgPHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTM4MCA3MzAgSDQ1NSIgc3Ryb2tlPSIjNWVlYWQ0IiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LXRlYWwpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTc3NSA3MzAgSDg1MCIgc3Ryb2tlPSIjNWVlYWQ0IiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93LXRlYWwpIi8+PHBhdGggY2xhc3M9ImNvbm5lY3RvciIgZD0iTTExNTAgNzMwIEgxMjI1IiBzdHJva2U9IiM1ZWVhZDQiIG1hcmtlci1lbmQ9InVybCgjYXJyb3ctdGVhbCkiLz48cGF0aCBjbGFzcz0iY29ubmVjdG9yIiBkPSJNMTUyNSA3MzAgSDE2MDAiIHN0cm9rZT0iIzVlZWFkNCIgbWFya2VyLWVuZD0idXJsKCNhcnJvdy10ZWFsKSIvPgogIDwvZz4KCiAgPHJlY3QgeD0iMjIwIiB5PSI5MjUiIHdpZHRoPSIxNTYwIiBoZWlnaHQ9Ijc0IiByeD0iMjIiIGZpbGw9IiMyMDE5MjMiIHN0cm9rZT0iI2QxNmY3NSIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHRleHQgeD0iMTAwMCIgeT0iOTU4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJjaGl0ZWN0cyBEYXVnaHRlciwgQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyNCIgZmlsbD0iI2ZkYTRhZiI+T25lIGJ1c2luZXNzIG9wZXJhdGlvbiwgb25lIG93bmVyLCBvbmUgcHJvcGFnYXRlZCB0cmFuc2FjdGlvbiBjb250ZXh0PC90ZXh0PgogIDx0ZXh0IHg9IjEwMDAiIHk9Ijk4NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjE1IiBmaWxsPSIjYjZjNGQ2Ij5SZXR1cm5pbmcgYSBEQU8gZW50aXR5IG9yIHVuY29sbGVjdGVkIGRhdGFiYXNlIEZsb3cgY3Jvc3NlcyB0aGUgYm91bmRhcnkgYmVmb3JlIHRoZSB3b3JrIGlzIGNvbXBsZXRlLjwvdGV4dD4KPC9zdmc+Cg==" alt="Transaction ownership architecture: a service or controller boundary encloses JDBC transaction blocks and R2DBC suspend transaction blocks before repository calls reach the database.">
+      </dialog>
+    </figure>
+  
+      </section>
+      <section id="scenario-explorer">
+        <div class="section-heading"><span class="section-number">03</span><div><p class="kicker">BOUNDARY LAB</p><h2>Replay six boundary decisions</h2><p>Select a path. The sequence, owner, terminal signal, code mapping, and risk statement update together.</p></div></div>
+        <div class="scenario-tabs" role="group" aria-label="Replay six boundary decisions">
+    <button type="button"
+            id="scenario-jdbc-single"
+            class="scenario-tab"
+            data-scenario="jdbc-single"
+            aria-controls="sequence-jdbc-single"
+            aria-pressed="true">
+      <span>01</span>
+      JDBC · one repository
+    </button>
+  
+    <button type="button"
+            id="scenario-jdbc-multi-repository"
+            class="scenario-tab"
+            data-scenario="jdbc-multi-repository"
+            aria-controls="sequence-jdbc-multi-repository"
+            aria-pressed="false">
+      <span>02</span>
+      JDBC · multiple repositories
+    </button>
+  
+    <button type="button"
+            id="scenario-r2dbc-single"
+            class="scenario-tab"
+            data-scenario="r2dbc-single"
+            aria-controls="sequence-r2dbc-single"
+            aria-pressed="false">
+      <span>03</span>
+      R2DBC · one repository
+    </button>
+  
+    <button type="button"
+            id="scenario-r2dbc-flow-inside"
+            class="scenario-tab"
+            data-scenario="r2dbc-flow-inside"
+            aria-controls="sequence-r2dbc-flow-inside"
+            aria-pressed="false">
+      <span>04</span>
+      R2DBC Flow · collect inside
+    </button>
+  
+    <button type="button"
+            id="scenario-r2dbc-flow-escape"
+            class="scenario-tab"
+            data-scenario="r2dbc-flow-escape"
+            aria-controls="sequence-r2dbc-flow-escape"
+            aria-pressed="false">
+      <span>05</span>
+      R2DBC Flow · escapes
+    </button>
+  
+    <button type="button"
+            id="scenario-rollback-or-cancellation"
+            class="scenario-tab"
+            data-scenario="rollback-or-cancellation"
+            aria-controls="sequence-rollback-or-cancellation"
+            aria-pressed="false">
+      <span>06</span>
+      Failure or cancellation
+    </button>
+  </div>
+      </section>
+      <section id="sequence">
+        <div class="section-heading"><span class="section-number">04</span><div><p class="kicker">CALL → RETURN → TERMINAL</p><h2>Execution sequence</h2></div></div>
+        <div class="sequence-stack">
+    <article class="sequence-panel" id="sequence-jdbc-single"
+             data-sequence="jdbc-single"
+             data-view="jdbc-single"
+             >
+      <header class="sequence-summary">
+        <div>
+          <span class="scenario-outcome outcome-commit">COMMIT</span>
+          <h3>JDBC · one repository</h3>
+          <p>One synchronous boundary encloses query, mapping, and commit.</p>
+        </div>
+        <dl>
+          <div><dt>Boundary owner</dt><dd><code>Controller / service `transaction {}`</code></dd></div>
+          <div><dt>Evidence entry</dt><dd><a href="#source-jdbc-controller">jdbc-controller</a></dd></div>
+        </dl>
+      </header>
+      <div class="sequence-canvas" style="--participants:4">
+        <div class="sequence-participants">
+    <div class="sequence-participant" data-participant="client">
+      <strong>Client</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  
+    <div class="sequence-participant" data-participant="boundary">
+      <strong>Controller / Service</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  
+    <div class="sequence-participant" data-participant="repository">
+      <strong>JdbcRepository</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  
+    <div class="sequence-participant" data-participant="database">
+      <strong>Database</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  </div>
+        <ol class="sequence-messages">
+      <li class="message message-call"
+          data-message-kind="call"
+          style="--from:1;--to:2;--row:1">
+        <span class="message-number">1</span>
+        <span class="message-kind">CALL</span>
+        <span class="message-label">CALL use case</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li>
+      <li class="message message-call"
+          data-message-kind="call"
+          style="--from:2;--to:3;--row:2">
+        <span class="message-number">2</span>
+        <span class="message-kind">CALL</span>
+        <span class="message-label">CALL transaction { findAll() }</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li>
+      <li class="message message-return"
+          data-message-kind="return"
+          style="--from:3;--to:2;--row:3">
+        <span class="message-number">3</span>
+        <span class="message-kind">RETURN</span>
+        <span class="message-label">RETURN mapped records</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li>
+      <li class="message message-commit"
+          data-message-kind="commit"
+          style="--from:2;--to:4;--row:4">
+        <span class="message-number">4</span>
+        <span class="message-kind">COMMIT</span>
+        <span class="message-label">COMMIT boundary</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li></ol>
+      </div>
+      <div class="sequence-alt outcome-commit" data-outcome="commit">
+        <strong>COMMIT</strong>
+        <span>the block returns normally.</span>
+      </div>
+    </article>
+    <article class="sequence-panel" id="sequence-jdbc-multi-repository"
+             data-sequence="jdbc-multi-repository"
+             data-view="jdbc-multi-repository"
+             hidden>
+      <header class="sequence-summary">
+        <div>
+          <span class="scenario-outcome outcome-commit">COMMIT</span>
+          <h3>JDBC · multiple repositories</h3>
+          <p>One service boundary composes calls so partial success cannot leak.</p>
+        </div>
+        <dl>
+          <div><dt>Boundary owner</dt><dd><code>Service `transaction {}`</code></dd></div>
+          <div><dt>Evidence entry</dt><dd><a href="#source-jdbc-repository">jdbc-repository</a></dd></div>
+        </dl>
+      </header>
+      <div class="sequence-canvas" style="--participants:4">
+        <div class="sequence-participants">
+    <div class="sequence-participant" data-participant="service">
+      <strong>Service</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  
+    <div class="sequence-participant" data-participant="repo-a">
+      <strong>Repository A</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  
+    <div class="sequence-participant" data-participant="repo-b">
+      <strong>Repository B</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  
+    <div class="sequence-participant" data-participant="database">
+      <strong>Database</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  </div>
+        <ol class="sequence-messages">
+      <li class="message message-call"
+          data-message-kind="call"
+          style="--from:1;--to:2;--row:1">
+        <span class="message-number">1</span>
+        <span class="message-kind">CALL</span>
+        <span class="message-label">CALL reserve stock</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li>
+      <li class="message message-return"
+          data-message-kind="return"
+          style="--from:2;--to:1;--row:2">
+        <span class="message-number">2</span>
+        <span class="message-kind">RETURN</span>
+        <span class="message-label">RETURN reservation</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li>
+      <li class="message message-call"
+          data-message-kind="call"
+          style="--from:1;--to:3;--row:3">
+        <span class="message-number">3</span>
+        <span class="message-kind">CALL</span>
+        <span class="message-label">CALL write order</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li>
+      <li class="message message-commit"
+          data-message-kind="commit"
+          style="--from:1;--to:4;--row:4">
+        <span class="message-number">4</span>
+        <span class="message-kind">COMMIT</span>
+        <span class="message-label">COMMIT one unit</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li></ol>
+      </div>
+      <div class="sequence-alt outcome-commit" data-outcome="commit">
+        <strong>COMMIT</strong>
+        <span>both repository effects become visible together.</span>
+      </div>
+    </article>
+    <article class="sequence-panel" id="sequence-r2dbc-single"
+             data-sequence="r2dbc-single"
+             data-view="r2dbc-single"
+             hidden>
+      <header class="sequence-summary">
+        <div>
+          <span class="scenario-outcome outcome-commit">COMMIT</span>
+          <h3>R2DBC · one repository</h3>
+          <p>The coroutine context carries the transaction through suspending repository work.</p>
+        </div>
+        <dl>
+          <div><dt>Boundary owner</dt><dd><code>Coroutine `suspendTransaction {}`</code></dd></div>
+          <div><dt>Evidence entry</dt><dd><a href="#source-r2dbc-controller">r2dbc-controller</a></dd></div>
+        </dl>
+      </header>
+      <div class="sequence-canvas" style="--participants:4">
+        <div class="sequence-participants">
+    <div class="sequence-participant" data-participant="handler">
+      <strong>WebFlux Handler</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  
+    <div class="sequence-participant" data-participant="boundary">
+      <strong>suspendTransaction</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  
+    <div class="sequence-participant" data-participant="repository">
+      <strong>R2dbcRepository</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  
+    <div class="sequence-participant" data-participant="database">
+      <strong>R2DBC Database</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  </div>
+        <ol class="sequence-messages">
+      <li class="message message-call"
+          data-message-kind="call"
+          style="--from:1;--to:2;--row:1">
+        <span class="message-number">1</span>
+        <span class="message-kind">CALL</span>
+        <span class="message-label">CALL suspendTransaction</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li>
+      <li class="message message-call"
+          data-message-kind="call"
+          style="--from:2;--to:3;--row:2">
+        <span class="message-number">2</span>
+        <span class="message-kind">CALL</span>
+        <span class="message-label">CALL suspend findAll()</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li>
+      <li class="message message-return"
+          data-message-kind="return"
+          style="--from:3;--to:2;--row:3">
+        <span class="message-number">3</span>
+        <span class="message-kind">RETURN</span>
+        <span class="message-label">RETURN entities</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li>
+      <li class="message message-commit"
+          data-message-kind="commit"
+          style="--from:2;--to:4;--row:4">
+        <span class="message-number">4</span>
+        <span class="message-kind">COMMIT</span>
+        <span class="message-label">COMMIT coroutine boundary</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li></ol>
+      </div>
+      <div class="sequence-alt outcome-commit" data-outcome="commit">
+        <strong>COMMIT</strong>
+        <span>suspendTransaction completes.</span>
+      </div>
+    </article>
+    <article class="sequence-panel" id="sequence-r2dbc-flow-inside"
+             data-sequence="r2dbc-flow-inside"
+             data-view="r2dbc-flow-inside"
+             hidden>
+      <header class="sequence-summary">
+        <div>
+          <span class="scenario-outcome outcome-commit">COMMIT</span>
+          <h3>R2DBC Flow · collect inside</h3>
+          <p>A cold Flow or channelFlow is collected before the transaction block exits.</p>
+        </div>
+        <dl>
+          <div><dt>Boundary owner</dt><dd><code>Collector inside `suspendTransaction {}`</code></dd></div>
+          <div><dt>Evidence entry</dt><dd><a href="#source-r2dbc-test">r2dbc-test</a></dd></div>
+        </dl>
+      </header>
+      <div class="sequence-canvas" style="--participants:4">
+        <div class="sequence-participants">
+    <div class="sequence-participant" data-participant="boundary">
+      <strong>suspendTransaction</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  
+    <div class="sequence-participant" data-participant="repository">
+      <strong>Repository</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  
+    <div class="sequence-participant" data-participant="flow">
+      <strong>Cold Flow</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  
+    <div class="sequence-participant" data-participant="database">
+      <strong>Database</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  </div>
+        <ol class="sequence-messages">
+      <li class="message message-call"
+          data-message-kind="call"
+          style="--from:1;--to:2;--row:1">
+        <span class="message-number">1</span>
+        <span class="message-kind">CALL</span>
+        <span class="message-label">CALL query as Flow</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li>
+      <li class="message message-return"
+          data-message-kind="return"
+          style="--from:2;--to:3;--row:2">
+        <span class="message-number">2</span>
+        <span class="message-kind">RETURN</span>
+        <span class="message-label">RETURN cold pipeline</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li>
+      <li class="message message-call"
+          data-message-kind="call"
+          style="--from:1;--to:3;--row:3">
+        <span class="message-number">3</span>
+        <span class="message-kind">CALL</span>
+        <span class="message-label">CALL collect inside</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li>
+      <li class="message message-commit"
+          data-message-kind="commit"
+          style="--from:1;--to:4;--row:4">
+        <span class="message-number">4</span>
+        <span class="message-kind">COMMIT</span>
+        <span class="message-label">COMMIT after collection</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li></ol>
+      </div>
+      <div class="sequence-alt outcome-commit" data-outcome="commit">
+        <strong>COMMIT</strong>
+        <span>every emission is consumed inside the boundary.</span>
+      </div>
+    </article>
+    <article class="sequence-panel" id="sequence-r2dbc-flow-escape"
+             data-sequence="r2dbc-flow-escape"
+             data-view="r2dbc-flow-escape"
+             hidden>
+      <header class="sequence-summary">
+        <div>
+          <span class="scenario-outcome outcome-boundary-error">BOUNDARY ERROR</span>
+          <h3>R2DBC Flow · escapes</h3>
+          <p>Returning a cold Flow closes the transaction before collection begins.</p>
+        </div>
+        <dl>
+          <div><dt>Boundary owner</dt><dd><code>Caller mistakenly outlives the transaction</code></dd></div>
+          <div><dt>Evidence entry</dt><dd><a href="#source-r2dbc-manual">r2dbc-manual</a></dd></div>
+        </dl>
+      </header>
+      <div class="sequence-canvas" style="--participants:4">
+        <div class="sequence-participants">
+    <div class="sequence-participant" data-participant="caller">
+      <strong>Caller</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  
+    <div class="sequence-participant" data-participant="boundary">
+      <strong>suspendTransaction</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  
+    <div class="sequence-participant" data-participant="flow">
+      <strong>Escaped Flow</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  
+    <div class="sequence-participant" data-participant="database">
+      <strong>Database</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  </div>
+        <ol class="sequence-messages">
+      <li class="message message-call"
+          data-message-kind="call"
+          style="--from:1;--to:2;--row:1">
+        <span class="message-number">1</span>
+        <span class="message-kind">CALL</span>
+        <span class="message-label">CALL create Flow</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li>
+      <li class="message message-return"
+          data-message-kind="return"
+          style="--from:2;--to:1;--row:2">
+        <span class="message-number">2</span>
+        <span class="message-kind">RETURN</span>
+        <span class="message-label">RETURN cold Flow too early</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li>
+      <li class="message message-boundary-error"
+          data-message-kind="boundary-error"
+          style="--from:1;--to:3;--row:3">
+        <span class="message-number">3</span>
+        <span class="message-kind">BOUNDARY ERROR</span>
+        <span class="message-label">BOUNDARY ERROR on collect</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li>
+      <li class="message message-rollback"
+          data-message-kind="rollback"
+          style="--from:3;--to:4;--row:4">
+        <span class="message-number">4</span>
+        <span class="message-kind">ROLLBACK</span>
+        <span class="message-label">ROLLBACK / closed context</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li></ol>
+      </div>
+      <div class="sequence-alt outcome-boundary-error" data-outcome="boundary-error">
+        <strong>BOUNDARY ERROR</strong>
+        <span>later collection has no valid transaction context.</span>
+      </div>
+    </article>
+    <article class="sequence-panel" id="sequence-rollback-or-cancellation"
+             data-sequence="rollback-or-cancellation"
+             data-view="rollback-or-cancellation"
+             hidden>
+      <header class="sequence-summary">
+        <div>
+          <span class="scenario-outcome outcome-rollback">ROLLBACK</span>
+          <h3>Failure or cancellation</h3>
+          <p>An exception or coroutine cancellation must terminate the whole unit, not one repository call.</p>
+        </div>
+        <dl>
+          <div><dt>Boundary owner</dt><dd><code>Transaction block / coroutine scope</code></dd></div>
+          <div><dt>Evidence entry</dt><dd><a href="#source-r2dbc-test">r2dbc-test</a></dd></div>
+        </dl>
+      </header>
+      <div class="sequence-canvas" style="--participants:4">
+        <div class="sequence-participants">
+    <div class="sequence-participant" data-participant="boundary">
+      <strong>Boundary</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  
+    <div class="sequence-participant" data-participant="repository">
+      <strong>Repository</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  
+    <div class="sequence-participant" data-participant="failure">
+      <strong>Exception / Cancel</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  
+    <div class="sequence-participant" data-participant="database">
+      <strong>Database</strong>
+      <span class="lifeline" aria-hidden="true"></span>
+      <span class="activation" aria-hidden="true"></span>
+    </div>
+  </div>
+        <ol class="sequence-messages">
+      <li class="message message-call"
+          data-message-kind="call"
+          style="--from:1;--to:2;--row:1">
+        <span class="message-number">1</span>
+        <span class="message-kind">CALL</span>
+        <span class="message-label">CALL write</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li>
+      <li class="message message-call"
+          data-message-kind="call"
+          style="--from:2;--to:3;--row:2">
+        <span class="message-number">2</span>
+        <span class="message-kind">CALL</span>
+        <span class="message-label">CALL fails or is cancelled</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li>
+      <li class="message message-return"
+          data-message-kind="return"
+          style="--from:3;--to:1;--row:3">
+        <span class="message-number">3</span>
+        <span class="message-kind">RETURN</span>
+        <span class="message-label">RETURN exceptional completion</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li>
+      <li class="message message-rollback"
+          data-message-kind="rollback"
+          style="--from:1;--to:4;--row:4">
+        <span class="message-number">4</span>
+        <span class="message-kind">ROLLBACK</span>
+        <span class="message-label">ROLLBACK whole unit</span>
+        <span class="message-line" aria-hidden="true"></span>
+      </li></ol>
+      </div>
+      <div class="sequence-alt outcome-rollback" data-outcome="rollback">
+        <strong>ROLLBACK</strong>
+        <span>no partial write crosses the boundary.</span>
+      </div>
+    </article></div>
+      </section>
+      <section id="ownership-matrix">
+        <div class="section-heading"><span class="section-number">05</span><div><p class="kicker">RESPONSIBILITY</p><h2>Who owns what?</h2></div></div>
+        
+    <div class="table-wrap">
+      <table class="">
+        <thead><tr><th scope="col">Actor</th><th scope="col">Owns</th><th scope="col">Reason</th></tr></thead>
+        <tbody><tr><th scope="row">Application boundary</th><td>Begins and ends the business transaction</td><td>Keeps multiple repository calls atomic</td></tr><tr><th scope="row">Repository</th><td>Expresses queries, mapping, and writes</td><td>Does not secretly widen the use-case boundary</td></tr><tr><th scope="row">Exposed runtime</th><td>Binds transaction state to the JDBC thread or R2DBC coroutine context</td><td>Makes escaped work a correctness concern</td></tr><tr><th scope="row">Database</th><td>Commits or rolls back the unit</td><td>Sees one terminal outcome</td></tr></tbody>
+      </table>
+    </div>
+      </section>
+      <section id="code-mapping">
+        <div class="section-heading"><span class="section-number">06</span><div><p class="kicker">MIGRATION MAP</p><h2>From JPA habit to Exposed code</h2></div></div>
+        
+    <div class="table-wrap">
+      <table class="mapping-table">
+        <thead><tr><th scope="col">JPA habit</th><th scope="col">Exposed mapping</th></tr></thead>
+        <tbody><tr><th scope="row"><code>@Transactional</code> service method</th><td><code>transaction { ... }</code> or <code>suspendTransaction { ... }</code> at the application boundary</td></tr><tr><th scope="row">Managed entity mutation</th><td>Explicit <code>update</code>, <code>insert</code>, or <code>delete</code> repository operation</td></tr><tr><th scope="row">Lazy relationship traversal</th><td>Explicit join or follow-up query inside the same boundary</td></tr><tr><th scope="row">Flush-time SQL</th><td>SQL occurs where the Exposed DSL or repository call is made</td></tr><tr><th scope="row">Persistence-context lifetime</th><td>Transaction block / coroutine-context lifetime</td></tr></tbody>
+      </table>
+    </div>
+      </section>
+      <section id="tradeoffs">
+        <div class="section-heading"><span class="section-number">07</span><div><p class="kicker">DECISION GUIDE</p><h2>Choose with the costs visible</h2></div></div>
+        
+    <div class="table-wrap">
+      <table class="tradeoff-table">
+        <thead><tr><th scope="col">Decision</th><th scope="col">Signal</th></tr></thead>
+        <tbody><tr><th scope="row">Prefer JPA/Hibernate</th><td>Complex object graphs, domain navigation, and ecosystem integrations outweigh hidden I/O risk.</td></tr><tr><th scope="row">Prefer Exposed</th><td>SQL shape, predictable I/O, Kotlin DSL composition, and explicit boundaries are primary.</td></tr><tr><th scope="row">Avoid a blind migration</th><td>Moving repository names without moving the mental model preserves boundary and N+1 mistakes.</td></tr><tr><th scope="row">Use both deliberately</th><td>Choose per bounded context; do not mix transaction ownership inside one use case.</td></tr></tbody>
+      </table>
+    </div>
+      </section>
+      <section id="evidence">
+        <div class="section-heading"><span class="section-number">08</span><div><p class="kicker">TRACEABLE CLAIMS</p><h2>Source and test ledger</h2></div></div>
+        
+    <div class="table-wrap evidence-table">
+      <table>
+        <thead><tr>
+          <th scope="col">Why it matters</th>
+          <th scope="col">Production source</th>
+          <th scope="col">Test or executable example</th>
+          <th scope="col">Verification</th>
+        </tr></thead>
+        <tbody>
+          
+            <tr id="source-jdbc-repository" data-source-anchor="jdbc-repository">
+              <th scope="row">JDBC repository calls execute inside caller-owned transaction blocks.</th>
+              <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/exposed/jdbc/src/main/kotlin/io/bluetape4k/exposed/jdbc/repository/JdbcRepository.kt"><code>exposed/jdbc/src/main/kotlin/io/bluetape4k/exposed/jdbc/repository/JdbcRepository.kt</code></a></td>
+              <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/examples/jdbc-demo/src/main/kotlin/io/bluetape4k/examples/exposed/mvc/controller/ProductController.kt"><code>examples/jdbc-demo/src/main/kotlin/io/bluetape4k/examples/exposed/mvc/controller/ProductController.kt</code></a></td>
+              <td><code>rg -n &quot;transaction \\{&quot; examples/jdbc-demo/src/main/kotlin</code></td>
+            </tr>
+            <tr id="source-jdbc-controller" data-source-anchor="jdbc-controller">
+              <th scope="row">The executable JDBC demo places the boundary at the controller use case.</th>
+              <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/examples/jdbc-demo/src/main/kotlin/io/bluetape4k/examples/exposed/mvc/controller/ProductController.kt"><code>examples/jdbc-demo/src/main/kotlin/io/bluetape4k/examples/exposed/mvc/controller/ProductController.kt</code></a></td>
+              <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/docs/manual/en/modules/bluetape4k-exposed-jdbc/transaction-ownership.md"><code>docs/manual/en/modules/bluetape4k-exposed-jdbc/transaction-ownership.md</code></a></td>
+              <td><code>rg -n &quot;transaction \\{&quot; examples/jdbc-demo/src/main/kotlin</code></td>
+            </tr>
+            <tr id="source-r2dbc-repository" data-source-anchor="r2dbc-repository">
+              <th scope="row">R2DBC operations depend on the suspendTransaction coroutine context.</th>
+              <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/exposed/r2dbc/src/main/kotlin/io/bluetape4k/exposed/r2dbc/repository/R2dbcRepository.kt"><code>exposed/r2dbc/src/main/kotlin/io/bluetape4k/exposed/r2dbc/repository/R2dbcRepository.kt</code></a></td>
+              <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/exposed/r2dbc/src/test/kotlin/io/bluetape4k/exposed/r2dbc/repository/MovieR2dbcRepositoryTest.kt"><code>exposed/r2dbc/src/test/kotlin/io/bluetape4k/exposed/r2dbc/repository/MovieR2dbcRepositoryTest.kt</code></a></td>
+              <td><code>./gradlew :bluetape4k-exposed-r2dbc:test</code></td>
+            </tr>
+            <tr id="source-r2dbc-controller" data-source-anchor="r2dbc-controller">
+              <th scope="row">The R2DBC demo opens the suspending boundary before repository work.</th>
+              <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/examples/r2dbc-demo/src/main/kotlin/io/bluetape4k/examples/exposed/webflux/controller/ProductController.kt"><code>examples/r2dbc-demo/src/main/kotlin/io/bluetape4k/examples/exposed/webflux/controller/ProductController.kt</code></a></td>
+              <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md"><code>docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md</code></a></td>
+              <td><code>rg -n &quot;suspendTransaction&quot; examples/r2dbc-demo/src/main/kotlin</code></td>
+            </tr>
+            <tr id="source-r2dbc-test" data-source-anchor="r2dbc-test">
+              <th scope="row">Repository tests exercise suspending query and transaction behavior.</th>
+              <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/exposed/r2dbc/src/test/kotlin/io/bluetape4k/exposed/r2dbc/repository/MovieR2dbcRepositoryTest.kt"><code>exposed/r2dbc/src/test/kotlin/io/bluetape4k/exposed/r2dbc/repository/MovieR2dbcRepositoryTest.kt</code></a></td>
+              <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/docs/manual/en/modules/bluetape4k-exposed-r2dbc/coroutine-transactions.md"><code>docs/manual/en/modules/bluetape4k-exposed-r2dbc/coroutine-transactions.md</code></a></td>
+              <td><code>./gradlew :bluetape4k-exposed-r2dbc:test --tests &quot;*MovieR2dbcRepositoryTest&quot;</code></td>
+            </tr>
+            <tr id="source-r2dbc-manual" data-source-anchor="r2dbc-manual">
+              <th scope="row">The manual makes coroutine lifetime and cold Flow collection explicit.</th>
+              <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/docs/manual/en/modules/bluetape4k-exposed-r2dbc/coroutine-transactions.md"><code>docs/manual/en/modules/bluetape4k-exposed-r2dbc/coroutine-transactions.md</code></a></td>
+              <td><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md"><code>docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md</code></a></td>
+              <td><code>ruby scripts/manual/validate_manuals.rb build/manual/module-inventory-1.11.0.json docs/manual/manifest.yaml</code></td>
+            </tr>
+        </tbody>
+      </table>
+    </div>
+      </section></main>
+  <footer>
+    <span>Offline standalone HTML · <span id="status" aria-live="polite">Selected scenario:</span></span>
+    <span><a data-source-link href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/docs/manual/en/guides/transaction-boundaries.md">docs/manual/en/guides/transaction-boundaries.md</a> · <a href="https://github.com/bluetape4k/bluetape4k-exposed/blob/develop/docs/superpowers/specs/2026-07-30-issue-410-exposed-visual-companions-design.md">design source</a></span>
+  </footer>
+  <script>
+    (() => {
+      const themes = ['auto', 'light', 'dark'];
+      const params = new URLSearchParams(location.search);
+      const forcedTheme = params.get('theme');
+      let theme = themes.includes(forcedTheme) ? forcedTheme : 'auto';
+      const root = document.documentElement;
+      const themeToggle = document.querySelector('[data-theme-control]');
+      const applyTheme = (next) => {
+        theme = next;
+        root.dataset.theme = theme;
+        themeToggle.querySelector('span').textContent = theme;
+        themeToggle.setAttribute('aria-pressed', String(theme !== 'auto'));
+      };
+      applyTheme(theme);
+      themeToggle.addEventListener('click', () => applyTheme(themes[(themes.indexOf(theme) + 1) % themes.length]));
+
+      const status = document.querySelector('#status');
+      const scenarioButtons = [...document.querySelectorAll('[data-scenario]')];
+      const selectScenario = (id, announce = true) => {
+        for (const button of scenarioButtons) {
+          const active = button.dataset.scenario === id;
+          button.setAttribute('aria-pressed', String(active));
+        }
+        for (const panel of document.querySelectorAll('[data-sequence]')) {
+          panel.hidden = panel.dataset.sequence !== id;
+        }
+        const selected = scenarioButtons.find((button) => button.dataset.scenario === id);
+        if (selected && announce) status.textContent = 'Selected scenario:' + ' ' + selected.textContent.trim();
+      };
+      for (const button of scenarioButtons) {
+        button.addEventListener('click', () => selectScenario(button.dataset.scenario));
+        button.addEventListener('keydown', (event) => {
+          if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+          event.preventDefault();
+          const direction = ['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : -1;
+          const target = scenarioButtons[(scenarioButtons.indexOf(button) + direction + scenarioButtons.length) % scenarioButtons.length];
+          target.focus();
+          selectScenario(target.dataset.scenario);
+        });
+      }
+
+      for (const opener of document.querySelectorAll('[data-lightbox-open]')) {
+        opener.addEventListener('click', () => document.querySelector('#architecture-' + opener.dataset.lightboxOpen).showModal());
+      }
+      for (const closer of document.querySelectorAll('[data-lightbox-close]')) {
+        closer.addEventListener('click', () => document.querySelector('#architecture-' + closer.dataset.lightboxClose).close());
+      }
+      for (const dialog of document.querySelectorAll('dialog')) {
+        dialog.addEventListener('click', (event) => {
+          if (event.target === dialog) dialog.close();
+        });
+      }
+      window.__VISUAL_COMPANION_READY__ = true;
+    })();
+  </script>
+</body>
+</html>

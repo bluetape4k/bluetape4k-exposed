@@ -5,8 +5,9 @@
     {
       "id": "jdbc-r2dbc-transaction-boundaries",
       "source": "docs/superpowers/specs/2026-07-30-issue-410-exposed-visual-companions-design.md",
-      "status": "approved",
-      "public": true,
+      "data": "docs/visual-companions/data/jdbc-r2dbc-transaction-boundaries.json",
+      "status": "pending-review",
+      "public": false,
       "presentation": {
         "mode": "comparison",
         "defaultView": "jdbc",
@@ -18,20 +19,29 @@
       },
       "locales": {
         "en": {
-          "title": "JDBC and R2DBC Transaction Boundaries",
-          "html": "docs/visual-companions/jdbc-r2dbc-transaction-boundaries.html"
+          "title": "JPA to Exposed: Make Transaction Ownership Visible",
+          "html": "docs/visual-companions/en/jdbc-r2dbc-transaction-boundaries.html",
+          "captures": {
+            "light": "docs/visual-companions/assets/jdbc-r2dbc-transaction-boundaries.en.light.png",
+            "dark": "docs/visual-companions/assets/jdbc-r2dbc-transaction-boundaries.en.dark.png"
+          }
         },
         "ko": {
-          "title": "JDBC와 R2DBC 트랜잭션 경계",
-          "html": "docs/visual-companions/jdbc-r2dbc-transaction-boundaries.ko.html"
+          "title": "JPA에서 Exposed로: 트랜잭션 소유권을 드러내기",
+          "html": "docs/visual-companions/ko/jdbc-r2dbc-transaction-boundaries.html",
+          "captures": {
+            "light": "docs/visual-companions/assets/jdbc-r2dbc-transaction-boundaries.ko.light.png",
+            "dark": "docs/visual-companions/assets/jdbc-r2dbc-transaction-boundaries.ko.dark.png"
+          }
         }
       }
     },
     {
       "id": "spring-boot-exposed-activation",
       "source": "docs/superpowers/specs/2026-07-30-issue-410-exposed-visual-companions-design.md",
-      "status": "approved",
-      "public": true,
+      "data": "docs/visual-companions/data/spring-boot-exposed-activation.json",
+      "status": "pending-review",
+      "public": false,
       "presentation": {
         "mode": "condition-explorer",
         "defaultView": "conditions",
@@ -42,11 +52,11 @@
       "locales": {
         "en": {
           "title": "Spring Boot Exposed Activation",
-          "html": "docs/visual-companions/spring-boot-exposed-activation.html"
+          "html": "docs/visual-companions/en/spring-boot-exposed-activation.html"
         },
         "ko": {
           "title": "Spring Boot Exposed 활성화",
-          "html": "docs/visual-companions/spring-boot-exposed-activation.ko.html"
+          "html": "docs/visual-companions/ko/spring-boot-exposed-activation.html"
         }
       }
     }
