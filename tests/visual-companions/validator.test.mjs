@@ -113,6 +113,20 @@ test('external runtime dependencies are rejected', async () => {
   }, /contains a forbidden runtime dependency/);
 });
 
+test('source links must resolve inside the develop tree', async () => {
+  await expectInvalid(async ({ root, manifest }) => {
+    const htmlPath = path.join(root, manifest.documents[0].locales.en.html);
+    const html = await readFile(htmlPath, 'utf8');
+    await writeFile(
+      htmlPath,
+      html.replace(
+        'docs/manual/en/guides/transaction-boundaries.md',
+        'docs/manual/en/guides/missing-transaction-guide.md',
+      ),
+    );
+  }, /source link does not resolve/);
+});
+
 test('locale structure drift is rejected', async () => {
   await expectInvalid(async ({ root, manifest }) => {
     const htmlPath = path.join(root, manifest.documents[0].locales.ko.html);
