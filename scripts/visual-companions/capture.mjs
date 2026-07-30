@@ -28,6 +28,7 @@ export function chromeArguments(profileDir, port) {
     '--disable-component-update',
     '--disable-default-apps',
     '--disable-extensions',
+    '--disable-gpu',
     '--disable-sync',
     '--force-device-scale-factor=1',
     '--hide-scrollbars',
@@ -38,6 +39,13 @@ export function chromeArguments(profileDir, port) {
     `--user-data-dir=${profileDir}`,
     'about:blank',
   ];
+}
+
+export function auditScenarioId(scenarioIds) {
+  if (scenarioIds.length === 0) throw new Error('audit requires at least one scenario');
+  return scenarioIds.includes('r2dbc-flow-escape')
+    ? 'r2dbc-flow-escape'
+    : scenarioIds.at(-1);
 }
 
 function sha256(buffer) {
@@ -146,17 +154,8 @@ async function captureOne({ root, documentId, locale, theme, audit = false }) {
         while (document.readyState !== 'complete') await new Promise(r => setTimeout(r, 25));
         await document.fonts.ready;
         await Promise.all([...document.images].map((image) => image.decode()));
-        const originalScrollBehavior = document.documentElement.style.scrollBehavior;
-        document.documentElement.style.scrollBehavior = 'auto';
-        for (const image of document.querySelectorAll('.architecture-card > img')) {
-          image.scrollIntoView({ block: 'center' });
-          await new Promise((resolve) =>
-            requestAnimationFrame(() => requestAnimationFrame(resolve)));
-        }
-        scrollTo(0, 0);
         await new Promise((resolve) =>
           requestAnimationFrame(() => requestAnimationFrame(resolve)));
-        document.documentElement.style.scrollBehavior = originalScrollBehavior;
         const deadline = Date.now() + 5000;
         while (window.__VISUAL_COMPANION_READY__ !== true) {
           if (Date.now() > deadline) throw new Error('visual companion ready signal timed out');
@@ -168,6 +167,11 @@ async function captureOne({ root, documentId, locale, theme, audit = false }) {
       returnByValue: true,
     });
     if (audit) {
+      const scenarioIdsResult = await client.send('Runtime.evaluate', {
+        expression: `[...document.querySelectorAll('[data-scenario]')].map((tab) => tab.dataset.scenario)`,
+        returnByValue: true,
+      });
+      const selectedAuditScenario = auditScenarioId(scenarioIdsResult.result.value);
       const desktop = await client.send('Runtime.evaluate', {
         expression: `(() => {
           const tabs = [...document.querySelectorAll('[data-scenario]')];
@@ -203,9 +207,13 @@ async function captureOne({ root, documentId, locale, theme, audit = false }) {
               });
             }
           }
-          const target = tabs.find((button) => button.dataset.scenario === 'r2dbc-flow-escape');
+          const target = tabs.find(
+            (button) => button.dataset.scenario === ${JSON.stringify(selectedAuditScenario)},
+          );
           target.click();
-          const selectedPanel = document.querySelector('[data-sequence="r2dbc-flow-escape"]');
+          const selectedPanel = document.querySelector(
+            \`[data-sequence="\${target.dataset.scenario}"]\`,
+          );
           const callLineColor = getComputedStyle(
             selectedPanel.querySelector('.message-call .message-line'),
           ).color;

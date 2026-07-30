@@ -40,8 +40,8 @@
       "id": "spring-boot-exposed-activation",
       "source": "docs/superpowers/specs/2026-07-30-issue-410-exposed-visual-companions-design.md",
       "data": "docs/visual-companions/data/spring-boot-exposed-activation.json",
-      "status": "pending-review",
-      "public": false,
+      "status": "approved",
+      "public": true,
       "presentation": {
         "mode": "condition-explorer",
         "defaultView": "conditions",
@@ -52,11 +52,19 @@
       "locales": {
         "en": {
           "title": "Spring Boot Exposed Activation",
-          "html": "docs/visual-companions/en/spring-boot-exposed-activation.html"
+          "html": "docs/visual-companions/en/spring-boot-exposed-activation.html",
+          "captures": {
+            "light": "docs/visual-companions/assets/spring-boot-exposed-activation.en.light.png",
+            "dark": "docs/visual-companions/assets/spring-boot-exposed-activation.en.dark.png"
+          }
         },
         "ko": {
           "title": "Spring Boot Exposed 활성화",
-          "html": "docs/visual-companions/ko/spring-boot-exposed-activation.html"
+          "html": "docs/visual-companions/ko/spring-boot-exposed-activation.html",
+          "captures": {
+            "light": "docs/visual-companions/assets/spring-boot-exposed-activation.ko.light.png",
+            "dark": "docs/visual-companions/assets/spring-boot-exposed-activation.ko.dark.png"
+          }
         }
       }
     }

@@ -14,6 +14,13 @@ function evidenceLinkLabel(value) {
   return value.split('/').at(-1).replace(/\.(?:java|kt|kts)$/, '');
 }
 
+function renderEvidenceLinkLabel(value, allowCamelCaseBreaks = false) {
+  const label = escapeHtml(evidenceLinkLabel(value));
+  return allowCamelCaseBreaks
+    ? label.replaceAll(/([a-z0-9])(?=[A-Z])/g, '$1<wbr>')
+    : label;
+}
+
 function renderTable(headers, rows, className = '') {
   return `
     <div class="table-wrap">
@@ -165,22 +172,38 @@ function renderActivationScenarioDetails({ model, locale }) {
 
 export function renderEvidenceLedger({ model, locale }) {
   const copy = model.locales[locale];
+  const groupedEvidenceFiles = model.kind === 'activation';
+  const evidenceFileHeaders = groupedEvidenceFiles
+    ? `<th scope="col">${escapeHtml(copy.evidenceFilesLabel ?? 'Evidence files')}</th>`
+    : `<th scope="col">${escapeHtml(copy.sourceLabel ?? 'Production source')}</th>
+          <th scope="col">${escapeHtml(copy.testLabel ?? 'Test')}</th>`;
+  const renderEvidenceFiles = (source) => groupedEvidenceFiles
+    ? `<td class="evidence-files">
+                <div class="evidence-file-row">
+                  <span class="evidence-file-kind">${escapeHtml(copy.sourceLabel ?? 'Production source')}</span>
+                  <a data-source-link href="${repositoryBlob}${escapeHtml(source.sourcePath)}"><code>${renderEvidenceLinkLabel(source.sourcePath, true)}</code></a>
+                </div>
+                <div class="evidence-file-row">
+                  <span class="evidence-file-kind">${escapeHtml(copy.testLabel ?? 'Test')}</span>
+                  <a data-source-link href="${repositoryBlob}${escapeHtml(source.testPath)}"><code>${renderEvidenceLinkLabel(source.testPath, true)}</code></a>
+                </div>
+              </td>`
+    : `<td><a data-source-link href="${repositoryBlob}${escapeHtml(source.sourcePath)}"><code>${renderEvidenceLinkLabel(source.sourcePath)}</code></a></td>
+              <td><a data-source-link href="${repositoryBlob}${escapeHtml(source.testPath)}"><code>${renderEvidenceLinkLabel(source.testPath)}</code></a></td>`;
   return `
     <div class="table-wrap evidence-table">
-      <table>
+      <table${groupedEvidenceFiles ? ' class="grouped-evidence-table"' : ''}>
         <thead><tr>
           <th scope="col">${escapeHtml(copy.whyLabel ?? 'Claim')}</th>
-          <th scope="col">${escapeHtml(copy.sourceLabel ?? 'Production source')}</th>
-          <th scope="col">${escapeHtml(copy.testLabel ?? 'Test')}</th>
-          <th scope="col">${escapeHtml(copy.verifyLabel ?? 'Verification')}</th>
+          ${evidenceFileHeaders}
+          ${groupedEvidenceFiles ? '' : `<th scope="col">${escapeHtml(copy.verifyLabel ?? 'Verification')}</th>`}
         </tr></thead>
         <tbody>
           ${model.sources.map((source) => `
             <tr id="source-${escapeHtml(source.id)}" data-source-anchor="${escapeHtml(source.id)}">
               <th scope="row">${escapeHtml(source.locales[locale].claim)}</th>
-              <td><a data-source-link href="${repositoryBlob}${escapeHtml(source.sourcePath)}"><code>${escapeHtml(evidenceLinkLabel(source.sourcePath))}</code></a></td>
-              <td><a data-source-link href="${repositoryBlob}${escapeHtml(source.testPath)}"><code>${escapeHtml(evidenceLinkLabel(source.testPath))}</code></a></td>
-              <td><code>${escapeHtml(source.verificationCommand)}</code></td>
+              ${renderEvidenceFiles(source)}
+              ${groupedEvidenceFiles ? '' : `<td><code>${escapeHtml(source.verificationCommand)}</code></td>`}
             </tr>`).join('')}
         </tbody>
       </table>
@@ -512,7 +535,13 @@ function renderStandaloneShell({ model, locale, body }) {
     tbody td { color: var(--muted); }
     tr:last-child th, tr:last-child td { border-bottom: 0; }
     .evidence-table code { font-size: .72rem; }
-    .evidence-table td:nth-child(2) a, .evidence-table td:nth-child(3) a { white-space: nowrap; }
+    .evidence-table td:nth-child(2) a, .evidence-table td:nth-child(3) a { white-space: nowrap; }${model.kind === 'activation' ? `
+    .evidence-files { min-width: 270px; }
+    .evidence-file-row { display: grid; grid-template-columns: minmax(90px, auto) minmax(0, 1fr); gap: 12px; align-items: center; }
+    .evidence-file-row + .evidence-file-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+    .evidence-file-kind { color: var(--muted); font: 800 .66rem monospace; letter-spacing: .04em; }
+    .grouped-evidence-table tbody th { width: 50%; }
+    .evidence-table td.evidence-files a { white-space: normal; overflow-wrap: normal; }` : ''}
     footer { width: min(1180px, calc(100% - 32px)); margin: 0 auto 50px; padding-top: 22px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 20px; color: var(--muted); font-size: .82rem; }
     [hidden] { display: none !important; }
     @media (max-width: 800px) {
@@ -524,7 +553,11 @@ function renderStandaloneShell({ model, locale, body }) {
       .scenario-tabs { grid-template-columns: 1fr 1fr; }
       .scenario-detail { grid-template-columns: 1fr; }
       .sequence-summary { grid-template-columns: 1fr; }
-      .sequence-scroll { overflow-x: auto; overscroll-behavior-inline: contain; }
+      .sequence-scroll { overflow-x: auto; overscroll-behavior-inline: contain; }${model.kind === 'activation' ? `
+      .grouped-evidence-table { min-width: 0; table-layout: fixed; }
+      .grouped-evidence-table thead th:first-child { width: 38%; }
+      .grouped-evidence-table tbody th { width: 38%; }
+      .grouped-evidence-table .evidence-file-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }` : ''}
       footer { flex-direction: column; }
     }
     @media (max-width: 480px) {
