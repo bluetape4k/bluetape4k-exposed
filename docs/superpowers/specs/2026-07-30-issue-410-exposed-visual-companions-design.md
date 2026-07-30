@@ -12,7 +12,7 @@ Issue #410의 첫 구현은 트랜잭션 경계와 Spring Boot 활성화 조건�
 
 `bluetape4k.github.io`에 이미 게시된 여섯 개 시각화 자료는 문제 정의, 아키텍처, 실행 흐름, 실패 시나리오, 코드 연결, 검증 방법을 한 문서 안에서 연결한다. 반면 첫 구현은 트랜잭션 자료가 3개 구역과 4개 상태 버튼, 활성화 자료가 2개 구역과 조건 입력 위주여서 기존 자료의 해설 밀도와 학습 경로에 미치지 못했다.
 
-이번 재설계는 기존 구현에 설명 카드를 추가하는 수준이 아니다. JPA/Hibernate와 Exposed의 서로 다른 정신 모형에서 이야기를 시작하고, 이미 승인된 Architecture Diagram을 해설의 중심축으로 재사용하며, 실제 소스와 테스트까지 추적할 수 있는 심층 시각 해설서로 다시 구성한다.
+이번 재설계는 기존 구현에 설명 카드를 추가하는 수준이 아니다. JPA/Hibernate와 Exposed의 서로 다른 사고방식에서 이야기를 시작하고, 두 실행 구조를 나란히 보여 주는 비교 Architecture Diagram과 기존 Exposed Architecture Diagram을 해설의 중심축으로 사용하며, 실제 소스와 테스트까지 추적할 수 있는 심층 시각 해설서로 다시 구성한다.
 
 ## 2. 목표
 
@@ -30,7 +30,7 @@ Issue #410의 첫 구현은 트랜잭션 경계와 Spring Boot 활성화 조건�
 - JPA 전체 명세나 모든 JPA 구현체를 설명하지 않는다.
 - Hibernate와 Exposed의 성능을 일반화한 벤치마크 결과를 주장하지 않는다.
 - Spring Boot의 전체 조건 평가 엔진을 브라우저에서 재현하지 않는다.
-- 기존 Architecture Diagram의 구조적 주장을 별도 HTML 그림으로 복제하지 않는다.
+- 기존 Exposed Architecture Diagram의 구조적 주장을 비교 그림으로 덮어쓰거나 단순화하지 않는다.
 - Exposed DSL, DAO, JDBC, R2DBC의 모든 API를 한 자료에 나열하지 않는다.
 - 시각화 작업과 별개인 기존 매뉴얼의 구조적 부채는 Issue #411의 범위로 유지한다.
 
@@ -97,17 +97,33 @@ scripts/visual-companions/
 - `build.mjs --check`는 생성 결과가 저장소의 산출물과 정확히 일치하는지 검증한다.
 - HTML은 외부 CDN, 글꼴, 스크립트, 네트워크 요청 없이 단독 실행된다.
 
-### 5.2 기존 Architecture Diagram을 해설의 중심축으로 사용
+### 5.2 비교 Architecture Diagram과 기존 상세 Diagram을 함께 사용
 
-다음 매뉴얼 자산을 구조적 사실의 원본으로 사용한다.
+트랜잭션 해설서의 첫 Architecture Diagram은 JPA/Hibernate와 Exposed의 책임 구조를 같은 추상화 수준에서 비교한다. JPA/Hibernate는 전형적인 Spring Data JPA + Hibernate 애플리케이션을 기준으로 하고, Exposed는 JDBC와 R2DBC 실행 경로를 내부 하위 레인으로 나눈다. JPA/Hibernate를 JDBC, R2DBC와 같은 드라이버 레인으로 배치하지 않는다.
+
+비교 Diagram의 JPA/Hibernate 쪽은 `bluetape4k-hibernate`의 실제 역할을 다음과 같이 제한한다.
+
+- `JpaRepository`와 직접 `EntityManager` 사용은 서로 대체 가능한 접근 경로로 표시한다.
+- `bluetape4k-hibernate`는 `EntityManager`, `Session`, Criteria, Querydsl에 Kotlin 편의 기능을 더하는 확장 계층으로 표시한다.
+- `bluetape4k-hibernate`가 Spring 트랜잭션 관리자나 저장소 추상화를 소유한다고 표현하지 않는다.
+- 관리 엔티티, 영속성 컨텍스트, 변경 감지, flush와 JDBC 경로를 JPA/Hibernate의 핵심 상태·I/O 모델로 표시한다.
+
+Exposed 쪽은 호출자가 트랜잭션 경계를 소유한다는 공통 원칙 아래에서 JDBC와 R2DBC를 구분한다.
+
+- JDBC: `transaction {}` → `JdbcTransaction` → `JdbcRepository` / DSL → JDBC
+- R2DBC: `suspendTransaction {}` → `R2dbcTransaction` → `R2dbcRepository` / DSL → R2DBC
+
+비교 Diagram 다음에는 기존 트랜잭션 소유권 Diagram을 그대로 배치해 Exposed 내부 구조를 확대 설명한다. 다음 매뉴얼 자산을 구조적 사실의 원본으로 사용한다.
 
 | 해설서 | 기준 Architecture Diagram |
 |---|---|
+| 트랜잭션 소유권 | `docs/manual/assets/persistence/jpa-exposed-comparison.en.svg` |
+| 트랜잭션 소유권 | `docs/manual/assets/persistence/jpa-exposed-comparison.ko.svg` |
 | 트랜잭션 소유권 | `docs/manual/assets/persistence/transaction-ownership.svg` |
 | Spring Boot 활성화 | `docs/manual/assets/spring/jdbc-auto-configuration.svg` |
 | Spring Boot 활성화 | `docs/manual/assets/spring/r2dbc-auto-configuration.svg` |
 
-생성기는 이 SVG를 결정적으로 HTML에 내장하고, 원본의 SHA-256을 `manifest.json`에 기록한다. 검증기는 현재 SVG 해시와 기록된 해시가 다르면 실패시켜 Architecture Diagram 변경이 시각 해설서에 조용히 누락되지 않도록 한다.
+비교 Diagram은 독자용 문구가 있으므로 영어와 한국어 SVG/PNG를 각각 유지한다. 생성기는 현재 locale의 SVG를 결정적으로 HTML에 내장하고, 모델에 locale별 SHA-256을 기록한다. 검증기는 현재 SVG 해시와 기록된 해시가 다르면 실패시켜 Architecture Diagram 변경이 시각 해설서에 조용히 누락되지 않도록 한다.
 
 내장된 Diagram은 다음 기능을 제공한다.
 
@@ -134,9 +150,11 @@ scripts/visual-companions/
 
 JPA의 관리 엔티티, 변경 감지, flush와 Exposed의 명시적 쿼리·쓰기·문맥을 작은 비교 흐름으로 소개한다. 단순 장단점 표에 그치지 않고 동일한 “주문 상태 변경” 유스케이스를 두 방식의 코드와 I/O 타임라인으로 나란히 보여 준다.
 
-#### 2) 기존 트랜잭션 소유권 Architecture Diagram
+#### 2) JPA/Hibernate와 Exposed 비교 Architecture Diagram
 
-`transaction-ownership.svg`를 전체 너비로 배치한다. JDBC와 R2DBC 두 레인을 기준으로 호출자, 트랜잭션 문맥, 저장소, 드라이버, 데이터베이스가 어떤 책임을 소유하는지 단계별로 해설한다.
+`jpa-exposed-comparison.{en,ko}.svg`를 전체 너비로 먼저 배치한다. 왼쪽은 `@Transactional`, `JpaRepository` 또는 직접 `EntityManager` 사용, Hibernate 영속성 컨텍스트, JDBC를 보여 준다. 오른쪽은 호출자가 소유하는 명시적 경계 아래에서 Exposed JDBC와 R2DBC를 하위 레인으로 나눈다.
+
+그다음 `transaction-ownership.svg`를 전체 너비로 배치한다. JDBC와 R2DBC 두 레인을 기준으로 호출자, 트랜잭션 문맥, 저장소, 드라이버, 데이터베이스가 어떤 책임을 소유하는지 단계별로 해설한다.
 
 #### 3) 상호작용형 시나리오 탐색기
 
