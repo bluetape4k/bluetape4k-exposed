@@ -6,8 +6,8 @@
       "id": "jdbc-r2dbc-transaction-boundaries",
       "source": "docs/superpowers/specs/2026-07-30-issue-410-exposed-visual-companions-design.md",
       "data": "docs/visual-companions/data/jdbc-r2dbc-transaction-boundaries.json",
-      "status": "pending-review",
-      "public": false,
+      "status": "approved",
+      "public": true,
       "presentation": {
         "mode": "comparison",
         "defaultView": "jdbc",
