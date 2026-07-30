@@ -28,7 +28,7 @@
   ],
   "locales": {
     "en": {
-      "title": "Spring Boot Exposed Activation, Without Hidden Ownership",
+      "title": "Spring Boot Exposed Activation and Ownership",
       "eyebrow": "AUTO-CONFIGURATION · CONDITIONS · OWNERSHIP",
       "lede": "JDBC activation can connect Exposed to a Spring DataSource and supply one specifically named transaction manager. R2DBC activation is intentionally thinner: the application still owns the pool, R2dbcDatabase, transaction scope, and shutdown.",
       "statusPrefix": "Selected activation scenario:",
@@ -138,7 +138,7 @@
       "skip": "Skip to activation scenarios"
     },
     "ko": {
-      "title": "숨은 소유권 없이 이해하는 Spring Boot Exposed 활성화",
+      "title": "Spring Boot Exposed 활성화와 소유권",
       "eyebrow": "자동 설정 · 조건 · 소유권",
       "lede": "JDBC 활성화는 Spring의 DataSource에 Exposed를 연결하고, 정해진 이름의 트랜잭션 관리자를 조건부로 제공합니다. R2DBC 활성화는 의도적으로 더 얇습니다. 풀과 R2dbcDatabase, 트랜잭션 범위, 종료 절차는 여전히 애플리케이션이 맡습니다.",
       "statusPrefix": "선택한 활성화 시나리오:",
@@ -187,7 +187,7 @@
       "architectureIntro": "두 모듈은 저장소 탐색과 매핑 개념을 공유하지만 같은 기반 객체를 소유하지는 않습니다. 각 원본 다이어그램을 열면 전체 크기로 확인할 수 있습니다.",
       "architectureTitle": {
         "jdbc-auto-configuration": "JDBC · 컨테이너에 참여하는 경로",
-        "r2dbc-auto-configuration": "R2DBC · 애플리케이션이 기반 객체를 소유하는 경로"
+        "r2dbc-auto-configuration": "R2DBC · 애플리케이션 소유 경로"
       },
       "architectureDescription": {
         "jdbc-auto-configuration": "DataSource가 있어야 이름 있는 트랜잭션 관리자를 추가할 수 있습니다.",
