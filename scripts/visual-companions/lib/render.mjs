@@ -10,6 +10,10 @@ function inlineCode(value) {
   return escapeHtml(value).replaceAll(/`([^`]+)`/g, '<code>$1</code>');
 }
 
+function evidenceLinkLabel(value) {
+  return value.split('/').at(-1).replace(/\.(?:java|kt|kts)$/, '');
+}
+
 function renderTable(headers, rows, className = '') {
   return `
     <div class="table-wrap">
@@ -133,8 +137,8 @@ export function renderEvidenceLedger({ model, locale }) {
           ${model.sources.map((source) => `
             <tr id="source-${escapeHtml(source.id)}" data-source-anchor="${escapeHtml(source.id)}">
               <th scope="row">${escapeHtml(source.locales[locale].claim)}</th>
-              <td><a data-source-link href="${repositoryBlob}${escapeHtml(source.sourcePath)}"><code>${escapeHtml(source.sourcePath)}</code></a></td>
-              <td><a data-source-link href="${repositoryBlob}${escapeHtml(source.testPath)}"><code>${escapeHtml(source.testPath)}</code></a></td>
+              <td><a data-source-link href="${repositoryBlob}${escapeHtml(source.sourcePath)}"><code>${escapeHtml(evidenceLinkLabel(source.sourcePath))}</code></a></td>
+              <td><a data-source-link href="${repositoryBlob}${escapeHtml(source.testPath)}"><code>${escapeHtml(evidenceLinkLabel(source.testPath))}</code></a></td>
               <td><code>${escapeHtml(source.verificationCommand)}</code></td>
             </tr>`).join('')}
         </tbody>
@@ -394,6 +398,7 @@ function renderStandaloneShell({ model, locale, body }) {
     tbody td { color: var(--muted); }
     tr:last-child th, tr:last-child td { border-bottom: 0; }
     .evidence-table code { font-size: .72rem; }
+    .evidence-table td:nth-child(2) a, .evidence-table td:nth-child(3) a { white-space: nowrap; }
     footer { width: min(1180px, calc(100% - 32px)); margin: 0 auto 50px; padding-top: 22px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 20px; color: var(--muted); font-size: .82rem; }
     [hidden] { display: none !important; }
     @media (max-width: 800px) {
