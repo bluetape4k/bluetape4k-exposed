@@ -53,6 +53,51 @@ test('approved bilingual visual companions satisfy the repository contract', asy
   assert.deepEqual(result, { documentCount: 2, localeFileCount: 4 });
 });
 
+test('transaction companion preserves the source-backed execution claims', async () => {
+  for (const relativePath of [
+    'docs/visual-companions/jdbc-r2dbc-transaction-boundaries.html',
+    'docs/visual-companions/jdbc-r2dbc-transaction-boundaries.ko.html',
+  ]) {
+    const content = await read(relativePath);
+    for (const marker of [
+      '@Transactional',
+      'suspendTransaction',
+      'channelFlow',
+      'data-view="jdbc"',
+      'data-view="r2dbc"',
+      'data-view="multi-call"',
+      'SimpleExposedJdbcRepository.kt',
+      'SimpleExposedR2dbcRepository.kt',
+    ]) {
+      assert.match(content, new RegExp(marker));
+    }
+  }
+});
+
+test('activation companion preserves conditions, back-off, and R2DBC ownership', async () => {
+  for (const relativePath of [
+    'docs/visual-companions/spring-boot-exposed-activation.html',
+    'docs/visual-companions/spring-boot-exposed-activation.ko.html',
+  ]) {
+    const content = await read(relativePath);
+    for (const marker of [
+      'data-condition="entity-class"',
+      'data-condition="data-source"',
+      'data-condition="transaction-manager"',
+      'data-condition="enable-jdbc"',
+      'data-condition="enable-r2dbc"',
+      'data-condition="mapping-context"',
+      'springTransactionManager',
+      'ConnectionPool',
+      'R2dbcDatabase',
+      'ExposedMappingContext',
+    ]) {
+      assert.match(content, new RegExp(marker));
+    }
+    assert.match(content, /R2DBC[^<]*(?:pool|풀)[\s\S]*(?:is created|does not create|만들지 않)/i);
+  }
+});
+
 test('duplicate document ids are rejected', async () => {
   await expectInvalid(async ({ root, manifest }) => {
     manifest.documents[1].id = manifest.documents[0].id;

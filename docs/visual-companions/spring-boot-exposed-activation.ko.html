@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><circle cx=%2216%22 cy=%2216%22 r=%2214%22 fill=%22%236ee7a8%22/></svg>">
   <title>Spring Boot Exposed 활성화</title>
   <script>
     (() => {
@@ -113,6 +114,7 @@
       cursor: pointer;
     }
     .condition input { width: 1.2rem; height: 1.2rem; margin-top: .18rem; accent-color: var(--accent); }
+    .condition span, .path-step, td, code { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
     .condition strong, .condition small { display: block; }
     .condition small { color: var(--muted); margin-top: 2px; }
     .result { min-width: 0; }
@@ -130,6 +132,7 @@
     .path-step[data-state="off"] { border-left-color: var(--off); color: var(--muted); }
     .path-step strong { display: block; }
     .path-step small { color: var(--muted); }
+    .table-wrap { max-width: 100%; overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
     th, td { border-bottom: 1px solid var(--line); padding: 12px 9px; text-align: left; vertical-align: top; }
     th { color: var(--muted); font-size: .82rem; text-transform: uppercase; letter-spacing: .08em; }
@@ -144,7 +147,7 @@
       .shell { width: min(100% - 20px, 1180px); padding-top: 16px; }
       .topbar { margin-bottom: 26px; }
       .explorer { grid-template-columns: 1fr; }
-      .table-wrap { overflow-x: auto; }
+      table { min-width: 620px; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .001ms !important; animation-duration: .001ms !important; }
