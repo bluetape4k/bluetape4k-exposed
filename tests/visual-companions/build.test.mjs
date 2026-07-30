@@ -70,8 +70,33 @@ test('sequence messages connect participant centers with direction-aware arrowhe
   assert.match(document, /\.message-line \{[^}]*color: var\(--message-color\)[^}]*border-top: 2px solid currentColor/);
   assert.match(document, /\.message-forward \.message-line::after \{[^}]*border-left-color: currentColor/);
   assert.match(document, /\.message-reverse \.message-line::after \{[^}]*border-right-color: currentColor/);
+  assert.match(document, /\.lifeline \{[^}]*var\(--role-line\)/);
+  assert.match(document, /\.activation \{[^}]*var\(--role-active\)[^}]*var\(--role-active-soft\)/);
+  assert.match(document, /\.message \{[^}]*--message-color: var\(--call-line\)/);
+  assert.doesNotMatch(document, /\.lifeline \{[^}]*var\(--call-line\)/);
   assert.doesNotMatch(document, /\.message-line::after \{[^}]*var\(--cyan\)/);
   assert.doesNotMatch(document, /message-return message-forward/);
+});
+
+test('reader-facing document omits authoring and validation metadata', async () => {
+  const [model] = await loadCompanionModels(root);
+  const document = renderDocument({
+    model,
+    locale: 'ko',
+    architectureAssets: model.architecture.map((asset) => ({
+      ...asset,
+      dataUri: 'data:image/png;base64,AA==',
+    })),
+  });
+
+  assert.doesNotMatch(document, />[^<]*Issue #410[^<]*</);
+  assert.doesNotMatch(document, />SHA-256 /);
+  assert.doesNotMatch(document, />오프라인 단일 HTML</);
+  assert.doesNotMatch(document, />설계 문서</);
+  assert.doesNotMatch(document, />jdbc-controller</);
+  assert.match(document, /data-source="[^"]*issue-410[^"]*"/);
+  assert.match(document, /id="status" class="sr-only" aria-live="polite"/);
+  assert.match(document, />트랜잭션 경계 매뉴얼</);
 });
 
 test('evidence links keep full targets but display concise source names', async () => {
