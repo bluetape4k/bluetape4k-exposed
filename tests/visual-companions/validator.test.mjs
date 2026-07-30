@@ -56,6 +56,24 @@ test('approved bilingual visual companions satisfy the repository contract', asy
   assert.deepEqual(result, { documentCount: 2, localeFileCount: 4 });
 });
 
+test('generated documents use locale directories and declare their data models', async () => {
+  const manifest = JSON.parse(await read(manifestRelativePath));
+
+  for (const document of manifest.documents) {
+    assert.equal(document.data, `docs/visual-companions/data/${document.id}.json`);
+    assert.equal(document.locales.en.html, `docs/visual-companions/en/${document.id}.html`);
+    assert.equal(document.locales.ko.html, `docs/visual-companions/ko/${document.id}.html`);
+    assert.deepEqual(
+      Object.keys(document.locales.en.captures).sort(),
+      ['dark', 'light'],
+    );
+    assert.deepEqual(
+      Object.keys(document.locales.ko.captures).sort(),
+      ['dark', 'light'],
+    );
+  }
+});
+
 test('transaction companion preserves the source-backed execution claims', async () => {
   for (const relativePath of [
     'docs/visual-companions/jdbc-r2dbc-transaction-boundaries.html',
