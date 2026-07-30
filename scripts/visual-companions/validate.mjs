@@ -58,7 +58,6 @@ function structuralFingerprint(content) {
     views: values(content, /\bdata-view=["']([^"']+)["']/gi),
     conditions: values(content, /\bdata-condition=["']([^"']+)["']/gi),
     sourceAnchors: values(content, /\bdata-source-anchor=["']([^"']+)["']/gi),
-    sourceLinks: values(content, /<a\b[^>]*\bdata-source-link\b[^>]*\bhref=["']([^"']+)["']/gi),
   };
 }
 
@@ -260,7 +259,6 @@ export async function validateRepository(
         views: 'view values',
         conditions: 'condition values',
         sourceAnchors: 'source anchors',
-        sourceLinks: 'source links',
       };
       for (const [key, label] of Object.entries(labels)) {
         if (!sameValues(english[key], korean[key])) {

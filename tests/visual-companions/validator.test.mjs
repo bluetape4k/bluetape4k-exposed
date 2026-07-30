@@ -188,3 +188,16 @@ test('manual pages link to the locale-specific public routes', async () => {
     assert.match(await read(relativePath), new RegExp(route.replaceAll('/', '\\/')));
   }
 });
+
+test('locale documents link to their matching manual source', async () => {
+  const expectations = [
+    ['docs/visual-companions/jdbc-r2dbc-transaction-boundaries.html', 'docs/manual/en/guides/transaction-boundaries.md'],
+    ['docs/visual-companions/jdbc-r2dbc-transaction-boundaries.ko.html', 'docs/manual/ko/guides/transaction-boundaries.md'],
+    ['docs/visual-companions/spring-boot-exposed-activation.html', 'docs/manual/en/guides/spring-and-ktor.md'],
+    ['docs/visual-companions/spring-boot-exposed-activation.ko.html', 'docs/manual/ko/guides/spring-and-ktor.md'],
+  ];
+
+  for (const [relativePath, sourcePath] of expectations) {
+    assert.match(await read(relativePath), new RegExp(sourcePath.replaceAll('/', '\\/')));
+  }
+});
