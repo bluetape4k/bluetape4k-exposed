@@ -8,6 +8,8 @@ releaseRef: "1.11.0"
 
 어떤 프레임워크가 더 익숙한지만 보지 말고, 기반 객체와 트랜잭션, 종료 절차를 누가 맡을지 먼저 정하세요. Spring 모듈은 컨테이너가 관리하는 애플리케이션에 참여하고, Ktor 모듈은 명시적인 도우미만 제공하므로 데이터베이스 생명주기는 애플리케이션이 관리합니다.
 
+> [Spring Boot Exposed 활성화 시각화 자료](https://bluetape4k.github.io/ko/visual-companions/bluetape4k-exposed/spring-boot-exposed-activation/)에서 활성화 조건과 소유권을 직접 확인할 수 있습니다.
+
 ## 소유권 비교
 
 | 경로 | 기반 객체 소유자 | 트랜잭션 경계 | 저장소 구성 | 잘 맞는 환경 |

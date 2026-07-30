@@ -9,6 +9,8 @@ releaseRef: 1.11.0
 
 A repository can issue statements, but only the application service knows which statements form one business operation. Put the transaction boundary around that operation and keep connection, coroutine, and framework ownership visible.
 
+> Explore the execution paths in the [JDBC and R2DBC transaction boundary visual companion](https://bluetape4k.github.io/visual-companions/bluetape4k-exposed/jdbc-r2dbc-transaction-boundaries/).
+
 ## One business operation, one explicit owner
 
 ```kotlin

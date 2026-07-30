@@ -102,7 +102,7 @@ test('declared views and reciprocal locale links are enforced', async () => {
         .replace('data-view="multi-call"', 'data-view="multi-call-missing"')
         .replace(path.basename(document.locales.ko.html), 'missing-locale.html'),
     );
-  }, /must represent declared view multi-call[\s\S]*must link to its ko locale/);
+  }, /must link to its ko locale[\s\S]*must represent declared view multi-call/);
 });
 
 test('manual pages link to the locale-specific public routes', async () => {

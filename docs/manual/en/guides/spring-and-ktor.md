@@ -8,6 +8,8 @@ releaseRef: "1.11.0"
 
 Choose the integration by deciding who owns infrastructure, transactions, and shutdown. The Spring modules participate in a container-managed application. The Ktor module provides explicit helpers and leaves the database lifecycle with the application.
 
+> Explore activation conditions and ownership in the [Spring Boot Exposed activation visual companion](https://bluetape4k.github.io/visual-companions/bluetape4k-exposed/spring-boot-exposed-activation/).
+
 ## Ownership matrix
 
 | Path | Infrastructure owner | Transaction boundary | Repository wiring | Best fit |
