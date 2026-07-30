@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -20,18 +20,26 @@ async function read(relativePath) {
 async function withFixture(mutator) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'exposed-visual-companions-'));
   const manifest = JSON.parse(await read(manifestRelativePath));
-  const paths = new Set([manifestRelativePath]);
-
+  await cp(
+    path.join(repositoryRoot, 'docs/visual-companions'),
+    path.join(root, 'docs/visual-companions'),
+    { recursive: true },
+  );
+  await cp(
+    path.join(repositoryRoot, 'docs/manual'),
+    path.join(root, 'docs/manual'),
+    { recursive: true },
+  );
   for (const document of manifest.documents) {
-    paths.add(document.source);
-    paths.add(document.locales.en.html);
-    paths.add(document.locales.ko.html);
-  }
-
-  for (const relativePath of paths) {
-    const target = path.join(root, relativePath);
-    await mkdir(path.dirname(target), { recursive: true });
-    await writeFile(target, await read(relativePath));
+    const model = JSON.parse(await read(document.data));
+    for (const relativePath of [
+      document.source,
+      ...model.sources.flatMap(({ sourcePath, testPath }) => [sourcePath, testPath]),
+    ]) {
+      const target = path.join(root, relativePath);
+      await mkdir(path.dirname(target), { recursive: true });
+      await cp(path.join(repositoryRoot, relativePath), target);
+    }
   }
 
   try {
@@ -63,65 +71,46 @@ test('generated documents use locale directories and declare their data models',
     assert.equal(document.data, `docs/visual-companions/data/${document.id}.json`);
     assert.equal(document.locales.en.html, `docs/visual-companions/en/${document.id}.html`);
     assert.equal(document.locales.ko.html, `docs/visual-companions/ko/${document.id}.html`);
-    assert.deepEqual(
-      Object.keys(document.locales.en.captures).sort(),
-      ['dark', 'light'],
-    );
-    assert.deepEqual(
-      Object.keys(document.locales.ko.captures).sort(),
-      ['dark', 'light'],
-    );
+    if (document.status === 'approved') {
+      assert.deepEqual(Object.keys(document.locales.en.captures).sort(), ['dark', 'light']);
+      assert.deepEqual(Object.keys(document.locales.ko.captures).sort(), ['dark', 'light']);
+    } else {
+      assert.equal(document.status, 'pending-review');
+      assert.equal(document.public, false);
+    }
   }
 });
 
 test('transaction companion preserves the source-backed execution claims', async () => {
   for (const relativePath of [
-    'docs/visual-companions/jdbc-r2dbc-transaction-boundaries.html',
-    'docs/visual-companions/jdbc-r2dbc-transaction-boundaries.ko.html',
+    'docs/visual-companions/en/jdbc-r2dbc-transaction-boundaries.html',
+    'docs/visual-companions/ko/jdbc-r2dbc-transaction-boundaries.html',
   ]) {
     const content = await read(relativePath);
     for (const marker of [
       '@Transactional',
       'suspendTransaction',
       'channelFlow',
-      'data-view="jdbc"',
-      'data-view="r2dbc"',
-      'data-view="multi-call"',
-      'SimpleExposedJdbcRepository.kt',
-      'SimpleExposedR2dbcRepository.kt',
+      'data-scenario="jdbc-single"',
+      'data-scenario="r2dbc-single"',
+      'data-scenario="r2dbc-flow-escape"',
+      'JdbcRepository.kt',
+      'R2dbcRepository.kt',
     ]) {
       assert.match(content, new RegExp(marker));
     }
-    const multiCall = content.match(/<div id="panel-multi-call"[\s\S]*?<\/div>\s*<div class="legend"/)?.[0];
-    assert.ok(multiCall, `${relativePath} must contain the multi-call panel`);
-    assert.doesNotMatch(multiCall, /data-owner="(?:jdbc|r2dbc)"/);
+    assert.match(content, /JPA[\s\S]*dirty checking[\s\S]*Exposed[\s\S]*(?:explicit|명시적)/i);
+    assert.match(content, /data-sequence="rollback-or-cancellation"/);
   }
 });
 
-test('activation companion preserves conditions, back-off, and R2DBC ownership', async () => {
-  for (const relativePath of [
-    'docs/visual-companions/spring-boot-exposed-activation.html',
-    'docs/visual-companions/spring-boot-exposed-activation.ko.html',
-  ]) {
-    const content = await read(relativePath);
-    for (const marker of [
-      'data-condition="entity-class"',
-      'data-condition="data-source"',
-      'data-condition="transaction-manager"',
-      'data-condition="enable-jdbc"',
-      'data-condition="enable-r2dbc"',
-      'data-condition="mapping-context"',
-      'springTransactionManager',
-      'ConnectionPool',
-      'R2dbcDatabase',
-      'ExposedMappingContext',
-    ]) {
-      assert.match(content, new RegExp(marker));
-    }
-    assert.match(content, /R2DBC[^<]*(?:pool|풀)[\s\S]*(?:is created|does not create|만들지 않)/i);
-    assert.match(content, /(?:Only the R2DBC mapping bean backs off|R2DBC 매핑 빈만 Back-off)/);
-    assert.match(content, /themeToggle\.setAttribute\('aria-pressed'/);
-  }
+test('activation companion stays private while its deep redesign is gated', async () => {
+  const manifest = JSON.parse(await read(manifestRelativePath));
+  const activation = manifest.documents.find(({ id }) => id === 'spring-boot-exposed-activation');
+  assert.equal(activation.status, 'pending-review');
+  assert.equal(activation.public, false);
+  assert.equal(activation.locales.en.captures, undefined);
+  assert.equal(activation.locales.ko.captures, undefined);
 });
 
 test('duplicate document ids are rejected', async () => {
@@ -183,7 +172,7 @@ test('locale structure drift is rejected', async () => {
   await expectInvalid(async ({ root, manifest }) => {
     const htmlPath = path.join(root, manifest.documents[0].locales.ko.html);
     const html = await readFile(htmlPath, 'utf8');
-    await writeFile(htmlPath, html.replace('id="view-jdbc"', 'id="view-jdbc-ko"'));
+    await writeFile(htmlPath, html.replace('id="scenario-jdbc-single"', 'id="scenario-jdbc-single-ko"'));
   }, /locale control ids must match/);
 });
 
@@ -210,10 +199,10 @@ test('declared views and reciprocal locale links are enforced', async () => {
     await writeFile(
       htmlPath,
       html
-        .replace('data-view="multi-call"', 'data-view="multi-call-missing"')
-        .replace(path.basename(document.locales.ko.html), 'missing-locale.html'),
+        .replace('data-scenario="jdbc-multi-repository"', 'data-scenario="missing"')
+        .replace(`../ko/${document.id}.html`, '../ko/missing-locale.html'),
     );
-  }, /must link to its ko locale[\s\S]*must represent declared view multi-call/);
+  }, /must link to its ko locale[\s\S]*missing scenario jdbc-multi-repository/);
 });
 
 test('manual pages link to the locale-specific public routes', async () => {
@@ -243,10 +232,10 @@ test('manual pages link to the locale-specific public routes', async () => {
 
 test('locale documents link to their matching manual source', async () => {
   const expectations = [
-    ['docs/visual-companions/jdbc-r2dbc-transaction-boundaries.html', 'docs/manual/en/guides/transaction-boundaries.md'],
-    ['docs/visual-companions/jdbc-r2dbc-transaction-boundaries.ko.html', 'docs/manual/ko/guides/transaction-boundaries.md'],
-    ['docs/visual-companions/spring-boot-exposed-activation.html', 'docs/manual/en/guides/spring-and-ktor.md'],
-    ['docs/visual-companions/spring-boot-exposed-activation.ko.html', 'docs/manual/ko/guides/spring-and-ktor.md'],
+    ['docs/visual-companions/en/jdbc-r2dbc-transaction-boundaries.html', 'docs/manual/en/guides/transaction-boundaries.md'],
+    ['docs/visual-companions/ko/jdbc-r2dbc-transaction-boundaries.html', 'docs/manual/ko/guides/transaction-boundaries.md'],
+    ['docs/visual-companions/en/spring-boot-exposed-activation.html', 'docs/manual/en/guides/spring-and-ktor.md'],
+    ['docs/visual-companions/ko/spring-boot-exposed-activation.html', 'docs/manual/ko/guides/spring-and-ktor.md'],
   ];
 
   for (const [relativePath, sourcePath] of expectations) {

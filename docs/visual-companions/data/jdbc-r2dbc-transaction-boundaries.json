@@ -1,0 +1,344 @@
+{
+  "id": "jdbc-r2dbc-transaction-boundaries",
+  "kind": "transaction",
+  "architecture": [
+    {
+      "id": "transaction-ownership",
+      "source": "docs/manual/assets/persistence/transaction-ownership.svg",
+      "fallback": "docs/manual/assets/persistence/transaction-ownership.png",
+      "sha256": "1d7336238d24a63bde89c86cbc641bd4e1bda820cc327be258e323506f7a3597"
+    }
+  ],
+  "sections": [
+    { "id": "mental-model" },
+    { "id": "architecture" },
+    { "id": "scenario-explorer" },
+    { "id": "sequence" },
+    { "id": "ownership-matrix" },
+    { "id": "code-mapping" },
+    { "id": "tradeoffs" },
+    { "id": "evidence" }
+  ],
+  "locales": {
+    "en": {
+      "title": "JPA to Exposed: Make Transaction Ownership Visible",
+      "eyebrow": "Interactive architecture companion · Issue #410",
+      "lede": "Exposed trades part of JPA/Hibernate's object-graph automation for explicit SQL intent. The decisive migration question is not which repository opens a transaction, but which application boundary owns the complete unit of work.",
+      "openArchitecture": "Open the original architecture diagram",
+      "architectureAlt": {
+        "transaction-ownership": "Transaction ownership architecture: a service or controller boundary encloses JDBC transaction blocks and R2DBC suspend transaction blocks before repository calls reach the database."
+      },
+      "close": "Close",
+      "theme": "Theme",
+      "language": "한국어",
+      "skip": "Skip to the scenario explorer",
+      "scenarioHeading": "Replay six boundary decisions",
+      "scenarioIntro": "Select a path. The sequence, owner, terminal signal, code mapping, and risk statement update together.",
+      "sequenceHeading": "Execution sequence",
+      "architectureHeading": "Start with the existing architecture",
+      "architectureIntro": "This is the repository's approved transaction-ownership diagram, embedded without reinterpretation. The explorer below turns each lane into an executable story.",
+      "mentalHeading": "First, change the mental model",
+      "ownershipHeading": "Who owns what?",
+      "mappingHeading": "From JPA habit to Exposed code",
+      "tradeoffHeading": "Choose with the costs visible",
+      "evidenceHeading": "Source and test ledger",
+      "statusPrefix": "Selected scenario:",
+      "ownerLabel": "Boundary owner",
+      "terminalLabel": "Terminal result",
+      "whyLabel": "Why it matters",
+      "sourceLabel": "Production source",
+      "testLabel": "Test or executable example",
+      "verifyLabel": "Verification",
+      "jpaTitle": "JPA / Hibernate default",
+      "jpaFlow": "managed entity → dirty checking → flush",
+      "jpaStrength": "Strength: productive object graphs, mature ecosystem, rich persistence context.",
+      "jpaCost": "Cost: I/O can hide behind proxies, N+1 traversal, flush timing, and entity lifecycle.",
+      "exposedTitle": "Exposed DSL / repository",
+      "exposedFlow": "explicit select / join / map → explicit insert / update / delete",
+      "exposedStrength": "Strength: SQL intent and execution points stay visible in application code.",
+      "exposedCost": "Cost: query shape, mapping, writes, and transaction boundaries require explicit design.",
+      "invariant": "Invariant",
+      "invariantText": "Repositories compose database operations; the service or controller boundary owns atomicity across the whole use case.",
+      "matrix": [
+        ["Application boundary", "Begins and ends the business transaction", "Keeps multiple repository calls atomic"],
+        ["Repository", "Expresses queries, mapping, and writes", "Does not secretly widen the use-case boundary"],
+        ["Exposed runtime", "Binds transaction state to the JDBC thread or R2DBC coroutine context", "Makes escaped work a correctness concern"],
+        ["Database", "Commits or rolls back the unit", "Sees one terminal outcome"]
+      ],
+      "matrixHeaders": ["Actor", "Owns", "Reason"],
+      "mapping": [
+        ["`@Transactional` service method", "`transaction { ... }` or `suspendTransaction { ... }` at the application boundary"],
+        ["Managed entity mutation", "Explicit `update`, `insert`, or `delete` repository operation"],
+        ["Lazy relationship traversal", "Explicit join or follow-up query inside the same boundary"],
+        ["Flush-time SQL", "SQL occurs where the Exposed DSL or repository call is made"],
+        ["Persistence-context lifetime", "Transaction block / coroutine-context lifetime"]
+      ],
+      "mappingHeaders": ["JPA habit", "Exposed mapping"],
+      "tradeoffs": [
+        ["Prefer JPA/Hibernate", "Complex object graphs, domain navigation, and ecosystem integrations outweigh hidden I/O risk."],
+        ["Prefer Exposed", "SQL shape, predictable I/O, Kotlin DSL composition, and explicit boundaries are primary."],
+        ["Avoid a blind migration", "Moving repository names without moving the mental model preserves boundary and N+1 mistakes."],
+        ["Use both deliberately", "Choose per bounded context; do not mix transaction ownership inside one use case."]
+      ],
+      "tradeoffHeaders": ["Decision", "Signal"]
+    },
+    "ko": {
+      "title": "JPA에서 Exposed로: 트랜잭션 소유권을 드러내기",
+      "eyebrow": "대화형 아키텍처 해설 · Issue #410",
+      "lede": "Exposed는 JPA/Hibernate의 객체 그래프 자동화 일부를 명시적인 SQL 의도와 맞바꾼다. 마이그레이션의 핵심 질문은 어느 저장소가 트랜잭션을 여느냐가 아니라, 어느 애플리케이션 경계가 전체 작업 단위를 소유하느냐이다.",
+      "openArchitecture": "기존 Architecture Diagram 크게 보기",
+      "architectureAlt": {
+        "transaction-ownership": "서비스 또는 컨트롤러 경계가 JDBC transaction 블록과 R2DBC suspendTransaction 블록을 열고, 그 안에서 저장소 호출이 데이터베이스로 이어지는 트랜잭션 소유권 아키텍처"
+      },
+      "close": "닫기",
+      "theme": "테마",
+      "language": "English",
+      "skip": "시나리오 탐색기로 건너뛰기",
+      "scenarioHeading": "여섯 가지 경계 결정을 재생해 보기",
+      "scenarioIntro": "경로를 선택하면 시퀀스, 소유자, 종료 신호, 코드 매핑, 위험 설명이 함께 바뀐다.",
+      "sequenceHeading": "실행 시퀀스",
+      "architectureHeading": "기존 Architecture Diagram에서 시작한다",
+      "architectureIntro": "저장소가 이미 승인해 둔 트랜잭션 소유권 그림을 재해석 없이 내장했다. 아래 탐색기는 각 lane을 실행 가능한 이야기로 풀어낸다.",
+      "mentalHeading": "먼저 정신 모형을 바꾼다",
+      "ownershipHeading": "누가 무엇을 소유하는가?",
+      "mappingHeading": "JPA 습관을 Exposed 코드로 옮기기",
+      "tradeoffHeading": "비용까지 보고 선택하기",
+      "evidenceHeading": "소스 및 테스트 검증 원장",
+      "statusPrefix": "선택한 시나리오:",
+      "ownerLabel": "경계 소유자",
+      "terminalLabel": "최종 결과",
+      "whyLabel": "중요한 이유",
+      "sourceLabel": "프로덕션 소스",
+      "testLabel": "테스트 또는 실행 예제",
+      "verifyLabel": "검증 방법",
+      "jpaTitle": "JPA / Hibernate 기본 모형",
+      "jpaFlow": "관리 엔티티 → dirty checking → flush",
+      "jpaStrength": "장점: 생산적인 객체 그래프, 성숙한 생태계, 풍부한 persistence context.",
+      "jpaCost": "비용: proxy, N+1 순회, flush 시점, 엔티티 생명주기 뒤에 I/O가 숨을 수 있다.",
+      "exposedTitle": "Exposed DSL / 저장소",
+      "exposedFlow": "명시적 select / join / map → 명시적 insert / update / delete",
+      "exposedStrength": "장점: SQL 의도와 실행 지점이 애플리케이션 코드에 드러난다.",
+      "exposedCost": "비용: 쿼리 형태, 매핑, 쓰기, 트랜잭션 경계를 명시적으로 설계해야 한다.",
+      "invariant": "불변 규칙",
+      "invariantText": "저장소는 데이터베이스 연산을 조합하고, 서비스 또는 컨트롤러 경계가 전체 유스케이스의 원자성을 소유한다.",
+      "matrix": [
+        ["애플리케이션 경계", "업무 트랜잭션을 시작하고 끝낸다", "여러 저장소 호출을 하나의 원자적 작업으로 묶는다"],
+        ["저장소", "쿼리, 매핑, 쓰기를 표현한다", "유스케이스 경계를 몰래 넓히지 않는다"],
+        ["Exposed 런타임", "JDBC 스레드 또는 R2DBC 코루틴 context에 트랜잭션 상태를 결합한다", "경계 밖으로 빠져나간 작업이 정확성 문제가 되는 이유다"],
+        ["데이터베이스", "작업 단위를 commit 또는 rollback 한다", "하나의 최종 결과만 본다"]
+      ],
+      "matrixHeaders": ["주체", "소유 책임", "이유"],
+      "mapping": [
+        ["`@Transactional` 서비스 메서드", "애플리케이션 경계의 `transaction { ... }` 또는 `suspendTransaction { ... }`"],
+        ["관리 엔티티 변경", "명시적인 `update`, `insert`, `delete` 저장소 연산"],
+        ["지연 관계 순회", "동일 경계 안의 명시적 join 또는 후속 쿼리"],
+        ["flush 시점 SQL", "Exposed DSL 또는 저장소 호출이 실행되는 지점의 SQL"],
+        ["persistence context 수명", "트랜잭션 블록 / 코루틴 context 수명"]
+      ],
+      "mappingHeaders": ["JPA 습관", "Exposed 매핑"],
+      "tradeoffs": [
+        ["JPA/Hibernate가 유리한 경우", "복잡한 객체 그래프, 도메인 탐색, 생태계 통합의 가치가 숨은 I/O 위험보다 크다."],
+        ["Exposed가 유리한 경우", "SQL 형태, 예측 가능한 I/O, Kotlin DSL 조합, 명시적 경계가 우선이다."],
+        ["이름만 바꾸는 마이그레이션은 피한다", "정신 모형을 바꾸지 않고 저장소 이름만 옮기면 경계와 N+1 실수도 그대로 남는다."],
+        ["둘을 의도적으로 함께 쓴다", "bounded context별로 선택하되 한 유스케이스 안에서 트랜잭션 소유권을 섞지 않는다."]
+      ],
+      "tradeoffHeaders": ["선택", "판단 신호"]
+    }
+  },
+  "scenarios": [
+    {
+      "id": "jdbc-single",
+      "outcome": "commit",
+      "owner": "Controller / service `transaction {}`",
+      "sourceRef": "jdbc-controller",
+      "locales": {
+        "en": { "label": "JDBC · one repository", "summary": "One synchronous boundary encloses query, mapping, and commit.", "outcome": "COMMIT · the block returns normally." },
+        "ko": { "label": "JDBC · 단일 저장소", "summary": "하나의 동기 경계가 조회, 매핑, commit을 감싼다.", "outcome": "COMMIT · 블록이 정상 반환한다." }
+      },
+      "participants": [
+        { "id": "client", "locales": { "en": { "label": "Client" }, "ko": { "label": "클라이언트" } } },
+        { "id": "boundary", "locales": { "en": { "label": "Controller / Service" }, "ko": { "label": "컨트롤러 / 서비스" } } },
+        { "id": "repository", "locales": { "en": { "label": "JdbcRepository" }, "ko": { "label": "JdbcRepository" } } },
+        { "id": "database", "locales": { "en": { "label": "Database" }, "ko": { "label": "데이터베이스" } } }
+      ],
+      "messages": [
+        { "kind": "call", "from": "client", "to": "boundary", "locales": { "en": { "label": "CALL use case" }, "ko": { "label": "CALL 유스케이스" } } },
+        { "kind": "call", "from": "boundary", "to": "repository", "locales": { "en": { "label": "CALL transaction { findAll() }" }, "ko": { "label": "CALL transaction { findAll() }" } } },
+        { "kind": "return", "from": "repository", "to": "boundary", "locales": { "en": { "label": "RETURN mapped records" }, "ko": { "label": "RETURN 매핑된 레코드" } } },
+        { "kind": "commit", "from": "boundary", "to": "database", "locales": { "en": { "label": "COMMIT boundary" }, "ko": { "label": "COMMIT 경계" } } }
+      ]
+    },
+    {
+      "id": "jdbc-multi-repository",
+      "outcome": "commit",
+      "owner": "Service `transaction {}`",
+      "sourceRef": "jdbc-repository",
+      "locales": {
+        "en": { "label": "JDBC · multiple repositories", "summary": "One service boundary composes calls so partial success cannot leak.", "outcome": "COMMIT · both repository effects become visible together." },
+        "ko": { "label": "JDBC · 여러 저장소", "summary": "하나의 서비스 경계가 호출을 조합해 부분 성공이 새지 않게 한다.", "outcome": "COMMIT · 두 저장소 효과가 함께 보인다." }
+      },
+      "participants": [
+        { "id": "service", "locales": { "en": { "label": "Service" }, "ko": { "label": "서비스" } } },
+        { "id": "repo-a", "locales": { "en": { "label": "Repository A" }, "ko": { "label": "저장소 A" } } },
+        { "id": "repo-b", "locales": { "en": { "label": "Repository B" }, "ko": { "label": "저장소 B" } } },
+        { "id": "database", "locales": { "en": { "label": "Database" }, "ko": { "label": "데이터베이스" } } }
+      ],
+      "messages": [
+        { "kind": "call", "from": "service", "to": "repo-a", "locales": { "en": { "label": "CALL reserve stock" }, "ko": { "label": "CALL 재고 예약" } } },
+        { "kind": "return", "from": "repo-a", "to": "service", "locales": { "en": { "label": "RETURN reservation" }, "ko": { "label": "RETURN 예약 결과" } } },
+        { "kind": "call", "from": "service", "to": "repo-b", "locales": { "en": { "label": "CALL write order" }, "ko": { "label": "CALL 주문 기록" } } },
+        { "kind": "commit", "from": "service", "to": "database", "locales": { "en": { "label": "COMMIT one unit" }, "ko": { "label": "COMMIT 하나의 작업 단위" } } }
+      ]
+    },
+    {
+      "id": "r2dbc-single",
+      "outcome": "commit",
+      "owner": "Coroutine `suspendTransaction {}`",
+      "sourceRef": "r2dbc-controller",
+      "locales": {
+        "en": { "label": "R2DBC · one repository", "summary": "The coroutine context carries the transaction through suspending repository work.", "outcome": "COMMIT · suspendTransaction completes." },
+        "ko": { "label": "R2DBC · 단일 저장소", "summary": "코루틴 context가 suspend 저장소 작업 전체에 트랜잭션을 전달한다.", "outcome": "COMMIT · suspendTransaction이 완료된다." }
+      },
+      "participants": [
+        { "id": "handler", "locales": { "en": { "label": "WebFlux Handler" }, "ko": { "label": "WebFlux 핸들러" } } },
+        { "id": "boundary", "locales": { "en": { "label": "suspendTransaction" }, "ko": { "label": "suspendTransaction" } } },
+        { "id": "repository", "locales": { "en": { "label": "R2dbcRepository" }, "ko": { "label": "R2dbcRepository" } } },
+        { "id": "database", "locales": { "en": { "label": "R2DBC Database" }, "ko": { "label": "R2DBC Database" } } }
+      ],
+      "messages": [
+        { "kind": "call", "from": "handler", "to": "boundary", "locales": { "en": { "label": "CALL suspendTransaction" }, "ko": { "label": "CALL suspendTransaction" } } },
+        { "kind": "call", "from": "boundary", "to": "repository", "locales": { "en": { "label": "CALL suspend findAll()" }, "ko": { "label": "CALL suspend findAll()" } } },
+        { "kind": "return", "from": "repository", "to": "boundary", "locales": { "en": { "label": "RETURN entities" }, "ko": { "label": "RETURN 엔티티" } } },
+        { "kind": "commit", "from": "boundary", "to": "database", "locales": { "en": { "label": "COMMIT coroutine boundary" }, "ko": { "label": "COMMIT 코루틴 경계" } } }
+      ]
+    },
+    {
+      "id": "r2dbc-flow-inside",
+      "outcome": "commit",
+      "owner": "Collector inside `suspendTransaction {}`",
+      "sourceRef": "r2dbc-test",
+      "locales": {
+        "en": { "label": "R2DBC Flow · collect inside", "summary": "A cold Flow or channelFlow is collected before the transaction block exits.", "outcome": "COMMIT · every emission is consumed inside the boundary." },
+        "ko": { "label": "R2DBC Flow · 경계 안에서 collect", "summary": "cold Flow 또는 channelFlow를 트랜잭션 블록이 끝나기 전에 collect한다.", "outcome": "COMMIT · 모든 emission이 경계 안에서 소비된다." }
+      },
+      "participants": [
+        { "id": "boundary", "locales": { "en": { "label": "suspendTransaction" }, "ko": { "label": "suspendTransaction" } } },
+        { "id": "repository", "locales": { "en": { "label": "Repository" }, "ko": { "label": "저장소" } } },
+        { "id": "flow", "locales": { "en": { "label": "Cold Flow" }, "ko": { "label": "Cold Flow" } } },
+        { "id": "database", "locales": { "en": { "label": "Database" }, "ko": { "label": "데이터베이스" } } }
+      ],
+      "messages": [
+        { "kind": "call", "from": "boundary", "to": "repository", "locales": { "en": { "label": "CALL query as Flow" }, "ko": { "label": "CALL Flow 쿼리" } } },
+        { "kind": "return", "from": "repository", "to": "flow", "locales": { "en": { "label": "RETURN cold pipeline" }, "ko": { "label": "RETURN cold pipeline" } } },
+        { "kind": "call", "from": "boundary", "to": "flow", "locales": { "en": { "label": "CALL collect inside" }, "ko": { "label": "CALL 경계 안에서 collect" } } },
+        { "kind": "commit", "from": "boundary", "to": "database", "locales": { "en": { "label": "COMMIT after collection" }, "ko": { "label": "COMMIT collect 완료 후" } } }
+      ]
+    },
+    {
+      "id": "r2dbc-flow-escape",
+      "outcome": "boundary-error",
+      "owner": "Caller mistakenly outlives the transaction",
+      "sourceRef": "r2dbc-manual",
+      "locales": {
+        "en": { "label": "R2DBC Flow · escapes", "summary": "Returning a cold Flow closes the transaction before collection begins.", "outcome": "BOUNDARY ERROR · later collection has no valid transaction context." },
+        "ko": { "label": "R2DBC Flow · 경계 밖으로 탈출", "summary": "cold Flow를 반환하면 collect가 시작되기 전에 트랜잭션이 닫힌다.", "outcome": "BOUNDARY ERROR · 나중의 collect에는 유효한 트랜잭션 context가 없다." }
+      },
+      "participants": [
+        { "id": "caller", "locales": { "en": { "label": "Caller" }, "ko": { "label": "호출자" } } },
+        { "id": "boundary", "locales": { "en": { "label": "suspendTransaction" }, "ko": { "label": "suspendTransaction" } } },
+        { "id": "flow", "locales": { "en": { "label": "Escaped Flow" }, "ko": { "label": "탈출한 Flow" } } },
+        { "id": "database", "locales": { "en": { "label": "Database" }, "ko": { "label": "데이터베이스" } } }
+      ],
+      "messages": [
+        { "kind": "call", "from": "caller", "to": "boundary", "locales": { "en": { "label": "CALL create Flow" }, "ko": { "label": "CALL Flow 생성" } } },
+        { "kind": "return", "from": "boundary", "to": "caller", "locales": { "en": { "label": "RETURN cold Flow too early" }, "ko": { "label": "RETURN cold Flow를 너무 일찍 반환" } } },
+        { "kind": "boundary-error", "from": "caller", "to": "flow", "locales": { "en": { "label": "BOUNDARY ERROR on collect" }, "ko": { "label": "BOUNDARY ERROR collect 시점" } } },
+        { "kind": "rollback", "from": "flow", "to": "database", "locales": { "en": { "label": "ROLLBACK / closed context" }, "ko": { "label": "ROLLBACK / 닫힌 context" } } }
+      ]
+    },
+    {
+      "id": "rollback-or-cancellation",
+      "outcome": "rollback",
+      "owner": "Transaction block / coroutine scope",
+      "sourceRef": "r2dbc-test",
+      "locales": {
+        "en": { "label": "Failure or cancellation", "summary": "An exception or coroutine cancellation must terminate the whole unit, not one repository call.", "outcome": "ROLLBACK · no partial write crosses the boundary." },
+        "ko": { "label": "실패 또는 취소", "summary": "예외나 코루틴 취소는 저장소 호출 하나가 아니라 전체 작업 단위를 끝내야 한다.", "outcome": "ROLLBACK · 부분 쓰기가 경계를 넘지 않는다." }
+      },
+      "participants": [
+        { "id": "boundary", "locales": { "en": { "label": "Boundary" }, "ko": { "label": "경계" } } },
+        { "id": "repository", "locales": { "en": { "label": "Repository" }, "ko": { "label": "저장소" } } },
+        { "id": "failure", "locales": { "en": { "label": "Exception / Cancel" }, "ko": { "label": "예외 / 취소" } } },
+        { "id": "database", "locales": { "en": { "label": "Database" }, "ko": { "label": "데이터베이스" } } }
+      ],
+      "messages": [
+        { "kind": "call", "from": "boundary", "to": "repository", "locales": { "en": { "label": "CALL write" }, "ko": { "label": "CALL 쓰기" } } },
+        { "kind": "call", "from": "repository", "to": "failure", "locales": { "en": { "label": "CALL fails or is cancelled" }, "ko": { "label": "CALL 실패 또는 취소" } } },
+        { "kind": "return", "from": "failure", "to": "boundary", "locales": { "en": { "label": "RETURN exceptional completion" }, "ko": { "label": "RETURN 예외 완료" } } },
+        { "kind": "rollback", "from": "boundary", "to": "database", "locales": { "en": { "label": "ROLLBACK whole unit" }, "ko": { "label": "ROLLBACK 전체 작업 단위" } } }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "jdbc-repository",
+      "sourcePath": "exposed/jdbc/src/main/kotlin/io/bluetape4k/exposed/jdbc/repository/JdbcRepository.kt",
+      "testPath": "examples/jdbc-demo/src/main/kotlin/io/bluetape4k/examples/exposed/mvc/controller/ProductController.kt",
+      "verificationCommand": "rg -n \"transaction \\\\{\" examples/jdbc-demo/src/main/kotlin",
+      "locales": {
+        "en": { "claim": "JDBC repository calls execute inside caller-owned transaction blocks." },
+        "ko": { "claim": "JDBC 저장소 호출은 호출자가 소유한 transaction 블록 안에서 실행된다." }
+      }
+    },
+    {
+      "id": "jdbc-controller",
+      "sourcePath": "examples/jdbc-demo/src/main/kotlin/io/bluetape4k/examples/exposed/mvc/controller/ProductController.kt",
+      "testPath": "docs/manual/en/modules/bluetape4k-exposed-jdbc/transaction-ownership.md",
+      "verificationCommand": "rg -n \"transaction \\\\{\" examples/jdbc-demo/src/main/kotlin",
+      "locales": {
+        "en": { "claim": "The executable JDBC demo places the boundary at the controller use case." },
+        "ko": { "claim": "실행 가능한 JDBC 데모는 컨트롤러 유스케이스에 경계를 둔다." }
+      }
+    },
+    {
+      "id": "r2dbc-repository",
+      "sourcePath": "exposed/r2dbc/src/main/kotlin/io/bluetape4k/exposed/r2dbc/repository/R2dbcRepository.kt",
+      "testPath": "exposed/r2dbc/src/test/kotlin/io/bluetape4k/exposed/r2dbc/repository/MovieR2dbcRepositoryTest.kt",
+      "verificationCommand": "./gradlew :bluetape4k-exposed-r2dbc:test",
+      "locales": {
+        "en": { "claim": "R2DBC operations depend on the suspendTransaction coroutine context." },
+        "ko": { "claim": "R2DBC 연산은 suspendTransaction 코루틴 context에 의존한다." }
+      }
+    },
+    {
+      "id": "r2dbc-controller",
+      "sourcePath": "examples/r2dbc-demo/src/main/kotlin/io/bluetape4k/examples/exposed/webflux/controller/ProductController.kt",
+      "testPath": "docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md",
+      "verificationCommand": "rg -n \"suspendTransaction\" examples/r2dbc-demo/src/main/kotlin",
+      "locales": {
+        "en": { "claim": "The R2DBC demo opens the suspending boundary before repository work." },
+        "ko": { "claim": "R2DBC 데모는 저장소 작업 전에 suspend 경계를 연다." }
+      }
+    },
+    {
+      "id": "r2dbc-test",
+      "sourcePath": "exposed/r2dbc/src/test/kotlin/io/bluetape4k/exposed/r2dbc/repository/MovieR2dbcRepositoryTest.kt",
+      "testPath": "docs/manual/en/modules/bluetape4k-exposed-r2dbc/coroutine-transactions.md",
+      "verificationCommand": "./gradlew :bluetape4k-exposed-r2dbc:test --tests \"*MovieR2dbcRepositoryTest\"",
+      "locales": {
+        "en": { "claim": "Repository tests exercise suspending query and transaction behavior." },
+        "ko": { "claim": "저장소 테스트가 suspend 쿼리와 트랜잭션 동작을 실행한다." }
+      }
+    },
+    {
+      "id": "r2dbc-manual",
+      "sourcePath": "docs/manual/en/modules/bluetape4k-exposed-r2dbc/coroutine-transactions.md",
+      "testPath": "docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md",
+      "verificationCommand": "ruby scripts/manual/validate_manuals.rb build/manual/module-inventory-1.11.0.json docs/manual/manifest.yaml",
+      "locales": {
+        "en": { "claim": "The manual makes coroutine lifetime and cold Flow collection explicit." },
+        "ko": { "claim": "매뉴얼은 코루틴 수명과 cold Flow collect 시점을 명시한다." }
+      }
+    }
+  ]
+}

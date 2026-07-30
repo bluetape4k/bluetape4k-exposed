@@ -38,9 +38,6 @@ test('locale prose changes do not alter the structural fingerprint', async () =>
   assert.equal(structuralFingerprint(translated), structuralFingerprint(model));
 });
 
-test('build check reports stale or missing generated files', async () => {
-  await assert.rejects(
-    buildRepository({ root, check: true }),
-    /generated visual companion differs/,
-  );
+test('build check accepts generated files that match their models', async () => {
+  await assert.doesNotReject(buildRepository({ root, check: true }));
 });

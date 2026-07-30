@@ -1,0 +1,73 @@
+{
+  "id": "spring-boot-exposed-activation",
+  "kind": "activation",
+  "architecture": [
+    {
+      "id": "jdbc-auto-configuration",
+      "source": "docs/manual/assets/spring/jdbc-auto-configuration.svg",
+      "fallback": "docs/manual/assets/spring/jdbc-auto-configuration.png",
+      "sha256": "8a737961a5c61f1818d75203a19d6bbe555334fb0c08a8ddddb97a4baba21808"
+    },
+    {
+      "id": "r2dbc-auto-configuration",
+      "source": "docs/manual/assets/spring/r2dbc-auto-configuration.svg",
+      "fallback": "docs/manual/assets/spring/r2dbc-auto-configuration.png",
+      "sha256": "7dcb3984c5237511ff6002173b64922fd0142ea5c9c230a6de2a15d21b4f8ec3"
+    }
+  ],
+  "sections": [
+    { "id": "mental-model" },
+    { "id": "architecture" },
+    { "id": "scenario-explorer" },
+    { "id": "sequence" },
+    { "id": "ownership-matrix" },
+    { "id": "code-mapping" },
+    { "id": "configuration-recipes" },
+    { "id": "failure-diagnostics" },
+    { "id": "tradeoffs" },
+    { "id": "evidence" }
+  ],
+  "locales": {
+    "en": {
+      "title": "Spring Boot Exposed Activation",
+      "eyebrow": "Pending deep-dive after transaction companion approval",
+      "lede": "This model preserves the approved public document id while the activation narrative waits at the explicit user-review gate.",
+      "openArchitecture": "Open architecture diagram",
+      "architectureAlt": {
+        "jdbc-auto-configuration": "JDBC auto-configuration architecture",
+        "r2dbc-auto-configuration": "R2DBC auto-configuration architecture"
+      },
+      "close": "Close",
+      "theme": "Theme",
+      "language": "한국어",
+      "skip": "Skip to content"
+    },
+    "ko": {
+      "title": "Spring Boot Exposed 활성화",
+      "eyebrow": "트랜잭션 해설 승인 후 심층 작업 예정",
+      "lede": "명시적인 사용자 검토 gate에서 활성화 해설 작업을 기다리는 동안 승인된 공개 문서 ID를 보존하는 모델이다.",
+      "openArchitecture": "Architecture Diagram 크게 보기",
+      "architectureAlt": {
+        "jdbc-auto-configuration": "JDBC 자동 구성 아키텍처",
+        "r2dbc-auto-configuration": "R2DBC 자동 구성 아키텍처"
+      },
+      "close": "닫기",
+      "theme": "테마",
+      "language": "English",
+      "skip": "본문으로 건너뛰기"
+    }
+  },
+  "scenarios": [],
+  "sources": [
+    {
+      "id": "activation-manual",
+      "sourcePath": "docs/manual/en/guides/spring-and-ktor.md",
+      "testPath": "docs/manual/ko/guides/spring-and-ktor.md",
+      "verificationCommand": "node scripts/visual-companions/validate.mjs",
+      "locales": {
+        "en": { "claim": "Activation content remains pending until the transaction companion is approved." },
+        "ko": { "claim": "활성화 콘텐츠는 트랜잭션 해설 승인 전까지 대기한다." }
+      }
+    }
+  ]
+}
