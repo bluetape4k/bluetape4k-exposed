@@ -2,6 +2,7 @@
 
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
+import { once } from 'node:events';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import net from 'node:net';
 import os from 'node:os';
@@ -145,6 +146,17 @@ async function captureOne({ root, documentId, locale, theme, audit = false }) {
         while (document.readyState !== 'complete') await new Promise(r => setTimeout(r, 25));
         await document.fonts.ready;
         await Promise.all([...document.images].map((image) => image.decode()));
+        const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+        document.documentElement.style.scrollBehavior = 'auto';
+        for (const image of document.querySelectorAll('.architecture-card > img')) {
+          image.scrollIntoView({ block: 'center' });
+          await new Promise((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        }
+        scrollTo(0, 0);
+        await new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        document.documentElement.style.scrollBehavior = originalScrollBehavior;
         const deadline = Date.now() + 5000;
         while (window.__VISUAL_COMPANION_READY__ !== true) {
           if (Date.now() > deadline) throw new Error('visual companion ready signal timed out');
@@ -239,12 +251,20 @@ async function captureOne({ root, documentId, locale, theme, audit = false }) {
           const themeButton = document.querySelector('[data-theme-control]');
           themeButton.click();
           const themeAfterClick = document.documentElement.dataset.theme;
-          const opener = document.querySelector('[data-lightbox-open]');
-          opener.click();
-          const dialog = document.querySelector('dialog');
-          const dialogOpened = dialog.open;
-          dialog.querySelector('[data-lightbox-close]').click();
-          return { ...clicked, keyboardScenario, themeAfterClick, dialogOpened, dialogClosed: !dialog.open };
+          const lightboxes = [...document.querySelectorAll('[data-lightbox-open]')].map((opener) => {
+            opener.click();
+            const dialog = document.querySelector(
+              '#architecture-' + opener.dataset.lightboxOpen,
+            );
+            const opened = dialog.open;
+            dialog.querySelector('[data-lightbox-close]').click();
+            return {
+              id: opener.dataset.lightboxOpen,
+              opened,
+              closedByButton: !dialog.open,
+            };
+          });
+          return { ...clicked, keyboardScenario, themeAfterClick, lightboxes };
         })()`,
         returnByValue: true,
       });
@@ -303,7 +323,13 @@ async function captureOne({ root, documentId, locale, theme, audit = false }) {
       // The browser may already be closing after a failed capture.
     }
     client?.close();
-    if (child.exitCode === null) child.kill('SIGTERM');
+    if (child.exitCode === null) {
+      child.kill('SIGTERM');
+      await Promise.race([
+        once(child, 'exit'),
+        new Promise((resolve) => setTimeout(resolve, 1000)),
+      ]);
+    }
     await rm(profile, { recursive: true, force: true });
   }
 }

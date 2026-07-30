@@ -3,7 +3,9 @@ import test from 'node:test';
 
 import { buildRepository } from '../../scripts/visual-companions/build.mjs';
 import {
+  loadArchitectureAsset,
   loadCompanionModels,
+  localizedArchitectureValue,
   structuralFingerprint,
 } from '../../scripts/visual-companions/lib/model.mjs';
 import {
@@ -30,6 +32,52 @@ test('models expose the approved document and scenario ids', async () => {
       'r2dbc-flow-escape',
       'rollback-or-cancellation',
     ],
+  );
+});
+
+test('transaction companion compares JPA with Exposed before the Exposed detail diagram', async () => {
+  const [model] = await loadCompanionModels(root);
+
+  assert.deepEqual(
+    model.architecture.map(({ id }) => id),
+    ['jpa-exposed-comparison', 'transaction-ownership'],
+  );
+});
+
+test('localized architecture values select the requested locale and preserve shared assets', () => {
+  assert.equal(
+    localizedArchitectureValue({
+      en: 'docs/manual/assets/persistence/jpa-exposed-comparison.en.svg',
+      ko: 'docs/manual/assets/persistence/jpa-exposed-comparison.ko.svg',
+    }, 'ko', 'source'),
+    'docs/manual/assets/persistence/jpa-exposed-comparison.ko.svg',
+  );
+  assert.equal(
+    localizedArchitectureValue(
+      'docs/manual/assets/persistence/transaction-ownership.svg',
+      'en',
+      'source',
+    ),
+    'docs/manual/assets/persistence/transaction-ownership.svg',
+  );
+  assert.throws(
+    () => localizedArchitectureValue({ en: 'comparison.en.svg' }, 'ko', 'source'),
+    /missing ko source/,
+  );
+});
+
+test('architecture assets embed the rendered PNG to remain stable across theme repaint', async () => {
+  const [model] = await loadCompanionModels(root);
+  const asset = await loadArchitectureAsset(root, model.architecture[0], 'ko');
+
+  assert.match(asset.dataUri, /^data:image\/png;base64,/);
+  assert.equal(
+    asset.source,
+    'docs/manual/assets/persistence/jpa-exposed-comparison.ko.svg',
+  );
+  assert.equal(
+    asset.fallback,
+    'docs/manual/assets/persistence/jpa-exposed-comparison.ko.png',
   );
 });
 

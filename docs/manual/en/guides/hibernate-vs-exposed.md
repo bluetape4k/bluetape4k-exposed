@@ -8,6 +8,10 @@ releaseRef: "1.11.0"
 
 Hibernate and Exposed are not interchangeable syntax layers. They expose different persistence models. Choose the model whose ownership and query style fit the application; avoid turning the decision into a framework ranking.
 
+[![JPA and Exposed architecture comparison](../../assets/persistence/jpa-exposed-comparison.en.png)](../../assets/persistence/jpa-exposed-comparison.en.svg)
+
+Read the diagram from top to bottom. The application owns the business transaction. JPA then works through a persistence context and `EntityManager` or `Session`, while Exposed keeps the JDBC or R2DBC transaction path explicit. `bluetape4k-hibernate` supplies optional Kotlin extensions beside the JPA runtime; it does not own the transaction or replace the persistence provider.
+
 ## Model comparison
 
 | Concern | Hibernate | Exposed |

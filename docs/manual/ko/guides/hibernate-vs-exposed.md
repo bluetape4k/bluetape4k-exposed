@@ -8,6 +8,10 @@ releaseRef: "1.11.0"
 
 Hibernate와 Exposed는 문법만 다른 같은 계층이 아닙니다. 두 라이브러리가 드러내는 영속성 모델이 다릅니다. 프레임워크의 우열을 정하려 하지 말고, 애플리케이션의 소유권과 쿼리 작성 방식에 맞는 모델을 고르세요.
 
+[![JPA와 Exposed 아키텍처 비교](../../assets/persistence/jpa-exposed-comparison.ko.png)](../../assets/persistence/jpa-exposed-comparison.ko.svg)
+
+도표는 위에서 아래로 읽습니다. 애플리케이션이 업무 트랜잭션을 소유합니다. JPA는 영속성 컨텍스트와 `EntityManager` 또는 `Session`을 거쳐 동작하고, Exposed는 JDBC 또는 R2DBC 트랜잭션 경로를 명시적으로 드러냅니다. `bluetape4k-hibernate`는 JPA 실행 계층 옆에서 선택적으로 사용하는 Kotlin 확장입니다. 트랜잭션을 소유하거나 영속성 공급자를 대체하지 않습니다.
+
 ## 모델 비교
 
 | 관점 | Hibernate | Exposed |

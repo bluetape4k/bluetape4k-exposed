@@ -674,7 +674,7 @@ docs/manual/en/modules/bluetape4k-exposed-r2dbc/coroutine-transactions.md
 docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md
 ```
 
-- [x] **Step 2: JPA 대비 정신 모형과 실제 코드 mapping을 채운다**
+- [x] **Step 2: JPA 대비 사고방식과 실제 코드 mapping을 채운다**
 
 다음 내용을 영어와 한국어에 의미 동등하게 제공한다.
 
@@ -1157,6 +1157,9 @@ Expected terminal state for this plan: `CG-16 PENDING`.
 - Create: `docs/manual/assets/persistence/jpa-exposed-comparison.en.png`
 - Create: `docs/manual/assets/persistence/jpa-exposed-comparison.ko.svg`
 - Create: `docs/manual/assets/persistence/jpa-exposed-comparison.ko.png`
+- Modify: `docs/manual/manifest.yaml`
+- Modify: `docs/manual/en/guides/hibernate-vs-exposed.md`
+- Modify: `docs/manual/ko/guides/hibernate-vs-exposed.md`
 - Modify: `docs/visual-companions/data/jdbc-r2dbc-transaction-boundaries.json`
 - Modify: `scripts/visual-companions/lib/model.mjs`
 - Modify: `scripts/visual-companions/lib/render.mjs`
@@ -1167,7 +1170,7 @@ Expected terminal state for this plan: `CG-16 PENDING`.
 - Regenerate: `docs/visual-companions/{en,ko}/jdbc-r2dbc-transaction-boundaries.html`
 - Regenerate: `docs/visual-companions/assets/jdbc-r2dbc-transaction-boundaries.{en,ko}.{light,dark}.png`
 
-- [ ] **Step 1: locale별 Architecture Diagram 계약을 실패 테스트로 고정한다**
+- [x] **Step 1: locale별 Architecture Diagram 계약을 실패 테스트로 고정한다**
 
 `build.test.mjs`는 트랜잭션 모델의 Architecture Diagram ID가 다음 순서를 유지하고, 영어·한국어가 같은 두 ID를 렌더링하는지 검사한다.
 
@@ -1178,11 +1181,11 @@ transaction-ownership
 
 `validator.test.mjs`는 locale별 SVG/PNG 경로 또는 locale별 digest가 누락되거나 바뀌면 검증이 실패하는지 확인한다.
 
-- [ ] **Step 2: locale별 asset model을 구현한다**
+- [x] **Step 2: locale별 asset model을 구현한다**
 
 `source`, `fallback`, `sha256`은 기존 단일 문자열과 `en`/`ko` 객체를 모두 허용한다. `build.mjs`와 `validate.mjs`는 현재 locale을 명시해 자산을 로드하고, 두 locale의 HTML fingerprint에는 같은 Architecture Diagram ID가 남아야 한다.
 
-- [ ] **Step 3: 비교 Architecture Diagram 영어·한국어 SVG를 만든다**
+- [x] **Step 3: 비교 Architecture Diagram 영어·한국어 SVG를 만든다**
 
 두 Diagram은 같은 geometry와 의미를 유지한다.
 
@@ -1200,7 +1203,7 @@ Application service owns the use-case transaction
 
 JPA/Hibernate는 Exposed의 JDBC/R2DBC와 같은 세 번째 드라이버 레인으로 표현하지 않는다. `bluetape4k-hibernate`는 확장 계층으로만 표시하며 트랜잭션 관리자나 저장소 추상화를 소유한다고 표현하지 않는다.
 
-- [ ] **Step 4: CairoSVG 렌더링과 Architecture Diagram 감사를 통과한다**
+- [x] **Step 4: CairoSVG 렌더링과 Architecture Diagram 감사를 통과한다**
 
 ```bash
 xmllint --noout docs/manual/assets/persistence/jpa-exposed-comparison.{en,ko}.svg
@@ -1212,11 +1215,11 @@ cairosvg docs/manual/assets/persistence/jpa-exposed-comparison.ko.svg \
 
 두 SVG에 대해 text normalization, connector, geometry, endpoint, mixed-corner, Architecture kind 감사를 실행하고, 각 PNG를 원본 크기로 검사한다.
 
-- [ ] **Step 5: 비교와 상세 Diagram을 순서대로 해설서에 렌더링한다**
+- [x] **Step 5: 비교와 상세 Diagram을 순서대로 해설서에 렌더링한다**
 
 각 카드에는 독자용 제목과 설명을 표시한다. 첫 카드는 JPA/Hibernate와 Exposed의 책임 구조 비교, 두 번째 카드는 Exposed JDBC/R2DBC 트랜잭션 소유권 상세로 설명한다. 저작·검증 정보는 카드 안에 넣지 않는다.
 
-- [ ] **Step 6: HTML과 fallback capture를 재생성하고 브라우저에서 검증한다**
+- [x] **Step 6: HTML과 fallback capture를 재생성하고 브라우저에서 검증한다**
 
 ```bash
 node scripts/visual-companions/build.mjs
@@ -1230,7 +1233,7 @@ git diff --check
 
 영어·한국어 HTML에서 두 Diagram의 lightbox, locale 이동, theme 전환, 시나리오 상호작용을 실제 브라우저로 확인한다.
 
-- [ ] **Step 7: PR #412를 새 exact head로 갱신한다**
+- [x] **Step 7: PR #412를 새 exact head로 갱신한다**
 
 Lore commit 형식으로 변경을 커밋하고 force 없이 push한다. PR body의 Summary, Source contract, Verification, `## DoD Status`에 비교 Diagram과 locale별 SVG/PNG 검증 근거를 추가하고 새 exact-head CI를 확인한다. Merge는 새 사용자 승인 전까지 수행하지 않는다.
 
