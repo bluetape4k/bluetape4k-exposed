@@ -9,6 +9,8 @@ releaseRef: 1.11.0
 
 저장소는 statement를 실행할 수 있지만 어떤 statement가 하나의 업무 작업인지는 알지 못한다. 업무 규칙을 소유한 서비스가 transaction 경계를 정하고 connection, coroutine, framework의 소유권도 드러내야 한다.
 
+> [JDBC와 R2DBC 트랜잭션 경계 시각화 자료](https://bluetape4k.github.io/ko/visual-companions/bluetape4k-exposed/jdbc-r2dbc-transaction-boundaries/)에서 실행 경로를 직접 비교할 수 있습니다.
+
 ## 업무 작업 하나에 명확한 소유자 한 명
 
 ```kotlin
