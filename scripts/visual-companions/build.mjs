@@ -42,10 +42,10 @@ export async function buildRepository({ root, check = false }) {
   const models = await loadCompanionModels(root);
   const outputs = [];
   for (const model of models) {
-    const architectureAssets = await Promise.all(
-      model.architecture.map((asset) => loadArchitectureAsset(root, asset)),
-    );
     for (const locale of ['en', 'ko']) {
+      const architectureAssets = await Promise.all(
+        model.architecture.map((asset) => loadArchitectureAsset(root, asset, locale)),
+      );
       outputs.push({
         path: `docs/visual-companions/${locale}/${model.id}.html`,
         content: renderDocument({ model, locale, architectureAssets }),

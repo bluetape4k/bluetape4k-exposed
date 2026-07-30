@@ -127,6 +127,24 @@ test('documents must declare exactly the en and ko locales', async () => {
   }, /locales must contain exactly en and ko/);
 });
 
+test('localized architecture assets must declare both locale paths', async () => {
+  await expectInvalid(async ({ root, manifest }) => {
+    const modelPath = path.join(root, manifest.documents[0].data);
+    const model = JSON.parse(await readFile(modelPath, 'utf8'));
+    delete model.architecture[0].source.ko;
+    await writeFile(modelPath, `${JSON.stringify(model, null, 2)}\n`);
+  }, /jpa-exposed-comparison\.source must contain exactly en and ko/);
+});
+
+test('localized architecture digests are verified per locale', async () => {
+  await expectInvalid(async ({ root, manifest }) => {
+    const modelPath = path.join(root, manifest.documents[0].data);
+    const model = JSON.parse(await readFile(modelPath, 'utf8'));
+    model.architecture[0].sha256.ko = '0'.repeat(64);
+    await writeFile(modelPath, `${JSON.stringify(model, null, 2)}\n`);
+  }, /jpa-exposed-comparison: architecture SVG digest mismatch/);
+});
+
 test('external runtime dependencies are rejected', async () => {
   await expectInvalid(async ({ root, manifest }) => {
     const htmlPath = path.join(root, manifest.documents[0].locales.en.html);

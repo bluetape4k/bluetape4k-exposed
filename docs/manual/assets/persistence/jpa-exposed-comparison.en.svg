@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1350" viewBox="0 0 2000 1350" role="img" aria-labelledby="title desc">
+  <title id="title">JPA Hibernate and Exposed responsibility architecture</title>
+  <desc id="desc">A typical Spring Data JPA and Hibernate architecture is compared with Exposed JDBC and R2DBC. The application service owns the use-case transaction in both approaches. JPA uses a transaction-bound persistence context and managed entities, while Exposed uses explicit transaction contexts, repositories, and SQL operations.</desc>
+  <defs>
+    <linearGradient id="canvas" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07111f"/>
+      <stop offset="1" stop-color="#101827"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#162235"/>
+      <stop offset="1" stop-color="#0f1726"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-20%" width="120%" height="150%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000814" flood-opacity=".48"/>
+    </filter>
+    <marker id="arrow-amber" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L14 7 L0 14 Z" fill="#f4c56a" stroke="#f4c56a"/>
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L14 7 L0 14 Z" fill="#c4b5fd" stroke="#c4b5fd"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L14 7 L0 14 Z" fill="#9ed8ff" stroke="#9ed8ff"/>
+    </marker>
+    <marker id="arrow-teal" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L14 7 L0 14 Z" fill="#5eead4" stroke="#5eead4"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L14 7 L0 14 Z" fill="#86efac" stroke="#86efac"/>
+    </marker>
+    <style>
+      .title { font: 400 58px "Architects Daughter", "Comic Sans MS", cursive; fill: #f8fbff; }
+      .subtitle { font: 400 24px "Comic Mono", "SFMono-Regular", monospace; fill: #a9b9ca; }
+      .lane-title { font: 400 34px "Architects Daughter", "Comic Sans MS", cursive; fill: #f8fbff; }
+      .lane-note { font: 400 19px "Comic Mono", "SFMono-Regular", monospace; fill: #9fb1c5; }
+      .card-title { font: 700 23px "Comic Mono", "SFMono-Regular", monospace; fill: #f8fbff; }
+      .card-copy { font: 400 18px "Comic Mono", "SFMono-Regular", monospace; fill: #b9c7d6; }
+      .card-code { font: 700 21px "Comic Mono", "SFMono-Regular", monospace; fill: #f8fbff; }
+      .chip { font: 700 16px "Comic Mono", "SFMono-Regular", monospace; }
+      .legend { font: 700 16px "Comic Mono", "SFMono-Regular", monospace; fill: #b9c7d6; }
+      .connector { fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+      .card { fill: #172033; stroke-width: 4; }
+    </style>
+  </defs>
+
+  <rect width="2000" height="1350" fill="url(#canvas)"/>
+  <rect x="42" y="36" width="1916" height="1278" rx="34" fill="url(#panel)" stroke="#536377" stroke-width="4" filter="url(#shadow)"/>
+
+  <text class="title" x="86" y="112">JPA / Hibernate vs Exposed</text>
+  <text class="subtitle" x="88" y="154">Compare responsibility, state, and database I/O — not framework names alone</text>
+
+  <g filter="url(#shadow)">
+    <rect class="card" x="280" y="190" width="1440" height="104" rx="24" stroke="#c58b2a"/>
+  </g>
+  <text x="1000" y="232" text-anchor="middle" class="card-title">Application service owns the use-case transaction</text>
+  <text x="1000" y="267" text-anchor="middle" class="card-copy">One business operation | one atomic boundary | repositories participate</text>
+
+  <rect x="70" y="330" width="900" height="760" rx="28" fill="#111827" stroke="#8b6bd6" stroke-width="3"/>
+  <rect x="1030" y="330" width="900" height="760" rx="28" fill="#111827" stroke="#4c8cc8" stroke-width="3"/>
+
+  <text class="lane-title" x="112" y="382">JPA / Hibernate</text>
+  <text class="lane-note" x="112" y="414">Spring Data JPA + Hibernate</text>
+  <text class="lane-title" x="1072" y="382">JetBrains Exposed</text>
+  <text class="lane-note" x="1072" y="414">JDBC and R2DBC execution paths</text>
+
+  <g filter="url(#shadow)">
+    <rect class="card" x="120" y="450" width="800" height="100" rx="22" stroke="#c58b2a"/>
+    <rect class="card" x="120" y="610" width="360" height="128" rx="22" stroke="#8b6bd6"/>
+    <rect class="card" x="560" y="610" width="360" height="128" rx="22" stroke="#8b6bd6"/>
+    <rect class="card" x="120" y="798" width="800" height="150" rx="22" stroke="#8b6bd6"/>
+    <rect class="card" x="300" y="988" width="440" height="86" rx="22" stroke="#4c8cc8"/>
+
+    <rect class="card" x="1080" y="450" width="380" height="100" rx="22" stroke="#4c8cc8"/>
+    <rect class="card" x="1500" y="450" width="380" height="100" rx="22" stroke="#159c92"/>
+    <rect class="card" x="1080" y="610" width="380" height="104" rx="22" stroke="#4c8cc8"/>
+    <rect class="card" x="1500" y="610" width="380" height="104" rx="22" stroke="#159c92"/>
+    <rect class="card" x="1080" y="774" width="380" height="118" rx="22" stroke="#4c8cc8"/>
+    <rect class="card" x="1500" y="774" width="380" height="118" rx="22" stroke="#159c92"/>
+    <rect class="card" x="1080" y="952" width="380" height="86" rx="22" stroke="#4c8cc8"/>
+    <rect class="card" x="1500" y="952" width="380" height="86" rx="22" stroke="#159c92"/>
+  </g>
+
+  <g text-anchor="middle">
+    <text class="card-code" x="520" y="489">@Transactional boundary</text>
+    <text class="card-copy" x="520" y="522">Spring binds EntityManager to the transaction</text>
+
+    <text class="card-title" x="300" y="653">Spring Data JpaRepository</text>
+    <text class="card-copy" x="300" y="686">repository proxy</text>
+    <text class="card-copy" x="300" y="716">delegates to EntityManager</text>
+
+    <text class="card-title" x="740" y="648">Direct EntityManager / Session</text>
+    <rect x="612" y="670" width="256" height="29" rx="14" fill="#2b2142" stroke="#8b6bd6" stroke-width="2"/>
+    <text class="chip" x="740" y="691" fill="#d8ccff">bluetape4k-hibernate</text>
+    <text class="card-copy" x="740" y="721">Kotlin extensions; no boundary ownership</text>
+
+    <text class="card-title" x="520" y="839">EntityManager / Hibernate Session</text>
+    <text class="card-copy" x="520" y="874">persistence context | managed entities | first-level cache</text>
+    <text class="card-copy" x="520" y="909">dirty checking | lazy loading | flush</text>
+
+    <text class="card-title" x="520" y="1024">JDBC driver / connection</text>
+    <text class="card-copy" x="520" y="1052">blocking database I/O</text>
+
+    <text class="card-code" x="1270" y="490">transaction { ... }</text>
+    <text class="card-copy" x="1270" y="522">caller-owned JDBC boundary</text>
+    <text class="card-code" x="1690" y="490">suspendTransaction { ... }</text>
+    <text class="card-copy" x="1690" y="522">caller-owned coroutine boundary</text>
+
+    <text class="card-title" x="1270" y="650">JdbcTransaction</text>
+    <text class="card-copy" x="1270" y="682">thread-bound context</text>
+    <text class="card-title" x="1690" y="650">R2dbcTransaction</text>
+    <text class="card-copy" x="1690" y="682">coroutine-bound context</text>
+
+    <text class="card-title" x="1270" y="816">JdbcRepository + Exposed DSL</text>
+    <text class="card-copy" x="1270" y="850">explicit select / join / map</text>
+    <text class="card-copy" x="1270" y="878">explicit insert / update / delete</text>
+    <text class="card-title" x="1690" y="816">R2dbcRepository + Exposed DSL</text>
+    <text class="card-copy" x="1690" y="850">explicit select / join / map</text>
+    <text class="card-copy" x="1690" y="878">explicit insert / update / delete</text>
+
+    <text class="card-title" x="1270" y="988">JDBC driver</text>
+    <text class="card-copy" x="1270" y="1017">blocking I/O</text>
+    <text class="card-title" x="1690" y="988">R2DBC driver</text>
+    <text class="card-copy" x="1690" y="1017">non-blocking I/O</text>
+  </g>
+
+  <g class="connector">
+    <path d="M520 294 V306 Q520 314 528 314 H880 Q888 314 888 322 V450" stroke="#f4c56a" marker-end="url(#arrow-amber)"/>
+    <path d="M1270 294 V306 Q1270 314 1278 314 H1420 Q1428 314 1428 322 V450" stroke="#9ed8ff" marker-end="url(#arrow-blue)"/>
+    <path d="M1690 294 V306 Q1690 314 1698 314 H1840 Q1848 314 1848 322 V450" stroke="#5eead4" marker-end="url(#arrow-teal)"/>
+
+    <path d="M300 550 V610" stroke="#c4b5fd" marker-end="url(#arrow-purple)"/>
+    <path d="M740 550 V610" stroke="#c4b5fd" marker-end="url(#arrow-purple)"/>
+    <path d="M300 738 V798" stroke="#c4b5fd" marker-end="url(#arrow-purple)"/>
+    <path d="M740 738 V798" stroke="#c4b5fd" marker-end="url(#arrow-purple)"/>
+    <path d="M520 948 V988" stroke="#9ed8ff" marker-end="url(#arrow-blue)"/>
+
+    <path d="M1270 550 V610" stroke="#9ed8ff" marker-end="url(#arrow-blue)"/>
+    <path d="M1690 550 V610" stroke="#5eead4" marker-end="url(#arrow-teal)"/>
+    <path d="M1270 714 V774" stroke="#9ed8ff" marker-end="url(#arrow-blue)"/>
+    <path d="M1690 714 V774" stroke="#5eead4" marker-end="url(#arrow-teal)"/>
+    <path d="M1270 892 V952" stroke="#9ed8ff" marker-end="url(#arrow-blue)"/>
+    <path d="M1690 892 V952" stroke="#5eead4" marker-end="url(#arrow-teal)"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect class="card" x="220" y="1120" width="1560" height="92" rx="24" stroke="#2ca36b"/>
+  </g>
+  <g class="connector">
+    <path d="M520 1074 V1120" stroke="#86efac" marker-end="url(#arrow-green)"/>
+    <path d="M1270 1038 V1120" stroke="#86efac" marker-end="url(#arrow-green)"/>
+    <path d="M1690 1038 V1120" stroke="#86efac" marker-end="url(#arrow-green)"/>
+  </g>
+  <text x="1000" y="1158" text-anchor="middle" class="card-title">Relational database</text>
+  <text x="1000" y="1190" text-anchor="middle" class="card-copy">constraints | locks | isolation | commit or rollback</text>
+
+  <g transform="translate(222 1260)">
+    <circle cx="8" cy="0" r="7" fill="#f4c56a"/><text class="legend" x="24" y="6">boundary owner</text>
+    <circle cx="250" cy="0" r="7" fill="#c4b5fd"/><text class="legend" x="266" y="6">JPA persistence runtime</text>
+    <circle cx="600" cy="0" r="7" fill="#9ed8ff"/><text class="legend" x="616" y="6">JDBC path</text>
+    <circle cx="820" cy="0" r="7" fill="#5eead4"/><text class="legend" x="836" y="6">R2DBC path</text>
+    <circle cx="1060" cy="0" r="7" fill="#86efac"/><text class="legend" x="1076" y="6">database outcome</text>
+  </g>
+</svg>

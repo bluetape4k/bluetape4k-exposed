@@ -3,6 +3,21 @@
   "kind": "transaction",
   "architecture": [
     {
+      "id": "jpa-exposed-comparison",
+      "source": {
+        "en": "docs/manual/assets/persistence/jpa-exposed-comparison.en.svg",
+        "ko": "docs/manual/assets/persistence/jpa-exposed-comparison.ko.svg"
+      },
+      "fallback": {
+        "en": "docs/manual/assets/persistence/jpa-exposed-comparison.en.png",
+        "ko": "docs/manual/assets/persistence/jpa-exposed-comparison.ko.png"
+      },
+      "sha256": {
+        "en": "00e871623a72affd2a3d541e258ce716b3bddf288cd05f6418b3b931e3ac8dc6",
+        "ko": "d495118be09b25fb95cb70494a59b05f8ec9bec2fc0c510897aca225be2a2c4a"
+      }
+    },
+    {
       "id": "transaction-ownership",
       "source": "docs/manual/assets/persistence/transaction-ownership.svg",
       "fallback": "docs/manual/assets/persistence/transaction-ownership.png",
@@ -24,8 +39,17 @@
       "title": "JPA to Exposed: Make Transaction Ownership Visible",
       "eyebrow": "Interactive architecture companion",
       "lede": "Exposed trades part of JPA/Hibernate's object-graph automation for explicit SQL intent. The decisive migration question is not which repository opens a transaction, but which application boundary owns the complete unit of work.",
-      "openArchitecture": "Open the original architecture diagram",
+      "openArchitecture": "Open diagram",
+      "architectureTitle": {
+        "jpa-exposed-comparison": "JPA/Hibernate and Exposed responsibility architecture",
+        "transaction-ownership": "Exposed JDBC and R2DBC transaction ownership"
+      },
+      "architectureDescription": {
+        "jpa-exposed-comparison": "Compare the transaction boundary, persistence state, repository role, and database transport at the same level.",
+        "transaction-ownership": "Expand the Exposed side to see how JDBC and R2DBC carry the same caller-owned transaction rule."
+      },
       "architectureAlt": {
+        "jpa-exposed-comparison": "JPA and Exposed architecture comparison: a typical Spring Data JPA and Hibernate path uses a transaction-bound EntityManager and persistence context over JDBC, while Exposed uses caller-owned JDBC or R2DBC transaction contexts with explicit repositories and SQL operations.",
         "transaction-ownership": "Transaction ownership architecture: a service or controller boundary encloses JDBC transaction blocks and R2DBC suspend transaction blocks before repository calls reach the database."
       },
       "close": "Close",
@@ -35,8 +59,8 @@
       "scenarioHeading": "Replay six boundary decisions",
       "scenarioIntro": "Select a path. The sequence, owner, terminal signal, code mapping, and risk statement update together.",
       "sequenceHeading": "Execution sequence",
-      "architectureHeading": "Start with the existing architecture",
-      "architectureIntro": "This is the repository's approved transaction-ownership diagram, embedded without reinterpretation. The explorer below turns each lane into an executable story.",
+      "architectureHeading": "Compare the architectures before tracing the calls",
+      "architectureIntro": "The first diagram aligns a typical Spring Data JPA and Hibernate stack with Exposed at the same responsibility level. The second preserves the repository's Exposed transaction-ownership diagram as the detailed view.",
       "mentalHeading": "First, change the mental model",
       "ownershipHeading": "Who owns what?",
       "mappingHeading": "From JPA habit to Exposed code",
@@ -86,8 +110,17 @@
       "title": "JPA에서 Exposed로: 트랜잭션 소유권을 드러내기",
       "eyebrow": "대화형 아키텍처 해설",
       "lede": "Exposed는 JPA/Hibernate가 제공하는 객체 그래프 자동화 일부를 명시적인 SQL 의도와 실행 경계로 바꾼다. 마이그레이션의 핵심 질문은 어느 저장소가 트랜잭션을 여느냐가 아니라, 어느 애플리케이션 경계가 전체 작업 단위를 소유하느냐이다.",
-      "openArchitecture": "기존 아키텍처 다이어그램 크게 보기",
+      "openArchitecture": "다이어그램 크게 보기",
+      "architectureTitle": {
+        "jpa-exposed-comparison": "JPA/Hibernate와 Exposed 책임 구조 비교",
+        "transaction-ownership": "Exposed JDBC와 R2DBC 트랜잭션 소유권"
+      },
+      "architectureDescription": {
+        "jpa-exposed-comparison": "트랜잭션 경계, 영속성 상태, 저장소 역할, 데이터베이스 접근 방식을 같은 수준에서 비교한다.",
+        "transaction-ownership": "Exposed 내부를 확대해 JDBC와 R2DBC가 호출자 소유 트랜잭션 원칙을 어떻게 구현하는지 확인한다."
+      },
       "architectureAlt": {
+        "jpa-exposed-comparison": "JPA와 Exposed 아키텍처 비교. 전형적인 Spring Data JPA와 Hibernate 경로는 트랜잭션에 연결된 EntityManager와 영속성 컨텍스트를 거쳐 JDBC를 사용하고, Exposed는 호출자가 소유하는 JDBC 또는 R2DBC 트랜잭션 문맥에서 저장소와 SQL 연산을 명시한다.",
         "transaction-ownership": "서비스 또는 컨트롤러 경계가 JDBC transaction {} 블록과 R2DBC suspendTransaction {} 블록을 열고, 그 안에서 저장소 호출이 데이터베이스로 이어지는 트랜잭션 소유권 아키텍처"
       },
       "close": "닫기",
@@ -97,8 +130,8 @@
       "scenarioHeading": "여섯 가지 트랜잭션 경계 시나리오 비교",
       "scenarioIntro": "시나리오를 선택하면 실행 순서, 경계 소유자, 종료 결과, 코드 대응 관계, 주의 사항이 함께 바뀐다.",
       "sequenceHeading": "실행 시퀀스",
-      "architectureHeading": "기존 아키텍처 다이어그램에서 출발한다",
-      "architectureIntro": "이 저장소에서 승인한 트랜잭션 소유권 다이어그램을 재해석하지 않고 그대로 사용했다. 아래 탐색기에서는 각 실행 경로의 트랜잭션 흐름을 단계별로 확인할 수 있다.",
+      "architectureHeading": "호출 흐름을 보기 전에 책임 구조부터 비교한다",
+      "architectureIntro": "첫 번째 다이어그램은 전형적인 Spring Data JPA와 Hibernate 구조를 Exposed와 같은 책임 수준에서 비교한다. 두 번째 다이어그램은 저장소에서 승인한 Exposed 트랜잭션 소유권 구조를 상세하게 보여 준다.",
       "mentalHeading": "먼저 사고방식을 바꾼다",
       "ownershipHeading": "누가 무엇을 소유하는가?",
       "mappingHeading": "JPA 사용 방식을 Exposed 코드로 옮기기",

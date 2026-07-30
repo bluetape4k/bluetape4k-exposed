@@ -200,7 +200,11 @@ export async function validateRepository(
       model = validateCompanionModel(JSON.parse(data));
       if (model.id !== document.id) errors.push(`${field}.data id must match document id`);
       await validateModelPaths(root, model);
-      for (const asset of model.architecture) await loadArchitectureAsset(root, asset);
+      for (const locale of REQUIRED_LOCALES) {
+        for (const asset of model.architecture) {
+          await loadArchitectureAsset(root, asset, locale);
+        }
+      }
     } catch (error) {
       errors.push(`${field}.data is invalid: ${error.message}`);
       continue;

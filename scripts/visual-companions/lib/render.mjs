@@ -26,22 +26,33 @@ function renderTable(headers, rows, className = '') {
 
 export function renderArchitecture({ model, locale, architectureAssets }) {
   const copy = model.locales[locale];
-  return architectureAssets.map((asset) => `
+  return architectureAssets.map((asset) => {
+    const title = copy.architectureTitle?.[asset.id] ?? copy.architectureAlt[asset.id];
+    const description = copy.architectureDescription?.[asset.id] ?? '';
+    const descriptionMarkup = description
+      ? `\n          <span>${escapeHtml(description)}</span>`
+      : '';
+    return `
     <figure class="architecture-card" data-architecture-id="${escapeHtml(asset.id)}"
             data-architecture-sha256="${escapeHtml(asset.sha256)}">
-      <button class="architecture-open" type="button" data-lightbox-open="${escapeHtml(asset.id)}">
-        <span aria-hidden="true">↗</span> ${escapeHtml(copy.openArchitecture)}
-      </button>
+      <figcaption>
+        <div>
+          <strong>${escapeHtml(title)}</strong>${descriptionMarkup}
+        </div>
+        <button class="architecture-open" type="button" data-lightbox-open="${escapeHtml(asset.id)}">
+          <span aria-hidden="true">↗</span> ${escapeHtml(copy.openArchitecture)}
+        </button>
+      </figcaption>
       <img src="${asset.dataUri}" alt="${escapeHtml(copy.architectureAlt[asset.id])}">
       <dialog id="architecture-${escapeHtml(asset.id)}" aria-label="${escapeHtml(copy.architectureAlt[asset.id])}">
         <div class="dialog-bar">
-          <strong>${escapeHtml(copy.architectureAlt[asset.id])}</strong>
+          <strong>${escapeHtml(title)}</strong>
           <button type="button" data-lightbox-close="${escapeHtml(asset.id)}">${escapeHtml(copy.close)} <kbd>Esc</kbd></button>
         </div>
         <img src="${asset.dataUri}" alt="${escapeHtml(copy.architectureAlt[asset.id])}">
       </dialog>
-    </figure>
-  `).join('');
+    </figure>`;
+  }).join('');
 }
 
 export function renderScenarioExplorer({ model, locale }) {
@@ -178,7 +189,7 @@ function renderTransactionDocument({ model, locale, architectureAssets }) {
   const copy = model.locales[locale];
   const labels = locale === 'ko'
     ? {
-      sourceDiagram: '원본 다이어그램',
+      sourceDiagram: '구조 비교',
       boundaryLab: '경계 시나리오',
       sequence: '호출 → 반환 → 종료',
       responsibility: '책임',
@@ -187,7 +198,7 @@ function renderTransactionDocument({ model, locale, architectureAssets }) {
       traceableClaims: '검증 근거',
     }
     : {
-      sourceDiagram: 'SOURCE DIAGRAM',
+      sourceDiagram: 'ARCHITECTURE COMPARISON',
       boundaryLab: 'BOUNDARY LAB',
       sequence: 'CALL → RETURN → TERMINAL',
       responsibility: 'RESPONSIBILITY',
@@ -347,9 +358,12 @@ function renderStandaloneShell({ model, locale, body }) {
     :root[data-theme="dark"] .invariant-callout { color: #07111f; }
     @media (prefers-color-scheme: dark) { :root[data-theme="auto"] .invariant-callout { color: #07111f; } }
     .invariant-callout p { margin: 0; }
-    .architecture-card { position: relative; margin: 0 0 22px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
-    .architecture-card > img { display: block; width: 100%; height: auto; border-radius: 12px; background: #07111f; }
-    .architecture-open { position: absolute; z-index: 2; top: 28px; right: 28px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 999px; background: rgb(7 17 31 / .88); color: #f2f8ff; cursor: pointer; }
+    .architecture-card { position: relative; margin: 0 0 22px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+    .architecture-card figcaption { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+    .architecture-card figcaption strong { display: block; margin-bottom: 4px; font-size: 1.05rem; }
+    .architecture-card figcaption span { display: block; color: var(--muted); font-size: .88rem; }
+    .architecture-card > img { display: block; width: 100%; height: auto; background: #07111f; }
+    .architecture-open { flex: 0 0 auto; padding: 9px 13px; border: 1px solid var(--line); border-radius: 999px; background: rgb(7 17 31 / .88); color: #f2f8ff; cursor: pointer; }
     dialog { width: min(96vw, 1500px); max-height: 94vh; padding: 0; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); color: var(--ink); box-shadow: 0 30px 100px #0009; }
     dialog::backdrop { background: rgb(0 7 17 / .84); backdrop-filter: blur(4px); }
     dialog img { display: block; width: 100%; height: auto; }
@@ -425,7 +439,8 @@ function renderStandaloneShell({ model, locale, body }) {
       .section-number { width: 38px; height: 38px; }
       .scenario-tabs { grid-template-columns: 1fr; }
       .invariant-callout { grid-template-columns: 1fr; }
-      .architecture-open { position: static; width: 100%; margin-bottom: 10px; }
+      .architecture-card figcaption { align-items: stretch; flex-direction: column; gap: 12px; }
+      .architecture-open { width: 100%; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
