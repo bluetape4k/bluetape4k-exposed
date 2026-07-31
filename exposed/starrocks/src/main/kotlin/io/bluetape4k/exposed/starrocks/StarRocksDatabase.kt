@@ -11,12 +11,12 @@ import java.sql.DriverManager
 import javax.sql.DataSource
 
 /**
- * Factory object for connecting Exposed to StarRocks through Connector/J.
+ * Connector/J를 통해 Exposed를 StarRocks에 연결하는 factory 객체입니다.
  *
- * The factory registers the `jdbc:starrocks` driver prefix, the `starrocks`
- * Exposed dialect, and StarRocks metadata adapter on first access.
+ * 최초 접근 시 `jdbc:starrocks` driver prefix, `starrocks` Exposed dialect,
+ * StarRocks metadata adapter를 등록합니다.
  *
- * ## Basic usage
+ * ## 기본 사용법
  *
  * ```kotlin
  * val db = StarRocksDatabase.connect(
@@ -28,16 +28,15 @@ import javax.sql.DataSource
  * )
  * ```
  *
- * StarRocks table DDL is engine-specific. This module only proves the narrow
- * local smoke path and does not claim MySQL or PostgreSQL DDL parity.
+ * StarRocks table DDL은 engine 고유 형식입니다. 이 모듈은 제한된 local smoke path만 보장하며
+ * MySQL 또는 PostgreSQL DDL과의 동등성을 주장하지 않습니다.
  */
 object StarRocksDatabase: KLogging() {
 
     /**
-     * StarRocks Connector/J driver class.
+     * StarRocks Connector/J driver class입니다.
      *
-     * This is a `val` so property access triggers dialect registration through
-     * this object's initializer.
+     * `val`이므로 property 접근 시 이 객체의 initializer를 통해 dialect 등록이 실행됩니다.
      */
     val DRIVER: String = "com.starrocks.cj.jdbc.Driver"
 
@@ -49,10 +48,9 @@ object StarRocksDatabase: KLogging() {
     }
 
     /**
-     * Connects to a StarRocks database using host, FE query port, catalog, and database.
+     * host, FE query port, catalog, database를 사용해 StarRocks database에 연결합니다.
      *
-     * Builds a JDBC URL of the form
-     * `jdbc:starrocks://{host}:{port}/{catalog}.{database}`.
+     * `jdbc:starrocks://{host}:{port}/{catalog}.{database}` 형식의 JDBC URL을 구성합니다.
      */
     fun connect(
         host: String = "localhost",
@@ -77,9 +75,7 @@ object StarRocksDatabase: KLogging() {
         )
     }
 
-    /**
-     * Connects to StarRocks using a fully-qualified JDBC URL.
-     */
+    /** fully-qualified JDBC URL로 StarRocks에 연결합니다. */
     fun connect(
         jdbcUrl: String,
         user: String = "root",
@@ -107,9 +103,7 @@ object StarRocksDatabase: KLogging() {
         )
     }
 
-    /**
-     * Connects to StarRocks through a caller-managed [DataSource].
-     */
+    /** 호출자가 관리하는 [DataSource]를 통해 StarRocks에 연결합니다. */
     fun connect(dataSource: DataSource): Database =
         Database.connect(
             getNewConnection = {

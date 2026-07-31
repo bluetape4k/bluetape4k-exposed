@@ -3,10 +3,9 @@ package io.bluetape4k.exposed.starrocks.dialect
 import org.jetbrains.exposed.v1.jdbc.vendors.MysqlDialectMetadata
 
 /**
- * StarRocks JDBC metadata adapter for Exposed.
+ * Exposed용 StarRocks JDBC metadata adapter입니다.
  *
- * StarRocks Connector/J documents standard [java.sql.DatabaseMetaData] support.
- * The initial adapter therefore keeps MySQL metadata behavior instead of
- * masking metadata calls preemptively.
+ * StarRocks Connector/J가 표준 [java.sql.DatabaseMetaData] 지원을 문서화하므로
+ * 초기 adapter는 metadata 호출을 선제적으로 가리지 않고 MySQL metadata 동작을 유지합니다.
  */
 class StarRocksDialectMetadata: MysqlDialectMetadata()

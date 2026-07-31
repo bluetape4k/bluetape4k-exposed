@@ -3,12 +3,11 @@ package io.bluetape4k.exposed.starrocks
 import org.jetbrains.exposed.v1.core.Table
 
 /**
- * Exposed table base for narrow StarRocks OLAP DDL smoke tests.
+ * 제한된 StarRocks OLAP DDL smoke test를 위한 Exposed table base입니다.
  *
- * The class removes generic primary-key syntax that StarRocks OLAP tables do
- * not accept as plain MySQL DDL and appends conservative StarRocks table
- * options. Use it only for simple local fixtures until broader StarRocks DDL
- * behavior is proven by tests.
+ * StarRocks OLAP table이 일반 MySQL DDL로 허용하지 않는 generic primary-key 문법을 제거하고
+ * 보수적인 StarRocks table option을 추가합니다. 더 넓은 StarRocks DDL 동작이 test로 입증될 때까지
+ * 단순 local fixture에만 사용합니다.
  */
 open class StarRocksTable(
     name: String = "",

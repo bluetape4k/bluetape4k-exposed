@@ -4,12 +4,11 @@ import java.sql.Connection
 import java.sql.PreparedStatement
 
 /**
- * JDBC connection adapter for StarRocks Connector/J.
+ * StarRocks Connector/J용 JDBC connection adapter입니다.
  *
- * The wrapper keeps Exposed's transaction adapter in autocommit mode and
- * delegates generated-key `prepareStatement` overloads to the plain SQL
- * overload. This matches the narrow OLAP module contract: statements are
- * executed independently and rollback is not used as a durability guarantee.
+ * 이 wrapper는 Exposed transaction adapter를 autocommit 모드로 유지하고 generated-key
+ * `prepareStatement` overload를 일반 SQL overload에 위임합니다. statement를 독립적으로 실행하고
+ * rollback을 durability 보장으로 사용하지 않는 제한된 OLAP 모듈 계약에 맞춥니다.
  */
 @Suppress("JavaDefaultMethodsNotOverriddenByDelegation")
 internal class StarRocksConnectionWrapper(
