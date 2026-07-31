@@ -1,37 +1,42 @@
 # Issue #165 — JDBC Batch Retry Empty Re-query
 
-**Date**: 2026-05-19  
-**Issue**: #165  
+**Date**: 2026-05-19
+**Issue**: #165
 **Module**: `utils/batch`
 
-## Context
+## 배경
 
-`ExposedJdbcBatchJobRepository.findOrCreateJobExecution()` handled unique-constraint races by re-querying the
-competing job execution, but the JDBC retry path used `.first()`. If the winner row disappeared or no longer matched
-the restartable status filter before the retry query, callers saw a generic `NoSuchElementException`.
+`ExposedJdbcBatchJobRepository.findOrCreateJobExecution()`은 unique-constraint race를
+competing job execution의 re-query로 처리했지만 JDBC retry path는 `.first()`를
+사용했습니다. retry query 전에 winner row가 사라지거나 restartable status filter와
+일치하지 않으면 caller는 일반적인 `NoSuchElementException`을 받았습니다.
 
-The R2DBC counterpart already used `firstOrNull() ?: IllegalStateException(...)` with job context.
+R2DBC counterpart는 이미 job context가 포함된
+`firstOrNull() ?: IllegalStateException(...)`을 사용했습니다.
 
-## Decision
+## 결정
 
-Align JDBC with R2DBC by moving the retry re-query into an internal helper that returns the winner row with
-`firstOrNull()` or throws a contextual `IllegalStateException` containing `jobName` and `params`. While touching the
-retry catch, keep coroutine cancellation explicit by rethrowing `CancellationException` before broad exception handling.
+retry re-query를 internal helper로 옮겨 JDBC를 R2DBC와 정렬합니다. helper는
+`firstOrNull()`로 winner row를 반환하거나 `jobName`과 `params`를 포함한 contextual
+`IllegalStateException`을 던집니다. retry catch를 수정하는 동안 broad exception
+handling 전에 `CancellationException`을 다시 던져 coroutine cancellation을 명시적으로
+유지합니다.
 
-## Outcome
+## 결과
 
-The JDBC retry path no longer leaks `NoSuchElementException` for a missing winner row. The retry re-query returns an
-existing winner row when present, and otherwise describes the unique-violation retry state with enough job context for
-diagnosis.
+JDBC retry path는 missing winner row에 더 이상 `NoSuchElementException`을 노출하지
+않습니다. winner row가 있으면 반환하고, 없으면 unique-violation retry state를 충분한
+job context와 함께 설명합니다.
 
-## Verification
+## 검증
 
 - `./gradlew :bluetape4k-exposed-batch:compileTestKotlin --console=plain --no-daemon`
 - `./gradlew :bluetape4k-exposed-batch:test --tests "io.bluetape4k.batch.jdbc.ExposedJdbcBatchJobRepositoryTest*unique violation retry*" --console=plain --no-daemon`
 - `./gradlew :bluetape4k-exposed-batch:test --console=plain --no-daemon`
 - `git diff --check`
 
-## Future Guard
+## 향후 guard
 
-When catch-and-retry re-selects a winner row after a unique violation, never use `.first()` on the retry query. Use
-`firstOrNull()` and throw a domain-relevant exception with the identifying keys used for the retry.
+unique violation 뒤 catch-and-retry가 winner row를 다시 select할 때 retry query에서
+`.first()`를 사용하지 않습니다. `firstOrNull()`을 사용하고 retry에 쓴 identifying key를
+담은 domain-relevant exception을 던집니다.

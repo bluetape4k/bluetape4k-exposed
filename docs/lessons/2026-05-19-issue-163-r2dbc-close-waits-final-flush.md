@@ -1,39 +1,43 @@
-# Issue #163 — R2DBC Caffeine `close()` Waits For Final Flush
+# Issue #163 — R2DBC Caffeine `close()`가 최종 Flush를 기다림
 
-**Date**: 2026-05-19  
-**Issue**: #163  
+**Date**: 2026-05-19
+**Issue**: #163
 **Module**: `exposed-r2dbc-caffeine`
 
-## Context
+## 배경
 
-`AbstractR2dbcCaffeineRepository.close()` closed the write-behind channel and then cancelled the repository scope
-without waiting for the write-behind job to finish. After #161 made the final flush cancellation-safe, `close()` still
-needed to wait for that final flush before returning.
+`AbstractR2dbcCaffeineRepository.close()`는 write-behind channel을 닫고
+write-behind job이 끝나기를 기다리지 않은 채 repository scope를 cancel했습니다.
+#161이 최종 flush를 cancellation-safe로 만들었지만 `close()`는 return 전에 그 최종
+flush를 기다려야 했습니다.
 
-## Decision
+## 결정
 
-Keep `close()` synchronous and wait until the write-behind job observes the closed channel and completes its final
-flush. Avoid `runBlocking` in this production lifecycle path; use a bounded completion wait and only then invalidate
-the cache and cancel the scope.
+`close()`는 synchronous로 두고 write-behind job이 닫힌 channel을 관찰하여 최종 flush를
+완료할 때까지 기다립니다. production lifecycle path에서 `runBlocking`을 피하고 bounded
+completion wait 뒤에만 cache를 invalidate하고 scope를 cancel합니다.
 
-## Outcome
+## 결과
 
-Write-behind shutdown now provides a stronger lifecycle contract: once `close()` returns normally, pending write-behind
-entries have either been flushed by the worker or handled by the existing flush error path. A bounded timeout prevents
-an indefinitely hung DB/driver from blocking shutdown forever. If that timeout is reached, shutdown proceeds with a
-warning and the caller should treat any still-pending write-behind entries as not guaranteed to be durable.
+write-behind shutdown은 더 강한 lifecycle contract를 제공합니다. `close()`가 정상적으로
+return하면 pending write-behind entry는 worker가 flush했거나 기존 flush error path가
+처리했습니다. bounded timeout은 hung DB/driver가 shutdown을 무한히 block하지 않게
+합니다. timeout에 도달하면 shutdown은 warning과 함께 진행하며 caller는 남은 pending
+write-behind entry가 durable하다고 보장할 수 없음을 알아야 합니다.
 
-## Verification
+## 검증
 
 - `./gradlew :bluetape4k-exposed-r2dbc-caffeine:compileTestKotlin --console=plain --no-daemon`
 - `./gradlew :bluetape4k-exposed-r2dbc-caffeine:test --tests "io.bluetape4k.exposed.r2dbc.caffeine.repository.WriteBehindCacheTest*CancellationSafeFinalFlush*" --console=plain --no-daemon`
 - `./gradlew :bluetape4k-exposed-r2dbc-caffeine:test --console=plain --no-daemon`
 - `git diff --check`
 
-The targeted tests cover final-flush wait behavior, close before any write-behind put, idempotent close after the
-write-behind job starts, and WRITE_THROUGH close not initializing the write-behind job.
+targeted test는 final-flush wait behavior, write-behind `put` 전 close, write-behind job
+시작 뒤 idempotent close, WRITE_THROUGH close가 write-behind job을 초기화하지 않음을
+다룹니다.
 
-## Future Guard
+## 향후 guard
 
-For synchronous lifecycle APIs that close coroutine-backed workers, do not cancel the scope until worker completion has
-been observed. Add a test that blocks the final flush and proves `close()` does not return early.
+coroutine-backed worker를 닫는 synchronous lifecycle API는 worker completion이 관찰될
+때까지 scope를 cancel하지 않습니다. final flush를 block하고 `close()`가 일찍 return하지
+않음을 증명하는 test를 추가합니다.
