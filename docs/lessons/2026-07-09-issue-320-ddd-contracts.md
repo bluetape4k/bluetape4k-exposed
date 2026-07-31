@@ -1,31 +1,33 @@
-# Issue 320 DDD Contracts Lesson
+# Issue 320 DDD 계약 교훈
 
-## Context
+## 배경
 
-Issue #320 adds Spring-neutral aggregate/domain-event contracts to
-`bluetape4k-exposed-core`.
+Issue #320은 `bluetape4k-exposed-core`에 Spring 중립적인 애그리거트/도메인
+이벤트 계약을 추가한다.
 
-## Decision
+## 결정
 
-The base contracts stay framework-neutral and do not publish, persist, replay,
-or observe events. `drainDomainEvents(handoff)` clears the aggregate buffer only
-after the handoff callback returns successfully.
+기본 계약은 프레임워크 중립성을 유지하며 이벤트를 발행, 영속화, 재처리 또는
+관측하지 않는다. `drainDomainEvents(handoff)`는 handoff 콜백이 성공적으로
+반환된 후에만 애그리거트 버퍼를 비운다.
 
-## Outcome
+## 결과
 
-The API avoids the natural but unsafe shape where a caller fetches and clears
-events before publisher ownership is durable. Repository adapters must snapshot
-events, commit aggregate state, wait for an after-transaction-commit or
-equivalent durability boundary, hand events to a durable owner, and only then
-clear or drain the aggregate buffer.
+이 API는 발행자 소유권이 영속화되기 전에 호출자가 이벤트를 가져오고 비우는,
+자연스럽지만 안전하지 않은 형태를 피한다. 저장소 어댑터는 이벤트 스냅샷을 만들고
+애그리거트 상태를 커밋한 뒤, 트랜잭션 커밋 이후 시점이나 그에 준하는 영속성
+경계까지 기다려야 한다. 이후 이벤트를 영속적인 소유자에게 인계하고 나서야
+애그리거트 버퍼를 비우거나 drain해야 한다.
 
-## Verification
+## 검증
 
-- Focused DDD tests passed with 9 tests.
-- Full `:bluetape4k-exposed-core:test` passed with 286 tests and 13 skipped.
-- Step 6-R review converged with P0 = 0 and P1 = 0.
+- DDD 집중 테스트는 테스트 9개로 통과했다.
+- 전체 `:bluetape4k-exposed-core:test`는 테스트 286개 통과, 13개 건너뜀으로
+  완료됐다.
+- Step 6-R 검토는 P0 = 0, P1 = 0으로 수렴했다.
 
-## Future Guard
+## 향후 주의 사항
 
-Do not drain or clear domain events before aggregate state commit and durable
-handoff acceptance. A process-local retry queue is not a durable event owner.
+애그리거트 상태 커밋과 영속적인 handoff 수락이 완료되기 전에 도메인 이벤트를
+drain하거나 비우지 않는다. 프로세스 로컬 재시도 큐는 영속적인 이벤트 소유자가
+아니다.
