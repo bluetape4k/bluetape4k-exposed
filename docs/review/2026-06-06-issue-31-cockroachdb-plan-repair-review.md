@@ -1,50 +1,50 @@
-# Issue #31 Plan Repair Review
+# 이슈 #31 계획 보완 검토
 
-Date: 2026-06-06
-Plan: `docs/superpowers/plans/2026-06-06-issue-31-cockroachdb-ddl-boundary-plan.md`
-Spec: `docs/superpowers/specs/2026-06-06-issue-31-cockroachdb-ddl-boundary-design.md`
-Workflow gate: Step 3-R repair
+날짜: 2026-06-06
+계획: `docs/superpowers/plans/2026-06-06-issue-31-cockroachdb-ddl-boundary-plan.md`
+명세: `docs/superpowers/specs/2026-06-06-issue-31-cockroachdb-ddl-boundary-design.md`
+워크플로 게이트: Step 3-R 보완
 
-## Repair Trigger
+## 보완 계기
 
-The plan was updated after implementation evidence showed that the direct JDBC
-path should use `bluetape4k-jdbc`/HikariCP and that migration diff no-op support
-must remain deferred for #31.
+구현 근거를 통해 직접 JDBC 경로에서 `bluetape4k-jdbc`/HikariCP를 사용해야 하고,
+마이그레이션 차이가 없는 상태에 대한 지원은 #31에서 계속 유보해야 함이 확인되어
+계획을 갱신했다.
 
-## Perspective Review
+## 관점별 검토
 
-| Perspective | P0 | P1 | P2 | P3 | Evidence |
+| 관점 | P0 | P1 | P2 | P3 | 근거 |
 |---|---:|---:|---:|---:|---|
-| Implementer | 0 | 0 | 0 | 0 | Tasks are ordered as matrix -> tests -> dialect decision -> docs -> verification. |
-| Test engineer | 0 | 0 | 0 | 0 | Plan names accepted DDL, generated ID, `RETURNING`, metadata, migration diff, unsupported SQL, and targeted Gradle commands. |
-| Architect | 0 | 0 | 0 | 0 | Helper-only contract remains default; custom dialect is evidence-gated. |
-| Delivery | 0 | 0 | 0 | 0 | README locale pair, changelog, research preservation, lesson, PR body, CI monitoring are assigned. |
+| 구현 담당자 | 0 | 0 | 0 | 0 | 작업은 매트릭스 -> 테스트 -> 방언 결정 -> 문서 -> 검증 순서로 구성되어 있다. |
+| 테스트 엔지니어 | 0 | 0 | 0 | 0 | 계획에 허용되는 DDL, 생성 ID, `RETURNING`, 메타데이터, 마이그레이션 차이, 지원하지 않는 SQL, 대상 Gradle 명령이 명시되어 있다. |
+| 아키텍트 | 0 | 0 | 0 | 0 | 헬퍼 전용 계약을 기본값으로 유지하며, 사용자 정의 방언은 근거가 있을 때만 도입한다. |
+| 배포 담당자 | 0 | 0 | 0 | 0 | README 언어별 문서 쌍, 변경 로그, 조사 자료 보존, 교훈, PR 본문, CI 모니터링이 작업에 배정되어 있다. |
 
-## Checklist Review
+## 체크리스트 검토
 
-| Check | Status | Evidence |
+| 점검 항목 | 상태 | 근거 |
 |---|---|---|
-| Spec requirements map to plan tasks | PASS | Plan tasks 1-8 cover matrix, tests, docs, research, verification, review, PR. |
-| Task ordering is implementable | PASS | Dialect decision happens after the helper-only compatibility suite. |
-| Failure and lifecycle paths are covered | PASS | Unsupported SQL, cleanup guards, HikariCP `DataSource`, and Testcontainers singleton use are planned. |
-| README and localized README covered | PASS | Plan task 5 updates `README.md` and `README.ko.md`. |
-| Exposed-specific risks covered | PASS | Plan checks helper-only dialect behavior and records migration diff boundary. |
-| Verification commands concrete | PASS | Test, Kover XML, compile, and `git diff --check` commands are listed. |
+| 명세 요구 사항이 계획 작업에 대응함 | 통과 | 계획 작업 1-8에서 매트릭스, 테스트, 문서, 조사, 검증, 리뷰, PR을 다룬다. |
+| 작업 순서를 실제로 구현할 수 있음 | 통과 | 헬퍼 전용 호환성 테스트 모음 실행 후 방언 도입 여부를 결정한다. |
+| 실패 및 수명 주기 경로를 다룸 | 통과 | 지원하지 않는 SQL, 정리 보호 장치, HikariCP `DataSource`, Testcontainers 싱글턴 사용이 계획되어 있다. |
+| README와 현지화 README를 다룸 | 통과 | 계획 작업 5에서 `README.md`와 `README.ko.md`를 갱신한다. |
+| Exposed 고유 위험을 다룸 | 통과 | 계획에서 헬퍼 전용 방언 동작을 확인하고 마이그레이션 차이의 경계를 기록한다. |
+| 검증 명령이 구체적임 | 통과 | 테스트, Kover XML, 컴파일, `git diff --check` 명령이 나열되어 있다. |
 
-## Integrated Findings
+## 종합 발견 사항
 
-| Priority | Area | Finding | Required plan edit |
+| 우선순위 | 영역 | 발견 사항 | 필요한 계획 수정 |
 |---|---|---|---|
-| P0 | N/A | No blocking plan defect found after repair. | None. |
-| P1 | N/A | No high-priority plan defect found after repair. | None. |
+| P0 | 해당 없음 | 보완 후 계획에서 진행을 막는 결함은 발견되지 않았다. | 없음. |
+| P1 | 해당 없음 | 보완 후 계획에서 우선순위가 높은 결함은 발견되지 않았다. | 없음. |
 
-Rejected: adding a custom CockroachDB dialect only to silence the observed
-sequence ownership migration diff. The plan correctly requires a dialect only
-when accepted DDL paths fail because of the default PostgreSQL dialect.
+기각: 관찰된 시퀀스 소유권 마이그레이션 차이만 없애기 위해 사용자 정의 CockroachDB
+방언을 추가하는 방안. 계획은 기본 PostgreSQL 방언 때문에 허용되는 DDL 경로가 실패할
+때만 방언을 요구하도록 올바르게 규정한다.
 
-## Verdict
+## 판정
 
 P0 = 0
 P1 = 0
 
-Step 3-R repair PASS.
+Step 3-R 보완 통과.

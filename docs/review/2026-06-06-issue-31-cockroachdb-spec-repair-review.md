@@ -1,45 +1,44 @@
-# Issue #31 Spec Repair Review
+# 이슈 #31 명세 보완 검토
 
-Date: 2026-06-06
-Spec: `docs/superpowers/specs/2026-06-06-issue-31-cockroachdb-ddl-boundary-design.md`
-Workflow gate: Step 2-R repair
+날짜: 2026-06-06
+명세: `docs/superpowers/specs/2026-06-06-issue-31-cockroachdb-ddl-boundary-design.md`
+워크플로 게이트: Step 2-R 보완
 
-## Repair Trigger
+## 보완 계기
 
-Implementation evidence narrowed two spec assumptions:
+구현 근거를 통해 명세의 두 가지 가정을 구체화했다.
 
-- Direct JDBC evidence should use the bluetape4k ecosystem (`bluetape4k-jdbc`
-  plus HikariCP) instead of ad hoc `DriverManager.getConnection`.
-- `MigrationUtils.statementsRequiredForDatabaseMigration` still proposes
-  generated-ID sequence ownership updates after `SchemaUtils.create`, so the
-  spec must document migration diff no-op semantics as deferred.
+- 직접 JDBC 근거에는 임시방편인 `DriverManager.getConnection` 대신 bluetape4k
+  생태계(`bluetape4k-jdbc`와 HikariCP)를 사용해야 한다.
+- `MigrationUtils.statementsRequiredForDatabaseMigration`는 `SchemaUtils.create`
+  실행 후에도 생성 ID 시퀀스 소유권 갱신을 제안하므로, 명세에는 마이그레이션
+  차이가 없는 상태의 의미 체계가 유보되었음을 문서화해야 한다.
 
-## 7-Tier Review
+## 7단계 검토
 
-| Tier | Reviewed scope | P0 | P1 | P2 | P3 | Evidence |
+| 단계 | 검토 범위 | P0 | P1 | P2 | P3 | 근거 |
 |---|---|---:|---:|---:|---:|---|
-| 1 Security | Direct JDBC and unsupported SQL evidence | 0 | 0 | 0 | 0 | Test SQL is fixed test input; no secrets or caller-controlled SQL were added. |
-| 2 Ops/SRE | Testcontainers, HikariCP lifecycle, cleanup requirements | 0 | 0 | 0 | 0 | Spec requires `CockroachServer.Launcher.cockroach`, serial Testcontainers proof, and cleanup guards. |
-| 3 Structural impact | Helper-only contract and dialect decision rule | 0 | 0 | 0 | 0 | Spec keeps custom dialect evidence-gated and avoids expanding public API when accepted paths pass. |
-| 4 Kotlin/API quality | bluetape4k ecosystem reuse and public API contract | 0 | 0 | 0 | 0 | Spec requires bluetape4k JDBC/HikariCP helpers and no new public API unless dialect evidence requires it. |
-| 5 Tests/types/silent failure | Accepted, deferred, and unsupported paths | 0 | 0 | 0 | 0 | Spec requires direct CockroachDB evidence, non-brittle unsupported-path checks, and matrix validation. |
-| 6 Performance/stability | Pool/container/resource lifecycle | 0 | 0 | 0 | 0 | Serial container and caller-managed pool cleanup are explicit test constraints. |
-| 7 Docs/release/evidence | README locale pair, changelog, verification commands | 0 | 0 | 0 | 0 | Spec requires README matrix, Exposed caveat, verification command, changelog, and PR DoD body. |
+| 1 보안 | 직접 JDBC 및 지원하지 않는 SQL 근거 | 0 | 0 | 0 | 0 | 테스트 SQL은 고정된 테스트 입력이며, 비밀 정보나 호출자가 제어하는 SQL을 추가하지 않았다. |
+| 2 운영/SRE | Testcontainers, HikariCP 수명 주기, 정리 요구 사항 | 0 | 0 | 0 | 0 | 명세에서 `CockroachServer.Launcher.cockroach`, 직렬 Testcontainers 검증, 정리 보호 장치를 요구한다. |
+| 3 구조적 영향 | 헬퍼 전용 계약 및 방언 결정 규칙 | 0 | 0 | 0 | 0 | 명세는 근거가 있을 때만 사용자 정의 방언을 도입하며, 허용 경로가 통과하면 공개 API 확장을 피한다. |
+| 4 Kotlin/API 품질 | bluetape4k 생태계 재사용 및 공개 API 계약 | 0 | 0 | 0 | 0 | 명세는 bluetape4k JDBC/HikariCP 헬퍼 사용을 요구하며, 방언 도입 근거가 없는 한 새로운 공개 API를 추가하지 않는다. |
+| 5 테스트/타입/무증상 실패 | 허용, 유보, 미지원 경로 | 0 | 0 | 0 | 0 | 명세에서 직접 CockroachDB 근거, 깨지기 어려운 미지원 경로 검사, 매트릭스 검증을 요구한다. |
+| 6 성능/안정성 | 풀/컨테이너/리소스 수명 주기 | 0 | 0 | 0 | 0 | 컨테이너 직렬 실행과 호출자 관리 풀 정리를 명시적인 테스트 제약으로 둔다. |
+| 7 문서/릴리스/근거 | README 언어별 문서 쌍, 변경 로그, 검증 명령 | 0 | 0 | 0 | 0 | 명세에서 README 매트릭스, Exposed 주의 사항, 검증 명령, 변경 로그, PR 완료 조건 본문을 요구한다. |
 
-## Integrated Findings
+## 종합 발견 사항
 
-| Priority | Area | Finding | Resolution |
+| 우선순위 | 영역 | 발견 사항 | 해결 방안 |
 |---|---|---|---|
-| P0 | N/A | No blocking spec defect found after repair. | Gate can close. |
-| P1 | N/A | No high-priority spec defect found after repair. | Gate can close. |
+| P0 | 해당 없음 | 보완 후 명세에서 진행을 막는 결함은 발견되지 않았다. | 게이트를 종료할 수 있다. |
+| P1 | 해당 없음 | 보완 후 명세에서 우선순위가 높은 결함은 발견되지 않았다. | 게이트를 종료할 수 있다. |
 
-Rejected: claiming migration diff no-op support in #31 because current
-`MigrationUtils` evidence shows generated-ID sequence ownership updates after
-schema creation.
+기각: 현재 `MigrationUtils` 근거에서 스키마 생성 후 생성 ID 시퀀스 소유권 갱신이
+나타나므로, #31에서 마이그레이션 차이가 없는 상태를 지원한다고 선언하는 방안.
 
-## Verdict
+## 판정
 
 P0 = 0
 P1 = 0
 
-Step 2-R repair PASS.
+Step 2-R 보완 통과.
