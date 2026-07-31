@@ -1,30 +1,28 @@
-# 2026-05-20 — Batch benchmark charts
+# 2026-05-20 — Batch Benchmark Chart
 
-## Context
+## 배경
 
-The batch benchmark details for H2, MySQL, and PostgreSQL used Mermaid xychart
-templates. The rendered output was less useful than direct PNG charts and still
-needed legend workarounds.
+H2, MySQL, PostgreSQL의 batch benchmark detail은 Mermaid xychart template을
+사용했습니다. render 결과는 직접 PNG chart보다 유용하지 않았고 legend workaround도
+필요했습니다.
 
-## Decision
+## 결정
 
-Replace the Mermaid benchmark chart blocks with static SVG + PNG charts under
-`docs/images/readme-charts/`. Keep the detailed result tables as the measured
-source of truth.
+Mermaid benchmark chart block을 `docs/images/readme-charts/` 아래 static SVG + PNG
+chart로 교체합니다. detailed result table은 measured source of truth로 유지합니다.
 
-## Outcome
+## 결과
 
-Each database detail page now has three charts: seed throughput by data size,
-seed throughput by pool size, and end-to-end throughput by parallelism.
+각 database detail page에는 data size별 seed throughput, pool size별 seed throughput,
+parallelism별 end-to-end throughput의 세 chart가 있습니다.
 
-## Verification
+## 검증
 
 - `xmllint --noout docs/images/readme-charts/*.svg`
 - `identify docs/images/readme-charts/*.png`
-- Searched the touched benchmark detail files for remaining Mermaid/ASCII chart
-  blocks.
+- touched benchmark detail file에서 남은 Mermaid/ASCII chart block을 검색했습니다.
 
-## Future
+## 향후
 
-Use log scale for data-size and end-to-end comparisons when JDBC and R2DBC values
-span multiple orders of magnitude.
+JDBC와 R2DBC value가 여러 order of magnitude에 걸치면 data-size 및 end-to-end 비교에
+log scale을 사용합니다.

@@ -1,28 +1,27 @@
 # Timefold Solver 2
 
-## Context
+## 배경
 
-Timefold Solver 2.1 flattened score packages, changed integer score APIs to
-long-backed records, and removed several 1.x artifacts and score classes.
+Timefold Solver 2.1은 score package를 flatten하고 integer score API를 long-backed
+record로 바꿨으며 여러 1.x artifact와 score class를 제거했습니다.
 
-## Decision
+## 결정
 
-Align the Exposed persistence module with the actual 2.1 public API: remove
-unsupported long score columns, update score imports, and keep documentation in
-sync with the reduced supported score set.
+Exposed persistence module을 실제 2.1 public API와 정렬합니다. 지원하지 않는 long
+score column을 제거하고 score import를 업데이트하며 줄어든 supported score set과
+documentation을 맞춥니다.
 
-## Outcome
+## 결과
 
-- Score imports now use `ai.timefold.solver.core.api.score.*`.
-- Removed unsupported `*LongScore` Exposed column helpers and tests.
-- Removed `timefold-solver-persistence-common` and `timefold-solver-test`
-  aliases/usages because they are not published for 2.1.0.
-- `SimpleScore` now stores long values with `LongColumnType`.
-- README and Korean README now describe the 8 supported score types.
-- AWS SDK Java, AWS SDK Kotlin, Fory Kotlin, and MyBatis Dynamic SQL were
-  materialized from the central catalog as part of the coordinated dependency
-  PR batch.
+- score import는 이제 `ai.timefold.solver.core.api.score.*`를 사용합니다.
+- 지원하지 않는 `*LongScore` Exposed column helper와 test를 제거했습니다.
+- 2.1.0에 publication되지 않아 `timefold-solver-persistence-common` 및
+  `timefold-solver-test` alias/usage를 제거했습니다.
+- `SimpleScore`는 이제 `LongColumnType`에 long value를 저장합니다.
+- README와 Korean README는 지원하는 8개 score type을 설명합니다.
+- AWS SDK Java, AWS SDK Kotlin, Fory Kotlin, MyBatis Dynamic SQL은 coordinated
+  dependency PR batch의 일부로 central catalog에서 materialize되었습니다.
 
-## Verification
+## 검증
 
 - `./gradlew :bluetape4k-exposed-timefold-solver-persistence:compileTestKotlin --no-daemon`
