@@ -1,23 +1,22 @@
-# Issue 123 cache health design
+# Issue 123 cache health 설계
 
-## Context
+## 배경
 
-GitHub issue #123 requests a consistency health check for Caffeine-backed
-repositories. The immediate failure mode is WRITE_BEHIND: the cache can accept a
-write while the background DB flush later fails, leaving callers without an
-observable signal.
+GitHub issue #123은 Caffeine 기반 저장소의 consistency health check를
+요구한다. 직접적인 failure mode는 WRITE_BEHIND이다. cache가 write를
+수락한 뒤 background DB flush가 실패할 수 있지만, 현재 caller는 이 상태를
+관찰할 수 없다.
 
-Claude advisor/review is intentionally not used. The user stated that Claude
-Code review is unavailable because the subscription was lowered. External Codex
-CLI review is also skipped because this Codex session owns implementation,
-review, and verification.
+Claude Code review를 사용할 수 없다는 사용자 지시에 따라 Claude
+advisor/review를 사용하지 않는다. 현재 Codex 세션이 구현·검토·검증을
+소유하므로 외부 Codex CLI review도 생략한다.
 
-IntelliJ diagnostics are unavailable for this worktree in the current IDE
-session, so validation uses repository search plus Gradle compile/tests.
+현재 IDE session에서는 이 worktree의 IntelliJ diagnostics를 사용할 수 없다.
+따라서 repository search와 Gradle compile/test로 검증한다.
 
-## Design
+## 설계
 
-Add `CacheHealthReport` to `exposed-cache`:
+`exposed-cache`에 `CacheHealthReport`를 추가한다.
 
 ```kotlin
 data class CacheHealthReport(
@@ -28,45 +27,40 @@ data class CacheHealthReport(
 )
 ```
 
-The report is a read-only snapshot:
+report는 다음 값을 제공하는 read-only snapshot이다.
 
-- `mode`: configured cache write mode.
-- `queueDepth`: write-behind entries accepted by the repository but not yet
-  observed as flushed by the background worker. This includes entries pulled
-  into the current in-memory batch.
-- `isFlushJobRunning`: true only when WRITE_BEHIND mode has started its worker
-  and the worker job is currently active.
-- `lastFlushError`: the last non-cancellation flush failure observed by the
-  background worker, or null after a successful flush.
+- `mode`: 설정된 cache write mode.
+- `queueDepth`: 저장소가 수락했지만 background worker의 flush 완료가 아직
+  관찰되지 않은 write-behind entry 수. 현재 in-memory batch로 가져온 entry도 포함한다.
+- `isFlushJobRunning`: WRITE_BEHIND mode에서 worker가 시작되었고 현재 job이
+  active일 때만 `true`.
+- `lastFlushError`: background worker가 관찰한 마지막 non-cancellation flush
+  failure. flush가 성공하면 `null`.
 
-Expose the API on Caffeine-specific repository contracts:
+Caffeine 전용 저장소 계약에 API를 노출한다.
 
 - `JdbcCaffeineRepository.validateConsistency(): CacheHealthReport`
 - `R2dbcCaffeineRepository.validateConsistency(): CacheHealthReport`
 
-Implement the API in:
+다음 구현에 API를 추가한다.
 
 - `AbstractJdbcCaffeineRepository`
 - `AbstractR2dbcCaffeineRepository`
 
-The issue does not require Actuator integration, and labels it optional. This
-increment leaves Actuator auto-configuration for a follow-up so the core runtime
-contract can land with focused tests first.
+issue는 Actuator 통합을 선택 사항으로 명시한다. 핵심 runtime 계약을 집중
+테스트와 함께 먼저 제공할 수 있도록 Actuator auto-configuration은 후속 작업으로 남긴다.
 
-## Risks
+## 위험
 
-- `Channel` does not expose a stable queue size, so queue depth must be tracked
-  explicitly on successful sends and after flush attempts complete.
-- Calling a lazy write-behind job from health reporting would accidentally start
-  the worker. Health reporting must not initialize the job.
-- Flush failures are currently logged and suppressed. Health reporting must
-  preserve that existing behavior while surfacing the last failure.
+- `Channel`은 안정적인 queue size를 제공하지 않는다. 성공한 send 시 증가시키고
+  flush attempt가 끝난 뒤 감소시키는 방식으로 queue depth를 명시적으로 추적해야 한다.
+- health 보고 중 lazy write-behind job을 호출하면 의도치 않게 worker가 시작된다.
+  health 보고는 job을 초기화하지 않아야 한다.
+- 현재 flush failure는 log 후 suppress된다. 이 동작을 유지하면서 마지막 failure를 노출해야 한다.
 
-## Verification
+## 검증
 
-- Compile `exposed-cache`, `exposed-jdbc-caffeine`, and `exposed-r2dbc-caffeine`.
-- Test JDBC health snapshots for idle WRITE_BEHIND, in-flight queue depth, and
-  recorded flush failure.
-- Test R2DBC health snapshots for idle WRITE_BEHIND, in-flight queue depth, and
-  recorded flush failure.
-- Run final diff review in this session.
+- `exposed-cache`, `exposed-jdbc-caffeine`, `exposed-r2dbc-caffeine`을 compile한다.
+- JDBC에서 idle WRITE_BEHIND, in-flight queue depth, 기록된 flush failure snapshot을 테스트한다.
+- R2DBC에서 idle WRITE_BEHIND, in-flight queue depth, 기록된 flush failure snapshot을 테스트한다.
+- 현재 세션에서 최종 diff review를 수행한다.

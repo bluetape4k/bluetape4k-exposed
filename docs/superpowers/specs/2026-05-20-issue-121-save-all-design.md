@@ -1,74 +1,71 @@
-# Issue 121 SaveAll Repository API Design
+# Issue 121 SaveAll 저장소 API 설계
 
-## Context
+## 배경
 
-GitHub issue #121 asks for `saveAll(entities: Iterable<E>)` on the core
-`JdbcRepository` and `R2dbcRepository` contracts for milestone 1.8.1.
+GitHub issue #121은 milestone 1.8.1에서 핵심 `JdbcRepository`와
+`R2dbcRepository` 계약에 `saveAll(entities: Iterable<E>)`를 추가하도록
+요구한다.
 
-Current source differs from the issue wording:
+현재 source는 issue의 표현과 다음과 같이 다르다.
 
-- `JdbcRepository` and `R2dbcRepository` do not expose a core single-entity
-  `save(entity)` contract today.
-- Repository test fixtures implement ad-hoc `save()` methods because the core
-  repository interfaces only know `table`, `extractId`, and `toEntity`.
-- A generic batch insert cannot be implemented from `E` alone without a
-  repository-provided column binding hook.
+- `JdbcRepository`와 `R2dbcRepository`에는 핵심 단일 entity
+  `save(entity)` 계약이 없다.
+- 핵심 저장소 인터페이스가 `table`, `extractId`, `toEntity`만 알기 때문에
+  저장소 테스트 fixture는 임시 `save()` 메서드를 구현한다.
+- 저장소가 column binding 확장 지점을 제공하지 않으면 `E`만으로 범용
+  batch insert를 구현할 수 없다.
 
-Claude advisor/review is intentionally not used for this work. The user stated
-that Claude Code review is unavailable because the subscription was lowered.
-Codex CLI review is also not run as an external process; this Codex session owns
-implementation, review, and verification.
+이 작업에서는 Claude advisor/review를 사용하지 않는다. 구독 등급 변경으로
+Claude Code review를 사용할 수 없다는 사용자 지시를 따른다. 외부 프로세스로
+Codex CLI review도 실행하지 않으며, 현재 Codex 세션이 구현·검토·검증을 소유한다.
 
-IDE reference/diagnostic tools are unavailable for this worktree because
-IntelliJ currently has `bluetape4k-workshop` open, not `bluetape4k-exposed`.
-Fallback evidence is repo search plus targeted Gradle compile/tests.
+현재 IntelliJ에는 `bluetape4k-exposed`가 아니라 `bluetape4k-workshop`이 열려
+있으므로 이 worktree에 대한 IDE reference/diagnostic 도구를 사용할 수 없다.
+대신 repository search와 대상 Gradle compile/test를 근거로 사용한다.
 
-## API Decision
+## API 결정
 
-Add a small binding hook plus a default `saveAll` implementation:
+작은 binding 확장 지점과 기본 `saveAll` 구현을 추가한다.
 
 ```kotlin
 fun BatchInsertStatement.bindSave(entity: E)
 fun saveAll(entities: Iterable<E>): List<ID>
 ```
 
-The hook is a member extension on each repository interface. Implementations
-that want the default `saveAll` override it and assign table columns from the
-entity. The default hook throws `UnsupportedOperationException` with a clear
-message so existing repositories remain source-compatible and fail explicitly
-only when calling `saveAll` without a binding.
+확장 지점은 각 저장소 인터페이스의 member extension이다. 기본 `saveAll`을
+사용하려는 구현은 이를 재정의하여 entity 값을 table column에 할당한다.
+기본 확장 지점은 명확한 메시지와 함께 `UnsupportedOperationException`을
+던진다. 따라서 기존 저장소는 source compatibility를 유지하고, binding 없이
+`saveAll`을 호출할 때만 명시적으로 실패한다.
 
-`saveAll` materializes the input iterable once, returns `emptyList()` for empty
-input, calls Exposed `batchInsert`, and returns generated primary key values in
-insert order.
+`saveAll`은 입력 `Iterable`을 한 번만 materialize하고, 입력이 비어 있으면
+`emptyList()`를 반환한다. 그렇지 않으면 Exposed `batchInsert`를 호출하고
+삽입 순서대로 생성된 primary key 값을 반환한다.
 
-## Scope
+## 범위
 
-- Add `saveAll(Iterable<E>): List<ID>` to `JdbcRepository`.
-- Add `suspend saveAll(Iterable<E>): List<ID>` to `R2dbcRepository`.
-- Add the same `BatchInsertStatement.bindSave(entity)` hook to both contracts.
-- Cover normal repositories with 100+ row and 10k+ row bulk insert tests.
-- Cover auditable repository variants with bulk insert tests that verify audit
-  defaults are still produced by the table defaults.
+- `JdbcRepository`에 `saveAll(Iterable<E>): List<ID>`를 추가한다.
+- `R2dbcRepository`에 `suspend saveAll(Iterable<E>): List<ID>`를 추가한다.
+- 두 계약 모두에 동일한 `BatchInsertStatement.bindSave(entity)` 확장 지점을 추가한다.
+- 일반 저장소에서 100개 이상 및 10k개 이상 일괄 삽입을 검증한다.
+- 감사 저장소 variant에서 일괄 삽입 후 table 기본값이 감사 기본값을 계속 생성하는지 검증한다.
 
-## Non-Goals
+## 범위 밖
 
-- Do not add `save(entity)` to the core interfaces. Existing test repositories
-  already define `save(entity): E`; adding a same-parameter method with a
-  different return type would create source conflicts.
-- Do not infer entity-to-column mappings through reflection.
-- Do not change Spring Data `ExposedJdbcRepository` /
-  `ExposedR2dbcRepository`; they already inherit or implement Spring Data
-  `saveAll`.
-- Do not add new dependencies.
+- 핵심 인터페이스에 `save(entity)`를 추가하지 않는다. 기존 테스트 저장소에는
+  이미 `save(entity): E`가 있으므로, 매개변수는 같고 반환 타입만 다른 메서드를
+  추가하면 source conflict가 발생한다.
+- reflection으로 entity-to-column mapping을 추론하지 않는다.
+- Spring Data `ExposedJdbcRepository` / `ExposedR2dbcRepository`를 변경하지
+  않는다. 이들은 이미 Spring Data `saveAll`을 상속하거나 구현한다.
+- 새 dependency를 추가하지 않는다.
 
-## Verification
+## 검증
 
-- Compile affected modules:
+- 영향받는 모듈 compile:
   - `./gradlew :bluetape4k-exposed-jdbc:compileKotlin`
   - `./gradlew :bluetape4k-exposed-r2dbc:compileKotlin`
-- Run focused repository tests:
-  - JDBC normal/auditable saveAll tests
-  - R2DBC normal/auditable saveAll tests
-- Run final diff review in this Codex session and record Claude/Codex external
-  review gaps in the DoD.
+- 집중 저장소 테스트:
+  - JDBC 일반/감사 `saveAll` 테스트
+  - R2DBC 일반/감사 `saveAll` 테스트
+- 현재 Codex 세션에서 최종 diff를 검토하고 Claude/Codex 외부 review 제약을 DoD에 기록한다.
