@@ -1,14 +1,14 @@
 # Issue 410 Exposed 심층 시각 해설서 구현 계획
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **에이전트 워커용:** 필수 하위 스킬: superpowers:subagent-driven-development(권장) 또는 superpowers:executing-plans를 사용하여 이 계획을 작업별로 구현한다. 단계 추적에는 체크박스(`- [ ]`) 구문을 사용한다.
 
-**Goal:** JPA/Hibernate 경험자가 Exposed의 선택 기준, 트랜잭션 소유권, Spring Boot 활성화 계약을 기존 Architecture Diagram과 실제 소스 근거로 탐색할 수 있는 영어·한국어 심층 HTML 해설서 두 개를 제공한다.
+**목표:** JPA/Hibernate 경험자가 기존 Architecture Diagram과 실제 소스 근거를 바탕으로 Exposed의 선택 기준, 트랜잭션 소유권, Spring Boot 활성화 계약을 탐색할 수 있는 영어·한국어 심층 HTML 해설서 두 개를 제공한다.
 
-**Architecture:** 두 구조화 JSON이 시나리오, 로케일 문구, 시퀀스, 책임 행렬, 코드 근거의 단일 원본이 된다. 순수 Node.js 생성기가 기존 매뉴얼 SVG를 SHA-256으로 결속해 독립 HTML을 생성하고, validator와 Chrome DevTools Protocol 기반 capture 도구가 로케일·테마·접근성·결정적 PNG 계약을 검증한다.
+**아키텍처:** 두 구조화 JSON이 시나리오, 로케일 문구, 시퀀스, 책임 행렬, 코드 근거의 단일 원본이 된다. 순수 Node.js 생성기가 기존 매뉴얼 SVG를 SHA-256으로 결속해 독립 HTML을 생성하고, validator와 Chrome DevTools Protocol 기반 capture 도구가 로케일·테마·접근성·결정적 PNG 계약을 검증한다.
 
-**Tech Stack:** Node.js 26 built-in modules, `node:test`, standalone HTML/CSS/JavaScript, JSON, existing manual SVG/PNG assets, local Google Chrome headless/CDP, Markdown.
+**기술 스택:** Node.js 26 built-in modules, `node:test`, standalone HTML/CSS/JavaScript, JSON, existing manual SVG/PNG assets, local Google Chrome headless/CDP, Markdown.
 
-**Execution mode:** 사용자의 기존 “혼자 작업” 지시에 따라 subagent를 사용하지 않고 이 세션에서 `executing-plans`로 순차 실행한다. 트랜잭션 해설서를 실제 브라우저로 보여 주고 사용자 시각 승인을 받은 뒤에만 Spring Boot 해설서 구현을 시작한다.
+**실행 모드:** 사용자의 기존 “혼자 작업” 지시에 따라 subagent를 사용하지 않고 이 세션에서 `executing-plans`로 순차 실행한다. 트랜잭션 해설서를 실제 브라우저로 보여 주고 사용자 시각 승인을 받은 뒤에만 Spring Boot 해설서 구현을 시작한다.
 
 ---
 
@@ -43,52 +43,51 @@ spring-boot-exposed-activation
 ## 워크플로 gate 상태
 
 - [x] **WF-01 — Type E로 분류**
-  - **Action:** production Kotlin 동작을 바꾸지 않는 문서·시각화 유지보수로 분류한다.
-  - **Evidence:** Issue #410 exclusions, 현재 diff, `bluetape-maintenance` route.
-  - **Failure:** Kotlin 또는 public API 변경이 필요해지면 Type A/B/C로 재분류한다.
+  - **작업:** production Kotlin 동작을 바꾸지 않는 문서·시각화 유지보수로 분류한다.
+  - **증거:** Issue #410 exclusions, 현재 diff, `bluetape-maintenance` route.
+  - **실패:** Kotlin 또는 public API 변경이 필요해지면 Type A/B/C로 재분류한다.
 - [x] **WF-02 — 첫 구체 계획 고정**
-  - **Action:** JPA 대비 서사, 기존 Diagram 재사용, 사용자 HTML 검토 순서를 설계서에 기록한다.
-  - **Evidence:** `docs/superpowers/specs/2026-07-30-issue-410-exposed-visual-companions-design.md`.
-  - **Failure:** 승인된 설계 범위를 벗어나는 구현을 시작하지 않는다.
+  - **작업:** JPA 대비 서사, 기존 Diagram 재사용, 사용자 HTML 검토 순서를 설계서에 기록한다.
+  - **증거:** `docs/superpowers/specs/2026-07-30-issue-410-exposed-visual-companions-design.md`.
+  - **실패:** 승인된 설계 범위를 벗어나는 구현을 시작하지 않는다.
 - [x] **WF-03 — 첫 계획 승인**
-  - **Action:** 사용자에게 재작성 설계를 제시하고 명시적 승인을 받는다.
-  - **Evidence:** 이 계획 직전 사용자의 `승인`.
-  - **Failure:** 승인 없이는 구현 mutation을 진행하지 않는다.
+  - **작업:** 사용자에게 재작성 설계를 제시하고 명시적 승인을 받는다.
+  - **증거:** 이 계획 직전 사용자의 `승인`.
+  - **실패:** 승인 없이는 구현 mutation을 진행하지 않는다.
 - [x] **WF-04/WF-04A — 실행 계약과 receipt 초기화**
-  - **Action:** workflow, maintenance, diagram, writing-plans 계약을 읽고 현재 세션에 Type E run을 만든다.
-  - **Evidence:** run `20260730T143307Z-1f6892bf`, lane `inline-execution`, topology `visual-companion-plan`.
-  - **Failure:** mutation check가 실패하면 해당 경로를 수정하지 않는다.
-- [x] **CG-01~CG-05/E-01~E-03/DIA-01~DIA-02 — preflight**
-  - **Action:** authority, live Issue/PR, GNO history, isolated worktree, locale 정책, 기존 6개 자료와 Diagram/source를 확인한다.
-  - **Evidence:** branch `docs/issue-410-visual-companions`, local head `3431ed1c`, remote PR head `ca21e5c6`, loaded `common.md`, `architecture.md`, `sequence.md`, `workflow.md`.
-  - **Failure:** unrelated user work 또는 source contract 충돌이 발견되면 보존하고 중단한다.
+  - **작업:** workflow, maintenance, diagram, writing-plans 계약을 읽고 현재 세션에 Type E run을 만든다.
+  - **증거:** run `20260730T143307Z-1f6892bf`, lane `inline-execution`, topology `visual-companion-plan`.
+  - **실패:** mutation check가 실패하면 해당 경로를 수정하지 않는다.
+- [x] **CG-01~CG-05/E-01~E-03/DIA-01~DIA-02 — 사전 점검**
+  - **작업:** authority, live Issue/PR, GNO history, isolated worktree, locale 정책, 기존 6개 자료와 Diagram/source를 확인한다.
+  - **증거:** branch `docs/issue-410-visual-companions`, local head `3431ed1c`, remote PR head `ca21e5c6`, loaded `common.md`, `architecture.md`, `sequence.md`, `workflow.md`.
+  - **실패:** unrelated user work 또는 source contract 충돌이 발견되면 보존하고 중단한다.
 - [ ] **CG-06~CG-10/E-04~E-06/DIA-03~DIA-08 — 구현과 pre-PR 검증**
-  - **Action:** 아래 Task 1~9를 순서대로 완료하고 P0/P1을 0으로 수렴한다.
-  - **Evidence:** 생성물, 테스트, PNG ledger, 사용자 시각 승인, exact local head.
-  - **Failure:** 실패한 gate 이후 작업을 진행하지 않고 해당 Task로 돌아간다.
+  - **작업:** 아래 Task 1~9를 순서대로 완료하고 P0/P1을 0으로 수렴한다.
+  - **증거:** 생성물, 테스트, PNG ledger, 사용자 시각 승인, exact local head.
+  - **실패:** 실패한 gate 이후 작업을 진행하지 않고 해당 Task로 돌아간다.
 - [ ] **CG-11~CG-15/E-07 — PR 갱신과 merge-ready**
-  - **Action:** Task 10에서 exact head push, PR body/metadata/CI/review를 갱신한다.
-  - **Evidence:** local=remote=PR head, green checks, current reviews/threads, 최종 `## DoD Status`.
-  - **Failure:** merge-ready 보고를 하지 않는다.
-- [ ] **CG-16~CG-18/E-08 — merge, sync, cleanup**
-  - **Action:** merge-ready 보고 뒤 exact-head에 대한 새 사용자 승인을 받아 merge·sync·cleanup한다.
-  - **Evidence:** 승인 메시지, merge SHA, local/upstream SHA, 보수적 cleanup 결과.
-  - **Failure:** 이전 승인으로 merge하지 않으며 CG-16에서 `PENDING`으로 멈춘다.
+  - **작업:** Task 10에서 exact head push, PR body/metadata/CI/review를 갱신한다.
+  - **증거:** local=remote=PR head, green checks, current reviews/threads, 최종 `## DoD Status`.
+  - **실패:** merge-ready 보고를 하지 않는다.
+- [ ] **CG-16~CG-18/E-08 — 병합, 동기화, 정리**
+  - **작업:** merge-ready 보고 뒤 exact-head에 대한 새 사용자 승인을 받아 merge·sync·cleanup한다.
+  - **증거:** 승인 메시지, merge SHA, local/upstream SHA, 보수적 cleanup 결과.
+  - **실패:** 이전 승인으로 merge하지 않으며 CG-16에서 `PENDING`으로 멈춘다.
 
 ---
+### 작업 1: 생성형 contract를 실패 테스트로 잠근다
 
-### Task 1: 생성형 contract를 실패 테스트로 잠근다
+**파일:**
 
-**Files:**
+- 생성: `tests/visual-companions/build.test.mjs`
+- 생성: `tests/visual-companions/capture.test.mjs`
+- 수정: `tests/visual-companions/validator.test.mjs`
+- 테스트: `tests/visual-companions/build.test.mjs`
+- 테스트: `tests/visual-companions/capture.test.mjs`
+- 테스트: `tests/visual-companions/validator.test.mjs`
 
-- Create: `tests/visual-companions/build.test.mjs`
-- Create: `tests/visual-companions/capture.test.mjs`
-- Modify: `tests/visual-companions/validator.test.mjs`
-- Test: `tests/visual-companions/build.test.mjs`
-- Test: `tests/visual-companions/capture.test.mjs`
-- Test: `tests/visual-companions/validator.test.mjs`
-
-- [x] **Step 1: 모델과 생성기 API에 대한 실패 테스트를 작성한다**
+- [x] **단계 1: 모델과 생성기 API에 대한 실패 테스트를 작성한다**
 
 `tests/visual-companions/build.test.mjs`에서 다음 contract를 고정한다.
 
@@ -127,7 +126,7 @@ test('build check reports stale or missing generated files', async () => {
 });
 ```
 
-- [x] **Step 2: 캡처 matrix 실패 테스트를 작성한다**
+- [x] **단계 2: 캡처 matrix 실패 테스트를 작성한다**
 
 ```js
 import assert from 'node:assert/strict';
@@ -155,7 +154,7 @@ test('chrome runs without background network or animation drift', () => {
 });
 ```
 
-- [x] **Step 3: validator 거부 테스트를 새 구조에 맞게 바꾼다**
+- [x] **단계 3: validator 거부 테스트를 새 구조에 맞게 변경한다**
 
 다음 실패를 각각 독립 fixture로 검증한다.
 
@@ -175,9 +174,9 @@ missing architecture lightbox control
 missing sequence participant, lifeline, activation, numbered message, or alt frame
 ```
 
-- [x] **Step 4: 세 테스트를 실행해 RED를 확인한다**
+- [x] **단계 4: 세 테스트를 실행해 RED를 확인한다**
 
-Run:
+실행:
 
 ```bash
 node --test \
@@ -186,31 +185,28 @@ node --test \
   tests/visual-companions/validator.test.mjs
 ```
 
-Expected: `ERR_MODULE_NOT_FOUND` for `build.mjs`, `model.mjs`, or `capture.mjs`; 기존 validator 테스트는 새 manifest/data contract가 없어 실패한다.
+예상 결과: `build.mjs`, `model.mjs` 또는 `capture.mjs`에 대해 `ERR_MODULE_NOT_FOUND`가 발생한다. 기존 validator 테스트는 새로운 manifest/data contract가 없어 실패한다.
 
-- [x] **Step 5: RED contract를 커밋한다**
+- [x] **단계 5: RED contract를 커밋한다**
 
 ```bash
 git add tests/visual-companions
 git commit
 ```
 
-Commit intent: `Lock the depth and determinism contract before rebuilding the companions`
+커밋 의도: `Lock the depth and determinism contract before rebuilding the companions`
+### 작업 2: 구조화 모델과 결정적 HTML 생성기를 구현한다
 
----
+**파일:**
 
-### Task 2: 구조화 모델과 결정적 HTML 생성기를 구현한다
+- 생성: `scripts/visual-companions/lib/model.mjs`
+- 생성: `scripts/visual-companions/lib/render.mjs`
+- 생성: `scripts/visual-companions/build.mjs`
+- 생성: `docs/visual-companions/data/jdbc-r2dbc-transaction-boundaries.json`
+- 생성: `docs/visual-companions/data/spring-boot-exposed-activation.json`
+- 수정: `tests/visual-companions/build.test.mjs`
 
-**Files:**
-
-- Create: `scripts/visual-companions/lib/model.mjs`
-- Create: `scripts/visual-companions/lib/render.mjs`
-- Create: `scripts/visual-companions/build.mjs`
-- Create: `docs/visual-companions/data/jdbc-r2dbc-transaction-boundaries.json`
-- Create: `docs/visual-companions/data/spring-boot-exposed-activation.json`
-- Modify: `tests/visual-companions/build.test.mjs`
-
-- [x] **Step 1: 모델 스키마의 최소 공통 shape를 구현한다**
+- [x] **1단계: 모델 스키마의 최소 공통 shape를 구현한다**
 
 `model.mjs`가 다음 API를 export한다.
 
@@ -312,7 +308,7 @@ export function structuralFingerprint(model) {
 
 `validateCompanionModel`은 kebab-case ID, 정확한 `en`/`ko`, 중복 없는 section/scenario/source ID, 존재하는 architecture/source/test 경로를 검사한다.
 
-- [x] **Step 2: Architecture Diagram을 해시와 data URI로 고정한다**
+- [x] **2단계: Architecture Diagram을 해시와 data URI로 고정한다**
 
 `loadArchitectureAsset`은 다음 값을 반환한다.
 
@@ -328,7 +324,7 @@ export function structuralFingerprint(model) {
 
 HTML은 외부 파일을 runtime에 읽지 않고 `dataUri`를 `<img>`의 `src`로 사용한다. 구조화 모델의 `hotspots`는 percentage 좌표를 가진 native `<button>` overlay로 렌더링한다.
 
-- [x] **Step 3: 공통 renderer를 구현한다**
+- [x] **3단계: 공통 renderer를 구현한다**
 
 `render.mjs`가 다음 API를 export한다.
 
@@ -441,7 +437,7 @@ const sectionIds = [
 
 Spring Boot 모델은 `configuration-recipes`와 `failure-diagnostics`를 `tradeoffs` 앞에 추가한다. 공통 shell은 locale 전환 링크, `auto/light/dark` theme 선택, `<main>`, skip link, visible focus, `prefers-reduced-motion`, `aria-live="polite"` 상태 요약을 포함한다.
 
-- [x] **Step 4: builder와 `--check`를 구현한다**
+- [x] **4단계: builder와 `--check`를 구현한다**
 
 ```js
 export async function buildRepository({ root, check = false }) {
@@ -464,9 +460,9 @@ export async function buildRepository({ root, check = false }) {
 
 `writeOrCheckOutputs`은 LF와 마지막 newline을 고정한다. `--check`에서는 어떤 파일도 쓰지 않고 첫 차이 경로와 함께 실패한다.
 
-- [x] **Step 5: build 테스트를 GREEN으로 만든다**
+- [x] **5단계: build 테스트를 GREEN으로 만든다**
 
-Run:
+실행:
 
 ```bash
 node scripts/visual-companions/build.mjs
@@ -474,29 +470,26 @@ node scripts/visual-companions/build.mjs --check
 node --test tests/visual-companions/build.test.mjs
 ```
 
-Expected: generated file 4개, `--check` exit 0, build tests PASS.
+예상 결과: 생성된 파일 4개, `--check` exit 0, build tests PASS.
 
-- [x] **Step 6: 모델·builder를 커밋한다**
+- [x] **6단계: 모델·builder를 커밋한다**
 
 ```bash
 git add docs/visual-companions/data scripts/visual-companions/lib scripts/visual-companions/build.mjs tests/visual-companions/build.test.mjs
 git commit
 ```
 
-Commit intent: `Make one source of truth govern every visual state and locale`
+커밋 의도: `Make one source of truth govern every visual state and locale`
+### 작업 3: validator와 캡처 도구를 새 contract로 강화한다
 
----
+**파일:**
 
-### Task 3: validator와 캡처 도구를 새 contract로 강화한다
+- 수정: `scripts/visual-companions/validate.mjs`
+- 생성: `scripts/visual-companions/capture.mjs`
+- 수정: `tests/visual-companions/validator.test.mjs`
+- 수정: `tests/visual-companions/capture.test.mjs`
 
-**Files:**
-
-- Modify: `scripts/visual-companions/validate.mjs`
-- Create: `scripts/visual-companions/capture.mjs`
-- Modify: `tests/visual-companions/validator.test.mjs`
-- Modify: `tests/visual-companions/capture.test.mjs`
-
-- [x] **Step 1: validator를 manifest→model→generated artifact 순서로 재구성한다**
+- [x] **1단계: validator를 manifest→model→generated artifact 순서로 재구성한다**
 
 `validateRepository`는 다음 순서로 검사한다.
 
@@ -514,7 +507,7 @@ const checks = [
 
 기존 path containment, external dependency, reciprocal locale, section/control fingerprint 검사는 유지한다. 새 검사는 model scenario ID, source ledger, architecture digest, sequence visual signal, `window.__VISUAL_COMPANION_READY__ === true`를 추가한다.
 
-- [x] **Step 2: Node built-in WebSocket을 사용하는 CDP client를 구현한다**
+- [x] **2단계: Node built-in WebSocket을 사용하는 CDP client를 구현한다**
 
 `capture.mjs`가 다음 API를 export한다.
 
@@ -598,7 +591,7 @@ Page.getLayoutMetrics
 Page.captureScreenshot(full content clip)
 ```
 
-- [x] **Step 3: 같은 입력을 두 번 캡처해 hash equality를 검사한다**
+- [x] **3단계: 동일한 입력을 두 번 캡처해 hash equality를 검사한다**
 
 각 target을 임시 경로에 두 번 캡처하고 다음을 비교한다.
 
@@ -610,9 +603,9 @@ assert.equal(sha256(first.png), sha256(second.png));
 
 일치할 때만 `docs/visual-companions/assets/<target>`에 쓴다. `--check`는 기존 PNG와 새 PNG의 SHA-256이 다르면 실패한다.
 
-- [x] **Step 4: validator와 capture 단위 테스트를 GREEN으로 만든다**
+- [x] **4단계: validator와 capture 단위 테스트를 GREEN으로 만든다**
 
-Run:
+실행:
 
 ```bash
 node --test \
@@ -620,33 +613,30 @@ node --test \
   tests/visual-companions/capture.test.mjs
 ```
 
-Expected: fixture rejection diagnostics를 포함해 PASS.
+예상 결과: fixture rejection diagnostics를 포함해 PASS.
 
-- [x] **Step 5: validator와 capture 도구를 커밋한다**
+- [x] **5단계: validator와 capture 도구를 커밋한다**
 
 ```bash
 git add scripts/visual-companions tests/visual-companions
 git commit
 ```
 
-Commit intent: `Fail publication when visuals drift from source or replay`
+커밋 의도: `Fail publication when visuals drift from source or replay`
+### 작업 4: 트랜잭션 소유권 심층 해설서를 구현한다
 
----
+**파일:**
 
-### Task 4: 트랜잭션 소유권 심층 해설서를 구현한다
+- 수정: `docs/visual-companions/data/jdbc-r2dbc-transaction-boundaries.json`
+- 생성: `docs/visual-companions/en/jdbc-r2dbc-transaction-boundaries.html`
+- 생성: `docs/visual-companions/ko/jdbc-r2dbc-transaction-boundaries.html`
+- 생성: `docs/visual-companions/assets/jdbc-r2dbc-transaction-boundaries.{en,ko}.{light,dark}.png`
+- 삭제: `docs/visual-companions/jdbc-r2dbc-transaction-boundaries.html`
+- 삭제: `docs/visual-companions/jdbc-r2dbc-transaction-boundaries.ko.html`
+- 테스트: `tests/visual-companions/build.test.mjs`
+- 테스트: `tests/visual-companions/validator.test.mjs`
 
-**Files:**
-
-- Modify: `docs/visual-companions/data/jdbc-r2dbc-transaction-boundaries.json`
-- Generate: `docs/visual-companions/en/jdbc-r2dbc-transaction-boundaries.html`
-- Generate: `docs/visual-companions/ko/jdbc-r2dbc-transaction-boundaries.html`
-- Generate: `docs/visual-companions/assets/jdbc-r2dbc-transaction-boundaries.{en,ko}.{light,dark}.png`
-- Delete: `docs/visual-companions/jdbc-r2dbc-transaction-boundaries.html`
-- Delete: `docs/visual-companions/jdbc-r2dbc-transaction-boundaries.ko.html`
-- Test: `tests/visual-companions/build.test.mjs`
-- Test: `tests/visual-companions/validator.test.mjs`
-
-- [x] **Step 1: 6개 시나리오와 정확한 source ledger를 채운다**
+- [x] **1단계: 6개 시나리오와 정확한 source ledger를 채운다**
 
 시나리오 ID와 결과를 다음으로 고정한다.
 
@@ -674,7 +664,7 @@ docs/manual/en/modules/bluetape4k-exposed-r2dbc/coroutine-transactions.md
 docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md
 ```
 
-- [x] **Step 2: JPA 대비 사고방식과 실제 코드 mapping을 채운다**
+- [x] **2단계: JPA 대비 사고방식과 실제 코드 mapping을 채운다**
 
 다음 내용을 영어와 한국어에 의미 동등하게 제공한다.
 
@@ -689,11 +679,11 @@ Exposed cost: explicit query, mapping, write, and boundary code
 
 “Exposed는 ORM이 아니다”, “JPA 저장소가 업무 트랜잭션을 소유한다”, “Exposed는 schema 도구가 없다”는 문구는 금지한다.
 
-- [x] **Step 3: 기존 Architecture Diagram을 기본 주인공으로 배치한다**
+- [x] **3단계: 기존 Architecture Diagram을 기본 주인공으로 배치한다**
 
 `transaction-ownership.svg`를 data URI로 내장하고, JDBC/R2DBC lane을 선택하는 hotspot과 확대 dialog를 제공한다. dialog는 native `<dialog>`, 열기 `<button>`, 닫기 `<button>`, `Escape`를 사용한다.
 
-- [x] **Step 4: 시나리오에 따라 정식 sequence view를 갱신한다**
+- [x] **4단계: 시나리오에 따라 정식 sequence view를 갱신한다**
 
 모든 시나리오는 다음 요소를 포함한다.
 
@@ -708,7 +698,7 @@ commit or rollback terminal result
 
 색만으로 결과를 구분하지 않고 `CALL`, `RETURN`, `COMMIT`, `ROLLBACK`, `BOUNDARY ERROR` label을 함께 표시한다.
 
-- [x] **Step 5: 책임 행렬, trade-off, 선택 가이드, 검증 원장을 채운다**
+- [x] **5단계: 책임 행렬, trade-off, 선택 가이드, 검증 원장을 채운다**
 
 문서가 다음 질문에 모두 답하는지 build test로 검사한다.
 
@@ -723,9 +713,9 @@ which source and test prove the claim
 when to choose or avoid each approach
 ```
 
-- [x] **Step 6: 생성·정적 검증을 실행한다**
+- [x] **6단계: 생성·정적 검증을 실행한다**
 
-Run:
+실행:
 
 ```bash
 node scripts/visual-companions/build.mjs
@@ -734,39 +724,36 @@ node scripts/visual-companions/validate.mjs
 node --test tests/visual-companions/build.test.mjs tests/visual-companions/validator.test.mjs
 ```
 
-Expected: transaction pair와 source contract PASS.
+예상 결과: transaction pair와 source contract PASS.
 
-- [x] **Step 7: 트랜잭션 해설서를 커밋한다**
+- [x] **7단계: 트랜잭션 해설서를 커밋한다**
 
 ```bash
 git add docs/visual-companions scripts/visual-companions tests/visual-companions
 git commit
 ```
 
-Commit intent: `Teach transaction ownership through the JPA migration mental model`
+커밋 의도: `Teach transaction ownership through the JPA migration mental model`
+### 작업 5: 트랜잭션 HTML을 브라우저로 검증하고 사용자에게 보여 준다
 
----
+**파일:**
 
-### Task 5: 트랜잭션 HTML을 브라우저로 검증하고 사용자에게 보여 준다
+- 검증: `docs/visual-companions/en/jdbc-r2dbc-transaction-boundaries.html`
+- 검증: `docs/visual-companions/ko/jdbc-r2dbc-transaction-boundaries.html`
+- 생성: `docs/visual-companions/assets/jdbc-r2dbc-transaction-boundaries.*.png`
 
-**Files:**
+- [x] **1단계: 결정적 fallback matrix를 두 번 캡처한다**
 
-- Verify: `docs/visual-companions/en/jdbc-r2dbc-transaction-boundaries.html`
-- Verify: `docs/visual-companions/ko/jdbc-r2dbc-transaction-boundaries.html`
-- Generate: `docs/visual-companions/assets/jdbc-r2dbc-transaction-boundaries.*.png`
-
-- [x] **Step 1: 결정적 fallback matrix를 두 번 캡처한다**
-
-Run:
+실행:
 
 ```bash
 node scripts/visual-companions/capture.mjs jdbc-r2dbc-transaction-boundaries
 node scripts/visual-companions/capture.mjs jdbc-r2dbc-transaction-boundaries --check
 ```
 
-Expected: 4개 PNG, 각 반복 capture dimensions/hash equality PASS.
+예상 결과: PNG 4개, 각 반복 캡처의 dimensions/hash equality PASS.
 
-- [x] **Step 2: desktop/narrow, keyboard, reduced motion, console을 검사한다**
+- [x] **2단계: desktop/narrow, keyboard, reduced motion, console을 검사한다**
 
 검사 matrix:
 
@@ -782,7 +769,7 @@ failed requests = 0
 page horizontal overflow = 0
 ```
 
-- [x] **Step 3: full-size PNG를 직접 검사한다**
+- [x] **3단계: full-size PNG를 직접 검사한다**
 
 다음 4개를 원본 크기로 열어 typography, sequence label, architecture readability, clipping, whitespace를 확인한다.
 
@@ -793,9 +780,9 @@ docs/visual-companions/assets/jdbc-r2dbc-transaction-boundaries.ko.light.png
 docs/visual-companions/assets/jdbc-r2dbc-transaction-boundaries.ko.dark.png
 ```
 
-- [x] **Step 4: 로컬 HTTP 서버에서 실제 한국어 HTML을 사용자 브라우저로 연다**
+- [x] **4단계: 로컬 HTTP 서버에서 실제 한국어 HTML을 사용자 브라우저로 연다**
 
-Run:
+실행:
 
 ```bash
 python3 -m http.server 4173 --bind 127.0.0.1
@@ -804,26 +791,23 @@ open http://127.0.0.1:4173/docs/visual-companions/ko/jdbc-r2dbc-transaction-boun
 
 사용자가 scenario, theme, Diagram 확대, keyboard 동작을 직접 확인할 때까지 Spring Boot 해설서 구현을 시작하지 않는다.
 
-- [ ] **Step 5: 사용자 피드백을 반영하고 시각 승인을 기록한다**
+- [ ] **5단계: 사용자 피드백을 반영하고 시각 승인을 기록한다**
 
-Expected evidence: 사용자의 명시적 승인 메시지와 승인된 exact local commit SHA.
+예상 증거: 사용자의 명시적 승인 메시지와 승인된 exact local commit SHA.
+### 작업 6: Spring Boot 활성화 심층 해설서를 구현한다
 
----
+**선행 조건:** Task 5 사용자 시각 승인 PASS.
 
-### Task 6: Spring Boot 활성화 심층 해설서를 구현한다
+**파일:**
 
-**Prerequisite:** Task 5 사용자 시각 승인 PASS.
+- 수정: `docs/visual-companions/data/spring-boot-exposed-activation.json`
+- 생성: `docs/visual-companions/en/spring-boot-exposed-activation.html`
+- 생성: `docs/visual-companions/ko/spring-boot-exposed-activation.html`
+- 생성: `docs/visual-companions/assets/spring-boot-exposed-activation.{en,ko}.{light,dark}.png`
+- 삭제: `docs/visual-companions/spring-boot-exposed-activation.html`
+- 삭제: `docs/visual-companions/spring-boot-exposed-activation.ko.html`
 
-**Files:**
-
-- Modify: `docs/visual-companions/data/spring-boot-exposed-activation.json`
-- Generate: `docs/visual-companions/en/spring-boot-exposed-activation.html`
-- Generate: `docs/visual-companions/ko/spring-boot-exposed-activation.html`
-- Generate: `docs/visual-companions/assets/spring-boot-exposed-activation.{en,ko}.{light,dark}.png`
-- Delete: `docs/visual-companions/spring-boot-exposed-activation.html`
-- Delete: `docs/visual-companions/spring-boot-exposed-activation.ko.html`
-
-- [ ] **Step 1: 7개 구성 preset과 정확한 결과를 채운다**
+- [ ] **단계 1: 7개 구성 preset과 정확한 결과를 채운다**
 
 ```json
 [
@@ -837,7 +821,7 @@ Expected evidence: 사용자의 명시적 승인 메시지와 승인된 exact lo
 ]
 ```
 
-- [ ] **Step 2: 실제 auto-configuration source ledger를 채운다**
+- [ ] **단계 2: 실제 auto-configuration source ledger를 채운다**
 
 ```text
 spring-boot/jdbc/src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/config/ExposedSpringDataAutoConfiguration.kt
@@ -852,11 +836,11 @@ docs/manual/en/modules/bluetape4k-exposed-spring-boot-jdbc.md
 docs/manual/en/modules/bluetape4k-exposed-spring-boot-r2dbc.md
 ```
 
-- [ ] **Step 3: JDBC/R2DBC Architecture Diagram을 비교·확대 가능하게 배치한다**
+- [ ] **단계 3: JDBC/R2DBC Architecture Diagram을 비교·확대 가능하게 배치한다**
 
-큰 화면에서는 두 Diagram을 나란히, 작은 화면에서는 native tab으로 전환한다. hotspot은 `DataSource`, `springTransactionManager`, `R2dbcDatabase`, mapping context, registrar, factory의 책임 설명을 연다.
+큰 화면에서는 두 Diagram을 나란히 배치하고, 작은 화면에서는 native tab으로 전환한다. hotspot은 `DataSource`, `springTransactionManager`, `R2dbcDatabase`, mapping context, registrar, factory의 책임 설명을 연다.
 
-- [ ] **Step 4: 조건 sequence와 bean ownership matrix를 구현한다**
+- [ ] **단계 4: 조건 sequence와 bean ownership matrix를 구현한다**
 
 JDBC와 R2DBC의 차이를 다음 invariant로 고정한다.
 
@@ -869,13 +853,13 @@ JDBC/R2DBC: registrar/factory registers repository proxies when explicitly enabl
 R2DBC suspend methods do not gain Spring reactive @Transactional semantics from registration alone
 ```
 
-- [ ] **Step 5: 구성 recipe와 실패 진단을 추가한다**
+- [ ] **단계 5: 구성 recipe와 실패 진단을 추가한다**
 
 각 recipe는 제공해야 할 빈, 생성되는 빈, 생성되지 않는 빈, verification command를 포함한다. 각 failure는 관찰 증상, condition/log 확인 지점, source/test link를 포함한다.
 
-- [ ] **Step 6: 생성·정적 검증을 실행한다**
+- [ ] **단계 6: 생성·정적 검증을 실행한다**
 
-Run:
+실행:
 
 ```bash
 node scripts/visual-companions/build.mjs
@@ -884,28 +868,25 @@ node scripts/visual-companions/validate.mjs
 node --test tests/visual-companions/build.test.mjs tests/visual-companions/validator.test.mjs
 ```
 
-Expected: activation pair와 source contract PASS.
+예상 결과: activation pair와 source contract PASS.
 
-- [ ] **Step 7: 활성화 해설서를 커밋한다**
+- [ ] **단계 7: 활성화 해설서를 커밋한다**
 
 ```bash
 git add docs/visual-companions scripts/visual-companions tests/visual-companions
 git commit
 ```
 
-Commit intent: `Make Spring Boot activation and ownership explicit across both stacks`
-
----
-
+커밋 의도: `Make Spring Boot activation and ownership explicit across both stacks`
 ### Task 7: Spring Boot HTML을 브라우저로 검증하고 사용자에게 보여 준다
 
-**Prerequisite:** Task 6 PASS.
+**사전 조건:** Task 6 PASS.
 
-**Files:**
+**파일:**
 
-- Verify: `docs/visual-companions/en/spring-boot-exposed-activation.html`
-- Verify: `docs/visual-companions/ko/spring-boot-exposed-activation.html`
-- Generate: `docs/visual-companions/assets/spring-boot-exposed-activation.*.png`
+- 검증: `docs/visual-companions/en/spring-boot-exposed-activation.html`
+- 검증: `docs/visual-companions/ko/spring-boot-exposed-activation.html`
+- 생성: `docs/visual-companions/assets/spring-boot-exposed-activation.*.png`
 
 - [ ] **Step 1: 결정적 fallback matrix를 생성·재검사한다**
 
@@ -914,7 +895,7 @@ node scripts/visual-companions/capture.mjs spring-boot-exposed-activation
 node scripts/visual-companions/capture.mjs spring-boot-exposed-activation --check
 ```
 
-Expected: 4개 PNG와 paired SHA-256 equality PASS.
+예상 결과: 4개 PNG와 paired SHA-256 equality PASS.
 
 - [ ] **Step 2: 7개 preset과 접근성 matrix를 검사한다**
 
@@ -942,22 +923,22 @@ open http://127.0.0.1:4173/docs/visual-companions/ko/spring-boot-exposed-activat
 
 - [ ] **Step 5: 사용자 피드백을 반영하고 시각 승인을 기록한다**
 
-Expected evidence: 사용자의 명시적 승인 메시지와 승인된 exact local commit SHA.
+예상 증거: 사용자의 명시적 승인 메시지와 승인된 exact local commit SHA.
 
 ---
 
 ### Task 8: manifest와 영어·한국어 매뉴얼 연결을 새 생성물에 맞춘다
 
-**Prerequisite:** Task 5와 Task 7 사용자 시각 승인 PASS.
+**사전 조건:** Task 5와 Task 7 사용자 시각 승인 PASS.
 
-**Files:**
+**파일:**
 
-- Modify: `docs/visual-companions/manifest.json`
-- Modify: `docs/manual/en/guides/transaction-boundaries.md`
-- Modify: `docs/manual/ko/guides/transaction-boundaries.md`
-- Modify: `docs/manual/en/guides/spring-and-ktor.md`
-- Modify: `docs/manual/ko/guides/spring-and-ktor.md`
-- Modify: `tests/visual-companions/validator.test.mjs`
+- 수정: `docs/visual-companions/manifest.json`
+- 수정: `docs/manual/en/guides/transaction-boundaries.md`
+- 수정: `docs/manual/ko/guides/transaction-boundaries.md`
+- 수정: `docs/manual/en/guides/spring-and-ktor.md`
+- 수정: `docs/manual/ko/guides/spring-and-ktor.md`
+- 수정: `tests/visual-companions/validator.test.mjs`
 
 - [ ] **Step 1: manifest public ID와 route를 유지하며 새 파일·hash를 기록한다**
 
@@ -996,7 +977,7 @@ rg -n 'jdbc-r2dbc-transaction-boundaries|spring-boot-exposed-activation' \
   docs/manual/en/guides docs/manual/ko/guides
 ```
 
-Expected: 각 locale에 정확히 두 public route, 잘못된 cross-locale route 0.
+예상 결과: 각 locale에 정확히 두 public route, 잘못된 cross-locale route 0.
 
 - [ ] **Step 4: manifest/manual 통합을 커밋한다**
 
@@ -1005,17 +986,14 @@ git add docs/visual-companions/manifest.json docs/manual tests/visual-companions
 git commit
 ```
 
-Commit intent: `Keep static diagrams and deep companions on one publication contract`
+커밋 의도: `Keep static diagrams and deep companions on one publication contract`
+### 작업 9: 전체 검증과 독립적인 pre-PR review를 수렴한다
 
----
+**파일:**
 
-### Task 9: 전체 검증과 독립적인 pre-PR review를 수렴한다
+- 검증: `origin/develop` 이후 변경된 모든 파일
 
-**Files:**
-
-- Verify: all files changed from `origin/develop`
-
-- [ ] **Step 1: 결정적 생성과 캡처를 다시 검사한다**
+- [ ] **1단계: 결정적 생성과 캡처를 다시 검사한다**
 
 ```bash
 node scripts/visual-companions/build.mjs --check
@@ -1023,14 +1001,14 @@ node scripts/visual-companions/capture.mjs jdbc-r2dbc-transaction-boundaries --c
 node scripts/visual-companions/capture.mjs spring-boot-exposed-activation --check
 ```
 
-- [ ] **Step 2: 전체 Node contract를 실행한다**
+- [ ] **2단계: 전체 Node contract를 실행한다**
 
 ```bash
 node --test tests/visual-companions/*.test.mjs
 node scripts/visual-companions/validate.mjs
 ```
 
-- [ ] **Step 3: 문서·링크·baseline debt를 검사한다**
+- [ ] **3단계: 문서·링크·baseline debt를 검사한다**
 
 ```bash
 ./gradlew help --no-daemon
@@ -1038,9 +1016,9 @@ node scripts/visual-companions/validate.mjs
 ruby scripts/manual/validate_manuals.rb build/manual/module-inventory-1.11.0.json docs/manual/manifest.yaml
 ```
 
-Expected: Gradle help와 inventory export PASS. manual validator는 Issue #411의 기존 두 omission만 보고하며 새 오류는 0.
+예상 결과: Gradle help와 inventory export는 PASS. manual validator는 Issue #411의 기존 두 omission만 보고하며 새 오류는 0.
 
-- [ ] **Step 4: Diagram과 diff hygiene를 검사한다**
+- [ ] **4단계: Diagram과 diff hygiene를 검사한다**
 
 ```bash
 xmllint --noout \
@@ -1052,7 +1030,7 @@ git diff --check origin/develop...HEAD
 
 기존 SVG 자체를 변경하지 않으므로 CairoSVG 재생성은 hash/기존 PNG parity 검사로 N/A 처리한다. HTML fallback PNG 네 쌍은 Task 5와 7의 결정적 Chromium evidence를 사용한다.
 
-- [ ] **Step 5: 최종 diff를 7개 관점으로 검토한다**
+- [ ] **5단계: 최종 diff를 7개 관점으로 검토한다**
 
 검토 관점:
 
@@ -1066,28 +1044,25 @@ deterministic generation/capture
 publication compatibility
 ```
 
-P0/P1이 있으면 수정하고 영향받은 Step 1~4를 다시 실행한다. P2/P3는 scope가 작고 재검증이 저렴한 경우만 현재 PR에서 수정한다.
+P0/P1이 있으면 수정하고 영향받은 1~4단계를 다시 실행한다. P2/P3는 scope가 작고 재검증이 저렴한 경우만 현재 PR에서 수정한다.
 
-- [ ] **Step 6: plan checkbox와 PR용 DoD evidence를 갱신하고 커밋한다**
+- [ ] **6단계: plan checkbox와 PR용 DoD evidence를 갱신하고 커밋한다**
 
 ```bash
 git add docs/superpowers/plans/2026-07-30-issue-410-exposed-visual-companions-plan.md
 git commit
 ```
 
-Commit intent: `Record the evidence required to trust the rebuilt companions`
+커밋 의도: `Record the evidence required to trust the rebuilt companions`
+### 작업 10: PR #412를 exact head로 갱신하고 merge-ready에서 멈춘다
 
----
+**사전 조건:** 작업 9 PASS, P0=0, P1=0.
 
-### Task 10: PR #412를 exact head로 갱신하고 merge-ready에서 멈춘다
+**파일:**
 
-**Prerequisite:** Task 9 PASS, P0=0, P1=0.
+- 라이브 업데이트: PR #412
 
-**Files:**
-
-- Update live: PR #412
-
-- [ ] **Step 1: local head와 authorized refs를 확인한다**
+- [ ] **단계 1: local head와 authorized refs를 확인한다**
 
 ```bash
 git status --short
@@ -1096,9 +1071,9 @@ git rev-parse HEAD
 git rev-parse origin/develop
 ```
 
-Expected: clean worktree, head branch `docs/issue-410-visual-companions`, base `develop`.
+예상 결과: clean worktree, head 브랜치 `docs/issue-410-visual-companions`, base `develop`.
 
-- [ ] **Step 2: exact head를 force 없이 push하고 remote SHA를 읽는다**
+- [ ] **단계 2: force 없이 exact head를 push하고 remote SHA를 읽는다**
 
 ```bash
 git push origin docs/issue-410-visual-companions
@@ -1106,9 +1081,9 @@ git rev-parse HEAD
 git ls-remote --heads origin docs/issue-410-visual-companions
 ```
 
-Expected: local SHA = remote branch SHA.
+예상 결과: local SHA = remote branch SHA.
 
-- [ ] **Step 3: PR body와 metadata를 새 contract로 갱신한다**
+- [ ] **단계 3: PR body와 metadata를 새 contract에 맞게 갱신한다**
 
 PR body는 영어로 작성하고 다음을 포함한다.
 
@@ -1126,9 +1101,9 @@ final heading: ## DoD Status
 
 assignee `debop`, milestone `1.12.0`, labels `documentation`과 `enhancement`를 live read-back으로 확인한다.
 
-- [ ] **Step 4: exact-head CI와 current review state를 확인한다**
+- [ ] **단계 4: exact-head CI와 current review state를 확인한다**
 
-다음이 모두 current head에 대해 PASS여야 한다.
+다음 항목이 모두 current head에 대해 PASS여야 한다.
 
 ```text
 required checks completed successfully
@@ -1139,40 +1114,37 @@ PR head equals local and remote head
 DoD final heading is exact
 ```
 
-- [ ] **Step 5: merge-ready 보고 후 새 merge 승인을 기다린다**
+- [ ] **단계 5: merge-ready를 보고한 후 새 merge 승인을 기다린다**
 
 보고에는 exact PR URL, head SHA, CI, review/thread, 두 사용자 시각 승인, checklist count를 포함한다. 이전의 설계 승인이나 구현 승인을 merge 권한으로 사용하지 않는다.
 
-Expected terminal state for this plan: `CG-16 PENDING`.
+이 계획의 예상 terminal state: `CG-16 PENDING`.
+### 작업 11: JPA/Hibernate와 Exposed 비교 아키텍처 다이어그램을 추가한다
 
----
+**맥락:** 첫 시각 검토 뒤 사용자는 Exposed 전용 아키텍처 다이어그램만으로는 JPA 대비 차이를 충분히 비교하기 어렵다고 판단했다. 사용자는 `bluetape4k-hibernate`의 실제 구조를 근거로 JPA 방식을 함께 보여 주는 설계를 승인했다.
 
-### Task 11: JPA/Hibernate와 Exposed 비교 Architecture Diagram을 추가한다
+**파일:**
 
-**Context:** 첫 시각 검토 뒤 사용자는 Exposed 전용 Architecture Diagram만으로는 JPA 대비 차이를 충분히 비교하기 어렵다고 판단했다. 사용자는 `bluetape4k-hibernate`의 실제 구조를 근거로 JPA 방식을 함께 보여 주는 설계를 승인했다.
+- 생성: `docs/manual/assets/persistence/jpa-exposed-comparison.en.svg`
+- 생성: `docs/manual/assets/persistence/jpa-exposed-comparison.en.png`
+- 생성: `docs/manual/assets/persistence/jpa-exposed-comparison.ko.svg`
+- 생성: `docs/manual/assets/persistence/jpa-exposed-comparison.ko.png`
+- 수정: `docs/manual/manifest.yaml`
+- 수정: `docs/manual/en/guides/hibernate-vs-exposed.md`
+- 수정: `docs/manual/ko/guides/hibernate-vs-exposed.md`
+- 수정: `docs/visual-companions/data/jdbc-r2dbc-transaction-boundaries.json`
+- 수정: `scripts/visual-companions/lib/model.mjs`
+- 수정: `scripts/visual-companions/lib/render.mjs`
+- 수정: `scripts/visual-companions/build.mjs`
+- 수정: `scripts/visual-companions/validate.mjs`
+- 수정: `tests/visual-companions/build.test.mjs`
+- 수정: `tests/visual-companions/validator.test.mjs`
+- 재생성: `docs/visual-companions/{en,ko}/jdbc-r2dbc-transaction-boundaries.html`
+- 재생성: `docs/visual-companions/assets/jdbc-r2dbc-transaction-boundaries.{en,ko}.{light,dark}.png`
 
-**Files:**
+- [x] **1단계: locale별 아키텍처 다이어그램 계약을 실패 테스트로 고정한다**
 
-- Create: `docs/manual/assets/persistence/jpa-exposed-comparison.en.svg`
-- Create: `docs/manual/assets/persistence/jpa-exposed-comparison.en.png`
-- Create: `docs/manual/assets/persistence/jpa-exposed-comparison.ko.svg`
-- Create: `docs/manual/assets/persistence/jpa-exposed-comparison.ko.png`
-- Modify: `docs/manual/manifest.yaml`
-- Modify: `docs/manual/en/guides/hibernate-vs-exposed.md`
-- Modify: `docs/manual/ko/guides/hibernate-vs-exposed.md`
-- Modify: `docs/visual-companions/data/jdbc-r2dbc-transaction-boundaries.json`
-- Modify: `scripts/visual-companions/lib/model.mjs`
-- Modify: `scripts/visual-companions/lib/render.mjs`
-- Modify: `scripts/visual-companions/build.mjs`
-- Modify: `scripts/visual-companions/validate.mjs`
-- Modify: `tests/visual-companions/build.test.mjs`
-- Modify: `tests/visual-companions/validator.test.mjs`
-- Regenerate: `docs/visual-companions/{en,ko}/jdbc-r2dbc-transaction-boundaries.html`
-- Regenerate: `docs/visual-companions/assets/jdbc-r2dbc-transaction-boundaries.{en,ko}.{light,dark}.png`
-
-- [x] **Step 1: locale별 Architecture Diagram 계약을 실패 테스트로 고정한다**
-
-`build.test.mjs`는 트랜잭션 모델의 Architecture Diagram ID가 다음 순서를 유지하고, 영어·한국어가 같은 두 ID를 렌더링하는지 검사한다.
+`build.test.mjs`는 트랜잭션 모델의 아키텍처 다이어그램 ID가 다음 순서를 유지하고, 영어·한국어가 같은 두 ID를 렌더링하는지 검사한다.
 
 ```text
 jpa-exposed-comparison
@@ -1181,13 +1153,13 @@ transaction-ownership
 
 `validator.test.mjs`는 locale별 SVG/PNG 경로 또는 locale별 digest가 누락되거나 바뀌면 검증이 실패하는지 확인한다.
 
-- [x] **Step 2: locale별 asset model을 구현한다**
+- [x] **2단계: locale별 자산 모델을 구현한다**
 
-`source`, `fallback`, `sha256`은 기존 단일 문자열과 `en`/`ko` 객체를 모두 허용한다. `build.mjs`와 `validate.mjs`는 현재 locale을 명시해 자산을 로드하고, 두 locale의 HTML fingerprint에는 같은 Architecture Diagram ID가 남아야 한다.
+`source`, `fallback`, `sha256`은 기존 단일 문자열과 `en`/`ko` 객체를 모두 허용한다. `build.mjs`와 `validate.mjs`는 현재 locale을 명시해 자산을 로드하고, 두 locale의 HTML fingerprint에는 같은 아키텍처 다이어그램 ID가 남아야 한다.
 
-- [x] **Step 3: 비교 Architecture Diagram 영어·한국어 SVG를 만든다**
+- [x] **3단계: 비교 아키텍처 다이어그램 영어·한국어 SVG를 만든다**
 
-두 Diagram은 같은 geometry와 의미를 유지한다.
+두 다이어그램은 같은 geometry와 의미를 유지한다.
 
 ```text
 Application service owns the use-case transaction
@@ -1203,7 +1175,7 @@ Application service owns the use-case transaction
 
 JPA/Hibernate는 Exposed의 JDBC/R2DBC와 같은 세 번째 드라이버 레인으로 표현하지 않는다. `bluetape4k-hibernate`는 확장 계층으로만 표시하며 트랜잭션 관리자나 저장소 추상화를 소유한다고 표현하지 않는다.
 
-- [x] **Step 4: CairoSVG 렌더링과 Architecture Diagram 감사를 통과한다**
+- [x] **4단계: CairoSVG 렌더링과 아키텍처 다이어그램 감사를 통과한다**
 
 ```bash
 xmllint --noout docs/manual/assets/persistence/jpa-exposed-comparison.{en,ko}.svg
@@ -1215,11 +1187,11 @@ cairosvg docs/manual/assets/persistence/jpa-exposed-comparison.ko.svg \
 
 두 SVG에 대해 text normalization, connector, geometry, endpoint, mixed-corner, Architecture kind 감사를 실행하고, 각 PNG를 원본 크기로 검사한다.
 
-- [x] **Step 5: 비교와 상세 Diagram을 순서대로 해설서에 렌더링한다**
+- [x] **5단계: 비교와 상세 다이어그램을 순서대로 해설서에 렌더링한다**
 
 각 카드에는 독자용 제목과 설명을 표시한다. 첫 카드는 JPA/Hibernate와 Exposed의 책임 구조 비교, 두 번째 카드는 Exposed JDBC/R2DBC 트랜잭션 소유권 상세로 설명한다. 저작·검증 정보는 카드 안에 넣지 않는다.
 
-- [x] **Step 6: HTML과 fallback capture를 재생성하고 브라우저에서 검증한다**
+- [x] **6단계: HTML과 fallback capture를 재생성하고 브라우저에서 검증한다**
 
 ```bash
 node scripts/visual-companions/build.mjs
@@ -1231,11 +1203,11 @@ node scripts/visual-companions/validate.mjs
 git diff --check
 ```
 
-영어·한국어 HTML에서 두 Diagram의 lightbox, locale 이동, theme 전환, 시나리오 상호작용을 실제 브라우저로 확인한다.
+영어·한국어 HTML에서 두 다이어그램의 lightbox, locale 이동, theme 전환, 시나리오 상호작용을 실제 브라우저로 확인한다.
 
-- [x] **Step 7: PR #412를 새 exact head로 갱신한다**
+- [x] **7단계: PR #412를 새 exact head로 갱신한다**
 
-Lore commit 형식으로 변경을 커밋하고 force 없이 push한다. PR body의 Summary, Source contract, Verification, `## DoD Status`에 비교 Diagram과 locale별 SVG/PNG 검증 근거를 추가하고 새 exact-head CI를 확인한다. Merge는 새 사용자 승인 전까지 수행하지 않는다.
+Lore commit 형식으로 변경을 커밋하고 force 없이 push한다. PR body의 Summary, Source contract, Verification, `## DoD Status`에 비교 다이어그램과 locale별 SVG/PNG 검증 근거를 추가하고 새 exact-head CI를 확인한다. Merge는 새 사용자 승인 전까지 수행하지 않는다.
 
 ---
 

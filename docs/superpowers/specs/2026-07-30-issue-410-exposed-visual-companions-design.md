@@ -96,7 +96,6 @@ scripts/visual-companions/
 - `capture.mjs`는 영어/한국어 × 밝은/어두운 테마의 정적 대체 PNG를 생성한다.
 - `build.mjs --check`는 생성 결과가 저장소의 산출물과 정확히 일치하는지 검증한다.
 - HTML은 외부 CDN, 글꼴, 스크립트, 네트워크 요청 없이 단독 실행된다.
-
 ### 5.2 비교 Architecture Diagram과 기존 상세 Diagram을 함께 사용
 
 트랜잭션 해설서의 첫 Architecture Diagram은 JPA/Hibernate와 Exposed의 책임 구조를 같은 추상화 수준에서 비교한다. JPA/Hibernate는 전형적인 Spring Data JPA + Hibernate 애플리케이션을 기준으로 하고, Exposed는 JDBC와 R2DBC 실행 경로를 내부 하위 레인으로 나눈다. JPA/Hibernate를 JDBC, R2DBC와 같은 드라이버 레인으로 배치하지 않는다.
@@ -220,7 +219,6 @@ JPA 스타일의 서비스 예제와 Exposed 저장소 호출 예제를 나란�
 문서 마지막에 사용된 소스, 테스트, 실행 명령, 예상 결과를 표로 제공한다. 독자가 애니메이션을 믿는 데 그치지 않고 저장소에서 직접 확인할 수 있어야 한다.
 
 ## 7. 해설서 2: JPA 자동 구성 기대에서 Exposed 명시적 활성화로
-
 ### 7.1 독자가 얻어야 할 결론
 
 - Spring Data JPA 경험에서 생긴 “의존성만 넣으면 저장소와 트랜잭션이 모두 준비된다”는 기대를 Exposed에 그대로 적용하면 안 된다.
@@ -338,7 +336,6 @@ JDBC와 R2DBC는 트랜잭션 관리자 계약이 다르므로 하나의 “기�
 - 색상만으로 성공, back-off, 실패를 구분하지 않는다.
 - `prefers-reduced-motion`에서 애니메이션을 제거하거나 즉시 완료한다.
 - 작은 화면에서 표와 시퀀스가 의미를 잃지 않도록 축약 보기와 가로 스크롤을 제공한다.
-
 ## 9. 설명 깊이의 완료 기준
 
 줄 수나 카드 수만으로 품질을 판정하지 않는다. 각 해설서는 최소한 다음 질문에 답해야 한다.
@@ -388,9 +385,9 @@ JDBC와 R2DBC는 트랜잭션 관리자 계약이 다르므로 하나의 “기�
 
 ### 11.2 Spring Boot 활성화
 
-- JDBC enable annotation
-- R2DBC enable annotation
-- JDBC/R2DBC auto-configuration
+- JDBC 활성화 애노테이션
+- R2DBC 활성화 애노테이션
+- JDBC/R2DBC 자동 구성
 - registrar와 repository factory
 - 조건부 빈 생성 및 back-off 테스트
 - R2DBC suspend 메서드의 Spring Data transaction interceptor 우회 계약
@@ -461,7 +458,6 @@ Spring Boot activation × en/ko × light/dark
 - 관련 장에서는 같은 개념의 심층 HTML 해설서로 연결한다.
 - source PR이 병합된 뒤 `bluetape4k.github.io` Issue #304에서 정확한 release ref와 commit으로 결과물을 가져온다.
 - 사이트는 source artifact를 임의로 수정하지 않고 게시 경로와 탐색 구조만 소유한다.
-
 ## 14. 전달 순서와 승인 경계
 
 1. 이 재설계 문서를 자체 검토하고 커밋한다.
@@ -482,7 +478,7 @@ Spring Boot activation × en/ko × light/dark
 | 위험 | 대응 |
 |---|---|
 | JPA와 Exposed 비교가 과도하게 단순화됨 | 비교 범위를 전형적인 Hibernate/Spring Data JPA 사용으로 명시하고 절대적 우열 주장을 금지 |
-| Architecture Diagram과 HTML 설명이 드리프트함 | 원본 SVG 내장, SHA-256 guard, 구조적 주장의 단일 원본 유지 |
+| 아키텍처 다이어그램과 HTML 설명이 드리프트함 | 원본 SVG 내장, SHA-256 guard, 구조적 주장의 단일 원본 유지 |
 | 상호작용이 장식으로 변함 | 시나리오 선택이 시퀀스, 책임, 코드, 근거를 함께 변경할 때만 유지 |
 | Spring 조건 탐색기가 실제 엔진처럼 오해됨 | 저장소가 보장하는 교육 모델임을 명시하고 소스 근거를 모든 결과에 연결 |
 | 한국어와 영어의 의미가 달라짐 | 동일한 구조화 데이터와 시나리오 ID 사용, 로케일 의미 동등성 검사 |
@@ -492,10 +488,10 @@ Spring Boot activation × en/ko × light/dark
 ## 16. 완료 정의
 
 - 두 해설서가 JPA 대비 Exposed의 특징, 장점, 비용, 선택 기준에서 출발한다.
-- 기존 세 개 Architecture Diagram이 해설의 중심축으로 실제 내장된다.
+- 기존 세 개 아키텍처 다이어그램이 해설의 중심축으로 실제 내장된다.
 - 각 해설서가 아키텍처, 시퀀스, 행렬, 코드, 실패 흐름, 근거, 검증을 포함한다.
 - 영어/한국어 독립 HTML과 네 가지 정적 대체 이미지가 결정적으로 생성된다.
-- 기존 Diagram 및 실제 소스와 설명 사이의 드리프트를 자동 검출한다.
+- 기존 다이어그램 및 실제 소스와 설명 사이의 드리프트를 자동 검출한다.
 - 접근성, 반응형, 브라우저 콘솔, 네트워크 독립성 검사가 통과한다.
 - 사용자가 로컬 HTML을 직접 조작해 두 해설서를 각각 승인한다.
 - PR #412는 exact-head 검증과 별도 merge 승인 전까지 병합하지 않는다.

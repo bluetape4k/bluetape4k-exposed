@@ -1,97 +1,89 @@
-# Issue #326 Ktor R2DBC Cache and DDD Demo Implementation Plan
+# Issue #326 Ktor R2DBC 캐시 및 DDD 데모 구현 계획
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **에이전트 작업자용:** REQUIRED SUB-SKILL: 이 계획을 작업별로 구현하려면 superpowers:subagent-driven-development(권장) 또는 superpowers:executing-plans를 사용하세요. 단계는 추적을 위해 체크박스(`- [ ]`) 구문을 사용합니다.
 
-**Goal:** Deliver a runnable, bilingual Ktor Order Confirmation example backed by PostgreSQL R2DBC, an R2DBC Caffeine repository, and Spring-neutral domain-event handoff, with verified lifecycle behavior and readable architecture/sequence diagrams.
+**목표:** PostgreSQL R2DBC, R2DBC Caffeine 저장소, Spring과 무관한 도메인 이벤트 전달을 기반으로 실행 가능한 이중 언어 Ktor 주문 확인 예제를 제공하고, 검증된 생명주기 동작과 이해하기 쉬운 아키텍처/시퀀스 다이어그램을 구현합니다.
 
-**Architecture:** POST commands enter a thin Ktor route and execute through `OrderCommandService`; GET demonstrates repository read-through directly. The command service owns aggregate rehydration, write-failure cache compensation, a post-persistence cancellation gate, and synchronous non-durable event handoff. `KtorExposedDemoResources` owns H2 JDBC plus PostgreSQL R2DBC/cache resources and restores Exposed's process-wide R2DBC default before disposing the pool.
+**아키텍처:** POST 명령은 얇은 Ktor 라우트로 진입하여 `OrderCommandService`를 통해 실행됩니다. GET은 저장소의 read-through를 직접 보여 줍니다. 명령 서비스는 애그리거트 재수화, 쓰기 실패 시 캐시 보상, persistence 이후 취소 게이트, 동기식 비내구적 이벤트 전달을 담당합니다. `KtorExposedDemoResources`는 H2 JDBC와 PostgreSQL R2DBC/캐시 리소스를 소유하고, 풀을 해제하기 전에 Exposed의 프로세스 전역 R2DBC 기본값을 복원합니다.
 
-**Tech Stack:** Kotlin 2.3 language level, Ktor 3, kotlinx.serialization, JetBrains Exposed R2DBC, PostgreSQL 16, r2dbc-pool, Caffeine, Kotlin coroutines, JUnit 5, MockK, Testcontainers 2, Docker Compose, SVG, CairoSVG.
+**기술 스택:** Kotlin 2.3 language level, Ktor 3, kotlinx.serialization, JetBrains Exposed R2DBC, PostgreSQL 16, r2dbc-pool, Caffeine, Kotlin coroutines, JUnit 5, MockK, Testcontainers 2, Docker Compose, SVG, CairoSVG.
 
 ---
 
-## Locked File Structure
+## 고정된 파일 구조
 
-### Production and runtime
+### Production 및 runtime
 
-- Modify `examples/ktor-exposed-demo/build.gradle.kts` — serialization plugin, direct cache/PostgreSQL dependencies, isolated `postgresIntegrationTest` task.
-- Create `examples/ktor-exposed-demo/compose.yaml` — loopback PostgreSQL 16 service, health check, named volume.
-- Create `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderDomain.kt` — status, aggregate, event, serializable record.
-- Create `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderRepository.kt` — UUID table and R2DBC Caffeine mapping.
-- Create `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderCommandService.kt` — publisher port, typed failures, compensation, cancellation gate.
-- Create `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderRoutes.kt` — serializers, validation precedence, response/error mapping, sanitized diagnostics.
-- Modify `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoResources.kt` — config, PostgreSQL pool/schema, default-database lifecycle, close report.
-- Modify `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoApplication.kt` — Ktor composition, readiness contributor, routes, testable server runner, exit statuses.
+- `examples/ktor-exposed-demo/build.gradle.kts` 수정 — serialization plugin, direct cache/PostgreSQL dependencies, isolated `postgresIntegrationTest` task.
+- `examples/ktor-exposed-demo/compose.yaml` 생성 — loopback PostgreSQL 16 service, health check, named volume.
+- `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderDomain.kt` 생성 — status, aggregate, event, serializable record.
+- `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderRepository.kt` 생성 — UUID table and R2DBC Caffeine mapping.
+- `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderCommandService.kt` 생성 — publisher port, typed failures, compensation, cancellation gate.
+- `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderRoutes.kt` 생성 — serializers, validation precedence, response/error mapping, sanitized diagnostics.
+- `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoResources.kt` 수정 — config, PostgreSQL pool/schema, default-database lifecycle, close report.
+- `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoApplication.kt` 수정 — Ktor composition, readiness contributor, routes, testable server runner, exit statuses.
 
-### Tests
+### 테스트
 
-- Create `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderDomainTest.kt`.
-- Create `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderCommandServiceTest.kt`.
-- Create `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderRoutesTest.kt`.
-- Create `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoLifecycleTest.kt`.
-- Replace `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoApplicationTest.kt` with Docker-free composition tests only.
-- Create `examples/ktor-exposed-demo/src/postgresIntegrationTest/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoPostgresIntegrationTest.kt` — full PostgreSQL/cache/readiness/lifecycle proof.
+- `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderDomainTest.kt` 생성.
+- `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderCommandServiceTest.kt` 생성.
+- `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderRoutesTest.kt` 생성.
+- `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoLifecycleTest.kt` 생성.
+- `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoApplicationTest.kt`를 Docker-free composition tests only로 교체.
+- `examples/ktor-exposed-demo/src/postgresIntegrationTest/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoPostgresIntegrationTest.kt` 생성 — full PostgreSQL/cache/readiness/lifecycle proof.
 
-### Documentation and durable evidence
+### 문서 및 영구 증거
 
-- Replace `examples/ktor-exposed-demo/README.md` and `examples/ktor-exposed-demo/README.ko.md` in semantic parity.
-- Create `docs/images/readme-diagrams/examples-ktor-exposed-demo-architecture-01.svg` and rendered `.png`.
-- Create `docs/images/readme-diagrams/examples-ktor-exposed-demo-sequence-01.svg` and rendered `.png`.
-- Create `docs/lessons/2026-07-17-issue-326-ktor-r2dbc-write-through-event-handoff.md`.
-- Create `docs/review/2026-07-17-issue-326-ktor-r2dbc-ddd-demo-review.md`.
-- Update the issue checklist and this plan as evidence is completed.
+- `examples/ktor-exposed-demo/README.md`와 `examples/ktor-exposed-demo/README.ko.md`를 의미적으로 동일하게 교체.
+- `docs/images/readme-diagrams/examples-ktor-exposed-demo-architecture-01.svg` 및 렌더링된 `.png` 생성.
+- `docs/images/readme-diagrams/examples-ktor-exposed-demo-sequence-01.svg` 및 렌더링된 `.png` 생성.
+- `docs/lessons/2026-07-17-issue-326-ktor-r2dbc-write-through-event-handoff.md` 생성.
+- `docs/review/2026-07-17-issue-326-ktor-r2dbc-ddd-demo-review.md` 생성.
+- 증거가 완료되는 대로 issue checklist와 이 계획을 업데이트.
 
-## Triggered Risk Predictions
+## 트리거된 위험 예측
 
-| Risk | Earliest signal | Prevention/proof | Rerun point |
+| 위험 | 가장 이른 신호 | 예방/증명 | 재실행 지점 |
 |---|---|---|---|
-| Caffeine contains an unpersisted value after PostgreSQL failure | `put` throws after cache mutation | `NonCancellable` local invalidation, cause preservation, service + real PostgreSQL tests | after Tasks 3 and 7 |
-| Cancellation publishes an event after an ambiguous write | cancelled job returns from `put` | `ensureActive()` immediately after `put`; same cancellation instance; no publish | after Task 3 |
-| Closed demo DB remains Exposed's process-wide default | second lifecycle reads through old pool | capture, unregister, restore; run two real lifecycles sequentially | after Tasks 6 and 7 |
-| Persisted order loses non-durable event handoff | publisher throws after successful write | typed `OrderEventHandoffException`, retained request-local buffer, README outbox warning | after Tasks 3, 5, and 10 |
-| Docker test enters normal `test` or runs in parallel | fast task starts a container or CI contention appears | separate source set/task, no task dependency, `--no-parallel`, same-thread JUnit | after Tasks 1 and 7 |
-| Startup/shutdown hides failure or leaks resources | exit 0, stale pool/thread, raw throwable log | runner statuses 1/2, aggregated close report, allowlisted diagnostics, lifecycle doubles | after Task 6 |
-| Diagram is visually attractive but unreadable | clipped text, oversized markers, ambiguous branches | fixed markers/fonts, true lifelines/activation/numbered pills, all audits + full-size inspection | after Task 9 |
+| PostgreSQL 실패 후 Caffeine에 persistence되지 않은 값이 남음 | 캐시 변경 후 `put` throws | `NonCancellable` local invalidation, cause preservation, service + real PostgreSQL tests | after Tasks 3 and 7 |
+| 취소된 작업이 모호한 쓰기 이후 이벤트를 publish함 | cancelled job returns from `put` | `ensureActive()` immediately after `put`; same cancellation instance; no publish | after Task 3 |
+| 종료된 demo DB가 Exposed의 프로세스 전역 기본값으로 남음 | second lifecycle reads through old pool | capture, unregister, restore; run two real lifecycles sequentially | after Tasks 6 and 7 |
+| persistence된 order가 비내구적 이벤트 전달을 잃음 | publisher throws after successful write | typed `OrderEventHandoffException`, retained request-local buffer, README outbox warning | after Tasks 3, 5, and 10 |
+| Docker test가 일반 `test`에 들어가거나 병렬 실행됨 | fast task starts a container or CI contention appears | separate source set/task, no task dependency, `--no-parallel`, same-thread JUnit | after Tasks 1 and 7 |
+| Startup/shutdown이 실패를 숨기거나 리소스를 누수함 | exit 0, stale pool/thread, raw throwable log | runner statuses 1/2, aggregated close report, allowlisted diagnostics, lifecycle doubles | after Task 6 |
+| 다이어그램이 시각적으로 매력적이지만 읽기 어려움 | clipped text, oversized markers, ambiguous branches | fixed markers/fonts, true lifelines/activation/numbered pills, all audits + full-size inspection | after Task 9 |
 
-## Plan Review Record
+## 계획 검토 기록
 
-The final 2026-07-17 plan review converged after every finding was repaired:
+최종 2026-07-17 plan review는 모든 finding이 수정된 후 수렴했습니다:
 
-| Lens | P0 | P1 | P2 | P3 | Result |
+| 관점 | P0 | P1 | P2 | P3 | 결과 |
 |---|---:|---:|---:|---:|---|
-| Performance | 0 | 0 | 0 | 0 | READY |
-| Stability/concurrency | 0 | 0 | 0 | 0 | READY |
-| Security/privacy | 0 | 0 | 0 | 0 | READY |
-| Ops/operator | 0 | 0 | 0 | 0 | READY |
-| Developer/API | 0 | 0 | 0 | 0 | READY |
-| User/caller, bilingual docs, diagrams | 0 | 0 | 0 | 0 | READY |
-| Main-session integration | 0 | 0 | 0 | 0 | READY |
+| 성능 | 0 | 0 | 0 | 0 | READY |
+| 안정성/동시성 | 0 | 0 | 0 | 0 | READY |
+| 보안/개인정보 보호 | 0 | 0 | 0 | 0 | READY |
+| 운영/운영자 | 0 | 0 | 0 | 0 | READY |
+| 개발자/API | 0 | 0 | 0 | 0 | READY |
+| 사용자/caller, 이중 언어 문서, 다이어그램 | 0 | 0 | 0 | 0 | READY |
+| 주 세션 통합 | 0 | 0 | 0 | 0 | READY |
 
-The repair rounds closed dependency timing, Java-time availability, lifecycle
-acquisition and concurrent close seams, Ktor 3.5 shutdown observability limits,
-pre/post-write cancellation, process-wide R2DBC-default ownership, diagnostic
-formatting, hostile-origin behavior, bilingual caller contracts, failure-safe
-Compose cleanup, per-asset diagram validation, and Testcontainers execution
-cost. Main integration rechecked those decisions against the current repository
-APIs and Ktor 3.5.1 sources, confirmed every code fence is balanced, found no
-placeholder or trailing-whitespace defect, and mapped every predicted risk to
-an implementation task plus rerun point. No implementation gap remains in the
-approved scope.
+수정 라운드에서는 dependency timing, Java-time availability, lifecycle
+acquisition 및 concurrent close seams, Ktor 3.5 shutdown observability limits, pre/post-write cancellation, process-wide R2DBC-default ownership, diagnostic formatting, hostile-origin behavior, bilingual caller contracts, failure-safe Compose cleanup, per-asset diagram validation, Testcontainers execution cost를 마무리했습니다. Main integration에서는 현재 repository APIs와 Ktor 3.5.1 sources를 기준으로 해당 결정을 다시 확인하고, 모든 code fence의 균형을 검증했으며, placeholder 또는 trailing-whitespace defect가 없음을 확인했습니다. 또한 모든 predicted risk를 implementation task와 rerun point에 매핑했습니다. 승인된 범위에는 implementation gap이 남아 있지 않습니다.
 
-### Task 0: Freeze Reviewed Design and Plan Evidence
+### Task 0: 검토된 설계 및 계획 증거 고정
 
-**Files:**
-- Modify: `docs/superpowers/specs/2026-07-17-issue-326-ktor-r2dbc-ddd-demo-design.md`
-- Modify: `docs/superpowers/plans/2026-07-17-issue-326-ktor-r2dbc-ddd-demo-plan.md`
-- Modify: `docs/superpowers/checklists/2026-07-17-issue-326-ktor-r2dbc-ddd-demo-checklist.md`
+**파일:**
+- 수정: `docs/superpowers/specs/2026-07-17-issue-326-ktor-r2dbc-ddd-demo-design.md`
+- 수정: `docs/superpowers/plans/2026-07-17-issue-326-ktor-r2dbc-ddd-demo-plan.md`
+- 수정: `docs/superpowers/checklists/2026-07-17-issue-326-ktor-r2dbc-ddd-demo-checklist.md`
 
-- [ ] **Step 1: Record final plan-review convergence and risk traceability**
+- [ ] **Step 1: 최종 plan-review 수렴 및 risk traceability 기록**
 
-Append the six plan-lens counts plus main integration result to this plan, check A-04/A-05 only after every P0/P1 is repaired, and map each risk-table row above to the implementation task and rerun command already named in this document.
+여섯 plan-lens counts와 main integration result를 이 계획에 추가하고, 모든 P0/P1이 수정된 후에만 A-04/A-05를 check하며, 위의 risk-table 각 행을 이 문서에 이미 명시된 implementation task와 rerun command에 매핑합니다.
 
-- [ ] **Step 2: Validate the durable artifacts before code changes**
+- [ ] **Step 2: 코드 변경 전에 durable artifacts 검증**
 
-Run:
+실행:
 
 ```bash
 rg -n "P0|P1|P2|P3|READY|Triggered Risk Predictions" \
@@ -100,9 +92,9 @@ rg -n "P0|P1|P2|P3|READY|Triggered Risk Predictions" \
 git diff --check
 ```
 
-Expected: design and plan both show final P0=0/P1=0; no placeholder or whitespace failure remains.
+예상 결과: design과 plan 모두 최종 P0=0/P1=0을 표시하고, placeholder 또는 whitespace failure가 남아 있지 않습니다.
 
-- [ ] **Step 3: Commit the approved decision artifacts before implementation**
+- [ ] **Step 3: 구현 전에 승인된 decision artifacts commit**
 
 ```bash
 git add docs/superpowers/specs/2026-07-17-issue-326-ktor-r2dbc-ddd-demo-design.md \
@@ -117,24 +109,24 @@ git commit -m "Lock the PostgreSQL order scenario before implementation" \
   -m "Not-tested: implementation does not exist yet"
 ```
 
-### Task 1: Lock Build and Test-Task Boundaries
+### 작업 1: 빌드 및 테스트 태스크 경계 고정
 
-**Files:**
-- Modify: `examples/ktor-exposed-demo/build.gradle.kts`
+**파일:**
+- 수정: `examples/ktor-exposed-demo/build.gradle.kts`
 
-- [ ] **Step 1: Capture the fast-task baseline**
+- [ ] **단계 1: 빠른 태스크 기준선 캡처**
 
-Run:
+실행:
 
 ```bash
 ./gradlew :examples-ktor-exposed-demo:test --no-daemon --console=plain
 ```
 
-Expected: PASS without starting Docker/Testcontainers.
+예상 결과: Docker/Testcontainers를 시작하지 않고 PASS.
 
-- [ ] **Step 2: Replace the module build file with the explicit runtime and test-suite contract**
+- [ ] **단계 2: 모듈 빌드 파일을 명시적인 런타임 및 테스트 스위트 계약으로 교체**
 
-Use this complete shape, preserving the existing application main class:
+기존 애플리케이션 메인 클래스를 유지하면서 다음의 완전한 형태를 사용합니다:
 
 ```kotlin
 plugins {
@@ -199,20 +191,20 @@ tasks.register<Test>("postgresIntegrationTest") {
 }
 ```
 
-Retain `runtimeOnly(bt4k.r2dbc.h2)` in this first build-only commit because the existing application test still constructs the current H2 R2DBC resources. Remove that driver only in Task 6, in the same commit that replaces those resources and tests with PostgreSQL-aware production wiring plus Docker-free doubles.
+기존 애플리케이션 테스트가 현재 H2 R2DBC 리소스를 계속 생성하므로, 첫 번째 빌드 전용 커밋에서는 `runtimeOnly(bt4k.r2dbc.h2)`를 유지합니다. 해당 드라이버는 Task 6에서 PostgreSQL을 인식하는 프로덕션 wiring과 Docker가 필요 없는 double로 리소스와 테스트를 교체하는 동일한 커밋에서만 제거합니다.
 
-- [ ] **Step 3: Prove Gradle sees the isolated task**
+- [ ] **단계 3: Gradle이 격리된 태스크를 인식하는지 입증**
 
-Run:
+실행:
 
 ```bash
 ./gradlew :examples-ktor-exposed-demo:tasks --all --no-daemon --console=plain | rg "postgresIntegrationTest"
 ./gradlew :examples-ktor-exposed-demo:test --no-daemon --console=plain
 ```
 
-Expected: the task is listed exactly once; normal `test` still passes and does not execute `postgresIntegrationTest`.
+예상 결과: 해당 태스크가 정확히 한 번 나열되고, 일반 `test`는 계속 통과하며 `postgresIntegrationTest`를 실행하지 않습니다.
 
-- [ ] **Step 4: Commit the build boundary**
+- [ ] **단계 4: 빌드 경계 커밋**
 
 ```bash
 git add examples/ktor-exposed-demo/build.gradle.kts
@@ -224,15 +216,15 @@ git commit -m "Isolate PostgreSQL proof from the fast Ktor example tests" \
   -m "Not-tested: PostgreSQL integration sources do not exist yet"
 ```
 
-### Task 2: Implement the Aggregate and Event Contract Test-First
+### 작업 2: Aggregate 및 Event Contract를 테스트 우선으로 구현
 
-**Files:**
-- Create: `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderDomain.kt`
-- Create: `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderDomainTest.kt`
+**파일:**
+- 생성: `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderDomain.kt`
+- 생성: `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderDomainTest.kt`
 
-- [ ] **Step 1: Write the failing aggregate tests**
+- [ ] **1단계: 실패하는 aggregate 테스트 작성**
 
-Create `OrderDomainTest.kt` with three exact cases:
+세 가지 정확한 케이스로 `OrderDomainTest.kt`를 생성합니다:
 
 ```kotlin
 package io.bluetape4k.examples.exposed.ktor.order
@@ -281,20 +273,20 @@ class OrderDomainTest {
 }
 ```
 
-- [ ] **Step 2: Run RED**
+- [ ] **2단계: RED 실행**
 
-Run:
+실행:
 
 ```bash
 ./gradlew :examples-ktor-exposed-demo:test \
   --tests "*OrderDomainTest" --no-daemon --console=plain
 ```
 
-Expected: FAIL because `DemoOrder`, `OrderStatus`, `OrderConfirmed`, and `OrderRecord` do not exist.
+예상 결과: `DemoOrder`, `OrderStatus`, `OrderConfirmed`, `OrderRecord`가 존재하지 않으므로 FAIL.
 
-- [ ] **Step 3: Implement the complete domain file**
+- [ ] **3단계: 완전한 domain 파일 구현**
 
-Create `OrderDomain.kt`:
+`OrderDomain.kt`를 생성합니다:
 
 ```kotlin
 package io.bluetape4k.examples.exposed.ktor.order
@@ -357,18 +349,18 @@ data class OrderRecord(
 }
 ```
 
-- [ ] **Step 4: Run GREEN and serialization proof**
+- [ ] **4단계: GREEN 및 serialization 증명 실행**
 
-Run:
+실행:
 
 ```bash
 ./gradlew :examples-ktor-exposed-demo:test \
   --tests "*OrderDomainTest" --no-daemon --console=plain
 ```
 
-Expected: PASS, with exactly three tests.
+예상 결과: 정확히 세 개의 테스트가 PASS.
 
-- [ ] **Step 5: Commit the aggregate boundary**
+- [ ] **5단계: aggregate 경계 커밋**
 
 ```bash
 git add examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderDomain.kt \
@@ -382,15 +374,15 @@ git commit -m "Keep order confirmation invariants inside the aggregate" \
   -m "Not-tested: persistence and HTTP mapping"
 ```
 
-### Task 3: Implement Command Ordering, Compensation, and Cancellation
+### 작업 3: 명령 순서, 보상 및 취소 구현
 
-**Files:**
-- Create: `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderCommandService.kt`
-- Create: `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderCommandServiceTest.kt`
+**파일:**
+- 생성: `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderCommandService.kt`
+- 생성: `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderCommandServiceTest.kt`
 
-- [ ] **Step 1: Write service tests before the service**
+- [ ] **1단계: 서비스보다 먼저 서비스 테스트 작성**
 
-The test class must use a `mockk<R2dbcCaffeineRepository<UUID, OrderRecord>>()`, a fixed `Clock`, and recording/failing publishers. Use the fixed ID `018f6f95-7f4a-7a20-8b52-70ad30c30f36` and instant `2026-07-17T00:01:00Z` in every case. Implement this fixture and success test exactly, then repeat the same explicit arrangement for the failure matrix below:
+테스트 클래스는 `mockk<R2dbcCaffeineRepository<UUID, OrderRecord>>()`, 고정된 `Clock`, 기록/실패 publisher를 사용해야 합니다. 모든 경우에 고정 ID `018f6f95-7f4a-7a20-8b52-70ad30c30f36`와 instant `2026-07-17T00:01:00Z`를 사용합니다. 다음 fixture와 성공 테스트를 정확히 구현한 뒤, 아래 실패 매트릭스에도 동일한 명시적 구성을 반복합니다:
 
 ```kotlin
 private val id = UUID.fromString("018f6f95-7f4a-7a20-8b52-70ad30c30f36")
@@ -421,34 +413,34 @@ fun `confirmation writes before publishing and clears events`() = runTest {
 }
 ```
 
-Failure matrix:
+실패 매트릭스:
 
-| Test name | Arrangement | Exact assertions |
+| 테스트 이름 | 구성 | 정확한 단언 |
 |---|---|---|
-| `sequential confirmed record skips write and publish` | `get` returns `OrderRecord(CONFIRMED)` | result `eventPublished=false`; `put` exactly 0; publisher exactly 0 |
-| `write failure invalidates skips publisher and preserves cause and events` | internal aggregate seam; `put` throws `primary`; `invalidate` succeeds | `OrderPersistenceException.cause === primary`; invalidate once; publisher 0; aggregate retains `OrderConfirmed` |
-| `invalidation failure is suppressed on original persistence cause` | `put` throws `primary`; `invalidate` throws `cleanup` | wrapper cause is `primary`; `primary.suppressed` equals `[cleanup]` |
-| `publisher failure leaves persisted record and request local events` | `put` succeeds; publisher throws `primary` | `OrderEventHandoffException.cause === primary`; no invalidate; aggregate retains event |
-| `repository cancellation invalidates noncancellably and rethrows the same instance` | `put` throws a named `CancellationException`; invalidate succeeds | same cancellation instance escapes; invalidate once under `NonCancellable`; publisher 0 |
-| `repository cancellation keeps cleanup failure suppressed on the same instance` | `put` throws named cancellation; invalidate throws cleanup | same cancellation instance escapes; its suppressed list is `[cleanup]`; publisher 0 |
-| `pre-write cancellation never calls put or publisher` | cancel child before the service's pre-write gate | `ensureActive()` throws the same cancellation; `put` 0; publisher 0 |
-| `cancellation observed immediately after put invalidates and never publishes` | repository answer cancels the child job immediately before returning | post-return `ensureActive()` throws same cancellation; invalidate once under `NonCancellable`; publisher 0 |
-| `simultaneous confirmation can publish twice by design` | a two-party barrier forces both reads of `PENDING` to complete before either write | assert exactly two `put` calls and two publications; the deterministic characterization documents unsupported concurrent idempotency |
+| `sequential confirmed record skips write and publish` | `get`이 `OrderRecord(CONFIRMED)` 반환 | 결과 `eventPublished=false`; `put` 정확히 0회; publisher 정확히 0회 |
+| `write failure invalidates skips publisher and preserves cause and events` | 내부 aggregate seam; `put`이 `primary` throw; `invalidate` 성공 | `OrderPersistenceException.cause === primary`; invalidate 1회; publisher 0회; aggregate가 `OrderConfirmed` 유지 |
+| `invalidation failure is suppressed on original persistence cause` | `put`이 `primary` throw; `invalidate`가 `cleanup` throw | wrapper cause는 `primary`; `primary.suppressed`가 `[cleanup]`과 동일 |
+| `publisher failure leaves persisted record and request local events` | `put` 성공; publisher가 `primary` throw | `OrderEventHandoffException.cause === primary`; invalidate 없음; aggregate가 event 유지 |
+| `repository cancellation invalidates noncancellably and rethrows the same instance` | `put`이 이름이 지정된 `CancellationException` throw; invalidate 성공 | 동일한 cancellation instance가 외부로 전달; `NonCancellable` 아래에서 invalidate 1회; publisher 0회 |
+| `repository cancellation keeps cleanup failure suppressed on the same instance` | `put`이 이름이 지정된 cancellation throw; invalidate가 cleanup throw | 동일한 cancellation instance가 외부로 전달; 해당 suppressed 목록이 `[cleanup]`; publisher 0회 |
+| `pre-write cancellation never calls put or publisher` | 서비스의 pre-write gate 전에 child를 취소 | `ensureActive()`가 동일한 cancellation throw; `put` 0회; publisher 0회 |
+| `cancellation observed immediately after put invalidates and never publishes` | repository 응답이 반환 직전에 child job을 취소 | 반환 후 `ensureActive()`가 동일한 cancellation throw; `NonCancellable` 아래에서 invalidate 1회; publisher 0회 |
+| `simultaneous confirmation can publish twice by design` | 두 write가 발생하기 전에 두 `PENDING` 읽기가 모두 완료되도록 two-party barrier가 강제 | `put` 호출 정확히 2회 및 publication 2회 단언; 결정론적 특성이 지원되지 않는 concurrent idempotency를 문서화 |
 
-- [ ] **Step 2: Run RED**
+- [ ] **2단계: RED 실행**
 
-Run:
+실행:
 
 ```bash
 ./gradlew :examples-ktor-exposed-demo:test \
   --tests "*OrderCommandServiceTest" --no-daemon --console=plain
 ```
 
-Expected: FAIL because the service, publisher, result, and typed failures do not exist.
+예상 결과: service, publisher, result 및 typed failure가 존재하지 않으므로 FAIL.
 
-- [ ] **Step 3: Implement the service API and failure taxonomy**
+- [ ] **3단계: 서비스 API와 실패 분류 구현**
 
-Create `OrderCommandService.kt` with this complete behavior:
+다음의 완전한 동작으로 `OrderCommandService.kt`를 생성합니다:
 
 ```kotlin
 package io.bluetape4k.examples.exposed.ktor.order
@@ -540,11 +532,11 @@ class OrderCommandService(
 }
 ```
 
-The public ID method owns repository lookup/rehydration, while the internal aggregate overload is a test seam used to prove event retention and clearing without widening the HTTP API. Run `currentCoroutineContext().ensureActive()` immediately before `repository.put`, again immediately after it returns, and route every `CancellationException` from `put` or either gate through the same `NonCancellable` invalidation helper before rethrowing the original cancellation object. Never catch `Error`.
+공개 ID 메서드는 repository 조회/rehydration을 담당하며, 내부 aggregate overload는 HTTP API를 확장하지 않고 event 보존 및 정리를 검증하기 위한 테스트 seam입니다. `repository.put` 직전에 `currentCoroutineContext().ensureActive()`를 실행하고, 반환 직후 다시 실행합니다. `put` 또는 두 gate 중 하나에서 발생하는 모든 `CancellationException`은 동일한 `NonCancellable` invalidation helper를 거친 후 원래 cancellation object를 다시 throw하도록 처리합니다. 절대로 `Error`를 catch하지 않습니다.
 
-- [ ] **Step 4: Run GREEN and the whole fast suite**
+- [ ] **4단계: GREEN 및 전체 빠른 테스트 실행**
 
-Run:
+실행:
 
 ```bash
 ./gradlew :examples-ktor-exposed-demo:test \
@@ -552,9 +544,9 @@ Run:
 ./gradlew :examples-ktor-exposed-demo:test --no-daemon --console=plain
 ```
 
-Expected: all service cases and the full Docker-free suite PASS.
+예상 결과: 모든 서비스 케이스와 전체 Docker-free suite가 PASS.
 
-- [ ] **Step 5: Commit the application boundary**
+- [ ] **5단계: 애플리케이션 경계 커밋**
 
 ```bash
 git add examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderCommandService.kt \
@@ -568,15 +560,15 @@ git commit -m "Publish order events only after persistence returns" \
   -m "Not-tested: real PostgreSQL and Ktor routes"
 ```
 
-### Task 4: Add the UUID PostgreSQL/Caffeine Repository
+### 작업 4: UUID PostgreSQL/Caffeine 리포지토리 추가
 
-**Files:**
-- Create: `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderRepository.kt`
-- Modify: `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderDomainTest.kt`
+**파일:**
+- 생성: `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderRepository.kt`
+- 수정: `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderDomainTest.kt`
 
-- [ ] **Step 1: Add a failing metadata/serialization test**
+- [ ] **1단계: 실패하는 메타데이터/직렬화 테스트 추가**
 
-Extend `OrderDomainTest` with:
+다음과 같이 `OrderDomainTest`를 확장합니다:
 
 ```kotlin
 @Test
@@ -588,20 +580,20 @@ fun `record serialization id is stable and table uses client UUID`() {
 }
 ```
 
-- [ ] **Step 2: Run RED**
+- [ ] **2단계: RED 실행**
 
-Run:
+다음을 실행합니다:
 
 ```bash
 ./gradlew :examples-ktor-exposed-demo:test \
   --tests "*OrderDomainTest" --no-daemon --console=plain
 ```
 
-Expected: FAIL because `DemoOrders` does not exist.
+예상 결과: `DemoOrders`가 존재하지 않으므로 FAIL.
 
-- [ ] **Step 3: Implement the table and concrete repository**
+- [ ] **3단계: 테이블 및 구체적인 리포지토리 구현**
 
-Create `OrderRepository.kt`:
+`OrderRepository.kt`를 생성합니다:
 
 ```kotlin
 package io.bluetape4k.examples.exposed.ktor.order
@@ -654,9 +646,9 @@ class OrderR2dbcCaffeineRepository(
 }
 ```
 
-- [ ] **Step 4: Run GREEN and compile main**
+- [ ] **4단계: GREEN 실행 및 main 컴파일**
 
-Run:
+다음을 실행합니다:
 
 ```bash
 ./gradlew :examples-ktor-exposed-demo:test \
@@ -664,9 +656,9 @@ Run:
 ./gradlew :examples-ktor-exposed-demo:compileKotlin --no-daemon --console=plain
 ```
 
-Expected: PASS; no H2 R2DBC type is referenced by main sources.
+예상 결과: PASS; main 소스에서 H2 R2DBC 타입을 참조하지 않습니다.
 
-- [ ] **Step 5: Commit the repository mapping**
+- [ ] **5단계: 리포지토리 매핑 커밋**
 
 ```bash
 git add examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderRepository.kt \
@@ -680,42 +672,42 @@ git commit -m "Use client UUIDs for deterministic write-through inserts" \
   -m "Not-tested: database mapping round trip"
 ```
 
-### Task 5: Add Deterministic Order HTTP Contracts
+### 작업 5: 결정론적 순서 HTTP 계약 추가
 
-**Files:**
-- Create: `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderRoutes.kt`
-- Create: `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderRoutesTest.kt`
+**파일:**
+- 생성: `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderRoutes.kt`
+- 생성: `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderRoutesTest.kt`
 
-- [ ] **Step 1: Write route tests with mocked service/repository**
+- [ ] **1단계: 모의 서비스/리포지토리를 사용해 라우트 테스트 작성**
 
-Create `OrderRoutesTest.kt` using `testApplication`, `installBluetape4kKtorCore()`, a mocked `OrderCommandService`, a mocked `R2dbcCaffeineRepository<UUID, OrderRecord>`, and a recording `DemoDiagnosticSink`. The exact matrix is:
+`testApplication`, `installBluetape4kKtorCore()`, 모의 `OrderCommandService`, 모의 `R2dbcCaffeineRepository<UUID, OrderRecord>`, 그리고 기록용 `DemoDiagnosticSink`를 사용해 `OrderRoutesTest.kt`를 작성합니다. 정확한 매트릭스는 다음과 같습니다.
 
-| Test name | Request/setup | Exact assertions |
+| 테스트 이름 | 요청/설정 | 정확한 assertion |
 |---|---|---|
-| `missing or wrong header wins over invalid id with 403` | two POST requests to `/orders/not-a-uuid/confirm`, one without the header and one with a wrong value | both `403`, code `DEMO_COMMAND_REQUIRED`, service/repository/publisher calls 0 |
-| `hostile origin preflight receives no permissive CORS grant` | OPTIONS preflight with hostile `Origin`, requested POST method, and requested `X-Demo-Command` header | no `Access-Control-Allow-Origin`/credentials grant, no successful mutation response, service/repository/publisher calls 0 |
-| `valid header and invalid uppercase nil or oversized id return constant 400` | four POST requests with the valid header | every response `400 INVALID_ORDER_ID`; service calls 0; no input echoed |
-| `confirmation returns serialized eventPublished result` | service returns confirmed result | `200 application/json`; exact four fields; ISO instant |
-| `sequential confirmation returns eventPublished false` | service returns `eventPublished=false` | `200`; false encoded, not omitted |
-| `get returns 404 for missing order and 200 for stored order` | repository returns null then a record | exact `404 ORDER_NOT_FOUND`, then exact three-field success |
-| `typed command failures map to distinct sanitized 503 responses` | service throws each typed failure | exact code/message, UUID correlation ID, operation `confirm` |
-| `get repository failure maps to ORDER_READ_FAILED and operation read` | repository throws ordinary exception | exact `503 ORDER_READ_FAILED`; diagnostic operation `read` |
-| `secret bearing primary and suppressed messages never enter body or diagnostic` | failures contain URL/user/password/SQL and suppressed secret | response/diagnostic serialization contains none of those strings |
+| `missing or wrong header wins over invalid id with 403` | 헤더가 없는 요청과 잘못된 값이 있는 요청, `/orders/not-a-uuid/confirm`에 대한 두 번의 POST 요청 | 모두 `403`, code `DEMO_COMMAND_REQUIRED`, service/repository/publisher 호출 0회 |
+| `hostile origin preflight receives no permissive CORS grant` | 악성 `Origin`, 요청된 POST 메서드, 요청된 `X-Demo-Command` 헤더가 포함된 OPTIONS preflight | `Access-Control-Allow-Origin`/credentials 허용 없음, 성공적인 mutation 응답 없음, service/repository/publisher 호출 0회 |
+| `valid header and invalid uppercase nil or oversized id return constant 400` | 유효한 헤더를 사용한 네 번의 POST 요청 | 모든 응답이 `400 INVALID_ORDER_ID`; service 호출 0회; 입력값을 echo하지 않음 |
+| `confirmation returns serialized eventPublished result` | 서비스가 confirmed result 반환 | `200 application/json`; 정확히 네 개의 필드; ISO instant |
+| `sequential confirmation returns eventPublished false` | 서비스가 `eventPublished=false` 반환 | `200`; false가 인코딩되며 생략되지 않음 |
+| `get returns 404 for missing order and 200 for stored order` | 리포지토리가 먼저 null을 반환한 뒤 record를 반환 | 정확한 `404 ORDER_NOT_FOUND`, 이어서 정확히 세 필드로 구성된 성공 응답 |
+| `typed command failures map to distinct sanitized 503 responses` | 서비스가 각 typed failure를 throw | 정확한 code/message, UUID correlation ID, operation `confirm` |
+| `get repository failure maps to ORDER_READ_FAILED and operation read` | 리포지토리가 일반 exception을 throw | 정확한 `503 ORDER_READ_FAILED`; diagnostic operation `read` |
+| `secret bearing primary and suppressed messages never enter body or diagnostic` | URL/user/password/SQL 및 suppressed secret을 포함한 failure | response/diagnostic serialization에 해당 문자열이 하나도 포함되지 않음 |
 
-- [ ] **Step 2: Run RED**
+- [ ] **2단계: RED 실행**
 
-Run:
+다음을 실행합니다.
 
 ```bash
 ./gradlew :examples-ktor-exposed-demo:test \
   --tests "*OrderRoutesTest" --no-daemon --console=plain
 ```
 
-Expected: FAIL because route DTOs, validation, and installer do not exist.
+예상 결과: route DTO, validation, installer가 존재하지 않으므로 FAIL.
 
-- [ ] **Step 3: Implement DTOs, diagnostics, validation, and routes**
+- [ ] **3단계: DTO, diagnostics, validation, routes 구현**
 
-Create `OrderRoutes.kt` with these exact public contracts:
+다음의 정확한 public contract로 `OrderRoutes.kt`를 생성합니다.
 
 ```kotlin
 @Serializable data class OrderResponse(val orderId: String, val status: String, val updatedAt: String)
@@ -734,7 +726,7 @@ data class DemoDiagnostic(
 fun interface DemoDiagnosticSink { fun emit(diagnostic: DemoDiagnostic) }
 ```
 
-Implement `fun Route.orderRoutes(service, repository, diagnostics)` with this precedence and mapping:
+다음 우선순위와 매핑으로 `fun Route.orderRoutes(service, repository, diagnostics)`를 구현합니다.
 
 ```kotlin
 post("/orders/{orderId}/confirm") {
@@ -761,7 +753,7 @@ post("/orders/{orderId}/confirm") {
 }
 ```
 
-Add the GET route and helpers exactly as follows; imports are the corresponding Ktor request/response/routing types, `CancellationException`, and `UUID`:
+GET route와 helper를 다음과 정확히 같이 추가합니다. import는 해당 Ktor request/response/routing types, `CancellationException`, `UUID`입니다.
 
 ```kotlin
 get("/orders/{orderId}") {
@@ -828,9 +820,9 @@ private suspend fun ApplicationCall.respondServiceUnavailable(
 }
 ```
 
-- [ ] **Step 4: Run GREEN and serializer compilation**
+- [ ] **4단계: GREEN 및 serializer compilation 실행**
 
-Run:
+다음을 실행합니다.
 
 ```bash
 ./gradlew :examples-ktor-exposed-demo:test \
@@ -838,9 +830,9 @@ Run:
 ./gradlew :examples-ktor-exposed-demo:compileKotlin --no-daemon --console=plain
 ```
 
-Expected: all route cases PASS and generated serializers compile.
+예상 결과: 모든 route case가 PASS하고 생성된 serializer가 compile됨.
 
-- [ ] **Step 5: Commit the HTTP boundary**
+- [ ] **5단계: HTTP boundary 커밋**
 
 ```bash
 git add examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/order/OrderRoutes.kt \
@@ -854,38 +846,38 @@ git commit -m "Make order confirmation failures stable for callers" \
   -m "Not-tested: full application resources"
 ```
 
-### Task 6: Replace H2 R2DBC with Owned PostgreSQL Resources and a Safe Runner
+### 작업 6: H2 R2DBC를 소유한 PostgreSQL 리소스 및 안전한 러너로 교체
 
-**Files:**
-- Modify: `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoResources.kt`
-- Modify: `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoApplication.kt`
-- Modify: `examples/ktor-exposed-demo/build.gradle.kts`
-- Create: `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoLifecycleTest.kt`
-- Replace: `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoApplicationTest.kt`
+**파일:**
+- 수정: `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoResources.kt`
+- 수정: `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoApplication.kt`
+- 수정: `examples/ktor-exposed-demo/build.gradle.kts`
+- 생성: `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoLifecycleTest.kt`
+- 교체: `examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoApplicationTest.kt`
 
-- [ ] **Step 1: Write lifecycle and composition tests first**
+- [ ] **1단계: 라이프사이클 및 컴포지션 테스트를 먼저 작성**
 
-`KtorExposedDemoLifecycleTest` must define named fake close actions and fake `DemoServer` instances. Use this assertion matrix:
+`KtorExposedDemoLifecycleTest`는 이름이 지정된 가짜 close action과 가짜 `DemoServer` 인스턴스를 정의해야 합니다. 다음 assertion matrix를 사용합니다:
 
-| Test name | Exact proof |
+| 테스트 이름 | 정확한 검증 |
 |---|---|
-| `acquisition failure closes completed resources in reverse order and keeps primary cause` | acquired `lease,jdbc,dispatcher,pool`; throw `primary`; close order `pool,dispatcher,jdbc,lease`; thrown object is `primary`; cleanup failures are suppressed; immediate next lifecycle acquisition succeeds |
-| `engine creation or start failure closes resources and returns exit one` | server factory/start throws; resources close once; one `DEMO_STARTUP_FAILED`; status 1; no throwable text |
-| `schema initialization failure unregisters restores prior default closes pool and releases lease` | injected schema step throws `primary`; exact order `closeAndUnregister,restore-default,pool,...,lease`; result retains `primary`; cleanup failures are suppressed; immediate next lifecycle acquisition succeeds |
-| `engine create bind and start failures retain their original cause separately` | inject one named failure at each boundary | each `DemoRunResult.primaryFailure` is the exact injected object; status 1; resources close once; sanitized stderr contains none of its text |
-| `actual loopback server uses configured shutdown and cleans after ApplicationStopped` | create the production `EmbeddedServer` on an ephemeral loopback port; assert engine config `1000/5000`; stop it from a helper thread; prove `ApplicationStopped`/`closeReport` completes before blocking `start(wait=true)` returns; status 0 |
-| `resource cleanup failures aggregate once continue cleanup and return two` | repository/pool failures; later closers still run; one `DEMO_SHUTDOWN_FAILED`; status 2 |
-| `repeated close returns the original report without closing twice` | invoke close twice; each action count 1; report object/value unchanged |
-| `concurrent close returns one report and runs every closer once` | two threads enter through a barrier while the first closer is held by a latch; both complete within a bounded timeout; each closer count is 1; both receive the same report instance |
-| `overlapping demo lifecycle is rejected and sequential reuse succeeds` | hold the first resource lease; second acquisition fails before changing the default; close first; third acquisition succeeds; prior default is preserved |
-| `external non-null default is never overwritten during close` | install a different non-null default immediately before demo close | `closeAndUnregister(demo)` leaves that external default current; conditional restore skips the captured prior value; external DB is neither closed nor unregistered |
-| `stderr diagnostic sink renders only the allowlisted key-value record` | capture a supplied `PrintStream`; assert one line, stable field order, UUID correlation ID where required, omitted nulls, and absence of URL/user/password/SQL/throwable text for runtime, startup, and shutdown records |
+| `acquisition failure closes completed resources in reverse order and keeps primary cause` | `lease,jdbc,dispatcher,pool`을 획득하고 `primary`를 throw; close 순서는 `pool,dispatcher,jdbc,lease`; throw된 객체는 `primary`; cleanup failures는 suppressed 처리; 즉시 다음 lifecycle acquisition이 성공 |
+| `engine creation or start failure closes resources and returns exit one` | server factory/start가 throw; resources가 한 번만 close; 하나의 `DEMO_STARTUP_FAILED`; status 1; throwable text 없음 |
+| `schema initialization failure unregisters restores prior default closes pool and releases lease` | 주입된 schema step이 `primary`를 throw; 정확한 순서는 `closeAndUnregister,restore-default,pool,...,lease`; result가 `primary`를 유지; cleanup failures는 suppressed 처리; 즉시 다음 lifecycle acquisition이 성공 |
+| `engine create bind and start failures retain their original cause separately` | 각 boundary에 하나의 이름 있는 failure를 주입 | 각 `DemoRunResult.primaryFailure`가 정확히 주입된 객체; status 1; resources가 한 번만 close; 정제된 stderr에 해당 text가 포함되지 않음 |
+| `actual loopback server uses configured shutdown and cleans after ApplicationStopped` | ephemeral loopback port에서 production `EmbeddedServer`를 생성; engine config가 `1000/5000`인지 확인; helper thread에서 stop; blocking `start(wait=true)`가 반환되기 전에 `ApplicationStopped`/`closeReport`가 완료됨을 검증; status 0 |
+| `resource cleanup failures aggregate once continue cleanup and return two` | repository/pool failures; 이후 closer들도 계속 실행; 하나의 `DEMO_SHUTDOWN_FAILED`; status 2 |
+| `repeated close returns the original report without closing twice` | close를 두 번 호출; 각 action count가 1; report object/value가 변경되지 않음 |
+| `concurrent close returns one report and runs every closer once` | 첫 번째 closer가 latch에 의해 대기 중인 동안 두 thread가 barrier를 통해 진입; 둘 다 제한 시간 내 완료; 각 closer count가 1; 둘 다 동일한 report instance를 받음 |
+| `overlapping demo lifecycle is rejected and sequential reuse succeeds` | 첫 번째 resource lease를 유지; 두 번째 acquisition은 default를 변경하기 전에 실패; 첫 번째를 close; 세 번째 acquisition은 성공; 이전 default가 보존됨 |
+| `external non-null default is never overwritten during close` | demo close 직전에 다른 non-null default를 설치 | `closeAndUnregister(demo)`가 해당 external default를 현재 값으로 유지; conditional restore가 캡처된 이전 값을 건너뜀; external DB가 close 또는 unregister되지 않음 |
+| `stderr diagnostic sink renders only the allowlisted key-value record` | 제공된 `PrintStream`을 캡처; 한 줄, 고정된 field order, 필요한 경우 UUID correlation ID, null 생략, runtime/startup/shutdown record에서 URL/user/password/SQL/throwable text가 없음을 검증 |
 
-Replace `KtorExposedDemoApplicationTest` with a Docker-free composition test that installs Ktor core and `orderRoutes` with mocked service/repository dependencies, verifies route registration, and never constructs or mocks JDBC/R2DBC databases.
+`KtorExposedDemoApplicationTest`를 Docker-free composition test로 교체합니다. 이 테스트는 mock service/repository dependencies를 사용해 Ktor core와 `orderRoutes`를 설치하고, route registration을 검증하며, JDBC/R2DBC databases를 생성하거나 mock하지 않습니다.
 
-- [ ] **Step 2: Run RED**
+- [ ] **2단계: RED 실행**
 
-Run:
+다음을 실행합니다:
 
 ```bash
 ./gradlew :examples-ktor-exposed-demo:test \
@@ -894,11 +886,11 @@ Run:
   --no-daemon --console=plain
 ```
 
-Expected: FAIL because config, cleanup report, server abstraction, and runner do not exist.
+예상 결과: config, cleanup report, server abstraction, runner가 아직 존재하지 않으므로 FAIL.
 
-- [ ] **Step 3: Implement configuration and failure-atomic resource ownership**
+- [ ] **3단계: configuration 및 failure-atomic resource ownership 구현**
 
-In `KtorExposedDemoResources.kt`, define:
+`KtorExposedDemoResources.kt`에서 다음을 정의합니다:
 
 ```kotlin
 data class KtorExposedDemoConfig(
@@ -912,7 +904,7 @@ data class DemoCleanupReport(val failures: List<Throwable>) {
 }
 ```
 
-Keep `DemoItems` and H2 JDBC initialization. Replace H2 R2DBC creation with `ConnectionFactoryOptions.parse(config.r2dbcUrl).mutate()` plus typed `USER` and `PASSWORD` options, a `ConnectionPool` using `initialSize(1)`, `maxSize(2)`, and `maxAcquireTime(Duration.ofSeconds(5))`, and `R2dbcDatabase.connect`. Capture the R2DBC `TransactionManager.defaultDatabase`, set the demo DB as default, then run:
+`DemoItems`와 H2 JDBC 초기화는 유지합니다. H2 R2DBC 생성을 `ConnectionFactoryOptions.parse(config.r2dbcUrl).mutate()`와 typed `USER`, `PASSWORD` options를 사용하는 방식으로 교체하고, `initialSize(1)`, `maxSize(2)`, `maxAcquireTime(Duration.ofSeconds(5))`를 사용하는 `ConnectionPool` 및 `R2dbcDatabase.connect`를 사용합니다. R2DBC `TransactionManager.defaultDatabase`를 캡처하고 demo DB를 default로 설정한 다음 다음을 실행합니다:
 
 ```kotlin
 runBlocking {
@@ -920,24 +912,24 @@ runBlocking {
 }
 ```
 
-Create `OrderR2dbcCaffeineRepository`, `InMemoryOrderEventPublisher`, and `OrderCommandService(orderRepository, eventPublisher, Clock.systemUTC())`; expose those same instances as consistently named resource properties.
+`OrderR2dbcCaffeineRepository`, `InMemoryOrderEventPublisher`, `OrderCommandService(orderRepository, eventPublisher, Clock.systemUTC())`를 생성하고, 동일한 인스턴스를 일관되게 이름이 지정된 resource properties로 노출합니다.
 
-Put production acquisition behind an internal `DemoResourceAcquirer` whose injected `DemoResourceSteps` cover a process-local atomic lifecycle lease, JDBC, dispatcher, pool, R2DBC database, default-database registration, schema initialization, repository, and publisher/service construction. Every acquired step supplies a named close action that is pushed onto one reverse-order stack. Production uses real factories; tests inject named doubles. Reject a second active demo lifecycle before changing the Exposed default; release the lease on normal close and every construction-failure path so sequential reuse remains valid. On any acquisition or schema failure, unwind completed steps, ensure the R2DBC path performs `closeAndUnregister(demo)` → restore the captured previous default only when the current default is null → dispose pool, add every cleanup failure as suppressed to the original failure, and rethrow that exact original object. Never overwrite a different non-null default installed by external code. This seam is internal and does not change the example's user-facing API.
+production acquisition은 주입 가능한 `DemoResourceSteps`가 process-local atomic lifecycle lease, JDBC, dispatcher, pool, R2DBC database, default-database registration, schema initialization, repository, publisher/service construction을 담당하는 내부 `DemoResourceAcquirer` 뒤에 둡니다. 획득된 각 step은 하나의 reverse-order stack에 push되는 이름 있는 close action을 제공합니다. Production은 실제 factory를 사용하고, 테스트는 이름 있는 double을 주입합니다. Exposed default를 변경하기 전에 두 번째 active demo lifecycle을 거부합니다. 정상 close 및 모든 construction-failure 경로에서 lease를 release하여 sequential reuse가 유효하게 유지되도록 합니다. acquisition 또는 schema failure가 발생하면 완료된 step을 unwind하고, R2DBC 경로가 `closeAndUnregister(demo)` → current default가 null인 경우에만 캡처된 이전 default 복원 → pool dispose를 수행하도록 보장하며, 모든 cleanup failure를 원래 failure에 suppressed로 추가한 뒤 정확히 동일한 원본 객체를 rethrow합니다. 외부 코드가 설치한 다른 non-null default를 절대 덮어쓰지 않습니다. 이 seam은 내부용이며 example의 user-facing API를 변경하지 않습니다.
 
-Implement idempotent `closeReport()` under a private close lock with a volatile stored report so concurrent `ApplicationStopped` and runner fallback calls execute cleanup once. The exact semantic order is: repository close; R2DBC `TransactionManager.closeAndUnregister(demo)`; restore the captured previous default only if the current default is null; pool disposal with five-second bound; Hikari close; dispatcher close; release the demo lifecycle lease last. Continue after each `Exception`, retain failures without logging messages, and return the same stored report on repeated calls. Lease release must still run if any earlier closer fails. `close()` delegates to `closeReport()`.
+private close lock과 volatile stored report를 사용해 idempotent `closeReport()`를 구현하여, concurrent `ApplicationStopped` 및 runner fallback 호출이 cleanup을 한 번만 실행하도록 합니다. 정확한 semantic order는 다음과 같습니다: repository close; R2DBC `TransactionManager.closeAndUnregister(demo)`; current default가 null인 경우에만 캡처된 이전 default 복원; five-second bound를 적용한 pool disposal; Hikari close; dispatcher close; 마지막으로 demo lifecycle lease release. 각 `Exception` 이후에도 계속 진행하고, logging messages 없이 failure를 보존하며, 반복 호출 시 동일한 stored report를 반환합니다. 이전 closer가 실패하더라도 lease release는 반드시 실행되어야 합니다. `close()`는 `closeReport()`에 위임합니다.
 
-- [ ] **Step 4: Implement application composition and runner statuses**
+- [ ] **4단계: application composition 및 runner status 구현**
 
-In `KtorExposedDemoApplication.kt`:
+`KtorExposedDemoApplication.kt`에서 다음을 수행합니다:
 
-- call the two-argument `installBluetape4kExposedKtor(config, cacheReadiness)` overload, passing `ExposedKtorCacheReadinessConfig(listOf(ExposedKtorCacheContributor.r2dbcRepository("orders") { resources.orderRepository.validateConsistency() }))`;
-- keep `/transactions/jdbc-count` and add `/transactions/r2dbc-count` through `call.exposedR2dbcTransaction(resources.r2dbcDatabase) { DemoOrders.selectAll().count() }`;
-- install POST/GET order routes;
-- bind production Netty to `127.0.0.1:8080`;
-- configure the production Netty engine with `shutdownGracePeriod = 1_000` and `shutdownTimeout = 5_000`; Ktor's `EmbeddedServer.start(wait=true)` installs the actual JVM shutdown hook and its no-argument `stop()` consumes those configured values;
-- retain `ApplicationStopped` calling idempotent `closeReport()`.
+- 두 인자 overload인 `installBluetape4kExposedKtor(config, cacheReadiness)`를 호출하고, `ExposedKtorCacheReadinessConfig(listOf(ExposedKtorCacheContributor.r2dbcRepository("orders") { resources.orderRepository.validateConsistency() }))`를 전달합니다.
+- `/transactions/jdbc-count`를 유지하고, `call.exposedR2dbcTransaction(resources.r2dbcDatabase) { DemoOrders.selectAll().count() }`를 통해 `/transactions/r2dbc-count`를 추가합니다.
+- POST/GET order routes를 설치합니다.
+- production Netty를 `127.0.0.1:8080`에 bind합니다.
+- production Netty engine을 `shutdownGracePeriod = 1_000`, `shutdownTimeout = 5_000`으로 구성합니다. Ktor의 `EmbeddedServer.start(wait=true)`는 실제 JVM shutdown hook을 설치하고, 인자가 없는 `stop()`은 구성된 값을 사용합니다.
+- idempotent `closeReport()`를 호출하는 `ApplicationStopped`를 유지합니다.
 
-Define a testable server port:
+테스트 가능한 server port를 정의합니다:
 
 ```kotlin
 internal interface DemoServer {
@@ -962,24 +954,24 @@ internal data class DemoRunResult(
 )
 ```
 
-The runner returns `DemoRunResult(status=1, primaryFailure=<exact original>, cleanupReport=...)` for resource/server create/bind/start failure and emits one `DEMO_STARTUP_FAILED` with `phase=startup`; only that failed-start fallback explicitly calls `stop(1_000, 5_000)` on an already-created server before closing acquired resources. When `DemoResourcesFactory.create()` fails before returning a resource object, the acquirer has already attached cleanup failures to the original throwable; the runner uses `DemoCleanupReport(primary.suppressed.toList())` as the explicit fallback report. On the successful path it calls `start(wait=true)`: Ktor's installed shutdown hook initiates the configured `1_000/5_000` stop, synchronously raises `ApplicationStopped`, and unblocks `start`. The runner then reads the idempotent `closeReport()`; it must not issue a second successful-path stop. It returns status `0` when cleanup is clean or status `2` after one aggregated application-resource `DEMO_SHUTDOWN_FAILED` with `phase=shutdown`. Direct tests assert the retained cause and suppressed cleanup chain; diagnostics still receive no throwable or message. Ktor 3.5 internally catches and framework-logs engine-stop exceptions, so the demo does not falsely claim that its runner can observe or reclassify that framework-owned failure; the production loopback test instead proves the real engine configuration and lifecycle ordering.
+resource/server create/bind/start failure가 발생하면 runner는 `DemoRunResult(status=1, primaryFailure=<exact original>, cleanupReport=...)`를 반환하고 `phase=startup`인 하나의 `DEMO_STARTUP_FAILED`를 출력합니다. 이미 생성된 server에 대해서만 failed-start fallback이 `stop(1_000, 5_000)`을 명시적으로 호출한 뒤 획득한 resources를 close합니다. `DemoResourcesFactory.create()`가 resource object를 반환하기 전에 실패하는 경우, acquirer는 이미 cleanup failures를 원래 throwable에 연결한 상태입니다. runner는 명시적인 fallback report로 `DemoCleanupReport(primary.suppressed.toList())`를 사용합니다. 성공 경로에서는 `start(wait=true)`를 호출합니다. Ktor가 설치한 shutdown hook은 구성된 `1_000/5_000` stop을 시작하고, `ApplicationStopped`를 동기적으로 발생시키며, `start`를 unblock합니다. 그런 다음 runner는 idempotent `closeReport()`를 읽습니다. 두 번째 successful-path stop을 실행해서는 안 됩니다. cleanup이 clean이면 status `0`을 반환하고, `phase=shutdown`인 하나의 aggregated application-resource `DEMO_SHUTDOWN_FAILED` 이후에는 status `2`를 반환합니다. Direct tests는 retained cause와 suppressed cleanup chain을 검증합니다. diagnostics에는 여전히 throwable 또는 message가 전달되지 않습니다. Ktor 3.5는 engine-stop exceptions를 내부적으로 catch하고 framework-log하므로, demo는 runner가 해당 framework-owned failure를 observe하거나 reclassify할 수 있다고 잘못 주장하지 않습니다. 대신 production loopback test가 실제 engine configuration과 lifecycle ordering을 검증합니다.
 
-Implement `StderrDemoDiagnosticSink(output: PrintStream = System.err)` with a deterministic manual formatter that emits one space-delimited key-value line in this fixed order, omitting null fields: `code`, `correlationId`, `component`, `operation`, `phase`, `outcome`. The formatter accepts only the allowlisted DTO fields; it does not serialize arbitrary maps or throwable values. The sink accepts no throwable parameter and never receives exception messages, URLs, credentials, or SQL. Capture a supplied `PrintStream` in tests and prove the exact confirm/read/startup/shutdown records, correlation-ID shape, one-line framing, omitted nulls, and secret/throwable exclusion. `main` passes `StderrDemoDiagnosticSink()` to the production runner and calls `exitProcess(result.status)`; it never exposes `primaryFailure`.
+`StderrDemoDiagnosticSink(output: PrintStream = System.err)`를 구현합니다. deterministic manual formatter는 null field를 생략하고, 다음 고정 순서로 하나의 space-delimited key-value line을 출력합니다: `code`, `correlationId`, `component`, `operation`, `phase`, `outcome`. Formatter는 allowlisted DTO fields만 받으며, arbitrary maps 또는 throwable values를 serialize하지 않습니다. Sink는 throwable parameter를 받지 않으며 exception messages, URLs, credentials 또는 SQL을 절대 전달받지 않습니다. 테스트에서는 제공된 `PrintStream`을 캡처하고, 정확한 confirm/read/startup/shutdown records, correlation-ID shape, one-line framing, 생략된 null, secret/throwable exclusion을 검증합니다. `main`은 production runner에 `StderrDemoDiagnosticSink()`를 전달하고 `exitProcess(result.status)`를 호출하며, `primaryFailure`를 절대 노출하지 않습니다.
 
-At the end of Task 6 remove `runtimeOnly(bt4k.r2dbc.h2)` from `build.gradle.kts`, then prove the replaced Docker-free tests no longer construct H2 R2DBC resources.
+Task 6이 끝나면 `build.gradle.kts`에서 `runtimeOnly(bt4k.r2dbc.h2)`를 제거하고, 교체된 Docker-free tests가 더 이상 H2 R2DBC resources를 생성하지 않음을 검증합니다.
 
-- [ ] **Step 5: Run GREEN and prove fast tests remain Docker-free**
+- [ ] **5단계: GREEN 실행 및 fast tests가 Docker-free임을 검증**
 
-Run:
+다음을 실행합니다:
 
 ```bash
 ./gradlew :examples-ktor-exposed-demo:test --no-daemon --console=plain
 ./gradlew :examples-ktor-exposed-demo:compileKotlin --no-daemon --console=plain
 ```
 
-Expected: PASS; no Testcontainers log appears; lifecycle order/status assertions pass.
+예상 결과: PASS; Testcontainers log가 나타나지 않으며 lifecycle order/status assertions가 통과합니다.
 
-- [ ] **Step 6: Commit resource ownership**
+- [ ] **6단계: resource ownership 커밋**
 
 ```bash
 git add examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoResources.kt \
@@ -996,43 +988,42 @@ git commit -m "Restore Exposed global state before releasing PostgreSQL" \
   -m "Not-tested: real PostgreSQL connectivity"
 ```
 
-### Task 7: Prove the Full Scenario Against PostgreSQL Sequentially
+### 작업 7: PostgreSQL을 대상으로 전체 시나리오를 순차적으로 입증
 
-**Files:**
-- Create: `examples/ktor-exposed-demo/src/postgresIntegrationTest/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoPostgresIntegrationTest.kt`
+**파일:**
+- 생성: `examples/ktor-exposed-demo/src/postgresIntegrationTest/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoPostgresIntegrationTest.kt`
 
-- [ ] **Step 1: Write the full integration test before running the Docker task**
+- [ ] **1단계: Docker 작업을 실행하기 전에 전체 통합 테스트 작성**
 
-Create one `@Execution(ExecutionMode.SAME_THREAD)` test class using `PostgreSQLContainer("postgres:16-alpine")`. Reuse one suite-level container sequentially for the normal scenario, readiness, and default-restoration cases; each of those tests creates and closes fresh application resources. The outage case owns a second independent container that it may stop. Use `try/finally` so every resource closes before its owning container, including suite teardown. Build `KtorExposedDemoConfig` from `container.host`, `container.getMappedPort(5432)`, `container.databaseName`, `container.username`, and `container.password`.
+`PostgreSQLContainer("postgres:16-alpine")`을 사용하는 `@Execution(ExecutionMode.SAME_THREAD)` 테스트 클래스 하나를 생성합니다. 일반 시나리오, readiness, 기본값 복원 케이스에는 suite 수준의 컨테이너 하나를 순차적으로 재사용하며, 각 테스트는 애플리케이션 리소스를 새로 생성하고 닫습니다. 장애 케이스는 중지할 수 있는 독립적인 두 번째 컨테이너를 소유합니다. suite teardown을 포함하여 모든 리소스가 자신이 속한 컨테이너보다 먼저 닫히도록 `try/finally`를 사용합니다. `container.host`, `container.getMappedPort(5432)`, `container.databaseName`, `container.username`, `container.password`에서 `KtorExposedDemoConfig`를 구성합니다.
 
-Implement four cases named `order confirmation persists publishes reads through cache and stays sequentially idempotent`, `readiness exposes jdbc r2dbc and cache orders while health remains probe free`, `stopped PostgreSQL keeps liveness up and returns bounded sanitized readiness down`, and `closing restores previous default and a second lifecycle does not reuse the closed pool`.
+다음 네 가지 이름의 케이스를 구현합니다: `order confirmation persists publishes reads through cache and stays sequentially idempotent`, `readiness exposes jdbc r2dbc and cache orders while health remains probe free`, `stopped PostgreSQL keeps liveness up and returns bounded sanitized readiness down`, `closing restores previous default and a second lifecycle does not reuse the closed pool`.
 
-The scenario case must:
+시나리오 케이스는 다음을 수행해야 합니다.
 
-1. assert JDBC count `2` and initial R2DBC count `0`;
-2. POST a client-generated lowercase UUID with the required header and assert `eventPublished=true`;
-3. read the row directly from PostgreSQL with explicit
-   `suspendTransaction(resources.r2dbcDatabase)`, never the implicit default;
-4. invalidate the repository key, assert the cache entry is absent, GET over HTTP, then assert the cache contains the returned record;
-5. call repository GET again and assert referential identity with the cached record;
-6. repeat POST and assert `eventPublished=false`, one DB row, and one runtime event snapshot.
+1. JDBC count `2`와 초기 R2DBC count `0`을 검증합니다.
+2. 클라이언트가 생성한 소문자 UUID를 필수 헤더와 함께 POST하고 `eventPublished=true`임을 검증합니다.
+3. 명시적인 `suspendTransaction(resources.r2dbcDatabase)`를 사용하여 PostgreSQL에서 행을 직접 읽습니다. 암시적 기본값은 절대 사용하지 않습니다.
+4. repository key를 무효화하고 캐시 항목이 없음을 검증한 다음, HTTP를 통해 GET하고 반환된 레코드가 캐시에 포함되어 있음을 검증합니다.
+5. repository GET을 다시 호출하고 캐시된 레코드와 참조 동일성임을 검증합니다.
+6. POST를 반복하고 `eventPublished=false`, DB 행 하나, runtime event snapshot 하나임을 검증합니다.
 
-The outage case must stop the container after application startup, assert `/healthz/exposed` is `200`, and use a ten-second client/test timeout to assert `/readyz/exposed` is sanitized `503` with no URL, user, password, SQL, or exception text.
+장애 케이스는 애플리케이션이 시작된 후 컨테이너를 중지하고 `/healthz/exposed`가 `200`임을 검증해야 합니다. 또한 10초 클라이언트/테스트 timeout을 사용하여 `/readyz/exposed`가 URL, 사용자, 비밀번호, SQL 또는 exception 텍스트 없이 정제된 `503`임을 검증해야 합니다.
 
-- [ ] **Step 2: Run the first real PostgreSQL proof**
+- [ ] **2단계: 최초의 실제 PostgreSQL 검증 실행**
 
-Run:
+다음을 실행합니다.
 
 ```bash
 ./gradlew :examples-ktor-exposed-demo:postgresIntegrationTest \
   --no-parallel --no-daemon --console=plain
 ```
 
-Expected: PASS when the implementation is already correct. If the first real run exposes a mapping, lifecycle, or timeout defect, preserve the exact failure as evidence and make the smallest repair. Docker unavailability is a hard environmental failure, never a skip or H2 fallback; do not manufacture a RED result.
+예상 결과: 구현이 이미 올바르면 PASS입니다. 최초의 실제 실행에서 매핑, lifecycle 또는 timeout 결함이 드러나면 정확한 실패를 증거로 보존하고 가장 작은 수정만 적용합니다. Docker를 사용할 수 없는 경우는 엄격한 환경 실패이며, skip이나 H2 fallback으로 처리하지 않습니다. RED 결과를 조작하지 않습니다.
 
-- [ ] **Step 3: Make only the smallest integration corrections**
+- [ ] **3단계: 가장 작은 통합 수정만 적용**
 
-Correct mapping, route composition, lifecycle, or timeouts only where the real PostgreSQL failure proves the current implementation wrong. Preserve these invariants while editing:
+실제 PostgreSQL 실패가 현재 구현의 잘못을 입증하는 경우에만 매핑, route composition, lifecycle 또는 timeout을 수정합니다. 편집하는 동안 다음 불변 조건을 유지합니다.
 
 ```text
 ensureActive -> repository.put -> ensureActive -> publisher.publish -> clearDomainEvents
@@ -1040,9 +1031,9 @@ repository.close -> closeAndUnregister -> restore previous default -> pool.dispo
 ordinary test !-> postgresIntegrationTest
 ```
 
-- [ ] **Step 4: Run GREEN and rerun fast tests**
+- [ ] **4단계: GREEN 실행 및 빠른 테스트 재실행**
 
-Run:
+다음을 실행합니다.
 
 ```bash
 ./gradlew :examples-ktor-exposed-demo:postgresIntegrationTest \
@@ -1050,9 +1041,9 @@ Run:
 ./gradlew :examples-ktor-exposed-demo:test --no-daemon --console=plain
 ```
 
-Expected: the PostgreSQL task PASS; its dedicated test performs two resource lifecycles sequentially to prove no closed default/pool contamination without a duplicate whole-suite container run; fast tests remain PASS.
+예상 결과: PostgreSQL task는 PASS해야 합니다. 전용 테스트는 전체 suite의 중복 컨테이너 실행 없이 두 개의 리소스 lifecycle을 순차적으로 수행하여 닫힌 기본값/풀 오염이 없음을 입증해야 하며, 빠른 테스트도 계속 PASS해야 합니다.
 
-- [ ] **Step 5: Commit real-database proof**
+- [ ] **5단계: 실제 데이터베이스 검증 커밋**
 
 ```bash
 git add examples/ktor-exposed-demo/src/postgresIntegrationTest/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoPostgresIntegrationTest.kt \
@@ -1067,12 +1058,12 @@ git commit -m "Prove the Ktor cache scenario against PostgreSQL" \
   -m "Not-tested: Docker Compose walkthrough"
 ```
 
-### Task 8: Add the Loopback Docker Compose Runtime
+### 작업 8: Loopback Docker Compose 런타임 추가
 
-**Files:**
-- Create: `examples/ktor-exposed-demo/compose.yaml`
+**파일:**
+- 생성: `examples/ktor-exposed-demo/compose.yaml`
 
-- [ ] **Step 1: Create the exact local PostgreSQL contract**
+- [ ] **1단계: 정확한 로컬 PostgreSQL 계약 생성**
 
 ```yaml
 services:
@@ -1097,9 +1088,9 @@ volumes:
   ktor-exposed-demo-postgres:
 ```
 
-- [ ] **Step 2: Validate and smoke the Compose lifecycle**
+- [ ] **2단계: Compose 수명 주기 검증 및 스모크 테스트**
 
-Run from repository root:
+저장소 루트에서 실행:
 
 ```bash
 COMPOSE_PROJECT_NAME=bt4k-issue-326-smoke
@@ -1116,9 +1107,9 @@ cleanup_compose
 trap - EXIT INT TERM
 ```
 
-Expected: config validation succeeds; PostgreSQL becomes healthy within 60 seconds; `down` retains the named volume.
+예상 결과: 구성 검증이 성공하고, PostgreSQL이 60초 이내에 정상 상태가 되며, `down` 실행 후에도 이름이 지정된 볼륨이 유지된다.
 
-- [ ] **Step 3: Commit local runtime ownership**
+- [ ] **3단계: 로컬 런타임 소유권 커밋**
 
 ```bash
 git add examples/ktor-exposed-demo/compose.yaml
@@ -1131,27 +1122,27 @@ git commit -m "Make the PostgreSQL example runnable without hidden infrastructur
   -m "Not-tested: README curl walkthrough"
 ```
 
-### Task 9: Create and Audit Architecture and Sequence Diagrams
+### 작업 9: 아키텍처 및 시퀀스 다이어그램 생성과 감사
 
-**Files:**
-- Create: `docs/images/readme-diagrams/examples-ktor-exposed-demo-architecture-01.svg`
-- Create: `docs/images/readme-diagrams/examples-ktor-exposed-demo-architecture-01.png`
-- Create: `docs/images/readme-diagrams/examples-ktor-exposed-demo-sequence-01.svg`
-- Create: `docs/images/readme-diagrams/examples-ktor-exposed-demo-sequence-01.png`
+**파일:**
+- 생성: `docs/images/readme-diagrams/examples-ktor-exposed-demo-architecture-01.svg`
+- 생성: `docs/images/readme-diagrams/examples-ktor-exposed-demo-architecture-01.png`
+- 생성: `docs/images/readme-diagrams/examples-ktor-exposed-demo-sequence-01.svg`
+- 생성: `docs/images/readme-diagrams/examples-ktor-exposed-demo-sequence-01.png`
 
-- [ ] **Step 1: Complete the architecture asset loop**
+- [ ] **1단계: 아키텍처 에셋 루프 완료**
 
-Use `docs/images/readme-diagrams/exposed-r2dbc-caffeine-diagram-01.svg` as the style reference. The new SVG must show the application ownership boundary; HTTP → routes → command service; aggregate; concrete repository; Caffeine before PostgreSQL; Spring-free publisher; readiness contributor; and repository-before-unregister/pool shutdown. Set all marker sizes with `markerUnits="userSpaceOnUse"`, use the approved font stack, and keep every label at readable full-size PNG scale.
+스타일 참고 자료로 `docs/images/readme-diagrams/exposed-r2dbc-caffeine-diagram-01.svg`를 사용한다. 새 SVG에는 애플리케이션 소유권 경계, HTTP → routes → command service, aggregate, concrete repository, PostgreSQL 앞의 Caffeine, Spring-free publisher, readiness contributor, repository-before-unregister/pool shutdown을 표시해야 한다. 모든 마커 크기는 `markerUnits="userSpaceOnUse"`로 설정하고, 승인된 글꼴 스택을 사용하며, 모든 레이블이 전체 크기 PNG에서도 읽기 쉬워야 한다.
 
-Before touching the sequence asset, close this exact loop for architecture: edit SVG → `xmllint` → render PNG at scale 2 → connector/geometry/endpoint/mixed-corner audits → inspect PNG at original resolution → record connector/card/path/label counts, PNG dimensions, and visual notes. Run geometry audit with `--fail-diagonal`. If an audit reports `WEAK`, zero connectors/cards/paths/labels, or cannot classify the SVG, add and run a targeted invariant check instead of treating that result as PASS.
+시퀀스 에셋을 수정하기 전에 아키텍처에 대한 다음의 정확한 루프를 완료한다: SVG 편집 → `xmllint` → 배율 2로 PNG 렌더링 → 커넥터/기하/엔드포인트/혼합 모서리 감사 → 원본 해상도로 PNG 검사 → 커넥터/카드/경로/레이블 수, PNG 크기 및 시각적 메모 기록. `--fail-diagonal`을 사용하여 기하 감사를 실행한다. 감사에서 `WEAK`, 커넥터/카드/경로/레이블 수 0, 또는 SVG 분류 불가가 보고되면 해당 결과를 PASS로 간주하지 말고 대상 불변식 검사를 추가하여 실행한다.
 
-- [ ] **Step 2: Complete the true sequence asset loop**
+- [ ] **2단계: 실제 시퀀스 에셋 루프 완료**
 
-Use `docs/images/readme-diagrams/exposed-r2dbc-caffeine-sequence-01.svg` as the style reference. Include labeled lifelines, activation bars, visible numbered pills, and transparent `alt` frames for cache hit/miss, persistence success/failure+invalidate, and publisher success/retain. Make the non-atomic Caffeine→PostgreSQL order explicit; no connector may cross a label or frame title.
+스타일 참고 자료로 `docs/images/readme-diagrams/exposed-r2dbc-caffeine-sequence-01.svg`를 사용한다. 레이블이 있는 라이프라인, 활성화 바, 표시되는 번호 pill, 그리고 cache hit/miss, persistence success/failure+invalidate, publisher success/retain을 위한 투명한 `alt` 프레임을 포함한다. 비원자적인 Caffeine→PostgreSQL 순서를 명확히 표시해야 하며, 어떤 커넥터도 레이블이나 프레임 제목을 가로질러서는 안 된다.
 
-Only after Step 1 evidence is complete, close the same loop for sequence: edit SVG → `xmllint` → render PNG at scale 2 → connector/geometry/endpoint/mixed-corner/sequence-style audits → inspect PNG at original resolution → record connector/card/path/label counts, PNG dimensions, and visual notes. Run geometry audit with `--fail-diagonal`. Apply the same `WEAK`/zero-count fallback rule.
+1단계의 증거가 완료된 후에만 시퀀스에 대해 동일한 루프를 완료한다: SVG 편집 → `xmllint` → 배율 2로 PNG 렌더링 → 커넥터/기하/엔드포인트/혼합 모서리/시퀀스 스타일 감사 → 원본 해상도로 PNG 검사 → 커넥터/카드/경로/레이블 수, PNG 크기 및 시각적 메모 기록. `--fail-diagonal`을 사용하여 기하 감사를 실행한다. 동일한 `WEAK`/수량 0 대체 규칙을 적용한다.
 
-- [ ] **Step 3: Run the exact per-asset commands and preserve evidence**
+- [ ] **3단계: 에셋별 정확한 명령을 실행하고 증거 보존**
 
 ```bash
 xmllint --noout docs/images/readme-diagrams/examples-ktor-exposed-demo-architecture-01.svg
@@ -1172,13 +1163,13 @@ python ~/.codex/skills/bluetape-diagram/scripts/diagram-mixed-corner-audit.py do
 python ~/.codex/skills/bluetape-diagram/scripts/diagram-sequence-style-audit.py docs/images/readme-diagrams/examples-ktor-exposed-demo-sequence-01.svg
 ```
 
-Expected: each asset is closed before the next begins; both PNGs are non-empty; XML and every audit PASS with zero connector/geometry/endpoint/style violations or an explicit targeted fallback invariant; the review evidence records all counts, dimensions, and original-resolution visual notes.
+예상 결과: 각 에셋은 다음 에셋으로 넘어가기 전에 완료되어야 하며, 두 PNG는 비어 있지 않아야 한다. XML 및 모든 감사가 커넥터/기하/엔드포인트/스타일 위반 0건 또는 명시적인 대상 대체 불변식과 함께 PASS해야 한다. 검토 증거에는 모든 수량, 크기 및 원본 해상도 시각적 메모가 기록되어야 한다.
 
-- [ ] **Step 4: Reinspect both final PNGs after the last SVG change**
+- [ ] **4단계: 마지막 SVG 변경 후 최종 PNG 두 개 재검사**
 
-Open both PNGs with the image viewer at original resolution. Expected: all text is readable; arrowheads are proportionate; no clipping/overlap; sequence branches and numbers remain visible without color dependence. If either image changes, rerender and rerun all audits before inspecting again.
+이미지 뷰어에서 두 PNG를 원본 해상도로 연다. 예상 결과: 모든 텍스트가 읽기 쉽고, 화살촉의 비율이 적절하며, 잘림/겹침이 없어야 한다. 시퀀스 분기와 번호는 색상에 의존하지 않고 계속 표시되어야 한다. 어느 이미지라도 변경되면 다시 렌더링하고 모든 감사를 다시 실행한 후 다시 검사한다.
 
-- [ ] **Step 5: Commit the visual explanation**
+- [ ] **5단계: 시각적 설명 커밋**
 
 ```bash
 git add docs/images/readme-diagrams/examples-ktor-exposed-demo-architecture-01.svg \
@@ -1194,29 +1185,29 @@ git commit -m "Explain the Ktor order flow without implying cache atomicity" \
   -m "Not-tested: README embedding"
 ```
 
-### Task 10: Write the Bilingual User Walkthrough and Limitations
+### 작업 10: 이중 언어 사용자 워크스루 및 제한 사항 작성
 
-**Files:**
-- Replace: `examples/ktor-exposed-demo/README.md`
-- Replace: `examples/ktor-exposed-demo/README.ko.md`
+**파일:**
+- 교체: `examples/ktor-exposed-demo/README.md`
+- 교체: `examples/ktor-exposed-demo/README.ko.md`
 
-- [ ] **Step 1: Write English and Korean READMEs in the locked section order**
+- [ ] **1단계: 고정된 섹션 순서로 영어 및 한국어 README 작성**
 
-Both files must contain, in order: Overview; Example Scenario; Architecture; Order Confirmation Sequence; Project Structure; Resource Ownership; Routes; Run with PostgreSQL; Testing; Behavior and Limitations; See Also. Keep mutual locale links at the top.
+두 파일은 다음 순서를 따라야 합니다: 개요; 예제 시나리오; 아키텍처; 주문 확인 시퀀스; 프로젝트 구조; 리소스 소유권; 라우트; PostgreSQL로 실행; 테스트; 동작 및 제한 사항; 참고 자료. 상단에는 상호 로케일 링크를 유지합니다.
 
-Embed the PNGs with natural locale-specific alt text, link each canonical SVG below its image, and add adjacent textual legends explaining line styles, branch frames, colors, non-atomic Caffeine→PostgreSQL order, and repository-before-pool shutdown.
+PNG를 자연스러운 로케일별 대체 텍스트와 함께 삽입하고, 각 이미지 아래에 해당 canonical SVG를 링크하며, 선 스타일, 분기 프레임, 색상, 비원자적인 Caffeine→PostgreSQL 순서, repository-before-pool 종료를 설명하는 인접 텍스트 범례를 추가합니다.
 
-In each `Routes` section, include the full approved route/media-type table, explicitly label POST confirmation as bodyless, and include the exact success JSON plus the complete error table: `400 INVALID_ORDER_ID`, `403 DEMO_COMMAND_REQUIRED`, `404 ORDER_NOT_FOUND`, and all four `503` codes/messages. Explain that only `503` responses carry a generated UUID `correlationId`, that it links the sanitized caller response to one allowlisted stderr diagnostic record, and that it is not a retry or event-republication token.
+각 `Routes` 섹션에는 승인된 전체 route/media-type 표를 포함하고, POST 확인이 bodyless임을 명시하며, 정확한 성공 JSON과 전체 오류 표를 포함합니다: `400 INVALID_ORDER_ID`, `403 DEMO_COMMAND_REQUIRED`, `404 ORDER_NOT_FOUND`, 그리고 네 가지 `503` 코드/메시지. `503` 응답에만 생성된 UUID `correlationId`가 포함되며, 이 값은 정제된 호출자 응답을 하나의 allowlisted stderr 진단 레코드에 연결하고, 재시도 또는 이벤트 재게시 토큰이 아님을 설명합니다.
 
-- [ ] **Step 2: Add the exact copy-paste run and recovery commands**
+- [ ] **2단계: 정확한 복사-붙여넣기 실행 및 복구 명령 추가**
 
-Include the repository-root Compose `up --wait`, terminal-one Gradle run, terminal-two `BASE_URL` and lowercase `uuidgen`, health/readiness/count requests, first POST, GET, repeated POST, normal `down`, destructive `down -v --remove-orphans`, port-conflict inspection, and focused/full test commands exactly as locked in the design spec.
+저장소 루트의 Compose `up --wait`, 터미널 1의 Gradle 실행, 터미널 2의 `BASE_URL` 및 소문자 `uuidgen`, health/readiness/count 요청, 첫 번째 POST, GET, 반복 POST, 일반 `down`, 삭제 작업인 `down -v --remove-orphans`, 포트 충돌 검사, 집중/전체 테스트 명령을 설계 사양에 고정된 그대로 포함합니다.
 
-State expected responses: readiness components `jdbc`, `r2dbc`, `cache.orders`; first POST `eventPublished=true`; repeat `false`; GET same ID/status/timestamp; R2DBC count increases.
+예상 응답을 명시합니다: readiness components `jdbc`, `r2dbc`, `cache.orders`; 첫 번째 POST `eventPublished=true`; 반복 요청 `false`; GET은 동일한 ID/status/timestamp를 반환; R2DBC count가 증가합니다.
 
-- [ ] **Step 3: State all operational and semantic limitations plainly**
+- [ ] **3단계: 모든 운영 및 의미상의 제한 사항을 명확하게 기술**
 
-Both locales must explicitly say:
+두 로케일 모두 다음을 명시적으로 포함해야 합니다:
 
 ```text
 - loopback and X-Demo-Command are teaching guards, not production auth;
@@ -1239,11 +1230,11 @@ Both locales must explicitly say:
 - the demo exposes no readiness drain and production owns traffic withdrawal.
 ```
 
-Link the service/publisher source and focused `OrderCommandServiceTest` command so readers can verify the non-HTTP event boundary.
+서비스/퍼블리셔 소스와 집중 `OrderCommandServiceTest` 명령을 링크하여 독자가 비HTTP 이벤트 경계를 확인할 수 있도록 합니다.
 
-- [ ] **Step 4: Validate links, command parity, and formatting**
+- [ ] **4단계: 링크, 명령어 동등성 및 형식 검증**
 
-Create a parity matrix in the issue review file with rows for section order, mutual links, route/media table, every Compose/Gradle/curl command, success/error responses, limitations, diagram PNG/SVG assets, and service/publisher/test source links. Then run:
+이슈 리뷰 파일에 섹션 순서, 상호 링크, route/media 표, 모든 Compose/Gradle/curl 명령, 성공/오류 응답, 제한 사항, 다이어그램 PNG/SVG 자산, 서비스/퍼블리셔/테스트 소스 링크를 행으로 포함하는 동등성 매트릭스를 작성합니다. 그런 다음 실행합니다:
 
 ```bash
 awk '/^```bash$/{copy=1; next} /^```$/{if(copy){copy=0; print "---"}; next} copy' \
@@ -1267,15 +1258,15 @@ rg -n "examples-ktor-exposed-demo-(architecture|sequence)-01\.(png|svg)|DEMO_POS
 git diff --check
 ```
 
-Expected: command fences compare byte-for-byte; the completed matrix proves semantic parity beyond token presence; every linked local file exists; no whitespace error.
+예상 결과: 명령어 펜스가 바이트 단위로 동일하게 비교되고, 완성된 매트릭스가 토큰 존재 여부를 넘어 의미상의 동등성을 입증하며, 링크된 모든 로컬 파일이 존재하고, 공백 오류가 없습니다.
 
-- [ ] **Step 5: Execute the documented walkthrough**
+- [ ] **5단계: 문서화된 워크스루 실행**
 
-Use a task-owned Compose project and a shell trap/finally that stops the background Gradle process and runs normal `down` on every success, failure, interrupt, or termination path while retaining the named volume. Start Compose with the documented bounded wait, start the Gradle application in a separate terminal/session, run every documented curl, verify the stated results, and allow the trap to stop Gradle and Compose.
+작업 전용 Compose 프로젝트와, 모든 성공·실패·인터럽트·종료 경로에서 백그라운드 Gradle 프로세스를 중지하고 일반 `down`을 실행하면서 명명된 볼륨은 유지하는 shell trap/finally를 사용합니다. 문서화된 제한 시간 내 대기로 Compose를 시작하고, 별도의 터미널/세션에서 Gradle 애플리케이션을 시작하며, 문서화된 모든 curl을 실행하고, 명시된 결과를 검증한 다음, trap이 Gradle과 Compose를 중지하도록 합니다.
 
-Then create a separate disposable project named `bt4k-issue-326-reset`, run its PostgreSQL service, execute the documented `docker compose -p bt4k-issue-326-reset -f examples/ktor-exposed-demo/compose.yaml down -v --remove-orphans`, and assert `docker volume inspect bt4k-issue-326-reset_ktor-exposed-demo-postgres` fails. Never point this destructive verification at the retained smoke/walkthrough project or a user-selected project name.
+그런 다음 `bt4k-issue-326-reset`이라는 별도의 일회용 프로젝트를 생성하고 PostgreSQL 서비스를 실행한 뒤, 문서화된 `docker compose -p bt4k-issue-326-reset -f examples/ktor-exposed-demo/compose.yaml down -v --remove-orphans`를 실행하고 `docker volume inspect bt4k-issue-326-reset_ktor-exposed-demo-postgres`가 실패하는지 확인합니다. 이 삭제 검증의 대상을 보존된 smoke/walkthrough 프로젝트나 사용자가 선택한 프로젝트 이름으로 지정하지 않습니다.
 
-- [ ] **Step 6: Commit the reader-facing example**
+- [ ] **6단계: 독자 대상 예제 커밋**
 
 ```bash
 git add examples/ktor-exposed-demo/README.md examples/ktor-exposed-demo/README.ko.md
@@ -1288,20 +1279,20 @@ git commit -m "Teach the PostgreSQL order scenario from request to shutdown" \
   -m "Not-tested: external deployment beyond loopback"
 ```
 
-### Task 11: Final Verification, Durable Lesson, and PR Evidence
+### 작업 11: 최종 검증, 지속 가능한 교훈, PR 증거
 
-**Files:**
-- Create: `docs/lessons/2026-07-17-issue-326-ktor-r2dbc-write-through-event-handoff.md`
-- Create: `docs/review/2026-07-17-issue-326-ktor-r2dbc-ddd-demo-review.md`
-- Modify: `docs/superpowers/checklists/2026-07-17-issue-326-ktor-r2dbc-ddd-demo-checklist.md`
+**파일:**
+- 생성: `docs/lessons/2026-07-17-issue-326-ktor-r2dbc-write-through-event-handoff.md`
+- 생성: `docs/review/2026-07-17-issue-326-ktor-r2dbc-ddd-demo-review.md`
+- 수정: `docs/superpowers/checklists/2026-07-17-issue-326-ktor-r2dbc-ddd-demo-checklist.md`
 
-- [ ] **Step 0: Remove only task-owned visual scratch artifacts**
+- [ ] **단계 0: 작업에 속한 시각적 임시 산출물만 제거**
 
-Stop the issue #326 visual-companion server, then remove the task-owned untracked `.playwright-cli/` files and `.superpowers/brainstorm/82929-1784217386/` directory from this worktree. Do not remove any tracked file or any artifact outside that exact session path. Run `repo-status` and verify no visual scratch path remains.
+issue #326 시각적 동반 서버를 중지한 다음, 이 worktree에서 작업에 속한 추적되지 않은 `.playwright-cli/` 파일과 `.superpowers/brainstorm/82929-1784217386/` 디렉터리를 제거한다. 추적된 파일이나 정확히 지정된 세션 경로 외부의 산출물은 제거하지 않는다. `repo-status`를 실행하고 시각적 임시 경로가 남아 있지 않은지 확인한다.
 
-- [ ] **Step 1: Run focused and proportional repository verification**
+- [ ] **단계 1: 집중적이고 비례적인 저장소 검증 실행**
 
-Run sequentially:
+다음 명령을 순서대로 실행한다:
 
 ```bash
 ./gradlew :examples-ktor-exposed-demo:test --no-daemon --console=plain
@@ -1311,17 +1302,17 @@ Run sequentially:
 git diff --check
 ```
 
-Expected: every command PASS. If the module has no `detekt` task, record the exact Gradle task-not-found output and run root `./gradlew detekt --no-daemon --console=plain` as the next-best static proof.
+예상 결과: 모든 명령이 PASS. 모듈에 `detekt` task가 없다면 정확한 Gradle task-not-found 출력을 기록하고, 다음으로 root `./gradlew detekt --no-daemon --console=plain`을 차선의 정적 증거로 실행한다.
 
-- [ ] **Step 2: Record the durable lesson**
+- [ ] **단계 2: 지속 가능한 교훈 기록**
 
-The lesson must contain Context, Decision, Outcome, Proof, Misses, and Future Guard. Record that WRITE_THROUGH updates Caffeine before PostgreSQL, service compensation invalidates but cannot remove the transient reader window, and non-durable publication must use snapshot/publish/clear rather than `drainDomainEvents`.
+교훈에는 Context, Decision, Outcome, Proof, Misses, Future Guard가 포함되어야 한다. WRITE_THROUGH가 PostgreSQL보다 먼저 Caffeine을 업데이트하고, 서비스 보상은 무효화하지만 일시적인 reader window를 제거할 수 없으며, 비내구성 publication에는 `drainDomainEvents`가 아니라 snapshot/publish/clear를 사용해야 한다는 내용을 기록한다.
 
-- [ ] **Step 3: Run the final multi-lens review and repair every P0/P1**
+- [ ] **단계 3: 최종 다중 관점 리뷰를 실행하고 모든 P0/P1 수정**
 
-Review the actual diff independently for performance, stability/concurrency, security/privacy, Ops, developer/API, and user/caller/docs/diagrams. Integrate the results in the review file with P0-P3 counts, repairs, exact commands, and final READY state. Stop PR creation until every lens and main integration are P0=0/P1=0.
+실제 diff를 성능, 안정성/동시성, 보안/개인정보, Ops, 개발자/API, 사용자/caller/docs/diagrams 관점에서 독립적으로 검토한다. 결과를 리뷰 파일에 P0-P3 개수, 수정 사항, 정확한 명령, 최종 READY 상태와 함께 통합한다. 모든 관점과 main integration에서 P0=0/P1=0이 될 때까지 PR 생성을 중지한다.
 
-- [ ] **Step 4: Commit lesson and review evidence**
+- [ ] **단계 4: 교훈 및 리뷰 증거 커밋**
 
 ```bash
 git add docs/lessons/2026-07-17-issue-326-ktor-r2dbc-write-through-event-handoff.md \
@@ -1338,9 +1329,9 @@ git commit -m "Preserve the cache compensation and event handoff boundary" \
   -m "Not-tested: production authentication, migrations, and concurrent idempotency"
 ```
 
-- [ ] **Step 5: Rerun PostgreSQL proof on the exact final head**
+- [ ] **단계 5: 정확한 최종 head에서 PostgreSQL 증명 재실행**
 
-Run only from a clean worktree after all implementation/docs/evidence commits:
+모든 구현/docs/evidence 커밋 이후 깨끗한 worktree에서만 다음을 실행한다:
 
 ```bash
 git status --short
@@ -1349,8 +1340,8 @@ git rev-parse HEAD
   --no-parallel --no-daemon --console=plain
 ```
 
-Expected: clean status, recorded commit SHA, PASS. Any later commit invalidates this proof and requires repeating the step.
+예상 결과: clean status, 기록된 commit SHA, PASS. 이후 커밋이 하나라도 추가되면 이 증명이 무효화되므로 해당 단계를 반복해야 한다.
 
-- [ ] **Step 6: Push and open the authorized PR without merging**
+- [ ] **단계 6: 승인된 PR을 push하고 merge 없이 생성**
 
-Push `feat/issue-326-ktor-r2dbc-ddd-demo`, open a PR targeting `develop`, mirror issue #326 metadata, describe the Order Confirmation scenario and PostgreSQL replacement, include the exact-head local PostgreSQL proof, and end the body with final `## DoD Status`. Wait for required CI/reviews/threads on that exact head. Report the exact PR number, head SHA, checks, and review state; obtain fresh user approval before any merge.
+`feat/issue-326-ktor-r2dbc-ddd-demo`를 push하고, `develop`을 대상으로 PR을 생성한다. issue #326 메타데이터를 반영하고, Order Confirmation 시나리오와 PostgreSQL 대체를 설명하며, 정확한 head에 대한 로컬 PostgreSQL 증명을 포함하고, 본문을 최종 `## DoD Status`로 끝낸다. 해당 정확한 head에 대한 필수 CI/reviews/threads를 기다린다. 정확한 PR 번호, head SHA, checks, review state를 보고하고, merge 전에 사용자의 새로운 승인을 받는다.

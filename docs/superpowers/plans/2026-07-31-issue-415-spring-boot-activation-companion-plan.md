@@ -1,16 +1,16 @@
 # Issue 415 Spring Boot 활성화 시각 해설서 구현 계획
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **에이전트 작업자용:** 필수 하위 기술: superpowers:subagent-driven-development 사용(권장) 또는 superpowers:executing-plans 사용. 단계는 추적을 위해 체크박스(`- [ ]`) 구문을 사용한다.
 
-**Goal:** Spring Data JPA의 자동 구성 기대와 Exposed의 명시적 활성화 계약을 비교하고, JDBC와 R2DBC의 조건·소유권·실패 진단을 실제 소스와 테스트에 연결한 영어·한국어 독립 HTML을 제공한다.
+**목표:** Spring Data JPA의 자동 구성 기대와 Exposed의 명시적 활성화 계약을 비교하고, JDBC와 R2DBC의 조건·소유권·실패 진단을 실제 소스와 테스트에 연결한 영어·한국어 독립 HTML을 제공한다.
 
-**Architecture:** `docs/visual-companions/data/spring-boot-exposed-activation.json`을 조건, 시나리오, 책임, 레시피, 진단, 근거의 단일 구조화 원본으로 확장한다. 공용 generator는 이 모델에서 한·영 HTML과 DOM 기반 sequence diagram을 만들고, 기존 JDBC/R2DBC Architecture Diagram은 해시로 고정해 내장한다. 사용자 시각 승인 전에는 manifest를 `pending-review/private`로 유지하고, 승인 후에만 정적 fallback과 `approved/public` 상태를 기록한다.
+**아키텍처:** `docs/visual-companions/data/spring-boot-exposed-activation.json`을 조건, 시나리오, 책임, 레시피, 진단, 근거를 담은 단일 구조화 원본으로 확장한다. 공용 generator는 이 모델에서 한·영 HTML과 DOM 기반 sequence diagram을 만들고, 기존 JDBC/R2DBC Architecture Diagram은 해시로 고정해 내장한다. 사용자 시각 승인 전에는 manifest를 `pending-review/private`로 유지하고, 승인 후에만 정적 fallback과 `approved/public` 상태를 기록한다.
 
-**Tech Stack:** Node.js ESM, JSON, 독립 실행형 HTML/CSS/JavaScript, Chrome DevTools Protocol, 기존 visual companion validator/capture 도구
+**기술 스택:** Node.js ESM, JSON, 독립 실행형 HTML/CSS/JavaScript, Chrome DevTools Protocol, 기존 visual companion validator/capture 도구
 
 ---
 
-## 파일 책임 구조
+## 파일별 책임 구조
 
 | 파일 | 책임 |
 |---|---|
@@ -39,13 +39,13 @@
 - 한국어 `mental model`은 `사고방식`으로 표현한다.
 - sequence diagram은 call line과 role line을 분리하고, call/return/error arrowhead 색상을 각 line과 일치시키며, participant card text를 세로 중앙 정렬한다.
 
-### Task 1: Activation 모델 contract를 실패 테스트로 잠근다
+### Task 1: Activation 모델 contract를 실패 테스트로 고정한다
 
-**Files:**
+**파일:**
 
-- Modify: `tests/visual-companions/build.test.mjs`
-- Modify: `tests/visual-companions/validator.test.mjs`
-- Modify: `scripts/visual-companions/lib/model.mjs`
+- 수정: `tests/visual-companions/build.test.mjs`
+- 수정: `tests/visual-companions/validator.test.mjs`
+- 수정: `scripts/visual-companions/lib/model.mjs`
 
 - [ ] **Step 1: 7개 preset과 reader-facing section을 요구하는 실패 테스트를 추가한다**
 
@@ -98,18 +98,17 @@ node --test tests/visual-companions/build.test.mjs tests/visual-companions/valid
 ```
 
 Expected: 새 검증기는 동작하지만 placeholder JSON이 아직 새 contract를 만족하지 않아 예상된 FAIL 유지.
+### 작업 2: 실제 activation 데이터와 한·영 기술문서를 작성한다
 
-### Task 2: 실제 activation 데이터와 한·영 기술문서를 작성한다
+**파일:**
 
-**Files:**
+- 수정: `docs/visual-companions/data/spring-boot-exposed-activation.json`
 
-- Modify: `docs/visual-companions/data/spring-boot-exposed-activation.json`
-
-- [ ] **Step 1: JPA 기대와 Exposed 활성화의 사고방식 비교를 작성한다**
+- [ ] **1단계: JPA 기대와 Exposed 활성화의 사고방식 비교를 작성한다**
 
 비교 축은 `activation trigger`, `repository registration`, `transaction infrastructure`, `runtime ownership`, `back-off`로 제한한다. JPA 전체 명세를 일반화하지 않고 전형적인 Spring Data JPA + Hibernate 경험이라고 범위를 밝힌다.
 
-- [ ] **Step 2: 7개 preset의 조건과 결과를 구조화한다**
+- [ ] **2단계: 7개 preset의 조건과 결과를 구조화한다**
 
 각 preset은 다음 상태를 명시한다.
 
@@ -121,15 +120,15 @@ stack: jdbc | r2dbc | dual | inactive
 
 `missing-infrastructure`는 JDBC `DataSource` 누락과 R2DBC application runtime 누락을 한 실패 preset 안의 분리된 결과로 보여 준다.
 
-- [ ] **Step 3: JDBC/R2DBC activation sequence를 작성한다**
+- [ ] **3단계: JDBC/R2DBC activation sequence를 작성한다**
 
 각 sequence는 `Spring Boot`, `Auto-configuration`, `Condition evaluation`, `Enable annotation / registrar`, `Repository factory`, `Application infrastructure` 참여자를 사용한다. 정상 call, reuse/back-off return, missing/error branch를 번호가 붙은 message로 표현한다.
 
-- [ ] **Step 4: 책임 행렬, recipe, failure diagnostics를 작성한다**
+- [ ] **4단계: 책임 행렬, recipe, failure diagnostics를 작성한다**
 
 책임 행렬에는 `DataSource`, `springTransactionManager`, `ExposedMappingContext`, `R2dbcDatabase`, connection pool/dispatcher/lifecycle, repository proxy/factory, schema migration을 포함한다. 각 recipe와 failure에는 제공 주체, 생성 결과, 관찰 증상, 확인 지점, verification command를 기록한다.
 
-- [ ] **Step 5: source/test ledger를 실제 구현에 고정한다**
+- [ ] **5단계: source/test ledger를 실제 구현에 고정한다**
 
 최소 근거는 다음 파일을 포함한다.
 
@@ -148,17 +147,17 @@ AbstractExposedR2dbcRepositoryTest.kt
 MultiManagerDocumentationExample.kt
 ```
 
-### Task 3: 공용 renderer를 activation 해설 구조로 확장한다
+### 작업 3: 공용 renderer를 activation 해설 구조로 확장한다
 
-**Files:**
+**파일:**
 
-- Modify: `scripts/visual-companions/lib/render.mjs`
-- Generate: `docs/visual-companions/en/spring-boot-exposed-activation.html`
-- Generate: `docs/visual-companions/ko/spring-boot-exposed-activation.html`
-- Delete: `docs/visual-companions/spring-boot-exposed-activation.html`
-- Delete: `docs/visual-companions/spring-boot-exposed-activation.ko.html`
+- 수정: `scripts/visual-companions/lib/render.mjs`
+- 생성: `docs/visual-companions/en/spring-boot-exposed-activation.html`
+- 생성: `docs/visual-companions/ko/spring-boot-exposed-activation.html`
+- 삭제: `docs/visual-companions/spring-boot-exposed-activation.html`
+- 삭제: `docs/visual-companions/spring-boot-exposed-activation.ko.html`
 
-- [ ] **Step 1: placeholder renderer를 activation renderer로 교체한다**
+- [ ] **1단계: placeholder renderer를 activation renderer로 교체한다**
 
 `renderActivationPlaceholder`를 제거하고 `renderActivationDocument`가 다음 구역을 순서대로 생성하게 한다.
 
@@ -174,23 +173,23 @@ MultiManagerDocumentationExample.kt
 09 소스와 테스트 근거
 ```
 
-- [ ] **Step 2: scenario 선택이 관련 정보를 함께 갱신하게 한다**
+- [ ] **2단계: scenario 선택이 관련 정보를 함께 갱신하게 한다**
 
 scenario button을 선택하면 sequence, 결과 요약, 조건/결과 목록, 관련 source anchor가 함께 바뀐다. native button과 `aria-pressed`, 화살표 키 이동, `aria-live` 상태 전달을 유지한다.
 
-- [ ] **Step 3: sequence geometry와 semantic color를 고정한다**
+- [ ] **3단계: sequence geometry와 semantic color를 고정한다**
 
 participant header와 lifeline은 `--role-line`, call은 `--call-line`, return은 `--teal`, created/reused는 `--green`, missing/error는 `--red`를 사용한다. arrowhead는 `currentColor`을 사용하고 forward/reverse 위치가 실제 대상 participant 쪽을 가리키게 한다.
 
-- [ ] **Step 4: Architecture Diagram 비교와 lightbox를 구현한다**
+- [ ] **4단계: Architecture Diagram 비교와 lightbox를 구현한다**
 
 넓은 화면에서는 JDBC/R2DBC 두 diagram을 같은 높이의 비교 grid에 놓고, 좁은 화면에서는 의미가 유지되는 세로 배치로 바꾼다. 각 diagram은 독립적인 확대 button과 dialog를 사용한다.
 
-- [ ] **Step 5: 한·영 HTML을 생성하고 검증한다**
+- [ ] **5단계: 한·영 HTML을 생성하고 검증한다**
 
 Generator가 소유하지 않는 root-level legacy HTML 두 개를 삭제하고, canonical locale 경로만 남긴다.
 
-Run:
+실행:
 
 ```bash
 node scripts/visual-companions/build.mjs
@@ -199,18 +198,17 @@ node scripts/visual-companions/validate.mjs
 node --test tests/visual-companions/build.test.mjs tests/visual-companions/validator.test.mjs
 ```
 
-Expected: 4개 companion HTML generated/check PASS, 2 documents / 4 locale files validation PASS, Node tests PASS.
+예상 결과: companion HTML 4개가 생성되고/check PASS, 문서 2개 / locale 파일 4개의 validation PASS, Node tests PASS.
+### 작업 4: 브라우저와 시각 판정을 수렴하고 사용자에게 로컬 URL을 제공한다
 
-### Task 4: 브라우저와 시각 판정을 수렴하고 사용자에게 로컬 URL을 제공한다
+**파일:**
 
-**Files:**
+- 수정: `scripts/visual-companions/capture.mjs`
+- 생성: `.omx/state/issue-415/ralph-progress.json`
+- 검증: `docs/visual-companions/en/spring-boot-exposed-activation.html`
+- 검증: `docs/visual-companions/ko/spring-boot-exposed-activation.html`
 
-- Modify: `scripts/visual-companions/capture.mjs`
-- Create: `.omx/state/issue-415/ralph-progress.json`
-- Verify: `docs/visual-companions/en/spring-boot-exposed-activation.html`
-- Verify: `docs/visual-companions/ko/spring-boot-exposed-activation.html`
-
-- [ ] **Step 1: activation 전용 브라우저 assertion을 추가한다**
+- [ ] **단계 1: 활성화 전용 브라우저 assertion을 추가한다**
 
 다음을 CDP 기반 검사에 포함한다.
 
@@ -228,59 +226,59 @@ auto/light/dark theme = PASS
 prefers-reduced-motion = PASS
 ```
 
-- [ ] **Step 2: 데스크톱과 좁은 화면을 반복 검사한다**
+- [ ] **단계 2: 데스크톱과 좁은 화면을 반복 검사한다**
 
-Run:
+실행:
 
 ```bash
 node scripts/visual-companions/capture.mjs spring-boot-exposed-activation --qa
 ```
 
-Expected: en/ko × 1440px/360px × light/dark 조합의 assertion PASS.
+예상 결과: en/ko × 1440px/360px × light/dark 조합의 assertion PASS.
 
-- [ ] **Step 3: 시각 판정 JSON을 기록한다**
+- [ ] **단계 3: 시각 판정 JSON을 기록한다**
 
-설치된 `$visual-verdict` surface가 없으므로 같은 판정 계약을 `.omx/state/issue-415/ralph-progress.json`에 기록한다. 각 iteration은 screenshot 경로, viewport, locale, theme, clipping, overflow, sequence arrowhead, participant alignment, Architecture Diagram readability, verdict를 포함한다.
+설치된 `$visual-verdict` surface가 없으므로 동일한 판정 계약을 `.omx/state/issue-415/ralph-progress.json`에 기록한다. 각 iteration에는 screenshot 경로, viewport, locale, theme, clipping, overflow, sequence arrowhead, participant alignment, Architecture Diagram 가독성, verdict를 포함한다.
 
-- [ ] **Step 4: 한국어 HTML을 로컬 서버로 연다**
+- [ ] **단계 4: 한국어 HTML을 로컬 서버로 연다**
 
-Run:
+실행:
 
 ```bash
 python3 -m http.server 4173 --bind 127.0.0.1
 open http://127.0.0.1:4173/docs/visual-companions/ko/spring-boot-exposed-activation.html
 ```
 
-Expected: 사용자가 scenario, theme, diagram 확대, keyboard 동작과 설명 깊이를 직접 확인할 수 있다.
+예상 결과: 사용자가 scenario, theme, diagram 확대, keyboard 동작과 설명의 깊이를 직접 확인할 수 있다.
 
-- [ ] **Step 5: 사용자 시각 승인을 기다린다**
+- [ ] **단계 5: 사용자의 시각 승인을 기다린다**
 
-Manifest는 이 시점까지 `pending-review/private`다. 승인된 exact local commit과 사용자 메시지가 확보되기 전에는 Task 5를 시작하지 않는다.
+Manifest는 이 시점까지 `pending-review/private` 상태다. 승인된 exact local commit과 사용자 메시지가 확보되기 전에는 Task 5를 시작하지 않는다.
 
-### Task 5: 승인된 companion을 공개 manifest와 fallback에 등록한다
+### 작업 5: 승인된 companion을 공개 manifest와 fallback에 등록한다
 
-**Prerequisite:** Task 4 Step 5 사용자 시각 승인 PASS.
+**사전 조건:** Task 4 Step 5 사용자 시각 승인 PASS.
 
-**Files:**
+**파일:**
 
-- Modify: `docs/visual-companions/manifest.json`
-- Create: `docs/visual-companions/assets/spring-boot-exposed-activation.en.light.png`
-- Create: `docs/visual-companions/assets/spring-boot-exposed-activation.en.dark.png`
-- Create: `docs/visual-companions/assets/spring-boot-exposed-activation.ko.light.png`
-- Create: `docs/visual-companions/assets/spring-boot-exposed-activation.ko.dark.png`
+- 수정: `docs/visual-companions/manifest.json`
+- 생성: `docs/visual-companions/assets/spring-boot-exposed-activation.en.light.png`
+- 생성: `docs/visual-companions/assets/spring-boot-exposed-activation.en.dark.png`
+- 생성: `docs/visual-companions/assets/spring-boot-exposed-activation.ko.light.png`
+- 생성: `docs/visual-companions/assets/spring-boot-exposed-activation.ko.dark.png`
 
-- [ ] **Step 1: deterministic fallback matrix를 두 번 생성한다**
+- [ ] **단계 1: 결정론적 fallback matrix를 두 번 생성한다**
 
-Run:
+실행:
 
 ```bash
 node scripts/visual-companions/capture.mjs spring-boot-exposed-activation
 node scripts/visual-companions/capture.mjs spring-boot-exposed-activation --check
 ```
 
-Expected: 4개 PNG의 dimensions가 일치하고, 같은 입력의 paired SHA-256이 모두 동일하다.
+예상 결과: 4개 PNG의 dimensions가 일치하고, 동일한 입력의 paired SHA-256이 모두 동일하다.
 
-- [ ] **Step 2: manifest를 `approved/public`으로 승격한다**
+- [ ] **단계 2: manifest를 `approved/public`으로 승격한다**
 
 `spring-boot-exposed-activation`에 다음을 기록한다.
 
@@ -304,9 +302,9 @@ Expected: 4개 PNG의 dimensions가 일치하고, 같은 입력의 paired SHA-25
 }
 ```
 
-- [ ] **Step 3: manifest와 fallback을 다시 검증한다**
+- [ ] **단계 3: manifest와 fallback을 다시 검증한다**
 
-Run:
+실행:
 
 ```bash
 node scripts/visual-companions/build.mjs --check
@@ -314,17 +312,16 @@ node scripts/visual-companions/validate.mjs
 node scripts/visual-companions/capture.mjs spring-boot-exposed-activation --check
 ```
 
-Expected: approved/public 문서가 한·영 HTML과 네 fallback을 모두 참조하며 PASS.
+예상 결과: approved/public 문서가 한국어·영어 HTML과 네 개의 fallback을 모두 참조하며 PASS.
+### 작업 6: PR 전 증거를 수렴하고 PR에서 멈춘다
 
-### Task 6: pre-PR proof를 수렴하고 PR에서 멈춘다
+**파일:**
 
-**Files:**
+- 검증: `origin/develop...HEAD` 전체 변경
 
-- Verify: `origin/develop...HEAD` 전체 변경
+- [ ] **단계 1: 최종 정적·브라우저·문서 검증을 실행한다**
 
-- [ ] **Step 1: 최종 정적·브라우저·문서 검증을 실행한다**
-
-Run:
+실행:
 
 ```bash
 node scripts/visual-companions/build.mjs --check
@@ -334,11 +331,11 @@ node scripts/visual-companions/capture.mjs spring-boot-exposed-activation --chec
 git diff --check origin/develop...HEAD
 ```
 
-Expected: 모든 command exit 0.
+예상 결과: 모든 command exit 0.
 
-- [ ] **Step 2: 범위와 P0/P1을 검토한다**
+- [ ] **단계 2: 범위와 P0/P1을 검토한다**
 
-Run:
+실행:
 
 ```bash
 git diff --stat origin/develop...HEAD
@@ -347,11 +344,11 @@ rg -n '정신 모형|사고 구조|TBD|TODO|pending deep-dive|waits at the expli
   docs/visual-companions scripts/visual-companions tests/visual-companions
 ```
 
-Expected: production Kotlin 변경 0, 금지 문구 0, P0=0, P1=0.
+예상 결과: production Kotlin 변경 0, 금지 문구 0, P0=0, P1=0.
 
-- [ ] **Step 3: Lore protocol로 converged commit을 만든다**
+- [ ] **단계 3: Lore protocol에 따라 수렴된 commit을 만든다**
 
-Commit intent:
+커밋 의도:
 
 ```text
 Make Spring Boot activation ownership observable before repository use
@@ -359,9 +356,9 @@ Make Spring Boot activation ownership observable before repository use
 
 Commit trailers에는 constraint, confidence, scope-risk, tested, not-tested를 기록한다.
 
-- [ ] **Step 4: exact head를 push하고 PR을 생성한다**
+- [ ] **단계 4: exact head를 push하고 PR을 생성한다**
 
-Target:
+대상:
 
 ```text
 repository: bluetape4k/bluetape4k-exposed
@@ -371,6 +368,6 @@ head: docs/issue-415-spring-boot-activation
 
 PR은 `debop`에게 assign하고 issue #415의 `documentation`, `enhancement`, milestone `1.12.0`을 반영한다. 본문 마지막 `##` section은 `## DoD Status`여야 한다.
 
-- [ ] **Step 5: live PR과 CI를 확인하고 merge gate에서 멈춘다**
+- [ ] **단계 5: live PR과 CI를 확인하고 merge gate에서 멈춘다**
 
 PR URL, exact head SHA, checks, reviews, threads, mergeability, DoD body를 live로 다시 읽는다. merge-ready 증거를 사용자에게 보고한 뒤 fresh merge approval을 기다리며, 자동 merge는 설정하지 않는다.
