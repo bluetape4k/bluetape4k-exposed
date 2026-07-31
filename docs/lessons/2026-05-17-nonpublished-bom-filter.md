@@ -1,21 +1,21 @@
-# Non-published module BOM filter
+# Non-published Module BOM Filter
 
-## Context
+## 배경
 
-Example and demo modules are useful for validation but should not become
-consumer BOM or Central Portal artifacts.
+example 및 demo module은 validation에는 유용하지만 consumer BOM이나 Central Portal
+artifact가 되어서는 안 됩니다.
 
-## Decision
+## 결정
 
-Use one normalized non-published module filter for examples, `*-examples`,
-`*-demo`, `benchmark/`, and `*-benchmark` across BOM constraints, NMCP
-aggregation, and publication/signing setup.
+BOM constraint, NMCP aggregation, publication/signing setup 전반에서 example,
+`*-examples`, `*-demo`, `benchmark/`, `*-benchmark`에 하나의 normalized
+non-published module filter를 사용합니다.
 
-## Outcome
+## 결과
 
-The Exposed BOM and publishing aggregation now include only library modules.
+Exposed BOM과 publishing aggregation은 이제 library module만 포함합니다.
 
-## Verification
+## 검증
 
 - `./gradlew clean generatePomFileForBluetapeExposedPublication --no-daemon --no-configuration-cache --no-build-cache`
-- Generated BOM POM scan found no `examples`, `demo`, or `benchmark` entries.
+- 생성된 BOM POM scan에서 `examples`, `demo`, `benchmark` entry가 발견되지 않았습니다.
