@@ -1,35 +1,33 @@
 # README Diagram Image Validation
 
-## Context
+## 배경
 
-README diagram assets were regenerated as pastel infographic PNG images while
-preserving SVG sources for reuse.
+README diagram asset은 reuse용 SVG source를 보존하는 pastel infographic PNG image로
+재생성되었습니다.
 
-## Decision
+## 결정
 
-Use PNG embeds in README files, keep SVG assets beside them, and keep diagram
-labels English-only. Class diagrams must keep UML compartments and visible
-inheritance stems; sequence diagrams must grow vertically instead of covering
-messages with notes.
+README file에는 PNG embed를 쓰고 SVG asset은 옆에 보관하며 diagram label은
+English-only로 유지합니다. class diagram은 UML compartment와 visible inheritance stem을
+유지해야 하고 sequence diagram은 note가 message를 덮지 않도록 vertical로 확장해야 합니다.
 
-## Outcome
+## 결과
 
-The exposed README diagrams were regenerated and linked as PNG files. A stale
-Mermaid tail in `exposed-jdbc-redisson` was removed. The `exposed-core`
-ID-table hierarchy image was adjusted so inheritance arrows show visible line
-segments instead of only triangle markers.
+exposed README diagram이 PNG file로 재생성·연결되었습니다. `exposed-jdbc-redisson`의
+stale Mermaid tail을 제거했고 `exposed-core` ID-table hierarchy image는 inheritance
+arrow가 triangle marker만이 아니라 visible line segment를 보이도록 조정했습니다.
 
-## Verification
+## 검증
 
 - Full regeneration: `rendered=188`, `missing=[]`.
-- README image links: `missing=0`.
-- Local SVG image embeds: `0`.
+- README image link: `missing=0`.
+- Local SVG image embed: `0`.
 - Mermaid residue: `0`.
-- Asset counts: `png=155`, `svg=155`.
+- Asset count: `png=155`, `svg=155`.
 - Shape sanity check: `shapeCandidates=0`.
 - Whitespace check: `git diff --check`.
 
-## Future Guidance
+## 향후 지침
 
-Do not accept a class diagram if inheritance or realization arrows collapse into
-marker-only visuals. Increase class row spacing before review.
+inheritance 또는 realization arrow가 marker-only visual로 무너지면 class diagram을
+수락하지 않습니다. review 전에 class row spacing을 늘립니다.

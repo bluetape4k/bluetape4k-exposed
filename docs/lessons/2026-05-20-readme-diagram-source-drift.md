@@ -1,16 +1,29 @@
-# README diagram source drift correction
+# README Diagram Source Drift Correction
 
-## Context
-A generated class diagram made deprecated `HasIdentifier` look like a primary exposed-core API. Current source marks it deprecated and recommends `Serializable` records instead.
+## 배경
 
-## Decision
-Regenerate README diagrams from current source, not recovered Mermaid alone. Keep deprecated compatibility APIs out of central class diagrams unless they are explicitly documented as compatibility notes.
+생성된 class diagram은 deprecated `HasIdentifier`를 primary exposed-core API처럼
+보이게 했습니다. current source는 이를 deprecated로 표시하고 대신 `Serializable`
+record를 권장합니다.
 
-## Outcome
-`exposed-core` now centers `AuditableIdTable` and `ExposedPage`, while Redisson/R2DBC README snippets use `Serializable`, `RedissonCacheConfig`, `table`, and `containsKey` names that match source APIs.
+## 결정
 
-## Verification
-Checked README and SVG text for stale `HasIdentifier`, `RedisCacheConfig`, `entityTable`, and marker-only class labels; visually reviewed regenerated exposed-core diagrams.
+복원한 Mermaid만이 아니라 current source에서 README diagram을 재생성합니다. deprecated
+compatibility API는 compatibility note로 명시적으로 문서화하지 않는 한 central class
+diagram에서 제외합니다.
 
-## Next time
-Before rendering class/API diagrams, grep current source for every class, field, method, and relationship shown in the image.
+## 결과
+
+`exposed-core`는 이제 `AuditableIdTable`과 `ExposedPage`를 중심에 두며,
+Redisson/R2DBC README snippet은 source API와 일치하는 `Serializable`,
+`RedissonCacheConfig`, `table`, `containsKey` name을 사용합니다.
+
+## 검증
+
+README와 SVG text에서 stale `HasIdentifier`, `RedisCacheConfig`, `entityTable`,
+marker-only class label을 확인했고 regenerated exposed-core diagram을 visual review했습니다.
+
+## 다음 작업
+
+class/API diagram을 render하기 전 image에 보이는 모든 class, field, method, relationship을
+current source에서 grep합니다.
