@@ -48,11 +48,10 @@ class UnloadableEventPublicationException(
 )
 
 /**
- * JDBC-only Spring Modulith [EventPublicationRepository] backed by Exposed DSL.
+ * Exposed DSL을 기반으로 하는 JDBC 전용 Spring Modulith [EventPublicationRepository]입니다.
  *
- * Methods are bound to the `springTransactionManager` created by the Exposed
- * Spring integration so publication rows can participate in the same
- * Exposed/JDBC transaction as application data.
+ * 메서드는 Exposed Spring 통합이 생성한 `springTransactionManager`에 연결됩니다.
+ * 따라서 게시 행은 애플리케이션 데이터와 같은 Exposed/JDBC 트랜잭션에 참여할 수 있습니다.
  */
 @Transactional(transactionManager = "springTransactionManager")
 class ExposedEventPublicationRepository(
@@ -250,8 +249,7 @@ class ExposedEventPublicationRepository(
     }
 
     /**
-     * Creates the publication table and, when archive completion is enabled,
-     * the archive table.
+     * 게시 테이블을 생성하고, 보관 완료 기능이 활성화되어 있으면 보관 테이블도 생성합니다.
      */
     fun createSchema() {
         if (completionMode == CompletionMode.ARCHIVE) {
