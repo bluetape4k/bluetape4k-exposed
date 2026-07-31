@@ -1,97 +1,92 @@
-# Issue #322 Exposed Migration Drift Design Review
+# 이슈 #322 Exposed 마이그레이션 드리프트 설계 리뷰
 
-## Scope
+## 범위
 
-- Artifact:
+- 산출물:
   `docs/superpowers/specs/2026-07-17-issue-322-exposed-migration-drift-design.md`
-- Review gate: Type A design review
-- Perspectives: performance, stability/reliability, security/privacy,
-  operator/Ops, developer/API, user/caller, and main-session integration
-- Research basis: current repository plugin/demo/test/workflow surfaces,
-  Exposed 1.3.1 migration documentation and cached APIs, upstream Exposed
-  issues #377 and #2441, and the stable-manual 1.11.0 pin
-- Implementation state: no production code, test code, workflow, or README
-  change exists yet
+- 리뷰 게이트: Type A 설계 리뷰
+- 관점: 성능, 안정성/신뢰성, 보안/개인정보 보호, 운영자/Ops, 개발자/API,
+  사용자/호출자, 주 세션 통합
+- 조사 근거: 현재 저장소의 플러그인/데모/테스트/워크플로 표면, Exposed 1.3.1
+  마이그레이션 문서 및 캐시된 API, 업스트림 Exposed 이슈 #377과 #2441,
+  안정 버전 매뉴얼의 1.11.0 고정
+- 구현 상태: 아직 프로덕션 코드, 테스트 코드, 워크플로 또는 README 변경이 없음
 
-## Convergence
+## 수렴 과정
 
-The first review round found material gaps in retry isolation, sequential
-Testcontainers execution, SQL validation, cleanup failure preservation,
-application-user safety, and stable-manual ownership. A second round separated
-tagged drift tests from retried bulk jobs, pinned the additive fixture and
-validator, moved 1.12-only guidance to the bilingual READMEs, and defined
-dedicated H2 and real-database evidence.
+첫 번째 리뷰에서 재시도 격리, 순차 Testcontainers 실행, SQL 검증, 정리 실패 보존,
+애플리케이션 사용자 안전, 안정 버전 매뉴얼 소유권에 중대한 공백이 발견되었다.
+두 번째 리뷰에서는 태그가 지정된 드리프트 테스트를 재시도되는 일괄 작업과 분리하고,
+추가형 픽스처와 검증기를 고정했으며, 1.12 전용 지침을 이중 언어 README로
+옮기고 전용 H2 및 실제 데이터베이스 근거를 정의했다.
 
-Later affected-lane reviews closed deterministic untracked-file detection,
-intrinsic task non-cacheability, bounded step timeouts, artifact assembly,
-pipeline exit-code capture, untrusted-PR permissions, and raw-log privacy.
-Every affected perspective was rerun after its repair.
+이후 영향받은 검토 영역의 리뷰에서 결정론적 미추적 파일 탐지, 작업 자체의
+캐시 불가 설정, 제한된 단계 타임아웃, 산출물 조립, 파이프라인 종료 코드 캡처,
+신뢰할 수 없는 PR의 권한, 원시 로그 개인정보 보호 문제를 해소했다. 각 수정 후
+영향받은 모든 관점의 리뷰를 다시 수행했다.
 
-## Final Findings
+## 최종 발견 사항
 
-| Perspective | P0 | P1 | P2 | P3 | Result |
+| 관점 | P0 | P1 | P2 | P3 | 결과 |
 |---|---:|---:|---:|---:|---|
-| Performance/cost | 0 | 0 | 0 | 0 | READY |
-| Stability/reliability | 0 | 0 | 0 | 0 | READY |
-| Security/privacy | 0 | 0 | 0 | 0 | READY |
-| Operator/Ops | 0 | 0 | 0 | 0 | READY |
-| Developer/API | 0 | 0 | 0 | 0 | READY |
-| User/caller | 0 | 0 | 0 | 0 | READY |
-| Main-session integration | 0 | 0 | 0 | 0 | READY |
+| 성능/비용 | 0 | 0 | 0 | 0 | READY |
+| 안정성/신뢰성 | 0 | 0 | 0 | 0 | READY |
+| 보안/개인정보 보호 | 0 | 0 | 0 | 0 | READY |
+| 운영자/Ops | 0 | 0 | 0 | 0 | READY |
+| 개발자/API | 0 | 0 | 0 | 0 | READY |
+| 사용자/호출자 | 0 | 0 | 0 | 0 | READY |
+| 주 세션 통합 | 0 | 0 | 0 | 0 | READY |
 
-## Locked Decisions
+## 확정한 결정
 
-- Keep the existing fixed-file Gradle plugin demo smoke and add
-  programmatic/test-time JDBC and R2DBC drift regressions.
-- Use plain tables with one nullable additive column; validate exactly one
-  whole `ALTER TABLE ... ADD [COLUMN]` statement before executing synthetic
-  fixture SQL.
-- Tag drift tests, exclude them from default retried test tasks, and expose
-  intrinsically live-only `migrationDriftTest` tasks.
-- Keep pull-request proof on H2 and run PostgreSQL/MySQL 8 in one no-retry,
-  sequential full-Nightly lane with bounded steps and per-selection evidence.
-- Preserve untrusted-PR read-only permissions and upload only sanitized,
-  allowlisted command summaries plus status and test reports.
-- Document current 1.12 behavior in `README.md` and `README.ko.md`; do not edit
-  the stable manual pinned to 1.11.0.
-- Treat fixed V1 files as replaceable repository fixtures only. Applications
-  never overwrite applied migrations and retain migration-runner ownership.
+- 기존 고정 파일 Gradle 플러그인 데모 스모크 테스트를 유지하고, 프로그래밍
+  방식/테스트 시점의 JDBC 및 R2DBC 드리프트 회귀 테스트를 추가한다.
+- null 허용 추가 열 하나가 있는 일반 테이블을 사용한다. 합성 픽스처 SQL을
+  실행하기 전에 정확히 하나의 완전한 `ALTER TABLE ... ADD [COLUMN]` 문을
+  검증한다.
+- 드리프트 테스트에 태그를 지정하고 기본 재시도 테스트 작업에서 제외하며,
+  본질적으로 실제 실행 전용인 `migrationDriftTest` 작업을 노출한다.
+- 풀 리퀘스트 검증은 H2로 유지하고, PostgreSQL/MySQL 8은 재시도 없이 제한된
+  단계와 선택별 근거를 갖춘 하나의 순차 전체 Nightly 영역에서 실행한다.
+- 신뢰할 수 없는 PR에는 읽기 전용 권한을 유지하고, 정제 및 허용 목록 검사를
+  거친 명령 요약과 상태 및 테스트 보고서만 업로드한다.
+- 현재 1.12 동작은 `README.md`와 `README.ko.md`에 문서화하고, 1.11.0에
+  고정된 안정 버전 매뉴얼은 편집하지 않는다.
+- 고정 V1 파일은 교체 가능한 저장소 픽스처로만 취급한다. 애플리케이션은 적용된
+  마이그레이션을 덮어쓰지 않으며 마이그레이션 실행기 소유권을 유지한다.
 
-## Accepted Constraints
+## 수용한 제약
 
-- Existing real-database selectors also execute H2. The small duplicate H2
-  cost is accepted instead of widening selector semantics solely for this
-  issue, and CI timeout budgets account for it.
-- PostgreSQL/MySQL type-change detection remains documented but ungated while
-  Exposed 1.3.1 limitations and upstream issue #2441 remain.
-- An empty comparison result means only that this API/version detected no
-  difference; it is not a schema-equality guarantee.
+- 기존 실제 데이터베이스 선택자는 H2도 실행한다. 이 이슈만을 위해 선택자 의미를
+  확장하는 대신 소규모 H2 중복 비용을 수용하며, CI 타임아웃 예산에 이를 반영한다.
+- Exposed 1.3.1 제한과 업스트림 이슈 #2441이 남아 있는 동안 PostgreSQL/MySQL
+  타입 변경 탐지는 문서화하되 게이트 조건으로 사용하지 않는다.
+- 빈 비교 결과는 이 API/버전이 차이를 탐지하지 못했다는 의미일 뿐이며, 스키마가
+  동일하다는 보장은 아니다.
 
-## Evidence
+## 근거
 
-- Design validation: `git diff --check`
-- Unfinished-marker scan: no unresolved marker remains in the
-  design/checklist artifacts
-- User approval: `승인`, received 2026-07-17 after the written design handoff
-- Open user decisions: none
+- 설계 검증: `git diff --check`
+- 미완료 마커 검사: 설계/체크리스트 산출물에 미해결 마커가 남아 있지 않음
+- 사용자 승인: `승인`, 서면 설계 인계 후 2026-07-17에 수신
+- 미결 사용자 결정: 없음
 
-## Verdict
+## 판정
 
-**PASS: P0 = 0, P1 = 0.** The user-approved design is ready for a separate,
-reviewed implementation plan. No implementation may widen the stable-manual,
-public-API, dependency-version, or production-migration boundary.
+**PASS: P0 = 0, P1 = 0.** 사용자가 승인한 설계는 별도로 리뷰할 구현 계획을
+작성할 준비가 되었다. 어떤 구현도 안정 버전 매뉴얼, 공개 API, 의존성 버전 또는
+프로덕션 마이그레이션 경계를 넓혀서는 안 된다.
 
-## Plan-Driven Design Addendum
+## 구현 계획 기반 설계 부록
 
-The implementation-plan review tightened the approved design without changing
-its outcome or scope. It pinned plugin-specific `--rerun`, exact experimental
-API imports/calls, the complete additive `VARCHAR(255) NULL` grammar,
-failure-preserving cleanup, task-owned JUnit XML paths/privacy, exact helper
-filters, environment/cache inputs, per-step CI failure precedence, deterministic
-README parity validation, and a separately owned 1.12 manual-promotion gate.
+구현 계획 리뷰는 결과나 범위를 바꾸지 않으면서 승인된 설계를 더 엄격하게
+구체화했다. 플러그인별 `--rerun`, 정확한 실험적 API 임포트/호출, 완전한
+추가형 `VARCHAR(255) NULL` 문법, 실패를 보존하는 정리, 작업 소유 JUnit XML
+경로/개인정보 보호, 정확한 헬퍼 필터, 환경/캐시 입력, 단계별 CI 실패 우선순위,
+결정론적 README 동등성 검증, 별도 소유의 1.12 매뉴얼 승격 게이트를 고정했다.
 
-The affected developer/API, user/caller, security/privacy,
-stability/reliability, performance/cost, and operator/Ops lenses were rerun.
-All remain **PASS: P0 = 0, P1 = 0**, with no residual P2/P3 finding. The
-written-spec approval still applies because these refinements narrow proof and
-safety contracts rather than changing the user-visible direction.
+영향받은 개발자/API, 사용자/호출자, 보안/개인정보 보호, 안정성/신뢰성,
+성능/비용, 운영자/Ops 관점의 리뷰를 다시 수행했다. 모두 계속
+**PASS: P0 = 0, P1 = 0**이며, 잔여 P2/P3 발견 사항은 없다. 이 개선은
+사용자에게 보이는 방향을 바꾸지 않고 검증 및 안전 계약을 좁히므로 기존 서면
+명세 승인은 계속 유효하다.
