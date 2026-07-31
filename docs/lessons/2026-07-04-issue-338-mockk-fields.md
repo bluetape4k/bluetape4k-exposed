@@ -1,18 +1,18 @@
-# Issue 338 MockK Fixture Cleanup
+# 이슈 338 MockK 픽스처 정리
 
-## What Changed
+## 변경 내용
 
-Repeated MockK collaborator setup in representative tests was moved to class-level fixture fields and reset in `@BeforeEach` with `clearMocks(...)`.
+대표 테스트에서 반복되던 MockK 협력 객체 설정을 클래스 수준 픽스처 필드로 옮기고, `@BeforeEach`에서 `clearMocks(...)`로 초기화했다.
 
-## What To Repeat
+## 반복 적용할 사항
 
-- Promote stable collaborators such as API clients, service handles, `ResultRow`, and `Expression` mocks to class fields.
-- Reset class-level mocks with `clearMocks(...)` before each test, then apply scenario-specific `every { ... }` stubs inside the test.
-- Keep scenario data, payloads, and capture slots method-local because they encode the individual test case.
-- If Gradle reports `Shutdown in progress` after tests have completed, rerun the same targeted command before treating it as a code failure.
+- API 클라이언트, 서비스 핸들, `ResultRow`, `Expression` 목과 같은 안정적인 협력 객체를 클래스 필드로 올린다.
+- 각 테스트 전에 클래스 수준 목을 `clearMocks(...)`로 초기화한 다음, 테스트 안에서 시나리오별 `every { ... }` 스텁을 적용한다.
+- 시나리오 데이터, 페이로드, 캡처 슬롯은 개별 테스트 사례를 표현하므로 메서드 로컬로 유지한다.
+- 테스트 완료 후 Gradle이 `Shutdown in progress`를 보고하면 코드 실패로 판단하기 전에 동일한 대상 명령을 다시 실행한다.
 
-## Evidence
+## 근거
 
-- Baseline targeted tests passed before edits.
-- Touched-file MockK scan leaves `mockk` calls only in class-level fixture declarations.
-- Targeted tests passed after a retry with `BUILD SUCCESSFUL in 36s`.
+- 변경 전 기준 대상 테스트가 통과했다.
+- 수정 파일의 MockK 검사 결과 `mockk` 호출은 클래스 수준 픽스처 선언에만 남았다.
+- 재시도 후 대상 테스트가 `BUILD SUCCESSFUL in 36s`와 함께 통과했다.
