@@ -30,6 +30,9 @@ fun Application.installBluetape4kExposedKtor(
  * meter registry, cache와 shutdown을 소유합니다. installer는 어떤 resource도 생성하거나 닫지 않습니다.
  * contributor probe는 non-blocking, cancellation-cooperative인 side-effect-free O(1) in-memory 조회여야 합니다.
  * blocking과 backend-I/O probe는 지원하지 않으며 coroutine deadline보다 오래 실행될 수 있습니다.
+ *
+ * Contract: caller owns authentication, dispatchers, repositories, registries, and shutdown; this installer
+ * creates or closes no resources.
  */
 fun Application.installBluetape4kExposedKtor(
     config: Bluetape4kExposedKtorConfig,
