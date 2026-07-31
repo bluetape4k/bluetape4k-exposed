@@ -1,31 +1,28 @@
-# Issue #252: ClickHouse snapshot retry backoff
+# Issue #252: ClickHouse Snapshot Retry Backoff
 
-## Context
+## 배경
 
-After the general exposed retry hardening, exposed Nightly full still failed in
-`Test / exposed-clickhouse`. The repeated failure was Central snapshot metadata
-HTTP 403 for `bluetape4k-logging`, while local HEAD and GET checks returned
-200.
+general exposed retry hardening 뒤에도 exposed Nightly full은 `Test / exposed-clickhouse`에서
+계속 실패했습니다. 반복된 failure는 `bluetape4k-logging`의 Central snapshot metadata HTTP
+403이었지만 local HEAD/GET check는 200을 반환했습니다.
 
-## Decision
+## 결정
 
-Keep the broader exposed retry policy unchanged, but extend the ClickHouse gate
-to eight attempts with a 60 second delay and a 35 minute timeout. This keeps the
-extra wait isolated to the job that repeatedly hit the longer Central edge
-failure.
+broader exposed retry policy는 유지하되 ClickHouse gate만 60초 delay, 35분 timeout의
+8회 시도로 확장합니다. 이는 긴 Central edge failure가 반복된 job에만 추가 wait를 격리합니다.
 
-## Outcome
+## 결과
 
-The ClickHouse test gate can now absorb a longer Central snapshot metadata
-outage without widening every exposed Nightly job.
+ClickHouse test gate는 모든 exposed Nightly job을 넓히지 않고도 더 긴 Central snapshot
+metadata outage를 흡수할 수 있습니다.
 
-## Verification
+## 검증
 
-Run `git diff --check` and `actionlint` before PR creation. Rerun exposed
-Nightly full before continuing to downstream repositories.
+PR 생성 전에 `git diff --check`과 `actionlint`를 실행합니다. downstream repository를
+계속하기 전에 exposed Nightly full을 다시 실행합니다.
 
-## Future guidance
+## 향후 지침
 
-If Central 403 appears only in one Testcontainers-backed job after general
-retry hardening, avoid broad workflow churn. Widen that job first, then rerun the
-dependency-ordered Nightly chain.
+general retry hardening 뒤 Central 403이 하나의 Testcontainers-backed job에만 나타나면
+broad workflow churn을 피합니다. 먼저 그 job만 넓힌 뒤 dependency-ordered Nightly chain을
+다시 실행합니다.
