@@ -1,19 +1,18 @@
-# Issue #77 ArtifactId Migration
+# Issue #77 ArtifactId 마이그레이션
 
-## Summary
+## 요약
 
-`bluetape4k-exposed` keeps the same groupId and repository identity, but shortens
-its published artifactIds and Gradle project paths.
+`bluetape4k-exposed`는 동일한 groupId와 repository identity를 유지하지만, 게시되는 artifactIds와 Gradle project paths를 단축합니다.
 
-GroupId stays:
+GroupId는 유지됩니다:
 
 ```text
 io.github.bluetape4k.exposed
 ```
 
-## Coordinate Mapping
+## Coordinate 매핑
 
-| Old artifactId | New artifactId |
+| 기존 artifactId | 새 artifactId |
 |---|---|
 | `bluetape4k-exposed-bom` | `exposed-bom` |
 | `bluetape4k-exposed-core` | `exposed-core` |
@@ -47,50 +46,42 @@ io.github.bluetape4k.exposed
 | `bluetape4k-spring-boot-exposed-spring-modulith` | `exposed-spring-modulith` |
 | `bluetape4k-batch` | `exposed-batch` |
 
-Internal demo/example Gradle paths also change:
+내부 demo/example Gradle paths도 변경됩니다:
 
-| Old Gradle path | New Gradle path |
+| 기존 Gradle path | 새 Gradle path |
 |---|---|
 | `:bluetape4k-spring-boot-exposed-jdbc-demo` | `:exposed-spring-boot-jdbc-demo` |
 | `:bluetape4k-spring-boot-exposed-r2dbc-demo` | `:exposed-spring-boot-r2dbc-demo` |
 | `:bluetape4k-examples-exposed-clickhouse-oltp-olap` | `:examples-exposed-clickhouse-oltp-olap` |
 
-## What Does Not Change
+## 변경되지 않는 항목
 
-- Repository slug: `bluetape4k-exposed`
-- Root Gradle project name: `bluetape4k-exposed`
+- 저장소 slug: `bluetape4k-exposed`
+- 루트 Gradle 프로젝트 이름: `bluetape4k-exposed`
 - GitHub URL: `https://github.com/bluetape4k/bluetape4k-exposed`
-- SCM URLs ending in `bluetape4k-exposed.git`
-- Package names under `io.bluetape4k.exposed`
+- `bluetape4k-exposed.git`로 끝나는 SCM URLs
+- `io.bluetape4k.exposed` 하위의 Package names
 - Maven groupId: `io.github.bluetape4k.exposed`
-- Cross-ecosystem bluetape4k dependencies such as
-  `io.github.bluetape4k:bluetape4k-coroutines`
+- `io.github.bluetape4k:bluetape4k-coroutines`와 같은 Cross-ecosystem bluetape4k dependencies
 
-## Rollout Order
+## 롤아웃 순서
 
-1. Merge the exposed rename PR only after PR CI and PR branch Nightly(full) pass.
-2. Run develop Nightly(full).
-3. Publish the exposed snapshot.
-4. Verify representative renamed coordinates resolve from Central Snapshots.
-5. Update `bluetape4k-dependencies` and publish its snapshot first.
-6. Update consumer/example repositories only after the dependencies snapshot is
-   available.
+1. PR CI와 PR branch Nightly(full)이 통과한 후에만 exposed rename PR을 병합합니다.
+2. develop Nightly(full)을 실행합니다.
+3. exposed snapshot을 게시합니다.
+4. 대표적인 변경된 coordinates가 Central Snapshots에서 resolve되는지 확인합니다.
+5. `bluetape4k-dependencies`를 업데이트하고 해당 snapshot을 먼저 게시합니다.
+6. dependencies snapshot을 사용할 수 있게 된 후에만 consumer/example repositories를 업데이트합니다.
 
-Consumer repositories should not be updated directly against unpublished exposed
-coordinates. They should consume the dependencies snapshot first.
+Consumer repositories는 게시되지 않은 exposed coordinates를 직접 대상으로 업데이트해서는 안 됩니다. 먼저 dependencies snapshot을 사용해야 합니다.
 
-## `bluetape4k-dependencies` Sync Requirement
+## `bluetape4k-dependencies` 동기화 요구 사항
 
-`bluetape4k-dependencies` generates managed catalog aliases and BOM constraints
-from this repository's Gradle project graph. Its sync script must be updated for
-the new explicit mapping shape before publishing the dependencies snapshot:
+`bluetape4k-dependencies`는 이 repository의 Gradle project graph에서 managed catalog aliases와 BOM constraints를 생성합니다. dependencies snapshot을 게시하기 전에 새 explicit mapping shape에 맞게 해당 sync script를 업데이트해야 합니다:
 
-- parse `includeMappedModule("path", "project-name")` entries
-- treat `includeModules("exposed", withBaseDir = false)` as publishing
-  directory names directly, not as `bluetape4k-*`
-- preserve the old alias keys only if intentionally keeping consumer source
-  compatibility; otherwise update consuming build scripts together
-- verify generated aliases and constraints contain `exposed-*`,
-  `exposed-batch`, `exposed-spring-boot-*`, and `exposed-spring-modulith`
+- `includeMappedModule("path", "project-name")` entries를 parse
+- `includeModules("exposed", withBaseDir = false)`를 `bluetape4k-*`가 아니라 publishing directory names를 직접 사용하는 것으로 처리
+- consumer source compatibility를 의도적으로 유지하는 경우에만 기존 alias keys를 보존; 그렇지 않으면 consuming build scripts를 함께 업데이트
+- 생성된 aliases와 constraints에 `exposed-*`, `exposed-batch`, `exposed-spring-boot-*`, `exposed-spring-modulith`가 포함되는지 확인
 
-This is the first downstream blocker after exposed snapshot publication.
+이는 exposed snapshot publication 이후의 첫 번째 downstream blocker입니다.
