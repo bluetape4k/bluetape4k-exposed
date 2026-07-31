@@ -1,73 +1,70 @@
-# Issue 326: Write-through cache compensation is not a transaction
+# Issue 326: 쓰기 관통 캐시 보상은 트랜잭션이 아니다
 
-## Context
+## 배경
 
-The Ktor example needed to combine a Spring-neutral aggregate, an existing
-R2DBC Caffeine repository, PostgreSQL persistence, and explicit event handoff.
-The repository's `WRITE_THROUGH` path changes Caffeine before PostgreSQL, while
-the aggregate owns an in-memory event buffer until another component accepts
-the event.
+Ktor 예제는 Spring에 중립적인 애그리거트, 기존 R2DBC Caffeine 리포지토리,
+PostgreSQL 영속화, 명시적 이벤트 전달을 결합해야 했다. 리포지토리의
+`WRITE_THROUGH` 경로는 PostgreSQL보다 먼저 Caffeine을 변경하지만,
+애그리거트는 다른 컴포넌트가 이벤트를 수락할 때까지 인메모리 이벤트 버퍼를
+소유한다.
 
-## Decision
+## 결정
 
-- Keep orchestration in `OrderCommandService`, not in Ktor routes or a new
-  repository decorator.
-- Snapshot pending events, persist the aggregate, publish the snapshot, and
-  clear the aggregate buffer only after successful handoff.
-- Invalidate the order cache when persistence throws or cancellation crosses
-  the persistence boundary. This repairs later reads but does not make the
-  cache and PostgreSQL update atomic.
-- Use client-generated canonical UUIDs so an `UPDATE` followed by `INSERT` can
-  preserve the requested order identity without a database-generated-ID race.
-- Keep the publisher application-owned and non-durable. A production recovery
-  guarantee requires an outbox or another durable handoff boundary.
+- 오케스트레이션은 Ktor 라우트나 새로운 리포지토리 데코레이터가 아니라
+  `OrderCommandService`에 둔다.
+- 대기 중인 이벤트의 스냅샷을 만들고, 애그리거트를 영속화하고, 스냅샷을
+  발행한 다음, 전달에 성공한 뒤에만 애그리거트 버퍼를 비운다.
+- 영속화에서 예외가 발생하거나 취소가 영속화 경계를 통과하면 주문 캐시를
+  무효화한다. 이 조치는 이후 읽기를 복구하지만 캐시와 PostgreSQL 업데이트를
+  원자적으로 만들지는 않는다.
+- 클라이언트가 생성한 정규 UUID를 사용해 `UPDATE` 후 `INSERT`로
+  데이터베이스 생성 ID 경합 없이 요청된 주문 동일성을 유지할 수 있게 한다.
+- 발행기는 애플리케이션이 소유하고 내구성을 보장하지 않는다. 프로덕션 수준의
+  복구 보장에는 아웃박스나 다른 내구성 있는 전달 경계가 필요하다.
 
-## Outcome
+## 결과
 
-The example now traces one bodyless Ktor command through validation, command
-service orchestration, aggregate transition, Caffeine-first write-through,
-PostgreSQL persistence, event handoff, and sequential idempotency. A failed
-write invalidates the cache, a failed publisher leaves the event buffered, and
-stable HTTP errors distinguish persistence from event-handoff failure without
-returning exception text.
+이제 예제는 본문 없는 Ktor 명령 하나가 검증, 명령 서비스 오케스트레이션,
+애그리거트 전이, Caffeine 우선 쓰기 관통, PostgreSQL 영속화, 이벤트 전달,
+순차적 멱등성을 거치는 과정을 추적한다. 쓰기에 실패하면 캐시를 무효화하고,
+발행기에 실패하면 이벤트가 버퍼에 남으며, 안정적인 HTTP 오류는 예외 텍스트를
+반환하지 않고 영속화 실패와 이벤트 전달 실패를 구분한다.
 
-The application also owns the full PostgreSQL R2DBC lifecycle. Construction
-unwinds in reverse order, shutdown closes the repository before unregistering
-the Exposed database and disposing the pool, and the captured process-wide
-default database is restored only when no external owner has replaced it.
+애플리케이션은 PostgreSQL R2DBC의 전체 수명 주기도 소유한다. 생성 실패 시
+역순으로 정리하고, 종료 시 Exposed 데이터베이스 등록을 해제하고 풀을 폐기하기
+전에 리포지토리를 닫으며, 캡처해 둔 프로세스 전역 기본 데이터베이스는 외부
+소유자가 이를 교체하지 않은 경우에만 복원한다.
 
-## Proof
+## 입증 결과
 
-- Docker-free suite: 32 tests, zero failures, and zero Testcontainers output.
-- PostgreSQL suite: 4 tests covering the scenario, readiness/outage, and a
-  second lifecycle with default restoration; zero failures with Ryuk disabled
-  for the local Colima socket.
-- Documented walkthrough: JDBC count `2`, R2DBC count `1 -> 2`, first command
-  `eventPublished=true`, repeated command `eventPublished=false`, and matching
-  GET state.
-- Compose: loopback PostgreSQL became healthy; a separate disposable project
-  proved `down -v --remove-orphans` removes only its named volume.
-- Diagram XML, render parity, connector, geometry, endpoint, mixed-corner, and
-  sequence-style audits passed. The PNGs are 3360 x 2100 and 3360 x 4400.
-- English/Korean Bash blocks compare byte-for-byte and every local link exists.
+- Docker 없는 테스트 모음: 테스트 32개, 실패 0건, Testcontainers 출력 0건.
+- PostgreSQL 테스트 모음: 시나리오, 준비 상태/장애, 기본값 복원을 포함한 두 번째
+  수명 주기를 다루는 테스트 4개. 로컬 Colima 소켓에서 Ryuk을 비활성화한 상태로
+  실패 0건.
+- 문서화된 실행 과정: JDBC 개수 `2`, R2DBC 개수 `1 -> 2`, 첫 번째 명령
+  `eventPublished=true`, 반복 명령 `eventPublished=false`, 일치하는 GET 상태.
+- Compose: 루프백 PostgreSQL이 정상 상태가 되었고, 별도의 일회성 프로젝트에서
+  `down -v --remove-orphans`가 자체 이름을 가진 볼륨만 제거함을 입증했다.
+- 다이어그램 XML, 렌더링 동등성, 연결선, 기하 구조, 끝점, 혼합 모서리, 시퀀스
+  스타일 감사가 통과했다. PNG 크기는 3360 x 2100 및 3360 x 4400이다.
+- 영문/한글 Bash 블록이 바이트 단위로 일치하고 모든 로컬 링크가 존재한다.
 
-## Misses
+## 놓친 점
 
-- The first fresh Testcontainers run failed before tests because Ryuk tried to
-  mount the Colima socket inside its own container. The repository's documented
-  `TESTCONTAINERS_RYUK_DISABLED=true` setting produced the successful proof.
-- The example project has no module-local `detekt` task. Root `detekt` succeeds
-  but reports `NO-SOURCE`, so compilation and the focused tests remain the
-  effective Kotlin static proof for this example.
-- The code-review graph had no indexed nodes for the new example. Direct
-  import/call-site scans, scope scans, fresh compilation, and runtime tests were
-  used instead.
+- 최초 Testcontainers 실행은 테스트 전에 실패했다. Ryuk이 자체 컨테이너 안에
+  Colima 소켓을 마운트하려 했기 때문이다. 리포지토리에 문서화된
+  `TESTCONTAINERS_RYUK_DISABLED=true` 설정으로 입증 실행에 성공했다.
+- 예제 프로젝트에는 모듈 로컬 `detekt` 작업이 없다. 루트 `detekt`는 성공하지만
+  `NO-SOURCE`를 보고하므로, 컴파일과 집중 테스트가 이 예제에서 실질적인 Kotlin
+  정적 검증 수단으로 남는다.
+- 코드 리뷰 그래프에는 새 예제에 대해 인덱싱된 노드가 없었다. 대신 직접
+  가져오기/호출 지점 검사, 범위 검사, 새 컴파일, 런타임 테스트를 사용했다.
 
-## Future Guard
+## 향후 변경 시 준수 사항
 
-Do not replace snapshot/publish/clear with `drainDomainEvents()`: a failed
-non-durable publisher must leave events available to the current aggregate
-owner. Do not describe cache invalidation as rollback; readers may observe the
-short interval after Caffeine changes and before PostgreSQL succeeds. If the
-example grows durable delivery, design an outbox explicitly instead of adding
-retry or recovery semantics to this request-local publisher.
+스냅샷 생성/발행/비우기를 `drainDomainEvents()`로 바꾸지 않는다. 내구성이 없는
+발행기에 실패하면 현재 애그리거트 소유자가 이벤트를 계속 사용할 수 있어야
+한다. 캐시 무효화를 롤백으로 설명하지 않는다. Caffeine이 변경된 후
+PostgreSQL이 성공하기 전까지의 짧은 구간을 독자가 관찰할 수 있다. 예제가
+내구성 있는 전달로 확장되면 이 요청 로컬 발행기에 재시도나 복구 의미 체계를
+추가하는 대신 아웃박스를 명시적으로 설계한다.
