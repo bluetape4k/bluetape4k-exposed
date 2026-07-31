@@ -1,14 +1,14 @@
-# ClickHouseDatabase.connect: Close Exception Replaces Original
+# ClickHouseDatabase.connect: close 예외가 원래 예외의 진단 정보를 잃음
 
-**Date**: 2026-05-16  
-**Issue**: #83  
-**Module**: `exposed-clickhouse`  
+**Date**: 2026-05-16
+**Issue**: #83
+**Module**: `exposed-clickhouse`
 **File**: `ClickHouseDatabase.kt`
 
-## Root Cause
+## 근본 원인
 
-Both `connect()` overloads used `raw.runCatching { close() }.onFailure { closeEx -> log.warn(...) }`
-when `ClickHouseConnectionWrapper(raw)` construction failed:
+두 `connect()` overload는 `ClickHouseConnectionWrapper(raw)` 생성에 실패했을 때
+`raw.runCatching { close() }.onFailure { closeEx -> log.warn(...) }`를 사용했습니다.
 
 ```kotlin
 raw.runCatching { close() }.onFailure { closeEx ->
@@ -17,14 +17,14 @@ raw.runCatching { close() }.onFailure { closeEx ->
 throw e
 ```
 
-If `raw.close()` itself throws, that exception was only logged — the original wrapper
-creation failure `e` was still rethrown. However, the close failure was silently discarded
-from the exception chain, making diagnosis harder when both operations fail.
+`raw.close()` 자체가 예외를 던지면 해당 예외는 log에만 남고 원래 wrapper 생성 실패
+`e`가 다시 던져졌습니다. 원래 예외를 대체하지는 않지만 close 실패가 exception chain에
+포함되지 않아 두 작업이 모두 실패한 경우 진단이 어려웠습니다.
 
-## Fix
+## 수정
 
-Use `e.addSuppressed(closeEx)` to attach the close failure as a suppressed exception on
-the original error, preserving full diagnostic context:
+close 실패를 원래 error의 suppressed exception으로 붙이는 `e.addSuppressed(closeEx)`를
+사용해 전체 진단 context를 보존합니다.
 
 ```kotlin
 runCatching { raw.close() }.onFailure { closeEx ->
@@ -33,14 +33,15 @@ runCatching { raw.close() }.onFailure { closeEx ->
 throw e
 ```
 
-This follows the standard Java/Kotlin idiom for try-with-resources: if cleanup fails after
-a primary failure, attach the cleanup exception as suppressed rather than replacing or
-silently dropping it.
+이는 try-with-resources의 표준 Java/Kotlin 관용구를 따릅니다. primary failure 뒤에
+cleanup이 실패하면 cleanup exception을 대체하거나 조용히 버리지 말고 suppressed로
+첨부합니다.
 
-## Future Guidance
+## 향후 지침
 
-- When a cleanup operation (close, disconnect, rollback) fails inside an error handler,
-  always use `primaryException.addSuppressed(cleanupException)` rather than logging only.
-- `Throwable.addSuppressed()` is the standard mechanism; debuggers and logging frameworks
-  display suppressed exceptions automatically.
-- Never silently swallow cleanup exceptions — at minimum attach them as suppressed.
+- error handler 안에서 cleanup operation (close, disconnect, rollback)이 실패하면
+  log만 남기지 말고 항상 `primaryException.addSuppressed(cleanupException)`를
+  사용합니다.
+- `Throwable.addSuppressed()`는 표준 mechanism이며 debugger와 logging framework가
+  suppressed exception을 자동으로 표시합니다.
+- cleanup exception을 조용히 삼키지 않습니다. 최소한 suppressed로 첨부합니다.
