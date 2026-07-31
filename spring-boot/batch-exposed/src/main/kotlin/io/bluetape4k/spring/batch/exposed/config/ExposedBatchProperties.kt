@@ -3,15 +3,13 @@ package io.bluetape4k.spring.batch.exposed.config
 import org.springframework.boot.context.properties.ConfigurationProperties
 
 /**
- * Configuration properties for Exposed Spring Batch integration.
+ * Exposed Spring Batch 통합 설정 속성입니다.
  *
- * ## Behaviour / Contract
- * - `bluetape4k.batch.executor.enabled=false` disables the default
- *   `batchPartitionTaskExecutor` bean.
- * - `virtualThreads` controls whether the default executor creates virtual
- *   threads.
- * - `concurrencyLimit` limits concurrently running partition tasks.
- * - `awaitTerminationSeconds` is applied to Spring's task termination timeout.
+ * ## 동작 계약
+ * - `bluetape4k.batch.executor.enabled=false`는 기본 `batchPartitionTaskExecutor` bean을 비활성화합니다.
+ * - `virtualThreads`는 기본 executor의 virtual thread 생성 여부를 제어합니다.
+ * - `concurrencyLimit`는 동시에 실행하는 partition task 수를 제한합니다.
+ * - `awaitTerminationSeconds`는 Spring의 task 종료 timeout에 적용됩니다.
  *
  * ```yaml
  * bluetape4k:
@@ -26,33 +24,21 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 @ConfigurationProperties(prefix = "bluetape4k.batch")
 class ExposedBatchProperties {
 
-    /**
-     * Default partition executor settings.
-     */
+    /** 기본 partition executor 설정입니다. */
     var executor: Executor = Executor()
 
-    /**
-     * Settings for the auto-configured `batchPartitionTaskExecutor` bean.
-     */
+    /** 자동 설정되는 `batchPartitionTaskExecutor` bean의 설정입니다. */
     class Executor {
-        /**
-         * Whether to create the default `batchPartitionTaskExecutor` bean.
-         */
+        /** 기본 `batchPartitionTaskExecutor` bean을 생성할지 여부입니다. */
         var enabled: Boolean = true
 
-        /**
-         * Whether the default executor should use virtual threads.
-         */
+        /** 기본 executor가 virtual thread를 사용할지 여부입니다. */
         var virtualThreads: Boolean = true
 
-        /**
-         * Maximum number of partition tasks allowed to run concurrently.
-         */
+        /** 동시에 실행할 수 있는 partition task의 최대 수입니다. */
         var concurrencyLimit: Int = Runtime.getRuntime().availableProcessors() * 2
 
-        /**
-         * Maximum time to wait for active tasks during executor shutdown.
-         */
+        /** executor 종료 중 실행 중인 task를 기다리는 최대 시간입니다. */
         var awaitTerminationSeconds: Long = 30
     }
 }
