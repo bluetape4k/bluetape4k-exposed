@@ -65,42 +65,41 @@ private val DELETE_EXACT_MARKER_SCRIPT = """
 """.trimIndent()
 
 /**
- * Marks destructive snapshot-cache namespace operations that require explicit operator review.
+ * 운영자의 명시적 검토가 필요한 파괴적 snapshot-cache namespace 작업을 표시합니다.
  *
- * These APIs are for a quiesced namespace only. They require network isolation and a dedicated namespace-scoped
- * Redis ACL identity. The ACL must allow marker and map inspection and unlink, local-cache clear scoped pub/sub,
- * and transient `${namespace}:clear:*` semaphore keys and channels, while it must deny global keyevent subscription.
- * These APIs must never be exposed through request-facing application paths. The fingerprint is an accident guard,
- * not authorization.
+ * 이 API는 정지된 namespace에만 사용합니다. network isolation과 namespace 전용 Redis ACL identity가 필요합니다.
+ * ACL은 marker와 map 조회 및 unlink, local-cache clear 범위의 pub/sub,
+ * 임시 `${namespace}:clear:*` semaphore key와 channel을 허용하고 global keyevent subscription은 거부해야 합니다.
+ * 이 API를 request-facing application path에 노출해서는 안 됩니다. fingerprint는 실수 방지 장치이지 권한이 아닙니다.
  */
 @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
 @Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.CLASS)
 annotation class DelicateSnapshotCacheAdminApi
 
-/** Structural outcome of a bounded snapshot namespace cleanup attempt. */
+/** 제한된 snapshot namespace 정리 시도의 구조적 결과입니다. */
 enum class SnapshotNamespaceCleanupOutcome {
-    /** The requested cleanup and final remote-state verification completed. */
+/** 요청한 정리와 최종 remote-state 검증을 완료했습니다. */
     COMPLETED,
 
-    /** Remote map and marker absence was reverified after the caller-local view was cleared. */
+/** 호출자 local view를 비운 뒤 remote map과 marker가 없음을 다시 검증했습니다. */
     ALREADY_COMPLETE,
 
-    /** The map and caller-local view were cleared and the exact marker was retained. */
+/** map과 호출자 local view를 비우고 정확한 marker는 유지했습니다. */
     MARKER_RETAINED,
 
-    /** A cleanup command was accepted, but its final state was unknown when the shared deadline expired. */
+/** 정리 command는 승인됐지만 공유 deadline 만료 시 최종 상태를 알 수 없었습니다. */
     TIMED_OUT_ACCEPTED_UNKNOWN,
 
-    /** Cleanup failed closed before its requested terminal state was proved. */
+/** 요청한 terminal state를 입증하기 전에 정리가 fail-closed로 실패했습니다. */
     FAILED,
 }
 
 /**
- * Structural snapshot namespace cleanup result.
+ * snapshot namespace 정리의 구조적 결과입니다.
  *
- * [exceptionType] contains only the exception class name. It never includes messages, endpoints, credentials, or
- * arbitrary client text.
+ * [exceptionType]에는 exception class 이름만 포함합니다. message, endpoint, credential 또는 임의의 client text는
+ * 포함하지 않습니다.
  */
 data class SnapshotNamespaceCleanupResult(
     val outcome: SnapshotNamespaceCleanupOutcome,
@@ -118,15 +117,14 @@ data class SnapshotNamespaceCleanupResult(
 }
 
 /**
- * Clears a quiesced snapshot namespace, including its compatibility marker.
+ * 정지된 snapshot namespace와 compatibility marker를 함께 비웁니다.
  *
- * Operators must first stop every writer, remove the namespace from every live client, and drain in-flight traffic.
- * Use network isolation and a dedicated namespace-scoped Redis ACL identity. The ACL must allow marker and map
- * inspection and unlink, local-cache clear scoped pub/sub, and transient `${namespace}:clear:*` semaphore keys and
- * channels, while it must deny global keyevent subscription. This function must never be exposed through
- * request-facing application paths. The expected fingerprint is an accident guard, not authorization. Map unlink is
- * accepted before marker unlink, uses one shared monotonic deadline, is never cancelled, and can be resumed safely by
- * rerunning this function.
+ * 운영자는 먼저 모든 writer를 중지하고 모든 live client에서 namespace를 제거한 뒤 in-flight traffic을 비워야 합니다.
+ * network isolation과 namespace 전용 Redis ACL identity를 사용합니다. ACL은 marker와 map 조회 및 unlink,
+ * local-cache clear 범위의 pub/sub, 임시 `${namespace}:clear:*` semaphore key와 channel을 허용하고
+ * global keyevent subscription은 거부해야 합니다. 이 함수를 request-facing application path에 노출해서는 안 됩니다.
+ * expected fingerprint는 실수 방지 장치이지 권한이 아닙니다. map unlink는 marker unlink보다 먼저 승인되고
+ * 하나의 shared monotonic deadline을 사용하며 취소되지 않습니다. 이 함수를 다시 실행해 안전하게 재개할 수 있습니다.
  */
 @DelicateSnapshotCacheAdminApi
 fun <ID : Any> clearSnapshotNamespace(
@@ -139,11 +137,11 @@ fun <ID : Any> clearSnapshotNamespace(
     clearNamespace(redissonClient, codec, namespace, expectedFingerprint, timeout, retainMarker = false)
 
 /**
- * Clears a quiesced snapshot namespace map and caller-local view while retaining the exact compatibility marker.
+ * 정확한 compatibility marker를 유지하면서 정지된 snapshot namespace map과 호출자 local view를 비웁니다.
  *
- * This rollback-preparation operation has the same quiescence, dedicated namespace-scoped Redis ACL, network
- * isolation, and request-facing prohibition as [clearSnapshotNamespace]. The fingerprint is an accident guard, not
- * authorization. Accepted commands are never cancelled; rerun the operation to inspect and resume partial cleanup.
+ * 이 rollback 준비 작업에는 [clearSnapshotNamespace]와 같은 quiescence, namespace 전용 Redis ACL,
+ * network isolation, request-facing 노출 금지 조건을 적용합니다. fingerprint는 실수 방지 장치이지 권한이 아닙니다.
+ * 승인된 command는 취소되지 않으며, 작업을 다시 실행해 부분 정리 상태를 확인하고 재개합니다.
  */
 @DelicateSnapshotCacheAdminApi
 fun <ID : Any> clearMapRetainingMarker(
@@ -160,7 +158,7 @@ internal enum class SnapshotNamespaceMarkerVerification {
     MATCHED,
 }
 
-/** Atomic fail-closed marker claim/compare seam used before a namespace-backed facade accesses its map. */
+/** namespace 기반 facade가 map에 접근하기 전에 사용하는 원자적 fail-closed marker claim/compare 경계입니다. */
 internal fun verifyOrClaimSnapshotNamespace(
     redissonClient: RedissonClient,
     namespace: String,

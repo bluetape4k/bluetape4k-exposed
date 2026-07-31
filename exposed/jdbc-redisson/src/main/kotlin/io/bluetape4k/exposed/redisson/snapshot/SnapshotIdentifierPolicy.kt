@@ -4,18 +4,18 @@ import java.nio.ByteBuffer
 import java.util.UUID
 
 /**
- * Canonical scalar identifier policy for distributed snapshot invalidation keys.
+ * 분산 snapshot 무효화 key에 사용하는 canonical scalar identifier 정책입니다.
  *
- * Identifiers become Redis-visible infrastructure keys. Applications must use non-secret, non-credential,
- * non-PII surrogate row identifiers. Map sensitive, composite, or String domain identifiers to a Long or UUID
- * surrogate before using a distributed snapshot invalidator.
+ * 식별자는 Redis에 노출되는 infrastructure key가 됩니다. 애플리케이션은 secret, credential, PII가 아닌
+ * surrogate row identifier를 사용해야 합니다. 민감하거나 composite 또는 String인 domain identifier는
+ * 분산 snapshot invalidator에서 사용하기 전에 Long 또는 UUID surrogate로 매핑합니다.
  */
 sealed interface SnapshotIdentifierPolicy<ID : Any>
 
-/** Returns the canonical signed, eight-byte, big-endian Long identifier policy. */
+/** canonical signed 8-byte big-endian Long identifier 정책을 반환합니다. */
 fun longSnapshotIdentifierPolicy(): SnapshotIdentifierPolicy<Long> = LongSnapshotIdentifierPolicy
 
-/** Returns the canonical sixteen-byte, big-endian UUID identifier policy. */
+/** canonical 16-byte big-endian UUID identifier 정책을 반환합니다. */
 fun uuidSnapshotIdentifierPolicy(): SnapshotIdentifierPolicy<UUID> = UuidSnapshotIdentifierPolicy
 
 internal sealed interface CanonicalSnapshotIdentifierPolicy<ID : Any> : SnapshotIdentifierPolicy<ID> {
