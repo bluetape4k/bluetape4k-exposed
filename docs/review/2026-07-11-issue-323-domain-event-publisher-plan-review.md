@@ -1,81 +1,81 @@
-# Issue #323 Transaction-Aware Domain Event Publisher Plan Review
+# Issue #323 트랜잭션 인식 도메인 이벤트 발행자 계획 리뷰
 
-- Date: 2026-07-11
-- Status: PASS
-- Gate: Step 3-R implementation-plan review
-- Final severity: P0 = 0, P1 = 0, P2 = 0, P3 = 0
-- Source implementation started: no
+- 날짜: 2026-07-11
+- 상태: PASS
+- 게이트: Step 3-R 구현 계획 리뷰
+- 최종 심각도: P0 = 0, P1 = 0, P2 = 0, P3 = 0
+- 소스 구현 시작 여부: 아니요
 
-## Reviewed Basis
+## 검토 기준
 
-| Artifact | Blob |
+| 산출물 | Blob |
 |---|---|
-| Approved design spec | `94ff1250d3431e0051049d273ff846ce64d7a229` |
-| Final implementation plan | `72c99fa1f661274e491f44bc82201d9c6e0c304b` |
-| Approved spec commit | `c665505910c4b41aa9d27d0262d3c02c97dce19c` |
+| 승인된 설계 명세 | `94ff1250d3431e0051049d273ff846ce64d7a229` |
+| 최종 구현 계획 | `72c99fa1f661274e491f44bc82201d9c6e0c304b` |
+| 승인된 명세 커밋 | `c665505910c4b41aa9d27d0262d3c02c97dce19c` |
 
-The plan/review commit SHA is recorded in the execution log after commit. A tracked file cannot contain the SHA of the commit that contains itself.
+계획/리뷰 커밋 SHA는 커밋 후 실행 로그에 기록한다. 추적 파일에는 자신을 포함하는 커밋의 SHA를 기록할 수 없다.
 
-## Convergence History
+## 수렴 이력
 
-| Wave | Result | Decisive repairs |
+| 차수 | 결과 | 결정적 수정 |
 |---|---|---|
-| Initial six-lens review | Rerun required | Split minimal GREEN from hardening, required real refreshed Spring contexts, strengthened fail-closed behavior, structured logging, runbook, multi-manager proof, documentation parity, and CI/Kover evidence. |
-| Second six-lens review | Rerun required | Added exact TDD boundaries, context cleanup, root and non-additive logger capture, per-file publication-store checks, reviewed-basis verification, live PR/CI gates, and explicit report-only Kover scope. |
-| Third review wave | Performance, security, and operations PASS; stability, developer/API, and user/docs required repair | Added the missing MDC import, corrected Common Gates semantics, made `transactionManagerRef` executable, strengthened RED/GREEN ordering, exact coverage paths, exact commit/blob checks, and source-to-README verification. |
-| Fourth affected-lens wave | Stability PASS; developer/API and user/docs required repair | Replaced `save()` as manager-selection evidence with proxy `count()`/`deleteAll()`, separated behavioral manager RED from auto-configuration compile RED, handled clean-new `git diff --no-index` status, and added per-file/ordered documentation checks. |
-| Fifth affected-lens wave | Stability and developer/API PASS; user/docs P2 remained | Required each JDBC locale to embed the lifecycle PNG independently. |
-| Final user/docs rerun | PASS | Confirmed per-file diagram embeds and no remaining P2/P3. |
+| 최초 여섯 관점 리뷰 | 재실행 필요 | 최소 GREEN과 강화 작업을 분리하고, 실제로 갱신한 Spring 컨텍스트, 강화된 fail-closed 동작, 구조화된 로깅, 런북, 다중 관리자 검증, 문서 동등성, CI/Kover 근거를 요구했다. |
+| 두 번째 여섯 관점 리뷰 | 재실행 필요 | 정확한 TDD 경계, 컨텍스트 정리, 루트 및 비가산 로거 캡처, 파일별 발행 저장소 검사, 검토 기준 검증, 라이브 PR/CI 게이트, 명시적인 보고 전용 Kover 범위를 추가했다. |
+| 세 번째 리뷰 차수 | 성능, 보안, 운영 PASS; 안정성, 개발자/API, 사용자/문서는 수정 필요 | 누락된 MDC import를 추가하고, Common Gates 의미를 바로잡고, `transactionManagerRef`를 실행 가능하게 만들었다. RED/GREEN 순서, 정확한 커버리지 경로, 정확한 커밋/blob 검사, 소스와 README 간 검증도 강화했다. |
+| 영향받은 관점의 네 번째 차수 | 안정성 PASS; 개발자/API와 사용자/문서는 수정 필요 | 관리자 선택 근거인 `save()`를 프록시 소유 `count()`/`deleteAll()`로 교체하고, 관리자 동작 RED와 자동 구성 컴파일 RED를 분리했다. 새 파일만 있는 깨끗한 상태의 `git diff --no-index` 종료 상태를 처리하고 파일별/순서 기반 문서 검사를 추가했다. |
+| 영향받은 관점의 다섯 번째 차수 | 안정성과 개발자/API PASS; 사용자/문서 P2 잔존 | 각 JDBC 로케일이 수명주기 PNG를 독립적으로 포함하도록 요구했다. |
+| 최종 사용자/문서 재실행 | PASS | 파일별 다이어그램 포함 여부와 남은 P2/P3가 없음을 확인했다. |
 
-## Resolved Blocking Findings
+## 해결한 차단 지적
 
-- Preserved the required TDD sequence: manager behavioral RED and GREEN complete before the separate publisher auto-configuration compile RED.
-- Repaired the existing public `transactionManagerRef` contract by planning Spring Data factory-property forwarding and removal of hard-coded base-repository manager qualifiers.
-- Required proxy-owned `count()` and `deleteAll()` against distinguishable stores; `save()` is explicitly rejected as manager-selection evidence.
-- Restored `CG` to Common Gates `CG-01..17`, with CodeGraph availability recorded separately, and declared `WF`, `CL`, `A`, `KT`, `KT-TEST`, and `KT-SPR` applicability.
-- Added the missing `org.slf4j.MDC` import and deterministic transaction/MDC/database cleanup.
-- Made untracked-file whitespace checks executable under zsh by accepting clean-new status `1`, rejecting other statuses, checking empty diagnostic output, and avoiding the read-only `status` variable.
-- Required fresh application contexts for real commit/rollback listener behavior, exact `Throwable` identity, transaction-local synchronization state, and `REQUIRES_NEW` isolation.
+- 필수 TDD 순서를 유지했다. 관리자 동작 RED와 GREEN을 완료한 뒤 별도의 발행자 자동 구성 컴파일 RED를 수행한다.
+- Spring Data 팩토리 속성 전달과 하드 코딩된 기본 저장소 관리자 한정자 제거를 계획해 기존 공개 `transactionManagerRef` 계약을 복구했다.
+- 구분 가능한 저장소를 대상으로 프록시 소유 `count()`와 `deleteAll()`을 요구했다. `save()`는 관리자 선택 근거로 명시적으로 기각했다.
+- `CG`를 Common Gates `CG-01..17`로 복원하고 CodeGraph 가용성은 별도로 기록했으며, `WF`, `CL`, `A`, `KT`, `KT-TEST`, `KT-SPR`의 적용 여부를 선언했다.
+- 누락된 `org.slf4j.MDC` import와 결정론적 트랜잭션/MDC/데이터베이스 정리를 추가했다.
+- 새 파일만 있는 깨끗한 상태의 종료 상태 `1`은 허용하고 다른 상태는 거부하며, 진단 출력이 비어 있는지 검사하고 읽기 전용 `status` 변수를 피하도록 해 zsh에서 미추적 파일 공백 검사를 실행할 수 있게 했다.
+- 실제 커밋/롤백 리스너 동작, 정확한 `Throwable` 동일성, 트랜잭션 로컬 동기화 상태, `REQUIRES_NEW` 격리를 검증하기 위해 새로운 애플리케이션 컨텍스트를 요구했다.
 
-## Resolved Non-Blocking Findings
+## 해결한 비차단 지적
 
-- The compiled multi-manager source region is compared mechanically with each JDBC README locale, not only between READMEs.
-- README contract tokens, publication-store controls, and lifecycle image embeds are checked per file.
-- Reconciliation state/action mappings and rollout failure order use stable semantic markers with exact ordered comparison.
-- The locale-link loop is pipe-delimited and parses under both bash and zsh.
-- Encryption at rest and in transit are verified separately.
-- PR coverage checks require the exact non-empty core, JDBC, Spring Modulith, and DDD example `report.xml` paths.
+- 컴파일된 다중 관리자 소스 영역을 README끼리만 비교하지 않고 각 JDBC README 로케일과 기계적으로 비교한다.
+- README 계약 토큰, 발행 저장소 제어, 수명주기 이미지 포함 여부를 파일별로 검사한다.
+- 조정 상태/작업 매핑과 롤아웃 실패 순서는 안정적인 의미 마커를 사용해 정확한 순서로 비교한다.
+- 로케일 링크 루프는 파이프로 구분하며 bash와 zsh에서 모두 파싱된다.
+- 저장 데이터 암호화와 전송 중 암호화를 별도로 검증한다.
+- PR 커버리지 검사는 비어 있지 않은 core, JDBC, Spring Modulith, DDD 예제의 정확한 `report.xml` 경로를 요구한다.
 
-## Scope Decisions
+## 범위 결정
 
-- The repository-wide Kover workflow remains report-only, as required by workspace policy. Issue #323 adds local and PR evidence that the four affected XML reports are non-empty; it does not introduce a hard coverage threshold.
-- R2DBC, savepoint callback support, durable outbox semantics, retry configuration, and manager/DataSource identity claims remain outside issue #323.
-- One JDBC lifecycle sequence diagram is required because commit, rollback, immediate handoff, default `AFTER_COMMIT`, and committed cleanup are difficult to communicate reliably in prose. The plan requires matching SVG/PNG assets, full-size inspection, and all diagram audits.
+- 저장소 전체 Kover 워크플로는 워크스페이스 정책에 따라 보고 전용으로 유지한다. Issue #323은 영향받은 XML 보고서 네 개가 비어 있지 않다는 로컬 및 PR 근거를 추가하지만, 강제 커버리지 임계값은 도입하지 않는다.
+- R2DBC, 세이브포인트 콜백 지원, 영속 아웃박스 의미, 재시도 구성, 관리자/DataSource 동일성 주장은 issue #323 범위 밖에 둔다.
+- 커밋, 롤백, 즉시 인계, 기본 `AFTER_COMMIT`, 커밋 후 정리를 산문만으로 확실하게 전달하기 어려우므로 JDBC 수명주기 시퀀스 다이어그램 1개가 필요하다. 계획은 서로 일치하는 SVG/PNG 자산, 전체 크기 검사, 모든 다이어그램 감사를 요구한다.
 
-## Final Lens Table
+## 최종 관점 표
 
-| Lens | P0 | P1 | P2 | P3 | Verdict |
+| 관점 | P0 | P1 | P2 | P3 | 판정 |
 |---|---:|---:|---:|---:|---|
-| Performance | 0 | 0 | 0 | 0 | PASS |
-| Stability | 0 | 0 | 0 | 0 | PASS |
-| Security | 0 | 0 | 0 | 0 | PASS |
-| Operations | 0 | 0 | 0 | 0 | PASS |
-| Developer/API | 0 | 0 | 0 | 0 | PASS |
-| User/docs | 0 | 0 | 0 | 0 | PASS |
-| Main-session integration | 0 | 0 | 0 | 0 | PASS |
+| 성능 | 0 | 0 | 0 | 0 | PASS |
+| 안정성 | 0 | 0 | 0 | 0 | PASS |
+| 보안 | 0 | 0 | 0 | 0 | PASS |
+| 운영 | 0 | 0 | 0 | 0 | PASS |
+| 개발자/API | 0 | 0 | 0 | 0 | PASS |
+| 사용자/문서 | 0 | 0 | 0 | 0 | PASS |
+| 메인 세션 통합 | 0 | 0 | 0 | 0 | PASS |
 
-Performance, security, and operations passed before the final affected-lens reruns. Later changes were limited to manager test executability, shell evidence, and stricter documentation validation; they did not alter the hot-path, fail-closed, or operator contracts those lanes approved. Stability and developer/API were rerun after the manager/TDD changes. User/docs was rerun after the final per-file diagram check.
+성능, 보안, 운영 관점은 영향받은 관점의 최종 재실행 전에 통과했다. 이후 변경은 관리자 테스트 실행 가능성, 셸 근거, 더 엄격한 문서 검증으로 제한됐으며, 이 관점들이 승인한 핫 패스, fail-closed, 운영자 계약은 바꾸지 않았다. 안정성과 개발자/API 관점은 관리자/TDD 변경 후 다시 실행했다. 사용자/문서 관점은 최종 파일별 다이어그램 검사 후 다시 실행했다.
 
-## Verification Evidence
+## 검증 근거
 
 - `actionlint .github/workflows/ci.yml .github/workflows/nightly-tests.yml`: PASS
-- Required CI/Nightly job structure check for core, Spring Boot, Spring Modulith, examples, coverage, and status jobs: PASS
-- Plan clean-new whitespace check with explicit `git diff --no-index` status handling: PASS
-- Task 7 validation block parsed by both `bash -n` and `zsh -n`: PASS
-- Plan code fences: 104, balanced
-- Plan placeholder markers: none
-- Approved spec committed blob equals working-tree blob: PASS
+- core, Spring Boot, Spring Modulith, 예제, 커버리지, 상태 작업에 필요한 CI/Nightly 작업 구조 검사: PASS
+- 명시적인 `git diff --no-index` 상태 처리를 포함한 계획의 새 파일 공백 검사: PASS
+- Task 7 검증 블록을 `bash -n`과 `zsh -n`으로 파싱: PASS
+- 계획 코드 펜스: 104개, 짝이 맞음
+- 계획 플레이스홀더 마커: 없음
+- 승인된 명세의 커밋 blob과 작업 트리 blob이 동일함: PASS
 
-## Gate Decision
+## 게이트 결정
 
-Step 3-R is PASS. Implementation remains blocked until the user approves the reviewed implementation plan. No source file, workflow, README, or diagram implementation was changed during this planning gate.
+Step 3-R은 PASS다. 사용자가 검토된 구현 계획을 승인할 때까지 구현은 차단된다. 이 계획 게이트에서는 소스 파일, 워크플로, README, 다이어그램 구현을 변경하지 않았다.
