@@ -13,25 +13,22 @@ import java.io.Serializable
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
- * Opt-in JDBC Caffeine repository base that publishes Spring Modulith events
- * after cache writes reach the JDBC persistence boundary.
+ * cache write가 JDBC 영속성 경계에 도달한 뒤 Spring Modulith 이벤트를 발행하는
+ * 명시적 opt-in JDBC Caffeine Repository 기반 클래스입니다.
  *
- * Contract:
- * - `WRITE_THROUGH` publishes after the synchronous database write succeeds.
- * - `WRITE_BEHIND` publishes after a background flush commits and the retained
- *   in-memory batch has been cleared.
- * - `READ_ONLY`, invalidation, and cache clear operations publish nothing.
- * - Only synchronous JDBC Caffeine repositories are supported. Suspended JDBC
- *   and R2DBC Caffeine repositories are not covered by this base class.
- * - Publication happens outside the Exposed transaction. When
- *   [TransactionOperations] is supplied, publication is wrapped in that Spring
- *   transaction so Spring Modulith transactional listeners can consume the
- *   event after the publication boundary commits. Ordinary mapper or publisher
- *   failures are logged and swallowed as post-commit publication failures;
- *   [CancellationException] is rethrown.
- * - The process-local write-behind queue is not a durable outbox.
+ * ## 계약
+ * - `WRITE_THROUGH`는 동기식 database write가 성공한 뒤 발행합니다.
+ * - `WRITE_BEHIND`는 background flush가 commit되고 보관하던 in-memory batch를 비운 뒤 발행합니다.
+ * - `READ_ONLY`, invalidation, cache clear 연산은 이벤트를 발행하지 않습니다.
+ * - 동기식 JDBC Caffeine Repository만 지원합니다. suspend JDBC와 R2DBC Caffeine Repository는
+ *   이 기반 클래스의 적용 대상이 아닙니다.
+ * - 이벤트 발행은 Exposed 트랜잭션 밖에서 수행합니다. [TransactionOperations]를 제공하면
+ *   발행을 해당 Spring 트랜잭션으로 감싸므로 Spring Modulith transactional listener가
+ *   발행 경계의 commit 이후 이벤트를 소비할 수 있습니다. 일반 mapper 또는 publisher 실패는
+ *   commit 이후 발행 실패로 기록하고 삼키지만 [CancellationException]은 다시 던집니다.
+ * - process-local write-behind queue는 durable outbox가 아닙니다.
  *
- * Example:
+ * ## 사용 예
  * ```kotlin
  * data class ActorUpdatedEvent(val actorId: Long) : Serializable {
  *     companion object {
@@ -53,8 +50,8 @@ import kotlin.coroutines.cancellation.CancellationException
  * }
  * ```
  *
- * Publish stable, minimal event DTOs. Do not return cached entities, pairs,
- * credentials, tokens, raw secrets, or full records from [toDomainEvent].
+ * 안정적이고 최소한의 event DTO를 발행하세요. [toDomainEvent]에서 cache entity, pair,
+ * credential, token, raw secret, 전체 record를 반환하면 안 됩니다.
  */
 abstract class SpringModulithJdbcCaffeineRepository<ID: Any, E: Serializable>(
     config: LocalCacheConfig,
@@ -74,13 +71,12 @@ abstract class SpringModulithJdbcCaffeineRepository<ID: Any, E: Serializable>(
     }
 
     /**
-     * Maps a persisted cache write to a Spring application event.
+     * 영속화된 cache write를 Spring application event로 매핑합니다.
      *
-     * Return `null` to suppress publication for the write. The returned event
-     * must be an already constructed, application-owned DTO with a stable type
-     * name and a minimal payload. This method must not return serialized
-     * payloads, event class names, cached entities, pairs, credentials, tokens,
-     * raw secrets, or full records.
+     * 해당 write의 발행을 생략하려면 `null`을 반환합니다. 반환 이벤트는 안정적인 타입 이름과
+     * 최소 payload를 가진, 애플리케이션이 소유하고 이미 생성된 DTO여야 합니다.
+     * serialized payload, event class name, cache entity, pair, credential, token,
+     * raw secret, 전체 record를 반환하면 안 됩니다.
      */
     protected abstract fun toDomainEvent(id: ID, entity: E): Any?
 
