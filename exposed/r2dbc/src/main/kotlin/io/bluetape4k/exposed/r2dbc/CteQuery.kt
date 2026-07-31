@@ -5,12 +5,12 @@ import org.jetbrains.exposed.v1.core.QueryBuilder
 import org.jetbrains.exposed.v1.r2dbc.Query
 
 /**
- * [Query] implementation that prepends a `WITH` CTE clause to an R2DBC SELECT query.
+ * R2DBC SELECT 쿼리 앞에 `WITH` CTE 절을 추가하는 [Query] 구현체입니다.
  *
- * ## Contract
- * - Renders CTE bodies and the final SELECT through the same [QueryBuilder], preserving parameter binding order.
- * - Preserves the source [Query] state such as where/order/limit/group/having/distinct via [Query.copyTo].
- * - Supports SELECT CTEs only. DML CTEs require a separate Statement implementation.
+ * ## 계약
+ * - CTE 본문과 최종 SELECT를 같은 [QueryBuilder]로 렌더링하여 매개변수 바인딩 순서를 보존합니다.
+ * - [Query.copyTo]를 통해 원본 [Query]의 where/order/limit/group/having/distinct 상태를 유지합니다.
+ * - SELECT CTE만 지원합니다. DML CTE에는 별도의 Statement 구현이 필요합니다.
  *
  * ```kotlin
  * val recent = CteTable("recent_orders", Orders.selectAll().where { Orders.status eq "PAID" })
@@ -48,16 +48,16 @@ class CteQuery(
 }
 
 /**
- * Prepends one or more CTEs to this [Query].
+ * 이 [Query] 앞에 하나 이상의 CTE를 추가합니다.
  */
 fun Query.withCtes(vararg ctes: CteTable): Query = withCtes(ctes.toList())
 
 /**
- * Prepends one or more CTEs to this [Query].
+ * 이 [Query] 앞에 하나 이상의 CTE를 추가합니다.
  */
 fun Query.withCtes(ctes: Iterable<CteTable>): Query = CteQuery(ctes.toList(), this)
 
 /**
- * Prepends a single CTE to this [Query].
+ * 이 [Query] 앞에 단일 CTE를 추가합니다.
  */
 fun Query.withCte(cte: CteTable): Query = withCtes(cte)
