@@ -52,20 +52,20 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /**
- * Abstract repository combining Exposed R2DBC with a Caffeine in-process local cache.
+ * Exposed R2DBC와 Caffeine 프로세스 내 로컬 캐시를 결합하는 추상 저장소입니다.
  *
- * Uses a Caffeine [AsyncCache] for in-process caching without a JDBC dependency.
- * All database access is performed through R2DBC `suspendTransaction` calls.
+ * JDBC 의존성 없이 Caffeine [AsyncCache]로 프로세스 내 캐싱을 수행합니다.
+ * 모든 데이터베이스 접근은 R2DBC `suspendTransaction` 호출을 통해 실행됩니다.
  *
- * Subclasses must implement four abstract members:
- * - [table]: the Exposed [IdTable]
- * - [ResultRow.toEntity]: converts a [ResultRow] to entity [E]
- * - [UpdateStatement.updateEntity]: maps entity fields for UPDATE
- * - [BatchInsertStatement.insertEntity]: maps entity fields for INSERT
+ * 하위 클래스는 다음 네 추상 멤버를 구현해야 합니다.
+ * - [table]: Exposed [IdTable]
+ * - [ResultRow.toEntity]: [ResultRow]를 [E] 엔티티로 변환
+ * - [UpdateStatement.updateEntity]: UPDATE용 엔티티 필드 매핑
+ * - [BatchInsertStatement.insertEntity]: INSERT용 엔티티 필드 매핑
  *
- * @param ID Primary key type
- * @param E Entity (DTO) type. Must implement [Serializable] for cache storage.
- * @param config [LocalCacheConfig] settings
+ * @param ID 기본 키 타입
+ * @param E 엔티티(DTO) 타입. 캐시에 저장하려면 [Serializable]을 구현해야 합니다.
+ * @param config [LocalCacheConfig] 설정
  */
 abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
     override val config: LocalCacheConfig = LocalCacheConfig.WRITE_THROUGH,
@@ -80,31 +80,31 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
 
     abstract override val table: IdTable<ID>
 
-    /** Converts a [ResultRow] into entity [E]. */
+/** [ResultRow]를 [E] 엔티티로 변환합니다. */
     abstract override suspend fun ResultRow.toEntity(): E
 
-    /** Maps entity fields when updating an existing row. */
+/** 기존 행을 갱신할 때 엔티티 필드를 매핑합니다. */
     abstract fun UpdateStatement.updateEntity(entity: E)
 
-    /** Maps entity fields when inserting a new row. */
+/** 새 행을 삽입할 때 엔티티 필드를 매핑합니다. */
     abstract fun BatchInsertStatement.insertEntity(entity: E)
 
-    /** Serializes an entity id to a cache key string. The default uses [toString]. */
+/** 엔티티 ID를 캐시 키 문자열로 직렬화합니다. 기본 구현은 [toString]을 사용합니다. */
     open fun serializeKey(id: ID): String = id.toString()
 
     // -------------------------------------------------------------------------
     // R2dbcCacheRepository 필수 프로퍼티 구현
     // -------------------------------------------------------------------------
 
-    /** Cache name used as the key prefix. */
+/** 키 접두사로 사용할 캐시 이름입니다. */
     override val cacheName: String
         get() = config.keyPrefix
 
-    /** Cache storage mode. Caffeine repositories are always local. */
+/** 캐시 저장 모드입니다. Caffeine 저장소는 항상 로컬 모드를 사용합니다. */
     override val cacheMode: CacheMode
         get() = CacheMode.LOCAL
 
-    /** Cache write strategy configured for this repository. */
+/** 이 저장소에 구성된 캐시 쓰기 전략입니다. */
     override val cacheWriteMode: CacheWriteMode
         get() = config.writeMode
 
@@ -153,12 +153,11 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
     private val lastFlushError = AtomicReference<Throwable?>(null)
 
     /**
-     * Write-behind background job.
+     * write-behind 백그라운드 작업입니다.
      *
-     * Receives items from the channel, groups them up to [LocalCacheConfig.writeBehindBatchSize],
-     * and writes each batch through [flushBatch]. When the channel closes, the loop exits and the
-     * `finally` block flushes any remaining items. The job is lazy, so the first `put()` call in
-     * write-behind mode starts the background consumer.
+     * 채널에서 항목을 받아 [LocalCacheConfig.writeBehindBatchSize]까지 묶고 [flushBatch]로 각 배치를 씁니다.
+     * 채널이 닫히면 루프를 종료하고 `finally` 블록에서 남은 항목을 플러시합니다.
+     * 이 작업은 지연 시작되므로 write-behind 모드의 첫 `put()` 호출이 백그라운드 소비자를 시작합니다.
      */
     private val writeBehindJob by lazy {
         scope.launch {
@@ -271,11 +270,10 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
     }
 
     /**
-     * Flushes a write-behind batch to the database.
+     * write-behind 배치를 데이터베이스에 플러시합니다.
      *
-     * New entities are not inserted for auto-increment tables because the database owns
-     * id allocation. [CancellationException] must be rethrown during coroutine cancellation,
-     * so it is handled separately before the broad [Exception] catch.
+     * 자동 증가 테이블은 데이터베이스가 ID를 할당하므로 새 엔티티를 삽입하지 않습니다.
+     * 코루틴 취소 중 [CancellationException]은 다시 던져야 하므로 넓은 [Exception] 처리보다 먼저 분리해 처리합니다.
      */
     private suspend fun flushBatch(batch: List<Pair<ID, E>>): Boolean {
         try {
@@ -401,9 +399,9 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
     }
 
     /**
-     * Extracts the id from an entity.
+     * 엔티티에서 ID를 추출합니다.
      *
-     * Subclasses must override this when using the `findAll(where)` variant.
+     * `findAll(where)` 변형을 사용하려면 하위 클래스에서 재정의해야 합니다.
      */
     override fun extractId(entity: E): ID =
         error(
@@ -553,11 +551,11 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
     }
 
     /**
-     * Stores a single entity in the database for write-through mode.
+     * write-through 모드에서 단일 엔티티를 데이터베이스에 저장합니다.
      *
-     * Attempts UPDATE first and inserts only when no rows were affected. New entities are not
-     * inserted for auto-increment tables because the database owns id allocation and a client-side
-     * id could conflict.
+     * 먼저 UPDATE를 시도하고 영향받은 행이 없을 때만 삽입합니다.
+     * 자동 증가 테이블은 데이터베이스가 ID를 할당하고 클라이언트 ID가 충돌할 수 있으므로
+     * 새 엔티티를 삽입하지 않습니다.
      */
     private suspend fun writeToDb(id: ID, entity: E) {
         suspendTransaction {
@@ -595,12 +593,12 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
     }
 
     /**
-     * Closes the repository.
+     * 저장소를 닫습니다.
      *
-     * In write-behind mode, closing the channel stops new items from being accepted.
-     * The write-behind job processes remaining queued items and then exits. Waiting happens
-     * at the synchronous [close] boundary with a bounded timeout so database or driver hangs
-     * cannot block shutdown forever.
+     * write-behind 모드에서 채널을 닫으면 새 항목을 더 이상 받지 않습니다.
+     * write-behind 작업은 큐에 남은 항목을 처리한 뒤 종료합니다.
+     * 동기 [close] 경계에서는 제한된 시간만 대기하여 데이터베이스나 드라이버 중단이
+     * 종료를 무기한 막지 않도록 합니다.
      */
     override fun close() {
         if (config.writeMode == CacheWriteMode.WRITE_BEHIND) {

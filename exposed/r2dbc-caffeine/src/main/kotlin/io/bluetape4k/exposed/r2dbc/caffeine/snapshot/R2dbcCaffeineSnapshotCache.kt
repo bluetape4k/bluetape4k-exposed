@@ -34,9 +34,10 @@ import kotlin.concurrent.withLock
 import kotlin.reflect.KClass
 
 /**
- * A cache-only R2DBC Caffeine facade for transaction-aware detached snapshots.
+ * 트랜잭션을 인식하는 분리 스냅샷을 위한 캐시 전용 R2DBC Caffeine 파사드입니다.
  *
- * Instances own no threads or closeable resources. Database access remains entirely caller-owned.
+ * 인스턴스는 스레드나 닫아야 할 리소스를 소유하지 않습니다.
+ * 데이터베이스 접근의 생명주기는 전적으로 호출자가 관리합니다.
  */
 class R2dbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
     idType: KClass<ID>,
@@ -44,7 +45,7 @@ class R2dbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor
     private val config: CaffeineSnapshotCacheConfig,
     private val valueSizer: SnapshotValueSizer<V>?,
     internal val validator: CacheSnapshotValueValidator<V>,
-    /** Caller-owned bounded failure buffer used by this facade. */
+/** 이 파사드가 사용하는 호출자 소유의 용량 제한 실패 버퍼입니다. */
     override val failureBuffer: SnapshotCacheFailureBuffer,
 ) : SnapshotCacheStore<ID, V> {
     private val cache: Cache<ID, StoredSnapshot<V>> = buildCache(config)
@@ -52,7 +53,7 @@ class R2dbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor
     private val misses = SnapshotMissCapabilityRegistry<ID, V>(config.maxOutstandingMissTokens)
     private val maintenanceLock = ReentrantLock()
 
-    /** Stable logical identity for this cache. */
+/** 이 캐시의 안정적인 논리 식별자입니다. */
     override val storeId: SnapshotStoreId = SnapshotStoreId(BACKEND, config.snapshot.namespace)
 
     @InternalSnapshotCacheApi
@@ -80,10 +81,10 @@ class R2dbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor
     )
 
     /**
-     * Returns the current cached snapshot or an opaque one-shot miss capability for [id].
+     * [id]의 현재 캐시 스냅샷 또는 불투명한 일회성 miss 권한을 반환합니다.
      *
-     * A miss is captured before any caller database work and is rejected if a newer local mutation advances its
-     * generation before commit.
+     * miss는 호출자의 데이터베이스 작업 전에 포착됩니다.
+     * 커밋 전에 더 최신 로컬 변경이 세대를 전진시키면 해당 miss를 거부합니다.
      */
     fun lookup(id: ID): SnapshotCacheLookup<ID, V> {
         val fence = fences.capture(id)
@@ -221,7 +222,7 @@ class R2dbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor
     }
 }
 
-/** Creates a cache-only R2DBC Caffeine snapshot facade using explicit runtime type tokens. */
+/** 명시적 런타임 타입 토큰으로 캐시 전용 R2DBC Caffeine 스냅샷 파사드를 생성합니다. */
 fun <ID : Any, V : Serializable> r2dbcCaffeineSnapshotCache(
     idType: KClass<ID>,
     valueType: KClass<V>,
@@ -236,7 +237,7 @@ fun <ID : Any, V : Serializable> r2dbcCaffeineSnapshotCache(
     return R2dbcCaffeineSnapshotCache.create(idType, valueType, config, valueSizer, validator, failureBuffer)
 }
 
-/** Creates a cache-only R2DBC Caffeine snapshot facade using reified runtime type tokens. */
+/** 구체화된 런타임 타입 토큰으로 캐시 전용 R2DBC Caffeine 스냅샷 파사드를 생성합니다. */
 inline fun <reified ID : Any, reified V : Serializable> r2dbcCaffeineSnapshotCache(
     config: CaffeineSnapshotCacheConfig,
     valueSizer: SnapshotValueSizer<V>? = null,
