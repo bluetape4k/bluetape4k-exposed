@@ -1,26 +1,26 @@
-# MySQL Benchmark Details
+# MySQL 벤치마크 상세
 
-[Benchmark Hub](./README.md) · [벤치마크 허브](./README.ko.md)
+[벤치마크 허브](./README.md) · [벤치마크 허브](./README.ko.md)
 
-## Profiles
+## 프로필
 
-| Driver | Gradle Task | Benchmark Class |
+| 드라이버 | Gradle 태스크 | 벤치마크 클래스 |
 |--------|-------------|-----------------|
 | JDBC | `./gradlew :bluetape4k-exposed-batch:mysqlJdbcBenchmark` | `MySqlJdbcBatchBenchmark` |
 | R2DBC | `./gradlew :bluetape4k-exposed-batch:mysqlR2dbcBenchmark` | `MySqlR2dbcBatchBenchmark` |
 
-## Comparison Dimensions
+## 비교 항목
 
-| Scenario | JDBC vs R2DBC 비교 축 | 고정/가변 파라미터 |
+| 시나리오 | JDBC와 R2DBC 비교 축 | 고정/가변 파라미터 |
 |----------|-----------------------|-------------------|
-| Seed | source row insert throughput / time | dataSize = 1000, 10000, 100000 · poolSize = 10, 30, 60 |
-| End-to-End | full batch job throughput / time | dataSize = 1000, 10000, 100000 · poolSize = 10, 30, 60 · parallelism = 1, 4, 8 |
+| 시드 | 원본 행 삽입 처리량 / 시간 | dataSize = 1000, 10000, 100000 · poolSize = 10, 30, 60 |
+| 엔드투엔드 | 전체 배치 작업 처리량 / 시간 | dataSize = 1000, 10000, 100000 · poolSize = 10, 30, 60 · parallelism = 1, 4, 8 |
 
-## Result Tables
+## 결과 표
 
-### Seed Benchmark — JDBC vs R2DBC by dataSize / poolSize
+### 시드 벤치마크 — dataSize / poolSize별 JDBC와 R2DBC
 
-| Driver | dataSize | poolSize | ops/sec | avg ms |
+| 드라이버 | dataSize | poolSize | ops/sec | 평균 ms |
 |--------|----------|----------|--------:|-------:|
 | JDBC | 1000 | 10 | 141.603 | 7.062 |
 | JDBC | 1000 | 30 | 142.923 | 6.997 |
@@ -41,9 +41,9 @@
 | R2DBC | 100000 | 30 | 0.049 | 20600.950 |
 | R2DBC | 100000 | 60 | 0.055 | 18270.431 |
 
-### End-to-End Benchmark — JDBC vs R2DBC by dataSize / poolSize / parallelism
+### 엔드투엔드 벤치마크 — dataSize / poolSize / parallelism별 JDBC와 R2DBC
 
-| Driver | dataSize | poolSize | parallelism | ops/sec | avg ms |
+| 드라이버 | dataSize | poolSize | parallelism | ops/sec | 평균 ms |
 |--------|----------|----------|-------------|--------:|-------:|
 | JDBC | 1000 | 10 | 1 | 33.457 | 29.889 |
 | JDBC | 1000 | 10 | 4 | 30.578 | 32.703 |
@@ -100,31 +100,31 @@
 | R2DBC | 100000 | 60 | 4 | 0.126 | 7931.421 |
 | R2DBC | 100000 | 60 | 8 | 0.182 | 5490.831 |
 
-## Comparison Charts
+## 비교 차트
 
-> These charts use the latest JSON benchmark report values (ops/sec). Use the tables above for avg ms.
+> 이 차트는 최신 JSON 벤치마크 보고서 값(ops/sec)을 사용합니다. 평균 ms는 위 표를 참조하세요.
 
-### Chart Legend
+### 차트 범례
 
-JDBC bars are blue; R2DBC bars are orange.
+JDBC 막대는 파란색이고 R2DBC 막대는 주황색입니다.
 
-### Seed — dataSize comparison (poolSize=30)
+### 시드 — dataSize 비교 (poolSize=30)
 
 ![mysql seed dataSize chart](../../../docs/images/readme-charts/utils-batch-mysql-seed-datasize-chart-01.png)
 
-### Seed — poolSize comparison (dataSize=10000)
+### 시드 — poolSize 비교 (dataSize=10000)
 
 ![mysql seed poolSize chart](../../../docs/images/readme-charts/utils-batch-mysql-seed-poolsize-chart-01.png)
 
-### End-to-End — parallelism comparison (dataSize=10000, poolSize=30)
+### 엔드투엔드 — parallelism 비교 (dataSize=10000, poolSize=30)
 
 ![mysql end-to-end parallelism chart](../../../docs/images/readme-charts/utils-batch-mysql-e2e-parallelism-chart-01.png)
 
-## Notes
+## 참고
 
-- MySQL benchmark도 Testcontainers 자동 기동을 전제로 합니다.
-- 대규모 batch에서 JDBC + Virtual Threads의 이점이 드러나는 비교 대상입니다.
+- MySQL 벤치마크도 Testcontainers 자동 기동을 전제로 합니다.
+- 대규모 배치에서 JDBC + Virtual Threads의 이점이 드러나는 비교 대상입니다.
 
-## Generated Result Rows
+## 생성된 결과 행
 
-> Latest JSON benchmark reports were found and rendered into the tables/graphs above. Re-run the corresponding benchmark tasks and `generateBenchmarkDocs` to refresh the numbers.
+> 최신 JSON 벤치마크 보고서를 찾아 위 표와 그래프로 렌더링했습니다. 수치를 갱신하려면 해당 벤치마크 태스크와 `generateBenchmarkDocs`를 다시 실행하세요.

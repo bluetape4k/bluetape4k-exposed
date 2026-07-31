@@ -8,20 +8,20 @@
 
 - 대상 벤치마크: `batchInsert`, `joinQuery`, `singleFindById`, `singleInsert`, `singleUpdate`
 - 최적화 기간: 2026-04-21
-- 사용 도구: `oh-my-claudecode` self-improve loop (JMH / kotlinx-benchmark)
+- 사용 도구: `oh-my-claudecode` self-improve 루프 (JMH / kotlinx-benchmark)
 
 ---
 
-## 초기 Baseline
+## 초기 기준선
 
 | 항목 | 값 |
 |------|----|
-| Baseline ops/s | 25,400.673 |
+| 기준선 ops/s | 25,400.673 |
 | JMH 설정 | @Warmup(2×2s) + @Measurement(3×3s) |
 | @Threads | 8 |
-| HikariCP pool | max=10, min=2 |
+| HikariCP 풀 | max=10, min=2 |
 
-초기 sub-score (Run 3 기준):
+초기 하위 점수 (실행 3 기준):
 
 | 메서드 | ops/s |
 |--------|-------|
@@ -35,14 +35,14 @@
 
 ## 라운드별 결과
 
-### Round 1 — 모두 거부
+### 라운드 1 — 모두 거부
 
 - 모든 플랜이 sealed_files 설정 오류(H004)로 거부
-- benchmark 파일이 sealed files에 잘못 추가됨 → 다음 라운드에서 수정
+- 벤치마크 파일이 보호 파일 목록에 잘못 추가됨 → 다음 라운드에서 수정
 
 ---
 
-### Round 2 — **위너: executor_b** ✅
+### 라운드 2 — **승자: executor_b** ✅
 
 **가설**: HikariCP poolSize=24 + @Threads(14)로 JDBC 연결 경합 해소
 
@@ -59,7 +59,7 @@
 
 ---
 
-### Round 3 — **위너: executor_a** ✅
+### 라운드 3 — **승자: executor_a** ✅
 
 **가설**: `BenchmarkOrders` 테이블에 인덱스 추가로 `joinQuery` 최적화
 
@@ -77,7 +77,7 @@ val statusAmountIdx = index("idx_orders_status_amount", false, status, amount)
 
 ---
 
-### Round 4 — 위너 없음
+### 라운드 4 — 승자 없음
 
 - executor_a(`synchronous_commit=off`): WAL 비동기화로 INSERT 향상 시도 → singleFindById 급락(-37%)
 - executor_b(`connectionInitSql` 쿼리 플래너 튜닝): 효과 미미
@@ -87,7 +87,7 @@ val statusAmountIdx = index("idx_orders_status_amount", false, status, amount)
 
 ---
 
-### Round 5 — **위너: executor_a** ✅
+### 라운드 5 — **승자: executor_a** ✅
 
 **가설**: JMH 측정 설정 강화(warmup/measurement 증가)로 노이즈 제거
 
@@ -107,35 +107,35 @@ val statusAmountIdx = index("idx_orders_status_amount", false, status, amount)
 
 ---
 
-### Round 6 — 위너 없음
+### 라운드 6 — 승자 없음
 
-- executor_a(JDBC `executeBatch` + `reWriteBatchedInserts=true`): batchInsert +449% (217→1196 ops/s) 이나, table bloat으로 singleXxx 급락
-- executor_b(`prepareThreshold=1` server-side prepared statement): -35% 회귀
+- executor_a(JDBC `executeBatch` + `reWriteBatchedInserts=true`): batchInsert +449% (217→1196 ops/s) 이나, 테이블 비대화로 singleXxx 급락
+- executor_b(`prepareThreshold=1` 서버 측 prepared statement): -35% 회귀
 - executor_c(`synchronous_commit=off`): READ 벤치마크 급락
 
 **핵심 발견**: `batchInsert`가 알파벳 순서로 먼저 실행되어 수십만 행을 추가 → 이후 singleXxx가 비대한 테이블에서 실행됨.
 
 ---
 
-### Round 7 — 위너 없음
+### 라운드 7 — 승자 없음
 
-`@TearDown(Level.Iteration)` cleanup 3가지 변형 시도:
+`@TearDown(Level.Iteration)` 정리 3가지 변형 시도:
 
-| Executor | 전략 | 점수 | vs. baseline |
+| 실행기 | 전략 | 점수 | 기준선 대비 |
 |----------|------|------|--------------|
 | executor_a | DELETE bench_users WHERE id > 2000 | 40,547 | -10.8% |
 | executor_b | DELETE + JDBC executeBatch + reWriteBatchedInserts=true | 31,184 | -31.4% |
 | executor_c | DELETE + ANALYZE bench_users | 38,062 | -16.2% |
 
-**교훈**: cleanup 자체가 성능을 오히려 하락시킴. baseline(45,431)은 cleanup 없이 달성된 점수.
+**교훈**: 정리 자체가 성능을 오히려 하락시킴. 기준선(45,431)은 정리 없이 달성된 점수.
 
 ---
 
-### Round 8 — 위너 없음 (circuit breaker 동작)
+### 라운드 8 — 승자 없음 (회로 차단기 동작)
 
-| Executor | 전략 | 점수 | vs. baseline |
+| 실행기 | 전략 | 점수 | 기준선 대비 |
 |----------|------|------|--------------|
-| executor_a | @Warmup iterations 3→5 | 44,056 | -3.0% |
+| executor_a | @Warmup 반복 3→5 | 44,056 | -3.0% |
 | executor_b | @Threads(14→10) + HikariCP(max=12, min=12) | 37,579 | -17.3% |
 | executor_c | batchInsert shouldReturnGeneratedValues=false | 44,307 | -2.5% |
 
@@ -147,14 +147,14 @@ val statusAmountIdx = index("idx_orders_status_amount", false, status, amount)
 
 | 항목 | 값 |
 |------|----|
-| **초기 baseline** | 25,400 ops/s |
+| **초기 기준선** | 25,400 ops/s |
 | **최종 최고 점수** | **45,431 ops/s** |
 | **총 개선율** | **+78.9%** |
 | 실행 라운드 | 8 |
 | 총 실행 executor | 24 |
-| 위너 수 | 3 (R2, R3, R5) |
+| 승자 수 | 3 (R2, R3, R5) |
 
-### 최종 sub-score (Round 5 winner 기준)
+### 최종 하위 점수 (라운드 5 승자 기준)
 
 | 메서드 | 초기 | 최종 | 개선율 |
 |--------|------|------|--------|
@@ -194,12 +194,12 @@ object BenchmarkOrders: Table("bench_orders") {
 
 | # | 교훈 |
 |---|------|
-| 1 | **HikariCP pool 크기**가 가장 큰 단일 개선 요인 (max=10→24, +71%) |
+| 1 | **HikariCP 풀 크기**가 가장 큰 단일 개선 요인 (max=10→24, +71%) |
 | 2 | **적절한 인덱스**는 joinQuery에 즉각 효과 |
-| 3 | **JMH 측정 안정화**(warmup/measurement 증가)가 variance를 줄이고 측정 신뢰성 향상 |
+| 3 | **JMH 측정 안정화**(warmup/measurement 증가)가 변동성을 줄이고 측정 신뢰성 향상 |
 | 4 | `reWriteBatchedInserts=true`는 batchInsert를 극적으로 향상하지만 전체 측정 환경 오염 |
-| 5 | `@TearDown(Level.Iteration)` cleanup은 net-negative — baseline은 cleanup 없이 달성됨 |
-| 6 | `@Threads`와 pool 크기는 일치시킬 필요 없음 — @Threads(14)+pool(24)가 @Threads(10)+pool(12)보다 우월 |
+| 5 | `@TearDown(Level.Iteration)` 정리는 net-negative — 기준선은 정리 없이 달성됨 |
+| 6 | `@Threads`와 풀 크기는 일치시킬 필요 없음 — @Threads(14)+pool(24)가 @Threads(10)+pool(12)보다 우월 |
 | 7 | `prepareThreshold=1`, `synchronous_commit=off`는 특정 메서드 개선이나 전체 회귀 |
 
 ---
