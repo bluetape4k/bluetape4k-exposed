@@ -1,40 +1,39 @@
 # Exposed 1.8.1 Release Prep
 
-## Context
+## 배경
 
-`bluetape4k-exposed` 1.8.1 must be published before the ecosystem moves to the
-`bluetape4k-bom` 1.9.0 release line.
+ecosystem이 `bluetape4k-bom` 1.9.0 release line으로 이동하기 전에
+`bluetape4k-exposed` 1.8.1을 publication해야 합니다.
 
-## Decision
+## 결정
 
-Prepare the 1.8.1 release tag with `snapshotVersion=` and keep this release on
-`io.github.bluetape4k:bluetape4k-bom:1.8.0`. The later 1.9.0 release line will
-move to `bluetape4k-bom:1.9.0`.
+`snapshotVersion=`으로 1.8.1 release tag를 준비하고 이 release는
+`io.github.bluetape4k:bluetape4k-bom:1.8.0`에 유지합니다. 이후 1.9.0 release line은
+`bluetape4k-bom:1.9.0`으로 옮깁니다.
 
-## Outcome
+## 결과
 
-Release metadata now matches the release workflow gate:
+release metadata는 이제 release workflow gate와 일치합니다.
 
 - `baseVersion=1.8.1`
 - `snapshotVersion=`
 - `bluetape4kVersion=1.8.0`
 - `gradle/libs.versions.toml` `bluetape4k-bom = "1.8.0"`
 
-## Verification
+## 검증
 
 - `actionlint .github/workflows/release.yml .github/workflows/publish-snapshot.yml .github/workflows/nightly-tests.yml .github/workflows/ci.yml`
 - `./gradlew generatePomFileForBluetapeExposedPublication --no-daemon --no-configuration-cache --no-build-cache`
-- Generated 31 publication POMs and scanned them for `SNAPSHOT`.
-- Confirmed generated publication POMs use artifact version `1.8.1` and `bluetape4k-bom:1.8.0`.
+- 31개 publication POM을 생성해 `SNAPSHOT`을 scan했습니다.
+- 생성 publication POM이 artifact version `1.8.1` 및 `bluetape4k-bom:1.8.0`을 사용하는지
+  확인했습니다.
 - `./gradlew build -x test -x koverVerify publishToMavenLocal --parallel --no-daemon --no-configuration-cache --no-build-cache`
-- Removed the unused `opentelemetry-bom-alpha` snapshot catalog reference by
-  pinning it to the current Maven Central release `1.62.0-alpha`.
+- 사용하지 않는 `opentelemetry-bom-alpha` snapshot catalog reference를 현재 Maven Central
+  release `1.62.0-alpha`로 pin해 제거했습니다.
 
-Known follow-up: GitHub release workflow still needs to run after tag `1.8.1`
-is pushed.
+알려진 후속 작업: tag `1.8.1` push 후 GitHub release workflow를 실행해야 합니다.
 
-## Future Guidance
+## 향후 지침
 
-Do not let the 1.8.1 release tag consume `bluetape4k-bom:1.8.1-SNAPSHOT` or
-`1.9.0`. Start the 1.9.0 development branch after the immutable 1.8.1 release is
-published.
+1.8.1 release tag가 `bluetape4k-bom:1.8.1-SNAPSHOT` 또는 `1.9.0`을 사용하지 않게
+합니다. immutable 1.8.1 release를 publication한 뒤 1.9.0 development branch를 시작합니다.

@@ -1,33 +1,31 @@
-# README visual semantics and placement
+# README Visual Semantics 및 Placement
 
-## Context
+## 배경
 
-README images had several placeholder-style alt labels, benchmark sections used
-diagram-shaped output where charts were clearer, and test infrastructure
-diagrams appeared after usage details.
+README image에는 placeholder-style alt label이 여럿 있었고 benchmark section은 chart가 더
+명확한데 diagram-shaped output을 사용했으며 test infrastructure diagram은 usage detail 뒤에
+나왔습니다.
 
-## Decision
+## 결정
 
-Keep architecture and test-support diagrams near the top of their README files,
-use chart images for measured benchmark results, and make generated image labels
-English-only.
+architecture와 test-support diagram은 해당 README 상단 가까이에 두고 measured benchmark
+result에는 chart image를 사용하며 generated image label은 English-only로 둡니다.
 
-## Outcome
+## 결과
 
-The root README visual order, exposed-jdbc benchmark chart, exposed-batch
-benchmark map/chart, and JDBC/R2DBC test infrastructure diagrams now match the
-section intent and current source layout.
+root README visual order, exposed-jdbc benchmark chart, exposed-batch benchmark
+map/chart, JDBC/R2DBC test infrastructure diagram은 이제 section intent와 current source
+layout에 맞습니다.
 
-## Verification
+## 검증
 
-- `xmllint --noout` on changed SVG assets
-- `rsvg-convert` PNG rendering for new and changed SVG assets
+- 변경 SVG asset의 `xmllint --noout`
+- 새롭거나 변경한 SVG asset의 `rsvg-convert` PNG rendering
 - README/Benchmark image-link scan
-- Placeholder image-alt and broken graph pattern scan
+- Placeholder image-alt 및 broken graph pattern scan
 - `./gradlew :bluetape4k-exposed-batch:compileBenchmarkKotlin`
 
-## Future note
+## 향후 메모
 
-When benchmark docs are regenerated, prefer durable PNG chart references over
-Mermaid `xychart-beta` blocks so README rendering stays stable across GitHub and
-presentation/blog reuse.
+benchmark doc을 재생성할 때 README rendering이 GitHub와 presentation/blog reuse에서 안정되게
+Mermaid `xychart-beta` block보다 durable PNG chart reference를 우선합니다.

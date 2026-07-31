@@ -1,30 +1,29 @@
 # Issue 200 Jdbc Record Serialization
 
-## Context
+## 배경
 
-Issue #200 reported that `AuditableEdgeCaseRecord` did not implement
-`java.io.Serializable` and lacked an explicit `serialVersionUID`.
+Issue #200은 `AuditableEdgeCaseRecord`가 `java.io.Serializable`을 구현하지 않고
+명시적인 `serialVersionUID`도 없다고 보고했습니다.
 
-## Decision
+## 결정
 
-Fix the reported record and the sibling `exposed-jdbc` repository test records
-in the same package. The project rule applies to all data classes, and leaving
-adjacent records without stable serialization contracts would recreate the same
-daily review finding.
+보고된 record와 같은 package의 sibling `exposed-jdbc` repository test record를 함께
+수정합니다. project rule은 모든 data class에 적용되며, 인접 record를 stable serialization
+contract 없이 남기면 같은 daily review finding이 반복됩니다.
 
-## Outcome
+## 결과
 
-All `exposed-jdbc` repository test record data classes now implement
-`Serializable` and define `serialVersionUID = 1L`. A focused regression test
-checks the Java serialization contract with `ObjectStreamClass`.
+모든 `exposed-jdbc` repository test record data class는 이제 `Serializable`을 구현하고
+`serialVersionUID = 1L`을 정의합니다. focused regression test는 `ObjectStreamClass`로
+Java serialization contract를 확인합니다.
 
-## Verification
+## 검증
 
 - `./gradlew :bluetape4k-exposed-jdbc:test --tests 'io.bluetape4k.exposed.jdbc.repository.JdbcRepositoryRecordSerializationTest' --no-daemon --no-configuration-cache --no-build-cache`
 - `./gradlew :bluetape4k-exposed-jdbc:test --no-daemon --no-configuration-cache --no-build-cache`
 
-## Future Guard
+## 향후 guard
 
-When a daily review flags one data class serialization miss, inspect sibling
-test fixtures in the same package before opening a PR. Prefer a small
-`ObjectStreamClass` regression test when the fix is contract-only.
+daily review가 data class serialization miss 하나를 지적하면 PR을 열기 전에 같은 package의
+sibling test fixture를 검사합니다. 수정이 contract-only면 작은 `ObjectStreamClass`
+regression test를 우선합니다.
