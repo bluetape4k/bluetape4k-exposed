@@ -19,8 +19,7 @@ import org.springframework.modulith.events.core.EventPublicationRepository
 import java.io.Serializable
 
 /**
- * Auto-configuration for optional Micrometer gauges over the Exposed-backed
- * Spring Modulith event publication store.
+ * Exposed 기반 Spring Modulith 이벤트 게시 저장소에 선택적 Micrometer gauge를 구성합니다.
  */
 @AutoConfiguration(after = [ExposedModulithAutoConfiguration::class])
 @Configuration(proxyBeanMethods = false)
@@ -65,24 +64,22 @@ class ExposedModulithObservabilityAutoConfiguration {
 }
 
 /**
- * Configuration properties for Exposed Spring Modulith store observability.
+ * Exposed Spring Modulith 저장소 관측성 구성 속성입니다.
  */
 @ConfigurationProperties("bluetape4k.spring.modulith.exposed.observability")
 data class ExposedModulithObservabilityProperties(
     /**
-     * Whether Exposed Spring Modulith store metrics are registered when
-     * Micrometer is available.
+     * Micrometer를 사용할 수 있을 때 Exposed Spring Modulith 저장소 메트릭을 등록할지 여부입니다.
      */
     val enabled: Boolean = true,
 
     /**
-     * Whether to expose the gauge that detects incomplete publications whose
-     * event type can no longer be loaded.
+     * 이벤트 타입을 더 이상 로드할 수 없는 미완료 게시를 감지하는 gauge를 노출할지 여부입니다.
      */
     val includeUnloadable: Boolean = true,
 
     /**
-     * Low-cardinality tags added to every Exposed Spring Modulith store metric.
+     * 모든 Exposed Spring Modulith 저장소 메트릭에 추가할 낮은 카디널리티 태그입니다.
      */
     val tags: Map<String, String> = emptyMap(),
 ) : Serializable {
@@ -92,8 +89,7 @@ data class ExposedModulithObservabilityProperties(
 }
 
 /**
- * Registers Micrometer gauges for Exposed-backed Spring Modulith publication
- * state.
+ * Exposed 기반 Spring Modulith 게시 상태를 나타내는 Micrometer gauge를 등록합니다.
  */
 class ExposedEventPublicationMetrics(
     private val repository: ExposedEventPublicationRepository,
