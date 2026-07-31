@@ -21,10 +21,10 @@ private const val DEFAULT_TRINO_PAGE_SIZE = 1_000
 private const val DEFAULT_TRINO_BATCH_CHUNK_SIZE = 1_000
 
 /**
- * Options for [pagedQueryFlow].
+ * [pagedQueryFlow] option입니다.
  *
- * @property pageSize maximum number of rows requested per transaction.
- * @property initialOffset first offset passed to the page query block.
+ * @property pageSize transaction마다 요청할 최대 row 수
+ * @property initialOffset page query block에 처음 전달할 offset
  */
 data class TrinoPagedQueryOptions(
     val pageSize: Int = DEFAULT_TRINO_PAGE_SIZE,
@@ -41,17 +41,15 @@ data class TrinoPagedQueryOptions(
 }
 
 /**
- * Options for [trinoBatchInsert].
+ * [trinoBatchInsert] option입니다.
  *
- * Trino write support is connector-dependent and this module cannot make a
- * connector write path transactional. The defaults favor compatibility with
- * Trino JDBC by avoiding generated-key retrieval and sending rows in bounded
- * chunks.
+ * Trino write 지원 여부는 connector에 따라 달라지며 이 module은 connector write path에
+ * transaction을 제공할 수 없습니다. 기본값은 generated key 조회를 피하고 row를 제한된
+ * chunk로 전송하여 Trino JDBC 호환성을 우선합니다.
  *
- * @property chunkSize maximum number of rows sent through one Exposed
- *   `batchInsert` call.
- * @property shouldReturnGeneratedValues whether Exposed should request
- *   generated values from JDBC. Keep this disabled for normal Trino tables.
+ * @property chunkSize 한 번의 Exposed `batchInsert` 호출로 전송할 최대 row 수
+ * @property shouldReturnGeneratedValues Exposed가 JDBC에 generated value를 요청할지 여부.
+ *   일반 Trino table에서는 비활성 상태를 유지하십시오.
  */
 data class TrinoBatchInsertOptions(
     val chunkSize: Int = DEFAULT_TRINO_BATCH_CHUNK_SIZE,
@@ -67,16 +65,14 @@ data class TrinoBatchInsertOptions(
 }
 
 /**
- * Executes connector-dependent Trino batch inserts in bounded chunks.
+ * Connector에 의존하는 Trino batch insert를 제한된 chunk 단위로 실행합니다.
  *
- * This is a thin Exposed `batchInsert` wrapper, not a Trino-specific bulk-loader
- * protocol. It is intended for connectors that already support `INSERT`, and it
- * keeps the batch size explicit so callers do not accidentally materialize or
- * submit a very large write in one JDBC call.
+ * Trino 전용 bulk-loader protocol이 아니라 얇은 Exposed `batchInsert` wrapper입니다.
+ * 이미 `INSERT`를 지원하는 connector를 대상으로 하며, 호출자가 한 번의 JDBC 호출에서 매우
+ * 큰 write를 materialize하거나 전송하지 않도록 batch size를 명시적으로 유지합니다.
  *
- * Trino transactions are autocommit-like for this module. If a later chunk
- * fails, earlier chunks may already be visible and are not rolled back by
- * [TrinoConnectionWrapper.rollback].
+ * 이 module에서 Trino transaction은 autocommit처럼 동작합니다. 뒤쪽 chunk가 실패해도 앞선
+ * chunk는 이미 보일 수 있으며 [TrinoConnectionWrapper.rollback]으로 rollback되지 않습니다.
  *
  * ```kotlin
  * Events.trinoBatchInsert(events, TrinoBatchInsertOptions(chunkSize = 500)) { event ->
@@ -86,12 +82,11 @@ data class TrinoBatchInsertOptions(
  * }
  * ```
  *
- * @param data source rows to insert.
- * @param options chunking and generated-value behavior.
- * @param body Exposed batch insert body.
- * @return generated rows returned by Exposed when
- *   [TrinoBatchInsertOptions.shouldReturnGeneratedValues] is enabled. The
- *   default returns an empty list after successful writes.
+ * @param data insert할 source row
+ * @param options chunking과 generated-value 동작
+ * @param body Exposed batch insert body
+ * @return [TrinoBatchInsertOptions.shouldReturnGeneratedValues]가 활성화된 경우 Exposed가
+ *   반환한 generated row. 기본값에서는 write 성공 후 빈 list를 반환합니다.
  */
 fun <E> Table.trinoBatchInsert(
     data: Iterable<E>,
@@ -205,15 +200,15 @@ fun <T> queryFlow(
 }
 
 /**
- * Returns Trino query results as a page-by-page [Flow].
+ * Trino query 결과를 page 단위 [Flow]로 반환합니다.
  *
- * This function is intentionally not a row-by-row JDBC cursor stream. Each page
- * is fetched and materialized inside a short Exposed transaction, then emitted
- * after the transaction is closed. This preserves JDBC `ResultSet` and Exposed
- * transaction lifetimes while avoiding one full-result-set materialization.
+ * 이 function은 의도적으로 row-by-row JDBC cursor stream을 제공하지 않습니다. 각 page는
+ * 짧은 Exposed transaction 안에서 조회하고 materialize한 뒤 transaction을 닫은 후 emit합니다.
+ * 따라서 전체 result set을 한 번에 materialize하지 않으면서 JDBC `ResultSet`과 Exposed
+ * transaction 수명 경계를 보존합니다.
  *
- * The caller must apply the provided `limit` and `offset` to a stable,
- * deterministic query, usually with an explicit `orderBy`.
+ * 호출자는 제공된 `limit`과 `offset`을 안정적이고 결정적인 query에 적용해야 하며, 일반적으로
+ * 명시적인 `orderBy`가 필요합니다.
  *
  * ```kotlin
  * pagedQueryFlow(db, TrinoPagedQueryOptions(pageSize = 500)) { limit, offset ->
@@ -226,15 +221,13 @@ fun <T> queryFlow(
  * }
  * ```
  *
- * Cancellation is checked before each page fetch and before each emitted item.
- * If collection is cancelled, the current transaction is allowed to close and no
- * further pages are requested.
+ * 각 page fetch 전과 item emit 전에 cancellation을 확인합니다. Collection이 취소되면 현재
+ * transaction을 닫고 추가 page를 요청하지 않습니다.
  *
- * @param db Trino database connection.
- * @param options page size and initial offset.
- * @param dispatcher dispatcher used for blocking JDBC calls.
- * @param block page query block. It receives the page `limit` and `offset` and
- *   must return at most `limit` rows.
+ * @param db Trino database connection
+ * @param options page size와 initial offset
+ * @param dispatcher blocking JDBC 호출에 사용할 dispatcher
+ * @param block page query block. Page `limit`과 `offset`을 받아 최대 `limit`개의 row를 반환해야 합니다.
  */
 fun <T> pagedQueryFlow(
     db: Database,

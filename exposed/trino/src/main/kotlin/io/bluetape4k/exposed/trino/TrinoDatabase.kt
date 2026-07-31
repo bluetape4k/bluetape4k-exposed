@@ -8,10 +8,10 @@ import org.jetbrains.exposed.v1.jdbc.Database
 import java.sql.DriverManager
 
 /**
- * Factory object for connecting to a Trino database via Exposed ORM.
+ * Exposed ORM을 통해 Trino database에 연결하는 factory object입니다.
  *
- * Registers the Trino JDBC driver and dialect on first access, then provides
- * `connect` overloads for host/port, JDBC URL, and `javax.sql.DataSource`.
+ * 최초 접근 시 Trino JDBC driver와 dialect를 등록하고, host/port, JDBC URL,
+ * `javax.sql.DataSource`용 `connect` overload를 제공합니다.
  *
  * ## Basic usage
  *
@@ -42,24 +42,24 @@ import java.sql.DriverManager
  * }.collect { row -> ... }
  * ```
  *
- * ## autocommit behaviour
+ * ## Autocommit 동작
  *
- * - Trino does not support transactions. Every statement runs in autocommit mode.
- * - Multiple DML statements inside a `transaction {}` block are NOT atomic; a
- *   mid-block failure leaves preceding statements already committed.
- * - `rollback()` is a no-op adapter provided for Exposed framework compatibility.
- * - Nested transactions and savepoints are accepted but provide no atomicity guarantees.
- * - Prefer [TrinoTable] over [org.jetbrains.exposed.v1.core.Table] for DDL so that
- *   `PRIMARY KEY` clauses are stripped before Trino sees them.
+ * - Trino는 transaction을 지원하지 않으며 모든 statement를 autocommit mode로 실행합니다.
+ * - `transaction {}` block 안의 여러 DML statement는 원자적이지 않습니다. Block 중간에 실패하면
+ *   앞선 statement는 이미 commit된 상태로 남습니다.
+ * - `rollback()`은 Exposed framework 호환성을 위한 no-op adapter입니다.
+ * - Nested transaction과 savepoint를 허용하지만 원자성을 보장하지 않습니다.
+ * - DDL에서는 [org.jetbrains.exposed.v1.core.Table]보다 [TrinoTable]을 사용하여 Trino에
+ *   전달하기 전에 `PRIMARY KEY` clause를 제거하십시오.
  */
 object TrinoDatabase : KLogging() {
 
     /**
-     * Trino JDBC driver class name.
+     * Trino JDBC driver class name입니다.
      *
-     * Declared as `val` (not `const val`) so that accessing this property triggers
-     * the `init` block and registers the driver. A `const val` is inlined at compile
-     * time and may not trigger object initialisation.
+     * 이 property 접근 시 `init` block이 실행되어 driver를 등록하도록 `const val`이 아닌
+     * `val`로 선언했습니다. `const val`은 compile time에 inline되므로 object 초기화를
+     * 유발하지 않을 수 있습니다.
      */
     val DRIVER = "io.trino.jdbc.TrinoDriver"
 
@@ -71,19 +71,19 @@ object TrinoDatabase : KLogging() {
     }
 
     /**
-     * Connects to a Trino database using individual host/port/catalog/schema parameters.
+     * 개별 host/port/catalog/schema parameter를 사용해 Trino database에 연결합니다.
      *
-     * Builds a JDBC URL of the form `jdbc:trino://{host}:{port}/{catalog}/{schema}`.
+     * `jdbc:trino://{host}:{port}/{catalog}/{schema}` 형식의 JDBC URL을 구성합니다.
      *
-     * **Warning**: Trino does not support transactions. All statements run in autocommit
-     * mode; a failure mid-block leaves preceding DML already committed.
-     * Use [TrinoTable] for DDL to strip unsupported `PRIMARY KEY` syntax.
+     * **주의**: Trino는 transaction을 지원하지 않습니다. 모든 statement는 autocommit mode로
+     * 실행되며 block 중간에 실패하면 앞선 DML은 이미 commit된 상태로 남습니다.
+     * DDL에서는 [TrinoTable]을 사용해 지원하지 않는 `PRIMARY KEY` syntax를 제거하십시오.
      *
-     * @param host Trino coordinator host (default: `localhost`)
-     * @param port Trino coordinator port (default: `8080`)
-     * @param catalog Trino catalog name (default: `memory`)
-     * @param schema Trino schema name (default: `default`)
-     * @param user Connection user (default: `trino`)
+     * @param host Trino coordinator host, 기본값은 `localhost`
+     * @param port Trino coordinator port, 기본값은 `8080`
+     * @param catalog Trino catalog name, 기본값은 `memory`
+     * @param schema Trino schema name, 기본값은 `default`
+     * @param user connection user, 기본값은 `trino`
      * @return Exposed [Database] instance
      */
     fun connect(
@@ -116,14 +116,14 @@ object TrinoDatabase : KLogging() {
     }
 
     /**
-     * Connects to a Trino database using a fully-qualified JDBC URL.
+     * Fully-qualified JDBC URL을 사용해 Trino database에 연결합니다.
      *
-     * **Warning**: Trino does not support transactions. All statements run in autocommit
-     * mode; a failure mid-block leaves preceding DML already committed.
-     * Use [TrinoTable] for DDL to strip unsupported `PRIMARY KEY` syntax.
+     * **주의**: Trino는 transaction을 지원하지 않습니다. 모든 statement는 autocommit mode로
+     * 실행되며 block 중간에 실패하면 앞선 DML은 이미 commit된 상태로 남습니다.
+     * DDL에서는 [TrinoTable]을 사용해 지원하지 않는 `PRIMARY KEY` syntax를 제거하십시오.
      *
-     * @param jdbcUrl Trino JDBC URL (e.g. `jdbc:trino://host:8080/hive/default`)
-     * @param user Connection user (default: `trino`)
+     * @param jdbcUrl Trino JDBC URL, 예: `jdbc:trino://host:8080/hive/default`
+     * @param user connection user, 기본값은 `trino`
      * @return Exposed [Database] instance
      */
     fun connect(
@@ -148,9 +148,7 @@ object TrinoDatabase : KLogging() {
         )
     }
 
-    /**
-     * Connects to a Trino database using a JDBC URL and typed JDBC options.
-     */
+    /** JDBC URL과 typed JDBC option을 사용해 Trino database에 연결합니다. */
     fun connect(
         jdbcUrl: String,
         options: TrinoConnectionOptions,
@@ -158,17 +156,17 @@ object TrinoDatabase : KLogging() {
         connect(jdbcUrl = jdbcUrl, user = "trino", options = options)
 
     /**
-     * Connects to a Trino database via a `javax.sql.DataSource` (e.g. HikariCP).
+     * `javax.sql.DataSource`(예: HikariCP)를 통해 Trino database에 연결합니다.
      *
-     * Use this overload in production when the application manages a connection pool.
-     * A connection is obtained from the pool via `dataSource.getConnection()`, then
-     * wrapped in [TrinoConnectionWrapper] to enforce `autoCommit = true`.
-     * If wrapper construction fails, the raw connection is closed to prevent leaks.
+     * Application이 connection pool을 관리하는 production 환경에서 이 overload를 사용합니다.
+     * `dataSource.getConnection()`으로 pool에서 connection을 가져온 뒤
+     * [TrinoConnectionWrapper]로 감싸 `autoCommit = true`를 강제합니다. Wrapper 생성에
+     * 실패하면 leak을 방지하기 위해 raw connection을 닫습니다.
      *
-     * **Warning**: Trino does not support transactions. All statements run in autocommit
-     * mode; a failure mid-block leaves preceding DML already committed.
+     * **주의**: Trino는 transaction을 지원하지 않습니다. 모든 statement는 autocommit mode로
+     * 실행되며 block 중간에 실패하면 앞선 DML은 이미 commit된 상태로 남습니다.
      *
-     * @param dataSource Connection pool supplying JDBC connections (e.g. HikariCP)
+     * @param dataSource JDBC connection을 제공하는 connection pool, 예: HikariCP
      * @return Exposed [Database] instance
      */
     fun connect(dataSource: javax.sql.DataSource): Database {
