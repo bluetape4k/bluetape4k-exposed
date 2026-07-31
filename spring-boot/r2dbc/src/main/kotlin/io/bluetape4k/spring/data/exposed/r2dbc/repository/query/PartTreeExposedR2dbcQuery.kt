@@ -52,8 +52,8 @@ internal class PartTreeExposedR2dbcQuery<R: Any, ID: Any>(
         val sort = partTree.sort
             .and(pageable.sort)
             .and(values.firstInstanceOrNull<Sort>() ?: Sort.unsorted())
-        // Spring Data 4 suspend query parameters in this factory path still expect
-        // the trailing Continuation when ParameterAccessor binds method arguments.
+        // 이 factory 경로에서 Spring Data 4의 suspend 쿼리 파라미터는
+        // ParameterAccessor가 메서드 인자를 바인딩할 때 마지막 Continuation까지 필요합니다.
         val bindValues = parameters.toList().toTypedArray()
 
         return suspendTransaction {
