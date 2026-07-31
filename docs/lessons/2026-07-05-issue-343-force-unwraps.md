@@ -1,18 +1,21 @@
-# Lesson — Issue #343 force unwrap cleanup
+# 교훈 — 이슈 #343 강제 언래핑 정리
 
-## Decision
+## 결정
 
-Do not use force unwrap in production or shared helper code. Capture validated values into non-null locals with either:
+프로덕션 코드나 공유 헬퍼 코드에서 강제 언래핑을 사용하지 않는다. 검증된 값은 다음 방법 중 하나를 사용해
+null이 아닌 지역 변수로 저장한다.
 
-- `requireNotNull(...)` when the value is caller input or builder configuration, preserving `IllegalArgumentException` semantics.
-- `checkNotNull(...)` when the value is internal lifecycle state or a framework invariant, preserving `IllegalStateException` semantics.
+- 값이 호출자 입력 또는 빌더 설정이면 `IllegalArgumentException` 의미 체계를 보존하는 `requireNotNull(...)`을 사용한다.
+- 값이 내부 수명 주기 상태 또는 프레임워크 불변 조건이면 `IllegalStateException` 의미 체계를 보존하는 `checkNotNull(...)`을 사용한다.
 
-## Patterns applied
+## 적용한 패턴
 
-- After a guard, avoid re-reading nullable state with force unwrap; bind a local non-null value at the use site.
-- Replace `filter { value != null }.map { value!! }` with `mapNotNull { value?.let { ... } }`.
-- Keep broad test assertion unwrap cleanup separate from production/helper cleanup to avoid noisy mechanical diffs.
+- 가드 검사 후 null 허용 상태를 강제 언래핑해 다시 읽지 말고, 사용 지점에서 null이 아닌 지역 변수에 바인딩한다.
+- `filter { value != null }.map { value!! }`를 `mapNotNull { value?.let { ... } }`로 교체한다.
+- 불필요하게 큰 기계적 diff가 생기지 않도록 광범위한 테스트 단언 언래핑 정리는 프로덕션/헬퍼 정리와 분리한다.
 
-## Future guardrail
+## 향후 가드레일
 
-If a repo-wide `rg '!!'` finds a new `src/main` hit, treat it as a production-quality issue unless it is only historical documentation text. Prefer documenting why a value is non-null in the exception message rather than relying on an NPE.
+저장소 전체에서 실행한 `rg '!!'`가 새로운 `src/main` 항목을 찾으면, 과거 기록을 담은 문서 텍스트에만
+등장하는 경우가 아닌 한 프로덕션 품질 문제로 취급한다. NPE에 의존하기보다 예외 메시지에 값이 null이 아닌
+이유를 명시하는 방식을 우선한다.
