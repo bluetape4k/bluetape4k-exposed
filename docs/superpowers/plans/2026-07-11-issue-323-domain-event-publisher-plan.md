@@ -1,58 +1,58 @@
-# Issue #323 Transaction-Aware Domain Event Publisher Implementation Plan
+# Issue #323 트랜잭션 인식 도메인 이벤트 발행자 구현 계획
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **에이전트 작업자 안내:** 필수 하위 스킬로 superpowers:subagent-driven-development(권장) 또는 superpowers:executing-plans를 사용해 이 계획을 작업 단위로 구현한다. 진행 상태는 체크박스(`- [ ]`) 문법으로 추적한다.
 
-**Goal:** Add an explicit Spring Boot JDBC bridge that hands aggregate domain events to Spring inside the command transaction, clears them only after committed completion, and demonstrates the contract in the DDD Spring Modulith example.
+**목표:** 명령 트랜잭션 안에서 애그리거트 도메인 이벤트를 Spring에 전달하고 커밋 완료 후에만 지우는 명시적 Spring Boot JDBC bridge를 추가하며, DDD Spring Modulith 예제로 이 계약을 보여 준다.
 
-**Architecture:** `spring-boot/jdbc` owns one public `ExposedAggregateEventPublisher` and one public auto-configuration class. Publisher state lives only in a private transaction synchronization discovered from Spring's current synchronization list; aggregate identity is reserved before publication, commit is poisoned after any lifecycle violation, and completion cleanup is isolated per aggregate. `exposed/core` remains Spring-neutral, while the example replaces its manual publisher loop with the new API.
+**아키텍처:** `spring-boot/jdbc`가 public `ExposedAggregateEventPublisher` 하나와 public 자동 구성 클래스 하나를 담당한다. 발행자 상태는 Spring의 현재 synchronization 목록에서 찾은 private 트랜잭션 synchronization에만 둔다. 발행 전에 애그리거트 identity를 예약하고, 수명주기 위반이 발생하면 커밋을 poison 상태로 만들며, 완료 정리는 애그리거트별로 격리한다. `exposed/core`는 Spring 중립성을 유지하고 예제의 수동 발행 loop는 새 API로 교체한다.
 
-**Tech Stack:** Kotlin, Spring Framework 7 transaction synchronization, Spring Boot 4 auto-configuration, JetBrains Exposed 1.3.1, Spring Modulith 2.0.6, H2, JUnit 5, bluetape4k assertions/logging, Logback test capture, CairoSVG.
+**기술 스택:** Kotlin, Spring Framework 7 트랜잭션 synchronization, Spring Boot 4 자동 구성, JetBrains Exposed 1.3.1, Spring Modulith 2.0.6, H2, JUnit 5, bluetape4k assertion/logging, Logback 테스트 캡처, CairoSVG.
 
 ---
 
-## Approved Basis
+## 승인된 기준
 
-- Issue: `#323`, milestone `1.12.0`, assignee `debop`.
-- Design: `docs/superpowers/specs/2026-07-10-issue-323-domain-event-publisher-design.md`.
-- Spec review: `docs/review/2026-07-10-issue-323-domain-event-publisher-spec-review.md`, final `P0 = 0`, `P1 = 0`.
-- Baseline command already passed before implementation:
+- 이슈: `#323`, milestone `1.12.0`, assignee `debop`.
+- 설계: `docs/superpowers/specs/2026-07-10-issue-323-domain-event-publisher-design.md`.
+- 명세 리뷰: `docs/review/2026-07-10-issue-323-domain-event-publisher-spec-review.md`, 최종 `P0 = 0`, `P1 = 0`.
+- 구현 전에 이미 통과한 baseline 명령:
   `./gradlew :bluetape4k-exposed-spring-boot-jdbc:test :bluetape4k-exposed-spring-modulith:test :examples-ddd-spring-modulith-demo:test --no-configuration-cache --no-daemon --console=plain`.
-- CodeGraph is unavailable in this worktree (`0` files/nodes). Exact source paths below were verified with direct repository inspection.
+- 이 worktree에서는 CodeGraph를 사용할 수 없다(`0` files/nodes). 아래의 정확한 소스 경로는 저장소를 직접 검사해 확인했다.
 
-## File And Ownership Map
+## 파일과 소유권 매핑
 
-| Task | Write scope | Responsibility |
+| 작업 | 쓰기 범위 | 책임 |
 |---|---|---|
-| 0 | Read-only workflow inspection; approved spec/plan/review artifacts | Fail fast on CI/Nightly coverage gaps and freeze the approved implementation basis. |
-| 1 | `exposed/core/src/main/.../ddd/**`, `exposed/core/src/test/.../ddd/AbstractAggregateRootTest.kt` | Lock and document Spring-neutral event immutability/reference contracts. |
-| 2-4 | `spring-boot/jdbc/src/main/.../ddd/ExposedAggregateEventPublisher.kt`, `spring-boot/jdbc/src/test/.../ddd/ExposedAggregateEventPublisherTest.kt` | Implement and test transaction lifecycle, poison semantics, correlation, and completion logging. |
-| 5 | JDBC repository configuration extension/base implementation, aggregate publisher auto-configuration/imports, matching tests | Make the existing `transactionManagerRef` contract executable and add guarded default publisher registration. |
-| 6 | `examples/ddd-spring-modulith-demo/**` listed in Task 6 | Replace manual publication and extend integration/serializer tests. |
-| 7 | README locale pairs, `CHANGELOG.md`, lifecycle SVG/PNG | Document public behavior, migration, operations, and timing. |
-| 8-9 | Review/lesson artifacts only | Run final verification and capture evidence. |
-| 10 | GitHub PR/CI evidence after explicit external-side-effect approval | Prove live metadata, checks, coverage artifacts, and review-thread closure before merge. |
+| 0 | 읽기 전용 workflow 검사, 승인된 명세/계획/리뷰 산출물 | CI/Nightly 커버리지 누락을 조기에 거부하고 승인된 구현 기준을 고정한다. |
+| 1 | `exposed/core/src/main/.../ddd/**`, `exposed/core/src/test/.../ddd/AbstractAggregateRootTest.kt` | Spring 중립 이벤트 불변성/reference 계약을 고정하고 문서화한다. |
+| 2-4 | `spring-boot/jdbc/src/main/.../ddd/ExposedAggregateEventPublisher.kt`, `spring-boot/jdbc/src/test/.../ddd/ExposedAggregateEventPublisherTest.kt` | 트랜잭션 수명주기, poison 의미, correlation, 완료 logging을 구현하고 테스트한다. |
+| 5 | JDBC 저장소 구성 extension/기반 구현, 애그리거트 발행자 자동 구성/import, 관련 테스트 | 기존 `transactionManagerRef` 계약을 실행 가능하게 만들고 보호된 기본 발행자 등록을 추가한다. |
+| 6 | 작업 6에 나열된 `examples/ddd-spring-modulith-demo/**` | 수동 발행을 교체하고 통합/serializer 테스트를 확장한다. |
+| 7 | README 로케일 쌍, `CHANGELOG.md`, 수명주기 SVG/PNG | public 동작, migration, 운영, timing을 문서화한다. |
+| 8-9 | 리뷰/교훈 산출물만 | 최종 검증을 실행하고 근거를 기록한다. |
+| 10 | 명시적 외부 상태 변경 승인 후 GitHub PR/CI 근거 | 병합 전에 라이브 메타데이터, 검사, 커버리지 산출물, 리뷰 thread 종료를 증명한다. |
 
-Task 0 is the pre-implementation gate. Tasks 2-4 share one implementation file and must run sequentially. Task 5 depends on the public class from Task 3. Task 6 depends on Tasks 3 and 5. Documentation starts only after the API and example compile. No task depends on an artifact produced by a later task.
+작업 0은 구현 전 gate다. 작업 2-4는 구현 파일 하나를 공유하므로 순차로 실행해야 한다. 작업 5는 작업 3의 public 클래스에 의존하고, 작업 6은 작업 3과 5에 의존한다. 문서 작업은 API와 예제가 컴파일된 후에만 시작한다. 어떤 작업도 뒤 작업이 만드는 산출물에 의존하지 않는다.
 
-## Task 0: Verify Workflow Coverage And Freeze The Approved Basis
+## 작업 0: workflow 커버리지 검증과 승인 기준 고정
 
-complexity: low
-depends_on: approved design and Step 3-R plan review
-applies: `bluetape4k-full-feature`, `verification-before-completion`
+복잡도: 낮음
+의존성: 승인된 설계와 단계 3-R 계획 리뷰
+적용 항목: `bluetape4k-full-feature`, `verification-before-completion`
 
-**Files:**
-- Inspect: `.github/workflows/ci.yml`
-- Inspect: `.github/workflows/nightly-tests.yml`
-- Verify: committed approved spec
-- Commit: implementation plan and plan-review artifact only
+**파일:**
+- 검사: `.github/workflows/ci.yml`
+- 검사: `.github/workflows/nightly-tests.yml`
+- 검증: 커밋된 승인 명세
+- 커밋: 구현 계획과 계획 리뷰 산출물만
 
-- [ ] **Step 1: Record the approved execution gate and checklist applicability**
+- [ ] **단계 1: 승인된 실행 gate와 checklist 적용 여부 기록**
 
-Quote the user's explicit implementation-plan approval in the execution log. Instantiate the Full Feature checklist and record `WF` (workflow), `CL` (change lifecycle), `CG` (Common Gates `CG-01..17`), `A` (Full Feature `A-01..11`), and `KT` (Kotlin) as applicable or unavailable with evidence. Mark the triggered `KT-TEST` and `KT-SPR` checklists applicable as well. Record CodeGraph availability separately as tool evidence; it is not the `CG` checklist. For every task below, record before execution: `Action`, `Expected DoD`, and `Failure/return point`; record `Step DoD` with command/file evidence before advancing. A missing approval or unchecked applicable gate stops before mutation.
+실행 log에 사용자의 명시적인 구현 계획 승인을 인용한다. Full Feature checklist를 만들고 `WF` (workflow), `CL` (change lifecycle), `CG` (Common Gates `CG-01..17`), `A` (Full Feature `A-01..11`), `KT` (Kotlin)를 적용 가능 또는 사용 불가로 근거와 함께 기록한다. 발동한 `KT-TEST`와 `KT-SPR` checklist도 적용 대상으로 표시한다. CodeGraph 사용 가능 여부는 도구 근거로 별도 기록하며 `CG` checklist와 혼동하지 않는다. 아래 모든 작업은 실행 전에 `Action`, `Expected DoD`, `Failure/return point`를 기록하고, 다음으로 넘어가기 전에 명령/파일 근거가 있는 `Step DoD`를 기록한다. 승인이 없거나 적용 가능한 gate가 확인되지 않았으면 변경 전에 중단한다.
 
-- [ ] **Step 2: Fail fast on workflow coverage gaps**
+- [ ] **단계 2: workflow 커버리지 누락 조기 거부**
 
-Before any source edit, inspect both workflows and record evidence that CI changes under `exposed/core/**`, `spring-boot/**` (covering JDBC and Spring Modulith), the narrower `spring-boot/jdbc/**`/`spring-boot/spring-modulith/**` dependent-job filters, and `examples/**` route to jobs that run the corresponding `test` and `koverXmlReport` tasks. Nightly has no path filter: prove the core, Spring Boot, and Spring Modulith jobs run in the applicable Nightly scopes, while `test-examples` runs in weekly/full scope. Verify those jobs are included in status/coverage `needs` and their Kover XML is uploaded. Preserve the repository's report-only Kover policy; this task verifies visibility/routing rather than introducing a hard coverage threshold.
+소스를 편집하기 전에 두 workflow를 모두 검사하고, `exposed/core/**`, JDBC와 Spring Modulith를 포함하는 `spring-boot/**`, 더 좁은 `spring-boot/jdbc/**`/`spring-boot/spring-modulith/**` 종속 job filter, `examples/**` 변경이 각각 해당 `test`와 `koverXmlReport` 작업을 실행하는 job으로 연결된다는 근거를 기록한다. Nightly에는 경로 filter가 없으므로 core, Spring Boot, Spring Modulith job이 해당 Nightly 범위에서 실행되고 `test-examples`는 weekly/full 범위에서 실행됨을 증명한다. 이 job들이 status/coverage `needs`에 포함되고 Kover XML이 업로드되는지 확인한다. 저장소의 report-only Kover 정책을 유지한다. 이 작업은 강제 coverage 임계값을 도입하지 않고 가시성과 routing을 검증한다.
 
 ```bash
 actionlint .github/workflows/ci.yml .github/workflows/nightly-tests.yml
@@ -68,11 +68,11 @@ rg -n 'exposed/core/\*\*|spring-boot/\*\*|spring-boot/jdbc/\*\*|spring-boot/spri
   .github/workflows/ci.yml .github/workflows/nightly-tests.yml
 ```
 
-Expected: CI path routing, Nightly full-scope job inclusion, all four module test/Kover registrations, status/coverage dependencies, and coverage upload paths are evidenced. If any route is absent, stop before Task 1, add the workflow file to the ownership map, and insert a RED workflow-validation step plus the minimal workflow edit into the owning implementation task.
+예상 결과: CI 경로 routing, Nightly 전체 범위 job 포함, 네 모듈의 test/Kover 등록, status/coverage 의존성, 커버리지 업로드 경로에 근거가 있다. 누락된 route가 있으면 작업 1 전에 중단하고 workflow 파일을 소유권 매핑에 추가한 뒤, RED workflow 검증 단계와 최소 workflow 수정을 담당 구현 작업에 넣는다.
 
-- [ ] **Step 3: Freeze the reviewed implementation basis**
+- [ ] **단계 3: 리뷰된 구현 기준 고정**
 
-Confirm the plan review records final `P0 = 0`, `P1 = 0`, all P2/P3 resolutions, and the exact reviewed plan/spec blob IDs. Verify the approved spec is already pinned in branch history. Because the plan/review files are new, run scoped checks that include untracked content, commit them in one Lore commit, and verify the committed blob IDs before Task 1:
+계획 리뷰에 최종 `P0 = 0`, `P1 = 0`, 모든 P2/P3 해결 내용, 리뷰한 정확한 plan/spec blob ID가 기록됐는지 확인한다. 승인된 명세가 branch 이력에 이미 고정됐는지 검증한다. 계획/리뷰 파일은 새 파일이므로 추적되지 않은 내용까지 포함하는 범위 검사를 실행하고 Lore commit 하나로 커밋한 뒤 작업 1 전에 커밋된 blob ID를 검증한다.
 
 ```text
 docs/superpowers/plans/2026-07-11-issue-323-domain-event-publisher-plan.md
@@ -111,23 +111,23 @@ git rev-parse HEAD:docs/review/2026-07-11-issue-323-domain-event-publisher-plan-
 git status --short
 ```
 
-Record the resulting baseline commit SHA in the execution log; the review artifact records the pre-commit spec/plan blobs because a commit cannot contain its own SHA. The pinned spec commit plus this plan/review commit form the immutable implementation baseline. Any later plan change reruns affected Step 3-R lenses and creates a new reviewed baseline rather than being folded into source work silently.
+결과 baseline commit SHA를 실행 log에 기록한다. commit은 자기 SHA를 포함할 수 없으므로 리뷰 산출물에는 커밋 전 spec/plan blob을 기록한다. 고정된 spec commit과 이 plan/review commit이 불변 구현 baseline을 이룬다. 이후 계획을 변경하면 소스 작업에 조용히 섞지 말고 영향을 받는 단계 3-R 관점을 다시 실행해 새로 리뷰된 baseline을 만든다.
 
-## Task 1: Lock The Spring-Neutral Aggregate Contract
+## 작업 1: Spring 중립 애그리거트 계약 고정
 
-complexity: low
-depends_on: Task 0 PASS and committed reviewed basis
-applies: `test-driven-development`, `bluetape4k-code-patterns`, `ecc-kotlin-testing`
+복잡도: 낮음
+의존성: 작업 0 PASS와 커밋된 리뷰 기준
+적용 항목: `test-driven-development`, `bluetape4k-code-patterns`, `ecc-kotlin-testing`
 
-**Files:**
-- Modify: `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/AggregateRoot.kt`
-- Modify: `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/AbstractAggregateRoot.kt`
-- Modify: `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/DomainEvent.kt`
-- Modify: `exposed/core/src/test/kotlin/io/bluetape4k/exposed/core/ddd/AbstractAggregateRootTest.kt`
+**파일:**
+- 수정: `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/AggregateRoot.kt`
+- 수정: `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/AbstractAggregateRoot.kt`
+- 수정: `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/DomainEvent.kt`
+- 수정: `exposed/core/src/test/kotlin/io/bluetape4k/exposed/core/ddd/AbstractAggregateRootTest.kt`
 
-- [ ] **Step 1: Add a characterization test for stable event references**
+- [ ] **단계 1: 안정적인 이벤트 reference 특성 테스트 추가**
 
-Add this test to `AbstractAggregateRootTest`:
+이 테스트를 `AbstractAggregateRootTest`에 추가한다.
 
 ```kotlin
 @Test
@@ -157,11 +157,11 @@ fun `domainEvents preserves event object references until clear`() {
 }
 ```
 
-This is a characterization test and is expected to pass before KDoc edits; no production behavior change is required.
+이는 특성화 테스트이며 KDoc 편집 전에도 통과해야 한다. production 동작 변경은 필요하지 않다.
 
-- [ ] **Step 2: Run the focused core test**
+- [ ] **단계 2: 대상 core 테스트 실행**
 
-Run:
+실행:
 
 ```bash
 ./gradlew :bluetape4k-exposed-core:test \
@@ -169,11 +169,11 @@ Run:
   --no-configuration-cache --no-daemon --console=plain
 ```
 
-Expected: PASS, proving that snapshots are separate caller-visible `List` instances containing the same event object references and isolated from caller mutation.
+예상 결과: PASS. 스냅숏은 같은 이벤트 객체 reference를 담되 호출자에게 보이는 서로 다른 `List` 인스턴스이며 호출자 변경으로부터 격리됨을 증명한다.
 
-- [ ] **Step 3: Update English KDoc without adding Spring dependencies**
+- [ ] **단계 3: Spring 의존성을 추가하지 않고 영어 KDoc 갱신**
 
-Update the three public contracts so they state:
+public 계약 세 개를 다음 내용으로 갱신한다.
 
 ```text
 AggregateRoot.domainEvents(): side-effect-free immutable snapshot, recording order and event object references stable until clear.
@@ -183,11 +183,11 @@ AbstractAggregateRoot: single command/transaction owner, no concurrent or overla
 DomainEvent: payload must be deeply immutable after recording/registration.
 ```
 
-Do not import or link Spring types from `exposed/core`; name the bridge as plain code text in KDoc.
+`exposed/core`에서 Spring 타입을 import하거나 link하지 않는다. KDoc에는 bridge 이름을 일반 코드 텍스트로 적는다.
 
-- [ ] **Step 4: Verify the dependency boundary and commit**
+- [ ] **단계 4: 의존성 경계 검증과 커밋**
 
-Run:
+실행:
 
 ```bash
 ! rg -n 'import org\.springframework|import org\.springframework\.modulith|org\.javers' \
@@ -196,28 +196,28 @@ Run:
 git diff --check
 ```
 
-Expected: the `rg` command returns no matches; core remains Spring- and JaVers-neutral, and core tests and diff check pass. Audit history, snapshot persistence, and JaVers commit semantics are explicitly outside this publisher contract.
+예상 결과: `rg` 명령에 일치 항목이 없고 core는 Spring 및 JaVers 중립성을 유지하며 core 테스트와 diff 검사가 통과한다. 감사 이력, 스냅숏 영속화, JaVers commit 의미는 이 발행자 계약의 명시적인 범위 밖이다.
 
-Commit only Task 1 files with a Lore message beginning:
+작업 1 파일만 다음으로 시작하는 Lore 메시지로 커밋한다.
 
 ```text
 docs: define aggregate event handoff invariants
 ```
 
-Rollback point: this commit contains only KDoc plus a passing characterization test and can be reverted independently.
+rollback 지점: 이 commit에는 KDoc과 통과하는 특성화 테스트만 있으므로 독립적으로 되돌릴 수 있다.
 
-## Task 2: Write RED Transaction Lifecycle Tests
+## 작업 2: RED 트랜잭션 수명주기 테스트 작성
 
-complexity: high
-depends_on: Task 1
-applies: `test-driven-development`, `bluetape4k-code-patterns`, `ecc-kotlin-exposed`, `ecc-kotlin-testing`
+복잡도: 높음
+의존성: 작업 1
+적용 항목: `test-driven-development`, `bluetape4k-code-patterns`, `ecc-kotlin-exposed`, `ecc-kotlin-testing`
 
-**Files:**
-- Create: `spring-boot/jdbc/src/test/kotlin/io/bluetape4k/spring/data/exposed/jdbc/ddd/ExposedAggregateEventPublisherTest.kt`
+**파일:**
+- 생성: `spring-boot/jdbc/src/test/kotlin/io/bluetape4k/spring/data/exposed/jdbc/ddd/ExposedAggregateEventPublisherTest.kt`
 
-- [ ] **Step 1: Add deterministic H2 transaction fixtures**
+- [ ] **단계 1: 결정적 H2 트랜잭션 fixture 추가**
 
-Create the test class with these reusable fixtures:
+다음 재사용 fixture로 테스트 클래스를 만든다.
 
 ```kotlin
 package io.bluetape4k.spring.data.exposed.jdbc.ddd
@@ -303,11 +303,11 @@ class ExposedAggregateEventPublisherTest {
 }
 ```
 
-Every additional `AnnotationConfigApplicationContext`, `EmbeddedDatabase`, and Logback appender introduced by later tests must be lifecycle-safe: wrap contexts in `use`, shut databases down in `finally`, call `appender.start()` before capture, and detach plus `appender.stop()` in `finally`. No test may leave MDC or transaction synchronization active for the next case.
+이후 테스트에서 추가하는 모든 `AnnotationConfigApplicationContext`, `EmbeddedDatabase`, Logback appender는 수명주기에 안전해야 한다. context는 `use`로 감싸고, database는 `finally`에서 종료하며, 캡처 전에 `appender.start()`를 호출하고 `finally`에서 분리한 뒤 `appender.stop()`을 호출한다. 어떤 테스트도 다음 case에 MDC나 트랜잭션 synchronization을 활성 상태로 남겨서는 안 된다.
 
-- [ ] **Step 2: Add RED tests for commit, rollback, ordering, and empty no-op**
+- [ ] **단계 2: commit, rollback, 순서, 빈 no-op의 RED 테스트 추가**
 
-Add tests with these exact assertions:
+다음의 정확한 assertion으로 테스트를 추가한다.
 
 ```kotlin
 @Test
@@ -381,11 +381,11 @@ fun `synchronization without an actual transaction is rejected`() {
 }
 ```
 
-The rollback test intentionally observes the immediate Spring handoff through the recording publisher.
+rollback 테스트는 기록용 발행자를 통해 즉시 Spring에 전달되는 동작을 의도적으로 관찰한다.
 
-- [ ] **Step 3: Add the real `AFTER_COMMIT` listener test before implementation**
+- [ ] **단계 3: 구현 전에 실제 `AFTER_COMMIT` listener 테스트 추가**
 
-Add a nested `@Configuration(proxyBeanMethods = false)` plus `@EnableTransactionManagement` that defines a unique H2 `EmbeddedDatabase`, `DataSourceTransactionManager`, `TransactionTemplate`, and an `AfterCommitListener` bean with `@TransactionalEventListener`. Use a refreshed context explicitly:
+고유한 H2 `EmbeddedDatabase`, `DataSourceTransactionManager`, `TransactionTemplate`, `@TransactionalEventListener`가 붙은 `AfterCommitListener` bean을 정의하는 중첩 `@Configuration(proxyBeanMethods = false)`와 `@EnableTransactionManagement`를 추가한다. 새로 갱신한 context를 명시적으로 사용한다.
 
 ```kotlin
 AnnotationConfigApplicationContext(ListenerTestConfiguration::class.java).use { context ->
@@ -397,11 +397,11 @@ AnnotationConfigApplicationContext(ListenerTestConfiguration::class.java).use { 
 }
 ```
 
-Keep commit and rollback in independent tests with fresh contexts/databases. The context itself is the `ApplicationEventPublisher`; do not call `getBean(ApplicationEventPublisher::class.java)`. Every context is closed by `use`.
+commit과 rollback은 새 context/database를 사용하는 독립 테스트로 유지한다. context 자체가 `ApplicationEventPublisher`이므로 `getBean(ApplicationEventPublisher::class.java)`를 호출하지 않는다. 모든 context는 `use`로 닫는다.
 
-- [ ] **Step 4: Run the RED test**
+- [ ] **단계 4: RED 테스트 실행**
 
-Run:
+실행:
 
 ```bash
 ./gradlew :bluetape4k-exposed-spring-boot-jdbc:test \
@@ -409,23 +409,23 @@ Run:
   --no-configuration-cache --no-daemon --console=plain
 ```
 
-Expected: FAIL at Kotlin compilation because `ExposedAggregateEventPublisher` does not exist, including the real `AFTER_COMMIT` tests.
+예상 결과: 실제 `AFTER_COMMIT` 테스트를 포함해 `ExposedAggregateEventPublisher`가 없으므로 Kotlin 컴파일에서 FAIL한다.
 
-Do not commit RED-only state.
+RED 상태만으로는 커밋하지 않는다.
 
-## Task 3: Implement The Minimal Transaction-Safe Publisher
+## 작업 3: 최소 트랜잭션 안전 발행자 구현
 
-complexity: high
-depends_on: Task 2 RED evidence
-applies: `test-driven-development`, `bluetape4k-code-patterns`, `ecc-kotlin-exposed`
+복잡도: 높음
+의존성: 작업 2 RED 근거
+적용 항목: `test-driven-development`, `bluetape4k-code-patterns`, `ecc-kotlin-exposed`
 
-**Files:**
-- Create: `spring-boot/jdbc/src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/ddd/ExposedAggregateEventPublisher.kt`
-- Modify: `spring-boot/jdbc/src/test/kotlin/io/bluetape4k/spring/data/exposed/jdbc/ddd/ExposedAggregateEventPublisherTest.kt`
+**파일:**
+- 생성: `spring-boot/jdbc/src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/ddd/ExposedAggregateEventPublisher.kt`
+- 수정: `spring-boot/jdbc/src/test/kotlin/io/bluetape4k/spring/data/exposed/jdbc/ddd/ExposedAggregateEventPublisherTest.kt`
 
-- [ ] **Step 1: Add only the minimal public publisher and per-call completion synchronization**
+- [ ] **단계 1: 최소 public 발행자와 호출별 완료 synchronization만 추가**
 
-Implement this shape in one focused file:
+집중된 파일 하나에 다음 형태로 구현한다.
 
 ```kotlin
 class ExposedAggregateEventPublisher(
@@ -450,7 +450,7 @@ class ExposedAggregateEventPublisher(
 }
 ```
 
-The internal implementation must use:
+내부 구현은 다음을 사용해야 한다.
 
 ```kotlin
 private class MinimalAggregateCompletionSynchronization(
@@ -464,43 +464,43 @@ private class MinimalAggregateCompletionSynchronization(
 }
 ```
 
-This Task 3 implementation intentionally supports only the RED cases from Task 2: empty no-op, active-transaction checks, immediate ordered handoff, commit clear, rollback preserve, and real default `AFTER_COMMIT` timing. Do not add identity reservation, synchronization reuse, mutation verification, poison state, completion logging, correlation capture, or final lifecycle KDoc yet; those changes belong to Task 4 after its RED evidence.
+작업 3 구현은 의도적으로 작업 2의 RED case만 지원한다. 즉 빈 no-op, 활성 트랜잭션 검사, 즉시 순서 보장 전달, commit 시 비움, rollback 시 보존, 실제 기본 `AFTER_COMMIT` 시점이다. 아직 identity 예약, synchronization 재사용, 변경 검증, poison 상태, 완료 logging, correlation 캡처, 최종 수명주기 KDoc을 추가하지 않는다. 이 변경은 RED 근거 이후 작업 4에서 수행한다.
 
-Add only a one-line English summary KDoc in Task 3. Task 4 replaces it with the final contract and executable example.
+작업 3에서는 한 줄짜리 영문 요약 KDoc만 추가한다. 작업 4에서 최종 계약과 실행 가능한 예제로 교체한다.
 
 ```kotlin
 /** Hands aggregate domain events to Spring inside the current command transaction. */
 ```
 
-- [ ] **Step 2: Run GREEN verification**
+- [ ] **단계 2: GREEN 검증 실행**
 
-Run the same focused test command from Task 2.
+작업 2와 같은 집중 테스트 명령을 실행한다.
 
-Expected: PASS for empty, commit, rollback, ordering, active-transaction, and real `AFTER_COMMIT` listener tests.
+예상 결과: 빈 항목, commit, rollback, 순서, 활성 트랜잭션, 실제 `AFTER_COMMIT` listener 테스트가 PASS한다.
 
-- [ ] **Step 3: Commit the minimal lifecycle implementation**
+- [ ] **단계 3: 최소 수명주기 구현 커밋**
 
-Run `git diff --check`, then commit only the publisher and its test with a Lore message beginning:
+`git diff --check`를 실행한 뒤 발행자와 해당 테스트만 다음으로 시작하는 Lore 메시지로 커밋한다.
 
 ```text
 feat: hand aggregate events to Spring transactions
 ```
 
-Rollback point: reverting this commit removes the new API without affecting auto-configuration or the example.
+rollback 지점: 이 commit을 되돌리면 자동 구성이나 예제에 영향을 주지 않고 새 API만 제거된다.
 
-## Task 4: Harden Identity, Poison, Completion, And Logging Semantics
+## 작업 4: identity, poison, 완료, logging 의미 강화
 
-complexity: high
-depends_on: Task 3
-applies: `test-driven-development`, `bluetape4k-code-patterns`, `ecc-kotlin-testing`
+복잡도: 높음
+의존성: 작업 3
+적용 항목: `test-driven-development`, `bluetape4k-code-patterns`, `ecc-kotlin-testing`
 
-**Files:**
-- Modify: `spring-boot/jdbc/src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/ddd/ExposedAggregateEventPublisher.kt`
-- Modify: `spring-boot/jdbc/src/test/kotlin/io/bluetape4k/spring/data/exposed/jdbc/ddd/ExposedAggregateEventPublisherTest.kt`
+**파일:**
+- 수정: `spring-boot/jdbc/src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/ddd/ExposedAggregateEventPublisher.kt`
+- 수정: `spring-boot/jdbc/src/test/kotlin/io/bluetape4k/spring/data/exposed/jdbc/ddd/ExposedAggregateEventPublisherTest.kt`
 
-- [ ] **Step 1: Add RED lifecycle and fail-closed tests**
+- [ ] **단계 1: RED 수명주기 및 fail-closed 테스트 추가**
 
-Add tests for each approved case:
+승인된 각 case의 테스트를 추가한다.
 
 ```text
 same aggregate registered twice -> second call throws, publishes no second snapshot, beforeCommit rejects commit
@@ -524,13 +524,13 @@ both REQUIRES_NEW cases -> inner synchronization differs from suspended outer sy
 same aggregate instance across overlapping REQUIRES_NEW -> documented unsupported; no supporting test path is added
 ```
 
-Use counting/throwing aggregate subclasses in the same test file. Poison and mutation tests use `assertFailsWith<IllegalStateException>` around `TransactionTemplate.executeWithoutResult`; Spring propagates the synchronization's stable `IllegalStateException` from `beforeCommit`.
+같은 테스트 파일에서 counting/throwing 애그리거트 subclass를 사용한다. Poison과 변경 테스트는 `TransactionTemplate.executeWithoutResult`를 `assertFailsWith<IllegalStateException>`로 감싼다. Spring은 synchronization의 안정적인 `IllegalStateException`을 `beforeCommit`에서 전파한다.
 
-Keep `Registration` and a read-only `internal fun retainedSnapshotForTest(aggregate: AggregateRoot<*>): List<*>?` accessor internal to the JDBC module. The snapshot-retention test compares the accessor result to the aggregate's instrumented snapshot with `===`; no public testing hook is added.
+`Registration`과 읽기 전용 `internal fun retainedSnapshotForTest(aggregate: AggregateRoot<*>): List<*>?` accessor는 JDBC 모듈 내부로 유지한다. 스냅숏 보존 테스트는 accessor 결과와 계측된 애그리거트 스냅숏을 `===`로 비교한다. public 테스트 hook은 추가하지 않는다.
 
-- [ ] **Step 2: Add RED completion and structured-log tests**
+- [ ] **단계 2: RED 완료 및 구조화 log 테스트 추가**
 
-Attach a Logback `ListAppender<ILoggingEvent>` to the publisher implementation logger and cover:
+발행자 구현 logger에 Logback `ListAppender<ILoggingEvent>`를 연결하고 다음을 검증한다.
 
 ```text
 STATUS_COMMITTED + clear failure -> other aggregates still clear, one aggregate-event-cleanup-failed error row
@@ -546,11 +546,11 @@ message, formatted message, MDC, arguments, key/value fields, and throwable prox
 caller MDC is restored after each anomaly log
 ```
 
-Define `eventType` as the recording-order, de-duplicated, comma-separated set of fully qualified event class names for one aggregate registration. Build it lazily with a `LinkedHashSet` in one O(E) pass only when an anomaly row is emitted; do not sort it. `eventCount` is the retained snapshot size and `aggregateType` is the aggregate's fully qualified class name. Normal publication, commit, and rollback must not allocate or traverse event-type metadata.
+`eventType`은 애그리거트 등록 하나에 대해 기록 순서를 유지하고 중복을 제거한 fully qualified 이벤트 클래스 이름의 쉼표 구분 집합으로 정의한다. anomaly row를 방출할 때만 `LinkedHashSet`으로 O(E) 단일 pass에서 지연 생성하며 정렬하지 않는다. `eventCount`는 보존한 스냅숏 크기이고 `aggregateType`은 애그리거트의 fully qualified 클래스 이름이다. 정상 발행, commit, rollback에서는 event-type metadata를 할당하거나 순회해서는 안 된다.
 
-- [ ] **Step 3: Run the RED lifecycle and logging tests**
+- [ ] **단계 3: RED 수명주기와 logging 테스트 실행**
 
-Run the focused Task 4 test class before changing production code:
+production 코드를 변경하기 전에 작업 4의 대상 테스트 클래스를 실행한다.
 
 ```bash
 ./gradlew :bluetape4k-exposed-spring-boot-jdbc:test \
@@ -558,11 +558,11 @@ Run the focused Task 4 test class before changing production code:
   --no-configuration-cache --no-daemon --console=plain
 ```
 
-Expected: targeted failures prove duplicate/mutation checks, caught `Exception` and caught `AssertionError` poisoning/identity, exact `1 -> 2` snapshot counts, `REQUIRES_NEW` isolation, completion logging, correlation validation, sentinel synchronization reuse, and snapshot retention are not yet implemented. Record the failing test names; do not accept a compile-only or already-green result without explaining which earlier task supplied the behavior.
+예상 결과: 표적 실패를 통해 중복/변경 검사, 잡힌 `Exception`과 `AssertionError`의 poisoning/identity, 정확한 `1 -> 2` 스냅숏 횟수, `REQUIRES_NEW` 격리, 완료 logging, correlation 검증, sentinel synchronization 재사용, 스냅숏 보존이 아직 구현되지 않았음을 증명한다. 실패한 테스트 이름을 기록한다. 어느 앞선 작업이 동작을 제공했는지 설명하지 않은 compile-only 또는 이미 GREEN인 결과는 인정하지 않는다.
 
-- [ ] **Step 4: Implement identity reservation and poison behavior**
+- [ ] **단계 4: identity 예약과 poison 동작 구현**
 
-Use this exact operation order:
+다음의 정확한 연산 순서를 사용한다.
 
 ```text
 if synchronization active -> find current owner synchronization -> reject reserved identity
@@ -574,13 +574,13 @@ publication Throwable -> poison -> rethrow the same instance
 beforeCommit -> throw stored poison first -> verify every snapshot by size and element identity
 ```
 
-`rejectReserved` stores a stable poison reason before throwing. No repeated call may invoke `domainEvents()` again. The synchronization lookup scans only `TransactionSynchronizationManager.getSynchronizations()` and compares publisher owners with `===`; do not call `bindResource` or keep a bean-global map.
+`rejectReserved`는 예외를 던지기 전에 안정적인 poison 사유를 저장한다. 반복 호출에서는 `domainEvents()`를 다시 호출해서는 안 된다. synchronization 조회는 `TransactionSynchronizationManager.getSynchronizations()`만 순회하고 발행자 소유자를 `===`로 비교한다. `bindResource`를 호출하거나 빈 전역 map을 유지하지 않는다.
 
-Replace Task 3's minimal synchronization with one `internal AggregateEventTransactionSynchronization` per publisher/current transaction. It owns an `IdentityHashMap<AggregateRoot<*>, Registration>`, poison state, and completion cleanup. `Registration` retains the exact immutable snapshot object, aggregate reference/class, verification/clear lambdas, and registration-time correlation without a publisher copy. Keep a read-only internal snapshot accessor only for same-module identity tests.
+작업 3의 최소 synchronization을 발행자/현재 트랜잭션마다 하나의 `internal AggregateEventTransactionSynchronization`으로 교체한다. 이 객체는 `IdentityHashMap<AggregateRoot<*>, Registration>`, poison 상태, 완료 정리를 소유한다. `Registration`은 발행자 복사 없이 정확한 불변 스냅숏 객체, 애그리거트 reference/class, 검증/clear lambda, 등록 시점 correlation을 보존한다. 읽기 전용 내부 스냅숏 accessor는 같은 모듈의 identity 테스트에만 둔다.
 
-`currentSynchronization()` must call `getSynchronizations()` zero times when synchronization is inactive and exactly once when active; cache that returned list and scan it outside all event/registration loops. The sentinel test proves this bounded scan while source inspection confirms the cached operation order.
+`currentSynchronization()`은 synchronization이 비활성일 때 `getSynchronizations()`를 한 번도 호출하지 않고, 활성일 때 정확히 한 번 호출해야 한다. 반환된 list를 cache하고 모든 이벤트/등록 loop 밖에서 scan한다. sentinel 테스트는 이 제한된 scan을 증명하고 소스 검사는 cache된 연산 순서를 확인한다.
 
-Replace the temporary KDoc with the final English contract. It must include same-transaction save/handoff, empty no-op, active-transaction checks, immediate synchronous versus default `AFTER_COMMIT` timing, commit clear/rollback preserve, poison and one-final-call rules, immutable event references, unsupported NESTED/savepoint and same-instance overlapping `REQUIRES_NEW`, listener write `REQUIRES_NEW`, and `@throws IllegalStateException`. Include this executable usage block:
+임시 KDoc을 최종 영문 계약으로 교체한다. 같은 트랜잭션에서의 save/handoff, 빈 no-op, 활성 트랜잭션 검사, 즉시 동기 실행과 기본 `AFTER_COMMIT` 시점 비교, commit 시 비움/rollback 시 보존, poison과 마지막 단일 호출 규칙, 불변 이벤트 reference, 지원하지 않는 NESTED/savepoint와 동일 인스턴스의 중첩 `REQUIRES_NEW`, listener 쓰기의 `REQUIRES_NEW`, `@throws IllegalStateException`을 포함해야 한다. 다음 실행 가능한 사용 block을 포함한다.
 
 ```kotlin
 /**
@@ -605,7 +605,7 @@ Replace the temporary KDoc with the final English contract. It must include same
  */
 ```
 
-The executable block inside that KDoc is:
+해당 KDoc 안의 실행 가능한 block은 다음과 같다.
 
 ```kotlin
 transactionTemplate.executeWithoutResult {
@@ -614,18 +614,18 @@ transactionTemplate.executeWithoutResult {
 }
 ```
 
-KDoc must distinguish failures: a synchronous publication failure is rethrown immediately as the same `Throwable`; if caller code catches a lifecycle/publication failure, the stored poison causes a stable `IllegalStateException` from `beforeCommit` so commit still fails.
+KDoc은 실패를 구분해야 한다. 동기 발행 실패는 같은 `Throwable`로 즉시 다시 던진다. 호출자 코드가 수명주기/발행 실패를 잡으면 저장된 poison이 `beforeCommit`에서 안정적인 `IllegalStateException`을 발생시켜 commit이 계속 실패한다.
 
-- [ ] **Step 5: Implement bounded correlation and completion logging**
+- [ ] **단계 5: 제한된 correlation과 완료 logging 구현**
 
-Capture only these keys at registration:
+등록할 때는 다음 키만 캡처한다.
 
 ```kotlin
 private val correlationKeys = listOf("traceId", "spanId", "requestId")
 private val safeCorrelation = Regex("[A-Za-z0-9._:-]{1,128}")
 ```
 
-Use `MDC.get(key)?.takeIf(safeCorrelation::matches)`. Do not use `errorMdc` for anomaly rows because it preserves unrelated completion-time MDC. Implement one private logging helper with this isolation contract:
+`MDC.get(key)?.takeIf(safeCorrelation::matches)`를 사용한다. `errorMdc`는 관련 없는 완료 시점 MDC도 보존하므로 이상 행에 사용하지 않는다. 다음 격리 계약을 따르는 private logging helper 하나를 구현한다.
 
 ```kotlin
 private inline fun withSanitizedMdc(
@@ -646,9 +646,9 @@ private inline fun withSanitizedMdc(
 }
 ```
 
-Inside that scope, call plain `logger.error(...)` with a stable category-only message. Do not pass the caught clear exception or its message/cause to the logger. Tests must prove arbitrary completion-time MDC is absent from the captured row and restored after logging. Start each `ListAppender` before use, then detach and stop it in `finally`; inspect the complete `ILoggingEvent`, not only its rendered message. Event metadata derivation must be reachable only from the two anomaly branches.
+이 범위 안에서는 안정적인 category 전용 메시지로 일반 `logger.error(...)`를 호출한다. 포착한 clear 예외나 그 message/cause를 logger에 전달하지 않는다. 테스트는 임의의 완료 시점 MDC가 캡처된 행에 없고 logging 후 복원됨을 증명해야 한다. 각 `ListAppender`는 사용 전에 시작하고 `finally`에서 분리한 뒤 중지한다. 렌더링된 메시지만이 아니라 전체 `ILoggingEvent`를 검사한다. 이벤트 metadata 도출에는 두 이상 분기에서만 도달할 수 있어야 한다.
 
-`afterCompletion` must:
+`afterCompletion`은 다음과 같이 동작해야 한다.
 
 ```text
 COMMITTED -> attempt every clear independently; log each failure; always discard registry
@@ -656,9 +656,9 @@ UNKNOWN -> log every registration; preserve buffers; always discard registry
 ROLLED_BACK or other known non-commit -> preserve buffers; always discard registry
 ```
 
-- [ ] **Step 6: Run focused and module tests**
+- [ ] **단계 6: 대상 테스트와 모듈 테스트 실행**
 
-Run:
+실행:
 
 ```bash
 ./gradlew :bluetape4k-exposed-spring-boot-jdbc:test \
@@ -668,43 +668,43 @@ Run:
   --no-configuration-cache --no-daemon --console=plain
 ```
 
-Expected: both commands PASS, including original-Throwable identity and exact normal/duplicate/sentinel snapshot counts, with no sleeps, ad hoc threads, Testcontainers, or shared aggregate instances across concurrent commands.
+예상 결과: 원본 Throwable identity와 정상/중복/sentinel의 정확한 스냅숏 횟수를 포함해 두 명령 모두 PASS한다. sleep, 임시 thread, Testcontainers, 동시 명령 간 공유 애그리거트 인스턴스는 없어야 한다.
 
-- [ ] **Step 7: Commit the hardened lifecycle**
+- [ ] **단계 7: 강화된 수명주기 커밋**
 
-Run `git diff --check`, then commit the two Task 4 files with a Lore message beginning:
+`git diff --check`를 실행한 다음, 다음으로 시작하는 Lore 메시지로 작업 4의 두 파일을 커밋한다.
 
 ```text
 test: harden aggregate event transaction lifecycle
 ```
 
-Rollback point: revert Task 4 and Task 3 together if the synchronization contract proves incompatible; do not retain a partial publisher that clears early or permits caught publication failures to commit.
+rollback 지점: synchronization 계약이 호환되지 않는 것으로 확인되면 작업 4와 작업 3을 함께 되돌린다. 너무 일찍 비우거나, 포착된 발행 실패가 커밋되도록 허용하는 불완전한 발행자를 남기지 않는다.
 
-## Task 5: Repair Manager Selection And Add Guarded Auto-Configuration
+## 작업 5: manager 선택 수정과 보호된 자동 구성 추가
 
-complexity: medium
-depends_on: Task 4
-applies: `test-driven-development`, `bluetape4k-code-patterns`, `ecc-springboot-kotlin`, `ecc-kotlin-testing`
+복잡도: 중간
+의존성: 작업 4
+적용 항목: `test-driven-development`, `bluetape4k-code-patterns`, `ecc-springboot-kotlin`, `ecc-kotlin-testing`
 
-**Files:**
-- Create: `spring-boot/jdbc/src/test/kotlin/io/bluetape4k/spring/data/exposed/jdbc/config/ExposedAggregateEventPublisherAutoConfigurationTest.kt`
-- Create: `spring-boot/jdbc/src/test/kotlin/io/bluetape4k/spring/data/exposed/jdbc/ddd/MultiManagerDocumentationExample.kt`
-- Create: `spring-boot/jdbc/src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/config/ExposedAggregateEventPublisherAutoConfiguration.kt`
-- Modify: `spring-boot/jdbc/src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/repository/config/ExposedJdbcRepositoryConfigurationExtension.kt`
-- Modify: `spring-boot/jdbc/src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/repository/support/SimpleExposedJdbcRepository.kt`
-- Modify: `spring-boot/jdbc/src/test/kotlin/io/bluetape4k/spring/data/exposed/jdbc/config/ExposedSpringDataAutoConfigurationTest.kt`
-- Modify: `spring-boot/jdbc/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`
+**파일:**
+- 생성: `spring-boot/jdbc/src/test/kotlin/io/bluetape4k/spring/data/exposed/jdbc/config/ExposedAggregateEventPublisherAutoConfigurationTest.kt`
+- 생성: `spring-boot/jdbc/src/test/kotlin/io/bluetape4k/spring/data/exposed/jdbc/ddd/MultiManagerDocumentationExample.kt`
+- 생성: `spring-boot/jdbc/src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/config/ExposedAggregateEventPublisherAutoConfiguration.kt`
+- 수정: `spring-boot/jdbc/src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/repository/config/ExposedJdbcRepositoryConfigurationExtension.kt`
+- 수정: `spring-boot/jdbc/src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/repository/support/SimpleExposedJdbcRepository.kt`
+- 수정: `spring-boot/jdbc/src/test/kotlin/io/bluetape4k/spring/data/exposed/jdbc/config/ExposedSpringDataAutoConfigurationTest.kt`
+- 수정: `spring-boot/jdbc/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`
 
-- [ ] **Step 1: Write RED manager-selection tests against existing production code**
+- [ ] **단계 1: 기존 production 코드에 대한 RED manager 선택 테스트 작성**
 
-Create a self-contained `MultiManagerDocumentationExample.kt` without referencing the not-yet-created publisher auto-configuration. It defines `Orders : LongIdTable`, `OrderEntity : LongEntity`, `OrderRepository : ExposedJdbcRepository<OrderEntity, Long>`, the aggregate/event, two distinguishable H2 stores, two Exposed `SpringTransactionManager` beans, and an explicit `ExposedAggregateEventPublisher` because the two managers intentionally have no single autowire candidate.
+아직 생성하지 않은 발행자 자동 구성을 참조하지 않는 독립적인 `MultiManagerDocumentationExample.kt`를 작성한다. 여기에는 `Orders : LongIdTable`, `OrderEntity : LongEntity`, `OrderRepository : ExposedJdbcRepository<OrderEntity, Long>`, 애그리거트/이벤트, 서로 구분되는 H2 저장소 두 개, Exposed `SpringTransactionManager` 빈 두 개를 정의한다. 두 manager에는 의도적으로 단일 autowire 후보가 없으므로 `ExposedAggregateEventPublisher`를 명시적으로 구성한다.
 
-Add two independent RED proofs before production edits:
+production 편집 전에 독립적인 RED 근거 두 가지를 추가한다.
 
-1. In `ExposedSpringDataAutoConfigurationTest`, inspect the generated repository factory bean definition and assert its `transactionManager` property is `secondTransactionManager` when `@EnableExposedJdbcRepositories(transactionManagerRef = "secondTransactionManager")` is used.
-2. In `MultiManagerDocumentationExampleTest`, seed different row counts in the first and second stores, call `repository.count()` outside an explicit transaction, and assert the result matches only the second store. Then call `repository.deleteAll()` through the proxy and assert only the second store changed. `save()` is not manager-selection evidence because `OrderEntity.from(...)` executes before the proxy and `save()` returns the existing DAO entity.
+1. `ExposedSpringDataAutoConfigurationTest`에서 생성된 repository factory bean definition을 검사하고, `@EnableExposedJdbcRepositories(transactionManagerRef = "secondTransactionManager")`를 사용했을 때 `transactionManager` 속성이 `secondTransactionManager`인지 검증한다.
+2. `MultiManagerDocumentationExampleTest`에서 첫 번째와 두 번째 저장소에 서로 다른 행 수를 준비하고, 명시적 트랜잭션 밖에서 `repository.count()`를 호출해 결과가 두 번째 저장소에만 일치하는지 검증한다. 그다음 proxy를 통해 `repository.deleteAll()`을 호출하고 두 번째 저장소만 변경됐는지 검증한다. `OrderEntity.from(...)`이 proxy보다 먼저 실행되고 `save()`가 기존 DAO entity를 반환하므로 `save()`는 manager 선택의 근거가 아니다.
 
-The fixture also contains the production-shaped command example:
+fixture에는 production 형태의 명령 예제도 포함한다.
 
 ```kotlin
 @Configuration(proxyBeanMethods = false)
@@ -739,9 +739,9 @@ class OrderCommandService(
 }
 ```
 
-The successful command case proves only the second store commits and the buffer clears. The rollback case proves the second write disappears and the buffer remains. Delimit the production-shaped configuration/service region with `// issue-323-multi-manager:start/end`; Task 7 copies and compares that exact region. Close contexts and databases in `finally`.
+성공한 명령 사례는 두 번째 저장소만 커밋되고 버퍼가 비워짐을 증명한다. rollback 사례는 두 번째 쓰기가 사라지고 버퍼가 보존됨을 증명한다. production 형태의 구성/service 구간은 `// issue-323-multi-manager:start/end`로 구분한다. 작업 7은 이 정확한 구간을 복사하고 비교한다. context와 database는 `finally`에서 닫는다.
 
-- [ ] **Step 2: Run the behavioral manager-selection RED alone**
+- [ ] **단계 2: manager 선택 동작 RED만 실행**
 
 ```bash
 ./gradlew :bluetape4k-exposed-spring-boot-jdbc:test \
@@ -750,19 +750,19 @@ The successful command case proves only the second store commits and the buffer 
   --no-configuration-cache --no-daemon --console=plain
 ```
 
-Expected: Kotlin compilation succeeds, then the bean-definition property assertion and/or proxy `count()`/`deleteAll()` store-selection assertion fails because the existing annotation value is not forwarded and the base repository hard-codes `springTransactionManager`. Record the exact failing assertion; a compile failure is not acceptable RED evidence for this step.
+예상 결과: Kotlin 컴파일은 성공하지만 기존 annotation 값이 전달되지 않고 기반 저장소가 `springTransactionManager`를 하드 코딩하므로 bean definition 속성 assertion 또는 proxy `count()`/`deleteAll()` 저장소 선택 assertion이 실패한다. 정확히 실패한 assertion을 기록한다. 컴파일 실패는 이 단계의 RED 근거로 인정하지 않는다.
 
-- [ ] **Step 3: Make only the manager-selection tests GREEN**
+- [ ] **단계 3: manager 선택 테스트만 GREEN으로 전환**
 
-- Override the annotation-source post-processing hook in `ExposedJdbcRepositoryConfigurationExtension` and forward `transactionManagerRef` to the `transactionManager` property of `ExposedJdbcRepositoryFactoryBean`, following the Spring Data JDBC/JPA extension pattern.
-- Remove explicit `transactionManager = EXPOSED_TRANSACTION_MANAGER` qualifiers from `SimpleExposedJdbcRepository` transaction annotations so the factory-selected manager governs proxy operations; retain read-only/write semantics and the annotation default `springTransactionManager`. Remove or relocate the constant if it otherwise becomes unused.
-- Update English KDoc for the touched public configuration surface to state that `transactionManagerRef` controls the repository proxy.
+- Spring Data JDBC/JPA extension 패턴을 따라 `ExposedJdbcRepositoryConfigurationExtension`의 annotation-source 후처리 hook을 override하고, `transactionManagerRef`를 `ExposedJdbcRepositoryFactoryBean`의 `transactionManager` 속성으로 전달한다.
+- factory가 선택한 manager가 proxy 연산을 제어하도록 `SimpleExposedJdbcRepository`의 트랜잭션 annotation에서 명시적인 `transactionManager = EXPOSED_TRANSACTION_MANAGER` qualifier를 제거한다. read-only/write 의미와 annotation 기본값 `springTransactionManager`는 유지한다. 이로 인해 상수가 사용되지 않으면 제거하거나 적절한 위치로 옮긴다.
+- 변경한 public 구성 표면의 영문 KDoc에 `transactionManagerRef`가 repository proxy를 제어한다고 명시한다.
 
-Run the exact Step 2 command again. Expected: PASS, with `count()` and `deleteAll()` proving the second manager against distinguishable stores. This repairs existing declared behavior required by the approved spec; if it needs a broader repository redesign, stop and return to the approved design.
+단계 2의 정확한 명령을 다시 실행한다. 예상 결과: PASS. 서로 구분되는 저장소를 대상으로 `count()`와 `deleteAll()`이 두 번째 manager 사용을 증명한다. 이는 승인된 명세가 요구하는 기존 선언 동작을 복구한다. 더 광범위한 repository 재설계가 필요하면 중단하고 승인된 설계로 돌아간다.
 
-- [ ] **Step 4: Write RED `ApplicationContextRunner` auto-configuration coverage**
+- [ ] **단계 4: RED `ApplicationContextRunner` 자동 구성 커버리지 작성**
 
-Only after manager-selection GREEN, create `ExposedAggregateEventPublisherAutoConfigurationTest` using `ApplicationContextRunner` plus `AutoConfigurations.of(ExposedAggregateEventPublisherAutoConfiguration::class.java)` for this matrix:
+manager 선택 테스트가 GREEN이 된 후에만 `ApplicationContextRunner`와 `AutoConfigurations.of(ExposedAggregateEventPublisherAutoConfiguration::class.java)`를 사용해 다음 행렬을 검증하는 `ExposedAggregateEventPublisherAutoConfigurationTest`를 작성한다.
 
 ```text
 no PlatformTransactionManager -> no publisher bean
@@ -776,9 +776,9 @@ FilteredClassLoader(TransactionSynchronizationManager::class.java) -> context st
 ApplicationEventPublisher class condition -> verify ConditionalOnClass annotation metadata contains the exact class
 ```
 
-Use H2 `DataSourceTransactionManager` beans only as condition candidates; repository operations continue to use Exposed `SpringTransactionManager`. Add an ordering test that loads `ExposedSpringDataAutoConfiguration` before the new auto-configuration and asserts the default manager and publisher beans exist.
+H2 `DataSourceTransactionManager` 빈은 조건 후보로만 사용하고 repository 연산은 계속 Exposed `SpringTransactionManager`를 사용한다. 새 자동 구성보다 `ExposedSpringDataAutoConfiguration`을 먼저 로드하고 기본 manager와 publisher 빈이 존재하는지 검증하는 순서 테스트를 추가한다.
 
-- [ ] **Step 5: Run the isolated auto-configuration RED**
+- [ ] **단계 5: 격리된 자동 구성 RED 실행**
 
 ```bash
 ./gradlew :bluetape4k-exposed-spring-boot-jdbc:test \
@@ -786,15 +786,15 @@ Use H2 `DataSourceTransactionManager` beans only as condition candidates; reposi
   --no-configuration-cache --no-daemon --console=plain
 ```
 
-Expected: FAIL at Kotlin compilation only because `ExposedAggregateEventPublisherAutoConfiguration` does not exist. The manager-selection suite is already GREEN and is not hidden behind this compile failure.
+예상 결과: `ExposedAggregateEventPublisherAutoConfiguration`이 존재하지 않으므로 Kotlin 컴파일에서만 FAIL한다. manager 선택 suite는 이미 GREEN이며 이 컴파일 실패 뒤에 가려지지 않는다.
 
-- [ ] **Step 6: Implement and register the publisher auto-configuration**
+- [ ] **단계 6: 발행자 자동 구성 구현과 등록**
 
-Create the class with `@AutoConfiguration(after = [ExposedSpringDataAutoConfiguration::class])`, class conditions for `AggregateRoot`, `ApplicationEventPublisher`, and `TransactionSynchronizationManager`, `@ConditionalOnSingleCandidate(PlatformTransactionManager::class)`, and a missing-bean guarded `ExposedAggregateEventPublisher` bean. The bean injects only `ApplicationEventPublisher`; it never identifies a manager. Register it immediately after `ExposedSpringDataAutoConfiguration` in `AutoConfiguration.imports`.
+`@AutoConfiguration(after = [ExposedSpringDataAutoConfiguration::class])`, `AggregateRoot`, `ApplicationEventPublisher`, `TransactionSynchronizationManager`에 대한 class 조건, `@ConditionalOnSingleCandidate(PlatformTransactionManager::class)`, missing-bean으로 보호되는 `ExposedAggregateEventPublisher` 빈을 사용해 클래스를 작성한다. 이 빈은 `ApplicationEventPublisher`만 주입하며 manager를 식별하지 않는다. `AutoConfiguration.imports`에서 `ExposedSpringDataAutoConfiguration` 바로 다음에 등록한다.
 
-Add English KDoc explaining single autowire-candidate semantics, including multiple managers with one `@Primary`, and caller responsibility for matching repository and command boundaries to the active transaction.
+하나가 `@Primary`인 복수 manager를 포함한 단일 autowire 후보 의미와, repository/명령 경계를 활성 트랜잭션에 맞춰야 하는 호출자 책임을 설명하는 영문 KDoc을 추가한다.
 
-- [ ] **Step 7: Run combined GREEN tests and commit**
+- [ ] **단계 7: 결합된 GREEN 테스트 실행과 커밋**
 
 ```bash
 ./gradlew :bluetape4k-exposed-spring-boot-jdbc:test \
@@ -806,34 +806,34 @@ Add English KDoc explaining single autowire-candidate semantics, including multi
 git diff --check
 ```
 
-Expected: PASS. Commit Task 5 files with a Lore message beginning:
+예상 결과: PASS. 다음으로 시작하는 Lore 메시지로 작업 5 파일을 커밋한다.
 
 ```text
 feat: auto-configure aggregate event publisher safely
 ```
 
-Rollback point: the publisher auto-configuration can revert while manual construction remains supported, but the `transactionManagerRef` repair and regression tests move or revert together so the public annotation never claims unimplemented behavior.
+rollback 지점: 수동 생성 지원을 유지하면서 발행자 자동 구성만 되돌릴 수 있다. 다만 public annotation이 구현되지 않은 동작을 주장하지 않도록 `transactionManagerRef` 수정과 회귀 테스트는 함께 이동하거나 되돌린다.
 
-## Task 6: Migrate The DDD Spring Modulith Example
+## 작업 6: DDD Spring Modulith 예제 migration
 
-complexity: medium
-depends_on: Task 5
-applies: `test-driven-development`, `bluetape4k-code-patterns`, `ecc-kotlin-exposed`, `ecc-springboot-kotlin`, `ecc-kotlin-testing`
+복잡도: 중간
+의존성: 작업 5
+적용 항목: `test-driven-development`, `bluetape4k-code-patterns`, `ecc-kotlin-exposed`, `ecc-springboot-kotlin`, `ecc-kotlin-testing`
 
-**Files:**
-- Modify: `examples/ddd-spring-modulith-demo/src/main/kotlin/io/bluetape4k/exposed/examples/modulith/orders/OrderApplicationService.kt`
-- Modify: `examples/ddd-spring-modulith-demo/src/main/kotlin/io/bluetape4k/exposed/examples/modulith/orders/OrderDomain.kt`
-- Modify: `examples/ddd-spring-modulith-demo/src/test/kotlin/io/bluetape4k/exposed/examples/modulith/DddSpringModulithDemoApplicationTest.kt`
+**파일:**
+- 수정: `examples/ddd-spring-modulith-demo/src/main/kotlin/io/bluetape4k/exposed/examples/modulith/orders/OrderApplicationService.kt`
+- 수정: `examples/ddd-spring-modulith-demo/src/main/kotlin/io/bluetape4k/exposed/examples/modulith/orders/OrderDomain.kt`
+- 수정: `examples/ddd-spring-modulith-demo/src/test/kotlin/io/bluetape4k/exposed/examples/modulith/DddSpringModulithDemoApplicationTest.kt`
 
-- [ ] **Step 1: Update tests first**
+- [ ] **단계 1: 테스트부터 갱신**
 
-Change the existing successful-command test to assert:
+기존 성공 명령 테스트에 다음 검증을 추가한다.
 
 ```kotlin
 accepted.domainEvents().isEmpty().shouldBeTrue()
 ```
 
-Keep the existing persistence, completed publication, and reservation assertions. Update the failed-handoff fixture to construct:
+기존 persistence, 완료된 publication, reservation assertion은 유지한다. 실패한 handoff fixture가 다음 객체를 생성하도록 갱신한다.
 
 ```kotlin
 aggregateEventPublisher = ExposedAggregateEventPublisher(
@@ -843,7 +843,7 @@ aggregateEventPublisher = ExposedAggregateEventPublisher(
 )
 ```
 
-Add a serializer trust-boundary integration test that exercises actual Spring/Modulith publication, not only a direct serializer call:
+serializer 직접 호출만 검사하지 말고 실제 Spring/Modulith publication을 실행하는 serializer 신뢰 경계 통합 테스트를 추가한다.
 
 ```kotlin
 @Test
@@ -876,24 +876,24 @@ private data class UnsupportedEvent(val secret: String) : Serializable {
 }
 ```
 
-Attach a started `ListAppender` to the Logback root logger for the test duration. Discover any non-additive logger in the active context, attach there too, and restore its original additivity/appender state in `finally`; do not assume the publication repository has its own logger. Use concrete helpers to inspect every captured `ILoggingEvent` field: message, formatted message, MDC, argument array, key/value pairs, marker list, and the full throwable/cause chain. Inspect the caught exception's message/cause chain as well. Require zero secret occurrences and zero publication rows. Keep a direct serializer rejection assertion only as supplemental unit coverage.
+테스트가 실행되는 동안 시작된 `ListAppender`를 Logback root logger에 연결한다. 활성 context에서 non-additive logger가 있으면 찾아서 그곳에도 연결하고, `finally`에서 원래의 additivity/appender 상태를 복원한다. publication repository가 자체 logger를 가진다고 가정하지 않는다. 구체적인 helper로 캡처한 모든 `ILoggingEvent` 필드, 즉 message, formatted message, MDC, argument array, key/value pair, marker list, 전체 throwable/cause chain을 검사한다. 포착한 예외의 message/cause chain도 검사한다. secret 출현 횟수와 publication 행 수가 모두 0이어야 한다. serializer 직접 거부 assertion은 보조 unit coverage로만 유지한다.
 
-The existing rollback, sensitive-payload, restart replay, module-boundary, and idempotency tests remain mandatory.
+기존 rollback, 민감한 payload, 재시작 replay, module boundary, idempotency 테스트는 계속 필수다.
 
-- [ ] **Step 2: Run RED example tests**
+- [ ] **단계 2: RED 예제 테스트 실행**
 
-Run:
+실행:
 
 ```bash
 ./gradlew :examples-ddd-spring-modulith-demo:test \
   --no-configuration-cache --no-daemon --console=plain
 ```
 
-Expected: Kotlin compilation fails at the updated failed-handoff fixture/service call site because the existing `OrderApplicationService` constructor still expects `ApplicationEventPublisher` rather than `ExposedAggregateEventPublisher`. Do not claim the post-success empty-buffer assertion as RED evidence: the legacy manual clear already satisfies that assertion. Lifecycle behavior becomes GREEN evidence only after the manual path is removed.
+예상 결과: 기존 `OrderApplicationService` 생성자가 아직 `ExposedAggregateEventPublisher`가 아니라 `ApplicationEventPublisher`를 요구하므로 갱신한 실패 handoff fixture/service 호출 위치에서 Kotlin 컴파일이 실패한다. 성공 후 빈 버퍼 assertion을 RED 근거로 주장하지 않는다. 기존 수동 clear가 이미 그 assertion을 만족한다. 수동 경로를 제거한 후에만 수명주기 동작이 GREEN 근거가 된다.
 
-- [ ] **Step 3: Replace the manual loop with the public bridge**
+- [ ] **단계 3: 수동 loop를 public bridge로 교체**
 
-Change the service constructor and transaction body to:
+service 생성자와 트랜잭션 본문을 다음과 같이 변경한다.
 
 ```kotlin
 class OrderApplicationService(
@@ -922,13 +922,13 @@ class OrderApplicationService(
 }
 ```
 
-Remove both the manual `domainEvents().forEach` publication loop and the post-transaction `clearDomainEvents()` call.
+수동 `domainEvents().forEach` publication loop와 트랜잭션 후 `clearDomainEvents()` 호출을 모두 제거한다.
 
-Change `OrderHandoffFailedException` to use the stable message `order-event-handoff-failed`; retain the aggregate property and cause for direct caller inspection, but never include aggregate ID or nested exception text in its message.
+`OrderHandoffFailedException`이 안정적인 메시지 `order-event-handoff-failed`를 사용하도록 변경한다. 호출자가 직접 검사할 수 있도록 aggregate property와 cause는 유지하되 메시지에 aggregate ID나 중첩 예외 텍스트를 포함하지 않는다.
 
-- [ ] **Step 4: Run GREEN example and cross-module tests**
+- [ ] **단계 4: GREEN 예제와 모듈 간 테스트 실행**
 
-Run:
+실행:
 
 ```bash
 ./gradlew \
@@ -940,38 +940,38 @@ Run:
   examples/ddd-spring-modulith-demo/src/main
 ```
 
-Expected: Gradle PASS; the source search is run as `! rg` and returns no matches. A rollback retains the aggregate buffer while leaving no order, listener side effect, or publication row.
+예상 결과: Gradle이 PASS하고, `! rg`로 실행한 소스 검색은 일치 항목 없이 종료한다. rollback 시 애그리거트 버퍼는 보존되며 order, listener 부수 효과, publication 행은 남지 않는다.
 
-- [ ] **Step 5: Commit the example migration**
+- [ ] **단계 5: 예제 migration 커밋**
 
-Run `git diff --check`, then commit the three example files with a Lore message beginning:
+`git diff --check`를 실행한 다음, 다음으로 시작하는 Lore 메시지로 예제 파일 세 개를 커밋한다.
 
 ```text
 refactor: adopt transaction-aware event handoff in DDD demo
 ```
 
-Rollback point: rollback must restore the complete old manual loop and manual clear together; never run old and new paths in one application instance.
+rollback 지점: 되돌릴 때는 기존 수동 loop와 수동 clear 전체를 함께 복원해야 한다. 한 애플리케이션 인스턴스에서 기존 경로와 새 경로를 함께 실행하지 않는다.
 
-## Task 7: Update README Locales, Changelog, And Lifecycle Diagram
+## 작업 7: README 로케일, changelog, 수명주기 diagram 갱신
 
-complexity: medium
-depends_on: Task 6
-applies: `bluetape4k-maintenance`, `bluetape4k-blog`, `bluetape4k-diagram`
+복잡도: 중간
+의존성: 작업 6
+적용 항목: `bluetape4k-maintenance`, `bluetape4k-blog`, `bluetape4k-diagram`
 
-**Files:**
-- Modify: `spring-boot/jdbc/README.md`
-- Modify: `spring-boot/jdbc/README.ko.md`
-- Modify: `spring-boot/spring-modulith/README.md`
-- Modify: `spring-boot/spring-modulith/README.ko.md`
-- Modify: `examples/ddd-spring-modulith-demo/README.md`
-- Modify: `examples/ddd-spring-modulith-demo/README.ko.md`
-- Modify: `CHANGELOG.md`
-- Create: `docs/images/readme-diagrams/spring-boot-exposed-jdbc-domain-event-sequence-01.svg`
-- Create: `docs/images/readme-diagrams/spring-boot-exposed-jdbc-domain-event-sequence-01.png`
+**파일:**
+- 수정: `spring-boot/jdbc/README.md`
+- 수정: `spring-boot/jdbc/README.ko.md`
+- 수정: `spring-boot/spring-modulith/README.md`
+- 수정: `spring-boot/spring-modulith/README.ko.md`
+- 수정: `examples/ddd-spring-modulith-demo/README.md`
+- 수정: `examples/ddd-spring-modulith-demo/README.ko.md`
+- 수정: `CHANGELOG.md`
+- 생성: `docs/images/readme-diagrams/spring-boot-exposed-jdbc-domain-event-sequence-01.svg`
+- 생성: `docs/images/readme-diagrams/spring-boot-exposed-jdbc-domain-event-sequence-01.png`
 
-- [ ] **Step 1: Add source-equivalent English/Korean JDBC documentation**
+- [ ] **단계 1: 원문과 동등한 영어/한국어 JDBC 문서 추가**
 
-Wrap every issue-owned README section in `<!-- issue-323-section:start -->` / `<!-- issue-323-section:end -->`. Add `<a id="transaction-aware-domain-events"></a>` immediately before the JDBC locale headings `Transaction-Aware Domain Events` / `트랜잭션 인식 도메인 이벤트` so cross-locale links use one stable anchor. Cover:
+이 이슈가 소유하는 모든 README 절을 `<!-- issue-323-section:start -->` / `<!-- issue-323-section:end -->`로 감싼다. 로케일 간 링크가 하나의 안정적인 anchor를 사용하도록 JDBC 로케일 제목 `Transaction-Aware Domain Events` / `트랜잭션 인식 도메인 이벤트` 바로 앞에 `<a id="transaction-aware-domain-events"></a>`를 추가한다. 다음 내용을 다룬다.
 
 ```text
 dependency and auto-configuration conditions
@@ -991,17 +991,17 @@ R2DBC exclusion
 JaVers audit/history boundary
 ```
 
-Wrap the outcome table in `<!-- issue-323-outcome-table:start -->` / `<!-- issue-323-outcome-table:end -->`. The JDBC locale pair must reproduce these five outcome rows with the same persistence/buffer/retry decisions:
+결과 표는 `<!-- issue-323-outcome-table:start -->` / `<!-- issue-323-outcome-table:end -->`로 감싼다. JDBC 로케일 쌍은 persistence/buffer/retry 결정이 동일한 다음 다섯 결과 행을 재현해야 한다.
 
-| Outcome | Persistence | Buffer | Command retry |
+| 결과 | 저장 상태 | 버퍼 | 명령 재시도 |
 |---|---|---|---|
-| No active transaction or same-transaction precondition violation | Indeterminate | Preserved | No automatic retry; reconcile first |
-| Full rollback or poisoned handoff | Rolled back | Preserved | Allowed only in a fresh transaction; synchronous side effects may need deduplication |
-| Committed listener failure | Committed | Cleared | Never retry command; use listener retry/replay |
-| Committed cleanup failure | Committed | May remain | Never retry; discard aggregate instance |
-| `STATUS_UNKNOWN` | Indeterminate | Preserved | No automatic retry; reconcile first |
+| 활성 트랜잭션 없음 또는 같은 트랜잭션 전제 조건 위반 | 미확정 | 보존 | 자동 재시도 금지, 먼저 정합성을 복구한다 |
+| 전체 rollback 또는 poison된 전달 | rollback됨 | 보존 | 새 트랜잭션에서만 허용, 동기 부수 효과는 중복 제거가 필요할 수 있다 |
+| 커밋된 listener 실패 | 커밋됨 | 비움 | 명령 재시도 금지, listener 재시도/재생을 사용한다 |
+| 커밋된 정리 실패 | 커밋됨 | 남을 수 있음 | 재시도 금지, 애그리거트 인스턴스를 폐기한다 |
+| `STATUS_UNKNOWN` | 미확정 | 보존 | 자동 재시도 금지, 먼저 정합성을 복구한다 |
 
-Wrap reconciliation in `<!-- issue-323-reconciliation:start -->` / `<!-- issue-323-reconciliation:end -->`. Prefix each translated bullet with the matching stable semantic marker shown below so state/action mapping and order can be checked independently from prose. It must reproduce these four states and actions without changing retry semantics:
+대조 절은 `<!-- issue-323-reconciliation:start -->` / `<!-- issue-323-reconciliation:end -->`로 감싼다. 상태/동작 매핑과 순서를 산문과 독립적으로 검사할 수 있도록 번역한 각 bullet 앞에 아래의 안정적인 semantic marker를 붙인다. retry 의미를 바꾸지 않고 다음 네 상태와 동작을 재현해야 한다.
 
 ```text
 <!-- issue-323-reconciliation:state=present-present;action=listener-recovery;command-retry=false -->
@@ -1014,34 +1014,34 @@ persistence absent + publication absent -> retry only as a new command after rul
 persistence absent + publication present -> quarantine invariant breach and compensate manually; replay neither path
 ```
 
-Add a `Production rollout checklist` / `프로덕션 롤아웃 체크리스트` naming the application owner and requiring, before canary: alerts for both anomaly categories, at least one propagated allowlisted correlation field, audit/trace-to-persistence-key lookup, database and publication-table read access, and a canary proving one persisted aggregate, one durable publication, one listener side effect, and zero anomaly rows. Prefix the four failure steps with `<!-- issue-323-rollout:01-stop -->`, `<!-- issue-323-rollout:02-preserve -->`, `<!-- issue-323-rollout:03-reconcile-repair -->`, and `<!-- issue-323-rollout:04-binary-rollback-version-defect-only -->`. The order is exact: `stop rollout -> preserve logs/records -> reconcile and repair canary -> full binary rollback only for a version defect`.
+application owner를 명시하는 `Production rollout checklist` / `프로덕션 롤아웃 체크리스트`를 추가한다. canary 전에 두 anomaly category에 대한 alert, 전달된 allowlist correlation field 하나 이상, audit/trace에서 persistence key를 찾는 방법, database와 publication table의 읽기 권한을 준비해야 한다. 또한 영속화된 애그리거트 하나, 내구성 있는 publication 하나, listener 부수 효과 하나, anomaly 행 0개를 증명하는 canary가 필요하다. 네 실패 단계 앞에는 `<!-- issue-323-rollout:01-stop -->`, `<!-- issue-323-rollout:02-preserve -->`, `<!-- issue-323-rollout:03-reconcile-repair -->`, `<!-- issue-323-rollout:04-binary-rollback-version-defect-only -->`를 붙인다. 순서는 정확히 `stop rollout -> preserve logs/records -> reconcile and repair canary -> full binary rollback only for a version defect`이다.
 
-Add the no-correlation recovery rule verbatim in meaning: if no allowlisted correlation field is present, quarantine the affected time window, use application audit records, and forbid automatic repair.
+correlation이 없을 때의 복구 규칙은 의미를 그대로 유지해 추가한다. allowlist에 있는 correlation field가 하나도 없으면 영향을 받은 시간 구간을 격리하고 application audit record를 사용하며 자동 복구를 금지한다.
 
-Both JDBC README locales and both example README locales must state the publication-store controls explicitly: least-privilege database access, encryption at rest and in transit as application infrastructure permits, integrity protection, retention/deletion policy, payload minimization, and exposure of stored event class names. State that audit history, snapshot persistence, and JaVers commit semantics are forbidden dependencies of the new publisher.
+JDBC README 두 로케일과 예제 README 두 로케일에는 publication store 제어를 명시해야 한다. 최소 권한 database 접근, application infrastructure가 허용하는 저장·전송 암호화, 무결성 보호, 보존/삭제 정책, payload 최소화, 저장된 이벤트 class 이름의 노출을 다룬다. audit history, snapshot persistence, JaVers commit 의미는 새 발행자가 의존해서는 안 된다고 명시한다.
 
-Embed the new PNG from both locale files.
+두 로케일 파일에 새 PNG를 삽입한다.
 
-- [ ] **Step 2: Update example and Modulith README locale pairs**
+- [ ] **단계 2: 예제와 Modulith README 로케일 쌍 갱신**
 
-Replace manual publication/clear instructions in the example README pair with `ExposedAggregateEventPublisher`. Copy the compiled multi-manager Kotlin example from Task 5 into both JDBC locale files without changing the code block, wrapped by `<!-- issue-323-multi-manager:start -->` / `<!-- issue-323-multi-manager:end -->`. Preserve restart replay, publication-table protection, idempotency, and serializer guidance. Add a short cross-link from the Spring Modulith README pair to the JDBC publisher section and example; do not duplicate the full lifecycle contract.
+예제 README 쌍의 수동 publication/clear 지침을 `ExposedAggregateEventPublisher`로 교체한다. 작업 5의 컴파일된 multi-manager Kotlin 예제를 코드 block을 변경하지 않고 JDBC 로케일 파일 양쪽에 복사하며, `<!-- issue-323-multi-manager:start -->` / `<!-- issue-323-multi-manager:end -->`로 감싼다. 재시작 replay, publication table 보호, idempotency, serializer 지침을 보존한다. Spring Modulith README 쌍에는 JDBC 발행자 절과 예제로 연결되는 짧은 cross-link를 추가하되 전체 수명주기 계약을 중복하지 않는다.
 
-- [ ] **Step 3: Add the changelog entry**
+- [ ] **단계 3: changelog 항목 추가**
 
-Under `CHANGELOG.md` `Unreleased -> Added`, record issue #323 and the public JDBC publisher, guarded auto-configuration, committed cleanup, and example adoption. Do not edit stale release versions or `WIP.md` as part of this feature.
+`CHANGELOG.md`의 `Unreleased -> Added` 아래에 이슈 #323, public JDBC publisher, 보호된 자동 구성, committed cleanup, 예제 적용을 기록한다. 이 기능 작업에서 지난 release version이나 `WIP.md`는 편집하지 않는다.
 
-- [ ] **Step 4: Create and render one lifecycle sequence asset**
+- [ ] **단계 4: 수명주기 sequence asset 하나 생성과 렌더링**
 
-Open these full-size reference PNGs first:
+먼저 다음 reference PNG를 전체 크기로 연다.
 
 ```text
 /Users/debop/work/bluetape4k/bluetape4k-wiki/docs/diagrams/best-practices/assets/sequence-workflow-sample.png
 docs/images/readme-diagrams/spring-boot-exposed-spring-modulith-sequence-01.png
 ```
 
-The new diagram must show aggregate, repository, publisher, Spring transaction, default transactional listener, optional Modulith, commit, rollback, and committed cleanup with visible numbered labels and transparent `alt` branches.
+새 diagram에는 aggregate, repository, publisher, Spring transaction, 기본 transactional listener, optional Modulith, commit, rollback, committed cleanup을 표시해야 한다. 번호 label은 보여야 하고 `alt` branch는 투명해야 한다.
 
-Run the one-asset loop:
+단일 asset loop를 실행한다.
 
 ```bash
 xmllint --noout docs/images/readme-diagrams/spring-boot-exposed-jdbc-domain-event-sequence-01.svg
@@ -1060,11 +1060,11 @@ python3 /Users/debop/.codex/skills/bluetape4k-diagram/scripts/diagram-mixed-corn
   docs/images/readme-diagrams/spring-boot-exposed-jdbc-domain-event-sequence-01.svg
 ```
 
-Inspect the PNG at full size after the final coordinate change and record dimensions, visible label count, branch transparency, marker-color parity, connector counts, and zero audit failures.
+마지막 좌표 변경 후 PNG를 전체 크기로 검사하고 크기, 보이는 label 수, branch 투명도, marker 색상 일치, connector 수, audit 실패 0건을 기록한다.
 
-- [ ] **Step 5: Verify locale/source parity and commit**
+- [ ] **단계 5: 로케일/원문 동등성 검증과 커밋**
 
-Run:
+실행:
 
 ```bash
 for file in \
@@ -1193,32 +1193,32 @@ done
 git diff --check
 ```
 
-Expected: Kotlin blocks, link/image targets, five outcome rows, four reconciliation state/action mappings, rollout order, and every named publication-store control are source-equivalent across each locale pair; example and cross-links use the new API; diff check passes. Manually compare every translated issue-owned section, including table cells and prose adjacent to semantic markers, against the approved English decisions because token and marker checks cannot prove translation meaning.
+예상 결과: Kotlin block, link/image target, 결과 행 다섯 개, 대조 상태/동작 매핑 네 개, rollout 순서, 명시된 모든 publication store 제어가 각 로케일 쌍에서 원문과 동등하다. 예제와 cross-link는 새 API를 사용하고 diff 검사가 통과한다. token과 marker 검사로는 번역 의미를 증명할 수 없으므로 표 cell과 semantic marker 주변 산문을 포함해 이 이슈가 소유하는 모든 번역 절을 승인된 영문 결정과 수동으로 비교한다.
 
-Commit Task 7 files with a Lore message beginning:
+다음으로 시작하는 Lore 메시지로 작업 7 파일을 커밋한다.
 
 ```text
 docs: explain aggregate event transaction lifecycle
 ```
 
-Rollback point: SVG and PNG are one asset pair and must be reverted or retained together with the README embeds.
+rollback 지점: SVG와 PNG는 하나의 asset 쌍이며 README embed와 함께 되돌리거나 유지해야 한다.
 
-## Task 8: Run Final Implementation Verification And Risk Scan
+## 작업 8: 최종 구현 검증과 위험 스캔
 
-complexity: high
-depends_on: Tasks 1-7
-applies: `verification-before-completion`, `bluetape4k-full-feature`, `bluetape4k-code-patterns`
+복잡도: 높음
+의존성: 작업 1-7
+적용 항목: `verification-before-completion`, `bluetape4k-full-feature`, `bluetape4k-code-patterns`
 
-**Files:**
-- No source edits unless verification returns to the owning task.
+**파일:**
+- 검증 결과가 담당 작업으로 돌아가라고 요구하지 않는 한 소스를 편집하지 않는다.
 
-- [ ] **Step 1: Inspect Kotlin impact and diagnostics**
+- [ ] **단계 1: Kotlin 영향과 diagnostics 검사**
 
-Before final compilation, inspect references for every touched Kotlin public symbol with available IDE/LSP tools. CodeGraph was empty during planning; if still empty, record that gap and use exact `rg` import/call-site checks. Run IDE diagnostics when available and leave no unresolved deprecation warning in touched files.
+최종 컴파일 전에 사용 가능한 IDE/LSP 도구로 변경한 모든 Kotlin public symbol의 reference를 검사한다. 계획 수립 중 CodeGraph가 비어 있었으므로 여전히 비어 있다면 그 공백을 기록하고 정확한 `rg` import/call-site 검사를 사용한다. 가능하면 IDE diagnostics를 실행하고 변경한 파일에 해결되지 않은 deprecation warning을 남기지 않는다.
 
-- [ ] **Step 2: Run targeted compile and test commands sequentially**
+- [ ] **단계 2: 대상 compile과 test 명령을 순차 실행**
 
-Run:
+실행:
 
 ```bash
 ./gradlew \
@@ -1241,11 +1241,11 @@ test -s spring-boot/spring-modulith/build/reports/kover/report.xml
 test -s examples/ddd-spring-modulith-demo/build/reports/kover/report.xml
 ```
 
-Expected: PASS with four non-empty Kover XML reports. These H2-backed checks run in one Gradle invocation; no Testcontainers jobs run in parallel. Existing CI `continue-on-error` report-only behavior is repository governance and is not changed by #323; missing local or PR coverage artifacts still block this issue's evidence gate.
+예상 결과: 비어 있지 않은 Kover XML report 네 개와 함께 PASS한다. H2 기반 검사는 한 번의 Gradle 호출로 실행하며 Testcontainers job을 병렬로 실행하지 않는다. 기존 CI의 `continue-on-error` report-only 동작은 저장소 정책이므로 #323에서 변경하지 않는다. 다만 local 또는 PR coverage artifact가 없으면 이 이슈의 근거 gate는 계속 차단된다.
 
-- [ ] **Step 3: Run static boundary and workflow checks**
+- [ ] **단계 3: 정적 경계와 workflow 검사 실행**
 
-Run:
+실행:
 
 ```bash
 ! rg -n 'import org\.springframework|import org\.springframework\.modulith|org\.javers' \
@@ -1262,11 +1262,11 @@ rg -n 'exposed/core/\*\*|spring-boot/\*\*|spring-boot/jdbc/\*\*|spring-boot/spri
 git diff --check
 ```
 
-Expected: all forbidden-dependency and legacy-path searches return no matches. The JDBC compile classpath contains neither JaVers nor Spring Modulith. Exact workflow blocks prove CI path routes, Nightly full-scope jobs, corresponding test/Kover tasks, status/coverage `needs`, and coverage uploads; do not claim workflow coverage from a task-name-only search.
+예상 결과: 금지된 dependency와 기존 path 검색에 일치 항목이 없다. JDBC compile classpath에는 JaVers와 Spring Modulith가 모두 없다. 정확한 workflow block으로 CI path route, Nightly 전체 범위 job, 해당 test/Kover task, status/coverage `needs`, coverage upload를 증명한다. task 이름만 검색한 결과로 workflow coverage를 주장하지 않는다.
 
-- [ ] **Step 4: Run the performance/stability scan**
+- [ ] **단계 4: 성능/안정성 스캔 실행**
 
-Prove with source and tests:
+소스와 테스트로 다음을 증명한다.
 
 ```text
 one immutable snapshot object retained per event-bearing aggregate; sentinel/snapshot-retention tests pass and no publisher copy exists
@@ -1282,64 +1282,64 @@ clear failures are isolated; rollback and unknown completion preserve buffers
 REQUIRES_NEW uses Spring synchronization suspension with distinct aggregate instances
 ```
 
-Record file/line evidence for each item and map operations explicitly: event publication and identity verification are `E`; one synchronization-list scan plus Spring's synchronization ordering is `S log S`; retained snapshots plus current synchronization references are `E + S`. Re-run the sentinel, snapshot-retention, anomaly-log, and exact call-count tests; prove normal and each sentinel aggregate transitions `1 -> 2`, while duplicate rejection remains `1`.
+각 항목의 file/line 근거를 기록하고 연산을 명시적으로 매핑한다. event publication과 identity 검증은 `E`, synchronization list 한 번의 scan과 Spring의 synchronization ordering은 `S log S`, 보존한 snapshot과 현재 synchronization reference는 `E + S`다. sentinel, snapshot retention, anomaly log, 정확한 호출 횟수 테스트를 다시 실행한다. 정상 애그리거트와 각 sentinel 애그리거트는 `1 -> 2`로 전이하고 중복 거부는 `1`에 머무름을 증명한다.
 
-If a P0/P1 issue appears, return to the owning task, add a RED regression test, fix, rerun Task 8 from Step 1, and rerun only affected review lenses.
+P0/P1 문제가 나타나면 담당 작업으로 돌아가 RED 회귀 테스트를 추가하고 수정한다. 작업 8을 단계 1부터 다시 실행하고 영향을 받은 review lens만 재실행한다.
 
-- [ ] **Step 5: Review the complete diff**
+- [ ] **단계 5: 전체 diff 리뷰**
 
-Use raw `git diff origin/develop...HEAD` plus uncommitted diff inspection. Confirm only issue #323 files are present, public KDoc is English, README pairs are source-equivalent, the SVG/PNG pair matches, and no generated build output is tracked.
+원시 `git diff origin/develop...HEAD`와 커밋되지 않은 diff 검사를 함께 사용한다. 이슈 #323 파일만 있고, public KDoc은 영문이며, README 쌍은 원문과 동등하고, SVG/PNG 쌍이 일치하며, 생성된 build output이 추적되지 않는지 확인한다.
 
-## Task 9: Capture Review, Lesson, And Pre-PR Evidence
+## 작업 9: 리뷰, 교훈, PR 전 근거 기록
 
-complexity: medium
-depends_on: Task 8 PASS
-applies: `bluetape4k-full-feature`, `requesting-code-review`, `verification-before-completion`
+복잡도: 중간
+의존성: 작업 8 PASS
+적용 항목: `bluetape4k-full-feature`, `requesting-code-review`, `verification-before-completion`
 
-**Files:**
-- Create: `docs/review/2026-07-11-issue-323-domain-event-publisher-implementation-review.md`
-- Create: `docs/lessons/2026-07-11-issue-323-domain-event-publisher.md`
+**파일:**
+- 생성: `docs/review/2026-07-11-issue-323-domain-event-publisher-implementation-review.md`
+- 생성: `docs/lessons/2026-07-11-issue-323-domain-event-publisher.md`
 
-- [ ] **Step 1: Run the six implementation review lenses plus main integration**
+- [ ] **단계 1: 여섯 구현 리뷰 관점과 주 통합 리뷰 실행**
 
-Review the exact branch diff in dependency order: core contract -> publisher -> auto-configuration -> example -> docs/diagram. Record P0/P1/P2/P3, resolved edits, rerun lanes, performance/stability evidence, and final `P0 = 0`, `P1 = 0`. P2/P3 must be fixed, deferred with rationale, or filed as follow-up.
+정확한 branch diff를 core contract -> publisher -> auto-configuration -> example -> docs/diagram 의존성 순서로 리뷰한다. P0/P1/P2/P3, 해결한 편집, 재실행 lane, 성능/안정성 근거, 최종 `P0 = 0`, `P1 = 0`을 기록한다. P2/P3는 수정하거나, 근거와 함께 연기하거나, 후속 작업으로 등록해야 한다.
 
-- [ ] **Step 2: Run the spec/plan verifier**
+- [ ] **단계 2: 명세/계획 검증기 실행**
 
-Map every design acceptance criterion to an implementation file, test name, documentation section, and command result. A missing criterion returns to the owning implementation task; it does not become a prose-only exception.
+모든 설계 acceptance criterion을 구현 파일, 테스트 이름, 문서 절, 명령 결과에 매핑한다. 누락된 criterion은 담당 구현 작업으로 되돌리며 산문으로만 적은 예외로 처리하지 않는다.
 
-- [ ] **Step 3: Write the durable lesson**
+- [ ] **단계 3: 영속 교훈 작성**
 
-Record context, chosen in-transaction handoff, why `afterCommit` publication was rejected, identity/poison insight, completion uncertainty, test evidence, review misses, and the future rule: never clear aggregate events before committed completion and never claim manager identity from Spring thread-local synchronization.
+context, 선택한 transaction 내부 handoff, `afterCommit` publication을 거부한 이유, identity/poison 통찰, 완료 불확실성, 테스트 근거, 리뷰에서 놓친 내용, 향후 규칙을 기록한다. 향후 규칙은 committed completion 전에 애그리거트 이벤트를 절대 비우지 않고 Spring thread-local synchronization으로 manager identity를 주장하지 않는 것이다.
 
-- [ ] **Step 4: Commit review and lesson artifacts**
+- [ ] **단계 4: 리뷰와 교훈 산출물 커밋**
 
-Run `git diff --check`, then commit both artifacts with a Lore message beginning:
+`git diff --check`를 실행한 다음, 다음으로 시작하는 Lore 메시지로 두 산출물을 커밋한다.
 
 ```text
 docs: capture aggregate event handoff evidence
 ```
 
-- [ ] **Step 5: Prepare the external-side-effect authority gate**
+- [ ] **단계 5: 외부 상태 변경 권한 gate 준비**
 
-At this point implementation is ready for PR preparation. Re-read issue #323 metadata and prepare the exact branch/PR payload, then stop until explicit push/PR authority is present. Merge, workflow dispatch beyond PR-triggered CI, branch deletion, and worktree cleanup remain separate authority boundaries.
+이 시점에 구현은 PR 준비가 끝난 상태다. 이슈 #323 metadata를 다시 읽고 정확한 branch/PR payload를 준비한 뒤, 명시적인 push/PR 권한이 생길 때까지 중단한다. merge, PR이 유발한 CI 이외의 workflow dispatch, branch 삭제, worktree 정리는 별도의 권한 경계로 남는다.
 
-## Task 10: Prove Live PR, CI, Coverage, And Review Gates
+## 작업 10: 라이브 PR, CI, 커버리지, 리뷰 gate 증명
 
-complexity: medium
-depends_on: Task 9 PASS and explicit push/PR approval
-applies: `bluetape4k-full-feature`, `verification-before-completion`
+복잡도: 중간
+의존성: 작업 9 PASS와 명시적인 push/PR 승인
+적용 항목: `bluetape4k-full-feature`, `verification-before-completion`
 
-**Files:**
-- No source edits unless live evidence returns to the owning task.
+**파일:**
+- 라이브 근거가 담당 작업으로 돌아가라고 요구하지 않는 한 소스를 편집하지 않는다.
 
-- [ ] **Step 1: Push and create the issue-linked PR only after authority is present**
+- [ ] **단계 1: 권한이 있을 때만 push와 이슈 연결 PR 생성**
 
-Push the reviewed branch and create the PR against `develop`. Copy issue #323 assignee `debop`, milestone `1.12.0`, and relevant labels. The PR body links/closes #323, includes test and coverage evidence, and ends with the final Markdown section `## DoD Status`. Verify live metadata and body with `gh pr view --json` rather than relying on create-command output.
+리뷰한 branch를 push하고 `develop`을 대상으로 PR을 생성한다. 이슈 #323의 assignee `debop`, milestone `1.12.0`, 관련 label을 복사한다. PR 본문은 #323을 연결/종료하고 test와 coverage 근거를 포함하며 마지막 Markdown 절 `## DoD Status`로 끝나야 한다. 생성 명령 출력에 의존하지 말고 `gh pr view --json`으로 live metadata와 본문을 검증한다.
 
-- [ ] **Step 2: Watch CI and inspect raw retry evidence**
+- [ ] **단계 2: CI 감시와 원시 재시도 근거 검사**
 
-Use `ci-status --watch` or `gh pr checks --watch`, then inspect the raw job logs for core, Spring Boot JDBC, Spring Modulith, and examples. If any log contains `Attempt N failed`, stop even when the final conclusion is success, investigate lifecycle/container/timing causes, return to the affected task, and rerun the relevant local suite before a fresh CI run.
+`ci-status --watch` 또는 `gh pr checks --watch`를 사용한 다음 core, Spring Boot JDBC, Spring Modulith, example의 원시 job log를 검사한다. log에 `Attempt N failed`가 하나라도 있으면 최종 conclusion이 성공이어도 중단한다. lifecycle/container/timing 원인을 조사하고 영향을 받은 작업으로 돌아가 관련 local suite를 다시 실행한 후 새 CI run을 시작한다.
 
 ```bash
 gh run view <run-id> --json status,conclusion,jobs,url
@@ -1347,9 +1347,9 @@ gh run view <run-id> --log | tee /tmp/issue-323-ci.log
 ! rg -n 'Attempt [1-5] failed' /tmp/issue-323-ci.log
 ```
 
-- [ ] **Step 3: Verify live non-empty coverage artifacts**
+- [ ] **단계 3: 비어 있지 않은 라이브 커버리지 산출물 검증**
 
-Download the PR run's coverage artifacts and prove the core, JDBC, Spring Modulith, and example `report.xml` files exist and are non-empty. This issue-level artifact gate complements, but does not rewrite, the repository's report-only Kover workflow policy.
+PR run의 coverage artifact를 내려받고 core, JDBC, Spring Modulith, example의 `report.xml` 파일이 존재하며 비어 있지 않음을 증명한다. 이 이슈 수준 artifact gate는 저장소의 report-only Kover workflow 정책을 보완하지만 다시 정의하지 않는다.
 
 ```bash
 coverage_dir="$(mktemp -d /tmp/issue-323-coverage.XXXXXX)"
@@ -1361,43 +1361,43 @@ test -s "$coverage_dir/coverage-spring-modulith/spring-boot/spring-modulith/buil
 test -s "$coverage_dir/coverage-examples/examples/ddd-spring-modulith-demo/build/reports/kover/report.xml"
 ```
 
-- [ ] **Step 4: Reopen review and merge gates**
+- [ ] **단계 4: 리뷰와 병합 gate 재개방**
 
-After CI is green, re-read PR reviews and every review thread. Any unresolved or newer comment returns to the owning task and requires affected tests/review lenses again. Verify issue/PR metadata and the live PR body one final time. Stop before merge unless explicit merge authority is present; merge strategy remains GitHub rebase merge.
+CI가 green이 되면 PR review와 모든 review thread를 다시 읽는다. 해결되지 않았거나 더 새로운 comment가 있으면 담당 작업으로 돌아가 영향을 받은 테스트/review lens를 다시 실행해야 한다. issue/PR metadata와 live PR 본문을 마지막으로 한 번 더 검증한다. 명시적인 merge 권한이 없으면 merge 전에 중단한다. merge 전략은 GitHub rebase merge를 유지한다.
 
-## Spec-To-Task Traceability
+## 명세-작업 추적성
 
-| Design requirement | Plan task |
+| 설계 요구 사항 | 계획 작업 |
 |---|---|
-| Spring-neutral immutable/stable DDD contracts | 1 |
-| Explicit public JDBC publisher and active transaction checks | 2-3 |
-| Immediate handoff plus default AFTER_COMMIT behavior | 2-3 |
-| Identity reservation, mutation detection, poison, one synchronization | 4 |
-| Commit clear, rollback/unknown preserve, cleanup isolation | 3-4 |
-| Safe anomaly fields and correlation allowlist | 4 |
-| REQUIRES_NEW isolation, nested/savepoint exclusion | 4, 7 |
-| Single-candidate auto-configuration and executable `transactionManagerRef` multi-manager use | 5 |
-| Plain Spring Boot without Spring Modulith | 5 |
-| Example migration, rollback, durable publication, serializer trust | 6 |
-| README locale parity, JaVers boundary, migration/runbook | 7 |
-| Lifecycle SVG/PNG | 7 |
-| CI/Nightly/Kover visibility | 0, 8, 10 |
-| 7-Tier implementation review and durable lesson | 9 |
-| Live PR metadata, retry-log inspection, coverage artifacts, review threads | 10 |
+| Spring 중립적이며 불변이고 안정적인 DDD 계약 | 1 |
+| 명시적인 public JDBC publisher와 활성 트랜잭션 검사 | 2-3 |
+| 즉시 handoff와 기본 AFTER_COMMIT 동작 | 2-3 |
+| identity 예약, 변경 감지, poison, 단일 synchronization | 4 |
+| commit 시 clear, rollback/unknown 시 보존, cleanup 격리 | 3-4 |
+| 안전한 anomaly field와 correlation allowlist | 4 |
+| REQUIRES_NEW 격리, nested/savepoint 제외 | 4, 7 |
+| 단일 후보 자동 구성과 실행 가능한 `transactionManagerRef` multi-manager 사용 | 5 |
+| Spring Modulith 없는 일반 Spring Boot | 5 |
+| 예제 migration, rollback, 내구성 publication, serializer 신뢰 경계 | 6 |
+| README 로케일 동등성, JaVers 경계, migration/runbook | 7 |
+| 수명주기 SVG/PNG | 7 |
+| CI/Nightly/Kover 가시성 | 0, 8, 10 |
+| 7-Tier 구현 리뷰와 영속적인 교훈 | 9 |
+| live PR metadata, retry log 검사, coverage artifact, review thread | 10 |
 
-## Risk Prediction And Stop Conditions
+## 위험 예측과 중단 조건
 
-| Risk | Signal | Mitigation / rerun point |
+| 위험 | 신호 | 완화 / 재실행 지점 |
 |---|---|---|
-| Publication happens too late for transactional listeners | AFTER_COMMIT listener receives nothing | Keep `ApplicationEventPublisher` call inside Task 3 transaction; rerun Task 2-3 tests. |
-| Caller catches publication/duplicate error and transaction commits | DB row commits after handoff error | Poison synchronization and fail `beforeCommit`; rerun Task 4 fail-closed tests. |
-| Aggregate changes after save/handoff | Snapshot size/reference mismatch | Fail before commit and preserve buffer; return to Task 4. |
-| Registry leaks across suspension/completion | Duplicate rejection in a later or REQUIRES_NEW transaction | Keep state only in synchronization list; rerun Task 4 lifecycle matrix. |
-| Post-commit cleanup failure triggers command retry | Cleanup anomaly mistaken for rollback | Structured committed-cleanup log and README no-retry table; return to Tasks 4 and 7. |
-| Sensitive payload enters logs/publication store | Secret marker appears in captured log or serialized row | Fail tests; return to Tasks 4 or 6 before continuing. |
-| Auto-configuration implies manager identity | Multi-manager test requires injected manager | Keep bean manager-agnostic; return to Task 5. |
-| Repository ignores `transactionManagerRef` | First store changes or second store remains unchanged | Forward the annotation value to the repository factory and remove hard-coded base-class qualifiers; rerun Task 5 RED/GREEN tests. |
-| Old and new example publication paths coexist | Source search finds manual loop/clear | Remove both old calls in Task 6; never proceed to docs with dual publication. |
-| Diagram diverges from implementation | Full-size PNG timing differs from tests/source | Correct SVG and rerun all Task 7 diagram gates. |
+| transactional listener에 너무 늦게 publication됨 | AFTER_COMMIT listener가 아무것도 받지 못함 | `ApplicationEventPublisher` 호출을 작업 3 트랜잭션 안에 유지하고 작업 2-3 테스트를 재실행한다. |
+| 호출자가 publication/중복 오류를 잡은 뒤 트랜잭션이 커밋됨 | handoff 오류 후 DB 행이 커밋됨 | synchronization을 poison 상태로 만들고 `beforeCommit`을 실패시킨 뒤 작업 4 fail-closed 테스트를 재실행한다. |
+| save/handoff 후 애그리거트가 변경됨 | snapshot 크기/reference 불일치 | commit 전에 실패하고 버퍼를 보존한 뒤 작업 4로 돌아간다. |
+| suspension/completion 사이에 registry가 누출됨 | 이후 트랜잭션이나 REQUIRES_NEW 트랜잭션에서 중복이 거부됨 | 상태를 synchronization list에만 유지하고 작업 4 수명주기 행렬을 재실행한다. |
+| commit 후 cleanup 실패가 명령 retry를 유발함 | cleanup anomaly를 rollback으로 오인함 | 구조화된 committed-cleanup log와 README no-retry 표를 작성하고 작업 4와 7로 돌아간다. |
+| 민감한 payload가 log/publication store에 들어감 | 캡처한 log나 직렬화된 행에 secret marker가 나타남 | 테스트를 실패시키고 계속하기 전에 작업 4 또는 6으로 돌아간다. |
+| 자동 구성이 manager identity를 암시함 | multi-manager 테스트가 주입된 manager를 요구함 | 빈을 manager 중립적으로 유지하고 작업 5로 돌아간다. |
+| repository가 `transactionManagerRef`를 무시함 | 첫 번째 저장소가 변경되거나 두 번째 저장소가 그대로임 | annotation 값을 repository factory로 전달하고 base class의 hard-coded qualifier를 제거한 뒤 작업 5 RED/GREEN 테스트를 재실행한다. |
+| 예제의 기존 publication 경로와 새 경로가 공존함 | 소스 검색에서 수동 loop/clear를 찾음 | 작업 6에서 기존 호출 두 개를 모두 제거하고 이중 publication 상태로 문서 작업을 진행하지 않는다. |
+| diagram이 구현과 불일치함 | 전체 크기 PNG의 timing이 테스트/소스와 다름 | SVG를 수정하고 작업 7의 모든 diagram gate를 재실행한다. |
 
-Stop implementation immediately and return to the approved design if safe behavior would require R2DBC, savepoint callback support, a durable outbox, a new metric/callback SPI, manager/DataSource identity proof, or a change to the one-final-call contract. These are material scope changes, not implementation details.
+안전한 동작에 R2DBC, savepoint callback 지원, 내구성 outbox, 새 metric/callback SPI, manager/DataSource identity 증명, 마지막 단일 호출 계약 변경이 필요하다면 구현을 즉시 중단하고 승인된 설계로 돌아간다. 이는 구현 세부 사항이 아니라 중대한 범위 변경이다.
