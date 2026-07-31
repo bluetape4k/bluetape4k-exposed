@@ -104,9 +104,9 @@ object UserContext {
     }
 
     /**
-     * Returns a coroutine context element that restores the current user on every coroutine resume.
+     * Coroutine이 재개될 때마다 현재 사용자를 복원하는 context element를 반환합니다.
      *
-     * Use this when composing your own coroutine context, for example:
+     * 다음과 같이 coroutine context를 직접 구성할 때 사용합니다.
      *
      * ```kotlin
      * withContext(UserContext.asContextElement("admin") + Dispatchers.IO) {
@@ -118,10 +118,10 @@ object UserContext {
         THREAD_LOCAL_USER.asContextElement(username)
 
     /**
-     * Runs [block] with [username] bound to coroutine execution, including dispatcher hops.
+     * Dispatcher hop을 포함한 coroutine 실행에 [username]을 바인딩하여 [block]을 실행합니다.
      *
-     * This keeps the caller's structured concurrency intact because it only adds a
-     * [ThreadContextElement] to the current coroutine context.
+     * 현재 coroutine context에 [ThreadContextElement]만 추가하므로 호출자의 structured concurrency를
+     * 그대로 유지합니다.
      */
     suspend fun <T> withCoroutineUser(username: String, block: suspend () -> T): T =
         withContext(asContextElement(username)) {

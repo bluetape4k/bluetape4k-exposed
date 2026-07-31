@@ -1,55 +1,52 @@
 package io.bluetape4k.exposed.core.ddd
 
 /**
- * Spring-neutral DDD aggregate root contract.
+ * Spring에 의존하지 않는 DDD aggregate root 계약입니다.
  *
- * ## Contract
- * The aggregate owns an in-memory event buffer only. The buffer is not a durable
- * outbox, publisher adapter, Exposed DAO lifecycle hook, Exposed DAO
- * `EntityCache`, in-memory queue, or Spring Modulith publication store.
- * Repository adapters may hand a snapshot to a transaction-aware publisher
- * while the command transaction is active, but they must retain the aggregate
- * buffer until committed completion. A durable outbox or persisted retry queue
- * is a separate integration choice. Existing repositories remain unaffected
- * unless callers explicitly adopt these contracts.
+ * ## 계약
+ * Aggregate는 in-memory event buffer만 소유합니다. 이 buffer는 durable outbox,
+ * publisher adapter, Exposed DAO lifecycle hook, Exposed DAO `EntityCache`,
+ * in-memory queue, Spring Modulith publication store가 아닙니다.
+ *
+ * Command transaction이 활성화된 동안 repository adapter가 transaction-aware publisher에
+ * snapshot을 전달할 수 있지만, commit 완료 전까지 aggregate buffer를 유지해야 합니다.
+ * Durable outbox나 영속 retry queue는 별도의 integration 선택 사항입니다. 호출자가 이 계약을
+ * 명시적으로 채택하지 않는 한 기존 repository에는 영향을 주지 않습니다.
  */
 interface AggregateRoot<ID : Any> {
 
     /**
-     * Stable aggregate identifier.
+     * Aggregate의 안정적인 identifier입니다.
      */
     val id: ID
 
     /**
-     * Returns a side-effect-free, read-only snapshot of recorded domain events.
+     * 기록된 domain event의 side effect 없는 read-only snapshot을 반환합니다.
      *
-     * Each non-empty call returns an independent list in recording order.
-     * Calling this method does not clear or mutate the aggregate event buffer.
-     * Implementations used with a reference-validating transaction-aware
-     * publisher must preserve event object references until
-     * [clearDomainEvents] succeeds.
+     * 비어 있지 않은 호출 결과는 매번 기록 순서를 유지한 독립 list입니다. 이 method는 aggregate
+     * event buffer를 비우거나 변경하지 않습니다. 참조를 검증하는 transaction-aware publisher와
+     * 함께 사용하는 구현은 [clearDomainEvents]가 성공할 때까지 event object reference를
+     * 보존해야 합니다.
      */
     fun domainEvents(): List<DomainEvent<ID>>
 
     /**
-     * Clears recorded domain events without returning them.
+     * 기록된 domain event를 반환하지 않고 비웁니다.
      *
-     * Use this for caller-owned discard or committed-completion cleanup. It is
-     * forbidden while a transaction-aware publisher owns a registered snapshot
-     * because rollback and unknown completion must preserve the buffer.
+     * 호출자가 소유한 폐기 작업이나 commit 완료 후 정리에 사용합니다. Transaction-aware
+     * publisher가 등록된 snapshot을 소유하는 동안에는 rollback이나 완료 여부를 알 수 없는
+     * 상황에서도 buffer를 보존해야 하므로 호출하면 안 됩니다.
      */
     fun clearDomainEvents()
 
     /**
-     * Hands recorded domain events to [handoff] in recording order and clears
-     * the buffer only after [handoff] returns successfully.
+     * 기록된 domain event를 기록 순서대로 [handoff]에 전달하고, [handoff]가 성공적으로 반환된
+     * 뒤에만 buffer를 비웁니다.
      *
-     * Use this only after the caller is ready to move events into a durable
-     * owner such as an outbox or persisted retry queue. This method is
-     * incompatible with publishers that retain snapshot ownership until
-     * transaction completion because it clears immediately after [handoff]. It
-     * is a local buffer operation, not a publish or persistence boundary. If
-     * [handoff] throws, the buffer remains intact.
+     * 호출자가 event를 outbox나 영속 retry queue 같은 durable owner로 이동할 준비가 된 뒤에만
+     * 사용합니다. [handoff] 직후 buffer를 비우므로 transaction 완료까지 snapshot 소유권을
+     * 유지하는 publisher와는 함께 사용할 수 없습니다. 이 method는 local buffer 연산이며 publish
+     * 또는 persistence 경계가 아닙니다. [handoff]가 예외를 던지면 buffer는 그대로 유지됩니다.
      */
     fun drainDomainEvents(handoff: (List<DomainEvent<ID>>) -> Unit): List<DomainEvent<ID>>
 }

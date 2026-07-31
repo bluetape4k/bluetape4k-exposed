@@ -12,13 +12,13 @@ import org.jetbrains.exposed.v1.core.appendTo
 import org.jetbrains.exposed.v1.core.transactions.currentTransaction
 
 /**
- * A [Table] facade that makes an Exposed SELECT query addressable as a Common Table Expression (CTE).
+ * Exposed SELECT query를 Common Table Expression(CTE)으로 참조할 수 있게 하는 [Table] facade입니다.
  *
- * ## Contract
- * - Renders the CTE body and final query through the same [QueryBuilder], preserving prepared-argument order.
- * - Maps the columns and aliases selected by [query] to fields on this temporary table.
- * - Renders `WITH RECURSIVE ... UNION [ALL] ...` when [recursiveQuery] is present.
- * - Does not support DDL statements because a CTE is scoped to a single SQL statement.
+ * ## 계약
+ * - CTE 본문과 최종 query를 같은 [QueryBuilder]로 렌더링하여 prepared argument 순서를 보존합니다.
+ * - [query]가 선택한 column과 alias를 이 임시 table의 field로 매핑합니다.
+ * - [recursiveQuery]가 있으면 `WITH RECURSIVE ... UNION [ALL] ...`을 렌더링합니다.
+ * - CTE는 단일 SQL statement 범위에서만 유효하므로 DDL statement를 지원하지 않습니다.
  *
  * ```kotlin
  * val activeUsers = CteTable(
@@ -69,7 +69,7 @@ open class CteTable(
         throw UnsupportedOperationException("DROP statements are not supported by CTEs")
 
     /**
-     * Appends the `cte_name [(columns...)] AS (...)` fragment to [builder].
+     * `cte_name [(columns...)] AS (...)` 조각을 [builder]에 추가합니다.
      */
     @OptIn(InternalApi::class)
     fun describeWith(builder: QueryBuilder) {
@@ -89,7 +89,7 @@ open class CteTable(
     }
 
     /**
-     * Returns the temporary CTE field corresponding to [queryField].
+     * [queryField]에 대응하는 임시 CTE field를 반환합니다.
      */
     @Suppress("UNCHECKED_CAST")
     operator fun <T> get(queryField: Expression<T>): Expression<T> =
@@ -97,7 +97,7 @@ open class CteTable(
             ?: error("$queryField is not in CTE query set")
 
     /**
-     * Returns the temporary CTE column corresponding to [queryColumn].
+     * [queryColumn]에 대응하는 임시 CTE column을 반환합니다.
      */
     @Suppress("UNCHECKED_CAST")
     operator fun <T> get(queryColumn: Column<T>): Column<T> =
@@ -105,7 +105,7 @@ open class CteTable(
             ?: error("$queryColumn is not in CTE query set")
 
     /**
-     * Returns the temporary CTE field corresponding to [queryAlias].
+     * [queryAlias]에 대응하는 임시 CTE field를 반환합니다.
      */
     @Suppress("UNCHECKED_CAST")
     operator fun <T> get(queryAlias: IExpressionAlias<T>): Expression<T> =
