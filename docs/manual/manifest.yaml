@@ -187,6 +187,18 @@ modules:
     sourcePaths: ["exposed/duckdb/src/main/kotlin"]
     testPaths: ["exposed/duckdb/src/test/kotlin","exposed/duckdb/src/test/resources"]
     workshops: []
+  - id: "bluetape4k-exposed-druid"
+    title: {"en":"Exposed Druid JDBC Utilities","ko":"Exposed Druid JDBC 유틸리티"}
+    gradlePath: ":bluetape4k-exposed-druid"
+    sourceDir: "exposed/druid"
+    kind: "library"
+    group: "database"
+    artifact: "io.github.bluetape4k.exposed:bluetape4k-exposed-druid"
+    en: "en/modules/bluetape4k-exposed-druid.md"
+    ko: "ko/modules/bluetape4k-exposed-druid.md"
+    sourcePaths: ["exposed/druid/src/main/kotlin"]
+    testPaths: ["exposed/druid/src/test/kotlin","exposed/druid/src/test/resources"]
+    workshops: []
   - id: "bluetape4k-exposed-fastjson2"
     title: {"en":"Exposed Fastjson2 Serialization","ko":"Exposed Fastjson2 직렬화"}
     gradlePath: ":bluetape4k-exposed-fastjson2"
@@ -542,6 +554,18 @@ modules:
     ko: "ko/modules/examples-ktor-exposed-demo.md"
     sourcePaths: ["examples/ktor-exposed-demo/src/main/kotlin"]
     testPaths: ["examples/ktor-exposed-demo/src/test/kotlin","examples/ktor-exposed-demo/src/test/resources"]
+    workshops: []
+  - id: "examples-ddd-spring-modulith-demo"
+    title: {"en":"DDD Spring Modulith Demo","ko":"DDD Spring Modulith 데모"}
+    gradlePath: ":examples-ddd-spring-modulith-demo"
+    sourceDir: "examples/ddd-spring-modulith-demo"
+    kind: "example"
+    group: "example"
+    artifact: null
+    en: "en/modules/examples-ddd-spring-modulith-demo.md"
+    ko: "ko/modules/examples-ddd-spring-modulith-demo.md"
+    sourcePaths: ["examples/ddd-spring-modulith-demo/src/main/kotlin","examples/ddd-spring-modulith-demo/src/main/resources"]
+    testPaths: ["examples/ddd-spring-modulith-demo/src/test/kotlin","examples/ddd-spring-modulith-demo/src/test/resources"]
     workshops: []
   - id: "exposed-spring-boot-jdbc-demo"
     title: {"en":"Spring Boot JDBC Example","ko":"Spring Boot JDBC 예제"}
