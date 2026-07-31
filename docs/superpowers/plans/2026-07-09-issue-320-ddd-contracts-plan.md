@@ -1,39 +1,39 @@
-# Issue 320 DDD Contracts Implementation Plan
+# Issue 320 DDD 계약 구현 계획
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **에이전트 작업자 안내:** 필수 하위 스킬로 superpowers:subagent-driven-development(권장) 또는 superpowers:executing-plans를 사용해 이 계획을 작업 단위로 구현한다. 진행 상태는 체크박스(`- [ ]`) 문법으로 추적한다.
 
-**Goal:** Add Spring-neutral DDD aggregate/domain-event contracts to `bluetape4k-exposed-core` with tests, KDoc, and README locale documentation.
+**목표:** 테스트, KDoc, README 로케일 문서와 함께 Spring 중립적인 DDD 애그리거트/도메인 이벤트 계약을 `bluetape4k-exposed-core`에 추가한다.
 
-**Architecture:** Add a small `io.bluetape4k.exposed.core.ddd` package in the existing core module. The package contains only framework-neutral contracts and an in-memory event buffer base class. Publishing, durable outbox, repository adapters, Spring Modulith integration, JaVers integration, and Exposed DAO lifecycle hooks stay out of scope.
+**아키텍처:** 기존 core 모듈에 작은 `io.bluetape4k.exposed.core.ddd` 패키지를 추가한다. 이 패키지에는 프레임워크 중립 계약과 인메모리 이벤트 버퍼 기반 클래스만 둔다. 발행, 영속 아웃박스, 저장소 어댑터, Spring Modulith 연동, JaVers 연동, Exposed DAO 수명주기 훅은 범위에서 제외한다.
 
-**Tech Stack:** Kotlin catalog version in this worktree, JDK `Instant`, `bluetape4k-assertions`, JUnit 5, Gradle module `:bluetape4k-exposed-core`.
+**기술 스택:** 이 worktree의 Kotlin 카탈로그 버전, JDK `Instant`, `bluetape4k-assertions`, JUnit 5, Gradle 모듈 `:bluetape4k-exposed-core`.
 
 ---
 
-## File Structure
+## 파일 구조
 
-- Create: `exposed/core/src/test/kotlin/io/bluetape4k/exposed/core/ddd/AbstractAggregateRootTest.kt`
-  - TDD tests for event recording, snapshot, drain, ordering, mismatched IDs, and typed ID fixtures.
-- Create: `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/DomainEvent.kt`
-  - Spring-neutral domain event contract.
-- Create: `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/AggregateRoot.kt`
-  - Aggregate root contract.
-- Create: `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/AbstractAggregateRoot.kt`
-  - Minimal base implementation with lazy event buffer.
-- Modify: `README.md`
-  - English DDD contracts section.
-- Modify: `README.ko.md`
-  - Korean equivalent section.
+- 생성: `exposed/core/src/test/kotlin/io/bluetape4k/exposed/core/ddd/AbstractAggregateRootTest.kt`
+  - 이벤트 기록, 스냅숏, 비우기, 순서, ID 불일치, 타입 지정 ID fixture를 검증하는 TDD 테스트.
+- 생성: `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/DomainEvent.kt`
+  - Spring 중립 도메인 이벤트 계약.
+- 생성: `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/AggregateRoot.kt`
+  - 애그리거트 루트 계약.
+- 생성: `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/AbstractAggregateRoot.kt`
+  - 지연 이벤트 버퍼를 사용하는 최소 기반 구현.
+- 수정: `README.md`
+  - 영어 DDD 계약 절.
+- 수정: `README.ko.md`
+  - 같은 내용을 담은 한국어 절.
 
-## Task 1: Write RED Tests For DDD Contracts
+## 작업 1: DDD 계약의 RED 테스트 작성
 
-complexity: medium
-applies: `$bluetape4k-code-patterns`, `test-driven-development`
+복잡도: 중간
+적용 항목: `$bluetape4k-code-patterns`, `test-driven-development`
 
-**Files:**
-- Create: `exposed/core/src/test/kotlin/io/bluetape4k/exposed/core/ddd/AbstractAggregateRootTest.kt`
+**파일:**
+- 생성: `exposed/core/src/test/kotlin/io/bluetape4k/exposed/core/ddd/AbstractAggregateRootTest.kt`
 
-- [ ] **Step 1: Create the failing test file**
+- [ ] **단계 1: 실패하는 테스트 파일 생성**
 
 ```kotlin
 package io.bluetape4k.exposed.core.ddd
@@ -221,27 +221,27 @@ class AbstractAggregateRootTest {
 }
 ```
 
-- [ ] **Step 2: Run tests and verify RED**
+- [ ] **단계 2: 테스트를 실행해 RED 확인**
 
-Run:
+실행:
 
 ```bash
 repo-test-summary -- ./gradlew :bluetape4k-exposed-core:test --tests 'io.bluetape4k.exposed.core.ddd.AbstractAggregateRootTest' --no-configuration-cache --no-build-cache --no-parallel --console=plain
 ```
 
-Expected: `compileTestKotlin` fails because `AggregateRoot`, `DomainEvent`, and `AbstractAggregateRoot` do not exist.
+예상 결과: `AggregateRoot`, `DomainEvent`, `AbstractAggregateRoot`가 없으므로 `compileTestKotlin`이 실패한다.
 
-## Task 2: Implement Minimal Spring-Neutral Contracts
+## 작업 2: 최소 Spring 중립 계약 구현
 
-complexity: medium
-applies: `$bluetape4k-code-patterns`, `test-driven-development`
+복잡도: 중간
+적용 항목: `$bluetape4k-code-patterns`, `test-driven-development`
 
-**Files:**
-- Create: `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/DomainEvent.kt`
-- Create: `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/AggregateRoot.kt`
-- Create: `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/AbstractAggregateRoot.kt`
+**파일:**
+- 생성: `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/DomainEvent.kt`
+- 생성: `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/AggregateRoot.kt`
+- 생성: `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/AbstractAggregateRoot.kt`
 
-- [ ] **Step 1: Add `DomainEvent`**
+- [ ] **단계 1: `DomainEvent` 추가**
 
 ```kotlin
 package io.bluetape4k.exposed.core.ddd
@@ -292,7 +292,7 @@ interface DomainEvent<ID: Any> {
 }
 ```
 
-- [ ] **Step 2: Add `AggregateRoot`**
+- [ ] **단계 2: `AggregateRoot` 추가**
 
 ```kotlin
 package io.bluetape4k.exposed.core.ddd
@@ -347,7 +347,7 @@ interface AggregateRoot<ID: Any> {
 }
 ```
 
-- [ ] **Step 3: Add `AbstractAggregateRoot`**
+- [ ] **단계 3: `AbstractAggregateRoot` 추가**
 
 ```kotlin
 package io.bluetape4k.exposed.core.ddd
@@ -410,28 +410,28 @@ abstract class AbstractAggregateRoot<ID: Any>: AggregateRoot<ID> {
 }
 ```
 
-- [ ] **Step 4: Run tests and verify GREEN**
+- [ ] **단계 4: 테스트를 실행해 GREEN 확인**
 
-Run:
+실행:
 
 ```bash
 repo-test-summary -- ./gradlew :bluetape4k-exposed-core:test --tests 'io.bluetape4k.exposed.core.ddd.AbstractAggregateRootTest' --no-configuration-cache --no-build-cache --no-parallel --console=plain
 ```
 
-Expected: focused test class passes.
+예상 결과: 대상 테스트 클래스가 통과한다.
 
-## Task 3: Add README Locale Documentation
+## 작업 3: README 로케일 문서 추가
 
-complexity: low
-applies: `$bluetape4k-code-patterns`
+복잡도: 낮음
+적용 항목: `$bluetape4k-code-patterns`
 
-**Files:**
-- Modify: `README.md`
-- Modify: `README.ko.md`
+**파일:**
+- 수정: `README.md`
+- 수정: `README.ko.md`
 
-- [ ] **Step 1: Add English README section**
+- [ ] **단계 1: 영어 README 절 추가**
 
-Insert near the Spring Modulith/boundary documentation:
+Spring Modulith/경계 문서 근처에 삽입한다.
 
 ````markdown
 ### Spring-Neutral DDD Contracts
@@ -490,9 +490,9 @@ business facts. Do not put secrets, credentials, tokens, natural keys, or
 unnecessary PII in domain events.
 ````
 
-- [ ] **Step 2: Add Korean README section**
+- [ ] **단계 2: 한국어 README 절 추가**
 
-Add source-equivalent Korean text in `README.ko.md`:
+`README.ko.md`에 원문과 같은 내용을 담은 한국어 텍스트를 추가한다.
 
 ````markdown
 ### Spring-neutral DDD Contracts
@@ -550,45 +550,44 @@ Event payload는 opaque하고 민감하지 않은 identifier와 최소 business 
 넣지 않습니다.
 ````
 
-- [ ] **Step 3: Verify docs source consistency**
+- [ ] **단계 3: 문서 원본 일관성 검증**
 
-Run:
+실행:
 
 ```bash
 rg -n "Spring-Neutral DDD Contracts|Spring-neutral DDD Contracts|AggregateRoot|DomainEvent|EntityCache|after-transaction-commit|existing repositories|기존 repository|opt-in|automatic publication|lifecycle hook|durable outbox|JaVers|Spring Modulith" README.md README.ko.md
 git diff --check
 ```
 
-Expected: both locale files contain source-equivalent sections covering opt-in
-adoption, no existing behavior change, no automatic publication, no lifecycle
-hook/outbox, `EntityCache` not being a durable boundary, after-commit handoff,
-and `git diff --check` passes.
+예상 결과: 두 로케일 파일에 옵트인 도입, 기존 동작 불변, 자동 발행 없음,
+수명주기 훅/아웃박스 없음, `EntityCache`가 영속 경계가 아니라는 점,
+커밋 후 전달을 같은 의미로 설명하는 절이 있으며 `git diff --check`가 통과한다.
 
-## Task 4: Run Targeted Verification
+## 작업 4: 대상 범위 검증 실행
 
-complexity: low
-applies: `verification-before-completion`
+복잡도: 낮음
+적용 항목: `verification-before-completion`
 
-**Files:**
-- Verify all changed files.
+**파일:**
+- 변경한 모든 파일을 검증한다.
 
-- [ ] **Step 1: Run focused core test**
+- [ ] **단계 1: 대상 core 테스트 실행**
 
 ```bash
 repo-test-summary -- ./gradlew :bluetape4k-exposed-core:test --tests 'io.bluetape4k.exposed.core.ddd.AbstractAggregateRootTest' --no-configuration-cache --no-build-cache --no-parallel --console=plain
 ```
 
-Expected: focused tests pass.
+예상 결과: 대상 테스트가 통과한다.
 
-- [ ] **Step 2: Run full affected module test**
+- [ ] **단계 2: 영향받는 모듈 전체 테스트 실행**
 
 ```bash
 repo-test-summary -- ./gradlew :bluetape4k-exposed-core:test --no-configuration-cache --no-build-cache --no-parallel --console=plain
 ```
 
-Expected: `BUILD SUCCESSFUL`.
+예상 결과: `BUILD SUCCESSFUL`.
 
-- [ ] **Step 3: Run static diff checks**
+- [ ] **단계 3: 정적 diff 검사 실행**
 
 ```bash
 git diff --check
@@ -596,66 +595,66 @@ rg -n "TODO|TBD|!!|AssertJ|assertThrows|kotlin.test.assertFailsWith" exposed/cor
 rg -n "^import .*(spring|modulith|javers|exposed\\.dao|EntityCache|EventPublication|publisher|outbox|repository)" exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd || true
 ```
 
-Expected: no whitespace errors, no forbidden assertion APIs, no `!!`, no
-unresolved placeholders, and no framework/adapter imports or implementation
-coupling in the new core `ddd` package. KDoc may mention adapter boundaries in
-plain text but must not import or depend on those types.
+예상 결과: 공백 오류, 금지된 assertion API, `!!`, 미해결 placeholder가 없고
+새 core `ddd` 패키지에 프레임워크/어댑터 import나 구현 결합이 없다.
+KDoc은 일반 텍스트로 어댑터 경계를 언급할 수 있지만 해당 타입을 import하거나
+의존해서는 안 된다.
 
-## Task 5: Review, Lessons, Commit, PR
+## 작업 5: 리뷰, 교훈, 커밋, PR
 
-complexity: medium
-applies: `$bluetape4k-code-patterns`, `verification-before-completion`
+복잡도: 중간
+적용 항목: `$bluetape4k-code-patterns`, `verification-before-completion`
 
-**Files:**
-- Create: `docs/review/2026-07-09-issue-320-ddd-contracts-review.md`
-- Create: `docs/lessons/2026-07-09-issue-320-ddd-contracts.md`
+**파일:**
+- 생성: `docs/review/2026-07-09-issue-320-ddd-contracts-review.md`
+- 생성: `docs/lessons/2026-07-09-issue-320-ddd-contracts.md`
 
-- [ ] **Step 1: Run Step 6-R code review**
+- [ ] **단계 1: 단계 6-R 코드 리뷰 실행**
 
-Review changed code/docs against:
-- public API KDoc in English,
-- framework-neutral dependency boundary,
-- aggregate ID mismatch validation,
-- after-commit/handoff documentation,
-- opt-in adoption/no existing repository behavior change,
-- `EntityCache`, database flush, and in-memory queues not being durable event boundaries,
-- README locale parity,
-- test coverage and assertion style.
+변경한 코드/문서를 다음 기준으로 검토한다.
+- 영어 public API KDoc,
+- 프레임워크 중립 의존성 경계,
+- 애그리거트 ID 불일치 검증,
+- 커밋 후 전달 문서,
+- 옵트인 도입과 기존 저장소 동작 불변,
+- `EntityCache`, 데이터베이스 flush, 인메모리 큐가 영속 이벤트 경계가 아니라는 점,
+- README 로케일 동등성,
+- 테스트 커버리지와 assertion 스타일.
 
-- [ ] **Step 2: Write review artifact**
+- [ ] **단계 2: 리뷰 산출물 작성**
 
-Write `docs/review/2026-07-09-issue-320-ddd-contracts-review.md` with P0/P1/P2/P3 summary and verification evidence.
+P0/P1/P2/P3 요약과 검증 근거를 담아 `docs/review/2026-07-09-issue-320-ddd-contracts-review.md`를 작성한다.
 
-- [ ] **Step 3: Write short lesson**
+- [ ] **단계 3: 짧은 교훈 작성**
 
-Write `docs/lessons/2026-07-09-issue-320-ddd-contracts.md` with:
-- context,
-- decision,
-- outcome,
-- verification evidence,
-- future guard: do not drain events before commit/durable handoff acceptance.
+다음 내용을 담아 `docs/lessons/2026-07-09-issue-320-ddd-contracts.md`를 작성한다.
+- 맥락,
+- 결정,
+- 결과,
+- 검증 근거,
+- 향후 가드: 커밋/영속 전달 수락 전에 이벤트를 비우지 않는다.
 
-- [ ] **Step 4: Commit**
+- [ ] **단계 4: 커밋**
 
-Use Lore protocol:
+Lore 프로토콜을 사용한다.
 
-Stage the changed files and commit with a multi-line Lore protocol message.
-The commit body must include `Constraint`, `Rejected`, `Confidence`,
-`Scope-risk`, `Directive`, `Tested`, and `Not-tested` trailers.
+변경 파일을 stage하고 여러 줄로 된 Lore 프로토콜 메시지로 커밋한다.
+커밋 본문에는 `Constraint`, `Rejected`, `Confidence`, `Scope-risk`,
+`Directive`, `Tested`, `Not-tested` trailer가 있어야 한다.
 
-- [ ] **Step 5: Create PR**
+- [ ] **단계 5: PR 생성**
 
-Before creating the PR, read live issue metadata:
+PR을 만들기 전에 라이브 이슈 메타데이터를 읽는다.
 
 ```bash
 gh issue view 320 --json assignees,labels,milestone,title,state,url
 ```
 
-Create PR against `develop`, link `Closes #320`, assign `debop`, copy the issue
-milestone (`1.12.0`) and labels (`enhancement`, `feature`, `test`), and ensure
-the final PR body section is `## DoD Status` with test, documentation, review,
-and metadata evidence. Verify the PR base branch and metadata exactly match the
-issue:
+`develop`을 대상으로 PR을 만들고 `Closes #320`을 연결하며 `debop`을 할당한다.
+이슈 milestone(`1.12.0`)과 label(`enhancement`, `feature`, `test`)을 복사하고,
+PR 본문의 마지막 절이 테스트, 문서, 리뷰, 메타데이터 근거를 담은
+`## DoD Status`인지 확인한다. PR base branch와 메타데이터가 이슈와 정확히
+일치하는지 검증한다.
 
 ```bash
 gh pr view <number> --json baseRefName,body,assignees,labels,milestone,closingIssuesReferences
