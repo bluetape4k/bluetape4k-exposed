@@ -28,33 +28,32 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /**
- * Base repository interface for Exposed JDBC backed by an [IdTable].
+ * [IdTable]을 기반으로 Exposed JDBC를 사용하는 기본 저장소 인터페이스입니다.
  *
- * Provides common CRUD operations for reading, persisting, and deleting
- * entities of type [E] identified by primary key type [ID].
- * Implementors need only define [table] and [ResultRow.toEntity].
+ * 기본 키 타입 [ID]로 식별되는 [E] 엔티티를 조회하고 저장하며 삭제하는 공통 CRUD 연산을 제공합니다.
+ * 구현체는 [table]과 [ResultRow.toEntity]만 정의하면 됩니다.
  *
- * @param ID primary key type (e.g. [Long], [Int], [java.util.UUID])
- * @param E entity (record) type mapped from a [ResultRow]
+ * @param ID 기본 키 타입(예: [Long], [Int], [java.util.UUID])
+ * @param E [ResultRow]에서 매핑되는 엔티티(레코드) 타입
  *
- * ## Usage
+ * ## 사용 예
  *
  * ```kotlin
- * // 1. Table definition
+ * // 1. 테이블 정의
  * object ActorTable : LongIdTable("actors") {
  *     val firstName = varchar("first_name", 50)
  *     val lastName  = varchar("last_name",  50)
  *     val birthday  = date("birthday").nullable()
  * }
  *
- * // 2. Record (DTO) type
+ * // 2. 레코드(DTO) 타입
  * data class ActorRecord(
  *     val id: Long = 0L,
  *     val firstName: String,
  *     val lastName: String,
  * )
  *
- * // 3. Repository implementation
+ * // 3. 저장소 구현
  * class ActorRepository : LongJdbcRepository<ActorRecord> {
  *     override val table = ActorTable
  *
@@ -73,7 +72,7 @@ import kotlin.uuid.Uuid
  *     }
  * }
  *
- * // 4. Usage inside a transaction
+ * // 4. 트랜잭션 내부에서 사용
  * transaction {
  *     val repo = ActorRepository()
  *     val saved = repo.save(ActorRecord(firstName = "Johnny", lastName = "Depp"))
@@ -86,28 +85,28 @@ import kotlin.uuid.Uuid
  */
 interface JdbcRepository<ID: Any, E: Any> {
     /**
-     * Returns the [IdTable] that backs this repository.
+     * 이 저장소가 사용하는 [IdTable]을 반환합니다.
      */
     val table: IdTable<ID>
 
     /**
-     * Extracts the primary key from [entity].
+     * [entity]에서 기본 키를 추출합니다.
      */
     fun extractId(entity: E): ID
 
     /**
-     * Maps a [ResultRow] to an entity of type [E].
+     * [ResultRow]를 [E] 타입 엔티티로 매핑합니다.
      *
-     * @receiver the row returned by an Exposed query
-     * @return the mapped entity [E]
+     * @receiver Exposed 쿼리가 반환한 행
+     * @return 매핑된 [E] 엔티티
      */
     fun ResultRow.toEntity(): E
 
     /**
-     * Binds [entity] values to a batch insert statement used by [saveAll].
+     * [entity] 값을 [saveAll]이 사용하는 배치 삽입 문에 바인딩합니다.
      *
-     * Repository implementations that want to use the default [saveAll] should
-     * override this hook and assign all non-id columns required for insertion.
+     * 기본 [saveAll]을 사용하려는 저장소 구현체는 이 훅을 재정의하고
+     * 삽입에 필요한 기본 키 이외의 모든 컬럼을 할당해야 합니다.
      *
      * ```kotlin
      * override fun BatchInsertStatement.bindSave(entity: ActorRecord) {
@@ -116,8 +115,7 @@ interface JdbcRepository<ID: Any, E: Any> {
      * }
      * ```
      *
-     * @throws UnsupportedOperationException when [saveAll] is called without an
-     *         implementation-specific binding.
+     * @throws UnsupportedOperationException 구현별 바인딩 없이 [saveAll]을 호출한 경우
      */
     fun BatchInsertStatement.bindSave(entity: E): Unit =
         throw UnsupportedOperationException(
@@ -125,13 +123,13 @@ interface JdbcRepository<ID: Any, E: Any> {
         )
 
     /**
-     * Persists [entities] with Exposed batch insert and returns generated IDs.
+     * Exposed 배치 삽입으로 [entities]를 저장하고 생성된 ID를 반환합니다.
      *
-     * The returned IDs preserve the input order reported by Exposed
-     * `batchInsert`. Empty input is a no-op.
+     * 반환 ID는 Exposed `batchInsert`가 보고한 입력 순서를 유지합니다.
+     * 입력이 비어 있으면 아무 작업도 수행하지 않습니다.
      *
-     * @param entities entities to insert
-     * @return generated primary key values
+     * @param entities 삽입할 엔티티
+     * @return 생성된 기본 키 값
      */
     fun saveAll(entities: Iterable<E>): List<ID> {
         val entityList = entities.toList()
@@ -147,38 +145,38 @@ interface JdbcRepository<ID: Any, E: Any> {
     }
 
     /**
-     * Returns the total number of rows in the table.
+     * 테이블의 전체 행 수를 반환합니다.
      */
     fun count(): Long = table.selectAll().count()
 
     /**
-     * Returns the number of rows matching [predicate].
+     * [predicate]와 일치하는 행 수를 반환합니다.
      *
-     * @param predicate filter condition; defaults to `Op.TRUE` (all rows)
+     * @param predicate 필터 조건. 기본값은 `Op.TRUE`(모든 행)입니다.
      */
     fun countBy(predicate: () -> Op<Boolean> = { Op.TRUE }): Long = table.selectAll().where(predicate).count()
 
     /**
-     * Returns the number of rows matching [op].
+     * [op]와 일치하는 행 수를 반환합니다.
      *
-     * @param op filter condition
+     * @param op 필터 조건
      */
     fun countBy(op: Op<Boolean>): Long = table.selectAll().where(op).count()
 
     /**
-     * Returns `true` when the table contains no rows.
+     * 테이블에 행이 없으면 `true`를 반환합니다.
      */
     fun isEmpty(): Boolean = table.selectAll().empty()
 
     /**
-     * Returns `true` when the table contains at least one row.
+     * 테이블에 행이 하나 이상 있으면 `true`를 반환합니다.
      */
     fun isNotEmpty(): Boolean = !isEmpty()
 
     /**
-     * Returns `true` when at least one row matches the given [query].
+     * 주어진 [query]와 일치하는 행이 하나 이상 있으면 `true`를 반환합니다.
      *
-     * @param query the sub-query to check existence for
+     * @param query 존재 여부를 확인할 서브쿼리
      */
     fun exists(query: AbstractQuery<*>): Boolean {
         val exists =
@@ -188,28 +186,28 @@ interface JdbcRepository<ID: Any, E: Any> {
     }
 
     /**
-     * Returns `true` when a row with the given [id] exists in the table.
+     * 주어진 [id]를 가진 행이 테이블에 존재하면 `true`를 반환합니다.
      *
-     * @param id entity primary key
+     * @param id 엔티티 기본 키
      */
     fun existsById(id: ID): Boolean = !table.selectAll().where { table.id eq id }.empty()
 
     /**
-     * Returns `true` when at least one row matches [predicate].
+     * [predicate]와 일치하는 행이 하나 이상 있으면 `true`를 반환합니다.
      *
-     * @param predicate filter condition
+     * @param predicate 필터 조건
      */
     fun existsBy(predicate: () -> Op<Boolean>): Boolean = !table.selectAll().where(predicate).empty()
 
     /**
-     * Returns the entity with the given [id], or throws if it does not exist.
+     * 주어진 [id]의 엔티티를 반환하며, 존재하지 않으면 예외를 던집니다.
      *
-     * @param id entity primary key
-     * @return the matching entity [E]
-     * @throws NoSuchElementException when no row with [id] is found
-     * @throws IllegalArgumentException when more than one row with [id] is found
+     * @param id 엔티티 기본 키
+     * @return 일치하는 [E] 엔티티
+     * @throws NoSuchElementException [id]에 해당하는 행이 없는 경우
+     * @throws IllegalArgumentException [id]에 해당하는 행이 둘 이상인 경우
      *
-     * ## Usage
+     * ## 사용 예
      *
      * ```kotlin
      * transaction {
@@ -226,10 +224,10 @@ interface JdbcRepository<ID: Any, E: Any> {
             .toEntity()
 
     /**
-     * Returns the entity with the given [id], or `null` if it does not exist.
+     * 주어진 [id]의 엔티티를 반환하며, 존재하지 않으면 `null`을 반환합니다.
      *
-     * @param id entity primary key
-     * @return the matching entity [E], or `null`
+     * @param id 엔티티 기본 키
+     * @return 일치하는 [E] 엔티티 또는 `null`
      */
     fun findByIdOrNull(id: ID): E? =
         table
@@ -239,13 +237,13 @@ interface JdbcRepository<ID: Any, E: Any> {
             ?.toEntity()
 
     /**
-     * Returns all entities matching [predicate].
+     * [predicate]와 일치하는 모든 엔티티를 반환합니다.
      *
-     * @param limit maximum number of results; `null` means no limit
-     * @param offset zero-based row offset; `null` means no offset
-     * @param sortOrder result ordering (default: [SortOrder.ASC])
-     * @param predicate filter condition; defaults to `Op.TRUE` (all rows)
-     * @return list of matching entities
+     * @param limit 최대 결과 수. `null`이면 제한하지 않습니다.
+     * @param offset 0부터 시작하는 행 오프셋. `null`이면 적용하지 않습니다.
+     * @param sortOrder 결과 정렬 순서. 기본값은 [SortOrder.ASC]입니다.
+     * @param predicate 필터 조건. 기본값은 `Op.TRUE`(모든 행)입니다.
+     * @return 일치하는 엔티티 목록
      */
     fun findAll(
         limit: Int? = null,
@@ -263,13 +261,13 @@ interface JdbcRepository<ID: Any, E: Any> {
             .map { it.toEntity() }
 
     /**
-     * Returns all entities matching all [filters] combined with AND.
+     * AND로 결합한 모든 [filters]와 일치하는 엔티티를 반환합니다.
      *
-     * @param filters vararg filter lambdas combined with AND
-     * @param limit maximum number of results; `null` means no limit
-     * @param offset zero-based row offset; `null` means no offset
-     * @param sortOrder result ordering (default: [SortOrder.ASC])
-     * @return list of matching entities
+     * @param filters AND로 결합할 가변 인자 필터 람다
+     * @param limit 최대 결과 수. `null`이면 제한하지 않습니다.
+     * @param offset 0부터 시작하는 행 오프셋. `null`이면 적용하지 않습니다.
+     * @param sortOrder 결과 정렬 순서. 기본값은 [SortOrder.ASC]입니다.
+     * @return 일치하는 엔티티 목록
      */
     fun findWithFilters(
         vararg filters: () -> Op<Boolean>,
@@ -285,15 +283,15 @@ interface JdbcRepository<ID: Any, E: Any> {
     }
 
     /**
-     * Returns all entities matching all [filters] combined with AND.
+     * AND로 결합한 모든 [filters]와 일치하는 엔티티를 반환합니다.
      *
-     * Alias for [findWithFilters].
+     * [findWithFilters]의 별칭입니다.
      *
-     * @param filters vararg filter lambdas combined with AND
-     * @param limit maximum number of results; `null` means no limit
-     * @param offset zero-based row offset; `null` means no offset
-     * @param sortOrder result ordering (default: [SortOrder.ASC])
-     * @return list of matching entities
+     * @param filters AND로 결합할 가변 인자 필터 람다
+     * @param limit 최대 결과 수. `null`이면 제한하지 않습니다.
+     * @param offset 0부터 시작하는 행 오프셋. `null`이면 적용하지 않습니다.
+     * @param sortOrder 결과 정렬 순서. 기본값은 [SortOrder.ASC]입니다.
+     * @return 일치하는 엔티티 목록
      */
     fun findBy(
         vararg filters: () -> Op<Boolean>,
@@ -309,11 +307,11 @@ interface JdbcRepository<ID: Any, E: Any> {
         )
 
     /**
-     * Returns the first entity matching [predicate], or `null` if none is found.
+     * [predicate]와 일치하는 첫 엔티티를 반환하며, 없으면 `null`을 반환합니다.
      *
-     * @param offset zero-based row offset; `null` means no offset
-     * @param predicate filter condition; defaults to `Op.TRUE` (all rows)
-     * @return the first matching entity [E], or `null`
+     * @param offset 0부터 시작하는 행 오프셋. `null`이면 적용하지 않습니다.
+     * @param predicate 필터 조건. 기본값은 `Op.TRUE`(모든 행)입니다.
+     * @return 처음 일치한 [E] 엔티티 또는 `null`
      */
     fun findFirstOrNull(
         offset: Long? = null,
@@ -329,12 +327,12 @@ interface JdbcRepository<ID: Any, E: Any> {
             ?.toEntity()
 
     /**
-     * Returns the last entity matching [predicate] ordered by primary key DESC,
-     * or `null` if none is found.
+     * 기본 키 내림차순으로 정렬했을 때 [predicate]와 일치하는 마지막 엔티티를 반환하며,
+     * 없으면 `null`을 반환합니다.
      *
-     * @param offset zero-based row offset; `null` means no offset
-     * @param predicate filter condition; defaults to `Op.TRUE` (all rows)
-     * @return the last matching entity [E], or `null`
+     * @param offset 0부터 시작하는 행 오프셋. `null`이면 적용하지 않습니다.
+     * @param predicate 필터 조건. 기본값은 `Op.TRUE`(모든 행)입니다.
+     * @return 마지막으로 일치한 [E] 엔티티 또는 `null`
      */
     fun findLastOrNull(
         offset: Long? = null,
@@ -351,11 +349,11 @@ interface JdbcRepository<ID: Any, E: Any> {
             ?.toEntity()
 
     /**
-     * Returns all entities where [field] equals [value].
+     * [field] 값이 [value]와 같은 모든 엔티티를 반환합니다.
      *
-     * @param field the column to filter on
-     * @param value the value to match
-     * @return list of matching entities
+     * @param field 필터링할 컬럼
+     * @param value 비교할 값
+     * @return 일치하는 엔티티 목록
      */
     fun <V> findByField(
         field: Column<V>,
@@ -367,11 +365,11 @@ interface JdbcRepository<ID: Any, E: Any> {
             .map { it.toEntity() }
 
     /**
-     * Returns the first entity where [field] equals [value], or `null` if none exists.
+     * [field] 값이 [value]와 같은 첫 엔티티를 반환하며, 없으면 `null`을 반환합니다.
      *
-     * @param field the column to filter on
-     * @param value the value to match
-     * @return the first matching entity [E], or `null`
+     * @param field 필터링할 컬럼
+     * @param value 비교할 값
+     * @return 처음 일치한 [E] 엔티티 또는 `null`
      */
     fun <V> findByFieldOrNull(
         field: Column<V>,
@@ -384,13 +382,13 @@ interface JdbcRepository<ID: Any, E: Any> {
             ?.toEntity()
 
     /**
-     * Returns all entities whose primary key is contained in [ids].
+     * 기본 키가 [ids]에 포함된 모든 엔티티를 반환합니다.
      *
-     * **Note:** a large [ids] collection may exceed the database `IN` clause limit.
-     * For bulk lookups, split large ID lists into smaller chunks.
+     * **참고:** [ids]가 크면 데이터베이스 `IN` 절 제한을 초과할 수 있습니다.
+     * 대량 조회 시 큰 ID 목록을 작은 청크로 나누십시오.
      *
-     * @param ids collection of primary key values to look up
-     * @return list of matching entities
+     * @param ids 조회할 기본 키 값 모음
+     * @return 일치하는 엔티티 목록
      */
     fun findAllByIds(ids: Iterable<ID>): List<E> =
         table
@@ -399,26 +397,26 @@ interface JdbcRepository<ID: Any, E: Any> {
             .map { it.toEntity() }
 
     /**
-     * Deletes [entity] by its primary key.
+     * [entity]를 기본 키로 삭제합니다.
      *
-     * @return number of deleted rows
+     * @return 삭제한 행 수
      */
     fun delete(entity: E): Int = deleteById(extractId(entity))
 
     /**
-     * Deletes the row with the given [id].
+     * 주어진 [id]의 행을 삭제합니다.
      *
-     * @param id entity primary key
-     * @return number of deleted rows
+     * @param id 엔티티 기본 키
+     * @return 삭제한 행 수
      */
     fun deleteById(id: ID): Int = table.deleteWhere { table.id eq id }
 
     /**
-     * Deletes all rows matching [op].
+     * [op]와 일치하는 모든 행을 삭제합니다.
      *
-     * @param limit maximum number of rows to delete; `null` means no limit
-     * @param op filter condition; defaults to `Op.TRUE` (all rows)
-     * @return number of deleted rows
+     * @param limit 삭제할 최대 행 수. `null`이면 제한하지 않습니다.
+     * @param op 필터 조건. 기본값은 `Op.TRUE`(모든 행)입니다.
+     * @return 삭제한 행 수
      */
     fun deleteAll(
         limit: Int? = null,
@@ -426,19 +424,19 @@ interface JdbcRepository<ID: Any, E: Any> {
     ): Int = table.deleteWhere(limit = limit, op = op)
 
     /**
-     * Deletes the row with [id], ignoring constraint violations.
+     * 제약 조건 위반을 무시하고 [id]의 행을 삭제합니다.
      *
-     * @param id entity primary key
-     * @return number of deleted rows
+     * @param id 엔티티 기본 키
+     * @return 삭제한 행 수
      */
     fun deleteByIdIgnore(id: ID): Int = table.deleteIgnoreWhere { table.id eq id }
 
     /**
-     * Deletes all rows matching [op], ignoring constraint violations.
+     * 제약 조건 위반을 무시하고 [op]와 일치하는 모든 행을 삭제합니다.
      *
-     * @param limit maximum number of rows to delete; `null` means no limit
-     * @param op filter condition; defaults to `Op.TRUE` (all rows)
-     * @return number of deleted rows
+     * @param limit 삭제할 최대 행 수. `null`이면 제한하지 않습니다.
+     * @param op 필터 조건. 기본값은 `Op.TRUE`(모든 행)입니다.
+     * @return 삭제한 행 수
      */
     fun deleteAllIgnore(
         limit: Int? = null,
@@ -446,23 +444,23 @@ interface JdbcRepository<ID: Any, E: Any> {
     ): Int = table.deleteIgnoreWhere(limit, op = op)
 
     /**
-     * Deletes all rows whose primary key is contained in [ids].
+     * 기본 키가 [ids]에 포함된 모든 행을 삭제합니다.
      *
-     * **Note:** a large [ids] collection may exceed the database `IN` clause limit.
-     * For bulk deletions, split large ID lists into smaller chunks.
+     * **참고:** [ids]가 크면 데이터베이스 `IN` 절 제한을 초과할 수 있습니다.
+     * 대량 삭제 시 큰 ID 목록을 작은 청크로 나누십시오.
      *
-     * @param ids collection of primary key values to delete
-     * @return number of deleted rows
+     * @param ids 삭제할 기본 키 값 모음
+     * @return 삭제한 행 수
      */
     fun deleteAllByIds(ids: Iterable<ID>): Int = table.deleteWhere { table.id inList ids }
 
     /**
-     * Updates the row identified by [id] using [updateStatement].
+     * [updateStatement]로 [id]가 식별하는 행을 갱신합니다.
      *
-     * @param id entity primary key
-     * @param limit maximum number of rows to update; `null` means no limit
-     * @param updateStatement column assignments to apply
-     * @return number of updated rows
+     * @param id 엔티티 기본 키
+     * @param limit 갱신할 최대 행 수. `null`이면 제한하지 않습니다.
+     * @param updateStatement 적용할 컬럼 할당
+     * @return 갱신한 행 수
      */
     fun updateById(
         id: ID,
@@ -471,12 +469,12 @@ interface JdbcRepository<ID: Any, E: Any> {
     ): Int = table.update(where = { table.id eq id }, limit = limit, body = updateStatement)
 
     /**
-     * Updates all rows matching [predicate] using [updateStatement].
+     * [updateStatement]로 [predicate]와 일치하는 모든 행을 갱신합니다.
      *
-     * @param predicate filter condition; defaults to `Op.TRUE` (all rows)
-     * @param limit maximum number of rows to update; `null` means no limit
-     * @param updateStatement column assignments to apply
-     * @return number of updated rows
+     * @param predicate 필터 조건. 기본값은 `Op.TRUE`(모든 행)입니다.
+     * @param limit 갱신할 최대 행 수. `null`이면 제한하지 않습니다.
+     * @param updateStatement 적용할 컬럼 할당
+     * @return 갱신한 행 수
      */
     fun updateAll(
         predicate: () -> Op<Boolean> = { Op.TRUE },
@@ -485,14 +483,14 @@ interface JdbcRepository<ID: Any, E: Any> {
     ): Int = table.update(where = predicate, limit = limit, body = updateStatement)
 
     /**
-     * Batch-inserts [entities] using a caller-supplied [insertStatement] lambda and
-     * returns the resulting entities mapped via [ResultRow.toEntity].
+     * 호출자가 제공한 [insertStatement] 람다로 [entities]를 배치 삽입하고
+     * [ResultRow.toEntity]로 매핑한 결과 엔티티를 반환합니다.
      *
-     * @param entities data to insert
-     * @param ignore when `true`, duplicate-key violations are silently skipped
-     * @param shouldReturnGeneratedValues when `true`, Exposed returns auto-generated values
-     * @param insertStatement column assignments for each element
-     * @return list of inserted entities
+     * @param entities 삽입할 데이터
+     * @param ignore `true`이면 중복 키 위반을 조용히 건너뜁니다.
+     * @param shouldReturnGeneratedValues `true`이면 Exposed가 자동 생성 값을 반환합니다.
+     * @param insertStatement 각 원소에 적용할 컬럼 할당
+     * @return 삽입된 엔티티 목록
      */
     fun <D> batchInsert(
         entities: Iterable<D>,
@@ -509,14 +507,14 @@ interface JdbcRepository<ID: Any, E: Any> {
             ).map { it.toEntity() }
 
     /**
-     * Batch-inserts [entities] from a [Sequence] using a caller-supplied [insertStatement]
-     * lambda and returns the resulting entities mapped via [ResultRow.toEntity].
+     * 호출자가 제공한 [insertStatement] 람다로 [Sequence]의 [entities]를 배치 삽입하고
+     * [ResultRow.toEntity]로 매핑한 결과 엔티티를 반환합니다.
      *
-     * @param entities data sequence to insert
-     * @param ignore when `true`, duplicate-key violations are silently skipped
-     * @param shouldReturnGeneratedValues when `true`, Exposed returns auto-generated values
-     * @param insertStatement column assignments for each element
-     * @return list of inserted entities
+     * @param entities 삽입할 데이터 시퀀스
+     * @param ignore `true`이면 중복 키 위반을 조용히 건너뜁니다.
+     * @param shouldReturnGeneratedValues `true`이면 Exposed가 자동 생성 값을 반환합니다.
+     * @param insertStatement 각 원소에 적용할 컬럼 할당
+     * @return 삽입된 엔티티 목록
      */
     fun <D> batchInsert(
         entities: Sequence<D>,
@@ -533,19 +531,18 @@ interface JdbcRepository<ID: Any, E: Any> {
             ).map { it.toEntity() }
 
     /**
-     * Batch-upserts [entities] and returns the resulting entities mapped via [ResultRow.toEntity].
+     * [entities]를 배치 업서트하고 [ResultRow.toEntity]로 매핑한 결과 엔티티를 반환합니다.
      *
-     * See [Batch Insert](https://github.com/JetBrains/Exposed/wiki/DSL#batch-insert) for details.
+     * 자세한 내용은 [Batch Insert](https://github.com/JetBrains/Exposed/wiki/DSL#batch-insert)를 참고하십시오.
      *
-     * @param entities data to upsert
-     * @param keys columns used to match duplicate rows; defaults to the primary key, then the
-     *   first unique index
-     * @param onUpdate lambda receiving an [UpdateStatement] to specify UPDATE column assignments;
-     *   call `insertValue()` to reuse the INSERT value for a column; `null` updates all columns
-     *   with the INSERT values
-     * @param onUpdateExclude columns to exclude from the UPDATE clause; `null` updates all columns
-     * @param shouldReturnGeneratedValues when `true`, Exposed returns auto-generated values
-     * @return list of upserted entities
+     * @param entities 업서트할 데이터
+     * @param keys 중복 행 판별에 사용할 컬럼. 기본 키를 우선하고, 없으면 첫 번째 고유 인덱스를 사용합니다.
+     * @param onUpdate UPDATE 컬럼 할당을 지정할 [UpdateStatement] 수신 람다.
+     *   `insertValue()`를 호출하면 해당 컬럼의 INSERT 값을 재사용하며,
+     *   `null`이면 모든 컬럼을 INSERT 값으로 갱신합니다.
+     * @param onUpdateExclude UPDATE 절에서 제외할 컬럼. `null`이면 모든 컬럼을 갱신합니다.
+     * @param shouldReturnGeneratedValues `true`이면 Exposed가 자동 생성 값을 반환합니다.
+     * @return 업서트된 엔티티 목록
      */
     fun <D: Any> batchUpsert(
         entities: Iterable<D>,
@@ -568,20 +565,18 @@ interface JdbcRepository<ID: Any, E: Any> {
             ).map { it.toEntity() }
 
     /**
-     * Batch-upserts [entities] from a [Sequence] and returns the resulting entities mapped via
-     * [ResultRow.toEntity].
+     * [Sequence]의 [entities]를 배치 업서트하고 [ResultRow.toEntity]로 매핑한 결과 엔티티를 반환합니다.
      *
-     * See [Batch Insert](https://github.com/JetBrains/Exposed/wiki/DSL#batch-insert) for details.
+     * 자세한 내용은 [Batch Insert](https://github.com/JetBrains/Exposed/wiki/DSL#batch-insert)를 참고하십시오.
      *
-     * @param entities data sequence to upsert
-     * @param keys columns used to match duplicate rows; defaults to the primary key, then the
-     *   first unique index
-     * @param onUpdate lambda receiving an [UpdateStatement] to specify UPDATE column assignments;
-     *   call `insertValue()` to reuse the INSERT value for a column; `null` updates all columns
-     *   with the INSERT values
-     * @param onUpdateExclude columns to exclude from the UPDATE clause; `null` updates all columns
-     * @param shouldReturnGeneratedValues when `true`, Exposed returns auto-generated values
-     * @return list of upserted entities
+     * @param entities 업서트할 데이터 시퀀스
+     * @param keys 중복 행 판별에 사용할 컬럼. 기본 키를 우선하고, 없으면 첫 번째 고유 인덱스를 사용합니다.
+     * @param onUpdate UPDATE 컬럼 할당을 지정할 [UpdateStatement] 수신 람다.
+     *   `insertValue()`를 호출하면 해당 컬럼의 INSERT 값을 재사용하며,
+     *   `null`이면 모든 컬럼을 INSERT 값으로 갱신합니다.
+     * @param onUpdateExclude UPDATE 절에서 제외할 컬럼. `null`이면 모든 컬럼을 갱신합니다.
+     * @param shouldReturnGeneratedValues `true`이면 Exposed가 자동 생성 값을 반환합니다.
+     * @return 업서트된 엔티티 목록
      */
     fun <D: Any> batchUpsert(
         entities: Sequence<D>,
@@ -604,22 +599,20 @@ interface JdbcRepository<ID: Any, E: Any> {
             ).map { it.toEntity() }
 
     /**
-     * Returns a paginated slice of entities matching [predicate].
+     * [predicate]와 일치하는 엔티티의 페이지 조각을 반환합니다.
      *
-     * ## Behaviour / Contract
-     * `totalCount` and `content` are fetched with separate queries and are **not**
-     * atomically consistent. A concurrent transaction that inserts or deletes rows
-     * between the two queries can cause the counts to disagree. Use
-     * `SERIALIZABLE` isolation level when strict consistency is required.
+     * ## 동작 계약
+     * `totalCount`와 `content`는 별도 쿼리로 조회하므로 원자적으로 일관되지 **않습니다**.
+     * 두 쿼리 사이에 동시 트랜잭션이 행을 삽입하거나 삭제하면 개수가 달라질 수 있습니다.
+     * 엄격한 일관성이 필요하면 `SERIALIZABLE` 격리 수준을 사용하십시오.
      *
-     * @param pageNumber zero-based page index (must be ≥ 0)
-     * @param pageSize number of rows per page (must be > 0)
-     * @param sortOrder ordering applied to the result (default: [SortOrder.ASC])
-     * @param predicate filter condition; defaults to `Op.TRUE` (all rows)
-     * @return [ExposedPage] containing `content`, `totalCount`, `pageNumber`, `pageSize`,
-     *   and `totalPages`
+     * @param pageNumber 0부터 시작하는 페이지 인덱스(0 이상)
+     * @param pageSize 페이지당 행 수(0보다 커야 함)
+     * @param sortOrder 결과에 적용할 정렬 순서. 기본값은 [SortOrder.ASC]입니다.
+     * @param predicate 필터 조건. 기본값은 `Op.TRUE`(모든 행)입니다.
+     * @return `content`, `totalCount`, `pageNumber`, `pageSize`, `totalPages`를 담은 [ExposedPage]
      *
-     * ## Usage
+     * ## 사용 예
      *
      * ```kotlin
      * transaction {
@@ -628,10 +621,10 @@ interface JdbcRepository<ID: Any, E: Any> {
      *         pageSize   = 20,
      *     ) { ActorTable.lastName eq "Depp" }
      *
-     *     println(page.content)    // matching entities on this page
-     *     println(page.totalCount) // total rows matching the predicate
-     *     println(page.totalPages) // total number of pages
-     *     println(page.pageNumber) // current page index
+     *     println(page.content)    // 현재 페이지의 일치 엔티티
+     *     println(page.totalCount) // 조건과 일치하는 전체 행 수
+     *     println(page.totalPages) // 전체 페이지 수
+     *     println(page.pageNumber) // 현재 페이지 인덱스
      * }
      * ```
      */
@@ -661,18 +654,18 @@ interface JdbcRepository<ID: Any, E: Any> {
 }
 
 /**
- * Convenience specialization of [JdbcRepository] with an [Int] primary key.
+ * [Int] 기본 키를 사용하는 [JdbcRepository] 편의 특수화 인터페이스입니다.
  *
- * @param E entity type
+ * @param E 엔티티 타입
  */
 interface IntJdbcRepository<E: Any>: JdbcRepository<Int, E>
 
 /**
- * Convenience specialization of [JdbcRepository] with a [Long] primary key.
+ * [Long] 기본 키를 사용하는 [JdbcRepository] 편의 특수화 인터페이스입니다.
  *
- * @param E entity type
+ * @param E 엔티티 타입
  *
- * ## Usage
+ * ## 사용 예
  *
  * ```kotlin
  * object ActorTable : LongIdTable("actors") {
@@ -691,23 +684,23 @@ interface IntJdbcRepository<E: Any>: JdbcRepository<Int, E>
 interface LongJdbcRepository<E: Any>: JdbcRepository<Long, E>
 
 /**
- * Convenience specialization of [JdbcRepository] with a Kotlin [Uuid] primary key.
+ * Kotlin [Uuid] 기본 키를 사용하는 [JdbcRepository] 편의 특수화 인터페이스입니다.
  *
- * @param E entity type
+ * @param E 엔티티 타입
  */
 @OptIn(ExperimentalUuidApi::class)
 interface UuidJdbcRepository<E: Any>: JdbcRepository<Uuid, E>
 
 /**
- * Convenience specialization of [JdbcRepository] with a [java.util.UUID] primary key.
+ * [java.util.UUID] 기본 키를 사용하는 [JdbcRepository] 편의 특수화 인터페이스입니다.
  *
- * @param E entity type
+ * @param E 엔티티 타입
  */
 interface UUIDJdbcRepository<E: Any>: JdbcRepository<UUID, E>
 
 /**
- * Convenience specialization of [JdbcRepository] with a [String] primary key.
+ * [String] 기본 키를 사용하는 [JdbcRepository] 편의 특수화 인터페이스입니다.
  *
- * @param E entity type
+ * @param E 엔티티 타입
  */
 interface StringJdbcRepository<E: Any>: JdbcRepository<String, E>
