@@ -1,78 +1,78 @@
-# Issue #321 Transaction-Aware Snapshot Near-Cache Implementation Plan
+# 이슈 #321 트랜잭션 인식 스냅숏 Near Cache 구현 계획
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **에이전트 작업자용:** 필수 하위 스킬: superpowers:subagent-driven-development(권장) 또는 superpowers:executing-plans를 사용해 이 계획을 작업별로 구현한다. 단계 추적에는 체크박스(`- [ ]`) 문법을 사용한다.
 
-**Goal:** Add opt-in JDBC and R2DBC snapshot near-caches whose mutations are staged in the active root Exposed transaction, discarded on rollback, and applied only after commit, with Caffeine local stores and a JDBC Redisson invalidation adapter.
+**목표:** 활성 루트 Exposed 트랜잭션에서 변경을 스테이징하고, 롤백 시 폐기하며, 커밋 후에만 적용하는 선택형 JDBC 및 R2DBC 스냅숏 Near Cache를 추가한다. 로컬 저장소에는 Caffeine을, JDBC 무효화 어댑터에는 Redisson을 사용한다.
 
-**Architecture:** Put snapshot values, limits, transaction coordination, failure reporting, and engine-neutral cache-only SPIs in `exposed/cache`. JDBC/R2DBC Caffeine modules adapt Exposed transaction lifecycles and use opaque miss capabilities plus striped local ordering fences. JDBC Redisson distributes invalidations only, with canonical key encoding, bounded non-blocking admission, namespace compatibility checks, and explicit recovery/admin APIs. No existing repository write mode is reused and no cache callback performs a database write.
+**아키텍처:** 스냅숏 값, 제한, 트랜잭션 조정, 실패 보고, 엔진 중립적인 캐시 전용 SPI를 `exposed/cache`에 둔다. JDBC/R2DBC Caffeine 모듈은 Exposed 트랜잭션 생명주기에 맞춰 동작하며, 불투명한 miss 기능과 스트라이프 방식의 로컬 순서 펜스를 사용한다. JDBC Redisson은 정규 키 인코딩, 제한된 논블로킹 승인, 네임스페이스 호환성 검사, 명시적 복구/관리 API로 무효화만 분산한다. 기존 리포지토리 쓰기 모드는 재사용하지 않으며, 어떤 캐시 콜백도 데이터베이스 쓰기를 수행하지 않는다.
 
-**Tech Stack:** Kotlin 2.3+, JetBrains Exposed 1.3.1 APIs available through the central catalog, Caffeine, Redisson, kotlinx-coroutines, JUnit 5, bluetape4k assertions, Testcontainers, JMH/Gradle benchmarks.
+**기술 스택:** Kotlin 2.3+, 중앙 카탈로그에서 제공하는 JetBrains Exposed 1.3.1 API, Caffeine, Redisson, kotlinx-coroutines, JUnit 5, bluetape4k assertions, Testcontainers, JMH/Gradle 벤치마크.
 
 ---
 
-## Delivery Contract
+## 전달 계약
 
-- Repository: `bluetape4k-exposed`
-- Issue: `#321`
-- Base branch: `develop`
-- Head branch: `feat/issue-321-transaction-aware-snapshot-cache`
-- Pull request: create after all local gates and independent code review pass.
-- Merge: stop after reporting the exact merge-ready PR; obtain fresh user approval before merging.
-- Scope exclusions: no Spring Boot auto-configuration, no Ktor health route, no schema-drift tooling, no durable outbox, no direct `Entity` caching, no Lettuce adapter in this issue.
-- Dependency rule: add no production dependency. Existing module dependency graphs already contain Exposed core/JDBC/R2DBC, Caffeine, Redisson, test fixtures, and benchmark dependencies needed by this plan. Task 9 adds the cataloged `testcontainers-toxiproxy` dependency only to `testImplementation`: `bluetape4k-testcontainers` exposes `ToxiproxyServer` as a public subtype, but its implementation dependency does not put the Toxiproxy container/client API on a consumer's test compile classpath; the direct test dependency is required for the peer-only disconnect fixture and has no published runtime effect.
-- Manual rule: update module READMEs and public KDoc, but do not change stable `docs/manual/{en,ko}` content pinned to 1.11.0.
+- 리포지토리: `bluetape4k-exposed`
+- 이슈: `#321`
+- 기준 브랜치: `develop`
+- 헤드 브랜치: `feat/issue-321-transaction-aware-snapshot-cache`
+- Pull request: 모든 로컬 게이트와 독립 코드 리뷰를 통과한 뒤 생성한다.
+- 병합: 병합 준비가 완료된 정확한 PR을 보고한 뒤 중단하며, 병합 전에 사용자의 새로운 승인을 받는다.
+- 범위 제외: Spring Boot 자동 구성, Ktor 상태 확인 경로, 스키마 드리프트 도구, 영속 아웃박스, 직접 `Entity` 캐싱, Lettuce 어댑터는 이 이슈에 포함하지 않는다.
+- 의존성 규칙: 프로덕션 의존성을 추가하지 않는다. 기존 모듈 의존성 그래프에는 이 계획에 필요한 Exposed core/JDBC/R2DBC, Caffeine, Redisson, 테스트 픽스처, 벤치마크 의존성이 이미 포함되어 있다. 작업 9에서는 카탈로그에 등록된 `testcontainers-toxiproxy` 의존성을 `testImplementation`에만 추가한다. `bluetape4k-testcontainers`는 `ToxiproxyServer`를 공개 하위 타입으로 노출하지만, 구현 의존성만으로는 Toxiproxy 컨테이너/클라이언트 API가 소비자의 테스트 컴파일 클래스패스에 포함되지 않는다. 직접 테스트 의존성은 피어 전용 연결 해제 픽스처에 필요하며, 게시된 런타임에는 영향을 주지 않는다.
+- 매뉴얼 규칙: 모듈 README와 공개 KDoc은 갱신하되, 1.11.0에 고정된 안정 버전 `docs/manual/{en,ko}` 콘텐츠는 변경하지 않는다.
 
-## Acceptance Mapping
+## 인수 조건 매핑
 
-| ID | Acceptance criterion | Implementation tasks | Proof |
+| ID | 인수 조건 | 구현 작업 | 증명 |
 |---|---|---|---|
-| AC-1 | Rollback never exposes staged snapshots | 3, 4, 5, 6 | coordinator and adapter rollback tests |
-| AC-2 | Public APIs reject direct Exposed DAO `Entity` values | 1 | runtime rejection and compile-facing API tests |
-| AC-3 | Cache callbacks cannot repeat database writes | 2, 4, 6 | cache-only SPI shape and transaction integration tests |
-| AC-4 | Repeated mutations are deterministic last-mutation-wins | 3 | replacement/order/limit tests |
-| AC-5 | Caffeine protects a newer invalidation from an older fill | 2, 4, 6 | controlled concurrency fence tests |
-| AC-6 | Exposed retry attempts cannot reuse stale miss capability | 2, 4, 6 | `maxAttempts` rejection and outer-retry tests |
-| AC-7 | Redisson distributes invalidation without Redis snapshot reads/writes | 7, 8, 9 | spy/contract and two-client Testcontainers tests |
-| AC-8 | Distributed admission and failures remain bounded/non-blocking | 8 | quota, never-completing future, buffer drain tests |
-| AC-9 | Namespace/schema/key encoding incompatibility fails before use | 7, 9 | golden vectors and marker mismatch tests |
-| AC-10 | Public API and bilingual documentation are complete | 10 | KDoc compilation and README parity review |
-| AC-11 | Existing benchmark module can measure the new path | 11 | benchmark class compilation and bounded smoke run |
+| AC-1 | 롤백은 스테이징된 스냅숏을 절대 노출하지 않는다 | 3, 4, 5, 6 | 코디네이터 및 어댑터 롤백 테스트 |
+| AC-2 | 공개 API는 Exposed DAO `Entity` 직접 값을 거부한다 | 1 | 런타임 거부 및 컴파일 대상 API 테스트 |
+| AC-3 | 캐시 콜백은 데이터베이스 쓰기를 반복할 수 없다 | 2, 4, 6 | 캐시 전용 SPI 형태 및 트랜잭션 통합 테스트 |
+| AC-4 | 반복 변경은 결정론적으로 마지막 변경이 우선한다 | 3 | 교체/순서/제한 테스트 |
+| AC-5 | Caffeine은 이전 fill이 더 새로운 무효화를 덮어쓰지 못하게 한다 | 2, 4, 6 | 제어된 동시성 펜스 테스트 |
+| AC-6 | Exposed 재시도 시 오래된 miss 기능을 재사용할 수 없다 | 2, 4, 6 | `maxAttempts` 거부 및 외부 재시도 테스트 |
+| AC-7 | Redisson은 Redis 스냅숏 읽기/쓰기 없이 무효화를 분산한다 | 7, 8, 9 | spy/계약 및 두 클라이언트 Testcontainers 테스트 |
+| AC-8 | 분산 승인과 실패는 제한되고 논블로킹이어야 한다 | 8 | 할당량, 영원히 완료되지 않는 future, 버퍼 drain 테스트 |
+| AC-9 | 네임스페이스/스키마/키 인코딩 비호환성은 사용 전에 실패한다 | 7, 9 | 골든 벡터 및 마커 불일치 테스트 |
+| AC-10 | 공개 API와 이중 언어 문서를 완성한다 | 10 | KDoc 컴파일 및 README 동등성 리뷰 |
+| AC-11 | 기존 벤치마크 모듈에서 새 경로를 측정할 수 있다 | 11 | 벤치마크 클래스 컴파일 및 제한된 스모크 실행 |
 
-## Risk Prediction and Rerun Triggers
+## 위험 예측 및 재실행 조건
 
-| Risk | Preventive design | Rerun trigger |
+| 위험 | 예방 설계 | 재실행 조건 |
 |---|---|---|
-| Exposed clears transaction user data before `afterCommit` | Move the active buffer into interceptor-owned pending state in `beforeCommit` | Any Exposed/catalog upgrade or callback-order change |
-| Another interceptor throws before this adapter's `afterCommit` | Hold no strong transaction reference; stale cache is safe and pending state is GC-reclaimable | Interceptor registration/order modification |
-| Old DB fill overwrites a newer invalidation | Capture identity generation token at lookup; validate and mutate under one stripe lock | Fence or Caffeine implementation change |
-| Exposed automatic retries reuse attempt-local state | Reject `maxAttempts != 1`; document outer retry around the full lookup/transaction cycle | Transaction bridge change |
-| Staging limit bypass through replacements or multiple stores | Enforce transaction-wide entry/store minima and replacement weight deltas atomically | Coordinator/store registration change |
-| Redisson future or synchronous submission leaks quota | Exactly-once lease release on pre-future failure or completion callback | Quota/submission refactor |
-| Redis key codec drift causes cross-node incompatibility | Canonical Long/UUID bytes plus remote marker fingerprint | Codec, schema, or Redisson upgrade |
-| Event-loop/thread blocking | No `await`, `get`, scheduler, executor, or worker thread in invalidation submission | Redisson adapter change |
-| Testcontainers instability hides a regression | Run Redis integration sequentially and preserve unit-level deterministic proofs | Docker/Redis/Redisson upgrade |
-| Stable manuals accidentally point at unreleased APIs | Leave manual sources unchanged and validate pinned inventory | Any docs/manual or manifest diff |
+| Exposed가 `afterCommit` 전에 트랜잭션 사용자 데이터를 지움 | `beforeCommit`에서 활성 버퍼를 인터셉터 소유의 대기 상태로 이동 | Exposed/카탈로그 업그레이드 또는 콜백 순서 변경 |
+| 다른 인터셉터가 이 어댑터의 `afterCommit` 전에 예외를 던짐 | 강한 트랜잭션 참조를 보관하지 않음. 오래된 캐시는 안전하며 대기 상태는 GC로 회수 가능 | 인터셉터 등록/순서 변경 |
+| 이전 DB fill이 더 새로운 무효화를 덮어씀 | 조회 시 identity generation token을 캡처하고 단일 스트라이프 잠금에서 검증 및 변경 | 펜스 또는 Caffeine 구현 변경 |
+| Exposed 자동 재시도가 시도별 로컬 상태를 재사용함 | `maxAttempts != 1`을 거부하고 전체 조회/트랜잭션 주기 외부의 재시도를 문서화 | 트랜잭션 브리지 변경 |
+| 교체 또는 여러 저장소로 스테이징 제한을 우회함 | 트랜잭션 전체 엔트리/저장소 최솟값과 교체 가중치 차이를 원자적으로 적용 | 코디네이터/저장소 등록 변경 |
+| Redisson future 또는 동기 제출이 할당량을 누수함 | future 생성 전 실패 또는 완료 콜백에서 lease를 정확히 한 번 해제 | 할당량/제출 리팩터링 |
+| Redis 키 코덱 드리프트가 노드 간 비호환성을 일으킴 | 정규 Long/UUID 바이트와 원격 마커 fingerprint 사용 | 코덱, 스키마 또는 Redisson 업그레이드 |
+| 이벤트 루프/스레드 블로킹 | 무효화 제출에서 `await`, `get`, 스케줄러, 실행기, 작업자 스레드를 사용하지 않음 | Redisson 어댑터 변경 |
+| Testcontainers 불안정성이 회귀를 숨김 | Redis 통합 테스트를 순차 실행하고 단위 수준의 결정론적 증명을 유지 | Docker/Redis/Redisson 업그레이드 |
+| 안정 버전 매뉴얼이 실수로 미출시 API를 가리킴 | 매뉴얼 소스를 변경하지 않고 고정 인벤토리를 검증 | docs/manual 또는 manifest 변경 |
 
-## Repository Hazard Check
+## 리포지토리 위험 요소 점검
 
-- Module registration: not applicable. All implementation lands in existing registered modules; `settings.gradle.kts` must remain unchanged.
-- Generated catalogs/checkers: not applicable. No artifact or module is added/moved.
-- Broad backend matrix: Redisson integration tests run sequentially. Caffeine tests remain local/in-memory.
-- Lettuce: deliberately excluded. Existing JDBC Lettuce access is synchronous and existing suspended/R2DBC access awaits futures; there is no reusable non-blocking peer-invalidation protocol with the lifecycle required by this design. Adding one would be a separate distributed-backend feature.
-- Benchmark: extend `benchmark/exposed-benchmark`; do not register another project.
+- 모듈 등록: 해당 없음. 모든 구현은 이미 등록된 모듈에 추가하며, `settings.gradle.kts`는 변경하지 않는다.
+- 생성 카탈로그/검사기: 해당 없음. 아티팩트나 모듈을 추가하거나 이동하지 않는다.
+- 광범위한 백엔드 매트릭스: Redisson 통합 테스트는 순차 실행한다. Caffeine 테스트는 로컬/인메모리로 유지한다.
+- Lettuce: 의도적으로 제외한다. 기존 JDBC Lettuce 접근은 동기 방식이고 기존 suspend/R2DBC 접근은 future를 기다린다. 이 설계에 필요한 생명주기를 갖춘 재사용 가능한 논블로킹 피어 무효화 프로토콜은 없다. 이를 추가하려면 별도의 분산 백엔드 기능으로 다뤄야 한다.
+- 벤치마크: `benchmark/exposed-benchmark`를 확장하며 다른 프로젝트를 등록하지 않는다.
 
-## Task 1: Add immutable snapshot values, validation, and configuration
+## 작업 1: 불변 스냅숏 값, 검증 및 구성 추가
 
-**Files:**
-- Create: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/CacheSnapshot.kt`
-- Create: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig.kt`
-- Create: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/CacheSnapshotTest.kt`
-- Create: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfigTest.kt`
-- Create: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/CacheSnapshotDaoFreeClasspathTest.kt`
+**파일:**
+- 생성: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/CacheSnapshot.kt`
+- 생성: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig.kt`
+- 생성: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/CacheSnapshotTest.kt`
+- 생성: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfigTest.kt`
+- 생성: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/CacheSnapshotDaoFreeClasspathTest.kt`
 
-- [x] Write failing tests for a serializable immutable DTO envelope, optional revision, schema rejection, positive limits/durations, sizer requirements, payload validator behavior, and top-level `Entity` rejection. Enforce namespace syntax `[a-z][a-z0-9._-]{0,62}:v[1-9][0-9]*`; document (rather than attempt to infer lexically) that it must be an operator-owned static name and never a tenant, request, or entity identifier. Require `fenceStripes` to be a power of two in the exact inclusive range 64..65,536.
-- [x] Run `./gradlew :bluetape4k-exposed-cache:test --tests '*CacheSnapshotTest' --tests '*SnapshotCacheConfigTest'` and confirm the tests fail because the API does not exist.
-- [x] Implement this public surface with English KDoc on every public declaration:
+- [x] 직렬화 가능한 불변 DTO envelope, 선택적 revision, 스키마 거부, 양수 제한/기간, sizer 요구 사항, 페이로드 validator 동작, 최상위 `Entity` 거부에 대한 실패 테스트를 작성한다. 네임스페이스 문법 `[a-z][a-z0-9._-]{0,62}:v[1-9][0-9]*`를 강제한다. 이를 어휘적으로 추론하려 하지 말고 운영자 소유의 정적 이름이어야 하며 tenant, request, entity 식별자여서는 안 된다고 문서화한다. `fenceStripes`는 정확히 64..65,536 범위의 2의 거듭제곱이어야 한다.
+- [x] `./gradlew :bluetape4k-exposed-cache:test --tests '*CacheSnapshotTest' --tests '*SnapshotCacheConfigTest'`를 실행하고 API가 없어서 테스트가 실패하는지 확인한다.
+- [x] 모든 공개 선언에 영문 KDoc을 포함해 다음 공개 표면을 구현한다.
 
 ```kotlin
 data class CacheSnapshot<V : Serializable>(
@@ -112,10 +112,10 @@ data class CaffeineSnapshotCacheConfig(
 )
 ```
 
-- [x] Provide the exact classpath-safe `rejectDirectEntitySnapshotValues()` default validator and `maximumEstimatedPayloadBytes(sizer, limit)` for opt-in payload rejection. Resolve the DAO base class by name only when present and use assignability without a static DAO type reference; do not recursively reflect over object graphs.
-- [x] Add `CacheSnapshotDaoFreeClasspathTest.kt` that launches a child classloader/process without Exposed DAO and proves validator construction/DTO validation do not throw `NoClassDefFoundError`.
-- [x] Re-run the targeted tests and confirm they pass.
-- [x] Commit with Lore trailers:
+- [x] 클래스패스에 안전한 정확한 `rejectDirectEntitySnapshotValues()` 기본 validator와 선택형 페이로드 거부용 `maximumEstimatedPayloadBytes(sizer, limit)`를 제공한다. DAO 기반 클래스가 있을 때만 이름으로 해석하고 정적 DAO 타입 참조 없이 할당 가능성을 사용한다. 객체 그래프를 재귀적으로 리플렉션하지 않는다.
+- [x] Exposed DAO 없이 하위 classloader/process를 실행하고 validator 생성/DTO 검증이 `NoClassDefFoundError`를 던지지 않음을 증명하는 `CacheSnapshotDaoFreeClasspathTest.kt`를 추가한다.
+- [x] 대상 테스트를 다시 실행해 통과하는지 확인한다.
+- [x] Lore 트레일러가 포함된 커밋을 생성한다.
 
 ```text
 Define detached snapshot values before transaction integration
@@ -127,18 +127,18 @@ Scope-risk: narrow
 Tested: exposed cache snapshot value and configuration tests
 ```
 
-## Task 2: Add cache-only SPI, opaque miss capabilities, and local ordering fences
+## 작업 2: 캐시 전용 SPI, 불투명한 miss 기능 및 로컬 순서 펜스 추가
 
-**Files:**
-- Create: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheStore.kt`
-- Create: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotLocalFenceRegistry.kt`
-- Create: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheStoreTest.kt`
-- Create: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotLocalFenceRegistryTest.kt`
+**파일:**
+- 생성: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheStore.kt`
+- 생성: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotLocalFenceRegistry.kt`
+- 생성: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheStoreTest.kt`
+- 생성: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotLocalFenceRegistryTest.kt`
 
-- [x] Write failing tests proving lookup returns exactly one of snapshot/miss; miss objects reveal no ID/fence, are not serializable, have a constant `toString`, and cannot be claimed twice.
-- [x] Add concurrency tests using latches/barriers: lookup miss -> concurrent invalidation -> old fill must be rejected; unrelated stripe operations proceed; deliberate stripe collision may reject a safe fill but never permit stale data.
-- [x] Run `./gradlew :bluetape4k-exposed-cache:test --tests '*SnapshotCacheStoreTest' --tests '*SnapshotLocalFenceRegistryTest'` and confirm red.
-- [x] Implement the engine-neutral surface:
+- [x] lookup이 snapshot/miss 중 정확히 하나만 반환하고, miss 객체가 ID/fence를 노출하지 않으며 직렬화할 수 없고, 고정된 `toString`을 가지며 두 번 claim할 수 없음을 증명하는 실패 테스트를 작성한다.
+- [x] latch/barrier를 사용한 동시성 테스트를 추가한다. lookup miss -> 동시 무효화 -> 이전 fill은 거부되어야 한다. 관련 없는 스트라이프 작업은 계속 진행하며, 의도적인 스트라이프 충돌은 안전한 fill을 거부할 수 있지만 오래된 데이터는 절대 허용하지 않는다.
+- [x] `./gradlew :bluetape4k-exposed-cache:test --tests '*SnapshotCacheStoreTest' --tests '*SnapshotLocalFenceRegistryTest'`를 실행하고 RED를 확인한다.
+- [x] 엔진 중립적 표면을 구현한다.
 
 ```kotlin
 class SnapshotCacheLookup<ID : Any, V : Serializable> private constructor(
@@ -204,13 +204,13 @@ interface SnapshotCacheDeadline {
 class SnapshotLocalFence<ID : Any> internal constructor()
 ```
 
-- [x] Keep the ID-bound `SnapshotLocalFence` as an opaque regular class with an internal constructor and no token getters, copy, component, serialization, or structural equality surface. The owning registry alone captures and validates it. Keep the mutation field carrying it behind `@InternalSnapshotCacheApi`; expose no public bare-ID `put` method.
-- [x] Implement a weak-identity miss registry protected by an explicit lock and bounded by `maxOutstandingMissTokens`; after expunging stale weak entries, a full registry rejects `lookup` before any transaction or database read. Remove a token before mapper/preparer work and keep claimed preparers one-shot, so mapper failure requires a fresh lookup.
-- [x] Implement a fixed power-of-two explicit-lock stripe registry using identity generation tokens. Replace the token and mutate the cache under the same lock.
-- [x] Add `SnapshotStoreId`, `SnapshotCacheLimits`, measured invalidation, mutation, deadline, operation/outcome, and report models from the approved design.
-- [x] Test bulk apply rather than per-entry SPI calls: each store is invoked at most once per phase, all phase inputs pass `SnapshotCacheApplyReport.requireReconciled(operation, expectedCount)` using overflow-safe `Long` accumulation and reconcile exactly to success/failure/rejected/not-attempted counts, and a shared monotonic deadline can expire between entries.
-- [x] Re-run targeted tests, including 100 repeated controlled races.
-- [x] Commit with Lore trailers:
+- [x] ID에 결합된 `SnapshotLocalFence`를 internal 생성자가 있는 불투명한 일반 클래스로 유지하며, token getter, copy, component, 직렬화, 구조적 동등성 표면을 제공하지 않는다. 소유 registry만 이를 캡처하고 검증한다. 이를 운반하는 변경 필드는 `@InternalSnapshotCacheApi` 뒤에 유지하고, bare-ID 공개 `put` 메서드는 노출하지 않는다.
+- [x] 명시적 잠금으로 보호되고 `maxOutstandingMissTokens`로 제한되는 weak-identity miss registry를 구현한다. 오래된 weak entry를 제거한 뒤 registry가 가득 차면 트랜잭션이나 데이터베이스 읽기 전에 `lookup`을 거부한다. mapper/preparer 작업 전에 token을 제거하고 claim된 preparer를 일회용으로 유지하여 mapper 실패 시 새 lookup이 필요하게 한다.
+- [x] identity generation token을 사용하는 고정된 2의 거듭제곱 크기의 명시적 잠금 스트라이프 registry를 구현한다. 동일한 잠금 아래에서 token을 교체하고 캐시를 변경한다.
+- [x] 승인된 설계의 `SnapshotStoreId`, `SnapshotCacheLimits`, 측정된 무효화, 변경, deadline, operation/outcome, 보고 모델을 추가한다.
+- [x] 엔트리별 SPI 호출 대신 bulk apply를 테스트한다. 각 저장소는 단계마다 최대 한 번 호출하고, 모든 단계 입력은 overflow에 안전한 `Long` 누적을 사용하는 `SnapshotCacheApplyReport.requireReconciled(operation, expectedCount)`를 통과하며 success/failure/rejected/not-attempted 개수와 정확히 일치해야 한다. 공유 단조 deadline은 엔트리 사이에서 만료될 수 있다.
+- [x] 제어된 경합 100회 반복을 포함해 대상 테스트를 다시 실행한다.
+- [x] Lore 트레일러가 포함된 커밋을 생성한다.
 
 ```text
 Make stale snapshot fills unrepresentable at the cache boundary
@@ -222,21 +222,21 @@ Scope-risk: moderate
 Tested: opaque miss, bounded registry, and striped fence concurrency tests
 ```
 
-## Task 3: Add failure reporting and transaction-wide staging coordinator
+## 작업 3: 실패 보고 및 트랜잭션 전체 스테이징 코디네이터 추가
 
-**Files:**
-- Create: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailure.kt`
-- Create: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotTransactionCoordinator.kt`
-- Modify: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheStore.kt`
-- Create: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureTest.kt`
-- Create: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotTransactionCoordinatorTest.kt`
-- Create: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheApiContractTest.kt`
-- Create: `exposed/jdbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/SnapshotCacheCommonApiCompileTest.kt`
+**파일:**
+- 생성: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailure.kt`
+- 생성: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotTransactionCoordinator.kt`
+- 수정: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheStore.kt`
+- 생성: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureTest.kt`
+- 생성: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotTransactionCoordinatorTest.kt`
+- 생성: `exposed/cache/src/test/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheApiContractTest.kt`
+- 생성: `exposed/jdbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/SnapshotCacheCommonApiCompileTest.kt`
 
-- [x] Write failing state-machine tests for root/current transaction checks, nested/captured/post-boundary rejection, single interceptor registration, last-mutation-wins order, rollback discard, before/after commit transfer, callback cleanup-before-cache-work, store/entry/weight limits, and observer failure accounting.
-- [x] Add a regression test for an earlier third-party interceptor throwing before this interceptor's `afterCommit`: database completion remains independent, no cache mutation occurs, and the weak transaction entry can be reclaimed.
-- [x] Run the two targeted test classes and confirm red.
-- [x] Implement a classpath-safe common bridge:
+- [x] 루트/현재 트랜잭션 검사, 중첩/캡처/경계 이후 거부, 단일 인터셉터 등록, 마지막 변경 우선 순서, 롤백 폐기, 커밋 전/후 전송, 캐시 작업 전 콜백 정리, 저장소/엔트리/가중치 제한, observer 실패 계산에 대한 실패 상태 머신 테스트를 작성한다.
+- [x] 앞선 타사 인터셉터가 이 인터셉터의 `afterCommit` 전에 예외를 던지는 회귀 테스트를 추가한다. 데이터베이스 완료는 독립적으로 유지되고, 캐시 변경은 발생하지 않으며, weak 트랜잭션 엔트리는 회수할 수 있어야 한다.
+- [x] 대상 테스트 클래스 두 개를 실행해 RED를 확인한다.
+- [x] 클래스패스에 안전한 공통 브리지를 구현한다.
 
 ```kotlin
 @InternalSnapshotCacheApi
@@ -288,18 +288,18 @@ fun <TX : Transaction, ID : Any, V : Serializable> stageInvalidationMutation(
 )
 ```
 
-- [x] Declare `@RequiresOptIn(level = RequiresOptIn.Level.ERROR) annotation class InternalSnapshotCacheApi` exactly and add a cross-module compile-facing contract test proving the opt-in `SnapshotCacheLookup.hit/miss` factories are usable by adapters, implementation hooks require explicit opt-in, both local/async invalidation overloads resolve, and common public signatures leak neither `JdbcTransaction` nor `R2dbcTransaction`.
+- [x] `@RequiresOptIn(level = RequiresOptIn.Level.ERROR) annotation class InternalSnapshotCacheApi`를 정확히 선언한다. 선택형 `SnapshotCacheLookup.hit/miss` 팩토리를 어댑터에서 사용할 수 있고, 구현 hook에는 명시적 opt-in이 필요하며, local/async 무효화 overload가 모두 해석되고, 공통 공개 시그니처가 `JdbcTransaction`과 `R2dbcTransaction`을 모두 누출하지 않음을 증명하는 모듈 간 컴파일 대상 계약 테스트를 추가한다.
 
-- [x] Store the registry under one private Exposed transaction user-data key and mirror only its state in a payload-free weak terminal guard protected by an explicit lock, with no strong transaction back-reference. Register participants atomically and use the strictest transaction-wide limits among participating stores.
-- [x] Reject two facades with the same logical `SnapshotStoreId` unless their private instance token is identical by reference, their caller-supplied failure buffer is identical by reference, and their non-secret compatibility fingerprint matches; reject before buffer mutation.
-- [x] In `beforeCommit`, detach the active buffer into interceptor-owned pending state. In `afterCommit`, remove registry/pending state before invoking cache work. In `afterRollback`, clear both states without cache work.
-- [x] In non-throwing `beforeRollback`, mark the state terminal and clear active and pending payloads before later rollback interceptors can skip `afterRollback`; make `afterRollback` defensive/idempotent cleanup.
-- [x] Preserve insertion order for distinct keys while replacing the effective mutation for the same `(store identity, id)`; apply replacement weight deltas before buffer mutation.
-- [x] Drain in exact phases: attempt every distributed chunk admission/submission without awaiting; apply all local invalidations; then apply all local snapshot PUTs. Use one transaction-wide monotonic deadline derived from the smallest local budget, poll before each local entry, mark remaining entries `NOT_ATTEMPTED`, and report cooperative overrun rather than claiming hard preemption.
-- [x] Isolate ordinary per-entry `Exception`, including post-commit `CancellationException`, and continue unrelated entries. Never convert fatal JVM `Error` into a cache health event. Reconcile every phase input exactly in the final report.
-- [x] Implement bounded sanitized failure records and structured drain results. Retain only exception type and structural counts—never messages, causes, suppressed exceptions, stack traces, values, identifiers, credentials, SQL, URLs, endpoints, or serialized snapshots. Add malicious, Unicode, oversized, bidi-control, and identifier-ignorable exception fixtures. Observer callbacks run only during explicit caller-thread drain; a throwing observer consumes that event and increments `observerFailureCount`.
-- [x] Implement and test `loggingSnapshotCacheFailureObserver()`. It logs only the sanitized failure object/type. Document that `storeId.namespace` is the only static low-cardinality tag candidate and `affectedCount` is a measurement, never a tag.
-- [x] Implement this exact public failure API and compile source usage of `poll`, default/limited `drainTo`, the logging observer, and caller-supplied buffer identity:
+- [x] 하나의 private Exposed 트랜잭션 user-data key 아래에 registry를 저장하고, 명시적 잠금으로 보호되는 페이로드 없는 weak terminal guard에는 상태만 반영하며 강한 트랜잭션 역참조를 두지 않는다. 참여자를 원자적으로 등록하고 참여 저장소 중 가장 엄격한 트랜잭션 전체 제한을 사용한다.
+- [x] 논리적 `SnapshotStoreId`가 같은 두 facade는 private instance token이 참조상 동일하고, 호출자가 제공한 failure buffer가 참조상 동일하며, 비밀이 아닌 호환성 fingerprint가 일치하는 경우에만 허용한다. 버퍼 변경 전에 거부한다.
+- [x] `beforeCommit`에서 활성 버퍼를 분리해 인터셉터 소유의 대기 상태로 옮긴다. `afterCommit`에서는 캐시 작업을 호출하기 전에 registry/대기 상태를 제거한다. `afterRollback`에서는 캐시 작업 없이 두 상태를 모두 정리한다.
+- [x] 예외를 던지지 않는 `beforeRollback`에서 상태를 terminal로 표시하고, 뒤쪽 롤백 인터셉터 때문에 `afterRollback`이 건너뛰어질 수 있기 전에 활성 및 대기 페이로드를 정리한다. `afterRollback`은 방어적이고 멱등인 정리로 만든다.
+- [x] 서로 다른 키의 삽입 순서를 보존하면서 같은 `(store identity, id)`의 유효 변경을 교체한다. 버퍼 변경 전에 교체 가중치 차이를 적용한다.
+- [x] 정확한 단계로 drain한다. 대기 없이 모든 분산 chunk 승인/제출을 시도하고, 모든 로컬 무효화를 적용한 다음, 모든 로컬 스냅숏 PUT을 적용한다. 가장 작은 로컬 budget에서 도출한 하나의 트랜잭션 전체 단조 deadline을 사용하고, 각 로컬 엔트리 전에 poll하며, 나머지 엔트리를 `NOT_ATTEMPTED`로 표시한다. 강한 선점이라고 주장하지 말고 협력적 초과를 보고한다.
+- [x] 커밋 후 `CancellationException`을 포함한 일반적인 엔트리별 `Exception`을 격리하고 관련 없는 엔트리는 계속 처리한다. 치명적인 JVM `Error`를 캐시 상태 이벤트로 변환하지 않는다. 최종 보고서에서 모든 단계 입력을 정확히 reconcile한다.
+- [x] 제한되고 정제된 실패 레코드와 구조화된 drain 결과를 구현한다. 예외 타입과 구조적 개수만 유지하며 메시지, 원인, suppressed exception, stack trace, 값, 식별자, 자격 증명, SQL, URL, endpoint, 직렬화된 스냅숏은 절대 보관하지 않는다. 악성, Unicode, 과대, bidi-control, identifier-ignorable 예외 픽스처를 추가한다. Observer 콜백은 명시적인 호출자 스레드 drain 중에만 실행하며, 예외를 던진 observer는 해당 이벤트를 소비하고 `observerFailureCount`를 증가시킨다.
+- [x] `loggingSnapshotCacheFailureObserver()`를 구현하고 테스트한다. 정제된 실패 객체/타입만 로그로 남긴다. `storeId.namespace`만 정적인 저카디널리티 tag 후보이고 `affectedCount`는 tag가 아닌 측정값임을 문서화한다.
+- [x] 다음과 같은 정확한 공개 실패 API를 구현하고 `poll`, 기본/제한 `drainTo`, logging observer, 호출자가 제공한 buffer identity의 소스 사용을 컴파일한다.
 
 ```kotlin
 sealed interface SnapshotCacheFailureBuffer {
@@ -340,8 +340,8 @@ data class SnapshotCacheFailure(
     val exceptionType: String? = null,
 )
 ```
-- [x] Re-run targeted tests and the full `:bluetape4k-exposed-cache:test` task.
-- [x] Commit with Lore trailers:
+- [x] 대상 테스트와 전체 `:bluetape4k-exposed-cache:test` 작업을 다시 실행한다.
+- [x] Lore 트레일러가 포함된 커밋을 생성한다.
 
 ```text
 Bind snapshot mutation visibility to one Exposed commit boundary
@@ -353,32 +353,32 @@ Scope-risk: moderate
 Tested: coordinator lifecycle, limits, ordering, cleanup, and failure tests
 ```
 
-Completion evidence: focused coordinator/failure tests 28/28, full
-`:bluetape4k-exposed-cache:test` 141/141, and the `jdbc-caffeine` cross-module
-API contract 2/2. Independent spec and code-quality reviews reported no
-remaining Critical, Important, or Minor findings. Root `detekt` succeeds with
-`NO-SOURCE`; the cache module has no module-specific detekt task.
+완료 증거: 코디네이터/실패 집중 테스트 28/28, 전체
+`:bluetape4k-exposed-cache:test` 141/141, `jdbc-caffeine` 모듈 간
+API 계약 2/2가 통과했다. 독립 명세 및 코드 품질 리뷰에서 남은
+Critical, Important, Minor 발견 사항이 없다고 보고했다. 루트 `detekt`는
+`NO-SOURCE`로 성공했으며, 캐시 모듈에는 모듈별 detekt 작업이 없다.
 
-## Task 4: Implement the JDBC Caffeine facade and transaction extensions
+## 작업 4: JDBC Caffeine facade 및 트랜잭션 확장 구현
 
-**Files:**
-- Modify: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheStore.kt`
-- Modify: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotLocalFenceRegistry.kt`
-- Create: `exposed/jdbc-caffeine/src/main/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcCaffeineSnapshotCache.kt`
-- Create: `exposed/jdbc-caffeine/src/main/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcSnapshotTransaction.kt`
-- Create: `exposed/jdbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcCaffeineSnapshotCacheTest.kt`
-- Create: `exposed/jdbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcSnapshotTransactionTest.kt`
-- Create: `exposed/jdbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcSnapshotCacheApiUsageTest.kt`
-- Modify: `exposed/jdbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/SnapshotCacheCommonApiCompileTest.kt`
+**파일:**
+- 수정: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotCacheStore.kt`
+- 수정: `exposed/cache/src/main/kotlin/io/bluetape4k/exposed/cache/snapshot/SnapshotLocalFenceRegistry.kt`
+- 생성: `exposed/jdbc-caffeine/src/main/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcCaffeineSnapshotCache.kt`
+- 생성: `exposed/jdbc-caffeine/src/main/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcSnapshotTransaction.kt`
+- 생성: `exposed/jdbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcCaffeineSnapshotCacheTest.kt`
+- 생성: `exposed/jdbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcSnapshotTransactionTest.kt`
+- 생성: `exposed/jdbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcSnapshotCacheApiUsageTest.kt`
+- 수정: `exposed/jdbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/jdbc/caffeine/snapshot/SnapshotCacheCommonApiCompileTest.kt`
 
-- [x] Write failing tests for factory configuration, hit/miss, opaque claim, weighted/unweighted construction, commit PUT, commit invalidation, rollback discard, mapper execution inside the current root transaction, captured transaction rejection, and `maxAttempts > 1` rejection for snapshot fill only. Prove invalidation remains attempt-local and allowed under Exposed retry configuration.
-- [x] Add an H2 test that counts SQL writes and proves the cache commit callback performs zero additional database writes.
-- [x] Add the deterministic stale-fill race test at the public facade boundary.
-- [x] Add engine-real lifecycle tests: preceding throwing `afterCommit`, `beforeRollback`, and `afterRollback` `StatementInterceptor` callbacks; callback-time staging; commit-then-stage; rollback-then-stage; interceptor non-accumulation; nested savepoint commit followed by outer rollback; and nested rollback followed by outer commit. Earlier callback failure must produce zero cache mutation and retain payload only until transaction GC. Every invalid receiver must fail before mapping or buffer mutation.
-- [x] Add retry tests proving a failed invalidation attempt leaks nothing and a successful retried attempt publishes exactly once; outer snapshot-fill retry must reacquire a fresh miss before each database read.
-- [x] Prove capacity/error timing at the public facade: retained miss tokens fill the registry and the next `lookup` fails before the SQL counter changes; mapper failure consumes the token and reusing it fails before a second mapping call.
-- [x] Run `./gradlew :bluetape4k-exposed-jdbc-caffeine:test --tests '*Jdbc*CaffeineSnapshotCacheTest' --tests '*JdbcSnapshotTransactionTest'` and confirm red.
-- [x] Implement the exact factory and transaction extensions:
+- [x] 팩토리 구성, hit/miss, 불투명 claim, 가중/비가중 생성, 커밋 PUT, 커밋 무효화, 롤백 폐기, 현재 루트 트랜잭션 내부 mapper 실행, 캡처된 트랜잭션 거부, 스냅숏 fill에만 적용되는 `maxAttempts > 1` 거부의 실패 테스트를 작성한다. 무효화는 시도별 로컬 상태로 유지되며 Exposed 재시도 구성에서도 허용됨을 증명한다.
+- [x] SQL 쓰기 횟수를 세고 캐시 커밋 콜백이 추가 데이터베이스 쓰기를 전혀 수행하지 않음을 증명하는 H2 테스트를 추가한다.
+- [x] 공개 facade 경계에 결정론적 stale-fill 경합 테스트를 추가한다.
+- [x] 실제 엔진 생명주기 테스트를 추가한다. 앞에서 예외를 던지는 `afterCommit`, `beforeRollback`, `afterRollback` `StatementInterceptor` 콜백, 콜백 시점 스테이징, commit-then-stage, rollback-then-stage, 인터셉터 비누적, 중첩 savepoint 커밋 후 외부 롤백, 중첩 롤백 후 외부 커밋을 다룬다. 앞선 콜백 실패 시 캐시 변경은 0이어야 하고 페이로드는 트랜잭션 GC까지만 유지해야 한다. 모든 잘못된 receiver는 mapping 또는 버퍼 변경 전에 실패해야 한다.
+- [x] 실패한 무효화 시도는 아무것도 누출하지 않고 재시도에 성공한 시도는 정확히 한 번 게시함을 증명하는 재시도 테스트를 추가한다. 외부 스냅숏 fill 재시도는 데이터베이스 읽기마다 새 miss를 다시 획득해야 한다.
+- [x] 공개 facade에서 용량/오류 시점을 증명한다. 보관된 miss token이 registry를 채우면 다음 `lookup`은 SQL 카운터가 바뀌기 전에 실패하고, mapper 실패는 token을 소비하므로 재사용 시 두 번째 mapping 호출 전에 실패해야 한다.
+- [x] `./gradlew :bluetape4k-exposed-jdbc-caffeine:test --tests '*Jdbc*CaffeineSnapshotCacheTest' --tests '*JdbcSnapshotTransactionTest'`를 실행해 RED를 확인한다.
+- [x] 정확한 팩토리와 트랜잭션 확장을 구현한다.
 
 ```kotlin
 fun <ID : Any, V : Serializable> jdbcCaffeineSnapshotCache(
@@ -417,13 +417,13 @@ fun <ID : Any, V : Serializable> JdbcTransaction.stageInvalidation(
 )
 ```
 
-- [x] Keep facade constructors internal. Expose only `storeId`, the exact caller-supplied `failureBuffer` instance, and `lookup(id): SnapshotCacheLookup<ID, V>`; prove both explicit-token and reified factories preserve the supplied buffer identity without `@PublishedApi` constructor access.
-- [x] Compile the README-equivalent JDBC usage in `JdbcSnapshotCacheApiUsageTest`; assert the exact receiver/signature surface by reflection so R2DBC engine types do not leak into this module.
-- [x] Configure Caffeine weight/expiry exactly from `CaffeineSnapshotCacheConfig`; pass the exact non-negative `SnapshotValueSizer` estimate to Caffeine and enforce `maximumSize` independently after maintenance without synthetic weight inflation. Never silently ignore an optional setting.
-- [x] Require a root current `JdbcTransaction`; require `maxAttempts == 1` only when consuming a miss for snapshot fill. Register one core `StatementInterceptor` via the common coordinator.
-- [x] Keep cache callbacks cache-only and cooperatively bounded by `localDrainBudget`; after a completed operation crosses the deadline, record its normal one-count outcome followed by `OVERRUN(0)`, then mark remaining entries `NOT_ATTEMPTED`. Preserve report count reconciliation without claiming a hard latency bound or throwing into the completed transaction.
-- [x] Re-run module tests and confirm all existing tests remain green.
-- [x] Commit with Lore trailers:
+- [x] facade 생성자는 internal로 유지한다. `storeId`, 호출자가 제공한 정확한 `failureBuffer` 인스턴스, `lookup(id): SnapshotCacheLookup<ID, V>`만 노출한다. 명시적 token 및 reified 팩토리가 `@PublishedApi` 생성자 접근 없이 제공된 버퍼 identity를 유지함을 증명한다.
+- [x] `JdbcSnapshotCacheApiUsageTest`에서 README와 동등한 JDBC 사용 코드를 컴파일한다. R2DBC 엔진 타입이 이 모듈로 누출되지 않도록 정확한 receiver/signature 표면을 리플렉션으로 단언한다.
+- [x] `CaffeineSnapshotCacheConfig`에서 Caffeine 가중치/만료를 정확히 구성한다. 음수가 아닌 정확한 `SnapshotValueSizer` 추정치를 Caffeine에 전달하고, 합성 가중치 부풀리기 없이 maintenance 후 `maximumSize`를 독립적으로 강제한다. 선택 설정을 조용히 무시하지 않는다.
+- [x] 현재 루트 `JdbcTransaction`을 요구하고, 스냅숏 fill용 miss를 소비할 때만 `maxAttempts == 1`을 요구한다. 공통 코디네이터를 통해 핵심 `StatementInterceptor` 하나를 등록한다.
+- [x] 캐시 콜백은 캐시 전용으로 유지하고 `localDrainBudget`로 협력적으로 제한한다. 완료된 작업이 deadline을 넘으면 정상적인 1개 결과 뒤에 `OVERRUN(0)`을 기록하고 나머지 엔트리를 `NOT_ATTEMPTED`로 표시한다. 강한 지연 시간 한계를 주장하거나 완료된 트랜잭션에 예외를 던지지 않으면서 보고 개수 reconcile을 유지한다.
+- [x] 모듈 테스트를 다시 실행해 기존 테스트가 모두 계속 통과하는지 확인한다.
+- [x] Lore 트레일러가 포함된 커밋을 생성한다.
 
 ```text
 Expose commit-safe JDBC Caffeine snapshot caching
@@ -435,47 +435,47 @@ Scope-risk: moderate
 Tested: JDBC Caffeine unit, transaction, H2, and concurrency tests
 ```
 
-Completion evidence: cache 141/141; JDBC Caffeine 364 passed and 22 existing
-environment-gated tests skipped, with zero failures/errors under the repository
-Ryuk-disabled test contract. Controlled weighted-capacity and stale-fill races
-passed 100 repetitions each. Independent spec and code-quality reviews reported
-no remaining Critical, Important, or Minor findings. Root `detekt` succeeds
-with `NO-SOURCE`; the module has no module-specific detekt task.
+완료 증거: cache 141/141, JDBC Caffeine 364개가 통과했고 기존 환경 게이트
+테스트 22개가 건너뛰어졌다. 리포지토리의 Ryuk 비활성화 테스트 계약에서
+실패/오류는 0이었다. 제어된 가중 용량 및 stale-fill 경합은 각각 100회
+반복을 통과했다. 독립 명세 및 코드 품질 리뷰에서 남은 Critical, Important,
+Minor 발견 사항이 없다고 보고했다. 루트 `detekt`는 `NO-SOURCE`로 성공했으며,
+모듈에는 모듈별 detekt 작업이 없다.
 
-## Task 5: Review the JDBC vertical slice before duplicating it
+## 작업 5: JDBC 수직 슬라이스를 복제하기 전에 리뷰
 
-**Files:**
-- Modify only files from Tasks 1-4 when findings require changes.
+**파일:**
+- 발견 사항을 수정해야 할 때만 작업 1~4의 파일을 수정한다.
 
-- [x] Run `./gradlew :bluetape4k-exposed-cache:test :bluetape4k-exposed-jdbc-caffeine:test --no-daemon`.
-- [x] Inspect the public API for accidental ID/fence exposure, direct PUT, strong transaction references, database access from callbacks, blocking primitives, and missing KDoc.
-- [x] Run `git diff --check` and a Kotlin diagnostics/compile pass on touched modules.
-- [x] Fix every P0/P1 finding before proceeding; fix P2/P3 findings unless a concrete deferral issue is created.
-- [x] Commit only if the review changes code, using an intent-first Lore message.
+- [x] `./gradlew :bluetape4k-exposed-cache:test :bluetape4k-exposed-jdbc-caffeine:test --no-daemon`을 실행한다.
+- [x] 공개 API에서 의도하지 않은 ID/fence 노출, 직접 PUT, 강한 트랜잭션 참조, 콜백의 데이터베이스 접근, 블로킹 primitive, 누락된 KDoc을 검사한다.
+- [x] 변경한 모듈에서 `git diff --check`와 Kotlin 진단/컴파일 패스를 실행한다.
+- [x] 진행하기 전에 모든 P0/P1 발견 사항을 수정한다. 구체적인 연기 이슈를 만들지 않는 한 P2/P3 발견 사항도 수정한다.
+- [x] 리뷰로 코드가 변경된 경우에만 의도 우선 Lore 메시지로 커밋한다.
 
-Completion evidence: independent vertical review reported P0=P1=P2=P3=0 after
-aligning the design SPI with the verified implementation. The exact two-module
-gate passed with cache 141/141 and JDBC Caffeine 364 passed plus 22 existing
-environment-gated skips. Forced Kotlin main/test compilation passed without
-warnings or errors. One pre-existing non-snapshot H2 timing assertion flaked
-during a forced full rerun and passed immediately in isolated rerun.
+완료 증거: 설계 SPI를 검증된 구현과 맞춘 뒤 독립 수직 리뷰에서
+P0=P1=P2=P3=0을 보고했다. 정확한 두 모듈 게이트에서 cache 141/141,
+JDBC Caffeine 364개가 통과했고 기존 환경 게이트 22개가 건너뛰어졌다.
+강제 Kotlin main/test 컴파일은 경고나 오류 없이 통과했다. 기존의 스냅숏과
+무관한 H2 타이밍 단언 하나가 강제 전체 재실행 중 간헐적으로 실패했으나
+격리 재실행에서는 즉시 통과했다.
 
-## Task 6: Implement the R2DBC Caffeine facade and transaction extensions
+## 작업 6: R2DBC Caffeine facade 및 트랜잭션 확장 구현
 
-**Files:**
-- Create: `exposed/r2dbc-caffeine/src/main/kotlin/io/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcCaffeineSnapshotCache.kt`
-- Create: `exposed/r2dbc-caffeine/src/main/kotlin/io/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcSnapshotTransaction.kt`
-- Create: `exposed/r2dbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcCaffeineSnapshotCacheTest.kt`
-- Create: `exposed/r2dbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcSnapshotTransactionTest.kt`
-- Create: `exposed/r2dbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcSnapshotCacheApiUsageTest.kt`
+**파일:**
+- 생성: `exposed/r2dbc-caffeine/src/main/kotlin/io/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcCaffeineSnapshotCache.kt`
+- 생성: `exposed/r2dbc-caffeine/src/main/kotlin/io/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcSnapshotTransaction.kt`
+- 생성: `exposed/r2dbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcCaffeineSnapshotCacheTest.kt`
+- 생성: `exposed/r2dbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcSnapshotTransactionTest.kt`
+- 생성: `exposed/r2dbc-caffeine/src/test/kotlin/io/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcSnapshotCacheApiUsageTest.kt`
 
-- [x] Port the JDBC contract tests first, replacing only the transaction engine and preserving the same opaque miss/fence/coordinator assertions.
-- [x] Add H2 R2DBC commit/rollback tests and an SQL-write counter proving post-commit cache work is cache-only.
-- [x] Repeat the engine-real lifecycle—including preceding throwing `afterCommit`, `beforeRollback`, and `afterRollback` callbacks—nesting, callback-time staging, interceptor-ordering/non-accumulation, invalidation retry, and fresh-miss outer fill retry cases from Task 4 for R2DBC. Assert zero cache mutation and transaction-GC-bounded retention when an earlier callback skips ours.
-- [x] Repeat the public capacity/error-timing tests: full registry fails at lookup before R2DBC work and mapper failure consumes the token.
-- [x] Add a conditional unknown-physical-commit/cancellation proof seam. If Exposed offers no injectable commit seam, capture source/bytecode evidence plus a focused contract test showing no `afterCommit`/cache event and do not label the outcome rollback.
-- [x] Run the two targeted R2DBC tests and confirm red.
-- [x] Implement:
+- [x] 먼저 JDBC 계약 테스트를 포팅하되 트랜잭션 엔진만 교체하고 동일한 불투명 miss/fence/coordinator 단언을 유지한다.
+- [x] H2 R2DBC 커밋/롤백 테스트와 커밋 후 캐시 작업이 캐시 전용임을 증명하는 SQL 쓰기 카운터를 추가한다.
+- [x] 작업 4의 실제 엔진 생명주기 사례를 R2DBC에서 반복한다. 앞에서 예외를 던지는 `afterCommit`, `beforeRollback`, `afterRollback` 콜백, 중첩, 콜백 시점 스테이징, 인터셉터 순서/비누적, 무효화 재시도, 새로운 miss를 쓰는 외부 fill 재시도를 포함한다. 앞선 콜백이 우리 콜백을 건너뛰게 하면 캐시 변경은 0이고 보관 기간은 트랜잭션 GC로 제한됨을 단언한다.
+- [x] 공개 용량/오류 시점 테스트를 반복한다. registry가 가득 차면 R2DBC 작업 전 lookup에서 실패하고 mapper 실패는 token을 소비해야 한다.
+- [x] 조건부 unknown-physical-commit/cancellation 증명 seam을 추가한다. Exposed가 주입 가능한 commit seam을 제공하지 않으면 `afterCommit`/캐시 이벤트가 없음을 보여주는 소스/bytecode 증거와 집중 계약 테스트를 확보하고, 결과를 rollback이라고 표시하지 않는다.
+- [x] 대상 R2DBC 테스트 두 개를 실행해 RED를 확인한다.
+- [x] 다음을 구현한다.
 
 ```kotlin
 fun <ID : Any, V : Serializable> r2dbcCaffeineSnapshotCache(
@@ -514,10 +514,10 @@ fun <ID : Any, V : Serializable> R2dbcTransaction.stageInvalidation(
 )
 ```
 
-- [x] Keep constructors internal, prove explicit-token and reified factories preserve the caller-supplied failure-buffer identity, and compile the README-equivalent usage in `R2dbcSnapshotCacheApiUsageTest`. Assert JDBC engine types do not leak into this module.
-- [x] Use the same common coordinator and cache-only implementation; do not introduce `runBlocking`, a scheduler, or a worker thread.
-- [x] Run `./gradlew :bluetape4k-exposed-r2dbc-caffeine:test --no-daemon` and compare API behavior with the JDBC contract.
-- [x] Commit with Lore trailers:
+- [x] 생성자를 internal로 유지하고, 명시적 token 및 reified 팩토리가 호출자 제공 failure-buffer identity를 보존함을 증명하며, `R2dbcSnapshotCacheApiUsageTest`에서 README와 동등한 사용 코드를 컴파일한다. JDBC 엔진 타입이 이 모듈로 누출되지 않음을 단언한다.
+- [x] 동일한 공통 코디네이터와 캐시 전용 구현을 사용하고 `runBlocking`, 스케줄러, 작업자 스레드를 도입하지 않는다.
+- [x] `./gradlew :bluetape4k-exposed-r2dbc-caffeine:test --no-daemon`을 실행하고 API 동작을 JDBC 계약과 비교한다.
+- [x] Lore 트레일러가 포함된 커밋을 생성한다.
 
 ```text
 Keep R2DBC snapshot visibility aligned with JDBC commits
@@ -529,33 +529,33 @@ Scope-risk: moderate
 Tested: R2DBC Caffeine unit, transaction, H2, and concurrency tests
 ```
 
-Completion evidence: targeted R2DBC contracts 40/40, cache 141/141, and full
-R2DBC Caffeine 106 passed plus one existing pending test. Main/test Kotlin
-compilation completed with zero warnings or errors. The public injected commit
-seam proves `BEFORE_COMMIT -> PHYSICAL_COMMIT_STARTED`, no `AFTER_COMMIT`, caller
-cancellation propagation, and unchanged cache/failure state without calling the
-outcome rollback. Controlled races and every coroutine wait are bounded.
-Independent spec and code-quality reviews reported no remaining Critical,
-Important, or Minor findings.
+완료 증거: 대상 R2DBC 계약 40/40, cache 141/141, 전체 R2DBC Caffeine
+106개가 통과했고 기존 pending 테스트 하나가 남았다. Main/test Kotlin
+컴파일은 경고나 오류 없이 완료됐다. 공개 주입 commit seam은
+`BEFORE_COMMIT -> PHYSICAL_COMMIT_STARTED`, `AFTER_COMMIT` 없음, 호출자
+cancellation 전파, 변경되지 않은 cache/failure 상태를 증명하며 결과를
+rollback이라고 부르지 않는다. 제어된 경합과 모든 coroutine 대기는 제한된다.
+독립 명세 및 코드 품질 리뷰에서 남은 Critical, Important, Minor 발견 사항이
+없다고 보고했다.
 
-## Task 7: Define canonical Redisson identifiers, codec, configuration, and namespace fingerprint
+## 작업 7: 정규 Redisson 식별자, 코덱, 구성 및 네임스페이스 fingerprint 정의
 
-**Files:**
-- Create: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotIdentifierPolicy.kt`
-- Create: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotRedissonCodec.kt`
-- Create: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidatorConfig.kt`
-- Create: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceFingerprint.kt`
-- Modify: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/repository/ExposedRedissonCodecSafety.kt`
-- Create: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotRedissonCodecTest.kt`
-- Create: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceFingerprintTest.kt`
-- Modify: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/repository/RedissonRepositoryCodecSafetyTest.kt`
-- Create: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotRedissonApiUsageTest.kt`
+**파일:**
+- 생성: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotIdentifierPolicy.kt`
+- 생성: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotRedissonCodec.kt`
+- 생성: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidatorConfig.kt`
+- 생성: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceFingerprint.kt`
+- 수정: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/repository/ExposedRedissonCodecSafety.kt`
+- 생성: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotRedissonCodecTest.kt`
+- 생성: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceFingerprintTest.kt`
+- 수정: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/repository/RedissonRepositoryCodecSafetyTest.kt`
+- 생성: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotRedissonApiUsageTest.kt`
 
-- [x] Write failing golden-vector tests: signed Long uses exactly 8 big-endian bytes; UUID uses exactly 16 bytes, most-significant then least-significant bits, big-endian. Reject String and unsupported ID types.
-- [x] Write configuration tests for all positive caps/timeouts and `trustedBinaryCache = false` default. In separate parameterized tests, allow only `SyncStrategy.INVALIDATE` (reject `UPDATE` and multi-node `NONE`) and only `ReconnectionStrategy.CLEAR` (reject every other enum value, including `NONE`/`LOAD`). Use existing `ExposedRedissonCodecSafety`: reject Fory, Kryo, and JDK object codecs by default; permit them only with explicit trusted-binary opt-in.
-- [x] Write fingerprint tests covering only a canonical UTF-8, line-delimited, field-name-sorted allowlist: backend, namespace, key raw class, snapshot raw class, schema version, codec class/version, sync strategy, and canonical key-encoding ID. Prove endpoints, usernames, credentials, tuning values, and arbitrary `toString()` output are excluded.
-- [x] Run targeted tests and confirm red.
-- [x] Implement the exact public codec API and validate `codecVersion` with `[A-Za-z0-9._-]{1,64}`:
+- [x] 실패하는 골든 벡터 테스트를 작성한다. signed Long은 정확히 8개의 big-endian 바이트를 사용하고, UUID는 most-significant bits 다음 least-significant bits 순서의 정확히 16개 big-endian 바이트를 사용한다. String과 지원하지 않는 ID 타입은 거부한다.
+- [x] 모든 양수 cap/timeout과 `trustedBinaryCache = false` 기본값에 대한 구성 테스트를 작성한다. 별도의 매개변수화 테스트에서 `SyncStrategy.INVALIDATE`만 허용하고 `UPDATE` 및 다중 노드 `NONE`은 거부한다. `ReconnectionStrategy.CLEAR`만 허용하고 `NONE`/`LOAD`를 포함한 다른 모든 enum 값은 거부한다. 기존 `ExposedRedissonCodecSafety`로 Fory, Kryo, JDK 객체 코덱을 기본 거부하고 명시적 trusted-binary opt-in에서만 허용한다.
+- [x] 정규 UTF-8, 줄 구분, 필드명 정렬 allowlist만 다루는 fingerprint 테스트를 작성한다. backend, namespace, key raw class, snapshot raw class, schema version, codec class/version, sync strategy, canonical key-encoding ID를 포함한다. endpoint, username, credential, tuning 값, 임의의 `toString()` 출력이 제외됨을 증명한다.
+- [x] 대상 테스트를 실행해 RED를 확인한다.
+- [x] 정확한 공개 코덱 API를 구현하고 `[A-Za-z0-9._-]{1,64}`로 `codecVersion`을 검증한다.
 
 ```kotlin
 sealed interface SnapshotIdentifierPolicy<ID : Any>
@@ -574,10 +574,10 @@ fun <ID : Any> snapshotRedissonCodec(
 ): SnapshotRedissonCodec<ID>
 ```
 
-- [x] Add a direct `Codec` overload to `ExposedRedissonCodecSafety` and test it. Require the same wrapper instance in the existing repository's `RedissonCacheConfig.codec` and the invalidator; `AbstractJdbcRedissonRepository`/`AbstractSuspendedJdbcRedissonRepository` already pass `config.codec` to their map construction, so add source-usage tests proving their local-cached map receives the wrapper without changing those classes unless the test reveals a gap.
-- [x] Route every delegate codec through `ExposedRedissonCodecSafety`. Document that trusted-binary opt-in is only for isolated data where all writers and payloads are trusted.
-- [x] Implement `JdbcRedissonSnapshotInvalidatorConfig` exactly as approved, including encoded key/batch/commit caps and outstanding chunk/byte limits.
-- [x] Use this exact public configuration declaration and defaults:
+- [x] `ExposedRedissonCodecSafety`에 직접 `Codec` overload를 추가하고 테스트한다. 기존 리포지토리의 `RedissonCacheConfig.codec`과 invalidator에 동일한 wrapper 인스턴스를 요구한다. `AbstractJdbcRedissonRepository`/`AbstractSuspendedJdbcRedissonRepository`는 이미 map 생성 시 `config.codec`을 전달하므로, 테스트에서 누락을 발견하지 않는 한 클래스를 변경하지 말고 local-cached map이 wrapper를 받음을 증명하는 소스 사용 테스트를 추가한다.
+- [x] 모든 delegate codec을 `ExposedRedissonCodecSafety`를 거쳐 처리한다. trusted-binary opt-in은 모든 writer와 payload를 신뢰하는 격리 데이터에만 사용할 수 있다고 문서화한다.
+- [x] encoded key/batch/commit cap과 outstanding chunk/byte 제한을 포함해 승인된 그대로 `JdbcRedissonSnapshotInvalidatorConfig`를 구현한다.
+- [x] 다음과 같은 정확한 공개 구성 선언과 기본값을 사용한다.
 
 ```kotlin
 data class JdbcRedissonSnapshotInvalidatorConfig(
@@ -598,10 +598,10 @@ data class JdbcRedissonSnapshotInvalidatorConfig(
 )
 ```
 
-- [x] Document that identifiers must be non-secret, non-credential, non-PII surrogate keys.
-- [x] Compile `longSnapshotIdentifierPolicy`, `uuidSnapshotIdentifierPolicy`, and `snapshotRedissonCodec` source usage; include an API contract assertion that no String identifier policy/factory is present.
-- [x] Re-run targeted tests.
-- [x] Commit with Lore trailers:
+- [x] 식별자는 비밀, 자격 증명, PII가 아닌 surrogate key여야 한다고 문서화한다.
+- [x] `longSnapshotIdentifierPolicy`, `uuidSnapshotIdentifierPolicy`, `snapshotRedissonCodec` 소스 사용을 컴파일한다. String 식별자 policy/factory가 없다는 API 계약 단언을 포함한다.
+- [x] 대상 테스트를 다시 실행한다.
+- [x] Lore 트레일러가 포함된 커밋을 생성한다.
 
 ```text
 Pin distributed invalidation to canonical identifier bytes
@@ -613,31 +613,30 @@ Scope-risk: moderate
 Tested: Redisson codec golden vectors, configuration, and fingerprint tests
 ```
 
-Task 7 evidence: commits `2382cc3`, `f89141a`, `c3c7afd`, and `bd50cc8`
-implement the exact three-argument public codec factory, canonical Long/UUID key
-bytes, deterministic allowlisted fingerprinting, and consumer-owned binary-codec
-trust. Redisson 4.6.1 repository-relevant delegate wrappers are traversed with
-identity-cycle and 64-node bounds; supported-wrapper inspection drift fails
-closed while reviewed unknown codecs remain usable. Targeted Task 7 tests passed
-78/78, the full JDBC Redisson module passed 523 tests with one existing skip,
-main/test compilation and root detekt passed, and independent spec and quality
-reviews reported P0=0, P1=0, P2=0, P3=0.
+작업 7 증거: 커밋 `2382cc3`, `f89141a`, `c3c7afd`, `bd50cc8`은 정확한
+3-인자 공개 코덱 팩토리, 정규 Long/UUID 키 바이트, 결정론적 allowlist 기반
+fingerprinting, 소비자 소유 binary-codec 신뢰를 구현한다. Redisson 4.6.1의
+리포지토리 관련 delegate wrapper는 identity-cycle 및 64-node 제한으로
+순회한다. 지원 wrapper 검사 드리프트는 fail closed하고 리뷰된 미확인 코덱은
+계속 사용할 수 있다. 대상 작업 7 테스트는 78/78, 전체 JDBC Redisson 모듈은
+기존 skip 하나를 포함해 523개 테스트를 통과했다. main/test 컴파일과 루트
+detekt가 통과했고 독립 명세 및 품질 리뷰는 P0=0, P1=0, P2=0, P3=0을 보고했다.
 
-## Task 8: Implement bounded non-blocking Redisson invalidation and failure handling
+## 작업 8: 제한된 논블로킹 Redisson 무효화 및 실패 처리 구현
 
-**Files:**
-- Create: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/snapshot/RedissonInvalidationQuotaRegistry.kt`
-- Create: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidator.kt`
-- Create: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotTransaction.kt`
-- Create: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/RedissonInvalidationQuotaRegistryTest.kt`
-- Create: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidatorTest.kt`
-- Create: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotTransactionTest.kt`
+**파일:**
+- 생성: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/snapshot/RedissonInvalidationQuotaRegistry.kt`
+- 생성: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidator.kt`
+- 생성: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotTransaction.kt`
+- 생성: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/RedissonInvalidationQuotaRegistryTest.kt`
+- 생성: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidatorTest.kt`
+- 생성: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotTransactionTest.kt`
 
-- [x] Write failing tests for exact encoded-byte measurement at stage time, canonical re-encode/hash verification at submit time, batch/commit caps, an admission/submission attempt for every chunk before local work, pinned first-client quota configuration, mismatched factory rejection, and invalidation-only Redis commands. With quota smaller than total chunks, rejected chunks and an early synchronous failure must not suppress later stores or local phases.
-- [x] Add completion-future tests for synchronous pre-future failure, normal completion, exceptional completion, duplicate completion notification, and never-completing future. Assert exactly-once lease release and bounded outstanding counts/bytes.
-- [x] Add failure-buffer tests: successful completion records nothing; non-success uses non-blocking bounded offer; explicit drain calls the observer on the caller thread; observer exception consumes the event and appears in the structured drain result.
-- [x] Run targeted tests and confirm red.
-- [x] Implement the exact public construction/composition surface:
+- [x] 스테이징 시 정확한 encoded-byte 측정, 제출 시 정규 re-encode/hash 검증, batch/commit cap, 로컬 작업 전 모든 chunk의 승인/제출 시도, 고정된 첫 클라이언트 할당량 구성, 불일치 팩토리 거부, 무효화 전용 Redis 명령에 대한 실패 테스트를 작성한다. 총 chunk보다 할당량이 작더라도 거부된 chunk와 초기 동기 실패가 뒤쪽 저장소나 로컬 단계를 막아서는 안 된다.
+- [x] future 생성 전 동기 실패, 정상 완료, 예외 완료, 중복 완료 알림, 영원히 완료되지 않는 future에 대한 테스트를 추가한다. lease를 정확히 한 번 해제하고 outstanding count/byte가 제한됨을 단언한다.
+- [x] failure-buffer 테스트를 추가한다. 성공 완료는 아무것도 기록하지 않고, 성공하지 못한 결과는 제한된 논블로킹 offer를 사용하며, 명시적 drain은 호출자 스레드에서 observer를 호출한다. observer 예외는 이벤트를 소비하고 구조화된 drain 결과에 나타난다.
+- [x] 대상 테스트를 실행해 RED를 확인한다.
+- [x] 정확한 공개 생성/조합 표면을 구현한다.
 
 ```kotlin
 fun <ID : Any, V : Serializable> jdbcRedissonSnapshotInvalidator(
@@ -681,15 +680,15 @@ fun <ID : Any> JdbcTransaction.stageInvalidation(
 )
 ```
 
-- [x] Keep invalidator constructors internal. Expose only `storeId`, the identical caller-supplied `failureBuffer`, `quotaHealth()`, and transaction invalidation; expose no read or snapshot PUT. Compile explicit-token and reified usage and prove both preserve supplied-buffer identity.
-- [x] Add a narrow repository-plus-invalidator contract fixture: construct the existing repository `RedissonCacheConfig` and the invalidator with the identical `SnapshotRedissonCodec` object, versioned map namespace, value-type token, caller-owned `RedissonClient`, and identical supplied failure buffer. Before map use, reject every mismatch the exact factory can observe locally: unsupported ID/value tokens, codec safety, invalid configuration, and same-client quota-cap drift. Before mutating transaction state, reject same-transaction store-token, compatibility-fingerprint, and failure-buffer collisions. The exact public factory intentionally accepts no repository contract object, so cross-transaction repository/invalidator namespace, codec, value-token, schema, and configuration mismatch is rejected by Task 9's remote namespace marker before accepting mutations rather than by a partial process-local registry. Keep example-application work for #326.
-- [x] Implement a per-Redisson-client weak-identity quota registry. The first valid factory pins caps; later mismatches fail before constructing a facade.
-- [x] Encode and measure every staged ID without retaining raw sensitive IDs in public health/failure reports. Re-encode and verify bytes/hash before submission.
-- [x] For every chunk in sequence, re-encode, attempt admission, submit only when admitted, structurally record rejection/failure, and continue. Begin local phases only after all chunks/stores received an attempt; all chunks need not be admitted. Attach completion callbacks; never call `await`, `get`, `join`, `runBlocking`, cancellation, an executor, a scheduler, or a worker thread.
-- [x] Release quota immediately on synchronous submission failure, otherwise in completion callback `finally`. A never-completing future intentionally retains its bounded lease until client replacement.
-- [x] Expose only the exact structural quota health and the supplied `failureBuffer`; callers drain via `failureBuffer.drainTo(observer)`. Test every health counter transition and saturation/recovery state.
-- [x] Re-run targeted tests and the full JDBC Redisson unit suite.
-- [x] Commit with Lore trailers:
+- [x] invalidator 생성자는 internal로 유지한다. `storeId`, 호출자가 제공한 동일한 `failureBuffer`, `quotaHealth()`, 트랜잭션 무효화만 노출하고 읽기나 스냅숏 PUT은 노출하지 않는다. 명시적 token 및 reified 사용을 컴파일하고 둘 다 제공된 buffer identity를 보존함을 증명한다.
+- [x] 좁은 repository-plus-invalidator 계약 픽스처를 추가한다. 기존 리포지토리 `RedissonCacheConfig`와 invalidator를 동일한 `SnapshotRedissonCodec` 객체, 버전이 있는 map namespace, value-type token, 호출자 소유 `RedissonClient`, 동일한 제공 failure buffer로 생성한다. map 사용 전에 정확한 팩토리가 로컬에서 관찰할 수 있는 모든 불일치, 즉 지원하지 않는 ID/value token, codec safety, 잘못된 구성, 동일 클라이언트 quota-cap 드리프트를 거부한다. 트랜잭션 상태 변경 전에 동일 트랜잭션의 store-token, compatibility-fingerprint, failure-buffer 충돌을 거부한다. 정확한 공개 팩토리는 의도적으로 repository 계약 객체를 받지 않으므로, 트랜잭션 간 repository/invalidator namespace, codec, value-token, schema, 구성 불일치는 부분적인 프로세스 로컬 registry가 아니라 작업 9의 원격 네임스페이스 마커가 변경 승인 전에 거부한다. 예제 애플리케이션 작업은 #326으로 남긴다.
+- [x] Redisson 클라이언트별 weak-identity quota registry를 구현한다. 첫 유효 팩토리가 cap을 고정하고 이후 불일치는 facade 생성 전에 실패한다.
+- [x] 공개 상태/실패 보고서에 민감한 원시 ID를 보관하지 않고 모든 스테이징 ID를 인코딩하고 측정한다. 제출 전에 bytes/hash를 재인코딩하고 검증한다.
+- [x] 모든 chunk를 순서대로 재인코딩하고 승인을 시도하며, 승인된 경우에만 제출하고, 거부/실패를 구조적으로 기록한 뒤 계속한다. 모든 chunk/store가 시도를 받은 뒤에만 로컬 단계를 시작하며 모든 chunk가 승인될 필요는 없다. 완료 콜백을 연결하고 `await`, `get`, `join`, `runBlocking`, cancellation, 실행기, 스케줄러, 작업자 스레드를 절대 호출하지 않는다.
+- [x] 동기 제출 실패 시 할당량을 즉시 해제하고 그 외에는 완료 콜백의 `finally`에서 해제한다. 영원히 완료되지 않는 future는 클라이언트 교체 시까지 제한된 lease를 의도적으로 유지한다.
+- [x] 정확한 구조적 할당량 상태와 제공된 `failureBuffer`만 노출한다. 호출자는 `failureBuffer.drainTo(observer)`로 drain한다. 모든 상태 카운터 전이와 포화/복구 상태를 테스트한다.
+- [x] 대상 테스트와 전체 JDBC Redisson 단위 테스트 모음을 다시 실행한다.
+- [x] Lore 트레일러가 포함된 커밋을 생성한다.
 
 ```text
 Bound distributed invalidation without blocking commit callbacks
@@ -701,34 +700,33 @@ Scope-risk: broad
 Tested: quota, submission, completion, failure buffer, and invalidation command tests
 ```
 
-Task 8 evidence: weak client-identity quota and namespace-composition reservations
-pin caps and exact local facade contracts before map access, roll back failed
-construction without retaining the client, and share one transaction identity for
-exact matches. Staging measures canonical bytes and enforces the transaction-wide
-commit cap; submission re-encodes, verifies, chunks, admits, and invokes only
-`fastRemoveAsync` before local phases. Completion paths release leases exactly
-once, retain no measured list or identifier in pending callbacks, keep ordinary
-failures structural, and rethrow synchronous fatal `Error` values unchanged.
-Focused Task 8 tests passed 37/37, `exposed/cache` passed 142/142, and the full
-JDBC Redisson module passed 560 tests with one existing skip. Main/test
-compilation, root detekt, diff/forbidden-call audits, independent spec review,
-and independent quality review all passed with P0=0, P1=0, P2=0, P3=0.
+작업 8 증거: weak client-identity 할당량과 네임스페이스 조합 예약은 map 접근
+전에 cap과 정확한 로컬 facade 계약을 고정하고, 클라이언트를 보관하지 않은 채
+실패한 생성을 롤백하며, 정확히 일치할 때 하나의 트랜잭션 identity를 공유한다.
+스테이징은 정규 바이트를 측정하고 트랜잭션 전체 commit cap을 강제한다. 제출은
+재인코딩, 검증, chunk 분할, 승인을 수행하고 로컬 단계 전에 `fastRemoveAsync`만
+호출한다. 완료 경로는 lease를 정확히 한 번 해제하고 대기 콜백에 측정 목록이나
+식별자를 보관하지 않으며 일반 실패를 구조적으로 유지하고 동기 치명적 `Error`
+값을 변경 없이 다시 던진다. 작업 8 집중 테스트 37/37, `exposed/cache` 142/142,
+전체 JDBC Redisson 모듈은 기존 skip 하나를 포함해 560개 테스트를 통과했다.
+Main/test 컴파일, 루트 detekt, diff/금지 호출 감사, 독립 명세 및 품질 리뷰가
+모두 통과했으며 P0=0, P1=0, P2=0, P3=0이었다.
 
-## Task 9: Add namespace administration, recovery, and two-client Redis integration
+## 작업 9: 네임스페이스 관리, 복구 및 두 클라이언트 Redis 통합 추가
 
-**Files:**
-- Modify: `exposed/jdbc-redisson/build.gradle.kts` (test-only Toxiproxy API compile dependency)
-- Create: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceAdmin.kt`
-- Create: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceAdminTest.kt`
-- Create: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidatorIntegrationTest.kt`
+**파일:**
+- 수정: `exposed/jdbc-redisson/build.gradle.kts` (테스트 전용 Toxiproxy API 컴파일 의존성)
+- 생성: `exposed/jdbc-redisson/src/main/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceAdmin.kt`
+- 생성: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceAdminTest.kt`
+- 생성: `exposed/jdbc-redisson/src/test/kotlin/io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidatorIntegrationTest.kt`
 
-- [x] Write unit tests for atomic marker claim/compare, mismatch rejection before cache use, map-before-marker cleanup order, bounded asynchronous unlink, ACL failure reporting, and quiescence requirement. Require an exact `expectedFingerprint`; marker-absent/map-present fails closed; map-absent/marker-present safely resumes marker deletion.
-- [x] Write a sequential Testcontainers test with two Redisson clients: populate client B near-cache, commit invalidation from client A, and poll with a bounded monotonic deadline plus deterministic timeout diagnostics until B no longer serves the stale local value. Also verify rollback sends no invalidation.
-- [x] Add a construction-options test proving positive local-cache size, `SyncStrategy.INVALIDATE`, and `ReconnectionStrategy.CLEAR` reach `RLocalCachedMap`. Add a deterministic peer-only reconnect test that primes client B's stale local state, disconnects only B through repo-owned Toxiproxy while A remains directly connected and invalidates the remote key, observes B transport reconnect plus invalidation-topic resubscription without a cache `get`, and proves CLEAR removed the cached key before exactly one first post-reconnect `mapB[3]` hit under bounded monotonic deadlines with deterministic timeout diagnostics.
-- [x] Add namespace marker script timeout and connection-failure tests. Facade creation must fail closed before map access, registration, or mutation on timeout, connection failure, or mismatch.
-- [x] Add incompatible fingerprint and never-completing-future recovery tests. Recovery must quiesce, close the old client, prove old quota zero after close/completion under one bounded monotonic deadline with deterministic timeout diagnostics, and drain failures before replacement. Then create facades with a distinct new `RedissonClient` identity and fresh quota registry; prove the closed old client cannot be reused. Expiry fails recovery closed.
-- [x] Run `./gradlew :bluetape4k-exposed-jdbc-redisson:test --tests '*SnapshotNamespaceAdminTest' --tests '*JdbcRedissonSnapshotInvalidatorIntegrationTest' --no-daemon` sequentially and confirm red before implementation.
-- [x] Implement the exact guarded cleanup surface and an `@RequiresOptIn(ERROR)` delicate admin annotation:
+- [x] 원자적 마커 claim/compare, 캐시 사용 전 불일치 거부, map-before-marker 정리 순서, 제한된 비동기 unlink, ACL 실패 보고, quiescence 요구 사항의 단위 테스트를 작성한다. 정확한 `expectedFingerprint`를 요구한다. marker-absent/map-present는 fail closed하고, map-absent/marker-present는 마커 삭제를 안전하게 재개한다.
+- [x] Redisson 클라이언트 두 개를 사용하는 순차 Testcontainers 테스트를 작성한다. 클라이언트 B의 Near Cache를 채우고 클라이언트 A에서 무효화를 커밋한 뒤, B가 오래된 로컬 값을 더 이상 제공하지 않을 때까지 결정론적 timeout 진단이 포함된 제한된 단조 deadline으로 poll한다. 롤백이 무효화를 보내지 않는지도 검증한다.
+- [x] 양수 local-cache 크기, `SyncStrategy.INVALIDATE`, `ReconnectionStrategy.CLEAR`가 `RLocalCachedMap`에 전달됨을 증명하는 생성 옵션 테스트를 추가한다. 클라이언트 B의 오래된 로컬 상태를 준비하고, A는 직접 연결된 채 원격 키를 무효화하면서 리포지토리 소유 Toxiproxy로 B만 연결 해제하는 결정론적 피어 전용 재연결 테스트를 추가한다. 캐시 `get` 없이 B transport 재연결과 invalidation-topic 재구독을 관찰하고, 결정론적 timeout 진단이 포함된 제한된 단조 deadline 안에서 재연결 후 첫 `mapB[3]` hit를 정확히 한 번 수행하기 전에 CLEAR가 캐시된 키를 제거했음을 증명한다.
+- [x] 네임스페이스 마커 스크립트 timeout 및 연결 실패 테스트를 추가한다. timeout, 연결 실패, 불일치 시 facade 생성은 map 접근, 등록, 변경 전에 fail closed해야 한다.
+- [x] 비호환 fingerprint와 영원히 완료되지 않는 future 복구 테스트를 추가한다. 복구는 quiesce하고 기존 클라이언트를 닫으며, 결정론적 timeout 진단이 포함된 하나의 제한된 단조 deadline에서 close/완료 후 기존 할당량이 0임을 증명하고 교체 전에 실패를 drain해야 한다. 이후 새로운 `RedissonClient` identity와 fresh quota registry로 facade를 만들고 닫힌 이전 클라이언트를 재사용할 수 없음을 증명한다. 만료 시 복구는 fail closed한다.
+- [x] `./gradlew :bluetape4k-exposed-jdbc-redisson:test --tests '*SnapshotNamespaceAdminTest' --tests '*JdbcRedissonSnapshotInvalidatorIntegrationTest' --no-daemon`을 순차 실행하고 구현 전에 RED를 확인한다.
+- [x] 정확하게 보호된 정리 표면과 `@RequiresOptIn(ERROR)` delicate 관리 annotation을 구현한다.
 
 ```kotlin
 @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
@@ -768,14 +766,14 @@ fun <ID : Any> clearMapRetainingMarker(
 ): SnapshotNamespaceCleanupResult
 ```
 
-- [x] Compile source usage of the delicate opt-in and every cleanup result outcome. Use one shared monotonic timeout across marker verification, asynchronous map unlink, local clear, and absence verification; accepted server cleanup cannot be cancelled, and a rerun resumes from observed partial state.
-- [x] Before any Redisson/map/script interaction, both admin helpers validate namespace against `[a-z][a-z0-9._-]{0,62}:v[1-9][0-9]*`, `expectedFingerprint` against lowercase SHA-256 `[0-9a-f]{64}`, and a positive bounded timeout. Add zero-client-interaction tests for every invalid input.
-- [x] Delete map entries before marker and fail closed on the partial-state matrix. Mark both APIs delicate and document dedicated namespace-scoped Redis ACL credentials, network isolation, quiescence, and the prohibition on request-facing exposure. Treat the fingerprint as an accident guard, not authorization.
-- [x] Implement remote namespace marker verification within `namespaceVerificationTimeout`. Reject incompatible namespace reuse before accepting mutations.
-- [x] Verify integration fixtures use finite Redisson command timeout and retry policy no greater than five seconds before outage/recovery cases.
-- [x] Add a configuration-contract test for the exact v1-to-v2 state machine. Rollout: deploy v2 readers/writers, warm or naturally repopulate v2, cut every node over, stop all v1 writers, drain in-flight requests, then clear v1 remote map, every node's v1 local view, and v1 marker. Rollback: stop v2 writers, quiesce traffic, clear the retained v1 remote map and every node's v1 local view while retaining/revalidating its marker, switch every node to an empty v1, rebuild and verify reads from the database, and only then clean v2. Reject mixed-version nodes sharing an unversioned namespace.
-- [x] Re-run the targeted integration tests sequentially, then the full module test task sequentially.
-- [x] Commit with Lore trailers:
+- [x] delicate opt-in과 모든 정리 결과 outcome의 소스 사용을 컴파일한다. 마커 검증, 비동기 map unlink, 로컬 clear, 부재 검증 전체에 하나의 공유 단조 timeout을 사용한다. 승인된 서버 정리는 취소할 수 없고 재실행은 관찰된 부분 상태에서 재개한다.
+- [x] Redisson/map/script 상호 작용 전에 두 관리 helper 모두 네임스페이스를 `[a-z][a-z0-9._-]{0,62}:v[1-9][0-9]*`, `expectedFingerprint`를 소문자 SHA-256 `[0-9a-f]{64}`, timeout을 양수 제한값으로 검증한다. 모든 잘못된 입력에 대해 클라이언트 상호 작용이 0인 테스트를 추가한다.
+- [x] 마커보다 map 엔트리를 먼저 삭제하고 부분 상태 매트릭스에서는 fail closed한다. 두 API를 delicate로 표시하고 네임스페이스 전용 Redis ACL 자격 증명, 네트워크 격리, quiescence, request-facing 노출 금지를 문서화한다. fingerprint는 권한 부여가 아니라 실수 방지 장치로 취급한다.
+- [x] `namespaceVerificationTimeout` 안에서 원격 네임스페이스 마커 검증을 구현한다. 변경을 승인하기 전에 비호환 네임스페이스 재사용을 거부한다.
+- [x] outage/recovery 사례 전에 통합 픽스처가 유한한 Redisson 명령 timeout과 5초 이하 재시도 정책을 사용하는지 검증한다.
+- [x] 정확한 v1-to-v2 상태 머신의 구성 계약 테스트를 추가한다. Rollout: v2 reader/writer를 배포하고, v2를 워밍업하거나 자연스럽게 다시 채우며, 모든 노드를 전환하고, 모든 v1 writer를 중지하고, 처리 중 요청을 drain한 뒤 v1 원격 map, 모든 노드의 v1 로컬 view, v1 마커를 정리한다. Rollback: v2 writer를 중지하고 트래픽을 quiesce하며, 마커를 유지/재검증하면서 유지된 v1 원격 map과 모든 노드의 v1 로컬 view를 정리하고, 모든 노드를 빈 v1로 전환하며, 데이터베이스에서 다시 구축하고 읽기를 검증한 뒤에만 v2를 정리한다. 버전 없는 네임스페이스를 공유하는 혼합 버전 노드는 거부한다.
+- [x] 대상 통합 테스트를 순차 재실행한 뒤 전체 모듈 테스트 작업을 순차 실행한다.
+- [x] Lore 트레일러가 포함된 커밋을 생성한다.
 
 ```text
 Make Redisson namespace compatibility and recovery explicit
@@ -787,53 +785,59 @@ Scope-risk: broad
 Tested: namespace admin unit tests and sequential two-client Redis integration tests
 ```
 
-Task 9 evidence: the sequential live fixture uses `RedisServer.Launcher.redis`, independently owned Redisson
-application/operator clients, 2-second command/connect timeouts, one retry, a 250-millisecond retry delay, and a
-500-millisecond heartbeat. Every random namespace is tracked; teardown restores paused transports, closes clients,
-deletes the Toxiproxy proxy, deletes both map and marker keys, and verifies no tracked Redis key remains. Real Redis Lua
-claim persisted across clients, exact markers matched, mismatches failed closed, guarded rollback cleanup retained and
-revalidated the marker, and destructive cleanup removed map before marker. Two-client commit invalidation removed client
-B's primed stale local value under a bounded monotonic poll; rollback retained it after a later committed barrier
-invalidation, without a timing sleep. The reconnect proof routes only client B through the repo-owned `ToxiproxyServer`
-while A stays directly connected. It observes B's Redisson 4.6.1 connection-listener disconnect, allows A to remove the
-key while B is isolated, restores the proxy, awaits B transport reconnect and the exact `{$namespace}:topic` local-cache
-invalidation-topic resubscription, and observes the public local-cache view clear before exactly one first `mapB[3]` read.
-Recovery committed an invalidation during the outage, observed one outstanding quota lease, bounded old-client shutdown,
-then proved quota zero plus one drainable failure before creating a distinct replacement with fresh caps; old-client reuse
-and an expired verification failed closed. The live v1/v2 state machine uses separate operator and application clients,
-asserts quota quiescence and actual client shutdown before each cleanup, creates a fresh empty v1 client after retained-marker
-cleanup, rebuilds from the database, closes the rebuilt v1 client, and only then cleans v2; its trace is appended only after
-each real operation succeeds. The single-read reconnect regression failed RED with stale on the first post-reconnect hit;
-the peer-only listener/subscription/CLEAR implementation then passed three consecutive isolated reruns. The exact targeted
-suite passed 41/41. The final full JDBC Redisson module run executed 607 tests with 606 passing, one existing skip, zero
-failures, and zero errors. Root `detekt` completed successfully with the root task reported as `NO-SOURCE`.
+작업 9 증거: 순차 live 픽스처는 `RedisServer.Launcher.redis`, 독립 소유 Redisson
+application/operator 클라이언트, 2초 command/connect timeout, 재시도 1회, 250밀리초
+재시도 지연, 500밀리초 heartbeat를 사용한다. 모든 무작위 네임스페이스를 추적한다.
+teardown은 중지된 transport를 복원하고 클라이언트를 닫으며 Toxiproxy proxy와 map 및
+marker key를 삭제한 뒤 추적된 Redis key가 남지 않았는지 검증한다. 실제 Redis Lua
+claim은 클라이언트 사이에서 유지됐고, 정확한 마커는 일치했으며, 불일치는 fail
+closed했다. 보호된 롤백 정리는 마커를 유지하고 재검증했으며, 파괴적 정리는 마커보다
+map을 먼저 제거했다. 두 클라이언트 커밋 무효화는 제한된 단조 poll에서 클라이언트
+B에 준비된 오래된 로컬 값을 제거했다. 롤백은 timing sleep 없이 이후 커밋된 barrier
+무효화 뒤에도 값을 유지했다. 재연결 증명은 A가 직접 연결된 상태에서 리포지토리 소유
+`ToxiproxyServer`를 통해 B만 라우팅한다. B의 Redisson 4.6.1 connection-listener
+연결 해제를 관찰하고, B가 격리된 동안 A가 키를 제거하도록 한 뒤 proxy를 복원한다.
+B transport 재연결과 정확한 `{$namespace}:topic` local-cache invalidation-topic
+재구독을 기다리고, 재연결 후 첫 `mapB[3]` 읽기를 정확히 한 번 수행하기 전에 공개
+local-cache view가 정리됨을 관찰한다. 복구는 outage 중 무효화를 커밋하고 outstanding
+quota lease 하나를 관찰했으며, 이전 클라이언트를 제한된 시간 안에 종료했다. fresh
+cap을 가진 별도 교체 클라이언트를 만들기 전에 할당량 0과 drain 가능한 실패 하나를
+증명했다. 이전 클라이언트 재사용과 만료된 검증은 fail closed했다. live v1/v2 상태
+머신은 별도의 operator/application 클라이언트를 사용하고, 정리 전에 할당량 quiescence와
+실제 클라이언트 종료를 단언한다. retained-marker 정리 후 fresh empty v1 클라이언트를
+만들어 데이터베이스에서 재구축하고, 재구축된 v1 클라이언트를 닫은 뒤에만 v2를 정리한다.
+trace는 실제 작업이 성공한 뒤에만 추가된다. 단일 읽기 재연결 회귀는 재연결 후 첫 hit의
+stale 값으로 RED에 실패했고, 피어 전용 listener/subscription/CLEAR 구현은 이후 격리
+재실행 3회를 연속 통과했다. 정확한 대상 모음은 41/41을 통과했다. 최종 전체 JDBC
+Redisson 모듈 실행은 607개 테스트 중 606개 통과, 기존 skip 1개, 실패 0개, 오류 0개였다.
+루트 `detekt`는 성공했고 루트 작업은 `NO-SOURCE`로 보고됐다.
 
-## Task 10: Document the public contract in English and Korean
+## 작업 10: 공개 계약을 영어와 한국어로 문서화
 
-**Files:**
-- Modify: `exposed/cache/README.md`
-- Modify: `exposed/cache/README.ko.md`
-- Modify: `exposed/jdbc-caffeine/README.md`
-- Modify: `exposed/jdbc-caffeine/README.ko.md`
-- Modify: `exposed/r2dbc-caffeine/README.md`
-- Modify: `exposed/r2dbc-caffeine/README.ko.md`
-- Modify: `exposed/jdbc-redisson/README.md`
-- Modify: `exposed/jdbc-redisson/README.ko.md`
-- Do not modify: `docs/manual/en/**`, `docs/manual/ko/**`, `docs/manual/manifest.yaml`
+**파일:**
+- 수정: `exposed/cache/README.md`
+- 수정: `exposed/cache/README.ko.md`
+- 수정: `exposed/jdbc-caffeine/README.md`
+- 수정: `exposed/jdbc-caffeine/README.ko.md`
+- 수정: `exposed/r2dbc-caffeine/README.md`
+- 수정: `exposed/r2dbc-caffeine/README.ko.md`
+- 수정: `exposed/jdbc-redisson/README.md`
+- 수정: `exposed/jdbc-redisson/README.ko.md`
+- 수정 금지: `docs/manual/en/**`, `docs/manual/ko/**`, `docs/manual/manifest.yaml`
 
-- [x] Add paired sections covering detached immutable DTOs, mapper timing, `Entity` prohibition, root transaction/current transaction requirements, `maxAttempts = 1`, outer retry shape, commit/rollback semantics, last-mutation-wins, local fence behavior, limits, post-commit failure observability, and no database writes in callbacks.
-- [x] Add Redisson guidance covering invalidation-only behavior, Long/UUID key policy, key sensitivity restrictions, canonical codec/fingerprint compatibility, quota saturation, failure drain, quiescent cleanup, and client replacement.
-- [x] State that namespace is a static operator-owned versioned name matching `[a-z][a-z0-9._-]{0,62}:v[1-9][0-9]*`, never a tenant/request/entity identifier; unsafe binary codecs require explicit trusted isolated-cache opt-in; cleanup APIs require dedicated ACLs and must not be request-facing.
-- [x] Document that public failure/health surfaces retain only bounded structural data and exception type, never exception text, stack traces, payloads, identifiers, SQL, URLs, endpoints, or credentials.
-- [x] Add a paired behavior table distinguishing Exposed transaction-local `EntityCache` from this application near-cache. State explicitly that commit-safe is not database/cache atomicity, is not crash durability, and does not replace an application-owned outbox/repair path after post-commit cache failure.
-- [x] State that the feature is opt-in with no migration of existing repository caches. Document lookup-capacity failure before database work, one-shot token consumption on mapper/staging failure, callback-order stale-cache behavior, savepoint rejection, invalidation retry support, and fresh lookup for each outer snapshot-fill retry.
-- [x] Add exact bilingual v1-to-v2 rollout and rollback runbooks matching Task 9, including the mixed-version prohibition, verified database rebuild before v2 cleanup, shared cleanup timeout semantics, alerts/rate controls for repeated invalidations, and database load shedding for miss amplification.
-- [x] Include equivalent runnable snippets in both languages. Mark the JDBC, R2DBC, and Redisson blocks as canonical and keep library coordinates versionless because consumers own the BOM version.
-- [x] Extract and normalize each canonical fenced block from both English/Korean READMEs in tests (or assert exact literal equality with the compiled fixture source), then compile the canonical fixture through the source-usage tests created in Tasks 4, 6, 7, and 8. Keep API-name parity and use API reflection/ABI assertions for negative wrong-engine and no-String-policy cases without adding a compiler-testing dependency.
-- [x] Audit all new public declarations for English KDoc and `@InternalSnapshotCacheApi` opt-in where appropriate.
-- [x] Run a literal parity check for public type/function names across every README pair.
-- [x] Confirm `git diff -- docs/manual docs/manual/manifest.yaml` is empty.
-- [x] Commit with Lore trailers:
+- [x] 분리된 불변 DTO, mapper 실행 시점, `Entity` 금지, 루트/현재 트랜잭션 요구 사항, `maxAttempts = 1`, 외부 재시도 형태, 커밋/롤백 의미, 마지막 변경 우선, 로컬 펜스 동작, 제한, 커밋 후 실패 관찰 가능성, 콜백의 데이터베이스 쓰기 금지를 다루는 대응 섹션을 추가한다.
+- [x] 무효화 전용 동작, Long/UUID 키 정책, 키 민감도 제한, 정규 codec/fingerprint 호환성, 할당량 포화, 실패 drain, quiescent 정리, 클라이언트 교체를 다루는 Redisson 지침을 추가한다.
+- [x] 네임스페이스는 `[a-z][a-z0-9._-]{0,62}:v[1-9][0-9]*`와 일치하는 운영자 소유 정적 버전 이름이며 tenant/request/entity 식별자가 아님을 명시한다. 안전하지 않은 binary codec은 명시적인 trusted isolated-cache opt-in이 필요하고 정리 API에는 전용 ACL이 필요하며 request-facing이어서는 안 된다.
+- [x] 공개 실패/상태 표면은 제한된 구조 데이터와 예외 타입만 유지하고 예외 텍스트, stack trace, payload, 식별자, SQL, URL, endpoint, 자격 증명은 절대 보관하지 않는다고 문서화한다.
+- [x] Exposed 트랜잭션 로컬 `EntityCache`와 이 애플리케이션 Near Cache를 구분하는 대응 동작 표를 추가한다. commit-safe는 데이터베이스/캐시 원자성이나 crash durability가 아니며, 커밋 후 캐시 실패를 위한 애플리케이션 소유 outbox/repair 경로를 대체하지 않는다고 명시한다.
+- [x] 기존 리포지토리 캐시를 마이그레이션하지 않는 선택형 기능임을 명시한다. 데이터베이스 작업 전 lookup 용량 실패, mapper/staging 실패 시 일회용 token 소비, 콜백 순서에 따른 stale-cache 동작, savepoint 거부, 무효화 재시도 지원, 외부 스냅숏 fill 재시도마다 fresh lookup 수행을 문서화한다.
+- [x] 혼합 버전 금지, v2 정리 전 검증된 데이터베이스 재구축, 공유 정리 timeout 의미, 반복 무효화의 alert/rate control, miss 증폭 시 데이터베이스 load shedding을 포함해 작업 9와 일치하는 정확한 이중 언어 v1-to-v2 rollout/rollback runbook을 추가한다.
+- [x] 두 언어에 동등한 실행 가능한 snippet을 포함한다. JDBC, R2DBC, Redisson block을 canonical로 표시하고 소비자가 BOM 버전을 소유하므로 라이브러리 좌표에는 버전을 쓰지 않는다.
+- [x] 테스트에서 영어/한국어 README의 각 canonical fenced block을 추출하고 정규화하거나 컴파일된 fixture 소스와 정확히 동일함을 단언한 뒤, 작업 4, 6, 7, 8에서 만든 소스 사용 테스트로 canonical fixture를 컴파일한다. API 이름 동등성을 유지하고 compiler-testing 의존성을 추가하지 않은 채 잘못된 엔진 및 String 정책 부재의 negative 사례에 API reflection/ABI 단언을 사용한다.
+- [x] 모든 새 공개 선언에서 영문 KDoc과 필요한 `@InternalSnapshotCacheApi` opt-in을 감사한다.
+- [x] 모든 README 쌍의 공개 타입/함수 이름에 대해 리터럴 동등성 검사를 실행한다.
+- [x] `git diff -- docs/manual docs/manual/manifest.yaml`이 비어 있는지 확인한다.
+- [x] Lore 트레일러가 포함된 커밋을 생성한다.
 
 ```text
 Explain safe snapshot caching at transaction and operator boundaries
@@ -845,40 +849,44 @@ Scope-risk: narrow
 Tested: bilingual API-name parity and stable-manual diff check
 ```
 
-**Evidence:** Forced fresh targeted verification passed 57/57 tests across cache, JDBC Caffeine, R2DBC Caffeine, and
-JDBC Redisson source-usage/admin contracts. The canonical typed JSON codec round-trips the documented immutable DTO,
-and the README gate rejects explicit Maven artifact versions. The 61 new top-level public declarations have English
-KDoc, internal SPIs retain the required opt-in boundary, and the stable manual diff is empty.
+**증거:** 강제로 새로 실행한 대상 검증에서 cache, JDBC Caffeine, R2DBC Caffeine,
+JDBC Redisson 소스 사용/관리 계약의 57/57 테스트가 통과했다. canonical typed JSON
+codec은 문서화된 불변 DTO를 round-trip하고 README 게이트는 명시적 Maven 아티팩트
+버전을 거부한다. 새로운 최상위 공개 선언 61개에는 영문 KDoc이 있고 internal SPI는
+필수 opt-in 경계를 유지하며 안정 버전 매뉴얼 diff는 비어 있다.
 
-## Task 11: Extend the existing benchmark module
+## 작업 11: 기존 벤치마크 모듈 확장
 
-**Files:**
-- Create: `benchmark/exposed-benchmark/src/benchmark/kotlin/io/bluetape4k/exposed/benchmark/cache/SnapshotCacheBenchmark.kt`
-- Modify: `benchmark/exposed-benchmark/build.gradle.kts`
+**파일:**
+- 생성: `benchmark/exposed-benchmark/src/benchmark/kotlin/io/bluetape4k/exposed/benchmark/cache/SnapshotCacheBenchmark.kt`
+- 수정: `benchmark/exposed-benchmark/build.gradle.kts`
 
-- [x] Add benchmarks for local hit, miss capability creation/claim, one-key and maximum count/weight buffers, repeated-key coalescing, multi-store phase partitioning, peak drain allocation, commit drain, striped lookup/fence contention, Redisson key encoding/chunk submission through a fake async-store seam, failure-buffer saturation, and timeout/outage connection-hold behavior. Use bounded in-memory fixtures; do not require Redis for the default benchmark task.
-- [x] Extend the existing `cacheBenchmark` include pattern to compile and optionally execute the new class. Do not add a module or dependency.
-- [x] Run `./gradlew :benchmark-exposed-benchmark:benchmarkClasses --no-daemon`.
-- [x] Run `./gradlew :benchmark-exposed-benchmark:smokeBenchmark --no-daemon`; the existing smoke configuration provides one warmup, one measurement, and 100 ms iterations. Treat numbers as diagnostic, not a release gate.
-- [x] Inspect allocations/latency for accidental per-entry thread, scheduler, unbounded collection, reflection traversal, repeated serialization, lock hot spots, and retained connection/future state. Fix structural regressions; record environment-sensitive numbers only in the PR body. Keep deterministic tests as the gate for retained count/weight, submission counts, and proof that callbacks never await Redis.
+- [x] local hit, miss 기능 생성/claim, 단일 키 및 최대 count/weight 버퍼, 반복 키 병합, 다중 저장소 단계 분할, peak drain 할당, commit drain, 스트라이프 lookup/fence 경합, 가짜 async-store seam을 통한 Redisson 키 인코딩/chunk 제출, failure-buffer 포화, timeout/outage connection-hold 동작의 벤치마크를 추가한다. 제한된 인메모리 픽스처를 사용하고 기본 벤치마크 작업에서 Redis를 요구하지 않는다.
+- [x] 기존 `cacheBenchmark` include 패턴을 확장해 새 클래스를 컴파일하고 선택적으로 실행한다. 모듈이나 의존성을 추가하지 않는다.
+- [x] `./gradlew :benchmark-exposed-benchmark:benchmarkClasses --no-daemon`을 실행한다.
+- [x] `./gradlew :benchmark-exposed-benchmark:smokeBenchmark --no-daemon`을 실행한다. 기존 스모크 구성은 warmup 1회, measurement 1회, 100 ms iteration을 제공한다. 수치는 출시 게이트가 아닌 진단값으로 취급한다.
+- [x] 엔트리별 스레드, 스케줄러, 무제한 컬렉션, 리플렉션 순회, 반복 직렬화, 잠금 hot spot, 유지된 connection/future 상태가 우발적으로 생겼는지 allocation/latency를 검사한다. 구조적 회귀를 수정하고 환경 민감 수치는 PR 본문에만 기록한다. 유지 count/weight, 제출 횟수, 콜백이 Redis를 기다리지 않는다는 증명은 결정론적 테스트를 게이트로 유지한다.
 
-Task 11 evidence: the existing benchmark module declares `src/benchmark/kotlin` as its source set, so the planned
-`src/jmh/kotlin` path was corrected to the repository's established source-set convention. The compile-oriented RED
-failed on the intentionally absent coverage seam before implementation. `benchmarkClasses` then compiled the new
-class, and the Redis-free smoke run discovered and executed all 12 snapshot-cache methods with one bounded warmup and
-measurement. The fixtures retain a fixed store set, one H2 pool connection, bounded buffers/chunks, no worker threads
-or schedulers, and at most one never-completing future. Fast paths have no class-wide invocation setup or teardown;
-fixed-memory monotonic counters use before/after deltas, while failure saturation and outage cleanup are isolated to
-the two benchmark methods whose lifecycle costs are intentionally measured. The four-thread fence benchmark therefore
-does not race shared cleanup. A review RED made the old one-encode/fixed-count path fail its structural assertion. The
-replacement fake seam partitions by measured encoded bytes, re-encodes and verifies every identifier digest per chunk,
-materializes and consumes reflective boxed-Long arrays, and accounts for bounded chunks and submitted identifiers.
-Canonical hex conversion uses a fixed-size character array rather than formatter traversal. The outage benchmark also
-requires the H2/Hikari active-connection count to be zero while its one bounded future remains incomplete, then releases
-that future in method-local cleanup. Forced-fresh benchmark compilation and the Redis-free smoke run pass with all 12
-methods and no JMH exception output. Smoke throughput remains diagnostic only; deterministic adapter tests remain the
-correctness gate for count/weight retention, submission accounting, and non-awaiting callbacks.
-- [x] Commit with Lore trailers:
+작업 11 증거: 기존 벤치마크 모듈은 `src/benchmark/kotlin`을 source set으로 선언하므로
+계획했던 `src/jmh/kotlin` 경로를 리포지토리의 기존 source-set 규칙에 맞게 수정했다.
+컴파일 중심 RED는 구현 전에 의도적으로 없는 coverage seam에서 실패했다.
+`benchmarkClasses`는 이후 새 클래스를 컴파일했고 Redis 없는 스모크 실행은 제한된
+warmup과 measurement 각 1회로 스냅숏 캐시 메서드 12개를 모두 발견해 실행했다.
+픽스처는 고정 저장소 집합, H2 pool connection 하나, 제한된 buffer/chunk, 작업자
+스레드와 스케줄러 없음, 최대 하나의 영원히 완료되지 않는 future를 유지한다. 빠른
+경로에는 클래스 전체 invocation setup/teardown이 없다. 고정 메모리 단조 counter는
+전후 차이를 사용하고, 실패 포화와 outage 정리는 생명주기 비용을 의도적으로 측정하는
+두 벤치마크 메서드에 격리한다. 따라서 4-thread fence 벤치마크는 공유 정리와 경합하지
+않는다. 리뷰 RED는 기존 one-encode/fixed-count 경로가 구조적 단언에 실패하게 했다.
+교체 fake seam은 측정된 encoded byte로 분할하고, chunk마다 모든 식별자 digest를
+재인코딩하고 검증하며, 리플렉션 boxed-Long 배열을 구체화해 소비하고, 제한된 chunk와
+제출 식별자를 계산한다. 정규 hex 변환은 formatter 순회 대신 고정 크기 문자 배열을
+사용한다. outage 벤치마크는 제한된 future 하나가 미완료인 동안 H2/Hikari 활성
+connection 수가 0이어야 하며, 메서드 로컬 정리에서 해당 future를 해제한다. 강제로
+새로 실행한 벤치마크 컴파일과 Redis 없는 스모크 실행은 12개 메서드 모두 통과했고
+JMH 예외 출력은 없었다. 스모크 throughput은 진단값일 뿐이며 count/weight 유지,
+제출 계산, 대기하지 않는 콜백의 정확성 게이트는 결정론적 어댑터 테스트로 유지한다.
+- [x] Lore 트레일러가 포함된 커밋을 생성한다.
 
 ```text
 Make snapshot cache coordination costs observable
@@ -890,12 +898,12 @@ Scope-risk: narrow
 Tested: benchmark class compilation and bounded local smoke run
 ```
 
-## Task 12: Run final verification, independent review, and PR delivery
+## 작업 12: 최종 검증, 독립 리뷰 및 PR 전달
 
-**Files:**
-- Modify only files needed to resolve verified findings.
+**파일:**
+- 검증된 발견 사항을 해결하는 데 필요한 파일만 수정한다.
 
-- [x] Run fast deterministic gates:
+- [x] 빠른 결정론적 게이트를 실행한다.
 
 ```bash
 ./gradlew :bluetape4k-exposed-cache:test \
@@ -906,14 +914,14 @@ Tested: benchmark class compilation and bounded local smoke run
   --no-daemon --no-parallel --rerun-tasks -Pkotlin.incremental=false
 ```
 
-- [x] Run the Testcontainers-backed Redisson gate by itself:
+- [x] Testcontainers 기반 Redisson 게이트를 단독 실행한다.
 
 ```bash
 TESTCONTAINERS_RYUK_DISABLED=true ./gradlew :bluetape4k-exposed-jdbc-redisson:test \
   --no-daemon --no-parallel --rerun-tasks -Pkotlin.incremental=false
 ```
 
-- [x] Validate the stable manual inventory without changing pinned manual content:
+- [x] 고정된 매뉴얼 콘텐츠를 변경하지 않고 안정 버전 매뉴얼 인벤토리를 검증한다.
 
 ```bash
 ./gradlew exportManualModuleInventory --no-daemon
@@ -924,41 +932,41 @@ ruby scripts/manual/release_inventory.rb \
 ruby scripts/manual/validate_manuals.rb build/manual/module-inventory-1.11.0.json docs/manual/manifest.yaml
 ```
 
-- [x] Run repository static gates:
+- [x] 리포지토리 정적 게이트를 실행한다.
 
 ```bash
 ./gradlew detekt --no-daemon
 git diff --check
 ```
 
-- [x] Perform independent reviews for performance, stability/concurrency, security, operator/Ops, developer/API, and user/caller behavior. Integrate findings in the main session. Require `P0=0` and `P1=0`; resolve P2/P3 or create a clearly justified follow-up issue.
-- [x] Re-run every gate affected by review fixes and record exact results.
-- [x] Verify the final diff contains no `settings.gradle.kts`, stable manual, dependency catalog, Spring Boot, Ktor, Lettuce, or issue #322 schema-drift changes.
-- [x] Push `feat/issue-321-transaction-aware-snapshot-cache` and open English PR #381 against `develop` referencing `Closes #321`. Include design decisions, test evidence, benchmark environment caveat, distributed failure semantics, and known non-goals.
-- [ ] Wait for GitHub checks and current review/thread status. Report the exact PR/head as merge-ready and stop for fresh user merge approval.
+- [x] 성능, 안정성/동시성, 보안, 운영자/Ops, 개발자/API, 사용자/호출자 동작 관점의 독립 리뷰를 수행한다. 발견 사항은 주 세션에서 통합한다. `P0=0`, `P1=0`을 요구하고 P2/P3를 해결하거나 명확히 정당화된 후속 이슈를 만든다.
+- [x] 리뷰 수정의 영향을 받은 모든 게이트를 다시 실행하고 정확한 결과를 기록한다.
+- [x] 최종 diff에 `settings.gradle.kts`, 안정 버전 매뉴얼, 의존성 카탈로그, Spring Boot, Ktor, Lettuce, 이슈 #322 스키마 드리프트 변경이 없는지 검증한다.
+- [x] `feat/issue-321-transaction-aware-snapshot-cache`를 push하고 `Closes #321`을 참조하는 영문 PR #381을 `develop` 대상으로 연다. 설계 결정, 테스트 증거, 벤치마크 환경 주의 사항, 분산 실패 의미, 알려진 비목표를 포함한다.
+- [ ] GitHub check와 현재 review/thread 상태를 기다린다. 병합 준비가 된 정확한 PR/head를 보고하고 사용자의 새로운 병합 승인을 받기 위해 중단한다.
 
-**Final evidence (rebased on `origin/develop` `0907513a4dfb358a39f2b79002ec6ccd049635c6`):**
+**최종 증거(`origin/develop` `0907513a4dfb358a39f2b79002ec6ccd049635c6`에 rebase):**
 
-- Cache: 149 tests, 0 failures/errors/skips.
-- JDBC Caffeine: 387 tests, 0 failures/errors, 22 skips.
-- R2DBC Caffeine: 108 tests, 0 failures/errors, 1 skip.
-- JDBC Redisson: 612 tests, 0 failures/errors, 1 skip, run separately with Ryuk disabled.
-- Benchmark: `benchmarkClasses` plus 32 smoke benchmarks; all 12 `SnapshotCacheBenchmark` methods emitted finite scores with no structural exception.
-- Stable manuals: the current inventory was filtered against immutable release `1.11.0` at commit `0b494a5fd1e083006046764757342b68a397e4c5`; 40 projects aligned.
-- Static/scope: `detekt` succeeded (`:detekt NO-SOURCE`), `git diff --check` passed, and forbidden surfaces were absent.
-- Independent re-review after fixes: performance/stability, security/Ops, and developer/API/user perspectives each reported `P0=0`, `P1=0`, `P2=0`, `P3=0`, `COMPLETE=YES`.
+- Cache: 테스트 149개, failure/error/skip 0개.
+- JDBC Caffeine: 테스트 387개, failure/error 0개, skip 22개.
+- R2DBC Caffeine: 테스트 108개, failure/error 0개, skip 1개.
+- JDBC Redisson: 테스트 612개, failure/error 0개, skip 1개. Ryuk을 비활성화하고 별도로 실행했다.
+- 벤치마크: `benchmarkClasses`와 스모크 벤치마크 32개. `SnapshotCacheBenchmark` 메서드 12개 모두 구조적 예외 없이 유한한 점수를 출력했다.
+- 안정 버전 매뉴얼: 현재 인벤토리를 커밋 `0b494a5fd1e083006046764757342b68a397e4c5`의 불변 릴리스 `1.11.0`과 대조해 필터링했으며 프로젝트 40개가 일치했다.
+- 정적 검사/범위: `detekt` 성공(`:detekt NO-SOURCE`), `git diff --check` 통과, 금지 표면 없음.
+- 수정 후 독립 재리뷰: 성능/안정성, 보안/Ops, 개발자/API/사용자 관점에서 각각 `P0=0`, `P1=0`, `P2=0`, `P3=0`, `COMPLETE=YES`를 보고했다.
 
-## Completion Checklist
+## 완료 체크리스트
 
-- [x] Every acceptance criterion maps to passing evidence.
-- [x] No cache callback can write the database.
-- [x] Rollback and retry behavior are explicit and tested for JDBC and R2DBC.
-- [x] Public miss tokens expose no identifier or generation state.
-- [x] Caffeine ordering fences reject stale fills under controlled concurrency.
-- [x] Redisson is invalidation-only, bounded, non-blocking, and namespace-compatible.
-- [x] Failure buffers and recovery remain bounded even for never-completing futures.
-- [x] English/Korean README APIs match and public KDoc is complete.
-- [x] Stable manuals remain unchanged and validate against the pinned release inventory.
-- [x] Benchmark sources compile and the bounded smoke run has no structural regression.
-- [x] Independent review reports `P0=0`, `P1=0`.
-- [x] PR #381 is open against `develop`; merge waits for fresh user approval.
+- [x] 모든 인수 조건이 통과 증거에 매핑된다.
+- [x] 어떤 캐시 콜백도 데이터베이스에 쓸 수 없다.
+- [x] 롤백 및 재시도 동작이 명시되어 있고 JDBC와 R2DBC에서 테스트됐다.
+- [x] 공개 miss token은 식별자나 generation 상태를 노출하지 않는다.
+- [x] Caffeine 순서 펜스는 제어된 동시성에서 stale fill을 거부한다.
+- [x] Redisson은 무효화 전용이고, 제한되며, 논블로킹이고, 네임스페이스와 호환된다.
+- [x] 영원히 완료되지 않는 future에서도 failure buffer와 복구는 제한된다.
+- [x] 영어/한국어 README API가 일치하고 공개 KDoc이 완성됐다.
+- [x] 안정 버전 매뉴얼은 변경되지 않았고 고정 릴리스 인벤토리와 대조해 검증됐다.
+- [x] 벤치마크 소스가 컴파일되고 제한된 스모크 실행에 구조적 회귀가 없다.
+- [x] 독립 리뷰에서 `P0=0`, `P1=0`을 보고했다.
+- [x] PR #381이 `develop` 대상으로 열려 있으며 병합은 사용자의 새로운 승인을 기다린다.
