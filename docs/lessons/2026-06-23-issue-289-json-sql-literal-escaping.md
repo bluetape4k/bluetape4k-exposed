@@ -1,20 +1,20 @@
-# Issue #289 JSON SQL Literal Escaping
+# 이슈 #289 JSON SQL 리터럴 이스케이프
 
-## Context
+## 배경
 
-JSON column types rendered serialized JSON by interpolating `notNullValueToDB(value)` directly inside single quotes. That bypassed Exposed's string literal escaping for single quotes, carriage returns, and line feeds.
+JSON column type은 직렬화한 JSON을 single quote 안에 `notNullValueToDB(value)`로 직접 보간해 렌더링했습니다. 이 방식은 single quote, carriage return, line feed에 대한 Exposed 문자열 리터럴 이스케이프를 우회했습니다.
 
-## Decision
+## 결정
 
-Reuse Exposed `TextColumnType.nonNullValueToString` for the serialized JSON body, then add only the dialect-specific JSON prefix where required.
+직렬화한 JSON 본문에는 Exposed `TextColumnType.nonNullValueToString`을 재사용하고, 필요한 경우에만 dialect별 JSON prefix를 추가합니다.
 
-## Why
+## 이유
 
-- It avoids maintaining a separate escape table in each JSON module.
-- It keeps JSON, JSONB default strings, and SQL literal rendering aligned with Exposed's core string literal semantics.
-- It preserves existing H2 behavior by retaining the `JSON ` prefix around the escaped literal.
+- 각 JSON 모듈에서 별도의 escape table을 유지하지 않아도 됩니다.
+- JSON, JSONB 기본 문자열, SQL 리터럴 렌더링을 Exposed core 문자열 리터럴 의미론에 맞춰 유지합니다.
+- 이스케이프한 리터럴 주변의 `JSON ` prefix를 보존하여 기존 H2 동작을 유지합니다.
 
-## Verification Notes
+## 검증 메모
 
-- Add regression tests at the column-type layer when literal rendering is the bug surface.
-- Run module tests after unit tests because JSONB/default helpers inherit the JSON column-type rendering path.
+- 리터럴 렌더링이 버그 표면일 때는 column-type 계층에 회귀 테스트를 추가합니다.
+- JSONB/default helper가 JSON column-type 렌더링 경로를 상속하므로 unit test 뒤에 모듈 테스트를 실행합니다.
