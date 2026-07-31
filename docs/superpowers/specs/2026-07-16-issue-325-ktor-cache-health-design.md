@@ -1,26 +1,26 @@
-# Issue #325 Ktor Cache Health and Metrics Design
+# 이슈 #325 Ktor 캐시 상태 및 메트릭 설계
 
-## Problem
+## 문제
 
-`bluetape4k-exposed-ktor` exposes explicit, caller-owned database health and readiness checks, but it has no equivalent operational contract for cache repositories or the transaction-aware snapshot cache introduced by issue #321. Ktor applications therefore cannot report cache consistency failures or bounded cache metrics without inventing application-specific endpoints.
+`bluetape4k-exposed-ktor`는 명시적이고 호출자 소유인 데이터베이스 health 및 readiness check를 제공하지만, 캐시 repository 또는 issue #321에서 도입된 transaction-aware snapshot cache에 상응하는 운영 계약이 없습니다. 따라서 Ktor 애플리케이션은 애플리케이션별 endpoint를 직접 만들지 않고서는 캐시 일관성 실패나 제한된 캐시 메트릭을 보고할 수 없습니다.
 
-The new surface must preserve Ktor's explicit opt-in model and must never expose cache keys, entity identifiers, values, SQL, URLs, exception messages, causes, or stack traces.
+새로운 surface는 Ktor의 명시적 opt-in 모델을 유지해야 하며, 캐시 키, entity identifier, 값, SQL, URL, exception message, cause 또는 stack trace를 절대 노출해서는 안 됩니다.
 
-## Current Evidence
+## 현재 근거
 
-- `bluetape4kExposedHealthRoutes` already aggregates JDBC and R2DBC readiness into `/readyz/exposed`, applies a bounded timeout, rethrows `CancellationException`, and emits Micrometer timers with finite tags.
-- `CacheHealthReport` was introduced on `develop` by issue #321 and has not shipped in a stable release. Its current `isFlushJobRunning` Boolean cannot distinguish a healthy, lazy-started worker from a failed or closed worker, so issue #325 will correct that contract before its first release.
-- `SnapshotCacheFailureBuffer` exposes bounded counters (`size`, `droppedCount`, `observerFailureCount`) without exposing cached values or identifiers.
-- `SnapshotStoreId.namespace` is documented as a permitted metrics tag only when the application controls it as a static, low-cardinality value. The Ktor API will apply a narrower component-name contract instead of accepting arbitrary cache names.
-- The Ktor module already depends on Exposed JDBC and R2DBC modules. Adding the existing `:bluetape4k-exposed-cache` project dependency does not introduce an external dependency or a new module.
+- `bluetape4kExposedHealthRoutes`는 이미 JDBC 및 R2DBC readiness를 `/readyz/exposed`로 집계하고, 제한된 timeout을 적용하며, `CancellationException`을 다시 throw하고, 유한한 tag를 사용해 Micrometer timer를 생성합니다.
+- `CacheHealthReport`는 issue #321에 의해 `develop`에 도입되었으며 아직 stable release에는 포함되지 않았습니다. 현재 `isFlushJobRunning` Boolean은 정상적인 lazy-started worker와 실패했거나 종료된 worker를 구분할 수 없으므로, issue #325는 최초 release 전에 이 계약을 수정합니다.
+- `SnapshotCacheFailureBuffer`는 캐시된 값이나 identifier를 노출하지 않고 제한된 counter(`size`, `droppedCount`, `observerFailureCount`)를 제공합니다.
+- `SnapshotStoreId.namespace`는 애플리케이션이 이를 정적이고 low-cardinality인 값으로 제어하는 경우에만 허용된 metrics tag로 문서화되어 있습니다. Ktor API는 임의의 cache name을 허용하는 대신 더 제한적인 component-name 계약을 적용합니다.
+- Ktor module은 이미 Exposed JDBC 및 R2DBC module에 의존합니다. 기존 `:bluetape4k-exposed-cache` project dependency를 추가해도 external dependency나 새 module은 도입되지 않습니다.
 
-## Chosen Approach
+## 선택한 접근 방식
 
-Add a backend-neutral, sanitized cache readiness contributor contract to `bluetape4k-exposed-ktor` and aggregate configured contributors into the existing `/readyz/exposed` response.
+`bluetape4k-exposed-ktor`에 backend-neutral하고 sanitized된 cache readiness contributor contract를 추가하고, 구성된 contributor를 기존 `/readyz/exposed` response에 집계합니다.
 
-### Public contract
+### 공개 계약
 
-- `ExposedKtorCacheContributor` is an immutable class with a private constructor. Its public companion factories pin kind and sanitization instead of accepting a caller-selected kind:
+- `ExposedKtorCacheContributor`는 private constructor를 가진 immutable class입니다. public companion factory는 caller가 kind를 선택하도록 허용하지 않고 kind와 sanitization을 고정합니다.
 
 ```kotlin
 fun jdbcRepository(
@@ -44,20 +44,20 @@ fun custom(
 ): ExposedKtorCacheContributor
 ```
 
-- `ExposedKtorCacheStatus` is the finite public enum `UP|DOWN`. Custom contributors return status only; they cannot create metric tags or measurement fields.
-- Repository and snapshot factories build an internal, non-serializable sanitized sample. That sample validates every available count as non-negative and enforces repository-only versus snapshot-only field combinations. No new Java serialization contract is introduced.
-- `ExposedKtorCacheReadinessConfig(contributors: List<ExposedKtorCacheContributor>)` defensively copies a non-empty list and validates names, uniqueness, and size at construction.
-- Because these public declarations expose `CacheHealthReport` and `SnapshotCacheFailureBuffer`, `bluetape4k-exposed-ktor` adds `api(project(":bluetape4k-exposed-cache"))`, not an `implementation` dependency.
+- `ExposedKtorCacheStatus`는 유한한 public enum `UP|DOWN`입니다. Custom contributor는 status만 반환하며 metric tag나 measurement field를 생성할 수 없습니다.
+- Repository 및 snapshot factory는 내부의 non-serializable sanitized sample을 생성합니다. 이 sample은 사용 가능한 모든 count가 음수가 아닌지 검증하고, repository 전용 및 snapshot 전용 field 조합을 강제합니다. 새로운 Java serialization contract는 도입되지 않습니다.
+- `ExposedKtorCacheReadinessConfig(contributors: List<ExposedKtorCacheContributor>)`는 비어 있지 않은 list를 방어적으로 복사하고, 생성 시 name, uniqueness 및 size를 검증합니다.
+- 이러한 public declaration이 `CacheHealthReport` 및 `SnapshotCacheFailureBuffer`를 노출하므로 `bluetape4k-exposed-ktor`는 `implementation` dependency가 아닌 `api(project(":bluetape4k-exposed-cache"))`를 추가합니다.
 
-Contributor names must match the lowercase ASCII pattern `[a-z][a-z0-9_-]{0,62}`, configured names must be byte-for-byte unique, and at most 16 contributors may be installed per cache-readiness config and route. A component name is an operational label, not a tenant, key, namespace, URL, endpoint, or other data-bearing identifier. These validated names are the only caller-controlled metric tag values.
+Contributor name은 lowercase ASCII pattern `[a-z][a-z0-9_-]{0,62}`와 일치해야 하고, 구성된 name은 byte-for-byte 기준으로 unique해야 하며, cache-readiness config 및 route마다 최대 16개의 contributor만 설치할 수 있습니다. Component name은 운영 label이지 tenant, key, namespace, URL, endpoint 또는 기타 data-bearing identifier가 아닙니다. 검증된 name은 caller가 제어할 수 있는 유일한 metric tag 값입니다.
 
-Every caller-provided probe is side-effect-free and bounded. A JDBC report supplier may only read the repository's existing in-memory atomic consistency state in O(1); it must not perform database, cache, network, file, or other blocking I/O. An R2DBC report supplier has the same in-memory-only rule and must be non-blocking and cooperative with coroutine cancellation if it suspends. A custom probe must likewise be non-blocking and cancellation-cooperative. Snapshot sampling is a bounded local read and performs no backend I/O. A caller that needs blocking or backend work owns dispatcher offload and a backend-native timeout in a different operational surface; placing it in any readiness supplier is unsupported. The library does not create a dispatcher, executor, scope, or worker to isolate caller code.
+Caller가 제공하는 모든 probe는 side-effect-free이며 bounded되어야 합니다. JDBC report supplier는 repository의 기존 in-memory atomic consistency state를 O(1)로 읽는 작업만 수행할 수 있으며, database, cache, network, file 또는 기타 blocking I/O를 수행해서는 안 됩니다. R2DBC report supplier에도 동일한 in-memory-only 규칙이 적용되며, suspend하는 경우 non-blocking이고 coroutine cancellation에 cooperative해야 합니다. Custom probe도 마찬가지로 non-blocking이고 cancellation-cooperative해야 합니다. Snapshot sampling은 bounded local read이며 backend I/O를 수행하지 않습니다. Blocking 또는 backend 작업이 필요한 caller는 별도의 operational surface에서 dispatcher offload 및 backend-native timeout을 직접 소유해야 합니다. 이를 readiness supplier에 배치하는 것은 지원되지 않습니다. Library는 caller code를 격리하기 위한 dispatcher, executor, scope 또는 worker를 생성하지 않습니다.
 
-### Source and JVM compatibility
+### Source 및 JVM 호환성
 
-The existing `Bluetape4kExposedKtorConfig` primary constructor, `Application.installBluetape4kExposedKtor(config)`, and eight-parameter `Route.bluetape4kExposedHealthRoutes(...)` declarations keep their exact JVM descriptors and existing `$default` methods. They delegate to a new internal aggregate implementation with no cache contributors.
+기존 `Bluetape4kExposedKtorConfig` primary constructor, `Application.installBluetape4kExposedKtor(config)` 및 eight-parameter `Route.bluetape4kExposedHealthRoutes(...)` declaration은 정확한 JVM descriptor와 기존 `$default` method를 유지합니다. 이들은 cache contributor가 없는 새로운 internal aggregate implementation에 위임합니다.
 
-Cache support uses new overloads; it does not append a default parameter to an existing public declaration:
+Cache support는 새로운 overload를 사용하며, 기존 public declaration에 default parameter를 추가하지 않습니다.
 
 ```kotlin
 fun Application.installBluetape4kExposedKtor(
@@ -78,131 +78,130 @@ fun Route.bluetape4kExposedHealthRoutes(
 )
 ```
 
-The new overload parameters have no defaults, preventing overload ambiguity. Cache-only installation supplies null database arguments plus a non-empty cache config. The installer overload honors `installHealthRoutes`; its validation accepts at least one configured database or cache contributor. English and Korean README examples must compile-check the JDBC supplier, R2DBC suspend supplier, snapshot buffer, custom status probe, and cache-only forms.
+새 overload parameter에는 default가 없으므로 overload ambiguity를 방지합니다. Cache-only installation은 database argument에 null을 공급하고 비어 있지 않은 cache config를 전달합니다. Installer overload는 `installHealthRoutes`를 따르며, validation은 적어도 하나의 구성된 database 또는 cache contributor를 허용합니다. English 및 Korean README example은 JDBC supplier, R2DBC suspend supplier, snapshot buffer, custom status probe 및 cache-only form에 대해 compile-check되어야 합니다.
 
-### Readiness aggregation
+### Readiness 집계
 
-- The existing database-only behavior remains source- and binary-compatible by preserving the old public declarations and JVM descriptors.
-- `installHealthRoutes` remains the only installation switch. At least one database or cache contributor is required.
-- `/healthz/exposed` remains a liveness response and does not execute cache probes.
-- `/readyz/exposed` runs configured cache probes sequentially in installation order. This avoids unstructured concurrency, avoids simultaneous backend pressure, and keeps deterministic metric emission.
-- The existing `readinessProbeTimeout` remains the per-JDBC and per-R2DBC probe timeout and is also one shared cache-phase deadline, not a fresh timeout per cache contributor. Every cache probe receives only the remaining monotonic-time budget.
-- An ordinary `DOWN` or error does not short-circuit the phase; later contributors still run while budget remains. When the deadline expires, the active contributor and every remaining contributor receive an HTTP `timeout` detail in installation order without invoking the remaining probes.
-- For supported non-blocking, cancellation-cooperative probes, the cache phase therefore adds at most one `readinessProbeTimeout` interval to the existing database readiness work, independent of the number of configured cache contributors. Any unsupported blocking or cancellation-insensitive JDBC, R2DBC, or custom supplier can exceed that bound because the library does not own a thread or process boundary capable of terminating it.
-- Response details use only `cache.<component> -> UP|DOWN|timeout`; no measurements or failure metadata are returned.
-- Any required cache contributor that is `DOWN` or times out makes the aggregate response `503 Service Unavailable`.
-- Every invoked probe produces exactly one internal sealed terminal result before HTTP details, timers, or gauges are updated. The actively timed-out invocation produces one `timeout` result and timer. Contributors skipped because the shared budget is exhausted receive a synthetic HTTP `timeout` detail and `NaN` gauges but no probe-duration timer. A cancellation signal observed while the current request context is inactive produces exactly one `cancelled` timer for the active invocation, is rethrown, and never produces an HTTP failure detail. A supplier-thrown `CancellationException` while the current request context remains active is a sanitized ordinary `error`: its message and cause are discarded, later contributors continue while budget remains, and it is never rethrown as request cancellation. No code path records two outcomes for one invocation, and fatal JVM `Error` values are never converted to cache `DOWN`.
+- 기존 database-only behavior는 기존 public declaration 및 JVM descriptor를 보존하여 source 및 binary-compatible 상태로 유지됩니다.
+- `installHealthRoutes`는 유일한 installation switch로 유지됩니다. 최소 하나의 database 또는 cache contributor가 필요합니다.
+- `/healthz/exposed`는 liveness response로 유지되며 cache probe를 실행하지 않습니다.
+- `/readyz/exposed`는 구성된 cache probe를 installation order에 따라 sequential하게 실행합니다. 이를 통해 unstructured concurrency를 피하고, simultaneous backend pressure를 방지하며, deterministic metric emission을 유지합니다.
+- 기존 `readinessProbeTimeout`은 각 JDBC 및 R2DBC probe별 timeout으로 유지되며, 하나의 cache contributor마다 새로 적용되는 timeout이 아니라 공유되는 단일 cache-phase deadline이기도 합니다. 모든 cache probe는 monotonic-time budget의 남은 시간만 전달받습니다.
+- 일반적인 `DOWN` 또는 error는 phase를 short-circuit하지 않습니다. budget이 남아 있는 동안 이후 contributor도 계속 실행됩니다. Deadline이 만료되면 active contributor 및 모든 remaining contributor에 대해 probe를 호출하지 않고 installation order에 따라 HTTP `timeout` detail을 전달합니다.
+- 지원되는 non-blocking 및 cancellation-cooperative probe의 경우 cache phase는 구성된 cache contributor 수와 무관하게 기존 database readiness 작업에 최대 하나의 `readinessProbeTimeout` interval만 추가합니다. Library가 이를 종료할 수 있는 thread 또는 process boundary를 소유하지 않으므로, 지원되지 않는 blocking 또는 cancellation-insensitive JDBC, R2DBC 또는 custom supplier는 이 bound를 초과할 수 있습니다.
+- Response detail은 `cache.<component> -> UP|DOWN|timeout`만 사용하며, measurement 또는 failure metadata는 반환하지 않습니다.
+- Required cache contributor 중 하나라도 `DOWN`이거나 timeout되면 aggregate response는 `503 Service Unavailable`이 됩니다.
+- 호출된 모든 probe는 HTTP detail, timer 또는 gauge가 update되기 전에 정확히 하나의 internal sealed terminal result를 생성합니다. 실제로 timeout된 invocation은 하나의 `timeout` result와 timer를 생성합니다. Shared budget이 소진되어 skip된 contributor는 synthetic HTTP `timeout` detail과 `NaN` gauge를 받지만 probe-duration timer는 생성하지 않습니다. 현재 request context가 inactive인 동안 cancellation signal이 감지되면 active invocation에 대해 정확히 하나의 `cancelled` timer를 생성하고 이를 rethrow하며 HTTP failure detail은 생성하지 않습니다. 현재 request context가 active인 동안 supplier가 `CancellationException`을 throw하면 sanitized ordinary `error`가 됩니다. 해당 message와 cause는 폐기되고, budget이 남아 있는 동안 이후 contributor가 계속 실행되며 request cancellation으로 rethrow되지 않습니다. 하나의 invocation에 대해 두 개의 outcome을 기록하는 code path는 없으며, fatal JVM `Error` 값은 cache `DOWN`으로 변환되지 않습니다.
 
-With `R = readinessProbeTimeout`, `J_effective` equal to the JDBC statement timeout after the current whole-second/minimum-one-second conversion, and indicator variables for configured JDBC, R2DBC, and cache probes, the conservative supported planning budget is:
+`R = readinessProbeTimeout`, `J_effective`는 현재 whole-second/minimum-one-second conversion 이후의 JDBC statement timeout이며, configured JDBC, R2DBC 및 cache probe에 대한 indicator variable을 사용할 때 conservative supported planning budget은 다음과 같습니다.
 
 `T_endpoint = I_jdbc * (R + J_effective) + I_r2dbc * R + I_cache * R + routing/dispatcher overhead`.
 
-The additive JDBC term covers a blocking query that starts near the coroutine deadline and then consumes its driver timeout. JDBC driver timeout enforcement, dispatcher saturation, and unsupported blocking/cancellation-insensitive suppliers remain caller/backend constraints, so operators add deployment margin rather than treating the formula as a process-kill guarantee. README examples set the orchestrator `timeoutSeconds` above the rounded-up budget plus margin, keep `periodSeconds` above `timeoutSeconds`, and use `failureThreshold >= 3` to avoid transient eviction.
+Additive JDBC term은 coroutine deadline 직전에 시작된 blocking query가 이후 driver timeout을 소비하는 경우를 포함합니다. JDBC driver timeout enforcement, dispatcher saturation 및 unsupported blocking/cancellation-insensitive supplier는 여전히 caller/backend constraint이므로, operator는 이 공식을 process-kill guarantee로 취급하지 말고 deployment margin을 추가해야 합니다. README example은 orchestrator `timeoutSeconds`를 반올림한 budget 및 margin보다 크게 설정하고, `periodSeconds`를 `timeoutSeconds`보다 크게 유지하며, 일시적인 eviction을 방지하기 위해 `failureThreshold >= 3`을 사용합니다.
 
-### Built-in health mapping
+### 기본 제공 상태 매핑
 
-For `CacheHealthReport`:
+`CacheHealthReport`에 대해 다음을 적용합니다.
 
-- Replace the ambiguous `isFlushJobRunning` Boolean, before its first stable release, with a finite `CacheWorkerState`: `NOT_APPLICABLE`, `IDLE`, `RUNNING`, `DRAINING`, `FAILED`, or `STOPPED`. Because the serializable shape is intentionally incompatible, assign a new fixed `serialVersionUID` and test it explicitly rather than retaining the old UID and risking a legacy stream with a null non-null state. Repository implementations own one authoritative atomic lifecycle state; a health probe only observes it and never starts, restarts, closes, or otherwise owns the worker.
-- `READ_ONLY` and `WRITE_THROUGH` report `NOT_APPLICABLE` and are `UP` unless the supplier itself fails.
-- A fresh lazy `WRITE_BEHIND` repository reports `IDLE`; `IDLE` and `RUNNING` are `UP` when no last flush error is present.
-- First accepted work attempts the one-way compare-and-set `IDLE -> RUNNING`; it never overwrites `DRAINING`, `FAILED`, or `STOPPED` when admission races with close. R2DBC admission and queue-depth accounting are linearized so a fast consumer cannot decrement before the producer records acceptance, a rejected or cancelled send cannot leave phantom depth, and terminal classification cannot race a late increment. Expected `close()` transitions `IDLE|RUNNING -> DRAINING` before the channel closes. Confirmed normal drain completion transitions `DRAINING -> STOPPED`; expected scope cancellation after `STOPPED` does not change it. An uncaught terminal failure or cancellation before or during draining transitions to `FAILED`. If the 30-second production close wait expires, `close()` sets `FAILED` before cancelling the scope and never leaves the returned repository indefinitely in `DRAINING`; a late completion cannot overwrite `FAILED` with `STOPPED`. Tests use a module-internal wait-duration seam to exercise the real deadline-expiry path without changing the public timeout and cover thread interruption separately.
-- `DRAINING`, `FAILED`, `STOPPED`, or a last flush error makes `WRITE_BEHIND` `DOWN`. A later successful flush clears a recoverable flush error; terminal failure and expected close remain distinct.
-- Queue depth is a measurement, not an automatic failure threshold.
+- 최초 stable release 전에 모호한 `isFlushJobRunning` Boolean을 유한한 `CacheWorkerState`인 `NOT_APPLICABLE`, `IDLE`, `RUNNING`, `DRAINING`, `FAILED` 또는 `STOPPED`로 교체합니다. Serializable shape는 의도적으로 호환되지 않으므로 새로운 fixed `serialVersionUID`를 할당하고 명시적으로 테스트합니다. 기존 UID를 유지하면 non-null state가 null인 legacy stream이 발생할 위험이 있습니다. Repository implementation은 하나의 authoritative atomic lifecycle state를 소유하며, health probe는 이를 observe할 뿐 worker를 시작, 재시작, 종료하거나 그 밖의 방식으로 소유하지 않습니다.
+- `READ_ONLY` 및 `WRITE_THROUGH`는 `NOT_APPLICABLE`을 report하며 supplier 자체가 실패하지 않는 한 `UP`입니다.
+- 새로 생성된 lazy `WRITE_BEHIND` repository는 `IDLE`을 report합니다. 마지막 flush error가 없으면 `IDLE` 및 `RUNNING`은 `UP`입니다.
+- 최초의 accepted work는 one-way compare-and-set `IDLE -> RUNNING`을 시도합니다. Admission이 close와 race하는 경우 `DRAINING`, `FAILED` 또는 `STOPPED`를 절대 overwrite하지 않습니다. R2DBC admission 및 queue-depth accounting은 fast consumer가 producer가 acceptance를 기록하기 전에 decrement하지 않도록 linearize됩니다. Rejected 또는 cancelled send는 phantom depth를 남기지 않으며, terminal classification은 late increment와 race하지 않습니다. Expected `close()`는 channel이 close되기 전에 `IDLE|RUNNING -> DRAINING`으로 transition합니다. Confirmed normal drain completion은 `DRAINING -> STOPPED`로 transition하며, `STOPPED` 이후의 expected scope cancellation은 이를 변경하지 않습니다. Uncaught terminal failure 또는 draining 전이나 도중의 cancellation은 `FAILED`로 transition합니다. 30-second production close wait가 만료되면 `close()`는 scope를 cancel하기 전에 `FAILED`를 설정하며, 반환된 repository를 indefinite하게 `DRAINING` 상태로 남기지 않습니다. Late completion은 `FAILED`를 `STOPPED`로 overwrite할 수 없습니다. Tests는 public timeout을 변경하지 않고 실제 deadline-expiry path를 실행하기 위해 module-internal wait-duration seam을 사용하며, thread interruption도 별도로 다룹니다.
+- `DRAINING`, `FAILED`, `STOPPED` 또는 last flush error는 `WRITE_BEHIND`를 `DOWN`으로 만듭니다. 이후 성공적인 flush는 recoverable flush error를 clear하지만, terminal failure와 expected close는 서로 구별됩니다.
+- Queue depth는 measurement이며 자동 failure threshold가 아닙니다.
 
-For `SnapshotCacheFailureBuffer`:
+`SnapshotCacheFailureBuffer`에 대해 다음을 적용합니다.
 
-- Retained, dropped, and observer-failure counts are measurements and do not by themselves make application readiness fail, because snapshot-cache mutations are best-effort, database correctness remains authoritative, and the latter two counters are cumulative without reset semantics.
-- The built-in snapshot contributor is `UP` when it can take one sanitized read-only snapshot of the buffer state. It is `DOWN` only when that snapshot operation throws an ordinary exception. Applications that need a windowed threshold or acknowledgement policy express it through a custom contributor.
-- A probe reads the buffer state once and never drains, acknowledges, resets, or mutates it. Concurrent offer/drain operations may change the next sample but cannot block readiness beyond the shared deadline.
+- Retained, dropped 및 observer-failure count는 measurement이며 그 자체로 application readiness를 fail시키지 않습니다. Snapshot-cache mutation은 best-effort이고 database correctness가 authoritative로 유지되며, 후자의 두 counter는 reset semantics가 없는 cumulative 값이기 때문입니다.
+- Built-in snapshot contributor는 buffer state를 sanitized read-only snapshot으로 한 번 읽을 수 있으면 `UP`입니다. 해당 snapshot operation이 ordinary exception을 throw하는 경우에만 `DOWN`입니다. Windowed threshold 또는 acknowledgement policy가 필요한 application은 이를 custom contributor를 통해 표현합니다.
+- Probe는 buffer state를 한 번 읽으며 이를 drain, acknowledge, reset 또는 mutate하지 않습니다. Concurrent offer/drain operation은 다음 sample을 변경할 수 있지만 shared deadline을 초과하여 readiness를 block할 수는 없습니다.
 
-For custom contributors, the caller owns the safe state mapping but cannot add response fields or metric tag keys.
+Custom contributor의 경우 caller가 safe state mapping을 소유하지만 response field 또는 metric tag key를 추가할 수는 없습니다.
 
-### Metrics
+### 메트릭
 
-Reuse the existing Ktor Micrometer naming and outcome vocabulary:
+기존 Ktor Micrometer naming 및 outcome vocabulary를 재사용합니다.
 
-- `bluetape4k.exposed.ktor.cache.readiness`: probe duration with finite `component`, `kind`, `operation=readiness`, and `outcome=success|error|timeout|cancelled` tags.
-- Outcome mapping is fixed: returned `UP -> success`; returned `DOWN`, repository `DRAINING|FAILED|STOPPED`, a recorded flush error, or any ordinary supplier/snapshot/custom exception `-> error`; active shared-deadline expiry `-> timeout`; parent cancellation `-> cancelled`. Skipped contributors do not record a timer.
-- Four gauges use only `component` and `kind` tags:
-  - `bluetape4k.exposed.ktor.cache.queue.depth`, base unit `entries`: accepted write-behind entries not yet observed as flushed;
-  - `bluetape4k.exposed.ktor.cache.snapshot.pending`, base unit `events`: currently retained snapshot failure events;
-  - `bluetape4k.exposed.ktor.cache.snapshot.dropped`, base unit `events`: cumulative events dropped by the bounded buffer;
-  - `bluetape4k.exposed.ktor.cache.snapshot.observer.failures`, base unit `events`: cumulative observer callback failures.
-  Each meter description states that `NaN` means unavailable, not zero. Measurement values are never tags.
-- `CacheWriteMode` is a response-internal finite value and is not a metric tag. Cache keys, namespaces, URLs, SQL, exception types, and messages are forbidden as tags.
+- `bluetape4k.exposed.ktor.cache.readiness`: 유한한 `component`, `kind`, `operation=readiness` 및 `outcome=success|error|timeout|cancelled` tag를 사용하는 probe duration입니다.
+- Outcome mapping은 고정됩니다. 반환된 `UP -> success`; 반환된 `DOWN`, repository `DRAINING|FAILED|STOPPED`, 기록된 flush error 또는 ordinary supplier/snapshot/custom exception `-> error`; active shared-deadline expiry `-> timeout`; parent cancellation `-> cancelled`입니다. Skip된 contributor는 timer를 기록하지 않습니다.
+- 네 개의 gauge는 `component` 및 `kind` tag만 사용합니다.
+  - `bluetape4k.exposed.ktor.cache.queue.depth`, base unit `entries`: 아직 flushed된 것으로 observe되지 않은 accepted write-behind entry;
+  - `bluetape4k.exposed.ktor.cache.snapshot.pending`, base unit `events`: 현재 retained된 snapshot failure event;
+  - `bluetape4k.exposed.ktor.cache.snapshot.dropped`, base unit `events`: bounded buffer가 drop한 cumulative event;
+  - `bluetape4k.exposed.ktor.cache.snapshot.observer.failures`, base unit `events`: observer callback failure의 cumulative event.
+  각 meter description은 `NaN`이 zero가 아니라 unavailable을 의미한다고 명시합니다. Measurement value는 절대 tag가 되지 않습니다.
+- `CacheWriteMode`는 response-internal finite value이며 metric tag가 아닙니다. Cache key, namespace, URL, SQL, exception type 및 message는 tag로 사용할 수 없습니다.
 
-Meters, immutable tag sets, direct timer references, and stable thread-safe gauge holders are created once when routes are installed and reused for every request; the request path performs no `MeterRegistry.find`, meter builder, tag construction, or meter registration. Four gauges per contributor hold one immutable sample behind an atomic reference; fields that do not apply, have not succeeded yet, or belong to an error/timeout result publish `NaN` rather than a stale value. A monotonic generation is claimed per contributor only when its probe begins or it receives a synthetic budget-exhausted timeout. Only the newest claimed generation for that contributor may publish, so a late completion or cancellation from an older attempt cannot overwrite a newer sample; a newer request cancelled before reaching that contributor does not suppress the older in-flight result. Parent cancellation sets the active contributor's gauges to `NaN` only when its generation is still newest; contributors not yet invoked retain their last completed sample. A successful probe publishes all four fields from its one sanitized snapshot. Timers use four finite outcome meter IDs. The upper bound is eight Micrometer meter IDs per contributor, or 128 cache meter IDs per route installation at the 16-contributor limit, and repeated or concurrent requests cannot register more meters. Exported backend time-series count is registry and distribution-configuration dependent because one timer meter may expand into count, sum, maximum, histogram buckets, or percentiles.
+Meter, immutable tag set, direct timer reference 및 stable thread-safe gauge holder는 route 설치 시 한 번 생성하고 모든 request에서 재사용합니다. Request path에서는 `MeterRegistry.find`, meter builder, tag construction 또는 meter registration을 수행하지 않습니다. Contributor마다 네 개의 gauge는 atomic reference 뒤에 하나의 immutable sample을 보관합니다. 적용되지 않는 field, 아직 성공하지 않은 field 또는 error/timeout result에 속한 field는 stale value가 아닌 `NaN`을 publish합니다. Monotonic generation은 각 contributor에 대해 probe가 시작되거나 synthetic budget-exhausted timeout을 받을 때만 claim됩니다. 해당 contributor에 대해 가장 최근에 claim된 generation만 publish할 수 있으므로, 오래된 attempt의 late completion 또는 cancellation은 새로운 sample을 overwrite할 수 없습니다. 해당 contributor에 도달하기 전에 새로운 request가 cancellation되더라도 이전 in-flight result를 suppress하지 않습니다. Parent cancellation은 해당 generation이 여전히 newest인 경우에만 active contributor의 gauge를 `NaN`으로 설정합니다. 아직 invoke되지 않은 contributor는 마지막 completed sample을 유지합니다. 성공적인 probe는 하나의 sanitized snapshot에서 네 field를 모두 publish합니다. Timer는 네 개의 유한한 outcome meter ID를 사용합니다. Upper bound는 contributor당 8개의 Micrometer meter ID이며, 16-contributor limit에서는 route installation당 128개의 cache meter ID입니다. Repeated 또는 concurrent request는 더 많은 meter를 register할 수 없습니다. Export된 backend time-series count는 registry 및 distribution-configuration에 따라 달라집니다. 하나의 timer meter가 count, sum, maximum, histogram bucket 또는 percentile로 확장될 수 있기 때문입니다.
 
-Library-owned route installation serializes preflight and registration in one installation-only `ReentrantLock` critical section that is never used by the request path and retains no registry reference after the operation. Before registering any cache meter, installation rejects an existing library meter name with the same `component` and `kind` identity, including incompatible meter types or identities with extra tags. It tracks only meters created by the current attempt and removes them if a later registration fails, then throws a stable sanitized error without retaining the registry exception as its cause. Concurrent identical library installations therefore allow exactly one winner; the loser neither adds meters nor binds gauges to the winner's state holder. Multiple route installations with distinct identities add at most 128 meter IDs each, so the application-wide Micrometer ID bound is `128 * cache-route-installation-count`; exported backend time-series remain registry/configuration dependent. Documentation recommends one Exposed readiness route per application/registry. The library does not add a global registry or silently share a state holder across routes. The caller must not concurrently mutate these library-owned identities outside the library installation API.
+Library-owned route installation은 하나의 installation-only `ReentrantLock` critical section에서 preflight와 registration을 serialize합니다. 이 lock은 request path에서 절대 사용되지 않으며 operation 이후 registry reference를 보유하지 않습니다. Cache meter를 하나라도 register하기 전에 installation은 동일한 `component` 및 `kind` identity를 가진 기존 library meter name을 reject합니다. 여기에는 호환되지 않는 meter type 또는 추가 tag가 있는 identity도 포함됩니다. 현재 attempt가 생성한 meter만 추적하며, 이후 registration이 실패하면 이를 제거한 뒤 registry exception을 cause로 보유하지 않는 stable sanitized error를 throw합니다. Concurrent identical library installation은 정확히 하나의 winner만 허용하며, loser는 meter를 추가하거나 winner의 state holder에 gauge를 bind하지 않습니다. 서로 다른 identity를 가진 여러 route installation은 각각 최대 128개의 meter ID를 추가하므로 application-wide Micrometer ID bound는 `128 * cache-route-installation-count`입니다. Export된 backend time-series는 여전히 registry/configuration에 따라 달라집니다. Documentation은 application/registry마다 하나의 Exposed readiness route를 사용할 것을 권장합니다. Library는 global registry를 추가하거나 route 간에 state holder를 암묵적으로 공유하지 않습니다. Caller는 library installation API 외부에서 이러한 library-owned identity를 concurrent하게 mutate해서는 안 됩니다.
 
-Sequential execution applies within one readiness request. The caller owns authentication, request concurrency, and rate limiting for the route; simultaneous requests may probe the same backend concurrently. Shared gauge state must tolerate those updates without exceptions or meter growth, and the library creates no cross-request mutex, queue, or rate limiter that could become application lifecycle work.
+하나의 readiness request 내부에는 sequential execution이 적용됩니다. Caller는 route에 대한 authentication, request concurrency 및 rate limiting을 소유하며, simultaneous request는 동일한 backend를 concurrent하게 probe할 수 있습니다. Shared gauge state는 exception이나 meter growth 없이 이러한 update를 처리할 수 있어야 합니다. 또한 library는 application lifecycle 작업이 될 수 있는 cross-request mutex, queue 또는 rate limiter를 생성하지 않습니다.
 
-The application continues to own the `MeterRegistry` and its lifecycle. The library starts no meter-maintenance jobs and retains no lifecycle work after the caller closes the application and registry.
+Application은 계속해서 `MeterRegistry`와 그 lifecycle을 소유합니다. Library는 meter-maintenance job을 시작하지 않으며 caller가 application 및 registry를 close한 이후 어떠한 lifecycle 작업도 유지하지 않습니다.
 
-## Rejected Alternatives
+## 거부된 대안
 
-### Dedicated cache endpoint
+### 전용 캐시 엔드포인트
 
-Adding `/readyz/exposed/cache` would isolate cache output, but it would force operators to compose multiple readiness endpoints and could let database and cache readiness disagree. Aggregating into the existing endpoint preserves one operational decision point.
+`/readyz/exposed/cache`를 추가하면 cache output을 격리할 수 있지만, operator가 여러 readiness endpoint를 조합해야 하며 database readiness와 cache readiness가 서로 불일치할 수 있습니다. 기존 endpoint에 집계하면 하나의 운영 의사결정 지점을 유지할 수 있습니다.
+### 백엔드별 repository parameters
 
-### Backend-specific repository parameters
+Caffeine, Redisson, Lettuce 또는 snapshot-store 구현을 직접 허용하면 Ktor 모듈이 선택적 backend 모듈에 결합되고, dependency graph가 확장되며, backend capability 차이가 public API의 일부가 됩니다. 정제된 contributor 경계를 유지하면 모듈을 backend-neutral하게 유지할 수 있습니다.
 
-Accepting Caffeine, Redisson, Lettuce, or snapshot-store implementations directly would couple the Ktor module to optional backend modules, expand its dependency graph, and make backend capability differences part of the public API. A sanitized contributor boundary keeps the module backend-neutral.
+### 호출자 제공 상세 정보 맵 및 태그 맵
 
-### Caller-provided detail maps and tag maps
+임의의 map은 유연하지만 redaction이나 cardinality 제한을 강제할 수 없습니다. Typed finite field는 의도적으로 확장성이 낮으며 더 안전합니다.
 
-Arbitrary maps are flexible but cannot enforce redaction or bounded cardinality. Typed finite fields are deliberately less extensible and safer.
+## 실패 모드와 완화책
 
-## Failure Modes and Mitigations
+1. **Probe timeout or hung backend**: 지원되는 probe에 shared monotonic cache-phase deadline을 적용하고, active invocation에 대해 timeout timer 하나만 기록하며, 건너뛴 contributor에는 timer 없이 synthetic HTTP timeout detail을 제공하고, exception을 노출하지 않습니다. Blocking 또는 cancellation-insensitive supplier code는 library-owned dispatcher에 숨기지 않고 contract에 따라 거부하며, deadline을 초과하거나 deadline 이후에도 실행될 수 있습니다.
+2. **Probe throws an ordinary exception**: `Exception`만 catch하고, `DOWN`을 반환하며, `error`를 emit하고, HTTP 및 metric boundary에서 message/cause/stack detail을 폐기합니다. 임의의 `Throwable`을 catch하거나 보존하지 않습니다. fatal JVM error는 전파됩니다.
+3. **Coroutine cancellation**: parent/request cancellation, cache-phase timeout, 그리고 request context가 active인 동안 supplier가 throw한 `CancellationException`을 구분합니다. inactive request context에 대해서만 정확히 하나의 `cancelled` outcome을 emit하고 HTTP failure detail 없이 rethrow하며, active-context supplier signal은 sanitized `error`로 매핑하고 계속 진행합니다.
+4. **Duplicate or unsafe component names**: routes가 설치되기 전에 configuration을 거부하며 raw name을 echo하지 않습니다. Validation error에는 list index, input length, stable reason code만 포함하고, duplicate error에는 position만 식별하며, message와 cause 어느 쪽에도 거부된 값이 포함되지 않습니다.
+5. **Metric cardinality growth**: route installation당 contributor를 16개로 제한하고, exact lowercase ASCII contract로 component name을 검증하며, registry identity collision을 거부하고, meter를 한 번만 register하며, 유한한 library-owned tag key와 value만 허용합니다.
+6. **Write-behind lifecycle ambiguity**: `IDLE`, `RUNNING`, `DRAINING`, `FAILED`, `STOPPED`를 명시적으로 노출하며, fresh idle repository를 healthy로 처리하되 probe가 worker를 시작하도록 하지는 않습니다.
+7. **Historical snapshot failures**: cumulative dropped/observer counter를 measurement로만 유지하여, 하나의 recovered event가 restart 전까지 readiness를 `DOWN`으로 유지하지 않도록 합니다.
 
-1. **Probe timeout or hung backend**: enforce the shared monotonic cache-phase deadline for supported probes, record one timeout timer for the active invocation, give skipped contributors synthetic HTTP timeout details without timers, and avoid exposing the exception. Blocking or cancellation-insensitive supplier code is rejected by contract rather than hidden on a library-owned dispatcher and may outlive or exceed the deadline.
-2. **Probe throws an ordinary exception**: catch only `Exception`, return `DOWN`, emit `error`, and discard message/cause/stack details at the HTTP and metric boundaries. Do not catch or retain arbitrary `Throwable`; fatal JVM errors propagate.
-3. **Coroutine cancellation**: distinguish parent/request cancellation from the cache-phase timeout and from a supplier-thrown `CancellationException` while the request context remains active. Emit exactly one `cancelled` outcome only for inactive request context and rethrow without an HTTP failure detail; map the active-context supplier signal to sanitized `error` and continue.
-4. **Duplicate or unsafe component names**: reject configuration before routes are installed without echoing the raw name. Validation errors contain only list index, input length, and a stable reason code; duplicate errors identify positions, and neither message nor cause contains the rejected value.
-5. **Metric cardinality growth**: cap contributors at 16 per route installation, validate component names with the exact lowercase ASCII contract, reject registry identity collisions, register meters once, and allow only finite library-owned tag keys and values.
-6. **Write-behind lifecycle ambiguity**: expose `IDLE`, `RUNNING`, `DRAINING`, `FAILED`, and `STOPPED` explicitly; treat a fresh idle repository as healthy without letting the probe start the worker.
-7. **Historical snapshot failures**: retain cumulative dropped/observer counters as measurements only, so one recovered event cannot hold readiness `DOWN` until restart.
+## 호환성과 소유권
 
-## Compatibility and Ownership
+- JDBC/R2DBC database만 configure하는 기존 caller는 동일한 route와 response shape을 유지합니다.
+- Cache support는 configured contributor를 통한 opt-in이며, library는 repository, cache, dispatcher, scope 또는 registry를 생성하지 않습니다.
+- Spring Boot 또는 Actuator type은 Ktor module에 들어오지 않습니다. Kotlin API change는 `spring-boot/jdbc`와 `spring-boot/r2dbc`에서 조정됩니다. 자동으로 발견되는 `exposedJdbcCacheHealthIndicator`와 `exposedR2dbcCacheHealthIndicator`는 `NOT_APPLICABLE|IDLE|RUNNING`을 `Status.UP`으로, `DRAINING|STOPPED`를 `Status.OUT_OF_SERVICE`로, `FAILED` 또는 모든 `lastFlushError`를 `Status.DOWN`으로 매핑합니다. Non-null flush error는 `Health.down(error)`에 전달되는 throwable로 유지하며, 해당 error가 없는 `FAILED` state는 `Health.down()`을 사용합니다. Actuator는 `repositoryCount`와 report별 `mode`, `queueDepth`, `lastFlushError` message detail을 유지하고, `flushJobRunning`만 finite `workerState`로 대체하며, 기존 management-endpoint disclosure policy는 더 엄격한 Ktor redaction boundary와 별도로 유지합니다. Tests와 bilingual Spring README는 해당 exact status와 detail을 assert합니다. Ktor documentation은 해당 module을 link하고 automatic Actuator discovery와 explicit Ktor contributor installation을 대조합니다.
+- Cache repository lifecycle behavior는 변경되지 않으며, 이전에 release되지 않은 health report만 observable state를 구분합니다.
+- Snapshot/develop consumer는 `report.isFlushJobRunning` check를 `report.workerState == CacheWorkerState.RUNNING` 또는 적절한 finite-state mapping으로 대체합니다. Released database-only Ktor caller는 migration이 필요하지 않습니다.
+- README safe-deployment example은 지원되는 두 가지 shape을 다룹니다: ingress/network policy로 보호되는 installer-owned root route, 그리고 `installHealthRoutes = false`와 caller-owned `authenticate("ops")` 내부에 중첩된 direct route overload입니다. Helper 자체는 authentication을 제공하지 않으며, route를 public Internet에 직접 노출해서는 안 되고, caller는 두 번째 unprotected route를 실수로 설치해서는 안 됩니다.
+- Library는 Ktor boundary에서 contributor exception detail을 폐기하며 message, cause 또는 stack trace를 log하지 않습니다. Caller가 safe custom-probe logging과 backend telemetry를 소유하고, repository worker log는 repository-owned로 유지됩니다.
 
-- Existing callers that configure only JDBC/R2DBC databases keep the same routes and response shape.
-- Cache support is opt-in through configured contributors; the library creates no repository, cache, dispatcher, scope, or registry.
-- No Spring Boot or Actuator types enter the Ktor module. The Kotlin API change is reconciled in `spring-boot/jdbc` and `spring-boot/r2dbc`: the automatically discovered `exposedJdbcCacheHealthIndicator` and `exposedR2dbcCacheHealthIndicator` map `NOT_APPLICABLE|IDLE|RUNNING` to `Status.UP`, `DRAINING|STOPPED` to `Status.OUT_OF_SERVICE`, and `FAILED` or any `lastFlushError` to `Status.DOWN`. A non-null flush error remains the throwable passed to `Health.down(error)`; a `FAILED` state without that error uses `Health.down()`. Actuator retains `repositoryCount` and per-report `mode`, `queueDepth`, and `lastFlushError` message details, replaces only `flushJobRunning` with finite `workerState`, and keeps its existing management-endpoint disclosure policy separate from the stricter Ktor redaction boundary. Tests and bilingual Spring READMEs assert those exact statuses and details. Ktor documentation links those modules and contrasts automatic Actuator discovery with explicit Ktor contributor installation.
-- Cache repository lifecycle behavior is unchanged; only the previously unreleased health report distinguishes its observable states.
-- Snapshot/develop consumers replace `report.isFlushJobRunning` checks with `report.workerState == CacheWorkerState.RUNNING` or the appropriate finite-state mapping. Released database-only Ktor callers require no migration.
-- The README safe-deployment examples cover two supported shapes: installer-owned root routes protected by ingress/network policy, and `installHealthRoutes = false` plus the direct route overload nested inside caller-owned `authenticate("ops")`. The helper itself provides no authentication, the route must not be exposed directly to the public Internet, and callers must not accidentally install a second unprotected route.
-- The library discards contributor exception details at the Ktor boundary and does not log their message, cause, or stack trace. The caller owns safe custom-probe logging and backend telemetry; repository worker logs remain repository-owned.
+## 검증
 
-## Verification
+- 기존 8개의 Ktor test를 baseline으로 보존합니다.
+- Fresh-idle, running, draining, recoverable-error, failed, stopped repository state와 normal close, drain failure, close-timeout cancellation, late-completion race, unexpected cancellation, snapshot measurement 및 historical failure 이후 recovery를 위한 RED/GREEN test를 추가합니다. timeout, ordinary exception redaction, cancellation propagation, duplicate/unsafe name, 16-contributor limit도 추가합니다.
+- Cache phase가 하나의 timeout budget 안에 유지되고, exhausted-budget contributor가 invoke되지 않으며, ordinary error가 이후 contributor로 계속 진행되고, result가 installation order로 유지됨을 입증합니다.
+- 하나의 active cache timeout이 `timeout` 하나와 `cancelled` outcome 0개를 emit하고, skipped contributor는 timer를 emit하지 않으며 `NaN` gauge를 노출하고, parent cancellation은 `cancelled` 하나를 emit하고 rethrow하며 HTTP failure detail을 emit하지 않고, request가 active인 동안 secret-bearing supplier-thrown `CancellationException`이 later contributor를 중단하지 않고 sanitized `error` 하나가 됨을 입증합니다. Fatal JVM error가 propagate되는지 검증합니다.
+- Documented bounded JDBC/R2DBC repository supplier와 non-blocking cancellation-cooperative custom probe를 실행합니다. Intentionally blocking JDBC/custom 및 cancellation-insensitive R2DBC/custom test double을 사용하여 unsupported supplier가 coroutine deadline을 초과하거나 그 이후까지 실행될 수 있지만, library가 compensating thread 또는 scope를 생성하지 않는다는 점을 문서화합니다.
+- Response body에 secret, exception message, SQL, URL, cache key 또는 namespace가 포함되지 않음을 검증합니다.
+- Malicious component name이 거부되고 KDoc/README가 component name에 tenant, key, namespace, URL 및 endpoint material을 포함하지 못하도록 금지함을 검증합니다. Exception message와 cause에는 raw value, control character 또는 secret-bearing substring이 포함되지 않아야 합니다.
+- Timer tag와 measurement meter가 허용된 유한 field만 사용하고, exact meter name/base unit/description을 사용하며, `CacheWriteMode`가 tag가 아니고, repeated 및 concurrent probe가 meter count를 일정하게 유지하며, per-contributor generation ordering이 contributor에 도달하지 않은 newer request와 newer success 이후의 older cancellation을 처리하고, thread-safe gauge update가 throw하지 않으며, error/timeout gauge가 `NaN`이 되고, cancellation이 active newest contributor generation의 gauge만 clear하며, route installation당 cache meter ID가 최대 128개인지 검증합니다. Exported backend time-series는 registry/configuration dependent로 보고합니다.
+- Duplicate meter identity installation이 meter가 하나라도 추가되기 전에 fail하고, Nth registration 이후의 filter/registry failure가 current attempt의 meter만 제거하며, concurrent identical install이 정확히 하나의 winner를 생성하고, distinct route installation이 application-wide meter-ID formula를 따르며, 어떤 route도 다른 route의 state holder에 gauge를 조용히 bind하지 않음을 검증합니다.
+- Producer와 drainer가 concurrent하게 실행되는 동안 snapshot sampling이 read-only이고 bounded인지 검증합니다.
+- JDBC, R2DBC 및 cache contributor를 configure한 all-backend planning budget을 검증합니다. 여기에는 constrained blocking dispatcher와, JDBC query가 `R` 근처에서 시작한 뒤 `J_effective`를 소비하는 controllable JDBC statement/DataSource fixture, deployment margin을 포함한 orchestrator timeout example이 포함됩니다. Deterministic virtual-time orchestration을 위해 internal time/probe seam을 사용하고, 명시적인 executor/DataSource cleanup과 함께 하나의 bounded real-time smoke test를 유지합니다.
+- `javap` 또는 동등한 compiled-consumer compatibility check를 사용하여 기존 config, installer, route 및 `$default` JVM descriptor를 보존합니다.
+- `:bluetape4k-exposed-cache`, `:bluetape4k-exposed-jdbc-caffeine`, `:bluetape4k-exposed-r2dbc-caffeine`, `:bluetape4k-exposed-spring-boot-jdbc`, `:bluetape4k-exposed-spring-boot-r2dbc`, `:bluetape4k-exposed-ktor`를 compile 및 test한 다음 Kotlin diagnostics와 `git diff --check`를 실행합니다.
+- Ktor authentication test를 추가하여 unauthenticated denial이 readiness detail 또는 contributor invocation 없이 expected 401/403을 반환하고, authenticated access가 contributor를 정확히 한 번 invoke한 뒤 readiness를 반환함을 입증합니다.
+- Repository `DOWN`, cache timeout, snapshot cumulative counter, `NaN` gauge, invalid contributor configuration 및 unsupported custom probe를 위한 bilingual runbook row를 추가합니다. Runbook은 caller-owned log, backend telemetry, worker state, queue depth 및 fixed meter를 확인하도록 안내하고, dropped/observer counter가 cumulative이며 readiness failure로 취급하지 말고 rate/increase로 query해야 한다고 설명합니다.
+- README parity review는 양 locale에서 heading, compile-checked code, API name, supported supplier constraint, route/status example, meter name/tag, registry-installation limit, runbook row, security warning, orchestrator timing 및 Actuator link를 다룹니다. Factual parity가 통과한 후 identifier를 번역하거나 semantic을 변경하지 않는 natural Korean technical-prose review를 수행합니다.
 
-- Preserve the existing eight Ktor tests as the baseline.
-- Add RED/GREEN tests for fresh-idle, running, draining, recoverable-error, failed, and stopped repository states; normal close, drain failure, close-timeout cancellation, late-completion races, and unexpected cancellation; snapshot measurements and recovery after historical failures; timeout; ordinary exception redaction; cancellation propagation; duplicate/unsafe names; and the 16-contributor limit.
-- Prove the cache phase stays within one timeout budget, exhausted-budget contributors are not invoked, ordinary errors continue to later contributors, and results remain in installation order.
-- Prove one active cache timeout emits one `timeout` and zero `cancelled` outcomes, skipped contributors emit no timer and expose `NaN` gauges, parent cancellation emits one `cancelled`, rethrows, and emits no HTTP failure detail, and a secret-bearing supplier-thrown `CancellationException` while the request remains active becomes one sanitized `error` without stopping later contributors. Verify fatal JVM errors propagate.
-- Exercise documented bounded JDBC/R2DBC repository suppliers and a non-blocking cancellation-cooperative custom probe. Use intentionally blocking JDBC/custom and cancellation-insensitive R2DBC/custom test doubles to document that unsupported suppliers may exceed and outlive the coroutine deadline without causing the library to create compensating threads or scopes.
-- Verify response bodies do not contain secrets, exception messages, SQL, URLs, cache keys, or namespaces.
-- Verify malicious component names are rejected and KDoc/README forbid tenant, key, namespace, URL, and endpoint material in component names. Exception messages and causes must not contain the raw value, control characters, or secret-bearing substrings.
-- Verify timer tags and measurement meters use only the allowed finite fields, the exact meter names/base units/descriptions, `CacheWriteMode` is not a tag, repeated and concurrent probes keep meter count constant, per-contributor generation ordering handles a newer request that never reaches a contributor and an older cancellation after a newer success, thread-safe gauge updates do not throw, error/timeout gauges become `NaN`, cancellation clears only the active newest contributor generation's gauges, and the maximum is 128 cache meter IDs per route installation. Report exported backend time-series as registry/configuration dependent.
-- Verify duplicate meter identity installation fails before any meter is added; a filter/registry failure after the Nth registration removes only the current attempt's meters; concurrent identical installs produce exactly one winner; distinct route installations follow the application-wide meter-ID formula; and no route silently binds gauges to another route's state holder.
-- Verify snapshot sampling remains read-only and bounded while producers and drainers run concurrently.
-- Verify the all-backend planning budget with JDBC, R2DBC, and cache contributors configured, including a constrained blocking dispatcher and controllable JDBC statement/DataSource fixture where a JDBC query starts near `R` and then consumes `J_effective`, plus an orchestrator timeout example with deployment margin. Use an internal time/probe seam for deterministic virtual-time orchestration and retain one bounded real-time smoke test with explicit executor/DataSource cleanup.
-- Preserve the old config, installer, route, and `$default` JVM descriptors with `javap` or an equivalent compiled-consumer compatibility check.
-- Compile and test `:bluetape4k-exposed-cache`, `:bluetape4k-exposed-jdbc-caffeine`, `:bluetape4k-exposed-r2dbc-caffeine`, `:bluetape4k-exposed-spring-boot-jdbc`, `:bluetape4k-exposed-spring-boot-r2dbc`, and `:bluetape4k-exposed-ktor`, then run Kotlin diagnostics and `git diff --check`.
-- Add a Ktor authentication test proving unauthenticated denial returns the expected 401/403 without readiness details or contributor invocation, then authenticated access invokes the contributor exactly once and returns readiness.
-- Add bilingual runbook rows for repository `DOWN`, cache timeout, snapshot cumulative counters, `NaN` gauges, invalid contributor configuration, and unsupported custom probes. The runbook directs operators to caller-owned logs, backend telemetry, worker state, queue depth, and the fixed meters; it explains that dropped/observer counters are cumulative and should be queried with rate/increase rather than treated as readiness failures.
-- README parity review covers headings, compile-checked code, API names, supported supplier constraints, route/status examples, meter names/tags, registry-installation limits, runbook rows, security warnings, orchestrator timing, and Actuator links in both locales. After factual parity passes, perform a natural Korean technical-prose review without translating identifiers or changing semantics.
+## 인수 조건
 
-## Acceptance Criteria
+- Ktor application이 기존 Exposed readiness route에 cache repository 및 snapshot-cache readiness를 추가할 수 있습니다.
+- Timeout과 `DOWN` behavior가 deterministic하고 test-covered입니다.
+- HTTP detail과 Micrometer tag가 sanitized되고 bounded입니다.
+- Feature가 명시적인 opt-in이며 caller-owned로 유지됩니다.
+- 기존 database-only Ktor behavior가 compatible하게 유지됩니다.
 
-- Ktor applications can add cache repository and snapshot-cache readiness to the existing Exposed readiness route.
-- Timeout and `DOWN` behavior are deterministic and test-covered.
-- HTTP details and Micrometer tags are sanitized and bounded.
-- The feature remains explicit opt-in and caller-owned.
-- Existing database-only Ktor behavior remains compatible.
+## 완료 조건
 
-## Definition of Done
-
-- Spec and implementation plan pass performance, stability, security, Ops, developer/API, user/caller, and integration review with P0=0/P1=0.
-- All targeted tests, diagnostics, documentation parity checks, and final scoped review pass.
-- The issue-linked PR targets `develop`, mirrors issue metadata, and reaches green CI on the exact head before merge approval is requested.
+- Spec과 implementation plan이 performance, stability, security, Ops, developer/API, user/caller 및 integration review를 통과하고 P0=0/P1=0입니다.
+- 모든 targeted test, diagnostics, documentation parity check 및 final scoped review가 통과합니다.
+- Issue-linked PR이 `develop`을 target하고 issue metadata를 mirror하며, merge approval 요청 전에 exact head에서 green CI에 도달합니다.
