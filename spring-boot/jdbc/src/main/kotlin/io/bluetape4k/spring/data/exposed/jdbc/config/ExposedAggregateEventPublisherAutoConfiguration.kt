@@ -12,12 +12,12 @@ import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionSynchronizationManager
 
 /**
- * Auto-configures transaction-aware aggregate event handoff when one transaction manager is selectable.
+ * 하나의 transaction manager를 선택할 수 있을 때 transaction-aware aggregate event 전달을 자동 설정합니다.
  *
- * A context with one manager, or multiple managers with exactly one `@Primary`, receives an
- * [ExposedAggregateEventPublisher]. Ambiguous multi-manager contexts must declare the publisher explicitly.
- * The publisher does not select or retain a manager; callers remain responsible for using matching repository
- * and command transaction boundaries.
+ * manager가 하나이거나 여러 manager 중 정확히 하나에 `@Primary`가 지정된 context에는
+ * [ExposedAggregateEventPublisher]를 제공합니다. 여러 manager가 모호한 context는 publisher를 명시적으로 선언해야 합니다.
+ * publisher는 manager를 선택하거나 보관하지 않으며, 호출자가 일치하는 repository와 command transaction 경계를
+ * 사용할 책임을 집니다.
  */
 @AutoConfiguration(after = [ExposedSpringDataAutoConfiguration::class])
 @ConditionalOnClass(

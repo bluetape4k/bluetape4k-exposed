@@ -14,41 +14,39 @@ private val correlationKeys = listOf("traceId", "spanId", "requestId")
 private val safeCorrelation = Regex("[A-Za-z0-9._:-]{1,128}")
 
 /**
- * Publishes an aggregate's immutable domain-event snapshot inside the current command transaction.
+ * 현재 command transaction 안에서 aggregate의 불변 domain-event snapshot을 발행합니다.
  *
- * Save the aggregate and call [publishAfterSave] exactly once in the same active transaction:
+ * 동일한 활성 transaction에서 aggregate를 저장하고 [publishAfterSave]를 정확히 한 번 호출합니다.
  * ```kotlin
  * transactionTemplate.executeWithoutResult {
  *     orderRepository.save(order)
  *     aggregateEventPublisher.publishAfterSave(order)
  * }
  * ```
- * Empty aggregates are a no-op. Synchronous listeners run immediately; default `AFTER_COMMIT` listeners run
- * only after commit. Committed completion clears the registered buffer, while rollback or unknown completion
- * preserves it. Publication, duplicate registration, or snapshot mutation poisons the transaction even when
- * caller code catches the immediate failure. Event instances and payloads must remain deeply immutable.
- * Duplicate protection uses aggregate object identity within the current transaction; separate instances with
- * the same aggregate id are independent registrations and require application-level idempotency.
- * Snapshot verification runs at [Ordered.LOWEST_PRECEDENCE]. Any synchronization that can mutate the aggregate
- * must use an earlier order; registering a same-order mutating synchronization after publication is unsupported.
+ * event가 없는 aggregate는 아무 작업도 하지 않습니다. synchronous listener는 즉시 실행되고 기본 `AFTER_COMMIT`
+ * listener는 commit 후에만 실행됩니다. commit 완료 시 등록 buffer를 비우지만 rollback 또는 알 수 없는 완료 상태에서는
+ * 유지합니다. 호출자 코드가 즉시 발생한 실패를 잡더라도 발행, 중복 등록 또는 snapshot 변경은 transaction을 오염시킵니다.
+ * event instance와 payload는 깊은 불변성을 유지해야 합니다. 중복 방지는 현재 transaction 안의 aggregate object identity를
+ * 사용합니다. 같은 aggregate id를 가진 별도 instance는 독립 등록이며 애플리케이션 수준 idempotency가 필요합니다.
+ * snapshot 검증은 [Ordered.LOWEST_PRECEDENCE]에서 실행됩니다. aggregate를 변경할 수 있는 synchronization은 더 이른
+ * order를 사용해야 하며 발행 후 같은 order의 변경 synchronization을 등록하는 것은 지원하지 않습니다.
  *
- * A synchronous publication failure is rethrown as the same [Throwable]. If caller code catches a lifecycle or
- * publication failure, the stored poison causes a stable [IllegalStateException] from `beforeCommit`, so the
- * transaction still cannot commit.
+ * synchronous 발행 실패는 같은 [Throwable]로 다시 던집니다. 호출자 코드가 lifecycle 또는 발행 실패를 잡으면 저장된
+ * poison이 `beforeCommit`에서 안정적인 [IllegalStateException]을 발생시켜 transaction을 commit할 수 없게 합니다.
  *
- * `PROPAGATION_NESTED`/savepoint rollback and same-instance reuse across overlapping `REQUIRES_NEW` transactions
- * are unsupported. Listener database writes after commit require a new transaction.
+ * `PROPAGATION_NESTED`/savepoint rollback과 겹치는 `REQUIRES_NEW` transaction 사이의 동일 instance 재사용은
+ * 지원하지 않습니다. commit 후 listener의 database 쓰기에는 새 transaction이 필요합니다.
  *
- * @throws IllegalStateException when the transaction, identity, or snapshot lifecycle contract is violated.
+ * @throws IllegalStateException transaction, identity 또는 snapshot lifecycle 계약을 위반한 경우
  */
 class ExposedAggregateEventPublisher(
     private val applicationEventPublisher: ApplicationEventPublisher,
 ) {
 
     /**
-     * Hands [aggregate]'s current event snapshot to Spring and retains it until transaction completion.
+     * [aggregate]의 현재 event snapshot을 Spring에 전달하고 transaction 완료 시까지 유지합니다.
      *
-     * @throws IllegalStateException when the transaction or aggregate lifecycle contract is violated.
+     * @throws IllegalStateException transaction 또는 aggregate lifecycle 계약을 위반한 경우
      */
     fun <ID : Any> publishAfterSave(aggregate: AggregateRoot<ID>) {
         val currentSynchronization = currentSynchronization()

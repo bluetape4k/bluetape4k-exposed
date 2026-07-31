@@ -42,7 +42,7 @@ annotation class EnableExposedJdbcRepositories(
     val repositoryFactoryBeanClass: KClass<*> = ExposedJdbcRepositoryFactoryBean::class,
     /** 쿼리 조회 전략 */
     val queryLookupStrategy: QueryLookupStrategy.Key = QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND,
-    /** Transaction manager bean name used by generated repository proxies. */
+/** 생성된 repository proxy가 사용하는 transaction manager bean 이름입니다. */
     val transactionManagerRef: String = "springTransactionManager",
     /** NamedQueries 위치 */
     val namedQueriesLocation: String = "",
