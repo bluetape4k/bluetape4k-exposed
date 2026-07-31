@@ -5,12 +5,11 @@ import java.io.Serializable
 import java.util.Properties
 
 /**
- * Typed StarRocks JDBC connection options.
+ * type이 지정된 StarRocks JDBC connection option입니다.
  *
- * StarRocks currently documents only standard `user` and `password`
- * connection properties for Connector/J. Additional properties are accepted as
- * a narrow escape hatch for driver-level tuning after the caller verifies the
- * option against the StarRocks driver documentation.
+ * StarRocks는 현재 Connector/J의 표준 `user`, `password` connection property만 문서화합니다.
+ * 추가 property는 호출자가 StarRocks driver 문서에서 option을 검증한 뒤 driver 수준 tuning에 사용하는
+ * 제한된 escape hatch로 허용합니다.
  */
 data class StarRocksConnectionOptions(
     val extraProperties: Map<String, String> = emptyMap(),

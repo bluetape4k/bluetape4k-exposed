@@ -7,17 +7,16 @@ import org.jetbrains.exposed.v1.core.InternalApi
 import org.jetbrains.exposed.v1.core.vendors.MysqlDialect
 
 /**
- * Minimal Exposed dialect for StarRocks Connector/J.
+ * StarRocks Connector/J용 최소 Exposed dialect입니다.
  *
- * StarRocks uses a MySQL-compatible wire protocol, but its OLAP DDL is
- * StarRocks-specific. This dialect reuses Exposed's MySQL SQL generator only
- * for the narrow query and smoke-test surface, while disabling unproven schema
- * mutation features.
+ * StarRocks는 MySQL 호환 wire protocol을 사용하지만 OLAP DDL은 StarRocks 고유 형식입니다.
+ * 이 dialect는 제한된 query와 smoke-test 범위에서만 Exposed의 MySQL SQL generator를 재사용하며
+ * 입증되지 않은 schema mutation 기능은 비활성화합니다.
  */
 class StarRocksDialect: MysqlDialect() {
 
     companion object: KLogging() {
-        /** Dialect name registered with Exposed. */
+/** Exposed에 등록하는 dialect 이름입니다. */
         const val dialectName: String = "starrocks"
     }
 
