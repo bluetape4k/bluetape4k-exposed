@@ -412,6 +412,9 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
             }
 
             awaitCondition { replayDeliveryIds == listOf(event.eventId) }
+            awaitCondition {
+                repository.findIncompletePublications().single().status == Status.FAILED
+            }
             val failed = repository.findIncompletePublications().single()
             failed.event shouldBeEqualTo event
             failed.status shouldBeEqualTo Status.FAILED
