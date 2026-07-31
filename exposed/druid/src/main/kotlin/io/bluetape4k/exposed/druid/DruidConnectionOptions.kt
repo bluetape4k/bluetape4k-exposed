@@ -8,12 +8,11 @@ import java.util.Properties
 private const val DEFAULT_DRUID_AVATICA_ENDPOINT = "http://localhost:8888/druid/v2/sql/avatica/"
 
 /**
- * Apache Druid Avatica JDBC connection options.
+ * Apache Druid Avatica JDBC 연결 옵션입니다.
  *
- * Druid JDBC is a query-only integration surface in this module. The generated
- * URL targets the Router/Broker Avatica endpoint and enables transparent
- * reconnection by default, matching the Druid JDBC guidance for Broker restarts
- * or membership changes.
+ * 이 module에서 Druid JDBC는 query-only integration surface입니다. 생성되는 URL은
+ * Router/Broker Avatica endpoint를 대상으로 하며, Broker 재시작이나 membership 변경에 대한
+ * Druid JDBC 지침에 맞게 transparent reconnection을 기본으로 활성화합니다.
  */
 data class DruidConnectionOptions(
     val avaticaEndpoint: String = DEFAULT_DRUID_AVATICA_ENDPOINT,
@@ -37,7 +36,7 @@ data class DruidConnectionOptions(
         validatePairs("extraProperties", extraProperties)
     }
 
-    /** Returns the Avatica JDBC URL used by [DruidJdbc]. */
+    /** [DruidJdbc]가 사용할 Avatica JDBC URL을 반환합니다. */
     fun jdbcUrl(): String = buildString {
         append("jdbc:avatica:remote:url=")
         append(avaticaEndpoint)
@@ -48,7 +47,7 @@ data class DruidConnectionOptions(
         }
     }
 
-    /** Returns JDBC properties for Druid query context and optional authentication. */
+    /** Druid query context와 선택적 authentication에 사용할 JDBC property를 반환합니다. */
     fun toProperties(): Properties = Properties().apply {
         user?.let { setProperty("user", it) }
         password?.let { setProperty("password", it) }
@@ -57,7 +56,7 @@ data class DruidConnectionOptions(
     }
 }
 
-/** Avatica wire serialization mode supported by Druid Router/Broker endpoints. */
+/** Druid Router/Broker endpoint가 지원하는 Avatica wire serialization mode입니다. */
 enum class DruidAvaticaSerialization {
     JSON,
     PROTOBUF,
