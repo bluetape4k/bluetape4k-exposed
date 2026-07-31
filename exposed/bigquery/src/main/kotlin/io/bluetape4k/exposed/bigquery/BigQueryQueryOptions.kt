@@ -5,12 +5,11 @@ import com.google.api.services.bigquery.model.TableReference
 import java.io.Serializable
 
 /**
- * BigQuery REST query-job options applied to generated or raw SQL execution.
+ * 생성 SQL 또는 원시 SQL 실행에 적용할 BigQuery REST 쿼리 작업 옵션입니다.
  *
- * These options map to BigQuery `jobs.query` request fields so callers can
- * validate queries with dry runs, cap billed bytes, select execution priority,
- * attach job labels, and control destination-table behavior without switching
- * away from the Exposed DSL integration.
+ * 이 옵션은 BigQuery `jobs.query` 요청 필드에 매핑됩니다.
+ * 호출자는 Exposed DSL 통합을 유지하면서 dry run 검증, 과금 바이트 상한,
+ * 실행 우선순위, 작업 라벨, 대상 테이블 동작을 제어할 수 있습니다.
  */
 data class BigQueryQueryOptions(
     val dryRun: Boolean = false,
@@ -61,7 +60,7 @@ data class BigQueryQueryOptions(
 }
 
 /**
- * BigQuery query priority values supported by the REST query job API.
+ * REST 쿼리 작업 API가 지원하는 BigQuery 쿼리 우선순위입니다.
  */
 enum class BigQueryQueryPriority(val apiValue: String) {
     INTERACTIVE("INTERACTIVE"),
@@ -69,7 +68,7 @@ enum class BigQueryQueryPriority(val apiValue: String) {
 }
 
 /**
- * Destination table for BigQuery query-job results.
+ * BigQuery 쿼리 작업 결과를 저장할 대상 테이블입니다.
  */
 data class BigQueryDestinationTable(
     val projectId: String,

@@ -30,11 +30,11 @@ private val UNSAFE_RAW_CLAUSE_BOUNDARY = Regex(
 )
 
 /**
- * Rendered ClickHouse engine expression.
+ * 렌더링된 ClickHouse 엔진 표현식입니다.
  *
- * Prefer [Expression]-based DSL methods. Use [unsafeRaw] only for ClickHouse
- * grammar fragments that Exposed cannot model yet; it rejects statement and
- * clause-boundary tokens before the fragment reaches generated DDL.
+ * [Expression] 기반 DSL 메서드를 우선 사용하십시오.
+ * [unsafeRaw]는 Exposed가 아직 모델링할 수 없는 ClickHouse 문법 조각에만 사용합니다.
+ * 이 함수는 조각이 생성 DDL에 도달하기 전에 문장 및 절 경계 토큰을 거부합니다.
  */
 @JvmInline
 value class ClickHouseEngineExpression private constructor(val sql: String): Serializable {
@@ -51,7 +51,7 @@ value class ClickHouseEngineExpression private constructor(val sql: String): Ser
 }
 
 /**
- * Validated ClickHouse setting name.
+ * 검증된 ClickHouse 설정 이름입니다.
  */
 @JvmInline
 value class ClickHouseSettingName private constructor(val sql: String): Serializable {
@@ -88,7 +88,7 @@ value class ClickHouseSettingName private constructor(val sql: String): Serializ
 }
 
 /**
- * Typed ClickHouse setting value.
+ * 타입이 지정된 ClickHouse 설정 값입니다.
  */
 sealed interface ClickHouseSettingValue: Serializable {
     fun toSql(): String
@@ -118,7 +118,7 @@ private data class RawSettingValue(private val sql: String): ClickHouseSettingVa
 }
 
 /**
- * ClickHouse engine setting with a validated name and typed value.
+ * 검증된 이름과 타입 지정 값을 가진 ClickHouse 엔진 설정입니다.
  */
 @ConsistentCopyVisibility
 data class ClickHouseSetting private constructor(
@@ -167,34 +167,34 @@ data class ClickHouseSetting private constructor(
 }
 
 /**
- * ClickHouse table engine.
+ * ClickHouse 테이블 엔진입니다.
  *
- * [toClause] returns the `ENGINE` clause appended to `CREATE TABLE` DDL.
+ * [toClause]는 `CREATE TABLE` DDL에 추가할 `ENGINE` 절을 반환합니다.
  */
 sealed interface ClickHouseEngine: Serializable {
     fun toClause(): String
 }
 
-/** Memory engine for tests and temporary tables. */
+/** 테스트와 임시 테이블에 사용할 Memory 엔진입니다. */
 data object Memory: ClickHouseEngine {
     private const val serialVersionUID: Long = 1L
     override fun toClause(): String = "ENGINE = Memory()"
 }
 
-/** TinyLog engine for small column-file tables. */
+/** 작은 컬럼 파일 테이블에 사용할 TinyLog 엔진입니다. */
 data object TinyLog: ClickHouseEngine {
     private const val serialVersionUID: Long = 1L
     override fun toClause(): String = "ENGINE = TinyLog()"
 }
 
-/** Log engine for small append-focused tables. */
+/** 작은 추가 중심 테이블에 사용할 Log 엔진입니다. */
 data object Log: ClickHouseEngine {
     private const val serialVersionUID: Long = 1L
     override fun toClause(): String = "ENGINE = Log()"
 }
 
 /**
- * MergeTree family base engine.
+ * MergeTree 계열의 기본 엔진입니다.
  */
 data class MergeTree(
     val orderBy: List<ClickHouseEngineExpression>,
@@ -224,7 +224,7 @@ data class MergeTree(
 }
 
 /**
- * ReplacingMergeTree engine.
+ * ReplacingMergeTree 엔진입니다.
  */
 data class ReplacingMergeTree(
     val orderBy: List<ClickHouseEngineExpression>,
@@ -250,7 +250,7 @@ data class ReplacingMergeTree(
 }
 
 /**
- * SummingMergeTree engine.
+ * SummingMergeTree 엔진입니다.
  */
 data class SummingMergeTree(
     val orderBy: List<ClickHouseEngineExpression>,
@@ -276,7 +276,7 @@ data class SummingMergeTree(
 }
 
 /**
- * AggregatingMergeTree engine.
+ * AggregatingMergeTree 엔진입니다.
  */
 data class AggregatingMergeTree(
     val orderBy: List<ClickHouseEngineExpression>,
