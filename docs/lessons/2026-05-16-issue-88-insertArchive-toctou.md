@@ -1,13 +1,13 @@
-# ExposedEventPublicationRepository.insertArchive: TOCTOU Existence-Check-Then-Insert
+# ExposedEventPublicationRepository.insertArchive: TOCTOU 존재 확인 후 삽입
 
-**Date**: 2026-05-16  
-**Issue**: #88  
-**Module**: `exposed-spring-modulith`  
+**Date**: 2026-05-16
+**Issue**: #88
+**Module**: `exposed-spring-modulith`
 **File**: `ExposedEventPublicationRepository.kt`
 
-## Root Cause
+## 근본 원인
 
-`insertArchive` used a SELECT + INSERT two-step pattern:
+`insertArchive`는 SELECT + INSERT 두 단계 pattern을 사용했습니다.
 
 ```kotlin
 val exists = archiveTable.selectAll()
@@ -19,14 +19,14 @@ if (exists) return  // TOCTOU window: another thread can INSERT between check an
 archiveTable.insert { ... }
 ```
 
-Between the SELECT and the INSERT, another transaction can archive the same publication,
-causing a unique constraint violation on the second INSERT. The SELECT guard provides no
-atomicity guarantee.
+SELECT와 INSERT 사이에 다른 transaction이 같은 publication을 archive할 수 있어 두 번째
+INSERT에서 unique constraint violation이 발생합니다. SELECT guard는 atomicity를
+보장하지 않습니다.
 
-## Fix
+## 수정
 
-Remove the existence check. Attempt the INSERT directly and catch SQL state `23xxx`
-(integrity constraint violation — unique key already exists) as an idempotent condition:
+존재 확인을 제거합니다. INSERT를 직접 시도하고 SQL state `23xxx`(integrity constraint
+violation — unique key already exists)는 idempotent condition으로 처리합니다.
 
 ```kotlin
 try {
@@ -38,16 +38,18 @@ try {
 }
 ```
 
-SQL state prefixes:
+SQL state prefix는 다음과 같습니다.
+
 - `23505` — unique_violation (PostgreSQL, H2)
 - `23000` — integrity constraint violation (MySQL)
 
-Both start with `23`, so `startsWith("23")` covers all supported databases portably.
+둘 다 `23`으로 시작하므로 `startsWith("23")`는 지원하는 모든 database를 이식성 있게
+처리합니다.
 
-## Future Guidance
+## 향후 지침
 
-- Never guard an INSERT with a SELECT to check existence — this is always a TOCTOU race.
-- Prefer INSERT with duplicate-key handling (SQL state 23xxx, `ON CONFLICT DO NOTHING`,
-  or DB-specific `INSERT IGNORE`) for idempotent archive/upsert operations.
-- `ExposedSQLException` extends `java.sql.SQLException` and exposes `getSQLState()` via
-  the standard JDBC interface — use it for portable constraint-violation detection.
+- 존재를 확인하려고 INSERT 앞에 SELECT를 두지 않습니다. 이는 항상 TOCTOU race입니다.
+- idempotent archive/upsert operation에는 duplicate-key 처리(SQL state `23xxx`,
+  `ON CONFLICT DO NOTHING`, DB-specific `INSERT IGNORE`)를 우선합니다.
+- `ExposedSQLException`은 `java.sql.SQLException`을 확장하고 표준 JDBC interface로
+  `getSQLState()`를 제공하므로 이식 가능한 constraint-violation 탐지에 사용합니다.
