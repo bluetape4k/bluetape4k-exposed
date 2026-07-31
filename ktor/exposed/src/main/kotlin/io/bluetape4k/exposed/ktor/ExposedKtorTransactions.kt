@@ -12,9 +12,7 @@ import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 
-/**
- * Runs a blocking Exposed JDBC transaction on the caller-supplied dispatcher.
- */
+/** 호출자가 제공한 dispatcher에서 blocking Exposed JDBC transaction을 실행합니다. */
 suspend fun <T> ApplicationCall.exposedJdbcTransaction(
     db: Database,
     blockingDispatcher: CoroutineDispatcher,
@@ -42,9 +40,7 @@ private suspend fun <T> runJdbcTransaction(
         throw ExposedKtorTransactionException(e)
     }
 
-/**
- * Runs a coroutine-native Exposed R2DBC transaction.
- */
+/** coroutine-native Exposed R2DBC transaction을 실행합니다. */
 suspend fun <T> ApplicationCall.exposedR2dbcTransaction(
     db: R2dbcDatabase,
     meterRegistry: MeterRegistry? = null,

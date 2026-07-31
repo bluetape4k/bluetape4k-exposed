@@ -8,9 +8,7 @@ import kotlinx.coroutines.CancellationException
 import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import java.sql.SQLException
 
-/**
- * Registers client-safe Exposed error responses.
- */
+/** client에 안전한 Exposed error response를 등록합니다. */
 fun StatusPagesConfig.bluetape4kExposedErrors() {
     exception<CancellationException> { _, cause ->
         throw cause

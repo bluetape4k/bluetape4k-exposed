@@ -9,10 +9,10 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * Explicit opt-in configuration for [installBluetape4kExposedKtor].
+ * [installBluetape4kExposedKtor]를 위한 명시적 opt-in 설정입니다.
  *
- * The installer never creates or closes database resources, dispatchers, pools,
- * or meter registries. Applications own those lifecycles.
+ * installer는 database resource, dispatcher, pool, meter registry를 생성하거나 닫지 않습니다.
+ * 애플리케이션이 해당 lifecycle을 소유합니다.
  */
 class Bluetape4kExposedKtorConfig(
     val jdbcDatabase: Database? = null,
