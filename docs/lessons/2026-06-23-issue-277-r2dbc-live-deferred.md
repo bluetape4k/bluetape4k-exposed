@@ -1,14 +1,14 @@
-# Lessons Learned - R2DBC Live Deferred (2026-06-23)
+# 교훈 - R2DBC Live Deferred (2026-06-23)
 
 Issue: #277
 Module: `:bluetape4k-exposed-r2dbc`
 
-## L1: A returned Deferred must not be created inside a waiting scope
+## L1: 반환하는 Deferred를 대기 scope 안에서 만들면 안 됩니다
 
-### Problem
+### 문제
 
-`coroutineScope { async { ... } }` looks like it returns asynchronous work, but the scope waits for the child before returning. That makes a `Deferred` API misleading because the caller cannot schedule multiple jobs before the first one finishes.
+`coroutineScope { async { ... } }`는 비동기 작업을 반환하는 것처럼 보이지만 scope가 반환하기 전에 child를 기다립니다. 호출자는 첫 작업이 끝나기 전에 여러 job을 예약할 수 없으므로 `Deferred` API가 오해를 일으킵니다.
 
-### Lesson
+### 교훈
 
-When a suspend API intentionally returns `Deferred`, create the child from the caller-owned coroutine context rather than a transient waiting scope. Keep cancellation tied to the caller, and use a barrier test that proves the function returns while the child is still suspended.
+suspend API가 의도적으로 `Deferred`를 반환한다면 일시적인 대기 scope가 아니라 호출자가 소유한 coroutine context에서 child를 생성합니다. cancellation은 호출자에 연결하고, child가 여전히 suspend 상태일 때 함수가 반환함을 증명하는 barrier 테스트를 사용합니다.
