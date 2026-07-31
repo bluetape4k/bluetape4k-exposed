@@ -14,17 +14,17 @@ import org.springframework.core.task.TaskExecutor
 import java.time.Duration
 
 /**
- * Spring Boot auto-configuration for Exposed Batch components.
+ * Exposed Batch 구성 요소를 위한 Spring Boot 자동 설정입니다.
  *
- * Do not add `@EnableBatchProcessing` to applications using this module. It
- * disables Spring Boot 4 batch auto-configuration.
+ * 이 모듈을 사용하는 애플리케이션에는 `@EnableBatchProcessing`을 추가하지 마십시오.
+ * 추가하면 Spring Boot 4 batch 자동 설정이 비활성화됩니다.
  *
- * Recommended application configuration:
+ * 권장 애플리케이션 설정:
  * ```yaml
  * spring:
  *   batch:
  *     job:
- *       enabled: false  # prefer explicit JobLauncher usage
+ *       enabled: false  # 명시적인 JobLauncher 사용 권장
  * ```
  */
 @AutoConfiguration(after = [BatchAutoConfiguration::class])
@@ -35,10 +35,9 @@ class ExposedBatchAutoConfiguration {
     companion object : KLogging()
 
     /**
-     * Default [TaskExecutor] for partitioned batch execution.
+     * partition batch 실행에 사용하는 기본 [TaskExecutor]입니다.
      *
-     * User-defined `batchPartitionTaskExecutor` beans take precedence over this
-     * default bean.
+     * 사용자가 정의한 `batchPartitionTaskExecutor` bean이 이 기본 bean보다 우선합니다.
      */
     @Bean
     @ConditionalOnMissingBean(name = ["batchPartitionTaskExecutor"])
