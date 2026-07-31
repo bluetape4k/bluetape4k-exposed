@@ -1,66 +1,66 @@
-# Issue #32 CockroachDB Transaction Retry Plan
+# Issue #32 CockroachDB Transaction Retry 계획
 
-Spec: `docs/superpowers/specs/2026-06-07-issue-32-cockroachdb-transaction-retry-design.md`
+설계 문서: `docs/superpowers/specs/2026-06-07-issue-32-cockroachdb-transaction-retry-design.md`
 
-## Decision
+## 결정
 
-Implement a CockroachDB-specific retry wrapper instead of enabling Exposed's
-generic transaction retry globally. The wrapper will set the inner Exposed
-transaction to one attempt and retry only SQL exceptions classified by
-CockroachDB's documented retryable transaction signature.
+Exposed의 일반 transaction retry를 전역으로 활성화하지 않고 CockroachDB
+전용 retry wrapper를 구현한다. wrapper는 내부 Exposed transaction의 시도
+횟수를 한 번으로 설정하고, CockroachDB가 문서화한 retry 가능 transaction
+signature로 분류된 SQL 예외만 재시도한다.
 
-## Tasks
+## 작업
 
-1. Add retry support source.
-   - Add `CockroachTransactionRetryOptions`.
-   - Add `Throwable.isCockroachRetryableTransactionError()`.
-   - Add `withCockroachTransaction(...)`.
-   - Add an internal retry executor for fake SQLException regression tests.
-   - Validate options with bluetape4k support helpers.
+1. retry 지원 소스를 추가한다.
+   - `CockroachTransactionRetryOptions`를 추가한다.
+   - `Throwable.isCockroachRetryableTransactionError()`를 추가한다.
+   - `withCockroachTransaction(...)`을 추가한다.
+   - 가짜 SQLException 회귀 테스트를 위한 내부 retry executor를 추가한다.
+   - bluetape4k 지원 헬퍼로 option을 검증한다.
 
-2. Add regression tests.
-   - Add predicate tests for exact, wrapped, wrong SQLSTATE, and wrong message
-     cases.
-   - Add retry executor tests for success, exhaustion, non-retryable SQL,
-     cancellation, and interruption.
-   - Add CockroachDB Testcontainers transaction helper smoke tests for commit,
-     rollback, and inner Exposed `maxAttempts = 1`.
+2. 회귀 테스트를 추가한다.
+   - 정확히 일치하는 경우, wrapping된 경우, 잘못된 SQLSTATE, 잘못된 메시지에
+     대한 predicate 테스트를 추가한다.
+   - 성공, 시도 소진, retry 불가능한 SQL, cancellation, interruption에 대한
+     retry executor 테스트를 추가한다.
+   - commit, rollback, 내부 Exposed `maxAttempts = 1`에 대한 CockroachDB
+     Testcontainers transaction 헬퍼 smoke test를 추가한다.
 
-3. Update documentation.
-   - Update `README.md`.
-   - Update `README.ko.md`.
-   - Update `CHANGELOG.md`.
+3. 문서를 갱신한다.
+   - `README.md`를 갱신한다.
+   - `README.ko.md`를 갱신한다.
+   - `CHANGELOG.md`를 갱신한다.
 
-4. Verify locally.
-   - Compile touched module.
-   - Run module tests with `--rerun-tasks`.
-   - Run Kover XML report.
-   - Run `git diff --check`.
-   - Validate wiki research note with GNO commands.
+4. 로컬에서 검증한다.
+   - 변경한 모듈을 compile한다.
+   - `--rerun-tasks`로 모듈 테스트를 실행한다.
+   - Kover XML report를 실행한다.
+   - `git diff --check`를 실행한다.
+   - GNO 명령으로 wiki 조사 메모를 검증한다.
 
-5. Review and delivery.
-   - Add Step 6-R final review evidence with `P0 = 0`, `P1 = 0`.
-   - Add `docs/lessons/2026-06-07-issue-32-cockroachdb-transaction-retry.md`.
-   - Commit using the Lore protocol.
-   - Push branch and create PR assigned to `debop`.
-   - Set PR milestone `1.11.0` and relevant labels where available.
-   - Verify the live PR body and ensure the final `##` section is
-     `## DoD Status`.
+5. 검토하고 전달한다.
+   - `P0 = 0`, `P1 = 0`인 Step 6-R 최종 검토 근거를 추가한다.
+   - `docs/lessons/2026-06-07-issue-32-cockroachdb-transaction-retry.md`를
+     추가한다.
+   - Lore protocol에 따라 커밋한다.
+   - 브랜치를 push하고 `debop`에게 할당한 PR을 생성한다.
+   - 가능하면 PR milestone `1.11.0`과 관련 label을 설정한다.
+   - 라이브 PR 본문을 확인하고 마지막 `##` section이
+     `## DoD Status`인지 검증한다.
 
-## Risks And Controls
+## 위험과 통제
 
-| Risk | Control |
+| 위험 | 통제 |
 |---|---|
-| Exposed internal retry widens the classification boundary | Set inner transaction `maxAttempts = 1`. |
-| Non-retryable SQL errors are retried | Retry only when SQLSTATE/message match CockroachDB retry errors. |
-| Wrapped `ExposedSQLException` hides the PostgreSQL cause | Walk the cause chain. |
-| Exhaustion loses attempt evidence | Rethrow the final SQL exception and attach prior SQL failures as suppressed exceptions. |
-| Tests rely on nondeterministic CockroachDB contention | Use fake SQLException regression tests for retry mechanics and Testcontainers only for smoke commit/rollback behavior. |
+| Exposed 내부 retry가 분류 경계를 넓힌다. | 내부 transaction의 `maxAttempts = 1`로 설정한다. |
+| retry 불가능한 SQL 오류를 재시도한다. | SQLSTATE/message가 CockroachDB retry 오류와 일치할 때만 재시도한다. |
+| wrapping된 `ExposedSQLException`이 PostgreSQL 원인을 숨긴다. | cause chain을 순회한다. |
+| 시도 소진 시 시도 근거가 사라진다. | 마지막 SQL 예외를 다시 던지고 이전 SQL 실패를 suppressed exception으로 첨부한다. |
+| 테스트가 결정적이지 않은 CockroachDB 경합에 의존한다. | retry 메커니즘에는 가짜 SQLException 회귀 테스트를 사용하고, Testcontainers는 commit/rollback 동작의 smoke test에만 사용한다. |
 
-## Validation Expectations
+## 검증 기대 사항
 
-- Fake retry tests prove classification and retry mechanics deterministically.
-- Testcontainers smoke tests prove the public helper works with real
-  CockroachDB and Exposed JDBC.
-- README examples reuse bluetape4k ecosystem helpers where relevant.
-
+- 가짜 retry 테스트로 분류와 retry 메커니즘을 결정적으로 입증한다.
+- Testcontainers smoke test로 공개 헬퍼가 실제 CockroachDB 및 Exposed
+  JDBC와 함께 동작함을 입증한다.
+- README 예제는 관련된 곳에서 bluetape4k ecosystem 헬퍼를 재사용한다.
