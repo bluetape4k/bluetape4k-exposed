@@ -1,23 +1,21 @@
-# Module Folder and README Asset Rename
+# 모듈 폴더 및 README 자산 이름 변경
 
 Date: 2026-06-22
 Repo: `bluetape4k-exposed`
 
-## Context
+## 배경
 
-The repository kept published-style names in physical folders, for example
-`exposed/exposed-core` and `spring-boot/exposed-jdbc`. After the artifact naming
-contract stabilized, those prefixes made local paths noisier than the Gradle
-project names they mapped to.
+이 저장소는 `exposed/exposed-core`, `spring-boot/exposed-jdbc`처럼 물리 폴더에
+published-style 이름을 유지했습니다. 아티팩트 명명 계약이 안정된 뒤에는 이 접두사가
+매핑되는 Gradle 프로젝트 이름보다 로컬 경로를 더 장황하게 만들었습니다.
 
-README diagram and chart asset names had the same duplicate pattern:
-`exposed-exposed-*`, and the BOM asset used
-`exposed-bluetape4k-exposed-bom-*`.
+README 다이어그램과 chart 자산 이름에도 `exposed-exposed-*`라는 중복 패턴이 있었고,
+BOM 자산은 `exposed-bluetape4k-exposed-bom-*`을 사용했습니다.
 
-## Decision
+## 결정
 
-Keep Gradle project names and Maven artifact names unchanged, but simplify
-physical paths and README-facing asset filenames:
+Gradle 프로젝트 이름과 Maven 아티팩트 이름은 변경하지 않고, 물리 경로와 README에
+노출되는 자산 파일 이름만 단순화합니다.
 
 - `exposed/exposed-core` -> `exposed/core`
 - `exposed/bluetape4k-exposed-bom` -> `exposed/bom`
@@ -28,27 +26,28 @@ physical paths and README-facing asset filenames:
 - `docs/images/readme-diagrams/exposed-bluetape4k-exposed-bom-diagram-01.png` ->
   `docs/images/readme-diagrams/exposed-bom-diagram-01.png`
 
-`spring-boot/batch-exposed` was left unchanged because it does not use the
-`exposed-` prefix pattern and its name communicates Spring Batch integration.
+`spring-boot/batch-exposed`는 `exposed-` 접두사 패턴을 사용하지 않고 이름이 Spring
+Batch 통합을 설명하므로 그대로 유지했습니다.
 
-## Validation
+## 검증
 
-Use path-level validation for this kind of rename:
+이런 이름 변경에는 경로 수준 검증을 사용합니다.
 
-- `./gradlew -q projects --no-configuration-cache --no-daemon` to prove project
-  names still map to the new directories.
-- `./gradlew build -x test --parallel --no-configuration-cache --no-daemon` to
-  prove compile-only build wiring still works.
-- `actionlint .github/workflows/ci.yml .github/workflows/migration-smoke.yml`
-  after workflow path-filter edits.
-- `xmllint --noout` over renamed SVG assets because only names and references
-  changed, not SVG geometry.
-- README image-reference existence checks after replacing asset paths.
+- `./gradlew -q projects --no-configuration-cache --no-daemon`으로 프로젝트 이름이
+  여전히 새 디렉터리에 매핑되는지 증명합니다.
+- `./gradlew build -x test --parallel --no-configuration-cache --no-daemon`으로
+  compile-only build wiring이 계속 동작하는지 증명합니다.
+- workflow path-filter를 수정한 뒤에는
+  `actionlint .github/workflows/ci.yml .github/workflows/migration-smoke.yml`을
+  실행합니다.
+- SVG geometry가 아니라 이름과 참조만 바뀌었으므로 이름을 바꾼 SVG 자산에는
+  `xmllint --noout`을 실행합니다.
+- 자산 경로를 바꾼 뒤 README 이미지 참조의 존재 여부를 검사합니다.
 - `git diff --check` before commit.
 
-## Follow-up Guard
+## 후속 보호 장치
 
-Future module additions under `exposed/` should use short physical folder names
-and map to published-style Gradle project names through `settings.gradle.kts`.
-README-facing generated asset names should avoid repeating the directory or
-artifact prefix.
+앞으로 `exposed/` 아래에 모듈을 추가할 때는 짧은 물리 폴더 이름을 사용하고
+`settings.gradle.kts`로 published-style Gradle 프로젝트 이름에 매핑해야 합니다.
+README에 노출되는 생성 자산 이름은 디렉터리 또는 아티팩트 접두사를 반복하지 않아야
+합니다.
