@@ -3,7 +3,7 @@ package io.bluetape4k.exposed.clickhouse.engine
 import org.jetbrains.exposed.v1.core.Expression
 
 /**
- * DSL builder for [MergeTree].
+ * [MergeTree] DSL 빌더입니다.
  */
 class MergeTreeBuilder {
     private var orderByExpressions: List<ClickHouseEngineExpression> = emptyList()
@@ -12,47 +12,47 @@ class MergeTreeBuilder {
     private var sampleByExpression: ClickHouseEngineExpression? = null
     private val settings: MutableList<ClickHouseSetting> = mutableListOf()
 
-    /** Sets `ORDER BY` with typed Exposed expressions. At least one expression is required. */
+    /** 타입이 지정된 Exposed 표현식으로 `ORDER BY`를 설정합니다. 표현식이 하나 이상 필요합니다. */
     fun orderBy(vararg expressions: Expression<*>) {
         orderByExpressions = expressions.map { ClickHouseEngineExpression.from(it) }
     }
 
-    /** Sets `ORDER BY` with raw ClickHouse SQL after strict unsafe-fragment validation. */
+    /** 엄격한 비안전 조각 검증 후 원시 ClickHouse SQL로 `ORDER BY`를 설정합니다. */
     fun unsafeRawOrderBy(vararg expressions: String) {
         orderByExpressions = expressions.map { ClickHouseEngineExpression.unsafeRaw(it) }
     }
 
-    /** Sets the optional `PARTITION BY` expression. */
+    /** 선택적 `PARTITION BY` 표현식을 설정합니다. */
     fun partitionBy(expression: Expression<*>) {
         partitionByExpression = ClickHouseEngineExpression.from(expression)
     }
 
-    /** Sets raw `PARTITION BY` SQL after strict unsafe-fragment validation. */
+    /** 엄격한 비안전 조각 검증 후 원시 `PARTITION BY` SQL을 설정합니다. */
     fun unsafeRawPartitionBy(expression: String) {
         partitionByExpression = ClickHouseEngineExpression.unsafeRaw(expression)
     }
 
-    /** Sets optional `PRIMARY KEY` expressions. Defaults to `ORDER BY` when omitted. */
+    /** 선택적 `PRIMARY KEY` 표현식을 설정합니다. 생략하면 `ORDER BY`를 사용합니다. */
     fun primaryKey(vararg expressions: Expression<*>) {
         primaryKeyExpressions = expressions.map { ClickHouseEngineExpression.from(it) }
     }
 
-    /** Sets raw `PRIMARY KEY` SQL after strict unsafe-fragment validation. */
+    /** 엄격한 비안전 조각 검증 후 원시 `PRIMARY KEY` SQL을 설정합니다. */
     fun unsafeRawPrimaryKey(vararg expressions: String) {
         primaryKeyExpressions = expressions.map { ClickHouseEngineExpression.unsafeRaw(it) }
     }
 
-    /** Sets the optional `SAMPLE BY` expression. */
+    /** 선택적 `SAMPLE BY` 표현식을 설정합니다. */
     fun sampleBy(expression: Expression<*>) {
         sampleByExpression = ClickHouseEngineExpression.from(expression)
     }
 
-    /** Sets raw `SAMPLE BY` SQL after strict unsafe-fragment validation. */
+    /** 엄격한 비안전 조각 검증 후 원시 `SAMPLE BY` SQL을 설정합니다. */
     fun unsafeRawSampleBy(expression: String) {
         sampleByExpression = ClickHouseEngineExpression.unsafeRaw(expression)
     }
 
-    /** Adds typed/validated ClickHouse engine settings. */
+    /** 타입이 지정되고 검증된 ClickHouse 엔진 설정을 추가합니다. */
     fun settings(vararg values: ClickHouseSetting) {
         settings.addAll(values)
     }
@@ -68,7 +68,7 @@ class MergeTreeBuilder {
     fun setting(name: ClickHouseSettingName, value: Boolean) = settings(ClickHouseSetting.of(name, value))
     fun setting(name: ClickHouseSettingName, value: String) = settings(ClickHouseSetting.of(name, value))
 
-    /** Adds a raw ClickHouse engine setting value after strict unsafe-fragment validation. */
+    /** 엄격한 비안전 조각 검증 후 원시 ClickHouse 엔진 설정 값을 추가합니다. */
     fun unsafeRawSetting(name: String, value: String) {
         settings(ClickHouseSetting.unsafeRaw(name, value))
     }
@@ -83,7 +83,7 @@ class MergeTreeBuilder {
 }
 
 /**
- * Creates a [MergeTree] engine.
+ * [MergeTree] 엔진을 생성합니다.
  *
  * ```kotlin
  * val engine = mergeTree {
@@ -97,7 +97,7 @@ fun mergeTree(block: MergeTreeBuilder.() -> Unit): MergeTree =
     MergeTreeBuilder().apply(block).build()
 
 /**
- * DSL builder for [ReplacingMergeTree].
+ * [ReplacingMergeTree] DSL 빌더입니다.
  */
 class ReplacingMergeTreeBuilder {
     private var orderByExpressions: List<ClickHouseEngineExpression> = emptyList()
@@ -105,37 +105,37 @@ class ReplacingMergeTreeBuilder {
     private var partitionByExpression: ClickHouseEngineExpression? = null
     private val settings: MutableList<ClickHouseSetting> = mutableListOf()
 
-    /** Sets `ORDER BY` with typed Exposed expressions. At least one expression is required. */
+    /** 타입이 지정된 Exposed 표현식으로 `ORDER BY`를 설정합니다. 표현식이 하나 이상 필요합니다. */
     fun orderBy(vararg expressions: Expression<*>) {
         orderByExpressions = expressions.map { ClickHouseEngineExpression.from(it) }
     }
 
-    /** Sets `ORDER BY` with raw ClickHouse SQL after strict unsafe-fragment validation. */
+    /** 엄격한 비안전 조각 검증 후 원시 ClickHouse SQL로 `ORDER BY`를 설정합니다. */
     fun unsafeRawOrderBy(vararg expressions: String) {
         orderByExpressions = expressions.map { ClickHouseEngineExpression.unsafeRaw(it) }
     }
 
-    /** Sets the optional version column/expression used to keep the latest duplicate row. */
+    /** 최신 중복 행을 유지하는 데 사용할 선택적 버전 컬럼 또는 표현식을 설정합니다. */
     fun versionColumn(expression: Expression<*>) {
         versionExpression = ClickHouseEngineExpression.from(expression)
     }
 
-    /** Sets raw version column SQL after strict unsafe-fragment validation. */
+    /** 엄격한 비안전 조각 검증 후 원시 버전 컬럼 SQL을 설정합니다. */
     fun unsafeRawVersionColumn(expression: String) {
         versionExpression = ClickHouseEngineExpression.unsafeRaw(expression)
     }
 
-    /** Sets the optional `PARTITION BY` expression. */
+    /** 선택적 `PARTITION BY` 표현식을 설정합니다. */
     fun partitionBy(expression: Expression<*>) {
         partitionByExpression = ClickHouseEngineExpression.from(expression)
     }
 
-    /** Sets raw `PARTITION BY` SQL after strict unsafe-fragment validation. */
+    /** 엄격한 비안전 조각 검증 후 원시 `PARTITION BY` SQL을 설정합니다. */
     fun unsafeRawPartitionBy(expression: String) {
         partitionByExpression = ClickHouseEngineExpression.unsafeRaw(expression)
     }
 
-    /** Adds typed/validated ClickHouse engine settings. */
+    /** 타입이 지정되고 검증된 ClickHouse 엔진 설정을 추가합니다. */
     fun settings(vararg values: ClickHouseSetting) {
         settings.addAll(values)
     }
@@ -151,7 +151,7 @@ class ReplacingMergeTreeBuilder {
     fun setting(name: ClickHouseSettingName, value: Boolean) = settings(ClickHouseSetting.of(name, value))
     fun setting(name: ClickHouseSettingName, value: String) = settings(ClickHouseSetting.of(name, value))
 
-    /** Adds a raw ClickHouse engine setting value after strict unsafe-fragment validation. */
+    /** 엄격한 비안전 조각 검증 후 원시 ClickHouse 엔진 설정 값을 추가합니다. */
     fun unsafeRawSetting(name: String, value: String) {
         settings(ClickHouseSetting.unsafeRaw(name, value))
     }
@@ -165,13 +165,13 @@ class ReplacingMergeTreeBuilder {
 }
 
 /**
- * Creates a [ReplacingMergeTree] engine.
+ * [ReplacingMergeTree] 엔진을 생성합니다.
  */
 fun replacingMergeTree(block: ReplacingMergeTreeBuilder.() -> Unit): ReplacingMergeTree =
     ReplacingMergeTreeBuilder().apply(block).build()
 
 /**
- * DSL builder for [SummingMergeTree].
+ * [SummingMergeTree] DSL 빌더입니다.
  */
 class SummingMergeTreeBuilder {
     private var orderByExpressions: List<ClickHouseEngineExpression> = emptyList()
@@ -179,37 +179,37 @@ class SummingMergeTreeBuilder {
     private var partitionByExpression: ClickHouseEngineExpression? = null
     private val settings: MutableList<ClickHouseSetting> = mutableListOf()
 
-    /** Sets `ORDER BY` with typed Exposed expressions. At least one expression is required. */
+    /** 타입이 지정된 Exposed 표현식으로 `ORDER BY`를 설정합니다. 표현식이 하나 이상 필요합니다. */
     fun orderBy(vararg expressions: Expression<*>) {
         orderByExpressions = expressions.map { ClickHouseEngineExpression.from(it) }
     }
 
-    /** Sets `ORDER BY` with raw ClickHouse SQL after strict unsafe-fragment validation. */
+    /** 엄격한 비안전 조각 검증 후 원시 ClickHouse SQL로 `ORDER BY`를 설정합니다. */
     fun unsafeRawOrderBy(vararg expressions: String) {
         orderByExpressions = expressions.map { ClickHouseEngineExpression.unsafeRaw(it) }
     }
 
-    /** Sets columns to be summed. Defaults to all numeric columns when omitted. */
+    /** 합산할 컬럼을 설정합니다. 생략하면 모든 숫자 컬럼을 사용합니다. */
     fun sumColumns(vararg expressions: Expression<*>) {
         sumColumnExpressions = expressions.map { ClickHouseEngineExpression.from(it) }
     }
 
-    /** Sets raw sum column SQL after strict unsafe-fragment validation. */
+    /** 엄격한 비안전 조각 검증 후 원시 합산 컬럼 SQL을 설정합니다. */
     fun unsafeRawSumColumns(vararg expressions: String) {
         sumColumnExpressions = expressions.map { ClickHouseEngineExpression.unsafeRaw(it) }
     }
 
-    /** Sets the optional `PARTITION BY` expression. */
+    /** 선택적 `PARTITION BY` 표현식을 설정합니다. */
     fun partitionBy(expression: Expression<*>) {
         partitionByExpression = ClickHouseEngineExpression.from(expression)
     }
 
-    /** Sets raw `PARTITION BY` SQL after strict unsafe-fragment validation. */
+    /** 엄격한 비안전 조각 검증 후 원시 `PARTITION BY` SQL을 설정합니다. */
     fun unsafeRawPartitionBy(expression: String) {
         partitionByExpression = ClickHouseEngineExpression.unsafeRaw(expression)
     }
 
-    /** Adds typed/validated ClickHouse engine settings. */
+    /** 타입이 지정되고 검증된 ClickHouse 엔진 설정을 추가합니다. */
     fun settings(vararg values: ClickHouseSetting) {
         settings.addAll(values)
     }
@@ -225,7 +225,7 @@ class SummingMergeTreeBuilder {
     fun setting(name: ClickHouseSettingName, value: Boolean) = settings(ClickHouseSetting.of(name, value))
     fun setting(name: ClickHouseSettingName, value: String) = settings(ClickHouseSetting.of(name, value))
 
-    /** Adds a raw ClickHouse engine setting value after strict unsafe-fragment validation. */
+    /** 엄격한 비안전 조각 검증 후 원시 ClickHouse 엔진 설정 값을 추가합니다. */
     fun unsafeRawSetting(name: String, value: String) {
         settings(ClickHouseSetting.unsafeRaw(name, value))
     }
@@ -239,40 +239,40 @@ class SummingMergeTreeBuilder {
 }
 
 /**
- * Creates a [SummingMergeTree] engine.
+ * [SummingMergeTree] 엔진을 생성합니다.
  */
 fun summingMergeTree(block: SummingMergeTreeBuilder.() -> Unit): SummingMergeTree =
     SummingMergeTreeBuilder().apply(block).build()
 
 /**
- * DSL builder for [AggregatingMergeTree].
+ * [AggregatingMergeTree] DSL 빌더입니다.
  */
 class AggregatingMergeTreeBuilder {
     private var orderByExpressions: List<ClickHouseEngineExpression> = emptyList()
     private var partitionByExpression: ClickHouseEngineExpression? = null
     private val settings: MutableList<ClickHouseSetting> = mutableListOf()
 
-    /** Sets `ORDER BY` with typed Exposed expressions. At least one expression is required. */
+    /** 타입이 지정된 Exposed 표현식으로 `ORDER BY`를 설정합니다. 표현식이 하나 이상 필요합니다. */
     fun orderBy(vararg expressions: Expression<*>) {
         orderByExpressions = expressions.map { ClickHouseEngineExpression.from(it) }
     }
 
-    /** Sets `ORDER BY` with raw ClickHouse SQL after strict unsafe-fragment validation. */
+    /** 엄격한 비안전 조각 검증 후 원시 ClickHouse SQL로 `ORDER BY`를 설정합니다. */
     fun unsafeRawOrderBy(vararg expressions: String) {
         orderByExpressions = expressions.map { ClickHouseEngineExpression.unsafeRaw(it) }
     }
 
-    /** Sets the optional `PARTITION BY` expression. */
+    /** 선택적 `PARTITION BY` 표현식을 설정합니다. */
     fun partitionBy(expression: Expression<*>) {
         partitionByExpression = ClickHouseEngineExpression.from(expression)
     }
 
-    /** Sets raw `PARTITION BY` SQL after strict unsafe-fragment validation. */
+    /** 엄격한 비안전 조각 검증 후 원시 `PARTITION BY` SQL을 설정합니다. */
     fun unsafeRawPartitionBy(expression: String) {
         partitionByExpression = ClickHouseEngineExpression.unsafeRaw(expression)
     }
 
-    /** Adds typed/validated ClickHouse engine settings. */
+    /** 타입이 지정되고 검증된 ClickHouse 엔진 설정을 추가합니다. */
     fun settings(vararg values: ClickHouseSetting) {
         settings.addAll(values)
     }
@@ -288,7 +288,7 @@ class AggregatingMergeTreeBuilder {
     fun setting(name: ClickHouseSettingName, value: Boolean) = settings(ClickHouseSetting.of(name, value))
     fun setting(name: ClickHouseSettingName, value: String) = settings(ClickHouseSetting.of(name, value))
 
-    /** Adds a raw ClickHouse engine setting value after strict unsafe-fragment validation. */
+    /** 엄격한 비안전 조각 검증 후 원시 ClickHouse 엔진 설정 값을 추가합니다. */
     fun unsafeRawSetting(name: String, value: String) {
         settings(ClickHouseSetting.unsafeRaw(name, value))
     }
@@ -301,7 +301,7 @@ class AggregatingMergeTreeBuilder {
 }
 
 /**
- * Creates an [AggregatingMergeTree] engine.
+ * [AggregatingMergeTree] 엔진을 생성합니다.
  */
 fun aggregatingMergeTree(block: AggregatingMergeTreeBuilder.() -> Unit): AggregatingMergeTree =
     AggregatingMergeTreeBuilder().apply(block).build()

@@ -148,10 +148,9 @@ class BigQueryContext(
     }
 
     /**
-     * Validates raw SQL with a BigQuery dry run.
+     * BigQuery dry run으로 원시 SQL을 검증합니다.
      *
-     * A dry run performs server-side parsing, authorization, and cost checks
-     * without executing a billable query.
+     * dry run은 과금되는 쿼리를 실행하지 않고 서버 측 구문 분석, 권한, 비용 검사를 수행합니다.
      */
     fun validateRawQuery(
         sql: String,
@@ -173,7 +172,7 @@ class BigQueryContext(
     ): QueryResponse =
         withContext(dispatcher) { runRawQuery(sql, options) }
 
-    /** Asynchronously validates raw SQL with a BigQuery dry run. */
+    /** BigQuery dry run으로 원시 SQL을 비동기 검증합니다. */
     suspend fun validateRawQuerySuspending(
         sql: String,
         options: BigQueryQueryOptions = BigQueryQueryOptions(),
@@ -191,7 +190,7 @@ class BigQueryContext(
         return runRawQuery(sql, options)
     }
 
-    /** Validates an Exposed [Query] with a BigQuery dry run. */
+    /** BigQuery dry run으로 Exposed [Query]를 검증합니다. */
     fun validateQuery(
         query: Query,
         options: BigQueryQueryOptions = BigQueryQueryOptions(),
