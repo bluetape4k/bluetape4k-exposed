@@ -1,82 +1,81 @@
-# Issue #322 Exposed Migration Drift Final Review
+# 이슈 #322 Exposed 마이그레이션 드리프트 최종 리뷰
 
-## Scope
+## 범위
 
-- Issue: #322 `feat(migration): integrate Exposed Gradle migration plugin and schema drift checks`
-- Branch: `feat/issue-322-migration-drift`
-- Base: `origin/develop@38d13d9`
-- Review type: Type A implemented-diff review
-- Exclusions: production migration runner, public API, dependency/catalog
-  upgrade, checked-in migration content change, and stable 1.11 manual change
+- 이슈: #322 `feat(migration): integrate Exposed Gradle migration plugin and schema drift checks`
+- 브랜치: `feat/issue-322-migration-drift`
+- 기준: `origin/develop@38d13d9`
+- 리뷰 유형: Type A 구현 차이 리뷰
+- 제외 사항: 프로덕션 마이그레이션 실행기, 공개 API, 의존성/카탈로그
+  업그레이드, 저장소에 반영된 마이그레이션 콘텐츠 변경, 안정 버전 1.11 매뉴얼 변경
 
-## Gate Verdict
+## 게이트 판정
 
-The pre-PR gate requires every final lens to report P0=0 and P1=0, all repaired
-findings to have fresh evidence, and the exact candidate head to pass H2 plus
-sequential PostgreSQL/MySQL 8 verification.
+PR 전 게이트를 통과하려면 모든 최종 관점에서 P0=0 및 P1=0이어야 하고,
+수정한 모든 발견 사항에 최신 근거가 있어야 하며, 정확한 후보 head가 H2와
+순차 PostgreSQL/MySQL 8 검증을 통과해야 한다.
 
-| Lens | P0 | P1 | P2 | P3 | Result |
+| 관점 | P0 | P1 | P2 | P3 | 결과 |
 |---|---:|---:|---:|---:|---|
-| Performance/cost | 0 | 0 | 0 | 0 | READY |
-| Stability/reliability | 0 | 0 | 0 | 0 | READY |
-| Security/privacy | 0 | 0 | 0 | 0 | READY |
-| Operator/Ops | 0 | 0 | 0 | 0 | READY |
-| Developer/API | 0 | 0 | 0 | 0 | READY |
-| User/docs | 0 | 0 | 0 | 0 | READY |
-| Main-session integration | 0 | 0 | 0 | 0 | READY for candidate commit |
+| 성능/비용 | 0 | 0 | 0 | 0 | READY |
+| 안정성/신뢰성 | 0 | 0 | 0 | 0 | READY |
+| 보안/개인정보 보호 | 0 | 0 | 0 | 0 | READY |
+| 운영자/Ops | 0 | 0 | 0 | 0 | READY |
+| 개발자/API | 0 | 0 | 0 | 0 | READY |
+| 사용자/문서 | 0 | 0 | 0 | 0 | READY |
+| 주 세션 통합 | 0 | 0 | 0 | 0 | 후보 커밋 준비 완료(READY) |
 
-## Repaired Findings
+## 수정한 발견 사항
 
-| Severity | Finding | Repair and proof |
+| 심각도 | 발견 사항 | 수정 및 근거 |
 |---|---|---|
-| P1 | Real-database migration job was absent from `Nightly Status` | Added the job to `nightly-status.needs`; weekday skipped results remain allowed. |
-| P1 | Evidence commands could replace the captured Gradle exit under `errexit` | Kept evidence assembly guarded after `PIPESTATUS[0]`; shell contract and stability re-review pass. |
-| P2 | Quote stripping allowed whitespace-bearing quoted identifiers | Added RED hostile cases and exact quoted/unquoted identifier-token matching; helper and full H2 tasks pass. |
-| P2 | Pull-request workflow granted unused `packages: read` | Reduced Migration Smoke workflow and job permissions to `contents: read` only. |
-| P2 | Sanitization missed scheme-less host-port authorities | Added DNS, IPv4, and bracketed IPv6 host-port redaction plus fail-closed scanning; fixtures and re-review pass. |
-| P2 | Invalid database selector widened to the default real-DB matrix | Restricted the dedicated tasks to `H2`, `POSTGRESQL`, and `MYSQL_V8`; `TYPO` now fails during task creation. |
-| P2 | Dedicated tasks did not participate in the repository Test mutex | Applied the existing shared mutex to every `Test` task; combined execution remains serialized. |
-| P2 | Cancellation helper test threw an exception without cancelling a coroutine | Cancelled an actual async child and made cleanup suspend; cleanup completes only through `NonCancellable`. |
-| P2 | H2 type-change characterization accepted any `ALTER` | Required the expected table, column, and text/clob type semantics. |
-| P2 | Focused CI declared an excessive aggregate heap ceiling | Reduced focused test workers to 2 GiB and bounded CI Gradle/Kotlin daemon heaps to 2 GiB/1 GiB. |
+| P1 | `Nightly Status`에 실제 데이터베이스 마이그레이션 작업이 없었음 | 작업을 `nightly-status.needs`에 추가했으며, 평일에 건너뛴 결과는 계속 허용한다. |
+| P1 | `errexit`에서 근거 수집 명령이 캡처한 Gradle 종료 코드를 덮어쓸 수 있었음 | `PIPESTATUS[0]` 이후 근거 조립을 보호된 상태로 유지했으며, 셸 계약 및 안정성 재리뷰를 통과했다. |
+| P2 | 따옴표 제거 로직이 공백을 포함한 인용 식별자를 허용했음 | RED 적대 사례와 인용/비인용 식별자 토큰의 정확한 일치 검사를 추가했으며, 헬퍼와 전체 H2 작업이 통과했다. |
+| P2 | 풀 리퀘스트 워크플로가 사용하지 않는 `packages: read` 권한을 부여했음 | Migration Smoke 워크플로 및 작업 권한을 `contents: read`로만 축소했다. |
+| P2 | 정제 로직이 스킴 없는 호스트-포트 권한 부분을 누락했음 | DNS, IPv4, 대괄호로 감싼 IPv6 호스트-포트 마스킹과 실패 시 차단 검사를 추가했으며, 픽스처와 재리뷰가 통과했다. |
+| P2 | 잘못된 데이터베이스 선택자가 기본 실제 DB 매트릭스로 범위를 넓혔음 | 전용 작업을 `H2`, `POSTGRESQL`, `MYSQL_V8`로 제한했으며, 이제 `TYPO`는 작업 생성 중 실패한다. |
+| P2 | 전용 작업이 저장소의 Test 뮤텍스에 참여하지 않았음 | 기존 공유 뮤텍스를 모든 `Test` 작업에 적용했으며, 결합 실행은 계속 직렬화된다. |
+| P2 | 취소 헬퍼 테스트가 코루틴을 취소하지 않고 예외만 던졌음 | 실제 비동기 자식을 취소하고 정리를 suspend로 변경했으며, 정리는 `NonCancellable`을 통해서만 완료된다. |
+| P2 | H2 타입 변경 특성화가 모든 `ALTER`를 허용했음 | 예상 테이블, 열, text/clob 타입 의미를 필수 조건으로 지정했다. |
+| P2 | 집중 CI에 과도한 전체 힙 상한이 선언되어 있었음 | 집중 테스트 워커를 2 GiB로 줄이고 CI Gradle/Kotlin 데몬 힙을 2 GiB/1 GiB로 제한했다. |
 
-## Fresh Validation Evidence
+## 최신 검증 근거
 
-- JDBC/R2DBC H2 migration tasks: PASS after all Kotlin hardening.
-- Focused H2 count: JDBC 7/7 and R2DBC 8/8.
-- JDBC and R2DBC normal module tests: PASS with the repository Testcontainers
-  environment; normal XML contains no `MigrationDriftTest` suite.
-- Invalid selector: `EXPOSED_TEST_DB=TYPO` fails with the supported-value
-  message.
-- Fixed JDBC/R2DBC V1 regeneration: both files recreated; bounded migration
-  directory status clean.
-- README parity self-test: 6 runs, 16 assertions, 0 failures/errors.
-- Live README parity: PASS.
-- Stable manual diff against `origin/develop`: empty.
-- `actionlint`: PASS for Migration Smoke and Nightly.
+- JDBC/R2DBC H2 마이그레이션 작업: 모든 Kotlin 강화 조치 후 PASS.
+- 집중 H2 개수: JDBC 7/7 및 R2DBC 8/8.
+- JDBC 및 R2DBC 일반 모듈 테스트: 저장소 Testcontainers 환경에서 PASS.
+  일반 XML에는 `MigrationDriftTest` 스위트가 없다.
+- 잘못된 선택자: `EXPOSED_TEST_DB=TYPO`는 지원 값 메시지와 함께 실패한다.
+- 고정 JDBC/R2DBC V1 재생성: 두 파일 모두 다시 생성했으며, 범위를 제한한
+  마이그레이션 디렉터리 상태는 깨끗하다.
+- README 동등성 자체 테스트: 6회 실행, 16개 단언, 실패/오류 0건.
+- 실제 README 동등성: PASS.
+- `origin/develop` 대비 안정 버전 매뉴얼 차이: 없음.
+- `actionlint`: Migration Smoke 및 Nightly에 대해 PASS.
 - Detekt: `BUILD SUCCESSFUL`.
 - `git diff --check`: PASS.
-- Six final implemented-diff lenses: P0=0, P1=0, P2=0, P3=0.
+- 최종 구현 차이 관점 여섯 개: P0=0, P1=0, P2=0, P3=0.
 
-Preliminary local real-database evidence passed all four selections in required
-order before final review repairs: JDBC PostgreSQL, R2DBC PostgreSQL, JDBC
-MySQL 8, and R2DBC MySQL 8. The same four selections must run again against the
-clean pushed candidate SHA before merge readiness is reported.
+최종 리뷰 수정 전에 수행한 예비 로컬 실제 데이터베이스 검증은 필수 순서에 따라
+네 가지 선택을 모두 통과했다: JDBC PostgreSQL, R2DBC PostgreSQL, JDBC
+MySQL 8, R2DBC MySQL 8. 병합 준비 완료를 보고하기 전에 깨끗하게 푸시한 후보
+SHA를 대상으로 같은 네 가지 선택을 다시 실행해야 한다.
 
-## Accepted Non-Blocking Risks
+## 수용한 비차단 위험
 
-- Touched workflows retain the repository's existing mutable verified major
-  Action tags. Pinning every Action to a commit SHA is a separate repository
-  governance change.
-- Dedicated CI steps intentionally use fresh Gradle invocations and broad
-  migration-related PR paths. This spends additional runner time to preserve
-  API-specific evidence and to keep README/workflow promises exercised.
-- Exposed 1.3.1 migration APIs remain experimental and do not prove complete
-  schema, data, or rollout compatibility.
+- 변경한 워크플로는 저장소의 기존 변경 가능한 검증된 메이저 액션 태그를
+  유지한다. 모든 액션을 커밋 SHA에 고정하는 작업은 별도의 저장소 거버넌스
+  변경이다.
+- 전용 CI 단계는 의도적으로 새 Gradle 호출과 마이그레이션 관련 범용 PR 경로를
+  사용한다. API별 근거를 보존하고 README/워크플로 약속을 계속 검증하는 대신
+  추가 러너 시간을 사용한다.
+- Exposed 1.3.1 마이그레이션 API는 여전히 실험 단계이며, 스키마·데이터·배포
+  호환성 전체를 입증하지 않는다.
 
-## Stop Condition
+## 중단 조건
 
-PR creation is allowed only after pending final lens cells are resolved and the
-candidate commit is clean and pushed. Merge remains blocked until the exact PR
-head, CI, reviews, unresolved threads, branch protection, and active rulesets
-are reported and the user gives fresh approval for that exact state.
+대기 중인 최종 관점 셀을 모두 해소하고 후보 커밋이 깨끗한 상태로 푸시된
+후에만 PR 생성을 허용한다. 정확한 PR head, CI, 리뷰, 미해결 스레드, 브랜치
+보호 및 활성 ruleset을 보고하고 사용자가 그 정확한 상태를 새로 승인할 때까지
+병합은 계속 차단된다.
