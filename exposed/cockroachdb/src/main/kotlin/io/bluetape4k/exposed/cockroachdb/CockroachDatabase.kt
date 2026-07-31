@@ -9,12 +9,11 @@ import java.sql.DriverManager
 import javax.sql.DataSource
 
 /**
- * Factory object for connecting Exposed to CockroachDB through PostgreSQL JDBC.
+ * PostgreSQL JDBC를 통해 Exposed를 CockroachDB에 연결하는 factory object입니다.
  *
- * CockroachDB speaks the PostgreSQL wire protocol, so this first module slice
- * uses the PostgreSQL JDBC driver and the default Exposed PostgreSQL dialect.
- * It intentionally does not register a custom CockroachDB dialect; PostgreSQL
- * compatibility and DDL boundary work is tracked separately.
+ * CockroachDB는 PostgreSQL wire protocol을 사용하므로 이 module은 PostgreSQL JDBC driver와
+ * Exposed의 기본 PostgreSQL dialect를 사용합니다. Custom CockroachDB dialect는 의도적으로
+ * 등록하지 않으며, PostgreSQL compatibility와 DDL 경계는 별도 범위에서 다룹니다.
  *
  * ## Basic usage
  *
@@ -29,14 +28,10 @@ import javax.sql.DataSource
  */
 object CockroachDatabase: KLogging() {
 
-    /**
-     * PostgreSQL JDBC driver used by CockroachDB's PostgreSQL wire protocol.
-     */
+    /** CockroachDB의 PostgreSQL wire protocol에 사용하는 PostgreSQL JDBC driver입니다. */
     val DRIVER: String = "org.postgresql.Driver"
 
-    /**
-     * Connects to CockroachDB using host, SQL port, database, and credentials.
-     */
+    /** Host, SQL port, database, credential을 사용해 CockroachDB에 연결합니다. */
     fun connect(
         host: String = "localhost",
         port: Int = 26257,
@@ -58,9 +53,7 @@ object CockroachDatabase: KLogging() {
         )
     }
 
-    /**
-     * Connects to CockroachDB using a PostgreSQL JDBC URL.
-     */
+    /** PostgreSQL JDBC URL을 사용해 CockroachDB에 연결합니다. */
     fun connect(
         jdbcUrl: String,
         user: String = "root",
@@ -81,9 +74,7 @@ object CockroachDatabase: KLogging() {
         )
     }
 
-    /**
-     * Connects to CockroachDB through a caller-managed [DataSource].
-     */
+    /** 호출자가 관리하는 [DataSource]를 통해 CockroachDB에 연결합니다. */
     fun connect(
         dataSource: DataSource,
         databaseConfig: DatabaseConfig? = null,
@@ -93,9 +84,7 @@ object CockroachDatabase: KLogging() {
             databaseConfig = databaseConfig ?: DatabaseConfig {},
         )
 
-    /**
-     * Builds a PostgreSQL JDBC URL suitable for CockroachDB.
-     */
+    /** CockroachDB에 사용할 PostgreSQL JDBC URL을 구성합니다. */
     fun buildJdbcUrl(host: String, port: Int = 26257, database: String = "defaultdb"): String {
         host.requireNotBlank("host")
         port.requireInRange(1, 65535, "port")

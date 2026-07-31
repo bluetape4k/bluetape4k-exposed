@@ -14,14 +14,13 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * Retry options for CockroachDB serializable transaction retry handling.
+ * CockroachDB serializable transaction의 retry 처리 옵션입니다.
  *
- * ## Contract
+ * ## 계약
  *
- * The first execution counts as an attempt. Retry delays are expressed in
- * milliseconds because this helper is a blocking JDBC helper. The default
- * transaction isolation is `SERIALIZABLE`, matching CockroachDB's default
- * isolation level.
+ * 최초 실행도 attempt 횟수에 포함됩니다. 이 helper는 blocking JDBC를 사용하므로 retry delay의
+ * 단위는 millisecond입니다. 기본 transaction isolation은 CockroachDB 기본값과 같은
+ * `SERIALIZABLE`입니다.
  *
  * ```kotlin
  * val options = CockroachTransactionRetryOptions(
@@ -68,9 +67,7 @@ data class CockroachTransactionRetryOptions(
     companion object {
         private const val serialVersionUID: Long = 1L
 
-        /**
-         * Creates retry options with Kotlin [Duration] values.
-         */
+        /** Kotlin [Duration] 값으로 retry 옵션을 생성합니다. */
         operator fun invoke(
             maxAttempts: Int = 3,
             minRetryDelay: Duration = 50.milliseconds,
@@ -89,15 +86,13 @@ data class CockroachTransactionRetryOptions(
 }
 
 /**
- * Returns whether this throwable represents a CockroachDB transaction retry
- * error.
+ * 이 throwable이 CockroachDB transaction retry error를 나타내는지 반환합니다.
  *
- * ## Contract
+ * ## 계약
  *
- * CockroachDB documents retryable transaction errors as SQLSTATE `40001` with
- * a message beginning with `restart transaction`. The check walks the cause
- * chain so wrapped JDBC and Exposed exceptions keep the original SQL error
- * classification.
+ * CockroachDB의 retry 가능한 transaction error는 SQLSTATE `40001`이면서 message가
+ * `restart transaction`으로 시작합니다. Cause chain 전체를 확인하므로 JDBC나 Exposed가
+ * exception을 감싸도 원래 SQL error 분류를 유지합니다.
  */
 fun Throwable.isCockroachRetryableTransactionError(): Boolean =
     causeSequence().filterIsInstance<SQLException>().any { e ->
@@ -106,15 +101,13 @@ fun Throwable.isCockroachRetryableTransactionError(): Boolean =
     }
 
 /**
- * Executes a top-level CockroachDB transaction with retry handling for
- * CockroachDB retryable transaction errors.
+ * CockroachDB의 retry 가능한 transaction error를 처리하면서 최상위 CockroachDB transaction을 실행합니다.
  *
- * ## Contract
+ * ## 계약
  *
- * This helper restarts the whole Exposed transaction when CockroachDB reports a
- * retryable transaction error. The inner Exposed transaction is forced to one
- * attempt so retry classification stays CockroachDB-specific instead of
- * retrying every `SQLException`.
+ * CockroachDB가 retry 가능한 transaction error를 보고하면 Exposed transaction 전체를 다시
+ * 시작합니다. 내부 Exposed transaction의 attempt는 1회로 고정하여 모든 `SQLException`을
+ * 재시도하지 않고 CockroachDB 전용 분류만 적용합니다.
  *
  * ```kotlin
  * val orderId = withCockroachTransaction(db) {
@@ -124,10 +117,8 @@ fun Throwable.isCockroachRetryableTransactionError(): Boolean =
  * }
  * ```
  *
- * @throws IllegalStateException if called inside an existing Exposed
- * transaction.
- * @throws SQLException when a non-retryable SQL error occurs or retry attempts
- * are exhausted.
+ * @throws IllegalStateException 기존 Exposed transaction 내부에서 호출한 경우
+ * @throws SQLException retry할 수 없는 SQL error가 발생하거나 retry 횟수를 모두 소진한 경우
  */
 inline fun <T> withCockroachTransaction(
     db: Database? = null,

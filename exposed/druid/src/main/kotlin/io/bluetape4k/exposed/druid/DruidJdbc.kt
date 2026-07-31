@@ -9,10 +9,10 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.ResultSet
 
-/** Query-only Apache Druid JDBC helper backed by Apache Calcite Avatica. */
+/** Apache Calcite Avatica 기반의 query-only Apache Druid JDBC helper입니다. */
 object DruidJdbc: KLogging() {
 
-    /** Apache Calcite Avatica remote JDBC driver class name. */
+    /** Apache Calcite Avatica remote JDBC driver class name입니다. */
     val DRIVER = "org.apache.calcite.avatica.remote.Driver"
 
     init {
@@ -20,15 +20,15 @@ object DruidJdbc: KLogging() {
         log.debug("Druid Avatica JDBC driver registered: $DRIVER")
     }
 
-    /** Opens a new JDBC [Connection] for a Druid Router/Broker Avatica endpoint. */
+    /** Druid Router/Broker Avatica endpoint에 대한 새 JDBC [Connection]을 엽니다. */
     fun connection(options: DruidConnectionOptions = DruidConnectionOptions()): Connection =
         DriverManager.getConnection(options.jdbcUrl(), options.toProperties())
 
     /**
-     * Executes a read-only SQL query and maps the [ResultSet].
+     * Read-only SQL query를 실행하고 [ResultSet]을 매핑합니다.
      *
-     * This helper intentionally does not expose DDL, DML, repository, migration,
-     * or Exposed dialect behavior. Callers own SQL text and result mapping.
+     * 이 helper는 DDL, DML, repository, migration, Exposed dialect 동작을 의도적으로 노출하지
+     * 않습니다. SQL text와 결과 매핑의 책임은 호출자에게 있습니다.
      */
     fun <T> query(
         sql: String,
@@ -49,7 +49,7 @@ object DruidJdbc: KLogging() {
         }
     }
 
-    /** Executes [query] on [Dispatchers.IO] or the supplied dispatcher. */
+    /** [query]를 [Dispatchers.IO] 또는 호출자가 제공한 dispatcher에서 실행합니다. */
     suspend fun <T> querySuspend(
         sql: String,
         options: DruidConnectionOptions = DruidConnectionOptions(),
@@ -63,7 +63,7 @@ object DruidJdbc: KLogging() {
         }
     }
 
-    /** Discovers Druid datasource columns through `INFORMATION_SCHEMA.COLUMNS`. */
+    /** `INFORMATION_SCHEMA.COLUMNS`를 통해 Druid datasource column을 조회합니다. */
     fun listColumns(
         datasource: String,
         schema: String = "druid",
@@ -117,7 +117,7 @@ object DruidJdbc: KLogging() {
             "ORDER BY ORDINAL_POSITION"
 }
 
-/** Column metadata returned from Druid `INFORMATION_SCHEMA.COLUMNS`. */
+/** Druid `INFORMATION_SCHEMA.COLUMNS`가 반환하는 column metadata입니다. */
 data class DruidColumnMetadata(
     val tableSchema: String,
     val tableName: String,
