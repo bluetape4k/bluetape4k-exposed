@@ -146,7 +146,7 @@ class ExposedR2dbcBatchJobRepository(
     }
 
     /**
-     * Re-queries the active winner row after a concurrent insert loses the unique-index race.
+     * 동시 insert가 unique-index 경합에서 실패한 뒤, 활성 상태인 승자 row를 다시 조회합니다.
      */
     internal suspend fun requeryJobExecutionAfterUniqueViolation(
         jobName: String,
