@@ -34,33 +34,31 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /**
- * Base repository interface for Exposed R2DBC backed by an [IdTable].
+ * [IdTable]을 기반으로 Exposed R2DBC를 사용하는 기본 저장소 인터페이스입니다.
  *
- * Provides common CRUD operations for reading, persisting, and deleting
- * entities of type [E] identified by primary key type [ID]. Single-row read
- * and write operations are suspending functions, while multi-row reads return
- * [kotlinx.coroutines.flow.Flow].
+ * 기본 키 타입 [ID]로 식별되는 [E] 엔티티의 조회, 저장, 삭제를 위한 공통 CRUD 연산을 제공합니다.
+ * 단일 행 조회와 쓰기는 일시 중단 함수이며, 다중 행 조회는 [kotlinx.coroutines.flow.Flow]를 반환합니다.
  *
- * @param ID primary key type (e.g. [Long], [Int], [java.util.UUID])
- * @param E entity (record) type mapped from a [ResultRow]
+ * @param ID 기본 키 타입(예: [Long], [Int], [java.util.UUID])
+ * @param E [ResultRow]에서 매핑되는 엔티티(레코드) 타입
  *
- * ## Usage example
+ * ## 사용 예
  *
  * ```kotlin
- * // 1. Table definition
+ * // 1. 테이블 정의
  * object ActorTable : LongIdTable("actors") {
  *     val firstName = varchar("first_name", 50)
  *     val lastName  = varchar("last_name",  50)
  * }
  *
- * // 2. Record DTO
+ * // 2. 레코드 DTO
  * data class ActorRecord(
  *     val id: Long = 0L,
  *     val firstName: String,
  *     val lastName: String,
  * )
  *
- * // 3. Repository implementation
+ * // 3. 저장소 구현
  * class ActorRepository : LongR2dbcRepository<ActorRecord> {
  *     override val table = ActorTable
  *
@@ -79,7 +77,7 @@ import kotlin.uuid.Uuid
  *     }
  * }
  *
- * // 4. Usage inside a suspend transaction
+ * // 4. 일시 중단 트랜잭션 내부에서 사용
  * suspendTransaction {
  *     val repo = ActorRepository()
  *     val saved = repo.save(ActorRecord(firstName = "Johnny", lastName = "Depp"))
@@ -92,25 +90,25 @@ import kotlin.uuid.Uuid
  */
 interface R2dbcRepository<ID: Any, E: Any> {
     /**
-     * Returns the [IdTable] that backs this repository.
+     * 이 저장소가 사용하는 [IdTable]을 반환합니다.
      */
     val table: IdTable<ID>
 
     /**
-     * Extracts the primary key from [entity].
+     * [entity]에서 기본 키를 추출합니다.
      */
     fun extractId(entity: E): ID
 
     /**
-     * Maps a [ResultRow] to an entity of type [E].
+     * [ResultRow]를 [E] 타입 엔티티로 매핑합니다.
      */
     suspend fun ResultRow.toEntity(): E
 
     /**
-     * Binds [entity] values to a batch insert statement used by [saveAll].
+     * [entity] 값을 [saveAll]이 사용하는 배치 삽입 문에 바인딩합니다.
      *
-     * Repository implementations that want to use the default [saveAll] should
-     * override this hook and assign all non-id columns required for insertion.
+     * 기본 [saveAll]을 사용하는 저장소 구현체는 이 훅을 재정의하고
+     * 삽입에 필요한 기본 키 이외의 모든 컬럼을 할당해야 합니다.
      *
      * ```kotlin
      * override fun BatchInsertStatement.bindSave(entity: ActorRecord) {
@@ -119,8 +117,7 @@ interface R2dbcRepository<ID: Any, E: Any> {
      * }
      * ```
      *
-     * @throws UnsupportedOperationException when [saveAll] is called without an
-     *         implementation-specific binding.
+     * @throws UnsupportedOperationException 구현별 바인딩 없이 [saveAll]을 호출한 경우
      */
     fun BatchInsertStatement.bindSave(entity: E): Unit =
         throw UnsupportedOperationException(
@@ -128,13 +125,13 @@ interface R2dbcRepository<ID: Any, E: Any> {
         )
 
     /**
-     * Persists [entities] with Exposed batch insert and returns generated IDs.
+     * Exposed 배치 삽입으로 [entities]를 저장하고 생성된 ID를 반환합니다.
      *
-     * The returned IDs preserve the input order reported by Exposed
-     * `batchInsert`. Empty input is a no-op.
+     * 반환 ID는 Exposed `batchInsert`가 보고한 입력 순서를 유지합니다.
+     * 입력이 비어 있으면 아무 작업도 수행하지 않습니다.
      *
-     * @param entities entities to insert
-     * @return generated primary key values
+     * @param entities 삽입할 엔티티
+     * @return 생성된 기본 키 값
      */
     suspend fun saveAll(entities: Iterable<E>): List<ID> {
         val entityList = entities.toList()
@@ -150,35 +147,35 @@ interface R2dbcRepository<ID: Any, E: Any> {
     }
 
     /**
-     * Returns the total number of entities.
+     * 전체 엔티티 수를 반환합니다.
      */
     suspend fun count(): Long = table.selectAll().count()
 
     /**
-     * Returns the number of entities that match [predicate].
-     * @param predicate function that returns the filter condition
+     * [predicate]와 일치하는 엔티티 수를 반환합니다.
+     * @param predicate 필터 조건을 반환하는 함수
      */
     suspend fun countBy(predicate: () -> Op<Boolean> = { Op.TRUE }): Long = table.selectAll().where(predicate).count()
 
     /**
-     * Returns the number of entities that match [op].
-     * @param op filter condition
+     * [op]와 일치하는 엔티티 수를 반환합니다.
+     * @param op 필터 조건
      */
     suspend fun countBy(op: Op<Boolean>): Long = table.selectAll().where(op).count()
 
     /**
-     * Returns whether the table contains no rows.
+     * 테이블에 행이 없는지 반환합니다.
      */
     suspend fun isEmpty(): Boolean = table.selectAll().empty()
 
     /**
-     * Returns whether the table contains at least one row.
+     * 테이블에 행이 하나 이상 있는지 반환합니다.
      */
     suspend fun isNotEmpty(): Boolean = !isEmpty()
 
     /**
-     * Returns whether [query] produces at least one row.
-     * @param query AbstractQuery
+     * [query]가 행을 하나 이상 생성하는지 반환합니다.
+     * @param query 존재 여부를 확인할 [AbstractQuery]
      */
     suspend fun exists(query: AbstractQuery<*>): Boolean {
         val exists =
@@ -188,20 +185,20 @@ interface R2dbcRepository<ID: Any, E: Any> {
     }
 
     /**
-     * Returns whether an entity exists for [id].
-     * @param id entity primary key
+     * [id]에 해당하는 엔티티가 존재하는지 반환합니다.
+     * @param id 엔티티 기본 키
      */
     suspend fun existsById(id: ID): Boolean = !table.selectAll().where { table.id eq id }.empty()
 
     /**
-     * Returns whether any entity matches [predicate].
-     * @param predicate filter condition
+     * [predicate]와 일치하는 엔티티가 있는지 반환합니다.
+     * @param predicate 필터 조건
      */
     suspend fun existsBy(predicate: () -> Op<Boolean>): Boolean = !table.selectAll().where(predicate).empty()
 
     /**
-     * Finds an entity by [id] or throws when it does not exist.
-     * @param id entity primary key
+     * [id]로 엔티티를 조회하며, 존재하지 않으면 예외를 던집니다.
+     * @param id 엔티티 기본 키
      */
     suspend fun findById(id: ID): E =
         table
@@ -211,8 +208,8 @@ interface R2dbcRepository<ID: Any, E: Any> {
             .toEntity()
 
     /**
-     * Finds an entity by [id], returning null when it does not exist.
-     * @param id entity primary key
+     * [id]로 엔티티를 조회하며, 존재하지 않으면 `null`을 반환합니다.
+     * @param id 엔티티 기본 키
      */
     suspend fun findByIdOrNull(id: ID): E? =
         table
@@ -222,11 +219,11 @@ interface R2dbcRepository<ID: Any, E: Any> {
             ?.toEntity()
 
     /**
-     * Finds all entities that match [predicate].
-     * @param limit maximum number of rows to read
-     * @param offset zero-based row offset
-     * @param sortOrder sort direction
-     * @param predicate filter condition
+     * [predicate]와 일치하는 모든 엔티티를 조회합니다.
+     * @param limit 조회할 최대 행 수
+     * @param offset 0부터 시작하는 행 오프셋
+     * @param sortOrder 정렬 방향
+     * @param predicate 필터 조건
      */
     fun findAll(
         limit: Int? = null,
@@ -244,11 +241,11 @@ interface R2dbcRepository<ID: Any, E: Any> {
             .map { it.toEntity() }
 
     /**
-     * Finds entities by combining [filters] with logical AND.
-     * @param filters filter condition functions
-     * @param limit maximum number of rows to read
-     * @param offset zero-based row offset
-     * @param sortOrder sort direction
+     * [filters]를 논리 AND로 결합하여 엔티티를 조회합니다.
+     * @param filters 필터 조건 함수
+     * @param limit 조회할 최대 행 수
+     * @param offset 0부터 시작하는 행 오프셋
+     * @param sortOrder 정렬 방향
      */
     fun findWithFilters(
         vararg filters: () -> Op<Boolean>,
@@ -264,11 +261,11 @@ interface R2dbcRepository<ID: Any, E: Any> {
     }
 
     /**
-     * Finds entities by combining [filters] with logical AND. Alias for [findWithFilters].
-     * @param filters filter condition functions
-     * @param limit maximum number of rows to read
-     * @param offset zero-based row offset
-     * @param sortOrder sort direction
+     * [filters]를 논리 AND로 결합하여 엔티티를 조회합니다. [findWithFilters]의 별칭입니다.
+     * @param filters 필터 조건 함수
+     * @param limit 조회할 최대 행 수
+     * @param offset 0부터 시작하는 행 오프셋
+     * @param sortOrder 정렬 방향
      */
     fun findBy(
         vararg filters: () -> Op<Boolean>,
@@ -284,9 +281,9 @@ interface R2dbcRepository<ID: Any, E: Any> {
         )
 
     /**
-     * Finds the first entity that matches [predicate].
-     * @param offset zero-based row offset
-     * @param predicate filter condition
+     * [predicate]와 일치하는 첫 엔티티를 조회합니다.
+     * @param offset 0부터 시작하는 행 오프셋
+     * @param predicate 필터 조건
      */
     suspend fun findFirstOrNull(
         offset: Long? = null,
@@ -302,9 +299,9 @@ interface R2dbcRepository<ID: Any, E: Any> {
             ?.toEntity()
 
     /**
-     * Finds the last entity that matches [predicate].
-     * @param offset zero-based row offset
-     * @param predicate filter condition
+     * [predicate]와 일치하는 마지막 엔티티를 조회합니다.
+     * @param offset 0부터 시작하는 행 오프셋
+     * @param predicate 필터 조건
      */
     suspend fun findLastOrNull(
         offset: Long? = null,
@@ -321,9 +318,9 @@ interface R2dbcRepository<ID: Any, E: Any> {
             ?.toEntity()
 
     /**
-     * Finds entities whose [field] equals [value].
-     * @param field column to compare
-     * @param value expected column value
+     * [field] 값이 [value]와 같은 엔티티를 조회합니다.
+     * @param field 비교할 컬럼
+     * @param value 예상 컬럼 값
      */
     fun <V> findByField(
         field: Column<V>,
@@ -335,9 +332,9 @@ interface R2dbcRepository<ID: Any, E: Any> {
             .map { it.toEntity() }
 
     /**
-     * Finds the first entity whose [field] equals [value], returning null when none exists.
-     * @param field column to compare
-     * @param value expected column value
+     * [field] 값이 [value]와 같은 첫 엔티티를 조회하며, 없으면 `null`을 반환합니다.
+     * @param field 비교할 컬럼
+     * @param value 예상 컬럼 값
      */
     suspend fun <V> findByFieldOrNull(
         field: Column<V>,
@@ -350,12 +347,12 @@ interface R2dbcRepository<ID: Any, E: Any> {
             ?.toEntity()
 
     /**
-     * Finds entities by a collection of IDs.
+     * ID 모음으로 엔티티를 조회합니다.
      *
-     * **Note**: very large `ids` collections can exceed database-specific `IN`
-     * clause limits. Split large ID collections into chunks before calling.
+     * **참고:** 매우 큰 `ids` 모음은 데이터베이스별 `IN` 절 제한을 초과할 수 있습니다.
+     * 호출 전에 큰 ID 모음을 청크로 나누십시오.
      *
-     * @param ids entity primary keys to read
+     * @param ids 조회할 엔티티 기본 키
      */
     fun findAllByIds(ids: Iterable<ID>): Flow<E> =
         table
@@ -364,20 +361,20 @@ interface R2dbcRepository<ID: Any, E: Any> {
             .map { it.toEntity() }
 
     /**
-     * Deletes [entity].
+     * [entity]를 삭제합니다.
      */
     suspend fun delete(entity: E): Int = deleteById(extractId(entity))
 
     /**
-     * Deletes an entity by [id].
-     * @param id entity primary key to delete
+     * [id]로 엔티티를 삭제합니다.
+     * @param id 삭제할 엔티티 기본 키
      */
     suspend fun deleteById(id: ID): Int = table.deleteWhere { table.id eq id }
 
     /**
-     * Deletes all entities that match [op].
-     * @param limit maximum number of rows to delete
-     * @param op filter condition
+     * [op]와 일치하는 모든 엔티티를 삭제합니다.
+     * @param limit 삭제할 최대 행 수
+     * @param op 필터 조건
      */
     suspend fun deleteAll(
         limit: Int? = null,
@@ -385,15 +382,15 @@ interface R2dbcRepository<ID: Any, E: Any> {
     ): Int = table.deleteWhere(limit = limit, op = op)
 
     /**
-     * Deletes an entity by [id], ignoring missing rows.
-     * @param id entity primary key to delete
+     * 존재하지 않는 행을 무시하고 [id]로 엔티티를 삭제합니다.
+     * @param id 삭제할 엔티티 기본 키
      */
     suspend fun deleteByIdIgnore(id: ID): Int = table.deleteIgnoreWhere { table.id eq id }
 
     /**
-     * Deletes all entities that match [op], ignoring missing rows.
-     * @param limit maximum number of rows to delete
-     * @param op filter condition
+     * 존재하지 않는 행을 무시하고 [op]와 일치하는 모든 엔티티를 삭제합니다.
+     * @param limit 삭제할 최대 행 수
+     * @param op 필터 조건
      */
     suspend fun deleteAllIgnore(
         limit: Int? = null,
@@ -401,20 +398,20 @@ interface R2dbcRepository<ID: Any, E: Any> {
     ): Int = table.deleteIgnoreWhere(limit, op = op)
 
     /**
-     * Deletes entities by a collection of IDs.
+     * ID 모음으로 엔티티를 삭제합니다.
      *
-     * **Note**: very large `ids` collections can exceed database-specific `IN`
-     * clause limits. Split large ID collections into chunks before calling.
+     * **참고:** 매우 큰 `ids` 모음은 데이터베이스별 `IN` 절 제한을 초과할 수 있습니다.
+     * 호출 전에 큰 ID 모음을 청크로 나누십시오.
      *
-     * @param ids entity primary keys to delete
+     * @param ids 삭제할 엔티티 기본 키
      */
     suspend fun deleteAllByIds(ids: Iterable<ID>): Int = table.deleteWhere { table.id inList ids }
 
     /**
-     * Updates an entity by [id].
-     * @param id entity primary key to update
-     * @param limit maximum number of rows to update
-     * @param updateStatement update body
+     * [id]로 엔티티를 갱신합니다.
+     * @param id 갱신할 엔티티 기본 키
+     * @param limit 갱신할 최대 행 수
+     * @param updateStatement 갱신 본문
      */
     suspend fun updateById(
         id: ID,
@@ -428,10 +425,10 @@ interface R2dbcRepository<ID: Any, E: Any> {
         )
 
     /**
-     * Updates all entities that match [predicate].
-     * @param predicate filter condition
-     * @param limit maximum number of rows to update
-     * @param updateStatement update body
+     * [predicate]와 일치하는 모든 엔티티를 갱신합니다.
+     * @param predicate 필터 조건
+     * @param limit 갱신할 최대 행 수
+     * @param updateStatement 갱신 본문
      */
     suspend fun updateAll(
         predicate: () -> Op<Boolean> = { Op.TRUE },
@@ -440,11 +437,11 @@ interface R2dbcRepository<ID: Any, E: Any> {
     ): Int = table.update(where = predicate, limit = limit, body = updateStatement)
 
     /**
-     * Inserts [entities] with Exposed batch insert.
-     * @param entities entities to insert
-     * @param ignore whether to ignore duplicate rows
-     * @param shouldReturnGeneratedValues whether generated values should be returned
-     * @param insertStatement insert body
+     * Exposed 배치 삽입으로 [entities]를 삽입합니다.
+     * @param entities 삽입할 엔티티
+     * @param ignore 중복 행을 무시할지 여부
+     * @param shouldReturnGeneratedValues 생성된 값을 반환할지 여부
+     * @param insertStatement 삽입 본문
      */
     suspend fun <D> batchInsert(
         entities: Iterable<D>,
@@ -461,11 +458,11 @@ interface R2dbcRepository<ID: Any, E: Any> {
             ).map { it.toEntity() }
 
     /**
-     * Inserts [entities] with Exposed batch insert.
-     * @param entities entity sequence to insert
-     * @param ignore whether to ignore duplicate rows
-     * @param shouldReturnGeneratedValues whether generated values should be returned
-     * @param insertStatement insert body
+     * Exposed 배치 삽입으로 [entities]를 삽입합니다.
+     * @param entities 삽입할 엔티티 시퀀스
+     * @param ignore 중복 행을 무시할지 여부
+     * @param shouldReturnGeneratedValues 생성된 값을 반환할지 여부
+     * @param insertStatement 삽입 본문
      */
     suspend fun <D> batchInsert(
         entities: Sequence<D>,
@@ -482,20 +479,19 @@ interface R2dbcRepository<ID: Any, E: Any> {
             ).map { it.toEntity() }
 
     /**
-     * Upserts [entities] with Exposed batch upsert.
+     * Exposed 배치 업서트로 [entities]를 업서트합니다.
      *
-     * See [Batch Insert](https://github.com/JetBrains/Exposed/wiki/DSL#batch-insert) for more details.
+     * 자세한 내용은 [Batch Insert](https://github.com/JetBrains/Exposed/wiki/DSL#batch-insert)를 참고하십시오.
      *
-     * @param entities entities to upsert
-     * @param keys (optional) Columns to include in the condition that determines a unique constraint match. If no columns are provided,
-     *             primary keys will be used. If the table does not have any primary keys, the first unique index will be attempted.
-     * @param onUpdate Lambda block with an [UpdateStatement] as its argument, allowing values to be assigned to the UPDATE clause.
-     *  To specify manually that the insert value should be used when updating a column, for example within an expression
-     *  or function, invoke `insertValue()` with the desired column as the function argument.
-     *  If left null, all columns will be updated with the values provided for the insert.
-     * @param onUpdateExclude List of specific columns to exclude from updating. If left null, all columns will be updated with the values provided for the insert.
-     * @param shouldReturnGeneratedValues Specifies whether newly generated values (for example, auto-incremented IDs) should be returned.
-     * @return rows returned from the upsert operation
+     * @param entities 업서트할 엔티티
+     * @param keys 고유 제약 조건 일치를 판별할 선택적 컬럼. 비어 있으면 기본 키를 사용하고,
+     *   기본 키도 없으면 첫 번째 고유 인덱스를 사용합니다.
+     * @param onUpdate [UpdateStatement]를 인자로 받아 UPDATE 절에 값을 할당하는 람다.
+     *   표현식이나 함수에서 삽입 값을 재사용하려면 대상 컬럼으로 `insertValue()`를 호출합니다.
+     *   `null`이면 삽입에 제공한 값으로 모든 컬럼을 갱신합니다.
+     * @param onUpdateExclude 갱신에서 제외할 컬럼. `null`이면 모든 컬럼을 갱신합니다.
+     * @param shouldReturnGeneratedValues 자동 증가 ID 등 새로 생성된 값을 반환할지 여부
+     * @return 업서트 연산이 반환한 행
      */
     suspend fun <D: Any> batchUpsert(
         entities: Iterable<D>,
@@ -518,20 +514,19 @@ interface R2dbcRepository<ID: Any, E: Any> {
             ).map { it.toEntity() }
 
     /**
-     * Upserts [entities] with Exposed batch upsert.
+     * Exposed 배치 업서트로 [entities]를 업서트합니다.
      *
-     * See [Batch Insert](https://github.com/JetBrains/Exposed/wiki/DSL#batch-insert) for more details.
+     * 자세한 내용은 [Batch Insert](https://github.com/JetBrains/Exposed/wiki/DSL#batch-insert)를 참고하십시오.
      *
-     * @param entities entity sequence to upsert
-     * @param keys (optional) Columns to include in the condition that determines a unique constraint match. If no columns are provided,
-     *             primary keys will be used. If the table does not have any primary keys, the first unique index will be attempted.
-     * @param onUpdate Lambda block with an [UpdateStatement] as its argument, allowing values to be assigned to the UPDATE clause.
-     *  To specify manually that the insert value should be used when updating a column, for example within an expression
-     *  or function, invoke `insertValue()` with the desired column as the function argument.
-     *  If left null, all columns will be updated with the values provided for the insert.
-     * @param onUpdateExclude List of specific columns to exclude from updating. If left null, all columns will be updated with the values provided for the insert.
-     * @param shouldReturnGeneratedValues Specifies whether newly generated values (for example, auto-incremented IDs) should be returned.
-     * @return rows returned from the upsert operation
+     * @param entities 업서트할 엔티티 시퀀스
+     * @param keys 고유 제약 조건 일치를 판별할 선택적 컬럼. 비어 있으면 기본 키를 사용하고,
+     *   기본 키도 없으면 첫 번째 고유 인덱스를 사용합니다.
+     * @param onUpdate [UpdateStatement]를 인자로 받아 UPDATE 절에 값을 할당하는 람다.
+     *   표현식이나 함수에서 삽입 값을 재사용하려면 대상 컬럼으로 `insertValue()`를 호출합니다.
+     *   `null`이면 삽입에 제공한 값으로 모든 컬럼을 갱신합니다.
+     * @param onUpdateExclude 갱신에서 제외할 컬럼. `null`이면 모든 컬럼을 갱신합니다.
+     * @param shouldReturnGeneratedValues 자동 증가 ID 등 새로 생성된 값을 반환할지 여부
+     * @return 업서트 연산이 반환한 행
      */
     suspend fun <D: Any> batchUpsert(
         entities: Sequence<D>,
@@ -554,18 +549,17 @@ interface R2dbcRepository<ID: Any, E: Any> {
             ).map { it.toEntity() }
 
     /**
-     * Finds a page of entities.
+     * 엔티티 페이지를 조회합니다.
      *
-     * **Note**: `totalCount` and `content` are fetched by separate queries and
-     * are not atomically consistent. If another transaction inserts or deletes
-     * rows between the queries, the values may diverge. Use a stronger
-     * isolation level when strict consistency is required.
+     * **참고:** `totalCount`와 `content`는 별도 쿼리로 조회하므로 원자적으로 일관되지 않습니다.
+     * 두 쿼리 사이에 다른 트랜잭션이 행을 삽입하거나 삭제하면 값이 달라질 수 있습니다.
+     * 엄격한 일관성이 필요하면 더 강한 격리 수준을 사용하십시오.
      *
-     * @param pageNumber zero-based page number
-     * @param pageSize page size
-     * @param sortOrder sort direction
-     * @param predicate filter condition
-     * @return paged result [ExposedPage]
+     * @param pageNumber 0부터 시작하는 페이지 번호
+     * @param pageSize 페이지 크기
+     * @param sortOrder 정렬 방향
+     * @param predicate 필터 조건
+     * @return 페이지 결과 [ExposedPage]
      */
     suspend fun findPage(
         pageNumber: Int,
@@ -593,37 +587,37 @@ interface R2dbcRepository<ID: Any, E: Any> {
 }
 
 /**
- * Convenience [R2dbcRepository] specialization for [Int] primary keys.
+ * [Int] 기본 키를 사용하는 [R2dbcRepository] 편의 특수화 인터페이스입니다.
  *
- * @param E entity type
+ * @param E 엔티티 타입
  */
 interface IntR2dbcRepository<E: Any>: R2dbcRepository<Int, E>
 
 /**
- * Convenience [R2dbcRepository] specialization for [Long] primary keys.
+ * [Long] 기본 키를 사용하는 [R2dbcRepository] 편의 특수화 인터페이스입니다.
  *
- * @param E entity type
+ * @param E 엔티티 타입
  */
 interface LongR2dbcRepository<E: Any>: R2dbcRepository<Long, E>
 
 /**
- * Convenience [R2dbcRepository] specialization for Kotlin [kotlin.uuid.Uuid] primary keys.
+ * Kotlin [kotlin.uuid.Uuid] 기본 키를 사용하는 [R2dbcRepository] 편의 특수화 인터페이스입니다.
  *
- * @param E entity type
+ * @param E 엔티티 타입
  */
 @OptIn(ExperimentalUuidApi::class)
 interface UuidR2dbcRepository<E: Any>: R2dbcRepository<Uuid, E>
 
 /**
- * Convenience [R2dbcRepository] specialization for [java.util.UUID] primary keys.
+ * [java.util.UUID] 기본 키를 사용하는 [R2dbcRepository] 편의 특수화 인터페이스입니다.
  *
- * @param E entity type
+ * @param E 엔티티 타입
  */
 interface UUIDR2dbcRepository<E: Any>: R2dbcRepository<UUID, E>
 
 /**
- * Convenience [R2dbcRepository] specialization for [String] primary keys.
+ * [String] 기본 키를 사용하는 [R2dbcRepository] 편의 특수화 인터페이스입니다.
  *
- * @param E entity type
+ * @param E 엔티티 타입
  */
 interface StringR2dbcRepository<E: Any>: R2dbcRepository<String, E>
