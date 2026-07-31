@@ -1,23 +1,28 @@
-# 2026-06-04 Issue 246 Pin Bluetape4k Catalog Aliases
+# 2026-06-04 Issue 246 Pin Bluetape4k Catalog Alias
 
-## Context
+## 배경
 
-After disabling Gradle action caching, Nightly smoke no longer failed in `exposed-measured`, but H2 and Spring Boot jobs still resolved `exposed-jdbc-tests` bluetape4k dependencies as `group:artifact:.`.
+Gradle action caching을 disabled로 둔 뒤 Nightly smoke는 더 이상 `exposed-measured`에서
+실패하지 않았지만 H2와 Spring Boot job은 여전히 `exposed-jdbc-tests` bluetape4k
+dependency를 `group:artifact:.`로 resolve했습니다.
 
-## Decision
+## 결정
 
-Keep repo-local `libs.bluetape4k.*` aliases versioned with `version.ref = "bluetape4k-bom"` so task graphs are not dependent on dependency-management timing alone.
+task graph가 dependency-management timing에만 의존하지 않게 repo-local
+`libs.bluetape4k.*` alias에 `version.ref = "bluetape4k-bom"`을 유지합니다.
 
-## Outcome
+## 결과
 
-The local catalog now mirrors the release-train catalog style for bluetape4k artifacts while preserving the existing `bluetape4k-bom` version key.
+local catalog는 기존 `bluetape4k-bom` version key를 보존하면서 bluetape4k artifact의
+release-train catalog style을 반영합니다.
 
-## Verification
+## 검증
 
-- Planned: clean/fresh Gradle home H2 Nightly task graph.
-- Planned: clean/fresh Gradle home Spring Boot Nightly task graph.
-- Planned: `git diff --check` and catalog alias audit.
+- 예정: clean/fresh Gradle home H2 Nightly task graph.
+- 예정: clean/fresh Gradle home Spring Boot Nightly task graph.
+- 예정: `git diff --check` 및 catalog alias audit.
 
-## Future Rule
+## 향후 규칙
 
-When a repo-local version catalog keeps bluetape4k aliases, version them through the bluetape4k BOM ref instead of relying on unversioned aliases plus dependency-management only.
+repo-local version catalog가 bluetape4k alias를 유지할 때 dependency-management만 있는
+unversioned alias에 의존하지 말고 bluetape4k BOM ref로 version을 지정합니다.

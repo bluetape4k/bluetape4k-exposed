@@ -1,67 +1,56 @@
-# Lessons Learned — exposed-cache Nightly configuration cache (2026-06-04)
+# Lessons Learned — Exposed-cache Nightly Configuration Cache (2026-06-04)
 
 **Related issues**: #240, #242, #244
 **Affected module**: `bluetape4k-exposed-cache`
 
-## Context
+## 배경
 
-Post-merge Nightly smoke failed in `Test / exposed-cache (H2)` after the
-snapshot-refresh workflow fix had already passed PR CI. The failing GitHub
-runner discarded a configuration-cache entry and resolved
-`io.github.bluetape4k:bluetape4k-logging:.` without a version.
+snapshot-refresh workflow fix가 PR CI를 통과한 뒤에도 post-merge Nightly smoke의
+`Test / exposed-cache (H2)`가 실패했습니다. GitHub runner는 configuration-cache entry를
+버리고 `io.github.bluetape4k:bluetape4k-logging:.`처럼 version 없는 dependency를
+resolve했습니다.
 
-The follow-up PR then failed in the CI `Build (compile only)` job because CI
-still resolved snapshot artifacts without `--refresh-dependencies`, so stale
-Central metadata can break PR checks before Nightly runs. After that fix merged,
-post-merge Nightly smoke failed again in `Test / exposed-core + exposed-dao
-(H2)`, proving the configuration-cache/BOM-empty-version failure is not limited
-to the cache module.
+후속 PR은 CI의 `Build (compile only)` job이 `--refresh-dependencies` 없이 snapshot
+artifact를 resolve해 Nightly 전에 stale Central metadata가 PR check를 깨뜨림을 보였습니다.
+그 수정 뒤에는 `Test / exposed-core + exposed-dao (H2)`도 실패해
+configuration-cache/BOM-empty-version failure가 cache module에 국한되지 않음이
+증명되었습니다. `--no-configuration-cache`를 Nightly Gradle command 전체에 적용해도
+run `26963387223`은 같은 GitHub runner path에서 실패했고 affected job은
+`gradle/actions/setup-gradle@v6`가 test command 전에 cache를 restore한 뒤
+`io.github.bluetape4k:bluetape4k-junit5:.` 같은 empty version을 resolve했음을 보였습니다.
 
-After `--no-configuration-cache` was applied to every Nightly Gradle command,
-run `26963387223` still failed in the same GitHub runner path. The failed jobs
-showed `gradle/actions/setup-gradle@v6` restoring caches before the affected
-test commands and then resolving BOM-managed bluetape4k dependencies with empty
-versions such as `io.github.bluetape4k:bluetape4k-junit5:.`.
+## 결정
 
-## Decision
+dependency refresh와 Nightly `--no-configuration-cache`는 유지하되 snapshot BOM metadata
+refresh 중 Nightly workflow에서 Gradle cache를 restore하지 않습니다. local macOS run과
+clean temporary `GRADLE_USER_HOME`은 통과했으므로 source test failure가 아니라 runner
+cache path 문제입니다.
 
-Keep dependency refresh enabled and keep Nightly commands on
-`--no-configuration-cache`, but do not restore Gradle caches in the Nightly
-workflow while snapshot BOM metadata is being refreshed. Local macOS runs and a
-clean temporary `GRADLE_USER_HOME` both passed, so the failure is runner
-cache-path specific rather than a source test failure.
+snapshot refresh와 GitHub runner configuration-cache 회피를 CI Gradle invocation에도
+반영해 PR check와 Nightly가 같은 dependency-resolution policy를 사용하게 합니다. 모든
+Nightly test/Kover Gradle command에 `--no-configuration-cache`를 적용하고 모든
+`gradle/actions/setup-gradle@v6` step에 `cache-disabled: true`를 둡니다.
 
-Mirror snapshot refresh and GitHub runner configuration-cache avoidance in CI
-Gradle invocations so PR checks and Nightly use the same dependency-resolution
-policy. For Nightly, apply `--no-configuration-cache` to every test and Kover
-Gradle command, and set `cache-disabled: true` on every
-`gradle/actions/setup-gradle@v6` step.
+## 결과
 
-## Outcome
+Nightly smoke path는 BOM-managed bluetape4k dependency의 refreshed snapshot BOM metadata를
+resolve할 때 restored Gradle cache state에 더 이상 의존하지 않습니다.
 
-The Nightly smoke path no longer depends on restored Gradle cache state while
-resolving refreshed snapshot BOM metadata for BOM-managed bluetape4k
-dependencies.
-
-## Verification
+## 검증
 
 - `./gradlew --refresh-dependencies :bluetape4k-exposed-cache:test --no-daemon`
 - `env GRADLE_USER_HOME=/tmp/bt4k-exposed-gradle-home ./gradlew --refresh-dependencies :bluetape4k-exposed-cache:test --no-daemon`
 - `actionlint .github/workflows/ci.yml .github/workflows/nightly-tests.yml`
-- CI/Nightly Gradle audit: every `./gradlew` call includes
-  `--refresh-dependencies`.
-- Nightly Gradle audit: every `./gradlew` run block includes
-  `--no-configuration-cache`.
-- Nightly setup-gradle audit: every setup step includes `cache-disabled: true`.
+- CI/Nightly Gradle audit: 모든 `./gradlew` call에 `--refresh-dependencies` 포함.
+- Nightly Gradle audit: 모든 `./gradlew` run block에 `--no-configuration-cache` 포함.
+- Nightly setup-gradle audit: 모든 setup step에 `cache-disabled: true` 포함.
 
-## Future Rule
+## 향후 규칙
 
-When a Nightly-only workflow change passes PR CI but post-merge smoke still
-fails, inspect whether changed-module PR CI skipped the affected module test.
-Keep exposed Nightly commands on `--no-configuration-cache` unless the
-configuration-cache failure is fixed and verified on GitHub runners across the
-core smoke path, not just `exposed-cache`.
-Do not re-enable Nightly Gradle cache restore until a post-merge smoke run proves
-snapshot BOM dependency resolution is stable on GitHub runners.
-When changing snapshot dependency policy, audit both `.github/workflows/ci.yml`
-and `.github/workflows/nightly-tests.yml`.
+Nightly-only workflow change가 PR CI를 통과해도 post-merge smoke가 실패하면 changed-module
+PR CI가 affected module test를 skip했는지 확인합니다. configuration-cache failure가 core
+smoke path 전체에서 GitHub runner로 수정·검증될 때까지 exposed Nightly command에는
+`--no-configuration-cache`를 유지합니다. post-merge smoke가 snapshot BOM resolution
+안정성을 증명할 때까지 Nightly Gradle cache restore를 다시 켜지 않습니다. snapshot
+dependency policy를 바꿀 때 `.github/workflows/ci.yml`과 `.github/workflows/nightly-tests.yml`
+모두 audit합니다.
