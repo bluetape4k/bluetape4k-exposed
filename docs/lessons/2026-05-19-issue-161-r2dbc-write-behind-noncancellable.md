@@ -1,35 +1,34 @@
-# R2DBC Caffeine Write-Behind Final Flush Cancellation
+# R2DBC Caffeine Write-Behind 최종 Flush Cancellation
 
-## Context
+## 배경
 
-Issue #161 found that `AbstractR2dbcCaffeineRepository` called the suspend
-`flushBatch()` from the write-behind job `finally` block while the job could
-already be cancelled. That makes the final in-memory batch vulnerable to being
-dropped during cancellation.
+Issue #161은 `AbstractR2dbcCaffeineRepository`가 write-behind job `finally` block에서
+suspend `flushBatch()`를 호출하는데 job이 이미 cancelled일 수 있음을 발견했습니다.
+이 경우 최종 in-memory batch가 cancellation 중 버려질 수 있습니다.
 
-## Decision
+## 결정
 
-Run the final `flushBatch(batch)` inside `withContext(NonCancellable)` when the
-write-behind loop exits with a non-empty batch. Keep normal in-loop flush
-behavior unchanged so ordinary cancellation still propagates through the job.
+write-behind loop가 non-empty batch로 끝나면 최종 `flushBatch(batch)`를
+`withContext(NonCancellable)` 안에서 실행합니다. ordinary cancellation이 job을 통해
+전파되도록 normal in-loop flush behavior는 바꾸지 않습니다.
 
-## Outcome
+## 결과
 
-The write-behind job now retries the already collected final batch in a
-non-cancellable cleanup context. The fix is intentionally scoped to #161; the
-separate `close()` ordering issue remains #163.
+write-behind job은 이제 이미 수집한 최종 batch를 non-cancellable cleanup context에서
+다시 시도합니다. 수정 범위는 의도적으로 #161에 한정하며 별도의 `close()` ordering
+문제는 #163으로 남아 있습니다.
 
-## Verification
+## 검증
 
 - `./gradlew :bluetape4k-exposed-r2dbc-caffeine:compileTestKotlin --console=plain --no-daemon`
 - `./gradlew :bluetape4k-exposed-r2dbc-caffeine:test --tests "io.bluetape4k.exposed.r2dbc.caffeine.repository.WriteBehindCacheTest*CancellationSafeFinalFlush*" --console=plain --no-daemon`
 - `./gradlew :bluetape4k-exposed-r2dbc-caffeine:test --rerun-tasks --console=plain --no-daemon`
-- Claude Review: no blocking findings and no missing-test gap for #161 scope.
-- Codex CLI review: no actionable defects.
+- Claude Review: blocking finding과 #161 범위의 missing-test gap이 없었습니다.
+- Codex CLI review: actionable defect가 없었습니다.
 
-## Future Guidance
+## 향후 지침
 
-- Suspend cleanup in a cancelled coroutine must use `withContext(NonCancellable)`
-  only around the cleanup operation.
-- Keep #163 separate: closing the queue and then cancelling the scope still needs
-  a lifecycle-ordering fix so shutdown waits for natural write-behind completion.
+- cancelled coroutine의 suspend cleanup에는 cleanup operation 주위에만
+  `withContext(NonCancellable)`를 사용합니다.
+- #163은 분리합니다. queue를 닫고 scope를 cancel하는 순서는 shutdown이 natural
+  write-behind completion을 기다리도록 lifecycle-ordering fix가 여전히 필요합니다.
