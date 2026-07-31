@@ -1,19 +1,19 @@
-# Issue 285 ClickHouse DDL Hardening Lessons
+# 이슈 285 ClickHouse DDL 강화 교훈
 
 Date: 2026-06-23
 Issue: #285
 
-## Lesson
+## 교훈
 
-ClickHouse engine clauses are table-local DDL, not normal query expressions. Typed engine DSL rendering must not blindly reuse query-style column rendering when that produces `table.column` output.
+ClickHouse engine clause는 일반 query expression이 아니라 table-local DDL입니다. typed engine DSL 렌더링은 `table.column` 출력을 만들 때 query-style column 렌더링을 무분별하게 재사용하면 안 됩니다.
 
-## Guidance
+## 지침
 
-- Prefer `ClickHouseTable` engine overrides declared after column properties when engine clauses should reference typed columns.
-- Keep constructor-time raw fragments only for compatibility or expressions that cannot be modeled yet, and make the raw boundary explicit with `unsafeRaw...`.
-- Treat setting names separately from setting values: safe paths should be allowlisted or typed, while arbitrary setting names belong behind an unsafe API.
-- Add schema-level create/drop coverage for typed engine declarations, not only `toClause()` string tests.
+- engine clause가 typed column을 참조해야 할 때는 column property 뒤에 선언한 `ClickHouseTable` engine override를 우선합니다.
+- constructor-time raw fragment는 호환성 또는 아직 모델링할 수 없는 expression에만 유지하고 `unsafeRaw...`로 raw 경계를 명시합니다.
+- setting name은 setting value와 분리해 다룹니다. safe 경로는 allowlist 또는 typed여야 하며 임의의 setting name은 unsafe API 뒤에 둡니다.
+- typed engine 선언에는 `toClause()` 문자열 테스트뿐 아니라 schema 수준 create/drop coverage를 추가합니다.
 
-## Follow-up
+## 후속 조치
 
-When adding a new ClickHouse expression helper that should be valid inside engine DDL, add it to the dedicated engine expression renderer and cover it with `MergeTreeDslTest`.
+engine DDL 내부에서 유효해야 하는 새 ClickHouse expression helper를 추가할 때는 전용 engine expression renderer에 넣고 `MergeTreeDslTest`로 다룹니다.
