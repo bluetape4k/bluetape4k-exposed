@@ -5,11 +5,10 @@ import org.jetbrains.exposed.v1.javatime.timestamp
 import kotlin.uuid.ExperimentalUuidApi
 
 /**
- * Exposed table model for Spring Modulith event publications.
+ * Spring Modulith 이벤트 게시를 위한 Exposed 테이블 모델입니다.
  *
- * The default shape follows Spring Modulith 2.x JDBC schema v2 so applications
- * can migrate between this module and Spring Modulith JDBC without changing
- * stored data.
+ * 기본 구조는 Spring Modulith 2.x JDBC schema v2를 따릅니다.
+ * 따라서 저장 데이터를 변경하지 않고 이 모듈과 Spring Modulith JDBC 사이를 마이그레이션할 수 있습니다.
  */
 @OptIn(ExperimentalUuidApi::class)
 class ExposedEventPublicationTable(

@@ -6,13 +6,13 @@ import org.springframework.modulith.events.core.TargetEventPublication
 import java.time.Instant
 
 /**
- * Creates a Spring Modulith [PublicationTargetIdentifier] with Kotlin-style factory syntax.
+ * Kotlin 스타일 팩토리 문법으로 Spring Modulith [PublicationTargetIdentifier]를 생성합니다.
  *
- * Contract:
- * - Rejects blank listener ids before delegating to Spring Modulith.
- * - Keeps Kotlin call sites free from `PublicationTargetIdentifier.of(...)`.
+ * 계약:
+ * - Spring Modulith에 위임하기 전에 빈 listener ID를 거부합니다.
+ * - Kotlin 호출부에서 `PublicationTargetIdentifier.of(...)`를 직접 사용하지 않게 합니다.
  *
- * Example:
+ * 예:
  * ```kotlin
  * val targetIdentifier = publicationTargetIdentifierOf("listener.order-submitted")
  * ```
@@ -21,13 +21,13 @@ fun publicationTargetIdentifierOf(value: String): PublicationTargetIdentifier =
     PublicationTargetIdentifier.of(value.requireNotBlank("value"))
 
 /**
- * Creates a Spring Modulith [TargetEventPublication] with Kotlin-style factory syntax.
+ * Kotlin 스타일 팩토리 문법으로 Spring Modulith [TargetEventPublication]을 생성합니다.
  *
- * Contract:
- * - Delegates to Spring Modulith's Java static factory.
- * - Keeps call sites in Kotlin code free from `TargetEventPublication.of(...)`.
+ * 계약:
+ * - Spring Modulith의 Java 정적 팩토리에 위임합니다.
+ * - Kotlin 호출부에서 `TargetEventPublication.of(...)`를 직접 사용하지 않게 합니다.
  *
- * Example:
+ * 예:
  * ```kotlin
  * val publication = targetEventPublicationOf(
  *     event = "order-1",
