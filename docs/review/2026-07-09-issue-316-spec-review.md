@@ -1,40 +1,38 @@
-# Issue #316 Spec Review
+# 이슈 #316 명세 리뷰
 
-Date: 2026-07-09
-Scope: `docs/superpowers/specs/2026-07-09-issue-316-ddd-spring-modulith-sample-design.md`
+날짜: 2026-07-09
+범위: `docs/superpowers/specs/2026-07-09-issue-316-ddd-spring-modulith-sample-design.md`
 
-## Gate
+## 게이트
 
-Step 2-R used six read-only native review lanes plus current-session
-integration review.
+Step 2-R에서는 읽기 전용 네이티브 리뷰 레인 여섯 개와 현재 세션의
+통합 리뷰를 사용했다.
 
-| Tier | Perspective | Result | Notes |
+| Tier | 관점 | 결과 | 참고 |
 | --- | --- | --- | --- |
-| 1 | Performance | P0=0, P1=0 | Added one-event/one-listener row-count and bounded-wait expectations. Benchmark/stress explicitly out of scope. |
-| 2 | Stability | P0=0, P1=0 | Added stable listener id, idempotent reservation, restart republication, rollback, isolation, and bounded async assertions. |
-| 3 | Security | P0=0, P1=0 | Added opaque event payload rule, internal publication-table trust boundary, serializer guidance, schema-init warning, and safe table-name constraints. |
-| 4 | Operator/Ops | P0=0, P1=0 | Added operational resources/runbook, metric/state names, failure triage, workflow grep evidence, and root README requirement. |
-| 5 | Developer/API | P0=0, P1=0 | Resolved DDD event-clear order, invalid fixture isolation, and concrete Gradle/Spring bean wiring. |
-| 6 | User/Caller | P0=0, P1=0 | Added supported/not-supported README section, migration guidance, and numbered diagram flow requirement. |
+| 1 | 성능 | P0=0, P1=0 | 이벤트 하나/리스너 하나에 대한 행 개수 및 제한된 대기 기대 조건을 추가했다. 벤치마크/스트레스는 명시적으로 범위에서 제외했다. |
+| 2 | 안정성 | P0=0, P1=0 | 안정적인 리스너 ID, 멱등 예약, 재시작 후 재발행, 롤백, 격리, 제한된 비동기 단언을 추가했다. |
+| 3 | 보안 | P0=0, P1=0 | 불투명 이벤트 페이로드 규칙, 내부 발행 테이블 신뢰 경계, 직렬화 지침, 스키마 초기화 경고, 안전한 테이블 이름 제약을 추가했다. |
+| 4 | 운영 | P0=0, P1=0 | 운영 리소스/런북, 메트릭/상태 이름, 실패 분류, 워크플로 grep 증거, 루트 README 요구 사항을 추가했다. |
+| 5 | 개발자/API | P0=0, P1=0 | DDD 이벤트 정리 순서, 잘못된 픽스처 격리, 구체적인 Gradle/Spring 빈 배선을 확정했다. |
+| 6 | 사용자/호출자 | P0=0, P1=0 | 지원/미지원 README 섹션, 마이그레이션 안내, 번호를 붙인 다이어그램 흐름 요구 사항을 추가했다. |
 
-## Integrated Findings
+## 통합 지적 사항
 
-No P0/P1 findings remain after revision.
+수정 후 남아 있는 P0/P1 지적 사항은 없다.
 
-Key revisions:
+주요 수정 사항:
 
-- Event buffer handling now snapshots events, records the Modulith handoff in
-  the command transaction, and clears only after successful transaction return.
-- The invalid Modulith fixture must live outside the valid application package
-  root and use a separate `ApplicationModules.of(...)` entrypoint.
-- The example must expose the Exposed-backed `EventPublicationRepository` and
-  document the required `springTransactionManager` and `EventSerializer` beans.
-- README and tests must address idempotency, restart republication, rollback,
-  safe serialized payloads, production schema migration guidance, and
-  publication-store diagnostics.
+- 이벤트 버퍼 처리는 이제 이벤트의 스냅숏을 만들고, 명령 트랜잭션에서 Modulith 핸드오프를 기록하며,
+  트랜잭션이 성공적으로 반환된 후에만 버퍼를 비운다.
+- 잘못된 Modulith 픽스처는 유효한 애플리케이션 패키지 루트 밖에 두고
+  별도의 `ApplicationModules.of(...)` 진입점을 사용해야 한다.
+- 예제는 Exposed 기반 `EventPublicationRepository`를 노출하고 필수
+  `springTransactionManager` 및 `EventSerializer` 빈을 문서화해야 한다.
+- README와 테스트는 멱등성, 재시작 후 재발행, 롤백, 안전한 직렬화 페이로드,
+  프로덕션 스키마 마이그레이션 안내, 발행 저장소 진단을 다뤄야 한다.
 
-## Deferred Items
+## 보류 항목
 
-- No benchmark or stress test is required because this is an educational H2
-  example. Hot-path evidence is limited to one event, one listener, bounded
-  wait, and expected publication row count.
+- 교육용 H2 예제이므로 벤치마크나 스트레스 테스트는 필요하지 않다.
+  핫 패스 증거는 이벤트 하나, 리스너 하나, 제한된 대기, 예상 발행 행 개수로 제한한다.

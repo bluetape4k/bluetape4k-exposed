@@ -1,32 +1,32 @@
-# Issue #316 Plan Review
+# 이슈 #316 계획 리뷰
 
-## Summary
+## 요약
 
-- Scope: `examples/ddd-spring-modulith-demo` implementation plan for a DDD + Spring Modulith + Exposed sample.
-- Review gate: Step 3-R multi-perspective plan review.
-- Final result: P0=0, P1=0.
-- Blocker status: none.
+- 범위: DDD + Spring Modulith + Exposed 예제를 위한 `examples/ddd-spring-modulith-demo` 구현 계획.
+- 리뷰 게이트: Step 3-R 다각도 계획 리뷰.
+- 최종 결과: P0=0, P1=0.
+- 차단 상태: 없음.
 
-## Review Results
+## 리뷰 결과
 
-| Perspective | Final Result | Notes |
+| 관점 | 최종 결과 | 참고 |
 |---|---:|---|
-| Performance | P0=0 / P1=0 | Added concrete row-count assertions, bounded polling, transaction-clear expectations, and no benchmark claims. |
-| Stability | P0=0 / P1=0 | Made restart republication deterministic and added H2/table cleanup and lifecycle constraints. |
-| Security | P0=0 / P1=0 | Restricted event serialization to `OrderAcceptedEvent` only and required no unsafe polymorphic/default typing. |
-| Operator | P0=0 / P1=0 | Added PR `Fixes #316`, issue metadata mirroring, CI wait, and Nightly full dispatch evidence. |
-| Developer | P0=0 / P1=0 | Moved invalid-boundary fixture skeleton into Task 1 so all test sources compile before filtered GREEN runs. |
-| User | P0=0 / P1=0 | Added README, diagram, discoverability, and migration guidance requirements. |
+| 성능 | P0=0 / P1=0 | 구체적인 행 개수 단언, 제한된 폴링, 트랜잭션 후 정리 기대 조건, 벤치마크 주장을 하지 않는다는 조건을 추가했다. |
+| 안정성 | P0=0 / P1=0 | 재시작 후 재발행을 결정적으로 만들고 H2/테이블 정리 및 수명주기 제약을 추가했다. |
+| 보안 | P0=0 / P1=0 | 이벤트 직렬화를 `OrderAcceptedEvent`로만 제한하고 안전하지 않은 다형성/기본 타입 지정을 금지했다. |
+| 운영자 | P0=0 / P1=0 | PR `Fixes #316`, 이슈 메타데이터 복제, CI 대기, Nightly 전체 디스패치 증거를 추가했다. |
+| 개발자 | P0=0 / P1=0 | 필터링한 GREEN 실행 전에 모든 테스트 소스가 컴파일되도록 잘못된 경계 픽스처 골격을 Task 1로 옮겼다. |
+| 사용자 | P0=0 / P1=0 | README, 다이어그램, 검색 가능성, 마이그레이션 안내 요구 사항을 추가했다. |
 
-## Plan Revisions
+## 계획 수정 사항
 
-- Task 1 now creates a minimal invalid-boundary fixture skeleton before writing tests because Gradle compiles all test sources before applying `--tests` filters.
-- Task 3 validates only the valid-app event/publication subset after production wiring.
-- Task 4 is limited to completing or adjusting the invalid fixture for the negative verifier assertion.
-- Restart republication uses two Spring contexts over the same H2 database and deterministically clears the matching publication completion date before restart.
-- Rollback and handoff-failure tests are separated so transactional rollback uses the real `ApplicationEventPublisher`, while handoff-buffer retention uses a throwing publisher.
-- Documentation requirements include unsupported guarantees, operational security, migration from direct calls, and no benchmark or throughput claims.
+- Gradle은 `--tests` 필터를 적용하기 전에 모든 테스트 소스를 컴파일하므로, Task 1에서 테스트 작성 전에 최소한의 잘못된 경계 픽스처 골격을 생성하도록 했다.
+- Task 3은 프로덕션 배선 후 유효한 애플리케이션의 이벤트/발행 하위 집합만 검증한다.
+- Task 4는 부정 검증 단언을 위한 잘못된 픽스처를 완성하거나 조정하는 작업으로 제한한다.
+- 재시작 후 재발행은 동일한 H2 데이터베이스를 사용하는 두 Spring 컨텍스트로 검증하며, 재시작 전에 일치하는 발행 완료 날짜를 결정적으로 지운다.
+- 트랜잭션 롤백에는 실제 `ApplicationEventPublisher`를 사용하고 핸드오프 버퍼 유지에는 예외를 던지는 발행자를 사용하도록 롤백 테스트와 핸드오프 실패 테스트를 분리했다.
+- 문서 요구 사항에는 지원하지 않는 보장, 운영 보안, 직접 호출 방식에서의 마이그레이션, 벤치마크나 처리량 주장을 하지 않는다는 조건이 포함된다.
 
-## Decision
+## 결정
 
-Proceed to implementation under the approved TDD plan. No P0/P1 items remain.
+승인된 TDD 계획에 따라 구현을 진행한다. 남아 있는 P0/P1 항목은 없다.

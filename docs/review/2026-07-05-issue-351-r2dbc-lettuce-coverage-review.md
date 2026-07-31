@@ -1,42 +1,42 @@
-# Issue #351 r2dbc-lettuce Coverage Review
+# 이슈 #351 r2dbc-lettuce 커버리지 리뷰
 
-## Scope
+## 범위
 
-- Issue: <https://github.com/bluetape4k/bluetape4k-exposed/issues/351>
-- Module: `:bluetape4k-exposed-r2dbc-lettuce`
-- Changed test surface:
+- 이슈: <https://github.com/bluetape4k/bluetape4k-exposed/issues/351>
+- 모듈: `:bluetape4k-exposed-r2dbc-lettuce`
+- 변경된 테스트 범위:
   - `exposed/r2dbc-lettuce/src/test/kotlin/io/bluetape4k/exposed/r2dbc/lettuce/map/ExposedR2dbcLettuceSuspendedLoadedMapTest.kt`
 
-## Review Result
+## 리뷰 결과
 
-- P0/P1 findings: 0
-- Tier 4 correctness: PASS
-- Tier 5 test adequacy: PASS
-- Tier 7 evidence integrity: PASS
+- P0/P1 지적 사항: 0
+- Tier 4 정확성: PASS
+- Tier 5 테스트 적정성: PASS
+- Tier 7 증거 무결성: PASS
 
-## Evidence
+## 증거
 
-- Baseline Kover XML instruction coverage: `73.71%` (`covered=2868`, `missed=1023`, `total=3891`).
-- Largest baseline gap: `ExposedR2dbcLettuceSuspendedLoadedMap.kt`, `59.7%` instruction coverage (`missed=726`, `covered=1077`).
-- Added focused Redis-backed tests for direct map contracts:
-  - cache miss loading through `get` and `getAll`.
-  - pattern invalidation and full clear.
-  - write-through Redis writes and eviction.
-  - write-behind drain through both `suspendClose()` and blocking `close()`.
-  - write-behind failure handling during shutdown.
-- Focused command:
+- 기준 Kover XML 명령어 커버리지: `73.71%` (`covered=2868`, `missed=1023`, `total=3891`).
+- 기준 상태에서 가장 큰 공백: `ExposedR2dbcLettuceSuspendedLoadedMap.kt`, 명령어 커버리지 `59.7%` (`missed=726`, `covered=1077`).
+- 직접적인 맵 계약에 초점을 맞춘 Redis 기반 테스트를 추가했다.
+  - `get`과 `getAll`을 통한 캐시 미스 로딩.
+  - 패턴 무효화와 전체 비우기.
+  - 즉시 반영 방식의 Redis 쓰기와 제거.
+  - `suspendClose()`와 블로킹 `close()`를 통한 지연 쓰기 드레인.
+  - 종료 중 지연 쓰기 실패 처리.
+- 집중 검증 명령:
   - `./gradlew --no-parallel :bluetape4k-exposed-r2dbc-lettuce:compileTestKotlin :bluetape4k-exposed-r2dbc-lettuce:test --tests 'io.bluetape4k.exposed.r2dbc.lettuce.map.ExposedR2dbcLettuceSuspendedLoadedMapTest'`
-  - Result: `5 passing`, `BUILD SUCCESSFUL`.
-- Full module command:
+  - 결과: `5 passing`, `BUILD SUCCESSFUL`.
+- 전체 모듈 명령:
   - `./gradlew --no-parallel :bluetape4k-exposed-r2dbc-lettuce:test :bluetape4k-exposed-r2dbc-lettuce:koverXmlReport :bluetape4k-exposed-r2dbc-lettuce:koverLog`
-  - Result: `138 passing`, `4 pending`, `BUILD SUCCESSFUL`.
-- Final Kover:
-  - Line coverage: `85.9116%`.
-  - XML instruction coverage: `88.33%` (`covered=3437`, `missed=454`, `total=3891`).
-  - `ExposedR2dbcLettuceSuspendedLoadedMap.kt`: `91.3%` instruction coverage (`missed=157`, `covered=1646`).
+  - 결과: `138 passing`, `4 pending`, `BUILD SUCCESSFUL`.
+- 최종 Kover:
+  - 라인 커버리지: `85.9116%`.
+  - XML 명령어 커버리지: `88.33%` (`covered=3437`, `missed=454`, `total=3891`).
+  - `ExposedR2dbcLettuceSuspendedLoadedMap.kt`: 명령어 커버리지 `91.3%` (`missed=157`, `covered=1646`).
 
-## Notes
+## 참고
 
-- No production behavior changed.
-- Testcontainers-backed verification was run with `--no-parallel`.
-- The new tests reuse existing module fixtures, `runSuspendIO`, and `bluetape4k-assertions`.
+- 프로덕션 동작은 변경되지 않았다.
+- Testcontainers 기반 검증은 `--no-parallel`로 실행했다.
+- 새 테스트는 기존 모듈 픽스처, `runSuspendIO`, `bluetape4k-assertions`를 재사용한다.
