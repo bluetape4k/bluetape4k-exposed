@@ -1,43 +1,38 @@
-# Issue 123 cache health plan
+# Issue 123 cache health 계획
 
-## Goal
+## 목표
 
-Implement milestone 1.8.1 issue #123 by adding a Caffeine repository health
-snapshot that exposes WRITE_BEHIND queue, worker, and flush error state.
+WRITE_BEHIND queue, worker, flush error 상태를 노출하는 Caffeine 저장소
+health snapshot을 추가하여 milestone 1.8.1의 issue #123을 구현한다.
 
-## Steps
+## 단계
 
-1. Add shared model.
-   - Create `CacheHealthReport` in `exposed-cache`.
-   - Make it `Serializable` with `serialVersionUID`.
+1. 공유 model을 추가한다.
+   - `exposed-cache`에 `CacheHealthReport`를 생성한다.
+   - `serialVersionUID`를 포함한 `Serializable`로 만든다.
 
-2. Expose Caffeine contract.
-   - Add `validateConsistency()` to `JdbcCaffeineRepository`.
-   - Add `suspend validateConsistency()` to `R2dbcCaffeineRepository`.
+2. Caffeine 계약을 노출한다.
+   - `JdbcCaffeineRepository`에 `validateConsistency()`를 추가한다.
+   - `R2dbcCaffeineRepository`에 `suspend validateConsistency()`를 추가한다.
 
-3. Implement runtime state tracking.
-   - Track accepted write-behind entries with an `AtomicInteger`.
-   - Track last non-cancellation flush failure with an `AtomicReference`.
-   - Track whether the lazy write-behind job has been started without forcing
-     initialization from health reporting.
+3. runtime 상태 추적을 구현한다.
+   - 수락한 write-behind entry 수를 `AtomicInteger`로 추적한다.
+   - 마지막 non-cancellation flush failure를 `AtomicReference`로 추적한다.
+   - health 보고가 lazy write-behind job을 강제로 초기화하지 않도록, job 시작 여부를 별도로 추적한다.
 
-4. Add tests.
-   - JDBC: idle health snapshot, blocked in-flight flush queue depth, flush
-     failure report.
-   - R2DBC: idle health snapshot, blocked in-flight flush queue depth, flush
-     failure report.
+4. 테스트를 추가한다.
+   - JDBC: idle health snapshot, 막힌 in-flight flush의 queue depth, flush failure report.
+   - R2DBC: idle health snapshot, 막힌 in-flight flush의 queue depth, flush failure report.
 
-5. Verify and publish.
-   - Run targeted compile/tests.
-   - Run `git diff --check`.
-   - Do local in-session review.
-   - Commit, push, and open a PR that closes #123.
+5. 검증하고 전달한다.
+   - 대상 compile/test를 실행한다.
+   - `git diff --check`를 실행한다.
+   - 현재 세션에서 로컬 review를 수행한다.
+   - commit과 push 후 #123을 닫는 PR을 생성한다.
 
-## Constraints
+## 제약
 
-- Actuator HealthIndicator integration is optional in the issue and remains out
-  of scope for this increment.
-- Claude advisor/review is skipped by user instruction.
-- External Codex CLI review is skipped by user instruction.
-- IntelliJ diagnostics are unavailable unless this worktree becomes the active
-  IntelliJ project; Gradle compile/tests are the fallback.
+- issue에서 선택 사항인 Actuator `HealthIndicator` 통합은 이번 범위에서 제외한다.
+- 사용자 지시에 따라 Claude advisor/review를 생략한다.
+- 사용자 지시에 따라 외부 Codex CLI review를 생략한다.
+- 이 worktree가 IntelliJ의 활성 project가 아니면 IntelliJ diagnostics를 사용할 수 없으므로 Gradle compile/test로 대체한다.
