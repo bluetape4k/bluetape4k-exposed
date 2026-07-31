@@ -26,7 +26,7 @@ internal val CACHE_OUTCOMES: List<String> = listOf(
     CANCELLED_OUTCOME,
 )
 
-/** Installed fixed-cardinality metrics for one cache contributor. */
+/** 하나의 cache contributor에 설치된 fixed-cardinality metric입니다. */
 internal class ExposedKtorCacheMetricBinding internal constructor(
     val contributor: ExposedKtorCacheContributor,
     val tags: List<Tag>,
@@ -50,11 +50,11 @@ internal class ExposedKtorCacheMetricBinding internal constructor(
 }
 
 /**
- * Registers exactly four gauges and four finite-outcome timers per contributor.
+ * contributor마다 gauge 4개와 finite-outcome timer 4개를 정확히 등록합니다.
  *
- * Registration is serialized only during installation. The returned bindings retain direct meter state and
- * timer references, so request handling performs no registry lookup, builder invocation, tag construction, or
- * meter registration. Exported backend time-series counts remain registry and distribution-config dependent.
+ * 등록은 설치 중에만 직렬화합니다. 반환된 binding은 meter state와 timer reference를 직접 보관하므로
+ * request 처리 시 registry 조회, builder 호출, tag 구성, meter 등록을 수행하지 않습니다.
+ * 내보낸 backend time-series 수는 registry와 distribution config에 따라 달라집니다.
  */
 internal fun registerExposedKtorCacheMetrics(
     meterRegistry: MeterRegistry?,

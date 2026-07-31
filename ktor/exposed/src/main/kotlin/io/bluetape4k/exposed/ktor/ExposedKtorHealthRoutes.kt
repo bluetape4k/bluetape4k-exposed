@@ -21,9 +21,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.TimeSource
 
-/**
- * Adds Exposed-specific liveness and readiness routes.
- */
+/** Exposed 전용 liveness와 readiness route를 추가합니다. */
 fun Route.bluetape4kExposedHealthRoutes(
     jdbcDatabase: Database?,
     jdbcBlockingDispatcher: CoroutineDispatcher?,
@@ -48,18 +46,17 @@ fun Route.bluetape4kExposedHealthRoutes(
 }
 
 /**
- * Adds Exposed liveness and readiness routes with explicit cache contributors.
+ * 명시적인 cache contributor와 함께 Exposed liveness와 readiness route를 추가합니다.
  *
- * Database arguments may all be `null` for cache-only readiness. Cache contributors run sequentially after JDBC
- * and R2DBC under one shared monotonic [readinessProbeTimeout] deadline. Supported probes are caller-owned O(1)
- * in-memory, non-blocking, cancellation-cooperative observers; blocking, cancellation-insensitive, or backend-I/O
- * probes are unsupported and can outlive the coroutine deadline. The caller owns route authentication, request
- * concurrency and rate limiting, databases, dispatchers, repositories, registries, and their complete lifecycle.
- * This helper creates or closes no thread, dispatcher, scope, worker, database, repository, registry, or cache.
- * A supplier-thrown [CancellationException] becomes one sanitized `DOWN` result while an active request continues;
- * cancellation of the request context is rethrown and terminates readiness processing.
- * Responses expose only validated component names and finite `UP`, `DOWN`, or `timeout` values; supplier exception
- * messages, causes, cache keys, SQL, URLs, namespaces, credentials, and measurements are never returned or logged.
+ * cache-only readiness에서는 database 인수를 모두 `null`로 둘 수 있습니다. cache contributor는 JDBC와 R2DBC 뒤에서
+ * 하나의 shared monotonic [readinessProbeTimeout] deadline 아래 순차 실행됩니다. 지원하는 probe는 호출자 소유의
+ * O(1) in-memory, non-blocking, cancellation-cooperative observer입니다. blocking, cancellation-insensitive 또는
+ * backend-I/O probe는 지원하지 않으며 coroutine deadline보다 오래 실행될 수 있습니다. 호출자는 route authentication,
+ * request concurrency와 rate limit, database, dispatcher, repository, registry와 전체 lifecycle을 소유합니다.
+ * 이 helper는 thread, dispatcher, scope, worker, database, repository, registry, cache를 생성하거나 닫지 않습니다.
+ * 활성 request 중 supplier가 던진 [CancellationException]은 정제된 `DOWN` 결과가 되며 request context cancellation은
+ * 다시 던져 readiness 처리를 종료합니다. response는 검증된 component 이름과 유한 `UP`, `DOWN`, `timeout` 값만 노출하며
+ * supplier exception message, cause, cache key, SQL, URL, namespace, credential, measurement는 반환하거나 기록하지 않습니다.
  */
 fun Route.bluetape4kExposedHealthRoutes(
     jdbcDatabase: Database?,
