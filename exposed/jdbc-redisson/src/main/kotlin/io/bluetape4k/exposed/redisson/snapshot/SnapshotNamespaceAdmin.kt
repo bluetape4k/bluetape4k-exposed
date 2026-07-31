@@ -71,6 +71,12 @@ private val DELETE_EXACT_MARKER_SCRIPT = """
  * ACL은 marker와 map 조회 및 unlink, local-cache clear 범위의 pub/sub,
  * 임시 `${namespace}:clear:*` semaphore key와 channel을 허용하고 global keyevent subscription은 거부해야 합니다.
  * 이 API를 request-facing application path에 노출해서는 안 됩니다. fingerprint는 실수 방지 장치이지 권한이 아닙니다.
+ *
+ * Contract anchors: quiesce; network isolation; dedicated namespace-scoped Redis ACL;
+ * marker and map inspection and unlink; local-cache clear scoped pub/sub;
+ * `${namespace}:clear:*` semaphore keys and channels; deny global keyevent subscription.
+ * This API must never be exposed through request-facing paths.
+ * The fingerprint is an accident guard, not authorization.
  */
 @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
 @Retention(AnnotationRetention.BINARY)
