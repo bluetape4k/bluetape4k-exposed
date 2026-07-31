@@ -1,47 +1,47 @@
-# Issue 342 Concurrency Tester Review
+# Issue 342 동시성 테스터 검토
 
-## Scope
+## 범위
 
-- Issue: #342 `test(cache): replace ad hoc concurrency probes with bluetape4k junit5 testers`
-- Modules: `bluetape4k-exposed-core`, `bluetape4k-exposed-jdbc-caffeine`, `bluetape4k-exposed-r2dbc-caffeine`
-- Changed tests:
+- 이슈: #342 `test(cache): replace ad hoc concurrency probes with bluetape4k junit5 testers`
+- 모듈: `bluetape4k-exposed-core`, `bluetape4k-exposed-jdbc-caffeine`, `bluetape4k-exposed-r2dbc-caffeine`
+- 변경한 테스트:
   - `UserContextTest`
   - `JdbcCaffeineRepositoryExtraTest`
   - `SuspendedJdbcCaffeineRepositoryExtraTest`
   - `CacheManagementTest`
 
-## Helper coverage
+## 도우미 적용 범위
 
 - `MultithreadingTester`
-  - `UserContextTest`: thread-local isolation now uses two tester workers instead of explicit executor, latch, and sleep.
-  - `JdbcCaffeineRepositoryExtraTest`: synchronous cache miss contention now uses eight tester workers for `get` and `getAll`.
+  - `UserContextTest`: 이제 명시적인 executor, latch, sleep 대신 테스터 워커 2개로 스레드 로컬 격리를 검증한다.
+  - `JdbcCaffeineRepositoryExtraTest`: 이제 `get`과 `getAll`의 동기 캐시 미스 경합에 테스터 워커 8개를 사용한다.
 - `SuspendedJobTester`
-  - `SuspendedJdbcCaffeineRepositoryExtraTest`: suspended cache miss contention now uses eight tester jobs for `get` and `getAll`.
-  - `CacheManagementTest`: R2DBC cache miss contention now uses eight tester jobs for `get` and `getAll`.
+  - `SuspendedJdbcCaffeineRepositoryExtraTest`: 이제 `get`과 `getAll`의 일시 중단 캐시 미스 경합에 테스터 작업 8개를 사용한다.
+  - `CacheManagementTest`: 이제 `get`과 `getAll`의 R2DBC 캐시 미스 경합에 테스터 작업 8개를 사용한다.
 
-## Boundary synchronization kept intentionally
+## 의도적으로 유지한 경계 동기화
 
-The remaining direct `CountDownLatch` usages are write-behind boundary probes. They coordinate deterministic production flush/failure points (`flushStarted`, `releaseFlush`, `flushFailed`, `flushSucceeded`) and are not generic race/stress runners. A tester would hide the exact production boundary these tests assert.
+남아 있는 직접적인 `CountDownLatch` 사용은 write-behind 경계를 확인하기 위한 것이다. 이는 결정적인 프로덕션 플러시/실패 지점(`flushStarted`, `releaseFlush`, `flushFailed`, `flushSucceeded`)을 조정하며, 일반적인 경합/스트레스 실행기가 아니다. 테스터를 사용하면 이 테스트가 검증하는 정확한 프로덕션 경계가 드러나지 않는다.
 
-## 7-Tier lite review
+## 간소화한 7단계 검토
 
-| Tier | Result | Evidence |
+| 단계 | 결과 | 근거 |
 | --- | --- | --- |
-| 1 Correctness | PASS | Helper workers still run the same repository calls and assert single-load counts/results. |
-| 2 Concurrency | PASS | Ad hoc executor/async race launchers were replaced with bluetape4k-junit5 helpers where they fit. |
-| 3 Test reliability | PASS | Sleep/latch overlap probe was removed from `UserContextTest`; write-behind latches remain deterministic gates. |
-| 4 Maintainability | PASS | Test intent is now encoded in test names and standard helper API. |
-| 5 Scope | PASS | Only issue-listed representative test hotspots changed; no production code changed. |
-| 6 Compatibility | PASS | No dependency or public API changes. |
-| 7 Evidence | PASS | Baseline and final targeted Gradle tasks passed with `--no-parallel`. |
+| 1 정확성 | PASS | 도우미 워커가 기존과 같은 리포지토리 호출을 실행하고 단일 로드 횟수/결과를 검증한다. |
+| 2 동시성 | PASS | 적용하기 적절한 곳에서 임시 executor/async 경합 실행기를 bluetape4k-junit5 도우미로 교체했다. |
+| 3 테스트 신뢰성 | PASS | `UserContextTest`에서 sleep/latch 중첩 검사를 제거했고, write-behind latch는 결정적인 게이트로 유지했다. |
+| 4 유지보수성 | PASS | 이제 테스트 이름과 표준 도우미 API에 테스트 의도가 드러난다. |
+| 5 범위 | PASS | 이슈에 명시된 대표적인 테스트 집중 지점만 변경했으며 프로덕션 코드는 변경하지 않았다. |
+| 6 호환성 | PASS | 의존성이나 공개 API 변경이 없다. |
+| 7 근거 | PASS | 기준선 및 최종 대상 Gradle 작업이 `--no-parallel`로 통과했다. |
 
-## Validation
+## 검증
 
-- Baseline: `./gradlew --no-parallel :bluetape4k-exposed-core:test :bluetape4k-exposed-jdbc-caffeine:test :bluetape4k-exposed-r2dbc-caffeine:test` — BUILD SUCCESSFUL in 1m 36s.
-- Compile after edits: `./gradlew --no-parallel :bluetape4k-exposed-core:compileTestKotlin :bluetape4k-exposed-jdbc-caffeine:compileTestKotlin :bluetape4k-exposed-r2dbc-caffeine:compileTestKotlin` — BUILD SUCCESSFUL in 1s.
-- Final targeted tests: `./gradlew --no-parallel :bluetape4k-exposed-core:test :bluetape4k-exposed-jdbc-caffeine:test :bluetape4k-exposed-r2dbc-caffeine:test` — BUILD SUCCESSFUL in 1m 23s.
-- Post-change probe summary: representative files have `newFixedThreadPool=0`, `async(Dispatchers.Default)=0`, and `UserContextTest` has `CountDownLatch=0`, `Thread.sleep=0`.
+- 기준선: `./gradlew --no-parallel :bluetape4k-exposed-core:test :bluetape4k-exposed-jdbc-caffeine:test :bluetape4k-exposed-r2dbc-caffeine:test` — 1m 36s 만에 BUILD SUCCESSFUL.
+- 편집 후 컴파일: `./gradlew --no-parallel :bluetape4k-exposed-core:compileTestKotlin :bluetape4k-exposed-jdbc-caffeine:compileTestKotlin :bluetape4k-exposed-r2dbc-caffeine:compileTestKotlin` — 1s 만에 BUILD SUCCESSFUL.
+- 최종 대상 테스트: `./gradlew --no-parallel :bluetape4k-exposed-core:test :bluetape4k-exposed-jdbc-caffeine:test :bluetape4k-exposed-r2dbc-caffeine:test` — 1m 23s 만에 BUILD SUCCESSFUL.
+- 변경 후 검사 요약: 대표 파일에서 `newFixedThreadPool=0`, `async(Dispatchers.Default)=0`이며, `UserContextTest`에서는 `CountDownLatch=0`, `Thread.sleep=0`이다.
 
-## Verdict
+## 판정
 
-P0/P1: 0. Ready for PR after `git diff --check` and documentation indexing.
+P0/P1: 0. `git diff --check`와 문서 인덱싱 후 PR을 생성할 수 있다.
