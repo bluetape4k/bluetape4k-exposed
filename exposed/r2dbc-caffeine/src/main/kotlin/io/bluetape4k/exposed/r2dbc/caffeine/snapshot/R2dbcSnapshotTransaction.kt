@@ -15,7 +15,7 @@ import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.transactions.currentOrNull
 import java.io.Serializable
 
-/** Stages [snapshot] for cache-only publication after this root R2DBC transaction commits. */
+/** 이 루트 R2DBC 트랜잭션이 커밋된 뒤 캐시 전용으로 게시할 [snapshot]을 준비합니다. */
 fun <ID : Any, V : Serializable> R2dbcTransaction.stageSnapshot(
     cache: R2dbcCaffeineSnapshotCache<ID, V>,
     miss: SnapshotCacheMiss<ID, V>,
@@ -29,7 +29,7 @@ fun <ID : Any, V : Serializable> R2dbcTransaction.stageSnapshot(
     cache.validator,
 )
 
-/** Maps [source] inside this root R2DBC transaction and stages the detached result for commit-only publication. */
+/** 이 루트 R2DBC 트랜잭션 안에서 [source]를 매핑하고 커밋 후에만 게시할 분리 결과를 준비합니다. */
 fun <ID : Any, S, V : Serializable> R2dbcTransaction.stageSnapshot(
     cache: R2dbcCaffeineSnapshotCache<ID, V>,
     miss: SnapshotCacheMiss<ID, V>,
@@ -45,7 +45,7 @@ fun <ID : Any, S, V : Serializable> R2dbcTransaction.stageSnapshot(
     cache.validator,
 )
 
-/** Stages cache-only invalidation after this root R2DBC transaction commits. */
+/** 이 루트 R2DBC 트랜잭션이 커밋된 뒤 수행할 캐시 전용 무효화를 준비합니다. */
 fun <ID : Any, V : Serializable> R2dbcTransaction.stageInvalidation(
     cache: R2dbcCaffeineSnapshotCache<ID, V>,
     id: ID,

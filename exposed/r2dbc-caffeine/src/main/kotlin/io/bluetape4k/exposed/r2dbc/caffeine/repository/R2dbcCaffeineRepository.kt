@@ -56,7 +56,7 @@ interface R2dbcCaffeineRepository<ID: Any, E: Serializable>: R2dbcCacheRepositor
     val cache: AsyncCache<String, E>
 
     /**
-     * Returns a snapshot of Caffeine write-behind consistency state.
+     * Caffeine write-behind 일관성 상태의 스냅샷을 반환합니다.
      */
     suspend fun validateConsistency(): CacheHealthReport
 }
