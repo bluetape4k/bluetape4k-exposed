@@ -1,37 +1,35 @@
-# Issue 209 README Module Diagrams
+# Issue 209 README Module Diagram
 
-## Context
+## 배경
 
-Issue #209 asked for root README relationship diagrams refreshed from the current
-module tables and source modules. The existing root module composition chart
-lived under `docs/images/readme-charts/`, while the issue required README-facing
-SVG and PNG assets under `docs/images/readme-diagrams/`.
+Issue #209는 current module table과 source module에서 root README relationship diagram을
+갱신해 달라고 요청했습니다. 기존 root module composition chart는
+`docs/images/readme-charts/`에 있었지만 issue는 README-facing SVG 및 PNG asset을
+`docs/images/readme-diagrams/` 아래에 요구했습니다.
 
-## Decision
+## 결정
 
-Keep the root overview diagram and replace the module chart with a module
-relationship diagram under `docs/images/readme-diagrams/`. Validate the module
-model against `README.md`, `README.ko.md`, and `settings.gradle.kts` before
-editing assets, then render and inspect each SVG/PNG pair.
+root overview diagram은 유지하고 module chart는 `docs/images/readme-diagrams/` 아래
+module relationship diagram으로 교체합니다. asset 편집 전에 `README.md`, `README.ko.md`,
+`settings.gradle.kts`에서 module model을 검증하고 각 SVG/PNG pair를 render·inspect합니다.
 
-## Outcome
+## 결과
 
-The README visual block now embeds only PNG assets from
-`docs/images/readme-diagrams/`. The SVG sources sit beside their PNGs, and the
-old root module chart under `docs/images/readme-charts/` was removed.
+README visual block은 이제 `docs/images/readme-diagrams/`의 PNG asset만 embed합니다.
+SVG source는 PNG 옆에 있으며 `docs/images/readme-charts/` 아래의 이전 root module chart는
+제거되었습니다.
 
-## Verification
+## 검증
 
-- Source model check against the README module table and `settings.gradle.kts`
-- CairoSVG render for both SVG sources
-- `xmllint --noout` for both generated SVG files
+- README module table 및 `settings.gradle.kts`의 source model check
+- 두 SVG source의 CairoSVG render
+- 생성 SVG file 두 개의 `xmllint --noout`
 - README image link check
 - `git diff --check`
 
-## Future Notes
+## 향후 메모
 
-For root README diagram refreshes, validate the README module table against
-`settings.gradle.kts` before drawing. Keep shared English-label assets for
-localized READMEs unless the diagram itself needs localized domain terms. Do not
-reintroduce stale generator scripts that can overwrite manually validated
-README-scale SVG assets.
+root README diagram refresh에서는 drawing 전에 README module table을
+`settings.gradle.kts`와 검증합니다. diagram 자체가 localized domain term을 요구하지
+않는다면 localized README에는 shared English-label asset을 유지합니다. manually validated
+README-scale SVG asset을 덮어쓸 수 있는 stale generator script를 다시 도입하지 않습니다.
