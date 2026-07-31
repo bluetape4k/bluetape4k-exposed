@@ -1,20 +1,25 @@
-# README.md / README.ko.md Structural Alignment
+# README.md / README.ko.md 구조 정렬
 
 **Date**: 2026-05-16
 **Issue**: #94
 **Type**: Maintenance (docs)
 
-## Summary
+## 요약
 
-Aligned README.md and README.ko.md structural differences found during 1.8.0 pre-release review.
+1.8.0 pre-release 검토 중 발견한 README.md와 README.ko.md의 구조 차이를
+정렬했습니다.
 
-## Changes
+## 변경 사항
 
-1. Updated outdated `JetBrains Exposed 0.60+` requirement to `1.2+` in both files
-   (the project has used Exposed 1.x since the standalone repo was created)
-2. Added missing `deleteById` method to README.ko.md JDBC example to match README.md
+1. 두 파일의 오래된 `JetBrains Exposed 0.60+` requirement를 `1.2+`로
+   업데이트했습니다. standalone repository 생성 뒤 project는 Exposed 1.x를
+   사용해 왔습니다.
+2. README.md와 맞추기 위해 README.ko.md JDBC example에 누락된 `deleteById`
+   method를 추가했습니다.
 
-## Future Guidance
+## 향후 지침
 
-- When adding code examples to README.md, always add the equivalent to README.ko.md in the same PR.
-- Check `JetBrains Exposed` version in Requirements section when Exposed is upgraded.
+- README.md에 code example을 추가할 때는 같은 PR에서 README.ko.md에 해당 example도
+  함께 추가합니다.
+- Exposed를 upgrade할 때 Requirements section의 `JetBrains Exposed` version을
+  확인합니다.
