@@ -1,78 +1,75 @@
-# Issue #322 Exposed Migration Drift Plan Review
+# Issue #322 Exposed 마이그레이션 드리프트 계획 리뷰
 
-## Scope
+## 범위
 
-- Artifact:
+- 산출물:
   `docs/superpowers/plans/2026-07-17-issue-322-exposed-migration-drift-plan.md`
-- Gate: Type A implementation-plan review before implementation
-- Perspectives: performance/cost, stability/reliability, security/privacy,
-  operator/Ops, developer/API, user/caller, and main-session integration
-- Implementation state: no test, workflow, README, or production-code change
-  exists at this gate
+- 게이트: 구현 전 Type A 구현 계획 리뷰
+- 관점: 성능/비용, 안정성/신뢰성, 보안/개인정보 보호, 운영자/Ops,
+  개발자/API, 사용자/호출자, 메인 세션 통합
+- 구현 상태: 이 게이트에서는 테스트, 워크플로, README, 프로덕션 코드가
+  변경되지 않았다.
 
-## Convergence
+## 수렴 과정
 
-The first plan review found gaps around exact Exposed experimental APIs,
-whole-statement dialect grammar, task-owned JUnit evidence, helper-only test
-isolation, generated-file collision safety, copy-pastable application DSL,
-bilingual parity automation, stable-manual ownership, and diagnostic order.
+첫 계획 리뷰에서 정확한 Exposed 실험 API, 전체 구문 단위의 방언 문법,
+태스크가 소유하는 JUnit 근거, 도우미 전용 테스트 격리, 생성 파일 충돌 안전성,
+그대로 복사해 사용할 수 있는 애플리케이션 DSL, 이중 언어 동등성 자동화,
+안정 버전 매뉴얼 소유권, 진단 순서에 공백이 있음을 확인했다.
 
-The repaired plan now pins:
+수정한 계획은 이제 다음 사항을 고정한다.
 
-- exact JDBC/R2DBC imports, calls, transaction receivers, and helper filters;
-- exact nullable additive `VARCHAR(255) NULL` acceptance with hostile tails
-  rejected and no silent validator broadening;
-- default-tag exclusion, dedicated live-only task inputs, cache behavior,
-  test-worker environment, and private JUnit XML paths;
-- fixed-filename collision preflight and ephemeral-CI fixture recreation;
-- independent bounded H2 and sequential no-retry real-database evidence;
-- allowlisted sanitized artifacts with Gradle/evidence failure precedence;
-- equivalent application/contributor documentation, deterministic parity
-  validation, and a separately owned 1.12 manual-promotion gate.
+- 정확한 JDBC/R2DBC import, 호출, 트랜잭션 리시버, 도우미 필터
+- 적대적 후행 구문을 거부하고 검증기 범위를 암묵적으로 넓히지 않는, nullable 추가형 `VARCHAR(255) NULL`의 정확한 허용 기준
+- 기본 태그 제외, 전용 live-only 태스크 입력, 캐시 동작, 테스트 워커 환경, 비공개 JUnit XML 경로
+- 고정 파일 이름의 충돌 사전 검사와 일시적 CI 픽스처 재생성
+- 독립적이고 범위가 제한된 H2 근거와 재시도 없이 순차 실행하는 실제 데이터베이스 근거
+- Gradle/근거 실패의 우선순위를 정하고 허용 목록으로 제한해 정제한 산출물
+- 동등한 애플리케이션/기여자 문서, 결정론적 동등성 검증, 별도 소유권을 둔 1.12 매뉴얼 승격 게이트
 
-Every affected perspective was rerun after repair.
+수정 후 영향받은 모든 관점의 리뷰를 다시 실행했다.
 
-## Final Findings
+## 최종 결과
 
-| Perspective | P0 | P1 | P2 | P3 | Result |
+| 관점 | P0 | P1 | P2 | P3 | 결과 |
 |---|---:|---:|---:|---:|---|
-| Performance/cost | 0 | 0 | 0 | 0 | READY |
-| Stability/reliability | 0 | 0 | 0 | 0 | READY |
-| Security/privacy | 0 | 0 | 0 | 0 | READY |
-| Operator/Ops | 0 | 0 | 0 | 0 | READY |
-| Developer/API | 0 | 0 | 0 | 0 | READY |
-| User/caller | 0 | 0 | 0 | 0 | READY |
-| Main-session integration | 0 | 0 | 0 | 0 | READY |
+| 성능/비용 | 0 | 0 | 0 | 0 | READY |
+| 안정성/신뢰성 | 0 | 0 | 0 | 0 | READY |
+| 보안/개인정보 보호 | 0 | 0 | 0 | 0 | READY |
+| 운영자/Ops | 0 | 0 | 0 | 0 | READY |
+| 개발자/API | 0 | 0 | 0 | 0 | READY |
+| 사용자/호출자 | 0 | 0 | 0 | 0 | READY |
+| 메인 세션 통합 | 0 | 0 | 0 | 0 | READY |
 
-## Accepted Constraint
+## 수용한 제약
 
-The two touched workflows retain the repository's current verified mutable
-major Action tags. Full commit-SHA pinning is a repository-wide workflow
-governance change outside issue #322. Read-only issue search found no matching
-tracker. The implementation review must record `workflow governance` as owner
-and recommend a separate follow-up without widening this PR.
+변경 대상인 두 워크플로는 저장소에서 현재 검증된 변경 가능한 메이저 Action 태그를
+유지한다. 커밋 SHA를 완전히 고정하는 작업은 issue #322 범위를 벗어나는 저장소 전체
+워크플로 거버넌스 변경이다. 읽기 전용 이슈 검색에서는 일치하는 추적 이슈를 찾지 못했다.
+구현 리뷰는 `workflow governance`를 소유자로 기록하고 이 PR의 범위를 넓히지 않는 별도
+후속 작업을 권고해야 한다.
 
-## Acceptance Trace
+## 인수 조건 추적
 
-- Deterministic plugin output: Tasks 5, 7, and 9
-- Additive JDBC/R2DBC convergence: Tasks 2 and 3
-- H2/PostgreSQL/MySQL 8 proof: Tasks 2, 3, 5, 6, and 8
-- Default-build isolation and live-only cache behavior: Tasks 1 and 4
-- Secret-safe failure evidence: Tasks 5, 6, and 8
-- Bilingual guidance and stable-manual boundary: Tasks 7 and 8
-- Exact-head PR and separate merge gate: Task 9
+- 결정론적 플러그인 출력: Tasks 5, 7, 9
+- 추가형 JDBC/R2DBC 수렴: Tasks 2, 3
+- H2/PostgreSQL/MySQL 8 검증: Tasks 2, 3, 5, 6, 8
+- 기본 빌드 격리와 live-only 캐시 동작: Tasks 1, 4
+- 비밀정보를 노출하지 않는 실패 근거: Tasks 5, 6, 8
+- 이중 언어 지침과 안정 버전 매뉴얼 경계: Tasks 7, 8
+- 정확한 HEAD의 PR과 별도 병합 게이트: Task 9
 
-## Evidence
+## 근거
 
-- Design spec and Type A checklist reconciled with the repaired plan
-- Triggered-risk table maps each signal to prevention/proof and an owning task
-- Developer/API rerun: P0=0, P1=0, P2=0, P3=0
-- User/caller rerun: P0=0, P1=0, P2=0, P3=0
-- Other plan lenses and main-session integration: all severities zero
-- Validation: `git diff --check` and unfinished-marker scan before commit
+- 설계 명세와 Type A 체크리스트를 수정한 계획에 맞춰 조정했다.
+- 위험 신호 표는 각 신호를 예방/검증 방법과 담당 태스크에 연결한다.
+- 개발자/API 재실행: P0=0, P1=0, P2=0, P3=0
+- 사용자/호출자 재실행: P0=0, P1=0, P2=0, P3=0
+- 그 밖의 계획 관점과 메인 세션 통합: 모든 심각도 0
+- 검증: 커밋 전 `git diff --check`와 미완료 마커 검색
 
-## Verdict
+## 판정
 
-**PASS: P0 = 0, P1 = 0.** The plan is implementation-ready and does not widen
-the public API, dependency version, stable-manual, production migration, or
-merge-authority boundary.
+**PASS: P0 = 0, P1 = 0.** 이 계획은 구현을 시작할 준비가 되었으며
+공개 API, 의존성 버전, 안정 버전 매뉴얼, 프로덕션 마이그레이션,
+병합 권한 경계를 넓히지 않는다.

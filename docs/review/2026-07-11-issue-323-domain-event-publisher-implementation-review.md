@@ -1,111 +1,96 @@
-# Issue 323 Domain Event Publisher Implementation Review
+# Issue 323 도메인 이벤트 발행자 구현 리뷰
 
-## Scope
+## 범위
 
 - `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/*`
 - `spring-boot/jdbc/src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/{ddd,config,repository}/*`
 - `examples/ddd-spring-modulith-demo/*`
-- Public README locale pairs, changelog, and the lifecycle diagram
-- Approved design and implementation plan for issue #323
+- 공개 README 로케일 쌍, 변경 로그, 수명주기 다이어그램
+- issue #323의 승인된 설계와 구현 계획
 
-## Contract Resolution
+## 계약 정리
 
-The original issue used `publish after commit` as shorthand. The approved design
-made the executable Spring contract more precise: call `ApplicationEventPublisher`
-inside the command transaction so transactional listeners and Spring Modulith can
-register durable work, then let default `AFTER_COMMIT` listeners execute only
-after commit. Synchronous listeners run immediately and are part of the command
-failure boundary. Full rollback prevents default transactional-listener delivery
-and preserves the aggregate buffer.
+원래 이슈에서는 `publish after commit`을 줄임 표현으로 사용했다. 승인된 설계는 실행 가능한
+Spring 계약을 더 정확하게 정의했다. 명령 트랜잭션 안에서 `ApplicationEventPublisher`를
+호출해 트랜잭션 리스너와 Spring Modulith가 영속 작업을 등록하게 한 다음, 기본
+`AFTER_COMMIT` 리스너는 커밋 후에만 실행한다. 동기 리스너는 즉시 실행되며 명령 실패
+경계에 포함된다. 전체 롤백은 기본 트랜잭션 리스너 전달을 막고 애그리거트 버퍼를 유지한다.
 
-This review uses that approved contract. Moving `publishEvent` into
-`afterCommit` was rejected because it would be too late for transaction-bound
-publication registration and would introduce a persistence/publication crash
-window. A durable outbox is a separate design.
+이 리뷰는 승인된 계약을 기준으로 삼는다. `publishEvent`를 `afterCommit`으로 옮기면
+트랜잭션 바인딩 발행을 등록하기에 너무 늦고 영속화/발행 사이에 장애 구간이 생기므로
+기각했다. 영속 아웃박스는 별도의 설계다.
 
-## Review Lanes
+## 리뷰 관점
 
-| Lane | Final result | Evidence |
+| 관점 | 최종 결과 | 근거 |
 |---|---:|---|
-| Architecture | P0/P1 = 0 after fixes | Core KDoc is adapter-neutral; transaction-aware and post-commit durable handoff patterns are separated in both root README locales. |
-| Security | P0/P1 = 0 | Logs expose only category, aggregate/event class names, event count, and validated `traceId`/`spanId`/`requestId`; payload and exception text are excluded. |
-| Performance | P0/P1 = 0 | One retained snapshot per aggregate, `IdentityHashMap` reservations, one synchronization-list scan per publisher call, and no lock, polling, retry loop, or global mutable registry. |
-| Stability/Ops | P0/P1 = 0 after fixes | Commit clears, rollback/unknown preserve, cleanup failures are isolated, fatal `Error` is rethrown, and completion always discards registry state. |
-| Developer/API | P0/P1 = 0 after fixes | One-final-call contract, object-identity duplicate scope, same-ID distinct-instance behavior, manager ambiguity, and unsupported transaction boundaries are explicit and tested. |
-| User/caller | P0/P1 = 0 after fixes | English/Korean lifecycle docs, recovery matrix, rollout sequence, publication-store controls, example adoption, and sequence diagram converge on the implementation. |
-| Build/CI/tests | P0/P1 = 0 | Four affected suites and Kover reports pass; CI/Nightly paths, task names, summary dependencies, and coverage uploads remain present. |
+| 아키텍처 | 수정 후 P0/P1 = 0 | Core KDoc은 어댑터 중립적이다. 루트 README의 두 로케일 모두에서 트랜잭션 인식 인계 패턴과 커밋 후 영속 인계 패턴을 구분했다. |
+| 보안 | P0/P1 = 0 | 로그에는 범주, 애그리거트/이벤트 클래스 이름, 이벤트 수, 검증된 `traceId`/`spanId`/`requestId`만 노출한다. 페이로드와 예외 텍스트는 제외한다. |
+| 성능 | P0/P1 = 0 | 애그리거트마다 유지하는 스냅숏 1개, `IdentityHashMap` 예약, 발행자 호출마다 동기화 목록 스캔 1회를 사용하며 잠금, 폴링, 재시도 루프, 전역 변경 가능 레지스트리는 없다. |
+| 안정성/Ops | 수정 후 P0/P1 = 0 | 커밋은 버퍼를 비우고 롤백/알 수 없는 상태는 유지한다. 정리 실패는 격리하고 치명적인 `Error`는 다시 던지며, 완료 시에는 항상 레지스트리 상태를 폐기한다. |
+| 개발자/API | 수정 후 P0/P1 = 0 | 단 한 번의 최종 호출 계약, 객체 동일성 기준 중복 범위, ID는 같지만 인스턴스가 다른 경우의 동작, 관리자 모호성, 지원하지 않는 트랜잭션 경계를 명시하고 테스트했다. |
+| 사용자/호출자 | 수정 후 P0/P1 = 0 | 영문/국문 수명주기 문서, 복구 매트릭스, 롤아웃 순서, 발행 저장소 제어, 예제 적용, 시퀀스 다이어그램이 구현과 일치한다. |
+| 빌드/CI/테스트 | P0/P1 = 0 | 영향받은 테스트 스위트 네 개와 Kover 보고서가 통과했다. CI/Nightly 경로, 태스크 이름, 요약 의존성, 커버리지 업로드도 유지된다. |
 
-## Review Findings And Disposition
+## 리뷰 지적 및 처리
 
-| Severity | Finding | Disposition |
+| 심각도 | 지적 | 처리 |
 |---|---|---|
-| P1 | Original issue wording could be read as invoking Spring only after commit. | Resolved by the approved design contract above. The PR payload must state this clarification so the live issue shorthand is not repeated without context. |
-| P1 | `PROPAGATION_NESTED` and same-instance overlapping `REQUIRES_NEW` cannot be proved safe by thread-local synchronization ownership. | Accepted scope boundary from the approved design; both are explicitly unsupported. Adding savepoint ownership or a global registry would materially change the design. |
-| P2 | Throwing `AFTER_COMMIT` listener test did not prove command and row counts stay at one. | Fixed in `37b3e25`; the test now asserts one callback and one committed row. |
-| P2 | Committed cleanup caught every `Throwable`, hiding fatal JVM errors. | Fixed in `d72de0b`; only `Exception` is isolated and a fatal-error regression test passes. |
-| P2 | Core KDoc overstated list immutability and named Spring-specific adapter/propagation concepts. | Fixed in `429672c`; core now describes independent read-only snapshots and neutral ownership scopes. |
-| P2 | Duplicate wording did not distinguish object identity from aggregate ID. | Fixed in `429672c` and `45f87f0`; same-ID distinct instances are documented and tested as independent registrations. |
-| P2 | Example rollback test did not assert the returned aggregate buffer was retained. | Fixed in `45f87f0`; the typed exception now exposes an aggregate with one retained event. |
-| P2 | Diagram registration/delivery timing and source-trace path were ambiguous. | Fixed in `45f87f0`; step 6 registers `AFTER_COMMIT`, step 8 delivers, and the source path is valid. |
-| P2 | Root README described only post-commit durable ownership. | Fixed in `7ecdbad`; both locale files now separate that pattern from in-transaction publication registration. |
-| P2 | Restart replay does not induce an actual listener exception before restart. | Deferred with rationale: the example deterministically resets the durable publication to incomplete, then proves restart replay, completion, and idempotent reservation. JDBC tests independently prove throwing `AFTER_COMMIT` listener semantics. A failure-injection fixture would add asynchronous timing without changing the replay contract. |
+| P1 | 원래 이슈의 표현은 커밋 후에만 Spring을 호출한다는 뜻으로 읽힐 수 있다. | 위의 승인된 설계 계약으로 해결했다. 실제 이슈의 줄임 표현이 문맥 없이 반복되지 않도록 PR 본문에 이 설명을 명시해야 한다. |
+| P1 | `PROPAGATION_NESTED`와 같은 인스턴스에서 겹치는 `REQUIRES_NEW`는 스레드 로컬 동기화 소유권만으로 안전성을 증명할 수 없다. | 승인된 설계의 범위 경계로 수용했으며 둘 다 명시적으로 지원하지 않는다. 세이브포인트 소유권이나 전역 레지스트리를 추가하면 설계가 실질적으로 달라진다. |
+| P2 | 예외를 던지는 `AFTER_COMMIT` 리스너 테스트는 명령과 행 수가 각각 1로 유지됨을 증명하지 못했다. | `37b3e25`에서 수정했다. 이제 테스트가 콜백 1회와 커밋된 행 1개를 단언한다. |
+| P2 | 커밋 후 정리에서 모든 `Throwable`을 잡아 치명적인 JVM 오류를 숨겼다. | `d72de0b`에서 수정했다. `Exception`만 격리하며 치명적 오류 회귀 테스트가 통과한다. |
+| P2 | Core KDoc이 목록 불변성을 과장하고 Spring 전용 어댑터/전파 개념을 언급했다. | `429672c`에서 수정했다. 이제 core는 독립적인 읽기 전용 스냅숏과 중립적인 소유권 범위를 설명한다. |
+| P2 | 중복 관련 표현이 객체 동일성과 애그리거트 ID를 구분하지 않았다. | `429672c`와 `45f87f0`에서 수정했다. ID가 같지만 인스턴스가 다른 경우를 독립 등록으로 문서화하고 테스트했다. |
+| P2 | 예제 롤백 테스트가 반환된 애그리거트 버퍼가 유지됨을 단언하지 않았다. | `45f87f0`에서 수정했다. 이제 타입이 지정된 예외가 이벤트 1개를 유지한 애그리거트를 노출한다. |
+| P2 | 다이어그램의 등록/전달 시점과 소스 추적 경로가 모호했다. | `45f87f0`에서 수정했다. step 6은 `AFTER_COMMIT`을 등록하고 step 8은 전달하며 소스 경로도 유효하다. |
+| P2 | 루트 README가 커밋 후 영속 소유권만 설명했다. | `7ecdbad`에서 수정했다. 이제 두 로케일 파일 모두 이 패턴과 트랜잭션 내 발행 등록을 구분한다. |
+| P2 | 재시작 재생은 재시작 전에 실제 리스너 예외를 유발하지 않는다. | 근거를 남기고 보류했다. 예제는 영속 발행을 결정론적으로 미완료 상태로 되돌린 다음 재시작 재생, 완료, 멱등 예약을 증명한다. JDBC 테스트는 예외를 던지는 `AFTER_COMMIT` 리스너 의미를 별도로 증명한다. 실패 주입 픽스처는 재생 계약을 바꾸지 않으면서 비동기 시점만 추가한다. |
 
-Final convergence: **P0 = 0, P1 = 0** against the approved design.
+승인된 설계를 기준으로 한 최종 수렴 결과: **P0 = 0, P1 = 0**.
 
-## Acceptance Mapping
+## 인수 조건 매핑
 
-| Criterion | Implementation | Test/docs evidence |
+| 기준 | 구현 | 테스트/문서 근거 |
 |---|---|---|
-| In-transaction Spring handoff; default listener after commit | `ExposedAggregateEventPublisher.publishAfterSave` | Commit, rollback, ordering, and real `@TransactionalEventListener` tests; JDBC README and diagram steps 3, 6, and 8. |
-| Clear only committed buffers | `AggregateEventTransactionSynchronization.afterCompletion` | Commit, rollback, `STATUS_UNKNOWN`, cleanup failure, and fatal-error tests. |
-| Fail closed on duplicate, mutation, or publication failure | Identity reservation, retained snapshot verification, poison state | Duplicate, clear/drain-after-registration, mutation, caught exception/error, and reentrant publication tests. |
-| Guarded auto-configuration | `ExposedAggregateEventPublisherAutoConfiguration` | Missing class, single manager, `@Primary`, ambiguous manager, and custom bean tests. |
-| Repository manager propagation | `transactionManagerRef` configuration path | Compiled multi-manager example and repository auto-configuration tests. |
-| Optional Modulith integration | Plain Spring publisher in JDBC; Modulith remains downstream | Modulith-absent auto-config test, publication persistence, rollback, replay, and example tests. |
-| No JaVers/R2DBC coupling | Core and JDBC dependency boundaries | Negative source/classpath scans and README boundary sections. |
-| Operational recovery and security | Sanitized anomaly logging and documented reconciliation | Log allowlist tests, five-outcome table, four-state reconciliation, rollout ordering, and publication-store controls. |
+| 트랜잭션 내 Spring 인계, 커밋 후 기본 리스너 실행 | `ExposedAggregateEventPublisher.publishAfterSave` | 커밋, 롤백, 순서, 실제 `@TransactionalEventListener` 테스트와 JDBC README 및 다이어그램 steps 3, 6, 8 |
+| 커밋된 버퍼만 비우기 | `AggregateEventTransactionSynchronization.afterCompletion` | 커밋, 롤백, `STATUS_UNKNOWN`, 정리 실패, 치명적 오류 테스트 |
+| 중복, 상태 변경, 발행 실패 시 fail-closed | 동일성 예약, 유지된 스냅숏 검증, poison 상태 | 중복, 등록 후 clear/drain, 상태 변경, 잡힌 예외/오류, 재진입 발행 테스트 |
+| 보호된 자동 구성 | `ExposedAggregateEventPublisherAutoConfiguration` | 클래스 부재, 단일 관리자, `@Primary`, 모호한 관리자, 사용자 정의 빈 테스트 |
+| 저장소 관리자 전파 | `transactionManagerRef` 구성 경로 | 컴파일된 다중 관리자 예제와 저장소 자동 구성 테스트 |
+| 선택적 Modulith 통합 | JDBC의 일반 Spring 발행자, Modulith는 다운스트림 유지 | Modulith 부재 자동 구성 테스트, 발행 영속화, 롤백, 재생, 예제 테스트 |
+| JaVers/R2DBC 결합 없음 | Core와 JDBC 의존성 경계 | 소스/클래스패스 부정 스캔과 README 경계 섹션 |
+| 운영 복구와 보안 | 정제된 이상 로그와 문서화된 조정 | 로그 허용 목록 테스트, 다섯 가지 결과 표, 네 가지 상태 조정, 롤아웃 순서, 발행 저장소 제어 |
 
-## Performance And Stability Evidence
+## 성능 및 안정성 근거
 
-- Event publication and snapshot identity verification are `E` operations.
-- The current synchronization scan is `S`; Spring synchronization ordering makes
-  the transaction path `O(E + S log S)` overall.
-- Retained event references plus synchronization references require `O(E + S)`
-  temporary/reference storage.
-- Three sentinel synchronizations and two aggregates still produce one publisher
-  synchronization; each aggregate's `domainEvents()` calls transition `1 -> 2`.
-- Duplicate registration rejects before a second snapshot, leaving its call count
-  at `1`.
-- Anomaly event-type aggregation is reachable only for cleanup failure or
-  `STATUS_UNKNOWN`, never for normal publication, commit, or rollback.
+- 이벤트 발행과 스냅숏 동일성 검증은 `E` 연산이다.
+- 현재 동기화 스캔은 `S`이며, Spring 동기화 순서 지정으로 전체 트랜잭션 경로는 `O(E + S log S)`가 된다.
+- 유지된 이벤트 참조와 동기화 참조에는 `O(E + S)`의 임시/참조 저장 공간이 필요하다.
+- 센티널 동기화 3개와 애그리거트 2개가 있어도 발행자 동기화는 1개만 생성된다. 각 애그리거트의 `domainEvents()` 호출 수는 `1 -> 2`로 변한다.
+- 중복 등록은 두 번째 스냅숏 전에 거부되므로 호출 수가 `1`로 유지된다.
+- 이상 이벤트 타입 집계는 정리 실패 또는 `STATUS_UNKNOWN`에서만 도달할 수 있으며, 정상 발행, 커밋, 롤백에서는 도달하지 않는다.
 
-## Verification Evidence
+## 검증 근거
 
-- Current HEAD forced suites: core 287 tests (13 skipped), JDBC 186, Spring
-  Modulith 61, DDD example 10; `BUILD SUCCESSFUL`.
-- Publisher-focused suite: 33 tests; `BUILD SUCCESSFUL`.
+- 현재 HEAD 강제 실행 스위트: core 테스트 287개(13개 건너뜀), JDBC 186개, Spring
+  Modulith 61개, DDD 예제 10개; `BUILD SUCCESSFUL`.
+- 발행자 집중 스위트: 테스트 33개; `BUILD SUCCESSFUL`.
 - Kover XML: core 80,529 bytes; JDBC 80,319; Spring Modulith 46,375; example
   44,536.
-- Static boundaries: no Spring/JaVers in core, no JaVers/Modulith in JDBC, no
-  legacy manual example publication/clear path.
-- CI/Nightly evidence: 163 matching path/task/coverage/summary lines and all
-  four test/Kover task pairs present.
-- Diagram: 4,360 x 3,360 PNG; sequence, connector, geometry, endpoint, and
-  mixed-corner audits pass with 11 connectors and zero failures.
-- README source example, locale links, anchors, outcome/reconciliation markers,
-  rollout order, and security controls pass.
-- `git diff --check origin/develop...HEAD` passes; worktree is clean and no build
-  output is tracked.
+- 정적 경계: core에 Spring/JaVers 없음, JDBC에 JaVers/Modulith 없음, 기존 수동 예제의 발행/clear 경로 없음.
+- CI/Nightly 근거: 경로/태스크/커버리지/요약과 일치하는 줄 163개와 테스트/Kover 태스크 쌍 네 개가 모두 존재한다.
+- 다이어그램: 4,360 x 3,360 PNG. 시퀀스, 커넥터, 기하 구조, 끝점, 혼합 모서리 감사가 커넥터 11개와 실패 0건으로 통과했다.
+- README 소스 예제, 로케일 링크, 앵커, 결과/조정 마커, 롤아웃 순서, 보안 제어가 통과했다.
+- `git diff --check origin/develop...HEAD`가 통과했다. 작업 트리는 깨끗하고 추적 중인 빌드 출력은 없다.
 
-CodeGraph returned zero indexed nodes and Kotlin diagnostics were unavailable
-because the transport closed. Exact call-site/import scans and fresh Gradle
-compilation/tests were used instead. The canonical `verifier` agent could not
-start because its selected model was at capacity. Per workflow fallback, the
-main session performed the acceptance mapping above; an attempted legacy-model
-substitution was stopped and its output was not used.
+전송이 종료되어 CodeGraph가 인덱싱된 노드 0개를 반환했고 Kotlin 진단도 사용할 수 없었다.
+대신 정확한 호출 지점/import 스캔과 새 Gradle 컴파일/테스트를 사용했다. 선택된 모델의
+용량이 부족해 표준 `verifier` 에이전트를 시작할 수 없었다. 워크플로의 대체 절차에 따라
+메인 세션이 위 인수 조건 매핑을 수행했다. 레거시 모델로 대체하려던 시도는 중단했으며
+그 출력은 사용하지 않았다.
 
-## Gate
+## 게이트
 
-Task 9 review gate: **PASS**. Implementation and local evidence are ready for PR
-preparation. Push, PR creation, issue-body mutation, workflow dispatch, and merge
-remain external authority boundaries.
+Task 9 리뷰 게이트: **PASS**. 구현과 로컬 근거는 PR 준비를 시작할 수 있는 상태다.
+push, PR 생성, 이슈 본문 변경, 워크플로 디스패치, 병합은 계속 외부 권한 경계로 남는다.

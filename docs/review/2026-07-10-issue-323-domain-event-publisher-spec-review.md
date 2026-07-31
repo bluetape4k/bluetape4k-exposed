@@ -1,87 +1,70 @@
-# Issue #323 Design Spec Review
+# Issue #323 설계 명세 리뷰
 
-## Scope
+## 범위
 
-- Artifact: `docs/superpowers/specs/2026-07-10-issue-323-domain-event-publisher-design.md`
-- Review gate: Full Feature Step 2-R
-- Perspectives: performance, stability, security, operator/Ops,
-  developer/API, user/caller, and main-session integration
-- Research basis: current repository source and tests, Spring Framework 7.0.8
-  transaction synchronization source, Spring Modulith 2.0.6 listener behavior,
-  and the Exposed 1.3.1 transaction-manager implementation
-- Implementation state: no production or test code changed
+- 산출물: `docs/superpowers/specs/2026-07-10-issue-323-domain-event-publisher-design.md`
+- 리뷰 게이트: Full Feature Step 2-R
+- 관점: 성능, 안정성, 보안, 운영자/Ops, 개발자/API, 사용자/호출자, 메인 세션 통합
+- 조사 근거: 현재 저장소 소스와 테스트, Spring Framework 7.0.8 트랜잭션 동기화 소스,
+  Spring Modulith 2.0.6 리스너 동작, Exposed 1.3.1 트랜잭션 관리자 구현
+- 구현 상태: 프로덕션 코드와 테스트 코드는 변경하지 않았다.
 
-## Convergence
+## 수렴 과정
 
-| Iteration | Scope | P1 result | Resolution |
+| 반복 | 범위 | P1 결과 | 조치 |
 |---|---|---:|---|
-| 1 | All six lanes | 22 raw | Reworked transaction timing, mutation checks, lifecycle, trust boundaries, auto-configuration, retry, and operator guidance. |
-| 2 | All affected lanes | 9 raw | Closed actual-transaction, poison, cleanup, listener-write, KDoc, manager-ownership, and recovery gaps. |
-| 3 | All six lanes | 4 integrated | Performance and stability passed; normalized duplicated findings in security, Ops, API, and caller contracts. |
-| 4 | Four affected lanes | 6 raw | Corrected `@ConditionalOnSingleCandidate` semantics, retry classification, correlation, reconciliation, and serializer ownership. |
-| 5 | Four affected lanes | 0 | Security, Ops, API, and caller lanes passed. One caller P2 terminology inconsistency was fixed before closure. |
+| 1 | 여섯 관점 전체 | 원시 22 | 트랜잭션 시점, 상태 변경 검사, 수명주기, 신뢰 경계, 자동 구성, 재시도, 운영자 지침을 재정비했다. |
+| 2 | 영향받은 모든 관점 | 원시 9 | 실제 트랜잭션, poison 상태, 정리, 리스너 쓰기, KDoc, 관리자 소유권, 복구의 공백을 해소했다. |
+| 3 | 여섯 관점 전체 | 통합 4 | 성능과 안정성은 통과했고, 보안, Ops, API, 호출자 계약의 중복 지적을 정규화했다. |
+| 4 | 영향받은 네 관점 | 원시 6 | `@ConditionalOnSingleCandidate` 의미, 재시도 분류, 상관관계, 조정, 직렬화기 소유권을 바로잡았다. |
+| 5 | 영향받은 네 관점 | 0 | 보안, Ops, API, 호출자 관점이 통과했다. 종료 전에 호출자 관점의 P2 용어 불일치 1건을 수정했다. |
 
-Raw lane counts can overlap. The main-session integration count is the
-deduplicated gate result used for progression.
+관점별 원시 건수는 서로 중복될 수 있다. 메인 세션 통합 건수는 중복을 제거한
+게이트 결과이며 다음 단계 진행 여부를 판단하는 데 사용한다.
 
-## Final Findings
+## 최종 결과
 
-| Priority | Performance | Stability | Security | Ops | API | Caller | Integrated |
+| 우선순위 | 성능 | 안정성 | 보안 | Ops | API | 호출자 | 통합 |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | P0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | P1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | P2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | P3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
-The documented synchronous-listener, serializer, transaction-manager identity,
-savepoint, completion-uncertainty, and exactly-once limitations are accepted
-design risks or explicit non-goals, not open review findings.
+문서에 명시한 동기 리스너, 직렬화기, 트랜잭션 관리자 동일성, 세이브포인트,
+완료 불확실성, exactly-once 제약은 수용한 설계 위험 또는 명시적 비목표이며,
+미해결 리뷰 지적이 아니다.
 
-## Resolved Blockers
+## 해결한 차단 요인
 
-- Publish Spring events while the command transaction is active; publishing
-  from `afterCommit` cannot register normal transactional listeners.
-- Require both transaction synchronization and an actual active transaction
-  for event-bearing calls.
-- Reserve aggregate object identity before the first publication and poison
-  commit on re-entry, repeated handoff, mutation, or publication failure.
-- Keep the transaction registry only in the current Spring synchronization
-  list so `REQUIRES_NEW` suspension does not leak custom thread-bound state.
-- Clear buffers only from committed completion; preserve them for rollback and
-  unknown completion, while isolating per-aggregate cleanup failures.
-- Treat save/handoff transaction alignment as a caller precondition rather
-  than claiming manager or `DataSource` identity proof.
-- Define application-owned serializer trust, idempotent recovery, structured
-  anomaly logging, and four-state reconciliation boundaries.
-- Specify the actual `@ConditionalOnSingleCandidate` behavior, including
-  multiple manager beans with one `@Primary`.
+- 명령 트랜잭션이 활성 상태일 때 Spring 이벤트를 발행한다. `afterCommit`에서 발행하면 일반 트랜잭션 리스너를 등록할 수 없다.
+- 이벤트가 있는 호출에는 트랜잭션 동기화와 실제 활성 트랜잭션을 모두 요구한다.
+- 최초 발행 전에 애그리거트 객체 동일성을 예약하고 재진입, 반복 인계, 상태 변경, 발행 실패 시 커밋을 poison 상태로 만든다.
+- 트랜잭션 레지스트리를 현재 Spring 동기화 목록에만 두어 `REQUIRES_NEW` 일시 중단 시 사용자 정의 스레드 바인딩 상태가 누출되지 않게 한다.
+- 커밋 완료 시에만 버퍼를 비우고, 롤백과 알 수 없는 완료 상태에서는 유지한다. 애그리거트별 정리 실패는 서로 격리한다.
+- 관리자 또는 `DataSource` 동일성을 증명한다고 주장하지 않고 저장/인계 트랜잭션 정렬을 호출자 사전 조건으로 둔다.
+- 애플리케이션 소유 직렬화기의 신뢰 경계, 멱등 복구, 구조화된 이상 로그, 네 가지 상태의 조정 경계를 정의한다.
+- 관리자 빈이 여러 개이고 그중 하나에 `@Primary`가 있는 경우를 포함해 실제 `@ConditionalOnSingleCandidate` 동작을 명시한다.
 
-## Rejected Alternatives
+## 기각한 대안
 
-- `afterCommit` publication: too late for normal transactional-listener
-  registration.
-- Repeated suffix publication: permits duplicate or unpersisted event handoff;
-  one final event-bearing call is required.
-- Runtime manager or `DataSource` identity proof: unavailable from the Spring
-  thread-local synchronization contract.
-- A separately bound transaction resource registry: creates suspension and
-  cleanup complexity without adding correctness.
-- `PROPAGATION_NESTED` or savepoint handoff: the listener registration cannot
-  be safely retracted with the current Exposed transaction manager.
-- A new metric or callback SPI: structured anomaly logs provide the required
-  signal without adding a dependency or public extension surface.
-- Bridge-owned serializer allowlisting: durable publication serialization is
-  an existing application and Spring Modulith boundary.
+- `afterCommit` 발행: 일반 트랜잭션 리스너를 등록하기에는 너무 늦다.
+- 반복 접미 발행: 중복되거나 영속화되지 않은 이벤트 인계를 허용하므로 이벤트가 있는 최종 호출을 한 번만 해야 한다.
+- 런타임 관리자 또는 `DataSource` 동일성 증명: Spring 스레드 로컬 동기화 계약으로는 확인할 수 없다.
+- 별도로 바인딩한 트랜잭션 리소스 레지스트리: 정확성을 높이지 않으면서 일시 중단과 정리 복잡성만 만든다.
+- `PROPAGATION_NESTED` 또는 세이브포인트 인계: 현재 Exposed 트랜잭션 관리자에서는 리스너 등록을 안전하게 철회할 수 없다.
+- 새 메트릭 또는 콜백 SPI: 구조화된 이상 로그가 의존성이나 공개 확장 표면을 추가하지 않고 필요한 신호를 제공한다.
+- 브리지 소유 직렬화기 허용 목록: 영속 발행 직렬화는 기존 애플리케이션과 Spring Modulith의 책임 경계다.
 
-## Evidence
+## 근거
 
-- Baseline before design edits:
+- 설계 수정 전 기준선:
   `./gradlew :bluetape4k-exposed-spring-boot-jdbc:test :bluetape4k-exposed-spring-modulith:test :examples-ddd-spring-modulith-demo:test --no-configuration-cache --no-daemon --console=plain`
-  completed successfully.
-- Final artifact validation: `git diff --check`.
-- Open user decisions: none.
+  명령이 성공적으로 완료됐다.
+- 최종 산출물 검증: `git diff --check`.
+- 미결 사용자 결정: 없음.
 
-## Verdict
+## 판정
 
-**PASS: P0 = 0, P1 = 0.** The design spec is ready for user review before the
-implementation plan is written.
+**PASS: P0 = 0, P1 = 0.** 구현 계획을 작성하기 전에 사용자가 검토할 수 있는
+상태로 설계 명세가 준비됐다.
