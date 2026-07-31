@@ -16,9 +16,7 @@ import org.springframework.boot.health.contributor.ReactiveHealthIndicator
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
-/**
- * Auto-configuration for R2DBC Caffeine repository consistency health.
- */
+/** R2DBC Caffeine repository의 consistency health를 제공하는 auto-configuration입니다. */
 @AutoConfiguration
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(
@@ -44,17 +42,13 @@ class ExposedR2dbcCacheHealthAutoConfiguration {
         ExposedR2dbcCacheHealthIndicator(repositories)
 }
 
-/**
- * Configuration properties for Exposed cache health integration.
- */
+/** Exposed cache health integration의 configuration property입니다. */
 @ConfigurationProperties("bluetape4k.exposed.cache.health")
 class ExposedR2dbcCacheHealthProperties {
     var enabled: Boolean = true
 }
 
-/**
- * Spring Boot [ReactiveHealthIndicator] backed by R2DBC Caffeine repository consistency reports.
- */
+/** R2DBC Caffeine repository consistency report를 사용하는 Spring Boot [ReactiveHealthIndicator]입니다. */
 class ExposedR2dbcCacheHealthIndicator(
     private val repositories: ObjectProvider<R2dbcCaffeineRepository<*, *>>,
 ): ReactiveHealthIndicator {
@@ -82,7 +76,7 @@ class ExposedR2dbcCacheHealthIndicator(
     }
 }
 
-/** Selects a failure by observable exception data instead of repository discovery order. */
+/** Repository 탐색 순서 대신 관측 가능한 exception data를 기준으로 failure를 선택합니다. */
 private fun List<CacheHealthReport>.selectFlushError(): Throwable? =
     mapNotNull { it.lastFlushError }
         .minWithOrNull(

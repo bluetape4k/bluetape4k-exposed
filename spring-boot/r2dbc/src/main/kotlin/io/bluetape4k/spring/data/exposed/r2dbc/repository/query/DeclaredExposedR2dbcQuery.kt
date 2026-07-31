@@ -19,18 +19,17 @@ import kotlin.coroutines.Continuation
 import kotlin.reflect.KClass
 
 /**
- * Executes raw SQL declared with [@Query][io.bluetape4k.spring.data.exposed.jdbc.annotation.Query]
- * inside the current R2DBC transaction boundary.
+ * [@Query][io.bluetape4k.spring.data.exposed.jdbc.annotation.Query]로 선언한 raw SQL을 현재
+ * R2DBC transaction 경계 안에서 실행합니다.
  *
- * If the caller already runs inside `suspendTransaction { }`, that active transaction is
- * reused so uncommitted caller data remains visible. Otherwise this query opens the same
- * transaction boundary used by PartTree and base R2DBC repository methods.
+ * 호출자가 이미 `suspendTransaction { }` 안에서 실행 중이면 해당 transaction을 재사용하여
+ * commit되지 않은 호출자 data가 계속 보이게 합니다. 그렇지 않으면 PartTree와 기본 R2DBC
+ * repository method가 사용하는 것과 같은 transaction 경계를 엽니다.
  *
- * Positional parameters (`?1`, `?2`, ...) are bound before execution. The SELECT query
- * must expose the entity id column under its mapped name; entities are reloaded and
- * returned in the exact id order produced by the raw SQL. This preserves `ORDER BY`,
- * `LIMIT`, and join ordering while deliberately rejecting projection or grouping shapes
- * that do not return entity ids.
+ * Positional parameter(`?1`, `?2`, ...)는 실행 전에 바인딩합니다. SELECT query는 매핑된
+ * name으로 entity id column을 노출해야 합니다. Entity는 다시 load되며 raw SQL이 만든 정확한
+ * id 순서로 반환됩니다. 따라서 `ORDER BY`, `LIMIT`, join 순서는 보존하지만 entity id를 반환하지
+ * 않는 projection이나 grouping 형태는 의도적으로 거부합니다.
  */
 internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
     private val queryMethod: ExposedR2dbcQueryMethod,
