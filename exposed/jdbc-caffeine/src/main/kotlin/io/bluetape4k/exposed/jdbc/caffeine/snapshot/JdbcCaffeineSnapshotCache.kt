@@ -39,12 +39,17 @@ import kotlin.reflect.KClass
  * Instances own no threads or closeable resources. Database access remains entirely caller-owned.
  */
 class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
+    /** Cache identifier의 runtime type token입니다. compatibility fingerprint 계산에 사용합니다. */
     idType: KClass<ID>,
+    /** 분리 snapshot 값의 runtime type token입니다. compatibility fingerprint 계산에 사용합니다. */
     valueType: KClass<V>,
+    /** Caffeine backend와 snapshot coordination의 immutable 설정입니다. */
     private val config: CaffeineSnapshotCacheConfig,
+    /** Retained weight 제한을 적용할 때 사용하는 caller-provided estimator입니다. */
     private val valueSizer: SnapshotValueSizer<V>?,
+    /** Cache admission 전에 분리 snapshot 값을 검사하는 validator입니다. */
     internal val validator: CacheSnapshotValueValidator<V>,
-    /** Caller-owned bounded failure buffer used by this facade. */
+    /** 이 facade가 failure event를 기록하는 caller-owned bounded buffer입니다. */
     override val failureBuffer: SnapshotCacheFailureBuffer,
 ) : SnapshotCacheStore<ID, V> {
     private val cache: Cache<ID, StoredSnapshot<V>> = buildCache(config)
@@ -52,7 +57,7 @@ class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
     private val misses = SnapshotMissCapabilityRegistry<ID, V>(config.maxOutstandingMissTokens)
     private val maintenanceLock = ReentrantLock()
 
-    /** Stable logical identity for this cache. */
+    /** 이 cache의 안정적인 logical identity입니다. */
     override val storeId: SnapshotStoreId = SnapshotStoreId(BACKEND, config.snapshot.namespace)
 
     @InternalSnapshotCacheApi
@@ -260,6 +265,8 @@ private fun <ID : Any, V : Serializable> buildCache(
 }
 
 private data class StoredSnapshot<V : Serializable>(
+    /** Caffeine entry에 보관되는 분리 snapshot입니다. */
     val snapshot: CacheSnapshot<V>,
+    /** Caffeine eviction 계산에 사용하는 entry weight입니다. */
     val caffeineWeight: Int,
 )
