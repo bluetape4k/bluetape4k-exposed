@@ -7,10 +7,37 @@
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-07-31
+
 ### 추가됨
 
-- 트랜잭션을 인식하는 JDBC 애그리게이트 이벤트 전달, 단일 후보로 제한된 자동 구성, 커밋된 버퍼 정리, Spring Modulith DDD 예제 도입을 지원하는 `ExposedAggregateEventPublisher`를 추가했습니다
-  ([#323](https://github.com/bluetape4k/bluetape4k-exposed/issues/323)).
+- Apache Druid SQL용 query-only JDBC 통합과 metadata discovery 경로를 추가했습니다
+  ([#256](https://github.com/bluetape4k/bluetape4k-exposed/issues/256)).
+- Spring, Spring Modulith, Exposed DAO 구현에 종속되지 않는 `AggregateRoot` 및
+  `DomainEvent` 계약을 추가했습니다
+  ([#320](https://github.com/bluetape4k/bluetape4k-exposed/issues/320)).
+- 트랜잭션 결과 이후의 불변 snapshot을 저장하는 DAO near-cache를 추가했습니다
+  ([#321](https://github.com/bluetape4k/bluetape4k-exposed/issues/321)).
+- 트랜잭션 인식 JDBC aggregate event 전달과 Spring Modulith DDD 예제를 추가했습니다
+  ([#323](https://github.com/bluetape4k/bluetape4k-exposed/issues/323),
+  [#316](https://github.com/bluetape4k/bluetape4k-exposed/issues/316)).
+- Ktor Exposed demo에 R2DBC cache 및 DDD event 시나리오를 추가하고, cache/near-cache의
+  health 및 metrics route helper를 제공했습니다
+  ([#325](https://github.com/bluetape4k/bluetape4k-exposed/issues/325),
+  [#326](https://github.com/bluetape4k/bluetape4k-exposed/issues/326)).
+
+### 수정됨
+
+- 여러 repository resource를 닫는 과정에서 앞선 실패가 후속 cleanup을 건너뛰지 않도록
+  lifecycle 및 coroutine cancellation 처리를 보강했습니다
+  ([#341](https://github.com/bluetape4k/bluetape4k-exposed/issues/341)).
+
+### 문서화
+
+- Druid와 Spring Modulith demo module을 매뉴얼 manifest와 module inventory에 등록했습니다
+  ([#411](https://github.com/bluetape4k/bluetape4k-exposed/issues/411)).
+- 단일 언어 문서와 Kotlin KDoc을 한국어 기술 문체로 정리했습니다
+  ([#395](https://github.com/bluetape4k/bluetape4k-exposed/issues/395)).
 
 ## [1.11.0] - 2026-06-27
 
