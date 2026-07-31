@@ -1,13 +1,13 @@
-# BigQueryQueryExecutor.convertValue: NumberFormatException Without Column Context
+# BigQueryQueryExecutor.convertValue: Column context 없는 NumberFormatException
 
-**Date**: 2026-05-16  
-**Issue**: #89  
-**Module**: `exposed-bigquery`  
+**Date**: 2026-05-16
+**Issue**: #89
+**Module**: `exposed-bigquery`
 **File**: `BigQueryQueryExecutor.kt`
 
-## Root Cause
+## 근본 원인
 
-`convertValue` performed numeric/date conversions with no exception context:
+`convertValue`는 exception context 없이 numeric/date conversion을 수행했습니다.
 
 ```kotlin
 return when (column.columnType) {
@@ -17,13 +17,13 @@ return when (column.columnType) {
 } as T?
 ```
 
-When BigQuery returns an unexpected format (e.g., a NUMERIC column with "N/A"), the
-`NumberFormatException` or `valueFromDB` exception message contained only the raw string
-with no column name, no type, and no query context — making debugging very slow.
+BigQuery가 예상하지 못한 format(예: `"N/A"`인 NUMERIC column)을 반환하면
+`NumberFormatException` 또는 `valueFromDB` exception message에는 raw string만 있고
+column name, type, query context가 없어 debugging이 매우 느렸습니다.
 
-## Fix
+## 수정
 
-Wrap the entire `when` block in a try/catch that rethrows with column name and raw value:
+전체 `when` block을 try/catch로 감싸 column name과 raw value를 포함해 다시 던집니다.
 
 ```kotlin
 return try {
@@ -41,8 +41,10 @@ return try {
 }
 ```
 
-## Future Guidance
+## 향후 지침
 
-- Every type conversion that can throw should include: raw value, column name, column type.
-- Wrap at the function level (not per-branch) to avoid duplication — one try/catch covers all.
-- The original exception is preserved as the cause so the stack trace is not lost.
+- exception이 발생할 수 있는 모든 type conversion에는 raw value, column name,
+  column type을 포함합니다.
+- branch마다 중복하지 않도록 function level에서 감쌉니다. 하나의 try/catch가
+  모든 branch를 처리합니다.
+- stack trace가 사라지지 않도록 원래 exception을 cause로 보존합니다.
