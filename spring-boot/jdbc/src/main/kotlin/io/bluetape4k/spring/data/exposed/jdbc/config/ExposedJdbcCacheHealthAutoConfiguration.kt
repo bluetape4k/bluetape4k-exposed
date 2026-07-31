@@ -15,9 +15,7 @@ import org.springframework.boot.health.contributor.HealthIndicator
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
-/**
- * Auto-configuration for JDBC Caffeine repository consistency health.
- */
+/** JDBC Caffeine repository 일관성 상태를 위한 자동 설정입니다. */
 @AutoConfiguration
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(
@@ -43,17 +41,13 @@ class ExposedJdbcCacheHealthAutoConfiguration {
         ExposedJdbcCacheHealthIndicator(repositories)
 }
 
-/**
- * Configuration properties for Exposed cache health integration.
- */
+/** Exposed cache health 통합 설정 속성입니다. */
 @ConfigurationProperties("bluetape4k.exposed.cache.health")
 class ExposedJdbcCacheHealthProperties {
     var enabled: Boolean = true
 }
 
-/**
- * Spring Boot [HealthIndicator] backed by JDBC Caffeine repository consistency reports.
- */
+/** JDBC Caffeine repository 일관성 보고서를 사용하는 Spring Boot [HealthIndicator]입니다. */
 class ExposedJdbcCacheHealthIndicator(
     private val repositories: ObjectProvider<JdbcCaffeineRepository<*, *>>,
 ): HealthIndicator {
@@ -81,7 +75,7 @@ class ExposedJdbcCacheHealthIndicator(
     }
 }
 
-/** Selects a failure by observable exception data instead of repository discovery order. */
+/** repository 탐색 순서가 아니라 관찰 가능한 exception data로 실패를 선택합니다. */
 private fun List<CacheHealthReport>.selectFlushError(): Throwable? =
     mapNotNull { it.lastFlushError }
         .minWithOrNull(
