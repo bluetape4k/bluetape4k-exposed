@@ -57,6 +57,9 @@ fun Route.bluetape4kExposedHealthRoutes(
  * 활성 request 중 supplier가 던진 [CancellationException]은 정제된 `DOWN` 결과가 되며 request context cancellation은
  * 다시 던져 readiness 처리를 종료합니다. response는 검증된 component 이름과 유한 `UP`, `DOWN`, `timeout` 값만 노출하며
  * supplier exception message, cause, cache key, SQL, URL, namespace, credential, measurement는 반환하거나 기록하지 않습니다.
+ *
+ * Contract: probes and resources are caller-owned, including authentication and request concurrency. This helper
+ * creates or closes no resources. Responses never expose cache keys, SQL, URLs, or credentials.
  */
 fun Route.bluetape4kExposedHealthRoutes(
     jdbcDatabase: Database?,
