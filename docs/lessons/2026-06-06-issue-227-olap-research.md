@@ -1,34 +1,33 @@
-# Issue #227 OLAP Research
+# 이슈 #227 OLAP 조사
 
-## Context
+## 배경
 
-Issue #227 asked for a local-testability gate before opening additional OLAP
-database implementation work in `bluetape4k-exposed`.
+이슈 #227은 `bluetape4k-exposed`에서 추가 OLAP 데이터베이스 구현 작업을
+시작하기 전에 로컬 테스트 가능성 게이트를 마련하도록 요청했습니다.
 
-## Decision
+## 결정
 
-Open follow-up work only for candidates with a narrow local proof:
+범위를 좁힌 로컬 검증이 가능한 후보에만 후속 작업을 엽니다.
 
-- #255 for StarRocks as the strongest local-first JDBC candidate.
-- #256 for Apache Druid as a query-only Avatica JDBC experiment.
+- 가장 강력한 로컬 우선 JDBC 후보인 StarRocks는 #255에서 다룹니다.
+- 쿼리 전용 Avatica JDBC 실험인 Apache Druid는 #256에서 다룹니다.
 
-Keep Pinot, Redshift, Snowflake, and Databricks out of implementation scope until
-their local or approved external verification story is stronger.
+Pinot, Redshift, Snowflake, Databricks는 로컬 또는 승인된 외부 검증 방식이
+더 견고해질 때까지 구현 범위에서 제외합니다.
 
-## Outcome
+## 결과
 
-The research artifact now records the candidate matrix, narrow contracts, and
-defer reasons. README files were not changed because no new module is accepted
-as user-facing yet.
+조사 산출물에는 후보 매트릭스, 제한된 계약, 보류 사유를 기록했습니다. 아직
+사용자에게 노출할 새 모듈을 채택하지 않았으므로 README 파일은 변경하지 않았습니다.
 
-## Verification
+## 검증
 
-- Official vendor docs were checked on 2026-06-06.
+- 2026-06-06에 공식 벤더 문서를 확인했습니다.
 - `git diff --check`
-- Targeted text checks for #227, #255, #256, and OLAP candidates.
+- #227, #255, #256 및 OLAP 후보를 대상으로 텍스트를 점검했습니다.
 
-## Future Guidance
+## 향후 지침
 
-Do not infer full Exposed dialect support from JDBC connectivity alone. For OLAP
-engines, record local startup, metadata behavior, generated SQL shape, DDL/DML
-limits, and CI placement before creating module work.
+JDBC 연결성만으로 완전한 Exposed dialect 지원을 추론하지 마세요. OLAP 엔진은
+모듈 작업을 만들기 전에 로컬 기동, 메타데이터 동작, 생성 SQL 형태, DDL/DML 제한,
+CI 배치 방식을 기록해야 합니다.
