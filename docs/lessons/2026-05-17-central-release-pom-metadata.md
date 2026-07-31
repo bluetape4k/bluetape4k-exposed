@@ -1,48 +1,48 @@
 # Central Release POM Metadata
 
-## Context
+## 배경
 
-The 1.8.0 Central Portal release failed validation because generated Maven POMs
-omitted dependency version metadata for dependencies managed by imported BOMs.
+생성된 Maven POM이 imported BOM으로 관리되는 dependency의 version metadata를
+누락해 1.8.0 Central Portal release validation이 실패했습니다.
 
-## Decision
+## 결정
 
-Keep Spring dependency-management POM customization enabled for release POMs so
-the generated POM includes dependency management entries.
+생성 POM에 dependency management entry가 포함되도록 release POM의 Spring
+dependency-management POM customization을 유지합니다.
 
-## Outcome
+## 결과
 
-Generated publication POMs now include `dependencyManagement` with
-`io.github.bluetape4k:bluetape4k-bom:1.8.0` and no `SNAPSHOT` references.
+생성된 publication POM에는 이제
+`io.github.bluetape4k:bluetape4k-bom:1.8.0`이 포함된 `dependencyManagement`와
+`SNAPSHOT` reference 부재가 보장됩니다.
 
-The failure recurred on the 1.12.0 SNAPSHOT line after shared versions moved to
-the central Gradle catalog. Publication-facing dependencies still used local
-aliases that intentionally omit versions. Although the authoritative `bt4k`
-catalog already exposed versioned aliases for the Exposed and Spring Boot BOMs,
-the module build files did not use them. Gradle therefore generated versionless
-BOM imports even though the build itself resolved successfully.
+shared version을 central Gradle catalog로 옮긴 뒤 1.12.0 SNAPSHOT line에서
+실패가 재발했습니다. publication-facing dependency는 의도적으로 version을 생략한
+local alias를 계속 사용했습니다. authoritative `bt4k` catalog는 Exposed 및 Spring
+Boot BOM의 versioned alias를 이미 제공했지만 module build file이 이를 사용하지
+않았습니다. 따라서 build 자체는 성공해도 Gradle은 version 없는 BOM import를
+생성했습니다.
 
-Publication-facing BOM declarations now use `bt4k.exposed.bom` and
-`bt4k.spring.boot4.dependencies`. A repository validator rejects every
-versionless `dependencyManagement` entry and rejects an unversioned regular
-dependency unless the same POM supplies explicit dependency management or a
-versioned BOM import. CI, SNAPSHOT publication, and stable publication all run
-the validator before publishing can continue.
+publication-facing BOM declaration은 이제 `bt4k.exposed.bom` 및
+`bt4k.spring.boot4.dependencies`를 사용합니다. repository validator는 version 없는
+모든 `dependencyManagement` entry와 같은 POM이 explicit dependency management 또는
+versioned BOM import를 제공하지 않을 때의 unversioned regular dependency를
+거부합니다. CI, SNAPSHOT publication, stable publication은 publication을 계속하기
+전에 모두 validator를 실행합니다.
 
-## Verification
+## 검증
 
 - `./gradlew generatePomFileForBluetapeExposedPublication --no-daemon --no-configuration-cache --no-build-cache`
 - `ruby scripts/publication/validate_poms.rb`
-- Verify generated `pom-default.xml` files contain neither missing dependency
-  versions nor unintended `SNAPSHOT` references for the target release class.
+- 생성된 `pom-default.xml` file에 target release class의 missing dependency version과
+  의도하지 않은 `SNAPSHOT` reference가 없는지 확인합니다.
 
-## Future Guidance
+## 향후 지침
 
-Do not treat a successful Gradle dependency resolution as publication proof.
-Before any Central publication, generate every public POM and require explicit
-versions on all dependency-management entries, especially imported BOMs.
-Regular dependencies may omit direct versions only when the generated POM
-provides valid dependency management. Prefer the authoritative central catalog
-alias whenever it already represents a publication-facing platform. Keep the
-validator in PR CI as well as both publication workflows so a malformed POM
-cannot reach a repository before the gate runs.
+성공한 Gradle dependency resolution을 publication proof로 보지 않습니다. Central
+publication 전에는 모든 public POM을 생성하고 특히 imported BOM을 포함한 모든
+dependency-management entry의 explicit version을 요구합니다. generated POM이 유효한
+dependency management를 제공할 때만 regular dependency가 direct version을 생략할 수
+있습니다. publication-facing platform을 나타내는 authoritative central catalog alias가
+있으면 이를 우선합니다. 잘못된 POM이 gate 전에 repository에 도달하지 않도록 validator를
+PR CI와 두 publication workflow 모두에 둡니다.
