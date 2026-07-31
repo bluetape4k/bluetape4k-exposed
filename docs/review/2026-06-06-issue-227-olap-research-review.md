@@ -1,32 +1,31 @@
-# Issue #227 OLAP Research Review
+# Issue #227 OLAP 조사 검토
 
-Date: 2026-06-06
-Scope: Documentation and issue-triage changes for #227.
+날짜: 2026-06-06
+범위: #227의 문서화 및 이슈 분류 변경 사항.
 
-## Gate Verdict
+## 게이트 판정
 
 - P0=0
 - P1=0
-- Gate: PASS
+- 게이트: 통과
 
-## Review Findings
+## 검토 결과
 
-No blocking findings.
+차단할 만한 검토 결과 없음.
 
-## Checks
+## 점검 항목
 
-| Tier | Result | Evidence |
+| 항목 | 결과 | 근거 |
 |---|---|---|
-| Requirements | PASS | #227 acceptance criteria mapped to the research checklist. |
-| Source grounding | PASS | Official Druid, Pinot, StarRocks, Redshift, Snowflake, and Databricks docs cited. |
-| Scope control | PASS | Only StarRocks and Druid received follow-up implementation issues. |
-| Local-testability gate | PASS | SaaS/credential-gated targets are explicitly deferred. |
-| Public claim risk | PASS | README was not updated because no new module is user-facing yet. |
-| Regression risk | PASS | Docs-only change; no production behavior touched. |
-| Workflow hygiene | PASS | Lesson and review artifacts are tracked before PR creation. |
+| 요구 사항 | 통과 | #227 인수 기준을 조사 체크리스트에 대응시켰다. |
+| 출처 근거 | 통과 | Druid, Pinot, StarRocks, Redshift, Snowflake, Databricks의 공식 문서를 인용했다. |
+| 범위 통제 | 통과 | StarRocks와 Druid에 대해서만 후속 구현 이슈를 생성했다. |
+| 로컬 테스트 가능성 게이트 | 통과 | SaaS 또는 자격 증명이 필요한 대상은 명시적으로 보류했다. |
+| 공개 설명 위험 | 통과 | 아직 사용자에게 노출되는 새 모듈이 없으므로 README를 수정하지 않았다. |
+| 회귀 위험 | 통과 | 문서만 변경했으며 프로덕션 동작은 건드리지 않았다. |
+| 워크플로 위생 | 통과 | PR 생성 전에 교훈 및 검토 산출물을 추적했다. |
 
-## Residual Risk
+## 잔여 위험
 
-StarRocks and Druid implementation feasibility still depends on a stable
-container recipe and serial CI placement. Those risks are delegated to #255 and
-#256.
+StarRocks와 Druid의 구현 가능성은 여전히 안정적인 컨테이너 구성법과 직렬 CI
+배치에 달려 있다. 이러한 위험은 #255와 #256에서 다룬다.
