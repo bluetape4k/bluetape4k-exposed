@@ -32,7 +32,9 @@ Snapshot: 2026-07-31 KST
 
 ## 열린 PR
 
-이 문서 갱신의 PR은 #598을 참조하며, 생성 전까지 `develop` 대상 release work PR은 없습니다.
+[#599](https://github.com/bluetape4k/bluetape4k-exposed/pull/599)가 #598을 참조하는 유일한
+`develop` 대상 release-preflight PR입니다. 이 PR은 문서 준비만 포함하며 tag/publish 권한을
+포함하지 않습니다.
 
 ## 갱신 메모
 
