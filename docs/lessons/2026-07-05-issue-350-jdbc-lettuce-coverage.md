@@ -1,31 +1,29 @@
-# Lessons Learned - JDBC Lettuce Coverage (2026-07-05)
+# 교훈 - JDBC Lettuce 커버리지 (2026-07-05)
 
-**Related issue**: #350
-**Affected module**: `:bluetape4k-exposed-jdbc-lettuce`
+**관련 이슈**: #350
+**영향을 받는 모듈**: `:bluetape4k-exposed-jdbc-lettuce`
 
-## L1: Coverage gaps should follow the Kover XML sourcefile counters
+## L1: Kover XML의 소스 파일 카운터를 기준으로 커버리지 누락을 추적해야 한다
 
-### Problem
+### 문제
 
-The module-level gap was too large for small repository facade tests. Kover showed
-the largest missed instruction count in `ExposedLettuceSuspendedLoadedMap.kt`.
+모듈 수준의 커버리지 차이는 소규모 저장소 퍼사드 테스트만으로 해소하기에는 너무 컸다.
+Kover에서 `ExposedLettuceSuspendedLoadedMap.kt`의 미실행 명령어 수가 가장 많은 것으로 나타났다.
 
-### Lesson
+### 교훈
 
-For coverage issues, parse the XML report before adding tests. Sourcefile-level
-missed instruction counters identify the fastest path to meaningful coverage gains.
+커버리지 이슈에서는 테스트를 추가하기 전에 XML 보고서를 분석한다. 소스 파일 수준의 미실행 명령어
+카운터를 이용하면 유의미하게 커버리지를 높일 수 있는 가장 빠른 경로를 식별할 수 있다.
 
-## L2: Direct contract tests can avoid database noise
+## L2: 직접적인 계약 테스트로 데이터베이스 관련 잡음을 피할 수 있다
 
-### Problem
+### 문제
 
-The target class is a Redis loaded-map implementation, but repository scenario tests
-pull in database setup and many unrelated branches.
+대상 클래스는 Redis loaded-map 구현이지만, 저장소 시나리오 테스트에는 데이터베이스 설정과
+관련 없는 여러 분기가 함께 포함된다.
 
-### Lesson
+### 교훈
 
-When the uncovered contract is below the repository layer, add focused module-local
-contract tests against the lower-level component. For this module, Redis-backed direct
-tests covered read-through, write-through, write-behind, close, and failure handling
-without adding more DB fixture cost.
-
+커버되지 않은 계약이 저장소 계층 아래에 있으면 하위 컴포넌트를 대상으로 집중된 모듈 로컬 계약 테스트를
+추가한다. 이 모듈에서는 Redis 기반 직접 테스트를 통해 DB 픽스처 비용을 더 늘리지 않고 읽기 관통,
+쓰기 관통, 지연 쓰기, 종료 및 실패 처리를 검증했다.

@@ -1,31 +1,30 @@
-# Lessons Learned - Cache Close Lifecycle (2026-07-05)
+# 교훈 - 캐시 종료 수명 주기 (2026-07-05)
 
-**Related issue**: #341
-**Affected modules**: JDBC/R2DBC Lettuce and Caffeine cache repositories
+**관련 이슈**: #341
+**영향을 받는 모듈**: JDBC/R2DBC Lettuce 및 Caffeine 캐시 저장소
 
-## L1: Cleanup steps must be independently isolated
+## L1: 정리 단계는 각각 독립적으로 격리해야 한다
 
-### Problem
+### 문제
 
-A close path that calls resource A and then resource B directly can skip B when A fails.
-That is especially risky for repository shutdown because cache invalidation, backing cache
-close, and coroutine scope cancellation are separate responsibilities.
+리소스 A를 호출한 다음 리소스 B를 직접 호출하는 종료 경로에서는 A가 실패하면 B를 건너뛸 수 있다.
+캐시 무효화, 기반 캐시 종료, 코루틴 스코프 취소는 서로 다른 책임이므로 저장소를 종료할 때는
+이러한 방식이 특히 위험하다.
 
-### Lesson
+### 교훈
 
-Close paths should isolate independent cleanup steps and preserve cancellation semantics.
-For suspend lifecycle bridges, catch `CancellationException` explicitly and rethrow it before
-handling ordinary cleanup failures.
+종료 경로에서는 독립적인 정리 단계를 격리하고 취소 의미 체계를 보존해야 한다.
+일시 중단 함수의 수명 주기 브리지에서는 `CancellationException`을 명시적으로 잡고 다시 던진 다음
+일반적인 정리 실패를 처리한다.
 
-## L2: Write-behind shutdown order is part of the contract
+## L2: Write-behind 종료 순서는 계약의 일부다
 
-### Problem
+### 문제
 
-Write-behind repositories must stop accepting new items and wait for the bounded final flush
-before post-flush cleanup. Hardening later cleanup must not move or bypass that wait.
+Write-behind 저장소는 새 항목 수신을 중단하고 제한 시간이 있는 최종 flush가 끝날 때까지 기다린 후
+flush 이후 정리를 수행해야 한다. 후속 정리 과정을 강화하더라도 이 대기 단계를 이동하거나 우회해서는 안 된다.
 
-### Lesson
+### 교훈
 
-Keep the write-behind close sequence explicit: close queue, wait for bounded final flush,
-then run cache invalidation and scope cancellation as independent cleanup steps.
-
+Write-behind 종료 순서를 명확하게 유지한다. 큐를 닫고 제한 시간이 있는 최종 flush를 기다린 다음,
+캐시 무효화와 스코프 취소를 독립적인 정리 단계로 실행한다.
