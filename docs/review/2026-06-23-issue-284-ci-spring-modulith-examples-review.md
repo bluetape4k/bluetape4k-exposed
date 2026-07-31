@@ -1,41 +1,41 @@
-# Issue 284 CI Spring Modulith and Examples Review
+# 이슈 284 CI Spring Modulith 및 예제 리뷰
 
-Date: 2026-06-23
-Scope: `.github/workflows/ci.yml`, `.github/workflows/nightly-tests.yml`
-Issue: #284
+날짜: 2026-06-23
+범위: `.github/workflows/ci.yml`, `.github/workflows/nightly-tests.yml`
+이슈: #284
 
-## Verdict
+## 판정
 
-P0 findings: 0
-P1 findings: 0
+P0 지적 사항: 0
+P1 지적 사항: 0
 
-The workflow diff adds first-class CI and Nightly coverage for the spring-modulith module plus documented example and demo test suites. The new jobs are wired into coverage aggregation and final status gates, and their artifacts use dedicated names so missing uploads remain visible in the existing coverage summary flow.
+워크플로 차이는 spring-modulith 모듈과 문서화된 예제 및 데모 테스트 스위트에 정식 CI 및 Nightly 검증 범위를 추가한다. 새 작업은 커버리지 집계와 최종 상태 게이트에 연결되며, 아티팩트에는 전용 이름을 사용하므로 업로드 누락이 기존 커버리지 요약 흐름에 계속 드러난다.
 
-## Review Notes
+## 리뷰 참고 사항
 
-- CI path filtering now exposes `spring-modulith` and `examples` outputs, which trigger targeted jobs for `spring-boot/spring-modulith/**` and `examples/**`.
-- The `spring-modulith` CI filter includes its backing JDBC/core modules and workflow/build files so this PR and future dependency-path changes actually exercise the new lane.
-- The `examples` CI filter also includes underlying example dependencies and workflow/build files: `exposed/bigquery/**`, `exposed/clickhouse/**`, `spring-boot/jdbc/**`, `spring-boot/r2dbc/**`, workflow YAML, root Gradle scripts, `gradle/**`, and `buildSrc/**`.
-- `test-spring-modulith` runs `:bluetape4k-exposed-spring-modulith:test` and uploads `test-results-spring-modulith` plus `coverage-spring-modulith`.
-- `test-examples` runs the BigQuery dry-run example, ClickHouse OLTP/OLAP example, and both Spring Boot demo tests with Testcontainers environment variables for the Docker-backed example.
-- Nightly `test-examples` follows the existing Docker-heavy full-scope guard so daily smoke runs do not inherit the ClickHouse Testcontainers example load.
-- CI and Nightly `coverage-report` plus final status jobs include the new job names in `needs`, so coverage/status cannot finish without observing the added lanes.
-- GitHub Actions expression quoting uses the normal `${{ needs.changes.outputs['spring-modulith'] == 'true' }}` style. No escaped quote sequences were found.
+- CI 경로 필터는 이제 `spring-modulith` 및 `examples` 출력을 노출하며, 이 출력은 `spring-boot/spring-modulith/**`와 `examples/**`를 대상으로 하는 작업을 실행한다.
+- `spring-modulith` CI 필터에는 기반 JDBC/core 모듈과 워크플로/빌드 파일이 포함되어, 이 PR과 향후 의존성 경로 변경이 실제로 새 검증 경로를 실행하도록 한다.
+- `examples` CI 필터에도 기반 예제 의존성과 워크플로/빌드 파일이 포함된다. 해당 경로는 `exposed/bigquery/**`, `exposed/clickhouse/**`, `spring-boot/jdbc/**`, `spring-boot/r2dbc/**`, 워크플로 YAML, 루트 Gradle 스크립트, `gradle/**` 및 `buildSrc/**`이다.
+- `test-spring-modulith`는 `:bluetape4k-exposed-spring-modulith:test`를 실행하고 `test-results-spring-modulith`와 `coverage-spring-modulith`를 업로드한다.
+- `test-examples`는 BigQuery 드라이런 예제, ClickHouse OLTP/OLAP 예제 및 두 Spring Boot 데모 테스트를 실행하며, Docker 기반 예제에는 Testcontainers 환경 변수를 적용한다.
+- Nightly `test-examples`는 기존의 Docker 부하가 큰 전체 범위 가드를 따르므로 일일 스모크 실행에 ClickHouse Testcontainers 예제 부하가 추가되지 않는다.
+- CI 및 Nightly의 `coverage-report`와 최종 상태 작업은 `needs`에 새 작업 이름을 포함한다. 따라서 추가된 검증 경로를 확인하지 않고는 커버리지/상태 처리가 완료될 수 없다.
+- GitHub Actions 표현식 인용은 일반적인 `${{ needs.changes.outputs['spring-modulith'] == 'true' }}` 형식을 사용한다. 이스케이프된 따옴표 시퀀스는 발견되지 않았다.
 
-## Validation
+## 검증
 
 - `actionlint .github/workflows/ci.yml .github/workflows/nightly-tests.yml`
-  - Result: success.
-- Ruby YAML structure check for both workflow files
-  - Result: success, confirmed `test-spring-modulith` and `test-examples` jobs plus coverage/status `needs` entries.
+  - 결과: 성공.
+- 두 워크플로 파일에 대한 Ruby YAML 구조 검사
+  - 결과: 성공. `test-spring-modulith` 및 `test-examples` 작업과 커버리지/상태 `needs` 항목을 확인했다.
 - `git diff --check`
-  - Result: success.
+  - 결과: 성공.
 - `./gradlew :bluetape4k-exposed-spring-modulith:test :examples-exposed-bigquery-dry-run:test :exposed-spring-boot-jdbc-demo:test :exposed-spring-boot-r2dbc-demo:test --no-build-cache --console=plain --no-configuration-cache --no-daemon`
-  - Result: success.
-  - Evidence: spring-modulith 12 tests, JDBC demo 26 tests, R2DBC demo 25 tests, and BigQuery dry-run example passed.
+  - 결과: 성공.
+  - 근거: spring-modulith 테스트 12개, JDBC 데모 테스트 26개, R2DBC 데모 테스트 25개 및 BigQuery 드라이런 예제 통과.
 - `./gradlew :examples-exposed-clickhouse-oltp-olap:testClasses --no-build-cache --console=plain --no-configuration-cache --no-daemon`
-  - Result: success.
+  - 결과: 성공.
 
-## Residual Risk
+## 잔여 위험
 
-- `:examples-exposed-clickhouse-oltp-olap:test` could not complete locally because the current machine did not expose a valid Docker environment to Testcontainers. The workflow job is still intentionally Docker-enabled and must be proven by GitHub Actions CI/Nightly runners.
+- 현재 머신이 Testcontainers에 유효한 Docker 환경을 제공하지 않아 `:examples-exposed-clickhouse-oltp-olap:test`는 로컬에서 완료되지 못했다. 워크플로 작업은 의도적으로 Docker를 사용하도록 구성되어 있으므로 GitHub Actions CI/Nightly 러너에서 검증해야 한다.
