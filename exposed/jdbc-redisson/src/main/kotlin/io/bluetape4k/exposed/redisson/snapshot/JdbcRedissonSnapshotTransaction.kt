@@ -9,7 +9,7 @@ import org.jetbrains.exposed.v1.core.statements.StatementInterceptor
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.currentOrNull
 
-/** Stages distributed invalidation after this root JDBC transaction commits. */
+/** 이 root JDBC transaction이 commit된 뒤 실행할 distributed invalidation을 staging합니다. */
 fun <ID : Any> JdbcTransaction.stageInvalidation(
     invalidator: JdbcRedissonSnapshotInvalidator<ID>,
     id: ID,

@@ -38,10 +38,11 @@ private const val UUID_KEY_ENCODING = "bt4k-uuid-be-v1"
 private val redissonInvalidationQuotas = RedissonInvalidationQuotaRegistry()
 
 /**
- * Asynchronously publishes invalidation-only removals through a caller-owned Redisson local-cache map.
+ * 호출자가 소유한 Redisson local-cache map을 통해 invalidation-only removal을 비동기로 전달합니다.
  *
- * This facade intentionally exposes neither reads nor writes. Transaction coordination owns failure observation;
- * this adapter only reports structural outcomes and retains no identifiers after a completion releases its quota.
+ * 이 facade는 read와 write를 의도적으로 노출하지 않습니다. Failure 관측은 transaction
+ * coordination이 소유하며, 이 adapter는 구조적인 outcome만 보고합니다. Completion이 quota를
+ * 해제한 뒤에는 identifier를 보관하지 않습니다.
  */
 class JdbcRedissonSnapshotInvalidator<ID : Any> internal constructor(
     private val localCacheMap: RLocalCachedMap<ID, Any?>,
@@ -176,7 +177,7 @@ class JdbcRedissonSnapshotInvalidator<ID : Any> internal constructor(
     }
 }
 
-/** Creates a JDBC Redisson snapshot invalidator with explicit runtime type tokens. */
+/** 명시적인 runtime type token으로 JDBC Redisson snapshot invalidator를 생성합니다. */
 fun <ID : Any, V : Serializable> jdbcRedissonSnapshotInvalidator(
     redissonClient: RedissonClient,
     codec: SnapshotRedissonCodec<ID>,
@@ -240,7 +241,7 @@ fun <ID : Any, V : Serializable> jdbcRedissonSnapshotInvalidator(
     }
 }
 
-/** Creates a JDBC Redisson snapshot invalidator using reified runtime type tokens. */
+/** Reified runtime type token을 사용해 JDBC Redisson snapshot invalidator를 생성합니다. */
 inline fun <reified ID : Any, reified V : Serializable> jdbcRedissonSnapshotInvalidator(
     redissonClient: RedissonClient,
     codec: SnapshotRedissonCodec<ID>,
@@ -249,7 +250,7 @@ inline fun <reified ID : Any, reified V : Serializable> jdbcRedissonSnapshotInva
 ): JdbcRedissonSnapshotInvalidator<ID> =
     jdbcRedissonSnapshotInvalidator(redissonClient, codec, ID::class, V::class, config, failureBuffer)
 
-/** Returns payload-free bounded admission health for this invalidator's caller-owned Redisson client. */
+/** 이 invalidator에서 호출자가 소유한 Redisson client의 payload-free bounded admission health를 반환합니다. */
 fun JdbcRedissonSnapshotInvalidator<*>.quotaHealth(): SnapshotInvalidationQuotaHealth = currentQuotaHealth()
 
 private fun <ID : Any> requireSupportedIdentifier(codec: SnapshotRedissonCodec<ID>, idType: KClass<ID>) {

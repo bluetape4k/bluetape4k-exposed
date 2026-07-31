@@ -7,24 +7,24 @@ import java.io.Serializable
 import java.time.Duration
 
 /**
- * Safety and admission limits for the JDBC Redisson snapshot invalidation adapter.
+ * JDBC Redisson snapshot invalidation adapter의 안전 및 admission 한도입니다.
  *
- * This configuration contains no endpoint, username, credential, or near-cache expiry setting. Those remain owned by
- * the caller's Redisson client and repository. [trustedBinaryCache] is an explicit opt-in only for isolated cache data
- * where every writer and payload is trusted.
+ * 이 configuration에는 endpoint, username, credential, near-cache expiry 설정이 없습니다.
+ * 해당 설정은 호출자의 Redisson client와 repository가 계속 소유합니다. [trustedBinaryCache]는
+ * 모든 writer와 payload를 신뢰하는 격리 cache data에서만 명시적으로 opt-in해야 합니다.
  *
- * @property snapshot common namespace, schema, and transaction staging limits
- * @property nearCacheMaximumSize maximum local invalidation-map entry count
- * @property maxEncodedKeyBytes maximum bytes accepted for one canonical identifier
- * @property maxBatchEncodedKeyBytes maximum canonical identifier bytes submitted in one async chunk
- * @property maxCommitEncodedKeyBytes maximum canonical identifier bytes staged by one commit
- * @property maxOutstandingChunks maximum async invalidation chunks admitted per Redisson client
- * @property maxOutstandingEncodedBytes maximum admitted canonical identifier bytes per Redisson client
- * @property namespaceVerificationTimeout maximum time allowed to verify the remote namespace marker
- * @property multiNode whether peer-node invalidation is required
- * @property synchronizationStrategy local-cache synchronization strategy
- * @property reconnectionStrategy local-cache recovery strategy after reconnection
- * @property trustedBinaryCache explicit trust opt-in for isolated binary-codec data
+ * @property snapshot 공통 namespace, schema, transaction staging 한도
+ * @property nearCacheMaximumSize local invalidation-map의 최대 entry 수
+ * @property maxEncodedKeyBytes canonical identifier 하나에 허용할 최대 byte 수
+ * @property maxBatchEncodedKeyBytes 비동기 chunk 하나로 제출할 canonical identifier의 최대 byte 수
+ * @property maxCommitEncodedKeyBytes commit 하나가 staging할 canonical identifier의 최대 byte 수
+ * @property maxOutstandingChunks Redisson client마다 허용할 최대 비동기 invalidation chunk 수
+ * @property maxOutstandingEncodedBytes Redisson client마다 admission할 canonical identifier의 최대 byte 수
+ * @property namespaceVerificationTimeout remote namespace marker 검증에 허용할 최대 시간
+ * @property multiNode peer-node invalidation이 필요한지 여부
+ * @property synchronizationStrategy local-cache synchronization 전략
+ * @property reconnectionStrategy reconnection 후 local-cache 복구 전략
+ * @property trustedBinaryCache 격리된 binary-codec data에 대한 명시적 trust opt-in
  */
 data class JdbcRedissonSnapshotInvalidatorConfig(
     val snapshot: SnapshotCacheConfig,
@@ -89,7 +89,7 @@ data class JdbcRedissonSnapshotInvalidatorConfig(
     }
 }
 
-/** Applies this invalidator consumer's independent binary-codec trust authority. */
+/** 이 invalidator consumer가 독립적으로 소유하는 binary-codec trust authority를 적용합니다. */
 internal fun JdbcRedissonSnapshotInvalidatorConfig.requireSafeCodec(codec: SnapshotRedissonCodec<*>) {
     ExposedRedissonCodecSafety.requireSafe(codec, trustedBinaryCache)
 }

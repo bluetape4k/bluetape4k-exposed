@@ -9,21 +9,23 @@ import org.redisson.client.protocol.Decoder
 import org.redisson.client.protocol.Encoder
 
 /**
- * Redisson codec whose map keys use a library-owned canonical snapshot identifier encoding.
+ * Map key에 library 소유의 canonical snapshot identifier encoding을 사용하는 Redisson codec입니다.
  *
- * The delegate supplies map values and non-map-key encoding only. The same wrapper instance must be passed to the
- * existing repository configuration and the snapshot invalidator so both components use identical key bytes.
+ * Delegate는 map value와 map-key가 아닌 encoding만 제공합니다. Repository configuration과
+ * snapshot invalidator에 같은 wrapper instance를 전달하여 두 component가 동일한 key byte를
+ * 사용하도록 해야 합니다.
  */
 sealed interface SnapshotRedissonCodec<ID : Any> : Codec {
-    /** Operator-owned compatibility version for the delegate's serialized value format. */
+    /** Delegate의 serialized value format에 대해 operator가 소유하는 compatibility version입니다. */
     val codecVersion: String
 }
 
 /**
- * Wraps [delegate] with canonical map-key encoding.
+ * [delegate]를 canonical map-key encoding으로 감쌉니다.
  *
- * Identifiers must be non-secret, non-credential, non-PII surrogate keys. Fory, Kryo, and JDK object serialization
- * delegates remain subject to each repository or invalidator consumer's independent trusted-binary safety decision.
+ * Identifier는 secret, credential, PII가 아닌 surrogate key여야 합니다. Fory, Kryo, JDK object
+ * serialization delegate의 trusted-binary 안전성은 각 repository 또는 invalidator consumer가
+ * 독립적으로 결정합니다.
  */
 fun <ID : Any> snapshotRedissonCodec(
     delegate: Codec,
