@@ -1,59 +1,58 @@
-# Issue 325: Cache readiness needs lifecycle, deadline, and identity contracts
+# Issue 325: 캐시 준비 상태에는 수명 주기, 마감 시간, 동일성 계약이 필요하다
 
-## Context
+## 배경
 
-A Boolean such as `isFlushJobRunning` cannot distinguish a fresh idle worker,
-an active worker, graceful draining, terminal failure, and completed shutdown.
-Ktor readiness also needed to combine JDBC, R2DBC, repository, snapshot, and
-custom cache observations without multiplying the endpoint timeout or metric
-cardinality.
+`isFlushJobRunning` 같은 Boolean 값으로는 새로 시작해 유휴 상태인 워커,
+작업 중인 워커, 정상적인 드레이닝, 최종 실패, 완료된 종료 상태를 구분할 수
+없다. 또한 Ktor 준비 상태는 엔드포인트 제한 시간이나 메트릭 카디널리티를
+늘리지 않으면서 JDBC, R2DBC, 리포지토리, 스냅샷, 사용자 정의 캐시 관측을
+결합해야 했다.
 
-## Decision
+## 결정
 
-- Model background work with `CacheWorkerState`; do not retain an ambiguous
-  Boolean compatibility alias.
-- Run cache contributors sequentially under one shared monotonic cache-phase
-  deadline. Suppliers remain caller-owned, side-effect-free O(1), non-blocking,
-  and cancellation-cooperative.
-- Register a fixed set of four gauges and four finite-outcome timers per
-  contributor during route installation. Component and kind are bounded
-  operational identities, never data-bearing runtime values.
-- Preserve the existing Ktor config constructor and default bridges. Add cache
-  support with overloads so compiled database-only callers remain compatible.
-- Keep authentication, concurrency control, repositories, registries, and
-  shutdown in the application lifecycle.
+- 백그라운드 작업을 `CacheWorkerState`로 모델링하고, 의미가 모호한 Boolean
+  호환 별칭은 유지하지 않는다.
+- 하나의 공유 단조 시간 기반 캐시 단계 마감 시간 안에서 캐시 기여자를 순차
+  실행한다. 공급자는 계속 호출자가 소유하며, 부수 효과가 없는 O(1), 비차단,
+  취소 협조 방식이어야 한다.
+- 라우트 설치 중 기여자별로 게이지 4개와 유한한 결과 타이머 4개로 구성된 고정
+  집합을 등록한다. 컴포넌트와 종류는 범위가 제한된 운영 동일성이며, 데이터를
+  담는 런타임 값으로 사용하지 않는다.
+- 기존 Ktor 구성 생성자와 기본 브리지를 유지한다. 데이터베이스만 사용하는
+  기존 컴파일된 호출자의 호환성을 유지하도록 오버로드로 캐시 지원을 추가한다.
+- 인증, 동시성 제어, 리포지토리, 레지스트리, 종료 처리는 애플리케이션 수명
+  주기에 둔다.
 
-## Outcome
+## 결과
 
-Ktor can now expose one redacted readiness decision for databases and up to 16
-cache contributors, including cache-only applications. Spring Actuator retains
-its management-specific `OUT_OF_SERVICE` distinction, while Ktor intentionally
-maps draining and stopped repositories to traffic-readiness `DOWN`. Timeout,
-cancellation, and error metrics are mutually exclusive, and registry identity
-collisions fail installation before a second route can claim the same meters.
-Worker completion callbacks publish a non-null terminal cause immediately,
-before waiting for accepted cache publications to settle, so cancellation
-before the coroutine body starts cannot leave readiness stuck at `RUNNING`.
-Concurrent shutdown also has one outcome owner: interrupted follower callers
-restore their own interrupt flag only after the owner publishes the immutable
-drain result, so they cannot turn another caller's successful drain into failure.
-If terminal shutdown overlaps cache publication, reads bypass that dirty cache
-entry and keep the public read-through contract by consulting the authoritative
-database instead of returning a false `null`.
+이제 Ktor는 데이터베이스와 최대 16개의 캐시 기여자에 대해 민감 정보가 제거된
+하나의 준비 상태 결정을 노출할 수 있으며, 캐시 전용 애플리케이션도 지원한다.
+Spring Actuator는 관리 영역에 특화된 `OUT_OF_SERVICE` 구분을 유지하지만,
+Ktor는 의도적으로 드레이닝 중이거나 중지된 리포지토리를 트래픽 준비 상태
+`DOWN`으로 매핑한다. 제한 시간 초과, 취소, 오류 메트릭은 서로 배타적이며,
+레지스트리 동일성 충돌은 두 번째 라우트가 같은 미터를 차지하기 전에 설치를
+실패시킨다. 워커 완료 콜백은 승인된 캐시 발행이 안정될 때까지 기다리기 전에
+null이 아닌 최종 원인을 즉시 발행하므로, 코루틴 본문 시작 전 취소로 준비
+상태가 `RUNNING`에 고착되지 않는다. 동시 종료에서도 결과 소유자는 하나뿐이다.
+인터럽트된 추종 호출자는 소유자가 불변 드레인 결과를 발행한 뒤에만 자신의
+인터럽트 플래그를 복구하므로, 다른 호출자의 성공적인 드레인을 실패로 바꿀 수
+없다. 최종 종료가 캐시 발행과 겹치면 읽기는 오염된 캐시 항목을 우회하고,
+잘못된 `null`을 반환하는 대신 권위 있는 데이터베이스를 조회해 공개된
+읽기 관통 계약을 유지한다.
 
-## Verification Expectations
+## 검증 기대 사항
 
-- Pin old and new JVM descriptors from compiled output.
-- Compile canonical README examples and compare both locale fences with them.
-- Prove shared-budget ordering, parent cancellation, supplier cancellation,
-  generation safety, fixed meter count, collision rollback, and redaction.
-- Run the complete Ktor module suite and keep `docs/manual/**` unchanged until a
-  release-specific manual update is planned.
+- 컴파일된 출력에서 이전 JVM 디스크립터와 새 JVM 디스크립터를 고정한다.
+- 표준 README 예제를 컴파일하고 두 로케일의 코드 블록을 모두 비교한다.
+- 공유 예산 순서, 부모 취소, 공급자 취소, 세대 안전성, 고정 미터 수, 충돌 시
+  롤백, 민감 정보 제거를 입증한다.
+- 전체 Ktor 모듈 테스트 모음을 실행하고, 릴리스별 매뉴얼 업데이트가 계획되기
+  전까지 `docs/manual/**`은 변경하지 않는다.
 
-## Guidance for Future Changes
+## 향후 변경 지침
 
-Do not add a per-contributor timeout, dynamic metric tag, hidden dispatcher,
-background scope, or compatibility Boolean. If a new readiness source needs
-backend I/O, keep that I/O in a caller-owned monitor and contribute only its
-bounded in-memory status. Add public parameters with ABI-preserving overloads
-and extend the compiled descriptor fixture before implementation.
+기여자별 제한 시간, 동적 메트릭 태그, 숨겨진 디스패처, 백그라운드 스코프,
+호환성 Boolean을 추가하지 않는다. 새로운 준비 상태 소스에 백엔드 I/O가
+필요하면 해당 I/O는 호출자가 소유한 모니터에 두고, 범위가 제한된 인메모리
+상태만 기여하게 한다. ABI를 보존하는 오버로드로 공개 매개변수를 추가하고
+구현 전에 컴파일된 디스크립터 픽스처를 확장한다.

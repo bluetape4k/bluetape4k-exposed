@@ -1,96 +1,95 @@
-# Issue #322 Exposed Migration Drift Lessons
+# Issue #322 Exposed 마이그레이션 드리프트 교훈
 
-## Context
+## 배경
 
-Exposed 1.3.1 exposes two related but different migration surfaces. The Gradle
-plugin generates a file from build-time JDBC metadata, while the JDBC and
-R2DBC `MigrationUtils` APIs compare live database metadata inside their
-matching transaction types. Treating those surfaces as interchangeable made
-the old README example easy to misuse and left schema drift without a focused
-regression lane.
+Exposed 1.3.1은 서로 관련 있지만 다른 두 가지 마이그레이션 표면을 제공한다.
+Gradle 플러그인은 빌드 시점 JDBC 메타데이터로 파일을 생성하지만, JDBC와
+R2DBC `MigrationUtils` API는 각각에 맞는 트랜잭션 타입 안에서 실제 데이터베이스
+메타데이터를 비교한다. 이 표면들을 서로 바꿔 쓸 수 있다고 취급하면 기존 README
+예제를 오용하기 쉬웠으며, 스키마 드리프트를 집중적으로 검증하는 회귀 경로도
+남지 않았다.
 
-## Decisions and Findings
+## 결정 및 발견 사항
 
-### Fixed filenames prove reproducibility, not application versioning
+### 고정 파일명은 애플리케이션 버전 관리가 아니라 재현 가능성을 입증한다
 
-The repository demos keep fixed `V1` filenames because CI deletes only those
-two known fixtures, regenerates them with `--rerun --no-build-cache`, and
-requires a clean bounded migration-directory status. This is a deterministic
-repository fixture contract.
+리포지토리 데모는 고정된 `V1` 파일명을 유지한다. CI가 알려진 두 픽스처만
+삭제하고 `--rerun --no-build-cache`로 다시 생성한 뒤, 범위가 제한된 마이그레이션
+디렉터리 상태가 깨끗한지 요구하기 때문이다. 이는 결정적인 리포지토리 픽스처
+계약이다.
 
-Applications must do the opposite: select a new immutable versioned filename,
-check that it does not already exist, and never overwrite a migration that may
-have been applied. The plugin's timestamp default is convenient, but it is not
-a reproducibility proof because every invocation can choose a different path.
+애플리케이션은 반대로 해야 한다. 변경 불가능한 새 버전 파일명을 선택하고, 해당
+파일이 아직 존재하지 않는지 확인하며, 이미 적용되었을 수 있는 마이그레이션을
+절대 덮어쓰지 않아야 한다. 플러그인의 기본 타임스탬프는 편리하지만, 호출할
+때마다 다른 경로를 선택할 수 있으므로 재현 가능성을 입증하지는 않는다.
 
-### Build-time generation is JDBC even for an R2DBC application
+### R2DBC 애플리케이션에서도 빌드 시점 생성은 JDBC를 사용한다
 
-The Exposed Gradle plugin reads schema metadata through JDBC. An R2DBC
-application that uses the plugin therefore still owns a build-time JDBC URL and
-driver. Live R2DBC comparison remains separate and must run through the R2DBC
-`MigrationUtils` API and suspending transaction.
+Exposed Gradle 플러그인은 JDBC를 통해 스키마 메타데이터를 읽는다. 따라서 이
+플러그인을 사용하는 R2DBC 애플리케이션도 빌드 시점 JDBC URL과 드라이버를
+소유한다. 실제 R2DBC 비교는 별개로 유지하며, R2DBC `MigrationUtils` API와
+일시 중단 트랜잭션을 통해 실행해야 한다.
 
-### Generated SQL must cross an exact execution boundary
+### 생성된 SQL은 정확한 실행 경계를 통과해야 한다
 
-The regression executes only the single additive nullable
-`VARCHAR(255)` statement produced for a synthetic table. The validator matches
-the whole statement, exact table and column tokens, and the complete approved
-tail. Quoted identifiers are matched as tokens rather than stripped: stripping
-quotes first can turn an identifier with leading or trailing whitespace into
-the expected name while the database still targets a different object.
+회귀 테스트는 합성 테이블용으로 생성된 단 하나의 null 허용 추가
+`VARCHAR(255)` 문만 실행한다. 검증기는 문 전체, 정확한 테이블 및 열 토큰,
+승인된 전체 후행부를 일치시킨다. 따옴표로 감싼 식별자는 따옴표를 제거하지 않고
+토큰으로 일치시킨다. 따옴표를 먼저 제거하면 선행 또는 후행 공백이 있는 식별자가
+예상 이름으로 바뀔 수 있지만, 데이터베이스는 여전히 다른 객체를 대상으로 삼을
+수 있기 때문이다.
 
-Type-change output is characterized but never passed to the additive executor.
-This keeps the regression useful without converting an experimental upstream
-API into a production migration runner.
+타입 변경 출력의 특성은 기록하지만 추가 전용 실행기에는 절대 전달하지 않는다.
+이렇게 하면 실험적인 업스트림 API를 프로덕션 마이그레이션 실행기로 바꾸지
+않으면서도 회귀 테스트의 유용성을 유지할 수 있다.
 
-### Empty output has a deliberately narrow meaning
+### 빈 출력의 의미는 의도적으로 제한되어 있다
 
-An empty `MigrationUtils` result means only that this Exposed comparison did
-not detect a difference for the supplied table model and current dialect. It
-does not prove data compatibility, rollout safety, complete schema equality,
-or the absence of objects that Exposed does not model.
+빈 `MigrationUtils` 결과는 제공된 테이블 모델과 현재 방언에 대해 이 Exposed
+비교가 차이를 감지하지 못했다는 의미일 뿐이다. 데이터 호환성, 롤아웃 안전성,
+완전한 스키마 동일성, Exposed가 모델링하지 않는 객체의 부재를 입증하지 않는다.
 
-### Failure evidence needs two independent statuses
+### 실패 증거에는 서로 독립적인 두 상태가 필요하다
 
-CI captures the Gradle pipeline result with `PIPESTATUS[0]` and separately
-tracks evidence staging. Evidence assembly stays in a guarded non-errexit
-section so a later redaction, copy, or report failure cannot replace the
-original Gradle exit. The final selection result prefers a nonzero Gradle
-status, then the evidence status. Raw logs remain runner-temporary; only
-sanitized summaries, status, and stream-free JUnit XML may be uploaded.
+CI는 `PIPESTATUS[0]`으로 Gradle 파이프라인 결과를 캡처하고 증거 준비 상태를
+별도로 추적한다. 증거 조립은 errexit이 적용되지 않는 보호된 구간에 두어,
+이후의 민감 정보 제거, 복사, 보고 실패가 원래 Gradle 종료 값을 대체하지 못하게
+한다. 최종 선택 결과는 0이 아닌 Gradle 상태를 우선하고, 그다음 증거 상태를
+사용한다. 원시 로그는 러너의 임시 파일로만 유지하며, 정제된 요약, 상태,
+스트림 정보가 없는 JUnit XML만 업로드할 수 있다.
 
-## Outcome
+## 결과
 
-- Normal module tests exclude the `migration-drift` tag.
-- Dedicated JDBC and R2DBC tasks are live-only, non-cacheable, serialized by
-  the repository Test mutex, and restricted to `H2`, `POSTGRESQL`, or
-  `MYSQL_V8`.
-- Pull requests prove fixed demo generation and independent H2 JDBC/R2DBC
-  drift behavior.
-- Sunday/manual full Nightly proves PostgreSQL and MySQL 8 selections
-  sequentially without retries.
-- English and Korean README guidance separates application and contributor
-  scenarios, while the stable 1.11 manual remains unchanged until the 1.12
-  release owner promotes it against an exact release ref.
+- 일반 모듈 테스트는 `migration-drift` 태그를 제외한다.
+- 전용 JDBC와 R2DBC 작업은 실제 환경에서만 실행하고 캐시할 수 없으며,
+  리포지토리 테스트 뮤텍스로 직렬화하고 `H2`, `POSTGRESQL`, `MYSQL_V8`로
+  제한한다.
+- 풀 리퀘스트에서는 고정된 데모 생성과 서로 독립적인 H2 JDBC/R2DBC 드리프트
+  동작을 입증한다.
+- 일요일/수동 전체 야간 빌드에서는 PostgreSQL과 MySQL 8 선택을 재시도 없이
+  순차적으로 입증한다.
+- 영문 및 한글 README 지침은 애플리케이션과 기여자 시나리오를 구분하며,
+  안정 버전 1.11 매뉴얼은 1.12 릴리스 담당자가 정확한 릴리스 ref를 기준으로
+  승격할 때까지 변경하지 않는다.
 
-## Verification
+## 검증
 
-- Validator regression observed RED for quoted identifiers with embedded
-  boundary whitespace, then GREEN after exact-token matching.
-- Invalid `EXPOSED_TEST_DB=TYPO` changed from a successful dry run to a
-  fail-fast configuration error.
-- JDBC/R2DBC H2 additive convergence, H2 type-change characterization, and
-  real coroutine-cancellation cleanup pass.
-- Fixed JDBC/R2DBC V1 regeneration leaves both migration directories clean.
-- README parity self-test and live parity check, `actionlint`, Detekt, stable
-  manual no-diff, and `git diff --check` pass.
+- 검증기 회귀 테스트는 경계에 공백이 포함된 따옴표 식별자에서 실패를 관찰한 뒤,
+  정확한 토큰 일치 적용 후 성공을 확인했다.
+- 잘못된 `EXPOSED_TEST_DB=TYPO`는 성공하는 드라이 런에서 즉시 실패하는 구성
+  오류로 바뀌었다.
+- JDBC/R2DBC H2 추가 변경 수렴, H2 타입 변경 특성화, 실제 코루틴 취소 정리가
+  통과한다.
+- 고정 JDBC/R2DBC V1 재생성 후 두 마이그레이션 디렉터리가 모두 깨끗하다.
+- README 동등성 자체 테스트와 실제 동등성 검사, `actionlint`, Detekt, 안정
+  버전 매뉴얼 무변경 확인, `git diff --check`가 통과한다.
 
-## Future Guidance
+## 향후 지침
 
-- Keep production migration orchestration outside startup and request paths.
-- Add new executable statement shapes only with a whole-statement negative
-  matrix and a dialect-specific live proof.
-- Keep real-database selections sequential and no-retry so the evidence shows
-  the first actual migration failure.
-- Promote README material into the stable manual only after an exact 1.12
-  release ref and commit are available.
+- 프로덕션 마이그레이션 오케스트레이션은 시작 및 요청 경로 밖에 둔다.
+- 문 전체에 대한 부정 테스트 매트릭스와 방언별 실제 환경 증명 없이는 실행
+  가능한 새로운 문 형태를 추가하지 않는다.
+- 실제 데이터베이스 선택은 순차적이고 재시도 없이 유지해 첫 번째 실제
+  마이그레이션 실패가 증거에 드러나게 한다.
+- 정확한 1.12 릴리스 ref와 커밋을 사용할 수 있게 된 뒤에만 README 내용을
+  안정 버전 매뉴얼로 승격한다.

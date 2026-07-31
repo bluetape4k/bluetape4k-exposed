@@ -1,67 +1,68 @@
-# Issue 323 Domain Event Publisher Lesson
+# Issue 323 도메인 이벤트 발행기 교훈
 
-## Context
+## 배경
 
-Issue #323 connects Spring-neutral aggregate event buffers to Spring Boot JDBC
-transactions and optional Spring Modulith publication tracking.
+Issue #323은 Spring에 중립적인 애그리거트 이벤트 버퍼를 Spring Boot JDBC
+트랜잭션 및 선택적인 Spring Modulith 발행 추적과 연결한다.
 
-## Decision
+## 결정
 
-The publisher hands events to Spring inside the command transaction immediately
-after aggregate persistence. This timing lets default transactional listeners
-and Spring Modulith register work against the current transaction. Only
-committed completion clears the aggregate buffer; rollback and unknown
-completion preserve it.
+발행기는 애그리거트가 영속화된 직후 명령 트랜잭션 안에서 이벤트를 Spring에
+전달한다. 이 시점 덕분에 기본 트랜잭션 리스너와 Spring Modulith가 현재
+트랜잭션에 작업을 등록할 수 있다. 커밋 완료 시에만 애그리거트 버퍼를 비우며,
+롤백과 알 수 없는 완료 상태에서는 버퍼를 보존한다.
 
-Publishing for the first time from `afterCommit` was rejected. It cannot enlist
-durable publication in the command transaction and creates a crash window after
-aggregate persistence. Synchronous listeners therefore remain an explicit
-in-transaction boundary and must not perform non-idempotent irreversible work.
+`afterCommit`에서 처음 발행하는 방식은 채택하지 않았다. 이 방식은 명령
+트랜잭션에 내구성 있는 발행을 참여시킬 수 없고, 애그리거트 영속화 이후에
+크래시가 발생할 수 있는 구간을 만든다. 따라서 동기 리스너는 명시적인
+트랜잭션 내부 경계로 유지하며, 멱등성이 없는 되돌릴 수 없는 작업을 수행해서는
+안 된다.
 
-## Ownership Insight
+## 소유권에 관한 교훈
 
-The publisher reserves aggregate object identity, not aggregate ID. It retains
-the exact read-only snapshot and verifies event-reference identity before
-commit. Duplicate registration, snapshot mutation, and publication failure
-poison the transaction even when caller code catches the immediate exception.
+발행기는 애그리거트 ID가 아니라 애그리거트 객체 동일성을 예약한다. 정확히 같은
+읽기 전용 스냅샷을 유지하고 커밋 전에 이벤트 참조의 동일성을 검증한다. 호출자
+코드가 즉시 발생한 예외를 잡더라도 중복 등록, 스냅샷 변경, 발행 실패는
+트랜잭션을 실패 상태로 만든다.
 
-Spring's synchronization thread-local does not prove transaction-manager or
-DataSource identity. Auto-configuration may require one selectable manager, but
-the publisher never claims which manager owns the current transaction.
+Spring의 동기화 스레드 로컬만으로는 트랜잭션 관리자나 DataSource의 동일성을
+입증할 수 없다. 자동 구성은 선택 가능한 관리자가 하나뿐인 상황을 요구할 수
+있지만, 발행기는 현재 트랜잭션을 어느 관리자가 소유하는지 단정하지 않는다.
 
-## Completion Insight
+## 완료 처리에 관한 교훈
 
-Committed cleanup failures are observable but cannot roll back persistence.
-Recoverable `Exception` failures are isolated per aggregate and logged without
-payload or exception text. Fatal `Error` values are rethrown. `STATUS_UNKNOWN`
-preserves buffers, logs one sanitized anomaly per aggregate, and requires
-reconciliation before retry.
+커밋 후 정리 실패는 관찰할 수 있지만 영속화를 롤백할 수는 없다. 복구 가능한
+`Exception` 실패는 애그리거트별로 격리하며, 페이로드나 예외 텍스트 없이
+로그를 남긴다. 치명적인 `Error` 값은 다시 던진다. `STATUS_UNKNOWN`에서는
+버퍼를 보존하고 애그리거트마다 정제된 이상 로그 하나를 남기며, 재시도 전에
+조정 작업을 요구한다.
 
-`PROPAGATION_NESTED`/savepoint handoff and same-instance reuse across overlapping
-`REQUIRES_NEW` transactions remain unsupported. Solving them requires a broader
-ownership model, not a local callback tweak.
+`PROPAGATION_NESTED`/세이브포인트 전달과 서로 겹치는 `REQUIRES_NEW`
+트랜잭션에서 동일 인스턴스를 재사용하는 방식은 여전히 지원하지 않는다. 이를
+해결하려면 로컬 콜백 수정이 아니라 더 폭넓은 소유권 모델이 필요하다.
 
-## Outcome
+## 결과
 
-- Core contracts remain adapter-neutral and distinguish read-only list snapshots
-  from deeply immutable event objects.
-- JDBC auto-configuration backs off for ambiguous manager contexts and custom
-  publisher beans.
-- The DDD Modulith example uses one save-then-handoff transaction and no manual
-  publication/clear loop.
-- English/Korean docs, recovery guidance, rollout controls, and the lifecycle
-  diagram match the implementation.
+- 핵심 계약은 어댑터에 중립적으로 유지하며, 읽기 전용 목록 스냅샷과 깊은
+  불변성을 지닌 이벤트 객체를 구분한다.
+- JDBC 자동 구성은 관리자가 모호한 컨텍스트와 사용자 정의 발행기 빈이 있으면
+  물러난다.
+- DDD Modulith 예제는 하나의 저장 후 전달 트랜잭션을 사용하며, 수동 발행/비우기
+  루프를 두지 않는다.
+- 영문/한글 문서, 복구 지침, 롤아웃 제어, 수명 주기 다이어그램이 구현과
+  일치한다.
 
-## Verification
+## 검증
 
-- Forced tests passed: core 287 (13 skipped), JDBC 186, Modulith 61, example 10.
-- Publisher-focused tests passed with 33 tests.
-- Four Kover XML reports were generated and verified non-empty.
-- Final review converged at P0 = 0 and P1 = 0 against the approved design.
+- 강제 실행한 테스트가 통과했다: core 287 (13개 건너뜀), JDBC 186, Modulith 61,
+  example 10.
+- 발행기 중심 테스트 33개가 통과했다.
+- Kover XML 보고서 4개를 생성했으며 비어 있지 않음을 확인했다.
+- 최종 검토는 승인된 설계를 기준으로 P0 = 0, P1 = 0에 수렴했다.
 
-## Future Guard
+## 향후 변경 시 준수 사항
 
-Never clear aggregate events before committed completion. Never claim
-transaction-manager identity from Spring thread-local synchronization. Keep
-synchronous listener side effects idempotent, and use a durable outbox when the
-application requires post-commit dispatch without an in-transaction handoff.
+커밋 완료 전에 애그리거트 이벤트를 비우지 않는다. Spring 스레드 로컬 동기화만으로
+트랜잭션 관리자 동일성을 단정하지 않는다. 동기 리스너의 부수 효과는 멱등성을
+유지하고, 애플리케이션이 트랜잭션 내부 전달 없이 커밋 후 디스패치를 요구하면
+내구성 있는 아웃박스를 사용한다.

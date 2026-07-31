@@ -1,30 +1,31 @@
-# R2DBC `@Query` result semantics
+# R2DBC `@Query` 결과 의미 체계
 
-## Context
+## 배경
 
-R2DBC declared queries used raw SQL only to collect entity IDs, then reloaded entities with an
-`IN` query. The reload discarded the SQL result order, and queries without an ID column produced
-driver-dependent failures.
+R2DBC 선언형 쿼리는 원시 SQL을 엔티티 ID 수집에만 사용한 다음, `IN` 쿼리로
+엔티티를 다시 조회했다. 이 재조회 과정에서 SQL 결과 순서가 사라졌으며, ID 열이
+없는 쿼리는 드라이버에 따라 서로 다른 방식으로 실패했다.
 
-## Decision
+## 결정
 
-- Reload entities once, index them by ID, and rebuild the result in the raw SQL ID order.
-- Validate the SELECT list before execution so empty projection/grouping results cannot bypass the
-  mapped entity ID requirement. Locate top-level SELECT branches by tracking quotes, comments, and
-  parenthesis depth instead of matching nested SQL with a regular expression. Treat PostgreSQL
-  dollar-quoted strings and MySQL hash comments as lexical regions, including projection commas.
-- Decode raw IDs with the Exposed ID column type, reload distinct IDs, and reconstruct from the
-  original ID sequence so duplicate join rows retain their cardinality.
-- Unwrap the internal unsupported-shape exception so H2, PostgreSQL, and MySQL expose the same
-  `IllegalArgumentException` contract.
-- Keep scalar projection and aggregation mapping outside the entity repository query path.
+- 엔티티를 한 번만 다시 조회하고 ID로 인덱싱한 뒤, 원시 SQL의 ID 순서대로 결과를
+  재구성한다.
+- 빈 프로젝션이나 그룹화 결과가 매핑된 엔티티 ID 요구 사항을 우회하지 못하도록
+  실행 전에 SELECT 목록을 검증한다. 중첩 SQL을 정규식으로 일치시키는 대신 따옴표,
+  주석, 괄호 깊이를 추적해 최상위 SELECT 분기를 찾는다. PostgreSQL의 달러 따옴표
+  문자열과 MySQL의 해시 주석은 프로젝션 쉼표까지 포함하는 어휘 영역으로 취급한다.
+- 원시 ID는 Exposed ID 열 타입으로 디코딩하고, 서로 다른 ID만 다시 조회한 다음,
+  원래 ID 시퀀스로 결과를 재구성해 중복 조인 행의 카디널리티를 유지한다.
+- 내부의 지원하지 않는 형태 예외를 언래핑해 H2, PostgreSQL, MySQL이 동일한
+  `IllegalArgumentException` 계약을 노출하게 한다.
+- 스칼라 프로젝션과 집계 매핑은 엔티티 리포지토리 쿼리 경로 밖에 둔다.
 
-## Outcome
+## 결과
 
-`ORDER BY`, `LIMIT`, and join ordering are deterministic. Projection and grouping shapes without
-an entity ID fail explicitly instead of relying on the first selected column as an ID.
+`ORDER BY`, `LIMIT`, 조인 순서가 결정적으로 유지된다. 엔티티 ID가 없는 프로젝션과
+그룹화 형태는 첫 번째 선택 열을 ID로 간주하는 대신 명시적으로 실패한다.
 
-## Verification
+## 검증
 
-The declared-query regression suite covers ordering, limits, joins, scalar projection, and grouping
-against H2, PostgreSQL, and MySQL.
+선언형 쿼리 회귀 테스트 모음은 H2, PostgreSQL, MySQL을 대상으로 순서, 제한, 조인,
+스칼라 프로젝션, 그룹화를 검증한다.
