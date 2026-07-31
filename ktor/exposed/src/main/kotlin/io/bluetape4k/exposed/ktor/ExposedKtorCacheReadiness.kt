@@ -31,6 +31,9 @@ class ExposedKtorCacheContributor private constructor(
          * [component]는 `[a-z][a-z0-9_-]{0,62}`와 일치하고 tenant, key, URL, namespace, endpoint, secret 등
          * 데이터를 담는 값을 인코딩하지 않아야 합니다. [report]는 blocking이나 backend I/O를 수행해서는 안 됩니다.
          * library는 supplier용 isolation thread, dispatcher, scope를 생성하지 않습니다.
+         *
+         * Contract: [component] must not contain a data-bearing value. [report] is a side-effect-free O(1) in-memory
+         * read with no backend I/O; the library creates no isolation thread, dispatcher, or scope.
          */
         fun jdbcRepository(
             component: String,
@@ -43,6 +46,10 @@ class ExposedKtorCacheContributor private constructor(
          * [component]는 `[a-z][a-z0-9_-]{0,62}`와 일치하고 데이터를 담는 값을 인코딩하지 않아야 합니다.
          * [report]는 non-blocking이고 backend I/O 없이 coroutine cancellation에 협력해야 합니다.
          * library는 isolation thread, dispatcher, scope를 생성하지 않습니다.
+         *
+         * Contract: [component] must not contain a tenant, key, URL, namespace, secret, or other data-bearing value.
+         * [report] is a side-effect-free O(1) in-memory read with no backend I/O, must be non-blocking, and must
+         * cooperate with coroutine cancellation; the library creates no isolation thread, dispatcher, or scope.
          */
         fun r2dbcRepository(
             component: String,
@@ -54,6 +61,10 @@ class ExposedKtorCacheContributor private constructor(
          *
          * [component]는 지정된 형식과 일치하고 데이터를 담는 값을 인코딩하지 않아야 합니다.
          * sampling은 blocking이나 backend I/O를 수행하지 않으며 library는 isolation thread, dispatcher, scope를 생성하지 않습니다.
+         *
+         * Contract: [component] must match `[a-z][a-z0-9_-]{0,62}` and must not contain a tenant, key, URL,
+         * namespace, secret, or other data-bearing value. Sampling is a side-effect-free O(1) in-memory read with
+         * no backend I/O; the library creates no isolation thread, dispatcher, or scope.
          */
         fun snapshot(
             component: String,
@@ -72,6 +83,11 @@ class ExposedKtorCacheContributor private constructor(
          * [component]는 지정된 형식과 일치하고 데이터를 담는 값을 인코딩하지 않아야 합니다. [probe]는 side-effect-free
          * O(1) in-memory 조회이면서 non-blocking이고 backend I/O 없이 coroutine cancellation에 협력해야 합니다.
          * library는 isolation thread, dispatcher, scope를 생성하지 않습니다.
+         *
+         * Contract: [component] must match `[a-z][a-z0-9_-]{0,62}` and must not contain a tenant, key, URL,
+         * namespace, secret, or other data-bearing value. [probe] is a side-effect-free O(1) in-memory read with no
+         * backend I/O, must be non-blocking, and must cooperate with coroutine cancellation.
+         * The library creates no isolation thread, dispatcher, or scope.
          */
         fun custom(
             component: String,
@@ -106,6 +122,11 @@ class ExposedKtorCacheContributor private constructor(
  * 사용해야 합니다. component 이름은 데이터를 담는 값을 인코딩해서는 안 됩니다. supplier probe는 backend I/O 없는
  * side-effect-free O(1) in-memory 조회여야 합니다. suspending supplier는 non-blocking이고 coroutine cancellation에
  * 협력해야 합니다. library는 isolation thread, dispatcher, scope를 생성하지 않습니다. [ExposedKtorCacheContributor]를 참고합니다.
+ *
+ * Contract: component names match `[a-z][a-z0-9_-]{0,62}` and contain no tenant, key, URL, namespace, secret, or
+ * other data-bearing value. Probes are side-effect-free O(1) in-memory reads with no backend I/O; suspending probes
+ * are non-blocking and cooperate with coroutine cancellation. The library creates no isolation thread, dispatcher,
+ * or scope.
  */
 class ExposedKtorCacheReadinessConfig(
     contributors: List<ExposedKtorCacheContributor>,
