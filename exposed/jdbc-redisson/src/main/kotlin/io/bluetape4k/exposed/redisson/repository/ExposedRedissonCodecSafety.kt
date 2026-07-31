@@ -14,17 +14,17 @@ import java.util.ArrayDeque
 import java.util.Collections
 import java.util.IdentityHashMap
 
-/** Shared fail-fast policy for Redisson codecs that can deserialize executable object graphs. */
+/** 실행 가능한 객체 그래프를 역직렬화할 수 있는 Redisson codec에 공통으로 적용하는 fail-fast 정책입니다. */
 object ExposedRedissonCodecSafety {
 
-    /** Validates the codec carried by a repository [config]. */
+/** 저장소 [config]에 포함된 codec을 검증합니다. */
     fun requireSafe(config: RedissonCacheConfig, trustedBinaryCache: Boolean) {
         requireSafe(config.codec, trustedBinaryCache)
     }
 
     /**
-     * Rejects Fory, Kryo, and JDK object serialization codecs unless the caller explicitly trusts every cache writer
-     * and payload in an isolated Redis data set.
+     * 호출자가 격리된 Redis 데이터 세트의 모든 cache writer와 payload를 명시적으로 신뢰하지 않으면
+     * Fory, Kryo, JDK 객체 직렬화 codec을 거부합니다.
      */
     fun requireSafe(codec: Codec, trustedBinaryCache: Boolean) {
         if (trustedBinaryCache) return
@@ -168,7 +168,7 @@ object ExposedRedissonCodecSafety {
     private const val MAX_CODEC_GRAPH_NODES = 64
 }
 
-/** Internal seam that lets each consumer revalidate the preserved raw delegate with its own trust authority. */
+/** 각 소비자가 보존된 raw delegate를 자체 신뢰 권한으로 다시 검증할 수 있게 하는 내부 경계입니다. */
 internal interface ExposedRedissonDelegatingCodec : Codec {
     val delegateCodec: Codec
 }

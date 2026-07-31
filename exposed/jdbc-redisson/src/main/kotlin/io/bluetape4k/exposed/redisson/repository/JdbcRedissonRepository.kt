@@ -118,13 +118,13 @@ interface JdbcRedissonRepository<ID: Any, E: Serializable>: JdbcRedisRepository<
     }
 
     /**
-     * Upserts multiple entities into the cache using Redisson's batched map write path.
+     * Redisson의 batch map 쓰기 경로를 사용해 여러 엔티티를 캐시에 upsert합니다.
      *
-     * In write-through or write-behind mode, Redisson invokes the configured map writer
-     * with the same semantics as [putAll]. Empty input is ignored.
+     * write-through 또는 write-behind 모드에서는 Redisson이 설정된 map writer를
+     * [putAll]과 같은 의미로 호출합니다. 빈 입력은 무시합니다.
      *
-     * @param entities entities keyed by ID
-     * @param batchSize Redisson batch size; must be greater than zero
+     * @param entities ID를 키로 사용하는 엔티티
+     * @param batchSize Redisson batch 크기이며 0보다 커야 합니다
      */
     fun upsertAll(
         entities: Map<ID, E>,

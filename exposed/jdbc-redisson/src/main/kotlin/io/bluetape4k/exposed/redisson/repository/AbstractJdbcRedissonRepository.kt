@@ -218,7 +218,7 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
     }
 
     /**
-     * Upserts many entities through the writer-backed Redisson map.
+     * writer가 연결된 Redisson map을 통해 여러 엔티티를 upsert합니다.
      */
     override fun upsertAll(
         entities: Map<ID, E>,
