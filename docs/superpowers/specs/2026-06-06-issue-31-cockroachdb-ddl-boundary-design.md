@@ -1,150 +1,148 @@
-# Issue #31 CockroachDB DDL Boundary Design
+# Issue #31 CockroachDB DDL 경계 설계
 
-Date: 2026-06-06
-Issue: https://github.com/bluetape4k/bluetape4k-exposed/issues/31
-Parent epic: https://github.com/bluetape4k/bluetape4k-exposed/issues/24
-Previous slice: https://github.com/bluetape4k/bluetape4k-exposed/issues/30
+날짜: 2026-06-06
+이슈: https://github.com/bluetape4k/bluetape4k-exposed/issues/31
+상위 epic: https://github.com/bluetape4k/bluetape4k-exposed/issues/24
+이전 작업 단위: https://github.com/bluetape4k/bluetape4k-exposed/issues/30
 
-## Goal
+## 목표
 
-Define the supported `exposed-cockroachdb` 1.11.0 DDL and PostgreSQL
-compatibility boundary with executable CockroachDB evidence.
+실행 가능한 CockroachDB 근거를 바탕으로 `exposed-cockroachdb` 1.11.0의
+지원 DDL 및 PostgreSQL 호환성 경계를 정의한다.
 
-This issue must not turn CockroachDB into a broad PostgreSQL alias. It should
-answer which Exposed-generated schema paths are accepted by a real CockroachDB
-container, which PostgreSQL-derived paths are deferred, and whether a custom
-`CockroachDbDialect` is required for the 1.11.0 contract.
+이 이슈에서 CockroachDB를 포괄적인 PostgreSQL alias로 만들어서는 안 된다.
+실제 CockroachDB container가 허용하는 Exposed 생성 스키마 경로, 보류할
+PostgreSQL 파생 경로, 1.11.0 계약에 사용자 정의 `CockroachDbDialect`가
+필요한지를 명확히 답해야 한다.
 
-## Current Evidence
+## 현재 근거
 
-- #30 landed a minimal `exposed-cockroachdb` module with `CockroachDatabase`,
-  `CockroachServer` Testcontainers smoke coverage, and no custom dialect.
-- CockroachDB stable docs currently expose v26.2.2. They state CockroachDB uses
-  the PostgreSQL wire protocol and supports most PostgreSQL syntax, but also
-  document unsupported or different PostgreSQL behavior.
-- CockroachDB v26.2 docs list `CREATE DOMAIN`, PostgreSQL range types, events,
-  dropping a single primary key, XML functions, column-level privileges, XA
-  syntax, template database creation, single partition drop, foreign data
-  wrappers, and advisory lock semantics as unsupported or different areas.
-- CockroachDB SQL feature support docs list primary key, unique, check, foreign
-  key, default value, indexes, `ALTER TABLE`, `RETURNING`, sequences, and
-  identity columns as supported areas.
-- JetBrains Exposed 1.3.0 docs do not list CockroachDB as a built-in supported
-  database.
-- Existing bluetape4k modules use custom dialect registration only when the
-  accepted SQL surface needs a named Exposed dialect, metadata adapter, or
-  disabled capabilities (`TrinoDialect`, `DuckDBDialect`, `StarRocksDialect`).
+- #30에서 `CockroachDatabase`, `CockroachServer` Testcontainers smoke
+  coverage를 포함하고 사용자 정의 dialect는 없는 최소
+  `exposed-cockroachdb` 모듈을 도입했다.
+- 현재 CockroachDB stable docs는 v26.2.2를 제공한다. CockroachDB가
+  PostgreSQL wire protocol을 사용하고 PostgreSQL 구문의 대부분을 지원한다고
+  설명하지만, 지원하지 않거나 다르게 동작하는 PostgreSQL 기능도 문서화한다.
+- CockroachDB v26.2 문서는 `CREATE DOMAIN`, PostgreSQL range type, event,
+  단일 기본 키 삭제, XML 함수, 컬럼 수준 권한, XA 구문, template database
+  생성, 단일 partition 삭제, foreign data wrapper, advisory lock 의미론을
+  지원하지 않거나 다르게 동작하는 영역으로 나열한다.
+- CockroachDB SQL 기능 지원 문서는 기본 키, unique, check, foreign key,
+  default value, index, `ALTER TABLE`, `RETURNING`, sequence, identity column을
+  지원 영역으로 나열한다.
+- JetBrains Exposed 1.3.0 문서는 CockroachDB를 내장 지원 데이터베이스로
+  나열하지 않는다.
+- 기존 bluetape4k 모듈은 허용된 SQL 영역에 이름이 지정된 Exposed dialect,
+  metadata adapter, 비활성화할 기능이 필요할 때만 사용자 정의 dialect를
+  등록한다(`TrinoDialect`, `DuckDBDialect`, `StarRocksDialect`).
 
-## Scope
+## 범위
 
-### Implementation Scope
+### 구현 범위
 
-- Extend the existing `exposed/exposed-cockroachdb` tests with a focused
-  compatibility suite.
-- Add a source-visible compatibility matrix that README files can render and
-  tests can validate against.
-- Update `README.md` and `README.ko.md` with the accepted, deferred, and
-  unsupported DDL boundary.
-- Update `CHANGELOG.md`.
-- If evidence shows PostgreSQLDialect needs local capability overrides, add a
-  minimal `CockroachDbDialect` and register it from `CockroachDatabase`.
+- 기존 `exposed/exposed-cockroachdb` 테스트에 집중된 호환성 테스트 모음을
+  추가한다.
+- README 파일에서 표시할 수 있고 테스트에서 검증할 수 있는 소스 수준 호환성
+  매트릭스를 추가한다.
+- 허용, 보류, 미지원 DDL 경계를 `README.md`와 `README.ko.md`에 반영한다.
+- `CHANGELOG.md`를 갱신한다.
+- 근거상 PostgreSQLDialect에 로컬 기능 override가 필요하면 최소
+  `CockroachDbDialect`를 추가하고 `CockroachDatabase`에서 등록한다.
 
-### Accepted Evidence Categories
+### 허용 근거 범주
 
-The compatibility suite must cover these accepted or deferred categories:
+호환성 테스트 모음은 다음의 허용 또는 보류 범주를 다뤄야 한다.
 
-| Category | Required Evidence |
+| 범주 | 필수 근거 |
 |---|---|
-| Primary key DDL | `SchemaUtils.create/drop` succeeds for a primary-key table. |
-| Unique constraint/index DDL | Create/drop succeeds and duplicate insert fails. |
-| Explicit index DDL | Create/drop succeeds and metadata/query path can see the table. |
-| Generated IDs | Exposed insert can obtain a generated ID for the accepted table form. |
-| `RETURNING` | A raw CockroachDB `INSERT ... RETURNING` smoke query succeeds through PostgreSQL JDBC. |
-| Schema metadata | JDBC `DatabaseMetaData` can discover created table/columns. |
+| 기본 키 DDL | 기본 키 테이블에 대해 `SchemaUtils.create/drop`이 성공한다. |
+| Unique constraint/index DDL | 생성/삭제가 성공하고 중복 insert가 실패한다. |
+| 명시적 index DDL | 생성/삭제가 성공하고 metadata/query 경로에서 테이블을 확인할 수 있다. |
+| 생성 ID | 허용된 테이블 형식에서 Exposed insert로 생성 ID를 얻을 수 있다. |
+| `RETURNING` | PostgreSQL JDBC를 통한 원시 CockroachDB `INSERT ... RETURNING` smoke query가 성공한다. |
+| 스키마 메타데이터 | JDBC `DatabaseMetaData`가 생성된 테이블/컬럼을 탐색할 수 있다. |
 
-### Deferred Or Unsupported Evidence Categories
+### 보류 또는 미지원 근거 범주
 
-The README matrix must explicitly mark these as deferred or unsupported for
-1.11.0 unless direct CockroachDB tests prove otherwise in this issue:
+이 이슈의 CockroachDB 직접 테스트로 달리 입증하지 않는 한 README 매트릭스는
+다음 항목을 1.11.0에서 보류 또는 미지원으로 명시해야 한다.
 
-- Custom CockroachDB dialect parity.
-- Full PostgreSQL type parity.
-- PostgreSQL range types.
-- `CREATE DOMAIN`.
-- XML functions / XML type behavior.
-- Drop-single-primary-key workflows.
-- Schema migration diff no-op semantics. Implementation evidence showed
-  `MigrationUtils` still proposes generated-ID sequence ownership changes after
-  `SchemaUtils.create`, so #31 documents this as deferred instead of claiming
-  no-op migration support.
-- Advanced migration semantics beyond the observed sequence diff boundary.
-- Serializable transaction retry helpers, which are owned by #32.
-- R2DBC support.
+- 사용자 정의 CockroachDB dialect 동등성
+- 완전한 PostgreSQL type 동등성
+- PostgreSQL range type
+- `CREATE DOMAIN`
+- XML 함수/XML type 동작
+- 단일 기본 키 삭제 workflow
+- Schema migration diff no-op 의미론. 구현 근거에서 `SchemaUtils.create`
+  이후에도 `MigrationUtils`가 생성 ID sequence ownership 변경을 제안했으므로,
+  #31에서는 no-op migration 지원을 주장하지 않고 보류 항목으로 문서화한다.
+- 관찰된 sequence diff 경계를 넘어서는 고급 migration 의미론
+- #32가 담당하는 serializable transaction retry 헬퍼
+- R2DBC 지원
 
-## Dialect Decision Rule
+## Dialect 결정 규칙
 
-Keep the helper-only module contract for 1.11.0 unless one of the accepted
-evidence categories fails specifically because Exposed's default PostgreSQL
-dialect advertises an unsupported CockroachDB capability or emits SQL that a
-minimal CockroachDB dialect can safely fix.
+허용 근거 범주 중 하나가 Exposed의 기본 PostgreSQL dialect가 지원하지 않는
+CockroachDB 기능을 지원한다고 표시하거나, 최소 CockroachDB dialect로
+안전하게 고칠 수 있는 SQL을 생성한 탓에 실패하는 경우가 아니라면 1.11.0에서
+헬퍼 전용 모듈 계약을 유지한다.
 
-If a custom dialect is added, it must be minimal:
+사용자 정의 dialect를 추가한다면 최소 범위로 제한해야 한다.
 
-- Register a separate dialect name without overriding global PostgreSQL
-  behavior.
-- Disable only proven unsafe capabilities.
-- Preserve the working PostgreSQL-wire query and DDL subset.
-- Add tests proving `db.dialect` is the custom dialect and accepted DDL still
-  passes.
+- 전역 PostgreSQL 동작을 override하지 않고 별도 dialect 이름을 등록한다.
+- 안전하지 않다고 입증한 기능만 비활성화한다.
+- 동작하는 PostgreSQL-wire query 및 DDL 하위 집합을 보존한다.
+- `db.dialect`가 사용자 정의 dialect이고 허용된 DDL이 계속 통과함을 테스트로
+  입증한다.
 
-## Public API Contract
+## 공개 API 계약
 
-No new public API is required if the helper-only decision holds. If a dialect is
-added, public API changes are limited to:
+헬퍼 전용 결정을 유지하면 새로운 공개 API가 필요하지 않다. dialect를 추가하는
+경우 공개 API 변경은 다음으로 제한한다.
 
 - `io.bluetape4k.exposed.cockroachdb.dialect.CockroachDbDialect`
-- Optional metadata adapter only when direct evidence requires it.
+- 직접 근거상 필요할 때만 선택적으로 추가하는 metadata adapter
 
-Public KDoc must be English and must state the bounded 1.11.0 scope.
+공개 KDoc는 영어로 작성하고 제한된 1.11.0 범위를 명시해야 한다.
 
-## Test Contract
+## 테스트 계약
 
-- Use `CockroachServer.Launcher.cockroach`; do not instantiate raw containers.
-- Keep Testcontainers-backed verification serial.
-- Use bluetape4k assertion helpers.
-- Prefer Exposed `SchemaUtils` for accepted DDL proof.
-- Use raw SQL only when Exposed has no direct API for the evidence category
-  (`RETURNING`, direct unsupported PostgreSQL feature checks, or metadata
-  diagnostics).
-- Use bluetape4k JDBC/HikariCP helpers for direct JDBC evidence instead of
-  opening ad hoc `DriverManager` connections in tests.
-- Use unique table names or cleanup guards so reruns are deterministic.
-- Unsupported-path checks must not rely on fragile full error message strings;
-  assert SQLSTATE or a stable, narrow error classification where available.
+- 원시 container를 직접 만들지 말고 `CockroachServer.Launcher.cockroach`를
+  사용한다.
+- Testcontainers 기반 검증은 순차 실행한다.
+- bluetape4k assertion 헬퍼를 사용한다.
+- 허용된 DDL 근거에는 Exposed `SchemaUtils`를 우선 사용한다.
+- 근거 범주에 대한 Exposed 직접 API가 없을 때만 원시 SQL을 사용한다
+  (`RETURNING`, 지원하지 않는 PostgreSQL 기능 직접 검사, metadata 진단).
+- 직접 JDBC 근거에는 테스트에서 임시 `DriverManager` 연결을 열지 말고
+  bluetape4k JDBC/HikariCP 헬퍼를 사용한다.
+- 재실행 결과가 결정적이도록 고유한 테이블 이름이나 정리 guard를 사용한다.
+- 미지원 경로 검사는 쉽게 바뀌는 전체 오류 메시지 문자열에 의존하지 않는다.
+  가능하면 SQLSTATE나 안정적이고 좁은 오류 분류를 확인한다.
 
-## Documentation Contract
+## 문서 계약
 
-Both module READMEs must contain:
+두 모듈 README에 다음 내용을 포함해야 한다.
 
-- A compatibility matrix with `Supported`, `Deferred`, and `Out of scope`
-  statuses.
-- A short warning that CockroachDB is PostgreSQL-wire-compatible but not
-  PostgreSQL-equivalent.
-- A note that Exposed does not list CockroachDB as a built-in supported
-  database.
-- The exact verification command.
-- Links to #30, #31, and #32 where relevant.
+- `Supported`, `Deferred`, `Out of scope` 상태를 포함한 호환성 매트릭스
+- CockroachDB는 PostgreSQL wire 호환이지만 PostgreSQL과 동등하지 않다는
+  짧은 경고
+- Exposed가 CockroachDB를 내장 지원 데이터베이스로 나열하지 않는다는 설명
+- 정확한 검증 명령
+- 관련되는 곳에 #30, #31, #32 링크
 
-## Acceptance Criteria
+## 인수 기준
 
-- #31 GitHub issue body is refreshed with current documentation evidence.
-- `./gradlew :bluetape4k-exposed-cockroachdb:test --rerun-tasks --no-configuration-cache --no-daemon`
-  passes with the new compatibility suite.
-- `./gradlew :bluetape4k-exposed-cockroachdb:koverXmlReport --no-configuration-cache --no-daemon`
-  passes after tests.
-- README locale pair documents the matrix and does not overclaim PostgreSQL
-  parity.
-- CHANGELOG records the compatibility boundary work.
-- Step 2-R, Step 3-R, and Step 6-R local 7-tier reviews all close with
-  `P0 = 0` and `P1 = 0`.
-- PR body final `##` section is `## DoD Status`.
+- 현재 문서 근거를 반영해 #31 GitHub issue 본문을 갱신한다.
+- 새로운 호환성 테스트 모음으로
+  `./gradlew :bluetape4k-exposed-cockroachdb:test --rerun-tasks --no-configuration-cache --no-daemon`
+  명령이 통과한다.
+- 테스트 후
+  `./gradlew :bluetape4k-exposed-cockroachdb:koverXmlReport --no-configuration-cache --no-daemon`
+  명령이 통과한다.
+- README locale pair가 매트릭스를 문서화하고 PostgreSQL 동등성을 과장하지
+  않는다.
+- CHANGELOG에 호환성 경계 작업을 기록한다.
+- Step 2-R, Step 3-R, Step 6-R 로컬 7단계 검토를 모두 `P0 = 0`,
+  `P1 = 0`으로 마친다.
+- PR 본문의 마지막 `##` section은 `## DoD Status`이다.

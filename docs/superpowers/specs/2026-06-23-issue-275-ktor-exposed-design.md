@@ -1,9 +1,9 @@
-# Issue #275 Ktor Exposed Integration Design
+# Issue #275 Ktor Exposed 통합 설계
 
-Date: 2026-06-23
-Issue: #275
-Milestone: 1.11.0
-Branch: `feat/issue-275-ktor-integration`
+날짜: 2026-06-23
+이슈: #275
+마일스톤: 1.11.0
+브랜치: `feat/issue-275-ktor-integration`
 
 ## 문제
 
@@ -49,19 +49,19 @@ route handler 안에서 JDBC `transaction {}` 또는 R2DBC `suspendTransaction {
 
 ## 결정
 
-### Module
+### 모듈
 
-- Physical path: `ktor/exposed`
+- 물리 경로: `ktor/exposed`
 - Gradle project/artifact: `:bluetape4k-exposed-ktor`
 - Package root: `io.bluetape4k.exposed.ktor`
-- Generic Ktor helper는 계속 `bluetape4k-projects`에 둔다.
+- 일반 Ktor 헬퍼는 계속 `bluetape4k-projects`에 둔다.
 
 이 경로는 Spring Boot integration family와 같은 root-level integration
 family 패턴을 따른다. `exposed/ktor`도 자동 include가 가능하지만, Ktor 관련
 surface가 Exposed dialect/helper라기보다 server integration이므로
 `ktor/exposed`가 책임을 더 명확히 드러낸다.
 
-### Ownership
+### 소유권
 
 모듈은 pool, registry, global lifecycle을 만들지 않는다. application이 다음
 객체를 공급한다.
@@ -73,7 +73,7 @@ surface가 Exposed dialect/helper라기보다 server integration이므로
 `DataSource`, `ConnectionFactory`, pool, OpenTelemetry SDK, Prometheus registry는
 caller-owned이다.
 
-### Ktor Core Composition
+### Ktor Core 구성
 
 `bluetape4k-exposed-ktor`는 `bluetape4k-ktor-core`를 `api` dependency로
 사용하고 다음 타입/함수를 재사용한다.
@@ -84,11 +84,10 @@ caller-owned이다.
 - `requireAbsoluteKtorPath`와 같은 path validation style
 
 그러나 `installBluetape4kExposedKtor`는 `installBluetape4kKtorCore()`를 자동
-호출하지 않는다. Content negotiation, generic core status pages, generic
-`/healthz`/`/readyz` route는 application이 `bluetape4k-ktor-core` 또는 자기 Ktor
-configuration으로 명시적으로 설치한다. 이 module은 Exposed-specific status
-mapping, Exposed-specific liveness/readiness routes, and Exposed transaction
-helpers만 추가한다.
+호출하지 않는다. Content negotiation, 일반 core status pages, 일반
+`/healthz`/`/readyz` route는 application이 `bluetape4k-ktor-core` 또는 자체 Ktor
+configuration으로 명시적으로 설치한다. 이 모듈은 Exposed 전용 status mapping,
+Exposed 전용 liveness/readiness route, Exposed transaction 헬퍼만 추가한다.
 
 따라서 README/KDoc example은 `installBluetape4kKtorCore(
 Bluetape4kKtorCoreConfig(installStatusPages = false)
@@ -105,7 +104,7 @@ Exposed mapping을 같이 쓰는 supported path는 caller가 하나의 `install(
 block 안에서 `bluetape4kErrorResponses()`와 `bluetape4kExposedErrors()`를 조합하는
 방식이다.
 
-### Lifecycle Contract
+### Lifecycle 계약
 
 모듈은 다음 객체를 닫거나 mutate하지 않는다.
 
@@ -119,7 +118,7 @@ block 안에서 `bluetape4kErrorResponses()`와 `bluetape4kExposedErrors()`를 �
 생성하지 않는다. Test/example이 pool이나 executor를 만들면 해당 test/example이
 `finally` 또는 lifecycle hook에서 닫는다.
 
-### Public API Sketch
+### 공개 API 개요
 
 ```kotlin
 fun Application.installBluetape4kExposedKtor(
@@ -163,54 +162,54 @@ suspend fun <T> ApplicationCall.exposedR2dbcTransaction(
 ): T
 ```
 
-구현 단계에서 overload 이름은 source compatibility와 readability를 기준으로
+구현 단계에서 overload 이름은 소스 호환성과 가독성을 기준으로
 정리할 수 있지만, 다음 계약은 유지한다.
 
-- transaction helper는 caller가 넘긴 database만 사용한다.
-- R2DBC helper는 `suspendTransaction(db = ...)`를 사용하고 cancellation을
+- transaction 헬퍼는 호출자가 넘긴 database만 사용한다.
+- R2DBC 헬퍼는 `suspendTransaction(db = ...)`를 사용하고 cancellation을
   보존한다.
-- JDBC helper는 `suspend` API이며 caller가 넘긴 `CoroutineDispatcher` 안에서 기존
+- JDBC 헬퍼는 `suspend` API이며 호출자가 넘긴 `CoroutineDispatcher` 안에서 기존
   Exposed `transaction(db = ...)`를 실행한다. Dispatcher에는 `Dispatchers.VT`,
-  application-owned dispatcher, 또는 caller가 직접 선택한 blocking isolation
-  dispatcher를 넘긴다. helper는 hidden dispatcher를 만들지 않으며,
+  application 소유 dispatcher 또는 호출자가 직접 선택한 blocking isolation
+  dispatcher를 넘긴다. 헬퍼는 숨겨진 dispatcher를 만들지 않으며,
   README/KDoc/example/test는 Ktor route coroutine에서 blocking JDBC를 직접 실행하지
   않는다. `CoroutineContext`나 `EmptyCoroutineContext`를 받아 event-loop에서
   blocking transaction이 실행될 수 있는 API는 제공하지 않는다.
-- status mapping은 Exposed/SQL exception을 safe `ApiErrorResponse`로 바꾸되,
+- status mapping은 Exposed/SQL exception을 안전한 `ApiErrorResponse`로 바꾸되,
   `CancellationException`은 재던진다.
-- metrics는 caller가 `MeterRegistry`를 제공할 때만 timer/counter를 기록한다.
+- metrics는 호출자가 `MeterRegistry`를 제공할 때만 timer/counter를 기록한다.
 - `installHealthRoutes = true` 또는 `bluetape4kExposedHealthRoutes(...)` 호출 시
   `jdbcDatabase`와 `r2dbcDatabase`가 모두 `null`이면 fail fast 한다. StatusPages
   only 사용은 `installHealthRoutes = false`로 허용한다.
-- default `installBluetape4kExposedKtor()` 호출은 intentionally no-op일 수 있다.
-  KDoc/README는 installer가 Exposed-specific features만 추가하며, real 사용에는
+- 기본 `installBluetape4kExposedKtor()` 호출은 의도적으로 아무 작업도 하지 않을 수 있다.
+  KDoc/README는 installer가 Exposed 전용 기능만 추가하며, 실제 사용에는
   `installStatusPages = true`, `installHealthRoutes = true` + backend, 또는 direct
-  route/transaction helper 호출 중 하나가 필요하다고 경고한다. Tests는 default
+  route/transaction 헬퍼 호출 중 하나가 필요하다고 경고한다. 테스트는 기본
   installer가 StatusPages나 health/readiness route를 추가하지 않음을 검증한다.
 - `jdbcDatabase`가 있고 readiness route 설치가 요청되면 `jdbcBlockingDispatcher`는
   필수다. 없으면 fail fast 한다. R2DBC-only readiness는
   `jdbcBlockingDispatcher` 없이 허용한다.
 
-### Readiness Contract
+### Readiness 계약
 
 - `/healthz/exposed`는 Exposed integration liveness endpoint다. DB probe를 하지
   않고 HTTP 200 + `HealthResponse.up(details = mapOf("exposed" to "UP"))`를
   반환한다.
-- `/readyz/exposed`는 configured backend만 probe한다.
-- configured backend가 모두 UP이면 HTTP 200 +
+- `/readyz/exposed`는 설정한 backend만 probe한다.
+- 설정한 backend가 모두 UP이면 HTTP 200 +
   `HealthResponse.up(details = mapOf("jdbc" to "UP", "r2dbc" to "UP"))`를
-  반환한다. 한 backend만 configured된 경우 해당 key만 포함한다.
-- configured backend 중 하나라도 실패하면 HTTP 503 +
+  반환한다. 한 backend만 설정된 경우 해당 key만 포함한다.
+- 설정한 backend 중 하나라도 실패하면 HTTP 503 +
   `HealthResponse.down(details = ...)`를 반환한다.
-- unconfigured backend는 details에서 제외한다. `jdbcDatabase`와 `r2dbcDatabase`가
+- 설정하지 않은 backend는 details에서 제외한다. `jdbcDatabase`와 `r2dbcDatabase`가
   모두 없는데 readiness route 설치가 요청되면 fail fast 한다.
 - `readinessProbeTimeout` default는 1초이며 0 이하 값은 fail fast 한다.
 - `jdbcQueryTimeout` default는 1초이며 0 이하 값은 fail fast 한다. JDBC readiness
   implementation은 JDBC/Exposed statement-level query timeout을 적용해야 한다.
-- module-internal readiness deadline은 `timeout`으로 분류한다. External caller
-  cancellation and request cancellation에서 발생한 `CancellationException`은
+- 모듈 내부 readiness deadline은 `timeout`으로 분류한다. 외부 호출자
+  cancellation과 request cancellation에서 발생한 `CancellationException`은
   재던지고 `timeout`이나 SQL error로 변환하지 않는다.
-- probe는 schema/table scan을 하지 않는다. JDBC는 caller-owned blocking dispatcher
+- probe는 schema/table scan을 하지 않는다. JDBC는 호출자가 소유하는 blocking dispatcher
   안에서 single minimal `SELECT 1`류 connectivity query만 수행하며
   `readinessProbeTimeout` 이후 route coroutine이 복귀하고 `jdbcQueryTimeout` 이후
   blocked JDBC statement가 timeout으로 정리됨을 test로 검증한다. R2DBC는
@@ -224,12 +223,12 @@ suspend fun <T> ApplicationCall.exposedR2dbcTransaction(
   vendor code, pool name, exception message, stack trace, latency histogram을
   포함하지 않는다.
 
-### Security Requirements
+### 보안 요구 사항
 
 - `StatusPagesConfig.bluetape4kExposedErrors()`는 stable error code와 generic
   client-safe message만 반환한다.
 - 대상 exception family는 `ExposedSQLException`, `SQLException`, R2DBC exception,
-  pool/connectivity failure, and timeout failure를 포함한다.
+  pool/connectivity failure, timeout failure를 포함한다.
 - error classification allowlist는 다음으로 제한한다.
   - `CancellationException`: response body 없이 rethrow, metrics outcome
     `cancelled`.
@@ -252,7 +251,7 @@ suspend fun <T> ApplicationCall.exposedR2dbcTransaction(
 - tests는 secret-bearing exception message와 SQL-looking payload를 던져 response
   body가 해당 문자열을 포함하지 않음을 검증한다.
 
-### Metrics Contract
+### Metrics 계약
 
 - registry가 없으면 no-op이며 meter를 만들지 않는다.
 - registry가 있으면 meter 이름은 다음 allowlist만 사용한다.
@@ -265,12 +264,12 @@ suspend fun <T> ApplicationCall.exposedR2dbcTransaction(
 - successful transaction/readiness는 `success`, SQL/driver failure는 `error`,
   timeout은 `timeout`, `CancellationException`은 `cancelled`로 분류한다.
   Cancellation은 재던지며 generic error로 집계하지 않는다.
-- `SimpleMeterRegistry` tests는 exact meter names/tags, no-registry no-op, and
-  repeated call meter identity reuse를 검증한다.
+- `SimpleMeterRegistry` 테스트는 정확한 meter name/tag, registry가 없을 때의
+  no-op, 반복 호출 시 meter identity 재사용을 검증한다.
 
 ## 대안
 
-### A. 단일 `ktor/exposed` module
+### A. 단일 `ktor/exposed` 모듈
 
 장점:
 
@@ -286,7 +285,7 @@ suspend fun <T> ApplicationCall.exposedR2dbcTransaction(
 
 결정: 채택한다.
 
-### B. `ktor/jdbc`, `ktor/r2dbc` split modules
+### B. `ktor/jdbc`, `ktor/r2dbc` 분할 모듈
 
 장점:
 
@@ -302,7 +301,7 @@ suspend fun <T> ApplicationCall.exposedR2dbcTransaction(
 결정: 첫 버전에서는 보류한다. 향후 dependency pressure가 실제로 문제일 때
 split을 별도 issue로 다룬다.
 
-### C. `exposed/ktor` auto-discovered module
+### C. 자동 탐색되는 `exposed/ktor` 모듈
 
 장점:
 
@@ -466,7 +465,7 @@ split을 별도 issue로 다룬다.
    - CI/Nightly needs, Kover artifacts, generated BOM POM, Maven local metadata,
      shared catalog alias or linked release-blocking issue를 DoD에 넣는다.
 
-## Acceptance Criteria
+## 인수 기준
 
 - [ ] `ktor/exposed` physical path와 `:bluetape4k-exposed-ktor` project/artifact가
       문서화되고 등록된다.
