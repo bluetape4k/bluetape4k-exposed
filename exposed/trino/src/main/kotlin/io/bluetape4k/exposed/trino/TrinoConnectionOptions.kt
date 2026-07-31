@@ -4,11 +4,10 @@ import java.io.Serializable
 import java.util.Properties
 
 /**
- * Typed Trino JDBC connection properties for operational and performance tuning.
+ * 운영 및 성능 tuning에 사용하는 typed Trino JDBC connection property입니다.
  *
- * The options are translated to standard Trino JDBC property names and can be
- * supplied to [TrinoDatabase.connect] without changing the existing connection
- * overloads.
+ * Option은 표준 Trino JDBC property name으로 변환되며, 기존 connection overload를 변경하지
+ * 않고 [TrinoDatabase.connect]에 전달할 수 있습니다.
  */
 data class TrinoConnectionOptions(
     val explicitPrepare: Boolean? = null,
