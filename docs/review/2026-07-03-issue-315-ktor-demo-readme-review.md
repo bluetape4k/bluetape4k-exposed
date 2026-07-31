@@ -1,9 +1,9 @@
-# Issue #315 Ktor Demo README Review
+# 이슈 #315 Ktor 데모 README 리뷰
 
-## Scope
+## 범위
 
-- Issue: #315 `docs(examples): add README pair for ktor-exposed-demo`
-- Files reviewed:
+- 이슈: #315 `docs(examples): add README pair for ktor-exposed-demo`
+- 리뷰한 파일:
   - `examples/ktor-exposed-demo/README.md`
   - `examples/ktor-exposed-demo/README.ko.md`
   - `examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoApplication.kt`
@@ -12,26 +12,25 @@
   - `ktor/exposed/README.md`
   - `ktor/exposed/README.ko.md`
 
-## Findings
+## 검토 결과
 
-- P0/P1: none.
-- The new README pair keeps the public contract source-grounded: the demo owns
-  H2 JDBC/R2DBC resources, passes them to `installBluetape4kExposedKtor()`, and
-  closes them from the Ktor lifecycle.
-- The documentation does not imply that `installBluetape4kExposedKtor()` creates
-  databases, pools, dispatchers, Ktor core, or content negotiation.
-- English and Korean files cover equivalent sections: overview, resource
-  ownership, Ktor composition, routes, running, and module README links.
+- P0/P1: 없음.
+- 새로운 README 쌍은 공개 계약을 소스에 근거해 설명한다. 데모가 H2 JDBC/R2DBC
+  리소스를 소유하고 `installBluetape4kExposedKtor()`에 전달하며, Ktor 수명 주기에
+  맞춰 리소스를 닫는다.
+- 문서는 `installBluetape4kExposedKtor()`가 데이터베이스, 풀, 디스패처,
+  Ktor 코어 또는 콘텐츠 협상을 생성한다고 암시하지 않는다.
+- 영문과 한국어 파일은 개요, 리소스 소유권, Ktor 구성, 라우트, 실행 방법,
+  모듈 README 링크를 동일하게 다룬다.
 
-## Verification
+## 검증
 
 - `git diff --check`: PASS.
-- Targeted source reference check for routes, `StatusPages`,
-  `ApplicationStopped`, `installHealthRoutes = true`, and
-  `:examples-ktor-exposed-demo:test`: PASS.
-- `./gradlew :examples-ktor-exposed-demo:test`: PASS, 1 test passing,
+- 라우트, `StatusPages`, `ApplicationStopped`, `installHealthRoutes = true`,
+  `:examples-ktor-exposed-demo:test`를 대상으로 소스 참조를 확인한 결과: PASS.
+- `./gradlew :examples-ktor-exposed-demo:test`: PASS, 테스트 1개 통과,
   `BUILD SUCCESSFUL in 15s`.
 
-## Residual Risk
+## 잔여 위험
 
-- Documentation-only change. No production source or test source was modified.
+- 문서만 변경했다. 프로덕션 소스와 테스트 소스는 변경하지 않았다.
