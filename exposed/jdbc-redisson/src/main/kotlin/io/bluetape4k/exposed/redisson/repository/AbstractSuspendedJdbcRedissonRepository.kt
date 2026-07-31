@@ -237,7 +237,7 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
         }
 
     /**
-     * Upserts many entities through the writer-backed Redisson async map.
+     * writer가 연결된 Redisson 비동기 map을 통해 여러 엔티티를 upsert합니다.
      */
     override suspend fun upsertAll(
         entities: Map<ID, E>,
