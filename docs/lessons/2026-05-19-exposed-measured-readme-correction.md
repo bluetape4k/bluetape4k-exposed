@@ -1,21 +1,26 @@
 # exposed-measured README correction
 
-## Context
+## 배경
 
-The root README described `exposed-measured` as a Micrometer metrics integration, while the module actually provides Exposed custom column types for `bluetape4k-measured` units.
+root README는 `exposed-measured`를 Micrometer metrics integration으로 설명했지만,
+실제 module은 `bluetape4k-measured` unit용 Exposed custom column type을 제공합니다.
 
-## Decision
+## 결정
 
-Correct the root README and localized README to describe measured-unit column mappings. Replace the module README's Micrometer timer flow with a column conversion flow.
+root README와 localized README를 수정해 measured-unit column mapping을 설명합니다.
+module README의 Micrometer timer flow는 column conversion flow로 교체합니다.
 
-## Outcome
+## 결과
 
-The documentation now matches the module behavior: `Measure<T>`, `Temperature`, and `TemperatureDelta` values are converted to base-unit `DOUBLE` values and restored on read.
+문서는 module behavior와 일치합니다. `Measure<T>`, `Temperature`,
+`TemperatureDelta` value는 base-unit `DOUBLE` value로 변환되고 read 시 복원됩니다.
 
-## Verification
+## 검증
 
-Searched README files outside `.worktrees` for `exposed-measured` combined with `Micrometer`, `metrics`, or `메트릭`; no remaining hits.
+`.worktrees` 밖 README file에서 `exposed-measured`와 `Micrometer`, `metrics`,
+`메트릭`을 함께 검색했고 남은 결과가 없었습니다.
 
-## Future Guidance
+## 향후 지침
 
-When documenting `exposed-measured`, treat "measured" as physical/unit measurement, not observability metrics.
+`exposed-measured`를 문서화할 때 "measured"는 observability metrics가 아니라
+physical/unit measurement로 다룹니다.

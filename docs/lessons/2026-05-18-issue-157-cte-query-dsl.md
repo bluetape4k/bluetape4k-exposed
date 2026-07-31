@@ -1,42 +1,41 @@
 # CTE Query DSL
 
-## Context
+## 배경
 
-Issue #157 added PostgreSQL/MySQL Common Table Expression support to the
-Exposed extension modules. Exposed does not currently expose a first-class CTE
-DSL for repository code, but users still need typed field access and prepared
-statement binding instead of raw SQL strings.
+Issue #157은 Exposed extension module에 PostgreSQL/MySQL Common Table Expression
+support를 추가했습니다. Exposed는 현재 repository code용 first-class CTE DSL을
+제공하지 않지만, 사용자는 raw SQL string 대신 typed field access와 prepared
+statement binding을 계속 필요로 합니다.
 
-## Decision
+## 결정
 
-Introduce `CteTable` in `exposed-core` and keep JDBC/R2DBC helpers as Query
-wrappers:
+`exposed-core`에 `CteTable`을 도입하고 JDBC/R2DBC helper는 Query wrapper로
+유지합니다.
 
-- `CteTable` maps selected fields from an existing `Query` into a table-like
-  facade so downstream SELECT clauses can keep typed column access.
-- `withCte` and `withCtes` render the CTE body and final SELECT through the same
-  Exposed `QueryBuilder` flow.
-- Recursive CTE support is a flag on the CTE clause instead of a separate raw SQL
-  path.
+- `CteTable`은 기존 `Query`의 selected field를 table-like facade로 매핑해
+  downstream SELECT clause가 typed column access를 유지할 수 있게 합니다.
+- `withCte`와 `withCtes`는 같은 Exposed `QueryBuilder` flow로 CTE body와 final
+  SELECT를 render합니다.
+- recursive CTE support는 별도 raw SQL path 대신 CTE clause의 flag로 둡니다.
 
-## Outcome
+## 결과
 
-JDBC and R2DBC now share the same CTE table facade while each module keeps its
-own query wrapper surface. The public API remains scoped to SELECT queries, so
-DML CTE support can be designed separately if Exposed exposes a better internal
-statement contract later.
+JDBC와 R2DBC는 동일한 CTE table facade를 공유하면서 각 module은 자체 query wrapper
+surface를 유지합니다. public API는 SELECT query로 범위를 제한하므로, Exposed가
+더 나은 internal statement contract를 제공하면 DML CTE support를 별도로 설계할 수
+있습니다.
 
-## Verification
+## 검증
 
-- JDBC CTE tests passed against H2, PostgreSQL, and MySQL 8.
-- R2DBC CTE tests passed against H2, PostgreSQL, and MySQL 8.
-- Root README, module README, WIP, and CHANGELOG were updated together.
+- JDBC CTE test가 H2, PostgreSQL, MySQL 8에서 통과했습니다.
+- R2DBC CTE test가 H2, PostgreSQL, MySQL 8에서 통과했습니다.
+- root README, module README, WIP, CHANGELOG를 함께 업데이트했습니다.
 
-## Future Guidance
+## 향후 지침
 
-- Keep JDBC and R2DBC CTE behavior symmetric unless a driver-specific limitation
-  is documented in tests.
-- Do not split CTE body rendering from final SELECT rendering; that risks
-  prepared-parameter ordering bugs.
-- When adding public Exposed DSL helpers, update both English and Korean module
-  README files in the same PR.
+- driver-specific limitation이 test에 문서화되지 않았다면 JDBC와 R2DBC CTE behavior를
+  대칭으로 유지합니다.
+- CTE body rendering과 final SELECT rendering을 분리하지 않습니다. prepared-parameter
+  ordering bug 위험이 있습니다.
+- public Exposed DSL helper를 추가할 때는 같은 PR에서 English와 Korean module README를
+  모두 업데이트합니다.
