@@ -1,29 +1,27 @@
-# README Mermaid SVG infographics
+# README Mermaid SVG Infographics
 
-## Context
+## 배경
 
-README files used live Mermaid diagrams. The documentation presentation needed
-stable pastel SVG infographic assets while keeping sequence diagrams editable as
-Mermaid source.
+README file은 live Mermaid diagram을 사용했습니다. documentation presentation에는
+sequence diagram을 editable Mermaid source로 유지하면서 stable pastel SVG infographic
+asset이 필요했습니다.
 
-## Decision
+## 결정
 
-Render every non-sequence README Mermaid block to SVG under
-`docs/images/readme-diagrams/` and replace only those blocks with relative
-image links.
+sequence가 아닌 모든 README Mermaid block을 `docs/images/readme-diagrams/` 아래 SVG로
+render하고 해당 block만 relative image link로 교체합니다.
 
-## Outcome
+## 결과
 
-Generated checked-in SVG assets for non-sequence diagrams. `sequenceDiagram`
-blocks remain as Mermaid code blocks.
+non-sequence diagram의 checked-in SVG asset을 생성했습니다. `sequenceDiagram` block은
+Mermaid code block으로 남습니다.
 
-## Verification
+## 검증
 
-Rendered SVG assets with Mermaid CLI 11.14.0, verified SVG link/file counts,
-verified zero remaining non-sequence README Mermaid blocks, and ran
-`git diff --check`.
+Mermaid CLI 11.14.0으로 SVG asset을 render하고 SVG link/file count, 남은 non-sequence
+README Mermaid block 0건을 확인했으며 `git diff --check`을 실행했습니다.
 
-## Future Guidance
+## 향후 지침
 
-Render first, finalize README links only after every SVG exists, and exclude
-worktrees and build outputs from repository-wide documentation rewrites.
+먼저 render하고 모든 SVG가 존재한 뒤에만 README link를 확정합니다. repository-wide
+documentation rewrite에서는 worktree와 build output을 제외합니다.
