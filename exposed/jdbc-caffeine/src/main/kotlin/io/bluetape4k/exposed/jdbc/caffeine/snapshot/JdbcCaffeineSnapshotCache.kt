@@ -34,9 +34,9 @@ import kotlin.concurrent.withLock
 import kotlin.reflect.KClass
 
 /**
- * A cache-only JDBC Caffeine facade for transaction-aware detached snapshots.
+ * 트랜잭션을 인식하는 detached snapshot용 cache-only JDBC Caffeine facade입니다.
  *
- * Instances own no threads or closeable resources. Database access remains entirely caller-owned.
+ * 인스턴스는 thread 또는 closeable resource를 소유하지 않습니다. database 접근은 전적으로 호출자가 소유합니다.
  */
 class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
     idType: KClass<ID>,
@@ -44,7 +44,7 @@ class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
     private val config: CaffeineSnapshotCacheConfig,
     private val valueSizer: SnapshotValueSizer<V>?,
     internal val validator: CacheSnapshotValueValidator<V>,
-    /** Caller-owned bounded failure buffer used by this facade. */
+    /** 이 facade가 사용하는 호출자 소유의 bounded failure buffer입니다. */
     override val failureBuffer: SnapshotCacheFailureBuffer,
 ) : SnapshotCacheStore<ID, V> {
     private val cache: Cache<ID, StoredSnapshot<V>> = buildCache(config)
@@ -52,7 +52,7 @@ class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
     private val misses = SnapshotMissCapabilityRegistry<ID, V>(config.maxOutstandingMissTokens)
     private val maintenanceLock = ReentrantLock()
 
-    /** Stable logical identity for this cache. */
+    /** 이 cache의 안정적인 logical identity입니다. */
     override val storeId: SnapshotStoreId = SnapshotStoreId(BACKEND, config.snapshot.namespace)
 
     @InternalSnapshotCacheApi
@@ -80,10 +80,10 @@ class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
     )
 
     /**
-     * Returns the current cached snapshot or an opaque one-shot miss capability for [id].
+     * 현재 cache된 snapshot 또는 [id]에 대한 opaque one-shot miss capability를 반환합니다.
      *
-     * A miss is captured before any caller database work and is rejected if a newer local mutation advances its
-     * generation before commit.
+     * 호출자가 database 작업을 시작하기 전에 miss를 capture합니다. commit 전에 더 새로운 local mutation이
+     * generation을 진행시키면 해당 miss를 거부합니다.
      */
     fun lookup(id: ID): SnapshotCacheLookup<ID, V> {
         val fence = fences.capture(id)
@@ -221,7 +221,7 @@ class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
     }
 }
 
-/** Creates a cache-only JDBC Caffeine snapshot facade using explicit runtime type tokens. */
+/** 명시적인 runtime type token을 사용해 cache-only JDBC Caffeine snapshot facade를 생성합니다. */
 fun <ID : Any, V : Serializable> jdbcCaffeineSnapshotCache(
     idType: KClass<ID>,
     valueType: KClass<V>,
@@ -236,7 +236,7 @@ fun <ID : Any, V : Serializable> jdbcCaffeineSnapshotCache(
     return JdbcCaffeineSnapshotCache.create(idType, valueType, config, valueSizer, validator, failureBuffer)
 }
 
-/** Creates a cache-only JDBC Caffeine snapshot facade using reified runtime type tokens. */
+/** reified runtime type token을 사용해 cache-only JDBC Caffeine snapshot facade를 생성합니다. */
 inline fun <reified ID : Any, reified V : Serializable> jdbcCaffeineSnapshotCache(
     config: CaffeineSnapshotCacheConfig,
     valueSizer: SnapshotValueSizer<V>? = null,
