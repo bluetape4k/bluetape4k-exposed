@@ -1,19 +1,23 @@
-# README Diagram Layout Fixes
+# README Diagram Layout Fix
 
-## Context
+## 배경
 
-Follow-up visual QA found two layout defects in generated README diagrams:
+후속 visual QA가 generated README diagram의 두 layout defect를 발견했습니다.
 
-- some architecture connectors were rendered as very short line segments where only the arrow head was visible
-- sequence participant header labels were vertically biased toward the top of the header box
+- 일부 architecture connector는 arrow head만 보이는 매우 짧은 line segment로 render됨
+- sequence participant header label이 header box 상단 쪽으로 치우침
 
-A related sequence issue was also fixed: self-calls previously rendered as zero-length arrows, which looked like a standalone arrow head.
+관련 sequence 문제도 수정했습니다. self-call은 이전에 zero-length arrow로 render되어
+독립된 arrow head처럼 보였습니다.
 
-## Decision
+## 결정
 
-Keep the existing diagram style and update only geometry in the generated SVG/PNG assets. Architecture connector line segments must span the visible gap between adjacent cards. Sequence participant labels must use the same vertical-centering baseline as architecture cards. Sequence self-calls should render as a small loop instead of a zero-length line.
+기존 diagram style은 유지하고 generated SVG/PNG asset의 geometry만 업데이트합니다.
+architecture connector line segment는 인접 card 사이 visible gap을 채워야 합니다.
+sequence participant label은 architecture card와 같은 vertical-centering baseline을
+사용하고 self-call은 zero-length line 대신 작은 loop로 render합니다.
 
-## Verification
+## 검증
 
 - README image link check: missing=0, localSvgImageLinks=0, mermaidResidue=0
 - PNG/SVG shape check: shapeCandidates=0
@@ -21,8 +25,10 @@ Keep the existing diagram style and update only geometry in the generated SVG/PN
 - sequence header alignment check: seqTop=0
 - sequence zero-length arrow check: zeroSeq=0
 - `git diff --check`
-- visual samples reviewed for exposed root architecture and representative sequence diagrams
+- exposed root architecture와 representative sequence diagram의 visual sample 검토
 
-## Future Guidance
+## 향후 지침
 
-Treat arrow head-only connectors as a failed rendering even when the SVG is syntactically valid. Geometry checks should cover architecture connector length, sequence header baseline, and sequence self-call arrows before PR creation.
+SVG가 문법적으로 유효해도 arrow head-only connector는 failed rendering으로 봅니다.
+PR 생성 전 geometry check는 architecture connector length, sequence header baseline,
+sequence self-call arrow를 포함해야 합니다.
