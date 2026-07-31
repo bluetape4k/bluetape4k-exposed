@@ -1,21 +1,26 @@
-# Root README architecture asset
+# Root README Architecture Asset
 
-## Context
+## 배경
 
-The root README architecture section used Mermaid diagrams in both English and Korean README files.
+root README architecture section은 English와 Korean README file 모두에서 Mermaid
+diagram을 사용했습니다.
 
-## Decision
+## 결정
 
-Replace the Mermaid blocks with one shared SVG asset under `docs/assets/`, following the repo-local rule that root README visual assets live there and are shared by localized READMEs.
+root README visual asset이 `docs/assets/`에 있고 localized README가 공유한다는
+repo-local rule을 따라 Mermaid block을 `docs/assets/` 아래 shared SVG asset 하나로
+교체합니다.
 
-## Outcome
+## 결과
 
-`README.md` and `README.ko.md` now embed `docs/assets/exposed-architecture.svg`.
+`README.md`와 `README.ko.md`는 이제 `docs/assets/exposed-architecture.svg`를 embed합니다.
 
-## Verification
+## 검증
 
-Validated the SVG with `xmllint --noout`, confirmed both README links resolve to the shared asset, and confirmed no Mermaid block remains in the architecture sections.
+`xmllint --noout`으로 SVG를 검증하고 두 README link가 shared asset으로 resolve됨과
+architecture section에 Mermaid block이 남지 않았음을 확인했습니다.
 
-## Future Guidance
+## 향후 지침
 
-For text-heavy README diagrams, prefer deterministic SVG assets over generated bitmap images so module names and API terms stay legible in GitHub rendering.
+text-heavy README diagram은 GitHub rendering에서 module name과 API term이 읽히도록
+generated bitmap image보다 deterministic SVG asset을 우선합니다.
