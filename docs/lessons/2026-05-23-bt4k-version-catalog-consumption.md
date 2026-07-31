@@ -1,31 +1,30 @@
 # bt4k Version Catalog Consumption
 
-## Context
+## 배경
 
-`bluetape4k-exposed` duplicated shared dependency versions in its local Gradle
-catalog while `bluetape4k-dependencies` already publishes the ecosystem catalog.
+`bluetape4k-exposed`는 local Gradle catalog에 shared dependency version을 중복했지만
+`bluetape4k-dependencies`가 이미 ecosystem catalog를 publication합니다.
 
-## Decision
+## 결정
 
-Import `io.github.bluetape4k:bluetape4k-version-catalog` as `bt4k` and resolve
-shared leaf dependency constraints through `bt4kVersion(alias)`. Keep local
-aliases for module names and plugin/BOM train versions that are still resolved
-locally.
+`io.github.bluetape4k:bluetape4k-version-catalog`를 `bt4k`로 import하고 shared leaf
+dependency constraint는 `bt4kVersion(alias)`로 resolve합니다. module name 및 아직 local로
+resolve하는 plugin/BOM train version에는 local alias를 유지합니다.
 
-## Outcome
+## 결과
 
-The local catalog no longer pins the selected shared leaf dependency aliases;
-dependency management reads those versions from `bt4k`. This keeps dependency
-coordinates local while centralizing the governed version values.
+local catalog는 더 이상 선택된 shared leaf dependency alias를 pin하지 않습니다.
+dependency management는 version을 `bt4k`에서 읽습니다. 이로써 dependency coordinate는
+local에 두면서 governed version value는 centralize합니다.
 
-## Verification
+## 검증
 
 - `git diff --check`
 - `./gradlew help --no-daemon --no-configuration-cache`
 - `./gradlew compileKotlin --no-daemon --no-configuration-cache`
 
-## Future Guidance
+## 향후 지침
 
-Prefer `bt4k` for new shared dependency versions. Avoid adding a local version
-unless the dependency is repository-specific or the central catalog cannot yet
-serve the required plugin/BOM use case.
+새 shared dependency version에는 `bt4k`를 우선합니다. dependency가 repository-specific이거나
+central catalog가 필요한 plugin/BOM use case를 아직 지원하지 않을 때만 local version을
+추가합니다.

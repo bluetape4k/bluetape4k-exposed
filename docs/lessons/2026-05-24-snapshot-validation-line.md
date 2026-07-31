@@ -1,21 +1,20 @@
 # Snapshot Validation Line
 
-## Context
+## 배경
 
-After the previous release, snapshot validation needed the repository reopened
-on the next development line while consuming the matching upstream bluetape4k
-snapshot.
+이전 release 뒤 matching upstream bluetape4k snapshot을 소비하면서 다음 development
+line에서 repository를 다시 열어 snapshot validation이 필요했습니다.
 
-## Decision
+## 결정
 
-Set `baseVersion=1.9.2`, keep `snapshotVersion=` empty, and consume
-`bluetape4k-bom:1.9.2-SNAPSHOT`.
+`baseVersion=1.9.2`로 설정하고 `snapshotVersion=`은 비워 두며
+`bluetape4k-bom:1.9.2-SNAPSHOT`을 소비합니다.
 
-## Outcome
+## 결과
 
-The repository can publish `1.9.2-SNAPSHOT` through `publish-snapshot.yml`
-without checking a snapshot suffix into `gradle.properties`.
+repository는 snapshot suffix를 `gradle.properties`에 check-in하지 않고
+`publish-snapshot.yml`로 `1.9.2-SNAPSHOT`을 publication할 수 있습니다.
 
-## Verification
+## 검증
 
-Pending in the snapshot validation train.
+snapshot validation train에서 보류 중입니다.
