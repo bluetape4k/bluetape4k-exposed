@@ -7,10 +7,10 @@ import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.routing.routing
 
 /**
- * Installs Exposed-specific Ktor helpers.
+ * Exposed 전용 Ktor helper를 설치합니다.
  *
- * This does not install bluetape4k Ktor core, content negotiation, generic
- * health routes, database pools, dispatchers, or meter registries.
+ * bluetape4k Ktor core, content negotiation, generic health route, database pool,
+ * dispatcher 또는 meter registry는 설치하지 않습니다.
  */
 fun Application.installBluetape4kExposedKtor(
     config: Bluetape4kExposedKtorConfig = Bluetape4kExposedKtorConfig(),
@@ -19,18 +19,17 @@ fun Application.installBluetape4kExposedKtor(
 }
 
 /**
- * Installs Exposed-specific Ktor helpers with explicit cache readiness contributors.
+ * 명시적인 cache readiness contributor와 함께 Exposed 전용 Ktor helper를 설치합니다.
  *
- * When [Bluetape4kExposedKtorConfig.installHealthRoutes] is `true`, this overload supports cache-only readiness
- * with no JDBC or R2DBC database. Database probes run first, then cache contributors run sequentially under one
- * shared monotonic readiness deadline. Setting `installHealthRoutes` to `false` installs no route and invokes no
- * contributor, so callers can place the direct route overload inside caller-owned authentication and security.
+ * [Bluetape4kExposedKtorConfig.installHealthRoutes]가 `true`이면 JDBC나 R2DBC database가 없는 cache-only
+ * readiness를 지원합니다. database probe를 먼저 실행하고 cache contributor를 하나의 shared monotonic readiness
+ * deadline 아래 순차 실행합니다. `installHealthRoutes=false`이면 route를 설치하거나 contributor를 호출하지 않으므로
+ * 호출자가 직접 route overload를 자체 authentication과 security 안에 배치할 수 있습니다.
  *
- * The caller owns authentication, authorization, request concurrency, rate limiting, databases, dispatchers,
- * repositories, meter registries, caches, and shutdown. This installer creates or closes no thread, dispatcher,
- * scope, worker, database, repository, registry, or cache. Contributor probes must be side-effect-free O(1)
- * in-memory reads that are non-blocking and cancellation-cooperative; blocking and backend-I/O probes are
- * unsupported and may outlive the coroutine deadline.
+ * 호출자는 authentication, authorization, request concurrency, rate limit, database, dispatcher, repository,
+ * meter registry, cache와 shutdown을 소유합니다. installer는 어떤 resource도 생성하거나 닫지 않습니다.
+ * contributor probe는 non-blocking, cancellation-cooperative인 side-effect-free O(1) in-memory 조회여야 합니다.
+ * blocking과 backend-I/O probe는 지원하지 않으며 coroutine deadline보다 오래 실행될 수 있습니다.
  */
 fun Application.installBluetape4kExposedKtor(
     config: Bluetape4kExposedKtorConfig,
