@@ -1,40 +1,40 @@
-# Issue 281 Spring Modulith Unloadable Events Review
+# 이슈 281 Spring Modulith 로드 불가 이벤트 리뷰
 
-Date: 2026-06-23
-Scope: `spring-boot/spring-modulith`
-Issue: #281
+날짜: 2026-06-23
+범위: `spring-boot/spring-modulith`
+이슈: #281
 
-## Verdict
+## 판정
 
-P0 findings: 0
-P1 findings: 0
+P0 지적 사항: 0
+P1 지적 사항: 0
 
-Stored Spring Modulith publications with unloadable event classes are no longer filtered out during repository queries.
-They remain visible to incomplete, failed, and status lookup paths, and they fail explicitly only when the caller tries
-to deserialize the event payload.
+로드할 수 없는 이벤트 클래스가 포함된 저장된 Spring Modulith 발행 정보는 더 이상 저장소 조회 과정에서 제외되지 않는다.
+이 정보는 미완료, 실패 및 상태 조회 경로에서 계속 노출되며, 호출자가 이벤트 페이로드의 역직렬화를 시도할 때만
+명시적으로 실패한다.
 
-## Review Notes
+## 리뷰 참고 사항
 
-- Publication row materialization now maps every matching row instead of dropping rows whose event class cannot load.
-- `UnloadableEventPublicationException` carries the publication id, listener id, and event type so operators can locate
-  and repair the stored row.
-- Event deserialization is deferred behind the existing `TargetEventPublication.event` access path, preserving query
-  visibility while still failing loudly at the point where a concrete event object is required.
-- The regression inserts unknown `EVENT_TYPE` rows directly and verifies both incomplete and failed publication queries
-  surface those rows.
-- English and Korean READMEs document the operator choices: restore the classpath, migrate stored rows, or explicitly
-  delete/resubmit after correction.
+- 발행 정보 행을 구체화할 때 이제 이벤트 클래스를 로드할 수 없는 행을 버리지 않고 일치하는 모든 행을 매핑한다.
+- `UnloadableEventPublicationException`은 운영자가 저장된 행을 찾아 복구할 수 있도록 발행 ID, 리스너 ID,
+  이벤트 유형을 제공한다.
+- 이벤트 역직렬화는 기존 `TargetEventPublication.event` 접근 경로 뒤로 지연된다. 따라서 조회 가시성을 유지하면서도
+  구체적인 이벤트 객체가 필요한 시점에는 명확하게 실패한다.
+- 회귀 테스트는 알 수 없는 `EVENT_TYPE` 행을 직접 삽입하고, 미완료 및 실패 발행 정보 조회 모두에서 해당 행이
+  노출되는지 검증한다.
+- 영문 및 한글 README에는 운영자가 선택할 수 있는 대응 방법을 설명한다. 클래스패스를 복원하거나, 저장된 행을
+  마이그레이션하거나, 수정 후 명시적으로 삭제하고 다시 제출할 수 있다.
 
-## Validation
+## 검증
 
 - `./gradlew :bluetape4k-exposed-spring-modulith:testClasses --rerun-tasks`
-  - Result: success.
+  - 결과: 성공.
 - `./gradlew :bluetape4k-exposed-spring-modulith:test --continue --rerun-tasks`
-  - Result: success.
+  - 결과: 성공.
 - `git diff --check`
-  - Result: success.
+  - 결과: 성공.
 
-## Residual Risk
+## 잔여 위험
 
-- Operators still need an explicit migration or cleanup path for renamed event classes. This change makes those rows
-  discoverable and diagnostic, but it does not infer a safe payload migration automatically.
+- 이름이 변경된 이벤트 클래스에는 여전히 운영자가 명시적으로 수행할 마이그레이션 또는 정리 경로가 필요하다.
+  이번 변경으로 해당 행을 발견하고 진단할 수 있지만, 안전한 페이로드 마이그레이션을 자동으로 추론하지는 않는다.

@@ -1,33 +1,33 @@
-# Issue 282 Tink Persisted Keyset Review
+# 이슈 282 Tink 영속 키셋 리뷰
 
-Date: 2026-06-23
-Scope: `exposed/tink`
-Issue: #282
+날짜: 2026-06-23
+범위: `exposed/tink`
+이슈: #282
 
-## Verdict
+## 판정
 
-P0 findings: 0
-P1 findings: 0
+P0 지적 사항: 0
+P1 지적 사항: 0
 
-Persisted encrypted column helpers no longer create or hide generated process-local Tink keysets. Callers must pass explicit AEAD or Deterministic AEAD encryptors, and the README examples now show encryptors reconstructed from durable keyset JSON.
+영속 암호화 열 헬퍼는 더 이상 프로세스 로컬 Tink 키셋을 생성하거나 숨기지 않는다. 호출자는 명시적인 AEAD 또는 Deterministic AEAD 암호화기를 전달해야 하며, README 예제는 이제 영속 키셋 JSON에서 복원한 암호화기를 보여 준다.
 
-## Review Notes
+## 리뷰 참고 사항
 
-- `Table.tinkAead*` and `Table.tinkDaead*` helpers now require caller-supplied encryptors. `VARCHAR` helpers retain the default ciphertext length through `name + encryptor` overloads, but not a default key.
-- AEAD and DAEAD transformer constructors no longer expose generated-keyset defaults for direct use.
-- Existing tests now pass explicit test encryptors where they intentionally use generated in-memory keysets.
-- New regressions prove ciphertext written with a keyset reconstructed from persisted JSON remains readable after table reconstruction, while a newly generated keyset cannot decrypt the same stored ciphertext.
-- English and Korean READMEs now document durable keyset loading before encrypted table definitions.
+- `Table.tinkAead*` 및 `Table.tinkDaead*` 헬퍼는 이제 호출자가 제공한 암호화기를 요구한다. `VARCHAR` 헬퍼는 `name + encryptor` 오버로드를 통해 기본 암호문 길이를 유지하지만, 기본 키는 제공하지 않는다.
+- AEAD 및 DAEAD 변환기 생성자는 더 이상 직접 사용할 수 있는 생성 키셋 기본값을 노출하지 않는다.
+- 기존 테스트는 생성된 인메모리 키셋을 의도적으로 사용하는 곳에 명시적인 테스트 암호화기를 전달한다.
+- 새로운 회귀 테스트는 영속 JSON에서 복원한 키셋으로 작성한 암호문이 테이블을 재구성한 뒤에도 읽히며, 새로 생성한 키셋으로는 동일한 저장 암호문을 복호화할 수 없음을 입증한다.
+- 영문 및 한글 README는 이제 암호화된 테이블을 정의하기 전에 영속 키셋을 로드하는 방법을 설명한다.
 
-## Validation
+## 검증
 
 - `./gradlew :bluetape4k-exposed-tink:testClasses --rerun-tasks`
-  - Result: success.
+  - 결과: 성공.
 - `./gradlew :bluetape4k-exposed-tink:test --continue --rerun-tasks`
-  - Result: success, 163 tests passed.
+  - 결과: 성공, 테스트 163개 통과.
 - `git diff --check`
-  - Result: success.
+  - 결과: 성공.
 
-## Residual Risk
+## 잔여 위험
 
-- This intentionally changes the source-level API for unsafe convenience calls. Downstream callers must provide persisted/versioned encryptors instead of relying on module-generated defaults.
+- 이는 안전하지 않은 편의 호출의 소스 수준 API를 의도적으로 변경한다. 하위 호출자는 모듈이 생성하는 기본값에 의존하는 대신 영속화되고 버전이 관리되는 암호화기를 제공해야 한다.
