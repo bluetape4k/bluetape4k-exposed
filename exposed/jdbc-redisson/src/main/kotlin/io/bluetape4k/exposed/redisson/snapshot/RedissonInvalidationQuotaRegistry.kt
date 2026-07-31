@@ -10,16 +10,16 @@ import kotlin.concurrent.withLock
 import kotlin.reflect.KClass
 
 /**
- * Structural health for invalidation work admitted by one Redisson client identity.
+ * 하나의 Redisson client identity가 승인한 무효화 작업의 구조적 상태입니다.
  *
- * The report intentionally contains no identifiers, Redis endpoints, credentials, or command payloads.
+ * 이 보고서에는 식별자, Redis endpoint, credential, command payload를 의도적으로 포함하지 않습니다.
  *
- * @property maxOutstandingChunks configured maximum number of admitted chunks
- * @property outstandingChunks currently admitted chunks whose completion has not released its lease
- * @property maxOutstandingEncodedBytes configured maximum canonical identifier bytes held by admitted chunks
- * @property outstandingEncodedBytes canonical identifier bytes currently held by admitted chunks
- * @property rejectedChunks total chunks rejected by the bounded admission quota
- * @property saturated whether either current outstanding value has reached its configured maximum
+ * @property maxOutstandingChunks 설정된 최대 승인 chunk 수
+ * @property outstandingChunks 완료 lease가 아직 해제되지 않은 현재 승인 chunk 수
+ * @property maxOutstandingEncodedBytes 승인 chunk가 보유할 수 있는 canonical identifier의 최대 byte 수
+ * @property outstandingEncodedBytes 승인 chunk가 현재 보유한 canonical identifier byte 수
+ * @property rejectedChunks 제한된 승인 quota가 거부한 전체 chunk 수
+ * @property saturated 현재 outstanding 값 중 하나라도 설정된 최댓값에 도달했는지 여부
  */
 data class SnapshotInvalidationQuotaHealth(
     val maxOutstandingChunks: Int,
@@ -30,16 +30,16 @@ data class SnapshotInvalidationQuotaHealth(
     val saturated: Boolean,
 )
 
-/** Owns one weak-identity quota per caller-owned [RedissonClient]. */
+/** 호출자가 소유한 [RedissonClient]마다 weak-identity quota 하나를 관리합니다. */
 internal class RedissonInvalidationQuotaRegistry {
     private val lock = ReentrantLock()
     private val staleClients = ReferenceQueue<RedissonClient>()
     private val clients = HashMap<RedissonClientIdentityWeakReference, RedissonClientRegistration>()
 
     /**
-     * Returns the quota pinned to [redissonClient], creating it on the first valid lookup.
+     * [redissonClient]에 고정된 quota를 반환하며, 첫 유효 조회 시 생성합니다.
      *
-     * Later lookups for the exact same client identity must use the originally pinned limits.
+     * 이후 동일한 client identity 조회에는 처음 고정한 한도를 사용해야 합니다.
      */
     fun quotaFor(
         redissonClient: RedissonClient,
@@ -70,7 +70,7 @@ internal class RedissonInvalidationQuotaRegistry {
         }
     }
 
-    /** Reserves one namespace composition before any Redisson map interaction. */
+/** Redisson map과 상호 작용하기 전에 namespace composition 하나를 예약합니다. */
     fun reserveComposition(
         redissonClient: RedissonClient,
         descriptor: RedissonInvalidationCompositionDescriptor,
@@ -141,7 +141,7 @@ internal class RedissonInvalidationQuotaRegistry {
     }
 }
 
-/** Identity-sensitive local facade composition pinned per client namespace. */
+/** client namespace마다 고정되는 identity-sensitive local facade composition입니다. */
 internal class RedissonInvalidationCompositionDescriptor(
     private val codec: SnapshotRedissonCodec<*>,
     private val idType: KClass<*>,
@@ -174,7 +174,7 @@ internal class RedissonInvalidationCompositionRegistration(
     var committed: Boolean = false
 }
 
-/** Exactly-once reservation around map and facade construction. */
+/** map과 facade 생성에 적용하는 exactly-once 예약입니다. */
 internal class RedissonInvalidationCompositionReservation(
     private val registry: RedissonInvalidationQuotaRegistry,
     private val clientKey: RedissonClientIdentityWeakReference,
@@ -199,7 +199,7 @@ internal class RedissonInvalidationCompositionReservation(
     }
 }
 
-/** Bounded chunk-and-byte quota shared by invalidators using one client identity. */
+/** 하나의 client identity를 사용하는 invalidator가 공유하는 제한된 chunk-and-byte quota입니다. */
 internal class RedissonInvalidationQuota(
     private val maxOutstandingChunks: Int,
     private val maxOutstandingEncodedBytes: Long,
@@ -209,7 +209,7 @@ internal class RedissonInvalidationQuota(
     private var outstandingEncodedBytes = 0L
     private var rejectedChunks = 0L
 
-    /** Atomically admits one chunk and its actual canonical encoded byte count. */
+/** chunk 하나와 실제 canonical encoded byte 수를 원자적으로 승인합니다. */
     fun tryAdmit(encodedBytes: Long): RedissonInvalidationQuotaLease? {
         require(encodedBytes > 0L) { "encodedBytes[$encodedBytes] must be positive." }
 
@@ -229,7 +229,7 @@ internal class RedissonInvalidationQuota(
         }
     }
 
-    /** Returns a payload-free snapshot of the current admission state. */
+/** payload를 포함하지 않는 현재 승인 상태 snapshot을 반환합니다. */
     fun health(): SnapshotInvalidationQuotaHealth = lock.withLock {
         SnapshotInvalidationQuotaHealth(
             maxOutstandingChunks = maxOutstandingChunks,
@@ -261,14 +261,14 @@ internal class RedissonInvalidationQuota(
     }
 }
 
-/** Exactly-once ownership token for one admitted invalidation chunk. */
+/** 승인된 무효화 chunk 하나의 exactly-once ownership token입니다. */
 internal class RedissonInvalidationQuotaLease(
     private val quota: RedissonInvalidationQuota,
     private val encodedBytes: Long,
 ) {
     private val released = atomic(false)
 
-    /** Releases the admitted counts once; duplicate completion notifications are harmless. */
+/** 승인된 count를 한 번만 해제하며, 중복 완료 알림은 영향을 주지 않습니다. */
     fun release() {
         if (released.compareAndSet(false, true)) {
             quota.release(encodedBytes)
