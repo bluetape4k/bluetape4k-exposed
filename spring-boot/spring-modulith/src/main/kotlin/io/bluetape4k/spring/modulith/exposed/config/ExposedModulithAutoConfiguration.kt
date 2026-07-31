@@ -16,8 +16,7 @@ import org.springframework.modulith.events.core.EventPublicationRepository
 import org.springframework.modulith.events.core.EventSerializer
 
 /**
- * Auto-configuration for the Exposed-backed Spring Modulith event publication
- * repository.
+ * Exposed 기반 Spring Modulith 이벤트 게시 저장소의 자동 구성입니다.
  */
 @AutoConfiguration(after = [ExposedSpringDataAutoConfiguration::class])
 @ConditionalOnClass(
