@@ -4,6 +4,13 @@ Snapshot: 2026-08-01 KST
 범위: `1.12.0` stable-release preflight 및 repository-state review follow-up.
 열린 항목: 1.12.0 milestone review follow-up 10건 ([#600](https://github.com/bluetape4k/bluetape4k-exposed/issues/600), [#601](https://github.com/bluetape4k/bluetape4k-exposed/issues/601), [#602](https://github.com/bluetape4k/bluetape4k-exposed/issues/602), [#605](https://github.com/bluetape4k/bluetape4k-exposed/issues/605), [#608](https://github.com/bluetape4k/bluetape4k-exposed/issues/608), [#609](https://github.com/bluetape4k/bluetape4k-exposed/issues/609), [#610](https://github.com/bluetape4k/bluetape4k-exposed/issues/610), [#611](https://github.com/bluetape4k/bluetape4k-exposed/issues/611), [#612](https://github.com/bluetape4k/bluetape4k-exposed/issues/612), [#613](https://github.com/bluetape4k/bluetape4k-exposed/issues/613)).
 
+## 범위 고정
+
+이번 작업은 **release preflight만** 수행합니다. Tag, Maven Central publication, GitHub
+Release, workflow dispatch, milestone close, stable-manual promotion 및 shipped 상태 선언은
+이 작업 범위에서 수행하지 않습니다. 여기서는 후보 문서, 검증 증거, version authority 확인
+준비 및 release hold만 갱신합니다.
+
 ## 현재 방향
 
 `gradle.properties`의 `baseVersion=1.12.0` 및 빈 `snapshotVersion`을 release candidate
@@ -21,7 +28,7 @@ Snapshot: 2026-08-01 KST
 | CHANGELOG 후보 섹션 | 완료(후보) | [#598](https://github.com/bluetape4k/bluetape4k-exposed/issues/598)은 closed이고 [#599](https://github.com/bluetape4k/bluetape4k-exposed/pull/599)은 merged입니다. `CHANGELOG.md`의 2026-07-31 `1.12.0` section은 publication 선언이 아닌 후보 요약입니다. |
 | 후보 head CI | 대기 | local candidate commit의 targeted/build 검증은 통과했습니다. 기준 `develop` head `4a3c6de7ece55d23f074cb62c37792897c5da4de`의 Nightly #30662576566은 14개 job success / 24개 conditional skip이며, candidate의 full database/cache/Testcontainers matrix 증거는 아직 없습니다. |
 | 외부 version authority | 대기 | `bluetape4kVersion=1.11.0-SNAPSHOT`은 이 저장소에서 `1.12.0`으로 추정 변경하지 않습니다. 해당 POM/카탈로그 authority와 소비자 resolution 증거를 release checklist에서 확정해야 합니다. |
-| tag 및 publication | 대기 | release tag, Maven Central publication, GitHub Release 및 milestone close는 release authority가 부여된 뒤에만 수행합니다. |
+| tag 및 publication | 수행하지 않음 | release tag, Maven Central publication, GitHub Release 및 milestone close는 이번 preflight 범위에서 실행하지 않습니다. 별도 release authority와 별도 작업이 필요합니다. |
 | stable manual 승격 | 대기 | immutable `1.12.0` ref, release-tree inventory, bilingual manifest 검증이 선행되어야 합니다. |
 
 ## Review follow-up evidence
