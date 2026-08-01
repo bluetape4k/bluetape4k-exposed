@@ -9,6 +9,7 @@ import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -216,6 +217,20 @@ class InMemoryBatchJobRepositoryTest {
         repo.saveCheckpoint(se.id, 20L)
 
         repo.loadCheckpoint(se.id) shouldBeEqualTo 20L
+    }
+
+    @Test
+    fun `checkpoint 로그는 실행 ID와 payload를 노출하지 않는다`() = runSuspendIO {
+        val (_, se) = newJobAndStep()
+        val checkpoint = "token=batch-checkpoint-secret"
+
+        RecordingLogAppender().use { appender ->
+            repo.saveCheckpoint(se.id, checkpoint)
+            repo.loadCheckpoint(se.id) shouldBeEqualTo checkpoint
+
+            appender.rendered shouldNotContain se.id.toString()
+            appender.rendered shouldNotContain checkpoint
+        }
     }
 
     // ─── completeStepExecution ───

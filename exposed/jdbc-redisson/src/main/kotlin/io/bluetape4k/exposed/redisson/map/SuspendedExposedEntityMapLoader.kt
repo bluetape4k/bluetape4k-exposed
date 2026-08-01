@@ -71,7 +71,7 @@ open class SuspendedExposedEntityMapLoader<ID: Any, E: Any>(
                 rows.forEach { row ->
                     val id = row[entityTable.id].value
                     channel.trySend(id).onFailure { cause ->
-                        throw IllegalStateException("채널 전송 실패. id=$id", cause)
+                        throw IllegalStateException("채널 전송 실패", cause)
                     }
                     rowCount += 1
                 }
@@ -80,7 +80,7 @@ open class SuspendedExposedEntityMapLoader<ID: Any, E: Any>(
             }
             log.debug { "DB에서 모든 ID 로딩 완료. 로딩된 id 수=$rowCount" }
         } catch (cause: Throwable) {
-            log.error(cause) { "DB에서 모든 ID 로딩 중 오류 발생" }
+            log.error { "DB에서 모든 ID 로딩 중 오류가 발생했습니다." }
             throw cause
         }
     },

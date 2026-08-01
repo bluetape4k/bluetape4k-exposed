@@ -1,5 +1,5 @@
-import io.gitlab.arturbosch.detekt.Detekt
-import io.gitlab.arturbosch.detekt.report.ReportMergeTask
+import dev.detekt.gradle.Detekt
+import dev.detekt.gradle.extensions.DetektExtension
 import nmcp.NmcpAggregationExtension
 import nmcp.NmcpExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
@@ -118,6 +118,7 @@ subprojects {
     apply {
         plugin<JavaLibraryPlugin>()
         plugin("org.jetbrains.kotlin.jvm")
+        plugin("dev.detekt")
         plugin("org.jetbrains.kotlinx.atomicfu")
         if (!isNonPublishedModule()) {
             plugin("org.jetbrains.kotlinx.kover")
@@ -162,6 +163,12 @@ subprojects {
                 )
                 freeCompilerArgs.addAll(experimentalAnnotations.map { "-opt-in=$it" })
             }
+        }
+    }
+
+    pluginManager.withPlugin("dev.detekt") {
+        extensions.configure<DetektExtension> {
+            baseline.set(project.layout.projectDirectory.file("config/detekt/baseline.xml"))
         }
     }
 
@@ -219,13 +226,20 @@ subprojects {
             showFullStackTraces = true
         }
 
-        val reportMerge = register<ReportMergeTask>("reportMerge") {
-            val file = rootProject.layout.buildDirectory.asFile.get().resolve("reports/detekt/merged.xml")
-            output.set(file)
-        }
         withType<Detekt>().configureEach detekt@{
-            finalizedBy(reportMerge)
-            reportMerge.configure { input.from(this@detekt.xmlReportFile) }
+            // Keep generated sources and documented example applications out of the
+            // production static-analysis gate; their build/test paths are verified
+            // by the dedicated example and integration jobs.
+            exclude("**/generated/**")
+            if (project.projectDir.toPath().normalize().toString().contains("/examples/")) {
+                exclude("**")
+            }
+            reports {
+                checkstyle.required.set(true)
+                html.required.set(true)
+                sarif.required.set(false)
+                markdown.required.set(false)
+            }
         }
 
         jar {
@@ -623,6 +637,31 @@ subprojects {
 
         configurePublishingSigning("BluetapeExposed")
     }
+}
+
+tasks.named<Detekt>("detekt") {
+    dependsOn(subprojects
+        .filterNot { it.name == "bluetape4k-exposed-bom" }
+        .map { it.tasks.named("detekt") })
+    doLast {
+        val reports = subprojects
+            .filterNot { it.name == "bluetape4k-exposed-bom" }
+            .flatMap { project ->
+                project.layout.buildDirectory.dir("reports/detekt").get().asFile
+                    .walkTopDown()
+                    .filter { it.isFile && it.extension == "xml" && it.length() > 0L }
+                    .toList()
+            }
+        check(reports.isNotEmpty()) {
+            "Detekt aggregate completed without any non-empty subproject XML report"
+        }
+    }
+}
+
+tasks.named("detektBaseline") {
+    dependsOn(subprojects
+        .filterNot { it.name == "bluetape4k-exposed-bom" }
+        .map { it.tasks.named("detektBaseline") })
 }
 
 extensions.configure<NmcpAggregationExtension>("nmcpAggregation") {

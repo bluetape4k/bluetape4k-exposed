@@ -60,6 +60,13 @@ class ExposedR2dbcCacheHealthAutoConfigurationTest {
     }
 
     @Test
+    fun `does not register R2DBC cache health indicator without a repository bean`() {
+        contextRunner.run { context ->
+            context.containsBean("exposedR2dbcCacheHealthIndicator").shouldBeFalse()
+        }
+    }
+
+    @Test
     fun `maps every R2DBC cache worker state without inferring status from queue depth`() {
         val cases = listOf(
             CacheWorkerState.NOT_APPLICABLE to Status.UP,

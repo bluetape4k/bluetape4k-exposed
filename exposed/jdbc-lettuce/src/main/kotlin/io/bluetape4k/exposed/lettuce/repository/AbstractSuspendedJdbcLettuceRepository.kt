@@ -11,6 +11,7 @@ import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.warn
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.redis.lettuce.map.WriteMode
+import io.bluetape4k.support.requirePositiveNumber
 import io.lettuce.core.RedisClient
 import io.lettuce.core.codec.RedisCodec
 import kotlinx.coroutines.Dispatchers
@@ -222,9 +223,16 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
         // WHY: findAll은 캐시 우회 조회가 아니라 Read-through 경로이므로,
         //      DB에서 가져온 결과를 캐시에 적재해 다음 단일 조회(get/getAll)가 캐시를 히트하게 한다.
         //      Redis 장애 시에도 DB 조회 결과를 그대로 반환해야 하므로 예외를 캐치하고 경고만 기록한다.
-        entities.forEach { entity ->
-            runCatching { cache.set(extractId(entity), entity) }
-                .onFailure { e -> log.warn(e) { "캐시 적재 실패: id=${extractId(entity)}" } }
+        val entries = entities.associateBy(::extractId)
+        try {
+            cache.warmAll(entries, SuspendedJdbcLettuceRepository.DEFAULT_BATCH_SIZE)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.warn {
+                "캐시 적재 실패: operation=findAll, entryCount=${entries.size}, cacheType=${cache::class.simpleName}"
+                    .plus(", errorType=${e::class.simpleName}")
+            }
         }
         return entities
     }
@@ -253,10 +261,9 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     }
 
     override suspend fun putAll(entities: Map<ID, E>, batchSize: Int) {
-        entities.forEach { (id, entity) ->
-            cache.set(id, entity)
-            nearCache?.put(serializeKey(id), entity)
-        }
+        batchSize.requirePositiveNumber("batchSize")
+        cache.putAll(entities, batchSize)
+        entities.forEach { (id, entity) -> nearCache?.put(serializeKey(id), entity) }
     }
 
     // -------------------------------------------------------------------------
@@ -313,7 +320,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.warn(e) { "nearCache 종료 중 오류 발생" }
+            log.warn { "nearCache 종료 중 오류 발생: errorType=${e::class.simpleName}" }
         }
     }
 
@@ -321,7 +328,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
         try {
             closeCacheResource()
         } catch (e: Exception) {
-            log.warn(e) { "cache 종료 중 오류 발생" }
+            log.warn { "cache 종료 중 오류 발생: errorType=${e::class.simpleName}" }
         }
     }
 }

@@ -6,6 +6,7 @@ import io.bluetape4k.exposed.r2dbc.caffeine.repository.R2dbcCaffeineRepository
 import kotlinx.coroutines.reactor.mono
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.boot.autoconfigure.AutoConfiguration
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -35,6 +36,7 @@ import org.springframework.context.annotation.Configuration
 class ExposedR2dbcCacheHealthAutoConfiguration {
 
     @Bean("exposedR2dbcCacheHealthIndicator")
+    @ConditionalOnBean(R2dbcCaffeineRepository::class)
     @ConditionalOnMissingBean(name = ["exposedR2dbcCacheHealthIndicator"])
     fun exposedR2dbcCacheHealthIndicator(
         repositories: ObjectProvider<R2dbcCaffeineRepository<*, *>>,

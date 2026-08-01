@@ -54,7 +54,7 @@ open class R2dbcEntityMapWriter<ID: Any, E: Any>(
                         // 코루틴 취소는 반드시 재전파해야 한다 — 삼키면 구조적 동시성이 깨진다
                         throw e
                     } catch (e: Throwable) {
-                        log.error(e) { "R2dbc로 DB에 엔티티 Write 중 오류 발생" }
+                        log.error { "R2dbc로 DB에 엔티티 Write 중 오류 발생: errorType=${e::class.simpleName}" }
                         throw e
                     }
                 }
@@ -68,13 +68,13 @@ open class R2dbcEntityMapWriter<ID: Any, E: Any>(
                 //      개별 삭제 루프를 쓰면 중간 실패 시 일부만 삭제되는 불일치가 발생한다.
                 suspendTransaction {
                     try {
-                        log.debug { "캐시 변경 사항을 DB에 반영합니다... ids=$ids" }
+                        log.debug { "캐시 변경 사항을 DB에 반영합니다... count=${ids.size}" }
                         deleteFromDb(ids)
                     } catch (e: CancellationException) {
                         // 코루틴 취소는 반드시 재전파해야 한다 — 삼키면 구조적 동시성이 깨진다
                         throw e
                     } catch (e: Throwable) {
-                        log.error(e) { "R2dbc로 엔티티 삭제 중 오류 발생" }
+                        log.error { "R2dbc로 엔티티 삭제 중 오류 발생: errorType=${e::class.simpleName}" }
                         throw e
                     }
                 }

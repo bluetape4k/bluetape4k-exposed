@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>LongMethod:ExposedKtorReadinessBudgetTest.kt:ExposedKtorReadinessBudgetTest$@Test fun `all-backend real smoke stays inside conservative formula and cleans controlled resources`</ID>
+    <ID>LongMethod:ExposedKtorReadinessBudgetTest.kt:ExposedKtorReadinessBudgetTest$@Test fun `snapshot producer drainer and sampler remain bounded read-only and meter-stable`</ID>
+    <ID>MaxLineLength:Bluetape4kExposedKtorTest.kt:Bluetape4kExposedKtorTest$fun</ID>
+    <ID>MaxLineLength:Bluetape4kExposedKtorTest.kt:Bluetape4kExposedKtorTest$val paths = listOf(Path.of(relative), Path.of("src/main/kotlin/io/bluetape4k/exposed/ktor/Bluetape4kExposedKtor.kt"))</ID>
+    <ID>MaxLineLength:ExposedKtorAbiCompatibilityTest.kt:ExposedKtorAbiCompatibilityTest$.</ID>
+    <ID>MaxLineLength:ExposedKtorCacheContributorTest.kt:ExposedKtorCacheContributorTest$val candidates = listOf(Path.of(relative), Path.of("src/main/kotlin/io/bluetape4k/exposed/ktor/ExposedKtorCacheReadiness.kt"))</ID>
+    <ID>MaxLineLength:ExposedKtorCacheHealthRoutesTest.kt:ExposedKtorCacheHealthRoutesTest$assertFalse(Regex("io\\.bluetape4k\\.logging|KLogging|logger\\.|log\\.(warn|error|info)").containsMatchIn(production))</ID>
+    <ID>MaxLineLength:ExposedKtorCacheHealthRoutesTest.kt:ExposedKtorCacheHealthRoutesTest$fun</ID>
+    <ID>MaxLineLength:ExposedKtorCacheHealthRoutesTest.kt:ExposedKtorCacheHealthRoutesTest$val paths = listOf(Path.of(relative), Path.of("src/main/kotlin/io/bluetape4k/exposed/ktor/ExposedKtorHealthRoutes.kt"))</ID>
+    <ID>MaxLineLength:ExposedKtorReadinessBudgetTest.kt:ExposedKtorReadinessBudgetTest$fun</ID>
+    <ID>MaxLineLength:ExposedKtorReadinessBudgetTest.kt:ExposedKtorReadinessBudgetTest$val paths = listOf(Path.of(relative), Path.of("src/main/kotlin/io/bluetape4k/exposed/ktor/ExposedKtorHealthRoutes.kt"))</ID>
+    <ID>ThrowsCount:ExposedKtorCacheMetrics.kt:internal fun registerExposedKtorCacheMetrics: List&lt;ExposedKtorCacheMetricBinding></ID>
+    <ID>ThrowsCount:ExposedKtorMetrics.kt:private suspend fun &lt;T> MeterRegistry?.recordExposedKtor: T</ID>
+    <ID>TooGenericExceptionCaught:ExposedKtorCacheMetrics.kt:failure: Throwable</ID>
+    <ID>TooGenericExceptionCaught:ExposedKtorMetrics.kt:e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:ExposedKtorTransactions.kt:e: Throwable</ID>
+  </CurrentIssues>
+</SmellBaseline>

@@ -5,23 +5,17 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.spring.modulith.exposed.ExposedEventPublicationRepository
-import io.bluetape4k.spring.modulith.exposed.UnloadableEventPublicationException
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.test.context.FilteredClassLoader
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.context.annotation.Bean
-import org.springframework.modulith.events.EventPublication.Status
-import org.springframework.modulith.events.core.EventPublicationRepository
-import org.springframework.modulith.events.core.TargetEventPublication
-import java.io.Serializable
-import java.time.Instant
-import java.util.UUID
 
 class ExposedModulithObservabilityAutoConfigurationTest {
 
@@ -42,6 +36,60 @@ class ExposedModulithObservabilityAutoConfigurationTest {
                 registry.publicationGauge("failed") shouldBeEqualTo 1.0
                 registry.publicationGauge("unloadable") shouldBeEqualTo 1.0
             }
+    }
+
+    @Test
+    fun `status gauges use count queries without materializing publications`() {
+        val repository = mockk<ExposedEventPublicationRepository>(relaxed = true) {
+            every { countIncompletePublications() } returns 2
+            every { countCompletedPublications() } returns 1
+            every { countFailedPublications() } returns 1
+            every { countUnloadablePublications() } returns 1
+        }
+        val registry = SimpleMeterRegistry()
+        ExposedEventPublicationMetrics(
+            repository = repository,
+            meterRegistry = registry,
+            modulithProperties = ExposedModulithProperties(),
+            observabilityProperties = ExposedModulithObservabilityProperties(includeUnloadable = true),
+        )
+
+        registry.publicationGauge("incomplete") shouldBeEqualTo 2.0
+        registry.publicationGauge("completed") shouldBeEqualTo 1.0
+        registry.publicationGauge("failed") shouldBeEqualTo 1.0
+        registry.publicationGauge("unloadable") shouldBeEqualTo 1.0
+        verify(exactly = 1) {
+            repository.countIncompletePublications()
+            repository.countCompletedPublications()
+            repository.countFailedPublications()
+            repository.countUnloadablePublications()
+        }
+        verify(exactly = 0) {
+            repository.findIncompletePublications()
+            repository.findCompletedPublications()
+            repository.findFailedPublications(any())
+        }
+    }
+
+    @Test
+    fun `gauge query failures return NaN and increment a low cardinality counter`() {
+        val repository = mockk<ExposedEventPublicationRepository>(relaxed = true) {
+            every { countIncompletePublications() } throws IllegalStateException("database unavailable")
+        }
+        val registry = SimpleMeterRegistry()
+        ExposedEventPublicationMetrics(
+            repository = repository,
+            meterRegistry = registry,
+            modulithProperties = ExposedModulithProperties(),
+            observabilityProperties = ExposedModulithObservabilityProperties(includeUnloadable = false),
+        )
+
+        registry.publicationGauge("incomplete").isNaN().shouldBeTrue()
+        requireNotNull(
+            registry.find(ExposedEventPublicationMetrics.ERROR_METER_NAME)
+                .tag("state", "incomplete")
+                .counter()
+        ).count() shouldBeEqualTo 1.0
     }
 
     @Test
@@ -176,42 +224,15 @@ class ExposedModulithObservabilityAutoConfigurationTest {
     companion object {
 
         private fun meteredRepository(): ExposedEventPublicationRepository {
-            val incomplete = listOf(loadablePublication(), unloadablePublication())
-            val failed = listOf(unloadablePublication())
-            val completed = listOf(loadablePublication())
-
             return mockk(relaxed = true) {
-                every { findIncompletePublications() } returns incomplete
-                every { findCompletedPublications() } returns completed
-                every { findFailedPublications(EventPublicationRepository.FailedCriteria.ALL) } returns failed
+                every { countIncompletePublications() } returns 2
+                every { countCompletedPublications() } returns 1
+                every { countFailedPublications() } returns 1
+                every { countUnloadablePublications() } returns 1
             }
         }
-
-        private fun loadablePublication(): TargetEventPublication =
-            mockk {
-                every { event } returns TestEvent("loadable")
-                every { status } returns Status.PUBLISHED
-                every { publicationDate } returns Instant.parse("2026-05-16T00:00:00Z")
-            }
-
-        private fun unloadablePublication(): TargetEventPublication =
-            mockk {
-                every { event } throws UnloadableEventPublicationException(
-                    identifier = UUID.fromString("018f4a28-85b8-7d6c-8a1b-463e0b468101"),
-                    eventType = "com.example.MissingEvent",
-                    listenerId = "listener.missing",
-                    cause = ClassNotFoundException("com.example.MissingEvent"),
-                )
-                every { status } returns Status.FAILED
-                every { publicationDate } returns Instant.parse("2026-05-16T00:00:00Z")
-            }
     }
 
-    data class TestEvent(val value: String) : Serializable {
-        companion object {
-            private const val serialVersionUID: Long = -3368753273455485545L
-        }
-    }
 }
 
 private inline fun <reified T : Any> ApplicationContextRunner.withUserConfiguration(): ApplicationContextRunner =

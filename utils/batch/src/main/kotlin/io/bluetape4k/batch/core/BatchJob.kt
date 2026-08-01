@@ -123,14 +123,14 @@ class BatchJob(
         } catch (e: CancellationException) {
             withContext(NonCancellable) {
                 runCatching { repository.completeJobExecution(claimedJobExecution, BatchStatus.STOPPED) }
-                    .onFailure { log.warn(it) { "STOPPED 상태 저장 실패 — job=$name" } }
+                    .onFailure { log.warn { "STOPPED 상태 저장 실패" } }
             }
             throw e
 
         } catch (e: Throwable) {
             withContext(NonCancellable) {
                 runCatching { repository.completeJobExecution(claimedJobExecution, BatchStatus.FAILED) }
-                    .onFailure { log.warn(it) { "FAILED 상태 저장 실패 — job=$name" } }
+                    .onFailure { log.warn { "FAILED 상태 저장 실패" } }
             }
             return BatchReport.Failure(
                 claimedJobExecution.copy(status = BatchStatus.FAILED),

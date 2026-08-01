@@ -19,6 +19,7 @@ import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.andWhere
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.update
 import org.springframework.beans.factory.BeanClassLoaderAware
@@ -248,6 +249,42 @@ class ExposedEventPublicationRepository(
             .toInt()
     }
 
+    /** 완료되지 않은 게시 행 수를 payload 역직렬화 없이 계산합니다. */
+    @Transactional(transactionManager = "springTransactionManager", readOnly = true)
+    fun countIncompletePublications(): Int =
+        table.selectAll()
+            .where { table.completionDate.isNull() or (table.status neq Status.COMPLETED.name) }
+            .count()
+            .toInt()
+
+    /** completion mode에 맞는 완료 게시 행 수를 payload 역직렬화 없이 계산합니다. */
+    @Transactional(transactionManager = "springTransactionManager", readOnly = true)
+    fun countCompletedPublications(): Int {
+        val source = if (completionMode == CompletionMode.ARCHIVE) archiveTable else table
+        return source.selectAll()
+            .where { source.completionDate.isNotNull() or (source.status eq Status.COMPLETED.name) }
+            .count()
+            .toInt()
+    }
+
+    /** 실패한 게시 행 수를 payload 역직렬화 없이 계산합니다. */
+    @Transactional(transactionManager = "springTransactionManager", readOnly = true)
+    fun countFailedPublications(): Int =
+        table.selectAll()
+            .where {
+                (table.status eq Status.FAILED.name) or
+                        (table.status.isNull() and table.completionDate.isNull())
+            }
+            .count()
+            .toInt()
+
+    /** 로드할 수 없는 event type을 참조하는 미완료 게시 행 수를 payload 역직렬화 없이 계산합니다. */
+    @Transactional(transactionManager = "springTransactionManager", readOnly = true)
+    fun countUnloadablePublications(): Int =
+        table.select(table.eventType)
+            .where { table.completionDate.isNull() or (table.status neq Status.COMPLETED.name) }
+            .count { row -> !isEventTypeLoadable(row[table.eventType]) }
+
     /**
      * 게시 테이블을 생성하고, 보관 완료 기능이 활성화되어 있으면 보관 테이블도 생성합니다.
      */
@@ -354,6 +391,16 @@ class ExposedEventPublicationRepository(
         @Suppress("UNCHECKED_CAST")
         return ClassUtils.forName(className, classLoader) as Class<Any>
     }
+
+    private fun isEventTypeLoadable(className: String): Boolean =
+        try {
+            loadEventClass(className)
+            true
+        } catch (_: ClassNotFoundException) {
+            false
+        } catch (_: LinkageError) {
+            false
+        }
 
     private fun serialize(event: Any): String = serializer.serialize(event).toString()
 

@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:AbstractR2dbcCaffeineRepository.kt:AbstractR2dbcCaffeineRepository$private fun awaitWriteBehindShutdown</ID>
+    <ID>InvalidPackageDeclaration:R2dbcSnapshotReadmeFixture.kt:package io.bluetape4k.exposed.r2dbc.caffeine.snapshot.readme</ID>
+    <ID>LongMethod:AbstractR2dbcCaffeineRepository.kt:AbstractR2dbcCaffeineRepository$private fun awaitWriteBehindShutdown</ID>
+    <ID>LoopWithTooManyJumpStatements:AbstractR2dbcCaffeineRepository.kt:AbstractR2dbcCaffeineRepository$while</ID>
+    <ID>MaxLineLength:R2dbcSnapshotTransactionTest.kt:R2dbcSnapshotTransactionTest$fun</ID>
+    <ID>MaxLineLength:WriteBehindCacheTest.kt:WriteBehindCacheTest$private</ID>
+    <ID>NestedBlockDepth:AbstractR2dbcCaffeineRepository.kt:AbstractR2dbcCaffeineRepository$override suspend fun put</ID>
+    <ID>ReturnCount:AbstractR2dbcCaffeineRepository.kt:AbstractR2dbcCaffeineRepository$private fun publishWriteBehindCompletionLocked</ID>
+    <ID>ReturnCount:AbstractR2dbcCaffeineRepository.kt:AbstractR2dbcCaffeineRepository$private fun writeBehindReadinessWasWithinCloseBudgetLocked: Boolean</ID>
+    <ID>SerialVersionUIDInSerializableClass:R2dbcCaffeineSnapshotCacheTest.kt:R2dbcCaffeineSnapshotCacheTest$Payload : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:R2dbcSnapshotCacheApiUsageTest.kt:R2dbcSnapshotCacheApiUsageTest$Payload : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:R2dbcSnapshotTransactionTest.kt:R2dbcSnapshotTransactionTest$Payload : Serializable</ID>
+    <ID>ThrowingExceptionFromFinally:AbstractR2dbcCaffeineRepository.kt:AbstractR2dbcCaffeineRepository$throw terminalFailure</ID>
+    <ID>TooGenericExceptionCaught:AbstractR2dbcCaffeineRepository.kt:AbstractR2dbcCaffeineRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AbstractR2dbcCaffeineRepository.kt:AbstractR2dbcCaffeineRepository$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:R2dbcCaffeineSnapshotCache.kt:R2dbcCaffeineSnapshotCache$exception: Exception</ID>
+    <ID>TooManyFunctions:AbstractR2dbcCaffeineRepository.kt:AbstractR2dbcCaffeineRepository&lt;ID: Any, E: Serializable> : R2dbcCaffeineRepository</ID>
+  </CurrentIssues>
+</SmellBaseline>

@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MaxLineLength:ExposedRangePartitionerTest.kt:ExposedRangePartitionerTest$ctx.getLong(ExposedRangePartitioner.PARTITION_MIN_ID)..ctx.getLong(ExposedRangePartitioner.PARTITION_MAX_ID)</ID>
+    <ID>ReturnCount:ExposedKeysetItemReader.kt:ExposedKeysetItemReader$override fun read: T?</ID>
+    <ID>TooGenericExceptionThrown:RestartIntegrationTest.kt:RestartIntegrationTest.JobConfig$throw RuntimeException("item-300 처리 중 의도적 실패")</ID>
+  </CurrentIssues>
+</SmellBaseline>

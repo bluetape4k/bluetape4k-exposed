@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MagicNumber:CockroachDatabase.kt:CockroachDatabase$65535</ID>
+    <ID>MayBeConstant:CockroachDatabase.kt:CockroachDatabase$/** CockroachDB의 PostgreSQL wire protocol에 사용하는 PostgreSQL JDBC driver입니다. */ val DRIVER: String = "org.postgresql.Driver"</ID>
+    <ID>ThrowsCount:CockroachTransaction.kt:CockroachTransactionRetry$@PublishedApi internal fun &lt;T> execute: T</ID>
+    <ID>UtilityClassWithPublicConstructor:AbstractCockroachDbTest.kt:AbstractCockroachDbTest</ID>
+  </CurrentIssues>
+</SmellBaseline>

@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:DeclaredExposedR2dbcQuery.kt:DeclaredExposedR2dbcQuery$private fun String.withoutSqlComments: String</ID>
+    <ID>CyclomaticComplexMethod:DeclaredExposedR2dbcQuery.kt:DeclaredExposedR2dbcQuery$private fun projectionItems: List&lt;String></ID>
+    <ID>CyclomaticComplexMethod:DeclaredExposedR2dbcQuery.kt:DeclaredExposedR2dbcQuery$private fun topLevelSelectClauses: List&lt;String></ID>
+    <ID>CyclomaticComplexMethod:ExposedR2dbcRepositoryFactory.kt:ExposedR2dbcRepositoryFactory$private fun createDirectProxy: Any</ID>
+    <ID>LoopWithTooManyJumpStatements:DeclaredExposedR2dbcQuery.kt:DeclaredExposedR2dbcQuery$while</ID>
+    <ID>MaxLineLength:ExposedR2dbcRepositoryFactory.kt:ExposedR2dbcRepositoryFactory$else -> error("Method '${method.name}' must provide a default implementation in ${repositoryInterface.name}")</ID>
+    <ID>MaxLineLength:SimpleExposedR2dbcRepositoryTest.kt:SimpleExposedR2dbcRepositoryTest$val updated = userRepository.save(User(id = userId, name = "Alice Updated", email = "alice@example.com", age = 31))</ID>
+    <ID>ReturnCount:DeclaredExposedR2dbcQuery.kt:DeclaredExposedR2dbcQuery$private fun String.dollarQuoteDelimiterAt: String?</ID>
+    <ID>ThrowsCount:DeclaredExposedR2dbcQuery.kt:DeclaredExposedR2dbcQuery$private suspend fun executeInTransaction: Any?</ID>
+    <ID>TooGenericExceptionCaught:DeclaredExposedR2dbcQuery.kt:DeclaredExposedR2dbcQuery$e: Exception</ID>
+    <ID>TooManyFunctions:DeclaredExposedR2dbcQuery.kt:DeclaredExposedR2dbcQuery&lt;R: Any, ID: Any> : RepositoryQuery</ID>
+    <ID>TooManyFunctions:ExposedR2dbcRepository.kt:ExposedR2dbcRepository&lt;R: Any, ID: Any> : CoroutineCrudRepository</ID>
+    <ID>TooManyFunctions:PartTreeExposedR2dbcQuery.kt:PartTreeExposedR2dbcQuery&lt;R: Any, ID: Any> : RepositoryQuery</ID>
+    <ID>TooManyFunctions:SimpleExposedR2dbcRepository.kt:SimpleExposedR2dbcRepository&lt;R: Any, ID: Any> : ExposedR2dbcRepository</ID>
+  </CurrentIssues>
+</SmellBaseline>

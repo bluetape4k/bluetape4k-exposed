@@ -10,6 +10,7 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotContain
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.r2dbc.insert
 import org.junit.jupiter.api.Test
@@ -49,6 +50,25 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
 
             val result = loader.load(id).toCompletableFuture().get()
             result shouldBeEqualTo TestEntity(id, "entity-1")
+        }
+    }
+
+    @Test
+    fun `load 로그는 원시 ID와 엔티티 payload를 노출하지 않는다`() = runSuspendIO {
+        withTables(TestDB.H2, TestTable) {
+            val sensitiveName = "credential=r2dbc-redisson-secret"
+            TestTable.insert { it[name] = sensitiveName }
+            val loader = R2dbcExposedEntityMapLoader(
+                entityTable = TestTable,
+            ) { TestEntity(this[TestTable.id].value, this[TestTable.name]) }
+            val id = loader.loadAllKeys().toList().single()
+
+            RecordingLogAppender().use { appender ->
+                loader.load(id).toCompletableFuture().get()
+
+                appender.rendered shouldNotContain id.toString()
+                appender.rendered shouldNotContain sensitiveName
+            }
         }
     }
 

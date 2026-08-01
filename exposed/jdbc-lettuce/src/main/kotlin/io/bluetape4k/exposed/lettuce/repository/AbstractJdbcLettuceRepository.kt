@@ -163,10 +163,14 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
         // WHY: findAll은 캐시 우회 조회가 아니라 Read-through 경로이므로,
         //      DB에서 가져온 결과를 캐시에 적재해 다음 단일 조회(get/getAll)가 캐시를 히트하게 한다.
         //      Redis 장애 시에도 DB 조회 결과를 그대로 반환해야 하므로 예외를 캐치하고 경고만 기록한다.
-        entities.forEach { entity ->
-            runCatching { cache[extractId(entity)] = entity }
-                .onFailure { e -> log.warn(e) { "캐시 적재 실패: id=${extractId(entity)}" } }
-        }
+        val entries = entities.associateBy(::extractId)
+        runCatching { cache.warmAll(entries, JdbcLettuceRepository.DEFAULT_BATCH_SIZE) }
+            .onFailure { e ->
+                log.warn {
+                    "캐시 적재 실패: operation=findAll, entryCount=${entries.size}, cacheType=${cache::class.simpleName}"
+                        .plus(", errorType=${e::class.simpleName}")
+                }
+            }
         return entities
     }
 

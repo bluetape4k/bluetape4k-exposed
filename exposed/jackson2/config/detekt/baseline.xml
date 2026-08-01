@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MatchingDeclarationName:JsonFunctions.kt:Extract&lt;T> : Function</ID>
+    <ID>MaxLineLength:JacksonBColumnTest.kt:JacksonBColumnTest$// SELECT COUNT(*) FROM jackson_b_table WHERE JSONB_PATH_EXISTS(jackson_b_table.jackson_b_column, '$.fakeKey')</ID>
+    <ID>MaxLineLength:JacksonBColumnTest.kt:JacksonBColumnTest$// SELECT COUNT(*) FROM jackson_b_table WHERE JSONB_PATH_EXISTS(jackson_b_table.jackson_b_column, '$.logins')</ID>
+    <ID>MaxLineLength:JacksonBColumnTest.kt:JacksonBColumnTest$// WHERE JSONB_PATH_EXISTS(jackson_b_table.jackson_b_column, '$.user.team ? (@ == $team)', '{"team":"A"}')</ID>
+    <ID>ReturnCount:ReadableExtensionsTest.kt:ReadableExtensionsTest.FakeReadable$override fun &lt;T: Any?> get: T?</ID>
+    <ID>SerialVersionUIDInSerializableClass:JacksonSchema.kt:JacksonSchema$DataHolder : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:JacksonSchema.kt:JacksonSchema$User : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:JacksonSchema.kt:JacksonSchema$UserGroup : Serializable</ID>
+  </CurrentIssues>
+</SmellBaseline>

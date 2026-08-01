@@ -83,6 +83,7 @@ fun <T> JdbcTransaction.withVirtualThreadJdbcTransaction(
     statement: JdbcTransaction.() -> T,
 ): T = virtualThreadJdbcTransactionAsync(
     executor = executor,
+    db = this.db,
     readOnly = this.readOnly,
     statement = statement
 ).await()

@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MagicNumber:R2dbcExposedEntityMapWriter.kt:R2dbcExposedEntityMapWriter$100</ID>
+    <ID>ReturnCount:AbstractR2dbcLettuceRepository.kt:AbstractR2dbcLettuceRepository$override suspend fun get: E?</ID>
+    <ID>ReturnCount:ExposedR2dbcLettuceSuspendedLoadedMap.kt:ExposedR2dbcLettuceSuspendedLoadedMap$suspend fun get: V?</ID>
+    <ID>TooGenericExceptionCaught:AbstractR2dbcLettuceRepository.kt:AbstractR2dbcLettuceRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ExposedR2dbcLettuceSuspendedLoadedMap.kt:ExposedR2dbcLettuceSuspendedLoadedMap$e: Exception</ID>
+    <ID>TooManyFunctions:AbstractR2dbcLettuceRepository.kt:AbstractR2dbcLettuceRepository&lt;ID: Any, E: Serializable> : R2dbcLettuceRepository</ID>
+    <ID>TooManyFunctions:ExposedR2dbcLettuceSuspendedLoadedMap.kt:ExposedR2dbcLettuceSuspendedLoadedMap&lt;K: Any, V: Any> : Closeable</ID>
+    <ID>TooManyFunctions:R2dbcLettuceRepository.kt:R2dbcLettuceRepository&lt;ID: Any, E: Serializable> : R2dbcRedisRepository</ID>
+    <ID>UnusedParameter:R2dbcLettuceRepositoryCodecSafetyTest.kt:R2dbcLettuceRepositoryCodecSafetyTest$testDB: TestDB</ID>
+  </CurrentIssues>
+</SmellBaseline>

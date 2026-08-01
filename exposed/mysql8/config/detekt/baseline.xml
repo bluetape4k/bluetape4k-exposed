@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MagicNumber:JtsHelpers.kt:3</ID>
+    <ID>MagicNumber:MySqlWkbUtils.kt:MySqlWkbUtils$5</ID>
+    <ID>MatchingDeclarationName:GeoColumnTypes.kt:GeometryColumnType&lt;T: Geometry> : ColumnType</ID>
+    <ID>ThrowingExceptionFromFinally:AbstractMySqlGisTest.kt:AbstractMySqlGisTest$throw e</ID>
+    <ID>TooManyFunctions:SpatialFunctions.kt:io.bluetape4k.exposed.mysql8.gis.SpatialFunctions.kt</ID>
+  </CurrentIssues>
+</SmellBaseline>

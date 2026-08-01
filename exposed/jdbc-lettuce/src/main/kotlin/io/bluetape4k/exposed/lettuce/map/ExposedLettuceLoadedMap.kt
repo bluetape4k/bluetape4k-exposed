@@ -3,6 +3,8 @@ package io.bluetape4k.exposed.lettuce.map
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.error
 import io.bluetape4k.logging.warn
+import io.bluetape4k.support.requirePositiveNumber
+import io.lettuce.core.LettuceFutures
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.redis.lettuce.map.MapLoader
 import io.bluetape4k.redis.lettuce.map.MapWriter
@@ -20,6 +22,8 @@ import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingDeque
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 class ExposedLettuceLoadedMap<K: Any, V: Any>(
     private val client: RedisClient,
@@ -35,6 +39,9 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
 
     private val connection: StatefulRedisConnection<String, V> = client.connect(valueCodec)
     private val commands: RedisCommands<String, V> = connection.sync()
+
+    private val bulkConnection = lazy { client.connect(valueCodec) }
+    private val bulkLock = ReentrantLock()
 
     private val lazyStrConnection = lazy { client.connect(StringCodec.UTF8) }
     private val strConnection: StatefulRedisConnection<String, String> by lazyStrConnection
@@ -72,13 +79,13 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
     operator fun get(key: K): V? {
         val redisKey = redisKey(key)
         val cached = runCatching { commands.get(redisKey) }
-            .onFailure { log.warn(it) { "Redis GET failed, loader fallback: $redisKey" } }
+            .onFailure { e -> log.warn { "Redis GET failed, loader fallback: errorType=${e::class.simpleName}" } }
             .getOrNull()
         if (cached != null) return cached
         val loader = loader ?: return null
         val value = loader.load(key) ?: return null
         runCatching { commands.set(redisKey, value, SetArgs().ex(ttlSeconds)) }
-            .onFailure { log.warn(it) { "Redis SETEX failed: $redisKey" } }
+            .onFailure { e -> log.warn { "Redis SETEX failed: errorType=${e::class.simpleName}" } }
         return value
     }
 
@@ -103,13 +110,77 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
         }
     }
 
+    /**
+     * 여러 엔트리를 [batchSize] 단위로 write-through/write-behind 처리하고 Redis 명령을 pipeline으로 전송한다.
+     */
+    fun putAll(entries: Map<K, V>, batchSize: Int) {
+        batchSize.requirePositiveNumber("batchSize")
+        if (entries.isEmpty()) return
+
+        entries.entries.chunked(batchSize).forEach { chunkEntries ->
+            val chunk = chunkEntries.associate { it.key to it.value }
+            when (config.writeMode) {
+                WriteMode.NONE          -> Unit
+                WriteMode.WRITE_THROUGH -> writer?.write(chunk)
+                WriteMode.WRITE_BEHIND  -> enqueueWriteBehind(chunk)
+            }
+            putCacheOnly(chunk)
+        }
+    }
+
+    /**
+     * DB writer를 호출하지 않고 여러 엔트리를 [batchSize] 단위 Redis pipeline으로 적재한다.
+     */
+    fun warmAll(entries: Map<K, V>, batchSize: Int) {
+        batchSize.requirePositiveNumber("batchSize")
+        if (entries.isEmpty()) return
+        entries.entries.chunked(batchSize).forEach { chunkEntries ->
+            putCacheOnly(chunkEntries.associate { it.key to it.value })
+        }
+    }
+
+    private fun enqueueWriteBehind(entries: Map<K, V>) {
+        val queue = writeBehindQueue ?: return
+        entries.forEach { (key, value) ->
+            if (!queue.offer(Triple(key, value, 0))) {
+                throw IllegalStateException(
+                    "Write-behind queue is full (capacity=${config.writeBehindQueueCapacity})"
+                )
+            }
+        }
+    }
+
+    private fun putCacheOnly(entries: Map<K, V>) {
+        if (entries.isEmpty()) return
+        bulkLock.withLock {
+            val bulk = bulkConnection.value
+            val bulkCommands = bulk.async()
+            bulk.setAutoFlushCommands(false)
+            try {
+                val futures = entries.map { (key, value) ->
+                    bulkCommands.set(redisKey(key), value, SetArgs().ex(ttlSeconds))
+                }
+                bulk.flushCommands()
+                check(LettuceFutures.awaitAll(bulk.timeout, *futures.toTypedArray())) {
+                    "Redis cache batch timed out. entries=${entries.size}"
+                }
+            } finally {
+                bulk.setAutoFlushCommands(true)
+            }
+        }
+    }
+
     fun getAll(keys: Set<K>): Map<K, V> {
         if (keys.isEmpty()) return emptyMap()
         val keyList = keys.toList()
         val redisKeys = keyList.map { redisKey(it) }.toTypedArray()
 
         val mgetResult = runCatching { commands.mget(*redisKeys) }
-            .onFailure { log.warn(it) { "Redis MGET failed, loader fallback: ${redisKeys.take(5)}..." } }
+            .onFailure { e ->
+                log.warn {
+                    "Redis MGET failed, loader fallback: requested=${keys.size}, errorType=${e::class.simpleName}"
+                }
+            }
             .getOrNull()
 
         val result = mutableMapOf<K, V>()
@@ -132,7 +203,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
                 val value = loader.load(key) ?: return@forEach
                 result[key] = value
                 runCatching { commands.set(redisKey(key), value, SetArgs().ex(ttlSeconds)) }
-                    .onFailure { log.warn(it) { "Redis SETEX failed: ${redisKey(key)}" } }
+                    .onFailure { e -> log.warn { "Redis SETEX failed: errorType=${e::class.simpleName}" } }
             }
         }
         return result
@@ -199,7 +270,10 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
         runCatching { writer?.write(batch) }
             .onFailure { e ->
                 val retryCount = entries.first().third + 1
-                log.error(e) { "Write-behind flush failed (attempt $retryCount): ${batch.keys}" }
+                log.error {
+                    "Write-behind flush failed (attempt $retryCount): entries=${batch.size}, " +
+                        "errorType=${e::class.simpleName}"
+                }
                 if (retryCount < MAX_DEAD_LETTER_RETRY) {
                     val failed = mutableListOf<Triple<K, V, Int>>()
                     entries.forEach { (key, value, _) ->
@@ -223,7 +297,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
             commands.hset(deadLetterValuesKey, valueMap)
             val serializedKeys = batch.keys.map { keySerializer(it) }
             strCommands.lpush(deadLetterKey, *serializedKeys.toTypedArray())
-        }.onFailure { ex -> log.error(ex) { "Dead letter write failed" } }
+        }.onFailure { e -> log.error { "Dead letter write failed: errorType=${e::class.simpleName}" } }
     }
 
     override fun close() {
@@ -239,6 +313,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
             sched.awaitTermination(1, TimeUnit.SECONDS)
         }
         if (lazyStrConnection.isInitialized()) strConnection.close()
+        if (bulkConnection.isInitialized()) bulkConnection.value.close()
         connection.close()
     }
 }

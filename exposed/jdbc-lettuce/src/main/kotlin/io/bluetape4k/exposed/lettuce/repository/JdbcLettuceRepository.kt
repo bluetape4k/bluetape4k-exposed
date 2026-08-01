@@ -117,7 +117,7 @@ interface JdbcLettuceRepository<ID: Any, E: Serializable>: JdbcRedisRepository<I
      */
     override fun putAll(entities: Map<ID, E>, batchSize: Int) {
         batchSize.requirePositiveNumber("batchSize")
-        entities.forEach { (id, entity) -> cache[id] = entity }
+        cache.putAll(entities, batchSize)
     }
 
     /**

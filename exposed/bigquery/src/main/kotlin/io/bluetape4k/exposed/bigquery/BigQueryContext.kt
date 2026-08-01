@@ -26,6 +26,8 @@ import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.Query
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.util.*
 
 /**
@@ -88,6 +90,19 @@ class BigQueryContext(
         private const val DEFAULT_QUERY_TIMEOUT_MS = 30_000L
 
         private val DB_NAME_SANITIZE_REGEX = Regex("[^A-Za-z0-9_]")
+        private val BIGQUERY_TABLE_IDENTIFIER_REGEX = Regex("[A-Za-z_][A-Za-z0-9_]*")
+        private val SQL_STATEMENT_KIND_REGEX = Regex("^[A-Za-z]+")
+        private val SAFE_SQL_STATEMENT_KINDS = setOf(
+            "SELECT", "WITH", "INSERT", "UPDATE", "DELETE", "MERGE",
+            "CREATE", "ALTER", "DROP", "TRUNCATE", "CALL", "EXPORT",
+        )
+        private val SAFE_JOB_ID_REGEX = Regex("[A-Za-z0-9_-]{1,128}")
+        private val SAFE_ERROR_REASONS = setOf(
+            "accessDenied", "backendError", "badRequest", "billingNotEnabled", "duplicate",
+            "internalError", "invalid", "invalidQuery", "jobBackendError", "jobInternalError",
+            "notFound", "quotaExceeded", "rateLimitExceeded", "resourcesExceeded",
+            "responseTooLarge", "stopped", "tableUnavailable",
+        )
         private val BIGINT_REGEX = Regex("\\bBIGINT\\b")
         private val VARCHAR_REGEX = Regex("\\bVARCHAR\\(\\d+\\)")
         private val DECIMAL_REGEX = Regex("\\bDECIMAL\\(\\d+,\\s*\\d+\\)")
@@ -134,7 +149,8 @@ class BigQueryContext(
     /**
      * 원시 SQL 문자열을 BigQuery에서 실행합니다. DML 또는 단순 조회에 사용합니다.
      *
-     * 서버가 오류를 반환하면 [BigQueryQueryException]을 던집니다.
+     * 서버가 오류를 반환하면 [BigQueryQueryException]을 던집니다. 예외 진단에는 원문 SQL과 서버 메시지 대신
+     * statement kind, SHA-256 fingerprint, 안전한 reason/job ID만 포함됩니다.
      *
      * @param sql 실행할 SQL 문자열 (표준 SQL, Legacy SQL 불가)
      * @throws BigQueryQueryException BigQuery 서버 오류 응답 시
@@ -310,10 +326,11 @@ class BigQueryContext(
      * 테이블의 모든 행을 삭제합니다.
      *
      * BigQuery는 WHERE 절 없는 DELETE를 지원하지 않으므로 `WHERE TRUE`를 사용합니다.
-     * [tableName]은 Exposed [Table] 객체의 상수값으로 SQL 인젝션 위험이 없습니다.
+     * 테이블 이름은 단일 비인용 BigQuery 식별자 문법으로 검증한 뒤 backtick으로 인용합니다.
+     * schema/dataset 접두사, 기존 quote, 공백, 구두점이 포함된 이름은 모호하거나 주입 위험이 있으므로 거부합니다.
      */
     fun Table.execDeleteAll(): QueryResponse =
-        runRawQuery("DELETE FROM $tableName WHERE TRUE")
+        runRawQuery("DELETE FROM ${toSafeBigQueryIdentifier()} WHERE TRUE")
 
     // ── INTERNAL ──────────────────────────────────────────────────────────────
 
@@ -376,8 +393,7 @@ class BigQueryContext(
             // 추가 페이지 응답에도 errors 필드가 포함될 수 있다.
             // RuntimeException 대신 BigQueryQueryException을 던져 호출자가 BigQuery 오류임을 명확히 구분하게 한다.
             page.errors?.takeIf { it.isNotEmpty() }?.let { errors ->
-                val msg = errors.joinToString("; ") { it.message ?: it.reason ?: "unknown" }
-                throw BigQueryQueryException("BigQuery 쿼리 오류: $msg")
+                throw BigQueryQueryException(queryErrorDiagnostic(sql, errors, jobId))
             }
 
             if (schema == null) schema = page.schema
@@ -416,8 +432,7 @@ class BigQueryContext(
             // collectAllRows(동기 버전)에서도 페이지 단위 오류를 동일하게 처리한다.
             // RuntimeException 대신 BigQueryQueryException으로 던져 호출자가 일관성 있게 catch할 수 있게 한다.
             page.errors?.takeIf { it.isNotEmpty() }?.let { errors ->
-                val msg = errors.joinToString("; ") { it.message ?: it.reason ?: "unknown" }
-                throw BigQueryQueryException("BigQuery 쿼리 오류: $msg")
+                throw BigQueryQueryException(queryErrorDiagnostic(sql, errors, jobId))
             }
 
             if (schema == null) schema = page.schema
@@ -430,12 +445,45 @@ class BigQueryContext(
     }
 
     // QueryResponse.errors 는 최초 쿼리 응답(runRawQuery)에서 발생한 오류를 담는다.
-    // SQL을 최대 200자로 잘라 메시지에 포함하는 이유: BigQuery 오류 메시지만으로는 어떤 SQL이 실패했는지
-    // 파악하기 어렵기 때문이다. 200자 제한은 로그 라인 길이를 적정 수준으로 유지한다.
+    // SQL과 서버 오류 message는 리터럴을 포함할 수 있으므로 예외에 넣지 않는다.
     private fun QueryResponse.checkErrors(sql: String) {
         if (errors?.isNotEmpty() == true) {
-            val msg = errors.joinToString("; ") { it.message ?: it.reason ?: "unknown" }
-            throw BigQueryQueryException("BigQuery 쿼리 오류: $msg\nSQL: ${sql.take(200)}")
+            throw BigQueryQueryException(queryErrorDiagnostic(sql, errors, jobReference?.jobId))
+        }
+    }
+
+    private fun Table.toSafeBigQueryIdentifier(): String {
+        require(BIGQUERY_TABLE_IDENTIFIER_REGEX.matches(tableName)) {
+            "BigQuery table name must be a single unquoted identifier."
+        }
+        return "`$tableName`"
+    }
+
+    private fun queryErrorDiagnostic(
+        sql: String,
+        errors: List<com.google.api.services.bigquery.model.ErrorProto>,
+        jobId: String?,
+    ): String {
+        val statementKind = SQL_STATEMENT_KIND_REGEX.find(sql.trimStart())
+            ?.value
+            ?.uppercase(Locale.ROOT)
+            ?.takeIf(SAFE_SQL_STATEMENT_KINDS::contains)
+            ?: "UNKNOWN"
+        val reasons = errors
+            .mapNotNull { it.reason?.takeIf(SAFE_ERROR_REASONS::contains) }
+            .distinct()
+            .ifEmpty { listOf("unknown") }
+            .joinToString(",")
+        val fingerprint = MessageDigest.getInstance("SHA-256")
+            .digest(sql.toByteArray(StandardCharsets.UTF_8))
+            .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+        val safeJobId = jobId?.takeIf(SAFE_JOB_ID_REGEX::matches)
+
+        return buildString {
+            append("BigQuery query failed: reasons=$reasons")
+            append("; statement=$statementKind")
+            append("; sqlFingerprint=sha256:$fingerprint")
+            safeJobId?.let { append("; jobId=$it") }
         }
     }
 

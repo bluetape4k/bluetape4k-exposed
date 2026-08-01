@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicLong
  * - checkpoint를 `Any` 객체 그대로 [ConcurrentHashMap]에 저장
  * - 재시작 시 `RUNNING/FAILED/STOPPED` 상태의 JobExecution을 재사용
  * - thread-safe ([ConcurrentHashMap] + [AtomicLong])
+ * - 운영 로그에는 caller-owned 이름, 실행 ID, checkpoint payload를 기록하지 않음
  *
  * ## findOrCreateStepExecution 4-case 계약
  * | 기존 status              | 동작                               |
@@ -70,7 +71,7 @@ class InMemoryBatchJobRepository : BatchJobRepository {
             }
 
             if (existing != null) {
-                log.debug { "기존 JobExecution 재사용: jobName=$jobName, id=${existing.id}, status=${existing.status}" }
+                log.debug { "기존 JobExecution 재사용: status=${existing.status}" }
                 return existing
             }
 
@@ -83,7 +84,7 @@ class InMemoryBatchJobRepository : BatchJobRepository {
                 startTime = Instant.now(),
             )
             jobExecutions[newId] = newExecution
-            log.debug { "신규 JobExecution 생성: jobName=$jobName, id=$newId" }
+            log.debug { "신규 JobExecution 생성" }
             return newExecution
         }
     }
@@ -150,7 +151,7 @@ class InMemoryBatchJobRepository : BatchJobRepository {
                 jobExecutions[execution.id] = updated
             }
         }
-        log.debug { "JobExecution 완료: id=${execution.id}, status=$status" }
+        log.debug { "JobExecution 완료: status=$status" }
     }
 
     /**
@@ -179,7 +180,7 @@ class InMemoryBatchJobRepository : BatchJobRepository {
                     // 완료 상태 — 변경 없이 반환. BatchStepRunner가 즉시 skip 처리
                     BatchStatus.COMPLETED,
                     BatchStatus.COMPLETED_WITH_SKIPS -> {
-                        log.debug { "StepExecution skip (이미 완료): stepName=$stepName, status=${existing.status}" }
+                        log.debug { "StepExecution skip (이미 완료): status=${existing.status}" }
                         existing
                     }
 
@@ -187,13 +188,13 @@ class InMemoryBatchJobRepository : BatchJobRepository {
                     BatchStatus.FAILED,
                     BatchStatus.STOPPED,
                     BatchStatus.RUNNING -> {
-                        log.debug { "StepExecution 재시작 대상: stepName=$stepName, 이전 status=${existing.status}" }
+                        log.debug { "StepExecution 재시작 대상: 이전 status=${existing.status}" }
                         existing
                     }
 
                     // 그 외 예상치 못한 상태 — 변경 없이 반환
                     else -> {
-                        log.warn { "StepExecution 예상치 못한 상태: stepName=$stepName, status=${existing.status}" }
+                        log.warn { "StepExecution 예상치 못한 상태: status=${existing.status}" }
                         existing
                     }
                 }
@@ -208,7 +209,7 @@ class InMemoryBatchJobRepository : BatchJobRepository {
                 startTime = Instant.now(),
             )
             stepExecutions[newId] = newExecution
-            log.debug { "신규 StepExecution 생성: stepName=$stepName, id=$newId" }
+            log.debug { "신규 StepExecution 생성" }
             return newExecution
         }
     }
@@ -272,8 +273,8 @@ class InMemoryBatchJobRepository : BatchJobRepository {
             }
         }
         log.debug {
-            "StepExecution 완료: id=${execution.id}, stepName=${execution.stepName}, " +
-                "status=${report.status}, read=${report.readCount}, write=${report.writeCount}, skip=${report.skipCount}"
+            "StepExecution 완료: status=${report.status}, " +
+                "read=${report.readCount}, write=${report.writeCount}, skip=${report.skipCount}"
         }
     }
 
@@ -287,7 +288,7 @@ class InMemoryBatchJobRepository : BatchJobRepository {
      */
     override suspend fun saveCheckpoint(stepExecutionId: Long, checkpoint: Any) {
         checkpoints[stepExecutionId] = checkpoint
-        log.debug { "체크포인트 저장: stepExecutionId=$stepExecutionId, checkpoint=$checkpoint" }
+        log.debug { "체크포인트 저장 완료" }
     }
 
     override suspend fun saveCheckpoint(execution: StepExecution, checkpoint: Any) {
@@ -297,7 +298,7 @@ class InMemoryBatchJobRepository : BatchJobRepository {
                 checkpoints[execution.id] = checkpoint
             }
         }
-        log.debug { "체크포인트 저장: stepExecutionId=${execution.id}, checkpoint=$checkpoint" }
+        log.debug { "체크포인트 저장 완료" }
     }
 
     /**
@@ -308,6 +309,6 @@ class InMemoryBatchJobRepository : BatchJobRepository {
      */
     override suspend fun loadCheckpoint(stepExecutionId: Long): Any? =
         checkpoints[stepExecutionId].also { checkpoint ->
-            log.debug { "체크포인트 조회: stepExecutionId=$stepExecutionId, checkpoint=$checkpoint" }
+            log.debug { "체크포인트 조회 완료: found=${checkpoint != null}" }
         }
 }

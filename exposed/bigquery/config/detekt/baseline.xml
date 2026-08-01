@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MagicNumber:BigQueryQueryExecutor.kt:BigQueryResultRow$1000</ID>
+    <ID>MaxLineLength:BigQueryContextUnitTest.kt:BigQueryContextUnitTest$(request.captured.get("destinationTable") as com.google.api.services.bigquery.model.TableReference).tableId shouldBeEqualTo "result_1"</ID>
+    <ID>MaxLineLength:BigQueryQueryContinuationUnitTest.kt:BigQueryQueryContinuationUnitTest$fun</ID>
+    <ID>ReturnCount:BigQueryQueryExecutor.kt:BigQueryResultRow$@Suppress("UNCHECKED_CAST") private fun &lt;T> convertValue: T?</ID>
+    <ID>TooGenericExceptionCaught:BigQueryQueryExecutor.kt:BigQueryResultRow$e: Exception</ID>
+    <ID>TooManyFunctions:BigQueryContext.kt:BigQueryContext</ID>
+  </CurrentIssues>
+</SmellBaseline>

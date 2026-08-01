@@ -171,6 +171,8 @@ When Spring Boot Actuator and `bluetape4k-exposed-r2dbc-caffeine` are on the
 classpath, auto-configuration registers `exposedR2dbcCacheHealthIndicator` as a
 reactive health indicator. It reports cache mode, queue depth, `workerState`,
 and the last flush error from suspend cache consistency checks.
+The indicator is not registered when no compatible R2DBC Caffeine repository bean exists, avoiding a misleading
+optional `UP` component with `repositoryCount=0`.
 
 ```properties
 bluetape4k.exposed.cache.health.enabled=true

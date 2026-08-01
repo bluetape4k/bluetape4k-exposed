@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:SuspendedQuery.kt:SuspendedQuery$@Suppress("UNCHECKED_CAST") fun fetchBatchResultFlow: Flow&lt;List&lt;ResultRow>></ID>
+    <ID>LongMethod:MovieSchema.kt:MovieSchema$private fun Transaction.populateSampleData</ID>
+    <ID>LongMethod:SuspendedQuery.kt:SuspendedQuery$@Suppress("UNCHECKED_CAST") fun fetchBatchResultFlow: Flow&lt;List&lt;ResultRow>></ID>
+    <ID>MatchingDeclarationName:ImplicitSelectAll.kt:ImplicitQuery : Query</ID>
+    <ID>ReturnCount:ApplicationOwnedIdempotencyRecordJdbcTest.kt:ApplicationOwnedIdempotencyRecordJdbcTest.JdbcIdempotencyFixture$fun retryInterrupted: IdempotencyAcquireResult</ID>
+    <ID>SerialVersionUIDInSerializableClass:movie-records.kt:ActorRecord : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:movie-records.kt:MovieActorCountRecord : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:movie-records.kt:MovieActorRecord : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:movie-records.kt:MovieRecord : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:movie-records.kt:MovieWithActorRecord : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:movie-records.kt:MovieWithProducingActorRecord : Serializable</ID>
+    <ID>SwallowedException:VirtualThreadTransactionTest.kt:VirtualThreadTransactionTest$e: Throwable</ID>
+    <ID>TooManyFunctions:JdbcRepository.kt:JdbcRepository&lt;ID: Any, E: Any></ID>
+    <ID>UnusedParameter:MovieSchema.kt:MovieSchema$testDB: TestDB</ID>
+  </CurrentIssues>
+</SmellBaseline>

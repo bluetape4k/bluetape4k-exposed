@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MagicNumber:ExposedEntityMapWriter.kt:ExposedEntityMapWriter$100</ID>
+    <ID>MagicNumber:SuspendedExposedEntityMapWriter.kt:SuspendedExposedEntityMapWriter$100</ID>
+    <ID>MaxLineLength:LettuceRepositoryContractTest.kt:LettuceRepositoryContractTest$val repository = SuspendedJdbcProbeRepository(redisClientWithAsyncSetFailure(CancellationException("cancel warm")))</ID>
+    <ID>ReturnCount:AbstractSuspendedJdbcLettuceRepository.kt:AbstractSuspendedJdbcLettuceRepository$override suspend fun get: E?</ID>
+    <ID>ReturnCount:ExposedLettuceLoadedMap.kt:ExposedLettuceLoadedMap$operator fun get: V?</ID>
+    <ID>ReturnCount:ExposedLettuceSuspendedLoadedMap.kt:ExposedLettuceSuspendedLoadedMap$suspend fun get: V?</ID>
+    <ID>SerialVersionUIDInSerializableClass:ExposedEntityMapLoaderTest.kt:ExposedEntityMapLoaderTest$LoaderEntity : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:ExposedEntityMapWriterTest.kt:ExposedEntityMapWriterTest$WriterEntity : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:SuspendedExposedEntityMapLoaderTest.kt:SuspendedExposedEntityMapLoaderTest$SuspendedLoaderEntity : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:SuspendedExposedEntityMapWriterTest.kt:SuspendedExposedEntityMapWriterTest$SuspendedWriterEntity : Serializable</ID>
+    <ID>TooGenericExceptionCaught:AbstractSuspendedJdbcLettuceRepository.kt:AbstractSuspendedJdbcLettuceRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ExposedLettuceSuspendedLoadedMap.kt:ExposedLettuceSuspendedLoadedMap$e: Exception</ID>
+    <ID>TooManyFunctions:AbstractSuspendedJdbcLettuceRepository.kt:AbstractSuspendedJdbcLettuceRepository&lt;ID: Any, E: Serializable> : SuspendedJdbcLettuceRepository</ID>
+    <ID>TooManyFunctions:ExposedLettuceLoadedMap.kt:ExposedLettuceLoadedMap&lt;K: Any, V: Any> : Closeable</ID>
+    <ID>TooManyFunctions:ExposedLettuceSuspendedLoadedMap.kt:ExposedLettuceSuspendedLoadedMap&lt;K: Any, V: Any> : Closeable</ID>
+    <ID>TooManyFunctions:JdbcLettuceRepository.kt:JdbcLettuceRepository&lt;ID: Any, E: Serializable> : JdbcRedisRepository</ID>
+    <ID>TooManyFunctions:SuspendedJdbcLettuceRepository.kt:SuspendedJdbcLettuceRepository&lt;ID: Any, E: Serializable> : SuspendJdbcRedisRepository</ID>
+    <ID>UnusedParameter:LettuceRepositoryCodecSafetyTest.kt:LettuceRepositoryCodecSafetyTest$testDB: TestDB</ID>
+  </CurrentIssues>
+</SmellBaseline>

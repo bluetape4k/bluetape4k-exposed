@@ -103,7 +103,7 @@ class ExposedR2dbcBatchJobRepository(
             throw e
         } catch (e: Throwable) {
             if (!e.isUniqueViolation()) throw e
-            log.debug(e) { "동시 INSERT 감지 — job=$jobName, 재조회" }
+            log.debug { "동시 INSERT 감지 — JobExecution 재조회" }
             requeryJobExecutionAfterUniqueViolation(jobName, params)
         }
     }
@@ -168,8 +168,7 @@ class ExposedR2dbcBatchJobRepository(
                 .map { it.toJobExecution(checkpointJson) }
                 .firstOrNull()
                 ?: throw IllegalStateException(
-                    "Job execution disappeared after unique-constraint violation re-query. " +
-                        "jobName=${jobName}, params=${params}"
+                        "Job execution disappeared after unique-constraint violation re-query."
                 )
         }
     }

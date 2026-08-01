@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>EmptyFunctionBlock:JdbcCacheRepositoryTest.kt:JdbcCacheRepositoryTest.MinimalJdbcCacheRepository${}</ID>
+    <ID>EmptyFunctionBlock:JdbcRedisRepositoryTest.kt:JdbcRedisRepositoryTest.&lt;no name provided>${}</ID>
+    <ID>EmptyFunctionBlock:R2dbcCacheRepositoryTest.kt:R2dbcCacheRepositoryTest.MinimalR2dbcCacheRepository${}</ID>
+    <ID>EmptyFunctionBlock:R2dbcRedisRepositoryTest.kt:R2dbcRedisRepositoryTest.&lt;no name provided>${}</ID>
+    <ID>EmptyFunctionBlock:SuspendJdbcRedisRepositoryTest.kt:SuspendJdbcRedisRepositoryTest.&lt;no name provided>${}</ID>
+    <ID>EmptyFunctionBlock:SuspendedJdbcCacheRepositoryTest.kt:SuspendedJdbcCacheRepositoryTest.MinimalSuspendedJdbcCacheRepository${}</ID>
+    <ID>LongMethod:SnapshotCacheStoreTest.kt:SnapshotCacheStoreTest$@Test fun `store identity limits and result models validate caller input`</ID>
+    <ID>MagicNumber:LocalCacheConfig.kt:LocalCacheConfig$10</ID>
+    <ID>MagicNumber:RedisRepositoryResilienceConfig.kt:RedisRepositoryResilienceConfig$500</ID>
+    <ID>MagicNumber:SnapshotCacheConfig.kt:CaffeineSnapshotCacheConfig$10</ID>
+    <ID>MagicNumber:SnapshotCacheConfig.kt:CaffeineSnapshotCacheConfig$250</ID>
+    <ID>MaxLineLength:JdbcRedisRepositoryTest.kt:JdbcRedisRepositoryTest.&lt;no name provided>$override fun findAll</ID>
+    <ID>MaxLineLength:LocalCacheConfig.kt:LocalCacheConfig$"writeBehindQueueCapacity[$writeBehindQueueCapacity] must be >= writeBehindBatchSize[$writeBehindBatchSize]."</ID>
+    <ID>MaxLineLength:R2dbcRedisRepositoryTest.kt:R2dbcRedisRepositoryTest.&lt;no name provided>$override suspend fun findAll</ID>
+    <ID>MaxLineLength:SnapshotReadmeParityTest.kt:SnapshotReadmeParityTest$add(PublicSnapshotDeclaration(match.groupValues[1], source.hasInternalApiAnnotationBefore(match.range.first)))</ID>
+    <ID>MaxLineLength:SnapshotReadmeParityTest.kt:SnapshotReadmeParityTest.Companion$"""(?m)^(?!(?:internal|private|protected)\b)(?:(?:public|expect|actual|const|lateinit)\s+)*(?:val|var)\s+([A-Za-z_]\w*)"""</ID>
+    <ID>MaxLineLength:SnapshotReadmeParityTest.kt:SnapshotReadmeParityTest.Companion$"""(?m)^(?!(?:internal|private|protected)\b)(?:(?:public|expect|actual|data|sealed|enum|annotation|value|fun|open|abstract)\s+)*(?:class|interface|object|typealias)\s+([A-Za-z_]\w*)"""</ID>
+    <ID>MaxLineLength:SnapshotReadmeParityTest.kt:SnapshotReadmeParityTest.Companion$"""(?m)^(?!(?:internal|private|protected)\b)(?:(?:public|expect|actual|inline|suspend|operator|infix|tailrec|external)\s+)*fun\s+(?:&lt;[^>\n]+>\s+)?([^\n(]+)\("""</ID>
+    <ID>MaxLineLength:SuspendJdbcRedisRepositoryTest.kt:SuspendJdbcRedisRepositoryTest$val</ID>
+    <ID>MaxLineLength:SuspendJdbcRedisRepositoryTest.kt:SuspendJdbcRedisRepositoryTest.&lt;no name provided>$override suspend fun findAll</ID>
+    <ID>ReturnCount:SnapshotCacheFailure.kt:BoundedSnapshotCacheFailureBuffer$override fun drainTo: SnapshotCacheDrainResult</ID>
+    <ID>ReturnCount:SnapshotCacheFailure.kt:private fun String.isJvmIdentifier: Boolean</ID>
+    <ID>SerialVersionUIDInSerializableClass:SnapshotCacheApiContractTest.kt:SnapshotCacheApiContractTest$Payload : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:SnapshotTransactionCoordinatorTest.kt:SnapshotTransactionCoordinatorTest$Payload : Serializable</ID>
+    <ID>TooGenericExceptionCaught:SnapshotCacheFailure.kt:BoundedSnapshotCacheFailureBuffer$exception: Exception</ID>
+    <ID>TooGenericExceptionCaught:SnapshotTransactionCoordinator.kt:SnapshotTransactionCoordinator$failure: Throwable</ID>
+    <ID>TooGenericExceptionCaught:SnapshotTransactionCoordinator.kt:exception: Exception</ID>
+    <ID>TooManyFunctions:JdbcCacheRepository.kt:JdbcCacheRepository&lt;ID: Any, E: Serializable> : Closeable</ID>
+    <ID>TooManyFunctions:R2dbcCacheRepository.kt:R2dbcCacheRepository&lt;ID: Any, E: Serializable> : Closeable</ID>
+    <ID>TooManyFunctions:SuspendedJdbcCacheRepository.kt:SuspendedJdbcCacheRepository&lt;ID: Any, E: Serializable> : Closeable</ID>
+  </CurrentIssues>
+</SmellBaseline>

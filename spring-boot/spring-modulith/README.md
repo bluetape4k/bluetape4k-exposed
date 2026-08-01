@@ -98,6 +98,11 @@ The built-in gauges never use event ids, listener ids, event types, serialized p
 content as labels. Diagnose a specific pending or failed publication through the repository data and application logs,
 not by adding unbounded or sensitive metric tags.
 
+Gauge scrapes use bounded count/type queries and do not deserialize publication payloads. A query failure keeps the
+scrape non-fatal by returning `NaN` for that gauge and increments
+`bluetape4k.exposed.modulith.publications.errors` with the same bounded `state` and `completion.mode` tags. Treat
+`NaN` as unavailable data, never as zero.
+
 Spring Modulith's own event-publishing metrics, such as `module.events.published`, still describe application event
 emission. These Exposed gauges describe the durable publication store state: pending rows, completed rows according to
 the configured completion mode, failed rows, and incomplete rows whose event type can no longer be loaded.

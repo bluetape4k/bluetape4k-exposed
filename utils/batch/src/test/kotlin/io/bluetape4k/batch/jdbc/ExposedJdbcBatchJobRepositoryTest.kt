@@ -340,7 +340,7 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `UniqueViolation 재조회 - winner row가 없으면 맥락 있는 IllegalStateException을 던진다`(testDB: TestDB) {
+    fun `UniqueViolation 재조회 - winner row가 없으면 민감한 맥락 없이 IllegalStateException을 던진다`(testDB: TestDB) {
         withRepoTables(testDB) {
             val error = assertFailsWith<IllegalStateException> {
                 requeryJobExecutionAfterUniqueViolation(
@@ -351,8 +351,7 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
 
             val message = error.message.shouldNotBeNull()
             message shouldContain "Job execution disappeared after unique-constraint violation re-query"
-            message shouldContain "missingRetryJob"
-            message shouldContain "date=2026-05-19"
+            (message.contains("missingRetryJob") || message.contains("date=2026-05-19")) shouldBeEqualTo false
         }
     }
 }

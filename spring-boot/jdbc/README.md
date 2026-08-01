@@ -99,6 +99,8 @@ When Spring Boot Actuator and `bluetape4k-exposed-jdbc-caffeine` are on the
 classpath, auto-configuration registers `exposedJdbcCacheHealthIndicator`.
 It reports Caffeine write-through/write-behind state through Boot health
 details: cache mode, queue depth, `workerState`, and the last flush error.
+The indicator is not registered when no compatible JDBC Caffeine repository bean exists, avoiding a misleading
+optional `UP` component with `repositoryCount=0`.
 
 ```properties
 bluetape4k.exposed.cache.health.enabled=true

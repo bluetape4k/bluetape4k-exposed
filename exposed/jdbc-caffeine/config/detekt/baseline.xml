@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:AbstractJdbcCaffeineRepository.kt:AbstractJdbcCaffeineRepository$private fun awaitWriteBehindShutdown</ID>
+    <ID>InvalidPackageDeclaration:JdbcSnapshotReadmeFixture.kt:package io.bluetape4k.exposed.jdbc.caffeine.snapshot.readme</ID>
+    <ID>LongMethod:AbstractJdbcCaffeineRepository.kt:AbstractJdbcCaffeineRepository$override fun put</ID>
+    <ID>LongMethod:AbstractJdbcCaffeineRepository.kt:AbstractJdbcCaffeineRepository$private fun awaitWriteBehindShutdown</ID>
+    <ID>LongMethod:JdbcCaffeineRepositoryExtraTest.kt:JdbcCaffeineRepositoryExtraTest.WriteBehindCloseFlushTest$@Test @Timeout(5, unit = TimeUnit.SECONDS) fun `close - accepted put blocked before cache mutation cannot repopulate after timeout`</ID>
+    <ID>LongMethod:JdbcCaffeineRepositoryExtraTest.kt:JdbcCaffeineRepositoryExtraTest.WriteBehindOverflowTest$@Test @Timeout(15, unit = TimeUnit.SECONDS) fun `put versus close gate tracks multiple accepted admissions and rejects later writes`</ID>
+    <ID>LoopWithTooManyJumpStatements:AbstractJdbcCaffeineRepository.kt:AbstractJdbcCaffeineRepository$while</ID>
+    <ID>ReturnCount:AbstractJdbcCaffeineRepository.kt:AbstractJdbcCaffeineRepository$private fun publishWriteBehindCompletionLocked</ID>
+    <ID>ReturnCount:AbstractJdbcCaffeineRepository.kt:AbstractJdbcCaffeineRepository$private fun writeBehindReadinessWasWithinCloseBudgetLocked: Boolean</ID>
+    <ID>SerialVersionUIDInSerializableClass:JdbcCaffeineSnapshotCacheTest.kt:JdbcCaffeineSnapshotCacheTest$Payload : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:JdbcSnapshotCacheApiUsageTest.kt:JdbcSnapshotCacheApiUsageTest$Payload : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:JdbcSnapshotTransactionTest.kt:JdbcSnapshotTransactionTest$Payload : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:SnapshotCacheCommonApiCompileTest.kt:SnapshotCacheCommonApiCompileTest$Payload : Serializable</ID>
+    <ID>ThrowingExceptionFromFinally:AbstractJdbcCaffeineRepository.kt:AbstractJdbcCaffeineRepository$throw failure</ID>
+    <ID>ThrowsCount:AbstractJdbcCaffeineRepository.kt:AbstractJdbcCaffeineRepository$override fun put</ID>
+    <ID>ThrowsCount:AbstractJdbcCaffeineRepository.kt:AbstractJdbcCaffeineRepository$private fun checkWriteBehindAcceptingWritesLocked</ID>
+    <ID>TooGenericExceptionCaught:AbstractJdbcCaffeineRepository.kt:AbstractJdbcCaffeineRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AbstractJdbcCaffeineRepository.kt:AbstractJdbcCaffeineRepository$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:AbstractSuspendedJdbcCaffeineRepository.kt:AbstractSuspendedJdbcCaffeineRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:JdbcCaffeineSnapshotCache.kt:JdbcCaffeineSnapshotCache$exception: Exception</ID>
+    <ID>TooManyFunctions:AbstractJdbcCaffeineRepository.kt:AbstractJdbcCaffeineRepository&lt;ID: Any, E: Serializable> : JdbcCaffeineRepository</ID>
+    <ID>TooManyFunctions:AbstractSuspendedJdbcCaffeineRepository.kt:AbstractSuspendedJdbcCaffeineRepository&lt;ID: Any, E: Serializable> : SuspendedJdbcCaffeineRepository</ID>
+  </CurrentIssues>
+</SmellBaseline>

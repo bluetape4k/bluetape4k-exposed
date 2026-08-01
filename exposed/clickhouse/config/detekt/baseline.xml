@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>EnumNaming:DateFunctions.kt:DateDiffUnit$day</ID>
+    <ID>EnumNaming:DateFunctions.kt:DateDiffUnit$hour</ID>
+    <ID>EnumNaming:DateFunctions.kt:DateDiffUnit$minute</ID>
+    <ID>EnumNaming:DateFunctions.kt:DateDiffUnit$month</ID>
+    <ID>EnumNaming:DateFunctions.kt:DateDiffUnit$quarter</ID>
+    <ID>EnumNaming:DateFunctions.kt:DateDiffUnit$second</ID>
+    <ID>EnumNaming:DateFunctions.kt:DateDiffUnit$week</ID>
+    <ID>EnumNaming:DateFunctions.kt:DateDiffUnit$year</ID>
+    <ID>MagicNumber:ClickHouseDatabase.kt:ClickHouseDatabase$65535</ID>
+    <ID>MagicNumber:DateTime64ColumnType.kt:DateTime64ColumnType$9</ID>
+    <ID>MagicNumber:UnsignedColumnTypes.kt:ClickHouseULongColumnType$64</ID>
+    <ID>MatchingDeclarationName:ArrayColumnType.kt:ClickHouseArrayColumnType&lt;T: Any> : ColumnType</ID>
+    <ID>MaxLineLength:AbstractClickHouseTest.kt:AbstractClickHouseTest.Companion$log.warn("ClickHouse not ready (attempt {}/{}), waiting {}ms...", attempt + 1, maxAttempts, backoffMillis)</ID>
+    <ID>MaxLineLength:ArrayColumnType.kt:ClickHouseArrayColumnType$is String -> error("Array value returned as String literal '$value' — unsupported. Report this as a ClickHouse JDBC issue.")</ID>
+    <ID>MaxLineLength:ClickHouseEngine.kt:pattern = "\\b(engine|order\\s+by|partition\\s+by|primary\\s+key|sample\\s+by|settings|create|alter|drop|truncate|insert|update|delete)\\b"</ID>
+    <ID>MaxLineLength:ClickHouseTable.kt:private val CH_CONSTRAINT_PK_REGEX = Regex(",?\\s*CONSTRAINT\\s+\\S+\\s+PRIMARY\\s+KEY\\s*\\([^)]*\\)", RegexOption.IGNORE_CASE)</ID>
+    <ID>MaxLineLength:ClickHouseTable.kt:private val CH_REFERENCES_REGEX = Regex("\\s+REFERENCES\\s+\\S+\\s*\\([^)]*\\)(\\s+ON\\s+\\w+\\s+\\w+)?", RegexOption.IGNORE_CASE)</ID>
+    <ID>MaxLineLength:DateFunctionsTest.kt:DateFunctionsTest$exec</ID>
+    <ID>MaxLineLength:UnsignedTypesTest.kt:UnsignedTypesTest$ClickHouseNullableColumnType(ClickHouseFixedStringColumnType(8)).sqlType() shouldBeEqualTo "Nullable(FixedString(8))"</ID>
+    <ID>MayBeConstant:ClickHouseDatabase.kt:ClickHouseDatabase$/** * ClickHouse JDBC 드라이버 클래스 이름입니다. * * 이 값은 의도적으로 `const val`이 아니라 `val`입니다. 프로퍼티 접근이 객체 초기화(`init {}`) * 를 반드시 트리거해야 JDBC driver/dialect 등록이 실행되기 때문입니다. `const val`은 컴파일 시점에 * inline되어 객체 초기화를 건너뛸 수 있습니다. */ val DRIVER = "com.clickhouse.jdbc.ClickHouseDriver"</ID>
+    <ID>RethrowCaughtException:ClickHouseExtensions.kt:throw e</ID>
+    <ID>SwallowedException:DateTime64Test.kt:DateTime64Test$e: IllegalArgumentException</ID>
+    <ID>SwallowedException:MergeTreeDslTest.kt:MergeTreeDslTest$e: IllegalArgumentException</ID>
+    <ID>TooGenericExceptionThrown:BatchInsertTest.kt:BatchInsertTest$throw RuntimeException("의도적 예외 — 원자성 부재 테스트")</ID>
+    <ID>TooManyFunctions:EngineDsl.kt:AggregatingMergeTreeBuilder</ID>
+    <ID>TooManyFunctions:EngineDsl.kt:MergeTreeBuilder</ID>
+    <ID>TooManyFunctions:EngineDsl.kt:ReplacingMergeTreeBuilder</ID>
+    <ID>TooManyFunctions:EngineDsl.kt:SummingMergeTreeBuilder</ID>
+    <ID>UtilityClassWithPublicConstructor:AbstractClickHouseTest.kt:AbstractClickHouseTest</ID>
+  </CurrentIssues>
+</SmellBaseline>

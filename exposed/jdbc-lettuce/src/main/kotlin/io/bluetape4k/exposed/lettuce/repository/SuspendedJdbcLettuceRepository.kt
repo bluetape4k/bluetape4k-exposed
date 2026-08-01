@@ -120,7 +120,7 @@ interface SuspendedJdbcLettuceRepository<ID: Any, E: Serializable>: SuspendJdbcR
      */
     override suspend fun putAll(entities: Map<ID, E>, batchSize: Int) {
         batchSize.requirePositiveNumber("batchSize")
-        entities.forEach { (id, entity) -> cache.set(id, entity) }
+        cache.putAll(entities, batchSize)
     }
 
     /**

@@ -17,7 +17,10 @@ package io.bluetape4k.exposed.bigquery
  * }
  * ```
  *
- * @param message BigQuery 서버에서 반환된 오류 메시지
+ * 메시지는 원문 SQL, SQL 리터럴, 서버 오류 message를 포함하지 않습니다. 대신 statement kind,
+ * SQL SHA-256 fingerprint, 안전한 reason과 provider job ID만 진단 정보로 제공합니다.
+ *
+ * @param message redacted BigQuery 오류 진단 메시지
  * @param cause 원인 예외 (있는 경우)
  */
 class BigQueryQueryException(
