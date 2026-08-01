@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:ColumnExtensions.kt:fun IColumnType&lt;*>.getLanguageType: KClass&lt;*>?</ID>
+    <ID>LongMethod:ColumnExtensions.kt:fun IColumnType&lt;*>.getLanguageType: KClass&lt;*>?</ID>
+    <ID>MagicNumber:PhoneNumberColumnType.kt:PhoneNumberColumnType$20</ID>
+    <ID>ReturnCount:AbstractAggregateRoot.kt:AbstractAggregateRoot$override fun domainEvents: List&lt;DomainEvent&lt;ID>></ID>
+    <ID>ReturnCount:AbstractAggregateRoot.kt:AbstractAggregateRoot$override fun drainDomainEvents: List&lt;DomainEvent&lt;ID>></ID>
+    <ID>ReturnCount:UserContext.kt:UserContext$fun getCurrentUser: String</ID>
+    <ID>SerialVersionUIDInSerializableClass:BinarySerializedBinaryColumnTypeTest.kt:BinarySerializedBinaryColumnTypeTest$Embeddable : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:BinarySerializedBinaryColumnTypeTest.kt:BinarySerializedBinaryColumnTypeTest$Embeddable2 : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:BinarySerializedBlobColumTypeTest.kt:BinarySerializedBlobColumTypeTest$Embeddable : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:BinarySerializedBlobColumTypeTest.kt:BinarySerializedBlobColumTypeTest$Embeddable2 : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:BinarySerializedTransformersTest.kt:BinarySerializedTransformersTest$ComplexPayload : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:BinarySerializedTransformersTest.kt:BinarySerializedTransformersTest$SamplePayload : Serializable</ID>
+    <ID>TooGenericExceptionCaught:CompressedBinaryColumnType.kt:CompressedBinaryTransformer$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:CompressedBlobColumnType.kt:CompressedBlobTransformer$e: Exception</ID>
+    <ID>TooGenericExceptionThrown:UserContextTest.kt:UserContextTest$throw RuntimeException("inner error")</ID>
+    <ID>TooGenericExceptionThrown:UserContextTest.kt:UserContextTest$throw RuntimeException("test error")</ID>
+    <ID>TooManyFunctions:ResultRowExtensions.kt:io.bluetape4k.exposed.core.ResultRowExtensions.kt</ID>
+  </CurrentIssues>
+</SmellBaseline>

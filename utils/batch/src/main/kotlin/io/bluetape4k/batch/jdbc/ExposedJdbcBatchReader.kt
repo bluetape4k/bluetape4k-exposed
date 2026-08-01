@@ -102,7 +102,7 @@ class ExposedJdbcBatchReader<K: Comparable<K>, T: Any>(
     override suspend fun onChunkCommitted() {
         lastCommittedKey = lastReadKey
         lastFetchedKey = lastCommittedKey
-        log.debug { "청크 커밋 완료: lastCommittedKey=$lastCommittedKey" }
+        log.debug { "청크 커밋 완료" }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -130,7 +130,7 @@ class ExposedJdbcBatchReader<K: Comparable<K>, T: Any>(
         lastReadKey = key
         buffer.clear()
         exhausted = false
-        log.debug { "체크포인트 복원: lastCommittedKey=$key" }
+        log.debug { "체크포인트 복원 완료" }
     }
 
     /**
@@ -170,7 +170,7 @@ class ExposedJdbcBatchReader<K: Comparable<K>, T: Any>(
         } else {
             buffer.addAll(page)
             lastFetchedKey = keyExtractor(page.last())
-            log.debug { "페이지 조회: size=${page.size}, lastFetchedKey=$lastFetchedKey" }
+            log.debug { "페이지 조회: size=${page.size}" }
         }
     }
 }

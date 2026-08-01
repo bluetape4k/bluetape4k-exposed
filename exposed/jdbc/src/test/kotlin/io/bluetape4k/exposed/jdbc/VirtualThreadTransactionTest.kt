@@ -27,11 +27,15 @@ import org.jetbrains.exposed.v1.dao.IntEntity
 import org.jetbrains.exposed.v1.dao.IntEntityClass
 import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.statements.api.ExposedConnection
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.concurrent.ExecutionException
@@ -50,6 +54,39 @@ class VirtualThreadTransactionTest: AbstractExposedTest() {
     object VTesterUnique: Table("vt_table_unique") {
         val id = integer("id").uniqueIndex()
         override val primaryKey = PrimaryKey(id)
+    }
+
+    @Test
+    fun `receiver virtual thread transaction preserves its database`() {
+        val selectedDb = Database.connect("jdbc:h2:mem:vt-selected-${System.nanoTime()};DB_CLOSE_DELAY=-1")
+        val defaultDb = Database.connect("jdbc:h2:mem:vt-default-${System.nanoTime()};DB_CLOSE_DELAY=-1")
+        val previousDefault = TransactionManager.defaultDatabase
+
+        try {
+            transaction(selectedDb) {
+                SchemaUtils.create(VTester)
+                VTester.insert { it[name] = "selected" }
+            }
+            transaction(defaultDb) {
+                SchemaUtils.create(VTester)
+                VTester.insert { it[name] = "default" }
+            }
+            TransactionManager.defaultDatabase = defaultDb
+
+            val selectedNames = transaction(selectedDb) {
+                withVirtualThreadJdbcTransaction {
+                    VTester.insert { it[name] = "bridged" }
+                    VTester.selectAll().map { it[VTester.name] }
+                }
+            }
+
+            selectedNames shouldBeEqualTo listOf("selected", "bridged")
+            transaction(defaultDb) {
+                VTester.selectAll().map { it[VTester.name] }
+            } shouldBeEqualTo listOf("default")
+        } finally {
+            TransactionManager.defaultDatabase = previousDefault
+        }
     }
 
     @Suppress("UnusedReceiverParameter")

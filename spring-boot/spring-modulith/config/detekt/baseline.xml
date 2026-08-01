@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MaxLineLength:ExposedEventPublicationRepository.kt:ExposedEventPublicationRepository$override</ID>
+    <ID>MaxLineLength:ExposedEventPublicationRepository.kt:ExposedEventPublicationRepository$private</ID>
+    <ID>MaxLineLength:SpringModulithJdbcCaffeineRepositoryTest.kt:SpringModulithJdbcCaffeineRepositoryTest.TestConfig$fun</ID>
+    <ID>TooGenericExceptionCaught:SpringModulithJdbcCaffeineRepository.kt:SpringModulithJdbcCaffeineRepository$e: Exception</ID>
+    <ID>TooManyFunctions:ExposedEventPublicationRepository.kt:ExposedEventPublicationRepository : EventPublicationRepositoryBeanClassLoaderAware</ID>
+  </CurrentIssues>
+</SmellBaseline>

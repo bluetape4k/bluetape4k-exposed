@@ -74,7 +74,7 @@ open class ExposedEntityMapLoader<ID: Any, E: Any>(
             log.debug { "DB에서 모든 ID 로딩 완료. 로딩된 id 수=${loadedIds.size}" }
             loadedIds
         } catch (cause: Throwable) {
-            log.error(cause) { "DB에서 모든 ID 로딩 중 오류 발생" }
+            log.error { "DB에서 모든 ID 로딩 중 오류가 발생했습니다." }
             throw cause
         }
     }

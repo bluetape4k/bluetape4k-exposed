@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MagicNumber:StarRocksDatabase.kt:StarRocksDatabase$65535</ID>
+    <ID>MayBeConstant:StarRocksDatabase.kt:StarRocksDatabase$/** * StarRocks Connector/J driver class입니다. * * `val`이므로 property 접근 시 이 객체의 initializer를 통해 dialect 등록이 실행됩니다. */ val DRIVER: String = "com.starrocks.cj.jdbc.Driver"</ID>
+  </CurrentIssues>
+</SmellBaseline>

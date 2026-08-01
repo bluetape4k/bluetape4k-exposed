@@ -12,6 +12,7 @@ import org.redisson.api.map.MapLoader
  * - [load]는 `transaction { ... }` 안에서 [loadByIdFromDB]를 실행해 단건 엔티티를 읽습니다.
  * - [loadAllKeys]는 `queryTimeout=30_000`을 설정한 뒤 [loadAllIdsFromDB]를 실행합니다.
  * - 입력/출력 객체를 mutate하지 않고, DB 조회 결과를 그대로 반환합니다.
+ * - 운영 로그에는 caller-owned ID나 엔티티 payload를 기록하지 않습니다.
  *
  * ```kotlin
  * val loader = EntityMapLoader<Long, UserRecord>(
@@ -35,10 +36,10 @@ open class EntityMapLoader<ID: Any, E: Any>(
     /** 단일 키를 DB에서 로드합니다. */
     override fun load(id: ID): E? =
         transaction {
-            log.debug { "DB에서 엔티티를 로드합니다... id=$id" }
+            log.debug { "DB에서 단건 엔티티 로드를 시작합니다." }
             loadByIdFromDB(id)
                 .apply {
-                    log.debug { "DB에서 엔티티를 로드했습니다. id=$id, entity=$this" }
+                    log.debug { "DB에서 단건 엔티티 로드를 완료했습니다. found=${this != null}" }
                 }
         }
 

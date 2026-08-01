@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MaxLineLength:AbstractR2dbcRedissonRepository.kt:AbstractR2dbcRedissonRepository$updateBody = { stmt, entity -> with(this@AbstractR2dbcRedissonRepository) { stmt.updateEntity(entity) } }</ID>
+    <ID>MaxLineLength:R2dbcUserCredentialRedissonRepository.kt:R2dbcUserCredentialRedissonRepository$config: RedissonCacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(name = "exposed:remote:r2dbc:user-credentials")</ID>
+    <ID>SerialVersionUIDInSerializableClass:R2dbcEntityMapLoaderTest.kt:R2dbcEntityMapLoaderTest$TestEntity : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:R2dbcExposedEntityMapLoaderTest.kt:R2dbcExposedEntityMapLoaderTest$LoaderEntity : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:UserSchema.kt:UserSchema$UserCredentialsRecord : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:UserSchema.kt:UserSchema$UserRecord : Serializable</ID>
+    <ID>TooGenericExceptionCaught:R2dbcEntityMapLoader.kt:R2dbcEntityMapLoader$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:R2dbcEntityMapWriter.kt:R2dbcEntityMapWriter$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:R2dbcExposedEntityMapLoader.kt:R2dbcExposedEntityMapLoader$cause: Throwable</ID>
+    <ID>TooGenericExceptionThrown:AbstractR2dbcRedissonTest.kt:AbstractR2dbcRedissonTest$throw RuntimeException("Fail to execute in coroutine", exception)</ID>
+    <ID>TooManyFunctions:AbstractR2dbcRedissonRepository.kt:AbstractR2dbcRedissonRepository&lt;ID: Any, E: Serializable> : R2dbcRedissonRepository</ID>
+    <ID>TooManyFunctions:R2dbcRedissonRepository.kt:R2dbcRedissonRepository&lt;ID: Any, E: Serializable> : R2dbcRedisRepository</ID>
+    <ID>UnusedParameter:R2dbcRedissonRepositoryCodecSafetyTest.kt:R2dbcRedissonRepositoryCodecSafetyTest$testDB: TestDB</ID>
+    <ID>UnusedParameter:UserSchema.kt:UserSchema$context: CoroutineContext</ID>
+  </CurrentIssues>
+</SmellBaseline>

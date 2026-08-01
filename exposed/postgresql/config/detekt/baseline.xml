@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ComplexCondition:TstzRangeColumnType.kt:TstzRangeColumnType$s[i] == ',' &amp;&amp; i + 1 &lt; s.length &amp;&amp; (s[i + 1].isDigit() || s[i + 1] == ' ')</ID>
+    <ID>SwallowedException:TstzRangeColumnType.kt:TstzRangeColumnType$e1: Exception</ID>
+    <ID>TooGenericExceptionCaught:TstzRangeColumnType.kt:TstzRangeColumnType$e1: Exception</ID>
+    <ID>TooGenericExceptionCaught:TstzRangeColumnType.kt:TstzRangeColumnType$e2: Exception</ID>
+    <ID>TooManyFunctions:GeoExtensions.kt:io.bluetape4k.exposed.postgresql.postgis.GeoExtensions.kt</ID>
+  </CurrentIssues>
+</SmellBaseline>

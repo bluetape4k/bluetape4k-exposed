@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>LongMethod:DMLTestData.kt:DMLTestData$@Suppress("UnusedReceiverParameter") suspend fun AbstractExposedR2dbcTest.withCitiesAndUsers</ID>
+    <ID>LongMethod:OrderSchema.kt:OrderSchema$@Suppress("UnusedReceiverParameter") suspend fun AbstractExposedR2dbcTest.withOrdersTables</ID>
+    <ID>LongMethod:PersonSchema.kt:PersonSchema$@Suppress("UnusedReceiverParameter") suspend fun AbstractExposedR2dbcTest.withPersonsAndAddress</ID>
+    <ID>MagicNumber:DMLTestData.kt:DMLTestData$10</ID>
+    <ID>MagicNumber:DMLTestData.kt:DMLTestData$11</ID>
+    <ID>MagicNumber:DMLTestData.kt:DMLTestData$12</ID>
+    <ID>MagicNumber:DMLTestData.kt:DMLTestData$20</ID>
+    <ID>MagicNumber:DMLTestData.kt:DMLTestData$2018</ID>
+    <ID>MagicNumber:DMLTestData.kt:DMLTestData$2019</ID>
+    <ID>MagicNumber:DMLTestData.kt:DMLTestData$30</ID>
+    <ID>MagicNumber:OrderSchema.kt:OrderSchema$3</ID>
+    <ID>MagicNumber:OrderSchema.kt:OrderSchema$55</ID>
+    <ID>MagicNumber:OrderSchema.kt:OrderSchema$6</ID>
+    <ID>MagicNumber:PersonSchema.kt:PersonSchema$10</ID>
+    <ID>MagicNumber:PersonSchema.kt:PersonSchema$14</ID>
+    <ID>MagicNumber:PersonSchema.kt:PersonSchema$1935</ID>
+    <ID>MagicNumber:PersonSchema.kt:PersonSchema$1937</ID>
+    <ID>MagicNumber:PersonSchema.kt:PersonSchema$1940</ID>
+    <ID>MagicNumber:PersonSchema.kt:PersonSchema$1943</ID>
+    <ID>MagicNumber:PersonSchema.kt:PersonSchema$1960</ID>
+    <ID>MagicNumber:PersonSchema.kt:PersonSchema$1963</ID>
+    <ID>MagicNumber:PersonSchema.kt:PersonSchema$1968</ID>
+    <ID>MagicNumber:PersonSchema.kt:PersonSchema$1996</ID>
+    <ID>MagicNumber:PersonSchema.kt:PersonSchema$22</ID>
+    <ID>MagicNumber:PersonSchema.kt:PersonSchema$5</ID>
+    <ID>MagicNumber:PersonSchema.kt:PersonSchema$6</ID>
+    <ID>MagicNumber:PersonSchema.kt:PersonSchema$7</ID>
+    <ID>MagicNumber:PersonSchema.kt:PersonSchema$8</ID>
+    <ID>MaxLineLength:Assertions.kt:throw AssertionError("Failed on ${currentDialectTest.name}. Unexpected exception type: ${thrown::class}", thrown)</ID>
+    <ID>MaxLineLength:BookSchema.kt:BookSchema.Authors$*</ID>
+    <ID>MaxLineLength:BookSchema.kt:BookSchema.Offices$*</ID>
+    <ID>MaxLineLength:R2dbcMigrationDriftTest.kt:R2dbcMigrationDriftTest.HelperContract$"ALTER TABLE r2dbc_migration_drift ADD description VARCHAR(255) NULL CONSTRAINT description_check CHECK (1 = 1)"</ID>
+    <ID>MaxLineLength:TestDB.kt:TestDB.H2_PSQL$*</ID>
+    <ID>SerialVersionUIDInSerializableClass:OrderSchema.kt:OrderSchema$OrderRecord : ComparableSerializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:PersonSchema.kt:PersonSchema$AddressRecord : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:PersonSchema.kt:PersonSchema$PersonRecord : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:PersonSchema.kt:PersonSchema$PersonWithAddress : Serializable</ID>
+    <ID>ThrowingExceptionFromFinally:withSchemas.kt:throw dropFailure</ID>
+    <ID>TooGenericExceptionCaught:Assertions.kt:ex: Throwable</ID>
+    <ID>TooGenericExceptionCaught:withSchemas.kt:ex: Throwable</ID>
+  </CurrentIssues>
+</SmellBaseline>

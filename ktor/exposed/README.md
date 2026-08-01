@@ -314,6 +314,9 @@ fun Application.installAuthenticatedReadiness(
 Do not install a second unprotected route. The caller owns authentication,
 authorization, request concurrency, and rate limiting.
 
+`healthPath` and `readinessPath` must remain distinct after trailing slashes are removed. A collision is rejected
+before route registration so the probe-free liveness handler cannot mask readiness failures.
+
 ## Readiness Semantics and Budget
 
 | Path or state | Ktor result |

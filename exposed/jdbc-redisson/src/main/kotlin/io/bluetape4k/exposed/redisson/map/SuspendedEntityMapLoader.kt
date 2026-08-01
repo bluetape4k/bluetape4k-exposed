@@ -29,6 +29,7 @@ import java.util.concurrent.CompletionStage
  * - [loadAllKeys]는 [Channel]을 통해 [loadAllIdsFromDB]가 생산하는 ID를 [AsyncIterator]로 스트리밍합니다.
  * - 채널 내부에서 `queryTimeout = DEFAULT_QUERY_TIMEOUT`, `withTimeoutOrNull(DEFAULT_LOAD_ALL_IDS_TIMEOUT)` 보호막을 사용합니다.
  * - DB 오류나 채널 실패는 로깅 후 예외를 그대로 전파합니다.
+ * - 운영 로그에는 caller-owned ID, 엔티티 payload, 예외 message를 기록하지 않습니다.
  *
  * ```kotlin
  * val loader = SuspendedEntityMapLoader<Long, UserRecord>(
@@ -72,19 +73,19 @@ open class SuspendedEntityMapLoader<ID: Any, E: Any>(
     override fun load(id: ID): CompletionStage<E?> =
         scope
             .async {
-                log.debug { "DB에서 엔티티를 로딩... id=$id" }
+                log.debug { "DB에서 단건 엔티티 로드를 시작합니다." }
                 withContext(scope.coroutineContext) {
                     suspendTransaction {
                         try {
                             loadByIdFromDB(id)
                                 .apply {
-                                    log.debug { "DB로부터 엔티티를 로딩했습니다. id=$id, entity=$this" }
+                                    log.debug { "DB에서 단건 엔티티 로드를 완료했습니다. found=${this != null}" }
                                 }
                         } catch (e: kotlinx.coroutines.CancellationException) {
                             // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파해야 합니다.
                             throw e
                         } catch (e: Throwable) {
-                            log.error(e) { "DB에서 엔티티 로딩 중 오류 발생. id=$id" }
+                            log.error { "DB에서 단건 엔티티 로드 중 오류가 발생했습니다." }
                             throw e
                         }
                     }
@@ -103,7 +104,7 @@ open class SuspendedEntityMapLoader<ID: Any, E: Any>(
         val channel =
             Channel<ID>(Channel.RENDEZVOUS).also {
                 it.invokeOnClose { cause ->
-                    log.debug { "Channel closed. cause=$cause" }
+                    log.debug { "단건 ID 채널이 닫혔습니다. failed=${cause != null}" }
                 }
             }
 
@@ -126,7 +127,7 @@ open class SuspendedEntityMapLoader<ID: Any, E: Any>(
                 cause = e
                 throw e
             } catch (e: Throwable) {
-                log.error(e) { "DB에서 모든 ID 로딩 중 오류 발생" }
+                log.error { "DB에서 모든 ID 로딩 중 오류가 발생했습니다." }
                 cause = e
                 throw e
             } finally {

@@ -1,5 +1,7 @@
 package io.bluetape4k.exposed.ktor
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.ktor.core.Bluetape4kKtorCoreConfig
 import io.bluetape4k.ktor.core.HealthResponse
 import io.bluetape4k.ktor.core.installBluetape4kKtorCore
@@ -34,6 +36,26 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class ExposedKtorCacheHealthRoutesTest {
+
+    @Test
+    fun `direct routes reject equivalent health and readiness paths`() = testApplication {
+        application {
+            routing {
+                val error = assertFailsWith<IllegalArgumentException> {
+                    bluetape4kExposedHealthRoutes(
+                        jdbcDatabase = null,
+                        jdbcBlockingDispatcher = null,
+                        r2dbcDatabase = null,
+                        healthPath = "/ops/status",
+                        readinessPath = "/ops/status/",
+                        cacheReadiness = cacheConfig(contributor("orders") { ExposedKtorCacheStatus.UP }),
+                    )
+                }
+
+                error.message shouldContain "healthPath and readinessPath must be distinct"
+            }
+        }
+    }
 
     @Test
     fun `cache-only readiness exposes deterministic finite details and liveness invokes no probe`() = testApplication {

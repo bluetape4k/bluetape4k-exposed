@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:ExposedQueryCreator.kt:ExposedQueryCreator$@Suppress("UNCHECKED_CAST") private fun buildCondition: Op&lt;Boolean></ID>
+    <ID>CyclomaticComplexMethod:PartTreeExposedQuery.kt:PartTreeExposedQuery$@Suppress("UNCHECKED_CAST") override fun execute: Any?</ID>
+    <ID>CyclomaticComplexMethod:SimpleExposedJdbcRepository.kt:SimpleExposedJdbcRepository$private fun buildExampleConditions: Op&lt;Boolean>?</ID>
+    <ID>LargeClass:ExposedAggregateEventPublisherTest.kt:ExposedAggregateEventPublisherTest</ID>
+    <ID>LoopWithTooManyJumpStatements:SimpleExposedJdbcRepository.kt:ExampleSortComparator$for</ID>
+    <ID>ReturnCount:SimpleExposedJdbcRepository.kt:ExampleSortComparator$@Suppress("UNCHECKED_CAST") override fun compare: Int</ID>
+    <ID>ThrowsCount:DeclaredExposedQuery.kt:DeclaredExposedQuery$@Suppress("UNCHECKED_CAST") private fun coerceIdValue: ID</ID>
+    <ID>TooGenericExceptionCaught:ExposedAggregateEventPublisher.kt:ExposedAggregateEventPublisher$failure: Throwable</ID>
+    <ID>TooManyFunctions:SimpleExposedJdbcRepository.kt:SimpleExposedJdbcRepository&lt;E: Entity&lt;ID>, ID: Any> : ExposedJdbcRepository</ID>
+    <ID>TooManyFunctions:SimpleExposedJdbcRepository.kt:SimpleFluentQuery&lt;E: Any> : FetchableFluentQuery</ID>
+  </CurrentIssues>
+</SmellBaseline>

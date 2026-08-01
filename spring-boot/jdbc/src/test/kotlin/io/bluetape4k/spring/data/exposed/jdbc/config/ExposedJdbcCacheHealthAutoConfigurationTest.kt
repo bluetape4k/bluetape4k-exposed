@@ -60,6 +60,13 @@ class ExposedJdbcCacheHealthAutoConfigurationTest {
     }
 
     @Test
+    fun `does not register JDBC cache health indicator without a repository bean`() {
+        contextRunner.run { context ->
+            context.containsBean("exposedJdbcCacheHealthIndicator").shouldBeFalse()
+        }
+    }
+
+    @Test
     fun `maps every JDBC cache worker state without inferring status from queue depth`() {
         val cases = listOf(
             CacheWorkerState.NOT_APPLICABLE to Status.UP,

@@ -97,6 +97,10 @@ bluetape4k:
 label로 사용하지 않습니다. 특정 pending/failed publication은 unbounded하거나 민감한 metric tag를 추가하지 말고
 repository data와 application log로 진단하세요.
 
+Gauge scrape는 bounded count/type query를 사용하며 publication payload를 역직렬화하지 않습니다. Query가 실패하면
+해당 gauge는 scrape를 중단하지 않고 `NaN`을 반환하며, 같은 bounded `state`, `completion.mode` tag를 가진
+`bluetape4k.exposed.modulith.publications.errors` counter를 증가시킵니다. `NaN`은 0이 아니라 unavailable data입니다.
+
 Spring Modulith의 기본 event publishing metric인 `module.events.published` 계열은 application event 발행을
 설명합니다. 이 Exposed gauge는 durable publication store 상태를 설명합니다. 즉 pending row, completion mode에 따른
 completed row, failed row, event type을 더 이상 로드할 수 없는 incomplete row를 운영자가 확인할 수 있게 합니다.

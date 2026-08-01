@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MatchingDeclarationName:JsonFunctions.kt:Extract&lt;T> : Function</ID>
+    <ID>MaxLineLength:FastjsonBColumnTest.kt:FastjsonBColumnTest$// SELECT COUNT(*) FROM fastjson_b_table WHERE JSONB_PATH_EXISTS(fastjson_b_table.fastjson_b_column, '$.fakeKey')</ID>
+    <ID>MaxLineLength:FastjsonBColumnTest.kt:FastjsonBColumnTest$// SELECT COUNT(*) FROM fastjson_b_table WHERE JSONB_PATH_EXISTS(fastjson_b_table.fastjson_b_column, '$.logins')</ID>
+    <ID>MaxLineLength:FastjsonBColumnTest.kt:FastjsonBColumnTest$// WHERE JSONB_PATH_EXISTS(fastjson_b_table.fastjson_b_column, '$.user.team ? (@ == $team)', '{"team":"A"}')</ID>
+    <ID>ReturnCount:ReadableExtensionsTest.kt:ReadableExtensionsTest.FakeReadable$override fun &lt;T: Any?> get: T?</ID>
+    <ID>SerialVersionUIDInSerializableClass:FastjsonSchema.kt:FastjsonSchema$DataHolder : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:FastjsonSchema.kt:FastjsonSchema$User : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:FastjsonSchema.kt:FastjsonSchema$UserGroup : Serializable</ID>
+    <ID>TooManyFunctions:ReadableExtensions.kt:io.bluetape4k.exposed.core.fastjson2.ReadableExtensions.kt</ID>
+  </CurrentIssues>
+</SmellBaseline>

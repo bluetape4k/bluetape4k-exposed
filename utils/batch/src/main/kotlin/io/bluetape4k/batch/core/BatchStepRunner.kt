@@ -81,7 +81,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
         if (stepExecution.status == BatchStatus.COMPLETED ||
             stepExecution.status == BatchStatus.COMPLETED_WITH_SKIPS
         ) {
-            log.debug { "Step 이미 완료됨 — 즉시 skip: step=${step.name}, status=${stepExecution.status}" }
+            log.debug { "Step 이미 완료됨 — 즉시 skip: status=${stepExecution.status}" }
             return StepReport(
                 stepName = step.name,
                 status = stepExecution.status,
@@ -116,7 +116,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
             // (2) checkpoint 조회 — null이 아닐 때만 restoreFrom 호출
             val checkpoint = repository.loadCheckpoint(claimedStepExecution.id)
             if (checkpoint != null) {
-                log.debug { "체크포인트 복원: step=${step.name}, checkpoint=$checkpoint" }
+                log.debug { "체크포인트 복원 완료" }
                 step.reader.restoreFrom(checkpoint)
             }
 
@@ -145,8 +145,9 @@ internal class BatchStepRunner<I : Any, O : Any>(
                         } catch (e: Throwable) {
                             if (step.skipPolicy.shouldSkip(e, skipCount)) {
                                 skipCount++
-                                log.warn(e) {
-                                    "processor.process() 실패 — skip: step=${step.name}, skipCount=$skipCount"
+                                log.warn {
+                                    "processor.process() 실패 — skip: skipCount=$skipCount, " +
+                                        "errorType=${e::class.simpleName}"
                                 }
                                 null
                             } else {
@@ -182,9 +183,10 @@ internal class BatchStepRunner<I : Any, O : Any>(
                         throw e
                     } catch (e: Throwable) {
                         if (attempts < step.retryPolicy.maxAttempts) {
-                            log.warn(e) {
-                                "writer.write() 실패 — 재시도 예정: step=${step.name}, " +
-                                    "attempt=$attempts/${step.retryPolicy.maxAttempts}, delay=$currentDelay"
+                            log.warn {
+                                "writer.write() 실패 — 재시도 예정: " +
+                                    "attempt=$attempts/${step.retryPolicy.maxAttempts}, delay=$currentDelay, " +
+                                    "errorType=${e::class.simpleName}"
                             }
                             if (currentDelay.isPositive()) {
                                 delay(currentDelay)
@@ -199,9 +201,10 @@ internal class BatchStepRunner<I : Any, O : Any>(
                         // retry 소진 → chunk-level skipPolicy 평가
                         if (step.skipPolicy.shouldSkip(e, skipCount)) {
                             skipCount += chunk.size
-                            log.warn(e) {
-                                "writer.write() retry 소진 — chunk skip: step=${step.name}, " +
-                                    "chunkSize=${chunk.size}, skipCount=$skipCount"
+                            log.warn {
+                                "writer.write() retry 소진 — chunk skip: " +
+                                    "chunkSize=${chunk.size}, skipCount=$skipCount, " +
+                                    "errorType=${e::class.simpleName}"
                             }
                             break@writerLoop
                         }
@@ -236,7 +239,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
                 )
                 runCatching { repository.completeStepExecution(claimedStepExecution, stoppedReport) }
                     .onFailure { t ->
-                        log.warn(t) { "STOPPED 상태 저장 실패 — step=${step.name}" }
+                        log.warn { "STOPPED 상태 저장 실패" }
                     }
             }
             throw e
@@ -251,15 +254,15 @@ internal class BatchStepRunner<I : Any, O : Any>(
             )
             runCatching { repository.completeStepExecution(claimedStepExecution, failedReport) }
                 .onFailure { t ->
-                    log.warn(t) { "FAILED 상태 저장 실패 — step=${step.name}" }
+                    log.warn { "FAILED 상태 저장 실패" }
                 }
             return failedReport
         } finally {
             withContext(NonCancellable) {
                 runCatching { step.reader.close() }
-                    .onFailure { t -> log.warn(t) { "reader close 실패 — step=${step.name}" } }
+                    .onFailure { log.warn { "reader close 실패" } }
                 runCatching { step.writer.close() }
-                    .onFailure { t -> log.warn(t) { "writer close 실패 — step=${step.name}" } }
+                    .onFailure { log.warn { "writer close 실패" } }
             }
         }
     }

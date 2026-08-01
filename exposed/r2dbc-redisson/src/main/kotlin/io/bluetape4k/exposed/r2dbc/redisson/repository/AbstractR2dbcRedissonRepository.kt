@@ -133,7 +133,7 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
     }
 
     override val cache: RMap<ID, E?> by lazy {
-        log.info { "캐시용 RMap을 생성합니다. config=$config" }
+        log.info { "캐시용 RMap을 생성합니다." }
 
         if (config.isNearCacheEnabled) {
             createLocalCacheMap()
@@ -172,7 +172,7 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
 
     protected fun createLocalCacheMap(): RLocalCachedMap<ID, E?> =
         localCachedMap(cacheName, redissonClient) {
-            log.info { "RLocalCacheMap 를 생성합니다. local cacheName=$cacheName, config=$config" }
+            log.info { "RLocalCacheMap 를 생성합니다." }
 
             if (config.isReadOnly) {
                 loaderAsync(r2dbcEntityMapLoader)
@@ -195,7 +195,7 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
 
     protected fun createMapCache(): RMapCache<ID, E?> =
         mapCache(cacheName, redissonClient) {
-            log.info { "RMapCache 를 생성합니다. remote cacheName=$cacheName, config=$config" }
+            log.info { "RMapCache 를 생성합니다." }
 
             if (config.isReadOnly) {
                 loaderAsync(r2dbcEntityMapLoader)
@@ -359,7 +359,7 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
         return ids
             .chunked(DEFAULT_BATCH_SIZE)
             .flatMap { chunk ->
-                log.debug { "캐시에서 ${chunk.size} 개의 엔티티를 가져옵니다. chunk=$chunk" }
+                log.debug { "캐시에서 엔티티를 가져옵니다. count=${chunk.size}" }
                 cache
                     .getAllAsync(chunk.toSet())
                     .await()

@@ -5,6 +5,7 @@ import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.jdbc.caffeine.repository.JdbcCaffeineRepository
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.boot.autoconfigure.AutoConfiguration
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -34,6 +35,7 @@ import org.springframework.context.annotation.Configuration
 class ExposedJdbcCacheHealthAutoConfiguration {
 
     @Bean("exposedJdbcCacheHealthIndicator")
+    @ConditionalOnBean(JdbcCaffeineRepository::class)
     @ConditionalOnMissingBean(name = ["exposedJdbcCacheHealthIndicator"])
     fun exposedJdbcCacheHealthIndicator(
         repositories: ObjectProvider<JdbcCaffeineRepository<*, *>>,

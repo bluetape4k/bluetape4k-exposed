@@ -16,6 +16,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.bigquery.domain.Events
 import io.mockk.clearMocks
 import io.mockk.every
@@ -153,8 +154,10 @@ class BigQueryQueryContinuationUnitTest {
             executor().toFlow().toList()
         } shouldThrow BigQueryQueryException::class
 
-        listError.message.shouldNotBeNull() shouldContain "backendError"
-        flowError.message.shouldNotBeNull() shouldContain "backendError"
+        listError.message.shouldNotBeNull() shouldContain "reasons=internalError"
+        flowError.message.shouldNotBeNull() shouldContain "reasons=internalError"
+        listError.message.orEmpty() shouldNotContain "backendError"
+        flowError.message.orEmpty() shouldNotContain "backendError"
     }
 
     @Test

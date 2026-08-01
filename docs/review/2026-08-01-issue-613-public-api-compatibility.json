@@ -1,0 +1,50 @@
+{
+  "issue": 613,
+  "reviewDate": "2026-08-01",
+  "repository": "bluetape4k-exposed",
+  "baseHead": "4a3c6de7ece55d23f074cb62c37792897c5da4de",
+  "candidateHead": "local candidate commit on fix/issue-600-review-findings",
+  "baseline": "Maven Central 1.11.0",
+  "method": {
+    "tool": "javap -public -s",
+    "scope": "top-level public classes and Kotlin facades",
+    "excluded": ["inner/synthetic classes whose binary name contains $"],
+    "note": "Kotlin compiler-generated access$ members in top-level facades were retained and classified in the Markdown report."
+  },
+  "artifacts": [
+    {"name": "bluetape4k-exposed-bigquery", "baselineLines": 194, "candidateLines": 196, "removed": 0, "added": 2},
+    {"name": "bluetape4k-exposed-jdbc-lettuce", "baselineLines": 242, "candidateLines": 250, "removed": 0, "added": 8},
+    {"name": "bluetape4k-exposed-r2dbc-lettuce", "baselineLines": 133, "candidateLines": 140, "removed": 0, "added": 7},
+    {"name": "bluetape4k-exposed-jdbc-redisson", "baselineLines": 107, "candidateLines": 380, "removed": 0, "added": 273},
+    {"name": "bluetape4k-exposed-r2dbc-redisson", "baselineLines": 58, "candidateLines": 58, "removed": 0, "added": 0},
+    {
+      "name": "bluetape4k-exposed-ktor",
+      "baselineLines": 89,
+      "candidateLines": 205,
+      "removed": 4,
+      "added": 120,
+      "removedClassification": "internal helper and compiler-generated accessors"
+    },
+    {
+      "name": "bluetape4k-exposed-spring-boot-jdbc",
+      "baselineLines": 144,
+      "candidateLines": 174,
+      "removed": 5,
+      "added": 35,
+      "removedClassification": "compiler-generated accessor plus pre-existing internal facade constant"
+    },
+    {
+      "name": "bluetape4k-exposed-spring-boot-r2dbc",
+      "baselineLines": 125,
+      "candidateLines": 127,
+      "removed": 2,
+      "added": 4,
+      "removedClassification": "compiler-generated accessor"
+    },
+    {"name": "bluetape4k-exposed-spring-modulith", "baselineLines": 59, "candidateLines": 106, "removed": 0, "added": 47},
+    {"name": "bluetape4k-exposed-batch", "baselineLines": 504, "candidateLines": 504, "removed": 0, "added": 0},
+    {"name": "bluetape4k-exposed-jdbc", "baselineLines": 58, "candidateLines": 58, "removed": 0, "added": 0}
+  ],
+  "stableSourceApiRemovalsAttributedToIssue600": 0,
+  "preExistingObservation": "SimpleExposedJdbcRepositoryKt.EXPOSED_TRANSACTION_MANAGER was removed by commit 6e4b28a4 as an internal const facade member and is not attributed to this review patch."
+}

@@ -1,0 +1,75 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:SnapshotNamespaceAdmin.kt:private fun &lt;ID : Any> clearNamespace: SnapshotNamespaceCleanupResult</ID>
+    <ID>CyclomaticComplexMethod:SnapshotNamespaceAdminTest.kt:RecordingAdmin$private fun future: RFuture&lt;Any?></ID>
+    <ID>InvalidPackageDeclaration:SnapshotRedissonReadmeFixture.kt:package io.bluetape4k.exposed.redisson.snapshot.readme</ID>
+    <ID>LargeClass:JdbcRedissonSnapshotInvalidatorTest.kt:JdbcRedissonSnapshotInvalidatorTest</ID>
+    <ID>LargeClass:SnapshotNamespaceAdminTest.kt:SnapshotNamespaceAdminTest</ID>
+    <ID>LongMethod:JdbcRedissonSnapshotInvalidatorIntegrationTest.kt:JdbcRedissonSnapshotInvalidatorIntegrationTest$@Test fun `versioned configuration performs the guarded rollout and rollback operations`</ID>
+    <ID>LongMethod:JdbcRedissonSnapshotInvalidatorTest.kt:JdbcRedissonSnapshotInvalidatorTest$@Test fun `same client namespace rejects every local composition mismatch before map access`</ID>
+    <ID>LongMethod:JdbcRedissonSnapshotTransactionTest.kt:JdbcRedissonSnapshotTransactionTest$@Test fun `all async stores and chunks are attempted before local invalidation and put phases`</ID>
+    <ID>LongMethod:SnapshotNamespaceAdmin.kt:private fun &lt;ID : Any> clearNamespace: SnapshotNamespaceCleanupResult</ID>
+    <ID>MagicNumber:JdbcRedissonSnapshotInvalidator.kt:4</ID>
+    <ID>MagicNumber:JdbcRedissonSnapshotInvalidatorConfig.kt:JdbcRedissonSnapshotInvalidatorConfig$1024</ID>
+    <ID>MagicNumber:JdbcRedissonSnapshotInvalidatorConfig.kt:JdbcRedissonSnapshotInvalidatorConfig$256</ID>
+    <ID>MagicNumber:JdbcRedissonSnapshotInvalidatorConfig.kt:JdbcRedissonSnapshotInvalidatorConfig$4</ID>
+    <ID>MagicNumber:JdbcRedissonSnapshotInvalidatorConfig.kt:JdbcRedissonSnapshotInvalidatorConfig$4L</ID>
+    <ID>MagicNumber:JdbcRedissonSnapshotInvalidatorConfig.kt:JdbcRedissonSnapshotInvalidatorConfig$64</ID>
+    <ID>MagicNumber:SnapshotNamespaceFingerprint.kt:0xff</ID>
+    <ID>MatchingDeclarationName:SnapshotRedissonReadmeFixture.kt:RedissonOrderSnapshot : Serializable</ID>
+    <ID>MaxLineLength:AbstractJdbcRedissonRepository.kt:AbstractJdbcRedissonRepository$updateBody = { stmt, entity -> with(this@AbstractJdbcRedissonRepository) { stmt.updateEntity(entity) } }</ID>
+    <ID>MaxLineLength:AbstractSuspendedJdbcRedissonRepository.kt:AbstractSuspendedJdbcRedissonRepository$*</ID>
+    <ID>MaxLineLength:JdbcRedissonSnapshotInvalidatorIntegrationTest.kt:JdbcRedissonSnapshotInvalidatorIntegrationTest$clearSnapshotNamespace(adminClient, codec, v2.snapshot.namespace, v2Invalidator.compatibilityFingerprint).outcome</ID>
+    <ID>MaxLineLength:JdbcRedissonSnapshotInvalidatorIntegrationTest.kt:JdbcRedissonSnapshotInvalidatorIntegrationTest$private</ID>
+    <ID>MaxLineLength:JdbcRedissonSnapshotInvalidatorIntegrationTest.kt:JdbcRedissonSnapshotInvalidatorIntegrationTest$val old = jdbcRedissonSnapshotInvalidator(oldClient, codec, Long::class, String::class, config(namespace), buffer)</ID>
+    <ID>MaxLineLength:JdbcRedissonSnapshotInvalidatorTest.kt:JdbcRedissonSnapshotInvalidatorTest$first = { jdbcRedissonSnapshotInvalidator(it, baseCodec, Long::class, Payload::class, baseConfig, baseBuffer) }</ID>
+    <ID>MaxLineLength:JdbcRedissonSnapshotTransactionTest.kt:JdbcRedissonSnapshotTransactionTest$val failed = testInvalidator("failed:v1", failureMap, sharedClient, quotaRegistry, failedBuffer, events, "failed")</ID>
+    <ID>MaxLineLength:SnapshotNamespaceFingerprintTest.kt:SnapshotNamespaceFingerprintTest$fingerprint(snapshotRedissonCodec(StringCodec(), "json-v1", uuidSnapshotIdentifierPolicy()), Payload::class.java)</ID>
+    <ID>MaxLineLength:SnapshotNamespaceFingerprintTest.kt:SnapshotNamespaceFingerprintTest$fingerprint(snapshotRedissonCodec(StringCodec(), "json-v2", longSnapshotIdentifierPolicy()), Payload::class.java)</ID>
+    <ID>MaxLineLength:SnapshotNamespaceFingerprintTest.kt:SnapshotNamespaceFingerprintTest$snapshotNamespaceFingerprint("other", "orders-snapshot:v1", Long::class.java, Payload::class.java, "orders-v3", codec, LocalCachedMapOptions.SyncStrategy.INVALIDATE)</ID>
+    <ID>MaxLineLength:SnapshotNamespaceFingerprintTest.kt:SnapshotNamespaceFingerprintTest$snapshotNamespaceFingerprint("redisson", "orders-snapshot:v1", Class.forName("java.lang.Long"), Payload::class.java, "orders-v3", codec, LocalCachedMapOptions.SyncStrategy.INVALIDATE)</ID>
+    <ID>MaxLineLength:SnapshotNamespaceFingerprintTest.kt:SnapshotNamespaceFingerprintTest$snapshotNamespaceFingerprint("redisson", "orders-snapshot:v1", Long::class.java, OtherPayload::class.java, "orders-v3", codec, LocalCachedMapOptions.SyncStrategy.INVALIDATE)</ID>
+    <ID>MaxLineLength:SnapshotNamespaceFingerprintTest.kt:SnapshotNamespaceFingerprintTest$snapshotNamespaceFingerprint("redisson", "orders-snapshot:v1", Long::class.java, Payload::class.java, "orders-v4", codec, LocalCachedMapOptions.SyncStrategy.INVALIDATE)</ID>
+    <ID>MaxLineLength:SnapshotNamespaceFingerprintTest.kt:SnapshotNamespaceFingerprintTest$snapshotNamespaceFingerprint("redisson", "other-snapshot:v1", Long::class.java, Payload::class.java, "orders-v3", codec, LocalCachedMapOptions.SyncStrategy.INVALIDATE)</ID>
+    <ID>MaxLineLength:SnapshotRedissonCodecTest.kt:SnapshotRedissonCodecTest$snapshotRedissonCodec(StringCodec(), version, longSnapshotIdentifierPolicy()).codecVersion shouldBeEqualTo version</ID>
+    <ID>MaxLineLength:SuspendedEntityMapLoader.kt:SuspendedEntityMapLoader$}</ID>
+    <ID>MaxLineLength:SuspendedReadThroughScenario.kt:SuspendedReadThroughScenario$(repository as io.bluetape4k.exposed.redisson.repository.AbstractSuspendedJdbcRedissonRepository&lt;ID, E>)</ID>
+    <ID>MaxLineLength:SuspendedReadWriteThroughCacheTest.kt:SuspendedReadWriteThroughCacheTest.SuspendedAutoIncIdReadWriteThroughNearCache$RedissonCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE.copy(name = "suspended:read-write-through:near:users")</ID>
+    <ID>MaxLineLength:SuspendedReadWriteThroughCacheTest.kt:SuspendedReadWriteThroughCacheTest.SuspendedClientGeneratedIdReadThroughNearCache$RedissonCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE.copy(name = "suspended:read-through:near:user-credentials")</ID>
+    <ID>MaxLineLength:SuspendedUserCredentialCacheRepository.kt:SuspendedUserCredentialCacheRepository$config: RedissonCacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(name = "exposed:remote:suspended:user-credentials")</ID>
+    <ID>ReturnCount:ExposedRedissonCodecSafety.kt:ExposedRedissonCodecSafety$private fun Codec.isTrustedBinaryCodec: Boolean</ID>
+    <ID>ReturnCount:ExposedRedissonCodecSafety.kt:ExposedRedissonCodecSafety$private fun readCodecFields: List&lt;Codec>?</ID>
+    <ID>ReturnCount:SnapshotNamespaceAdmin.kt:private fun &lt;ID : Any> clearNamespace: SnapshotNamespaceCleanupResult</ID>
+    <ID>SerialVersionUIDInSerializableClass:ExposedEntityMapLoaderTest.kt:ExposedEntityMapLoaderTest$LoaderEntity : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:JdbcRedissonRepositoryDefaultMethodTest.kt:JdbcRedissonRepositoryDefaultMethodTest$ProbeEntity : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:SnapshotNamespaceFingerprintTest.kt:SnapshotNamespaceFingerprintTest$OtherPayload : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:SnapshotNamespaceFingerprintTest.kt:SnapshotNamespaceFingerprintTest$Payload : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:UserSchema.kt:UserSchema$UserCredentialsRecord : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:UserSchema.kt:UserSchema$UserRecord : Serializable</ID>
+    <ID>SwallowedException:SnapshotNamespaceAdmin.kt:exception: Exception</ID>
+    <ID>ThrowingExceptionFromFinally:SnapshotNamespaceAdmin.kt:throw destroyFailure</ID>
+    <ID>ThrowsCount:SnapshotNamespaceAdmin.kt:internal fun verifyOrClaimSnapshotNamespace: SnapshotNamespaceMarkerVerification</ID>
+    <ID>ThrowsCount:SnapshotNamespaceAdmin.kt:private fun &lt;ID : Any> clearNamespace: SnapshotNamespaceCleanupResult</ID>
+    <ID>TooGenericExceptionCaught:ExposedEntityMapLoader.kt:ExposedEntityMapLoader$cause: Throwable</ID>
+    <ID>TooGenericExceptionCaught:JdbcRedissonSnapshotInvalidator.kt:JdbcRedissonSnapshotInvalidator$error: Error</ID>
+    <ID>TooGenericExceptionCaught:JdbcRedissonSnapshotInvalidator.kt:JdbcRedissonSnapshotInvalidator$exception: Exception</ID>
+    <ID>TooGenericExceptionCaught:JdbcRedissonSnapshotInvalidator.kt:failure: Throwable</ID>
+    <ID>TooGenericExceptionCaught:SnapshotNamespaceAdmin.kt:destroyFailure: Throwable</ID>
+    <ID>TooGenericExceptionCaught:SnapshotNamespaceAdmin.kt:error: Error</ID>
+    <ID>TooGenericExceptionCaught:SnapshotNamespaceAdmin.kt:exception: Exception</ID>
+    <ID>TooGenericExceptionCaught:SnapshotNamespaceAdmin.kt:failure: Throwable</ID>
+    <ID>TooGenericExceptionCaught:SuspendedEntityMapLoader.kt:SuspendedEntityMapLoader$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:SuspendedEntityMapWriter.kt:SuspendedEntityMapWriter$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:SuspendedExposedEntityMapLoader.kt:SuspendedExposedEntityMapLoader$cause: Throwable</ID>
+    <ID>TooGenericExceptionThrown:AbstractRedissonTest.kt:AbstractRedissonTest$throw RuntimeException("Fail to execute in coroutine", exception)</ID>
+    <ID>TooManyFunctions:AbstractJdbcRedissonRepository.kt:AbstractJdbcRedissonRepository&lt;ID: Any, E: Serializable> : JdbcRedissonRepository</ID>
+    <ID>TooManyFunctions:AbstractSuspendedJdbcRedissonRepository.kt:AbstractSuspendedJdbcRedissonRepository&lt;ID: Any, E: Serializable> : SuspendedJdbcRedissonRepository</ID>
+    <ID>TooManyFunctions:JdbcRedissonRepository.kt:JdbcRedissonRepository&lt;ID: Any, E: Serializable> : JdbcRedisRepository</ID>
+    <ID>TooManyFunctions:SnapshotNamespaceAdmin.kt:io.bluetape4k.exposed.redisson.snapshot.SnapshotNamespaceAdmin.kt</ID>
+    <ID>TooManyFunctions:SuspendedJdbcRedissonRepository.kt:SuspendedJdbcRedissonRepository&lt;ID: Any, E: Serializable> : SuspendJdbcRedisRepository</ID>
+    <ID>UnusedParameter:RedissonRepositoryCodecSafetyTest.kt:RedissonRepositoryCodecSafetyTest$name: String</ID>
+    <ID>UnusedParameter:RedissonRepositoryCodecSafetyTest.kt:RedissonRepositoryCodecSafetyTest$testDB: TestDB</ID>
+  </CurrentIssues>
+</SmellBaseline>

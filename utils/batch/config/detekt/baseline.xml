@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:BatchStepRunner.kt:BatchStepRunner$suspend fun run: StepReport</ID>
+    <ID>EmptyFunctionBlock:BatchBuilderTest.kt:BatchBuilderTest.&lt;no name provided>${}</ID>
+    <ID>EmptyFunctionBlock:BatchDslTest.kt:BatchDslTest.&lt;no name provided>${}</ID>
+    <ID>EmptyFunctionBlock:BatchStepBuilderTest.kt:BatchStepBuilderTest.&lt;no name provided>${}</ID>
+    <ID>EmptyFunctionBlock:BatchStepRunnerRetryTest.kt:BatchStepRunnerRetryTest.ListBatchReader${}</ID>
+    <ID>EmptyFunctionBlock:BatchStepRunnerTimeoutTest.kt:BatchStepRunnerTimeoutTest.ListBatchReader${}</ID>
+    <ID>EmptyFunctionBlock:BatchStepRunnerTimeoutTest.kt:BatchStepRunnerTimeoutTest.SlowWriter${}</ID>
+    <ID>LongMethod:BatchStepRunner.kt:BatchStepRunner$suspend fun run: StepReport</ID>
+    <ID>LoopWithTooManyJumpStatements:BatchStepRunner.kt:BatchStepRunner$while</ID>
+    <ID>MagicNumber:BatchJob.kt:BatchJob$15</ID>
+    <ID>MagicNumber:ExposedJdbcBatchJobRepository.kt:ExposedJdbcBatchJobRepository$1062</ID>
+    <ID>MaxLineLength:ExposedR2dbcBatchJobRepository.kt:ExposedR2dbcBatchJobRepository$row[BatchJobExecutionTable.paramsHash] = hash</ID>
+    <ID>MaxLineLength:ExposedR2dbcBatchJobRepositoryTest.kt:ExposedR2dbcBatchJobRepositoryTest$completeStepExecution(se, StepReport("step1", BatchStatus.COMPLETED, readCount = 100L, writeCount = 100L))</ID>
+    <ID>NestedBlockDepth:BatchStepRunner.kt:BatchStepRunner$suspend fun run: StepReport</ID>
+    <ID>RethrowCaughtException:BatchJob.kt:BatchJob$throw e</ID>
+    <ID>ReturnCount:BatchJob.kt:BatchJob$suspend fun run: BatchReport</ID>
+    <ID>ReturnCount:BatchStepRunner.kt:BatchStepRunner$suspend fun run: StepReport</ID>
+    <ID>ReturnCount:InMemoryBatchJobRepository.kt:InMemoryBatchJobRepository$override suspend fun claimJobExecution: JobExecution?</ID>
+    <ID>ReturnCount:InMemoryBatchJobRepository.kt:InMemoryBatchJobRepository$override suspend fun claimStepExecution: StepExecution?</ID>
+    <ID>ThrowsCount:BatchStepRunner.kt:BatchStepRunner$suspend fun run: StepReport</ID>
+    <ID>TooGenericExceptionCaught:BatchJob.kt:BatchJob$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:BatchStepRunner.kt:BatchStepRunner$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:ExposedJdbcBatchJobRepository.kt:ExposedJdbcBatchJobRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ExposedR2dbcBatchJobRepository.kt:ExposedR2dbcBatchJobRepository$e: Throwable</ID>
+    <ID>TooGenericExceptionThrown:BatchJobTest.kt:BatchJobTest.&lt;no name provided>$throw RuntimeException(message)</ID>
+    <ID>TooGenericExceptionThrown:BatchStepRunnerCheckpointTest.kt:BatchStepRunnerCheckpointTest.FailingCheckpointRepository$throw RuntimeException("checkpoint save failed")</ID>
+    <ID>TooGenericExceptionThrown:BatchStepRunnerRetryTest.kt:BatchStepRunnerRetryTest.AlwaysFailWriter$throw RuntimeException("항상 실패")</ID>
+    <ID>TooGenericExceptionThrown:BatchStepRunnerRetryTest.kt:BatchStepRunnerRetryTest.FailThenSucceedWriter$throw RuntimeException("실패 attempt=$attempt")</ID>
+    <ID>TooGenericExceptionThrown:BatchStepRunnerSkipTest.kt:BatchStepRunnerSkipTest.AlwaysFailWriter$throw RuntimeException("항상 실패")</ID>
+    <ID>TooGenericExceptionThrown:BatchStepRunnerTest.kt:BatchStepRunnerTest$throw RuntimeException("fatal")</ID>
+    <ID>TooGenericExceptionThrown:BatchStepRunnerTest.kt:BatchStepRunnerTest.AlwaysFailWriter$throw RuntimeException("항상 실패")</ID>
+    <ID>TooGenericExceptionThrown:BatchStepRunnerTest.kt:BatchStepRunnerTest.FailOnCloseWriter$throw RuntimeException("writer.close() 실패")</ID>
+    <ID>TooGenericExceptionThrown:BatchStepRunnerTest.kt:BatchStepRunnerTest.FailOnOpenReader$throw RuntimeException("reader.open() 실패")</ID>
+    <ID>TooGenericExceptionThrown:BatchStepRunnerTest.kt:BatchStepRunnerTest.FailThenSucceedWriter$throw RuntimeException("write 실패 (attempt=${attempts.get()})")</ID>
+    <ID>TooManyFunctions:ExposedJdbcBatchJobRepository.kt:ExposedJdbcBatchJobRepository : BatchJobRepository</ID>
+    <ID>TooManyFunctions:ExposedR2dbcBatchJobRepository.kt:ExposedR2dbcBatchJobRepository : BatchJobRepository</ID>
+    <ID>UnusedPrivateClass:BatchStepRunnerCheckpointTest.kt:BatchStepRunnerCheckpointTest$PreloadedCheckpointRepository : BatchJobRepository</ID>
+  </CurrentIssues>
+</SmellBaseline>

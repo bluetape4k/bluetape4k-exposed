@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MayBeConstant:DruidJdbc.kt:DruidJdbc$/** Apache Calcite Avatica remote JDBC driver class name입니다. */ val DRIVER = "org.apache.calcite.avatica.remote.Driver"</ID>
+    <ID>RethrowCaughtException:DruidJdbc.kt:DruidJdbc$throw e</ID>
+  </CurrentIssues>
+</SmellBaseline>

@@ -60,7 +60,8 @@ open class ExposedEntityMapWriter<ID: Any, E: Any>(
     deleteFromDB = { ids ->
         if (deleteFromDBOnInvalidate) {
             log.debug {
-                "캐시가 Invalidated 되어, DB에서도 삭제합니다... ids=$ids, id type=${ids.firstOrNull()?.javaClass?.simpleName}"
+                "캐시가 Invalidated 되어, DB에서도 삭제합니다... count=${ids.size}, " +
+                    "idType=${ids.firstOrNull()?.javaClass?.simpleName ?: "unknown"}"
             }
 
             // Map Key가 String Codec 인데, UUID로 변환을 못함
@@ -79,7 +80,7 @@ open class ExposedEntityMapWriter<ID: Any, E: Any>(
             updateBody: IdTable<K>.(UpdateStatement, V) -> Unit,
             batchInsertBody: BatchInsertStatement.(V) -> Unit,
         ) {
-            log.debug { "캐시 변경 사항을 DB에 반영합니다... ids=${map.keys}" }
+            log.debug { "캐시 변경 사항을 DB에 반영합니다... entries=${map.size}" }
             val existIds =
                 entityTable
                     .select(entityTable.id)

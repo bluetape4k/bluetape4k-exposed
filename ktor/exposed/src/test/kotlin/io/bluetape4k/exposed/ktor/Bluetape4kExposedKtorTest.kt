@@ -48,6 +48,18 @@ import kotlin.time.Duration.Companion.seconds
 class Bluetape4kExposedKtorTest {
 
     @Test
+    fun `configuration rejects equivalent health and readiness paths`() {
+        val error = assertFailsWith<IllegalArgumentException> {
+            Bluetape4kExposedKtorConfig(
+                healthPath = "/ops/status/",
+                readinessPath = "/ops/status",
+            )
+        }
+
+        error.message shouldContain "healthPath and readinessPath must be distinct"
+    }
+
+    @Test
     fun `default installer is a no-op`() = testApplication {
         application {
             installBluetape4kExposedKtor()

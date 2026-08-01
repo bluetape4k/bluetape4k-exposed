@@ -7,6 +7,7 @@ import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -68,6 +69,27 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
             val entity = loader.load(insertedId.value)
             entity.shouldNotBeNull()
             entity.name shouldBeEqualTo "alice"
+        }
+    }
+
+    @Test
+    fun `load 로그는 원시 ID와 엔티티 payload를 노출하지 않는다`() {
+        withTables(TestDB.H2, LoaderTable) {
+            val sensitiveName = "credential=jdbc-redisson-secret"
+            val insertedId = LoaderTable.insert {
+                it[name] = sensitiveName
+            } get LoaderTable.id
+            val loader = ExposedEntityMapLoader(
+                entityTable = LoaderTable,
+                toEntity = { toLoaderEntity() },
+            )
+
+            RecordingLogAppender().use { appender ->
+                loader.load(insertedId.value).shouldNotBeNull()
+
+                appender.rendered shouldNotContain insertedId.value.toString()
+                appender.rendered shouldNotContain sensitiveName
+            }
         }
     }
 

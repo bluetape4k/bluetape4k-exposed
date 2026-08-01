@@ -173,7 +173,7 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
      * Read-Only 모드에서는 loader만, Read-Write 모드에서는 loader + writer를 설정합니다.
      */
     protected fun createLocalCacheMap(): RLocalCachedMap<ID, E?> = localCachedMap(cacheName, redissonClient) {
-        log.info { "RLocalCacheMap 를 생성합니다. config=$config" }
+        log.info { "RLocalCacheMap 를 생성합니다." }
         if (config.isReadOnly) {
             loader(mapLoader)
         } else {
@@ -199,7 +199,7 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
      * [RedissonCacheConfig.nearCacheMaxSize]가 0보다 크면 LRU 방식으로 최대 크기를 제한합니다.
      */
     protected fun createMapCache(): RMapCache<ID, E?> = mapCache(cacheName, redissonClient) {
-        log.info { "RMapCache 를 생성합니다. config=$config" }
+        log.info { "RMapCache 를 생성합니다." }
         if (config.isReadOnly) {
             loader(mapLoader)
         } else {
@@ -377,7 +377,7 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
             }
 
         if (entities.isNotEmpty()) {
-            log.debug { "DB에서 엔티티를 조회했습니다. entities=$entities" }
+            log.debug { "DB에서 엔티티를 조회했습니다. count=${entities.size}" }
             upsertAll(entities.associateBy { extractId(it) }, DEFAULT_BATCH_SIZE)
         }
         return entities
@@ -410,7 +410,7 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
         val chunkedIds = ids.chunked(batchSize)
 
         return chunkedIds.flatMap { chunk ->
-            log.debug { "캐시에서 ${chunk.size}개의 엔티티를 가져옵니다. chunk=$chunk" }
+            log.debug { "캐시에서 엔티티를 가져옵니다. count=${chunk.size}" }
             @Suppress("UNCHECKED_CAST")
             cache.getAll(chunk.toSet()).entries
                 .mapNotNull { (key, value) -> value?.let { key to it } }

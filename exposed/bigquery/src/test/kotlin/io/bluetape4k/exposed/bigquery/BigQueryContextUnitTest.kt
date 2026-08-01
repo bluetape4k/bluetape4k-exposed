@@ -5,6 +5,7 @@ import com.google.api.services.bigquery.Bigquery.Jobs
 import com.google.api.services.bigquery.model.ErrorProto
 import com.google.api.services.bigquery.model.QueryRequest
 import com.google.api.services.bigquery.model.QueryResponse
+import com.google.api.services.bigquery.model.JobReference
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
@@ -12,6 +13,7 @@ import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import io.mockk.CapturingSlot
 import io.mockk.clearMocks
 import io.mockk.every
@@ -19,6 +21,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.core.Table
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -133,7 +136,8 @@ class BigQueryContextUnitTest {
             context.runRawQuery("SELECT * FROM missing_table")
         }
         ex.message.shouldNotBeNull()
-        ex.message!! shouldContain "테이블을 찾을 수 없습니다"
+        ex.message!! shouldContain "reasons=notFound"
+        ex.message!! shouldNotContain "테이블을 찾을 수 없습니다"
     }
 
     @Test
@@ -152,11 +156,13 @@ class BigQueryContextUnitTest {
     }
 
     @Test
-    fun `runRawQuery - 오류 메시지에 SQL 앞부분이 포함된다`() {
-        val sql = "SELECT * FROM bad_table_xyz"
+    fun `runRawQuery 오류 진단은 SQL 리터럴을 숨기고 안전한 메타데이터만 포함한다`() {
+        val secret = "token=bigquery-secret"
+        val sql = "SELECT * FROM bad_table WHERE credential = '$secret'"
         val errorResponse = QueryResponse()
             .setJobComplete(true)
-            .setErrors(listOf(ErrorProto().setMessage("오류").setReason("badRequest")))
+            .setJobReference(JobReference().setJobId("job-safe-123"))
+            .setErrors(listOf(ErrorProto().setMessage("invalid literal '$secret'").setReason("badRequest")))
         val bq = mockBigquery { errorResponse }
 
         val context = BigQueryContext(bq, "proj", "ds", sqlGenDb)
@@ -164,7 +170,74 @@ class BigQueryContextUnitTest {
         val ex = assertFailsWith<BigQueryQueryException> {
             context.runRawQuery(sql)
         }
-        ex.message!! shouldContain "bad_table_xyz"
+        ex.message!! shouldContain "statement=SELECT"
+        ex.message!! shouldContain "sqlFingerprint=sha256:"
+        ex.message!! shouldContain "jobId=job-safe-123"
+        ex.message!! shouldNotContain secret
+        ex.message!! shouldNotContain "bad_table"
+    }
+
+    @Test
+    fun `runRawQuery 오류 진단은 알 수 없는 첫 토큰을 statement kind로 노출하지 않는다`() {
+        val secret = "credentialSecretToken"
+        val errorResponse = QueryResponse()
+            .setJobComplete(true)
+            .setErrors(listOf(ErrorProto().setMessage(secret).setReason("badRequest")))
+        val bq = mockBigquery { errorResponse }
+        val context = BigQueryContext(bq, "proj", "ds", sqlGenDb)
+
+        val ex = assertFailsWith<BigQueryQueryException> {
+            context.runRawQuery("$secret is not SQL")
+        }
+
+        ex.message!! shouldContain "statement=UNKNOWN"
+        ex.message!! shouldNotContain secret
+    }
+
+    @Test
+    fun `runRawQuery 오류 진단은 알 수 없는 reason을 노출하지 않는다`() {
+        val secretReason = "credentialSecretReason"
+        val errorResponse = QueryResponse()
+            .setJobComplete(true)
+            .setErrors(listOf(ErrorProto().setMessage("error").setReason(secretReason)))
+        val bq = mockBigquery { errorResponse }
+        val context = BigQueryContext(bq, "proj", "ds", sqlGenDb)
+
+        val ex = assertFailsWith<BigQueryQueryException> {
+            context.runRawQuery("SELECT 1")
+        }
+
+        ex.message!! shouldContain "reasons=unknown"
+        ex.message!! shouldNotContain secretReason
+    }
+
+    @Test
+    fun `execDeleteAll은 안전한 단일 식별자만 backtick으로 인용한다`() {
+        val request = slot<QueryRequest>()
+        val bq = mockBigquery(request) { QueryResponse().setJobComplete(true) }
+        val context = BigQueryContext(bq, "proj", "ds", sqlGenDb)
+        val table = object: Table("safe_events") {}
+
+        with(context) { table.execDeleteAll() }
+
+        request.captured.query shouldBeEqualTo "DELETE FROM `safe_events` WHERE TRUE"
+    }
+
+    @Test
+    fun `execDeleteAll은 악성 또는 모호한 테이블 이름을 쿼리 전에 거부한다`() {
+        val bq = mockBigquery { QueryResponse().setJobComplete(true) }
+        val context = BigQueryContext(bq, "proj", "ds", sqlGenDb)
+        val unsafeNames = listOf("events; DROP TABLE audit", "dataset.events", "`events`")
+
+        unsafeNames.forEach { unsafeName ->
+            val table = object: Table(unsafeName) {}
+            val ex = assertFailsWith<IllegalArgumentException> {
+                with(context) { table.execDeleteAll() }
+            }
+            ex.message.orEmpty() shouldNotContain unsafeName
+        }
+
+        verify(exactly = 0) { jobs.query(any(), any()) }
     }
 
     @Test

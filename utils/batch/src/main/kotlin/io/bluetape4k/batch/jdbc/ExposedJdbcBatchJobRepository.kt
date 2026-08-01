@@ -99,7 +99,7 @@ class ExposedJdbcBatchJobRepository(
         }
 
         if (existing != null) {
-            log.debug { "기존 JobExecution 재사용: jobName=$jobName, id=${existing.id}, status=${existing.status}" }
+            log.debug { "기존 JobExecution 재사용: status=${existing.status}" }
             return existing
         }
 
@@ -116,7 +116,7 @@ class ExposedJdbcBatchJobRepository(
                             if (params.isEmpty()) null else checkpointJson.write(params)
                         row[BatchJobExecutionTable.startTime] = now
                     }
-                    log.debug { "신규 JobExecution 생성: jobName=$jobName, id=${newId.value}" }
+                    log.debug { "신규 JobExecution 생성" }
                     JobExecution(
                         id = newId.value,
                         jobName = jobName,
@@ -131,7 +131,7 @@ class ExposedJdbcBatchJobRepository(
         } catch (e: Exception) {
             val sqle = e.findSqlException()
             if (sqle == null || !sqle.isUniqueViolation()) throw e
-            log.debug(e) { "동시 INSERT 감지 — job=$jobName, 재조회" }
+            log.debug { "동시 INSERT 감지 — JobExecution 재조회" }
             requeryJobExecutionAfterUniqueViolation(jobName, params)
         }
     }
@@ -200,8 +200,7 @@ class ExposedJdbcBatchJobRepository(
                     .firstOrNull()
                     ?.toJobExecution(checkpointJson)
                     ?: throw IllegalStateException(
-                        "Job execution disappeared after unique-constraint violation re-query. " +
-                            "jobName=$jobName, params=$params"
+                        "Job execution disappeared after unique-constraint violation re-query."
                     )
             }
         }
@@ -225,7 +224,7 @@ class ExposedJdbcBatchJobRepository(
                 }
             }
         }
-        log.debug { "JobExecution 완료: id=${execution.id}, status=$status" }
+        log.debug { "JobExecution 완료: status=$status" }
     }
 
     /**
@@ -263,21 +262,21 @@ class ExposedJdbcBatchJobRepository(
                 BatchStatus.COMPLETED,
                 BatchStatus.COMPLETED_WITH_SKIPS,
                     -> {
-                    log.debug { "StepExecution skip (이미 완료): stepName=$stepName, status=${existing.status}" }
+                    log.debug { "StepExecution skip (이미 완료): status=${existing.status}" }
                     existing
                 }
 
                 BatchStatus.FAILED,
                 BatchStatus.STOPPED,
                     -> {
-                    log.debug { "StepExecution 재시작 대상: stepName=$stepName, 이전 status=${existing.status}" }
+                    log.debug { "StepExecution 재시작 대상: 이전 status=${existing.status}" }
                     existing
                 }
 
                 BatchStatus.RUNNING -> existing
 
                 else -> {
-                    log.debug { "StepExecution 예상치 못한 상태: stepName=$stepName, status=${existing.status}" }
+                    log.debug { "StepExecution 예상치 못한 상태: status=${existing.status}" }
                     existing
                 }
             }
@@ -292,7 +291,7 @@ class ExposedJdbcBatchJobRepository(
                     row[BatchStepExecutionTable.status] = BatchStatus.RUNNING
                     row[BatchStepExecutionTable.startTime] = now
                 }
-                log.debug { "신규 StepExecution 생성: stepName=$stepName, id=${newId.value}" }
+                log.debug { "신규 StepExecution 생성" }
                 StepExecution(
                     id = newId.value,
                     jobExecutionId = jobExecution.id,
@@ -367,8 +366,8 @@ class ExposedJdbcBatchJobRepository(
             }
         }
         log.debug {
-            "StepExecution 완료: id=${execution.id}, stepName=${execution.stepName}, " +
-                    "status=${report.status}, read=${report.readCount}, write=${report.writeCount}, skip=${report.skipCount}"
+            "StepExecution 완료: status=${report.status}, " +
+                    "read=${report.readCount}, write=${report.writeCount}, skip=${report.skipCount}"
         }
     }
 
@@ -381,7 +380,7 @@ class ExposedJdbcBatchJobRepository(
                 }
             }
         }
-        log.debug { "체크포인트 저장: stepExecutionId=$stepExecutionId" }
+        log.debug { "체크포인트 저장 완료" }
     }
 
     override suspend fun saveCheckpoint(execution: StepExecution, checkpoint: Any) {
@@ -399,7 +398,7 @@ class ExposedJdbcBatchJobRepository(
                 }
             }
         }
-        log.debug { "체크포인트 저장: stepExecutionId=${execution.id}" }
+        log.debug { "체크포인트 저장 완료" }
     }
 
     override suspend fun loadCheckpoint(stepExecutionId: Long): Any? {
@@ -413,7 +412,7 @@ class ExposedJdbcBatchJobRepository(
                     ?.let { checkpointJson.read(it) }
             }
         }
-        log.debug { "체크포인트 조회: stepExecutionId=$stepExecutionId, exists=${result != null}" }
+        log.debug { "체크포인트 조회 완료: found=${result != null}" }
         return result
     }
 

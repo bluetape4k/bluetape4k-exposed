@@ -311,6 +311,9 @@ fun Application.installAuthenticatedReadiness(
 인증되지 않은 두 번째 route를 설치하면 안 됩니다. 인증, 인가, request concurrency,
 rate limiting은 호출자가 담당합니다.
 
+`healthPath`와 `readinessPath`는 trailing slash를 제거한 뒤에도 서로 달라야 합니다. 충돌하면 route 등록 전에
+거부하므로 probe-free liveness handler가 readiness 실패를 가릴 수 없습니다.
+
 ## Readiness 의미와 시간 예산
 
 | Path 또는 상태 | Ktor 결과 |

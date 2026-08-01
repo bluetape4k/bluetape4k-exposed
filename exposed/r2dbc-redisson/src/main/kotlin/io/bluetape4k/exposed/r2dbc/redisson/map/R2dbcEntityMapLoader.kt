@@ -27,6 +27,7 @@ import java.util.concurrent.CompletionStage
  * - [load]는 `suspendTransaction`에서 [loadByIdFromDB]를 실행해 단건 엔티티를 조회합니다.
  * - [loadAllKeys]는 채널 기반 [AsyncIterator]를 반환하고, 백그라운드 코루틴에서 [loadAllIdsFromDB]를 실행합니다.
  * - 전체 키 로딩은 60초 타임아웃을 적용하며, 타임아웃 시 경고 로그를 남기고 채널을 닫습니다.
+ * - 운영 로그에는 caller-owned ID, 엔티티 payload, 예외 message를 기록하지 않습니다.
  *
  * ```kotlin
  * val loader = R2dbcEntityMapLoader<Long, LoaderEntity>(
@@ -56,18 +57,18 @@ open class R2dbcEntityMapLoader<ID: Any, E: Any>(
     override fun load(id: ID): CompletionStage<E?> =
         scope
             .async {
-                log.debug { "DB에서 엔티티를 로딩... id=$id" }
+                log.debug { "DB에서 단건 엔티티 로드를 시작합니다." }
                 suspendTransaction {
                     try {
                         loadByIdFromDB(id)
                             .apply {
-                                log.debug { "DB로부터 엔티티를 로딩했습니다. id=$id, entity=$this" }
+                                log.debug { "DB에서 단건 엔티티 로드를 완료했습니다. found=${this != null}" }
                             }
                     } catch (e: CancellationException) {
                         // 코루틴 취소는 반드시 재전파해야 한다 — 삼키면 구조적 동시성이 깨진다
                         throw e
                     } catch (e: Throwable) {
-                        log.error(e) { "DB에서 엔티티 로딩 중 오류 발생. id=$id" }
+                        log.error { "DB에서 단건 엔티티 로드 중 오류가 발생했습니다." }
                         throw e
                     }
                 }
@@ -79,7 +80,7 @@ open class R2dbcEntityMapLoader<ID: Any, E: Any>(
         val channel =
             Channel<ID>(Channel.RENDEZVOUS).also {
                 it.invokeOnClose { cause ->
-                    log.debug { "Channel closed. cause=$cause" }
+                    log.debug { "단건 ID 채널이 닫혔습니다. failed=${cause != null}" }
                 }
             }
 
@@ -99,7 +100,7 @@ open class R2dbcEntityMapLoader<ID: Any, E: Any>(
                 channel.close(e)
                 throw e
             } catch (e: Throwable) {
-                log.error(e) { "DB에서 모든 ID 로딩 중 오류 발생" }
+                log.error { "DB에서 모든 ID 로딩 중 오류가 발생했습니다." }
                 channel.close(e)
                 throw e
             } finally {

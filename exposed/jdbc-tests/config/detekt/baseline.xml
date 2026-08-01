@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>LongMethod:DMLTestData.kt:DMLTestData$@Suppress("UnusedReceiverParameter") fun AbstractExposedTest.withCitiesAndUsers</ID>
+    <ID>LongMethod:MovieSchema.kt:MovieSchema$private fun JdbcTransaction.populateSampleData</ID>
+    <ID>LongMethod:OrderSchema.kt:OrderSchema$@Suppress("UnusedReceiverParameter") fun AbstractExposedTest.withOrdersTables</ID>
+    <ID>LongMethod:PersonSchema.kt:@Suppress("UnusedReceiverParameter") fun AbstractExposedTest.withPersonsAndAddress</ID>
+    <ID>MagicNumber:DMLTestData.kt:DMLTestData$10</ID>
+    <ID>MagicNumber:DMLTestData.kt:DMLTestData$11</ID>
+    <ID>MagicNumber:DMLTestData.kt:DMLTestData$12</ID>
+    <ID>MagicNumber:DMLTestData.kt:DMLTestData$20</ID>
+    <ID>MagicNumber:DMLTestData.kt:DMLTestData$2018</ID>
+    <ID>MagicNumber:DMLTestData.kt:DMLTestData$2019</ID>
+    <ID>MagicNumber:DMLTestData.kt:DMLTestData$30</ID>
+    <ID>MagicNumber:PersonSchema.kt:1935</ID>
+    <ID>MagicNumber:PersonSchema.kt:1937</ID>
+    <ID>MagicNumber:PersonSchema.kt:1940</ID>
+    <ID>MagicNumber:PersonSchema.kt:1943</ID>
+    <ID>MagicNumber:PersonSchema.kt:1960</ID>
+    <ID>MagicNumber:PersonSchema.kt:1963</ID>
+    <ID>MagicNumber:PersonSchema.kt:5</ID>
+    <ID>MagicNumber:PersonSchema.kt:6</ID>
+    <ID>MagicNumber:PersonSchema.kt:7</ID>
+    <ID>MagicNumber:PersonSchema.kt:8</ID>
+    <ID>MaxLineLength:BookSchema.kt:BookSchema.Authors$*</ID>
+    <ID>MaxLineLength:BookSchema.kt:BookSchema.Offices$*</ID>
+    <ID>MaxLineLength:JdbcMigrationDriftTest.kt:JdbcMigrationDriftTest.HelperContract$"ALTER TABLE jdbc_migration_drift ADD description VARCHAR(255) NULL CONSTRAINT description_check CHECK (1 = 1)"</ID>
+    <ID>MaxLineLength:TestDB.kt:TestDB.H2_PSQL$"jdbc:h2:mem:psql;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;"</ID>
+    <ID>MaxLineLength:WithTables.kt:configure: (DatabaseConfig.Builder.() -> Unit)? = {}</ID>
+    <ID>MaxLineLength:WithTablesSuspending.kt:"withTablesSuspending(testDB, *tables, context = context, configure = configure, dropTables = dropTables, statement = statement)"</ID>
+    <ID>SerialVersionUIDInSerializableClass:MovieRecords.kt:ActorRecord : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:MovieRecords.kt:MovieActorCountRecord : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:MovieRecords.kt:MovieActorRecord : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:MovieRecords.kt:MovieRecord : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:MovieRecords.kt:MovieWithActorRecord : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:MovieRecords.kt:MovieWithProducingActorRecord : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:OrderSchema.kt:OrderSchema$Item : LongEntitySerializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:OrderSchema.kt:OrderSchema$Order : LongEntitySerializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:OrderSchema.kt:OrderSchema$OrderDetail : LongEntitySerializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:OrderSchema.kt:OrderSchema$OrderLine : LongEntitySerializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:OrderSchema.kt:OrderSchema$OrderRecord : ComparableSerializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:OrderSchema.kt:OrderSchema$User : LongEntitySerializable</ID>
+    <ID>SwallowedException:WithAutoCommitTest.kt:WithAutoCommitTest$ex: RuntimeException</ID>
+    <ID>TooGenericExceptionCaught:WithTables.kt:ex: Throwable</ID>
+    <ID>TooGenericExceptionCaught:WithTablesSuspending.kt:ex: Throwable</ID>
+    <ID>TooGenericExceptionThrown:AssertionsTest.kt:AssertionsTest$throw RuntimeException("Expected failure")</ID>
+    <ID>TooGenericExceptionThrown:WithAutoCommitTest.kt:WithAutoCommitTest$throw RuntimeException("Test exception")</ID>
+  </CurrentIssues>
+</SmellBaseline>

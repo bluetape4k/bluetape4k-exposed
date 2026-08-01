@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>LoopWithTooManyJumpStatements:TrinoExtensions.kt:while</ID>
+    <ID>MagicNumber:TrinoDatabase.kt:TrinoDatabase$65535</ID>
+    <ID>MaxLineLength:TrinoDatabaseValidationTest.kt:TrinoDatabaseValidationTest$assertFailsWith&lt;IllegalArgumentException> { TrinoDatabase.connect(host = "", port = 8080, catalog = "memory", schema = "default") }</ID>
+    <ID>MaxLineLength:TrinoDatabaseValidationTest.kt:TrinoDatabaseValidationTest$assertFailsWith&lt;IllegalArgumentException> { TrinoDatabase.connect(host = "localhost", port = 0, catalog = "memory", schema = "default") }</ID>
+    <ID>MaxLineLength:TrinoDatabaseValidationTest.kt:TrinoDatabaseValidationTest$assertFailsWith&lt;IllegalArgumentException> { TrinoDatabase.connect(host = "localhost", port = 65536, catalog = "memory", schema = "default") }</ID>
+    <ID>MaxLineLength:TrinoDatabaseValidationTest.kt:TrinoDatabaseValidationTest$assertFailsWith&lt;IllegalArgumentException> { TrinoDatabase.connect(host = "localhost", port = 8080, catalog = "", schema = "default") }</ID>
+    <ID>MaxLineLength:TrinoDatabaseValidationTest.kt:TrinoDatabaseValidationTest$assertFailsWith&lt;IllegalArgumentException> { TrinoDatabase.connect(host = "localhost", port = 8080, catalog = "memory", schema = "") }</ID>
+    <ID>MaxLineLength:TrinoDatabaseValidationTest.kt:TrinoDatabaseValidationTest$assertFailsWith&lt;IllegalArgumentException> { TrinoDatabase.connect(jdbcUrl = "jdbc:postgresql://localhost/mydb") }</ID>
+    <ID>MaxLineLength:TrinoTable.kt:private val TRINO_CONSTRAINT_PK_REGEX = Regex(",\\s*CONSTRAINT\\s+\\S+\\s+PRIMARY\\s+KEY\\s*\\([^)]*\\)", RegexOption.IGNORE_CASE)</ID>
+    <ID>MayBeConstant:TrinoDatabase.kt:TrinoDatabase$/** * Trino JDBC driver class name입니다. * * 이 property 접근 시 `init` block이 실행되어 driver를 등록하도록 `const val`이 아닌 * `val`로 선언했습니다. `const val`은 compile time에 inline되므로 object 초기화를 * 유발하지 않을 수 있습니다. */ val DRIVER = "io.trino.jdbc.TrinoDriver"</ID>
+    <ID>RethrowCaughtException:TrinoExtensions.kt:throw e</ID>
+    <ID>TooGenericExceptionThrown:TrinoTransactionAtomicityTest.kt:TrinoTransactionAtomicityTest$throw RuntimeException("outer 예외")</ID>
+    <ID>TooGenericExceptionThrown:TrinoTransactionAtomicityTest.kt:TrinoTransactionAtomicityTest$throw RuntimeException("의도적 예외")</ID>
+  </CurrentIssues>
+</SmellBaseline>

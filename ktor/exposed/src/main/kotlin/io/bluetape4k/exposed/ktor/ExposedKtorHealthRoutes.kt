@@ -98,6 +98,7 @@ private fun Route.installExposedHealthRoutes(
 ) {
     healthPath.requireAbsoluteExposedKtorPath("healthPath")
     readinessPath.requireAbsoluteExposedKtorPath("readinessPath")
+    requireDistinctExposedKtorPaths(healthPath, readinessPath)
     readinessProbeTimeout.requirePositiveDuration("readinessProbeTimeout")
     jdbcQueryTimeout.requirePositiveDuration("jdbcQueryTimeout")
     require(jdbcDatabase != null || r2dbcDatabase != null || cacheReadiness != null) {
