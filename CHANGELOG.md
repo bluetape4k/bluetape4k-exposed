@@ -26,7 +26,7 @@
   ([#325](https://github.com/bluetape4k/bluetape4k-exposed/issues/325),
   [#326](https://github.com/bluetape4k/bluetape4k-exposed/issues/326)).
 
-### 수정됨
+### 버그 수정
 
 - 여러 repository resource를 닫는 과정에서 앞선 실패가 후속 cleanup을 건너뛰지 않도록
   lifecycle 및 coroutine cancellation 처리를 보강했습니다
@@ -38,6 +38,8 @@
   ([#411](https://github.com/bluetape4k/bluetape4k-exposed/issues/411)).
 - 단일 언어 문서와 Kotlin KDoc을 한국어 기술 문체로 정리했습니다
   ([#395](https://github.com/bluetape4k/bluetape4k-exposed/issues/395)).
+- Keep a Changelog의 `Fixed` 범주를 한국어 표준 용어인 `버그 수정`으로 통일했습니다
+  ([#615](https://github.com/bluetape4k/bluetape4k-exposed/issues/615)).
 
 ## [1.11.0] - 2026-06-27
 
@@ -81,7 +83,7 @@
 
 - 1.9.0 release line이 `io.github.bluetape4k:bluetape4k-bom:1.9.0`에 의존하고 immutable `io.github.bluetape4k.exposed` artifact를 publish하도록 준비했습니다 ([#202](https://github.com/bluetape4k/bluetape4k-exposed/issues/202)).
 
-### 수정됨
+### 버그 수정
 
 - `AuditableEdgeCaseRecord`를 포함하여 JDBC repository test record에 stable Java serialization contract를 추가했습니다 ([#200](https://github.com/bluetape4k/bluetape4k-exposed/issues/200)).
 
@@ -99,7 +101,7 @@
 - 1.8.1 릴리스 라인이 이후의 `1.8.1-SNAPSHOT` BOM 대신 `io.github.bluetape4k:bluetape4k-bom:1.8.0`에 의존하도록 준비했습니다.
 - 1.8.1 cycle 동안 변경된 repository 및 cache API의 public KDoc과 README 문구를 맞췄습니다 ([#129](https://github.com/bluetape4k/bluetape4k-exposed/issues/129), [#130](https://github.com/bluetape4k/bluetape4k-exposed/issues/130), [#138](https://github.com/bluetape4k/bluetape4k-exposed/issues/138), [#194](https://github.com/bluetape4k/bluetape4k-exposed/issues/194)).
 
-### 수정됨
+### 버그 수정
 
 - `NullPointerException` 또는 `NoSuchElementException`을 발생시킬 수 있었던 R2DBC batch job execution retry 및 concurrent insert recovery path를 수정했습니다 ([#117](https://github.com/bluetape4k/bluetape4k-exposed/issues/117), [#124](https://github.com/bluetape4k/bluetape4k-exposed/issues/124), [#165](https://github.com/bluetape4k/bluetape4k-exposed/issues/165)).
 - batch reader close/checkpoint state handling을 수정하여 close 이후 cursor state가 안전하게 reset되고, 잘못된 checkpoint cast가 context와 함께 실패하도록 했습니다 ([#118](https://github.com/bluetape4k/bluetape4k-exposed/issues/118)).
@@ -165,7 +167,7 @@
 - transient failure noise를 줄이기 위해 CI 및 nightly test job에 `retry=3`을 추가했습니다 ([PR #12](https://github.com/bluetape4k/bluetape4k-exposed/pull/12)).
 - Test code를 Kluent에서 `bluetape4k-assertions`로 마이그레이션했습니다 ([PR #14](https://github.com/bluetape4k/bluetape4k-exposed/pull/14)).
 
-### 수정됨
+### 버그 수정
 
 - **#79** `AbstractJdbcCaffeineRepository` / `AbstractR2dbcCaffeineRepository`: channel overflow 시 `writeBehindQueue.trySend()`가 entity를 조용히 drop하던 문제를 수정하여 이제 `IllegalStateException`을 throw합니다 ([PR #95](https://github.com/bluetape4k/bluetape4k-exposed/pull/95)).
 - **#80** `AbstractJdbcRedissonRepository.invalidateAll()` / `invalidateByPattern()`: 안전하지 않은 `*ids.toTypedArray<Any>() as Array<ID>` cast를 element별 `fastRemove()`로 교체하여 `ClassCastException`을 제거했습니다 ([PR #96](https://github.com/bluetape4k/bluetape4k-exposed/pull/96)).
