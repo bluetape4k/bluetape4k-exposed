@@ -81,7 +81,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - uses: gradle/actions/wrapper-validation@v6
+      - uses: gradle/actions/wrapper-validation@v6.2.0
 
   # Detect changed modules (runs in parallel with build)
   changes:
@@ -228,11 +228,11 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: ${{ github.event_name == 'pull_request' }}
@@ -258,12 +258,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
 
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: ${{ github.event_name == 'pull_request' }}
@@ -293,11 +293,11 @@ jobs:
     if: ${{ needs.changes.outputs.core == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -338,11 +338,11 @@ jobs:
     if: ${{ needs.changes.outputs.serialization == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -389,11 +389,11 @@ jobs:
     if: ${{ needs.changes.outputs.tink == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -434,11 +434,11 @@ jobs:
     if: ${{ needs.changes.outputs.jdbc == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -485,11 +485,11 @@ jobs:
     if: ${{ needs.changes.outputs.r2dbc == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -536,11 +536,11 @@ jobs:
     if: ${{ needs.changes.outputs.ktor == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -581,11 +581,11 @@ jobs:
     if: ${{ needs.changes.outputs['spring-boot'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -633,11 +633,11 @@ jobs:
     if: ${{ needs.changes.outputs['spring-modulith'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -678,11 +678,11 @@ jobs:
     if: ${{ needs.changes.outputs.lettuce == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -730,11 +730,11 @@ jobs:
     if: ${{ needs.changes.outputs.redisson == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -782,11 +782,11 @@ jobs:
     if: ${{ needs.changes.outputs.measured == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -827,11 +827,11 @@ jobs:
     if: ${{ needs.changes.outputs['postgresql-module'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -874,11 +874,11 @@ jobs:
     if: ${{ needs.changes.outputs['mysql8-module'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -921,11 +921,11 @@ jobs:
     if: ${{ needs.changes.outputs.duckdb == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -966,11 +966,11 @@ jobs:
     if: ${{ needs.changes.outputs.cache == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -1011,11 +1011,11 @@ jobs:
     if: ${{ needs.changes.outputs['jdbc-caffeine'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -1057,11 +1057,11 @@ jobs:
     if: ${{ needs.changes.outputs['r2dbc-caffeine'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -1103,11 +1103,11 @@ jobs:
     if: ${{ needs.changes.outputs.druid == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -1143,11 +1143,11 @@ jobs:
     if: ${{ needs.changes.outputs.clickhouse == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -1190,11 +1190,11 @@ jobs:
     if: ${{ needs.changes.outputs.trino == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -1237,11 +1237,11 @@ jobs:
     if: ${{ needs.changes.outputs.starrocks == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -1284,11 +1284,11 @@ jobs:
     if: ${{ needs.changes.outputs.cockroachdb == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -1331,11 +1331,11 @@ jobs:
     if: ${{ needs.changes.outputs.bigquery == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -1378,11 +1378,11 @@ jobs:
     if: ${{ needs.changes.outputs.examples == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -1442,11 +1442,11 @@ jobs:
     if: ${{ needs.changes.outputs.timefold == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -1488,11 +1488,11 @@ jobs:
     if: ${{ needs.changes.outputs['spring-boot-batch'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
@@ -1536,11 +1536,11 @@ jobs:
     if: ${{ needs.changes.outputs['utils-batch'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.6.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: wrapper
           cache-read-only: true
