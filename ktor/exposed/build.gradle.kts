@@ -7,7 +7,7 @@ configurations {
 dependencies {
     implementation(platform(bt4k.ktor.bom))
     implementation(platform(bt4k.exposed.bom))
-    implementation(platform(libs.micrometer.bom))
+    implementation(platform(bt4k.micrometer.bom))
 
     api(bt4k.bluetape4k.ktor.core)
 
@@ -26,10 +26,10 @@ dependencies {
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation("io.ktor:ktor-server-auth")
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.mockk)
+    testImplementation(bt4k.mockk)
 
     testImplementation(bt4k.exposed.java.time)
-    testImplementation(libs.h2.v2)
+    testImplementation(bt4k.h2.v2)
     testImplementation(bt4k.r2dbc.h2)
     testImplementation(libs.micrometer.test)
 }

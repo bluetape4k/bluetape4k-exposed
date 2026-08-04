@@ -15,7 +15,7 @@ dependencies {
     implementation(bt4k.bluetape4k.logging)
 
     // MySQL 8 GIS 전용 라이브러리 (사용자가 필요한 것만 런타임에 추가)
-    api(libs.jts.core)                   // JTS Core (Geometry 타입)
+    api(bt4k.jts.core)                   // JTS Core (Geometry 타입)
 
     // Database Drivers
     compileOnly(bt4k.mysql.connector.j)

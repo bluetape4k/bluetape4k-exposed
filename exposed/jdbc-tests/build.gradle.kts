@@ -89,11 +89,11 @@ dependencies {
     compileOnly(bt4k.hikaricp)
 
     // Database Drivers
-    compileOnly(libs.h2.v2)
-    compileOnly(libs.mariadb.java.client)
+    compileOnly(bt4k.h2.v2)
+    compileOnly(bt4k.mariadb.java.client)
     compileOnly(bt4k.mysql.connector.j)
     compileOnly(bt4k.postgresql)
-    compileOnly(libs.pgjdbc.ng)
+    compileOnly(bt4k.pgjdbc.ng)
 
     // Coroutines
     implementation(bt4k.bluetape4k.coroutines)
@@ -103,5 +103,5 @@ dependencies {
 
     // Id Generators
     implementation(bt4k.bluetape4k.idgenerators)
-    implementation(libs.java.uuid.generator)
+    implementation(bt4k.java.uuid.generator)
 }

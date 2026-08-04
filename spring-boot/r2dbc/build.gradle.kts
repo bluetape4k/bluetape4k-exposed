@@ -43,19 +43,19 @@ dependencies {
     compileOnly(project(":bluetape4k-exposed-r2dbc-caffeine"))
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation(libs.mockk)
+    testImplementation(bt4k.mockk)
 
-    testImplementation(libs.h2.v2)
+    testImplementation(bt4k.h2.v2)
     testImplementation(bt4k.r2dbc.h2)
     testImplementation(bt4k.hikaricp)
 
     // Multi-DB 테스트용 R2DBC 드라이버
-    testImplementation(libs.r2dbc.mysql)
-    testImplementation(libs.r2dbc.mariadb)
-    testImplementation(libs.r2dbc.postgresql)
+    testImplementation(bt4k.r2dbc.mysql)
+    testImplementation(bt4k.r2dbc.mariadb)
+    testImplementation(bt4k.r2dbc.postgresql)
 
     // Multi-DB 테스트용 JDBC 드라이버 (Testcontainers 컨테이너 연결용)
     testImplementation(bt4k.mysql.connector.j)
-    testImplementation(libs.mariadb.java.client)
+    testImplementation(bt4k.mariadb.java.client)
     testImplementation(bt4k.postgresql)
 }

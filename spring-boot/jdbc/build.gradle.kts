@@ -38,12 +38,12 @@ dependencies {
     compileOnly("org.springframework.boot:spring-boot-starter-data-jdbc")
     compileOnly(project(":bluetape4k-exposed-jdbc-caffeine"))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation(libs.mockk)
-    testImplementation(libs.h2.v2)
+    testImplementation(bt4k.mockk)
+    testImplementation(bt4k.h2.v2)
     testImplementation(bt4k.hikaricp)
 
     // Multi-DB 테스트용 JDBC 드라이버
     testImplementation(bt4k.mysql.connector.j)
-    testImplementation(libs.mariadb.java.client)
+    testImplementation(bt4k.mariadb.java.client)
     testImplementation(bt4k.postgresql)
 }

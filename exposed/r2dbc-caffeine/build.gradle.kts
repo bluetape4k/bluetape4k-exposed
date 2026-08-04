@@ -8,7 +8,7 @@ dependencies {
     api(project(":bluetape4k-exposed-r2dbc"))
     api(project(":bluetape4k-exposed-cache"))
     api(bt4k.bluetape4k.coroutines)
-    api(libs.caffeine)
+    api(bt4k.caffeine)
 
     api(bt4k.exposed.core)
     api(bt4k.exposed.r2dbc)
@@ -24,7 +24,7 @@ dependencies {
     testImplementation(testFixtures(project(":bluetape4k-exposed-cache")))
     testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
     testImplementation(bt4k.bluetape4k.junit5)
-    testImplementation(libs.h2.v2)
+    testImplementation(bt4k.h2.v2)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.awaitility.kotlin)
 }
