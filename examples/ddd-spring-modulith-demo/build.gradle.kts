@@ -14,7 +14,7 @@ configurations {
 
 dependencies {
     implementation(platform(bt4k.spring.boot4.dependencies))
-    implementation(platform(libs.spring.modulith.bom))
+    implementation(platform(bt4k.spring.modulith.bom))
 
     implementation(project(":bluetape4k-exposed-core"))
     implementation(project(":bluetape4k-exposed-spring-boot-jdbc"))
@@ -29,7 +29,7 @@ dependencies {
     implementation("org.springframework.modulith:spring-modulith-starter-core")
     implementation(libs.spring.modulith.events.jackson)
 
-    runtimeOnly(libs.h2.v2)
+    runtimeOnly(bt4k.h2.v2)
 
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(bt4k.bluetape4k.assertions)

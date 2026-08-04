@@ -23,7 +23,7 @@ dependencies {
 
     // Entity ID generators (ColumnExtensions에서 사용)
     api(bt4k.bluetape4k.idgenerators)
-    api(libs.java.uuid.generator)
+    api(bt4k.java.uuid.generator)
 
     //
     // Custom Column Types
@@ -33,16 +33,16 @@ dependencies {
     compileOnly(bt4k.bluetape4k.io)
 
     // Serializer (runtime for tests)
-    testRuntimeOnly(libs.kryo5)
+    testRuntimeOnly(bt4k.kryo5)
     testRuntimeOnly(bt4k.fory.kotlin)  // new Apache Fory
 
     // Compressors
-    testRuntimeOnly(libs.lz4.java)
-    testRuntimeOnly(libs.snappy.java)
+    testRuntimeOnly(bt4k.at.yawk.lz4.java)
+    testRuntimeOnly(bt4k.snappy.java)
     testRuntimeOnly(bt4k.zstd.jni)
 
     // Phone number column types (compileOnly -> testImplementation 자동 전이 via extendsFrom)
-    compileOnly(libs.libphonenumber)
+    compileOnly(bt4k.libphonenumber.v8)
 
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(libs.kotlinx.coroutines.test)
@@ -54,9 +54,9 @@ dependencies {
 
     // Database Drivers
     compileOnly(bt4k.hikaricp)
-    testRuntimeOnly(libs.h2.v2)
-    testRuntimeOnly(libs.mariadb.java.client)
+    testRuntimeOnly(bt4k.h2.v2)
+    testRuntimeOnly(bt4k.mariadb.java.client)
     testRuntimeOnly(bt4k.mysql.connector.j)
     testRuntimeOnly(bt4k.postgresql)
-    testRuntimeOnly(libs.pgjdbc.ng)
+    testRuntimeOnly(bt4k.pgjdbc.ng)
 }

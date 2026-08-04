@@ -2,7 +2,7 @@ val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").ge
 
 plugins {
     kotlin("plugin.allopen")
-    alias(libs.plugins.kotlinx.benchmark)
+    alias(bt4k.plugins.kotlinx.benchmark)
 }
 
 allOpen {
@@ -15,7 +15,7 @@ benchmark {
     targets {
         register("test") {
             this as kotlinx.benchmark.gradle.JvmBenchmarkTarget
-            jmhVersion = libs.versions.jmh.get()
+            jmhVersion = bt4k.versions.managed.jmh.core.h350a653f63e5.get()
         }
     }
 }
@@ -40,7 +40,7 @@ dependencies {
 
     // Entity ID generators
     implementation(bt4k.bluetape4k.idgenerators)
-    implementation(libs.java.uuid.generator)
+    implementation(bt4k.java.uuid.generator)
 
     // JDBC
     api(bt4k.bluetape4k.jdbc)
@@ -68,14 +68,14 @@ dependencies {
     }
 
     // Database Drivers
-    testRuntimeOnly(libs.h2.v2)
-    testRuntimeOnly(libs.mariadb.java.client)
+    testRuntimeOnly(bt4k.h2.v2)
+    testRuntimeOnly(bt4k.mariadb.java.client)
     testRuntimeOnly(bt4k.mysql.connector.j)
     testRuntimeOnly(bt4k.postgresql)
-    testRuntimeOnly(libs.pgjdbc.ng)
+    testRuntimeOnly(bt4k.pgjdbc.ng)
 
     // Benchmark (JMH for exposed-jdbc CRUD/pool 측정)
-    testImplementation(libs.kotlinx.benchmark.runtime)
-    testImplementation(libs.kotlinx.benchmark.runtime.jvm)
-    testImplementation(libs.jmh.core)
+    testImplementation(bt4k.kotlinx.benchmark.runtime)
+    testImplementation(bt4k.kotlinx.benchmark.runtime.jvm)
+    testImplementation(bt4k.jmh.core)
 }

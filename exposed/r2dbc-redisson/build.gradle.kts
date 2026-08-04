@@ -26,12 +26,12 @@ dependencies {
     api(bt4k.bluetape4k.io)
 
     // Serializers
-    runtimeOnly(libs.kryo5)
+    runtimeOnly(bt4k.kryo5)
     runtimeOnly(bt4k.fory.kotlin)  // new Apache Fory
 
     // Compressor
-    runtimeOnly(libs.lz4.java)
-    runtimeOnly(libs.snappy.java)
+    runtimeOnly(bt4k.at.yawk.lz4.java)
+    runtimeOnly(bt4k.snappy.java)
     runtimeOnly(bt4k.zstd.jni)
 
     // Coroutines
@@ -43,12 +43,12 @@ dependencies {
     testImplementation(bt4k.bluetape4k.idgenerators)
 
     // R2DBC
-    api(libs.r2dbc.spi)
-    api(libs.r2dbc.pool)
+    api(bt4k.r2dbc.spi)
+    api(bt4k.r2dbc.pool)
     testRuntimeOnly(bt4k.r2dbc.h2)
-    testRuntimeOnly(libs.r2dbc.mariadb)
-    testRuntimeOnly(libs.r2dbc.mysql)
-    testRuntimeOnly(libs.r2dbc.postgresql)
+    testRuntimeOnly(bt4k.r2dbc.mariadb)
+    testRuntimeOnly(bt4k.r2dbc.mysql)
+    testRuntimeOnly(bt4k.r2dbc.postgresql)
 
     // Bluetape4k Modules for Testing
     testImplementation(bt4k.bluetape4k.junit5)
@@ -58,8 +58,8 @@ dependencies {
     testImplementation(libs.testcontainers.postgresql)
 
     // Database Drivers for Testcontainers Database
-    testRuntimeOnly(libs.h2.v2)
-    testRuntimeOnly(libs.mariadb.java.client)
+    testRuntimeOnly(bt4k.h2.v2)
+    testRuntimeOnly(bt4k.mariadb.java.client)
     testRuntimeOnly(bt4k.mysql.connector.j)
     testRuntimeOnly(bt4k.postgresql)
 

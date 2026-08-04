@@ -14,7 +14,7 @@ dependencies {
     api(libs.kotlinx.coroutines.core)
 
     // DuckDB JDBC 드라이버
-    api(libs.duckdb.jdbc)
+    api(bt4k.duckdb.jdbc)
 
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(libs.kotlinx.coroutines.test)

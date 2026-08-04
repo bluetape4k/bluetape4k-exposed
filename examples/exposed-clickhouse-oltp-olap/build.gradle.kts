@@ -14,7 +14,7 @@ dependencies {
     testImplementation(bt4k.hikaricp)
 
     // ClickHouse (OLAP)
-    testImplementation(libs.clickhouse.jdbc)
+    testImplementation(bt4k.clickhouse.jdbc)
 
     // Coroutines
     testImplementation(bt4k.bluetape4k.coroutines)

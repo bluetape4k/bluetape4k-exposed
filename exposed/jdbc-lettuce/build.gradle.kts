@@ -11,7 +11,7 @@ dependencies {
     api(project(":bluetape4k-exposed-cache"))
     api(bt4k.bluetape4k.jackson3)
     api(bt4k.bluetape4k.resilience4j)
-    api(libs.resilience4j.retry)
+    api(bt4k.resilience4j.retry)
 
     // Exposed
     api(bt4k.exposed.core)
@@ -24,11 +24,11 @@ dependencies {
 
     // Serializer (LettuceLoadedMap에서 사용하는 codec용)
     compileOnly(bt4k.fory.kotlin)
-    compileOnly(libs.kryo5)
+    compileOnly(bt4k.kryo5)
 
     // Compressor
-    compileOnly(libs.snappy.java)
-    compileOnly(libs.lz4.java)
+    compileOnly(bt4k.snappy.java)
+    compileOnly(bt4k.at.yawk.lz4.java)
     compileOnly(bt4k.zstd.jni)
 
     testImplementation(bt4k.bluetape4k.junit5)
@@ -36,7 +36,7 @@ dependencies {
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
     testImplementation(testFixtures(project(":bluetape4k-exposed-cache")))
 
-    testImplementation(libs.h2.v2)
+    testImplementation(bt4k.h2.v2)
     testImplementation(bt4k.hikaricp)
     testImplementation(libs.kotlinx.coroutines.test)
 
@@ -44,8 +44,8 @@ dependencies {
     testImplementation(libs.testcontainers.mariadb)
     testImplementation(libs.testcontainers.mysql)
     testImplementation(libs.testcontainers.postgresql)
-    testImplementation(libs.mariadb.java.client)
+    testImplementation(bt4k.mariadb.java.client)
     testImplementation(bt4k.mysql.connector.j)
     testImplementation(bt4k.postgresql)
-    testImplementation(libs.pgjdbc.ng)
+    testImplementation(bt4k.pgjdbc.ng)
 }
