@@ -1,4 +1,3 @@
-val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 val springBootVersion = bt4k.versions.spring.boot.get()
 
 plugins {
@@ -74,7 +73,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-jdbc")  // DataSource auto-configuration (Spring Boot 분리 모듈)
     testImplementation(libs.spring.batch.test)
-    testImplementation(libs.h2.v2)
+    testImplementation(bt4k.h2.v2)
     testImplementation(bt4k.hikaricp)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(bt4k.postgresql)

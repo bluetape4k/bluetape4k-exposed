@@ -1,4 +1,3 @@
-val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
 plugins {
     kotlin("plugin.spring")
@@ -30,7 +29,7 @@ dependencies {
     implementation(libs.exposed.dao)
     implementation(bt4k.exposed.migration.jdbc)
     implementation(bt4k.exposed.java.time)
-    runtimeOnly(libs.h2.v2)
+    runtimeOnly(bt4k.h2.v2)
 
     // Jackson 3
     implementation(bt4k.bluetape4k.jackson3)

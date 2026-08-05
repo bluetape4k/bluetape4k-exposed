@@ -1,8 +1,7 @@
-val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
 plugins {
     kotlin("plugin.allopen")
-    alias(libs.plugins.kotlinx.benchmark)
+    alias(bt4k.plugins.kotlinx.benchmark)
     alias(bt4k.plugins.kover)
 }
 
@@ -53,7 +52,7 @@ benchmark {
     targets {
         register("benchmark") {
             this as kotlinx.benchmark.gradle.JvmBenchmarkTarget
-            jmhVersion = libs.versions.jmh.get()
+            jmhVersion = bt4k.versions.managed.jmh.core.h350a653f63e5.get()
         }
     }
     configurations {
@@ -161,23 +160,23 @@ dependencies {
     testImplementation(bt4k.bluetape4k.virtualthread.jdk21)
 
     // Test DB — H2 (내장)
-    testImplementation(libs.h2.v2)
+    testImplementation(bt4k.h2.v2)
     testImplementation(bt4k.hikaricp)
     testImplementation(bt4k.r2dbc.h2)
-    testImplementation(libs.r2dbc.pool)
+    testImplementation(bt4k.r2dbc.pool)
 
     // Test DB — PostgreSQL (Testcontainers)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(bt4k.postgresql)
-    testImplementation(libs.r2dbc.postgresql)
+    testImplementation(bt4k.r2dbc.postgresql)
 
     // Test DB — MySQL (Testcontainers)
     testImplementation(libs.testcontainers.mysql)
     testImplementation(bt4k.mysql.connector.j)
-    testImplementation(libs.r2dbc.mysql)
+    testImplementation(bt4k.r2dbc.mysql)
 
     // Benchmark
-    add("benchmarkImplementation", libs.kotlinx.benchmark.runtime)
-    add("benchmarkImplementation", libs.kotlinx.benchmark.runtime.jvm)
-    add("benchmarkImplementation", libs.jmh.core)
+    add("benchmarkImplementation", bt4k.kotlinx.benchmark.runtime)
+    add("benchmarkImplementation", bt4k.kotlinx.benchmark.runtime.jvm)
+    add("benchmarkImplementation", bt4k.jmh.core)
 }

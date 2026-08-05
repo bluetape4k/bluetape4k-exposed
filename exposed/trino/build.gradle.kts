@@ -1,4 +1,3 @@
-val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
 dependencies {
     api(bt4k.bluetape4k.logging)
@@ -8,7 +7,7 @@ dependencies {
     api(libs.kotlinx.coroutines.core)
 
     // Trino JDBC 드라이버
-    api(libs.trino.jdbc)
+    api(bt4k.trino.jdbc)
 
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(bt4k.bluetape4k.testcontainers)

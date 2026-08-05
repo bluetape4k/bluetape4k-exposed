@@ -33,12 +33,12 @@ dependencies {
     implementation(bt4k.exposed.r2dbc)
     implementation(bt4k.exposed.java.time)
     implementation(bt4k.hikaricp)
-    implementation(libs.r2dbc.pool)
+    implementation(bt4k.r2dbc.pool)
     implementation(libs.kotlinx.coroutines.core)
     implementation("io.ktor:ktor-server-netty")
 
-    runtimeOnly(libs.h2.v2)
-    runtimeOnly(libs.r2dbc.postgresql)
+    runtimeOnly(bt4k.h2.v2)
+    runtimeOnly(bt4k.r2dbc.postgresql)
 
     testImplementation(bt4k.bluetape4k.ktor.testing)
     testImplementation(bt4k.bluetape4k.assertions)

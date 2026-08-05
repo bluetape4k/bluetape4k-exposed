@@ -1,4 +1,3 @@
-val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
 dependencies {
     api(bt4k.bluetape4k.logging)
@@ -6,7 +5,7 @@ dependencies {
     api(bt4k.exposed.jdbc)
     api(bt4k.exposed.java.time)
     api(libs.kotlinx.coroutines.core)
-    api(libs.clickhouse.jdbc)
+    api(bt4k.clickhouse.jdbc)
 
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(bt4k.bluetape4k.testcontainers)

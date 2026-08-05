@@ -1,4 +1,3 @@
-val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
 tasks.test {
     // DuckDB JDBC uses System.load() for native library — required for Java 25+
@@ -14,7 +13,7 @@ dependencies {
     api(libs.kotlinx.coroutines.core)
 
     // DuckDB JDBC 드라이버
-    api(libs.duckdb.jdbc)
+    api(bt4k.duckdb.jdbc)
 
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(libs.kotlinx.coroutines.test)

@@ -1,4 +1,3 @@
-val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
 configurations {
     testImplementation.get().extendsFrom(compileOnly.get(), runtimeOnly.get())
@@ -16,17 +15,17 @@ dependencies {
 
     /* Fastjson2 */
     api(bt4k.bluetape4k.fastjson2)
-    api(libs.fastjson2.kotlin)
-    api(libs.fastjson2.extension)
-    compileOnly(libs.r2dbc.spi)
+    api(bt4k.fastjson2.kotlin)
+    api(bt4k.fastjson2.extension)
+    compileOnly(bt4k.r2dbc.spi)
 
     // Database Drivers
     testImplementation(bt4k.hikaricp)
-    testRuntimeOnly(libs.h2.v2)
-    testRuntimeOnly(libs.mariadb.java.client)
+    testRuntimeOnly(bt4k.h2.v2)
+    testRuntimeOnly(bt4k.mariadb.java.client)
     testRuntimeOnly(bt4k.mysql.connector.j)
     testRuntimeOnly(bt4k.postgresql)
-    testRuntimeOnly(libs.pgjdbc.ng)
+    testRuntimeOnly(bt4k.pgjdbc.ng)
 
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(bt4k.bluetape4k.testcontainers)

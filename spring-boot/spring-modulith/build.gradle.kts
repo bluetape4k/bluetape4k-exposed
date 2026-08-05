@@ -1,4 +1,3 @@
-val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
 plugins {
     kotlin("plugin.spring")
@@ -10,7 +9,7 @@ configurations {
 
 dependencies {
     implementation(platform(bt4k.spring.boot4.dependencies))
-    implementation(platform(libs.spring.modulith.bom))
+    implementation(platform(bt4k.spring.modulith.bom))
 
     api(bt4k.exposed.core)
     api(bt4k.exposed.jdbc)
@@ -35,7 +34,7 @@ dependencies {
     testImplementation(libs.micrometer.core)
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
     testImplementation(bt4k.bluetape4k.junit5)
-    testImplementation(libs.h2.v2)
+    testImplementation(bt4k.h2.v2)
     testImplementation(bt4k.hikaricp)
     testImplementation(bt4k.mysql.connector.j)
     testImplementation(bt4k.postgresql)

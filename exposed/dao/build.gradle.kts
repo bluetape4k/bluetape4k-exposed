@@ -1,4 +1,3 @@
-val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
 configurations {
     testImplementation.get().extendsFrom(compileOnly.get(), runtimeOnly.get())
@@ -13,7 +12,7 @@ dependencies {
 
     // Entity ID generators
     api(bt4k.bluetape4k.idgenerators)
-    api(libs.java.uuid.generator)
+    api(bt4k.java.uuid.generator)
 
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
 
@@ -25,9 +24,9 @@ dependencies {
     testImplementation(libs.testcontainers.postgresql)
 
     // Database Drivers
-    testRuntimeOnly(libs.h2.v2)
-    testRuntimeOnly(libs.mariadb.java.client)
+    testRuntimeOnly(bt4k.h2.v2)
+    testRuntimeOnly(bt4k.mariadb.java.client)
     testRuntimeOnly(bt4k.mysql.connector.j)
     testRuntimeOnly(bt4k.postgresql)
-    testRuntimeOnly(libs.pgjdbc.ng)
+    testRuntimeOnly(bt4k.pgjdbc.ng)
 }

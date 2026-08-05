@@ -1,4 +1,3 @@
-val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
 configurations {
     testImplementation.get().extendsFrom(compileOnly.get(), runtimeOnly.get())
@@ -11,7 +10,7 @@ dependencies {
     api(project(":bluetape4k-exposed-cache"))
     api(bt4k.bluetape4k.jackson3)
     api(bt4k.bluetape4k.resilience4j)
-    api(libs.resilience4j.retry)
+    api(bt4k.resilience4j.retry)
 
     // Exposed R2DBC
     api(bt4k.exposed.core)
@@ -24,11 +23,11 @@ dependencies {
 
     // Serializer (LettuceLoadedMap 코덱용)
     compileOnly(bt4k.fory.kotlin)
-    compileOnly(libs.kryo5)
+    compileOnly(bt4k.kryo5)
 
     // Compressor
-    compileOnly(libs.snappy.java)
-    compileOnly(libs.lz4.java)
+    compileOnly(bt4k.snappy.java)
+    compileOnly(bt4k.at.yawk.lz4.java)
     compileOnly(bt4k.zstd.jni)
 
     // Coroutines (R2DBC suspend 브리징)
@@ -45,7 +44,7 @@ dependencies {
     testImplementation(bt4k.bluetape4k.testcontainers)
     testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
     testImplementation(testFixtures(project(":bluetape4k-exposed-cache")))
-    testImplementation(libs.h2.v2)
+    testImplementation(bt4k.h2.v2)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(bt4k.bluetape4k.idgenerators)
 }

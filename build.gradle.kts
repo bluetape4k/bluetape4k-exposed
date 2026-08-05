@@ -14,13 +14,13 @@ plugins {
     alias(bt4k.plugins.kotlin.allopen) apply false
     alias(bt4k.plugins.kotlin.noarg) apply false
     alias(bt4k.plugins.kotlin.serialization) apply false
-    alias(libs.plugins.kotlinx.atomicfu)
+    alias(bt4k.plugins.kotlinx.atomicfu)
 
-    alias(libs.plugins.detekt)
+    alias(bt4k.plugins.detekt.dev)
     alias(bt4k.plugins.dependency.management)
 
     alias(bt4k.plugins.dokka)
-    alias(libs.plugins.test.logger)
+    alias(bt4k.plugins.test.logger)
 
     alias(bt4k.plugins.nmcp.aggregation)
     alias(bt4k.plugins.nmcp) apply false
@@ -30,6 +30,7 @@ plugins {
 }
 
 val rootLibs = libs
+val rootBt4k = bt4k
 val bt4kCatalog = extensions.getByType<org.gradle.api.artifacts.VersionCatalogsExtension>().named("bt4k")
 fun bt4kLibrary(alias: String) = bt4kCatalog.findLibrary(alias).get()
 fun bt4kVersion(alias: String): String {
@@ -66,7 +67,6 @@ val centralSnapshotsParallelism: Int = providers
 val projectGroup: String = providers.gradleProperty("projectGroup").get()
 val baseVersion: String = providers.gradleProperty("baseVersion").get()
 val snapshotVersion: String = providers.gradleProperty("snapshotVersion").get()
-val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
 allprojects {
     group = projectGroup
@@ -277,8 +277,8 @@ subprojects {
             mavenBom("org.springframework.boot:spring-boot-dependencies:${bt4kVersion("spring-boot")}")
             mavenBom("org.jetbrains.kotlinx:kotlinx-coroutines-bom:${bt4kVersion("kotlinx-coroutines")}")
             mavenBom("org.jetbrains.kotlin:kotlin-bom:${bt4kVersion("kotlin")}")
-            mavenBom(rootLibs.junit.bom.get().toString())
-            mavenBom(rootLibs.micrometer.bom.get().toString())
+            mavenBom(rootBt4k.junit.bom.get().toString())
+            mavenBom(rootBt4k.micrometer.bom.get().toString())
             mavenBom("org.testcontainers:testcontainers-bom:${bt4kVersion("testcontainers")}")
             mavenBom("com.fasterxml.jackson:jackson-bom:${bt4kVersion("jackson")}")
             mavenBom("tools.jackson:jackson-bom:${bt4kVersion("jackson3")}")
@@ -557,12 +557,12 @@ subprojects {
             dependency("org.slf4j:slf4j-api:${bt4kVersion("slf4j")}")
             dependency("com.github.luben:zstd-jni:${bt4kVersion("zstd-jni")}")
             dependency("com.google.guava:guava:${bt4kVersion("guava")}")
-            dependency(rootLibs.lz4.java.get().toString())
+            dependency(rootBt4k.at.yawk.lz4.java.get().toString())
         }
     }
 
     dependencies {
-        add("api", rootLibs.jetbrains.annotations.get())
+        add("api", rootBt4k.jetbrains.annotations.get())
 
         add("implementation", rootLibs.kotlin.stdlib.asProvider().get())
         add("implementation", rootLibs.kotlin.reflect.get())
@@ -570,19 +570,19 @@ subprojects {
         add("testImplementation", rootLibs.kotlin.test.junit5.get())
 
         add("implementation", rootLibs.kotlinx.coroutines.core.asProvider().get())
-        add("implementation", rootLibs.kotlinx.atomicfu.get())
+        add("implementation", rootBt4k.kotlinx.atomicfu.get())
 
         add("api", bt4kLibrary("slf4j-api").get())
-        add("testImplementation", rootLibs.logback.classic.get())
+        add("testImplementation", rootBt4k.logback.asProvider().get())
         add("testImplementation", rootLibs.jcl.over.slf4j.get())
         add("testImplementation", rootLibs.jul.to.slf4j.get())
         add("testImplementation", rootLibs.log4j.over.slf4j.get())
 
-        add("testImplementation", rootLibs.junit.jupiter.asProvider().get())
-        add("testRuntimeOnly", rootLibs.junit.platform.engine.get())
+        add("testImplementation", rootBt4k.junit.jupiter.asProvider().get())
+        add("testRuntimeOnly", rootBt4k.junit.platform.engine.get())
 
         add("testImplementation", rootLibs.awaitility.kotlin.get())
-        add("testImplementation", rootLibs.mockk.get())
+        add("testImplementation", rootBt4k.mockk.get())
     }
 
     if (!isNonPublishedModule()) {

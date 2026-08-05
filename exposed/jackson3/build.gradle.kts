@@ -1,4 +1,3 @@
-val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
 configurations {
     testImplementation.get().extendsFrom(compileOnly.get(), runtimeOnly.get())
@@ -20,15 +19,15 @@ dependencies {
     implementation(libs.jackson3.module.blackbird)
 
     // R2DBC - ReadableExtensions
-    compileOnly(libs.r2dbc.spi)
+    compileOnly(bt4k.r2dbc.spi)
 
     // Database Drivers
     testRuntimeOnly(bt4k.hikaricp)
-    testRuntimeOnly(libs.h2.v2)
-    testRuntimeOnly(libs.mariadb.java.client)
+    testRuntimeOnly(bt4k.h2.v2)
+    testRuntimeOnly(bt4k.mariadb.java.client)
     testRuntimeOnly(bt4k.mysql.connector.j)
     testRuntimeOnly(bt4k.postgresql)
-    testRuntimeOnly(libs.pgjdbc.ng)
+    testRuntimeOnly(bt4k.pgjdbc.ng)
 
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(bt4k.bluetape4k.testcontainers)

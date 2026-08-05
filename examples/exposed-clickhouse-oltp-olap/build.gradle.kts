@@ -1,4 +1,3 @@
-val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
 configurations {
     testImplementation.get().extendsFrom(compileOnly.get(), runtimeOnly.get())
@@ -14,7 +13,7 @@ dependencies {
     testImplementation(bt4k.hikaricp)
 
     // ClickHouse (OLAP)
-    testImplementation(libs.clickhouse.jdbc)
+    testImplementation(bt4k.clickhouse.jdbc)
 
     // Coroutines
     testImplementation(bt4k.bluetape4k.coroutines)

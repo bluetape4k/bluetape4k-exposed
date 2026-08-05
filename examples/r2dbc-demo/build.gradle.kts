@@ -1,4 +1,3 @@
-val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
 plugins {
     kotlin("plugin.spring")
@@ -27,9 +26,9 @@ dependencies {
     implementation(bt4k.exposed.r2dbc)
     implementation(bt4k.exposed.java.time)
 
-    implementation(libs.r2dbc.pool)
+    implementation(bt4k.r2dbc.pool)
     runtimeOnly(bt4k.r2dbc.h2)
-    runtimeOnly(libs.h2.v2)   // JDBC DataSource (DataInitializer + SchemaUtils에 필요)
+    runtimeOnly(bt4k.h2.v2)   // JDBC DataSource (DataInitializer + SchemaUtils에 필요)
 
     // Jackson 3
     implementation(bt4k.bluetape4k.jackson3)

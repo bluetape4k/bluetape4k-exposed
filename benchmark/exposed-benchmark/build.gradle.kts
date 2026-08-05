@@ -1,6 +1,6 @@
 plugins {
     kotlin("plugin.allopen")
-    alias(libs.plugins.kotlinx.benchmark)
+    alias(bt4k.plugins.kotlinx.benchmark)
 }
 
 sourceSets {
@@ -38,7 +38,7 @@ benchmark {
     targets {
         register("benchmark") {
             this as kotlinx.benchmark.gradle.JvmBenchmarkTarget
-            jmhVersion = libs.versions.jmh.get()
+            jmhVersion = bt4k.versions.managed.jmh.core.h350a653f63e5.get()
         }
     }
     configurations {
@@ -121,9 +121,9 @@ tasks.register<JavaExec>("generateBenchmarkDocs") {
 }
 
 dependencies {
-    add("benchmarkImplementation", libs.kotlinx.benchmark.runtime)
-    add("benchmarkImplementation", libs.kotlinx.benchmark.runtime.jvm)
-    add("benchmarkImplementation", libs.jmh.core)
+    add("benchmarkImplementation", bt4k.kotlinx.benchmark.runtime)
+    add("benchmarkImplementation", bt4k.kotlinx.benchmark.runtime.jvm)
+    add("benchmarkImplementation", bt4k.jmh.core)
 
     add("benchmarkImplementation", project(":bluetape4k-exposed-core"))
     add("benchmarkImplementation", project(":bluetape4k-exposed-dao"))
@@ -145,22 +145,22 @@ dependencies {
     add("benchmarkImplementation", bt4k.bluetape4k.testcontainers)
     add("benchmarkImplementation", bt4k.bluetape4k.virtualthread.api)
     add("benchmarkImplementation", bt4k.bluetape4k.virtualthread.jdk21)
-    add("benchmarkImplementation", libs.caffeine)
+    add("benchmarkImplementation", bt4k.caffeine)
     add("benchmarkImplementation", libs.exposed.dao)
     add("benchmarkImplementation", bt4k.exposed.java.time)
     add("benchmarkImplementation", bt4k.exposed.jdbc)
     add("benchmarkImplementation", bt4k.exposed.r2dbc)
-    add("benchmarkImplementation", libs.h2.v2)
+    add("benchmarkImplementation", bt4k.h2.v2)
     add("benchmarkImplementation", bt4k.hikaricp)
     add("benchmarkImplementation", libs.kotlinx.coroutines.core)
     add("benchmarkImplementation", libs.kotlinx.coroutines.reactor)
     add("benchmarkImplementation", libs.lettuce.core)
     add("benchmarkImplementation", bt4k.r2dbc.h2)
-    add("benchmarkImplementation", libs.r2dbc.pool)
+    add("benchmarkImplementation", bt4k.r2dbc.pool)
     add("benchmarkImplementation", bt4k.redisson)
     add("benchmarkImplementation", bt4k.slf4j.api)
 
-    add("benchmarkRuntimeOnly", libs.logback.classic)
+    add("benchmarkRuntimeOnly", bt4k.logback)
     add("benchmarkRuntimeOnly", libs.jcl.over.slf4j)
     add("benchmarkRuntimeOnly", libs.jul.to.slf4j)
     add("benchmarkRuntimeOnly", libs.log4j.over.slf4j)
