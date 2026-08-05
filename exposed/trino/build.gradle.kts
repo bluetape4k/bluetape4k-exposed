@@ -1,4 +1,3 @@
-val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
 dependencies {
     api(bt4k.bluetape4k.logging)

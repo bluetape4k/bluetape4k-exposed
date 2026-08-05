@@ -67,7 +67,6 @@ val centralSnapshotsParallelism: Int = providers
 val projectGroup: String = providers.gradleProperty("projectGroup").get()
 val baseVersion: String = providers.gradleProperty("baseVersion").get()
 val snapshotVersion: String = providers.gradleProperty("snapshotVersion").get()
-val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 
 allprojects {
     group = projectGroup

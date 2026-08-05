@@ -1,4 +1,3 @@
-val bluetape4kVersion: String = providers.gradleProperty("bluetape4kVersion").get()
 val springBootVersion = bt4k.versions.spring.boot.get()
 
 plugins {
