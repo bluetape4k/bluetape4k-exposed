@@ -4,7 +4,8 @@ configurations {
 }
 
 dependencies {
-    implementation(platform(bt4k.timefold.solver.bom))
+    api(platform(bt4k.timefold.solver.bom))
+    api(platform(bt4k.kotlinx.coroutines.bom))
 
     api(libs.timefold.solver.core)
 

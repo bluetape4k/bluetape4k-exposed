@@ -8,8 +8,9 @@ configurations {
 }
 
 dependencies {
-    implementation(platform(bt4k.spring.boot4.dependencies))
-    implementation(platform(bt4k.spring.modulith.bom))
+    api(platform(bt4k.spring.boot4.dependencies))
+    api(platform(bt4k.spring.modulith.bom))
+    api(platform(bt4k.kotlinx.coroutines.bom))
 
     api(bt4k.exposed.core)
     api(bt4k.exposed.jdbc)

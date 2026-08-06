@@ -59,7 +59,9 @@ configurations {
 
 dependencies {
     // Exposed
-    implementation(platform(bt4k.exposed.bom))
+    api(platform(bt4k.exposed.bom))
+    api(platform(bt4k.kotlinx.coroutines.bom))
+    api(platform(bt4k.testcontainers.bom))
     api(bt4k.exposed.core)
     api(bt4k.exposed.jdbc)
     api(libs.exposed.dao)

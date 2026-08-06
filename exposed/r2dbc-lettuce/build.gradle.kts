@@ -4,6 +4,7 @@ configurations {
 }
 
 dependencies {
+    api(platform(bt4k.kotlinx.coroutines.bom))
     api(bt4k.bluetape4k.lettuce)
     api(bt4k.bluetape4k.cache.lettuce)
     api(project(":bluetape4k-exposed-r2dbc"))
@@ -19,7 +20,7 @@ dependencies {
     compileOnly(libs.exposed.kotlin.datetime)
 
     // Lettuce
-    api(libs.lettuce.core)
+    api(bt4k.lettuce.core)
 
     // Serializer (LettuceLoadedMap 코덱용)
     compileOnly(bt4k.fory.kotlin)

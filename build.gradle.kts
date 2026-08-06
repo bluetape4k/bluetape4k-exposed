@@ -710,6 +710,50 @@ val publishableProjects = subprojects.filterNot { project ->
     project.isNonPublishedModule()
 }
 
+val publicationInventory = layout.buildDirectory.file("publication/publication-inventory.json")
+val publicationInventoryEntries = publishableProjects
+    .sortedBy(Project::getPath)
+    .map { publishableProject ->
+        val sourceDir = rootProject.rootDir.toPath()
+            .relativize(publishableProject.projectDir.toPath())
+            .toString()
+            .replace(File.separatorChar, '/')
+        linkedMapOf(
+            "gradlePath" to publishableProject.path,
+            "projectName" to publishableProject.name,
+            "sourceDir" to sourceDir,
+            "metadataPath" to "$sourceDir/build/publications/BluetapeExposed/module.json",
+            "pomPath" to "$sourceDir/build/publications/BluetapeExposed/pom-default.xml",
+        )
+    }
+
+tasks.register("exportPublicationInventory") {
+    group = "verification"
+    description = "Exports the publishable project registry for publication validation."
+
+    val inventoryJson = groovy.json.JsonOutput.prettyPrint(
+        groovy.json.JsonOutput.toJson(linkedMapOf("publications" to publicationInventoryEntries)),
+    ) + "\n"
+    inputs.property("publicationInventory", inventoryJson)
+    outputs.file(publicationInventory)
+    doLast {
+        publicationInventory.get().asFile.apply {
+            parentFile.mkdirs()
+            writeText(inventoryJson)
+        }
+    }
+}
+
+tasks.register("publishPublicationValidation") {
+    group = "verification"
+    description = "Publishes every registered publication to the configured Maven local repository."
+    dependsOn(
+        publishableProjects.map {
+            it.tasks.named("publishBluetapeExposedPublicationToMavenLocal")
+        },
+    )
+}
+
 dependencies {
     publishableProjects.forEach { publishableProject ->
         add("nmcpAggregation", project(mapOf("path" to publishableProject.path)))

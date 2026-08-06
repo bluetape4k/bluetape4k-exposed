@@ -1,4 +1,5 @@
 dependencies {
+    api(platform(bt4k.kotlinx.coroutines.bom))
     implementation(bt4k.bluetape4k.core)
 
     api(bt4k.bluetape4k.logging)
