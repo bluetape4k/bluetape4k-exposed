@@ -7,6 +7,17 @@
 
 ## [Unreleased]
 
+## [1.12.1] - 2026-08-06
+
+### 버그 수정
+
+- Gradle Module Metadata의 API 및 runtime variant가 실제 publication dependency-management
+  계약을 함께 노출하도록 외부 BOM과 constraint를 정렬했습니다
+  ([#619](https://github.com/bluetape4k/bluetape4k-exposed/issues/619)).
+- 모든 publication의 POM, Gradle metadata, artifact-isolated downstream consumer를 release
+  workflow에서 검증하여 versionless dependency가 관리되지 않은 채 게시되지 않도록 했습니다
+  ([#619](https://github.com/bluetape4k/bluetape4k-exposed/issues/619)).
+
 ## [1.12.0] - 2026-08-06
 
 ### 추가됨
