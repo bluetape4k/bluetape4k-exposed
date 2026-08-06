@@ -4,9 +4,10 @@ configurations {
 }
 
 dependencies {
-    implementation(platform(bt4k.ktor.bom))
-    implementation(platform(bt4k.exposed.bom))
-    implementation(platform(bt4k.micrometer.bom))
+    api(platform(bt4k.ktor.bom))
+    api(platform(bt4k.exposed.bom))
+    api(platform(bt4k.micrometer.bom))
+    api(platform(bt4k.kotlinx.coroutines.bom))
 
     api(bt4k.bluetape4k.ktor.core)
 

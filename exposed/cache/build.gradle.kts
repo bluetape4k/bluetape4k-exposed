@@ -20,6 +20,8 @@ configurations {
 }
 
 dependencies {
+    api(platform(bt4k.kotlinx.coroutines.bom))
+
     // Bluetape4k
     api(bt4k.bluetape4k.logging)
 
@@ -34,6 +36,7 @@ dependencies {
     compileOnly(libs.kotlinx.coroutines.core)
 
     // Test Fixtures
+    testFixturesApi(platform(bt4k.kotlinx.coroutines.bom))
     testFixturesApi(bt4k.bluetape4k.logging)
     testFixturesApi(platform(bt4k.exposed.bom))
     testFixturesApi(bt4k.exposed.core)
@@ -49,6 +52,10 @@ dependencies {
     testFixturesImplementation(libs.kotlinx.coroutines.test)
 
     testFixturesImplementation(libs.awaitility.kotlin)
+    constraints {
+        add("testFixturesApi", "org.jetbrains.kotlinx:kotlinx-coroutines-test:${bt4k.versions.coroutines.get()}")
+        add("testFixturesApi", "org.awaitility:awaitility-kotlin:${bt4k.versions.awaitility.get()}")
+    }
 
     // Testing
     testImplementation(bt4k.bluetape4k.junit5)

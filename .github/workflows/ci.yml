@@ -38,7 +38,7 @@ env:
   JAVA_VERSION: '21'
   JAVA_DISTRIBUTION: 'temurin'
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
-  BLUETAPE4K_DEPENDENCIES_CATALOG_REF: '8d81f59e0a2667938edfabaa68e2e7b62778d82e'
+  BLUETAPE4K_DEPENDENCIES_CATALOG_REF: '0fc4d618d1baf535d19aeea719b4463bdd84d1f8'
 
 jobs:
   # Secret scan
@@ -253,7 +253,7 @@ jobs:
   build:
     name: Build (compile only)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     needs: [validate-wrapper, catalog-governance]
     steps:
       - uses: actions/checkout@v7
@@ -280,9 +280,14 @@ jobs:
 
       - name: Validate publication POMs
         run: |
-          ./gradlew generatePomFileForBluetapeExposedPublication -PsnapshotVersion=-SNAPSHOT \
+          ./gradlew generateMetadataFileForBluetapeExposedPublication \
+            generatePomFileForBluetapeExposedPublication exportPublicationInventory \
+            -PsnapshotVersion=-SNAPSHOT \
             --no-daemon --no-configuration-cache --no-build-cache
+          ruby -I scripts/publication scripts/publication/gradle_module_metadata_audit_test.rb
+          ruby scripts/publication/validate_module_metadata.rb
           ruby scripts/publication/validate_poms.rb
+          ruby scripts/publication/validate_downstream_consumer.rb
 
   # exposed-core + exposed-dao (H2)
   test-core:

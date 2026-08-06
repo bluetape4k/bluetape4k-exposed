@@ -4,6 +4,9 @@ configurations {
 }
 
 dependencies {
+    // Exposed platform must be API-visible for versionless Exposed API dependencies.
+    api(platform(bt4k.exposed.bom))
+    api(platform(bt4k.kotlinx.coroutines.bom))
     api(bt4k.bluetape4k.cache.lettuce)
     api(bt4k.bluetape4k.lettuce)
     api(project(":bluetape4k-exposed-jdbc"))
@@ -19,7 +22,7 @@ dependencies {
     api(bt4k.exposed.java.time)
 
     // Lettuce
-    api(libs.lettuce.core)
+    api(bt4k.lettuce.core)
 
     // Serializer (LettuceLoadedMap에서 사용하는 codec용)
     compileOnly(bt4k.fory.kotlin)

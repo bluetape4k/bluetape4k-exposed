@@ -4,8 +4,10 @@ configurations {
 }
 
 dependencies {
+    api(platform(bt4k.kotlinx.coroutines.bom))
+
     // Exposed
-    implementation(platform(bt4k.exposed.bom))
+    api(platform(bt4k.exposed.bom))
     api(project(":bluetape4k-exposed-core"))
     api(libs.exposed.dao)
     compileOnly(bt4k.exposed.jdbc)

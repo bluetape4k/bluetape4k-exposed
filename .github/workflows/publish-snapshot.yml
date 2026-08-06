@@ -39,9 +39,14 @@ jobs:
           cache-read-only: true
       - name: Validate publication POMs
         run: |
-          ./gradlew generatePomFileForBluetapeExposedPublication -PsnapshotVersion=-SNAPSHOT \
+          ./gradlew generateMetadataFileForBluetapeExposedPublication \
+            generatePomFileForBluetapeExposedPublication exportPublicationInventory \
+            -PsnapshotVersion=-SNAPSHOT \
             --no-daemon --no-configuration-cache --no-build-cache
+          ruby -I scripts/publication scripts/publication/gradle_module_metadata_audit_test.rb
+          ruby scripts/publication/validate_module_metadata.rb
           ruby scripts/publication/validate_poms.rb
+          ruby scripts/publication/validate_downstream_consumer.rb
       - name: Publish SNAPSHOT
         run: |
           ./gradlew publishAggregationToCentralSnapshots -PsnapshotVersion=-SNAPSHOT \

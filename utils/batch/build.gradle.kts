@@ -130,6 +130,7 @@ tasks.register<JavaExec>("generateBenchmarkDocs") {
 }
 
 dependencies {
+    api(platform(bt4k.kotlinx.coroutines.bom))
     api(bt4k.bluetape4k.core)
     api(bt4k.bluetape4k.coroutines)
     api(bt4k.bluetape4k.logging)

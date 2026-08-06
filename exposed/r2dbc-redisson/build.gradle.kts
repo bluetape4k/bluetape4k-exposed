@@ -6,6 +6,7 @@ configurations {
 dependencies {
     // Exposed
     implementation(platform(bt4k.exposed.bom))
+    api(platform(bt4k.kotlinx.coroutines.bom))
 
     api(bt4k.exposed.core)
     api(bt4k.exposed.r2dbc)

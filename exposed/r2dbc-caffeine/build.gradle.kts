@@ -4,6 +4,7 @@ configurations {
 }
 
 dependencies {
+    api(platform(bt4k.kotlinx.coroutines.bom))
     api(project(":bluetape4k-exposed-r2dbc"))
     api(project(":bluetape4k-exposed-cache"))
     api(bt4k.bluetape4k.coroutines)

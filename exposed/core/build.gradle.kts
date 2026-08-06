@@ -4,6 +4,7 @@ configurations {
 }
 
 dependencies {
+    api(platform(bt4k.kotlinx.coroutines.bom))
     // Exposed
     implementation(platform(bt4k.exposed.bom))
     api(bt4k.exposed.core)
