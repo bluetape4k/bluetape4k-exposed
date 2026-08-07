@@ -2,7 +2,7 @@
 manualId: jdbc-vs-r2dbc
 title: JDBC와 R2DBC 선택
 locale: ko
-releaseRef: 1.11.0
+releaseRef: 1.12.1
 ---
 
 # JDBC와 R2DBC 선택
@@ -41,7 +41,7 @@ JDBC transaction context는 흔히 thread에 묶인다. R2DBC transaction은 `su
 
 ## Spring과 migration tool
 
-1.11.0 Spring JDBC 모듈은 명령형 Exposed 저장소를 Spring data access와 연결한다. Spring R2DBC 모듈은 suspend와 `Flow` signature를 유지하고 Exposed R2DBC transaction에서 실행한다. 모든 Spring 구성 요소가 같은 방식으로 바뀌는 것은 아니다. migration tool, batch library, 외부 integration은 runtime query가 R2DBC여도 JDBC를 요구할 수 있다.
+1.12.1 Spring JDBC 모듈은 명령형 Exposed 저장소를 Spring data access와 연결한다. Spring R2DBC 모듈은 suspend와 `Flow` signature를 유지하고 Exposed R2DBC transaction에서 실행한다. 모든 Spring 구성 요소가 같은 방식으로 바뀌는 것은 아니다. migration tool, batch library, 외부 integration은 runtime query가 R2DBC여도 JDBC를 요구할 수 있다.
 
 ## 전환하기 전에 증명할 것
 

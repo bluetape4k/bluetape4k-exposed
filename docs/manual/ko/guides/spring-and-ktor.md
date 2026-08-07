@@ -1,7 +1,7 @@
 ---
 title: "Spring과 Ktor 연동"
 locale: "ko"
-releaseRef: "1.11.0"
+releaseRef: "1.12.1"
 ---
 
 # Spring과 Ktor 연동

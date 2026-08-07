@@ -6,7 +6,7 @@ locale: "en"
 kind: "library"
 gradlePath: ":bluetape4k-exposed-jdbc-caffeine"
 sourceDir: "exposed/jdbc-caffeine"
-releaseRef: "1.11.0"
+releaseRef: "1.12.1"
 artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-caffeine
 ---
 
@@ -103,19 +103,19 @@ The adapter does not create a distributed transaction, provision the backend, mi
 <!-- release-readme-diagrams:start -->
 ## Release diagrams {#release-diagrams}
 
-These diagrams are loaded directly from README assets published with the `1.11.0` release and pinned to its immutable commit. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG at the same release commit.
+These diagrams are loaded directly from README assets published with the `1.12.1` release and pinned to its immutable commit. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG at the same release commit.
 
 ### JDBC Caffeine local cache architecture diagram
 
-[![JDBC Caffeine local cache architecture diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-jdbc-caffeine-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-jdbc-caffeine-diagram-01.svg)
+[![JDBC Caffeine local cache architecture diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/exposed-jdbc-caffeine-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/exposed-jdbc-caffeine-diagram-01.svg)
 
-_Release README: [`exposed/jdbc-caffeine/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-caffeine/README.md)_
+_Release README: [`exposed/jdbc-caffeine/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/exposed/jdbc-caffeine/README.md)_
 
 ### Write Strategy Flows diagram
 
-[![Write Strategy Flows diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-jdbc-caffeine-sequence-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-jdbc-caffeine-sequence-01.svg)
+[![Write Strategy Flows diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/exposed-jdbc-caffeine-sequence-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/exposed-jdbc-caffeine-sequence-01.svg)
 
-_Release README: [`exposed/jdbc-caffeine/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jdbc-caffeine/README.md)_
+_Release README: [`exposed/jdbc-caffeine/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/exposed/jdbc-caffeine/README.md)_
 
 <!-- release-readme-diagrams:end -->
 

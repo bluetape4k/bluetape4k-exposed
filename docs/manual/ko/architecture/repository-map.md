@@ -2,12 +2,12 @@
 manualId: "repository-map"
 title: "Exposed 저장소 지도"
 locale: "ko"
-releaseRef: "1.11.0"
+releaseRef: "1.12.1"
 ---
 
 # Exposed 저장소 지도
 
-`bluetape4k-exposed 1.11.0`의 40개 Gradle 프로젝트는 모두 같은 역할을 하지 않는다. 먼저 공통 기반 모듈 위에서 JDBC 또는 R2DBC 경로를 고른다. 그 뒤에 캐시와 직렬화·열 변환 모듈, 데이터베이스 어댑터를 필요한 만큼 붙인다. 마지막으로 애플리케이션 프레임워크에서 자원과 트랜잭션을 누가 소유하는지 확인하고 연동 모듈을 선택한다.
+`bluetape4k-exposed 1.12.1`의 40개 Gradle 프로젝트는 모두 같은 역할을 하지 않는다. 먼저 공통 기반 모듈 위에서 JDBC 또는 R2DBC 경로를 고른다. 그 뒤에 캐시와 직렬화·열 변환 모듈, 데이터베이스 어댑터를 필요한 만큼 붙인다. 마지막으로 애플리케이션 프레임워크에서 자원과 트랜잭션을 누가 소유하는지 확인하고 연동 모듈을 선택한다.
 
 ![Exposed 모듈 지도](../../assets/overview/module-map.png)
 
@@ -22,23 +22,23 @@ releaseRef: "1.11.0"
 
 ## 릴리스 범위
 
-이 지도에는 `1.11.0` 태그에 있는 모듈만 표시한다. 현재 개발 브랜치에만 있는 모듈은 다음 안정 마이너 버전의 문서가 나올 때까지 포함하지 않는다. 정확한 프로젝트 목록과 소스 경로는 [모듈 매뉴얼](../modules/bluetape4k-exposed-bom.md)에서 확인할 수 있다.
+이 지도에는 `1.12.1` 태그에 있는 모듈만 표시한다. 현재 개발 브랜치에만 있는 모듈은 다음 안정 마이너 버전의 문서가 나올 때까지 포함하지 않는다. 정확한 프로젝트 목록과 소스 경로는 [모듈 매뉴얼](../modules/bluetape4k-exposed-bom.md)에서 확인할 수 있다.
 
 <!-- release-readme-diagrams:start -->
 ## 배포본 다이어그램 {#release-diagrams}
 
-아래 그림은 `1.11.0` 배포본의 README 자산을 해당 배포 커밋에서 직접 불러옵니다. 이후 SNAPSHOT이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 같은 배포 커밋의 SVG 원본이 열립니다.
+아래 그림은 `1.12.1` 배포본의 README 자산을 해당 배포 커밋에서 직접 불러옵니다. 이후 SNAPSHOT이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 같은 배포 커밋의 SVG 원본이 열립니다.
 
 ### Bluetape4k Exposed 모듈 구성도
 
-[![Bluetape4k Exposed 모듈 구성도](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/root-readme-module-relationships-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/root-readme-module-relationships-01.svg)
+[![Bluetape4k Exposed 모듈 구성도](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/root-readme-module-relationships-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/root-readme-module-relationships-01.svg)
 
-_배포본 README: [`README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/README.ko.md)_
+_배포본 README: [`README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/README.ko.md)_
 
 ### Bluetape4k Exposed 개요
 
-[![Bluetape4k Exposed 개요](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/root-readme-overview-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/root-readme-overview-01.svg)
+[![Bluetape4k Exposed 개요](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/root-readme-overview-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/root-readme-overview-01.svg)
 
-_배포본 README: [`README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/README.ko.md)_
+_배포본 README: [`README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/README.ko.md)_
 
 <!-- release-readme-diagrams:end -->

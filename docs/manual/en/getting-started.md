@@ -2,7 +2,7 @@
 manualId: "getting-started"
 title: "Getting Started with Bluetape4k Exposed"
 locale: "en"
-releaseRef: "1.11.0"
+releaseRef: "1.12.1"
 ---
 
 # Getting Started with Bluetape4k Exposed
@@ -20,7 +20,7 @@ dependencies {
 }
 ```
 
-Replace `<version>` with the released `bluetape4k-dependencies` version used by your application. The `1.11.0` label in this manual is the verified Exposed source baseline, not the consumer version to paste into this snippet.
+Replace `<version>` with the released `bluetape4k-dependencies` version used by your application. The `1.12.1` label in this manual is the verified Exposed source baseline, not the consumer version to paste into this snippet.
 
 ## Choose JDBC or R2DBC first
 

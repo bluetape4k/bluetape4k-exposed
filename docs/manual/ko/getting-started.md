@@ -2,7 +2,7 @@
 manualId: "getting-started"
 title: "Bluetape4k Exposed 시작하기"
 locale: "ko"
-releaseRef: "1.11.0"
+releaseRef: "1.12.1"
 ---
 
 # Bluetape4k Exposed 시작하기
@@ -20,7 +20,7 @@ dependencies {
 }
 ```
 
-`<version>`에는 애플리케이션이 사용하는 `bluetape4k-dependencies` 배포 버전을 넣는다. 이 매뉴얼의 `1.11.0`은 문서가 검증한 Exposed 소스 기준이며, 위 `<version>` 자리에 넣는 버전이 아니다.
+`<version>`에는 애플리케이션이 사용하는 `bluetape4k-dependencies` 배포 버전을 넣는다. 이 매뉴얼의 `1.12.1`은 문서가 검증한 Exposed 소스 기준이며, 위 `<version>` 자리에 넣는 버전이 아니다.
 
 ## JDBC와 R2DBC 중 하나를 먼저 선택하기
 

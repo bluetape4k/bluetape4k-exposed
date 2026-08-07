@@ -67,7 +67,7 @@ Map required columns directly and fail close to the database boundary. Do not tu
 
 ## Learning path
 
-Start with one repository and H2, then repeat the same behavior against the production driver. Continue to [`exposed-r2dbc-workshop`](https://github.com/bluetape4k/exposed-r2dbc-workshop) for DDL/DML, coroutine repositories, Spring WebFlux, Ktor, cache, multi-tenancy, and routing exercises. The workshop is a learning repository; the 1.11.0 source links below remain the API authority for this manual.
+Start with one repository and H2, then repeat the same behavior against the production driver. Continue to [`exposed-r2dbc-workshop`](https://github.com/bluetape4k/exposed-r2dbc-workshop) for DDL/DML, coroutine repositories, Spring WebFlux, Ktor, cache, multi-tenancy, and routing exercises. The workshop is a learning repository; the 1.12.1 source links below remain the API authority for this manual.
 
 ## Sources
 

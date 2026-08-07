@@ -6,7 +6,7 @@ locale: "ko"
 kind: "library"
 gradlePath: ":bluetape4k-exposed-jackson3"
 sourceDir: "exposed/jackson3"
-releaseRef: "1.11.0"
+releaseRef: "1.12.1"
 artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-jackson3
 ---
 
@@ -16,7 +16,7 @@ artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-jackson3
 
 ## 제공하는 기능 {#problem}
 
-1.11.0 안정판에 들어 있는 Jackson 3 API로 Kotlin 값을 Exposed JSON·JSONB 컬럼에 매핑합니다. Jackson 2 모듈과 같은 컬럼·행 reader·Dialect 식 역할을 `io.bluetape4k.exposed.core.jackson3` 패키지에서 제공합니다.
+1.12.1 안정판에 들어 있는 Jackson 3 API로 Kotlin 값을 Exposed JSON·JSONB 컬럼에 매핑합니다. Jackson 2 모듈과 같은 컬럼·행 reader·Dialect 식 역할을 `io.bluetape4k.exposed.core.jackson3` 패키지에서 제공합니다.
 
 ## 사용하기 좋은 경우 {#when-to-use}
 
@@ -67,7 +67,7 @@ transaction {
 
 ## 권장 패턴 {#patterns}
 
-1.11.0 태그에서 확인한 API만 사용하세요. develop에 나중에 추가된 API는 이 매뉴얼의 범위가 아닙니다. 컬럼별로 프로퍼티 이름, module, subtype id, 알 수 없는 필드 정책을 고정하고, Jackson 2 writer를 바꾸기 전에 예전 행을 읽을 수 있는지 증명해야 합니다.
+1.12.1 태그에서 확인한 API만 사용하세요. develop에 나중에 추가된 API는 이 매뉴얼의 범위가 아닙니다. 컬럼별로 프로퍼티 이름, module, subtype id, 알 수 없는 필드 정책을 고정하고, Jackson 2 writer를 바꾸기 전에 예전 행을 읽을 수 있는지 증명해야 합니다.
 
 ## 연동 {#integrations}
 
@@ -91,7 +91,7 @@ Exposed core와 JDBC·DAO·R2DBC 행 경로에 연동됩니다. `com.fasterxml.j
 
 ## 테스트 {#testing}
 
-1.11.0 Jackson 3 import를 컴파일 단계에서 확인합니다. 현재·예전 fixture, Kotlin 기본값, 알 수 없는 필드, nullable 값, tree 읽기, 깨진 JSON, DB별 JSON 식을 round-trip으로 검증하세요.
+1.12.1 Jackson 3 import를 컴파일 단계에서 확인합니다. 현재·예전 fixture, Kotlin 기본값, 알 수 없는 필드, nullable 값, tree 읽기, 깨진 JSON, DB별 JSON 식을 round-trip으로 검증하세요.
 
 ```bash
 ./gradlew :bluetape4k-exposed-jackson3:test
@@ -108,19 +108,19 @@ Jackson 2 마이그레이션, 저장 JSON 재작성, 두 패키지 생태계의 
 <!-- release-readme-diagrams:start -->
 ## 배포본 다이어그램 {#release-diagrams}
 
-아래 그림은 `1.11.0` 배포본의 README 자산을 해당 배포 커밋에서 직접 불러옵니다. 이후 SNAPSHOT이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 같은 배포 커밋의 SVG 원본이 열립니다.
+아래 그림은 `1.12.1` 배포본의 README 자산을 해당 배포 커밋에서 직접 불러옵니다. 이후 SNAPSHOT이 아니라 이 매뉴얼 버전의 구조와 실행 흐름을 보여 줍니다. 미리보기를 누르면 같은 배포 커밋의 SVG 원본이 열립니다.
 
 ### Jackson 3 JSON column boundary
 
-[![Jackson 3 JSON column boundary](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-jackson3-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-jackson3-diagram-01.svg)
+[![Jackson 3 JSON column boundary](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/exposed-jackson3-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/exposed-jackson3-diagram-01.svg)
 
-_배포본 README: [`exposed/jackson3/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jackson3/README.ko.md)_
+_배포본 README: [`exposed/jackson3/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/exposed/jackson3/README.ko.md)_
 
 ### Jackson 3 JSON round trip
 
-[![Jackson 3 JSON round trip](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-jackson3-flow-02.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-jackson3-flow-02.svg)
+[![Jackson 3 JSON round trip](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/exposed-jackson3-flow-02.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/exposed-jackson3-flow-02.svg)
 
-_배포본 README: [`exposed/jackson3/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jackson3/README.ko.md)_
+_배포본 README: [`exposed/jackson3/README.ko.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/exposed/jackson3/README.ko.md)_
 
 <!-- release-readme-diagrams:end -->
 

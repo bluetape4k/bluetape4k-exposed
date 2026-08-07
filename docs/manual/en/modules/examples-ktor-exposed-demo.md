@@ -6,7 +6,7 @@ locale: "en"
 kind: "example"
 gradlePath: ":examples-ktor-exposed-demo"
 sourceDir: "examples/ktor-exposed-demo"
-releaseRef: "1.11.0"
+releaseRef: "1.12.1"
 artifact: null
 ---
 
@@ -73,7 +73,7 @@ dependencies {
 }
 ```
 
-The repository example additionally uses its managed Ktor and Exposed BOM catalogs so all demonstration dependencies stay aligned with release `1.11.0`.
+The repository example additionally uses its managed Ktor and Exposed BOM catalogs so all demonstration dependencies stay aligned with release `1.12.1`.
 
 ## Core concepts {#concepts}
 
@@ -133,7 +133,7 @@ In-memory H2 keeps the example deterministic but does not reproduce a production
 
 ## Sources {#sources}
 
-- [Application setup at release 1.11.0](https://github.com/bluetape4k/bluetape4k-exposed/blob/1.11.0/examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoApplication.kt)
-- [Resource ownership at release 1.11.0](https://github.com/bluetape4k/bluetape4k-exposed/blob/1.11.0/examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoResources.kt)
-- [Integration test at release 1.11.0](https://github.com/bluetape4k/bluetape4k-exposed/blob/1.11.0/examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoApplicationTest.kt)
-- [Gradle build at release 1.11.0](https://github.com/bluetape4k/bluetape4k-exposed/blob/1.11.0/examples/ktor-exposed-demo/build.gradle.kts)
+- [Application setup at release 1.12.1](https://github.com/bluetape4k/bluetape4k-exposed/blob/1.12.1/examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoApplication.kt)
+- [Resource ownership at release 1.12.1](https://github.com/bluetape4k/bluetape4k-exposed/blob/1.12.1/examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoResources.kt)
+- [Integration test at release 1.12.1](https://github.com/bluetape4k/bluetape4k-exposed/blob/1.12.1/examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoApplicationTest.kt)
+- [Gradle build at release 1.12.1](https://github.com/bluetape4k/bluetape4k-exposed/blob/1.12.1/examples/ktor-exposed-demo/build.gradle.kts)

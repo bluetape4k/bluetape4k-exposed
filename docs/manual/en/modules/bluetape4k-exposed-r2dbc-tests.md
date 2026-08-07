@@ -6,7 +6,7 @@ locale: "en"
 kind: "library"
 gradlePath: ":bluetape4k-exposed-r2dbc-tests"
 sourceDir: "exposed/r2dbc-tests"
-releaseRef: "1.11.0"
+releaseRef: "1.12.1"
 artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-tests
 ---
 
@@ -84,19 +84,19 @@ The fixture cannot guarantee that a particular driver cancels server-side work. 
 <!-- release-readme-diagrams:start -->
 ## Release diagrams {#release-diagrams}
 
-These diagrams are loaded directly from README assets published with the `1.11.0` release and pinned to its immutable commit. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG at the same release commit.
+These diagrams are loaded directly from README assets published with the `1.12.1` release and pinned to its immutable commit. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG at the same release commit.
 
 ### Test Infrastructure Structure diagram
 
-[![Test Infrastructure Structure diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-r2dbc-tests-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-r2dbc-tests-diagram-01.svg)
+[![Test Infrastructure Structure diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/exposed-r2dbc-tests-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/exposed-r2dbc-tests-diagram-01.svg)
 
-_Release README: [`exposed/r2dbc-tests/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/r2dbc-tests/README.md)_
+_Release README: [`exposed/r2dbc-tests/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/exposed/r2dbc-tests/README.md)_
 
 ### withTables R2DBC test lifecycle diagram
 
-[![withTables R2DBC test lifecycle diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-r2dbc-tests-diagram-02.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-r2dbc-tests-diagram-02.svg)
+[![withTables R2DBC test lifecycle diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/exposed-r2dbc-tests-diagram-02.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/exposed-r2dbc-tests-diagram-02.svg)
 
-_Release README: [`exposed/r2dbc-tests/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/r2dbc-tests/README.md)_
+_Release README: [`exposed/r2dbc-tests/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/exposed/r2dbc-tests/README.md)_
 
 <!-- release-readme-diagrams:end -->
 

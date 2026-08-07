@@ -1,7 +1,7 @@
 ---
 title: "테스트와 운영"
 locale: "ko"
-releaseRef: "1.11.0"
+releaseRef: "1.12.1"
 ---
 
 # 테스트와 운영

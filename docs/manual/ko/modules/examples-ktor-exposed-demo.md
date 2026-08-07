@@ -6,7 +6,7 @@ locale: "ko"
 kind: "example"
 gradlePath: ":examples-ktor-exposed-demo"
 sourceDir: "examples/ktor-exposed-demo"
-releaseRef: "1.11.0"
+releaseRef: "1.12.1"
 artifact: null
 ---
 
@@ -73,7 +73,7 @@ dependencies {
 }
 ```
 
-저장소 안의 예제 빌드는 관리 중인 Ktor·Exposed BOM 카탈로그도 함께 사용해 릴리스 `1.11.0`의 데모 의존성을 맞춥니다.
+저장소 안의 예제 빌드는 관리 중인 Ktor·Exposed BOM 카탈로그도 함께 사용해 릴리스 `1.12.1`의 데모 의존성을 맞춥니다.
 
 ## 핵심 개념 {#concepts}
 
@@ -133,7 +133,7 @@ JDBC와 R2DBC가 서로 다른 H2 데이터베이스를 쓰는 것은 의도한 
 
 ## 근거 자료 {#sources}
 
-- [1.11.0 애플리케이션 설정](https://github.com/bluetape4k/bluetape4k-exposed/blob/1.11.0/examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoApplication.kt)
-- [1.11.0 자원 소유권](https://github.com/bluetape4k/bluetape4k-exposed/blob/1.11.0/examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoResources.kt)
-- [1.11.0 통합 테스트](https://github.com/bluetape4k/bluetape4k-exposed/blob/1.11.0/examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoApplicationTest.kt)
-- [1.11.0 Gradle 빌드](https://github.com/bluetape4k/bluetape4k-exposed/blob/1.11.0/examples/ktor-exposed-demo/build.gradle.kts)
+- [1.12.1 애플리케이션 설정](https://github.com/bluetape4k/bluetape4k-exposed/blob/1.12.1/examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoApplication.kt)
+- [1.12.1 자원 소유권](https://github.com/bluetape4k/bluetape4k-exposed/blob/1.12.1/examples/ktor-exposed-demo/src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoResources.kt)
+- [1.12.1 통합 테스트](https://github.com/bluetape4k/bluetape4k-exposed/blob/1.12.1/examples/ktor-exposed-demo/src/test/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoApplicationTest.kt)
+- [1.12.1 Gradle 빌드](https://github.com/bluetape4k/bluetape4k-exposed/blob/1.12.1/examples/ktor-exposed-demo/build.gradle.kts)

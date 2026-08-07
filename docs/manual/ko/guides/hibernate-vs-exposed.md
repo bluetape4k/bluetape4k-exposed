@@ -1,7 +1,7 @@
 ---
 title: "Hibernate와 Exposed 비교"
 locale: "ko"
-releaseRef: "1.11.0"
+releaseRef: "1.12.1"
 ---
 
 # Hibernate와 Exposed 비교

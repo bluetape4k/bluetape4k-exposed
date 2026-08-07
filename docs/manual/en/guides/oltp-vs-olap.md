@@ -1,7 +1,7 @@
 ---
 title: "Choosing an OLTP or OLAP Path"
 locale: "en"
-releaseRef: "1.11.0"
+releaseRef: "1.12.1"
 ---
 
 # Choosing an OLTP or OLAP Path

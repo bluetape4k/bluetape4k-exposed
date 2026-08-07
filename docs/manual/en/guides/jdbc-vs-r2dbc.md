@@ -2,7 +2,7 @@
 manualId: jdbc-vs-r2dbc
 title: JDBC vs R2DBC
 locale: en
-releaseRef: 1.11.0
+releaseRef: 1.12.1
 ---
 
 # JDBC vs R2DBC
@@ -39,7 +39,7 @@ With JDBC, transaction context is commonly thread-bound. With R2DBC, the transac
 
 ## Spring and migration tooling
 
-The 1.11.0 Spring JDBC module integrates Exposed repositories with imperative Spring data access. The Spring R2DBC module preserves suspend/`Flow` signatures and delegates execution to Exposed R2DBC transactions. Do not assume every Spring component is interchangeable: migration tools, batch libraries, and third-party integrations may still require JDBC even when runtime queries use R2DBC.
+The 1.12.1 Spring JDBC module integrates Exposed repositories with imperative Spring data access. The Spring R2DBC module preserves suspend/`Flow` signatures and delegates execution to Exposed R2DBC transactions. Do not assume every Spring component is interchangeable: migration tools, batch libraries, and third-party integrations may still require JDBC even when runtime queries use R2DBC.
 
 ## Proof before migration
 

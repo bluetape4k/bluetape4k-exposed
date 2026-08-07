@@ -2,7 +2,7 @@
 manualId: transaction-boundaries
 title: Transaction boundaries
 locale: en
-releaseRef: 1.11.0
+releaseRef: 1.12.1
 ---
 
 # Transaction boundaries
