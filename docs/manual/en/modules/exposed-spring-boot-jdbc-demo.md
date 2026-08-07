@@ -6,7 +6,7 @@ locale: "en"
 kind: "example"
 gradlePath: ":exposed-spring-boot-jdbc-demo"
 sourceDir: "examples/jdbc-demo"
-releaseRef: "1.11.0"
+releaseRef: "1.12.1"
 artifact: null
 ---
 
@@ -141,19 +141,19 @@ The demo uses one in-memory database, startup schema adjustment, controller-owne
 <!-- release-readme-diagrams:start -->
 ## Release diagrams {#release-diagrams}
 
-These diagrams are loaded directly from README assets published with the `1.11.0` release and pinned to its immutable commit. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG at the same release commit.
+These diagrams are loaded directly from README assets published with the `1.12.1` release and pinned to its immutable commit. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG at the same release commit.
 
 ### Spring Boot JDBC demo structure diagram
 
-[![Spring Boot JDBC demo structure diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-01.svg)
+[![Spring Boot JDBC demo structure diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-01.svg)
 
-_Release README: [`examples/jdbc-demo/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/examples/jdbc-demo/README.md)_
+_Release README: [`examples/jdbc-demo/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/examples/jdbc-demo/README.md)_
 
 ### Spring Boot JDBC demo request transaction flow diagram
 
-[![Spring Boot JDBC demo request transaction flow diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-02.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-02.svg)
+[![Spring Boot JDBC demo request transaction flow diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-02.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/spring-boot-exposed-jdbc-demo-diagram-02.svg)
 
-_Release README: [`examples/jdbc-demo/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/examples/jdbc-demo/README.md)_
+_Release README: [`examples/jdbc-demo/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/examples/jdbc-demo/README.md)_
 
 <!-- release-readme-diagrams:end -->
 

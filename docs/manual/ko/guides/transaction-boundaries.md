@@ -2,7 +2,7 @@
 manualId: transaction-boundaries
 title: 트랜잭션 경계
 locale: ko
-releaseRef: 1.11.0
+releaseRef: 1.12.1
 ---
 
 # 트랜잭션 경계

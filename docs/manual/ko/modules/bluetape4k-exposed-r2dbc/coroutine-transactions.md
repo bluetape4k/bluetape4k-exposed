@@ -49,7 +49,7 @@ DB 작업은 트랜잭션을 받은 structured scope 안에 둔다. 별도의 ap
 
 ## 격리 수준과 재시도
 
-기본값과 다른 계약이 필요하면 `transactionIsolation`과 `readOnly`를 명시한다. 트랜잭션 재시도는 insert, 외부 호출, 이벤트 발행을 중복시킬 수 있다. 1.11.0 테스트 helper는 원인을 분명하게 드러내기 위해 `maxAttempts = 1`로 실행한다.
+기본값과 다른 계약이 필요하면 `transactionIsolation`과 `readOnly`를 명시한다. 트랜잭션 재시도는 insert, 외부 호출, 이벤트 발행을 중복시킬 수 있다. 1.12.1 테스트 helper는 원인을 분명하게 드러내기 위해 `maxAttempts = 1`로 실행한다.
 
 ## 장애를 찾는 순서
 

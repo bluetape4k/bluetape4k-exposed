@@ -6,7 +6,7 @@ locale: "en"
 kind: "library"
 gradlePath: ":bluetape4k-exposed-druid"
 sourceDir: "exposed/druid"
-releaseRef: "1.11.0"
+releaseRef: "1.12.1"
 artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-druid
 ---
 
@@ -57,6 +57,48 @@ The unit suite verifies official Avatica URL construction, Protobuf configuratio
 ```bash
 ./gradlew :bluetape4k-exposed-druid:test --no-daemon
 ```
+
+## Problem {#problem}
+
+Druid is a remote, read-oriented SQL boundary. Treating its Avatica connection like an Exposed transaction would create misleading rollback and consistency expectations.
+
+## Core concepts {#concepts}
+
+The adapter separates endpoint construction, query validation, parameter binding, and result mapping. It never owns a Druid schema or multi-statement transaction.
+
+## Quick start {#quick-start}
+
+Create `DruidConnectionOptions`, call `DruidJdbc.query`, and map the `ResultSet` inside the callback. Keep the endpoint and context values application configuration.
+
+## API by task {#api-by-task}
+
+- Build a Router URL with `DruidConnectionOptions`.
+- Open a connection with `DruidJdbc.connection` when a lower-level JDBC operation is required.
+- Execute a parameterized read with `DruidJdbc.query`.
+
+## Integrations {#integrations}
+
+Use the helper from a service or repository boundary. Spring and Ktor applications should inject endpoint settings and expose query results through their own request and timeout policies.
+
+## Configuration {#configuration}
+
+Configure the Avatica endpoint, serialization mode, SQL context, authentication properties, and connection timeout. Do not put credentials in source-controlled URLs.
+
+## Failure modes {#failures}
+
+Reject non-query statements before connecting. Handle Avatica transport errors, timeout errors, malformed responses, and mapping failures as read failures with an application-level retry policy.
+
+## Operations {#operations}
+
+Log the logical query name, endpoint identity, duration, row count, and failure category without logging credentials or sensitive query parameters. Bound result size and request time.
+
+## Workshops and learning path {#workshops}
+
+Start with the query-only example, then inspect URL construction and parameter binding tests before integrating the adapter into a service boundary.
+
+## Limitations {#limitations}
+
+This module does not provide Exposed DAO support, distributed transactions, schema migrations, write statements, or a guarantee that a remote Druid query is idempotent.
 
 ## Sources {#sources}
 

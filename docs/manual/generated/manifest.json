@@ -229,6 +229,30 @@
       ]
     },
     {
+      "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-druid",
+      "en": "en/modules/bluetape4k-exposed-druid.md",
+      "gradlePath": ":bluetape4k-exposed-druid",
+      "group": "database",
+      "id": "bluetape4k-exposed-druid",
+      "kind": "library",
+      "ko": "ko/modules/bluetape4k-exposed-druid.md",
+      "sourceDir": "exposed/druid",
+      "sourcePaths": [
+        "exposed/druid/src/main/kotlin"
+      ],
+      "testPaths": [
+        "exposed/druid/src/test/kotlin",
+        "exposed/druid/src/test/resources"
+      ],
+      "title": {
+        "en": "Exposed Druid JDBC Utilities",
+        "ko": "Exposed Druid JDBC 유틸리티"
+      },
+      "workshops": [
+
+      ]
+    },
+    {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-duckdb",
       "en": "en/modules/bluetape4k-exposed-duckdb.md",
       "gradlePath": ":bluetape4k-exposed-duckdb",
@@ -891,6 +915,30 @@
     },
     {
       "artifact": null,
+      "en": "en/modules/examples-ddd-spring-modulith-demo.md",
+      "gradlePath": ":examples-ddd-spring-modulith-demo",
+      "group": "example",
+      "id": "examples-ddd-spring-modulith-demo",
+      "kind": "example",
+      "ko": "ko/modules/examples-ddd-spring-modulith-demo.md",
+      "sourceDir": "examples/ddd-spring-modulith-demo",
+      "sourcePaths": [
+        "examples/ddd-spring-modulith-demo/src/main/kotlin"
+      ],
+      "testPaths": [
+        "examples/ddd-spring-modulith-demo/src/test/kotlin",
+        "examples/ddd-spring-modulith-demo/src/test/resources"
+      ],
+      "title": {
+        "en": "DDD Spring Modulith Demo",
+        "ko": "DDD Spring Modulith 데모"
+      },
+      "workshops": [
+
+      ]
+    },
+    {
+      "artifact": null,
       "en": "en/modules/examples-exposed-bigquery-dry-run.md",
       "gradlePath": ":examples-exposed-bigquery-dry-run",
       "group": "example",
@@ -1022,6 +1070,10 @@
       "assets/persistence/path-decision.png",
       "assets/persistence/transaction-ownership.svg",
       "assets/persistence/transaction-ownership.png",
+      "assets/persistence/jpa-exposed-comparison.en.svg",
+      "assets/persistence/jpa-exposed-comparison.en.png",
+      "assets/persistence/jpa-exposed-comparison.ko.svg",
+      "assets/persistence/jpa-exposed-comparison.ko.png",
       "assets/cache/cache-selection.svg",
       "assets/cache/cache-selection.png",
       "assets/database/adapter-map.svg",
@@ -1070,8 +1122,8 @@
       ]
     }
   },
-  "releaseCommit": "0b494a5fd1e083006046764757342b68a397e4c5",
-  "releaseRef": "1.11.0",
+  "releaseCommit": "4cc2cce07087241ec24a597d8464615434ea2b81",
+  "releaseRef": "1.12.1",
   "repository": "bluetape4k/bluetape4k-exposed",
   "schemaVersion": 2
 }

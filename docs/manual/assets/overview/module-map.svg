@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1100" viewBox="0 0 1800 1100" role="img" aria-labelledby="title desc">
   <title id="title">Bluetape4k Exposed module responsibility map</title>
-  <desc id="desc">A static module map showing shared foundation modules, parallel JDBC and R2DBC lanes, lane-specific cache and test support, and framework integrations in release 1.11.0.</desc>
+  <desc id="desc">A static module map showing shared foundation modules, parallel JDBC and R2DBC lanes, lane-specific cache and test support, and framework integrations in release 1.12.1.</desc>
   <defs>
     <marker id="flow-blue" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
       <path d="M 0 0 L 14 7 L 0 14 Z" fill="#9ed8ff" stroke="#9ed8ff"/>
@@ -22,7 +22,7 @@
   <rect width="1800" height="1100" fill="url(#canvas)"/>
   <rect x="42" y="36" width="1716" height="1028" rx="34" fill="url(#panel)" stroke="#536377" stroke-width="4" filter="url(#shadow)"/>
   <text x="900" y="100" text-anchor="middle" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="52" fill="#f8fafc">Choose a Runtime Lane, Keep Its Ownership Intact</text>
-  <text x="900" y="142" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="19" fill="#b6c4d6">Stable 1.11.0 relationships • JDBC and R2DBC remain parallel • optional modules refine a lane</text>
+  <text x="900" y="142" text-anchor="middle" font-family="Comic Mono, ui-monospace, monospace" font-size="19" fill="#b6c4d6">Stable 1.12.1 relationships • JDBC and R2DBC remain parallel • optional modules refine a lane</text>
 
   <rect x="90" y="185" width="360" height="745" rx="28" fill="#111827" stroke="#536377" stroke-width="3"/>
   <text x="270" y="230" text-anchor="middle" font-family="Architects Daughter, Comic Sans MS, cursive" font-size="30" fill="#9ed8ff">Shared foundation</text>

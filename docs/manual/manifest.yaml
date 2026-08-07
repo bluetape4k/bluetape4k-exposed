@@ -1,7 +1,7 @@
 schemaVersion: 2
 repository: "bluetape4k/bluetape4k-exposed"
-releaseRef: "1.11.0"
-releaseCommit: "0b494a5fd1e083006046764757342b68a397e4c5"
+releaseRef: "1.12.1"
+releaseCommit: "4cc2cce07087241ec24a597d8464615434ea2b81"
 overview:
   documents:
     en:
@@ -564,7 +564,7 @@ modules:
     artifact: null
     en: "en/modules/examples-ddd-spring-modulith-demo.md"
     ko: "ko/modules/examples-ddd-spring-modulith-demo.md"
-    sourcePaths: ["examples/ddd-spring-modulith-demo/src/main/kotlin","examples/ddd-spring-modulith-demo/src/main/resources"]
+    sourcePaths: ["examples/ddd-spring-modulith-demo/src/main/kotlin"]
     testPaths: ["examples/ddd-spring-modulith-demo/src/test/kotlin","examples/ddd-spring-modulith-demo/src/test/resources"]
     workshops: []
   - id: "exposed-spring-boot-jdbc-demo"

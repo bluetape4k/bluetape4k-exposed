@@ -67,7 +67,7 @@ class ActorRepository : LongR2dbcRepository<ActorRecord> {
 
 ## 학습 경로
 
-H2에서 저장소 하나를 완성한 뒤 운영 DB driver로 같은 동작을 다시 검증한다. [`exposed-r2dbc-workshop`](https://github.com/bluetape4k/exposed-r2dbc-workshop)에는 DDL/DML, coroutine repository, Spring WebFlux, Ktor, cache, multi-tenancy, routing 실습이 단계별로 있다. 워크숍은 학습 경로이며, 이 매뉴얼의 API 기준은 아래 1.11.0 소스다.
+H2에서 저장소 하나를 완성한 뒤 운영 DB driver로 같은 동작을 다시 검증한다. [`exposed-r2dbc-workshop`](https://github.com/bluetape4k/exposed-r2dbc-workshop)에는 DDL/DML, coroutine repository, Spring WebFlux, Ktor, cache, multi-tenancy, routing 실습이 단계별로 있다. 워크숍은 학습 경로이며, 이 매뉴얼의 API 기준은 아래 1.12.1 소스다.
 
 ## 근거 자료
 

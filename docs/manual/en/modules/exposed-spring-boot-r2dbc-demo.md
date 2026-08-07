@@ -6,7 +6,7 @@ locale: "en"
 kind: "example"
 gradlePath: ":exposed-spring-boot-r2dbc-demo"
 sourceDir: "examples/r2dbc-demo"
-releaseRef: "1.11.0"
+releaseRef: "1.12.1"
 artifact: null
 ---
 
@@ -132,19 +132,19 @@ The demo uses in-memory H2, asynchronous startup schema creation, one process, a
 <!-- release-readme-diagrams:start -->
 ## Release diagrams {#release-diagrams}
 
-These diagrams are loaded directly from README assets published with the `1.11.0` release and pinned to its immutable commit. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG at the same release commit.
+These diagrams are loaded directly from README assets published with the `1.12.1` release and pinned to its immutable commit. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG at the same release commit.
 
 ### Spring Boot R2DBC demo structure diagram
 
-[![Spring Boot R2DBC demo structure diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-01.svg)
+[![Spring Boot R2DBC demo structure diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-01.svg)
 
-_Release README: [`examples/r2dbc-demo/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/examples/r2dbc-demo/README.md)_
+_Release README: [`examples/r2dbc-demo/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/examples/r2dbc-demo/README.md)_
 
 ### WebFlux suspend request flow diagram
 
-[![WebFlux suspend request flow diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-02.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-02.svg)
+[![WebFlux suspend request flow diagram](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-02.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/spring-boot-exposed-r2dbc-demo-diagram-02.svg)
 
-_Release README: [`examples/r2dbc-demo/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/examples/r2dbc-demo/README.md)_
+_Release README: [`examples/r2dbc-demo/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/examples/r2dbc-demo/README.md)_
 
 <!-- release-readme-diagrams:end -->
 

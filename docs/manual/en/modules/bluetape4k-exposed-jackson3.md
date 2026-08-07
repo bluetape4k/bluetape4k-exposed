@@ -6,7 +6,7 @@ locale: "en"
 kind: "library"
 gradlePath: ":bluetape4k-exposed-jackson3"
 sourceDir: "exposed/jackson3"
-releaseRef: "1.11.0"
+releaseRef: "1.12.1"
 artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-jackson3
 ---
 
@@ -16,7 +16,7 @@ artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-jackson3
 
 ## Problem {#problem}
 
-This module maps Kotlin values to Exposed JSON and JSONB columns with the Jackson 3 APIs present in release 1.11.0. It mirrors the JSON column, row-reader, and dialect-expression roles of the Jackson 2 module under the `io.bluetape4k.exposed.core.jackson3` package.
+This module maps Kotlin values to Exposed JSON and JSONB columns with the Jackson 3 APIs present in release 1.12.1. It mirrors the JSON column, row-reader, and dialect-expression roles of the Jackson 2 module under the `io.bluetape4k.exposed.core.jackson3` package.
 
 ## When to use it {#when-to-use}
 
@@ -67,7 +67,7 @@ transaction {
 
 ## Recommended patterns {#patterns}
 
-Use only APIs verified in the 1.11.0 tag; later develop additions are outside this manual. Freeze property naming, modules, subtype ids, and unknown-field policy per column. Prove old rows can be read before switching a writer from Jackson 2 to Jackson 3.
+Use only APIs verified in the 1.12.1 tag; later develop additions are outside this manual. Freeze property naming, modules, subtype ids, and unknown-field policy per column. Prove old rows can be read before switching a writer from Jackson 2 to Jackson 3.
 
 ## Integrations {#integrations}
 
@@ -91,7 +91,7 @@ Track decode failures during migration and retain rollback capability until old 
 
 ## Testing {#testing}
 
-Test the 1.11.0 Jackson 3 imports at compile time. Round-trip current and legacy fixtures, Kotlin defaults, unknown fields, nullable values, tree reads, malformed JSON, and every database-side JSON expression.
+Test the 1.12.1 Jackson 3 imports at compile time. Round-trip current and legacy fixtures, Kotlin defaults, unknown fields, nullable values, tree reads, malformed JSON, and every database-side JSON expression.
 
 ```bash
 ./gradlew :bluetape4k-exposed-jackson3:test
@@ -108,19 +108,19 @@ This module does not automate a Jackson 2 migration, rewrite stored JSON, or mak
 <!-- release-readme-diagrams:start -->
 ## Release diagrams {#release-diagrams}
 
-These diagrams are loaded directly from README assets published with the `1.11.0` release and pinned to its immutable commit. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG at the same release commit.
+These diagrams are loaded directly from README assets published with the `1.12.1` release and pinned to its immutable commit. They describe this manual's released structure and runtime flows, not later Snapshot changes. Select a preview to open the SVG at the same release commit.
 
 ### Jackson 3 JSON column boundary
 
-[![Jackson 3 JSON column boundary](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-jackson3-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-jackson3-diagram-01.svg)
+[![Jackson 3 JSON column boundary](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/exposed-jackson3-diagram-01.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/exposed-jackson3-diagram-01.svg)
 
-_Release README: [`exposed/jackson3/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jackson3/README.md)_
+_Release README: [`exposed/jackson3/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/exposed/jackson3/README.md)_
 
 ### Jackson 3 JSON round trip
 
-[![Jackson 3 JSON round trip](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-jackson3-flow-02.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/docs/images/readme-diagrams/exposed-jackson3-flow-02.svg)
+[![Jackson 3 JSON round trip](https://raw.githubusercontent.com/bluetape4k/bluetape4k-exposed/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/exposed-jackson3-flow-02.png)](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/docs/images/readme-diagrams/exposed-jackson3-flow-02.svg)
 
-_Release README: [`exposed/jackson3/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/0b494a5fd1e083006046764757342b68a397e4c5/exposed/jackson3/README.md)_
+_Release README: [`exposed/jackson3/README.md`](https://github.com/bluetape4k/bluetape4k-exposed/blob/4cc2cce07087241ec24a597d8464615434ea2b81/exposed/jackson3/README.md)_
 
 <!-- release-readme-diagrams:end -->
 
