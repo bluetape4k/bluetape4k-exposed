@@ -3,8 +3,8 @@
 <desc id="desc">Spring Data coroutine repository scanning, direct proxy creation, mapper binding, suspend transactions, R2DBC database, and optional reactive cache health wiring.</desc>
 <defs>
   <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f2937" flood-opacity="0.10"/></filter>
-  <marker id="arrow" markerWidth="14" markerHeight="14" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#5d6f83" stroke="#5d6f83" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-  <marker id="arrow-5d6f83" markerWidth="14" markerHeight="14" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#5d6f83" stroke="#5d6f83" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+  <marker id="arrow" markerWidth="14" markerHeight="14" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 14 14" data-role="primary" data-tip-direction="positive-x"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#5d6f83" stroke="#5d6f83" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+  <marker id="arrow-5d6f83" markerWidth="14" markerHeight="14" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 14 14" data-role="primary" data-tip-direction="positive-x"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#5d6f83" stroke="#5d6f83" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
   <marker id="arrow-8a72d6" markerWidth="14" markerHeight="14" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#8a72d6" stroke="#8a72d6" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
   <style>
     .canvas{fill:#f7f9fc}.frame{fill:#fff;stroke:#d8e0ea;stroke-width:1.5}

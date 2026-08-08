@@ -3,8 +3,8 @@
   <desc id="desc">Repository contract map rebuilt from exposed-jdbc repository source files and README repository sections.</desc>
   <defs>
     <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#203040" flood-opacity="0.10"/></filter>
-    <marker id="arrow" viewBox="0 0 5 5" markerWidth="10" markerHeight="10" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5" fill="#536C85" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
-    <marker id="generalizationArrow" viewBox="0 0 5 5" markerWidth="18" markerHeight="16" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5" fill="#FFFFFF" stroke="#536C85" stroke-width="0.8" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="arrow" viewBox="0 0 5 5" markerWidth="10" markerHeight="10" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse" data-role="secondary" data-tip-direction="positive-x"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5" fill="#536C85" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
+    <marker id="generalizationArrow" viewBox="0 0 5 5" markerWidth="18" markerHeight="16" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse" data-role="uml-hollow" data-tip-direction="positive-x"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5" fill="#FFFFFF" stroke="#536C85" stroke-width="0.8" stroke-dasharray="none" style="stroke-dasharray:none!important"/></marker>
     <style>
       .canvas{fill:#F6F9FC}.decor{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3.2;filter:url(#shadow)}
       .innerFrame{fill:#FBFDFF;stroke:#D9E4EF;stroke-width:2}
@@ -16,10 +16,10 @@
       .connector{fill:none;stroke-width:2.6;marker-end:url(#arrow);stroke-linejoin:round;stroke-linecap:round}.generalization{marker-end:url(#generalizationArrow)}.dashed{stroke-dasharray:7 6}
       .pill{fill:#FFFFFF;stroke:#D7E2EC;stroke-width:1}
     </style>
-    <marker id="arrow-758297" viewBox="0 0 5 5" markerWidth="10" markerHeight="10" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5" fill="#758297" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="arrow-2e8f89" viewBox="0 0 5 5" markerWidth="10" markerHeight="10" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5" fill="#2E8F89" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="arrow-4f83bf" viewBox="0 0 5 5" markerWidth="10" markerHeight="10" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5" fill="#4F83BF" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
-    <marker id="arrow-b9851b" viewBox="0 0 5 5" markerWidth="10" markerHeight="10" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5" fill="#B9851B" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+    <marker id="arrow-758297" viewBox="0 0 5 5" markerWidth="10" markerHeight="10" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse" data-role="secondary" data-tip-direction="positive-x"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5" fill="#758297" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+    <marker id="arrow-2e8f89" viewBox="0 0 5 5" markerWidth="10" markerHeight="10" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse" data-role="secondary" data-tip-direction="positive-x"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5" fill="#2E8F89" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+    <marker id="arrow-4f83bf" viewBox="0 0 5 5" markerWidth="10" markerHeight="10" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse" data-role="secondary" data-tip-direction="positive-x"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5" fill="#4F83BF" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
+    <marker id="arrow-b9851b" viewBox="0 0 5 5" markerWidth="10" markerHeight="10" refX="4.5" refY="2.5" orient="auto" markerUnits="userSpaceOnUse" data-role="secondary" data-tip-direction="positive-x"><path d="M 0.5 0.5 L 4.5 2.5 L 0.5 4.5" fill="#B9851B" style="stroke-dasharray:none!important" stroke-dasharray="none"/></marker>
   </defs>
   <rect class="canvas" width="1760" height="1358"/>
   <rect class="decor" x="44" y="36" width="1672" height="1286" rx="34"/>

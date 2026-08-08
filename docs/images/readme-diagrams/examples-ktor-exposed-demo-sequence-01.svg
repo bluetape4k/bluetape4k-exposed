@@ -2,11 +2,11 @@
   <title id="title">Ktor Order Confirmation Sequence</title>
   <desc id="desc">Sequence diagram showing order lookup cache hit and miss, non-atomic Caffeine then PostgreSQL persistence, compensation invalidation on failure, and event buffer clearing only after publisher success.</desc>
   <defs>
-    <marker id="seqArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#327d91"/>
+    <marker id="seqArrow" viewBox="0 0 13.3333 13.3333" refX="9" refY="5" markerWidth="16" markerHeight="16" orient="auto" markerUnits="userSpaceOnUse" data-role="sequence" data-tip-direction="positive-x">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#327d91" stroke-dasharray="none"/>
     </marker>
-    <marker id="returnArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#9b7d54"/>
+    <marker id="returnArrow" viewBox="0 0 13.3333 13.3333" refX="9" refY="5" markerWidth="16" markerHeight="16" orient="auto" markerUnits="userSpaceOnUse" data-role="sequence" data-tip-direction="positive-x">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#9b7d54" stroke-dasharray="none"/>
     </marker>
     <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
       <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#20303a" flood-opacity="0.13"/>
