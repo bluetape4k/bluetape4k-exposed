@@ -1,139 +1,138 @@
-# Issue #316 - DDD Spring Modulith Exposed Sample Design
+# Issue #316 - DDD Spring Modulith Exposed 샘플 설계
 
-## Context
+## 배경
 
 Issue [#316](https://github.com/bluetape4k/bluetape4k-exposed/issues/316)
-asks for a public example that combines:
+은 다음을 결합한 public example을 요구한다:
 
-- DDD aggregate persistence with bluetape4k Exposed repositories.
-- Spring Modulith application-module boundaries.
-- Domain/application event publication with `@ApplicationModuleListener`.
-- Durable publication state through `:bluetape4k-exposed-spring-modulith`.
-- English and Korean README documentation when a new public example is added.
+- bluetape4k Exposed repository를 사용하는 DDD aggregate persistence.
+- Spring Modulith application-module boundary.
+- `@ApplicationModuleListener`를 사용하는 domain/application event publication.
+- `:bluetape4k-exposed-spring-modulith`를 통한 durable publication state.
+- 새 public example을 추가할 때 English 및 Korean README documentation.
 
-Current repository evidence:
+현재 repository 증거:
 
-- `settings.gradle.kts` auto-registers directories under `examples/`, so
-  `examples/ddd-spring-modulith-demo` becomes
-  `:examples-ddd-spring-modulith-demo`.
-- `.github/workflows/ci.yml` and `.github/workflows/nightly-tests.yml` run
-  example tests through explicit Gradle task lists, so a new example must be
-  added to both `test-examples` jobs and their Kover report commands.
-- `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/` already
-  provides Spring-neutral `AggregateRoot`, `AbstractAggregateRoot`, and
-  `DomainEvent` contracts.
-- `spring-boot/spring-modulith` already provides the Exposed-backed Spring
-  Modulith event-publication repository and tests a real
-  `@ApplicationModuleListener` path.
-- The related `exposed-workshop` issue #145 and PR #157 used the same
-  `orders :: events` named-interface pattern with positive and negative
-  `ApplicationModules.verify()` tests.
-- Context7 Spring Modulith documentation confirms
+- `settings.gradle.kts`는 `examples/` 아래 directory를 자동 등록하므로
+  `examples/ddd-spring-modulith-demo`는
+  `:examples-ddd-spring-modulith-demo`가 된다.
+- `.github/workflows/ci.yml`과 `.github/workflows/nightly-tests.yml`은 명시적인
+  Gradle task list로 example test를 실행하므로 새 example을 두
+  `test-examples` job과 Kover report command에 모두 추가해야 한다.
+- `exposed/core/src/main/kotlin/io/bluetape4k/exposed/core/ddd/`는 이미
+  Spring-neutral `AggregateRoot`, `AbstractAggregateRoot`, `DomainEvent`
+  contract를 제공한다.
+- `spring-boot/spring-modulith`는 이미 Exposed-backed Spring Modulith
+  event-publication repository를 제공하며 실제 `@ApplicationModuleListener`
+  path를 테스트한다.
+- 관련 `exposed-workshop` issue #145와 PR #157은 positive 및 negative
+  `ApplicationModules.verify()` test와 동일한 `orders :: events`
+  named-interface pattern을 사용했다.
+- Context7 Spring Modulith documentation은
   `ApplicationModules.of(Application::class.java).verify()`,
-  `@ApplicationModule(allowedDependencies = "order :: *")`,
-  Kotlin `@PackageInfo` metadata classes, `@NamedInterface`, and
-  `@ApplicationModuleListener` as current patterns.
+  `@ApplicationModule(allowedDependencies = "order :: *")`, Kotlin
+  `@PackageInfo` metadata class, `@NamedInterface`,
+  `@ApplicationModuleListener`를 현재 pattern으로 확인한다.
 
-## Approved Direction
+## 승인된 방향
 
-Create `examples/ddd-spring-modulith-demo`.
+`examples/ddd-spring-modulith-demo`를 생성한다.
 
-The user approved the next-issue plan after the #370 merge. #326 remains
-deferred because it was previously questioned as a possible exclusion and is a
-broader Ktor/R2DBC/cache expansion. #316 is the narrower continuation of the
-recent Spring Modulith and DDD work.
+사용자는 #370 merge 후 다음 issue 계획을 승인했다. #326은 이전에 제외 가능성이
+질문되었고 더 넓은 Ktor/R2DBC/cache 확장에 해당하므로 계속 deferred 상태다.
+#316은 최근 Spring Modulith 및 DDD 작업의 더 좁은 후속 작업이다.
 
-## Architecture
+## 아키텍처
 
-The example models an order-to-shipping handoff with two Spring Modulith
-application modules:
+이 example은 두 Spring Modulith application module을 사용해 order-to-shipping
+handoff를 모델링한다:
 
-- `orders`: accepts an order command, creates an aggregate, persists it with
-  Exposed, and records an `OrderAcceptedEvent`.
-- `shipping`: listens to `OrderAcceptedEvent` via
-  `@ApplicationModuleListener(id = "shipping.reserve-order")` and persists an
-  idempotent shipping reservation with its own Exposed table.
+- `orders`: order command를 수락하고 aggregate를 생성한 뒤 Exposed로 persist하고
+  `OrderAcceptedEvent`를 기록한다.
+- `shipping`: `@ApplicationModuleListener(id = "shipping.reserve-order")`로
+  `OrderAcceptedEvent`를 수신하고 자체 Exposed table에 idempotent shipping
+  reservation을 persist한다.
 
-The only exported dependency surface from `orders` is `orders.events`, marked
-with `@NamedInterface("events")`. The `shipping` module declares
-`@ApplicationModule(allowedDependencies = ["orders :: events"])` through a
-Kotlin `ModuleMetadata` class annotated with `@PackageInfo`.
+`orders`에서 export하는 유일한 dependency surface는
+`@NamedInterface("events")`로 표시한 `orders.events`다. `shipping` module은
+`@PackageInfo`가 붙은 Kotlin `ModuleMetadata` class를 통해
+`@ApplicationModule(allowedDependencies = ["orders :: events"])`를 선언한다.
 
-The aggregate uses `AbstractAggregateRoot<OrderId>` and emits
-`DomainEvent<OrderId>` payloads. The command service persists the aggregate in a
-Spring transaction, snapshots the recorded domain events, publishes that
-snapshot through Spring's `ApplicationEventPublisher`, and clears the aggregate
-buffer only after the transaction has successfully accepted the Spring Modulith
-publication handoff. The `publishEvent(...)` call is the handoff to Spring
-Modulith publication recording, not a generic durable outbox.
+aggregate는 `AbstractAggregateRoot<OrderId>`를 사용하고
+`DomainEvent<OrderId>` payload를 emit한다. command service는 Spring transaction
+안에서 aggregate를 persist하고 기록된 domain event를 snapshot한 뒤 Spring의
+`ApplicationEventPublisher`로 snapshot을 publish한다. aggregate buffer는
+transaction이 Spring Modulith publication handoff를 성공적으로 수락한 뒤에만
+비운다. `publishEvent(...)` 호출은 Spring Modulith publication recording으로의
+handoff이지 일반적인 durable outbox가 아니다.
 
-The Exposed Modulith publication repository owns durable listener publication
-state. The listener must use a stable listener id and deduplicate reservations
-by order id so restart republication or duplicate delivery does not create a
-second reservation. The sample config enables schema initialization through
-`bluetape4k.spring.modulith.exposed.initialize-schema=true` and uses a
-test-specific publication table name so tests stay isolated. That flag is for
-H2 sample/test execution only; production deployments should keep schema
-auto-initialization disabled and manage DDL with Flyway, Liquibase, or an
-equivalent migration process.
+Exposed Modulith publication repository는 durable listener publication state를
+소유한다. listener는 stable listener id를 사용하고 order id로 reservation을
+deduplicate해야 restart republication이나 duplicate delivery가 두 번째
+reservation을 만들지 않는다. sample config는
+`bluetape4k.spring.modulith.exposed.initialize-schema=true`로 schema
+initialization을 활성화하고 test-specific publication table name을 사용해
+test를 격리한다. 이 flag는 H2 sample/test 실행 전용이다. production deployment는
+schema auto-initialization을 비활성화하고 Flyway, Liquibase 또는 동등한 migration
+process로 DDL을 관리해야 한다.
 
-## Design Alternatives
+## 설계 대안
 
-### Option A - New focused example under `examples/ddd-spring-modulith-demo`
+### 옵션 A - `examples/ddd-spring-modulith-demo` 아래의 새 집중 example
 
-Selected.
+선택.
 
-Pros:
+장점:
 
-- Fits issue #316 exactly and keeps the example discoverable beside existing
-  public examples.
-- Reuses current repo modules instead of copying workshop code.
-- Gives CI and Nightly a clear single Gradle project to run.
-- Keeps Ktor/R2DBC/cache expansion out of this PR.
+- issue #316에 정확히 맞고 기존 public example 옆에서 example을 쉽게 찾을 수
+  있다.
+- workshop code를 복사하는 대신 현재 repo module을 재사용한다.
+- CI와 Nightly가 실행할 명확한 단일 Gradle project를 제공한다.
+- Ktor/R2DBC/cache 확장을 이 PR 범위에서 제외한다.
 
-Cons:
+단점:
 
-- Adds a new example module and workflow registration surface.
-- Requires bilingual README and diagram validation.
+- 새 example module과 workflow registration surface를 추가한다.
+- bilingual README 및 diagram validation이 필요하다.
 
-### Option B - Extend `spring-boot/spring-modulith` tests only
+### 옵션 B - `spring-boot/spring-modulith` test만 확장
 
-Rejected.
+거부.
 
-Pros:
+장점:
 
-- Smaller diff and faster local verification.
+- diff가 작고 local verification이 빠르다.
 
-Cons:
+단점:
 
-- Does not create the public DDD sample requested by the issue.
-- Keeps module-boundary guidance hidden in library tests instead of user-facing
-  documentation.
-- Does not exercise example registration and README conventions.
+- issue가 요청한 public DDD sample을 만들지 못한다.
+- module-boundary guidance가 user-facing documentation이 아닌 library test에
+  숨겨진다.
+- example registration 및 README convention을 검증하지 못한다.
 
-### Option C - Reuse or copy the `exposed-workshop` #145 module
+### 옵션 C - `exposed-workshop` #145 module을 재사용하거나 복사
 
-Rejected as a direct copy, partially borrowed as prior art.
+direct copy는 거부하고 prior art로 일부만 차용한다.
 
-Pros:
+장점:
 
-- Proven `orders :: events` boundary shape and negative verifier fixture.
+- 검증된 `orders :: events` boundary shape와 negative verifier fixture가 있다.
 
-Cons:
+단점:
 
-- Workshop code uses workshop package names and dependencies.
-- This repository should demonstrate bluetape4k-exposed DDD contracts and
-  `:bluetape4k-exposed-spring-modulith`, not only plain Exposed plus Modulith.
+- workshop code는 workshop package name과 dependency를 사용한다.
+- 이 repository는 plain Exposed와 Modulith만이 아니라 bluetape4k-exposed DDD
+  contract와 `:bluetape4k-exposed-spring-modulith`를 보여 줘야 한다.
 
-## Package And File Shape
+## package 및 file 구조
 
-Main package:
+주요 package:
 
 ```text
 io.bluetape4k.exposed.examples.modulith
 ```
 
-Expected files:
+예상 file:
 
 - `examples/ddd-spring-modulith-demo/build.gradle.kts`
 - `examples/ddd-spring-modulith-demo/README.md`
@@ -151,237 +150,238 @@ Expected files:
 - `docs/images/readme-diagrams/examples-ddd-spring-modulith-demo-architecture.svg`
 - `docs/images/readme-diagrams/examples-ddd-spring-modulith-demo-architecture.png`
 
-## Domain Model
+## domain model
 
-The domain stays intentionally small:
+domain은 의도적으로 작게 유지한다:
 
 - `OrderId`: opaque value object.
 - `OrderStatus`: `ACCEPTED`.
 - `Order`: aggregate root.
 - `AcceptOrderCommand`: input command.
-- `OrderAcceptedEvent`: exported event in `orders.events`; fields are
-  `aggregateId: OrderId`, `eventId: String`, and `occurredAt: Instant`.
-- `ShippingReservation`: consumer-side projection/reservation keyed by order id.
+- `OrderAcceptedEvent`: `orders.events`의 exported event이며 field는
+  `aggregateId: OrderId`, `eventId: String`, `occurredAt: Instant`다.
+- `ShippingReservation`: order id를 key로 하는 consumer-side
+  projection/reservation.
 
-Rules:
+규칙:
 
-- `orderKey` and `customerId` must be non-blank command input only.
-- Event payloads carry only opaque sample identifiers and minimal facts.
-  `OrderAcceptedEvent` must not persist customer-facing identifiers, natural
-  order keys, addresses, emails, tokens, credentials, secrets, or full aggregate
-  snapshots in the publication table.
-- Exposed tables and repositories are internal to their owning module.
-- `shipping` must not import `orders.internal` in the valid application.
-- The shipping listener must be idempotent: repeated `OrderAcceptedEvent`
-  delivery for the same order id leaves exactly one reservation.
-- A test-only invalid fixture must import `orders.internal` from `shipping` and
-  prove that `ApplicationModules.verify()` rejects the dependency.
+- `orderKey`와 `customerId`는 non-blank command input으로만 허용한다.
+- event payload는 opaque sample identifier와 minimal fact만 전달한다.
+  `OrderAcceptedEvent`는 publication table에 customer-facing identifier,
+  natural order key, address, email, token, credential, secret, full aggregate
+  snapshot을 persist하면 안 된다.
+- Exposed table과 repository는 소유 module 내부다.
+- valid application의 `shipping`은 `orders.internal`을 import하면 안 된다.
+- shipping listener는 idempotent여야 한다. 같은 order id에 대한 반복
+  `OrderAcceptedEvent` delivery는 reservation 하나만 남겨야 한다.
+- test-only invalid fixture는 `shipping`에서 `orders.internal`을 import하고
+  `ApplicationModules.verify()`가 dependency를 거부함을 입증해야 한다.
 
-All data classes must implement `Serializable` and define `serialVersionUID`.
-New public classes and functions need English KDoc where they are part of the
-example's reader-facing API.
+모든 data class는 `Serializable`을 구현하고 `serialVersionUID`를 정의해야 한다.
+example의 reader-facing API에 포함되는 새 public class와 function에는 English
+KDoc이 필요하다.
 
-## Persistence And Transaction Boundary
+## persistence 및 transaction boundary
 
-The sample uses H2 in PostgreSQL compatibility mode for local-first tests and
-docs. No external credentials or Testcontainers are required for this example.
+sample은 local-first test와 docs를 위해 PostgreSQL compatibility mode의 H2를
+사용한다. 이 example에는 external credential이나 Testcontainers가 필요하지
+않다.
 
-The command service runs inside a Spring transaction:
+command service는 Spring transaction 안에서 실행된다:
 
-1. Create or accept an order aggregate.
-2. Persist the aggregate with an Exposed JDBC repository.
-3. Snapshot aggregate domain events once with `domainEvents()`.
-4. Publish the snapshot with Spring `ApplicationEventPublisher` so Spring
-   Modulith records the listener publication in the same command transaction.
-5. After the transaction returns successfully, clear the aggregate event buffer.
-   If publishing, handoff recording, or the surrounding transaction fails, the
-   aggregate event buffer remains intact for caller-owned retry/discard handling.
+1. order aggregate를 생성하거나 수락한다.
+2. Exposed JDBC repository로 aggregate를 persist한다.
+3. `domainEvents()`로 aggregate domain event를 한 번 snapshot한다.
+4. Spring `ApplicationEventPublisher`로 snapshot을 publish해 Spring Modulith가
+   같은 command transaction에서 listener publication을 기록하게 한다.
+5. transaction이 성공적으로 반환된 후 aggregate event buffer를 비운다.
+   publish, handoff recording 또는 주변 transaction이 실패하면 caller-owned
+   retry/discard handling을 위해 aggregate event buffer를 그대로 유지한다.
 
-The intended boundary is explicit: order persistence and Spring Modulith
-publication-row creation are part of the command transaction. Shipping listener
-side effects run after the command transaction has accepted the event and must
-not be required for the command commit. If the command transaction rolls back
-after event snapshot but before commit, the test must prove that no order,
-shipping reservation, or publication row remains.
+의도한 boundary는 명확하다. order persistence와 Spring Modulith publication-row
+creation은 command transaction의 일부다. shipping listener side effect는
+command transaction이 event를 수락한 뒤 실행되며 command commit의 필수 조건이
+되어서는 안 된다. event snapshot 후 commit 전에 command transaction이
+rollback하면 order, shipping reservation, publication row가 남지 않음을 test로
+입증해야 한다.
 
-Spring Modulith records publication rows through the
-`:bluetape4k-exposed-spring-modulith` repository and invokes the shipping
-listener. The integration test verifies both the shipping reservation and the
-publication repository state against the Exposed-backed store. The happy path
-must have exactly one exported event and exactly one listener, and tests should
-assert exactly one publication state transition. The expected DB overhead is one
-order insert, one publication insert/update pair owned by Spring Modulith, and
-one shipping insert. Listener tests must use bounded waiting around asynchronous
-publication completion, target the existing 5 second local test window, and use
-thread-safe, per-context state instead of unbounded sleeps or immediate reads.
+Spring Modulith는 `:bluetape4k-exposed-spring-modulith` repository를 통해
+publication row를 기록하고 shipping listener를 호출한다. integration test는
+Exposed-backed store를 기준으로 shipping reservation과 publication repository
+state를 모두 검증한다. happy path에는 exported event 하나와 listener 하나만
+있어야 하며 test는 publication state transition 하나를 단언해야 한다. 예상 DB
+overhead는 order insert 하나, Spring Modulith가 소유하는 publication
+insert/update pair 하나, shipping insert 하나다. listener test는 asynchronous
+publication completion 주변에서 bounded waiting을 사용하고, 기존 5 second
+local test window를 대상으로 하며, 무제한 sleep이나 즉시 read 대신 thread-safe한
+context별 state를 사용해야 한다.
 
-Tests must isolate all mutable database state. Acceptable approaches are a
-unique H2 database per Spring context or randomized table names for orders,
-shipping reservations, and publication rows. Test resources must disable JUnit
-parallel execution for this module. Configured table names must be static
-code/test-owned identifiers matching `[A-Z][A-Z0-9_]*`; they must not be derived
-from request parameters, user input, or untrusted environment values.
+test는 변경 가능한 database state를 모두 격리해야 한다. 허용되는 방법은 Spring
+context마다 unique H2 database를 사용하거나 order, shipping reservation,
+publication row에 randomized table name을 사용하는 것이다. test resource는 이
+module에서 JUnit parallel execution을 비활성화해야 한다. configured table name은
+`[A-Z][A-Z0-9_]*`에 맞는 static code/test-owned identifier여야 하며 request
+parameter, user input, untrusted environment value에서 파생하면 안 된다.
 
-The negative Modulith fixture must use a distinct package root outside the
-valid application base package, for example
-`io.bluetape4k.exposed.examples.modulithinvalid`. Positive and negative
-verification must call separate `ApplicationModules.of(...)` entrypoints so the
-invalid fixture cannot contaminate the valid application scan.
+negative Modulith fixture는 valid application base package 밖의 별도 package
+root를 사용해야 한다. 예를 들면
+`io.bluetape4k.exposed.examples.modulithinvalid`다. invalid fixture가 valid
+application scan을 오염시키지 않도록 positive와 negative verification은 별도의
+`ApplicationModules.of(...)` entrypoint를 호출해야 한다.
 
-The publication table is trusted, app-owned internal state, not an external
-input channel. README guidance must state that database write access to the
-publication table is restricted to the application/migration owner and that
-event serializers must avoid unsafe polymorphic/default typing. The example
-uses one stable DTO event class under `orders.events`.
+publication table은 trusted app-owned internal state이며 external input channel이
+아니다. README guidance는 publication table에 대한 database write access가
+application/migration owner로 제한되고 event serializer가 unsafe
+polymorphic/default typing을 피해야 함을 명시해야 한다. example은
+`orders.events` 아래의 stable DTO event class 하나를 사용한다.
 
-## Build And Runtime Wiring
+## build 및 runtime wiring
 
-`examples/ddd-spring-modulith-demo/build.gradle.kts` must include:
+`examples/ddd-spring-modulith-demo/build.gradle.kts`에는 다음이 포함되어야 한다:
 
-- Spring Boot dependency platform and Spring Modulith BOM.
-- `application` and Kotlin Spring plugin.
+- Spring Boot dependency platform과 Spring Modulith BOM.
+- `application` 및 Kotlin Spring plugin.
 - `implementation(project(":bluetape4k-exposed-core"))`.
 - `implementation(project(":bluetape4k-exposed-spring-boot-jdbc"))`.
 - `implementation(project(":bluetape4k-exposed-spring-modulith"))`.
-- Exposed JDBC, Java time, Spring transaction, HikariCP, Spring Boot starter
-  JDBC, Spring Modulith starter/core/events, and H2 runtime.
-- Test dependencies for Spring Boot test, Spring Modulith test/core,
-  `bluetape4k-junit5`, `bluetape4k-assertions`, and Awaitility when bounded
-  listener polling needs it.
 
-The Spring context must expose:
+- Exposed JDBC, Java time, Spring transaction, HikariCP, Spring Boot starter
+  JDBC, Spring Modulith starter/core/events, H2 runtime.
+- Spring Boot test, Spring Modulith test/core,
+  `bluetape4k-junit5`, `bluetape4k-assertions`, bounded listener polling에
+  필요한 Awaitility용 test dependency.
+
+Spring context는 다음을 노출해야 한다:
 
 - `DataSource`.
-- `springTransactionManager` compatible with the Exposed Modulith
-  auto-configuration.
-- `EventSerializer` for `OrderAcceptedEvent`.
-- `EventPublicationRepository` from `:bluetape4k-exposed-spring-modulith`.
+- Exposed Modulith auto-configuration과 호환되는 `springTransactionManager`.
+- `OrderAcceptedEvent`용 `EventSerializer`.
+- `:bluetape4k-exposed-spring-modulith`의 `EventPublicationRepository`.
 
-## Operational Resources And Runbook
+## 운영 resource 및 runbook
 
-The example owns these local resources:
+example은 다음 local resource를 소유한다:
 
-| Resource | Owner | Local initialization | Cleanup / rollback |
+| resource | owner | local initialization | cleanup / rollback |
 | --- | --- | --- | --- |
-| H2 `DataSource` | Sample Spring context | Spring Boot test/application properties | Close Spring context; use unique database names per context |
-| Orders table | `orders.internal` repository | Sample schema initializer | Drop/delete in test cleanup; rollback leaves no rows |
-| Shipping reservations table | `shipping.internal` repository | Sample schema initializer | Drop/delete in test cleanup; idempotent order key prevents duplicates |
-| Modulith publication/archive tables | `:bluetape4k-exposed-spring-modulith` | `initialize-schema=true` for H2 sample/test only | Query `incomplete`, `completed`, `failed`, and `unloadable` rows; production uses migrations |
+| H2 `DataSource` | sample Spring context | Spring Boot test/application property | Spring context를 닫고 context마다 unique database name 사용 |
+| Orders table | `orders.internal` repository | sample schema initializer | test cleanup에서 drop/delete; rollback 후 row 없음 |
+| Shipping reservations table | `shipping.internal` repository | sample schema initializer | test cleanup에서 drop/delete; idempotent order key가 duplicate 방지 |
+| Modulith publication/archive table | `:bluetape4k-exposed-spring-modulith` | H2 sample/test 전용 `initialize-schema=true` | `incomplete`, `completed`, `failed`, `unloadable` row를 query; production은 migration 사용 |
 
-Operational documentation must include:
+운영 documentation에는 다음이 포함되어야 한다:
 
-- `bluetape4k.spring.modulith.exposed.initialize-schema=true` is sample/local
-  only. Production should keep it disabled and manage DDL through migrations.
-- Stable listener id: `shipping.reserve-order`.
-- Publication table/status query guidance for local diagnosis.
-- Micrometer meter name `bluetape4k.exposed.modulith.publications` and states
-  `incomplete`, `completed`, `failed`, and `unloadable`.
-- Failure triage:
-  - listener not invoked: check listener id, module scan, and publication row.
-  - publication incomplete/failed: inspect publication completion date and
-    listener exception path.
-  - unloadable event type: treat the row as app-owned repair data, verify class
-    name/package migration, and do not deserialize untrusted external rows.
+- `bluetape4k.spring.modulith.exposed.initialize-schema=true`는 sample/local
+  전용이다. production에서는 비활성화하고 migration으로 DDL을 관리해야 한다.
+- stable listener id: `shipping.reserve-order`.
+- local diagnosis를 위한 publication table/status query guidance.
+- Micrometer meter name `bluetape4k.exposed.modulith.publications`와
+  `incomplete`, `completed`, `failed`, `unloadable` state.
+- failure triage:
+  - listener가 호출되지 않음: listener id, module scan, publication row를
+    확인한다.
+  - publication이 incomplete/failed: publication completion date와 listener
+    exception path를 검사한다.
+  - unloadable event type: row를 app-owned repair data로 취급하고 class
+    name/package migration을 확인하며 신뢰할 수 없는 external row를
+    deserialize하지 않는다.
 
-## Documentation And Diagram
+## documentation 및 diagram
 
-The new public example gets both `README.md` and `README.ko.md` with language
-switches. The docs explain:
+새 public example에는 language switch가 있는 `README.md`와 `README.ko.md`를
+모두 추가한다. docs는 다음을 설명한다:
 
-- When to use this pattern.
-- Which boundary belongs to DDD, Spring Modulith, Exposed, and the Exposed
-  Modulith store.
-- How to run the example tests.
-- Why `orders.events` is the only exported named interface.
-- Why event payloads should remain minimal and non-sensitive.
-- Supported/not supported boundaries: JDBC-only, no R2DBC or suspend API, no
-  exactly-once guarantee, no durable outbox beyond Spring Modulith publication
-  rows, stable listener ids, idempotent consumers, unloadable event DTO/package
-  rename risk, and no direct cross-module repository access.
-- Migration from direct service/repository calls: keep repositories internal,
-  export only `orders.events`, move shipping side effects into an idempotent
-  `@ApplicationModuleListener(id = "...")`, and verify boundaries with
-  `ApplicationModules.verify()`.
+- 이 pattern을 사용할 시점.
+- DDD, Spring Modulith, Exposed, Exposed Modulith store가 각각 소유하는 boundary.
+- example test 실행 방법.
+- `orders.events`만 exported named interface인 이유.
+- event payload를 minimal하고 non-sensitive하게 유지해야 하는 이유.
+- supported/not supported boundary: JDBC-only, R2DBC 또는 suspend API 없음,
+  exactly-once guarantee 없음, Spring Modulith publication row 외 durable
+  outbox 없음, stable listener id, idempotent consumer, unloadable event
+  DTO/package rename risk, cross-module repository 직접 접근 없음.
+- direct service/repository call에서의 migration: repository는 internal로
+  유지하고 `orders.events`만 export하며 shipping side effect를 idempotent
+  `@ApplicationModuleListener(id = "...")`로 옮기고
+  `ApplicationModules.verify()`로 boundary를 검증한다.
 
-A README architecture diagram is required because the example is about
-cross-module ownership, not only API syntax. The diagram should show:
+이 example은 API syntax뿐 아니라 cross-module ownership을 다루므로 README
+architecture diagram이 필요하다. diagram에는 다음을 표시한다:
 
 - `orders` module ownership.
 - exported `orders.events` named interface.
 - `shipping` module allowed dependency.
-- Exposed order and shipping tables.
+- Exposed order 및 shipping table.
 - Exposed-backed Spring Modulith publication table.
-- A numbered flow for order transaction, publication row creation, listener
-  invocation, completion state, and retryable/incomplete state. A second
-  sequence diagram is allowed if the architecture diagram becomes too crowded.
+- order transaction, publication row creation, listener invocation, completion
+  state, retryable/incomplete state의 번호가 매겨진 flow. architecture diagram이
+  너무 복잡해지면 두 번째 sequence diagram을 추가해도 된다.
 
-The diagram must follow `bluetape4k-diagram` rules, render SVG to PNG with
-CairoSVG, and pass XML/render/visual inspection evidence.
+diagram은 `bluetape4k-diagram` 규칙을 따르고 CairoSVG로 SVG를 PNG로 렌더링하며
+XML/render/visual inspection 증거를 통과해야 한다.
 
-## Workflow Registration
+## workflow 등록
 
-`settings.gradle.kts` auto-registers the new example, but the following
-surfaces still need explicit verification or edits:
+`settings.gradle.kts`가 새 example을 자동 등록하지만 다음 surface는 여전히
+명시적인 검증 또는 수정이 필요하다:
 
-- `./gradlew projects` must list `:examples-ddd-spring-modulith-demo`.
-- `.github/workflows/ci.yml` `test-examples` task list and Kover report list
-  must include the new project.
-- `.github/workflows/nightly-tests.yml` `test-examples` task list and Kover
-  report list must include the new project.
-- Root `README.md` and `README.ko.md` contain example discovery tables and must
-  add the new DDD/Spring Modulith example row with the real Gradle verification
-  command.
-- No Maven publication or BOM/catalog constraint is expected for an example
-  module.
+- `./gradlew projects`에 `:examples-ddd-spring-modulith-demo`가 표시되어야 한다.
+- `.github/workflows/ci.yml`의 `test-examples` task list와 Kover report list에
+  새 project가 포함되어야 한다.
+- `.github/workflows/nightly-tests.yml`의 `test-examples` task list와 Kover
+  report list에 새 project가 포함되어야 한다.
+- root `README.md`와 `README.ko.md`에는 example discovery table이 있으므로
+  실제 Gradle verification command와 함께 새 DDD/Spring Modulith example
+  row를 추가해야 한다.
+- example module에는 Maven publication 또는 BOM/catalog constraint가 필요하지
+  않다.
 
-## Risks And Mitigations
+## 위험 및 완화
 
-| Risk | Mitigation |
+| 위험 | 완화 |
 | --- | --- |
-| Module verification passes because the invalid fixture is not imported | Use a separate invalid application root and assert `ApplicationModules.of(...).verify()` throws `Violations` containing `orders` and `internal`. |
-| Event publication test observes listener state but not durable publication state | Query `EventPublicationRepository` or the configured Exposed publication table in the integration test. |
-| Publication rows leak customer data | Keep `OrderAcceptedEvent` to opaque `OrderId`, `eventId`, and `occurredAt`; assert serialized rows do not contain `customerId`, natural order key, or secret-like payloads. |
-| Publication table is treated as untrusted input | Document it as app-owned internal state with restricted write access and stable DTO serialization only. |
-| Test schema creation is mistaken for production guidance | README must mark `initialize-schema=true` as H2/sample-only and recommend migration-managed production DDL. |
-| Restart republication creates duplicate shipping rows | Use stable `@ApplicationModuleListener(id = "shipping.reserve-order")`, make reservations unique by order id, and test duplicate delivery/republication behavior. |
-| Rollback leaves a publication row without an order | Add a rollback-path test that fails after event snapshot/publish attempt and verifies empty order, shipping, and publication state. |
-| Example accidentally teaches direct cross-context repository access | Keep repositories in `internal` packages and document `orders.events` as the only allowed surface. |
-| CI misses the new module | Add explicit CI and Nightly Gradle tasks and verify with `./gradlew projects`. |
-| Diagram drifts from source | Build diagram from this spec and source package names, then render and inspect PNG before PR. |
+| invalid fixture가 import되지 않아 module verification이 통과함 | 별도 invalid application root를 사용하고 `ApplicationModules.of(...).verify()`가 `orders`와 `internal`을 포함한 `Violations`를 던지는지 단언한다. |
+| event publication test가 durable publication state가 아닌 listener state만 관찰함 | integration test에서 `EventPublicationRepository` 또는 configured Exposed publication table을 query한다. |
+| publication row가 customer data를 노출함 | `OrderAcceptedEvent`를 opaque `OrderId`, `eventId`, `occurredAt`로 제한하고 serialized row에 `customerId`, natural order key, secret-like payload가 없는지 단언한다. |
+| publication table을 untrusted input으로 취급함 | app-owned internal state이며 write access가 제한되고 stable DTO serialization만 사용한다고 문서화한다. |
+| test schema creation을 production guidance로 오해함 | README에서 `initialize-schema=true`를 H2/sample 전용으로 표시하고 migration-managed production DDL을 권장한다. |
+| restart republication이 duplicate shipping row를 생성함 | stable `@ApplicationModuleListener(id = "shipping.reserve-order")`를 사용하고 order id로 reservation을 unique하게 만들며 duplicate delivery/republication을 테스트한다. |
+| rollback이 order 없는 publication row를 남김 | event snapshot/publish 시도 후 실패하는 rollback-path test를 추가하고 order, shipping, publication state가 비어 있는지 검증한다. |
+| example이 실수로 direct cross-context repository access를 가르침 | repository를 `internal` package에 두고 `orders.events`만 허용된 surface라고 문서화한다. |
+| CI가 새 module을 누락함 | CI 및 Nightly Gradle task를 명시적으로 추가하고 `./gradlew projects`로 검증한다. |
+| diagram이 source와 drift함 | 이 spec과 source package name으로 diagram을 만들고 PR 전에 PNG를 렌더링하고 검사한다. |
 
-## Acceptance Criteria
+## 인수 기준
 
-- `:examples-ddd-spring-modulith-demo` exists and is registered by Gradle.
-- The application context exposes the Exposed-backed
-  `EventPublicationRepository`.
-- The valid application passes `ApplicationModules.verify()`.
-- The invalid test fixture fails verification for a dependency on
-  `orders.internal`.
-- The order acceptance flow persists an order, publishes an
-  `OrderAcceptedEvent`, writes a shipping reservation, and uses the
-  Exposed-backed Modulith publication store.
-- The happy path uses one event, one listener, and one publication row/state
-  transition; benchmark or stress testing is intentionally out of scope for this
-  educational example.
-- Serialized publication rows contain only opaque event data and do not contain
-  customer-facing identifiers, natural order keys, addresses, emails, tokens,
-  credentials, or full aggregate snapshots.
-- Duplicate or restart-republished `OrderAcceptedEvent` delivery leaves exactly
-  one shipping reservation and a completed publication state.
-- A rollback-path test leaves no order, shipping reservation, or publication row
-  when the command transaction fails before commit.
-- A handoff failure or rollback-path test proves aggregate events are not
-  cleared before the transactionally recorded Modulith handoff is accepted.
-- README.md and README.ko.md explain the pattern and link the rendered diagram.
-- CI and Nightly example jobs include the new module.
-- Targeted test/build, workflow syntax, diagram validation, and diff hygiene
-  evidence are captured before PR.
+- `:examples-ddd-spring-modulith-demo`가 존재하고 Gradle에 등록된다.
+- application context가 Exposed-backed `EventPublicationRepository`를 노출한다.
+- valid application이 `ApplicationModules.verify()`를 통과한다.
+- invalid test fixture가 `orders.internal` dependency 검증에 실패한다.
+- order acceptance flow가 order를 persist하고 `OrderAcceptedEvent`를 publish하며
+  shipping reservation을 기록하고 Exposed-backed Modulith publication store를
+  사용한다.
+- happy path는 event 하나, listener 하나, publication row/state transition 하나를
+  사용한다. 이 educational example에서는 benchmark와 stress test를 의도적으로
+  범위에서 제외한다.
+- serialized publication row에는 opaque event data만 있고 customer-facing
+  identifier, natural order key, address, email, token, credential, full
+  aggregate snapshot이 없다.
+- duplicate 또는 restart-republished `OrderAcceptedEvent` delivery 후에도
+  shipping reservation은 정확히 하나이고 publication state는 completed다.
+- command transaction이 commit 전에 실패하면 rollback-path test가 order,
+  shipping reservation, publication row를 남기지 않는다.
+- handoff failure 또는 rollback-path test가 transactionally recorded Modulith
+  handoff가 수락되기 전에 aggregate event를 clear하지 않음을 입증한다.
+- README.md와 README.ko.md가 pattern을 설명하고 rendered diagram에 link한다.
+- CI와 Nightly example job에 새 module이 포함된다.
+- PR 전에 대상 test/build, workflow syntax, diagram validation, diff hygiene
+  증거를 수집한다.
 
-## Verification Plan
+## 검증 계획
 
 - RED test:
   `./gradlew :examples-ddd-spring-modulith-demo:test --no-configuration-cache --no-daemon --console=plain`
-- Named tests:
+- named test:
   - `application modules allow shipping to depend only on order events`
   - `boundary verifier rejects shipping dependency on order internals`
   - `accepting an order persists reservation through Modulith publication`
@@ -390,17 +390,17 @@ surfaces still need explicit verification or edits:
   - `restart republishes incomplete order event without duplicate reservation`
   - `failed command transaction leaves no order reservation or publication row`
   - `failed handoff keeps aggregate domain events recorded`
-- Targeted verification:
+- 대상 검증:
   `./gradlew :examples-ddd-spring-modulith-demo:test --no-configuration-cache --no-daemon --console=plain --rerun-tasks`
   `./gradlew :examples-ddd-spring-modulith-demo:build --no-configuration-cache --no-daemon --console=plain --rerun-tasks --warning-mode all`
-- Registration:
+- 등록:
   `./gradlew projects --no-configuration-cache --no-daemon --console=plain`
-- Workflow syntax:
+- workflow syntax:
   `actionlint .github/workflows/ci.yml .github/workflows/nightly-tests.yml`
-- Workflow registration grep:
+- workflow registration grep:
   `rg -n ":examples-ddd-spring-modulith-demo:(test|koverXmlReport)" .github/workflows/ci.yml .github/workflows/nightly-tests.yml`
-- Diagram:
+- diagram:
   `xmllint --noout docs/images/readme-diagrams/examples-ddd-spring-modulith-demo-architecture.svg`
   `/Users/debop/.local/bin/cairosvg docs/images/readme-diagrams/examples-ddd-spring-modulith-demo-architecture.svg -o docs/images/readme-diagrams/examples-ddd-spring-modulith-demo-architecture.png -s 2`
-- Diff hygiene:
+- diff hygiene:
   `git diff --check`
