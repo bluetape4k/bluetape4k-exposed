@@ -5,9 +5,7 @@
     <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%">
       <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#203040" flood-opacity="0.12"/>
     </filter>
-    <marker id="arrow" viewBox="0 0 12 10" markerWidth="14" markerHeight="14" refX="11" refY="5" orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M 1 1 L 6.5 3.2 Q 11 5 6.5 6.8 L 1 9" fill="#536C85" stroke-dasharray="none" style="stroke-dasharray:none!important"/>
-    </marker>
+    <marker id="arrow" viewBox="0 0 12 10" markerWidth="14" markerHeight="14" refX="11" refY="5" orient="auto" markerUnits="userSpaceOnUse" data-role="primary" data-tip-direction="positive-x"><path d="M 0.96 1 L 11.04 5 L 0.96 9 Z" fill="#536C85" stroke="#536C85" stroke-width="0" stroke-dasharray="none"/></marker>
     <style>
       .canvas{fill:#F6F9FC}
       .panel{fill:#FFFFFF;stroke:#C7D7E7;stroke-width:3;filter:url(#shadow)}
@@ -26,9 +24,7 @@
       .arrow{fill:none;stroke:#536C85;stroke-width:2.4;marker-end:url(#arrow);stroke-linecap:round;stroke-linejoin:round}
       .bidir{fill:none;stroke:#536C85;stroke-width:2.4;marker-end:url(#arrow);stroke-linecap:round;stroke-linejoin:round}
     </style>
-    <marker id="arrow-536c85" viewBox="0 0 12 10" markerWidth="14" markerHeight="14" refX="11" refY="5" orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M 1 1 L 6.5 3.2 Q 11 5 6.5 6.8 L 1 9" fill="#536C85" style="stroke-dasharray:none!important" stroke-dasharray="none"/>
-    </marker>
+    <marker id="arrow-536c85" viewBox="0 0 12 10" markerWidth="14" markerHeight="14" refX="11" refY="5" orient="auto" markerUnits="userSpaceOnUse" data-role="primary" data-tip-direction="positive-x"><path d="M 0.96 1 L 11.04 5 L 0.96 9 Z" fill="#536C85" stroke="#536C85" stroke-width="0" stroke-dasharray="none"/></marker>
   </defs>
 
   <rect class="canvas" width="1600" height="1316"/>
