@@ -1,25 +1,25 @@
-# README Hero And Architecture Refresh
+# README Hero 및 아키텍처 갱신
 
-## Context
+## 배경
 
-The root README had feature and module lists but did not show the full
-repository architecture at the entrypoint.
+루트 README에는 기능과 module 목록은 있었지만 entrypoint에서 전체 repository
+architecture를 보여주지 않았다.
 
-## Decision
+## 결정
 
-Store the generated Exposed workbench image in `docs/assets/exposed-workbench.png`
-and add a root Mermaid architecture diagram covering core repositories,
-cross-cutting modules, dialect extensions, and Spring Boot 4 integration.
+생성한 Exposed workbench 이미지를 `docs/assets/exposed-workbench.png`에 저장하고,
+core repository, cross-cutting module, dialect extension, Spring Boot 4 통합을
+포함하는 루트 Mermaid architecture diagram을 추가한다.
 
-## Outcome
+## 결과
 
-Both README locales now present the project purpose, feature scope, visual hero,
-and repository architecture before quick-start examples.
+두 README locale 모두 이제 quick-start 예제보다 먼저 project purpose, feature
+scope, visual hero, repository architecture를 제시한다.
 
-## Verification
+## 검증
 
-- Confirmed the generated asset exists as a PNG under `docs/assets`.
-- Verified both README locales reference the shared image path.
+- 생성한 asset이 `docs/assets` 아래 PNG로 존재하는지 확인했다.
+- 두 README locale이 공유 image path를 참조하는지 검증했다.
 
 ## Future Guidance
 
