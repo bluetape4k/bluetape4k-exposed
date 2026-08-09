@@ -59,6 +59,7 @@ logs/
 
 # Git Worktrees
 .worktrees/
+.bluetape/
 
 # Eclipse
 .project
