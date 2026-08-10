@@ -48,7 +48,7 @@ object UserContext {
     /**
      * Virtual Thread / Structured Concurrency 환경에서 사용자명을 전파하는 [ScopedValue]입니다.
      *
-     * `ScopedValue.where(...).call(...)` 스코프 내에서만 유효하며,
+     * `ScopedValue.where(...).run(...)` 스코프 내에서만 유효하며,
      * 해당 스코프가 종료되면 자동으로 이전 값으로 복원됩니다.
      */
     val SCOPED_USER: ScopedValue<String> = ScopedValue.newInstance()
@@ -65,7 +65,7 @@ object UserContext {
      * [ScopedValue]와 [ThreadLocal]을 동시에 설정하고 [block]을 실행합니다.
      *
      * Virtual Thread 환경에서 권장되는 방법입니다.
-     * [ScopedValue]는 `Callable` 경계 내에서 전파되며,
+     * [ScopedValue]는 `Runnable` 경계 내에서 전파되며,
      * `finally` 블록에서 이전 [ThreadLocal] 값을 복원합니다.
      *
      * @param username 이 블록 내에서 사용할 사용자명
@@ -76,7 +76,13 @@ object UserContext {
         val prev = THREAD_LOCAL_USER.get()
         THREAD_LOCAL_USER.set(username)
         return try {
-            ScopedValue.where(SCOPED_USER, username).call(block)
+            // ScopedValue.Carrier.call(Callable)은 JDK 25에서 CallableOp으로
+            // 변경되어 Kotlin의 함수형 타입 추론이 깨지므로 run + capture를 사용합니다.
+            var captured: Result<T>? = null
+            ScopedValue.where(SCOPED_USER, username).run {
+                captured = runCatching { block() }
+            }
+            checkNotNull(captured) { "ScopedValue.Carrier.run did not execute block" }.getOrThrow()
         } finally {
             if (prev != null) THREAD_LOCAL_USER.set(prev) else THREAD_LOCAL_USER.remove()
         }

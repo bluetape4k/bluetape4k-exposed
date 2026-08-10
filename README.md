@@ -1,8 +1,8 @@
 # bluetape4k-exposed
 
 [![CI](https://github.com/bluetape4k/bluetape4k-exposed/actions/workflows/ci.yml/badge.svg)](https://github.com/bluetape4k/bluetape4k-exposed/actions/workflows/ci.yml)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.3-7F52FF?logo=kotlin)](https://kotlinlang.org)
-[![JVM](https://img.shields.io/badge/JVM-21-ED8B00?logo=openjdk)](https://openjdk.org)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.4-7F52FF?logo=kotlin)](https://kotlinlang.org)
+[![JVM](https://img.shields.io/badge/JVM-25-ED8B00?logo=openjdk)](https://openjdk.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 English | [한국어](README.ko.md)
@@ -645,8 +645,8 @@ readiness triage, rollback, and non-goals.
 
 ## Requirements
 
-- JVM 21+
-- Kotlin 2.3+
+- JVM 25+
+- Kotlin 2.4+
 - JetBrains Exposed 1.3+
 
 ## License
