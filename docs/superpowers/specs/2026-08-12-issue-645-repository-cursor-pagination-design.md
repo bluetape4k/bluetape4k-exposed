@@ -90,7 +90,16 @@ data class ExposedCursorPage<T, C : Comparable<C>>(
     val content: List<T>,
     val nextCursor: C?,
     val hasNext: Boolean,
-)
+) {
+    init {
+        require(hasNext || nextCursor == null) {
+            "nextCursor must be null when hasNext is false"
+        }
+        require(!hasNext || (content.isNotEmpty() && nextCursor != null)) {
+            "hasNext requires non-empty content and a nextCursor"
+        }
+    }
+}
 ```
 
 계약은 다음과 같다.
@@ -288,7 +297,9 @@ JDBC와 R2DBC 각각:
 
 - 비정상적으로 큰 `pageSize`는 `pageSize + 1` 메모리와 DB limit 비용을
   키우므로 상한은 overflow 방지에만 두고 caller가 운영 상한을 정해야 한다.
-- ID 비교 가능성은 Kotlin 타입 시스템으로 강제하지 않으므로 runtime
-  validation과 문서가 함께 필요하다.
+- extension의 `ID : Comparable<ID>` bound는 cursor 값의 비교 가능성을
+  compile time에 보장하지만, `IdTable`의 underlying column type과
+  `extractId`가 일치하는지는 repository 구현자가 보장해야 한다. adapter의
+  checked cast가 잘못된 table 구성을 즉시 감지한다.
 - snapshot isolation을 제공하지 않으므로 동일 순회 중 데이터 변경의
   가시성은 DB transaction isolation과 caller의 책임이다.
