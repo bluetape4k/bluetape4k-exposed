@@ -226,6 +226,32 @@ JDBC와 R2DBC 각각:
 단위/통합 테스트는 저장소의 기존 JUnit 5, Kluent/bluetape4k assertion,
 `runSuspendIO` 규칙을 따른다.
 
+테스트 fixture와 실행 기준:
+
+- `exposed/jdbc/src/test/kotlin/io/bluetape4k/exposed/jdbc/repository/`
+  아래에 cursor 전용 fixture를 두고 auto-increment에 의존하지 않는
+  `[1, 3, 7, 20]` sparse ID를 구성한다. R2DBC도 같은 ID 집합과 mapper
+  계약을 사용한다.
+- JDBC/R2DBC 각각에서 page 사이 cursor 행 삭제, cursor 뒤 삽입, predicate
+  일치 행 삽입을 별도 transaction/connection으로 재현하고 stable-position
+  결과를 고정한다. snapshot 일관성을 주장하지 않는다.
+- 기존 SQL logger/counter 선례를 재사용해 cursor 호출이 COUNT 0회,
+  bounded SELECT 1회인지와 strict `>`/`<`, predicate AND, 동일 order,
+  `LIMIT pageSize + 1`을 검증한다.
+- `Long`, `Int`, `String`, `java.util.UUID`, Kotlin `Uuid`는 compile 및
+  integration matrix로 검증하고, `CompositeID`/비교 불가능 custom ID는
+  `ID : Comparable<ID>` extension이 제공되지 않음을 compile fixture로
+  확인한다.
+- R2DBC cancellation 테스트는 row mapping 중 `CancellationException`을
+  발생시켜 원래 예외 재전파, rollback, connection release, 취소 후 같은
+  pool의 후속 query 성공을 검증한다.
+- 일반 PR 경로는 H2에서
+  `./gradlew :bluetape4k-exposed-core:test :bluetape4k-exposed-jdbc:test :bluetape4k-exposed-r2dbc:test --no-parallel`
+  을 순차 실행하고, PostgreSQL/Testcontainers 검증은 nightly topology에
+  맞춰 별도로 실행한다. 이 저장소에는 전용 ABI plugin이 없으므로
+  `findPage` 기존 시그니처를 유지한 compile/API surface 검증과
+  `javap`/`git diff` read-back을 ABI evidence로 남긴다.
+
 ## 문서 및 예제
 
 - `exposed/core/README.md`와 `README.ko.md`에 DTO와 cursor invariants를
