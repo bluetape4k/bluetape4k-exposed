@@ -172,7 +172,39 @@ suspendTransaction {
 }
 ```
 
-### 2. Implementing AuditableR2dbcRepository
+### 2. Typed cursor pagination
+
+Use the suspending `findCursorPage` extension inside the caller-owned `suspendTransaction`. It returns a
+materialized `ExposedCursorPage`, so the row mapping and connection release complete before the transaction
+boundary closes.
+
+```kotlin
+import io.bluetape4k.exposed.r2dbc.repository.findCursorPage
+import org.jetbrains.exposed.v1.core.SortOrder
+
+suspendTransaction {
+    val first = repo.findCursorPage(
+        pageSize = 20,
+        predicate = { ActorTable.lastName eq "Depp" },
+    )
+    val next = repo.findCursorPage(
+        pageSize = 20,
+        cursor = first.nextCursor,
+        sortOrder = SortOrder.ASC,
+        predicate = { ActorTable.lastName eq "Depp" },
+    )
+}
+```
+
+The cursor is the raw non-null primary-key value. Each call issues one bounded `SELECT` with
+`LIMIT pageSize + 1`, never a count or offset query, and accepts `pageSize` from 1 through 10,000.
+All six `SortOrder` variants are supported; ascending variants use strict `>`, descending variants use
+strict `<`, and null-placement variants only preserve direction. The caller owns token encoding, signing,
+expiry, tenant/authorization scope, and reuse of the same sort and predicate. There is no snapshot guarantee.
+The default predicate is `Op.TRUE`, so soft-deleted rows require an explicit active predicate. Cancellation
+rethrows `CancellationException` and releases the connection through the surrounding transaction/pool.
+
+### 3. Implementing AuditableR2dbcRepository
 
 ```kotlin
 import io.bluetape4k.exposed.core.auditable.AuditableLongIdTable
@@ -220,7 +252,7 @@ suspendTransaction {
 `updatedBy` argument. If `updatedBy` is omitted, the value is captured from `UserContext.getCurrentUser()`.
 Plain `updateById()` and `updateAll()` do not set audit columns.
 
-### 3. Implementing SoftDeletedR2dbcRepository
+### 4. Implementing SoftDeletedR2dbcRepository
 
 ```kotlin
 import io.bluetape4k.exposed.core.dao.id.SoftDeletedIdTable
@@ -269,7 +301,7 @@ suspendTransaction {
 }
 ```
 
-### 4. Batch insert / Upsert
+### 5. Batch insert / Upsert
 
 ```kotlin
 suspendTransaction {
@@ -293,7 +325,7 @@ Because
 `BatchInsertOnConflictDoNothing` does not pin the conflict target to a specific column on PostgreSQL-compatible databases, it works with tables that use unique columns or indexes other than
 `id`.
 
-### 5. Common Table Expressions
+### 6. Common Table Expressions
 
 ```kotlin
 import io.bluetape4k.exposed.core.CteTable
@@ -339,6 +371,7 @@ parameters from CTE predicates keep their binding order.
 | `findByFieldOrNull(field, value)`     | yes     | `E?`             | First result matching a specific column |
 | `findAllByIds(ids)`                   | no      | `Flow<E>`        | Find multiple entities by IDs           |
 | `findPage(pageNumber, pageSize, ...)` | yes     | `ExposedPage<E>` | Paginated query                         |
+| `findCursorPage(pageSize, cursor, ...)` | yes   | `ExposedCursorPage<E, ID>` | Typed primary-key cursor page      |
 | `deleteById(id)`                      | yes     | `Int`            | Delete by ID                            |
 | `deleteAll(op)`                       | yes     | `Int`            | Delete matching records                 |
 | `deleteAllByIds(ids)`                 | yes     | `Int`            | Delete multiple records by IDs          |

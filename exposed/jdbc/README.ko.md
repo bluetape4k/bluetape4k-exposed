@@ -217,7 +217,40 @@ transaction {
 }
 ```
 
-### 6. 배치 삽입 / Upsert
+### 6. 타입이 있는 커서 페이징
+
+전체 개수와 offset보다 기본 키 위치를 기준으로 안정적으로 다음 구간을 읽고 싶다면
+`findCursorPage`를 사용합니다. 저장소는 계속 호출자가 소유한 JDBC `transaction {}` 안에서 실행됩니다.
+
+```kotlin
+import io.bluetape4k.exposed.jdbc.repository.findCursorPage
+import org.jetbrains.exposed.v1.core.SortOrder
+
+transaction {
+    val first = repo.findCursorPage(
+        pageSize = 20,
+        predicate = { UserTable.name like "Hong%" },
+    )
+    val next = repo.findCursorPage(
+        pageSize = 20,
+        cursor = first.nextCursor,
+        sortOrder = SortOrder.ASC,
+        predicate = { UserTable.name like "Hong%" },
+    )
+}
+```
+
+이 확장은 `IdTable.id`의 원시 값을 커서로 사용하고 오름차순/내림차순에 따라 엄격한 `>`/`<` 경계를
+적용합니다. 여섯 가지 `SortOrder` 변형을 모두 허용하지만 기본 키가 null이 아니므로 null 배치
+변형은 방향만 유지합니다. 한 번의 호출은 `LIMIT pageSize + 1`을 사용하는 제한된 SELECT 하나만
+실행하며 count나 offset 쿼리를 실행하지 않습니다. `pageSize` 범위는 1부터 10,000까지입니다.
+`hasNext`와 `nextCursor`의 불변식은 `ExposedCursorPage` 문서와 같습니다.
+
+커서 토큰의 인코딩, 서명, 만료, tenant/권한 범위, 같은 정렬과 predicate의 재사용은 호출자 책임입니다.
+호출 사이의 snapshot은 보장하지 않습니다. 기본 predicate는 `Op.TRUE`이므로 논리 삭제 저장소는
+활성 행 조건을 명시해야 합니다. `findPage`와 Spring Batch keyset reader는 별도 계약으로 유지됩니다.
+
+### 7. 배치 삽입 / Upsert
 
 ```kotlin
 transaction {
@@ -237,7 +270,7 @@ transaction {
 }
 ```
 
-### 7. Common Table Expression
+### 8. Common Table Expression
 
 ```kotlin
 import io.bluetape4k.exposed.core.CteTable
@@ -281,6 +314,7 @@ prepared parameter 바인딩 순서가 유지됩니다.
 | `findByField(field, value)`           | 특정 컬럼 값으로 조회             |
 | `findAllByIds(ids)`                   | 여러 ID로 일괄 조회             |
 | `findPage(pageNumber, pageSize, ...)` | 페이징 조회                   |
+| `findCursorPage(pageSize, cursor, ...)` | 타입이 있는 기본 키 커서 조회       |
 | `deleteById(id)`                      | ID로 삭제                   |
 | `deleteByIdIgnore(id)`                | ID로 삭제 (예외 무시)           |
 | `deleteAll(op)`                       | 조건에 맞는 레코드 삭제            |

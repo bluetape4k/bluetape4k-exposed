@@ -294,6 +294,10 @@ JDBC와 R2DBC 각각:
   기존 `findActivePage` convenience API는 변경하지 않는다.
 - 기존 offset `findPage`와 Spring Batch keyset reader는 별도 계약임을
   migration note에서 명확히 한다.
+- `docs/manual/**`는 현재 공개 안정 버전 `1.12.1`의 immutable release ref에
+  고정되어 있으므로 이 개발 기능 PR에서는 수정하지 않는다. 1.13.0 release
+  promotion 단계에서 module landing과 repository-patterns EN/KO 페이지를
+  같은 계약으로 갱신하고, 그때 release-tree validator를 통과시킨다.
 - 이번 변경은 diagram geometry를 바꾸지 않으므로 diagram asset 생성은
   하지 않는다. 텍스트 locale parity는 검증한다.
 

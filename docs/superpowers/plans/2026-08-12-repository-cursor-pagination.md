@@ -21,9 +21,7 @@
 - Modify: `exposed/core/README.md`, `exposed/core/README.ko.md` — DTO와 typed cursor 공통 계약.
 - Modify: `exposed/jdbc/README.md`, `exposed/jdbc/README.ko.md` — JDBC 사용 예와 count/transport 책임.
 - Modify: `exposed/r2dbc/README.md`, `exposed/r2dbc/README.ko.md` — suspend 사용 예와 cancellation 경계.
-- Modify: `docs/manual/en/modules/bluetape4k-exposed-jdbc/repository-patterns.md`, `docs/manual/ko/modules/bluetape4k-exposed-jdbc/repository-patterns.md` — JDBC manual source of truth.
-- Modify: `docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md`, `docs/manual/ko/modules/bluetape4k-exposed-r2dbc/repository-patterns.md` — R2DBC manual source of truth.
-- Modify: `docs/manual/en/modules/bluetape4k-exposed-core.md`, `docs/manual/ko/modules/bluetape4k-exposed-core.md`, `docs/manual/en/modules/bluetape4k-exposed-jdbc.md`, `docs/manual/ko/modules/bluetape4k-exposed-jdbc.md`, `docs/manual/en/modules/bluetape4k-exposed-r2dbc.md`, `docs/manual/ko/modules/bluetape4k-exposed-r2dbc.md` — landing API discoverability and release-pinned contract summary.
+- Defer: `docs/manual/**` — stable 1.12.1 landing/chapter pages are immutable release-pinned sources; promote the same contract during the 1.13.0 release-manual gate.
 - Create: `docs/superpowers/lessons/2026-08-12-issue-645-repository-cursor-pagination.md` — 구현 중 발견한 Kotlin/Exposed 계약과 재발 방지 규칙.
 
 ### Task 1: DTO 실패 테스트와 최소 구현
@@ -269,9 +267,9 @@ git add exposed/r2dbc/src/main/kotlin/io/bluetape4k/exposed/r2dbc/repository/R2d
 git commit -m "R2DBC 저장소에 typed cursor 페이지를 추가한다"
 ```
 
-### Task 4: EN/KO README와 manual을 계약에 맞게 갱신한다
+### Task 4: EN/KO module README를 계약에 맞게 갱신한다
 
-**Files:** six README pairs and six release-pinned landing/manual pairs listed in the file map.
+**Files:** `exposed/core`, `exposed/jdbc`, and `exposed/r2dbc` README pairs. Stable `docs/manual/**` remains unchanged until 1.13.0 promotion.
 
 - [ ] **Step 1: 각 locale에 동일한 의미의 typed cursor section을 추가한다.**
 
@@ -292,7 +290,8 @@ Document primary-key stable position, all six `SortOrder` variants, strict bound
 
 ```bash
 git diff --check
-rg -n "findCursorPage|ExposedCursorPage|nextCursor|10,000|10_000|cursor" exposed/core/README.md exposed/core/README.ko.md exposed/jdbc/README.md exposed/jdbc/README.ko.md exposed/r2dbc/README.md exposed/r2dbc/README.ko.md docs/manual/en/modules/bluetape4k-exposed-core.md docs/manual/ko/modules/bluetape4k-exposed-core.md docs/manual/en/modules/bluetape4k-exposed-jdbc.md docs/manual/ko/modules/bluetape4k-exposed-jdbc.md docs/manual/en/modules/bluetape4k-exposed-r2dbc.md docs/manual/ko/modules/bluetape4k-exposed-r2dbc.md docs/manual/en/modules/bluetape4k-exposed-jdbc/repository-patterns.md docs/manual/ko/modules/bluetape4k-exposed-jdbc/repository-patterns.md docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md docs/manual/ko/modules/bluetape4k-exposed-r2dbc/repository-patterns.md
+rg -n "findCursorPage|ExposedCursorPage|nextCursor|10,000|10_000|cursor" exposed/core/README.md exposed/core/README.ko.md exposed/jdbc/README.md exposed/jdbc/README.ko.md exposed/r2dbc/README.md exposed/r2dbc/README.ko.md
+git diff --quiet -- docs/manual
 ```
 
 Expected: no whitespace errors; every EN/KO pair contains the same API names, examples, exclusions, and cursor invariants.
@@ -300,7 +299,7 @@ Expected: no whitespace errors; every EN/KO pair contains the same API names, ex
 - [ ] **Step 3: documentation 변경을 Lore commit으로 기록한다.**
 
 ```bash
-git add exposed/core/README.md exposed/core/README.ko.md exposed/jdbc/README.md exposed/jdbc/README.ko.md exposed/r2dbc/README.md exposed/r2dbc/README.ko.md docs/manual/en/modules/bluetape4k-exposed-core.md docs/manual/ko/modules/bluetape4k-exposed-core.md docs/manual/en/modules/bluetape4k-exposed-jdbc.md docs/manual/ko/modules/bluetape4k-exposed-jdbc.md docs/manual/en/modules/bluetape4k-exposed-r2dbc.md docs/manual/ko/modules/bluetape4k-exposed-r2dbc.md docs/manual/en/modules/bluetape4k-exposed-jdbc/repository-patterns.md docs/manual/ko/modules/bluetape4k-exposed-jdbc/repository-patterns.md docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md docs/manual/ko/modules/bluetape4k-exposed-r2dbc/repository-patterns.md
+git add exposed/core/README.md exposed/core/README.ko.md exposed/jdbc/README.md exposed/jdbc/README.ko.md exposed/r2dbc/README.md exposed/r2dbc/README.ko.md
 git commit -m "cursor 페이지 사용 계약을 문서와 예제에 반영한다"
 ```
 
@@ -366,7 +365,7 @@ git commit -m "cursor 페이지 구현 근거와 교훈을 기록한다"
 - [ ] Sparse IDs and separate-connection insert/delete tests prove stable-position semantics without claiming snapshots.
 - [ ] `Long`, `Int`, `String`, and UUID-compatible IDs remain documented; `CompositeID` remains explicitly out of scope.
 - [ ] Both adapters enforce `1..10_000`; all six `SortOrder` variants and SoftDeleted active predicates are tested.
-- [ ] EN/KO README/manual pairs are parity-checked, and no diagram geometry/assets are changed.
+- [ ] EN/KO module README pairs are parity-checked; stable manual pairs remain unchanged and no diagram geometry/assets are changed.
 - [ ] Cancellation is rethrown unchanged and connection reuse is tested.
 - [ ] Final DoD maps every #645 acceptance item to a test file, CI job, and manual evidence path.
 - [ ] No placeholder, TODO, or unbounded broad catch remains in the plan or implementation.
