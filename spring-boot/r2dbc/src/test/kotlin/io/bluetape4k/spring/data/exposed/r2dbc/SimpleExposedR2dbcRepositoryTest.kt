@@ -1,5 +1,6 @@
 package io.bluetape4k.spring.data.exposed.r2dbc
 
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
@@ -18,10 +19,13 @@ import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.UserR2dbcRepository
 import io.bluetape4k.support.requireNotNull
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
@@ -328,7 +332,40 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
             val saved = userRepository.saveAll(usersFlow).toList()
             saved shouldHaveSize 2
             saved.all { it.id != null }.shouldBeTrue()
+            saved.map { it.name } shouldBeEqualTo listOf("Alice", "Bob")
             userRepository.count() shouldBeEqualTo 2L
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `saveAll with Flow emits before collecting the remaining input`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, Users) {
+            val firstSaved = withTimeout(5_000) {
+                userRepository.saveAll(kotlinx.coroutines.flow.flow {
+                    emit(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
+                    awaitCancellation()
+                }).first()
+            }
+
+            firstSaved.name shouldBeEqualTo "Alice"
+            firstSaved.id.shouldNotBeNull()
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `saveAll with Flow rolls back when input fails`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, Users, configure = { useNestedTransactions = true }) {
+            val failure = assertFailsWith<IllegalStateException> {
+                userRepository.saveAll(kotlinx.coroutines.flow.flow {
+                    emit(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
+                    error("upstream failure")
+                }).toList()
+            }
+
+            failure.message shouldBeEqualTo "upstream failure"
+            userRepository.count() shouldBeEqualTo 0L
         }
     }
 

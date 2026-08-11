@@ -404,14 +404,20 @@ fun findAll(op: () -> Op<Boolean>): Flow<User>
 
 ```kotlin
 // 여러 엔티티 저장
-suspend fun saveAll(entities: Iterable<User>): Flow<User>
+fun saveAll(entities: Iterable<User>): Flow<User>
 
-// Flow로 저장 (백프레셔)
-suspend fun saveAll(entityStream: Flow<User>): Flow<User>
+// Flow로 저장 (bounded, 백프레셔 인식)
+fun saveAll(entityStream: Flow<User>): Flow<User>
 
 // 여러 개 삭제
 suspend fun deleteAllById(ids: Iterable<Long>)
 ```
+
+`saveAll(entityStream: Flow<User>)`는 cold `Flow`입니다. 입력과 출력 전체를 컬렉션으로
+구체화하지 않고 엔티티를 순차적으로 저장한 뒤, 동일한 Exposed 트랜잭션에서 저장된
+엔티티를 하나씩 방출합니다. 반환된 `Flow`를 collect해야 작업이 시작되며, 정상적으로
+완료되면 트랜잭션을 커밋하고 취소나 예외가 발생하면 롤백합니다.
+이 오버로드는 하나의 atomic transaction을 유지하며, chunked 저장은 별도 API 범위입니다.
 
 ## 테스트 작성
 
@@ -545,7 +551,14 @@ userRepository.findAll().toList()  // 메모리 사용량 증가
 // streamAll: row-by-row 스트리밍, 백프레셔 지원
 userRepository.streamAll()  // 메모리 효율적
     .collect { user -> /* 처리 */ }
+
+// saveAll(Flow): 순차 저장과 bounded 백프레셔
+userRepository.saveAll(inputUsers)
+    .collect { savedUser -> /* 저장된 엔티티 처리 */ }
 ```
+
+`saveAll(Flow)` 오버로드도 collect할 때만 시작하므로, 소비자가 입력 저장 속도와 저장
+결과 방출 속도를 제어할 수 있습니다.
 
 ### toDomain과 toPersistValues 구현 필수
 
