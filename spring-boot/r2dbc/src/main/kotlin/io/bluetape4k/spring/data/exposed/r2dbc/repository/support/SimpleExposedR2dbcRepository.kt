@@ -5,10 +5,12 @@ import io.bluetape4k.spring.data.exposed.jdbc.repository.support.toExposedOrderB
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedR2dbcRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.yield
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -80,15 +82,19 @@ class SimpleExposedR2dbcRepository<R: Any, ID: Any>(
         emitAll(results.asFlow())
     }
 
-    override fun <S: R> saveAll(entityStream: Flow<S>): Flow<S> = flow {
-        val results = mutableListOf<S>()
+    /**
+     * 입력 [entityStream]을 하나의 transaction에서 순차 저장하고, 각 결과를 즉시 방출합니다.
+     * 입력이 정상 완료되면 transaction을 commit하며, cancellation 또는 예외가 발생하면
+     * transaction을 rollback합니다.
+     */
+    override fun <S: R> saveAll(entityStream: Flow<S>): Flow<S> = channelFlow {
         inTransaction {
             entityStream.collect { entity ->
-                results.add(persist(entity) as S)
+                send(persist(entity) as S)
+                yield()
             }
         }
-        emitAll(results.asFlow())
-    }
+    }.buffer(0)
 
     override suspend fun findById(id: ID): R? = findByIdOrNull(id)
 
