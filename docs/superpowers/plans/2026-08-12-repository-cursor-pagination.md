@@ -244,10 +244,9 @@ suspend fun <ID : Comparable<ID>, E : Any> R2dbcRepository<ID, E>.findCursorPage
     val hasNext = rows.size > pageSize
     val pageRows = if (hasNext) rows.take(pageSize) else rows
     val nextCursor = pageRows.lastOrNull()?.let { row -> if (hasNext) row[table.id].value else null }
-    val content = buildList {
-        for (row in pageRows) {
-            add(row.toEntity())
-        }
+    val content = mutableListOf<E>()
+    for (row in pageRows) {
+        content += row.toEntity()
     }
     return ExposedCursorPage(content, nextCursor, hasNext)
 }
