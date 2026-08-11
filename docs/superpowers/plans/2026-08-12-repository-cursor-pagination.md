@@ -23,6 +23,7 @@
 - Modify: `exposed/r2dbc/README.md`, `exposed/r2dbc/README.ko.md` — suspend 사용 예와 cancellation 경계.
 - Modify: `docs/manual/en/modules/bluetape4k-exposed-jdbc/repository-patterns.md`, `docs/manual/ko/modules/bluetape4k-exposed-jdbc/repository-patterns.md` — JDBC manual source of truth.
 - Modify: `docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md`, `docs/manual/ko/modules/bluetape4k-exposed-r2dbc/repository-patterns.md` — R2DBC manual source of truth.
+- Modify: `docs/manual/en/modules/bluetape4k-exposed-core.md`, `docs/manual/ko/modules/bluetape4k-exposed-core.md`, `docs/manual/en/modules/bluetape4k-exposed-jdbc.md`, `docs/manual/ko/modules/bluetape4k-exposed-jdbc.md`, `docs/manual/en/modules/bluetape4k-exposed-r2dbc.md`, `docs/manual/ko/modules/bluetape4k-exposed-r2dbc.md` — landing API discoverability and release-pinned contract summary.
 - Create: `docs/superpowers/lessons/2026-08-12-issue-645-repository-cursor-pagination.md` — 구현 중 발견한 Kotlin/Exposed 계약과 재발 방지 규칙.
 
 ### Task 1: DTO 실패 테스트와 최소 구현
@@ -125,12 +126,12 @@ second.nextCursor shouldBeNull()
 
 val descending = repository.findCursorPage(pageSize = 2, sortOrder = SortOrder.DESC)
 descending.content.map { it.id } shouldBeEqualTo listOf(20L, 7L)
-repository.findCursorPage(pageSize = 0)
+assertFailsWith<IllegalArgumentException> { repository.findCursorPage(pageSize = 0) }
 assertFailsWith<IllegalArgumentException> { repository.findCursorPage(pageSize = -1) }
-assertFailsWith<IllegalArgumentException> { repository.findCursorPage(pageSize = Int.MAX_VALUE) }
+assertFailsWith<IllegalArgumentException> { repository.findCursorPage(pageSize = 10_001) }
 ```
 
-Add predicate composition, deletion of ID `3L` between separate transactions, insertion of ID `5L` after cursor `3L`, and a SQL statement counter/logger assertion that the cursor call emits one bounded `SELECT`, no `COUNT`, strict `>`, the predicate, matching order, and `LIMIT 3`.
+Add predicate composition, active/deleted visibility (`isDeleted eq false`), deletion of ID `3L` between separate physical connections, insertion of ID `5L` after cursor `3L`, cursor-before insertion, predicate-mismatch insertion, DESC mutation, all six `SortOrder` variants, and a SQL statement counter/logger assertion that the cursor call emits one bounded `SELECT`, no `COUNT`, strict `>`, the predicate, matching order, and `LIMIT 3`. The mutation helper must expose the connection identity and commit each setup/mutation transaction before the next read.
 
 - [ ] **Step 2: JDBC test를 먼저 실행해 unresolved extension 또는 실패 assertion을 확인한다.**
 
@@ -162,8 +163,7 @@ fun <ID : Comparable<ID>, E : Any> JdbcRepository<ID, E>.findCursorPage(
     sortOrder: SortOrder = SortOrder.ASC,
     predicate: () -> Op<Boolean> = { Op.TRUE },
 ): ExposedCursorPage<E, ID> {
-    pageSize.requirePositiveNumber("pageSize")
-    require(pageSize < Int.MAX_VALUE) { "pageSize must be less than Int.MAX_VALUE" }
+    require(pageSize in 1..10_000) { "pageSize must be between 1 and 10_000" }
 
     val basePredicate = predicate()
     val where = cursor?.let { basePredicate and table.cursorBoundary(it, sortOrder) } ?: basePredicate
@@ -191,7 +191,7 @@ private fun SortOrder.isAscending(): Boolean = this in setOf(
 )
 ```
 
-The implementation must not call `countBy`, `offset`, or a second query. Keep the checked cast private and preserve `JdbcRepository<ID : Any, E>` unchanged.
+The implementation must not call `countBy`, `offset`, or a second query. Keep the checked cast private, document the hard 10,000-row page cap, and preserve `JdbcRepository<ID : Any, E>` unchanged.
 
 - [ ] **Step 4: JDBC targeted tests and compile pass를 확인한다.**
 
@@ -214,7 +214,7 @@ git commit -m "JDBC 저장소에 typed cursor 페이지를 추가한다"
 
 - [ ] **Step 1: JDBC와 같은 fixture/result assertions를 `runSuspendIO` 기반으로 작성한다.**
 
-The first call, cursor continuation, ASC/DESC, predicate, sparse IDs, delete/insert between transactions, validation, and SQL/count evidence must match Task 2. Add a mapper suspension point that throws `CancellationException`; assert the original cancellation propagates and a later query on the same pool succeeds.
+The first call, cursor continuation, ASC/DESC, predicate, sparse IDs, active/deleted visibility, six `SortOrder` variants, delete/insert between physical connections, validation, and SQL/count evidence must match Task 2. Launch the cursor call in a child `Job`, block the suspend mapper at a real suspension point, cancel the child, and assert the original cancellation propagates. In the same test use a pool of size one, perform an uncommitted write before cancellation, assert rollback, then run a follow-up query to prove connection release.
 
 - [ ] **Step 2: R2DBC test를 먼저 실행해 extension 부재 또는 실패를 확인한다.**
 
@@ -233,8 +233,7 @@ suspend fun <ID : Comparable<ID>, E : Any> R2dbcRepository<ID, E>.findCursorPage
     sortOrder: SortOrder = SortOrder.ASC,
     predicate: () -> Op<Boolean> = { Op.TRUE },
 ): ExposedCursorPage<E, ID> {
-    pageSize.requirePositiveNumber("pageSize")
-    require(pageSize < Int.MAX_VALUE) { "pageSize must be less than Int.MAX_VALUE" }
+    require(pageSize in 1..10_000) { "pageSize must be between 1 and 10_000" }
     val basePredicate = predicate()
     val where = cursor?.let { basePredicate and table.cursorBoundary(it, sortOrder) } ?: basePredicate
     val rows = table.selectAll()
@@ -245,7 +244,12 @@ suspend fun <ID : Comparable<ID>, E : Any> R2dbcRepository<ID, E>.findCursorPage
     val hasNext = rows.size > pageSize
     val pageRows = if (hasNext) rows.take(pageSize) else rows
     val nextCursor = pageRows.lastOrNull()?.let { row -> if (hasNext) row[table.id].value else null }
-    return ExposedCursorPage(pageRows.map { it.toEntity() }, nextCursor, hasNext)
+    val content = buildList {
+        for (row in pageRows) {
+            add(row.toEntity())
+        }
+    }
+    return ExposedCursorPage(content, nextCursor, hasNext)
 }
 ```
 
@@ -268,7 +272,7 @@ git commit -m "R2DBC 저장소에 typed cursor 페이지를 추가한다"
 
 ### Task 4: EN/KO README와 manual을 계약에 맞게 갱신한다
 
-**Files:** six README/manual pairs listed in the file map.
+**Files:** six README pairs and six release-pinned landing/manual pairs listed in the file map.
 
 - [ ] **Step 1: 각 locale에 동일한 의미의 typed cursor section을 추가한다.**
 
@@ -283,13 +287,13 @@ val next = repository.findCursorPage(
 )
 ```
 
-Document primary-key stable position, ASC/DESC strict boundary, no count/offset, `hasNext`/`nextCursor` invariant, caller-owned token encode/decode/signing and predicate/sort scope, no snapshot guarantee, transaction/cancellation behavior, `SoftDeleted*` active predicate usage, and `findPage`/Spring Batch reader remaining separate contracts. Keep code, API names, URLs, and commands unchanged between translations.
+Document primary-key stable position, all six `SortOrder` variants, strict boundary, no count/offset, the shared 10,000 page cap, `hasNext`/`nextCursor` invariant, caller-owned token encode/decode/signing and predicate/sort scope, no snapshot guarantee, transaction/cancellation behavior, explicit `SoftDeleted*` active predicate usage (deleted rows are otherwise visible), and `findPage`/Spring Batch reader remaining separate contracts. Keep code, API names, URLs, and commands unchanged between translations.
 
 - [ ] **Step 2: locale parity and manual source checks를 실행한다.**
 
 ```bash
 git diff --check
-rg -n "findCursorPage|ExposedCursorPage|nextCursor|cursor" exposed/core/README.md exposed/core/README.ko.md exposed/jdbc/README.md exposed/jdbc/README.ko.md exposed/r2dbc/README.md exposed/r2dbc/README.ko.md docs/manual/en/modules/bluetape4k-exposed-jdbc/repository-patterns.md docs/manual/ko/modules/bluetape4k-exposed-jdbc/repository-patterns.md docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md docs/manual/ko/modules/bluetape4k-exposed-r2dbc/repository-patterns.md
+rg -n "findCursorPage|ExposedCursorPage|nextCursor|10,000|10_000|cursor" exposed/core/README.md exposed/core/README.ko.md exposed/jdbc/README.md exposed/jdbc/README.ko.md exposed/r2dbc/README.md exposed/r2dbc/README.ko.md docs/manual/en/modules/bluetape4k-exposed-core.md docs/manual/ko/modules/bluetape4k-exposed-core.md docs/manual/en/modules/bluetape4k-exposed-jdbc.md docs/manual/ko/modules/bluetape4k-exposed-jdbc.md docs/manual/en/modules/bluetape4k-exposed-r2dbc.md docs/manual/ko/modules/bluetape4k-exposed-r2dbc.md docs/manual/en/modules/bluetape4k-exposed-jdbc/repository-patterns.md docs/manual/ko/modules/bluetape4k-exposed-jdbc/repository-patterns.md docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md docs/manual/ko/modules/bluetape4k-exposed-r2dbc/repository-patterns.md
 ```
 
 Expected: no whitespace errors; every EN/KO pair contains the same API names, examples, exclusions, and cursor invariants.
@@ -297,7 +301,7 @@ Expected: no whitespace errors; every EN/KO pair contains the same API names, ex
 - [ ] **Step 3: documentation 변경을 Lore commit으로 기록한다.**
 
 ```bash
-git add exposed/core/README.md exposed/core/README.ko.md exposed/jdbc/README.md exposed/jdbc/README.ko.md exposed/r2dbc/README.md exposed/r2dbc/README.ko.md docs/manual/en/modules/bluetape4k-exposed-jdbc/repository-patterns.md docs/manual/ko/modules/bluetape4k-exposed-jdbc/repository-patterns.md docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md docs/manual/ko/modules/bluetape4k-exposed-r2dbc/repository-patterns.md
+git add exposed/core/README.md exposed/core/README.ko.md exposed/jdbc/README.md exposed/jdbc/README.ko.md exposed/r2dbc/README.md exposed/r2dbc/README.ko.md docs/manual/en/modules/bluetape4k-exposed-core.md docs/manual/ko/modules/bluetape4k-exposed-core.md docs/manual/en/modules/bluetape4k-exposed-jdbc.md docs/manual/ko/modules/bluetape4k-exposed-jdbc.md docs/manual/en/modules/bluetape4k-exposed-r2dbc.md docs/manual/ko/modules/bluetape4k-exposed-r2dbc.md docs/manual/en/modules/bluetape4k-exposed-jdbc/repository-patterns.md docs/manual/ko/modules/bluetape4k-exposed-jdbc/repository-patterns.md docs/manual/en/modules/bluetape4k-exposed-r2dbc/repository-patterns.md docs/manual/ko/modules/bluetape4k-exposed-r2dbc/repository-patterns.md
 git commit -m "cursor 페이지 사용 계약을 문서와 예제에 반영한다"
 ```
 
@@ -308,7 +312,7 @@ git commit -m "cursor 페이지 사용 계약을 문서와 예제에 반영한�
 - [ ] **Step 1: core/JDBC/R2DBC targeted suite를 순차 실행한다.**
 
 ```bash
-./gradlew :bluetape4k-exposed-core:test :bluetape4k-exposed-jdbc:test :bluetape4k-exposed-r2dbc:test --no-configuration-cache --no-daemon --rerun-tasks
+./gradlew :bluetape4k-exposed-core:test :bluetape4k-exposed-jdbc:test :bluetape4k-exposed-r2dbc:test :bluetape4k-exposed-jdbc-tests:test :bluetape4k-exposed-r2dbc-tests:test --no-parallel --no-configuration-cache --no-daemon --rerun-tasks
 ```
 
 Expected: `BUILD SUCCESSFUL`; baseline comparison must show existing `findPage` tests remain green and cursor tests are additive.
@@ -317,8 +321,11 @@ Expected: `BUILD SUCCESSFUL`; baseline comparison must show existing `findPage` 
 
 ```bash
 ./gradlew :bluetape4k-exposed-jdbc:compileKotlin :bluetape4k-exposed-r2dbc:compileKotlin --no-configuration-cache --no-daemon --rerun-tasks
-javap -classpath exposed/jdbc/build/classes/kotlin/main io.bluetape4k.exposed.jdbc.repository.JdbcRepository
-javap -classpath exposed/r2dbc/build/classes/kotlin/main io.bluetape4k.exposed.r2dbc.repository.R2dbcRepository
+find exposed/jdbc/build/classes/kotlin/main exposed/r2dbc/build/classes/kotlin/main -name '*CursorPagination*.class' -print
+javap -public -classpath exposed/jdbc/build/classes/kotlin/main io.bluetape4k.exposed.jdbc.repository.JdbcRepository
+javap -public -classpath exposed/r2dbc/build/classes/kotlin/main io.bluetape4k.exposed.r2dbc.repository.R2dbcRepository
+javap -public -classpath exposed/jdbc/build/classes/kotlin/main io.bluetape4k.exposed.jdbc.repository.JdbcRepositoryCursorPaginationKt
+javap -public -classpath exposed/r2dbc/build/classes/kotlin/main io.bluetape4k.exposed.r2dbc.repository.R2dbcRepositoryCursorPaginationKt
 ```
 
 Expected: both interfaces retain their pre-change `findPage` methods; only new static extension classes expose cursor methods. Record the exact output in the workflow evidence, not in public docs.
@@ -334,7 +341,7 @@ Use the cursor SQL logger assertions from Tasks 2–3 to verify one bounded sele
 git diff --check
 ```
 
-Review null-safety, immutable DTOs, narrow private helpers, structured R2DBC cancellation, no broad catches, no new dependency, and Korean KDoc/docs against `$bluetape-kotlin-patterns`.
+Review null-safety, DTO's existing shallow-list policy (matching `ExposedPage`), narrow private helpers, structured R2DBC cancellation, no broad catches, no new dependency, and Korean KDoc/docs against `$bluetape-kotlin-patterns`. Verify that Spring Data JDBC/R2DBC and Ktor transaction files have no diff and their existing compile/tests remain green; these adapters are intentionally out of scope.
 
 - [ ] **Step 5: lesson note와 final verification commit을 기록한다.**
 
@@ -355,10 +362,12 @@ git commit -m "cursor 페이지 구현 근거와 교훈을 기록한다"
 
 ## Self-review checklist
 
-- [ ] Existing `findPage` interface signatures and behavior are untouched.
+- [ ] Existing `findPage` interface signatures and behavior are untouched; Spring Data and Ktor adapter boundaries have no source changes.
 - [ ] JDBC/R2DBC share DTO, parameter names, sort semantics, strict boundaries, page-size validation, and no-count behavior.
-- [ ] Sparse IDs and separate-transaction insert/delete tests prove stable-position semantics without claiming snapshots.
+- [ ] Sparse IDs and separate-connection insert/delete tests prove stable-position semantics without claiming snapshots.
 - [ ] `Long`, `Int`, `String`, and UUID-compatible IDs remain documented; `CompositeID` remains explicitly out of scope.
+- [ ] Both adapters enforce `1..10_000`; all six `SortOrder` variants and SoftDeleted active predicates are tested.
 - [ ] EN/KO README/manual pairs are parity-checked, and no diagram geometry/assets are changed.
 - [ ] Cancellation is rethrown unchanged and connection reuse is tested.
+- [ ] Final DoD maps every #645 acceptance item to a test file, CI job, and manual evidence path.
 - [ ] No placeholder, TODO, or unbounded broad catch remains in the plan or implementation.

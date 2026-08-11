@@ -144,8 +144,10 @@ extension static method를 사용할 수 있지만, Kotlin처럼 extension impor
 
 ## 조회 알고리즘
 
-1. `pageSize`는 양수이고 `Int.MAX_VALUE - 1` 이하인지 검증한다. 한 번의
-   조회에서 `pageSize + 1`개를 요청해야 하므로 overflow를 허용하지 않는다.
+1. `pageSize`는 `1..10_000` 범위인지 검증한다. 한 번의 조회에서
+   `pageSize + 1`개를 메모리에 모으므로 overflow뿐 아니라 accidental
+   unbounded materialization도 방지한다. 더 큰 결과가 필요하면 caller가
+   여러 cursor page로 나누어 요청해야 한다.
 2. extension의 `ID : Comparable<ID>` bound가 cursor의 비교 가능성을
    compile time에 보장한다. 따라서 `CompositeID`나 비교 불가능한 custom ID는
    첫 페이지부터 API 호출 자체가 컴파일되지 않는다.
@@ -198,8 +200,8 @@ cursor 순회 중 기본 키를 변경하지 않아야 한다. 이 invariant를 
 
 ## 오류 및 취소 계약
 
-- `pageSize <= 0` 또는 `pageSize == Int.MAX_VALUE`는 기존 support validation
-  예외 규칙에 따라 즉시 거부한다.
+- `pageSize <= 0` 또는 `pageSize > 10_000`은 즉시 거부한다. 두 adapter는
+  같은 hard cap과 예외 계약을 사용한다.
 - 비교 불가능한 ID는 extension type bound에서 거부되며, SQL 실행 전에
   별도 runtime fallback을 두지 않는다.
 - JDBC 예외는 현재 transaction 예외 경계를 그대로 따른다.
@@ -220,11 +222,12 @@ JDBC와 R2DBC 각각:
 - predicate가 cursor 조건과 AND 결합됨
 - 결과가 정확히 page size이면 다음 sentinel을 판정함
 - 마지막 페이지와 빈 결과
-- `pageSize` 0, 음수, overflow 경계
+- `pageSize` 0, 음수, 10,001 초과 경계
 - `Long`/`Int`/`String`/`UUID` 경계 compile 및 integration coverage와
   `CompositeID`/비교 불가능 custom ID의 compile-time 제외
 - 페이지 사이 행 삭제 후 다음 cursor 조회
-- 페이지 사이 새 행 삽입의 stable-position semantics
+- 페이지 사이 cursor 앞/뒤 삽입과 predicate 불일치/일치 행 삽입의
+  stable-position semantics
 - cursor 경로가 count query를 수행하지 않는 구조적/SQL 로그 검증
 - 기존 `findPage` 회귀 및 ABI compatibility 검증(interfaces unchanged,
   extension static method addition only)
@@ -241,9 +244,10 @@ JDBC와 R2DBC 각각:
   아래에 cursor 전용 fixture를 두고 auto-increment에 의존하지 않는
   `[1, 3, 7, 20]` sparse ID를 구성한다. R2DBC도 같은 ID 집합과 mapper
   계약을 사용한다.
-- JDBC/R2DBC 각각에서 page 사이 cursor 행 삭제, cursor 뒤 삽입, predicate
-  일치 행 삽입을 별도 transaction/connection으로 재현하고 stable-position
-  결과를 고정한다. snapshot 일관성을 주장하지 않는다.
+- JDBC/R2DBC 각각에서 page 사이 cursor 행 삭제, cursor 앞/뒤 삽입,
+  predicate 불일치/일치 행 삽입을 별도 physical connection과 transaction으로
+  재현하고 stable-position 결과를 고정한다. DESC 방향 mutation과
+  SoftDeleted active predicate도 포함하며 snapshot 일관성을 주장하지 않는다.
 - 기존 SQL logger/counter 선례를 재사용해 cursor 호출이 COUNT 0회,
   bounded SELECT 1회인지와 strict `>`/`<`, predicate AND, 동일 order,
   `LIMIT pageSize + 1`을 검증한다.
@@ -251,11 +255,18 @@ JDBC와 R2DBC 각각:
   integration matrix로 검증하고, `CompositeID`/비교 불가능 custom ID는
   `ID : Comparable<ID>` extension이 제공되지 않음을 compile fixture로
   확인한다.
-- R2DBC cancellation 테스트는 row mapping 중 `CancellationException`을
-  발생시켜 원래 예외 재전파, rollback, connection release, 취소 후 같은
-  pool의 후속 query 성공을 검증한다.
+- 모든 `SortOrder` variant(`ASC`, `DESC`, `ASC_NULLS_FIRST`,
+  `ASC_NULLS_LAST`, `DESC_NULLS_FIRST`, `DESC_NULLS_LAST`)를 matrix로
+  검증한다. primary key는 non-null이므로 null placement variant는
+  방향만 바꾼다는 점을 고정한다.
+- R2DBC cancellation 테스트는 child `Job`의 실제 취소 가능한 suspension
+  지점에서 `CancellationException`을 재전파하고, 미커밋 write rollback,
+  pool size 1에서 connection release, 취소 후 같은 pool의 후속 query
+  성공을 검증한다.
 - 일반 PR 경로는 H2에서
-  `./gradlew :bluetape4k-exposed-core:test :bluetape4k-exposed-jdbc:test :bluetape4k-exposed-r2dbc:test --no-parallel`
+  `./gradlew :bluetape4k-exposed-core:test :bluetape4k-exposed-jdbc:test
+  :bluetape4k-exposed-r2dbc:test :bluetape4k-exposed-jdbc-tests:test
+  :bluetape4k-exposed-r2dbc-tests:test --no-parallel`
   을 순차 실행하고, PostgreSQL/Testcontainers 검증은 nightly topology에
   맞춰 별도로 실행한다. 이 저장소에는 전용 ABI plugin이 없으므로
   `findPage` 기존 시그니처를 유지한 compile/API surface 검증과
@@ -271,11 +282,16 @@ JDBC와 R2DBC 각각:
   추가한다.
 - `docs/manual/en|ko/modules/bluetape4k-exposed-jdbc/repository-patterns.md`
   및 R2DBC 동등 manual에 같은 계약을 추가한다.
+- `docs/manual/en|ko/modules/bluetape4k-exposed-core.md`와 JDBC/R2DBC
+  landing manual에도 API 목록·10,000 page cap·caller-owned token 경계를
+  반영한다.
 - typed cursor를 HTTP token으로 사용할 때 caller가 encode/decode하는
   예를 짧게 제시한다.
 - `SoftDeletedJdbcRepository`/`SoftDeletedR2dbcRepository`는 별도
   `findActiveCursorPage`를 추가하지 않고 base extension에 active predicate를
-  전달한다. 기존 `findActivePage` convenience API는 변경하지 않는다.
+  전달한다. base cursor의 기본 predicate가 `Op.TRUE`이므로 삭제 행을
+  자동으로 숨기지 않는다는 사실과 `isDeleted eq false` 예제를 명시한다.
+  기존 `findActivePage` convenience API는 변경하지 않는다.
 - 기존 offset `findPage`와 Spring Batch keyset reader는 별도 계약임을
   migration note에서 명확히 한다.
 - 이번 변경은 diagram geometry를 바꾸지 않으므로 diagram asset 생성은
@@ -295,8 +311,9 @@ JDBC와 R2DBC 각각:
 
 ## 알려진 위험
 
-- 비정상적으로 큰 `pageSize`는 `pageSize + 1` 메모리와 DB limit 비용을
-  키우므로 상한은 overflow 방지에만 두고 caller가 운영 상한을 정해야 한다.
+- cursor 결과를 `toList()`로 경계 안에서 materialize하므로 두 adapter 모두
+  `pageSize`를 10,000 이하로 제한한다. 더 큰 결과는 여러 cursor 요청으로
+  나누어야 하며, 이 hard cap은 caller 입력에 대한 메모리 상한이기도 하다.
 - extension의 `ID : Comparable<ID>` bound는 cursor 값의 비교 가능성을
   compile time에 보장하지만, `IdTable`의 underlying column type과
   `extractId`가 일치하는지는 repository 구현자가 보장해야 한다. adapter의
