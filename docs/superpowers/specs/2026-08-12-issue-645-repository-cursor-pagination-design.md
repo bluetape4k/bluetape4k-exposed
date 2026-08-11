@@ -143,8 +143,10 @@ suspend fun findCursorPage(
 5. JDBC는 행을 즉시 매핑하고, R2DBC는 `Flow`를 현재 suspend transaction
    안에서 `toList()`로 수집한다. 두 adapter 모두 같은 결과 경계를 만든다.
 6. 행이 `pageSize + 1`개이면 마지막 sentinel을 제거하고 `hasNext = true`,
-   `nextCursor = extractId(content.last())`로 반환한다. 그렇지 않으면
-   전체 행을 반환하고 `hasNext = false`, `nextCursor = null`로 반환한다.
+   `nextCursor = rows[pageSize - 1][table.id].value`로 반환한다. 그렇지
+   않으면 전체 행을 반환하고 `hasNext = false`, `nextCursor = null`로
+   반환한다. cursor는 매핑된 엔티티의 임의 필드가 아니라 실제 정렬 컬럼의
+   raw ID에서 추출한다.
 
 cursor query는 `countBy` 또는 offset을 호출하지 않는다. 페이지 사이의
 삭제로 cursor 행 자체가 사라져도 strict 비교가 다음 경계를 유지한다.
@@ -156,15 +158,29 @@ cursor 뒤에 삽입된 행은 이후 페이지에 포함될 수 있고, 이미 
 
 repository interface의 `ID: Any` bound를 `Comparable`로 바꾸지 않는다.
 그 변경은 기존 구현체의 source/ABI 호환성을 깨뜨리기 때문이다. 대신
-cursor가 실제로 전달된 경우에만 `Comparable<*>`를 검사하고, Exposed의
-`Column.greater`/`Column.less`에 필요한 checked cast를 작은 private helper로
-격리한다.
+cursor가 실제로 전달된 경우에만 private `EntityIdCursorAdapter`가 다음
+순서로 검증하고 경계를 만든다.
+
+1. `table.id.columnType`을 `EntityIDColumnType<ID>`로 확인하고 underlying
+   `idColumn`을 꺼낸다.
+2. cursor를 `Comparable<*>`로 확인한다. 실패하면 SQL을 만들기 전에
+   `IllegalArgumentException`을 던진다.
+3. underlying `Column<ID>`와 cursor에만 국소적인 checked cast를 적용해
+   Exposed `greater`/`less` bound expression을 만든다.
+
+이 adapter는 public API가 아니며 repository마다 comparator를 주입하지
+않는다. `Long`, `Int`, `String`, `java.util.UUID`, Kotlin `Uuid`처럼
+underlying ID가 자연 순서를 제공하는 타입만 지원한다. `CompositeID`와
+비교 불가능한 사용자 ID는 명시적으로 거부한다.
 
 `Long`, `Int`, `String`, `java.util.UUID`, Kotlin `Uuid` 같은 기본 키는
 기존 Exposed 비교 연산을 사용할 수 있다. `CompositeID`나 사용자 정의
 비교 불가능 타입은 cursor API에서 지원하지 않으며, caller는 기존
 `findAll`/`findPage` 또는 별도 predicate를 사용해야 한다. 이 제한은
-README와 KDoc에 명시한다.
+README와 KDoc에 명시한다. repository 구현체는 `extractId(entity)`가
+`ResultRow[table.id].value`와 동일한 값을 반환하도록 유지해야 하며,
+cursor 순회 중 기본 키를 변경하지 않아야 한다. 이 invariant를 어기면
+`nextCursor`와 SQL 정렬 경계가 달라져 중복·누락이 발생할 수 있다.
 
 ## 오류 및 취소 계약
 
@@ -191,11 +207,14 @@ JDBC와 R2DBC 각각:
 - 결과가 정확히 page size이면 다음 sentinel을 판정함
 - 마지막 페이지와 빈 결과
 - `pageSize` 0, 음수, overflow 경계
-- 비교 불가능 cursor 거부
+- 비교 불가능 cursor 거부와 `Long`/`Int`/`String`/`UUID` 경계 compile 및
+  integration coverage
 - 페이지 사이 행 삭제 후 다음 cursor 조회
 - 페이지 사이 새 행 삽입의 stable-position semantics
 - cursor 경로가 count query를 수행하지 않는 구조적/SQL 로그 검증
 - 기존 `findPage` 회귀 및 ABI compatibility 검증
+- R2DBC 매핑 중 coroutine 취소 시 `CancellationException` 재전파,
+  transaction rollback, connection release 검증
 
 무거운 PostgreSQL/Testcontainers 경로는 JDBC와 R2DBC를 순차 실행한다.
 단위/통합 테스트는 저장소의 기존 JUnit 5, Kluent/bluetape4k assertion,
@@ -220,7 +239,7 @@ JDBC와 R2DBC 각각:
 
 | #645 기준 | 설계 대응 |
 | --- | --- |
-| 안정적인 정렬과 cursor 형식 | `IdTable.id` + typed `ID` position token |
+| 안정적인 정렬과 cursor 형식 | `IdTable.id` + typed `ID` position token + raw ID extraction |
 | forward/previous semantics | forward-only next cursor, ASC/DESC 명시 |
 | count 분리 | cursor query에서 count 미실행 |
 | JDBC/R2DBC 일치 | 동일 DTO·인자·경계·테스트 |
