@@ -43,9 +43,10 @@
 
 ### A. typed primary-key cursor slice (선택)
 
-core에 `ExposedCursorPage<T, C>`를 추가하고 JDBC/R2DBC repository에
-`findCursorPage`를 추가한다. `C`는 repository의 `ID`와 같으며, 결과의
-`nextCursor`는 마지막으로 반환된 행의 기본 키 값이다.
+core에 `ExposedCursorPage<T, C>`를 추가하고 JDBC/R2DBC 패키지에
+`ID : Comparable<ID>`를 요구하는 top-level `findCursorPage` extension을
+추가한다. `C`는 repository의 `ID`와 같으며, 결과의 `nextCursor`는
+마지막으로 반환된 행의 기본 키 값이다.
 
 장점:
 
@@ -58,7 +59,7 @@ core에 `ExposedCursorPage<T, C>`를 추가하고 JDBC/R2DBC repository에
 비용:
 
 - repository 호출자는 `ID`를 transport 표현으로 변환해야 한다.
-- `ID`가 `Comparable`이 아니면 cursor를 사용할 수 없다.
+- `ID`가 `Comparable`이 아니면 extension이 컴파일되지 않는다.
 - 기본 키 이외의 정렬 요구는 별도 API가 필요하다.
 
 이 접근 방식을 선택한다.
@@ -85,7 +86,7 @@ transport 사용성은 좋지만 generic `ID`의 직렬화 규칙, 형식 버전
 ### core 결과 DTO
 
 ```kotlin
-data class ExposedCursorPage<T, C>(
+data class ExposedCursorPage<T, C : Comparable<C>>(
     val content: List<T>,
     val nextCursor: C?,
     val hasNext: Boolean,
@@ -104,10 +105,10 @@ data class ExposedCursorPage<T, C>(
   다른 sort order나 다른 predicate에 재사용하는 것은 caller 책임이며,
   문서와 예제에서 같은 조건을 유지해야 한다.
 
-### JDBC
+### JDBC extension
 
 ```kotlin
-fun findCursorPage(
+fun <ID : Comparable<ID>, E : Any> JdbcRepository<ID, E>.findCursorPage(
     pageSize: Int,
     cursor: ID? = null,
     sortOrder: SortOrder = SortOrder.ASC,
@@ -115,10 +116,10 @@ fun findCursorPage(
 ): ExposedCursorPage<E, ID>
 ```
 
-### R2DBC
+### R2DBC extension
 
 ```kotlin
-suspend fun findCursorPage(
+suspend fun <ID : Comparable<ID>, E : Any> R2dbcRepository<ID, E>.findCursorPage(
     pageSize: Int,
     cursor: ID? = null,
     sortOrder: SortOrder = SortOrder.ASC,
@@ -126,18 +127,23 @@ suspend fun findCursorPage(
 ): ExposedCursorPage<E, ID>
 ```
 
-기존 `findPage`와 이름이 다르므로 source/ABI 호환성을 유지한다.
+extension은 JVM static method로 추가되며 기존 `JdbcRepository`/`R2dbcRepository`
+인터페이스와 구현체의 ABI를 변경하지 않는다. 기존 `findPage`와 이름이
+다르므로 source/behavior 호환성도 유지한다. Java caller는 생성되는
+extension static method를 사용할 수 있지만, Kotlin처럼 extension import를
+명시해야 한다.
 
 ## 조회 알고리즘
 
 1. `pageSize`는 양수이고 `Int.MAX_VALUE - 1` 이하인지 검증한다. 한 번의
    조회에서 `pageSize + 1`개를 요청해야 하므로 overflow를 허용하지 않는다.
-2. `cursor != null`이면 runtime에서 `cursor`가 `Comparable`인지 확인한다.
-   비교 불가능한 값(예: `CompositeID`)은 SQL을 실행하기 전에
-   `IllegalArgumentException`으로 거부한다.
+2. extension의 `ID : Comparable<ID>` bound가 cursor의 비교 가능성을
+   compile time에 보장한다. 따라서 `CompositeID`나 비교 불가능한 custom ID는
+   첫 페이지부터 API 호출 자체가 컴파일되지 않는다.
 3. 기본 predicate와 cursor 경계를 AND로 결합한다.
-   - ASC: `table.id > cursor`
-   - DESC: `table.id < cursor`
+   - `ASC`, `ASC_NULLS_FIRST`, `ASC_NULLS_LAST`: `table.id > cursor`
+   - `DESC`, `DESC_NULLS_FIRST`, `DESC_NULLS_LAST`: `table.id < cursor`
+   기본 키는 null이 아니므로 null placement 변형은 방향만 결정한다.
 4. `table.id`를 동일한 `sortOrder`로 정렬하고 `limit(pageSize + 1)`을
    적용한다.
 5. JDBC는 행을 즉시 매핑하고, R2DBC는 `Flow`를 현재 suspend transaction
@@ -158,24 +164,23 @@ cursor 뒤에 삽입된 행은 이후 페이지에 포함될 수 있고, 이미 
 
 repository interface의 `ID: Any` bound를 `Comparable`로 바꾸지 않는다.
 그 변경은 기존 구현체의 source/ABI 호환성을 깨뜨리기 때문이다. 대신
-cursor가 실제로 전달된 경우에만 private `EntityIdCursorAdapter`가 다음
-순서로 검증하고 경계를 만든다.
+extension의 `ID : Comparable<ID>` bound와 private
+`EntityIdCursorAdapter`가 다음 순서로 경계를 만든다.
 
 1. `table.id.columnType`을 `EntityIDColumnType<ID>`로 확인하고 underlying
    `idColumn`을 꺼낸다.
-2. cursor를 `Comparable<*>`로 확인한다. 실패하면 SQL을 만들기 전에
-   `IllegalArgumentException`을 던진다.
+2. compiler가 보장한 `ID : Comparable<ID>` cursor를 사용한다.
 3. underlying `Column<ID>`와 cursor에만 국소적인 checked cast를 적용해
    Exposed `greater`/`less` bound expression을 만든다.
 
 이 adapter는 public API가 아니며 repository마다 comparator를 주입하지
 않는다. `Long`, `Int`, `String`, `java.util.UUID`, Kotlin `Uuid`처럼
 underlying ID가 자연 순서를 제공하는 타입만 지원한다. `CompositeID`와
-비교 불가능한 사용자 ID는 명시적으로 거부한다.
+비교 불가능한 사용자 ID는 compile-time에 제외된다.
 
 `Long`, `Int`, `String`, `java.util.UUID`, Kotlin `Uuid` 같은 기본 키는
 기존 Exposed 비교 연산을 사용할 수 있다. `CompositeID`나 사용자 정의
-비교 불가능 타입은 cursor API에서 지원하지 않으며, caller는 기존
+비교 불가능 타입은 cursor extension이 제공되지 않으며, caller는 기존
 `findAll`/`findPage` 또는 별도 predicate를 사용해야 한다. 이 제한은
 README와 KDoc에 명시한다. repository 구현체는 `extractId(entity)`가
 `ResultRow[table.id].value`와 동일한 값을 반환하도록 유지해야 하며,
@@ -186,8 +191,8 @@ cursor 순회 중 기본 키를 변경하지 않아야 한다. 이 invariant를 
 
 - `pageSize <= 0` 또는 `pageSize == Int.MAX_VALUE`는 기존 support validation
   예외 규칙에 따라 즉시 거부한다.
-- 비교 불가능한 non-null cursor는 SQL 실행 전에
-  `IllegalArgumentException`으로 거부한다.
+- 비교 불가능한 ID는 extension type bound에서 거부되며, SQL 실행 전에
+  별도 runtime fallback을 두지 않는다.
 - JDBC 예외는 현재 transaction 예외 경계를 그대로 따른다.
 - R2DBC suspend 함수는 취소 예외를 삼키거나 변환하지 않고 기존
   `suspendTransaction`/Flow 계약을 따른다.
@@ -207,12 +212,13 @@ JDBC와 R2DBC 각각:
 - 결과가 정확히 page size이면 다음 sentinel을 판정함
 - 마지막 페이지와 빈 결과
 - `pageSize` 0, 음수, overflow 경계
-- 비교 불가능 cursor 거부와 `Long`/`Int`/`String`/`UUID` 경계 compile 및
-  integration coverage
+- `Long`/`Int`/`String`/`UUID` 경계 compile 및 integration coverage와
+  `CompositeID`/비교 불가능 custom ID의 compile-time 제외
 - 페이지 사이 행 삭제 후 다음 cursor 조회
 - 페이지 사이 새 행 삽입의 stable-position semantics
 - cursor 경로가 count query를 수행하지 않는 구조적/SQL 로그 검증
-- 기존 `findPage` 회귀 및 ABI compatibility 검증
+- 기존 `findPage` 회귀 및 ABI compatibility 검증(interfaces unchanged,
+  extension static method addition only)
 - R2DBC 매핑 중 coroutine 취소 시 `CancellationException` 재전파,
   transaction rollback, connection release 검증
 
@@ -228,8 +234,13 @@ JDBC와 R2DBC 각각:
   추가한다.
 - `exposed/r2dbc/README.md`와 `README.ko.md`에 suspend 사용 예제를
   추가한다.
+- `docs/manual/en|ko/modules/bluetape4k-exposed-jdbc/repository-patterns.md`
+  및 R2DBC 동등 manual에 같은 계약을 추가한다.
 - typed cursor를 HTTP token으로 사용할 때 caller가 encode/decode하는
   예를 짧게 제시한다.
+- `SoftDeletedJdbcRepository`/`SoftDeletedR2dbcRepository`는 별도
+  `findActiveCursorPage`를 추가하지 않고 base extension에 active predicate를
+  전달한다. 기존 `findActivePage` convenience API는 변경하지 않는다.
 - 기존 offset `findPage`와 Spring Batch keyset reader는 별도 계약임을
   migration note에서 명확히 한다.
 - 이번 변경은 diagram geometry를 바꾸지 않으므로 diagram asset 생성은
