@@ -28,4 +28,5 @@ import org.jetbrains.exposed.v1.core.dao.id.EntityID
  *
  * @param id `Int` 타입 엔티티 식별자
  */
+@Suppress("AbstractClassCanBeConcreteClass")
 abstract class AuditableIntEntity(id: EntityID<Int>): AuditableEntity<Int>(id)

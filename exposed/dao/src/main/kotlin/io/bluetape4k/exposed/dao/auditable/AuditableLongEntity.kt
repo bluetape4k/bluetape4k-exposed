@@ -28,4 +28,5 @@ import org.jetbrains.exposed.v1.core.dao.id.EntityID
  *
  * @param id `Long` 타입 엔티티 식별자
  */
+@Suppress("AbstractClassCanBeConcreteClass")
 abstract class AuditableLongEntity(id: EntityID<Long>): AuditableEntity<Long>(id)

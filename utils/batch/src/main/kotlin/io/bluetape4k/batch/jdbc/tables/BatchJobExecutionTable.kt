@@ -4,6 +4,7 @@ import io.bluetape4k.batch.api.BatchStatus
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.javatime.timestamp
 import java.security.MessageDigest
+import java.util.Locale
 
 /**
  * Job 실행 이력 테이블.
@@ -64,5 +65,5 @@ internal fun Map<String, Any>.toParamsHash(): String {
     if (isEmpty()) return ""
     val sorted = entries.sortedBy { it.key }.joinToString("&") { "${it.key}=${it.value}" }
     val digest = MessageDigest.getInstance("SHA-256").digest(sorted.toByteArray())
-    return digest.joinToString("") { "%02x".format(it) }
+    return digest.joinToString("") { "%02x".format(Locale.ROOT, it) }
 }

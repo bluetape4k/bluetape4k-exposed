@@ -18,28 +18,23 @@ abstract class AbstractAggregateRoot<ID : Any> : AggregateRoot<ID> {
 
     abstract override val id: ID
 
-    private var recordedDomainEvents: MutableList<DomainEvent<ID>>? = null
+    private val recordedDomainEvents = mutableListOf<DomainEvent<ID>>()
 
     override fun domainEvents(): List<DomainEvent<ID>> {
-        val events = recordedDomainEvents ?: return emptyList()
-        if (events.isEmpty()) return emptyList()
-        return events.toList()
+        if (recordedDomainEvents.isEmpty()) return emptyList()
+        return recordedDomainEvents.toList()
     }
 
     override fun clearDomainEvents() {
-        recordedDomainEvents = null
+        recordedDomainEvents.clear()
     }
 
     override fun drainDomainEvents(handoff: (List<DomainEvent<ID>>) -> Unit): List<DomainEvent<ID>> {
-        val events = recordedDomainEvents ?: return emptyList()
-        if (events.isEmpty()) {
-            recordedDomainEvents = null
-            return emptyList()
-        }
+        if (recordedDomainEvents.isEmpty()) return emptyList()
 
-        val snapshot = events.toList()
+        val snapshot = recordedDomainEvents.toList()
         handoff(snapshot)
-        recordedDomainEvents = null
+        recordedDomainEvents.clear()
         return snapshot
     }
 
@@ -52,9 +47,6 @@ abstract class AbstractAggregateRoot<ID : Any> : AggregateRoot<ID> {
         require(event.aggregateId == id) {
             "Domain event aggregateId must match aggregate id"
         }
-        val events = recordedDomainEvents ?: mutableListOf<DomainEvent<ID>>().also {
-            recordedDomainEvents = it
-        }
-        events += event
+        recordedDomainEvents += event
     }
 }

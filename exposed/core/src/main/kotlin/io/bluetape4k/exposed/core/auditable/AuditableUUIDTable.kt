@@ -22,6 +22,7 @@ import java.util.UUID
  * }
  * ```
  */
+@Suppress("AbstractClassCanBeConcreteClass")
 abstract class AuditableUUIDTable(
     name: String = "",
     columnName: String = "id",

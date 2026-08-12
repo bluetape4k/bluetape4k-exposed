@@ -19,6 +19,7 @@ import org.jetbrains.exposed.v1.core.dao.id.EntityID
  * }
  * ```
  */
+@Suppress("AbstractClassCanBeConcreteClass")
 abstract class AuditableIntIdTable(
     name: String = "",
     columnName: String = "id",

@@ -32,6 +32,7 @@ object CockroachDatabase: KLogging() {
     val DRIVER: String = "org.postgresql.Driver"
 
     /** Host, SQL port, database, credential을 사용해 CockroachDB에 연결합니다. */
+    @Suppress("LongParameterList")
     fun connect(
         host: String = "localhost",
         port: Int = 26257,

@@ -1,4 +1,5 @@
 @file:OptIn(InternalSnapshotCacheApi::class)
+@file:Suppress("LongParameterList")
 
 package io.bluetape4k.exposed.cache.snapshot
 

@@ -100,7 +100,7 @@ class BatchJob(
 
                 if (report.status == BatchStatus.FAILED) {
                     throw report.error
-                        ?: IllegalStateException("Step '${step.name}' FAILED without error")
+                        ?: error("Step '${step.name}' FAILED without error")
                 }
             }
 

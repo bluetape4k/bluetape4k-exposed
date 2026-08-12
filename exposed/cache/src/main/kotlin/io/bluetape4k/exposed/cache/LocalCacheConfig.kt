@@ -35,6 +35,7 @@ import java.time.Duration
  * @property writeBehindBatchSize Write-Behind 배치 처리 크기 (기본값: 100)
  * @property writeBehindQueueCapacity Write-Behind 큐 최대 용량 — UNLIMITED 금지 (기본값: 10,000)
  */
+@Suppress("LongParameterList")
 open class LocalCacheConfig(
     val keyPrefix: String = "local",
     val maximumSize: Long = 10_000L,
