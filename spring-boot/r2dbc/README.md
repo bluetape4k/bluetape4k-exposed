@@ -602,6 +602,14 @@ suspend fun complexOperation() {
 }
 ```
 
+`@EnableExposedR2dbcRepositories(transactionManagerRef = ...)` is retained only
+for source and binary compatibility and is deprecated. This adapter bypasses
+Spring's transaction interceptor, so a non-default value is rejected during
+repository registration and never selects an Exposed `R2dbcDatabase`. For
+multiple databases, choose the target explicitly with
+`suspendTransaction(database) { ... }`; use `streamAll(database)` when the
+streaming API itself owns the database choice.
+
 ## Performance Optimization
 
 ### Large-Volume Streaming

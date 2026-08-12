@@ -601,6 +601,13 @@ suspend fun complexOperation() {
 }
 ```
 
+`@EnableExposedR2dbcRepositories(transactionManagerRef = ...)`는 소스·바이너리
+호환성만을 위해 유지하며 deprecated 상태입니다. 이 어댑터는 Spring 트랜잭션
+인터셉터를 우회하므로 기본값이 아닌 값을 지정하면 저장소 등록 단계에서 거부하며,
+Exposed `R2dbcDatabase`를 선택하지 않습니다. 데이터베이스가 여러 개라면
+`suspendTransaction(database) { ... }`에서 대상을 명시하고, 스트리밍 API 자체에서
+선택해야 한다면 `streamAll(database)`을 사용하세요.
+
 ## 성능 최적화
 
 ### 대용량 스트리밍
