@@ -120,6 +120,13 @@ tasks.register<JavaExec>("generateBenchmarkDocs") {
     )
 }
 
+configurations {
+    // JDK 25 benchmark runtime에는 legacy JDK 21 provider를 섞지 않습니다.
+    named("benchmarkRuntimeClasspath") {
+        exclude(group = "io.github.bluetape4k", module = "bluetape4k-virtualthread-jdk21")
+    }
+}
+
 dependencies {
     add("benchmarkImplementation", bt4k.kotlinx.benchmark.runtime)
     add("benchmarkImplementation", bt4k.kotlinx.benchmark.runtime.jvm)
@@ -144,7 +151,8 @@ dependencies {
     add("benchmarkImplementation", bt4k.bluetape4k.logging)
     add("benchmarkImplementation", bt4k.bluetape4k.testcontainers)
     add("benchmarkImplementation", bt4k.bluetape4k.virtualthread.api)
-    add("benchmarkImplementation", bt4k.bluetape4k.virtualthread.jdk21)
+    // JDK 25 benchmark runtime과 StructuredTaskScope provider의 classfile/preview 호환성을 맞춘다.
+    add("benchmarkImplementation", bt4k.bluetape4k.virtualthread.jdk25)
     add("benchmarkImplementation", bt4k.caffeine)
     add("benchmarkImplementation", libs.exposed.dao)
     add("benchmarkImplementation", bt4k.exposed.java.time)
