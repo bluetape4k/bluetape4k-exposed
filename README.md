@@ -221,7 +221,7 @@ repositories {
 <!-- migration-guide:heading:availability -->
 #### Availability
 
-JetBrains Exposed 1.3.1 provides the Gradle migration plugin and the JDBC and
+JetBrains Exposed 1.4.0 provides the Gradle migration plugin and the JDBC and
 R2DBC `MigrationUtils` APIs. The dedicated `migrationDriftTest` tasks and CI
 checks described here are available on `develop` and first ship with
 bluetape4k-exposed 1.12.0. See the
@@ -245,7 +245,7 @@ with `alias(bt4k.plugins.exposed.plugin)`:
 
 ```kotlin
 plugins {
-    id("org.jetbrains.exposed.plugin") version "1.3.1"
+    id("org.jetbrains.exposed.plugin") version "1.4.0"
 }
 
 val migrationJdbcUrl = providers.environmentVariable("MIGRATION_JDBC_URL")
@@ -312,7 +312,7 @@ The demo V1 files are fixed-name repository fixtures. Contributors may
 regenerate and replace them intentionally; applications must not copy that
 naming policy. The demo proof requires only the Gradle wrapper and its H2 JDBC
 driver. It writes into the two demo migration directories. A clean bounded
-status proves that Exposed 1.3.1 regenerated those fixtures without repository
+status proves that Exposed 1.4.0 regenerated those fixtures without repository
 drift; it does not prove that arbitrary application migrations are safe.
 
 ```bash
