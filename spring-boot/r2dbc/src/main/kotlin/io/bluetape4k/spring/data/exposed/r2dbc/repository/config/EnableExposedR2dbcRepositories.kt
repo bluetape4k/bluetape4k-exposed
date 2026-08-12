@@ -14,12 +14,11 @@ import kotlin.reflect.KClass
  * @EnableExposedR2dbcRepositories(basePackages = ["io.example.repository"])
  * class Application
  *
- * // 복수 패키지 + 커스텀 트랜잭션 매니저 예
- * @EnableExposedR2dbcRepositories(
- *     basePackages = ["io.example.user", "io.example.order"],
- *     transactionManagerRef = "myTransactionManager",
- * )
- * class MultiSourceApplication
+ * // 데이터베이스가 여러 개라면 저장소 메서드 바깥에서 대상을 명시합니다.
+ * suspendTransaction(database) {
+ *     userRepository.findAllAsList()
+ * }
+ * userRepository.streamAll(database)
  * ```
  */
 @Target(AnnotationTarget.CLASS)
@@ -34,6 +33,15 @@ annotation class EnableExposedR2dbcRepositories(
     val includeFilters: Array<ComponentScan.Filter> = [],
     val repositoryFactoryBeanClass: KClass<*> = ExposedR2dbcRepositoryFactoryBean::class,
     val queryLookupStrategy: QueryLookupStrategy.Key = QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND,
+    /**
+     * R2DBC 저장소는 Spring transaction interceptor를 사용하지 않으므로 이 값으로
+     * `R2dbcDatabase`를 선택하지 않습니다. ABI 호환성을 위해 유지하며, 기본값이 아닌
+     * 값을 지정하면 저장소 등록 시 명확한 오류가 발생합니다.
+     */
+    @Deprecated(
+        message = "R2DBC 저장소는 transactionManagerRef로 Exposed R2dbcDatabase를 선택하지 않습니다. " +
+            "명시적인 suspendTransaction(database) 경계 또는 streamAll(database)를 사용하세요.",
+    )
     val transactionManagerRef: String = "springTransactionManager",
     val namedQueriesLocation: String = "",
     val repositoryImplementationPostfix: String = "Impl",
