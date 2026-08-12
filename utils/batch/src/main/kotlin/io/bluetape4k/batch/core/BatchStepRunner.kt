@@ -126,11 +126,12 @@ internal class BatchStepRunner<I : Any, O : Any>(
                 val chunk = mutableListOf<O>()
 
                 // chunk 수집 (reader → processor → chunk)
-                collectLoop@ for (i in 0 until step.chunkSize) {
+                repeat(step.chunkSize) {
+                    if (eofReached) return@repeat
                     val item = step.reader.read()
                     if (item == null) {
                         eofReached = true
-                        break@collectLoop
+                        return@repeat
                     }
                     readCount++
 

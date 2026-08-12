@@ -32,6 +32,10 @@ kotlin {
 
 configurations {
     testImplementation.get().extendsFrom(compileOnly.get(), runtimeOnly.get())
+    // JDK 25 테스트 런타임에는 legacy JDK 21 provider를 섞지 않습니다.
+    testRuntimeClasspath {
+        exclude(group = "io.github.bluetape4k", module = "bluetape4k-virtualthread-jdk21")
+    }
     named("benchmarkImplementation") {
         extendsFrom(
             configurations.getByName("implementation"),
@@ -154,6 +158,8 @@ dependencies {
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(bt4k.bluetape4k.jackson3)
     testImplementation(libs.kotlinx.coroutines.test)
+    // StructuredTaskScope provider의 JDK 25 classfile/runtime 호환성을 맞춥니다.
+    testImplementation(bt4k.bluetape4k.virtualthread.jdk25)
 
     // JDBC/R2DBC 통합 테스트 인프라
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))

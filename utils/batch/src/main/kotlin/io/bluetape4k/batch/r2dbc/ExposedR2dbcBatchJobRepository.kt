@@ -167,9 +167,7 @@ class ExposedR2dbcBatchJobRepository(
                 .limit(1)
                 .map { it.toJobExecution(checkpointJson) }
                 .firstOrNull()
-                ?: throw IllegalStateException(
-                        "Job execution disappeared after unique-constraint violation re-query."
-                )
+                ?: error("Job execution disappeared after unique-constraint violation re-query.")
         }
     }
 
@@ -355,7 +353,7 @@ class ExposedR2dbcBatchJobRepository(
  * - H2: "unique" 포함 메시지
  */
 private fun Throwable.isUniqueViolation(): Boolean {
-    val msg = message ?: cause?.message ?: ""
+    val msg = (message ?: cause?.message).orEmpty()
     return msg.contains("unique", ignoreCase = true) ||
         msg.contains("23505") ||
         msg.contains("1062")

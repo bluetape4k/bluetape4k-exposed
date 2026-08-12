@@ -37,6 +37,7 @@ import java.util.*
  * @param entityType 엔티티 클래스 (생략 시 Exposed 자동 추론)
  * @param entityCtor 엔티티 생성자 (생략 시 Exposed 자동 추론)
  */
+@Suppress("AbstractClassCanBeConcreteClass")
 abstract class AuditableIntEntityClass<E: AuditableIntEntity>(
     table: AuditableIntIdTable,
     entityType: Class<E>? = null,
@@ -73,6 +74,7 @@ abstract class AuditableIntEntityClass<E: AuditableIntEntity>(
  * @param entityType 엔티티 클래스 (생략 시 Exposed 자동 추론)
  * @param entityCtor 엔티티 생성자 (생략 시 Exposed 자동 추론)
  */
+@Suppress("AbstractClassCanBeConcreteClass")
 abstract class AuditableLongEntityClass<E: AuditableLongEntity>(
     table: AuditableLongIdTable,
     entityType: Class<E>? = null,
@@ -109,6 +111,7 @@ abstract class AuditableLongEntityClass<E: AuditableLongEntity>(
  * @param entityType 엔티티 클래스 (생략 시 Exposed 자동 추론)
  * @param entityCtor 엔티티 생성자 (생략 시 Exposed 자동 추론)
  */
+@Suppress("AbstractClassCanBeConcreteClass")
 abstract class AuditableUUIDEntityClass<E: AuditableUUIDEntity>(
     table: AuditableUUIDTable,
     entityType: Class<E>? = null,

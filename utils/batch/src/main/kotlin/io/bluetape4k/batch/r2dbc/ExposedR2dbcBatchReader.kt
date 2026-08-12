@@ -56,6 +56,7 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
  * @param maxKey partition 종료 key입니다. inclusive boundary이며, `null`이면 끝까지 읽습니다.
  * parallel partitioning에 사용할 수 있습니다.
  */
+@Suppress("LongParameterList")
 class ExposedR2dbcBatchReader<K : Comparable<K>, T : Any>(
     private val database: R2dbcDatabase,
     private val table: Table,
@@ -105,11 +106,11 @@ class ExposedR2dbcBatchReader<K : Comparable<K>, T : Any>(
         // Use keyClass.isInstance for a real runtime check when the key type is known.
         // Without keyClass, K is erased to Comparable at runtime so `as K` may not
         // catch a wrong-type checkpoint (e.g. String for a Long key).
-        if (keyClass != null && !keyClass.isInstance(checkpoint)) {
-            throw IllegalArgumentException(
-                "restoreFrom: checkpoint type mismatch — expected ${keyClass.simpleName}, " +
+        keyClass?.let { expectedKeyClass ->
+            require(expectedKeyClass.isInstance(checkpoint)) {
+                "restoreFrom: checkpoint type mismatch — expected ${expectedKeyClass.simpleName}, " +
                     "got ${checkpoint::class.qualifiedName} for keyColumn '${keyColumn.name}'"
-            )
+            }
         }
         val key = try {
             checkpoint as K

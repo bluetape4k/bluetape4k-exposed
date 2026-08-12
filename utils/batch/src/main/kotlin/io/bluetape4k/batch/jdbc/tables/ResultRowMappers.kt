@@ -29,7 +29,7 @@ fun ResultRow.toJobExecution(checkpointJson: CheckpointJson): JobExecution = Job
     jobName = this[BatchJobExecutionTable.jobName],
     params = this[BatchJobExecutionTable.params]
         ?.let { checkpointJson.read(it) as? Map<String, Any> }
-        ?: emptyMap(),
+        .orEmpty(),
     status = this[BatchJobExecutionTable.status],
     ownerId = this[BatchJobExecutionTable.ownerId],
     leaseUntil = this[BatchJobExecutionTable.leaseUntil],

@@ -18,6 +18,7 @@ import org.jetbrains.exposed.v1.core.Table
  * - PRIMARY KEY는 ORDER BY로 표현 (DSL 빌더에서 설정)
  * - FK 참조는 ClickHouse 미지원
  */
+@Suppress("AbstractClassCanBeConcreteClass")
 abstract class ClickHouseTable(
     name: String = "",
     engine: ClickHouseEngine? = null,

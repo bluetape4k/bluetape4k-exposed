@@ -199,9 +199,7 @@ class ExposedJdbcBatchJobRepository(
                     .limit(1)
                     .firstOrNull()
                     ?.toJobExecution(checkpointJson)
-                    ?: throw IllegalStateException(
-                        "Job execution disappeared after unique-constraint violation re-query."
-                    )
+                    ?: error("Job execution disappeared after unique-constraint violation re-query.")
             }
         }
     }

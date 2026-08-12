@@ -343,7 +343,7 @@ class BigQueryContext(
         options: BigQueryQueryOptions = BigQueryQueryOptions(),
     ): List<BigQueryResultRow> {
         val (schema, allRows) = fetchAllPages(sql, options)
-        val fieldNames = schema?.fields?.map { it.name.lowercase(Locale.ROOT) } ?: emptyList()
+        val fieldNames = schema?.fields?.map { it.name.lowercase(Locale.ROOT) }.orEmpty()
         return allRows.map { row ->
             val data = fieldNames.zip(row.f).associate { (name, cell) -> name to cell.v }
             BigQueryResultRow(data)
@@ -370,7 +370,7 @@ class BigQueryContext(
         var jobComplete = initial.jobComplete ?: true
 
         // 첫 페이지 emit
-        val firstFieldNames = schema?.fields?.map { it.name.lowercase(Locale.ROOT) } ?: emptyList()
+        val firstFieldNames = schema?.fields?.map { it.name.lowercase(Locale.ROOT) }.orEmpty()
         initial.rows?.forEach { row ->
             val data = firstFieldNames.zip(row.f).associate { (name, cell) -> name to cell.v }
             emit(BigQueryResultRow(data))
@@ -397,7 +397,7 @@ class BigQueryContext(
             }
 
             if (schema == null) schema = page.schema
-            val fieldNames = schema?.fields?.map { it.name.lowercase(Locale.ROOT) } ?: emptyList()
+            val fieldNames = schema?.fields?.map { it.name.lowercase(Locale.ROOT) }.orEmpty()
             page.rows?.forEach { row ->
                 val data = fieldNames.zip(row.f).associate { (name, cell) -> name to cell.v }
                 emit(BigQueryResultRow(data))
@@ -476,7 +476,7 @@ class BigQueryContext(
             .joinToString(",")
         val fingerprint = MessageDigest.getInstance("SHA-256")
             .digest(sql.toByteArray(StandardCharsets.UTF_8))
-            .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+            .joinToString("") { byte -> "%02x".format(Locale.ROOT, byte.toInt() and 0xff) }
         val safeJobId = jobId?.takeIf(SAFE_JOB_ID_REGEX::matches)
 
         return buildString {

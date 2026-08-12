@@ -50,6 +50,7 @@ import kotlin.time.Duration
  * @property retryPolicy 청크 쓰기 실패 시 재시도 정책. 기본값: [RetryPolicy.NONE]
  * @property commitTimeout 청크 커밋 타임아웃. 0 이하면 타임아웃 미적용.
  */
+@Suppress("LongParameterList")
 class BatchStep<I : Any, O : Any>(
     val name: String,
     val chunkSize: Int = BatchDefaults.CHUNK_SIZE,
