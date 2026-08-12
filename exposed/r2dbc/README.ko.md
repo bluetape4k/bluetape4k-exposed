@@ -171,7 +171,39 @@ suspendTransaction {
 }
 ```
 
-### 2. AuditableR2dbcRepository 구현
+### 2. 타입이 있는 커서 페이징
+
+호출자가 소유한 `suspendTransaction` 안에서 suspend `findCursorPage` 확장을 사용합니다. 결과는
+`ExposedCursorPage`로 메모리에 완성되어 반환되므로 트랜잭션 경계가 닫히기 전에 행 매핑과 연결 정리가
+끝납니다.
+
+```kotlin
+import io.bluetape4k.exposed.r2dbc.repository.findCursorPage
+import org.jetbrains.exposed.v1.core.SortOrder
+
+suspendTransaction {
+    val first = repo.findCursorPage(
+        pageSize = 20,
+        predicate = { ActorTable.lastName eq "Depp" },
+    )
+    val next = repo.findCursorPage(
+        pageSize = 20,
+        cursor = first.nextCursor,
+        sortOrder = SortOrder.ASC,
+        predicate = { ActorTable.lastName eq "Depp" },
+    )
+}
+```
+
+커서는 null이 아닌 기본 키 원시 값입니다. 한 번의 호출은 `LIMIT pageSize + 1`을 사용하는 제한된
+SELECT 하나만 실행하며 count나 offset 쿼리를 실행하지 않습니다. `pageSize`는 1부터 10,000까지이고,
+여섯 가지 `SortOrder` 변형을 지원합니다. 오름차순은 엄격한 `>`, 내림차순은 엄격한 `<`를 사용하며
+null 배치 변형은 방향만 유지합니다. 토큰 인코딩, 서명, 만료, tenant/권한 범위, 같은 정렬과
+predicate의 재사용은 호출자 책임이고 호출 사이 snapshot은 보장하지 않습니다. 기본 predicate가
+`Op.TRUE`이므로 논리 삭제 행은 활성 조건을 명시해야 합니다. 취소 시 `CancellationException`을
+그대로 다시 던지고 바깥 트랜잭션/pool이 연결을 정리합니다.
+
+### 3. AuditableR2dbcRepository 구현
 
 ```kotlin
 import io.bluetape4k.exposed.core.auditable.AuditableLongIdTable
@@ -219,7 +251,7 @@ suspendTransaction {
 `updatedBy`를 생략하면 호출 시점의 `UserContext.getCurrentUser()` 값을 캡처합니다.
 일반 `updateById()`, `updateAll()`은 감사 컬럼을 설정하지 않습니다.
 
-### 3. SoftDeletedR2dbcRepository 구현
+### 4. SoftDeletedR2dbcRepository 구현
 
 ```kotlin
 import io.bluetape4k.exposed.core.dao.id.SoftDeletedIdTable
@@ -268,7 +300,7 @@ suspendTransaction {
 }
 ```
 
-### 4. 배치 삽입 / Upsert
+### 5. 배치 삽입 / Upsert
 
 ```kotlin
 suspendTransaction {
@@ -291,7 +323,7 @@ suspendTransaction {
 `BatchInsertOnConflictDoNothing`는 PostgreSQL 계열에서 conflict target을 특정 컬럼으로 고정하지 않으므로,
 `id`가 아닌 unique 컬럼 또는 unique index를 사용하는 테이블에도 그대로 적용할 수 있습니다.
 
-### 5. Common Table Expression
+### 6. Common Table Expression
 
 ```kotlin
 import io.bluetape4k.exposed.core.CteTable
@@ -337,6 +369,7 @@ prepared parameter binding 순서를 유지합니다.
 | `findByFieldOrNull(field, value)`     | suspend    | `E?`             | 특정 컬럼 값으로 첫 번째 조회        |
 | `findAllByIds(ids)`                   | —          | `Flow<E>`        | 여러 ID로 일괄 조회             |
 | `findPage(pageNumber, pageSize, ...)` | suspend    | `ExposedPage<E>` | 페이징 조회                   |
+| `findCursorPage(pageSize, cursor, ...)` | suspend | `ExposedCursorPage<E, ID>` | 타입이 있는 기본 키 커서 조회 |
 | `deleteById(id)`                      | suspend    | `Int`            | ID로 삭제                   |
 | `deleteAll(op)`                       | suspend    | `Int`            | 조건에 맞는 레코드 삭제            |
 | `deleteAllByIds(ids)`                 | suspend    | `Int`            | 여러 ID로 일괄 삭제             |

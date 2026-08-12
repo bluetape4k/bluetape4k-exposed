@@ -19,6 +19,7 @@ A foundation module that provides shared column types, table helpers, extension 
 - **Batch insert**: `BatchInsertOnConflictDoNothing` (ignore-duplicate batch insert)
 - **CTE table facade**: `CteTable` maps selected query fields for JDBC/R2DBC `WITH` queries
 - **Pagination DTO**: `ExposedPage<T>` with derived page metadata
+- **Typed cursor DTO**: `ExposedCursorPage<T, C>` for bounded primary-key keyset pages
 
 ## Adding Dependencies
 
@@ -212,6 +213,33 @@ println("Total pages: ${page.totalPages}")
 println("Is last page: ${page.isLast}")
 ```
 
+### 9. ExposedCursorPage (typed cursor results)
+
+`ExposedCursorPage` is the bounded result DTO for forward-only keyset pagination. The cursor is the raw,
+non-null primary-key value from the repository's `IdTable`; it is not an opaque transport token.
+
+```kotlin
+import io.bluetape4k.exposed.core.ExposedCursorPage
+
+val page = ExposedCursorPage<UserRecord, Long>(
+    content = users,
+    nextCursor = 42L,
+    hasNext = true,
+)
+```
+
+The JDBC and R2DBC repository extensions use one `SELECT` with `LIMIT pageSize + 1`, do not run a count or
+offset query, and accept `pageSize` from 1 through 10,000. `ASC` variants use a strict `>` boundary and
+`DESC` variants use a strict `<` boundary; the null-placement variants only preserve their direction because
+an `IdTable` primary key is non-null. `hasNext == false` always has a null `nextCursor`.
+
+The caller must encode, sign, scope, and decode the cursor, and must reuse the same sort order and predicate
+for the next request. The API does not promise snapshot isolation, and the default predicate is `Op.TRUE`,
+so soft-deleted rows remain visible unless an active-row predicate is supplied. `Comparable` ID values such
+as `Long`, `Int`, `String`, `UUID`, or Kotlin `Uuid` are supported; `CompositeID` and other non-comparable
+IDs are intentionally outside this extension. Existing offset-based `ExposedPage`/`findPage` APIs remain
+unchanged.
+
 ## Key Files and Classes
 
 | File                                               | Description                                        |
@@ -226,6 +254,7 @@ println("Is last page: ${page.isLast}")
 | `serializable/BinarySerializedBinaryColumnType.kt` | Serialized Binary column type                      |
 | `serializable/BinarySerializedBlobColumnType.kt`   | Serialized Blob column type                        |
 | `ExposedPage.kt`                                   | Paginated result data class                        |
+| `ExposedCursorPage.kt`                             | Typed keyset/cursor result data class              |
 | `HasIdentifier.kt`                                 | Deprecated compatibility interface; prefer `Serializable` records |
 | `dao/id/KsuidTable.kt`                             | KSUID primary key table                            |
 | `dao/id/KsuidMillisTable.kt`                       | KsuidMillis primary key table                      |

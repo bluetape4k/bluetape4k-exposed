@@ -17,6 +17,7 @@ JetBrains Exposed에서 공통으로 쓰는 컬럼 타입, 테이블 helper, 확
 - **배치 삽입**: `BatchInsertOnConflictDoNothing` (중복 무시 배치 삽입)
 - **CTE 테이블 facade**: JDBC/R2DBC `WITH` 쿼리에서 선택 필드를 매핑하는 `CteTable`
 - **페이징 DTO**: 파생 페이지 메타데이터를 제공하는 `ExposedPage<T>`
+- **타입이 있는 커서 DTO**: 기본 키 keyset 페이지를 제한하는 `ExposedCursorPage<T, C>`
 
 ## 의존성 추가
 
@@ -210,6 +211,32 @@ println("총 페이지: ${page.totalPages}")
 println("마지막 페이지: ${page.isLast}")
 ```
 
+### 9. ExposedCursorPage (타입이 있는 커서 결과)
+
+`ExposedCursorPage`는 앞으로만 이동하는 keyset pagination의 제한된 결과 DTO입니다. 커서는 저장소의
+`IdTable`이 가진 null이 아닌 원시 기본 키 값이며, 전송용 불투명 토큰 자체는 아닙니다.
+
+```kotlin
+import io.bluetape4k.exposed.core.ExposedCursorPage
+
+val page = ExposedCursorPage<UserRecord, Long>(
+    content = users,
+    nextCursor = 42L,
+    hasNext = true,
+)
+```
+
+JDBC와 R2DBC 저장소 확장은 `LIMIT pageSize + 1`을 사용하는 SELECT 하나만 실행하며 count나 offset
+쿼리를 실행하지 않습니다. `pageSize`는 1부터 10,000까지이고, `ASC` 계열은 엄격한 `>` 경계,
+`DESC` 계열은 엄격한 `<` 경계를 사용합니다. `IdTable` 기본 키는 null이 아니므로 null 배치 변형은
+방향만 보존합니다. `hasNext == false`이면 `nextCursor`는 항상 null입니다.
+
+커서의 encode, 서명, 범위 지정, decode는 호출자가 소유하며 다음 요청에서도 같은 정렬과 predicate를
+재사용해야 합니다. snapshot 격리는 보장하지 않고 기본 predicate가 `Op.TRUE`이므로 활성 조건을
+전달하지 않으면 논리 삭제 행도 보입니다. `Long`, `Int`, `String`, `UUID`, Kotlin `Uuid`처럼
+`Comparable`인 ID를 지원하며 `CompositeID`와 비교할 수 없는 custom ID는 이 확장 범위에서 제외합니다.
+기존 offset 기반 `ExposedPage`/`findPage` API는 변경하지 않습니다.
+
 ## 주요 파일/클래스 목록
 
 | 파일                                                 | 설명                                     |
@@ -224,6 +251,7 @@ println("마지막 페이지: ${page.isLast}")
 | `serializable/BinarySerializedBinaryColumnType.kt` | 직렬화 Binary 컬럼 타입                       |
 | `serializable/BinarySerializedBlobColumnType.kt`   | 직렬화 Blob 컬럼 타입                         |
 | `ExposedPage.kt`                                   | 페이징 결과 데이터 클래스                         |
+| `ExposedCursorPage.kt`                             | 타입이 있는 keyset/cursor 결과 데이터 클래스      |
 | `HasIdentifier.kt`                                 | Deprecated 호환 인터페이스; `Serializable` record 권장 |
 | `dao/id/KsuidTable.kt`                             | KSUID 기본키 테이블                          |
 | `dao/id/KsuidMillisTable.kt`                       | KsuidMillis 기본키 테이블                    |

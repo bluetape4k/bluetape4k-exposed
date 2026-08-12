@@ -217,7 +217,41 @@ transaction {
 }
 ```
 
-### 6. Batch insert / Upsert
+### 6. Typed cursor pagination
+
+Use `findCursorPage` when a stable primary-key position is more useful than an offset and total count.
+The repository still runs inside the caller-owned JDBC `transaction {}`.
+
+```kotlin
+import io.bluetape4k.exposed.jdbc.repository.findCursorPage
+import org.jetbrains.exposed.v1.core.SortOrder
+
+transaction {
+    val first = repo.findCursorPage(
+        pageSize = 20,
+        predicate = { UserTable.name like "Hong%" },
+    )
+    val next = repo.findCursorPage(
+        pageSize = 20,
+        cursor = first.nextCursor,
+        sortOrder = SortOrder.ASC,
+        predicate = { UserTable.name like "Hong%" },
+    )
+}
+```
+
+The extension uses the raw `IdTable.id` value and a strict `>`/`<` boundary for ascending/descending
+sort orders. All six `SortOrder` variants are accepted; null-placement variants only keep their direction
+because primary keys are non-null. Each call executes one bounded `SELECT` with `LIMIT pageSize + 1`,
+never a count or offset query, and accepts `pageSize` from 1 through 10,000. `hasNext` and `nextCursor`
+follow the invariant documented by `ExposedCursorPage`.
+
+The caller owns cursor token encoding, signing, expiry, tenant/authorization scope, and reuse of the same
+sort and predicate. There is no snapshot guarantee across calls. The default predicate is `Op.TRUE`, so a
+soft-delete repository must pass its active-row predicate explicitly; `findPage` and Spring Batch keyset
+readers remain separate contracts.
+
+### 7. Batch insert / Upsert
 
 ```kotlin
 transaction {
@@ -237,7 +271,7 @@ transaction {
 }
 ```
 
-### 7. Common Table Expressions
+### 8. Common Table Expressions
 
 ```kotlin
 import io.bluetape4k.exposed.core.CteTable
@@ -281,6 +315,7 @@ parameters from CTE predicates keep their binding order.
 | `findByField(field, value)`           | Find by a specific column value        |
 | `findAllByIds(ids)`                   | Find multiple entities by IDs          |
 | `findPage(pageNumber, pageSize, ...)` | Paginated query                        |
+| `findCursorPage(pageSize, cursor, ...)` | Typed primary-key cursor page       |
 | `deleteById(id)`                      | Delete by ID                           |
 | `deleteByIdIgnore(id)`                | Delete by ID (ignore exceptions)       |
 | `deleteAll(op)`                       | Delete matching records                |
