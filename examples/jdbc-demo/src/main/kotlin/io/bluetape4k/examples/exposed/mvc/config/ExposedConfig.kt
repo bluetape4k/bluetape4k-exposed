@@ -18,8 +18,10 @@ import javax.sql.DataSource
 class ExposedConfig {
 
     @Bean
-    fun springTransactionManager(dataSource: DataSource): SpringTransactionManager =
-        SpringTransactionManager(dataSource, DatabaseConfig {}, false)
+    fun springTransactionManager(
+        dataSource: DataSource,
+        databaseConfig: DatabaseConfig,
+    ): SpringTransactionManager = SpringTransactionManager(dataSource, databaseConfig, false)
 
     @Bean
     fun databaseConfig(): DatabaseConfig = DatabaseConfig {}
