@@ -288,6 +288,14 @@ Dir.mktmpdir("bluetape4k-exposed-downstream-consumer") do |root|
                       gradleMetadata()
                   }
               }
+              maven {
+                  name = "central-snapshots"
+                  url = uri("https://central.sonatype.com/repository/maven-snapshots/")
+                  content {
+                      includeGroupAndSubgroups("io.github.bluetape4k")
+                      excludeGroup("io.github.bluetape4k.exposed")
+                  }
+              }
               mavenCentral {
                   content {
                       excludeGroup("io.github.bluetape4k.exposed")
