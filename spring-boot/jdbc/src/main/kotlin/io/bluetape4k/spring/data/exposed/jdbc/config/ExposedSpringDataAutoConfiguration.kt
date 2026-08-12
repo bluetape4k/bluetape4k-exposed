@@ -3,7 +3,6 @@ package io.bluetape4k.spring.data.exposed.jdbc.config
 import io.bluetape4k.spring.data.exposed.jdbc.mapping.ExposedMappingContext
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.dao.EntityClass
-import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.spring7.transaction.SpringTransactionManager
 import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
@@ -34,11 +33,18 @@ class ExposedSpringDataAutoConfiguration {
     @Bean
     fun exposedMappingContext(): ExposedMappingContext = ExposedMappingContext()
 
+    /**
+     * 애플리케이션이 별도 설정을 제공하지 않을 때 사용할 Exposed 기본 설정입니다.
+     */
+    @Bean
+    @ConditionalOnMissingBean(DatabaseConfig::class)
+    fun databaseConfig(): DatabaseConfig = DatabaseConfig {}
+
     @Bean("springTransactionManager")
     @ConditionalOnBean(DataSource::class)
     @ConditionalOnMissingBean(name = ["springTransactionManager"])
-    fun springTransactionManager(dataSource: DataSource): PlatformTransactionManager {
-        Database.connect(dataSource)
-        return SpringTransactionManager(dataSource, DatabaseConfig {}, false)
-    }
+    fun springTransactionManager(
+        dataSource: DataSource,
+        databaseConfig: DatabaseConfig,
+    ): PlatformTransactionManager = SpringTransactionManager(dataSource, databaseConfig, false)
 }
