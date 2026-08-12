@@ -6,6 +6,10 @@ plugins {
 
 configurations {
     testImplementation.get().extendsFrom(compileOnly.get(), runtimeOnly.get())
+    // JDK 25 테스트 런타임에는 legacy JDK 21 provider를 섞지 않습니다.
+    testRuntimeClasspath {
+        exclude(group = "io.github.bluetape4k", module = "bluetape4k-virtualthread-jdk21")
+    }
 }
 
 // Spring Boot 4 baseline을 compile/test classpath에만 보강한다.
@@ -70,7 +74,8 @@ dependencies {
     testImplementation(project(":bluetape4k-exposed-jdbc-tests")) {
         exclude(group = "org.jetbrains.exposed", module = "exposed-spring-boot-starter")
     }
-    testImplementation(bt4k.bluetape4k.virtualthread.jdk21)
+    // JDK 25 테스트 런타임과 StructuredTaskScope provider의 classfile/preview 호환성을 맞춘다.
+    testImplementation(bt4k.bluetape4k.virtualthread.jdk25)
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-jdbc")  // DataSource auto-configuration (Spring Boot 분리 모듈)
     testImplementation(libs.spring.batch.test)
