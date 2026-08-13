@@ -19,16 +19,8 @@ on:
       - '.claude/**'
   pull_request:
     branches: [develop, main]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.gitignore'
-      - '.editorconfig'
-      - '.gitleaks.toml'
-      - 'CHANGELOG.md'
-      - 'WIP.md'
-      - 'LICENSE'
-      - '.claude/**'
+    # Keep the PR workflow always-on so branch protection receives CI Status
+    # even when the change is limited to documentation or repository metadata.
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -116,12 +108,25 @@ jobs:
       timefold: ${{ steps.filter.outputs.timefold }}
       spring-boot-batch: ${{ steps.filter.outputs.spring-boot-batch }}
       utils-batch: ${{ steps.filter.outputs.utils-batch }}
+      docs-only: ${{ github.event_name == 'pull_request' && steps.filter.outputs['non-doc'] == 'false' }}
     steps:
       - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v4
         id: filter
         with:
+          predicate-quantifier: 'some-with-excludes'
           filters: |
+            non-doc:
+              - '**'
+              - '!**.md'
+              - '!docs/**'
+              - '!.gitignore'
+              - '!.editorconfig'
+              - '!.gitleaks.toml'
+              - '!CHANGELOG.md'
+              - '!WIP.md'
+              - '!LICENSE'
+              - '!.claude/**'
             core:
               - 'exposed/core/**'
               - 'exposed/dao/**'
@@ -218,6 +223,8 @@ jobs:
     name: Central Catalog Governance
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: [changes]
+    if: ${{ needs.changes.outputs['docs-only'] != 'true' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/checkout@v7
@@ -254,7 +261,8 @@ jobs:
     name: Build (compile only)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [validate-wrapper, catalog-governance]
+    needs: [changes, validate-wrapper, catalog-governance]
+    if: ${{ needs.changes.outputs['docs-only'] != 'true' }}
     steps:
       - uses: actions/checkout@v7
 
@@ -288,6 +296,48 @@ jobs:
           ruby scripts/publication/validate_module_metadata.rb
           ruby scripts/publication/validate_poms.rb
           ruby scripts/publication/validate_downstream_consumer.rb
+
+  docs-only-validation:
+    name: Docs-only validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [changes]
+    if: ${{ needs.changes.outputs['docs-only'] == 'true' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Verify changed paths stay in the docs-only boundary
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          test -n "$BASE_SHA"
+          test -n "$HEAD_SHA"
+          changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          test -n "$changed"
+
+          while IFS= read -r path; do
+            case "$path" in
+              *.md|docs/*|.gitignore|.editorconfig|.gitleaks.toml|LICENSE|.claude/*) ;;
+              *)
+                echo "Unexpected non-doc path: $path" >&2
+                exit 1
+                ;;
+            esac
+          done <<< "$changed"
+
+      - name: Validate README migration parity
+        run: ruby scripts/manual/validate_migration_readme_parity.rb README.md README.ko.md
+
+      - name: Validate diff whitespace
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git diff --check "$BASE_SHA" "$HEAD_SHA"
 
   # exposed-core + exposed-dao (H2)
   test-core:
@@ -1641,9 +1691,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs:
+      - changes
       - catalog-governance
       - gitleaks
       - build
+      - docs-only-validation
       - test-core
       - test-serialization
       - test-tink
