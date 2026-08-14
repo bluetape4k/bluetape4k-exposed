@@ -319,11 +319,12 @@ Spring Boot 4.x를 사용하는 경우:
 ```kotlin
 dependencies {
     // Spring Boot BOM 사용
-    implementation(platform(Libs.spring_boot_dependencies))
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:<spring-boot-version>"))
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<bluetape4k-version>"))
 
     // 나머지 의존성은 동일
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:${bluetape4kVersion}")
-    implementation(Libs.springBootStarter("web"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc")
+    implementation("org.springframework.boot:spring-boot-starter-web")
 }
 ```
 
@@ -349,18 +350,20 @@ Spring Boot는 기본적으로 다음 버전을 제공합니다:
 
 ```kotlin
 dependencies {
-    implementation(platform(Libs.spring_boot_dependencies))
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:${bluetape4kVersion}")
-    implementation(Libs.springBootStarter("web"))
-    implementation(Libs.jackson_module_kotlin)
-    implementation(Libs.exposed_spring_boot_starter)
-    implementation(Libs.exposed_jdbc)
-    implementation(Libs.exposed_dao)
-    implementation(Libs.exposed_migration_jdbc)
-    implementation(Libs.exposed_java_time)
-    runtimeOnly(Libs.h2_v2)
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:<spring-boot-version>"))
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<bluetape4k-version>"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc")
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-jdbc")
+    implementation("tools.jackson.module:jackson-module-kotlin")
+    implementation("org.jetbrains.exposed:exposed-spring-boot4-starter")
+    implementation("org.jetbrains.exposed:exposed-jdbc")
+    implementation("org.jetbrains.exposed:exposed-dao")
+    implementation("org.jetbrains.exposed:exposed-migration-jdbc")
+    implementation("org.jetbrains.exposed:exposed-java-time")
+    runtimeOnly("com.h2database:h2")
 
-    testImplementation(Libs.springBootStarter("test"))
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 ```
 

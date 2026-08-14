@@ -360,11 +360,12 @@ override fun toPersistValues(domain: ProductRecord): Map<Column<*>, Any?> =
 ```kotlin
 dependencies {
     // Use Spring Boot BOM
-    implementation(platform(Libs.spring_boot_dependencies))
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:<spring-boot-version>"))
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<bluetape4k-version>"))
 
     // Other dependencies remain the same
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-r2dbc:${bluetape4kVersion}")
-    implementation(Libs.springBootStarter("webflux"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-r2dbc")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
 }
 ```
 
@@ -392,14 +393,18 @@ The Spring Boot BOM keeps the WebFlux, R2DBC, test, and Spring Framework version
 
 ```kotlin
 dependencies {
-    implementation(platform(Libs.spring_boot_dependencies))
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-r2dbc:${bluetape4kVersion}")
-    implementation(Libs.springBootStarter("webflux"))
-    implementation(Libs.exposed_spring_boot_starter)
-    implementation(Libs.exposed_r2dbc)
-    runtimeOnly(Libs.h2_r2dbc)
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:<spring-boot-version>"))
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<bluetape4k-version>"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-r2dbc")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.jetbrains.exposed:exposed-spring-boot4-starter")
+    implementation("org.jetbrains.exposed:exposed-r2dbc")
+    implementation("org.jetbrains.exposed:exposed-java-time")
+    implementation("io.r2dbc:r2dbc-pool")
+    runtimeOnly("io.r2dbc:r2dbc-h2")
+    runtimeOnly("com.h2database:h2")
 
-    testImplementation(Libs.springBootStarter("test"))
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 ```
 

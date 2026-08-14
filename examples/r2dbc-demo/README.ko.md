@@ -362,11 +362,12 @@ Spring Boot 4 기반으로 예제를 실행할 때 확인할 내용입니다.
 ```kotlin
 dependencies {
     // Spring Boot BOM 사용
-    implementation(platform(Libs.spring_boot_dependencies))
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:<spring-boot-version>"))
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<bluetape4k-version>"))
 
     // 나머지 의존성은 동일
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-r2dbc:${bluetape4kVersion}")
-    implementation(Libs.springBootStarter("webflux"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-r2dbc")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
 }
 ```
 
@@ -394,14 +395,18 @@ Spring Boot BOM이 WebFlux, R2DBC, 테스트, Spring Framework 버전을 함께 
 
 ```kotlin
 dependencies {
-    implementation(platform(Libs.spring_boot_dependencies))
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-r2dbc:${bluetape4kVersion}")
-    implementation(Libs.springBootStarter("webflux"))
-    implementation(Libs.exposed_spring_boot_starter)
-    implementation(Libs.exposed_r2dbc)
-    runtimeOnly(Libs.h2_r2dbc)
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:<spring-boot-version>"))
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<bluetape4k-version>"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-r2dbc")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.jetbrains.exposed:exposed-spring-boot4-starter")
+    implementation("org.jetbrains.exposed:exposed-r2dbc")
+    implementation("org.jetbrains.exposed:exposed-java-time")
+    implementation("io.r2dbc:r2dbc-pool")
+    runtimeOnly("io.r2dbc:r2dbc-h2")
+    runtimeOnly("com.h2database:h2")
 
-    testImplementation(Libs.springBootStarter("test"))
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 ```
 

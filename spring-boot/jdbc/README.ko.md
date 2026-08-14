@@ -20,8 +20,9 @@ method-name query parsing을 하나의 repository 모델로 연결합니다.
 
 ```gradle
 dependencies {
-    implementation(platform(Libs.spring_boot_dependencies))
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:${version}")
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:<spring-boot-version>"))
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<bluetape4k-version>"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc")
 }
 ```
 
@@ -251,7 +252,8 @@ class UserQueryService(
 
 ```gradle
 dependencies {
-    implementation(platform(Libs.spring_boot_dependencies))
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:<spring-boot-version>"))
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<bluetape4k-version>"))
 }
 ```
 

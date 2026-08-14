@@ -11,7 +11,8 @@ import java.time.Instant
  * Exposed `IdTable` 베이스 클래스입니다.
  *
  * > **주의**: 이 클래스는 `exposed-java-time` 모듈에 의존합니다.
- * > `build.gradle.kts`에 `compileOnly(Libs.exposed_java_time)` 의존성이 필요합니다.
+ * > `build.gradle.kts`에 `compileOnly("org.jetbrains.exposed:exposed-java-time")`
+ * > 의존성이 필요합니다. 버전은 Exposed BOM에서 관리합니다.
  *
  * ## 컬럼 동작
  * | 컬럼        | INSERT 시                          | UPDATE 시                          |

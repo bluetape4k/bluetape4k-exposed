@@ -20,11 +20,12 @@ Exposed R2DBC `suspendTransaction` 블록에 위임합니다.
 
 ```gradle
 dependencies {
-    implementation(platform(Libs.spring_boot_dependencies))
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-r2dbc:${version}")
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:<spring-boot-version>"))
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<bluetape4k-version>"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-r2dbc")
 
     // 코루틴 지원 (필수)
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:${version}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 }
 ```
 
