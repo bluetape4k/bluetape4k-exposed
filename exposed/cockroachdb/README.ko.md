@@ -26,9 +26,11 @@ CockroachDB는 PostgreSQL wire protocol과 호환되지만 PostgreSQL과 동일�
 않습니다. 이 모듈은 의도적으로 custom Exposed dialect를 등록하지 않으며 넓은
 PostgreSQL DDL parity를 주장하지 않습니다.
 
-JetBrains Exposed 1.3.0은 CockroachDB를 built-in supported database로 나열하지
-않습니다. 이 모듈은 full dialect가 아니라 제한된 helper와 검증된 compatibility
-slice로 보아야 합니다.
+현재 `bluetape4k-exposed` 1.13.0 개발선은 JetBrains Exposed 1.4.0을 대상으로
+합니다. [Exposed 1.4.0 release](https://github.com/JetBrains/Exposed/releases/tag/1.4.0)와
+[1.4.0 changelog](https://github.com/JetBrains/Exposed/blob/1.4.0/CHANGELOG.md)에는
+built-in CockroachDB dialect를 추가했다는 근거가 없습니다. 따라서 이 모듈은 full
+dialect가 아니라 제한된 helper와 검증된 compatibility slice로 보아야 합니다.
 
 ## 헬퍼 경계
 
@@ -45,9 +47,9 @@ slice로 보아야 합니다.
 | Schema metadata | Supported | HikariCP 경유 `DatabaseMetaData`로 table/index metadata 조회 성공 |
 | Serializable transaction retry | Supported | `withCockroachTransaction`이 CockroachDB retryable transaction error만 재시도 |
 | Migration diff no-op | Deferred | `MigrationUtils`가 create 이후에도 generated-ID sequence ownership 변경을 제안 |
-| `CREATE DOMAIN` | Deferred | CockroachDB 공식 문서에서 unsupported PostgreSQL feature로 분류 |
-| PostgreSQL range types | Deferred | CockroachDB 공식 문서에서 PostgreSQL range types를 unsupported로 분류 |
-| Custom CockroachDB dialect | Out of scope | accepted path가 dialect를 요구하기 전까지 1.11.0은 helper-only 계약 유지 |
+| `CREATE DOMAIN` | Deferred | [CockroachDB 공식 문서에서 unsupported PostgreSQL feature로 분류](https://www.cockroachlabs.com/docs/stable/query-behavior-troubleshooting) |
+| PostgreSQL range types | Deferred | [CockroachDB 공식 문서에서 PostgreSQL range types를 unsupported로 분류](https://www.cockroachlabs.com/docs/stable/postgresql-compatibility) |
+| Custom CockroachDB dialect | Out of scope | accepted path가 dialect를 요구하기 전까지 `bluetape4k-exposed` 1.13.0 개발선은 helper-only 계약을 유지 |
 
 ## 범위 밖
 
@@ -104,8 +106,9 @@ transaction(db) {
 
 ## Serializable Transaction Retry
 
-CockroachDB transaction retry error는 SQLSTATE `40001`과 `restart transaction`으로
-시작하는 메시지로 식별합니다. 이 retryable signature만 제한적으로 재시도하려면
+CockroachDB 공식 [transaction retry error reference](https://www.cockroachlabs.com/docs/stable/transaction-retry-error-reference)는
+transaction retry error를 SQLSTATE `40001`과 `restart transaction`으로 시작하는
+메시지로 설명합니다. 이 retryable signature만 제한적으로 재시도하려면
 `withCockroachTransaction`을 사용합니다:
 
 ```kotlin

@@ -65,7 +65,8 @@ internal object CockroachDbCompatibility {
         CockroachDbCompatibilityItem(
             feature = CUSTOM_DIALECT,
             status = CockroachDbCompatibilityStatus.OutOfScope,
-            evidence = "1.11.0 keeps the helper-only contract until a failing accepted path requires a dialect.",
+            evidence = "Exposed 1.4.0 on the 1.13.0 development line keeps the " +
+                    "helper-only contract until an accepted path requires a dialect.",
         ),
     )
 
