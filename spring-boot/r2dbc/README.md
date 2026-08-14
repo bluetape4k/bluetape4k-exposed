@@ -20,11 +20,12 @@ transactional execution to Exposed R2DBC `suspendTransaction` blocks.
 
 ```gradle
 dependencies {
-    implementation(platform(Libs.spring_boot_dependencies))
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-r2dbc:${version}")
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:<spring-boot-version>"))
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<bluetape4k-version>"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-r2dbc")
 
     // Coroutines support (required)
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:${version}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 }
 ```
 
