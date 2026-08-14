@@ -25,9 +25,11 @@ CockroachDB is PostgreSQL-wire-compatible but not PostgreSQL-equivalent. This
 module intentionally does not register a custom Exposed dialect and does not
 claim broad PostgreSQL DDL parity.
 
-JetBrains Exposed 1.3.0 does not list CockroachDB as a built-in supported
-database. Treat this module as a bounded helper and verified compatibility
-slice, not as a full dialect.
+The current `bluetape4k-exposed` 1.13.0 development line targets JetBrains
+Exposed 1.4.0. The [Exposed 1.4.0 release](https://github.com/JetBrains/Exposed/releases/tag/1.4.0)
+and [1.4.0 changelog](https://github.com/JetBrains/Exposed/blob/1.4.0/CHANGELOG.md)
+do not add a built-in CockroachDB dialect. Treat this module as a bounded
+helper and verified compatibility slice, not as a full dialect.
 
 ## Helper Boundary
 
@@ -44,9 +46,9 @@ slice, not as a full dialect.
 | Schema metadata | Supported | `DatabaseMetaData` discovers table and index metadata through HikariCP. |
 | Serializable transaction retry | Supported | `withCockroachTransaction` retries only CockroachDB retryable transaction errors. |
 | Migration diff no-op | Deferred | `MigrationUtils` still proposes generated-ID sequence ownership changes after create. |
-| `CREATE DOMAIN` | Deferred | CockroachDB documents this PostgreSQL feature as unsupported. |
-| PostgreSQL range types | Deferred | CockroachDB documents PostgreSQL range types as unsupported. |
-| Custom CockroachDB dialect | Out of scope | 1.11.0 keeps the helper-only contract until accepted paths require a dialect. |
+| `CREATE DOMAIN` | Deferred | [CockroachDB documents this PostgreSQL feature as unsupported](https://www.cockroachlabs.com/docs/stable/query-behavior-troubleshooting). |
+| PostgreSQL range types | Deferred | [CockroachDB documents PostgreSQL range types as unsupported](https://www.cockroachlabs.com/docs/stable/postgresql-compatibility). |
+| Custom CockroachDB dialect | Out of scope | The `bluetape4k-exposed` 1.13.0 development line keeps the helper-only contract until accepted paths require a dialect. |
 
 ## Out Of Scope
 
@@ -103,10 +105,11 @@ transaction(db) {
 
 ## Serializable Transaction Retry
 
-CockroachDB transaction retry errors are identified by SQLSTATE `40001` and a
-message beginning with `restart transaction`. Use `withCockroachTransaction` for
-bounded serializable work that should retry only that CockroachDB retryable
-signature:
+CockroachDB documents transaction retry errors as SQLSTATE `40001` with a
+message beginning with `restart transaction` in its [transaction retry error
+reference](https://www.cockroachlabs.com/docs/stable/transaction-retry-error-reference).
+Use `withCockroachTransaction` for bounded serializable work that should retry
+only that CockroachDB retryable signature:
 
 ```kotlin
 import io.bluetape4k.exposed.cockroachdb.CockroachTransactionRetryOptions

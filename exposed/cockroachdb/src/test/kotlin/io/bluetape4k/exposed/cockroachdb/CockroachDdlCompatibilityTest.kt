@@ -22,7 +22,8 @@ import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 import org.junit.jupiter.api.Test
 
 /**
- * CockroachDB DDL boundary tests for the helper-only 1.11.0 contract.
+ * Exposed 1.4.0 및 `bluetape4k-exposed` 1.13.0 개발선의 helper-only 계약을
+ * 검증하는 CockroachDB DDL 경계 테스트입니다.
  */
 class CockroachDdlCompatibilityTest: AbstractCockroachDbTest() {
 
