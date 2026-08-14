@@ -518,6 +518,11 @@ class ExposedKtorReadinessBudgetTest {
             "SQL",
             "URLs",
             "credentials",
+            "Timeout contract",
+            "readinessProbeTimeout",
+            "jdbcQueryTimeout",
+            "defaultQueryTimeout",
+            "no separate Ktor query timeout",
         ).forEach { assertTrue(kdoc.contains(it), it) }
     }
 

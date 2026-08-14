@@ -60,6 +60,11 @@ fun Route.bluetape4kExposedHealthRoutes(
  *
  * Contract: probes and resources are caller-owned, including authentication and request concurrency. This helper
  * creates or closes no resources. Responses never expose cache keys, SQL, URLs, or credentials.
+ * Timeout contract: `readinessProbeTimeout` is the coroutine wall-clock budget. JDBC readiness always applies
+ * `jdbcQueryTimeout`, truncating sub-second durations to whole seconds with a minimum of one, so it overrides
+ * `DatabaseConfig.defaultQueryTimeout`. R2DBC readiness inherits `R2dbcDatabaseConfig.defaultQueryTimeout` and
+ * has no separate Ktor query timeout. Unsupported drivers may ignore the statement timeout; cooperative
+ * operations still observe the coroutine budget.
  */
 fun Route.bluetape4kExposedHealthRoutes(
     jdbcDatabase: Database?,
