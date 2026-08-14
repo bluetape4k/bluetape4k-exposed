@@ -199,6 +199,43 @@ suspendTransaction(db = r2dbcDatabase) {
 }
 ```
 
+## Transaction Timeout Contract
+
+`exposedJdbcTransaction` and `exposedR2dbcTransaction` use the statement timeout
+from the caller-owned Exposed database configuration. Configure the integer
+number of seconds when creating the database; `0` keeps Exposed's driver
+default (no statement timeout). `defaultQueryTimeout` may be `0` or a positive
+number of seconds, while Ktor's `readinessProbeTimeout` and `jdbcQueryTimeout`
+must be positive Durations.
+
+```kotlin
+import org.jetbrains.exposed.v1.core.DatabaseConfig
+
+val jdbcDatabase = Database.connect(dataSource, databaseConfig = DatabaseConfig {
+    defaultQueryTimeout = 5
+})
+
+val r2dbcDatabase = R2dbcDatabase.connect(
+    databaseConfig = R2dbcDatabaseConfig {
+        setUrl(applicationConfig.property("database.r2dbc.url").getString())
+        defaultQueryTimeout = 7
+    }
+)
+```
+
+A transaction receiver inherits the caller-owned database default. The
+receiver `queryTimeout` override wins for that transaction only. The value is
+measured in whole driver seconds, and unsupported drivers may ignore the
+statement timeout.
+
+For `/readyz/exposed`, `readinessProbeTimeout` is the coroutine wall-clock
+budget. JDBC readiness always applies `jdbcQueryTimeout`; sub-second durations
+are truncated to whole seconds with a minimum of one, so it overrides
+`DatabaseConfig.defaultQueryTimeout`.
+R2DBC readiness inherits `R2dbcDatabaseConfig.defaultQueryTimeout` and exposes no
+separate Ktor query-timeout setting. The caller still creates and closes the
+databases, pools, and dispatcher.
+
 ## Cache Readiness Contributors
 
 Use a fixed operational component name. It must match `[a-z][a-z0-9_-]{0,62}`;
