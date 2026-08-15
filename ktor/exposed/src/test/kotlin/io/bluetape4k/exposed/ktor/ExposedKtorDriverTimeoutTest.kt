@@ -4,6 +4,7 @@ import eu.rekawek.toxiproxy.Proxy
 import eu.rekawek.toxiproxy.ToxiproxyClient
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.testcontainers.database.CockroachServer
 import io.bluetape4k.testcontainers.database.JdbcServer
@@ -19,6 +20,10 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -100,6 +105,49 @@ class ExposedKtorDriverTimeoutTest {
         r2dbcCases().forEach { case ->
             runR2dbcProbe(case)
         }
+    }
+
+    @Test
+    fun `R2DBC coroutine cancellation은 slow statement를 정리하고 session을 재사용한다`() = testApplication {
+        val database = R2dbcDatabase.connect(
+            databaseConfig = R2dbcDatabaseConfig {
+                setUrl(r2dbcCases().first().r2dbcUrl())
+                defaultQueryTimeout = 30
+            },
+        )
+        val statementStarted = CompletableDeferred<Unit>()
+        val requestCompleted = CompletableDeferred<Unit>()
+
+        application {
+            routing {
+                get("/cancel") {
+                    statementStarted.complete(Unit)
+                    try {
+                        call.exposedR2dbcTransaction(database) {
+                            exec("SELECT pg_sleep(5)")
+                        }
+                    } finally {
+                        requestCompleted.complete(Unit)
+                    }
+                }
+                get("/ping") {
+                    call.exposedR2dbcTransaction(database) {
+                        exec("SELECT 1")
+                    }
+                    call.respondText("COMPLETED")
+                }
+            }
+        }
+
+        coroutineScope {
+            val request = async { client.get("/cancel") }
+            withTimeout(5.seconds) { statementStarted.await() }
+            request.cancelAndJoin()
+            request.isCancelled.shouldBeTrue()
+            withTimeout(5.seconds) { requestCompleted.await() }
+        }
+
+        withTimeout(5.seconds) { client.get("/ping").bodyAsText() } shouldBeEqualTo "COMPLETED"
     }
 
     @Test
