@@ -70,12 +70,18 @@ class ProductEntity(id: EntityID<Long>) : LongEntity(id) {
 data class ProductRecord(
     val id: Long? = null,
     val name: String,
-    val price: java.math.BigDecimal,
+    val price: java.math.BigDecimal = java.math.BigDecimal.ZERO,
     val stock: Int = 0,
-)
+) : java.io.Serializable {
+    companion object {
+        private const val serialVersionUID: Long = 1L
+    }
+}
 
 fun ProductEntity.toRecord() = ProductRecord(id.value, name, price, stock)
 ```
+
+`ProductRecord`는 JSON HTTP 경계와 별개로 JVM DTO의 `Serializable` 계약을 유지하며 `serialVersionUID = 1L`을 명시합니다. 직렬화된 데이터에 영향을 주는 필드 변경은 호환성과 마이그레이션을 먼저 검토하고, 이전 데이터를 의도적으로 무효화할 때만 UID를 변경합니다.
 
 ## Repository
 

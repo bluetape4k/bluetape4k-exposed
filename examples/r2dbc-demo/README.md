@@ -66,8 +66,14 @@ data class ProductRecord(
     val name: String,
     val price: java.math.BigDecimal = java.math.BigDecimal.ZERO,
     val stock: Int = 0,
-) : java.io.Serializable
+) : java.io.Serializable {
+    companion object {
+        private const val serialVersionUID: Long = 1L
+    }
+}
 ```
+
+`ProductRecord` keeps the JVM DTO `Serializable` contract separately from the JSON HTTP boundary and declares `serialVersionUID = 1L`. Review compatibility and migration before changing fields that affect serialized data, and change the UID only when older data must be intentionally invalidated.
 
 The repository extracts the ID through `extractId(entity)`.
 
