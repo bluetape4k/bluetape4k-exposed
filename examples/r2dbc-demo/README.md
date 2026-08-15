@@ -25,7 +25,8 @@ WebFlux runtime, R2DBC pool configuration, and platform dependency management th
 - **ExposedR2dbcRepository**: record-centric row mapping implementation
 - **Spring WebFlux**: Async non-blocking REST API
 - **Coroutines**: R2DBC database access via `suspendTransaction`
-- **Automatic schema creation**: Async initialization after the application is ready
+- **Lifecycle-bound initialization**: Schema and seed work runs once after `ApplicationReadyEvent`
+- **Explicit readiness**: `/readyz` returns `UP` only after initialization succeeds
 - **Spring Boot compatible**: Spring Boot 4+ platform dependency management
 
 ## Project Structure
@@ -38,10 +39,11 @@ src/main/kotlin/io/bluetape4k/examples/exposed/webflux/
 ├── repository/
 │   └── ProductR2dbcRepository.kt    # suspend CRUD Repository
 ├── controller/
-│   └── ProductController.kt         # Async REST API
+│   ├── ProductController.kt         # Async REST API
+│   └── ReadinessController.kt       # Initialization readiness endpoint
 └── config/
     ├── ExposedR2dbcConfig.kt        # R2DBC database configuration
-    └── DataInitializer.kt           # Async data initializer
+    └── DataInitializer.kt           # Lifecycle-bound data initializer
 ```
 
 ## Domain Model
@@ -220,7 +222,10 @@ The application starts on port `8080` by default.
 
 ### Initial Data
 
-After the application is ready (`ApplicationReadyEvent`), three sample products are asynchronously created:
+After `ApplicationReadyEvent`, `DataInitializer` starts one lifecycle-bound coroutine that creates the schema and
+three sample products. Duplicate ready events are ignored, and the seed query is idempotent. The `/readyz` endpoint
+returns `503 {"status":"DOWN"}` while initialization is running or has failed, and returns `200 {"status":"UP"}`
+only after initialization completes.
 
 ```
 1. Kotlin Coroutines Book - $39.99 (100 in stock)
@@ -312,23 +317,27 @@ suspend fun update(@PathVariable id: Long, @RequestBody dto: ProductRecord): Pro
     }
 ```
 
-### Async Initialization
+### Lifecycle Initialization
 
-Data initialization runs in a separate coroutine on `ApplicationReadyEvent`, avoiding blocking the startup thread.
+Data initialization runs in a lifecycle-bound coroutine after `ApplicationReadyEvent`, without fire-and-forget work
+escaping the application. The initializer publishes Spring Boot `ReadinessState.REFUSING_TRAFFIC` until the schema
+and seed are complete, then publishes `ACCEPTING_TRAFFIC`. Initialization failures remain observable through
+`awaitReady()` and `/readyz`; shutdown cancels the child and waits for it to finish.
 
-```kotlin
-@Component
-class DataInitializer(private val r2dbcDatabase: R2dbcDatabase) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
-    @EventListener(ApplicationReadyEvent::class)
-    fun onApplicationReady(event: ApplicationReadyEvent) {
-        scope.launch {
-            initializeData()
-        }
-    }
-}
+```http
+GET /readyz
+// 200 {"status":"UP"} after schema + seed completion
+// 503 {"status":"DOWN"} while initializing or after a failure
 ```
+
+The coroutine dispatcher is provided by the application configuration, so tests can replace it with a test
+dispatcher. `DataInitializer.awaitReady()` is the deterministic synchronization point for integration tests; do not
+poll `/products` or add `Thread.sleep` delays.
+
+### Readiness Endpoint
+
+`GET /readyz` is an explicit health/status contract for this demo. It does not expose database error details, and a
+failed initialization keeps the endpoint at `503` until the application is restarted.
 
 ## Record Mapping
 
