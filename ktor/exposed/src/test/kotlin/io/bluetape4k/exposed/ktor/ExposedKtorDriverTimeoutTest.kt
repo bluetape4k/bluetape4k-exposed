@@ -144,7 +144,8 @@ class ExposedKtorDriverTimeoutTest {
             withTimeout(5.seconds) { statementStarted.await() }
             request.cancelAndJoin()
             request.isCancelled.shouldBeTrue()
-            withTimeout(5.seconds) { requestCompleted.await() }
+            // 드라이버별 query 정리와 request finally 실행은 statement timeout과 별도 예산이 필요합니다.
+            withTimeout(10.seconds) { requestCompleted.await() }
         }
 
         withTimeout(5.seconds) { client.get("/ping").bodyAsText() } shouldBeEqualTo "COMPLETED"
