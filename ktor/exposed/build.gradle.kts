@@ -1,4 +1,44 @@
 
+tasks.named<Test>("test") {
+    useJUnitPlatform {
+        excludeTags("driver-timeout")
+    }
+}
+
+tasks.register<Test>("driverTimeoutTest") {
+    group = "verification"
+    description = "Runs sequential driver statement-timeout and Toxiproxy compatibility tests."
+
+    val testSourceSet = sourceSets.named("test").get()
+    testClassesDirs = testSourceSet.output.classesDirs
+    classpath = testSourceSet.runtimeClasspath
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+
+    maxParallelForks = 1
+    systemProperty("junit.jupiter.execution.parallel.enabled", "false")
+    useJUnitPlatform {
+        includeTags("driver-timeout")
+    }
+    jvmArgs(
+        "-Xshare:off",
+        "-Xms2M",
+        "-Xmx2G",
+        "-XX:+UseG1GC",
+        "-XX:+UnlockExperimentalVMOptions",
+        "-XX:+EnableDynamicAgentLoading",
+        "--enable-preview",
+        "-Didea.io.use.nio2=true",
+    )
+
+    binaryResultsDirectory.set(layout.buildDirectory.dir("test-results/driverTimeoutTest/binary"))
+    reports.junitXml.required.set(true)
+    reports.junitXml.outputLocation.set(layout.buildDirectory.dir("test-results/driverTimeoutTest"))
+    reports.junitXml.includeSystemOutLog.set(false)
+    reports.junitXml.includeSystemErrLog.set(false)
+    reports.html.required.set(false)
+}
+
 configurations {
     testImplementation.get().extendsFrom(compileOnly.get(), runtimeOnly.get())
 }
@@ -20,6 +60,15 @@ dependencies {
 
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
     testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
+    testImplementation(libs.testcontainers.cockroachdb)
+    testImplementation(libs.testcontainers.toxiproxy)
+
+    testRuntimeOnly(bt4k.mariadb.java.client)
+    testRuntimeOnly(bt4k.mysql.connector.j)
+    testRuntimeOnly(bt4k.postgresql)
+    testRuntimeOnly(bt4k.r2dbc.mariadb)
+    testRuntimeOnly(bt4k.r2dbc.mysql)
+    testRuntimeOnly(bt4k.r2dbc.postgresql)
 
     testImplementation(bt4k.bluetape4k.ktor.testing)
     testImplementation(bt4k.bluetape4k.assertions)
