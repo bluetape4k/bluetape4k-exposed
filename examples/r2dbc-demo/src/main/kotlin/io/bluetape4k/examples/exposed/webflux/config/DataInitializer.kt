@@ -15,6 +15,8 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
@@ -52,6 +54,7 @@ class DataInitializer(
         dispatcher = databaseCoroutineDispatcher,
         initialize = ::initializeData,
     )
+    private val initializationMutex = Mutex()
 
     @EventListener(ApplicationReadyEvent::class)
     fun onApplicationReady(event: ApplicationReadyEvent) {
@@ -75,7 +78,7 @@ class DataInitializer(
     }
 
     /** 스키마를 보장하고 비어 있는 상품 테이블에 데모 seed를 멱등적으로 적재한다. */
-    suspend fun initializeData() {
+    suspend fun initializeData() = initializationMutex.withLock {
         ensureSchema()
         suspendTransaction(r2dbcDatabase) {
             if (Products.selectAll().count() == 0L) {
@@ -141,7 +144,7 @@ internal class DataInitializerLifecycle(
         state.set(DataInitializationState.INITIALIZING)
         publishReadiness(ReadinessState.REFUSING_TRAFFIC)
         log.info { "R2DBC demo 데이터 초기화를 시작합니다." }
-        scope.launch {
+        val job = scope.launch {
             try {
                 initialize()
                 state.set(DataInitializationState.READY)
@@ -157,6 +160,12 @@ internal class DataInitializerLifecycle(
                 completion.completeExceptionally(e)
                 log.error(e) { "R2DBC demo 데이터 초기화에 실패했습니다." }
                 publishReadiness(ReadinessState.REFUSING_TRAFFIC)
+            }
+        }
+        job.invokeOnCompletion { cause ->
+            if (cause is CancellationException) {
+                state.set(DataInitializationState.CANCELLED)
+                completion.cancel(cause)
             }
         }
     }

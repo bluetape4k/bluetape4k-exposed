@@ -4,6 +4,7 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -82,6 +83,39 @@ class DataInitializerLifecycleTest {
         lifecycle.closeAndJoin()
 
         cancelled.await()
+    }
+
+    @Test
+    fun `close before dispatcher runs completes readiness wait with cancellation`() = runTest {
+        val publisher = RecordingApplicationEventPublisher()
+        val lifecycle = DataInitializerLifecycle(publisher, StandardTestDispatcher(testScheduler)) {
+            awaitCancellation()
+        }
+
+        lifecycle.start()
+        lifecycle.closeAndJoin()
+
+        assertFailsWith<CancellationException> {
+            lifecycle.awaitReady()
+        }
+    }
+
+    @Test
+    fun `premature accepting readiness is rejected until initialization completes`() = runTest {
+        val publisher = RecordingApplicationEventPublisher()
+        val lifecycle = DataInitializerLifecycle(publisher, StandardTestDispatcher(testScheduler)) {}
+
+        lifecycle.start()
+        lifecycle.onReadinessChange(AvailabilityChangeEvent(this, ReadinessState.ACCEPTING_TRAFFIC))
+        publisher.readinessStates shouldBeEqualTo listOf(
+            ReadinessState.REFUSING_TRAFFIC,
+            ReadinessState.REFUSING_TRAFFIC,
+        )
+
+        advanceUntilIdle()
+        lifecycle.awaitReady()
+        publisher.readinessStates.last() shouldBeEqualTo ReadinessState.ACCEPTING_TRAFFIC
+        lifecycle.closeAndJoin()
     }
 
     private class RecordingApplicationEventPublisher : ApplicationEventPublisher {

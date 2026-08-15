@@ -6,6 +6,8 @@ import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.examples.exposed.webflux.config.DataInitializer
 import io.bluetape4k.examples.exposed.webflux.domain.ProductRecord
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Order
@@ -66,6 +68,34 @@ class ProductControllerTest {
             .responseBody
             .orEmpty()
         products shouldHaveSize 3
+    }
+
+    @Test
+    fun `concurrent initialization keeps seed idempotent`() = runSuspendIO {
+        val initialProducts = webTestClient.get().uri("/products")
+            .exchange()
+            .expectStatus().isOk
+            .expectBodyList<ProductRecord>()
+            .returnResult()
+            .responseBody
+            .orEmpty()
+
+        coroutineScope {
+            repeat(2) {
+                launch {
+                    dataInitializer.initializeData()
+                }
+            }
+        }
+
+        val products = webTestClient.get().uri("/products")
+            .exchange()
+            .expectStatus().isOk
+            .expectBodyList<ProductRecord>()
+            .returnResult()
+            .responseBody
+            .orEmpty()
+        products shouldHaveSize initialProducts.size
     }
 
     @Test

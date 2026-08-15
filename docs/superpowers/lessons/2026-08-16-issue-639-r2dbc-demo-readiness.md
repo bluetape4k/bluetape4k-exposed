@@ -26,13 +26,13 @@
 ## 결과와 검증
 
 - lifecycle 단위 테스트가 중복 시작의 단일 실행, 실패 시 예외·readiness 상태,
-  child cancellation 완료 대기를 고정한다.
+  premature readiness 차단, dispatcher 실행 전 종료, child cancellation 완료 대기를 고정한다.
 - WebFlux 통합 테스트가 `awaitReady()`를 동기화 지점으로 사용하고 `/readyz`의
   `200 UP`을 검증하며, `/products` polling과 `Thread.sleep`을 제거했다.
-- seed 재실행 테스트가 상품 3개 불변식을 검증한다.
+- 순차·동시 seed 재실행 테스트가 상품 3개 불변식을 검증한다.
 - `:exposed-spring-boot-r2dbc-demo:test --no-build-cache`: 30 tests, 0 failures,
   0 errors, 0 skipped.
-- targeted lifecycle/controller 테스트: 10 tests 통과.
+- targeted lifecycle/controller 테스트: 14 tests 통과.
 - `detekt`와 `:exposed-spring-boot-r2dbc-demo:detekt`: 통과(`NO-SOURCE` 포함).
 - `git diff --check`: 통과. migration README parity validator는 이 모듈 README에
   migration marker가 없어 적용 대상이 아니므로 `N/A`로 기록한다.
