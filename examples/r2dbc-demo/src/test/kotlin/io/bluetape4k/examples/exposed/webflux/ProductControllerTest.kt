@@ -5,6 +5,7 @@ import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.examples.exposed.webflux.config.DataInitializer
 import io.bluetape4k.examples.exposed.webflux.domain.ProductRecord
+import io.bluetape4k.examples.exposed.webflux.domain.Products
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -13,6 +14,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
+import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
+import org.jetbrains.exposed.v1.r2dbc.deleteAll
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
@@ -28,6 +32,9 @@ class ProductControllerTest {
 
     @Autowired
     private lateinit var dataInitializer: DataInitializer
+
+    @Autowired
+    private lateinit var r2dbcDatabase: R2dbcDatabase
 
     @Value("\${local.server.port}")
     private var port: Int = 0
@@ -71,14 +78,9 @@ class ProductControllerTest {
     }
 
     @Test
+    @Order(3)
     fun `concurrent initialization keeps seed idempotent`() = runSuspendIO {
-        val initialProducts = webTestClient.get().uri("/products")
-            .exchange()
-            .expectStatus().isOk
-            .expectBodyList<ProductRecord>()
-            .returnResult()
-            .responseBody
-            .orEmpty()
+        suspendTransaction(r2dbcDatabase) { Products.deleteAll() }
 
         coroutineScope {
             repeat(2) {
@@ -95,7 +97,7 @@ class ProductControllerTest {
             .returnResult()
             .responseBody
             .orEmpty()
-        products shouldHaveSize initialProducts.size
+        products shouldHaveSize 3
     }
 
     @Test

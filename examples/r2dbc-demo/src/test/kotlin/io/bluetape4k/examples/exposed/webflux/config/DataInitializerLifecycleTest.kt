@@ -67,6 +67,44 @@ class DataInitializerLifecycleTest {
     }
 
     @Test
+    fun `accepting readiness publication failure is observable`() = runTest {
+        val publisher = RecordingApplicationEventPublisher().apply {
+            throwOnState = ReadinessState.ACCEPTING_TRAFFIC
+        }
+        val lifecycle = DataInitializerLifecycle(publisher, StandardTestDispatcher(testScheduler)) {}
+
+        lifecycle.start()
+        advanceUntilIdle()
+
+        assertFailsWith<IllegalStateException> {
+            lifecycle.awaitReady()
+        }
+        lifecycle.isReady.shouldBeFalse()
+        publisher.readinessStates shouldBeEqualTo listOf(
+            ReadinessState.REFUSING_TRAFFIC,
+            ReadinessState.REFUSING_TRAFFIC,
+        )
+
+        lifecycle.closeAndJoin()
+    }
+
+    @Test
+    fun `initial refusing readiness publication failure is observable`() = runTest {
+        val publisher = RecordingApplicationEventPublisher().apply {
+            throwOnState = ReadinessState.REFUSING_TRAFFIC
+        }
+        val lifecycle = DataInitializerLifecycle(publisher, StandardTestDispatcher(testScheduler)) {}
+
+        lifecycle.start()
+
+        assertFailsWith<IllegalStateException> {
+            lifecycle.awaitReady()
+        }
+        lifecycle.isReady.shouldBeFalse()
+        lifecycle.closeAndJoin()
+    }
+
+    @Test
     fun `close waits for the child coroutine to observe cancellation`() = runTest {
         val publisher = RecordingApplicationEventPublisher()
         val cancelled = CompletableDeferred<Unit>()
@@ -120,16 +158,26 @@ class DataInitializerLifecycleTest {
 
     private class RecordingApplicationEventPublisher : ApplicationEventPublisher {
 
+        var throwOnState: ReadinessState? = null
+
         val readinessStates: List<ReadinessState>
             get() = events.mapNotNull { (it as? AvailabilityChangeEvent<*>)?.state as? ReadinessState }
 
         private val events = mutableListOf<Any>()
 
         override fun publishEvent(event: ApplicationEvent) {
-            events += event
+            record(event)
         }
 
         override fun publishEvent(event: Any) {
+            record(event)
+        }
+
+        private fun record(event: Any) {
+            val state = (event as? AvailabilityChangeEvent<*>)?.state as? ReadinessState
+            if (state == throwOnState) {
+                throw IllegalStateException("readiness publication failed for $state")
+            }
             events += event
         }
     }

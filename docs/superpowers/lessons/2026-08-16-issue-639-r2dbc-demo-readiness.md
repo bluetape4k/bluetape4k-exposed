@@ -16,6 +16,9 @@
 - schema/seed가 끝날 때까지 `REFUSING_TRAFFIC`을 유지하고, 성공 시에만
   `ACCEPTING_TRAFFIC`으로 전환한다. 실패는 `awaitReady()` 예외와 `/readyz`의
   `503 DOWN`으로 관찰한다.
+- readiness event 발행 자체가 실패해도 completion을 성공으로 남기지 않고, 초기화
+  실패로 종료한다. dispatcher가 실행되기 전 취소도 child completion callback으로
+  `awaitReady()`에 전달한다.
 - dispatcher는 기존 `databaseCoroutineDispatcher` bean을 주입해 production과
   `StandardTestDispatcher`를 분리한다. `AutoCloseable.close()`의 `runBlocking`은
   non-suspend Spring destruction bridge이며 child cancellation 완료를 기다리는
@@ -29,10 +32,10 @@
   premature readiness 차단, dispatcher 실행 전 종료, child cancellation 완료 대기를 고정한다.
 - WebFlux 통합 테스트가 `awaitReady()`를 동기화 지점으로 사용하고 `/readyz`의
   `200 UP`을 검증하며, `/products` polling과 `Thread.sleep`을 제거했다.
-- 순차·동시 seed 재실행 테스트가 상품 3개 불변식을 검증한다.
-- `:exposed-spring-boot-r2dbc-demo:test --no-build-cache`: 30 tests, 0 failures,
+- 순차·빈 테이블 동시 seed 재실행 테스트가 상품 3개 불변식을 검증한다.
+- `:exposed-spring-boot-r2dbc-demo:test --no-build-cache`: 33 tests, 0 failures,
   0 errors, 0 skipped.
-- targeted lifecycle/controller 테스트: 14 tests 통과.
+- targeted lifecycle/controller 테스트: 16 tests 통과.
 - `detekt`와 `:exposed-spring-boot-r2dbc-demo:detekt`: 통과(`NO-SOURCE` 포함).
 - `git diff --check`: 통과. migration README parity validator는 이 모듈 README에
   migration marker가 없어 적용 대상이 아니므로 `N/A`로 기록한다.

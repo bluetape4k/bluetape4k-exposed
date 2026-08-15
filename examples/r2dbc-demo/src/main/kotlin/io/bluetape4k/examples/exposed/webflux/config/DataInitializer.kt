@@ -142,37 +142,42 @@ internal class DataInitializerLifecycle(
         }
 
         state.set(DataInitializationState.INITIALIZING)
-        publishReadiness(ReadinessState.REFUSING_TRAFFIC)
-        log.info { "R2DBC demo 데이터 초기화를 시작합니다." }
-        val job = scope.launch {
-            try {
-                initialize()
-                state.set(DataInitializationState.READY)
-                completion.complete(Unit)
-                log.info { "R2DBC demo 데이터 초기화가 완료되었습니다." }
-                publishReadiness(ReadinessState.ACCEPTING_TRAFFIC)
-            } catch (e: CancellationException) {
-                state.set(DataInitializationState.CANCELLED)
-                completion.cancel(e)
-                throw e
-            } catch (e: Exception) {
-                state.set(DataInitializationState.FAILED)
-                completion.completeExceptionally(e)
-                log.error(e) { "R2DBC demo 데이터 초기화에 실패했습니다." }
-                publishReadiness(ReadinessState.REFUSING_TRAFFIC)
+        try {
+            publishReadiness(ReadinessState.REFUSING_TRAFFIC)
+            log.info { "R2DBC demo 데이터 초기화를 시작합니다." }
+            val job = scope.launch {
+                try {
+                    initialize()
+                    state.set(DataInitializationState.READY)
+                    publishReadiness(ReadinessState.ACCEPTING_TRAFFIC)
+                    completion.complete(Unit)
+                    log.info { "R2DBC demo 데이터 초기화가 완료되었습니다." }
+                } catch (e: CancellationException) {
+                    state.set(DataInitializationState.CANCELLED)
+                    completion.cancel(e)
+                    throw e
+                } catch (e: Exception) {
+                    fail(e)
+                }
             }
-        }
-        job.invokeOnCompletion { cause ->
-            if (cause is CancellationException) {
-                state.set(DataInitializationState.CANCELLED)
-                completion.cancel(cause)
+            job.invokeOnCompletion { cause ->
+                if (cause is CancellationException) {
+                    state.set(DataInitializationState.CANCELLED)
+                    completion.cancel(cause)
+                }
             }
+        } catch (e: Exception) {
+            fail(e)
         }
     }
 
     fun onReadinessChange(event: AvailabilityChangeEvent<ReadinessState>) {
         if (event.state == ReadinessState.ACCEPTING_TRAFFIC && !isReady) {
-            publishReadiness(ReadinessState.REFUSING_TRAFFIC)
+            try {
+                publishReadiness(ReadinessState.REFUSING_TRAFFIC)
+            } catch (e: Exception) {
+                fail(e)
+            }
         }
     }
 
@@ -191,6 +196,13 @@ internal class DataInitializerLifecycle(
         runBlocking {
             closeAndJoin()
         }
+    }
+
+    private fun fail(exception: Exception) {
+        state.set(DataInitializationState.FAILED)
+        completion.completeExceptionally(exception)
+        log.error(exception) { "R2DBC demo 데이터 초기화에 실패했습니다." }
+        runCatching { publishReadiness(ReadinessState.REFUSING_TRAFFIC) }
     }
 
     private fun publishReadiness(state: ReadinessState) {
