@@ -25,7 +25,8 @@ Repository는 `ProductRecord`를 `Products` 테이블과 매핑하고, Spring Bo
 - **ExposedR2dbcRepository**: record 중심의 row 매핑 구현
 - **Spring WebFlux**: 비동기 논블로킹 REST API
 - **코루틴**: `suspendTransaction`으로 R2DBC 데이터베이스 액세스
-- **자동 스키마 생성**: 애플리케이션 준비 완료 후 비동기 초기화
+- **lifecycle 기반 초기화**: `ApplicationReadyEvent` 이후 스키마와 seed를 한 번만 실행
+- **명시적 readiness**: 초기화 성공 후에만 `/readyz`가 `UP`을 반환
 - **Spring Boot 호환**: Spring Boot 4+ 플랫폼 의존성 관리
 
 ## 프로젝트 구조
@@ -38,10 +39,11 @@ src/main/kotlin/io/bluetape4k/examples/exposed/webflux/
 ├── repository/
 │   └── ProductR2dbcRepository.kt    # suspend CRUD Repository
 ├── controller/
-│   └── ProductController.kt         # 비동기 REST API
+│   ├── ProductController.kt         # 비동기 REST API
+│   └── ReadinessController.kt       # 초기화 readiness endpoint
 └── config/
     ├── ExposedR2dbcConfig.kt        # R2DBC 데이터베이스 설정
-    └── DataInitializer.kt           # 비동기 초기 데이터 로더
+    └── DataInitializer.kt           # lifecycle 기반 데이터 초기화
 ```
 
 ## 도메인 모델
@@ -220,7 +222,9 @@ java -jar examples/r2dbc-demo/build/libs/exposed-r2dbc-spring-data-webflux-demo-
 
 ### 초기 데이터
 
-애플리케이션이 준비 완료(`ApplicationReadyEvent`)한 후 비동기로 다음 3개의 샘플 상품이 생성됩니다.
+`ApplicationReadyEvent` 이후 `DataInitializer`가 lifecycle에 묶인 coroutine 하나를 시작해 스키마와 다음 3개의
+샘플 상품을 생성합니다. 중복 ready event는 무시하며 seed 조회는 멱등적입니다. 초기화 중이거나 실패한 경우
+`/readyz`는 `503 {"status":"DOWN"}`을 반환하고, 초기화가 완료된 경우에만 `200 {"status":"UP"}`을 반환합니다.
 
 ```
 1. Kotlin Coroutines Book - $39.99 (100개 재고)
@@ -312,23 +316,27 @@ suspend fun update(@PathVariable id: Long, @RequestBody dto: ProductRecord): Pro
     }
 ```
 
-### 비동기 초기화
+### Lifecycle 기반 초기화
 
-데이터 초기화는 `ApplicationReadyEvent`에서 별도 코루틴으로 실행되어 시작 스레드를 막지 않습니다.
+데이터 초기화는 `ApplicationReadyEvent` 이후 lifecycle에 묶인 coroutine에서 실행되어 애플리케이션 밖으로
+fire-and-forget 작업이 남지 않습니다. 스키마와 seed가 완료될 때까지 Spring Boot `ReadinessState`를
+`REFUSING_TRAFFIC`으로 유지하고, 완료 후 `ACCEPTING_TRAFFIC`으로 전환합니다. 초기화 실패는 `awaitReady()`와
+`/readyz`로 관찰할 수 있으며, 종료 시 child coroutine을 취소하고 완료까지 기다립니다.
 
-```kotlin
-@Component
-class DataInitializer(private val r2dbcDatabase: R2dbcDatabase) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
-    @EventListener(ApplicationReadyEvent::class)
-    fun onApplicationReady(event: ApplicationReadyEvent) {
-        scope.launch {
-            initializeData()
-        }
-    }
-}
+```http
+GET /readyz
+// 스키마 + seed 완료 후 200 {"status":"UP"}
+// 초기화 중이거나 실패하면 503 {"status":"DOWN"}
 ```
+
+코루틴 dispatcher는 애플리케이션 설정에서 주입하므로 테스트에서는 test dispatcher로 교체할 수 있습니다.
+통합 테스트는 결정론적 동기화 지점인 `DataInitializer.awaitReady()`를 사용하며 `/products` polling이나
+`Thread.sleep`을 사용하지 않습니다.
+
+### Readiness Endpoint
+
+`GET /readyz`는 이 데모의 명시적인 health/status 계약입니다. 데이터베이스 오류 세부 정보는 노출하지 않으며,
+초기화에 실패하면 애플리케이션을 재시작할 때까지 `503` 상태를 유지합니다.
 
 ## Record 매핑
 

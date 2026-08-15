@@ -3,11 +3,21 @@ package io.bluetape4k.examples.exposed.webflux
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.examples.exposed.webflux.config.DataInitializer
 import io.bluetape4k.examples.exposed.webflux.domain.ProductRecord
+import io.bluetape4k.examples.exposed.webflux.domain.Products
+import io.bluetape4k.junit5.coroutines.runSuspendIO
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import org.junit.jupiter.api.MethodOrderer
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
+import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
+import org.jetbrains.exposed.v1.r2dbc.deleteAll
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
@@ -20,6 +30,12 @@ import java.math.BigDecimal
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class ProductControllerTest {
 
+    @Autowired
+    private lateinit var dataInitializer: DataInitializer
+
+    @Autowired
+    private lateinit var r2dbcDatabase: R2dbcDatabase
+
     @Value("\${local.server.port}")
     private var port: Int = 0
 
@@ -27,11 +43,70 @@ class ProductControllerTest {
         WebTestClient.bindToServer().baseUrl("http://localhost:$port").build()
     }
 
+    @BeforeEach
+    fun `wait for deterministic data readiness`(): Unit = runSuspendIO {
+        dataInitializer.awaitReady()
+    }
+
     @Test
     @Order(1)
     fun `GET products returns list`() {
-        val products = awaitProducts()
+        val products = webTestClient.get().uri("/products")
+            .exchange()
+            .expectStatus().isOk
+            .expectBodyList<ProductRecord>()
+            .returnResult()
+            .responseBody
+            .orEmpty()
         products shouldHaveSize 3
+    }
+
+    @Test
+    @Order(2)
+    fun `re-running initialization keeps seed idempotent`() = runSuspendIO {
+        dataInitializer.initializeData()
+        dataInitializer.initializeData()
+
+        val products = webTestClient.get().uri("/products")
+            .exchange()
+            .expectStatus().isOk
+            .expectBodyList<ProductRecord>()
+            .returnResult()
+            .responseBody
+            .orEmpty()
+        products shouldHaveSize 3
+    }
+
+    @Test
+    @Order(3)
+    fun `concurrent initialization keeps seed idempotent`() = runSuspendIO {
+        suspendTransaction(r2dbcDatabase) { Products.deleteAll() }
+
+        coroutineScope {
+            repeat(2) {
+                launch {
+                    dataInitializer.initializeData()
+                }
+            }
+        }
+
+        val products = webTestClient.get().uri("/products")
+            .exchange()
+            .expectStatus().isOk
+            .expectBodyList<ProductRecord>()
+            .returnResult()
+            .responseBody
+            .orEmpty()
+        products shouldHaveSize 3
+    }
+
+    @Test
+    fun `GET readyz reports accepting traffic after initialization`() {
+        webTestClient.get().uri("/readyz")
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("$.status").isEqualTo("UP")
     }
 
     @Test
@@ -107,19 +182,4 @@ class ProductControllerTest {
             .expectStatus().isNotFound
     }
 
-    private fun awaitProducts(): List<ProductRecord> {
-        repeat(30) {
-            val result = webTestClient.get().uri("/products")
-                .exchange()
-                .expectStatus().isOk
-                .expectBodyList<ProductRecord>()
-                .returnResult()
-                .responseBody ?: emptyList()
-            if (result.size == 3) {
-                return result
-            }
-            Thread.sleep(100)
-        }
-        throw AssertionError("seed products were not initialized in time")
-    }
 }
