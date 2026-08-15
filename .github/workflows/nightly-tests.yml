@@ -684,6 +684,43 @@ jobs:
           path: '**/build/reports/kover/'
           retention-days: 14
 
+  # Heavy non-H2 driver timeout coverage is full-only; daily smoke keeps fast H2 coverage.
+  test-ktor-driver-timeout:
+    name: Test / exposed-ktor (driver-timeout)
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '3 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5.7.0
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v6.3.0
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Test exposed-ktor driver timeout
+        run: |
+          for attempt in 1 2 3 4 5; do
+            ./gradlew :bluetape4k-exposed-ktor:driverTimeoutTest --no-configuration-cache --no-parallel --max-workers=1 --no-daemon && break
+            echo "Attempt $attempt failed"
+            [ $attempt -lt 5 ] && sleep 30 || exit 1
+          done
+        env:
+          GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false'
+          TESTCONTAINERS_RYUK_DISABLED: 'true'
+          DOCKER_HOST: 'unix:///var/run/docker.sock'
+      - name: Upload driver timeout test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-ktor-driver-timeout
+          path: '**/build/test-results/driverTimeoutTest/*.xml'
+          if-no-files-found: error
+          retention-days: 14
+
   # exposed-r2dbc (PostgreSQL, Testcontainers)
   test-r2dbc-postgresql:
     name: Test / exposed-r2dbc (PostgreSQL)
@@ -1930,6 +1967,7 @@ jobs:
       - test-jdbc-mysql
       - test-r2dbc-h2
       - test-ktor-exposed
+      - test-ktor-driver-timeout
       - test-r2dbc-postgresql
       - test-r2dbc-mysql
       - test-jdbc-lettuce
@@ -1993,6 +2031,7 @@ jobs:
       - test-jdbc-mysql
       - test-r2dbc-h2
       - test-ktor-exposed
+      - test-ktor-driver-timeout
       - test-r2dbc-postgresql
       - test-r2dbc-mysql
       - test-jdbc-lettuce
