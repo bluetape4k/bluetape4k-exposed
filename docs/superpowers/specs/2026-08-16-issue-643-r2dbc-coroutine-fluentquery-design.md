@@ -181,6 +181,7 @@ executor는 terminal 실행 lease를 outer transaction context별로 관리한�
 - `all()`과 `findAll(...)`은 cold `Flow`다. Flow 생성은 SQL이나 transaction을 시작하지 않으며 선택과 실행은 수집 시점에 이뤄진다.
 - 외부 트랜잭션의 미커밋 row는 그 transaction 안에서 terminal을 호출하거나 `Flow`를 수집할 때만 관찰한다. transaction 밖으로 Flow를 반환해 나중에 수집하면 새 top-level transaction을 사용한다.
 - `CancellationException`을 잡거나 wrapping하지 않고 동일 객체로 상위 coroutine에 전파한다. top-level transaction/result/connection 정리는 Exposed의 `NonCancellable` cleanup에 맡긴다. 지원되는 `useNestedTransactions=false` outer 호출은 caller-owned transaction/connection을 commit하거나 닫지 않는다. QBE result 수집과 execution lease만 `finally`에서 정리한다.
+- top-level streaming `all()`/`findAll(...)`은 첫 SQL 전에 해당 transaction의 `maxAttempts = 1`을 설정해 Exposed automatic retry가 이미 방출한 row를 중복 방출하지 않게 한다. caller-owned outer transaction의 `maxAttempts`와 `DatabaseConfig`는 변경하지 않으며, 전체 Flow 재시도는 caller가 수집 단위로 감싼다. non-streaming terminal의 retry/backoff/timeout은 Exposed와 caller 설정에 위임하고 QBE는 별도 retry registry나 deadline을 소유하지 않는다.
 - callback이 반환한 임의 `Flow`나 lazy 값의 수명주기는 이 API가 보장하지 않는다. 이 API가 보장하는 탈출 가능한 lazy 결과는 `all()`이 생성한 `Flow`뿐이다.
 - `all()` Flow는 row-by-row로 materialize하고 방출한다. 이 Flow에 collection 시점에 적용하는 `map`/`filter`는 허용하지만, callback 안에서 임의로 만든 다른 Flow나 transaction-bound 값을 반환하는 것은 지원하지 않는다.
 - `page`의 content와 필요한 count는 하나의 logical transaction에서 실행한다. `READ COMMITTED`에서는 statement별 snapshot이 달라질 수 있으므로 total과 content의 동시 변경 정합성을 보장하지 않는다. 더 강한 snapshot이 필요하면 caller가 database transaction isolation을 설정한다.
@@ -189,6 +190,7 @@ executor는 terminal 실행 lease를 outer transaction context별로 관리한�
 
 | Terminal | 의미 |
 | --- | --- |
+| `findOne(example)` | direct executor entry point; fluent `limit`과 무관하게 최대 2건을 읽어 0건은 `null`, 1건은 값, 2건 이상은 `IncorrectResultSizeDataAccessException` |
 | `one()` | fluent `limit`을 무시하고 최대 2건을 읽어 0건은 `null`, 1건은 값, 2건 이상은 `IncorrectResultSizeDataAccessException` |
 | `first()` | 정렬·필터 적용 후 `limit 1`; 없으면 `null` |
 | `all()` | cold `Flow`; 각 수집마다 fresh query/result 생성 |
@@ -309,7 +311,7 @@ factory는 기존에 확보한 domain type, table, mapper와 Spring `ProjectionF
 | null 입력, 음수 limit | `IllegalArgumentException` |
 | 지원하지 않는 matcher/projection shape | `UnsupportedOperationException` |
 | unknown/ambiguous/nested property, 지원하지 않는 sort, callback 종료 후 사용, terminal 병렬 실행 | `InvalidDataAccessApiUsageException` |
-| `one()` 결과가 2건 이상 | `IncorrectResultSizeDataAccessException` |
+| `findOne(example)` 또는 `one()` 결과가 2건 이상 | `IncorrectResultSizeDataAccessException` |
 | getter/transformer/projection constructor/nullability 불일치 | `CancellationException`과 `Error`를 제외하고 target type과 property만 포함하며 cause graph를 제거한 Spring Data `MappingException` |
 | coroutine 취소 | 원래 `CancellationException`을 그대로 전파 |
 
