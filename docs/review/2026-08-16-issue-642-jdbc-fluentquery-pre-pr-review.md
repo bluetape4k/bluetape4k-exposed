@@ -28,18 +28,18 @@
 ## 독립 검토 결과
 
 최신 diff를 성능, 안정성, 보안, 운영, developer/API, user/caller의 여섯 관점으로
-분리해 독립 검토한다. 아래 표는 최종 수정본 재검토가 끝난 뒤 PASS로 닫는다.
+분리해 정확한 HEAD `1d995d294ae0e17537ba4b166ddc82cf5bd96b85`에서 독립 검토했다.
 
 | 관점 | P0 | P1 | 판정 |
 | --- | ---: | ---: | --- |
-| 성능 | - | - | PENDING |
-| 안정성 | - | - | PENDING |
-| 보안 | - | - | PENDING |
-| 운영 | - | - | PENDING |
-| developer/API | - | - | PENDING |
-| user/caller | - | - | PENDING |
+| 성능 | 0 | 0 | PASS |
+| 안정성 | 0 | 0 | PASS |
+| 보안 | 0 | 0 | PASS |
+| 운영 | 0 | 0 | PASS |
+| developer/API | 0 | 0 | PASS |
+| user/caller | 0 | 0 | PASS |
 
-현재 판정은 **PENDING — 최종 6개 관점 재검토 전**이다.
+현재 판정은 **PASS — 6개 관점 모두 P0=0/P1=0**이다.
 
 ## 주요 P1 closure
 
@@ -90,7 +90,7 @@
 ## 검증 증거
 
 - JDK 25, H2/대표 multi-DB 포함 전체 module test: 259 tests, 0 failures
-- H2와 같은 실행의 Detekt: PASS
+- Detekt: PASS, findings 0
 - PostgreSQL 대표 multi-DB suite 강제 재실행: 26 tests, 0 failures, 0 errors, 0 skipped
 - MySQL V8 `useCursorFetch=true` 대표 multi-DB suite 강제 재실행: 26 tests,
   0 failures, 0 errors, 0 skipped
@@ -118,6 +118,11 @@
   독립 collaborator fallback을 유지한다. Spring factory 경로는 registry를 사용한다.
 - multi-DB 검증은 H2 전체와 PostgreSQL/MySQL 대표 suite다. 모든 dialect의 전체
   FluentQuery 의미 조합을 실행한 것은 아니다.
+- `CLOSE_FAILED` 상태에서 explicit close를 다시 호출하면 JDBC cleanup을 재시도할 수
+  있다. 일부 driver의 중복 close 진단 가능성이 있으므로 cleanup failure 뒤에는 재사용
+  또는 재시도하지 않고 transaction을 종료해야 한다.
+- mapped getter 보강은 현재 domain type에 직접 선언된 getter를 대상으로 하므로 향후
+  상속 계층의 mapped getter 지원은 별도 확장 범위다.
 
 ## DoD Status
 
@@ -126,9 +131,11 @@
 - [x] TDD RED→GREEN 구현 완료
 - [x] targeted/H2/PostgreSQL/MySQL/Detekt/API·ABI 검증 완료
 - [x] EN/KO/KDoc 및 stable manual 경계 검증 완료
-- [ ] 6개 관점 독립 pre-PR 검토 P0=0/P1=0
-- [ ] Lore commit과 PR 생성
+- [x] 6개 관점 독립 pre-PR 검토 P0=0/P1=0
+- [x] Lore commit 완료
+- [ ] PR 생성
 - [ ] exact-head CI, review/thread, mergeability 확인
 - [ ] fresh merge 승인 후 merge·sync·cleanup
 
-상태: `PENDING` — local 구현과 검증은 완료됐고 6개 관점 pre-PR 수렴이 남아 있다.
+상태: `PENDING` — local 구현·검증·pre-PR 검토와 Lore commit은 완료됐고 PR 생성이
+남아 있다.
