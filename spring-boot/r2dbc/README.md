@@ -221,6 +221,94 @@ val count = userRepository.count { Users.age greaterEq 18 }
 val exists = userRepository.exists { Users.email eq "alice@example.com" }
 ```
 
+<!-- r2dbc-coroutine-fluent-query:START -->
+### 10. Coroutine Query by Example and FluentQuery
+
+<!-- contract-key:coroutine-only -->
+<!-- contract-key:suspend-terminal -->
+<!-- contract-key:cold-flow -->
+<!-- contract-key:flow-collection-context -->
+<!-- contract-key:outer-transaction -->
+<!-- contract-key:database-selection -->
+<!-- contract-key:nested-transactions-rejected -->
+<!-- contract-key:closed-projection -->
+<!-- contract-key:open-projection-rejected -->
+<!-- contract-key:matcher-projection-matrix -->
+<!-- contract-key:find-one-cardinality -->
+<!-- contract-key:first-one-all-page-slice-count-exists -->
+<!-- contract-key:error-taxonomy -->
+<!-- contract-key:callback-scope -->
+<!-- contract-key:cancellation -->
+<!-- contract-key:streaming-retry-no-duplicate -->
+<!-- contract-key:terminal-retry-delegated -->
+
+Use `ExposedR2dbcQueryByExampleRepository` when a repository needs a
+coroutine-native Query by Example API. It exposes only `suspend` and Kotlin
+`Flow`; Reactor `Mono`/`Flux` is not part of this contract.
+
+```kotlin
+interface UserRepository : ExposedR2dbcQueryByExampleRepository<User, Long> {
+    override val table: IdTable<Long> get() = Users
+    override fun extractId(entity: User): Long? = entity.id
+    override fun toDomain(row: ResultRow): User = User(
+        id = row[Users.id].value,
+        name = row[Users.name],
+        email = row[Users.email],
+        age = row[Users.age],
+    )
+    override fun toPersistValues(domain: User): Map<Column<*>, Any?> = mapOf(
+        Users.name to domain.name,
+        Users.email to domain.email,
+        Users.age to domain.age,
+    )
+}
+
+val example = Example.of(
+    User(name = "Alice", email = "ignored", age = 0),
+    ExampleMatcher.matching().withIgnorePaths("id", "email", "age"),
+)
+
+val alice: User? = userRepository.findOne(example)
+val users: Flow<User> = userRepository.findAll(example)
+val names: Flow<NameView> = userRepository.findBy(example) { query ->
+    query.asType(NameView::class)
+        .project("name")
+        .sortBy(Sort.by(Sort.Direction.DESC, "age"))
+        .all()
+}
+```
+
+The supported matcher forms are exact/default, `CONTAINING`, `STARTING`, and
+`ENDING`, with explicit null inclusion. Regex, ignore-case, nested properties,
+open/SpEL projections, and partial domain projections fail before SQL. `findOne`
+and fluent `one()` use strict cardinality: zero rows return `null`, one row is
+returned, and multiple rows raise `IncorrectResultSizeDataAccessException`.
+
+Fluent plans are immutable. Non-empty `project()` must exactly match the closed
+projection's required source properties; an empty call resets to automatic
+selection. A closed interface, Kotlin constructor type, or Java record is selected
+only from the required columns. `first()`, `one()`, `all()`, `page()`, `slice()`,
+`count()`, and `exists()` keep their documented terminal semantics, including
+`Pageable` precedence and ID-only existence checks.
+
+`Flow` is cold and the query is collected inside the current coroutine context, so
+collecting the same flow twice executes two independent transactions. A
+caller-owned active Exposed transaction is reused; to choose another database,
+collect inside `suspendTransaction(database) { flow.collect { ... } }`.
+`useNestedTransactions=true` is rejected before SQL. Callback scope is valid for
+building and invoking a terminal inside `findBy`; cancellation preserves the
+original `CancellationException` and releases the transaction lease.
+
+Top-level streaming uses `maxAttempts = 1` so a row emitted before a driver error
+is never duplicated. Non-streaming terminal retry, backoff, timeout, and outer
+transaction settings remain delegated to Exposed and the caller. Unsupported
+matcher/projection/sort usage raises `UnsupportedOperationException` or
+`InvalidDataAccessApiUsageException`; mapping failures are sanitized
+`MappingException` values and cardinality violations are
+`IncorrectResultSizeDataAccessException`.
+
+<!-- r2dbc-coroutine-fluent-query:END -->
+
 ## Usage Examples
 
 ### Entity and Table Definitions

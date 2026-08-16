@@ -9,6 +9,10 @@
 
 ### 추가됨
 
+- Spring Data R2DBC repository에 Reactor 타입 없이 coroutine-native Query by Example과
+  immutable `FluentQuery` terminal, projection, paging, slice, cold `Flow` 실행을
+  추가했습니다
+  ([#643](https://github.com/bluetape4k/bluetape4k-exposed/issues/643)).
 - Spring Data JDBC `QueryByExampleExecutor.findBy`가 closed interface, Kotlin data class,
   Java record projection과 `project`/sort/limit/page/count/exists를 SQL로 pushdown하고,
   caller-owned transaction에서 한 행씩 소비하는 cursor-backed `stream()`을 지원합니다
