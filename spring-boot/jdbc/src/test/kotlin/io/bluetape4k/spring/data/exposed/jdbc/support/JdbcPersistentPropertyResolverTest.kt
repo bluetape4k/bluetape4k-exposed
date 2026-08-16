@@ -48,7 +48,7 @@ class JdbcPersistentPropertyResolverTest {
 
     @Test
     fun `invalid property diagnostic removes controls and limits length`() {
-        val property = "prefix\n\r\t" + "x".repeat(256)
+        val property = "prefix\n\r\t\u2028\u2029\u202E" + "x".repeat(256)
 
         val failure = assertFailsWith<InvalidDataAccessApiUsageException> {
             resolverFor(UserEntity::class.java).resolve(property)
@@ -57,6 +57,9 @@ class JdbcPersistentPropertyResolverTest {
         failure.message.orEmpty().contains('\n').shouldBeFalse()
         failure.message.orEmpty().contains('\r').shouldBeFalse()
         failure.message.orEmpty().contains('\t').shouldBeFalse()
+        failure.message.orEmpty().contains('\u2028').shouldBeFalse()
+        failure.message.orEmpty().contains('\u2029').shouldBeFalse()
+        failure.message.orEmpty().contains('\u202E').shouldBeFalse()
         (failure.message.orEmpty().length <= 256) shouldBeEqualTo true
     }
 

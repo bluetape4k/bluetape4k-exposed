@@ -22,6 +22,8 @@ import org.springframework.transaction.NoTransactionException
 import java.util.Optional
 import java.util.stream.Stream
 
+private const val DEFAULT_STREAM_FETCH_SIZE = 100
+
 @Suppress("TooManyFunctions")
 internal class JdbcFluentQueryExecutor<E: Entity<ID>, ID: Any>(
     private val entityClass: EntityClass<ID, E>,
@@ -114,6 +116,7 @@ internal class JdbcFluentQueryExecutor<E: Entity<ID>, ID: Any>(
             query.orderBy(*resolveSort(plan.sort, JdbcPersistentPropertyResolver(plan.persistentEntity)))
         }
         if (plan.hasLimit) query.limit(plan.limit)
+        query.fetchSize(transaction.db.defaultFetchSize?.takeIf { it > 0 } ?: DEFAULT_STREAM_FETCH_SIZE)
         return JdbcResultRowStream.open(transaction, query, mapper)
     }
 

@@ -149,6 +149,7 @@ enum class TestDB(
                     "&useLegacyDatetimeCode=false" +
                     "&serverTimezone=UTC" +  // TimeZone 을 UTC 로 설정
                     "&allowPublicKeyRetrieval=true" +
+                    "&useCursorFetch=true" +
                     "&rewriteBatchedStatements=true" // Batch 처리를 위한 설정
 
             if (useTestcontainers) {

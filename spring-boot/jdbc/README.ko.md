@@ -232,7 +232,10 @@ Join, grouping, distinct, custom order, offset, limit, locking shape는 SQL 실�
 `stream`은 cursor-backed single-use result입니다. Factory-created repository는
 caller-owned outer `@Transactional` boundary에 참여해야 합니다. 직접 생성한
 `SimpleExposedJdbcRepository`는 caller-owned `transaction {}` 안에서 호출해야
-합니다.
+합니다. Positive `DatabaseConfig.defaultFetchSize`가 설정되어 있으면 그 값을
+사용하고, 그렇지 않으면 bounded fetch size `100`을 적용합니다. PostgreSQL의
+cursor fetch에는 active transaction이 필요하며, MySQL Connector/J의 server-side
+cursor fetch에는 JDBC URL의 `useCursorFetch=true`도 필요합니다.
 
 <!-- contract-key:cursor-same-thread -->
 Cursor는 같은 thread와 같은 Exposed transaction에서 소비하세요. Cursor가 열린

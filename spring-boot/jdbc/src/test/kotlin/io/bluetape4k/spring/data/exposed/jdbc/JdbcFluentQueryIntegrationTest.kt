@@ -385,6 +385,24 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
     }
 
     @Test
+    fun `stream applies a positive bounded fetch size when the database does not configure one`() {
+        transaction {
+            seedUsers()
+            val capturedQueries = mutableListOf<Query>()
+            val capturingEntityClass = object: LongEntityClass<UserEntity>(Users) {
+                override fun searchQuery(op: Op<Boolean>): Query =
+                    super.searchQuery(op).also(capturedQueries::add)
+            }
+
+            customRepository(capturingEntityClass)
+                .findBy(allUsersExample()) { it.sortBy(Sort.by("name")).stream() }
+                .use { rows -> rows.findFirst().orElseThrow().name shouldBeEqualTo "Alice" }
+
+            capturedQueries.last().fetchSize shouldBeEqualTo 100
+        }
+    }
+
+    @Test
     fun `open stream rejects nested Exposed SQL until it is closed`() {
         transaction {
             seedUsers()
