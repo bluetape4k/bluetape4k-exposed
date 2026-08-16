@@ -2,7 +2,7 @@ package io.bluetape4k.spring.data.exposed.r2dbc.repository.support
 
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.toExposedOrderBy
-import io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedR2dbcRepository
+import io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedR2dbcQueryByExampleRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.buffer
@@ -29,7 +29,12 @@ import org.jetbrains.exposed.v1.r2dbc.update
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Example
+import org.springframework.data.domain.Sort
+import org.springframework.data.projection.ProjectionFactory
+import org.springframework.data.projection.SpelAwareProxyProjectionFactory
 import org.springframework.stereotype.Repository
+import kotlin.reflect.KClass
 
 /**
  * Exposed suspend CRUD/paging/streaming Repository의 기본 구현체입니다.
@@ -51,15 +56,46 @@ import org.springframework.stereotype.Repository
  * ```
  */
 @Repository
-@Suppress("UNCHECKED_CAST")
+@Suppress("UNCHECKED_CAST", "TooManyFunctions")
 class SimpleExposedR2dbcRepository<R: Any, ID: Any>(
     override val table: IdTable<ID>,
     private val toDomainMapper: (ResultRow) -> R,
     private val persistValuesProvider: (R) -> Map<Column<*>, Any?>,
     private val idExtractor: (R) -> ID?,
-): ExposedR2dbcRepository<R, ID> {
+): ExposedR2dbcQueryByExampleRepository<R, ID> {
 
     companion object: KLoggingChannel()
+
+    private var qbeExecutor: R2dbcFluentQueryExecutor<R>? = null
+
+    /** Factory가 domain metadata와 projection collaborator를 주입하는 internal 경계입니다. */
+    internal fun configureQbe(
+        domainType: KClass<R>,
+        projectionFactory: ProjectionFactory,
+        constructionMode: R2dbcQbeConstructionMode,
+    ) {
+        check(qbeExecutor == null) { "QBE executor is already configured" }
+        qbeExecutor = R2dbcFluentQueryExecutor(
+            expectedDomainType = domainType,
+            table = table as IdTable<Any>,
+            toDomainMapper = ::toDomain,
+            projectionFactory = projectionFactory,
+            constructionMode = constructionMode,
+        )
+    }
+
+    private fun qbeExecutor(example: Example<R>): R2dbcFluentQueryExecutor<R> {
+        qbeExecutor?.let { return it }
+        @Suppress("UNCHECKED_CAST")
+        val inferredDomainType = example.probe::class as KClass<R>
+        return R2dbcFluentQueryExecutor(
+            expectedDomainType = inferredDomainType,
+            table = table as IdTable<Any>,
+            toDomainMapper = ::toDomain,
+            projectionFactory = SpelAwareProxyProjectionFactory(),
+            constructionMode = R2dbcQbeConstructionMode.DIRECT,
+        ).also { qbeExecutor = it }
+    }
 
     override fun extractId(entity: R): ID? = idExtractor(entity)
 
@@ -122,6 +158,21 @@ class SimpleExposedR2dbcRepository<R: Any, ID: Any>(
             }
         }
     }
+
+    override suspend fun findOne(example: Example<R>): R? = qbeExecutor(example).findOne(example)
+
+    override fun findAll(example: Example<R>): Flow<R> = qbeExecutor(example).findAll(example)
+
+    override fun findAll(example: Example<R>, sort: Sort): Flow<R> = qbeExecutor(example).findAll(example, sort)
+
+    override suspend fun count(example: Example<R>): Long = qbeExecutor(example).count(example)
+
+    override suspend fun exists(example: Example<R>): Boolean = qbeExecutor(example).exists(example)
+
+    override suspend fun <Q> findBy(
+        example: Example<R>,
+        queryFunction: suspend (io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedCoroutineFluentQuery<R>) -> Q,
+    ): Q = qbeExecutor(example).findBy(example, queryFunction)
 
     override fun findAllById(ids: Iterable<ID>): Flow<R> = flow {
         val idList = ids.toList()

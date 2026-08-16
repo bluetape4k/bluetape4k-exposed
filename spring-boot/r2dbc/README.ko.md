@@ -221,6 +221,93 @@ val count = userRepository.count { Users.age greaterEq 18 }
 val exists = userRepository.exists { Users.email eq "alice@example.com" }
 ```
 
+<!-- r2dbc-coroutine-fluent-query:START -->
+### 10. Coroutine Query by Example 및 FluentQuery
+
+<!-- contract-key:coroutine-only -->
+<!-- contract-key:suspend-terminal -->
+<!-- contract-key:cold-flow -->
+<!-- contract-key:flow-collection-context -->
+<!-- contract-key:outer-transaction -->
+<!-- contract-key:database-selection -->
+<!-- contract-key:nested-transactions-rejected -->
+<!-- contract-key:closed-projection -->
+<!-- contract-key:open-projection-rejected -->
+<!-- contract-key:matcher-projection-matrix -->
+<!-- contract-key:find-one-cardinality -->
+<!-- contract-key:first-one-all-page-slice-count-exists -->
+<!-- contract-key:error-taxonomy -->
+<!-- contract-key:callback-scope -->
+<!-- contract-key:cancellation -->
+<!-- contract-key:streaming-retry-no-duplicate -->
+<!-- contract-key:terminal-retry-delegated -->
+
+coroutine-native Query by Example API가 필요하면
+`ExposedR2dbcQueryByExampleRepository`를 사용하세요. 이 계약은 `suspend`와
+Kotlin `Flow`만 노출하며 Reactor `Mono`/`Flux`는 포함하지 않습니다.
+
+```kotlin
+interface UserRepository : ExposedR2dbcQueryByExampleRepository<User, Long> {
+    override val table: IdTable<Long> get() = Users
+    override fun extractId(entity: User): Long? = entity.id
+    override fun toDomain(row: ResultRow): User = User(
+        id = row[Users.id].value,
+        name = row[Users.name],
+        email = row[Users.email],
+        age = row[Users.age],
+    )
+    override fun toPersistValues(domain: User): Map<Column<*>, Any?> = mapOf(
+        Users.name to domain.name,
+        Users.email to domain.email,
+        Users.age to domain.age,
+    )
+}
+
+val example = Example.of(
+    User(name = "Alice", email = "ignored", age = 0),
+    ExampleMatcher.matching().withIgnorePaths("id", "email", "age"),
+)
+
+val alice: User? = userRepository.findOne(example)
+val users: Flow<User> = userRepository.findAll(example)
+val names: Flow<NameView> = userRepository.findBy(example) { query ->
+    query.asType(NameView::class)
+        .project("name")
+        .sortBy(Sort.by(Sort.Direction.DESC, "age"))
+        .all()
+}
+```
+
+지원하는 matcher는 exact/default, `CONTAINING`, `STARTING`, `ENDING`이며 명시적
+null 포함을 지원합니다. Regex, ignore-case, 중첩 property, open/SpEL
+projection, 부분 domain projection은 SQL 실행 전에 실패합니다. `findOne`과
+fluent `one()`은 strict cardinality를 사용합니다. 결과가 없으면 `null`, 하나면
+반환하고, 여러 개면 `IncorrectResultSizeDataAccessException`을 던집니다.
+
+Fluent plan은 immutable입니다. property를 지정한 `project()`는 closed
+projection의 required source property와 정확히 일치해야 하며, 빈 호출은 필요한
+property 자동 선택으로 초기화합니다. closed interface, Kotlin constructor type,
+Java record는 필요한 컬럼만 조회합니다. `first()`, `one()`, `all()`, `page()`,
+`slice()`, `count()`, `exists()`는 `Pageable` 우선순위와 ID-only 존재 확인을
+포함한 각 terminal semantics를 유지합니다.
+
+`Flow`는 cold이므로 같은 flow를 두 번 collect하면 서로 독립적인 transaction이
+두 번 실행됩니다. query는 현재 coroutine context에서 collect할 때 실행됩니다.
+다른 database를 선택하려면 `suspendTransaction(database) { flow.collect { ... } }`
+안에서 collect하세요. 호출자가 소유한 활성 Exposed transaction은 재사용하며,
+`useNestedTransactions=true`인 경우 SQL 실행 전에 거부합니다. `findBy` callback
+scope에서는 query를 만들고 terminal을 호출할 수 있으며, cancellation 시 원래
+`CancellationException`을 유지하고 transaction lease를 해제합니다.
+
+top-level streaming은 row 중복 재방출을 막기 위해 `maxAttempts = 1`을 사용합니다.
+non-streaming terminal의 retry, backoff, timeout과 outer transaction 설정은 Exposed와
+호출자에게 위임합니다. 지원하지 않는 matcher/projection/sort는
+`UnsupportedOperationException` 또는 `InvalidDataAccessApiUsageException`으로
+실패하며, mapping 실패는 sanitized `MappingException`, cardinality 위반은
+`IncorrectResultSizeDataAccessException`으로 보고합니다.
+
+<!-- r2dbc-coroutine-fluent-query:END -->
+
 ## 사용 예시
 
 ### 엔티티 및 테이블 정의

@@ -15,7 +15,7 @@ import org.springframework.data.domain.Sort
 /**
  * 테스트용 suspend 기반 User Repository 입니다.
  */
-interface UserR2dbcRepository: ExposedR2dbcRepository<User, Long> {
+interface UserR2dbcRepository: ExposedR2dbcQueryByExampleRepository<User, Long> {
 
     override val table: Users get() = Users
 

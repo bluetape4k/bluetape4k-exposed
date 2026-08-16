@@ -17,11 +17,13 @@ import org.springframework.data.repository.query.QueryLookupStrategy
 import org.springframework.data.repository.query.RepositoryQuery
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.InvocationHandler
+import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.intrinsics.startCoroutineUninterceptedOrReturn
+import kotlin.reflect.KClass
 
 /**
  * 테이블 기반 코루틴 Exposed Repository 프록시를 생성합니다.
@@ -36,7 +38,7 @@ import kotlin.coroutines.intrinsics.startCoroutineUninterceptedOrReturn
  * // repo는 SimpleExposedR2dbcRepository 기반의 JDK 프록시 인스턴스
  * ```
  */
-@Suppress("UNCHECKED_CAST")
+@Suppress("UNCHECKED_CAST", "TooManyFunctions")
 class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
 
     private var queryLookupStrategyKey: QueryLookupStrategy.Key? = null
@@ -78,7 +80,14 @@ class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
             toDomainMapper = mapper.toDomain,
             persistValuesProvider = mapper.toPersistValues,
             idExtractor = mapper.extractId,
-        )
+        ).also { repository ->
+            @Suppress("UNCHECKED_CAST")
+            repository.configureQbe(
+                domainType = getRepositoryMetadata(repositoryInterface).domainType.kotlin as KClass<Any>,
+                projectionFactory = projectionFactory,
+                constructionMode = R2dbcQbeConstructionMode.FACTORY,
+            )
+        }
     }
 
     /**
@@ -94,66 +103,114 @@ class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
         val queryCache = ConcurrentHashMap<Method, RepositoryQuery>()
 
         val handler = InvocationHandler { proxy, method, args ->
-            // Object 메서드 처리
-            if (method.declaringClass == Any::class.java) {
-                return@InvocationHandler when (method.name) {
-                    "toString" -> "ExposedSuspendRepository(${repositoryInterface.simpleName})"
-                    "hashCode" -> System.identityHashCode(proxy)
-                    "equals" -> proxy === args?.firstOrNull()
-                    else     -> null
-                }
-            }
-
-            // SimpleExposedSuspendRepository 에 구현이 있으면 직접 호출
-            val implMethod: Method? = try {
-                implClass.getMethod(method.name, *method.parameterTypes)
-            } catch (_: NoSuchMethodException) {
-                null
-            }
-
-            if (implMethod != null) {
-                return@InvocationHandler implMethod.invoke(impl, *(args ?: emptyArray()))
-            }
-
-            // 인터페이스 default 메서드 처리 (toDomain, extractId, toPersistValues, table 등)
-            if (method.isDefault) {
-                return@InvocationHandler InvocationHandler.invokeDefault(proxy, method, *(args ?: emptyArray()))
-            }
-
-            val query = queryCache.computeIfAbsent(method) { m ->
-                val qMethod = ExposedR2dbcQueryMethod(m, repositoryMetadata, projectionFactory)
-                val key = queryLookupStrategyKey ?: QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND
-                when (key) {
-                    QueryLookupStrategy.Key.USE_DECLARED_QUERY -> {
-                        require(qMethod.isAnnotatedQuery) {
-                            "No @Query annotation found on method '${m.name}'"
-                        }
-                        DeclaredExposedR2dbcQuery(qMethod, queryMapper)
-                    }
-                    QueryLookupStrategy.Key.CREATE -> PartTreeExposedR2dbcQuery(qMethod, queryMapper)
-                    QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND ->
-                        if (qMethod.isAnnotatedQuery) DeclaredExposedR2dbcQuery(qMethod, queryMapper)
-                        else PartTreeExposedR2dbcQuery(qMethod, queryMapper)
-                }
-            }
-            val continuation = args?.lastOrNull() as? Continuation<Any?>
-            if (continuation != null) {
-                return@InvocationHandler suspend {
-                    @Suppress("UNCHECKED_CAST")
-                    when (query) {
-                        is DeclaredExposedR2dbcQuery<*, *> ->
-                            (query as DeclaredExposedR2dbcQuery<Any, Any>).executeSuspending(args)
-                        is PartTreeExposedR2dbcQuery<*, *> ->
-                            (query as PartTreeExposedR2dbcQuery<Any, Any>).executeSuspending(args)
-                        else -> query.execute(args)
-                    }
-                }.startCoroutineUninterceptedOrReturn(continuation)
-            }
-
-            query.execute(args ?: emptyArray())
+            invokeDirect(
+                proxy = proxy,
+                method = method,
+                args = args,
+                repositoryInterface = repositoryInterface,
+                implClass = implClass,
+                impl = impl,
+                repositoryMetadata = repositoryMetadata,
+                queryMapper = queryMapper,
+                queryCache = queryCache,
+            )
         }
 
         return Proxy.newProxyInstance(repositoryInterface.classLoader, arrayOf(repositoryInterface), handler)
+    }
+
+    @Suppress("ReturnCount")
+    private fun invokeDirect(
+        proxy: Any,
+        method: Method,
+        args: Array<out Any?>?,
+        repositoryInterface: Class<*>,
+        implClass: Class<*>,
+        impl: SimpleExposedR2dbcRepository<Any, Any>,
+        repositoryMetadata: RepositoryMetadata,
+        queryMapper: R2dbcQueryMapper<Any, Any>,
+        queryCache: ConcurrentHashMap<Method, RepositoryQuery>,
+    ): Any? {
+        if (method.declaringClass == Any::class.java) {
+            return invokeObjectMethod(proxy, method, args, repositoryInterface)
+        }
+        findImplementationMethod(implClass, method)?.let { implementation ->
+            return invokeImplementation(implementation, impl, args)
+        }
+        if (method.isDefault) {
+            return InvocationHandler.invokeDefault(proxy, method, *(args ?: emptyArray()))
+        }
+        val query = queryCache.computeIfAbsent(method) {
+            createQuery(it, repositoryMetadata, queryMapper)
+        }
+        return invokeQuery(query, args)
+    }
+
+    private fun invokeObjectMethod(
+        proxy: Any,
+        method: Method,
+        args: Array<out Any?>?,
+        repositoryInterface: Class<*>,
+    ): Any? = when (method.name) {
+        "toString" -> "ExposedSuspendRepository(${repositoryInterface.simpleName})"
+        "hashCode" -> System.identityHashCode(proxy)
+        "equals" -> proxy === args?.firstOrNull()
+        else -> null
+    }
+
+    private fun findImplementationMethod(implClass: Class<*>, method: Method): Method? = try {
+        implClass.getMethod(method.name, *method.parameterTypes)
+    } catch (_: NoSuchMethodException) {
+        null
+    }
+
+    private fun invokeImplementation(
+        method: Method,
+        impl: SimpleExposedR2dbcRepository<Any, Any>,
+        args: Array<out Any?>?,
+    ): Any? = try {
+        method.invoke(impl, *(args ?: emptyArray()))
+    } catch (failure: InvocationTargetException) {
+        throw (failure.targetException ?: failure)
+    }
+
+    private fun createQuery(
+        method: Method,
+        repositoryMetadata: RepositoryMetadata,
+        queryMapper: R2dbcQueryMapper<Any, Any>,
+    ): RepositoryQuery {
+        val qMethod = ExposedR2dbcQueryMethod(method, repositoryMetadata, projectionFactory)
+        val key = queryLookupStrategyKey ?: QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND
+        return when (key) {
+            QueryLookupStrategy.Key.USE_DECLARED_QUERY -> {
+                require(qMethod.isAnnotatedQuery) {
+                    "No @Query annotation found on method '${method.name}'"
+                }
+                DeclaredExposedR2dbcQuery(qMethod, queryMapper)
+            }
+            QueryLookupStrategy.Key.CREATE -> PartTreeExposedR2dbcQuery(qMethod, queryMapper)
+            QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND ->
+                if (qMethod.isAnnotatedQuery) DeclaredExposedR2dbcQuery(qMethod, queryMapper)
+                else PartTreeExposedR2dbcQuery(qMethod, queryMapper)
+        }
+    }
+
+    private fun invokeQuery(
+        query: RepositoryQuery,
+        args: Array<out Any?>?,
+    ): Any? {
+        val continuation = args?.lastOrNull() as? Continuation<Any?>
+        if (continuation == null) return query.execute(args ?: emptyArray())
+        return suspend {
+            @Suppress("UNCHECKED_CAST")
+            when (query) {
+                is DeclaredExposedR2dbcQuery<*, *> ->
+                    (query as DeclaredExposedR2dbcQuery<Any, Any>).executeSuspending(args)
+                is PartTreeExposedR2dbcQuery<*, *> ->
+                    (query as PartTreeExposedR2dbcQuery<Any, Any>).executeSuspending(args)
+                else -> query.execute(args)
+            }
+        }.startCoroutineUninterceptedOrReturn(continuation)
     }
 
     private fun resolveMapper(repositoryInterface: Class<*>): RepositoryMapper {
