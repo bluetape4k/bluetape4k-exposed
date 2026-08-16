@@ -123,6 +123,28 @@ class JdbcProjectionMapperTest {
         typeFailure.message.orEmpty().contains("not-a-number").shouldBeFalse()
     }
 
+    @Test
+    fun `constructor failure redacts the nested cause message`() {
+        val failure = assertFailsWith<MappingException> {
+            mapper.shape(FailingUserProjection::class.java, listOf("name"))
+                .map(5, mapOf("name" to "alice"))
+        }
+
+        throwableGraph(failure).contains("sensitive-constructor-value").shouldBeFalse()
+        failure.cause?.cause shouldBeEqualTo null
+    }
+
+    private fun throwableGraph(failure: Throwable): String = buildString {
+        var current: Throwable? = failure
+        while (current != null) {
+            append(current::class.java.name)
+            append(':')
+            appendLine(current.message)
+            current.suppressed.forEach { suppressed -> appendLine(suppressed.message) }
+            current = current.cause
+        }
+    }
+
 }
 
 internal interface NamedView {
@@ -153,6 +175,14 @@ internal data class UserNameDto(
 )
 
 internal class ZeroArgumentProjection
+
+internal class FailingUserProjection(
+    val name: String,
+) {
+    init {
+        throw IllegalArgumentException("sensitive-constructor-value")
+    }
+}
 
 internal interface SnakeCaseNameView {
     @Suppress("VariableNaming")

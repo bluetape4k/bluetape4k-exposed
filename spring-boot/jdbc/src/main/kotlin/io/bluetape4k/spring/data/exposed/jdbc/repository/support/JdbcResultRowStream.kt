@@ -14,9 +14,10 @@ import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.springframework.dao.DataAccessResourceFailureException
 import org.springframework.dao.InvalidDataAccessApiUsageException
 import java.sql.ResultSet
+import java.sql.SQLException
 import java.util.Spliterator
 import java.util.Spliterators
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
 import java.util.stream.Stream
 import java.util.stream.StreamSupport
@@ -28,16 +29,29 @@ internal object JdbcResultRowStream {
         transaction: JdbcTransaction,
         query: Query,
         mapper: (Int, ResultRow) -> R,
-    ): Stream<R> = transaction.execQuery(query) { resultSet ->
-        fromResultSet(transaction, query, resultSet, mapper)
-    } ?: error("JDBC FluentQuery expected a ResultSet.")
+    ): Stream<R> = try {
+        transaction.execQuery(query) { resultSet ->
+            fromResultSet(transaction, query, resultSet, mapper)
+        } ?: error("JDBC FluentQuery expected a ResultSet.")
+    } catch (cause: SQLException) {
+        throw DataAccessResourceFailureException(
+            "JDBC FluentQuery could not execute the query.",
+            sanitizedSqlException(cause, "JDBC query execution failed."),
+        )
+    }
 
+    @Suppress("TooGenericExceptionCaught")
     internal fun <R: Any> fromResultSet(
         transaction: JdbcTransaction,
         query: Query,
         resultSet: ResultSet,
         mapper: (Int, ResultRow) -> R,
-    ): Stream<R> = Lease(transaction, query, resultSet, mapper).stream()
+    ): Stream<R> = try {
+        Lease(transaction, query, resultSet, mapper).stream()
+    } catch (cause: Exception) {
+        closeJdbcResources(resultSet)?.let(cause::addSuppressed)
+        throw cause
+    }
 
     private class Lease<R: Any>(
         private val transaction: JdbcTransaction,
@@ -47,10 +61,10 @@ internal object JdbcResultRowStream {
     ): AutoCloseable {
 
         private val ownerThreadId = Thread.currentThread().threadId()
-        private val closed = AtomicBoolean(false)
+        private val state = AtomicReference(LeaseState.OPEN)
         private val nestedStatementGuard = object: StatementInterceptor {
             override fun beforeExecution(transaction: Transaction, context: StatementContext) {
-                if (!closed.get()) {
+                if (state.get() != LeaseState.CLOSED) {
                     throw InvalidDataAccessApiUsageException(
                         "Nested Exposed SQL is not allowed while a JDBC FluentQuery stream is open.",
                     )
@@ -73,22 +87,28 @@ internal object JdbcResultRowStream {
                 Long.MAX_VALUE,
                 Spliterator.ORDERED or Spliterator.NONNULL,
             ) {
+                @Suppress("TooGenericExceptionCaught")
                 override fun tryAdvance(action: Consumer<in R>): Boolean {
                     validateActiveTransaction()
-                    var completed = false
                     return try {
                         if (!advanceCursor()) {
                             close()
-                            completed = true
                             false
                         } else {
                             val row = ResultRow.create(JdbcResult(resultSet), fieldIndex, columnTypes)
                             action.accept(mapper(rowIndex++, row))
-                            completed = true
                             true
                         }
-                    } finally {
-                        if (!completed) close()
+                    } catch (cause: SQLException) {
+                        val failure = DataAccessResourceFailureException(
+                            "JDBC FluentQuery row materialization failed.",
+                            sanitizedSqlException(cause, "JDBC row materialization failed."),
+                        )
+                        closeAfterFailure(failure)
+                        throw failure
+                    } catch (cause: Exception) {
+                        closeAfterFailure(cause)
+                        throw cause
                     }
                 }
             }
@@ -96,13 +116,12 @@ internal object JdbcResultRowStream {
         }
 
         private fun validateActiveTransaction() {
-            if (closed.get()) {
+            if (state.get() != LeaseState.OPEN) {
                 throw InvalidDataAccessApiUsageException("JDBC FluentQuery stream is already closed.")
             }
             if (Thread.currentThread().threadId() != ownerThreadId ||
                 TransactionManager.currentOrNull() !== transaction
             ) {
-                close()
                 throw InvalidDataAccessApiUsageException(
                     "JDBC FluentQuery stream must be consumed on its owner thread inside the originating transaction.",
                 )
@@ -111,19 +130,98 @@ internal object JdbcResultRowStream {
 
         private fun advanceCursor(): Boolean = try {
             resultSet.next()
-        } catch (cause: java.sql.SQLException) {
+        } catch (cause: SQLException) {
             throw DataAccessResourceFailureException(
                 "JDBC FluentQuery cursor could not advance; avoid nested SQL while consuming the stream.",
-                cause,
+                sanitizedSqlException(cause, "JDBC cursor advance failed."),
             )
         }
 
+        @Suppress("TooGenericExceptionCaught")
         override fun close() {
-            if (!closed.compareAndSet(false, true)) return
-            transaction.unregisterInterceptor(nestedStatementGuard)
-            val statement = runCatching { resultSet.statement }.getOrNull()
-            runCatching { resultSet.close() }
-            runCatching { statement?.close() }
+            if (state.get() == LeaseState.CLOSED) return
+            validateOwnerContext()
+            if (!beginClose()) return
+
+            val cleanupFailure = closeJdbcResources(resultSet)
+            if (cleanupFailure != null) {
+                state.set(LeaseState.CLOSE_FAILED)
+                throw cleanupFailure
+            }
+
+            try {
+                transaction.unregisterInterceptor(nestedStatementGuard)
+                state.set(LeaseState.CLOSED)
+            } catch (cause: RuntimeException) {
+                state.set(LeaseState.CLOSE_FAILED)
+                throw cause
+            }
         }
+
+        private fun closeAfterFailure(failure: Throwable) {
+            try {
+                close()
+            } catch (cleanupFailure: DataAccessResourceFailureException) {
+                failure.addSuppressed(cleanupFailure)
+            }
+        }
+
+        private fun validateOwnerContext() {
+            if (Thread.currentThread().threadId() != ownerThreadId ||
+                TransactionManager.currentOrNull() !== transaction
+            ) {
+                throw InvalidDataAccessApiUsageException(
+                    "JDBC FluentQuery stream must be closed on its owner thread inside the originating transaction.",
+                )
+            }
+        }
+
+        private fun beginClose(): Boolean {
+            while (true) {
+                when (val current = state.get()) {
+                    LeaseState.CLOSED -> return false
+                    LeaseState.CLOSING -> throw InvalidDataAccessApiUsageException(
+                        "JDBC FluentQuery stream close is already in progress.",
+                    )
+                    LeaseState.OPEN,
+                    LeaseState.CLOSE_FAILED,
+                    -> if (state.compareAndSet(current, LeaseState.CLOSING)) return true
+                }
+            }
+        }
+    }
+
+    private fun closeJdbcResources(resultSet: ResultSet): DataAccessResourceFailureException? {
+        var statement: java.sql.Statement? = null
+        val failures = buildList {
+            try {
+                statement = resultSet.statement
+            } catch (cause: SQLException) {
+                add(sanitizedSqlException(cause, "JDBC Statement lookup failed."))
+            }
+            try {
+                resultSet.close()
+            } catch (cause: SQLException) {
+                add(sanitizedSqlException(cause, "JDBC ResultSet close failed."))
+            }
+            try {
+                statement?.close()
+            } catch (cause: SQLException) {
+                add(sanitizedSqlException(cause, "JDBC Statement close failed."))
+            }
+        }
+        if (failures.isEmpty()) return null
+
+        return DataAccessResourceFailureException(
+            "JDBC FluentQuery cursor cleanup failed.",
+            failures.first(),
+        ).also { failure -> failures.drop(1).forEach(failure::addSuppressed) }
+    }
+
+    private enum class LeaseState {
+        OPEN,
+        CLOSING,
+        CLOSE_FAILED,
+        CLOSED,
     }
 }

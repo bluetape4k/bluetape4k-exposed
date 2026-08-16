@@ -49,7 +49,8 @@ import org.springframework.data.repository.query.QueryByExampleExecutor
  * Cursor-backed `stream()`은 caller-owned outer transaction과 생성 thread 안에서만
  * 소비할 수 있습니다. Kotlin `use` 또는 Java try-with-resources로 명시적으로 닫고,
  * cursor가 열린 동안 같은 transaction에서 다른 repository/Exposed SQL을 실행하지
- * 마세요.
+ * 마세요. Driver cleanup 실패는 `DataAccessResourceFailureException`으로 노출되며,
+ * 이 경우 현재 transaction을 종료해야 합니다.
  */
 @NoRepositoryBean
 interface ExposedJdbcRepository<E: Entity<ID>, ID: Any>: ListCrudRepository<E, ID>,

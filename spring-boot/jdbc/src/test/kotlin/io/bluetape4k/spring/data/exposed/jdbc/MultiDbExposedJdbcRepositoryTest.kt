@@ -201,10 +201,11 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
     fun `fluent query pushes projection paging matching and cursor semantics to each dialect`(testDB: TestDB) {
         withTables(testDB, Users) {
             val repo = createRepo()
-            val literalPercent = UserEntity.new { name = "A%lice"; email = "literal@example.com"; age = 30 }
+            UserEntity.new { name = "A%lice"; email = "literal@example.com"; age = 30 }
             UserEntity.new { name = "Axxlice"; email = "wildcard@example.com"; age = 31 }
             UserEntity.new { name = "Bob"; email = "bob@example.com"; age = 20 }
             UserEntity.new { name = "Charlie"; email = "charlie@example.com"; age = 40 }
+            val literalPercent = UserEntity.find { Users.email eq "literal@example.com" }.single()
 
             val all = Example.of(
                 literalPercent,

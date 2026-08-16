@@ -52,7 +52,8 @@ internal class JdbcProjectionMapper(
         val projectionInformation = projectionFactory.getProjectionInformation(resultType)
         if (!projectionInformation.isClosed) {
             throw UnsupportedOperationException(
-                "Open or SpEL projection '${resultType.name}' is not supported by JDBC FluentQuery.",
+                "Open or SpEL projection '${resultType.name}' is not supported by JDBC FluentQuery; " +
+                    "use a closed getter interface, Kotlin data class, or Java record.",
             )
         }
 
@@ -88,7 +89,8 @@ internal class JdbcProjectionMapper(
         val constructorNames = constructorNames(resultType, preferred)
         if (inputProperties != constructorNames) {
             throw UnsupportedOperationException(
-                "Projection constructor inputs for '${resultType.name}' are not deterministic.",
+                "Projection constructor inputs for '${resultType.name}' are not deterministic; " +
+                    "use one preferred constructor whose named inputs match the projection properties.",
             )
         }
 
@@ -122,13 +124,15 @@ internal class JdbcProjectionMapper(
     ): List<String> {
         if (preferred.parameters.isEmpty()) {
             throw UnsupportedOperationException(
-                "Projection type '${resultType.name}' must have at least one named constructor input.",
+                "Projection type '${resultType.name}' must have at least one named constructor input; " +
+                    "declare a closed projection with one or more mapped properties.",
             )
         }
         return preferred.parameters.map { parameter ->
             if (!parameter.hasName()) {
                 throw UnsupportedOperationException(
-                    "Projection constructor for '${resultType.name}' must expose parameter names.",
+                    "Projection constructor for '${resultType.name}' must expose parameter names; " +
+                        "compile with Java '-parameters' or use Kotlin constructor metadata.",
                 )
             }
             parameter.requiredName
@@ -182,7 +186,7 @@ internal class JdbcProjectionMapper(
     } catch (cause: ReflectiveOperationException) {
         throw MappingException(
             "Projection constructor invocation failed at row $rowIndex for '${constructor.declaringClass.name}'.",
-            cause,
+            sanitizedReflectiveException(cause),
         )
     }
 
@@ -191,7 +195,8 @@ internal class JdbcProjectionMapper(
     ): PreferredConstructor<R, ExposedPersistentProperty> =
         PreferredConstructorDiscoverer.discover<R, ExposedPersistentProperty>(resultType)
             ?: throw UnsupportedOperationException(
-                "Projection type '${resultType.name}' must have one preferred named constructor.",
+                "Projection type '${resultType.name}' must have one preferred named constructor; " +
+                    "use a Kotlin data class or Java record with deterministic component names.",
             )
 
     private fun boxed(type: Class<*>): Class<*> = when (type) {

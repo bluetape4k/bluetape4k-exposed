@@ -27,15 +27,19 @@
 
 ## 독립 검토 결과
 
-최신 diff를 운영·caller, 성능·안정성, 보안·API 세 관점에서 독립 검토했다.
+최신 diff를 성능, 안정성, 보안, 운영, developer/API, user/caller의 여섯 관점으로
+분리해 독립 검토한다. 아래 표는 최종 수정본 재검토가 끝난 뒤 PASS로 닫는다.
 
 | 관점 | P0 | P1 | 판정 |
 | --- | ---: | ---: | --- |
-| 운영·repository caller | 0 | 0 | PASS |
-| 성능·안정성 | 0 | 0 | PASS |
-| 보안·API/ABI | 0 | 0 | PASS |
+| 성능 | - | - | PENDING |
+| 안정성 | - | - | PENDING |
+| 보안 | - | - | PENDING |
+| 운영 | - | - | PENDING |
+| developer/API | - | - | PENDING |
+| user/caller | - | - | PENDING |
 
-최종 판정은 **PASS — P0=0, P1=0**이다.
+현재 판정은 **PENDING — 최종 6개 관점 재검토 전**이다.
 
 ## 주요 P1 closure
 
@@ -53,6 +57,15 @@
   checked-in ABI baseline과 Java/Kotlin consumer fixture로 검증했다.
 - 열린 cursor의 nested Exposed SQL을 결정적으로 거부하고 close 뒤 interceptor를
   해제하는 RED→GREEN 통합 테스트를 추가했다.
+- projection constructor, QBE getter, cursor advance, row materialization, resource
+  cleanup의 원본 cause graph를 안전한 진단 정보로 치환하고 control character와
+  과도한 길이를 제한했다.
+- wrong-thread consumption은 owner resource를 건드리지 않고 실패하며, owner
+  transaction에서 후속 close가 정확히 한 번 수행됨을 검증했다.
+- cleanup 실패 시 nested-SQL guard를 해제하지 않고 caller에게
+  `DataAccessResourceFailureException`을 노출해 transaction 종료를 강제한다.
+- `EntityClass.new {}`로 insert 예약된 probe는 ID snapshot/write-set으로 SQL과 getter
+  접근 전에 거부한다.
 
 ## 검토 중 철회·기각한 항목
 
@@ -68,9 +81,9 @@
 
 ## 검증 증거
 
-- JDK 25, H2 전체 module test: 223 tests, 0 failures
+- JDK 25, H2 전체 module test: 256 tests, 0 failures
 - H2와 같은 실행의 Detekt: PASS
-- PostgreSQL 대표 multi-DB suite: PASS
+- PostgreSQL 대표 multi-DB suite: 26 tests, 0 failures, 0 errors, 0 skipped
 - MySQL V8 대표 multi-DB suite: 26 tests, 0 failures, 0 errors, 0 skipped
 - public ABI/Java/Kotlin consumer fixture: 3 tests, PASS
 - EN/KO README parity validator: 6 runs, 16 assertions, PASS
@@ -80,13 +93,16 @@
 
 ## 비차단 잔여 위험
 
-- resource close 실패는 현재 best-effort 정리이므로 driver close 오류가 사용자에게
-  노출되지 않을 수 있다. 정상 query 결과를 close 진단으로 덮지 않는 현재 정책을
-  유지하되 별도 개선 후보로 남긴다.
+- resource close 실패 시 JDBC resource를 모두 한 번씩 정리하되 nested-SQL guard를
+  유지한다. Java `Stream.close()`는 실패 뒤 handler를 재실행하지 않으므로 caller는
+  해당 transaction을 종료해야 한다.
 - 같은 thread/transaction 사용은 caller contract다. raw JDBC/JdbcTemplate nested
   SQL까지 차단하는 계약은 아니며 Exposed repository/statement 경계만 보호한다.
 - custom `searchQuery`는 안전한 shape를 fail-fast 하기 위해 preflight와 실제 query를
   두 번 구성한다. 사용자 정의 builder가 무거운 경우 비용이 생길 수 있다.
+- selected-row projection은 행마다 reflection mapping과 작은 map allocation을 수행한다.
+- 기존 one-argument constructor ABI 때문에 direct construction은 registry miss 시
+  독립 collaborator fallback을 유지한다. Spring factory 경로는 registry를 사용한다.
 - multi-DB 검증은 H2 전체와 PostgreSQL/MySQL 대표 suite다. 모든 dialect의 전체
   FluentQuery 의미 조합을 실행한 것은 아니다.
 
@@ -97,9 +113,9 @@
 - [x] TDD RED→GREEN 구현 완료
 - [x] targeted/H2/PostgreSQL/MySQL/Detekt/API·ABI 검증 완료
 - [x] EN/KO/KDoc 및 stable manual 경계 검증 완료
-- [x] 독립 pre-PR 검토 P0=0/P1=0
+- [ ] 6개 관점 독립 pre-PR 검토 P0=0/P1=0
 - [ ] Lore commit과 PR 생성
 - [ ] exact-head CI, review/thread, mergeability 확인
 - [ ] fresh merge 승인 후 merge·sync·cleanup
 
-상태: `PENDING` — local 구현과 pre-PR gate는 완료됐고 PR 및 exact-head CI가 남아 있다.
+상태: `PENDING` — local 구현과 검증은 완료됐고 6개 관점 pre-PR 수렴이 남아 있다.

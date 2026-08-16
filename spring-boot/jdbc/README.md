@@ -164,7 +164,8 @@ fast.
 
 <!-- contract-key:closed-projection -->
 Closed getter interfaces, Kotlin data classes, and Java records are supported
-by `as`. `project` further restricts the selected properties. Projection,
+by `as`. A non-empty `project` list must exactly match the projection's required
+inputs; an empty list restores automatic input selection. Projection,
 `sortBy`, positive limits, and `Pageable` are pushed down to SQL; `firstValue`,
 `oneValue`, `all`, `page`, `count`, and `exists` keep Spring Data cardinality
 semantics. Repeated sort is appended, while a paged query uses the sort from
@@ -211,6 +212,9 @@ val exists = userRepository.findBy(example) { it.exists() }
 
 ```java
 public record UserNameRecord(String name) {}
+
+List<UserNameRecord> records = userRepository.findBy(example,
+    query -> query.as(UserNameRecord.class).project(List.of("name")).all());
 ```
 
 <!-- contract-key:open-projection-rejected -->
@@ -238,6 +242,8 @@ finish or close it before the next statement.
 
 <!-- contract-key:cursor-explicit-close -->
 Always close the cursor explicitly with `use` or Java try-with-resources.
+Driver cleanup failures are reported as `DataAccessResourceFailureException`;
+end the current transaction after such a failure.
 
 ```kotlin
 @Transactional(readOnly = true)
