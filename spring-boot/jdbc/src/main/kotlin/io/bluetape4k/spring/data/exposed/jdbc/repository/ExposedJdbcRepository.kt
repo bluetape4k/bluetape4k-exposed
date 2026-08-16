@@ -35,6 +35,21 @@ import org.springframework.data.repository.query.QueryByExampleExecutor
  * val count  = userRepository.count  { Users.age greaterEq 18 } // 18세 이상 수
  * val exists = userRepository.exists { Users.name eq "Alice" }  // true/false
  * ```
+ *
+ * `QueryByExampleExecutor.findBy`의 probe는 현재 Exposed transaction에 연결된
+ * 영속 Entity여야 합니다. Closed getter interface, Kotlin data class, Java record
+ * projection은 필요한 column만 조회하며, open SpEL projection과 nested property는
+ * SQL 실행 전에 거부합니다. 문자열 matcher는 `DEFAULT`, `EXACT`, `CONTAINING`,
+ * `STARTING`, `ENDING`만 지원하고 ignore-case와 regex는 지원하지 않습니다.
+ * `project(properties)`의 non-empty property set은 projection의 필수 input과 정확히
+ * 같아야 하며 빈 set은 필수 input 자동 선택을 사용합니다. `first`는 첫 행만 읽고,
+ * `one`은 limit 설정과 무관하게 둘 이상의 행을 검출해
+ * `IncorrectResultSizeDataAccessException`을 발생시킵니다.
+ *
+ * Cursor-backed `stream()`은 caller-owned outer transaction과 생성 thread 안에서만
+ * 소비할 수 있습니다. Kotlin `use` 또는 Java try-with-resources로 명시적으로 닫고,
+ * cursor가 열린 동안 같은 transaction에서 다른 repository/Exposed SQL을 실행하지
+ * 마세요.
  */
 @NoRepositoryBean
 interface ExposedJdbcRepository<E: Entity<ID>, ID: Any>: ListCrudRepository<E, ID>,

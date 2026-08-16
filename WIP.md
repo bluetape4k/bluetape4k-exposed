@@ -1,30 +1,30 @@
 # 진행 중인 작업 - bluetape4k-exposed
 
-스냅숏: 2026-08-06 KST
-범위: `1.12.1` 게시 메타데이터 교정 릴리스.
+스냅숏: 2026-08-16 KST
+범위: `1.13.0` 개발선의 Spring Data Exposed repository 개선.
 
 ## 릴리스 목표
 
-`1.12.0`의 POM은 유효했지만 Gradle Module Metadata의 개별 variant가 동일한
-dependency-management 계약을 완전히 노출하지 못했습니다. `1.12.1`은 각 API/runtime
-variant에 필요한 BOM 또는 constraint를 직접 연결하고, 실제 게시 산출물만 사용하는 격리된
-하위 소비자 검증을 릴리스 게이트로 고정합니다.
+Epic [#658](https://github.com/bluetape4k/bluetape4k-exposed/issues/658)의 child를
+stacked PR train으로 전달합니다. 현재 slot은 JDBC repository의 Spring Data
+`FluentQuery` projection과 QBE terminal을 실제 SQL 실행 경로에 연결하는
+[#642](https://github.com/bluetape4k/bluetape4k-exposed/issues/642)입니다.
 
 ## 검증 기준
 
-- `baseVersion=1.12.1`, 빈 `snapshotVersion`, immutable catalog commit을 사용합니다.
-- 35개 게시 산출물의 POM과 Gradle Module Metadata를 모두 검사합니다.
-- 34개 일반 artifact와 1개 test fixture를 격리된 로컬 repository에 게시한 뒤 compile/runtime
-  dependency resolution을 검증합니다.
-- exact-head CI, Nightly, Snapshot, signed tag, Maven Central 게시 순서로 진행합니다.
-- Maven Central의 `1.12.1` POM 및 `.module` 산출물과 실제 Gradle consumer resolution이
-  확인된 뒤에만 milestone을 닫습니다.
+- Attached persisted DAO probe만 QBE 입력으로 허용합니다.
+- Closed interface, Kotlin data class, Java record projection의 selected column을 SQL로
+  pushdown합니다.
+- sort, limit, page, count, exists, cardinality와 literal LIKE escape를 H2, PostgreSQL,
+  MySQL V8에서 검증합니다.
+- Cursor-backed `stream()`은 caller-owned transaction, 같은 thread, 명시적 close를
+  요구하며 upfront materialization을 허용하지 않습니다.
+- 기존 public constructor와 repository API/ABI를 유지합니다.
+- 아직 `1.13.0`을 배포하지 않았으므로 안정판 `docs/manual/**`는 변경하지 않습니다.
 
 ## 현재 상태
 
-- 교정 구현 PR [#620](https://github.com/bluetape4k/bluetape4k-exposed/pull/620)은 exact-head
-  CI 전체 성공 후 `develop`에 병합되었습니다.
-- 릴리스 후보는 `catalog/2026-08-06-02` 준비 commit을 사용하며, 공개 릴리스 완료 후
-  해당 catalog train의 `bluetape4k-exposed` 버전을 `1.12.1`로 확정합니다.
-- issue [#619](https://github.com/bluetape4k/bluetape4k-exposed/issues/619)와 `1.12.1`
-  milestone은 Maven Central 공개 검증까지 추적합니다.
+- Issue #642의 설계와 구현 계획은 독립 검토에서 P0=0/P1=0으로 확정했습니다.
+- JDBC QBE compiler, projection mapper, SQL terminal executor, direct JDBC cursor lease를
+  TDD로 구현하고 대표 dialect 회귀 검증을 진행하고 있습니다.
+- 문서·정적 분석·API/ABI·module 검증과 독립 pre-PR review가 끝난 뒤 PR을 생성합니다.

@@ -1,30 +1,31 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository.support
 
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.spring.data.exposed.jdbc.mapping.ExposedMappingContext
+import io.bluetape4k.spring.data.exposed.jdbc.mapping.ExposedPersistentEntity
 import io.bluetape4k.spring.data.exposed.jdbc.repository.ExposedJdbcRepository
-import io.bluetape4k.support.toOptional
-import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.Op
-import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
-import org.jetbrains.exposed.v1.core.like
-import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.dao.Entity
 import org.jetbrains.exposed.v1.dao.EntityClass
 import org.jetbrains.exposed.v1.jdbc.deleteAll
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
+import org.springframework.dao.InvalidDataAccessApiUsageException
 import org.springframework.data.domain.Example
-import org.springframework.data.domain.ExampleMatcher
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
+import org.springframework.data.projection.ProjectionFactory
+import org.springframework.data.projection.SpelAwareProxyProjectionFactory
 import org.springframework.data.repository.query.FluentQuery
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
+import java.util.WeakHashMap
 import java.util.function.Function
 import java.util.stream.Stream
 
@@ -44,6 +45,14 @@ import java.util.stream.Stream
  * val page = userRepository.findAll(PageRequest.of(0, 10, Sort.by("name")))
  * val users = userRepository.findAll { Users.age greaterEq 18 }
  * ```
+ *
+ * 일반 애플리케이션은 Spring repository factory가 생성한 인스턴스를 사용하세요.
+ * 이 생성자를 직접 사용할 때는 모든 호출을 caller-owned Exposed `transaction {}`
+ * 안에서 실행해야 합니다. `findBy(Example) { ... }`의 cursor-backed `stream()`도
+ * 같은 transaction과 thread에서 소비하고 명시적으로 닫아야 합니다. QBE 문자열
+ * matcher는 exact/contains/startsWith/endsWith만 지원하며 ignore-case와 regex는
+ * SQL 전에 거부합니다. Non-empty `project(properties)`는 projection 필수 input과
+ * 정확히 같아야 하고 `one`은 limit과 무관하게 다건 결과를 거부합니다.
  */
 
 @Repository
@@ -53,10 +62,32 @@ class SimpleExposedJdbcRepository<E: Entity<ID>, ID: Any>(
     private val entityInformation: ExposedEntityInformation<E, ID>,
 ): ExposedJdbcRepository<E, ID> {
 
-    companion object: KLogging()
+    companion object: KLogging() {
+        @JvmSynthetic
+        internal fun <E: Entity<ID>, ID: Any> create(
+            entityInformation: ExposedEntityInformation<E, ID>,
+            mappingContext: ExposedMappingContext,
+            projectionFactory: ProjectionFactory,
+            creationMode: JdbcRepositoryCreationMode,
+        ): SimpleExposedJdbcRepository<E, ID> = SimpleExposedJdbcRepository(entityInformation).also { repository ->
+            JdbcRepositoryCollaboratorRegistry.register(
+                repository,
+                JdbcRepositoryCollaborators(mappingContext, projectionFactory, creationMode),
+            )
+        }
+    }
+
+    private val collaborators by lazy { JdbcRepositoryCollaboratorRegistry.resolve(this) }
 
     private val entityClass: EntityClass<ID, E> get() = entityInformation.entityClass
     override val table: IdTable<ID> get() = entityInformation.table
+    private val persistentEntity: ExposedPersistentEntity<E> by lazy {
+        collaborators.mappingContext
+            .getRequiredPersistentEntity(entityInformation.javaType) as ExposedPersistentEntity<E>
+    }
+    private val fluentQueryExecutor by lazy {
+        JdbcFluentQueryExecutor(entityClass, table, collaborators.creationMode)
+    }
 
     override fun extractId(entity: E): ID? =
         if (entityInformation.isNew(entity)) null else entity.id.value
@@ -166,185 +197,127 @@ class SimpleExposedJdbcRepository<E: Entity<ID>, ID: Any>(
     // ============================================================
 
     override fun <S: E> findOne(example: Example<S>): Optional<S> {
-        val conditions = buildExampleConditions(example.probe, example.matcher)
-        val result = if (conditions == null) entityClass.all().firstOrNull()
-        else entityClass.find { conditions }.firstOrNull()
-        return Optional.ofNullable(result as? S)
+        return withFluentQuery(example) { plan -> fluentQueryExecutor.one(plan) }
     }
 
     override fun <S: E> findAll(example: Example<S>): List<S> {
-        val conditions = buildExampleConditions(example.probe, example.matcher)
-        return if (conditions == null) entityClass.all().toList() as List<S>
-        else entityClass.find { conditions }.toList() as List<S>
+        return withFluentQuery(example) { plan -> fluentQueryExecutor.all(plan) }
     }
 
     override fun <S: E> findAll(example: Example<S>, sort: Sort): List<S> {
-        val conditions = buildExampleConditions(example.probe, example.matcher)
-        val query = if (conditions == null) entityClass.all() else entityClass.find { conditions }
-        if (sort.isUnsorted) return query.toList() as List<S>
-        return query.orderBy(*sort.toExposedOrderBy(table)).toList() as List<S>
+        return withFluentQuery(example) { plan -> fluentQueryExecutor.all(plan.withSort(sort)) }
     }
 
     override fun <S: E> findAll(example: Example<S>, pageable: Pageable): Page<S> {
-        val conditions = buildExampleConditions(example.probe, example.matcher)
-        val total = if (conditions == null) entityClass.count()
-        else entityClass.find { conditions }.count()
-        val query = if (conditions == null) entityClass.all() else entityClass.find { conditions }
-        if (pageable.sort.isSorted) {
-            query.orderBy(*pageable.sort.toExposedOrderBy(table))
-        }
-        val content = if (pageable.isUnpaged) {
-            query.toList() as List<S>
-        } else {
-            query.limit(pageable.pageSize).offset(pageable.offset).toList() as List<S>
-        }
-        return PageImpl(content, pageable, total)
+        return withFluentQuery(example) { plan -> fluentQueryExecutor.page(plan, pageable) }
     }
 
-    override fun <S: E> count(example: Example<S>): Long {
-        val conditions = buildExampleConditions(example.probe, example.matcher)
-        return if (conditions == null) entityClass.count()
-        else entityClass.find { conditions }.count()
-    }
+    override fun <S: E> count(example: Example<S>): Long =
+        withFluentQuery(example) { plan -> fluentQueryExecutor.count(plan) }
 
-    override fun <S: E> exists(example: Example<S>): Boolean {
-        val conditions = buildExampleConditions(example.probe, example.matcher)
-        return if (conditions == null) entityClass.count() > 0L
-        else !entityClass.find { conditions }.empty()
-    }
+    override fun <S: E> exists(example: Example<S>): Boolean =
+        withFluentQuery(example) { plan -> fluentQueryExecutor.exists(plan) }
 
     override fun <S: E, R> findBy(
         example: Example<S>,
         queryFunction: Function<FluentQuery.FetchableFluentQuery<S>, R>,
-    ): R {
-        val conditions = buildExampleConditions(example.probe, example.matcher)
-        val results = if (conditions == null) entityClass.all().toList() as List<S>
-        else entityClass.find { conditions }.toList() as List<S>
-        return queryFunction.apply(SimpleFluentQuery(results) as FluentQuery.FetchableFluentQuery<S>)
+    ): R = withFluentQuery(example) { plan ->
+        queryFunction.apply(JdbcFetchableFluentQuery<E, ID, S>(fluentQueryExecutor, plan))
     }
 
     // ============================================================
     // Internal helpers
     // ============================================================
 
-    /**
-     * [ExampleMatcher] 설정을 반영한 WHERE 조건을 생성합니다.
-     *
-     * - `matcher.ignoredPaths`: 지정된 경로는 조건에서 제외합니다.
-     * - `matcher.isAnyMatching`: true이면 OR, false(기본)이면 AND로 조건을 결합합니다.
-     * - `matcher.defaultStringMatcher`: CONTAINING/STARTING/ENDING은 LIKE로, 나머지는 등호(=)로 처리합니다.
-     *   단, 케이스 구분(case sensitivity)과 per-property 설정은 지원하지 않습니다.
-     */
-    private fun buildExampleConditions(probe: E, matcher: ExampleMatcher): Op<Boolean>? {
-        val ignoredPaths = matcher.ignoredPaths
-        val stringMatcher = matcher.defaultStringMatcher
-
-        val conditions = table.columns
-            .asSequence()
-            .filterNot { it == table.id }
-            .mapNotNull { col ->
-                val camelCaseName = toCamelCase(col.name)
-
-                // ignoredPaths 체크 (snake_case 및 camelCase 모두)
-                if (col.name in ignoredPaths || camelCaseName in ignoredPaths) return@mapNotNull null
-
-                val field =
-                    runCatching {
-                        probe.javaClass.getDeclaredField(col.name).apply { isAccessible = true }
-                    }.getOrNull()
-                        ?: runCatching {
-                            probe.javaClass.getDeclaredField(camelCaseName).apply { isAccessible = true }
-                        }.getOrNull()
-                        ?: return@mapNotNull null
-
-                val value = field.get(probe) ?: return@mapNotNull null
-
-                // String 컬럼에 대해 StringMatcher 적용
-                if (value is String) {
-                    @Suppress("UNCHECKED_CAST")
-                    val strCol = col as Column<String>
-                    when (stringMatcher) {
-                        ExampleMatcher.StringMatcher.CONTAINING -> strCol.like("%$value%")
-                        ExampleMatcher.StringMatcher.STARTING -> strCol.like("$value%")
-                        ExampleMatcher.StringMatcher.ENDING   -> strCol.like("%$value")
-                        else                                  -> strCol.eq(value)  // DEFAULT, EXACT, REGEX → 등호
-                    }
-                } else {
-                    @Suppress("UNCHECKED_CAST")
-                    (col as Column<Any>).eq(value)
-                }
-            }.toList()
-
-        if (conditions.isEmpty()) return null
-        return if (matcher.isAnyMatching) {
-            conditions.reduce { a, b -> a or b }
-        } else {
-            conditions.reduce { a, b -> a and b }
+    private fun <S: E, R> withFluentQuery(
+        example: Example<S>,
+        block: (JdbcFluentQueryPlan<E>) -> R,
+    ): R {
+        val transaction = TransactionManager.currentOrNull()
+            ?: throw InvalidDataAccessApiUsageException(
+                "JDBC FluentQuery requires an active caller-owned Exposed transaction.",
+            )
+        val scope = JdbcFluentQueryScope.open(transaction)
+        @Suppress("UNCHECKED_CAST")
+        val plan = JdbcFluentQueryPlan.create(
+            example = example as Example<E>,
+            domainType = entityInformation.javaType,
+            projectionFactory = collaborators.projectionFactory,
+            persistentEntity = persistentEntity,
+            scope = scope,
+        )
+        return try {
+            block(plan)
+        } finally {
+            scope.close()
         }
     }
 }
 
-/**
- * In-memory 정렬을 위한 Comparator (SimpleFluentQuery.sortBy 용)
- */
-private class ExampleSortComparator<E>(
-    private val sort: Sort,
-): Comparator<E> {
-    @Suppress("UNCHECKED_CAST")
-    override fun compare(a: E, b: E): Int {
-        val targetClass = (a ?: b)?.javaClass ?: return 0
-        for (order in sort) {
-            val field =
-                runCatching {
-                    targetClass.getDeclaredField(order.property).apply { isAccessible = true }
-                }.getOrNull() ?: continue
-
-            val va = field.get(a) as? Comparable<Any> ?: continue
-            val vb = field.get(b) as? Comparable<Any> ?: continue
-            val cmp = va.compareTo(vb)
-            if (cmp != 0) return if (order.isAscending) cmp else -cmp
-        }
-        return 0
-    }
+internal enum class JdbcRepositoryCreationMode {
+    DIRECT,
+    FACTORY,
 }
 
-/**
- * FluentQuery 최소 구현 (findBy 지원용).
- *
- * **제약**: [project] 는 projection을 지원하지 않으며 모든 프로퍼티가 반환됩니다.
- */
-private class SimpleFluentQuery<E: Any>(
-    private val results: List<E>,
-): FluentQuery.FetchableFluentQuery<E> {
-    override fun sortBy(sort: Sort): FluentQuery.FetchableFluentQuery<E> =
-        if (sort.isUnsorted) this
-        else SimpleFluentQuery(results.sortedWith(ExampleSortComparator(sort)))
+internal data class JdbcRepositoryCollaborators(
+    val mappingContext: ExposedMappingContext,
+    val projectionFactory: ProjectionFactory,
+    val creationMode: JdbcRepositoryCreationMode,
+)
 
-    override fun <R: Any> `as`(projectionType: Class<R>): FluentQuery.FetchableFluentQuery<R> =
-        SimpleFluentQuery(results.map { projectionType.cast(it) })
+internal object JdbcRepositoryCollaboratorRegistry {
+    private val collaborators = Collections.synchronizedMap(
+        WeakHashMap<SimpleExposedJdbcRepository<*, *>, JdbcRepositoryCollaborators>(),
+    )
 
-    /** Projection은 지원되지 않습니다. 모든 프로퍼티가 반환됩니다. */
-    override fun project(properties: MutableCollection<String>): FluentQuery.FetchableFluentQuery<E> = this
-
-    override fun first(): Optional<E> = results.firstOrNull().toOptional()
-
-    override fun firstValue(): E? = results.firstOrNull()
-
-    override fun one(): Optional<E> = results.singleOrNull().toOptional()
-
-    override fun oneValue(): E? = results.singleOrNull()
-
-    override fun all(): List<E> = results
-
-    override fun page(pageable: Pageable): Page<E> {
-        val start = pageable.offset.toInt().coerceAtMost(results.size)
-        val end = (start + pageable.pageSize).coerceAtMost(results.size)
-        return PageImpl(results.subList(start, end), pageable, results.size.toLong())
+    fun register(
+        repository: SimpleExposedJdbcRepository<*, *>,
+        value: JdbcRepositoryCollaborators,
+    ) {
+        collaborators[repository] = value
     }
 
-    override fun count(): Long = results.size.toLong()
+    fun resolve(repository: SimpleExposedJdbcRepository<*, *>): JdbcRepositoryCollaborators =
+        collaborators.remove(repository) ?: JdbcRepositoryCollaborators(
+            mappingContext = ExposedMappingContext(),
+            projectionFactory = SpelAwareProxyProjectionFactory(),
+            creationMode = JdbcRepositoryCreationMode.DIRECT,
+        )
+}
 
-    override fun exists(): Boolean = results.isNotEmpty()
+@Suppress("TooManyFunctions")
+internal class JdbcFetchableFluentQuery<E: Entity<ID>, ID: Any, R: Any>(
+    private val executor: JdbcFluentQueryExecutor<E, ID>,
+    private val plan: JdbcFluentQueryPlan<E>,
+): FluentQuery.FetchableFluentQuery<R> {
 
-    override fun stream(): Stream<E> = results.stream()
+    override fun sortBy(sort: Sort): FluentQuery.FetchableFluentQuery<R> =
+        JdbcFetchableFluentQuery(executor, plan.withSort(sort))
+
+    override fun limit(limit: Int): FluentQuery.FetchableFluentQuery<R> =
+        JdbcFetchableFluentQuery(executor, plan.withLimit(limit))
+
+    override fun <T: Any> `as`(projectionType: Class<T>): FluentQuery.FetchableFluentQuery<T> =
+        JdbcFetchableFluentQuery(executor, plan.asType(projectionType))
+
+    override fun project(properties: MutableCollection<String>): FluentQuery.FetchableFluentQuery<R> =
+        JdbcFetchableFluentQuery(executor, plan.withProperties(properties))
+
+    override fun first(): Optional<R> = executor.first(plan)
+
+    override fun firstValue(): R? = executor.firstValue(plan)
+
+    override fun one(): Optional<R> = executor.one(plan)
+
+    override fun oneValue(): R? = executor.oneValue(plan)
+
+    override fun all(): List<R> = executor.all(plan)
+
+    override fun page(pageable: Pageable): Page<R> = executor.page(plan, pageable)
+
+    override fun count(): Long = executor.count(plan)
+
+    override fun exists(): Boolean = executor.exists(plan)
+
+    override fun stream(): Stream<R> = executor.stream(plan)
 }

@@ -7,6 +7,21 @@
 
 ## [Unreleased]
 
+### 추가됨
+
+- Spring Data JDBC `QueryByExampleExecutor.findBy`가 closed interface, Kotlin data class,
+  Java record projection과 `project`/sort/limit/page/count/exists를 SQL로 pushdown하고,
+  caller-owned transaction에서 한 행씩 소비하는 cursor-backed `stream()`을 지원합니다
+  ([#642](https://github.com/bluetape4k/bluetape4k-exposed/issues/642)).
+
+### 변경됨
+
+- JDBC QBE terminal이 하나의 matcher compiler와 cardinality 규칙을 공유합니다. 현재
+  transaction에 연결되지 않은 probe, open SpEL projection, nested/unknown property,
+  결과 cardinality를 바꾸는 custom `EntityClass.searchQuery` shape는 SQL 전에
+  fail-fast로 거부합니다
+  ([#642](https://github.com/bluetape4k/bluetape4k-exposed/issues/642)).
+
 ## [1.12.1] - 2026-08-06
 
 ### 버그 수정

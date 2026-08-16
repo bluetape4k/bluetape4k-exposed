@@ -1,5 +1,6 @@
 package io.bluetape4k.spring.data.exposed.jdbc.mapping
 
+import org.springframework.beans.BeanUtils
 import org.springframework.data.core.TypeInformation
 import org.springframework.data.mapping.context.AbstractMappingContext
 import org.springframework.data.mapping.model.Property
@@ -20,8 +21,24 @@ class ExposedMappingContext:
 
     override fun <T: Any> createPersistentEntity(
         typeInformation: TypeInformation<T>,
-    ): DefaultExposedPersistentEntity<T> =
-        DefaultExposedPersistentEntity(typeInformation)
+    ): DefaultExposedPersistentEntity<T> = DefaultExposedPersistentEntity(typeInformation).also { entity ->
+        val table = entity.getTable() ?: return@also
+        BeanUtils.getPropertyDescriptors(typeInformation.type)
+            .asSequence()
+            .filter { descriptor -> descriptor.readMethod?.declaringClass == typeInformation.type }
+            .filter { descriptor ->
+                table.columns.any { column ->
+                    column.name == descriptor.name ||
+                        column.name.equals(
+                            io.bluetape4k.spring.data.exposed.jdbc.repository.support.toSnakeCase(descriptor.name),
+                            ignoreCase = true,
+                        )
+                }
+            }
+            .map { descriptor -> Property.of(typeInformation, descriptor) }
+            .map { property -> DefaultExposedPersistentProperty(property, entity, SimpleTypeHolder.DEFAULT) }
+            .forEach(entity::addPersistentProperty)
+    }
 
     override fun createPersistentProperty(
         property: Property,

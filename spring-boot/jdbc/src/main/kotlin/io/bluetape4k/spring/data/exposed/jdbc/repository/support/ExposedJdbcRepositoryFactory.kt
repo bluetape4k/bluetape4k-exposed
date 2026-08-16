@@ -1,6 +1,7 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository.support
 
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.spring.data.exposed.jdbc.mapping.ExposedMappingContext
 import io.bluetape4k.spring.data.exposed.jdbc.repository.query.ExposedQueryLookupStrategy
 import io.bluetape4k.support.toOptional
 import org.jetbrains.exposed.v1.dao.Entity
@@ -27,12 +28,19 @@ class ExposedJdbcRepositoryFactory: RepositoryFactorySupport() {
 
     companion object: KLogging()
 
+    private val mappingContext = ExposedMappingContext()
+
     override fun getEntityInformation(metadata: RepositoryMetadata): EntityInformation<*, *> =
         ExposedEntityInformationImpl(metadata.domainType as Class<Entity<Any>>) as EntityInformation<*, *>
 
     override fun getTargetRepository(information: RepositoryInformation): Any {
         val entityInfo = exposedEntityInformation(information.domainType)
-        return SimpleExposedJdbcRepository(entityInfo)
+        return SimpleExposedJdbcRepository.create(
+            entityInformation = entityInfo,
+            mappingContext = mappingContext,
+            projectionFactory = getProjectionFactory(),
+            creationMode = JdbcRepositoryCreationMode.FACTORY,
+        )
     }
 
     override fun getRepositoryBaseClass(metadata: RepositoryMetadata): Class<*> =
