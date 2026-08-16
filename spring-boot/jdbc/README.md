@@ -150,6 +150,110 @@ interface UserRepository : ExposedJdbcRepository<User, Long> {
 }
 ```
 
+<!-- jdbc-fluent-query:START -->
+### Query by Example and FluentQuery
+
+<!-- contract-key:attached-probe -->
+Build an `Example` from a persisted `Entity` that was loaded in the current
+transaction. A new, detached, cross-transaction, or cross-thread probe is
+rejected before property access or SQL. `ExampleMatcher` supports flat
+properties, `matchingAll`/`matchingAny`, ignored paths, null inclusion, exact,
+containing, starting, ending, and property transformers. Nested paths, regular
+expressions, case-insensitive matching, and unsupported string matchers fail
+fast.
+
+<!-- contract-key:closed-projection -->
+Closed getter interfaces, Kotlin data classes, and Java records are supported
+by `as`. `project` further restricts the selected properties. Projection,
+`sortBy`, positive limits, and `Pageable` are pushed down to SQL; `firstValue`,
+`oneValue`, `all`, `page`, `count`, and `exists` keep Spring Data cardinality
+semantics. Repeated sort is appended, while a paged query uses the sort from
+`Pageable`.
+
+```kotlin
+interface UserNameView {
+    val name: String
+}
+
+data class UserNameDto(val name: String)
+
+// Unsupported open projection
+interface UserDisplayNameView {
+    @get:Value("#{target.name}")
+    val displayName: String
+}
+
+@Transactional(readOnly = true)
+fun findNames(): List<UserNameDto> {
+    val probe = User.find { Users.name eq "Alice" }.single()
+    val example = Example.of(
+        probe,
+        ExampleMatcher.matchingAll().withIgnorePaths("name", "email", "age"),
+    )
+    return userRepository.findBy(example) { query ->
+        query.`as`(UserNameDto::class.java)
+            .project(listOf("name"))
+            .sortBy(Sort.by("name"))
+            .limit(100)
+            .all()
+    }
+}
+```
+
+```kotlin
+val first = userRepository.findBy(example) { it.firstValue() }
+val one = userRepository.findBy(example) { it.oneValue() }
+val all = userRepository.findBy(example) { it.all() }
+val page = userRepository.findBy(example) { it.page(PageRequest.of(0, 20)) }
+val count = userRepository.findBy(example) { it.count() }
+val exists = userRepository.findBy(example) { it.exists() }
+```
+
+```java
+public record UserNameRecord(String name) {}
+```
+
+<!-- contract-key:open-projection-rejected -->
+An open interface using `@Value` or another `SpEL` expression is rejected.
+Computed projection expressions cannot be translated into a deterministic
+selected-column query.
+
+<!-- contract-key:first-one-all-page-count-exists -->
+Use `firstValue` for at most one row and `oneValue` when more than one row must
+raise `IncorrectResultSizeDataAccessException`. `count` and `exists` ignore
+projection, sort, and fluent limits. Custom `EntityClass.searchQuery` overrides
+may add root-table filters only; joins, grouping, distinct, custom order,
+offset, limit, and locking shapes are rejected before SQL.
+
+<!-- contract-key:cursor-outer-transaction -->
+`stream` is a cursor-backed, single-use result. A factory-created repository
+must join a caller-owned outer `@Transactional` boundary. A direct
+`SimpleExposedJdbcRepository` must be called inside caller-owned
+`transaction {}`.
+
+<!-- contract-key:cursor-same-thread -->
+Consume the cursor on the same thread and in the same Exposed transaction.
+Do not execute nested repository or Exposed SQL while the cursor is open;
+finish or close it before the next statement.
+
+<!-- contract-key:cursor-explicit-close -->
+Always close the cursor explicitly with `use` or Java try-with-resources.
+
+```kotlin
+@Transactional(readOnly = true)
+fun consumeNames(example: Example<User>) {
+    userRepository.findBy(example) { query ->
+        query.`as`(UserNameView::class.java).sortBy(Sort.by("name")).stream()
+    }.use { rows ->
+        rows.forEach { consume(it.name) }
+    }
+}
+```
+
+See the [repository contract](./src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/repository/ExposedJdbcRepository.kt)
+for the public API boundary.
+<!-- jdbc-fluent-query:END -->
+
 ### Service Usage
 
 ```kotlin

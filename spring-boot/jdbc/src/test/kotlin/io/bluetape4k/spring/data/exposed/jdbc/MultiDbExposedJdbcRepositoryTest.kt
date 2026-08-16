@@ -15,8 +15,13 @@ import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
+import org.jetbrains.exposed.v1.core.SqlLogger
+import org.jetbrains.exposed.v1.core.Transaction
+import org.jetbrains.exposed.v1.core.statements.StatementContext
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import org.springframework.data.domain.Example
+import org.springframework.data.domain.ExampleMatcher
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 
@@ -190,4 +195,57 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
             id shouldBeEqualTo user.id.value
         }
     }
+
+    @ParameterizedTest
+    @MethodSource("enableDialects")
+    fun `fluent query pushes projection paging matching and cursor semantics to each dialect`(testDB: TestDB) {
+        withTables(testDB, Users) {
+            val repo = createRepo()
+            val literalPercent = UserEntity.new { name = "A%lice"; email = "literal@example.com"; age = 30 }
+            UserEntity.new { name = "Axxlice"; email = "wildcard@example.com"; age = 31 }
+            UserEntity.new { name = "Bob"; email = "bob@example.com"; age = 20 }
+            UserEntity.new { name = "Charlie"; email = "charlie@example.com"; age = 40 }
+
+            val all = Example.of(
+                literalPercent,
+                ExampleMatcher.matchingAll().withIgnorePaths("name", "email", "age"),
+            )
+            val statements = mutableListOf<String>()
+            addLogger(recordSql(statements))
+
+            val names = repo.findBy(all) {
+                it.`as`(UserNameDto::class.java).sortBy(Sort.by("name")).limit(2).all()
+            }
+            names.map { it.name } shouldBeEqualTo listOf("A%lice", "Axxlice")
+            selectStatements(statements) shouldHaveSize 1
+            selectStatements(statements).single().contains("email", ignoreCase = true).shouldBeFalse()
+            selectStatements(statements).single().contains("age", ignoreCase = true).shouldBeFalse()
+
+            val containingLiteralPercent = Example.of(
+                literalPercent,
+                ExampleMatcher.matchingAll()
+                    .withIgnorePaths("email", "age")
+                    .withMatcher("name", ExampleMatcher.GenericPropertyMatchers.contains()),
+            )
+            repo.findBy(containingLiteralPercent) { it.all() }.map { it.name } shouldBeEqualTo listOf("A%lice")
+
+            repo.findBy(all) { it.count() } shouldBeEqualTo 4L
+            repo.findBy(all) { it.exists() }.shouldBeTrue()
+            repo.findBy(all) { it.page(PageRequest.of(1, 2, Sort.by("name"))) }
+                .content.map { it.name } shouldBeEqualTo listOf("Bob", "Charlie")
+
+            repo.findBy(all) { it.`as`(UserNameView::class.java).sortBy(Sort.by("name")).stream() }
+                .use { rows -> rows.findFirst().orElseThrow().name shouldBeEqualTo "A%lice" }
+            repo.count() shouldBeEqualTo 4L
+        }
+    }
+
+    private fun recordSql(statements: MutableList<String>) = object: SqlLogger {
+        override fun log(context: StatementContext, transaction: Transaction) {
+            statements += context.sql(transaction)
+        }
+    }
+
+    private fun selectStatements(statements: List<String>): List<String> =
+        statements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
 }

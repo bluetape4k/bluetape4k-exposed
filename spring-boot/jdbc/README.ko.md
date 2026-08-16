@@ -150,6 +150,109 @@ interface UserRepository : ExposedJdbcRepository<User, Long> {
 }
 ```
 
+<!-- jdbc-fluent-query:START -->
+### Query by Example과 FluentQuery
+
+<!-- contract-key:attached-probe -->
+현재 transaction에서 조회한 영속 `Entity`로 `Example`을 만드세요. 신규, detached,
+다른 transaction 또는 다른 thread의 probe는 property 접근이나 SQL 실행 전에
+거부됩니다. `ExampleMatcher`는 flat property, `matchingAll`/`matchingAny`, ignored
+path, null 포함, exact, containing, starting, ending, property transformer를
+지원합니다. Nested path, regular expression, case-insensitive matching, 지원하지
+않는 string matcher는 fail-fast로 거부합니다.
+
+<!-- contract-key:closed-projection -->
+Closed getter interface, Kotlin data class, Java record를 `as`로 지정할 수 있습니다.
+`project`는 선택할 property를 더 제한합니다. Projection, `sortBy`, 양수 limit,
+`Pageable`은 SQL로 pushdown되며 `firstValue`, `oneValue`, `all`, `page`, `count`,
+`exists`는 Spring Data cardinality semantics를 유지합니다. 반복 sort는 append하고,
+paged query는 `Pageable`의 sort를 사용합니다.
+
+```kotlin
+interface UserNameView {
+    val name: String
+}
+
+data class UserNameDto(val name: String)
+
+// 지원하지 않는 open projection
+interface UserDisplayNameView {
+    @get:Value("#{target.name}")
+    val displayName: String
+}
+
+@Transactional(readOnly = true)
+fun findNames(): List<UserNameDto> {
+    val probe = User.find { Users.name eq "Alice" }.single()
+    val example = Example.of(
+        probe,
+        ExampleMatcher.matchingAll().withIgnorePaths("name", "email", "age"),
+    )
+    return userRepository.findBy(example) { query ->
+        query.`as`(UserNameDto::class.java)
+            .project(listOf("name"))
+            .sortBy(Sort.by("name"))
+            .limit(100)
+            .all()
+    }
+}
+```
+
+```kotlin
+val first = userRepository.findBy(example) { it.firstValue() }
+val one = userRepository.findBy(example) { it.oneValue() }
+val all = userRepository.findBy(example) { it.all() }
+val page = userRepository.findBy(example) { it.page(PageRequest.of(0, 20)) }
+val count = userRepository.findBy(example) { it.count() }
+val exists = userRepository.findBy(example) { it.exists() }
+```
+
+```java
+public record UserNameRecord(String name) {}
+```
+
+<!-- contract-key:open-projection-rejected -->
+`@Value` 또는 다른 `SpEL` expression을 사용하는 open interface는 거부합니다.
+계산형 projection expression은 deterministic selected-column query로 변환할 수
+없습니다.
+
+<!-- contract-key:first-one-all-page-count-exists -->
+최대 한 행을 허용할 때는 `firstValue`, 여러 행이면
+`IncorrectResultSizeDataAccessException`을 발생시켜야 할 때는 `oneValue`를
+사용합니다. `count`와 `exists`는 projection, sort, fluent limit를 무시합니다.
+Custom `EntityClass.searchQuery` override는 root-table filter만 추가할 수 있습니다.
+Join, grouping, distinct, custom order, offset, limit, locking shape는 SQL 실행 전에
+거부합니다.
+
+<!-- contract-key:cursor-outer-transaction -->
+`stream`은 cursor-backed single-use result입니다. Factory-created repository는
+caller-owned outer `@Transactional` boundary에 참여해야 합니다. 직접 생성한
+`SimpleExposedJdbcRepository`는 caller-owned `transaction {}` 안에서 호출해야
+합니다.
+
+<!-- contract-key:cursor-same-thread -->
+Cursor는 같은 thread와 같은 Exposed transaction에서 소비하세요. Cursor가 열린
+동안 nested repository 또는 Exposed SQL을 실행하지 말고, 다음 statement 전에
+모두 소비하거나 닫으세요.
+
+<!-- contract-key:cursor-explicit-close -->
+Cursor는 항상 `use` 또는 Java try-with-resources로 명시적으로 닫으세요.
+
+```kotlin
+@Transactional(readOnly = true)
+fun consumeNames(example: Example<User>) {
+    userRepository.findBy(example) { query ->
+        query.`as`(UserNameView::class.java).sortBy(Sort.by("name")).stream()
+    }.use { rows ->
+        rows.forEach { consume(it.name) }
+    }
+}
+```
+
+공개 API 경계는 [repository contract](./src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/repository/ExposedJdbcRepository.kt)를
+참고하세요.
+<!-- jdbc-fluent-query:END -->
+
 ### Service 사용
 
 ```kotlin
