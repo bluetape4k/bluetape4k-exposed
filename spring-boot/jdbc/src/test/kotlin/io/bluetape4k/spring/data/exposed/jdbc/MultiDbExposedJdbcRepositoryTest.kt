@@ -15,9 +15,12 @@ import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
+import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.core.statements.StatementContext
+import org.jetbrains.exposed.v1.dao.LongEntityClass
+import org.jetbrains.exposed.v1.jdbc.Query
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.data.domain.Example
@@ -235,8 +238,17 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
             repo.findBy(all) { it.page(PageRequest.of(1, 2, Sort.by("name"))) }
                 .content.map { it.name } shouldBeEqualTo listOf("Bob", "Charlie")
 
-            repo.findBy(all) { it.`as`(UserNameView::class.java).sortBy(Sort.by("name")).stream() }
+            val capturedQueries = mutableListOf<Query>()
+            val capturingEntityClass = object: LongEntityClass<UserEntity>(Users) {
+                override fun searchQuery(op: Op<Boolean>): Query =
+                    super.searchQuery(op).also(capturedQueries::add)
+            }
+            val streamingRepo = SimpleExposedJdbcRepository(
+                ExposedEntityInformationImpl(UserEntity::class.java, capturingEntityClass),
+            )
+            streamingRepo.findBy(all) { it.`as`(UserNameView::class.java).sortBy(Sort.by("name")).stream() }
                 .use { rows -> rows.findFirst().orElseThrow().name shouldBeEqualTo "A%lice" }
+            capturedQueries.last().fetchSize shouldBeEqualTo 100
             repo.count() shouldBeEqualTo 4L
         }
     }

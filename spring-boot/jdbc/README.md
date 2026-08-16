@@ -233,7 +233,11 @@ offset, limit, and locking shapes are rejected before SQL.
 `stream` is a cursor-backed, single-use result. A factory-created repository
 must join a caller-owned outer `@Transactional` boundary. A direct
 `SimpleExposedJdbcRepository` must be called inside caller-owned
-`transaction {}`.
+`transaction {}`. The stream uses the positive
+`DatabaseConfig.defaultFetchSize` when configured and otherwise applies a
+bounded fetch size of `100`. PostgreSQL requires an active transaction for
+cursor fetching; MySQL Connector/J also requires `useCursorFetch=true` in the
+JDBC URL for server-side cursor fetching.
 
 <!-- contract-key:cursor-same-thread -->
 Consume the cursor on the same thread and in the same Exposed transaction.

@@ -58,6 +58,16 @@ class JdbcResultRowStreamTest: AbstractExposedJdbcRepositoryTest() {
     }
 
     @Test
+    fun `mapper error closes both resources before propagating`() {
+        withCountingStream(mapper = { _, _ -> throw AssertionError("fatal mapping failure") }) { stream, counters ->
+            assertFailsWith<AssertionError> { stream.findFirst() }
+            counters.next.get() shouldBeEqualTo 1
+            counters.resultSetClose.get() shouldBeEqualTo 1
+            counters.statementClose.get() shouldBeEqualTo 1
+        }
+    }
+
+    @Test
     fun `short circuit closes result set and statement exactly once`() {
         withCountingStream { stream, counters ->
             stream.use { it.findFirst().orElseThrow() shouldBeEqualTo "Alice" }
@@ -144,13 +154,26 @@ class JdbcResultRowStreamTest: AbstractExposedJdbcRepositoryTest() {
         }
     }
 
+    @Test
+    fun `unchecked close failure is redacted and does not skip the remaining resource`() {
+        withCountingStream(
+            resultSetCloseFailure = IllegalStateException("sensitive result-set close"),
+            statementCloseFailure = IllegalStateException("sensitive statement close"),
+        ) { stream, counters ->
+            val failure = assertFailsWith<DataAccessResourceFailureException> { stream.close() }
+            throwableGraph(failure).contains("sensitive").shouldBeFalse()
+            counters.resultSetClose.get() shouldBeEqualTo 1
+            counters.statementClose.get() shouldBeEqualTo 1
+        }
+    }
+
     private fun withCountingStream(
         mapper: (Int, org.jetbrains.exposed.v1.core.ResultRow) -> String = { _, row -> row[Users.name] },
         statementAccessible: Boolean = true,
         nextFailure: SQLException? = null,
         getObjectFailure: SQLException? = null,
-        resultSetCloseFailure: SQLException? = null,
-        statementCloseFailure: SQLException? = null,
+        resultSetCloseFailure: Throwable? = null,
+        statementCloseFailure: Throwable? = null,
         block: (java.util.stream.Stream<String>, CloseCounters) -> Unit,
     ) {
         transaction transactionBlock@{
@@ -185,8 +208,8 @@ class JdbcResultRowStreamTest: AbstractExposedJdbcRepositoryTest() {
         statementAccessible: Boolean,
         nextFailure: SQLException?,
         getObjectFailure: SQLException?,
-        resultSetCloseFailure: SQLException?,
-        statementCloseFailure: SQLException?,
+        resultSetCloseFailure: Throwable?,
+        statementCloseFailure: Throwable?,
     ): ResultSet {
         val statement = delegate.statement
         val statementProxy = countingStatement(statement, counters, statementCloseFailure)
@@ -229,7 +252,7 @@ class JdbcResultRowStreamTest: AbstractExposedJdbcRepositoryTest() {
     private fun closeResultSet(
         delegate: ResultSet,
         counters: CloseCounters,
-        failure: SQLException?,
+        failure: Throwable?,
     ) {
         if (counters.resultSetClose.incrementAndGet() == 1) {
             delegate.close()
@@ -240,7 +263,7 @@ class JdbcResultRowStreamTest: AbstractExposedJdbcRepositoryTest() {
     private fun countingStatement(
         delegate: Statement,
         counters: CloseCounters,
-        closeFailure: SQLException?,
+        closeFailure: Throwable?,
     ): Statement = Proxy.newProxyInstance(
         javaClass.classLoader,
         arrayOf(Statement::class.java),

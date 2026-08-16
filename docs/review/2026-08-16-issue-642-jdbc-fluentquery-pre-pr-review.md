@@ -66,6 +66,14 @@
   `DataAccessResourceFailureException`을 노출해 transaction 종료를 강제한다.
 - `EntityClass.new {}`로 insert 예약된 probe는 ID snapshot/write-set으로 SQL과 getter
   접근 전에 거부한다.
+- cursor-backed stream은 positive `DatabaseConfig.defaultFetchSize`를 존중하고,
+  미설정·비양수 값에는 bounded fetch size `100`을 적용한다. PostgreSQL/MySQL 실제
+  driver suite에서 적용된 `Query.fetchSize`를 검증하고 MySQL 검증 URL에는
+  `useCursorFetch=true`를 설정했다.
+- mapper가 `Error`를 던져도 JDBC resource cleanup을 먼저 수행하고, driver cleanup의
+  unchecked `Exception`도 각 resource별로 독립 수집·redact한다.
+- 진단 문자열은 ISO control뿐 아니라 Unicode format, line separator, paragraph
+  separator도 제거한다.
 
 ## 검토 중 철회·기각한 항목
 
@@ -81,10 +89,11 @@
 
 ## 검증 증거
 
-- JDK 25, H2 전체 module test: 256 tests, 0 failures
+- JDK 25, H2/대표 multi-DB 포함 전체 module test: 259 tests, 0 failures
 - H2와 같은 실행의 Detekt: PASS
-- PostgreSQL 대표 multi-DB suite: 26 tests, 0 failures, 0 errors, 0 skipped
-- MySQL V8 대표 multi-DB suite: 26 tests, 0 failures, 0 errors, 0 skipped
+- PostgreSQL 대표 multi-DB suite 강제 재실행: 26 tests, 0 failures, 0 errors, 0 skipped
+- MySQL V8 `useCursorFetch=true` 대표 multi-DB suite 강제 재실행: 26 tests,
+  0 failures, 0 errors, 0 skipped
 - public ABI/Java/Kotlin consumer fixture: 3 tests, PASS
 - EN/KO README parity validator: 6 runs, 16 assertions, PASS
 - production README parity validation: PASS
@@ -98,6 +107,10 @@
   해당 transaction을 종료해야 한다.
 - 같은 thread/transaction 사용은 caller contract다. raw JDBC/JdbcTemplate nested
   SQL까지 차단하는 계약은 아니며 Exposed repository/statement 경계만 보호한다.
+- Wrong-thread `Stream.close()`는 Java `Stream` pipeline을 closed로 만든 뒤 owner-close
+  handler가 실패하므로 owner thread에서 다시 close할 수 없다. 이 계약을 위반한 caller는
+  해당 transaction을 종료해야 하며, 모든 intermediate stream을 감싸는 별도 API 계층은
+  이번 범위에 추가하지 않았다.
 - custom `searchQuery`는 안전한 shape를 fail-fast 하기 위해 preflight와 실제 query를
   두 번 구성한다. 사용자 정의 builder가 무거운 경우 비용이 생길 수 있다.
 - selected-row projection은 행마다 reflection mapping과 작은 map allocation을 수행한다.

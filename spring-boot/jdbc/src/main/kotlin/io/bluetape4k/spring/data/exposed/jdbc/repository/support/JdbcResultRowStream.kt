@@ -87,7 +87,7 @@ internal object JdbcResultRowStream {
                 Long.MAX_VALUE,
                 Spliterator.ORDERED or Spliterator.NONNULL,
             ) {
-                @Suppress("TooGenericExceptionCaught")
+                @Suppress("TooGenericExceptionCaught", "SwallowedException")
                 override fun tryAdvance(action: Consumer<in R>): Boolean {
                     validateActiveTransaction()
                     return try {
@@ -106,7 +106,7 @@ internal object JdbcResultRowStream {
                         )
                         closeAfterFailure(failure)
                         throw failure
-                    } catch (cause: Exception) {
+                    } catch (cause: Throwable) {
                         closeAfterFailure(cause)
                         throw cause
                     }
@@ -158,10 +158,11 @@ internal object JdbcResultRowStream {
             }
         }
 
+        @Suppress("TooGenericExceptionCaught")
         private fun closeAfterFailure(failure: Throwable) {
             try {
                 close()
-            } catch (cleanupFailure: DataAccessResourceFailureException) {
+            } catch (cleanupFailure: Exception) {
                 failure.addSuppressed(cleanupFailure)
             }
         }
@@ -191,23 +192,24 @@ internal object JdbcResultRowStream {
         }
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private fun closeJdbcResources(resultSet: ResultSet): DataAccessResourceFailureException? {
         var statement: java.sql.Statement? = null
         val failures = buildList {
             try {
                 statement = resultSet.statement
-            } catch (cause: SQLException) {
-                add(sanitizedSqlException(cause, "JDBC Statement lookup failed."))
+            } catch (cause: Exception) {
+                add(sanitizedJdbcCleanupException(cause, "JDBC Statement lookup failed."))
             }
             try {
                 resultSet.close()
-            } catch (cause: SQLException) {
-                add(sanitizedSqlException(cause, "JDBC ResultSet close failed."))
+            } catch (cause: Exception) {
+                add(sanitizedJdbcCleanupException(cause, "JDBC ResultSet close failed."))
             }
             try {
                 statement?.close()
-            } catch (cause: SQLException) {
-                add(sanitizedSqlException(cause, "JDBC Statement close failed."))
+            } catch (cause: Exception) {
+                add(sanitizedJdbcCleanupException(cause, "JDBC Statement close failed."))
             }
         }
         if (failures.isEmpty()) return null
