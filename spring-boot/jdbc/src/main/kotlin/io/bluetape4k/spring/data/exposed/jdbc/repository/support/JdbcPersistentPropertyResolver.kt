@@ -55,6 +55,6 @@ internal class JdbcPersistentPropertyResolver(
 
     private fun invalidProperty(propertyName: String, reason: String) =
         InvalidDataAccessApiUsageException(
-            "FluentQuery property '$propertyName' is not supported: $reason.",
+            "FluentQuery property '${safeDiagnosticValue(propertyName)}' is not supported: $reason.",
         )
 }

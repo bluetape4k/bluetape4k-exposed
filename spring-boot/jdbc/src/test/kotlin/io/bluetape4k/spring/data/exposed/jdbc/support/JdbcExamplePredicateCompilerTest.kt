@@ -2,6 +2,7 @@ package io.bluetape4k.spring.data.exposed.jdbc.support
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.spring.data.exposed.jdbc.AbstractExposedJdbcRepositoryTest
 import io.bluetape4k.spring.data.exposed.jdbc.mapping.ExposedMappingContext
@@ -188,6 +189,16 @@ class JdbcExamplePredicateCompilerTest: AbstractExposedJdbcRepositoryTest() {
             assertFailsWith<InvalidDataAccessApiUsageException> {
                 compiler().compile(Example.of(newProbe))
             }
+
+            val scheduledInsert = QbeProfileEntity.new {
+                name = "Pending"
+                nickname = null
+                age = 19
+                displayName = "Pending Insert"
+            }
+            assertFailsWith<InvalidDataAccessApiUsageException> {
+                compiler().compile(Example.of(scheduledInsert))
+            }
         }
 
         val detached = transaction {
@@ -199,6 +210,22 @@ class JdbcExamplePredicateCompilerTest: AbstractExposedJdbcRepositoryTest() {
                 compiler().compile(Example.of(detached))
             }
         }
+    }
+
+    @Test
+    fun `probe getter failure redacts the reflected target cause`() {
+        val getter = ThrowingProbe::class.java.getMethod("getSecret")
+
+        val failure = assertFailsWith<InvalidDataAccessApiUsageException> {
+            JdbcExamplePredicateCompiler.readProbeProperty(
+                getter = getter,
+                probe = ThrowingProbe(),
+                propertyName = "secret\nproperty",
+            )
+        }
+
+        throwableGraph(failure).contains("sensitive getter payload").shouldBeFalse()
+        failure.message.orEmpty().contains('\n').shouldBeFalse()
     }
 
     private fun compiler(): JdbcExamplePredicateCompiler<QbeProfileEntity, Long> {
@@ -218,6 +245,18 @@ class JdbcExamplePredicateCompilerTest: AbstractExposedJdbcRepositoryTest() {
         QbeProfileEntity.new { name = "Alice"; nickname = "ally"; age = 30; displayName = "Alice A" }
         QbeProfileEntity.new { name = "Bob"; nickname = "bobby"; age = 30; displayName = "Bob B" }
         QbeProfileEntity.new { name = "NullNick"; nickname = null; age = 20; displayName = "Null N" }
+    }
+
+    private fun throwableGraph(failure: Throwable): String = buildString {
+        var current: Throwable? = failure
+        while (current != null) {
+            appendLine(current.message)
+            current = current.cause
+        }
+    }
+
+    private class ThrowingProbe {
+        fun getSecret(): String = error("sensitive getter payload")
     }
 }
 

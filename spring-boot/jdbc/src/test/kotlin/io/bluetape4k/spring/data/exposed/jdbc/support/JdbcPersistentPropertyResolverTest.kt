@@ -2,6 +2,7 @@ package io.bluetape4k.spring.data.exposed.jdbc.support
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
 import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
@@ -43,6 +44,20 @@ class JdbcPersistentPropertyResolverTest {
         assertFailsWith<InvalidDataAccessApiUsageException> {
             resolverFor(AmbiguousEntity::class.java).resolve("display_name")
         }
+    }
+
+    @Test
+    fun `invalid property diagnostic removes controls and limits length`() {
+        val property = "prefix\n\r\t" + "x".repeat(256)
+
+        val failure = assertFailsWith<InvalidDataAccessApiUsageException> {
+            resolverFor(UserEntity::class.java).resolve(property)
+        }
+
+        failure.message.orEmpty().contains('\n').shouldBeFalse()
+        failure.message.orEmpty().contains('\r').shouldBeFalse()
+        failure.message.orEmpty().contains('\t').shouldBeFalse()
+        (failure.message.orEmpty().length <= 256) shouldBeEqualTo true
     }
 
     private fun resolverFor(type: Class<*>): JdbcPersistentPropertyResolver =

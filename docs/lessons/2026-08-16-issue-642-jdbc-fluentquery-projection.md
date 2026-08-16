@@ -40,9 +40,24 @@ statement를 single-use lease가 직접 소유하고 exhaustion, explicit close,
 failure에서 idempotent하게 닫는다. Statement 조회 자체가 실패해도 `ResultSet.close()`는
 계속 실행해야 한다.
 
+JDBC driver는 `next()`, `getObject()` 기반 row materialization, `ResultSet.close()`,
+`Statement.close()`에서 서로 독립적으로 실패할 수 있다. 예외 message만 검사하지
+말고 cause와 suppressed를 포함한 전체 throwable graph에서 raw SQL·payload가 제거됐는지
+검증한다. Cleanup 실패는 모든 resource를 시도한 뒤 안전한 SQLState/vendor code만
+보존하며, 열린 가능성이 있으면 nested-SQL guard를 유지하고 transaction을 종료한다.
+
 Factory repository의 cursor는 caller-owned outer Spring transaction에 참여한 호출만
 허용한다. Direct repository는 caller-owned Exposed transaction을 요구한다. Cursor
-advance마다 owner thread와 exact transaction identity를 확인한다.
+advance마다 owner thread와 exact transaction identity를 확인한다. Wrong-thread
+consumption은 그 thread에서 Exposed interceptor나 JDBC resource를 닫지 않고 실패시킨
+뒤, owner transaction의 명시적 close가 lease를 정리하도록 한다.
+
+### 신규 Entity는 cache identity만으로 판별하지 않는다
+
+Exposed `EntityCache.find`는 insert 예약 entity도 반환한다. `_readValues`와 cache identity만
+검사하면 `EntityClass.new {}` probe가 영속 probe로 오인될 수 있다. ID column snapshot이
+실제 read row에 있고 ID column이 write-set에 남아 있지 않은지 함께 확인해 property
+getter나 SQL 전에 거부한다.
 
 ### Kotlin constructor 변경은 JVM ABI를 먼저 확인한다
 
@@ -68,4 +83,7 @@ resolve에서 제거해 public descriptor 추가를 피했다.
 - Default REGEX를 probe attachment나 getter 접근 뒤에 거부하는 동작
 - Custom `searchQuery`의 partial selection을 filter-only로 오인하는 동작
 - Cursor 종료 시 `resultSet.statement` 조회 실패가 `ResultSet.close()`를 막는 동작
+- `ResultSet.getObject()` 또는 reflection getter의 nested cause가 raw payload를 노출하는 동작
+- cleanup 실패 뒤 nested-SQL guard를 먼저 해제하거나 다른 thread에서 interceptor를 수정하는 동작
+- insert 예약 Entity를 current transaction의 영속 QBE probe로 허용하는 동작
 - ABI 확인 없이 constructor visibility/default argument를 바꾸는 동작

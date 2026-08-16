@@ -117,6 +117,10 @@ internal class JdbcFluentQueryExecutor<E: Entity<ID>, ID: Any>(
         return JdbcResultRowStream.open(transaction, query, mapper)
     }
 
+    fun validateScope(plan: JdbcFluentQueryPlan<E>) {
+        validate(plan)
+    }
+
     private fun <R: Any> rows(
         plan: JdbcFluentQueryPlan<E>,
         terminalLimit: Int? = null,
@@ -201,7 +205,8 @@ internal class JdbcFluentQueryExecutor<E: Entity<ID>, ID: Any>(
             query.isForUpdate()
         if (!rootColumnsOnly || unsupportedShape) {
             throw UnsupportedOperationException(
-                "JDBC FluentQuery supports only root-table filter-only EntityClass.searchQuery shapes.",
+                "JDBC FluentQuery supports only root-table filter-only EntityClass.searchQuery shapes; " +
+                    "move joins, grouping, distinct, ordering, paging, or locking to a declared query.",
             )
         }
     }
@@ -238,7 +243,8 @@ internal class JdbcFluentQueryExecutor<E: Entity<ID>, ID: Any>(
         return sort.map { order ->
             if (order.isIgnoreCase || order.nullHandling != Sort.NullHandling.NATIVE) {
                 throw InvalidDataAccessApiUsageException(
-                    "FluentQuery sort options ignoreCase/nullHandling are not supported for '${order.property}'.",
+                    "FluentQuery sort options ignoreCase/nullHandling are not supported for " +
+                        "'${safeDiagnosticValue(order.property)}'.",
                 )
             }
             resolveColumn(order.property) to
@@ -258,6 +264,6 @@ internal class JdbcFluentQueryExecutor<E: Entity<ID>, ID: Any>(
                 column.name == toSnakeCase(propertyName) ||
                 toCamelCase(column.name) == propertyName
         } ?: throw InvalidDataAccessApiUsageException(
-            "FluentQuery sort property '$propertyName' is unknown or ambiguous.",
+            "FluentQuery sort property '${safeDiagnosticValue(propertyName)}' is unknown or ambiguous.",
         )
 }

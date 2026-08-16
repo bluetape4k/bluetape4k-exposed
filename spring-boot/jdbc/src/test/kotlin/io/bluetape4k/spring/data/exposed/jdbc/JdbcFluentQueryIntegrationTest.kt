@@ -156,6 +156,10 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
             }
 
             assertFailsWith<InvalidDataAccessApiUsageException> { escaped.all() }
+            assertFailsWith<InvalidDataAccessApiUsageException> { escaped.sortBy(Sort.by("name")) }
+            assertFailsWith<InvalidDataAccessApiUsageException> { escaped.limit(1) }
+            assertFailsWith<InvalidDataAccessApiUsageException> { escaped.`as`(UserNameView::class.java) }
+            assertFailsWith<InvalidDataAccessApiUsageException> { escaped.project(mutableListOf("name")) }
         }
 
         lateinit var escapedOutsideTransaction: FluentQuery.FetchableFluentQuery<UserEntity>

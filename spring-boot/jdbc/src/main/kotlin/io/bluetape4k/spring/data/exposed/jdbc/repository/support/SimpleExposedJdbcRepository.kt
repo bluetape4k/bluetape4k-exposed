@@ -291,17 +291,25 @@ internal class JdbcFetchableFluentQuery<E: Entity<ID>, ID: Any, R: Any>(
     private val plan: JdbcFluentQueryPlan<E>,
 ): FluentQuery.FetchableFluentQuery<R> {
 
-    override fun sortBy(sort: Sort): FluentQuery.FetchableFluentQuery<R> =
-        JdbcFetchableFluentQuery(executor, plan.withSort(sort))
+    override fun sortBy(sort: Sort): FluentQuery.FetchableFluentQuery<R> {
+        executor.validateScope(plan)
+        return JdbcFetchableFluentQuery(executor, plan.withSort(sort))
+    }
 
-    override fun limit(limit: Int): FluentQuery.FetchableFluentQuery<R> =
-        JdbcFetchableFluentQuery(executor, plan.withLimit(limit))
+    override fun limit(limit: Int): FluentQuery.FetchableFluentQuery<R> {
+        executor.validateScope(plan)
+        return JdbcFetchableFluentQuery(executor, plan.withLimit(limit))
+    }
 
-    override fun <T: Any> `as`(projectionType: Class<T>): FluentQuery.FetchableFluentQuery<T> =
-        JdbcFetchableFluentQuery(executor, plan.asType(projectionType))
+    override fun <T: Any> `as`(projectionType: Class<T>): FluentQuery.FetchableFluentQuery<T> {
+        executor.validateScope(plan)
+        return JdbcFetchableFluentQuery(executor, plan.asType(projectionType))
+    }
 
-    override fun project(properties: MutableCollection<String>): FluentQuery.FetchableFluentQuery<R> =
-        JdbcFetchableFluentQuery(executor, plan.withProperties(properties))
+    override fun project(properties: MutableCollection<String>): FluentQuery.FetchableFluentQuery<R> {
+        executor.validateScope(plan)
+        return JdbcFetchableFluentQuery(executor, plan.withProperties(properties))
+    }
 
     override fun first(): Optional<R> = executor.first(plan)
 

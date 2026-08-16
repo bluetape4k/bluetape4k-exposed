@@ -163,7 +163,8 @@ path, null 포함, exact, containing, starting, ending, property transformer를
 
 <!-- contract-key:closed-projection -->
 Closed getter interface, Kotlin data class, Java record를 `as`로 지정할 수 있습니다.
-`project`는 선택할 property를 더 제한합니다. Projection, `sortBy`, 양수 limit,
+비어 있지 않은 `project` 목록은 projection의 필수 input과 정확히 일치해야 하며,
+빈 목록은 필수 input 자동 선택으로 복귀합니다. Projection, `sortBy`, 양수 limit,
 `Pageable`은 SQL로 pushdown되며 `firstValue`, `oneValue`, `all`, `page`, `count`,
 `exists`는 Spring Data cardinality semantics를 유지합니다. 반복 sort는 append하고,
 paged query는 `Pageable`의 sort를 사용합니다.
@@ -209,6 +210,9 @@ val exists = userRepository.findBy(example) { it.exists() }
 
 ```java
 public record UserNameRecord(String name) {}
+
+List<UserNameRecord> records = userRepository.findBy(example,
+    query -> query.as(UserNameRecord.class).project(List.of("name")).all());
 ```
 
 <!-- contract-key:open-projection-rejected -->
@@ -237,6 +241,8 @@ Cursor는 같은 thread와 같은 Exposed transaction에서 소비하세요. Cur
 
 <!-- contract-key:cursor-explicit-close -->
 Cursor는 항상 `use` 또는 Java try-with-resources로 명시적으로 닫으세요.
+Driver cleanup 실패는 `DataAccessResourceFailureException`으로 노출되므로,
+이 예외가 발생하면 현재 transaction을 종료하세요.
 
 ```kotlin
 @Transactional(readOnly = true)
