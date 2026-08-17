@@ -19,17 +19,23 @@ import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.UserR2dbcRepository
 import io.bluetape4k.support.requireNotNull
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
-import io.bluetape4k.junit5.coroutines.runSuspendIO
+import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
+import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.condition.EnabledForJreRange
 import org.junit.jupiter.api.condition.JRE
@@ -58,6 +64,18 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
         }.value
 
         return User(id = id, name = name, email = email, age = age)
+    }
+
+    private suspend fun <T> withTopLevelUsers(testDB: TestDB, block: suspend () -> T): T {
+        withTables(testDB, Users, dropTables = false) {}
+        val previousDatabase = TransactionManager.defaultDatabase
+        TransactionManager.defaultDatabase = checkNotNull(testDB.db)
+        return try {
+            block()
+        } finally {
+            TransactionManager.defaultDatabase = previousDatabase
+            withTables(testDB, Users) {}
+        }
     }
 
 
@@ -339,32 +357,124 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
 
     @ParameterizedTest
     @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
-    fun `saveAll with Flow emits before collecting the remaining input`(testDB: TestDB) = runSuspendIO {
-        withTables(testDB, Users) {
-            val firstSaved = withTimeout(5_000) {
-                userRepository.saveAll(kotlinx.coroutines.flow.flow {
-                    emit(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
-                    awaitCancellation()
-                }).first()
+    fun `saveAll with Flow rolls back on top-level upstream cancellation`(testDB: TestDB) = runSuspendIO {
+        withTopLevelUsers(testDB) {
+            val upstreamStarted = CompletableDeferred<Unit>()
+            val upstreamCancelled = CompletableDeferred<Unit>()
+            val emitted = mutableListOf<User>()
+            coroutineScope {
+                val job = async {
+                    userRepository.saveAll(kotlinx.coroutines.flow.flow {
+                        emit(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
+                        upstreamStarted.complete(Unit)
+                        try {
+                            awaitCancellation()
+                        } finally {
+                            upstreamCancelled.complete(Unit)
+                        }
+                    }).toList(emitted)
+                }
+
+                withTimeoutOrNull(1_000) { upstreamStarted.await() }.shouldNotBeNull()
+                job.cancel()
+                assertFailsWith<CancellationException> { job.await() }
             }
 
-            firstSaved.name shouldBeEqualTo "Alice"
-            firstSaved.id.shouldNotBeNull()
+            withTimeoutOrNull(1_000) { upstreamCancelled.await() }.shouldNotBeNull()
+            emitted shouldHaveSize 0
+            userRepository.count() shouldBeEqualTo 0L
         }
     }
 
     @ParameterizedTest
     @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `saveAll with Flow emits only after upstream completes`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, Users) {
+            var upstreamCompleted = false
+            val saved = userRepository.saveAll(kotlinx.coroutines.flow.flow {
+                emit(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
+                emit(User(id = null, name = "Bob", email = "bob@example.com", age = 25))
+                upstreamCompleted = true
+            }).onEach {
+                check(upstreamCompleted) { "saveAll emitted before the upstream Flow completed" }
+            }.toList()
+
+            saved shouldHaveSize 2
+            saved.map { it.name } shouldBeEqualTo listOf("Alice", "Bob")
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `saveAll with Flow keeps committed rows after top-level finite first`(testDB: TestDB) = runSuspendIO {
+        withTopLevelUsers(testDB) {
+            val first = userRepository.saveAll(
+                flowOf(
+                    User(id = null, name = "Alice", email = "alice@example.com", age = 30),
+                    User(id = null, name = "Bob", email = "bob@example.com", age = 25),
+                )
+            ).first()
+
+            first.id.shouldNotBeNull()
+            userRepository.count() shouldBeEqualTo 2L
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `saveAll with Flow propagates downstream failure after top-level commit`(testDB: TestDB) = runSuspendIO {
+        withTopLevelUsers(testDB) {
+            val emitted = mutableListOf<User>()
+            val failure = assertFailsWith<IllegalStateException> {
+                userRepository.saveAll(
+                    flowOf(
+                        User(id = null, name = "Alice", email = "alice@example.com", age = 30),
+                        User(id = null, name = "Bob", email = "bob@example.com", age = 25),
+                    )
+                ).collect {
+                    emitted += it
+                    error("downstream failure")
+                }
+            }
+
+            failure.message shouldBeEqualTo "downstream failure"
+            emitted shouldHaveSize 1
+            userRepository.count() shouldBeEqualTo 2L
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `saveAll with Flow reuses the caller transaction when nested transactions are disabled`(testDB: TestDB) =
+        runSuspendIO {
+            withTables(testDB, Users, configure = { useNestedTransactions = false }) {
+                val callerTransaction = checkNotNull(TransactionManager.currentOrNull())
+                val saved = userRepository.saveAll(
+                    flowOf(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
+                ).toList()
+
+                check(TransactionManager.currentOrNull() === callerTransaction) {
+                    "saveAll(Flow) must preserve the caller-owned transaction when nested transactions are disabled"
+                }
+                saved shouldHaveSize 1
+                userRepository.count() shouldBeEqualTo 1L
+            }
+        }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
     fun `saveAll with Flow rolls back when input fails`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users, configure = { useNestedTransactions = true }) {
+            val emitted = mutableListOf<User>()
             val failure = assertFailsWith<IllegalStateException> {
                 userRepository.saveAll(kotlinx.coroutines.flow.flow {
                     emit(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
                     error("upstream failure")
-                }).toList()
+                }).toList(emitted)
             }
 
             failure.message shouldBeEqualTo "upstream failure"
+            emitted shouldHaveSize 0
             userRepository.count() shouldBeEqualTo 0L
         }
     }
