@@ -494,18 +494,27 @@ fun findAll(op: () -> Op<Boolean>): Flow<User>
 // 여러 엔티티 저장
 fun saveAll(entities: Iterable<User>): Flow<User>
 
-// Flow로 저장 (bounded, 백프레셔 인식)
+// Flow로 저장 (atomic transaction; commit 이후 방출)
 fun saveAll(entityStream: Flow<User>): Flow<User>
 
 // 여러 개 삭제
 suspend fun deleteAllById(ids: Iterable<Long>)
 ```
 
-`saveAll(entityStream: Flow<User>)`는 cold `Flow`입니다. 입력과 출력 전체를 컬렉션으로
-구체화하지 않고 엔티티를 순차적으로 저장한 뒤, 동일한 Exposed 트랜잭션에서 저장된
-엔티티를 하나씩 방출합니다. 반환된 `Flow`를 collect해야 작업이 시작되며, 정상적으로
-완료되면 트랜잭션을 커밋하고 취소나 예외가 발생하면 롤백합니다.
-이 오버로드는 하나의 atomic transaction을 유지하며, chunked 저장은 별도 API 범위입니다.
+`saveAll(entityStream: Flow<User>)`는 cold `Flow`입니다. 하나의 Exposed 트랜잭션에서
+엔티티를 순차 저장하고 transaction block이 끝날 때까지 저장 결과를 보관합니다.
+최상위에서 호출하면 입력 수집 block이 정상 완료될 때 트랜잭션을 커밋한 뒤 저장 결과를
+방출하며, 입력 수집 중 취소나 예외가 발생하면 롤백하고 결과를 방출하지 않습니다.
+commit 이후 downstream collector에서 취소나 예외가 발생해도 이미 완료된 트랜잭션은
+롤백할 수 없고 남은 결과 방출만 중단될 수 있습니다. 이미 활성화된 outer transaction을
+재사용하는 경우 nested block이 반환된 뒤 outer transaction 커밋 전에 결과를 방출할 수
+있습니다. 최종 commit/rollback 경계는 호출자가 소유하므로 외부 side effect는 outer
+scope가 성공한 뒤에 수행해야 합니다. Exposed가 데이터베이스 예외로 최상위 R2DBC
+트랜잭션을 재시도하면 입력 `Flow`를 다시 collect할 수 있으므로, retry를 사용하는
+경우 replayable하고 side effect가 없는 입력을 제공하세요. 반환된 `Flow`를 collect해야
+작업이 시작됩니다. 하나의 atomic transaction 안에서 결과를 구체화하므로 입력이
+크거나 끝나지 않으면 메모리를 점유하고 트랜잭션을 오래 유지할 수 있습니다. chunked
+저장은 별도 API 범위입니다.
 
 ## 테스트 작성
 
@@ -640,13 +649,15 @@ userRepository.findAll().toList()  // 메모리 사용량 증가
 userRepository.streamAll()  // 메모리 효율적
     .collect { user -> /* 처리 */ }
 
-// saveAll(Flow): 순차 저장과 bounded 백프레셔
+// saveAll(Flow): 순차 저장 후 transaction 완료 뒤 결과 방출
 userRepository.saveAll(inputUsers)
     .collect { savedUser -> /* 저장된 엔티티 처리 */ }
 ```
 
-`saveAll(Flow)` 오버로드도 collect할 때만 시작하므로, 소비자가 입력 저장 속도와 저장
-결과 방출 속도를 제어할 수 있습니다.
+`saveAll(Flow)` 오버로드는 collect할 때만 시작합니다. 입력을 모두 소비하고 저장한 뒤
+결과를 방출하므로 collector가 입력 저장 속도를 제어하는 API는 아닙니다.
+row-by-row 조회 스트리밍에는 `streamAll()`을 사용하세요. 이 오버로드는 하나의 atomic
+transaction을 유지하며 chunked 쓰기는 제공하지 않습니다.
 
 ### toDomain과 toPersistValues 구현 필수
 

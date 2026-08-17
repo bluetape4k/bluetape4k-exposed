@@ -495,19 +495,26 @@ fun findAll(op: () -> Op<Boolean>): Flow<User>
 // Save multiple entities
 fun saveAll(entities: Iterable<User>): Flow<User>
 
-// Save from Flow (bounded, backpressure-aware)
+// Save from Flow (atomic transaction; emits after commit)
 fun saveAll(entityStream: Flow<User>): Flow<User>
 
 // Delete multiple
 suspend fun deleteAllById(ids: Iterable<Long>)
 ```
 
-`saveAll(entityStream: Flow<User>)` is a cold `Flow`. It persists entities sequentially
-and emits each saved entity from the same Exposed transaction, without materializing the
-input or output collections. Collecting the returned `Flow` drives the operation; normal
-completion commits the transaction, while cancellation or an exception rolls it back.
-This overload intentionally keeps one atomic transaction; chunked persistence requires a
-separate API.
+`saveAll(entityStream: Flow<User>)` is a cold `Flow`. It persists entities sequentially in
+one Exposed transaction and retains the saved results until that transaction block
+completes. At top level, normal completion commits the transaction before any saved result
+is emitted; cancellation or an exception while collecting the input rolls it back and emits no
+result. A downstream cancellation or exception after commit cannot roll back the completed
+transaction and only stops remaining result emission. When an active
+outer transaction is reused, the nested block may return and emit results before the outer
+transaction commits; the caller owns that final commit or rollback boundary, so defer
+external side effects until the outer scope succeeds. Exposed may retry a top-level R2DBC
+transaction after a database exception, so the input `Flow` can be collected again; use a
+replayable, side-effect-free input when retries are enabled. Because the results are
+materialized inside one atomic transaction, large or unbounded inputs can hold memory and
+keep the transaction open; chunked persistence requires a separate API.
 
 ## Writing Tests
 
@@ -641,13 +648,15 @@ userRepository.findAll().toList()  // Higher memory usage
 userRepository.streamAll()  // Memory efficient
     .collect { user -> /* process */ }
 
-// saveAll(Flow): sequential persistence with bounded backpressure
+// saveAll(Flow): sequential persistence; results are emitted after the transaction completes
 userRepository.saveAll(inputUsers)
     .collect { savedUser -> /* process each saved entity */ }
 ```
 
-The `saveAll(Flow)` overload also starts only when collected, so the consumer controls
-how quickly the input is persisted and the saved results are emitted.
+The `saveAll(Flow)` overload starts only when collected. It consumes the input and persists
+all entities before emitting the saved results, so the collector does not control the input
+persistence rate. Use `streamAll()` for row-by-row read streaming; this overload intentionally
+keeps one atomic transaction and does not provide chunked writes.
 
 ### Implementing toDomain and toPersistValues
 

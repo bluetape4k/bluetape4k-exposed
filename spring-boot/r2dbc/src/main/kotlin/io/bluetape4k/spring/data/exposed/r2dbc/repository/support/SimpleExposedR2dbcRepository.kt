@@ -5,12 +5,10 @@ import io.bluetape4k.spring.data.exposed.jdbc.repository.support.toExposedOrderB
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedR2dbcQueryByExampleRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.yield
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -109,28 +107,42 @@ class SimpleExposedR2dbcRepository<R: Any, ID: Any>(
     }
 
     override fun <S: R> saveAll(entities: Iterable<S>): Flow<S> = flow {
-        val results = mutableListOf<S>()
-        inTransaction {
-            for (entity in entities) {
-                results.add(persist(entity) as S)
+        val results = inTransaction {
+            buildList {
+                for (entity in entities) {
+                    add(persist(entity) as S)
+                }
             }
         }
         emitAll(results.asFlow())
     }
 
     /**
-     * 입력 [entityStream]을 하나의 transaction에서 순차 저장하고, 각 결과를 즉시 방출합니다.
-     * 입력이 정상 완료되면 transaction을 commit하며, cancellation 또는 예외가 발생하면
-     * transaction을 rollback합니다.
+     * 입력 [entityStream]을 하나의 transaction에서 순차 저장한 뒤 transaction block이
+     * 정상 종료되면 저장 결과를 방출합니다.
+     * 최상위 transaction에서 입력 수집 block이 정상 완료되면 transaction을 commit하고
+     * 결과를 방출합니다. 입력 수집 block 안에서 cancellation 또는 예외가 발생하면
+     * transaction을 rollback하고 결과를 방출하지 않습니다. commit 후 downstream
+     * collector가 cancellation 또는 예외를 발생시키면 이미 commit된 transaction을
+     * rollback할 수 없으며 남은 결과 방출만 중단될 수 있습니다.
+     *
+     * 호출자가 이미 outer transaction을 소유한 경우 Exposed가 해당 transaction을 재사용할
+     * 수 있으므로 nested block이 반환된 뒤 결과가 방출될 수 있지만 최종 commit/rollback
+     * 경계는 호출자에게 있습니다. 외부 side effect는 outer transaction의 성공 이후에
+     * 수행해야 합니다.
+     *
+     * Exposed가 R2DBC 예외를 재시도하면 transaction block과 입력 [entityStream]이 다시
+     * 실행될 수 있습니다. 재시도 설정을 사용하는 경우 입력 Flow는 replayable하고
+     * side effect가 없어야 하며, 실패한 시도의 결과는 방출 목록에 남지 않습니다.
      */
-    override fun <S: R> saveAll(entityStream: Flow<S>): Flow<S> = channelFlow {
-        inTransaction {
-            entityStream.collect { entity ->
-                send(persist(entity) as S)
-                yield()
+    override fun <S: R> saveAll(entityStream: Flow<S>): Flow<S> = flow {
+        val results = inTransaction {
+            buildList {
+                entityStream.collect { entity -> add(persist(entity) as S) }
             }
         }
-    }.buffer(0)
+        emitAll(results.asFlow())
+    }
 
     override suspend fun findById(id: ID): R? = findByIdOrNull(id)
 
