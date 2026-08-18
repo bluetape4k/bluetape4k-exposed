@@ -39,10 +39,12 @@ interface ExposedR2dbcRepository<R: Any, ID: Any>: CoroutineCrudRepository<R, ID
 
     /**
      * Iterable 입력을 하나의 Exposed transaction에서 저장하고 block 정상 종료 후 결과를
-     * 방출합니다. 입력 수집 중 예외나 cancellation은 rollback되며 결과를 방출하지 않습니다.
-     * commit 이후 downstream cancellation 또는 exception은 이미 완료된 transaction을
-     * rollback하지 못하고 남은 결과 방출만 중단할 수 있습니다. retry가 활성화되면 입력을
-     * 다시 순회할 수 있으므로 안정적으로 반복 가능한 입력을 제공해야 합니다.
+     * 방출합니다. repository가 소유한 최상위 transaction에서는 입력 재순회를 막기 위해
+     * `maxAttempts = 1`을 적용합니다. 이미 active outer transaction을 호출자가 소유한
+     * 경우에는 caller의 retry 설정이 유지되므로 outer block 재시도에 안전한 Iterable을
+     * 제공해야 합니다. 입력 수집 중 예외나 cancellation은 rollback되며 결과를 방출하지
+     * 않습니다. commit 이후 downstream cancellation 또는 exception은 이미 완료된
+     * transaction을 rollback하지 못하고 남은 결과 방출만 중단할 수 있습니다.
      */
     override fun <S: R> saveAll(entities: Iterable<S>): Flow<S>
 
@@ -53,8 +55,10 @@ interface ExposedR2dbcRepository<R: Any, ID: Any>: CoroutineCrudRepository<R, ID
      * 재사용하면 nested block 반환 후 outer commit 전에 방출될 수 있으며 최종 경계는
      * caller가 소유합니다. commit 이후 downstream cancellation 또는 exception은 이미
      * 완료된 transaction을 rollback하지 못하고 남은 결과 방출만 중단할 수 있습니다.
-     * Exposed retry가 활성화되면 입력 Flow가 다시 collect될 수 있으므로 replayable하고
-     * side effect가 없는 입력을 사용해야 합니다.
+     * repository가 소유한 최상위 transaction에서는 입력 재수집과 side effect 반복을
+     * 막기 위해 `maxAttempts = 1`을 적용합니다. 이미 active outer transaction을
+     * 호출자가 소유한 경우에는 caller의 retry 설정이 유지되므로 outer block 재시도에
+     * 안전한 replayable·side-effect-free 입력을 사용해야 합니다.
      */
     override fun <S: R> saveAll(entityStream: Flow<S>): Flow<S>
 

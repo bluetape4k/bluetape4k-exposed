@@ -509,12 +509,14 @@ commit 이후 downstream collector에서 취소나 예외가 발생해도 이미
 롤백할 수 없고 남은 결과 방출만 중단될 수 있습니다. 이미 활성화된 outer transaction을
 재사용하는 경우 nested block이 반환된 뒤 outer transaction 커밋 전에 결과를 방출할 수
 있습니다. 최종 commit/rollback 경계는 호출자가 소유하므로 외부 side effect는 outer
-scope가 성공한 뒤에 수행해야 합니다. Exposed가 데이터베이스 예외로 최상위 R2DBC
-트랜잭션을 재시도하면 입력 `Flow`를 다시 collect할 수 있으므로, retry를 사용하는
-경우 replayable하고 side effect가 없는 입력을 제공하세요. 반환된 `Flow`를 collect해야
-작업이 시작됩니다. 하나의 atomic transaction 안에서 결과를 구체화하므로 입력이
-크거나 끝나지 않으면 메모리를 점유하고 트랜잭션을 오래 유지할 수 있습니다. chunked
-저장은 별도 API 범위입니다.
+scope가 성공한 뒤에 수행해야 합니다. Repository가 소유한 최상위
+`saveAll(Flow)`와 `saveAll(Iterable)`은 `maxAttempts = 1`을 명시하므로 데이터베이스
+예외를 재수집이나 재순회 없이 호출자에게 전파합니다. 호출자가 active outer
+transaction으로 감싸면 해당 트랜잭션의 retry 정책은 caller가 소유하므로, outer block이
+재시도될 수 있는 경우 replayable하고 side effect가 없는 입력을 제공하세요. 반환된
+`Flow`를 collect해야 작업이 시작됩니다. 하나의 atomic transaction 안에서 결과를
+구체화하므로 입력이 크거나 끝나지 않으면 메모리를 점유하고 트랜잭션을 오래 유지할
+수 있습니다. chunked 저장은 별도 API 범위입니다.
 
 ## 테스트 작성
 
@@ -656,8 +658,10 @@ userRepository.saveAll(inputUsers)
 
 `saveAll(Flow)` 오버로드는 collect할 때만 시작합니다. 입력을 모두 소비하고 저장한 뒤
 결과를 방출하므로 collector가 입력 저장 속도를 제어하는 API는 아닙니다.
-row-by-row 조회 스트리밍에는 `streamAll()`을 사용하세요. 이 오버로드는 하나의 atomic
-transaction을 유지하며 chunked 쓰기는 제공하지 않습니다.
+Repository-owned 최상위 호출은 데이터베이스 예외를 자동 재시도하지 않으며, active
+outer transaction은 caller-owned 정책에 따라 재시도할 수 있습니다. row-by-row 조회
+스트리밍에는 `streamAll()`을 사용하세요. 이 오버로드는 하나의 atomic transaction을
+유지하며 chunked 쓰기는 제공하지 않습니다.
 
 ### toDomain과 toPersistValues 구현 필수
 
