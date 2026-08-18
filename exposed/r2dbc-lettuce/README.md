@@ -14,7 +14,9 @@ A coroutine-native Read-through / Write-through / Write-behind cache repository 
 - **NearCache support**: Optional 2-tier cache with Caffeine local cache (front) + Redis (back)
 - **Coroutine repository**: `R2dbcLettuceRepository` / `AbstractR2dbcLettuceRepository`
 - **MapLoader / MapWriter**: R2DBC-based implementations for repository loaded-map integration
-    - `loadAllKeys()` iterates stably in ascending PK order
+    - `loadAllKeys()` keeps the existing `List` API; ordered scalar IDs use keyset pages and unsupported custom IDs use the legacy offset fallback
+    - `loadAllKeysFlow()` provides bounded page streaming with one `suspendTransaction` per page when no ambient caller-owned transaction is active, follows Exposed ambient reuse otherwise, and propagates downstream cancellation
+    - Enumeration is weakly consistent; a page-side delete can skip an unseen row on the custom-ID offset fallback path
     - `chunkSize` (writer) and `batchSize` (loader) must be greater than 0
 
 ## Architecture

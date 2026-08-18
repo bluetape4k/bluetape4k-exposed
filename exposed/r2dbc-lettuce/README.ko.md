@@ -14,7 +14,9 @@ Exposed R2DBC와 Lettuce Redis 캐시를 결합한 코루틴 네이티브 Read-t
 - **NearCache 지원**: Caffeine 로컬 캐시(front) + Redis(back) 2-tier 캐시 (옵션)
 - **코루틴 레포지토리**: `R2dbcLettuceRepository` / `AbstractR2dbcLettuceRepository`
 - **MapLoader / MapWriter**: repository loaded-map 연동을 위한 R2DBC 기반 구현체
-    - `loadAllKeys()`는 PK 오름차순으로 안정적으로 순회
+    - `loadAllKeys()`는 기존 `List` API를 유지하며, 지원되는 표준 scalar ID에는 keyset page를 사용하고 custom ID에는 기존 offset fallback을 사용
+    - `loadAllKeysFlow()`는 ambient caller-owned transaction이 없으면 page마다 `suspendTransaction`을 여는 bounded streaming을 제공하고, 활성 transaction에서는 Exposed의 ambient 재사용 규칙을 따르며 downstream cancellation을 재전파
+    - 열거는 weakly consistent하며, custom ID offset fallback 경로에서는 page 사이 삭제로 아직 관찰하지 않은 row를 건너뛸 수 있음
     - writer의 `chunkSize`/loader의 `batchSize`는 0보다 커야 함
 
 ## 아키텍처

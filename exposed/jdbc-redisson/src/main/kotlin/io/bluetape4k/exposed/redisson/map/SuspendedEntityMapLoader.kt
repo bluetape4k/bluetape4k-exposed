@@ -7,18 +7,21 @@ import io.bluetape4k.logging.warn
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ChannelResult
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.redisson.api.AsyncIterator
 import org.redisson.api.map.MapLoaderAsync
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage
 
 /**
@@ -27,15 +30,19 @@ import java.util.concurrent.CompletionStage
  * ## 동작/계약
  * - [load]는 `suspendTransaction`으로 [loadByIdFromDB]를 실행해 단건 엔티티를 읽고 [CompletionStage]로 반환합니다.
  * - [loadAllKeys]는 [Channel]을 통해 [loadAllIdsFromDB]가 생산하는 ID를 [AsyncIterator]로 스트리밍합니다.
- * - 채널 내부에서 `queryTimeout = DEFAULT_QUERY_TIMEOUT`, `withTimeoutOrNull(DEFAULT_LOAD_ALL_IDS_TIMEOUT)` 보호막을 사용합니다.
- * - DB 오류나 채널 실패는 로깅 후 예외를 그대로 전파합니다.
+ * - 채널 내부에서 `maxAttempts = 1`, `queryTimeout = DEFAULT_QUERY_TIMEOUT`,
+ *   `withTimeout(DEFAULT_LOAD_ALL_IDS_TIMEOUT)` 보호막을 사용합니다. ID를 channel에
+ *   방출한 뒤 transaction retry를 수행하면 이미 관찰된 ID가 중복될 수 있으므로,
+ *   재시도가 필요하면 호출자가 전체 열거를 다시 시작해야 합니다.
+ * - 일반 DB 오류나 채널 실패는 channel cause로 consumer에 전달하고, fatal [Error]는
+ *   coroutine exception handler까지 재전파합니다.
  * - 운영 로그에는 caller-owned ID, 엔티티 payload, 예외 message를 기록하지 않습니다.
  *
  * ```kotlin
  * val loader = SuspendedEntityMapLoader<Long, UserRecord>(
  *     loadByIdFromDB = { id -> repo.findByIdFromDb(id) },
  *     loadAllIdsFromDB = { channel ->
- *         repo.findAllIds().forEach { channel.trySend(it) }
+ *         repo.findAllIds().forEach { channel.send(it) }
  *     }
  * )
  * ```
@@ -58,7 +65,8 @@ open class SuspendedEntityMapLoader<ID: Any, E: Any>(
         private const val DEFAULT_QUERY_TIMEOUT = 30_000 // 30 seconds
         private const val DEFAULT_LOAD_ALL_IDS_TIMEOUT = 60_000L // 60 seconds
 
-        protected val defaultMapLoaderCoroutineScope = CoroutineScope(Dispatchers.IO) + CoroutineName("DB-Loader")
+        protected val defaultMapLoaderCoroutineScope =
+            CoroutineScope(SupervisorJob() + Dispatchers.IO) + CoroutineName("DB-Loader")
     }
 
     /**
@@ -116,20 +124,27 @@ open class SuspendedEntityMapLoader<ID: Any, E: Any>(
             try {
                 withContext(scope.coroutineContext) {
                     suspendTransaction {
+                        // channel 방출은 외부 부작용이므로 transaction retry로 안전하게 재생할 수 없다.
+                        this.maxAttempts = 1
                         this.queryTimeout = DEFAULT_QUERY_TIMEOUT // 30 seconds
-                        withTimeoutOrNull(DEFAULT_LOAD_ALL_IDS_TIMEOUT) {
+                        withTimeout(DEFAULT_LOAD_ALL_IDS_TIMEOUT) {
                             loadAllIdsFromDB(channel)
-                        } ?: log.warn { "DB에서 모든 ID를 읽는 작업 중 Timeout 이 발생했습니다. timeout=$DEFAULT_LOAD_ALL_IDS_TIMEOUT msec" }
+                        }
                     }
                 }
             } catch (e: kotlinx.coroutines.CancellationException) {
+                if (e is TimeoutCancellationException) {
+                    log.warn { "DB에서 모든 ID를 읽는 작업 중 Timeout 이 발생했습니다. timeout=$DEFAULT_LOAD_ALL_IDS_TIMEOUT msec" }
+                }
                 // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파합니다.
                 cause = e
                 throw e
             } catch (e: Throwable) {
                 log.error { "DB에서 모든 ID 로딩 중 오류가 발생했습니다." }
                 cause = e
-                throw e
+                // DB 오류는 channel cause로 consumer에 전달한다. 일반 예외를 이 child 밖으로
+                // 재전파하면 caller-owned 일반 Job까지 취소되어 다음 enumeration을 막는다.
+                if (e is Error) throw e
             } finally {
                 // 예외 발생 시 cause 를 전달해 채널 소비자가 오류를 감지하도록 합니다.
                 channel.close(cause)
@@ -148,12 +163,18 @@ open class SuspendedEntityMapLoader<ID: Any, E: Any>(
 
             override fun hasNext(): CompletionStage<Boolean?> =
                 ensurePending().thenApply { result ->
+                    result.exceptionOrNull()?.let { cause ->
+                        throw CompletionException(cause)
+                    }
                     result.isSuccess
                 }
 
             override fun next(): CompletionStage<ID> =
                 ensurePending().thenApply { result ->
                     pendingReceive = null
+                    result.exceptionOrNull()?.let { cause ->
+                        throw CompletionException(cause)
+                    }
                     result.getOrNull() ?: throw NoSuchElementException("No more elements")
                 }
         }
