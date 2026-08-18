@@ -510,11 +510,14 @@ result. A downstream cancellation or exception after commit cannot roll back the
 transaction and only stops remaining result emission. When an active
 outer transaction is reused, the nested block may return and emit results before the outer
 transaction commits; the caller owns that final commit or rollback boundary, so defer
-external side effects until the outer scope succeeds. Exposed may retry a top-level R2DBC
-transaction after a database exception, so the input `Flow` can be collected again; use a
-replayable, side-effect-free input when retries are enabled. Because the results are
-materialized inside one atomic transaction, large or unbounded inputs can hold memory and
-keep the transaction open; chunked persistence requires a separate API.
+external side effects until the outer scope succeeds. Repository-owned top-level
+`saveAll(Flow)` and `saveAll(Iterable)` explicitly use `maxAttempts = 1`, so a database
+exception is propagated without recollecting or re-iterating the input. If the caller wraps
+the operation in an active outer transaction, that transaction's retry policy remains
+caller-owned; use a replayable, side-effect-free input when the outer block may retry.
+Because the results are materialized inside one atomic transaction, large or unbounded
+inputs can hold memory and keep the transaction open; chunked persistence requires a
+separate API.
 
 ## Writing Tests
 
@@ -655,8 +658,10 @@ userRepository.saveAll(inputUsers)
 
 The `saveAll(Flow)` overload starts only when collected. It consumes the input and persists
 all entities before emitting the saved results, so the collector does not control the input
-persistence rate. Use `streamAll()` for row-by-row read streaming; this overload intentionally
-keeps one atomic transaction and does not provide chunked writes.
+persistence rate. A repository-owned top-level call does not retry a database exception;
+an active outer transaction may retry according to its caller-owned policy. Use
+`streamAll()` for row-by-row read streaming; this overload intentionally keeps one atomic
+transaction and does not provide chunked writes.
 
 ### Implementing toDomain and toPersistValues
 

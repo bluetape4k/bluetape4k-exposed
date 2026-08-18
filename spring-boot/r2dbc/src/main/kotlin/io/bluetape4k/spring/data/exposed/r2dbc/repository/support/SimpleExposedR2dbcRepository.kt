@@ -22,6 +22,7 @@ import org.jetbrains.exposed.v1.r2dbc.deleteAll
 import org.jetbrains.exposed.v1.r2dbc.deleteWhere
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.jetbrains.exposed.v1.r2dbc.selectAll
+import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.r2dbc.update
 import org.springframework.data.domain.Page
@@ -107,7 +108,7 @@ class SimpleExposedR2dbcRepository<R: Any, ID: Any>(
     }
 
     override fun <S: R> saveAll(entities: Iterable<S>): Flow<S> = flow {
-        val results = inTransaction {
+        val results = inTransactionWithoutRetry {
             buildList {
                 for (entity in entities) {
                     add(persist(entity) as S)
@@ -131,12 +132,14 @@ class SimpleExposedR2dbcRepository<R: Any, ID: Any>(
      * 경계는 호출자에게 있습니다. 외부 side effect는 outer transaction의 성공 이후에
      * 수행해야 합니다.
      *
-     * Exposed가 R2DBC 예외를 재시도하면 transaction block과 입력 [entityStream]이 다시
-     * 실행될 수 있습니다. 재시도 설정을 사용하는 경우 입력 Flow는 replayable하고
-     * side effect가 없어야 하며, 실패한 시도의 결과는 방출 목록에 남지 않습니다.
+     * repository가 소유한 최상위 transaction에서는 입력 재수집과 side effect 반복을
+     * 막기 위해 `maxAttempts = 1`을 적용합니다. 호출자가 이미 outer transaction을
+     * 소유한 경우 retry 횟수는 caller 설정을 따르므로, outer block 재시도에 안전한
+     * replayable·side-effect-free 입력을 제공해야 합니다. 실패한 시도의 결과는 방출
+     * 목록에 남지 않습니다.
      */
     override fun <S: R> saveAll(entityStream: Flow<S>): Flow<S> = flow {
-        val results = inTransaction {
+        val results = inTransactionWithoutRetry {
             buildList {
                 entityStream.collect { entity -> add(persist(entity) as S) }
             }
@@ -320,6 +323,18 @@ class SimpleExposedR2dbcRepository<R: Any, ID: Any>(
 
     private suspend inline fun <T> inTransaction(crossinline block: suspend R2dbcTransaction.() -> T): T =
         suspendTransaction { block() }
+
+    private suspend inline fun <T> inTransactionWithoutRetry(
+        crossinline block: suspend R2dbcTransaction.() -> T,
+    ): T {
+        val hasOuterTransaction = TransactionManager.currentOrNull() != null
+        return suspendTransaction {
+            if (!hasOuterTransaction) {
+                maxAttempts = 1
+            }
+            block()
+        }
+    }
 
     private fun writePersistValues(statement: UpdateBuilder<*>, entity: R) {
         toPersistValues(entity).forEach { (column, value) ->
