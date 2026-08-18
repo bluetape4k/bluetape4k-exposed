@@ -196,6 +196,18 @@ suspend fun example(repo: ActorSuspendedRepository) {
 }
 ```
 
+#### Suspend read-through miss 수명주기
+
+캐시 miss가 발생하면 같은 직렬화 키의 동시 호출을 private `Mutex` entry로
+조정합니다. DB 로드가 성공하면 Caffeine을 채우므로 겹친 호출은 캐시 값을
+관찰하고 새 loader를 실행하지 않습니다. 마지막 holder 또는 waiter가 끝나면
+예외와 취소 경로를 포함해 entry를 회수합니다.
+
+예외, `CancellationException`, `null` 결과는 deferred outcome으로 공유하지
+않습니다. 대기 중인 호출이나 이후 호출은 앞선 시도가 끝난 뒤 순차적으로 재시도할
+수 있습니다. 호출자 취소는 원래 예외를 그대로 다시 던집니다. 조정 registry는
+private 상태이며 크기를 메트릭이나 정책 API로 노출하지 않습니다.
+
 ### Write-Behind 설정
 
 ```kotlin

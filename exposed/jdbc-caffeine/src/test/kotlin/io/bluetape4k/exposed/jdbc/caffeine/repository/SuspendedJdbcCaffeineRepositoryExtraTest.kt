@@ -17,11 +17,14 @@ import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.junit5.coroutines.SuspendedJobTester
 import io.bluetape4k.logging.KLogging
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
+import kotlinx.coroutines.withTimeout
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
@@ -118,6 +121,169 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
     }
 
     @Test
+    fun `get - completed unique-key misses reclaim private load coordination entries`() = runSuspendIO {
+        val repository = CountingSuspendedActorRepository("jdbc:caffeine:s-lifecycle:success")
+
+        repeat(12) { id ->
+            repository.get(id.toLong()).shouldNotBeNull()
+        }
+
+        loadMutexSizeOf(repository) shouldBeEqualTo 0
+    }
+
+    @Test
+    fun `get - loader exception releases entry and a later caller retries`() = runSuspendIO {
+        val expected = IllegalStateException("planned loader failure")
+        val repository = ScriptedSuspendedActorRepository("jdbc:caffeine:s-lifecycle:failure") { id, attempt ->
+            if (attempt == 1) throw expected
+            ActorSchema.newActorRecord().withId(id)
+        }
+
+        val error = assertFailsWith<IllegalStateException> {
+            repository.get(1L)
+        }
+        error shouldBeEqualTo expected
+
+        repository.get(1L).shouldNotBeNull()
+        repository.loadCount.get() shouldBeEqualTo 2
+        loadMutexSizeOf(repository) shouldBeEqualTo 0
+    }
+
+    @Test
+    fun `get - null result releases entry and a later caller retries`() = runSuspendIO {
+        val repository = ScriptedSuspendedActorRepository("jdbc:caffeine:s-lifecycle:null") { id, attempt ->
+            if (attempt == 1) null else ActorSchema.newActorRecord().withId(id)
+        }
+
+        repository.get(1L).shouldBeNull()
+        repository.get(1L).shouldNotBeNull()
+        repository.loadCount.get() shouldBeEqualTo 2
+        loadMutexSizeOf(repository) shouldBeEqualTo 0
+    }
+
+    @Test
+    fun `get - caller cancellation releases entry and preserves retry`() = runSuspendIO(timeout = 10.seconds) {
+        val loadStarted = CompletableDeferred<Unit>()
+        val releaseLoad = CompletableDeferred<Unit>()
+        val repository = ScriptedSuspendedActorRepository("jdbc:caffeine:s-lifecycle:cancel") { id, _ ->
+            loadStarted.complete(Unit)
+            releaseLoad.await()
+            ActorSchema.newActorRecord().withId(id)
+        }
+        val caller = async(Dispatchers.Default) {
+            repository.get(1L)
+        }
+
+        loadStarted.await()
+        caller.cancel(CancellationException("caller cancelled"))
+        val error = assertFailsWith<CancellationException> {
+            caller.await()
+        }
+        error.message shouldBeEqualTo "caller cancelled"
+
+        releaseLoad.complete(Unit)
+        repository.get(1L).shouldNotBeNull()
+        repository.loadCount.get() shouldBeEqualTo 2
+        loadMutexSizeOf(repository) shouldBeEqualTo 0
+    }
+
+    @Test
+    fun `get - cancelled waiter does not remove holder entry`() = runSuspendIO(timeout = 10.seconds) {
+        val loadStarted = CompletableDeferred<Unit>()
+        val releaseLoad = CompletableDeferred<Unit>()
+        val repository = ScriptedSuspendedActorRepository("jdbc:caffeine:s-lifecycle:waiter") { id, _ ->
+            loadStarted.complete(Unit)
+            releaseLoad.await()
+            ActorSchema.newActorRecord().withId(id)
+        }
+        val holder = async(Dispatchers.Default) {
+            repository.get(1L)
+        }
+        loadStarted.await()
+
+        val waiter = async(Dispatchers.Default) {
+            repository.get(1L)
+        }
+        withTimeout(5.seconds) {
+            while (loadMutexUsersOf(repository) < 2) yield()
+        }
+        loadMutexUsersOf(repository) shouldBeEqualTo 2
+
+        waiter.cancelAndJoin()
+        loadMutexUsersOf(repository) shouldBeEqualTo 1
+
+        releaseLoad.complete(Unit)
+        holder.await().shouldNotBeNull()
+        loadMutexSizeOf(repository) shouldBeEqualTo 0
+    }
+
+    @Test
+    fun `get - release and new acquire boundary keeps successful loaders non-overlapping`() =
+        runSuspendIO(timeout = 10.seconds) {
+            val loadStarted = CompletableDeferred<Unit>()
+            val releaseLoad = CompletableDeferred<Unit>()
+            val secondLoadStarted = CompletableDeferred<Unit>()
+            val releaseSecondLoad = CompletableDeferred<Unit>()
+            val thirdLoadStarted = CompletableDeferred<Unit>()
+            val activeLoads = AtomicInteger()
+            val maxActiveLoads = AtomicInteger()
+            val repository = ScriptedSuspendedActorRepository("jdbc:caffeine:s-lifecycle:boundary") { id, attempt ->
+                val active = activeLoads.incrementAndGet()
+                maxActiveLoads.updateAndGet { current -> maxOf(current, active) }
+                try {
+                    loadStarted.complete(Unit)
+                    if (attempt == 1) {
+                        releaseLoad.await()
+                        null
+                    } else if (attempt == 2) {
+                        secondLoadStarted.complete(Unit)
+                        releaseSecondLoad.await()
+                        null
+                    } else {
+                        thirdLoadStarted.complete(Unit)
+                        ActorSchema.newActorRecord().withId(id)
+                    }
+                } finally {
+                    activeLoads.decrementAndGet()
+                }
+            }
+            val holder = async(Dispatchers.Default) {
+                repository.get(1L)
+            }
+            loadStarted.await()
+
+            val waiter = async(Dispatchers.Default) {
+                repository.get(1L)
+            }
+            withTimeout(5.seconds) {
+                while (loadMutexUsersOf(repository) < 2) yield()
+            }
+            loadMutexUsersOf(repository) shouldBeEqualTo 2
+
+            releaseLoad.complete(Unit)
+            holder.await().shouldBeNull()
+
+            secondLoadStarted.await()
+            val third = async(Dispatchers.Default) {
+                repository.get(1L)
+            }
+            withTimeout(5.seconds) {
+                while (loadMutexUsersOf(repository) < 2 && !thirdLoadStarted.isCompleted) yield()
+            }
+            loadMutexUsersOf(repository) shouldBeEqualTo 2
+            thirdLoadStarted.isCompleted shouldBeEqualTo false
+
+            releaseSecondLoad.complete(Unit)
+            val results = listOf(waiter.await(), third.await())
+            results.count { it == null } shouldBeEqualTo 1
+            results.count { it != null } shouldBeEqualTo 1
+
+            maxActiveLoads.get() shouldBeEqualTo 1
+            repository.loadCount.get() shouldBeEqualTo 3
+            loadMutexSizeOf(repository) shouldBeEqualTo 0
+        }
+
+    @Test
     fun `close cancels scope when cache invalidate fails`() {
         val repository = CloseProbeSuspendedJdbcCaffeineRepository()
 
@@ -156,6 +322,29 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
             delay(100)
             return ids.map { ActorSchema.newActorRecord().withId(it) }
         }
+    }
+
+    private class ScriptedSuspendedActorRepository(
+        keyPrefix: String,
+        private val loader: suspend (Long, Int) -> ActorRecord?,
+    ): AbstractSuspendedJdbcCaffeineRepository<Long, ActorRecord>(
+        LocalCacheConfig(keyPrefix = keyPrefix, writeMode = CacheWriteMode.READ_ONLY)
+    ) {
+        val loadCount = AtomicInteger()
+
+        override val table: IdTable<Long> = ActorTable
+
+        override fun ResultRow.toEntity(): ActorRecord =
+            error("DB row conversion is not used by this scripted lifecycle test")
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) = Unit
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) = Unit
+
+        override fun extractId(entity: ActorRecord): Long = entity.id
+
+        override suspend fun findByIdFromDb(id: Long): ActorRecord? =
+            loader(id, loadCount.incrementAndGet())
     }
 
     private class CloseProbeSuspendedJdbcCaffeineRepository:
@@ -658,5 +847,21 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
         field.isAccessible = true
 
         return (field.get(repository) as Lazy<Job>).value
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun loadMutexSizeOf(repository: AbstractSuspendedJdbcCaffeineRepository<*, *>): Int {
+        val field = AbstractSuspendedJdbcCaffeineRepository::class.java.getDeclaredField("loadMutexes")
+        field.isAccessible = true
+        return (field.get(repository) as Map<String, *>).size
+    }
+
+    private fun loadMutexUsersOf(repository: AbstractSuspendedJdbcCaffeineRepository<*, *>): Int {
+        val registryField = AbstractSuspendedJdbcCaffeineRepository::class.java
+            .getDeclaredField("loadMutexes")
+            .also { it.isAccessible = true }
+        val entry = (registryField.get(repository) as Map<String, *>).values.firstOrNull() ?: return 0
+        val usersField = entry.javaClass.getDeclaredField("users").also { it.isAccessible = true }
+        return usersField.getInt(entry)
     }
 }

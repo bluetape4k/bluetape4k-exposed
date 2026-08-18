@@ -196,6 +196,20 @@ suspend fun example(repo: ActorSuspendedRepository) {
 }
 ```
 
+#### Suspend read-through miss lifecycle
+
+For a cache miss, concurrent calls for the same serialized key share a private
+`Mutex` entry. A successful database load populates Caffeine, so overlapping
+callers observe the cached value and do not start another loader. The entry is
+removed after the last holder or waiter leaves, including exception and
+cancellation paths.
+
+An exception, `CancellationException`, or `null` result is not shared as a
+deferred outcome. A queued or later caller may retry sequentially after the
+previous attempt finishes. Caller cancellation is rethrown unchanged. The
+coordination registry is private; this module does not expose its size as
+metrics or policy APIs.
+
 ### Write-Behind configuration
 
 ```kotlin
