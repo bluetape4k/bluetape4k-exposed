@@ -116,7 +116,13 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
         Channel(capacity = config.writeBehindQueueCapacity)
     }
 
-    private val loadMutexes = ConcurrentHashMap<String, Mutex>()
+    /** 캐시 miss 조정 entry. users 변경은 [loadMutexes]의 key별 compute 안에서만 수행합니다. */
+    private class LoadMutexEntry {
+        val mutex = Mutex()
+        var users: Int = 0
+    }
+
+    private val loadMutexes = ConcurrentHashMap<String, LoadMutexEntry>()
 
     private val writeBehindJob by lazy {
         scope.launch {
@@ -218,16 +224,30 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
 
     override suspend fun containsKey(id: ID): Boolean = get(id) != null
 
+    /**
+     * 캐시 miss를 같은 직렬화 키별로 suspend-safe하게 조정합니다.
+     *
+     * 성공한 값은 겹친 호출이 하나의 DB loader 결과를 관찰하도록 Caffeine에 저장합니다.
+     * loader의 예외, [CancellationException], `null` 결과는 deferred outcome으로 공유하지
+     * 않으며, 대기 중인 호출은 앞선 시도가 끝난 뒤 순차적으로 재시도할 수 있습니다.
+     * 마지막 holder 또는 waiter가 끝나면 private 조정 entry를 회수하고, 호출자 취소는
+     * 원래 [CancellationException]을 유지합니다.
+     */
     override suspend fun get(id: ID): E? {
         val key = serializeKey(id)
         val cached = cache.getIfPresent(key)
         if (cached != null) return cached
 
-        return loadMutex(key).withLock {
-            cache.getIfPresent(key)
-                ?: findByIdFromDb(id)?.let { fromDb ->
-                    cache.asMap().putIfAbsent(key, fromDb) ?: fromDb
-                }
+        val entry = acquireLoadMutex(key)
+        return try {
+            entry.mutex.withLock {
+                cache.getIfPresent(key)
+                    ?: findByIdFromDb(id)?.let { fromDb ->
+                        cache.asMap().putIfAbsent(key, fromDb) ?: fromDb
+                    }
+            }
+        } finally {
+            releaseLoadMutex(key, entry)
         }
     }
 
@@ -239,8 +259,20 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
         }.toMap()
     }
 
-    private fun loadMutex(key: String): Mutex =
-        loadMutexes.computeIfAbsent(key) { Mutex() }
+    private fun acquireLoadMutex(key: String): LoadMutexEntry =
+        loadMutexes.compute(key) { _, current ->
+            (current ?: LoadMutexEntry()).also { it.users += 1 }
+        } ?: error("load mutex entry was not created")
+
+    private fun releaseLoadMutex(key: String, entry: LoadMutexEntry) {
+        loadMutexes.computeIfPresent(key) { _, current ->
+            when {
+                current !== entry -> current
+                current.users <= 1 -> null
+                else -> current.also { it.users -= 1 }
+            }
+        }
+    }
 
     @Suppress("DEPRECATION")
     override suspend fun findAll(
