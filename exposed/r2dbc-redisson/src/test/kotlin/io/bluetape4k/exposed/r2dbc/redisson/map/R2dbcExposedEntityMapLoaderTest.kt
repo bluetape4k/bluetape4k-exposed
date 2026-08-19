@@ -143,6 +143,41 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
     }
 
     @Test
+    fun `loadAllKeys - exact multiple fixture는 마지막 빈 page query를 계약으로 고정한다`() = runSuspendIO {
+        val sqlStatements = mutableListOf<String>()
+        withTables(
+            TestDB.H2,
+            LoaderTable,
+            configure = {
+                sqlLogger = object : SqlLogger {
+                    override fun log(context: StatementContext, transaction: Transaction) {
+                        sqlStatements += context.sql(transaction)
+                    }
+                }
+            },
+        ) {
+            repeat(4) { index ->
+                LoaderTable.insert { it[name] = "exact-user-$index" }
+            }
+            commit()
+            sqlStatements.clear()
+
+            val loader = R2dbcExposedEntityMapLoader(
+                entityTable = LoaderTable,
+                batchSize = 2,
+            ) {
+                toLoaderEntity()
+            }
+            val ids = loader.loadAllKeys().toList()
+            val selects = sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
+
+            ids shouldHaveSize 4
+            selects.size shouldBeEqualTo 3
+            selects.drop(1).all { it.contains(">") }.shouldBeTrue()
+        }
+    }
+
+    @Test
     fun `loadAllKeys - sparse ID는 keyset 경계에서 중복 없이 순회한다`() = runSuspendIO {
         withTables(TestDB.H2, LoaderTable) {
             val initialIds =

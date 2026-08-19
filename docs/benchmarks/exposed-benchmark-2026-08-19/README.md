@@ -30,7 +30,7 @@
 - `idTables-{1,2,3}.json`: custom ID table select benchmark
 - `docs/images/readme-charts/exposed-benchmark-suite.svg` 및 `.png`: 세 실행 중앙값을 패널별로 표시한 차트
 
-차트는 cache 전략을 log-width로, 나머지 두 패널을 선형 축으로 그려 단위와 비교 범위를 분리합니다. 이는 cache hit 처리량과 DB select 처리량을 하나의 순위표로 오해하지 않게 하기 위한 것입니다.
+차트는 cache, DB select, custom ID를 각각 별도 panel의 선형 폭으로 그려 단위와 비교 범위를 분리합니다. 이는 cache hit 처리량과 DB select 처리량을 하나의 순위표로 오해하지 않게 하기 위한 것입니다.
 
 ## 해석 기준
 

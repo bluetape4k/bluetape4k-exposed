@@ -4,18 +4,29 @@ import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
-import kotlinx.coroutines.channels.Channel
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotContain
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.r2dbc.insert
+import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutionException
 
 /**
  * [R2dbcEntityMapLoader]의 단위 테스트입니다.
@@ -198,6 +209,110 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
 
             val ids = loader.loadAllKeys().toList()
             ids shouldBeEqualTo expectedIds
+        }
+    }
+
+    @Test
+    fun `loadAllKeys - streaming transaction은 retry를 끄고 producer 예외를 전달한다`() = runSuspendIO {
+        withTables(TestDB.H2, TestTable) {
+            val expectedFailure = IllegalStateException("producer failure")
+            var configuredMaxAttempts: Int? = null
+            val loader = R2dbcEntityMapLoader<Long, TestEntity>(
+                loadByIdFromDB = { null },
+                loadAllIdsFromDB = { channel: Channel<Long> ->
+                    configuredMaxAttempts = TransactionManager.currentOrNull()?.maxAttempts
+                    channel.send(1L)
+                    throw expectedFailure
+                },
+            )
+
+            val iterator = loader.loadAllKeys()
+            iterator.hasNext().toCompletableFuture().get().shouldBeTrue()
+            iterator.next().toCompletableFuture().get() shouldBeEqualTo 1L
+
+            val failure = assertFailsWith<ExecutionException> {
+                iterator.hasNext().toCompletableFuture().get()
+            }
+            failure.cause?.javaClass shouldBeEqualTo expectedFailure.javaClass
+            failure.cause?.message shouldBeEqualTo expectedFailure.message
+            configuredMaxAttempts shouldBeEqualTo 1
+        }
+    }
+
+    @Test
+    fun `loadAllKeys - fatal Error는 iterator와 exception handler에 모두 전달한다`() = runSuspendIO {
+        withTables(TestDB.H2, TestTable) {
+            val expectedFailure = AssertionError("fatal producer failure")
+            val observedFailure = CompletableDeferred<Throwable>()
+            val handler = CoroutineExceptionHandler { _, cause ->
+                observedFailure.complete(cause)
+            }
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + handler)
+            try {
+                val loader = R2dbcEntityMapLoader<Long, TestEntity>(
+                    loadByIdFromDB = { null },
+                    loadAllIdsFromDB = {
+                        throw expectedFailure
+                    },
+                    scope = scope,
+                )
+
+                val failure = assertFailsWith<ExecutionException> {
+                    loader.loadAllKeys().hasNext().toCompletableFuture().get()
+                }
+                failure.cause?.javaClass shouldBeEqualTo expectedFailure.javaClass
+                failure.cause?.message shouldBeEqualTo expectedFailure.message
+
+                val handlerFailure = withTimeout(5_000) { observedFailure.await() }
+                handlerFailure.javaClass shouldBeEqualTo expectedFailure.javaClass
+                handlerFailure.message shouldBeEqualTo expectedFailure.message
+            } finally {
+                scope.cancel()
+            }
+        }
+    }
+
+    @Test
+    fun `loadAllKeys - ambient transaction의 retry 정책은 caller가 소유한다`() = runSuspendIO {
+        withTables(TestDB.H2, TestTable) {
+            maxAttempts = 7
+            var configuredMaxAttempts: Int? = null
+            val loader = R2dbcEntityMapLoader<Long, TestEntity>(
+                loadByIdFromDB = { null },
+                loadAllIdsFromDB = { channel ->
+                    configuredMaxAttempts = TransactionManager.currentOrNull()?.maxAttempts
+                    channel.send(1L)
+                },
+                // TransactionContextHolder를 보존하는 caller scope에서 outer transaction을 재사용한다.
+                scope = CoroutineScope(currentCoroutineContext()),
+            )
+
+            val iterator = loader.loadAllKeys()
+            iterator.hasNext().toCompletableFuture().get().shouldBeTrue()
+            iterator.next().toCompletableFuture().get() shouldBeEqualTo 1L
+            iterator.hasNext().toCompletableFuture().get().shouldBeFalse()
+
+            configuredMaxAttempts shouldBeEqualTo 7
+        }
+    }
+
+    @Test
+    fun `load - 기본 SupervisorJob은 단건 실패 후 다음 호출을 보존한다`() = runSuspendIO {
+        withTables(TestDB.H2, TestTable) {
+            val failingLoader = R2dbcEntityMapLoader<Long, TestEntity>(
+                loadByIdFromDB = { error("single-load failure") },
+                loadAllIdsFromDB = { },
+            )
+            val failure = assertFailsWith<ExecutionException> {
+                failingLoader.load(1L).toCompletableFuture().get()
+            }
+            failure.cause?.message shouldBeEqualTo "single-load failure"
+
+            val succeedingLoader = R2dbcEntityMapLoader<Long, TestEntity>(
+                loadByIdFromDB = { id -> TestEntity(id, "recovered") },
+                loadAllIdsFromDB = { },
+            )
+            succeedingLoader.load(2L).toCompletableFuture().get() shouldBeEqualTo TestEntity(2L, "recovered")
         }
     }
 }

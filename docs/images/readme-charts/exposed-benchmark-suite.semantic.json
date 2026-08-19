@@ -2,12 +2,24 @@
   "kind": "chart",
   "source": {
     "question": "What do the three repeated H2 benchmark profiles show, and which comparisons must remain separate?",
-    "revision": "2026-08-19",
+    "revision": "17f27889cf0ecc151011e2edc172e45010dbbd47",
+    "selection": {
+      "method": "median",
+      "run_count": 3,
+      "profile": "JDK 25.0.4 / H2 / sequential Gradle rerun"
+    },
+    "scale": "linear within each panel; panels are not globally ranked",
     "paths": [
       "docs/benchmarks/exposed-benchmark-2026-08-19/README.md",
       "docs/benchmarks/exposed-benchmark-2026-08-19/cache-1.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-19/cache-2.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-19/cache-3.json",
       "docs/benchmarks/exposed-benchmark-2026-08-19/jdbcR2dbc-1.json",
-      "docs/benchmarks/exposed-benchmark-2026-08-19/idTables-1.json"
+      "docs/benchmarks/exposed-benchmark-2026-08-19/jdbcR2dbc-2.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-19/jdbcR2dbc-3.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-19/idTables-1.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-19/idTables-2.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-19/idTables-3.json"
     ]
   },
   "nodes": [
@@ -59,5 +71,13 @@
     "branches": 0,
     "loops": 0
   },
-  "repairs": []
+  "repairs": [
+    {
+      "kind": "canvas-resize",
+      "target": "chart-canvas",
+      "reason": "custom-ID labels needed additional vertical space",
+      "touches": 1,
+      "verified_by": "full-size PNG inspection and visual occupancy audit"
+    }
+  ]
 }

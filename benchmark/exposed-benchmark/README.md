@@ -31,7 +31,7 @@ The checked-in comparison was produced on 2026-08-19 with Oracle GraalVM `25.0.4
 
 ### Interpretation and limits
 
-- The cache panel uses a log-width scale because cache throughput is orders of magnitude above the database panels. The panels must not be read as one global ranking.
+- All three panels use linear bar widths within their own comparison group. The panels must not be read as one global ranking because their units and workloads differ.
 - The H2 result does not choose the default for #690's opt-in parallel key enumeration. It is a single-row benchmark, not a contention or producer/consumer benchmark.
 - The custom-ID spread between the selected maximum and minimum is about 10.3%; it does not establish a universal ID-strategy winner.
 - Redis is `N/A` because no endpoint was supplied. Non-H2 drivers, connection-pool effects, cache hit ratios, and mutation contention require separate environment validation.

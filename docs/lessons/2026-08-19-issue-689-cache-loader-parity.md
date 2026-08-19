@@ -32,7 +32,9 @@ raw column과 Kotlin 비교 semantics가 일치한다고 추측하지 않기 위
 - 각 module의 keyset capability test는 `Long`을 지원하고
   `ComparableCustomId`를 fallback으로 분류한다.
 - R2DBC `AsyncIterator`는 기존 rendezvous producer/consumer 경계를 그대로 사용한다.
-  이번 slot은 정상·sparse·producer error를 검증하며, scope cancellation의 full
+  top-level streaming transaction은 `maxAttempts = 1`로 retry 재방출을 막고, producer
+  오류와 timeout 원인은 `hasNext()`/`next()`의 비정상 완료로 전달한다. 정상·sparse·exact
+  multiple·producer error 및 transaction 설정을 검증하며, scope cancellation의 full
   cross-driver 증거는 기존 #646 base test와 후속 driver 환경 검증에서 이어간다.
 
 ### Benchmark evidence와 chart
@@ -50,19 +52,27 @@ JDK 25.0.4/H2에서 동일 profile을 세 번 순차 실행하고 중앙값을 �
   `34,688` / `24,376` / `19,197 ops/s`
 - custom ID `selectByName` 범위: `196,483`–`216,715 ops/s`
 
-Cache panel은 처리량 자릿수가 달라 log-width로 표시하고 JDBC/R2DBC와 custom-ID
-panel은 선형 폭으로 표시했다. 따라서 chart는 전역 순위가 아니라 panel 내부 비교다.
+Cache, JDBC/R2DBC, custom-ID panel 모두 각 비교 그룹 안에서 선형 폭으로 표시했다.
+따라서 chart는 전역 순위가 아니라 panel 내부 비교다.
 H2 단건 조회 결과만으로 #690의 parallel enumeration 기본 동작을 결정하지 않으며,
 Redis는 endpoint가 없어 `N/A`다.
 
 ## 문제와 해결
 
-### 마지막 partial page의 불필요한 빈 query
+### 마지막 page 경계와 producer 오류 전달
 
 초기 구현은 page가 `batchSize`와 같을 때 다음 loop에서 빈 page를 한 번 더 조회했다.
 이 때문에 5행/2행 배치가 4 SELECT, 101행/16행 배치가 8 SELECT로 관찰됐다.
 partial page(`chunk.size < batchSize`)를 성공적으로 방출한 즉시 종료하도록 세 loader의
-loop를 정렬했고, query 수 assertion을 회귀 guard로 고정했다.
+loop를 정렬했고, exact-multiple fixture는 마지막 빈 page query가 필요한 현재 계약을
+명시적인 query-count assertion으로 고정했다.
+
+R2DBC producer가 transaction retry 중 이미 채널에 보낸 ID를 다시 보낼 수 있었고, 채널
+close cause를 `hasNext()`가 false로 처리해 partial enumeration을 성공으로 보일 수 있었다.
+top-level streaming transaction에만 `maxAttempts = 1`을 적용하고, timeout/producer cause를
+`hasNext()`/`next()`에서 비동기 예외로 재전달하는 테스트를 추가했다. transaction context를
+보존한 caller scope에서는 outer transaction의 retry 정책을 변경하지 않으며, 기본 scope는
+`SupervisorJob`으로 단건 실패가 다음 enumeration을 취소하지 않게 한다.
 
 ### chart 하단 label clipping
 
@@ -83,9 +93,12 @@ asset-pair audit와 full-size PNG inspection을 다시 실행해 clipping과 누
 - 비-H2 driver별 keyset SQL, page 사이 insert/delete, network fault/retry replay는
   별도 driver 환경에서 확인해야 한다. 현재 구현은 public transaction 계약을 바꾸지
   않고 정상 H2 경계를 검증했다.
-- R2DBC Redisson의 producer channel과 transaction retry interaction은 기존 base
-  contract를 보존했으므로, retry를 바꾸는 것은 별도 API/transaction decision으로
-  남긴다.
+- R2DBC Redisson의 non-H2 driver fault/retry와 ambient outer transaction 재실행은 별도
+  환경에서 확인해야 한다. top-level producer 중복 방지는 이번 slot에서
+  `maxAttempts = 1`로 고정했지만, outer block이 caller 정책으로 재실행될 때의 전체
+  operation semantics는 후속 fault-injection 검증 대상이다.
+- 위 경계는 후속 Issue #692(custom ID fallback·page mutation·비-H2 driver fault parity)로
+  등록했고, Epic #659의 stacked train Slot 5로 연결했다.
 - #690은 이 branch에서 구현하지 않는다. Virtual Thread range partition, pool 상한,
   ordering merge, opt-in API와 benchmark 설계를 stacked 다음 slot에서 다룬다.
 - `docs/manual/**`는 안정 릴리스 `1.12.1` 경계를 유지해 변경하지 않았다.
@@ -94,8 +107,8 @@ asset-pair audit와 full-size PNG inspection을 다시 실행해 clipping과 누
 
 1. 새 map loader는 표준 scalar capability와 custom fallback을 같은 helper test로
    고정한다.
-2. `batchSize` 경계가 정확히 맞는 fixture와 partial page fixture를 함께 유지해 빈
-   query가 다시 생기지 않게 한다.
+2. `batchSize` 경계가 정확히 맞는 fixture와 partial page fixture를 함께 유지해 page
+   종료/query-count 계약이 다시 흐려지지 않게 한다.
 3. benchmark 비교는 세 번 중앙값, raw JSON provenance, grouped panel, Redis `N/A`
    사유를 함께 보존한다. 단일 최고값이나 서로 다른 단위의 전역 순위를 사용하지 않는다.
 4. chart 변경 뒤에는 SVG/PNG pair, semantic ledger, XML, visual geometry, full-size
@@ -103,7 +116,7 @@ asset-pair audit와 full-size PNG inspection을 다시 실행해 clipping과 누
 
 ## Writer DoD (SPW-01~05)
 
-- [x] SPW-01 — Issue #689, Epic #659, 세 loader와 #690 경계를 고정했다.
+- [x] SPW-01 — Issue #689, Epic #659, 세 loader와 #690/#692 경계를 고정했다.
 - [x] SPW-02 — keyset/fallback, transaction/back-pressure, page evidence와 known gap을
   실제 구현에 맞춰 기록했다.
 - [x] SPW-03 — 한국어 technical register와 `keyset`, `paging`, `streaming`,

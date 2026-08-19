@@ -31,7 +31,7 @@ Exposed JDBC, R2DBC, custom ID table, cache 전략을 독립적으로 실행하�
 
 ### 분석 및 한계
 
-- Cache 처리량은 database 패널보다 자릿수가 커서 chart의 cache 패널을 log-width 축으로 표시했습니다. 세 패널을 하나의 전역 순위로 읽으면 안 됩니다.
+- 세 패널은 각 비교 그룹 안에서 선형 bar 폭을 사용합니다. 단위와 workload가 다르므로 세 패널을 하나의 전역 순위로 읽으면 안 됩니다.
 - H2 결과만으로 #690의 opt-in parallel key enumeration 기본값을 정하지 않습니다. 이 결과는 단건 조회이며 contention 또는 producer/consumer benchmark가 아닙니다.
 - 선택된 최고/최저 custom-ID 중앙값 차이는 약 10.3%이며, 특정 ID 전략의 보편적 우위를 뜻하지 않습니다.
 - Redis는 endpoint를 제공하지 않아 `N/A`입니다. 비-H2 driver, connection pool, cache hit ratio, mutation contention은 별도 환경 검증이 필요합니다.

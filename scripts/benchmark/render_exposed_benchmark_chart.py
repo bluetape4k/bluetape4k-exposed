@@ -116,7 +116,7 @@ def render(all_rows: list[dict[str, object]], evidence_name: str) -> str:
     lines = [
         '<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1510" viewBox="0 0 1800 1510" role="img" aria-labelledby="title desc">',
         '  <title id="title">Exposed benchmark comparison</title>',
-        f'  <desc id="desc">Grouped median throughput from three JDK 25 H2 repetitions in {escape(evidence_name)}. Cache bars use a logarithmic width scale; database and custom ID bars use linear scales.</desc>',
+        f'  <desc id="desc">Grouped median throughput from three JDK 25 H2 repetitions in {escape(evidence_name)}. All panels use a linear width scale within their own unit and comparison group.</desc>',
         '  <style>',
         '    .background { fill: #08111f; }',
         '    .panel { fill: #111f33; stroke: #263b57; stroke-width: 2; }',
@@ -132,7 +132,7 @@ def render(all_rows: list[dict[str, object]], evidence_name: str) -> str:
         '  <text x="34" y="54" class="title">Exposed benchmark comparison</text>',
         '  <text x="34" y="84" class="subtitle">Three-run median · JDK 25.0.4 · H2 · throughput (ops/s)</text>',
     ]
-    lines.extend(panel("Cache strategy", "Cache size 10,000 · logarithmic bar width keeps different orders of magnitude readable", cache, 112, "#38bdf8", log_scale=True))
+    lines.extend(panel("Cache strategy", "Cache size 10,000 · linear bar width; compare values within this panel", cache, 112, "#38bdf8"))
     lines.extend(panel("JDBC vs R2DBC", "Rows 10,000 · pool size 10 for JDBC · linear bar width", database, 530, "#2dd4bf"))
     lines.extend(panel("Custom ID table lookup", "Select by name · rows 10,000 · linear bar width", custom_ids, 948, "#fbbf24"))
     lines.extend([

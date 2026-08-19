@@ -13,6 +13,8 @@ Exposed R2DBC와 Redisson 캐시를 결합해 코루틴 기반 Read-Through, Wri
 - **MapLoader/MapWriter 비동기 지원**: Redisson `AsyncMapLoader`/`AsyncMapWriter` 연동
     - `R2dbcExposedEntityMapLoader`는 지원되는 scalar ID에서 오름차순 keyset page를 사용하고 custom ID에는 기존 offset fallback을 사용
     - `loadAllKeys()`는 rendezvous channel back-pressure로 PK 오름차순을 안정적으로 순회하며 한 번에 `batchSize` page만 materialize합니다. 전체 열거는 weakly consistent합니다
+    - top-level streaming에는 Exposed `maxAttempts = 1`을 적용해 retry 재방출을 막고, producer 오류와 timeout 원인은 정상 종료가 아닌 `AsyncIterator` 예외로 전달합니다
+    - caller-owned ambient transaction은 자체 retry 정책을 유지하며, 기본 loader scope는 한 번의 실패가 후속 호출을 취소하지 않도록 격리합니다
 - **Repository 추상화**: 캐시 + DB 접근 공통 패턴 (`R2dbcRedissonRepository`)
 - **Coroutines 네이티브 Repository API**: 캐시와 Repository 호출은 `suspend` 함수이고, Redisson SPI 어댑터는 내부적으로 async로 동작
 - **Near Cache 지원**: Local Cache + Redis 2-Tier 캐시
