@@ -27,8 +27,10 @@ raw column과 Kotlin 비교 semantics가 일치한다고 추측하지 않기 위
 - 101행 fixture에서 `batchSize=16`은 7 SELECT를 실행했고, 모든 query가 `LIMIT`을
   사용했으며 page buffer가 batch 크기를 넘지 않았다.
 - JDBC Redisson synchronous와 R2DBC Redisson에 sparse-ID 중복 방지 회귀를 추가했다.
-  JDBC Lettuce suspended와 JDBC Redisson suspended의 기존 sparse/keyset 검증도 함께
-  유지된다.
+  JDBC Lettuce suspended와 JDBC Redisson suspended의 sparse/keyset 검증도 함께
+  유지된다. JDBC Lettuce suspended는 각 page의 ResultSet을 bounded하게 소비하지만,
+  전체 page loop를 감싸는 하나의 `suspendedTransactionAsync` connection은 enumeration
+  동안 유지한다.
 - 각 module의 keyset capability test는 `Long`을 지원하고
   `ComparableCustomId`를 fallback으로 분류한다.
 - R2DBC `AsyncIterator`는 기존 rendezvous producer/consumer 경계를 그대로 사용한다.

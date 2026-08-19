@@ -4,44 +4,44 @@
   <style>
     .background { fill: #08111f; }
     .panel { fill: #111f33; stroke: #263b57; stroke-width: 2; }
-    .title { fill: #f8fafc; font: 700 34px Arial, sans-serif; }
-    .subtitle { fill: #a9bdd8; font: 16px Arial, sans-serif; }
-    .panelTitle { fill: #f8fafc; font: 700 23px Arial, sans-serif; }
-    .panelSubtitle { fill: #a9bdd8; font: 15px Arial, sans-serif; }
-    .label { fill: #dbeafe; font: 15px Arial, sans-serif; }
-    .value { fill: #f8fafc; font: 700 14px Arial, sans-serif; }
-    .footnote { fill: #8da7c4; font: 14px Arial, sans-serif; }
+    .title { fill: #f8fafc; font: 700 34px "Architects Daughter", "Comic Mono", monospace; }
+    .subtitle { fill: #a9bdd8; font: 16px "Comic Mono", monospace; }
+    .panelTitle { fill: #f8fafc; font: 700 23px "Architects Daughter", "Comic Mono", monospace; }
+    .panelSubtitle { fill: #a9bdd8; font: 15px "Comic Mono", monospace; }
+    .label { fill: #dbeafe; font: 15px "Comic Mono", monospace; }
+    .value { fill: #f8fafc; font: 700 14px "Comic Mono", monospace; }
+    .footnote { fill: #8da7c4; font: 14px "Comic Mono", monospace; }
   </style>
   <rect class="background" width="1800" height="1510"/>
   <text x="34" y="54" class="title">Exposed benchmark comparison</text>
-  <text x="34" y="84" class="subtitle">Three-run median · JDK 25.0.4 · H2 · throughput (ops/s)</text>
+  <text x="34" y="84" class="subtitle">Three-run median | JDK 25.0.4 | H2 | throughput (ops/s)</text>
 <rect x="34" y="112" width="1732" height="390" rx="18" class="panel"/>
 <text x="68" y="160" class="panelTitle">Cache strategy</text>
-<text x="68" y="190" class="panelSubtitle">Cache size 10,000 · linear bar width; compare values within this panel</text>
-<text x="68" y="246" class="label">Near cache hit · size 10,000</text>
+<text x="68" y="190" class="panelSubtitle">Cache size 10,000 | linear bar width; compare values within this panel</text>
+<text x="68" y="246" class="label">Near cache hit | size 10,000</text>
 <rect x="450" y="224" width="1190.0" height="24" rx="6" fill="#38bdf8"/>
 <text x="1656.0" y="245" class="value">206,595,487 ops/s</text>
-<text x="68" y="291" class="label">Local Caffeine hit · size 10,000</text>
+<text x="68" y="291" class="label">Local Caffeine hit | size 10,000</text>
 <rect x="450" y="269" width="314.1" height="24" rx="6" fill="#38bdf8"/>
 <text x="780.1" y="290" class="value">54,531,040 ops/s</text>
-<text x="68" y="336" class="label">Near cache read-through miss · size 10,000</text>
+<text x="68" y="336" class="label">Near cache read-through miss | size 10,000</text>
 <rect x="450" y="314" width="271.5" height="24" rx="6" fill="#38bdf8"/>
 <text x="737.5" y="335" class="value">47,137,612 ops/s</text>
 <rect x="34" y="530" width="1732" height="390" rx="18" class="panel"/>
 <text x="68" y="578" class="panelTitle">JDBC vs R2DBC</text>
-<text x="68" y="608" class="panelSubtitle">Rows 10,000 · pool size 10 for JDBC · linear bar width</text>
-<text x="68" y="664" class="label">JDBC platform thread · rows 10,000</text>
+<text x="68" y="608" class="panelSubtitle">Rows 10,000 | pool size 10 for JDBC | linear bar width</text>
+<text x="68" y="664" class="label">JDBC platform thread | rows 10,000</text>
 <rect x="450" y="642" width="1190.0" height="24" rx="6" fill="#2dd4bf"/>
 <text x="1656.0" y="663" class="value">34,688 ops/s</text>
-<text x="68" y="709" class="label">JDBC virtual thread · rows 10,000</text>
+<text x="68" y="709" class="label">JDBC virtual thread | rows 10,000</text>
 <rect x="450" y="687" width="836.3" height="24" rx="6" fill="#2dd4bf"/>
 <text x="1302.3" y="708" class="value">24,376 ops/s</text>
-<text x="68" y="754" class="label">R2DBC suspend transaction · rows 10,000</text>
+<text x="68" y="754" class="label">R2DBC suspend transaction | rows 10,000</text>
 <rect x="450" y="732" width="658.6" height="24" rx="6" fill="#2dd4bf"/>
 <text x="1124.6" y="753" class="value">19,197 ops/s</text>
 <rect x="34" y="948" width="1732" height="480" rx="18" class="panel"/>
 <text x="68" y="996" class="panelTitle">Custom ID table lookup</text>
-<text x="68" y="1026" class="panelSubtitle">Select by name · rows 10,000 · linear bar width</text>
+<text x="68" y="1026" class="panelSubtitle">Select by name | rows 10,000 | linear bar width</text>
 <text x="68" y="1082" class="label">UUID</text>
 <rect x="450" y="1060" width="1190.0" height="24" rx="6" fill="#fbbf24"/>
 <text x="1656.0" y="1081" class="value">216,715 ops/s</text>

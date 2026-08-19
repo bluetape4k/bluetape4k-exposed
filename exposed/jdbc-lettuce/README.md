@@ -16,7 +16,7 @@ A Read-through / Write-through / Write-behind cache repository module that combi
     - `loadAllKeys()` returns a lazy ascending-PK `Iterable`; ordered scalar IDs use keyset pages and unsupported custom IDs use the legacy offset fallback
     - The suspended JDBC loader keeps its existing `List` API and reads the same keyset/fallback pages inside `suspendedTransactionAsync`; it does not expose a new streaming surface
     - Enumeration is weakly consistent; a page-side delete can skip an unseen row on the custom-ID offset fallback path
-    - Each page is materialized only for `batchSize` IDs, so the JDBC query and connection do not escape the page boundary. The suspended loader executes the page loop in one `suspendedTransactionAsync`; an ambient caller-owned Exposed transaction remains caller-owned
+    - Each page materializes only `batchSize` IDs and consumes its ResultSet within that page. The suspended loader executes the entire page loop in one `suspendedTransactionAsync`, so its JDBC connection remains held for the enumeration; an ambient caller-owned Exposed transaction remains caller-owned
     - `chunkSize` (writer) and `batchSize` (loader) must be greater than 0
 
 ## Dependency

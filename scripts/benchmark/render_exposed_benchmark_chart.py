@@ -95,14 +95,14 @@ def panel(
 
 def render(all_rows: list[dict[str, object]], evidence_name: str) -> str:
     cache = [
-        ("Near cache hit · size 10,000", median_series(all_rows, "CacheStrategyBenchmark.nearCacheHit", {"cacheSize": "10000"})),
-        ("Local Caffeine hit · size 10,000", median_series(all_rows, "CacheStrategyBenchmark.localCaffeineHit", {"cacheSize": "10000"})),
-        ("Near cache read-through miss · size 10,000", median_series(all_rows, "CacheStrategyBenchmark.nearCacheReadThroughMiss", {"cacheSize": "10000"})),
+        ("Near cache hit | size 10,000", median_series(all_rows, "CacheStrategyBenchmark.nearCacheHit", {"cacheSize": "10000"})),
+        ("Local Caffeine hit | size 10,000", median_series(all_rows, "CacheStrategyBenchmark.localCaffeineHit", {"cacheSize": "10000"})),
+        ("Near cache read-through miss | size 10,000", median_series(all_rows, "CacheStrategyBenchmark.nearCacheReadThroughMiss", {"cacheSize": "10000"})),
     ]
     database = [
-        ("JDBC platform thread · rows 10,000", median_series(all_rows, "JdbcThreadingBenchmark.platformThreadSelectById", {"poolSize": "10", "rowCount": "10000"})),
-        ("JDBC virtual thread · rows 10,000", median_series(all_rows, "JdbcThreadingBenchmark.virtualThreadSelectById", {"poolSize": "10", "rowCount": "10000"})),
-        ("R2DBC suspend transaction · rows 10,000", median_series(all_rows, "R2dbcCoroutineBenchmark.suspendTransactionSelectById", {"rowCount": "10000"})),
+        ("JDBC platform thread | rows 10,000", median_series(all_rows, "JdbcThreadingBenchmark.platformThreadSelectById", {"poolSize": "10", "rowCount": "10000"})),
+        ("JDBC virtual thread | rows 10,000", median_series(all_rows, "JdbcThreadingBenchmark.virtualThreadSelectById", {"poolSize": "10", "rowCount": "10000"})),
+        ("R2DBC suspend transaction | rows 10,000", median_series(all_rows, "R2dbcCoroutineBenchmark.suspendTransactionSelectById", {"rowCount": "10000"})),
     ]
     custom_ids = [
         ("UUID", median_series(all_rows, "CustomIdTableBenchmark.uuidTableSelectByName", {"rowCount": "10000"})),
@@ -120,21 +120,21 @@ def render(all_rows: list[dict[str, object]], evidence_name: str) -> str:
         '  <style>',
         '    .background { fill: #08111f; }',
         '    .panel { fill: #111f33; stroke: #263b57; stroke-width: 2; }',
-        '    .title { fill: #f8fafc; font: 700 34px Arial, sans-serif; }',
-        '    .subtitle { fill: #a9bdd8; font: 16px Arial, sans-serif; }',
-        '    .panelTitle { fill: #f8fafc; font: 700 23px Arial, sans-serif; }',
-        '    .panelSubtitle { fill: #a9bdd8; font: 15px Arial, sans-serif; }',
-        '    .label { fill: #dbeafe; font: 15px Arial, sans-serif; }',
-        '    .value { fill: #f8fafc; font: 700 14px Arial, sans-serif; }',
-        '    .footnote { fill: #8da7c4; font: 14px Arial, sans-serif; }',
+        '    .title { fill: #f8fafc; font: 700 34px "Architects Daughter", "Comic Mono", monospace; }',
+        '    .subtitle { fill: #a9bdd8; font: 16px "Comic Mono", monospace; }',
+        '    .panelTitle { fill: #f8fafc; font: 700 23px "Architects Daughter", "Comic Mono", monospace; }',
+        '    .panelSubtitle { fill: #a9bdd8; font: 15px "Comic Mono", monospace; }',
+        '    .label { fill: #dbeafe; font: 15px "Comic Mono", monospace; }',
+        '    .value { fill: #f8fafc; font: 700 14px "Comic Mono", monospace; }',
+        '    .footnote { fill: #8da7c4; font: 14px "Comic Mono", monospace; }',
         '  </style>',
         '  <rect class="background" width="1800" height="1510"/>',
         '  <text x="34" y="54" class="title">Exposed benchmark comparison</text>',
-        '  <text x="34" y="84" class="subtitle">Three-run median · JDK 25.0.4 · H2 · throughput (ops/s)</text>',
+        '  <text x="34" y="84" class="subtitle">Three-run median | JDK 25.0.4 | H2 | throughput (ops/s)</text>',
     ]
-    lines.extend(panel("Cache strategy", "Cache size 10,000 · linear bar width; compare values within this panel", cache, 112, "#38bdf8"))
-    lines.extend(panel("JDBC vs R2DBC", "Rows 10,000 · pool size 10 for JDBC · linear bar width", database, 530, "#2dd4bf"))
-    lines.extend(panel("Custom ID table lookup", "Select by name · rows 10,000 · linear bar width", custom_ids, 948, "#fbbf24"))
+    lines.extend(panel("Cache strategy", "Cache size 10,000 | linear bar width; compare values within this panel", cache, 112, "#38bdf8"))
+    lines.extend(panel("JDBC vs R2DBC", "Rows 10,000 | pool size 10 for JDBC | linear bar width", database, 530, "#2dd4bf"))
+    lines.extend(panel("Custom ID table lookup", "Select by name | rows 10,000 | linear bar width", custom_ids, 948, "#fbbf24"))
     lines.extend([
         '  <text x="68" y="1470" class="footnote">Interpret bars within their panel only. Redis profiles are not included because no Redis endpoint was available; see the preserved JSON evidence for all series.</text>',
         '</svg>',

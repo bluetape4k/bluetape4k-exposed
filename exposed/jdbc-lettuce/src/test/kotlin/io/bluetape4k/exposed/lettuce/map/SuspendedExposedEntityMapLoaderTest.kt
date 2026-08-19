@@ -15,6 +15,8 @@ import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.core.statements.StatementContext
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.junit.jupiter.api.Test
 import java.io.Serializable
@@ -152,6 +154,29 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
             selects.size shouldBeEqualTo 3
             selects.none { it.contains("offset", ignoreCase = true) }.shouldBeTrue()
             selects.drop(1).all { it.contains(">") }.shouldBeTrue()
+        }
+    }
+
+    @Test
+    fun `loadAllKeys - sparse ID를 순서대로 중복 없이 반환한다`() = runSuspendIO {
+        withTablesSuspending(TestDB.H2, SuspendedLoaderTable) {
+            val initialIds =
+                List(5) { index ->
+                    SuspendedLoaderTable.insert { it[name] = "user-$index" } get SuspendedLoaderTable.id
+                }.map { it.value }
+            SuspendedLoaderTable.deleteWhere { SuspendedLoaderTable.id eq initialIds[1] }
+            commit()
+
+            val loader = SuspendedExposedEntityMapLoader(
+                table = SuspendedLoaderTable,
+                batchSize = 2,
+                toEntity = { row -> row.toSuspendedLoaderEntity() },
+            )
+
+            val ids = loader.loadAllKeys()
+
+            ids shouldBeEqualTo initialIds.filterNot { it == initialIds[1] }
+            ids.distinct() shouldBeEqualTo ids
         }
     }
 
