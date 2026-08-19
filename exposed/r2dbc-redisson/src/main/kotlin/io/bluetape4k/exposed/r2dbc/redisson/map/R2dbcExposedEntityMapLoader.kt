@@ -7,12 +7,16 @@ import io.bluetape4k.support.requirePositiveNumber
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.Column
+import org.jetbrains.exposed.v1.core.EntityIDColumnType
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.greater
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 
@@ -21,7 +25,8 @@ import org.jetbrains.exposed.v1.r2dbc.selectAll
  *
  * ## 동작/계약
  * - 단건 조회는 `selectAll().where { id eq ... }.singleOrNull()` 결과를 [toEntity]로 변환합니다.
- * - 전체 키 조회는 [batchSize] 단위 `limit/offset` 반복으로 PK 오름차순 키를 채널에 전송합니다.
+ * - 전체 키 조회는 표준 scalar PK의 keyset page 또는 custom PK의 offset fallback으로
+ *   [batchSize] 단위 키를 채널에 전송합니다.
  * - [batchSize]가 0 이하이면 초기화 시 [IllegalArgumentException]이 발생합니다.
  * - 테스트 기준으로 `batchSize=2`일 때도 3건 키를 모두 로드합니다.
  *
@@ -57,28 +62,48 @@ open class R2dbcExposedEntityMapLoader<ID: Any, E: Any>(
 
         var loadedIds = 0
         var offset = 0L
+        var lastId: ID? = null
+        var keysetSupported: Boolean? = null
+        var hasMore = true
 
         try {
-            while (true) {
+            while (hasMore) {
+                val cursor = lastId
+                val query = entityTable.select(entityTable.id).orderBy(entityTable.id, SortOrder.ASC)
                 val chunk =
-                    entityTable
-                        .select(entityTable.id)
-                        .orderBy(entityTable.id, SortOrder.ASC)
-                        .limit(batchSize)
-                        .offset(offset)
-                        .mapNotNull { it[entityTable.id].value }
-                        .toList()
+                    if (keysetSupported == true && cursor != null) {
+                        query
+                            .where { entityTable.rawIdColumn() greater cursor.asComparableKey() }
+                            .limit(batchSize)
+                            .map { it[entityTable.id].value }
+                            .toList()
+                    } else {
+                        query
+                            .limit(batchSize)
+                            .offset(offset)
+                            .map { it[entityTable.id].value }
+                            .toList()
+                    }
 
                 if (chunk.isEmpty()) {
-                    break
+                    hasMore = false
+                } else {
+                    chunk.forEach { id ->
+                        loadedIds++
+                        channel.send(id)
+                    }
+                    val currentLastId = chunk.last()
+                    if (keysetSupported == null) {
+                        keysetSupported = currentLastId.isKeysetScalar()
+                    }
+                    if (keysetSupported == true) {
+                        lastId = currentLastId
+                    } else {
+                        offset += chunk.size.toLong()
+                    }
+                    log.debug { "DB에서 모든 ID 로딩 중... 로딩된 id 수=$loadedIds" }
+                    hasMore = chunk.size == batchSize
                 }
-
-                chunk.forEach { id ->
-                    loadedIds++
-                    channel.send(id)
-                }
-                offset += batchSize.toLong()
-                log.debug { "DB에서 모든 ID 로딩 중... 로딩된 id 수=$loadedIds, offset=$offset" }
             }
             log.debug { "DB에서 모든 ID 로딩 완료. 로딩된 id 수=$loadedIds" }
         } catch (cause: CancellationException) {
@@ -99,3 +124,24 @@ open class R2dbcExposedEntityMapLoader<ID: Any, E: Any>(
         batchSize.requirePositiveNumber("batchSize")
     }
 }
+
+@Suppress("UNCHECKED_CAST")
+private fun <ID: Any> ID.asComparableKey(): Comparable<Any> =
+    this as? Comparable<Any>
+        ?: error("keyset paging requires a Comparable primary key")
+
+@JvmSynthetic
+internal fun Any.isKeysetScalar(): Boolean =
+    this is Comparable<*> &&
+        when (this) {
+            is Byte, is Short, is Int, is Long, is Float, is Double,
+            is UByte, is UShort, is UInt, is ULong,
+            is java.math.BigDecimal, is java.math.BigInteger,
+            is String, is Char, is java.util.UUID,
+            is java.sql.Date, is java.sql.Time, is java.sql.Timestamp -> true
+            else -> javaClass.name.startsWith("java.time.")
+        }
+
+@Suppress("UNCHECKED_CAST")
+private fun <ID: Any> IdTable<ID>.rawIdColumn(): Column<Comparable<Any>> =
+    ((id.columnType as EntityIDColumnType<ID>).idColumn as Column<Comparable<Any>>)

@@ -9,8 +9,14 @@ import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldBeTrue
 import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.SqlLogger
+import org.jetbrains.exposed.v1.core.Transaction
+import org.jetbrains.exposed.v1.core.statements.StatementContext
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.junit.jupiter.api.Test
 import java.io.Serializable
@@ -111,6 +117,101 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
             val ids = loader.loadAllKeys()
             ids shouldHaveSize 5
             ids shouldBeEqualTo ids.sorted()
+        }
+    }
+
+    @Test
+    fun `loadAllKeys - 표준 scalar PK는 offset 없이 keyset page를 사용한다`() = runSuspendIO {
+        val sqlStatements = mutableListOf<String>()
+        withTablesSuspending(
+            TestDB.H2,
+            SuspendedLoaderTable,
+            configure = {
+                sqlLogger = object : SqlLogger {
+                    override fun log(context: StatementContext, transaction: Transaction) {
+                        sqlStatements += context.sql(transaction)
+                    }
+                }
+            },
+        ) {
+            repeat(5) { index ->
+                SuspendedLoaderTable.insert { it[name] = "user-$index" }
+            }
+            commit()
+            sqlStatements.clear()
+
+            val loader = SuspendedExposedEntityMapLoader(
+                table = SuspendedLoaderTable,
+                batchSize = 2,
+                toEntity = { row -> row.toSuspendedLoaderEntity() },
+            )
+
+            val ids = loader.loadAllKeys()
+            ids shouldHaveSize 5
+            ids shouldBeEqualTo ids.sorted()
+
+            val selects = sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
+            selects.size shouldBeEqualTo 3
+            selects.none { it.contains("offset", ignoreCase = true) }.shouldBeTrue()
+            selects.drop(1).all { it.contains(">") }.shouldBeTrue()
+        }
+    }
+
+    @Test
+    fun `loadAllKeys - sparse ID를 순서대로 중복 없이 반환한다`() = runSuspendIO {
+        withTablesSuspending(TestDB.H2, SuspendedLoaderTable) {
+            val initialIds =
+                List(5) { index ->
+                    SuspendedLoaderTable.insert { it[name] = "user-$index" } get SuspendedLoaderTable.id
+                }.map { it.value }
+            SuspendedLoaderTable.deleteWhere { SuspendedLoaderTable.id eq initialIds[1] }
+            commit()
+
+            val loader = SuspendedExposedEntityMapLoader(
+                table = SuspendedLoaderTable,
+                batchSize = 2,
+                toEntity = { row -> row.toSuspendedLoaderEntity() },
+            )
+
+            val ids = loader.loadAllKeys()
+
+            ids shouldBeEqualTo initialIds.filterNot { it == initialIds[1] }
+            ids.distinct() shouldBeEqualTo ids
+        }
+    }
+
+    @Test
+    fun `loadAllKeys - 큰 fixture의 page cardinality와 query 수를 bounded하게 유지한다`() = runSuspendIO {
+        val sqlStatements = mutableListOf<String>()
+        withTablesSuspending(
+            TestDB.H2,
+            SuspendedLoaderTable,
+            configure = {
+                sqlLogger = object : SqlLogger {
+                    override fun log(context: StatementContext, transaction: Transaction) {
+                        sqlStatements += context.sql(transaction)
+                    }
+                }
+            },
+        ) {
+            repeat(101) { index ->
+                SuspendedLoaderTable.insert { it[name] = "large-user-$index" }
+            }
+            commit()
+            sqlStatements.clear()
+
+            val loader = SuspendedExposedEntityMapLoader(
+                table = SuspendedLoaderTable,
+                batchSize = 16,
+                toEntity = { row -> row.toSuspendedLoaderEntity() },
+            )
+            val ids = loader.loadAllKeys()
+            val selects = sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
+
+            ids shouldHaveSize 101
+            selects.size shouldBeEqualTo 7
+            selects.all { it.contains("limit", ignoreCase = true) }.shouldBeTrue()
+            selects.drop(1).all { it.contains(">") }.shouldBeTrue()
         }
     }
 

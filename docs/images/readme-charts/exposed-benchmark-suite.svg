@@ -1,48 +1,67 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="680" viewBox="0 0 1160 680" role="img" aria-labelledby="title desc">
-  <title id="title">Exposed benchmark suite results</title>
-  <desc id="desc">Top benchmark scores rendered from kotlinx-benchmark JSON output.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1510" viewBox="0 0 1800 1510" role="img" aria-labelledby="title desc">
+  <title id="title">Exposed benchmark comparison</title>
+  <desc id="desc">Grouped median throughput from three JDK 25 H2 repetitions in exposed-benchmark-2026-08-19. All panels use a linear width scale within their own unit and comparison group.</desc>
   <style>
-    .bg { fill: #f7f8fb; }
-    .title { fill: #18212f; font: 700 28px Arial, sans-serif; }
-    .subtitle { fill: #536173; font: 15px Arial, sans-serif; }
-    .label { fill: #1f2937; font: 14px Arial, sans-serif; }
-    .score { fill: #334155; font: 13px Arial, sans-serif; }
-    .scoreInside { fill: #ffffff; font: 700 13px Arial, sans-serif; }
-    .bar { fill: #2f7d6d; }
-    .axis { stroke: #cbd5e1; stroke-width: 1; }
+    .background { fill: #08111f; }
+    .panel { fill: #111f33; stroke: #263b57; stroke-width: 2; }
+    .title { fill: #f8fafc; font: 700 34px "Architects Daughter", "Comic Mono", monospace; }
+    .subtitle { fill: #a9bdd8; font: 16px "Comic Mono", monospace; }
+    .panelTitle { fill: #f8fafc; font: 700 23px "Architects Daughter", "Comic Mono", monospace; }
+    .panelSubtitle { fill: #a9bdd8; font: 15px "Comic Mono", monospace; }
+    .label { fill: #dbeafe; font: 15px "Comic Mono", monospace; }
+    .value { fill: #f8fafc; font: 700 14px "Comic Mono", monospace; }
+    .footnote { fill: #8da7c4; font: 14px "Comic Mono", monospace; }
   </style>
-  <rect class="bg" width="1160" height="680" rx="0"/>
-  <text x="32" y="44" class="title">Exposed Benchmark Suite</text>
-  <text x="32" y="72" class="subtitle">JDBC, R2DBC, custom ID table, and cache benchmark summary</text>
-  <line x1="330" y1="86" x2="1090" y2="86" class="axis"/>
-  <text x="32" y="116" class="label">nearCacheHit</text>
-<rect x="330" y="96" width="760.0" height="26" rx="4" class="bar"/>
-<text x="1078.0" y="116" class="scoreInside" text-anchor="end">160467607.91 ops/s</text>
-<text x="32" y="170" class="label">localCaffeineHit</text>
-<rect x="330" y="150" width="708.5363257930507" height="26" rx="4" class="bar"/>
-<text x="1026.5363257930508" y="170" class="scoreInside" text-anchor="end">44643332.35 ops/s</text>
-<text x="32" y="224" class="label">nearCacheReadThroughMiss</text>
-<rect x="330" y="204" width="680.5085952109276" height="26" rx="4" class="bar"/>
-<text x="998.5085952109276" y="224" class="scoreInside" text-anchor="end">22240956.17 ops/s</text>
-<text x="32" y="278" class="label">snowflakeTableSelectByName</text>
-<rect x="330" y="258" width="436.6446815604894" height="26" rx="4" class="bar"/>
-<text x="786.6446815604894" y="278" class="score">51790.86 ops/s</text>
-<text x="32" y="332" class="label">uuidTableSelectByName</text>
-<rect x="330" y="312" width="436.5496972612899" height="26" rx="4" class="bar"/>
-<text x="786.5496972612899" y="332" class="score">51668.71 ops/s</text>
-<text x="32" y="386" class="label">base62TableSelectByName</text>
-<rect x="330" y="366" width="435.9821616087997" height="26" rx="4" class="bar"/>
-<text x="785.9821616087997" y="386" class="score">50944.82 ops/s</text>
-<text x="32" y="440" class="label">ulidTableSelectByName</text>
-<rect x="330" y="420" width="434.751060588905" height="26" rx="4" class="bar"/>
-<text x="784.7510605889049" y="440" class="score">49409.24 ops/s</text>
-<text x="32" y="494" class="label">ksuidMillisTableSelectByName</text>
-<rect x="330" y="474" width="434.4083969932091" height="26" rx="4" class="bar"/>
-<text x="784.4083969932092" y="494" class="score">48990.12 ops/s</text>
-<text x="32" y="548" class="label">timebasedUuidTableSelectByName</text>
-<rect x="330" y="528" width="433.65814534309305" height="26" rx="4" class="bar"/>
-<text x="783.6581453430931" y="548" class="score">48084.84 ops/s</text>
-<text x="32" y="602" class="label">ksuidTableSelectByName</text>
-<rect x="330" y="582" width="431.4121264225368" height="26" rx="4" class="bar"/>
-<text x="781.4121264225369" y="602" class="score">45473.50 ops/s</text>
+  <rect class="background" width="1800" height="1510"/>
+  <text x="34" y="54" class="title">Exposed benchmark comparison</text>
+  <text x="34" y="84" class="subtitle">Three-run median | JDK 25.0.4 | H2 | throughput (ops/s)</text>
+<rect x="34" y="112" width="1732" height="390" rx="18" class="panel"/>
+<text x="68" y="160" class="panelTitle">Cache strategy</text>
+<text x="68" y="190" class="panelSubtitle">Cache size 10,000 | linear bar width; compare values within this panel</text>
+<text x="68" y="246" class="label">Near cache hit | size 10,000</text>
+<rect x="450" y="224" width="1190.0" height="24" rx="6" fill="#38bdf8"/>
+<text x="1656.0" y="245" class="value">206,595,487 ops/s</text>
+<text x="68" y="291" class="label">Local Caffeine hit | size 10,000</text>
+<rect x="450" y="269" width="314.1" height="24" rx="6" fill="#38bdf8"/>
+<text x="780.1" y="290" class="value">54,531,040 ops/s</text>
+<text x="68" y="336" class="label">Near cache read-through miss | size 10,000</text>
+<rect x="450" y="314" width="271.5" height="24" rx="6" fill="#38bdf8"/>
+<text x="737.5" y="335" class="value">47,137,612 ops/s</text>
+<rect x="34" y="530" width="1732" height="390" rx="18" class="panel"/>
+<text x="68" y="578" class="panelTitle">JDBC vs R2DBC</text>
+<text x="68" y="608" class="panelSubtitle">Rows 10,000 | pool size 10 for JDBC | linear bar width</text>
+<text x="68" y="664" class="label">JDBC platform thread | rows 10,000</text>
+<rect x="450" y="642" width="1190.0" height="24" rx="6" fill="#2dd4bf"/>
+<text x="1656.0" y="663" class="value">34,688 ops/s</text>
+<text x="68" y="709" class="label">JDBC virtual thread | rows 10,000</text>
+<rect x="450" y="687" width="836.3" height="24" rx="6" fill="#2dd4bf"/>
+<text x="1302.3" y="708" class="value">24,376 ops/s</text>
+<text x="68" y="754" class="label">R2DBC suspend transaction | rows 10,000</text>
+<rect x="450" y="732" width="658.6" height="24" rx="6" fill="#2dd4bf"/>
+<text x="1124.6" y="753" class="value">19,197 ops/s</text>
+<rect x="34" y="948" width="1732" height="480" rx="18" class="panel"/>
+<text x="68" y="996" class="panelTitle">Custom ID table lookup</text>
+<text x="68" y="1026" class="panelSubtitle">Select by name | rows 10,000 | linear bar width</text>
+<text x="68" y="1082" class="label">UUID</text>
+<rect x="450" y="1060" width="1190.0" height="24" rx="6" fill="#fbbf24"/>
+<text x="1656.0" y="1081" class="value">216,715 ops/s</text>
+<text x="68" y="1127" class="label">Base62 UUIDv7</text>
+<rect x="450" y="1105" width="1147.2" height="24" rx="6" fill="#fbbf24"/>
+<text x="1613.2" y="1126" class="value">208,927 ops/s</text>
+<text x="68" y="1172" class="label">KSUID millis</text>
+<rect x="450" y="1150" width="1186.6" height="24" rx="6" fill="#fbbf24"/>
+<text x="1652.6" y="1171" class="value">216,100 ops/s</text>
+<text x="68" y="1217" class="label">KSUID</text>
+<rect x="450" y="1195" width="1122.8" height="24" rx="6" fill="#fbbf24"/>
+<text x="1588.8" y="1216" class="value">204,472 ops/s</text>
+<text x="68" y="1262" class="label">Snowflake</text>
+<rect x="450" y="1240" width="1118.0" height="24" rx="6" fill="#fbbf24"/>
+<text x="1584.0" y="1261" class="value">203,600 ops/s</text>
+<text x="68" y="1307" class="label">Timebased UUID</text>
+<rect x="450" y="1285" width="1078.9" height="24" rx="6" fill="#fbbf24"/>
+<text x="1544.9" y="1306" class="value">196,483 ops/s</text>
+<text x="68" y="1352" class="label">ULID</text>
+<rect x="450" y="1330" width="1122.6" height="24" rx="6" fill="#fbbf24"/>
+<text x="1588.6" y="1351" class="value">204,433 ops/s</text>
+  <text x="68" y="1470" class="footnote">Interpret bars within their panel only. Redis profiles are not included because no Redis endpoint was available; see the preserved JSON evidence for all series.</text>
 </svg>

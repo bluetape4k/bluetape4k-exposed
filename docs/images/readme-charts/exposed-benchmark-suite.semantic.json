@@ -1,0 +1,83 @@
+{
+  "kind": "chart",
+  "source": {
+    "question": "What do the three repeated H2 benchmark profiles show, and which comparisons must remain separate?",
+    "revision": "17f27889cf0ecc151011e2edc172e45010dbbd47",
+    "selection": {
+      "method": "median",
+      "run_count": 3,
+      "profile": "JDK 25.0.4 / H2 / sequential Gradle rerun"
+    },
+    "scale": "linear within each panel; panels are not globally ranked",
+    "paths": [
+      "docs/benchmarks/exposed-benchmark-2026-08-19/README.md",
+      "docs/benchmarks/exposed-benchmark-2026-08-19/cache-1.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-19/cache-2.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-19/cache-3.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-19/jdbcR2dbc-1.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-19/jdbcR2dbc-2.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-19/jdbcR2dbc-3.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-19/idTables-1.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-19/idTables-2.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-19/idTables-3.json"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "evidence",
+      "label": "Three-run H2 evidence",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-19/README.md"
+    },
+    {
+      "id": "cache-panel",
+      "label": "Cache strategy medians",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-19/cache-1.json"
+    },
+    {
+      "id": "jdbc-r2dbc-panel",
+      "label": "JDBC and R2DBC medians",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-19/jdbcR2dbc-1.json"
+    },
+    {
+      "id": "custom-id-panel",
+      "label": "Custom ID lookup medians",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-19/idTables-1.json"
+    }
+  ],
+  "edges": [
+    {
+      "id": "evidence-cache",
+      "from": "evidence",
+      "to": "cache-panel",
+      "kind": "comparison-input",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-19/cache-1.json"
+    },
+    {
+      "id": "evidence-jdbc-r2dbc",
+      "from": "evidence",
+      "to": "jdbc-r2dbc-panel",
+      "kind": "comparison-input",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-19/jdbcR2dbc-1.json"
+    },
+    {
+      "id": "evidence-custom-id",
+      "from": "evidence",
+      "to": "custom-id-panel",
+      "kind": "comparison-input",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-19/idTables-1.json"
+    }
+  ],
+  "behavior": {
+    "branches": 0,
+    "loops": 0
+  },
+  "repairs": [
+    {
+      "kind": "canvas-resize",
+      "target": "chart-canvas",
+      "reason": "custom-ID labels needed additional vertical space",
+      "touches": 1,
+      "verified_by": "full-size PNG inspection and visual occupancy audit"
+    }
+  ]
+}

@@ -11,8 +11,8 @@ Combines Exposed JDBC with Redisson caching to implement Read-Through/Write-Thro
 ### Key Features
 
 - **MapLoader/MapWriter support**: Integration with Redisson Read-Through/Write-Through caching
+    - The synchronous `loadAllKeys()` uses ordered keyset pages for supported scalar IDs and the legacy offset fallback for custom IDs; each page is bounded by `batchSize`
     - The suspended `loadAllKeys()` exposes Redisson `AsyncIterator` with rendezvous-channel back-pressure and ascending keyset pages
-    - Ordered scalar IDs use keyset pages; unsupported custom IDs use the legacy offset fallback, while `batchSize` bounds each DB page
     - Enumeration is weakly consistent; a page-side delete can skip an unseen row on the custom-ID fallback path. The producer transaction uses `maxAttempts = 1`, so retry the whole enumeration instead of replaying channel emissions
 - **Repository abstraction**: Common cache + DB access patterns (`JdbcRedissonRepository`,
   `SuspendedJdbcRedissonRepository`)

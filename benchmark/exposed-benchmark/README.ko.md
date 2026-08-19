@@ -14,35 +14,30 @@ Exposed JDBC, R2DBC, custom ID table, cache 전략을 독립적으로 실행하�
 
 ## 결과
 
-생성일: 2026-06-23, 입력 경로: `build/reports/benchmarks`.
+2026-08-19 Oracle GraalVM `25.0.4` (Java 25), H2에서 같은 profile을 세 번 순차 실행했습니다. 아래 값은 세 실행의 중앙값이며, 단일 실행의 최고값이 아닙니다.
 
-| Benchmark | Mode | Score | Error | Unit |
-|---|---:|---:|---:|---|
-| `io.bluetape4k.exposed.benchmark.cache.CacheStrategyBenchmark.nearCacheHit` | thrpt | 160467607.91 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.cache.CacheStrategyBenchmark.localCaffeineHit` | thrpt | 44643332.35 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.cache.CacheStrategyBenchmark.nearCacheReadThroughMiss` | thrpt | 22240956.17 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.snowflakeTableSelectByName` | thrpt | 51790.86 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.uuidTableSelectByName` | thrpt | 51668.71 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.base62TableSelectByName` | thrpt | 50944.82 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.ulidTableSelectByName` | thrpt | 49409.24 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.ksuidMillisTableSelectByName` | thrpt | 48990.12 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.timebasedUuidTableSelectByName` | thrpt | 48084.84 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.ksuidTableSelectByName` | thrpt | 45473.50 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.jdbc.JdbcThreadingBenchmark.platformThreadSelectById` | thrpt | 30178.75 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.jdbc.JdbcThreadingBenchmark.virtualThreadSelectById` | thrpt | 18892.00 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.r2dbc.R2dbcCoroutineBenchmark.suspendTransactionSelectById` | thrpt | 2473.53 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.snowflakeTableBatchInsert` | thrpt | 1205.55 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.timebasedUuidTableBatchInsert` | thrpt | 983.04 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.ulidTableBatchInsert` | thrpt | 829.82 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.ksuidMillisTableBatchInsert` | thrpt | 821.43 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.uuidTableBatchInsert` | thrpt | 815.68 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.base62TableBatchInsert` | thrpt | 770.43 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.ksuidTableBatchInsert` | thrpt | 660.85 | - | ops/s |
+| workload | configuration | 중앙값 | 해석 |
+|---|---|---:|---|
+| Cache | near-cache hit, cache size 10,000 | 206,595,487 ops/s | 같은 profile에서 local Caffeine hit보다 약 3.79배, read-through miss보다 약 4.38배 높음 |
+| Cache | local Caffeine hit, cache size 10,000 | 54,531,040 ops/s | 같은 cache profile 내부 비교 |
+| Cache | near-cache read-through miss, cache size 10,000 | 47,137,612 ops/s | 같은 cache profile 내부 비교 |
+| JDBC/R2DBC | platform-thread select by ID, 10,000 rows | 34,688 ops/s | H2 단건 조회 기준선 |
+| JDBC/R2DBC | virtual-thread select by ID, 10,000 rows | 24,376 ops/s | 이 profile에서 platform-thread 기준의 약 70.3% |
+| JDBC/R2DBC | R2DBC suspend transaction select by ID, 10,000 rows | 19,197 ops/s | 이 profile에서 platform-thread 기준의 약 55.3% |
+| Custom IDs | 선택된 반복에서 가장 빠른 `selectByName`, 10,000 rows | 216,715 ops/s | UUID table |
+| Custom IDs | 선택된 반복에서 가장 느린 `selectByName`, 10,000 rows | 196,483 ops/s | Time-based UUID table |
 
-![Exposed benchmark chart](../../docs/images/readme-charts/exposed-benchmark-suite.svg)
+![Exposed benchmark 비교](../../docs/images/readme-charts/exposed-benchmark-suite.png)
 
-## 운영 메모
+### 분석 및 한계
 
-- Redis benchmark는 접근 가능한 Redis 서버가 필요하므로 smoke에서 분리했습니다.
-- 기본 검증은 H2로 가볍게 유지하고, DB별 profile은 같은 모듈 경계 안에서 확장합니다.
-- benchmark 실행 후 `./gradlew :benchmark-exposed-benchmark:generateBenchmarkDocs`로 표와 차트를 갱신합니다.
+- 세 패널은 각 비교 그룹 안에서 선형 bar 폭을 사용합니다. 단위와 workload가 다르므로 세 패널을 하나의 전역 순위로 읽으면 안 됩니다.
+- H2 결과만으로 #690의 opt-in parallel key enumeration 기본값을 정하지 않습니다. 이 결과는 단건 조회이며 contention 또는 producer/consumer benchmark가 아닙니다.
+- 선택된 최고/최저 custom-ID 중앙값 차이는 약 10.3%이며, 특정 ID 전략의 보편적 우위를 뜻하지 않습니다.
+- Redis는 endpoint를 제공하지 않아 `N/A`입니다. 비-H2 driver, connection pool, cache hit ratio, mutation contention은 별도 환경 검증이 필요합니다.
+
+## 근거와 재현
+
+- 원시 JSON과 정확한 세 실행 선택은 [`docs/benchmarks/exposed-benchmark-2026-08-19`](../../docs/benchmarks/exposed-benchmark-2026-08-19/README.md)에 기록했습니다.
+- 세 benchmark task를 `--rerun-tasks --no-build-cache --no-configuration-cache --no-parallel --max-workers=1`로 순차 실행한 뒤 `scripts/benchmark/render_exposed_benchmark_chart.py`로 SVG를 만들고 CairoSVG로 PNG pair를 생성합니다.
+- `generateBenchmarkDocs` task는 한 번의 로컬 report를 만드는 보조 도구입니다. 저장소에 고정한 세 실행 중앙값의 source가 아니므로, 이 비교를 갱신할 때는 위 evidence 디렉터리와 renderer를 사용합니다.
