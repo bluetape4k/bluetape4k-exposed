@@ -18,7 +18,8 @@ synchronous additive API, H2 회귀 테스트, benchmark/chart, EN/KO 문서입�
 ## 잔여 위험
 
 - benchmark는 H2 in-memory 단일 환경의 방향성 evidence다. PostgreSQL/MySQL driver,
-  실제 pool, lock/isolation 및 mutation consistency는 별도 후속 환경 검증이 필요하다.
+  실제 pool, lock/isolation 및 mutation consistency는 별도 후속 환경 검증이 필요하며
+  [Issue #694](https://github.com/bluetape4k/bluetape4k-exposed/issues/694)로 분리했다.
 - parallel API는 전체 ID를 `List`로 materialize하고 range별 독립 transaction을 사용한다.
   메모리 상한이나 단일 읽기 일관성 기준이 필요한 caller는 기존 lazy 경로와 isolation을
   선택해야 한다.

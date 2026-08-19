@@ -40,7 +40,7 @@ production driver의 보편적인 향상이나 기본값 전환 근거가 아니
 ## 후속 검증
 
 - PostgreSQL/MySQL driver와 실제 connection pool에서 throughput, lock, isolation,
-  읽기 일관성 기준을 별도 환경에서 측정한다.
+  읽기 일관성 기준을 별도 환경에서 측정한다([Issue #694](https://github.com/bluetape4k/bluetape4k-exposed/issues/694)).
 - 1,000행처럼 작은 입력과 메모리 제한이 있는 caller는 기존 lazy 경로와 비교해
   materialization 비용을 확인한다.
 - Issue #692의 suspended/R2DBC 또는 custom-ID fallback 설계와 합치지 않는다.
