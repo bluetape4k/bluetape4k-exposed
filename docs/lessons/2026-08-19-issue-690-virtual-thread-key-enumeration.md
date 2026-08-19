@@ -21,7 +21,7 @@ isolation 정책을 선택한다.
 | 실패/취소 | 한 sibling의 원래 예외를 보존하고 다른 sibling의 `InterruptedException`을 관찰한 뒤 모든 future를 정리 |
 | adapter parity | JDBC Lettuce와 Redisson의 기존 sequential 결과가 parallel 결과와 일치하고 empty/default path가 유지 |
 | executor lifecycle | 종료된 executor를 transaction을 열기 전에 거부하고 caller-owned executor를 helper가 닫지 않음 |
-| static/targeted | helper 7/7, Lettuce 12/12, Redisson 12/12, benchmark classes compile 성공 |
+| static/targeted | helper 8/8, 각 loader 2/2, JDBC/Lettuce/Redisson 전체 테스트, benchmark classes compile 성공 |
 
 ## benchmark
 
