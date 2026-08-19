@@ -227,10 +227,10 @@ Expected: detekt success, diff check clean, terminology findings `0`. `git diff 
   pool/concurrency 조합, test counts, skip/failure/error를 요약한다.
 - [x] pool 부족 또는 SERIALIZABLE 결과가 `N/A`이면 명령·환경·원인·후속 slot을
   Issue #694 comment에 한국어로 추가한다. 수치가 없는 항목을 성능 결론으로 쓰지 않는다.
-- [ ] Issue #659 stacked table에 `#694 / test/issue-694-postgresql / develop`을
+- [x] Issue #659 stacked table에 `#694 / test/issue-694-postgresql / develop`을
   slot 6으로 추가하는 metadata diff를 PR 직전에 다시 확인한다. child PR base는
   `develop`이며 #695 merge SHA `ff85c999`를 선행 조건으로 명시한다.
-- [ ] PR body는 한국어로 작성하고 마지막 heading을 정확히 `## DoD Status`로 둔다.
+- [x] PR body는 한국어로 작성하고 마지막 heading을 정확히 `## DoD Status`로 둔다.
   evidence 표의 `Required checks: X/Y; N/A: N; Blocked: N` 합계를 실제 결과와
   일치시키며, PostgreSQL Docker 미실행이면 `PENDING`으로 표시한다.
 - [ ] merge는 별도 gate다. PR 생성 후 exact head, required CI, review/thread,
@@ -254,5 +254,7 @@ Expected: detekt success, diff check clean, terminology findings `0`. `git diff 
 - [x] PostgreSQL test-only fixture가 실제 driver에서 correctness·pool·isolation을
   검증한다.
 - [x] H2 regression·PostgreSQL module·detekt·문서 audit의 fresh evidence가 있다.
-- [ ] Issue/Epic/PR metadata와 N/A/후속 slot이 서로 일치한다.
-- [ ] PR/CI handoff가 `DONE` 또는 Docker evidence 부재 시 `PENDING`으로 보고된다.
+- [x] Issue/Epic/PR metadata와 N/A/후속 slot이 서로 일치한다.
+- [x] PR/CI handoff가 `DONE` 또는 Docker evidence 부재 시 `PENDING`으로 보고된다.
+  현재 PR #696은 hosted CI `9/9` pass, `N/A=27`, `Blocked=0`이며 merge gate만
+  `PENDING`이다.
