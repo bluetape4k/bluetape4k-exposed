@@ -14,6 +14,7 @@ Exposed JDBC와 Lettuce Redis 캐시를 결합한 Read-through / Write-through /
 - **코루틴 레포지토리**: `SuspendedJdbcLettuceRepository` / `AbstractSuspendedJdbcLettuceRepository`
 - **MapLoader / MapWriter**: repository loaded-map 연동을 위한 Exposed 기반 구현체
     - `loadAllKeys()`는 PK 오름차순 lazy `Iterable`을 반환하며, 지원되는 표준 scalar ID에는 keyset page를 사용하고 custom ID에는 기존 offset fallback을 사용
+    - suspended JDBC loader는 기존 `List` API를 유지하며 `suspendedTransactionAsync` 안에서 같은 keyset/fallback page를 읽습니다. 새로운 streaming surface는 추가하지 않습니다
     - 열거는 weakly consistent하며, custom ID offset fallback 경로에서는 page 사이 삭제로 아직 관찰하지 않은 row를 건너뛸 수 있음
     - 각 page는 `batchSize`만 materialize하므로 JDBC query와 connection이 page 경계를 넘어 벗어나지 않으며, ambient caller-owned Exposed transaction이 없으면 page마다 별도 transaction을 사용함
     - writer의 `chunkSize`/loader의 `batchSize`는 0보다 커야 함

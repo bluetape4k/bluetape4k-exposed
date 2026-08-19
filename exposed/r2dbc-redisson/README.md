@@ -11,7 +11,8 @@ Combines Exposed R2DBC with Redisson caching to implement coroutine-friendly Rea
 ### Key Features
 
 - **Async MapLoader/MapWriter support**: Integration with Redisson `AsyncMapLoader`/`AsyncMapWriter`
-    - `loadAllKeys()` iterates reliably in ascending primary key order
+    - `R2dbcExposedEntityMapLoader` uses ascending keyset pages for supported scalar IDs and the legacy offset fallback for custom IDs
+    - `loadAllKeys()` iterates reliably in ascending primary key order with rendezvous-channel back-pressure; only one `batchSize` page is materialized at a time and enumeration remains weakly consistent
 - **Repository abstraction**: Common cache + DB access pattern (`R2dbcRedissonRepository`)
 - **Coroutines-native repository API**: Cache and repository calls are `suspend` functions; Redisson SPI adapters remain async internally
 - **Near Cache support**: Two-tier Local Cache + Redis caching

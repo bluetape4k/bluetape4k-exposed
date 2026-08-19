@@ -6,8 +6,11 @@ import io.bluetape4k.logging.error
 import io.bluetape4k.support.requirePositiveNumber
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.Column
+import org.jetbrains.exposed.v1.core.EntityIDColumnType
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.greater
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 
@@ -16,7 +19,8 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
  *
  * ## 동작/계약
  * - 단건 조회는 `selectAll().where { id eq ... }.singleOrNull()` 결과를 [toEntity]로 변환합니다.
- * - 전체 키 조회는 [batchSize] 단위 `limit/offset` 반복으로 모든 ID를 PK 오름차순으로 수집합니다.
+ * - 전체 키 조회는 표준 scalar PK의 keyset page 또는 custom PK의 offset fallback으로
+ *   [batchSize] 단위 ID를 PK 오름차순으로 수집합니다.
  * - [batchSize]가 0 이하이면 초기화 시 [IllegalArgumentException]이 발생합니다.
  * - `loadAllKeys()`는 DB 오류를 로깅 후 예외를 다시 던집니다.
  *
@@ -47,28 +51,46 @@ open class ExposedEntityMapLoader<ID: Any, E: Any>(
             ?.toEntity()
     },
     loadAllIdsFromDB = {
-        // 성능 문제를 피하기 위해 배치 단위로 모든 ID를 로드합니다.
-        val recordCount = entityTable.selectAll().count()
-        var offset = 0L
         val loadedIds = mutableListOf<ID>()
+        var offset = 0L
+        var lastId: ID? = null
+        var keysetSupported: Boolean? = null
+        var hasMore = true
 
         try {
 
-            while (offset < recordCount) {
+            while (hasMore) {
+                val cursor = lastId
+                val query = entityTable.select(entityTable.id).orderBy(entityTable.id, SortOrder.ASC)
                 val chunk =
-                    entityTable
-                        .select(entityTable.id)
-                        .orderBy(entityTable.id, SortOrder.ASC)
-                        .limit(batchSize)
-                        .offset(offset)
-                        .mapNotNull { it[entityTable.id].value }
+                    if (keysetSupported == true && cursor != null) {
+                        query
+                            .where { entityTable.rawIdColumn() greater cursor.asComparableKey() }
+                            .limit(batchSize)
+                            .map { it[entityTable.id].value }
+                    } else {
+                        query
+                            .limit(batchSize)
+                            .offset(offset)
+                            .map { it[entityTable.id].value }
+                    }
 
                 if (chunk.isEmpty()) {
-                    break
+                    hasMore = false
+                } else {
+                    loadedIds += chunk
+                    val currentLastId = chunk.last()
+                    if (keysetSupported == null) {
+                        keysetSupported = currentLastId.isKeysetScalar()
+                    }
+                    if (keysetSupported == true) {
+                        lastId = currentLastId
+                    } else {
+                        offset += chunk.size.toLong()
+                    }
+                    log.debug { "DB에서 모든 ID 로딩 중... 로딩된 id 수=${loadedIds.size}" }
+                    hasMore = chunk.size == batchSize
                 }
-                loadedIds += chunk
-                offset += batchSize.toLong()
-                log.debug { "DB에서 모든 ID 로딩 중... 로딩된 id 수=${loadedIds.size}, offset=$offset" }
             }
 
             log.debug { "DB에서 모든 ID 로딩 완료. 로딩된 id 수=${loadedIds.size}" }
@@ -87,3 +109,12 @@ open class ExposedEntityMapLoader<ID: Any, E: Any>(
         batchSize.requirePositiveNumber("batchSize")
     }
 }
+
+@Suppress("UNCHECKED_CAST")
+private fun <ID: Any> ID.asComparableKey(): Comparable<Any> =
+    this as? Comparable<Any>
+        ?: error("keyset paging requires a Comparable primary key")
+
+@Suppress("UNCHECKED_CAST")
+private fun <ID: Any> IdTable<ID>.rawIdColumn(): Column<Comparable<Any>> =
+    ((id.columnType as EntityIDColumnType<ID>).idColumn as Column<Comparable<Any>>)

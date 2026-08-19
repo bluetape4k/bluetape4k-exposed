@@ -1,0 +1,63 @@
+{
+  "kind": "chart",
+  "source": {
+    "question": "What do the three repeated H2 benchmark profiles show, and which comparisons must remain separate?",
+    "revision": "2026-08-19",
+    "paths": [
+      "docs/benchmarks/exposed-benchmark-2026-08-19/README.md",
+      "docs/benchmarks/exposed-benchmark-2026-08-19/cache-1.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-19/jdbcR2dbc-1.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-19/idTables-1.json"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "evidence",
+      "label": "Three-run H2 evidence",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-19/README.md"
+    },
+    {
+      "id": "cache-panel",
+      "label": "Cache strategy medians",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-19/cache-1.json"
+    },
+    {
+      "id": "jdbc-r2dbc-panel",
+      "label": "JDBC and R2DBC medians",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-19/jdbcR2dbc-1.json"
+    },
+    {
+      "id": "custom-id-panel",
+      "label": "Custom ID lookup medians",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-19/idTables-1.json"
+    }
+  ],
+  "edges": [
+    {
+      "id": "evidence-cache",
+      "from": "evidence",
+      "to": "cache-panel",
+      "kind": "comparison-input",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-19/cache-1.json"
+    },
+    {
+      "id": "evidence-jdbc-r2dbc",
+      "from": "evidence",
+      "to": "jdbc-r2dbc-panel",
+      "kind": "comparison-input",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-19/jdbcR2dbc-1.json"
+    },
+    {
+      "id": "evidence-custom-id",
+      "from": "evidence",
+      "to": "custom-id-panel",
+      "kind": "comparison-input",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-19/idTables-1.json"
+    }
+  ],
+  "behavior": {
+    "branches": 0,
+    "loops": 0
+  },
+  "repairs": []
+}

@@ -14,6 +14,7 @@ A Read-through / Write-through / Write-behind cache repository module that combi
 - **Coroutine repository**: `SuspendedJdbcLettuceRepository` / `AbstractSuspendedJdbcLettuceRepository`
 - **MapLoader / MapWriter**: Exposed-based implementations for repository loaded-map integration
     - `loadAllKeys()` returns a lazy ascending-PK `Iterable`; ordered scalar IDs use keyset pages and unsupported custom IDs use the legacy offset fallback
+    - The suspended JDBC loader keeps its existing `List` API and reads the same keyset/fallback pages inside `suspendedTransactionAsync`; it does not expose a new streaming surface
     - Enumeration is weakly consistent; a page-side delete can skip an unseen row on the custom-ID offset fallback path
     - Each page is materialized only for `batchSize` IDs, so the JDBC query and connection do not escape the page boundary; without an ambient caller-owned Exposed transaction, each page uses its own transaction
     - `chunkSize` (writer) and `batchSize` (loader) must be greater than 0

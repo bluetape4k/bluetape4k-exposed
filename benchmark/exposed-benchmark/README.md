@@ -14,35 +14,30 @@ Dedicated kotlinx-benchmark module for Exposed JDBC, R2DBC, custom ID tables, an
 
 ## Results
 
-Generated on 2026-06-23 from `build/reports/benchmarks`.
+The checked-in comparison was produced on 2026-08-19 with Oracle GraalVM `25.0.4` (Java 25), H2, and three sequential repetitions. Each value below is the median of those repetitions; it is not the best single run.
 
-| Benchmark | Mode | Score | Error | Unit |
-|---|---:|---:|---:|---|
-| `io.bluetape4k.exposed.benchmark.cache.CacheStrategyBenchmark.nearCacheHit` | thrpt | 160467607.91 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.cache.CacheStrategyBenchmark.localCaffeineHit` | thrpt | 44643332.35 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.cache.CacheStrategyBenchmark.nearCacheReadThroughMiss` | thrpt | 22240956.17 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.snowflakeTableSelectByName` | thrpt | 51790.86 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.uuidTableSelectByName` | thrpt | 51668.71 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.base62TableSelectByName` | thrpt | 50944.82 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.ulidTableSelectByName` | thrpt | 49409.24 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.ksuidMillisTableSelectByName` | thrpt | 48990.12 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.timebasedUuidTableSelectByName` | thrpt | 48084.84 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.ksuidTableSelectByName` | thrpt | 45473.50 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.jdbc.JdbcThreadingBenchmark.platformThreadSelectById` | thrpt | 30178.75 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.jdbc.JdbcThreadingBenchmark.virtualThreadSelectById` | thrpt | 18892.00 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.r2dbc.R2dbcCoroutineBenchmark.suspendTransactionSelectById` | thrpt | 2473.53 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.snowflakeTableBatchInsert` | thrpt | 1205.55 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.timebasedUuidTableBatchInsert` | thrpt | 983.04 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.ulidTableBatchInsert` | thrpt | 829.82 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.ksuidMillisTableBatchInsert` | thrpt | 821.43 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.uuidTableBatchInsert` | thrpt | 815.68 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.base62TableBatchInsert` | thrpt | 770.43 | - | ops/s |
-| `io.bluetape4k.exposed.benchmark.id.CustomIdTableBenchmark.ksuidTableBatchInsert` | thrpt | 660.85 | - | ops/s |
+| Workload | Configuration | Median | Interpretation |
+|---|---|---:|---|
+| Cache | near-cache hit, cache size 10,000 | 206,595,487 ops/s | Within this profile, about 3.79x local Caffeine hit and 4.38x read-through miss |
+| Cache | local Caffeine hit, cache size 10,000 | 54,531,040 ops/s | Same cache profile comparison |
+| Cache | near-cache read-through miss, cache size 10,000 | 47,137,612 ops/s | Same cache profile comparison |
+| JDBC/R2DBC | platform-thread select by ID, 10,000 rows | 34,688 ops/s | H2 single-row select baseline |
+| JDBC/R2DBC | virtual-thread select by ID, 10,000 rows | 24,376 ops/s | About 70.3% of the platform-thread baseline in this profile |
+| JDBC/R2DBC | R2DBC suspend transaction select by ID, 10,000 rows | 19,197 ops/s | About 55.3% of the platform-thread baseline in this profile |
+| Custom IDs | fastest `selectByName`, 10,000 rows | 216,715 ops/s | UUID table in the selected repetitions |
+| Custom IDs | slowest `selectByName`, 10,000 rows | 196,483 ops/s | Time-based UUID table in the selected repetitions |
 
-![Exposed benchmark chart](../../docs/images/readme-charts/exposed-benchmark-suite.svg)
+![Exposed benchmark comparison](../../docs/images/readme-charts/exposed-benchmark-suite.png)
 
-## Notes
+### Interpretation and limits
 
-- Redis benchmarks are intentionally separated from smoke because they require a reachable Redis server.
-- H2 keeps default verification cheap; database-specific benchmark profiles can be added without changing the module boundary.
-- Re-run `./gradlew :benchmark-exposed-benchmark:generateBenchmarkDocs` after benchmark runs to refresh tables and charts.
+- The cache panel uses a log-width scale because cache throughput is orders of magnitude above the database panels. The panels must not be read as one global ranking.
+- The H2 result does not choose the default for #690's opt-in parallel key enumeration. It is a single-row benchmark, not a contention or producer/consumer benchmark.
+- The custom-ID spread between the selected maximum and minimum is about 10.3%; it does not establish a universal ID-strategy winner.
+- Redis is `N/A` because no endpoint was supplied. Non-H2 drivers, connection-pool effects, cache hit ratios, and mutation contention require separate environment validation.
+
+## Evidence and reproduction
+
+- Raw JSON and the exact three-run selection are recorded in [`docs/benchmarks/exposed-benchmark-2026-08-19`](../../docs/benchmarks/exposed-benchmark-2026-08-19/README.md).
+- Re-run the three benchmark tasks sequentially with `--rerun-tasks --no-build-cache --no-configuration-cache --no-parallel --max-workers=1`; then use `scripts/benchmark/render_exposed_benchmark_chart.py` to render the SVG and CairoSVG to create the paired PNG.
+- The `generateBenchmarkDocs` task remains a one-run local report helper. It is not the source of the checked-in three-run median evidence; use the evidence directory and renderer above when refreshing this comparison.
