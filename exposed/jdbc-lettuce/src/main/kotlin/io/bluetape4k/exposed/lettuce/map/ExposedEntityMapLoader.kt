@@ -1,5 +1,8 @@
 package io.bluetape4k.exposed.lettuce.map
 
+import io.bluetape4k.exposed.jdbc.JdbcKeyRange
+import io.bluetape4k.exposed.jdbc.JdbcParallelKeyEnumerationOptions
+import io.bluetape4k.exposed.jdbc.parallelJdbcKeyEnumeration
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.EntityIDColumnType
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -37,6 +40,25 @@ class ExposedEntityMapLoader<ID: Any, E: Any>(
     init {
         require(batchSize > 0) { "batchSize는 0보다 커야 합니다. batchSize=$batchSize" }
     }
+
+    /**
+     * 호출자가 명시한 PK range를 Virtual Thread JDBC transaction으로 병렬 열거한다.
+     *
+     * 각 range는 독립 connection을 사용하고 입력 range 순서로 결과를 병합한다.
+     * 이 method는 opt-in materialization 경로이며, 기본 [loadAllKeys]의 lazy
+     * sequential keyset paging과 weak-consistency 계약을 변경하지 않는다.
+     * `maxConcurrency`는 caller JDBC connection pool보다 크게 설정하지 않아야 한다.
+     * 전체 range는 하나의 읽기 일관성 기준을 보장하지 않으므로, mutation이 없는 일관된
+     * 읽기 기준이 필요하면 caller가 database/isolation 정책을 별도로 선택해야 한다.
+     *
+     * @param ranges `[lowerInclusive, upperExclusive)` PK 구간 목록
+     * @param options executor, database, transaction isolation과 동시성 제한
+     * @return range 선언 순서로 병합한 ID 목록
+     */
+    fun loadAllKeysInParallel(
+        ranges: List<JdbcKeyRange<ID>>,
+        options: JdbcParallelKeyEnumerationOptions<ID> = JdbcParallelKeyEnumerationOptions(),
+    ): List<ID> = parallelJdbcKeyEnumeration(table, ranges, options)
 
     override fun loadById(id: ID): E? =
         table
