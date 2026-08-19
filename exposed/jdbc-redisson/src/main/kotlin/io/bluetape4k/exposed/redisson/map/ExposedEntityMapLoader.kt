@@ -1,5 +1,8 @@
 package io.bluetape4k.exposed.redisson.map
 
+import io.bluetape4k.exposed.jdbc.JdbcKeyRange
+import io.bluetape4k.exposed.jdbc.JdbcParallelKeyEnumerationOptions
+import io.bluetape4k.exposed.jdbc.parallelJdbcKeyEnumeration
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.error
@@ -108,6 +111,24 @@ open class ExposedEntityMapLoader<ID: Any, E: Any>(
     init {
         batchSize.requirePositiveNumber("batchSize")
     }
+
+    /**
+     * 호출자가 명시한 PK range를 Virtual Thread JDBC transaction으로 병렬 열거합니다.
+     *
+     * 각 range는 독립 connection에서 읽고 입력 range 순서로 결과를 병합합니다.
+     * 이 method는 opt-in materialization 경로이며 Redisson [MapLoader]의 기존
+     * [loadAllKeys] callback, query timeout, sequential keyset/offset fallback을
+     * 변경하지 않습니다. `maxConcurrency`는 caller JDBC connection pool보다 크게
+     * 설정하지 않아야 하며, 전체 결과에 하나의 읽기 일관성 기준을 보장하지 않습니다.
+     *
+     * @param ranges `[lowerInclusive, upperExclusive)` PK 구간 목록
+     * @param options executor, database, transaction isolation과 동시성 제한
+     * @return range 선언 순서로 병합한 ID 목록
+     */
+    fun loadAllKeysInParallel(
+        ranges: List<JdbcKeyRange<ID>>,
+        options: JdbcParallelKeyEnumerationOptions<ID> = JdbcParallelKeyEnumerationOptions(),
+    ): List<ID> = parallelJdbcKeyEnumeration(entityTable, ranges, options)
 }
 
 @Suppress("UNCHECKED_CAST")
