@@ -1,0 +1,31 @@
+{
+  "kind": "chart",
+  "source": {
+    "question": "같은 H2 fixture에서 기존 sequential keyset paging과 opt-in Virtual Thread range enumeration의 처리량 차이는 어떻게 보이는가?",
+    "revision": "48ba4363 plus working-tree implementation and benchmark artifacts",
+    "paths": [
+      "benchmark/exposed-benchmark/src/benchmark/kotlin/io/bluetape4k/exposed/benchmark/jdbc/JdbcKeyEnumerationBenchmark.kt",
+      "exposed/jdbc/src/main/kotlin/io/bluetape4k/exposed/jdbc/JdbcParallelKeyEnumeration.kt",
+      "docs/benchmarks/exposed-benchmark-2026-08-19-issue-690/run-1.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-19-issue-690/run-2.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-19-issue-690/run-3.json"
+    ]
+  },
+  "nodes": [
+    {"id": "fixture", "label": "JDK 25 / H2 / pool 10 / rangeCount 4", "source": "JdbcKeyEnumerationBenchmark.kt"},
+    {"id": "sequential-1000", "label": "sequentialKeysetPaging / 1,000 rows / 12,607 ops/s", "source": "run-1.json"},
+    {"id": "parallel-1000", "label": "parallelKeyEnumeration / 1,000 rows / 14,191 ops/s", "source": "run-1.json"},
+    {"id": "sequential-10000", "label": "sequentialKeysetPaging / 10,000 rows / 1,250 ops/s", "source": "run-1.json"},
+    {"id": "parallel-10000", "label": "parallelKeyEnumeration / 10,000 rows / 2,960 ops/s", "source": "run-1.json"}
+  ],
+  "edges": [
+    {"id": "fixture-sequential-1000", "from": "fixture", "to": "sequential-1000", "kind": "data", "source": "JdbcKeyEnumerationBenchmark.kt"},
+    {"id": "fixture-parallel-1000", "from": "fixture", "to": "parallel-1000", "kind": "data", "source": "JdbcKeyEnumerationBenchmark.kt"},
+    {"id": "fixture-sequential-10000", "from": "fixture", "to": "sequential-10000", "kind": "data", "source": "JdbcKeyEnumerationBenchmark.kt"},
+    {"id": "fixture-parallel-10000", "from": "fixture", "to": "parallel-10000", "kind": "data", "source": "JdbcKeyEnumerationBenchmark.kt"}
+  ],
+  "behavior": {"branches": 0, "loops": 0},
+  "repairs": [
+    {"target": "row-count-panels", "reason": "1,000행과 10,000행의 처리량 축을 분리해 작은 입력의 막대가 큰 입력의 축을 왜곡하지 않게 함", "touches": 1}
+  ]
+}

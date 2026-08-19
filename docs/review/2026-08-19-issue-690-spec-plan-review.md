@@ -18,7 +18,7 @@
 | Security | PASS | range predicate는 Exposed DSL parameter binding을 사용하고 raw SQL 문자열을 만들지 않는다. executor/database는 caller-owned이며 payload/ID 로그를 추가하지 않는다. |
 | Operator/Ops | PASS | custom executor close 책임, pool 상한, benchmark 재현 명령, failure/interrupt 원인 보존, manual `1.12.1` 불변 경계를 기록했다. |
 | Developer/API | PASS | 기존 `ID: Any`, constructor, sequential method를 보존하는 additive surface이며 공용 helper와 loader 책임이 분리된다. internal test hook은 public ABI에 노출하지 않는다. |
-| User/caller | PASS | `[lowerInclusive, upperExclusive)`와 open outer bound, overlap/reverse 거부, ordered merge, materialization·snapshot 비보장과 adapter 제외 범위를 KDoc/README에 반영하도록 계획했다. |
+| User/caller | PASS | `[lowerInclusive, upperExclusive)`와 open outer bound, overlap/reverse 거부, ordered merge, materialization·단일 읽기 일관성 기준 비보장과 adapter 제외 범위를 KDoc/README에 반영하도록 계획했다. |
 
 ## 통합 finding
 
@@ -35,7 +35,7 @@ dependency를 추가하는 별도 scope는 없다.
 
 | Acceptance | Plan task |
 | --- | --- |
-| range/order/snapshot | Task 1, 2, 6 |
+| range/order/read consistency | Task 1, 2, 6 |
 | bounded execution/pool | Task 1, 2, 7 |
 | sequential parity/benchmark | Task 3, 4, 5, 7 |
 | failure/cancellation | Task 1, 2, 7 |
@@ -45,13 +45,12 @@ dependency를 추가하는 별도 scope는 없다.
 
 - [x] SPW-01 — 대상 문서, issue/epic, 기준 SHA와 review 범위를 고정했다.
 - [x] SPW-02 — 관점별 근거, P2 repair, 수용 기준 traceability와 상태를 기록했다.
-- [x] SPW-03 — 한국어 technical register와 range/keyset/snapshot/transaction 용어를
+- [x] SPW-03 — 한국어 technical register와 range/keyset/read consistency/transaction 용어를
   일관되게 사용했다.
 - [x] SPW-04 — 현재 loader와 Virtual Thread helper를 설계·계획과 대조했다.
 - [x] SPW-05 — Markdown read-back과 `git diff --check`로 표/링크/code token을 확인했다.
 
 ## 최종 판정
 
-`CLEAR` — 최신 설계·계획 기준 P0=0, P1=0. 다음 단계는 설계/계획 문서 commit 후
-Task 1 RED 테스트이며, 구현 GREEN 전에는 benchmark/PR을 주장하지 않는다.
-
+`CLEAR` — 이 문서는 구현 전 설계·계획 gate의 기록이다. 구현·benchmark·PR 상태는
+별도 implementation review와 fresh verification evidence에서 판정한다.

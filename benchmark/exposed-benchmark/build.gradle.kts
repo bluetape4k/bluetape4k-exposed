@@ -62,6 +62,16 @@ benchmark {
             outputTimeUnit = "s"
             reportFormat = "json"
         }
+        register("jdbcKeyEnumeration") {
+            include("io.bluetape4k.exposed.benchmark.jdbc.JdbcKeyEnumerationBenchmark.*")
+            warmups = 1
+            iterations = 3
+            iterationTime = 1
+            iterationTimeUnit = "s"
+            mode = "thrpt"
+            outputTimeUnit = "s"
+            reportFormat = "json"
+        }
         register("idTables") {
             include("io.bluetape4k.exposed.benchmark.id.*")
             warmups = 1

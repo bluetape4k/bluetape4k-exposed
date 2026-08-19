@@ -67,7 +67,8 @@ Rollback: canonical `develop`와 기존 `TEST_APPLY_PATCH_TMP.txt`는 수정하�
 @Test fun `disjoint ranges are merged in range order without duplicates`()
 @Test fun `sparse IDs and open outer bounds are included once`()
 @Test fun `overlap and reverse ranges are rejected before a transaction`()
-@Test fun `custom IDs require an explicit comparator`()
+@Test fun `custom comparator is honored for range validation`()
+@Test fun `non-positive maxConcurrency is rejected`()
 @Test fun `active transactions never exceed maxConcurrency`()
 @Test fun `failed range cancels siblings and preserves the cause`()
 @Test fun `shutdown executor is rejected without opening a transaction`()
@@ -105,8 +106,11 @@ failure is feature-shaped before writing production code.
   ownership, database resolution, weak-consistency와 pool 책임을 기록한다.
 - [ ] range validator는 empty list를 즉시 empty list로 반환하고, null outer bound,
   strict lower/upper ordering, adjacent non-overlap을 comparator로 검증한다.
-- [ ] natural comparator는 `Comparable`을 확인하고 custom ID는 explicit comparator를
-  요구한다. `!!`와 broad unsafe cast는 사용하지 않는다.
+- [ ] natural comparator는 `Comparable`을 확인하고 custom `Comparable` ID는 DB 정렬과
+  일치하는 explicit comparator를 선택할 수 있게 한다. `!!`와 broad unsafe cast는
+  사용하지 않는다.
+- [ ] Exposed `greaterEq`/`less`의 `Comparable` bound 때문에 non-`Comparable` custom
+  ID binding은 이번 slot의 지원 범위가 아님을 KDoc/README와 lesson에서 숨기지 않는다.
 - [ ] database는 `options.database ?: TransactionManager.currentOrNull()?.db
   ?: TransactionManager.defaultDatabase` 순서로 결정하고 없으면 명확한
   `IllegalStateException`으로 거부한다.
@@ -201,7 +205,7 @@ Expected: all selected tests pass with no R2DBC or suspended source changes.
   with CairoSVG, run text/visual/asset-pair audits, open the full-size PNG, and record
   dimensions/occupancy.
 - [ ] README EN/KO tables and chart embed use the same values and state that H2 does not
-  prove PostgreSQL/MySQL superiority, snapshot consistency, or pool-independent speed.
+  prove PostgreSQL/MySQL superiority, 단일 읽기 일관성 기준, or pool-independent speed.
 
 Expected: benchmark task compiles; chart is not published until raw JSON and PNG audit
 evidence exist. If a run is too expensive, retain `N/A` with exact command/log rather
@@ -292,7 +296,7 @@ to a follow-up issue with evidence.
 
 | Issue #690 acceptance | Plan task/evidence |
 | --- | --- |
-| range partition/order/snapshot contract | Design, Task 2, Task 6 |
+| range partition/order/read-consistency contract | Design, Task 2, Task 6 |
 | bounded execution and pool cap | Task 1, Task 2, Task 7 |
 | sequential parity and benchmark | Task 3, Task 4, Task 5, Task 7 |
 | failure/cancellation cleanup | Task 1, Task 2, Task 7 |

@@ -38,7 +38,7 @@ connection-pool 비용을 호출자가 함께 선택한다.
   작업을 먼저 제출하므로 DB pool 상한을 표현하지 않는다. 이 설계에서는 range 제출
   자체를 `maxConcurrency`로 제한하고, 실패 시 모든 child future를 취소한다.
 - `docs/superpowers/specs/2026-08-19-issue-646-cache-loader-keyset-streaming-design.md`
-  는 Virtual Thread 병렬화를 독립 range partition·connection·merge·snapshot
+  는 Virtual Thread 병렬화를 독립 range partition·connection·merge·읽기 일관성
   계약이 필요한 후속 범위로 명시한다.
 
 ## 용어와 계약
@@ -49,7 +49,7 @@ connection-pool 비용을 호출자가 함께 선택한다.
 | range partition | 서로 겹치지 않고 선언 순서로 정렬된 range 목록 |
 | active transaction | range 하나를 읽는 독립 JDBC transaction |
 | bounded concurrency | 동시에 제출·실행하는 range 작업 수가 `maxConcurrency` 이하인 상태 |
-| weak consistency | range 사이의 insert/delete가 하나의 snapshot으로 고정되지 않는 관찰 의미 |
+| weak consistency | range 사이의 insert/delete가 하나의 읽기 일관성 기준으로 고정되지 않는 관찰 의미 |
 
 `JdbcKeyRange<ID>`는 다음 public value object로 추가한다.
 
@@ -83,9 +83,14 @@ data class JdbcParallelKeyEnumerationOptions<ID: Any>(
 `TransactionManager.defaultDatabase`를 사용한다. child transaction은 caller의
 outer transaction을 재사용하지 않는다.
 
-기본 comparator는 ID가 `Comparable`인 경우에만 사용한다. custom ID는 호출자가
-`Comparator`를 명시해야 하며, 비교할 수 없는 경계는 조기에 거부한다. 기존 loader의
+기본 comparator는 ID가 `Comparable`인 경우에만 사용한다. `Comparable`을 구현한 custom
+ID도 DB PK 정렬과 일치하는 `Comparator`를 호출자가 명시할 수 있으며, 비교할 수 없는
+경계는 조기에 거부한다. 기존 loader의
 `ID: Any` generic bound나 constructor는 변경하지 않는다.
+
+Exposed의 `greaterEq`/`less` 바인딩은 이 helper에서도 `Comparable` PK 값을 요구한다.
+따라서 comparator만 제공해 non-`Comparable` custom ID를 새로 지원한다고 약속하지
+않으며, 해당 column binding은 별도 설계 범위로 남긴다.
 
 ## 채택한 구조
 
@@ -160,7 +165,7 @@ materialize한다.
 
 ## 일관성·resource 계약
 
-- **snapshot**: range별 독립 transaction이므로 전체 결과에 동일 snapshot을
+- **읽기 일관성**: range별 독립 transaction이므로 전체 결과에 동일한 읽기 일관성 기준을
   보장하지 않는다. page/range 사이 mutation은 관찰될 수도, 관찰되지 않을 수도 있다.
 - **pool**: helper가 동시에 제출하는 range 수를 `maxConcurrency` 이하로 제한한다.
   caller는 Hikari/JDBC pool의 최대 connection 수보다 큰 값을 선택하지 않아야 한다.
@@ -183,8 +188,8 @@ materialize한다.
 | `maxConcurrency`가 pool보다 큼 | 제출 수를 상한으로 제한하고 KDoc/README에 caller pool 책임 명시 |
 | 한 range query 실패 | 모든 sibling future에 `cancel(true)` 후 종료 대기, 원래 예외 재전파 |
 | caller interrupt | interrupt flag 복원, child 취소·정리 후 `InterruptedException` 재전파 |
-| range 사이 insert/delete | weak consistency를 문서화하고 snapshot 보장 문구를 사용하지 않음 |
-| custom ID comparator 누락 | natural `Comparable`이 없으면 조기 거부; 기존 sequential fallback은 #692에서 검증 |
+| range 사이 insert/delete | weak consistency를 문서화하고 단일 읽기 일관성 기준을 보장하지 않음 |
+| custom `Comparable` ID comparator 누락 | natural `Comparable`이 없으면 조기 거부; 기존 sequential fallback은 #692에서 검증 |
 | empty range 목록 | side effect 없이 빈 list 반환; DB transaction을 열지 않음 |
 
 ## 검토한 대안
@@ -198,7 +203,7 @@ range 경계와 pool 비용이 public contract에 드러나고 generic ID arithm
 ### B. loader가 min/max를 조회해 자동 partition
 
 호출 코드는 짧아지지만 empty table, sparse ID, signed overflow, UUID/custom ID의
-분할 기준, min/max와 실제 page mutation 사이의 snapshot 의미가 모두 숨겨진다.
+분할 기준, min/max와 실제 page mutation 사이의 읽기 일관성 의미가 모두 숨겨진다.
 range partition 계약을 먼저 고정하는 #690의 목적과 맞지 않아 채택하지 않는다.
 
 ### C. JDK 25 `StructuredTaskScope`
@@ -230,11 +235,11 @@ keyset, parallel `maxConcurrency=2`, parallel `maxConcurrency=4`를 각각 측�
 하나의 전역 순위를 만들지 않는다.
 
 benchmark 결과는 H2의 단일 환경 증거일 뿐이며, PostgreSQL/MySQL driver, pool 크기,
-mutation contention, snapshot isolation의 일반적 우열을 주장하지 않는다.
+mutation contention, 읽기 격리 수준의 일반적 우열을 주장하지 않는다.
 
 ## 수용 기준
 
-1. caller-supplied disjoint range, ordering, weak consistency, snapshot 비보장과
+1. caller-supplied disjoint range, ordering, weak consistency, 단일 읽기 일관성 기준 비보장과
    pool 책임이 설계·KDoc·README에서 동일하게 설명된다.
 2. Lettuce/Redisson synchronous JDBC loader가 additive opt-in API로 helper를 사용하고
    기본 sequential path와 기존 public constructor/descriptor를 유지한다.
@@ -261,7 +266,7 @@ mutation contention, snapshot isolation의 일반적 우열을 주장하지 않�
   승인 범위를 고정했다.
 - [x] SPW-02 — 문제, API/transaction 구조, alternatives, failure modes, acceptance와
   non-goals를 포함했다.
-- [x] SPW-03 — 한국어 technical register와 `range`, `keyset`, `snapshot`,
+- [x] SPW-03 — 한국어 technical register와 `range`, `keyset`, `read consistency`,
   `bounded concurrency`, `weak consistency` 용어를 일관되게 사용했다.
 - [x] SPW-04 — 현재 loader, `VirtualFuture`, #646 설계, JDK 25 primary source와
   pool/cancellation 경계를 대조했다.
