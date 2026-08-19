@@ -1,6 +1,8 @@
 package io.bluetape4k.exposed.r2dbc.lettuce.map
 
 import io.bluetape4k.redis.lettuce.map.SuspendedMapLoader
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 
 /**
@@ -33,6 +35,19 @@ abstract class R2dbcEntityMapLoader<ID: Any, E: Any>: SuspendedMapLoader<ID, E> 
      * DB에 존재하는 모든 PK 목록을 `suspendTransaction` 내에서 로드한다.
      */
     override suspend fun loadAllKeys(): List<ID> = suspendTransaction { loadAllIds() }
+
+    /**
+     * DB의 모든 PK를 streaming 방식으로 소비한다.
+     *
+     * 기본 구현은 기존 [loadAllKeys] 결과를 Flow로 감싼 호환 경로다. Exposed
+     * concrete loader는 이 메서드를 override해 page 단위 transaction과 keyset 경계를
+     * 사용한다. Flow 수집 중 cancellation은 호출자에게 재전파된다.
+     */
+    open fun loadAllKeysFlow(): Flow<ID> = flow {
+        for (id in loadAllKeys()) {
+            emit(id)
+        }
+    }
 
     /**
      * 주어진 [id]에 해당하는 엔티티를 DB에서 로드한다.

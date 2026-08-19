@@ -11,7 +11,9 @@ Exposed JDBC와 Redisson 캐시를 결합해 Read-Through/Write-Through 캐시 �
 ### 주요 기능
 
 - **MapLoader/MapWriter 지원**: Redisson Read-Through/Write-Through 캐시 연동
-    - `loadAllKeys()`는 PK 오름차순으로 안정적으로 순회
+    - suspended `loadAllKeys()`는 rendezvous channel back-pressure를 사용하는 Redisson `AsyncIterator`로 PK 오름차순 keyset page를 스트리밍
+    - 지원되는 표준 scalar ID에는 keyset page를 사용하고 custom ID에는 기존 offset fallback을 사용하며, 각 DB page 크기는 `batchSize`로 제한
+    - 열거는 weakly consistent하며, custom ID fallback 경로에서는 page 사이 삭제로 아직 관찰하지 않은 row를 건너뛸 수 있음. producer transaction은 `maxAttempts = 1`로 실행하므로 channel 방출을 재생하지 않고 전체 열거를 다시 시도해야 함
 - **Repository 추상화**: 캐시 + DB 접근 공통 패턴 (`JdbcRedissonRepository`, `SuspendedJdbcRedissonRepository`)
 - **동기/코루틴 구현 제공**: 운영 환경에 맞는 방식 선택
 - **Near Cache 지원**: Local Cache + Redis 2-Tier 캐시
