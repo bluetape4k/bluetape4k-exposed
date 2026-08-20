@@ -1,0 +1,51 @@
+public final class io/bluetape4k/exposed/core/measured/MeasureColumnType : org/jetbrains/exposed/v1/core/ColumnType {
+	public fun <init> (Lio/bluetape4k/measured/Units;Lkotlin/jvm/functions/Function1;)V
+	public fun nonNullValueToString (Lio/bluetape4k/measured/Measure;)Ljava/lang/String;
+	public synthetic fun nonNullValueToString (Ljava/lang/Object;)Ljava/lang/String;
+	public fun notNullValueToDB (Lio/bluetape4k/measured/Measure;)Ljava/lang/Object;
+	public synthetic fun notNullValueToDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun sqlType ()Ljava/lang/String;
+	public fun valueFromDB (Ljava/lang/Object;)Lio/bluetape4k/measured/Measure;
+	public synthetic fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/core/measured/MeasuredColumnTypesKt {
+	public static final fun angle (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun area (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun binarySize (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun energy (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun frequency (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun length (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun mass (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun measure (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;Lio/bluetape4k/measured/Units;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun power (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun pressure (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun storage (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun temperature (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun temperatureDelta (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun time (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun volume (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/core/measured/TemperatureColumnType : org/jetbrains/exposed/v1/core/ColumnType {
+	public fun <init> ()V
+	public fun nonNullValueToString (Lio/bluetape4k/measured/Temperature;)Ljava/lang/String;
+	public synthetic fun nonNullValueToString (Ljava/lang/Object;)Ljava/lang/String;
+	public fun notNullValueToDB (Lio/bluetape4k/measured/Temperature;)Ljava/lang/Object;
+	public synthetic fun notNullValueToDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun sqlType ()Ljava/lang/String;
+	public fun valueFromDB (Ljava/lang/Object;)Lio/bluetape4k/measured/Temperature;
+	public synthetic fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/core/measured/TemperatureDeltaColumnType : org/jetbrains/exposed/v1/core/ColumnType {
+	public fun <init> ()V
+	public synthetic fun nonNullValueToString (Ljava/lang/Object;)Ljava/lang/String;
+	public fun nonNullValueToString-i-odGXI (D)Ljava/lang/String;
+	public synthetic fun notNullValueToDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun notNullValueToDB-i-odGXI (D)Ljava/lang/Object;
+	public fun sqlType ()Ljava/lang/String;
+	public synthetic fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun valueFromDB-qDcm8ZE (Ljava/lang/Object;)Lio/bluetape4k/measured/TemperatureDelta;
+}
+

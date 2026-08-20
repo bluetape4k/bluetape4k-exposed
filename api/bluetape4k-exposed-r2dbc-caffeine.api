@@ -1,0 +1,83 @@
+public abstract class io/bluetape4k/exposed/r2dbc/caffeine/repository/AbstractR2dbcCaffeineRepository : io/bluetape4k/exposed/r2dbc/caffeine/repository/R2dbcCaffeineRepository {
+	public static final field Companion Lio/bluetape4k/exposed/r2dbc/caffeine/repository/AbstractR2dbcCaffeineRepository$Companion;
+	public fun <init> ()V
+	public fun <init> (Lio/bluetape4k/exposed/cache/LocalCacheConfig;)V
+	public synthetic fun <init> (Lio/bluetape4k/exposed/cache/LocalCacheConfig;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	protected fun cancelScopeOnClose ()V
+	public fun clear (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun close ()V
+	public fun containsKey (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun countFromDb (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun extractId (Ljava/io/Serializable;)Ljava/lang/Object;
+	public fun findAll (Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/Expression;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun findAllFromDb (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun findByIdFromDb (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun get (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getAll (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getCache ()Lcom/github/benmanes/caffeine/cache/AsyncCache;
+	public fun getCacheMode ()Lio/bluetape4k/exposed/cache/CacheMode;
+	public fun getCacheName ()Ljava/lang/String;
+	public fun getCacheWriteMode ()Lio/bluetape4k/exposed/cache/CacheWriteMode;
+	public fun getConfig ()Lio/bluetape4k/exposed/cache/LocalCacheConfig;
+	public abstract fun getTable ()Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+	public abstract fun insertEntity (Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/io/Serializable;)V
+	public fun invalidate (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun invalidateAll (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	protected fun invalidateCacheOnClose ()V
+	public fun put (Ljava/lang/Object;Ljava/io/Serializable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun putAll (Ljava/util/Map;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun serializeKey (Ljava/lang/Object;)Ljava/lang/String;
+	public abstract fun toEntity (Lorg/jetbrains/exposed/v1/core/ResultRow;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun updateEntity (Lorg/jetbrains/exposed/v1/core/statements/UpdateStatement;Ljava/io/Serializable;)V
+	public fun validateConsistency (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/caffeine/repository/AbstractR2dbcCaffeineRepository$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public abstract interface class io/bluetape4k/exposed/r2dbc/caffeine/repository/R2dbcCaffeineRepository : io/bluetape4k/exposed/cache/R2dbcCacheRepository {
+	public static final field Companion Lio/bluetape4k/exposed/r2dbc/caffeine/repository/R2dbcCaffeineRepository$Companion;
+	public static final field DEFAULT_BATCH_SIZE I
+	public abstract fun extractId (Ljava/io/Serializable;)Ljava/lang/Object;
+	public abstract fun getCache ()Lcom/github/benmanes/caffeine/cache/AsyncCache;
+	public abstract fun getConfig ()Lio/bluetape4k/exposed/cache/LocalCacheConfig;
+	public abstract fun getTable ()Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+	public abstract fun toEntity (Lorg/jetbrains/exposed/v1/core/ResultRow;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun validateConsistency (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/caffeine/repository/R2dbcCaffeineRepository$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {
+	public static final field DEFAULT_BATCH_SIZE I
+}
+
+public final class io/bluetape4k/exposed/r2dbc/caffeine/repository/R2dbcCaffeineRepository$DefaultImpls {
+	public static fun close (Lio/bluetape4k/exposed/r2dbc/caffeine/repository/R2dbcCaffeineRepository;)V
+}
+
+public final class io/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcCaffeineSnapshotCache : io/bluetape4k/exposed/cache/snapshot/SnapshotCacheStore {
+	public static final field Companion Lio/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcCaffeineSnapshotCache$Companion;
+	public fun applyInvalidations (Ljava/util/List;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheDeadline;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheApplyReport;
+	public fun applySnapshots (Ljava/util/List;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheDeadline;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheApplyReport;
+	public fun claimMiss (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheMiss;)Lio/bluetape4k/exposed/cache/snapshot/ClaimedSnapshotMiss;
+	public fun getCompatibilityFingerprint ()Ljava/lang/String;
+	public fun getFailureBuffer ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureBuffer;
+	public fun getLimits ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheLimits;
+	public fun getStoreId ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotStoreId;
+	public fun getStoreInstanceToken ()Ljava/lang/Object;
+	public final fun lookup (Ljava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheLookup;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcCaffeineSnapshotCache$Companion {
+}
+
+public final class io/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcCaffeineSnapshotCacheKt {
+	public static final fun r2dbcCaffeineSnapshotCache (Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Lio/bluetape4k/exposed/cache/snapshot/CaffeineSnapshotCacheConfig;Lio/bluetape4k/exposed/cache/snapshot/SnapshotValueSizer;Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshotValueValidator;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureBuffer;)Lio/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcCaffeineSnapshotCache;
+	public static synthetic fun r2dbcCaffeineSnapshotCache$default (Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Lio/bluetape4k/exposed/cache/snapshot/CaffeineSnapshotCacheConfig;Lio/bluetape4k/exposed/cache/snapshot/SnapshotValueSizer;Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshotValueValidator;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureBuffer;ILjava/lang/Object;)Lio/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcCaffeineSnapshotCache;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcSnapshotTransactionKt {
+	public static final fun stageInvalidation (Lorg/jetbrains/exposed/v1/r2dbc/R2dbcTransaction;Lio/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcCaffeineSnapshotCache;Ljava/lang/Object;)V
+	public static final fun stageSnapshot (Lorg/jetbrains/exposed/v1/r2dbc/R2dbcTransaction;Lio/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcCaffeineSnapshotCache;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheMiss;Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;)Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;
+	public static final fun stageSnapshot (Lorg/jetbrains/exposed/v1/r2dbc/R2dbcTransaction;Lio/bluetape4k/exposed/r2dbc/caffeine/snapshot/R2dbcCaffeineSnapshotCache;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheMiss;Ljava/lang/Object;Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshotMapper;)Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;
+}
+

@@ -1,0 +1,73 @@
+public final class io/bluetape4k/exposed/druid/DruidAvaticaSerialization : java/lang/Enum {
+	public static final field JSON Lio/bluetape4k/exposed/druid/DruidAvaticaSerialization;
+	public static final field PROTOBUF Lio/bluetape4k/exposed/druid/DruidAvaticaSerialization;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/exposed/druid/DruidAvaticaSerialization;
+	public static fun values ()[Lio/bluetape4k/exposed/druid/DruidAvaticaSerialization;
+}
+
+public final class io/bluetape4k/exposed/druid/DruidColumnMetadata {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()I
+	public final fun component6 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;)Lio/bluetape4k/exposed/druid/DruidColumnMetadata;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/druid/DruidColumnMetadata;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/druid/DruidColumnMetadata;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getColumnName ()Ljava/lang/String;
+	public final fun getDataType ()Ljava/lang/String;
+	public final fun getOrdinalPosition ()I
+	public final fun getTableName ()Ljava/lang/String;
+	public final fun getTableSchema ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isNullable ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/druid/DruidConnectionOptions : java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/druid/DruidConnectionOptions$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;ZLio/bluetape4k/exposed/druid/DruidAvaticaSerialization;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;ZLio/bluetape4k/exposed/druid/DruidAvaticaSerialization;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Z
+	public final fun component3 ()Lio/bluetape4k/exposed/druid/DruidAvaticaSerialization;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/util/Map;
+	public final fun component7 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;ZLio/bluetape4k/exposed/druid/DruidAvaticaSerialization;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;)Lio/bluetape4k/exposed/druid/DruidConnectionOptions;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/druid/DruidConnectionOptions;Ljava/lang/String;ZLio/bluetape4k/exposed/druid/DruidAvaticaSerialization;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;ILjava/lang/Object;)Lio/bluetape4k/exposed/druid/DruidConnectionOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAvaticaEndpoint ()Ljava/lang/String;
+	public final fun getContextProperties ()Ljava/util/Map;
+	public final fun getExtraProperties ()Ljava/util/Map;
+	public final fun getPassword ()Ljava/lang/String;
+	public final fun getSerialization ()Lio/bluetape4k/exposed/druid/DruidAvaticaSerialization;
+	public final fun getTransparentReconnection ()Z
+	public final fun getUser ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun jdbcUrl ()Ljava/lang/String;
+	public final fun toProperties ()Ljava/util/Properties;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/druid/DruidConnectionOptions$Companion {
+}
+
+public final class io/bluetape4k/exposed/druid/DruidJdbc : io/bluetape4k/logging/KLogging {
+	public static final field INSTANCE Lio/bluetape4k/exposed/druid/DruidJdbc;
+	public final fun connection (Lio/bluetape4k/exposed/druid/DruidConnectionOptions;)Ljava/sql/Connection;
+	public static synthetic fun connection$default (Lio/bluetape4k/exposed/druid/DruidJdbc;Lio/bluetape4k/exposed/druid/DruidConnectionOptions;ILjava/lang/Object;)Ljava/sql/Connection;
+	public final fun getDRIVER ()Ljava/lang/String;
+	public final fun listColumns (Ljava/lang/String;Ljava/lang/String;Lio/bluetape4k/exposed/druid/DruidConnectionOptions;)Ljava/util/List;
+	public static synthetic fun listColumns$default (Lio/bluetape4k/exposed/druid/DruidJdbc;Ljava/lang/String;Ljava/lang/String;Lio/bluetape4k/exposed/druid/DruidConnectionOptions;ILjava/lang/Object;)Ljava/util/List;
+	public final fun query (Ljava/lang/String;Lio/bluetape4k/exposed/druid/DruidConnectionOptions;Lkotlin/jvm/functions/Function1;)Ljava/util/List;
+	public static synthetic fun query$default (Lio/bluetape4k/exposed/druid/DruidJdbc;Ljava/lang/String;Lio/bluetape4k/exposed/druid/DruidConnectionOptions;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/util/List;
+	public final fun querySuspend (Ljava/lang/String;Lio/bluetape4k/exposed/druid/DruidConnectionOptions;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun querySuspend$default (Lio/bluetape4k/exposed/druid/DruidJdbc;Ljava/lang/String;Lio/bluetape4k/exposed/druid/DruidConnectionOptions;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+

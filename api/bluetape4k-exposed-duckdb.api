@@ -1,0 +1,28 @@
+public final class io/bluetape4k/exposed/duckdb/DuckDBDatabase : io/bluetape4k/logging/KLogging {
+	public static final field INSTANCE Lio/bluetape4k/exposed/duckdb/DuckDBDatabase;
+	public final fun file (Ljava/lang/String;)Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public final fun getDRIVER ()Ljava/lang/String;
+	public final fun inMemory ()Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public final fun readOnly (Ljava/lang/String;)Lorg/jetbrains/exposed/v1/jdbc/Database;
+}
+
+public final class io/bluetape4k/exposed/duckdb/DuckDBExtensionsKt {
+	public static final fun queryFlow (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun queryFlow$default (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun suspendTransaction (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun suspendTransaction$default (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/duckdb/dialect/DuckDBDialect : org/jetbrains/exposed/v1/core/vendors/PostgreSQLDialect {
+	public static final field Companion Lio/bluetape4k/exposed/duckdb/dialect/DuckDBDialect$Companion;
+	public static final field dialectName Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/bluetape4k/exposed/duckdb/dialect/DuckDBDialect$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public final class io/bluetape4k/exposed/duckdb/dialect/DuckDBDialectMetadata : org/jetbrains/exposed/v1/jdbc/vendors/PostgreSQLDialectMetadata {
+	public fun <init> ()V
+}
+

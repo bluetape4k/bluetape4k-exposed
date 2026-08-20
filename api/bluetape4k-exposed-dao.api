@@ -1,0 +1,126 @@
+public final class io/bluetape4k/exposed/dao/EntityExtensionsKt {
+	public static final fun entityToStringBuilder (Lorg/jetbrains/exposed/v1/dao/Entity;)Lio/bluetape4k/ToStringBuilder;
+	public static final fun getIdValue (Lorg/jetbrains/exposed/v1/dao/Entity;)Ljava/lang/Object;
+	public static final fun idEquals (Lorg/jetbrains/exposed/v1/dao/Entity;Ljava/lang/Object;)Z
+	public static final fun idHashCode (Lorg/jetbrains/exposed/v1/dao/Entity;)I
+	public static final fun toStringBuilder (Lorg/jetbrains/exposed/v1/dao/Entity;)Lio/bluetape4k/ToStringBuilder;
+}
+
+public abstract class io/bluetape4k/exposed/dao/StringEntity : org/jetbrains/exposed/v1/dao/Entity {
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+}
+
+public abstract class io/bluetape4k/exposed/dao/StringEntityClass : org/jetbrains/exposed/v1/dao/EntityClass {
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public abstract class io/bluetape4k/exposed/dao/auditable/AuditableEntity : org/jetbrains/exposed/v1/dao/Entity, io/bluetape4k/exposed/core/auditable/Auditable {
+	public static final field Companion Lio/bluetape4k/exposed/dao/auditable/AuditableEntity$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun flush (Lorg/jetbrains/exposed/v1/dao/EntityBatchUpdate;)Z
+	public abstract fun getCreatedAt ()Ljava/time/Instant;
+	public abstract fun getCreatedBy ()Ljava/lang/String;
+	public abstract fun getUpdatedAt ()Ljava/time/Instant;
+	public abstract fun getUpdatedBy ()Ljava/lang/String;
+	public fun hashCode ()I
+	public abstract fun setCreatedAt (Ljava/time/Instant;)V
+	public abstract fun setCreatedBy (Ljava/lang/String;)V
+	public abstract fun setUpdatedAt (Ljava/time/Instant;)V
+	public abstract fun setUpdatedBy (Ljava/lang/String;)V
+}
+
+public final class io/bluetape4k/exposed/dao/auditable/AuditableEntity$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public abstract class io/bluetape4k/exposed/dao/auditable/AuditableIntEntity : io/bluetape4k/exposed/dao/auditable/AuditableEntity {
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+}
+
+public abstract class io/bluetape4k/exposed/dao/auditable/AuditableIntEntityClass : org/jetbrains/exposed/v1/dao/EntityClass {
+	public fun <init> (Lio/bluetape4k/exposed/core/auditable/AuditableIntIdTable;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lio/bluetape4k/exposed/core/auditable/AuditableIntIdTable;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public abstract class io/bluetape4k/exposed/dao/auditable/AuditableLongEntity : io/bluetape4k/exposed/dao/auditable/AuditableEntity {
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+}
+
+public abstract class io/bluetape4k/exposed/dao/auditable/AuditableLongEntityClass : org/jetbrains/exposed/v1/dao/EntityClass {
+	public fun <init> (Lio/bluetape4k/exposed/core/auditable/AuditableLongIdTable;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lio/bluetape4k/exposed/core/auditable/AuditableLongIdTable;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public abstract class io/bluetape4k/exposed/dao/auditable/AuditableUUIDEntity : io/bluetape4k/exposed/dao/auditable/AuditableEntity {
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+}
+
+public abstract class io/bluetape4k/exposed/dao/auditable/AuditableUUIDEntityClass : org/jetbrains/exposed/v1/dao/EntityClass {
+	public fun <init> (Lio/bluetape4k/exposed/core/auditable/AuditableUUIDTable;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lio/bluetape4k/exposed/core/auditable/AuditableUUIDTable;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public class io/bluetape4k/exposed/dao/id/KsuidEntity : io/bluetape4k/exposed/dao/StringEntity {
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+}
+
+public class io/bluetape4k/exposed/dao/id/KsuidEntityClass : io/bluetape4k/exposed/dao/StringEntityClass {
+	public fun <init> (Lio/bluetape4k/exposed/core/dao/id/KsuidTable;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lio/bluetape4k/exposed/core/dao/id/KsuidTable;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public class io/bluetape4k/exposed/dao/id/KsuidMillisEntity : io/bluetape4k/exposed/dao/StringEntity {
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+}
+
+public class io/bluetape4k/exposed/dao/id/KsuidMillisEntityClass : io/bluetape4k/exposed/dao/StringEntityClass {
+	public fun <init> (Lio/bluetape4k/exposed/core/dao/id/KsuidMillisTable;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lio/bluetape4k/exposed/core/dao/id/KsuidMillisTable;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public class io/bluetape4k/exposed/dao/id/SnowflakeIdEntity : org/jetbrains/exposed/v1/dao/LongEntity {
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+}
+
+public class io/bluetape4k/exposed/dao/id/SnowflakeIdEntityClass : org/jetbrains/exposed/v1/dao/LongEntityClass {
+	public fun <init> (Lio/bluetape4k/exposed/core/dao/id/SnowflakeIdTable;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lio/bluetape4k/exposed/core/dao/id/SnowflakeIdTable;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public class io/bluetape4k/exposed/dao/id/TimebasedUUIDBase62Entity : io/bluetape4k/exposed/dao/StringEntity {
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+}
+
+public class io/bluetape4k/exposed/dao/id/TimebasedUUIDBase62EntityClass : io/bluetape4k/exposed/dao/StringEntityClass {
+	public fun <init> (Lio/bluetape4k/exposed/core/dao/id/TimebasedUUIDBase62Table;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lio/bluetape4k/exposed/core/dao/id/TimebasedUUIDBase62Table;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public class io/bluetape4k/exposed/dao/id/TimebasedUUIDBase62EntityClassMySql : io/bluetape4k/exposed/dao/StringEntityClass {
+	public fun <init> (Lio/bluetape4k/exposed/core/dao/id/TimebasedUUIDBase62TableMySql;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lio/bluetape4k/exposed/core/dao/id/TimebasedUUIDBase62TableMySql;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public class io/bluetape4k/exposed/dao/id/TimebasedUUIDBase62EntityMySql : io/bluetape4k/exposed/dao/StringEntity {
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+}
+
+public class io/bluetape4k/exposed/dao/id/TimebasedUUIDEntity : org/jetbrains/exposed/v1/dao/java/UUIDEntity {
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+}
+
+public class io/bluetape4k/exposed/dao/id/TimebasedUUIDEntityClass : org/jetbrains/exposed/v1/dao/java/UUIDEntityClass {
+	public fun <init> (Lio/bluetape4k/exposed/core/dao/id/TimebasedUUIDTable;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lio/bluetape4k/exposed/core/dao/id/TimebasedUUIDTable;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public class io/bluetape4k/exposed/dao/id/UlidEntity : io/bluetape4k/exposed/dao/StringEntity {
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+}
+
+public class io/bluetape4k/exposed/dao/id/UlidEntityClass : io/bluetape4k/exposed/dao/StringEntityClass {
+	public fun <init> (Lio/bluetape4k/exposed/core/dao/id/UlidTable;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lio/bluetape4k/exposed/core/dao/id/UlidTable;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+

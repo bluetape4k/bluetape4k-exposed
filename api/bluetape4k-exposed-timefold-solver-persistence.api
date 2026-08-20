@@ -1,0 +1,135 @@
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/BendableBigDecimalScoreColumnType : org/jetbrains/exposed/v1/core/ColumnWithTransform {
+	public fun <init> (I)V
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/BendableBigDecimalScoreKt {
+	public static final fun bendableBigDecimalScore (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;I)Lorg/jetbrains/exposed/v1/core/Column;
+	public static synthetic fun bendableBigDecimalScore$default (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;IILjava/lang/Object;)Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/BendableBigDecimalScoreTransformer : org/jetbrains/exposed/v1/core/ColumnTransformer {
+	public fun <init> ()V
+	public fun unwrap (Lai/timefold/solver/core/api/score/BendableBigDecimalScore;)Ljava/lang/String;
+	public synthetic fun unwrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public synthetic fun wrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun wrap (Ljava/lang/String;)Lai/timefold/solver/core/api/score/BendableBigDecimalScore;
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/BendableScoreColumnType : org/jetbrains/exposed/v1/core/ColumnWithTransform {
+	public fun <init> (I)V
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/BendableScoreKt {
+	public static final fun bendableScore (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;I)Lorg/jetbrains/exposed/v1/core/Column;
+	public static synthetic fun bendableScore$default (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;IILjava/lang/Object;)Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/BendableScoreTransformer : org/jetbrains/exposed/v1/core/ColumnTransformer {
+	public fun <init> ()V
+	public fun unwrap (Lai/timefold/solver/core/api/score/BendableScore;)Ljava/lang/String;
+	public synthetic fun unwrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public synthetic fun wrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun wrap (Ljava/lang/String;)Lai/timefold/solver/core/api/score/BendableScore;
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/HardMediumSoftBigDecimalScoreColumnType : org/jetbrains/exposed/v1/core/ColumnWithTransform {
+	public fun <init> (I)V
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/HardMediumSoftBigDecimalScoreKt {
+	public static final fun hardMediumSoftBigDecimalScore (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;I)Lorg/jetbrains/exposed/v1/core/Column;
+	public static synthetic fun hardMediumSoftBigDecimalScore$default (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;IILjava/lang/Object;)Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/HardMediumSoftBigDecimalScoreTransformer : org/jetbrains/exposed/v1/core/ColumnTransformer {
+	public fun <init> ()V
+	public fun unwrap (Lai/timefold/solver/core/api/score/HardMediumSoftBigDecimalScore;)Ljava/lang/String;
+	public synthetic fun unwrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public synthetic fun wrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun wrap (Ljava/lang/String;)Lai/timefold/solver/core/api/score/HardMediumSoftBigDecimalScore;
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/HardMediumSoftScoreColumnType : org/jetbrains/exposed/v1/core/ColumnWithTransform {
+	public fun <init> (I)V
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/HardMediumSoftScoreKt {
+	public static final fun hardMediumSoftScore (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;I)Lorg/jetbrains/exposed/v1/core/Column;
+	public static synthetic fun hardMediumSoftScore$default (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;IILjava/lang/Object;)Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/HardMediumSoftScoreTransformer : org/jetbrains/exposed/v1/core/ColumnTransformer {
+	public fun <init> ()V
+	public fun unwrap (Lai/timefold/solver/core/api/score/HardMediumSoftScore;)Ljava/lang/String;
+	public synthetic fun unwrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public synthetic fun wrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun wrap (Ljava/lang/String;)Lai/timefold/solver/core/api/score/HardMediumSoftScore;
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/HardSoftBigDecimalScoreColumnType : org/jetbrains/exposed/v1/core/ColumnWithTransform {
+	public fun <init> (I)V
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/HardSoftBigDecimalScoreKt {
+	public static final fun hardSoftBigDecimalScore (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;I)Lorg/jetbrains/exposed/v1/core/Column;
+	public static synthetic fun hardSoftBigDecimalScore$default (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;IILjava/lang/Object;)Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/HardSoftBigDecimalScoreTransformer : org/jetbrains/exposed/v1/core/ColumnTransformer {
+	public fun <init> ()V
+	public fun unwrap (Lai/timefold/solver/core/api/score/HardSoftBigDecimalScore;)Ljava/lang/String;
+	public synthetic fun unwrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public synthetic fun wrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun wrap (Ljava/lang/String;)Lai/timefold/solver/core/api/score/HardSoftBigDecimalScore;
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/HardSoftScoreColumnType : org/jetbrains/exposed/v1/core/ColumnWithTransform {
+	public fun <init> (I)V
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/HardSoftScoreKt {
+	public static final fun hardSoftScore (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;I)Lorg/jetbrains/exposed/v1/core/Column;
+	public static synthetic fun hardSoftScore$default (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;IILjava/lang/Object;)Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/HardSoftScoreTransformer : org/jetbrains/exposed/v1/core/ColumnTransformer {
+	public fun <init> ()V
+	public fun unwrap (Lai/timefold/solver/core/api/score/HardSoftScore;)Ljava/lang/String;
+	public synthetic fun unwrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public synthetic fun wrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun wrap (Ljava/lang/String;)Lai/timefold/solver/core/api/score/HardSoftScore;
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/SimpleBigDecimalScoreColumnType : org/jetbrains/exposed/v1/core/ColumnWithTransform {
+	public fun <init> (I)V
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/SimpleBigDecimalScoreKt {
+	public static final fun simpleBigDecimalScore (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;I)Lorg/jetbrains/exposed/v1/core/Column;
+	public static synthetic fun simpleBigDecimalScore$default (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;IILjava/lang/Object;)Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/SimpleBigDecimalScoreTransformer : org/jetbrains/exposed/v1/core/ColumnTransformer {
+	public fun <init> ()V
+	public fun unwrap (Lai/timefold/solver/core/api/score/SimpleBigDecimalScore;)Ljava/lang/String;
+	public synthetic fun unwrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public synthetic fun wrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun wrap (Ljava/lang/String;)Lai/timefold/solver/core/api/score/SimpleBigDecimalScore;
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/SimpleScoreColumnType : org/jetbrains/exposed/v1/core/ColumnWithTransform {
+	public fun <init> ()V
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/SimpleScoreKt {
+	public static final fun simpleScore (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/timefold/solver/exposed/api/score/buildin/SimpleScoreTransformer : org/jetbrains/exposed/v1/core/ColumnTransformer {
+	public fun <init> ()V
+	public fun unwrap (Lai/timefold/solver/core/api/score/SimpleScore;)Ljava/lang/Long;
+	public synthetic fun unwrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun wrap (J)Lai/timefold/solver/core/api/score/SimpleScore;
+	public synthetic fun wrap (Ljava/lang/Object;)Ljava/lang/Object;
+}
+

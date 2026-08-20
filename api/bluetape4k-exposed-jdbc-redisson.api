@@ -1,0 +1,382 @@
+public class io/bluetape4k/exposed/redisson/map/EntityMapLoader : org/redisson/api/map/MapLoader {
+	public static final field Companion Lio/bluetape4k/exposed/redisson/map/EntityMapLoader$Companion;
+	public fun <init> (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;)V
+	public fun load (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun loadAllKeys ()Ljava/lang/Iterable;
+}
+
+public final class io/bluetape4k/exposed/redisson/map/EntityMapLoader$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public class io/bluetape4k/exposed/redisson/map/EntityMapWriter : org/redisson/api/map/MapWriter {
+	public static final field Companion Lio/bluetape4k/exposed/redisson/map/EntityMapWriter$Companion;
+	public fun <init> (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public fun delete (Ljava/util/Collection;)V
+	public fun write (Ljava/util/Map;)V
+}
+
+public final class io/bluetape4k/exposed/redisson/map/EntityMapWriter$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public class io/bluetape4k/exposed/redisson/map/ExposedEntityMapLoader : io/bluetape4k/exposed/redisson/map/EntityMapLoader {
+	public static final field Companion Lio/bluetape4k/exposed/redisson/map/ExposedEntityMapLoader$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;ILkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;ILkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun loadAllKeysInParallel (Ljava/util/List;Lio/bluetape4k/exposed/jdbc/JdbcParallelKeyEnumerationOptions;)Ljava/util/List;
+	public static synthetic fun loadAllKeysInParallel$default (Lio/bluetape4k/exposed/redisson/map/ExposedEntityMapLoader;Ljava/util/List;Lio/bluetape4k/exposed/jdbc/JdbcParallelKeyEnumerationOptions;ILjava/lang/Object;)Ljava/util/List;
+}
+
+public final class io/bluetape4k/exposed/redisson/map/ExposedEntityMapLoader$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public class io/bluetape4k/exposed/redisson/map/ExposedEntityMapWriter : io/bluetape4k/exposed/redisson/map/EntityMapWriter {
+	public static final field Companion Lio/bluetape4k/exposed/redisson/map/ExposedEntityMapWriter$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function2;ZLorg/redisson/api/map/WriteMode;)V
+	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function2;ZLorg/redisson/api/map/WriteMode;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/bluetape4k/exposed/redisson/map/ExposedEntityMapWriter$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public class io/bluetape4k/exposed/redisson/map/SuspendedEntityMapLoader : org/redisson/api/map/MapLoaderAsync {
+	public static final field Companion Lio/bluetape4k/exposed/redisson/map/SuspendedEntityMapLoader$Companion;
+	public fun <init> (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlinx/coroutines/CoroutineScope;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun load (Ljava/lang/Object;)Ljava/util/concurrent/CompletionStage;
+	public fun loadAllKeys ()Lorg/redisson/api/AsyncIterator;
+}
+
+public final class io/bluetape4k/exposed/redisson/map/SuspendedEntityMapLoader$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {
+}
+
+public class io/bluetape4k/exposed/redisson/map/SuspendedEntityMapWriter : org/redisson/api/map/MapWriterAsync {
+	public static final field Companion Lio/bluetape4k/exposed/redisson/map/SuspendedEntityMapWriter$Companion;
+	public fun <init> (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlinx/coroutines/CoroutineScope;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun delete (Ljava/util/Collection;)Ljava/util/concurrent/CompletionStage;
+	public fun write (Ljava/util/Map;)Ljava/util/concurrent/CompletionStage;
+}
+
+public final class io/bluetape4k/exposed/redisson/map/SuspendedEntityMapWriter$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {
+}
+
+public class io/bluetape4k/exposed/redisson/map/SuspendedExposedEntityMapLoader : io/bluetape4k/exposed/redisson/map/SuspendedEntityMapLoader {
+	public static final field Companion Lio/bluetape4k/exposed/redisson/map/SuspendedExposedEntityMapLoader$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;Lkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;Lkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/bluetape4k/exposed/redisson/map/SuspendedExposedEntityMapLoader$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {
+}
+
+public class io/bluetape4k/exposed/redisson/map/SuspendedExposedEntityMapWriter : io/bluetape4k/exposed/redisson/map/SuspendedEntityMapWriter {
+	public static final field Companion Lio/bluetape4k/exposed/redisson/map/SuspendedExposedEntityMapWriter$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;Lkotlinx/coroutines/CoroutineScope;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function2;ZLorg/redisson/api/map/WriteMode;)V
+	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;Lkotlinx/coroutines/CoroutineScope;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function2;ZLorg/redisson/api/map/WriteMode;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/bluetape4k/exposed/redisson/map/SuspendedExposedEntityMapWriter$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {
+}
+
+public abstract class io/bluetape4k/exposed/redisson/repository/AbstractJdbcRedissonRepository : io/bluetape4k/exposed/redisson/repository/JdbcRedissonRepository {
+	public static final field Companion Lio/bluetape4k/exposed/redisson/repository/AbstractJdbcRedissonRepository$Companion;
+	public static final field DEFAULT_BATCH_SIZE I
+	public fun <init> (Lorg/redisson/api/RedissonClient;Lio/bluetape4k/redis/redisson/cache/RedissonCacheConfig;Z)V
+	public synthetic fun <init> (Lorg/redisson/api/RedissonClient;Lio/bluetape4k/redis/redisson/cache/RedissonCacheConfig;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun clear ()V
+	public fun close ()V
+	public fun containsKey (Ljava/lang/Object;)Z
+	public fun countFromDb ()J
+	protected final fun createCacheOnlyLocalCacheMap ()Lorg/redisson/api/RLocalCachedMap;
+	protected final fun createLocalCacheMap ()Lorg/redisson/api/RLocalCachedMap;
+	protected final fun createMapCache ()Lorg/redisson/api/RMapCache;
+	public fun findAll (Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/Expression;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Ljava/util/List;
+	public fun findAllFromDb (Ljava/util/Collection;)Ljava/util/List;
+	public fun findByIdFromDb (Ljava/lang/Object;)Ljava/io/Serializable;
+	public fun get (Ljava/lang/Object;)Ljava/io/Serializable;
+	public fun getAll (Ljava/util/Collection;)Ljava/util/Map;
+	public final fun getAll (Ljava/util/Collection;I)Ljava/util/Map;
+	public fun getCache ()Lorg/redisson/api/RMap;
+	public fun getCacheMode ()Lio/bluetape4k/exposed/cache/CacheMode;
+	public fun getCacheName ()Ljava/lang/String;
+	protected fun getCacheOnlyMap ()Lorg/redisson/api/RMap;
+	public fun getCacheWriteMode ()Lio/bluetape4k/exposed/cache/CacheWriteMode;
+	protected final fun getConfig ()Lio/bluetape4k/redis/redisson/cache/RedissonCacheConfig;
+	protected fun getMapLoader ()Lio/bluetape4k/exposed/redisson/map/EntityMapLoader;
+	protected final fun getMapWriter ()Lio/bluetape4k/exposed/redisson/map/EntityMapWriter;
+	public final fun getRedissonClient ()Lorg/redisson/api/RedissonClient;
+	public abstract fun insertEntity (Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/io/Serializable;)V
+	public fun invalidate (Ljava/lang/Object;)V
+	public fun invalidateAll (Ljava/util/Collection;)V
+	public fun invalidateByPattern (Ljava/lang/String;I)J
+	public fun put (Ljava/lang/Object;Ljava/io/Serializable;)V
+	public fun putAll (Ljava/util/Map;I)V
+	public abstract fun updateEntity (Lorg/jetbrains/exposed/v1/core/statements/UpdateStatement;Ljava/io/Serializable;)V
+	public fun upsertAll (Ljava/util/Map;I)V
+}
+
+public final class io/bluetape4k/exposed/redisson/repository/AbstractJdbcRedissonRepository$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public abstract class io/bluetape4k/exposed/redisson/repository/AbstractSuspendedJdbcRedissonRepository : io/bluetape4k/exposed/redisson/repository/SuspendedJdbcRedissonRepository {
+	public static final field Companion Lio/bluetape4k/exposed/redisson/repository/AbstractSuspendedJdbcRedissonRepository$Companion;
+	public static final field DEFAULT_BATCH_SIZE I
+	public fun <init> (Lorg/redisson/api/RedissonClient;Lio/bluetape4k/redis/redisson/cache/RedissonCacheConfig;ZLkotlinx/coroutines/CoroutineScope;)V
+	public synthetic fun <init> (Lorg/redisson/api/RedissonClient;Lio/bluetape4k/redis/redisson/cache/RedissonCacheConfig;ZLkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun clear (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun close ()V
+	public fun containsKey (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun countFromDb (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	protected final fun createCacheOnlyLocalCacheMap ()Lorg/redisson/api/RLocalCachedMap;
+	protected final fun createLocalCacheMap ()Lorg/redisson/api/RLocalCachedMap;
+	protected final fun createMapCache ()Lorg/redisson/api/RMapCache;
+	public fun findAll (Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/Expression;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun findAllFromDb (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun findByIdFromDb (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun get (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getAll (Ljava/util/Collection;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getAll (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getCache ()Lorg/redisson/api/RMap;
+	public fun getCacheMode ()Lio/bluetape4k/exposed/cache/CacheMode;
+	public fun getCacheName ()Ljava/lang/String;
+	protected fun getCacheOnlyMap ()Lorg/redisson/api/RMap;
+	public fun getCacheWriteMode ()Lio/bluetape4k/exposed/cache/CacheWriteMode;
+	public final fun getRedissonClient ()Lorg/redisson/api/RedissonClient;
+	protected final fun getScope ()Lkotlinx/coroutines/CoroutineScope;
+	protected fun getSuspendedMapLoader ()Lio/bluetape4k/exposed/redisson/map/SuspendedEntityMapLoader;
+	protected final fun getSuspendedMapWriter ()Lio/bluetape4k/exposed/redisson/map/SuspendedEntityMapWriter;
+	public abstract fun insertEntity (Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/io/Serializable;)V
+	public fun invalidate (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun invalidateAll (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun invalidateByPattern (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun put (Ljava/lang/Object;Ljava/io/Serializable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun putAll (Ljava/util/Map;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun updateEntity (Lorg/jetbrains/exposed/v1/core/statements/UpdateStatement;Ljava/io/Serializable;)V
+	public fun upsertAll (Ljava/util/Map;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/redisson/repository/AbstractSuspendedJdbcRedissonRepository$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {
+}
+
+public final class io/bluetape4k/exposed/redisson/repository/ExposedRedissonCodecSafety {
+	public static final field INSTANCE Lio/bluetape4k/exposed/redisson/repository/ExposedRedissonCodecSafety;
+	public final fun requireSafe (Lio/bluetape4k/redis/redisson/cache/RedissonCacheConfig;Z)V
+	public final fun requireSafe (Lorg/redisson/client/codec/Codec;Z)V
+}
+
+public abstract interface class io/bluetape4k/exposed/redisson/repository/JdbcRedissonRepository : io/bluetape4k/exposed/cache/redis/JdbcRedisRepository {
+	public static final field Companion Lio/bluetape4k/exposed/redisson/repository/JdbcRedissonRepository$Companion;
+	public static final field DEFAULT_BATCH_SIZE I
+	public static final field DEFAULT_UPSERT_BATCH_SIZE I
+	public fun clear ()V
+	public fun containsKey (Ljava/lang/Object;)Z
+	public abstract fun extractId (Ljava/io/Serializable;)Ljava/lang/Object;
+	public abstract fun findAll (Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/Expression;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Ljava/util/List;
+	public fun get (Ljava/lang/Object;)Ljava/io/Serializable;
+	public abstract fun getAll (Ljava/util/Collection;)Ljava/util/Map;
+	public abstract fun getCache ()Lorg/redisson/api/RMap;
+	public abstract fun getTable ()Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+	public fun invalidate (Ljava/lang/Object;)V
+	public fun invalidateAll (Ljava/util/Collection;)V
+	public fun invalidateByPattern (Ljava/lang/String;I)J
+	public fun put (Ljava/lang/Object;Ljava/io/Serializable;)V
+	public fun putAll (Ljava/util/Map;I)V
+	public abstract fun toEntity (Lorg/jetbrains/exposed/v1/core/ResultRow;)Ljava/io/Serializable;
+	public fun upsertAll (Ljava/util/Map;I)V
+	public static synthetic fun upsertAll$default (Lio/bluetape4k/exposed/redisson/repository/JdbcRedissonRepository;Ljava/util/Map;IILjava/lang/Object;)V
+}
+
+public final class io/bluetape4k/exposed/redisson/repository/JdbcRedissonRepository$Companion {
+	public static final field DEFAULT_BATCH_SIZE I
+	public static final field DEFAULT_UPSERT_BATCH_SIZE I
+}
+
+public final class io/bluetape4k/exposed/redisson/repository/JdbcRedissonRepository$DefaultImpls {
+	public static fun clear (Lio/bluetape4k/exposed/redisson/repository/JdbcRedissonRepository;)V
+	public static fun close (Lio/bluetape4k/exposed/redisson/repository/JdbcRedissonRepository;)V
+	public static fun containsKey (Lio/bluetape4k/exposed/redisson/repository/JdbcRedissonRepository;Ljava/lang/Object;)Z
+	public static fun get (Lio/bluetape4k/exposed/redisson/repository/JdbcRedissonRepository;Ljava/lang/Object;)Ljava/io/Serializable;
+	public static fun invalidate (Lio/bluetape4k/exposed/redisson/repository/JdbcRedissonRepository;Ljava/lang/Object;)V
+	public static fun invalidateAll (Lio/bluetape4k/exposed/redisson/repository/JdbcRedissonRepository;Ljava/util/Collection;)V
+	public static fun invalidateByPattern (Lio/bluetape4k/exposed/redisson/repository/JdbcRedissonRepository;Ljava/lang/String;I)J
+	public static fun put (Lio/bluetape4k/exposed/redisson/repository/JdbcRedissonRepository;Ljava/lang/Object;Ljava/io/Serializable;)V
+	public static fun putAll (Lio/bluetape4k/exposed/redisson/repository/JdbcRedissonRepository;Ljava/util/Map;I)V
+	public static fun upsertAll (Lio/bluetape4k/exposed/redisson/repository/JdbcRedissonRepository;Ljava/util/Map;I)V
+	public static synthetic fun upsertAll$default (Lio/bluetape4k/exposed/redisson/repository/JdbcRedissonRepository;Ljava/util/Map;IILjava/lang/Object;)V
+}
+
+public abstract interface class io/bluetape4k/exposed/redisson/repository/SuspendedJdbcRedissonRepository : io/bluetape4k/exposed/cache/redis/SuspendJdbcRedisRepository {
+	public static final field Companion Lio/bluetape4k/exposed/redisson/repository/SuspendedJdbcRedissonRepository$Companion;
+	public static final field DEFAULT_BATCH_SIZE I
+	public static final field DEFAULT_UPSERT_BATCH_SIZE I
+	public fun clear (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun containsKey (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun extractId (Ljava/io/Serializable;)Ljava/lang/Object;
+	public abstract fun findAll (Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/Expression;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun get (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getAll (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getCache ()Lorg/redisson/api/RMap;
+	public abstract fun getTable ()Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+	public fun invalidate (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun invalidateAll (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun invalidateByPattern (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun put (Ljava/lang/Object;Ljava/io/Serializable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun putAll (Ljava/util/Map;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun toEntity (Lorg/jetbrains/exposed/v1/core/ResultRow;)Ljava/io/Serializable;
+	public fun upsertAll (Ljava/util/Map;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun upsertAll$default (Lio/bluetape4k/exposed/redisson/repository/SuspendedJdbcRedissonRepository;Ljava/util/Map;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/redisson/repository/SuspendedJdbcRedissonRepository$Companion {
+	public static final field DEFAULT_BATCH_SIZE I
+	public static final field DEFAULT_UPSERT_BATCH_SIZE I
+}
+
+public final class io/bluetape4k/exposed/redisson/repository/SuspendedJdbcRedissonRepository$DefaultImpls {
+	public static fun clear (Lio/bluetape4k/exposed/redisson/repository/SuspendedJdbcRedissonRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun close (Lio/bluetape4k/exposed/redisson/repository/SuspendedJdbcRedissonRepository;)V
+	public static fun containsKey (Lio/bluetape4k/exposed/redisson/repository/SuspendedJdbcRedissonRepository;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun get (Lio/bluetape4k/exposed/redisson/repository/SuspendedJdbcRedissonRepository;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun invalidate (Lio/bluetape4k/exposed/redisson/repository/SuspendedJdbcRedissonRepository;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun invalidateAll (Lio/bluetape4k/exposed/redisson/repository/SuspendedJdbcRedissonRepository;Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun invalidateByPattern (Lio/bluetape4k/exposed/redisson/repository/SuspendedJdbcRedissonRepository;Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun put (Lio/bluetape4k/exposed/redisson/repository/SuspendedJdbcRedissonRepository;Ljava/lang/Object;Ljava/io/Serializable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun putAll (Lio/bluetape4k/exposed/redisson/repository/SuspendedJdbcRedissonRepository;Ljava/util/Map;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun upsertAll (Lio/bluetape4k/exposed/redisson/repository/SuspendedJdbcRedissonRepository;Ljava/util/Map;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun upsertAll$default (Lio/bluetape4k/exposed/redisson/repository/SuspendedJdbcRedissonRepository;Ljava/util/Map;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public abstract interface annotation class io/bluetape4k/exposed/redisson/snapshot/DelicateSnapshotCacheAdminApi : java/lang/annotation/Annotation {
+}
+
+public final class io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidator : io/bluetape4k/exposed/cache/snapshot/AsyncSnapshotInvalidationStore {
+	public fun getCompatibilityFingerprint ()Ljava/lang/String;
+	public fun getFailureBuffer ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureBuffer;
+	public fun getLimits ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheLimits;
+	public fun getStoreId ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotStoreId;
+	public fun getStoreInstanceToken ()Ljava/lang/Object;
+	public fun measure (Ljava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/MeasuredInvalidation;
+	public fun submitInvalidation (Ljava/util/List;)Ljava/util/concurrent/CompletionStage;
+}
+
+public final class io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidatorConfig : java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidatorConfig$Companion;
+	public fun <init> (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig;IIIIIJLjava/time/Duration;ZLorg/redisson/api/options/LocalCachedMapOptions$SyncStrategy;Lorg/redisson/api/options/LocalCachedMapOptions$ReconnectionStrategy;Z)V
+	public synthetic fun <init> (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig;IIIIIJLjava/time/Duration;ZLorg/redisson/api/options/LocalCachedMapOptions$SyncStrategy;Lorg/redisson/api/options/LocalCachedMapOptions$ReconnectionStrategy;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig;
+	public final fun component10 ()Lorg/redisson/api/options/LocalCachedMapOptions$SyncStrategy;
+	public final fun component11 ()Lorg/redisson/api/options/LocalCachedMapOptions$ReconnectionStrategy;
+	public final fun component12 ()Z
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6 ()I
+	public final fun component7 ()J
+	public final fun component8 ()Ljava/time/Duration;
+	public final fun component9 ()Z
+	public final fun copy (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig;IIIIIJLjava/time/Duration;ZLorg/redisson/api/options/LocalCachedMapOptions$SyncStrategy;Lorg/redisson/api/options/LocalCachedMapOptions$ReconnectionStrategy;Z)Lio/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidatorConfig;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidatorConfig;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig;IIIIIJLjava/time/Duration;ZLorg/redisson/api/options/LocalCachedMapOptions$SyncStrategy;Lorg/redisson/api/options/LocalCachedMapOptions$ReconnectionStrategy;ZILjava/lang/Object;)Lio/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidatorConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaxBatchEncodedKeyBytes ()I
+	public final fun getMaxCommitEncodedKeyBytes ()I
+	public final fun getMaxEncodedKeyBytes ()I
+	public final fun getMaxOutstandingChunks ()I
+	public final fun getMaxOutstandingEncodedBytes ()J
+	public final fun getMultiNode ()Z
+	public final fun getNamespaceVerificationTimeout ()Ljava/time/Duration;
+	public final fun getNearCacheMaximumSize ()I
+	public final fun getReconnectionStrategy ()Lorg/redisson/api/options/LocalCachedMapOptions$ReconnectionStrategy;
+	public final fun getSnapshot ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig;
+	public final fun getSynchronizationStrategy ()Lorg/redisson/api/options/LocalCachedMapOptions$SyncStrategy;
+	public final fun getTrustedBinaryCache ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidatorConfig$Companion {
+}
+
+public final class io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidatorKt {
+	public static final fun jdbcRedissonSnapshotInvalidator (Lorg/redisson/api/RedissonClient;Lio/bluetape4k/exposed/redisson/snapshot/SnapshotRedissonCodec;Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Lio/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidatorConfig;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureBuffer;)Lio/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidator;
+	public static synthetic fun jdbcRedissonSnapshotInvalidator$default (Lorg/redisson/api/RedissonClient;Lio/bluetape4k/exposed/redisson/snapshot/SnapshotRedissonCodec;Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Lio/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidatorConfig;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureBuffer;ILjava/lang/Object;)Lio/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidator;
+	public static final fun quotaHealth (Lio/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidator;)Lio/bluetape4k/exposed/redisson/snapshot/SnapshotInvalidationQuotaHealth;
+}
+
+public final class io/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotTransactionKt {
+	public static final fun stageInvalidation (Lorg/jetbrains/exposed/v1/jdbc/JdbcTransaction;Lio/bluetape4k/exposed/redisson/snapshot/JdbcRedissonSnapshotInvalidator;Ljava/lang/Object;)V
+}
+
+public abstract interface class io/bluetape4k/exposed/redisson/snapshot/SnapshotIdentifierPolicy {
+}
+
+public final class io/bluetape4k/exposed/redisson/snapshot/SnapshotIdentifierPolicyKt {
+	public static final fun longSnapshotIdentifierPolicy ()Lio/bluetape4k/exposed/redisson/snapshot/SnapshotIdentifierPolicy;
+	public static final fun uuidSnapshotIdentifierPolicy ()Lio/bluetape4k/exposed/redisson/snapshot/SnapshotIdentifierPolicy;
+}
+
+public final class io/bluetape4k/exposed/redisson/snapshot/SnapshotInvalidationQuotaHealth {
+	public fun <init> (IIJJJZ)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun component6 ()Z
+	public final fun copy (IIJJJZ)Lio/bluetape4k/exposed/redisson/snapshot/SnapshotInvalidationQuotaHealth;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/redisson/snapshot/SnapshotInvalidationQuotaHealth;IIJJJZILjava/lang/Object;)Lio/bluetape4k/exposed/redisson/snapshot/SnapshotInvalidationQuotaHealth;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaxOutstandingChunks ()I
+	public final fun getMaxOutstandingEncodedBytes ()J
+	public final fun getOutstandingChunks ()I
+	public final fun getOutstandingEncodedBytes ()J
+	public final fun getRejectedChunks ()J
+	public final fun getSaturated ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceAdminKt {
+	public static final fun clearMapRetainingMarker (Lorg/redisson/api/RedissonClient;Lio/bluetape4k/exposed/redisson/snapshot/SnapshotRedissonCodec;Ljava/lang/String;Ljava/lang/String;Ljava/time/Duration;)Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupResult;
+	public static synthetic fun clearMapRetainingMarker$default (Lorg/redisson/api/RedissonClient;Lio/bluetape4k/exposed/redisson/snapshot/SnapshotRedissonCodec;Ljava/lang/String;Ljava/lang/String;Ljava/time/Duration;ILjava/lang/Object;)Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupResult;
+	public static final fun clearSnapshotNamespace (Lorg/redisson/api/RedissonClient;Lio/bluetape4k/exposed/redisson/snapshot/SnapshotRedissonCodec;Ljava/lang/String;Ljava/lang/String;Ljava/time/Duration;)Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupResult;
+	public static synthetic fun clearSnapshotNamespace$default (Lorg/redisson/api/RedissonClient;Lio/bluetape4k/exposed/redisson/snapshot/SnapshotRedissonCodec;Ljava/lang/String;Ljava/lang/String;Ljava/time/Duration;ILjava/lang/Object;)Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupResult;
+}
+
+public final class io/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupOutcome : java/lang/Enum {
+	public static final field ALREADY_COMPLETE Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupOutcome;
+	public static final field COMPLETED Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupOutcome;
+	public static final field FAILED Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupOutcome;
+	public static final field MARKER_RETAINED Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupOutcome;
+	public static final field TIMED_OUT_ACCEPTED_UNKNOWN Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupOutcome;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupOutcome;
+	public static fun values ()[Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupOutcome;
+}
+
+public final class io/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupResult : java/io/Serializable {
+	public fun <init> (Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupOutcome;ZZLjava/lang/String;)V
+	public synthetic fun <init> (Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupOutcome;ZZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupOutcome;
+	public final fun component2 ()Z
+	public final fun component3 ()Z
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupOutcome;ZZLjava/lang/String;)Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupResult;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupResult;Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupOutcome;ZZLjava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExceptionType ()Ljava/lang/String;
+	public final fun getMapAbsent ()Z
+	public final fun getMarkerPresent ()Z
+	public final fun getOutcome ()Lio/bluetape4k/exposed/redisson/snapshot/SnapshotNamespaceCleanupOutcome;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/bluetape4k/exposed/redisson/snapshot/SnapshotRedissonCodec : org/redisson/client/codec/Codec {
+	public abstract fun getCodecVersion ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/redisson/snapshot/SnapshotRedissonCodecKt {
+	public static final fun snapshotRedissonCodec (Lorg/redisson/client/codec/Codec;Ljava/lang/String;Lio/bluetape4k/exposed/redisson/snapshot/SnapshotIdentifierPolicy;)Lio/bluetape4k/exposed/redisson/snapshot/SnapshotRedissonCodec;
+}
+

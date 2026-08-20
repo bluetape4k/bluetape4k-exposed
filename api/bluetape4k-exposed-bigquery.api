@@ -1,0 +1,136 @@
+public final class io/bluetape4k/exposed/bigquery/BigQueryContext {
+	public static final field Companion Lio/bluetape4k/exposed/bigquery/BigQueryContext$Companion;
+	public fun <init> (Lcom/google/api/services/bigquery/Bigquery;Ljava/lang/String;Ljava/lang/String;Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;)V
+	public synthetic fun <init> (Lcom/google/api/services/bigquery/Bigquery;Ljava/lang/String;Ljava/lang/String;Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun execCreateTable (Lorg/jetbrains/exposed/v1/core/Table;)V
+	public final fun execDelete (Lorg/jetbrains/exposed/v1/core/Table;Lorg/jetbrains/exposed/v1/core/Op;)Lcom/google/api/services/bigquery/model/QueryResponse;
+	public final fun execDeleteAll (Lorg/jetbrains/exposed/v1/core/Table;)Lcom/google/api/services/bigquery/model/QueryResponse;
+	public final fun execDeleteSuspending (Lorg/jetbrains/exposed/v1/core/Table;Lorg/jetbrains/exposed/v1/core/Op;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun execInsert (Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function2;)Lcom/google/api/services/bigquery/model/QueryResponse;
+	public final fun execInsertSuspending (Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun execUpdate (Lorg/jetbrains/exposed/v1/core/Table;Lorg/jetbrains/exposed/v1/core/Op;Lkotlin/jvm/functions/Function2;)Lcom/google/api/services/bigquery/model/QueryResponse;
+	public final fun execUpdateSuspending (Lorg/jetbrains/exposed/v1/core/Table;Lorg/jetbrains/exposed/v1/core/Op;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getBigquery ()Lcom/google/api/services/bigquery/Bigquery;
+	public final fun getDatasetId ()Ljava/lang/String;
+	public final fun getDispatcher ()Lkotlinx/coroutines/CoroutineDispatcher;
+	public final fun getProjectId ()Ljava/lang/String;
+	public final fun getSqlGenDb ()Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public final fun runQuery (Lorg/jetbrains/exposed/v1/jdbc/Query;Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;)Lcom/google/api/services/bigquery/model/QueryResponse;
+	public static synthetic fun runQuery$default (Lio/bluetape4k/exposed/bigquery/BigQueryContext;Lorg/jetbrains/exposed/v1/jdbc/Query;Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;ILjava/lang/Object;)Lcom/google/api/services/bigquery/model/QueryResponse;
+	public final fun runRawQuery (Ljava/lang/String;Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;)Lcom/google/api/services/bigquery/model/QueryResponse;
+	public static synthetic fun runRawQuery$default (Lio/bluetape4k/exposed/bigquery/BigQueryContext;Ljava/lang/String;Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;ILjava/lang/Object;)Lcom/google/api/services/bigquery/model/QueryResponse;
+	public final fun runRawQuerySuspending (Ljava/lang/String;Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun runRawQuerySuspending$default (Lio/bluetape4k/exposed/bigquery/BigQueryContext;Ljava/lang/String;Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun validateQuery (Lorg/jetbrains/exposed/v1/jdbc/Query;Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;)Lcom/google/api/services/bigquery/model/QueryResponse;
+	public static synthetic fun validateQuery$default (Lio/bluetape4k/exposed/bigquery/BigQueryContext;Lorg/jetbrains/exposed/v1/jdbc/Query;Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;ILjava/lang/Object;)Lcom/google/api/services/bigquery/model/QueryResponse;
+	public final fun validateRawQuery (Ljava/lang/String;Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;)Lcom/google/api/services/bigquery/model/QueryResponse;
+	public static synthetic fun validateRawQuery$default (Lio/bluetape4k/exposed/bigquery/BigQueryContext;Ljava/lang/String;Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;ILjava/lang/Object;)Lcom/google/api/services/bigquery/model/QueryResponse;
+	public final fun validateRawQuerySuspending (Ljava/lang/String;Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun validateRawQuerySuspending$default (Lio/bluetape4k/exposed/bigquery/BigQueryContext;Ljava/lang/String;Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun withBigQuery (Lorg/jetbrains/exposed/v1/jdbc/Query;Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;)Lio/bluetape4k/exposed/bigquery/BigQueryQueryExecutor;
+	public static synthetic fun withBigQuery$default (Lio/bluetape4k/exposed/bigquery/BigQueryContext;Lorg/jetbrains/exposed/v1/jdbc/Query;Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;ILjava/lang/Object;)Lio/bluetape4k/exposed/bigquery/BigQueryQueryExecutor;
+}
+
+public final class io/bluetape4k/exposed/bigquery/BigQueryContext$Companion : io/bluetape4k/logging/KLogging {
+	public final fun create (Lcom/google/api/services/bigquery/Bigquery;Ljava/lang/String;Ljava/lang/String;Lkotlinx/coroutines/CoroutineDispatcher;)Lio/bluetape4k/exposed/bigquery/BigQueryContext;
+	public static synthetic fun create$default (Lio/bluetape4k/exposed/bigquery/BigQueryContext$Companion;Lcom/google/api/services/bigquery/Bigquery;Ljava/lang/String;Ljava/lang/String;Lkotlinx/coroutines/CoroutineDispatcher;ILjava/lang/Object;)Lio/bluetape4k/exposed/bigquery/BigQueryContext;
+}
+
+public final class io/bluetape4k/exposed/bigquery/BigQueryDestinationTable : java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/bigquery/BigQueryDestinationTable$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/bluetape4k/exposed/bigquery/BigQueryDestinationTable;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/bigquery/BigQueryDestinationTable;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/bigquery/BigQueryDestinationTable;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDatasetId ()Ljava/lang/String;
+	public final fun getProjectId ()Ljava/lang/String;
+	public final fun getTableId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/bigquery/BigQueryDestinationTable$Companion {
+}
+
+public final class io/bluetape4k/exposed/bigquery/BigQueryQueryException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/bluetape4k/exposed/bigquery/BigQueryQueryExecutor {
+	public fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Query;Lio/bluetape4k/exposed/bigquery/BigQueryContext;Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;)V
+	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Query;Lio/bluetape4k/exposed/bigquery/BigQueryContext;Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun dryRun ()Lcom/google/api/services/bigquery/model/QueryResponse;
+	public final fun dryRunSuspending (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun firstOrNull ()Lio/bluetape4k/exposed/bigquery/BigQueryResultRow;
+	public final fun single ()Lio/bluetape4k/exposed/bigquery/BigQueryResultRow;
+	public final fun singleOrNull ()Lio/bluetape4k/exposed/bigquery/BigQueryResultRow;
+	public final fun toFlow ()Lkotlinx/coroutines/flow/Flow;
+	public final fun toList ()Ljava/util/List;
+	public final fun toListSuspending (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/bigquery/BigQueryQueryOptions : java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions$Companion;
+	public fun <init> ()V
+	public fun <init> (ZLjava/lang/Long;Ljava/util/Map;Lio/bluetape4k/exposed/bigquery/BigQueryQueryPriority;Ljava/lang/String;Lio/bluetape4k/exposed/bigquery/BigQueryDestinationTable;Ljava/lang/Long;Ljava/lang/Boolean;)V
+	public synthetic fun <init> (ZLjava/lang/Long;Ljava/util/Map;Lio/bluetape4k/exposed/bigquery/BigQueryQueryPriority;Ljava/lang/String;Lio/bluetape4k/exposed/bigquery/BigQueryDestinationTable;Ljava/lang/Long;Ljava/lang/Boolean;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun component4 ()Lio/bluetape4k/exposed/bigquery/BigQueryQueryPriority;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Lio/bluetape4k/exposed/bigquery/BigQueryDestinationTable;
+	public final fun component7 ()Ljava/lang/Long;
+	public final fun component8 ()Ljava/lang/Boolean;
+	public final fun copy (ZLjava/lang/Long;Ljava/util/Map;Lio/bluetape4k/exposed/bigquery/BigQueryQueryPriority;Ljava/lang/String;Lio/bluetape4k/exposed/bigquery/BigQueryDestinationTable;Ljava/lang/Long;Ljava/lang/Boolean;)Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;ZLjava/lang/Long;Ljava/util/Map;Lio/bluetape4k/exposed/bigquery/BigQueryQueryPriority;Ljava/lang/String;Lio/bluetape4k/exposed/bigquery/BigQueryDestinationTable;Ljava/lang/Long;Ljava/lang/Boolean;ILjava/lang/Object;)Lio/bluetape4k/exposed/bigquery/BigQueryQueryOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDestinationTable ()Lio/bluetape4k/exposed/bigquery/BigQueryDestinationTable;
+	public final fun getDryRun ()Z
+	public final fun getLabels ()Ljava/util/Map;
+	public final fun getLocation ()Ljava/lang/String;
+	public final fun getMaximumBytesBilled ()Ljava/lang/Long;
+	public final fun getPriority ()Lio/bluetape4k/exposed/bigquery/BigQueryQueryPriority;
+	public final fun getTimeoutMs ()Ljava/lang/Long;
+	public final fun getUseQueryCache ()Ljava/lang/Boolean;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/bigquery/BigQueryQueryOptions$Companion {
+}
+
+public final class io/bluetape4k/exposed/bigquery/BigQueryQueryPriority : java/lang/Enum {
+	public static final field BATCH Lio/bluetape4k/exposed/bigquery/BigQueryQueryPriority;
+	public static final field INTERACTIVE Lio/bluetape4k/exposed/bigquery/BigQueryQueryPriority;
+	public final fun getApiValue ()Ljava/lang/String;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/exposed/bigquery/BigQueryQueryPriority;
+	public static fun values ()[Lio/bluetape4k/exposed/bigquery/BigQueryQueryPriority;
+}
+
+public final class io/bluetape4k/exposed/bigquery/BigQueryResultRow {
+	public fun <init> (Ljava/util/Map;)V
+	public final fun get (Ljava/lang/String;)Ljava/lang/Object;
+	public final fun get (Lorg/jetbrains/exposed/v1/core/Column;)Ljava/lang/Object;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/bigquery/dialect/BigQueryDialect : org/jetbrains/exposed/v1/core/vendors/PostgreSQLDialect {
+	public static final field Companion Lio/bluetape4k/exposed/bigquery/dialect/BigQueryDialect$Companion;
+	public static final field DRIVER_CLASS_NAME Ljava/lang/String;
+	public static final field dialectName Ljava/lang/String;
+	public fun <init> ()V
+	public fun getSupportsColumnTypeChange ()Z
+	public fun getSupportsMultipleGeneratedKeys ()Z
+	public fun getSupportsWindowFrameGroupsMode ()Z
+	public fun modifyColumn (Lorg/jetbrains/exposed/v1/core/Column;Lorg/jetbrains/exposed/v1/core/ColumnDiff;)Ljava/util/List;
+}
+
+public final class io/bluetape4k/exposed/bigquery/dialect/BigQueryDialect$Companion : io/bluetape4k/logging/KLogging {
+}
+

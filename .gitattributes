@@ -1,0 +1,2 @@
+# KGP ABI dumps intentionally end with the generator's canonical blank line.
+api/*.api whitespace=-blank-at-eof

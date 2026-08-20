@@ -1,0 +1,136 @@
+public class io/bluetape4k/spring/modulith/exposed/ExposedEventPublicationRepository : org/springframework/beans/factory/BeanClassLoaderAware, org/springframework/modulith/events/core/EventPublicationRepository {
+	public fun <init> (Lio/bluetape4k/spring/modulith/exposed/ExposedEventPublicationTable;Lio/bluetape4k/spring/modulith/exposed/ExposedEventPublicationTable;Lorg/springframework/modulith/events/core/EventSerializer;Lorg/springframework/modulith/events/support/CompletionMode;)V
+	public synthetic fun <init> (Lio/bluetape4k/spring/modulith/exposed/ExposedEventPublicationTable;Lio/bluetape4k/spring/modulith/exposed/ExposedEventPublicationTable;Lorg/springframework/modulith/events/core/EventSerializer;Lorg/springframework/modulith/events/support/CompletionMode;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun countByStatus (Lorg/springframework/modulith/events/EventPublication$Status;)I
+	public fun countCompletedPublications ()I
+	public fun countFailedPublications ()I
+	public fun countIncompletePublications ()I
+	public fun countUnloadablePublications ()I
+	public fun create (Lorg/springframework/modulith/events/core/TargetEventPublication;)Lorg/springframework/modulith/events/core/TargetEventPublication;
+	public fun createSchema ()V
+	public fun deleteCompletedPublications ()V
+	public fun deleteCompletedPublicationsBefore (Ljava/time/Instant;)V
+	public fun deletePublications (Ljava/util/List;)V
+	public fun findByStatus (Lorg/springframework/modulith/events/EventPublication$Status;)Ljava/util/List;
+	public fun findCompletedPublications ()Ljava/util/List;
+	public fun findFailedPublications (Lorg/springframework/modulith/events/core/EventPublicationRepository$FailedCriteria;)Ljava/util/List;
+	public fun findIncompletePublications ()Ljava/util/List;
+	public fun findIncompletePublicationsByEventAndTargetIdentifier (Ljava/lang/Object;Lorg/springframework/modulith/events/core/PublicationTargetIdentifier;)Ljava/util/Optional;
+	public fun findIncompletePublicationsPublishedBefore (Ljava/time/Instant;)Ljava/util/List;
+	public fun markCompleted (Ljava/lang/Object;Lorg/springframework/modulith/events/core/PublicationTargetIdentifier;Ljava/time/Instant;)V
+	public fun markCompleted (Ljava/util/UUID;Ljava/time/Instant;)V
+	public fun markFailed (Ljava/util/UUID;)V
+	public fun markProcessing (Ljava/util/UUID;)V
+	public fun markResubmitted (Ljava/util/UUID;Ljava/time/Instant;)Z
+	public fun setBeanClassLoader (Ljava/lang/ClassLoader;)V
+}
+
+public final class io/bluetape4k/spring/modulith/exposed/ExposedEventPublicationTable : org/jetbrains/exposed/v1/core/Table {
+	public static final field Companion Lio/bluetape4k/spring/modulith/exposed/ExposedEventPublicationTable$Companion;
+	public static final field DEFAULT_ARCHIVE_TABLE_NAME Ljava/lang/String;
+	public static final field DEFAULT_TABLE_NAME Ljava/lang/String;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCompletionAttempts ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getCompletionDate ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getEventType ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getLastResubmissionDate ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getListenerId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
+	public final fun getPublicationDate ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getSerializedEvent ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getStatus ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/spring/modulith/exposed/ExposedEventPublicationTable$Companion {
+}
+
+public abstract class io/bluetape4k/spring/modulith/exposed/SpringModulithJdbcCaffeineRepository : io/bluetape4k/exposed/jdbc/caffeine/repository/AbstractJdbcCaffeineRepository {
+	public static final field Companion Lio/bluetape4k/spring/modulith/exposed/SpringModulithJdbcCaffeineRepository$Companion;
+	public fun <init> (Lio/bluetape4k/exposed/cache/LocalCacheConfig;Lorg/springframework/context/ApplicationEventPublisher;Lorg/springframework/transaction/support/TransactionOperations;)V
+	public synthetic fun <init> (Lio/bluetape4k/exposed/cache/LocalCacheConfig;Lorg/springframework/context/ApplicationEventPublisher;Lorg/springframework/transaction/support/TransactionOperations;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	protected fun afterPersisted (Ljava/lang/Object;Ljava/io/Serializable;)V
+	protected fun afterPersisted (Ljava/util/List;)V
+	protected abstract fun toDomainEvent (Ljava/lang/Object;Ljava/io/Serializable;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/spring/modulith/exposed/SpringModulithJdbcCaffeineRepository$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public final class io/bluetape4k/spring/modulith/exposed/TargetEventPublicationSupportKt {
+	public static final fun publicationTargetIdentifierOf (Ljava/lang/String;)Lorg/springframework/modulith/events/core/PublicationTargetIdentifier;
+	public static final fun targetEventPublicationOf (Ljava/lang/Object;Lorg/springframework/modulith/events/core/PublicationTargetIdentifier;Ljava/time/Instant;)Lorg/springframework/modulith/events/core/TargetEventPublication;
+}
+
+public final class io/bluetape4k/spring/modulith/exposed/UnloadableEventPublicationException : java/lang/IllegalStateException {
+	public fun <init> (Ljava/util/UUID;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public final fun getEventType ()Ljava/lang/String;
+	public final fun getIdentifier ()Ljava/util/UUID;
+	public final fun getListenerId ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/spring/modulith/exposed/config/ExposedEventPublicationMetrics {
+	public static final field Companion Lio/bluetape4k/spring/modulith/exposed/config/ExposedEventPublicationMetrics$Companion;
+	public static final field ERROR_METER_NAME Ljava/lang/String;
+	public static final field METER_NAME Ljava/lang/String;
+	public fun <init> (Lio/bluetape4k/spring/modulith/exposed/ExposedEventPublicationRepository;Lio/micrometer/core/instrument/MeterRegistry;Lio/bluetape4k/spring/modulith/exposed/config/ExposedModulithProperties;Lio/bluetape4k/spring/modulith/exposed/config/ExposedModulithObservabilityProperties;)V
+}
+
+public final class io/bluetape4k/spring/modulith/exposed/config/ExposedEventPublicationMetrics$Companion {
+}
+
+public class io/bluetape4k/spring/modulith/exposed/config/ExposedModulithAutoConfiguration {
+	public fun <init> ()V
+	public fun eventPublicationArchiveTable (Lio/bluetape4k/spring/modulith/exposed/config/ExposedModulithProperties;)Lio/bluetape4k/spring/modulith/exposed/ExposedEventPublicationTable;
+	public fun eventPublicationTable (Lio/bluetape4k/spring/modulith/exposed/config/ExposedModulithProperties;)Lio/bluetape4k/spring/modulith/exposed/ExposedEventPublicationTable;
+	public fun exposedEventPublicationRepository (Lio/bluetape4k/spring/modulith/exposed/ExposedEventPublicationTable;Lio/bluetape4k/spring/modulith/exposed/ExposedEventPublicationTable;Lorg/springframework/modulith/events/core/EventSerializer;Lio/bluetape4k/spring/modulith/exposed/config/ExposedModulithProperties;)Lio/bluetape4k/spring/modulith/exposed/ExposedEventPublicationRepository;
+	public fun exposedEventPublicationSchemaInitializer (Lio/bluetape4k/spring/modulith/exposed/ExposedEventPublicationRepository;)Lorg/springframework/beans/factory/SmartInitializingSingleton;
+}
+
+public class io/bluetape4k/spring/modulith/exposed/config/ExposedModulithObservabilityAutoConfiguration {
+	public fun <init> ()V
+	public fun exposedModulithEventPublicationMetrics (Lio/bluetape4k/spring/modulith/exposed/ExposedEventPublicationRepository;Lio/micrometer/core/instrument/MeterRegistry;Lio/bluetape4k/spring/modulith/exposed/config/ExposedModulithProperties;Lio/bluetape4k/spring/modulith/exposed/config/ExposedModulithObservabilityProperties;)Lio/bluetape4k/spring/modulith/exposed/config/ExposedEventPublicationMetrics;
+}
+
+public final class io/bluetape4k/spring/modulith/exposed/config/ExposedModulithObservabilityProperties : java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/spring/modulith/exposed/config/ExposedModulithObservabilityProperties$Companion;
+	public fun <init> ()V
+	public fun <init> (ZZLjava/util/Map;)V
+	public synthetic fun <init> (ZZLjava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Z
+	public final fun component3 ()Ljava/util/Map;
+	public final fun copy (ZZLjava/util/Map;)Lio/bluetape4k/spring/modulith/exposed/config/ExposedModulithObservabilityProperties;
+	public static synthetic fun copy$default (Lio/bluetape4k/spring/modulith/exposed/config/ExposedModulithObservabilityProperties;ZZLjava/util/Map;ILjava/lang/Object;)Lio/bluetape4k/spring/modulith/exposed/config/ExposedModulithObservabilityProperties;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnabled ()Z
+	public final fun getIncludeUnloadable ()Z
+	public final fun getTags ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/spring/modulith/exposed/config/ExposedModulithObservabilityProperties$Companion {
+}
+
+public final class io/bluetape4k/spring/modulith/exposed/config/ExposedModulithProperties {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lorg/springframework/modulith/events/support/CompletionMode;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lorg/springframework/modulith/events/support/CompletionMode;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lorg/springframework/modulith/events/support/CompletionMode;
+	public final fun component4 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lorg/springframework/modulith/events/support/CompletionMode;Z)Lio/bluetape4k/spring/modulith/exposed/config/ExposedModulithProperties;
+	public static synthetic fun copy$default (Lio/bluetape4k/spring/modulith/exposed/config/ExposedModulithProperties;Ljava/lang/String;Ljava/lang/String;Lorg/springframework/modulith/events/support/CompletionMode;ZILjava/lang/Object;)Lio/bluetape4k/spring/modulith/exposed/config/ExposedModulithProperties;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getArchiveTableName ()Ljava/lang/String;
+	public final fun getCompletionMode ()Lorg/springframework/modulith/events/support/CompletionMode;
+	public final fun getInitializeSchema ()Z
+	public final fun getTableName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

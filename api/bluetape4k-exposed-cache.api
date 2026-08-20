@@ -1,0 +1,618 @@
+public final class io/bluetape4k/exposed/cache/CacheHealthReport : java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/cache/CacheHealthReport$Companion;
+	public fun <init> (Lio/bluetape4k/exposed/cache/CacheWriteMode;ILio/bluetape4k/exposed/cache/CacheWorkerState;Ljava/lang/Throwable;)V
+	public final fun component1 ()Lio/bluetape4k/exposed/cache/CacheWriteMode;
+	public final fun component2 ()I
+	public final fun component3 ()Lio/bluetape4k/exposed/cache/CacheWorkerState;
+	public final fun component4 ()Ljava/lang/Throwable;
+	public final fun copy (Lio/bluetape4k/exposed/cache/CacheWriteMode;ILio/bluetape4k/exposed/cache/CacheWorkerState;Ljava/lang/Throwable;)Lio/bluetape4k/exposed/cache/CacheHealthReport;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/cache/CacheHealthReport;Lio/bluetape4k/exposed/cache/CacheWriteMode;ILio/bluetape4k/exposed/cache/CacheWorkerState;Ljava/lang/Throwable;ILjava/lang/Object;)Lio/bluetape4k/exposed/cache/CacheHealthReport;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLastFlushError ()Ljava/lang/Throwable;
+	public final fun getMode ()Lio/bluetape4k/exposed/cache/CacheWriteMode;
+	public final fun getQueueDepth ()I
+	public final fun getWorkerState ()Lio/bluetape4k/exposed/cache/CacheWorkerState;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/cache/CacheHealthReport$Companion {
+}
+
+public final class io/bluetape4k/exposed/cache/CacheMode : java/lang/Enum {
+	public static final field LOCAL Lio/bluetape4k/exposed/cache/CacheMode;
+	public static final field NEAR_CACHE Lio/bluetape4k/exposed/cache/CacheMode;
+	public static final field REMOTE Lio/bluetape4k/exposed/cache/CacheMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/exposed/cache/CacheMode;
+	public static fun values ()[Lio/bluetape4k/exposed/cache/CacheMode;
+}
+
+public final class io/bluetape4k/exposed/cache/CacheWorkerState : java/lang/Enum {
+	public static final field DRAINING Lio/bluetape4k/exposed/cache/CacheWorkerState;
+	public static final field FAILED Lio/bluetape4k/exposed/cache/CacheWorkerState;
+	public static final field IDLE Lio/bluetape4k/exposed/cache/CacheWorkerState;
+	public static final field NOT_APPLICABLE Lio/bluetape4k/exposed/cache/CacheWorkerState;
+	public static final field RUNNING Lio/bluetape4k/exposed/cache/CacheWorkerState;
+	public static final field STOPPED Lio/bluetape4k/exposed/cache/CacheWorkerState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/exposed/cache/CacheWorkerState;
+	public static fun values ()[Lio/bluetape4k/exposed/cache/CacheWorkerState;
+}
+
+public final class io/bluetape4k/exposed/cache/CacheWriteMode : java/lang/Enum {
+	public static final field READ_ONLY Lio/bluetape4k/exposed/cache/CacheWriteMode;
+	public static final field WRITE_BEHIND Lio/bluetape4k/exposed/cache/CacheWriteMode;
+	public static final field WRITE_THROUGH Lio/bluetape4k/exposed/cache/CacheWriteMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/exposed/cache/CacheWriteMode;
+	public static fun values ()[Lio/bluetape4k/exposed/cache/CacheWriteMode;
+}
+
+public abstract interface class io/bluetape4k/exposed/cache/JdbcCacheRepository : java/io/Closeable {
+	public static final field Companion Lio/bluetape4k/exposed/cache/JdbcCacheRepository$Companion;
+	public static final field DEFAULT_BATCH_SIZE I
+	public abstract fun clear ()V
+	public fun close ()V
+	public abstract fun containsKey (Ljava/lang/Object;)Z
+	public abstract fun countFromDb ()J
+	public abstract fun extractId (Ljava/io/Serializable;)Ljava/lang/Object;
+	public abstract fun findAll (Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/Expression;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Ljava/util/List;
+	public static synthetic fun findAll$default (Lio/bluetape4k/exposed/cache/JdbcCacheRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/Expression;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Ljava/util/List;
+	public abstract fun findAllFromDb (Ljava/util/Collection;)Ljava/util/List;
+	public abstract fun findByIdFromDb (Ljava/lang/Object;)Ljava/io/Serializable;
+	public abstract fun get (Ljava/lang/Object;)Ljava/io/Serializable;
+	public abstract fun getAll (Ljava/util/Collection;)Ljava/util/Map;
+	public abstract fun getCacheMode ()Lio/bluetape4k/exposed/cache/CacheMode;
+	public abstract fun getCacheName ()Ljava/lang/String;
+	public abstract fun getCacheWriteMode ()Lio/bluetape4k/exposed/cache/CacheWriteMode;
+	public abstract fun getTable ()Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+	public abstract fun invalidate (Ljava/lang/Object;)V
+	public abstract fun invalidateAll (Ljava/util/Collection;)V
+	public abstract fun put (Ljava/lang/Object;Ljava/io/Serializable;)V
+	public abstract fun putAll (Ljava/util/Map;I)V
+	public static synthetic fun putAll$default (Lio/bluetape4k/exposed/cache/JdbcCacheRepository;Ljava/util/Map;IILjava/lang/Object;)V
+	public abstract fun toEntity (Lorg/jetbrains/exposed/v1/core/ResultRow;)Ljava/io/Serializable;
+}
+
+public final class io/bluetape4k/exposed/cache/JdbcCacheRepository$Companion : io/bluetape4k/logging/KLogging {
+	public static final field DEFAULT_BATCH_SIZE I
+}
+
+public final class io/bluetape4k/exposed/cache/JdbcCacheRepository$DefaultImpls {
+	public static fun close (Lio/bluetape4k/exposed/cache/JdbcCacheRepository;)V
+	public static synthetic fun findAll$default (Lio/bluetape4k/exposed/cache/JdbcCacheRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/Expression;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Ljava/util/List;
+	public static synthetic fun putAll$default (Lio/bluetape4k/exposed/cache/JdbcCacheRepository;Ljava/util/Map;IILjava/lang/Object;)V
+}
+
+public class io/bluetape4k/exposed/cache/LocalCacheConfig : java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/cache/LocalCacheConfig$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;JLjava/time/Duration;Ljava/time/Duration;Lio/bluetape4k/exposed/cache/CacheWriteMode;II)V
+	public synthetic fun <init> (Ljava/lang/String;JLjava/time/Duration;Ljava/time/Duration;Lio/bluetape4k/exposed/cache/CacheWriteMode;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getExpireAfterAccess ()Ljava/time/Duration;
+	public final fun getExpireAfterWrite ()Ljava/time/Duration;
+	public final fun getKeyPrefix ()Ljava/lang/String;
+	public final fun getMaximumSize ()J
+	public final fun getWriteBehindBatchSize ()I
+	public final fun getWriteBehindQueueCapacity ()I
+	public final fun getWriteMode ()Lio/bluetape4k/exposed/cache/CacheWriteMode;
+}
+
+public final class io/bluetape4k/exposed/cache/LocalCacheConfig$Companion : io/bluetape4k/logging/KLogging {
+	public final fun getREAD_ONLY ()Lio/bluetape4k/exposed/cache/LocalCacheConfig;
+	public final fun getWRITE_BEHIND ()Lio/bluetape4k/exposed/cache/LocalCacheConfig;
+	public final fun getWRITE_THROUGH ()Lio/bluetape4k/exposed/cache/LocalCacheConfig;
+}
+
+public abstract interface class io/bluetape4k/exposed/cache/R2dbcCacheRepository : java/io/Closeable {
+	public static final field Companion Lio/bluetape4k/exposed/cache/R2dbcCacheRepository$Companion;
+	public static final field DEFAULT_BATCH_SIZE I
+	public abstract fun clear (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun close ()V
+	public abstract fun containsKey (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun countFromDb (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun extractId (Ljava/io/Serializable;)Ljava/lang/Object;
+	public abstract fun findAll (Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/Expression;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun findAll$default (Lio/bluetape4k/exposed/cache/R2dbcCacheRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/Expression;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun findAllFromDb (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun findByIdFromDb (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun get (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getAll (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getCacheMode ()Lio/bluetape4k/exposed/cache/CacheMode;
+	public abstract fun getCacheName ()Ljava/lang/String;
+	public abstract fun getCacheWriteMode ()Lio/bluetape4k/exposed/cache/CacheWriteMode;
+	public abstract fun getTable ()Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+	public abstract fun invalidate (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun invalidateAll (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun put (Ljava/lang/Object;Ljava/io/Serializable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun putAll (Ljava/util/Map;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun putAll$default (Lio/bluetape4k/exposed/cache/R2dbcCacheRepository;Ljava/util/Map;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun toEntity (Lorg/jetbrains/exposed/v1/core/ResultRow;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/cache/R2dbcCacheRepository$Companion : io/bluetape4k/logging/KLogging {
+	public static final field DEFAULT_BATCH_SIZE I
+}
+
+public final class io/bluetape4k/exposed/cache/R2dbcCacheRepository$DefaultImpls {
+	public static fun close (Lio/bluetape4k/exposed/cache/R2dbcCacheRepository;)V
+	public static synthetic fun findAll$default (Lio/bluetape4k/exposed/cache/R2dbcCacheRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/Expression;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun putAll$default (Lio/bluetape4k/exposed/cache/R2dbcCacheRepository;Ljava/util/Map;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public abstract interface class io/bluetape4k/exposed/cache/SuspendedJdbcCacheRepository : java/io/Closeable {
+	public static final field Companion Lio/bluetape4k/exposed/cache/SuspendedJdbcCacheRepository$Companion;
+	public static final field DEFAULT_BATCH_SIZE I
+	public abstract fun clear (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun close ()V
+	public abstract fun containsKey (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun countFromDb (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun extractId (Ljava/io/Serializable;)Ljava/lang/Object;
+	public abstract fun findAll (Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/Expression;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun findAll$default (Lio/bluetape4k/exposed/cache/SuspendedJdbcCacheRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/Expression;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun findAllFromDb (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun findByIdFromDb (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun get (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getAll (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getCacheMode ()Lio/bluetape4k/exposed/cache/CacheMode;
+	public abstract fun getCacheName ()Ljava/lang/String;
+	public abstract fun getCacheWriteMode ()Lio/bluetape4k/exposed/cache/CacheWriteMode;
+	public abstract fun getTable ()Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+	public abstract fun invalidate (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun invalidateAll (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun put (Ljava/lang/Object;Ljava/io/Serializable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun putAll (Ljava/util/Map;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun putAll$default (Lio/bluetape4k/exposed/cache/SuspendedJdbcCacheRepository;Ljava/util/Map;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun toEntity (Lorg/jetbrains/exposed/v1/core/ResultRow;)Ljava/io/Serializable;
+}
+
+public final class io/bluetape4k/exposed/cache/SuspendedJdbcCacheRepository$Companion : io/bluetape4k/logging/KLogging {
+	public static final field DEFAULT_BATCH_SIZE I
+}
+
+public final class io/bluetape4k/exposed/cache/SuspendedJdbcCacheRepository$DefaultImpls {
+	public static fun close (Lio/bluetape4k/exposed/cache/SuspendedJdbcCacheRepository;)V
+	public static synthetic fun findAll$default (Lio/bluetape4k/exposed/cache/SuspendedJdbcCacheRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/Expression;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun putAll$default (Lio/bluetape4k/exposed/cache/SuspendedJdbcCacheRepository;Ljava/util/Map;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public abstract interface class io/bluetape4k/exposed/cache/redis/JdbcRedisRepository : io/bluetape4k/exposed/cache/JdbcCacheRepository {
+	public abstract fun invalidateByPattern (Ljava/lang/String;I)J
+	public static synthetic fun invalidateByPattern$default (Lio/bluetape4k/exposed/cache/redis/JdbcRedisRepository;Ljava/lang/String;IILjava/lang/Object;)J
+}
+
+public final class io/bluetape4k/exposed/cache/redis/JdbcRedisRepository$DefaultImpls {
+	public static fun close (Lio/bluetape4k/exposed/cache/redis/JdbcRedisRepository;)V
+	public static synthetic fun invalidateByPattern$default (Lio/bluetape4k/exposed/cache/redis/JdbcRedisRepository;Ljava/lang/String;IILjava/lang/Object;)J
+}
+
+public abstract interface class io/bluetape4k/exposed/cache/redis/R2dbcRedisRepository : io/bluetape4k/exposed/cache/R2dbcCacheRepository {
+	public abstract fun invalidateByPattern (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun invalidateByPattern$default (Lio/bluetape4k/exposed/cache/redis/R2dbcRedisRepository;Ljava/lang/String;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/cache/redis/R2dbcRedisRepository$DefaultImpls {
+	public static fun close (Lio/bluetape4k/exposed/cache/redis/R2dbcRedisRepository;)V
+	public static synthetic fun invalidateByPattern$default (Lio/bluetape4k/exposed/cache/redis/R2dbcRedisRepository;Ljava/lang/String;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/cache/redis/RedisRepositoryResilienceConfig : java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/cache/redis/RedisRepositoryResilienceConfig$Companion;
+	public fun <init> ()V
+	public fun <init> (ILjava/time/Duration;ZZLjava/time/Duration;)V
+	public synthetic fun <init> (ILjava/time/Duration;ZZLjava/time/Duration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/time/Duration;
+	public final fun component3 ()Z
+	public final fun component4 ()Z
+	public final fun component5 ()Ljava/time/Duration;
+	public final fun copy (ILjava/time/Duration;ZZLjava/time/Duration;)Lio/bluetape4k/exposed/cache/redis/RedisRepositoryResilienceConfig;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/cache/redis/RedisRepositoryResilienceConfig;ILjava/time/Duration;ZZLjava/time/Duration;ILjava/lang/Object;)Lio/bluetape4k/exposed/cache/redis/RedisRepositoryResilienceConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCircuitBreakerEnabled ()Z
+	public final fun getRetryExponentialBackoff ()Z
+	public final fun getRetryMaxAttempts ()I
+	public final fun getRetryWaitDuration ()Ljava/time/Duration;
+	public final fun getTimeoutDuration ()Ljava/time/Duration;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/cache/redis/RedisRepositoryResilienceConfig$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public abstract interface class io/bluetape4k/exposed/cache/redis/SuspendJdbcRedisRepository : io/bluetape4k/exposed/cache/SuspendedJdbcCacheRepository {
+	public abstract fun invalidateByPattern (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun invalidateByPattern$default (Lio/bluetape4k/exposed/cache/redis/SuspendJdbcRedisRepository;Ljava/lang/String;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/cache/redis/SuspendJdbcRedisRepository$DefaultImpls {
+	public static fun close (Lio/bluetape4k/exposed/cache/redis/SuspendJdbcRedisRepository;)V
+	public static synthetic fun invalidateByPattern$default (Lio/bluetape4k/exposed/cache/redis/SuspendJdbcRedisRepository;Ljava/lang/String;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public abstract interface class io/bluetape4k/exposed/cache/snapshot/AsyncSnapshotInvalidationStore {
+	public abstract fun getCompatibilityFingerprint ()Ljava/lang/String;
+	public abstract fun getFailureBuffer ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureBuffer;
+	public abstract fun getLimits ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheLimits;
+	public abstract fun getStoreId ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotStoreId;
+	public abstract fun getStoreInstanceToken ()Ljava/lang/Object;
+	public abstract fun measure (Ljava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/MeasuredInvalidation;
+	public abstract fun submitInvalidation (Ljava/util/List;)Ljava/util/concurrent/CompletionStage;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/CacheSnapshot : java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot$Companion;
+	public fun <init> (Ljava/io/Serializable;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/io/Serializable;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/io/Serializable;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/io/Serializable;Ljava/lang/String;)Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;Ljava/io/Serializable;Ljava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRevision ()Ljava/lang/String;
+	public final fun getValue ()Ljava/io/Serializable;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/CacheSnapshot$Companion {
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/CacheSnapshotKt {
+	public static final fun maximumEstimatedPayloadBytes (Lio/bluetape4k/exposed/cache/snapshot/SnapshotValueSizer;J)Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshotValueValidator;
+	public static final fun rejectDirectEntitySnapshotValues ()Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshotValueValidator;
+}
+
+public abstract interface class io/bluetape4k/exposed/cache/snapshot/CacheSnapshotMapper {
+	public abstract fun toSnapshot (Ljava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;
+}
+
+public abstract interface class io/bluetape4k/exposed/cache/snapshot/CacheSnapshotValueValidator {
+	public abstract fun validate (Ljava/io/Serializable;)V
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/CaffeineSnapshotCacheConfig : java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/cache/snapshot/CaffeineSnapshotCacheConfig$Companion;
+	public fun <init> (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig;JLjava/lang/Long;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Long;Ljava/time/Duration;II)V
+	public synthetic fun <init> (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig;JLjava/lang/Long;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Long;Ljava/time/Duration;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig;
+	public final fun component2 ()J
+	public final fun component3 ()Ljava/lang/Long;
+	public final fun component4 ()Ljava/time/Duration;
+	public final fun component5 ()Ljava/time/Duration;
+	public final fun component6 ()Ljava/lang/Long;
+	public final fun component7 ()Ljava/time/Duration;
+	public final fun component8 ()I
+	public final fun component9 ()I
+	public final fun copy (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig;JLjava/lang/Long;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Long;Ljava/time/Duration;II)Lio/bluetape4k/exposed/cache/snapshot/CaffeineSnapshotCacheConfig;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/cache/snapshot/CaffeineSnapshotCacheConfig;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig;JLjava/lang/Long;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Long;Ljava/time/Duration;IIILjava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/CaffeineSnapshotCacheConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExpireAfterAccess ()Ljava/time/Duration;
+	public final fun getExpireAfterWrite ()Ljava/time/Duration;
+	public final fun getFenceStripes ()I
+	public final fun getLocalDrainBudget ()Ljava/time/Duration;
+	public final fun getMaxOutstandingMissTokens ()I
+	public final fun getMaxStagedWeight ()Ljava/lang/Long;
+	public final fun getMaximumSize ()J
+	public final fun getMaximumWeight ()Ljava/lang/Long;
+	public final fun getSnapshot ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/CaffeineSnapshotCacheConfig$Companion {
+}
+
+public abstract interface class io/bluetape4k/exposed/cache/snapshot/ClaimedSnapshotMiss {
+	public abstract fun prepare (Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheMutation$Put;
+}
+
+public abstract interface annotation class io/bluetape4k/exposed/cache/snapshot/InternalSnapshotCacheApi : java/lang/annotation/Annotation {
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/MeasuredInvalidation {
+	public static final field Companion Lio/bluetape4k/exposed/cache/snapshot/MeasuredInvalidation$Companion;
+	public fun <init> (Ljava/lang/Object;ILjava/lang/String;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/Object;ILjava/lang/String;)Lio/bluetape4k/exposed/cache/snapshot/MeasuredInvalidation;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/cache/snapshot/MeasuredInvalidation;Ljava/lang/Object;ILjava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/MeasuredInvalidation;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEncodedBytes ()I
+	public final fun getEncodedSha256 ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/MeasuredInvalidation$Companion {
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheApplyReport : java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheApplyReport$Companion;
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheApplyReport;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheApplyReport;Ljava/util/List;ILjava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheApplyReport;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getResults ()Ljava/util/List;
+	public fun hashCode ()I
+	public final fun requireReconciled (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation;I)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheApplyReport;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheApplyReport$Companion {
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig : java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;II)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;II)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaxParticipatingStores ()I
+	public final fun getMaxStagedMutations ()I
+	public final fun getNamespace ()Ljava/lang/String;
+	public final fun getSchemaVersion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheConfig$Companion {
+}
+
+public abstract interface class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheDeadline {
+	public abstract fun isExpired ()Z
+	public abstract fun remaining ()Ljava/time/Duration;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheDrainResult {
+	public fun <init> (IIILjava/lang/String;)V
+	public synthetic fun <init> (IIILjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (IIILjava/lang/String;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheDrainResult;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheDrainResult;IIILjava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheDrainResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDeliveredCount ()I
+	public final fun getObserverExceptionType ()Ljava/lang/String;
+	public final fun getObserverFailedCount ()I
+	public final fun getRemainingCount ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailure {
+	public fun <init> (Lio/bluetape4k/exposed/cache/snapshot/SnapshotStoreId;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;ILjava/lang/String;)V
+	public synthetic fun <init> (Lio/bluetape4k/exposed/cache/snapshot/SnapshotStoreId;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;ILjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotStoreId;
+	public final fun component2 ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation;
+	public final fun component3 ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;
+	public final fun component4 ()I
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Lio/bluetape4k/exposed/cache/snapshot/SnapshotStoreId;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;ILjava/lang/String;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailure;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailure;Lio/bluetape4k/exposed/cache/snapshot/SnapshotStoreId;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;ILjava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAffectedCount ()I
+	public final fun getExceptionType ()Ljava/lang/String;
+	public final fun getOperation ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation;
+	public final fun getOutcome ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;
+	public final fun getStoreId ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotStoreId;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureBuffer {
+	public abstract fun drainTo (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureObserver;I)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheDrainResult;
+	public static synthetic fun drainTo$default (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureBuffer;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureObserver;IILjava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheDrainResult;
+	public abstract fun getCapacity ()I
+	public abstract fun getDroppedCount ()J
+	public abstract fun getObserverFailureCount ()J
+	public abstract fun getSize ()I
+	public abstract fun poll ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailure;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureBuffer$DefaultImpls {
+	public static synthetic fun drainTo$default (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureBuffer;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureObserver;IILjava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheDrainResult;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureKt {
+	public static final fun loggingSnapshotCacheFailureObserver ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureObserver;
+	public static final fun requireSafeSnapshotCacheExceptionType (Ljava/lang/String;)V
+	public static final fun sanitizeSnapshotCacheExceptionType (Ljava/lang/String;)Ljava/lang/String;
+	public static final fun snapshotCacheFailureBuffer (I)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureBuffer;
+	public static synthetic fun snapshotCacheFailureBuffer$default (IILjava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureBuffer;
+}
+
+public abstract interface class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureObserver {
+	public abstract fun onFailure (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailure;)V
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheLimits : java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheLimits$Companion;
+	public fun <init> (IILjava/lang/Long;Ljava/time/Duration;)V
+	public synthetic fun <init> (IILjava/lang/Long;Ljava/time/Duration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/lang/Long;
+	public final fun component4 ()Ljava/time/Duration;
+	public final fun copy (IILjava/lang/Long;Ljava/time/Duration;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheLimits;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheLimits;IILjava/lang/Long;Ljava/time/Duration;ILjava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheLimits;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLocalDrainBudget ()Ljava/time/Duration;
+	public final fun getMaxParticipatingStores ()I
+	public final fun getMaxStagedMutations ()I
+	public final fun getMaxStagedWeight ()Ljava/lang/Long;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheLimits$Companion {
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheLookup {
+	public static final field Companion Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheLookup$Companion;
+	public final fun getMiss ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheMiss;
+	public final fun getSnapshot ()Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheLookup$Companion {
+	public final fun hit (Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheLookup;
+	public final fun miss ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheLookup;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheMiss {
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheMutation {
+	public abstract fun getId ()Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheMutation$Invalidate : io/bluetape4k/exposed/cache/snapshot/SnapshotCacheMutation {
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheMutation$Invalidate;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheMutation$Invalidate;Ljava/lang/Object;ILjava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheMutation$Invalidate;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheMutation$Put : io/bluetape4k/exposed/cache/snapshot/SnapshotCacheMutation {
+	public fun <init> (Ljava/lang/Object;Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;Lio/bluetape4k/exposed/cache/snapshot/SnapshotLocalFence;Ljava/lang/Long;)V
+	public synthetic fun <init> (Ljava/lang/Object;Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;Lio/bluetape4k/exposed/cache/snapshot/SnapshotLocalFence;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun component2 ()Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;
+	public final fun component3 ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotLocalFence;
+	public final fun component4 ()Ljava/lang/Long;
+	public final fun copy (Ljava/lang/Object;Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;Lio/bluetape4k/exposed/cache/snapshot/SnapshotLocalFence;Ljava/lang/Long;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheMutation$Put;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheMutation$Put;Ljava/lang/Object;Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;Lio/bluetape4k/exposed/cache/snapshot/SnapshotLocalFence;Ljava/lang/Long;ILjava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheMutation$Put;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEstimatedWeight ()Ljava/lang/Long;
+	public fun getId ()Ljava/lang/Object;
+	public final fun getLocalFence ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotLocalFence;
+	public final fun getSnapshot ()Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation : java/lang/Enum {
+	public static final field GET Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation;
+	public static final field INVALIDATE Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation;
+	public static final field PUT Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation;
+	public static fun values ()[Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperationResult : java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperationResult$Companion;
+	public fun <init> (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;ILjava/lang/String;)V
+	public synthetic fun <init> (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;ILjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation;
+	public final fun component2 ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;ILjava/lang/String;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperationResult;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperationResult;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;ILjava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperationResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAffectedCount ()I
+	public final fun getExceptionType ()Ljava/lang/String;
+	public final fun getOperation ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperation;
+	public final fun getOutcome ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheOperationResult$Companion {
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome : java/lang/Enum {
+	public static final field FAILED Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;
+	public static final field NOT_ATTEMPTED Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;
+	public static final field OVERRUN Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;
+	public static final field REJECTED Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;
+	public static final field SUCCESS Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;
+	public static fun values ()[Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheOutcome;
+}
+
+public abstract interface class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheStore {
+	public abstract fun applyInvalidations (Ljava/util/List;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheDeadline;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheApplyReport;
+	public abstract fun applySnapshots (Ljava/util/List;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheDeadline;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheApplyReport;
+	public abstract fun claimMiss (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheMiss;)Lio/bluetape4k/exposed/cache/snapshot/ClaimedSnapshotMiss;
+	public abstract fun getCompatibilityFingerprint ()Ljava/lang/String;
+	public abstract fun getFailureBuffer ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureBuffer;
+	public abstract fun getLimits ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheLimits;
+	public abstract fun getStoreId ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotStoreId;
+	public abstract fun getStoreInstanceToken ()Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotLocalFence {
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotLocalFenceRegistry {
+	public static final field Companion Lio/bluetape4k/exposed/cache/snapshot/SnapshotLocalFenceRegistry$Companion;
+	public fun <init> (I)V
+	public final fun capture (Ljava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotLocalFence;
+	public final fun invalidate (Ljava/lang/Object;Lkotlin/jvm/functions/Function0;)V
+	public final fun putIfCurrent (Ljava/lang/Object;Lio/bluetape4k/exposed/cache/snapshot/SnapshotLocalFence;Lkotlin/jvm/functions/Function0;)Z
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotLocalFenceRegistry$Companion {
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotMissCapabilityRegistry {
+	public fun <init> (I)V
+	public final fun claim (Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheMiss;)Lio/bluetape4k/exposed/cache/snapshot/ClaimedSnapshotMiss;
+	public final fun register (Ljava/lang/Object;Lio/bluetape4k/exposed/cache/snapshot/SnapshotLocalFence;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheLookup;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotStoreId : java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/cache/snapshot/SnapshotStoreId$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotStoreId;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/cache/snapshot/SnapshotStoreId;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotStoreId;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBackend ()Ljava/lang/String;
+	public final fun getNamespace ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotStoreId$Companion {
+}
+
+public abstract interface class io/bluetape4k/exposed/cache/snapshot/SnapshotTransactionBridge {
+	public abstract fun isCurrent (Lorg/jetbrains/exposed/v1/core/Transaction;)Z
+	public abstract fun isRoot (Lorg/jetbrains/exposed/v1/core/Transaction;)Z
+	public abstract fun maxAttempts (Lorg/jetbrains/exposed/v1/core/Transaction;)I
+	public abstract fun registerInterceptor (Lorg/jetbrains/exposed/v1/core/Transaction;Lorg/jetbrains/exposed/v1/core/statements/StatementInterceptor;)V
+}
+
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotTransactionCoordinatorKt {
+	public static final fun stageInvalidationMutation (Lorg/jetbrains/exposed/v1/core/Transaction;Lio/bluetape4k/exposed/cache/snapshot/SnapshotTransactionBridge;Lio/bluetape4k/exposed/cache/snapshot/AsyncSnapshotInvalidationStore;Ljava/lang/Object;)V
+	public static final fun stageInvalidationMutation (Lorg/jetbrains/exposed/v1/core/Transaction;Lio/bluetape4k/exposed/cache/snapshot/SnapshotTransactionBridge;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheStore;Ljava/lang/Object;)V
+	public static final fun stageMappedSnapshotMutation (Lorg/jetbrains/exposed/v1/core/Transaction;Lio/bluetape4k/exposed/cache/snapshot/SnapshotTransactionBridge;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheStore;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheMiss;Ljava/lang/Object;Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshotMapper;Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshotValueValidator;)Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;
+	public static final fun stageSnapshotMutation (Lorg/jetbrains/exposed/v1/core/Transaction;Lio/bluetape4k/exposed/cache/snapshot/SnapshotTransactionBridge;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheStore;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheMiss;Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshotValueValidator;)Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;
+}
+
+public abstract interface class io/bluetape4k/exposed/cache/snapshot/SnapshotValueSizer {
+	public abstract fun estimatedRetainedBytes (Ljava/io/Serializable;)J
+}
+

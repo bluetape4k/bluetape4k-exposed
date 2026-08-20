@@ -1,0 +1,94 @@
+public class io/bluetape4k/spring/batch/exposed/config/ExposedBatchAutoConfiguration {
+	public static final field Companion Lio/bluetape4k/spring/batch/exposed/config/ExposedBatchAutoConfiguration$Companion;
+	public fun <init> ()V
+	public fun batchPartitionTaskExecutor (Lio/bluetape4k/spring/batch/exposed/config/ExposedBatchProperties;)Lorg/springframework/core/task/TaskExecutor;
+}
+
+public final class io/bluetape4k/spring/batch/exposed/config/ExposedBatchAutoConfiguration$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public final class io/bluetape4k/spring/batch/exposed/config/ExposedBatchProperties {
+	public fun <init> ()V
+	public final fun getExecutor ()Lio/bluetape4k/spring/batch/exposed/config/ExposedBatchProperties$Executor;
+	public final fun setExecutor (Lio/bluetape4k/spring/batch/exposed/config/ExposedBatchProperties$Executor;)V
+}
+
+public final class io/bluetape4k/spring/batch/exposed/config/ExposedBatchProperties$Executor {
+	public fun <init> ()V
+	public final fun getAwaitTerminationSeconds ()J
+	public final fun getConcurrencyLimit ()I
+	public final fun getEnabled ()Z
+	public final fun getVirtualThreads ()Z
+	public final fun setAwaitTerminationSeconds (J)V
+	public final fun setConcurrencyLimit (I)V
+	public final fun setEnabled (Z)V
+	public final fun setVirtualThreads (Z)V
+}
+
+public final class io/bluetape4k/spring/batch/exposed/dsl/BatchJobExtensionsKt {
+	public static final fun exposedPartitionedStep (Lorg/springframework/batch/core/step/builder/StepBuilder;Lio/bluetape4k/spring/batch/exposed/partition/ExposedRangePartitioner;Lorg/springframework/batch/core/partition/PartitionHandler;)Lorg/springframework/batch/core/step/Step;
+	public static final fun partitionedBatchJob (Ljava/lang/String;Lorg/springframework/batch/core/repository/JobRepository;Lkotlin/jvm/functions/Function1;)Lorg/springframework/batch/core/job/Job;
+}
+
+public final class io/bluetape4k/spring/batch/exposed/partition/ExposedRangePartitioner : org/springframework/batch/core/partition/Partitioner {
+	public static final field Companion Lio/bluetape4k/spring/batch/exposed/partition/ExposedRangePartitioner$Companion;
+	public static final field PARTITION_MAX_ID Ljava/lang/String;
+	public static final field PARTITION_MIN_ID Ljava/lang/String;
+	public fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;Lorg/jetbrains/exposed/v1/core/Table;Lorg/jetbrains/exposed/v1/core/ExpressionWithColumnType;ILkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;Lorg/jetbrains/exposed/v1/core/Table;Lorg/jetbrains/exposed/v1/core/ExpressionWithColumnType;ILkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun partition (I)Ljava/util/Map;
+}
+
+public final class io/bluetape4k/spring/batch/exposed/partition/ExposedRangePartitioner$Companion : io/bluetape4k/logging/KLogging {
+	public final fun forEntityId (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;ILorg/jetbrains/exposed/v1/jdbc/Database;)Lio/bluetape4k/spring/batch/exposed/partition/ExposedRangePartitioner;
+	public static synthetic fun forEntityId$default (Lio/bluetape4k/spring/batch/exposed/partition/ExposedRangePartitioner$Companion;Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;ILorg/jetbrains/exposed/v1/jdbc/Database;ILjava/lang/Object;)Lio/bluetape4k/spring/batch/exposed/partition/ExposedRangePartitioner;
+}
+
+public class io/bluetape4k/spring/batch/exposed/reader/ExposedKeysetItemReader : org/springframework/batch/infrastructure/item/ItemStreamReader, org/springframework/beans/factory/InitializingBean {
+	public static final field Companion Lio/bluetape4k/spring/batch/exposed/reader/ExposedKeysetItemReader$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;ILorg/jetbrains/exposed/v1/core/ExpressionWithColumnType;Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;)V
+	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;ILorg/jetbrains/exposed/v1/core/ExpressionWithColumnType;Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun afterPropertiesSet ()V
+	public fun close ()V
+	public fun open (Lorg/springframework/batch/infrastructure/item/ExecutionContext;)V
+	public fun read ()Ljava/lang/Object;
+	public fun update (Lorg/springframework/batch/infrastructure/item/ExecutionContext;)V
+}
+
+public final class io/bluetape4k/spring/batch/exposed/reader/ExposedKeysetItemReader$Companion : io/bluetape4k/logging/KLogging {
+	public final fun forEntityId (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;ILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lorg/jetbrains/exposed/v1/jdbc/Database;)Lio/bluetape4k/spring/batch/exposed/reader/ExposedKeysetItemReader;
+	public static synthetic fun forEntityId$default (Lio/bluetape4k/spring/batch/exposed/reader/ExposedKeysetItemReader$Companion;Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;ILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lorg/jetbrains/exposed/v1/jdbc/Database;ILjava/lang/Object;)Lio/bluetape4k/spring/batch/exposed/reader/ExposedKeysetItemReader;
+}
+
+public final class io/bluetape4k/spring/batch/exposed/support/VirtualThreadPartitionSupportKt {
+	public static final fun virtualThreadPartitionTaskExecutor (Ljava/lang/String;I)Lorg/springframework/core/task/TaskExecutor;
+	public static synthetic fun virtualThreadPartitionTaskExecutor$default (Ljava/lang/String;IILjava/lang/Object;)Lorg/springframework/core/task/TaskExecutor;
+}
+
+public final class io/bluetape4k/spring/batch/exposed/writer/ExposedItemWriter : org/springframework/batch/infrastructure/item/ItemWriter {
+	public static final field Companion Lio/bluetape4k/spring/batch/exposed/writer/ExposedItemWriter$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function2;)V
+	public fun write (Lorg/springframework/batch/infrastructure/item/Chunk;)V
+}
+
+public final class io/bluetape4k/spring/batch/exposed/writer/ExposedItemWriter$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public final class io/bluetape4k/spring/batch/exposed/writer/ExposedUpdateItemWriter : org/springframework/batch/infrastructure/item/ItemWriter {
+	public static final field Companion Lio/bluetape4k/spring/batch/exposed/writer/ExposedUpdateItemWriter$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/Table;Lorg/jetbrains/exposed/v1/core/ExpressionWithColumnType;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
+	public fun write (Lorg/springframework/batch/infrastructure/item/Chunk;)V
+}
+
+public final class io/bluetape4k/spring/batch/exposed/writer/ExposedUpdateItemWriter$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public final class io/bluetape4k/spring/batch/exposed/writer/ExposedUpsertItemWriter : org/springframework/batch/infrastructure/item/ItemWriter {
+	public static final field Companion Lio/bluetape4k/spring/batch/exposed/writer/ExposedUpsertItemWriter$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function2;)V
+	public fun write (Lorg/springframework/batch/infrastructure/item/Chunk;)V
+}
+
+public final class io/bluetape4k/spring/batch/exposed/writer/ExposedUpsertItemWriter$Companion : io/bluetape4k/logging/KLogging {
+}
+

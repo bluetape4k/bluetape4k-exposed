@@ -1,0 +1,79 @@
+public final class io/bluetape4k/exposed/ktor/Bluetape4kExposedKtorConfig {
+	public static final field Companion Lio/bluetape4k/exposed/ktor/Bluetape4kExposedKtorConfig$Companion;
+	public static final field DEFAULT_HEALTH_PATH Ljava/lang/String;
+	public static final field DEFAULT_READINESS_PATH Ljava/lang/String;
+	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;ZZLjava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;ZZLjava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getHealthPath ()Ljava/lang/String;
+	public final fun getInstallHealthRoutes ()Z
+	public final fun getInstallStatusPages ()Z
+	public final fun getJdbcBlockingDispatcher ()Lkotlinx/coroutines/CoroutineDispatcher;
+	public final fun getJdbcDatabase ()Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public final fun getJdbcQueryTimeout-UwyO8pc ()J
+	public final fun getMeterRegistry ()Lio/micrometer/core/instrument/MeterRegistry;
+	public final fun getR2dbcDatabase ()Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;
+	public final fun getReadinessPath ()Ljava/lang/String;
+	public final fun getReadinessProbeTimeout-UwyO8pc ()J
+}
+
+public final class io/bluetape4k/exposed/ktor/Bluetape4kExposedKtorConfig$Companion {
+	public final fun getDEFAULT_JDBC_QUERY_TIMEOUT-UwyO8pc ()J
+	public final fun getDEFAULT_READINESS_PROBE_TIMEOUT-UwyO8pc ()J
+}
+
+public final class io/bluetape4k/exposed/ktor/Bluetape4kExposedKtorKt {
+	public static final fun installBluetape4kExposedKtor (Lio/ktor/server/application/Application;Lio/bluetape4k/exposed/ktor/Bluetape4kExposedKtorConfig;)V
+	public static final fun installBluetape4kExposedKtor (Lio/ktor/server/application/Application;Lio/bluetape4k/exposed/ktor/Bluetape4kExposedKtorConfig;Lio/bluetape4k/exposed/ktor/ExposedKtorCacheReadinessConfig;)V
+	public static synthetic fun installBluetape4kExposedKtor$default (Lio/ktor/server/application/Application;Lio/bluetape4k/exposed/ktor/Bluetape4kExposedKtorConfig;ILjava/lang/Object;)V
+}
+
+public final class io/bluetape4k/exposed/ktor/ExposedKtorCacheContributor {
+	public static final field Companion Lio/bluetape4k/exposed/ktor/ExposedKtorCacheContributor$Companion;
+}
+
+public final class io/bluetape4k/exposed/ktor/ExposedKtorCacheContributor$Companion {
+	public final fun custom (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lio/bluetape4k/exposed/ktor/ExposedKtorCacheContributor;
+	public final fun jdbcRepository (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)Lio/bluetape4k/exposed/ktor/ExposedKtorCacheContributor;
+	public final fun r2dbcRepository (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lio/bluetape4k/exposed/ktor/ExposedKtorCacheContributor;
+	public final fun snapshot (Ljava/lang/String;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureBuffer;)Lio/bluetape4k/exposed/ktor/ExposedKtorCacheContributor;
+}
+
+public final class io/bluetape4k/exposed/ktor/ExposedKtorCacheReadinessConfig {
+	public fun <init> (Ljava/util/List;)V
+	public final fun getContributors ()Ljava/util/List;
+}
+
+public final class io/bluetape4k/exposed/ktor/ExposedKtorCacheStatus : java/lang/Enum {
+	public static final field DOWN Lio/bluetape4k/exposed/ktor/ExposedKtorCacheStatus;
+	public static final field UP Lio/bluetape4k/exposed/ktor/ExposedKtorCacheStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/exposed/ktor/ExposedKtorCacheStatus;
+	public static fun values ()[Lio/bluetape4k/exposed/ktor/ExposedKtorCacheStatus;
+}
+
+public final class io/bluetape4k/exposed/ktor/ExposedKtorHealthRoutesKt {
+	public static final fun bluetape4kExposedHealthRoutes-021xcDE (Lio/ktor/server/routing/Route;Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;Ljava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;)V
+	public static synthetic fun bluetape4kExposedHealthRoutes-021xcDE$default (Lio/ktor/server/routing/Route;Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;Ljava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;ILjava/lang/Object;)V
+	public static final fun bluetape4kExposedHealthRoutes-PLKeYGg (Lio/ktor/server/routing/Route;Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;Ljava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;Lio/bluetape4k/exposed/ktor/ExposedKtorCacheReadinessConfig;)V
+	public static synthetic fun bluetape4kExposedHealthRoutes-PLKeYGg$default (Lio/ktor/server/routing/Route;Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;Ljava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;Lio/bluetape4k/exposed/ktor/ExposedKtorCacheReadinessConfig;ILjava/lang/Object;)V
+}
+
+public final class io/bluetape4k/exposed/ktor/ExposedKtorReadinessTimeoutException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/bluetape4k/exposed/ktor/ExposedKtorStatusPagesKt {
+	public static final fun bluetape4kExposedErrors (Lio/ktor/server/plugins/statuspages/StatusPagesConfig;)V
+}
+
+public final class io/bluetape4k/exposed/ktor/ExposedKtorTransactionException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/Throwable;)V
+}
+
+public final class io/bluetape4k/exposed/ktor/ExposedKtorTransactionsKt {
+	public static final fun exposedJdbcTransaction (Lio/ktor/server/application/ApplicationCall;Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lio/micrometer/core/instrument/MeterRegistry;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun exposedJdbcTransaction$default (Lio/ktor/server/application/ApplicationCall;Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lio/micrometer/core/instrument/MeterRegistry;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun exposedR2dbcTransaction (Lio/ktor/server/application/ApplicationCall;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;Lio/micrometer/core/instrument/MeterRegistry;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun exposedR2dbcTransaction$default (Lio/ktor/server/application/ApplicationCall;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;Lio/micrometer/core/instrument/MeterRegistry;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+

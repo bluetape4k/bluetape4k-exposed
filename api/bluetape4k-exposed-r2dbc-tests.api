@@ -1,0 +1,542 @@
+public class io/bluetape4k/exposed/r2dbc/shared/MiscTable : org/jetbrains/exposed/v1/core/Table {
+	public fun <init> ()V
+	public final fun getBy ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getByn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getC ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getChar ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getCn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getDblcn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getDc ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getDcn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getE ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getEn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getEs ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getEsn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getFcn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getN ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getNn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getS ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getSm ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getSmn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getSn ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/MiscTable$E : java/lang/Enum {
+	public static final field ONE Lio/bluetape4k/exposed/r2dbc/shared/MiscTable$E;
+	public static final field THREE Lio/bluetape4k/exposed/r2dbc/shared/MiscTable$E;
+	public static final field TWO Lio/bluetape4k/exposed/r2dbc/shared/MiscTable$E;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/exposed/r2dbc/shared/MiscTable$E;
+	public static fun values ()[Lio/bluetape4k/exposed/r2dbc/shared/MiscTable$E;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/MiscTableKt {
+	public static final fun checkInsert (Lio/bluetape4k/exposed/r2dbc/shared/MiscTable;Lorg/jetbrains/exposed/v1/core/statements/InsertStatement;BLjava/lang/Byte;SLjava/lang/Short;ILjava/lang/Integer;Lio/bluetape4k/exposed/r2dbc/shared/MiscTable$E;Lio/bluetape4k/exposed/r2dbc/shared/MiscTable$E;Lio/bluetape4k/exposed/r2dbc/shared/MiscTable$E;Lio/bluetape4k/exposed/r2dbc/shared/MiscTable$E;Ljava/lang/String;Ljava/lang/String;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/lang/Float;Ljava/lang/Double;)V
+	public static final fun checkRow (Lio/bluetape4k/exposed/r2dbc/shared/MiscTable;Lorg/jetbrains/exposed/v1/core/ResultRow;BLjava/lang/Byte;SLjava/lang/Short;ILjava/lang/Integer;Lio/bluetape4k/exposed/r2dbc/shared/MiscTable$E;Lio/bluetape4k/exposed/r2dbc/shared/MiscTable$E;Lio/bluetape4k/exposed/r2dbc/shared/MiscTable$E;Lio/bluetape4k/exposed/r2dbc/shared/MiscTable$E;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/lang/Float;Ljava/lang/Double;)V
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData;
+	public final fun toCityNameList (Ljava/lang/Iterable;)Ljava/util/List;
+	public final fun toCityNameList (Lkotlinx/coroutines/flow/Flow;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun withCitiesAndUsers (Lio/bluetape4k/exposed/r2dbc/tests/AbstractExposedR2dbcTest;Lio/bluetape4k/exposed/r2dbc/tests/TestDB;Lkotlin/jvm/functions/Function5;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun withSales (Lio/bluetape4k/exposed/r2dbc/tests/AbstractExposedR2dbcTest;Lio/bluetape4k/exposed/r2dbc/tests/TestDB;Lkotlin/jvm/functions/Function4;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun withSalesAndSomeAmounts (Lio/bluetape4k/exposed/r2dbc/tests/AbstractExposedR2dbcTest;Lio/bluetape4k/exposed/r2dbc/tests/TestDB;Lkotlin/jvm/functions/Function5;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun withSomeAmounts (Lio/bluetape4k/exposed/r2dbc/tests/AbstractExposedR2dbcTest;Lio/bluetape4k/exposed/r2dbc/tests/TestDB;Lkotlin/jvm/functions/Function4;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$Cities : org/jetbrains/exposed/v1/core/Table {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$Cities;
+	public final fun getId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$OrgMemberships : org/jetbrains/exposed/v1/core/dao/id/IntIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$OrgMemberships;
+	public final fun getOrgId ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$Orgs : org/jetbrains/exposed/v1/core/dao/id/IntIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$Orgs;
+	public final fun getName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getUid ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$Sales : org/jetbrains/exposed/v1/core/Table {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$Sales;
+	public final fun getAmount ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getMonth ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getProduct ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getYear ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$SomeAmounts : org/jetbrains/exposed/v1/core/Table {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$SomeAmounts;
+	public final fun getAmount ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$UserData : org/jetbrains/exposed/v1/core/Table {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$UserData;
+	public final fun getComment ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getUserId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getValue ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$Users : org/jetbrains/exposed/v1/core/Table {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$Users;
+	public final fun getCityId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getFlags ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$Users$Flags {
+	public static final field HAS_DATA I
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$Users$Flags;
+	public static final field IS_ADMIN I
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/entities/BoardSchema {
+	public fun <init> ()V
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/entities/BoardSchema$Boards : org/jetbrains/exposed/v1/core/dao/id/IntIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/entities/BoardSchema$Boards;
+	public final fun getName ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/entities/BoardSchema$Categories : org/jetbrains/exposed/v1/core/dao/id/IntIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/entities/BoardSchema$Categories;
+	public final fun getTitle ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getUniqueId ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/entities/BoardSchema$Posts : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/entities/BoardSchema$Posts;
+	public final fun getBoardId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getCategoryId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getOptCategoryId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getParentId ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/OrderSchema {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/mapping/OrderSchema;
+	public final fun getAllOrderTables ()[Lorg/jetbrains/exposed/v1/core/dao/id/LongIdTable;
+	public final fun withOrdersTables (Lio/bluetape4k/exposed/r2dbc/tests/AbstractExposedR2dbcTest;Lio/bluetape4k/exposed/r2dbc/tests/TestDB;Lkotlin/jvm/functions/Function7;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/OrderSchema$ItemTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/mapping/OrderSchema$ItemTable;
+	public final fun getDescription ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/OrderSchema$OrderDetailTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/mapping/OrderSchema$OrderDetailTable;
+	public final fun getDescription ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getLineNumber ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getOrderId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getQuantity ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/OrderSchema$OrderLineTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/mapping/OrderSchema$OrderLineTable;
+	public final fun getItemId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getLineNumber ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getOrderId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getQuantity ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/OrderSchema$OrderRecord : java/io/Serializable, java/lang/Comparable {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun compareTo (Lio/bluetape4k/exposed/r2dbc/shared/mapping/OrderSchema$OrderRecord;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public final fun component1 ()Ljava/lang/Long;
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun component3 ()Ljava/lang/Integer;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/String;)Lio/bluetape4k/exposed/r2dbc/shared/mapping/OrderSchema$OrderRecord;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/r2dbc/shared/mapping/OrderSchema$OrderRecord;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/r2dbc/shared/mapping/OrderSchema$OrderRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getItemId ()Ljava/lang/Long;
+	public final fun getOrderId ()Ljava/lang/Long;
+	public final fun getQuantity ()Ljava/lang/Integer;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/OrderSchema$OrderTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/mapping/OrderSchema$OrderTable;
+	public final fun getOrderDate ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/OrderSchema$UserTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/mapping/OrderSchema$UserTable;
+	public final fun getParentId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getUserName ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema;
+	public final fun getAllPersonTables ()[Lorg/jetbrains/exposed/v1/core/dao/id/LongIdTable;
+	public final fun withPersons (Lio/bluetape4k/exposed/r2dbc/tests/AbstractExposedR2dbcTest;Lio/bluetape4k/exposed/r2dbc/tests/TestDB;Lkotlin/jvm/functions/Function4;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun withPersonsAndAddress (Lio/bluetape4k/exposed/r2dbc/tests/AbstractExposedR2dbcTest;Lio/bluetape4k/exposed/r2dbc/tests/TestDB;Lkotlin/jvm/functions/Function4;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$AddressRecord : java/io/Serializable {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Long;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$AddressRecord;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$AddressRecord;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$AddressRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCity ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/Long;
+	public final fun getState ()Ljava/lang/String;
+	public final fun getStreet ()Ljava/lang/String;
+	public final fun getZip ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$AddressTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$AddressTable;
+	public final fun getCity ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getState ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getStreet ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getZip ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$PersonRecord : java/io/Serializable {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/time/LocalDate;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/Long;)V
+	public synthetic fun <init> (Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/time/LocalDate;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Long;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/time/LocalDate;
+	public final fun component5 ()Ljava/lang/Boolean;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/Long;
+	public final fun copy (Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/time/LocalDate;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/Long;)Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$PersonRecord;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$PersonRecord;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/time/LocalDate;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/Long;ILjava/lang/Object;)Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$PersonRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAddress ()Ljava/lang/Long;
+	public final fun getBirthDate ()Ljava/time/LocalDate;
+	public final fun getEmployeed ()Ljava/lang/Boolean;
+	public final fun getFirstName ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/Long;
+	public final fun getLastName ()Ljava/lang/String;
+	public final fun getOccupation ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$PersonTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$PersonTable;
+	public final fun getAddressId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getBirthDate ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getEmployeed ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getFirstName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getLastName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getOccupation ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$PersonTableDML : org/jetbrains/exposed/v1/core/Table {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$PersonTableDML;
+	public final fun getAddressId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getBirthDate ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getEmployeed ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getFirstName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getLastName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getOccupation ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$PersonWithAddress : java/io/Serializable {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/time/LocalDate;Ljava/lang/Boolean;Ljava/lang/String;Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$AddressRecord;)V
+	public synthetic fun <init> (Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/time/LocalDate;Ljava/lang/Boolean;Ljava/lang/String;Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$AddressRecord;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Long;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/time/LocalDate;
+	public final fun component5 ()Ljava/lang/Boolean;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$AddressRecord;
+	public final fun copy (Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/time/LocalDate;Ljava/lang/Boolean;Ljava/lang/String;Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$AddressRecord;)Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$PersonWithAddress;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$PersonWithAddress;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/time/LocalDate;Ljava/lang/Boolean;Ljava/lang/String;Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$AddressRecord;ILjava/lang/Object;)Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$PersonWithAddress;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAddress ()Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$AddressRecord;
+	public final fun getBirthDate ()Ljava/time/LocalDate;
+	public final fun getEmployeed ()Ljava/lang/Boolean;
+	public final fun getFirstName ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/Long;
+	public final fun getLastName ()Ljava/lang/String;
+	public final fun getOccupation ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun setAddress (Lio/bluetape4k/exposed/r2dbc/shared/mapping/PersonSchema$AddressRecord;)V
+	public final fun setBirthDate (Ljava/time/LocalDate;)V
+	public final fun setEmployeed (Ljava/lang/Boolean;)V
+	public final fun setFirstName (Ljava/lang/String;)V
+	public final fun setId (Ljava/lang/Long;)V
+	public final fun setLastName (Ljava/lang/String;)V
+	public final fun setOccupation (Ljava/lang/String;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/compositeId/BookSchema {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/mapping/compositeId/BookSchema;
+	public final fun getAllTables ()[Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/compositeId/BookSchema$Authors : org/jetbrains/exposed/v1/core/dao/id/IntIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/mapping/compositeId/BookSchema$Authors;
+	public final fun getPenName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getPublisherId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getPublisherIsbn ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/compositeId/BookSchema$Books : org/jetbrains/exposed/v1/core/dao/id/CompositeIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/mapping/compositeId/BookSchema$Books;
+	public final fun getAuthor ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getBookId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
+	public final fun getTitle ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/compositeId/BookSchema$Offices : org/jetbrains/exposed/v1/core/dao/id/CompositeIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/mapping/compositeId/BookSchema$Offices;
+	public final fun getAreaCode ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
+	public final fun getPublisherId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getPublisherIsbn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getStaff ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getZipCode ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/compositeId/BookSchema$Publishers : org/jetbrains/exposed/v1/core/dao/id/CompositeIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/mapping/compositeId/BookSchema$Publishers;
+	public final fun getIsbn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
+	public final fun getPubId ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/mapping/compositeId/BookSchema$Reviews : org/jetbrains/exposed/v1/core/dao/id/CompositeIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/mapping/compositeId/BookSchema$Reviews;
+	public final fun getBook ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getContent ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
+	public final fun getRank ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/samples/BankSchema {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/samples/BankSchema;
+	public final fun getAccount (Lorg/jetbrains/exposed/v1/r2dbc/R2dbcTransaction;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getAllTables ()[Lorg/jetbrains/exposed/v1/core/Table;
+	public final fun getOwner (Lorg/jetbrains/exposed/v1/r2dbc/R2dbcTransaction;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun withBankTables (Lio/bluetape4k/exposed/r2dbc/tests/AbstractExposedR2dbcTest;Lio/bluetape4k/exposed/r2dbc/tests/TestDB;Lkotlin/jvm/functions/Function4;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/samples/BankSchema$AccountOwnerRecord {
+	public fun <init> (ILjava/lang/String;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (ILjava/lang/String;)Lio/bluetape4k/exposed/r2dbc/shared/samples/BankSchema$AccountOwnerRecord;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/r2dbc/shared/samples/BankSchema$AccountOwnerRecord;ILjava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/r2dbc/shared/samples/BankSchema$AccountOwnerRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()I
+	public final fun getSsn ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/samples/BankSchema$AccountOwnerTable : org/jetbrains/exposed/v1/core/dao/id/IntIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/samples/BankSchema$AccountOwnerTable;
+	public final fun getSsn ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/samples/BankSchema$BankAccountRecord {
+	public fun <init> (ILjava/lang/String;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (ILjava/lang/String;)Lio/bluetape4k/exposed/r2dbc/shared/samples/BankSchema$BankAccountRecord;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/r2dbc/shared/samples/BankSchema$BankAccountRecord;ILjava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/r2dbc/shared/samples/BankSchema$BankAccountRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()I
+	public final fun getNumber ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/samples/BankSchema$BankAccountTable : org/jetbrains/exposed/v1/core/dao/id/IntIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/samples/BankSchema$BankAccountTable;
+	public final fun getNumber ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/samples/BankSchema$OwnerAccountMapTable : org/jetbrains/exposed/v1/core/Table {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/samples/BankSchema$OwnerAccountMapTable;
+	public final fun getAccountId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getOwnerId ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/samples/CityTable : org/jetbrains/exposed/v1/core/dao/id/IntIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/samples/CityTable;
+	public final fun getCountryId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getName ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/samples/CountryTable : org/jetbrains/exposed/v1/core/dao/id/IntIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/samples/CountryTable;
+	public final fun getName ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/samples/UserTable : org/jetbrains/exposed/v1/core/dao/id/IntIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/samples/UserTable;
+	public final fun getAge ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getName ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/shared/samples/UserToCityTable : org/jetbrains/exposed/v1/core/Table {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/samples/UserToCityTable;
+	public final fun getCityId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getUserId ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public abstract class io/bluetape4k/exposed/r2dbc/tests/AbstractExposedR2dbcTest {
+	public static final field Companion Lio/bluetape4k/exposed/r2dbc/tests/AbstractExposedR2dbcTest$Companion;
+	public static final field ENABLE_DIALECTS_METHOD Ljava/lang/String;
+	public fun <init> ()V
+	public final fun addIfNotExistsIfSupported ()Ljava/lang/String;
+	public static final fun enableDialects ()Ljava/util/Set;
+	public static final fun getFaker ()Lnet/datafaker/Faker;
+	public final fun initTestContainers ()V
+	protected final fun prepareSchemaForTest (Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Schema;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/tests/AbstractExposedR2dbcTest$Companion : io/bluetape4k/logging/KLogging {
+	public final fun enableDialects ()Ljava/util/Set;
+	public final fun getFaker ()Lnet/datafaker/Faker;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/tests/AssertionsKt {
+	public static final fun assertEquals (Lorg/jetbrains/exposed/v1/core/Transaction;Ljava/lang/Object;Ljava/lang/Object;)V
+	public static final fun assertEquals (Lorg/jetbrains/exposed/v1/core/Transaction;Ljava/lang/Object;Ljava/util/Collection;)V
+	public static final fun assertFailAndRollback (Lorg/jetbrains/exposed/v1/r2dbc/R2dbcTransaction;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun assertFalse (Lorg/jetbrains/exposed/v1/core/Transaction;Z)V
+	public static final fun assertNotEquals (Lorg/jetbrains/exposed/v1/core/Transaction;Ljava/lang/Object;Ljava/lang/Object;)V
+	public static final fun assertTrue (Lorg/jetbrains/exposed/v1/core/Transaction;Z)V
+}
+
+public final class io/bluetape4k/exposed/r2dbc/tests/Containers : io/bluetape4k/logging/KLogging {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/tests/Containers;
+	public final fun getMariaDB ()Lio/bluetape4k/testcontainers/database/MariaDBServer;
+	public final fun getMySQL5 ()Lio/bluetape4k/testcontainers/database/MySQL5Server;
+	public final fun getMySQL8 ()Lio/bluetape4k/testcontainers/database/MySQL8Server;
+	public final fun getPostgres ()Lio/bluetape4k/testcontainers/database/PostgreSQLServer;
+}
+
+public abstract class io/bluetape4k/exposed/r2dbc/tests/R2dbcExposedTestBase {
+	public static final field Companion Lio/bluetape4k/exposed/r2dbc/tests/R2dbcExposedTestBase$Companion;
+	public static final field ENABLE_DIALECTS_METHOD Ljava/lang/String;
+	public fun <init> ()V
+	public final fun addIfNotExistsIfSupported ()Ljava/lang/String;
+	public static final fun enableDialects ()Ljava/util/Set;
+	public static final fun getFaker ()Lnet/datafaker/Faker;
+	protected final fun prepareSchemaForTest (Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Schema;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/tests/R2dbcExposedTestBase$Companion : io/bluetape4k/logging/KLogging {
+	public final fun enableDialects ()Ljava/util/Set;
+	public final fun getFaker ()Lnet/datafaker/Faker;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/tests/TestDB : java/lang/Enum {
+	public static final field Companion Lio/bluetape4k/exposed/r2dbc/tests/TestDB$Companion;
+	public static final field H2 Lio/bluetape4k/exposed/r2dbc/tests/TestDB;
+	public static final field H2_MARIADB Lio/bluetape4k/exposed/r2dbc/tests/TestDB;
+	public static final field H2_MYSQL Lio/bluetape4k/exposed/r2dbc/tests/TestDB;
+	public static final field H2_PSQL Lio/bluetape4k/exposed/r2dbc/tests/TestDB;
+	public static final field MARIADB Lio/bluetape4k/exposed/r2dbc/tests/TestDB;
+	public static final field MYSQL_V5 Lio/bluetape4k/exposed/r2dbc/tests/TestDB;
+	public static final field MYSQL_V8 Lio/bluetape4k/exposed/r2dbc/tests/TestDB;
+	public static final field POSTGRESQL Lio/bluetape4k/exposed/r2dbc/tests/TestDB;
+	public final fun connect (Lkotlin/jvm/functions/Function1;)Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;
+	public static synthetic fun connect$default (Lio/bluetape4k/exposed/r2dbc/tests/TestDB;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;
+	public final fun getAfterTestFinished ()Lkotlin/jvm/functions/Function0;
+	public final fun getBeforeConnection ()Lkotlin/jvm/functions/Function1;
+	public final fun getConnection ()Lkotlin/jvm/functions/Function0;
+	public final fun getDb ()Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;
+	public final fun getDbConfig ()Lkotlin/jvm/functions/Function1;
+	public final fun getDriver ()Ljava/lang/String;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getPass ()Ljava/lang/String;
+	public final fun getUser ()Ljava/lang/String;
+	public final fun setDb (Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;)V
+	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/exposed/r2dbc/tests/TestDB;
+	public static fun values ()[Lio/bluetape4k/exposed/r2dbc/tests/TestDB;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/tests/TestDB$Companion : io/bluetape4k/logging/KLogging {
+	public final fun enabledDialects ()Ljava/util/Set;
+	public final fun getALL ()Ljava/util/Set;
+	public final fun getALL_H2 ()Ljava/util/Set;
+	public final fun getALL_MARIADB ()Ljava/util/Set;
+	public final fun getALL_MARIADB_LIKE ()Ljava/util/Set;
+	public final fun getALL_MYSQL ()Ljava/util/Set;
+	public final fun getALL_MYSQL_LIKE ()Ljava/util/Set;
+	public final fun getALL_MYSQL_MARIADB ()Ljava/util/Set;
+	public final fun getALL_MYSQL_MARIADB_LIKE ()Ljava/util/Set;
+	public final fun getALL_POSTGRES ()Ljava/util/Set;
+	public final fun getALL_POSTGRES_LIKE ()Ljava/util/Set;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/tests/TestDBConfig {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/tests/TestDBConfig;
+	public final fun getUseFastDB ()Z
+	public final fun getUseTestcontainers ()Z
+	public final fun setUseFastDB (Z)V
+	public final fun setUseTestcontainers (Z)V
+}
+
+public final class io/bluetape4k/exposed/r2dbc/tests/TestSupportsKt {
+	public static final fun constraintNamePart (Lorg/jetbrains/exposed/v1/core/Column;)Ljava/lang/String;
+	public static final fun getCurrentDialectIfAvailableTest ()Lorg/jetbrains/exposed/v1/core/vendors/DatabaseDialect;
+	public static final fun getCurrentDialectMetadataTest ()Lorg/jetbrains/exposed/v1/r2dbc/vendors/DatabaseDialectMetadata;
+	public static final fun getCurrentDialectTest ()Lorg/jetbrains/exposed/v1/core/vendors/DatabaseDialect;
+	public static final fun inProperCase (Ljava/lang/String;)Ljava/lang/String;
+	public static final fun insertAndSuspending (Lorg/jetbrains/exposed/v1/core/Table;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/tests/WithAutoCommitKt {
+	public static final fun withAutoCommit (Lorg/jetbrains/exposed/v1/r2dbc/R2dbcTransaction;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withAutoCommit$default (Lorg/jetbrains/exposed/v1/r2dbc/R2dbcTransaction;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/tests/WithDbKt {
+	public static final fun withDb (Lio/bluetape4k/exposed/r2dbc/tests/TestDB;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withDb$default (Lio/bluetape4k/exposed/r2dbc/tests/TestDB;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/tests/WithSchemasKt {
+	public static final fun withSchemas (Lio/bluetape4k/exposed/r2dbc/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Schema;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withSchemas$default (Lio/bluetape4k/exposed/r2dbc/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Schema;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/tests/WithTablesKt {
+	public static final fun withTables (Lio/bluetape4k/exposed/r2dbc/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withTables$default (Lio/bluetape4k/exposed/r2dbc/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+

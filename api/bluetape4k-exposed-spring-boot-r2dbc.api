@@ -1,0 +1,159 @@
+public class io/bluetape4k/spring/data/exposed/r2dbc/config/ExposedR2dbcCacheHealthAutoConfiguration {
+	public fun <init> ()V
+	public fun exposedR2dbcCacheHealthIndicator (Lorg/springframework/beans/factory/ObjectProvider;)Lorg/springframework/boot/health/contributor/ReactiveHealthIndicator;
+}
+
+public final class io/bluetape4k/spring/data/exposed/r2dbc/config/ExposedR2dbcCacheHealthIndicator : org/springframework/boot/health/contributor/ReactiveHealthIndicator {
+	public fun <init> (Lorg/springframework/beans/factory/ObjectProvider;)V
+	public fun health ()Lreactor/core/publisher/Mono;
+}
+
+public final class io/bluetape4k/spring/data/exposed/r2dbc/config/ExposedR2dbcCacheHealthProperties {
+	public fun <init> ()V
+	public final fun getEnabled ()Z
+	public final fun setEnabled (Z)V
+}
+
+public class io/bluetape4k/spring/data/exposed/r2dbc/config/ExposedR2dbcSpringDataAutoConfiguration {
+	public fun <init> ()V
+	public fun exposedMappingContext ()Lio/bluetape4k/spring/data/exposed/jdbc/mapping/ExposedMappingContext;
+}
+
+public abstract interface class io/bluetape4k/spring/data/exposed/r2dbc/repository/ExposedCoroutineFluentQuery {
+	public abstract fun all ()Lkotlinx/coroutines/flow/Flow;
+	public abstract fun asType (Lkotlin/reflect/KClass;)Lio/bluetape4k/spring/data/exposed/r2dbc/repository/ExposedCoroutineFluentQuery;
+	public abstract fun count (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun exists (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun first (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun limit (I)Lio/bluetape4k/spring/data/exposed/r2dbc/repository/ExposedCoroutineFluentQuery;
+	public abstract fun one (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun page (Lorg/springframework/data/domain/Pageable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun project ([Ljava/lang/String;)Lio/bluetape4k/spring/data/exposed/r2dbc/repository/ExposedCoroutineFluentQuery;
+	public abstract fun slice (Lorg/springframework/data/domain/Pageable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun sortBy (Lorg/springframework/data/domain/Sort;)Lio/bluetape4k/spring/data/exposed/r2dbc/repository/ExposedCoroutineFluentQuery;
+}
+
+public abstract interface class io/bluetape4k/spring/data/exposed/r2dbc/repository/ExposedCoroutineQueryByExampleExecutor {
+	public abstract fun count (Lorg/springframework/data/domain/Example;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun exists (Lorg/springframework/data/domain/Example;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun findAll (Lorg/springframework/data/domain/Example;)Lkotlinx/coroutines/flow/Flow;
+	public abstract fun findAll (Lorg/springframework/data/domain/Example;Lorg/springframework/data/domain/Sort;)Lkotlinx/coroutines/flow/Flow;
+	public abstract fun findBy (Lorg/springframework/data/domain/Example;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun findOne (Lorg/springframework/data/domain/Example;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/bluetape4k/spring/data/exposed/r2dbc/repository/ExposedR2dbcQueryByExampleRepository : io/bluetape4k/spring/data/exposed/r2dbc/repository/ExposedCoroutineQueryByExampleExecutor, io/bluetape4k/spring/data/exposed/r2dbc/repository/ExposedR2dbcRepository {
+}
+
+public abstract interface class io/bluetape4k/spring/data/exposed/r2dbc/repository/ExposedR2dbcRepository : org/springframework/data/repository/kotlin/CoroutineCrudRepository {
+	public abstract fun count (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun count (Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun delete (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteAll (Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteAll (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteAll (Lkotlinx/coroutines/flow/Flow;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteAllById (Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteById (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun exists (Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun existsById (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun extractId (Ljava/lang/Object;)Ljava/lang/Object;
+	public abstract fun findAll ()Lkotlinx/coroutines/flow/Flow;
+	public abstract fun findAll (Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
+	public abstract fun findAll (Lorg/springframework/data/domain/Pageable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun findAllAsList (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun findAllById (Ljava/lang/Iterable;)Lkotlinx/coroutines/flow/Flow;
+	public abstract fun findAllById (Lkotlinx/coroutines/flow/Flow;)Lkotlinx/coroutines/flow/Flow;
+	public abstract fun findByIdOrNull (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getTable ()Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+	public abstract fun save (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun saveAll (Ljava/lang/Iterable;)Lkotlinx/coroutines/flow/Flow;
+	public abstract fun saveAll (Lkotlinx/coroutines/flow/Flow;)Lkotlinx/coroutines/flow/Flow;
+	public abstract fun streamAll (Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun streamAll$default (Lio/bluetape4k/spring/data/exposed/r2dbc/repository/ExposedR2dbcRepository;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public abstract fun toDomain (Lorg/jetbrains/exposed/v1/core/ResultRow;)Ljava/lang/Object;
+	public abstract fun toPersistValues (Ljava/lang/Object;)Ljava/util/Map;
+}
+
+public final class io/bluetape4k/spring/data/exposed/r2dbc/repository/ExposedR2dbcRepository$DefaultImpls {
+	public static synthetic fun streamAll$default (Lio/bluetape4k/spring/data/exposed/r2dbc/repository/ExposedR2dbcRepository;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+}
+
+public abstract interface annotation class io/bluetape4k/spring/data/exposed/r2dbc/repository/config/EnableExposedR2dbcRepositories : java/lang/annotation/Annotation {
+	public abstract fun basePackageClasses ()[Ljava/lang/Class;
+	public abstract fun basePackages ()[Ljava/lang/String;
+	public abstract fun excludeFilters ()[Lorg/springframework/context/annotation/ComponentScan$Filter;
+	public abstract fun includeFilters ()[Lorg/springframework/context/annotation/ComponentScan$Filter;
+	public abstract fun namedQueriesLocation ()Ljava/lang/String;
+	public abstract fun queryLookupStrategy ()Lorg/springframework/data/repository/query/QueryLookupStrategy$Key;
+	public abstract fun repositoryFactoryBeanClass ()Ljava/lang/Class;
+	public abstract fun repositoryImplementationPostfix ()Ljava/lang/String;
+	public abstract fun transactionManagerRef ()Ljava/lang/String;
+	public abstract fun value ()[Ljava/lang/String;
+}
+
+public final class io/bluetape4k/spring/data/exposed/r2dbc/repository/config/ExposedR2dbcRepositoriesRegistrar : org/springframework/data/repository/config/RepositoryBeanDefinitionRegistrarSupport {
+	public fun <init> ()V
+}
+
+public final class io/bluetape4k/spring/data/exposed/r2dbc/repository/config/ExposedSuspendRepositoryConfigurationExtension : org/springframework/data/repository/config/RepositoryConfigurationExtensionSupport {
+	public static final field Companion Lio/bluetape4k/spring/data/exposed/r2dbc/repository/config/ExposedSuspendRepositoryConfigurationExtension$Companion;
+	public fun <init> ()V
+	public fun getModuleName ()Ljava/lang/String;
+	public fun getRepositoryFactoryBeanClassName ()Ljava/lang/String;
+	public fun postProcess (Lorg/springframework/beans/factory/support/BeanDefinitionBuilder;Lorg/springframework/data/repository/config/AnnotationRepositoryConfigurationSource;)V
+}
+
+public final class io/bluetape4k/spring/data/exposed/r2dbc/repository/config/ExposedSuspendRepositoryConfigurationExtension$Companion {
+}
+
+public final class io/bluetape4k/spring/data/exposed/r2dbc/repository/support/ExposedR2dbcRepositoryFactory : org/springframework/data/repository/core/support/RepositoryFactorySupport {
+	public fun <init> ()V
+	public fun getEntityInformation (Lorg/springframework/data/repository/core/RepositoryMetadata;)Lorg/springframework/data/repository/core/EntityInformation;
+	public fun getRepository (Ljava/lang/Class;Lorg/springframework/data/repository/core/support/RepositoryComposition$RepositoryFragments;)Ljava/lang/Object;
+	public fun setQueryLookupStrategyKey (Lorg/springframework/data/repository/query/QueryLookupStrategy$Key;)V
+}
+
+public final class io/bluetape4k/spring/data/exposed/r2dbc/repository/support/ExposedR2dbcRepositoryFactoryBean : org/springframework/data/repository/core/support/RepositoryFactoryBeanSupport {
+	public fun <init> (Ljava/lang/Class;)V
+}
+
+public class io/bluetape4k/spring/data/exposed/r2dbc/repository/support/SimpleExposedR2dbcRepository : io/bluetape4k/spring/data/exposed/r2dbc/repository/ExposedR2dbcQueryByExampleRepository {
+	public static final field Companion Lio/bluetape4k/spring/data/exposed/r2dbc/repository/support/SimpleExposedR2dbcRepository$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public fun count (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun count (Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun count (Lorg/springframework/data/domain/Example;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun delete (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun deleteAll (Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun deleteAll (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun deleteAll (Lkotlinx/coroutines/flow/Flow;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun deleteAllById (Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun deleteById (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun exists (Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun exists (Lorg/springframework/data/domain/Example;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun existsById (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun extractId (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun findAll ()Lkotlinx/coroutines/flow/Flow;
+	public fun findAll (Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
+	public fun findAll (Lorg/springframework/data/domain/Example;)Lkotlinx/coroutines/flow/Flow;
+	public fun findAll (Lorg/springframework/data/domain/Example;Lorg/springframework/data/domain/Sort;)Lkotlinx/coroutines/flow/Flow;
+	public fun findAll (Lorg/springframework/data/domain/Pageable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun findAllAsList (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun findAllById (Ljava/lang/Iterable;)Lkotlinx/coroutines/flow/Flow;
+	public fun findAllById (Lkotlinx/coroutines/flow/Flow;)Lkotlinx/coroutines/flow/Flow;
+	public fun findBy (Lorg/springframework/data/domain/Example;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun findById (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun findByIdOrNull (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun findOne (Lorg/springframework/data/domain/Example;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getTable ()Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+	public fun save (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun saveAll (Ljava/lang/Iterable;)Lkotlinx/coroutines/flow/Flow;
+	public fun saveAll (Lkotlinx/coroutines/flow/Flow;)Lkotlinx/coroutines/flow/Flow;
+	public fun streamAll (Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;)Lkotlinx/coroutines/flow/Flow;
+	public fun toDomain (Lorg/jetbrains/exposed/v1/core/ResultRow;)Ljava/lang/Object;
+	public fun toPersistValues (Ljava/lang/Object;)Ljava/util/Map;
+}
+
+public final class io/bluetape4k/spring/data/exposed/r2dbc/repository/support/SimpleExposedR2dbcRepository$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {
+}
+
