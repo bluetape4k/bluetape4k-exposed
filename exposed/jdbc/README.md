@@ -247,7 +247,7 @@ never a count or offset query, and accepts `pageSize` from 1 through 10,000. `ha
 follow the invariant documented by `ExposedCursorPage`.
 
 The caller owns cursor token encoding, signing, expiry, tenant/authorization scope, and reuse of the same
-sort and predicate. There is no snapshot guarantee across calls. The default predicate is `Op.TRUE`, so a
+sort and predicate. There is no single read-view guarantee across calls. The default predicate is `Op.TRUE`, so a
 soft-delete repository must pass its active-row predicate explicitly; `findPage` and Spring Batch keyset
 readers remain separate contracts.
 
@@ -501,6 +501,41 @@ transaction {
 | `core/ImplicitSelectAll.kt`                         | Implicit `SELECT *` query                      |
 | `core/TableExtensions.kt`                           | Table metadata extension functions             |
 | `core/SchemaUtilsExtensions.kt`                     | SchemaUtils extension functions                |
+
+## MySQL 8 JDBC conformance
+
+`MySQLJdbcParallelKeyEnumerationTest` verifies the JDBC parallel key enumeration
+boundary with MySQL 8 Connector/J, HikariCP, and Testcontainers. The fixture is
+test-only; it does not change the production API, pool configuration, or release
+manual.
+
+| Contract | Evidence |
+|----------|----------|
+| Sparse IDs and disjoint range ordering | MySQL 8: PASS |
+| Overlap/reverse validation and empty-range no-lease path | MySQL 8: PASS |
+| Hikari pool 1/2/4 exact lease peak with `maxConcurrency=2` | MySQL 8: PASS |
+| `READ_COMMITTED` and `REPEATABLE_READ` two-SELECT fixture | MySQL 8: PASS |
+| Statement rollback, SQLState `23000`, and lease retry request count | MySQL 8: PASS |
+| Cleanup primary/suppressed failures and caller executor ownership | MySQL 8: PASS |
+
+Run the driver-specific test with:
+
+```bash
+EXPOSED_TEST_DB=MYSQL_V8 TESTCONTAINERS_RYUK_DISABLED=true \
+./gradlew :bluetape4k-exposed-jdbc:test \
+  --tests 'io.bluetape4k.exposed.jdbc.MySQLJdbcParallelKeyEnumerationTest' \
+  --rerun-tasks --no-build-cache --no-configuration-cache \
+  --no-parallel --max-workers=1 --console=plain
+```
+
+The H2 unit baseline remains `JdbcParallelKeyEnumerationTest`. The existing
+nightly MySQL job in `.github/workflows/nightly-tests.yml` supplies the Docker
+environment; this conformance class does not claim all MySQL deployments or all
+JDBC drivers are equivalent. Pool size 1 is an intentional under-provisioned
+pressure case, not an operational recommendation. The isolation callback uses
+an internal two-SELECT test seam and does not promise a shared read view for the
+public overload. `SERIALIZABLE`, network faults, and cancellation remain outside
+this issue; see follow-up issues #697 and #690.
 
 ## Performance Benchmarks
 
