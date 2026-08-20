@@ -20,7 +20,7 @@ Testcontainers, Java Virtual Threads, Gradle, Detekt.
 - worktree: `.worktrees/issue-698-mysql`, branch `test/issue-698-mysql`
 - base: `develop` `ea19b9e0c6d5135d2447c9a95435c85c1127e3b3`
 - 선행 slot: #696 PostgreSQL merge 완료
-- live metadata: #698 milestone `1.13.0`, assignee `debop`, labels `test`, `performance`,
+- live metadata: #698 milestone `2.0.0`, assignee `debop`, labels `test`, `performance`,
   `stacked-pr`
 - 허용 파일: 새 `exposed/jdbc/src/test/kotlin/.../MySQLJdbcParallelKeyEnumerationTest.kt`,
   `exposed/jdbc/README.md`, `exposed/jdbc/README.ko.md`, 설계 spec·이 계획·review·lesson 문서

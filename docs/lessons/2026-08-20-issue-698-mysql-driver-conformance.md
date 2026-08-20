@@ -57,6 +57,8 @@ production source/API/ABI, catalog/BOM, workflow, `docs/manual/**`는 변경하�
 | 검증 | 결과 |
 | --- | --- |
 | MySQL 8 Testcontainers targeted | `10/0/0/0`, `BUILD SUCCESSFUL` |
+| 실행 환경·driver provenance | Docker Server `29.2.1`, image `mysql:8.4.11`, Connector/J `9.7.0` |
+| MySQL XML evidence | `exposed/jdbc/build/test-results/test/TEST-io.bluetape4k.exposed.jdbc.MySQLJdbcParallelKeyEnumerationTest.xml`, fresh mtime `2026-08-20 21:24:39 +0900`, `tests=10 skipped=0 failures=0 errors=0` |
 | H2 parallel enumeration targeted | `8/0/0/0`, `BUILD SUCCESSFUL` |
 | exposed-jdbc H2 full regression | `207/0/0/21`, `BUILD SUCCESSFUL` |
 | shared jdbc-tests H2 regression | `72/0/0/5`, `BUILD SUCCESSFUL` |
