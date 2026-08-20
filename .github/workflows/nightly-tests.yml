@@ -1021,6 +1021,67 @@ jobs:
           path: '**/build/reports/kover/'
           retention-days: 14
 
+  # Issue #701 cache-loader selectors (PostgreSQL, Testcontainers)
+  test-cache-loader-postgresql:
+    name: Test / cache-loader PostgreSQL parity
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '3 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
+      TESTCONTAINERS_RYUK_DISABLED: "true"
+      DOCKER_HOST: "unix:///var/run/docker.sock"
+      EXPOSED_TEST_DB: "POSTGRESQL"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5.7.0
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v6.3.0
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Test JDBC Lettuce cache-loader selector (PostgreSQL)
+        run: >
+          ./gradlew
+          :bluetape4k-exposed-jdbc-lettuce:test
+          --tests '*Issue692CustomIdLoaderTest'
+          --rerun-tasks
+          --no-build-cache
+          --no-configuration-cache
+          --no-daemon
+      - name: Test JDBC Redisson cache-loader selector (PostgreSQL)
+        run: >
+          ./gradlew
+          :bluetape4k-exposed-jdbc-redisson:test
+          --tests '*Issue692CustomIdLoaderTest'
+          --rerun-tasks
+          --no-build-cache
+          --no-configuration-cache
+          --no-daemon
+      - name: Test R2DBC Redisson cache-loader selector (PostgreSQL)
+        run: >
+          ./gradlew
+          :bluetape4k-exposed-r2dbc-redisson:test
+          --tests '*Issue692CustomIdLoaderTest'
+          --rerun-tasks
+          --no-build-cache
+          --no-configuration-cache
+          --no-daemon
+        env:
+          EXPOSED_ISSUE_692_TIMEOUT_TEST: "true"
+      - name: Upload cache-loader test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-cache-loader-postgresql
+          path: '**/build/test-results/test/*.xml'
+          if-no-files-found: error
+          retention-days: 30
+
   # exposed-measured
   test-measured:
     name: Test / exposed-measured
@@ -2038,6 +2099,7 @@ jobs:
       - test-jdbc-redisson
       - test-r2dbc-lettuce
       - test-r2dbc-redisson
+      - test-cache-loader-postgresql
       - test-measured
       - test-postgresql-module
       - test-mysql8-module
