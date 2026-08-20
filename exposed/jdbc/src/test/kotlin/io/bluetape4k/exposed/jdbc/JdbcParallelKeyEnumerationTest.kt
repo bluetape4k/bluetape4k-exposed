@@ -16,6 +16,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
 
@@ -187,6 +188,155 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                 interrupted.get().shouldBeTrue()
             } finally {
                 executor.close()
+            }
+        }
+    }
+
+    @Test
+    @Suppress("LongMethod")
+    fun `failed range joins interrupt-ignoring siblings before returning`() {
+        withTables(TestDB.H2, EnumerationTable) {
+            commit()
+            val started = CountDownLatch(2)
+            val interruptObserved = CountDownLatch(1)
+            val allFinished = CountDownLatch(1)
+            val activeChildren = AtomicInteger(0)
+            val expected = IllegalStateException("range failure")
+            val executor = Executors.newVirtualThreadPerTaskExecutor()
+            try {
+                val failure =
+                    runCatching {
+                        parallelJdbcKeyEnumeration(
+                            table = EnumerationTable,
+                            ranges = listOf(
+                                JdbcKeyRange(upperExclusive = 1L),
+                                JdbcKeyRange(lowerInclusive = 1L, upperExclusive = 2L),
+                                JdbcKeyRange(lowerInclusive = 2L),
+                            ),
+                            options = JdbcParallelKeyEnumerationOptions(
+                                maxConcurrency = 2,
+                                executor = executor,
+                            ),
+                        ) { _, range ->
+                            activeChildren.incrementAndGet()
+                            started.countDown()
+                            try {
+                                if (range.upperExclusive == 1L) {
+                                    check(started.await(2, TimeUnit.SECONDS))
+                                    throw expected
+                                }
+
+                                val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(250)
+                                while (System.nanoTime() < deadline) {
+                                    try {
+                                        Thread.sleep(10)
+                                    } catch (_: InterruptedException) {
+                                        interruptObserved.countDown()
+                                    }
+                                }
+                                emptyList()
+                            } finally {
+                                if (activeChildren.decrementAndGet() == 0) {
+                                    allFinished.countDown()
+                                }
+                            }
+                        }
+                    }.exceptionOrNull()
+
+                failure shouldBeEqualTo expected
+                check(interruptObserved.await(2, TimeUnit.SECONDS)) {
+                    "the sibling must observe the cancellation interrupt"
+                }
+                activeChildren.get() shouldBeEqualTo 0
+                allFinished.count shouldBeEqualTo 0
+                executor.isShutdown shouldBeEqualTo false
+            } finally {
+                check(allFinished.await(2, TimeUnit.SECONDS)) {
+                    "interrupt-ignoring siblings must eventually finish"
+                }
+                executor.close()
+            }
+        }
+    }
+
+    @Test
+    @Suppress("LongMethod")
+    fun `caller interrupt joins interrupt-ignoring children before returning`() {
+        withTables(TestDB.H2, EnumerationTable) {
+            commit()
+            val database = checkNotNull(TestDB.H2.db)
+            val started = CountDownLatch(2)
+            val interruptObserved = CountDownLatch(1)
+            val allFinished = CountDownLatch(1)
+            val callerFinished = CountDownLatch(1)
+            val activeChildren = AtomicInteger(0)
+            val callerFailure = AtomicReference<Throwable?>()
+            val callerWasInterrupted = AtomicBoolean(false)
+            val childExecutor = Executors.newVirtualThreadPerTaskExecutor()
+            val caller = Thread.ofPlatform().start {
+                try {
+                    parallelJdbcKeyEnumeration(
+                        table = EnumerationTable,
+                        ranges = listOf(
+                            JdbcKeyRange(upperExclusive = 1L),
+                            JdbcKeyRange(lowerInclusive = 1L, upperExclusive = 2L),
+                            JdbcKeyRange(lowerInclusive = 2L),
+                        ),
+                        options = JdbcParallelKeyEnumerationOptions(
+                            maxConcurrency = 2,
+                            executor = childExecutor,
+                            database = database,
+                        ),
+                    ) { _, _ ->
+                        activeChildren.incrementAndGet()
+                        started.countDown()
+                        try {
+                            val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(250)
+                            while (System.nanoTime() < deadline) {
+                                try {
+                                    Thread.sleep(10)
+                                } catch (_: InterruptedException) {
+                                    interruptObserved.countDown()
+                                }
+                            }
+                            emptyList()
+                        } finally {
+                            if (activeChildren.decrementAndGet() == 0) {
+                                allFinished.countDown()
+                            }
+                        }
+                    }
+                    error("caller interrupt must abort enumeration")
+                } catch (cause: Throwable) {
+                    callerFailure.set(cause)
+                    callerWasInterrupted.set(Thread.currentThread().isInterrupted)
+                } finally {
+                    callerFinished.countDown()
+                }
+            }
+
+            try {
+                check(started.await(2, TimeUnit.SECONDS)) {
+                    "two child transactions must start before interrupting the caller"
+                }
+                caller.interrupt()
+                check(callerFinished.await(2, TimeUnit.SECONDS)) {
+                    "caller must finish after child cleanup"
+                }
+                check(interruptObserved.await(2, TimeUnit.SECONDS)) {
+                    "children must observe the caller cancellation interrupt"
+                }
+                (callerFailure.get() is InterruptedException).shouldBeTrue()
+                callerWasInterrupted.get().shouldBeTrue()
+                activeChildren.get() shouldBeEqualTo 0
+                allFinished.count shouldBeEqualTo 0
+            } finally {
+                caller.interrupt()
+                caller.join(TimeUnit.SECONDS.toMillis(2))
+                check(allFinished.await(2, TimeUnit.SECONDS)) {
+                    "interrupt-ignoring children must eventually finish"
+                }
+                childExecutor.close()
             }
         }
     }
