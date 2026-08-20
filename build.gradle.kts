@@ -795,10 +795,15 @@ tasks.register("checkProductionAbi") {
     dependsOn(productionAbiCheckTasks)
     doLast {
         val expectedProjects = productionAbiProjects.map(Project::getName).toSet()
-        val baselineProjects = rootProject.layout.projectDirectory.dir("api").asFile
+        val baselineFiles = rootProject.layout.projectDirectory.dir("api").asFile
             .listFiles()
             .orEmpty()
-            .filter { it.isFile && it.extension == "api" && it.length() > 0L }
+            .filter { it.isFile && it.extension == "api" }
+        val baselineProjects = baselineFiles
+            .map { it.name.removeSuffix(".api") }
+            .toSet()
+        val emptyBaselineProjects = baselineFiles
+            .filter { it.length() == 0L }
             .map { it.name.removeSuffix(".api") }
             .toSet()
         val actualProjects = productionAbiProjects
@@ -813,6 +818,7 @@ tasks.register("checkProductionAbi") {
             expectedProjects = expectedProjects,
             baselineProjects = baselineProjects,
             actualProjects = actualProjects,
+            emptyBaselineProjects = emptyBaselineProjects,
         )
         result.requireValid()
 
@@ -825,6 +831,7 @@ tasks.register("checkProductionAbi") {
                     appendLine("actualDumps=${actualProjects.size}/${expectedProjects.size}")
                     appendLine("orphanBaselines=${result.orphanBaselines.size}")
                     appendLine("orphanActuals=${result.orphanActuals.size}")
+                    appendLine("emptyBaselines=${result.emptyBaselineProjects.size}")
                     expectedProjects.sorted().forEach { appendLine(it) }
                 },
             )

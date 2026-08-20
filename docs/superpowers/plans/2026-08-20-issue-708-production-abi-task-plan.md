@@ -174,7 +174,8 @@ grep -F 'modules=34/34' build/abi/reports/production-abi.txt
 - `ProductionAbiSupportTest`는 helper 구현 전 unresolved symbol로 RED를 확인했고,
   구현 후 targeted 및 full `:buildSrc:test`가 GREEN이다.
 - `checkProductionAbi` report: `modules=34/34`, `baselines=34/34`,
-  `actualDumps=34/34`, `orphanBaselines=0`, `orphanActuals=0`.
+  `actualDumps=34/34`, `orphanBaselines=0`, `orphanActuals=0`,
+  `emptyBaselines=0`.
 - 기존 ABI fixture: JDBC `3/3`, R2DBC `2/2`, Ktor `3/3` pass; failure/error `0/0`.
 - compile retry-equivalent build, `detekt`, `actionlint`, terminology audit,
   `git diff --check`가 통과했다.
@@ -228,7 +229,7 @@ grep -F 'modules=34/34' build/abi/reports/production-abi.txt
 
 ## Implementation DoD Status
 
-Required checks: 7/8; N/A: 1; Blocked: 0
+Required checks: 7/8; N/A: 0; Blocked: 0
 
 Final status: **PENDING — 로컬 implementation evidence는 확보했지만 hosted
 exact-head CI, PR review/merge gate는 남아 있음**

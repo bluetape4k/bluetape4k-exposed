@@ -156,7 +156,8 @@ exact-head CI와 PR review는 이 문서의 로컬 DoD 이후 별도 gate로 남
   inventory를 fail-closed로 검증하고, root `build.gradle.kts`가 34개 publication을
   KGP task와 중앙 `api/` baseline에 연결한다.
 - `api/`에는 exact base에서 생성한 non-empty baseline 34개가 있으며 aggregate
-  report는 `modules=34/34`, `baselines=34/34`, `actualDumps=34/34`, orphan `0`이다.
+  report는 `modules=34/34`, `baselines=34/34`, `actualDumps=34/34`, orphan `0`,
+  `emptyBaselines=0`이다.
 - 기존 JDBC/R2DBC/Ktor fixture는 각각 `3/3`, `2/2`, `3/3` pass로 순차 검증했다.
 - CI compile retry에서 `checkKotlinAbi`를 제외하고, 후속 ABI 단계는 `pipefail`/`tee`,
   non-empty report, 실제 publication inventory JSON과 `if: always()` artifact upload,

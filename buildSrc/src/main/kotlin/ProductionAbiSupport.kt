@@ -8,6 +8,7 @@ data class ProductionAbiInventoryResult(
     val expectedProjects: Set<String>,
     val baselineProjects: Set<String>,
     val actualProjects: Set<String>,
+    val emptyBaselineProjects: Set<String> = emptySet(),
 ) {
     val missingBaselines: Set<String> = expectedProjects - baselineProjects
     val orphanBaselines: Set<String> = baselineProjects - expectedProjects
@@ -18,7 +19,8 @@ data class ProductionAbiInventoryResult(
         get() = missingBaselines.isEmpty() &&
             orphanBaselines.isEmpty() &&
             missingActuals.isEmpty() &&
-            orphanActuals.isEmpty()
+            orphanActuals.isEmpty() &&
+            emptyBaselineProjects.isEmpty()
 
     /** 검증 실패를 성공으로 삼지 않도록 상세 차이를 포함해 중단합니다. */
     fun requireValid() {
@@ -29,6 +31,7 @@ data class ProductionAbiInventoryResult(
                 appendDifference("orphan baselines", orphanBaselines)
                 appendDifference("missing actual dumps", missingActuals)
                 appendDifference("orphan actual dumps", orphanActuals)
+                appendDifference("empty baselines", emptyBaselineProjects)
             }.trimEnd()
         }
     }
@@ -47,11 +50,13 @@ fun validateProductionAbiInventory(
     expectedProjects: Set<String>,
     baselineProjects: Set<String>,
     actualProjects: Set<String>,
+    emptyBaselineProjects: Set<String> = emptySet(),
 ): ProductionAbiInventoryResult {
     require(expectedProjects.isNotEmpty()) { "Published ABI inventory must not be empty" }
     return ProductionAbiInventoryResult(
         expectedProjects = expectedProjects,
         baselineProjects = baselineProjects,
         actualProjects = actualProjects,
+        emptyBaselineProjects = emptyBaselineProjects,
     )
 }

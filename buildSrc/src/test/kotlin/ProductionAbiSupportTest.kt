@@ -42,6 +42,19 @@ class ProductionAbiSupportTest {
         check(result.orphanActuals.isEmpty())
     }
 
+    @Test
+    fun `empty baseline is never treated as valid`() {
+        val result = validateProductionAbiInventory(
+            expectedProjects = setOf("alpha"),
+            baselineProjects = setOf("alpha"),
+            actualProjects = setOf("alpha"),
+            emptyBaselineProjects = setOf("alpha"),
+        )
+
+        check(result.emptyBaselineProjects == setOf("alpha"))
+        expectFailure<IllegalStateException> { result.requireValid() }
+    }
+
     private inline fun <reified T : Throwable> expectFailure(block: () -> Unit) {
         try {
             block()

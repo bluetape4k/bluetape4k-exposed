@@ -309,6 +309,7 @@ jobs:
           grep -F 'modules=34/34' build/abi/reports/production-abi.txt
           grep -F 'baselines=34/34' build/abi/reports/production-abi.txt
           grep -F 'actualDumps=34/34' build/abi/reports/production-abi.txt
+          grep -F 'emptyBaselines=0' build/abi/reports/production-abi.txt
 
       - name: Upload production ABI evidence
         if: always()

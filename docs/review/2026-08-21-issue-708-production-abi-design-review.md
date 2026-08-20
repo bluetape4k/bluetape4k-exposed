@@ -77,7 +77,7 @@ gate다.
 
 ## DoD Status
 
-Required checks: 7/8; N/A: 1; Blocked: 0
+Required checks: 7/8; N/A: 0; Blocked: 0
 
 | Check | Status | Evidence |
 | --- | --- | --- |
