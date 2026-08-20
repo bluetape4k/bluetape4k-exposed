@@ -24,6 +24,9 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
  * - 단건 조회는 `selectAll().where { id eq ... }.singleOrNull()` 결과를 [toEntity]로 변환합니다.
  * - 전체 키 조회는 표준 scalar PK의 keyset page 또는 custom PK의 offset fallback으로
  *   [batchSize] 단위 ID를 PK 오름차순으로 수집합니다.
+ * - [loadAllKeys]는 하나의 JDBC transaction 안에서 모든 page를 순서대로 읽고,
+ *   반환 전에 전체 ID를 materialize하는 [Iterable]입니다. page loop는 transaction
+ *   경계 안에서 실행되며 전체 열거는 weakly consistent합니다.
  * - [batchSize]가 0 이하이면 초기화 시 [IllegalArgumentException]이 발생합니다.
  * - `loadAllKeys()`는 DB 오류를 로깅 후 예외를 다시 던집니다.
  *

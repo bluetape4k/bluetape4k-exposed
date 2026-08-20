@@ -27,6 +27,10 @@ import org.jetbrains.exposed.v1.r2dbc.selectAll
  * - 단건 조회는 `selectAll().where { id eq ... }.singleOrNull()` 결과를 [toEntity]로 변환합니다.
  * - 전체 키 조회는 표준 scalar PK의 keyset page 또는 custom PK의 offset fallback으로
  *   [batchSize] 단위 키를 채널에 전송합니다.
+ * - rendezvous channel back-pressure로 한 번에 한 ID만 소비자에게 전달하며, page 사이
+ *   mutation에는 weakly consistent semantics를 적용합니다. caller가 주입한 scope의
+ *   cancellation과 producer 오류/timeout 전파, top-level/ambient retry 경계는
+ *   [R2dbcEntityMapLoader] 계약을 따릅니다.
  * - [batchSize]가 0 이하이면 초기화 시 [IllegalArgumentException]이 발생합니다.
  * - 테스트 기준으로 `batchSize=2`일 때도 3건 키를 모두 로드합니다.
  *

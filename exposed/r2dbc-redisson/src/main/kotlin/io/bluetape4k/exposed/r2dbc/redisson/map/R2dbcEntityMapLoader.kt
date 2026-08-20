@@ -31,6 +31,14 @@ import java.util.concurrent.TimeoutException
  * - [loadAllKeys]는 채널 기반 [AsyncIterator]를 반환하고, 백그라운드 코루틴에서 [loadAllIdsFromDB]를 실행합니다.
  * - 전체 키 로딩은 60초 타임아웃과 top-level `maxAttempts = 1`을 적용합니다. 전자는
  *   무한 대기를 막고 후자는 transaction retry가 이미 전송한 ID를 재방출하는 것을 막습니다.
+ * - rendezvous channel은 한 번에 하나의 ID만 전달해 producer back-pressure를 보장하며,
+ *   caller가 loader에 주입한 scope를 취소하면 producer transaction까지 취소가 전파됩니다.
+ *   기본 shared scope는 caller coroutine과 독립적입니다. producer 오류와 timeout은
+ *   정상적인 `hasNext() == false`가 아니라 iterator 예외로 전달됩니다.
+ * - caller가 현재 transaction context를 보존한 scope를 전달하면 ambient transaction의
+ *   retry 정책을 caller가 소유합니다. outer retry 뒤 partial ID가 다시 관찰될 수 있습니다.
+ *   정확히 한 번의 관찰이 필요하면 중복 제거·멱등 처리를 적용하거나 성공 전 외부
+ *   side effect를 buffer해야 하며, 전체 열거 재시도는 completeness만 복구합니다.
  * - producer 예외와 timeout 원인은 채널 close cause로 보존하며, iterator의 [AsyncIterator.hasNext]
  *   및 [AsyncIterator.next]가 이를 정상 종료(false)와 구분해 비동기 예외로 전달합니다.
  * - 운영 로그에는 caller-owned ID, 엔티티 payload, 예외 message를 기록하지 않습니다.
@@ -54,7 +62,7 @@ open class R2dbcEntityMapLoader<ID: Any, E: Any>(
     private val scope: CoroutineScope = defaultMapLoaderCoroutineScope,
 ): MapLoaderAsync<ID, E> {
     companion object: KLoggingChannel() {
-        private const val DEFAULT_QUERY_TIMEOUT = 30_000 // 30 seconds
+        private const val DEFAULT_QUERY_TIMEOUT = 30_000 // Exposed queryTimeout 단위: seconds; #699에서 정리
         private const val DEFAULT_LOAD_ALL_IDS_TIMEOUT = 60_000L // 60 seconds
 
         protected val defaultMapLoaderCoroutineScope =
@@ -99,7 +107,7 @@ open class R2dbcEntityMapLoader<ID: Any, E: Any>(
                 // retry 정책을 caller가 소유한다. 기본 scope는 context를 공유하지 않으므로 top-level이다.
                 val hasOuterTransaction = TransactionManager.currentOrNull() != null
                 suspendTransaction {
-                    this.queryTimeout = DEFAULT_QUERY_TIMEOUT // 30 seconds
+                    this.queryTimeout = DEFAULT_QUERY_TIMEOUT // 단위/30초 정책은 후속 Issue #699에서 정리
                     // WHY: streaming은 transaction retry가 이미 전송한 ID를 재방출할 수 있으므로
                     //      top-level transaction에서만 retry를 끈다. outer transaction에서는
                     //      caller가 소유한 retry 정책을 그대로 둔다.

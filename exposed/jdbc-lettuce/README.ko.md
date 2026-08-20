@@ -16,6 +16,7 @@ Exposed JDBC와 Lettuce Redis 캐시를 결합한 Read-through / Write-through /
     - `loadAllKeys()`는 PK 오름차순 lazy `Iterable`을 반환하며, 지원되는 표준 scalar ID에는 keyset page를 사용하고 custom ID에는 기존 offset fallback을 사용
     - `loadAllKeysInParallel(ranges, options)`는 호출자가 분할한 겹치지 않는 `[lowerInclusive, upperExclusive)` PK range를 Virtual Thread와 독립 JDBC transaction으로 병렬 열거하는 opt-in materialized 경로이며, bounded concurrency와 선언 순서 merge를 사용하고 기본 lazy 경로는 변경하지 않음. Exposed range predicate는 `Comparable` PK 경계를 요구함
     - suspended JDBC loader는 기존 `List` API를 유지하며 `suspendedTransactionAsync` 안에서 같은 keyset/fallback page를 읽습니다. 새로운 streaming surface는 추가하지 않습니다
+    - suspended `List`는 반환 전에 전체를 materialize하며, caller cancellation은 suspended transaction까지 전파되어 JDBC 작업을 닫고 부분 List를 방출하지 않음
     - 열거는 weakly consistent하며, custom ID offset fallback 경로에서는 page 사이 삭제로 아직 관찰하지 않은 row를 건너뛸 수 있음
     - 각 page는 `batchSize`만 materialize하고 해당 page 안에서 ResultSet을 소비합니다. suspended loader는 전체 page loop를 하나의 `suspendedTransactionAsync` 안에서 실행하므로 enumeration 동안 JDBC connection을 유지하며, ambient caller-owned Exposed transaction의 소유권은 호출자에게 남습니다
     - writer의 `chunkSize`/loader의 `batchSize`는 0보다 커야 함
@@ -170,6 +171,6 @@ binary codec은 Redis 데이터가 완전히 신뢰되고 외부 writer와 공�
 
 ## 참고
 
-- [exposed-jdbc](../exposed-jdbc)
+- [exposed-jdbc](../jdbc)
 - [bluetape4k-lettuce](../../infra/lettuce)
 - [Lettuce Redis Client](https://lettuce.io)
