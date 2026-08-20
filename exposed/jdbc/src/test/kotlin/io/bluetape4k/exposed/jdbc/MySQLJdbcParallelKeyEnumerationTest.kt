@@ -263,6 +263,75 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
     }
 
     @Test
+    @Suppress("LongMethod")
+    fun `MySQL failed range waits for interrupt-ignoring sibling lease cleanup`() {
+        assumeMySQL8()
+
+        MySQLFixture.create(newEnumerationTable(), poolSize = 2).use { fixture ->
+            val started = CountDownLatch(2)
+            val interruptObserved = CountDownLatch(1)
+            val allFinished = CountDownLatch(1)
+            val activeChildren = AtomicInteger(0)
+            val expected = IllegalStateException("MySQL range failure")
+            val executor = Executors.newVirtualThreadPerTaskExecutor()
+            try {
+                val failure = runCatching {
+                    parallelJdbcKeyEnumeration(
+                        table = fixture.table,
+                        ranges = listOf(
+                            JdbcKeyRange(upperExclusive = 1L),
+                            JdbcKeyRange(lowerInclusive = 1L, upperExclusive = 2L),
+                            JdbcKeyRange(lowerInclusive = 2L),
+                        ),
+                        options = JdbcParallelKeyEnumerationOptions(
+                            maxConcurrency = 2,
+                            executor = executor,
+                            database = fixture.database,
+                        ),
+                    ) { table, range ->
+                        activeChildren.incrementAndGet()
+                        try {
+                            table.selectAll().toList()
+                            started.countDown()
+                            if (range.upperExclusive == 1L) {
+                                check(started.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS))
+                                throw expected
+                            }
+
+                            val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(250)
+                            while (System.nanoTime() < deadline) {
+                                try {
+                                    Thread.sleep(10)
+                                } catch (_: InterruptedException) {
+                                    interruptObserved.countDown()
+                                }
+                            }
+                            emptyList()
+                        } finally {
+                            if (activeChildren.decrementAndGet() == 0) {
+                                allFinished.countDown()
+                            }
+                        }
+                    }
+                }.exceptionOrNull() ?: error("MySQL range failure must be preserved")
+
+                failure shouldBeEqualTo expected
+                check(interruptObserved.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    "MySQL sibling must observe cancellation"
+                }
+                fixture.tracker.active.get() shouldBeEqualTo 0
+                activeChildren.get() shouldBeEqualTo 0
+                executor.isShutdown.shouldBeEqualTo(false)
+            } finally {
+                check(allFinished.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    "MySQL interrupt-ignoring sibling must finish"
+                }
+                executor.close()
+            }
+        }
+    }
+
+    @Test
     fun `MySQL statement failure rolls back a marker and preserves SQLState`() {
         assumeMySQL8()
 

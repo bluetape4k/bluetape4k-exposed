@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.jdbc
 
 import io.bluetape4k.concurrent.virtualthread.VirtualFuture
 import io.bluetape4k.concurrent.virtualthread.VirtualThreadExecutor
+import io.bluetape4k.concurrent.virtualthread.virtualFuture
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.EntityIDColumnType
 import org.jetbrains.exposed.v1.core.Op
@@ -14,9 +15,14 @@ import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.transactions.transactionManager
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Semaphore
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.jvm.JvmSynthetic
 
 /**
@@ -41,8 +47,11 @@ data class JdbcKeyRange<ID: Any>(
  * 병렬 경로는 호출자가 명시적으로 선택해야 하며, 결과를 range별 및 최종 [List]로
  * materialize합니다. 메모리 사용량이 우선이면 기존 sequential streaming loader를
  * 사용해야 합니다. [executor]를 넘긴 경우 생성·종료 책임은 caller에게 있고, 이 API는
- * executor를 닫지 않습니다. `maxConcurrency`는 caller JDBC connection pool의
- * 유효한 최대 connection 수보다 작거나 같게 선택해야 합니다.
+ * executor를 닫지 않습니다. 실패 또는 caller interrupt가 발생하면 이미 시작한 child의
+ * transaction과 connection cleanup이 끝날 때까지 기다린 뒤 원인을 반환합니다. 따라서
+ * interrupt를 무시하는 child는 실제 종료 시간만큼 실패 전파를 지연할 수 있습니다.
+ * `maxConcurrency`는 caller JDBC connection pool의 유효한 최대 connection 수보다
+ * 작거나 같게 선택해야 합니다.
  *
  * [comparator]는 range 경계의 선언 순서와 database PK 정렬 순서가 일치할 때만
  * 사용해야 합니다. 생략하면 PK 값이 [Comparable]인지 확인한 뒤 natural order를
@@ -121,42 +130,36 @@ internal fun <ID: Any> parallelJdbcKeyEnumeration(
     }
 
     val permits = Semaphore(options.maxConcurrency)
-    val futures = ArrayList<VirtualFuture<List<ID>>>(ranges.size)
+    val children = ArrayList<JdbcEnumerationChild<List<ID>>>(ranges.size)
 
     return try {
         ranges.forEach { range ->
-            checkCompletedFailures(futures)
-            try {
-                permits.acquire()
-            } catch (cause: InterruptedException) {
-                Thread.currentThread().interrupt()
-                throw cause
-            }
+            checkCompletedFailures(children)
+            permits.acquire()
 
             try {
-                val future =
-                    virtualThreadJdbcTransactionAsync(
+                children +=
+                    submitJdbcEnumerationChild(
                         executor = executor,
                         db = database,
                         transactionIsolation = options.transactionIsolation,
                         readOnly = options.readOnly,
+                        permits = permits,
                     ) {
                         rangeReader(table, range)
                     }
-                futures += future
-                future.toCompletableFuture().whenComplete { _, _ -> permits.release() }
             } catch (cause: Throwable) {
                 permits.release()
                 throw cause
             }
         }
 
-        futures.flatMap { it.await() }
+        children.flatMap { it.future.await() }
     } catch (cause: Throwable) {
-        if (cause is InterruptedException) {
+        val cleanupInterrupted = cancelAndAwait(children)
+        if (cause is InterruptedException || cleanupInterrupted) {
             Thread.currentThread().interrupt()
         }
-        cancelAndAwait(futures)
         throw unwrapExecutionFailure(cause)
     }
 }
@@ -191,18 +194,91 @@ private fun <ID: Any> validateRanges(
     }
 }
 
-private fun <ID: Any> checkCompletedFailures(futures: List<VirtualFuture<List<ID>>>) {
-    futures.asSequence()
+private fun <ID: Any> checkCompletedFailures(children: List<JdbcEnumerationChild<List<ID>>>) {
+    children.asSequence()
+        .map { it.future }
         .filter { it.isDone }
         .forEach { it.await() }
 }
 
-private fun <T> cancelAndAwait(futures: List<VirtualFuture<T>>) {
-    futures.forEach { it.cancel(true) }
-    futures.forEach { future ->
-        runCatching { future.await() }
+private fun <T> submitJdbcEnumerationChild(
+    executor: ExecutorService,
+    db: Database,
+    transactionIsolation: Int?,
+    readOnly: Boolean,
+    permits: Semaphore,
+    statement: JdbcTransaction.() -> T,
+): JdbcEnumerationChild<T> {
+    val completion = CountDownLatch(1)
+    val lifecycle = AtomicInteger(CHILD_NEW)
+    val future =
+        virtualFuture(executor = executor) {
+            if (!lifecycle.compareAndSet(CHILD_NEW, CHILD_RUNNING)) {
+                throw CancellationException("JDBC enumeration child was cancelled before start")
+            }
+            try {
+                val isolationLevel = transactionIsolation ?: db.transactionManager.defaultIsolationLevel
+                transaction(
+                    db = db,
+                    transactionIsolation = isolationLevel,
+                    readOnly = readOnly,
+                ) {
+                    statement(this)
+                }
+            } finally {
+                if (lifecycle.compareAndSet(CHILD_RUNNING, CHILD_COMPLETED)) {
+                    permits.release()
+                    completion.countDown()
+                }
+            }
+        }
+
+    return JdbcEnumerationChild(
+        future = future,
+        completion = completion,
+        lifecycle = lifecycle,
+        permits = permits,
+    )
+}
+
+private fun <T> cancelAndAwait(children: List<JdbcEnumerationChild<T>>): Boolean {
+    children.forEach { child ->
+        child.future.cancel(true)
+        child.cancelBeforeStart()
+    }
+
+    var interrupted = false
+    children.forEach { child ->
+        while (true) {
+            try {
+                child.completion.await()
+                break
+            } catch (_: InterruptedException) {
+                interrupted = true
+            }
+        }
+    }
+    return interrupted
+}
+
+private class JdbcEnumerationChild<T>(
+    val future: VirtualFuture<T>,
+    val completion: CountDownLatch,
+    private val lifecycle: AtomicInteger,
+    private val permits: Semaphore,
+) {
+    fun cancelBeforeStart() {
+        if (lifecycle.compareAndSet(CHILD_NEW, CHILD_CANCELLED)) {
+            permits.release()
+            completion.countDown()
+        }
     }
 }
+
+private const val CHILD_NEW = 0
+private const val CHILD_RUNNING = 1
+private const val CHILD_CANCELLED = 2
+private const val CHILD_COMPLETED = 3
 
 private fun unwrapExecutionFailure(cause: Throwable): Throwable =
     when (cause) {
