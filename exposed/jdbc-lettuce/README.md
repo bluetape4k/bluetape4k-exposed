@@ -16,6 +16,7 @@ A Read-through / Write-through / Write-behind cache repository module that combi
     - `loadAllKeys()` returns a lazy ascending-PK `Iterable`; ordered scalar IDs use keyset pages and unsupported custom IDs use the legacy offset fallback
     - `loadAllKeysInParallel(ranges, options)` is an opt-in materialized Virtual Thread path for caller-owned disjoint `[lowerInclusive, upperExclusive)` PK ranges; it uses independent JDBC transactions, bounded concurrency, and ordered merge, while the default lazy path remains unchanged. Exposed range predicates require `Comparable` PK boundaries
     - The suspended JDBC loader keeps its existing `List` API and reads the same keyset/fallback pages inside `suspendedTransactionAsync`; it does not expose a new streaming surface
+    - The suspended `List` is materialized before it is returned; caller cancellation propagates through the suspended transaction and closes the JDBC work without partial list emission
     - Enumeration is weakly consistent; a page-side delete can skip an unseen row on the custom-ID offset fallback path
     - Each page materializes only `batchSize` IDs and consumes its ResultSet within that page. The suspended loader executes the entire page loop in one `suspendedTransactionAsync`, so its JDBC connection remains held for the enumeration; an ambient caller-owned Exposed transaction remains caller-owned
     - `chunkSize` (writer) and `batchSize` (loader) must be greater than 0
@@ -171,6 +172,6 @@ trusted and not shared with untrusted writers.
 
 ## References
 
-- [exposed-jdbc](../exposed-jdbc)
+- [exposed-jdbc](../jdbc)
 - [bluetape4k-lettuce](../../infra/lettuce)
 - [Lettuce Redis Client](https://lettuce.io)

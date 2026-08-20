@@ -28,6 +28,10 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
  * @param toEntity [ResultRow] → [E] 변환 함수
  * @param batchSize 페이징 배치 크기. 0 이하여서는 안 되며, 표준 scalar PK는 keyset page,
  * custom PK는 offset fallback으로 PK 오름차순을 유지한다.
+ *
+ * 전체 키 조회는 `suspendedTransactionAsync` 안에서 page를 순서대로 읽어 하나의
+ * `List`로 materialize한다. 호출자가 coroutine을 취소하면 JDBC transaction도 취소되며,
+ * 완료되지 않은 partial list는 반환하지 않는다.
  */
 class SuspendedExposedEntityMapLoader<ID: Any, E: Any>(
     private val table: IdTable<ID>,

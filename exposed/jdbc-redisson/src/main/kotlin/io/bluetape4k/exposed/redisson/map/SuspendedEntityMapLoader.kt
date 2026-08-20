@@ -34,6 +34,10 @@ import java.util.concurrent.CompletionStage
  *   `withTimeout(DEFAULT_LOAD_ALL_IDS_TIMEOUT)` 보호막을 사용합니다. ID를 channel에
  *   방출한 뒤 transaction retry를 수행하면 이미 관찰된 ID가 중복될 수 있으므로,
  *   재시도가 필요하면 호출자가 전체 열거를 다시 시작해야 합니다.
+ * - [AsyncIterator]는 rendezvous channel back-pressure를 사용하며, caller cancellation과
+ *   producer 오류/timeout을 정상적인 끝(`hasNext() == false`)과 구분해 전달합니다.
+ * - Exposed [org.jetbrains.exposed.v1.core.dao.id.IdTable]의 custom ID는 concrete loader에서
+ *   offset fallback으로 처리하고, 표준 scalar ID는 keyset page를 사용합니다.
  * - 일반 DB 오류나 채널 실패는 channel cause로 consumer에 전달하고, fatal [Error]는
  *   coroutine exception handler까지 재전파합니다.
  * - 운영 로그에는 caller-owned ID, 엔티티 payload, 예외 message를 기록하지 않습니다.
@@ -62,7 +66,7 @@ open class SuspendedEntityMapLoader<ID: Any, E: Any>(
     private val scope: CoroutineScope = defaultMapLoaderCoroutineScope,
 ): MapLoaderAsync<ID, E> {
     companion object: KLoggingChannel() {
-        private const val DEFAULT_QUERY_TIMEOUT = 30_000 // 30 seconds
+        private const val DEFAULT_QUERY_TIMEOUT = 30_000 // Exposed queryTimeout 단위: seconds; #699에서 정리
         private const val DEFAULT_LOAD_ALL_IDS_TIMEOUT = 60_000L // 60 seconds
 
         protected val defaultMapLoaderCoroutineScope =

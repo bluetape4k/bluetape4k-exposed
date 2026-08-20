@@ -14,7 +14,8 @@ Exposed JDBC와 Redisson 캐시를 결합해 Read-Through/Write-Through 캐시 �
     - 동기 `loadAllKeys()`는 지원되는 scalar ID에서 순서가 보장된 keyset page를 사용하고 custom ID에서는 기존 offset fallback을 사용하며, 각 page는 `batchSize`로 제한
     - `loadAllKeysInParallel(ranges, options)`는 호출자가 분할한 겹치지 않는 `[lowerInclusive, upperExclusive)` PK range를 Virtual Thread와 독립 JDBC transaction으로 병렬 열거하는 opt-in materialized 경로이며, bounded concurrency와 선언 순서 merge를 사용하고 기본 sequential loader는 변경하지 않음. Exposed range predicate는 `Comparable` PK 경계를 요구함
     - suspended `loadAllKeys()`는 rendezvous channel back-pressure를 사용하는 Redisson `AsyncIterator`로 PK 오름차순 keyset page를 스트리밍
-    - 열거는 weakly consistent하며, custom ID fallback 경로에서는 page 사이 삭제로 아직 관찰하지 않은 row를 건너뛸 수 있음. producer transaction은 `maxAttempts = 1`로 실행하므로 channel 방출을 재생하지 않고 전체 열거를 다시 시도해야 함
+    - 두 JDBC loader 경로 모두 keyset 비교를 사용할 수 없는 custom ID에서는 offset fallback을 사용하며, suspended 경로는 한 번에 `batchSize` page만 처리하고 caller cancellation을 producer transaction까지 전달함
+    - 열거는 weakly consistent하며, custom ID fallback 경로에서는 page 사이 삭제로 아직 관찰하지 않은 row를 건너뛸 수 있음. suspended producer transaction은 `maxAttempts = 1`로 실행하므로 channel 방출을 재생하지 않고 전체 열거를 다시 시도해야 함
 - **Repository 추상화**: 캐시 + DB 접근 공통 패턴 (`JdbcRedissonRepository`, `SuspendedJdbcRedissonRepository`)
 - **동기/코루틴 구현 제공**: 운영 환경에 맞는 방식 선택
 - **Near Cache 지원**: Local Cache + Redis 2-Tier 캐시
@@ -228,10 +229,10 @@ Redis 인스턴스가 private이고, Redis 내용을 신뢰할 수 없는 클라
 dependency 경계에 놓인 Redis 데이터에는 기본 binary codec 대신 검토된 custom codec을 제공하세요.
 
 <!-- REDISSON-SNAPSHOT-INVALIDATION -->
-## 커밋에 맞춘 Redisson 스냅샷 무효화 (opt-in)
+## 커밋 기준 데이터에 맞춘 Redisson 무효화 (opt-in)
 
 `JdbcRedissonSnapshotInvalidator`는 애플리케이션 Near Cache만 무효화하는 별도 opt-in 경로입니다. 캐시 read나
-snapshot PUT을 노출하지 않고, 기존 `JdbcRedissonRepository`의 데이터도 옮기지 않습니다. `stageInvalidation`은
+기준 데이터 `PUT`을 노출하지 않고, 기존 `JdbcRedissonRepository`의 데이터도 옮기지 않습니다. `stageInvalidation`은
 현재 최상위 JDBC 트랜잭션이 커밋된 뒤 `fastRemoveAsync`만 호출합니다. 롤백하면 아무것도 공개하지 않습니다.
 이 transaction은 `maxAttempts = 1`이어야 하므로 애플리케이션 재시도는 transaction 전체를 감쌉니다.
 
@@ -536,4 +537,4 @@ Suspend write-behind 경로는 Redis가 값을 받은 뒤에 재개됩니다. DB
 - [JetBrains Exposed](https://github.com/JetBrains/Exposed)
 - [Redisson](https://github.com/redisson/redisson)
 - [Redisson RMap](https://www.javadoc.io/doc/org.redisson/redisson/latest/org/redisson/api/RMap.html)
-- [exposed-jdbc](../exposed-jdbc)
+- [exposed-jdbc](../jdbc)
