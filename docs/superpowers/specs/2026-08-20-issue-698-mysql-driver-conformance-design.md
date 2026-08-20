@@ -88,24 +88,29 @@ fixture 책임은 다음과 같다.
    실패하면 active를 반환 처리하지 않고 cleanup 예외를 별도로 기록한다.
 3. 고유한 `LongIdTable` 이름으로 8행을 삽입하고 2행·6행을 삭제해 sparse seed를
    만든다. fixture factory의 setup은 `try/catch`에서 부분 초기화된 Hikari를 즉시
-   닫고, 정상 `close()`는 schema drop과 datasource/executor 종료를 중첩 `finally`로
-   분리해 drop 실패에도 pool이 닫히게 한다. cleanup 예외는 primary failure에
-   `suppressed`로 보존한다.
+   닫고, 정상 `close()`는 schema drop과 datasource 종료를 중첩 `finally`로 분리해
+   drop 실패에도 pool이 닫히게 한다. cleanup 예외는 primary failure에 `suppressed`로
+   보존한다. caller-owned executor는 fixture가 닫지 않으며 각 test의 `finally`에서
+   bounded close와 `isShutdown`을 확인한다.
 4. `Database.connect(trackingDataSource, databaseConfig = DatabaseConfig { ... })`로
    helper가 실제 Hikari lease를 사용하게 하며 `TestDB.db`의 DriverManager 연결을
    pool evidence에 섞지 않는다. lease-fault 전용 fixture는
    `defaultMaxAttempts = 2`, `defaultMinRetryDelay = 0`, `defaultMaxRetryDelay = 0`을
    명시하고 한 range만 실행해 `getConnection()` 요청 수가 정확히 2회인지 검증한다.
+   statement-fault 전용 fixture는 `defaultMaxAttempts = 1`로 고정해 marker rollback
+   oracle가 하나의 transaction attempt를 판정하도록 한다.
 5. executor를 helper에 주입하고 호출 전·후 `isShutdown`을 확인한다. helper가 caller
    executor를 닫으면 실패시킨다.
 
 Testcontainers 경계는 fixture 생성 첫 줄에서 `TestDBConfig.useTestcontainers == true`와
-`TestDB.MYSQL_V8 in TestDB.enabledDialects()`를 요구한다. 실제 endpoint·username·password는
-시작된 `Containers.MySQL8`에서만 읽고, `TestDB.MYSQL_V8.connection()`의 localhost fallback은
-사용하지 않는다. 공유 container는 `ShutdownQueue`가 JVM 종료 시 소유하므로 fixture가 stop하지
-않으며, credential/full JDBC URL은 로그·README에 기록하지 않는다. selector/configuration
-부족만 `Assumptions`로 skip하고 container startup·driver·schema 오류는 실패로 남겨
-`PENDING`으로 판정한다.
+`TestDB.MYSQL_V8 in TestDB.enabledDialects()`를 요구한다. 그 확인 뒤 시작된
+`Containers.MySQL8`의 endpoint를 기준으로 `TestDB.MYSQL_V8.connection()`이 조합한
+기존 UTC·cursor-fetch·batch Connector/J 옵션 URL을 사용하고, URL이 container endpoint로
+시작하는지 assert한다. username/password는 container에서 읽으며 localhost fallback은
+도달할 수 없다. 공유 container는 `ShutdownQueue`가 JVM 종료 시 소유하므로 fixture가
+stop하지 않으며, credential/full JDBC URL은 로그·README에 기록하지 않는다.
+selector/configuration 부족만 `Assumptions`로 skip하고 container startup·driver·schema
+오류는 실패로 남겨 `PENDING`으로 판정한다.
 
 ### Test matrix
 
@@ -117,7 +122,7 @@ Testcontainers 경계는 fixture 생성 첫 줄에서 `TestDBConfig.useTestconta
 | `READ_COMMITTED` | 첫 SELECT 뒤 writer가 row 9 commit, 두 번째 SELECT | row 9 관찰 가능 |
 | `REPEATABLE_READ` | 같은 barrier와 기준 데이터 | row 9 미관찰 |
 | lease fault | 한 range, `defaultMaxAttempts=2`, 모든 acquisition에 transient connection exception | 요청 수 정확히 2, 원인 chain 보존, executor caller-owned; acquisition 전 실패이므로 acquired-lease cleanup은 #697/N/A |
-| statement/transaction fault | `readOnly=false` transaction에서 marker INSERT 후 unique payload 충돌 | SQL integrity 원인/SQLState 보존, marker와 seed 불변을 별도 transaction에서 확인 |
+| statement/transaction fault | `readOnly=false`, `defaultMaxAttempts=1` transaction에서 marker INSERT 후 unique payload 충돌 | SQL integrity 원인/SQLState 보존, marker와 seed 불변을 별도 transaction에서 확인 |
 
 `distinct()`로 결과를 정규화하지 않는다. 중복 또는 순서 불일치는 직접 실패해야
 한다. mutation assertion은 range 전체가 하나의 기준 데이터를 공유한다는 주장이 아니라,

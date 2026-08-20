@@ -60,6 +60,11 @@
 
 - [x] P0=0
 - [x] P1=0
+- [x] SPW-01 — Issue/source/audience와 외부 MySQL 근거를 고정함
+- [x] SPW-02 — fixture ownership, matrix, failure modes, rollback과 범위를 포함함
+- [x] SPW-03 — 한국어 technical register와 machine token을 보존함
+- [x] SPW-04 — production source, 선행 fixture, TestDB와 H2 evidence를 대조함
+- [x] SPW-05 — Markdown read-back, terminology audit와 implementation gate를 확인함
 - [x] production/API/ABI/catalog/workflow/manual 범위가 설계에 고정됨
 - [x] Testcontainers credential·lifecycle·skip/FAIL 경계가 고정됨
 - [x] deterministic barrier, retry count, rollback oracle이 수용 기준에 포함됨
