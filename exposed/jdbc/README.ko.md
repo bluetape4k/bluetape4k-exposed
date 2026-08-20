@@ -247,7 +247,7 @@ transaction {
 `hasNext`와 `nextCursor`의 불변식은 `ExposedCursorPage` 문서와 같습니다.
 
 커서 토큰의 인코딩, 서명, 만료, tenant/권한 범위, 같은 정렬과 predicate의 재사용은 호출자 책임입니다.
-호출 사이의 snapshot은 보장하지 않습니다. 기본 predicate는 `Op.TRUE`이므로 논리 삭제 저장소는
+호출 사이에 하나의 기준 데이터는 보장하지 않습니다. 기본 predicate는 `Op.TRUE`이므로 논리 삭제 저장소는
 활성 행 조건을 명시해야 합니다. `findPage`와 Spring Batch keyset reader는 별도 계약으로 유지됩니다.
 
 ### 7. 배치 삽입 / Upsert
@@ -499,6 +499,39 @@ transaction {
 | `core/ImplicitSelectAll.kt`                         | `SELECT *` 형태의 묵시적 전체 조회           |
 | `core/TableExtensions.kt`                           | 테이블 메타데이터 확장 함수                    |
 | `core/SchemaUtilsExtensions.kt`                     | SchemaUtils 확장 함수                  |
+
+## MySQL 8 JDBC conformance
+
+`MySQLJdbcParallelKeyEnumerationTest`는 MySQL 8 Connector/J, HikariCP,
+Testcontainers 조합에서 JDBC 병렬 키 열거 경계를 검증합니다. fixture는 테스트 전용이며
+production API, pool 설정, 릴리스 매뉴얼을 변경하지 않습니다.
+
+| 계약 | 증거 |
+|------|------|
+| Sparse ID와 서로 겹치지 않는 range 순서 | MySQL 8: PASS |
+| overlap/reverse 검증과 빈 range 무-lease 경로 | MySQL 8: PASS |
+| `maxConcurrency=2`에서 Hikari pool 1/2/4의 exact lease peak | MySQL 8: PASS |
+| `READ_COMMITTED`와 `REPEATABLE_READ` 두-SELECT fixture | MySQL 8: PASS |
+| statement rollback, SQLState `23000`, lease retry request count | MySQL 8: PASS |
+| cleanup primary/suppressed failure와 caller executor 소유권 | MySQL 8: PASS |
+
+driver 전용 테스트 실행 명령은 다음과 같습니다.
+
+```bash
+EXPOSED_TEST_DB=MYSQL_V8 TESTCONTAINERS_RYUK_DISABLED=true \
+./gradlew :bluetape4k-exposed-jdbc:test \
+  --tests 'io.bluetape4k.exposed.jdbc.MySQLJdbcParallelKeyEnumerationTest' \
+  --rerun-tasks --no-build-cache --no-configuration-cache \
+  --no-parallel --max-workers=1 --console=plain
+```
+
+H2 단위 테스트 baseline은 `JdbcParallelKeyEnumerationTest`로 유지합니다.
+기존 `.github/workflows/nightly-tests.yml`의 MySQL nightly job이 Docker 환경을
+제공하며, 이 conformance class는 모든 MySQL 배포나 모든 JDBC driver가 동등하다고
+주장하지 않습니다. pool size 1은 의도적인 under-provisioned pressure case이며 운영
+권고가 아닙니다. isolation callback은 내부 두-SELECT 테스트 seam만 사용하고 public
+overload의 shared 기준 데이터를 약속하지 않습니다. `SERIALIZABLE`, network fault,
+cancellation은 이 이슈 범위 밖이며 후속 이슈 #697, #690에서 다룹니다.
 
 ## 성능 벤치마크
 
