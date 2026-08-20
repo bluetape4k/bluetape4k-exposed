@@ -5,7 +5,7 @@
 - 대상: Issue [#701](https://github.com/bluetape4k/bluetape4k-exposed/issues/701),
   Epic [#659](https://github.com/bluetape4k/bluetape4k-exposed/issues/659) stacked slot
 - branch: `ci/issue-701-cache-loader-postgres`
-- base/head: `develop` / `c6903906704b89602fab17f8fd74959c538c4be0` (구현 전 base)
+- base/head: `develop` / `3b9b6e60` (구현·검증 commit; review artifact 자체는 해당 commit에 포함)
 - 범위: 주간/manual full PostgreSQL cache-loader selector job, artifact와
   `nightly-status` 연결, 설계·계획·lesson evidence
 - 제외: production Kotlin/API/ABI, 기존 full module job·coverage, `docs/manual/**`,
