@@ -173,17 +173,22 @@ grep -F 'modules=34/34' build/abi/reports/production-abi.txt
 
 - `ProductionAbiSupportTest`는 helper 구현 전 unresolved symbol로 RED를 확인했고,
   구현 후 targeted 및 full `:buildSrc:test`가 GREEN이다.
-- `checkProductionAbi` report: `modules=34/34`, `baselines=34/34`,
+- Linux hosted `checkProductionAbi` 기준은 `modules=34/34`, `baselines=34/34`,
   `actualDumps=34/34`, `orphanBaselines=0`, `orphanActuals=0`,
-  `emptyBaselines=0`.
+  `emptyBaselines=0`이어야 한다. macOS local dump는 case-insensitive
+  classpath에서 `UUID`/Kotlin `Uuid`를 충돌시켜 이 쌍을 생략할 수 있으므로
+  hosted Linux 결과를 최종 증거로 사용한다.
 - 기존 ABI fixture: JDBC `3/3`, R2DBC `2/2`, Ktor `3/3` pass; failure/error `0/0`.
 - compile retry-equivalent build, `detekt`, `actionlint`, terminology audit,
   `git diff --check`가 통과했다.
 - `bluetape4k-exposed-core` baseline에 public descriptor addition/removal/change를
   순차적으로 임시 적용한 controlled negative probe가 모두 `checkKotlinAbi`
-  exit `1`/`ABI has changed`로 실패했고, 기준선은 원복 후 aggregate GREEN을
-  재확인했다.
-- hosted PR CI와 nightly backend run은 아직 실행하지 않았으므로 PR DoD에서
+  exit `1`/`ABI has changed`로 실패했고 기준선은 원복했다. macOS의
+  case-insensitive classpath 한계 때문에 보정된 `Uuid` 쌍을 포함한 aggregate
+  GREEN은 corrected-head hosted Linux rerun에서 재확인한다.
+- hosted PR run `32435651147`은 이전 head에서 Linux 전용 `Uuid` descriptor
+  baseline 누락으로 실패했다. JDBC/R2DBC baseline을 보정했으며 corrected head의
+  hosted rerun과 nightly backend run은 아직 실행하지 않았으므로 PR DoD에서
   `PENDING`으로 유지한다.
 
 ## Task 6 — PR readiness와 stop gate
@@ -229,7 +234,7 @@ grep -F 'modules=34/34' build/abi/reports/production-abi.txt
 
 ## Implementation DoD Status
 
-Required checks: 7/8; N/A: 0; Blocked: 0
+Required checks: 6/8; N/A: 0; Blocked: 1
 
-Final status: **PENDING — 로컬 implementation evidence는 확보했지만 hosted
-exact-head CI, PR review/merge gate는 남아 있음**
+Final status: **PENDING — Linux `Uuid` baseline 보정 후 corrected-head hosted
+exact-head CI, PR review/merge gate가 남아 있음**

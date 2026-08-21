@@ -55,7 +55,9 @@
 - **Tier 4 동시성/수명:** production runtime 코드를 건드리지 않으며, Gradle task
   dependency가 actual dump 생성 뒤 aggregate를 실행한다.
 - **Tier 5 테스트:** TDD RED/GREEN, full buildSrc test, JDBC `3/3`, R2DBC `2/2`,
-  Ktor `3/3` fixture, aggregate `34/34`, detekt/actionlint를 확인했다.
+  Ktor `3/3` fixture, aggregate 구조 `34/34`, detekt/actionlint를 확인했다.
+  macOS local ABI dump는 case-insensitive classpath 때문에 `UUID`/Kotlin `Uuid`
+  쌍을 재현하지 못하므로 최종 aggregate 증거는 hosted Linux에서 확인한다.
 - **Tier 6 운영/CI:** `pipefail`/`tee`, `if: always()` artifact upload,
   `if-no-files-found: error`, non-doc build skip fail-closed를 적용했다.
 - **Tier 7 문서/유지보수:** 설계·계획·lesson을 현재 구현 evidence와 일치시켰고,
@@ -63,8 +65,9 @@
 
 controlled public descriptor mutation은 로컬에서 addition/removal/change 모두
 실행했고, 각 probe가 `checkKotlinAbi` exit `1`로 실패한 뒤 기준선을 원복했다.
-hosted PR exact-head CI와 nightly backend run은 로컬에서 검증할 수 없는 남은
-gate다.
+hosted PR run `32435651147`은 이전 head에서 Linux 전용 `Uuid` baseline 누락으로
+실패했으며, JDBC/R2DBC baseline 보정 후 corrected-head rerun이 남아 있다.
+nightly backend run도 별도 gate다.
 
 ## 남은 구현 경계
 
@@ -77,7 +80,7 @@ gate다.
 
 ## DoD Status
 
-Required checks: 7/8; N/A: 0; Blocked: 0
+Required checks: 6/8; N/A: 0; Blocked: 1
 
 | Check | Status | Evidence |
 | --- | --- | --- |
@@ -88,9 +91,8 @@ Required checks: 7/8; N/A: 0; Blocked: 0
 | implementation 7-Tier/static gate | PASS | buildSrc/build/ABI, detekt, actionlint, terminology audit, diff check |
 | documentation/evidence synchronization | PASS | design, plan, review, lesson read-back |
 | controlled descriptor negative | PASS | core addition/removal/change probes each exit `1`, then baseline restored |
-| hosted exact-head CI/PR review | PENDING | no PR/hosted run requested yet |
+| hosted exact-head CI/PR review | PENDING | old head run `32435651147` failed on missing Linux `Uuid` descriptors; corrected-head rerun pending |
 
-Final status: **PENDING — local implementation is verified; hosted exact-head and PR
-gates remain**
+Final status: **PENDING — corrected-head hosted CI and PR review/merge gates remain**
 
 Unchecked required items: CI hosted run, PR exact-head review/merge.

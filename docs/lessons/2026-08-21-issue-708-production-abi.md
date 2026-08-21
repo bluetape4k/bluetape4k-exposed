@@ -42,11 +42,15 @@ API owner `debop`이 연결된 API decision과 승인된 candidate head를 확�
   `validateProductionAbiInventory` 미해결로 실패했다.
 - TDD GREEN: `:buildSrc:test --tests ProductionAbiSupportTest` 통과.
 - full buildSrc test: `BUILD SUCCESSFUL`, 6 actionable tasks.
-- `checkProductionAbi`: `modules=34/34`, `baselines=34/34`,
+- Linux hosted `checkProductionAbi` 기준은 `modules=34/34`, `baselines=34/34`,
   `actualDumps=34/34`, `orphanBaselines=0`, `orphanActuals=0`,
-  `emptyBaselines=0`.
+  `emptyBaselines=0`이어야 한다. macOS는 case-insensitive classpath에서
+  `UUID`와 Kotlin `Uuid`를 충돌시켜 local dump에서 이 쌍을 생략할 수 있다.
 - ABI consumer fixture: JDBC 3/3, R2DBC 2/2, Ktor 3/3; failure/error 0/0.
 - compile retry-equivalent build, `detekt`, `actionlint`, `git diff --check` 통과.
+- hosted run `32435651147`은 이전 head에서 Linux `Uuid` descriptor baseline 누락으로
+  실패했고, JDBC/R2DBC baseline을 보정했다. corrected-head hosted rerun이 최종
+  호환성 증거다.
 - `bluetape4k-exposed-core` 기준선에 descriptor 추가·제거·변경을 임시 적용한
   controlled probe가 각각 `checkKotlinAbi` exit `1`/`ABI has changed`로 실패한 뒤
   원복됐다.
@@ -60,7 +64,7 @@ force-abort는 별도 issue로 유지한다.
 
 ## DoD Status
 
-Required checks: 7/8; N/A: 0; Blocked: 0
+Required checks: 6/8; N/A: 0; Blocked: 1
 
-Final status: **PENDING — 로컬 구현과 검증은 완료했지만 PR/hosted exact-head gate는
-아직 실행하지 않음**
+Final status: **PENDING — Linux `Uuid` baseline 보정 후 corrected-head hosted
+exact-head gate와 PR review/merge가 남아 있음**

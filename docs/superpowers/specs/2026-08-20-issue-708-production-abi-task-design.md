@@ -157,13 +157,19 @@ exact-head CI와 PR review는 이 문서의 로컬 DoD 이후 별도 gate로 남
   KGP task와 중앙 `api/` baseline에 연결한다.
 - `api/`에는 exact base에서 생성한 non-empty baseline 34개가 있으며 aggregate
   report는 `modules=34/34`, `baselines=34/34`, `actualDumps=34/34`, orphan `0`,
-  `emptyBaselines=0`이다.
+  `emptyBaselines=0`이다. Linux의 case-sensitive ABI 출력에서만 구분되는
+  `UUID`/Kotlin `Uuid` 공개 descriptor 쌍도 JDBC/R2DBC baseline에 고정했다.
 - 기존 JDBC/R2DBC/Ktor fixture는 각각 `3/3`, `2/2`, `3/3` pass로 순차 검증했다.
 - CI compile retry에서 `checkKotlinAbi`를 제외하고, 후속 ABI 단계는 `pipefail`/`tee`,
   non-empty report, 실제 publication inventory JSON과 `if: always()` artifact upload,
   non-doc skip fail-closed를 적용했다.
 - `buildSrc` TDD RED/GREEN, full `buildSrc:test`, `detekt`, `actionlint`,
-  `git diff --check`를 로컬에서 통과했다. `bluetape4k-exposed-core` 기준선에
+  `git diff --check`를 로컬에서 통과했다. macOS의 case-insensitive classpath는
+  `UUID`와 Kotlin `Uuid` class 파일을 충돌시켜 local `checkProductionAbi`가
+  `Uuid` descriptor 제거로 실패하므로, 이 쌍의 최종 증거는 hosted Linux에서만
+  판정한다. `bluetape4k-exposed-core` 기준선에
   public descriptor 추가·제거·descriptor 변경을 각각 임시 적용한 controlled
   probe가 모두 `checkKotlinAbi` exit `1`/`ABI has changed`로 실패한 뒤 원복됐다.
-  hosted PR/nightly evidence는 아직 실행하지 않았다.
+  hosted PR run `32435651147`은 이전 head에서 이 Linux 전용 descriptor 누락을
+  발견해 실패했고, baseline 보정 후 새 exact-head rerun이 필요하다. nightly
+  backend evidence는 아직 실행하지 않았다.
