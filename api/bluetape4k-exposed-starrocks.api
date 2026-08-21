@@ -1,0 +1,56 @@
+public final class io/bluetape4k/exposed/starrocks/StarRocksConnectionOptions : java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/starrocks/StarRocksConnectionOptions$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/Map;
+	public final fun copy (Ljava/util/Map;)Lio/bluetape4k/exposed/starrocks/StarRocksConnectionOptions;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/starrocks/StarRocksConnectionOptions;Ljava/util/Map;ILjava/lang/Object;)Lio/bluetape4k/exposed/starrocks/StarRocksConnectionOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExtraProperties ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/starrocks/StarRocksConnectionOptions$Companion {
+}
+
+public final class io/bluetape4k/exposed/starrocks/StarRocksDatabase : io/bluetape4k/logging/KLogging {
+	public static final field INSTANCE Lio/bluetape4k/exposed/starrocks/StarRocksDatabase;
+	public final fun connect (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/bluetape4k/exposed/starrocks/StarRocksConnectionOptions;)Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public final fun connect (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/bluetape4k/exposed/starrocks/StarRocksConnectionOptions;)Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public final fun connect (Ljavax/sql/DataSource;)Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public static synthetic fun connect$default (Lio/bluetape4k/exposed/starrocks/StarRocksDatabase;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/bluetape4k/exposed/starrocks/StarRocksConnectionOptions;ILjava/lang/Object;)Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public static synthetic fun connect$default (Lio/bluetape4k/exposed/starrocks/StarRocksDatabase;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/bluetape4k/exposed/starrocks/StarRocksConnectionOptions;ILjava/lang/Object;)Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public final fun getDRIVER ()Ljava/lang/String;
+}
+
+public class io/bluetape4k/exposed/starrocks/StarRocksTable : org/jetbrains/exposed/v1/core/Table {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun createStatement ()Ljava/util/List;
+}
+
+public final class io/bluetape4k/exposed/starrocks/dialect/StarRocksDialect : org/jetbrains/exposed/v1/core/vendors/MysqlDialect {
+	public static final field Companion Lio/bluetape4k/exposed/starrocks/dialect/StarRocksDialect$Companion;
+	public static final field dialectName Ljava/lang/String;
+	public fun <init> ()V
+	public fun getName ()Ljava/lang/String;
+	public fun getRequiresAutoCommitOnCreateDrop ()Z
+	public fun getSupportsColumnTypeChange ()Z
+	public fun getSupportsCreateSequence ()Z
+	public fun getSupportsMultipleGeneratedKeys ()Z
+	public fun getSupportsRestrictReferenceOption ()Z
+	public fun getSupportsSetDefaultReferenceOption ()Z
+	public fun getSupportsTernaryAffectedRowValues ()Z
+	public fun modifyColumn (Lorg/jetbrains/exposed/v1/core/Column;Lorg/jetbrains/exposed/v1/core/ColumnDiff;)Ljava/util/List;
+}
+
+public final class io/bluetape4k/exposed/starrocks/dialect/StarRocksDialect$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public final class io/bluetape4k/exposed/starrocks/dialect/StarRocksDialectMetadata : org/jetbrains/exposed/v1/jdbc/vendors/MysqlDialectMetadata {
+	public fun <init> ()V
+}
+

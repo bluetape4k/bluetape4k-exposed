@@ -279,7 +279,7 @@ jobs:
       - name: Build (compile only)
         run: |
           for attempt in 1 2 3 4 5; do
-            ./gradlew build -x test -x koverVerify --parallel --no-configuration-cache && break
+            ./gradlew build -x test -x koverVerify -x checkKotlinAbi --parallel --no-configuration-cache && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
@@ -296,6 +296,38 @@ jobs:
           ruby scripts/publication/validate_module_metadata.rb
           ruby scripts/publication/validate_poms.rb
           ruby scripts/publication/validate_downstream_consumer.rb
+
+      - name: Check production ABI (no retry)
+        run: |
+          set -euo pipefail
+          mkdir -p build/abi/reports
+          ./gradlew exportPublicationInventory --no-daemon --no-configuration-cache --no-build-cache \
+            2>&1 | tee build/abi/reports/publication-inventory.txt
+          ./gradlew checkProductionAbi --no-daemon --no-configuration-cache --no-build-cache \
+            2>&1 | tee build/abi/reports/check-production-abi.log
+          test -s build/abi/reports/production-abi.txt
+          grep -F 'modules=34/34' build/abi/reports/production-abi.txt
+          grep -F 'baselines=34/34' build/abi/reports/production-abi.txt
+          grep -F 'actualDumps=34/34' build/abi/reports/production-abi.txt
+          grep -F 'emptyBaselines=0' build/abi/reports/production-abi.txt
+
+      - name: Upload production ABI evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: production-abi-evidence
+          path: build/abi/reports/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload production ABI inventory
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: production-abi-inventory
+          path: build/publication/publication-inventory.json
+          if-no-files-found: error
+          retention-days: 14
 
   docs-only-validation:
     name: Docs-only validation
@@ -1723,7 +1755,7 @@ jobs:
           path: coverage-artifacts/
           retention-days: 14
 
-  # Final status gate — skipped jobs treated as success
+  # Final status gate — only proven docs-only may skip the non-doc build
   ci-status:
     name: CI Status
     runs-on: ubuntu-latest
@@ -1768,10 +1800,16 @@ jobs:
       - name: Check all jobs
         env:
           RESULTS: ${{ join(needs.*.result, ',') }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          DOCS_ONLY: ${{ needs.changes.outputs['docs-only'] }}
         run: |
           echo "Job results: $RESULTS"
           if echo "$RESULTS" | grep -qE "failure|cancelled"; then
             echo "CI failed"
             exit 1
           fi
-          echo "CI passed (skipped jobs treated as success)"
+          if [ "$DOCS_ONLY" != "true" ] && [ "$BUILD_RESULT" != "success" ]; then
+            echo "Non-doc changes require the production build and ABI gate to run"
+            exit 1
+          fi
+          echo "CI passed (docs-only build skip is the only allowed ABI N/A)"

@@ -1,0 +1,139 @@
+public final class io/bluetape4k/exposed/r2dbc/lettuce/map/ExposedR2dbcLettuceSuspendedLoadedMap : java/io/Closeable {
+	public static final field Companion Lio/bluetape4k/exposed/r2dbc/lettuce/map/ExposedR2dbcLettuceSuspendedLoadedMap$Companion;
+	public fun <init> (Lio/lettuce/core/RedisClient;Lio/bluetape4k/redis/lettuce/map/SuspendedMapLoader;Lio/bluetape4k/redis/lettuce/map/SuspendedMapWriter;Lio/bluetape4k/redis/lettuce/map/LettuceCacheConfig;Lkotlin/jvm/functions/Function1;Lkotlinx/coroutines/CoroutineScope;Lio/lettuce/core/codec/RedisCodec;)V
+	public synthetic fun <init> (Lio/lettuce/core/RedisClient;Lio/bluetape4k/redis/lettuce/map/SuspendedMapLoader;Lio/bluetape4k/redis/lettuce/map/SuspendedMapWriter;Lio/bluetape4k/redis/lettuce/map/LettuceCacheConfig;Lkotlin/jvm/functions/Function1;Lkotlinx/coroutines/CoroutineScope;Lio/lettuce/core/codec/RedisCodec;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clear (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun close ()V
+	public final fun evict (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun evictAll (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun get (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getAll (Ljava/util/Set;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun invalidateByPattern (Ljava/lang/String;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun invalidateByPattern$default (Lio/bluetape4k/exposed/r2dbc/lettuce/map/ExposedR2dbcLettuceSuspendedLoadedMap;Ljava/lang/String;JLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun putAll (Ljava/util/Map;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun set (Ljava/lang/Object;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun suspendClose (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun warmAll (Ljava/util/Map;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/lettuce/map/ExposedR2dbcLettuceSuspendedLoadedMap$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public abstract class io/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcEntityMapLoader : io/bluetape4k/redis/lettuce/map/SuspendedMapLoader {
+	public fun <init> ()V
+	public fun load (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	protected abstract fun loadAllIds (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun loadAllKeys (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun loadAllKeysFlow ()Lkotlinx/coroutines/flow/Flow;
+	protected abstract fun loadById (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract class io/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcEntityMapWriter : io/bluetape4k/redis/lettuce/map/SuspendedMapWriter {
+	public fun <init> ()V
+	public fun <init> (Lio/github/resilience4j/retry/RetryConfig;)V
+	public synthetic fun <init> (Lio/github/resilience4j/retry/RetryConfig;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun delete (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	protected abstract fun deleteEntities (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun write (Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	protected abstract fun writeEntities (Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcExposedEntityMapLoader : io/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcEntityMapLoader {
+	public static final field Companion Lio/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcExposedEntityMapLoader$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;Lkotlin/jvm/functions/Function2;I)V
+	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;Lkotlin/jvm/functions/Function2;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun loadAllKeysFlow ()Lkotlinx/coroutines/flow/Flow;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcExposedEntityMapLoader$Companion {
+}
+
+public final class io/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcExposedEntityMapWriter : io/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcEntityMapWriter {
+	public static final field Companion Lio/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcExposedEntityMapWriter$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;Lio/bluetape4k/redis/lettuce/map/WriteMode;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;IILjava/time/Duration;)V
+	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;Lio/bluetape4k/redis/lettuce/map/WriteMode;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;IILjava/time/Duration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcExposedEntityMapWriter$Companion {
+}
+
+public abstract class io/bluetape4k/exposed/r2dbc/lettuce/repository/AbstractR2dbcLettuceRepository : io/bluetape4k/exposed/r2dbc/lettuce/repository/R2dbcLettuceRepository {
+	public static final field Companion Lio/bluetape4k/exposed/r2dbc/lettuce/repository/AbstractR2dbcLettuceRepository$Companion;
+	public fun <init> (Lio/lettuce/core/RedisClient;Lio/bluetape4k/redis/lettuce/map/LettuceCacheConfig;Lio/lettuce/core/codec/RedisCodec;)V
+	public synthetic fun <init> (Lio/lettuce/core/RedisClient;Lio/bluetape4k/redis/lettuce/map/LettuceCacheConfig;Lio/lettuce/core/codec/RedisCodec;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun clear (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun close ()V
+	protected fun closeCacheResource ()V
+	protected fun closeNearCacheBlocking ()V
+	public fun containsKey (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun countFromDb (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun extractId (Ljava/io/Serializable;)Ljava/lang/Object;
+	public fun findAll (Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/Expression;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun findAllFromDb (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun findByIdFromDb (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun get (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getAll (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getCache ()Lio/bluetape4k/exposed/r2dbc/lettuce/map/ExposedR2dbcLettuceSuspendedLoadedMap;
+	public fun getCacheMode ()Lio/bluetape4k/exposed/cache/CacheMode;
+	public fun getCacheName ()Ljava/lang/String;
+	public fun getCacheWriteMode ()Lio/bluetape4k/exposed/cache/CacheWriteMode;
+	public fun getConfig ()Lio/bluetape4k/redis/lettuce/map/LettuceCacheConfig;
+	protected final fun getNearCache ()Lio/bluetape4k/cache/nearcache/LettuceSuspendNearCache;
+	public abstract fun getTable ()Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+	public abstract fun insertEntity (Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/io/Serializable;)V
+	public fun invalidate (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun invalidateAll (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun invalidateByPattern (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun put (Ljava/lang/Object;Ljava/io/Serializable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun putAll (Ljava/util/Map;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun serializeKey (Ljava/lang/Object;)Ljava/lang/String;
+	public abstract fun toEntity (Lorg/jetbrains/exposed/v1/core/ResultRow;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun updateEntity (Lorg/jetbrains/exposed/v1/core/statements/UpdateStatement;Ljava/io/Serializable;)V
+}
+
+public final class io/bluetape4k/exposed/r2dbc/lettuce/repository/AbstractR2dbcLettuceRepository$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {
+}
+
+public final class io/bluetape4k/exposed/r2dbc/lettuce/repository/ExposedR2dbcLettuceCodecs {
+	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/lettuce/repository/ExposedR2dbcLettuceCodecs;
+	public final fun jackson3 (Ljava/lang/Class;)Lio/lettuce/core/codec/RedisCodec;
+	public final fun requireExplicit ()Lio/lettuce/core/codec/RedisCodec;
+}
+
+public abstract interface class io/bluetape4k/exposed/r2dbc/lettuce/repository/R2dbcLettuceRepository : io/bluetape4k/exposed/cache/redis/R2dbcRedisRepository {
+	public static final field Companion Lio/bluetape4k/exposed/r2dbc/lettuce/repository/R2dbcLettuceRepository$Companion;
+	public static final field DEFAULT_BATCH_SIZE I
+	public fun clear (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun containsKey (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun extractId (Ljava/io/Serializable;)Ljava/lang/Object;
+	public abstract fun findAll (Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/Expression;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun get (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getAll (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getCache ()Lio/bluetape4k/exposed/r2dbc/lettuce/map/ExposedR2dbcLettuceSuspendedLoadedMap;
+	public abstract fun getConfig ()Lio/bluetape4k/redis/lettuce/map/LettuceCacheConfig;
+	public abstract fun getTable ()Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+	public fun invalidate (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun invalidateAll (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun invalidateByPattern (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun put (Ljava/lang/Object;Ljava/io/Serializable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun putAll (Ljava/util/Map;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun toEntity (Lorg/jetbrains/exposed/v1/core/ResultRow;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/lettuce/repository/R2dbcLettuceRepository$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {
+	public static final field DEFAULT_BATCH_SIZE I
+}
+
+public final class io/bluetape4k/exposed/r2dbc/lettuce/repository/R2dbcLettuceRepository$DefaultImpls {
+	public static fun clear (Lio/bluetape4k/exposed/r2dbc/lettuce/repository/R2dbcLettuceRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun close (Lio/bluetape4k/exposed/r2dbc/lettuce/repository/R2dbcLettuceRepository;)V
+	public static fun containsKey (Lio/bluetape4k/exposed/r2dbc/lettuce/repository/R2dbcLettuceRepository;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun get (Lio/bluetape4k/exposed/r2dbc/lettuce/repository/R2dbcLettuceRepository;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun getAll (Lio/bluetape4k/exposed/r2dbc/lettuce/repository/R2dbcLettuceRepository;Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun invalidate (Lio/bluetape4k/exposed/r2dbc/lettuce/repository/R2dbcLettuceRepository;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun invalidateAll (Lio/bluetape4k/exposed/r2dbc/lettuce/repository/R2dbcLettuceRepository;Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun invalidateByPattern (Lio/bluetape4k/exposed/r2dbc/lettuce/repository/R2dbcLettuceRepository;Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun put (Lio/bluetape4k/exposed/r2dbc/lettuce/repository/R2dbcLettuceRepository;Ljava/lang/Object;Ljava/io/Serializable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun putAll (Lio/bluetape4k/exposed/r2dbc/lettuce/repository/R2dbcLettuceRepository;Ljava/util/Map;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+

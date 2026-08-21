@@ -1,0 +1,137 @@
+public final class io/bluetape4k/exposed/core/tink/ByteArrayTinkAeadEncryptionTransformer : org/jetbrains/exposed/v1/core/ColumnTransformer {
+	public static final field Companion Lio/bluetape4k/exposed/core/tink/ByteArrayTinkAeadEncryptionTransformer$Companion;
+	public fun <init> (Lio/bluetape4k/tink/aead/TinkAead;)V
+	public fun <init> (Lio/bluetape4k/tink/aead/TinkAead;[B)V
+	public synthetic fun unwrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun unwrap ([B)[B
+	public synthetic fun wrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun wrap ([B)[B
+}
+
+public final class io/bluetape4k/exposed/core/tink/ByteArrayTinkAeadEncryptionTransformer$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public final class io/bluetape4k/exposed/core/tink/ByteArrayTinkDaeadEncryptionTransformer : org/jetbrains/exposed/v1/core/ColumnTransformer {
+	public static final field Companion Lio/bluetape4k/exposed/core/tink/ByteArrayTinkDaeadEncryptionTransformer$Companion;
+	public fun <init> (Lio/bluetape4k/tink/daead/TinkDeterministicAead;)V
+	public fun <init> (Lio/bluetape4k/tink/daead/TinkDeterministicAead;[B)V
+	public synthetic fun unwrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun unwrap ([B)[B
+	public synthetic fun wrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun wrap ([B)[B
+}
+
+public final class io/bluetape4k/exposed/core/tink/ByteArrayTinkDaeadEncryptionTransformer$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public final class io/bluetape4k/exposed/core/tink/StringTinkAeadEncryptionTransformer : org/jetbrains/exposed/v1/core/ColumnTransformer {
+	public static final field Companion Lio/bluetape4k/exposed/core/tink/StringTinkAeadEncryptionTransformer$Companion;
+	public fun <init> (Lio/bluetape4k/tink/aead/TinkAead;)V
+	public fun <init> (Lio/bluetape4k/tink/aead/TinkAead;[B)V
+	public synthetic fun unwrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun unwrap (Ljava/lang/String;)Ljava/lang/String;
+	public synthetic fun wrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun wrap (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/core/tink/StringTinkAeadEncryptionTransformer$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public final class io/bluetape4k/exposed/core/tink/StringTinkDaeadEncryptionTransformer : org/jetbrains/exposed/v1/core/ColumnTransformer {
+	public static final field Companion Lio/bluetape4k/exposed/core/tink/StringTinkDaeadEncryptionTransformer$Companion;
+	public fun <init> (Lio/bluetape4k/tink/daead/TinkDeterministicAead;)V
+	public fun <init> (Lio/bluetape4k/tink/daead/TinkDeterministicAead;[B)V
+	public synthetic fun unwrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun unwrap (Ljava/lang/String;)Ljava/lang/String;
+	public synthetic fun wrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun wrap (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/core/tink/StringTinkDaeadEncryptionTransformer$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public final class io/bluetape4k/exposed/core/tink/TablesKt {
+	public static final fun tinkAeadBinary (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;ILio/bluetape4k/tink/aead/TinkAead;Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static synthetic fun tinkAeadBinary$default (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;ILio/bluetape4k/tink/aead/TinkAead;Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider;ILjava/lang/Object;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun tinkAeadBlob (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;Lio/bluetape4k/tink/aead/TinkAead;Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static synthetic fun tinkAeadBlob$default (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;Lio/bluetape4k/tink/aead/TinkAead;Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider;ILjava/lang/Object;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun tinkAeadVarChar (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;ILio/bluetape4k/tink/aead/TinkAead;Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun tinkAeadVarChar (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;Lio/bluetape4k/tink/aead/TinkAead;Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static synthetic fun tinkAeadVarChar$default (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;ILio/bluetape4k/tink/aead/TinkAead;Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider;ILjava/lang/Object;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static synthetic fun tinkAeadVarChar$default (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;Lio/bluetape4k/tink/aead/TinkAead;Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider;ILjava/lang/Object;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun tinkDaeadBinary (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;ILio/bluetape4k/tink/daead/TinkDeterministicAead;Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static synthetic fun tinkDaeadBinary$default (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;ILio/bluetape4k/tink/daead/TinkDeterministicAead;Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider;ILjava/lang/Object;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun tinkDaeadBlob (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;Lio/bluetape4k/tink/daead/TinkDeterministicAead;Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static synthetic fun tinkDaeadBlob$default (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;Lio/bluetape4k/tink/daead/TinkDeterministicAead;Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider;ILjava/lang/Object;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun tinkDaeadVarChar (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;ILio/bluetape4k/tink/daead/TinkDeterministicAead;Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun tinkDaeadVarChar (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;Lio/bluetape4k/tink/daead/TinkDeterministicAead;Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static synthetic fun tinkDaeadVarChar$default (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;ILio/bluetape4k/tink/daead/TinkDeterministicAead;Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider;ILjava/lang/Object;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static synthetic fun tinkDaeadVarChar$default (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;Lio/bluetape4k/tink/daead/TinkDeterministicAead;Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider;ILjava/lang/Object;)Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/core/tink/TinkAeadBinaryColumnType : org/jetbrains/exposed/v1/core/ColumnWithTransform {
+	public fun <init> (Lio/bluetape4k/tink/aead/TinkAead;I)V
+	public fun <init> (Lio/bluetape4k/tink/aead/TinkAead;I[B)V
+}
+
+public final class io/bluetape4k/exposed/core/tink/TinkAeadBlobColumnType : org/jetbrains/exposed/v1/core/ColumnWithTransform {
+	public fun <init> (Lio/bluetape4k/tink/aead/TinkAead;)V
+	public fun <init> (Lio/bluetape4k/tink/aead/TinkAead;[B)V
+}
+
+public final class io/bluetape4k/exposed/core/tink/TinkAeadBlobTransformer : org/jetbrains/exposed/v1/core/ColumnTransformer {
+	public static final field Companion Lio/bluetape4k/exposed/core/tink/TinkAeadBlobTransformer$Companion;
+	public fun <init> (Lio/bluetape4k/tink/aead/TinkAead;)V
+	public fun <init> (Lio/bluetape4k/tink/aead/TinkAead;[B)V
+	public synthetic fun unwrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun unwrap ([B)Lorg/jetbrains/exposed/v1/core/statements/api/ExposedBlob;
+	public synthetic fun wrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun wrap (Lorg/jetbrains/exposed/v1/core/statements/api/ExposedBlob;)[B
+}
+
+public final class io/bluetape4k/exposed/core/tink/TinkAeadBlobTransformer$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public final class io/bluetape4k/exposed/core/tink/TinkAeadVarCharColumnType : org/jetbrains/exposed/v1/core/ColumnWithTransform {
+	public fun <init> (Lio/bluetape4k/tink/aead/TinkAead;I)V
+	public fun <init> (Lio/bluetape4k/tink/aead/TinkAead;I[B)V
+}
+
+public abstract interface class io/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider {
+	public static final field Companion Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider$Companion;
+	public abstract fun associatedData (Ljava/lang/String;Ljava/lang/String;)[B
+}
+
+public final class io/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider$Companion {
+	public final fun getEmpty ()Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider;
+	public final fun getTableAndColumn ()Lio/bluetape4k/exposed/core/tink/TinkColumnAssociatedDataProvider;
+}
+
+public final class io/bluetape4k/exposed/core/tink/TinkDaeadBinaryColumnType : org/jetbrains/exposed/v1/core/ColumnWithTransform {
+	public fun <init> (ILio/bluetape4k/tink/daead/TinkDeterministicAead;)V
+	public fun <init> (ILio/bluetape4k/tink/daead/TinkDeterministicAead;[B)V
+}
+
+public final class io/bluetape4k/exposed/core/tink/TinkDaeadBlobColumnType : org/jetbrains/exposed/v1/core/ColumnWithTransform {
+	public fun <init> (Lio/bluetape4k/tink/daead/TinkDeterministicAead;)V
+	public fun <init> (Lio/bluetape4k/tink/daead/TinkDeterministicAead;[B)V
+}
+
+public final class io/bluetape4k/exposed/core/tink/TinkDaeadBlobTransformer : org/jetbrains/exposed/v1/core/ColumnTransformer {
+	public static final field Companion Lio/bluetape4k/exposed/core/tink/TinkDaeadBlobTransformer$Companion;
+	public fun <init> (Lio/bluetape4k/tink/daead/TinkDeterministicAead;)V
+	public fun <init> (Lio/bluetape4k/tink/daead/TinkDeterministicAead;[B)V
+	public synthetic fun unwrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun unwrap ([B)Lorg/jetbrains/exposed/v1/core/statements/api/ExposedBlob;
+	public synthetic fun wrap (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun wrap (Lorg/jetbrains/exposed/v1/core/statements/api/ExposedBlob;)[B
+}
+
+public final class io/bluetape4k/exposed/core/tink/TinkDaeadBlobTransformer$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public final class io/bluetape4k/exposed/core/tink/TinkDaeadVarCharColumnType : org/jetbrains/exposed/v1/core/ColumnWithTransform {
+	public fun <init> (ILio/bluetape4k/tink/daead/TinkDeterministicAead;)V
+	public fun <init> (ILio/bluetape4k/tink/daead/TinkDeterministicAead;[B)V
+}
+

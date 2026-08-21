@@ -1,0 +1,246 @@
+public abstract interface annotation class io/bluetape4k/spring/data/exposed/jdbc/annotation/ExposedEntity : java/lang/annotation/Annotation {
+}
+
+public abstract interface annotation class io/bluetape4k/spring/data/exposed/jdbc/annotation/Query : java/lang/annotation/Annotation {
+	public abstract fun countQuery ()Ljava/lang/String;
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public class io/bluetape4k/spring/data/exposed/jdbc/config/ExposedAggregateEventPublisherAutoConfiguration {
+	public fun <init> ()V
+	public fun exposedAggregateEventPublisher (Lorg/springframework/context/ApplicationEventPublisher;)Lio/bluetape4k/spring/data/exposed/jdbc/ddd/ExposedAggregateEventPublisher;
+}
+
+public class io/bluetape4k/spring/data/exposed/jdbc/config/ExposedJdbcCacheHealthAutoConfiguration {
+	public fun <init> ()V
+	public fun exposedJdbcCacheHealthIndicator (Lorg/springframework/beans/factory/ObjectProvider;)Lorg/springframework/boot/health/contributor/HealthIndicator;
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/config/ExposedJdbcCacheHealthIndicator : org/springframework/boot/health/contributor/HealthIndicator {
+	public fun <init> (Lorg/springframework/beans/factory/ObjectProvider;)V
+	public fun health ()Lorg/springframework/boot/health/contributor/Health;
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/config/ExposedJdbcCacheHealthProperties {
+	public fun <init> ()V
+	public final fun getEnabled ()Z
+	public final fun setEnabled (Z)V
+}
+
+public class io/bluetape4k/spring/data/exposed/jdbc/config/ExposedSpringDataAutoConfiguration {
+	public fun <init> ()V
+	public fun databaseConfig ()Lorg/jetbrains/exposed/v1/core/DatabaseConfig;
+	public fun exposedMappingContext ()Lio/bluetape4k/spring/data/exposed/jdbc/mapping/ExposedMappingContext;
+	public fun springTransactionManager (Ljavax/sql/DataSource;Lorg/jetbrains/exposed/v1/core/DatabaseConfig;)Lorg/springframework/transaction/PlatformTransactionManager;
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/ddd/ExposedAggregateEventPublisher {
+	public fun <init> (Lorg/springframework/context/ApplicationEventPublisher;)V
+	public final fun publishAfterSave (Lio/bluetape4k/exposed/core/ddd/AggregateRoot;)V
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/mapping/DefaultExposedPersistentEntity : org/springframework/data/mapping/model/BasicPersistentEntity, io/bluetape4k/spring/data/exposed/jdbc/mapping/ExposedPersistentEntity {
+	public fun <init> (Lorg/springframework/data/core/TypeInformation;)V
+	public fun getEntityClass ()Lorg/jetbrains/exposed/v1/dao/EntityClass;
+	public fun getTable ()Lorg/jetbrains/exposed/v1/core/Table;
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/mapping/DefaultExposedPersistentProperty : org/springframework/data/mapping/model/AnnotationBasedPersistentProperty, io/bluetape4k/spring/data/exposed/jdbc/mapping/ExposedPersistentProperty {
+	public fun <init> (Lorg/springframework/data/mapping/model/Property;Lorg/springframework/data/mapping/PersistentEntity;Lorg/springframework/data/mapping/model/SimpleTypeHolder;)V
+	public fun getColumn ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/mapping/ExposedMappingContext : org/springframework/data/mapping/context/AbstractMappingContext {
+	public fun <init> ()V
+	public synthetic fun createPersistentEntity (Lorg/springframework/data/core/TypeInformation;)Lorg/springframework/data/mapping/model/MutablePersistentEntity;
+	public synthetic fun createPersistentProperty (Lorg/springframework/data/mapping/model/Property;Lorg/springframework/data/mapping/model/MutablePersistentEntity;Lorg/springframework/data/mapping/model/SimpleTypeHolder;)Lorg/springframework/data/mapping/PersistentProperty;
+}
+
+public abstract interface class io/bluetape4k/spring/data/exposed/jdbc/mapping/ExposedPersistentEntity : org/springframework/data/mapping/PersistentEntity {
+	public abstract fun getEntityClass ()Lorg/jetbrains/exposed/v1/dao/EntityClass;
+	public abstract fun getTable ()Lorg/jetbrains/exposed/v1/core/Table;
+}
+
+public abstract interface class io/bluetape4k/spring/data/exposed/jdbc/mapping/ExposedPersistentProperty : org/springframework/data/mapping/PersistentProperty {
+	public abstract fun getColumn ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public abstract interface class io/bluetape4k/spring/data/exposed/jdbc/repository/ExposedJdbcRepository : org/springframework/data/repository/ListCrudRepository, org/springframework/data/repository/ListPagingAndSortingRepository, org/springframework/data/repository/query/QueryByExampleExecutor {
+	public abstract fun count (Lkotlin/jvm/functions/Function0;)J
+	public abstract fun exists (Lkotlin/jvm/functions/Function0;)Z
+	public abstract fun extractId (Lorg/jetbrains/exposed/v1/dao/Entity;)Ljava/lang/Object;
+	public abstract fun findAll (Lkotlin/jvm/functions/Function0;)Ljava/util/List;
+	public abstract fun getTable ()Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+}
+
+public abstract interface annotation class io/bluetape4k/spring/data/exposed/jdbc/repository/config/EnableExposedJdbcRepositories : java/lang/annotation/Annotation {
+	public abstract fun basePackageClasses ()[Ljava/lang/Class;
+	public abstract fun basePackages ()[Ljava/lang/String;
+	public abstract fun excludeFilters ()[Lorg/springframework/context/annotation/ComponentScan$Filter;
+	public abstract fun includeFilters ()[Lorg/springframework/context/annotation/ComponentScan$Filter;
+	public abstract fun namedQueriesLocation ()Ljava/lang/String;
+	public abstract fun queryLookupStrategy ()Lorg/springframework/data/repository/query/QueryLookupStrategy$Key;
+	public abstract fun repositoryFactoryBeanClass ()Ljava/lang/Class;
+	public abstract fun repositoryImplementationPostfix ()Ljava/lang/String;
+	public abstract fun transactionManagerRef ()Ljava/lang/String;
+	public abstract fun value ()[Ljava/lang/String;
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/config/ExposedJdbcRepositoriesRegistrar : org/springframework/data/repository/config/RepositoryBeanDefinitionRegistrarSupport {
+	public fun <init> ()V
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/config/ExposedJdbcRepositoryConfigurationExtension : org/springframework/data/repository/config/RepositoryConfigurationExtensionSupport {
+	public fun <init> ()V
+	public fun getModuleName ()Ljava/lang/String;
+	public fun getRepositoryFactoryBeanClassName ()Ljava/lang/String;
+	public fun postProcess (Lorg/springframework/beans/factory/support/BeanDefinitionBuilder;Lorg/springframework/data/repository/config/AnnotationRepositoryConfigurationSource;)V
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/query/DeclaredExposedQuery : org/springframework/data/repository/query/RepositoryQuery {
+	public static final field Companion Lio/bluetape4k/spring/data/exposed/jdbc/repository/query/DeclaredExposedQuery$Companion;
+	public fun <init> (Lio/bluetape4k/spring/data/exposed/jdbc/repository/query/ExposedQueryMethod;Lio/bluetape4k/spring/data/exposed/jdbc/repository/support/ExposedEntityInformation;)V
+	public fun execute ([Ljava/lang/Object;)Ljava/lang/Object;
+	public fun getQueryMethod ()Lio/bluetape4k/spring/data/exposed/jdbc/repository/query/ExposedQueryMethod;
+	public synthetic fun getQueryMethod ()Lorg/springframework/data/repository/query/QueryMethod;
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/query/DeclaredExposedQuery$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/query/ExposedQueryCreator : org/springframework/data/repository/query/parser/AbstractQueryCreator {
+	public static final field Companion Lio/bluetape4k/spring/data/exposed/jdbc/repository/query/ExposedQueryCreator$Companion;
+	public fun <init> (Lorg/springframework/data/repository/query/parser/PartTree;Lorg/springframework/data/repository/query/ParameterAccessor;Lorg/jetbrains/exposed/v1/core/Table;)V
+	public synthetic fun and (Lorg/springframework/data/repository/query/parser/Part;Ljava/lang/Object;Ljava/util/Iterator;)Ljava/lang/Object;
+	public synthetic fun complete (Ljava/lang/Object;Lorg/springframework/data/domain/Sort;)Ljava/lang/Object;
+	public synthetic fun create (Lorg/springframework/data/repository/query/parser/Part;Ljava/util/Iterator;)Ljava/lang/Object;
+	public synthetic fun or (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/query/ExposedQueryCreator$Companion : io/bluetape4k/logging/KLogging {
+	public final fun escapeLikeWildcards (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/query/ExposedQueryLookupStrategy : org/springframework/data/repository/query/QueryLookupStrategy {
+	public static final field Companion Lio/bluetape4k/spring/data/exposed/jdbc/repository/query/ExposedQueryLookupStrategy$Companion;
+	public fun <init> (Lorg/springframework/data/repository/query/QueryLookupStrategy$Key;)V
+	public fun resolveQuery (Ljava/lang/reflect/Method;Lorg/springframework/data/repository/core/RepositoryMetadata;Lorg/springframework/data/projection/ProjectionFactory;Lorg/springframework/data/repository/core/NamedQueries;)Lorg/springframework/data/repository/query/RepositoryQuery;
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/query/ExposedQueryLookupStrategy$Companion : io/bluetape4k/logging/KLogging {
+	public final fun create (Lorg/springframework/data/repository/query/QueryLookupStrategy$Key;)Lio/bluetape4k/spring/data/exposed/jdbc/repository/query/ExposedQueryLookupStrategy;
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/query/ExposedQueryMethod : org/springframework/data/repository/query/QueryMethod {
+	public static final field Companion Lio/bluetape4k/spring/data/exposed/jdbc/repository/query/ExposedQueryMethod$Companion;
+	public fun <init> (Ljava/lang/reflect/Method;Lorg/springframework/data/repository/core/RepositoryMetadata;Lorg/springframework/data/projection/ProjectionFactory;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/reflect/Method;Lorg/springframework/data/repository/core/RepositoryMetadata;Lorg/springframework/data/projection/ProjectionFactory;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAnnotatedQuery ()Ljava/lang/String;
+	public final fun getCountQuery ()Ljava/lang/String;
+	public final fun isAnnotatedQuery ()Z
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/query/ExposedQueryMethod$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/query/ParameterMetadataProvider {
+	public static final field Companion Lio/bluetape4k/spring/data/exposed/jdbc/repository/query/ParameterMetadataProvider$Companion;
+	public fun <init> (Lorg/springframework/data/repository/query/ParameterAccessor;)V
+	public final fun getAccessor ()Lorg/springframework/data/repository/query/ParameterAccessor;
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/query/ParameterMetadataProvider$Companion : io/bluetape4k/logging/KLogging {
+	public final fun of (Lorg/springframework/data/repository/query/Parameters;[Ljava/lang/Object;)Lio/bluetape4k/spring/data/exposed/jdbc/repository/query/ParameterMetadataProvider;
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/query/PartTreeExposedQuery : org/springframework/data/repository/query/RepositoryQuery {
+	public static final field Companion Lio/bluetape4k/spring/data/exposed/jdbc/repository/query/PartTreeExposedQuery$Companion;
+	public fun <init> (Lio/bluetape4k/spring/data/exposed/jdbc/repository/query/ExposedQueryMethod;Lio/bluetape4k/spring/data/exposed/jdbc/repository/support/ExposedEntityInformation;)V
+	public fun execute ([Ljava/lang/Object;)Ljava/lang/Object;
+	public fun getQueryMethod ()Lio/bluetape4k/spring/data/exposed/jdbc/repository/query/ExposedQueryMethod;
+	public synthetic fun getQueryMethod ()Lorg/springframework/data/repository/query/QueryMethod;
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/query/PartTreeExposedQuery$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public abstract interface class io/bluetape4k/spring/data/exposed/jdbc/repository/support/ExposedEntityInformation : org/springframework/data/repository/core/EntityInformation {
+	public abstract fun getEntityClass ()Lorg/jetbrains/exposed/v1/dao/EntityClass;
+	public abstract fun getTable ()Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/support/ExposedEntityInformationImpl : org/springframework/data/repository/core/support/AbstractEntityInformation, io/bluetape4k/spring/data/exposed/jdbc/repository/support/ExposedEntityInformation {
+	public static final field Companion Lio/bluetape4k/spring/data/exposed/jdbc/repository/support/ExposedEntityInformationImpl$Companion;
+	public fun <init> (Ljava/lang/Class;Lorg/jetbrains/exposed/v1/dao/EntityClass;)V
+	public fun getEntityClass ()Lorg/jetbrains/exposed/v1/dao/EntityClass;
+	public synthetic fun getId (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun getId (Lorg/jetbrains/exposed/v1/dao/Entity;)Ljava/lang/Object;
+	public fun getIdType ()Ljava/lang/Class;
+	public fun getTable ()Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+	public synthetic fun isNew (Ljava/lang/Object;)Z
+	public fun isNew (Lorg/jetbrains/exposed/v1/dao/Entity;)Z
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/support/ExposedEntityInformationImpl$Companion : io/bluetape4k/logging/KLogging {
+	public final fun invoke (Ljava/lang/Class;)Lio/bluetape4k/spring/data/exposed/jdbc/repository/support/ExposedEntityInformationImpl;
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/support/ExposedJdbcRepositoryFactory : org/springframework/data/repository/core/support/RepositoryFactorySupport {
+	public static final field Companion Lio/bluetape4k/spring/data/exposed/jdbc/repository/support/ExposedJdbcRepositoryFactory$Companion;
+	public fun <init> ()V
+	public fun getEntityInformation (Lorg/springframework/data/repository/core/RepositoryMetadata;)Lorg/springframework/data/repository/core/EntityInformation;
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/support/ExposedJdbcRepositoryFactory$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/support/ExposedJdbcRepositoryFactoryBean : org/springframework/data/repository/core/support/TransactionalRepositoryFactoryBeanSupport {
+	public fun <init> (Ljava/lang/Class;)V
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/support/ExposedSortSupportKt {
+	public static final fun toExposedOrderBy (Lorg/springframework/data/domain/Sort;Lorg/jetbrains/exposed/v1/core/Table;)[Lkotlin/Pair;
+}
+
+public class io/bluetape4k/spring/data/exposed/jdbc/repository/support/SimpleExposedJdbcRepository : io/bluetape4k/spring/data/exposed/jdbc/repository/ExposedJdbcRepository {
+	public static final field Companion Lio/bluetape4k/spring/data/exposed/jdbc/repository/support/SimpleExposedJdbcRepository$Companion;
+	public fun <init> (Lio/bluetape4k/spring/data/exposed/jdbc/repository/support/ExposedEntityInformation;)V
+	public fun count ()J
+	public fun count (Lkotlin/jvm/functions/Function0;)J
+	public fun count (Lorg/springframework/data/domain/Example;)J
+	public synthetic fun delete (Ljava/lang/Object;)V
+	public fun delete (Lorg/jetbrains/exposed/v1/dao/Entity;)V
+	public fun deleteAll ()V
+	public fun deleteAll (Ljava/lang/Iterable;)V
+	public fun deleteAllById (Ljava/lang/Iterable;)V
+	public fun deleteById (Ljava/lang/Object;)V
+	public fun exists (Lkotlin/jvm/functions/Function0;)Z
+	public fun exists (Lorg/springframework/data/domain/Example;)Z
+	public fun existsById (Ljava/lang/Object;)Z
+	public fun extractId (Lorg/jetbrains/exposed/v1/dao/Entity;)Ljava/lang/Object;
+	public synthetic fun findAll ()Ljava/lang/Iterable;
+	public fun findAll ()Ljava/util/List;
+	public fun findAll (Lkotlin/jvm/functions/Function0;)Ljava/util/List;
+	public synthetic fun findAll (Lorg/springframework/data/domain/Example;)Ljava/lang/Iterable;
+	public fun findAll (Lorg/springframework/data/domain/Example;)Ljava/util/List;
+	public fun findAll (Lorg/springframework/data/domain/Example;Lorg/springframework/data/domain/Pageable;)Lorg/springframework/data/domain/Page;
+	public synthetic fun findAll (Lorg/springframework/data/domain/Example;Lorg/springframework/data/domain/Sort;)Ljava/lang/Iterable;
+	public fun findAll (Lorg/springframework/data/domain/Example;Lorg/springframework/data/domain/Sort;)Ljava/util/List;
+	public fun findAll (Lorg/springframework/data/domain/Pageable;)Lorg/springframework/data/domain/Page;
+	public synthetic fun findAll (Lorg/springframework/data/domain/Sort;)Ljava/lang/Iterable;
+	public fun findAll (Lorg/springframework/data/domain/Sort;)Ljava/util/List;
+	public synthetic fun findAllById (Ljava/lang/Iterable;)Ljava/lang/Iterable;
+	public fun findAllById (Ljava/lang/Iterable;)Ljava/util/List;
+	public fun findBy (Lorg/springframework/data/domain/Example;Ljava/util/function/Function;)Ljava/lang/Object;
+	public fun findById (Ljava/lang/Object;)Ljava/util/Optional;
+	public fun findOne (Lorg/springframework/data/domain/Example;)Ljava/util/Optional;
+	public fun getTable ()Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+	public synthetic fun save (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun save (Lorg/jetbrains/exposed/v1/dao/Entity;)Lorg/jetbrains/exposed/v1/dao/Entity;
+	public synthetic fun saveAll (Ljava/lang/Iterable;)Ljava/lang/Iterable;
+	public fun saveAll (Ljava/lang/Iterable;)Ljava/util/List;
+}
+
+public final class io/bluetape4k/spring/data/exposed/jdbc/repository/support/SimpleExposedJdbcRepository$Companion : io/bluetape4k/logging/KLogging {
+}
+

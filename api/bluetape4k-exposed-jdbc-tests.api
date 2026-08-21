@@ -1,0 +1,1010 @@
+public class io/bluetape4k/exposed/shared/MiscTable : org/jetbrains/exposed/v1/core/Table {
+	public fun <init> ()V
+	public final fun getBy ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getByn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getC ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getChar ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getCn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getDblcn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getDc ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getDcn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getE ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getEn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getEs ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getEsn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getFcn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getN ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getNn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getS ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getSm ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getSmn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getSn ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/MiscTable$E : java/lang/Enum {
+	public static final field ONE Lio/bluetape4k/exposed/shared/MiscTable$E;
+	public static final field THREE Lio/bluetape4k/exposed/shared/MiscTable$E;
+	public static final field TWO Lio/bluetape4k/exposed/shared/MiscTable$E;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/exposed/shared/MiscTable$E;
+	public static fun values ()[Lio/bluetape4k/exposed/shared/MiscTable$E;
+}
+
+public final class io/bluetape4k/exposed/shared/MiscTableKt {
+	public static final fun checkInsert (Lio/bluetape4k/exposed/shared/MiscTable;Lorg/jetbrains/exposed/v1/core/statements/InsertStatement;BLjava/lang/Byte;SLjava/lang/Short;ILjava/lang/Integer;Lio/bluetape4k/exposed/shared/MiscTable$E;Lio/bluetape4k/exposed/shared/MiscTable$E;Lio/bluetape4k/exposed/shared/MiscTable$E;Lio/bluetape4k/exposed/shared/MiscTable$E;Ljava/lang/String;Ljava/lang/String;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/lang/Float;Ljava/lang/Double;)V
+	public static final fun checkRow (Lio/bluetape4k/exposed/shared/MiscTable;Lorg/jetbrains/exposed/v1/core/ResultRow;BLjava/lang/Byte;SLjava/lang/Short;ILjava/lang/Integer;Lio/bluetape4k/exposed/shared/MiscTable$E;Lio/bluetape4k/exposed/shared/MiscTable$E;Lio/bluetape4k/exposed/shared/MiscTable$E;Lio/bluetape4k/exposed/shared/MiscTable$E;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/lang/Float;Ljava/lang/Double;)V
+}
+
+public final class io/bluetape4k/exposed/shared/dml/DMLTestData {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/dml/DMLTestData;
+	public final fun toCityNameList (Ljava/lang/Iterable;)Ljava/util/List;
+	public final fun withCitiesAndUsers (Lio/bluetape4k/exposed/tests/AbstractExposedTest;Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/jvm/functions/Function4;)V
+	public final fun withSales (Lio/bluetape4k/exposed/tests/AbstractExposedTest;Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/jvm/functions/Function3;)V
+	public final fun withSalesAndSomeAmounts (Lio/bluetape4k/exposed/tests/AbstractExposedTest;Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/jvm/functions/Function4;)V
+	public final fun withSomeAmounts (Lio/bluetape4k/exposed/tests/AbstractExposedTest;Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/jvm/functions/Function3;)V
+}
+
+public final class io/bluetape4k/exposed/shared/dml/DMLTestData$Cities : org/jetbrains/exposed/v1/core/Table {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/dml/DMLTestData$Cities;
+	public final fun getId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
+}
+
+public final class io/bluetape4k/exposed/shared/dml/DMLTestData$Org : org/jetbrains/exposed/v1/dao/IntEntity {
+	public static final field Companion Lio/bluetape4k/exposed/shared/dml/DMLTestData$Org$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public final fun getName ()Ljava/lang/String;
+	public final fun getUid ()Ljava/lang/String;
+	public final fun setName (Ljava/lang/String;)V
+	public final fun setUid (Ljava/lang/String;)V
+}
+
+public final class io/bluetape4k/exposed/shared/dml/DMLTestData$Org$Companion : org/jetbrains/exposed/v1/dao/IntEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/dml/DMLTestData$OrgMembership : org/jetbrains/exposed/v1/dao/IntEntity {
+	public static final field Companion Lio/bluetape4k/exposed/shared/dml/DMLTestData$OrgMembership$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public final fun getOrg ()Lio/bluetape4k/exposed/shared/dml/DMLTestData$Org;
+	public final fun getOrgId ()Ljava/lang/String;
+	public final fun setOrg (Lio/bluetape4k/exposed/shared/dml/DMLTestData$Org;)V
+	public final fun setOrgId (Ljava/lang/String;)V
+}
+
+public final class io/bluetape4k/exposed/shared/dml/DMLTestData$OrgMembership$Companion : org/jetbrains/exposed/v1/dao/IntEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/dml/DMLTestData$OrgMemberships : org/jetbrains/exposed/v1/core/dao/id/IntIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/dml/DMLTestData$OrgMemberships;
+	public final fun getOrgId ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/dml/DMLTestData$Orgs : org/jetbrains/exposed/v1/core/dao/id/IntIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/dml/DMLTestData$Orgs;
+	public final fun getName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getUid ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/dml/DMLTestData$Sales : org/jetbrains/exposed/v1/core/Table {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/dml/DMLTestData$Sales;
+	public final fun getAmount ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getMonth ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getProduct ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getYear ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/dml/DMLTestData$SomeAmounts : org/jetbrains/exposed/v1/core/Table {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/dml/DMLTestData$SomeAmounts;
+	public final fun getAmount ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/dml/DMLTestData$UserData : org/jetbrains/exposed/v1/core/Table {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/dml/DMLTestData$UserData;
+	public final fun getComment ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getUserId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getValue ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/dml/DMLTestData$Users : org/jetbrains/exposed/v1/core/Table {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/dml/DMLTestData$Users;
+	public final fun getCityId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getFlags ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
+}
+
+public final class io/bluetape4k/exposed/shared/dml/DMLTestData$Users$Flags {
+	public static final field HAS_DATA I
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/dml/DMLTestData$Users$Flags;
+	public static final field IS_ADMIN I
+}
+
+public final class io/bluetape4k/exposed/shared/entities/ActorRecord : java/io/Serializable {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;J)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()J
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;J)Lio/bluetape4k/exposed/shared/entities/ActorRecord;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/shared/entities/ActorRecord;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JILjava/lang/Object;)Lio/bluetape4k/exposed/shared/entities/ActorRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBirthday ()Ljava/lang/String;
+	public final fun getFirstName ()Ljava/lang/String;
+	public final fun getId ()J
+	public final fun getLastName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun withId (J)Lio/bluetape4k/exposed/shared/entities/ActorRecord;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BlogSchema {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/entities/BlogSchema;
+	public final fun getBlogTables ()[Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BlogSchema$Post : org/jetbrains/exposed/v1/dao/LongEntity {
+	public static final field Companion Lio/bluetape4k/exposed/shared/entities/BlogSchema$Post$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getComments ()Lorg/jetbrains/exposed/v1/jdbc/SizedIterable;
+	public final fun getDetail ()Lio/bluetape4k/exposed/shared/entities/BlogSchema$PostDetail;
+	public final fun getTags ()Lorg/jetbrains/exposed/v1/jdbc/SizedIterable;
+	public final fun getTitle ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun setTitle (Ljava/lang/String;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BlogSchema$Post$Companion : org/jetbrains/exposed/v1/dao/LongEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BlogSchema$PostComment : org/jetbrains/exposed/v1/dao/LongEntity {
+	public static final field Companion Lio/bluetape4k/exposed/shared/entities/BlogSchema$PostComment$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPost ()Lio/bluetape4k/exposed/shared/entities/BlogSchema$Post;
+	public final fun getReview ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun setPost (Lio/bluetape4k/exposed/shared/entities/BlogSchema$Post;)V
+	public final fun setReview (Ljava/lang/String;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BlogSchema$PostComment$Companion : org/jetbrains/exposed/v1/dao/LongEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BlogSchema$PostCommentTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/entities/BlogSchema$PostCommentTable;
+	public final fun getPostId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getReview ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BlogSchema$PostDetail : org/jetbrains/exposed/v1/dao/LongEntity {
+	public static final field Companion Lio/bluetape4k/exposed/shared/entities/BlogSchema$PostDetail$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCreatedBy ()Ljava/lang/String;
+	public final fun getCreatedOn ()Ljava/time/LocalDate;
+	public final fun getPost ()Lio/bluetape4k/exposed/shared/entities/BlogSchema$Post;
+	public fun hashCode ()I
+	public final fun setCreatedBy (Ljava/lang/String;)V
+	public final fun setCreatedOn (Ljava/time/LocalDate;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BlogSchema$PostDetail$Companion : org/jetbrains/exposed/v1/dao/LongEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BlogSchema$PostDetailTable : org/jetbrains/exposed/v1/core/dao/id/IdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/entities/BlogSchema$PostDetailTable;
+	public final fun getCreatedBy ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getCreatedOn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getId ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BlogSchema$PostTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/entities/BlogSchema$PostTable;
+	public final fun getTitle ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BlogSchema$PostTagTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/entities/BlogSchema$PostTagTable;
+	public final fun getPostId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getTagId ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BlogSchema$Tag : org/jetbrains/exposed/v1/dao/LongEntity {
+	public static final field Companion Lio/bluetape4k/exposed/shared/entities/BlogSchema$Tag$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPosts ()Lorg/jetbrains/exposed/v1/jdbc/SizedIterable;
+	public fun hashCode ()I
+	public final fun setName (Ljava/lang/String;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BlogSchema$Tag$Companion : org/jetbrains/exposed/v1/dao/LongEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BlogSchema$TagTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/entities/BlogSchema$TagTable;
+	public final fun getName ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BoardSchema {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/entities/BoardSchema;
+	public final fun getAllTables ()[Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BoardSchema$Board : org/jetbrains/exposed/v1/dao/IntEntity {
+	public static final field Companion Lio/bluetape4k/exposed/shared/entities/BoardSchema$Board$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPosts ()Lorg/jetbrains/exposed/v1/jdbc/SizedIterable;
+	public final fun setName (Ljava/lang/String;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BoardSchema$Board$Companion : org/jetbrains/exposed/v1/dao/IntEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BoardSchema$Boards : org/jetbrains/exposed/v1/core/dao/id/IntIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/entities/BoardSchema$Boards;
+	public final fun getName ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BoardSchema$Categories : org/jetbrains/exposed/v1/core/dao/id/IntIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/entities/BoardSchema$Categories;
+	public final fun getTitle ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getUniqueId ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BoardSchema$Category : org/jetbrains/exposed/v1/dao/IntEntity {
+	public static final field Companion Lio/bluetape4k/exposed/shared/entities/BoardSchema$Category$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPosts ()Lorg/jetbrains/exposed/v1/jdbc/SizedIterable;
+	public final fun getTitle ()Ljava/lang/String;
+	public final fun getUniqueId ()Ljava/util/UUID;
+	public fun hashCode ()I
+	public final fun setTitle (Ljava/lang/String;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BoardSchema$Category$Companion : org/jetbrains/exposed/v1/dao/IntEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BoardSchema$Post : org/jetbrains/exposed/v1/dao/LongEntity {
+	public static final field Companion Lio/bluetape4k/exposed/shared/entities/BoardSchema$Post$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBoard ()Lio/bluetape4k/exposed/shared/entities/BoardSchema$Board;
+	public final fun getCategory ()Lio/bluetape4k/exposed/shared/entities/BoardSchema$Category;
+	public final fun getChildren ()Lorg/jetbrains/exposed/v1/jdbc/SizedIterable;
+	public final fun getOptCategory ()Lio/bluetape4k/exposed/shared/entities/BoardSchema$Category;
+	public final fun getParent ()Lio/bluetape4k/exposed/shared/entities/BoardSchema$Post;
+	public fun hashCode ()I
+	public final fun setBoard (Lio/bluetape4k/exposed/shared/entities/BoardSchema$Board;)V
+	public final fun setCategory (Lio/bluetape4k/exposed/shared/entities/BoardSchema$Category;)V
+	public final fun setOptCategory (Lio/bluetape4k/exposed/shared/entities/BoardSchema$Category;)V
+	public final fun setParent (Lio/bluetape4k/exposed/shared/entities/BoardSchema$Post;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BoardSchema$Post$Companion : org/jetbrains/exposed/v1/dao/LongEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/entities/BoardSchema$Posts : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/entities/BoardSchema$Posts;
+	public final fun getBoardId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getCategoryId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getOptCategoryId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getParentId ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/MovieActorCountRecord : java/io/Serializable {
+	public fun <init> (Ljava/lang/String;I)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun copy (Ljava/lang/String;I)Lio/bluetape4k/exposed/shared/entities/MovieActorCountRecord;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/shared/entities/MovieActorCountRecord;Ljava/lang/String;IILjava/lang/Object;)Lio/bluetape4k/exposed/shared/entities/MovieActorCountRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActorCount ()I
+	public final fun getMovieName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/MovieActorRecord : java/io/Serializable {
+	public fun <init> (JJ)V
+	public final fun component1 ()J
+	public final fun component2 ()J
+	public final fun copy (JJ)Lio/bluetape4k/exposed/shared/entities/MovieActorRecord;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/shared/entities/MovieActorRecord;JJILjava/lang/Object;)Lio/bluetape4k/exposed/shared/entities/MovieActorRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActorId ()J
+	public final fun getMovieId ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/MovieMappersKt {
+	public static final fun toActorRecord (Lio/bluetape4k/exposed/shared/entities/MovieSchema$ActorEntity;)Lio/bluetape4k/exposed/shared/entities/ActorRecord;
+	public static final fun toActorRecord (Lorg/jetbrains/exposed/v1/core/ResultRow;)Lio/bluetape4k/exposed/shared/entities/ActorRecord;
+	public static final fun toMovieRecord (Lio/bluetape4k/exposed/shared/entities/MovieSchema$MovieEntity;)Lio/bluetape4k/exposed/shared/entities/MovieRecord;
+	public static final fun toMovieRecord (Lorg/jetbrains/exposed/v1/core/ResultRow;)Lio/bluetape4k/exposed/shared/entities/MovieRecord;
+	public static final fun toMovieWithActorRecord (Lio/bluetape4k/exposed/shared/entities/MovieRecord;Ljava/util/List;)Lio/bluetape4k/exposed/shared/entities/MovieWithActorRecord;
+	public static final fun toMovieWithActorRecord (Lio/bluetape4k/exposed/shared/entities/MovieSchema$MovieEntity;)Lio/bluetape4k/exposed/shared/entities/MovieWithActorRecord;
+	public static final fun toMovieWithActorRecord (Lorg/jetbrains/exposed/v1/core/ResultRow;Ljava/util/List;)Lio/bluetape4k/exposed/shared/entities/MovieWithActorRecord;
+	public static final fun toMovieWithProducingActorRecord (Lorg/jetbrains/exposed/v1/core/ResultRow;)Lio/bluetape4k/exposed/shared/entities/MovieWithProducingActorRecord;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/MovieRecord : java/io/Serializable {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;J)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()J
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;J)Lio/bluetape4k/exposed/shared/entities/MovieRecord;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/shared/entities/MovieRecord;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JILjava/lang/Object;)Lio/bluetape4k/exposed/shared/entities/MovieRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()J
+	public final fun getName ()Ljava/lang/String;
+	public final fun getProducerName ()Ljava/lang/String;
+	public final fun getReleaseDate ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun withId (J)Lio/bluetape4k/exposed/shared/entities/MovieRecord;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/MovieSchema : io/bluetape4k/logging/KLogging {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/entities/MovieSchema;
+	public final fun withMovieAndActors (Lio/bluetape4k/exposed/tests/AbstractExposedTest;Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/jvm/functions/Function1;)V
+	public final fun withSuspendedMovieAndActors (Lio/bluetape4k/exposed/tests/AbstractExposedTest;Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/MovieSchema$ActorEntity : org/jetbrains/exposed/v1/dao/LongEntity {
+	public static final field Companion Lio/bluetape4k/exposed/shared/entities/MovieSchema$ActorEntity$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBirthday ()Ljava/time/LocalDate;
+	public final fun getFirstName ()Ljava/lang/String;
+	public final fun getLastName ()Ljava/lang/String;
+	public final fun getMovies ()Lorg/jetbrains/exposed/v1/jdbc/SizedIterable;
+	public fun hashCode ()I
+	public final fun setBirthday (Ljava/time/LocalDate;)V
+	public final fun setFirstName (Ljava/lang/String;)V
+	public final fun setLastName (Ljava/lang/String;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/MovieSchema$ActorEntity$Companion : org/jetbrains/exposed/v1/dao/LongEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/entities/MovieSchema$ActorInMovieTable : org/jetbrains/exposed/v1/core/Table {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/entities/MovieSchema$ActorInMovieTable;
+	public final fun getActorId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getMovieId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/MovieSchema$ActorTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/entities/MovieSchema$ActorTable;
+	public final fun getBirthday ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getFirstName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getLastName ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/MovieSchema$MovieEntity : org/jetbrains/exposed/v1/dao/LongEntity {
+	public static final field Companion Lio/bluetape4k/exposed/shared/entities/MovieSchema$MovieEntity$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActors ()Lorg/jetbrains/exposed/v1/jdbc/SizedIterable;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getProducerName ()Ljava/lang/String;
+	public final fun getReleaseDate ()Ljava/time/LocalDate;
+	public fun hashCode ()I
+	public final fun setName (Ljava/lang/String;)V
+	public final fun setProducerName (Ljava/lang/String;)V
+	public final fun setReleaseDate (Ljava/time/LocalDate;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/MovieSchema$MovieEntity$Companion : org/jetbrains/exposed/v1/dao/LongEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/entities/MovieSchema$MovieTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/entities/MovieSchema$MovieTable;
+	public final fun getName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getProducerName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getReleaseDate ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/MovieWithActorRecord : java/io/Serializable {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;J)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()J
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;J)Lio/bluetape4k/exposed/shared/entities/MovieWithActorRecord;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/shared/entities/MovieWithActorRecord;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;JILjava/lang/Object;)Lio/bluetape4k/exposed/shared/entities/MovieWithActorRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActors ()Ljava/util/List;
+	public final fun getId ()J
+	public final fun getName ()Ljava/lang/String;
+	public final fun getProducerName ()Ljava/lang/String;
+	public final fun getReleaseDate ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/entities/MovieWithProducingActorRecord : java/io/Serializable {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lio/bluetape4k/exposed/shared/entities/MovieWithProducingActorRecord;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/shared/entities/MovieWithProducingActorRecord;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/shared/entities/MovieWithProducingActorRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMovieName ()Ljava/lang/String;
+	public final fun getProducerActorName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/OrderSchema : io/bluetape4k/logging/KLogging {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/mapping/OrderSchema;
+	public final fun getAllOrderTables ()[Lorg/jetbrains/exposed/v1/core/dao/id/LongIdTable;
+	public final fun withOrdersTables (Lio/bluetape4k/exposed/tests/AbstractExposedTest;Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/jvm/functions/Function6;)V
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/OrderSchema$Item : org/jetbrains/exposed/v1/dao/LongEntity, java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/shared/mapping/OrderSchema$Item$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDescription ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun setDescription (Ljava/lang/String;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/OrderSchema$Item$Companion : org/jetbrains/exposed/v1/dao/LongEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/OrderSchema$ItemTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/mapping/OrderSchema$ItemTable;
+	public final fun getDescription ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/OrderSchema$Order : org/jetbrains/exposed/v1/dao/LongEntity, java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/shared/mapping/OrderSchema$Order$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDetails ()Lorg/jetbrains/exposed/v1/jdbc/SizedIterable;
+	public final fun getOrderDate ()Ljava/time/LocalDate;
+	public fun hashCode ()I
+	public final fun setOrderDate (Ljava/time/LocalDate;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/OrderSchema$Order$Companion : org/jetbrains/exposed/v1/dao/LongEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/OrderSchema$OrderDetail : org/jetbrains/exposed/v1/dao/LongEntity, java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/shared/mapping/OrderSchema$OrderDetail$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getLineNumber ()I
+	public final fun getOrder ()Lio/bluetape4k/exposed/shared/mapping/OrderSchema$Order;
+	public final fun getOrderId ()Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;
+	public final fun getQuantity ()I
+	public fun hashCode ()I
+	public final fun setDescription (Ljava/lang/String;)V
+	public final fun setLineNumber (I)V
+	public final fun setOrder (Lio/bluetape4k/exposed/shared/mapping/OrderSchema$Order;)V
+	public final fun setQuantity (I)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/OrderSchema$OrderDetail$Companion : org/jetbrains/exposed/v1/dao/LongEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/OrderSchema$OrderDetailTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/mapping/OrderSchema$OrderDetailTable;
+	public final fun getDescription ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getLineNumber ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getOrderId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getQuantity ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/OrderSchema$OrderLine : org/jetbrains/exposed/v1/dao/LongEntity, java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/shared/mapping/OrderSchema$OrderLine$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getItem ()Lio/bluetape4k/exposed/shared/mapping/OrderSchema$Item;
+	public final fun getLineNumber ()I
+	public final fun getOrder ()Lio/bluetape4k/exposed/shared/mapping/OrderSchema$Order;
+	public final fun getQuantity ()I
+	public fun hashCode ()I
+	public final fun setItem (Lio/bluetape4k/exposed/shared/mapping/OrderSchema$Item;)V
+	public final fun setLineNumber (I)V
+	public final fun setOrder (Lio/bluetape4k/exposed/shared/mapping/OrderSchema$Order;)V
+	public final fun setQuantity (I)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/OrderSchema$OrderLine$Companion : org/jetbrains/exposed/v1/dao/LongEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/OrderSchema$OrderLineTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/mapping/OrderSchema$OrderLineTable;
+	public final fun getItemId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getLineNumber ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getOrderId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getQuantity ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/OrderSchema$OrderRecord : java/io/Serializable, java/lang/Comparable {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun compareTo (Lio/bluetape4k/exposed/shared/mapping/OrderSchema$OrderRecord;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public final fun component1 ()Ljava/lang/Long;
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun component3 ()Ljava/lang/Integer;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/String;)Lio/bluetape4k/exposed/shared/mapping/OrderSchema$OrderRecord;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/shared/mapping/OrderSchema$OrderRecord;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/shared/mapping/OrderSchema$OrderRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getItemId ()Ljava/lang/Long;
+	public final fun getOrderId ()Ljava/lang/Long;
+	public final fun getQuantity ()Ljava/lang/Integer;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/OrderSchema$OrderTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/mapping/OrderSchema$OrderTable;
+	public final fun getOrderDate ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/OrderSchema$User : org/jetbrains/exposed/v1/dao/LongEntity, java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/shared/mapping/OrderSchema$User$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getParent ()Lio/bluetape4k/exposed/shared/mapping/OrderSchema$User;
+	public final fun getUserName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun setParent (Lio/bluetape4k/exposed/shared/mapping/OrderSchema$User;)V
+	public final fun setUserName (Ljava/lang/String;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/OrderSchema$User$Companion : org/jetbrains/exposed/v1/dao/LongEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/OrderSchema$UserTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/mapping/OrderSchema$UserTable;
+	public final fun getParentId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getUserName ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/PersonSchema {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/mapping/PersonSchema;
+	public final fun getAllPersonTables ()[Lorg/jetbrains/exposed/v1/core/dao/id/LongIdTable;
+	public final fun withPersons (Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/jvm/functions/Function3;)V
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/PersonSchema$Address : org/jetbrains/exposed/v1/dao/LongEntity, java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/shared/mapping/PersonSchema$Address$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCity ()Ljava/lang/String;
+	public final fun getState ()Ljava/lang/String;
+	public final fun getStreet ()Ljava/lang/String;
+	public final fun getZip ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun setCity (Ljava/lang/String;)V
+	public final fun setState (Ljava/lang/String;)V
+	public final fun setStreet (Ljava/lang/String;)V
+	public final fun setZip (Ljava/lang/String;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/PersonSchema$Address$Companion : org/jetbrains/exposed/v1/dao/LongEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/PersonSchema$AddressTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/mapping/PersonSchema$AddressTable;
+	public final fun getCity ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getState ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getStreet ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getZip ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/PersonSchema$Person : org/jetbrains/exposed/v1/dao/LongEntity, java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/shared/mapping/PersonSchema$Person$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAddress ()Lio/bluetape4k/exposed/shared/mapping/PersonSchema$Address;
+	public final fun getBirthDate ()Ljava/time/LocalDate;
+	public final fun getEmployeed ()Z
+	public final fun getFirstName ()Ljava/lang/String;
+	public final fun getLastName ()Ljava/lang/String;
+	public final fun getOccupation ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun setAddress (Lio/bluetape4k/exposed/shared/mapping/PersonSchema$Address;)V
+	public final fun setBirthDate (Ljava/time/LocalDate;)V
+	public final fun setEmployeed (Z)V
+	public final fun setFirstName (Ljava/lang/String;)V
+	public final fun setLastName (Ljava/lang/String;)V
+	public final fun setOccupation (Ljava/lang/String;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/PersonSchema$Person$Companion : org/jetbrains/exposed/v1/dao/LongEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/PersonSchema$PersonRecord : java/io/Serializable {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/time/LocalDate;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/Long;)V
+	public synthetic fun <init> (Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/time/LocalDate;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Long;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/time/LocalDate;
+	public final fun component5 ()Ljava/lang/Boolean;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/Long;
+	public final fun copy (Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/time/LocalDate;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/Long;)Lio/bluetape4k/exposed/shared/mapping/PersonSchema$PersonRecord;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/shared/mapping/PersonSchema$PersonRecord;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/time/LocalDate;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/Long;ILjava/lang/Object;)Lio/bluetape4k/exposed/shared/mapping/PersonSchema$PersonRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAddress ()Ljava/lang/Long;
+	public final fun getBirthDate ()Ljava/time/LocalDate;
+	public final fun getEmployeed ()Ljava/lang/Boolean;
+	public final fun getFirstName ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/Long;
+	public final fun getLastName ()Ljava/lang/String;
+	public final fun getOccupation ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun withId (J)Lio/bluetape4k/exposed/shared/mapping/PersonSchema$PersonRecord;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/PersonSchema$PersonTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/mapping/PersonSchema$PersonTable;
+	public final fun getAddressId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getBirthDate ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getEmployeed ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getFirstName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getLastName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getOccupation ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/PersonSchema$PersonTableDML : org/jetbrains/exposed/v1/core/Table {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/mapping/PersonSchema$PersonTableDML;
+	public final fun getAddressId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getBirthDate ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getEmployeed ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getFirstName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getLastName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getOccupation ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/PersonSchema$PersonWithAddress : java/io/Serializable {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/time/LocalDate;Ljava/lang/Boolean;Ljava/lang/String;Lio/bluetape4k/exposed/shared/mapping/PersonSchema$Address;)V
+	public synthetic fun <init> (Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/time/LocalDate;Ljava/lang/Boolean;Ljava/lang/String;Lio/bluetape4k/exposed/shared/mapping/PersonSchema$Address;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Long;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/time/LocalDate;
+	public final fun component5 ()Ljava/lang/Boolean;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Lio/bluetape4k/exposed/shared/mapping/PersonSchema$Address;
+	public final fun copy (Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/time/LocalDate;Ljava/lang/Boolean;Ljava/lang/String;Lio/bluetape4k/exposed/shared/mapping/PersonSchema$Address;)Lio/bluetape4k/exposed/shared/mapping/PersonSchema$PersonWithAddress;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/shared/mapping/PersonSchema$PersonWithAddress;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/time/LocalDate;Ljava/lang/Boolean;Ljava/lang/String;Lio/bluetape4k/exposed/shared/mapping/PersonSchema$Address;ILjava/lang/Object;)Lio/bluetape4k/exposed/shared/mapping/PersonSchema$PersonWithAddress;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAddress ()Lio/bluetape4k/exposed/shared/mapping/PersonSchema$Address;
+	public final fun getBirthDate ()Ljava/time/LocalDate;
+	public final fun getEmployeed ()Ljava/lang/Boolean;
+	public final fun getFirstName ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/Long;
+	public final fun getLastName ()Ljava/lang/String;
+	public final fun getOccupation ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun setAddress (Lio/bluetape4k/exposed/shared/mapping/PersonSchema$Address;)V
+	public final fun setBirthDate (Ljava/time/LocalDate;)V
+	public final fun setEmployeed (Ljava/lang/Boolean;)V
+	public final fun setFirstName (Ljava/lang/String;)V
+	public final fun setId (Ljava/lang/Long;)V
+	public final fun setLastName (Ljava/lang/String;)V
+	public final fun setOccupation (Ljava/lang/String;)V
+	public fun toString ()Ljava/lang/String;
+	public final fun withId (J)Lio/bluetape4k/exposed/shared/mapping/PersonSchema$PersonWithAddress;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/PersonSchemaKt {
+	public static final fun withPersonsAndAddress (Lio/bluetape4k/exposed/tests/AbstractExposedTest;Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/jvm/functions/Function3;)V
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/compositeid/BookSchema {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema;
+	public final fun getAllTables ()[Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Author : org/jetbrains/exposed/v1/dao/IntEntity {
+	public static final field Companion Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Author$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public final fun getPenName ()Ljava/lang/String;
+	public final fun getPublisher ()Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Publisher;
+	public final fun setPenName (Ljava/lang/String;)V
+	public final fun setPublisher (Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Publisher;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Author$Companion : org/jetbrains/exposed/v1/dao/IntEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Authors : org/jetbrains/exposed/v1/core/dao/id/IntIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Authors;
+	public final fun getPenName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getPublisherId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getPublisherIsbn ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Book : org/jetbrains/exposed/v1/dao/CompositeEntity {
+	public static final field Companion Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Book$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public final fun getAuthor ()Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Author;
+	public final fun getReview ()Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Review;
+	public final fun getTitle ()Ljava/lang/String;
+	public final fun setAuthor (Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Author;)V
+	public final fun setTitle (Ljava/lang/String;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Book$Companion : org/jetbrains/exposed/v1/dao/CompositeEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Books : org/jetbrains/exposed/v1/core/dao/id/CompositeIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Books;
+	public final fun getAuthor ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getBookId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
+	public final fun getTitle ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Office : org/jetbrains/exposed/v1/dao/CompositeEntity {
+	public static final field Companion Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Office$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public final fun getPublisher ()Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Publisher;
+	public final fun getStaff ()Ljava/lang/Long;
+	public final fun setPublisher (Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Publisher;)V
+	public final fun setStaff (Ljava/lang/Long;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Office$Companion : org/jetbrains/exposed/v1/dao/CompositeEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Offices : org/jetbrains/exposed/v1/core/dao/id/CompositeIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Offices;
+	public final fun getAreaCode ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
+	public final fun getPublisherId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getPublisherIsbn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getStaff ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getZipCode ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Publisher : org/jetbrains/exposed/v1/dao/CompositeEntity {
+	public static final field Companion Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Publisher$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public final fun getAllOffices ()Lorg/jetbrains/exposed/v1/jdbc/SizedIterable;
+	public final fun getAuthors ()Lorg/jetbrains/exposed/v1/jdbc/SizedIterable;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getOffice ()Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Office;
+	public final fun setName (Ljava/lang/String;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Publisher$Companion : org/jetbrains/exposed/v1/dao/CompositeEntityClass {
+	public final fun new (Ljava/util/UUID;Lkotlin/jvm/functions/Function1;)Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Publisher;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Publishers : org/jetbrains/exposed/v1/core/dao/id/CompositeIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Publishers;
+	public final fun getIsbn ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
+	public final fun getPubId ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Review : org/jetbrains/exposed/v1/dao/CompositeEntity {
+	public static final field Companion Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Review$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/EntityID;)V
+	public final fun getBook ()Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Book;
+	public final fun setBook (Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Book;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Review$Companion : org/jetbrains/exposed/v1/dao/CompositeEntityClass {
+}
+
+public final class io/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Reviews : org/jetbrains/exposed/v1/core/dao/id/CompositeIdTable {
+	public static final field INSTANCE Lio/bluetape4k/exposed/shared/mapping/compositeid/BookSchema$Reviews;
+	public final fun getBook ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getContent ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
+	public final fun getRank ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public abstract class io/bluetape4k/exposed/tests/AbstractExposedTest {
+	public static final field Companion Lio/bluetape4k/exposed/tests/AbstractExposedTest$Companion;
+	public static final field ENABLE_DIALECTS_METHOD Ljava/lang/String;
+	public fun <init> ()V
+	public final fun addIfNotExistsIfSupported ()Ljava/lang/String;
+	public static final fun enableDialects ()Ljava/util/Set;
+	public static final fun getFaker ()Lnet/datafaker/Faker;
+	public final fun initTestContainers ()V
+	protected final fun prepareSchemaForTest (Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Schema;
+}
+
+public final class io/bluetape4k/exposed/tests/AbstractExposedTest$Companion : io/bluetape4k/logging/KLogging {
+	public final fun enableDialects ()Ljava/util/Set;
+	public final fun getFaker ()Lnet/datafaker/Faker;
+}
+
+public final class io/bluetape4k/exposed/tests/AssertionsKt {
+	public static final fun assertEquals (Lorg/jetbrains/exposed/v1/core/Transaction;Ljava/lang/Object;Ljava/lang/Object;)V
+	public static final fun assertEquals (Lorg/jetbrains/exposed/v1/core/Transaction;Ljava/lang/Object;Ljava/util/Collection;)V
+	public static final fun assertFailAndRollback (Lorg/jetbrains/exposed/v1/jdbc/JdbcTransaction;Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
+	public static final fun assertFalse (Lorg/jetbrains/exposed/v1/core/Transaction;Z)V
+	public static final fun assertNotEquals (Lorg/jetbrains/exposed/v1/core/Transaction;Ljava/lang/Object;Ljava/lang/Object;)V
+	public static final fun assertTrue (Lorg/jetbrains/exposed/v1/core/Transaction;Z)V
+}
+
+public final class io/bluetape4k/exposed/tests/Containers : io/bluetape4k/logging/KLogging {
+	public static final field INSTANCE Lio/bluetape4k/exposed/tests/Containers;
+	public final fun getMariaDB ()Lio/bluetape4k/testcontainers/database/MariaDBServer;
+	public final fun getMySQL5 ()Lio/bluetape4k/testcontainers/database/MySQL5Server;
+	public final fun getMySQL8 ()Lio/bluetape4k/testcontainers/database/MySQL8Server;
+	public final fun getPostgres ()Lio/bluetape4k/testcontainers/database/PostgreSQLServer;
+}
+
+public final class io/bluetape4k/exposed/tests/CurrentTestDBInterceptor : org/jetbrains/exposed/v1/core/statements/StatementInterceptor {
+	public static final field INSTANCE Lio/bluetape4k/exposed/tests/CurrentTestDBInterceptor;
+	public fun afterCommit (Lorg/jetbrains/exposed/v1/core/Transaction;)V
+	public fun afterExecution (Lorg/jetbrains/exposed/v1/core/Transaction;Ljava/util/List;Lorg/jetbrains/exposed/v1/core/statements/api/PreparedStatementApi;)V
+	public fun afterRollback (Lorg/jetbrains/exposed/v1/core/Transaction;)V
+	public fun afterStatementPrepared (Lorg/jetbrains/exposed/v1/core/Transaction;Lorg/jetbrains/exposed/v1/core/statements/api/PreparedStatementApi;)V
+	public fun beforeCommit (Lorg/jetbrains/exposed/v1/core/Transaction;)V
+	public fun beforeExecution (Lorg/jetbrains/exposed/v1/core/Transaction;Lorg/jetbrains/exposed/v1/core/statements/StatementContext;)V
+	public fun beforeRollback (Lorg/jetbrains/exposed/v1/core/Transaction;)V
+	public fun keepUserDataInTransactionStoreOnCommit (Ljava/util/Map;)Ljava/util/Map;
+}
+
+public final class io/bluetape4k/exposed/tests/TestDB : java/lang/Enum {
+	public static final field Companion Lio/bluetape4k/exposed/tests/TestDB$Companion;
+	public static final field H2 Lio/bluetape4k/exposed/tests/TestDB;
+	public static final field H2_MARIADB Lio/bluetape4k/exposed/tests/TestDB;
+	public static final field H2_MYSQL Lio/bluetape4k/exposed/tests/TestDB;
+	public static final field H2_PSQL Lio/bluetape4k/exposed/tests/TestDB;
+	public static final field H2_V1 Lio/bluetape4k/exposed/tests/TestDB;
+	public static final field MARIADB Lio/bluetape4k/exposed/tests/TestDB;
+	public static final field MYSQL_V5 Lio/bluetape4k/exposed/tests/TestDB;
+	public static final field MYSQL_V8 Lio/bluetape4k/exposed/tests/TestDB;
+	public static final field POSTGRESQL Lio/bluetape4k/exposed/tests/TestDB;
+	public static final field POSTGRESQLNG Lio/bluetape4k/exposed/tests/TestDB;
+	public final fun connect (Lkotlin/jvm/functions/Function1;)Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public static synthetic fun connect$default (Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public final fun getAfterConnection ()Lkotlin/jvm/functions/Function1;
+	public final fun getAfterTestFinished ()Lkotlin/jvm/functions/Function0;
+	public final fun getBeforeConnection ()Lkotlin/jvm/functions/Function0;
+	public final fun getConnection ()Lkotlin/jvm/functions/Function0;
+	public final fun getDatabaseForBatch ()Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public final fun getDb ()Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public final fun getDbConfig ()Lkotlin/jvm/functions/Function1;
+	public final fun getDriver ()Ljava/lang/String;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getPass ()Ljava/lang/String;
+	public final fun getUser ()Ljava/lang/String;
+	public final fun setDb (Lorg/jetbrains/exposed/v1/jdbc/Database;)V
+	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/exposed/tests/TestDB;
+	public static fun values ()[Lio/bluetape4k/exposed/tests/TestDB;
+}
+
+public final class io/bluetape4k/exposed/tests/TestDB$Companion : io/bluetape4k/logging/KLogging {
+	public final fun enabledDialects ()Ljava/util/Set;
+	public final fun getALL ()Ljava/util/Set;
+	public final fun getALL_H2 ()Ljava/util/Set;
+	public final fun getALL_H2_V1 ()Ljava/util/Set;
+	public final fun getALL_MARIADB ()Ljava/util/Set;
+	public final fun getALL_MARIADB_LIKE ()Ljava/util/Set;
+	public final fun getALL_MYSQL ()Ljava/util/Set;
+	public final fun getALL_MYSQL_LIKE ()Ljava/util/Set;
+	public final fun getALL_MYSQL_MARIADB ()Ljava/util/Set;
+	public final fun getALL_POSTGRES ()Ljava/util/Set;
+	public final fun getALL_POSTGRES_LIKE ()Ljava/util/Set;
+}
+
+public final class io/bluetape4k/exposed/tests/TestDBConfig {
+	public static final field INSTANCE Lio/bluetape4k/exposed/tests/TestDBConfig;
+	public final fun getUseFastDB ()Z
+	public final fun getUseTestcontainers ()Z
+	public final fun setUseFastDB (Z)V
+	public final fun setUseTestcontainers (Z)V
+}
+
+public final class io/bluetape4k/exposed/tests/TestSupportsKt {
+	public static final fun constraintNamePart (Lorg/jetbrains/exposed/v1/core/Column;)Ljava/lang/String;
+	public static final fun getCurrentDialectIfAvailableTest ()Lorg/jetbrains/exposed/v1/core/vendors/DatabaseDialect;
+	public static final fun getCurrentDialectTest ()Lorg/jetbrains/exposed/v1/core/vendors/DatabaseDialect;
+	public static final fun inProperCase (Ljava/lang/String;)Ljava/lang/String;
+	public static final fun insertAndSuspending (Lorg/jetbrains/exposed/v1/core/Table;JLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun insertAndSuspending$default (Lorg/jetbrains/exposed/v1/core/Table;JLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun insertAndWait (Lorg/jetbrains/exposed/v1/core/Table;JLkotlin/jvm/functions/Function2;)V
+	public static synthetic fun insertAndWait$default (Lorg/jetbrains/exposed/v1/core/Table;JLkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
+}
+
+public final class io/bluetape4k/exposed/tests/WithAutoCommitKt {
+	public static final fun withAutoCommit (Lorg/jetbrains/exposed/v1/jdbc/JdbcTransaction;ZLkotlin/jvm/functions/Function1;)V
+	public static synthetic fun withAutoCommit$default (Lorg/jetbrains/exposed/v1/jdbc/JdbcTransaction;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+}
+
+public final class io/bluetape4k/exposed/tests/WithAutoCommitSuspendingKt {
+	public static final fun withAutoCommitSuspending (Lorg/jetbrains/exposed/v1/jdbc/JdbcTransaction;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withAutoCommitSuspending$default (Lorg/jetbrains/exposed/v1/jdbc/JdbcTransaction;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun withSuspendedAutoCommit (Lorg/jetbrains/exposed/v1/jdbc/JdbcTransaction;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withSuspendedAutoCommit$default (Lorg/jetbrains/exposed/v1/jdbc/JdbcTransaction;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/tests/WithDBKt {
+	public static final fun getCurrentTestDB ()Lio/bluetape4k/exposed/tests/TestDB;
+	public static final fun setCurrentTestDB (Lio/bluetape4k/exposed/tests/TestDB;)V
+	public static final fun withDb (Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
+	public static synthetic fun withDb$default (Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
+}
+
+public final class io/bluetape4k/exposed/tests/WithDBSuspendingKt {
+	public static final fun withDbSuspending (Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withDbSuspending$default (Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun withSuspendedDb (Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withSuspendedDb$default (Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/tests/WithSchemasKt {
+	public static final fun withSchemas (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Schema;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun withSchemas$default (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Schema;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+}
+
+public final class io/bluetape4k/exposed/tests/WithSchemasSuspendingKt {
+	public static final fun withSchemasSuspending (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Schema;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withSchemasSuspending$default (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Schema;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/tests/WithTablesKt {
+	public static final fun withTables (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function2;)V
+	public static synthetic fun withTables$default (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
+}
+
+public final class io/bluetape4k/exposed/tests/WithTablesSuspendingKt {
+	public static final fun withSuspendedTables (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withSuspendedTables$default (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun withTablesSuspending (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withTablesSuspending$default (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
