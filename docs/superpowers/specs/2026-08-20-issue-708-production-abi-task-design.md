@@ -171,5 +171,6 @@ exact-head CI와 PR review는 이 문서의 로컬 DoD 이후 별도 gate로 남
   public descriptor 추가·제거·descriptor 변경을 각각 임시 적용한 controlled
   probe가 모두 `checkKotlinAbi` exit `1`/`ABI has changed`로 실패한 뒤 원복됐다.
   hosted PR run `32435651147`은 이전 head에서 이 Linux 전용 descriptor 누락을
-  발견해 실패했고, baseline 보정 후 새 exact-head rerun이 필요하다. nightly
-  backend evidence는 아직 실행하지 않았다.
+  발견해 실패했지만, baseline 보정 후 corrected head run
+  `32438771629`의 compile·POM·no-retry ABI·두 artifact upload가 모두 성공했다.
+  nightly backend evidence는 아직 실행하지 않았다.

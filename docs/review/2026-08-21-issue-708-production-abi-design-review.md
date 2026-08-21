@@ -66,8 +66,9 @@
 controlled public descriptor mutation은 로컬에서 addition/removal/change 모두
 실행했고, 각 probe가 `checkKotlinAbi` exit `1`로 실패한 뒤 기준선을 원복했다.
 hosted PR run `32435651147`은 이전 head에서 Linux 전용 `Uuid` baseline 누락으로
-실패했으며, JDBC/R2DBC baseline 보정 후 corrected-head rerun이 남아 있다.
-nightly backend run도 별도 gate다.
+실패했지만, JDBC/R2DBC baseline과 canonical EOF 보정 후 corrected-head run
+`32438771629`의 compile·POM·no-retry ABI·두 artifact upload가 모두 성공했다.
+nightly backend run과 fresh PR review/merge는 별도 gate다.
 
 ## 남은 구현 경계
 
@@ -80,7 +81,7 @@ nightly backend run도 별도 gate다.
 
 ## DoD Status
 
-Required checks: 6/8; N/A: 0; Blocked: 1
+Required checks: 7/8; N/A: 0; Blocked: 0
 
 | Check | Status | Evidence |
 | --- | --- | --- |
@@ -91,8 +92,9 @@ Required checks: 6/8; N/A: 0; Blocked: 1
 | implementation 7-Tier/static gate | PASS | buildSrc/build/ABI, detekt, actionlint, terminology audit, diff check |
 | documentation/evidence synchronization | PASS | design, plan, review, lesson read-back |
 | controlled descriptor negative | PASS | core addition/removal/change probes each exit `1`, then baseline restored |
-| hosted exact-head CI/PR review | PENDING | old head run `32435651147` failed on missing Linux `Uuid` descriptors; corrected-head rerun pending |
+| hosted exact-head CI/PR review | PENDING | corrected-head run `32438771629` passed hosted CI; fresh PR review remains |
 
-Final status: **PENDING — corrected-head hosted CI and PR review/merge gates remain**
+Final status: **PENDING — corrected-head hosted CI passed; fresh PR review/merge and
+nightly backend gates remain**
 
 Unchecked required items: CI hosted run, PR exact-head review/merge.

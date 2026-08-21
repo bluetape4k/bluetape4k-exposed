@@ -49,8 +49,8 @@ API owner `debop`이 연결된 API decision과 승인된 candidate head를 확�
 - ABI consumer fixture: JDBC 3/3, R2DBC 2/2, Ktor 3/3; failure/error 0/0.
 - compile retry-equivalent build, `detekt`, `actionlint`, `git diff --check` 통과.
 - hosted run `32435651147`은 이전 head에서 Linux `Uuid` descriptor baseline 누락으로
-  실패했고, JDBC/R2DBC baseline을 보정했다. corrected-head hosted rerun이 최종
-  호환성 증거다.
+  실패했지만, JDBC/R2DBC baseline과 canonical EOF를 보정한 corrected-head run
+  `32438771629`의 compile·POM·no-retry ABI·두 artifact upload가 모두 성공했다.
 - `bluetape4k-exposed-core` 기준선에 descriptor 추가·제거·변경을 임시 적용한
   controlled probe가 각각 `checkKotlinAbi` exit `1`/`ABI has changed`로 실패한 뒤
   원복됐다.
@@ -64,7 +64,7 @@ force-abort는 별도 issue로 유지한다.
 
 ## DoD Status
 
-Required checks: 6/8; N/A: 0; Blocked: 1
+Required checks: 7/8; N/A: 0; Blocked: 0
 
-Final status: **PENDING — Linux `Uuid` baseline 보정 후 corrected-head hosted
-exact-head gate와 PR review/merge가 남아 있음**
+Final status: **PENDING — corrected-head hosted exact-head gate는 통과했으며 PR
+review/merge와 nightly backend evidence가 남아 있음**
