@@ -50,21 +50,24 @@ API owner `debop`이 연결된 API decision과 승인된 candidate head를 확�
 - compile retry-equivalent build, `detekt`, `actionlint`, `git diff --check` 통과.
 - hosted run `32435651147`은 이전 head에서 Linux `Uuid` descriptor baseline 누락으로
   실패했지만, JDBC/R2DBC baseline과 canonical EOF를 보정한 corrected-head run
-  `32438771629`의 compile·POM·no-retry ABI·두 artifact upload가 모두 성공했다.
+  `32438771629`와 최신 exact-head run `32439775309`
+  (`03111acf993e9170590aaddc224889ba9fb56971`)의 compile·POM·no-retry ABI·두
+  artifact upload가 모두 성공했다. 최신 run은 13개 성공, 25개
+  path-filtered skipped, 실패 0이다.
 - `bluetape4k-exposed-core` 기준선에 descriptor 추가·제거·변경을 임시 적용한
   controlled probe가 각각 `checkKotlinAbi` exit `1`/`ABI has changed`로 실패한 뒤
   원복됐다.
 
 ## 남은 경계
 
-이 lesson은 로컬 implementation evidence를 기록한다. PR exact-head review, hosted
-CI, nightly backend run, merge는 이 slot에서 실행하지 않았으며 별도 권한과 fresh
-evidence가 필요하다. KGP catalog upgrade, release-JAR `japicmp`/`Revapi` 비교, JDBC
-force-abort는 별도 issue로 유지한다.
+이 lesson은 로컬 implementation과 hosted exact-head CI evidence를 기록한다. PR
+exact-head review, nightly backend run, merge는 이 slot에서 실행하지 않았으며
+별도 권한과 fresh evidence가 필요하다. KGP catalog upgrade, release-JAR
+`japicmp`/`Revapi` 비교, JDBC force-abort는 별도 issue로 유지한다.
 
 ## DoD Status
 
 Required checks: 7/8; N/A: 0; Blocked: 0
 
-Final status: **PENDING — corrected-head hosted exact-head gate는 통과했으며 PR
-review/merge와 nightly backend evidence가 남아 있음**
+Final status: **PENDING — latest corrected-head hosted exact-head gate는 통과했으며
+PR review/merge와 nightly backend evidence가 남아 있음**

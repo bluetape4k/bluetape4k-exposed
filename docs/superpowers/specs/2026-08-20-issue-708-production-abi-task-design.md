@@ -172,5 +172,8 @@ exact-head CI와 PR review는 이 문서의 로컬 DoD 이후 별도 gate로 남
   probe가 모두 `checkKotlinAbi` exit `1`/`ABI has changed`로 실패한 뒤 원복됐다.
   hosted PR run `32435651147`은 이전 head에서 이 Linux 전용 descriptor 누락을
   발견해 실패했지만, baseline 보정 후 corrected head run
-  `32438771629`의 compile·POM·no-retry ABI·두 artifact upload가 모두 성공했다.
+  `32438771629`와 최신 exact-head run `32439775309`
+  (`03111acf993e9170590aaddc224889ba9fb56971`)의 compile·POM·no-retry ABI·두
+  artifact upload가 모두 성공했다. 최신 run은 13개 성공, 25개
+  path-filtered skipped, 실패 0이다.
   nightly backend evidence는 아직 실행하지 않았다.

@@ -177,7 +177,8 @@ grep -F 'modules=34/34' build/abi/reports/production-abi.txt
   `actualDumps=34/34`, `orphanBaselines=0`, `orphanActuals=0`,
   `emptyBaselines=0`이어야 한다. macOS local dump는 case-insensitive
   classpath에서 `UUID`/Kotlin `Uuid`를 충돌시켜 이 쌍을 생략할 수 있으므로
-  hosted Linux 결과를 최종 증거로 사용한다.
+  hosted Linux 결과를 최종 증거로 사용한다. corrected-head hosted Linux에서
+  이 aggregate를 재확인했다.
 - 기존 ABI fixture: JDBC `3/3`, R2DBC `2/2`, Ktor `3/3` pass; failure/error `0/0`.
 - compile retry-equivalent build, `detekt`, `actionlint`, terminology audit,
   `git diff --check`가 통과했다.
@@ -185,12 +186,14 @@ grep -F 'modules=34/34' build/abi/reports/production-abi.txt
   순차적으로 임시 적용한 controlled negative probe가 모두 `checkKotlinAbi`
   exit `1`/`ABI has changed`로 실패했고 기준선은 원복했다. macOS의
   case-insensitive classpath 한계 때문에 보정된 `Uuid` 쌍을 포함한 aggregate
-  GREEN은 corrected-head hosted Linux rerun에서 재확인한다.
+  GREEN은 corrected-head hosted Linux에서 재확인했다.
 - hosted PR run `32435651147`은 이전 head에서 Linux 전용 `Uuid` descriptor
   baseline 누락으로 실패했다. JDBC/R2DBC baseline과 canonical EOF를 보정했고,
-  corrected head run `32438771629`의 compile·POM·no-retry ABI·두 artifact upload가
-  성공했다. nightly backend run은 아직 실행하지 않았고, fresh PR review/merge는
-  별도 gate다.
+  corrected head run `32438771629`와 최신 exact-head run `32439775309`
+  (`03111acf993e9170590aaddc224889ba9fb56971`)의 compile·POM·no-retry ABI·두
+  artifact upload가 모두 성공했다. 최신 run은 13개 성공, 25개
+  path-filtered skipped, 실패 0이다. nightly backend run은 아직 실행하지
+  않았고, fresh PR review/merge는 별도 gate다.
 
 ## Task 6 — PR readiness와 stop gate
 
@@ -237,5 +240,5 @@ grep -F 'modules=34/34' build/abi/reports/production-abi.txt
 
 Required checks: 7/8; N/A: 0; Blocked: 0
 
-Final status: **PENDING — corrected-head hosted exact-head CI는 통과했으며 fresh
-PR review/merge gate와 nightly backend evidence가 남아 있음**
+Final status: **PENDING — latest exact-head hosted CI는 통과했으며 fresh PR
+review/merge gate와 nightly backend evidence가 남아 있음**
