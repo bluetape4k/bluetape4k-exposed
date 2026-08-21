@@ -930,3 +930,4 @@ public final class io/bluetape4k/exposed/r2dbc/statements/BatchInsertOnConflictD
 	public synthetic fun getStatement ()Lorg/jetbrains/exposed/v1/core/statements/InsertStatement;
 	public synthetic fun getStatement ()Lorg/jetbrains/exposed/v1/core/statements/Statement;
 }
+

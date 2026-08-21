@@ -893,3 +893,4 @@ public final class io/bluetape4k/exposed/jdbc/repository/UuidSoftDeletedJdbcRepo
 	public static fun updateAll (Lio/bluetape4k/exposed/jdbc/repository/UuidSoftDeletedJdbcRepository;Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;)I
 	public static fun updateById (Lio/bluetape4k/exposed/jdbc/repository/UuidSoftDeletedJdbcRepository;Lkotlin/uuid/Uuid;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;)I
 }
+
