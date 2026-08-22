@@ -1,0 +1,431 @@
+{
+  "cardinalityPerRawFile": 12,
+  "provenance": {
+    "catalogRef": "91f9ea9336b5ea991f5675323a1cf25ccfd6f5ed",
+    "driverArtifacts": [
+      "com.mysql:mysql-connector-j:9.7.0",
+      "org.postgresql:postgresql:42.7.13"
+    ],
+    "gitDirty": [
+      true
+    ],
+    "gitSha": "f325a70fbd2047cdef28be928eeea4675b4b05b6",
+    "imageDigestsObserved": [
+      "sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15",
+      "sha256:b3b90af2a6552ae30c266fdb7d5dd55f3afb72404bb78d37fe8a23eb857fd3fb"
+    ],
+    "testcontainersVersions": [
+      "2.0.5"
+    ]
+  },
+  "rows": [
+    {
+      "driver": "MYSQL_V8",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 4.034700240979419,
+      "medianOpsPerSecond": 115.72703831638893,
+      "medianPeakActiveLeases": 1.0,
+      "medianRowsPerSecond": 115727.03831638893,
+      "medianStatementExecutionsPerOperation": 4.034700240979419,
+      "method": "parallelKeyEnumeration",
+      "poolSize": 1,
+      "rowCount": 1000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "MYSQL_V8",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 4.029620341860732,
+      "medianOpsPerSecond": 222.68433678766306,
+      "medianPeakActiveLeases": 2.0,
+      "medianRowsPerSecond": 222684.33678766305,
+      "medianStatementExecutionsPerOperation": 4.029620341860732,
+      "method": "parallelKeyEnumeration",
+      "poolSize": 2,
+      "rowCount": 1000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "MYSQL_V8",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 4.033179220289671,
+      "medianOpsPerSecond": 227.77729837670995,
+      "medianPeakActiveLeases": 2.0,
+      "medianRowsPerSecond": 227777.29837670995,
+      "medianStatementExecutionsPerOperation": 4.033179220289671,
+      "method": "parallelKeyEnumeration",
+      "poolSize": 4,
+      "rowCount": 1000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "MYSQL_V8",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 4.051672930811172,
+      "medianOpsPerSecond": 72.72716028627524,
+      "medianPeakActiveLeases": 1.0,
+      "medianRowsPerSecond": 727271.6028627524,
+      "medianStatementExecutionsPerOperation": 4.051672930811172,
+      "method": "parallelKeyEnumeration",
+      "poolSize": 1,
+      "rowCount": 10000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "MYSQL_V8",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 4.029367189650015,
+      "medianOpsPerSecond": 161.48110510702367,
+      "medianPeakActiveLeases": 2.0,
+      "medianRowsPerSecond": 1614811.0510702366,
+      "medianStatementExecutionsPerOperation": 4.029367189650015,
+      "method": "parallelKeyEnumeration",
+      "poolSize": 2,
+      "rowCount": 10000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "MYSQL_V8",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 4.038624570339022,
+      "medianOpsPerSecond": 147.61967364645793,
+      "medianPeakActiveLeases": 2.0,
+      "medianRowsPerSecond": 1476196.7364645794,
+      "medianStatementExecutionsPerOperation": 4.038624570339022,
+      "method": "parallelKeyEnumeration",
+      "poolSize": 4,
+      "rowCount": 10000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "MYSQL_V8",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 1.0081599223033004,
+      "medianOpsPerSecond": 448.77825415786157,
+      "medianPeakActiveLeases": 1.0,
+      "medianRowsPerSecond": 448778.2541578616,
+      "medianStatementExecutionsPerOperation": 2.016319844606601,
+      "method": "sequentialKeysetPaging",
+      "poolSize": 1,
+      "rowCount": 1000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "MYSQL_V8",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 1.0056401362792722,
+      "medianOpsPerSecond": 408.7960067587732,
+      "medianPeakActiveLeases": 1.0,
+      "medianRowsPerSecond": 408796.00675877323,
+      "medianStatementExecutionsPerOperation": 2.0112802725585444,
+      "method": "sequentialKeysetPaging",
+      "poolSize": 2,
+      "rowCount": 1000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "MYSQL_V8",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 1.0072804705397533,
+      "medianOpsPerSecond": 330.2622024314703,
+      "medianPeakActiveLeases": 1.0,
+      "medianRowsPerSecond": 330262.20243147033,
+      "medianStatementExecutionsPerOperation": 2.0145609410795067,
+      "method": "sequentialKeysetPaging",
+      "poolSize": 4,
+      "rowCount": 1000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "MYSQL_V8",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 1.011638462396439,
+      "medianOpsPerSecond": 94.2160008861524,
+      "medianPeakActiveLeases": 1.0,
+      "medianRowsPerSecond": 942160.008861524,
+      "medianStatementExecutionsPerOperation": 11.128023086360828,
+      "method": "sequentialKeysetPaging",
+      "poolSize": 1,
+      "rowCount": 10000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "MYSQL_V8",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 1.0090330098865654,
+      "medianOpsPerSecond": 90.18535479848191,
+      "medianPeakActiveLeases": 1.0,
+      "medianRowsPerSecond": 901853.547984819,
+      "medianStatementExecutionsPerOperation": 11.099363108752218,
+      "method": "sequentialKeysetPaging",
+      "poolSize": 2,
+      "rowCount": 10000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "MYSQL_V8",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 1.0088130086019738,
+      "medianOpsPerSecond": 91.52670767131569,
+      "medianPeakActiveLeases": 1.0,
+      "medianRowsPerSecond": 915267.0767131569,
+      "medianStatementExecutionsPerOperation": 11.096943094621713,
+      "method": "sequentialKeysetPaging",
+      "poolSize": 4,
+      "rowCount": 10000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "POSTGRESQL",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 4.026660588442615,
+      "medianOpsPerSecond": 316.55348630609444,
+      "medianPeakActiveLeases": 1.0,
+      "medianRowsPerSecond": 316553.48630609445,
+      "medianStatementExecutionsPerOperation": 4.026660588442615,
+      "method": "parallelKeyEnumeration",
+      "poolSize": 1,
+      "rowCount": 1000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "POSTGRESQL",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 4.022264972030703,
+      "medianOpsPerSecond": 575.9923142915079,
+      "medianPeakActiveLeases": 2.0,
+      "medianRowsPerSecond": 575992.3142915079,
+      "medianStatementExecutionsPerOperation": 4.022264972030703,
+      "method": "parallelKeyEnumeration",
+      "poolSize": 2,
+      "rowCount": 1000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "POSTGRESQL",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 4.0145351640571985,
+      "medianOpsPerSecond": 575.5751468699166,
+      "medianPeakActiveLeases": 2.0,
+      "medianRowsPerSecond": 575575.1468699166,
+      "medianStatementExecutionsPerOperation": 4.0145351640571985,
+      "method": "parallelKeyEnumeration",
+      "poolSize": 4,
+      "rowCount": 1000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "POSTGRESQL",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 4.030144368651413,
+      "medianOpsPerSecond": 156.1565233813011,
+      "medianPeakActiveLeases": 1.0,
+      "medianRowsPerSecond": 1561565.233813011,
+      "medianStatementExecutionsPerOperation": 4.030144368651413,
+      "method": "parallelKeyEnumeration",
+      "poolSize": 1,
+      "rowCount": 10000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "POSTGRESQL",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 4.027405175373968,
+      "medianOpsPerSecond": 281.73640775075637,
+      "medianPeakActiveLeases": 2.0,
+      "medianRowsPerSecond": 2817364.077507564,
+      "medianStatementExecutionsPerOperation": 4.027405175373968,
+      "method": "parallelKeyEnumeration",
+      "poolSize": 2,
+      "rowCount": 10000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "POSTGRESQL",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 4.019693736033058,
+      "medianOpsPerSecond": 287.5877398897322,
+      "medianPeakActiveLeases": 2.0,
+      "medianRowsPerSecond": 2875877.398897322,
+      "medianStatementExecutionsPerOperation": 4.019693736033058,
+      "method": "parallelKeyEnumeration",
+      "poolSize": 4,
+      "rowCount": 10000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "POSTGRESQL",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 1.006264043612132,
+      "medianOpsPerSecond": 935.4232476796439,
+      "medianPeakActiveLeases": 1.0,
+      "medianRowsPerSecond": 935423.2476796438,
+      "medianStatementExecutionsPerOperation": 2.012528087224264,
+      "method": "sequentialKeysetPaging",
+      "poolSize": 1,
+      "rowCount": 1000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "POSTGRESQL",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 1.0067582564886963,
+      "medianOpsPerSecond": 940.9739897613343,
+      "medianPeakActiveLeases": 1.0,
+      "medianRowsPerSecond": 940973.9897613344,
+      "medianStatementExecutionsPerOperation": 2.0135165129773926,
+      "method": "sequentialKeysetPaging",
+      "poolSize": 2,
+      "rowCount": 1000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "POSTGRESQL",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 1.007511935065424,
+      "medianOpsPerSecond": 982.0927969268968,
+      "medianPeakActiveLeases": 1.0,
+      "medianRowsPerSecond": 982092.7969268968,
+      "medianStatementExecutionsPerOperation": 2.015023870130848,
+      "method": "sequentialKeysetPaging",
+      "poolSize": 4,
+      "rowCount": 1000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "POSTGRESQL",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 1.0078168066065183,
+      "medianOpsPerSecond": 113.3524527461539,
+      "medianPeakActiveLeases": 1.0,
+      "medianRowsPerSecond": 1133524.527461539,
+      "medianStatementExecutionsPerOperation": 11.085984872671702,
+      "method": "sequentialKeysetPaging",
+      "poolSize": 1,
+      "rowCount": 10000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "POSTGRESQL",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 1.010843146183478,
+      "medianOpsPerSecond": 112.70609519457257,
+      "medianPeakActiveLeases": 1.0,
+      "medianRowsPerSecond": 1127060.9519457256,
+      "medianStatementExecutionsPerOperation": 11.119274608018257,
+      "method": "sequentialKeysetPaging",
+      "poolSize": 2,
+      "rowCount": 10000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    {
+      "driver": "POSTGRESQL",
+      "medianActiveAtEnd": 0.0,
+      "medianConnectionRequestsPerOperation": 1.0093763860212017,
+      "medianOpsPerSecond": 116.47481651668011,
+      "medianPeakActiveLeases": 1.0,
+      "medianRowsPerSecond": 1164748.165166801,
+      "medianStatementExecutionsPerOperation": 11.103140246233218,
+      "method": "sequentialKeysetPaging",
+      "poolSize": 4,
+      "rowCount": 10000,
+      "runs": [
+        "1",
+        "2",
+        "3"
+      ]
+    }
+  ]
+}

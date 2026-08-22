@@ -1,0 +1,25 @@
+{
+  "english": "README.md",
+  "headingCount": 8,
+  "headingLevels": [
+    1,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2
+  ],
+  "headingLevelsEqual": true,
+  "headingTechnicalTokensEqual": true,
+  "korean": "README.ko.md",
+  "linkCount": 18,
+  "linkTargetsExist": true,
+  "linksEqual": true,
+  "ok": true,
+  "tableCellsEqual": true,
+  "tableRowCount": 28,
+  "tableRowCountEqual": true,
+  "technicalNumericTokensEqual": true
+}
