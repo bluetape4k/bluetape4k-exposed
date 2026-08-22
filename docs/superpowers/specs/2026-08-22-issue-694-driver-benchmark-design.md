@@ -70,7 +70,7 @@ internal fun buildDriverBenchmarkRanges(rowCount: Int, rangeCount: Int): List<Jd
 matrix는 `driver = POSTGRESQL, MYSQL_V8`, `rowCount = 1000, 10000`,
 `poolSize = 1, 2, 4`, `maxConcurrency = 2`의 12개 case다. `poolSize <`, `=`, `>`
 `maxConcurrency`를 모두 포함하되, pool 1은 압박 조건이지 운영 권고가 아니다.
-matrix 함수는 양수 row/pool/concurrency와 `rangeCount <= rowCount`를 검증하고,
+matrix 함수는 양수 row/pool, 승인된 `maxConcurrency == 2`, `rangeCount <= rowCount`를 검증하고,
 불완전한 range가 중복 ID를 숨기지 않도록 disjoint half-open range를 생성한다.
 
 fixture는 다음 순서로 소유권을 고정한다.
@@ -120,7 +120,10 @@ benchmark의 활성 조건과 exact command를 문서에 기록한다.
 `mysql-run-1.json`…`mysql-run-3.json`을 보존한다. 각 JSON은 JMH의
 `primaryMetric.score`와 `secondaryMetrics`를 그대로 유지하고, 분석 script는 각 파일이
 정확히 12개(`2 methods × 2 row counts × 3 pool sizes × 1 driver`)의 finite·non-negative
-entry를 갖는지 검증한다. 실행 SHA·run ID·raw SHA-256은 sanitized metadata로 함께 보존하고,
+entry를 갖는지 검증한다. 각 primary/auxiliary rawData는 measurement 3개를 보존해야 하며,
+실행 SHA·run ID·raw SHA-256·관찰된 driver artifact/image digest/catalog ref·host/runtime
+provenance는 sanitized metadata로 함께 보존하고, run 번호와 source report의 대응 및
+post-copy SHA를 검증한다. metadata append는 lock으로 직렬화한다.
 signal/OOM으로 중단된 partial output은 폐기한 뒤 active lease/schema preflight를 통과한
 다음 run만 수집한다. 분석 표는 driver·row count·pool size·method별 세 run 중앙값과
 `rows/s`를 계산한다. `ops/s`는 완료된 benchmark operation/s, `rows/s`는
@@ -145,7 +148,7 @@ PNG를 검사한다. 숫자가 없거나 run이 하나라도 빠지면 차트와
 | benchmark run 간 container 경쟁 | backend와 세 run을 `--no-parallel --max-workers=1`로 순차 실행 |
 | 비정상 중단으로 남은 schema/lease | 해당 run을 `PENDING`으로 폐기하고 다음 run 전에 bounded active-lease/schema preflight를 통과시킨다. shared container는 중지하지 않는다 |
 | JMH score 변동/신뢰구간 과대 | 중앙값과 raw score를 함께 기록하고 일반적인 성능 우열을 주장하지 않음 |
-| URL/credential 또는 비정상 metric 노출 | raw artifact는 JMH metric payload만 보존하고 `jdbc:`, `password`, `DOCKER_HOST`를 검사한다. parser가 누락·NaN·Infinity·음수·허용되지 않은 enum을 거부하며 chart를 생성하지 않음 |
+| URL/credential 또는 비정상 metric 노출 | raw artifact는 JMH metric payload만 보존하고 알려진 connection/credential token(`jdbc:`, `postgres://`, `mysql://`, `password`, `passwd`, `secret`, `DOCKER_HOST`)을 검사한다. parser가 누락·NaN·Infinity·음수·허용되지 않은 enum·rawData sample count를 거부하며, summary provenance/lifecycle guard와 EN/KO table-cell parity를 통과할 때만 chart를 생성한다 |
 | cancellation/driver abort 미검증 | 별도 #707 범위로 명시하고 benchmark 결과가 이를 대체한다고 쓰지 않음 |
 
 benchmark source에는 새 production `!!`, broad exception swallowing, blocking event-loop

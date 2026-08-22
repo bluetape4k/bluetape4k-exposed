@@ -142,7 +142,7 @@ class JdbcDriverKeyEnumerationBenchmark {
             .loadAllKeysInParallel(
                 ranges = ranges,
                 options = JdbcParallelKeyEnumerationOptions(
-                    maxConcurrency = 2,
+                    maxConcurrency = DRIVER_BENCHMARK_MAX_CONCURRENCY,
                     executor = executor,
                     database = fixture.database,
                 ),
@@ -189,7 +189,7 @@ class JdbcDriverKeyEnumerationBenchmark {
         check(after.active == 0) {
             "benchmark invocation ended with ${after.active} active JDBC connections"
         }
-        val peakBound = minOf(fixture.poolSize, APPROVED_MAX_CONCURRENCY)
+        val peakBound = minOf(fixture.poolSize, DRIVER_BENCHMARK_MAX_CONCURRENCY)
         check(after.peak <= peakBound) {
             "benchmark invocation exceeded active lease bound: peak=${after.peak} bound=$peakBound"
         }
@@ -201,7 +201,6 @@ class JdbcDriverKeyEnumerationBenchmark {
 
     private companion object {
         const val RANGE_COUNT = 4
-        const val APPROVED_MAX_CONCURRENCY = 2
         const val SHUTDOWN_TIMEOUT_SECONDS = 5L
 
         fun shutdownExecutor(executor: ExecutorService?, primary: Throwable?) {
@@ -231,7 +230,7 @@ class JdbcDriverKeyEnumerationBenchmark {
     }
 }
 
-/** Secondary JMH metrics; raw primary output remains one row per benchmark invocation. */
+/** 보조 JMH 지표이며 primary raw output은 benchmark invocation마다 한 행을 유지합니다. */
 @AuxCounters(AuxCounters.Type.EVENTS)
 @State(Scope.Thread)
 class DriverBenchmarkAuxCounters {

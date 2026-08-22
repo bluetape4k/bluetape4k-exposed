@@ -16,7 +16,7 @@ class DriverBenchmarkSupportTest {
             setOf(JdbcBenchmarkDriver.POSTGRESQL, JdbcBenchmarkDriver.MYSQL_V8)
         cases.map { it.rowCount }.toSet() shouldBeEqualTo setOf(1_000, 10_000)
         cases.map { it.poolSize }.toSet() shouldBeEqualTo setOf(1, 2, 4)
-        cases.all { it.maxConcurrency == 2 }.shouldBeTrue()
+        cases.all { it.maxConcurrency == DRIVER_BENCHMARK_MAX_CONCURRENCY }.shouldBeTrue()
     }
 
     @Test

@@ -38,10 +38,12 @@ Gradle, Detekt, CairoSVG.
   preserved without hand-editing metric payloads.
 - Create: same directory `capture_jmh_run.py` — accepts one verified plugin report directory,
   rejects a missing/multiple JSON source or existing destination, copies the raw payload without
-  mutation, and records run ID, implementation SHA, and SHA-256 metadata.
+  mutation, verifies the post-copy SHA-256, observes the immutable catalog/driver/image/runtime
+  provenance, and serializes metadata append with a lock.
 - Create: same directory `summarize_jmh.py` — validates six raw payloads/cardinality/finiteness,
-  rejects forbidden connection tokens without rewriting raw files, and computes median `ops/s`
-  plus `rows/s`.
+  exact run-to-filename/source-report mapping, pinned implementation/catalog/image/runtime
+  provenance, and rejects forbidden connection tokens without rewriting raw files; computes
+  median `ops/s` plus `rows/s`.
 - Create: `docs/benchmarks/.../*.semantic.json` and source SVG assets; render PNG pairs under
   `docs/images/readme-charts/`.
 - Create: `docs/lessons/2026-08-22-issue-694-driver-benchmark.md` — Korean lesson with
@@ -180,7 +182,9 @@ for run in 1 2 3; do
     --report-dir "$JMH_POSTGRES_REPORT_DIR" \
     --destination "docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/postgresql-run-${run}.json" \
     --metadata "docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/raw-metadata.jsonl" \
-    --driver POSTGRESQL --run-id "$run" --git-sha "$(git rev-parse HEAD)"
+    --driver POSTGRESQL --run-id "$run" --git-sha "$(git rev-parse HEAD)" \
+    --driver-version 42.7.13 --image postgres:18.4-alpine \
+    --image-digest sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15
 done
 
 for run in 1 2 3; do
@@ -191,7 +195,9 @@ for run in 1 2 3; do
     --report-dir "$JMH_MYSQL_REPORT_DIR" \
     --destination "docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/mysql-run-${run}.json" \
     --metadata "docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/raw-metadata.jsonl" \
-    --driver MYSQL_V8 --run-id "$run" --git-sha "$(git rev-parse HEAD)"
+    --driver MYSQL_V8 --run-id "$run" --git-sha "$(git rev-parse HEAD)" \
+    --driver-version 9.7.0 --image mysql:8.4.11 \
+    --image-digest sha256:b3b90af2a6552ae30c266fdb7d5dd55f3afb72404bb78d37fe8a23eb857fd3fb
 done
 ```
 
@@ -202,14 +208,18 @@ driver-specific report directory로 고정한다. 각 디렉터리는 `capture_j
 
 - [ ] Copy PostgreSQL output to `postgresql-run-{1,2,3}.json` and MySQL output to
   `mysql-run-{1,2,3}.json` without changing metric values. Record the exact implementation
-  SHA, run ID, SHA-256 of each raw file, JDK, resolved driver and `bluetape4k-testcontainers`
-  versions, shared image tag/digest, Hikari pool, warmup/measurement, container
+  SHA, observed Git dirty flag, run ID, SHA-256 of each raw file, JDK, resolved driver
+  artifact and `bluetape4k-testcontainers` versions, host/runtime versions, shared image
+  tag/digest observed from Docker, Hikari pool, warmup/measurement, container
   state, and any skipped/failed case in a sanitized metadata note. A signal/OOM/interrupted run
   is `PENDING`, its partial output is discarded, and the next run starts only after bounded
   schema/active-lease preflight; if an immutable image digest cannot be observed, the raw evidence
   is `PENDING`; the shared container is never stopped by cleanup.
-- [ ] Run `summarize_jmh.py` to require exactly 12 finite non-negative entries per raw file,
-  reject forbidden connection tokens and unknown driver/method/row/pool values, and calculate
+- [x] Run `summarize_jmh.py` to require exactly 12 finite non-negative entries per raw file,
+  exactly three primary/auxiliary raw samples per measurement contract, and one metadata record
+  per raw file with matching SHA-256, exact run/source mapping, and observed dependency/image/
+  catalog/runtime provenance. Reject forbidden connection tokens and unknown driver/method/row/pool
+  values, and calculate
   median `ops/s`, `rows/s`, statement executions/op, and lease metrics. If any backend or case is
   absent, mark that matrix row `PENDING` and do not synthesize a table or chart value.
 
@@ -223,9 +233,10 @@ driver-specific report directory로 고정한다. 각 디렉터리는 `capture_j
   invocation/iteration-local auxiliary observations that exclude setup/teardown. They are not
   round-trip latency, connection-pool capacity, or a replacement for correctness. Do not include
   JDBC URLs, credentials, `DOCKER_HOST`, or raw startup diagnostics.
-- [ ] Compare EN/KO structure and data with a deterministic parity check: headings and table/link
-  counts must match, technical identifiers/raw links/numeric cells must be byte-equivalent, and
-  only translated prose headings may differ. Fail the check before chart publication.
+- [x] Compare EN/KO structure and data with a deterministic parity check: headings and table/link
+  counts must match, table cells and technical identifiers/raw links/numeric cells must be
+  byte-equivalent, link targets must exist, and only translated prose headings may differ. Fail
+  the check before chart publication.
 - [ ] Create a semantic ledger before drawing. Each node/edge must cite benchmark source or raw
   JSON; chart kind is `chart`, node/edge counts stay within the common chart budget, and any
   repair has a positive `touches` receipt.
@@ -233,10 +244,11 @@ driver-specific report directory로 고정한다. 각 디렉터리는 `capture_j
 
 ```bash
 python3 "${CODEX_HOME:-$HOME/.codex}/skills/bluetape-diagram/scripts/diagram-semantic-audit.py" \
-  --repo-root . --json docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/issue-694-driver-chart.semantic.json
+  --repo-root . --json docs/images/readme-charts/exposed-jdbc-driver-benchmark-issue-694.semantic.json
 ```
 
-- [ ] Author EN/KO SVG from the ledger and raw median table, validate XML/selectors/markers,
+- [x] Author EN/KO SVG from the ledger and raw median table, validate strict summary provenance/
+  lifecycle guards and atomic output, validate XML/selectors/markers,
   render both with CairoSVG `-s 2`, inspect both full-size PNGs with `view_image`, and run chart
   audits. Keep technical identifiers unchanged between locales.
 
@@ -251,8 +263,8 @@ python3 "${CODEX_HOME:-$HOME/.codex}/skills/bluetape-diagram/scripts/diagram-sem
   `git diff --check`, and the full changed-file union check including untracked files.
 - [ ] Run the Kotlin final checklist: no new `!!`, swallowed cancellation, public API/ABI
   changes, stale imports, or English reader-facing prose in the new docs/lesson.
-- [ ] Run a sanitized-artifact scan such as
-  `rg -n -i '(jdbc:|password|DOCKER_HOST|@exposed2025)' docs/benchmarks/exposed-benchmark-2026-08-22-issue-694`
+- [ ] Run a sanitized-artifact scan over captured artifacts (not the validator source itself), such as
+  `rg -n -i '(jdbc:|password|DOCKER_HOST|@exposed2025)' docs/benchmarks/exposed-benchmark-2026-08-22-issue-694 -g '*.json' -g '*.jsonl' -g '*.md' -g '*.svg'`
   and fail if any forbidden token appears; the parser rejects and reports, but never redacts or
   rewrites, a raw JSON payload.
 

@@ -1,0 +1,2104 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "io.bluetape4k.exposed.benchmark.jdbc.JdbcDriverKeyEnumerationBenchmark.parallelKeyEnumeration",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/graalvm-jdk-25/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-XX:ThreadPriorityPolicy=1",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+EnableJVMCIProduct",
+            "-XX:+EnableJVMCI",
+            "-XX:-UnlockExperimentalVMOptions",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=KR",
+            "-Duser.language=ko",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4",
+        "vmName" : "Java HotSpot(TM) 64-Bit Server VM",
+        "vmVersion" : "25.0.4+7-LTS-jvmci-25.2-b20",
+        "warmupIterations" : 1,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "driver" : "MYSQL_V8",
+            "poolSize" : "1",
+            "rowCount" : "1000"
+        },
+        "primaryMetric" : {
+            "score" : 123.59447713161858,
+            "scoreError" : 75.64634033735452,
+            "scoreConfidence" : [
+                47.94813679426406,
+                199.2408174689731
+            ],
+            "scorePercentiles" : {
+                "0.0" : 118.8194452645332,
+                "50.0" : 125.67835766315058,
+                "90.0" : 126.28562846717193,
+                "95.0" : 126.28562846717193,
+                "99.0" : 126.28562846717193,
+                "99.9" : 126.28562846717193,
+                "99.99" : 126.28562846717193,
+                "99.999" : 126.28562846717193,
+                "99.9999" : 126.28562846717193,
+                "100.0" : 126.28562846717193
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    118.8194452645332,
+                    125.67835766315058,
+                    126.28562846717193
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+            "activeAtEnd" : {
+                "score" : 0.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    0.0,
+                    0.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 0.0,
+                    "50.0" : 0.0,
+                    "90.0" : 0.0,
+                    "95.0" : 0.0,
+                    "99.0" : 0.0,
+                    "99.9" : 0.0,
+                    "99.99" : 0.0,
+                    "99.999" : 0.0,
+                    "99.9999" : 0.0,
+                    "100.0" : 0.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                ]
+            },
+            "connectionRequests" : {
+                "score" : 1496.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    1496.0,
+                    1496.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 484.0,
+                    "50.0" : 504.0,
+                    "90.0" : 508.0,
+                    "95.0" : 508.0,
+                    "99.0" : 508.0,
+                    "99.9" : 508.0,
+                    "99.99" : 508.0,
+                    "99.999" : 508.0,
+                    "99.9999" : 508.0,
+                    "100.0" : 508.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        484.0,
+                        504.0,
+                        508.0
+                    ]
+                ]
+            },
+            "peakActiveLeases" : {
+                "score" : 3.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    3.0,
+                    3.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 1.0,
+                    "50.0" : 1.0,
+                    "90.0" : 1.0,
+                    "95.0" : 1.0,
+                    "99.0" : 1.0,
+                    "99.9" : 1.0,
+                    "99.99" : 1.0,
+                    "99.999" : 1.0,
+                    "99.9999" : 1.0,
+                    "100.0" : 1.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                ]
+            },
+            "statementExecutions" : {
+                "score" : 1496.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    1496.0,
+                    1496.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 484.0,
+                    "50.0" : 504.0,
+                    "90.0" : 508.0,
+                    "95.0" : 508.0,
+                    "99.0" : 508.0,
+                    "99.9" : 508.0,
+                    "99.99" : 508.0,
+                    "99.999" : 508.0,
+                    "99.9999" : 508.0,
+                    "100.0" : 508.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        484.0,
+                        504.0,
+                        508.0
+                    ]
+                ]
+            }
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "io.bluetape4k.exposed.benchmark.jdbc.JdbcDriverKeyEnumerationBenchmark.parallelKeyEnumeration",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/graalvm-jdk-25/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-XX:ThreadPriorityPolicy=1",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+EnableJVMCIProduct",
+            "-XX:+EnableJVMCI",
+            "-XX:-UnlockExperimentalVMOptions",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=KR",
+            "-Duser.language=ko",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4",
+        "vmName" : "Java HotSpot(TM) 64-Bit Server VM",
+        "vmVersion" : "25.0.4+7-LTS-jvmci-25.2-b20",
+        "warmupIterations" : 1,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "driver" : "MYSQL_V8",
+            "poolSize" : "1",
+            "rowCount" : "10000"
+        },
+        "primaryMetric" : {
+            "score" : 72.72716028627524,
+            "scoreError" : 131.95352063151353,
+            "scoreConfidence" : [
+                -59.22636034523829,
+                204.68068091778878
+            ],
+            "scorePercentiles" : {
+                "0.0" : 66.94827605727819,
+                "50.0" : 70.39481870021662,
+                "90.0" : 80.83838610133088,
+                "95.0" : 80.83838610133088,
+                "99.0" : 80.83838610133088,
+                "99.9" : 80.83838610133088,
+                "99.99" : 80.83838610133088,
+                "99.999" : 80.83838610133088,
+                "99.9999" : 80.83838610133088,
+                "100.0" : 80.83838610133088
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    66.94827605727819,
+                    70.39481870021662,
+                    80.83838610133088
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+            "activeAtEnd" : {
+                "score" : 0.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    0.0,
+                    0.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 0.0,
+                    "50.0" : 0.0,
+                    "90.0" : 0.0,
+                    "95.0" : 0.0,
+                    "99.0" : 0.0,
+                    "99.9" : 0.0,
+                    "99.99" : 0.0,
+                    "99.999" : 0.0,
+                    "99.9999" : 0.0,
+                    "100.0" : 0.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                ]
+            },
+            "connectionRequests" : {
+                "score" : 884.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    884.0,
+                    884.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 272.0,
+                    "50.0" : 284.0,
+                    "90.0" : 328.0,
+                    "95.0" : 328.0,
+                    "99.0" : 328.0,
+                    "99.9" : 328.0,
+                    "99.99" : 328.0,
+                    "99.999" : 328.0,
+                    "99.9999" : 328.0,
+                    "100.0" : 328.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        272.0,
+                        284.0,
+                        328.0
+                    ]
+                ]
+            },
+            "peakActiveLeases" : {
+                "score" : 3.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    3.0,
+                    3.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 1.0,
+                    "50.0" : 1.0,
+                    "90.0" : 1.0,
+                    "95.0" : 1.0,
+                    "99.0" : 1.0,
+                    "99.9" : 1.0,
+                    "99.99" : 1.0,
+                    "99.999" : 1.0,
+                    "99.9999" : 1.0,
+                    "100.0" : 1.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                ]
+            },
+            "statementExecutions" : {
+                "score" : 884.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    884.0,
+                    884.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 272.0,
+                    "50.0" : 284.0,
+                    "90.0" : 328.0,
+                    "95.0" : 328.0,
+                    "99.0" : 328.0,
+                    "99.9" : 328.0,
+                    "99.99" : 328.0,
+                    "99.999" : 328.0,
+                    "99.9999" : 328.0,
+                    "100.0" : 328.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        272.0,
+                        284.0,
+                        328.0
+                    ]
+                ]
+            }
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "io.bluetape4k.exposed.benchmark.jdbc.JdbcDriverKeyEnumerationBenchmark.parallelKeyEnumeration",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/graalvm-jdk-25/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-XX:ThreadPriorityPolicy=1",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+EnableJVMCIProduct",
+            "-XX:+EnableJVMCI",
+            "-XX:-UnlockExperimentalVMOptions",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=KR",
+            "-Duser.language=ko",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4",
+        "vmName" : "Java HotSpot(TM) 64-Bit Server VM",
+        "vmVersion" : "25.0.4+7-LTS-jvmci-25.2-b20",
+        "warmupIterations" : 1,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "driver" : "MYSQL_V8",
+            "poolSize" : "2",
+            "rowCount" : "1000"
+        },
+        "primaryMetric" : {
+            "score" : 222.68433678766306,
+            "scoreError" : 470.0730402271391,
+            "scoreConfidence" : [
+                -247.38870343947602,
+                692.7573770148022
+            ],
+            "scorePercentiles" : {
+                "0.0" : 200.32492484634417,
+                "50.0" : 216.8656840396307,
+                "90.0" : 250.86240147701437,
+                "95.0" : 250.86240147701437,
+                "99.0" : 250.86240147701437,
+                "99.9" : 250.86240147701437,
+                "99.99" : 250.86240147701437,
+                "99.999" : 250.86240147701437,
+                "99.9999" : 250.86240147701437,
+                "100.0" : 250.86240147701437
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    200.32492484634417,
+                    216.8656840396307,
+                    250.86240147701437
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+            "activeAtEnd" : {
+                "score" : 0.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    0.0,
+                    0.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 0.0,
+                    "50.0" : 0.0,
+                    "90.0" : 0.0,
+                    "95.0" : 0.0,
+                    "99.0" : 0.0,
+                    "99.9" : 0.0,
+                    "99.99" : 0.0,
+                    "99.999" : 0.0,
+                    "99.9999" : 0.0,
+                    "100.0" : 0.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                ]
+            },
+            "connectionRequests" : {
+                "score" : 2692.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    2692.0,
+                    2692.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 808.0,
+                    "50.0" : 872.0,
+                    "90.0" : 1012.0,
+                    "95.0" : 1012.0,
+                    "99.0" : 1012.0,
+                    "99.9" : 1012.0,
+                    "99.99" : 1012.0,
+                    "99.999" : 1012.0,
+                    "99.9999" : 1012.0,
+                    "100.0" : 1012.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        808.0,
+                        872.0,
+                        1012.0
+                    ]
+                ]
+            },
+            "peakActiveLeases" : {
+                "score" : 6.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    6.0,
+                    6.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 2.0,
+                    "50.0" : 2.0,
+                    "90.0" : 2.0,
+                    "95.0" : 2.0,
+                    "99.0" : 2.0,
+                    "99.9" : 2.0,
+                    "99.99" : 2.0,
+                    "99.999" : 2.0,
+                    "99.9999" : 2.0,
+                    "100.0" : 2.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        2.0,
+                        2.0,
+                        2.0
+                    ]
+                ]
+            },
+            "statementExecutions" : {
+                "score" : 2692.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    2692.0,
+                    2692.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 808.0,
+                    "50.0" : 872.0,
+                    "90.0" : 1012.0,
+                    "95.0" : 1012.0,
+                    "99.0" : 1012.0,
+                    "99.9" : 1012.0,
+                    "99.99" : 1012.0,
+                    "99.999" : 1012.0,
+                    "99.9999" : 1012.0,
+                    "100.0" : 1012.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        808.0,
+                        872.0,
+                        1012.0
+                    ]
+                ]
+            }
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "io.bluetape4k.exposed.benchmark.jdbc.JdbcDriverKeyEnumerationBenchmark.parallelKeyEnumeration",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/graalvm-jdk-25/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-XX:ThreadPriorityPolicy=1",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+EnableJVMCIProduct",
+            "-XX:+EnableJVMCI",
+            "-XX:-UnlockExperimentalVMOptions",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=KR",
+            "-Duser.language=ko",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4",
+        "vmName" : "Java HotSpot(TM) 64-Bit Server VM",
+        "vmVersion" : "25.0.4+7-LTS-jvmci-25.2-b20",
+        "warmupIterations" : 1,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "driver" : "MYSQL_V8",
+            "poolSize" : "2",
+            "rowCount" : "10000"
+        },
+        "primaryMetric" : {
+            "score" : 161.48110510702367,
+            "scoreError" : 218.5381901419435,
+            "scoreConfidence" : [
+                -57.05708503491982,
+                380.0192952489672
+            ],
+            "scorePercentiles" : {
+                "0.0" : 148.13260346696245,
+                "50.0" : 165.01606432380265,
+                "90.0" : 171.2946475303059,
+                "95.0" : 171.2946475303059,
+                "99.0" : 171.2946475303059,
+                "99.9" : 171.2946475303059,
+                "99.99" : 171.2946475303059,
+                "99.999" : 171.2946475303059,
+                "99.9999" : 171.2946475303059,
+                "100.0" : 171.2946475303059
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    148.13260346696245,
+                    165.01606432380265,
+                    171.2946475303059
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+            "activeAtEnd" : {
+                "score" : 0.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    0.0,
+                    0.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 0.0,
+                    "50.0" : 0.0,
+                    "90.0" : 0.0,
+                    "95.0" : 0.0,
+                    "99.0" : 0.0,
+                    "99.9" : 0.0,
+                    "99.99" : 0.0,
+                    "99.999" : 0.0,
+                    "99.9999" : 0.0,
+                    "100.0" : 0.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                ]
+            },
+            "connectionRequests" : {
+                "score" : 1952.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    1952.0,
+                    1952.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 596.0,
+                    "50.0" : 664.0,
+                    "90.0" : 692.0,
+                    "95.0" : 692.0,
+                    "99.0" : 692.0,
+                    "99.9" : 692.0,
+                    "99.99" : 692.0,
+                    "99.999" : 692.0,
+                    "99.9999" : 692.0,
+                    "100.0" : 692.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        596.0,
+                        664.0,
+                        692.0
+                    ]
+                ]
+            },
+            "peakActiveLeases" : {
+                "score" : 6.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    6.0,
+                    6.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 2.0,
+                    "50.0" : 2.0,
+                    "90.0" : 2.0,
+                    "95.0" : 2.0,
+                    "99.0" : 2.0,
+                    "99.9" : 2.0,
+                    "99.99" : 2.0,
+                    "99.999" : 2.0,
+                    "99.9999" : 2.0,
+                    "100.0" : 2.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        2.0,
+                        2.0,
+                        2.0
+                    ]
+                ]
+            },
+            "statementExecutions" : {
+                "score" : 1952.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    1952.0,
+                    1952.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 596.0,
+                    "50.0" : 664.0,
+                    "90.0" : 692.0,
+                    "95.0" : 692.0,
+                    "99.0" : 692.0,
+                    "99.9" : 692.0,
+                    "99.99" : 692.0,
+                    "99.999" : 692.0,
+                    "99.9999" : 692.0,
+                    "100.0" : 692.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        596.0,
+                        664.0,
+                        692.0
+                    ]
+                ]
+            }
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "io.bluetape4k.exposed.benchmark.jdbc.JdbcDriverKeyEnumerationBenchmark.parallelKeyEnumeration",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/graalvm-jdk-25/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-XX:ThreadPriorityPolicy=1",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+EnableJVMCIProduct",
+            "-XX:+EnableJVMCI",
+            "-XX:-UnlockExperimentalVMOptions",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=KR",
+            "-Duser.language=ko",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4",
+        "vmName" : "Java HotSpot(TM) 64-Bit Server VM",
+        "vmVersion" : "25.0.4+7-LTS-jvmci-25.2-b20",
+        "warmupIterations" : 1,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "driver" : "MYSQL_V8",
+            "poolSize" : "4",
+            "rowCount" : "1000"
+        },
+        "primaryMetric" : {
+            "score" : 171.31421384665381,
+            "scoreError" : 254.5509245075083,
+            "scoreConfidence" : [
+                -83.2367106608545,
+                425.8651383541621
+            ],
+            "scorePercentiles" : {
+                "0.0" : 155.59863327393404,
+                "50.0" : 176.09858795675567,
+                "90.0" : 182.24542030927168,
+                "95.0" : 182.24542030927168,
+                "99.0" : 182.24542030927168,
+                "99.9" : 182.24542030927168,
+                "99.99" : 182.24542030927168,
+                "99.999" : 182.24542030927168,
+                "99.9999" : 182.24542030927168,
+                "100.0" : 182.24542030927168
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    155.59863327393404,
+                    176.09858795675567,
+                    182.24542030927168
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+            "activeAtEnd" : {
+                "score" : 0.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    0.0,
+                    0.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 0.0,
+                    "50.0" : 0.0,
+                    "90.0" : 0.0,
+                    "95.0" : 0.0,
+                    "99.0" : 0.0,
+                    "99.9" : 0.0,
+                    "99.99" : 0.0,
+                    "99.999" : 0.0,
+                    "99.9999" : 0.0,
+                    "100.0" : 0.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                ]
+            },
+            "connectionRequests" : {
+                "score" : 2068.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    2068.0,
+                    2068.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 628.0,
+                    "50.0" : 708.0,
+                    "90.0" : 732.0,
+                    "95.0" : 732.0,
+                    "99.0" : 732.0,
+                    "99.9" : 732.0,
+                    "99.99" : 732.0,
+                    "99.999" : 732.0,
+                    "99.9999" : 732.0,
+                    "100.0" : 732.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        628.0,
+                        708.0,
+                        732.0
+                    ]
+                ]
+            },
+            "peakActiveLeases" : {
+                "score" : 6.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    6.0,
+                    6.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 2.0,
+                    "50.0" : 2.0,
+                    "90.0" : 2.0,
+                    "95.0" : 2.0,
+                    "99.0" : 2.0,
+                    "99.9" : 2.0,
+                    "99.99" : 2.0,
+                    "99.999" : 2.0,
+                    "99.9999" : 2.0,
+                    "100.0" : 2.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        2.0,
+                        2.0,
+                        2.0
+                    ]
+                ]
+            },
+            "statementExecutions" : {
+                "score" : 2068.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    2068.0,
+                    2068.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 628.0,
+                    "50.0" : 708.0,
+                    "90.0" : 732.0,
+                    "95.0" : 732.0,
+                    "99.0" : 732.0,
+                    "99.9" : 732.0,
+                    "99.99" : 732.0,
+                    "99.999" : 732.0,
+                    "99.9999" : 732.0,
+                    "100.0" : 732.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        628.0,
+                        708.0,
+                        732.0
+                    ]
+                ]
+            }
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "io.bluetape4k.exposed.benchmark.jdbc.JdbcDriverKeyEnumerationBenchmark.parallelKeyEnumeration",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/graalvm-jdk-25/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-XX:ThreadPriorityPolicy=1",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+EnableJVMCIProduct",
+            "-XX:+EnableJVMCI",
+            "-XX:-UnlockExperimentalVMOptions",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=KR",
+            "-Duser.language=ko",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4",
+        "vmName" : "Java HotSpot(TM) 64-Bit Server VM",
+        "vmVersion" : "25.0.4+7-LTS-jvmci-25.2-b20",
+        "warmupIterations" : 1,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "driver" : "MYSQL_V8",
+            "poolSize" : "4",
+            "rowCount" : "10000"
+        },
+        "primaryMetric" : {
+            "score" : 147.61967364645793,
+            "scoreError" : 231.8102639569699,
+            "scoreConfidence" : [
+                -84.19059031051196,
+                379.4299376034278
+            ],
+            "scorePercentiles" : {
+                "0.0" : 136.637177055975,
+                "50.0" : 144.68544232804823,
+                "90.0" : 161.5364015553505,
+                "95.0" : 161.5364015553505,
+                "99.0" : 161.5364015553505,
+                "99.9" : 161.5364015553505,
+                "99.99" : 161.5364015553505,
+                "99.999" : 161.5364015553505,
+                "99.9999" : 161.5364015553505,
+                "100.0" : 161.5364015553505
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    161.5364015553505,
+                    144.68544232804823,
+                    136.637177055975
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+            "activeAtEnd" : {
+                "score" : 0.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    0.0,
+                    0.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 0.0,
+                    "50.0" : 0.0,
+                    "90.0" : 0.0,
+                    "95.0" : 0.0,
+                    "99.0" : 0.0,
+                    "99.9" : 0.0,
+                    "99.99" : 0.0,
+                    "99.999" : 0.0,
+                    "99.9999" : 0.0,
+                    "100.0" : 0.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                ]
+            },
+            "connectionRequests" : {
+                "score" : 1788.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    1788.0,
+                    1788.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 548.0,
+                    "50.0" : 584.0,
+                    "90.0" : 656.0,
+                    "95.0" : 656.0,
+                    "99.0" : 656.0,
+                    "99.9" : 656.0,
+                    "99.99" : 656.0,
+                    "99.999" : 656.0,
+                    "99.9999" : 656.0,
+                    "100.0" : 656.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        656.0,
+                        584.0,
+                        548.0
+                    ]
+                ]
+            },
+            "peakActiveLeases" : {
+                "score" : 6.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    6.0,
+                    6.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 2.0,
+                    "50.0" : 2.0,
+                    "90.0" : 2.0,
+                    "95.0" : 2.0,
+                    "99.0" : 2.0,
+                    "99.9" : 2.0,
+                    "99.99" : 2.0,
+                    "99.999" : 2.0,
+                    "99.9999" : 2.0,
+                    "100.0" : 2.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        2.0,
+                        2.0,
+                        2.0
+                    ]
+                ]
+            },
+            "statementExecutions" : {
+                "score" : 1788.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    1788.0,
+                    1788.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 548.0,
+                    "50.0" : 584.0,
+                    "90.0" : 656.0,
+                    "95.0" : 656.0,
+                    "99.0" : 656.0,
+                    "99.9" : 656.0,
+                    "99.99" : 656.0,
+                    "99.999" : 656.0,
+                    "99.9999" : 656.0,
+                    "100.0" : 656.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        656.0,
+                        584.0,
+                        548.0
+                    ]
+                ]
+            }
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "io.bluetape4k.exposed.benchmark.jdbc.JdbcDriverKeyEnumerationBenchmark.sequentialKeysetPaging",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/graalvm-jdk-25/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-XX:ThreadPriorityPolicy=1",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+EnableJVMCIProduct",
+            "-XX:+EnableJVMCI",
+            "-XX:-UnlockExperimentalVMOptions",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=KR",
+            "-Duser.language=ko",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4",
+        "vmName" : "Java HotSpot(TM) 64-Bit Server VM",
+        "vmVersion" : "25.0.4+7-LTS-jvmci-25.2-b20",
+        "warmupIterations" : 1,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "driver" : "MYSQL_V8",
+            "poolSize" : "1",
+            "rowCount" : "1000"
+        },
+        "primaryMetric" : {
+            "score" : 454.9720363491128,
+            "scoreError" : 442.88320009987365,
+            "scoreConfidence" : [
+                12.088836249239137,
+                897.8552364489865
+            ],
+            "scorePercentiles" : {
+                "0.0" : 438.802855834931,
+                "50.0" : 443.22638149568735,
+                "90.0" : 482.88687171671995,
+                "95.0" : 482.88687171671995,
+                "99.0" : 482.88687171671995,
+                "99.9" : 482.88687171671995,
+                "99.99" : 482.88687171671995,
+                "99.999" : 482.88687171671995,
+                "99.9999" : 482.88687171671995,
+                "100.0" : 482.88687171671995
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    482.88687171671995,
+                    438.802855834931,
+                    443.22638149568735
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+            "activeAtEnd" : {
+                "score" : 0.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    0.0,
+                    0.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 0.0,
+                    "50.0" : 0.0,
+                    "90.0" : 0.0,
+                    "95.0" : 0.0,
+                    "99.0" : 0.0,
+                    "99.9" : 0.0,
+                    "99.99" : 0.0,
+                    "99.999" : 0.0,
+                    "99.9999" : 0.0,
+                    "100.0" : 0.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                ]
+            },
+            "connectionRequests" : {
+                "score" : 1378.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    1378.0,
+                    1378.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 444.0,
+                    "50.0" : 446.0,
+                    "90.0" : 488.0,
+                    "95.0" : 488.0,
+                    "99.0" : 488.0,
+                    "99.9" : 488.0,
+                    "99.99" : 488.0,
+                    "99.999" : 488.0,
+                    "99.9999" : 488.0,
+                    "100.0" : 488.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        488.0,
+                        444.0,
+                        446.0
+                    ]
+                ]
+            },
+            "peakActiveLeases" : {
+                "score" : 3.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    3.0,
+                    3.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 1.0,
+                    "50.0" : 1.0,
+                    "90.0" : 1.0,
+                    "95.0" : 1.0,
+                    "99.0" : 1.0,
+                    "99.9" : 1.0,
+                    "99.99" : 1.0,
+                    "99.999" : 1.0,
+                    "99.9999" : 1.0,
+                    "100.0" : 1.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                ]
+            },
+            "statementExecutions" : {
+                "score" : 2756.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    2756.0,
+                    2756.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 888.0,
+                    "50.0" : 892.0,
+                    "90.0" : 976.0,
+                    "95.0" : 976.0,
+                    "99.0" : 976.0,
+                    "99.9" : 976.0,
+                    "99.99" : 976.0,
+                    "99.999" : 976.0,
+                    "99.9999" : 976.0,
+                    "100.0" : 976.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        976.0,
+                        888.0,
+                        892.0
+                    ]
+                ]
+            }
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "io.bluetape4k.exposed.benchmark.jdbc.JdbcDriverKeyEnumerationBenchmark.sequentialKeysetPaging",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/graalvm-jdk-25/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-XX:ThreadPriorityPolicy=1",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+EnableJVMCIProduct",
+            "-XX:+EnableJVMCI",
+            "-XX:-UnlockExperimentalVMOptions",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=KR",
+            "-Duser.language=ko",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4",
+        "vmName" : "Java HotSpot(TM) 64-Bit Server VM",
+        "vmVersion" : "25.0.4+7-LTS-jvmci-25.2-b20",
+        "warmupIterations" : 1,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "driver" : "MYSQL_V8",
+            "poolSize" : "1",
+            "rowCount" : "10000"
+        },
+        "primaryMetric" : {
+            "score" : 96.21355548578434,
+            "scoreError" : 28.94896102633156,
+            "scoreConfidence" : [
+                67.26459445945278,
+                125.1625165121159
+            ],
+            "scorePercentiles" : {
+                "0.0" : 94.41261972264302,
+                "50.0" : 96.82183157864725,
+                "90.0" : 97.40621515606271,
+                "95.0" : 97.40621515606271,
+                "99.0" : 97.40621515606271,
+                "99.9" : 97.40621515606271,
+                "99.99" : 97.40621515606271,
+                "99.999" : 97.40621515606271,
+                "99.9999" : 97.40621515606271,
+                "100.0" : 97.40621515606271
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    94.41261972264302,
+                    96.82183157864725,
+                    97.40621515606271
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+            "activeAtEnd" : {
+                "score" : 0.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    0.0,
+                    0.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 0.0,
+                    "50.0" : 0.0,
+                    "90.0" : 0.0,
+                    "95.0" : 0.0,
+                    "99.0" : 0.0,
+                    "99.9" : 0.0,
+                    "99.99" : 0.0,
+                    "99.999" : 0.0,
+                    "99.9999" : 0.0,
+                    "100.0" : 0.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                ]
+            },
+            "connectionRequests" : {
+                "score" : 292.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    292.0,
+                    292.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 95.0,
+                    "50.0" : 98.0,
+                    "90.0" : 99.0,
+                    "95.0" : 99.0,
+                    "99.0" : 99.0,
+                    "99.9" : 99.0,
+                    "99.99" : 99.0,
+                    "99.999" : 99.0,
+                    "99.9999" : 99.0,
+                    "100.0" : 99.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        95.0,
+                        98.0,
+                        99.0
+                    ]
+                ]
+            },
+            "peakActiveLeases" : {
+                "score" : 3.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    3.0,
+                    3.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 1.0,
+                    "50.0" : 1.0,
+                    "90.0" : 1.0,
+                    "95.0" : 1.0,
+                    "99.0" : 1.0,
+                    "99.9" : 1.0,
+                    "99.99" : 1.0,
+                    "99.999" : 1.0,
+                    "99.9999" : 1.0,
+                    "100.0" : 1.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                ]
+            },
+            "statementExecutions" : {
+                "score" : 3212.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    3212.0,
+                    3212.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 1045.0,
+                    "50.0" : 1078.0,
+                    "90.0" : 1089.0,
+                    "95.0" : 1089.0,
+                    "99.0" : 1089.0,
+                    "99.9" : 1089.0,
+                    "99.99" : 1089.0,
+                    "99.999" : 1089.0,
+                    "99.9999" : 1089.0,
+                    "100.0" : 1089.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        1045.0,
+                        1078.0,
+                        1089.0
+                    ]
+                ]
+            }
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "io.bluetape4k.exposed.benchmark.jdbc.JdbcDriverKeyEnumerationBenchmark.sequentialKeysetPaging",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/graalvm-jdk-25/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-XX:ThreadPriorityPolicy=1",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+EnableJVMCIProduct",
+            "-XX:+EnableJVMCI",
+            "-XX:-UnlockExperimentalVMOptions",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=KR",
+            "-Duser.language=ko",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4",
+        "vmName" : "Java HotSpot(TM) 64-Bit Server VM",
+        "vmVersion" : "25.0.4+7-LTS-jvmci-25.2-b20",
+        "warmupIterations" : 1,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "driver" : "MYSQL_V8",
+            "poolSize" : "2",
+            "rowCount" : "1000"
+        },
+        "primaryMetric" : {
+            "score" : 379.5779348737967,
+            "scoreError" : 3824.871963131754,
+            "scoreConfidence" : [
+                -3445.2940282579575,
+                4204.4498980055505
+            ],
+            "scorePercentiles" : {
+                "0.0" : 137.88542604752556,
+                "50.0" : 488.4489532295205,
+                "90.0" : 512.3994253443441,
+                "95.0" : 512.3994253443441,
+                "99.0" : 512.3994253443441,
+                "99.9" : 512.3994253443441,
+                "99.99" : 512.3994253443441,
+                "99.999" : 512.3994253443441,
+                "99.9999" : 512.3994253443441,
+                "100.0" : 512.3994253443441
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    137.88542604752556,
+                    488.4489532295205,
+                    512.3994253443441
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+            "activeAtEnd" : {
+                "score" : 0.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    0.0,
+                    0.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 0.0,
+                    "50.0" : 0.0,
+                    "90.0" : 0.0,
+                    "95.0" : 0.0,
+                    "99.0" : 0.0,
+                    "99.9" : 0.0,
+                    "99.99" : 0.0,
+                    "99.999" : 0.0,
+                    "99.9999" : 0.0,
+                    "100.0" : 0.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                ]
+            },
+            "connectionRequests" : {
+                "score" : 1143.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    1143.0,
+                    1143.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 139.0,
+                    "50.0" : 491.0,
+                    "90.0" : 513.0,
+                    "95.0" : 513.0,
+                    "99.0" : 513.0,
+                    "99.9" : 513.0,
+                    "99.99" : 513.0,
+                    "99.999" : 513.0,
+                    "99.9999" : 513.0,
+                    "100.0" : 513.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        139.0,
+                        491.0,
+                        513.0
+                    ]
+                ]
+            },
+            "peakActiveLeases" : {
+                "score" : 3.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    3.0,
+                    3.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 1.0,
+                    "50.0" : 1.0,
+                    "90.0" : 1.0,
+                    "95.0" : 1.0,
+                    "99.0" : 1.0,
+                    "99.9" : 1.0,
+                    "99.99" : 1.0,
+                    "99.999" : 1.0,
+                    "99.9999" : 1.0,
+                    "100.0" : 1.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                ]
+            },
+            "statementExecutions" : {
+                "score" : 2286.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    2286.0,
+                    2286.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 278.0,
+                    "50.0" : 982.0,
+                    "90.0" : 1026.0,
+                    "95.0" : 1026.0,
+                    "99.0" : 1026.0,
+                    "99.9" : 1026.0,
+                    "99.99" : 1026.0,
+                    "99.999" : 1026.0,
+                    "99.9999" : 1026.0,
+                    "100.0" : 1026.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        278.0,
+                        982.0,
+                        1026.0
+                    ]
+                ]
+            }
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "io.bluetape4k.exposed.benchmark.jdbc.JdbcDriverKeyEnumerationBenchmark.sequentialKeysetPaging",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/graalvm-jdk-25/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-XX:ThreadPriorityPolicy=1",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+EnableJVMCIProduct",
+            "-XX:+EnableJVMCI",
+            "-XX:-UnlockExperimentalVMOptions",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=KR",
+            "-Duser.language=ko",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4",
+        "vmName" : "Java HotSpot(TM) 64-Bit Server VM",
+        "vmVersion" : "25.0.4+7-LTS-jvmci-25.2-b20",
+        "warmupIterations" : 1,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "driver" : "MYSQL_V8",
+            "poolSize" : "2",
+            "rowCount" : "10000"
+        },
+        "primaryMetric" : {
+            "score" : 95.77876164346497,
+            "scoreError" : 47.1714800582184,
+            "scoreConfidence" : [
+                48.607281585246575,
+                142.95024170168338
+            ],
+            "scorePercentiles" : {
+                "0.0" : 92.79381568942081,
+                "50.0" : 97.21604977461749,
+                "90.0" : 97.32641946635664,
+                "95.0" : 97.32641946635664,
+                "99.0" : 97.32641946635664,
+                "99.9" : 97.32641946635664,
+                "99.99" : 97.32641946635664,
+                "99.999" : 97.32641946635664,
+                "99.9999" : 97.32641946635664,
+                "100.0" : 97.32641946635664
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    97.32641946635664,
+                    97.21604977461749,
+                    92.79381568942081
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+            "activeAtEnd" : {
+                "score" : 0.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    0.0,
+                    0.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 0.0,
+                    "50.0" : 0.0,
+                    "90.0" : 0.0,
+                    "95.0" : 0.0,
+                    "99.0" : 0.0,
+                    "99.9" : 0.0,
+                    "99.99" : 0.0,
+                    "99.999" : 0.0,
+                    "99.9999" : 0.0,
+                    "100.0" : 0.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                ]
+            },
+            "connectionRequests" : {
+                "score" : 291.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    291.0,
+                    291.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 94.0,
+                    "50.0" : 98.0,
+                    "90.0" : 99.0,
+                    "95.0" : 99.0,
+                    "99.0" : 99.0,
+                    "99.9" : 99.0,
+                    "99.99" : 99.0,
+                    "99.999" : 99.0,
+                    "99.9999" : 99.0,
+                    "100.0" : 99.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        99.0,
+                        98.0,
+                        94.0
+                    ]
+                ]
+            },
+            "peakActiveLeases" : {
+                "score" : 3.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    3.0,
+                    3.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 1.0,
+                    "50.0" : 1.0,
+                    "90.0" : 1.0,
+                    "95.0" : 1.0,
+                    "99.0" : 1.0,
+                    "99.9" : 1.0,
+                    "99.99" : 1.0,
+                    "99.999" : 1.0,
+                    "99.9999" : 1.0,
+                    "100.0" : 1.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                ]
+            },
+            "statementExecutions" : {
+                "score" : 3201.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    3201.0,
+                    3201.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 1034.0,
+                    "50.0" : 1078.0,
+                    "90.0" : 1089.0,
+                    "95.0" : 1089.0,
+                    "99.0" : 1089.0,
+                    "99.9" : 1089.0,
+                    "99.99" : 1089.0,
+                    "99.999" : 1089.0,
+                    "99.9999" : 1089.0,
+                    "100.0" : 1089.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        1089.0,
+                        1078.0,
+                        1034.0
+                    ]
+                ]
+            }
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "io.bluetape4k.exposed.benchmark.jdbc.JdbcDriverKeyEnumerationBenchmark.sequentialKeysetPaging",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/graalvm-jdk-25/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-XX:ThreadPriorityPolicy=1",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+EnableJVMCIProduct",
+            "-XX:+EnableJVMCI",
+            "-XX:-UnlockExperimentalVMOptions",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=KR",
+            "-Duser.language=ko",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4",
+        "vmName" : "Java HotSpot(TM) 64-Bit Server VM",
+        "vmVersion" : "25.0.4+7-LTS-jvmci-25.2-b20",
+        "warmupIterations" : 1,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "driver" : "MYSQL_V8",
+            "poolSize" : "4",
+            "rowCount" : "1000"
+        },
+        "primaryMetric" : {
+            "score" : 430.1417054911708,
+            "scoreError" : 546.4726808586379,
+            "scoreConfidence" : [
+                -116.33097536746709,
+                976.6143863498087
+            ],
+            "scorePercentiles" : {
+                "0.0" : 411.1114056201659,
+                "50.0" : 414.6442870322622,
+                "90.0" : 464.6694238210844,
+                "95.0" : 464.6694238210844,
+                "99.0" : 464.6694238210844,
+                "99.9" : 464.6694238210844,
+                "99.99" : 464.6694238210844,
+                "99.999" : 464.6694238210844,
+                "99.9999" : 464.6694238210844,
+                "100.0" : 464.6694238210844
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    411.1114056201659,
+                    414.6442870322622,
+                    464.6694238210844
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+            "activeAtEnd" : {
+                "score" : 0.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    0.0,
+                    0.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 0.0,
+                    "50.0" : 0.0,
+                    "90.0" : 0.0,
+                    "95.0" : 0.0,
+                    "99.0" : 0.0,
+                    "99.9" : 0.0,
+                    "99.99" : 0.0,
+                    "99.999" : 0.0,
+                    "99.9999" : 0.0,
+                    "100.0" : 0.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                ]
+            },
+            "connectionRequests" : {
+                "score" : 1299.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    1299.0,
+                    1299.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 415.0,
+                    "50.0" : 416.0,
+                    "90.0" : 468.0,
+                    "95.0" : 468.0,
+                    "99.0" : 468.0,
+                    "99.9" : 468.0,
+                    "99.99" : 468.0,
+                    "99.999" : 468.0,
+                    "99.9999" : 468.0,
+                    "100.0" : 468.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        416.0,
+                        415.0,
+                        468.0
+                    ]
+                ]
+            },
+            "peakActiveLeases" : {
+                "score" : 3.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    3.0,
+                    3.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 1.0,
+                    "50.0" : 1.0,
+                    "90.0" : 1.0,
+                    "95.0" : 1.0,
+                    "99.0" : 1.0,
+                    "99.9" : 1.0,
+                    "99.99" : 1.0,
+                    "99.999" : 1.0,
+                    "99.9999" : 1.0,
+                    "100.0" : 1.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                ]
+            },
+            "statementExecutions" : {
+                "score" : 2598.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    2598.0,
+                    2598.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 830.0,
+                    "50.0" : 832.0,
+                    "90.0" : 936.0,
+                    "95.0" : 936.0,
+                    "99.0" : 936.0,
+                    "99.9" : 936.0,
+                    "99.99" : 936.0,
+                    "99.999" : 936.0,
+                    "99.9999" : 936.0,
+                    "100.0" : 936.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        832.0,
+                        830.0,
+                        936.0
+                    ]
+                ]
+            }
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "io.bluetape4k.exposed.benchmark.jdbc.JdbcDriverKeyEnumerationBenchmark.sequentialKeysetPaging",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/graalvm-jdk-25/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-XX:ThreadPriorityPolicy=1",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+EnableJVMCIProduct",
+            "-XX:+EnableJVMCI",
+            "-XX:-UnlockExperimentalVMOptions",
+            "-Dfile.encoding=UTF-8",
+            "-Duser.country=KR",
+            "-Duser.language=ko",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.4",
+        "vmName" : "Java HotSpot(TM) 64-Bit Server VM",
+        "vmVersion" : "25.0.4+7-LTS-jvmci-25.2-b20",
+        "warmupIterations" : 1,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "driver" : "MYSQL_V8",
+            "poolSize" : "4",
+            "rowCount" : "10000"
+        },
+        "primaryMetric" : {
+            "score" : 94.7092882522635,
+            "scoreError" : 63.188094161997064,
+            "scoreConfidence" : [
+                31.52119409026644,
+                157.89738241426056
+            ],
+            "scorePercentiles" : {
+                "0.0" : 92.65748952587417,
+                "50.0" : 92.76217760601389,
+                "90.0" : 98.7081976249025,
+                "95.0" : 98.7081976249025,
+                "99.0" : 98.7081976249025,
+                "99.9" : 98.7081976249025,
+                "99.99" : 98.7081976249025,
+                "99.999" : 98.7081976249025,
+                "99.9999" : 98.7081976249025,
+                "100.0" : 98.7081976249025
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    92.76217760601389,
+                    92.65748952587417,
+                    98.7081976249025
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+            "activeAtEnd" : {
+                "score" : 0.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    0.0,
+                    0.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 0.0,
+                    "50.0" : 0.0,
+                    "90.0" : 0.0,
+                    "95.0" : 0.0,
+                    "99.0" : 0.0,
+                    "99.9" : 0.0,
+                    "99.99" : 0.0,
+                    "99.999" : 0.0,
+                    "99.9999" : 0.0,
+                    "100.0" : 0.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                ]
+            },
+            "connectionRequests" : {
+                "score" : 288.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    288.0,
+                    288.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 94.0,
+                    "50.0" : 94.0,
+                    "90.0" : 100.0,
+                    "95.0" : 100.0,
+                    "99.0" : 100.0,
+                    "99.9" : 100.0,
+                    "99.99" : 100.0,
+                    "99.999" : 100.0,
+                    "99.9999" : 100.0,
+                    "100.0" : 100.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        94.0,
+                        94.0,
+                        100.0
+                    ]
+                ]
+            },
+            "peakActiveLeases" : {
+                "score" : 3.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    3.0,
+                    3.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 1.0,
+                    "50.0" : 1.0,
+                    "90.0" : 1.0,
+                    "95.0" : 1.0,
+                    "99.0" : 1.0,
+                    "99.9" : 1.0,
+                    "99.99" : 1.0,
+                    "99.999" : 1.0,
+                    "99.9999" : 1.0,
+                    "100.0" : 1.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                ]
+            },
+            "statementExecutions" : {
+                "score" : 3168.0,
+                "scoreError" : "NaN",
+                "scoreConfidence" : [
+                    3168.0,
+                    3168.0
+                ],
+                "scorePercentiles" : {
+                    "0.0" : 1034.0,
+                    "50.0" : 1034.0,
+                    "90.0" : 1100.0,
+                    "95.0" : 1100.0,
+                    "99.0" : 1100.0,
+                    "99.9" : 1100.0,
+                    "99.99" : 1100.0,
+                    "99.999" : 1100.0,
+                    "99.9999" : 1100.0,
+                    "100.0" : 1100.0
+                },
+                "scoreUnit" : "#",
+                "rawData" : [
+                    [
+                        1034.0,
+                        1034.0,
+                        1100.0
+                    ]
+                ]
+            }
+        }
+    }
+]
+
+

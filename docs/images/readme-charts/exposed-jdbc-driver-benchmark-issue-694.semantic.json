@@ -1,0 +1,127 @@
+{
+  "kind": "chart",
+  "source": {
+    "question": "How does median throughput change with JDBC driver, enumeration method, and pool size on the 10,000-row fixture?",
+    "revision": "f325a70fbd2047cdef28be928eeea4675b4b05b6",
+    "paths": [
+      "benchmark/exposed-benchmark/src/benchmark/kotlin/io/bluetape4k/exposed/benchmark/jdbc/JdbcDriverKeyEnumerationBenchmark.kt",
+      "benchmark/exposed-benchmark/src/main/kotlin/io/bluetape4k/exposed/benchmark/jdbc/JdbcDriverBenchmarkMatrix.kt",
+      "docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/postgresql-run-1.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/postgresql-run-2.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/postgresql-run-3.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/mysql-run-1.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/mysql-run-2.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/mysql-run-3.json",
+      "docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/summary.json"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "chart-root",
+      "label": "Issue #694 JDBC driver benchmark chart",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/summary.json"
+    },
+    {
+      "id": "postgresql-panel",
+      "label": "POSTGRESQL · 10,000-row median ops/s",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/summary.json"
+    },
+    {
+      "id": "mysql-panel",
+      "label": "MYSQL_V8 · 10,000-row median ops/s",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/summary.json"
+    },
+    {
+      "id": "method-series",
+      "label": "sequentialKeysetPaging and parallelKeyEnumeration",
+      "source": "benchmark/exposed-benchmark/src/benchmark/kotlin/io/bluetape4k/exposed/benchmark/jdbc/JdbcDriverKeyEnumerationBenchmark.kt"
+    },
+    {
+      "id": "pool-series",
+      "label": "poolSize 1, 2, and 4",
+      "source": "benchmark/exposed-benchmark/src/main/kotlin/io/bluetape4k/exposed/benchmark/jdbc/JdbcDriverBenchmarkMatrix.kt"
+    },
+    {
+      "id": "raw-runs",
+      "label": "Three captured raw runs per driver",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/summary.json"
+    },
+    {
+      "id": "lifecycle-guard",
+      "label": "activeAtEnd 0 and bounded peak active leases",
+      "source": "benchmark/exposed-benchmark/src/benchmark/kotlin/io/bluetape4k/exposed/benchmark/jdbc/JdbcDriverKeyEnumerationBenchmark.kt"
+    },
+    {
+      "id": "scope-caveat",
+      "label": "Local Docker/JMH evidence with setup excluded",
+      "source": "benchmark/exposed-benchmark/src/benchmark/kotlin/io/bluetape4k/exposed/benchmark/jdbc/JdbcDriverKeyEnumerationBenchmark.kt"
+    }
+  ],
+  "edges": [
+    {
+      "id": "chart-postgresql",
+      "from": "chart-root",
+      "to": "postgresql-panel",
+      "kind": "comparison",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/summary.json"
+    },
+    {
+      "id": "chart-mysql",
+      "from": "chart-root",
+      "to": "mysql-panel",
+      "kind": "comparison",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/summary.json"
+    },
+    {
+      "id": "chart-methods",
+      "from": "chart-root",
+      "to": "method-series",
+      "kind": "series",
+      "source": "benchmark/exposed-benchmark/src/benchmark/kotlin/io/bluetape4k/exposed/benchmark/jdbc/JdbcDriverKeyEnumerationBenchmark.kt"
+    },
+    {
+      "id": "chart-pools",
+      "from": "chart-root",
+      "to": "pool-series",
+      "kind": "dimension",
+      "source": "benchmark/exposed-benchmark/src/main/kotlin/io/bluetape4k/exposed/benchmark/jdbc/JdbcDriverBenchmarkMatrix.kt"
+    },
+    {
+      "id": "chart-runs",
+      "from": "chart-root",
+      "to": "raw-runs",
+      "kind": "evidence",
+      "source": "docs/benchmarks/exposed-benchmark-2026-08-22-issue-694/summary.json"
+    },
+    {
+      "id": "chart-guard",
+      "from": "chart-root",
+      "to": "lifecycle-guard",
+      "kind": "guard",
+      "source": "benchmark/exposed-benchmark/src/benchmark/kotlin/io/bluetape4k/exposed/benchmark/jdbc/JdbcDriverKeyEnumerationBenchmark.kt"
+    },
+    {
+      "id": "chart-caveat",
+      "from": "chart-root",
+      "to": "scope-caveat",
+      "kind": "scope",
+      "source": "benchmark/exposed-benchmark/src/benchmark/kotlin/io/bluetape4k/exposed/benchmark/jdbc/JdbcDriverKeyEnumerationBenchmark.kt"
+    }
+  ],
+  "behavior": {
+    "branches": 0,
+    "loops": 0
+  },
+  "repairs": [
+    {
+      "target": "panels",
+      "reason": "Split two drivers and two methods into four panels so technical labels remain readable.",
+      "touches": 4
+    },
+    {
+      "target": "subtitle",
+      "reason": "Keep the 10,000-row filter and ops/s unit visible while the table retains all 24 rows.",
+      "touches": 2
+    }
+  ]
+}

@@ -1,24 +1,24 @@
 package io.bluetape4k.exposed.benchmark.jdbc
 
-/** Benchmark-only JDBC backends; this type is not part of the published API. */
+/** Benchmark 전용 JDBC backend이며 published API에 포함되지 않습니다. */
 internal enum class JdbcBenchmarkDriver {
     POSTGRESQL,
     MYSQL_V8,
 }
 
-/** One validated driver/row/pool point in the Issue #694 benchmark matrix. */
+/** Issue #694 benchmark matrix의 검증된 driver/row/pool point입니다. */
 internal data class JdbcDriverBenchmarkCase(
     val driver: JdbcBenchmarkDriver,
     val rowCount: Int,
     val poolSize: Int,
-    val maxConcurrency: Int = 2,
+    val maxConcurrency: Int = DRIVER_BENCHMARK_MAX_CONCURRENCY,
 ) {
     init {
         require(rowCount > 0) { "rowCount must be positive: $rowCount" }
         require(poolSize > 0) { "poolSize must be positive: $poolSize" }
-        require(maxConcurrency == APPROVED_MAX_CONCURRENCY) {
+        require(maxConcurrency == DRIVER_BENCHMARK_MAX_CONCURRENCY) {
             "maxConcurrency must equal the approved benchmark concurrency " +
-                "$APPROVED_MAX_CONCURRENCY: $maxConcurrency"
+                "$DRIVER_BENCHMARK_MAX_CONCURRENCY: $maxConcurrency"
         }
     }
 }
@@ -41,7 +41,7 @@ internal fun jdbcDriverBenchmarkCases(): List<JdbcDriverBenchmarkCase> =
         }
     }
 
-/** Builds non-overlapping `[lowerInclusive, upperExclusive)` ranges for generated IDs. */
+/** 생성 ID에 대해 겹치지 않는 `[lowerInclusive, upperExclusive)` 구간을 만듭니다. */
 internal fun buildDriverBenchmarkRanges(
     rowCount: Int,
     rangeCount: Int,
@@ -64,4 +64,4 @@ internal fun buildDriverBenchmarkRanges(
 
 private val ROW_COUNTS = intArrayOf(1_000, 10_000)
 private val POOL_SIZES = intArrayOf(1, 2, 4)
-private const val APPROVED_MAX_CONCURRENCY = 2
+internal const val DRIVER_BENCHMARK_MAX_CONCURRENCY = 2
