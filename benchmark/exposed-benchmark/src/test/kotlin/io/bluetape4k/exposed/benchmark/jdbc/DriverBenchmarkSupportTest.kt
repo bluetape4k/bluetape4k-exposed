@@ -37,6 +37,9 @@ class DriverBenchmarkSupportTest {
             JdbcDriverBenchmarkCase(JdbcBenchmarkDriver.POSTGRESQL, rowCount = 0, poolSize = 1)
         }
         assertFailsWith<IllegalArgumentException> {
+            JdbcDriverBenchmarkCase(JdbcBenchmarkDriver.POSTGRESQL, rowCount = 1, poolSize = 1, maxConcurrency = 3)
+        }
+        assertFailsWith<IllegalArgumentException> {
             buildDriverBenchmarkRanges(rowCount = 3, rangeCount = 4)
         }
     }

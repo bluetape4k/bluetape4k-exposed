@@ -222,13 +222,23 @@ internal class TrackingDataSource(
         peak.updateAndGet { previous -> maxOf(previous, current) }
         val returned = AtomicBoolean()
         val handler = InvocationHandler { _, method, args ->
-            if (method.name == "close" && returned.compareAndSet(false, true)) {
+            val logicalLeaseReturned = method.name == "close" && returned.compareAndSet(false, true)
+            if (logicalLeaseReturned) {
                 // Hikari releases the physical lease inside delegate.close(). Mark the
                 // logical lease returned before invoking it so a waiting borrower cannot
                 // observe a transient peak above the configured pool size.
                 active.decrementAndGet()
             }
-            val result = invokeDelegate(connection, method, args)
+            val result = try {
+                invokeDelegate(connection, method, args)
+            } catch (cause: Throwable) {
+                if (logicalLeaseReturned) {
+                    // A failed close must not report an idle fixture while the delegate
+                    // may still own the lease; restore the conservative active count.
+                    active.incrementAndGet()
+                }
+                throw cause
+            }
             if (result is Statement && Statement::class.java.isAssignableFrom(method.returnType)) {
                 trackStatement(result, method.returnType)
             } else {

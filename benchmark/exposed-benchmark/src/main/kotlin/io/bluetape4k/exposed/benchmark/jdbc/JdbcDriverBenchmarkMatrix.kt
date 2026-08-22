@@ -16,7 +16,10 @@ internal data class JdbcDriverBenchmarkCase(
     init {
         require(rowCount > 0) { "rowCount must be positive: $rowCount" }
         require(poolSize > 0) { "poolSize must be positive: $poolSize" }
-        require(maxConcurrency > 0) { "maxConcurrency must be positive: $maxConcurrency" }
+        require(maxConcurrency == APPROVED_MAX_CONCURRENCY) {
+            "maxConcurrency must equal the approved benchmark concurrency " +
+                "$APPROVED_MAX_CONCURRENCY: $maxConcurrency"
+        }
     }
 }
 
@@ -61,3 +64,4 @@ internal fun buildDriverBenchmarkRanges(
 
 private val ROW_COUNTS = intArrayOf(1_000, 10_000)
 private val POOL_SIZES = intArrayOf(1, 2, 4)
+private const val APPROVED_MAX_CONCURRENCY = 2
