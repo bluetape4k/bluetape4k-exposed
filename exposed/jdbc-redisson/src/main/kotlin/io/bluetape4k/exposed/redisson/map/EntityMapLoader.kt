@@ -10,9 +10,9 @@ import org.redisson.api.map.MapLoader
  *
  * ## 동작/계약
  * - [load]는 `transaction { ... }` 안에서 [loadByIdFromDB]를 실행해 단건 엔티티를 읽습니다.
- * - 기본 [loadAllKeys]는 `queryTimeout=30_000`을 설정한 뒤 [loadAllIdsFromDB]를 실행합니다.
- *   Exposed 1.4.0의 `queryTimeout` 단위는 초이므로 현재 값은 30,000초이며,
- *   의도한 statement-timeout 값과 이름은 후속 Issue #699에서 별도로 정리합니다.
+ * - 기본 [loadAllKeys]는 Exposed transaction의 statement `queryTimeout`을 30초로
+ *   설정한 뒤 [loadAllIdsFromDB]를 실행합니다. Exposed `queryTimeout`의 단위는 초이며,
+ *   전체 키 materialization에 적용하는 외부 timeout과는 별개입니다.
  * - 입력/출력 객체를 mutate하지 않고, DB 조회 결과를 그대로 반환합니다.
  * - 운영 로그에는 caller-owned ID나 엔티티 payload를 기록하지 않습니다.
  *
@@ -32,7 +32,7 @@ open class EntityMapLoader<ID: Any, E: Any>(
     private val loadAllIdsFromDB: () -> Collection<ID>,
 ): MapLoader<ID, E> {
     companion object: KLogging() {
-        private const val DEFAULT_QUERY_TIMEOUT = 30_000 // Exposed queryTimeout 단위: seconds; #699에서 정리
+        private const val DEFAULT_QUERY_TIMEOUT_SECONDS = 30
     }
 
     /** 단일 키를 DB에서 로드합니다. */
@@ -49,7 +49,7 @@ open class EntityMapLoader<ID: Any, E: Any>(
     override fun loadAllKeys(): Iterable<ID>? =
         transaction {
             log.debug { "DB에서 모든 id 를 로드합니다..." }
-            queryTimeout = DEFAULT_QUERY_TIMEOUT
+            queryTimeout = DEFAULT_QUERY_TIMEOUT_SECONDS
             loadAllIdsFromDB()
         }
 }

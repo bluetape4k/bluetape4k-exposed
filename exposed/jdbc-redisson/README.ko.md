@@ -12,6 +12,7 @@ Exposed JDBC와 Redisson 캐시를 결합해 Read-Through/Write-Through 캐시 �
 
 - **MapLoader/MapWriter 지원**: Redisson Read-Through/Write-Through 캐시 연동
     - 동기 `loadAllKeys()`는 지원되는 scalar ID에서 순서가 보장된 keyset page를 사용하고 custom ID에서는 기존 offset fallback을 사용하며, 각 page는 `batchSize`로 제한
+    - 동기·suspended JDBC `loadAllKeys()` 경로는 Exposed의 statement별 `queryTimeout`을 30초로 설정합니다(`queryTimeout` 단위는 초). suspended 경로의 전체 열거 60초 예산은 별도 timeout입니다
     - `loadAllKeysInParallel(ranges, options)`는 호출자가 분할한 겹치지 않는 `[lowerInclusive, upperExclusive)` PK range를 Virtual Thread와 독립 JDBC transaction으로 병렬 열거하는 opt-in materialized 경로이며, bounded concurrency와 선언 순서 merge를 사용하고 기본 sequential loader는 변경하지 않음. Exposed range predicate는 `Comparable` PK 경계를 요구함
     - suspended `loadAllKeys()`는 rendezvous channel back-pressure를 사용하는 Redisson `AsyncIterator`로 PK 오름차순 keyset page를 스트리밍
     - 두 JDBC loader 경로 모두 keyset 비교를 사용할 수 없는 custom ID에서는 offset fallback을 사용하며, suspended 경로는 한 번에 `batchSize` page만 처리하고 caller cancellation을 producer transaction까지 전달함

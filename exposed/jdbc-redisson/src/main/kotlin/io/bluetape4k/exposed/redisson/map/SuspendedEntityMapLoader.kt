@@ -30,7 +30,7 @@ import java.util.concurrent.CompletionStage
  * ## 동작/계약
  * - [load]는 `suspendTransaction`으로 [loadByIdFromDB]를 실행해 단건 엔티티를 읽고 [CompletionStage]로 반환합니다.
  * - [loadAllKeys]는 [Channel]을 통해 [loadAllIdsFromDB]가 생산하는 ID를 [AsyncIterator]로 스트리밍합니다.
- * - 채널 내부에서 `maxAttempts = 1`, `queryTimeout = DEFAULT_QUERY_TIMEOUT`,
+ * - 채널 내부에서 `maxAttempts = 1`, statement `queryTimeout = 30초`,
  *   `withTimeout(DEFAULT_LOAD_ALL_IDS_TIMEOUT)` 보호막을 사용합니다. ID를 channel에
  *   방출한 뒤 transaction retry를 수행하면 이미 관찰된 ID가 중복될 수 있으므로,
  *   재시도가 필요하면 호출자가 전체 열거를 다시 시작해야 합니다.
@@ -66,7 +66,7 @@ open class SuspendedEntityMapLoader<ID: Any, E: Any>(
     private val scope: CoroutineScope = defaultMapLoaderCoroutineScope,
 ): MapLoaderAsync<ID, E> {
     companion object: KLoggingChannel() {
-        private const val DEFAULT_QUERY_TIMEOUT = 30_000 // Exposed queryTimeout 단위: seconds; #699에서 정리
+        private const val DEFAULT_QUERY_TIMEOUT_SECONDS = 30
         private const val DEFAULT_LOAD_ALL_IDS_TIMEOUT = 60_000L // 60 seconds
 
         protected val defaultMapLoaderCoroutineScope =
@@ -130,7 +130,7 @@ open class SuspendedEntityMapLoader<ID: Any, E: Any>(
                     suspendTransaction {
                         // channel 방출은 외부 부작용이므로 transaction retry로 안전하게 재생할 수 없다.
                         this.maxAttempts = 1
-                        this.queryTimeout = DEFAULT_QUERY_TIMEOUT // 30 seconds
+                        this.queryTimeout = DEFAULT_QUERY_TIMEOUT_SECONDS
                         withTimeout(DEFAULT_LOAD_ALL_IDS_TIMEOUT) {
                             loadAllIdsFromDB(channel)
                         }

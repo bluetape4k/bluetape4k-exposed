@@ -14,7 +14,7 @@ Combines Exposed R2DBC with Redisson caching to implement coroutine-friendly Rea
     - `R2dbcExposedEntityMapLoader` uses ascending keyset pages for supported scalar IDs and the legacy offset fallback for custom IDs
     - `loadAllKeys()` iterates reliably in ascending primary key order with rendezvous-channel back-pressure; only one `batchSize` page is materialized at a time and enumeration remains weakly consistent
     - top-level streaming uses Exposed `maxAttempts = 1` to prevent retry replays; producer errors and timeout causes are propagated through `AsyncIterator` instead of being reported as a normal end
-    - the full enumeration budget is 60 seconds; its timeout is delivered as an `AsyncIterator` failure. The per-query `queryTimeout` value/unit is tracked separately in [Issue #699](https://github.com/bluetape4k/bluetape4k-exposed/issues/699)
+    - each database statement executed by `loadAllKeys()` uses an Exposed transaction `queryTimeout` of 30 seconds (the property unit is seconds); the full enumeration budget is a separate 60-second timeout delivered as an `AsyncIterator` failure
     - a caller-owned ambient transaction keeps its own retry policy, so a partial ID can be observed again after an outer retry; exactly-once observation requires deduplication/idempotent handling or buffering external side effects until success, while retrying the whole enumeration restores completeness only. The default loader scope isolates one failed load from subsequent calls
 - **Repository abstraction**: Common cache + DB access pattern (`R2dbcRedissonRepository`)
 - **Coroutines-native repository API**: Cache and repository calls are `suspend` functions; Redisson SPI adapters remain async internally

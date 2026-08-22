@@ -18,6 +18,7 @@ import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 import io.bluetape4k.assertions.assertFailsWith
@@ -222,6 +223,25 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
             val ids = loader.loadAllKeys()!!.toList()
             ids.shouldBeEmpty()
         }
+    }
+
+    @Test
+    fun `loadAllKeys - JDBC queryTimeout은 초 단위 30으로 설정한다`() {
+        var observedQueryTimeout: Int? = null
+
+        withTables(TestDB.H2, LoaderTable) {
+            val loader = EntityMapLoader<Long, LoaderEntity>(
+                loadByIdFromDB = { null },
+                loadAllIdsFromDB = {
+                    observedQueryTimeout = TransactionManager.current().queryTimeout
+                    emptyList()
+                },
+            )
+
+            loader.loadAllKeys()
+        }
+
+        observedQueryTimeout.shouldNotBeNull() shouldBeEqualTo 30
     }
 
     @Test
