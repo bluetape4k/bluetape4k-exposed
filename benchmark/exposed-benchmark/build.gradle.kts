@@ -72,6 +72,28 @@ benchmark {
             outputTimeUnit = "s"
             reportFormat = "json"
         }
+        register("jdbcDriverPostgreSQL") {
+            include("io.bluetape4k.exposed.benchmark.jdbc.JdbcDriverKeyEnumerationBenchmark.*")
+            warmups = 1
+            iterations = 3
+            iterationTime = 1
+            iterationTimeUnit = "s"
+            mode = "thrpt"
+            outputTimeUnit = "s"
+            reportFormat = "json"
+            param("driver", "POSTGRESQL")
+        }
+        register("jdbcDriverMySQL") {
+            include("io.bluetape4k.exposed.benchmark.jdbc.JdbcDriverKeyEnumerationBenchmark.*")
+            warmups = 1
+            iterations = 3
+            iterationTime = 1
+            iterationTimeUnit = "s"
+            mode = "thrpt"
+            outputTimeUnit = "s"
+            reportFormat = "json"
+            param("driver", "MYSQL_V8")
+        }
         register("idTables") {
             include("io.bluetape4k.exposed.benchmark.id.*")
             warmups = 1
@@ -138,6 +160,7 @@ configurations {
 }
 
 dependencies {
+    add("testImplementation", bt4k.bluetape4k.assertions)
     add("benchmarkImplementation", bt4k.kotlinx.benchmark.runtime)
     add("benchmarkImplementation", bt4k.kotlinx.benchmark.runtime.jvm)
     add("benchmarkImplementation", bt4k.jmh.core)
@@ -153,6 +176,7 @@ dependencies {
     add("benchmarkImplementation", project(":bluetape4k-exposed-r2dbc-caffeine"))
     add("benchmarkImplementation", project(":bluetape4k-exposed-r2dbc-lettuce"))
     add("benchmarkImplementation", project(":bluetape4k-exposed-r2dbc-redisson"))
+    add("benchmarkImplementation", project(":bluetape4k-exposed-jdbc-tests"))
 
     add("benchmarkImplementation", bt4k.bluetape4k.core)
     add("benchmarkImplementation", bt4k.bluetape4k.coroutines)
@@ -169,6 +193,10 @@ dependencies {
     add("benchmarkImplementation", bt4k.exposed.jdbc)
     add("benchmarkImplementation", bt4k.exposed.r2dbc)
     add("benchmarkImplementation", bt4k.h2.v2)
+    add("benchmarkImplementation", libs.testcontainers.mysql)
+    add("benchmarkImplementation", libs.testcontainers.postgresql)
+    add("benchmarkImplementation", bt4k.mysql.connector.j)
+    add("benchmarkImplementation", bt4k.postgresql)
     add("benchmarkImplementation", bt4k.hikaricp)
     add("benchmarkImplementation", libs.kotlinx.coroutines.core)
     add("benchmarkImplementation", libs.kotlinx.coroutines.reactor)
