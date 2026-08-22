@@ -62,8 +62,9 @@ internal data class JdbcDriverBenchmarkCase(
     val maxConcurrency: Int = 2,
 )
 
+internal data class JdbcDriverBenchmarkRange(val lowerInclusive: Long?, val upperExclusive: Long?)
 internal fun jdbcDriverBenchmarkCases(): List<JdbcDriverBenchmarkCase>
-internal fun buildDriverBenchmarkRanges(rowCount: Int, rangeCount: Int): List<JdbcKeyRange<Long>>
+internal fun buildDriverBenchmarkRanges(rowCount: Int, rangeCount: Int): List<JdbcDriverBenchmarkRange>
 ```
 
 matrix는 `driver = POSTGRESQL, MYSQL_V8`, `rowCount = 1000, 10000`,
