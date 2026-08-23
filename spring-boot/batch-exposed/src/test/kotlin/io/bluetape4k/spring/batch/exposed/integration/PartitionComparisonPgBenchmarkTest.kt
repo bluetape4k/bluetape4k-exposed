@@ -14,6 +14,7 @@ import io.bluetape4k.spring.batch.exposed.reader.ExposedKeysetItemReader
 import io.bluetape4k.spring.batch.exposed.support.virtualThreadPartitionTaskExecutor
 import io.bluetape4k.spring.batch.exposed.writer.ExposedItemWriter
 import io.bluetape4k.testcontainers.database.PostgreSQLServer
+import io.bluetape4k.testcontainers.spring.registerDynamicProperties
 import io.bluetape4k.assertions.shouldBeEqualTo
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.junit.jupiter.api.MethodOrderer
@@ -36,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.transaction.PlatformTransactionManager
@@ -45,18 +47,22 @@ import kotlin.system.measureTimeMillis
  * PostgreSQL 대상 순차(1파티션) vs 병렬(4/8파티션) 처리 시간 비교 벤치마크.
  *
  * - [PostgreSQLServer.Launcher.postgres] Testcontainers 싱글턴 사용
- * - `@DynamicPropertySource`로 application-test.yml의 H2 datasource를 PostgreSQL로 교체
+ * - `postgresql-benchmark` profile이 `testcontainers.postgresql.*` placeholder로 datasource를 구성
+ * - `registerDynamicProperties`가 PostgreSQL 연결 프로퍼티를 Spring Test registry에 등록
+ * - `@ActiveProfiles("test", "postgresql-benchmark")`로 benchmark 전용 profile 선택
+ * - 기본 `test` profile의 H2 datasource는 일반 테스트에서 그대로 유지
  * - 50,000건 기준 각 파티션 구성의 처리 시간을 로그로 출력
  *
  * CI 제외: `@Tag("benchmark")` — `./gradlew test -PexcludeTags="benchmark"`
  *
  * 로컬 실행:
  * ```bash
- * ./gradlew :exposed-spring-boot-batch:test \
+ * ./gradlew :bluetape4k-exposed-spring-boot-batch:test \
  *   --tests "*PartitionComparisonPgBenchmarkTest*" -PincludeTags="benchmark"
  * ```
  */
 @Tag("benchmark")
+@ActiveProfiles("test", "postgresql-benchmark")
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class PartitionComparisonPgBenchmarkTest : AbstractExposedBatchJobTest() {
 
@@ -66,10 +72,7 @@ class PartitionComparisonPgBenchmarkTest : AbstractExposedBatchJobTest() {
         @JvmStatic
         @DynamicPropertySource
         fun overrideDataSource(registry: DynamicPropertyRegistry) {
-            registry.add("spring.datasource.url") { postgres.jdbcUrl }
-            registry.add("spring.datasource.driver-class-name") { PostgreSQLServer.DRIVER_CLASS_NAME }
-            registry.add("spring.datasource.username") { postgres.username ?: "test" }
-            registry.add("spring.datasource.password") { postgres.password ?: "test" }
+            postgres.registerDynamicProperties(registry)
         }
     }
 
