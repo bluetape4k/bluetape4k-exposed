@@ -26,6 +26,7 @@ import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.sql.Connection
+import java.sql.SQLException
 import java.sql.SQLTransientConnectionException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -44,6 +45,57 @@ import javax.sql.DataSource
  * 변경하지 않으며, Hikari connection lease 계측은 test-only decorator로 한정합니다.
  */
 class PostgreSQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
+
+    @Test
+    @Suppress("LongMethod")
+    fun `PostgreSQL cancelQuery rolls back cancelled transaction and releases leases`() {
+        assumePostgreSQL()
+
+        PostgreSQLFixture(newEnumerationTable(), poolSize = 2).use { fixture ->
+            val target = fixture.tracker.getConnection()
+            val observer = fixture.tracker.getConnection()
+            val executor = Executors.newVirtualThreadPerTaskExecutor()
+            val failure = AtomicReference<Throwable?>()
+            val backendPid = invokePostgreSQLConnectionMethod(target, "getBackendPID") as Int
+            target.autoCommit = false
+            try {
+                val query = executor.submit {
+                    try {
+                        target.createStatement().use { statement ->
+                            statement.executeQuery("SELECT pg_sleep(30)").use { result ->
+                                while (result.next()) {
+                                    // The query is expected to be cancelled before a row arrives.
+                                }
+                            }
+                        }
+                    } catch (cause: Throwable) {
+                        failure.set(cause)
+                    }
+                }
+
+                awaitActiveSleep(observer, backendPid)
+                invokePostgreSQLConnectionMethod(target, "cancelQuery")
+                query.get(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+
+                val cancellation = failure.get() as? SQLException
+                    ?: error("cancelQuery must interrupt the active PostgreSQL statement")
+                cancellation.sqlState shouldBeEqualTo "57014"
+
+                target.rollback()
+                target.createStatement().use { statement ->
+                    statement.executeQuery("SELECT 1").use { result ->
+                        result.next().shouldBeTrue()
+                        result.getInt(1) shouldBeEqualTo 1
+                    }
+                }
+            } finally {
+                executor.close()
+                target.close()
+                observer.close()
+            }
+            fixture.tracker.active.get() shouldBeEqualTo 0
+        }
+    }
 
     @Test
     fun `PostgreSQL sparse IDs keep sequential and parallel ordering`() {
@@ -372,6 +424,39 @@ class PostgreSQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
         Assumptions.assumeTrue(TestDB.POSTGRESQL in TestDB.enabledDialects())
     }
 
+    private fun awaitActiveSleep(
+        observer: Connection,
+        backendPid: Int,
+    ) {
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(LATCH_TIMEOUT_SECONDS)
+        while (System.nanoTime() < deadline) {
+            observer.prepareStatement(
+                """
+                SELECT 1
+                FROM pg_stat_activity
+                WHERE pid = ? AND state = 'active' AND query ILIKE '%pg_sleep%'
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setInt(1, backendPid)
+                statement.executeQuery().use { result ->
+                    if (result.next()) return
+                }
+            }
+            Thread.sleep(25)
+        }
+        error("PostgreSQL pg_sleep query did not become active before cancellation")
+    }
+
+    private fun invokePostgreSQLConnectionMethod(
+        connection: Connection,
+        methodName: String,
+    ): Any? {
+        val extensionType = Class.forName(POSTGRESQL_CONNECTION_TYPE)
+        val unwrap = Connection::class.java.getMethod("unwrap", Class::class.java)
+        val extension = unwrap.invoke(connection, extensionType)
+        return extension.javaClass.getMethod(methodName).invoke(extension)
+    }
+
     private fun hasConnectionTimeoutCause(failure: Throwable): Boolean =
         generateSequence(failure) { it.cause }.any { cause ->
             cause is SQLTransientConnectionException ||
@@ -517,6 +602,7 @@ class PostgreSQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
         private const val DEFAULT_HIKARI_TIMEOUT_MS = 5_000L
         private const val LATCH_TIMEOUT_SECONDS = 5L
         private const val POSTGRESQL_DRIVER = "org.postgresql.Driver"
+        private const val POSTGRESQL_CONNECTION_TYPE = "org.postgresql.PGConnection"
         private val tableSequence = AtomicLong()
 
         private fun newEnumerationTable(): EnumerationTable =

@@ -7,22 +7,30 @@ import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.EntityIDColumnType
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.greaterEq
 import org.jetbrains.exposed.v1.core.less
+import org.jetbrains.exposed.v1.core.statements.StatementContext
+import org.jetbrains.exposed.v1.core.statements.StatementInterceptor
+import org.jetbrains.exposed.v1.core.statements.api.PreparedStatementApi
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.select
+import org.jetbrains.exposed.v1.jdbc.statements.api.JdbcPreparedStatementApi
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.transactions.transactionManager
+import java.sql.Connection
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.jvm.JvmSynthetic
 
 /**
@@ -111,6 +119,25 @@ internal fun <ID: Any> parallelJdbcKeyEnumeration(
     ranges: List<JdbcKeyRange<ID>>,
     options: JdbcParallelKeyEnumerationOptions<ID>,
     rangeReader: JdbcTransaction.(IdTable<ID>, JdbcKeyRange<ID>) -> List<ID>,
+): List<ID> =
+    parallelJdbcKeyEnumeration(table, ranges, options) { sourceTable, range, _ ->
+        rangeReader(sourceTable, range)
+    }
+
+/**
+ * test source capability probe가 child lifecycle을 확인할 수 있는 internal overload입니다.
+ *
+ * 이 handle은 public options/result API에 포함하지 않습니다. active JDBC connection과
+ * Exposed prepared statement를 단조 증가 child generation에 묶어, 오래된 registration이
+ * 새로운 child registration을 지우지 못하게 합니다.
+ */
+@JvmSynthetic
+@Suppress("TooGenericExceptionCaught")
+internal fun <ID: Any> parallelJdbcKeyEnumeration(
+    table: IdTable<ID>,
+    ranges: List<JdbcKeyRange<ID>>,
+    options: JdbcParallelKeyEnumerationOptions<ID>,
+    rangeReader: JdbcTransaction.(IdTable<ID>, JdbcKeyRange<ID>, JdbcEnumerationChildHandle) -> List<ID>,
 ): List<ID> {
     if (ranges.isEmpty()) {
         return emptyList()
@@ -145,8 +172,8 @@ internal fun <ID: Any> parallelJdbcKeyEnumeration(
                         transactionIsolation = options.transactionIsolation,
                         readOnly = options.readOnly,
                         permits = permits,
-                    ) {
-                        rangeReader(table, range)
+                    ) { childHandle ->
+                        rangeReader(table, range, childHandle)
                     }
             } catch (cause: Throwable) {
                 permits.release()
@@ -207,10 +234,11 @@ private fun <T> submitJdbcEnumerationChild(
     transactionIsolation: Int?,
     readOnly: Boolean,
     permits: Semaphore,
-    statement: JdbcTransaction.() -> T,
+    statement: JdbcTransaction.(JdbcEnumerationChildHandle) -> T,
 ): JdbcEnumerationChild<T> {
     val completion = CountDownLatch(1)
     val lifecycle = AtomicInteger(CHILD_NEW)
+    val handle = JdbcEnumerationChildHandle()
     val future =
         virtualFuture(executor = executor) {
             if (!lifecycle.compareAndSet(CHILD_NEW, CHILD_RUNNING)) {
@@ -223,7 +251,23 @@ private fun <T> submitJdbcEnumerationChild(
                     transactionIsolation = isolationLevel,
                     readOnly = readOnly,
                 ) {
-                    statement(this)
+                    val connectionRegistration =
+                        handle.registerConnection(
+                            this.connection.connection as? Connection
+                                ?: error("JDBC enumeration requires a java.sql.Connection"),
+                        )
+                    val interceptor = JdbcEnumerationStatementInterceptor(handle)
+                    registerInterceptor(interceptor)
+                    try {
+                        statement(handle)
+                    } finally {
+                        try {
+                            unregisterInterceptor(interceptor)
+                        } finally {
+                            handle.clearCurrentStatement()
+                            handle.clearConnection(connectionRegistration)
+                        }
+                    }
                 }
             } finally {
                 if (lifecycle.compareAndSet(CHILD_RUNNING, CHILD_COMPLETED)) {
@@ -238,6 +282,7 @@ private fun <T> submitJdbcEnumerationChild(
         completion = completion,
         lifecycle = lifecycle,
         permits = permits,
+        handle = handle,
     )
 }
 
@@ -266,12 +311,100 @@ private class JdbcEnumerationChild<T>(
     val completion: CountDownLatch,
     private val lifecycle: AtomicInteger,
     private val permits: Semaphore,
+    val handle: JdbcEnumerationChildHandle,
 ) {
     fun cancelBeforeStart() {
         if (lifecycle.compareAndSet(CHILD_NEW, CHILD_CANCELLED)) {
             permits.release()
             completion.countDown()
         }
+    }
+}
+
+private val nextJdbcEnumerationGeneration = AtomicLong()
+
+/**
+ * 하나의 enumeration child가 사용하는 internal identity registry입니다.
+ *
+ * registration 제거는 [AtomicReference.compareAndSet]로 generation과 object identity를
+ * 함께 확인합니다. 따라서 늦게 도착한 clear가 다른 child에 이미 등록된 connection이나
+ * statement를 제거하지 못합니다.
+ */
+internal class JdbcEnumerationChildHandle internal constructor(
+    val generation: Long = nextJdbcEnumerationGeneration.incrementAndGet(),
+) {
+    private val activeConnection = AtomicReference<JdbcEnumerationHandleRegistration<Connection>?>(null)
+    private val activeStatement = AtomicReference<JdbcEnumerationHandleRegistration<JdbcPreparedStatementApi>?>(null)
+
+    internal fun registerConnection(connection: Connection): JdbcEnumerationHandleRegistration<Connection> {
+        val registration = JdbcEnumerationHandleRegistration(generation, connection)
+        check(activeConnection.compareAndSet(null, registration)) {
+            "JDBC enumeration connection is already registered for generation=$generation"
+        }
+        return registration
+    }
+
+    internal fun clearConnection(registration: JdbcEnumerationHandleRegistration<Connection>): Boolean =
+        activeConnection.compareAndSet(registration, null)
+
+    internal fun currentConnection(expectedGeneration: Long): Connection? =
+        activeConnection.get()
+            ?.takeIf { it.generation == expectedGeneration }
+            ?.value
+
+    internal fun registerStatement(
+        statement: JdbcPreparedStatementApi,
+    ): JdbcEnumerationHandleRegistration<JdbcPreparedStatementApi> {
+        val registration = JdbcEnumerationHandleRegistration(generation, statement)
+        // Exposed는 statement 실패 시 afterExecution을 호출하지 않습니다. active registration을
+        // 교체하면 range reader가 복구 후 다음 statement를 실행할 수 있고, 정확한 object identity
+        // 비교를 통한 제거는 이전 callback이 새 registration을 지우지 못하게 합니다.
+        activeStatement.set(registration)
+        return registration
+    }
+
+    internal fun clearStatement(registration: JdbcEnumerationHandleRegistration<JdbcPreparedStatementApi>): Boolean =
+        activeStatement.compareAndSet(registration, null)
+
+    internal fun clearStatement(statement: JdbcPreparedStatementApi): Boolean {
+        val registration = activeStatement.get() ?: return false
+        return registration.value === statement && activeStatement.compareAndSet(registration, null)
+    }
+
+    internal fun currentStatement(expectedGeneration: Long): JdbcPreparedStatementApi? =
+        activeStatement.get()
+            ?.takeIf { it.generation == expectedGeneration }
+            ?.value
+
+    internal fun clearCurrentStatement() {
+        activeStatement.set(null)
+    }
+}
+
+internal data class JdbcEnumerationHandleRegistration<T>(
+    val generation: Long,
+    val value: T,
+)
+
+private class JdbcEnumerationStatementInterceptor(
+    private val handle: JdbcEnumerationChildHandle,
+): StatementInterceptor {
+
+    @Suppress("UNUSED_PARAMETER")
+    override fun afterStatementPrepared(
+        transaction: Transaction,
+        preparedStatement: PreparedStatementApi,
+    ) {
+        (preparedStatement as? JdbcPreparedStatementApi)?.let(handle::registerStatement)
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    override fun afterExecution(
+        transaction: Transaction,
+        contexts: List<StatementContext>,
+        executedStatement: PreparedStatementApi,
+    ) {
+        (executedStatement as? JdbcPreparedStatementApi)?.let(handle::clearStatement)
     }
 }
 
