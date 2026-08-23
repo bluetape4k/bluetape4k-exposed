@@ -1,4 +1,4 @@
-# Issue #707 JDBC driver 강제 abort 계약 설계
+# Issue #707 JDBC driver 취소·generation-bound 내부 handle 구현 계약
 
 ## 문서 상태
 
@@ -7,212 +7,157 @@
 - 관련 runtime fix: [#697](https://github.com/bluetape4k/bluetape4k-exposed/issues/697), PR #706
 - 비-H2 handoff: [#694](https://github.com/bluetape4k/bluetape4k-exposed/issues/694)
 - 기준 base: `develop` `9fda4b0984d30d9e0f4514281e663d4bd4221e04`
-- 구현 branch: `design/issue-707-driver-abort`
+- 구현 branch: `feat/issue-707-generation-handle`
 - worktree: `.worktrees/design-issue-707-driver-abort`
-- 분류: **Type D — driver capability 조사·계약 설계**
+- 분류: **Type A — 내부 lifecycle 기능과 backend runtime evidence**
 - 안정 manual: `docs/manual/**` `1.12.1` 불변
+- 별도 보류: public driver adapter, generic timeout, `Connection.abort()` fallback, PR/merge
 
-## 문제 정의
+이번 문서는 이전 Type D 조사·설계 결과를 구현 slot의 source/runtime evidence로 갱신한다.
+public API/ABI를 확장하지 않고 production 내부 handle과 test-only runtime fixture만
+추가했다. 공통 강제 abort의 의미와 pool ownership은 별도 설계가 필요한 비목표다.
+
+## 문제 정의와 결정
 
 PR #706은 취소 요청 뒤 child transaction·JDBC connection이 실제로 닫힐 때까지
-`CountDownLatch`를 기다리는 계약을 고정했다. 그러나 외부 JDBC driver가 interrupt를
-무기한 무시하면 caller가 영원히 기다릴 수 있다. 이 동작을 일반적인
-`forceAbort` 또는 임의 timeout으로 숨기면 `Statement.cancel`, `Connection.abort`,
-서버 측 query cancel의 의미와 연결 소유권이 driver마다 달라 안전하지 않다.
+`CountDownLatch`를 기다리는 계약을 고정했다. 외부 JDBC driver가 interrupt를 무시해도
+generic timeout이나 공통 `forceAbort`로 terminal barrier를 우회하지 않는다.
 
-현재 child lifecycle handle은 future/latch/permit만 보유하고 active
-`Statement`·`Connection` identity를 노출하지 않는다. 연결이 Hikari pool로 반환된
-뒤 stale handle이 새 child의 연결을 abort하는 race도 방지해야 한다.
+이번 구현은 다음 두 가지를 고정한다.
 
-## 조사 근거
+1. 각 child에 monotonic generation을 가진 internal handle을 만들고, active JDBC
+   `Connection`과 Exposed `JdbcPreparedStatementApi`를 `AtomicReference`로 추적한다.
+2. driver capability는 source 확인과 real runtime fixture를 분리한다. cancel acknowledgement,
+   rollback, 다음 query recovery, pool lease release를 한 row의 필수 관찰로 삼는다.
 
-현재 dependency cache와 source를 줄 단위로 확인했다.
+`JdbcParallelKeyEnumerationOptions`의 public field와 기본 sequential loader는 변경하지
+않는다. internal test-source overload만 handle을 관찰할 수 있도록 추가하며
+`@JvmSynthetic`으로 JVM 호출 surface를 제한한다.
 
-| driver | 확인한 capability | 이번 설계에서의 의미 |
-| --- | --- | --- |
-| PostgreSQL JDBC 42.7.13 | `org.postgresql.PGConnection.cancelQuery()` | active query cancel 후보. 연결 강제 종료와 동일하다고 해석하지 않는다. |
-| MySQL Connector/J 9.7.0 | `JdbcStatement.cancel()`; 표준 `Connection.abort(Executor)`는 연결 종료 경계 | statement cancel과 destructive abort를 분리한다. `queryTimeoutKillsConnection` 정책을 generic 계약으로 복사하지 않는다. |
-| MariaDB Connector/J 3.5.10 | `Statement.cancel()`, `Connection.cancelCurrentQuery()`, `Connection.abort(Executor)` | driver-specific adapter 후보지만 MySQL과 같은 의미라고 일반화하지 않는다. |
-| CockroachDB + pgjdbc | repository가 pgjdbc를 사용하지만 서버 취소·JDBC 지원 동작은 별도 검증 필요 | PostgreSQL 행을 상속하지 않고 real container 또는 `N/A`로 고정한다. |
+## 조사 및 runtime 근거
 
-외부 API 의미는 다음 공식 문서와 구현을 기준으로 한다.
+확인한 exact dependency/version은 PostgreSQL JDBC `42.7.13`, MySQL Connector/J
+`9.7.0`, MariaDB Connector/J `3.5.10`, CockroachDB image `v25.4.14`와 repository의
+pgjdbc 경로다. source capability와 runtime 결과를 같은 PASS로 합치지 않았다.
 
-- [Java `Statement.cancel`](https://docs.oracle.com/en/java/javase/25/docs/api/java.sql/java/sql/Statement.html#cancel())
-- [Java `Connection.abort`](https://docs.oracle.com/en/java/javase/25/docs/api/java.sql/java/sql/Connection.html#abort(java.util.concurrent.Executor))
-- [pgjdbc `PGConnection`](https://github.com/pgjdbc/pgjdbc/blob/master/pgjdbc/src/main/java/org/postgresql/PGConnection.java)
-- [MySQL Connector/J `JdbcStatement`](https://github.com/mysql/mysql-connector-j/blob/release/9.7.0/src/main/user-impl/java/com/mysql/cj/jdbc/JdbcStatement.java)
-- [MariaDB Connector/J `Connection`](https://github.com/mariadb-corporation/mariadb-connector-j/blob/master/src/main/java/org/mariadb/jdbc/Connection.java)
-
-## 실행 증거 — 2026-08-23
-
-이번 slot에서는 source capability와 실제 driver 동작을 같은 PASS로 합치지 않았다.
-dependency cache에서 확인한 exact version은 PostgreSQL JDBC `42.7.13`, MySQL
-Connector/J `9.7.0`, MariaDB Connector/J `3.5.10`이다. CockroachDB는 별도 JDBC
-driver alias 없이 Testcontainers module만 확인되며, 실제 연결 경로는 pgjdbc와 서버
-동작을 함께 증명해야 한다.
-
-| backend/driver | source capability | runtime evidence | 상태와 경계 |
+| backend/driver | operation과 scope | runtime evidence | 상태와 경계 |
 | --- | --- | --- | --- |
-| PostgreSQL / pgjdbc `42.7.13` | `PGConnection.cancelQuery()`, `getBackendPID()` | `PostgreSQLJdbcParallelKeyEnumerationTest.PostgreSQL cancelQuery rolls back cancelled transaction and releases leases`가 active `pg_sleep(30)`을 취소하고 SQLState `57014`를 확인한 뒤 명시적으로 `rollback()`하고 `SELECT 1` recovery 및 Hikari `active == 0`을 확인 | **PASS** — query cancel proof이며 `Connection.abort()` proof가 아님 |
-| MySQL / Connector/J `9.7.0` | `JdbcStatement.cancel()` source가 새 native session에서 `KILL QUERY <threadId>`를 전송; 표준 `Connection.abort(Executor)`는 연결 종료 경계 | 기존 lifecycle/rollback/interrupt-ignore 11개 테스트는 PASS지만 `Statement.cancel()`의 active query effect와 recovery fixture는 아직 없음 | **PENDING** — source만으로 runtime PASS를 만들지 않음 |
-| MariaDB / Connector/J `3.5.10` | `Connection.cancelCurrentQuery()`, `Statement.cancel()`, `Statement.abort()`, `Connection.abort(Executor)` | 이 저장소에 MariaDB cancel fixture와 직접 driver alias가 없음 | **PENDING/N/A** — MySQL semantics를 상속하지 않음 |
-| CockroachDB + pgjdbc | Testcontainers Cockroach module과 pgjdbc 경로는 확인했지만 server-side cancel/query recovery는 별도 계약 | real Cockroach cancel fixture를 실행하지 않음 | **PENDING/N/A** — PostgreSQL PASS를 대체하지 않음 |
+| PostgreSQL / pgjdbc `42.7.13` | `PGConnection.cancelQuery()` query scope | active `pg_sleep(30)`을 취소하고 SQLState `57014`, 명시적 `rollback()`, `SELECT 1`, Hikari `active == 0` 확인 | **PASS** — query cancel이며 `Connection.abort()` 증거는 아님 |
+| MySQL / Connector/J `9.7.0` | `Statement.cancel()` query scope; driver source는 native session에서 `KILL QUERY` 전송 | `PROCESSLIST`에서 `SLEEP(30)`을 관찰한 뒤 `Statement.cancel()`을 호출하고, 실제 종료를 확인했다. Connector/J는 이 경우 예외 대신 `SLEEP()` 결과 `1`을 반환할 수 있으며, rollback·`SELECT 1`·tracker `active == 0`을 확인 | **PASS** — source claim과 실제 effect를 모두 확인 |
+| MariaDB / Connector/J `3.5.10` | driver-specific `Connection.cancelCurrentQuery()` query scope | `PROCESSLIST` active query를 관찰하고 runtime-only driver를 reflection unwrap해 `cancelCurrentQuery()`를 호출했다. 종료 결과, rollback·`SELECT 1`·tracker `active == 0`을 확인 | **PASS** — MySQL 결과를 상속하지 않는 별도 fixture |
+| CockroachDB `v25.4.14` + pgjdbc `42.7.13` | PostgreSQL-wire `PGConnection.cancelQuery()` query scope | `SHOW QUERIES`에서 `pg_sleep`를 관찰한 뒤 cancel을 호출하고 SQLState `57014`, rollback·`SELECT 1`·tracker `active == 0`을 확인 | **PASS** — Cockroach server fixture로 별도 증명 |
 
-H2 targeted lifecycle `10/10`, PostgreSQL class `8/8`, MySQL class `11/11`은 모두
-`BUILD SUCCESSFUL`이다. 다만 H2와 기존 PG/MySQL 행은 transaction/lease lifecycle
-증거이고, driver cancel capability의 PASS로 승격하지 않는다. PostgreSQL fixture는
-다음 명령을 Docker/Testcontainers에서 순차 실행했다.
+핵심 fixture는 다음 source에 있다.
 
-```bash
-./gradlew :bluetape4k-exposed-jdbc:test \
-  --tests 'io.bluetape4k.exposed.jdbc.PostgreSQLJdbcParallelKeyEnumerationTest.PostgreSQL cancelQuery rolls back cancelled transaction and releases leases' \
-  --no-daemon
-./gradlew :bluetape4k.exposed-jdbc:test \
-  --tests 'io.bluetape4k.exposed.jdbc.PostgreSQLJdbcParallelKeyEnumerationTest' \
-  --no-daemon
-```
+- [generation-bound H2 lifecycle tests](../../../exposed/jdbc/src/test/kotlin/io/bluetape4k/exposed/jdbc/JdbcParallelKeyEnumerationTest.kt)
+- [MySQL cancel/recovery test](../../../exposed/jdbc/src/test/kotlin/io/bluetape4k/exposed/jdbc/MySQLJdbcParallelKeyEnumerationTest.kt)
+- [MariaDB cancel/recovery test](../../../exposed/jdbc/src/test/kotlin/io/bluetape4k/exposed/jdbc/MariaDBJdbcDriverCancellationTest.kt)
+- [CockroachDB cancel/recovery test](../../../exposed/jdbc/src/test/kotlin/io/bluetape4k/exposed/jdbc/CockroachDbJdbcCancellationTest.kt)
+- [production internal handle](../../../exposed/jdbc/src/main/kotlin/io/bluetape4k/exposed/jdbc/JdbcParallelKeyEnumeration.kt)
 
-fixture의 핵심 관찰 지점은
-[PostgreSQLJdbcParallelKeyEnumerationTest.kt:51](../../../exposed/jdbc/src/test/kotlin/io/bluetape4k/exposed/jdbc/PostgreSQLJdbcParallelKeyEnumerationTest.kt#L51),
-active query polling은
-[같은 파일:427](../../../exposed/jdbc/src/test/kotlin/io/bluetape4k/exposed/jdbc/PostgreSQLJdbcParallelKeyEnumerationTest.kt#L427),
-runtime-only driver 반사는
-[같은 파일:450](../../../exposed/jdbc/src/test/kotlin/io/bluetape4k/exposed/jdbc/PostgreSQLJdbcParallelKeyEnumerationTest.kt#L450)에
-있다. 처음에는 `org.postgresql.PGConnection`을 직접 import해 `compileTestKotlin`이
-실패했는데, PostgreSQL driver가 `testRuntimeOnly`인 현재 classpath 계약을 유지하도록
-reflection 기반 unwrap으로 고쳤고, 수정 후 targeted test와 전체 PG class가 통과했다.
+MariaDB와 CockroachDB test는 `testRuntimeOnly` driver classpath를 보존하기 위해
+reflection unwrap을 사용한다. compile-time 직접 import가 필요하지 않으며, runtime에서
+실제 method invocation이 성공해야 PASS가 된다.
 
-각 evidence row는 `driver/version`, `operation`, `scope`, `destructive 여부`,
-`active lease`, `rollback`, `next-query recovery`, `실행 명령`, `status`,
-`unsupported/pending 근거`를 보유한다. `PASS`는 해당 row의 모든 필수 관찰을 실제로
-확인한 경우에만 사용하며, Docker·권한·driver 부재는 `PENDING` 또는 `N/A`로 남긴다.
+## 채택한 lifecycle 계약
 
-## 목표
-
-1. driver별 query cancel, connection abort, rollback, active lease 회수, 다음 query
-   recovery를 분리한 capability matrix를 만든다.
-2. unsupported capability를 정상 완료나 timeout 성공으로 가장하지 않고 `UNSUPPORTED`,
-   `N/A`, `PENDING`, `FAIL`을 구분한다.
-3. active statement/connection을 generation identity와 함께 등록·해제하는 lifecycle
-   경계를 정의해 pool 반환 후 stale abort를 차단한다.
-4. abort 요청은 terminal completion이 아니며, 기존 transaction cleanup latch가 유일한
-   terminal barrier라는 규칙을 고정한다.
-5. caller-owned child executor를 닫지 않고, abort 작업은 별도 소유권의 bounded executor
-   또는 명시적 driver adapter가 책임지도록 한다.
-
-## 불변 경계와 비목표
-
-- 이번 설계 slot에서는 `JdbcParallelKeyEnumerationOptions`에 `forceAbort`, timeout,
-  driver callback을 추가하지 않는다. defaulted data-class field는 constructor/copy/
-  component ABI를 바꿀 수 있다.
-- `java.sql.Statement.cancel()`을 모든 driver에서 강제 abort로 취급하지 않는다.
-- `Connection.abort(Executor)`를 transaction 성공·rollback·pool 반환보다 먼저 끝난
-  terminal signal로 취급하지 않는다.
-- SQL session kill, query-id 추적, Hikari eviction, TCP close를 generic fallback으로
-  넣지 않는다. 권한·세대 race·다른 요청 영향이 별도 계약이다.
-- public API, `VirtualFuture`, executor 소유권, 기본 sequential loader,
-  `docs/manual/**`, dependency/catalog/workflow를 변경하지 않는다.
-
-## 채택 설계
-
-### 1. Capability matrix와 상태 모델
-
-내부 설계 모델은 다음 상태를 구분한다.
-
-```text
-UNSUPPORTED -> CANCEL_REQUESTED -> DRIVER_ACKNOWLEDGED
-                          \-> ABORT_REQUESTED -> CONNECTION_CLOSED
-child transaction cleanup + lease release -> TERMINAL
-```
-
-`DRIVER_ACKNOWLEDGED`나 `CONNECTION_CLOSED`만으로 parent 반환을 허용하지 않는다.
-실제 transaction wrapper의 `finally`에서 latch가 내려간 뒤에만 terminal이다.
-
-각 capability row는 driver/version, operation, statement/connection scope, destructive
-여부, active lease 관찰, rollback, next-query recovery, real fixture 명령, unsupported
-근거를 필수 필드로 갖는다.
-
-### 2. Generation-bound active handle
-
-후속 구현이 필요할 때 child마다 다음 internal handle을 만든다.
+### Generation-bound registration
 
 ```text
 ChildHandle {
-  generation: UUID/monotonic token
-  statement: AtomicReference<Statement?>
-  connection: AtomicReference<Connection?>
-  lifecycle: CountDownLatch
+  generation: monotonic Long
+  activeConnection: AtomicReference<Registration<Connection>?>
+  activeStatement: AtomicReference<Registration<JdbcPreparedStatementApi>?>
 }
 ```
 
-statement와 connection은 execute 직전 등록하고 transaction/connection close 직후
-원자적으로 해제한다. abort adapter는 generation이 일치하는 handle만 대상으로 삼고,
-이미 clear되었거나 다른 child가 대여한 connection에는 동작하지 않는다.
+- child transaction이 시작되면 underlying `java.sql.Connection`을 등록한다.
+- `StatementInterceptor.afterStatementPrepared`에서 현재 Exposed JDBC statement를
+  등록하고 `afterExecution`에서 같은 object identity만 제거한다.
+- statement 실패 시 Exposed가 `afterExecution`을 호출하지 않을 수 있으므로 다음
+  statement 등록은 이전 registration을 교체한다. 늦은 callback은 identity 비교 때문에
+  새 statement를 제거하지 못한다.
+- transaction body의 `finally`에서 interceptor, statement, connection을 정리한다.
+  이 정리 시점은 transaction wrapper의 commit/rollback 결과를 terminal로 선언하는
+  것이 아니며, 기존 child completion/latch 경계는 그대로 유지한다.
+- generation이 다르거나 이미 clear된 registration은 다른 child가 재대여한 pool
+  connection을 대상으로 삼을 수 없다. synthetic H2 test가 stale registration과
+  exact identity clear를 검증한다.
 
-### 3. API 경계
+### Terminal 및 ownership 경계
 
-첫 PR은 public API를 추가하지 않고 test-only capability probe와 design artifact로
-끝낸다. 실제 opt-in adapter가 필요하면 다음 별도 issue에서 driver-specific sealed
-adapter를 검토한다.
+```text
+cancel request -> driver acknowledgement (선택적 관찰)
+transaction rollback/close -> connection lease release
+child completion latch -> parent terminal barrier
+```
 
-- PostgreSQL: `PGConnection.cancelQuery` adapter 후보
-- MySQL/MariaDB: 각각의 `Statement.cancel`/`cancelCurrentQuery` adapter 후보
-- CockroachDB: real fixture가 pgjdbc CancelRequest와 server recovery를 증명할 때만
-  PostgreSQL adapter와의 관계를 결정한다.
+현재 구현은 query cancel adapter나 abort worker를 호출하지 않는다. caller-owned
+executor를 닫지 않으며, generic timeout·session kill·Hikari eviction·TCP close를
+fallback으로 추가하지 않는다.
 
-공통 `forceAbort=true` boolean, 임의 millisecond timeout, unsupported driver의
-`close()` fallback은 거부한다.
+## 불변 경계와 비목표
 
-## 검증 matrix와 실패 계약
+- `JdbcParallelKeyEnumerationOptions`에 `forceAbort`, timeout, driver callback을
+  추가하지 않는다. defaulted data-class field는 constructor/copy/component ABI를
+  바꿀 수 있다.
+- `Statement.cancel()`을 모든 driver의 강제 연결 종료로 해석하지 않는다.
+- `Connection.abort(Executor)`를 transaction cleanup보다 먼저 완료되는 terminal signal로
+  취급하지 않는다.
+- SQL session kill, query-id 추적, pool-wide close, 자동 retry를 generic fallback으로
+  넣지 않는다.
+- public API, `VirtualFuture`, executor 소유권, 기본 sequential loader,
+  `docs/manual/**`, dependency/catalog/workflow를 변경하지 않는다.
+- 이번 slot에서는 public driver-specific adapter와 PR/merge를 실행하지 않는다.
 
-| 검증 | 기대 | 미실행/실패 판정 |
+## 검증 matrix
+
+| 검증 | 기대 | 현재 evidence |
 | --- | --- | --- |
-| synthetic generation race | stale abort 0건, latch terminal 유지 | race/lease 관찰 실패는 FAIL |
-| PostgreSQL query cancel | cancel request 후 rollback·lease 0·next SELECT | Docker/driver unavailable은 PENDING; unsupported는 명시 |
-| MySQL query cancel | statement cancel의 실제 effect와 connection recovery | timeout만으로 PASS 금지 |
-| MariaDB cancel/abort | driver-specific capability를 별도 기록 | MySQL 결과 상속 금지 |
-| CockroachDB | pgjdbc와 server cancel semantics를 real fixture로 확인 | 미실행은 N/A/PENDING, PostgreSQL PASS 대체 금지 |
-| infinite interrupt-ignore driver | 강제 종료를 주장하지 않음 | 실제 종료까지 대기하는 기존 latch contract 유지 |
+| generation stale registration | 다른 generation 또는 이전 identity의 clear가 새 registration을 지우지 않음 | H2 `JdbcParallelKeyEnumerationTest` generation test, handle integration test |
+| H2 lifecycle regression | child/permit/latch/transaction cleanup 유지 | `JdbcParallelKeyEnumerationTest`: **12/12** |
+| PostgreSQL query cancel | SQLState, rollback, next query, lease 0 | `PostgreSQLJdbcParallelKeyEnumerationTest`: **8/8** |
+| MySQL query cancel | active query effect, rollback, next query, lease 0 | `MySQLJdbcParallelKeyEnumerationTest`: **12/12** |
+| MariaDB query cancel | driver-specific invocation, rollback, next query, lease 0 | `MariaDBJdbcDriverCancellationTest`: **1/1** |
+| CockroachDB query cancel | server visibility, pgjdbc cancel, rollback, next query, lease 0 | `CockroachDbJdbcCancellationTest`: **1/1** |
+| static analysis | changed production/test Kotlin clean | `:bluetape4k-exposed-jdbc:detekt` **BUILD SUCCESSFUL** |
 
-`Statement.cancel`이 예외를 던지거나 아무 효과가 없는 경우 원래 child failure와
-`suppressed` abort failure를 보존한다. abort worker가 늦어도 transaction cleanup
-barrier를 우회하지 않는다.
+모든 Testcontainers backend test는 서로 다른 Gradle invocation으로 순차 실행했다.
+Docker unavailable을 PASS로 승격하지 않았고, timeout 성공만으로 cancellation을
+주장하지 않았다.
 
 ## 수용 기준 상태
 
-- [~] PostgreSQL/MySQL/MariaDB/CockroachDB capability matrix에 exact version,
-  operation, ownership, rollback/recovery, real/unsupported evidence를 기록했다.
-  PostgreSQL은 runtime **PASS**, 나머지는 source-only 또는 미실행 **PENDING/N/A**다.
-- [x] generic `forceAbort`/임의 timeout을 추가하지 않았고 production diff가 없으며,
-  `JdbcParallelKeyEnumerationOptions` public data-class field도 변경하지 않았다.
-- [~] generation-bound statement/connection handle과 stale pool lease 방지 규칙은
-  후속 implementation contract로 고정했지만, 이 slot에서 synthetic race test나
-  production handle은 구현하지 않았다.
-- [x] 최소 한 실제 driver fixture와 미실행/PENDING backend row가 같은 evidence schema를
-  사용한다.
-- [x] `cancelQuery` acknowledgement와 `rollback()`/lease release/next-query recovery
-  terminal 경계를 문서와 PostgreSQL test-only fixture에서 분리했다.
-- [x] JDBC detekt, affected test/compile, `git diff --check`, terminology audit와 stable
-  manual guard를 최종 실행했다. PostgreSQL `8/8`, MySQL `11/11`, H2
-  `JdbcParallelKeyEnumerationTest` `10/10`이 모두 통과했고 `docs/manual/**`는 변경되지
-  않았다.
+- [x] 네 backend capability matrix에 exact version, operation, ownership,
+  rollback/recovery, active lease, 실제 runtime evidence를 기록했다.
+- [x] generation-bound internal connection/statement handle과 stale registration
+  방지 test를 production lifecycle에 연결했다.
+- [x] generic `forceAbort`/임의 timeout/`Connection.abort()` fallback과 public
+  `JdbcParallelKeyEnumerationOptions` ABI를 변경하지 않았다.
+- [x] MySQL, MariaDB, CockroachDB fixture는 PostgreSQL 결과를 상속하지 않고 각각
+  실제 driver/server invocation을 수행한다.
+- [x] H2/PG/MySQL/MariaDB/CockroachDB 및 JDBC detekt를 순차 fresh run으로 확인했다.
+- [x] `docs/manual/**`는 변경하지 않았고, 문서·review·lesson artifact를 현재 source와
+  결과에 맞춰 갱신한다.
+- [~] public driver-specific adapter, exact-head PR/CI, merge/issue close는 별도
+  권한·설계 gate가 필요하므로 이번 구현 slot의 비목표다.
 
-## 설계 gate
+## 설계 및 writer gate
 
-- [x] SPW-01 — Issue/Epic/base, runtime source, driver class/method와 공식 API source를
-  대조했다.
-- [x] SPW-02 — capability matrix, lifecycle/ownership, alternatives, failure/N/A와
-  acceptance를 고정했다.
-- [x] SPW-03 — 한국어 technical register와 `Statement.cancel`, `Connection.abort`,
-  `PENDING`, `UNSUPPORTED` token을 보존했다.
-- [x] SPW-04 — #697 latch/permit 코드와 local driver bytecode/source를 대조하고
-  unsupported claims를 분리했다.
-- [x] SPW-05 — 표·상태 그림·checklist·링크를 read-back했다.
+- [x] SPW-01 — Issue/Epic/base, source/runtime scope, exact driver versions와
+  non-goals를 fresh-read했다.
+- [x] SPW-02 — capability matrix, generation lifecycle, ownership, terminal barrier,
+  alternatives, acceptance를 고정했다.
+- [x] SPW-03 — 한국어 technical register를 적용하고 `Statement.cancel`,
+  `Connection.abort`, `PENDING`, `N/A`, `PASS` token을 보존했다.
+- [x] SPW-04 — production source, Testcontainers fixture, Gradle output과 기존
+  #697/#694 lifecycle contract를 대조했다.
+- [x] SPW-05 — 표·상태·링크·checklist를 최종 read-back하고 terminology audit 대상에
+  포함한다.
 
-## 설계 판정
+## 판정
 
-`PARTIAL / PENDING` — PostgreSQL query-cancel test-only 증거와 네 backend capability
-ledger의 책임 경계를 추가했지만, MySQL/MariaDB/Cockroach runtime row와
-generation-bound handle implementation은 남아 있다. public API/ABI·driver ownership을
-확정하기 전까지 공통 `forceAbort` 구현은 P1 contract blocker이며, 이번 slot은 production
-변경 없이 종료한다.
+**IMPLEMENTED / LOCAL-VERIFIED / DELIVERY-PENDING** — production public API를
+확장하지 않은 내부 handle과 네 backend runtime evidence는 구현·검증되었다. 다음
+delivery gate는 current head/CI/review를 fresh-read한 뒤 별도 PR 생성 및 merge 승인을
+받는 단계이며, 이 문서는 그 외부 mutation을 수행하지 않는다.

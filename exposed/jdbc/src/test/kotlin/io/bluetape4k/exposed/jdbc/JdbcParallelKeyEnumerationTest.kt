@@ -2,15 +2,24 @@ package io.bluetape4k.exposed.jdbc
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.Transaction
+import org.jetbrains.exposed.v1.core.statements.StatementContext
+import org.jetbrains.exposed.v1.core.statements.StatementInterceptor
+import org.jetbrains.exposed.v1.core.statements.api.PreparedStatementApi
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.statements.api.JdbcPreparedStatementApi
 import org.junit.jupiter.api.Test
+import java.lang.reflect.Proxy
+import java.sql.Connection
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -22,6 +31,87 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
 
     private object EnumerationTable: LongIdTable("jdbc_parallel_key_enumeration") {
         val name = varchar("name", 64)
+    }
+
+    @Test
+    fun `generation-bound connection registration ignores a stale generation`() {
+        val first = JdbcEnumerationChildHandle()
+        val second = JdbcEnumerationChildHandle()
+        val firstConnection = unusedConnection()
+        val secondConnection = unusedConnection()
+        val firstRegistration = first.registerConnection(firstConnection)
+        val secondRegistration = second.registerConnection(secondConnection)
+
+        first.generation shouldNotBeEqualTo second.generation
+        first.clearConnection(secondRegistration).shouldBeFalse()
+        (first.currentConnection(first.generation) === firstConnection).shouldBeTrue()
+        (second.currentConnection(second.generation) === secondConnection).shouldBeTrue()
+
+        first.clearConnection(firstRegistration).shouldBeTrue()
+        first.currentConnection(first.generation) shouldBeEqualTo null
+
+        val firstStatement = unusedPreparedStatement()
+        val secondStatement = unusedPreparedStatement()
+        val firstStatementRegistration = first.registerStatement(firstStatement)
+        first.registerStatement(secondStatement)
+
+        (first.currentStatement(first.generation) === secondStatement).shouldBeTrue()
+        first.clearStatement(firstStatementRegistration).shouldBeFalse()
+        first.clearStatement(firstStatement).shouldBeFalse()
+        first.clearStatement(secondStatement).shouldBeTrue()
+    }
+
+    @Test
+    fun `child handle tracks an Exposed statement and clears it after the transaction`() {
+        withTables(TestDB.H2, EnumerationTable) {
+            commit()
+            val observed = AtomicBoolean(false)
+            val handleRef = AtomicReference<JdbcEnumerationChildHandle>()
+
+            parallelJdbcKeyEnumeration(
+                table = EnumerationTable,
+                ranges = listOf(JdbcKeyRange(upperExclusive = 2L)),
+                options = JdbcParallelKeyEnumerationOptions(maxConcurrency = 1),
+            ) { _, _, handle ->
+                handleRef.set(handle)
+                val observer =
+                    object : StatementInterceptor {
+                        override fun afterStatementPrepared(
+                            transaction: Transaction,
+                            preparedStatement: PreparedStatementApi,
+                        ) {
+                            observed.set(
+                                handle.currentConnection(handle.generation) != null &&
+                                    (
+                                        handle.currentStatement(handle.generation) ===
+                                            preparedStatement as? JdbcPreparedStatementApi
+                                    ),
+                            )
+                        }
+
+                        override fun afterExecution(
+                            transaction: Transaction,
+                            contexts: List<StatementContext>,
+                            executedStatement: PreparedStatementApi,
+                        ) = Unit
+                    }
+                registerInterceptor(observer)
+                try {
+                    exec("SELECT 1") { resultSet ->
+                        resultSet.next()
+                        resultSet.getInt(1)
+                    }
+                } finally {
+                    unregisterInterceptor(observer)
+                }
+                emptyList()
+            }
+
+            observed.get().shouldBeTrue()
+            val handle = requireNotNull(handleRef.get())
+            (handle.currentConnection(handle.generation) == null).shouldBeTrue()
+            (handle.currentStatement(handle.generation) == null).shouldBeTrue()
+        }
     }
 
     @Test
@@ -357,4 +447,16 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
             }
         }
     }
+
+    private fun unusedConnection(): Connection =
+        Proxy.newProxyInstance(
+            Connection::class.java.classLoader,
+            arrayOf(Connection::class.java),
+        ) { _, _, _ -> error("unused JDBC connection proxy method") } as Connection
+
+    private fun unusedPreparedStatement(): JdbcPreparedStatementApi =
+        Proxy.newProxyInstance(
+            JdbcPreparedStatementApi::class.java.classLoader,
+            arrayOf(JdbcPreparedStatementApi::class.java),
+        ) { _, _, _ -> error("unused JDBC prepared statement proxy method") } as JdbcPreparedStatementApi
 }

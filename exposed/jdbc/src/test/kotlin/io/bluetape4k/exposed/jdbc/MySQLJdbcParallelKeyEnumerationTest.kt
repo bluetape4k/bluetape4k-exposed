@@ -372,6 +372,81 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
     }
 
     @Test
+    @Suppress("LongMethod", "NestedBlockDepth")
+    fun `MySQL Statement cancel interrupts an active query and recovers the lease`() {
+        assumeMySQL8()
+
+        MySQLFixture.create(newEnumerationTable(), poolSize = 2).use { fixture ->
+            val target = fixture.tracker.acquireForTest()
+            val observer = fixture.tracker.acquireForTest()
+            val executor = Executors.newVirtualThreadPerTaskExecutor()
+            val statement = target.createStatement()
+            try {
+                target.autoCommit = false
+                val connectionId =
+                    target.createStatement().use { probe ->
+                        probe.executeQuery("SELECT CONNECTION_ID()").use { result ->
+                            check(result.next()) { "MySQL connection id was not returned" }
+                            result.getLong(1)
+                        }
+                    }
+                val outcome = AtomicReference<Throwable?>()
+                val elapsedNanos = AtomicLong()
+                val sleepResult = AtomicReference<Int?>()
+                val future = executor.submit {
+                    val startedAt = System.nanoTime()
+                    try {
+                        if (statement.execute("SELECT SLEEP(30)")) {
+                            statement.resultSet?.use { result ->
+                                if (result.next()) {
+                                    sleepResult.set(result.getInt(1))
+                                }
+                            }
+                        }
+                    } catch (cause: Throwable) {
+                        outcome.set(cause)
+                    } finally {
+                        elapsedNanos.set(System.nanoTime() - startedAt)
+                    }
+                }
+
+                try {
+                    awaitMySQLSleep(observer, connectionId)
+                    statement.cancel()
+                    future.get(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+
+                    check(elapsedNanos.get() < TimeUnit.SECONDS.toNanos(LATCH_TIMEOUT_SECONDS)) {
+                        "Statement.cancel did not finish the MySQL query promptly"
+                    }
+                    outcome.get()?.let { cancellation ->
+                        hasMySQLCancellationCause(cancellation).shouldBeTrue()
+                    } ?: run {
+                        // KILL QUERY가 SLEEP()을 중단하면 MySQL은 Statement.execute() 예외 대신
+                        // 함수 결과 1을 반환할 수 있습니다.
+                        sleepResult.get() shouldBeEqualTo 1
+                    }
+                    target.rollback()
+                    target.createStatement().use { recovery ->
+                        recovery.executeQuery("SELECT 1").use { result ->
+                            check(result.next()) { "MySQL recovery query returned no row" }
+                            result.getInt(1) shouldBeEqualTo 1
+                        }
+                    }
+                } finally {
+                    runCatching { statement.cancel() }
+                    runCatching { target.close() }
+                    runCatching { observer.close() }
+                    runCatching { future.get(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS) }
+                }
+            } finally {
+                runCatching { statement.close() }
+                executor.close()
+            }
+            fixture.tracker.active.get() shouldBeEqualTo 0
+        }
+    }
+
+    @Test
     fun `MySQL cleanup preserves primary and suppressed failures`() {
         assumeMySQL8()
 
@@ -519,6 +594,37 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
         // Accessing the shared container is intentionally not wrapped: startup errors are failures.
         Containers.MySQL8
     }
+
+    private fun awaitMySQLSleep(
+        observer: Connection,
+        connectionId: Long,
+    ) {
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(LATCH_TIMEOUT_SECONDS)
+        while (System.nanoTime() < deadline) {
+            observer.prepareStatement(
+                """
+                SELECT 1
+                FROM information_schema.PROCESSLIST
+                WHERE ID = ? AND COMMAND = 'Query' AND INFO LIKE '%SLEEP%'
+                """.trimIndent(),
+            ).use { probe ->
+                probe.setLong(1, connectionId)
+                probe.executeQuery().use { result ->
+                    if (result.next()) return
+                }
+            }
+            Thread.sleep(25)
+        }
+        error("MySQL SLEEP query did not become active before cancellation")
+    }
+
+    private fun hasMySQLCancellationCause(failure: Throwable): Boolean =
+        generateSequence(failure) { it.cause }.any { cause ->
+            val sqlException = cause as? SQLException
+            sqlException?.errorCode == 1317 ||
+                sqlException?.sqlState == "70100" ||
+                cause.message.orEmpty().contains("interrupted", ignoreCase = true)
+        }
 
     private fun hasConnectionTimeoutCause(failure: Throwable): Boolean =
         generateSequence(failure) { it.cause }.any { cause ->

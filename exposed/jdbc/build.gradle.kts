@@ -59,6 +59,7 @@ dependencies {
     testImplementation(libs.testcontainers.mariadb)
     testImplementation(libs.testcontainers.mysql)
     testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.cockroachdb)
 
     // Spring Boot (테스트용)
     testImplementation("org.springframework.boot:spring-boot-starter-jdbc")

@@ -1,105 +1,131 @@
-# Issue #707 JDBC driver 강제 abort 설계 실행 계획
+# Issue #707 JDBC driver 취소·generation-bound 내부 handle 실행 계획
 
-> 이번 slot은 Type-D 조사·설계 산출물을 닫는다. generic public API나 driver-specific
-> abort 구현은 capability 증거와 별도 approval 뒤의 후속 slot으로 남긴다.
+> 이 계획은 Type D 조사·설계에서 승인된 범위를 Type A 내부 lifecycle 구현과
+> backend runtime evidence로 확장한 실행 기록이다. public API, generic timeout,
+> `Connection.abort()` fallback, PR/merge는 이번 slot의 비목표다.
 
 ## 기준과 허용 범위
 
 - base: `develop` `9fda4b0984d30d9e0f4514281e663d4bd4221e04`
-- branch/worktree: `design/issue-707-driver-abort` / `.worktrees/design-issue-707-driver-abort`
+- branch/worktree: `feat/issue-707-generation-handle` /
+  `.worktrees/design-issue-707-driver-abort`
 - live issue: #707, Epic #659, milestone `2.0.0`, assignee `debop`
-- 허용 파일: `docs/superpowers/specs/**`, `docs/superpowers/plans/**`,
-  `docs/review/**`, `docs/lessons/**`, test-only capability fixture가 승인된 경우의
-  `exposed/jdbc/src/test/**`
-- 금지: public/API/ABI, production `JdbcParallelKeyEnumeration.kt`, timeout/abort
-  fallback, dependency/catalog/workflow, `docs/manual/**` `1.12.1`
+- 허용 파일: `exposed/jdbc/src/main/**`의 internal lifecycle, 해당 test fixture,
+  `exposed/jdbc/build.gradle.kts` test dependency, `docs/superpowers/**`,
+  `docs/review/**`, `docs/lessons/**`
+- 금지: public/API/ABI, timeout/abort fallback, workflow/catalog, `docs/manual/**`
+  `1.12.1`, PR/merge/issue mutation
 
-## Task 0 — root-cause와 ownership preflight
+## Task 0 — root-cause와 ownership preflight — 완료
 
-1. `JdbcParallelKeyEnumeration.kt:221-275`의 child latch/permit/cancel 경계를 읽고,
-   `VirtualFuture` completion과 transaction terminal을 분리한다.
-2. Hikari tracker와 #694 PostgreSQL/MySQL fixture가 active lease를 관찰하는 지점을
-   확인한다.
-3. `JdbcParallelKeyEnumerationOptions`의 constructor/copy/component ABI를 기록하고
-   public field 추가 금지를 고정한다.
+1. `JdbcParallelKeyEnumeration.kt`의 child future/latch/permit/cancel 경계를 읽었다.
+2. Hikari tracker와 #694 PostgreSQL/MySQL fixture의 active lease 관찰 지점을
+   확인했다.
+3. `JdbcParallelKeyEnumerationOptions`의 constructor/copy/component ABI를 보존할
+   public field 금지를 확정했다.
 
-**Expected:** generic timeout/abort를 시작하지 않는 근거와 active-handle identity
-요건이 review에 남는다.
+**결과:** generic timeout/abort로 #697 terminal barrier를 우회하지 않으며, child별
+   active statement/connection identity와 generation이 필요하다는 근거를 확보했다.
 
-## Task 1 — capability source ledger — 완료(부분 runtime)
+## Task 1 — capability source ledger — 완료
 
-1. PostgreSQL 42.7.13, MySQL 9.7.0, MariaDB 3.5.10, CockroachDB repository
-   dependency를 exact version으로 기록한다.
-2. `Statement.cancel`, `Connection.abort`, driver-specific cancel method를
-   statement/connection scope와 destructive 여부로 나눈다.
-3. 공식 Javadoc/source URL, local `javap` output, unsupported/N/A 근거를 한 matrix에
-   묶는다. source claim과 runtime evidence를 같은 PASS로 합치지 않는다.
+1. PostgreSQL JDBC `42.7.13`, MySQL Connector/J `9.7.0`, MariaDB Connector/J
+   `3.5.10`, CockroachDB image `v25.4.14`와 pgjdbc 경로를 exact version으로
+   기록했다.
+2. `Statement.cancel`, driver-specific cancel, `Connection.abort(Executor)`를
+   query/connection scope와 destructive 여부로 분리했다.
+3. 공식 API/source와 local capability 확인을 runtime fixture 결과와 분리했다.
 
-**실행 결과:** PostgreSQL `42.7.13`, MySQL `9.7.0`, MariaDB `3.5.10`의 local
-capability를 확인하고, CockroachDB는 pgjdbc 경로와 별도 서버 검증 필요성을 기록했다.
-PostgreSQL은 real fixture PASS, MySQL/MariaDB/CockroachDB는 `PENDING/N/A`로 남겼다.
+**결과:** source capability는 runtime PASS의 충분조건이 아니며, 네 backend에 별도
+fixture가 필요하다는 규칙을 spec에 반영했다.
 
-## Task 2 — lifecycle/race design review — 완료(후속 구현 대기)
+## Task 2 — generation-bound production handle — 완료
 
-1. generation-bound active statement/connection handle과 atomic register/clear 시점을
-   설계한다.
-2. abort request/acknowledgement/transaction cleanup/lease release를 sequence로
-   그리고, stale pool connection과 abort executor 소유권을 failure mode로 적는다.
-3. `P0/P1/P2`를 severity와 exact source location으로 review artifact에 기록한다.
+1. child마다 monotonic `Long` generation을 발급하는
+   `JdbcEnumerationChildHandle`을 추가했다.
+2. underlying `Connection`과 `JdbcPreparedStatementApi`를 registration 객체로
+   보관하고, exact identity와 `AtomicReference` CAS로 늦은 clear를 차단했다.
+3. `StatementInterceptor`를 child transaction에 등록해 prepare/execute lifecycle을
+   연결했다. statement 실패 뒤 다음 statement가 실행될 수 있도록 active registration은
+   교체하고, 이전 callback은 identity 비교로 무해하게 만들었다.
+4. transaction body `finally`에서 interceptor/statement/connection을 지우고, 기존
+   permit/latch/future cleanup과 caller-owned executor 경계를 유지했다.
 
-**실행 결과:**
-[JdbcParallelKeyEnumeration.kt:210-275](../../../exposed/jdbc/src/main/kotlin/io/bluetape4k/exposed/jdbc/JdbcParallelKeyEnumeration.kt#L210)
-의 lifecycle latch/permit 경계를 유지하면서 generation-bound active handle, stale
-lease 차단, abort executor 소유권을 후속 contract로 고정했다. synthetic race와
-production handle은 이 slot의 금지 범위라 구현하지 않았다.
+**검증:** H2 generation stale registration과 transaction integration test가 통과했다.
 
-## Task 3 — test-only evidence choice — 완료(범위 한정)
+## Task 3 — backend runtime fixture — 완료
 
-1. 최소 한 실제 driver와 한 unsupported/N/A fixture를 선택하되, Docker unavailable은
-   PASS로 승격하지 않는다.
-2. synthetic race fixture가 후속 implementation에서 필요한 경우에만 추가한다. 이
-   slot에서 production API를 건드리지 않는다.
-3. `detekt`, affected test/compile, `git diff --check`, terminology audit와 manual
-   guard를 기록한다.
+1. MySQL `Statement.cancel()` fixture에서 `PROCESSLIST` active query, 실제 query
+   종료, rollback, 다음 query, tracker lease를 확인했다. Connector/J 특성상
+   `SLEEP()` 결과 `1`을 반환할 수 있어 예외만을 성공 조건으로 사용하지 않았다.
+2. MariaDB `cancelCurrentQuery()` fixture를 별도 추가하고 runtime-only driver를
+   reflection unwrap해 invocation을 증명했다.
+3. CockroachDB `CockroachServer` fixture를 추가하고 `SHOW QUERIES` 관찰과 pgjdbc
+   `PGConnection.cancelQuery()`를 별도 검증했다.
+4. CockroachDB Testcontainers alias만 testImplementation으로 추가했으며, central
+   catalog나 production dependency를 변경하지 않았다.
 
-**실행 결과:** PostgreSQL `cancelQuery` fixture 1개를 추가했고, 전체 PostgreSQL
-`8/8`, MySQL `11/11`, H2 `10/10`을 순차 실행했다. 첫 직접 driver import compile
-실패는 `testRuntimeOnly` classpath에 맞춘 reflection unwrap으로 수정했다. 최종
-JDBC detekt, Korean terminology audit 4개 파일 findings `[]`, `git diff --check`,
-`docs/manual/**` guard도 PASS했다. H2 selector는 실제 클래스명
-`JdbcParallelKeyEnumerationTest`로 재확인했다.
+**검증:** 각 Testcontainers backend는 독립 Gradle invocation으로 순차 실행했다.
 
-## Task 4 — 후속 issue handoff — 보류
+## Task 4 — test/compile/static verification — 완료
 
-1. public driver-specific adapter, generation handle 구현, real backend matrix를
-   별도 child issue로 분리한다.
-2. #694의 local PG 7/7·MySQL 11/11은 lifecycle evidence로 연결하되 nightly exact-head
-   부재를 `PENDING`으로 유지한다.
-3. #708 공통 ABI task와는 API/CI gate가 독립임을 Epic comment에 기록한다.
+| 명령 | 결과 |
+| --- | --- |
+| `:bluetape4k-exposed-jdbc:test --tests JdbcParallelKeyEnumerationTest` | **12/12**, `BUILD SUCCESSFUL` |
+| `:bluetape4k-exposed-jdbc:test --tests MySQLJdbcParallelKeyEnumerationTest` | **12/12**, `BUILD SUCCESSFUL` |
+| `:bluetape4k-exposed-jdbc:test --tests PostgreSQLJdbcParallelKeyEnumerationTest` | **8/8**, `BUILD SUCCESSFUL` |
+| `:bluetape4k-exposed-jdbc:test --tests MariaDBJdbcDriverCancellationTest` | **1/1**, `BUILD SUCCESSFUL` |
+| `:bluetape4k-exposed-jdbc:test --tests CockroachDbJdbcCancellationTest` | **1/1**, `BUILD SUCCESSFUL` |
+| `:bluetape4k-exposed-jdbc:detekt --no-daemon --rerun-tasks` | **BUILD SUCCESSFUL** |
 
-**보류 사유:** 이번 승인에는 GitHub issue/comment/PR 생성 target과 base/head 권한이
-명시되지 않았다. local design/evidence만 갱신하고 외부 metadata mutation은 실행하지
-않는다.
+TDD 기록도 보존한다. 구현 전 handle symbol 부재로 test compile이 실패하는 RED를
+확인했고, 구현 후 H2 integration이 GREEN이 됐다. MySQL 첫 runtime 시도는
+`SLEEP()`이 예외 없이 결과 `1`을 반환해 assertion이 실패했으며, driver의 실제
+semantics를 반영해 결과/elapsed-time 경로를 보강한 뒤 12/12가 통과했다.
+
+## Task 5 — performance/stability와 code review — 완료
+
+- generation registration은 child별 `AtomicReference` 두 개와 prepare/execute callback만
+  사용하며, 새로운 global lock·unbounded queue·반복 retry를 추가하지 않았다.
+- virtual thread child는 기존 transaction executor 경계를 유지하고, caller-owned
+  executor를 닫지 않는다. transaction body와 future completion의 모든 exit path에서
+  statement/interceptor/connection/permit/latch cleanup을 확인했다.
+- 네 backend fixture는 active query polling, cancellation invocation, rollback,
+  recovery, pool lease 0을 모두 관찰한다. timeout 성공만으로 PASS를 만들지 않았다.
+- current implementation review artifact에서 six perspective lane과 integration
+  결과를 기록하며, 최종 P0=0/P1=0을 확인한다. P2는 public adapter 미구현과 fixture
+  helper 중복처럼 이번 scope 밖인 항목만 rationale과 함께 남긴다.
+
+## Task 6 — 문서·lesson·delivery 경계 — 완료(외부 delivery 보류)
+
+1. spec, plan, lesson을 현재 source/runtime evidence와 일치하도록 갱신한다.
+2. current review artifact를 추가하고 SPW-01~05, terminology audit, diff/manual
+   guard evidence를 기록한다.
+3. Lore commit 직전의 local diff와 evidence를 재검증했다. PR 생성·CI 대기·merge·Issue
+   close는 별도 explicit authority 없이는 실행하지 않는다.
 
 ## Rollback/stop
 
-- 공통 `forceAbort`, 임의 timeout, pool-wide close가 제안되면 설계를 `BLOCK`으로
-  되돌리고 public API 변경 issue로 분리한다.
-- real driver semantics를 source만으로 추론하면 해당 행을 `N/A/PENDING`으로 낮춘다.
-- stale handle 또는 caller-owned executor 종료가 관찰되면 implementation을 시작하지
-  않고 generation/ownership 설계를 수정한다.
+- public `forceAbort`, 임의 timeout, pool-wide close가 요구되면 이 branch에서 범위를
+  확장하지 않고 별도 API/ABI 설계로 분리한다.
+- runtime driver semantics가 재현되지 않으면 해당 row를 `PENDING/N/A`로 낮추고
+  source claim만으로 PASS를 유지하지 않는다.
+- generation stale clear, transaction cleanup, caller-owned executor 보존 중 하나가
+  깨지면 code review와 문서를 먼저 되돌려 원인을 고정한다.
 
 ## Plan DoD
 
 - [x] Task 0 ownership/root-cause evidence
-- [~] Task 1 four-driver capability ledger — source 전체, runtime은 PG만 PASS
-- [~] Task 2 generation/lifecycle 7-Tier review — contract 완료, synthetic/production 구현 보류
-- [x] Task 3 real/unsupported fixture boundary — PG PASS와 나머지 PENDING/N/A 분리
-- [~] Task 4 follow-up issue handoff and Korean lesson — lesson local artifact는 추가했지만,
-  GitHub handoff는 target/base/head 권한 대기
+- [x] Task 1 four-driver capability ledger
+- [x] Task 2 generation-bound production internal handle
+- [x] Task 3 MySQL/MariaDB/CockroachDB runtime fixture와 기존 PG/H2 regression
+- [x] Task 4 순차 Testcontainers, targeted tests, Detekt, TDD red/green evidence
+- [x] Task 5 performance/stability scan과 P0/P1 convergence review artifact
+- [~] Task 6 문서·lesson·review와 local verification은 완료했다. Lore commit은
+  다음 단계이며, PR/CI/merge/Issue close는 별도 권한 대기
 
-## 구현 gate
+## 현재 판정
 
-현재 판정은 `PARTIAL / PENDING`이다. PostgreSQL test-only evidence는 확보했지만,
-public API·production code 변경 전에는 별도 사용자 approval과 MySQL/MariaDB/Cockroach
-fresh backend evidence, generation handle 구현이 필요하다.
+**IMPLEMENTED / LOCAL-VERIFIED / DELIVERY-PENDING** — 구현과 local evidence는
+완료되었고, external delivery mutation만 남았다. 다음 단계는 commit 후 fresh head/CI/
+review metadata를 읽고 PR 생성 권한이 명시될 때 delivery gate를 여는 것이다.
