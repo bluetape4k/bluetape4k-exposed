@@ -82,6 +82,7 @@ dependencies {
     testImplementation(bt4k.h2.v2)
     testImplementation(bt4k.hikaricp)
     testImplementation(libs.testcontainers.postgresql)
+    testImplementation(bt4k.bluetape4k.testcontainers.spring)
     testImplementation(bt4k.postgresql)
     testImplementation(libs.testcontainers.mysql)
     testImplementation(bt4k.mysql.connector.j)
