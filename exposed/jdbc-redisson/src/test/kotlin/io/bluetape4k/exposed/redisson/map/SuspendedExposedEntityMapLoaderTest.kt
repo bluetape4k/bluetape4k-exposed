@@ -298,6 +298,27 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
     }
 
     @Test
+    fun `loadAllKeys - suspended JDBC queryTimeout은 초 단위 30으로 설정한다`() = runSuspendIO {
+        var observedQueryTimeout: Int? = null
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        try {
+            val loader = SuspendedEntityMapLoader<Long, LoaderEntity>(
+                loadByIdFromDB = { null },
+                loadAllIdsFromDB = {
+                    observedQueryTimeout = TransactionManager.currentOrNull()?.queryTimeout
+                },
+                scope = scope,
+            )
+
+            loader.loadAllKeys().hasNext().await().shouldBeFalse()
+        } finally {
+            scope.cancel()
+        }
+
+        observedQueryTimeout.shouldBeEqualTo(30)
+    }
+
+    @Test
     fun `loadAllKeys - caller scope 취소는 producer를 취소한다`() = runSuspendIO {
         withTablesSuspending(TestDB.H2, LoaderTable) {
             repeat(5) { index ->

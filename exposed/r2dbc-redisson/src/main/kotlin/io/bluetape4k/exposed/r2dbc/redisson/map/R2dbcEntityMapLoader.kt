@@ -29,8 +29,10 @@ import java.util.concurrent.TimeoutException
  * ## 동작/계약
  * - [load]는 `suspendTransaction`에서 [loadByIdFromDB]를 실행해 단건 엔티티를 조회합니다.
  * - [loadAllKeys]는 채널 기반 [AsyncIterator]를 반환하고, 백그라운드 코루틴에서 [loadAllIdsFromDB]를 실행합니다.
- * - 전체 키 로딩은 60초 타임아웃과 top-level `maxAttempts = 1`을 적용합니다. 전자는
- *   무한 대기를 막고 후자는 transaction retry가 이미 전송한 ID를 재방출하는 것을 막습니다.
+ * - [loadAllKeys]가 실행하는 각 DB statement에는 Exposed transaction의 `queryTimeout` 30초(단위: 초)를 적용하고,
+ *   전체 키 로딩에는 별도의 60초 타임아웃과 top-level `maxAttempts = 1`을 적용합니다.
+ *   전체 열거 timeout은 statement timeout과 독립적으로 무한 대기를 막고, `maxAttempts = 1`은
+ *   transaction retry가 이미 전송한 ID를 재방출하는 것을 막습니다.
  * - rendezvous channel은 한 번에 하나의 ID만 전달해 producer back-pressure를 보장하며,
  *   caller가 loader에 주입한 scope를 취소하면 producer transaction까지 취소가 전파됩니다.
  *   기본 shared scope는 caller coroutine과 독립적입니다. producer 오류와 timeout은
@@ -62,7 +64,7 @@ open class R2dbcEntityMapLoader<ID: Any, E: Any>(
     private val scope: CoroutineScope = defaultMapLoaderCoroutineScope,
 ): MapLoaderAsync<ID, E> {
     companion object: KLoggingChannel() {
-        private const val DEFAULT_QUERY_TIMEOUT = 30_000 // Exposed queryTimeout 단위: seconds; #699에서 정리
+        private const val DEFAULT_QUERY_TIMEOUT_SECONDS = 30
         private const val DEFAULT_LOAD_ALL_IDS_TIMEOUT = 60_000L // 60 seconds
 
         protected val defaultMapLoaderCoroutineScope =
@@ -107,7 +109,7 @@ open class R2dbcEntityMapLoader<ID: Any, E: Any>(
                 // retry 정책을 caller가 소유한다. 기본 scope는 context를 공유하지 않으므로 top-level이다.
                 val hasOuterTransaction = TransactionManager.currentOrNull() != null
                 suspendTransaction {
-                    this.queryTimeout = DEFAULT_QUERY_TIMEOUT // 단위/30초 정책은 후속 Issue #699에서 정리
+                    this.queryTimeout = DEFAULT_QUERY_TIMEOUT_SECONDS
                     // WHY: streaming은 transaction retry가 이미 전송한 ID를 재방출할 수 있으므로
                     //      top-level transaction에서만 retry를 끈다. outer transaction에서는
                     //      caller가 소유한 retry 정책을 그대로 둔다.

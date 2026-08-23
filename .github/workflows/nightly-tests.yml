@@ -1062,6 +1062,17 @@ jobs:
           --no-build-cache
           --no-configuration-cache
           --no-daemon
+      - name: Test JDBC Redisson query-timeout selector (PostgreSQL)
+        run: >
+          ./gradlew
+          :bluetape4k-exposed-jdbc-redisson:test
+          --tests '*Issue699QueryTimeoutTest'
+          --rerun-tasks
+          --no-build-cache
+          --no-configuration-cache
+          --no-daemon
+        env:
+          EXPOSED_ISSUE_699_STATEMENT_TIMEOUT_TEST: "true"
       - name: Test R2DBC Redisson cache-loader selector (PostgreSQL)
         run: >
           ./gradlew
@@ -1073,6 +1084,17 @@ jobs:
           --no-daemon
         env:
           EXPOSED_ISSUE_692_TIMEOUT_TEST: "true"
+      - name: Test R2DBC Redisson query-timeout selector (PostgreSQL)
+        run: >
+          ./gradlew
+          :bluetape4k-exposed-r2dbc-redisson:test
+          --tests '*Issue699QueryTimeoutTest'
+          --rerun-tasks
+          --no-build-cache
+          --no-configuration-cache
+          --no-daemon
+        env:
+          EXPOSED_ISSUE_699_STATEMENT_TIMEOUT_TEST: "true"
       - name: Upload cache-loader test results
         if: always()
         uses: actions/upload-artifact@v7

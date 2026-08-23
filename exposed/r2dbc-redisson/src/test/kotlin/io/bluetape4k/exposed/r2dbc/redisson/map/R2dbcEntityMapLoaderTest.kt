@@ -213,6 +213,22 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
     }
 
     @Test
+    fun `loadAllKeys - R2DBC queryTimeout은 초 단위 30으로 설정한다`() = runSuspendIO {
+        withTables(TestDB.H2, TestTable) {
+            var observedQueryTimeout: Int? = null
+            val loader = R2dbcEntityMapLoader<Long, TestEntity>(
+                loadByIdFromDB = { null },
+                loadAllIdsFromDB = {
+                    observedQueryTimeout = TransactionManager.currentOrNull()?.queryTimeout
+                },
+            )
+
+            loader.loadAllKeys().hasNext().toCompletableFuture().get().shouldBeFalse()
+            observedQueryTimeout shouldBeEqualTo 30
+        }
+    }
+
+    @Test
     fun `loadAllKeys - streaming transaction은 retry를 끄고 producer 예외를 전달한다`() = runSuspendIO {
         withTables(TestDB.H2, TestTable) {
             val expectedFailure = IllegalStateException("producer failure")

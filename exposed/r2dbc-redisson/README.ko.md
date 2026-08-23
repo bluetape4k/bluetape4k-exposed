@@ -14,7 +14,7 @@ Exposed R2DBC와 Redisson 캐시를 결합해 코루틴 기반 Read-Through, Wri
     - `R2dbcExposedEntityMapLoader`는 지원되는 scalar ID에서 오름차순 keyset page를 사용하고 custom ID에는 기존 offset fallback을 사용
     - `loadAllKeys()`는 rendezvous channel back-pressure로 PK 오름차순을 안정적으로 순회하며 한 번에 `batchSize` page만 materialize합니다. 전체 열거는 weakly consistent합니다
     - top-level streaming에는 Exposed `maxAttempts = 1`을 적용해 retry 재방출을 막고, producer 오류와 timeout 원인은 정상 종료가 아닌 `AsyncIterator` 예외로 전달합니다
-    - 전체 열거 예산은 60초이며 timeout은 `AsyncIterator` 실패로 전달됩니다. 개별 query의 `queryTimeout` 값/단위는 별도 후속 [Issue #699](https://github.com/bluetape4k/bluetape4k-exposed/issues/699)에서 다룹니다
+    - `loadAllKeys()`가 실행하는 각 database statement에는 Exposed transaction `queryTimeout` 30초를 적용합니다(`queryTimeout` 단위는 초). 전체 열거 예산은 별도 60초이며 timeout은 `AsyncIterator` 실패로 전달됩니다
     - caller-owned ambient transaction은 자체 retry 정책을 유지하므로 outer retry 뒤 partial ID가 다시 관찰될 수 있습니다. 정확히 한 번 관찰하려면 중복 제거·멱등 처리를 적용하거나 성공 전 외부 side effect를 buffer해야 하며, 전체 열거 재시도는 completeness만 복구합니다. 기본 loader scope는 한 번의 실패가 후속 호출을 취소하지 않도록 격리합니다
 - **Repository 추상화**: 캐시 + DB 접근 공통 패턴 (`R2dbcRedissonRepository`)
 - **Coroutines 네이티브 Repository API**: 캐시와 Repository 호출은 `suspend` 함수이고, Redisson SPI 어댑터는 내부적으로 async로 동작
