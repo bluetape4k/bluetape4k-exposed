@@ -4,6 +4,11 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
+import java.io.ObjectStreamClass
 import org.junit.jupiter.api.Test
 
 /**
@@ -43,5 +48,30 @@ class ExposedCursorPageTest {
         page.content shouldBeEqualTo listOf("a", "b")
         page.nextCursor shouldBeEqualTo 20L
         page.hasNext.shouldBeTrue()
+    }
+
+    @Test
+    fun `직렬화 가능한 content와 cursor를 사용하면 Java serialization round-trip이 유지된다`() {
+        val page = ExposedCursorPage(content = listOf("a", "b"), nextCursor = 20L, hasNext = true)
+
+        val restored = serializeRoundTrip(page)
+
+        restored shouldBeEqualTo page
+    }
+
+    @Test
+    fun `직렬화 UID는 명시한 안정적인 값이다`() {
+        ObjectStreamClass.lookup(ExposedCursorPage::class.java).serialVersionUID shouldBeEqualTo 1L
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> serializeRoundTrip(value: T): T {
+        val bytes = ByteArrayOutputStream().use { output ->
+            ObjectOutputStream(output).use { it.writeObject(value) }
+            output.toByteArray()
+        }
+        return ByteArrayInputStream(bytes).use { input ->
+            ObjectInputStream(input).use { it.readObject() as T }
+        }
     }
 }
