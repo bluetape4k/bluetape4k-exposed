@@ -240,6 +240,12 @@ as `Long`, `Int`, `String`, `UUID`, or Kotlin `Uuid` are supported; `CompositeID
 IDs are intentionally outside this extension. Existing offset-based `ExposedPage`/`findPage` APIs remain
 unchanged.
 
+`ExposedCursorPage` implements `java.io.Serializable` with an explicit `serialVersionUID = 1L`. Java
+serialization is available only when the concrete `T` values, the `C` cursor, and the runtime content list
+implementation are serializable; the generic bounds intentionally do not enforce that requirement. This
+object serialization contract does not encode, sign, scope, expire, or decode an opaque transport cursor
+token, which remains the caller's responsibility.
+
 ## Key Files and Classes
 
 | File                                               | Description                                        |

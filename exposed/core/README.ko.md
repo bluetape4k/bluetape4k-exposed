@@ -232,10 +232,16 @@ JDBC와 R2DBC 저장소 확장은 `LIMIT pageSize + 1`을 사용하는 SELECT �
 방향만 보존합니다. `hasNext == false`이면 `nextCursor`는 항상 null입니다.
 
 커서의 encode, 서명, 범위 지정, decode는 호출자가 소유하며 다음 요청에서도 같은 정렬과 predicate를
-재사용해야 합니다. snapshot 격리는 보장하지 않고 기본 predicate가 `Op.TRUE`이므로 활성 조건을
+재사용해야 합니다. 일관된 시점 읽기 격리는 보장하지 않고 기본 predicate가 `Op.TRUE`이므로 활성 조건을
 전달하지 않으면 논리 삭제 행도 보입니다. `Long`, `Int`, `String`, `UUID`, Kotlin `Uuid`처럼
 `Comparable`인 ID를 지원하며 `CompositeID`와 비교할 수 없는 custom ID는 이 확장 범위에서 제외합니다.
 기존 offset 기반 `ExposedPage`/`findPage` API는 변경하지 않습니다.
+
+`ExposedCursorPage`는 `java.io.Serializable`을 구현하고 명시적인 `serialVersionUID = 1L`을 사용합니다.
+구체적인 `T` 원소와 `C` 커서, 런타임 content 리스트 구현이 직렬화 가능할 때만 Java serialization을
+사용할 수 있으며 generic 경계로 이 조건을 강제하지는 않습니다. DTO 객체 직렬화는 전송용 불투명
+cursor token의 encode, 서명, 범위 지정, 만료, decode를 대신하지 않으며 이 책임은 계속 호출자에게
+있습니다.
 
 ## 주요 파일/클래스 목록
 

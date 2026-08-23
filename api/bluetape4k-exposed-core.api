@@ -40,7 +40,8 @@ public final class io/bluetape4k/exposed/core/ExposedColumnSupportsKt {
 	public static final fun mapToLanguageType (Ljava/lang/Iterable;Lorg/jetbrains/exposed/v1/core/Column;)Ljava/util/List;
 }
 
-public final class io/bluetape4k/exposed/core/ExposedCursorPage {
+public final class io/bluetape4k/exposed/core/ExposedCursorPage : java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/core/ExposedCursorPage$Companion;
 	public fun <init> (Ljava/util/List;Ljava/lang/Comparable;Z)V
 	public final fun component1 ()Ljava/util/List;
 	public final fun component2 ()Ljava/lang/Comparable;
@@ -53,6 +54,9 @@ public final class io/bluetape4k/exposed/core/ExposedCursorPage {
 	public final fun getNextCursor ()Ljava/lang/Comparable;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/core/ExposedCursorPage$Companion {
 }
 
 public final class io/bluetape4k/exposed/core/ExposedPage {
