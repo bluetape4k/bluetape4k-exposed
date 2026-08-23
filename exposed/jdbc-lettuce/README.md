@@ -173,5 +173,5 @@ trusted and not shared with untrusted writers.
 ## References
 
 - [exposed-jdbc](../jdbc)
-- [bluetape4k-lettuce](../../infra/lettuce)
+- [bluetape4k-lettuce](https://github.com/bluetape4k/bluetape4k-projects/tree/develop/infra/lettuce)
 - [Lettuce Redis Client](https://lettuce.io)
