@@ -88,6 +88,7 @@ dependencies {
     implementation(bt4k.r2dbc.postgresql)
 
     // Bluetape4k Modules for Testing
+    api(bt4k.bluetape4k.assertions)
     api(bt4k.bluetape4k.junit5)
     api(bt4k.bluetape4k.testcontainers)
     api(libs.testcontainers.mariadb)
