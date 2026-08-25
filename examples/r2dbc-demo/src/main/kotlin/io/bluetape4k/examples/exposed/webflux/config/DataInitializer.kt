@@ -34,6 +34,10 @@ import java.math.BigDecimal
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
+private const val FIRST_PRODUCT_STOCK = 100
+private const val SECOND_PRODUCT_STOCK = 50
+private const val THIRD_PRODUCT_STOCK = 200
+
 /**
  * WebFlux 예제용 초기 데이터를 애플리케이션 lifecycle에 묶어 적재한다.
  *
@@ -85,17 +89,17 @@ class DataInitializer(
                 Products.insert {
                     it[name] = "Kotlin Coroutines Book"
                     it[price] = BigDecimal("39.99")
-                    it[stock] = 100
+                    it[stock] = FIRST_PRODUCT_STOCK
                 }
                 Products.insert {
                     it[name] = "Spring WebFlux Guide"
                     it[price] = BigDecimal("49.99")
-                    it[stock] = 50
+                    it[stock] = SECOND_PRODUCT_STOCK
                 }
                 Products.insert {
                     it[name] = "Reactive Programming"
                     it[price] = BigDecimal("29.99")
-                    it[stock] = 200
+                    it[stock] = THIRD_PRODUCT_STOCK
                 }
             }
         }
@@ -136,6 +140,7 @@ internal class DataInitializerLifecycle(
     val isReady: Boolean
         get() = state.get() == DataInitializationState.READY
 
+    @Suppress("TooGenericExceptionCaught") // application event 경계의 failure를 readiness lifecycle에 기록한다.
     fun start() {
         if (!started.compareAndSet(false, true)) {
             return
@@ -156,7 +161,7 @@ internal class DataInitializerLifecycle(
                     state.set(DataInitializationState.CANCELLED)
                     completion.cancel(e)
                     throw e
-                } catch (e: Exception) {
+                } catch (e: RuntimeException) {
                     fail(e)
                 }
             }
@@ -166,16 +171,17 @@ internal class DataInitializerLifecycle(
                     completion.cancel(cause)
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: RuntimeException) {
             fail(e)
         }
     }
 
+    @Suppress("TooGenericExceptionCaught") // readiness listener에서 application state를 관찰 가능한 상태로 유지한다.
     fun onReadinessChange(event: AvailabilityChangeEvent<ReadinessState>) {
         if (event.state == ReadinessState.ACCEPTING_TRAFFIC && !isReady) {
             try {
                 publishReadiness(ReadinessState.REFUSING_TRAFFIC)
-            } catch (e: Exception) {
+            } catch (e: RuntimeException) {
                 fail(e)
             }
         }
@@ -208,6 +214,7 @@ internal class DataInitializerLifecycle(
     private fun publishReadiness(state: ReadinessState) {
         eventPublisher.publishEvent(AvailabilityChangeEvent(this, state))
     }
+
 }
 
 internal enum class DataInitializationState {

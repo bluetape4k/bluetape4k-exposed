@@ -46,7 +46,7 @@ data class OrderAnalyticsResult(
     val latestProductId: String?,
 ): Serializable {
     companion object: KLogging() {
-        const val serialVersionUID: Long = 1L
+        private const val serialVersionUID: Long = 1L
     }
 }
 

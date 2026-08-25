@@ -168,14 +168,12 @@ class KtorExposedDemoLifecycleTest {
         val sink = StderrDemoDiagnosticSink(DemoDiagnosticLogger { messages += it() })
         val correlationId = UUID.fromString("018f6f95-7f4a-7a20-8b52-70ad30c30f36").toString()
 
-        sink.emit(
-            io.bluetape4k.examples.exposed.ktor.order.DemoDiagnostic(
-                code = "ORDER_READ_FAILED",
-                correlationId = correlationId,
-                component = "order-command",
-                operation = "read",
-                outcome = "failed",
-            ),
+        val diagnostic = io.bluetape4k.examples.exposed.ktor.order.DemoDiagnostic(
+            code = "ORDER_READ_FAILED",
+            correlationId = correlationId,
+            component = "order-command",
+            operation = "read",
+            outcome = "failed",
         )
 
         messages.single() shouldBeEqualTo

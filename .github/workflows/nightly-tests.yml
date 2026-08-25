@@ -61,11 +61,15 @@ jobs:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
       - name: Detekt static analysis
         run: |
+          set -o pipefail
           for attempt in 1 2 3 4 5; do
-            ./gradlew detekt --parallel --no-configuration-cache && break
+            ./gradlew detekt exampleDetekt --parallel --no-configuration-cache --console=plain \
+              2>&1 | tee build/example-detekt.log && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
+          grep -F 'Example Detekt analyzed projects:' build/example-detekt.log
+          grep -F 'Example pattern rules passed:' build/example-detekt.log
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
       - name: Upload detekt report

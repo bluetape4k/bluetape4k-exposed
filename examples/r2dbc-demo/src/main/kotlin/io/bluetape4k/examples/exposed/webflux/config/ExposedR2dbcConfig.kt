@@ -40,16 +40,27 @@ import java.time.Duration
  */
 @ConfigurationProperties(prefix = "bluetape4k.r2dbc.pool")
 data class R2dbcPoolProperties(
-    val maxIdleTime: Duration = Duration.ofMinutes(10),
-    val maxLifeTime: Duration = Duration.ofMinutes(30),
-    val maxCreateConnectionTime: Duration = Duration.ofSeconds(10),
-    val maxSize: Int = maxOf(Runtimex.availableProcessors * 8, 64),
-    val initialSize: Int = 8,
-    val minIdle: Int = 8,
-    val acquireRetry: Int = 3,
-    val backgroundEvictionInterval: Duration = Duration.ofMinutes(1),
-    val maxAcquireTime: Duration = Duration.ofSeconds(10),
+    val maxIdleTime: Duration = Duration.ofMinutes(MAX_IDLE_MINUTES),
+    val maxLifeTime: Duration = Duration.ofMinutes(MAX_LIFE_MINUTES),
+    val maxCreateConnectionTime: Duration = Duration.ofSeconds(MAX_CREATE_SECONDS),
+    val maxSize: Int = maxOf(Runtimex.availableProcessors * CONNECTIONS_PER_PROCESSOR, MAX_POOL_SIZE),
+    val initialSize: Int = INITIAL_POOL_SIZE,
+    val minIdle: Int = MIN_IDLE_SIZE,
+    val acquireRetry: Int = ACQUIRE_RETRY_COUNT,
+    val backgroundEvictionInterval: Duration = Duration.ofMinutes(BACKGROUND_EVICTION_MINUTES),
+    val maxAcquireTime: Duration = Duration.ofSeconds(MAX_ACQUIRE_SECONDS),
 )
+
+private const val MAX_IDLE_MINUTES = 10L
+private const val MAX_LIFE_MINUTES = 30L
+private const val MAX_CREATE_SECONDS = 10L
+private const val CONNECTIONS_PER_PROCESSOR = 8
+private const val MAX_POOL_SIZE = 64
+private const val INITIAL_POOL_SIZE = 8
+private const val MIN_IDLE_SIZE = 8
+private const val ACQUIRE_RETRY_COUNT = 3
+private const val BACKGROUND_EVICTION_MINUTES = 1L
+private const val MAX_ACQUIRE_SECONDS = 10L
 
 /**
  * WebFlux 데모에서 사용할 Exposed R2DBC 데이터베이스를 구성합니다.

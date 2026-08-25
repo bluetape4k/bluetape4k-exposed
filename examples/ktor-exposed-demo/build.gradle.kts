@@ -28,7 +28,9 @@ dependencies {
 
     implementation(project(":bluetape4k-exposed-ktor"))
     implementation(project(":bluetape4k-exposed-r2dbc-caffeine"))
+    implementation(bt4k.bluetape4k.idgenerators)
     implementation(bt4k.bluetape4k.ktor.core)
+    implementation(bt4k.bluetape4k.logging)
     implementation(bt4k.exposed.jdbc)
     implementation(bt4k.exposed.r2dbc)
     implementation(bt4k.exposed.java.time)

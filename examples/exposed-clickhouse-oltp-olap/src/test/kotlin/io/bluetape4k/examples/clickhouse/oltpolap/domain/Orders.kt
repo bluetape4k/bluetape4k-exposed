@@ -44,7 +44,7 @@ data class Order(
     val orderedAt: Long = Instant.now().toEpochMilli(),
 ): Serializable {
     companion object: KLogging() {
-        const val serialVersionUID: Long = 1L
+        private const val serialVersionUID: Long = 1L
     }
 }
 

@@ -256,13 +256,8 @@ subprojects {
         }
 
         withType<Detekt>().configureEach detekt@{
-            // Keep generated sources and documented example applications out of the
-            // production static-analysis gate; their build/test paths are verified
-            // by the dedicated example and integration jobs.
+            // examples를 포함한 모든 정적검사에서 생성 소스만 제외한다.
             exclude("**/generated/**")
-            if (project.projectDir.toPath().normalize().toString().contains("/examples/")) {
-                exclude("**")
-            }
             reports {
                 checkstyle.required.set(true)
                 html.required.set(true)
@@ -684,6 +679,105 @@ tasks.named<Detekt>("detekt") {
         check(reports.isNotEmpty()) {
             "Detekt aggregate completed without any non-empty subproject XML report"
         }
+    }
+}
+
+val exampleProjects = subprojects.filter { project ->
+    val relativePath = rootProject.rootDir.toPath()
+        .relativize(project.projectDir.toPath())
+        .toString()
+        .replace(File.separatorChar, '/')
+    relativePath.startsWith("examples/")
+}
+
+data class ExamplePatternRule(
+    val name: String,
+    val pattern: Regex,
+)
+
+val exampleProductionPatternRules = listOf(
+    ExamplePatternRule("production println", Regex("\\bprintln\\s*\\(")),
+    ExamplePatternRule("production System output", Regex("System\\.(out|err)")),
+    ExamplePatternRule("production non-null assertion", Regex("!!")),
+)
+val exampleTestPatternRules = listOf(
+    ExamplePatternRule(
+        "test raw assertion",
+        Regex("import\\s+(org\\.junit\\.jupiter\\.api\\.Assertions\\.assert|kotlin\\.test\\.assert)"),
+    ),
+)
+val ktorUuidPatternRule = ExamplePatternRule("Ktor production direct UUID", Regex("UUID\\.randomUUID\\s*\\("))
+
+tasks.register("exampleDetekt") {
+    group = "verification"
+    description = "모든 examples 프로젝트의 Detekt와 비어 있지 않은 XML 보고서를 검증한다."
+    dependsOn(exampleProjects.map { it.tasks.named("detekt") })
+    doLast {
+        check(exampleProjects.isNotEmpty()) {
+            "Example Detekt aggregate has no examples projects"
+        }
+
+        val reportsByProject = exampleProjects.associateWith { project ->
+            project.layout.buildDirectory.dir("reports/detekt").get().asFile
+                .walkTopDown()
+                .filter { it.isFile && it.extension == "xml" && it.length() > 0L }
+                .toList()
+        }
+        val missingReports = reportsByProject
+            .filterValues { it.isEmpty() }
+            .keys
+            .map(Project::getPath)
+
+        check(missingReports.isEmpty()) {
+            "Example Detekt missing non-empty XML report for: ${missingReports.joinToString()}"
+        }
+        logger.lifecycle(
+            "Example Detekt analyzed projects: ${reportsByProject.keys.map(Project::getPath).joinToString()}"
+        )
+
+        val productionFiles = exampleProjects.flatMap { project ->
+            project.fileTree(project.projectDir) {
+                include("src/main/**/*.kt")
+            }.files
+        }
+        val testFiles = exampleProjects.flatMap { project ->
+            project.fileTree(project.projectDir) {
+                include("src/test/**/*.kt")
+                include("src/*IntegrationTest/**/*.kt")
+            }.files
+        }
+        val violations = buildList {
+            productionFiles.forEach { source ->
+                val relative = rootProject.rootDir.toPath().relativize(source.toPath()).toString()
+                val rules = exampleProductionPatternRules +
+                    if (relative.startsWith("examples/ktor-exposed-demo/")) {
+                        listOf(ktorUuidPatternRule)
+                    } else {
+                        emptyList()
+                    }
+                rules.forEach { rule ->
+                    source.readLines().forEachIndexed { index, line ->
+                        if (rule.pattern.containsMatchIn(line)) {
+                            add("${rule.name}: $relative:${index + 1}")
+                        }
+                    }
+                }
+            }
+            testFiles.forEach { source ->
+                val relative = rootProject.rootDir.toPath().relativize(source.toPath()).toString()
+                exampleTestPatternRules.forEach { rule ->
+                    source.readLines().forEachIndexed { index, line ->
+                        if (rule.pattern.containsMatchIn(line)) {
+                            add("${rule.name}: $relative:${index + 1}")
+                        }
+                    }
+                }
+            }
+        }
+        check(violations.isEmpty()) {
+            "Example Kotlin pattern violations:\n${violations.joinToString("\n")}"
+        }
+        logger.lifecycle("Example pattern rules passed: production=${productionFiles.size}, tests=${testFiles.size}")
     }
 }
 

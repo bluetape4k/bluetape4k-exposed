@@ -75,100 +75,111 @@ fun Route.orderRoutes(
     diagnostics: DemoDiagnosticSink,
 ) {
     post("/orders/{orderId}/confirm") {
-        if (call.request.header(DEMO_COMMAND_HEADER) != DEMO_COMMAND_VALUE) {
-            call.respond(
-                HttpStatusCode.Forbidden,
-                DemoErrorResponse(
-                    code = "DEMO_COMMAND_REQUIRED",
-                    message = "Required demo command header is missing or invalid.",
-                ),
-            )
-            return@post
-        }
-
-        val id = call.parameters["orderId"].toCanonicalOrderIdOrNull()
-        if (id == null) {
-            call.respond(
-                HttpStatusCode.BadRequest,
-                DemoErrorResponse(
-                    code = "INVALID_ORDER_ID",
-                    message = "Order id must be a canonical non-nil UUID.",
-                ),
-            )
-            return@post
-        }
-
-        try {
-            call.respond(service.confirm(id).toResponse())
-        } catch (e: OrderPersistenceException) {
-            call.respondServiceUnavailable(
-                "ORDER_PERSISTENCE_FAILED",
-                "Order could not be stored.",
-                "confirm",
-                diagnostics,
-            )
-        } catch (e: OrderEventHandoffException) {
-            call.respondServiceUnavailable(
-                "ORDER_EVENT_HANDOFF_FAILED",
-                "Order was stored but its event was not handed off.",
-                "confirm",
-                diagnostics,
-            )
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            call.respondServiceUnavailable(
-                "ORDER_CONFIRMATION_FAILED",
-                "Order confirmation failed.",
-                "confirm",
-                diagnostics,
-            )
-        }
+        call.confirmOrder(service, diagnostics)
     }
 
     get("/orders/{orderId}") {
-        val id = call.parameters["orderId"].toCanonicalOrderIdOrNull()
-        if (id == null) {
-            call.respond(
-                HttpStatusCode.BadRequest,
-                DemoErrorResponse(
-                    code = "INVALID_ORDER_ID",
-                    message = "Order id must be a canonical non-nil UUID.",
-                ),
-            )
-            return@get
-        }
-
-        try {
-            val record = repository.get(id)
-            if (record == null) {
-                call.respond(
-                    HttpStatusCode.NotFound,
-                    DemoErrorResponse("ORDER_NOT_FOUND", "Order was not found."),
-                )
-            } else {
-                call.respond(record.toResponse())
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            call.respondServiceUnavailable(
-                "ORDER_READ_FAILED",
-                "Order could not be loaded.",
-                "read",
-                diagnostics,
-            )
-        }
+        call.getOrder(repository, diagnostics)
     }
 }
 
-private fun String?.toCanonicalOrderIdOrNull(): UUID? {
-    val raw = this ?: return null
-    if (raw.length != UUID_TEXT_LENGTH) return null
-    val parsed = runCatching { UUID.fromString(raw) }.getOrNull() ?: return null
-    if (parsed == NIL_UUID || parsed.toString() != raw) return null
-    return parsed
+private suspend fun ApplicationCall.confirmOrder(
+    service: OrderCommandService,
+    diagnostics: DemoDiagnosticSink,
+) {
+    val call = this
+    if (call.request.header(DEMO_COMMAND_HEADER) != DEMO_COMMAND_VALUE) {
+        call.respond(
+            HttpStatusCode.Forbidden,
+            DemoErrorResponse(
+                code = "DEMO_COMMAND_REQUIRED",
+                message = "Required demo command header is missing or invalid.",
+            ),
+        )
+        return
+    }
+
+    val id = call.parameters["orderId"].toCanonicalOrderIdOrNull()
+    if (id == null) {
+        call.respond(
+            HttpStatusCode.BadRequest,
+            DemoErrorResponse(
+                code = "INVALID_ORDER_ID",
+                message = "Order id must be a canonical non-nil UUID.",
+            ),
+        )
+        return
+    }
+
+    try {
+        call.respond(service.confirm(id).toResponse())
+    } catch (_: OrderPersistenceException) {
+        call.respondServiceUnavailable(
+            "ORDER_PERSISTENCE_FAILED",
+            "Order could not be stored.",
+            "confirm",
+            diagnostics,
+        )
+    } catch (_: OrderEventHandoffException) {
+        call.respondServiceUnavailable(
+            "ORDER_EVENT_HANDOFF_FAILED",
+            "Order was stored but its event was not handed off.",
+            "confirm",
+            diagnostics,
+        )
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: RuntimeException) {
+        call.respondServiceUnavailable(
+            "ORDER_CONFIRMATION_FAILED",
+            "Order confirmation failed.",
+            "confirm",
+            diagnostics,
+        )
+    }
 }
+
+private suspend fun ApplicationCall.getOrder(
+    repository: R2dbcCaffeineRepository<UUID, OrderRecord>,
+    diagnostics: DemoDiagnosticSink,
+) {
+    val call = this
+    val id = call.parameters["orderId"].toCanonicalOrderIdOrNull()
+    if (id == null) {
+        call.respond(
+            HttpStatusCode.BadRequest,
+            DemoErrorResponse(
+                code = "INVALID_ORDER_ID",
+                message = "Order id must be a canonical non-nil UUID.",
+            ),
+        )
+        return
+    }
+
+    try {
+        repository.get(id)?.let { call.respond(it.toResponse()) }
+            ?: call.respond(
+                HttpStatusCode.NotFound,
+                DemoErrorResponse("ORDER_NOT_FOUND", "Order was not found."),
+            )
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: RuntimeException) {
+        call.respondServiceUnavailable(
+            "ORDER_READ_FAILED",
+            "Order could not be loaded.",
+            "read",
+            diagnostics,
+        )
+    }
+}
+
+private fun String?.toCanonicalOrderIdOrNull(): UUID? =
+    this?.takeIf { it.length == UUID_TEXT_LENGTH }
+        ?.let { raw ->
+            runCatching { UUID.fromString(raw) }.getOrNull()
+                ?.takeIf { it != NIL_UUID && it.toString() == raw }
+        }
 
 private fun OrderConfirmationResult.toResponse() = OrderConfirmationResponse(
     orderId = record.id.toString(),

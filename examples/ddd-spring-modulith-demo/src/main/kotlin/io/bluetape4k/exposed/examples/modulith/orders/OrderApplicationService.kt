@@ -12,6 +12,7 @@ class OrderApplicationService(
     private val transactionTemplate: TransactionTemplate,
 ) {
 
+    @Suppress("TooGenericExceptionCaught") // 트랜잭션 rollback 경계에서 모든 application failure를 보존한다.
     fun accept(
         command: AcceptOrderCommand,
         failAfterPublish: Boolean = false,
@@ -26,11 +27,14 @@ class OrderApplicationService(
                 }
                 order
             }
-        } catch (e: Exception) {
+        } catch (e: RuntimeException) {
             if (order.domainEvents().isNotEmpty()) {
-                throw OrderHandoffFailedException(order, e)
+                return rethrowAfterPublishedEvent(order, e)
             }
             throw e
         }
     }
+
+    private fun rethrowAfterPublishedEvent(order: Order, failure: RuntimeException): Nothing =
+        throw OrderHandoffFailedException(order, failure)
 }

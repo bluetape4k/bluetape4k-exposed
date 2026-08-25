@@ -67,7 +67,8 @@ class OrderCommandServiceTest {
     }
 
     @Test
-    fun `write failure invalidates cache retains event and exposes the original cause`() = runTest(timeout = 30.seconds) {
+    fun `write failure invalidates cache retains event and exposes the original cause`() =
+        runTest(timeout = 30.seconds) {
         val repository = repository()
         val order = DemoOrder.pending(id, createdAt)
         val writeFailure = IllegalStateException("write failed")

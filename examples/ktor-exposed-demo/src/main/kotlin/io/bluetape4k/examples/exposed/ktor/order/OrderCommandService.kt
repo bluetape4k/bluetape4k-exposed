@@ -55,13 +55,7 @@ class OrderCommandService(
 ) {
 
     suspend fun confirm(orderId: UUID): OrderConfirmationResult {
-        val record = try {
-            repository.get(orderId)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            throw OrderPersistenceException(e)
-        }
+        val record = load(orderId)
         val order = record?.let(DemoOrder::rehydrate) ?: DemoOrder.pending(orderId, clock.instant())
         return confirm(order)
     }
@@ -75,36 +69,56 @@ class OrderCommandService(
         }
 
         val record = order.toRecord()
-        try {
-            currentCoroutineContext().ensureActive()
-            repository.put(order.id, record)
-            currentCoroutineContext().ensureActive()
-        } catch (e: CancellationException) {
-            compensateInvalidation(order.id, e)
-            throw e
-        } catch (e: Exception) {
-            compensateInvalidation(order.id, e)
-            throw OrderPersistenceException(e)
-        }
+        persist(order.id, record)
 
         val events = order.domainEvents()
-        try {
-            publisher.publish(events)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            throw OrderEventHandoffException(e)
-        }
+        publish(events)
         order.clearDomainEvents()
         return OrderConfirmationResult(record, eventPublished = true)
     }
 
-    private suspend fun compensateInvalidation(orderId: UUID, failure: Exception) {
+    @Suppress("TooGenericExceptionCaught") // repository adapter마다 runtime failure 타입이 다를 수 있다.
+    private suspend fun load(orderId: UUID): OrderRecord? = try {
+        repository.get(orderId)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: RuntimeException) {
+        throw OrderPersistenceException(e)
+    }
+
+    @Suppress("TooGenericExceptionCaught") // persistence와 compensation에서 original failure를 보존한다.
+    private suspend fun persist(orderId: UUID, record: OrderRecord) {
+        try {
+            currentCoroutineContext().ensureActive()
+            repository.put(orderId, record)
+            currentCoroutineContext().ensureActive()
+        } catch (e: CancellationException) {
+            compensateInvalidation(orderId, e)
+            throw e
+        } catch (e: RuntimeException) {
+            compensateInvalidation(orderId, e)
+            throw OrderPersistenceException(e)
+        }
+    }
+
+    @Suppress("TooGenericExceptionCaught") // event adapter마다 runtime failure 타입이 다를 수 있다.
+    private fun publish(events: List<DomainEvent<UUID>>) {
+        try {
+            publisher.publish(events)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: RuntimeException) {
+            throw OrderEventHandoffException(e)
+        }
+    }
+
+    @Suppress("TooGenericExceptionCaught") // cache invalidation failure를 primary를 가리지 않고 첨부한다.
+    private suspend fun compensateInvalidation(orderId: UUID, failure: Throwable) {
         try {
             withContext(NonCancellable) {
                 repository.invalidate(orderId)
             }
-        } catch (cleanupFailure: Exception) {
+        } catch (cleanupFailure: RuntimeException) {
             if (cleanupFailure !== failure) {
                 failure.addSuppressed(cleanupFailure)
             }
