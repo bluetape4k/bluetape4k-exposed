@@ -66,6 +66,6 @@
 
 ## 결론과 보류
 
-로컬 구현과 7-Tier 검증은 완료했다. Lore 커밋과 push 후 PR을 생성하고, hosted CI와 사람 리뷰가 끝날 때까지 merge는 보류한다. 이 리뷰 문서는 PR의 `## DoD Status`에 연결하며, hosted 결과가 바뀌면 PR에서 최신 상태를 갱신한다.
+로컬 구현과 7-Tier 검증을 완료하고 Lore 커밋 `5b8b08a36c34b956a8903d380afcc4eb1d2d9e2c`을 push했다. PR [#742](https://github.com/bluetape4k/bluetape4k-exposed/pull/742)를 생성했으며, hosted CI와 사람 리뷰가 끝날 때까지 merge는 보류한다. hosted 결과가 바뀌면 PR에서 최신 상태를 갱신한다.
 
 **Required checks: 22/22; N/A: 1 (T6 README parity); Blocked: 0**

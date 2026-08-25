@@ -40,9 +40,9 @@
 - [x] `docs/review/...-review.md`에 Type E checklist, Kotlin checklist, T1~T7, findings와 command evidence를 기록한다.
 - [x] `docs/lessons/...-lesson.md`에 NO-SOURCE false-green 원인, rule/CI guard, future guard를 기록한다.
 - [x] Korean terminology/read-back, `git diff --check`, exact head를 검증한다.
-- [ ] Lore 한국어 커밋을 만들고 exact branch를 push한다.
-- [ ] Issue #727 metadata를 재확인하고 Korean PR을 만든다. PR body 마지막 heading은 `## DoD Status`다.
-- [ ] `gh pr view`/`gh pr checks`로 metadata·head·CI를 read-back하고 merge/auto-merge는 실행하지 않는다.
+- [x] Lore 한국어 커밋 `5b8b08a36c34b956a8903d380afcc4eb1d2d9e2c`을 만들고 `build/examples-detekt-coverage`를 push했다.
+- [x] Issue #727 metadata를 재확인하고 Korean PR [#742](https://github.com/bluetape4k/bluetape4k-exposed/pull/742)를 만들었다. PR body 마지막 heading은 `## DoD Status`다.
+- [x] `gh pr view`/`gh pr checks`로 metadata·head·CI를 read-back했고 merge/auto-merge는 실행하지 않았다. hosted checks와 사람 리뷰는 pending이다.
 
 ## 롤백
 
