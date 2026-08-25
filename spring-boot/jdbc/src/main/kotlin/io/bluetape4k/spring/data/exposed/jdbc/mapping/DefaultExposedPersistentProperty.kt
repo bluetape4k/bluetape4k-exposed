@@ -9,19 +9,8 @@ import org.springframework.data.mapping.model.AnnotationBasedPersistentProperty
 import org.springframework.data.mapping.model.Property
 import org.springframework.data.mapping.model.SimpleTypeHolder
 
-/**
- * [ExposedPersistentProperty]의 기본 구현체입니다.
- * 프로퍼티 이름으로 Exposed Table의 Column을 검색합니다.
- *
- * ```kotlin
- * // ExposedMappingContext가 내부적으로 생성합니다.
- * val context = ExposedMappingContext()
- * val entity = context.getRequiredPersistentEntity(User::class.java)
- * entity.forEach { property ->
- *     val column = property.getColumn() // Users.name, Users.email 등
- * }
- * ```
- */
+/** JDBC 저장소의 기존 Exposed PersistentProperty 구현입니다. */
+@Deprecated("common.mapping.DefaultExposedPersistentProperty를 사용하십시오.")
 class DefaultExposedPersistentProperty(
     property: Property,
     owner: PersistentEntity<*, ExposedPersistentProperty>,
@@ -32,13 +21,12 @@ class DefaultExposedPersistentProperty(
     private val table: Table? = (owner as? ExposedPersistentEntity<*>)?.getTable()
 
     override fun getColumn(): Column<*>? {
-        val tbl = table ?: return null
-        return tbl.columns.firstOrNull { col ->
-            col.name.equals(name, ignoreCase = true) ||
-                    col.name.equals(toSnakeCase(name), ignoreCase = true)
+        val currentTable = table ?: return null
+        return currentTable.columns.firstOrNull { column ->
+            column.name.equals(name, ignoreCase = true) ||
+                column.name.equals(toSnakeCase(name), ignoreCase = true)
         }
     }
 
-    override fun createAssociation(): Association<ExposedPersistentProperty> =
-        Association(this, null)
+    override fun createAssociation(): Association<ExposedPersistentProperty> = Association(this, null)
 }

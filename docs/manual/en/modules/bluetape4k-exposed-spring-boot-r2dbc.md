@@ -35,6 +35,15 @@ dependencies {
 }
 ```
 
+The R2DBC adapter depends on the backend-neutral `bluetape4k-exposed-spring-boot-common` module for
+annotations, mapping metadata, derived-query planning, and sort conversion. It does not depend on the JDBC
+Spring Data adapter or `spring-jdbc`; an R2DBC-only runtime therefore stays free of JDBC classes. Use the
+common annotation import in repository interfaces:
+
+```kotlin
+import io.bluetape4k.spring.data.exposed.common.annotation.Query
+```
+
 ## Core concepts {#concepts}
 
 `@EnableExposedR2dbcRepositories` discovers repository interfaces and connects them to `ExposedR2dbcRepositoryFactory`. The application must connect its `R2dbcDatabase` before repository calls; the repository factory does not inject or own a database. Individual methods in `SimpleExposedR2dbcRepository` open their own Exposed `suspendTransaction`; this gives one repository call a transaction, not an automatic transaction spanning several calls.

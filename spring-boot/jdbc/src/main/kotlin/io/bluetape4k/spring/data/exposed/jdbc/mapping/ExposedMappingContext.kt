@@ -1,5 +1,6 @@
 package io.bluetape4k.spring.data.exposed.jdbc.mapping
 
+import io.bluetape4k.spring.data.exposed.jdbc.repository.support.toSnakeCase
 import org.springframework.beans.BeanUtils
 import org.springframework.data.core.TypeInformation
 import org.springframework.data.mapping.context.AbstractMappingContext
@@ -7,15 +8,11 @@ import org.springframework.data.mapping.model.Property
 import org.springframework.data.mapping.model.SimpleTypeHolder
 
 /**
- * Exposed DAO Entity를 위한 Spring Data MappingContext 구현체입니다.
+ * JDBC 저장소의 기존 MappingContext 구현입니다.
  *
- * ```kotlin
- * val context = ExposedMappingContext()
- * val entity = context.getRequiredPersistentEntity(User::class.java)
- * val table = entity.getTable()        // Users
- * val entityClass = entity.getEntityClass() // User.Companion
- * ```
+ * @deprecated common.mapping.ExposedMappingContext를 사용하십시오. JDBC binary facade로만 유지됩니다.
  */
+@Deprecated("common.mapping.ExposedMappingContext를 사용하십시오.")
 class ExposedMappingContext:
     AbstractMappingContext<DefaultExposedPersistentEntity<*>, ExposedPersistentProperty>() {
 
@@ -29,10 +26,7 @@ class ExposedMappingContext:
             .filter { descriptor ->
                 table.columns.any { column ->
                     column.name == descriptor.name ||
-                        column.name.equals(
-                            io.bluetape4k.spring.data.exposed.jdbc.repository.support.toSnakeCase(descriptor.name),
-                            ignoreCase = true,
-                        )
+                        column.name.equals(toSnakeCase(descriptor.name), ignoreCase = true)
                 }
             }
             .map { descriptor -> Property.of(typeInformation, descriptor) }
@@ -44,6 +38,5 @@ class ExposedMappingContext:
         property: Property,
         owner: DefaultExposedPersistentEntity<*>,
         simpleTypeHolder: SimpleTypeHolder,
-    ): ExposedPersistentProperty =
-        DefaultExposedPersistentProperty(property, owner, simpleTypeHolder)
+    ): ExposedPersistentProperty = DefaultExposedPersistentProperty(property, owner, simpleTypeHolder)
 }

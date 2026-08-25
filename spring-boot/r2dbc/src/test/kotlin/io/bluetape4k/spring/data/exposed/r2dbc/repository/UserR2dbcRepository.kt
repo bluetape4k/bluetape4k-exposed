@@ -1,6 +1,6 @@
 package io.bluetape4k.spring.data.exposed.r2dbc.repository
 
-import io.bluetape4k.spring.data.exposed.jdbc.annotation.Query
+import io.bluetape4k.spring.data.exposed.common.annotation.Query
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.USERS_TABLE_NAME
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users

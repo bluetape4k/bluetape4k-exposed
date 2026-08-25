@@ -435,6 +435,18 @@ modules:
     sourcePaths: ["spring-boot/batch-exposed/src/main/kotlin","spring-boot/batch-exposed/src/main/resources"]
     testPaths: ["spring-boot/batch-exposed/src/test/kotlin","spring-boot/batch-exposed/src/test/resources"]
     workshops: []
+  - id: "bluetape4k-exposed-spring-boot-common"
+    title: {"en":"Exposed Spring Boot Common Spring Data SPI","ko":"Exposed Spring Boot 공통 Spring Data SPI"}
+    gradlePath: ":bluetape4k-exposed-spring-boot-common"
+    sourceDir: "spring-boot/common"
+    kind: "library"
+    group: "integration"
+    artifact: "io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-common"
+    en: "en/modules/bluetape4k-exposed-spring-boot-common.md"
+    ko: "ko/modules/bluetape4k-exposed-spring-boot-common.md"
+    sourcePaths: ["spring-boot/common/src/main/kotlin"]
+    testPaths: ["spring-boot/common/src/test/kotlin"]
+    workshops: []
   - id: "bluetape4k-exposed-spring-boot-jdbc"
     title: {"en":"Exposed Spring Boot JDBC Integration","ko":"Exposed Spring Boot JDBC 연동"}
     gradlePath: ":bluetape4k-exposed-spring-boot-jdbc"

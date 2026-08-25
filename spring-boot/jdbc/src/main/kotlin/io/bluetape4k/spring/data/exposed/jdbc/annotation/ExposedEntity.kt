@@ -1,18 +1,15 @@
 package io.bluetape4k.spring.data.exposed.jdbc.annotation
 
 /**
- * Exposed DAO Entity 클래스에 부착하여 Spring Data가 관리 대상 엔티티로 인식하게 합니다.
- * Exposed의 `Entity<ID>`를 상속하면서 이 어노테이션도 달아야 Spring Data 스캐닝에 포함됩니다.
+ * JDBC 저장소의 기존 엔티티 annotation facade입니다.
  *
- * ```kotlin
- * @ExposedEntity
- * class User(id: EntityID<Long>) : LongEntity(id) {
- *     companion object : LongEntityClass<User>(Users)
- *     var name by Users.name
- *     var email by Users.email
- * }
- * ```
+ * 새 코드에서는 [io.bluetape4k.spring.data.exposed.common.annotation.ExposedEntity]를
+ * 사용하십시오. JDBC 스캐너는 두 annotation을 모두 인식합니다.
  */
+@Deprecated(
+    message = "common.annotation.ExposedEntity를 사용하십시오.",
+    replaceWith = ReplaceWith("ExposedEntity", "io.bluetape4k.spring.data.exposed.common.annotation"),
+)
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented

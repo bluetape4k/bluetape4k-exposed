@@ -35,6 +35,15 @@ dependencies {
 }
 ```
 
+R2DBC adapter는 annotation, mapping metadata, 파생 질의 계획, sort 변환을 위해 backend-neutral
+`bluetape4k-exposed-spring-boot-common`에 의존합니다. JDBC Spring Data adapter나 `spring-jdbc`에는
+의존하지 않으므로 R2DBC-only runtime에 JDBC class가 들어오지 않습니다. Repository interface에서는
+common annotation import를 사용하세요.
+
+```kotlin
+import io.bluetape4k.spring.data.exposed.common.annotation.Query
+```
+
 ## 핵심 개념 {#concepts}
 
 `@EnableExposedR2dbcRepositories`가 저장소 인터페이스를 찾아 `ExposedR2dbcRepositoryFactory`에 연결합니다. 저장소를 호출하기 전에 애플리케이션이 `R2dbcDatabase`를 연결해야 하며 저장소 팩토리는 데이터베이스를 주입하거나 소유하지 않습니다. `SimpleExposedR2dbcRepository`의 개별 메서드는 내부에서 Exposed `suspendTransaction`을 엽니다. 따라서 저장소 호출 하나는 트랜잭션으로 실행되지만 여러 호출이 자동으로 한 트랜잭션이 되지는 않습니다.

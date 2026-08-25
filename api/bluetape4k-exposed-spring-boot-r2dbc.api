@@ -16,7 +16,7 @@ public final class io/bluetape4k/spring/data/exposed/r2dbc/config/ExposedR2dbcCa
 
 public class io/bluetape4k/spring/data/exposed/r2dbc/config/ExposedR2dbcSpringDataAutoConfiguration {
 	public fun <init> ()V
-	public fun exposedMappingContext ()Lio/bluetape4k/spring/data/exposed/jdbc/mapping/ExposedMappingContext;
+	public fun exposedMappingContext ()Lio/bluetape4k/spring/data/exposed/common/mapping/ExposedMappingContext;
 }
 
 public abstract interface class io/bluetape4k/spring/data/exposed/r2dbc/repository/ExposedCoroutineFluentQuery {

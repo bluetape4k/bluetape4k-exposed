@@ -4,19 +4,13 @@ import org.jetbrains.exposed.v1.core.Column
 import org.springframework.data.mapping.PersistentProperty
 
 /**
- * Exposed Column을 Spring Data PersistentProperty로 표현합니다.
+ * JDBC 저장소의 기존 PersistentProperty 계약입니다.
  *
- * ```kotlin
- * val entity = context.getRequiredPersistentEntity(User::class.java)
- * entity.forEach { property: ExposedPersistentProperty ->
- *     val column = property.getColumn() // 해당 프로퍼티에 대응하는 Column<*>
- * }
- * ```
+ * @deprecated common.mapping.ExposedPersistentProperty를 사용하십시오.
  */
+@Deprecated("common.mapping.ExposedPersistentProperty를 사용하십시오.")
 interface ExposedPersistentProperty: PersistentProperty<ExposedPersistentProperty> {
 
-    /**
-     * 이 프로퍼티에 대응하는 Exposed [Column] 인스턴스 (없으면 null)
-     */
+    /** 이 프로퍼티에 대응하는 Exposed [Column] 인스턴스입니다. */
     fun getColumn(): Column<*>?
 }

@@ -19,7 +19,7 @@ import kotlin.coroutines.Continuation
 import kotlin.reflect.KClass
 
 /**
- * [@Query][io.bluetape4k.spring.data.exposed.jdbc.annotation.Query]로 선언한 raw SQL을 현재
+ * [@Query][io.bluetape4k.spring.data.exposed.common.annotation.Query]로 선언한 raw SQL을 현재
  * R2DBC transaction 경계 안에서 실행합니다.
  *
  * 호출자가 이미 `suspendTransaction { }` 안에서 실행 중이면 해당 transaction을 재사용하여

@@ -5,23 +5,16 @@ import org.jetbrains.exposed.v1.dao.EntityClass
 import org.springframework.data.mapping.PersistentEntity
 
 /**
- * Exposed DAO Entity를 Spring Data PersistentEntity로 표현합니다.
+ * JDBC 저장소의 기존 PersistentEntity 계약입니다.
  *
- * ```kotlin
- * val entity: ExposedPersistentEntity<User> = context.getRequiredPersistentEntity(User::class.java)
- * val entityClass = entity.getEntityClass() // User.Companion (LongEntityClass<User>)
- * val table = entity.getTable()             // Users
- * ```
+ * @deprecated common.mapping.ExposedPersistentEntity를 사용하십시오.
  */
+@Deprecated("common.mapping.ExposedPersistentEntity를 사용하십시오.")
 interface ExposedPersistentEntity<T: Any>: PersistentEntity<T, ExposedPersistentProperty> {
 
-    /**
-     * 이 Entity의 companion object에서 추출한 [EntityClass] 인스턴스 (없으면 null)
-     */
+    /** 이 Entity의 companion object에서 추출한 [EntityClass] 인스턴스입니다. */
     fun getEntityClass(): EntityClass<*, *>?
 
-    /**
-     * 이 Entity가 매핑되는 [Table] 인스턴스 (없으면 null)
-     */
+    /** 이 Entity가 매핑되는 [Table] 인스턴스입니다. */
     fun getTable(): Table?
 }

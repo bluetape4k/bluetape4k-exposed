@@ -1,8 +1,8 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository.support
 
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.spring.data.exposed.jdbc.mapping.ExposedMappingContext
-import io.bluetape4k.spring.data.exposed.jdbc.mapping.ExposedPersistentEntity
+import io.bluetape4k.spring.data.exposed.common.mapping.ExposedMappingContext
+import io.bluetape4k.spring.data.exposed.common.mapping.ExposedPersistentEntity
 import io.bluetape4k.spring.data.exposed.jdbc.repository.ExposedJdbcRepository
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.dao.id.IdTable

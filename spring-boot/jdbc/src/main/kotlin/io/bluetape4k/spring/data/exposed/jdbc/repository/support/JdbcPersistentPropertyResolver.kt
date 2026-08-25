@@ -1,7 +1,7 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository.support
 
-import io.bluetape4k.spring.data.exposed.jdbc.mapping.ExposedPersistentEntity
-import io.bluetape4k.spring.data.exposed.jdbc.mapping.ExposedPersistentProperty
+import io.bluetape4k.spring.data.exposed.common.mapping.ExposedPersistentEntity
+import io.bluetape4k.spring.data.exposed.common.mapping.ExposedPersistentProperty
 import org.jetbrains.exposed.v1.core.Column
 import org.springframework.dao.InvalidDataAccessApiUsageException
 

@@ -9,6 +9,9 @@
 
 ### 추가됨
 
+- Spring Data JDBC와 R2DBC가 공유하는 annotation, mapping, query planning, sort 변환을
+  `bluetape4k-exposed-spring-boot-common`으로 분리하고 BOM·manual·CI coverage를 등록했습니다
+  ([#729](https://github.com/bluetape4k/bluetape4k-exposed/issues/729)).
 - Spring Data R2DBC repository에 Reactor 타입 없이 coroutine-native Query by Example과
   immutable `FluentQuery` terminal, projection, paging, slice, cold `Flow` 실행을
   추가했습니다
@@ -20,6 +23,10 @@
 
 ### 변경됨
 
+- R2DBC Spring Data adapter가 JDBC adapter와 `spring-jdbc` 없이 common SPI만 사용하도록
+  dependency 경계를 고정했으며, 기존 JDBC public symbol은 descriptor를 보존하는 deprecated
+  facade로 유지했습니다
+  ([#729](https://github.com/bluetape4k/bluetape4k-exposed/issues/729)).
 - JDBC QBE terminal이 하나의 matcher compiler와 cardinality 규칙을 공유합니다. 현재
   transaction에 연결되지 않은 probe, open SpEL projection, nested/unknown property,
   결과 cardinality를 바꾸는 custom `EntityClass.searchQuery` shape는 SQL 전에

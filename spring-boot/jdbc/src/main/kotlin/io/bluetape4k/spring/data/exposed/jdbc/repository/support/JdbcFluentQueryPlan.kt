@@ -1,6 +1,6 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository.support
 
-import io.bluetape4k.spring.data.exposed.jdbc.mapping.ExposedPersistentEntity
+import io.bluetape4k.spring.data.exposed.common.mapping.ExposedPersistentEntity
 import org.springframework.dao.InvalidDataAccessApiUsageException
 import org.springframework.data.domain.Example
 import org.springframework.data.domain.Sort

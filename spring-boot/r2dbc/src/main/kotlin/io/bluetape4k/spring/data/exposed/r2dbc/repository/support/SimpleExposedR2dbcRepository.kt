@@ -1,7 +1,7 @@
 package io.bluetape4k.spring.data.exposed.r2dbc.repository.support
 
 import io.bluetape4k.logging.coroutines.KLoggingChannel
-import io.bluetape4k.spring.data.exposed.jdbc.repository.support.toExposedOrderBy
+import io.bluetape4k.spring.data.exposed.common.repository.support.toExposedOrderBy
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedR2dbcQueryByExampleRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow

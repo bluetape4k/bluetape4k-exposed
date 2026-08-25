@@ -2,7 +2,9 @@ package io.bluetape4k.spring.data.exposed.jdbc.repository.query
 
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedEntityInformation
-import io.bluetape4k.spring.data.exposed.jdbc.repository.support.toExposedOrderBy
+import io.bluetape4k.spring.data.exposed.common.repository.query.ExposedQueryCreator
+import io.bluetape4k.spring.data.exposed.common.repository.query.ParameterMetadataProvider
+import io.bluetape4k.spring.data.exposed.common.repository.support.toExposedOrderBy
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.dao.Entity
 import org.jetbrains.exposed.v1.dao.EntityClass

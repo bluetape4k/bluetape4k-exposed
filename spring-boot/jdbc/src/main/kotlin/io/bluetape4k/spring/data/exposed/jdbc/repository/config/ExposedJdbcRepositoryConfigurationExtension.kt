@@ -1,6 +1,7 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository.config
 
 import io.bluetape4k.spring.data.exposed.jdbc.annotation.ExposedEntity
+import io.bluetape4k.spring.data.exposed.common.annotation.ExposedEntity as CommonExposedEntity
 import io.bluetape4k.spring.data.exposed.jdbc.repository.ExposedJdbcRepository
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedJdbcRepositoryFactoryBean
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
@@ -37,7 +38,7 @@ class ExposedJdbcRepositoryConfigurationExtension: RepositoryConfigurationExtens
     }
 
     override fun getIdentifyingAnnotations(): Collection<Class<out Annotation>> =
-        listOf(ExposedEntity::class.java)
+        listOf(ExposedEntity::class.java, CommonExposedEntity::class.java)
 
     override fun getIdentifyingTypes(): Collection<Class<*>> =
         listOf(ExposedJdbcRepository::class.java)
