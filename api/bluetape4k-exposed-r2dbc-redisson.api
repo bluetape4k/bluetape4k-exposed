@@ -3,21 +3,35 @@ public final class io/bluetape4k/exposed/r2dbc/redisson/map/AsyncIteratorSupport
 	public static synthetic fun toList$default (Lorg/redisson/api/AsyncIterator;Ljava/util/List;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
-public class io/bluetape4k/exposed/r2dbc/redisson/map/R2dbcEntityMapLoader : org/redisson/api/map/MapLoaderAsync {
+public abstract interface class io/bluetape4k/exposed/r2dbc/redisson/map/R2dbcCloseableAsyncIterator : java/lang/AutoCloseable, org/redisson/api/AsyncIterator {
+	public fun closeAndJoin (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/redisson/map/R2dbcCloseableAsyncIterator$DefaultImpls {
+	public static fun closeAndJoin (Lio/bluetape4k/exposed/r2dbc/redisson/map/R2dbcCloseableAsyncIterator;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public class io/bluetape4k/exposed/r2dbc/redisson/map/R2dbcEntityMapLoader : java/lang/AutoCloseable, org/redisson/api/map/MapLoaderAsync {
 	public static final field Companion Lio/bluetape4k/exposed/r2dbc/redisson/map/R2dbcEntityMapLoader$Companion;
 	public fun <init> (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlinx/coroutines/CoroutineScope;)V
 	public synthetic fun <init> (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public final fun closeAndJoin (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun load (Ljava/lang/Object;)Ljava/util/concurrent/CompletionStage;
-	public fun loadAllKeys ()Lorg/redisson/api/AsyncIterator;
+	protected fun loadAllIdsTimeoutMillis ()J
+	public fun loadAllKeys ()Lio/bluetape4k/exposed/r2dbc/redisson/map/R2dbcCloseableAsyncIterator;
+	public synthetic fun loadAllKeys ()Lorg/redisson/api/AsyncIterator;
 }
 
 public final class io/bluetape4k/exposed/r2dbc/redisson/map/R2dbcEntityMapLoader$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {
 }
 
-public class io/bluetape4k/exposed/r2dbc/redisson/map/R2dbcEntityMapWriter : org/redisson/api/map/MapWriterAsync {
+public class io/bluetape4k/exposed/r2dbc/redisson/map/R2dbcEntityMapWriter : java/lang/AutoCloseable, org/redisson/api/map/MapWriterAsync {
 	public static final field Companion Lio/bluetape4k/exposed/r2dbc/redisson/map/R2dbcEntityMapWriter$Companion;
 	public fun <init> (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlinx/coroutines/CoroutineScope;)V
 	public synthetic fun <init> (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public final fun closeAndJoin (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun delete (Ljava/util/Collection;)Ljava/util/concurrent/CompletionStage;
 	public fun write (Ljava/util/Map;)Ljava/util/concurrent/CompletionStage;
 }
@@ -50,6 +64,7 @@ public abstract class io/bluetape4k/exposed/r2dbc/redisson/repository/AbstractR2
 	public synthetic fun <init> (Lorg/redisson/api/RedissonClient;Lio/bluetape4k/redis/redisson/cache/RedissonCacheConfig;ZLkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun clear (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun close ()V
+	public final fun closeAndJoin (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun containsKey (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun countFromDb (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	protected final fun createCacheOnlyLocalCacheMap ()Lorg/redisson/api/RLocalCachedMap;

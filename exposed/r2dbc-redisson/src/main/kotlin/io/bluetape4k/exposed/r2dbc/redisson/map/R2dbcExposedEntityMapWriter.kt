@@ -48,7 +48,7 @@ import org.redisson.api.map.WriteMode
  */
 open class R2dbcExposedEntityMapWriter<ID: Any, E: Any>(
     private val entityTable: IdTable<ID>,
-    scope: CoroutineScope = defaultMapWriterCoroutineScope,
+    scope: CoroutineScope = newR2dbcMapCoroutineScope("R2dbc-Writer"),
     private val updateBody: IdTable<ID>.(UpdateStatement, E) -> Unit,
     private val batchInsertBody: BatchInsertStatement.(E) -> Unit,
     deleteFromDBOnInvalidate: Boolean = false,

@@ -69,10 +69,12 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
                     batchSize = 2,
                     toEntity = { this[Issue692CustomIdTable.id].value.value },
                 )
-                val iterator = loader.loadAllKeys()
-                val ids = buildList {
-                    while (iterator.hasNext().await() == true) {
-                        add(iterator.next().await())
+                val ids = loader.useLoader {
+                    val iterator = loader.loadAllKeys()
+                    buildList {
+                        while (iterator.hasNext().await() == true) {
+                            add(iterator.next().await())
+                        }
                     }
                 }
 
@@ -166,10 +168,12 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
                         batchSize = 2,
                         toEntity = { this[Issue692CustomIdTable.id].value.value },
                     )
-                    val iterator = loader.loadAllKeys()
-                    val ids = buildList {
-                        while (iterator.hasNext().await() == true) {
-                            add(iterator.next().await())
+                    val ids = loader.useLoader {
+                        val iterator = loader.loadAllKeys()
+                        buildList {
+                            while (iterator.hasNext().await() == true) {
+                                add(iterator.next().await())
+                            }
                         }
                     }
 
@@ -222,12 +226,14 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
                         batchSize = 2,
                         toEntity = { this[Issue692CustomIdTable.id].value.value },
                     )
-                    val iterator = loader.loadAllKeys()
-                    iterator.hasNext().await() shouldBeEqualTo true
-                    iterator.next().await().value shouldBeEqualTo "a01"
+                    loader.useLoader {
+                        val iterator = loader.loadAllKeys()
+                        iterator.hasNext().await() shouldBeEqualTo true
+                        iterator.next().await().value shouldBeEqualTo "a01"
 
-                    callerJob.cancel()
-                    withTimeout(5_000) { callerJob.join() }
+                        callerJob.cancel()
+                        withTimeout(5_000) { callerJob.join() }
+                    }
 
                     val selects = sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
                     selects.size shouldBeEqualTo 1
@@ -258,11 +264,13 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
                     },
                 )
 
-                val iterator = loader.loadAllKeys()
-                iterator.hasNext().await() shouldBeEqualTo true
-                iterator.next().await() shouldBeEqualTo expectedId
-                assertFailsWith<R2dbcTransientResourceException> {
-                    iterator.hasNext().await()
+                loader.useLoader {
+                    val iterator = loader.loadAllKeys()
+                    iterator.hasNext().await() shouldBeEqualTo true
+                    iterator.next().await() shouldBeEqualTo expectedId
+                    assertFailsWith<R2dbcTransientResourceException> {
+                        iterator.hasNext().await()
+                    }
                 }
             }
 
@@ -297,9 +305,11 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
                         },
                         scope = CoroutineScope(currentCoroutineContext()),
                     )
-                    val iterator = loader.loadAllKeys()
-                    while (iterator.hasNext().await() == true) {
-                        iterator.next().await()
+                    loader.useLoader {
+                        val iterator = loader.loadAllKeys()
+                        while (iterator.hasNext().await() == true) {
+                            iterator.next().await()
+                        }
                     }
                 }
             }
@@ -329,8 +339,10 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
                     },
                 )
 
-                val failure = assertFailsWith<TimeoutException> {
-                    loader.loadAllKeys().hasNext().await()
+                val failure = loader.useLoader {
+                    assertFailsWith<TimeoutException> {
+                        loader.loadAllKeys().hasNext().await()
+                    }
                 }
                 failure.message shouldBeEqualTo "Loading all IDs exceeded 60000 ms"
             }

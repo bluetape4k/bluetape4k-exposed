@@ -35,26 +35,32 @@ class Issue699QueryTimeoutTest: AbstractExposedR2dbcTest() {
 
         try {
             withDefaultDatabase(database) {
-                val failure = try {
-                    R2dbcEntityMapLoader<Long, Unit>(
-                        loadByIdFromDB = { null },
-                        loadAllIdsFromDB = {
-                            TransactionManager.current().exec("SELECT pg_sleep(31)")
-                        },
-                        scope = scope,
-                    ).loadAllKeys().hasNext().toCompletableFuture().await()
-                    null
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Throwable) {
-                    e
+                val loader = R2dbcEntityMapLoader<Long, Unit>(
+                    loadByIdFromDB = { null },
+                    loadAllIdsFromDB = {
+                        TransactionManager.current().exec("SELECT pg_sleep(31)")
+                    },
+                    scope = scope,
+                )
+                try {
+                    val failure = try {
+                        loader.loadAllKeys().hasNext().toCompletableFuture().await()
+                        null
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Throwable) {
+                        e
+                    }
+
+                    assertPostgreSQLStatementTimeout(failure)
+                    check(TransactionManager.currentOrNull() == null) {
+                        "loader timeout must close the current R2DBC transaction"
+                    }
+                } finally {
+                    loader.closeAndJoin()
                 }
 
-                assertPostgreSQLStatementTimeout(failure)
                 awaitLoaderChildren(scope)
-                check(TransactionManager.currentOrNull() == null) {
-                    "loader timeout must close the current R2DBC transaction"
-                }
             }
         } finally {
             scope.cancel()
