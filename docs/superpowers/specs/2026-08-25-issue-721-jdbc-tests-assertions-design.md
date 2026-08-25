@@ -152,9 +152,13 @@ published test-support 소비자가 `Assertions.kt`를 컴파일할 때 직접 A
   `./gradlew :bluetape4k-exposed-jdbc-tests:outgoingVariants --no-daemon
   --console=plain`, `./gradlew
   :bluetape4k-exposed-jdbc-tests:generatePomFileForBluetapeExposedPublication
+  --no-daemon --console=plain`, `./gradlew
+  :bluetape4k-exposed-jdbc-tests:generateMetadataFileForBluetapeExposedPublication
   --no-daemon --console=plain`, 그리고
-  `build/publications/BluetapeExposed/pom-default.xml`에서
-  `bluetape4k-assertions` artifactId를 검색한다.
+  `exposed/jdbc-tests/build/publications/BluetapeExposed/pom-default.xml`과
+  `exposed/jdbc-tests/build/publications/BluetapeExposed/module.json`에서
+  `bluetape4k-assertions` artifactId/coordinate를 검색한다. `module.json`의
+  `apiElements` dependency와 POM dependency가 모두 있어야 한다.
 - `:bluetape4k-exposed-jdbc-tests:compileTestKotlin` 및
   `migrationDriftTest`의 H2 targeted 실행이 통과한다. PR 전 로컬 증거는
   `EXPOSED_TEST_DB=POSTGRESQL`과 `EXPOSED_TEST_DB=MYSQL_V8`도 각각

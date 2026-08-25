@@ -227,10 +227,13 @@ thrown.suppressed.toList() shouldBeEqualTo listOf(cleanup)
 ```bash
 ./gradlew :bluetape4k-exposed-jdbc-tests:outgoingVariants --no-daemon --console=plain
 ./gradlew :bluetape4k-exposed-jdbc-tests:generatePomFileForBluetapeExposedPublication --no-daemon --console=plain
-rg -n 'bluetape4k-assertions' build/publications/BluetapeExposed/pom-default.xml
+./gradlew :bluetape4k-exposed-jdbc-tests:generateMetadataFileForBluetapeExposedPublication --no-daemon --console=plain
+rg -n 'bluetape4k-assertions' \\
+  exposed/jdbc-tests/build/publications/BluetapeExposed/pom-default.xml \\
+  exposed/jdbc-tests/build/publications/BluetapeExposed/module.json
 ```
 
-Expected result: `apiElements` dependency view와 `build/publications/BluetapeExposed/pom-default.xml`에 `io.github.bluetape4k:bluetape4k-assertions`가 consumer-visible dependency로 나타난다.
+Expected result: `apiElements` dependency view, `exposed/jdbc-tests/build/publications/BluetapeExposed/module.json`의 `apiElements` variant, `pom-default.xml`에 `io.github.bluetape4k:bluetape4k-assertions`가 consumer-visible dependency로 나타난다.
 
 ## Task 4: 모듈 검증과 dialect 증거 수집
 
