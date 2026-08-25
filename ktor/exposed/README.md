@@ -424,6 +424,16 @@ existing matching identity with `reason=identity_collision` and rolls back newly
 claimed meters. Prefer one route per registry, or use a fresh registry. Never
 remove colliding meters while an older route may still serve requests.
 
+When installation fails, only meters claimed by the current attempt are removed
+in reverse order on a best-effort basis. Every removal is attempted, so one
+`remove` failure does not stop the remaining cleanup. Removal failures are
+preserved as a suppressed structured diagnostic on the stable installation
+exception, including `attempted`, `removed`, `notFound`, `failed`, and `residual`
+counts plus a sanitized per-meter failure reason. Treat a non-zero `residual`
+count as a contaminated registry: withdraw traffic and reinstall with a fresh
+registry. A successful rollback leaves the registry clean and makes a retry with
+the same configuration deterministic.
+
 ## Runbook
 
 | Situation | Action |

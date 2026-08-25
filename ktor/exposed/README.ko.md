@@ -418,6 +418,14 @@ Meter identity는 registry lifecycle 동안 유지됩니다. 같은 identity가 
 하나에는 route 하나를 권장하며, 재설치하려면 새 registry를 사용하세요. 이전 route가
 request를 처리할 수 있는 동안 colliding meter를 제거하면 안 됩니다.
 
+설치 중 오류가 나면 현재 시도에서 claim된 meter만 역순으로 best-effort 제거합니다.
+모든 제거를 시도하므로 하나의 `remove` 실패가 나머지 cleanup을 중단시키지 않습니다.
+제거 실패는 안정적인 설치 오류의 suppressed structured diagnostic으로 보존되며,
+`attempted`/`removed`/`notFound`/`failed`/`residual` 수와 meter identity별 실패 원인을
+확인할 수 있습니다. Registry에 남은 `residual` meter가 있으면 해당 registry를 오염된
+상태로 취급하고, traffic을 회수한 뒤 새 registry에서 재설치하세요. 성공한 rollback은
+registry를 비우므로 같은 설정으로 결정적으로 재시도할 수 있습니다.
+
 ## Runbook
 
 | 상황 | 조치 |

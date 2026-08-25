@@ -5,6 +5,7 @@ import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import io.micrometer.core.instrument.Timer
+import kotlinx.coroutines.CancellationException
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.concurrent.TimeUnit
@@ -55,6 +56,9 @@ internal class ExposedKtorCacheMetricBinding internal constructor(
  * 등록은 설치 중에만 직렬화합니다. 반환된 binding은 meter state와 timer reference를 직접 보관하므로
  * request 처리 시 registry 조회, builder 호출, tag 구성, meter 등록을 수행하지 않습니다.
  * 내보낸 backend time-series 수는 registry와 distribution config에 따라 달라집니다.
+ * 설치 실패 시 현재 시도에서 claim된 meter만 역순으로 best-effort 제거합니다. 제거 실패가 있으면
+ * 안정적인 설치 실패 원인과 잔여 meter 수를 담은 [CacheMeterRollbackDiagnostic]을 suppressed
+ * exception으로 보존하며, registry가 일부 오염된 경우에도 후속 재설치가 결정적으로 관찰되도록 합니다.
  */
 internal fun registerExposedKtorCacheMetrics(
     meterRegistry: MeterRegistry?,
@@ -72,14 +76,26 @@ internal fun registerExposedKtorCacheMetrics(
                 registerContributorMeters(meterRegistry, contributor, ownership)
             }
         } catch (failure: Throwable) {
-            ownership.rollback()
-            if (failure is Error) throw failure
-            when ((failure as? CacheMeterInstallationFailure)?.reason) {
-                CacheMeterFailureReason.IDENTITY_COLLISION ->
-                    throw IllegalArgumentException("Cache metric installation rejected: reason=identity_collision.")
-
-                else -> throw IllegalStateException("Cache metric installation failed: reason=registration_failed.")
+            val rollbackDiagnostic = ownership.rollback()
+            if (failure is CancellationException || failure is Error) {
+                rollbackDiagnostic?.let(failure::addSuppressed)
+                throw failure
             }
+
+            val primaryFailure = failure as? CacheMeterInstallationFailure
+                ?: CacheMeterInstallationFailure(
+                    reason = CacheMeterFailureReason.REGISTRATION_FAILED,
+                    primaryFailureType = failure.javaClass.name,
+                )
+            val installationFailure = when (primaryFailure.reason) {
+                CacheMeterFailureReason.IDENTITY_COLLISION ->
+                    IllegalArgumentException("Cache metric installation rejected: reason=identity_collision.")
+
+                CacheMeterFailureReason.REGISTRATION_FAILED ->
+                    IllegalStateException("Cache metric installation failed: reason=registration_failed.")
+            }.also { it.initCause(primaryFailure) }
+            rollbackDiagnostic?.let(installationFailure::addSuppressed)
+            throw installationFailure
         }
     }
 }
@@ -204,18 +220,71 @@ private class CacheMeterOwnership(
         ownedMeters += meter
     }
 
-    fun rollback() {
+    @Suppress("TooGenericExceptionCaught")
+    fun rollback(): CacheMeterRollbackDiagnostic? {
+        var removed = 0
+        var notFound = 0
+        val failures = ArrayList<CacheMeterRollbackFailure>()
         ownedMeters.asReversed().forEach { meter ->
-            runCatching { registry.remove(meter) }
+            try {
+                if (registry.remove(meter) == null) {
+                    notFound++
+                } else {
+                    removed++
+                }
+            } catch (failure: RuntimeException) {
+                failures += CacheMeterRollbackFailure(meter, failure)
+            }
         }
+        if (failures.isEmpty() && notFound == 0) return null
+
+        val residual = ownedMeters.count { owned -> registry.meters.any { it === owned } }
+        return CacheMeterRollbackDiagnostic(
+            attempted = ownedMeters.size,
+            removed = removed,
+            notFound = notFound,
+            failed = failures.size,
+            residual = residual,
+            failures = failures,
+        )
     }
 }
 
-private enum class CacheMeterFailureReason { IDENTITY_COLLISION, REGISTRATION_FAILED }
+/** 설치 실패를 외부에 노출할 때 사용할 안정적인 분류입니다. */
+internal enum class CacheMeterFailureReason { IDENTITY_COLLISION, REGISTRATION_FAILED }
 
-private class CacheMeterInstallationFailure(
+/** registry의 원본 예외 메시지나 내부 상태를 노출하지 않는 설치 실패 원인입니다. */
+internal class CacheMeterInstallationFailure(
     val reason: CacheMeterFailureReason,
+    val primaryFailureType: String? = null,
 ) : RuntimeException()
+
+/** 설치 rollback 결과를 secret 없이 보존하는 구조화된 진단입니다. */
+internal class CacheMeterRollbackDiagnostic(
+    val attempted: Int,
+    val removed: Int,
+    val notFound: Int,
+    val failed: Int,
+    val residual: Int,
+    failures: List<CacheMeterRollbackFailure>,
+) : RuntimeException(
+    "Cache metric rollback failed: " +
+            "attempted=$attempted,removed=$removed,notFound=$notFound,failed=$failed,residual=$residual."
+) {
+    init {
+        failures.forEach(::addSuppressed)
+    }
+}
+
+/** 개별 meter 제거 실패를 secret 없이 보존하는 suppressed 진단입니다. */
+internal class CacheMeterRollbackFailure(
+    meter: Meter,
+    failure: RuntimeException,
+) : RuntimeException(
+    "Cache metric rollback remove failed: " +
+            "meter=${meter.id.name},component=${meter.id.getTag("component") ?: "unknown"}," +
+            "kind=${meter.id.getTag("kind") ?: "unknown"},reason=${failure.javaClass.name}."
+)
 
 private fun Collection<Meter>.toIdentitySet(): Set<Meter> =
     identitySet<Meter>().also { it.addAll(this) }
