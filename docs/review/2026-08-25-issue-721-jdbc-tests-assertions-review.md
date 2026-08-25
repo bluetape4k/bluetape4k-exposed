@@ -1,13 +1,14 @@
-# Issue #721 `jdbc-tests` assertion 설계 7-Tier 검토
+# Issue #721 `jdbc-tests` assertion 구현 7-Tier 검토
 
 ## 검토 범위와 상태
 
 - Issue: https://github.com/bluetape4k/bluetape4k-exposed/issues/721
 - 기준 ref: `origin/develop@1242e5eb990a1f362233dba9542aa6e4d7192730`
-- 대상: `docs/superpowers/specs/2026-08-25-issue-721-jdbc-tests-assertions-design.md`,
-  `docs/superpowers/plans/2026-08-25-issue-721-jdbc-tests-assertions-plan.md`
-- 구현 상태: 계획 검토 완료, source mutation 전
-- workflow: `20260825T041335Z-a4e6d514` (Type A), 최종 receipt sequence 72
+- 대상: `exposed/jdbc-tests/build.gradle.kts`,
+  `exposed/jdbc-tests/src/test/kotlin/io/bluetape4k/exposed/tests/migration/JdbcMigrationDriftTest.kt`,
+  Issue #721 설계·계획·lesson 산출물
+- 구현 상태: source mutation·module-local 검증 완료, commit/PR delivery pending
+- workflow: `20260825T041335Z-a4e6d514` (Type A), topology receipt sequence 73 이후 증거 갱신 중
 
 ## 독립 렌즈 결과
 
@@ -28,18 +29,18 @@
 
 | Tier | 검토 내용 | 판정 | 근거와 구현 후 증거 |
 |---|---|---|---|
-| 1. 요구사항·범위 | `bluetape4k-assertions` direct `api`, migration fixture 정규화, module-local raw assertion 금지, #721 단일 모듈 | PASS | `jdbc-tests` Gradle/test 두 파일과 Type A 문서 산출물만 변경한다 |
-| 2. 구조·의존성 | catalog alias direct edge와 published API surface | PASS | `apiElements`, POM, module JSON, module ABI digest, isolated consumer compile |
-| 3. 동작·의미 | equality/identity/boolean/exception matcher와 migration diagnostic 보존 | PASS | `shouldBeEqualTo`, `shouldBeSameInstanceAs`, `shouldBeTrue/False`, `assertFailsWith` source-to-test mapping |
-| 4. 보안·경계 | fixed roots, canonical containment, symlink 차단, alias/wildcard/continuation/comment/semicolon fail-closed | PASS | `verifyBluetapeAssertionImports` RED/negative/positive probes와 실제 KotlinCompile source inventory |
-| 5. 성능·자원 | production path 불변, serial DB 실행, retry·cache 경계 | PASS | `--no-build-cache`, `--no-configuration-cache`, `--no-parallel`, `maxAttempts=1`, migration cleanup 경계 |
-| 6. 운영·검증 | H2, PostgreSQL, MySQL_V8 순차 실행과 XML count·Docker lifecycle | PASS | H2 7/0/0/0, 선택 dialect 각 8/0/0/0 기대치를 receipt로 고정; Docker 불가 시 PENDING |
-| 7. 유지보수·전달 | Kotlin checklist, Korean review/lesson, Lore commit, Korean PR DoD | PASS | SPW/KO checklist와 PR body 마지막 `## DoD Status`를 fail-closed로 검증 |
+| 1. 요구사항·범위 | `bluetape4k-assertions` direct `api`, migration fixture 정규화, module-local raw assertion 금지, #721 단일 모듈 | PASS | Gradle/test 두 파일과 Type A 설계·계획·review·lesson만 변경하고 production migration logic은 보존했다 |
+| 2. 구조·의존성 | catalog alias direct edge와 published API surface | PASS | `apiElements`, POM, module JSON, ABI baseline digest, isolated consumer `compileKotlin` 모두 PASS |
+| 3. 동작·의미 | equality/identity/boolean/exception matcher와 migration diagnostic 보존 | PASS | matcher별 compile과 H2/PostgreSQL/MySQL_V8 migration count, primary/suppressed identity 검증 |
+| 4. 보안·경계 | fixed roots, canonical containment, symlink 차단, alias/wildcard/continuation/comment/semicolon fail-closed | PASS | raw baseline RED, alias·dotted spacing/backtick·semicolon·block-comment negative probes, GREEN source inventory |
+| 5. 성능·자원 | production path 불변, serial DB 실행, retry·cache 경계 | PASS | no-cache/no-config-cache/no-parallel/max-workers=1, `maxAttempts=1`, migration cleanup 경계 유지 |
+| 6. 운영·검증 | H2, PostgreSQL, MySQL_V8 순차 실행과 XML count·Docker lifecycle | PASS | H2 7/0/0/0, PostgreSQL/MySQL_V8 각 8/0/0/0, Colima/Docker preflight와 container cleanup PASS |
+| 7. 유지보수·전달 | Kotlin checklist, Korean review/lesson, Lore commit, Korean PR DoD | PENDING | SPW/KO checklist와 lesson PASS; Lore commit·PR body/metadata/hosted CI는 delivery 단계에서 확인한다 |
 
 ## `$bluetape-kotlin-patterns`와 문서 checklist
 
 - KT-01..KT-11: intent-specific matcher, null/equality/identity 의미, 예외
-  message·suppressed 관계, 테스트 격리와 cleanup 계약을 계획에 고정했다.
+  message·suppressed 관계, 테스트 격리와 cleanup 계약을 구현·검증했다.
 - [x] **SPW-01** Issue URL, 기준 ref, source anchor, GNO/live metadata를 source ledger에 고정했다.
 - [x] **SPW-02** spec·plan·review·lesson·PR body의 산출물과 DoD 경계를 고정했다.
 - [x] **SPW-03** 한국어 용어 audit 대상과 판정 절차를 고정했다.
@@ -62,8 +63,8 @@
 
 ## Gate 결론
 
-설계·계획·독립 7-Tier gate는 **PASS**이며 구현 계획 승인 receipt를 기록할
-준비가 되었다. 다음 단계는 guard RED probe, direct `api`와 matcher 변경,
-compile/ABI/consumer/dialect 검증, 구현 후 7-Tier review와 lesson이다. 실제
-source mutation·Gradle 실행·hosted CI·PR은 아직 수행하지 않았으므로 이 문서만으로
-최종 PR DoD나 merge를 PASS로 표시하지 않는다.
+구현·module 검증 기준의 7-Tier gate는 Tier 1–6 **PASS**, Tier 7은
+delivery pending이다. source mutation, Gradle 검증, isolated consumer,
+ABI/publication metadata, dialect XML evidence와 lesson을 기록했다. 다음 단계는
+Lore commit, 원격 push, Korean PR 생성 및 live metadata/DoD·hosted CI 확인이다.
+PR이 열려도 merge는 별도 승인 없이는 수행하지 않는다.

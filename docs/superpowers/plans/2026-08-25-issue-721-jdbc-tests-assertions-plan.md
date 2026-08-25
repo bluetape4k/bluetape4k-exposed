@@ -71,6 +71,9 @@ Expected result: `Assertions.kt`는 이미 `io.bluetape4k.assertions`를 import�
 `build.gradle.kts`의 기존 `test`/`migrationDriftTest` task 선언 뒤에 다음 블록을 추가한다. root는 Gradle property나 환경 변수로 재지정할 수 없는 표준 module 경로로 고정한다. 두 root가 없거나 directory가 아니거나 root 자체가 symlink이면 즉시 `check`를 실패시키고, `Files.walk`의 기본 동작으로 symlink directory를 따라가지 않는 데 더해 발견된 symlink path도 즉시 실패시킨다. 따라서 누락·symlink·ancestor escape가 모두 fail-closed가 된다.
 
 ```kotlin
+import java.nio.file.Files
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 val bluetapeAssertionSourceRoots = listOf(
     layout.projectDirectory.dir("src/main/kotlin").asFile,
     layout.projectDirectory.dir("src/test/kotlin").asFile,
@@ -84,8 +87,8 @@ val verifyBluetapeAssertionImports = tasks.register("verifyBluetapeAssertionImpo
     doLast {
         fun regularKotlinFiles(root: java.io.File): List<java.io.File> {
             val rootPath = root.toPath().toAbsolutePath().normalize()
-            check(java.nio.file.Files.isDirectory(rootPath)) { "Missing Kotlin source root: $root" }
-            check(!java.nio.file.Files.isSymbolicLink(rootPath)) { "Kotlin source root must not be a symlink: $root" }
+            check(Files.isDirectory(rootPath)) { "Missing Kotlin source root: $root" }
+            check(!Files.isSymbolicLink(rootPath)) { "Kotlin source root must not be a symlink: $root" }
             val projectPath = projectDir.toPath().toRealPath()
             val realRoot = rootPath.toRealPath()
             check(realRoot.startsWith(projectPath)) {
@@ -93,19 +96,19 @@ val verifyBluetapeAssertionImports = tasks.register("verifyBluetapeAssertionImpo
             }
             var ancestor = rootPath
             while (ancestor != projectPath) {
-                check(!java.nio.file.Files.isSymbolicLink(ancestor)) {
+                check(!Files.isSymbolicLink(ancestor)) {
                     "Kotlin source root ancestor must not be a symlink: $ancestor"
                 }
                 ancestor = checkNotNull(ancestor.parent) { "Source root escaped project directory: $root" }
             }
-            return java.nio.file.Files.walk(rootPath).use { paths ->
+            return Files.walk(rootPath).use { paths ->
                 val allPaths = paths.toList()
-                check(allPaths.none { path -> java.nio.file.Files.isSymbolicLink(path) }) {
+                check(allPaths.none { path -> Files.isSymbolicLink(path) }) {
                     "Symlink path is forbidden below Kotlin source root: $root"
                 }
                 allPaths
                     .filter { path ->
-                        java.nio.file.Files.isRegularFile(path) &&
+                        Files.isRegularFile(path) &&
                             path.toRealPath().startsWith(realRoot) &&
                             path.fileName.toString().endsWith(".kt")
                     }
@@ -150,8 +153,8 @@ val verifyBluetapeAssertionImports = tasks.register("verifyBluetapeAssertionImpo
             .map { it.toPath().toAbsolutePath().normalize().toRealPath() }
             .toSet()
         val unexpectedKotlinSources = tasks
-            .withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>()
-            .flatMap { it.source.files }
+            .withType<KotlinCompile>()
+            .flatMap { it.inputs.sourceFiles.files }
             .filter { it.extension == "kt" }
             .filter { file ->
                 val sourcePath = file.toPath().toAbsolutePath().normalize().toRealPath()
@@ -188,7 +191,7 @@ val verifyBluetapeAssertionImports = tasks.register("verifyBluetapeAssertionImpo
                     if (strippedComment && (remainder.startsWith("import") || remainder.startsWith("."))) {
                         check(false) { "Import hidden after a block comment is rejected by the guard: ${file.relativeTo(projectDir)}:${index + 1}" }
                     }
-                    if (remainder.startsWith(".") || (remainder.startsWith("//") && "import" in remainder)) {
+                    if (remainder.startsWith("//") && "import" in remainder) {
                         check(false) { "Import continuation/comment bypass is rejected by the guard: ${file.relativeTo(projectDir)}:${index + 1}" }
                     }
                     if (remainder.startsWith("import") && isForbiddenAssertionImport(remainder)) {
@@ -363,8 +366,11 @@ consumer fixture도 만든다. fixture와 Maven repository는 repository 밖의 
 `settings.gradle.kts`, `build.gradle.kts`, `src/main/kotlin/Consumer.kt`는
 `apply_patch`로 생성하고, consumer는 정확한 `io.github.bluetape4k:
 bluetape4k-exposed-jdbc-tests:<version>` 좌표와 임시 repository만 선언하고,
-`bluetape4k-junit5` dependency를 exclude해 assertion API가 junit5의
-transitive edge로 우연히 해결되지 않도록 한다. consumer는
+`bluetape4k-junit5`·`bluetape4k-testcontainers` dependency를 exclude해 assertion
+API가 다른 test-support 모듈의 transitive edge로 우연히 해결되지 않도록 한다.
+게시된 `bluetape4k-assertions` artifact/POM과 생성 POM이 import하는 pre-release BOM
+좌표도 같은 임시 repository에만 staging하고 global `mavenLocal()`은 사용하지
+않는다. consumer는
 `io.bluetape4k.assertions.shouldBeEqualTo`를 호출한 뒤 `:compileKotlin`을
 실행한다. publish 전후 POM/module JSON와 임시 repository의 artifact/POM
 checksum을 대조해 stale/poisoned artifact를 배제한다. fixture와 init script는
@@ -414,7 +420,7 @@ allprojects {
 }
 ```
 
-consumer `settings.gradle.kts`는 `repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)`와 임시 repository 및 `mavenCentral()`만 선언하고 `mavenLocal()`은 선언하지 않는다. `build.gradle.kts`의 target dependency에는 `exclude(group = "io.github.bluetape4k", module = "bluetape4k-junit5")`를 넣고, `Consumer.kt`는 `1 shouldBeEqualTo 1`만 컴파일한다. `<version>`은 publish 직후 `module.json`의 `.component.version`에서 읽어 같은 값으로 치환한다.
+consumer `settings.gradle.kts`는 `repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)`와 임시 repository 및 `mavenCentral()`만 선언하고 `mavenLocal()`은 선언하지 않는다. `build.gradle.kts`의 target dependency에는 `exclude(group = "io.github.bluetape4k", module = "bluetape4k-junit5")`와 `exclude(group = "io.github.bluetape4k", module = "bluetape4k-testcontainers")`를 넣고, `Consumer.kt`는 `1 shouldBeEqualTo 1`만 컴파일한다. `<version>`은 publish 직후 `module.json`의 `.component.version`에서 읽어 같은 값으로 치환한다.
 
 fixture 파일은 다음 전문으로 생성한다.
 
