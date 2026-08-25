@@ -10,9 +10,12 @@ import io.bluetape4k.exposed.ktor.bluetape4kExposedErrors
 import io.bluetape4k.exposed.ktor.exposedJdbcTransaction
 import io.bluetape4k.exposed.ktor.exposedR2dbcTransaction
 import io.bluetape4k.exposed.ktor.installBluetape4kExposedKtor
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.ktor.core.Bluetape4kKtorCoreConfig
 import io.bluetape4k.ktor.core.bluetape4kErrorResponses
 import io.bluetape4k.ktor.core.installBluetape4kKtorCore
+import io.bluetape4k.logging.KotlinLogging
+import io.bluetape4k.logging.error
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.application.call
@@ -26,7 +29,6 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.selectAll as r2dbcSelectAll
-import java.io.PrintStream
 import java.io.Serializable
 import java.util.UUID
 import kotlin.system.exitProcess
@@ -143,8 +145,18 @@ internal fun runKtorExposedDemo(
     }
 }
 
-class StderrDemoDiagnosticSink(
-    private val output: PrintStream = System.err,
+private val log = KotlinLogging.logger {}
+
+internal fun interface DemoDiagnosticLogger {
+    fun error(message: () -> String)
+}
+
+private val defaultDiagnosticLogger = DemoDiagnosticLogger { message ->
+    log.error { message() }
+}
+
+internal class StderrDemoDiagnosticSink(
+    private val logger: DemoDiagnosticLogger = defaultDiagnosticLogger,
 ) : DemoDiagnosticSink {
     override fun emit(diagnostic: DemoDiagnostic) {
         val fields = buildList {
@@ -155,7 +167,7 @@ class StderrDemoDiagnosticSink(
             diagnostic.phase?.let { add("phase=$it") }
             add("outcome=${diagnostic.outcome}")
         }
-        output.println(fields.joinToString(" "))
+        logger.error { fields.joinToString(" ") }
     }
 }
 
@@ -194,7 +206,7 @@ fun main() {
 
 private fun runtimeDiagnostic(code: String, phase: String) = DemoDiagnostic(
     code = code,
-    correlationId = UUID.randomUUID().toString(),
+    correlationId = Uuid.V7.nextId().toString(),
     component = "ktor-demo",
     phase = phase,
     outcome = "failed",

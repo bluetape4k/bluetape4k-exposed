@@ -1,6 +1,7 @@
 package io.bluetape4k.examples.exposed.ktor.order
 
 import io.bluetape4k.exposed.r2dbc.caffeine.repository.R2dbcCaffeineRepository
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
@@ -188,7 +189,7 @@ private suspend fun ApplicationCall.respondServiceUnavailable(
     operation: String,
     diagnostics: DemoDiagnosticSink,
 ) {
-    val correlationId = UUID.randomUUID().toString()
+    val correlationId = Uuid.V7.nextId().toString()
     diagnostics.emit(
         DemoDiagnostic(
             code = code,

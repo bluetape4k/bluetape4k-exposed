@@ -138,9 +138,9 @@ Read response:
 | `503` | `ORDER_CONFIRMATION_FAILED` | `Order confirmation failed.` |
 | `503` | `ORDER_READ_FAILED` | `Order could not be loaded.` |
 
-Only `503` responses carry a generated UUID `correlationId`. It links the
-sanitized response to one allowlisted stderr diagnostic record. It is neither a
-retry token nor an event-republication token.
+Only `503` responses carry a generated UUIDv7 `correlationId`. It links the
+sanitized response to one allowlisted application logger diagnostic record. It
+is neither a retry token nor an event-republication token.
 
 ## Run with PostgreSQL
 
@@ -241,7 +241,7 @@ and locked by
 - The two-connection pool is demonstration sizing only.
 - The five-second acquire bound covers waiting for a pooled connection, not active SQL, DDL, or PostgreSQL lock time; production must configure statement/lock timeouts and migrations.
 - Only one demo resources lifecycle may own Exposed's process-wide default R2DBC database at a time; external code must not replace that default while the demo runs.
-- The stderr diagnostic sink is synchronous and may block under output backpressure; production should use bounded structured logging.
+- The application logger diagnostic sink emits synchronously and may block under appender backpressure; production should use bounded structured logging.
 - Ktor owns internal engine-stop exception logging; status `2` covers application-resource cleanup failures, while production owns engine-level log policy and shutdown observability.
 - The demo exposes no readiness drain; production owns traffic withdrawal.
 

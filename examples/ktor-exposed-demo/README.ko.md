@@ -134,9 +134,9 @@ repository.close
 | `503` | `ORDER_CONFIRMATION_FAILED` | `Order confirmation failed.` |
 | `503` | `ORDER_READ_FAILED` | `Order could not be loaded.` |
 
-`503` 응답에만 생성된 UUID `correlationId`가 포함됩니다. 이 값은 정제된 응답과
-허용 목록을 적용한 stderr 진단 레코드 하나를 연결합니다. 재시도 토큰이나 이벤트
-재발행 토큰으로 사용할 수 없습니다.
+`503` 응답에만 생성된 UUIDv7 `correlationId`가 포함됩니다. 이 값은 정제된 응답과
+허용 목록을 적용한 애플리케이션 logger 진단 레코드 하나를 연결합니다. 재시도
+토큰이나 이벤트 재발행 토큰으로 사용할 수 없습니다.
 
 ## PostgreSQL로 실행
 
@@ -238,7 +238,7 @@ Service/발행기 경계는
 - 연결 두 개짜리 풀은 데모용 크기일 뿐입니다.
 - 5초 acquire 제한은 풀 연결 대기 시간에만 적용되며 실행 중인 SQL, DDL, PostgreSQL lock 시간에는 적용되지 않습니다. 운영에서는 statement/lock timeout과 migration을 설정해야 합니다.
 - 한 번에 하나의 데모 resources lifecycle만 Exposed의 프로세스 전역 기본 R2DBC 데이터베이스를 소유할 수 있습니다. 데모 실행 중 외부 코드가 그 기본값을 교체하면 안 됩니다.
-- stderr 진단 sink는 동기식이어서 출력 backpressure가 발생하면 block될 수 있습니다. 운영에서는 제한된 구조화 logging을 사용해야 합니다.
+- 애플리케이션 logger 진단 sink는 동기식으로 emit하므로 appender backpressure에서 block될 수 있습니다. 운영에서는 제한된 구조화 logging을 사용해야 합니다.
 - Ktor가 내부 engine-stop exception logging을 소유합니다. 상태 `2`는 애플리케이션 리소스 정리 실패를 나타내며, 운영 환경은 engine-level log policy와 종료 observability를 직접 소유해야 합니다.
 - 데모는 readiness drain을 제공하지 않습니다. 운영 환경이 traffic withdrawal을 소유합니다.
 
