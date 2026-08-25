@@ -30,7 +30,7 @@
 Run from the repository root:
 
 ```bash
-rg -n '^import (org\.junit\.jupiter\.api\.Assertions|kotlin\.test\.assert|org\.assertj\.|org\.kluent\.)' \\
+rg -n '^import (org\.junit\.jupiter\.api\.Assertions|kotlin\.test\.assert|org\.assertj\.|org\.kluent\.)' \
   exposed/jdbc-tests/src/main/kotlin exposed/jdbc-tests/src/test/kotlin
 ```
 
@@ -39,8 +39,8 @@ Expected RED baseline: `JdbcMigrationDriftTest.kt`의 `Assertions.assertEquals`,
 - [ ] **Step 2: direct alias와 기존 published main source 사용을 대조한다.**
 
 ```bash
-rg -n 'bt4k\.bluetape4k\.(assertions|junit5)|io\.bluetape4k\.assertions' \\
-  exposed/jdbc-tests/build.gradle.kts \\
+rg -n 'bt4k\.bluetape4k\.(assertions|junit5)|io\.bluetape4k\.assertions' \
+  exposed/jdbc-tests/build.gradle.kts \
   exposed/jdbc-tests/src/main/kotlin/io/bluetape4k/exposed/tests/Assertions.kt
 ```
 
@@ -48,7 +48,7 @@ Expected result: `Assertions.kt`는 이미 `io.bluetape4k.assertions`를 import�
 
 - [ ] **Step 3: 기존 fixture의 의미 계약을 기록한다.**
 
-확인할 계약은 additive migration statement의 `statement` 원문 진단, `preservingFailure`의 primary identity, cleanup-only 예외, suppressed cleanup 예외, dialect별 cleanup/drop과 rollback이다. 이번 변경에서 이 동작과 `withLogs = false`를 수정하지 않는다.
+확인할 계약은 additive migration statement의 `statement` 원문 진단, `preservingFailure`의 primary identity, cleanup-only 예외, suppressed cleanup 예외, dialect별 cleanup/drop이다. 트랜잭션 rollback은 변경 대상 fixture의 새 동작으로 추가하지 않고, 기존 `AssertionsTest.assertFailAndRollback should rollback on failure` 회귀 계약과 `withDb`의 `maxAttempts = 1` 경계를 기준선으로 삼는다. 이번 변경에서 이 동작과 `withLogs = false`를 수정하지 않는다.
 
 ## Task 2: 고정-root import guard를 먼저 작성해 RED를 확인한다
 
@@ -57,7 +57,7 @@ Expected result: `Assertions.kt`는 이미 `io.bluetape4k.assertions`를 import�
 
 - [ ] **Step 1: 고정 source root와 금지 import predicate를 추가한다.**
 
-`build.gradle.kts`의 기존 `test`/`migrationDriftTest` task 선언 뒤에 다음 블록을 추가한다. root는 Gradle property나 환경 변수로 재지정할 수 없는 표준 module 경로로 고정하고, `Files.walk`의 기본 동작으로 symlink directory를 따라가지 않는다.
+`build.gradle.kts`의 기존 `test`/`migrationDriftTest` task 선언 뒤에 다음 블록을 추가한다. root는 Gradle property나 환경 변수로 재지정할 수 없는 표준 module 경로로 고정한다. 두 root가 없거나 directory가 아니거나 root 자체가 symlink이면 즉시 `check`를 실패시키고, `Files.walk`의 기본 동작으로 symlink directory를 따라가지 않는 데 더해 발견된 symlink path도 즉시 실패시킨다. 따라서 누락·symlink·ancestor escape가 모두 fail-closed가 된다.
 
 ```kotlin
 val bluetapeAssertionSourceRoots = listOf(
@@ -72,22 +72,29 @@ val verifyBluetapeAssertionImports = tasks.register("verifyBluetapeAssertionImpo
 
     doLast {
         fun regularKotlinFiles(root: java.io.File): List<java.io.File> {
-            if (!root.isDirectory || java.nio.file.Files.isSymbolicLink(root.toPath())) return emptyList()
             val rootPath = root.toPath().toAbsolutePath().normalize()
+            check(java.nio.file.Files.isDirectory(rootPath)) { "Missing Kotlin source root: $root" }
+            check(!java.nio.file.Files.isSymbolicLink(rootPath)) { "Kotlin source root must not be a symlink: $root" }
+            val realRoot = rootPath.toRealPath()
             return java.nio.file.Files.walk(rootPath).use { paths ->
-                paths
+                val allPaths = paths.toList()
+                check(allPaths.none(java.nio.file.Files::isSymbolicLink)) {
+                    "Symlink path is forbidden below Kotlin source root: $root"
+                }
+                allPaths
                     .filter { path ->
-                        !java.nio.file.Files.isSymbolicLink(path) &&
-                            java.nio.file.Files.isRegularFile(path) &&
+                        java.nio.file.Files.isRegularFile(path) &&
+                            path.toRealPath().startsWith(realRoot) &&
                             path.fileName.toString().endsWith(".kt")
                     }
                     .map { it.toFile() }
-                    .toList()
             }
         }
 
         fun isForbiddenAssertionImport(line: String): Boolean {
-            val imported = line.trim().removePrefix("import").trim()
+            val imported = Regex(
+                "^\\s*import\\s+([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*(?:\\s*\\.\\s*\\*)?)(?:\\s+as\\s+[A-Za-z_][A-Za-z0-9_]*)?\\s*$",
+            ).matchEntire(line)?.groupValues?.get(1)?.replace(Regex("\\s"), "") ?: return false
             return imported == "org.junit.jupiter.api.Assertions" ||
                 imported.startsWith("org.junit.jupiter.api.Assertions.") ||
                 imported.startsWith("kotlin.test.assert") ||
@@ -99,7 +106,7 @@ val verifyBluetapeAssertionImports = tasks.register("verifyBluetapeAssertionImpo
             .flatMap(::regularKotlinFiles)
             .flatMap { file ->
                 file.readLines().mapIndexedNotNull { index, line ->
-                    if (line.trimStart().startsWith("import ") && isForbiddenAssertionImport(line)) {
+                    if (line.trimStart().startsWith("import") && isForbiddenAssertionImport(line)) {
                         "${file.relativeTo(projectDir)}:${index + 1}: $line"
                     } else {
                         null
@@ -118,11 +125,11 @@ tasks.named("check") {
 }
 ```
 
-이 predicate는 `Assertions`, `Assertions.*`, alias를 포함한 `Assertions.<member>`와 `kotlin.test.assert*`, AssertJ/Kluent package를 금지하고 JUnit `Test`·lifecycle·parameterized annotation import는 금지하지 않는다.
+이 predicate는 공백/탭, `Assertions`, `Assertions.*`, `import ... as A` alias를 포함한 `Assertions.<member>`와 `kotlin.test.assert*`, AssertJ/Kluent package를 금지하고 JUnit `Test`·lifecycle·parameterized annotation import는 금지하지 않는다. `toRealPath().startsWith(realRoot)`로 canonical containment도 확인하며, 추가 Kotlin source set이 생기면 guard 대상 목록과 source-set inventory 검증을 함께 갱신한다.
 
 - [ ] **Step 2: RED probe로 guard가 실제 금지 import를 잡는지 확인한다.**
 
-`src/test/kotlin/io/bluetape4k/exposed/tests/migration/RawAssertionImportProbe.kt`에 다음 임시 파일을 `apply_patch`로 만든다.
+고정된 probe root 아래 이번 실행 전용의 unique path인 `src/test/kotlin/io/bluetape4k/exposed/tests/migration/RawAssertionImportProbe-<run-id>.kt`에 다음 임시 파일을 `apply_patch`로 만든다. 생성 전에 `test ! -e`로 충돌을 거부하고, probe를 만든 뒤 `trap`으로 정상 종료·실패·중단 모두에서 삭제한다. 삭제 후에도 `test ! -e`로 잔류를 확인하며, 기존 파일을 덮어쓰지 않는다.
 
 ```kotlin
 package io.bluetape4k.exposed.tests.migration
@@ -138,11 +145,11 @@ Run:
 ./gradlew :bluetape4k-exposed-jdbc-tests:verifyBluetapeAssertionImports --no-daemon --console=plain
 ```
 
-Expected result: FAIL with `RawAssertionImportProbe.kt` and the wildcard import in the violation list. Probe file를 `apply_patch`로 삭제하고, 이 임시 파일은 커밋하지 않는다.
+Expected result: FAIL with the unique probe path and the wildcard import in the violation list. Probe file를 `apply_patch`로 삭제하고, trap cleanup과 `test ! -e`를 통과시킨 뒤 이 임시 파일은 커밋하지 않는다. 같은 RED 단계에서 tab 및 alias import probe도 각각 추가해 모두 FAIL하는지 확인한다.
 
 - [ ] **Step 3: guard의 negative/positive 경계를 수동 확인한다.**
 
-`org.junit.jupiter.api.Test`, `org.junit.jupiter.api.Nested`, `org.junit.jupiter.params.ParameterizedTest` import는 기존 fixture에서 허용되어야 하며, regular `.kt` 외 파일과 source root 밖 파일은 검사 대상이 아니다. `git diff --check`로 임시 probe 제거 후 EOF 오류가 없는지 확인한다.
+`org.junit.jupiter.api.Test`, `org.junit.jupiter.api.Nested`, `org.junit.jupiter.params.ParameterizedTest` import는 기존 fixture에서 허용되어야 한다. regular `.kt` 외 파일과 source root 밖 파일은 검사 대상이 아니지만, `src/main/kotlin`·`src/test/kotlin` 외 Kotlin source set directory가 발견되면 검증을 실패시키고 guard 목록을 먼저 갱신한다. root 누락, root symlink, 하위 symlink probe는 모두 FAIL이어야 하며, `git diff --check`와 probe 잔류 검사를 통과한 뒤에만 다음 단계로 진행한다.
 
 ## Task 3: direct API dependency와 migration matcher를 최소 변경으로 적용한다
 
@@ -228,8 +235,8 @@ thrown.suppressed.toList() shouldBeEqualTo listOf(cleanup)
 ./gradlew :bluetape4k-exposed-jdbc-tests:outgoingVariants --no-daemon --console=plain
 ./gradlew :bluetape4k-exposed-jdbc-tests:generatePomFileForBluetapeExposedPublication --no-daemon --console=plain
 ./gradlew :bluetape4k-exposed-jdbc-tests:generateMetadataFileForBluetapeExposedPublication --no-daemon --console=plain
-rg -n 'bluetape4k-assertions' \\
-  exposed/jdbc-tests/build/publications/BluetapeExposed/pom-default.xml \\
+rg -n 'bluetape4k-assertions' \
+  exposed/jdbc-tests/build/publications/BluetapeExposed/pom-default.xml \
   exposed/jdbc-tests/build/publications/BluetapeExposed/module.json
 ```
 
@@ -255,39 +262,50 @@ Expected result: 두 task 모두 PASS, raw assertion import 검색 결과 0건�
 - [ ] **Step 2: H2 migration fixture와 전체 module test를 실행한다.**
 
 ```bash
-EXPOSED_TEST_DB=H2 ./gradlew :bluetape4k-exposed-jdbc-tests:migrationDriftTest \\
-  --tests 'io.bluetape4k.exposed.tests.migration.JdbcMigrationDriftTest' \\
+EXPOSED_TEST_DB=H2 ./gradlew :bluetape4k-exposed-jdbc-tests:migrationDriftTest \
+  --tests 'io.bluetape4k.exposed.tests.migration.JdbcMigrationDriftTest' \
   --no-build-cache --no-daemon --console=plain
 EXPOSED_TEST_DB=H2 ./gradlew :bluetape4k-exposed-jdbc-tests:test --no-build-cache --no-daemon --console=plain
 ```
 
-Expected result: migration drift parameterized cases와 helper contract cases가 모두 PASS하고, module test도 PASS한다. `preservingFailure` primary/suppressed identity와 `statement` failure message를 결과에서 확인한다.
+Expected result: migration drift parameterized cases와 helper contract cases가 모두 PASS하고, module test도 PASS한다. `preservingFailure` primary/suppressed identity와 `statement` failure message를 결과에서 확인한다. 기존 `AssertionsTest.assertFailAndRollback should rollback on failure`도 같은 H2 module run에서 PASS해야 하며, 이 issue는 새로운 rollback semantics를 주장하지 않는다.
 
 - [ ] **Step 3: PostgreSQL과 MySQL_V8을 순차 검증한다.**
 
 ```bash
-EXPOSED_TEST_DB=POSTGRESQL ./gradlew :bluetape4k-exposed-jdbc-tests:migrationDriftTest \\
-  --tests 'io.bluetape4k.exposed.tests.migration.JdbcMigrationDriftTest' \\
+EXPOSED_TEST_DB=POSTGRESQL ./gradlew :bluetape4k-exposed-jdbc-tests:migrationDriftTest \
+  --tests 'io.bluetape4k.exposed.tests.migration.JdbcMigrationDriftTest' \
   --no-build-cache --no-daemon --console=plain
-EXPOSED_TEST_DB=MYSQL_V8 ./gradlew :bluetape4k-exposed-jdbc-tests:migrationDriftTest \\
-  --tests 'io.bluetape4k.exposed.tests.migration.JdbcMigrationDriftTest' \\
+EXPOSED_TEST_DB=MYSQL_V8 ./gradlew :bluetape4k-exposed-jdbc-tests:migrationDriftTest \
+  --tests 'io.bluetape4k.exposed.tests.migration.JdbcMigrationDriftTest' \
   --no-build-cache --no-daemon --console=plain
 ```
 
-각 실행은 `TestDB` 선택 계약상 H2와 선택 dialect를 함께 포함한다. 따라서 H2/helper 검사는 Step 2에서 기준 증거를 한 번 확보하고, PostgreSQL/MySQL 실행에서 반복되는 H2 케이스는 의도된 고정 비용으로 별도 집계한다. 두 container lifecycle, dialect 문맥, cleanup/drop 경로를 각각 기록하며, 중복 실행을 단일 dialect PASS로 축약하지 않는다. Docker가 준비되지 않으면 `colima status`, `docker context show`, `docker info`를 먼저 확인한다. 세 dialect 증거가 없으면 PR DoD를 PASS로 표시하지 않고 `PENDING`으로 남긴다.
+각 실행은 `TestDB` 선택 계약상 H2와 선택 dialect를 함께 포함한다. 따라서 H2/helper 검사는 Step 2에서 기준 증거를 한 번 확보하고, PostgreSQL/MySQL 실행에서 반복되는 H2 케이스는 의도된 고정 비용으로 별도 집계한다. 각 JUnit XML의 `tests`, `failures`, `errors`, `skipped`를 읽어 H2는 7 tests/0 failures/0 errors/0 skipped, PostgreSQL과 MySQL_V8은 각각 8 tests/0 failures/0 errors/0 skipped인지 확인한다. XML이 없거나 count가 0/부분 실행이면 PASS가 아니라 `PENDING`/FAIL이다. 두 container lifecycle, dialect 문맥, cleanup/drop 경로를 각각 기록하며, 중복 실행을 단일 dialect PASS로 축약하지 않는다. Docker가 준비되지 않으면 `colima status`, `docker context show`, `docker info`를 먼저 확인한다. 세 dialect 증거가 없으면 PR DoD를 PASS로 표시하지 않고 `PENDING`으로 남긴다.
+
+`withDb`의 `maxAttempts = 1`을 재확인하고, 실패 후 재실행이 필요하면 첫 시도의 JUnit XML·exit status를 보존한다. 재실행만 green인 경우 retry-only PASS로 표시하지 않고 원인 분석 대기 `PENDING`으로 남긴다. Docker preflight 전후 `docker ps --format '{{.Names}}\t{{.Status}}'`와 테스트 종료 로그를 읽어 container 종료·connection cleanup·shutdown-hook 잔여가 없는지 확인하며, 자격 증명·토큰·전체 JDBC URL은 증거 문서에 기록하지 않는다.
 
 - [ ] **Step 4: 정적·diff·Kotlin checklist 검증을 실행한다.**
 
 ```bash
+set -euo pipefail
 EXPOSED_TEST_DB=H2 ./gradlew :bluetape4k-exposed-jdbc-tests:check --no-build-cache --no-daemon --console=plain
-rg -n '^import (org\\.junit\\.jupiter\\.api\\.Assertions|kotlin\\.test\\.assert|org\\.assertj\\.|org\\.kluent\\.)' \\
-  exposed/jdbc-tests/src/main/kotlin exposed/jdbc-tests/src/test/kotlin
-rg -n 'println\\(|System\\.(out|err)' exposed/jdbc-tests/build.gradle.kts \\
-  exposed/jdbc-tests/src/main/kotlin exposed/jdbc-tests/src/test/kotlin
+if rg -n '^import[[:space:]]+(org\.junit\.jupiter\.api\.Assertions(\.|[[:space:]]+as[[:space:]]|$)|kotlin\.test\.assert|org\.assertj\.|org\.kluent\.)' \
+  exposed/jdbc-tests/src/main/kotlin exposed/jdbc-tests/src/test/kotlin; then
+  echo 'forbidden raw assertion import found' >&2
+  exit 1
+fi
+if rg -n 'println\(|System\.(out|err)' exposed/jdbc-tests/build.gradle.kts \
+  exposed/jdbc-tests/src/main/kotlin exposed/jdbc-tests/src/test/kotlin; then
+  echo 'stdout/stderr call found' >&2
+  exit 1
+fi
+test "$(find exposed/jdbc-tests/src -type d -name kotlin -print | sort)" = \
+  $'exposed/jdbc-tests/src/main/kotlin\nexposed/jdbc-tests/src/test/kotlin'
 git diff --check
 ```
 
-Expected result: H2로 고정된 `check` PASS, raw import와 새 `println`/`System.out`/`System.err` 검색 0건, diff whitespace 오류 0건이다. `check`는 PostgreSQL/MySQL container를 다시 시작하지 않으며, 앞선 targeted dialect 실행과의 중복 비용은 Step 3의 선택 dialect 증거로 한정한다. `$bluetape-kotlin-patterns` testing checklist KT-01..KT-11과 7-Tier P0/P1=0을 review artifact에 연결한다.
+Expected result: H2로 고정된 `check` PASS, raw import와 새 `println`/`System.out`/`System.err` 검색 0건, diff whitespace 오류 0건이다. `check`는 PostgreSQL/MySQL container를 다시 시작하지 않으며, 앞선 targeted dialect 실행과의 중복 비용은 Step 3의 선택 dialect 증거로 한정한다. 결과 문서에는 sanitized counts/status만 남기고 password/token/secret/private JDBC URL을 redaction한다. `$bluetape-kotlin-patterns` testing checklist KT-01..KT-11과 7-Tier P0/P1=0을 review artifact에 연결한다.
 
 ## Task 5: 독립 검토 결과와 lesson을 기록한다
 
@@ -306,15 +324,17 @@ lesson에는 context(직접 사용하는 published API의 누락), decision(`api
 - [ ] **Step 3: 문서와 구현 산출물을 함께 self-review한다.**
 
 ```bash
-rg -n '미완성|placeholder' \\
-  docs/superpowers/plans/2026-08-25-issue-721-jdbc-tests-assertions-plan.md \\
-  docs/review/2026-08-25-issue-721-jdbc-tests-assertions-review.md \\
+rg -n '미완성|placeholder' \
+  docs/superpowers/plans/2026-08-25-issue-721-jdbc-tests-assertions-plan.md \
+  docs/review/2026-08-25-issue-721-jdbc-tests-assertions.md \
   docs/lessons/2026-08-25-issue-721-jdbc-tests-assertions.md
-node /Users/debop/.codex/skills/bluetape-writer/scripts/audit-korean-terms.mjs \\
-  docs/review/2026-08-25-issue-721-jdbc-tests-assertions-review.md \\
+node /Users/debop/.codex/skills/bluetape-writer/scripts/audit-korean-terms.mjs \
+  docs/review/2026-08-25-issue-721-jdbc-tests-assertions.md \
   docs/lessons/2026-08-25-issue-721-jdbc-tests-assertions.md
 git diff --check
 ```
+
+증거 파일과 review/lesson에는 테스트 count, exit status, sanitized lifecycle 상태만 기록한다. `password`, `token`, `secret`, private host, credential-bearing JDBC URL과 container 환경 dump는 redaction하고 원문 로그를 커밋하지 않는다. 문서에 남기는 failure message는 assertion 계약을 검증하는 데 필요한 statement/message prefix만 보존한다.
 
 ## Task 6: 커밋·push·PR 전달
 
@@ -335,7 +355,7 @@ git push -u origin refactor/jdbc-tests-bluetape-assertions
 git ls-remote origin refs/heads/refactor/jdbc-tests-bluetape-assertions
 ```
 
-로컬 HEAD와 원격 branch HEAD가 같은지 확인한 뒤 PR을 만든다.
+`git diff --name-only origin/develop...HEAD`가 다음 허용 경로만 포함하는지 확인한다: `exposed/jdbc-tests/build.gradle.kts`, `exposed/jdbc-tests/src/test/kotlin/io/bluetape4k/exposed/tests/migration/JdbcMigrationDriftTest.kt`, 현재 Issue #721의 `docs/superpowers/`, `docs/review/`, `docs/lessons/` 산출물. 그 밖의 경로가 있으면 push를 중단하고 원인을 정리한다. `git diff origin/develop...HEAD --binary | rg -n '(password|token|secret|jdbc:[^[:space:]]+@)'`가 0건인지 확인하고, `git remote get-url origin`이 기대한 GitHub 저장소인지 live-read한다. 로컬 HEAD와 원격 branch HEAD가 같은지 확인한 뒤 PR을 만든다.
 
 - [ ] **Step 3: Korean PR을 생성하고 live metadata를 맞춘다.**
 
