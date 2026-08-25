@@ -43,11 +43,12 @@ val job = batchJob("importUsers") {
     }
 }
 
+private object ExampleLog : io.bluetape4k.logging.KLogging()
 val report = job.run()
 when (report) {
-    is BatchReport.Success           -> println("완료: ${report.stepReports[0].writeCount} rows")
-    is BatchReport.PartiallyCompleted -> println("부분완료: skip=${report.stepReports.sumOf { it.skipCount }}")
-    is BatchReport.Failure           -> println("실패: ${report.error.message}")
+    is BatchReport.Success           -> ExampleLog.log.info { "완료: ${report.stepReports[0].writeCount} rows" }
+    is BatchReport.PartiallyCompleted -> ExampleLog.log.info { "부분완료: skip=${report.stepReports.sumOf { it.skipCount }}" }
+    is BatchReport.Failure           -> ExampleLog.log.error(report.error) { "실패" }
 }
 ```
 

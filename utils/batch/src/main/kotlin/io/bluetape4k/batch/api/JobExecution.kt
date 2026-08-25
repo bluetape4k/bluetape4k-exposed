@@ -10,11 +10,13 @@ import java.time.Instant
  * Job의 전체 실행 이력을 나타내며, 재시작 시 동일한 인스턴스를 재사용한다.
  *
  * ```kotlin
+ * private object ExampleLog : KLogging()
+ *
  * val jobExecution = repository.findOrCreateJobExecution(
  *     jobName = "importOrders",
  *     params = mapOf("date" to "2026-04-10")
  * )
- * println("Job ID: ${jobExecution.id}, Status: ${jobExecution.status}")
+ * ExampleLog.log.info { "Job ID: ${jobExecution.id}, Status: ${jobExecution.status}" }
  * ```
  *
  * @property id Job 실행 고유 ID

@@ -5,9 +5,11 @@ import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchExecutionAlreadyClaimedException
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.JobExecution
+import io.bluetape4k.batch.api.StepExecution
 import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
+import io.bluetape4k.logging.error
 import io.bluetape4k.logging.warn
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
@@ -32,6 +34,8 @@ import java.time.Instant
  * 1. [BatchJobRepository.findOrCreateStepExecution] 결과가 `COMPLETED` 또는 `COMPLETED_WITH_SKIPS`면
  *    reader/writer를 **절대 open하지 않고**, checkpoint 복원도 수행하지 않는다.
  * 2. [CancellationException]은 **절대 삼키지 않는다** — STOPPED 상태 저장 후 항상 즉시 재던진다.
+ *    일반적인 상태 저장 실패는 원래 취소 예외의 suppressed cause로 보존하고, 저장 중
+ *    cancellation이 발생하면 원인 예외를 suppressed로 연결한 뒤 전파하며 error 로그를 남긴다.
  * 3. `reader.close()` / `writer.close()`는 `finally`의 [NonCancellable] 컨텍스트에서
  *    각각 독립된 `runCatching`으로 실행된다.
  * 4. EOF 판정은 `chunk.isEmpty()`가 아닌 `eofReached` 플래그로 판단한다 — 전부 필터링된 경우와 구분한다.
@@ -238,10 +242,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
                     skipCount = skipCount,
                     checkpoint = runCatching { step.reader.checkpoint() }.getOrNull(),
                 )
-                runCatching { repository.completeStepExecution(claimedStepExecution, stoppedReport) }
-                    .onFailure { t ->
-                        log.warn { "STOPPED 상태 저장 실패" }
-                    }
+                completeStepExecutionSafely(claimedStepExecution, stoppedReport, e)
             }
             throw e
         } catch (e: Throwable) {
@@ -253,10 +254,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
                 skipCount = skipCount,
                 error = e,
             )
-            runCatching { repository.completeStepExecution(claimedStepExecution, failedReport) }
-                .onFailure { t ->
-                    log.warn { "FAILED 상태 저장 실패" }
-                }
+            completeStepExecutionSafely(claimedStepExecution, failedReport, e)
             return failedReport
         } finally {
             withContext(NonCancellable) {
@@ -266,5 +264,53 @@ internal class BatchStepRunner<I : Any, O : Any>(
                     .onFailure { log.warn { "writer close 실패" } }
             }
         }
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun completeStepExecutionSafely(
+        execution: StepExecution,
+        report: StepReport,
+        primary: Throwable,
+    ) {
+        try {
+            repository.completeStepExecution(execution, report)
+        } catch (persistenceCancellation: CancellationException) {
+            log.error(persistenceCancellation) {
+                "${report.status} 상태 저장 취소됨 — step=${step.name}, executionId=${execution.id}, " +
+                    "실행 원인 예외와 함께 전파합니다"
+            }
+            propagateCompletionCancellation(primary, persistenceCancellation)
+        } catch (persistenceFailure: Throwable) {
+            preserveCompletionFailure(execution.id, primary, report.status, persistenceFailure)
+        }
+    }
+
+    private fun preserveCompletionFailure(
+        executionId: Long,
+        primary: Throwable,
+        status: BatchStatus,
+        persistenceFailure: Throwable,
+    ) {
+        if (persistenceFailure !== primary) {
+            primary.addSuppressed(persistenceFailure)
+        }
+        log.error(persistenceFailure) {
+            "$status 상태 저장 실패 — step=${step.name}, executionId=$executionId, " +
+                "실행 원인 예외에 suppressed cause로 보존했습니다"
+        }
+    }
+
+    private fun propagateCompletionCancellation(
+        primary: Throwable,
+        persistenceCancellation: CancellationException,
+    ): Nothing {
+        if (persistenceCancellation !== primary) {
+            if (primary is CancellationException) {
+                primary.addSuppressed(persistenceCancellation)
+                throw primary
+            }
+            persistenceCancellation.addSuppressed(primary)
+        }
+        throw persistenceCancellation
     }
 }

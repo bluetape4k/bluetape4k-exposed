@@ -5,9 +5,10 @@ import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchExecutionAlreadyClaimedException
 import io.bluetape4k.batch.api.BatchReport
 import io.bluetape4k.batch.api.BatchStatus
+import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.logging.coroutines.KLoggingChannel
-import io.bluetape4k.logging.warn
+import io.bluetape4k.logging.error
 import io.bluetape4k.support.requireNotBlank
 import io.bluetape4k.support.requireNotEmpty
 import io.bluetape4k.workflow.api.SuspendWork
@@ -70,6 +71,9 @@ class BatchJob(
      * ## 취소 처리
      * - 외부 코루틴 취소([CancellationException]) → STOPPED 영속화 후 **반드시 재던짐**
      * - 치명적 예외([Throwable]) → FAILED 영속화 후 [BatchReport.Failure] 반환
+     * - 일반적인 FAILED/STOPPED 영속화 실패는 원인 예외의 suppressed cause로 보존하고
+     *   error 로그를 남긴다. 영속화 중 발생한 [CancellationException]은 원인 예외를
+     *   suppressed로 연결한 뒤 전파한다. 자동 재시도·outbox는 이 실행기의 책임이 아니다.
      *
      * @return [BatchReport.Success], [BatchReport.PartiallyCompleted], 또는 [BatchReport.Failure]
      */
@@ -121,23 +125,67 @@ class BatchJob(
             }
 
         } catch (e: CancellationException) {
-            withContext(NonCancellable) {
-                runCatching { repository.completeJobExecution(claimedJobExecution, BatchStatus.STOPPED) }
-                    .onFailure { log.warn { "STOPPED 상태 저장 실패" } }
-            }
+            persistCompletionSafely(claimedJobExecution, BatchStatus.STOPPED, e)
             throw e
 
         } catch (e: Throwable) {
-            withContext(NonCancellable) {
-                runCatching { repository.completeJobExecution(claimedJobExecution, BatchStatus.FAILED) }
-                    .onFailure { log.warn { "FAILED 상태 저장 실패" } }
-            }
+            persistCompletionSafely(claimedJobExecution, BatchStatus.FAILED, e)
             return BatchReport.Failure(
                 claimedJobExecution.copy(status = BatchStatus.FAILED),
                 stepReports,
                 e,
             )
         }
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun persistCompletionSafely(
+        execution: JobExecution,
+        status: BatchStatus,
+        primary: Throwable,
+    ) {
+        withContext(NonCancellable) {
+            try {
+                repository.completeJobExecution(execution, status)
+            } catch (persistenceCancellation: CancellationException) {
+                log.error(persistenceCancellation) {
+                    "$status 상태 저장 취소됨 — job=$name, executionId=${execution.id}, " +
+                        "실행 원인 예외와 함께 전파합니다"
+                }
+                propagateCompletionCancellation(primary, persistenceCancellation)
+            } catch (persistenceFailure: Throwable) {
+                preserveCompletionFailure(execution.id, primary, status, persistenceFailure)
+            }
+        }
+    }
+
+    private fun preserveCompletionFailure(
+        executionId: Long,
+        primary: Throwable,
+        status: BatchStatus,
+        persistenceFailure: Throwable,
+    ) {
+        if (persistenceFailure !== primary) {
+            primary.addSuppressed(persistenceFailure)
+        }
+        log.error(persistenceFailure) {
+            "$status 상태 저장 실패 — job=$name, executionId=$executionId, " +
+                "실행 원인 예외에 suppressed cause로 보존했습니다"
+        }
+    }
+
+    private fun propagateCompletionCancellation(
+        primary: Throwable,
+        persistenceCancellation: CancellationException,
+    ): Nothing {
+        if (persistenceCancellation !== primary) {
+            if (primary is CancellationException) {
+                primary.addSuppressed(persistenceCancellation)
+                throw primary
+            }
+            persistenceCancellation.addSuppressed(primary)
+        }
+        throw persistenceCancellation
     }
 
     /**

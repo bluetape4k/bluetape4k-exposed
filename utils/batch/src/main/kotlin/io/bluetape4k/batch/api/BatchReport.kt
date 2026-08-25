@@ -1,5 +1,7 @@
 package io.bluetape4k.batch.api
 
+import io.bluetape4k.logging.KLogging
+
 /**
  * Job 실행 전체 결과 보고서.
  *
@@ -9,11 +11,13 @@ package io.bluetape4k.batch.api
  * - [Failure]: 하나 이상의 Step FAILED
  *
  * ```kotlin
+ * private object ExampleLog : KLogging()
+ *
  * val report = jobRunner.run(job)
  * when (report) {
- *     is BatchReport.Success           -> println("Job 완료: ${report.stepReports.size}개 Step")
- *     is BatchReport.PartiallyCompleted -> println("부분 완료: skip 발생")
- *     is BatchReport.Failure           -> println("Job 실패: ${report.error.message}")
+ *     is BatchReport.Success           -> ExampleLog.log.info { "Job 완료: ${report.stepReports.size}개 Step" }
+ *     is BatchReport.PartiallyCompleted -> ExampleLog.log.info { "부분 완료: skip 발생" }
+ *     is BatchReport.Failure           -> ExampleLog.log.error(report.error) { "Job 실패" }
  * }
  * ```
  */
