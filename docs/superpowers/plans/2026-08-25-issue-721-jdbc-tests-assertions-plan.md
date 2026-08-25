@@ -222,7 +222,15 @@ thrown.suppressed.toList() shouldBeEqualTo listOf(cleanup)
 
 - [ ] **Step 4: direct API와 matcher 변경의 compile RED/GREEN 순서를 확인한다.**
 
-먼저 `verifyBluetapeAssertionImports`를 실행해 기존 raw import 때문에 실패하는 RED 결과를 보관한다. Step 2와 Step 3 변경 후 같은 명령이 PASS하고, `compileTestKotlin`이 `io.bluetape4k.assertions` API를 직접 해석하는지 확인한다.
+먼저 `verifyBluetapeAssertionImports`를 실행해 기존 raw import 때문에 실패하는 RED 결과를 보관한다. Step 2와 Step 3 변경 후 같은 명령이 PASS하고, `compileTestKotlin`이 `io.bluetape4k.assertions` API를 직접 해석하는지 확인한다. `api`/`implementation` 차이는 compile task만으로 판정하지 않고 다음 두 Gradle surface를 읽는다.
+
+```bash
+./gradlew :bluetape4k-exposed-jdbc-tests:outgoingVariants --no-daemon --console=plain
+./gradlew :bluetape4k-exposed-jdbc-tests:generatePomFileForBluetapeExposedPublication --no-daemon --console=plain
+rg -n 'bluetape4k-assertions' build/publications/BluetapeExposed/pom-default.xml
+```
+
+Expected result: `apiElements` dependency view와 `build/publications/BluetapeExposed/pom-default.xml`에 `io.github.bluetape4k:bluetape4k-assertions`가 consumer-visible dependency로 나타난다.
 
 ## Task 4: 모듈 검증과 dialect 증거 수집
 
@@ -246,29 +254,29 @@ Expected result: 두 task 모두 PASS, raw assertion import 검색 결과 0건�
 ```bash
 EXPOSED_TEST_DB=H2 ./gradlew :bluetape4k-exposed-jdbc-tests:migrationDriftTest \\
   --tests 'io.bluetape4k.exposed.tests.migration.JdbcMigrationDriftTest' \\
-  --no-daemon --console=plain
-EXPOSED_TEST_DB=H2 ./gradlew :bluetape4k-exposed-jdbc-tests:test --no-daemon --console=plain
+  --no-build-cache --no-daemon --console=plain
+EXPOSED_TEST_DB=H2 ./gradlew :bluetape4k-exposed-jdbc-tests:test --no-build-cache --no-daemon --console=plain
 ```
 
 Expected result: migration drift parameterized cases와 helper contract cases가 모두 PASS하고, module test도 PASS한다. `preservingFailure` primary/suppressed identity와 `statement` failure message를 결과에서 확인한다.
 
-- [ ] **Step 3: Docker가 준비된 경우 PostgreSQL과 MySQL_V8을 순차 검증한다.**
+- [ ] **Step 3: PostgreSQL과 MySQL_V8을 순차 검증한다.**
 
 ```bash
 EXPOSED_TEST_DB=POSTGRESQL ./gradlew :bluetape4k-exposed-jdbc-tests:migrationDriftTest \\
   --tests 'io.bluetape4k.exposed.tests.migration.JdbcMigrationDriftTest' \\
-  --no-daemon --console=plain
+  --no-build-cache --no-daemon --console=plain
 EXPOSED_TEST_DB=MYSQL_V8 ./gradlew :bluetape4k-exposed-jdbc-tests:migrationDriftTest \\
   --tests 'io.bluetape4k.exposed.tests.migration.JdbcMigrationDriftTest' \\
-  --no-daemon --console=plain
+  --no-build-cache --no-daemon --console=plain
 ```
 
-각 실행은 H2와 선택 dialect를 포함하므로 PostgreSQL/MySQL container lifecycle, dialect 문맥, cleanup/drop 경로를 각각 기록한다. Docker가 준비되지 않으면 `colima status`, `docker context show`, `docker info`를 먼저 확인하고, container test를 생략한 경우 PASS로 표시하지 않고 검증 공백으로 보고한다.
+각 실행은 H2와 선택 dialect를 포함하므로 PostgreSQL/MySQL container lifecycle, dialect 문맥, cleanup/drop 경로를 각각 기록한다. Docker가 준비되지 않으면 `colima status`, `docker context show`, `docker info`를 먼저 확인한다. 세 dialect 증거가 없으면 PR DoD를 PASS로 표시하지 않고 `PENDING`으로 남긴다.
 
 - [ ] **Step 4: 정적·diff·Kotlin checklist 검증을 실행한다.**
 
 ```bash
-./gradlew :bluetape4k-exposed-jdbc-tests:check --no-daemon --console=plain
+./gradlew :bluetape4k-exposed-jdbc-tests:check --no-build-cache --no-daemon --console=plain
 rg -n '^import (org\\.junit\\.jupiter\\.api\\.Assertions|kotlin\\.test\\.assert|org\\.assertj\\.|org\\.kluent\\.)' \\
   exposed/jdbc-tests/src/main/kotlin exposed/jdbc-tests/src/test/kotlin
 rg -n 'println\\(|System\\.(out|err)' exposed/jdbc-tests/build.gradle.kts \\
