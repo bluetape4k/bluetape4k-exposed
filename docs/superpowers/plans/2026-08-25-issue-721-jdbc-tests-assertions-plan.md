@@ -274,12 +274,12 @@ EXPOSED_TEST_DB=MYSQL_V8 ./gradlew :bluetape4k-exposed-jdbc-tests:migrationDrift
   --no-build-cache --no-daemon --console=plain
 ```
 
-각 실행은 H2와 선택 dialect를 포함하므로 PostgreSQL/MySQL container lifecycle, dialect 문맥, cleanup/drop 경로를 각각 기록한다. Docker가 준비되지 않으면 `colima status`, `docker context show`, `docker info`를 먼저 확인한다. 세 dialect 증거가 없으면 PR DoD를 PASS로 표시하지 않고 `PENDING`으로 남긴다.
+각 실행은 `TestDB` 선택 계약상 H2와 선택 dialect를 함께 포함한다. 따라서 H2/helper 검사는 Step 2에서 기준 증거를 한 번 확보하고, PostgreSQL/MySQL 실행에서 반복되는 H2 케이스는 의도된 고정 비용으로 별도 집계한다. 두 container lifecycle, dialect 문맥, cleanup/drop 경로를 각각 기록하며, 중복 실행을 단일 dialect PASS로 축약하지 않는다. Docker가 준비되지 않으면 `colima status`, `docker context show`, `docker info`를 먼저 확인한다. 세 dialect 증거가 없으면 PR DoD를 PASS로 표시하지 않고 `PENDING`으로 남긴다.
 
 - [ ] **Step 4: 정적·diff·Kotlin checklist 검증을 실행한다.**
 
 ```bash
-./gradlew :bluetape4k-exposed-jdbc-tests:check --no-build-cache --no-daemon --console=plain
+EXPOSED_TEST_DB=H2 ./gradlew :bluetape4k-exposed-jdbc-tests:check --no-build-cache --no-daemon --console=plain
 rg -n '^import (org\\.junit\\.jupiter\\.api\\.Assertions|kotlin\\.test\\.assert|org\\.assertj\\.|org\\.kluent\\.)' \\
   exposed/jdbc-tests/src/main/kotlin exposed/jdbc-tests/src/test/kotlin
 rg -n 'println\\(|System\\.(out|err)' exposed/jdbc-tests/build.gradle.kts \\
@@ -287,7 +287,7 @@ rg -n 'println\\(|System\\.(out|err)' exposed/jdbc-tests/build.gradle.kts \\
 git diff --check
 ```
 
-Expected result: `check` PASS, raw import와 새 `println`/`System.out`/`System.err` 검색 0건, diff whitespace 오류 0건이다. `$bluetape-kotlin-patterns` testing checklist KT-01..KT-11과 7-Tier P0/P1=0을 review artifact에 연결한다.
+Expected result: H2로 고정된 `check` PASS, raw import와 새 `println`/`System.out`/`System.err` 검색 0건, diff whitespace 오류 0건이다. `check`는 PostgreSQL/MySQL container를 다시 시작하지 않으며, 앞선 targeted dialect 실행과의 중복 비용은 Step 3의 선택 dialect 증거로 한정한다. `$bluetape-kotlin-patterns` testing checklist KT-01..KT-11과 7-Tier P0/P1=0을 review artifact에 연결한다.
 
 ## Task 5: 독립 검토 결과와 lesson을 기록한다
 
