@@ -1,5 +1,10 @@
 package io.bluetape4k.exposed.ktor
 
+import io.bluetape4k.assertions.should
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
+
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheFailure
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheFailureBuffer
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOperation
@@ -33,9 +38,6 @@ import org.h2.jdbcx.JdbcDataSource
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.PrintWriter
 import java.lang.reflect.InvocationTargetException
@@ -87,16 +89,13 @@ class ExposedKtorReadinessBudgetTest {
             timeSource = testScheduler.timeSource,
         )
 
-        assertEquals(listOf("jdbc", "r2dbc", "cache-first", "cache-second"), order)
-        assertEquals(
-            linkedMapOf(
+        order shouldBeEqualTo listOf("jdbc", "r2dbc", "cache-first", "cache-second")
+        details shouldBeEqualTo linkedMapOf(
                 "jdbc" to HealthResponse.UP,
                 "r2dbc" to HealthResponse.UP,
                 "cache.first" to HealthResponse.DOWN,
                 "cache.second" to HealthResponse.UP,
-            ),
-            details,
-        )
+            )
     }
 
     @Test
@@ -129,21 +128,18 @@ class ExposedKtorReadinessBudgetTest {
             testScheduler.timeSource,
         )
 
-        assertEquals(100L, testScheduler.currentTime)
-        assertEquals(
-            linkedMapOf(
+        testScheduler.currentTime shouldBeEqualTo 100L
+        details shouldBeEqualTo linkedMapOf(
                 "cache.first" to HealthResponse.UP,
                 "cache.active" to TIMEOUT_OUTCOME,
                 "cache.skipped" to TIMEOUT_OUTCOME,
-            ),
-            details,
-        )
-        assertEquals(listOf(1, 1, 0), invocations.map(AtomicInteger::get))
-        assertEquals(1L, timerCount(registry, "first", SUCCESS_OUTCOME))
-        assertEquals(1L, timerCount(registry, "active", TIMEOUT_OUTCOME))
-        assertEquals(0L, CACHE_OUTCOMES.sumOf { timerCount(registry, "skipped", it) })
-        assertTrue(bindings[1].currentSample().queueDepth.isNaN())
-        assertTrue(bindings[2].currentSample().queueDepth.isNaN())
+            )
+        (invocations.map(AtomicInteger::get)) shouldBeEqualTo listOf(1, 1, 0)
+        (timerCount(registry, "first", SUCCESS_OUTCOME)) shouldBeEqualTo 1L
+        (timerCount(registry, "active", TIMEOUT_OUTCOME)) shouldBeEqualTo 1L
+        (CACHE_OUTCOMES.sumOf { timerCount(registry, "skipped", it) }) shouldBeEqualTo 0L
+        (bindings[1].currentSample().queueDepth.isNaN()).shouldBeTrue()
+        (bindings[2].currentSample().queueDepth.isNaN()).shouldBeTrue()
     }
 
     @Test
@@ -173,16 +169,13 @@ class ExposedKtorReadinessBudgetTest {
             timeSource = testScheduler.timeSource,
         )
 
-        assertEquals((r + jEffective + r + r).inWholeMilliseconds, testScheduler.currentTime)
-        assertEquals(
-            linkedMapOf(
+        testScheduler.currentTime shouldBeEqualTo (r + jEffective + r + r).inWholeMilliseconds
+        details shouldBeEqualTo linkedMapOf(
                 "jdbc" to HealthResponse.UP,
                 "r2dbc" to HealthResponse.UP,
                 "cache.cache" to TIMEOUT_OUTCOME,
-            ),
-            details,
-        )
-        assertEquals(1L, timerCount(registry, "cache", TIMEOUT_OUTCOME))
+            )
+        (timerCount(registry, "cache", TIMEOUT_OUTCOME)) shouldBeEqualTo 1L
     }
 
     @Test
@@ -220,9 +213,9 @@ class ExposedKtorReadinessBudgetTest {
             releaseOlderB.complete(Unit)
             older.join()
 
-            assertEquals(ExposedKtorCacheStatus.UP, bindings[1].currentSample().status)
-            assertEquals(1L, timerCount(registry, "b", SUCCESS_OUTCOME))
-            assertEquals(0L, timerCount(registry, "b", CANCELLED_OUTCOME))
+            (bindings[1].currentSample().status) shouldBeEqualTo ExposedKtorCacheStatus.UP
+            (timerCount(registry, "b", SUCCESS_OUTCOME)) shouldBeEqualTo 1L
+            (timerCount(registry, "b", CANCELLED_OUTCOME)) shouldBeEqualTo 0L
         }
     }
 
@@ -245,18 +238,18 @@ class ExposedKtorReadinessBudgetTest {
             val attempt = async(dispatcher) {
                 aggregateExposedKtorReadiness(null, null, binding, 20.milliseconds)
             }
-            assertTrue(entered.await(2, TimeUnit.SECONDS))
+            (entered.await(2, TimeUnit.SECONDS)).shouldBeTrue()
             timer.schedule({ deadlinePassed.countDown() }, 80, TimeUnit.MILLISECONDS)
-            assertTrue(deadlinePassed.await(2, TimeUnit.SECONDS))
-            assertFalse(attempt.isCompleted)
+            (deadlinePassed.await(2, TimeUnit.SECONDS)).shouldBeTrue()
+            attempt.isCompleted.shouldBeFalse()
             release.countDown()
             withTimeout(2.seconds) { attempt.await() }
         } finally {
             release.countDown()
             dispatcher.close()
             timer.shutdownNow()
-            assertTrue(executor.awaitTermination(2, TimeUnit.SECONDS))
-            assertTrue(timer.awaitTermination(2, TimeUnit.SECONDS))
+            (executor.awaitTermination(2, TimeUnit.SECONDS)).shouldBeTrue()
+            (timer.awaitTermination(2, TimeUnit.SECONDS)).shouldBeTrue()
         }
     }
 
@@ -287,22 +280,22 @@ class ExposedKtorReadinessBudgetTest {
                     meterRegistry = registry,
                 )
             }
-            assertTrue(connectionRequested.await(2, TimeUnit.SECONDS))
+            (connectionRequested.await(2, TimeUnit.SECONDS)).shouldBeTrue()
             attempt.cancel()
             connectionGate.countDown()
             statementGate.countDown()
             attempt.join()
 
-            assertTrue(attempt.isCancelled)
-            assertEquals(1L, databaseTimerCount(registry, JDBC_BACKEND, CANCELLED_OUTCOME))
-            assertEquals(0L, databaseTimerCount(registry, JDBC_BACKEND, TIMEOUT_OUTCOME))
-            assertEquals(0L, databaseTimerCount(registry, JDBC_BACKEND, SUCCESS_OUTCOME))
-            assertEquals(0L, databaseTimerCount(registry, JDBC_BACKEND, ERROR_OUTCOME))
+            attempt.isCancelled.shouldBeTrue()
+            (databaseTimerCount(registry, JDBC_BACKEND, CANCELLED_OUTCOME)) shouldBeEqualTo 1L
+            (databaseTimerCount(registry, JDBC_BACKEND, TIMEOUT_OUTCOME)) shouldBeEqualTo 0L
+            (databaseTimerCount(registry, JDBC_BACKEND, SUCCESS_OUTCOME)) shouldBeEqualTo 0L
+            (databaseTimerCount(registry, JDBC_BACKEND, ERROR_OUTCOME)) shouldBeEqualTo 0L
         } finally {
             connectionGate.countDown()
             statementGate.countDown()
             dispatcher.close()
-            assertTrue(executor.awaitTermination(2, TimeUnit.SECONDS))
+            (executor.awaitTermination(2, TimeUnit.SECONDS)).shouldBeTrue()
             h2.connection.use { connection ->
                 connection.createStatement().use { it.execute("SHUTDOWN") }
             }
@@ -338,8 +331,8 @@ class ExposedKtorReadinessBudgetTest {
                 val drainer = async(dispatcher) {
                     repeat(rounds) {
                         roundBoundary.await(5, TimeUnit.SECONDS)
-                        assertTrue(produced.tryAcquire(5, TimeUnit.SECONDS))
-                        assertEquals(1, buffer.poll()?.affectedCount)
+                        (produced.tryAcquire(5, TimeUnit.SECONDS)).shouldBeTrue()
+                        (buffer.poll()?.affectedCount) shouldBeEqualTo 1
                         roundBoundary.await(5, TimeUnit.SECONDS)
                     }
                 }
@@ -347,7 +340,7 @@ class ExposedKtorReadinessBudgetTest {
                     repeat(rounds) {
                         roundBoundary.await(5, TimeUnit.SECONDS)
                         val details = aggregateExposedKtorReadiness(null, null, listOf(binding), 1.seconds)
-                        assertEquals(HealthResponse.UP, details["cache.snapshot"])
+                        (details["cache.snapshot"]) shouldBeEqualTo HealthResponse.UP
                         roundBoundary.await(5, TimeUnit.SECONDS)
                     }
                 }
@@ -356,7 +349,7 @@ class ExposedKtorReadinessBudgetTest {
                 sampler.await()
             }
 
-            assertEquals(rounds, buffer.size)
+            buffer.size shouldBeEqualTo rounds
             buffer.recordForTest(affectedCount = 777)
             val retainedAffectedCounts = mutableListOf<Int>()
             val drain = buffer.drainTo(
@@ -364,24 +357,24 @@ class ExposedKtorReadinessBudgetTest {
                 maxElements = Int.MAX_VALUE,
             )
 
-            assertEquals(rounds + 1, drain.deliveredCount)
-            assertEquals(0, drain.observerFailedCount)
-            assertEquals(0, drain.remainingCount)
-            assertEquals(rounds, retainedAffectedCounts.count { it == 1 })
-            assertEquals(1, retainedAffectedCounts.count { it == 777 })
-            assertEquals(0, buffer.size)
-            assertEquals(0L, buffer.droppedCount)
-            assertEquals(0L, buffer.observerFailureCount)
-            assertEquals(rounds.toLong(), timerCount(registry, "snapshot", SUCCESS_OUTCOME, kind = "snapshot"))
-            assertEquals(8, registry.meters.size)
+            drain.deliveredCount shouldBeEqualTo rounds + 1
+            drain.observerFailedCount shouldBeEqualTo 0
+            drain.remainingCount shouldBeEqualTo 0
+            (retainedAffectedCounts.count { it == 1 }) shouldBeEqualTo rounds
+            (retainedAffectedCounts.count { it == 777 }) shouldBeEqualTo 1
+            buffer.size shouldBeEqualTo 0
+            buffer.droppedCount shouldBeEqualTo 0L
+            buffer.observerFailureCount shouldBeEqualTo 0L
+            (timerCount(registry, "snapshot", SUCCESS_OUTCOME, kind = "snapshot")) shouldBeEqualTo rounds.toLong()
+            registry.meters.size shouldBeEqualTo 8
             registry.meters.filter { it.id.type.name == "GAUGE" }.forEach { meter ->
-                meter.measure().forEach { value -> assertTrue(value.value.isNaN() || value.value >= 0.0) }
+                meter.measure().forEach { value -> (value.value.isNaN() || value.value >= 0.0).shouldBeTrue() }
             }
         } finally {
             roundBoundary.reset()
             produced.release(rounds)
             dispatcher.close()
-            assertTrue(executor.awaitTermination(2, TimeUnit.SECONDS))
+            (executor.awaitTermination(2, TimeUnit.SECONDS)).shouldBeTrue()
         }
     }
 
@@ -436,13 +429,13 @@ class ExposedKtorReadinessBudgetTest {
                 val responseAttempt = async(Dispatchers.Default) {
                     bluetape4kJsonClient().get("/readyz/exposed")
                 }
-                assertTrue(connectionRequested.await(2, TimeUnit.SECONDS))
+                (connectionRequested.await(2, TimeUnit.SECONDS)).shouldBeTrue()
                 scheduler.schedule(
                     { connectionGate.countDown() },
                     connectionDelay.inWholeMilliseconds,
                     TimeUnit.MILLISECONDS,
                 )
-                assertTrue(statementStarted.await(2, TimeUnit.SECONDS))
+                (statementStarted.await(2, TimeUnit.SECONDS)).shouldBeTrue()
                 val statementHoldStarted = TimeSource.Monotonic.markNow()
                 scheduler.schedule(
                     { statementGate.countDown() },
@@ -455,36 +448,31 @@ class ExposedKtorReadinessBudgetTest {
             }
             val elapsed = started.elapsedNow()
 
-            assertEquals(
-                HealthResponse.down(
+            (response.decodeJsonBody<HealthResponse>()) shouldBeEqualTo HealthResponse.down(
                     linkedMapOf(
                         "jdbc" to TIMEOUT_OUTCOME,
                         "r2dbc" to HealthResponse.UP,
                         "cache.cache" to HealthResponse.UP,
                     )
-                ),
-                response.decodeJsonBody<HealthResponse>(),
-            )
-            assertTrue(statementHeld >= jdbcQueryTimeout - 150.milliseconds, "statementHeld=$statementHeld")
-            assertTrue(
-                elapsed >= connectionDelay + jdbcQueryTimeout - 200.milliseconds,
-                "elapsed=$elapsed connectionDelay=$connectionDelay jdbcQueryTimeout=$jdbcQueryTimeout",
-            )
+                )
+            (statementHeld >= jdbcQueryTimeout - 150.milliseconds).should("statementHeld=$statementHeld") { it }
+            (elapsed >= connectionDelay + jdbcQueryTimeout - 200.milliseconds)
+                .should("elapsed=$elapsed connectionDelay=$connectionDelay jdbcQueryTimeout=$jdbcQueryTimeout") { it }
             val formula = readinessTimeout + jdbcQueryTimeout + readinessTimeout + readinessTimeout
-            assertTrue(elapsed < formula + 2.seconds, "elapsed=$elapsed formula=$formula")
-            assertEquals(1L, databaseTimerCount(meterRegistry, JDBC_BACKEND, TIMEOUT_OUTCOME))
-            assertEquals(0L, databaseTimerCount(meterRegistry, JDBC_BACKEND, CANCELLED_OUTCOME))
-            assertEquals(0L, databaseTimerCount(meterRegistry, JDBC_BACKEND, SUCCESS_OUTCOME))
-            assertEquals(0L, databaseTimerCount(meterRegistry, JDBC_BACKEND, ERROR_OUTCOME))
-            assertEquals(1L, databaseTimerCount(meterRegistry, R2DBC_BACKEND, SUCCESS_OUTCOME))
-            assertEquals(1L, timerCount(meterRegistry, "cache", SUCCESS_OUTCOME))
+            (elapsed < formula + 2.seconds).should("elapsed=$elapsed formula=$formula") { it }
+            (databaseTimerCount(meterRegistry, JDBC_BACKEND, TIMEOUT_OUTCOME)) shouldBeEqualTo 1L
+            (databaseTimerCount(meterRegistry, JDBC_BACKEND, CANCELLED_OUTCOME)) shouldBeEqualTo 0L
+            (databaseTimerCount(meterRegistry, JDBC_BACKEND, SUCCESS_OUTCOME)) shouldBeEqualTo 0L
+            (databaseTimerCount(meterRegistry, JDBC_BACKEND, ERROR_OUTCOME)) shouldBeEqualTo 0L
+            (databaseTimerCount(meterRegistry, R2DBC_BACKEND, SUCCESS_OUTCOME)) shouldBeEqualTo 1L
+            (timerCount(meterRegistry, "cache", SUCCESS_OUTCOME)) shouldBeEqualTo 1L
         } finally {
             connectionGate.countDown()
             statementGate.countDown()
             jdbcDispatcher.close()
             scheduler.shutdownNow()
-            assertTrue(jdbcExecutor.awaitTermination(2, TimeUnit.SECONDS))
-            assertTrue(scheduler.awaitTermination(2, TimeUnit.SECONDS))
+            (jdbcExecutor.awaitTermination(2, TimeUnit.SECONDS)).shouldBeTrue()
+            (scheduler.awaitTermination(2, TimeUnit.SECONDS)).shouldBeTrue()
             h2.connection.use { connection ->
                 connection.createStatement().use { it.execute("SHUTDOWN") }
             }
@@ -523,7 +511,7 @@ class ExposedKtorReadinessBudgetTest {
             "jdbcQueryTimeout",
             "defaultQueryTimeout",
             "no separate Ktor query timeout",
-        ).forEach { assertTrue(kdoc.contains(it), it) }
+        ).forEach { (kdoc.contains(it)).should(it) { it } }
     }
 
     private fun bindings(

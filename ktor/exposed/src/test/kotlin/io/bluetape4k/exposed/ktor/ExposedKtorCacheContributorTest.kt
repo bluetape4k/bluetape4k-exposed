@@ -1,5 +1,12 @@
 package io.bluetape4k.exposed.ktor
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.should
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
+
 import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
@@ -8,10 +15,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.nio.file.Path
@@ -25,14 +28,14 @@ class ExposedKtorCacheContributorTest {
         val snapshot = ExposedKtorCacheContributor.snapshot("snapshots", failureBuffer())
         val custom = ExposedKtorCacheContributor.custom("custom-1") { ExposedKtorCacheStatus.DOWN }
 
-        assertEquals(ExposedKtorCacheKind.JDBC, jdbc.kind)
-        assertEquals(ExposedKtorCacheStatus.UP, jdbc.probe().status)
-        assertEquals(ExposedKtorCacheKind.R2DBC, r2dbc.kind)
-        assertEquals(ExposedKtorCacheStatus.UP, r2dbc.probe().status)
-        assertEquals(ExposedKtorCacheKind.SNAPSHOT, snapshot.kind)
-        assertEquals(ExposedKtorCacheStatus.UP, snapshot.probe().status)
-        assertEquals(ExposedKtorCacheKind.CUSTOM, custom.kind)
-        assertEquals(ExposedKtorCacheStatus.DOWN, custom.probe().status)
+        jdbc.kind shouldBeEqualTo ExposedKtorCacheKind.JDBC
+        (jdbc.probe().status) shouldBeEqualTo ExposedKtorCacheStatus.UP
+        r2dbc.kind shouldBeEqualTo ExposedKtorCacheKind.R2DBC
+        (r2dbc.probe().status) shouldBeEqualTo ExposedKtorCacheStatus.UP
+        snapshot.kind shouldBeEqualTo ExposedKtorCacheKind.SNAPSHOT
+        (snapshot.probe().status) shouldBeEqualTo ExposedKtorCacheStatus.UP
+        custom.kind shouldBeEqualTo ExposedKtorCacheKind.CUSTOM
+        (custom.probe().status) shouldBeEqualTo ExposedKtorCacheStatus.DOWN
     }
 
     @Test
@@ -50,13 +53,13 @@ class ExposedKtorCacheContributorTest {
             val contributor = ExposedKtorCacheContributor.jdbcRepository("orders") {
                 healthyReport().copy(workerState = state)
             }
-            assertEquals(status, contributor.probe().status)
+            (contributor.probe().status) shouldBeEqualTo status
         }
 
         val failed = ExposedKtorCacheContributor.jdbcRepository("orders") {
             healthyReport().copy(lastFlushError = IllegalStateException("secret"))
         }.probe()
-        assertEquals(ExposedKtorCacheStatus.DOWN, failed.status)
+        failed.status shouldBeEqualTo ExposedKtorCacheStatus.DOWN
     }
 
     @Test
@@ -64,10 +67,10 @@ class ExposedKtorCacheContributorTest {
         val buffer = failureBuffer(size = 3, dropped = 5, observerFailures = 7)
         val sample = ExposedKtorCacheContributor.snapshot("snapshots", buffer).probe()
 
-        assertEquals(3.0, sample.snapshotPending)
-        assertEquals(5.0, sample.snapshotDropped)
-        assertEquals(7.0, sample.snapshotObserverFailures)
-        assertTrue(sample.queueDepth.isNaN())
+        sample.snapshotPending shouldBeEqualTo 3.0
+        sample.snapshotDropped shouldBeEqualTo 5.0
+        sample.snapshotObserverFailures shouldBeEqualTo 7.0
+        (sample.queueDepth.isNaN()).shouldBeTrue()
         verify(exactly = 1) { buffer.size }
         verify(exactly = 1) { buffer.droppedCount }
         verify(exactly = 1) { buffer.observerFailureCount }
@@ -81,27 +84,27 @@ class ExposedKtorCacheContributorTest {
         val config = ExposedKtorCacheReadinessConfig(source)
         source += custom("b")
 
-        assertEquals(listOf("a"), config.contributors.map { it.component })
-        assertThrows(UnsupportedOperationException::class.java) {
+        (config.contributors.map { it.component }) shouldBeEqualTo listOf("a")
+        assertFailsWith<UnsupportedOperationException> {
             @Suppress("UNCHECKED_CAST")
             (config.contributors as MutableList<ExposedKtorCacheContributor>).add(custom("c"))
         }
-        val empty = assertThrows(IllegalArgumentException::class.java) {
+        val empty = assertFailsWith<IllegalArgumentException> {
             ExposedKtorCacheReadinessConfig(emptyList())
         }
-        assertEquals(null, empty.cause)
-        val duplicate = assertThrows(IllegalArgumentException::class.java) {
+        empty.cause.shouldBeNull()
+        val duplicate = assertFailsWith<IllegalArgumentException> {
             ExposedKtorCacheReadinessConfig(listOf(custom("same"), custom("same")))
         }
-        assertTrue(duplicate.message.orEmpty().contains("index=1"))
-        assertTrue(duplicate.message.orEmpty().contains("duplicateOf=0"))
-        assertFalse(duplicate.message.orEmpty().contains("same"))
-        assertEquals(null, duplicate.cause)
+        (duplicate.message.orEmpty().contains("index=1")).shouldBeTrue()
+        (duplicate.message.orEmpty().contains("duplicateOf=0")).shouldBeTrue()
+        (duplicate.message.orEmpty().contains("same")).shouldBeFalse()
+        duplicate.cause.shouldBeNull()
         ExposedKtorCacheReadinessConfig((0 until 16).map { custom("cache_$it") })
-        val overLimit = assertThrows(IllegalArgumentException::class.java) {
+        val overLimit = assertFailsWith<IllegalArgumentException> {
             ExposedKtorCacheReadinessConfig((0 until 17).map { custom("cache_$it") })
         }
-        assertEquals(null, overLimit.cause)
+        overLimit.cause.shouldBeNull()
     }
 
     @Test
@@ -116,12 +119,12 @@ class ExposedKtorCacheContributorTest {
             "jdbc:h2:mem:secret?password=top-secret\nnext",
         )
         unsafeValues.forEach { raw ->
-            val error = assertThrows(IllegalArgumentException::class.java) { custom(raw) }
-            assertTrue(error.message.orEmpty().contains("reason=unsafe_component"))
-            assertTrue(error.message.orEmpty().contains("length=${raw.length}"))
-            assertFalse(error.message.orEmpty().contains(raw))
-            assertFalse(error.message.orEmpty().contains("top-secret"))
-            assertEquals(null, error.cause)
+            val error = assertFailsWith<IllegalArgumentException> { custom(raw) }
+            (error.message.orEmpty().contains("reason=unsafe_component")).shouldBeTrue()
+            (error.message.orEmpty().contains("length=${raw.length}")).shouldBeTrue()
+            (error.message.orEmpty().contains(raw)).shouldBeFalse()
+            (error.message.orEmpty().contains("top-secret")).shouldBeFalse()
+            error.cause.shouldBeNull()
         }
     }
 
@@ -139,15 +142,15 @@ class ExposedKtorCacheContributorTest {
             val kdoc = kdocImmediatelyBefore(source, "fun $factory(")
             assertCommonProbeContract(factory, kdoc)
             if (suspends) {
-                assertTrue(kdoc.contains("non-blocking"), "$factory non-blocking")
-                assertTrue(kdoc.contains("cooperate with coroutine cancellation"), "$factory cancellation")
+                (kdoc.contains("non-blocking")).should("$factory non-blocking") { it }
+                (kdoc.contains("cooperate with coroutine cancellation")).should("$factory cancellation") { it }
             }
         }
 
         val configKdoc = kdocImmediatelyBefore(source, "class ExposedKtorCacheReadinessConfig(")
         assertCommonProbeContract("config", configKdoc)
-        assertTrue(configKdoc.contains("non-blocking"), "config non-blocking")
-        assertTrue(configKdoc.contains("cooperate with coroutine cancellation"), "config cancellation")
+        (configKdoc.contains("non-blocking")).should("config non-blocking") { it }
+        (configKdoc.contains("cooperate with coroutine cancellation")).should("config cancellation") { it }
     }
 
     @Test
@@ -157,8 +160,8 @@ class ExposedKtorCacheContributorTest {
                 healthyReport().copy(queueDepth = -1)
             }.probe()
         }.exceptionOrNull()
-        assertTrue(repositoryError is IllegalArgumentException)
-        assertTrue(repositoryError?.message.orEmpty().contains("reason=negative_queue_depth"))
+        (repositoryError is IllegalArgumentException).shouldBeTrue()
+        (repositoryError?.message.orEmpty().contains("reason=negative_queue_depth")).shouldBeTrue()
 
         val snapshotError = runCatching {
             ExposedKtorCacheContributor.snapshot(
@@ -166,8 +169,8 @@ class ExposedKtorCacheContributorTest {
                 failureBuffer(dropped = -1),
             ).probe()
         }.exceptionOrNull()
-        assertTrue(snapshotError is IllegalArgumentException)
-        assertTrue(snapshotError?.message.orEmpty().contains("reason=negative_dropped"))
+        (snapshotError is IllegalArgumentException).shouldBeTrue()
+        (snapshotError?.message.orEmpty().contains("reason=negative_dropped")).shouldBeTrue()
     }
 
     private fun custom(component: String) =
@@ -198,12 +201,12 @@ class ExposedKtorCacheContributorTest {
 
     private fun kdocImmediatelyBefore(source: String, declaration: String): String {
         val declarationOffset = source.indexOf(declaration)
-        assertTrue(declarationOffset >= 0, declaration)
+        (declarationOffset >= 0).should(declaration) { it }
         val prefix = source.substring(0, declarationOffset)
         val end = prefix.lastIndexOf("*/")
         val start = prefix.lastIndexOf("/**", end)
-        assertTrue(start >= 0 && end >= start, "$declaration KDoc")
-        assertTrue(prefix.substring(end + 2).isBlank(), "$declaration must immediately follow its KDoc")
+        (start >= 0 && end >= start).should("$declaration KDoc") { it }
+        (prefix.substring(end + 2).isBlank()).should("$declaration must immediately follow its KDoc") { it }
         return prefix.substring(start, end + 2)
     }
 
@@ -222,7 +225,7 @@ class ExposedKtorCacheContributorTest {
             "dispatcher" to "dispatcher",
             "scope" to "scope",
         ).forEach { (contract, label) ->
-            assertTrue(kdoc.contains(contract), "$scope $label")
+            (kdoc.contains(contract)).should("$scope $label") { it }
         }
     }
 }
