@@ -1,13 +1,12 @@
 package io.bluetape4k.spring.data.exposed.r2dbc.repository.support
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeSameInstanceAs
 import java.math.BigDecimal
 import java.nio.ByteBuffer
 import java.util.UUID
 import kotlin.test.Test
-import kotlin.test.assertContentEquals
-import kotlin.test.assertEquals
-import kotlin.test.assertNotSame
 
 class R2dbcBindValueSnapshotterTest {
 
@@ -27,18 +26,18 @@ class R2dbcBindValueSnapshotterTest {
         (original["values"] as MutableList<Any?>)[0] = "changed"
         buffer.put(0, 8)
 
-        assertNotSame(original, copy)
-        assertContentEquals(byteArrayOf(1, 2), copy["bytes"] as ByteArray)
-        assertEquals(listOf("alpha", listOf("beta")), copy["values"])
-        assertContentEquals(byteArrayOf(3, 4), (copy["buffer"] as ByteBuffer).array())
+        original shouldNotBeSameInstanceAs copy
+        (copy["bytes"] as ByteArray) shouldBeEqualTo byteArrayOf(1, 2)
+        copy["values"] shouldBeEqualTo listOf("alpha", listOf("beta"))
+        (copy["buffer"] as ByteBuffer).array() shouldBeEqualTo byteArrayOf(3, 4)
     }
 
     @Test
     fun `approved immutable scalars remain usable and unsupported mutable values fail`() {
         val id = UUID.randomUUID()
-        assertEquals("text", R2dbcBindValueSnapshotter.snapshot("text"))
-        assertEquals(BigDecimal("1.20"), R2dbcBindValueSnapshotter.snapshot(BigDecimal("1.20")))
-        assertEquals(id, R2dbcBindValueSnapshotter.snapshot(id))
+        R2dbcBindValueSnapshotter.snapshot("text") shouldBeEqualTo "text"
+        R2dbcBindValueSnapshotter.snapshot(BigDecimal("1.20")) shouldBeEqualTo BigDecimal("1.20")
+        R2dbcBindValueSnapshotter.snapshot(id) shouldBeEqualTo id
         assertFailsWith<org.springframework.dao.InvalidDataAccessApiUsageException> {
             R2dbcBindValueSnapshotter.snapshot(MutableNumber())
         }

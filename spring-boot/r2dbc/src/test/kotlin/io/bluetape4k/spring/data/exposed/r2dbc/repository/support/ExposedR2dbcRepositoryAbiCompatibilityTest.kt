@@ -1,5 +1,8 @@
 package io.bluetape4k.spring.data.exposed.r2dbc.repository.support
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.UserNameRecord
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
@@ -15,8 +18,6 @@ import org.springframework.data.domain.Example
 import org.springframework.data.domain.Sort
 import org.junit.jupiter.api.Test
 import java.lang.reflect.Modifier
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 /**
  * Public coroutine QBE API consumer fixture.
@@ -29,12 +30,12 @@ class ExposedR2dbcRepositoryAbiCompatibilityTest {
     @Test
     fun `coroutine QBE consumer fixture is loadable`() {
         ApiFixtureRepository::class.java
-        assertEquals(UserNameRecord::class.java, ExposedR2dbcRepositoryJavaConsumerFixture.projectionType())
+        ExposedR2dbcRepositoryJavaConsumerFixture.projectionType() shouldBeEqualTo UserNameRecord::class.java
     }
 
     @Test
     fun `public descriptors match the checked snapshot`() {
-        val expected = javaClass.getResourceAsStream("/abi/exposed-r2dbc-repository-public.txt")!!
+        val expected = javaClass.getResourceAsStream("/abi/exposed-r2dbc-repository-public.txt").shouldNotBeNull()
             .bufferedReader()
             .lineSequence()
             .filter { it.isNotBlank() && !it.startsWith("#") }
@@ -42,27 +43,19 @@ class ExposedR2dbcRepositoryAbiCompatibilityTest {
             .groupBy({ it[0] }, { "${it[1]} ${it[2]}" })
             .mapValues { (_, members) -> members.sorted() }
 
-        assertEquals(
-            expected[ExposedR2dbcRepository::class.java.name],
-            declaredDescriptors(ExposedR2dbcRepository::class.java),
-        )
-        assertEquals(
-            expected[ExposedCoroutineQueryByExampleExecutor::class.java.name],
-            declaredDescriptors(ExposedCoroutineQueryByExampleExecutor::class.java),
-        )
-        assertEquals(
-            expected[ExposedCoroutineFluentQuery::class.java.name],
-            declaredDescriptors(ExposedCoroutineFluentQuery::class.java),
-        )
+        declaredDescriptors(ExposedR2dbcRepository::class.java) shouldBeEqualTo
+            expected[ExposedR2dbcRepository::class.java.name]
+        declaredDescriptors(ExposedCoroutineQueryByExampleExecutor::class.java) shouldBeEqualTo
+            expected[ExposedCoroutineQueryByExampleExecutor::class.java.name]
+        declaredDescriptors(ExposedCoroutineFluentQuery::class.java) shouldBeEqualTo
+            expected[ExposedCoroutineFluentQuery::class.java.name]
 
         val constructors = SimpleExposedR2dbcRepository::class.java.declaredConstructors
             .filter { Modifier.isPublic(it.modifiers) }
-        assertEquals(1, constructors.size)
-        assertEquals(
-            expected[SimpleExposedR2dbcRepository::class.java.name],
-            constructors.map { "<init> ${constructorDescriptor(it)}" },
-        )
-        assertTrue(SimpleExposedR2dbcRepository::class.java.constructors.single().parameterCount == 4)
+        constructors.size shouldBeEqualTo 1
+        constructors.map { "<init> ${constructorDescriptor(it)}" } shouldBeEqualTo
+            expected[SimpleExposedR2dbcRepository::class.java.name]
+        (SimpleExposedR2dbcRepository::class.java.constructors.single().parameterCount == 4).shouldBeTrue()
     }
 
     private fun declaredDescriptors(type: Class<*>): List<String> =

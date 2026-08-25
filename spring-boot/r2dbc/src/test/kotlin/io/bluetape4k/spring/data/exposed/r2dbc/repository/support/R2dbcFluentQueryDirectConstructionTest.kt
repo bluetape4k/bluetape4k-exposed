@@ -13,7 +13,6 @@ import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.junit.jupiter.api.Test
 import org.springframework.data.domain.Example
 import org.springframework.data.domain.ExampleMatcher
-import kotlin.test.assertEquals
 
 class R2dbcFluentQueryDirectConstructionTest {
 
@@ -43,7 +42,7 @@ class R2dbcFluentQueryDirectConstructionTest {
             )
 
             repository.findOne(example)?.name shouldBeEqualTo "Alice"
-            assertEquals(listOf("Alice"), repository.findAll(example).toList().map { it.name })
+            repository.findAll(example).toList().map { it.name } shouldBeEqualTo listOf("Alice")
         }
     }
 

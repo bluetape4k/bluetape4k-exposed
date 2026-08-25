@@ -19,8 +19,8 @@ import org.springframework.data.domain.ExampleMatcher
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeTrue
 
 class R2dbcFluentQueryIntegrationTest: AbstractExposedR2dbcRepositoryTest() {
 
@@ -41,11 +41,11 @@ class R2dbcFluentQueryIntegrationTest: AbstractExposedR2dbcRepositoryTest() {
             val flow = userRepository.findAll(example)
             val alice = userRepository.findOne(example)
 
-            assertEquals("Alice", alice?.name)
-            assertEquals(listOf("Alice"), flow.toList().map { it.name })
-            assertEquals(listOf("Alice"), flow.toList().map { it.name })
-            assertEquals(1L, userRepository.count(example))
-            assertTrue(userRepository.exists(example))
+            alice?.name shouldBeEqualTo "Alice"
+            flow.toList().map { it.name } shouldBeEqualTo listOf("Alice")
+            flow.toList().map { it.name } shouldBeEqualTo listOf("Alice")
+            userRepository.count(example) shouldBeEqualTo 1L
+            userRepository.exists(example).shouldBeTrue()
         }
     }
 
@@ -68,22 +68,22 @@ class R2dbcFluentQueryIntegrationTest: AbstractExposedR2dbcRepositoryTest() {
                     .all()
             }
 
-            assertEquals(listOf("Carol", "Alice", "Bob"), names.toList().map { it.name })
+            names.toList().map { it.name } shouldBeEqualTo listOf("Carol", "Alice", "Bob")
 
             val autoProjectedNames = userRepository.findBy(example) { query ->
                 query.asType(NameView::class).all()
             }
-            assertEquals(listOf("Alice", "Bob", "Carol"), autoProjectedNames.toList().map { it.name })
+            autoProjectedNames.toList().map { it.name } shouldBeEqualTo listOf("Alice", "Bob", "Carol")
 
             val dataClassNames = userRepository.findBy(example) { query ->
                 query.asType(NameDto::class).project("name").all()
             }
-            assertEquals(listOf("Alice", "Bob", "Carol"), dataClassNames.toList().map { it.name })
+            dataClassNames.toList().map { it.name } shouldBeEqualTo listOf("Alice", "Bob", "Carol")
 
             val recordNames = userRepository.findBy(example) { query ->
                 query.asType(UserNameRecord::class).project("name").all()
             }
-            assertEquals(listOf("Alice", "Bob", "Carol"), recordNames.toList().map { it.name })
+            recordNames.toList().map { it.name } shouldBeEqualTo listOf("Alice", "Bob", "Carol")
 
             assertFailsWith<InvalidDataAccessApiUsageException> {
                 userRepository.findBy(example) { query ->
@@ -94,19 +94,19 @@ class R2dbcFluentQueryIntegrationTest: AbstractExposedR2dbcRepositoryTest() {
             val page = userRepository.findBy(example) { query ->
                 query.asType(NameView::class).project("name").page(PageRequest.of(0, 2))
             }
-            assertEquals(2, page.content.size)
-            assertEquals(3, page.totalElements)
+            page.content.size shouldBeEqualTo 2
+            page.totalElements shouldBeEqualTo 3
 
             val unpagedWithLimit = userRepository.findBy(example) { query ->
                 query.asType(NameView::class).project("name").limit(1).page(Pageable.unpaged())
             }
-            assertEquals(1, unpagedWithLimit.content.size)
-            assertEquals(3, unpagedWithLimit.totalElements)
+            unpagedWithLimit.content.size shouldBeEqualTo 1
+            unpagedWithLimit.totalElements shouldBeEqualTo 3
 
             val slice = userRepository.findBy(example) { query ->
                 query.asType(NameView::class).project("name").slice(PageRequest.of(0, 2))
             }
-            assertTrue(slice.hasNext())
+            slice.hasNext().shouldBeTrue()
         }
     }
 
