@@ -1,11 +1,11 @@
 package io.bluetape4k.exposed.examples.modulith.orders
 
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.exposed.core.ddd.AbstractAggregateRoot
 import io.bluetape4k.exposed.examples.modulith.orders.events.OrderAcceptedEvent
 import io.bluetape4k.support.requireNotBlank
 import java.io.Serializable
 import java.time.Instant
-import java.util.UUID
 
 @JvmInline
 value class OrderId(
@@ -20,7 +20,7 @@ value class OrderId(
         private const val serialVersionUID: Long = -5976855105992851231L
 
         fun newId(): OrderId =
-            OrderId("order-${UUID.randomUUID()}")
+            OrderId("order-${Uuid.V7.nextId()}")
     }
 }
 
@@ -69,7 +69,7 @@ class Order(
                 order.recordDomainEvent(
                     OrderAcceptedEvent(
                         aggregateId = order.id,
-                        eventId = "event-${UUID.randomUUID()}",
+                        eventId = "event-${Uuid.V7.nextId()}",
                         occurredAt = acceptedAt,
                     )
                 )

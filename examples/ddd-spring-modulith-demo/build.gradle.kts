@@ -19,6 +19,7 @@ dependencies {
     implementation(project(":bluetape4k-exposed-core"))
     implementation(project(":bluetape4k-exposed-spring-boot-jdbc"))
     implementation(project(":bluetape4k-exposed-spring-modulith"))
+    implementation(bt4k.bluetape4k.idgenerators)
 
     implementation(bt4k.exposed.core)
     implementation(bt4k.exposed.jdbc)
