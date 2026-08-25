@@ -479,14 +479,31 @@ transaction {
 |-----------------------------------|--------------------|
 | `IntJdbcRepository`               | `Int`              |
 | `LongJdbcRepository`              | `Long`             |
-| `UuidJdbcRepository`              | `kotlin.uuid.Uuid` |
-| `UUIDJdbcRepository`              | `java.util.UUID`   |
+| `KotlinUuidJdbcRepository`        | `kotlin.uuid.Uuid` |
+| `JavaUuidJdbcRepository`          | `java.util.UUID`   |
 | `StringJdbcRepository`            | `String`           |
 | `IntSoftDeletedJdbcRepository`    | `Int`              |
 | `LongSoftDeletedJdbcRepository`   | `Long`             |
-| `UuidSoftDeletedJdbcRepository`   | `kotlin.uuid.Uuid` |
-| `UUIDSoftDeletedJdbcRepository`   | `java.util.UUID`   |
+| `KotlinUuidSoftDeletedJdbcRepository` | `kotlin.uuid.Uuid` |
+| `JavaUuidSoftDeletedJdbcRepository`   | `java.util.UUID`   |
 | `StringSoftDeletedJdbcRepository` | `String`           |
+
+### UUID repository naming in 2.0
+
+`kotlin.uuid.Uuid` and `java.util.UUID` repository specializations now use
+filesystem-safe JVM class names. Update source imports and implementation
+supertypes as follows:
+
+| 1.x source name                    | 2.0 canonical name                    | Binary compatibility |
+|-----------------------------------|----------------------------------------|----------------------|
+| `UuidJdbcRepository`              | `KotlinUuidJdbcRepository`             | Recompile required   |
+| `UUIDJdbcRepository`              | `JavaUuidJdbcRepository`               | Recompile required   |
+| `UuidSoftDeletedJdbcRepository`  | `KotlinUuidSoftDeletedJdbcRepository` | Recompile required   |
+| `UUIDSoftDeletedJdbcRepository`  | `JavaUuidSoftDeletedJdbcRepository`   | Recompile required   |
+
+The 1.x names remain deprecated source-only typealiases in 2.0. They do not
+produce legacy JVM classes, so compiled consumers must be rebuilt against the
+canonical names.
 
 ## Key Files and Classes
 

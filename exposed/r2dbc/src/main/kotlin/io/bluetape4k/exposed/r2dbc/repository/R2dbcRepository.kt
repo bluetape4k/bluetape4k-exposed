@@ -603,17 +603,50 @@ interface LongR2dbcRepository<E: Any>: R2dbcRepository<Long, E>
 /**
  * Kotlin [kotlin.uuid.Uuid] 기본 키를 사용하는 [R2dbcRepository] 편의 특수화 인터페이스입니다.
  *
+ * JVM class 이름이 Java UUID 특수화와 충돌하지 않도록 2.0부터 `KotlinUuid` 접두사를
+ * 사용합니다. 기존 `UuidR2dbcRepository` 이름은 소스 호환을 위한 typealias로만
+ * 유지되며, binary class는 생성하지 않습니다.
+ *
  * @param E 엔티티 타입
  */
 @OptIn(ExperimentalUuidApi::class)
-interface UuidR2dbcRepository<E: Any>: R2dbcRepository<Uuid, E>
+interface KotlinUuidR2dbcRepository<E: Any>: R2dbcRepository<Uuid, E>
 
 /**
  * [java.util.UUID] 기본 키를 사용하는 [R2dbcRepository] 편의 특수화 인터페이스입니다.
  *
+ * JVM class 이름이 Kotlin UUID 특수화와 충돌하지 않도록 2.0부터 `JavaUuid` 접두사를
+ * 사용합니다. 기존 `UUIDR2dbcRepository` 이름은 소스 호환을 위한 typealias로만
+ * 유지되며, binary class는 생성하지 않습니다.
+ *
  * @param E 엔티티 타입
  */
-interface UUIDR2dbcRepository<E: Any>: R2dbcRepository<UUID, E>
+interface JavaUuidR2dbcRepository<E: Any>: R2dbcRepository<UUID, E>
+
+/**
+ * 1.x 소스 호환을 위한 Kotlin [kotlin.uuid.Uuid] repository 이름입니다.
+ *
+ * 2.0부터는 [KotlinUuidR2dbcRepository]를 사용하십시오. 이 typealias는 JVM class를
+ * 생성하지 않으므로 기존 binary consumer는 새 이름으로 다시 컴파일해야 합니다.
+ */
+@Deprecated(
+    message = "Use KotlinUuidR2dbcRepository instead.",
+    replaceWith = ReplaceWith("KotlinUuidR2dbcRepository<E>"),
+)
+@OptIn(ExperimentalUuidApi::class)
+typealias UuidR2dbcRepository<E> = KotlinUuidR2dbcRepository<E>
+
+/**
+ * 1.x 소스 호환을 위한 [java.util.UUID] repository 이름입니다.
+ *
+ * 2.0부터는 [JavaUuidR2dbcRepository]를 사용하십시오. 이 typealias는 JVM class를
+ * 생성하지 않으므로 기존 binary consumer는 새 이름으로 다시 컴파일해야 합니다.
+ */
+@Deprecated(
+    message = "Use JavaUuidR2dbcRepository instead.",
+    replaceWith = ReplaceWith("JavaUuidR2dbcRepository<E>"),
+)
+typealias UUIDR2dbcRepository<E> = JavaUuidR2dbcRepository<E>
 
 /**
  * [String] 기본 키를 사용하는 [R2dbcRepository] 편의 특수화 인터페이스입니다.

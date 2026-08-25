@@ -477,14 +477,31 @@ transaction {
 |-----------------------------------|--------------------|
 | `IntJdbcRepository`               | `Int`              |
 | `LongJdbcRepository`              | `Long`             |
-| `UuidJdbcRepository`              | `kotlin.uuid.Uuid` |
-| `UUIDJdbcRepository`              | `java.util.UUID`   |
+| `KotlinUuidJdbcRepository`        | `kotlin.uuid.Uuid` |
+| `JavaUuidJdbcRepository`          | `java.util.UUID`   |
 | `StringJdbcRepository`            | `String`           |
 | `IntSoftDeletedJdbcRepository`    | `Int`              |
 | `LongSoftDeletedJdbcRepository`   | `Long`             |
-| `UuidSoftDeletedJdbcRepository`   | `kotlin.uuid.Uuid` |
-| `UUIDSoftDeletedJdbcRepository`   | `java.util.UUID`   |
+| `KotlinUuidSoftDeletedJdbcRepository` | `kotlin.uuid.Uuid` |
+| `JavaUuidSoftDeletedJdbcRepository`   | `java.util.UUID`   |
 | `StringSoftDeletedJdbcRepository` | `String`           |
+
+### 2.0 UUID Repository 이름 변경
+
+`kotlin.uuid.Uuid`와 `java.util.UUID` repository 특수화가 파일시스템에
+안전한 JVM class 이름을 사용하도록 변경되었습니다. 소스의 import와 구현
+상위 타입을 다음과 같이 바꾸세요.
+
+| 1.x 소스 이름                   | 2.0 canonical 이름                    | 바이너리 호환성 |
+|--------------------------------|----------------------------------------|----------------|
+| `UuidJdbcRepository`           | `KotlinUuidJdbcRepository`             | 재컴파일 필요   |
+| `UUIDJdbcRepository`           | `JavaUuidJdbcRepository`               | 재컴파일 필요   |
+| `UuidSoftDeletedJdbcRepository` | `KotlinUuidSoftDeletedJdbcRepository` | 재컴파일 필요  |
+| `UUIDSoftDeletedJdbcRepository` | `JavaUuidSoftDeletedJdbcRepository`   | 재컴파일 필요  |
+
+2.0에서는 1.x 이름을 deprecated source-only typealias로 유지합니다. 기존
+JVM class는 생성하지 않으므로, 이미 컴파일된 consumer는 canonical 이름으로
+다시 빌드해야 합니다.
 
 ## 주요 파일/클래스 목록
 

@@ -407,17 +407,34 @@ parameters from CTE predicates keep their binding order.
 |------------------------------------|--------------------|
 | `IntR2dbcRepository`               | `Int`              |
 | `LongR2dbcRepository`              | `Long`             |
-| `UuidR2dbcRepository`              | `kotlin.uuid.Uuid` |
-| `UUIDR2dbcRepository`              | `java.util.UUID`   |
+| `KotlinUuidR2dbcRepository`        | `kotlin.uuid.Uuid` |
+| `JavaUuidR2dbcRepository`          | `java.util.UUID`   |
 | `StringR2dbcRepository`            | `String`           |
 | `IntAuditableR2dbcRepository`      | `Int`              |
 | `LongAuditableR2dbcRepository`     | `Long`             |
 | `UUIDAuditableR2dbcRepository`     | `java.util.UUID`   |
 | `IntSoftDeletedR2dbcRepository`    | `Int`              |
 | `LongSoftDeletedR2dbcRepository`   | `Long`             |
-| `UuidSoftDeletedR2dbcRepository`   | `kotlin.uuid.Uuid` |
-| `UUIDSoftDeletedR2dbcRepository`   | `java.util.UUID`   |
+| `KotlinUuidSoftDeletedR2dbcRepository` | `kotlin.uuid.Uuid` |
+| `JavaUuidSoftDeletedR2dbcRepository`   | `java.util.UUID`   |
 | `StringSoftDeletedR2dbcRepository` | `String`           |
+
+### UUID repository naming in 2.0
+
+`kotlin.uuid.Uuid` and `java.util.UUID` repository specializations now use
+filesystem-safe JVM class names. Update source imports and implementation
+supertypes as follows:
+
+| 1.x source name                    | 2.0 canonical name                     | Binary compatibility |
+|-----------------------------------|----------------------------------------|----------------------|
+| `UuidR2dbcRepository`             | `KotlinUuidR2dbcRepository`            | Recompile required   |
+| `UUIDR2dbcRepository`             | `JavaUuidR2dbcRepository`              | Recompile required   |
+| `UuidSoftDeletedR2dbcRepository` | `KotlinUuidSoftDeletedR2dbcRepository` | Recompile required  |
+| `UUIDSoftDeletedR2dbcRepository` | `JavaUuidSoftDeletedR2dbcRepository`   | Recompile required  |
+
+The 1.x names remain deprecated source-only typealiases in 2.0. They do not
+produce legacy JVM classes, so compiled consumers must be rebuilt against the
+canonical names.
 
 ## Virtual Thread Transactions
 
