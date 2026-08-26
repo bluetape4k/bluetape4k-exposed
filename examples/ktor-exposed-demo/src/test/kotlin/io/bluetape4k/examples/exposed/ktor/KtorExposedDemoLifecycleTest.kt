@@ -176,6 +176,8 @@ class KtorExposedDemoLifecycleTest {
             outcome = "failed",
         )
 
+        sink.emit(diagnostic)
+
         messages.single() shouldBeEqualTo
             "code=ORDER_READ_FAILED correlationId=$correlationId component=order-command operation=read outcome=failed"
     }
