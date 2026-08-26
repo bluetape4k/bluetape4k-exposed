@@ -67,11 +67,12 @@ internal class DemoResourceSteps {
         completed += NamedCloseAction(name, close)
     }
 
-    fun unwind(primary: Exception) {
+    @Suppress("TooGenericExceptionCaught") // resource cleanup에서 임의 close action의 failure를 집계한다.
+    fun unwind(primary: RuntimeException) {
         completed.asReversed().forEach { action ->
             try {
                 action.close()
-            } catch (cleanupFailure: Exception) {
+            } catch (cleanupFailure: RuntimeException) {
                 if (cleanupFailure !== primary) {
                     primary.addSuppressed(cleanupFailure)
                 }
@@ -81,11 +82,12 @@ internal class DemoResourceSteps {
 }
 
 internal class DemoResourceAcquirer {
+    @Suppress("TooGenericExceptionCaught") // acquisition rollback에서 모든 close failure를 처리한다.
     fun <T> acquire(block: DemoResourceSteps.() -> T): T {
         val steps = DemoResourceSteps()
         return try {
             steps.block()
-        } catch (primary: Exception) {
+        } catch (primary: RuntimeException) {
             steps.unwind(primary)
             throw primary
         }
@@ -126,6 +128,7 @@ class KtorExposedDemoResources internal constructor(
     @Volatile
     private var completedCloseReport: DemoCleanupReport? = null
 
+    @Suppress("TooGenericExceptionCaught") // cleanup report가 임의 close failure를 기록하는 경계다.
     fun closeReport(): DemoCleanupReport = closeLock.withLock {
         completedCloseReport?.let { return it }
 
@@ -133,7 +136,7 @@ class KtorExposedDemoResources internal constructor(
         closeActions.forEach { action ->
             try {
                 action.close()
-            } catch (failure: Exception) {
+            } catch (failure: RuntimeException) {
                 failures += failure
             }
         }
@@ -145,6 +148,7 @@ class KtorExposedDemoResources internal constructor(
     }
 
     companion object {
+        @Suppress("LongMethod") // resource acquisition 순서가 이 demo의 lifecycle 계약이다.
         fun create(config: KtorExposedDemoConfig = KtorExposedDemoConfig()): KtorExposedDemoResources =
             DemoResourceAcquirer().acquire {
                 val lease = DemoLifecycleLease().acquire()
@@ -167,11 +171,11 @@ class KtorExposedDemoResources internal constructor(
                     ConnectionPoolConfiguration.builder(ConnectionFactories.get(r2dbcOptions))
                         .initialSize(1)
                         .maxSize(2)
-                        .maxAcquireTime(Duration.ofSeconds(5))
+                        .maxAcquireTime(Duration.ofSeconds(R2DBC_POOL_CLOSE_TIMEOUT_SECONDS))
                         .build(),
                 )
                 completed("pool") {
-                    r2dbcPool.disposeLater().block(Duration.ofSeconds(5))
+                    r2dbcPool.disposeLater().block(Duration.ofSeconds(R2DBC_POOL_CLOSE_TIMEOUT_SECONDS))
                 }
 
                 val previousDefault = R2dbcTransactionManager.defaultDatabase
@@ -215,7 +219,7 @@ class KtorExposedDemoResources internal constructor(
                             restorePreviousDefault(previousDefault)
                         },
                         NamedCloseAction("pool") {
-                            r2dbcPool.disposeLater().block(Duration.ofSeconds(5))
+                            r2dbcPool.disposeLater().block(Duration.ofSeconds(R2DBC_POOL_CLOSE_TIMEOUT_SECONDS))
                         },
                         NamedCloseAction("jdbc", dataSource::close),
                         NamedCloseAction("dispatcher", jdbcDispatcher::close),
@@ -253,3 +257,4 @@ class KtorExposedDemoResources internal constructor(
 }
 
 private val GLOBAL_DEMO_LEASE = AtomicBoolean()
+private const val R2DBC_POOL_CLOSE_TIMEOUT_SECONDS = 5L

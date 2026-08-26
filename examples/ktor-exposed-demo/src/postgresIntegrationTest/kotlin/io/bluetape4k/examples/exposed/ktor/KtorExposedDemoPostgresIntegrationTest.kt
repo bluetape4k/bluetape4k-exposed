@@ -2,11 +2,11 @@ package io.bluetape4k.examples.exposed.ktor
 
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.examples.exposed.ktor.order.DemoDiagnosticSink
 import io.bluetape4k.examples.exposed.ktor.order.OrderConfirmationResponse
 import io.bluetape4k.examples.exposed.ktor.order.OrderResponse
 import io.bluetape4k.examples.exposed.ktor.order.OrderStatus
-import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.ktor.core.HealthResponse
 import io.bluetape4k.ktor.testing.bluetape4kJsonClient
 import io.bluetape4k.ktor.testing.decodeJsonBody

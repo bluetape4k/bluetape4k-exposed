@@ -268,7 +268,8 @@ class DddSpringModulithDemoApplicationTest {
             .properties(
                 mapOf(
                     "spring.application.name" to "ddd-spring-modulith-demo-test",
-                    "spring.datasource.url" to "jdbc:h2:mem:$databaseName;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL",
+                    "spring.datasource.url" to
+                        "jdbc:h2:mem:$databaseName;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL",
                     "spring.datasource.driver-class-name" to "org.h2.Driver",
                     "spring.datasource.username" to "sa",
                     "spring.datasource.password" to "",

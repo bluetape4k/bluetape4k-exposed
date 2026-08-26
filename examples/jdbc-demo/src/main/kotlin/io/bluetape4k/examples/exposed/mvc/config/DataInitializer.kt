@@ -20,19 +20,25 @@ class DataInitializer: ApplicationRunner {
                 ProductEntity.new {
                     name = "Kotlin Programming Book"
                     price = BigDecimal("39.99")
-                    stock = 100
+                    stock = FIRST_PRODUCT_STOCK
                 }
                 ProductEntity.new {
                     name = "Spring Boot Guide"
                     price = BigDecimal("49.99")
-                    stock = 50
+                    stock = SECOND_PRODUCT_STOCK
                 }
                 ProductEntity.new {
                     name = "Exposed ORM Tutorial"
                     price = BigDecimal("29.99")
-                    stock = 200
+                    stock = THIRD_PRODUCT_STOCK
                 }
             }
         }
+    }
+
+    private companion object {
+        const val FIRST_PRODUCT_STOCK = 100
+        const val SECOND_PRODUCT_STOCK = 50
+        const val THIRD_PRODUCT_STOCK = 200
     }
 }

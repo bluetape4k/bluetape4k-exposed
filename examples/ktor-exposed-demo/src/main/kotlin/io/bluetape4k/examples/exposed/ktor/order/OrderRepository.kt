@@ -20,8 +20,8 @@ object DemoOrders : TimebasedUUIDTable("ktor_demo_orders") {
 class OrderR2dbcCaffeineRepository(
     config: LocalCacheConfig = LocalCacheConfig(
         keyPrefix = "orders",
-        maximumSize = 1_000,
-        expireAfterWrite = Duration.ofMinutes(10),
+        maximumSize = ORDER_CACHE_MAXIMUM_SIZE,
+        expireAfterWrite = Duration.ofMinutes(ORDER_CACHE_EXPIRE_AFTER_WRITE_MINUTES),
         writeMode = CacheWriteMode.WRITE_THROUGH,
     ),
 ) : AbstractR2dbcCaffeineRepository<UUID, OrderRecord>(config) {
@@ -47,3 +47,6 @@ class OrderR2dbcCaffeineRepository(
 
     override fun extractId(entity: OrderRecord): UUID = entity.id
 }
+
+private const val ORDER_CACHE_MAXIMUM_SIZE = 1_000L
+private const val ORDER_CACHE_EXPIRE_AFTER_WRITE_MINUTES = 10L

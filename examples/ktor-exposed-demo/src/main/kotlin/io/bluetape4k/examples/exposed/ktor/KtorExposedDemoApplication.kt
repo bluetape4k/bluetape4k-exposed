@@ -30,7 +30,6 @@ import io.ktor.server.routing.routing
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.selectAll as r2dbcSelectAll
 import java.io.Serializable
-import java.util.UUID
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.seconds
 
@@ -108,6 +107,7 @@ internal data class DemoRunResult(
     }
 }
 
+@Suppress("TooGenericExceptionCaught") // startup cleanup에서 primary와 suppressed failure를 모두 보존한다.
 internal fun runKtorExposedDemo(
     resourcesFactory: DemoResourcesFactory,
     serverFactory: (KtorExposedDemoResources) -> DemoServer,
@@ -127,10 +127,10 @@ internal fun runKtorExposedDemo(
             diagnosticSink.emit(runtimeDiagnostic("DEMO_SHUTDOWN_FAILED", phase = "shutdown"))
             DemoRunResult(status = 2, cleanupReport = cleanupReport)
         }
-    } catch (primary: Exception) {
+    } catch (primary: RuntimeException) {
         try {
             server?.stop(SHUTDOWN_GRACE_MILLIS, SHUTDOWN_TIMEOUT_MILLIS)
-        } catch (stopFailure: Exception) {
+        } catch (stopFailure: RuntimeException) {
             if (stopFailure !== primary) primary.addSuppressed(stopFailure)
         }
 
@@ -214,3 +214,12 @@ private fun runtimeDiagnostic(code: String, phase: String) = DemoDiagnostic(
 
 private const val SHUTDOWN_GRACE_MILLIS = 1_000L
 private const val SHUTDOWN_TIMEOUT_MILLIS = 5_000L
+
+internal fun DemoDiagnostic.toLogFields(): String = buildList {
+    add("code=$code")
+    add("correlationId=$correlationId")
+    add("component=$component")
+    operation?.let { add("operation=$it") }
+    phase?.let { add("phase=$it") }
+    add("outcome=$outcome")
+}.joinToString(" ")
