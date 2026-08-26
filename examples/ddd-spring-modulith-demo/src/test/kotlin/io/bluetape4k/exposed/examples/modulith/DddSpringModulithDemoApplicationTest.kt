@@ -119,6 +119,8 @@ class DddSpringModulithDemoApplicationTest {
                 serialized shouldContain "aggregateId"
                 serialized shouldContain "eventId"
                 serialized shouldContain "occurredAt"
+                serialized shouldContain "\"aggregateId\":\"order-"
+                serialized shouldContain "\"eventId\":\"event-"
                 serialized shouldNotContain "@class"
                 serialized shouldNotContain "@type"
             }
