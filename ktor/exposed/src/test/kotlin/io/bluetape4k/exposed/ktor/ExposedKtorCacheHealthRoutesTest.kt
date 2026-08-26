@@ -1,6 +1,10 @@
 package io.bluetape4k.exposed.ktor
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.should
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.ktor.core.Bluetape4kKtorCoreConfig
 import io.bluetape4k.ktor.core.HealthResponse
@@ -25,9 +29,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.nio.file.Path
@@ -82,15 +83,15 @@ class ExposedKtorCacheHealthRoutesTest {
         val client = bluetape4kJsonClient()
         client.get("/healthz/exposed")
             .shouldHaveStatus(HttpStatusCode.OK)
-            .decodeJsonBody<HealthResponse>() shouldEqual
+            .decodeJsonBody<HealthResponse>() shouldBeEqualTo
                 HealthResponse.up(mapOf("exposed" to HealthResponse.UP))
-        assertEquals(0, invocations.get())
+        (invocations.get()) shouldBeEqualTo 0
 
         client.get("/readyz/exposed")
             .shouldHaveStatus(HttpStatusCode.OK)
-            .decodeJsonBody<HealthResponse>() shouldEqual
+            .decodeJsonBody<HealthResponse>() shouldBeEqualTo
                 HealthResponse.up(mapOf("cache.orders" to HealthResponse.UP))
-        assertEquals(1, invocations.get())
+        (invocations.get()) shouldBeEqualTo 1
     }
 
     @Test
@@ -135,23 +136,25 @@ class ExposedKtorCacheHealthRoutesTest {
         val response = bluetape4kJsonClient().get("/readyz/exposed")
             .shouldHaveStatus(HttpStatusCode.ServiceUnavailable)
         val health = response.decodeJsonBody<HealthResponse>()
-        health shouldEqual HealthResponse.down(
+        health shouldBeEqualTo HealthResponse.down(
             linkedMapOf(
                 "cache.first" to HealthResponse.DOWN,
                 "cache.second" to HealthResponse.DOWN,
                 "cache.third" to HealthResponse.UP,
             )
         )
-        assertEquals(listOf("first", "second", "third"), order)
+        order shouldBeEqualTo listOf("first", "second", "third")
         val body = response.bodyAsText()
-        secrets.forEach { assertFalse(body.contains(it), it) }
+        secrets.forEach { (body.contains(it)).should(it) { !it } }
         val exportedTags = registry.meters.flatMap { meter -> meter.id.tags.map { it.key to it.value } }
-        assertTrue(exportedTags.all { (key, _) -> key in setOf("component", "kind", "operation", "outcome") })
+        (exportedTags.all { (key, _) -> key in setOf("component", "kind", "operation", "outcome") }).shouldBeTrue()
         secrets.forEach { secret ->
-            assertTrue(exportedTags.none { (_, value) -> value.contains(secret) }, secret)
+            (exportedTags.none { (_, value) -> value.contains(secret) }).should(secret) { it }
         }
         val production = healthRoutesSource()
-        assertFalse(Regex("io\\.bluetape4k\\.logging|KLogging|logger\\.|log\\.(warn|error|info)").containsMatchIn(production))
+        Regex("io\\.bluetape4k\\.logging|KLogging|logger\\.|log\\.(warn|error|info)")
+            .containsMatchIn(production)
+            .shouldBeFalse()
     }
 
     @Test
@@ -187,13 +190,13 @@ class ExposedKtorCacheHealthRoutesTest {
 
             val response = bluetape4kJsonClient().get("/readyz/exposed")
                 .shouldHaveStatus(HttpStatusCode.ServiceUnavailable)
-            response.decodeJsonBody<HealthResponse>() shouldEqual HealthResponse.down(
+            response.decodeJsonBody<HealthResponse>() shouldBeEqualTo HealthResponse.down(
                 linkedMapOf("cache.self_cancel" to HealthResponse.DOWN, "cache.later" to HealthResponse.UP)
             )
-            assertFalse(response.bodyAsText().contains(secret))
-            assertEquals(1, later.get())
-            assertEquals(1L, timerCount(registry, "self_cancel", ERROR_OUTCOME))
-            assertEquals(0L, timerCount(registry, "self_cancel", CANCELLED_OUTCOME))
+            (response.bodyAsText().contains(secret)).shouldBeFalse()
+            (later.get()) shouldBeEqualTo 1
+            (timerCount(registry, "self_cancel", ERROR_OUTCOME)) shouldBeEqualTo 1L
+            (timerCount(registry, "self_cancel", CANCELLED_OUTCOME)) shouldBeEqualTo 0L
         }
 
     @Test
@@ -223,9 +226,9 @@ class ExposedKtorCacheHealthRoutesTest {
         val health = bluetape4kJsonClient().get("/readyz/exposed")
             .shouldHaveStatus(HttpStatusCode.ServiceUnavailable)
             .decodeJsonBody<HealthResponse>()
-        health shouldEqual HealthResponse.down(mapOf("cache.slow" to TIMEOUT_OUTCOME))
-        assertEquals(1L, timerCount(registry, "slow", TIMEOUT_OUTCOME))
-        assertEquals(0L, timerCount(registry, "slow", CANCELLED_OUTCOME))
+        health shouldBeEqualTo HealthResponse.down(mapOf("cache.slow" to TIMEOUT_OUTCOME))
+        (timerCount(registry, "slow", TIMEOUT_OUTCOME)) shouldBeEqualTo 1L
+        (timerCount(registry, "slow", CANCELLED_OUTCOME)) shouldBeEqualTo 0L
     }
 
     @Test
@@ -251,13 +254,10 @@ class ExposedKtorCacheHealthRoutesTest {
             timeSource = testScheduler.timeSource,
         )
 
-        assertEquals(
-            linkedMapOf("cache.cancel" to HealthResponse.DOWN, "cache.later" to HealthResponse.UP),
-            details,
-        )
-        assertEquals(1, later.get())
-        assertEquals(1L, timerCount(registry, "cancel", ERROR_OUTCOME))
-        assertEquals(0L, timerCount(registry, "cancel", CANCELLED_OUTCOME))
+        details shouldBeEqualTo linkedMapOf("cache.cancel" to HealthResponse.DOWN, "cache.later" to HealthResponse.UP)
+        (later.get()) shouldBeEqualTo 1
+        (timerCount(registry, "cancel", ERROR_OUTCOME)) shouldBeEqualTo 1L
+        (timerCount(registry, "cancel", CANCELLED_OUTCOME)) shouldBeEqualTo 0L
     }
 
     @Test
@@ -283,11 +283,11 @@ class ExposedKtorCacheHealthRoutesTest {
         entered.await()
         job.cancelAndJoin()
 
-        assertTrue(job.isCancelled)
-        assertTrue(binding.currentSample().queueDepth.isNaN())
-        assertEquals(1L, timerCount(registry, "active", CANCELLED_OUTCOME))
-        assertEquals(0L, timerCount(registry, "active", TIMEOUT_OUTCOME))
-        assertEquals(0L, timerCount(registry, "active", ERROR_OUTCOME))
+        job.isCancelled.shouldBeTrue()
+        (binding.currentSample().queueDepth.isNaN()).shouldBeTrue()
+        (timerCount(registry, "active", CANCELLED_OUTCOME)) shouldBeEqualTo 1L
+        (timerCount(registry, "active", TIMEOUT_OUTCOME)) shouldBeEqualTo 0L
+        (timerCount(registry, "active", ERROR_OUTCOME)) shouldBeEqualTo 0L
     }
 
     @Test
@@ -308,8 +308,8 @@ class ExposedKtorCacheHealthRoutesTest {
             )
         }.exceptionOrNull()
 
-        assertTrue(failure is AssertionError)
-        assertEquals(0L, timerCount(registry, "fatal", ERROR_OUTCOME))
+        (failure is AssertionError).shouldBeTrue()
+        (timerCount(registry, "fatal", ERROR_OUTCOME)) shouldBeEqualTo 0L
     }
 
     @Test
@@ -340,7 +340,7 @@ class ExposedKtorCacheHealthRoutesTest {
                 older.join()
             }
 
-            assertEquals(ExposedKtorCacheStatus.UP, binding.currentSample().status)
+            (binding.currentSample().status) shouldBeEqualTo ExposedKtorCacheStatus.UP
         }
     }
 
@@ -367,7 +367,7 @@ class ExposedKtorCacheHealthRoutesTest {
             aggregateExposedKtorReadiness(null, null, listOf(binding), 10.seconds, testScheduler.timeSource)
             older.cancelAndJoin()
 
-            assertEquals(ExposedKtorCacheStatus.UP, binding.currentSample().status)
+            (binding.currentSample().status) shouldBeEqualTo ExposedKtorCacheStatus.UP
         }
     }
 
@@ -388,13 +388,13 @@ class ExposedKtorCacheHealthRoutesTest {
                     )
                     registry.meters.filter { it.id.type.name == "GAUGE" }.forEach { meter ->
                         meter.measure().forEach { measurement ->
-                            assertTrue(measurement.value.isNaN() || measurement.value >= 0.0)
+                            (measurement.value.isNaN() || measurement.value >= 0.0).shouldBeTrue()
                         }
                     }
                 }
             }
         }
-        assertEquals(8, registry.meters.size)
+        registry.meters.size shouldBeEqualTo 8
     }
 
     private fun bindings(
@@ -421,10 +421,5 @@ class ExposedKtorCacheHealthRoutesTest {
         val relative = "ktor/exposed/src/main/kotlin/io/bluetape4k/exposed/ktor/ExposedKtorHealthRoutes.kt"
         val paths = listOf(Path.of(relative), Path.of("src/main/kotlin/io/bluetape4k/exposed/ktor/ExposedKtorHealthRoutes.kt"))
         return Files.readString(paths.first(Files::exists))
-    }
-
-    private infix fun <T> T.shouldEqual(expected: T): T {
-        assertEquals(expected, this)
-        return this
     }
 }

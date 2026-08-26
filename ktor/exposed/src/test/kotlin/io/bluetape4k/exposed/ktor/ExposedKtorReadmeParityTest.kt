@@ -1,7 +1,7 @@
 package io.bluetape4k.exposed.ktor
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import io.bluetape4k.assertions.should
+
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.nio.file.Path
@@ -16,7 +16,7 @@ class ExposedKtorReadmeParityTest {
         EXAMPLES.forEach { name ->
             val expected = extractFixture(fixture, name)
             readmes.forEach { path ->
-                assertEquals(expected, extractReadme(read(path), name), "$path example '$name' drifted")
+                (extractReadme(read(path), name)).should("$path example '$name' drifted") { it == expected }
             }
         }
     }
@@ -25,13 +25,13 @@ class ExposedKtorReadmeParityTest {
     fun `Ktor README locales contain the complete readiness and operations contract`() {
         listOf("ktor/exposed/README.md", "ktor/exposed/README.ko.md").forEach { path ->
             val text = read(path)
-            KTOR_TERMS.forEach { term -> assertTrue(term in text, "$path is missing '$term'") }
+            KTOR_TERMS.forEach { term -> (term in text).should("$path is missing '$term'") { it } }
         }
         REQUIRED_ENGLISH_FRAGMENTS.forEach { fragment ->
-            assertTrue(fragment in read("ktor/exposed/README.md"), "English Ktor README drifted: $fragment")
+            (fragment in read("ktor/exposed/README.md")).should("English Ktor README drifted: $fragment") { it }
         }
         REQUIRED_KOREAN_FRAGMENTS.forEach { fragment ->
-            assertTrue(fragment in read("ktor/exposed/README.ko.md"), "Korean Ktor README drifted: $fragment")
+            (fragment in read("ktor/exposed/README.ko.md")).should("Korean Ktor README drifted: $fragment") { it }
         }
     }
 
@@ -39,22 +39,22 @@ class ExposedKtorReadmeParityTest {
     fun `cache migration and Spring Actuator mappings remain source equivalent`() {
         listOf("exposed/cache/README.md", "exposed/cache/README.ko.md").forEach { path ->
             val text = read(path)
-            CACHE_TERMS.forEach { term -> assertTrue(term in text, "$path is missing '$term'") }
+            CACHE_TERMS.forEach { term -> (term in text).should("$path is missing '$term'") { it } }
         }
         CACHE_ENGLISH_FRAGMENTS.forEach { fragment ->
-            assertTrue(fragment in read("exposed/cache/README.md"), "English cache migration drifted: $fragment")
+            (fragment in read("exposed/cache/README.md")).should("English cache migration drifted: $fragment") { it }
         }
         CACHE_KOREAN_FRAGMENTS.forEach { fragment ->
-            assertTrue(fragment in read("exposed/cache/README.ko.md"), "Korean cache migration drifted: $fragment")
+            (fragment in read("exposed/cache/README.ko.md")).should("Korean cache migration drifted: $fragment") { it }
         }
         listOf(
             "spring-boot/jdbc/README.md",
             "spring-boot/r2dbc/README.md",
         ).forEach { path ->
             val text = read(path)
-            ACTUATOR_TERMS.forEach { term -> assertTrue(term in text, "$path is missing '$term'") }
+            ACTUATOR_TERMS.forEach { term -> (term in text).should("$path is missing '$term'") { it } }
             ACTUATOR_ENGLISH_FRAGMENTS.forEach { fragment ->
-                assertTrue(fragment in text, "$path Actuator mapping drifted: $fragment")
+                (fragment in text).should("$path Actuator mapping drifted: $fragment") { it }
             }
         }
         listOf(
@@ -62,9 +62,9 @@ class ExposedKtorReadmeParityTest {
             "spring-boot/r2dbc/README.ko.md",
         ).forEach { path ->
             val text = read(path)
-            ACTUATOR_TERMS.forEach { term -> assertTrue(term in text, "$path is missing '$term'") }
+            ACTUATOR_TERMS.forEach { term -> (term in text).should("$path is missing '$term'") { it } }
             ACTUATOR_KOREAN_FRAGMENTS.forEach { fragment ->
-                assertTrue(fragment in text, "$path Actuator mapping drifted: $fragment")
+                (fragment in text).should("$path Actuator mapping drifted: $fragment") { it }
             }
         }
     }
@@ -83,7 +83,7 @@ class ExposedKtorReadmeParityTest {
     private fun extract(text: String, start: String, end: String): String {
         val startIndex = text.indexOf(start)
         val endIndex = text.indexOf(end, startIndex + start.length)
-        assertTrue(startIndex >= 0 && endIndex > startIndex, "Missing markers: $start .. $end")
+        (startIndex >= 0 && endIndex > startIndex).should("Missing markers: $start .. $end") { it }
         return text.substring(startIndex + start.length, endIndex).trimIndent().trim()
     }
 

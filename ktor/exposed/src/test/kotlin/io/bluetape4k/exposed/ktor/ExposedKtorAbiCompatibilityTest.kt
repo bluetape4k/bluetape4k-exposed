@@ -1,12 +1,13 @@
 package io.bluetape4k.exposed.ktor
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.should
+
 import io.ktor.server.application.Application
 import io.ktor.server.routing.Route
 import kotlinx.coroutines.CoroutineDispatcher
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
 import java.io.IOException
@@ -45,17 +46,16 @@ class ExposedKtorAbiCompatibilityTest {
             }
         }
 
-        assertTrue(mismatches.isEmpty()) {
-            buildString {
-                appendLine("Ktor ABI descriptors changed in compiled production output: $productionLocation")
-                mismatches.forEach { appendLine("- $it") }
-                inspections.values.forEach { inspection ->
-                    appendLine()
-                    appendLine("Inspection for ${inspection.owner} via ${inspection.backend}:")
-                    appendLine(inspection.diagnostics)
-                }
+        val diagnostics = buildString {
+            appendLine("Ktor ABI descriptors changed in compiled production output: $productionLocation")
+            mismatches.forEach { appendLine("- $it") }
+            inspections.values.forEach { inspection ->
+                appendLine()
+                appendLine("Inspection for ${inspection.owner} via ${inspection.backend}:")
+                appendLine(inspection.diagnostics)
             }
         }
+        (mismatches.isEmpty()).should(diagnostics) { it }
     }
 
     @Test
@@ -67,11 +67,13 @@ class ExposedKtorAbiCompatibilityTest {
             requireNotNull(Test::class.java.protectionDomain.codeSource).location.toURI()
         ).toAbsolutePath().normalize()
 
-        val error = assertThrows(IllegalStateException::class.java) {
+        val error = assertFailsWith<IllegalStateException> {
             inspectWithReflection(Test::class.java.name, productionLocation, "forced fallback")
         }
-        assertTrue(error.message?.contains("expected: $productionLocation") == true)
-        assertTrue(error.message?.contains("actual: $shadowedLocation") == true)
+        (error.message?.contains("expected: $productionLocation") == true)
+            .should("fallback diagnostics did not include the expected production location") { it }
+        (error.message?.contains("actual: $shadowedLocation") == true)
+            .should("fallback diagnostics did not include the actual shadowed location") { it }
     }
 
     @Test
@@ -85,9 +87,9 @@ class ExposedKtorAbiCompatibilityTest {
             timeoutUnit = TimeUnit.MILLISECONDS,
         )
 
-        assertTrue(execution.timedOut, "process exceeded its timeout but was reported as completed")
-        assertTrue(execution.output.contains("timeout-probe"), "timeout diagnostics did not retain process output")
-        assertTrue(Files.notExists(execution.outputFile), "temporary process output was not deleted")
+        execution.timedOut.should("process exceeded its timeout but was reported as completed") { it }
+        (execution.output.contains("timeout-probe")).should("timeout diagnostics did not retain process output") { it }
+        (Files.notExists(execution.outputFile)).should("temporary process output was not deleted") { it }
     }
 
     private fun inspectClass(owner: String, productionLocation: Path): AbiInspection =

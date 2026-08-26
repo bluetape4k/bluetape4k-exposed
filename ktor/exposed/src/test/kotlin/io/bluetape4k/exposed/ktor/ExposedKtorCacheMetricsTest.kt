@@ -1,5 +1,13 @@
 package io.bluetape4k.exposed.ktor
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeSameInstanceAs
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldNotBeNull
+
 import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.Tags
@@ -10,13 +18,6 @@ import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheFailureBuffer
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertSame
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -31,26 +32,24 @@ class ExposedKtorCacheMetricsTest {
         val registry = SimpleMeterRegistry()
         val binding = registerExposedKtorCacheMetrics(registry, config("orders")).single()
 
-        assertEquals(8, registry.meters.size)
-        assertEquals(4, registry.meters.count { it.id.name == CACHE_READINESS_METER_NAME })
+        registry.meters.size shouldBeEqualTo 8
+        (registry.meters.count { it.id.name == CACHE_READINESS_METER_NAME }) shouldBeEqualTo 4
         CACHE_OUTCOMES.forEach { outcome ->
             val timer = registry.find(CACHE_READINESS_METER_NAME)
                     .tags("component", "orders", "kind", "custom", "operation", "readiness", "outcome", outcome)
                     .timer()
-            assertNotNull(timer)
-            assertEquals("Cache readiness probe duration.", timer!!.id.description)
-            assertEquals("seconds", timer.id.baseUnit)
-            assertEquals(
-                setOf("component", "kind", "operation", "outcome"),
-                timer.id.tags.map { it.key }.toSet(),
-            )
+            val nonNullTimer = timer.shouldNotBeNull()
+            nonNullTimer.id.description shouldBeEqualTo "Cache readiness probe duration."
+            nonNullTimer.id.baseUnit shouldBeEqualTo "seconds"
+            (nonNullTimer.id.tags.map { it.key }.toSet()) shouldBeEqualTo
+                setOf("component", "kind", "operation", "outcome")
         }
         assertGauge(registry, CACHE_QUEUE_DEPTH_METER_NAME, "entries")
         assertGauge(registry, CACHE_SNAPSHOT_PENDING_METER_NAME, "events")
         assertGauge(registry, CACHE_SNAPSHOT_DROPPED_METER_NAME, "events")
         assertGauge(registry, CACHE_SNAPSHOT_OBSERVER_FAILURES_METER_NAME, "events")
-        assertTrue(binding.currentSample().queueDepth.isNaN())
-        assertThrows(UnsupportedOperationException::class.java) {
+        (binding.currentSample().queueDepth.isNaN()).shouldBeTrue()
+        assertFailsWith<UnsupportedOperationException> {
             @Suppress("UNCHECKED_CAST")
             (binding.tags as MutableList<io.micrometer.core.instrument.Tag>).add(
                 io.micrometer.core.instrument.Tag.of("secret", "value")
@@ -68,25 +67,22 @@ class ExposedKtorCacheMetricsTest {
         ).single()
 
         val generation = binding.claimGeneration()
-        assertTrue(binding.publish(generation, contributor.probe()))
+        (binding.publish(generation, contributor.probe())).shouldBeTrue()
         binding.record(SUCCESS_OUTCOME, 10L)
 
-        assertTrue(gauge(registry, CACHE_QUEUE_DEPTH_METER_NAME, "snapshots", "snapshot").isNaN())
-        assertEquals(3.0, gauge(registry, CACHE_SNAPSHOT_PENDING_METER_NAME, "snapshots", "snapshot"))
-        assertEquals(5.0, gauge(registry, CACHE_SNAPSHOT_DROPPED_METER_NAME, "snapshots", "snapshot"))
-        assertEquals(7.0, gauge(registry, CACHE_SNAPSHOT_OBSERVER_FAILURES_METER_NAME, "snapshots", "snapshot"))
-        assertEquals(
-            1L,
-            registry.find(CACHE_READINESS_METER_NAME)
+        (gauge(registry, CACHE_QUEUE_DEPTH_METER_NAME, "snapshots", "snapshot").isNaN()).shouldBeTrue()
+        (gauge(registry, CACHE_SNAPSHOT_PENDING_METER_NAME, "snapshots", "snapshot")) shouldBeEqualTo 3.0
+        (gauge(registry, CACHE_SNAPSHOT_DROPPED_METER_NAME, "snapshots", "snapshot")) shouldBeEqualTo 5.0
+        (gauge(registry, CACHE_SNAPSHOT_OBSERVER_FAILURES_METER_NAME, "snapshots", "snapshot")) shouldBeEqualTo 7.0
+        (registry.find(CACHE_READINESS_METER_NAME)
                 .tags(
                     "component", "snapshots",
                     "kind", "snapshot",
                     "operation", "readiness",
                     "outcome", SUCCESS_OUTCOME,
                 )
-                .timer()!!
-                .count(),
-        )
+                .timer().shouldNotBeNull()
+                .count()) shouldBeEqualTo 1L
     }
 
     @Test
@@ -100,11 +96,11 @@ class ExposedKtorCacheMetricsTest {
         val oldGeneration = binding.claimGeneration()
         val newGeneration = binding.claimGeneration()
 
-        assertTrue(binding.publish(newGeneration, contributor.probe()))
-        assertFalse(binding.publish(oldGeneration, ExposedKtorCacheSample.snapshot(99, 99, 99)))
-        assertEquals(1.0, gauge(registry, CACHE_SNAPSHOT_PENDING_METER_NAME, "snapshots", "snapshot"))
-        assertTrue(binding.publishUnavailable(newGeneration))
-        assertTrue(gauge(registry, CACHE_SNAPSHOT_PENDING_METER_NAME, "snapshots", "snapshot").isNaN())
+        (binding.publish(newGeneration, contributor.probe())).shouldBeTrue()
+        (binding.publish(oldGeneration, ExposedKtorCacheSample.snapshot(99, 99, 99))).shouldBeFalse()
+        (gauge(registry, CACHE_SNAPSHOT_PENDING_METER_NAME, "snapshots", "snapshot")) shouldBeEqualTo 1.0
+        (binding.publishUnavailable(newGeneration)).shouldBeTrue()
+        (gauge(registry, CACHE_SNAPSHOT_PENDING_METER_NAME, "snapshots", "snapshot").isNaN()).shouldBeTrue()
     }
 
     @Test
@@ -112,7 +108,7 @@ class ExposedKtorCacheMetricsTest {
         val registry = SimpleMeterRegistry()
         val config = config16()
         val bindings = registerExposedKtorCacheMetrics(registry, config)
-        assertEquals(128, registry.meters.size)
+        registry.meters.size shouldBeEqualTo 128
 
         repeat(100) {
             bindings.forEach { binding ->
@@ -121,7 +117,7 @@ class ExposedKtorCacheMetricsTest {
                 binding.record(SUCCESS_OUTCOME, 1L)
             }
         }
-        assertEquals(128, registry.meters.size)
+        registry.meters.size shouldBeEqualTo 128
     }
 
     @Test
@@ -132,12 +128,12 @@ class ExposedKtorCacheMetricsTest {
             .register(registry)
         val before = registry.meters.map { it.id }.toSet()
 
-        val error = assertThrows(IllegalArgumentException::class.java) {
+        val error = assertFailsWith<IllegalArgumentException> {
             registerExposedKtorCacheMetrics(registry, config("orders"))
         }
-        assertTrue(error.message.orEmpty().contains("reason=identity_collision"))
-        assertEquals(before, registry.meters.map { it.id }.toSet())
-        assertNull(error.cause)
+        (error.message.orEmpty().contains("reason=identity_collision")).shouldBeTrue()
+        (registry.meters.map { it.id }.toSet()) shouldBeEqualTo before
+        error.cause.shouldBeNull()
     }
 
     @Test
@@ -155,15 +151,15 @@ class ExposedKtorCacheMetricsTest {
                 }
         })
 
-        val error = assertThrows(IllegalArgumentException::class.java) {
+        val error = assertFailsWith<IllegalArgumentException> {
             registerExposedKtorCacheMetrics(registry, config("orders"))
         }
 
-        assertEquals("Cache metric installation rejected: reason=identity_collision.", error.message)
-        assertNull(error.cause)
-        assertEquals(1, registry.meters.size)
-        assertSame(preexisting, registry.meters.single())
-        assertEquals(7.0, preexisting.value())
+        error.message shouldBeEqualTo "Cache metric installation rejected: reason=identity_collision."
+        error.cause.shouldBeNull()
+        registry.meters.size shouldBeEqualTo 1
+        (registry.meters.single()) shouldBeSameInstanceAs preexisting
+        (preexisting.value()) shouldBeEqualTo 7.0
     }
 
     @Test
@@ -178,14 +174,14 @@ class ExposedKtorCacheMetricsTest {
                 }
         })
 
-        val error = assertThrows(IllegalArgumentException::class.java) {
+        val error = assertFailsWith<IllegalArgumentException> {
             registerExposedKtorCacheMetrics(registry, config("orders"))
         }
 
-        assertEquals("Cache metric installation rejected: reason=identity_collision.", error.message)
-        assertNull(error.cause)
-        assertTrue(registry.meters.isEmpty())
-        assertEquals(1, registry.removals.get())
+        error.message shouldBeEqualTo "Cache metric installation rejected: reason=identity_collision."
+        error.cause.shouldBeNull()
+        (registry.meters.isEmpty()).shouldBeTrue()
+        (registry.removals.get()) shouldBeEqualTo 1
     }
 
     @Test
@@ -193,13 +189,13 @@ class ExposedKtorCacheMetricsTest {
         val registry = SimpleMeterRegistry()
         registry.config().meterFilter(MeterFilter.denyNameStartsWith("bluetape4k.exposed.ktor.cache"))
 
-        val error = assertThrows(IllegalStateException::class.java) {
+        val error = assertFailsWith<IllegalStateException> {
             registerExposedKtorCacheMetrics(registry, config("orders"))
         }
 
-        assertEquals("Cache metric installation failed: reason=registration_failed.", error.message)
-        assertNull(error.cause)
-        assertTrue(registry.meters.isEmpty())
+        error.message shouldBeEqualTo "Cache metric installation failed: reason=registration_failed."
+        error.cause.shouldBeNull()
+        (registry.meters.isEmpty()).shouldBeTrue()
     }
 
     @Test
@@ -207,12 +203,12 @@ class ExposedKtorCacheMetricsTest {
         val registry = FailingSimpleMeterRegistry(failAt = 6)
         val unrelated = registry.counter("application.unrelated")
 
-        val error = assertThrows(IllegalStateException::class.java) {
+        val error = assertFailsWith<IllegalStateException> {
             registerExposedKtorCacheMetrics(registry, config("orders"))
         }
-        assertEquals("Cache metric installation failed: reason=registration_failed.", error.message)
-        assertNull(error.cause)
-        assertEquals(listOf(unrelated.id), registry.meters.map { it.id })
+        error.message shouldBeEqualTo "Cache metric installation failed: reason=registration_failed."
+        error.cause.shouldBeNull()
+        (registry.meters.map { it.id }) shouldBeEqualTo listOf(unrelated.id)
     }
 
     @Test
@@ -231,24 +227,22 @@ class ExposedKtorCacheMetricsTest {
             start.countDown()
             val results = attempts.map { it.get(10, TimeUnit.SECONDS) }
 
-            assertEquals(1, results.count { it.isSuccess })
-            assertEquals(1, results.count { it.isFailure })
-            assertEquals(128, registry.meters.size)
+            (results.count { it.isSuccess }) shouldBeEqualTo 1
+            (results.count { it.isFailure }) shouldBeEqualTo 1
+            registry.meters.size shouldBeEqualTo 128
             val winnerBindings = results.single { it.isSuccess }.getOrThrow()
             val winnerGeneration = winnerBindings.first().claimGeneration()
-            assertTrue(
-                winnerBindings.first().publish(
+            (winnerBindings.first().publish(
                     winnerGeneration,
                     ExposedKtorCacheSample.snapshot(42, 43, 44),
-                )
-            )
-            assertEquals(42.0, gauge(registry, CACHE_SNAPSHOT_PENDING_METER_NAME, "cache_0", "custom"))
-            val loser = results.single { it.isFailure }.exceptionOrNull()!!
-            assertTrue(loser.message.orEmpty().contains("reason=identity_collision"))
-            assertNull(loser.cause)
+                )).shouldBeTrue()
+            (gauge(registry, CACHE_SNAPSHOT_PENDING_METER_NAME, "cache_0", "custom")) shouldBeEqualTo 42.0
+            val loser = results.single { it.isFailure }.exceptionOrNull().shouldNotBeNull()
+            (loser.message.orEmpty().contains("reason=identity_collision")).shouldBeTrue()
+            loser.cause.shouldBeNull()
         } finally {
             executor.shutdownNow()
-            assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS))
+            (executor.awaitTermination(10, TimeUnit.SECONDS)).shouldBeTrue()
         }
     }
 
@@ -257,13 +251,13 @@ class ExposedKtorCacheMetricsTest {
         val registry = SimpleMeterRegistry()
         registerExposedKtorCacheMetrics(registry, config16("cache"))
         registerExposedKtorCacheMetrics(registry, config16("other"))
-        assertEquals(256, registry.meters.size)
+        registry.meters.size shouldBeEqualTo 256
     }
 
     private fun assertGauge(registry: SimpleMeterRegistry, name: String, baseUnit: String) {
         val meter = registry.find(name).tags("component", "orders", "kind", "custom").gauge()
-        assertNotNull(meter)
-        assertEquals(baseUnit, meter!!.id.baseUnit)
+        val nonNullMeter = meter.shouldNotBeNull()
+        nonNullMeter.id.baseUnit shouldBeEqualTo baseUnit
         val expectedDescription = when (name) {
             CACHE_QUEUE_DEPTH_METER_NAME ->
                 "Accepted write-behind entries not yet observed as flushed; NaN means unavailable, not zero."
@@ -275,9 +269,9 @@ class ExposedKtorCacheMetricsTest {
                 "Cumulative snapshot observer callback failures; NaN means unavailable, not zero."
             else -> error("Unexpected gauge")
         }
-        assertEquals(expectedDescription, meter.id.description)
-        assertTrue(meter.value().isNaN())
-        assertEquals(setOf("component", "kind"), meter.id.tags.map { it.key }.toSet())
+        nonNullMeter.id.description shouldBeEqualTo expectedDescription
+        (nonNullMeter.value().isNaN()).shouldBeTrue()
+        (nonNullMeter.id.tags.map { it.key }.toSet()) shouldBeEqualTo setOf("component", "kind")
     }
 
     private fun gauge(
@@ -285,7 +279,7 @@ class ExposedKtorCacheMetricsTest {
         name: String,
         component: String,
         kind: String,
-    ): Double = registry.find(name).tags("component", component, "kind", kind).gauge()!!.value()
+    ): Double = registry.find(name).tags("component", component, "kind", kind).gauge().shouldNotBeNull().value()
 
     private fun config(component: String) = ExposedKtorCacheReadinessConfig(
         listOf(ExposedKtorCacheContributor.custom(component) { ExposedKtorCacheStatus.UP })
