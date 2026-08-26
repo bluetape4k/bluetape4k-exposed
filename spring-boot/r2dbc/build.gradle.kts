@@ -19,9 +19,10 @@ dependencies {
     api(platform(bt4k.kotlinx.coroutines.bom))
 
     api("org.springframework.data:spring-data-commons")
+    api("org.springframework:spring-tx")
 
-    // JDBC 모듈 재사용: EntityInformation, ExposedMappingContext
-    api(project(":bluetape4k-exposed-spring-boot-jdbc"))
+    // JDBC 어댑터와 분리된 공통 Spring Data SPI만 재사용한다.
+    api(project(":bluetape4k-exposed-spring-boot-common"))
 
     api(libs.kotlin.reflect)
     api(bt4k.exposed.core)
@@ -31,6 +32,7 @@ dependencies {
     testImplementation(libs.exposed.migration.r2dbc)
     testImplementation(bt4k.flyway.core)
     testImplementation(bt4k.bluetape4k.junit5)
+    testImplementation(bt4k.bluetape4k.assertions)
 
     api(project(":bluetape4k-exposed-r2dbc"))
     testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
@@ -63,4 +65,28 @@ dependencies {
     testImplementation(bt4k.mysql.connector.j)
     testImplementation(bt4k.mariadb.java.client)
     testImplementation(bt4k.postgresql)
+}
+
+val r2dbcCompileClasspath = configurations.named("compileClasspath")
+val r2dbcRuntimeClasspath = configurations.named("runtimeClasspath")
+
+tasks.register("checkR2dbcDependencyBoundary") {
+    group = "verification"
+    description = "R2DBC compile/runtime classpaths must not contain JDBC Spring Data adapters."
+    notCompatibleWithConfigurationCache("The check resolves dependency configurations at execution time.")
+    doLast {
+        val forbiddenModules = setOf(
+            "bluetape4k-exposed-spring-boot-jdbc",
+            "spring-jdbc",
+        )
+        val resolvedModules = listOf(r2dbcCompileClasspath.get(), r2dbcRuntimeClasspath.get())
+            .flatMap { configuration ->
+                configuration.resolvedConfiguration.resolvedArtifacts.map { artifact -> artifact.name }
+            }
+            .toSet()
+        val forbidden = resolvedModules.intersect(forbiddenModules)
+        check(forbidden.isEmpty()) {
+            "R2DBC dependency boundary violated; forbidden modules: ${forbidden.sorted()}"
+        }
+    }
 }

@@ -3,7 +3,7 @@ package io.bluetape4k.examples.exposed.mvc.domain
 import io.bluetape4k.exposed.dao.entityToStringBuilder
 import io.bluetape4k.exposed.dao.idEquals
 import io.bluetape4k.exposed.dao.idHashCode
-import io.bluetape4k.spring.data.exposed.jdbc.annotation.ExposedEntity
+import io.bluetape4k.spring.data.exposed.common.annotation.ExposedEntity
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.dao.LongEntity

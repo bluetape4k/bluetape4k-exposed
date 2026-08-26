@@ -31,6 +31,7 @@ import javax.sql.DataSource
 class ExposedSpringDataAutoConfiguration {
 
     @Bean
+    @ConditionalOnMissingBean(name = ["exposedMappingContext"])
     fun exposedMappingContext(): ExposedMappingContext = ExposedMappingContext()
 
     /**

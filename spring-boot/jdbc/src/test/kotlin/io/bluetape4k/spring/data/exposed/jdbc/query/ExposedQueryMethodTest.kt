@@ -1,9 +1,11 @@
 package io.bluetape4k.spring.data.exposed.jdbc.query
 
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.spring.data.exposed.common.annotation.Query as CommonQuery
 import io.bluetape4k.spring.data.exposed.jdbc.repository.UserJdbcRepository
 import io.bluetape4k.spring.data.exposed.jdbc.repository.query.ExposedQueryMethod
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
@@ -38,7 +40,9 @@ class ExposedQueryMethodTest {
 
         qm.isAnnotatedQuery.shouldBeTrue()
         qm.getAnnotatedQuery().shouldNotBeNull()
-        qm.getAnnotatedQuery()!! shouldStartWith "SELECT"
+        val query = qm.getAnnotatedQuery()
+        query.shouldNotBeNull()
+        query shouldStartWith "SELECT"
     }
 
     @Test
@@ -49,6 +53,17 @@ class ExposedQueryMethodTest {
         val sql = qm.getAnnotatedQuery()
         sql.shouldNotBeNull()
         sql.contains("users").shouldBeTrue()
+    }
+
+    @Test
+    fun `common Query annotation is accepted while legacy JDBC facade remains available`() {
+        val commonMetadata = DefaultRepositoryMetadata(CommonQueryRepository::class.java)
+        val method = CommonQueryRepository::class.java.getMethod("findByNameCommon", String::class.java)
+        val qm = ExposedQueryMethod(method, commonMetadata, factory)
+
+        qm.isAnnotatedQuery.shouldBeTrue()
+        qm.getAnnotatedQuery() shouldBeEqualTo "SELECT * FROM users WHERE name = ?1"
+        qm.getCountQuery() shouldBeEqualTo "SELECT COUNT(*) FROM users WHERE name = ?1"
     }
 
     @Test
@@ -82,4 +97,15 @@ class ExposedQueryMethodTest {
 
         qm.entityInformation.javaType.shouldNotBeNull()
     }
+}
+
+private interface CommonQueryRepository: org.springframework.data.repository.Repository<
+    io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity,
+    Long,
+> {
+    @CommonQuery(
+        value = "SELECT * FROM users WHERE name = ?1",
+        countQuery = "SELECT COUNT(*) FROM users WHERE name = ?1",
+    )
+    fun findByNameCommon(name: String): List<io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity>
 }

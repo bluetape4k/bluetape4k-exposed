@@ -1,0 +1,61 @@
+public abstract interface annotation class io/bluetape4k/spring/data/exposed/common/annotation/ExposedEntity : java/lang/annotation/Annotation {
+}
+
+public abstract interface annotation class io/bluetape4k/spring/data/exposed/common/annotation/Query : java/lang/annotation/Annotation {
+	public abstract fun countQuery ()Ljava/lang/String;
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/spring/data/exposed/common/mapping/DefaultExposedPersistentEntity : org/springframework/data/mapping/model/BasicPersistentEntity, io/bluetape4k/spring/data/exposed/common/mapping/ExposedPersistentEntity {
+	public fun <init> (Lorg/springframework/data/core/TypeInformation;)V
+	public fun getEntityClass ()Lorg/jetbrains/exposed/v1/dao/EntityClass;
+	public fun getTable ()Lorg/jetbrains/exposed/v1/core/Table;
+}
+
+public final class io/bluetape4k/spring/data/exposed/common/mapping/DefaultExposedPersistentProperty : org/springframework/data/mapping/model/AnnotationBasedPersistentProperty, io/bluetape4k/spring/data/exposed/common/mapping/ExposedPersistentProperty {
+	public fun <init> (Lorg/springframework/data/mapping/model/Property;Lorg/springframework/data/mapping/PersistentEntity;Lorg/springframework/data/mapping/model/SimpleTypeHolder;)V
+	public fun getColumn ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/spring/data/exposed/common/mapping/ExposedMappingContext : org/springframework/data/mapping/context/AbstractMappingContext {
+	public fun <init> ()V
+	public synthetic fun createPersistentEntity (Lorg/springframework/data/core/TypeInformation;)Lorg/springframework/data/mapping/model/MutablePersistentEntity;
+	public synthetic fun createPersistentProperty (Lorg/springframework/data/mapping/model/Property;Lorg/springframework/data/mapping/model/MutablePersistentEntity;Lorg/springframework/data/mapping/model/SimpleTypeHolder;)Lorg/springframework/data/mapping/PersistentProperty;
+}
+
+public abstract interface class io/bluetape4k/spring/data/exposed/common/mapping/ExposedPersistentEntity : org/springframework/data/mapping/PersistentEntity {
+	public abstract fun getEntityClass ()Lorg/jetbrains/exposed/v1/dao/EntityClass;
+	public abstract fun getTable ()Lorg/jetbrains/exposed/v1/core/Table;
+}
+
+public abstract interface class io/bluetape4k/spring/data/exposed/common/mapping/ExposedPersistentProperty : org/springframework/data/mapping/PersistentProperty {
+	public abstract fun getColumn ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/spring/data/exposed/common/repository/query/ExposedQueryCreator : org/springframework/data/repository/query/parser/AbstractQueryCreator {
+	public static final field Companion Lio/bluetape4k/spring/data/exposed/common/repository/query/ExposedQueryCreator$Companion;
+	public fun <init> (Lorg/springframework/data/repository/query/parser/PartTree;Lorg/springframework/data/repository/query/ParameterAccessor;Lorg/jetbrains/exposed/v1/core/Table;)V
+	public synthetic fun and (Lorg/springframework/data/repository/query/parser/Part;Ljava/lang/Object;Ljava/util/Iterator;)Ljava/lang/Object;
+	public synthetic fun complete (Ljava/lang/Object;Lorg/springframework/data/domain/Sort;)Ljava/lang/Object;
+	public synthetic fun create (Lorg/springframework/data/repository/query/parser/Part;Ljava/util/Iterator;)Ljava/lang/Object;
+	public synthetic fun or (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/spring/data/exposed/common/repository/query/ExposedQueryCreator$Companion {
+	public final fun escapeLikeWildcards (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class io/bluetape4k/spring/data/exposed/common/repository/query/ParameterMetadataProvider {
+	public static final field Companion Lio/bluetape4k/spring/data/exposed/common/repository/query/ParameterMetadataProvider$Companion;
+	public fun <init> (Lorg/springframework/data/repository/query/ParameterAccessor;)V
+	public final fun getAccessor ()Lorg/springframework/data/repository/query/ParameterAccessor;
+}
+
+public final class io/bluetape4k/spring/data/exposed/common/repository/query/ParameterMetadataProvider$Companion {
+	public final fun of (Lorg/springframework/data/repository/query/Parameters;[Ljava/lang/Object;)Lio/bluetape4k/spring/data/exposed/common/repository/query/ParameterMetadataProvider;
+}
+
+public final class io/bluetape4k/spring/data/exposed/common/repository/support/ExposedSortSupportKt {
+	public static final fun toExposedOrderBy (Lorg/springframework/data/domain/Sort;Lorg/jetbrains/exposed/v1/core/Table;)[Lkotlin/Pair;
+}
+

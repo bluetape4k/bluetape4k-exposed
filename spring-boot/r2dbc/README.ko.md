@@ -138,7 +138,7 @@ interface UserRepository : ExposedR2dbcRepository<User, Long> {
 `@Query` 어노테이션으로 네이티브 SQL을 실행할 수 있습니다. 위치 기반 플레이스홀더 `?1`, `?2`, ...가 메서드 파라미터에 순서대로 매핑됩니다.
 
 ```kotlin
-import io.bluetape4k.spring.data.exposed.jdbc.annotation.Query
+import io.bluetape4k.spring.data.exposed.common.annotation.Query
 
 interface UserRepository : ExposedR2dbcRepository<User, Long> {
     @Query("SELECT * FROM users WHERE email = ?1")

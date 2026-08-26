@@ -3,23 +3,25 @@ package io.bluetape4k.spring.data.exposed.jdbc.repository.query
 import io.bluetape4k.logging.KLogging
 import org.springframework.data.repository.query.ParameterAccessor
 import org.springframework.data.repository.query.Parameters
-import org.springframework.data.repository.query.ParametersParameterAccessor
 
-/**
- * 메서드 파라미터에서 [ParameterAccessor]를 제공합니다.
- * Spring Data 4.x [AbstractQueryCreator]는 [ParameterAccessor]를 필요로 합니다.
- *
- * ```kotlin
- * val provider = ParameterMetadataProvider.of(queryMethod.parameters, arrayOf("Alice", 25))
- * val accessor = provider.accessor // ParameterAccessor 인스턴스
- * ```
- */
+/** JDBC artifact에 남겨 둔 공통 [ParameterAccessor] facade입니다. */
+@Deprecated(
+    message = "common.repository.query.ParameterMetadataProvider를 사용하십시오.",
+    replaceWith = ReplaceWith(
+        "ParameterMetadataProvider",
+        "io.bluetape4k.spring.data.exposed.common.repository.query",
+    ),
+)
 class ParameterMetadataProvider(
     val accessor: ParameterAccessor,
 ) {
 
     companion object: KLogging() {
-        fun of(parameters: Parameters<*, *>, values: Array<Any?>): ParameterMetadataProvider =
-            ParameterMetadataProvider(ParametersParameterAccessor(parameters, values))
+        fun of(parameters: Parameters<*, *>, values: Array<Any?>): ParameterMetadataProvider {
+            val commonProvider =
+                io.bluetape4k.spring.data.exposed.common.repository.query.ParameterMetadataProvider
+                    .of(parameters, values)
+            return ParameterMetadataProvider(commonProvider.accessor)
+        }
     }
 }

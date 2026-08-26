@@ -138,7 +138,7 @@ Supported query forms follow the same column-name mapping as the Exposed DSL hel
 Use the `@Query` annotation for native SQL queries. Positional placeholders `?1`, `?2`, ... map to method parameters in order.
 
 ```kotlin
-import io.bluetape4k.spring.data.exposed.jdbc.annotation.Query
+import io.bluetape4k.spring.data.exposed.common.annotation.Query
 
 interface UserRepository : ExposedR2dbcRepository<User, Long> {
     @Query("SELECT * FROM users WHERE email = ?1")

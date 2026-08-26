@@ -22,6 +22,8 @@ dependencies {
 
     api("org.springframework.data:spring-data-commons")
 
+    api(project(":bluetape4k-exposed-spring-boot-common"))
+
     api(libs.kotlin.reflect)
     api(bt4k.bluetape4k.logging)
     api(bt4k.exposed.core)
@@ -33,6 +35,7 @@ dependencies {
     testImplementation(bt4k.exposed.migration.jdbc)
     testImplementation(bt4k.flyway.core)
     testImplementation(bt4k.bluetape4k.junit5)
+    testImplementation(bt4k.bluetape4k.assertions)
 
     // JDK 25 테스트 런타임과 StructuredTaskScope provider의 classfile/preview 호환성을 맞춘다.
     testImplementation(bt4k.bluetape4k.virtualthread.jdk25)

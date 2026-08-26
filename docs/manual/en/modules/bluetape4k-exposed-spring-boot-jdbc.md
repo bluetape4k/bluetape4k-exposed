@@ -35,6 +35,17 @@ dependencies {
 }
 ```
 
+The shared Spring Data annotations, mapping metadata, query planning, and sort conversion live in
+`bluetape4k-exposed-spring-boot-common`. New source may import `io.bluetape4k.spring.data.exposed.common.*`.
+The historical `io.bluetape4k.spring.data.exposed.jdbc.annotation`, `mapping`, `repository.query`, and
+`repository.support` symbols remain in this artifact as deprecated binary facades, so existing callers can
+migrate incrementally without a descriptor break.
+
+```kotlin
+import io.bluetape4k.spring.data.exposed.common.annotation.ExposedEntity
+import io.bluetape4k.spring.data.exposed.common.annotation.Query
+```
+
 ## Core concepts {#concepts}
 
 An `ExposedJdbcRepository<E, ID>` works with an Exposed DAO `Entity` and its `IdTable`. DAO identity, the entity cache, and change tracking live in the current Exposed transaction. Creating or mutating a DAO entity outside a transaction is therefore invalid. Spring's service transaction should own the business unit of work; repositories perform entity operations inside that boundary.

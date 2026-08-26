@@ -1,6 +1,6 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository.support
 
-import io.bluetape4k.spring.data.exposed.jdbc.mapping.ExposedPersistentEntity
+import io.bluetape4k.spring.data.exposed.common.mapping.ExposedPersistentEntity
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.LikePattern
 import org.jetbrains.exposed.v1.core.Op

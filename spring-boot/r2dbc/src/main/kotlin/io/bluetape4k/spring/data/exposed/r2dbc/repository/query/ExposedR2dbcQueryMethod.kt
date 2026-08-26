@@ -1,7 +1,7 @@
 package io.bluetape4k.spring.data.exposed.r2dbc.repository.query
 
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.spring.data.exposed.jdbc.annotation.Query
+import io.bluetape4k.spring.data.exposed.common.annotation.Query
 import org.springframework.data.projection.ProjectionFactory
 import org.springframework.data.repository.core.RepositoryMetadata
 import org.springframework.data.repository.query.Parameters

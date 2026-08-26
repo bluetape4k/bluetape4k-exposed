@@ -146,6 +146,7 @@ jobs:
               - 'spring-boot/**'
             spring-modulith:
               - 'spring-boot/spring-modulith/**'
+              - 'spring-boot/common/**'
               - 'spring-boot/jdbc/**'
               - 'exposed/core/**'
               - 'exposed/dao/**'
@@ -173,6 +174,7 @@ jobs:
               - 'exposed/clickhouse/**'
               - 'spring-boot/jdbc/**'
               - 'spring-boot/r2dbc/**'
+              - 'spring-boot/common/**'
               - '.github/workflows/ci.yml'
               - '.github/workflows/nightly-tests.yml'
               - 'settings.gradle.kts'
@@ -306,9 +308,9 @@ jobs:
           ./gradlew checkProductionAbi --no-daemon --no-configuration-cache --no-build-cache \
             2>&1 | tee build/abi/reports/check-production-abi.log
           test -s build/abi/reports/production-abi.txt
-          grep -F 'modules=34/34' build/abi/reports/production-abi.txt
-          grep -F 'baselines=34/34' build/abi/reports/production-abi.txt
-          grep -F 'actualDumps=34/34' build/abi/reports/production-abi.txt
+          grep -F 'modules=35/35' build/abi/reports/production-abi.txt
+          grep -F 'baselines=35/35' build/abi/reports/production-abi.txt
+          grep -F 'actualDumps=35/35' build/abi/reports/production-abi.txt
           grep -F 'emptyBaselines=0' build/abi/reports/production-abi.txt
 
       - name: Upload production ABI evidence
@@ -716,7 +718,9 @@ jobs:
       - name: Test spring-boot
         run: |
           for attempt in 1 2 3 4 5; do
-            ./gradlew :bluetape4k-exposed-spring-boot-jdbc:test :bluetape4k-exposed-spring-boot-r2dbc:test --no-configuration-cache --no-daemon && break
+            ./gradlew :bluetape4k-exposed-spring-boot-common:test --no-configuration-cache --no-daemon && \
+              ./gradlew :bluetape4k-exposed-spring-boot-jdbc:test --no-configuration-cache --no-daemon && \
+              ./gradlew :bluetape4k-exposed-spring-boot-r2dbc:test --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
@@ -728,6 +732,7 @@ jobs:
         if: always()
         run: >
           ./gradlew
+          :bluetape4k-exposed-spring-boot-common:koverXmlReport
           :bluetape4k-exposed-spring-boot-jdbc:koverXmlReport
           :bluetape4k-exposed-spring-boot-r2dbc:koverXmlReport
           --no-configuration-cache

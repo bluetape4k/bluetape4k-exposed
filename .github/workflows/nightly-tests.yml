@@ -1263,7 +1263,9 @@ jobs:
       - name: Test spring-boot
         run: |
           for attempt in 1 2 3 4 5; do
-            ./gradlew :bluetape4k-exposed-spring-boot-jdbc:test :bluetape4k-exposed-spring-boot-r2dbc:test --no-configuration-cache --no-daemon && break
+            ./gradlew :bluetape4k-exposed-spring-boot-common:test --no-configuration-cache --no-daemon && \
+              ./gradlew :bluetape4k-exposed-spring-boot-jdbc:test --no-configuration-cache --no-daemon && \
+              ./gradlew :bluetape4k-exposed-spring-boot-r2dbc:test --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
@@ -1276,6 +1278,7 @@ jobs:
         run: >
           ./gradlew
           --no-configuration-cache
+          :bluetape4k-exposed-spring-boot-common:koverXmlReport
           :bluetape4k-exposed-spring-boot-jdbc:koverXmlReport
           :bluetape4k-exposed-spring-boot-r2dbc:koverXmlReport
           --no-daemon

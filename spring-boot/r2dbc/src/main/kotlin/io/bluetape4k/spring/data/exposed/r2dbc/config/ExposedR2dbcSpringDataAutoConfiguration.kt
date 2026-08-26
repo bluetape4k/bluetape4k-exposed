@@ -1,17 +1,16 @@
 package io.bluetape4k.spring.data.exposed.r2dbc.config
 
-import io.bluetape4k.spring.data.exposed.jdbc.mapping.ExposedMappingContext
+import io.bluetape4k.spring.data.exposed.common.mapping.ExposedMappingContext
 import org.jetbrains.exposed.v1.dao.EntityClass
 import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import io.bluetape4k.spring.data.exposed.jdbc.config.ExposedSpringDataAutoConfiguration as JdbcExposedSpringDataAutoConfiguration
 
 /**
  * 코루틴 기반 Spring Data Exposed 자동 설정입니다.
- * Phase 1의 [JdbcExposedSpringDataAutoConfiguration] 이후에 실행됩니다.
+ * JDBC 자동 설정과 독립적으로 실행되며 공통 Spring Data mapping context만 등록합니다.
  *
  * ```kotlin
  * // Spring Boot 자동 등록 — 별도 설정 불필요
@@ -21,15 +20,15 @@ import io.bluetape4k.spring.data.exposed.jdbc.config.ExposedSpringDataAutoConfig
  * class Application
  * ```
  */
-@AutoConfiguration(after = [JdbcExposedSpringDataAutoConfiguration::class])
+@AutoConfiguration
 @ConditionalOnClass(EntityClass::class)
 @Configuration(proxyBeanMethods = false)
 class ExposedR2dbcSpringDataAutoConfiguration {
 
-    /**
-     * Phase 1 AutoConfiguration에 의해 이미 등록된 경우 생략합니다.
-     */
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(
+        value = [ExposedMappingContext::class],
+        name = ["exposedMappingContext"],
+    )
     fun exposedMappingContext(): ExposedMappingContext = ExposedMappingContext()
 }

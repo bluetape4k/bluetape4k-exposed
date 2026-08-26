@@ -5,8 +5,8 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.spring.data.exposed.jdbc.AbstractExposedJdbcRepositoryTest
-import io.bluetape4k.spring.data.exposed.jdbc.mapping.ExposedMappingContext
-import io.bluetape4k.spring.data.exposed.jdbc.mapping.ExposedPersistentEntity
+import io.bluetape4k.spring.data.exposed.common.mapping.ExposedMappingContext
+import io.bluetape4k.spring.data.exposed.common.mapping.ExposedPersistentEntity
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.JdbcExamplePredicateCompiler
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.JdbcPersistentPropertyResolver
 import org.jetbrains.exposed.v1.core.eq

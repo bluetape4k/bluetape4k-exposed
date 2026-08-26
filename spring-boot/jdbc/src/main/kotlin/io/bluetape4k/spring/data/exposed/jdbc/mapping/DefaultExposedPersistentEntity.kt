@@ -6,22 +6,11 @@ import org.springframework.data.core.TypeInformation
 import org.springframework.data.mapping.model.BasicPersistentEntity
 import kotlin.reflect.full.companionObjectInstance
 
-/**
- * [ExposedPersistentEntity]의 기본 구현체입니다.
- * Domain 클래스의 companion object에서 [EntityClass]를 추출합니다.
- *
- * ```kotlin
- * // ExposedMappingContext가 내부적으로 생성합니다.
- * val context = ExposedMappingContext()
- * val entity = context.getRequiredPersistentEntity(User::class.java)
- * val entityClass = entity.getEntityClass() // User.Companion (LongEntityClass<User>)
- * val table = entity.getTable()             // Users (IdTable<Long>)
- * ```
- */
+/** JDBC 저장소의 기존 Exposed PersistentEntity 구현입니다. */
+@Deprecated("common.mapping.DefaultExposedPersistentEntity를 사용하십시오.")
 class DefaultExposedPersistentEntity<T: Any>(
     typeInformation: TypeInformation<T>,
-): BasicPersistentEntity<T, ExposedPersistentProperty>(typeInformation),
-   ExposedPersistentEntity<T> {
+): BasicPersistentEntity<T, ExposedPersistentProperty>(typeInformation), ExposedPersistentEntity<T> {
 
     private val entityClassInstance: EntityClass<*, *>? by lazy {
         runCatching {

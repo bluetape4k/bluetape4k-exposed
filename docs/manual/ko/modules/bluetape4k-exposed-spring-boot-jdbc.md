@@ -35,6 +35,18 @@ dependencies {
 }
 ```
 
+공통 Spring Data annotation, mapping metadata, query planning, sort 변환은
+`bluetape4k-exposed-spring-boot-common`이 소유합니다. 새 source는
+`io.bluetape4k.spring.data.exposed.common.*`을 import하세요. 기존
+`io.bluetape4k.spring.data.exposed.jdbc.annotation`, `mapping`, `repository.query`,
+`repository.support` symbol은 descriptor를 보존하는 deprecated binary facade로 이 artifact에 남아
+있으므로 기존 caller를 순차적으로 migration할 수 있습니다.
+
+```kotlin
+import io.bluetape4k.spring.data.exposed.common.annotation.ExposedEntity
+import io.bluetape4k.spring.data.exposed.common.annotation.Query
+```
+
 ## 핵심 개념 {#concepts}
 
 `ExposedJdbcRepository<E, ID>`는 Exposed DAO `Entity`와 해당 `IdTable`을 사용합니다. DAO 식별성, 엔티티 캐시, 변경 추적은 현재 Exposed 트랜잭션에 속합니다. 따라서 트랜잭션 밖에서 DAO 엔티티를 만들거나 변경하면 안 됩니다. Spring 서비스 트랜잭션이 비즈니스 작업 단위를 소유하고 저장소는 그 경계 안에서 엔티티 작업을 수행합니다.

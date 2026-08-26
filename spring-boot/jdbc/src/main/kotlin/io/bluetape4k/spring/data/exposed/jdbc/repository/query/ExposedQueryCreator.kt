@@ -29,23 +29,9 @@ import org.springframework.data.repository.query.parser.PartTree
 /**
  * Spring Data [PartTree]를 Exposed [Op]<[Boolean]> 조건으로 변환합니다.
  *
- * Spring Data 4.x [AbstractQueryCreator] API:
- * - Constructor: `(PartTree, ParameterAccessor)`
- * - `create(Part, Iterator<Any>)`: 단일 Part → 조건 생성
- * - `and(Part, S, Iterator<Any>)`: Part → 조건 생성 후 base와 AND 결합 (3-param)
- * - `or(S, S)`: 두 조건을 OR 결합
- * - `complete(S?, Sort)`: 최종 결과 반환
- *
- * ```kotlin
- * // 아래 Repository 메서드명은 ExposedQueryCreator를 통해 자동 변환됩니다.
- * interface UserRepository : ExposedJdbcRepository<User, Long> {
- *     fun findByNameAndAge(name: String, age: Int): List<User>
- *     // → Users.name eq name AND Users.age eq age
- *
- *     fun findByNameContainingOrAgeGreaterThan(keyword: String, age: Int): List<User>
- *     // → Users.name LIKE "%keyword%" OR Users.age > age
- * }
- * ```
+ * 이 타입은 JDBC artifact의 binary facade로 유지됩니다. 새 공통 구현은
+ * `io.bluetape4k.spring.data.exposed.common.repository.query.ExposedQueryCreator`를
+ * 사용하며, 기존 JDBC descriptor는 호환성을 위해 이 모듈에 남겨 둡니다.
  */
 class ExposedQueryCreator(
     tree: PartTree,
@@ -145,5 +131,4 @@ class ExposedQueryCreator(
     }
 
     private fun toColumnName(propertyName: String): String = toSnakeCase(propertyName)
-
 }
