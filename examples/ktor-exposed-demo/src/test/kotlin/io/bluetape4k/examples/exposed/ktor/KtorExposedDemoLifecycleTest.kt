@@ -2,6 +2,7 @@ package io.bluetape4k.examples.exposed.ktor
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.examples.exposed.ktor.order.InMemoryOrderEventPublisher
 import io.bluetape4k.examples.exposed.ktor.order.OrderCommandService
 import io.bluetape4k.examples.exposed.ktor.order.OrderR2dbcCaffeineRepository
@@ -9,10 +10,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
-import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
-import java.io.ByteArrayOutputStream
-import java.io.PrintStream
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -42,7 +40,7 @@ class KtorExposedDemoLifecycleTest {
             }
         }
 
-        assertSame(primary, failure)
+        failure shouldBeSameInstanceAs primary
         order shouldBeEqualTo listOf("pool", "dispatcher", "jdbc", "lease")
         primary.suppressed.single().message shouldBeEqualTo cleanupFailure.message
     }
@@ -65,7 +63,7 @@ class KtorExposedDemoLifecycleTest {
         val first = resources.closeReport()
         val second = resources.closeReport()
 
-        assertSame(first, second)
+        second shouldBeSameInstanceAs first
         first.isClean shouldBeEqualTo true
         count.get() shouldBeEqualTo 1
     }
@@ -93,7 +91,7 @@ class KtorExposedDemoLifecycleTest {
 
             val firstReport = first.get(5, TimeUnit.SECONDS)
             val secondReport = second.get(5, TimeUnit.SECONDS)
-            assertSame(firstReport, secondReport)
+            secondReport shouldBeSameInstanceAs firstReport
             count.get() shouldBeEqualTo 2
         } finally {
             executor.shutdownNow()
@@ -123,7 +121,7 @@ class KtorExposedDemoLifecycleTest {
         )
 
         result.status shouldBeEqualTo 1
-        assertSame(primary, result.primaryFailure)
+        result.primaryFailure shouldBeSameInstanceAs primary
         closeCount.get() shouldBeEqualTo 1
         stopArguments shouldBeEqualTo listOf(1_000L to 5_000L)
         diagnostics.items.map { it.code } shouldBeEqualTo listOf("DEMO_STARTUP_FAILED")
@@ -165,9 +163,9 @@ class KtorExposedDemoLifecycleTest {
     }
 
     @Test
-    fun `stderr diagnostic sink renders only the allowlisted key value record`() {
-        val output = ByteArrayOutputStream()
-        val sink = StderrDemoDiagnosticSink(PrintStream(output, true, Charsets.UTF_8))
+    fun `logger diagnostic sink renders only the allowlisted key value record`() {
+        val messages = mutableListOf<String>()
+        val sink = StderrDemoDiagnosticSink(DemoDiagnosticLogger { messages += it() })
         val correlationId = UUID.fromString("018f6f95-7f4a-7a20-8b52-70ad30c30f36").toString()
 
         sink.emit(
@@ -180,7 +178,7 @@ class KtorExposedDemoLifecycleTest {
             ),
         )
 
-        output.toString(Charsets.UTF_8).trimEnd() shouldBeEqualTo
+        messages.single() shouldBeEqualTo
             "code=ORDER_READ_FAILED correlationId=$correlationId component=order-command operation=read outcome=failed"
     }
 

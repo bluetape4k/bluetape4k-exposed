@@ -170,7 +170,9 @@ class OrderRoutesTest {
                 .decodeJsonBody<DemoErrorResponse>()
             error.code shouldBeEqualTo expected.first
             error.message shouldBeEqualTo expected.second
-            UUID.fromString(requireNotNull(error.correlationId)).toString() shouldBeEqualTo error.correlationId
+            val correlationId = UUID.fromString(requireNotNull(error.correlationId))
+            correlationId.toString() shouldBeEqualTo error.correlationId
+            correlationId.version() shouldBeEqualTo 7
         }
         fixture.diagnostics.items.map { it.code } shouldBeEqualTo cases.map { it.second.first }
         fixture.diagnostics.items.map { it.operation } shouldBeEqualTo listOf("confirm", "confirm", "confirm")
@@ -187,7 +189,9 @@ class OrderRoutesTest {
 
         error.code shouldBeEqualTo "ORDER_READ_FAILED"
         error.message shouldBeEqualTo "Order could not be loaded."
-        UUID.fromString(requireNotNull(error.correlationId)).toString() shouldBeEqualTo error.correlationId
+        val correlationId = UUID.fromString(requireNotNull(error.correlationId))
+        correlationId.toString() shouldBeEqualTo error.correlationId
+        correlationId.version() shouldBeEqualTo 7
         fixture.diagnostics.items.single().operation shouldBeEqualTo "read"
     }
 

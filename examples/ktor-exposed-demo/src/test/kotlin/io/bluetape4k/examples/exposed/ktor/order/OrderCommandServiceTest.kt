@@ -2,6 +2,7 @@ package io.bluetape4k.examples.exposed.ktor.order
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.exposed.core.ddd.DomainEvent
 import io.bluetape4k.exposed.r2dbc.caffeine.repository.R2dbcCaffeineRepository
 import io.mockk.coEvery
@@ -15,7 +16,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import java.time.Clock
 import java.time.Instant
@@ -78,7 +78,7 @@ class OrderCommandServiceTest {
             service(repository, publisher).confirm(order)
         }
 
-        assertSame(writeFailure, failure.cause)
+        failure.cause shouldBeSameInstanceAs writeFailure
         order.domainEvents() shouldBeEqualTo listOf(OrderConfirmed(id, confirmedAt))
         coVerify(exactly = 1) { repository.invalidate(id) }
         io.mockk.verify(exactly = 0) { publisher.publish(any()) }
@@ -96,7 +96,7 @@ class OrderCommandServiceTest {
             service(repository, OrderEventPublisher {}).confirm(DemoOrder.pending(id, createdAt))
         }
 
-        assertSame(writeFailure, failure.cause)
+        failure.cause shouldBeSameInstanceAs writeFailure
         writeFailure.suppressed.single().javaClass shouldBeEqualTo cleanupFailure.javaClass
         writeFailure.suppressed.single().message shouldBeEqualTo cleanupFailure.message
     }
@@ -112,7 +112,7 @@ class OrderCommandServiceTest {
             service(repository, publisher).confirm(order)
         }
 
-        assertSame(publishFailure, failure.cause)
+        failure.cause shouldBeSameInstanceAs publishFailure
         order.domainEvents() shouldBeEqualTo listOf(OrderConfirmed(id, confirmedAt))
         coVerify(exactly = 0) { repository.invalidate(any()) }
     }
@@ -128,7 +128,7 @@ class OrderCommandServiceTest {
                 service(repository, OrderEventPublisher {}).confirm(DemoOrder.pending(id, createdAt))
             }
 
-            assertSame(cancellation, failure)
+            failure shouldBeSameInstanceAs cancellation
             coVerify(exactly = 1) { repository.invalidate(id) }
         }
 
@@ -144,7 +144,7 @@ class OrderCommandServiceTest {
             service(repository, OrderEventPublisher {}).confirm(DemoOrder.pending(id, createdAt))
         }
 
-        assertSame(cancellation, failure)
+        failure shouldBeSameInstanceAs cancellation
         cancellation.suppressed.single().javaClass shouldBeEqualTo cleanupFailure.javaClass
         cancellation.suppressed.single().message shouldBeEqualTo cleanupFailure.message
     }
@@ -162,7 +162,7 @@ class OrderCommandServiceTest {
         supervisorScope {
             val command = async { service(repository, publisher).confirm(id) }
             val failure = assertFailsWith<CancellationException> { command.await() }
-            assertSame(cancellation, failure.cause)
+            failure.cause shouldBeSameInstanceAs cancellation
         }
 
         coVerify(exactly = 0) { repository.put(any(), any()) }
@@ -183,7 +183,7 @@ class OrderCommandServiceTest {
         supervisorScope {
             val command = async { service(repository, publisher).confirm(id) }
             val failure = assertFailsWith<CancellationException> { command.await() }
-            assertSame(cancellation, failure.cause)
+            failure.cause shouldBeSameInstanceAs cancellation
         }
 
         coVerify(exactly = 1) { repository.put(any(), any()) }
@@ -201,7 +201,7 @@ class OrderCommandServiceTest {
             service(repository, OrderEventPublisher {}).confirm(id)
         }
 
-        assertSame(lookupFailure, failure.cause)
+        failure.cause shouldBeSameInstanceAs lookupFailure
         coVerify(exactly = 0) { repository.put(any(), any()) }
         coVerify(exactly = 0) { repository.invalidate(any()) }
     }

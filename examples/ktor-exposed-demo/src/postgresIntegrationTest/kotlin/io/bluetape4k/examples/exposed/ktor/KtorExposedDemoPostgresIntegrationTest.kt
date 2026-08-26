@@ -1,10 +1,12 @@
 package io.bluetape4k.examples.exposed.ktor
 
+import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.examples.exposed.ktor.order.DemoDiagnosticSink
 import io.bluetape4k.examples.exposed.ktor.order.OrderConfirmationResponse
 import io.bluetape4k.examples.exposed.ktor.order.OrderResponse
 import io.bluetape4k.examples.exposed.ktor.order.OrderStatus
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.ktor.core.HealthResponse
 import io.bluetape4k.ktor.testing.bluetape4kJsonClient
 import io.bluetape4k.ktor.testing.decodeJsonBody
@@ -30,7 +32,6 @@ import org.junit.jupiter.api.parallel.ExecutionMode
 import org.testcontainers.postgresql.PostgreSQLContainer
 import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
-import org.junit.jupiter.api.Assertions.assertSame
 
 @Execution(ExecutionMode.SAME_THREAD)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -51,7 +52,7 @@ class KtorExposedDemoPostgresIntegrationTest {
     @Test
     fun `order confirmation persists publishes reads through cache and stays sequentially idempotent`() {
         val resources = KtorExposedDemoResources.create(postgres.config())
-        val id = UUID.randomUUID()
+        val id = Uuid.V7.nextId()
         try {
             testApplication {
                 application {
@@ -86,7 +87,7 @@ class KtorExposedDemoPostgresIntegrationTest {
                 read.orderId shouldBeEqualTo id.toString()
                 val cached = resources.orderRepository.cache.synchronous().getIfPresent(id.toString())
                 cached?.id shouldBeEqualTo id
-                assertSame(cached, resources.orderRepository.get(id))
+                resources.orderRepository.get(id) shouldBeSameInstanceAs cached
 
                 val repeated = client.confirm(id)
                     .shouldHaveStatus(HttpStatusCode.OK)
