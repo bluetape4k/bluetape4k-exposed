@@ -31,7 +31,7 @@ BOM은 Gradle `java-platform`으로 `<dependencyManagement>` constraint만 게�
 | Persistence integration | `bluetape4k-exposed-timefold-solver-persistence` |
 | Ktor | `bluetape4k-exposed-ktor` |
 | Spring Boot | `bluetape4k-exposed-spring-boot-jdbc`, `bluetape4k-exposed-spring-boot-r2dbc`, `bluetape4k-exposed-spring-boot-batch`, `bluetape4k-exposed-spring-modulith` |
-| Utils | `bluetape4k-exposed-batch` |
+| Utils | `bluetape4k-exposed-batch`, `bluetape4k-exposed-batch-core`, `bluetape4k-exposed-batch-jdbc`, `bluetape4k-exposed-batch-r2dbc` |
 
 > 참고: `examples/*` 및 `*-demo` 모듈은 BOM constraint에서 제외됩니다.
 

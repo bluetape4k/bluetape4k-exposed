@@ -1,3 +1,4 @@
+import org.gradle.jvm.tasks.Jar
 
 plugins {
     kotlin("plugin.allopen")
@@ -16,7 +17,6 @@ kover {
 }
 
 allOpen {
-    // https://github.com/Kotlin/kotlinx-benchmark
     annotation("org.openjdk.jmh.annotations.State")
 }
 
@@ -32,7 +32,6 @@ kotlin {
 
 configurations {
     testImplementation.get().extendsFrom(compileOnly.get(), runtimeOnly.get())
-    // JDK 25 테스트 런타임에는 legacy JDK 21 provider를 섞지 않습니다.
     testRuntimeClasspath {
         exclude(group = "io.github.bluetape4k", module = "bluetape4k-virtualthread-jdk21")
     }
@@ -51,7 +50,6 @@ configurations {
     }
 }
 
-// https://github.com/Kotlin/kotlinx-benchmark
 benchmark {
     targets {
         register("benchmark") {
@@ -104,7 +102,7 @@ benchmark {
             include("io.bluetape4k.batch.benchmark.jdbc.MySqlJdbcBatchBenchmark")
             warmups = 2
             iterations = 5
-            iterationTime = 1
+            iterationTime = 5
             iterationTimeUnit = "s"
             mode = "thrpt"
             outputTimeUnit = "s"
@@ -114,7 +112,7 @@ benchmark {
             include("io.bluetape4k.batch.benchmark.r2dbc.MySqlR2dbcBatchBenchmark")
             warmups = 2
             iterations = 5
-            iterationTime = 1
+            iterationTime = 5
             iterationTimeUnit = "s"
             mode = "thrpt"
             outputTimeUnit = "s"
@@ -123,66 +121,124 @@ benchmark {
     }
 }
 
+val benchmarkReportRoot = layout.buildDirectory.dir("reports/benchmarks")
+
+val writeBenchmarkSidecars = tasks.register<org.gradle.api.tasks.Exec>("writeBenchmarkSidecars") {
+    commandLine(
+        "python3",
+        rootProject.file("scripts/batch/write_benchmark_sidecars.py").absolutePath,
+        benchmarkReportRoot.get().asFile.absolutePath,
+        "--source-root",
+        rootProject.rootDir.absolutePath,
+        "--source-ref",
+        providers.gradleProperty("benchmarkSourceRef").orElse("local").get(),
+        "--warmups",
+        "2",
+        "--iterations",
+        "5",
+        "--metric-type",
+        "ops/s",
+    )
+}
+
+val validateBenchmarkSidecars = tasks.register<org.gradle.api.tasks.Exec>("validateBenchmarkSidecars") {
+    dependsOn(writeBenchmarkSidecars)
+    commandLine(
+        "python3",
+        rootProject.file("scripts/batch/validate_benchmark_sidecars.py").absolutePath,
+        benchmarkReportRoot.get().asFile.absolutePath,
+        "--source-root",
+        rootProject.rootDir.absolutePath,
+    )
+}
+
+val benchmarkProfilesByTask = mapOf(
+    "h2JdbcBenchmark" to "h2Jdbc",
+    "h2R2dbcBenchmark" to "h2R2dbc",
+    "postgresJdbcBenchmark" to "postgresJdbc",
+    "postgresR2dbcBenchmark" to "postgresR2dbc",
+    "mysqlJdbcBenchmark" to "mysqlJdbc",
+    "mysqlR2dbcBenchmark" to "mysqlR2dbc",
+)
+
+val benchmarkSidecarTasks = benchmarkProfilesByTask.mapValues { (benchmarkTaskName, profile) ->
+    tasks.register<org.gradle.api.tasks.Exec>("write${benchmarkTaskName.removeSuffix("Benchmark").replaceFirstChar { it.uppercase() }}BenchmarkSidecar") {
+        commandLine(
+            "python3",
+            rootProject.file("scripts/batch/write_benchmark_sidecars.py").absolutePath,
+            benchmarkReportRoot.get().asFile.absolutePath,
+            "--source-root",
+            rootProject.rootDir.absolutePath,
+            "--source-ref",
+            providers.gradleProperty("benchmarkSourceRef").orElse("local").get(),
+            "--warmups",
+            "2",
+            "--iterations",
+            "5",
+            "--metric-type",
+            "ops/s",
+            "--profile",
+            profile,
+        )
+    }
+}
+
+tasks.configureEach {
+    benchmarkSidecarTasks[name]?.let { sidecarTask ->
+        finalizedBy(sidecarTask)
+    }
+}
+
 tasks.register<JavaExec>("generateBenchmarkDocs") {
     dependsOn("benchmarkClasses")
+    dependsOn(validateBenchmarkSidecars)
     classpath = sourceSets["benchmark"].runtimeClasspath
     mainClass.set("io.bluetape4k.batch.benchmark.support.BenchmarkDocsGeneratorKt")
     args(
         projectDir.absolutePath,
-        layout.buildDirectory.dir("reports/benchmarks").get().asFile.absolutePath
+        benchmarkReportRoot.get().asFile.absolutePath,
     )
 }
 
 dependencies {
     api(platform(bt4k.kotlinx.coroutines.bom))
-    api(bt4k.bluetape4k.core)
-    api(bt4k.bluetape4k.coroutines)
-    api(bt4k.bluetape4k.logging)
-    api(bt4k.bluetape4k.workflow)
+    api(project(":bluetape4k-exposed-batch-core"))
+    api(project(":bluetape4k-exposed-batch-jdbc"))
+    api(project(":bluetape4k-exposed-batch-r2dbc"))
 
-    implementation(bt4k.bluetape4k.virtualthread.api)
-    runtimeOnly(bt4k.bluetape4k.virtualthread.jdk21)
-
-    // Exposed JDBC/R2DBC
-    compileOnly(project(":bluetape4k-exposed-jdbc"))
-    compileOnly(project(":bluetape4k-exposed-r2dbc"))
-    compileOnly(bt4k.exposed.java.time)
-
-    // Checkpoint JSON 직렬화
-    compileOnly(bt4k.bluetape4k.jackson3)
-
-    // Coroutines
-    implementation(libs.kotlinx.coroutines.core)
-
-    // Test
     testImplementation(bt4k.bluetape4k.junit5)
+    testImplementation(bt4k.bluetape4k.assertions)
     testImplementation(bt4k.bluetape4k.jackson3)
     testImplementation(libs.kotlinx.coroutines.test)
-    // StructuredTaskScope provider의 JDK 25 classfile/runtime 호환성을 맞춥니다.
     testImplementation(bt4k.bluetape4k.virtualthread.jdk25)
-
-    // JDBC/R2DBC 통합 테스트 인프라
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
     testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
-
-    // Test DB — H2 (내장)
     testImplementation(bt4k.h2.v2)
     testImplementation(bt4k.hikaricp)
     testImplementation(bt4k.r2dbc.h2)
     testImplementation(bt4k.r2dbc.pool)
-
-    // Test DB — PostgreSQL (Testcontainers)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(bt4k.postgresql)
     testImplementation(bt4k.r2dbc.postgresql)
-
-    // Test DB — MySQL (Testcontainers)
     testImplementation(libs.testcontainers.mysql)
     testImplementation(bt4k.mysql.connector.j)
     testImplementation(bt4k.r2dbc.mysql)
 
-    // Benchmark
     add("benchmarkImplementation", bt4k.kotlinx.benchmark.runtime)
     add("benchmarkImplementation", bt4k.kotlinx.benchmark.runtime.jvm)
     add("benchmarkImplementation", bt4k.jmh.core)
+}
+
+// The aggregator keeps the historical effective JAR surface while publishing
+// the three child artifacts as the canonical dependency coordinates.
+val coreJar = project(":bluetape4k-exposed-batch-core").tasks.named<Jar>("jar")
+val jdbcJar = project(":bluetape4k-exposed-batch-jdbc").tasks.named<Jar>("jar")
+val r2dbcJar = project(":bluetape4k-exposed-batch-r2dbc").tasks.named<Jar>("jar")
+
+tasks.named<Jar>("jar") {
+    dependsOn(coreJar, jdbcJar, r2dbcJar)
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from({ zipTree(coreJar.get().archiveFile) })
+    from({ zipTree(jdbcJar.get().archiveFile) })
+    from({ zipTree(r2dbcJar.get().archiveFile) })
 }

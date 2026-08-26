@@ -6,13 +6,13 @@ import io.bluetape4k.batch.benchmark.support.BenchmarkSourceTable
 import io.bluetape4k.batch.benchmark.support.BenchmarkTargetRecord
 import io.bluetape4k.batch.benchmark.support.BenchmarkTargetTable
 import io.bluetape4k.batch.benchmark.support.KeyRange
+import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.core.dsl.batchJob
-import io.bluetape4k.batch.internal.CheckpointJson
-import io.bluetape4k.batch.jdbc.tables.BatchJobExecutionTable
-import io.bluetape4k.batch.jdbc.tables.BatchStepExecutionTable
 import io.bluetape4k.batch.r2dbc.ExposedR2dbcBatchJobRepository
 import io.bluetape4k.batch.r2dbc.ExposedR2dbcBatchReader
 import io.bluetape4k.batch.r2dbc.ExposedR2dbcBatchWriter
+import io.bluetape4k.batch.r2dbc.tables.BatchJobExecutionTable
+import io.bluetape4k.batch.r2dbc.tables.BatchStepExecutionTable
 import io.bluetape4k.exposed.tests.Containers
 import io.bluetape4k.exposed.tests.TestDBConfig
 import io.bluetape4k.logging.coroutines.KLoggingChannel

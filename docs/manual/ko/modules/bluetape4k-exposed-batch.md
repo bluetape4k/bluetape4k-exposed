@@ -7,6 +7,7 @@ kind: "library"
 gradlePath: ":bluetape4k-exposed-batch"
 sourceDir: "utils/batch"
 releaseRef: "1.12.1"
+releaseStatus: "develop-only"
 artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-batch
 ---
 
@@ -46,10 +47,17 @@ dependencies {
 배치 DSL로 잡과 스텝을 정의하고 reader, writer, 청크 크기, retry 정책, skip 정책, 커밋 제한 시간, 저장소를 제공합니다. 처음에는 `SkipPolicy.NONE`과 replay에 안전한 writer를 사용하세요. `InMemoryBatchJobRepository`는 테스트 또는 폐기 가능한 단일 프로세스 실행에만 적합합니다.
 
 ```bash
-./gradlew :bluetape4k-exposed-batch:test
+./gradlew \
+  :bluetape4k-exposed-batch-core:test \
+  :bluetape4k-exposed-batch-jdbc:test \
+  :bluetape4k-exposed-batch-r2dbc:test \
+  :bluetape4k-exposed-batch:test
 ```
 
-테스트 모음에서 완료 스텝 단축 실행, checkpoint 복원, retry·skip, 취소, JDBC/R2DBC 저장소 영속화를 실행 가능한 계약으로 확인할 수 있습니다.
+하위 모듈 테스트에서 완료 스텝 단축 실행, checkpoint 복원, retry·skip,
+취소, JDBC/R2DBC 저장소 영속화를 실행 가능한 계약으로 확인할 수 있습니다.
+호환성 aggregator의 `test` task는 schema parity와 패키징 소유권만 검사하며
+하위 모듈 테스트를 대신하지 않습니다.
 
 ## 작업별 API {#api-by-task}
 
@@ -86,7 +94,21 @@ dependencies {
 
 ## 테스트 {#testing}
 
-`./gradlew :bluetape4k-exposed-batch:test`를 실행합니다. 자원을 열지 않는 완료 스텝 단축 실행, checkpoint 유무에 따른 동작, processor skip, writer retry·backoff, retry 소진 뒤 청크 skip, lease 경쟁, 쓰기 시간 초과, 쓰기 뒤 checkpoint 전 장애, JDBC/R2DBC 저장소 재시작을 검증하세요.
+네 모듈 테스트 task를 함께 실행합니다.
+
+```bash
+./gradlew \
+  :bluetape4k-exposed-batch-core:test \
+  :bluetape4k-exposed-batch-jdbc:test \
+  :bluetape4k-exposed-batch-r2dbc:test \
+  :bluetape4k-exposed-batch:test
+```
+
+core task는 자원을 열지 않는 완료 스텝 단축 실행, checkpoint 동작,
+processor skip, writer retry·backoff, 취소, 인메모리 저장소를 검증합니다.
+JDBC와 R2DBC task는 lease 경쟁, 쓰기 시간 초과, 쓰기 뒤 checkpoint 전 장애,
+영속 저장소 재시작을 각각 검증합니다. aggregator task의 범위는 schema parity와
+패키징 검사입니다.
 
 취소는 별도로 단언해야 합니다. `CancellationException`은 일반 실패로 바꾸지 않습니다. runner는 `NonCancellable` 정리 구간에서 `STOPPED` 보고서 저장을 시도하고 reader와 writer를 각각 닫은 뒤 취소를 다시 던집니다.
 
@@ -125,12 +147,12 @@ _배포본 README: [`utils/batch/README.ko.md`](https://github.com/bluetape4k/bl
 
 ## 근거 자료 {#sources}
 
-- [`BatchStepRunner.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/core/BatchStepRunner.kt)
-- [`BatchStep.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/core/BatchStep.kt)
-- [`BatchJobRepository.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/api/BatchJobRepository.kt)
-- [`BatchReader.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/api/BatchReader.kt)
-- [`BatchWriter.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/api/BatchWriter.kt)
-- [`SkipPolicy.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/api/SkipPolicy.kt)
-- [`InMemoryBatchJobRepository.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/core/InMemoryBatchJobRepository.kt)
-- [`ExposedJdbcBatchJobRepository.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/jdbc/ExposedJdbcBatchJobRepository.kt)
-- [`ExposedR2dbcBatchJobRepository.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/r2dbc/ExposedR2dbcBatchJobRepository.kt)
+- [`BatchStepRunner.kt`](../../../../utils/batch/core/src/main/kotlin/io/bluetape4k/batch/core/BatchStepRunner.kt)
+- [`BatchStep.kt`](../../../../utils/batch/core/src/main/kotlin/io/bluetape4k/batch/core/BatchStep.kt)
+- [`BatchJobRepository.kt`](../../../../utils/batch/core/src/main/kotlin/io/bluetape4k/batch/api/BatchJobRepository.kt)
+- [`BatchReader.kt`](../../../../utils/batch/core/src/main/kotlin/io/bluetape4k/batch/api/BatchReader.kt)
+- [`BatchWriter.kt`](../../../../utils/batch/core/src/main/kotlin/io/bluetape4k/batch/api/BatchWriter.kt)
+- [`SkipPolicy.kt`](../../../../utils/batch/core/src/main/kotlin/io/bluetape4k/batch/api/SkipPolicy.kt)
+- [`InMemoryBatchJobRepository.kt`](../../../../utils/batch/core/src/main/kotlin/io/bluetape4k/batch/core/InMemoryBatchJobRepository.kt)
+- [`ExposedJdbcBatchJobRepository.kt`](../../../../utils/batch/jdbc/src/main/kotlin/io/bluetape4k/batch/jdbc/ExposedJdbcBatchJobRepository.kt)
+- [`ExposedR2dbcBatchJobRepository.kt`](../../../../utils/batch/r2dbc/src/main/kotlin/io/bluetape4k/batch/r2dbc/ExposedR2dbcBatchJobRepository.kt)

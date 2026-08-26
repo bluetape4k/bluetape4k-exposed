@@ -2000,10 +2000,16 @@ jobs:
     needs: build
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         db: [H2, POSTGRESQL, MYSQL_V8]
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Test benchmark sidecar validators
+        run: python3 -m unittest discover -s scripts/batch -p 'test_*.py'
       - uses: actions/setup-java@v5.7.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
@@ -2015,7 +2021,12 @@ jobs:
       - name: Test utils-batch (${{ matrix.db }})
         run: |
           for attempt in 1 2 3 4 5; do
-            ./gradlew :bluetape4k-exposed-batch:test --no-configuration-cache --no-daemon && break
+            ./gradlew \
+              :bluetape4k-exposed-batch-core:test \
+              :bluetape4k-exposed-batch-jdbc:test \
+              :bluetape4k-exposed-batch-r2dbc:test \
+              :bluetape4k-exposed-batch:test \
+              --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
@@ -2026,14 +2037,31 @@ jobs:
           DOCKER_HOST: 'unix:///var/run/docker.sock'
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-batch:koverXmlReport --no-configuration-cache --no-daemon
-        continue-on-error: true
+        run: >
+          ./gradlew
+          :bluetape4k-exposed-batch-core:koverXmlReport
+          :bluetape4k-exposed-batch-jdbc:koverXmlReport
+          :bluetape4k-exposed-batch-r2dbc:koverXmlReport
+          :bluetape4k-exposed-batch:koverXmlReport
+          --no-configuration-cache --no-daemon
+      - name: Verify utils-batch Kover reports
+        if: always()
+        run: |
+          set -euo pipefail
+          for report in \
+            utils/batch/core/build/reports/kover/report.xml \
+            utils/batch/jdbc/build/reports/kover/report.xml \
+            utils/batch/r2dbc/build/reports/kover/report.xml \
+            utils/batch/build/reports/kover/report.xml; do
+            test -s "$report"
+          done
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: test-results-utils-batch-${{ matrix.db }}
           path: '**/build/test-results/test/*.xml'
+          if-no-files-found: error
           retention-days: 14
       - name: Upload coverage report
         if: always()
@@ -2041,6 +2069,7 @@ jobs:
         with:
           name: coverage-utils-batch-${{ matrix.db }}
           path: '**/build/reports/kover/'
+          if-no-files-found: error
           retention-days: 14
 
   coverage-report:

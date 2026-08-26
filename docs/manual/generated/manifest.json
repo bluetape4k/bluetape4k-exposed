@@ -31,9 +31,9 @@
       "id": "bluetape4k-exposed-batch",
       "kind": "library",
       "ko": "ko/modules/bluetape4k-exposed-batch.md",
+      "releaseStatus": "develop-only",
       "sourceDir": "utils/batch",
       "sourcePaths": [
-        "utils/batch/src/main/kotlin",
         "utils/batch/src/benchmark/kotlin"
       ],
       "testPaths": [
@@ -43,6 +43,81 @@
       "title": {
         "en": "Exposed Batch Utilities",
         "ko": "Exposed 배치 유틸리티"
+      },
+      "workshops": [
+
+      ]
+    },
+    {
+      "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-batch-core",
+      "en": "en/modules/bluetape4k-exposed-batch-core.md",
+      "gradlePath": ":bluetape4k-exposed-batch-core",
+      "group": "integration",
+      "id": "bluetape4k-exposed-batch-core",
+      "kind": "library",
+      "ko": "ko/modules/bluetape4k-exposed-batch-core.md",
+      "releaseStatus": "develop-only",
+      "sourceDir": "utils/batch/core",
+      "sourcePaths": [
+        "utils/batch/core/src/main/kotlin"
+      ],
+      "testPaths": [
+        "utils/batch/core/src/test/kotlin",
+        "utils/batch/core/src/test/resources"
+      ],
+      "title": {
+        "en": "Exposed Batch Core",
+        "ko": "Exposed 배치 코어"
+      },
+      "workshops": [
+
+      ]
+    },
+    {
+      "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-batch-jdbc",
+      "en": "en/modules/bluetape4k-exposed-batch-jdbc.md",
+      "gradlePath": ":bluetape4k-exposed-batch-jdbc",
+      "group": "integration",
+      "id": "bluetape4k-exposed-batch-jdbc",
+      "kind": "library",
+      "ko": "ko/modules/bluetape4k-exposed-batch-jdbc.md",
+      "releaseStatus": "develop-only",
+      "sourceDir": "utils/batch/jdbc",
+      "sourcePaths": [
+        "utils/batch/jdbc/src/main/kotlin"
+      ],
+      "testPaths": [
+        "utils/batch/jdbc/src/test/kotlin",
+        "utils/batch/jdbc/src/test/resources"
+      ],
+      "title": {
+        "en": "Exposed Batch JDBC Adapter",
+        "ko": "Exposed 배치 JDBC adapter"
+      },
+      "workshops": [
+
+      ]
+    },
+    {
+      "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-batch-r2dbc",
+      "en": "en/modules/bluetape4k-exposed-batch-r2dbc.md",
+      "gradlePath": ":bluetape4k-exposed-batch-r2dbc",
+      "group": "integration",
+      "id": "bluetape4k-exposed-batch-r2dbc",
+      "kind": "library",
+      "ko": "ko/modules/bluetape4k-exposed-batch-r2dbc.md",
+      "releaseStatus": "develop-only",
+      "sourceDir": "utils/batch/r2dbc",
+      "sourcePaths": [
+        "utils/batch/r2dbc/src/main/kotlin"
+      ],
+      "testPaths": [
+        "utils/batch/r2dbc/src/test/kotlin",
+        "utils/batch/r2dbc/src/test/resources"
+      ],
+      "title": {
+        "en": "Exposed Batch R2DBC Adapter",
+        "ko": "Exposed 배치 R2DBC adapter"
       },
       "workshops": [
 
@@ -737,6 +812,30 @@
       "title": {
         "en": "Exposed Spring Boot Batch Integration",
         "ko": "Exposed Spring Boot Batch 연동"
+      },
+      "workshops": [
+
+      ]
+    },
+    {
+      "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-common",
+      "en": "en/modules/bluetape4k-exposed-spring-boot-common.md",
+      "gradlePath": ":bluetape4k-exposed-spring-boot-common",
+      "group": "integration",
+      "id": "bluetape4k-exposed-spring-boot-common",
+      "kind": "library",
+      "ko": "ko/modules/bluetape4k-exposed-spring-boot-common.md",
+      "releaseStatus": "develop-only",
+      "sourceDir": "spring-boot/common",
+      "sourcePaths": [
+        "spring-boot/common/src/main/kotlin"
+      ],
+      "testPaths": [
+        "spring-boot/common/src/test/kotlin"
+      ],
+      "title": {
+        "en": "Exposed Spring Boot Common Spring Data SPI",
+        "ko": "Exposed Spring Boot 공통 Spring Data SPI"
       },
       "workshops": [
 

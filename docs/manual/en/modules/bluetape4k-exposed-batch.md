@@ -7,6 +7,7 @@ kind: "library"
 gradlePath: ":bluetape4k-exposed-batch"
 sourceDir: "utils/batch"
 releaseRef: "1.12.1"
+releaseStatus: "develop-only"
 artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-batch
 ---
 
@@ -46,10 +47,18 @@ Within each chunk, processor exceptions are evaluated by `SkipPolicy`. Accepted 
 Define a job and step with the batch DSL, provide a reader and writer, choose a chunk size, retry policy, skip policy, commit timeout, and repository, then run the job. Start with `SkipPolicy.NONE` and a writer that is safe to replay. Use `InMemoryBatchJobRepository` only for tests or disposable single-process execution.
 
 ```bash
-./gradlew :bluetape4k-exposed-batch:test
+./gradlew \
+  :bluetape4k-exposed-batch-core:test \
+  :bluetape4k-exposed-batch-jdbc:test \
+  :bluetape4k-exposed-batch-r2dbc:test \
+  :bluetape4k-exposed-batch:test
 ```
 
-The test suite is the executable reference for completed-step short-circuiting, checkpoint restore, retry/skip behavior, cancellation, and JDBC/R2DBC repository persistence.
+The child test suites are the executable references for completed-step
+short-circuiting, checkpoint restore, retry/skip behavior, cancellation, and
+JDBC/R2DBC repository persistence. The compatibility aggregator's `test` task
+only checks schema parity and packaging ownership; it does not replace the
+child test tasks.
 
 ## API by task {#api-by-task}
 
@@ -86,7 +95,21 @@ Record job/step IDs, owner and lease expiry, status, checkpoint, read/write/skip
 
 ## Testing {#testing}
 
-Run `./gradlew :bluetape4k-exposed-batch:test`. Verify completed-step short-circuiting without resource open, null and non-null checkpoint behavior, processor skip, writer retry/backoff, exhausted retry with chunk skip, lease contention, write timeout, crash after write/before checkpoint, and persistent restart with both JDBC and R2DBC repositories.
+Run the four module test tasks together:
+
+```bash
+./gradlew \
+  :bluetape4k-exposed-batch-core:test \
+  :bluetape4k-exposed-batch-jdbc:test \
+  :bluetape4k-exposed-batch-r2dbc:test \
+  :bluetape4k-exposed-batch:test
+```
+
+The core task covers completed-step short-circuiting without resource open,
+checkpoint behavior, processor skip, writer retry/backoff, cancellation, and
+the in-memory repository. The JDBC and R2DBC tasks cover lease contention,
+write timeout, crash after write/before checkpoint, and persistent restart.
+The aggregator task is limited to schema parity and packaging checks.
 
 Cancellation requires a separate assertion: `CancellationException` is never converted to a normal failure. In a `NonCancellable` cleanup block the runner attempts to persist a `STOPPED` report, then independently closes reader and writer, and finally rethrows cancellation.
 
@@ -125,12 +148,12 @@ _Release README: [`utils/batch/README.md`](https://github.com/bluetape4k/bluetap
 
 ## Sources {#sources}
 
-- [`BatchStepRunner.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/core/BatchStepRunner.kt)
-- [`BatchStep.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/core/BatchStep.kt)
-- [`BatchJobRepository.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/api/BatchJobRepository.kt)
-- [`BatchReader.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/api/BatchReader.kt)
-- [`BatchWriter.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/api/BatchWriter.kt)
-- [`SkipPolicy.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/api/SkipPolicy.kt)
-- [`InMemoryBatchJobRepository.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/core/InMemoryBatchJobRepository.kt)
-- [`ExposedJdbcBatchJobRepository.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/jdbc/ExposedJdbcBatchJobRepository.kt)
-- [`ExposedR2dbcBatchJobRepository.kt`](../../../../utils/batch/src/main/kotlin/io/bluetape4k/batch/r2dbc/ExposedR2dbcBatchJobRepository.kt)
+- [`BatchStepRunner.kt`](../../../../utils/batch/core/src/main/kotlin/io/bluetape4k/batch/core/BatchStepRunner.kt)
+- [`BatchStep.kt`](../../../../utils/batch/core/src/main/kotlin/io/bluetape4k/batch/core/BatchStep.kt)
+- [`BatchJobRepository.kt`](../../../../utils/batch/core/src/main/kotlin/io/bluetape4k/batch/api/BatchJobRepository.kt)
+- [`BatchReader.kt`](../../../../utils/batch/core/src/main/kotlin/io/bluetape4k/batch/api/BatchReader.kt)
+- [`BatchWriter.kt`](../../../../utils/batch/core/src/main/kotlin/io/bluetape4k/batch/api/BatchWriter.kt)
+- [`SkipPolicy.kt`](../../../../utils/batch/core/src/main/kotlin/io/bluetape4k/batch/api/SkipPolicy.kt)
+- [`InMemoryBatchJobRepository.kt`](../../../../utils/batch/core/src/main/kotlin/io/bluetape4k/batch/core/InMemoryBatchJobRepository.kt)
+- [`ExposedJdbcBatchJobRepository.kt`](../../../../utils/batch/jdbc/src/main/kotlin/io/bluetape4k/batch/jdbc/ExposedJdbcBatchJobRepository.kt)
+- [`ExposedR2dbcBatchJobRepository.kt`](../../../../utils/batch/r2dbc/src/main/kotlin/io/bluetape4k/batch/r2dbc/ExposedR2dbcBatchJobRepository.kt)

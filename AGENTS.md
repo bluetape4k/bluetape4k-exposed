@@ -57,6 +57,10 @@ exposed/
   bom/
 utils/
   batch/
+    core/                 # API, runner/DSL, in-memory repository, CheckpointJson
+    jdbc/                 # JDBC tables, mapper, repository, reader, writer
+    r2dbc/                # R2DBC-owned tables, mapper, repository, reader, writer
+    consumer-fixtures/    # isolated published-coordinate consumers
 examples/
   jdbc-demo/
   r2dbc-demo/
@@ -89,7 +93,10 @@ buildSrc/
 | `ktor/exposed` | `:bluetape4k-exposed-ktor` |
 | `examples/jdbc-demo` | `:exposed-spring-boot-jdbc-demo` |
 | `examples/r2dbc-demo` | `:exposed-spring-boot-r2dbc-demo` |
-| `utils/batch` | `:bluetape4k-exposed-batch` |
+| `utils/batch/core` | `:bluetape4k-exposed-batch-core` |
+| `utils/batch/jdbc` | `:bluetape4k-exposed-batch-jdbc` |
+| `utils/batch/r2dbc` | `:bluetape4k-exposed-batch-r2dbc` |
+| `utils/batch` | `:bluetape4k-exposed-batch` (compatibility aggregator) |
 
 ## Commands
 
@@ -101,6 +108,10 @@ buildSrc/
 ./gradlew :bluetape4k-exposed-r2dbc:test
 ./gradlew :bluetape4k-exposed-ktor:test
 ./gradlew :bluetape4k-exposed-jdbc-lettuce:test
+./gradlew :bluetape4k-exposed-batch-core:test
+./gradlew :bluetape4k-exposed-batch-jdbc:test
+./gradlew :bluetape4k-exposed-batch-r2dbc:test
+./gradlew :bluetape4k-exposed-batch:test
 ./gradlew test --tests "io.bluetape4k.exposed.jdbc.ExposedJdbcRepositoryTest"
 ./gradlew :bluetape4k-exposed-spring-boot-jdbc:test
 ./gradlew exportManualModuleInventory

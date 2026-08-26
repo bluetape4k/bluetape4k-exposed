@@ -1,130 +1,66 @@
-# PostgreSQL 벤치마크 상세
+# PostgreSQL Benchmark Details
 
-[벤치마크 허브](./README.md) · [벤치마크 허브](./README.ko.md)
+[Benchmark Hub](./README.md) · [벤치마크 허브](./README.ko.md)
 
-## 프로필
+## Profiles
 
-| 드라이버 | Gradle 태스크 | 벤치마크 클래스 |
+| Driver | Gradle Task | Benchmark Class |
 |--------|-------------|-----------------|
 | JDBC | `./gradlew :bluetape4k-exposed-batch:postgresJdbcBenchmark` | `PostgreSqlJdbcBatchBenchmark` |
 | R2DBC | `./gradlew :bluetape4k-exposed-batch:postgresR2dbcBenchmark` | `PostgreSqlR2dbcBatchBenchmark` |
 
-## 비교 항목
+## Comparison Dimensions
 
-| 시나리오 | JDBC와 R2DBC 비교 축 | 고정/가변 파라미터 |
+| Scenario | JDBC vs R2DBC 비교 축 | 고정/가변 파라미터 |
 |----------|-----------------------|-------------------|
-| 시드 | 원본 행 삽입 처리량 / 시간 | dataSize = 1000, 10000, 100000 · poolSize = 10, 30, 60 |
-| 엔드투엔드 | 전체 배치 작업 처리량 / 시간 | dataSize = 1000, 10000, 100000 · poolSize = 10, 30, 60 · parallelism = 1, 4, 8 |
+| Seed | source row insert throughput / time | dataSize = 1000, 10000, 100000 · poolSize = 10, 30, 60 |
+| End-to-End | full batch job throughput / time | dataSize = 1000, 10000, 100000 · poolSize = 10, 30, 60 · parallelism = 1, 4, 8 |
 
-## 결과 표
+## Result Tables
 
-### 시드 벤치마크 — dataSize / poolSize별 JDBC와 R2DBC
+### Seed Benchmark — JDBC vs R2DBC by dataSize / poolSize
 
-| 드라이버 | dataSize | poolSize | ops/sec | 평균 ms |
+| Driver | dataSize | poolSize | ops/sec | avg ms |
 |--------|----------|----------|--------:|-------:|
-| JDBC | 1000 | 10 | 138.105 | 7.241 |
-| JDBC | 1000 | 30 | 147.629 | 6.774 |
-| JDBC | 1000 | 60 | 143.002 | 6.993 |
-| JDBC | 10000 | 10 | 14.396 | 69.464 |
-| JDBC | 10000 | 30 | 14.402 | 69.435 |
-| JDBC | 10000 | 60 | 14.852 | 67.332 |
-| JDBC | 100000 | 10 | 1.393 | 717.880 |
-| JDBC | 100000 | 30 | 1.438 | 695.259 |
-| JDBC | 100000 | 60 | 1.455 | 687.215 |
-| R2DBC | 1000 | 10 | 4.059 | 246.363 |
-| R2DBC | 1000 | 30 | 4.084 | 244.886 |
-| R2DBC | 1000 | 60 | 4.084 | 244.883 |
-| R2DBC | 10000 | 10 | 0.418 | 2391.395 |
-| R2DBC | 10000 | 30 | 0.407 | 2459.498 |
-| R2DBC | 10000 | 60 | 0.403 | 2483.720 |
-| R2DBC | 100000 | 10 | 0.034 | 29162.279 |
-| R2DBC | 100000 | 30 | 0.035 | 28902.297 |
-| R2DBC | 100000 | 60 | 0.034 | 29561.776 |
+| JDBC | 1000 | 10 | pending | pending |
+| JDBC | 10000 | 30 | pending | pending |
+| JDBC | 100000 | 60 | pending | pending |
+| R2DBC | 1000 | 10 | pending | pending |
+| R2DBC | 10000 | 30 | pending | pending |
+| R2DBC | 100000 | 60 | pending | pending |
 
-### 엔드투엔드 벤치마크 — dataSize / poolSize / parallelism별 JDBC와 R2DBC
+### End-to-End Benchmark — JDBC vs R2DBC by dataSize / poolSize / parallelism
 
-| 드라이버 | dataSize | poolSize | parallelism | ops/sec | 평균 ms |
+| Driver | dataSize | poolSize | parallelism | ops/sec | avg ms |
 |--------|----------|----------|-------------|--------:|-------:|
-| JDBC | 1000 | 10 | 1 | 38.641 | 25.879 |
-| JDBC | 1000 | 10 | 4 | 55.259 | 18.097 |
-| JDBC | 1000 | 10 | 8 | 46.617 | 21.451 |
-| JDBC | 1000 | 30 | 1 | 43.090 | 23.207 |
-| JDBC | 1000 | 30 | 4 | 54.894 | 18.217 |
-| JDBC | 1000 | 30 | 8 | 46.571 | 21.472 |
-| JDBC | 1000 | 60 | 1 | 43.416 | 23.033 |
-| JDBC | 1000 | 60 | 4 | 55.060 | 18.162 |
-| JDBC | 1000 | 60 | 8 | 46.724 | 21.402 |
-| JDBC | 10000 | 10 | 1 | 5.056 | 197.782 |
-| JDBC | 10000 | 10 | 4 | 10.379 | 96.351 |
-| JDBC | 10000 | 10 | 8 | 10.480 | 95.420 |
-| JDBC | 10000 | 30 | 1 | 5.080 | 196.867 |
-| JDBC | 10000 | 30 | 4 | 10.458 | 95.618 |
-| JDBC | 10000 | 30 | 8 | 10.387 | 96.273 |
-| JDBC | 10000 | 60 | 1 | 5.019 | 199.225 |
-| JDBC | 10000 | 60 | 4 | 10.544 | 94.840 |
-| JDBC | 10000 | 60 | 8 | 10.344 | 96.675 |
-| JDBC | 100000 | 10 | 1 | 0.480 | 2084.281 |
-| JDBC | 100000 | 10 | 4 | 0.939 | 1064.556 |
-| JDBC | 100000 | 10 | 8 | 0.972 | 1028.907 |
-| JDBC | 100000 | 30 | 1 | 0.485 | 2063.379 |
-| JDBC | 100000 | 30 | 4 | 0.944 | 1059.461 |
-| JDBC | 100000 | 30 | 8 | 0.990 | 1010.557 |
-| JDBC | 100000 | 60 | 1 | 0.481 | 2077.840 |
-| JDBC | 100000 | 60 | 4 | 0.961 | 1040.383 |
-| JDBC | 100000 | 60 | 8 | 0.951 | 1051.080 |
-| R2DBC | 1000 | 10 | 1 | 39.759 | 25.152 |
-| R2DBC | 1000 | 10 | 4 | 37.564 | 26.621 |
-| R2DBC | 1000 | 10 | 8 | 33.728 | 29.649 |
-| R2DBC | 1000 | 30 | 1 | 45.437 | 22.009 |
-| R2DBC | 1000 | 30 | 4 | 37.095 | 26.958 |
-| R2DBC | 1000 | 30 | 8 | 32.617 | 30.659 |
-| R2DBC | 1000 | 60 | 1 | 44.031 | 22.711 |
-| R2DBC | 1000 | 60 | 4 | 37.126 | 26.936 |
-| R2DBC | 1000 | 60 | 8 | 33.759 | 29.622 |
-| R2DBC | 10000 | 10 | 1 | 0.411 | 2435.077 |
-| R2DBC | 10000 | 10 | 4 | 5.085 | 196.663 |
-| R2DBC | 10000 | 10 | 8 | 9.717 | 102.913 |
-| R2DBC | 10000 | 30 | 1 | 0.394 | 2538.188 |
-| R2DBC | 10000 | 30 | 4 | 4.697 | 212.885 |
-| R2DBC | 10000 | 30 | 8 | 9.738 | 102.687 |
-| R2DBC | 10000 | 60 | 1 | 0.403 | 2483.999 |
-| R2DBC | 10000 | 60 | 4 | 4.908 | 203.740 |
-| R2DBC | 10000 | 60 | 8 | 8.295 | 120.560 |
-| R2DBC | 100000 | 10 | 1 | 0.032 | 31057.702 |
-| R2DBC | 100000 | 10 | 4 | 0.121 | 8293.422 |
-| R2DBC | 100000 | 10 | 8 | 0.192 | 5219.974 |
-| R2DBC | 100000 | 30 | 1 | 0.034 | 29815.798 |
-| R2DBC | 100000 | 30 | 4 | 0.123 | 8098.460 |
-| R2DBC | 100000 | 30 | 8 | 0.192 | 5201.966 |
-| R2DBC | 100000 | 60 | 1 | 0.034 | 29806.703 |
-| R2DBC | 100000 | 60 | 4 | 0.119 | 8425.800 |
-| R2DBC | 100000 | 60 | 8 | 0.193 | 5187.407 |
+| JDBC | 1000 | 10 | 1 | pending | pending |
+| JDBC | 10000 | 30 | 4 | pending | pending |
+| JDBC | 100000 | 60 | 8 | pending | pending |
+| R2DBC | 1000 | 10 | 1 | pending | pending |
+| R2DBC | 10000 | 30 | 4 | pending | pending |
+| R2DBC | 100000 | 60 | 8 | pending | pending |
 
-## 비교 차트
+## Comparison Charts
 
-> 이 차트는 최신 JSON 벤치마크 보고서 값(ops/sec)을 사용합니다. 평균 ms는 위 표를 참조하세요.
+> Chart image paths are reserved for generated benchmark reports. Re-run the benchmark tasks and `generateBenchmarkDocs` after JSON reports exist.
 
-### 차트 범례
-
-JDBC 막대는 파란색이고 R2DBC 막대는 주황색입니다.
-
-### 시드 — dataSize 비교 (poolSize=30)
+### Seed — dataSize comparison (poolSize=30)
 
 ![postgresql seed dataSize chart](../../../docs/images/readme-charts/utils-batch-postgresql-seed-datasize-chart-01.png)
 
-### 시드 — poolSize 비교 (dataSize=10000)
+### Seed — poolSize comparison (dataSize=10000)
 
 ![postgresql seed poolSize chart](../../../docs/images/readme-charts/utils-batch-postgresql-seed-poolsize-chart-01.png)
 
-### 엔드투엔드 — parallelism 비교 (dataSize=10000, poolSize=30)
+### End-to-End — parallelism comparison (dataSize=10000, poolSize=30)
 
 ![postgresql end-to-end parallelism chart](../../../docs/images/readme-charts/utils-batch-postgresql-e2e-parallelism-chart-01.png)
 
-## 참고
+## Notes
 
-- PostgreSQL 벤치마크는 Testcontainers를 자동 기동하도록 설계되어 있습니다.
+- PostgreSQL benchmark는 Testcontainers를 자동 기동하도록 설계되어 있습니다.
 - JDBC vs R2DBC 격차를 가장 명확하게 보여주는 대표 DB입니다.
 
-## 생성된 결과 행
+## Generated Result Rows
 
-> 최신 JSON 벤치마크 보고서를 찾아 위 표와 그래프로 렌더링했습니다. 수치를 갱신하려면 해당 벤치마크 태스크와 `generateBenchmarkDocs`를 다시 실행하세요.
+> JSON benchmark reports are not available in the current worktree yet, so this document records the benchmark contract, task mapping, and graph layout first. Numeric rows can be appended by rerunning the corresponding benchmark tasks and `generateBenchmarkDocs`.

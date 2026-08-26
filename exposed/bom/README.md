@@ -30,7 +30,7 @@ The BOM is a Gradle `java-platform` that publishes only `<dependencyManagement>`
 | Persistence integration | `bluetape4k-exposed-timefold-solver-persistence` |
 | Ktor | `bluetape4k-exposed-ktor` |
 | Spring Boot | `bluetape4k-exposed-spring-boot-jdbc`, `bluetape4k-exposed-spring-boot-r2dbc`, `bluetape4k-exposed-spring-boot-batch`, `bluetape4k-exposed-spring-modulith` |
-| Utils | `bluetape4k-exposed-batch` |
+| Utils | `bluetape4k-exposed-batch`, `bluetape4k-exposed-batch-core`, `bluetape4k-exposed-batch-jdbc`, `bluetape4k-exposed-batch-r2dbc` |
 
 > Note: `examples/*` and `*-demo` modules are excluded from the BOM constraints.
 
