@@ -1,16 +1,16 @@
 package io.bluetape4k.exposed.tests.migration
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeSameInstanceAs
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withDb
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertSame
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.jetbrains.exposed.v1.core.ExperimentalDatabaseMigrationApi
@@ -30,14 +30,14 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
         preservingFailure(
             block = {
                 withDb(testDB) {
-                    assertFalse(JdbcMigrationBaseline.exists())
+                    JdbcMigrationBaseline.exists().shouldBeFalse()
                     SchemaUtils.create(JdbcMigrationBaseline)
 
                     val statements = MigrationUtils.statementsRequiredForDatabaseMigration(
                         JdbcMigrationEvolved,
                         withLogs = false,
                     )
-                    assertEquals(1, statements.size)
+                    statements.size shouldBeEqualTo 1
                     val validated = validateAdditiveStatement(
                         statement = statements.single(),
                         expectedTable = JdbcMigrationEvolved.tableName,
@@ -46,12 +46,10 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
 
                     this.exec(validated)
 
-                    assertTrue(
-                        MigrationUtils.statementsRequiredForDatabaseMigration(
-                            JdbcMigrationEvolved,
-                            withLogs = false,
-                        ).isEmpty(),
-                    )
+                    MigrationUtils.statementsRequiredForDatabaseMigration(
+                        JdbcMigrationEvolved,
+                        withLogs = false,
+                    ).isEmpty().shouldBeTrue()
                 }
             },
             cleanup = {
@@ -59,7 +57,7 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
                     if (JdbcMigrationBaseline.exists()) {
                         SchemaUtils.drop(JdbcMigrationBaseline)
                     }
-                    assertFalse(JdbcMigrationBaseline.exists())
+                    JdbcMigrationBaseline.exists().shouldBeFalse()
                 }
             },
         )
@@ -70,7 +68,7 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
         preservingFailure(
             block = {
                 withDb(TestDB.H2) {
-                    assertFalse(JdbcTypeChangeBaseline.exists())
+                    JdbcTypeChangeBaseline.exists().shouldBeFalse()
                     SchemaUtils.create(JdbcTypeChangeBaseline)
 
                     val statements = MigrationUtils.statementsRequiredForDatabaseMigration(
@@ -78,8 +76,9 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
                         withLogs = false,
                     )
 
-                    assertTrue(statements.isNotEmpty())
-                    assertTrue(statements.any { isExpectedH2TypeChange(it, JdbcTypeChangeEvolved.tableName, "value") })
+                    statements.isNotEmpty().shouldBeTrue()
+                    statements.any { isExpectedH2TypeChange(it, JdbcTypeChangeEvolved.tableName, "value") }
+                        .shouldBeTrue()
                 }
             },
             cleanup = {
@@ -87,7 +86,7 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
                     if (JdbcTypeChangeBaseline.exists()) {
                         SchemaUtils.drop(JdbcTypeChangeBaseline)
                     }
-                    assertFalse(JdbcTypeChangeBaseline.exists())
+                    JdbcTypeChangeBaseline.exists().shouldBeFalse()
                 }
             },
         )
@@ -105,14 +104,11 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
             )
 
             statements.forEach { statement ->
-                assertEquals(
-                    statement,
-                    validateAdditiveStatement(
-                        statement = statement,
-                        expectedTable = "jdbc_migration_drift",
-                        expectedColumn = "description",
-                    ),
-                )
+                validateAdditiveStatement(
+                    statement = statement,
+                    expectedTable = "jdbc_migration_drift",
+                    expectedColumn = "description",
+                ) shouldBeEqualTo statement
             }
         }
 
@@ -141,7 +137,7 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
             )
 
             rejected.forEach { statement ->
-                assertThrows<IllegalArgumentException>(statement) {
+                assertFailsWith<IllegalArgumentException>(message = statement) {
                     validateAdditiveStatement(
                         statement = statement,
                         expectedTable = "jdbc_migration_drift",
@@ -155,29 +151,29 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
         fun `preserves a primary failure when cleanup succeeds`() {
             val primary = IllegalStateException("primary")
 
-            val thrown = assertThrows<IllegalStateException> {
+            val thrown = assertFailsWith<IllegalStateException> {
                 preservingFailure(
                     block = { throw primary },
                     cleanup = {},
                 )
             }
 
-            assertSame(primary, thrown)
-            assertTrue(thrown.suppressed.isEmpty())
+            thrown shouldBeSameInstanceAs primary
+            thrown.suppressed.isEmpty().shouldBeTrue()
         }
 
         @Test
         fun `throws a cleanup-only failure`() {
             val cleanup = IllegalArgumentException("cleanup")
 
-            val thrown = assertThrows<IllegalArgumentException> {
+            val thrown = assertFailsWith<IllegalArgumentException> {
                 preservingFailure(
                     block = {},
                     cleanup = { throw cleanup },
                 )
             }
 
-            assertSame(cleanup, thrown)
+            thrown shouldBeSameInstanceAs cleanup
         }
 
         @Test
@@ -185,15 +181,15 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
             val primary = IllegalStateException("primary")
             val cleanup = IllegalArgumentException("cleanup")
 
-            val thrown = assertThrows<IllegalStateException> {
+            val thrown = assertFailsWith<IllegalStateException> {
                 preservingFailure(
                     block = { throw primary },
                     cleanup = { throw cleanup },
                 )
             }
 
-            assertSame(primary, thrown)
-            assertEquals(listOf(cleanup), thrown.suppressed.toList())
+            thrown shouldBeSameInstanceAs primary
+            thrown.suppressed.toList() shouldBeEqualTo listOf(cleanup)
         }
     }
 
