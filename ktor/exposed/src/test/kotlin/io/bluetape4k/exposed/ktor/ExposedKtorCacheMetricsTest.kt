@@ -7,7 +7,6 @@ import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
-
 import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.Tags
@@ -17,6 +16,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheFailureBuffer
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
@@ -156,7 +156,7 @@ class ExposedKtorCacheMetricsTest {
         }
 
         error.message shouldBeEqualTo "Cache metric installation rejected: reason=identity_collision."
-        error.cause.shouldBeNull()
+        error.cause.shouldNotBeNull()
         registry.meters.size shouldBeEqualTo 1
         (registry.meters.single()) shouldBeSameInstanceAs preexisting
         (preexisting.value()) shouldBeEqualTo 7.0
@@ -179,7 +179,7 @@ class ExposedKtorCacheMetricsTest {
         }
 
         error.message shouldBeEqualTo "Cache metric installation rejected: reason=identity_collision."
-        error.cause.shouldBeNull()
+        error.cause.shouldNotBeNull()
         (registry.meters.isEmpty()).shouldBeTrue()
         (registry.removals.get()) shouldBeEqualTo 1
     }
@@ -194,12 +194,13 @@ class ExposedKtorCacheMetricsTest {
         }
 
         error.message shouldBeEqualTo "Cache metric installation failed: reason=registration_failed."
-        error.cause.shouldBeNull()
+        (error.cause as CacheMeterInstallationFailure).reason shouldBeEqualTo
+            CacheMeterFailureReason.REGISTRATION_FAILED
         (registry.meters.isEmpty()).shouldBeTrue()
     }
 
     @Test
-    fun `registration failure rolls back only current attempt and discards registry cause`() {
+    fun `registration failure rolls back only current attempt and preserves sanitized reason`() {
         val registry = FailingSimpleMeterRegistry(failAt = 6)
         val unrelated = registry.counter("application.unrelated")
 
@@ -207,8 +208,77 @@ class ExposedKtorCacheMetricsTest {
             registerExposedKtorCacheMetrics(registry, config("orders"))
         }
         error.message shouldBeEqualTo "Cache metric installation failed: reason=registration_failed."
-        error.cause.shouldBeNull()
+        (error.cause as CacheMeterInstallationFailure).reason shouldBeEqualTo
+            CacheMeterFailureReason.REGISTRATION_FAILED
         (registry.meters.map { it.id }) shouldBeEqualTo listOf(unrelated.id)
+    }
+
+    @Test
+    fun `rollback remove failure is reported with structured residual diagnostic`() {
+        val registry = FailingRemovalRegistry(failAt = 6)
+        registry.counter("application.unrelated")
+
+        val error = assertFailsWith<IllegalStateException> {
+            registerExposedKtorCacheMetrics(registry, config("orders"))
+        }
+
+        val diagnostic = error.suppressed.single() as CacheMeterRollbackDiagnostic
+        diagnostic.attempted shouldBeEqualTo 5
+        diagnostic.removed shouldBeEqualTo 4
+        diagnostic.notFound shouldBeEqualTo 0
+        diagnostic.failed shouldBeEqualTo 1
+        diagnostic.residual shouldBeEqualTo 1
+        diagnostic.message shouldBeEqualTo
+            "Cache metric rollback failed: attempted=5,removed=4,notFound=0,failed=1,residual=1."
+        diagnostic.suppressed.single().message.orEmpty().contains("remove-secret") shouldBeEqualTo false
+        (error.cause as CacheMeterInstallationFailure).primaryFailureType shouldBeEqualTo
+            IllegalArgumentException::class.java.name
+        registry.meters.size shouldBeEqualTo 2
+        registry.meters
+            .filter { it.id.name != "application.unrelated" }
+            .map { it.id.name }
+            .toSet() shouldBeEqualTo setOf(CACHE_READINESS_METER_NAME)
+    }
+
+    @Test
+    fun `rollback missing meter is reported without stopping remaining cleanup`() {
+        val registry = MissingRemovalRegistry(failAt = 6)
+
+        val error = assertFailsWith<IllegalStateException> {
+            registerExposedKtorCacheMetrics(registry, config("orders"))
+        }
+
+        val diagnostic = error.suppressed.single() as CacheMeterRollbackDiagnostic
+        diagnostic.attempted shouldBeEqualTo 5
+        diagnostic.removed shouldBeEqualTo 4
+        diagnostic.notFound shouldBeEqualTo 1
+        diagnostic.failed shouldBeEqualTo 0
+        diagnostic.residual shouldBeEqualTo 1
+        registry.meters.size shouldBeEqualTo 1
+    }
+
+    @Test
+    fun `successful rollback leaves registry clean and allows deterministic retry`() {
+        val registry = FailingOnceRegistrationRegistry(failAt = 6)
+
+        assertFailsWith<IllegalStateException> {
+            registerExposedKtorCacheMetrics(registry, config("orders"))
+        }
+        registry.meters.isEmpty().shouldBeTrue()
+
+        registerExposedKtorCacheMetrics(registry, config("orders"))
+
+        registry.meters.size shouldBeEqualTo 8
+    }
+
+    @Test
+    fun `cancellation is rethrown after rollback without sanitizing it as registration failure`() {
+        val registry = CancellingRegistrationRegistry()
+
+        assertFailsWith<CancellationException> {
+            registerExposedKtorCacheMetrics(registry, config("orders"))
+        }
+        registry.meters.isEmpty().shouldBeTrue()
     }
 
     @Test
@@ -328,6 +398,132 @@ class ExposedKtorCacheMetricsTest {
             if (registrations.incrementAndGet() == failAt) {
                 throw IllegalArgumentException("registry-secret")
             }
+        }
+    }
+
+    private class FailingRemovalRegistry(
+        private val failAt: Int,
+    ) : SimpleMeterRegistry() {
+        private val registrations = AtomicInteger()
+        private var failRemoval = true
+
+        override fun <T : Any> newGauge(
+            id: Meter.Id,
+            obj: T?,
+            valueFunction: ToDoubleFunction<T>,
+        ): Gauge {
+            failIfNeeded()
+            return super.newGauge(id, obj, valueFunction)
+        }
+
+        override fun newTimer(
+            id: Meter.Id,
+            distributionStatisticConfig: io.micrometer.core.instrument.distribution.DistributionStatisticConfig,
+            pauseDetector: io.micrometer.core.instrument.distribution.pause.PauseDetector,
+        ): Timer {
+            failIfNeeded()
+            return super.newTimer(id, distributionStatisticConfig, pauseDetector)
+        }
+
+        override fun remove(meter: Meter): Meter? {
+            if (failRemoval) {
+                failRemoval = false
+                throw IllegalStateException("remove-secret")
+            }
+            return super.remove(meter)
+        }
+
+        private fun failIfNeeded() {
+            if (registrations.incrementAndGet() == failAt) {
+                throw IllegalArgumentException("registry-secret")
+            }
+        }
+    }
+
+    private class FailingOnceRegistrationRegistry(
+        private val failAt: Int,
+    ) : SimpleMeterRegistry() {
+        private val registrations = AtomicInteger()
+        private var fail = true
+
+        override fun <T : Any> newGauge(
+            id: Meter.Id,
+            obj: T?,
+            valueFunction: ToDoubleFunction<T>,
+        ): Gauge {
+            failIfNeeded()
+            return super.newGauge(id, obj, valueFunction)
+        }
+
+        override fun newTimer(
+            id: Meter.Id,
+            distributionStatisticConfig: io.micrometer.core.instrument.distribution.DistributionStatisticConfig,
+            pauseDetector: io.micrometer.core.instrument.distribution.pause.PauseDetector,
+        ): Timer {
+            failIfNeeded()
+            return super.newTimer(id, distributionStatisticConfig, pauseDetector)
+        }
+
+        private fun failIfNeeded() {
+            if (fail && registrations.incrementAndGet() == failAt) {
+                fail = false
+                throw IllegalArgumentException("registry-secret")
+            }
+        }
+    }
+
+    private class MissingRemovalRegistry(
+        private val failAt: Int,
+    ) : SimpleMeterRegistry() {
+        private val registrations = AtomicInteger()
+        private var missingRemoval = true
+
+        override fun <T : Any> newGauge(
+            id: Meter.Id,
+            obj: T?,
+            valueFunction: ToDoubleFunction<T>,
+        ): Gauge {
+            failIfNeeded()
+            return super.newGauge(id, obj, valueFunction)
+        }
+
+        override fun newTimer(
+            id: Meter.Id,
+            distributionStatisticConfig: io.micrometer.core.instrument.distribution.DistributionStatisticConfig,
+            pauseDetector: io.micrometer.core.instrument.distribution.pause.PauseDetector,
+        ): Timer {
+            failIfNeeded()
+            return super.newTimer(id, distributionStatisticConfig, pauseDetector)
+        }
+
+        override fun remove(meter: Meter): Meter? {
+            if (missingRemoval) {
+                missingRemoval = false
+                return null
+            }
+            return super.remove(meter)
+        }
+
+        private fun failIfNeeded() {
+            if (registrations.incrementAndGet() == failAt) {
+                throw IllegalArgumentException("registry-secret")
+            }
+        }
+    }
+
+    private class CancellingRegistrationRegistry : SimpleMeterRegistry() {
+        private var cancel = true
+
+        override fun <T : Any> newGauge(
+            id: Meter.Id,
+            obj: T?,
+            valueFunction: ToDoubleFunction<T>,
+        ): Gauge {
+            if (cancel) {
+                cancel = false
+                throw CancellationException("registry-secret")
+            }
+            return super.newGauge(id, obj, valueFunction)
         }
     }
 
