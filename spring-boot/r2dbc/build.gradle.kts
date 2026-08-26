@@ -90,3 +90,85 @@ tasks.register("checkR2dbcDependencyBoundary") {
         }
     }
 }
+
+val checkSpringBootR2dbcAssertionStyle = tasks.register("checkSpringBootR2dbcAssertionStyle") {
+    group = "verification"
+    description = "Rejects legacy assertions in Spring Boot R2DBC tests."
+
+    val sourceRoot = layout.projectDirectory.dir("src/test/kotlin")
+    val reportFile = layout.buildDirectory.file("reports/spring-boot-r2dbc/assertion-style.txt")
+
+    inputs.dir(sourceRoot)
+    outputs.file(reportFile)
+
+    doLast {
+        val root = sourceRoot.asFile
+        if (!root.isDirectory) {
+            throw GradleException("Assertion style scan source root is missing: ${root.path}")
+        }
+
+        val sourceFiles = root.walkTopDown()
+            .filter { it.isFile && it.extension == "kt" }
+            .toList()
+            .sortedBy { it.path }
+        if (sourceFiles.isEmpty()) {
+            throw GradleException("Assertion style scan found no Kotlin test sources: ${root.path}")
+        }
+
+        val legacyImport = Regex(
+            "^\\s*import\\s+(?:kotlin\\.test\\.(?:assert[A-Za-z0-9_]*|\\*)|org\\.junit\\.jupiter\\.api\\.Assertions(?:\\.\\*)?)"
+        )
+        val fullyQualifiedCall = Regex(
+            "\\b(?:kotlin\\.test\\.|org\\.junit\\.jupiter\\.api\\.Assertions\\.)assert[A-Za-z0-9_]*\\s*\\("
+        )
+        val legacyCall = Regex(
+            "\\bassert(?:Equals|True|False|NotNull|ContentEquals|Same|NotSame|Throws)\\s*\\("
+        )
+        val findings = mutableListOf<String>()
+
+        sourceFiles.forEach { sourceFile ->
+            val lines = try {
+                sourceFile.readLines()
+            } catch (cause: Exception) {
+                throw GradleException("Assertion style scan could not read ${sourceFile.path}", cause)
+            }
+            lines.forEachIndexed { index, line ->
+                val rule = when {
+                    legacyImport.containsMatchIn(line) -> "legacy assertion import"
+                    fullyQualifiedCall.containsMatchIn(line) -> "fully-qualified legacy assertion call"
+                    legacyCall.containsMatchIn(line) -> "legacy assertion call"
+                    else -> null
+                }
+                if (rule != null) {
+                    val relativePath = root.toPath().relativize(sourceFile.toPath())
+                    findings += "src/test/kotlin/$relativePath:${index + 1}: $rule"
+                }
+            }
+        }
+
+        val report = reportFile.get().asFile
+        try {
+            report.parentFile.mkdirs()
+            report.writeText(
+                if (findings.isEmpty()) {
+                    "PASS: no legacy assertions found in ${sourceFiles.size} Kotlin test sources.\n"
+                } else {
+                    findings.joinToString(separator = "\n", postfix = "\n")
+                }
+            )
+        } catch (cause: Exception) {
+            throw GradleException("Assertion style scan could not write ${report.path}", cause)
+        }
+
+        if (findings.isNotEmpty()) {
+            findings.forEach { finding -> logger.error(finding) }
+            throw GradleException("Legacy assertions found in ${findings.size} locations")
+        }
+
+        logger.lifecycle("Assertion style scan passed for ${sourceFiles.size} Kotlin test sources")
+    }
+}
+
+tasks.named("check") {
+    dependsOn(checkSpringBootR2dbcAssertionStyle)
+}

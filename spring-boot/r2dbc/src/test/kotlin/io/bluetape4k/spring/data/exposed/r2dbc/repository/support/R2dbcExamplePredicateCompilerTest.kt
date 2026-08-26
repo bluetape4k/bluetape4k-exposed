@@ -1,10 +1,10 @@
 package io.bluetape4k.spring.data.exposed.r2dbc.repository.support
 
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import org.springframework.data.domain.ExampleMatcher
 import kotlin.test.Test
-import kotlin.test.assertNotNull
 
 class R2dbcExamplePredicateCompilerTest {
 
@@ -28,8 +28,8 @@ class R2dbcExamplePredicateCompilerTest {
         val any = all.copy(matchingAll = false)
         val compiler = R2dbcExamplePredicateCompiler(resolver)
 
-        assertNotNull(compiler.compile(all))
-        assertNotNull(compiler.compile(any))
+        compiler.compile(all).shouldNotBeNull()
+        compiler.compile(any).shouldNotBeNull()
     }
 
     @Test
@@ -43,6 +43,6 @@ class R2dbcExamplePredicateCompilerTest {
             properties = emptyList(),
         )
 
-        assertNotNull(R2dbcExamplePredicateCompiler(resolver).compile(snapshot))
+        R2dbcExamplePredicateCompiler(resolver).compile(snapshot).shouldNotBeNull()
     }
 }

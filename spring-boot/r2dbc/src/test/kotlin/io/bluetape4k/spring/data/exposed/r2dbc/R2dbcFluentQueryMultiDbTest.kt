@@ -1,5 +1,7 @@
 package io.bluetape4k.spring.data.exposed.r2dbc
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
@@ -14,8 +16,6 @@ import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Example
 import org.springframework.data.domain.ExampleMatcher
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 /**
  * H2, PostgreSQL, and MySQL V8에서 coroutine QBE의 대표 결과 의미를 확인합니다.
@@ -40,14 +40,14 @@ class R2dbcFluentQueryMultiDbTest: AbstractExposedR2dbcRepositoryTest() {
                 ExampleMatcher.matching().withIgnorePaths("id", "email", "age"),
             )
 
-            assertEquals("Alice", userRepository.findOne(example)?.name)
-            assertEquals(1L, userRepository.count(example))
-            assertTrue(userRepository.exists(example))
+            userRepository.findOne(example)?.name shouldBeEqualTo "Alice"
+            userRepository.count(example) shouldBeEqualTo 1L
+            userRepository.exists(example).shouldBeTrue()
 
             val projectedNames = userRepository.findBy(example) { query ->
                 query.asType(NameView::class).project("name").all()
             }.toList().map { it.name }
-            assertEquals(listOf("Alice"), projectedNames)
+            projectedNames shouldBeEqualTo listOf("Alice")
         }
     }
 
