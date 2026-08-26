@@ -62,6 +62,16 @@ import가 남지 않았다.
 - manual manifest, BOM POM, downstream example compile, path-filtered CI를 같은
   변경에서 함께 검증한다.
 
+## PR exact-head 사후 교훈
+
+- API graph에서 coroutine을 노출하는 publishable module은 개별 runtime version이
+  아니라 `api(platform(bt4k.kotlinx.coroutines.bom))`를 함께 선언해야 Gradle Module
+  Metadata의 versionless dependency 검사를 통과한다.
+- 새 production module을 ABI inventory에 추가하면 root build 파일뿐 아니라 CI의
+  고정 cardinality 검사도 같은 변경에서 갱신해야 한다.
+- 로컬 모듈 테스트가 process-spawn 자원 오류를 보이면 `--max-workers=1`로 재현해
+  코드 실패와 실행기 자원 고갈을 분리한다. 이번 재실행은 JDBC 260 tests GREEN이었다.
+
 ## SPW DoD
 
 - [x] 승인된 설계·계획과 Issue #729 범위를 구현에 반영했다.

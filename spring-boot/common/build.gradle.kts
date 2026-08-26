@@ -13,6 +13,7 @@ configurations {
 dependencies {
     // Spring Boot와 Exposed BOM은 API dependency의 버전을 소비자에게 전달합니다.
     api(platform(bt4k.spring.boot4.dependencies))
+    api(platform(bt4k.kotlinx.coroutines.bom))
     api(platform(bt4k.exposed.bom))
 
     // Spring Data 공통 SPI만 소유하며 JDBC/R2DBC adapter에는 의존하지 않습니다.

@@ -65,6 +65,28 @@ Spring Data module ABI는 각각 별도로 통과했다.
 처리: **P2, 명시된 운영 제약**. 기능 검증은 no-cache 명령으로 재현 가능하며, 향후
 Gradle task를 file-input 기반으로 바꿀 때 이 경계를 다시 검토한다.
 
+## PR exact-head 사후 검증과 수정
+
+PR #744의 exact head hosted CI를 fresh-read한 결과, 로컬 구현과 별개로
+publication/CI 계약 두 건이 실패했다.
+
+1. `spring-boot/common`의 `runtimeElements`가
+   `org.jetbrains.kotlinx:kotlinx-coroutines-core`를 versionless external dependency로
+   내보냈다. common이 API graph에서 coroutine을 노출하지만 coroutine BOM을 API-visible
+   platform으로 선언하지 않은 것이 원인이었다.
+2. root production ABI inventory가 35개로 갱신됐는데 CI workflow의 고정 검사는
+   `34/34`를 계속 요구했다.
+
+두 실패는 각각 `api(platform(bt4k.kotlinx.coroutines.bom))` 추가와 workflow의
+`modules/baselines/actualDumps=35/35` 갱신으로 최소 수정했다. publication metadata/POM,
+downstream consumer와 root compile/audit를 재실행해 모두 GREEN을 확인했고, JDBC는
+worker 수를 1로 제한한 순차 실행에서 260 tests GREEN을 확인했다. 이 수정은 source
+API나 legacy ABI facade를 변경하지 않는다.
+
+수정 후에도 root `checkProductionAbi`의 UUID repository baseline 차이는 기존 P2-1로
+남아 있으며, hosted exact-head rerun과 human review가 끝날 때까지 delivery verdict는
+**PENDING**이다.
+
 ## 검증 근거
 
 - `./gradlew :bluetape4k-exposed-spring-boot-common:test --no-configuration-cache` → **14 passing**, `BUILD SUCCESSFUL`
@@ -79,6 +101,12 @@ Gradle task를 file-input 기반으로 바꿀 때 이 경계를 다시 검토한
 - `./gradlew exportManualModuleInventory` 및 `ruby scripts/manual/validate_manuals.rb build/manual/module-inventory.json docs/manual/manifest.yaml` → **Manuals are aligned.**
 - `./gradlew :bluetape4k-exposed-bom:generatePomFileForBluetapeExposedPublication --no-configuration-cache` → **BUILD SUCCESSFUL**; generated POM에 `bluetape4k-exposed-spring-boot-common` 존재
 - `python3 .github/scripts/aggregate-kover-coverage.py spring-boot` → **total 82.69%**
+- PR #744 exact-head hosted CI 최초 실패: common Gradle Module Metadata의 versionless
+  coroutine runtime dependency 및 CI `34/34` inventory 계약 불일치
+- 수정 후 `build -x test`, publication metadata/POM audit, downstream consumer audit →
+  **모두 exit 0**; metadata `failures=0`, POM `failures=0`, downstream
+  `publications=36/libraries=35/fixtures=1`
+- 수정 후 `:bluetape4k-exposed-spring-boot-jdbc:test --max-workers=1` → **260 passing**
 - R2DBC/common/production output import guard → **통과**; `println`, `System.out`, `System.err` hit 없음
 - `git diff --check` → **통과**
 
