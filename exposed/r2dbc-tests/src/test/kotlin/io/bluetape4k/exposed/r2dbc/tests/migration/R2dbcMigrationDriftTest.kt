@@ -1,25 +1,24 @@
 package io.bluetape4k.exposed.r2dbc.tests.migration
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.coInvoking
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeSameInstanceAs
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.exposed.r2dbc.tests.preserveFailure
 import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.junit5.coroutines.runSuspendIO
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.yield
-import kotlinx.coroutines.withContext
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertSame
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.jetbrains.exposed.v1.core.ExperimentalDatabaseMigrationApi
@@ -28,7 +27,7 @@ import org.jetbrains.exposed.v1.migration.r2dbc.MigrationUtils
 import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
 import org.jetbrains.exposed.v1.r2dbc.exists
 import java.util.Locale
-import java.util.concurrent.CancellationException
+import kotlin.coroutines.cancellation.CancellationException
 
 @Tag("migration-drift")
 @OptIn(ExperimentalDatabaseMigrationApi::class)
@@ -37,17 +36,17 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
     @ParameterizedTest(name = "R2DBC additive drift converges on {0}")
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `additive description drift is detected applied and converged`(testDB: TestDB) = runSuspendIO {
-        preservingFailure(
+        preserveFailure(
             block = {
                 withDb(testDB) {
-                    assertFalse(R2dbcMigrationBaseline.exists())
+                    R2dbcMigrationBaseline.exists().shouldBeFalse()
                     SchemaUtils.create(R2dbcMigrationBaseline)
 
                     val statements = MigrationUtils.statementsRequiredForDatabaseMigration(
                         R2dbcMigrationEvolved,
                         withLogs = false,
                     )
-                    assertEquals(1, statements.size)
+                    statements.size shouldBeEqualTo 1
                     val validated = validateAdditiveStatement(
                         statement = statements.single(),
                         expectedTable = R2dbcMigrationEvolved.tableName,
@@ -56,12 +55,10 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
 
                     this.exec(validated)
 
-                    assertTrue(
-                        MigrationUtils.statementsRequiredForDatabaseMigration(
-                            R2dbcMigrationEvolved,
-                            withLogs = false,
-                        ).isEmpty(),
-                    )
+                    MigrationUtils.statementsRequiredForDatabaseMigration(
+                        R2dbcMigrationEvolved,
+                        withLogs = false,
+                    ).isEmpty().shouldBeTrue()
                 }
             },
             cleanup = {
@@ -69,7 +66,7 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
                     if (R2dbcMigrationBaseline.exists()) {
                         SchemaUtils.drop(R2dbcMigrationBaseline)
                     }
-                    assertFalse(R2dbcMigrationBaseline.exists())
+                    R2dbcMigrationBaseline.exists().shouldBeFalse()
                 }
             },
         )
@@ -77,10 +74,10 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
 
     @Test
     fun `H2 varchar to text drift is characterized without execution`() = runSuspendIO {
-        preservingFailure(
+        preserveFailure(
             block = {
                 withDb(TestDB.H2) {
-                    assertFalse(R2dbcTypeChangeBaseline.exists())
+                    R2dbcTypeChangeBaseline.exists().shouldBeFalse()
                     SchemaUtils.create(R2dbcTypeChangeBaseline)
 
                     val statements = MigrationUtils.statementsRequiredForDatabaseMigration(
@@ -88,8 +85,9 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
                         withLogs = false,
                     )
 
-                    assertTrue(statements.isNotEmpty())
-                    assertTrue(statements.any { isExpectedH2TypeChange(it, R2dbcTypeChangeEvolved.tableName, "value") })
+                    statements.isNotEmpty().shouldBeTrue()
+                    statements.any { isExpectedH2TypeChange(it, R2dbcTypeChangeEvolved.tableName, "value") }
+                        .shouldBeTrue()
                 }
             },
             cleanup = {
@@ -97,7 +95,7 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
                     if (R2dbcTypeChangeBaseline.exists()) {
                         SchemaUtils.drop(R2dbcTypeChangeBaseline)
                     }
-                    assertFalse(R2dbcTypeChangeBaseline.exists())
+                    R2dbcTypeChangeBaseline.exists().shouldBeFalse()
                 }
             },
         )
@@ -115,14 +113,11 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
             )
 
             statements.forEach { statement ->
-                assertEquals(
-                    statement,
-                    validateAdditiveStatement(
-                        statement = statement,
-                        expectedTable = "r2dbc_migration_drift",
-                        expectedColumn = "description",
-                    ),
-                )
+                validateAdditiveStatement(
+                    statement = statement,
+                    expectedTable = "r2dbc_migration_drift",
+                    expectedColumn = "description",
+                ) shouldBeEqualTo statement
             }
         }
 
@@ -151,7 +146,7 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
             )
 
             rejected.forEach { statement ->
-                assertThrows<IllegalArgumentException>(statement) {
+                assertFailsWith<IllegalArgumentException>(message = statement) {
                     validateAdditiveStatement(
                         statement = statement,
                         expectedTable = "r2dbc_migration_drift",
@@ -165,29 +160,30 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
         fun `preserves a primary failure when cleanup succeeds`() = runSuspendIO {
             val primary = IllegalStateException("primary")
 
-            val thrown = runCatching {
-                preservingFailure(
+            val thrown = coInvoking {
+                preserveFailure(
                     block = { throw primary },
                     cleanup = {},
                 )
-            }.exceptionOrNull()
+            }.shouldThrow(IllegalStateException::class)
 
-            assertSame(primary, thrown)
-            assertTrue(checkNotNull(thrown).suppressed.isEmpty())
+            thrown shouldBeSameInstanceAs primary
+            thrown.suppressed.isEmpty().shouldBeTrue()
         }
 
         @Test
         fun `throws a cleanup-only failure`() = runSuspendIO {
             val cleanup = IllegalArgumentException("cleanup")
 
-            val thrown = runCatching {
-                preservingFailure(
+            val thrown = coInvoking {
+                preserveFailure(
                     block = {},
                     cleanup = { throw cleanup },
                 )
-            }.exceptionOrNull()
+            }.shouldThrow(IllegalArgumentException::class)
 
-            assertSame(cleanup, thrown)
+            thrown::class shouldBeEqualTo cleanup::class
+            thrown.message shouldBeEqualTo cleanup.message
         }
 
         @Test
@@ -195,15 +191,17 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
             val primary = IllegalStateException("primary")
             val cleanup = IllegalArgumentException("cleanup")
 
-            val thrown = runCatching {
-                preservingFailure(
+            val thrown = coInvoking {
+                preserveFailure(
                     block = { throw primary },
                     cleanup = { throw cleanup },
                 )
-            }.exceptionOrNull()
+            }.shouldThrow(IllegalStateException::class)
 
-            assertSame(primary, thrown)
-            assertEquals(listOf(cleanup), checkNotNull(thrown).suppressed.toList())
+            thrown shouldBeSameInstanceAs primary
+            val suppressed = thrown.suppressed.single()
+            suppressed::class shouldBeEqualTo cleanup::class
+            suppressed.message shouldBeEqualTo cleanup.message
         }
 
         @Test
@@ -213,7 +211,7 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
 
             val thrown = coroutineScope {
                 val cancelled = async {
-                    preservingFailure(
+                    preserveFailure(
                         block = {
                             currentCoroutineContext().cancel(primary)
                             yield()
@@ -224,12 +222,11 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
                         },
                     )
                 }
-                runCatching { cancelled.await() }.exceptionOrNull()
+                coInvoking { cancelled.await() }.shouldThrow(CancellationException::class)
             }
 
-            assertTrue(thrown is CancellationException)
-            assertEquals(primary.message, thrown?.message)
-            assertTrue(cleaned)
+            thrown.message shouldBeEqualTo primary.message
+            cleaned.shouldBeTrue()
         }
     }
 
@@ -277,32 +274,6 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
         return normalized.startsWith("ALTER TABLE ${expectedTable.uppercase(Locale.ROOT)} ") &&
                 Regex("\\b${Regex.escape(expectedColumn.uppercase(Locale.ROOT))}\\b").containsMatchIn(normalized) &&
                 Regex("\\b(TEXT|CLOB)\\b").containsMatchIn(normalized)
-    }
-
-    private suspend fun preservingFailure(
-        block: suspend () -> Unit,
-        cleanup: suspend () -> Unit,
-    ) {
-        var primaryFailure: Throwable? = null
-        try {
-            block()
-        } catch (failure: Throwable) {
-            primaryFailure = failure
-        }
-
-        try {
-            if (primaryFailure is CancellationException || !currentCoroutineContext().isActive) {
-                withContext(NonCancellable) {
-                    cleanup()
-                }
-            } else {
-                cleanup()
-            }
-        } catch (cleanupFailure: Throwable) {
-            primaryFailure?.addSuppressed(cleanupFailure) ?: throw cleanupFailure
-        }
-
-        primaryFailure?.let { throw it }
     }
 
     companion object {
