@@ -305,6 +305,180 @@ public final class io/bluetape4k/exposed/r2dbc/repository/IntSoftDeletedR2dbcRep
 	public static fun updateById (Lio/bluetape4k/exposed/r2dbc/repository/IntSoftDeletedR2dbcRepository;ILjava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public abstract interface class io/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository : io/bluetape4k/exposed/r2dbc/repository/R2dbcRepository {
+}
+
+public final class io/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository$DefaultImpls {
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
+	public static fun count (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun countBy (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun countBy (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Op;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun delete (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteAll (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteAllByIds (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteAllIgnore (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteById (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteByIdIgnore (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun exists (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Lorg/jetbrains/exposed/v1/core/AbstractQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun existsBy (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun existsById (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findAll (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findAllByIds (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/lang/Iterable;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findBy (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;[Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findByField (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Column;Ljava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findByFieldOrNull (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Column;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findById (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findByIdOrNull (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findFirstOrNull (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/lang/Long;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findLastOrNull (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/lang/Long;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findPage (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;IILorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findWithFilters (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;[Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;)Lkotlinx/coroutines/flow/Flow;
+	public static fun isEmpty (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun isNotEmpty (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun saveAll (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun updateAll (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun updateById (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/util/UUID;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository : io/bluetape4k/exposed/r2dbc/repository/SoftDeletedR2dbcRepository {
+}
+
+public final class io/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository$DefaultImpls {
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
+	public static fun count (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun countActive (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun countBy (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun countBy (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Op;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun countDeleted (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun delete (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteAll (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteAllByIds (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteAllIgnore (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteById (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteByIdIgnore (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun exists (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/AbstractQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun existsBy (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun existsById (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findActive (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findActivePage (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;IILorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findAll (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findAllByIds (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findBy (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;[Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findByField (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Column;Ljava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findByFieldOrNull (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Column;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findById (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findByIdOrNull (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findDeleted (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findFirstOrNull (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/lang/Long;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findLastOrNull (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/lang/Long;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findPage (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;IILorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findWithFilters (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;[Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;)Lkotlinx/coroutines/flow/Flow;
+	public static fun isEmpty (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun isNotEmpty (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun restoreAll (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun restoreById (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun saveAll (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun softDeleteAll (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun softDeleteById (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun updateAll (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun updateById (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/util/UUID;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository : io/bluetape4k/exposed/r2dbc/repository/R2dbcRepository {
+}
+
+public final class io/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository$DefaultImpls {
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
+	public static fun count (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun countBy (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun countBy (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Op;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun delete (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteAll (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteAllByIds (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteAllIgnore (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteById (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteByIdIgnore (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun exists (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lorg/jetbrains/exposed/v1/core/AbstractQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun existsBy (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun existsById (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findAll (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findAllByIds (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Ljava/lang/Iterable;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findBy (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;[Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findByField (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Column;Ljava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findByFieldOrNull (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Column;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findById (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findByIdOrNull (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findFirstOrNull (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Ljava/lang/Long;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findLastOrNull (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Ljava/lang/Long;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findPage (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;IILorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findWithFilters (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;[Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;)Lkotlinx/coroutines/flow/Flow;
+	public static fun isEmpty (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun isNotEmpty (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun saveAll (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun updateAll (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun updateById (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lkotlin/uuid/Uuid;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository : io/bluetape4k/exposed/r2dbc/repository/SoftDeletedR2dbcRepository {
+}
+
+public final class io/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository$DefaultImpls {
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
+	public static fun count (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun countActive (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun countBy (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun countBy (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Op;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun countDeleted (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun delete (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteAll (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteAllByIds (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteAllIgnore (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteById (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun deleteByIdIgnore (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun exists (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/AbstractQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun existsBy (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun existsById (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findActive (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findActivePage (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;IILorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findAll (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findAllByIds (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findBy (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;[Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findByField (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Column;Ljava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findByFieldOrNull (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Column;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findById (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findByIdOrNull (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findDeleted (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
+	public static fun findFirstOrNull (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Ljava/lang/Long;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findLastOrNull (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Ljava/lang/Long;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findPage (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;IILorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findWithFilters (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;[Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;)Lkotlinx/coroutines/flow/Flow;
+	public static fun isEmpty (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun isNotEmpty (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun restoreAll (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun restoreById (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun saveAll (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun softDeleteAll (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun softDeleteById (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun updateAll (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun updateById (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/uuid/Uuid;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
 public abstract interface class io/bluetape4k/exposed/r2dbc/repository/LongAuditableR2dbcRepository : io/bluetape4k/exposed/r2dbc/repository/AuditableR2dbcRepository {
 }
 
@@ -742,180 +916,6 @@ public final class io/bluetape4k/exposed/r2dbc/repository/UUIDAuditableR2dbcRepo
 	public static fun saveAll (Lio/bluetape4k/exposed/r2dbc/repository/UUIDAuditableR2dbcRepository;Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun updateAll (Lio/bluetape4k/exposed/r2dbc/repository/UUIDAuditableR2dbcRepository;Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun updateById (Lio/bluetape4k/exposed/r2dbc/repository/UUIDAuditableR2dbcRepository;Ljava/util/UUID;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public abstract interface class io/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository : io/bluetape4k/exposed/r2dbc/repository/R2dbcRepository {
-}
-
-public final class io/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository$DefaultImpls {
-	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
-	public static fun count (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun countBy (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun countBy (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Op;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun delete (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteAll (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteAllByIds (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteAllIgnore (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteById (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteByIdIgnore (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun exists (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Lorg/jetbrains/exposed/v1/core/AbstractQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun existsBy (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun existsById (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findAll (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findAllByIds (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Ljava/lang/Iterable;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findBy (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;[Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findByField (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Column;Ljava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findByFieldOrNull (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Column;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findById (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findByIdOrNull (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findFirstOrNull (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Ljava/lang/Long;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findLastOrNull (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Ljava/lang/Long;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findPage (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;IILorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findWithFilters (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;[Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;)Lkotlinx/coroutines/flow/Flow;
-	public static fun isEmpty (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun isNotEmpty (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun saveAll (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun updateAll (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun updateById (Lio/bluetape4k/exposed/r2dbc/repository/UUIDR2dbcRepository;Ljava/util/UUID;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public abstract interface class io/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository : io/bluetape4k/exposed/r2dbc/repository/SoftDeletedR2dbcRepository {
-}
-
-public final class io/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository$DefaultImpls {
-	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
-	public static fun count (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun countActive (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun countBy (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun countBy (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Op;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun countDeleted (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun delete (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteAll (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteAllByIds (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteAllIgnore (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteById (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteByIdIgnore (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun exists (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/AbstractQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun existsBy (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun existsById (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findActive (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findActivePage (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;IILorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findAll (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findAllByIds (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/lang/Iterable;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findBy (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;[Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findByField (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Column;Ljava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findByFieldOrNull (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Column;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findById (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findByIdOrNull (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findDeleted (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findFirstOrNull (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/lang/Long;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findLastOrNull (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/lang/Long;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findPage (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;IILorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findWithFilters (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;[Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;)Lkotlinx/coroutines/flow/Flow;
-	public static fun isEmpty (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun isNotEmpty (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun restoreAll (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun restoreById (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun saveAll (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun softDeleteAll (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun softDeleteById (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun updateAll (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun updateById (Lio/bluetape4k/exposed/r2dbc/repository/UUIDSoftDeletedR2dbcRepository;Ljava/util/UUID;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public abstract interface class io/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository : io/bluetape4k/exposed/r2dbc/repository/R2dbcRepository {
-}
-
-public final class io/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository$DefaultImpls {
-	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
-	public static fun count (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun countBy (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun countBy (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Op;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun delete (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteAll (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteAllByIds (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteAllIgnore (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteById (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteByIdIgnore (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun exists (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lorg/jetbrains/exposed/v1/core/AbstractQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun existsBy (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun existsById (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findAll (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findAllByIds (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Ljava/lang/Iterable;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findBy (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;[Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findByField (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Column;Ljava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findByFieldOrNull (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Column;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findById (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findByIdOrNull (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findFirstOrNull (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Ljava/lang/Long;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findLastOrNull (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Ljava/lang/Long;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findPage (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;IILorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findWithFilters (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;[Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;)Lkotlinx/coroutines/flow/Flow;
-	public static fun isEmpty (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun isNotEmpty (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun saveAll (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun updateAll (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun updateById (Lio/bluetape4k/exposed/r2dbc/repository/UuidR2dbcRepository;Lkotlin/uuid/Uuid;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public abstract interface class io/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository : io/bluetape4k/exposed/r2dbc/repository/SoftDeletedR2dbcRepository {
-}
-
-public final class io/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository$DefaultImpls {
-	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
-	public static fun count (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun countActive (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun countBy (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun countBy (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Op;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun countDeleted (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun delete (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteAll (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteAllByIds (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteAllIgnore (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteById (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun deleteByIdIgnore (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun exists (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/AbstractQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun existsBy (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun existsById (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findActive (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findActivePage (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;IILorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findAll (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findAllByIds (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findBy (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;[Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findByField (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Column;Ljava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findByFieldOrNull (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/Column;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findById (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findByIdOrNull (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findDeleted (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
-	public static fun findFirstOrNull (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Ljava/lang/Long;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findLastOrNull (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Ljava/lang/Long;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findPage (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;IILorg/jetbrains/exposed/v1/core/SortOrder;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun findWithFilters (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;[Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Ljava/lang/Long;Lorg/jetbrains/exposed/v1/core/SortOrder;)Lkotlinx/coroutines/flow/Flow;
-	public static fun isEmpty (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun isNotEmpty (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun restoreAll (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun restoreById (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun saveAll (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun softDeleteAll (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun softDeleteById (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/uuid/Uuid;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun updateAll (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun updateById (Lio/bluetape4k/exposed/r2dbc/repository/UuidSoftDeletedR2dbcRepository;Lkotlin/uuid/Uuid;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/bluetape4k/exposed/r2dbc/statements/BatchInsertOnConflictDoNothing : org/jetbrains/exposed/v1/core/statements/BatchInsertStatement {

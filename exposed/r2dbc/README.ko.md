@@ -405,17 +405,34 @@ prepared parameter binding 순서를 유지합니다.
 |------------------------------------|--------------------|
 | `IntR2dbcRepository`               | `Int`              |
 | `LongR2dbcRepository`              | `Long`             |
-| `UuidR2dbcRepository`              | `kotlin.uuid.Uuid` |
-| `UUIDR2dbcRepository`              | `java.util.UUID`   |
+| `KotlinUuidR2dbcRepository`        | `kotlin.uuid.Uuid` |
+| `JavaUuidR2dbcRepository`          | `java.util.UUID`   |
 | `StringR2dbcRepository`            | `String`           |
 | `IntAuditableR2dbcRepository`      | `Int`              |
 | `LongAuditableR2dbcRepository`     | `Long`             |
 | `UUIDAuditableR2dbcRepository`     | `java.util.UUID`   |
 | `IntSoftDeletedR2dbcRepository`    | `Int`              |
 | `LongSoftDeletedR2dbcRepository`   | `Long`             |
-| `UuidSoftDeletedR2dbcRepository`   | `kotlin.uuid.Uuid` |
-| `UUIDSoftDeletedR2dbcRepository`   | `java.util.UUID`   |
+| `KotlinUuidSoftDeletedR2dbcRepository` | `kotlin.uuid.Uuid` |
+| `JavaUuidSoftDeletedR2dbcRepository`   | `java.util.UUID`   |
 | `StringSoftDeletedR2dbcRepository` | `String`           |
+
+### 2.0 UUID Repository 이름 변경
+
+`kotlin.uuid.Uuid`와 `java.util.UUID` repository 특수화가 파일시스템에
+안전한 JVM class 이름을 사용하도록 변경되었습니다. 소스의 import와 구현
+상위 타입을 다음과 같이 바꾸세요.
+
+| 1.x 소스 이름                    | 2.0 canonical 이름                     | 바이너리 호환성 |
+|---------------------------------|----------------------------------------|----------------|
+| `UuidR2dbcRepository`           | `KotlinUuidR2dbcRepository`            | 재컴파일 필요   |
+| `UUIDR2dbcRepository`           | `JavaUuidR2dbcRepository`              | 재컴파일 필요   |
+| `UuidSoftDeletedR2dbcRepository` | `KotlinUuidSoftDeletedR2dbcRepository` | 재컴파일 필요  |
+| `UUIDSoftDeletedR2dbcRepository` | `JavaUuidSoftDeletedR2dbcRepository`   | 재컴파일 필요  |
+
+2.0에서는 1.x 이름을 deprecated source-only typealias로 유지합니다. 기존
+JVM class는 생성하지 않으므로, 이미 컴파일된 consumer는 canonical 이름으로
+다시 빌드해야 합니다.
 
 ## 가상 스레드 트랜잭션
 

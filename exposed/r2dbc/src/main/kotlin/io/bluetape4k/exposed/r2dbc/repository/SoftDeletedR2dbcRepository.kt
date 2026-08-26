@@ -187,21 +187,54 @@ interface IntSoftDeletedR2dbcRepository<E: Any, T: SoftDeletedIdTable<Int>>: Sof
 interface LongSoftDeletedR2dbcRepository<E: Any, T: SoftDeletedIdTable<Long>>: SoftDeletedR2dbcRepository<Long, E, T>
 
 /**
- * Kotlin [kotlin.uuid.Uuid] 기본키를 사용하는 [SoftDeletedR2dbcRepository]의 편의 타입 별칭입니다.
+ * Kotlin [kotlin.uuid.Uuid] 기본키를 사용하는 [SoftDeletedR2dbcRepository]의 편의 특수화입니다.
+ *
+ * JVM class 이름이 Java UUID 특수화와 충돌하지 않도록 2.0부터 `KotlinUuid` 접두사를
+ * 사용합니다. 기존 `UuidSoftDeletedR2dbcRepository` 이름은 소스 호환을 위한 typealias로만
+ * 유지되며, binary class는 생성하지 않습니다.
  *
  * @param T [SoftDeletedIdTable]<Uuid> 구현체
  * @param E 엔티티 타입
  */
 @OptIn(ExperimentalUuidApi::class)
-interface UuidSoftDeletedR2dbcRepository<E: Any, T: SoftDeletedIdTable<Uuid>>: SoftDeletedR2dbcRepository<Uuid, E, T>
+interface KotlinUuidSoftDeletedR2dbcRepository<E: Any, T: SoftDeletedIdTable<Uuid>>:
+    SoftDeletedR2dbcRepository<Uuid, E, T>
 
 /**
  * [java.util.UUID] 기본키를 사용하는 [SoftDeletedR2dbcRepository]의 편의 타입 별칭입니다.
  *
+ * JVM class 이름이 Kotlin UUID 특수화와 충돌하지 않도록 2.0부터 `JavaUuid` 접두사를
+ * 사용합니다. 기존 `UUIDSoftDeletedR2dbcRepository` 이름은 소스 호환을 위한 typealias로만
+ * 유지되며, binary class는 생성하지 않습니다.
+ *
  * @param T [SoftDeletedIdTable]<UUID> 구현체
  * @param E 엔티티 타입
  */
-interface UUIDSoftDeletedR2dbcRepository<E: Any, T: SoftDeletedIdTable<UUID>>: SoftDeletedR2dbcRepository<UUID, E, T>
+interface JavaUuidSoftDeletedR2dbcRepository<E: Any, T: SoftDeletedIdTable<UUID>>:
+    SoftDeletedR2dbcRepository<UUID, E, T>
+
+/**
+ * 1.x 소스 호환을 위한 Kotlin [kotlin.uuid.Uuid] soft-delete repository 이름입니다.
+ *
+ * 2.0부터는 [KotlinUuidSoftDeletedR2dbcRepository]를 사용하십시오.
+ */
+@Deprecated(
+    message = "Use KotlinUuidSoftDeletedR2dbcRepository instead.",
+    replaceWith = ReplaceWith("KotlinUuidSoftDeletedR2dbcRepository<E, T>"),
+)
+@OptIn(ExperimentalUuidApi::class)
+typealias UuidSoftDeletedR2dbcRepository<E, T> = KotlinUuidSoftDeletedR2dbcRepository<E, T>
+
+/**
+ * 1.x 소스 호환을 위한 [java.util.UUID] soft-delete repository 이름입니다.
+ *
+ * 2.0부터는 [JavaUuidSoftDeletedR2dbcRepository]를 사용하십시오.
+ */
+@Deprecated(
+    message = "Use JavaUuidSoftDeletedR2dbcRepository instead.",
+    replaceWith = ReplaceWith("JavaUuidSoftDeletedR2dbcRepository<E, T>"),
+)
+typealias UUIDSoftDeletedR2dbcRepository<E, T> = JavaUuidSoftDeletedR2dbcRepository<E, T>
 
 /**
  * [String] 기본키를 사용하는 [SoftDeletedR2dbcRepository]의 편의 타입 별칭입니다.
