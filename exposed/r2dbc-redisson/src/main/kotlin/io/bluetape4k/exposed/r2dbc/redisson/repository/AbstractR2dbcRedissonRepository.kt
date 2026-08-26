@@ -6,6 +6,8 @@ import io.bluetape4k.exposed.r2dbc.redisson.map.R2dbcEntityMapLoader
 import io.bluetape4k.exposed.r2dbc.redisson.map.R2dbcEntityMapWriter
 import io.bluetape4k.exposed.r2dbc.redisson.map.R2dbcExposedEntityMapLoader
 import io.bluetape4k.exposed.r2dbc.redisson.map.R2dbcExposedEntityMapWriter
+import io.bluetape4k.exposed.r2dbc.redisson.map.newR2dbcMapCoroutineScope
+import io.bluetape4k.exposed.r2dbc.redisson.map.linkedSupervisorScope
 import io.bluetape4k.exposed.r2dbc.redisson.repository.AbstractR2dbcRedissonRepository.Companion.DEFAULT_BATCH_SIZE
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
@@ -16,12 +18,16 @@ import io.bluetape4k.redis.redisson.cache.mapCache
 import io.bluetape4k.support.requireNotNull
 import io.bluetape4k.support.requirePositiveNumber
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.future.asDeferred
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -64,8 +70,11 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
     val redissonClient: RedissonClient,
     private val config: RedissonCacheConfig,
     trustedBinaryCache: Boolean = false,
-    protected val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
+    protected val scope: CoroutineScope = newR2dbcMapCoroutineScope("R2dbc-RedissonRepository"),
 ): R2dbcRedissonRepository<ID, E> {
+    private val lifecycleScope = scope.linkedSupervisorScope("R2dbc-RedissonRepository-Lifecycle")
+    private val lifecycleJob = requireNotNull(lifecycleScope.coroutineContext[Job])
+
     companion object: KLoggingChannel() {
         const val DEFAULT_BATCH_SIZE = R2dbcRedissonRepository.DEFAULT_BATCH_SIZE
     }
@@ -96,7 +105,7 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
      * DB의 정보를 Read Through로 캐시에 로딩하는 [R2dbcEntityMapLoader] 입니다.
      */
     protected open val r2dbcEntityMapLoader: R2dbcEntityMapLoader<ID, E> by lazy {
-        R2dbcExposedEntityMapLoader(table, scope) { toEntity() }
+        R2dbcExposedEntityMapLoader(table, CoroutineScope(lifecycleScope.coroutineContext)) { toEntity() }
     }
 
     /**
@@ -120,7 +129,7 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
             null
         } else {
             R2dbcExposedEntityMapWriter(
-                scope = scope,
+                scope = CoroutineScope(lifecycleScope.coroutineContext),
                 entityTable = table,
                 updateBody = { stmt, entity -> with(this@AbstractR2dbcRedissonRepository) { stmt.updateEntity(entity) } },
                 batchInsertBody = { entity ->
@@ -367,5 +376,21 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
                     .mapNotNull { (k, v) -> if (v != null) k to v else null }
             }
             .toMap()
+    }
+
+    /**
+     * loader/writer가 사용하는 lifecycle scope를 취소해 진행 중인 R2DBC 작업을 종료합니다.
+     * caller가 주입한 부모 scope 자체는 취소하지 않습니다.
+     */
+    override fun close() {
+        lifecycleScope.cancel()
+    }
+
+    /** repository가 소유한 loader/writer 작업의 transaction cleanup 완료까지 기다립니다. */
+    suspend fun closeAndJoin() {
+        withContext(NonCancellable) {
+            lifecycleScope.cancel()
+            lifecycleJob.cancelAndJoin()
+        }
     }
 }

@@ -50,7 +50,7 @@ import org.jetbrains.exposed.v1.r2dbc.selectAll
  */
 open class R2dbcExposedEntityMapLoader<ID: Any, E: Any>(
     private val entityTable: IdTable<ID>,
-    scope: CoroutineScope = defaultMapLoaderCoroutineScope,
+    scope: CoroutineScope = newR2dbcMapCoroutineScope("R2dbc-Loader"),
     private val batchSize: Int = DEFAULT_BATCH_SIZE,
     private val toEntity: suspend ResultRow.() -> E,
 ): R2dbcEntityMapLoader<ID, E>(
@@ -114,7 +114,7 @@ open class R2dbcExposedEntityMapLoader<ID: Any, E: Any>(
             // 코루틴 취소는 반드시 재전파해야 한다 — 삼키면 구조적 동시성이 깨진다
             throw cause
         } catch (cause: Throwable) {
-            log.error { "R2dbc를 이용한 모든 ID 로딩 중 오류가 발생했습니다." }
+            log.error(cause) { "R2dbc를 이용한 모든 ID 로딩 중 오류가 발생했습니다." }
             throw cause
         }
     },

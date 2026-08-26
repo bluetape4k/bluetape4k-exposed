@@ -62,7 +62,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 toLoaderEntity()
             }
 
-            val ids = loader.loadAllKeys().toList()
+            val ids = loader.useLoader { loader.loadAllKeys().toList() }
             ids shouldHaveSize 3
             ids shouldBeEqualTo ids.sorted()
         }
@@ -95,12 +95,13 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 toLoaderEntity()
             }
 
-            val ids = loader.loadAllKeys().toList()
+            val (ids, selects) = loader.useLoader {
+                val loadedIds = loader.loadAllKeys().toList()
+                loadedIds to sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
+            }
+            selects.size shouldBeEqualTo 3
             ids shouldHaveSize 5
             ids shouldBeEqualTo ids.sorted()
-
-            val selects = sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
-            selects.size shouldBeEqualTo 3
             selects.none { it.contains("offset", ignoreCase = true) }.shouldBeTrue()
             selects.drop(1).all { it.contains(">") }.shouldBeTrue()
         }
@@ -132,8 +133,10 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
             ) {
                 toLoaderEntity()
             }
-            val ids = loader.loadAllKeys().toList()
-            val selects = sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
+            val (ids, selects) = loader.useLoader {
+                val loadedIds = loader.loadAllKeys().toList()
+                loadedIds to sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
+            }
 
             ids shouldHaveSize 101
             selects.size shouldBeEqualTo 7
@@ -168,8 +171,10 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
             ) {
                 toLoaderEntity()
             }
-            val ids = loader.loadAllKeys().toList()
-            val selects = sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
+            val (ids, selects) = loader.useLoader {
+                val loadedIds = loader.loadAllKeys().toList()
+                loadedIds to sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
+            }
 
             ids shouldHaveSize 4
             selects.size shouldBeEqualTo 3
@@ -192,10 +197,12 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
             ) {
                 toLoaderEntity()
             }
-            val iterator = loader.loadAllKeys()
-            val ids = buildList {
-                while (iterator.hasNext().await() == true) {
-                    add(iterator.next().await())
+            val ids = loader.useLoader {
+                val iterator = loader.loadAllKeys()
+                buildList {
+                    while (iterator.hasNext().await() == true) {
+                        add(iterator.next().await())
+                    }
                 }
             }
 
