@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MagicNumber:ExposedJdbcBatchJobRepository.kt:ExposedJdbcBatchJobRepository$1062</ID>
+    <ID>MaxLineLength:ExposedR2dbcBatchJobRepository.kt:ExposedR2dbcBatchJobRepository$row[BatchJobExecutionTable.paramsHash] = hash</ID>
+    <ID>MaxLineLength:ExposedR2dbcBatchJobRepositoryTest.kt:ExposedR2dbcBatchJobRepositoryTest$completeStepExecution(se, StepReport("step1", BatchStatus.COMPLETED, readCount = 100L, writeCount = 100L))</ID>
+    <ID>TooGenericExceptionCaught:ExposedJdbcBatchJobRepository.kt:ExposedJdbcBatchJobRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ExposedR2dbcBatchJobRepository.kt:ExposedR2dbcBatchJobRepository$e: Throwable</ID>
+    <ID>TooManyFunctions:ExposedJdbcBatchJobRepository.kt:ExposedJdbcBatchJobRepository : BatchJobRepository</ID>
+    <ID>TooManyFunctions:ExposedR2dbcBatchJobRepository.kt:ExposedR2dbcBatchJobRepository : BatchJobRepository</ID>
+  </CurrentIssues>
+</SmellBaseline>

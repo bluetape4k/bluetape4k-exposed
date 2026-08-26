@@ -132,7 +132,7 @@ The benchmark setup has been migrated to `kotlinx-benchmark` with DB-specific pr
 | MySQL | Compare JDBC vs R2DBC across seed and end-to-end batch job runs | [MySQL benchmark details](benchmark/mysql.md) |
 
 - [Benchmark hub](benchmark/README.md)
-- Example tasks: `./gradlew :bluetape4k-exposed-batch:h2JdbcBenchmark`, `./gradlew :bluetape4k-exposed-batch:postgresR2dbcBenchmark`, `./gradlew :bluetape4k-exposed-batch:generateBenchmarkDocs`
+- Example tasks: `./gradlew :bluetape4k-exposed-batch:h2JdbcBenchmark`, `./gradlew :bluetape4k-exposed-batch:postgresR2dbcBenchmark`, `./gradlew :bluetape4k-exposed-batch:generateBenchmarkDocs` (each benchmark task writes and validates its `metadata.json` sidecar)
 
 ### Comparison Focus
 
@@ -147,12 +147,24 @@ The benchmark setup has been migrated to `kotlinx-benchmark` with DB-specific pr
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-batch:${bluetape4kVersion}")
-    // for JDBC repository / reader / writer:
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:${bluetape4kVersion}")
-    // for R2DBC repository / reader / writer:
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:${bluetape4kVersion}")
-    // for workflow embedding:
-    implementation("io.github.bluetape4k:bluetape4k-workflow:${version}")
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<version>"))
+
+    // Existing users can keep the compatibility aggregator:
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-batch")
+
+    // Select only the runtime boundary you need:
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-batch-core")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-batch-jdbc")
+    // or: implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-batch-r2dbc")
+
+    // Workflow embedding is version-aligned by the same BOM:
+    implementation("io.github.bluetape4k:bluetape4k-workflow")
 }
 ```
+
+`bluetape4k-exposed-batch-core` does not publish Exposed, JDBC, R2DBC, or
+Jackson as runtime dependencies. Use the JDBC or R2DBC child only when that
+adapter is part of the application boundary. `CheckpointJson` is an explicit
+strategy: the core artifact supports a custom implementation without Jackson;
+`CheckpointJson.jackson3()` requires `bluetape4k-jackson3` on the runtime
+classpath.

@@ -81,4 +81,38 @@ class ReleaseContractTest < Minitest::Test
       assert_equal 1, result.checked_count
     end
   end
+
+  def test_skips_develop_only_manuals
+    Dir.mktmpdir("release-contract") do |root|
+      FileUtils.mkdir_p(File.join(root, "docs/manual/en/modules"))
+      File.write(
+        File.join(root, "docs/manual/en/modules/stable.md"),
+        "[Present](../../../../exposed/core/src/Present.kt)\n",
+      )
+      File.write(
+        File.join(root, "docs/manual/en/modules/develop.md"),
+        <<~MARKDOWN,
+          ---
+          releaseStatus: develop-only
+          ---
+
+          [Missing](../../../../exposed/core/src/Missing.kt)
+        MARKDOWN
+      )
+      runner = lambda do |args|
+        case args
+        when ["rev-parse", "--verify", "refs/tags/1.11.0^{commit}"] then [("a" * 40) + "\n", true]
+        when ["ls-tree", "-r", "--name-only", "a" * 40] then ["exposed/core/src/Present.kt\n", true]
+        else ["", false]
+        end
+      end
+
+      result = ManualDocs::ReleaseContract.new(
+        repository_root: root, tag: "1.11.0", expected_sha: "a" * 40, git_runner: runner,
+      ).validate
+
+      assert_empty result.errors
+      assert_equal 1, result.checked_count
+    end
+  end
 end

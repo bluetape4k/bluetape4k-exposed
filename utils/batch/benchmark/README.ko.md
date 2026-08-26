@@ -33,6 +33,6 @@
 ## 참고
 
 - 상세 수치 표는 DB별 문서에 둡니다.
-- `generateBenchmarkDocs`는 benchmark 허브와 DB별 상세 문서를 만들고, JSON report가 있으면 표와 차트까지 채웁니다.
-- Report directory: `utils/batch/build/reports/benchmarks`
+- `generateBenchmarkDocs`는 benchmark 허브와 DB별 상세 문서를 만들고, 검증된 JSON report가 있을 때만 표와 차트를 채웁니다. report root가 없거나 비어 있으면 즉시 실패합니다.
+- Report directory: `build/reports/benchmarks`
 - PostgreSQL/MySQL full run 결과는 나중에 추가해도 링크 구조는 그대로 유지됩니다.

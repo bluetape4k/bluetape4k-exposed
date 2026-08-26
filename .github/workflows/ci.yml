@@ -219,6 +219,11 @@ jobs:
               - 'spring-boot/batch-exposed/**'
             utils-batch:
               - 'utils/**'
+              - 'scripts/batch/**'
+              - 'settings.gradle.kts'
+              - 'build.gradle.kts'
+              - 'gradle/**'
+              - 'buildSrc/**'
 
   # Full build (no tests)
   catalog-governance:
@@ -308,9 +313,9 @@ jobs:
           ./gradlew checkProductionAbi --no-daemon --no-configuration-cache --no-build-cache \
             2>&1 | tee build/abi/reports/check-production-abi.log
           test -s build/abi/reports/production-abi.txt
-          grep -F 'modules=35/35' build/abi/reports/production-abi.txt
-          grep -F 'baselines=35/35' build/abi/reports/production-abi.txt
-          grep -F 'actualDumps=35/35' build/abi/reports/production-abi.txt
+          grep -F 'modules=38/38' build/abi/reports/production-abi.txt
+          grep -F 'baselines=38/38' build/abi/reports/production-abi.txt
+          grep -F 'actualDumps=38/38' build/abi/reports/production-abi.txt
           grep -F 'emptyBaselines=0' build/abi/reports/production-abi.txt
 
       - name: Upload production ABI evidence
@@ -1665,6 +1670,11 @@ jobs:
     if: ${{ needs.changes.outputs['utils-batch'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Test benchmark sidecar validators
+        run: python3 -m unittest discover -s scripts/batch -p 'test_*.py'
       - uses: actions/setup-java@v5.7.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
@@ -1676,7 +1686,12 @@ jobs:
       - name: Test utils-batch (H2)
         run: |
           for attempt in 1 2 3 4 5; do
-            ./gradlew :bluetape4k-exposed-batch:test --no-configuration-cache --no-daemon && break
+            ./gradlew \
+              :bluetape4k-exposed-batch-core:test \
+              :bluetape4k-exposed-batch-jdbc:test \
+              :bluetape4k-exposed-batch-r2dbc:test \
+              :bluetape4k-exposed-batch:test \
+              --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
@@ -1685,14 +1700,31 @@ jobs:
           EXPOSED_TEST_DB: 'H2'
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-batch:koverXmlReport --no-configuration-cache --no-daemon
-        continue-on-error: true
+        run: >
+          ./gradlew
+          :bluetape4k-exposed-batch-core:koverXmlReport
+          :bluetape4k-exposed-batch-jdbc:koverXmlReport
+          :bluetape4k-exposed-batch-r2dbc:koverXmlReport
+          :bluetape4k-exposed-batch:koverXmlReport
+          --no-configuration-cache --no-daemon
+      - name: Verify utils-batch Kover reports
+        if: always()
+        run: |
+          set -euo pipefail
+          for report in \
+            utils/batch/core/build/reports/kover/report.xml \
+            utils/batch/jdbc/build/reports/kover/report.xml \
+            utils/batch/r2dbc/build/reports/kover/report.xml \
+            utils/batch/build/reports/kover/report.xml; do
+            test -s "$report"
+          done
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: test-results-utils-batch
           path: '**/build/test-results/test/*.xml'
+          if-no-files-found: error
           retention-days: 7
       - name: Upload coverage report
         if: always()
@@ -1700,6 +1732,7 @@ jobs:
         with:
           name: coverage-utils-batch
           path: '**/build/reports/kover/'
+          if-no-files-found: error
           retention-days: 7
 
   # Coverage aggregation

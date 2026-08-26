@@ -9,7 +9,7 @@ import io.bluetape4k.batch.benchmark.support.BenchmarkSourceRecord
 import io.bluetape4k.batch.benchmark.support.BenchmarkTargetRecord
 import io.bluetape4k.batch.benchmark.support.KeyRange
 import io.bluetape4k.batch.core.dsl.batchJob
-import io.bluetape4k.batch.internal.CheckpointJson
+import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.jdbc.ExposedJdbcBatchJobRepository
 import io.bluetape4k.batch.jdbc.ExposedJdbcBatchReader
 import io.bluetape4k.batch.jdbc.ExposedJdbcBatchWriter

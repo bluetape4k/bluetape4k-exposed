@@ -143,7 +143,7 @@ benchmark 체계는 `kotlinx-benchmark` 기반으로 재구성되었고, JDBC + 
 | MySQL | seed 및 전체 batch job 실행을 JDBC/R2DBC로 비교 | [MySQL 상세 결과](benchmark/mysql.md) |
 
 - [Benchmark 문서 허브](benchmark/README.ko.md)
-- 실행 예시: `./gradlew :bluetape4k-exposed-batch:h2JdbcBenchmark`, `./gradlew :bluetape4k-exposed-batch:postgresR2dbcBenchmark`, `./gradlew :bluetape4k-exposed-batch:generateBenchmarkDocs`
+- 실행 예시: `./gradlew :bluetape4k-exposed-batch:h2JdbcBenchmark`, `./gradlew :bluetape4k-exposed-batch:postgresR2dbcBenchmark`, `./gradlew :bluetape4k-exposed-batch:generateBenchmarkDocs` (각 benchmark task가 `metadata.json` sidecar를 만들고 검증합니다)
 
 ### 비교 초점
 
@@ -158,12 +158,24 @@ benchmark 체계는 `kotlinx-benchmark` 기반으로 재구성되었고, JDBC + 
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-batch:${bluetape4kVersion}")
-    // JDBC repository / reader / writer 사용 시:
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc:${bluetape4kVersion}")
-    // R2DBC repository / reader / writer 사용 시:
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc:${bluetape4kVersion}")
-    // Workflow 임베딩 사용 시:
-    implementation("io.github.bluetape4k:bluetape4k-workflow:${version}")
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<version>"))
+
+    // 기존 사용자는 호환성 aggregator를 계속 사용할 수 있습니다.
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-batch")
+
+    // 필요한 runtime 경계만 선택합니다.
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-batch-core")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-batch-jdbc")
+    // 또는: implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-batch-r2dbc")
+
+    // 같은 BOM이 Workflow 버전도 정렬합니다.
+    implementation("io.github.bluetape4k:bluetape4k-workflow")
 }
 ```
+
+`bluetape4k-exposed-batch-core`는 Exposed, JDBC, R2DBC, Jackson을 runtime
+의존성으로 노출하지 않습니다. 해당 adapter가 애플리케이션 경계에 있을 때만
+JDBC 또는 R2DBC child를 선택하세요. `CheckpointJson`은 명시적인 strategy입니다.
+core artifact는 Jackson 없는 custom 구현을 지원하고,
+`CheckpointJson.jackson3()`는 runtime classpath에 `bluetape4k-jackson3`가 있어야
+합니다.

@@ -14,7 +14,7 @@ import kotlin.io.path.writeText
  * benchmark 결과 Markdown 문서를 생성하는 도우미입니다.
  *
  * 현재는 DB별 상세 문서와 허브 문서를 생성하는 최소 구현을 제공합니다.
- * JSON 결과가 존재하지 않아도 문서 골격과 실행 방법을 일관되게 갱신할 수 있습니다.
+ * 문서 생성 전 sidecar validator가 JSON 결과와 provenance를 fail-closed로 확인합니다.
  */
 internal object BenchmarkMarkdownExporter {
 
@@ -68,6 +68,8 @@ internal object BenchmarkMarkdownExporter {
     }
 
     private fun writeHubReadme(docsDir: Path, reportDir: Path?) {
+        val reportDirectoryLabel = reportDir?.let { docsDir.parent.relativize(it).toString() }
+            ?: "build/reports/benchmarks"
         docsDir.resolve("README.md").writeText(
             """
             # exposed-batch Benchmark Hub
@@ -105,14 +107,16 @@ internal object BenchmarkMarkdownExporter {
             ## Notes
 
             - Detailed numeric rows are generated per DB document.
-            - `generateBenchmarkDocs` writes the benchmark hub and DB detail documents, then fills tables and charts when JSON reports exist.
-            - Report directory: `${reportDir?.toString() ?: "not provided"}`.
+            - `generateBenchmarkDocs` writes the benchmark hub and DB detail documents, then fills tables and charts only after validated JSON reports exist; a missing or empty report root fails fast.
+            - Report directory: `$reportDirectoryLabel`.
             - Full PostgreSQL/MySQL runs can be generated later without changing the README link structure.
             """.trimIndent() + "\n"
         )
     }
 
     private fun writeHubReadmeKo(docsDir: Path, reportDir: Path?) {
+        val reportDirectoryLabel = reportDir?.let { docsDir.parent.relativize(it).toString() }
+            ?: "build/reports/benchmarks"
         docsDir.resolve("README.ko.md").writeText(
             """
             # exposed-batch 벤치마크 허브
@@ -150,8 +154,8 @@ internal object BenchmarkMarkdownExporter {
             ## 참고
 
             - 상세 수치 표는 DB별 문서에 둡니다.
-            - `generateBenchmarkDocs`는 benchmark 허브와 DB별 상세 문서를 만들고, JSON report가 있으면 표와 차트까지 채웁니다.
-            - Report directory: `${reportDir?.toString() ?: "not provided"}`
+            - `generateBenchmarkDocs`는 benchmark 허브와 DB별 상세 문서를 만들고, 검증된 JSON report가 있을 때만 표와 차트를 채웁니다. report root가 없거나 비어 있으면 즉시 실패합니다.
+            - Report directory: `$reportDirectoryLabel`
             - PostgreSQL/MySQL full run 결과는 나중에 추가해도 링크 구조는 그대로 유지됩니다.
             """.trimIndent() + "\n"
         )

@@ -173,6 +173,9 @@ includeProject("bluetape4k-exposed-bom", file("exposed/bom"))
 includeModules("exposed", withBaseDir = false, prefix = "bluetape4k-exposed-", excludeDirNames = setOf("bom"))
 includeModules("examples", withBaseDir = true, excludeDirNames = setOf("jdbc-demo", "r2dbc-demo"))
 
+includeMappedModule("utils/batch/core", "bluetape4k-exposed-batch-core")
+includeMappedModule("utils/batch/jdbc", "bluetape4k-exposed-batch-jdbc")
+includeMappedModule("utils/batch/r2dbc", "bluetape4k-exposed-batch-r2dbc")
 includeMappedModule("utils/batch", "bluetape4k-exposed-batch")
 includeModules("benchmark", withBaseDir = true)
 

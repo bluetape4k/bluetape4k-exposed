@@ -7,6 +7,7 @@ kind: "library"
 gradlePath: ":bluetape4k-exposed-spring-boot-common"
 sourceDir: "spring-boot/common"
 releaseRef: "1.12.1"
+releaseStatus: "develop-only"
 artifact: io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-common
 ---
 

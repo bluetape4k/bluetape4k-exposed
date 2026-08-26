@@ -5,6 +5,18 @@ public final class io/bluetape4k/batch/BatchDefaults {
 	public final fun getCOMMIT_TIMEOUT-UwyO8pc ()J
 }
 
+public abstract interface class io/bluetape4k/batch/CheckpointJson {
+	public static final field Companion Lio/bluetape4k/batch/CheckpointJson$Companion;
+	public abstract fun read (Ljava/lang/String;)Ljava/lang/Object;
+	public abstract fun write (Ljava/lang/Object;)Ljava/lang/String;
+}
+
+public final class io/bluetape4k/batch/CheckpointJson$Companion {
+	public final fun jackson3 ()Lio/bluetape4k/batch/CheckpointJson;
+	public final fun jackson3 (Ljava/lang/Iterable;)Lio/bluetape4k/batch/CheckpointJson;
+	public final fun jackson3 ([Lkotlin/reflect/KClass;)Lio/bluetape4k/batch/CheckpointJson;
+}
+
 public final class io/bluetape4k/batch/api/BatchExecutionAlreadyClaimedException : java/lang/RuntimeException {
 	public static final field Companion Lio/bluetape4k/batch/api/BatchExecutionAlreadyClaimedException$Companion;
 	public fun <init> (Ljava/lang/String;JLjava/lang/String;)V
@@ -24,6 +36,7 @@ public abstract interface class io/bluetape4k/batch/api/BatchJobRepository {
 	public abstract fun loadCheckpoint (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun saveCheckpoint (JLjava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun saveCheckpoint (Lio/bluetape4k/batch/api/StepExecution;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun saveCheckpointAndReturn (Lio/bluetape4k/batch/api/StepExecution;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/bluetape4k/batch/api/BatchJobRepository$DefaultImpls {
@@ -31,6 +44,11 @@ public final class io/bluetape4k/batch/api/BatchJobRepository$DefaultImpls {
 	public static fun claimStepExecution (Lio/bluetape4k/batch/api/BatchJobRepository;Lio/bluetape4k/batch/api/StepExecution;Ljava/lang/String;Ljava/time/Instant;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun findOrCreateJobExecution$default (Lio/bluetape4k/batch/api/BatchJobRepository;Ljava/lang/String;Ljava/util/Map;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static fun saveCheckpoint (Lio/bluetape4k/batch/api/BatchJobRepository;Lio/bluetape4k/batch/api/StepExecution;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun saveCheckpointAndReturn (Lio/bluetape4k/batch/api/BatchJobRepository;Lio/bluetape4k/batch/api/StepExecution;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/batch/api/BatchNameValidationKt {
+	public static final fun requireValidBatchName (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 }
 
 public abstract interface class io/bluetape4k/batch/api/BatchProcessor {
@@ -291,6 +309,7 @@ public final class io/bluetape4k/batch/core/InMemoryBatchJobRepository : io/blue
 	public fun loadCheckpoint (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun saveCheckpoint (JLjava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun saveCheckpoint (Lio/bluetape4k/batch/api/StepExecution;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun saveCheckpointAndReturn (Lio/bluetape4k/batch/api/StepExecution;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/bluetape4k/batch/core/InMemoryBatchJobRepository$Companion : io/bluetape4k/logging/KLogging {
@@ -334,7 +353,7 @@ public final class io/bluetape4k/batch/core/dsl/BatchStepBuilder {
 public final class io/bluetape4k/batch/core/dsl/BatchStepBuilder$Companion : io/bluetape4k/logging/KLogging {
 }
 
-public abstract interface class io/bluetape4k/batch/internal/CheckpointJson {
+public abstract interface class io/bluetape4k/batch/internal/CheckpointJson : io/bluetape4k/batch/CheckpointJson {
 	public static final field Companion Lio/bluetape4k/batch/internal/CheckpointJson$Companion;
 	public abstract fun read (Ljava/lang/String;)Ljava/lang/Object;
 	public abstract fun write (Ljava/lang/Object;)Ljava/lang/String;
@@ -348,6 +367,7 @@ public final class io/bluetape4k/batch/internal/CheckpointJson$Companion {
 
 public final class io/bluetape4k/batch/jdbc/ExposedJdbcBatchJobRepository : io/bluetape4k/batch/api/BatchJobRepository {
 	public static final field Companion Lio/bluetape4k/batch/jdbc/ExposedJdbcBatchJobRepository$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;Lio/bluetape4k/batch/CheckpointJson;)V
 	public fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;Lio/bluetape4k/batch/internal/CheckpointJson;)V
 	public fun claimJobExecution (Lio/bluetape4k/batch/api/JobExecution;Ljava/lang/String;Ljava/time/Instant;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun claimStepExecution (Lio/bluetape4k/batch/api/StepExecution;Ljava/lang/String;Ljava/time/Instant;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -358,6 +378,7 @@ public final class io/bluetape4k/batch/jdbc/ExposedJdbcBatchJobRepository : io/b
 	public fun loadCheckpoint (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun saveCheckpoint (JLjava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun saveCheckpoint (Lio/bluetape4k/batch/api/StepExecution;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun saveCheckpointAndReturn (Lio/bluetape4k/batch/api/StepExecution;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/bluetape4k/batch/jdbc/ExposedJdbcBatchJobRepository$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {
@@ -420,12 +441,15 @@ public final class io/bluetape4k/batch/jdbc/tables/BatchStepExecutionTable : org
 }
 
 public final class io/bluetape4k/batch/jdbc/tables/ResultRowMappersKt {
+	public static final fun toJobExecution (Lorg/jetbrains/exposed/v1/core/ResultRow;Lio/bluetape4k/batch/CheckpointJson;)Lio/bluetape4k/batch/api/JobExecution;
 	public static final fun toJobExecution (Lorg/jetbrains/exposed/v1/core/ResultRow;Lio/bluetape4k/batch/internal/CheckpointJson;)Lio/bluetape4k/batch/api/JobExecution;
+	public static final fun toStepExecution (Lorg/jetbrains/exposed/v1/core/ResultRow;Lio/bluetape4k/batch/CheckpointJson;)Lio/bluetape4k/batch/api/StepExecution;
 	public static final fun toStepExecution (Lorg/jetbrains/exposed/v1/core/ResultRow;Lio/bluetape4k/batch/internal/CheckpointJson;)Lio/bluetape4k/batch/api/StepExecution;
 }
 
 public final class io/bluetape4k/batch/r2dbc/ExposedR2dbcBatchJobRepository : io/bluetape4k/batch/api/BatchJobRepository {
 	public static final field Companion Lio/bluetape4k/batch/r2dbc/ExposedR2dbcBatchJobRepository$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;Lio/bluetape4k/batch/CheckpointJson;)V
 	public fun <init> (Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;Lio/bluetape4k/batch/internal/CheckpointJson;)V
 	public fun claimJobExecution (Lio/bluetape4k/batch/api/JobExecution;Ljava/lang/String;Ljava/time/Instant;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun claimStepExecution (Lio/bluetape4k/batch/api/StepExecution;Ljava/lang/String;Ljava/time/Instant;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -436,6 +460,7 @@ public final class io/bluetape4k/batch/r2dbc/ExposedR2dbcBatchJobRepository : io
 	public fun loadCheckpoint (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun saveCheckpoint (JLjava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun saveCheckpoint (Lio/bluetape4k/batch/api/StepExecution;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun saveCheckpointAndReturn (Lio/bluetape4k/batch/api/StepExecution;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/bluetape4k/batch/r2dbc/ExposedR2dbcBatchJobRepository$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {
@@ -465,5 +490,41 @@ public final class io/bluetape4k/batch/r2dbc/ExposedR2dbcBatchWriter : io/blueta
 }
 
 public final class io/bluetape4k/batch/r2dbc/ExposedR2dbcBatchWriter$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {
+}
+
+public final class io/bluetape4k/batch/r2dbc/tables/BatchJobExecutionTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/batch/r2dbc/tables/BatchJobExecutionTable;
+	public final fun getEndTime ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getJobName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getLeaseUntil ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getOwnerId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getParams ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getParamsHash ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getStartTime ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getStatus ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getVersion ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/batch/r2dbc/tables/BatchStepExecutionTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
+	public static final field INSTANCE Lio/bluetape4k/batch/r2dbc/tables/BatchStepExecutionTable;
+	public final fun getCheckpoint ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getEndTime ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getJobExecutionId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getLeaseUntil ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getOwnerId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getReadCount ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getSkipCount ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getStartTime ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getStatus ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getStepName ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getVersion ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getWriteCount ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/batch/r2dbc/tables/ResultRowMappersKt {
+	public static final fun toJobExecution (Lorg/jetbrains/exposed/v1/core/ResultRow;Lio/bluetape4k/batch/CheckpointJson;)Lio/bluetape4k/batch/api/JobExecution;
+	public static final fun toJobExecution (Lorg/jetbrains/exposed/v1/core/ResultRow;Lio/bluetape4k/batch/internal/CheckpointJson;)Lio/bluetape4k/batch/api/JobExecution;
+	public static final fun toStepExecution (Lorg/jetbrains/exposed/v1/core/ResultRow;Lio/bluetape4k/batch/CheckpointJson;)Lio/bluetape4k/batch/api/StepExecution;
+	public static final fun toStepExecution (Lorg/jetbrains/exposed/v1/core/ResultRow;Lio/bluetape4k/batch/internal/CheckpointJson;)Lio/bluetape4k/batch/api/StepExecution;
 }
 

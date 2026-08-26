@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["runId", "sourceRef", "sourceHead", "environment", "warmups", "iterations", "metric"],
+  "properties": {
+    "runId": {"type": "string", "minLength": 1},
+    "sourceRef": {"type": "string", "minLength": 1},
+    "sourceHead": {"type": "string", "minLength": 1},
+    "environment": {"anyOf": [{"type": "string", "minLength": 1}, {"type": "object", "minProperties": 1}]},
+    "warmups": {"type": "integer", "minimum": 1},
+    "iterations": {"type": "integer", "minimum": 1},
+    "metric": {
+      "type": "object",
+      "required": ["type", "value"],
+      "properties": {
+        "type": {"type": "string", "minLength": 1},
+        "value": {"type": "number", "finite": true}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

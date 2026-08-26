@@ -1,6 +1,7 @@
 require "open3"
 require "pathname"
 require "set"
+require "yaml"
 
 module ManualDocs
   class ReleaseContract
@@ -57,6 +58,8 @@ module ManualDocs
       Dir.glob(File.join(@repository_root, "docs/manual/**/*.md")).sort.flat_map do |path|
         file = Pathname.new(path).relative_path_from(Pathname.new(@repository_root)).to_s
         content = File.read(path)
+        next [] if develop_only_manual?(content)
+
         inline = content.to_enum(:scan, LINK_PATTERN).map do
           match = Regexp.last_match
           [file, content[0...match.begin(0)].count("\n") + 1, match[1]]
@@ -76,6 +79,14 @@ module ManualDocs
           .select { |_file, _line, target| repository_target?(file, target) }
           .sort_by { |entry| entry[1] }
       end
+    end
+
+    def develop_only_manual?(content)
+      match = content.match(/\A---\s*\n(.*?)\n---\s*(?:\n|\z)/m)
+      metadata = match ? YAML.safe_load(match[1]) : nil
+      metadata.is_a?(Hash) && metadata["releaseStatus"] == "develop-only"
+    rescue Psych::SyntaxError
+      false
     end
 
     def repository_target?(relative_file, target)

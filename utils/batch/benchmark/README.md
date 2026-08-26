@@ -33,6 +33,6 @@ The primary comparison is **JDBC vs R2DBC** for each database, split into:
 ## Notes
 
 - Detailed numeric rows are generated per DB document.
-- `generateBenchmarkDocs` writes the benchmark hub and DB detail documents, then fills tables and charts when JSON reports exist.
-- Report directory: `utils/batch/build/reports/benchmarks`.
+- `generateBenchmarkDocs` writes the benchmark hub and DB detail documents, then fills tables and charts only after validated JSON reports exist; a missing or empty report root fails fast.
+- Report directory: `build/reports/benchmarks`.
 - Full PostgreSQL/MySQL runs can be generated later without changing the README link structure.
