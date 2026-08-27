@@ -30,7 +30,9 @@ GRADLE_FLAGS = (
 )
 GRADLE_TIMEOUT_SECONDS = 900
 TEST_TASK_OUTCOME = re.compile(r"^> Task (?P<task>:[^ ]+:test)(?:\s+(?P<outcome>[A-Z-]+))?$")
-TEST_SUMMARY = re.compile(r"SUCCESS: Executed (?P<executed>\d+) tests? in .*?\((?P<skipped>\d+) skipped\)")
+TEST_SUMMARY = re.compile(
+    r"SUCCESS: Executed (?P<executed>\d+) tests? in .*?(?:\((?P<skipped>\d+) skipped\))?$"
+)
 CONTAINER_UNAVAILABLE = re.compile(
     r"(?:Could not find a valid Docker environment|"
     r"Cannot connect to the Docker daemon|Docker daemon is not running|"
@@ -61,8 +63,15 @@ def source_state(root: Path) -> tuple[str, bool, str]:
 
 
 def module_dir(root: Path, task: str) -> Path:
-    segments = [segment for segment in task.split(":") if segment]
-    return root.joinpath(*segments[:-1])
+    module_paths = {
+        ":bluetape4k-exposed-cache:test": ("exposed", "cache"),
+        ":bluetape4k-exposed-jdbc-caffeine:test": ("exposed", "jdbc-caffeine"),
+        ":bluetape4k-exposed-r2dbc-caffeine:test": ("exposed", "r2dbc-caffeine"),
+    }
+    try:
+        return root.joinpath(*module_paths[task])
+    except KeyError as error:
+        raise ValueError(f"unsupported test task: {task}") from error
 
 
 def test_summary(root: Path, task: str, log_text: str) -> dict[str, int] | None:
@@ -86,7 +95,11 @@ def test_summary(root: Path, task: str, log_text: str) -> dict[str, int] | None:
     matches = list(TEST_SUMMARY.finditer(log_text))
     if matches:
         match = matches[-1]
-        return {"executed": int(match.group("executed")), "skipped": int(match.group("skipped")), "failed": 0}
+        return {
+            "executed": int(match.group("executed")),
+            "skipped": int(match.group("skipped") or 0),
+            "failed": 0,
+        }
     return None
 
 
