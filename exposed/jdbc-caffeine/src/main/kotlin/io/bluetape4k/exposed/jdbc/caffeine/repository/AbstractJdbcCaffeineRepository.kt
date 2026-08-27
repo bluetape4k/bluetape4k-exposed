@@ -191,13 +191,10 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                         val persistedWrites = batch.toPersistedWrites()
                         val flushedCount = persistedWrites.size
                         if (flushBatchWithRetry(batch, writeBehindCloseDeadlineNanos.takeIf { it > 0L }) &&
-                            !writeBehindLateSideEffectGuard.get()
+                            settleSuccessfulWriteBehindBatch(batch, flushedCount, persistedWrites)
                         ) {
-                            recordCoordinatorFlushSuccess(flushedCount)
-                            releaseWriteBehindPending(flushedCount)
-                            decrementWriteBehindDepth(flushedCount)
-                            batch.clear()
-                            notifyPersisted(persistedWrites)
+                            // lifecycle fence가 회계와 persisted hook을
+                            // late-side-effect guard와 함께 정산한다.
                         } else {
                             // A permanent failure leaves the coordinator depth/error intact
                             // and terminates the worker without accepting a new batch.
@@ -224,12 +221,12 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                 if (batch.isNotEmpty()) {
                     val persistedWrites = batch.toPersistedWrites()
                     val flushedCount = persistedWrites.size
-                    if (flushFinalBatch(batch) && !writeBehindLateSideEffectGuard.get()) {
-                        recordCoordinatorFlushSuccess(flushedCount)
-                        releaseWriteBehindPending(flushedCount)
-                        decrementWriteBehindDepth(flushedCount)
-                        batch.clear()
-                        notifyPersisted(persistedWrites)
+                    if (
+                        flushFinalBatch(batch) &&
+                        settleSuccessfulWriteBehindBatch(batch, flushedCount, persistedWrites)
+                    ) {
+                        // lifecycle fence가 회계와 persisted hook을
+                        // late-side-effect guard와 함께 정산한다.
                     } else {
                         if (writeBehindLateSideEffectGuard.get()) {
                             batch.clear()
@@ -305,6 +302,27 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
             "Write-Behind coordinator queue depth[$queueDepth] is below flushed count[$count]"
         }
         writeBehindCoordinator.onFlushSucceeded(count)
+    }
+
+    /**
+     * close timeout/interruption과 worker 성공 side effect를 선형화합니다.
+     *
+     * guard 확인, coordinator/local 회계, batch 제거, persisted hook을 같은 lifecycle
+     * fence 안에서 실행합니다. 따라서 close가 guard를 설치하면 완전한 정산을 관찰하거나
+     * 정산 자체를 막으며 terminal 이후 회계/hook 경합이 발생하지 않습니다.
+     */
+    private fun settleSuccessfulWriteBehindBatch(
+        batch: MutableList<Pair<ID, E>>,
+        flushedCount: Int,
+        persistedWrites: List<CachePersistedWrite<ID, E>>,
+    ): Boolean = writeBehindLifecycleLock.withLock {
+        if (writeBehindLateSideEffectGuard.get()) return@withLock false
+        recordCoordinatorFlushSuccess(flushedCount)
+        releaseWriteBehindPending(flushedCount)
+        decrementWriteBehindDepth(flushedCount)
+        batch.clear()
+        notifyPersisted(persistedWrites)
+        true
     }
 
     private fun tryReserveWriteBehindPending(): Boolean {
