@@ -53,7 +53,7 @@ XML의 테스트 수/skip 수를 대조하고, XML의 failure/error가 0인지 �
 - `CacheHealthReport`와 기존 adapter hook/metric의 의미 보존
 - `putAll`은 입력 순서대로 항목을 처리하며 중간 실패 시 앞선 DB/cache side effect와 실패 지점의 예외를 보존한다. 자동 rollback이나 partial 결과 숨김은 제공하지 않는다.
 - transient flush 실패는 동일 batch를 최대 8회 재시도하고 backoff는 10ms에서 1초로 상한을 둔다. terminal failure는 `FAILED`로 남고 보류 batch는 자동 outbox/dead-letter로 이동하지 않는다.
-- accepted queue handoff 뒤 cache publication이 실패하면 해당 key를 invalidate하고 원래 예외를 전달한다. close는 publication drain과 worker drain을 모두 확인한 뒤 invalidate한다.
+- accepted queue handoff 뒤 cache publication이 실패하면 해당 key를 invalidate하고 원래 예외를 전달한다. publication put과 실패·terminal·late invalidate는 동일 key의 publication lock으로 선형화하며, close는 publication drain과 worker drain을 모두 확인한 뒤 invalidate한다.
 
 ## 롤아웃 규칙
 

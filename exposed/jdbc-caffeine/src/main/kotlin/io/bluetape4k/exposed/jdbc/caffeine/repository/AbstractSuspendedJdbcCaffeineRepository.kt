@@ -603,7 +603,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
                         }
                     }
                     try {
-                        cache.invalidate(key)
+                        invalidateCacheEntry(key)
                     } catch (invalidateFailure: Throwable) {
                         e.addSuppressed(invalidateFailure)
                     }
@@ -615,7 +615,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
                         ) {
                             terminalFailure = writeBehindNotAcceptingException()
                             try {
-                                cache.invalidate(key)
+                                invalidateCacheEntry(key)
                             } catch (invalidateFailure: Throwable) {
                                 terminalFailure.addSuppressed(invalidateFailure)
                             }
@@ -795,43 +795,56 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
     }
 
     private fun publishWriteBehindCache(key: String, entity: E) {
-        val publicationLock = acquireCachePublicationLock(key)
-        try {
-            publicationLock.lock.withLock {
-                if (writeBehindLateSideEffectGuard.get()) {
-                    throw writeBehindNotAcceptingException()
-                }
-                cache.put(key, entity)
+        withCachePublicationLock(key) {
+            if (writeBehindLateSideEffectGuard.get()) {
+                throw writeBehindNotAcceptingException()
             }
-        } finally {
-            if (publicationLock.users.decrementAndGet() == 0) {
-                writeBehindCachePublicationLocks.remove(key, publicationLock)
-            }
+            cache.put(key, entity)
         }
     }
 
-    private fun acquireCachePublicationLock(key: String): CachePublicationLock {
-        while (true) {
-            val publicationLock = writeBehindCachePublicationLocks.computeIfAbsent(key) {
-                CachePublicationLock()
-            }
-            publicationLock.users.incrementAndGet()
-            if (writeBehindCachePublicationLocks[key] === publicationLock) return publicationLock
-            if (publicationLock.users.decrementAndGet() == 0) {
-                writeBehindCachePublicationLocks.remove(key, publicationLock)
+    private fun invalidateCacheEntry(key: String) {
+        withCachePublicationLock(key) {
+            cache.invalidate(key)
+        }
+    }
+
+    private inline fun <T> withCachePublicationLock(key: String, action: () -> T): T {
+        val publicationLock = acquireCachePublicationLock(key)
+        return try {
+            publicationLock.lock.withLock(action)
+        } finally {
+            releaseCachePublicationLock(key, publicationLock)
+        }
+    }
+
+    /** Map membership and reference counting are one atomic per-key operation. */
+    private fun acquireCachePublicationLock(key: String): CachePublicationLock =
+        writeBehindCachePublicationLocks.compute(key) { _, current ->
+            (current ?: CachePublicationLock()).also { it.users++ }
+        } ?: error("Cache publication lock was not created for key=$key")
+
+    private fun releaseCachePublicationLock(key: String, publicationLock: CachePublicationLock) {
+        writeBehindCachePublicationLocks.computeIfPresent(key) { _, current ->
+            if (current !== publicationLock) {
+                current
+            } else {
+                current.users--
+                check(current.users >= 0) { "Cache publication lock user count underflow for key=$key" }
+                current.takeIf { it.users > 0 }
             }
         }
     }
 
     private class CachePublicationLock {
         val lock = ReentrantLock()
-        val users = AtomicInteger(0)
+        var users: Int = 0
     }
 
     @Suppress("TooGenericExceptionCaught", "SwallowedException")
     private fun invalidateCacheEntrySafely(key: String) {
         try {
-            cache.invalidate(key)
+            invalidateCacheEntry(key)
         } catch (failure: Throwable) {
             log.warn {
                 "Write-Behind event: component=suspended-jdbc operation=late_publication_invalidate " +
