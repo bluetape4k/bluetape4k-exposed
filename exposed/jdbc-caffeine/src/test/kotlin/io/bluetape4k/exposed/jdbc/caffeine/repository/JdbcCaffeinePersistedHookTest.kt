@@ -1,5 +1,7 @@
 package io.bluetape4k.exposed.jdbc.caffeine.repository
 
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
@@ -67,12 +69,18 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
                 try {
                     closeCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
                     closeThread.isAlive.shouldBeFalse()
+                    repository.closeInvalidations.get() shouldBeEqualTo 0
                     repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.FAILED
                 } finally {
                     releaseHook.countDown()
                     closeThread.interrupt()
                     closeThread.join(5_000)
                 }
+                repeat(100) {
+                    if (repository.closeInvalidations.get() > 0) return@repeat
+                    Thread.sleep(10)
+                }
+                repository.closeInvalidations.get() shouldBeEqualTo 1
             } finally {
                 releaseHook.countDown()
                 repository.close()
@@ -368,6 +376,14 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
         private val releaseHook: CountDownLatch,
     ): RecordingActorRepository(config) {
 
+        val closeInvalidations = AtomicInteger()
+        private val delegateCache = Caffeine.newBuilder().build<String, ActorRecord>()
+        override val cache: Cache<String, ActorRecord> = object: Cache<String, ActorRecord> by delegateCache {
+            override fun invalidateAll() {
+                closeInvalidations.incrementAndGet()
+                delegateCache.invalidateAll()
+            }
+        }
         override val writeBehindCloseWaitDuration: Duration = Duration.ofMillis(50)
 
         override fun afterPersisted(writes: List<CachePersistedWrite<Long, ActorRecord>>) {

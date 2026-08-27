@@ -227,7 +227,10 @@ clean external consumer fixture로 검증한다. friend-path 설정이 깨지면
   계약의 대상이 아니다.
 - existing adapter-specific `afterPersisted` hook (현재 JDBC adapter만 제공),
   raw `lastFlushError`를 포함한 기존 public report와 backend별 transaction
-  retry
+  retry. JDBC는 persisted batch 정산과 hook lease 예약을 같은 lifecycle
+  fence에서 선형화하고, hook lease를 close readiness/deferred cleanup에
+  포함한다. 사용자 hook 자체는 fence 밖에서 실행하되 lease가 해제될 때
+  deferred cleanup을 재개한다.
 - `closeWaitDuration`(기본 30초)의 owner/follower wait, interrupt 복원,
   cache invalidate와 scope 종료. adapter 생성 시 duration은 finite positive로
   검증하고 monotonic deadline을 계산한다. follower는 owner 결과를 기다리기만

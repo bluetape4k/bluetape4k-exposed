@@ -308,8 +308,8 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     /**
      * close timeout/interruption과 worker 성공 side effect를 선형화합니다.
      *
-     * guard 확인, coordinator/local 회계, batch 제거를 lifecycle fence 안에서 실행합니다.
-     * persisted hook은 별도 lease로 선형화한 뒤 fence 밖에서 호출하여, 사용자 hook이
+     * guard 확인, coordinator/local 회계, batch 제거와 persisted hook lease 예약을
+     * lifecycle fence 안에서 실행합니다. 사용자 hook 자체는 fence 밖에서 호출하여
      * blocking이어도 close의 bounded deadline이 lifecycle lock에 막히지 않게 합니다.
      */
     private fun settleSuccessfulWriteBehindBatch(
@@ -317,16 +317,38 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
         flushedCount: Int,
         persistedWrites: List<CachePersistedWrite<ID, E>>,
     ): Boolean {
-        val settled = writeBehindLifecycleLock.withLock {
-            if (writeBehindLateSideEffectGuard.get()) return@withLock false
+        val hookLeaseAcquired = writeBehindLifecycleLock.withLock {
+            if (writeBehindLateSideEffectGuard.get()) return@withLock null
             recordCoordinatorFlushSuccess(flushedCount)
             releaseWriteBehindPending(flushedCount)
             decrementWriteBehindDepth(flushedCount)
             batch.clear()
-            true
+            if (persistedWrites.isNotEmpty()) {
+                // Reserve the hook lease in the same fence as settlement.  Close
+                // must not observe zero admissions and start cleanup between the
+                // batch settlement and the post-persisted callback admission.
+                writeBehindPersistedHookInProgress.incrementAndGet()
+                true
+            } else {
+                false
+            }
         }
-        if (settled) notifyPersistedAfterSettlement(persistedWrites)
-        return settled
+        if (hookLeaseAcquired == null) return false
+        if (hookLeaseAcquired) {
+            try {
+                invokePersistedHook(persistedWrites)
+            } finally {
+                writeBehindPersistedHookInProgress.decrementAndGet()
+                writeBehindLifecycleLock.withLock {
+                    writeBehindLifecycleChanged.signalAll()
+                }
+                // A close that timed out while this user hook was running defers
+                // cache cleanup. Re-check the deferred barrier after releasing
+                // the lease so cleanup and completion cannot remain stranded.
+                finishDeferredCloseCleanupIfReady()
+            }
+        }
+        return true
     }
 
     private fun tryReserveWriteBehindPending(): Boolean {
@@ -368,6 +390,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     private fun publishWriteBehindCompletionLocked() {
         val completion = writeBehindJobCompletion.get() ?: return
         if (writeBehindAdmissions.get().inProgress != 0) return
+        if (writeBehindPersistedHookInProgress.get() != 0) return
         if (!writeBehindCompletionPublished.compareAndSet(false, true)) return
 
         if (
@@ -685,7 +708,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                     // The queue entry is already accepted at this point. A cache
                     // publication failure must not leave a stale value behind.
                     try {
-                        cache.invalidate(key)
+                        invalidateCacheEntry(key)
                     } catch (invalidateFailure: Throwable) {
                         failure.addSuppressed(invalidateFailure)
                     }
@@ -710,7 +733,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                     try {
                         terminalFailure?.let { failure ->
                             try {
-                                cache.invalidate(key)
+                                invalidateCacheEntry(key)
                             } catch (invalidateFailure: Throwable) {
                                 failure.addSuppressed(invalidateFailure)
                             }
@@ -821,27 +844,6 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
         }
     }
 
-    private fun notifyPersistedAfterSettlement(writes: List<CachePersistedWrite<ID, E>>) {
-        if (writes.isEmpty()) return
-        val leaseAcquired = writeBehindLifecycleLock.withLock {
-            if (writeBehindLateSideEffectGuard.get()) {
-                false
-            } else {
-                writeBehindPersistedHookInProgress.incrementAndGet()
-                true
-            }
-        }
-        if (!leaseAcquired) return
-        try {
-            invokePersistedHook(writes)
-        } finally {
-            writeBehindPersistedHookInProgress.decrementAndGet()
-            writeBehindLifecycleLock.withLock {
-                writeBehindLifecycleChanged.signalAll()
-            }
-        }
-    }
-
     private fun checkWriteBehindAcceptingWritesLocked() {
         val state = writeBehindWorkerState.get()
         if (state.isWriteBehindTerminalOrDraining()) {
@@ -876,37 +878,50 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     }
 
     private fun publishWriteBehindCache(key: String, entity: E) {
-        val publicationLock = acquireCachePublicationLock(key)
-        try {
-            publicationLock.lock.withLock {
-                if (writeBehindLateSideEffectGuard.get()) {
-                    throw writeBehindNotAcceptingException(writeBehindWorkerState.get())
-                }
-                cache.put(key, entity)
+        withCachePublicationLock(key) {
+            if (writeBehindLateSideEffectGuard.get()) {
+                throw writeBehindNotAcceptingException(writeBehindWorkerState.get())
             }
-        } finally {
-            if (publicationLock.users.decrementAndGet() == 0) {
-                writeBehindCachePublicationLocks.remove(key, publicationLock)
-            }
+            cache.put(key, entity)
         }
     }
 
-    private fun acquireCachePublicationLock(key: String): CachePublicationLock {
-        while (true) {
-            val publicationLock = writeBehindCachePublicationLocks.computeIfAbsent(key) {
-                CachePublicationLock()
-            }
-            publicationLock.users.incrementAndGet()
-            if (writeBehindCachePublicationLocks[key] === publicationLock) return publicationLock
-            if (publicationLock.users.decrementAndGet() == 0) {
-                writeBehindCachePublicationLocks.remove(key, publicationLock)
+    private fun invalidateCacheEntry(key: String) {
+        withCachePublicationLock(key) {
+            cache.invalidate(key)
+        }
+    }
+
+    private inline fun <T> withCachePublicationLock(key: String, action: () -> T): T {
+        val publicationLock = acquireCachePublicationLock(key)
+        return try {
+            publicationLock.lock.withLock(action)
+        } finally {
+            releaseCachePublicationLock(key, publicationLock)
+        }
+    }
+
+    /** Map membership and reference counting are one atomic per-key operation. */
+    private fun acquireCachePublicationLock(key: String): CachePublicationLock =
+        writeBehindCachePublicationLocks.compute(key) { _, current ->
+            (current ?: CachePublicationLock()).also { it.users++ }
+        } ?: error("Cache publication lock was not created for key=$key")
+
+    private fun releaseCachePublicationLock(key: String, publicationLock: CachePublicationLock) {
+        writeBehindCachePublicationLocks.computeIfPresent(key) { _, current ->
+            if (current !== publicationLock) {
+                current
+            } else {
+                current.users--
+                check(current.users >= 0) { "Cache publication lock user count underflow for key=$key" }
+                current.takeIf { it.users > 0 }
             }
         }
     }
 
     private class CachePublicationLock {
         val lock = ReentrantLock()
-        val users = AtomicInteger(0)
+        var users: Int = 0
     }
 
     private fun writeBehindNotAcceptingException(state: CacheWorkerState): IllegalStateException {
@@ -1149,7 +1164,8 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     }
 
     private fun markCloseCleanupPendingIfNeeded(): Boolean = writeBehindLifecycleLock.withLock {
-        val pending = writeBehindAdmissions.get().inProgress > 0
+        val pending = writeBehindAdmissions.get().inProgress > 0 ||
+            writeBehindPersistedHookInProgress.get() > 0
         if (pending) writeBehindCloseCleanupPending.set(true)
         pending
     }
@@ -1160,7 +1176,8 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
         writeBehindCloseLock.lock()
         try {
             val ready = writeBehindLifecycleLock.withLock {
-                writeBehindAdmissions.get().inProgress == 0
+                writeBehindAdmissions.get().inProgress == 0 &&
+                    writeBehindPersistedHookInProgress.get() == 0
             }
             if (!ready || !writeBehindCloseCleanupPending.compareAndSet(true, false)) return
             invalidateCacheOnCloseSafely()
@@ -1198,7 +1215,10 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     private fun writeBehindReadinessWasWithinCloseBudgetLocked(): Boolean {
         val completion = writeBehindJobCompletion.get() ?: return false
         val admissions = writeBehindAdmissions.get()
-        if (admissions.inProgress != 0 || admissions.drainedAtNanos == 0L) return false
+        if (admissions.inProgress != 0 ||
+            writeBehindPersistedHookInProgress.get() != 0 ||
+            admissions.drainedAtNanos == 0L
+        ) return false
         val readinessAtNanos = maxOf(
             completion.completedAtNanos,
             admissions.drainedAtNanos,
