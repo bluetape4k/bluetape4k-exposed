@@ -159,6 +159,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     private val writeBehindCachePublicationsInProgress = ConcurrentHashMap<String, AtomicInteger>()
     private val writeBehindCloseCleanupPending = AtomicBoolean(false)
     private val writeBehindLateSideEffectGuard = AtomicBoolean(false)
+    private val writeBehindPersistedHookInProgress = AtomicInteger(0)
     private var writeBehindCloseStarted = false
     private var writeBehindCloseStartedAtNanos = 0L
     private var writeBehindCloseWaitBudgetNanos = 0L
@@ -307,22 +308,25 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     /**
      * close timeout/interruption과 worker 성공 side effect를 선형화합니다.
      *
-     * guard 확인, coordinator/local 회계, batch 제거, persisted hook을 같은 lifecycle
-     * fence 안에서 실행합니다. 따라서 close가 guard를 설치하면 완전한 정산을 관찰하거나
-     * 정산 자체를 막으며 terminal 이후 회계/hook 경합이 발생하지 않습니다.
+     * guard 확인, coordinator/local 회계, batch 제거를 lifecycle fence 안에서 실행합니다.
+     * persisted hook은 별도 lease로 선형화한 뒤 fence 밖에서 호출하여, 사용자 hook이
+     * blocking이어도 close의 bounded deadline이 lifecycle lock에 막히지 않게 합니다.
      */
     private fun settleSuccessfulWriteBehindBatch(
         batch: MutableList<Pair<ID, E>>,
         flushedCount: Int,
         persistedWrites: List<CachePersistedWrite<ID, E>>,
-    ): Boolean = writeBehindLifecycleLock.withLock {
-        if (writeBehindLateSideEffectGuard.get()) return@withLock false
-        recordCoordinatorFlushSuccess(flushedCount)
-        releaseWriteBehindPending(flushedCount)
-        decrementWriteBehindDepth(flushedCount)
-        batch.clear()
-        notifyPersisted(persistedWrites)
-        true
+    ): Boolean {
+        val settled = writeBehindLifecycleLock.withLock {
+            if (writeBehindLateSideEffectGuard.get()) return@withLock false
+            recordCoordinatorFlushSuccess(flushedCount)
+            releaseWriteBehindPending(flushedCount)
+            decrementWriteBehindDepth(flushedCount)
+            batch.clear()
+            true
+        }
+        if (settled) notifyPersistedAfterSettlement(persistedWrites)
+        return settled
     }
 
     private fun tryReserveWriteBehindPending(): Boolean {
@@ -781,6 +785,10 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
 
     private fun notifyPersisted(id: ID, entity: E) {
         if (writeBehindLateSideEffectGuard.get()) return
+        invokePersistedHook(id, entity)
+    }
+
+    private fun invokePersistedHook(id: ID, entity: E) {
         try {
             afterPersisted(id, entity)
         } catch (e: CancellationException) {
@@ -796,6 +804,10 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
 
     private fun notifyPersisted(writes: List<CachePersistedWrite<ID, E>>) {
         if (writes.isEmpty() || writeBehindLateSideEffectGuard.get()) return
+        invokePersistedHook(writes)
+    }
+
+    private fun invokePersistedHook(writes: List<CachePersistedWrite<ID, E>>) {
         try {
             afterPersisted(writes)
         } catch (e: CancellationException) {
@@ -805,6 +817,27 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                 "Cache post-persistence hook failed. " +
                     "component=jdbc operation=after_persisted failureKind=error " +
                     "writeCount=${writes.size} queueDepth=${writeBehindQueueDepth.get()}"
+            }
+        }
+    }
+
+    private fun notifyPersistedAfterSettlement(writes: List<CachePersistedWrite<ID, E>>) {
+        if (writes.isEmpty()) return
+        val leaseAcquired = writeBehindLifecycleLock.withLock {
+            if (writeBehindLateSideEffectGuard.get()) {
+                false
+            } else {
+                writeBehindPersistedHookInProgress.incrementAndGet()
+                true
+            }
+        }
+        if (!leaseAcquired) return
+        try {
+            invokePersistedHook(writes)
+        } finally {
+            writeBehindPersistedHookInProgress.decrementAndGet()
+            writeBehindLifecycleLock.withLock {
+                writeBehindLifecycleChanged.signalAll()
             }
         }
     }

@@ -174,6 +174,7 @@ def run_gradle(root: Path, task: str, database: str | None, log_path: Path, resu
         log.write("$ " + " ".join(command) + "\n")
         if database is not None:
             log.write(f"EXPOSED_TEST_DB={database}\n")
+        log.flush()
         process = subprocess.Popen(
             command,
             cwd=root,

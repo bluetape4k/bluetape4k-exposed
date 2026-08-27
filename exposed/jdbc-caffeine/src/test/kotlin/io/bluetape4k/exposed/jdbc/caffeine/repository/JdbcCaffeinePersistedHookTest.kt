@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.jdbc.caffeine.repository
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
@@ -22,8 +23,10 @@ import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -31,6 +34,51 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.cancellation.CancellationException
 
 class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
+
+    @Test
+    fun `write-behind blocking persisted hook does not hold lifecycle lock past close deadline`() {
+        val hookStarted = CountDownLatch(1)
+        val releaseHook = CountDownLatch(1)
+        val repository = BlockingPersistedHookRepository(
+            config = LocalCacheConfig(
+                keyPrefix = "jdbc:caffeine:hook:wb:close-bound",
+                writeMode = CacheWriteMode.WRITE_BEHIND,
+                writeBehindBatchSize = 1,
+                writeBehindQueueCapacity = 2,
+            ),
+            hookStarted = hookStarted,
+            releaseHook = releaseHook,
+        )
+
+        withActorTable(TestDB.H2_MYSQL) {
+            val actor = ActorTable.selectAll().first().toActorRecord()
+            try {
+                repository.put(actor.id, actor.copy(firstName = "hook-close-bound"))
+                hookStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+
+                val closeCompleted = CountDownLatch(1)
+                val closeThread = Thread {
+                    try {
+                        repository.close()
+                    } finally {
+                        closeCompleted.countDown()
+                    }
+                }.apply { start() }
+                try {
+                    closeCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
+                    closeThread.isAlive.shouldBeFalse()
+                    repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.FAILED
+                } finally {
+                    releaseHook.countDown()
+                    closeThread.interrupt()
+                    closeThread.join(5_000)
+                }
+            } finally {
+                releaseHook.countDown()
+                repository.close()
+            }
+        }
+    }
 
     @ParameterizedTest(name = "{0}")
     @MethodSource(ENABLE_DIALECTS_METHOD)
@@ -311,6 +359,21 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
         override fun afterPersisted(writes: List<CachePersistedWrite<Long, ActorRecord>>) {
             hookCancelled.countDown()
             throw CancellationException("planned hook cancellation")
+        }
+    }
+
+    private class BlockingPersistedHookRepository(
+        config: LocalCacheConfig,
+        private val hookStarted: CountDownLatch,
+        private val releaseHook: CountDownLatch,
+    ): RecordingActorRepository(config) {
+
+        override val writeBehindCloseWaitDuration: Duration = Duration.ofMillis(50)
+
+        override fun afterPersisted(writes: List<CachePersistedWrite<Long, ActorRecord>>) {
+            hookStarted.countDown()
+            releaseHook.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            persisted += writes
         }
     }
 

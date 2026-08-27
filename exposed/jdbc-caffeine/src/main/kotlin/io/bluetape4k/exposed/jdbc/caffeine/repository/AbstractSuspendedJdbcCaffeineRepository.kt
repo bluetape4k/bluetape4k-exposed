@@ -722,7 +722,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
     }
 
     private fun cancelWriteBehindAfterClose(reason: WriteBehindCloseFailureReason) {
-        writeBehindLateSideEffectGuard.set(true)
+        markWriteBehindLateSideEffectGuard()
         val completed = CountDownLatch(1)
         writeBehindJob.invokeOnCompletion { completed.countDown() }
         writeBehindJob.cancel()
@@ -777,6 +777,17 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
             writeBehindCloseCleanupPending.get() && writeBehindPublicationsInProgress == 0
         }
         if (shouldFinish) finishDeferredCloseCleanupIfReady()
+    }
+
+    private fun markWriteBehindLateSideEffectGuard() {
+        writeBehindPublicationLock.withLock {
+            markWriteBehindLateSideEffectGuardLocked()
+        }
+    }
+
+    private fun markWriteBehindLateSideEffectGuardLocked() {
+        writeBehindLateSideEffectGuard.set(true)
+        writeBehindPublicationChanged.signalAll()
     }
 
     private fun writeBehindCloseStarted(): Boolean = writeBehindPublicationLock.withLock {
@@ -836,7 +847,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
                 val remaining = deadlineNanos - System.nanoTime()
                 if (remaining <= 0L) {
                     writeBehindCloseFailureReason.compareAndSet(null, WriteBehindCloseFailureReason.TIMEOUT)
-                    writeBehindLateSideEffectGuard.set(true)
+                    markWriteBehindLateSideEffectGuardLocked()
                     return false
                 }
                 try {
@@ -844,12 +855,12 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
                         writeBehindPublicationsInProgress > 0
                     ) {
                         writeBehindCloseFailureReason.compareAndSet(null, WriteBehindCloseFailureReason.TIMEOUT)
-                        writeBehindLateSideEffectGuard.set(true)
+                        markWriteBehindLateSideEffectGuardLocked()
                         return false
                     }
                 } catch (_: InterruptedException) {
                     writeBehindCloseFailureReason.compareAndSet(null, WriteBehindCloseFailureReason.INTERRUPTED)
-                    writeBehindLateSideEffectGuard.set(true)
+                    markWriteBehindLateSideEffectGuardLocked()
                     Thread.currentThread().interrupt()
                     return false
                 }
@@ -899,14 +910,14 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
             } catch (e: InterruptedException) {
                 closeFailureKind = WriteBehindCloseFailureReason.INTERRUPTED
                 writeBehindCloseFailureReason.compareAndSet(null, closeFailureKind)
-                writeBehindLateSideEffectGuard.set(true)
+                markWriteBehindLateSideEffectGuard()
                 Thread.currentThread().interrupt()
                 false
             }
 
         if (!completedInTime) {
             writeBehindCloseFailureReason.compareAndSet(null, closeFailureKind)
-            writeBehindLateSideEffectGuard.set(true)
+            markWriteBehindLateSideEffectGuard()
             log.warn {
                 "Write-Behind event: component=suspended-jdbc operation=close " +
                     "failureKind=${closeFailureKind.logName} queueDepth=${writeBehindQueueDepth.get()}"
