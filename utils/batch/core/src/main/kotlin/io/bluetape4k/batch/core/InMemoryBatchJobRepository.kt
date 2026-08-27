@@ -264,14 +264,6 @@ class InMemoryBatchJobRepository : BatchJobRepository {
      * @param report Step 실행 결과 보고서
      */
     override suspend fun completeStepExecution(execution: StepExecution, report: StepReport) {
-        val updated = execution.copy(
-            status = report.status,
-            readCount = report.readCount,
-            writeCount = report.writeCount,
-            skipCount = report.skipCount,
-            checkpoint = report.checkpoint,
-            endTime = Instant.now(),
-        )
         withLock {
             val current = stepExecutions[execution.id]
             val ownerMatches = if (execution.ownerId == null) {
@@ -282,11 +274,21 @@ class InMemoryBatchJobRepository : BatchJobRepository {
             check(current != null && ownerMatches && current.version == execution.version) {
                 "StepExecution completion rejected: id=${execution.id}"
             }
+            val checkpoint = report.checkpoint ?: current.checkpoint ?: checkpoints[execution.id]
+            val updated = execution.copy(
+                status = report.status,
+                readCount = report.readCount,
+                writeCount = report.writeCount,
+                skipCount = report.skipCount,
+                checkpoint = checkpoint,
+                endTime = Instant.now(),
+            )
             stepExecutions[execution.id] = updated.copy(
                 ownerId = null,
                 leaseUntil = null,
                 version = execution.version + 1,
             )
+            checkpoint?.let { checkpoints[execution.id] = it }
         }
         log.debug {
             "StepExecution 완료: status=${report.status}, " +

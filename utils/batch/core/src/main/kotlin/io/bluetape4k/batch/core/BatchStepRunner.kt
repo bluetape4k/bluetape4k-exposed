@@ -41,6 +41,8 @@ import java.time.Instant
  * 4. EOF 판정은 `chunk.isEmpty()`가 아닌 `eofReached` 플래그로 판단한다 — 전부 필터링된 경우와 구분한다.
  * 5. [BatchJobRepository.loadCheckpoint] 결과가 null이면 [io.bluetape4k.batch.api.BatchReader.restoreFrom]을
  *    호출하지 않는다.
+ * 6. 소유자 기반 checkpoint 커밋은 갱신된 [StepExecution]을 수신할 때까지
+ *    취소 불가 구간에서 완료하여, 커밋 직후 취소가 stale version을 남기지 않게 한다.
  *
  * @param I Reader 출력 타입
  * @param O Writer 입력 타입
@@ -181,7 +183,12 @@ internal class BatchStepRunner<I : Any, O : Any>(
                         writeWithTimeout(step.writer, chunk, step.commitTimeout)
                         step.reader.onChunkCommitted()
                         step.reader.checkpoint()?.let { cp ->
-                            claimedStepExecution = repository.saveCheckpointAndReturn(claimedStepExecution, cp)
+                            // 체크포인트 UPDATE 커밋과 최신 version 수신을 하나의
+                            // 비취소 구간으로 묶어, 커밋 직후 반환 전 취소가 stale
+                            // execution으로 STOPPED CAS를 시도하지 않게 한다.
+                            claimedStepExecution = withContext(NonCancellable) {
+                                repository.saveCheckpointAndReturn(claimedStepExecution, cp)
+                            }
                         }
                         writeCount += chunk.size
                         break@writerLoop
@@ -236,27 +243,55 @@ internal class BatchStepRunner<I : Any, O : Any>(
             // 취소 → STOPPED 저장 후 즉시 재던짐 — 절대 삼키지 않음
             primaryFailure = e
             withContext(NonCancellable) {
+                val checkpoint = try {
+                    checkpointForFailure(e)
+                } catch (checkpointCancellation: CancellationException) {
+                    if (checkpointCancellation !== e) {
+                        e.addSuppressed(checkpointCancellation)
+                    }
+                    null
+                }
                 val stoppedReport = StepReport(
                     stepName = step.name,
                     status = BatchStatus.STOPPED,
                     readCount = readCount,
                     writeCount = writeCount,
                     skipCount = skipCount,
-                    checkpoint = checkpointForFailure(e),
+                    checkpoint = checkpoint,
                 )
                 completeStepExecutionSafely(claimedStepExecution, stoppedReport, e)
             }
             throw e
         } catch (e: Throwable) {
             primaryFailure = e
-            val failedReport = StepReport(
-                stepName = step.name,
-                status = BatchStatus.FAILED,
-                readCount = readCount,
-                writeCount = writeCount,
-                skipCount = skipCount,
-                error = e,
-            )
+            val failedReport = try {
+                StepReport(
+                    stepName = step.name,
+                    status = BatchStatus.FAILED,
+                    readCount = readCount,
+                    writeCount = writeCount,
+                    skipCount = skipCount,
+                    checkpoint = checkpointForFailure(e),
+                    error = e,
+                )
+            } catch (cancellation: CancellationException) {
+                primaryFailure = cancellation
+                withContext(NonCancellable) {
+                    val stoppedReport = StepReport(
+                        stepName = step.name,
+                        status = BatchStatus.STOPPED,
+                        readCount = readCount,
+                        writeCount = writeCount,
+                        skipCount = skipCount,
+                    )
+                    try {
+                        completeStepExecutionSafely(claimedStepExecution, stoppedReport, cancellation)
+                    } catch (persistenceCancellation: CancellationException) {
+                        propagateCompletionCancellation(e, persistenceCancellation)
+                    }
+                }
+                propagateCompletionCancellation(e, cancellation)
+            }
             completeStepExecutionSafely(claimedStepExecution, failedReport, e)
             return failedReport
         } finally {
@@ -270,11 +305,13 @@ internal class BatchStepRunner<I : Any, O : Any>(
     @Suppress("TooGenericExceptionCaught")
     private suspend fun checkpointForFailure(primary: Throwable): Any? = try {
         step.reader.checkpoint()
+    } catch (failure: CancellationException) {
+        throw failure
     } catch (failure: Throwable) {
         if (failure !== primary) {
             primary.addSuppressed(failure)
         }
-        log.warn { "STOPPED 체크포인트 조회 실패 — suppressed cause로 보존" }
+        log.warn(failure) { "실패 상태 checkpoint 조회 실패 — suppressed cause로 보존" }
         null
     }
 

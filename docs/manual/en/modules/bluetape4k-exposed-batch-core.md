@@ -108,6 +108,16 @@ bash scripts/batch/validate_consumer_fixtures.sh
 Unclaimed, wrong-owner, stale-version, and zero-row checkpoint updates fail
 closed. Cancellation remains a `CancellationException`; cleanup failures are
 suppressed onto the primary cancellation instead of being swallowed.
+When a step fails after a successful chunk, the runner carries that checkpoint
+into the FAILED report. If failure handling cannot obtain a replacement, a
+repository must preserve the last stored checkpoint instead of clearing it.
+If checkpoint lookup itself is cancelled, the runner first attempts to persist
+`STOPPED` with the stored checkpoint preserved, then propagates the
+`CancellationException` with the original failure attached rather than
+converting it to FAILED.
+Owner-aware checkpoint commits also complete through receipt of the updated
+version before cancellation is observed, so a commit followed by cancellation
+cannot leave a stale owner lease behind.
 
 ## Operations {#operations}
 

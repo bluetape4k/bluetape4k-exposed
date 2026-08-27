@@ -92,6 +92,9 @@ published-style artifact로 compile하고 실행합니다.
 
 잘못된 owner, 오래된 version, 미청구 execution, 0행 CAS 갱신은 명시적으로
 실패합니다. lease를 잃으면 외부 효과를 재시도하기 전에 정합성을 확인합니다.
+청크를 커밋한 뒤 스텝이 `FAILED`가 되어도 마지막 checkpoint를 유지합니다. 실패
+보고서의 null checkpoint는 새 값이 없다는 뜻이므로 JDBC 완료 갱신은 저장된 값을
+지우지 않고, 재시작은 해당 key 다음부터 이어갑니다.
 
 ## 운영 {#operations}
 

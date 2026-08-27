@@ -348,7 +348,9 @@ class ExposedR2dbcBatchJobRepository(
                 row[BatchStepExecutionTable.readCount] = report.readCount
                 row[BatchStepExecutionTable.writeCount] = report.writeCount
                 row[BatchStepExecutionTable.skipCount] = report.skipCount
-                row[BatchStepExecutionTable.checkpoint] = report.checkpoint?.let { checkpointJson.write(it) }
+                report.checkpoint?.let { checkpoint ->
+                    row[BatchStepExecutionTable.checkpoint] = checkpointJson.write(checkpoint)
+                }
                 row[BatchStepExecutionTable.ownerId] = null
                 row[BatchStepExecutionTable.leaseUntil] = null
                 row[BatchStepExecutionTable.version] = execution.version + 1

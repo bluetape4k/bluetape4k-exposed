@@ -109,6 +109,14 @@ bash scripts/batch/validate_consumer_fixtures.sh
 미청구, 잘못된 owner, 오래된 version, 0행 checkpoint 갱신은 fail-closed로
 실패합니다. 취소는 `CancellationException`으로 유지하며 정리 실패는 primary
 취소에 suppressed로 연결하고 삼키지 않습니다.
+성공한 청크 뒤에 스텝이 실패하면 runner는 해당 checkpoint를 `FAILED` 보고서에
+담습니다. 실패 처리에서 새 checkpoint를 얻지 못해도 저장소는 마지막 저장 값을
+지우지 않고 보존해야 합니다.
+checkpoint 조회 자체가 취소되면 저장된 checkpoint를 보존한 `STOPPED` 저장을
+먼저 시도한 뒤 원래 실패를 함께 연결한 `CancellationException`을 전파하며 이를
+`FAILED`로 변환하지 않습니다.
+소유자 기반 checkpoint 커밋은 갱신된 version을 수신할 때까지 취소 불가 구간에서
+완료하므로, 커밋 직후 취소되어도 오래된 owner lease가 남지 않습니다.
 
 ## 운영 {#operations}
 

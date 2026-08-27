@@ -105,6 +105,8 @@ interface BatchJobRepository {
      * 저장 실패는 호출자에게 전파해야 한다. 실행기는 일반적인 FAILED/STOPPED 보정
      * 저장 실패를 실행 원인의 suppressed cause로 보존하고, 저장 중 발생한
      * [kotlinx.coroutines.CancellationException]은 원인 예외와 함께 재던진다.
+     * 보고서의 checkpoint가 null이면 마지막으로 저장된 성공 checkpoint를 유지해야 하며,
+     * null은 기존 checkpoint를 지우라는 의미가 아니다.
      */
     suspend fun completeStepExecution(execution: StepExecution, report: StepReport)
 

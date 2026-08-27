@@ -85,6 +85,7 @@ Set chunk size from database statement limits, row size, and measured transactio
 
 - Another owner holds a valid lease: the claim fails and the runner must not process the step.
 - The process dies after a successful write but before checkpoint persistence: the same chunk can replay after restart.
+- If a later chunk fails after a successful commit, the runner reports and retains the last successful checkpoint. Completion does not clear the persisted checkpoint when failure handling has no replacement value, so a rerun starts after the last committed key.
 - A timed-out write has partial external effects: timeout does not prove rollback; reconcile before retrying.
 - Writer retries are exhausted and the skip policy accepts the error: the whole chunk increases `skipCount`; design the policy with that scope in mind.
 - Checkpoint is absent: `restoreFrom` is intentionally not called; the reader starts from its initial position.

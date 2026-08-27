@@ -33,6 +33,13 @@
   fail-fast로 거부합니다
   ([#642](https://github.com/bluetape4k/bluetape4k-exposed/issues/642)).
 
+### 버그 수정
+
+- batch가 성공적으로 커밋한 청크 뒤에 `FAILED`되어도 마지막 checkpoint를 보존하고,
+  동일 parameters 재시작이 그 key 다음부터 이어지도록 InMemory/JDBC/R2DBC 완료 갱신과
+  취소 전파 계약을 정렬했습니다
+  ([#745](https://github.com/bluetape4k/bluetape4k-exposed/issues/745)).
+
 ## [1.12.1] - 2026-08-06
 
 ### 버그 수정

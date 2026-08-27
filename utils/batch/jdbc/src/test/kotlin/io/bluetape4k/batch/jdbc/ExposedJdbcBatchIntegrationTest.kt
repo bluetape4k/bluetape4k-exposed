@@ -107,6 +107,20 @@ class ExposedJdbcBatchIntegrationTest : AbstractBatchJdbcTest() {
         }
     }
 
+    private fun makeCheckpointJob(
+        testDB: TestDB,
+        reader: BatchReader<String>,
+        writer: BatchWriter<String>,
+    ) = batchJob("failedCheckpointJob") {
+        repository(ExposedJdbcBatchJobRepository(testDB.db!!, CheckpointJson.jackson3()))
+        params("partition" to "test")
+        step<String, String>("checkpointStep") {
+            reader(reader)
+            writer(writer)
+            chunkSize(1)
+        }
+    }
+
     // ─── 1. 정상 실행 → COMPLETED ─────────────────────────────────────────────
 
     @ParameterizedTest
@@ -155,6 +169,39 @@ class ExposedJdbcBatchIntegrationTest : AbstractBatchJdbcTest() {
 
             report shouldBeInstanceOf BatchReport.Success::class
             countTarget(testDB) shouldBeEqualTo 50L
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `FAILED 청크 뒤 마지막 checkpoint를 보존하고 재시작한다`(testDB: TestDB) {
+        withAllTables(testDB) {
+            val firstWriter = RecordingWriter()
+            val firstReport = makeCheckpointJob(
+                testDB,
+                FailingAfterCheckpointReader(),
+                firstWriter,
+            ).run()
+
+            firstReport shouldBeInstanceOf BatchReport.Failure::class
+            firstReport.stepReports.single().checkpoint shouldBeEqualTo "checkpoint-1"
+            firstWriter.items shouldBeEqualTo listOf("first")
+
+            val repository = ExposedJdbcBatchJobRepository(testDB.db!!, CheckpointJson.jackson3())
+            val execution = repository.findOrCreateJobExecution(
+                "failedCheckpointJob",
+                mapOf("partition" to "test"),
+            )
+            val storedStep = repository.findOrCreateStepExecution(execution, "checkpointStep")
+            storedStep.checkpoint shouldBeEqualTo "checkpoint-1"
+
+            val restartReader = ResumingReader()
+            val restartWriter = RecordingWriter()
+            val restartReport = makeCheckpointJob(testDB, restartReader, restartWriter).run()
+
+            restartReport shouldBeInstanceOf BatchReport.Success::class
+            restartReader.restoredFromValue shouldBeEqualTo "checkpoint-1"
+            restartWriter.items shouldBeEqualTo listOf("second")
         }
     }
 
@@ -253,6 +300,50 @@ class ExposedJdbcBatchIntegrationTest : AbstractBatchJdbcTest() {
         override suspend fun write(items: List<Int>) {
             delay(200)
             writeCount.addAndGet(items.size)
+        }
+    }
+
+    private class RecordingWriter : BatchWriter<String> {
+        val items = mutableListOf<String>()
+
+        override suspend fun write(items: List<String>) {
+            this.items += items
+        }
+    }
+
+    private class FailingAfterCheckpointReader : BatchReader<String> {
+        private var readIndex = 0
+        private var chunkCommitted = false
+
+        override suspend fun read(): String? = when (readIndex++) {
+            0 -> "first"
+            1 -> throw IllegalStateException("reader failed after successful chunk")
+            else -> null
+        }
+
+        override suspend fun checkpoint(): Any? = "checkpoint-1".takeIf { chunkCommitted }
+
+        override suspend fun onChunkCommitted() {
+            chunkCommitted = true
+        }
+    }
+
+    private class ResumingReader : BatchReader<String> {
+        private var read = false
+        private var chunkCommitted = false
+        var restoredFromValue: Any? = null
+            private set
+
+        override suspend fun restoreFrom(checkpoint: Any) {
+            restoredFromValue = checkpoint
+        }
+
+        override suspend fun read(): String? = if (read) null else "second".also { read = true }
+
+        override suspend fun checkpoint(): Any? = "checkpoint-2".takeIf { chunkCommitted }
+
+        override suspend fun onChunkCommitted() {
+            chunkCommitted = true
         }
     }
 }
