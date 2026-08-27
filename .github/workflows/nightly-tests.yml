@@ -2144,6 +2144,7 @@ jobs:
       - test-cache
       - test-jdbc-caffeine
       - test-r2dbc-caffeine
+      - verify-write-behind
       - test-clickhouse
       - test-trino
       - test-starrocks

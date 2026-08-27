@@ -4,10 +4,13 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
+import re
+import signal
 import subprocess
-import sys
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -22,6 +25,19 @@ GRADLE_FLAGS = (
     "--console=plain",
     "--no-parallel",
     "--max-workers=1",
+    "--rerun-tasks",
+    "--no-build-cache",
+)
+GRADLE_TIMEOUT_SECONDS = 900
+TEST_TASK_OUTCOME = re.compile(r"^> Task (?P<task>:[^ ]+:test)(?:\s+(?P<outcome>[A-Z-]+))?$")
+TEST_SUMMARY = re.compile(r"SUCCESS: Executed (?P<executed>\d+) tests? in .*?\((?P<skipped>\d+) skipped\)")
+CONTAINER_UNAVAILABLE = re.compile(
+    r"(?:Could not find a valid Docker environment|"
+    r"Cannot connect to the Docker daemon|Docker daemon is not running|"
+    r"docker\.sock.*(?:No such file|operation not supported|connection refused)|"
+    r"DockerClientProviderStrategy.*failed|"
+    r"Ryuk.*(?:connection refused|not available))",
+    re.IGNORECASE,
 )
 
 
@@ -33,6 +49,62 @@ def source_head(root: Path) -> str:
     return subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
 
 
+def source_state(root: Path) -> tuple[str, bool, str]:
+    head = source_head(root)
+    status = subprocess.check_output(
+        ["git", "-C", str(root), "status", "--porcelain", "--untracked-files=all"],
+        text=True,
+    )
+    diff = subprocess.check_output(["git", "-C", str(root), "diff", "--binary", "HEAD"], text=False)
+    fingerprint = hashlib.sha256(status.encode("utf-8") + diff).hexdigest()
+    return head, bool(status.strip()), "sha256:" + fingerprint
+
+
+def module_dir(root: Path, task: str) -> Path:
+    segments = [segment for segment in task.split(":") if segment]
+    return root.joinpath(*segments[:-1])
+
+
+def test_summary(root: Path, task: str, log_text: str) -> dict[str, int] | None:
+    executed = skipped = failed = 0
+    result_dir = module_dir(root, task) / "build" / "test-results" / "test"
+    result_files = sorted(result_dir.glob("TEST-*.xml"))
+    for result_file in result_files:
+        try:
+            document = ET.parse(result_file)
+        except ET.ParseError:
+            continue
+        for testcase in document.iter("testcase"):
+            executed += 1
+            if testcase.find("skipped") is not None:
+                skipped += 1
+            if testcase.find("failure") is not None or testcase.find("error") is not None:
+                failed += 1
+    if executed > 0:
+        return {"executed": executed, "skipped": skipped, "failed": failed}
+
+    matches = list(TEST_SUMMARY.finditer(log_text))
+    if matches:
+        match = matches[-1]
+        return {"executed": int(match.group("executed")), "skipped": int(match.group("skipped")), "failed": 0}
+    return None
+
+
+def test_task_executed(task: str, log_text: str) -> tuple[bool, bool]:
+    executed = False
+    cache_reuse = False
+    for line in log_text.splitlines():
+        match = TEST_TASK_OUTCOME.match(line.strip())
+        if not match or match.group("task") != task:
+            continue
+        outcome = match.group("outcome")
+        if outcome in {"UP-TO-DATE", "FROM-CACHE", "SKIPPED", "NO-SOURCE"}:
+            cache_reuse = True
+        else:
+            executed = True
+    return executed, cache_reuse
+
+
 def run_gradle(root: Path, task: str, database: str | None, log_path: Path) -> tuple[str, dict[str, Any]]:
     started = timestamp()
     environment = os.environ.copy()
@@ -40,20 +112,57 @@ def run_gradle(root: Path, task: str, database: str | None, log_path: Path) -> t
         environment["EXPOSED_TEST_DB"] = database
     command = ["./gradlew", task, *GRADLE_FLAGS]
     log_path.parent.mkdir(parents=True, exist_ok=True)
+    timed_out = False
     with log_path.open("w", encoding="utf-8") as log:
         log.write("$ " + " ".join(command) + "\n")
         if database is not None:
             log.write(f"EXPOSED_TEST_DB={database}\n")
-        process = subprocess.run(command, cwd=root, env=environment, stdout=log, stderr=subprocess.STDOUT, check=False)
+        process = subprocess.Popen(
+            command,
+            cwd=root,
+            env=environment,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+        try:
+            return_code = process.wait(timeout=GRADLE_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            log.write(f"\nTIMED_OUT after {GRADLE_TIMEOUT_SECONDS}s\n")
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                return_code = process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                os.killpg(process.pid, signal.SIGKILL)
+                return_code = process.wait()
     finished = timestamp()
-    status = "PASS" if process.returncode == 0 else "FAIL"
+    log_text = log_path.read_text(encoding="utf-8")
+    task_executed, cache_reuse = test_task_executed(task, log_text)
+    summary = test_summary(root, task, log_text)
+    if timed_out:
+        status = "TIMED_OUT"
+    elif return_code != 0:
+        status = "PENDING" if CONTAINER_UNAVAILABLE.search(log_text) else "FAIL"
+    elif not task_executed or summary is None or summary["executed"] <= 0:
+        status = "FAIL"
+    else:
+        status = "PASS"
     return status, {
         "command": " ".join(command),
         "database": database or "NONE",
-        "exitCode": process.returncode,
+        "exitCode": return_code,
         "log": str(log_path.relative_to(root)).replace(os.sep, "/"),
         "startedAt": started,
         "finishedAt": finished,
+        "timedOut": timed_out,
+        "timeoutSeconds": GRADLE_TIMEOUT_SECONDS,
+        "testTaskExecuted": task_executed,
+        "cacheReuse": cache_reuse,
+        "testSummary": summary,
     }
 
 
@@ -79,12 +188,19 @@ def make_row(
     }
 
 
-def write_receipts(root: Path, rows: list[dict[str, Any]], head: str) -> tuple[Path, Path]:
+def write_receipts(root: Path, rows: list[dict[str, Any]], head: str, dirty: bool, diff_hash: str) -> tuple[Path, Path]:
     verification_dir = root / "build" / "verification"
     verification_dir.mkdir(parents=True, exist_ok=True)
     matrix = verification_dir / "write-behind-db-matrix.json"
     metrics = verification_dir / "write-behind-metrics.json"
-    matrix.write_text(json.dumps({"schema": 1, "version": 1, "sourceHead": head, "rows": rows}, indent=2) + "\n", encoding="utf-8")
+    matrix.write_text(
+        json.dumps(
+            {"schema": 1, "version": 1, "sourceHead": head, "sourceDirty": dirty, "sourceDiffHash": diff_hash, "rows": rows},
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     metric_list: list[object] = []
     import hashlib
 
@@ -95,6 +211,8 @@ def write_receipts(root: Path, rows: list[dict[str, Any]], head: str) -> tuple[P
                 "schema": 1,
                 "version": 1,
                 "sourceHead": head,
+                "sourceDirty": dirty,
+                "sourceDiffHash": diff_hash,
                 "metrics": metric_list,
                 "baselineChecksum": "sha256:" + hashlib.sha256(canonical).hexdigest(),
                 "note": "No new coordinator meter family is introduced; adapter observability remains the stable existing inventory.",
@@ -108,7 +226,9 @@ def write_receipts(root: Path, rows: list[dict[str, Any]], head: str) -> tuple[P
 
 
 def run(root: Path) -> None:
-    head = source_head(root)
+    head, dirty, diff_hash = source_state(root)
+    if dirty:
+        raise SystemExit("write-behind-evidence: exact-head verification requires a clean worktree")
     rows: list[dict[str, Any]] = []
 
     status, evidence = run_gradle(root, ":bluetape4k-exposed-cache:test", None, root / "build/verification/logs/coordinator.log")
@@ -139,11 +259,17 @@ def run(root: Path) -> None:
             "log": "",
             "startedAt": now,
             "finishedAt": now,
+            "exitCode": None,
+            "timedOut": False,
+            "timeoutSeconds": GRADLE_TIMEOUT_SECONDS,
+            "testTaskExecuted": False,
+            "cacheReuse": False,
+            "testSummary": None,
         }
         rows.append(make_row("r2dbc-caffeine", database, False, False, "N/A", "No supported R2DBC Caffeine fixture is registered", evidence))
 
-    matrix, metrics = write_receipts(root, rows, head)
-    validate(matrix, metrics)
+    matrix, metrics = write_receipts(root, rows, head, dirty, diff_hash)
+    validate(matrix, metrics, expected_source_head=head)
     if any(row["required"] and row["applicable"] and row["status"] != "PASS" for row in rows):
         raise SystemExit("write-behind-evidence: required matrix row failed")
     print(f"write-behind-evidence: PASS matrix={matrix} metrics={metrics}")
