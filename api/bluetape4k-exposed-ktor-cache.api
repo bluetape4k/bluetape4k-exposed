@@ -1,0 +1,28 @@
+public final class io/bluetape4k/exposed/ktor/cache/ExposedKtorCacheContributor {
+	public static final field Companion Lio/bluetape4k/exposed/ktor/cache/ExposedKtorCacheContributor$Companion;
+}
+
+public final class io/bluetape4k/exposed/ktor/cache/ExposedKtorCacheContributor$Companion {
+	public final fun custom (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lio/bluetape4k/exposed/ktor/cache/ExposedKtorCacheContributor;
+	public final fun jdbcRepository (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)Lio/bluetape4k/exposed/ktor/cache/ExposedKtorCacheContributor;
+	public final fun r2dbcRepository (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lio/bluetape4k/exposed/ktor/cache/ExposedKtorCacheContributor;
+	public final fun snapshot (Ljava/lang/String;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheFailureBuffer;)Lio/bluetape4k/exposed/ktor/cache/ExposedKtorCacheContributor;
+}
+
+public final class io/bluetape4k/exposed/ktor/cache/ExposedKtorCacheReadinessConfig {
+	public fun <init> (Ljava/util/List;)V
+	public final fun getContributors ()Ljava/util/List;
+}
+
+public final class io/bluetape4k/exposed/ktor/cache/ExposedKtorCacheReadinessKt {
+	public static final fun exposedKtorCacheReadinessProbes (Lio/bluetape4k/exposed/ktor/cache/ExposedKtorCacheReadinessConfig;)Ljava/util/List;
+}
+
+public final class io/bluetape4k/exposed/ktor/cache/ExposedKtorCacheStatus : java/lang/Enum {
+	public static final field DOWN Lio/bluetape4k/exposed/ktor/cache/ExposedKtorCacheStatus;
+	public static final field UP Lio/bluetape4k/exposed/ktor/cache/ExposedKtorCacheStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/exposed/ktor/cache/ExposedKtorCacheStatus;
+	public static fun values ()[Lio/bluetape4k/exposed/ktor/cache/ExposedKtorCacheStatus;
+}
+

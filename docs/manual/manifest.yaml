@@ -357,6 +357,58 @@ modules:
     sourcePaths: ["ktor/exposed/src/main/kotlin"]
     testPaths: ["ktor/exposed/src/test/kotlin"]
     workshops: ["examples/ktor-exposed-demo"]
+  - id: "bluetape4k-exposed-ktor-core"
+    title: {"en":"Exposed Ktor Core","ko":"Exposed Ktor 코어"}
+    gradlePath: ":bluetape4k-exposed-ktor-core"
+    sourceDir: "ktor/core"
+    kind: "library"
+    group: "integration"
+    artifact: "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-core"
+    en: "en/modules/bluetape4k-exposed-ktor-core.md"
+    ko: "ko/modules/bluetape4k-exposed-ktor-core.md"
+    sourcePaths: ["ktor/core/src/main/kotlin"]
+    testPaths: ["ktor/core/src/test/kotlin"]
+    workshops: []
+    releaseStatus: "develop-only"
+  - id: "bluetape4k-exposed-ktor-jdbc"
+    title: {"en":"Exposed Ktor JDBC Adapter","ko":"Exposed Ktor JDBC 어댑터"}
+    gradlePath: ":bluetape4k-exposed-ktor-jdbc"
+    sourceDir: "ktor/jdbc"
+    kind: "library"
+    group: "integration"
+    artifact: "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-jdbc"
+    en: "en/modules/bluetape4k-exposed-ktor-jdbc.md"
+    ko: "ko/modules/bluetape4k-exposed-ktor-jdbc.md"
+    sourcePaths: ["ktor/jdbc/src/main/kotlin"]
+    testPaths: ["ktor/jdbc/src/test/kotlin"]
+    workshops: []
+    releaseStatus: "develop-only"
+  - id: "bluetape4k-exposed-ktor-r2dbc"
+    title: {"en":"Exposed Ktor R2DBC Adapter","ko":"Exposed Ktor R2DBC 어댑터"}
+    gradlePath: ":bluetape4k-exposed-ktor-r2dbc"
+    sourceDir: "ktor/r2dbc"
+    kind: "library"
+    group: "integration"
+    artifact: "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-r2dbc"
+    en: "en/modules/bluetape4k-exposed-ktor-r2dbc.md"
+    ko: "ko/modules/bluetape4k-exposed-ktor-r2dbc.md"
+    sourcePaths: ["ktor/r2dbc/src/main/kotlin"]
+    testPaths: ["ktor/r2dbc/src/test/kotlin"]
+    workshops: []
+    releaseStatus: "develop-only"
+  - id: "bluetape4k-exposed-ktor-cache"
+    title: {"en":"Exposed Ktor Cache Adapter","ko":"Exposed Ktor 캐시 어댑터"}
+    gradlePath: ":bluetape4k-exposed-ktor-cache"
+    sourceDir: "ktor/cache"
+    kind: "library"
+    group: "integration"
+    artifact: "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-cache"
+    en: "en/modules/bluetape4k-exposed-ktor-cache.md"
+    ko: "ko/modules/bluetape4k-exposed-ktor-cache.md"
+    sourcePaths: ["ktor/cache/src/main/kotlin"]
+    testPaths: ["ktor/cache/src/test/kotlin"]
+    workshops: []
+    releaseStatus: "develop-only"
   - id: "bluetape4k-exposed-measured"
     title: {"en":"Exposed Measurement Support","ko":"Exposed 측정 지원"}
     gradlePath: ":bluetape4k-exposed-measured"

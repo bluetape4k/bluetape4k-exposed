@@ -101,7 +101,7 @@ test/fixture에 다음 실패 검사를 추가한다.
 T1 RED가 실패하는 것을 확인한 뒤 다음 순서로 최소 구현한다.
 
 - `ktor/core/src/main/kotlin/io/bluetape4k/exposed/ktor/core/`에 backend enum,
-  cooperative probe, immutable registration snapshot, `ReadinessClock`,
+  cooperative probe, immutable registration state, `ReadinessClock`,
   sequential route와 path/timeout/component validation을 구현한다.
 - route는 probe를 최대 동시성 1로 실행하고, remaining deadline을 전달하며,
   wrapper-owned timeout·caller cancellation·generic Exception·`Error` 규칙과
@@ -133,7 +133,9 @@ T1 RED가 실패하는 것을 확인한 뒤 다음 순서로 최소 구현한다
 
 - 기존 `ktor/exposed/src/main/kotlin/io/bluetape4k/exposed/ktor/` facade의
   Config, installer, health route, transactions, status pages, cache contributor를
-  유지하고 구현 로직만 child/core forwarding으로 치환한다.
+  유지한다. transaction/status/error 표면은 child/core forwarding으로 전환하되,
+  legacy health route의 JDBC/R2DBC probe와 독립 phase budget은 기존 구현을
+  유지해 호환 timeout semantics를 보존한다.
 - aggregator는 core whole-deadline route를 호출하지 않는다. 기존 JDBC→R2DBC→
   cache phase 순서, 독립 budget, response key와 status mapping을 characterization
   fixture로 보존한다.
@@ -185,7 +187,7 @@ EXPOSED_TEST_DB=MYSQL_V8 ./gradlew \
   --no-configuration-cache --no-daemon --console=plain
 ./gradlew exportManualModuleInventory
 ruby scripts/manual/validate_manuals.rb \
-  build/manual/module-inventory-1.11.0.json docs/manual/manifest.yaml
+  build/manual/module-inventory.json docs/manual/manifest.yaml
 git diff --check
 ```
 

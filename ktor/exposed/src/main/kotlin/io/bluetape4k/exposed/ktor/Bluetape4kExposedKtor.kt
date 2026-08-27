@@ -6,6 +6,10 @@ import io.ktor.server.application.pluginOrNull
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.routing.routing
 
+@Deprecated(
+    message = "bluetape4k-exposed-ktor-core와 필요한 backend adapter를 사용하세요.",
+    level = DeprecationLevel.WARNING,
+)
 /**
  * Exposed 전용 Ktor helper를 설치합니다.
  *
@@ -18,6 +22,10 @@ fun Application.installBluetape4kExposedKtor(
     installBluetape4kExposedKtorInternal(config, cacheReadiness = null)
 }
 
+@Deprecated(
+    message = "bluetape4k-exposed-ktor-core와 필요한 backend adapter를 사용하세요.",
+    level = DeprecationLevel.WARNING,
+)
 /**
  * 명시적인 cache readiness contributor와 함께 Exposed 전용 Ktor helper를 설치합니다.
  *

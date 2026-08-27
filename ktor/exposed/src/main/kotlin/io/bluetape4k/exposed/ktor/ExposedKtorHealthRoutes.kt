@@ -21,6 +21,10 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.TimeSource
 
+@Deprecated(
+    message = "bluetape4k-exposed-ktor-core의 route와 필요한 backend adapter를 사용하세요.",
+    level = DeprecationLevel.WARNING,
+)
 /** Exposed 전용 liveness와 readiness route를 추가합니다. */
 fun Route.bluetape4kExposedHealthRoutes(
     jdbcDatabase: Database?,
@@ -45,6 +49,10 @@ fun Route.bluetape4kExposedHealthRoutes(
     )
 }
 
+@Deprecated(
+    message = "bluetape4k-exposed-ktor-core의 route와 필요한 backend adapter를 사용하세요.",
+    level = DeprecationLevel.WARNING,
+)
 /**
  * 명시적인 cache contributor와 함께 Exposed liveness와 readiness route를 추가합니다.
  *
@@ -192,7 +200,7 @@ internal suspend fun aggregateExposedKtorReadiness(
         val requestContext = currentCoroutineContext()
         val terminal = try {
             withTimeoutOrNull(remaining) {
-                probeCacheContributor(binding.contributor)
+                probeCacheContributor(binding.contributor, remaining)
             } ?: CacheProbeTerminal.Timeout
         } catch (cancellation: CancellationException) {
             if (requestContext.isActive) {
@@ -234,8 +242,9 @@ internal suspend fun aggregateExposedKtorReadiness(
 
 private suspend fun probeCacheContributor(
     contributor: ExposedKtorCacheContributor,
+    timeout: Duration,
 ): CacheProbeTerminal = try {
-    CacheProbeTerminal.Success(contributor.probe())
+    CacheProbeTerminal.Success(contributor.probeThroughChild(timeout))
 } catch (cancellation: CancellationException) {
     throw cancellation
 } catch (_: Exception) {
@@ -266,7 +275,8 @@ internal suspend fun probeJdbcReadiness(
                 }
             }
             HealthResponse.UP
-        } ?: throw ExposedKtorReadinessTimeoutException(JDBC_BACKEND)
+        }
+            ?: throw ExposedKtorReadinessTimeoutException(JDBC_BACKEND)
     }
 } catch (cancellation: CancellationException) {
     throw cancellation

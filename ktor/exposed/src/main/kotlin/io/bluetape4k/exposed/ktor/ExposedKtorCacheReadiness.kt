@@ -3,11 +3,23 @@ package io.bluetape4k.exposed.ktor
 import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheFailureBuffer
+import io.bluetape4k.exposed.ktor.cache.ExposedKtorCacheContributor as ChildCacheContributor
+import io.bluetape4k.exposed.ktor.cache.ExposedKtorCacheReadinessConfig as ChildCacheReadinessConfig
+import io.bluetape4k.exposed.ktor.cache.exposedKtorCacheReadinessProbes
 import java.util.Collections
+import kotlin.time.Duration
 
+@Deprecated(
+    message = "bluetape4k-exposed-ktor-cache의 cache status를 사용하세요.",
+    level = DeprecationLevel.WARNING,
+)
 /** custom contributor가 노출하는 유한 cache-readiness 상태입니다. */
 enum class ExposedKtorCacheStatus { UP, DOWN }
 
+@Deprecated(
+    message = "bluetape4k-exposed-ktor-cache의 contributor를 사용하세요.",
+    level = DeprecationLevel.WARNING,
+)
 /**
  * library가 소유한 고정 kind를 사용하는 sanitized cache-readiness contributor입니다.
  *
@@ -23,6 +35,28 @@ class ExposedKtorCacheContributor private constructor(
     internal val kind: ExposedKtorCacheKind,
     internal val probe: suspend () -> ExposedKtorCacheSample,
 ) {
+    /**
+     * child cache probe를 통해 legacy sample을 한 번만 관찰하는 호환 bridge입니다.
+     *
+     * Legacy metrics는 queue/snapshot measurement를 함께 보존해야 하므로 child의 status-only API에
+     * 별도 sample을 다시 읽히지 않습니다. 대신 child custom contributor가 legacy probe의 단일 sample을
+     * 받아 finite status로 변환하고, core readiness 계약의 cancellation/timeout 경계에서 실행합니다.
+     */
+    internal suspend fun probeThroughChild(timeout: Duration): ExposedKtorCacheSample {
+        var sampled: ExposedKtorCacheSample? = null
+        val childContributor = ChildCacheContributor.custom(component) {
+            val sample = probe().also { sampled = it }
+            when (sample.status) {
+                ExposedKtorCacheStatus.UP -> io.bluetape4k.exposed.ktor.cache.ExposedKtorCacheStatus.UP
+                ExposedKtorCacheStatus.DOWN -> io.bluetape4k.exposed.ktor.cache.ExposedKtorCacheStatus.DOWN
+            }
+        }
+        val childProbe = exposedKtorCacheReadinessProbes(
+            ChildCacheReadinessConfig(listOf(childContributor)),
+        ).single()
+        childProbe.probe(timeout)
+        return sampled ?: ExposedKtorCacheSample.UNAVAILABLE
+    }
 
     companion object {
         /**
@@ -115,6 +149,10 @@ class ExposedKtorCacheContributor private constructor(
     }
 }
 
+@Deprecated(
+    message = "bluetape4k-exposed-ktor-cache의 readiness config를 사용하세요.",
+    level = DeprecationLevel.WARNING,
+)
 /**
  * 불변 cache-readiness 설정입니다.
  *

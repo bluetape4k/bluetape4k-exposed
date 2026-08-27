@@ -24,6 +24,20 @@ module Publication
         "org.jetbrains.kotlinx:kotlinx-coroutines-reactor",
         "org.jetbrains.kotlinx:kotlinx-coroutines-test",
       ],
+      ["org.jetbrains.kotlinx", "kotlinx-serialization-bom"] => [
+        "org.jetbrains.kotlinx:kotlinx-serialization-core",
+        "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm",
+        "org.jetbrains.kotlinx:kotlinx-serialization-json",
+        "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm",
+        "org.jetbrains.kotlinx:kotlinx-serialization-properties",
+        "org.jetbrains.kotlinx:kotlinx-serialization-protobuf",
+      ],
+      ["io.ktor", "ktor-bom"] => [
+        "io.ktor:ktor-server-core",
+        "io.ktor:ktor-server-status-pages",
+        "io.ktor:ktor-server-content-negotiation",
+        "io.ktor:ktor-serialization-kotlinx-json",
+      ],
       ["com.fasterxml.jackson", "jackson-bom"] => [
         "com.fasterxml.jackson.module:jackson-module-blackbird",
         "com.fasterxml.jackson.module:jackson-module-kotlin",

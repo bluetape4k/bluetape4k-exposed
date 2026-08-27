@@ -1,0 +1,14 @@
+public final class io/bluetape4k/exposed/ktor/r2dbc/ExposedKtorReadinessKt {
+	public static final fun exposedKtorR2dbcReadinessProbe (Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;Ljava/lang/String;)Lio/bluetape4k/exposed/ktor/core/ExposedKtorReadinessProbe;
+	public static synthetic fun exposedKtorR2dbcReadinessProbe$default (Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;Ljava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/ktor/core/ExposedKtorReadinessProbe;
+}
+
+public final class io/bluetape4k/exposed/ktor/r2dbc/ExposedKtorStatusPagesKt {
+	public static final fun bluetape4kExposedR2dbcErrors (Lio/ktor/server/plugins/statuspages/StatusPagesConfig;)V
+}
+
+public final class io/bluetape4k/exposed/ktor/r2dbc/ExposedKtorTransactionsKt {
+	public static final fun exposedR2dbcTransaction (Lio/ktor/server/application/ApplicationCall;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;Lio/micrometer/core/instrument/MeterRegistry;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun exposedR2dbcTransaction$default (Lio/ktor/server/application/ApplicationCall;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;Lio/micrometer/core/instrument/MeterRegistry;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+

@@ -247,7 +247,11 @@ and locked by
 
 ## See Also
 
-- [`bluetape4k-exposed-ktor`](../../ktor/exposed/README.md)
+- [`bluetape4k-exposed-ktor-core`](../../ktor/core/README.md)
+- [`bluetape4k-exposed-ktor-jdbc`](../../ktor/jdbc/README.md)
+- [`bluetape4k-exposed-ktor-r2dbc`](../../ktor/r2dbc/README.md)
+- [`bluetape4k-exposed-ktor-cache`](../../ktor/cache/README.md)
+- [`bluetape4k-exposed-ktor` compatibility aggregator](../../ktor/exposed/README.md)
 - [`bluetape4k-exposed-r2dbc-caffeine`](../../exposed/r2dbc-caffeine/README.md)
 - [Ktor demo resources](src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoResources.kt)
 - [PostgreSQL integration proof](src/postgresIntegrationTest/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoPostgresIntegrationTest.kt)

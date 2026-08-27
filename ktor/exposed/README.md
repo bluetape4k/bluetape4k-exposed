@@ -38,6 +38,22 @@ dependencies {
 }
 ```
 
+For new services, choose the backend-selective artifacts instead of bringing
+the compatibility aggregator into every classpath:
+
+```kotlin
+dependencies {
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<version>"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-core")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-jdbc")
+    // Or choose -r2dbc and/or -cache for the backends used by this service.
+}
+```
+
+`bluetape4k-exposed-ktor` remains the compatibility aggregator. Existing
+imports continue to work during the 2.0 migration window; migrate one backend
+at a time to keep the consumer classpath selective.
+
 ## Caller-Owned Resources
 
 Create and close database resources outside this module. Pass the ready
@@ -147,7 +163,7 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 
 routing {
     get("/users/{id}") {
-        val id = call.parameters["id"]!!.toLong()
+        val id = requireNotNull(call.parameters["id"]).toLong()
         val row = call.exposedJdbcTransaction(
             db = jdbcDatabase,
             blockingDispatcher = jdbcDispatcher,
@@ -173,7 +189,7 @@ import org.jetbrains.exposed.v1.r2dbc.selectAll
 
 routing {
     get("/users/{id}/r2dbc") {
-        val id = call.parameters["id"]!!.toLong()
+        val id = requireNotNull(call.parameters["id"]).toLong()
         val row = call.exposedR2dbcTransaction(db = r2dbcDatabase) {
             Users.selectAll()
                 .where { Users.id eq id }

@@ -180,6 +180,10 @@ includeMappedModule("utils/batch", "bluetape4k-exposed-batch")
 includeModules("benchmark", withBaseDir = true)
 
 includeMappedModule("ktor/exposed", "bluetape4k-exposed-ktor")
+includeMappedModule("ktor/core", "bluetape4k-exposed-ktor-core")
+includeMappedModule("ktor/jdbc", "bluetape4k-exposed-ktor-jdbc")
+includeMappedModule("ktor/r2dbc", "bluetape4k-exposed-ktor-r2dbc")
+includeMappedModule("ktor/cache", "bluetape4k-exposed-ktor-cache")
 
 includeMappedModule("spring-boot/jdbc", "bluetape4k-exposed-spring-boot-jdbc")
 includeMappedModule("spring-boot/common", "bluetape4k-exposed-spring-boot-common")

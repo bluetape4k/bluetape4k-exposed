@@ -51,6 +51,13 @@ dependencies {
 
     api(bt4k.bluetape4k.ktor.core)
 
+    // Compatibility aggregator: expose the selective artifacts while retaining
+    // the legacy package and descriptor surface implemented in this module.
+    api(project(":bluetape4k-exposed-ktor-core"))
+    api(project(":bluetape4k-exposed-ktor-jdbc"))
+    api(project(":bluetape4k-exposed-ktor-r2dbc"))
+    api(project(":bluetape4k-exposed-ktor-cache"))
+
     api(project(":bluetape4k-exposed-cache"))
     api(project(":bluetape4k-exposed-jdbc"))
     api(project(":bluetape4k-exposed-r2dbc"))

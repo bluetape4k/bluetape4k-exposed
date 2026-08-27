@@ -33,6 +33,8 @@ dependencies {
 }
 ```
 
+이 아티팩트는 기존 소비자를 위한 compatibility aggregator로 유지됩니다. 새 애플리케이션은 `bluetape4k-exposed-ktor-core`와 실제로 사용하는 `-jdbc`, `-r2dbc`, `-cache` 어댑터만 선택하세요. 선택형 자식 아티팩트와 해당 매뉴얼은 2.0 마이그레이션 동안 develop-only이며 안정판 `1.12.1`에는 배포되지 않습니다. 안정판 소비자는 이 aggregator 좌표를 유지해야 합니다. 마이그레이션 기간에는 기존 좌표와 package를 사용할 수 있으므로 import와 dependency를 backend별로 옮긴 뒤 향후 major release에서 aggregator를 제거할 수 있습니다.
+
 ## 핵심 개념 {#concepts}
 
 `Bluetape4kExposedKtorConfig`는 애플리케이션이 소유한 JDBC `Database`, JDBC 블로킹 디스패처, R2DBC `R2dbcDatabase`, `MeterRegistry`, 라우트 경로, probe 제한 시간을 선택적으로 받습니다. 보조 기능을 설치하면 선택한 StatusPages 매핑과 상태 라우트만 등록됩니다. 시작과 종료 작업을 숨기지 않습니다.

@@ -75,6 +75,10 @@ spring-boot/
   batch-exposed/
   spring-modulith/
 ktor/
+  core/                  # backend-neutral Ktor contracts, probes, and routes
+  jdbc/                  # JDBC-specific Ktor adapter
+  r2dbc/                 # R2DBC-specific Ktor adapter
+  cache/                 # cache-specific Ktor adapter
   exposed/
 buildSrc/
 ```
@@ -90,7 +94,11 @@ buildSrc/
 | `exposed/r2dbc` | `:bluetape4k-exposed-r2dbc` |
 | `spring-boot/jdbc` | `:bluetape4k-exposed-spring-boot-jdbc` |
 | `spring-boot/r2dbc` | `:bluetape4k-exposed-spring-boot-r2dbc` |
-| `ktor/exposed` | `:bluetape4k-exposed-ktor` |
+| `ktor/core` | `:bluetape4k-exposed-ktor-core` |
+| `ktor/jdbc` | `:bluetape4k-exposed-ktor-jdbc` |
+| `ktor/r2dbc` | `:bluetape4k-exposed-ktor-r2dbc` |
+| `ktor/cache` | `:bluetape4k-exposed-ktor-cache` |
+| `ktor/exposed` | `:bluetape4k-exposed-ktor` (compatibility aggregator) |
 | `examples/jdbc-demo` | `:exposed-spring-boot-jdbc-demo` |
 | `examples/r2dbc-demo` | `:exposed-spring-boot-r2dbc-demo` |
 | `utils/batch/core` | `:bluetape4k-exposed-batch-core` |
@@ -107,6 +115,10 @@ buildSrc/
 ./gradlew :bluetape4k-exposed-jdbc:test
 ./gradlew :bluetape4k-exposed-r2dbc:test
 ./gradlew :bluetape4k-exposed-ktor:test
+./gradlew :bluetape4k-exposed-ktor-core:test
+./gradlew :bluetape4k-exposed-ktor-jdbc:test
+./gradlew :bluetape4k-exposed-ktor-r2dbc:test
+./gradlew :bluetape4k-exposed-ktor-cache:test
 ./gradlew :bluetape4k-exposed-jdbc-lettuce:test
 ./gradlew :bluetape4k-exposed-batch-core:test
 ./gradlew :bluetape4k-exposed-batch-jdbc:test

@@ -244,7 +244,11 @@ Service/발행기 경계는
 
 ## 참고
 
-- [`bluetape4k-exposed-ktor`](../../ktor/exposed/README.ko.md)
+- [`bluetape4k-exposed-ktor-core`](../../ktor/core/README.ko.md)
+- [`bluetape4k-exposed-ktor-jdbc`](../../ktor/jdbc/README.ko.md)
+- [`bluetape4k-exposed-ktor-r2dbc`](../../ktor/r2dbc/README.ko.md)
+- [`bluetape4k-exposed-ktor-cache`](../../ktor/cache/README.ko.md)
+- [`bluetape4k-exposed-ktor compatibility aggregator`](../../ktor/exposed/README.ko.md)
 - [`bluetape4k-exposed-r2dbc-caffeine`](../../exposed/r2dbc-caffeine/README.ko.md)
 - [Ktor 데모 리소스](src/main/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoResources.kt)
 - [PostgreSQL 통합 검증](src/postgresIntegrationTest/kotlin/io/bluetape4k/examples/exposed/ktor/KtorExposedDemoPostgresIntegrationTest.kt)
