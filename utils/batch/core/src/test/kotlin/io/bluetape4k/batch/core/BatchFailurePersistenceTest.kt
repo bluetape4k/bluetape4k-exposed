@@ -10,6 +10,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchReport
@@ -133,6 +134,27 @@ class BatchFailurePersistenceTest {
             val storedStep = repository.findOrCreateStepExecution(execution, "step")
             storedStep.status shouldBe BatchStatus.STOPPED
             storedStep.checkpoint shouldBe "checkpoint"
+        }
+    }
+
+    @Test
+    fun `checkpoint 커밋 직후 취소도 InMemory STOPPED 저장과 재claim을 보존한다`() = runSuspendIO {
+        assertCheckpointCommitCancellationRecovery(InMemoryBatchJobRepository())
+    }
+
+    @Test
+    fun `checkpoint 커밋 직후 취소도 JDBC STOPPED 저장과 재claim을 보존한다`() = withJdbcBatchTables {
+        assertCheckpointCommitCancellationRecovery(
+            ExposedJdbcBatchJobRepository(checkNotNull(it.db), CheckpointJson.jackson3()),
+        )
+    }
+
+    @Test
+    fun `checkpoint 커밋 직후 취소도 R2DBC STOPPED 저장과 재claim을 보존한다`() = runSuspendIO {
+        withR2dbcBatchTables {
+            assertCheckpointCommitCancellationRecovery(
+                ExposedR2dbcBatchJobRepository(checkNotNull(it.db), CheckpointJson.jackson3()),
+            )
         }
     }
 
@@ -302,6 +324,164 @@ class BatchFailurePersistenceTest {
         }
     }
 
+    @Test
+    fun `인메모리 FAILED Step은 마지막 성공 checkpoint로 재시작한다`() = runSuspendIO {
+        assertFailedCheckpointRestart(InMemoryBatchJobRepository())
+    }
+
+    @Test
+    fun `JDBC FAILED Step은 마지막 성공 checkpoint로 재시작한다`() = withJdbcBatchTables {
+        assertFailedCheckpointRestart(
+            ExposedJdbcBatchJobRepository(checkNotNull(it.db), CheckpointJson.jackson3()),
+        )
+    }
+
+    @Test
+    fun `R2DBC FAILED Step은 마지막 성공 checkpoint로 재시작한다`() = runSuspendIO {
+        withR2dbcBatchTables {
+            assertFailedCheckpointRestart(
+                ExposedR2dbcBatchJobRepository(checkNotNull(it.db), CheckpointJson.jackson3()),
+            )
+        }
+    }
+
+    @Test
+    fun `인메모리 FAILED completion의 null checkpoint는 기존 값을 보존한다`() = runSuspendIO {
+        assertNullFailureCheckpointPreserved(InMemoryBatchJobRepository())
+    }
+
+    @Test
+    fun `FAILED checkpoint 조회 중 CancellationException은 STOPPED 저장 후 전파된다`() = runSuspendIO {
+        val primaryFailure = IllegalStateException("reader failed")
+        val cancellation = CancellationException("checkpoint lookup cancelled")
+        val repository = InMemoryBatchJobRepository()
+        val execution = repository.findOrCreateJobExecution("checkpoint-cancellation")
+
+        val thrown = assertFailsWith<CancellationException> {
+            BatchStepRunner(
+                step(CheckpointFailingReader(primaryFailure, cancellation)),
+                execution,
+                repository,
+            ).run()
+        }
+
+        thrown shouldBeSameInstanceAs cancellation
+        thrown.suppressed.single() shouldBeSameInstanceAs primaryFailure
+
+        val storedStep = repository.findOrCreateStepExecution(execution, "step")
+        storedStep.status shouldBe BatchStatus.STOPPED
+        storedStep.ownerId shouldBe null
+        storedStep.leaseUntil shouldBe null
+        repository.claimStepExecution(
+            storedStep,
+            ownerId = "replacement-owner",
+            leaseUntil = java.time.Instant.now().plusSeconds(60),
+        ).shouldNotBeNull()
+    }
+
+    @Test
+    fun `JDBC FAILED completion의 null checkpoint는 기존 값을 보존한다`() = withJdbcBatchTables {
+        assertNullFailureCheckpointPreserved(
+            ExposedJdbcBatchJobRepository(checkNotNull(it.db), CheckpointJson.jackson3()),
+        )
+    }
+
+    @Test
+    fun `R2DBC FAILED completion의 null checkpoint는 기존 값을 보존한다`() = runSuspendIO {
+        withR2dbcBatchTables {
+            assertNullFailureCheckpointPreserved(
+                ExposedR2dbcBatchJobRepository(checkNotNull(it.db), CheckpointJson.jackson3()),
+            )
+        }
+    }
+
+    private suspend fun assertFailedCheckpointRestart(repository: BatchJobRepository) {
+        val firstReader = FailingAfterCheckpointReader()
+        val firstExecution = repository.findOrCreateJobExecution("failed-checkpoint")
+
+        val firstReport = BatchStepRunner(
+            step(firstReader, RecordingWriter()),
+            firstExecution,
+            repository,
+        ).run()
+
+        firstReport.status shouldBe BatchStatus.FAILED
+        firstReport.checkpoint shouldBeEqualTo "checkpoint-1"
+        repository.findOrCreateStepExecution(firstExecution, "step").checkpoint shouldBeEqualTo "checkpoint-1"
+
+        val restartReader = ResumingReader()
+        val restartWriter = RecordingWriter()
+        val restartExecution = repository.findOrCreateJobExecution("failed-checkpoint")
+        val restartReport = BatchStepRunner(
+            step(restartReader, restartWriter),
+            restartExecution,
+            repository,
+        ).run()
+
+        restartReport.status shouldBe BatchStatus.COMPLETED
+        restartReader.restoredFromValue shouldBeEqualTo "checkpoint-1"
+        restartWriter.items shouldBeEqualTo listOf("second")
+    }
+
+    private suspend fun assertNullFailureCheckpointPreserved(repository: BatchJobRepository) {
+        val jobExecution = repository.findOrCreateJobExecution("null-failure-checkpoint")
+        val stepExecution = repository.findOrCreateStepExecution(jobExecution, "step")
+        val claimed = repository.claimStepExecution(
+            stepExecution,
+            ownerId = "checkpoint-owner",
+            leaseUntil = java.time.Instant.now().plusSeconds(60),
+        ).shouldNotBeNull()
+        val checkpointed = repository.saveCheckpointAndReturn(claimed, "checkpoint-1")
+
+        repository.completeStepExecution(
+            checkpointed,
+            StepReport("step", BatchStatus.FAILED),
+        )
+
+        repository.loadCheckpoint(stepExecution.id) shouldBeEqualTo "checkpoint-1"
+        repository.findOrCreateStepExecution(jobExecution, "step").checkpoint shouldBeEqualTo "checkpoint-1"
+    }
+
+    private suspend fun assertCheckpointCommitCancellationRecovery(delegate: BatchJobRepository) {
+        val checkpointPersisted = CompletableDeferred<Unit>()
+        val releaseCheckpointReturn = CompletableDeferred<Unit>()
+        val repository = CommitReturnSuspendingRepository(
+            delegate = delegate,
+            checkpointPersisted = checkpointPersisted,
+            releaseCheckpointReturn = releaseCheckpointReturn,
+        )
+        val execution = repository.findOrCreateJobExecution("checkpoint-commit-cancellation")
+        val cancellation = CancellationException("cancelled after checkpoint commit")
+
+        coroutineScope {
+            val request = async(Dispatchers.Default, start = CoroutineStart.UNDISPATCHED) {
+                BatchStepRunner(
+                    step(CommitThenCancellationReader()),
+                    execution,
+                    repository,
+                ).run()
+            }
+
+            checkpointPersisted.await()
+            request.cancel(cancellation)
+            releaseCheckpointReturn.complete(Unit)
+
+            val thrown = assertFailsWith<CancellationException> { request.await() }
+            thrown.message shouldBeEqualTo cancellation.message
+        }
+
+        val storedStep = repository.findOrCreateStepExecution(execution, "step")
+        storedStep.status shouldBe BatchStatus.STOPPED
+        storedStep.ownerId shouldBe null
+        storedStep.leaseUntil shouldBe null
+        storedStep.checkpoint shouldBeEqualTo "checkpoint-1"
+        repository.claimStepExecution(
+            storedStep,
+            ownerId = "replacement-owner",
+            leaseUntil = java.time.Instant.now().plusSeconds(60),
+        ).shouldNotBeNull()
+    }
+
     private suspend fun assertJobStoppedPersistenceFailure(delegate: BatchJobRepository) {
         val cancellation = CancellationException("job external cancellation")
         val persistenceFailure = IllegalStateException("job stopped state write failed")
@@ -368,11 +548,14 @@ class BatchFailurePersistenceTest {
         repository = repository,
     )
 
-    private fun step(reader: BatchReader<String>): BatchStep<String, String> = BatchStep(
+    private fun step(
+        reader: BatchReader<String>,
+        writer: BatchWriter<String> = NoopWriter(),
+    ): BatchStep<String, String> = BatchStep(
         name = "step",
         chunkSize = 1,
         reader = reader,
-        writer = NoopWriter(),
+        writer = writer,
     )
 
     private class FailingReader(
@@ -381,8 +564,72 @@ class BatchFailurePersistenceTest {
         override suspend fun read(): String? = throw failure
     }
 
+    private class CheckpointFailingReader(
+        private val readFailure: Throwable,
+        private val checkpointFailure: CancellationException,
+    ) : BatchReader<String> {
+        override suspend fun read(): String? = throw readFailure
+
+        override suspend fun checkpoint(): Any? = throw checkpointFailure
+    }
+
     private class NoopWriter : BatchWriter<String> {
         override suspend fun write(items: List<String>) = Unit
+    }
+
+    private class RecordingWriter : BatchWriter<String> {
+        val items = mutableListOf<String>()
+
+        override suspend fun write(items: List<String>) {
+            this.items += items
+        }
+    }
+
+    private class FailingAfterCheckpointReader : BatchReader<String> {
+        private var readIndex = 0
+        private var chunkCommitted = false
+
+        override suspend fun read(): String? = when (readIndex++) {
+            0 -> "first"
+            1 -> throw IllegalStateException("reader failed after successful chunk")
+            else -> null
+        }
+
+        override suspend fun checkpoint(): Any? = "checkpoint-1".takeIf { chunkCommitted }
+
+        override suspend fun onChunkCommitted() {
+            chunkCommitted = true
+        }
+    }
+
+    private class ResumingReader : BatchReader<String> {
+        private var read = false
+        private var chunkCommitted = false
+        var restoredFromValue: Any? = null
+            private set
+
+        override suspend fun restoreFrom(checkpoint: Any) {
+            restoredFromValue = checkpoint
+        }
+
+        override suspend fun read(): String? = if (read) null else "second".also { read = true }
+
+        override suspend fun checkpoint(): Any? = "checkpoint-2".takeIf { chunkCommitted }
+
+        override suspend fun onChunkCommitted() {
+            chunkCommitted = true
+        }
+    }
+
+    private class CommitThenCancellationReader : BatchReader<String> {
+        private var readIndex = 0
+
+        override suspend fun read(): String? = when (readIndex++) {
+            0 -> "first"
+            else -> awaitCancellation()
+        }
+
+        override suspend fun checkpoint(): Any = "checkpoint-1"
     }
 
     private class RecordingFailureLogAppender : AppenderBase<ILoggingEvent>(), AutoCloseable {
@@ -458,6 +705,23 @@ class BatchFailurePersistenceTest {
             delegate.findOrCreateStepExecution(jobExecution, "step")
     }
 
+    private class CommitReturnSuspendingRepository(
+        private val delegate: BatchJobRepository,
+        private val checkpointPersisted: CompletableDeferred<Unit>,
+        private val releaseCheckpointReturn: CompletableDeferred<Unit>,
+    ) : BatchJobRepository by delegate {
+
+        override suspend fun saveCheckpointAndReturn(
+            execution: StepExecution,
+            checkpoint: Any,
+        ): StepExecution {
+            val updated = delegate.saveCheckpointAndReturn(execution, checkpoint)
+            checkpointPersisted.complete(Unit)
+            releaseCheckpointReturn.await()
+            return updated
+        }
+    }
+
     private fun withJdbcBatchTables(block: suspend (JdbcTestDB) -> Unit) {
         val testDB = JdbcTestDB.H2
         withJdbcTables(testDB, BatchJobExecutionTable, BatchStepExecutionTable) {
@@ -471,4 +735,5 @@ class BatchFailurePersistenceTest {
             block(testDB)
         }
     }
+
 }

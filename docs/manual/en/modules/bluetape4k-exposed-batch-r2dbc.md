@@ -92,6 +92,9 @@ The gate covers `aggregator-runtime`, `core-custom-json`, `jdbc-runtime`,
 
 Wrong owner, stale version, unclaimed execution, and zero-row CAS updates fail
 closed. Cancellation is not converted into a normal failure.
+After a committed chunk, a later FAILED step keeps the last checkpoint. A null
+failure report checkpoint is treated as no replacement, so the R2DBC completion
+update does not erase the stored value and restart can resume after that key.
 
 ## Operations {#operations}
 

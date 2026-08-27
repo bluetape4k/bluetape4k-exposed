@@ -92,6 +92,9 @@ bash scripts/batch/validate_consumer_fixtures.sh
 
 잘못된 owner, 오래된 version, 미청구 execution, 0행 CAS 갱신은 fail-closed로
 실패합니다. 취소를 일반 실패로 바꾸지 않습니다.
+청크를 커밋한 뒤 스텝이 `FAILED`가 되어도 마지막 checkpoint를 유지합니다. 실패
+보고서의 null checkpoint는 새 값이 없다는 뜻이므로 R2DBC 완료 갱신은 저장된 값을
+지우지 않고, 재시작은 해당 key 다음부터 이어갑니다.
 
 ## 운영 {#operations}
 
