@@ -1872,6 +1872,7 @@ jobs:
       - test-cache
       - test-jdbc-caffeine
       - test-r2dbc-caffeine
+      - verify-write-behind
       - test-clickhouse
       - test-trino
       - test-starrocks
@@ -1889,6 +1890,8 @@ jobs:
           RESULTS: ${{ join(needs.*.result, ',') }}
           BUILD_RESULT: ${{ needs.build.result }}
           DOCS_ONLY: ${{ needs.changes.outputs['docs-only'] }}
+          WRITE_BEHIND_RESULT: ${{ needs.verify-write-behind.result }}
+          WRITE_BEHIND_REQUIRED: ${{ needs.changes.outputs.cache == 'true' || needs.changes.outputs['jdbc-caffeine'] == 'true' || needs.changes.outputs['r2dbc-caffeine'] == 'true' || github.event_name == 'workflow_dispatch' }}
         run: |
           echo "Job results: $RESULTS"
           if echo "$RESULTS" | grep -qE "failure|cancelled"; then
@@ -1897,6 +1900,10 @@ jobs:
           fi
           if [ "$DOCS_ONLY" != "true" ] && [ "$BUILD_RESULT" != "success" ]; then
             echo "Non-doc changes require the production build and ABI gate to run"
+            exit 1
+          fi
+          if [ "$WRITE_BEHIND_REQUIRED" = "true" ] && [ "$WRITE_BEHIND_RESULT" != "success" ]; then
+            echo "Cache/Caffeine changes require the write-behind verification gate"
             exit 1
           fi
           echo "CI passed (docs-only build skip is the only allowed ABI N/A)"

@@ -2210,6 +2210,7 @@ jobs:
       - test-cache
       - test-jdbc-caffeine
       - test-r2dbc-caffeine
+      - verify-write-behind
       - test-clickhouse
       - test-trino
       - test-starrocks
@@ -2226,10 +2227,16 @@ jobs:
       - name: Check all jobs
         env:
           RESULTS: ${{ join(needs.*.result, ',') }}
+          WRITE_BEHIND_RESULT: ${{ needs.verify-write-behind.result }}
+          WRITE_BEHIND_REQUIRED: ${{ (github.event_name == 'schedule' && github.event.schedule == '3 19 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.scope == 'full') }}
         run: |
           echo "Nightly results: $RESULTS"
           if printf '%s\n' "$RESULTS" | tr ',' '\n' | grep -qvE '^(success|skipped)$'; then
             echo "Nightly failed"
+            exit 1
+          fi
+          if [ "$WRITE_BEHIND_REQUIRED" = "true" ] && [ "$WRITE_BEHIND_RESULT" != "success" ]; then
+            echo "Full nightly runs require the write-behind verification gate"
             exit 1
           fi
           echo "Nightly passed"
