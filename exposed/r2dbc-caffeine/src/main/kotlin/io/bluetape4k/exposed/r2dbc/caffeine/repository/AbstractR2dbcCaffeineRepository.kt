@@ -153,6 +153,7 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
     private val writeBehindFailedBatch = AtomicReference<List<Pair<ID, E>>>(emptyList())
     private val writeBehindLifecycleLock = ReentrantLock()
     private val writeBehindCloseLock = ReentrantLock()
+    private val writeBehindCachePublicationLocks = ConcurrentHashMap<String, CachePublicationLock>()
     private val writeBehindLifecycleChanged = writeBehindLifecycleLock.newCondition()
     private val writeBehindAdmissions = AtomicReference(WriteBehindAdmissions())
     private val writeBehindJobCompletion = AtomicReference<WriteBehindJobCompletion?>(null)
@@ -620,7 +621,7 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                     }
                     accepted = entry.accepted.complete(true)
                     check(accepted) { "Write-Behind admission was already settled" }
-                    cache.put(key, CompletableFuture.completedFuture(entity))
+                    publishWriteBehindCache(key, entity)
                 } catch (e: Throwable) {
                     if (!accepted) {
                         if (entry.accepted.complete(false) && !admissionSettled) {
@@ -786,6 +787,40 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
         }
     }
 
+    private fun publishWriteBehindCache(key: String, entity: E) {
+        val publicationLock = acquireCachePublicationLock(key)
+        try {
+            publicationLock.lock.withLock {
+                if (writeBehindLateSideEffectGuard.get()) {
+                    throw writeBehindNotAcceptingException(writeBehindWorkerState.get())
+                }
+                cache.put(key, CompletableFuture.completedFuture(entity))
+            }
+        } finally {
+            if (publicationLock.users.decrementAndGet() == 0) {
+                writeBehindCachePublicationLocks.remove(key, publicationLock)
+            }
+        }
+    }
+
+    private fun acquireCachePublicationLock(key: String): CachePublicationLock {
+        while (true) {
+            val publicationLock = writeBehindCachePublicationLocks.computeIfAbsent(key) {
+                CachePublicationLock()
+            }
+            publicationLock.users.incrementAndGet()
+            if (writeBehindCachePublicationLocks[key] === publicationLock) return publicationLock
+            if (publicationLock.users.decrementAndGet() == 0) {
+                writeBehindCachePublicationLocks.remove(key, publicationLock)
+            }
+        }
+    }
+
+    private class CachePublicationLock {
+        val lock = ReentrantLock()
+        val users = AtomicInteger(0)
+    }
+
     private fun markCloseCleanupPendingIfNeeded(): Boolean = writeBehindLifecycleLock.withLock {
         val pending = writeBehindAdmissions.get().inProgress > 0
         if (pending) writeBehindCloseCleanupPending.set(true)
@@ -795,7 +830,7 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
     @Suppress("ReturnCount") // deferred cleanup은 빠른 비활성/락/회계 검사를 유지한다.
     private fun finishDeferredCloseCleanupIfReady() {
         if (!writeBehindCloseCleanupPending.get()) return
-        if (!writeBehindCloseLock.tryLock()) return
+        writeBehindCloseLock.lock()
         try {
             val ready = writeBehindLifecycleLock.withLock {
                 writeBehindAdmissions.get().inProgress == 0

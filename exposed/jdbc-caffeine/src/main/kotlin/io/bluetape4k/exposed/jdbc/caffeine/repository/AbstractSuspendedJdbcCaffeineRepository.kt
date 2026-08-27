@@ -147,6 +147,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
     private val writeBehindPublicationLock = ReentrantLock()
     private val writeBehindPublicationChanged = writeBehindPublicationLock.newCondition()
     private val writeBehindCloseLock = ReentrantLock()
+    private val writeBehindCachePublicationLocks = ConcurrentHashMap<String, CachePublicationLock>()
     private val writeBehindCloseCleanupPending = AtomicBoolean(false)
     private val writeBehindLateSideEffectGuard = AtomicBoolean(false)
     private var writeBehindCloseStarted = false
@@ -201,9 +202,11 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
             } catch (e: CancellationException) {
                 // The NonCancellable final flush must settle accepted work before the
                 // completion callback marks the coordinator terminal.
+                writeBehindQueue.close(e)
                 throw e
             } catch (e: Throwable) {
                 writeBehindCoordinator.onCloseFailed(WriteBehindFailureKind.WORKER)
+                writeBehindQueue.close(e)
                 throw e
             } finally {
                 // 채널 닫힌 후 남은 항목 처리
@@ -519,6 +522,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
         "LongMethod",
         "CyclomaticComplexMethod",
         "TooGenericExceptionCaught",
+        "NestedBlockDepth",
     ) // admission/publication/terminal failure는 하나의 원자적 suspend 계약이다.
     override suspend fun put(id: ID, entity: E) {
         val key = serializeKey(id)
@@ -547,6 +551,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
                 var admissionSettled = false
                 var accepted = false
                 var pendingReserved = true
+                var terminalFailure: IllegalStateException? = null
                 try {
                     writeBehindQueue.send(queuedEntry)
                     publicationLeaseAcquired = tryAcquireWriteBehindPublicationLease()
@@ -566,7 +571,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
                     writeBehindQueueDepth.incrementAndGet()
                     accepted = queuedEntry.accepted.complete(true)
                     check(accepted) { "Write-Behind admission was already settled" }
-                    cache.put(key, entity)
+                    publishWriteBehindCache(key, entity)
                     if (writeBehindCloseStarted()) {
                         // close may have timed out while a synchronous cache publication
                         // was blocked; invalidate again after the late publication.
@@ -592,10 +597,24 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
                     }
                     throw e
                 } finally {
-                    if (publicationLeaseAcquired) {
-                        releaseWriteBehindPublicationLease()
+                    try {
+                        if (accepted &&
+                            writeBehindCoordinator.snapshot().workerState == CacheWorkerState.FAILED
+                        ) {
+                            terminalFailure = writeBehindNotAcceptingException()
+                            try {
+                                cache.invalidate(key)
+                            } catch (invalidateFailure: Throwable) {
+                                terminalFailure.addSuppressed(invalidateFailure)
+                            }
+                        }
+                    } finally {
+                        if (publicationLeaseAcquired) {
+                            releaseWriteBehindPublicationLease()
+                        }
                     }
                 }
+                terminalFailure?.let { throw it }
             }
 
             else -> cache.put(key, entity)  // READ_ONLY: 캐시만 갱신
@@ -752,6 +771,40 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
         writeBehindCloseStarted
     }
 
+    private fun publishWriteBehindCache(key: String, entity: E) {
+        val publicationLock = acquireCachePublicationLock(key)
+        try {
+            publicationLock.lock.withLock {
+                if (writeBehindLateSideEffectGuard.get()) {
+                    throw writeBehindNotAcceptingException()
+                }
+                cache.put(key, entity)
+            }
+        } finally {
+            if (publicationLock.users.decrementAndGet() == 0) {
+                writeBehindCachePublicationLocks.remove(key, publicationLock)
+            }
+        }
+    }
+
+    private fun acquireCachePublicationLock(key: String): CachePublicationLock {
+        while (true) {
+            val publicationLock = writeBehindCachePublicationLocks.computeIfAbsent(key) {
+                CachePublicationLock()
+            }
+            publicationLock.users.incrementAndGet()
+            if (writeBehindCachePublicationLocks[key] === publicationLock) return publicationLock
+            if (publicationLock.users.decrementAndGet() == 0) {
+                writeBehindCachePublicationLocks.remove(key, publicationLock)
+            }
+        }
+    }
+
+    private class CachePublicationLock {
+        val lock = ReentrantLock()
+        val users = AtomicInteger(0)
+    }
+
     @Suppress("TooGenericExceptionCaught", "SwallowedException")
     private fun invalidateCacheEntrySafely(key: String) {
         try {
@@ -806,7 +859,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
     @Suppress("ReturnCount") // deferred cleanup은 빠른 비활성/락/회계 검사를 유지한다.
     private fun finishDeferredCloseCleanupIfReady() {
         if (!writeBehindCloseCleanupPending.get()) return
-        if (!writeBehindCloseLock.tryLock()) return
+        writeBehindCloseLock.lock()
         try {
             val ready = writeBehindPublicationLock.withLock {
                 writeBehindPublicationsInProgress == 0
