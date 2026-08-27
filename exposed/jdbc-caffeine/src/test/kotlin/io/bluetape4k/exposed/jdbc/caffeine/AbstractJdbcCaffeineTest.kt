@@ -18,9 +18,17 @@ abstract class AbstractJdbcCaffeineTest: AbstractExposedTest() {
 
         /**
          * Caffeine 캐시 테스트는 H2_MYSQL, PostgreSQL, MySQL_V8 DB를 사용합니다.
+         *
+         * `EXPOSED_TEST_DB`가 지정된 matrix 실행에서는 해당 데이터베이스만
+         * 반환하여 receipt의 DB 라벨과 실제 연결 대상을 일치시킵니다.
          */
         @JvmStatic
-        fun getEnabledDialects() = setOf(TestDB.H2_MYSQL, TestDB.POSTGRESQL, TestDB.MYSQL_V8)
+        fun getEnabledDialects() = when (System.getenv("EXPOSED_TEST_DB")?.uppercase()) {
+            "H2" -> setOf(TestDB.H2_MYSQL)
+            "POSTGRESQL" -> setOf(TestDB.POSTGRESQL)
+            "MYSQL_V8" -> setOf(TestDB.MYSQL_V8)
+            else -> setOf(TestDB.H2_MYSQL, TestDB.POSTGRESQL, TestDB.MYSQL_V8)
+        }
 
         const val ENABLE_DIALECTS_METHOD = "getEnabledDialects"
     }

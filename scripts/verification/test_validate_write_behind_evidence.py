@@ -24,7 +24,15 @@ def _row(adapter: str, database: str, *, applicable: bool = True, status: str = 
         "reason": "fixture evidence",
         "startedAt": TIMESTAMP,
         "finishedAt": TIMESTAMP,
-        "evidence": {"command": "fixture"},
+        "evidence": {
+            "command": "fixture",
+            "database": database,
+            "log": "build/verification/fixture.log" if applicable else "",
+            "exitCode": 0 if applicable else None,
+            "testTaskExecuted": applicable,
+            "cacheReuse": False,
+            "testSummary": {"executed": 1, "skipped": 0, "failed": 0} if applicable else None,
+        },
     }
 
 
@@ -34,11 +42,11 @@ def _write_valid(root: Path) -> tuple[Path, Path]:
     rows.append(_row("r2dbc-caffeine", "H2"))
     rows.extend(_row("r2dbc-caffeine", database, applicable=False, status="N/A") for database in ("POSTGRESQL", "MYSQL_V8"))
     matrix = root / "matrix.json"
-    matrix.write_text(json.dumps({"schema": 1, "version": 1, "sourceHead": "fixture", "rows": rows}), encoding="utf-8")
+    matrix.write_text(json.dumps({"schema": 1, "version": 1, "sourceHead": "0" * 40, "sourceDirty": False, "sourceDiffHash": "sha256:" + "0" * 64, "rows": rows}), encoding="utf-8")
     metrics = root / "metrics.json"
     metric_list: list[object] = []
     checksum = "sha256:" + hashlib.sha256(b"[]").hexdigest()
-    metrics.write_text(json.dumps({"schema": 1, "version": 1, "sourceHead": "fixture", "metrics": metric_list, "baselineChecksum": checksum, "note": "No new coordinator meter family."}), encoding="utf-8")
+    metrics.write_text(json.dumps({"schema": 1, "version": 1, "sourceHead": "0" * 40, "sourceDirty": False, "sourceDiffHash": "sha256:" + "0" * 64, "metrics": metric_list, "baselineChecksum": checksum, "note": "No new coordinator meter family."}), encoding="utf-8")
     return matrix, metrics
 
 

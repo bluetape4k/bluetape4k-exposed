@@ -8,12 +8,19 @@
 | --- | --- |
 | `schema` | 문서 형식 버전. 현재 `1` |
 | `version` | 매트릭스 계약 버전. 현재 `1` |
-| `status` | `PASS`, `FAIL`, `PENDING`, `N/A`, `SKIPPED` 중 하나 |
+| `status` | `PASS`, `FAIL`, `PENDING`, `N/A`, `SKIPPED`, `TIMED_OUT` 중 하나 |
 | `required` | 해당 환경에서 반드시 실행해야 하는지 |
 | `applicable` | 모듈/DB 조합에 적용되는지 |
 | `reason` | 판정 사유. 비어 있을 수 없음 |
 | `startedAt`, `finishedAt` | UTC ISO-8601 실행 시각 |
-| `evidence` | 테스트 task, 실행 DB, 종료 코드와 로그 경로 |
+| `evidence` | 테스트 task, 실행 DB, 종료 코드와 로그 경로, 실제 실행 요약 |
+
+matrix와 metrics receipt는 `sourceDirty=false`, 40자리 `sourceHead`,
+`sourceDiffHash=sha256:<64자리>`를 함께 기록한다. runner는 clean exact-head가
+아니면 시작 전에 실패한다. 적용 행의 `PASS`는 `--rerun-tasks`
+`--no-build-cache` 실행, 실제 `:test` task 수행, 양수 테스트 수와 로그 경로를
+모두 포함해야 한다. 개별 Gradle timeout은 `TIMED_OUT`으로 기록하고, Docker
+환경 부재만 `PENDING`으로 분류한다.
 
 `required=true`이면서 `applicable=true`인 행은 `PASS`만 완료 증거로 인정한다. `applicable=false`는 의도적인 비적용으로 기록하고 `N/A`만 허용한다. `required=false`인 환경의 `SKIPPED`와 `PENDING`은 성공으로 집계하지 않는다. 누락·중복·알 수 없는 행과 잘못된 상태는 parser가 fail-closed로 거부한다.
 

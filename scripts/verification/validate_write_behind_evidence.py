@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 
-STATUS_VALUES = {"PASS", "FAIL", "PENDING", "N/A", "SKIPPED"}
+STATUS_VALUES = {"PASS", "FAIL", "PENDING", "N/A", "SKIPPED", "TIMED_OUT"}
 EXPECTED_ROWS = {
     ("coordinator", "NONE"),
     *((adapter, database) for adapter in ("jdbc-caffeine", "suspended-jdbc-caffeine") for database in ("H2", "POSTGRESQL", "MYSQL_V8")),
@@ -20,6 +20,8 @@ EXPECTED_ROWS = {
     ("r2dbc-caffeine", "MYSQL_V8"),
 }
 UTC_TIMESTAMP = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$")
+SOURCE_HEAD = re.compile(r"^[0-9a-f]{40}$")
+SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 
 def _fail(message: str) -> None:
@@ -44,14 +46,48 @@ def _validate_timestamp(value: Any, location: str) -> None:
         _fail(f"{location} must be an ISO-8601 UTC timestamp")
 
 
-def _validate_matrix(path: Path) -> None:
+def _validate_source(payload: dict[str, Any], kind: str, expected_source_head: str | None) -> None:
+    source_head = payload.get("sourceHead")
+    if not isinstance(source_head, str) or not SOURCE_HEAD.fullmatch(source_head):
+        _fail(f"{kind}.sourceHead must be a 40-character lowercase git commit")
+    if payload.get("sourceDirty") is not False:
+        _fail(f"{kind}.sourceDirty must be false")
+    if not isinstance(payload.get("sourceDiffHash"), str) or not SHA256.fullmatch(payload["sourceDiffHash"]):
+        _fail(f"{kind}.sourceDiffHash must be a sha256 fingerprint")
+    if expected_source_head is not None and source_head != expected_source_head:
+        _fail(f"{kind}.sourceHead does not match expected HEAD: {source_head} != {expected_source_head}")
+
+
+def _validate_execution_evidence(row: dict[str, Any], location: str) -> None:
+    evidence = row["evidence"]
+    if not _nonblank(evidence.get("command")):
+        _fail(f"{location}.evidence.command must be nonblank")
+    if evidence.get("database") != row.get("database"):
+        _fail(f"{location}.evidence.database must match row.database")
+    if row.get("applicable"):
+        if not _nonblank(evidence.get("log")):
+            _fail(f"{location}.evidence.log must be nonblank for applicable rows")
+        if not isinstance(evidence.get("exitCode"), int):
+            _fail(f"{location}.evidence.exitCode must be an integer for applicable rows")
+        if not isinstance(evidence.get("testTaskExecuted"), bool):
+            _fail(f"{location}.evidence.testTaskExecuted must be boolean")
+        if not isinstance(evidence.get("cacheReuse"), bool):
+            _fail(f"{location}.evidence.cacheReuse must be boolean")
+        summary = evidence.get("testSummary")
+        if row.get("status") == "PASS":
+            if evidence.get("exitCode") != 0 or not evidence.get("testTaskExecuted") or evidence.get("cacheReuse"):
+                _fail(f"{location} PASS row lacks fresh executed test evidence")
+            if not isinstance(summary, dict) or not isinstance(summary.get("executed"), int) or summary["executed"] <= 0:
+                _fail(f"{location} PASS row must include a positive testSummary.executed")
+
+
+def _validate_matrix(path: Path, expected_source_head: str | None) -> None:
     payload = _read_json(path)
     if not isinstance(payload, dict):
         _fail("matrix must be a JSON object")
     if payload.get("schema") != 1 or payload.get("version") != 1:
         _fail("matrix schema/version must both be 1")
-    if not _nonblank(payload.get("sourceHead")):
-        _fail("matrix.sourceHead must be nonblank")
+    _validate_source(payload, "matrix", expected_source_head)
     rows = payload.get("rows")
     if not isinstance(rows, list) or not rows:
         _fail("matrix.rows must be a non-empty array")
@@ -83,6 +119,7 @@ def _validate_matrix(path: Path) -> None:
         _validate_timestamp(row.get("finishedAt"), f"{location}.finishedAt")
         if not isinstance(row.get("evidence"), dict) or not row["evidence"]:
             _fail(f"{location}.evidence must be a non-empty object")
+        _validate_execution_evidence(row, location)
         if row["required"] and row["applicable"] and status != "PASS":
             _fail(f"required applicable row is not PASS: {adapter}/{database}={status}")
         if not row["applicable"] and status == "PASS":
@@ -97,14 +134,13 @@ def _canonical_metrics(metrics: list[Any]) -> bytes:
     return json.dumps(metrics, ensure_ascii=True, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
-def _validate_metrics(path: Path) -> None:
+def _validate_metrics(path: Path, expected_source_head: str | None) -> None:
     payload = _read_json(path)
     if not isinstance(payload, dict):
         _fail("metrics must be a JSON object")
     if payload.get("schema") != 1 or payload.get("version") != 1:
         _fail("metrics schema/version must both be 1")
-    if not _nonblank(payload.get("sourceHead")):
-        _fail("metrics.sourceHead must be nonblank")
+    _validate_source(payload, "metrics", expected_source_head)
     metrics = payload.get("metrics")
     if not isinstance(metrics, list):
         _fail("metrics.metrics must be an array")
@@ -132,17 +168,18 @@ def _validate_metrics(path: Path) -> None:
         _fail("metrics.note must be nonblank")
 
 
-def validate(matrix: Path, metrics: Path) -> None:
-    _validate_matrix(matrix)
-    _validate_metrics(metrics)
+def validate(matrix: Path, metrics: Path, expected_source_head: str | None = None) -> None:
+    _validate_matrix(matrix, expected_source_head)
+    _validate_metrics(metrics, expected_source_head)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--matrix", type=Path, default=Path("build/verification/write-behind-db-matrix.json"))
     parser.add_argument("--metrics", type=Path, default=Path("build/verification/write-behind-metrics.json"))
+    parser.add_argument("--expected-head")
     args = parser.parse_args()
-    validate(args.matrix, args.metrics)
+    validate(args.matrix, args.metrics, expected_source_head=args.expected_head)
     print(f"write-behind-evidence: PASS matrix={args.matrix} metrics={args.metrics}")
 
 

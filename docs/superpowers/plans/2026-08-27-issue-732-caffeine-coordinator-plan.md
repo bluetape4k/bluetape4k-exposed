@@ -26,7 +26,7 @@ serialization, metric 이름과 adapter별 transaction 의미는 보존한다.
    serial UID/metric/afterPersisted 의미와 ABI를 유지한다.
 4. H2를 먼저 실행하고 JDBC/suspended JDBC는 PostgreSQL→MySQL_V8를 순차 실행하며,
    R2DBC는 fixture 존재 여부에 따라 같은 순서를 적용한다. `PASS`만 green이고
-   `FAIL`, `PENDING`, `N/A`, `SKIPPED`는 manifest에 보존한다.
+   `FAIL`, `PENDING`, `N/A`, `SKIPPED`, `TIMED_OUT`는 manifest에 보존한다.
 5. `build/verification/write-behind-db-matrix.json`과
    `build/verification/write-behind-metrics.json`이 schema/version/required row를
    만족하고 CI aggregator가 fail-closed로 동작한다. 문서, detekt, Kover, ABI
@@ -140,7 +140,9 @@ source를 바꾸기 전에 다음 테스트/fixture를 추가해 의도한 실�
   required=true, R2DBC H2는 required=true, PG/MySQL는 fixture가 있을 때만
   applicable=true(required=true), 없으면 required=false/status=N/A로 기록한다.
   aggregator는 required && applicable 행의 `PASS`만 green으로 집계하고 나머지
-  상태를 숨기지 않는다.
+  상태를 숨기지 않는다. receipt는 clean exact HEAD와 diff fingerprint를
+  기록하며, runner는 cache 재사용 없이 실제 test task와 양수 테스트 수를
+  확인한다.
 - `.api`, JVM descriptor, serial UID, clean external consumer를 실행해
   coordinator leakage와 public drift를 fail-closed로 검증한다.
 
