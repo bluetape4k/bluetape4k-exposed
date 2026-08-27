@@ -28,11 +28,14 @@ The BOM is a Gradle `java-platform` that publishes only `<dependencyManagement>`
 | Column codecs | `bluetape4k-exposed-jackson2`, `bluetape4k-exposed-jackson3`, `bluetape4k-exposed-fastjson2`, `bluetape4k-exposed-tink`, `bluetape4k-exposed-measured` |
 | Dialects and analytics | `bluetape4k-exposed-postgresql`, `bluetape4k-exposed-mysql8`, `bluetape4k-exposed-cockroachdb`, `bluetape4k-exposed-bigquery`, `bluetape4k-exposed-clickhouse`, `bluetape4k-exposed-trino`, `bluetape4k-exposed-starrocks`, `bluetape4k-exposed-duckdb` |
 | Persistence integration | `bluetape4k-exposed-timefold-solver-persistence` |
-| Ktor | `bluetape4k-exposed-ktor` |
+| Ktor | `bluetape4k-exposed-ktor-core`, `bluetape4k-exposed-ktor-jdbc`, `bluetape4k-exposed-ktor-r2dbc`, `bluetape4k-exposed-ktor-cache`, `bluetape4k-exposed-ktor` (compatibility aggregator) |
 | Spring Boot | `bluetape4k-exposed-spring-boot-jdbc`, `bluetape4k-exposed-spring-boot-r2dbc`, `bluetape4k-exposed-spring-boot-batch`, `bluetape4k-exposed-spring-modulith` |
 | Utils | `bluetape4k-exposed-batch`, `bluetape4k-exposed-batch-core`, `bluetape4k-exposed-batch-jdbc`, `bluetape4k-exposed-batch-r2dbc` |
 
 > Note: `examples/*` and `*-demo` modules are excluded from the BOM constraints.
+
+For new Ktor services, select `core` plus only the backend adapters in use. Keep
+`bluetape4k-exposed-ktor` for the compatibility migration surface.
 
 ## Usage Examples
 

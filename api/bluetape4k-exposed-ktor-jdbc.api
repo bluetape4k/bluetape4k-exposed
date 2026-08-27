@@ -1,0 +1,14 @@
+public final class io/bluetape4k/exposed/ktor/jdbc/ExposedKtorReadinessKt {
+	public static final fun exposedKtorJdbcReadinessProbe-exY8QGI (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;JLjava/lang/String;)Lio/bluetape4k/exposed/ktor/core/ExposedKtorReadinessProbe;
+	public static synthetic fun exposedKtorJdbcReadinessProbe-exY8QGI$default (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;JLjava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/ktor/core/ExposedKtorReadinessProbe;
+}
+
+public final class io/bluetape4k/exposed/ktor/jdbc/ExposedKtorStatusPagesKt {
+	public static final fun bluetape4kExposedJdbcErrors (Lio/ktor/server/plugins/statuspages/StatusPagesConfig;)V
+}
+
+public final class io/bluetape4k/exposed/ktor/jdbc/ExposedKtorTransactionsKt {
+	public static final fun exposedJdbcTransaction (Lio/ktor/server/application/ApplicationCall;Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lio/micrometer/core/instrument/MeterRegistry;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun exposedJdbcTransaction$default (Lio/ktor/server/application/ApplicationCall;Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lio/micrometer/core/instrument/MeterRegistry;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+

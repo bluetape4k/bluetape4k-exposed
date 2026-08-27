@@ -8,6 +8,10 @@ import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+@Deprecated(
+    message = "bluetape4k-exposed-ktor-core와 필요한 backend adapter를 사용하세요.",
+    level = DeprecationLevel.WARNING,
+)
 /**
  * [installBluetape4kExposedKtor]를 위한 명시적 opt-in 설정입니다.
  *

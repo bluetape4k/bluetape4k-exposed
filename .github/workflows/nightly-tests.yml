@@ -648,7 +648,7 @@ jobs:
   test-ktor-exposed:
     name: Test / exposed-ktor (H2)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     needs: build
     steps:
       - uses: actions/checkout@v7
@@ -660,10 +660,10 @@ jobs:
         with:
           gradle-version: wrapper
           cache-read-only: true
-      - name: Test exposed-ktor
+      - name: Test exposed-ktor selective modules and aggregator
         run: |
           for attempt in 1 2 3 4 5; do
-            ./gradlew :bluetape4k-exposed-ktor:test --no-configuration-cache --no-daemon && break
+            ./gradlew :bluetape4k-exposed-ktor-core:test :bluetape4k-exposed-ktor-jdbc:test :bluetape4k-exposed-ktor-r2dbc:test :bluetape4k-exposed-ktor-cache:test :bluetape4k-exposed-ktor:test checkKtorDependencyBoundary checkProductionAbi exportManualModuleInventory --no-configuration-cache --no-parallel --max-workers=1 --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
@@ -671,8 +671,7 @@ jobs:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
       - name: Generate Kover XML report
         if: always()
-        run: ./gradlew :bluetape4k-exposed-ktor:koverXmlReport --no-configuration-cache --no-daemon
-        continue-on-error: true
+        run: ./gradlew :bluetape4k-exposed-ktor-core:koverXmlReport :bluetape4k-exposed-ktor-jdbc:koverXmlReport :bluetape4k-exposed-ktor-r2dbc:koverXmlReport :bluetape4k-exposed-ktor-cache:koverXmlReport :bluetape4k-exposed-ktor:koverXmlReport --no-configuration-cache --no-daemon
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v7
@@ -686,6 +685,18 @@ jobs:
         with:
           name: coverage-ktor-exposed
           path: '**/build/reports/kover/'
+          retention-days: 14
+      - name: Upload Ktor boundary and ABI receipts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: verification-ktor-boundary
+          path: |
+            build/verification/ktor-dependency-boundary.json
+            build/verification/ktor-consumer-boundary.json
+            build/abi/reports/production-abi.txt
+            build/manual/module-inventory.json
+          if-no-files-found: error
           retention-days: 14
 
   # Heavy non-H2 driver timeout coverage is full-only; daily smoke keeps fast H2 coverage.

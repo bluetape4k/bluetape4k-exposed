@@ -3,13 +3,17 @@ package io.bluetape4k.examples.exposed.ktor
 import io.bluetape4k.examples.exposed.ktor.order.DemoDiagnostic
 import io.bluetape4k.examples.exposed.ktor.order.DemoDiagnosticSink
 import io.bluetape4k.examples.exposed.ktor.order.orderRoutes
-import io.bluetape4k.exposed.ktor.Bluetape4kExposedKtorConfig
-import io.bluetape4k.exposed.ktor.ExposedKtorCacheContributor
-import io.bluetape4k.exposed.ktor.ExposedKtorCacheReadinessConfig
-import io.bluetape4k.exposed.ktor.bluetape4kExposedErrors
-import io.bluetape4k.exposed.ktor.exposedJdbcTransaction
-import io.bluetape4k.exposed.ktor.exposedR2dbcTransaction
-import io.bluetape4k.exposed.ktor.installBluetape4kExposedKtor
+import io.bluetape4k.exposed.ktor.cache.ExposedKtorCacheContributor
+import io.bluetape4k.exposed.ktor.cache.ExposedKtorCacheReadinessConfig
+import io.bluetape4k.exposed.ktor.cache.exposedKtorCacheReadinessProbes
+import io.bluetape4k.exposed.ktor.core.bluetape4kExposedCoreErrors
+import io.bluetape4k.exposed.ktor.core.bluetape4kExposedHealthRoutes
+import io.bluetape4k.exposed.ktor.jdbc.bluetape4kExposedJdbcErrors
+import io.bluetape4k.exposed.ktor.jdbc.exposedKtorJdbcReadinessProbe
+import io.bluetape4k.exposed.ktor.jdbc.exposedJdbcTransaction
+import io.bluetape4k.exposed.ktor.r2dbc.bluetape4kExposedR2dbcErrors
+import io.bluetape4k.exposed.ktor.r2dbc.exposedKtorR2dbcReadinessProbe
+import io.bluetape4k.exposed.ktor.r2dbc.exposedR2dbcTransaction
 import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.ktor.core.Bluetape4kKtorCoreConfig
 import io.bluetape4k.ktor.core.bluetape4kErrorResponses
@@ -49,25 +53,30 @@ fun Application.installKtorExposedDemo(
     )
     install(StatusPages) {
         bluetape4kErrorResponses()
-        bluetape4kExposedErrors()
+        bluetape4kExposedCoreErrors()
+        bluetape4kExposedJdbcErrors()
+        bluetape4kExposedR2dbcErrors()
     }
-    installBluetape4kExposedKtor(
-        Bluetape4kExposedKtorConfig(
-            jdbcDatabase = resources.jdbcDatabase,
-            jdbcBlockingDispatcher = resources.jdbcDispatcher,
-            r2dbcDatabase = resources.r2dbcDatabase,
-            installHealthRoutes = true,
-            readinessProbeTimeout = 2.seconds,
-        ),
-        ExposedKtorCacheReadinessConfig(
-            listOf(
-                ExposedKtorCacheContributor.r2dbcRepository("orders") {
-                    resources.orderRepository.validateConsistency()
-                },
+    val readinessProbes = buildList {
+        add(exposedKtorJdbcReadinessProbe(resources.jdbcDatabase, resources.jdbcDispatcher))
+        add(exposedKtorR2dbcReadinessProbe(resources.r2dbcDatabase))
+        addAll(
+            exposedKtorCacheReadinessProbes(
+                ExposedKtorCacheReadinessConfig(
+                    listOf(
+                        ExposedKtorCacheContributor.r2dbcRepository("orders") {
+                            resources.orderRepository.validateConsistency()
+                        },
+                    ),
+                ),
             ),
-        ),
-    )
+        )
+    }
     routing {
+        bluetape4kExposedHealthRoutes(
+            probes = readinessProbes,
+            readinessProbeTimeout = 2.seconds,
+        )
         get("/transactions/jdbc-count") {
             val count = call.exposedJdbcTransaction<Long>(
                 db = resources.jdbcDatabase,

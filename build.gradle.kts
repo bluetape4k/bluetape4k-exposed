@@ -837,6 +837,231 @@ val publishableProjects = subprojects.filterNot { project ->
     project.isNonPublishedModule()
 }
 
+tasks.register("checkKtorDependencyBoundary") {
+    group = "verification"
+    description = "Checks that selective Ktor artifacts do not pull sibling backend surfaces."
+
+    val selectivePaths = listOf(
+        ":bluetape4k-exposed-ktor-core",
+        ":bluetape4k-exposed-ktor-jdbc",
+        ":bluetape4k-exposed-ktor-r2dbc",
+        ":bluetape4k-exposed-ktor-cache",
+    )
+    dependsOn(
+        selectivePaths.flatMap { path ->
+            val selectiveProject = project(path)
+            listOf(
+                selectiveProject.tasks.named("generatePomFileForBluetapeExposedPublication"),
+                selectiveProject.tasks.named("generateMetadataFileForBluetapeExposedPublication"),
+            )
+        },
+    )
+
+    doLast {
+        val exposedGroup = projectGroup
+        val ktorArtifacts = setOf(
+            "bluetape4k-exposed-ktor",
+            "bluetape4k-exposed-ktor-core",
+            "bluetape4k-exposed-ktor-jdbc",
+            "bluetape4k-exposed-ktor-r2dbc",
+            "bluetape4k-exposed-ktor-cache",
+        )
+        val baseArtifacts = setOf(
+            "bluetape4k-exposed-jdbc",
+            "bluetape4k-exposed-r2dbc",
+            "bluetape4k-exposed-cache",
+        )
+        val allowedByModule = mapOf(
+            ":bluetape4k-exposed-ktor-core" to setOf(
+                "$exposedGroup:bluetape4k-exposed-ktor-core",
+            ),
+            ":bluetape4k-exposed-ktor-jdbc" to setOf(
+                "$exposedGroup:bluetape4k-exposed-ktor-core",
+                "$exposedGroup:bluetape4k-exposed-jdbc",
+                "$exposedGroup:bluetape4k-exposed-ktor-jdbc",
+            ),
+            ":bluetape4k-exposed-ktor-r2dbc" to setOf(
+                "$exposedGroup:bluetape4k-exposed-ktor-core",
+                "$exposedGroup:bluetape4k-exposed-r2dbc",
+                "$exposedGroup:bluetape4k-exposed-ktor-r2dbc",
+            ),
+            ":bluetape4k-exposed-ktor-cache" to setOf(
+                "$exposedGroup:bluetape4k-exposed-ktor-core",
+                "$exposedGroup:bluetape4k-exposed-cache",
+                "$exposedGroup:bluetape4k-exposed-ktor-cache",
+            ),
+        )
+        val forbiddenByModule = mapOf(
+            ":bluetape4k-exposed-ktor-core" to baseArtifacts +
+                ktorArtifacts - "bluetape4k-exposed-ktor-core",
+            ":bluetape4k-exposed-ktor-jdbc" to baseArtifacts - "bluetape4k-exposed-jdbc" +
+                (ktorArtifacts - setOf("bluetape4k-exposed-ktor-core", "bluetape4k-exposed-ktor-jdbc")),
+            ":bluetape4k-exposed-ktor-r2dbc" to baseArtifacts - "bluetape4k-exposed-r2dbc" +
+                (ktorArtifacts - setOf("bluetape4k-exposed-ktor-core", "bluetape4k-exposed-ktor-r2dbc")),
+            ":bluetape4k-exposed-ktor-cache" to baseArtifacts - "bluetape4k-exposed-cache" +
+                (ktorArtifacts - setOf("bluetape4k-exposed-ktor-core", "bluetape4k-exposed-ktor-cache")),
+        )
+        val selectiveProjects = forbiddenByModule.keys.associateWith { project(it) }
+        val sourceGraph = linkedMapOf<String, MutableList<String>>()
+        val resolvedGraph = linkedMapOf<String, MutableList<String>>()
+        val violations = buildList {
+            selectiveProjects.forEach { (path, selectiveProject) ->
+                val forbiddenProjects = forbiddenByModule.getValue(path)
+                val allowedCoordinates = allowedByModule.getValue(path)
+                fun checkCoordinate(location: String, coordinate: String?) {
+                    if (coordinate == null) return
+                    if (coordinate.substringAfter(':') in forbiddenProjects) {
+                        add("$path:$location -> $coordinate")
+                    }
+                    if (coordinate.startsWith("$exposedGroup:") && coordinate !in allowedCoordinates) {
+                        add("$path:$location -> unallowlisted exposed coordinate=$coordinate")
+                    }
+                }
+                listOf("api", "implementation", "compileOnly", "runtimeOnly").forEach { configurationName ->
+                    selectiveProject.configurations.findByName(configurationName)
+                        ?.dependencies
+                        ?.forEach { dependency ->
+                            val dependencyProject = dependency as? org.gradle.api.artifacts.ProjectDependency
+                            val coordinate = if (dependencyProject != null) {
+                                "$exposedGroup:${dependencyProject.path.substringAfterLast(':')}"
+                            } else {
+                                dependency.group?.let { "$it:${dependency.name}" }
+                            }
+                            if (coordinate != null) {
+                                sourceGraph.getOrPut(path) { mutableListOf() } += "$configurationName:$coordinate"
+                            }
+                            checkCoordinate(configurationName, coordinate)
+                        }
+                }
+                listOf("compileClasspath", "runtimeClasspath").forEach { configurationName ->
+                    selectiveProject.configurations.findByName(configurationName)
+                        ?.takeIf { it.isCanBeResolved }
+                        ?.incoming
+                        ?.resolutionResult
+                        ?.allComponents
+                        ?.forEach { component ->
+                            val projectPath = (component.id as?
+                                org.gradle.api.artifacts.component.ProjectComponentIdentifier)?.projectPath
+                            val coordinate = component.moduleVersion?.let { "${it.group}:${it.name}" }
+                                ?: projectPath?.let { "$exposedGroup:${it.substringAfterLast(':')}" }
+                            if (coordinate != null) {
+                                resolvedGraph.getOrPut(path) { mutableListOf() } += "$configurationName:$coordinate"
+                            }
+                            checkCoordinate(configurationName, coordinate)
+                        }
+                }
+
+                val publicationDir = selectiveProject.layout.buildDirectory
+                    .dir("publications/BluetapeExposed").get().asFile
+                val pom = publicationDir.resolve("pom-default.xml")
+                val metadata = publicationDir.resolve("module.json")
+                check(pom.isFile && metadata.isFile) {
+                    "$path publication metadata is missing: ${pom.absolutePath}, ${metadata.absolutePath}"
+                }
+                val pomDocument = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+                    .apply { isNamespaceAware = true }
+                    .newDocumentBuilder()
+                    .parse(pom)
+                val pomDependencies = pomDocument.getElementsByTagNameNS("*", "dependency")
+                val pomCoordinates = (0 until pomDependencies.length).mapNotNull { index ->
+                    val dependency = pomDependencies.item(index)
+                    val groupId = (dependency as org.w3c.dom.Element)
+                        .getElementsByTagNameNS("*", "groupId")
+                        .item(0)
+                        ?.textContent
+                        ?.trim()
+                    val artifactId = dependency
+                        .getElementsByTagNameNS("*", "artifactId")
+                        .item(0)
+                        ?.textContent
+                        ?.trim()
+                    if (groupId.isNullOrBlank() || artifactId.isNullOrBlank()) {
+                        null
+                    } else {
+                        "$groupId:$artifactId"
+                    }
+                }.toSet()
+                val metadataRoot = groovy.json.JsonSlurper().parse(metadata) as? Map<*, *>
+                    ?: error("$path Gradle metadata root must be an object")
+                val variants = metadataRoot["variants"] as? List<*>
+                    ?: error("$path Gradle metadata variants are missing")
+                val metadataCoordinates = variants.flatMap { variant ->
+                    val variantMap = variant as? Map<*, *>
+                        ?: error("$path Gradle metadata variant must be an object")
+                    val dependencies = variantMap["dependencies"] as? List<*> ?: emptyList<Any?>()
+                    dependencies.mapNotNull { dependency ->
+                        val dependencyMap = dependency as? Map<*, *>
+                            ?: error("$path Gradle metadata dependency must be an object")
+                        val groupId = dependencyMap["group"]?.toString()?.trim()
+                        val moduleId = dependencyMap["module"]?.toString()?.trim()
+                        if (groupId.isNullOrBlank() || moduleId.isNullOrBlank()) {
+                            null
+                        } else {
+                            "$groupId:$moduleId"
+                        }
+                    }
+                }.toSet()
+                val publishedCoordinates = pomCoordinates + metadataCoordinates
+                publishedCoordinates.forEach { coordinate ->
+                    checkCoordinate("publishedMetadata", coordinate)
+                }
+                sourceGraph.getOrPut("$path:publishedPom") { mutableListOf() }
+                    .addAll(pomCoordinates.sorted())
+                sourceGraph.getOrPut("$path:publishedGradleMetadata") { mutableListOf() }
+                    .addAll(metadataCoordinates.sorted())
+            }
+        }
+        check(violations.isEmpty()) {
+            "Selective Ktor dependency boundary violations:\n${violations.joinToString("\n")}"
+        }
+        val receipt = linkedMapOf(
+            "schema" to 1,
+            "selectiveArtifacts" to selectiveProjects.keys.sorted(),
+            "sourceGraph" to sourceGraph.mapValues { it.value.distinct().sorted() },
+            "resolvedGraph" to resolvedGraph.mapValues { it.value.distinct().sorted() },
+            "publishedMetadata" to selectiveProjects.keys.sorted().associateWith { path ->
+                val project = project(path)
+                val publicationDir = project.layout.buildDirectory.dir("publications/BluetapeExposed").get().asFile
+                linkedMapOf(
+                    "pom" to rootProject.projectDir.toPath().relativize(publicationDir.resolve("pom-default.xml").toPath())
+                        .toString().replace(File.separatorChar, '/'),
+                    "module" to rootProject.projectDir.toPath().relativize(publicationDir.resolve("module.json").toPath())
+                        .toString().replace(File.separatorChar, '/'),
+                )
+            },
+            "consumerFixture" to linkedMapOf(
+                "status" to "PENDING",
+                "mode" to "external-published-consumer-required",
+                "receipt" to "build/verification/ktor-consumer-boundary.json",
+            ),
+        )
+        val dependencyReceipt = layout.buildDirectory.file("verification/ktor-dependency-boundary.json").get().asFile
+        dependencyReceipt.apply {
+            parentFile.mkdirs()
+            writeText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(receipt)) + "\n")
+        }
+        val consumerFixtureScript = rootProject.file("scripts/verification/validate_ktor_consumer.rb")
+        check(consumerFixtureScript.isFile) {
+            "Ktor consumer fixture validator is missing: ${consumerFixtureScript.absolutePath}"
+        }
+        val consumerProcess = ProcessBuilder(
+            "ruby",
+            consumerFixtureScript.absolutePath,
+            project.version.toString(),
+        ).directory(rootProject.projectDir).inheritIO().start()
+        check(consumerProcess.waitFor() == 0) {
+            "Ktor external consumer fixture failed with exit code ${consumerProcess.exitValue()}"
+        }
+        receipt["consumerFixture"] = linkedMapOf(
+            "status" to "PASS",
+            "mode" to "external-published-consumer",
+            "receipt" to "build/verification/ktor-consumer-boundary.json",
+        )
+        dependencyReceipt.writeText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(receipt)) + "\n")
+        logger.lifecycle("Ktor dependency boundary passed: selectiveArtifacts=${selectiveProjects.size}")
+    }
+}
+
 val publicationInventory = layout.buildDirectory.file("publication/publication-inventory.json")
 val publicationInventoryEntries = publishableProjects
     .sortedBy(Project::getPath)
@@ -875,8 +1100,8 @@ val productionAbiProjects = publishableProjects
     .filterNot { it.name == "bluetape4k-exposed-bom" }
     .sortedBy(Project::getPath)
 
-check(productionAbiProjects.size == 38) {
-    "Production ABI publication inventory must contain 38 JVM modules, found ${productionAbiProjects.size}"
+check(productionAbiProjects.size == 42) {
+    "Production ABI publication inventory must contain 42 JVM modules, found ${productionAbiProjects.size}"
 }
 
 val productionAbiCheckTasks = productionAbiProjects.map { project ->

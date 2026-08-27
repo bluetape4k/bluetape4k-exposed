@@ -33,6 +33,8 @@ dependencies {
 }
 ```
 
+This artifact remains the compatibility aggregator for existing consumers. New applications should select `bluetape4k-exposed-ktor-core` plus exactly the `-jdbc`, `-r2dbc`, or `-cache` adapter they use. The selective child artifacts and their manuals are develop-only during the 2.0 migration and are not published in stable `1.12.1`; a stable consumer must keep this aggregator coordinate. The legacy coordinates and packages stay available during the migration window; move imports and dependencies one backend at a time before removing the aggregator from a future major release.
+
 ## Core concepts {#concepts}
 
 `Bluetape4kExposedKtorConfig` accepts optional application-owned JDBC `Database`, JDBC blocking dispatcher, R2DBC `R2dbcDatabase`, `MeterRegistry`, route paths, and probe timeouts. Installing the helper only registers the selected StatusPages mapping and health routes. It does not hide startup or shutdown work.

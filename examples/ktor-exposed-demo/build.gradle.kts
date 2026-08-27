@@ -26,7 +26,10 @@ dependencies {
     implementation(platform(bt4k.ktor.bom))
     implementation(platform(bt4k.exposed.bom))
 
-    implementation(project(":bluetape4k-exposed-ktor"))
+    implementation(project(":bluetape4k-exposed-ktor-core"))
+    implementation(project(":bluetape4k-exposed-ktor-jdbc"))
+    implementation(project(":bluetape4k-exposed-ktor-r2dbc"))
+    implementation(project(":bluetape4k-exposed-ktor-cache"))
     implementation(project(":bluetape4k-exposed-r2dbc-caffeine"))
     implementation(bt4k.bluetape4k.idgenerators)
     implementation(bt4k.bluetape4k.ktor.core)

@@ -34,6 +34,22 @@ dependencies {
 }
 ```
 
+새 서비스는 compatibility aggregator 대신 실제로 사용하는 backend별
+아티팩트만 선택하세요.
+
+```kotlin
+dependencies {
+    implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<version>"))
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-core")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-jdbc")
+    // 이 서비스가 사용하면 -r2dbc 및/또는 -cache도 선택합니다.
+}
+```
+
+`bluetape4k-exposed-ktor`는 compatibility aggregator로 유지됩니다. 2.0
+migration window 동안 기존 import는 계속 동작하므로 backend별로 하나씩 옮겨
+소비자 classpath를 선택형으로 유지하세요.
+
 ## 호출자 소유 Resource
 
 Database resource는 이 모듈 밖에서 만들고 닫습니다. 준비된 `Database`,
@@ -143,7 +159,7 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 
 routing {
     get("/users/{id}") {
-        val id = call.parameters["id"]!!.toLong()
+        val id = requireNotNull(call.parameters["id"]).toLong()
         val row = call.exposedJdbcTransaction(
             db = jdbcDatabase,
             blockingDispatcher = jdbcDispatcher,
@@ -169,7 +185,7 @@ import org.jetbrains.exposed.v1.r2dbc.selectAll
 
 routing {
     get("/users/{id}/r2dbc") {
-        val id = call.parameters["id"]!!.toLong()
+        val id = requireNotNull(call.parameters["id"]).toLong()
         val row = call.exposedR2dbcTransaction(db = r2dbcDatabase) {
             Users.selectAll()
                 .where { Users.id eq id }

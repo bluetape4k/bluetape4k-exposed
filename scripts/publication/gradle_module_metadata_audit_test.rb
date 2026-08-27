@@ -56,6 +56,44 @@ class GradleModuleMetadataAuditTest < Minitest::Test
     end
   end
 
+  def test_accepts_ktor_platform
+    with_publication(
+      metadata: module_metadata(
+        api_dependencies: [
+          platform("io.ktor", "ktor-bom"),
+          dependency("io.ktor", "ktor-server-core"),
+        ],
+        runtime_dependencies: [
+          platform("io.ktor", "ktor-bom"),
+          dependency("io.ktor", "ktor-server-core"),
+        ],
+      ),
+    ) do |module_path|
+      result = Publication::GradleModuleMetadataAudit.new([module_path]).validate
+
+      assert_empty result.errors
+    end
+  end
+
+  def test_accepts_kotlinx_serialization_platform
+    with_publication(
+      metadata: module_metadata(
+        api_dependencies: [
+          platform("org.jetbrains.kotlinx", "kotlinx-serialization-bom"),
+          dependency("org.jetbrains.kotlinx", "kotlinx-serialization-core-jvm"),
+        ],
+        runtime_dependencies: [
+          platform("org.jetbrains.kotlinx", "kotlinx-serialization-bom"),
+          dependency("org.jetbrains.kotlinx", "kotlinx-serialization-json-jvm"),
+        ],
+      ),
+    ) do |module_path|
+      result = Publication::GradleModuleMetadataAudit.new([module_path]).validate
+
+      assert_empty result.errors
+    end
+  end
+
   def test_rejects_enforced_platform_as_governance
     with_publication(
       metadata: module_metadata(
