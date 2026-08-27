@@ -24,6 +24,11 @@ matrix와 metrics receipt는 `sourceDirty=false`, 40자리 `sourceHead`,
 
 `required=true`이면서 `applicable=true`인 행은 `PASS`만 완료 증거로 인정한다. `applicable=false`는 의도적인 비적용으로 기록하고 `N/A`만 허용한다. `required=false`인 환경의 `SKIPPED`와 `PENDING`은 성공으로 집계하지 않는다. 누락·중복·알 수 없는 행과 잘못된 상태는 parser가 fail-closed로 거부한다.
 
+적용 행의 `evidence`는 실행 명령, 로그 경로, 실행별 XML 결과 디렉터리와 파일 수,
+종료 코드, timeout, cache 재사용 여부, 테스트 요약을 보존한다. validator는 로그와
+XML의 테스트 수/skip 수를 대조하고, XML의 failure/error가 0인지 확인한다. 로그·XML은
+공유 결과 디렉터리를 재사용하지 않으며 runner의 파일 잠금으로 동시 실행을 거부한다.
+
 `build/verification/write-behind-db-matrix.json`은 `scripts/verification/run_write_behind_matrix.py`가 H2 → PostgreSQL → MySQL 8 순서로 생성한다. `build/verification/write-behind-metrics.json`은 기존 adapter 관측성 inventory의 기준 checksum을 보존한다. coordinator는 새 Micrometer meter family를 추가하지 않으며 `queueDepth`는 metric label이 될 수 없다.
 
 ## 데이터베이스 매트릭스
