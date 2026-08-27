@@ -35,7 +35,8 @@ GRADLE_FLAGS = (
 GRADLE_TIMEOUT_SECONDS = 900
 TEST_TASK_OUTCOME = re.compile(r"^> Task (?P<task>:[^ ]+:test)(?:\s+(?P<outcome>[A-Z-]+))?$")
 TEST_SUMMARY = re.compile(
-    r"SUCCESS: Executed (?P<executed>\d+) tests? in .*?(?:\((?P<skipped>\d+) skipped\))?$"
+    r"SUCCESS: Executed (?P<executed>\d+) tests? in .*?(?:\((?P<skipped>\d+) skipped\))?$",
+    re.MULTILINE,
 )
 CONTAINER_UNAVAILABLE = re.compile(
     r"(?:Could not find a valid Docker environment|"
