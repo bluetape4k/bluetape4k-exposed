@@ -207,12 +207,10 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                     if (batch.isNotEmpty()) {
                         val flushedCount = batch.size
                         if (flushBatchWithRetry(batch, writeBehindCloseDeadlineNanos.takeIf { it > 0L }) &&
-                            !writeBehindLateSideEffectGuard.get()
+                            settleSuccessfulWriteBehindBatch(batch, flushedCount)
                         ) {
-                            recordCoordinatorFlushSuccess(flushedCount)
-                            releaseWriteBehindPending(flushedCount)
-                            decrementWriteBehindDepth(flushedCount)
-                            batch.clear()
+                            // lifecycle fence가 회계를
+                            // late-side-effect guard와 함께 정산한다.
                         } else {
                             // A permanent failure leaves depth/error intact and stops
                             // the worker before another queue item can be appended.
@@ -239,11 +237,9 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                 // 데이터 유실을 방지할 수 있다.
                 if (batch.isNotEmpty()) {
                     val flushedCount = batch.size
-                    if (flushFinalBatch(batch) && !writeBehindLateSideEffectGuard.get()) {
-                        recordCoordinatorFlushSuccess(flushedCount)
-                        releaseWriteBehindPending(flushedCount)
-                        decrementWriteBehindDepth(flushedCount)
-                        batch.clear()
+                    if (flushFinalBatch(batch) && settleSuccessfulWriteBehindBatch(batch, flushedCount)) {
+                        // lifecycle fence가 회계를
+                        // late-side-effect guard와 함께 정산한다.
                     } else {
                         if (writeBehindLateSideEffectGuard.get()) {
                             batch.clear()
@@ -331,6 +327,23 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
     /** Flush success must always settle the shared coordinator accounting. */
     private fun recordCoordinatorFlushSuccess(count: Int) {
         writeBehindCoordinator.onFlushSucceeded(count)
+    }
+
+    /**
+     * close timeout/interruption과 worker 성공 회계를 선형화합니다.
+     * close가 설치한 terminal guard는 완전한 정산 뒤에 관찰되거나 정산을 막으며,
+     * coordinator/local depth 변경 사이에 끼어들 수 없습니다.
+     */
+    private fun settleSuccessfulWriteBehindBatch(
+        batch: MutableList<Pair<ID, E>>,
+        flushedCount: Int,
+    ): Boolean = writeBehindLifecycleLock.withLock {
+        if (writeBehindLateSideEffectGuard.get()) return@withLock false
+        recordCoordinatorFlushSuccess(flushedCount)
+        releaseWriteBehindPending(flushedCount)
+        decrementWriteBehindDepth(flushedCount)
+        batch.clear()
+        true
     }
 
     private fun markWriteBehindFailed(error: Throwable, terminalizeCoordinator: Boolean = true) {

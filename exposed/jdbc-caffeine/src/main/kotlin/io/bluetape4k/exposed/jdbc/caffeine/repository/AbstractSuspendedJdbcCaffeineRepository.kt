@@ -182,12 +182,10 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
                     if (batch.isNotEmpty()) {
                         val flushedCount = batch.size
                         if (flushBatchWithRetry(batch, writeBehindCloseDeadlineNanos.takeIf { it > 0L }) &&
-                            !writeBehindLateSideEffectGuard.get()
+                            settleSuccessfulWriteBehindBatch(batch, flushedCount)
                         ) {
-                            recordCoordinatorFlushSuccess(flushedCount)
-                            releaseWriteBehindQueueDepth(flushedCount)
-                            releaseWriteBehindPending(flushedCount)
-                            batch.clear()
+                            // publication fence가 회계를
+                            // late-side-effect guard와 함께 정산한다.
                         } else {
                             if (writeBehindLateSideEffectGuard.get()) {
                                 batch.clear()
@@ -212,11 +210,9 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
                 // 채널 닫힌 후 남은 항목 처리
                 if (batch.isNotEmpty()) {
                     val flushedCount = batch.size
-                    if (flushFinalBatch(batch) && !writeBehindLateSideEffectGuard.get()) {
-                        recordCoordinatorFlushSuccess(flushedCount)
-                        releaseWriteBehindQueueDepth(flushedCount)
-                        releaseWriteBehindPending(flushedCount)
-                        batch.clear()
+                    if (flushFinalBatch(batch) && settleSuccessfulWriteBehindBatch(batch, flushedCount)) {
+                        // publication fence가 회계를
+                        // late-side-effect guard와 함께 정산한다.
                     } else {
                         if (writeBehindLateSideEffectGuard.get()) {
                             batch.clear()
@@ -248,6 +244,22 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
             "Write-Behind coordinator queue depth[$queueDepth] is below flushed count[$count]"
         }
         writeBehindCoordinator.onFlushSucceeded(count)
+    }
+
+    /**
+     * close timeout/interruption과 worker 성공 회계를 선형화합니다.
+     * 이 adapter에서는 publication lock이 terminal guard 경계이기도 합니다.
+     */
+    private fun settleSuccessfulWriteBehindBatch(
+        batch: MutableList<Pair<ID, E>>,
+        flushedCount: Int,
+    ): Boolean = writeBehindPublicationLock.withLock {
+        if (writeBehindLateSideEffectGuard.get()) return@withLock false
+        recordCoordinatorFlushSuccess(flushedCount)
+        releaseWriteBehindQueueDepth(flushedCount)
+        releaseWriteBehindPending(flushedCount)
+        batch.clear()
+        true
     }
 
     private suspend fun flushFinalBatch(batch: List<Pair<ID, E>>): Boolean = withContext(NonCancellable) {
