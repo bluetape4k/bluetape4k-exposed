@@ -7,6 +7,14 @@ import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
+import io.bluetape4k.exposed.cache.internal.CloseCompletion
+import io.bluetape4k.exposed.cache.internal.CloseCompletionKind
+import io.bluetape4k.exposed.cache.internal.CloseLease
+import io.bluetape4k.exposed.cache.internal.MAX_FLUSH_RETRY_ATTEMPTS
+import io.bluetape4k.exposed.cache.internal.WriteBehindCoordinator
+import io.bluetape4k.exposed.cache.internal.WriteBehindFailureKind
+import io.bluetape4k.exposed.cache.internal.WriteBehindWorkerCompletion
+import io.bluetape4k.exposed.cache.internal.flushRetryBackoffMillis
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.warn
@@ -15,6 +23,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
@@ -27,6 +36,7 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -45,6 +55,8 @@ import java.io.Serializable
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
@@ -67,12 +79,15 @@ import kotlin.concurrent.withLock
  * @param E 엔티티(DTO) 타입. 캐시에 저장하려면 [Serializable]을 구현해야 합니다.
  * @param config [LocalCacheConfig] 설정
  */
+@Suppress("LargeClass") // R2DBC cache와 write-behind 수명주기는 하나의 원자적 호환 경계다.
 abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
     override val config: LocalCacheConfig = LocalCacheConfig.WRITE_THROUGH,
 ): R2dbcCaffeineRepository<ID, E> {
 
     companion object: KLogging() {
         private val DEFAULT_WRITE_BEHIND_CLOSE_WAIT_DURATION: Duration = Duration.ofSeconds(30)
+        private const val NANOS_PER_MILLISECOND = 1_000_000L
+        private const val WRITE_BEHIND_CLOSE_JOIN_GRACE_MILLIS = 100L
     }
 
     internal open val writeBehindCloseWaitDuration: Duration
@@ -130,16 +145,27 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
         Channel(capacity = config.writeBehindQueueCapacity)
     }
 
+    private val writeBehindCoordinator = WriteBehindCoordinator(config.writeMode)
+    private val writeBehindPendingAdmissions = AtomicInteger(0)
+    private val writeBehindPendingCapacity = config.writeBehindQueueCapacity
+
     private val writeBehindQueueDepth = AtomicInteger(0)
+    private val writeBehindFailedBatch = AtomicReference<List<Pair<ID, E>>>(emptyList())
     private val writeBehindLifecycleLock = ReentrantLock()
+    private val writeBehindCloseLock = ReentrantLock()
     private val writeBehindLifecycleChanged = writeBehindLifecycleLock.newCondition()
     private val writeBehindAdmissions = AtomicReference(WriteBehindAdmissions())
     private val writeBehindJobCompletion = AtomicReference<WriteBehindJobCompletion?>(null)
     private val writeBehindCompletionPublished = AtomicBoolean(false)
+    private val writeBehindCoordinatorCloseLease = AtomicReference<CloseLease.Owner?>(null)
+    private val writeBehindCoordinatorCompletionPublished = AtomicBoolean(false)
     private val writeBehindCachePublicationsInProgress = ConcurrentHashMap<String, AtomicInteger>()
+    private val writeBehindCloseCleanupPending = AtomicBoolean(false)
+    private val writeBehindLateSideEffectGuard = AtomicBoolean(false)
     private var writeBehindCloseStarted = false
     private var writeBehindCloseStartedAtNanos = 0L
     private var writeBehindCloseWaitBudgetNanos = 0L
+    private var writeBehindCloseDeadlineNanos = 0L
     @Volatile
     private var writeBehindCloseOutcome: WriteBehindCloseOutcome? = null
     private val writeBehindWorkerState = AtomicReference(
@@ -159,6 +185,10 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
      * 채널이 닫히면 루프를 종료하고 `finally` 블록에서 남은 항목을 플러시합니다.
      * 이 작업은 지연 시작되므로 write-behind 모드의 첫 `put()` 호출이 백그라운드 소비자를 시작합니다.
      */
+    @Suppress(
+        "LoopWithTooManyJumpStatements",
+        "TooGenericExceptionCaught",
+    ) // queue drain에서 cancellation과 failed-worker 전환을 명시적으로 유지한다.
     private val writeBehindJob by lazy {
         scope.launch {
             val batch = mutableListOf<Pair<ID, E>>()
@@ -175,14 +205,28 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                     }
                     if (batch.isNotEmpty()) {
                         val flushedCount = batch.size
-                        if (flushBatch(batch)) {
+                        if (flushBatchWithRetry(batch, writeBehindCloseDeadlineNanos.takeIf { it > 0L }) &&
+                            !writeBehindLateSideEffectGuard.get()
+                        ) {
+                            recordCoordinatorFlushSuccess(flushedCount)
+                            releaseWriteBehindPending(flushedCount)
                             decrementWriteBehindDepth(flushedCount)
                             batch.clear()
+                        } else {
+                            // A permanent failure leaves depth/error intact and stops
+                            // the worker before another queue item can be appended.
+                            if (!writeBehindLateSideEffectGuard.get()) {
+                                retainWriteBehindFailedBatch(batch)
+                            }
+                            batch.clear()
+                            break
                         }
                     }
                 }
             } catch (e: CancellationException) {
-                markWriteBehindFailed(e)
+                // Keep the coordinator open until the NonCancellable final flush has
+                // settled the accepted batch; the completion callback terminalizes it.
+                markWriteBehindFailed(e, terminalizeCoordinator = false)
                 writeBehindQueue.close(e)
                 throw e
             } catch (e: Throwable) {
@@ -194,11 +238,18 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                 // 데이터 유실을 방지할 수 있다.
                 if (batch.isNotEmpty()) {
                     val flushedCount = batch.size
-                    withContext(NonCancellable) {
-                        if (flushBatch(batch)) {
-                            decrementWriteBehindDepth(flushedCount)
+                    if (flushFinalBatch(batch) && !writeBehindLateSideEffectGuard.get()) {
+                        recordCoordinatorFlushSuccess(flushedCount)
+                        releaseWriteBehindPending(flushedCount)
+                        decrementWriteBehindDepth(flushedCount)
+                        batch.clear()
+                    } else {
+                        if (writeBehindLateSideEffectGuard.get()) {
                             batch.clear()
+                            return@launch
                         }
+                        retainWriteBehindFailedBatch(batch)
+                        batch.clear()
                     }
                 }
             }
@@ -208,6 +259,19 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                 writeBehindJobCompletion.compareAndSet(
                     null,
                     WriteBehindJobCompletion(cause, System.nanoTime()),
+                )
+                if (writeBehindLateSideEffectGuard.get()) {
+                    writeBehindLifecycleLock.withLock {
+                        writeBehindLifecycleChanged.signalAll()
+                    }
+                    return@invokeOnCompletion
+                }
+                writeBehindCoordinator.onWorkerCompleted(
+                    when {
+                        cause == null -> WriteBehindWorkerCompletion.DRAINED
+                        cause is CancellationException -> WriteBehindWorkerCompletion.CANCELLED
+                        else -> WriteBehindWorkerCompletion.FAILED
+                    }
                 )
                 writeBehindLifecycleLock.withLock {
                     if (!writeBehindCloseStarted) {
@@ -221,12 +285,57 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
 
     private fun startWriteBehindJob(): Job = writeBehindJob
 
-    private fun decrementWriteBehindDepth(count: Int) {
-        val remaining = writeBehindQueueDepth.addAndGet(-count)
-        check(remaining >= 0) { "Write-Behind queue depth accounting underflow" }
+    private suspend fun flushFinalBatch(batch: List<Pair<ID, E>>): Boolean = withContext(NonCancellable) {
+        val deadlineNanos = writeBehindCloseDeadlineNanos.takeIf { it > 0L }
+        if (deadlineNanos == null || deadlineNanos == Long.MAX_VALUE) {
+            return@withContext flushBatchWithRetry(batch, deadlineNanos)
+        }
+        val remainingNanos = deadlineNanos - System.nanoTime()
+        if (remainingNanos <= 0L) return@withContext false
+        val remainingMillis = remainingNanos / 1_000_000L
+        if (remainingMillis <= 0L) return@withContext false
+        withTimeoutOrNull(remainingMillis) {
+            flushBatchWithRetry(batch, deadlineNanos)
+        } ?: false
     }
 
-    private fun markWriteBehindFailed(error: Throwable) {
+    private fun decrementWriteBehindDepth(count: Int) {
+        if (count <= 0) return
+        writeBehindQueueDepth.updateAndGet { current ->
+            check(current >= count) {
+                "Write-Behind queue depth accounting underflow: current=$current, decrement=$count"
+            }
+            current - count
+        }
+    }
+
+    private fun tryReserveWriteBehindPending(): Boolean {
+        while (true) {
+            val current = writeBehindPendingAdmissions.get()
+            if (current >= writeBehindPendingCapacity) return false
+            if (writeBehindPendingAdmissions.compareAndSet(current, current + 1)) return true
+        }
+    }
+
+    private fun releaseWriteBehindPending(count: Int) {
+        if (count <= 0) return
+        writeBehindPendingAdmissions.updateAndGet { current ->
+            check(current >= count) {
+                "Write-Behind pending admission accounting underflow: current=$current, release=$count"
+            }
+            current - count
+        }
+    }
+
+    /** Flush success must always settle the shared coordinator accounting. */
+    private fun recordCoordinatorFlushSuccess(count: Int) {
+        writeBehindCoordinator.onFlushSucceeded(count)
+    }
+
+    private fun markWriteBehindFailed(error: Throwable, terminalizeCoordinator: Boolean = true) {
+        if (terminalizeCoordinator) {
+            writeBehindCoordinator.onCloseFailed(WriteBehindFailureKind.WORKER)
+        }
         writeBehindLifecycleLock.withLock {
             if (writeBehindWorkerState.get() == CacheWorkerState.STOPPED) return
             if (writeBehindWorkerState.get() != CacheWorkerState.FAILED) {
@@ -237,6 +346,14 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
         }
     }
 
+    private fun retainWriteBehindFailedBatch(batch: List<Pair<ID, E>>) {
+        if (batch.isEmpty()) return
+        writeBehindFailedBatch.updateAndGet { retained ->
+            if (retained.isEmpty()) batch.toList() else retained + batch
+        }
+    }
+
+    @Suppress("CyclomaticComplexMethod", "ReturnCount") // completion/failure ordering is one lifecycle boundary.
     private fun publishWriteBehindCompletionLocked() {
         val completion = writeBehindJobCompletion.get() ?: return
         if (writeBehindAdmissions.get().inProgress != 0) return
@@ -260,11 +377,18 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                 writeBehindTerminalError.compareAndSet(null, lastFlushError.get())
             }
             writeBehindWorkerState.set(CacheWorkerState.FAILED)
+            if (writeBehindCloseOutcome == null) {
+                writeBehindCloseOutcome = WriteBehindCloseOutcome.FAILED
+            }
         } else if (writeBehindWorkerState.get() != CacheWorkerState.FAILED) {
             writeBehindWorkerState.set(CacheWorkerState.STOPPED)
         }
         if (writeBehindCloseOutcome == null) {
-            writeBehindCloseOutcome = WriteBehindCloseOutcome.COMPLETED
+            writeBehindCloseOutcome = if (writeBehindWorkerState.get() == CacheWorkerState.FAILED) {
+                WriteBehindCloseOutcome.FAILED
+            } else {
+                WriteBehindCloseOutcome.COMPLETED
+            }
         }
         writeBehindLifecycleChanged.signalAll()
     }
@@ -298,9 +422,44 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
             throw e
         } catch (e: Exception) {
             lastFlushError.set(e)
-            log.warn(e) { "Write-Behind: ${batch.size}건 DB flush 실패" }
+            log.warn {
+                "Write-Behind event: component=r2dbc operation=flush " +
+                    "failureKind=flush queueDepth=${writeBehindQueueDepth.get()}"
+            }
             return false
         }
+    }
+
+    @Suppress("ReturnCount") // retry terminal state를 worker 경계에서 구분해야 한다.
+    private suspend fun flushBatchWithRetry(batch: List<Pair<ID, E>>, deadlineNanos: Long? = null): Boolean {
+        for (attempt in 1..MAX_FLUSH_RETRY_ATTEMPTS) {
+            if (writeBehindLateSideEffectGuard.get()) return false
+            if (deadlineNanos != null && System.nanoTime() >= deadlineNanos) {
+                val failure = IllegalStateException("Write-Behind flush close deadline exhausted")
+                lastFlushError.compareAndSet(null, failure)
+                markWriteBehindFailed(failure)
+                writeBehindQueue.close(failure)
+                return false
+            }
+            if (flushBatch(batch) && !writeBehindLateSideEffectGuard.get()) return true
+            if (writeBehindLateSideEffectGuard.get()) return false
+            writeBehindCoordinator.onFlushFailed()
+            if (attempt == MAX_FLUSH_RETRY_ATTEMPTS) {
+                val failure = IllegalStateException("Write-Behind flush retry limit exhausted")
+                markWriteBehindFailed(failure)
+                writeBehindQueue.close(failure)
+                return false
+            }
+            val backoffMillis = flushRetryBackoffMillis(attempt)
+            if (deadlineNanos != null) {
+                val remainingNanos = deadlineNanos - System.nanoTime()
+                if (remainingNanos <= 0L) continue
+                    delay(minOf(backoffMillis, remainingNanos / NANOS_PER_MILLISECOND))
+            } else {
+                delay(backoffMillis)
+            }
+        }
+        return false
     }
 
     // -------------------------------------------------------------------------
@@ -390,8 +549,11 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                     cache.put(serializeKey(id), CompletableFuture.completedFuture(entity))
                 } catch (e: CancellationException) {
                     throw e
-                } catch (e: Exception) {
-                    log.warn(e) { "findAll: 캐시 적재 실패 — extractId()가 구현되지 않았을 수 있습니다" }
+                } catch (_: Exception) {
+                    log.warn {
+                        "Cache event: component=r2dbc operation=cache_warming failureKind=error " +
+                            "queueDepth=${writeBehindQueueDepth.get()}"
+                    }
                 }
             }
         }
@@ -413,6 +575,13 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
     // 쓰기 (캐시 + DB)
     // -------------------------------------------------------------------------
 
+    @Suppress(
+        "LongMethod",
+        "CyclomaticComplexMethod",
+        "ThrowsCount",
+        "NestedBlockDepth",
+        "TooGenericExceptionCaught",
+    ) // admission/publication/terminal 순서는 하나의 원자적 suspend 계약이다.
     override suspend fun put(id: ID, entity: E) {
         val key = serializeKey(id)
 
@@ -423,19 +592,51 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
             }
             CacheWriteMode.WRITE_BEHIND -> {
                 startWriteBehindJob()
+                val admissionToken = try {
+                    writeBehindCoordinator.reserveAdmission()
+                } catch (_: IllegalStateException) {
+                    throw writeBehindNotAcceptingException(writeBehindWorkerState.get())
+                }
+                if (!tryReserveWriteBehindPending()) {
+                    writeBehindCoordinator.settleEnqueue(admissionToken, accepted = false)
+                    throw IllegalStateException(
+                        "Write-Behind queue is full (capacity=${config.writeBehindQueueCapacity})."
+                    )
+                }
                 val entry = WriteBehindEntry(id, entity)
-                reserveWriteBehindAdmission(key)
                 var accepted = false
+                var admissionSettled = false
+                var publicationAdmissionReserved = false
                 try {
+                    reserveCoordinatorBackedPublication(key)
+                    publicationAdmissionReserved = true
                     writeBehindQueue.send(entry)
+                    writeBehindCoordinator.markEnqueued(admissionToken)
+                    val acceptedByCoordinator = writeBehindCoordinator.settleEnqueue(admissionToken, accepted = true)
+                    admissionSettled = true
+                    if (!acceptedByCoordinator) {
+                        entry.accepted.complete(false)
+                        throw writeBehindNotAcceptingException(writeBehindWorkerState.get())
+                    }
                     accepted = entry.accepted.complete(true)
                     check(accepted) { "Write-Behind admission was already settled" }
                     cache.put(key, CompletableFuture.completedFuture(entity))
                 } catch (e: Throwable) {
-                    if (!accepted && entry.accepted.complete(false)) {
-                        rollbackWriteBehindAdmission()
+                    if (!accepted) {
+                        if (entry.accepted.complete(false) && !admissionSettled) {
+                            writeBehindCoordinator.settleEnqueue(admissionToken, accepted = false)
+                        }
+                        if (publicationAdmissionReserved) {
+                            rollbackCoordinatorBackedPublication()
+                        } else {
+                            releaseWriteBehindPending(1)
+                        }
                     }
-                    cache.synchronous().invalidate(key)
+                    try {
+                        cache.synchronous().invalidate(key)
+                    } catch (invalidateFailure: Throwable) {
+                        e.addSuppressed(invalidateFailure)
+                    }
                     throw e
                 } finally {
                     try {
@@ -449,12 +650,17 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                                 }
                             }
                             if (terminalFailure != null) {
-                                cache.synchronous().invalidate(key)
+                                try {
+                                    cache.synchronous().invalidate(key)
+                                } catch (invalidateFailure: Throwable) {
+                                    terminalFailure.addSuppressed(invalidateFailure)
+                                }
                                 throw terminalFailure
                             }
                         }
                     } finally {
                         markWriteBehindCachePublicationCompleted(key)
+                        finishDeferredCloseCleanupIfReady()
                     }
                 }
             }
@@ -469,14 +675,22 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
     }
 
     override suspend fun validateConsistency(): CacheHealthReport =
-        CacheHealthReport(
-            mode = cacheWriteMode,
-            queueDepth = writeBehindQueueDepth.get(),
-            workerState = writeBehindWorkerState.get(),
-            lastFlushError = lastFlushError.get(),
-        )
+        writeBehindCoordinator.snapshot().let { snapshot ->
+            CacheHealthReport(
+                mode = snapshot.mode,
+                queueDepth = snapshot.queueDepth,
+                workerState = snapshot.workerState,
+                lastFlushError = lastFlushError.get(),
+            )
+        }
 
-    private fun reserveWriteBehindAdmission(key: String) {
+    /**
+     * Reserves the adapter-side publication accounting for a coordinator-backed write.
+     *
+     * The coordinator token is settled by [put] before the deferred queue gate opens;
+     * this method only records the adapter's cache-publication lease and diagnostic depth.
+     */
+    private fun reserveCoordinatorBackedPublication(key: String) {
         writeBehindLifecycleLock.withLock {
             val state = writeBehindWorkerState.get()
             if (state.isWriteBehindTerminalOrDraining() || !writeBehindJob.isActive) {
@@ -493,8 +707,43 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
         }
     }
 
-    private fun rollbackWriteBehindAdmission() {
+    /** Test-only fixture hook; it registers the same coordinator admission as put(). */
+    private fun reserveWriteBehindAdmission(key: String) {
+        writeBehindLifecycleLock.withLock {
+            val state = writeBehindWorkerState.get()
+            if (state.isWriteBehindTerminalOrDraining() || !writeBehindJob.isActive) {
+                throw writeBehindNotAcceptingException(state)
+            }
+            writeBehindQueueDepth.incrementAndGet()
+            // 이 private hook은 token-handshake fixture만 사용하며 adapter capacity gate를
+            // 우회해 capacity-one 채널에 두 항목을 준비한다. worker와 rollback 경로가
+            // production invariant를 계속 검증하도록 local 회계를 균형 있게 맞춘다.
+            writeBehindPendingAdmissions.incrementAndGet()
+            writeBehindAdmissions.updateAndGet { admissions ->
+                WriteBehindAdmissions(inProgress = admissions.inProgress + 1)
+            }
+            val token = writeBehindCoordinator.reserveAdmission()
+            writeBehindCoordinator.markEnqueued(token)
+            check(writeBehindCoordinator.settleEnqueue(token, accepted = true)) {
+                "Write-Behind fixture admission was rejected by the coordinator"
+            }
+            markWriteBehindCachePublicationStarted(key)
+            if (state == CacheWorkerState.IDLE) {
+                writeBehindWorkerState.set(CacheWorkerState.RUNNING)
+            }
+        }
+    }
+
+    private fun rollbackCoordinatorBackedPublication() {
         decrementWriteBehindDepth(1)
+        releaseWriteBehindPending(1)
+        settleWriteBehindAdmission()
+    }
+
+    private fun rollbackWriteBehindAdmission() {
+        writeBehindCoordinator.onFlushSucceeded(1)
+        decrementWriteBehindDepth(1)
+        releaseWriteBehindPending(1)
         settleWriteBehindAdmission()
     }
 
@@ -504,15 +753,15 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
 
     private fun settleWriteBehindAdmission() {
         val completedAtNanos = System.nanoTime()
-        writeBehindAdmissions.updateAndGet { admissions ->
-            val remaining = admissions.inProgress - 1
-            check(remaining >= 0) { "Write-Behind admission accounting underflow" }
-            WriteBehindAdmissions(
-                inProgress = remaining,
-                drainedAtNanos = completedAtNanos.takeIf { remaining == 0 } ?: 0L,
-            )
-        }
         writeBehindLifecycleLock.withLock {
+            writeBehindAdmissions.updateAndGet { admissions ->
+                val remaining = admissions.inProgress - 1
+                check(remaining >= 0) { "Write-Behind admission accounting underflow" }
+                WriteBehindAdmissions(
+                    inProgress = remaining,
+                    drainedAtNanos = completedAtNanos.takeIf { remaining == 0 } ?: 0L,
+                )
+            }
             if (!writeBehindCloseStarted) {
                 publishWriteBehindCompletionLocked()
             }
@@ -534,6 +783,28 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
     private fun markWriteBehindCachePublicationCompleted(key: String) {
         writeBehindCachePublicationsInProgress.computeIfPresent(key) { _, count ->
             count.takeIf { it.decrementAndGet() > 0 }
+        }
+    }
+
+    private fun markCloseCleanupPendingIfNeeded(): Boolean = writeBehindLifecycleLock.withLock {
+        val pending = writeBehindAdmissions.get().inProgress > 0
+        if (pending) writeBehindCloseCleanupPending.set(true)
+        pending
+    }
+
+    @Suppress("ReturnCount") // deferred cleanup은 빠른 비활성/락/회계 검사를 유지한다.
+    private fun finishDeferredCloseCleanupIfReady() {
+        if (!writeBehindCloseCleanupPending.get()) return
+        if (!writeBehindCloseLock.tryLock()) return
+        try {
+            val ready = writeBehindLifecycleLock.withLock {
+                writeBehindAdmissions.get().inProgress == 0
+            }
+            if (!ready || !writeBehindCloseCleanupPending.compareAndSet(true, false)) return
+            invalidateCacheOnCloseSafely()
+            publishCoordinatorCloseCompletion()
+        } finally {
+            writeBehindCloseLock.unlock()
         }
     }
 
@@ -601,12 +872,21 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
      * 종료를 무기한 막지 않도록 합니다.
      */
     override fun close() {
-        if (config.writeMode == CacheWriteMode.WRITE_BEHIND) {
-            startWriteBehindJob()
-            awaitWriteBehindShutdown()
+        writeBehindCloseLock.withLock {
+            if (config.writeMode == CacheWriteMode.WRITE_BEHIND) {
+                startWriteBehindJob()
+                val outcome = awaitWriteBehindShutdown()
+                if (outcome != null) cancelWriteBehindAfterClose(outcome)
+            }
+            cancelScopeOnClose()
+            val publicationsPending = markCloseCleanupPendingIfNeeded()
+            if (!publicationsPending) {
+                invalidateCacheOnCloseSafely()
+                publishCoordinatorCloseCompletion()
+            } else {
+                finishDeferredCloseCleanupIfReady()
+            }
         }
-        invalidateCacheOnCloseSafely()
-        cancelScopeOnClose()
     }
 
     protected open fun invalidateCacheOnClose() {
@@ -617,23 +897,62 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
         scope.cancel()
     }
 
-    private fun invalidateCacheOnCloseSafely() {
-        try {
-            invalidateCacheOnClose()
-        } catch (e: Exception) {
-            log.warn(e) { "cache invalidateAll 중 오류 발생" }
+    private fun cancelWriteBehindAfterClose(outcome: WriteBehindCloseOutcome) {
+        if (outcome == WriteBehindCloseOutcome.COMPLETED) return
+        if (outcome == WriteBehindCloseOutcome.TIMEOUT || outcome == WriteBehindCloseOutcome.INTERRUPTED) {
+            // Once the bounded close contract expires, no worker completion may publish
+            // cache, coordinator, or lifecycle state changes after close returns.
+            writeBehindLateSideEffectGuard.set(true)
+            val completed = CountDownLatch(1)
+            writeBehindJob.invokeOnCompletion { completed.countDown() }
+            writeBehindJob.cancel()
+            var restoreInterrupt = false
+            try {
+                completed.await(WRITE_BEHIND_CLOSE_JOIN_GRACE_MILLIS, TimeUnit.MILLISECONDS)
+            } catch (_: InterruptedException) {
+                restoreInterrupt = true
+            }
+            if (restoreInterrupt) Thread.currentThread().interrupt()
+            if (!writeBehindJob.isCompleted) {
+                log.warn {
+                    "Write-Behind event: component=r2dbc operation=close " +
+                        "failureKind=close_join_timeout queueDepth=${writeBehindQueueDepth.get()}"
+                }
+            }
+        } else {
+            writeBehindJob.cancel()
         }
     }
 
-    private fun awaitWriteBehindShutdown() {
+    private fun invalidateCacheOnCloseSafely() {
+        try {
+            invalidateCacheOnClose()
+        } catch (_: Exception) {
+            log.warn {
+                "Write-Behind event: component=r2dbc operation=close_cleanup " +
+                    "failureKind=cache_invalidate queueDepth=${writeBehindQueueDepth.get()}"
+            }
+        }
+    }
+
+    @Suppress("CyclomaticComplexMethod", "LongMethod") // owner/follower close arbitration is intentionally linearized.
+    private fun awaitWriteBehindShutdown(): WriteBehindCloseOutcome? {
         var restoreInterrupt = false
         val closeOutcome = writeBehindLifecycleLock.withLock {
             if (writeBehindCloseOutcome != null) return@withLock writeBehindCloseOutcome
             val ownsCloseOutcomeArbitration = !writeBehindCloseStarted
             if (ownsCloseOutcomeArbitration) {
+                (writeBehindCoordinator.beginClose() as? CloseLease.Owner)?.let {
+                    writeBehindCoordinatorCloseLease.compareAndSet(null, it)
+                }
                 writeBehindCloseStarted = true
                 writeBehindCloseStartedAtNanos = System.nanoTime()
                 writeBehindCloseWaitBudgetNanos = writeBehindCloseWaitNanos()
+                writeBehindCloseDeadlineNanos = if (writeBehindCloseWaitBudgetNanos == Long.MAX_VALUE) {
+                    Long.MAX_VALUE
+                } else {
+                    writeBehindCloseStartedAtNanos + writeBehindCloseWaitBudgetNanos
+                }
                 writeBehindAdmissions.updateAndGet { admissions ->
                     if (admissions.inProgress == 0 && admissions.drainedAtNanos == 0L) {
                         admissions.copy(drainedAtNanos = writeBehindCloseStartedAtNanos)
@@ -691,24 +1010,66 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
         if (restoreInterrupt) Thread.currentThread().interrupt()
         when (closeOutcome) {
             WriteBehindCloseOutcome.TIMEOUT -> log.warn {
-                "Write-Behind: close timed out waiting for final flush and accepted cache writes. " +
-                    "timeout=$writeBehindCloseWaitDuration"
+                "Write-Behind event: component=r2dbc operation=close " +
+                    "failureKind=close_timeout queueDepth=${writeBehindQueueDepth.get()}"
             }
             WriteBehindCloseOutcome.INTERRUPTED -> log.warn {
-                "Write-Behind: close was interrupted while waiting for final flush and accepted cache writes."
+                "Write-Behind event: component=r2dbc operation=close " +
+                    "failureKind=close_interrupted queueDepth=${writeBehindQueueDepth.get()}"
             }
             else -> Unit
         }
+        return closeOutcome
+    }
+
+    private fun publishCoordinatorCloseCompletion() {
+        val owner = writeBehindCoordinatorCloseLease.get() ?: return
+        if (!writeBehindCoordinatorCompletionPublished.compareAndSet(false, true)) return
+        val snapshot = writeBehindCoordinator.snapshot()
+        val outcome = writeBehindCloseOutcome
+        val completed = outcome == null || outcome == WriteBehindCloseOutcome.COMPLETED
+        val drained = completed && snapshot.queueDepth == 0 &&
+            writeBehindWorkerState.get() == CacheWorkerState.STOPPED
+        val kind = if (drained) {
+            CloseCompletionKind.COMPLETED
+        } else {
+            when (outcome) {
+                WriteBehindCloseOutcome.TIMEOUT -> CloseCompletionKind.TIMEOUT
+                WriteBehindCloseOutcome.INTERRUPTED -> CloseCompletionKind.INTERRUPTED
+                else -> CloseCompletionKind.FAILED
+            }
+        }
+        writeBehindCoordinator.publishCloseCompletion(
+            owner,
+            CloseCompletion(
+                kind = kind,
+                workerState = if (drained) CacheWorkerState.STOPPED else CacheWorkerState.FAILED,
+                queueDepth = snapshot.queueDepth,
+            ),
+        )
     }
 
     private fun publishWriteBehindCloseFailureLocked(reason: WriteBehindCloseFailureReason) {
         if (writeBehindCloseOutcome != null) return
+        if (reason == WriteBehindCloseFailureReason.TIMEOUT ||
+            reason == WriteBehindCloseFailureReason.INTERRUPTED
+        ) {
+            writeBehindLateSideEffectGuard.set(true)
+        }
         val failure = WriteBehindCloseFailure(reason)
         writeBehindTerminalError.compareAndSet(null, failure)
         writeBehindWorkerState.set(CacheWorkerState.FAILED)
+        writeBehindCoordinator.onCloseFailed(
+            when (reason) {
+                WriteBehindCloseFailureReason.TIMEOUT -> WriteBehindFailureKind.CLOSE_TIMEOUT
+                WriteBehindCloseFailureReason.INTERRUPTED -> WriteBehindFailureKind.CLOSE_INTERRUPTED
+                WriteBehindCloseFailureReason.WORKER -> WriteBehindFailureKind.WORKER
+            }
+        )
         writeBehindCloseOutcome = when (reason) {
             WriteBehindCloseFailureReason.TIMEOUT -> WriteBehindCloseOutcome.TIMEOUT
             WriteBehindCloseFailureReason.INTERRUPTED -> WriteBehindCloseOutcome.INTERRUPTED
+            WriteBehindCloseFailureReason.WORKER -> WriteBehindCloseOutcome.FAILED
         }
         writeBehindLifecycleChanged.signalAll()
     }
@@ -734,17 +1095,19 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
     private enum class WriteBehindCloseOutcome {
         COMPLETED,
         TIMEOUT,
-        INTERRUPTED;
+        INTERRUPTED,
+        FAILED;
 
         val failureReason: WriteBehindCloseFailureReason?
             get() = when (this) {
                 COMPLETED -> null
                 TIMEOUT -> WriteBehindCloseFailureReason.TIMEOUT
                 INTERRUPTED -> WriteBehindCloseFailureReason.INTERRUPTED
+                FAILED -> WriteBehindCloseFailureReason.WORKER
             }
     }
 
-    private enum class WriteBehindCloseFailureReason { TIMEOUT, INTERRUPTED }
+    private enum class WriteBehindCloseFailureReason { TIMEOUT, INTERRUPTED, WORKER }
 
     private class WriteBehindCloseFailure(
         val reason: WriteBehindCloseFailureReason,

@@ -893,9 +893,41 @@ class WriteBehindCacheTest {
             }
         }
 
+        @Test
+        fun `write-behind permanent flush failure exhausts retries and retains the batch`() = runSuspendIO {
+            val attempts = AtomicInteger()
+            val repository = PermanentlyFailingFlushR2dbcRepository(
+                config = LocalCacheConfig(
+                    keyPrefix = "r2dbc:caffeine:write-behind:permanent-failure",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 1,
+                    writeBehindQueueCapacity = 4,
+                ),
+                attempts = attempts,
+            )
+
+            withActorTable(TestDB.H2) {
+                val existing = ActorTable.selectAll().first().toActorRecord()
+                try {
+                    repository.put(existing.id, existing.copy(firstName = "permanent-failure"))
+                    val terminal = awaitHealthReport(repository) { health ->
+                        health.workerState == CacheWorkerState.FAILED && health.lastFlushError != null
+                    }
+                    terminal.workerState shouldBeEqualTo CacheWorkerState.FAILED
+                    terminal.queueDepth shouldBeEqualTo 1
+                    attempts.get() shouldBeEqualTo 8
+                    assertFailsWith<IllegalStateException> {
+                        repository.put(existing.id, existing.copy(firstName = "rejected-after-failure"))
+                    }
+                } finally {
+                    repository.close()
+                }
+            }
+        }
+
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `write-behind cancelled full-queue send does not publish dirty cache`(
+        fun `write-behind full admission rejects without publishing dirty cache`(
             testDB: TestDB,
         ) = runSuspendIO {
             val flushStarted = CountDownLatch(1)
@@ -905,7 +937,9 @@ class WriteBehindCacheTest {
                     keyPrefix = "r2dbc:caffeine:write-behind:cancel-full-send",
                     writeMode = CacheWriteMode.WRITE_BEHIND,
                     writeBehindBatchSize = 1,
-                    writeBehindQueueCapacity = 1,
+                    // One item is in-flight; a second item fills the bounded admission
+                    // budget so the third sender exercises cancellation while blocked.
+                    writeBehindQueueCapacity = 2,
                 ),
                 flushStarted = flushStarted,
                 releaseFlush = releaseFlush,
@@ -918,20 +952,15 @@ class WriteBehindCacheTest {
                 val cancelled = actors[2].copy(firstName = "cancelled-write")
 
                 try {
-                    coroutineScope {
-                        repository.put(blocked.id, blocked)
-                        flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
-                        repository.put(queued.id, queued)
-                        val pending = async { repository.put(cancelled.id, cancelled) }
-                        delay(100)
-
-                        pending.isActive.shouldBeTrue()
-                        repository.cache.synchronous().getIfPresent(cancelled.id.toString()).shouldBeNull()
-
-                        pending.cancelAndJoin()
-                        repository.cache.synchronous().getIfPresent(cancelled.id.toString()).shouldBeNull()
-                        repository.validateConsistency().queueDepth shouldBeEqualTo 2
+                    repository.put(blocked.id, blocked)
+                    flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    repository.put(queued.id, queued)
+                    val failure = assertFailsWith<IllegalStateException> {
+                        repository.put(cancelled.id, cancelled)
                     }
+                    failure.message.orEmpty().contains("queue is full").shouldBeTrue()
+                    repository.cache.synchronous().getIfPresent(cancelled.id.toString()).shouldBeNull()
+                    repository.validateConsistency().queueDepth shouldBeEqualTo 2
                 } finally {
                     releaseFlush.countDown()
                     repository.close()
@@ -1145,6 +1174,29 @@ class WriteBehindCacheTest {
         override fun extractId(entity: ActorRecord): Long = entity.id
     }
 
+    private class PermanentlyFailingFlushR2dbcRepository(
+        config: LocalCacheConfig,
+        private val attempts: AtomicInteger,
+    ): AbstractR2dbcCaffeineRepository<Long, ActorRecord>(config) {
+
+        override val table: IdTable<Long> = ActorTable
+
+        override suspend fun ResultRow.toEntity(): ActorRecord = toActorRecord()
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) {
+            attempts.incrementAndGet()
+            throw IllegalStateException("planned permanent write-behind flush failure")
+        }
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) {
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun extractId(entity: ActorRecord): Long = entity.id
+    }
+
     private class BlockingPutAsyncCache<K: Any, V: Any>(
         private val delegate: AsyncCache<K, V>,
         private val cachePutEntered: CountDownLatch,
@@ -1162,7 +1214,7 @@ class WriteBehindCacheTest {
         repository: R2dbcCaffeineRepository<*, *>,
         predicate: (CacheHealthReport) -> Boolean,
     ): CacheHealthReport {
-        repeat(100) {
+        repeat(600) {
             val report = repository.validateConsistency()
             if (predicate(report)) {
                 return report

@@ -192,6 +192,13 @@ class LocalCacheConfigTest {
         config.writeBehindQueueCapacity shouldBeEqualTo 50
     }
 
+    @Test
+    fun `writeBehindBatchSize와 queueCapacity가 canonical 상한을 넘으면 거부된다`() {
+        assertFailsWith<IllegalArgumentException> {
+            LocalCacheConfig(writeBehindBatchSize = 100_001, writeBehindQueueCapacity = 100_001)
+        }
+    }
+
     // ----------------------------------------------------------------
     // Serializable 직렬화 라운드트립
     // ----------------------------------------------------------------

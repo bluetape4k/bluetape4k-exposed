@@ -31,11 +31,15 @@ dependencies {
 }
 ```
 
-사용자가 선택할 버전은 중앙 BOM 버전 하나입니다. 이 페이지는 안정 배포본 `1.11` 소스 계보를 기록합니다.
+사용자가 선택할 버전은 중앙 BOM 버전 하나입니다. 이 페이지는 안정 배포본 `1.12.1` 소스 계보를 기록합니다.
 
 ## 핵심 개념 {#concepts}
 
 `get`과 `getAll`은 Read-through 연산입니다. Cache-aside는 애플리케이션이 DB를 바꾼 뒤 캐시를 무효화하는 방식입니다. 진짜 Write-through는 설정한 writer가 DB 쓰기를 마친 뒤 반환합니다. Write-behind는 영속화를 미룹니다. writer 정책을 확인하지 않은 평범한 `put`을 Write-through라고 부르면 안 됩니다. 이 어댑터는 로컬 전용이며 분산 무효화를 제공하지 않습니다.
+
+안정 배포본 `1.12.1`에서는 R2DBC transaction, coroutine scope, `AsyncCache`의 소유권이 어댑터에 남고 write-behind는 명시적인 지연 내구성 모드입니다. 아래의 lifecycle coordinator, bounded admission 회계, publication lease, terminal retry 동작은 현재 develop 변경이며 안정 배포본 `1.12.1` 계약에 포함되지 않습니다.
+
+**Develop-only write-behind 계약:** `writeBehindBatchSize`와 `writeBehindQueueCapacity`는 각각 `1..100_000` 범위여야 하고 queue capacity는 batch size 이상이어야 합니다. 0·음수·`100_000` 초과 값 또는 batch보다 작은 queue는 `IllegalArgumentException`으로 즉시 거부됩니다. flush 실패는 최대 8회까지 10 ms에서 1 s로 증가하는 capped exponential backoff로 재시도하며, 재시도 한도 전에는 보류 배치를 버리지 않습니다. terminal failure는 worker를 `FAILED`로 남기며 보류 배치를 durable outbox나 dead-letter 저장소로 자동 이동하지 않습니다.
 
 ## 빠른 시작 {#quick-start}
 
@@ -62,7 +66,7 @@ repository.use { repo ->
 
 ## 권장 패턴 {#patterns}
 
-캐시 이름 공간마다 저장소 하나를 두고 애플리케이션과 함께 닫으세요. Cache-aside에서는 DB 트랜잭션 커밋 뒤 무효화합니다. Write-through 실패는 쓰기가 끝나지 않은 상태입니다. Write-behind를 켜기 전에는 큐·dead-letter 상태와 종료 drain 시간을 노출하세요. 키 접두사와 직렬화 형식은 안정적으로 유지해야 합니다.
+캐시 이름 공간마다 저장소 하나를 두고 애플리케이션과 함께 닫으세요. Cache-aside에서는 DB 트랜잭션 커밋 뒤 무효화합니다. Write-through 실패는 쓰기가 끝나지 않은 상태입니다. Write-behind를 켜기 전에는 큐 상태와 종료 drain 시간을 노출하세요. `putAll`은 입력 순서대로 처리하며 중간 실패 시 앞선 side effect와 실패 지점 예외를 보존하고 implicit rollback을 제공하지 않습니다. accepted queue handoff 뒤 cache publication이 실패하면 해당 key를 invalidate합니다. 키 접두사와 직렬화 형식은 안정적으로 유지해야 합니다.
 
 ## 연동 모듈 {#integrations}
 
@@ -74,11 +78,11 @@ repository.use { repo ->
 
 ## 실패 방식 {#failures}
 
-캐시나 R2DBC 작업 중 호출 코루틴이 취소될 수 있습니다. Write-behind 응답은 DB 커밋 완료를 뜻하지 않습니다. 캐시 hit도 오래된 값일 수 있고, 백엔드 성공 뒤 DB가 실패할 수 있으며, DB 커밋 뒤 무효화가 실패할 수도 있습니다. 이 상태를 하나의 캐시 오류로 뭉개지 말고 따로 기록하세요.
+캐시나 R2DBC 작업 중 호출 코루틴이 취소될 수 있습니다. Write-behind 응답은 DB 커밋 완료를 뜻하지 않습니다. 캐시 hit도 오래된 값일 수 있고, 백엔드 성공 뒤 DB가 실패할 수 있으며, DB 커밋 뒤 무효화가 실패할 수도 있습니다. 이 상태를 하나의 캐시 오류로 뭉개지 말고 따로 기록하세요. durable retry/dead-letter 복구가 필요하면 outbox schema, replay/idempotency, alert와 운영 runbook을 애플리케이션이 소유해야 하며 coordinator의 `FAILED`는 영속 복구 장치가 아닌 관찰 경계입니다.
 
 ## 운영 {#operations}
 
-저장소가 비동기 캐시와 제한된 Write-behind 실행 범위를 소유하므로 애플리케이션 종료 때 닫아야 합니다. hit/miss, 백엔드 지연, 재시도·타임아웃, 큐 깊이, 거부·dead-letter 쓰기, 무효화 지연, 종료 drain을 관찰합니다. 캐시와 DB 경로의 SLO도 따로 잡아야 합니다.
+저장소가 비동기 캐시와 제한된 Write-behind 실행 범위를 소유하므로 애플리케이션 종료 때 닫아야 합니다. develop 구현의 `close()`는 새 admission을 막고 유한 종료 경계 안에서 publication과 worker drain을 시도한 뒤 cache를 invalidate합니다. 시간 초과나 중단이 발생하면 잔여 배치나 failure가 남을 수 있으므로 관찰해야 합니다. hit/miss, 백엔드 지연, 재시도·타임아웃, 큐 깊이, 거부 쓰기, 무효화 지연과 종료 drain을 관찰합니다. durable 복구의 outbox schema, replay/idempotency, alert와 운영 runbook은 애플리케이션이 소유하며 cache/DB 경로의 SLO도 따로 잡아야 합니다.
 
 ## 테스트 {#testing}
 

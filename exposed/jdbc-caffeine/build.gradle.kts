@@ -1,4 +1,17 @@
 
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+val exposedCacheMainClasses = project(":bluetape4k-exposed-cache")
+    .layout.buildDirectory
+    .dir("classes/kotlin/main")
+
+tasks.named<KotlinCompile>("compileKotlin") {
+    dependsOn(project(":bluetape4k-exposed-cache").tasks.named("compileKotlin"))
+    compilerOptions.freeCompilerArgs.add(
+        "-Xfriend-paths=${exposedCacheMainClasses.get().asFile.absolutePath}"
+    )
+}
+
 configurations {
     testImplementation.get().extendsFrom(compileOnly.get(), runtimeOnly.get())
 }

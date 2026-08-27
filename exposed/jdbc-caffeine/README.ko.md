@@ -29,7 +29,8 @@ Caffeine 인프로세스 캐시가 JDBC Repository 계약을 감싸는 위치와
 - **Suspend 레포지토리**: `AbstractSuspendedJdbcCaffeineRepository` — 모든 DB 호출이 `suspendedTransactionAsync` 사용
 - **Redis 의존 없음**: 순수 인프로세스 Caffeine, 단일 인스턴스 배포에 적합
 - **AutoIncrement 안전**: Write-Through/Write-Behind 시 AutoInc 테이블 신규 엔티티의 INSERT 건너뜀 (DB가 ID 할당)
-- **안전한 종료**: `close()` 호출 시 Write-Behind 큐를 모두 처리 후 코루틴 스코프 취소
+- **Write-behind 범위 제한**: `writeBehindBatchSize`와 `writeBehindQueueCapacity`는 각각 `1..100_000`이고 queue capacity는 batch size 이상이어야 하며, 어기면 설정 시 `IllegalArgumentException`이 발생
+- **안전한 종료**: `close()`는 새 admission을 막고 유한 종료 경계 안에서 publication과 worker drain을 시도한 뒤 cache를 정리합니다. 시간 초과나 중단이 발생하면 잔여 배치나 failure가 남을 수 있습니다.
 
 <!-- JDBC-SNAPSHOT-CACHE -->
 ## 커밋에 맞춰 공개하는 JDBC 스냅샷 캐시 (opt-in)

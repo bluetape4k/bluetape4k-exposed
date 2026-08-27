@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.cache
 
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.exposed.cache.internal.MAX_WRITE_BEHIND_QUEUE_CAPACITY
 import java.io.Serializable
 import java.time.Duration
 
@@ -57,10 +58,15 @@ open class LocalCacheConfig(
         expireAfterAccess?.let {
             require(it > Duration.ZERO) { "expireAfterAccess[$it] must be positive when set." }
         }
-        // writeBehindBatchSize가 1 미만이면 Write-Behind flush 배치가 영원히 실행되지 않는다.
-        require(writeBehindBatchSize >= 1) { "writeBehindBatchSize[$writeBehindBatchSize] must be at least 1." }
+        // batch와 queue 모두 canonical finite bound 안에 있어야 unbounded waiter와
+        // 정수 overflow가 admission 경계를 우회하지 않는다.
+        require(writeBehindBatchSize in 1..MAX_WRITE_BEHIND_QUEUE_CAPACITY) {
+            "writeBehindBatchSize[$writeBehindBatchSize] must be in 1..$MAX_WRITE_BEHIND_QUEUE_CAPACITY."
+        }
+        require(writeBehindQueueCapacity in 1..MAX_WRITE_BEHIND_QUEUE_CAPACITY) {
+            "writeBehindQueueCapacity[$writeBehindQueueCapacity] must be in 1..$MAX_WRITE_BEHIND_QUEUE_CAPACITY."
+        }
         // writeBehindQueueCapacity가 writeBehindBatchSize보다 작으면 큐가 즉시 포화된다.
-        // 또한 무제한 큐(Int.MAX_VALUE 등)는 메모리 누수로 이어진다.
         require(writeBehindQueueCapacity >= writeBehindBatchSize) {
             "writeBehindQueueCapacity[$writeBehindQueueCapacity] must be >= writeBehindBatchSize[$writeBehindBatchSize]."
         }

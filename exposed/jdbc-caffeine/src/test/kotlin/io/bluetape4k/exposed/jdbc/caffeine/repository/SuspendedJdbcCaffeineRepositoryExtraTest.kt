@@ -473,8 +473,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
                     entities shouldHaveSize ActorTable.selectAll().count().toInt()
                     repository.cache.asMap().shouldBeEmpty()
                     appender.hasWarnContaining(
-                        "Cache warming failed for entity - skipping. " +
-                            "cacheName=jdbc:caffeine:s-extra:find-all-failure"
+                        "Cache event: component=suspended-jdbc operation=cache_warming failureKind=error"
                     ).shouldBeTrue()
                 }
             }
@@ -497,8 +496,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
                     entities shouldHaveSize ActorTable.selectAll().count().toInt()
                     repository.cache.asMap().shouldBeEmpty()
                     appender.hasWarnContaining(
-                        "Cache warming failed for entity - skipping. " +
-                            "cacheName=jdbc:caffeine:s-extra:find-all-failure"
+                        "Cache event: component=suspended-jdbc operation=cache_warming failureKind=error"
                     ).shouldBeTrue()
                 }
             }
@@ -707,7 +705,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `put - cancelled full-queue send does not publish dirty cache`(
+        fun `put - full admission rejects without publishing dirty cache`(
             testDB: TestDB,
         ) = runSuspendIO(timeout = 35.seconds) {
             val flushStarted = CountDownLatch(1)
@@ -717,7 +715,9 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
                     keyPrefix = "jdbc:caffeine:s-extra:wb-cancel-full-send",
                     writeMode = CacheWriteMode.WRITE_BEHIND,
                     writeBehindBatchSize = 1,
-                    writeBehindQueueCapacity = 1,
+                    // One item is in-flight; a second item fills the bounded admission
+                    // budget so the third sender exercises cancellation while blocked.
+                    writeBehindQueueCapacity = 2,
                 ),
                 flushStarted = flushStarted,
                 releaseFlush = releaseFlush,
@@ -733,13 +733,10 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
                     repository.put(blocked.id, blocked)
                     flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
                     repository.put(queued.id, queued)
-                    val pending = async { repository.put(cancelled.id, cancelled) }
-                    delay(100)
-
-                    pending.isActive.shouldBeTrue()
-                    repository.cache.getIfPresent(cancelled.id.toString()).shouldBeNull()
-
-                    pending.cancelAndJoin()
+                    val failure = assertFailsWith<IllegalStateException> {
+                        repository.put(cancelled.id, cancelled)
+                    }
+                    failure.message.orEmpty().contains("queue is full").shouldBeTrue()
                     repository.cache.getIfPresent(cancelled.id.toString()).shouldBeNull()
                 } finally {
                     releaseFlush.countDown()
@@ -774,6 +771,37 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
                 repository.cache.getIfPresent(actor.id.toString()).shouldBeNull()
             }
         }
+
+        @Test
+        fun `write-behind permanent flush failure exhausts retries and rejects later writes`() =
+            runSuspendIO(timeout = 15.seconds) {
+                val attempts = AtomicInteger()
+                val repository = PermanentlyFailingFlushSuspendedJdbcRepository(
+                    LocalCacheConfig(
+                        keyPrefix = "jdbc:caffeine:s-extra:wb-permanent-failure",
+                        writeMode = CacheWriteMode.WRITE_BEHIND,
+                        writeBehindBatchSize = 1,
+                        writeBehindQueueCapacity = 4,
+                    ),
+                    attempts,
+                )
+
+                withSuspendedActorTable(TestDB.H2) {
+                    val existing = ActorTable.selectAll().first().toActorRecord()
+                    try {
+                        repository.put(existing.id, existing.copy(firstName = "permanent-failure"))
+                        withTimeout(5.seconds) {
+                            writeBehindJobOf(repository).join()
+                        }
+                        attempts.get() shouldBeEqualTo 8
+                        assertFailsWith<IllegalStateException> {
+                            repository.put(existing.id, existing.copy(firstName = "rejected-after-failure"))
+                        }
+                    } finally {
+                        repository.close()
+                    }
+                }
+            }
     }
 
     private class FailingCacheWarmSuspendedJdbcRepository(
@@ -830,6 +858,29 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
             this[ActorTable.firstName] = entity.firstName
             this[ActorTable.lastName] = entity.lastName
             this[ActorTable.email] = entity.email
+        }
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) {
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun extractId(entity: ActorRecord): Long = entity.id
+    }
+
+    private class PermanentlyFailingFlushSuspendedJdbcRepository(
+        config: LocalCacheConfig,
+        private val attempts: AtomicInteger,
+    ): AbstractSuspendedJdbcCaffeineRepository<Long, ActorRecord>(config) {
+
+        override val table: IdTable<Long> = ActorTable
+
+        override fun ResultRow.toEntity(): ActorRecord = toActorRecord()
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) {
+            attempts.incrementAndGet()
+            throw IllegalStateException("planned permanent write-behind flush failure")
         }
 
         override fun BatchInsertStatement.insertEntity(entity: ActorRecord) {
