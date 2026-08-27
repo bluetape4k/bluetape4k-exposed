@@ -3,23 +3,35 @@ package io.bluetape4k.exposed.jdbc.caffeine.repository
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.bluetape4k.exposed.cache.CacheMode
+import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
+import io.bluetape4k.exposed.cache.internal.CloseCompletion
+import io.bluetape4k.exposed.cache.internal.CloseCompletionKind
+import io.bluetape4k.exposed.cache.internal.CloseLease
+import io.bluetape4k.exposed.cache.internal.MAX_FLUSH_RETRY_ATTEMPTS
+import io.bluetape4k.exposed.cache.internal.WriteBehindCoordinator
+import io.bluetape4k.exposed.cache.internal.WriteBehindFailureKind
+import io.bluetape4k.exposed.cache.internal.WriteBehindWorkerCompletion
+import io.bluetape4k.exposed.cache.internal.flushRetryBackoffMillis
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.warn
 import io.bluetape4k.support.requirePositiveNumber
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.cancellation.CancellationException
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
@@ -39,6 +51,11 @@ import java.io.Serializable
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * Exposed JDBC + Caffeine 로컬 캐시를 결합한 suspend 추상 레포지토리.
@@ -56,12 +73,15 @@ import java.util.concurrent.TimeUnit
  * @param E 엔티티(DTO) 타입. 캐시 저장을 위해 [Serializable] 구현 필수.
  * @param config [LocalCacheConfig] 설정
  */
+@Suppress("LargeClass") // suspended JDBC cache와 write-behind 수명주기는 하나의 원자적 호환 경계다.
 abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>(
     override val config: LocalCacheConfig = LocalCacheConfig.READ_ONLY,
 ): SuspendedJdbcCaffeineRepository<ID, E> {
 
     companion object: KLogging() {
         private const val WRITE_BEHIND_CLOSE_TIMEOUT_SECONDS = 30L
+        private const val NANOS_PER_MILLISECOND = 1_000_000L
+        private const val WRITE_BEHIND_CLOSE_JOIN_GRACE_MILLIS = 100L
     }
 
     abstract override val table: IdTable<ID>
@@ -112,9 +132,27 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    private val writeBehindQueue: Channel<Pair<ID, E>> by lazy {
+    private val writeBehindQueue: Channel<WriteBehindEntry<ID, E>> by lazy {
         Channel(capacity = config.writeBehindQueueCapacity)
     }
+
+    private val writeBehindCoordinator = WriteBehindCoordinator(config.writeMode)
+    private val writeBehindPendingAdmissions = AtomicInteger(0)
+    private val writeBehindQueueDepth = AtomicInteger(0)
+    private val writeBehindPendingCapacity = config.writeBehindQueueCapacity
+    private val writeBehindFailedBatch = AtomicReference<List<Pair<ID, E>>>(emptyList())
+    private val lastFlushError = AtomicReference<Throwable?>(null)
+    private val writeBehindCoordinatorCloseLease = AtomicReference<CloseLease.Owner?>(null)
+    private val writeBehindCoordinatorCompletionPublished = AtomicBoolean(false)
+    private val writeBehindPublicationLock = ReentrantLock()
+    private val writeBehindPublicationChanged = writeBehindPublicationLock.newCondition()
+    private val writeBehindCloseLock = ReentrantLock()
+    private val writeBehindCloseCleanupPending = AtomicBoolean(false)
+    private val writeBehindLateSideEffectGuard = AtomicBoolean(false)
+    private var writeBehindCloseStarted = false
+    private var writeBehindCloseDeadlineNanos = 0L
+    private val writeBehindCloseFailureReason = AtomicReference<WriteBehindCloseFailureReason?>(null)
+    private var writeBehindPublicationsInProgress = 0
 
     /** 캐시 miss 조정 entry. users 변경은 [loadMutexes]의 key별 compute 안에서만 수행합니다. */
     private class LoadMutexEntry {
@@ -124,34 +162,147 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
 
     private val loadMutexes = ConcurrentHashMap<String, LoadMutexEntry>()
 
+    @Suppress(
+        "LoopWithTooManyJumpStatements",
+        "TooGenericExceptionCaught",
+    ) // queue drain에서 cancellation과 failed-worker 전환을 명시적으로 유지한다.
     private val writeBehindJob by lazy {
         scope.launch {
             val batch = mutableListOf<Pair<ID, E>>()
             try {
                 for (entry in writeBehindQueue) {
-                    batch.add(entry)
+                    if (!entry.accepted.await()) continue
+                    batch.add(entry.id to entry.entity)
                     // 큐에 남아있는 항목을 배치 크기까지 추가로 수집
                     while (batch.size < config.writeBehindBatchSize) {
                         val next = writeBehindQueue.tryReceive().getOrNull() ?: break
-                        batch.add(next)
+                        if (next.accepted.await()) batch.add(next.id to next.entity)
                     }
                     if (batch.isNotEmpty()) {
-                        if (flushBatch(batch)) {
+                        val flushedCount = batch.size
+                        if (flushBatchWithRetry(batch, writeBehindCloseDeadlineNanos.takeIf { it > 0L }) &&
+                            !writeBehindLateSideEffectGuard.get()
+                        ) {
+                            recordCoordinatorFlushSuccess(flushedCount)
+                            releaseWriteBehindQueueDepth(flushedCount)
+                            releaseWriteBehindPending(flushedCount)
                             batch.clear()
+                        } else {
+                            if (writeBehindLateSideEffectGuard.get()) {
+                                batch.clear()
+                                break
+                            }
+                            retainWriteBehindFailedBatch(batch)
+                            batch.clear()
+                            break
                         }
                     }
                 }
+            } catch (e: CancellationException) {
+                // The NonCancellable final flush must settle accepted work before the
+                // completion callback marks the coordinator terminal.
+                throw e
+            } catch (e: Throwable) {
+                writeBehindCoordinator.onCloseFailed(WriteBehindFailureKind.WORKER)
+                throw e
             } finally {
                 // 채널 닫힌 후 남은 항목 처리
                 if (batch.isNotEmpty()) {
-                    withContext(NonCancellable) {
-                        if (flushBatch(batch)) {
+                    val flushedCount = batch.size
+                    if (flushFinalBatch(batch) && !writeBehindLateSideEffectGuard.get()) {
+                        recordCoordinatorFlushSuccess(flushedCount)
+                        releaseWriteBehindQueueDepth(flushedCount)
+                        releaseWriteBehindPending(flushedCount)
+                        batch.clear()
+                    } else {
+                        if (writeBehindLateSideEffectGuard.get()) {
                             batch.clear()
+                            return@launch
                         }
+                        retainWriteBehindFailedBatch(batch)
+                        batch.clear()
                     }
                 }
             }
+        }.also { job ->
+            job.invokeOnCompletion { cause ->
+                if (writeBehindLateSideEffectGuard.get()) return@invokeOnCompletion
+                writeBehindCoordinator.onWorkerCompleted(
+                    when {
+                        cause == null -> WriteBehindWorkerCompletion.DRAINED
+                        cause is CancellationException -> WriteBehindWorkerCompletion.CANCELLED
+                        else -> WriteBehindWorkerCompletion.FAILED
+                    }
+                )
+            }
         }
+    }
+
+    /** Coordinator admission is the only production source of successful flush tokens. */
+    private fun recordCoordinatorFlushSuccess(count: Int) {
+        val queueDepth = writeBehindCoordinator.snapshot().queueDepth
+        check(queueDepth >= count) {
+            "Write-Behind coordinator queue depth[$queueDepth] is below flushed count[$count]"
+        }
+        writeBehindCoordinator.onFlushSucceeded(count)
+    }
+
+    private suspend fun flushFinalBatch(batch: List<Pair<ID, E>>): Boolean = withContext(NonCancellable) {
+        val deadlineNanos = writeBehindCloseDeadlineNanos.takeIf { it > 0L }
+        if (deadlineNanos == null || deadlineNanos == Long.MAX_VALUE) {
+            return@withContext flushBatchWithRetry(batch, deadlineNanos)
+        }
+        val remainingNanos = deadlineNanos - System.nanoTime()
+        if (remainingNanos <= 0L) return@withContext false
+        val remainingMillis = remainingNanos / NANOS_PER_MILLISECOND
+        if (remainingMillis <= 0L) return@withContext false
+        withTimeoutOrNull(remainingMillis) {
+            flushBatchWithRetry(batch, deadlineNanos)
+        } ?: false
+    }
+
+    private fun tryReserveWriteBehindPending(): Boolean {
+        while (true) {
+            val current = writeBehindPendingAdmissions.get()
+            if (current >= writeBehindPendingCapacity) return false
+            if (writeBehindPendingAdmissions.compareAndSet(current, current + 1)) return true
+        }
+    }
+
+    private fun releaseWriteBehindPending(count: Int) {
+        if (count <= 0) return
+        writeBehindPendingAdmissions.updateAndGet { current ->
+            check(current >= count) {
+                "Write-Behind pending admission accounting underflow: current=$current, release=$count"
+            }
+            current - count
+        }
+    }
+
+    private fun releaseWriteBehindQueueDepth(count: Int) {
+        if (count <= 0) return
+        writeBehindQueueDepth.updateAndGet { current ->
+            check(current >= count) {
+                "Write-Behind queue depth accounting underflow: current=$current, release=$count"
+            }
+            current - count
+        }
+    }
+
+    private fun retainWriteBehindFailedBatch(batch: List<Pair<ID, E>>) {
+        if (batch.isEmpty()) return
+        writeBehindFailedBatch.updateAndGet { retained ->
+            if (retained.isEmpty()) batch.toList() else retained + batch
+        }
+    }
+
+    private fun writeBehindNotAcceptingException(): IllegalStateException {
+        val snapshot = writeBehindCoordinator.snapshot()
+        return IllegalStateException(
+            "Write-Behind worker is not accepting writes because the repository is closing, closed, or terminal. " +
+                "cacheName=$cacheName, workerState=${snapshot.workerState}, " +
+                "terminalReason=${snapshot.failureKind?.name ?: snapshot.workerState.name}"
+        )
     }
 
     /**
@@ -178,14 +329,51 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
                 }
             }.await()
             log.debug { "Write-Behind: ${batch.size}건 DB flush 완료" }
+            lastFlushError.set(null)
             return true
         } catch (e: CancellationException) {
             // 코루틴 취소는 삼키지 않고 반드시 재전파한다
             throw e
         } catch (e: Exception) {
-            log.warn(e) { "Write-Behind: ${batch.size}건 DB flush 실패" }
+            lastFlushError.set(e)
+            log.warn {
+                "Write-Behind event: component=suspended-jdbc operation=flush " +
+                    "failureKind=flush queueDepth=${writeBehindQueueDepth.get()}"
+            }
             return false
         }
+    }
+
+    @Suppress("ReturnCount") // retry terminal state를 worker 경계에서 구분해야 한다.
+    private suspend fun flushBatchWithRetry(batch: List<Pair<ID, E>>, deadlineNanos: Long? = null): Boolean {
+        for (attempt in 1..MAX_FLUSH_RETRY_ATTEMPTS) {
+            if (writeBehindLateSideEffectGuard.get()) return false
+            if (deadlineNanos != null && System.nanoTime() >= deadlineNanos) {
+                val failure = IllegalStateException("Write-Behind flush close deadline exhausted")
+                lastFlushError.compareAndSet(null, failure)
+                writeBehindCoordinator.onCloseFailed(WriteBehindFailureKind.WORKER)
+                writeBehindQueue.close(failure)
+                return false
+            }
+            if (flushBatch(batch) && !writeBehindLateSideEffectGuard.get()) return true
+            if (writeBehindLateSideEffectGuard.get()) return false
+            writeBehindCoordinator.onFlushFailed()
+            if (attempt == MAX_FLUSH_RETRY_ATTEMPTS) {
+                val failure = IllegalStateException("Write-Behind flush retry limit exhausted")
+                writeBehindCoordinator.onCloseFailed(WriteBehindFailureKind.WORKER)
+                writeBehindQueue.close(failure)
+                return false
+            }
+            val backoffMillis = flushRetryBackoffMillis(attempt)
+            if (deadlineNanos != null) {
+                val remainingNanos = deadlineNanos - System.nanoTime()
+                if (remainingNanos <= 0L) continue
+                delay(minOf(backoffMillis, remainingNanos / NANOS_PER_MILLISECOND))
+            } else {
+                delay(backoffMillis)
+            }
+        }
+        return false
     }
 
     // -------------------------------------------------------------------------
@@ -301,8 +489,11 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
                     cache.put(serializeKey(id), entity)
                 } catch (e: CancellationException) {
                     throw e
-                } catch (e: Exception) {
-                    log.warn(e) { "Cache warming failed for entity - skipping. cacheName=$cacheName" }
+                } catch (_: Exception) {
+                    log.warn {
+                        "Cache event: component=suspended-jdbc operation=cache_warming failureKind=error " +
+                            "queueDepth=${writeBehindQueueDepth.get()}"
+                    }
                 }
             }
         }
@@ -323,6 +514,12 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
     // 쓰기 (캐시 + DB)
     // -------------------------------------------------------------------------
 
+    @Suppress(
+        "ThrowsCount",
+        "LongMethod",
+        "CyclomaticComplexMethod",
+        "TooGenericExceptionCaught",
+    ) // admission/publication/terminal failure는 하나의 원자적 suspend 계약이다.
     override suspend fun put(id: ID, entity: E) {
         val key = serializeKey(id)
 
@@ -332,14 +529,72 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
                 writeToDb(id, entity)
             }
             CacheWriteMode.WRITE_BEHIND -> {
+                val admissionToken = try {
+                    writeBehindCoordinator.reserveAdmission()
+                } catch (_: IllegalStateException) {
+                    throw writeBehindNotAcceptingException()
+                }
+                val queuedEntry = WriteBehindEntry(id, entity)
+                if (!tryReserveWriteBehindPending()) {
+                    writeBehindCoordinator.settleEnqueue(admissionToken, accepted = false)
+                    throw IllegalStateException(
+                        "Write-Behind queue is full (capacity=${config.writeBehindQueueCapacity})."
+                    )
+                }
                 // Write-Behind Job 초기화 보장
                 writeBehindJob
+                var publicationLeaseAcquired = false
+                var admissionSettled = false
+                var accepted = false
+                var pendingReserved = true
                 try {
-                    writeBehindQueue.send(id to entity)
+                    writeBehindQueue.send(queuedEntry)
+                    publicationLeaseAcquired = tryAcquireWriteBehindPublicationLease()
+                    if (!publicationLeaseAcquired) {
+                        throw writeBehindNotAcceptingException()
+                    }
+                    writeBehindCoordinator.markEnqueued(admissionToken)
+                    val acceptedByCoordinator = writeBehindCoordinator.settleEnqueue(admissionToken, accepted = true)
+                    admissionSettled = true
+                    if (!acceptedByCoordinator) {
+                        queuedEntry.accepted.complete(false)
+                        throw IllegalStateException("Write-Behind worker is not accepting writes after queue handoff")
+                    }
+                    // deferred gate를 열기 전에 legacy depth를 먼저 기록한다. worker가
+                    // accepted=true를 관찰하자마자 flush할 수 있으므로 이 항목이 depth에
+                    // 포함된 뒤 gate를 열어야 한다.
+                    writeBehindQueueDepth.incrementAndGet()
+                    accepted = queuedEntry.accepted.complete(true)
+                    check(accepted) { "Write-Behind admission was already settled" }
                     cache.put(key, entity)
+                    if (writeBehindCloseStarted()) {
+                        // close may have timed out while a synchronous cache publication
+                        // was blocked; invalidate again after the late publication.
+                        invalidateCacheEntrySafely(key)
+                    }
                 } catch (e: Exception) {
-                    cache.invalidate(key)
+                    if (!admissionSettled) {
+                        writeBehindCoordinator.settleEnqueue(admissionToken, accepted = false)
+                    }
+                    if (!accepted) {
+                        if (!queuedEntry.accepted.isCompleted) {
+                            queuedEntry.accepted.complete(false)
+                        }
+                        if (pendingReserved) {
+                            releaseWriteBehindPending(1)
+                            pendingReserved = false
+                        }
+                    }
+                    try {
+                        cache.invalidate(key)
+                    } catch (invalidateFailure: Throwable) {
+                        e.addSuppressed(invalidateFailure)
+                    }
                     throw e
+                } finally {
+                    if (publicationLeaseAcquired) {
+                        releaseWriteBehindPublicationLease()
+                    }
                 }
             }
 
@@ -401,12 +656,30 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
      * bounded synchronous latch로 대기하여 DB/드라이버 hang이 종료를 무한정 막지 않게 합니다.
      */
     override fun close() {
-        if (config.writeMode == CacheWriteMode.WRITE_BEHIND) {
-            writeBehindQueue.close()
-            awaitWriteBehindJobCompletion()
+        writeBehindCloseLock.withLock {
+            if (config.writeMode == CacheWriteMode.WRITE_BEHIND) {
+                val deadlineNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(WRITE_BEHIND_CLOSE_TIMEOUT_SECONDS)
+                beginWriteBehindClose(deadlineNanos)
+                val drained = awaitWriteBehindJobCompletion(deadlineNanos)
+                val publicationsDrained = awaitWriteBehindPublicationDrain(deadlineNanos)
+                val closeFailure = writeBehindCloseFailureReason.get()
+                if (closeFailure != null) {
+                    writeBehindCoordinator.onCloseFailed(closeFailure.toCoordinatorFailureKind())
+                    cancelWriteBehindAfterClose(closeFailure)
+                }
+                cancelScopeOnClose()
+                val publicationsPending = markCloseCleanupPendingIfNeeded(publicationsDrained)
+                if (!publicationsPending) {
+                    invalidateCacheOnCloseSafely()
+                    publishCoordinatorCloseCompletion(drained && publicationsDrained)
+                } else {
+                    finishDeferredCloseCleanupIfReady()
+                }
+                return
+            }
+            invalidateCacheOnCloseSafely()
+            cancelScopeOnClose()
         }
-        invalidateCacheOnCloseSafely()
-        cancelScopeOnClose()
     }
 
     protected open fun invalidateCacheOnClose() {
@@ -417,32 +690,202 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
         scope.cancel()
     }
 
-    private fun invalidateCacheOnCloseSafely() {
+    private fun cancelWriteBehindAfterClose(reason: WriteBehindCloseFailureReason) {
+        writeBehindLateSideEffectGuard.set(true)
+        val completed = CountDownLatch(1)
+        writeBehindJob.invokeOnCompletion { completed.countDown() }
+        writeBehindJob.cancel()
+        var restoreInterrupt = false
         try {
-            invalidateCacheOnClose()
-        } catch (e: Exception) {
-            log.warn(e) { "cache invalidateAll 중 오류 발생" }
+            completed.await(WRITE_BEHIND_CLOSE_JOIN_GRACE_MILLIS, TimeUnit.MILLISECONDS)
+        } catch (_: InterruptedException) {
+            restoreInterrupt = true
+        }
+        if (restoreInterrupt) Thread.currentThread().interrupt()
+        if (!writeBehindJob.isCompleted) {
+            log.warn {
+                "Write-Behind event: component=suspended-jdbc operation=close " +
+                    "failureKind=close_join_timeout queueDepth=${writeBehindQueueDepth.get()} " +
+                    "closeFailure=${reason.logName}"
+            }
         }
     }
 
-    private fun awaitWriteBehindJobCompletion() {
+    private fun invalidateCacheOnCloseSafely() {
+        try {
+            invalidateCacheOnClose()
+        } catch (_: Exception) {
+            log.warn {
+                "Write-Behind event: component=suspended-jdbc operation=close_cleanup " +
+                    "failureKind=cache_invalidate queueDepth=${writeBehindQueueDepth.get()}"
+            }
+        }
+    }
+
+    private fun beginWriteBehindClose(deadlineNanos: Long) {
+        writeBehindPublicationLock.withLock {
+            writeBehindCloseStarted = true
+            writeBehindCloseDeadlineNanos = deadlineNanos
+            writeBehindQueue.close()
+        }
+    }
+
+    private fun tryAcquireWriteBehindPublicationLease(): Boolean = writeBehindPublicationLock.withLock {
+        if (writeBehindCloseStarted) return@withLock false
+        writeBehindPublicationsInProgress += 1
+        true
+    }
+
+    private fun releaseWriteBehindPublicationLease() {
+        val shouldFinish = writeBehindPublicationLock.withLock {
+            check(writeBehindPublicationsInProgress > 0) {
+                "Write-Behind publication lease accounting underflow"
+            }
+            writeBehindPublicationsInProgress -= 1
+            writeBehindPublicationChanged.signalAll()
+            writeBehindCloseCleanupPending.get() && writeBehindPublicationsInProgress == 0
+        }
+        if (shouldFinish) finishDeferredCloseCleanupIfReady()
+    }
+
+    private fun writeBehindCloseStarted(): Boolean = writeBehindPublicationLock.withLock {
+        writeBehindCloseStarted
+    }
+
+    @Suppress("TooGenericExceptionCaught", "SwallowedException")
+    private fun invalidateCacheEntrySafely(key: String) {
+        try {
+            cache.invalidate(key)
+        } catch (failure: Throwable) {
+            log.warn {
+                "Write-Behind event: component=suspended-jdbc operation=late_publication_invalidate " +
+                    "failureKind=cache_invalidate queueDepth=${writeBehindQueueDepth.get()}"
+            }
+        }
+    }
+
+    @Suppress("ReturnCount") // deadline과 interruption 결과를 의도적으로 구분한다.
+    private fun awaitWriteBehindPublicationDrain(deadlineNanos: Long): Boolean {
+        writeBehindPublicationLock.withLock {
+            while (writeBehindPublicationsInProgress > 0) {
+                val remaining = deadlineNanos - System.nanoTime()
+                if (remaining <= 0L) {
+                    writeBehindCloseFailureReason.compareAndSet(null, WriteBehindCloseFailureReason.TIMEOUT)
+                    writeBehindLateSideEffectGuard.set(true)
+                    return false
+                }
+                try {
+                    if (writeBehindPublicationChanged.awaitNanos(remaining) <= 0L &&
+                        writeBehindPublicationsInProgress > 0
+                    ) {
+                        writeBehindCloseFailureReason.compareAndSet(null, WriteBehindCloseFailureReason.TIMEOUT)
+                        writeBehindLateSideEffectGuard.set(true)
+                        return false
+                    }
+                } catch (_: InterruptedException) {
+                    writeBehindCloseFailureReason.compareAndSet(null, WriteBehindCloseFailureReason.INTERRUPTED)
+                    writeBehindLateSideEffectGuard.set(true)
+                    Thread.currentThread().interrupt()
+                    return false
+                }
+            }
+            return true
+        }
+    }
+
+    private fun markCloseCleanupPendingIfNeeded(publicationsDrained: Boolean): Boolean =
+        writeBehindPublicationLock.withLock {
+            if (publicationsDrained || writeBehindPublicationsInProgress == 0) {
+                false
+            } else {
+                writeBehindCloseCleanupPending.set(true)
+                true
+            }
+        }
+
+    @Suppress("ReturnCount") // deferred cleanup은 빠른 비활성/락/회계 검사를 유지한다.
+    private fun finishDeferredCloseCleanupIfReady() {
+        if (!writeBehindCloseCleanupPending.get()) return
+        if (!writeBehindCloseLock.tryLock()) return
+        try {
+            val ready = writeBehindPublicationLock.withLock {
+                writeBehindPublicationsInProgress == 0
+            }
+            if (!ready || !writeBehindCloseCleanupPending.compareAndSet(true, false)) return
+            invalidateCacheOnCloseSafely()
+            publishCoordinatorCloseCompletion(drained = false)
+        } finally {
+            writeBehindCloseLock.unlock()
+        }
+    }
+
+    private fun awaitWriteBehindJobCompletion(deadlineNanos: Long): Boolean {
+        (writeBehindCoordinator.beginClose() as? CloseLease.Owner)?.let {
+            writeBehindCoordinatorCloseLease.compareAndSet(null, it)
+        }
         val completed = CountDownLatch(1)
         writeBehindJob.invokeOnCompletion { completed.countDown() }
 
+        var closeFailureKind = WriteBehindCloseFailureReason.TIMEOUT
         val completedInTime =
             try {
-                completed.await(WRITE_BEHIND_CLOSE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                val remaining = (deadlineNanos - System.nanoTime()).coerceAtLeast(0L)
+                completed.await(remaining, TimeUnit.NANOSECONDS)
             } catch (e: InterruptedException) {
+                closeFailureKind = WriteBehindCloseFailureReason.INTERRUPTED
+                writeBehindCloseFailureReason.compareAndSet(null, closeFailureKind)
+                writeBehindLateSideEffectGuard.set(true)
                 Thread.currentThread().interrupt()
                 false
             }
 
         if (!completedInTime) {
+            writeBehindCloseFailureReason.compareAndSet(null, closeFailureKind)
+            writeBehindLateSideEffectGuard.set(true)
             log.warn {
-                "Write-Behind: close timed out waiting for final flush. " +
-                    "Remaining queued items may be discarded when the repository scope is cancelled. " +
-                    "timeoutSeconds=$WRITE_BEHIND_CLOSE_TIMEOUT_SECONDS"
+                "Write-Behind event: component=suspended-jdbc operation=close " +
+                    "failureKind=${closeFailureKind.logName} queueDepth=${writeBehindQueueDepth.get()}"
             }
         }
+        return completedInTime && !writeBehindJob.isCancelled
     }
+
+    private fun publishCoordinatorCloseCompletion(drained: Boolean) {
+        val owner = writeBehindCoordinatorCloseLease.get() ?: return
+        if (!writeBehindCoordinatorCompletionPublished.compareAndSet(false, true)) return
+        val snapshot = writeBehindCoordinator.snapshot()
+        val completed = drained && snapshot.queueDepth == 0
+        writeBehindCoordinator.publishCloseCompletion(
+            owner,
+            CloseCompletion(
+                kind = if (completed) {
+                    CloseCompletionKind.COMPLETED
+                } else {
+                    when (writeBehindCloseFailureReason.get()) {
+                        WriteBehindCloseFailureReason.TIMEOUT -> CloseCompletionKind.TIMEOUT
+                        WriteBehindCloseFailureReason.INTERRUPTED -> CloseCompletionKind.INTERRUPTED
+                        null -> CloseCompletionKind.FAILED
+                    }
+                },
+                workerState = if (completed) CacheWorkerState.STOPPED else CacheWorkerState.FAILED,
+                queueDepth = snapshot.queueDepth,
+            ),
+        )
+    }
+
+    private enum class WriteBehindCloseFailureReason(val logName: String) {
+        TIMEOUT("close_timeout"),
+        INTERRUPTED("close_interrupted"),
+    }
+
+    private fun WriteBehindCloseFailureReason.toCoordinatorFailureKind(): WriteBehindFailureKind = when (this) {
+        WriteBehindCloseFailureReason.TIMEOUT -> WriteBehindFailureKind.CLOSE_TIMEOUT
+        WriteBehindCloseFailureReason.INTERRUPTED -> WriteBehindFailureKind.CLOSE_INTERRUPTED
+    }
+
+    private data class WriteBehindEntry<ID, E>(
+        val id: ID,
+        val entity: E,
+        val accepted: CompletableDeferred<Boolean> = CompletableDeferred(),
+    )
 }

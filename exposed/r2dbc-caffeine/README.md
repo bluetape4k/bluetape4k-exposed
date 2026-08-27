@@ -12,7 +12,7 @@ The architecture view separates the coroutine-facing repository contract, the lo
 
 ![R2DBC Caffeine local cache architecture diagram](../../docs/images/readme-diagrams/exposed-r2dbc-caffeine-diagram-01.png)
 
-The sequence view follows the real message order: read-through hit and miss branches, write-through waiting for the DB write, write-behind returning after the queue send, and `close()` draining the final batch.
+The sequence view follows the real message order: read-through hit and miss branches, write-through waiting for the DB write, write-behind returning after the queue send, and `close()` attempting a bounded drain before cache cleanup. A timeout or interruption can leave a residual batch or failure.
 
 ![R2DBC Caffeine cache sequence diagram](../../docs/images/readme-diagrams/exposed-r2dbc-caffeine-sequence-01.png)
 
@@ -24,6 +24,8 @@ The sequence view follows the real message order: read-through hit and miss bran
 - **No JDBC dependency**: Pure R2DBC with `exposed-cache` interfaces only
 - **Caffeine AsyncCache**: Non-blocking cache backed by `CompletableFuture`
 - **Coroutine-native**: All DB operations use `suspendTransaction`
+- **Bounded write-behind**: `writeBehindBatchSize` and `writeBehindQueueCapacity` each accept `1..100_000`; queue capacity must be greater than or equal to batch size, otherwise `IllegalArgumentException` is thrown during configuration
+- **Graceful shutdown**: `close()` stops new admissions, attempts publication and worker drain within a finite shutdown boundary, then cleans up the cache; timeout or interruption can leave a residual batch or failure
 
 <!-- R2DBC-SNAPSHOT-CACHE -->
 ## Commit-safe R2DBC snapshot cache (opt-in)

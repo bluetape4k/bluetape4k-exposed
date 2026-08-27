@@ -104,7 +104,7 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
                 keyPrefix = "jdbc:caffeine:hook:wb:full",
                 writeMode = CacheWriteMode.WRITE_BEHIND,
                 writeBehindBatchSize = 1,
-                writeBehindQueueCapacity = 1,
+                writeBehindQueueCapacity = 2,
             ),
             flushStarted = flushStarted,
             releaseFlush = releaseFlush,
@@ -125,7 +125,7 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
                     repository.put(rejected.id, rejected)
                 }
                 failure.message.orEmpty().contains("queue is full").shouldBeTrue()
-                failure.message.orEmpty().contains("capacity=1").shouldBeTrue()
+                failure.message.orEmpty().contains("capacity=2").shouldBeTrue()
                 repository.validateConsistency().queueDepth shouldBeEqualTo 2
                 repository.cache.getIfPresent(repository.serializeKey(rejected.id)).shouldBeNull()
                 releaseFlush.countDown()
@@ -209,7 +209,7 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
                 val rejection = assertFailsWith<IllegalStateException> {
                     repository.put(second.id, second)
                 }
-                rejection.message.orEmpty().contains("CancellationException").shouldBeTrue()
+                rejection.message.orEmpty().contains("workerState=FAILED").shouldBeTrue()
                 repository.cache.getIfPresent(repository.serializeKey(second.id)).shouldBeNull()
             } finally {
                 repository.close()

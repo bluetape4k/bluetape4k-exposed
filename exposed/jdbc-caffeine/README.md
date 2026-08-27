@@ -29,7 +29,8 @@ The sequence view focuses on the blocking repository path: read-through misses, 
 - **Suspend repository**: `AbstractSuspendedJdbcCaffeineRepository` — all DB calls use `suspendedTransactionAsync`
 - **No Redis dependency**: Pure in-process Caffeine; suitable for single-instance deployments
 - **AutoIncrement safety**: Write-Through and Write-Behind skip INSERT for AutoInc tables (DB assigns the ID)
-- **Graceful shutdown**: `close()` drains the Write-Behind queue before cancelling the coroutine scope
+- **Bounded write-behind**: `writeBehindBatchSize` and `writeBehindQueueCapacity` each accept `1..100_000`; queue capacity must be greater than or equal to batch size, otherwise `IllegalArgumentException` is thrown during configuration
+- **Graceful shutdown**: `close()` stops new admissions, attempts publication and worker drain within a finite shutdown boundary, then cleans up the cache; timeout or interruption can leave a residual batch or failure
 
 <!-- JDBC-SNAPSHOT-CACHE -->
 ## Commit-safe JDBC snapshot cache (opt-in)

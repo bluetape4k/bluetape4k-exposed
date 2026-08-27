@@ -203,10 +203,13 @@ jobs:
               - 'exposed/druid/**'
             cache:
               - 'exposed/cache/**'
+              - 'scripts/verification/**'
             jdbc-caffeine:
               - 'exposed/jdbc-caffeine/**'
+              - 'scripts/verification/**'
             r2dbc-caffeine:
               - 'exposed/r2dbc-caffeine/**'
+              - 'scripts/verification/**'
             clickhouse:
               - 'exposed/clickhouse/**'
             trino:
@@ -1135,7 +1138,6 @@ jobs:
       - name: Generate Kover XML report
         if: always()
         run: ./gradlew :bluetape4k-exposed-cache:koverXmlReport --no-configuration-cache --no-daemon
-        continue-on-error: true
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v7
@@ -1181,7 +1183,6 @@ jobs:
       - name: Generate Kover XML report
         if: always()
         run: ./gradlew :bluetape4k-exposed-jdbc-caffeine:koverXmlReport --no-configuration-cache --no-daemon
-        continue-on-error: true
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v7
@@ -1227,7 +1228,6 @@ jobs:
       - name: Generate Kover XML report
         if: always()
         run: ./gradlew :bluetape4k-exposed-r2dbc-caffeine:koverXmlReport --no-configuration-cache --no-daemon
-        continue-on-error: true
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v7
@@ -1242,6 +1242,39 @@ jobs:
           name: coverage-r2dbc-caffeine
           path: '**/build/reports/kover/'
           retention-days: 7
+
+  # Write-behind verification is intentionally serial so DB failures cannot be
+  # hidden by an independent matrix leg.
+  verify-write-behind:
+    name: Verify / write-behind evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: [build, changes]
+    if: ${{ needs.changes.outputs.cache == 'true' || needs.changes.outputs.jdbc-caffeine == 'true' || needs.changes.outputs.r2dbc-caffeine == 'true' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5.7.0
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v6.3.0
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+      - name: Run serial write-behind matrix and validate receipts
+        run: python3 scripts/verification/run_write_behind_matrix.py
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+          DOCKER_HOST: "unix:///var/run/docker.sock"
+      - name: Upload write-behind verification evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: verification-write-behind
+          path: build/verification/
+          if-no-files-found: error
+          retention-days: 14
 
   # exposed-druid (query-only Avatica JDBC; smoke is env-gated)
   test-druid:

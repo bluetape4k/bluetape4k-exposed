@@ -166,12 +166,10 @@ EXPOSED_TEST_DB=H2 ./gradlew \
 
 EXPOSED_TEST_DB=POSTGRESQL ./gradlew \
   :bluetape4k-exposed-jdbc-caffeine:test \
-  :bluetape4k-exposed-jdbc-caffeine:driverTimeoutTest \
   --no-configuration-cache --no-daemon --console=plain
 
 EXPOSED_TEST_DB=MYSQL_V8 ./gradlew \
   :bluetape4k-exposed-jdbc-caffeine:test \
-  :bluetape4k-exposed-jdbc-caffeine:driverTimeoutTest \
   --no-configuration-cache --no-daemon --console=plain
 
 ./gradlew checkProductionAbi detekt \

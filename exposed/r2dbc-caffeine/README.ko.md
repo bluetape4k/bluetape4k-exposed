@@ -12,7 +12,7 @@ Caffeine 로컬(인프로세스) 캐시를 사용하는 Exposed R2DBC 저장소�
 
 ![R2DBC Caffeine local cache architecture diagram](../../docs/images/readme-diagrams/exposed-r2dbc-caffeine-diagram-01.png)
 
-시퀀스 그림은 실제 메시지 순서를 따릅니다. read-through의 hit/miss 분기, write-through가 DB 쓰기까지 기다리는 흐름, write-behind가 큐에 넣은 뒤 반환하는 흐름, `close()`가 마지막 batch를 flush하는 과정을 한눈에 볼 수 있습니다.
+시퀀스 그림은 실제 메시지 순서를 따릅니다. read-through의 hit/miss 분기, write-through가 DB 쓰기까지 기다리는 흐름, write-behind가 큐에 넣은 뒤 반환하는 흐름, `close()`가 cache 정리 전에 유한하게 drain을 시도하는 과정을 한눈에 볼 수 있습니다. 시간 초과나 중단이 발생하면 잔여 배치나 failure가 남을 수 있습니다.
 
 ![R2DBC Caffeine cache sequence diagram](../../docs/images/readme-diagrams/exposed-r2dbc-caffeine-sequence-01.png)
 
@@ -24,6 +24,8 @@ Caffeine 로컬(인프로세스) 캐시를 사용하는 Exposed R2DBC 저장소�
 - **JDBC 무의존**: 순수 R2DBC + `exposed-cache` 인터페이스만 사용
 - **Caffeine AsyncCache**: `CompletableFuture` 기반 논블로킹 캐시
 - **코루틴 네이티브**: 모든 DB 작업이 `suspendTransaction` 사용
+- **Write-behind 범위 제한**: `writeBehindBatchSize`와 `writeBehindQueueCapacity`는 각각 `1..100_000`이고 queue capacity는 batch size 이상이어야 하며, 어기면 설정 시 `IllegalArgumentException`이 발생
+- **안전한 종료**: `close()`는 새 admission을 막고 유한 종료 경계 안에서 publication과 worker drain을 시도한 뒤 cache를 정리합니다. 시간 초과나 중단이 발생하면 잔여 배치나 failure가 남을 수 있습니다.
 
 <!-- R2DBC-SNAPSHOT-CACHE -->
 ## 커밋에 맞춰 공개하는 R2DBC 스냅샷 캐시 (opt-in)

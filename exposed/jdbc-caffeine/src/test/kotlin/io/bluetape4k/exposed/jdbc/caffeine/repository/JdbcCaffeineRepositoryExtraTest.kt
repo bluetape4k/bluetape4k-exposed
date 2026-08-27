@@ -245,8 +245,7 @@ class JdbcCaffeineRepositoryExtraTest {
                     entities shouldHaveSize ActorTable.selectAll().count().toInt()
                     repository.cache.asMap().shouldBeEmpty()
                     appender.hasWarnContaining(
-                        "Cache warming failed for entity - skipping. " +
-                            "cacheName=jdbc:caffeine:extra:find-all-failure"
+                        "Cache event: component=jdbc operation=cache_warming failureKind=error"
                     ).shouldBeTrue()
                 }
             }
@@ -267,8 +266,7 @@ class JdbcCaffeineRepositoryExtraTest {
                     entities shouldHaveSize ActorTable.selectAll().count().toInt()
                     repository.cache.asMap().shouldBeEmpty()
                     appender.hasWarnContaining(
-                        "Cache warming failed for entity - skipping. " +
-                            "cacheName=jdbc:caffeine:extra:find-all-failure"
+                        "Cache event: component=jdbc operation=cache_warming failureKind=error"
                     ).shouldBeTrue()
                 }
             }
@@ -943,7 +941,7 @@ class JdbcCaffeineRepositoryExtraTest {
                 keyPrefix = "jdbc:caffeine:extra:wb-overflow",
                 writeMode = CacheWriteMode.WRITE_BEHIND,
                 writeBehindBatchSize = 1,
-                writeBehindQueueCapacity = 1,
+                writeBehindQueueCapacity = 2,
             )
             val repository = BlockingFlushCredentialRepository(
                 config = config,
@@ -1094,6 +1092,31 @@ class JdbcCaffeineRepositoryExtraTest {
             }
         }
 
+        @Test
+        fun `put - cache publication failure invalidates the accepted key`() {
+            val repository = CachePutFailureJdbcRepository(
+                LocalCacheConfig(
+                    keyPrefix = "jdbc:caffeine:extra:wb-cache-put-failure",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 1,
+                    writeBehindQueueCapacity = 1,
+                )
+            )
+
+            withActorTable(TestDB.H2_MYSQL) {
+                val existing = ActorTable.selectAll().first().toActorRecord()
+                val updated = existing.copy(firstName = "cache-put-failure")
+                try {
+                    assertFailsWith<IllegalStateException> {
+                        repository.put(updated.id, updated)
+                    }
+                    repository.cache.getIfPresent(repository.serializeKey(updated.id)).shouldBeNull()
+                } finally {
+                    repository.close()
+                }
+            }
+        }
+
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
         fun `write-behind retries retained batch after transient flush failure`(testDB: TestDB) {
@@ -1136,6 +1159,38 @@ class JdbcCaffeineRepositoryExtraTest {
                     commit()
                     ActorSchema.findActorById(first.id).shouldNotBeNull().firstName shouldBeEqualTo first.firstName
                     ActorSchema.findActorById(second.id).shouldNotBeNull().firstName shouldBeEqualTo second.firstName
+                } finally {
+                    repository.close()
+                }
+            }
+        }
+
+        @Test
+        fun `write-behind permanent flush failure exhausts retries and retains the batch`() {
+            val attempts = AtomicInteger()
+            val repository = PermanentlyFailingFlushJdbcRepository(
+                LocalCacheConfig(
+                    keyPrefix = "jdbc:caffeine:extra:wb-permanent-failure",
+                    writeMode = CacheWriteMode.WRITE_BEHIND,
+                    writeBehindBatchSize = 1,
+                    writeBehindQueueCapacity = 4,
+                ),
+                attempts,
+            )
+
+            withActorTable(TestDB.H2_MYSQL) {
+                val existing = ActorTable.selectAll().first().toActorRecord()
+                try {
+                    repository.put(existing.id, existing.copy(firstName = "permanent-failure"))
+                    val terminal = awaitHealthReport(repository) { health ->
+                        health.workerState == CacheWorkerState.FAILED && health.lastFlushError != null
+                    }
+                    terminal.workerState shouldBeEqualTo CacheWorkerState.FAILED
+                    terminal.queueDepth shouldBeEqualTo 1
+                    attempts.get() shouldBeEqualTo 8
+                    assertFailsWith<IllegalStateException> {
+                        repository.put(existing.id, existing.copy(firstName = "rejected-after-failure"))
+                    }
                 } finally {
                     repository.close()
                 }
@@ -1357,6 +1412,38 @@ class JdbcCaffeineRepositoryExtraTest {
         override fun extractId(entity: ActorRecord): Long = entity.id
     }
 
+    private class CachePutFailureJdbcRepository(
+        config: LocalCacheConfig,
+    ): AbstractJdbcCaffeineRepository<Long, ActorRecord>(config) {
+
+        private val delegateCache = Caffeine.newBuilder().build<String, ActorRecord>()
+
+        override val cache: Cache<String, ActorRecord> = object: Cache<String, ActorRecord> by delegateCache {
+            override fun put(key: String, value: ActorRecord) {
+                delegateCache.put(key, value)
+                throw IllegalStateException("planned cache publication failure")
+            }
+        }
+
+        override val table: IdTable<Long> = ActorTable
+
+        override fun ResultRow.toEntity(): ActorRecord = toActorRecord()
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) {
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) {
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun extractId(entity: ActorRecord): Long = entity.id
+    }
+
     private class TransientFailingFlushJdbcRepository(
         config: LocalCacheConfig,
         private val flushFailed: CountDownLatch,
@@ -1390,11 +1477,34 @@ class JdbcCaffeineRepositoryExtraTest {
         override fun extractId(entity: ActorRecord): Long = entity.id
     }
 
+    private class PermanentlyFailingFlushJdbcRepository(
+        config: LocalCacheConfig,
+        private val attempts: AtomicInteger,
+    ): AbstractJdbcCaffeineRepository<Long, ActorRecord>(config) {
+
+        override val table: IdTable<Long> = ActorTable
+
+        override fun ResultRow.toEntity(): ActorRecord = toActorRecord()
+
+        override fun UpdateStatement.updateEntity(entity: ActorRecord) {
+            attempts.incrementAndGet()
+            throw IllegalStateException("planned permanent write-behind flush failure")
+        }
+
+        override fun BatchInsertStatement.insertEntity(entity: ActorRecord) {
+            this[ActorTable.firstName] = entity.firstName
+            this[ActorTable.lastName] = entity.lastName
+            this[ActorTable.email] = entity.email
+        }
+
+        override fun extractId(entity: ActorRecord): Long = entity.id
+    }
+
     private fun awaitHealthReport(
         repository: JdbcCaffeineRepository<*, *>,
         predicate: (CacheHealthReport) -> Boolean,
     ): CacheHealthReport {
-        repeat(100) {
+        repeat(600) {
             val report = repository.validateConsistency()
             if (predicate(report)) {
                 return report

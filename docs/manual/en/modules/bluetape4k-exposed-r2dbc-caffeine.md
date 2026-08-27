@@ -31,11 +31,15 @@ dependencies {
 }
 ```
 
-Users select the central BOM version; this page records the stable `1.11` source line.
+Users select the central BOM version; this page records the stable `1.12.1` source line.
 
 ## Core concepts {#concepts}
 
 `get` and `getAll` are read-through operations. Cache-aside is an application-owned DB update followed by invalidation. True write-through requires the configured writer to finish DB persistence before returning. Write-behind accepts a delayed durability window. Ordinary `put` must not be called write-through without that writer policy. This adapter is local-only; it has no distributed invalidation.
+
+The stable `1.12.1` adapter owns its R2DBC transactions, coroutine scope, and `AsyncCache`; write-behind remains an explicitly delayed durability mode. The lifecycle coordinator, bounded admission accounting, publication lease, and terminal retry behavior described below are current develop changes and are not part of the stable `1.12.1` contract.
+
+**Develop-only write-behind contract:** `writeBehindBatchSize` and `writeBehindQueueCapacity` must each be in `1..100_000`, and queue capacity must be greater than or equal to batch size. Zero, negative, values above `100_000`, or a queue smaller than the batch fail fast with `IllegalArgumentException`. A failed flush is retried at most 8 times with capped exponential backoff from 10 ms to 1 s; the retained batch is not dropped before the retry limit. A terminal failure leaves the worker in `FAILED`; the library does not silently move the retained batch to a durable outbox or dead-letter store.
 
 ## Quick start {#quick-start}
 
@@ -62,7 +66,7 @@ repository.use { repo ->
 
 ## Recommended patterns {#patterns}
 
-Keep one repository per cache namespace and close it with the application. For cache-aside, commit the DB transaction before invalidating. Treat write-through failure as an incomplete write. Before write-behind, expose queue/dead-letter state and define the shutdown drain budget. Keep key prefixes and serialized value formats stable.
+Keep one repository per cache namespace and close it with the application. For cache-aside, commit the DB transaction before invalidating. Treat write-through failure as an incomplete write. Before write-behind, expose queue state and define the shutdown drain budget. `putAll` processes entries in input order; if an entry fails, earlier effects remain visible and the exception identifies the failing operation—there is no implicit rollback. After an accepted queue handoff, a cache publication failure invalidates that key. Keep key prefixes and serialized value formats stable.
 
 ## Integrations {#integrations}
 
@@ -78,7 +82,7 @@ Caller cancellation can happen while cache or R2DBC work is in flight. Write-beh
 
 ## Operations {#operations}
 
-The repository owns the async cache and bounded write-behind scope; close it during application shutdown. Monitor hit/miss, backend latency, retries/timeouts, queue depth, rejected or dead-letter writes, invalidation lag, and shutdown drain. Set separate SLOs for cache and database paths.
+The repository owns the async cache and bounded write-behind scope; close it during application shutdown. In the develop implementation, `close()` first stops new admissions, attempts publication and worker drain within a finite shutdown boundary, and then invalidates the cache; timeout or interruption can leave a residual batch or failure for operators to observe. Monitor hit/miss, backend latency, retries/timeouts, queue depth, rejected writes, invalidation lag, and shutdown drain. For durable retry or dead-letter recovery, the application must own the outbox schema, replay/idempotency policy, alerting, and operator runbook; coordinator `FAILED` is an observation boundary, not a durable recovery mechanism. Set separate SLOs for cache and database paths.
 
 ## Testing {#testing}
 
