@@ -936,9 +936,10 @@ tasks.register("checkKtorDependencyBoundary") {
                             } else {
                                 dependency.group?.let { "$it:${dependency.name}" }
                             }
-                            if (coordinate != null) {
-                                sourceGraph.getOrPut(path) { mutableListOf() } += "$configurationName:$coordinate"
+                            check(coordinate != null) {
+                                "$path:$configurationName dependency must declare a fully-qualified group:name coordinate"
                             }
+                            sourceGraph.getOrPut(path) { mutableListOf() } += "$configurationName:$coordinate"
                             checkCoordinate(configurationName, coordinate)
                         }
                 }
@@ -953,9 +954,10 @@ tasks.register("checkKtorDependencyBoundary") {
                                 org.gradle.api.artifacts.component.ProjectComponentIdentifier)?.projectPath
                             val coordinate = component.moduleVersion?.let { "${it.group}:${it.name}" }
                                 ?: projectPath?.let { "$exposedGroup:${it.substringAfterLast(':')}" }
-                            if (coordinate != null) {
-                                resolvedGraph.getOrPut(path) { mutableListOf() } += "$configurationName:$coordinate"
+                            check(coordinate != null) {
+                                "$path:$configurationName resolved component must expose a fully-qualified group:name coordinate"
                             }
+                            resolvedGraph.getOrPut(path) { mutableListOf() } += "$configurationName:$coordinate"
                             checkCoordinate(configurationName, coordinate)
                         }
                 }
@@ -988,14 +990,12 @@ tasks.register("checkKtorDependencyBoundary") {
                             .map { dependenciesElement.childNodes.item(it) }
                             .filterIsInstance<org.w3c.dom.Element>()
                             .filter { isElementNamed(it, "dependency") }
-                            .mapNotNull { dependency ->
+                            .map { dependency ->
                                 val groupId = directChildText(dependency, "groupId")
+                                    ?: error("$path published POM dependency is missing groupId")
                                 val artifactId = directChildText(dependency, "artifactId")
-                                if (groupId == null || artifactId == null) {
-                                    null
-                                } else {
-                                    "$groupId:$artifactId"
-                                }
+                                    ?: error("$path published POM dependency is missing artifactId")
+                                "$groupId:$artifactId"
                             }
                             .toSet()
                     }
@@ -1009,16 +1009,16 @@ tasks.register("checkKtorDependencyBoundary") {
                         ?: error("$path Gradle metadata variant must be an object")
                     listOf("dependencies", "dependencyConstraints").flatMap { dependencyKey ->
                         val dependencies = variantMap[dependencyKey] as? List<*> ?: emptyList<Any?>()
-                        dependencies.mapNotNull { dependency ->
+                        dependencies.map { dependency ->
                             val dependencyMap = dependency as? Map<*, *>
                                 ?: error("$path Gradle metadata $dependencyKey entry must be an object")
                             val groupId = dependencyMap["group"]?.toString()?.trim()
+                                ?.takeIf { it.isNotBlank() }
+                                ?: error("$path Gradle metadata $dependencyKey entry is missing group")
                             val moduleId = dependencyMap["module"]?.toString()?.trim()
-                            if (groupId.isNullOrBlank() || moduleId.isNullOrBlank()) {
-                                null
-                            } else {
-                                "$groupId:$moduleId"
-                            }
+                                ?.takeIf { it.isNotBlank() }
+                                ?: error("$path Gradle metadata $dependencyKey entry is missing module")
+                            "$groupId:$moduleId"
                         }
                     }
                 }.toSet()
