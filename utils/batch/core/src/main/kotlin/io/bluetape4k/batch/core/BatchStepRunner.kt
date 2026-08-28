@@ -177,11 +177,13 @@ internal class BatchStepRunner<I : Any, O : Any>(
                 // (3) writer + retry 루프
                 var attempts = 0
                 var currentDelay = step.retryPolicy.delay
+                var writerSucceeded = false
                 writerLoop@ while (true) {
                     attempts++
                     try {
                         writeWithTimeout(step.writer, chunk, step.commitTimeout)
                         writeCount += chunk.size
+                        writerSucceeded = true
                         break@writerLoop
                     } catch (e: CancellationException) {
                         throw e
@@ -215,6 +217,11 @@ internal class BatchStepRunner<I : Any, O : Any>(
                         throw e
                     }
                 }
+
+                // writer 실패를 skip한 chunk는 커밋된 것으로 간주하지 않는다.
+                // reader 내부 fetch 포인터는 다음 읽기를 위해 진행될 수 있지만,
+                // 재시작 기준인 lastCommittedKey/checkpoint는 마지막 성공 chunk에 남긴다.
+                if (!writerSucceeded) continue@mainLoop
 
                 // writer 성공 이후의 reader advancement와 checkpoint 저장은 writer retry 범위 밖이다.
                 // 외부 side effect가 발생한 뒤 checkpoint가 실패해도 같은 chunk를 재전달하지 않는다.

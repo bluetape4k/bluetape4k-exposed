@@ -5,6 +5,7 @@ import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.BatchWriter
 import io.bluetape4k.batch.api.JobExecution
+import io.bluetape4k.batch.api.SkipPolicy
 import io.bluetape4k.batch.api.StepExecution
 import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.logging.KLogging
@@ -14,6 +15,7 @@ import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldHaveSize
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -90,6 +92,16 @@ class BatchStepRunnerCheckpointTest {
         override suspend fun write(items: List<String>) {
             callCount.incrementAndGet()
             collected.addAll(items)
+        }
+    }
+
+    /** writer retry가 소진된 뒤 항상 skip되는 경로를 검증하는 fake writer. */
+    private class AlwaysFailWriter: BatchWriter<String> {
+        val callCount = AtomicInteger(0)
+
+        override suspend fun write(items: List<String>) {
+            callCount.incrementAndGet()
+            throw IllegalStateException("writer failed")
         }
     }
 
@@ -177,13 +189,14 @@ class BatchStepRunnerCheckpointTest {
         writer: BatchWriter<String>,
         name: String = "checkpointStep",
         retryPolicy: RetryPolicy = RetryPolicy.NONE,
+        skipPolicy: SkipPolicy = SkipPolicy.NONE,
     ): BatchStep<String, String> = BatchStep(
         name = name,
         chunkSize = chunkSize,
         reader = reader,
         writer = writer,
         processor = null,
-        skipPolicy = io.bluetape4k.batch.api.SkipPolicy.NONE,
+        skipPolicy = skipPolicy,
         retryPolicy = retryPolicy,
         commitTimeout = 5.seconds,
     )
@@ -307,5 +320,30 @@ class BatchStepRunnerCheckpointTest {
         writer.collected shouldBeEqualTo items
         // writeCount는 이미 성공한 writer side effect를 숨기지 않는다.
         report.writeCount shouldBeEqualTo items.size.toLong()
+    }
+
+    @Test
+    fun `writer skip은 checkpoint를 전진시키지 않는다`() = runTest(timeout = 30.seconds) {
+        val reader = IndexedListReader(listOf("a", "b"))
+        val writer = AlwaysFailWriter()
+        val repository = CountingRepository()
+        val step = makeStep(
+            chunkSize = 2,
+            reader = reader,
+            writer = writer,
+            retryPolicy = RetryPolicy(maxAttempts = 3, delay = 0.seconds),
+            skipPolicy = SkipPolicy.ALL,
+        )
+
+        val report = BatchStepRunner(step, makeJobExecution(), repository).run()
+
+        report.status shouldBeEqualTo BatchStatus.COMPLETED_WITH_SKIPS
+        report.readCount shouldBeEqualTo 2L
+        report.writeCount shouldBeEqualTo 0L
+        report.skipCount shouldBeEqualTo 2L
+        report.checkpoint.shouldBeNull()
+        writer.callCount.get() shouldBeEqualTo 3
+        repository.saveCheckpointCount.get() shouldBeEqualTo 0
+        repository.savedValues shouldHaveSize 0
     }
 }

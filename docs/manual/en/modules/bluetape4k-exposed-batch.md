@@ -40,7 +40,7 @@ dependencies {
 
 A job and each step have persisted status, counters, owner, lease expiry, version, and checkpoint. The repository must claim ownership atomically; a failed claim returns a `FAILED` report without opening step resources. A completed step is returned immediately and is never reopened. For an incomplete step, a saved checkpoint is restored before the first read.
 
-Within each chunk, processor exceptions are evaluated by `SkipPolicy`. Accepted outputs are passed to the writer. A successful `writer.write()` is counted immediately, then the runner calls `reader.onChunkCommitted()` and persists `reader.checkpoint()` outside the writer retry/skip boundary. A checkpoint failure therefore reports the already completed write without replaying the chunk in the same run. This ordering defines restart behavior.
+Within each chunk, processor exceptions are evaluated by `SkipPolicy`. Accepted outputs are passed to the writer. A successful `writer.write()` is counted immediately, then the runner calls `reader.onChunkCommitted()` and persists `reader.checkpoint()` outside the writer retry/skip boundary. A chunk skipped after writer retries are exhausted does not advance the committed checkpoint. A checkpoint failure therefore reports the already completed write without replaying the chunk in the same run. This ordering defines restart behavior.
 
 ## Quick start {#quick-start}
 

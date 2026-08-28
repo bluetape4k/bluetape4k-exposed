@@ -11,6 +11,7 @@ import io.bluetape4k.batch.api.BatchReport
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.BatchWriter
 import io.bluetape4k.batch.api.SkipPolicy
+import io.bluetape4k.batch.api.StepExecution
 import io.bluetape4k.batch.core.dsl.batchJob
 import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.r2dbc.tables.BatchJobExecutionTable
@@ -100,8 +101,9 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
         database: R2dbcDatabase,
         reader: BatchReader<String>,
         writer: BatchWriter<String>,
+        repository: BatchJobRepository = ExposedR2dbcBatchJobRepository(database, CheckpointJson.jackson3()),
     ) = batchJob("failedCheckpointJob") {
-        repository(ExposedR2dbcBatchJobRepository(database, CheckpointJson.jackson3()))
+        repository(repository)
         params("partition" to "test")
         step<String, String>("checkpointStep") {
             reader(reader)
@@ -226,6 +228,39 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
                 restartReport shouldBeInstanceOf BatchReport.Success::class
                 restartReader.restoredFromValue shouldBeEqualTo "checkpoint-1"
                 restartWriter.items shouldBeEqualTo listOf("second")
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `checkpoint 저장 실패도 성공 writer counter와 receipt를 보존한다`(testDB: TestDB) {
+        runSuspendIO {
+            withAllTables(testDB) {
+                val database = testDB.db!!
+                val delegate = ExposedR2dbcBatchJobRepository(database, CheckpointJson.jackson3())
+                val firstWriter = RecordingWriter()
+                val report = makeCheckpointJob(
+                    database = database,
+                    reader = CheckpointingReader(),
+                    writer = firstWriter,
+                    repository = FailingCheckpointRepository(delegate),
+                ).run()
+
+                report shouldBeInstanceOf BatchReport.Failure::class
+                report.stepReports.single().status shouldBe BatchStatus.FAILED
+                report.stepReports.single().checkpoint shouldBeEqualTo "checkpoint-1"
+                report.stepReports.single().writeCount shouldBeEqualTo 1L
+                firstWriter.items shouldBeEqualTo listOf("first")
+
+                val execution = delegate.findOrCreateJobExecution(
+                    "failedCheckpointJob",
+                    mapOf("partition" to "test"),
+                )
+                val storedStep = delegate.findOrCreateStepExecution(execution, "checkpointStep")
+                storedStep.status shouldBe BatchStatus.FAILED
+                storedStep.checkpoint shouldBeEqualTo "checkpoint-1"
+                storedStep.writeCount shouldBeEqualTo 1L
             }
         }
     }
@@ -364,6 +399,28 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
         override suspend fun onChunkCommitted() {
             chunkCommitted = true
         }
+    }
+
+    private class CheckpointingReader : BatchReader<String> {
+        private var read = false
+        private var chunkCommitted = false
+
+        override suspend fun read(): String? = if (read) null else "first".also { read = true }
+
+        override suspend fun checkpoint(): Any? = "checkpoint-1".takeIf { chunkCommitted }
+
+        override suspend fun onChunkCommitted() {
+            chunkCommitted = true
+        }
+    }
+
+    private class FailingCheckpointRepository(
+        private val delegate: BatchJobRepository,
+    ) : BatchJobRepository by delegate {
+        override suspend fun saveCheckpointAndReturn(
+            execution: StepExecution,
+            checkpoint: Any,
+        ): StepExecution = throw IllegalStateException("checkpoint save failed")
     }
 
     private class ResumingReader : BatchReader<String> {

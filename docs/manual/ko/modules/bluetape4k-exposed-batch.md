@@ -40,7 +40,7 @@ dependencies {
 
 잡과 각 스텝에는 상태, 처리 건수, 소유자, lease 만료 시각, 버전, checkpoint가 저장됩니다. 저장소는 소유권을 원자적으로 획득해야 합니다. 획득에 실패하면 스텝 자원을 열지 않고 `FAILED` 보고서를 반환합니다. 완료된 스텝도 다시 열지 않고 기존 결과를 즉시 반환합니다. 미완료 스텝은 저장된 checkpoint가 있을 때만 첫 읽기 전에 복원합니다.
 
-각 청크에서 processor 예외는 `SkipPolicy`로 판단합니다. 통과한 출력은 writer에 전달합니다. `writer.write()`가 성공하면 먼저 write count에 반영하고, 그 뒤 writer retry·skip 범위 밖에서 `reader.onChunkCommitted()`를 호출하고 `reader.checkpoint()`를 저장합니다. 따라서 checkpoint 저장이 실패해도 이미 완료된 write를 보고하며 같은 실행에서 청크를 다시 writer에 전달하지 않습니다. 이 순서가 재시작 의미를 결정합니다.
+각 청크에서 processor 예외는 `SkipPolicy`로 판단합니다. 통과한 출력은 writer에 전달합니다. `writer.write()`가 성공하면 먼저 write count에 반영하고, 그 뒤 writer retry·skip 범위 밖에서 `reader.onChunkCommitted()`를 호출하고 `reader.checkpoint()`를 저장합니다. writer 재시도가 소진되어 skip한 청크는 커밋된 checkpoint를 전진시키지 않습니다. 따라서 checkpoint 저장이 실패해도 이미 완료된 write를 보고하며 같은 실행에서 청크를 다시 writer에 전달하지 않습니다. 이 순서가 재시작 의미를 결정합니다.
 
 ## 빠르게 시작하기 {#quick-start}
 
