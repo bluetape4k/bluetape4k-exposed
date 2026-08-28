@@ -1012,7 +1012,11 @@ tasks.register("checkKtorDependencyBoundary") {
                     val variantMap = variant as? Map<*, *>
                         ?: error("$path Gradle metadata variant must be an object")
                     listOf("dependencies", "dependencyConstraints").flatMap { dependencyKey ->
-                        val dependencies = variantMap[dependencyKey] as? List<*> ?: emptyList<Any?>()
+                        val dependencies = when (val value = variantMap[dependencyKey]) {
+                            null -> emptyList<Any?>()
+                            is List<*> -> value
+                            else -> error("$path Gradle metadata $dependencyKey must be an array")
+                        }
                         dependencies.map { dependency ->
                             val dependencyMap = dependency as? Map<*, *>
                                 ?: error("$path Gradle metadata $dependencyKey entry must be an object")
