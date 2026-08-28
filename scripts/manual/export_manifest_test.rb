@@ -46,4 +46,25 @@ class ExportManifestTest < Minitest::Test
       end
     end
   end
+
+  def test_uses_compact_empty_collections_for_ruby_version_independent_output
+    Dir.mktmpdir("manifest-export") do |root|
+      source = File.join(root, "manifest.yaml")
+      output = File.join(root, "manifest.json")
+      File.write(source, <<~YAML)
+        modules: []
+        releaseCommit: 0b494a5fd1e083006046764757342b68a397e4c5
+        repository: bluetape4k/bluetape4k-exposed
+        releaseRef: 1.11.0
+        schemaVersion: 2
+        title: 한국어 매뉴얼
+      YAML
+
+      ManualDocs::ManifestExporter.new(source_path: source, output_path: output).write
+
+      rendered = File.read(output)
+      assert_includes rendered, "  \"modules\": []"
+      refute_includes rendered, "  \"modules\": [\n\n  ]"
+    end
+  end
 end

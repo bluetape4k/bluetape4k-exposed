@@ -12,16 +12,12 @@
       "sourcePaths": [
         "benchmark/exposed-benchmark/src/benchmark/kotlin"
       ],
-      "testPaths": [
-
-      ],
+      "testPaths": [],
       "title": {
         "en": "Exposed Repository Benchmark",
         "ko": "Exposed 저장소 벤치마크"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-batch",
@@ -44,9 +40,7 @@
         "en": "Exposed Batch Utilities",
         "ko": "Exposed 배치 유틸리티"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-batch-core",
@@ -69,9 +63,7 @@
         "en": "Exposed Batch Core",
         "ko": "Exposed 배치 코어"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-batch-jdbc",
@@ -94,9 +86,7 @@
         "en": "Exposed Batch JDBC Adapter",
         "ko": "Exposed 배치 JDBC adapter"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-batch-r2dbc",
@@ -119,9 +109,7 @@
         "en": "Exposed Batch R2DBC Adapter",
         "ko": "Exposed 배치 R2DBC adapter"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-bigquery",
@@ -156,19 +144,13 @@
       "kind": "library",
       "ko": "ko/modules/bluetape4k-exposed-bom.md",
       "sourceDir": "exposed/bom",
-      "sourcePaths": [
-
-      ],
-      "testPaths": [
-
-      ],
+      "sourcePaths": [],
+      "testPaths": [],
       "title": {
         "en": "Exposed Bill of Materials",
         "ko": "Exposed BOM"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-cache",
@@ -191,9 +173,7 @@
         "en": "Exposed Cache Foundation",
         "ko": "Exposed 캐시 기반 모듈"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-clickhouse",
@@ -239,9 +219,7 @@
         "en": "Exposed CockroachDB Adapter",
         "ko": "Exposed CockroachDB 어댑터"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-core",
@@ -275,9 +253,7 @@
         "en": "Exposed Core Library",
         "ko": "Exposed 핵심 라이브러리"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-dao",
@@ -299,9 +275,7 @@
         "en": "Exposed DAO Extensions",
         "ko": "Exposed DAO 확장"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-druid",
@@ -323,9 +297,7 @@
         "en": "Exposed Druid JDBC Utilities",
         "ko": "Exposed Druid JDBC 유틸리티"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-duckdb",
@@ -347,9 +319,7 @@
         "en": "Exposed DuckDB Adapter",
         "ko": "Exposed DuckDB 어댑터"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-fastjson2",
@@ -371,9 +341,7 @@
         "en": "Exposed Fastjson2 Serialization",
         "ko": "Exposed Fastjson2 직렬화"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2",
@@ -395,9 +363,7 @@
         "en": "Exposed Jackson 2 Serialization",
         "ko": "Exposed Jackson 2 직렬화"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-jackson3",
@@ -419,9 +385,7 @@
         "en": "Exposed Jackson 3 Serialization",
         "ko": "Exposed Jackson 3 직렬화"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc",
@@ -460,9 +424,7 @@
         "en": "Exposed JDBC Library",
         "ko": "Exposed JDBC 라이브러리"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-caffeine",
@@ -484,9 +446,7 @@
         "en": "Exposed JDBC Caffeine Cache",
         "ko": "Exposed JDBC Caffeine 캐시"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-lettuce",
@@ -508,9 +468,7 @@
         "en": "Exposed JDBC Lettuce Cache",
         "ko": "Exposed JDBC Lettuce 캐시"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-redisson",
@@ -532,9 +490,7 @@
         "en": "Exposed JDBC Redisson Cache",
         "ko": "Exposed JDBC Redisson 캐시"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-tests",
@@ -556,9 +512,7 @@
         "en": "Exposed JDBC Test Support",
         "ko": "Exposed JDBC 테스트 지원"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor",
@@ -603,9 +557,7 @@
         "en": "Exposed Ktor Cache Adapter",
         "ko": "Exposed Ktor 캐시 어댑터"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-core",
@@ -627,9 +579,7 @@
         "en": "Exposed Ktor Core",
         "ko": "Exposed Ktor 코어"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-jdbc",
@@ -651,9 +601,7 @@
         "en": "Exposed Ktor JDBC Adapter",
         "ko": "Exposed Ktor JDBC 어댑터"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-r2dbc",
@@ -675,9 +623,7 @@
         "en": "Exposed Ktor R2DBC Adapter",
         "ko": "Exposed Ktor R2DBC 어댑터"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-measured",
@@ -699,9 +645,7 @@
         "en": "Exposed Measurement Support",
         "ko": "Exposed 측정 지원"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-mysql8",
@@ -723,9 +667,7 @@
         "en": "Exposed MySQL 8 Adapter",
         "ko": "Exposed MySQL 8 어댑터"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-postgresql",
@@ -747,9 +689,7 @@
         "en": "Exposed PostgreSQL Adapter",
         "ko": "Exposed PostgreSQL 어댑터"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc",
@@ -788,9 +728,7 @@
         "en": "Exposed R2DBC Library",
         "ko": "Exposed R2DBC 라이브러리"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-caffeine",
@@ -812,9 +750,7 @@
         "en": "Exposed R2DBC Caffeine Cache",
         "ko": "Exposed R2DBC Caffeine 캐시"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-lettuce",
@@ -836,9 +772,7 @@
         "en": "Exposed R2DBC Lettuce Cache",
         "ko": "Exposed R2DBC Lettuce 캐시"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-redisson",
@@ -860,9 +794,7 @@
         "en": "Exposed R2DBC Redisson Cache",
         "ko": "Exposed R2DBC Redisson 캐시"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-tests",
@@ -884,9 +816,7 @@
         "en": "Exposed R2DBC Test Support",
         "ko": "Exposed R2DBC 테스트 지원"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-batch",
@@ -909,9 +839,7 @@
         "en": "Exposed Spring Boot Batch Integration",
         "ko": "Exposed Spring Boot Batch 연동"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-common",
@@ -933,9 +861,7 @@
         "en": "Exposed Spring Boot Common Spring Data SPI",
         "ko": "Exposed Spring Boot 공통 Spring Data SPI"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc",
@@ -1008,9 +934,7 @@
         "en": "Exposed Spring Modulith Integration",
         "ko": "Exposed Spring Modulith 연동"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-starrocks",
@@ -1032,9 +956,7 @@
         "en": "Exposed StarRocks Adapter",
         "ko": "Exposed StarRocks 어댑터"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-timefold-solver-persistence",
@@ -1056,9 +978,7 @@
         "en": "Exposed Timefold Solver Persistence",
         "ko": "Exposed Timefold Solver 영속성 연동"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-tink",
@@ -1080,9 +1000,7 @@
         "en": "Exposed Tink Encryption",
         "ko": "Exposed Tink 암호화"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-trino",
@@ -1104,9 +1022,7 @@
         "en": "Exposed Trino Adapter",
         "ko": "Exposed Trino 어댑터"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": null,
@@ -1128,9 +1044,7 @@
         "en": "DDD Spring Modulith Demo",
         "ko": "DDD Spring Modulith 데모"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": null,
@@ -1141,9 +1055,7 @@
       "kind": "example",
       "ko": "ko/modules/examples-exposed-bigquery-dry-run.md",
       "sourceDir": "examples/exposed-bigquery-dry-run",
-      "sourcePaths": [
-
-      ],
+      "sourcePaths": [],
       "testPaths": [
         "examples/exposed-bigquery-dry-run/src/test/kotlin",
         "examples/exposed-bigquery-dry-run/src/test/resources"
@@ -1152,9 +1064,7 @@
         "en": "BigQuery Dry-run Example",
         "ko": "BigQuery Dry Run 예제"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": null,
@@ -1165,9 +1075,7 @@
       "kind": "example",
       "ko": "ko/modules/examples-exposed-clickhouse-oltp-olap.md",
       "sourceDir": "examples/exposed-clickhouse-oltp-olap",
-      "sourcePaths": [
-
-      ],
+      "sourcePaths": [],
       "testPaths": [
         "examples/exposed-clickhouse-oltp-olap/src/test/kotlin",
         "examples/exposed-clickhouse-oltp-olap/src/test/resources"
@@ -1176,9 +1084,7 @@
         "en": "ClickHouse OLTP/OLAP Example",
         "ko": "ClickHouse OLTP/OLAP 예제"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": null,
@@ -1200,9 +1106,7 @@
         "en": "Ktor and Exposed Example",
         "ko": "Ktor와 Exposed 연동 예제"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": null,
@@ -1225,9 +1129,7 @@
         "en": "Spring Boot JDBC Example",
         "ko": "Spring Boot JDBC 예제"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     },
     {
       "artifact": null,
@@ -1250,9 +1152,7 @@
         "en": "Spring Boot R2DBC Example",
         "ko": "Spring Boot R2DBC 예제"
       },
-      "workshops": [
-
-      ]
+      "workshops": []
     }
   ],
   "overview": {
