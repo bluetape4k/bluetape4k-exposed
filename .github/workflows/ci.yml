@@ -669,6 +669,8 @@ jobs:
           done
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+      - name: Validate Ktor dependency allowlist policy
+        run: ruby scripts/verification/ktor_dependency_allowlist_test.rb
       - name: Generate Kover XML report
         if: always()
         run: ./gradlew :bluetape4k-exposed-ktor-core:koverXmlReport :bluetape4k-exposed-ktor-jdbc:koverXmlReport :bluetape4k-exposed-ktor-r2dbc:koverXmlReport :bluetape4k-exposed-ktor-cache:koverXmlReport :bluetape4k-exposed-ktor:koverXmlReport --no-configuration-cache --no-daemon
