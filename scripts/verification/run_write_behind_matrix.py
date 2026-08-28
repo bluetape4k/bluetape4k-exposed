@@ -12,12 +12,16 @@ import re
 import signal
 import shutil
 import subprocess
+import sys
 import time
 import xml.etree.ElementTree as ET
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+
+sys.dont_write_bytecode = True
 
 from validate_write_behind_evidence import validate
 
