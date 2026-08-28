@@ -6,6 +6,7 @@ ROOT = File.expand_path("../..", __dir__)
 POLICY = JSON.parse(
   File.read(File.join(ROOT, "scripts/verification/ktor-dependency-allowlist.json")),
 ).freeze
+CI_WORKFLOW = File.read(File.join(ROOT, ".github/workflows/ci.yml")).freeze
 ALIASES = POLICY.fetch("aliases").transform_keys(&:to_s).transform_values(&:to_s).freeze
 COMMON = Set.new(POLICY.fetch("common").map(&:to_s)).freeze
 MODULES = POLICY.fetch("modules").transform_values { |coordinates| Set.new(coordinates.map(&:to_s)) }.freeze
@@ -66,6 +67,16 @@ class KtorDependencyAllowlistTest < Minitest::Test
   def test_rejects_non_jvm_serialization_variants
     SERIALIZATION_VARIANTS.each do |coordinate|
       refute allowed?("core", coordinate)
+    end
+  end
+
+  def test_allowlist_changes_trigger_ktor_ci_job
+    %w[
+      scripts/verification/ktor-dependency-allowlist.json
+      scripts/verification/ktor_dependency_allowlist_test.rb
+      scripts/verification/validate_ktor_consumer.rb
+    ].each do |workflow_path|
+      assert_includes CI_WORKFLOW, "- '#{workflow_path}'"
     end
   end
 
