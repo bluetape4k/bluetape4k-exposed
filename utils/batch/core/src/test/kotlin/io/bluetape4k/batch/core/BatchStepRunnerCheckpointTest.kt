@@ -85,7 +85,10 @@ class BatchStepRunnerCheckpointTest {
     /** 수집용 fake writer. */
     private class CollectingWriter: BatchWriter<String> {
         val collected = mutableListOf<String>()
+        val callCount = AtomicInteger(0)
+
         override suspend fun write(items: List<String>) {
+            callCount.incrementAndGet()
             collected.addAll(items)
         }
     }
@@ -173,6 +176,7 @@ class BatchStepRunnerCheckpointTest {
         reader: BatchReader<String>,
         writer: BatchWriter<String>,
         name: String = "checkpointStep",
+        retryPolicy: RetryPolicy = RetryPolicy.NONE,
     ): BatchStep<String, String> = BatchStep(
         name = name,
         chunkSize = chunkSize,
@@ -180,7 +184,7 @@ class BatchStepRunnerCheckpointTest {
         writer = writer,
         processor = null,
         skipPolicy = io.bluetape4k.batch.api.SkipPolicy.NONE,
-        retryPolicy = RetryPolicy.NONE,
+        retryPolicy = retryPolicy,
         commitTimeout = 5.seconds,
     )
 
@@ -278,13 +282,18 @@ class BatchStepRunnerCheckpointTest {
      * `failedReport` 를 만들어 **return** 한다 (예외 재던지지 않음).
      */
     @Test
-    fun `saveCheckpoint 실패 시 예외 전파`() = runTest(timeout = 30.seconds) {
+    fun `saveCheckpoint 실패는 writer 재시도로 재진입하지 않고 성공한 write를 보고`() = runTest(timeout = 30.seconds) {
         val items = listOf("a", "b")
         val reader = IndexedListReader(items)
         val writer = CollectingWriter()
         val failingRepo = FailingCheckpointRepository()
 
-        val step = makeStep(chunkSize = 2, reader = reader, writer = writer)
+        val step = makeStep(
+            chunkSize = 2,
+            reader = reader,
+            writer = writer,
+            retryPolicy = RetryPolicy(maxAttempts = 3, delay = 0.seconds),
+        )
         val je = failingRepo.findOrCreateJobExecution("checkpointFailJob")
 
         val report = BatchStepRunner(step, je, failingRepo).run()
@@ -293,9 +302,10 @@ class BatchStepRunnerCheckpointTest {
         report.status shouldBe BatchStatus.FAILED
         val error = report.error.shouldNotBeNull()
         error.message shouldBeEqualTo "checkpoint save failed"
-        // chunk 자체는 writer 까지 도달했으므로 writer 는 데이터를 받았을 수 있음
-        // 단, writeCount 는 saveCheckpoint 실패 직전에는 아직 증가하지 않았다 (BatchStepRunner.run 의
-        // try 블록 순서: write → onChunkCommitted → checkpoint → saveCheckpoint → writeCount += chunk.size)
-        report.writeCount shouldBeEqualTo 0L
+        // checkpoint persistence는 writer retry 범위 밖이므로 외부 side effect를 중복하지 않는다.
+        writer.callCount.get() shouldBeEqualTo 1
+        writer.collected shouldBeEqualTo items
+        // writeCount는 이미 성공한 writer side effect를 숨기지 않는다.
+        report.writeCount shouldBeEqualTo items.size.toLong()
     }
 }

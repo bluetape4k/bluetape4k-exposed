@@ -181,15 +181,6 @@ internal class BatchStepRunner<I : Any, O : Any>(
                     attempts++
                     try {
                         writeWithTimeout(step.writer, chunk, step.commitTimeout)
-                        step.reader.onChunkCommitted()
-                        step.reader.checkpoint()?.let { cp ->
-                            // 체크포인트 UPDATE 커밋과 최신 version 수신을 하나의
-                            // 비취소 구간으로 묶어, 커밋 직후 반환 전 취소가 stale
-                            // execution으로 STOPPED CAS를 시도하지 않게 한다.
-                            claimedStepExecution = withContext(NonCancellable) {
-                                repository.saveCheckpointAndReturn(claimedStepExecution, cp)
-                            }
-                        }
                         writeCount += chunk.size
                         break@writerLoop
                     } catch (e: CancellationException) {
@@ -222,6 +213,18 @@ internal class BatchStepRunner<I : Any, O : Any>(
                             break@writerLoop
                         }
                         throw e
+                    }
+                }
+
+                // writer 성공 이후의 reader advancement와 checkpoint 저장은 writer retry 범위 밖이다.
+                // 외부 side effect가 발생한 뒤 checkpoint가 실패해도 같은 chunk를 재전달하지 않는다.
+                step.reader.onChunkCommitted()
+                step.reader.checkpoint()?.let { cp ->
+                    // 체크포인트 UPDATE 커밋과 최신 version 수신을 하나의
+                    // 비취소 구간으로 묶어, 커밋 직후 반환 전 취소가 stale
+                    // execution으로 STOPPED CAS를 시도하지 않게 한다.
+                    claimedStepExecution = withContext(NonCancellable) {
+                        repository.saveCheckpointAndReturn(claimedStepExecution, cp)
                     }
                 }
             }
