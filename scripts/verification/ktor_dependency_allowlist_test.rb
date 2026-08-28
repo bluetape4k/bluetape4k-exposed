@@ -15,6 +15,8 @@ COMMON = Set.new(POLICY.fetch("common").map(&:to_s)).freeze
 MODULES = POLICY.fetch("modules").transform_values { |coordinates| Set.new(coordinates.map(&:to_s)) }.freeze
 SELECTIVE_MODULES = %w[core jdbc r2dbc cache].freeze
 BOUNDARY_SURFACES = %w[api compileClasspath runtimeClasspath publishedPom publishedGradleMetadata].freeze
+SOURCE_CONFIGURATIONS = %w[api implementation compileOnly runtimeOnly].freeze
+CLASSPATH_CONFIGURATIONS = %w[compileClasspath runtimeClasspath].freeze
 
 class KtorDependencyAllowlistTest < Minitest::Test
   SIBLING_BACKENDS = {
@@ -129,6 +131,41 @@ class KtorDependencyAllowlistTest < Minitest::Test
     end
   end
 
+  def test_gradle_boundary_rejects_missing_source_configurations
+    SOURCE_CONFIGURATIONS.each do |configuration_name|
+      stdout, stderr, status = run_gradle_with_structure_fixture("missing-source:#{configuration_name}")
+      output = stdout + stderr
+
+      refute status.success?, "the real Gradle checker accepted missing #{configuration_name} source configuration"
+      assert_includes output, "source configuration #{configuration_name} is missing"
+    end
+  end
+
+  def test_gradle_boundary_rejects_missing_or_non_resolvable_classpaths
+    CLASSPATH_CONFIGURATIONS.each do |configuration_name|
+      %w[missing non-resolvable].each do |state|
+        stdout, stderr, status = run_gradle_with_structure_fixture("#{state}-classpath:#{configuration_name}")
+        output = stdout + stderr
+
+        refute status.success?, "the real Gradle checker accepted #{state} #{configuration_name}"
+        expected = if state == "missing"
+                     "#{configuration_name} configuration is missing"
+                   else
+                     "#{configuration_name} configuration must be resolvable"
+                   end
+        assert_includes output, expected
+      end
+    end
+  end
+
+  def test_gradle_boundary_rejects_empty_metadata_variants
+    stdout, stderr, status = run_gradle_with_structure_fixture("empty-metadata-variants")
+    output = stdout + stderr
+
+    refute status.success?, "the real Gradle checker accepted empty Gradle metadata variants"
+    assert_includes output, "Gradle metadata variants must not be empty"
+  end
+
   private
 
   def run_gradle_with_malformed_metadata(field)
@@ -155,6 +192,80 @@ class KtorDependencyAllowlistTest < Minitest::Test
                     def metadata = new groovy.json.JsonSlurper().parse(metadataFile)
                     metadata.variants.each { variant -> variant["#{field}"] = [malformed: true] }
                     metadataFile.text = groovy.json.JsonOutput.toJson(metadata)
+                  }
+                }
+              }
+            }
+          }
+        GRADLE
+      )
+      Open3.capture3(
+        File.join(ROOT, "gradlew"),
+        "checkKtorDependencyBoundary",
+        "--init-script",
+        init_script,
+        "--no-configuration-cache",
+        "--no-daemon",
+        "--no-build-cache",
+        "--rerun-tasks",
+        "--console=plain",
+        chdir: ROOT,
+      )
+    end
+  end
+
+  def run_gradle_with_structure_fixture(fixture)
+    Dir.mktmpdir("ktor-structure-fixture") do |root|
+      init_script = File.join(root, "structure-fixture.init.gradle")
+      File.write(
+        init_script,
+        <<~GRADLE,
+          def fixture = #{fixture.to_json}
+          gradle.afterProject { project, ignoredState ->
+            if (project.name == "bluetape4k-exposed-ktor-core" && fixture.startsWith("non-resolvable-classpath:")) {
+              def configurationName = fixture.substring("non-resolvable-classpath:".length())
+              project.tasks.matching { task ->
+                task.name == "generateMetadataFileForBluetapeExposedPublication"
+              }.configureEach { task ->
+                task.doLast {
+                  def existing = project.configurations.findByName(configurationName)
+                  if (existing != null) {
+                    project.configurations.remove(existing)
+                  }
+                  project.configurations.create(configurationName) {
+                    canBeResolved = false
+                  }
+                }
+              }
+            }
+          }
+          gradle.afterProject { project, ignoredState ->
+            if (project.parent == null) {
+              def checkTask = project.tasks.findByName("checkKtorDependencyBoundary")
+              if (checkTask != null) {
+                checkTask.doFirst {
+                  def projectPaths = [
+                    ":bluetape4k-exposed-ktor-core",
+                    ":bluetape4k-exposed-ktor-jdbc",
+                    ":bluetape4k-exposed-ktor-r2dbc",
+                    ":bluetape4k-exposed-ktor-cache",
+                  ]
+                  projectPaths.each { projectPath ->
+                    def target = gradle.rootProject.project(projectPath)
+                    if (fixture.startsWith("missing-source:")) {
+                      def configurationName = fixture.substring("missing-source:".length())
+                      target.configurations.remove(target.configurations.findByName(configurationName))
+                    } else if (fixture.startsWith("missing-classpath:")) {
+                      def configurationName = fixture.substring("missing-classpath:".length())
+                      target.configurations.remove(target.configurations.findByName(configurationName))
+                    } else if (fixture == "empty-metadata-variants") {
+                      def publicationDir = target.layout.buildDirectory
+                        .dir("publications/BluetapeExposed").get().asFile
+                      def metadataFile = new File(publicationDir, "module.json")
+                      def metadata = new groovy.json.JsonSlurper().parse(metadataFile)
+                      metadata.variants = []
+                      metadataFile.text = groovy.json.JsonOutput.toJson(metadata)
+                    }
                   }
                 }
               }

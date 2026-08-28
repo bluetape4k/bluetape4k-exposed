@@ -75,10 +75,21 @@
    **향후 예방 확인**: 정책 테스트가 설명 문자열과 네 모듈의 `api`,
    compile/runtime, POM, Gradle metadata 조합을 각각 고정한다.
 
+8. **실패한 가정/판단**: 선택 모듈의 configuration 또는 publication metadata가
+   누락되어도 남은 표면의 좌표만 검사하면 충분하다.
+   **발견 증거 또는 교정**: exact-head review에서 `findByName()?.`와 빈
+   `variants` 목록이 필수 검증 표면을 조용히 건너뛸 수 있음을 확인했다.
+   **수정 결정**: source configuration의 존재, compile/runtime classpath의
+   존재·resolvable 상태, Gradle metadata variant의 비어 있지 않음을
+   fail-closed assertion으로 고정했다.
+   **향후 예방 확인**: Ruby fixture가 네 source configuration, 두 classpath의
+   missing/non-resolvable 상태, 빈 metadata variants를 실제 Gradle task에서
+   각각 실패시키는지 검증한다.
+
 ## 검증
 
-- `ruby scripts/verification/ktor_dependency_allowlist_test.rb` → 11 tests,
-  249 assertions, 0 failures.
+- `ruby scripts/verification/ktor_dependency_allowlist_test.rb` → 14 tests,
+  276 assertions, 0 failures.
 - `actionlint .github/workflows/ci.yml .github/workflows/nightly-tests.yml` → PASS.
 - `./gradlew checkKtorDependencyBoundary --no-configuration-cache --no-daemon
   --no-build-cache --rerun-tasks --console=plain` → selectiveArtifacts=4,
@@ -105,4 +116,5 @@
 - [x] 실제 Gradle checker negative fixture로 네 모듈×다섯 표면(`api` 포함)의 각 거부 경로를 직접 검증했다.
 - [x] Gradle metadata의 비배열 `dependencies`·`dependencyConstraints`를 fail-closed로 검증했다.
 - [x] boundary task description이 fully-qualified allowlist 검사 범위를 정확히 설명하는지 검증했다.
+- [x] 필수 source/classpath configuration과 Gradle metadata variants 누락을 fail-closed로 검증했다.
 - [x] local boundary task와 external consumer 검증을 통과했다.
