@@ -45,10 +45,20 @@
    **향후 예방 확인**: 정책 경로를 변경할 때마다 Ktor CI reachability 회귀
    assertion이 먼저 실패한다.
 
+5. **실패한 가정/판단**: 정책 함수 단위 테스트만으로 실제 Gradle boundary
+   checker의 거부 경로를 증명할 수 있다.
+   **발견 증거 또는 교정**: Ruby `allowed?`만 호출하는 테스트는 Gradle task나
+   source/resolved/POM/metadata 검사 우회를 감지하지 못했다.
+   **수정 결정**: 임시 allowlist fixture를 주입하는 실제 Gradle task 실행을
+   추가하고, 네 selective module과 네 publication/classpath 표면의 forbidden
+   edge 거부를 assert한다.
+   **향후 예방 확인**: 정책 테스트가 `KTOR_DEPENDENCY_ALLOWLIST_FILE` fixture로
+   실제 task를 실패시켜야 통과한다.
+
 ## 검증
 
-- `ruby scripts/verification/ktor_dependency_allowlist_test.rb` → 8 tests,
-  200 assertions, 0 failures.
+- `ruby scripts/verification/ktor_dependency_allowlist_test.rb` → 9 tests,
+  217 assertions, 0 failures.
 - `actionlint .github/workflows/ci.yml .github/workflows/nightly-tests.yml` → PASS.
 - `./gradlew checkKtorDependencyBoundary --no-configuration-cache --no-daemon
   --no-build-cache --rerun-tasks --console=plain` → selectiveArtifacts=4,
@@ -72,4 +82,5 @@
 - [x] fail-closed fully-qualified allowlist를 source/resolved/POM/metadata에 적용했다.
 - [x] JVM alias normalization과 비-JVM serialization 거부 회귀 fixture를 추가했다.
 - [x] 정책 테스트를 CI와 nightly Ktor job에 연결했다.
+- [x] 실제 Gradle checker negative fixture로 네 모듈·네 표면의 거부 경로를 검증했다.
 - [x] local boundary task와 external consumer 검증을 통과했다.
