@@ -584,6 +584,102 @@
       ]
     },
     {
+      "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-cache",
+      "en": "en/modules/bluetape4k-exposed-ktor-cache.md",
+      "gradlePath": ":bluetape4k-exposed-ktor-cache",
+      "group": "integration",
+      "id": "bluetape4k-exposed-ktor-cache",
+      "kind": "library",
+      "ko": "ko/modules/bluetape4k-exposed-ktor-cache.md",
+      "releaseStatus": "develop-only",
+      "sourceDir": "ktor/cache",
+      "sourcePaths": [
+        "ktor/cache/src/main/kotlin"
+      ],
+      "testPaths": [
+        "ktor/cache/src/test/kotlin"
+      ],
+      "title": {
+        "en": "Exposed Ktor Cache Adapter",
+        "ko": "Exposed Ktor 캐시 어댑터"
+      },
+      "workshops": [
+
+      ]
+    },
+    {
+      "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-core",
+      "en": "en/modules/bluetape4k-exposed-ktor-core.md",
+      "gradlePath": ":bluetape4k-exposed-ktor-core",
+      "group": "integration",
+      "id": "bluetape4k-exposed-ktor-core",
+      "kind": "library",
+      "ko": "ko/modules/bluetape4k-exposed-ktor-core.md",
+      "releaseStatus": "develop-only",
+      "sourceDir": "ktor/core",
+      "sourcePaths": [
+        "ktor/core/src/main/kotlin"
+      ],
+      "testPaths": [
+        "ktor/core/src/test/kotlin"
+      ],
+      "title": {
+        "en": "Exposed Ktor Core",
+        "ko": "Exposed Ktor 코어"
+      },
+      "workshops": [
+
+      ]
+    },
+    {
+      "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-jdbc",
+      "en": "en/modules/bluetape4k-exposed-ktor-jdbc.md",
+      "gradlePath": ":bluetape4k-exposed-ktor-jdbc",
+      "group": "integration",
+      "id": "bluetape4k-exposed-ktor-jdbc",
+      "kind": "library",
+      "ko": "ko/modules/bluetape4k-exposed-ktor-jdbc.md",
+      "releaseStatus": "develop-only",
+      "sourceDir": "ktor/jdbc",
+      "sourcePaths": [
+        "ktor/jdbc/src/main/kotlin"
+      ],
+      "testPaths": [
+        "ktor/jdbc/src/test/kotlin"
+      ],
+      "title": {
+        "en": "Exposed Ktor JDBC Adapter",
+        "ko": "Exposed Ktor JDBC 어댑터"
+      },
+      "workshops": [
+
+      ]
+    },
+    {
+      "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-r2dbc",
+      "en": "en/modules/bluetape4k-exposed-ktor-r2dbc.md",
+      "gradlePath": ":bluetape4k-exposed-ktor-r2dbc",
+      "group": "integration",
+      "id": "bluetape4k-exposed-ktor-r2dbc",
+      "kind": "library",
+      "ko": "ko/modules/bluetape4k-exposed-ktor-r2dbc.md",
+      "releaseStatus": "develop-only",
+      "sourceDir": "ktor/r2dbc",
+      "sourcePaths": [
+        "ktor/r2dbc/src/main/kotlin"
+      ],
+      "testPaths": [
+        "ktor/r2dbc/src/test/kotlin"
+      ],
+      "title": {
+        "en": "Exposed Ktor R2DBC Adapter",
+        "ko": "Exposed Ktor R2DBC 어댑터"
+      },
+      "workshops": [
+
+      ]
+    },
+    {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-measured",
       "en": "en/modules/bluetape4k-exposed-measured.md",
       "gradlePath": ":bluetape4k-exposed-measured",
