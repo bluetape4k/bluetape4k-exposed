@@ -857,64 +857,73 @@ tasks.register("checkKtorDependencyBoundary") {
         },
     )
 
+    val allowlistFile = rootProject.file("scripts/verification/ktor-dependency-allowlist.json")
+    inputs.file(allowlistFile)
+
     doLast {
         val exposedGroup = projectGroup
-        val ktorArtifacts = setOf(
-            "bluetape4k-exposed-ktor",
-            "bluetape4k-exposed-ktor-core",
-            "bluetape4k-exposed-ktor-jdbc",
-            "bluetape4k-exposed-ktor-r2dbc",
-            "bluetape4k-exposed-ktor-cache",
+        check(allowlistFile.isFile) {
+            "Ktor dependency allowlist is missing: ${allowlistFile.absolutePath}"
+        }
+        val policy = groovy.json.JsonSlurper().parse(allowlistFile) as? Map<*, *>
+            ?: error("Ktor dependency allowlist root must be an object")
+        val aliases = (policy["aliases"] as? Map<*, *> ?: emptyMap<Any?, Any?>())
+            .mapNotNull { (raw, canonical) ->
+                val rawCoordinate = raw?.toString()?.trim()
+                val canonicalCoordinate = canonical?.toString()?.trim()
+                if (rawCoordinate.isNullOrBlank() || canonicalCoordinate.isNullOrBlank()) {
+                    null
+                } else {
+                    rawCoordinate to canonicalCoordinate
+                }
+            }
+            .toMap()
+        val commonCoordinates = (policy["common"] as? List<*>)
+            ?.map { it.toString().trim() }
+            ?.filter { it.isNotBlank() }
+            ?.toSet()
+            ?: error("Ktor dependency allowlist common coordinates are missing")
+        val moduleCoordinates = (policy["modules"] as? Map<*, *>)
+            ?.mapNotNull { (module, coordinates) ->
+                val moduleName = module?.toString()?.trim()
+                val moduleAllowlist = (coordinates as? List<*>)
+                    ?.map { it.toString().trim() }
+                    ?.filter { it.isNotBlank() }
+                    ?.toSet()
+                if (moduleName.isNullOrBlank() || moduleAllowlist == null) {
+                    null
+                } else {
+                    moduleName to moduleAllowlist
+                }
+            }
+            ?.toMap()
+            ?: error("Ktor dependency allowlist modules are missing")
+        val moduleNameByPath = linkedMapOf(
+            ":bluetape4k-exposed-ktor-core" to "core",
+            ":bluetape4k-exposed-ktor-jdbc" to "jdbc",
+            ":bluetape4k-exposed-ktor-r2dbc" to "r2dbc",
+            ":bluetape4k-exposed-ktor-cache" to "cache",
         )
-        val baseArtifacts = setOf(
-            "bluetape4k-exposed-jdbc",
-            "bluetape4k-exposed-r2dbc",
-            "bluetape4k-exposed-cache",
-        )
-        val allowedByModule = mapOf(
-            ":bluetape4k-exposed-ktor-core" to setOf(
-                "$exposedGroup:bluetape4k-exposed-ktor-core",
-            ),
-            ":bluetape4k-exposed-ktor-jdbc" to setOf(
-                "$exposedGroup:bluetape4k-exposed-ktor-core",
-                "$exposedGroup:bluetape4k-exposed-jdbc",
-                "$exposedGroup:bluetape4k-exposed-ktor-jdbc",
-            ),
-            ":bluetape4k-exposed-ktor-r2dbc" to setOf(
-                "$exposedGroup:bluetape4k-exposed-ktor-core",
-                "$exposedGroup:bluetape4k-exposed-r2dbc",
-                "$exposedGroup:bluetape4k-exposed-ktor-r2dbc",
-            ),
-            ":bluetape4k-exposed-ktor-cache" to setOf(
-                "$exposedGroup:bluetape4k-exposed-ktor-core",
-                "$exposedGroup:bluetape4k-exposed-cache",
-                "$exposedGroup:bluetape4k-exposed-ktor-cache",
-            ),
-        )
-        val forbiddenByModule = mapOf(
-            ":bluetape4k-exposed-ktor-core" to baseArtifacts +
-                ktorArtifacts - "bluetape4k-exposed-ktor-core",
-            ":bluetape4k-exposed-ktor-jdbc" to baseArtifacts - "bluetape4k-exposed-jdbc" +
-                (ktorArtifacts - setOf("bluetape4k-exposed-ktor-core", "bluetape4k-exposed-ktor-jdbc")),
-            ":bluetape4k-exposed-ktor-r2dbc" to baseArtifacts - "bluetape4k-exposed-r2dbc" +
-                (ktorArtifacts - setOf("bluetape4k-exposed-ktor-core", "bluetape4k-exposed-ktor-r2dbc")),
-            ":bluetape4k-exposed-ktor-cache" to baseArtifacts - "bluetape4k-exposed-cache" +
-                (ktorArtifacts - setOf("bluetape4k-exposed-ktor-core", "bluetape4k-exposed-ktor-cache")),
-        )
-        val selectiveProjects = forbiddenByModule.keys.associateWith { project(it) }
+        check(moduleNameByPath.values.all { it in moduleCoordinates }) {
+            "Ktor dependency allowlist is missing a selective module definition"
+        }
+        val allowedByModule = moduleNameByPath.mapValues { (_, moduleName) ->
+            commonCoordinates + moduleCoordinates.getValue(moduleName)
+        }
+        val selectiveProjects = moduleNameByPath.keys.associateWith { project(it) }
         val sourceGraph = linkedMapOf<String, MutableList<String>>()
         val resolvedGraph = linkedMapOf<String, MutableList<String>>()
         val violations = buildList {
             selectiveProjects.forEach { (path, selectiveProject) ->
-                val forbiddenProjects = forbiddenByModule.getValue(path)
                 val allowedCoordinates = allowedByModule.getValue(path)
                 fun checkCoordinate(location: String, coordinate: String?) {
                     if (coordinate == null) return
-                    if (coordinate.substringAfter(':') in forbiddenProjects) {
-                        add("$path:$location -> $coordinate")
-                    }
-                    if (coordinate.startsWith("$exposedGroup:") && coordinate !in allowedCoordinates) {
-                        add("$path:$location -> unallowlisted exposed coordinate=$coordinate")
+                    val canonicalCoordinate = aliases[coordinate] ?: coordinate
+                    if (canonicalCoordinate !in allowedCoordinates) {
+                        add(
+                            "$path:$location -> unallowlisted coordinate=$coordinate " +
+                                "(canonical=$canonicalCoordinate)",
+                        )
                     }
                 }
                 listOf("api", "implementation", "compileOnly", "runtimeOnly").forEach { configurationName ->
@@ -962,25 +971,35 @@ tasks.register("checkKtorDependencyBoundary") {
                     .apply { isNamespaceAware = true }
                     .newDocumentBuilder()
                     .parse(pom)
-                val pomDependencies = pomDocument.getElementsByTagNameNS("*", "dependency")
-                val pomCoordinates = (0 until pomDependencies.length).mapNotNull { index ->
-                    val dependency = pomDependencies.item(index)
-                    val groupId = (dependency as org.w3c.dom.Element)
-                        .getElementsByTagNameNS("*", "groupId")
-                        .item(0)
-                        ?.textContent
-                        ?.trim()
-                    val artifactId = dependency
-                        .getElementsByTagNameNS("*", "artifactId")
-                        .item(0)
-                        ?.textContent
-                        ?.trim()
-                    if (groupId.isNullOrBlank() || artifactId.isNullOrBlank()) {
-                        null
-                    } else {
-                        "$groupId:$artifactId"
+                fun isElementNamed(element: org.w3c.dom.Element, name: String): Boolean =
+                    element.localName == name || element.nodeName.substringAfter(':') == name
+                fun directChild(element: org.w3c.dom.Element, name: String): org.w3c.dom.Element? =
+                    (0 until element.childNodes.length)
+                        .asSequence()
+                        .map { element.childNodes.item(it) }
+                        .filterIsInstance<org.w3c.dom.Element>()
+                        .firstOrNull { isElementNamed(it, name) }
+                fun directChildText(element: org.w3c.dom.Element, name: String): String? =
+                    directChild(element, name)?.textContent?.trim()?.takeIf { it.isNotBlank() }
+                val pomDependencies = directChild(pomDocument.documentElement, "dependencies")
+                    ?.let { dependenciesElement ->
+                        (0 until dependenciesElement.childNodes.length)
+                            .asSequence()
+                            .map { dependenciesElement.childNodes.item(it) }
+                            .filterIsInstance<org.w3c.dom.Element>()
+                            .filter { isElementNamed(it, "dependency") }
+                            .mapNotNull { dependency ->
+                                val groupId = directChildText(dependency, "groupId")
+                                val artifactId = directChildText(dependency, "artifactId")
+                                if (groupId == null || artifactId == null) {
+                                    null
+                                } else {
+                                    "$groupId:$artifactId"
+                                }
+                            }
+                            .toSet()
                     }
-                }.toSet()
+                    ?: emptySet()
                 val metadataRoot = groovy.json.JsonSlurper().parse(metadata) as? Map<*, *>
                     ?: error("$path Gradle metadata root must be an object")
                 val variants = metadataRoot["variants"] as? List<*>
@@ -1001,12 +1020,10 @@ tasks.register("checkKtorDependencyBoundary") {
                         }
                     }
                 }.toSet()
-                val publishedCoordinates = pomCoordinates + metadataCoordinates
-                publishedCoordinates.forEach { coordinate ->
-                    checkCoordinate("publishedMetadata", coordinate)
-                }
+                pomDependencies.forEach { coordinate -> checkCoordinate("publishedPom", coordinate) }
+                metadataCoordinates.forEach { coordinate -> checkCoordinate("publishedGradleMetadata", coordinate) }
                 sourceGraph.getOrPut("$path:publishedPom") { mutableListOf() }
-                    .addAll(pomCoordinates.sorted())
+                    .addAll(pomDependencies.sorted())
                 sourceGraph.getOrPut("$path:publishedGradleMetadata") { mutableListOf() }
                     .addAll(metadataCoordinates.sorted())
             }
@@ -1017,6 +1034,13 @@ tasks.register("checkKtorDependencyBoundary") {
         val receipt = linkedMapOf(
             "schema" to 1,
             "selectiveArtifacts" to selectiveProjects.keys.sorted(),
+            "allowlist" to linkedMapOf(
+                "schema" to policy["schema"],
+                "file" to rootProject.projectDir.toPath().relativize(allowlistFile.toPath())
+                    .toString().replace(File.separatorChar, '/'),
+                "commonCount" to commonCoordinates.size,
+                "moduleCoordinateCounts" to allowedByModule.mapValues { it.value.size },
+            ),
             "sourceGraph" to sourceGraph.mapValues { it.value.distinct().sorted() },
             "resolvedGraph" to resolvedGraph.mapValues { it.value.distinct().sorted() },
             "publishedMetadata" to selectiveProjects.keys.sorted().associateWith { path ->

@@ -3,6 +3,7 @@
 require "fileutils"
 require "json"
 require "open3"
+require "set"
 require "tmpdir"
 
 ROOT = File.expand_path("../..", __dir__)
@@ -10,6 +11,11 @@ GRADLE = ENV.fetch("GRADLE_COMMAND", File.join(ROOT, "gradlew"))
 GROUP = "io.github.bluetape4k.exposed"
 KOTLIN_VERSION = "2.4.10"
 SNAPSHOT_REPOSITORY = "https://central.sonatype.com/repository/maven-snapshots/"
+ALLOWLIST_PATH = File.join(ROOT, "scripts/verification/ktor-dependency-allowlist.json")
+ALLOWLIST = JSON.parse(File.read(ALLOWLIST_PATH)).freeze
+ALIASES = ALLOWLIST.fetch("aliases", {}).transform_keys(&:to_s).transform_values(&:to_s).freeze
+COMMON_COORDINATES = Set.new(ALLOWLIST.fetch("common").map(&:to_s)).freeze
+MODULE_COORDINATES = ALLOWLIST.fetch("modules").transform_values { |coordinates| Set.new(coordinates.map(&:to_s)) }.freeze
 
 CONSUMERS = {
   "core" => {
@@ -94,6 +100,10 @@ CONSUMERS = {
 def abort_with(message)
   warn("ktor-consumer: #{message}")
   exit 1
+end
+
+def canonical_coordinate(coordinate)
+  ALIASES.fetch(coordinate, coordinate)
 end
 
 def run_command(command, chdir:, env: {})
@@ -234,6 +244,14 @@ temporary_scope.call do |temporary_root|
     abort_with("consumer runtime component receipt is missing: #{components_path}") unless File.file?(components_path)
     compile_components = File.readlines(compile_components_path, chomp: true).reject(&:empty?)
     components = File.readlines(components_path, chomp: true).reject(&:empty?)
+    allowed_coordinates = COMMON_COORDINATES | MODULE_COORDINATES.fetch(name)
+    resolved_coordinates = (compile_components + components).uniq.reject do |coordinate|
+      coordinate.start_with?("bluetape4k-ktor-selective-consumer:")
+    end
+    unallowlisted = resolved_coordinates.reject do |coordinate|
+      allowed_coordinates.include?(canonical_coordinate(coordinate))
+    end
+    abort_with("#{name} consumer resolved unallowlisted coordinates: #{unallowlisted.join(", ")}") unless unallowlisted.empty?
     forbidden = (compile_components + components).uniq.select do |component|
       definition.fetch(:forbidden).include?(component.split(":", 2).last)
     end
