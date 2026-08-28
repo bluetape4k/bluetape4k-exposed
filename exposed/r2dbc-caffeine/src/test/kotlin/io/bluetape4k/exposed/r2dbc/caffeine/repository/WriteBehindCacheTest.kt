@@ -229,17 +229,24 @@ class WriteBehindCacheTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `write-behind final batch is flushed after job cancellation`(testDB: TestDB) = runSuspendIO {
+        fun `write-behind final batch is flushed after worker cancellation`(testDB: TestDB) = runSuspendIO {
             val config = LocalCacheConfig(
                 keyPrefix = "r2dbc:caffeine:write-behind:cancel-final-flush",
                 writeMode = CacheWriteMode.WRITE_BEHIND,
                 writeBehindBatchSize = 10,
                 writeBehindQueueCapacity = 16,
             )
+            val cachePutEntered = CountDownLatch(1)
+            val releaseCachePut = CountDownLatch(1)
+            val backing = Caffeine.newBuilder().buildAsync<String, ActorRecord>()
             lateinit var repository: CancellingActorRepository
             repository = CancellingActorRepository(config) {
                 writeBehindJobOf(repository)
             }
+            replaceCache(
+                repository,
+                BlockingPutAsyncCache(backing, cachePutEntered, releaseCachePut),
+            )
 
             withActorTable(testDB) {
                 val existingId = ActorTable.select(ActorTable.id).first()[ActorTable.id].value
@@ -247,12 +254,31 @@ class WriteBehindCacheTest {
                     .copy(firstName = "cancel-safe-final-flush")
 
                 try {
-                    repository.put(existingId, updated)
+                    val putFailure = async {
+                        try {
+                            repository.put(existingId, updated)
+                            null
+                        } catch (failure: IllegalStateException) {
+                            failure
+                        }
+                    }
+                    cachePutEntered.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    awaitHealthReport(repository) { it.workerState == CacheWorkerState.FAILED }
+                    releaseCachePut.countDown()
+
+                    val failure = putFailure.await().shouldNotBeNull()
+                    failure.message.orEmpty()
+                        .contains("workerState=FAILED")
+                        .shouldBeTrue()
+                    failure.message.orEmpty()
+                        .contains("terminalReason=")
+                        .shouldBeTrue()
                     writeBehindJobOf(repository).join()
 
                     repository.updateAttempts.get() shouldBeEqualTo 2
                     findActorById(existingId).shouldNotBeNull().firstName shouldBeEqualTo updated.firstName
                 } finally {
+                    releaseCachePut.countDown()
                     repository.close()
                 }
             }
