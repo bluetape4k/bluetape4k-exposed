@@ -12,6 +12,8 @@ CI_WORKFLOW = File.read(File.join(ROOT, ".github/workflows/ci.yml")).freeze
 ALIASES = POLICY.fetch("aliases").transform_keys(&:to_s).transform_values(&:to_s).freeze
 COMMON = Set.new(POLICY.fetch("common").map(&:to_s)).freeze
 MODULES = POLICY.fetch("modules").transform_values { |coordinates| Set.new(coordinates.map(&:to_s)) }.freeze
+SELECTIVE_MODULES = %w[core jdbc r2dbc cache].freeze
+BOUNDARY_SURFACES = %w[compileClasspath runtimeClasspath publishedPom publishedGradleMetadata].freeze
 
 class KtorDependencyAllowlistTest < Minitest::Test
   SIBLING_BACKENDS = {
@@ -103,16 +105,71 @@ class KtorDependencyAllowlistTest < Minitest::Test
       output = stdout + stderr
 
       refute status.success?, "the real Gradle checker accepted a forbidden policy fixture"
-      %w[core jdbc r2dbc cache].each do |module_name|
-        assert_includes output, ":bluetape4k-exposed-ktor-#{module_name}:api"
-      end
-      %w[compileClasspath runtimeClasspath publishedPom publishedGradleMetadata].each do |surface|
-        assert_includes output, surface
+      SELECTIVE_MODULES.each do |module_name|
+        BOUNDARY_SURFACES.each do |surface|
+          assert_includes output, ":bluetape4k-exposed-ktor-#{module_name}:#{surface}"
+        end
       end
     end
   end
 
+  def test_gradle_boundary_rejects_non_array_metadata_fields
+    %w[dependencies dependencyConstraints].each do |field|
+      stdout, stderr, status = run_gradle_with_malformed_metadata(field)
+      output = stdout + stderr
+
+      refute status.success?, "the real Gradle checker accepted malformed #{field} metadata"
+      assert_includes output, "Gradle metadata #{field} must be an array"
+    end
+  end
+
   private
+
+  def run_gradle_with_malformed_metadata(field)
+    Dir.mktmpdir("ktor-metadata-fixture") do |root|
+      init_script = File.join(root, "malformed-metadata.init.gradle")
+      File.write(
+        init_script,
+        <<~GRADLE,
+          gradle.afterProject { project, ignoredState ->
+            if (project.parent == null) {
+              def checkTask = project.tasks.findByName("checkKtorDependencyBoundary")
+              if (checkTask != null) {
+                checkTask.doFirst {
+                  def projectPaths = [
+                    ":bluetape4k-exposed-ktor-core",
+                    ":bluetape4k-exposed-ktor-jdbc",
+                    ":bluetape4k-exposed-ktor-r2dbc",
+                    ":bluetape4k-exposed-ktor-cache",
+                  ]
+                  projectPaths.each { projectPath ->
+                    def publicationDir = gradle.rootProject.project(projectPath).layout.buildDirectory
+                      .dir("publications/BluetapeExposed").get().asFile
+                    def metadataFile = new File(publicationDir, "module.json")
+                    def metadata = new groovy.json.JsonSlurper().parse(metadataFile)
+                    metadata.variants.each { variant -> variant["#{field}"] = [malformed: true] }
+                    metadataFile.text = groovy.json.JsonOutput.toJson(metadata)
+                  }
+                }
+              }
+            }
+          }
+        GRADLE
+      )
+      Open3.capture3(
+        File.join(ROOT, "gradlew"),
+        "checkKtorDependencyBoundary",
+        "--init-script",
+        init_script,
+        "--no-configuration-cache",
+        "--no-daemon",
+        "--no-build-cache",
+        "--rerun-tasks",
+        "--console=plain",
+        chdir: ROOT,
+      )
+    end
+  end
 
   def canonical_coordinate(coordinate)
     ALIASES.fetch(coordinate, coordinate)

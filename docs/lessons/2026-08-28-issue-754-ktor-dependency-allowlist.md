@@ -55,10 +55,19 @@
    **향후 예방 확인**: 정책 테스트가 `KTOR_DEPENDENCY_ALLOWLIST_FILE` fixture로
    실제 task를 실패시켜야 통과한다.
 
+6. **실패한 가정/판단**: Gradle metadata의 `dependencies`와
+   `dependencyConstraints`가 배열이 아니면 빈 목록으로 취급해도 된다.
+   **발견 증거 또는 교정**: review에서 object나 scalar 형태의 malformed field가
+   `as? List<*> ?: emptyList()`를 통해 조용히 누락될 수 있음을 확인했다.
+   **수정 결정**: field가 없을 때만 빈 배열로 취급하고, 값이 존재하면 반드시
+   배열인지 확인해 아니면 즉시 오류를 발생시킨다.
+   **향후 예방 확인**: Ruby fixture가 실제 publication metadata를 두 field별로
+   object로 변조해 boundary task의 fail-closed 오류를 직접 검증한다.
+
 ## 검증
 
-- `ruby scripts/verification/ktor_dependency_allowlist_test.rb` → 9 tests,
-  217 assertions, 0 failures.
+- `ruby scripts/verification/ktor_dependency_allowlist_test.rb` → 10 tests,
+  239 assertions, 0 failures.
 - `actionlint .github/workflows/ci.yml .github/workflows/nightly-tests.yml` → PASS.
 - `./gradlew checkKtorDependencyBoundary --no-configuration-cache --no-daemon
   --no-build-cache --rerun-tasks --console=plain` → selectiveArtifacts=4,
@@ -82,5 +91,6 @@
 - [x] fail-closed fully-qualified allowlist를 source/resolved/POM/metadata에 적용했다.
 - [x] JVM alias normalization과 비-JVM serialization 거부 회귀 fixture를 추가했다.
 - [x] 정책 테스트를 CI와 nightly Ktor job에 연결했다.
-- [x] 실제 Gradle checker negative fixture로 네 모듈·네 표면의 거부 경로를 검증했다.
+- [x] 실제 Gradle checker negative fixture로 네 모듈×네 표면의 각 거부 경로를 직접 검증했다.
+- [x] Gradle metadata의 비배열 `dependencies`·`dependencyConstraints`를 fail-closed로 검증했다.
 - [x] local boundary task와 external consumer 검증을 통과했다.
