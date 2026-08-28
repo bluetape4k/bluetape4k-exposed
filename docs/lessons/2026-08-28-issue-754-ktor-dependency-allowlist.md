@@ -35,10 +35,20 @@
    **향후 예방 확인**: Ruby fixture가 alias target 허용과 비-JVM serialization
    variant 거부를 동시에 검증한다.
 
+4. **실패한 가정/판단**: Ktor job에 정책 테스트를 추가하면 정책 파일만
+   변경한 PR에서도 자동으로 실행된다.
+   **발견 증거 또는 교정**: `dorny/paths-filter`의 `ktor` 경로에
+   `scripts/verification` 파일이 없어 정책 전용 변경이 Ktor job을 건너뛸 수
+   있었다.
+   **수정 결정**: allowlist JSON과 두 validator/test 경로를 Ktor filter에
+   명시하고, 정책 테스트가 세 경로의 filter 항목을 고정하도록 했다.
+   **향후 예방 확인**: 정책 경로를 변경할 때마다 Ktor CI reachability 회귀
+   assertion이 먼저 실패한다.
+
 ## 검증
 
-- `ruby scripts/verification/ktor_dependency_allowlist_test.rb` → 6 tests,
-  190 assertions, 0 failures.
+- `ruby scripts/verification/ktor_dependency_allowlist_test.rb` → 8 tests,
+  200 assertions, 0 failures.
 - `actionlint .github/workflows/ci.yml .github/workflows/nightly-tests.yml` → PASS.
 - `./gradlew checkKtorDependencyBoundary --no-configuration-cache --no-daemon
   --no-build-cache --rerun-tasks --console=plain` → selectiveArtifacts=4,
