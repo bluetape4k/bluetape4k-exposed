@@ -1007,16 +1007,18 @@ tasks.register("checkKtorDependencyBoundary") {
                 val metadataCoordinates = variants.flatMap { variant ->
                     val variantMap = variant as? Map<*, *>
                         ?: error("$path Gradle metadata variant must be an object")
-                    val dependencies = variantMap["dependencies"] as? List<*> ?: emptyList<Any?>()
-                    dependencies.mapNotNull { dependency ->
-                        val dependencyMap = dependency as? Map<*, *>
-                            ?: error("$path Gradle metadata dependency must be an object")
-                        val groupId = dependencyMap["group"]?.toString()?.trim()
-                        val moduleId = dependencyMap["module"]?.toString()?.trim()
-                        if (groupId.isNullOrBlank() || moduleId.isNullOrBlank()) {
-                            null
-                        } else {
-                            "$groupId:$moduleId"
+                    listOf("dependencies", "dependencyConstraints").flatMap { dependencyKey ->
+                        val dependencies = variantMap[dependencyKey] as? List<*> ?: emptyList<Any?>()
+                        dependencies.mapNotNull { dependency ->
+                            val dependencyMap = dependency as? Map<*, *>
+                                ?: error("$path Gradle metadata $dependencyKey entry must be an object")
+                            val groupId = dependencyMap["group"]?.toString()?.trim()
+                            val moduleId = dependencyMap["module"]?.toString()?.trim()
+                            if (groupId.isNullOrBlank() || moduleId.isNullOrBlank()) {
+                                null
+                            } else {
+                                "$groupId:$moduleId"
+                            }
                         }
                     }
                 }.toSet()
