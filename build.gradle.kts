@@ -857,7 +857,11 @@ tasks.register("checkKtorDependencyBoundary") {
         },
     )
 
-    val allowlistFile = rootProject.file("scripts/verification/ktor-dependency-allowlist.json")
+    val defaultAllowlistFile = rootProject.file("scripts/verification/ktor-dependency-allowlist.json")
+    val allowlistFile = System.getenv("KTOR_DEPENDENCY_ALLOWLIST_FILE")
+        ?.takeIf { it.isNotBlank() }
+        ?.let(rootProject::file)
+        ?: defaultAllowlistFile
     inputs.file(allowlistFile)
 
     doLast {

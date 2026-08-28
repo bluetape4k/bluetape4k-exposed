@@ -1,6 +1,8 @@
 require "json"
 require "minitest/autorun"
+require "open3"
 require "set"
+require "tmpdir"
 
 ROOT = File.expand_path("../..", __dir__)
 POLICY = JSON.parse(
@@ -77,6 +79,36 @@ class KtorDependencyAllowlistTest < Minitest::Test
       scripts/verification/validate_ktor_consumer.rb
     ].each do |workflow_path|
       assert_includes CI_WORKFLOW, "- '#{workflow_path}'"
+    end
+  end
+
+  def test_gradle_boundary_rejects_forbidden_policy_edge_on_every_surface
+    fixture_policy = JSON.parse(JSON.generate(POLICY))
+    fixture_policy.fetch("common").delete("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm")
+
+    Dir.mktmpdir("ktor-allowlist-fixture") do |root|
+      policy_path = File.join(root, "policy.json")
+      File.write(policy_path, JSON.pretty_generate(fixture_policy))
+      stdout, stderr, status = Open3.capture3(
+        { "KTOR_DEPENDENCY_ALLOWLIST_FILE" => policy_path },
+        File.join(ROOT, "gradlew"),
+        "checkKtorDependencyBoundary",
+        "--no-configuration-cache",
+        "--no-daemon",
+        "--no-build-cache",
+        "--rerun-tasks",
+        "--console=plain",
+        chdir: ROOT,
+      )
+      output = stdout + stderr
+
+      refute status.success?, "the real Gradle checker accepted a forbidden policy fixture"
+      %w[core jdbc r2dbc cache].each do |module_name|
+        assert_includes output, ":bluetape4k-exposed-ktor-#{module_name}:api"
+      end
+      %w[compileClasspath runtimeClasspath publishedPom publishedGradleMetadata].each do |surface|
+        assert_includes output, surface
+      end
     end
   end
 
