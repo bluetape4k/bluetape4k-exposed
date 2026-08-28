@@ -1260,7 +1260,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6.3.0
         with:
           gradle-version: wrapper
-          cache-read-only: true
+          cache-disabled: true
       - name: Run serial write-behind matrix and validate receipts
         run: python3 scripts/verification/run_write_behind_matrix.py
         env:
