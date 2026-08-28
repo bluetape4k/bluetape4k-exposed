@@ -385,6 +385,21 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: git diff --check "$BASE_SHA" "$HEAD_SHA"
 
+  manual-manifest-validation:
+    name: Manual manifest validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [changes]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Verify generated manual manifest parity
+        run: |
+          set -euo pipefail
+          ruby scripts/manual/export_manifest.rb --check docs/manual/manifest.yaml docs/manual/generated/manifest.json
+          ruby scripts/manual/export_manifest_test.rb
+          git diff --check
+
   # exposed-core + exposed-dao (H2)
   test-core:
     name: Test / exposed-core + exposed-dao (H2)
@@ -1853,6 +1868,7 @@ jobs:
       - gitleaks
       - build
       - docs-only-validation
+      - manual-manifest-validation
       - test-core
       - test-serialization
       - test-tink

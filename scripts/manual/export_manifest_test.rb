@@ -1,6 +1,7 @@
 require "json"
 require "minitest/autorun"
 require "tmpdir"
+require "yaml"
 
 require_relative "export_manifest"
 
@@ -25,6 +26,24 @@ class ExportManifestTest < Minitest::Test
       assert_equal "한국어 매뉴얼", parsed.fetch("title")
       assert File.binread(output).end_with?("\n")
       assert exporter.current?
+    end
+  end
+
+  def test_repository_snapshot_matches_source_and_declared_document_paths
+    repository_root = File.expand_path("../..", __dir__)
+    source = YAML.safe_load(File.read(File.join(repository_root, "docs/manual/manifest.yaml")))
+    generated_path = File.join(repository_root, "docs/manual/generated/manifest.json")
+    generated = JSON.parse(File.read(generated_path))
+
+    expected = source.dup
+    expected["modules"] = expected.fetch("modules").sort_by { |entry| entry.fetch("id") }
+    assert_equal expected, generated
+
+    expected.fetch("modules").each do |entry|
+      %w[en ko].each do |locale|
+        document = File.join(repository_root, "docs/manual", entry.fetch(locale))
+        assert File.file?(document), "missing #{locale} document for #{entry.fetch('id')}: #{document}"
+      end
     end
   end
 end
