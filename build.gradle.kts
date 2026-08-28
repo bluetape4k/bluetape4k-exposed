@@ -839,7 +839,7 @@ val publishableProjects = subprojects.filterNot { project ->
 
 tasks.register("checkKtorDependencyBoundary") {
     group = "verification"
-    description = "Checks that selective Ktor artifacts do not pull sibling backend surfaces."
+    description = "Checks selective Ktor artifacts against a fully-qualified dependency allowlist across third-party, namespace, alias, POM, and Gradle metadata edges."
 
     val selectivePaths = listOf(
         ":bluetape4k-exposed-ktor-core",
