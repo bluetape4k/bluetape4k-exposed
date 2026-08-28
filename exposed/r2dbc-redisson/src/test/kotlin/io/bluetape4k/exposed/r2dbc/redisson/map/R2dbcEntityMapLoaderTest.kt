@@ -63,13 +63,84 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 entityTable = TestTable,
             ) { TestEntity(this[TestTable.id].value, this[TestTable.name]) }
 
-            loader.useLoader {
+            loader.useLoader(TestDB.H2) {
                 val keys = loader.loadAllKeys().toList()
                 val id = keys.first()
 
                 val result = loader.load(id).toCompletableFuture().get()
                 result shouldBeEqualTo TestEntity(id, "entity-1")
             }
+        }
+    }
+
+    @Test
+    fun `detached loader는 현재 fixture TestDB를 default database로 사용한다`() = runSuspendIO {
+        // 다른 dialect를 먼저 초기화해 전역 default database가 fixture와 어긋난 상태를 만든다.
+        withTables(TestDB.H2_MYSQL) { }
+        withTables(TestDB.H2, TestTable) {
+            TestTable.insert { it[name] = "entity-1" }
+
+            val previousDefault = TransactionManager.defaultDatabase
+            TransactionManager.defaultDatabase = checkNotNull(TestDB.H2_MYSQL.db)
+            try {
+                val loader = R2dbcExposedEntityMapLoader(
+                    entityTable = TestTable,
+                ) { TestEntity(this[TestTable.id].value, this[TestTable.name]) }
+
+                loader.useLoader(TestDB.H2) {
+                    loader.loadAllKeys().toList() shouldBeEqualTo listOf(1L)
+                }
+
+                TransactionManager.defaultDatabase shouldBeEqualTo TestDB.H2_MYSQL.db
+            } finally {
+                TransactionManager.defaultDatabase = previousDefault
+            }
+        }
+    }
+
+    @Test
+    fun `loader fixture 오류는 원인과 TestDB 진단을 함께 보존한다`() = runSuspendIO {
+        val expected = IllegalStateException("fixture failure")
+        val loader = R2dbcEntityMapLoader<Long, TestEntity>(
+            loadByIdFromDB = { throw expected },
+            loadAllIdsFromDB = { },
+        )
+
+        val failure = assertFailsWith<IllegalStateException> {
+            loader.useLoader(TestDB.H2) {
+                throw expected
+            }
+        }
+
+        failure shouldBeEqualTo expected
+        failure.suppressed.any { it.message == "R2DBC loader fixture database=H2" }.shouldBeTrue()
+    }
+
+    @Test
+    fun `loader fixture cancellation은 원인과 default database 복원을 보존한다`() = runSuspendIO {
+        withTables(TestDB.H2_MYSQL) { }
+        withTables(TestDB.H2) { }
+
+        val previousDefault = TransactionManager.defaultDatabase
+        val expectedDefault = checkNotNull(TestDB.H2_MYSQL.db)
+        TransactionManager.defaultDatabase = expectedDefault
+        try {
+            val cancellation = CancellationException("fixture cancellation")
+            val loader = R2dbcEntityMapLoader<Long, TestEntity>(
+                loadByIdFromDB = { null },
+                loadAllIdsFromDB = { },
+            )
+
+            val failure = assertFailsWith<CancellationException> {
+                loader.useLoader(TestDB.H2) {
+                    throw cancellation
+                }
+            }
+
+            failure shouldBeEqualTo cancellation
+            TransactionManager.defaultDatabase shouldBeEqualTo expectedDefault
+        } finally {
+            TransactionManager.defaultDatabase = previousDefault
         }
     }
 
@@ -81,7 +152,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
             val loader = R2dbcExposedEntityMapLoader(
                 entityTable = TestTable,
             ) { TestEntity(this[TestTable.id].value, this[TestTable.name]) }
-            loader.useLoader {
+            loader.useLoader(TestDB.H2) {
                 val id = loader.loadAllKeys().toList().single()
                 RecordingLogAppender().use { appender ->
                     loader.load(id).toCompletableFuture().get()
@@ -103,7 +174,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 entityTable = TestTable,
             ) { TestEntity(this[TestTable.id].value, this[TestTable.name]) }
 
-            loader.useLoader {
+            loader.useLoader(TestDB.H2) {
                 val result = loader.load(Long.MIN_VALUE).toCompletableFuture().get()
                 result.shouldBeNull()
             }
@@ -123,7 +194,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 entityTable = TestTable,
             ) { TestEntity(this[TestTable.id].value, this[TestTable.name]) }
 
-            loader.useLoader {
+            loader.useLoader(TestDB.H2) {
                 val iterator = loader.loadAllKeys()
 
                 iterator.hasNext().toCompletableFuture().get().shouldBeTrue()
@@ -151,7 +222,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 entityTable = TestTable,
             ) { TestEntity(this[TestTable.id].value, this[TestTable.name]) }
 
-            val ids = loader.useLoader { loader.loadAllKeys().toList() }
+            val ids = loader.useLoader(TestDB.H2) { loader.loadAllKeys().toList() }
             ids shouldBeEqualTo emptyList()
         }
     }
@@ -168,7 +239,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 entityTable = TestTable,
             ) { TestEntity(this[TestTable.id].value, this[TestTable.name]) }
 
-            val ids = loader.useLoader { loader.loadAllKeys().toList() }
+            val ids = loader.useLoader(TestDB.H2) { loader.loadAllKeys().toList() }
             ids shouldHaveSize 3
             ids shouldBeEqualTo ids.sorted()
         }
@@ -227,7 +298,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 },
             )
 
-            val ids = loader.useLoader { loader.loadAllKeys().toList() }
+            val ids = loader.useLoader(TestDB.H2) { loader.loadAllKeys().toList() }
             ids shouldBeEqualTo expectedIds
         }
     }
@@ -243,7 +314,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 },
             )
 
-            loader.useLoader {
+            loader.useLoader(TestDB.H2) {
                 loader.loadAllKeys().hasNext().toCompletableFuture().get().shouldBeFalse()
             }
             observedQueryTimeout shouldBeEqualTo 30
@@ -264,7 +335,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 },
             )
 
-            loader.useLoader {
+            loader.useLoader(TestDB.H2) {
                 val iterator = loader.loadAllKeys()
                 iterator.hasNext().toCompletableFuture().get().shouldBeTrue()
                 iterator.next().toCompletableFuture().get() shouldBeEqualTo 1L
@@ -297,7 +368,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                     scope = scope,
                 )
 
-                val failure = loader.useLoader {
+                val failure = loader.useLoader(TestDB.H2) {
                     assertFailsWith<ExecutionException> {
                         loader.loadAllKeys().hasNext().toCompletableFuture().get()
                     }
@@ -331,7 +402,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                     scope = scope,
                 )
 
-                loader.useLoader {
+                loader.useLoader(TestDB.H2) {
                     val iterator = loader.loadAllKeys()
                     iterator.hasNext().toCompletableFuture().get().shouldBeTrue()
                     iterator.next().toCompletableFuture().get() shouldBeEqualTo 1L
@@ -352,7 +423,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 loadByIdFromDB = { error("single-load failure") },
                 loadAllIdsFromDB = { },
             )
-            val failure = failingLoader.useLoader {
+            val failure = failingLoader.useLoader(TestDB.H2) {
                 assertFailsWith<ExecutionException> {
                     failingLoader.load(1L).toCompletableFuture().get()
                 }
@@ -363,7 +434,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 loadByIdFromDB = { id -> TestEntity(id, "recovered") },
                 loadAllIdsFromDB = { },
             )
-            succeedingLoader.useLoader {
+            succeedingLoader.useLoader(TestDB.H2) {
                 succeedingLoader.load(2L).toCompletableFuture().get() shouldBeEqualTo TestEntity(2L, "recovered")
             }
         }
@@ -394,7 +465,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                     scope = scope,
                 )
 
-                loader.useLoader {
+                loader.useLoader(TestDB.H2) {
                     val pending = loader.loadAllKeys().hasNext().toCompletableFuture()
                     withTimeout(5_000) { producerStarted.await() }
 
@@ -435,7 +506,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                     scope = scope,
                 )
 
-                loader.useLoader {
+                loader.useLoader(TestDB.H2) {
                     val iterator = loader.loadAllKeys()
                     withTimeout(5_000) { producerStarted.await() }
 
@@ -476,7 +547,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                     scope = scope,
                 )
 
-                loader.useLoader {
+                loader.useLoader(TestDB.H2) {
                     loader.loadAllKeys()
                     withTimeout(5_000) { producerStarted.await() }
 
@@ -509,7 +580,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 },
             )
 
-            loader.useLoader {
+            loader.useLoader(TestDB.H2) {
                 loader.loadAllKeys()
                 withTimeout(5_000) { producerStarted.await() }
 
@@ -533,7 +604,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 override fun loadAllIdsTimeoutMillis(): Long = 20
             }
 
-            val failure = loader.useLoader {
+            val failure = loader.useLoader(TestDB.H2) {
                 assertFailsWith<ExecutionException> {
                     loader.loadAllKeys().hasNext().toCompletableFuture().get()
                 }
