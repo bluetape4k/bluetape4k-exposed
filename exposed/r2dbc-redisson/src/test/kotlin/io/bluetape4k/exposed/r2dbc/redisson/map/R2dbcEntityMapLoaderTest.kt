@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.r2dbc.redisson.map
 
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.assertFailsWith
@@ -9,6 +10,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotContain
 import kotlinx.coroutines.CompletableDeferred
@@ -160,6 +162,112 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                     appender.rendered shouldNotContain id.toString()
                     appender.rendered shouldNotContain sensitiveName
                 }
+            }
+        }
+    }
+
+    @Test
+    fun `load 실패 로그는 errorType만 기록하고 원시 예외를 첨부하지 않는다`() = runSuspendIO {
+        withDb(TestDB.H2) {
+            val secret = "credential=r2dbc-loader-secret"
+            val loader = R2dbcEntityMapLoader<Long, TestEntity>(
+                loadByIdFromDB = { throw IllegalStateException(secret) },
+                loadAllIdsFromDB = { },
+            )
+
+            RecordingLogAppender().use { appender ->
+                val failure = assertFailsWith<ExecutionException> {
+                    loader.useLoader(TestDB.H2) {
+                        loader.load(1L).toCompletableFuture().get()
+                    }
+                }
+
+                failure.cause?.javaClass shouldBeEqualTo IllegalStateException::class.java
+                val errorEvent = appender.events.first { event ->
+                    event.formattedMessage.contains("단건 엔티티 로드 중 오류")
+                }
+                errorEvent.formattedMessage shouldContain "errorType=IllegalStateException"
+                errorEvent.throwableProxy.shouldBeNull()
+                appender.rendered shouldNotContain secret
+            }
+        }
+    }
+
+    @Test
+    fun `loadAllKeys producer 실패 로그는 errorType만 기록하고 원시 예외를 첨부하지 않는다`() = runSuspendIO {
+        withDb(TestDB.H2) {
+            val secret = "token=r2dbc-producer-secret"
+            val loader = R2dbcEntityMapLoader<Long, TestEntity>(
+                loadByIdFromDB = { null },
+                loadAllIdsFromDB = { throw IllegalStateException(secret) },
+            )
+
+            RecordingLogAppender().use { appender ->
+                val failure = assertFailsWith<ExecutionException> {
+                    loader.useLoader(TestDB.H2) {
+                        loader.loadAllKeys().hasNext().toCompletableFuture().get()
+                    }
+                }
+
+                failure.cause?.javaClass shouldBeEqualTo IllegalStateException::class.java
+                val errorEvent = appender.events.first { event ->
+                    event.formattedMessage.contains("DB에서 모든 ID 로딩 중 오류")
+                }
+                errorEvent.formattedMessage shouldContain "errorType=IllegalStateException"
+                errorEvent.throwableProxy.shouldBeNull()
+                appender.rendered shouldNotContain secret
+            }
+        }
+    }
+
+    @Test
+    fun `loadAllKeys timeout 로그는 timeout과 errorType만 기록하고 원시 예외를 첨부하지 않는다`() = runSuspendIO {
+        withDb(TestDB.H2) {
+            val secret = "password=r2dbc-timeout-secret"
+            val loader = object : R2dbcEntityMapLoader<Long, TestEntity>(
+                loadByIdFromDB = { null },
+                loadAllIdsFromDB = { awaitCancellation() },
+            ) {
+                override fun loadAllIdsTimeoutMillis(): Long = 10
+            }
+
+            RecordingLogAppender().use { appender ->
+                val failure = assertFailsWith<ExecutionException> {
+                    loader.useLoader(TestDB.H2) {
+                        loader.loadAllKeys().hasNext().toCompletableFuture().get()
+                    }
+                }
+
+                failure.cause?.javaClass shouldBeEqualTo TimeoutException::class.java
+                val timeoutEvent = appender.events.first { event ->
+                    event.formattedMessage.contains("Timeout")
+                }
+                timeoutEvent.formattedMessage shouldContain "timeout=10 msec"
+                timeoutEvent.formattedMessage shouldContain "errorType=TimeoutException"
+                timeoutEvent.throwableProxy.shouldBeNull()
+                appender.rendered shouldNotContain secret
+            }
+        }
+    }
+
+    @Test
+    fun `load 취소는 로그를 남기지 않고 cancellation을 재전파한다`() = runSuspendIO {
+        withDb(TestDB.H2) {
+            val secret = "credential=r2dbc-cancellation-secret"
+            val loader = R2dbcEntityMapLoader<Long, TestEntity>(
+                loadByIdFromDB = { throw CancellationException(secret) },
+                loadAllIdsFromDB = { },
+            )
+
+            RecordingLogAppender().use { appender ->
+                val future = loader.load(1L).toCompletableFuture()
+                assertFailsWith<CancellationException> { future.get() }
+                loader.closeAndJoin()
+
+                appender.events.none { event ->
+                    event.formattedMessage.contains("단건 엔티티 로드 중 오류")
+                }.shouldBeTrue()
+                appender.rendered shouldNotContain secret
             }
         }
     }

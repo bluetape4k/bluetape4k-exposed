@@ -2,13 +2,17 @@ package io.bluetape4k.exposed.r2dbc.redisson.map
 
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import kotlinx.coroutines.future.await
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotContain
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
@@ -32,6 +36,39 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
 
     private object LoaderTable: LongIdTable("r2dbc_redisson_loader_test") {
         val name = varchar("name", 64)
+    }
+
+    private object MissingLoaderTable: LongIdTable("r2dbc_redisson_missing_log_table_credential_751")
+
+    @Test
+    fun `loadAllKeys DB 오류 로그는 errorType만 기록하고 원시 예외를 첨부하지 않는다`() = runSuspendIO {
+        withDb(TestDB.H2) {
+            val secret = "R2DBC_REDISSON_MISSING_LOG_TABLE_CREDENTIAL_751"
+            val loader = R2dbcExposedEntityMapLoader(
+                entityTable = MissingLoaderTable,
+                toEntity = { error(secret) },
+            )
+
+            RecordingLogAppender().use { appender ->
+                val failure = assertFailsWith<Throwable> {
+                    loader.useLoader(TestDB.H2) {
+                        loader.loadAllKeys().toList()
+                    }
+                }
+
+                failure.javaClass.simpleName shouldBeEqualTo "ExposedR2dbcException"
+                val errorEvents = appender.events.filter { event ->
+                    event.formattedMessage.contains("모든 ID") &&
+                        event.level.levelInt >= ch.qos.logback.classic.Level.ERROR.levelInt
+                }
+                errorEvents.size shouldBeEqualTo 2
+                errorEvents.forEach { event ->
+                    event.formattedMessage shouldContain "errorType="
+                    event.throwableProxy.shouldBeNull()
+                }
+                appender.rendered shouldNotContain secret
+            }
+        }
     }
 
     private fun ResultRow.toLoaderEntity(): LoaderEntity =

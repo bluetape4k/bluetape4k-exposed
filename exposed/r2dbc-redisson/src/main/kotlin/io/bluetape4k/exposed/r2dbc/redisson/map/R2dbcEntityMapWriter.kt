@@ -24,7 +24,9 @@ import java.util.concurrent.atomic.AtomicBoolean
  * ## 동작/계약
  * - [write]는 전달된 map을 하나의 `suspendTransaction`에서 [writeToDb]에 위임합니다.
  * - [delete]는 전달된 키 컬렉션을 하나의 `suspendTransaction`에서 [deleteFromDb]에 위임합니다.
- * - 예외는 로깅 후 그대로 전파됩니다.
+ * - 일반 오류는 안전한 예외 타입만 로깅한 뒤 그대로 전파하며, [CancellationException]은
+ *   오류 로그 없이 재전파합니다.
+ * - 오류 로그에는 작업명과 예외 타입만 기록하며, 예외 객체·message·stack trace는 기록하지 않습니다.
  * - writer는 주입된 scope의 context와 cancellation을 연결한 `SupervisorJob`을 소유하며 [close] 이후 새 write/delete를 거부합니다.
  * - [closeAndJoin]은 진행 중인 write/delete transaction cleanup이 끝날 때까지 기다립니다.
  *
@@ -65,7 +67,7 @@ open class R2dbcEntityMapWriter<ID: Any, E: Any>(
                         // 코루틴 취소는 반드시 재전파해야 한다 — 삼키면 구조적 동시성이 깨진다
                         throw e
                     } catch (e: Throwable) {
-                        log.error(e) { "R2dbc로 DB에 엔티티 Write 중 오류 발생: errorType=${e::class.simpleName}" }
+                        log.error { "R2dbc로 DB에 엔티티 Write 중 오류 발생: errorType=${e::class.simpleName}" }
                         throw e
                     }
                 }
@@ -88,7 +90,7 @@ open class R2dbcEntityMapWriter<ID: Any, E: Any>(
                         // 코루틴 취소는 반드시 재전파해야 한다 — 삼키면 구조적 동시성이 깨진다
                         throw e
                     } catch (e: Throwable) {
-                        log.error(e) { "R2dbc로 엔티티 삭제 중 오류 발생: errorType=${e::class.simpleName}" }
+                        log.error { "R2dbc로 엔티티 삭제 중 오류 발생: errorType=${e::class.simpleName}" }
                         throw e
                     }
                 }

@@ -49,7 +49,8 @@ import java.util.concurrent.atomic.AtomicBoolean
  *   side effect를 buffer해야 하며, 전체 열거 재시도는 completeness만 복구합니다.
  * - producer 예외와 timeout 원인은 채널 close cause로 보존하며, iterator의 [AsyncIterator.hasNext]
  *   및 [AsyncIterator.next]가 이를 정상 종료(false)와 구분해 비동기 예외로 전달합니다.
- * - 운영 로그에는 caller-owned ID, 엔티티 payload, 예외 message를 기록하지 않습니다.
+ * - 운영 로그에는 caller-owned ID, 엔티티 payload, 예외 객체/메시지/stack trace를 기록하지 않으며,
+ *   오류 진단에는 작업명과 안전한 예외 타입만 남깁니다.
  * - 기본 scope와 loader lifecycle scope는 [SupervisorJob]을 사용해 한 번의 `load` 실패가 다른 loader 호출을 취소하지 않도록 합니다.
  *
  * ```kotlin
@@ -101,7 +102,7 @@ open class R2dbcEntityMapLoader<ID: Any, E: Any>(
                         // 코루틴 취소는 반드시 재전파해야 한다 — 삼키면 구조적 동시성이 깨진다
                         throw e
                     } catch (e: Throwable) {
-                        log.error(e) { "DB에서 단건 엔티티 로드 중 오류가 발생했습니다." }
+                        log.error { "DB에서 단건 엔티티 로드 중 오류가 발생했습니다. errorType=${e::class.simpleName}" }
                         throw e
                     }
                 }
@@ -144,7 +145,10 @@ open class R2dbcEntityMapLoader<ID: Any, E: Any>(
                         val timeout = TimeoutException(
                             "Loading all IDs exceeded $timeoutMillis ms",
                         )
-                        log.warn(timeout) { "DB에서 모든 ID를 읽는 작업 중 Timeout 이 발생했습니다. timeout=$timeoutMillis msec" }
+                        log.warn {
+                            "DB에서 모든 ID를 읽는 작업 중 Timeout 이 발생했습니다. " +
+                                "timeout=$timeoutMillis msec, errorType=${timeout::class.simpleName}"
+                        }
                         throw timeout
                     }
                 }
@@ -157,7 +161,7 @@ open class R2dbcEntityMapLoader<ID: Any, E: Any>(
                 channel.close(e)
                 throw e
             } catch (e: Exception) {
-                log.error(e) { "DB에서 모든 ID 로딩 중 오류가 발생했습니다." }
+                log.error { "DB에서 모든 ID 로딩 중 오류가 발생했습니다. errorType=${e::class.simpleName}" }
                 channel.close(e)
             } finally {
                 // 정상 완료(오류 없음) 시 채널을 닫는다; 오류 경로에서는 이미 위에서 닫혔다
