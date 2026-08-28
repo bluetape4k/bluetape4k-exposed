@@ -9,11 +9,12 @@ POLICY = JSON.parse(
   File.read(File.join(ROOT, "scripts/verification/ktor-dependency-allowlist.json")),
 ).freeze
 CI_WORKFLOW = File.read(File.join(ROOT, ".github/workflows/ci.yml")).freeze
+BUILD_GRADLE = File.read(File.join(ROOT, "build.gradle.kts")).freeze
 ALIASES = POLICY.fetch("aliases").transform_keys(&:to_s).transform_values(&:to_s).freeze
 COMMON = Set.new(POLICY.fetch("common").map(&:to_s)).freeze
 MODULES = POLICY.fetch("modules").transform_values { |coordinates| Set.new(coordinates.map(&:to_s)) }.freeze
 SELECTIVE_MODULES = %w[core jdbc r2dbc cache].freeze
-BOUNDARY_SURFACES = %w[compileClasspath runtimeClasspath publishedPom publishedGradleMetadata].freeze
+BOUNDARY_SURFACES = %w[api compileClasspath runtimeClasspath publishedPom publishedGradleMetadata].freeze
 
 class KtorDependencyAllowlistTest < Minitest::Test
   SIBLING_BACKENDS = {
@@ -82,6 +83,11 @@ class KtorDependencyAllowlistTest < Minitest::Test
     ].each do |workflow_path|
       assert_includes CI_WORKFLOW, "- '#{workflow_path}'"
     end
+  end
+
+  def test_boundary_task_description_states_allowlist_contract
+    assert_includes BUILD_GRADLE,
+                    'description = "Checks selective Ktor artifacts against a fully-qualified dependency allowlist across third-party, namespace, alias, POM, and Gradle metadata edges."'
   end
 
   def test_gradle_boundary_rejects_forbidden_policy_edge_on_every_surface
