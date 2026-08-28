@@ -264,6 +264,7 @@ class WriteBehindCacheTest {
                     }
                     cachePutEntered.await(5, TimeUnit.SECONDS).shouldBeTrue()
                     awaitHealthReport(repository) { it.workerState == CacheWorkerState.FAILED }
+                        .workerState shouldBeEqualTo CacheWorkerState.FAILED
                     releaseCachePut.countDown()
 
                     val failure = putFailure.await().shouldNotBeNull()
