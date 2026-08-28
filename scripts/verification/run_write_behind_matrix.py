@@ -308,7 +308,14 @@ def runner_lock(root: Path):
 def _run_matrix(root: Path) -> None:
     head, dirty, diff_hash = source_state(root)
     if dirty:
-        raise SystemExit("write-behind-evidence: exact-head verification requires a clean worktree")
+        status = subprocess.check_output(
+            ["git", "-C", str(root), "status", "--porcelain", "--untracked-files=all"],
+            text=True,
+        ).strip()
+        raise SystemExit(
+            "write-behind-evidence: exact-head verification requires a clean worktree\n"
+            f"detected changes:\n{status}"
+        )
     rows: list[dict[str, Any]] = []
 
     coordinator_task = ":bluetape4k-exposed-cache:test"
