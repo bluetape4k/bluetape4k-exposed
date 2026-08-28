@@ -1,5 +1,4 @@
 
-import java.nio.file.Files
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val supportedMigrationDriftDatabases = setOf("H2", "POSTGRESQL", "MYSQL_V8")
@@ -18,138 +17,12 @@ val bluetapeAssertionSourceRoots = listOf(
     layout.projectDirectory.dir("src/test/kotlin").asFile,
 )
 
-val verifyBluetapeAssertionImports = tasks.register("verifyBluetapeAssertionImports") {
+val verifyBluetapeAssertionImports = tasks.register<VerifyBluetapeAssertionImportsTask>("verifyBluetapeAssertionImports") {
     group = "verification"
     description = "Rejects raw assertion imports in jdbc-tests Kotlin sources."
-    inputs.files(bluetapeAssertionSourceRoots)
-
-    doLast {
-        fun regularKotlinFiles(root: java.io.File): List<java.io.File> {
-            val rootPath = root.toPath().toAbsolutePath().normalize()
-            check(Files.isDirectory(rootPath)) { "Missing Kotlin source root: $root" }
-            check(!Files.isSymbolicLink(rootPath)) { "Kotlin source root must not be a symlink: $root" }
-            val projectPath = projectDir.toPath().toRealPath()
-            val realRoot = rootPath.toRealPath()
-            check(realRoot.startsWith(projectPath)) {
-                "Kotlin source root must stay inside project directory: $root"
-            }
-            var ancestor = rootPath
-            while (ancestor != projectPath) {
-                check(!Files.isSymbolicLink(ancestor)) {
-                    "Kotlin source root ancestor must not be a symlink: $ancestor"
-                }
-                ancestor = checkNotNull(ancestor.parent) { "Source root escaped project directory: $root" }
-            }
-            return Files.walk(rootPath).use { paths ->
-                val allPaths = paths.toList()
-                check(allPaths.none { path -> Files.isSymbolicLink(path) }) {
-                    "Symlink path is forbidden below Kotlin source root: $root"
-                }
-                allPaths
-                    .filter { path ->
-                        Files.isRegularFile(path) &&
-                            path.toRealPath().startsWith(realRoot) &&
-                            path.fileName.toString().endsWith(".kt")
-                    }
-                    .map { it.toFile() }
-            }
-        }
-
-        fun isForbiddenAssertionImport(line: String): Boolean {
-            val importLine = line.trim()
-            val importIndex = line.indexOf("import")
-            val leading = if (importIndex < 0) "" else line.substring(0, importIndex).trim()
-            check(importIndex < 0 || leading.isEmpty() || leading.endsWith("*/")) {
-                "Import hidden behind a leading comment is rejected by the guard: $line"
-            }
-            check(!importLine.endsWith(".") && !importLine.endsWith(" as")) {
-                "Incomplete or continued import declaration is rejected by the guard: $line"
-            }
-            check(';' !in importLine) {
-                "Semicolon-terminated import declarations are rejected by the guard: $line"
-            }
-            check("/*" !in importLine && "*/" !in importLine && "//" !in importLine) {
-                "Comments in import declarations are rejected by the guard: $line"
-            }
-            val imported = importLine
-                .removePrefix("import")
-                .trim()
-                .replace(Regex("\\s+as\\s+[A-Za-z_][A-Za-z0-9_]*\\s*$"), "")
-                .replace("`", "")
-                .replace(Regex("\\s*\\.\\s*"), ".")
-            check(imported.isNotBlank() && !Regex("\\s").containsMatchIn(imported)) {
-                "Unparseable import declaration is rejected by the guard: $line"
-            }
-            return imported == "org.junit.jupiter.api.Assertions" ||
-                imported.startsWith("org.junit.jupiter.api.Assertions.") ||
-                imported == "org.junit.jupiter.api.assertThrows" ||
-                imported.startsWith("kotlin.test.assert") ||
-                imported.startsWith("org.assertj.") ||
-                imported.startsWith("org.kluent.")
-        }
-
-        val expectedKotlinRoots = bluetapeAssertionSourceRoots
-            .map { it.toPath().toAbsolutePath().normalize().toRealPath() }
-            .toSet()
-        val unexpectedKotlinSources = tasks
-            .withType<KotlinCompile>()
-            .flatMap { it.inputs.sourceFiles.files }
-            .filter { it.extension == "kt" }
-            .filter { file ->
-                val sourcePath = file.toPath().toAbsolutePath().normalize().toRealPath()
-                expectedKotlinRoots.none { root -> sourcePath.startsWith(root) }
-            }
-        check(unexpectedKotlinSources.isEmpty()) {
-            "Kotlin compile source is outside the fixed guard roots: $unexpectedKotlinSources"
-        }
-
-        val violations = bluetapeAssertionSourceRoots
-            .flatMap(::regularKotlinFiles)
-            .flatMap { file ->
-                var blockCommentOpen = false
-                file.readLines().mapIndexedNotNull { index, line ->
-                    var remainder = line.trimStart()
-                    var strippedComment = false
-                    if (blockCommentOpen) {
-                        val closes = remainder.indexOf("*/")
-                        if (closes < 0) return@mapIndexedNotNull null
-                        blockCommentOpen = false
-                        remainder = remainder.substring(closes + 2).trimStart()
-                        strippedComment = true
-                    }
-                    while (remainder.startsWith("/*")) {
-                        val closes = remainder.indexOf("*/", 2)
-                        if (closes < 0) {
-                            blockCommentOpen = true
-                            return@mapIndexedNotNull null
-                        }
-                        remainder = remainder.substring(closes + 2).trimStart()
-                        strippedComment = true
-                    }
-                    if (strippedComment && (remainder.startsWith("import") || remainder.startsWith("."))) {
-                        check(false) {
-                            "Import hidden after a block comment is rejected by the guard: " +
-                                "${file.relativeTo(projectDir)}:${index + 1}"
-                        }
-                    }
-                    if (remainder.startsWith("//") && "import" in remainder) {
-                        check(false) {
-                            "Import continuation/comment bypass is rejected by the guard: " +
-                                "${file.relativeTo(projectDir)}:${index + 1}"
-                        }
-                    }
-                    if (remainder.startsWith("import") && isForbiddenAssertionImport(remainder)) {
-                        "${file.relativeTo(projectDir)}:${index + 1}: $remainder"
-                    } else {
-                        null
-                    }
-                }
-            }
-
-        check(violations.isEmpty()) {
-            "Raw assertion imports are forbidden in jdbc-tests:\n${violations.joinToString("\n")}"
-        }
-    }
+    sourceRoots.from(bluetapeAssertionSourceRoots)
+    kotlinCompileSources.from(tasks.withType<KotlinCompile>().flatMap { it.inputs.sourceFiles })
+    projectDirectoryPath.set(projectDir.absolutePath)
 }
 
 tasks.named<Test>("test") {
