@@ -931,29 +931,32 @@ tasks.register("checkKtorDependencyBoundary") {
                     }
                 }
                 listOf("api", "implementation", "compileOnly", "runtimeOnly").forEach { configurationName ->
-                    selectiveProject.configurations.findByName(configurationName)
-                        ?.dependencies
-                        ?.forEach { dependency ->
-                            val dependencyProject = dependency as? org.gradle.api.artifacts.ProjectDependency
-                            val coordinate = if (dependencyProject != null) {
-                                "$exposedGroup:${dependencyProject.path.substringAfterLast(':')}"
-                            } else {
-                                dependency.group?.let { "$it:${dependency.name}" }
-                            }
-                            check(coordinate != null) {
-                                "$path:$configurationName dependency must declare a fully-qualified group:name coordinate"
-                            }
-                            sourceGraph.getOrPut(path) { mutableListOf() } += "$configurationName:$coordinate"
-                            checkCoordinate(configurationName, coordinate)
+                    val configuration = selectiveProject.configurations.findByName(configurationName)
+                        ?: error("$path source configuration $configurationName is missing")
+                    configuration.dependencies.forEach { dependency ->
+                        val dependencyProject = dependency as? org.gradle.api.artifacts.ProjectDependency
+                        val coordinate = if (dependencyProject != null) {
+                            "$exposedGroup:${dependencyProject.path.substringAfterLast(':')}"
+                        } else {
+                            dependency.group?.let { "$it:${dependency.name}" }
                         }
+                        check(coordinate != null) {
+                            "$path:$configurationName dependency must declare a fully-qualified group:name coordinate"
+                        }
+                        sourceGraph.getOrPut(path) { mutableListOf() } += "$configurationName:$coordinate"
+                        checkCoordinate(configurationName, coordinate)
+                    }
                 }
                 listOf("compileClasspath", "runtimeClasspath").forEach { configurationName ->
-                    selectiveProject.configurations.findByName(configurationName)
-                        ?.takeIf { it.isCanBeResolved }
-                        ?.incoming
-                        ?.resolutionResult
-                        ?.allComponents
-                        ?.forEach { component ->
+                    val configuration = selectiveProject.configurations.findByName(configurationName)
+                        ?: error("$path $configurationName configuration is missing")
+                    check(configuration.isCanBeResolved) {
+                        "$path $configurationName configuration must be resolvable"
+                    }
+                    configuration.incoming
+                        .resolutionResult
+                        .allComponents
+                        .forEach { component ->
                             val projectPath = (component.id as?
                                 org.gradle.api.artifacts.component.ProjectComponentIdentifier)?.projectPath
                             val coordinate = component.moduleVersion?.let { "${it.group}:${it.name}" }
@@ -1008,6 +1011,9 @@ tasks.register("checkKtorDependencyBoundary") {
                     ?: error("$path Gradle metadata root must be an object")
                 val variants = metadataRoot["variants"] as? List<*>
                     ?: error("$path Gradle metadata variants are missing")
+                check(variants.isNotEmpty()) {
+                    "$path Gradle metadata variants must not be empty"
+                }
                 val metadataCoordinates = variants.flatMap { variant ->
                     val variantMap = variant as? Map<*, *>
                         ?: error("$path Gradle metadata variant must be an object")
