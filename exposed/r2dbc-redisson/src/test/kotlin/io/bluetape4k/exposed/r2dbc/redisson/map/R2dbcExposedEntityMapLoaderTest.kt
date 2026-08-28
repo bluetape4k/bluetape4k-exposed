@@ -62,7 +62,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 toLoaderEntity()
             }
 
-            val ids = loader.useLoader { loader.loadAllKeys().toList() }
+            val ids = loader.useLoader(TestDB.H2) { loader.loadAllKeys().toList() }
             ids shouldHaveSize 3
             ids shouldBeEqualTo ids.sorted()
         }
@@ -95,7 +95,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 toLoaderEntity()
             }
 
-            val (ids, selects) = loader.useLoader {
+            val (ids, selects) = loader.useLoader(TestDB.H2) {
                 val loadedIds = loader.loadAllKeys().toList()
                 loadedIds to sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
             }
@@ -133,7 +133,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
             ) {
                 toLoaderEntity()
             }
-            val (ids, selects) = loader.useLoader {
+            val (ids, selects) = loader.useLoader(TestDB.H2) {
                 val loadedIds = loader.loadAllKeys().toList()
                 loadedIds to sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
             }
@@ -171,7 +171,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
             ) {
                 toLoaderEntity()
             }
-            val (ids, selects) = loader.useLoader {
+            val (ids, selects) = loader.useLoader(TestDB.H2) {
                 val loadedIds = loader.loadAllKeys().toList()
                 loadedIds to sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
             }
@@ -197,7 +197,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
             ) {
                 toLoaderEntity()
             }
-            val ids = loader.useLoader {
+            val ids = loader.useLoader(TestDB.H2) {
                 val iterator = loader.loadAllKeys()
                 buildList {
                     while (iterator.hasNext().await() == true) {
