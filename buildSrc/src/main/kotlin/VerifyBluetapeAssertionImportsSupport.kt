@@ -3,10 +3,10 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 /**
- * jdbc-tests Kotlin source files must use Bluetape4k assertions instead of raw assertion APIs.
+ * jdbc-tests Kotlin 소스는 raw assertion API 대신 Bluetape4k assertion을 사용해야 합니다.
  *
- * The verifier is deliberately independent from Gradle's project and task APIs so that its
- * task action can be serialized by the configuration cache.
+ * 검증기는 Gradle project와 task API에서 의도적으로 분리되어 configuration cache가
+ * task action을 직렬화할 수 있도록 합니다.
  */
 fun findBluetapeAssertionImportViolations(
     sourceRoots: Collection<File>,

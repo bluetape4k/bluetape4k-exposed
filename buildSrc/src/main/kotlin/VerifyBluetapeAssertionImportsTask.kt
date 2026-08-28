@@ -8,7 +8,7 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import java.io.File
 
-/** Runs the jdbc-tests assertion import guard without capturing a Gradle script object. */
+/** Gradle script 객체를 캡처하지 않고 jdbc-tests assertion import guard를 실행합니다. */
 abstract class VerifyBluetapeAssertionImportsTask : DefaultTask() {
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
