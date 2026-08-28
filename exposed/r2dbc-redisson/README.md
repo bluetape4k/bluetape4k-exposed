@@ -232,6 +232,13 @@ Commonly used cache mode constants are provided as named constants.
 | `R2dbcExposedEntityMapWriter.kt` | Exposed IdTable-based MapWriter implementation (Write-Through/Behind) |
 | `AsyncIteratorSupport.kt`        | Extension to collect a Redisson `AsyncIterator` into a `List`         |
 
+## Operational Logging Contract
+
+Loader and writer operational logs contain only a fixed operation name,
+bounded counts/timeouts, and a safe exception type. They never attach a
+`Throwable` or emit caller-owned IDs, entity payloads, exception messages, or
+stack traces. `CancellationException` is rethrown without an error log.
+
 ## Testing
 
 ```bash

@@ -231,6 +231,13 @@ dependency 경계에 놓인 Redis 데이터에는 기본 binary codec 대신 검
 | `R2dbcExposedEntityMapWriter.kt` | Exposed IdTable 기반 MapWriter 구현체 (Write-Through/Write-Behind) |
 | `AsyncIteratorSupport.kt`        | Redisson `AsyncIterator`를 `List`로 수집하는 확장 함수                  |
 
+## 운영 로그 계약
+
+Loader와 writer의 운영 로그에는 고정된 작업명, 제한된 count/timeout,
+안전한 예외 타입만 기록합니다. `Throwable`을 첨부하거나 caller 소유 ID,
+엔티티 payload, 예외 message, stack trace를 출력하지 않습니다.
+`CancellationException`은 오류 로그 없이 재전파합니다.
+
 ## 테스트
 
 ```bash

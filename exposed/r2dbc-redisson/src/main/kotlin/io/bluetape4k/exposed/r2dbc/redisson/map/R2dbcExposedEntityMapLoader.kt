@@ -114,7 +114,7 @@ open class R2dbcExposedEntityMapLoader<ID: Any, E: Any>(
             // 코루틴 취소는 반드시 재전파해야 한다 — 삼키면 구조적 동시성이 깨진다
             throw cause
         } catch (cause: Throwable) {
-            log.error(cause) { "R2dbc를 이용한 모든 ID 로딩 중 오류가 발생했습니다." }
+            log.error { "R2dbc를 이용한 모든 ID 로딩 중 오류가 발생했습니다. errorType=${cause::class.simpleName}" }
             throw cause
         }
     },
