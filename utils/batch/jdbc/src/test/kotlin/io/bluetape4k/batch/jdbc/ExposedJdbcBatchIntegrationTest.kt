@@ -185,6 +185,7 @@ class ExposedJdbcBatchIntegrationTest : AbstractBatchJdbcTest() {
 
             firstReport shouldBeInstanceOf BatchReport.Failure::class
             firstReport.stepReports.single().checkpoint shouldBeEqualTo "checkpoint-1"
+            firstReport.stepReports.single().writeCount shouldBeEqualTo 1L
             firstWriter.items shouldBeEqualTo listOf("first")
 
             val repository = ExposedJdbcBatchJobRepository(testDB.db!!, CheckpointJson.jackson3())

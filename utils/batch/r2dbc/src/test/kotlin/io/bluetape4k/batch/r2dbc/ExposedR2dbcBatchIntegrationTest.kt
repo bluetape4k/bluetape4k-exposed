@@ -208,6 +208,7 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
 
                 firstReport shouldBeInstanceOf BatchReport.Failure::class
                 firstReport.stepReports.single().checkpoint shouldBeEqualTo "checkpoint-1"
+                firstReport.stepReports.single().writeCount shouldBeEqualTo 1L
                 firstWriter.items shouldBeEqualTo listOf("first")
 
                 val repository = ExposedR2dbcBatchJobRepository(database, CheckpointJson.jackson3())
