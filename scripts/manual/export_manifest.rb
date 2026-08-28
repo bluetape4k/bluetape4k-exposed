@@ -27,7 +27,7 @@ module ManualDocs
       if manifest.is_a?(Hash) && manifest["modules"].is_a?(Array)
         manifest = manifest.merge("modules" => manifest["modules"].sort_by { |entry| entry.fetch("id") })
       end
-      JSON.pretty_generate(sort_keys(manifest)) + "\n"
+      compact_empty_collections(JSON.pretty_generate(sort_keys(manifest))) + "\n"
     end
 
     def sort_keys(value)
@@ -36,6 +36,15 @@ module ManualDocs
       when Array then value.map { |entry| sort_keys(entry) }
       else value
       end
+    end
+
+    # Ruby 3.4 renders empty collections compactly while older JSON versions
+    # leave blank lines. Normalize both forms so snapshots are portable across
+    # the Ruby versions used locally and in CI.
+    def compact_empty_collections(json)
+      json
+        .gsub(/\[\n(?:[ \t]*\n)*[ \t]*\]/, "[]")
+        .gsub(/\{\n(?:[ \t]*\n)*[ \t]*\}/, "{}")
     end
   end
 end
