@@ -1,0 +1,19 @@
+{
+  "repository": "https://central.sonatype.com/repository/maven-snapshots",
+  "group": "io.github.bluetape4k",
+  "version": "2.0.0-SNAPSHOT",
+  "timestamp": "20260829.072901",
+  "buildNumber": "1",
+  "artifacts": {
+    "bluetape4k-tenant": {
+      "metadataSha256": "d6e69395167a252c82b39b5bb03aaf1b8b01fde43b5de6566256827e65cd2064",
+      "pomSha256": "97255ede4d6072f7cc374b80bebe6510e5201482b751d3ca4c01c41d8a4f4abc",
+      "jarSha256": "d5cb7a8aae767d333664ff705eadaab97f98a0fe4ca4c0e3dc733b2420734b0a"
+    },
+    "bluetape4k-ktor-tenant": {
+      "metadataSha256": "cb4dd69bce902c428d5a829bb73667c4a439385011bd5514986b3ac7a95d5f4c",
+      "pomSha256": "63769127dba01e23f8336503d092a2ee33e4728eacf3f527fbe6b33c0a33eb4b",
+      "jarSha256": "683c62a04b978f4b5886d5cdd7328e2e58d75c5b7df5d20f38e83206026be256"
+    }
+  }
+}
