@@ -144,6 +144,15 @@ adapter 자체에는 새 metric name/tag, retry, fallback, logging, background s
 추가하지 않습니다. resolver와 transaction block 내부에서 발생한 예외의 진단과
 HTTP 응답 매핑은 기존 application/StatusPages 조합이 담당합니다.
 
+운영 애플리케이션은 다음 최소 관측 계약을 조합해야 합니다. context 누락은
+`tenant_context_missing`, resolver 거부·실패는 `tenant_resolution_failed`로
+분류하고, transaction의 성공·일반 오류·취소는 기존 helper의
+`bluetape4k.exposed.ktor.core.transaction` timer outcome을 사용합니다. metric과
+log에는 raw `TenantId`, header, URL, SQL, credential을 넣지 않고 고정된 분류와
+요청 correlation 값만 사용합니다. HTTP 상태와 경보 임계값은 인증·인가 및
+운영 정책을 아는 애플리케이션이 결정하며, 1차 대응 주체도 애플리케이션
+운영자입니다. adapter는 이 분류를 강제하거나 별도 로그를 남기지 않습니다.
+
 ## 테스트 전략과 수용 기준 매핑
 
 각 새 모듈은 `bluetape4k-assertions`와 JUnit 5의 backtick 테스트 이름을
@@ -196,6 +205,15 @@ coordinates를 직접 선언합니다. 해당 임시 경계는 `bluetape4k-depen
 완료 후 alias 전환을 위한 후속 정리 대상으로 남깁니다. 이 상태에서는 공개
 `2.0.0-SNAPSHOT`이 이동하면 dependency resolution을 다시 검증해야 하며, stable
 `2.0.0` publication은 이 작업의 DoD가 아닙니다.
+
+rollback은 producer와 consumer를 분리해 수행합니다. producer가 아직 publish하지
+않았다면 새 모듈 디렉터리와 settings/CI/manual/allowlist 등록을 한 commit에서
+되돌립니다. 이미 consumer가 `2.0.0-SNAPSHOT`을 채택한 뒤에는 해당 consumer가
+tenant adapter dependency를 제거하고 기존 `exposedJdbcTransaction(db, ...)` 또는
+`exposedR2dbcTransaction(db, ...)`로 복귀한 뒤, 마지막으로 검증된 producer
+version을 고정합니다. CI와 release 전에는 timestamped metadata와 POM/JAR
+resolution을 다시 확인하고, 좌표가 없거나 checksum/metadata가 예상과 다르면
+배포·후속 전환을 hold합니다.
 
 ## 설계 DoD
 
