@@ -34,12 +34,19 @@
 resolver에 전달하는 공통 진입점은 없습니다.
 
 upstream PR #1566과 `2.0.0-SNAPSHOT` handoff PR #1568은 merge되었고 공개
-`2.0.0-SNAPSHOT` metadata와 jar/POM은 확인했습니다. 다만 live upstream issue #1562와
-`bluetape4k-dependencies#213`은 아직 OPEN이며 현재 immutable catalog
-`df64293753a9491b337852a158f89d4a93a1734a`에는 tenant alias가 없습니다. 구현은
-central BOM version authority(`bt4kVersion("bluetape4k-bom")`)를 사용하고,
-catalog alias가 생기면 별도 후속 동기화로 전환합니다. alias가 없다는 사실은
-최종 PR handoff의 잔여 의존성 상태로 기록합니다.
+`2.0.0-SNAPSHOT` metadata와 timestamped POM/JAR는 현재 확인했습니다. 다만 live
+upstream issue #1562와 `bluetape4k-dependencies#213`은 아직 OPEN이며 현재
+immutable catalog `df64293753a9491b337852a158f89d4a93a1734a`에는 tenant alias가
+없습니다. 따라서 이 branch의 compile/test는 central BOM version authority
+(`bt4kVersion("bluetape4k-bom")`)에 기반한 direct coordinate를 **임시 증거**로만
+사용합니다. `#213` handoff가 완료되거나 별도의 fresh owner decision이 있기 전에는
+PR/publication/release/merge를 진행하지 않습니다. 각 downstream gate 직전에
+`2.0.0-SNAPSHOT` metadata와 timestamped POM/JAR의 존재·checksum·metadata parity를
+`--refresh-dependencies` 또는 `scripts/verification/validate_issue_763_tenant_snapshot.rb`
+같은 fail-closed live 조회로 다시 확인하고, 404·checksum mismatch·metadata drift가
+있으면 해당 gate를 hold합니다. 현재 증거의 exact timestamp/build와 metadata·POM·JAR
+SHA-256은 `scripts/verification/issue-763-tenant-snapshot.json`에 기록합니다.
+alias가 생기면 별도 후속 변경에서 catalog alias로 전환합니다.
 
 ## 선택지와 결정
 
@@ -59,11 +66,12 @@ tenant adapter는 context 조회와 resolver 호출만 책임집니다.
 
 | 디렉터리 | Gradle module | 공개 artifact | `api` 의존성 |
 |---|---|---|---|
-| `ktor/tenant-jdbc` | `:bluetape4k-exposed-ktor-tenant-jdbc` | `io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-jdbc` | `bluetape4k-ktor-tenant`, `:bluetape4k-exposed-ktor-jdbc` |
-| `ktor/tenant-r2dbc` | `:bluetape4k-exposed-ktor-tenant-r2dbc` | `io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-r2dbc` | `bluetape4k-ktor-tenant`, `:bluetape4k-exposed-ktor-r2dbc` |
+| `ktor/tenant-jdbc` | `:bluetape4k-exposed-ktor-tenant-jdbc` | `io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-jdbc` | `bluetape4k-tenant`, `bluetape4k-ktor-tenant`, `:bluetape4k-exposed-ktor-jdbc` |
+| `ktor/tenant-r2dbc` | `:bluetape4k-exposed-ktor-tenant-r2dbc` | `io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-r2dbc` | `bluetape4k-tenant`, `bluetape4k-ktor-tenant`, `:bluetape4k-exposed-ktor-r2dbc` |
 
-각 모듈은 `bluetape4k-tenant`가 제공하는 `TenantId`를 public signature에
-노출하므로 upstream Ktor tenant artifact를 `api`로 선언합니다. JDBC adapter는
+각 모듈은 `bluetape4k-tenant`가 제공하는 `TenantId`와
+`bluetape4k-ktor-tenant`가 제공하는 `KtorTenantContext`를 public API에서
+사용하므로 두 upstream artifact를 모두 직접 `api`로 선언합니다. JDBC adapter는
 JDBC transaction helper만, R2DBC adapter는 R2DBC transaction helper만
 전이합니다. `ktor/core`와 기존 `ktor/jdbc`·`ktor/r2dbc`의 dependency/API는
 변경하지 않습니다.
@@ -121,6 +129,21 @@ resolver를 cache하거나 database/pool을 닫지 않습니다. `Database`와
 `R2dbcDatabase`, dispatcher, `MeterRegistry`의 생성·종료는 application이
 소유합니다.
 
+resolver 시그니처는 의도적으로 동기식이며, route event loop에서 빠르게 끝나는
+O(1) 메모리 조회·정확한 key match만 허용합니다. resolver와 backing map은
+애플리케이션이 immutable 또는 thread-safe하게 관리해야 하며, request 처리 중
+binding/DB lifecycle을 변경하지 않습니다. resolver 안에서 네트워크·DB I/O를
+수행하거나 blocking 작업을 숨기지 않습니다. 비동기 tenant-to-database 조회가
+필요한 애플리케이션은 route 진입 전에 조회를 완료해 caller-owned map을 만들거나,
+별도의 suspend resolver API가 설계·승인될 때까지 기존 explicit helper를
+사용합니다. library가 임의 dispatcher hop으로 이 계약을 우회하지 않습니다.
+
+resolver 예제는 `map.getValue(tenantId)`와 같이 exact match를 사용해야 하며,
+unknown 또는 인증되지 않은 tenant는 예외로 거부합니다. resolver가 unknown
+tenant를 default database로 보내거나 빈 값에 fallback하면 안 됩니다. adapter는
+이 정책을 대신 판단하지 않고 resolver가 던진 예외를 transaction 진입 전에
+그대로 전달합니다.
+
 기존 `ApplicationCall.exposedJdbcTransaction(db, ...)`와
 `ApplicationCall.exposedR2dbcTransaction(db, ...)`는 그대로 유지합니다. 새
 함수는 overload가 아니라 이름이 분리된 확장 함수이므로 JVM descriptor 충돌을
@@ -162,7 +185,7 @@ log에는 raw `TenantId`, header, URL, SQL, credential을 넣지 않고 고정�
 |---|---|
 | missing context fail-fast | binding 없는 `ApplicationCall`에서 resolver 호출 횟수가 0이고 `MissingTenantContextException`이 발생하는 테스트 |
 | tenant A/B routing | 두 H2 JDBC database와 두 R2DBC database를 resolver map으로 연결하고 각 transaction에서 서로 다른 marker를 읽는 테스트 |
-| resolver/transaction 예외 | resolver 예외는 동일 인스턴스로 전파하고 transaction 예외는 기존 `ExposedKtorTransactionException` mapping을 사용하는 테스트 |
+| resolver/transaction 예외 | exact-match resolver의 unknown/default 거부와 resolver 예외 동일 인스턴스 전파, transaction 예외의 기존 `ExposedKtorTransactionException` mapping을 검증하는 테스트 |
 | metrics/cancellation 유지 | 기존 helper의 targeted tests를 새 모듈에서 재사용하고, tenant wrapper가 cancellation을 삼키지 않는 suspend test를 추가 |
 | call isolation | 두 `ApplicationCall`에 서로 다른 tenant를 binding하고 순차·dispatcher hop 뒤 resolver 인자를 비교하는 테스트 |
 | 기존 API compatibility | 기존 JDBC/R2DBC module test suite와 ABI/publication metadata 검증 |
@@ -186,6 +209,10 @@ Testcontainers 기반 PostgreSQL/MySQL 경로는 이번 adapter가 driver routin
 - `scripts/verification/ktor-dependency-allowlist.json` 및
   `ktor_dependency_allowlist_test.rb`에 backend별 허용 좌표와 upstream tenant
   좌표를 등록합니다.
+- `scripts/verification/issue-763-tenant-snapshot.json`과
+  `validate_issue_763_tenant_snapshot.rb`에 exact timestamp/build 및
+  metadata·POM·JAR digest를 고정하고 downstream gate 전 fail-closed 검증을
+  실행합니다.
 - `exposed/bom`은 자동으로 모든 publishable subproject constraint를 수집하므로
   별도 수동 constraint를 추가하지 않고 generated BOM을 검증합니다.
 - 기존 `ktor/exposed` compatibility aggregator에는 tenant adapter를 추가하지
@@ -202,9 +229,12 @@ CI/manual 등록, allowlist 변경을 한 commit 단위로 제거하면 됩니�
 
 catalog alias handoff가 완료되기 전에는 central BOM version으로 upstream
 coordinates를 직접 선언합니다. 해당 임시 경계는 `bluetape4k-dependencies#213`
-완료 후 alias 전환을 위한 후속 정리 대상으로 남깁니다. 이 상태에서는 공개
-`2.0.0-SNAPSHOT`이 이동하면 dependency resolution을 다시 검증해야 하며, stable
-`2.0.0` publication은 이 작업의 DoD가 아닙니다.
+완료 후 alias 전환을 위한 후속 정리 대상으로 남깁니다. 이 branch의 구현 증거는
+현재 확인한 timestamped `2.0.0-SNAPSHOT` POM/JAR와 manifest의 checksum/metadata
+parity에 한정하며, 각 PR/publication/release/merge gate에서
+`validate_issue_763_tenant_snapshot.rb`로 live 재검증합니다. 좌표가
+이동·소실되거나 parity가 깨지면 후속 gate를 hold하고 구현을 `PENDING`으로
+되돌립니다. stable `2.0.0` publication은 이 작업의 DoD가 아닙니다.
 
 rollback은 producer와 consumer를 분리해 수행합니다. producer가 아직 publish하지
 않았다면 새 모듈 디렉터리와 settings/CI/manual/allowlist 등록을 한 commit에서
