@@ -54,7 +54,10 @@ Keep probes small, cancellation-cooperative, and free of resource ownership. Use
 
 ## Integrations {#integrations}
 
-Use `bluetape4k-exposed-ktor-jdbc`, `bluetape4k-exposed-ktor-r2dbc`, or `bluetape4k-exposed-ktor-cache` alongside this module. The core module does not create dispatchers, pools, databases, scopes, or routes outside the paths requested by the caller.
+Use `bluetape4k-exposed-ktor-jdbc`, `bluetape4k-exposed-ktor-r2dbc`,
+`bluetape4k-exposed-ktor-cache`, or the tenant-specific JDBC/R2DBC adapters
+alongside this module. The core module does not create dispatchers, pools,
+databases, scopes, or routes outside the paths requested by the caller.
 
 ## Configuration {#configuration}
 

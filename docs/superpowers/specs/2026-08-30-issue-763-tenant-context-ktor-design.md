@@ -37,8 +37,8 @@ upstream PR #1566과 `2.0.0-SNAPSHOT` handoff PR #1568은 merge되었고 공개
 `2.0.0-SNAPSHOT` metadata와 timestamped POM/JAR는 현재 확인했습니다. 다만 live
 upstream issue #1562와 `bluetape4k-dependencies#213`은 아직 OPEN이며 현재
 immutable catalog `df64293753a9491b337852a158f89d4a93a1734a`에는 tenant alias가
-없습니다. 따라서 이 branch의 compile/test는 central BOM version authority
-(`bt4kVersion("bluetape4k-bom")`)에 기반한 direct coordinate를 **임시 증거**로만
+없습니다. 따라서 이 branch의 compile/test는 root `bt4k` version catalog의 BOM
+version authority에 기반한 direct coordinate를 **임시 증거**로만
 사용합니다. `#213` handoff가 완료되거나 별도의 fresh owner decision이 있기 전에는
 PR/publication/release/merge를 진행하지 않습니다. 각 downstream gate 직전에
 `2.0.0-SNAPSHOT` metadata와 timestamped POM/JAR의 존재·checksum·metadata parity를

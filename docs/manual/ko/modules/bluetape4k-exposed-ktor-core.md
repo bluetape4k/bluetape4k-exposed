@@ -54,7 +54,10 @@ probe는 작고 취소 가능하며 resource를 소유하지 않게 하세요. c
 
 ## 연동 {#integrations}
 
-`bluetape4k-exposed-ktor-jdbc`, `bluetape4k-exposed-ktor-r2dbc`, `bluetape4k-exposed-ktor-cache`를 필요한 backend에 따라 선택합니다. 코어는 dispatcher, pool, database, scope를 만들거나 닫지 않습니다.
+`bluetape4k-exposed-ktor-jdbc`, `bluetape4k-exposed-ktor-r2dbc`,
+`bluetape4k-exposed-ktor-cache` 또는 tenant 전용 JDBC/R2DBC 어댑터를 필요한
+backend에 따라 선택합니다. 코어는 dispatcher, pool, database, scope를
+만들거나 닫지 않습니다.
 
 ## 구성 {#configuration}
 

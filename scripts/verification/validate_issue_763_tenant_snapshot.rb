@@ -20,6 +20,8 @@ group = manifest.fetch("group").split(".").join("/")
 version = manifest.fetch("version")
 timestamp = manifest.fetch("timestamp")
 build_number = manifest.fetch("buildNumber").to_s
+expected_artifacts = %w[bluetape4k-ktor-tenant bluetape4k-tenant].sort
+actual_artifacts = manifest.fetch("artifacts").keys.map(&:to_s).sort
 
 unless version == "2.0.0-SNAPSHOT"
   fail_with("manifest version must remain 2.0.0-SNAPSHOT")
@@ -27,6 +29,7 @@ end
 unless timestamp.match?(/\A\d{8}\.\d{6}\z/) && build_number.match?(/\A\d+\z/)
   fail_with("manifest timestamp/buildNumber is not immutable snapshot metadata")
 end
+fail_with("manifest artifacts must be exactly #{expected_artifacts.join(", ")}") unless actual_artifacts == expected_artifacts
 
 def fetch_bytes(url)
   URI.open(url, "User-Agent" => "bluetape4k-exposed-issue-763-verifier", &:read)
@@ -37,6 +40,12 @@ rescue StandardError => e
 end
 
 manifest.fetch("artifacts").each do |artifact, expected|
+  required_digests = %w[metadataSha256 pomSha256 jarSha256]
+  fail_with("#{artifact} digest manifest is incomplete") unless expected.is_a?(Hash) && expected.keys.sort == required_digests.sort
+  required_digests.each do |field|
+    value = expected.fetch(field).to_s
+    fail_with("#{artifact} #{field} is not a SHA-256 digest") unless value.match?(/\A[0-9a-f]{64}\z/)
+  end
   artifact_root = "#{repository}/#{group}/#{artifact}/#{version}"
   metadata_url = "#{artifact_root}/maven-metadata.xml"
   metadata = fetch_bytes(metadata_url)

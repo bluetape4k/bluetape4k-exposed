@@ -88,6 +88,8 @@ behavior belongs in `docs/manual/`.
 | `exposed-druid` | Apache Druid query-only Avatica JDBC experiment |
 | `exposed-timefold-solver-persistence` | Exposed column mappings for Timefold Score values |
 | `exposed-ktor` | Ktor integration for explicit Exposed JDBC/R2DBC transactions, readiness routes, and status pages |
+| `exposed-ktor-tenant-jdbc` | TenantContext-based JDBC transaction routing for Ktor |
+| `exposed-ktor-tenant-r2dbc` | TenantContext-based coroutine-native R2DBC transaction routing for Ktor |
 | `exposed-spring-boot-jdbc` | Spring Boot 4.x JDBC auto-configuration |
 | `exposed-spring-boot-r2dbc` | Spring Boot 4.x R2DBC auto-configuration |
 | `exposed-spring-boot-batch` | Spring Boot 4.x batch integration |
@@ -198,6 +200,9 @@ dependencies {
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2")
     // Ktor integration
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor")
+    // Ktor tenant-aware JDBC/R2DBC transaction adapters (opt-in)
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-jdbc")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-r2dbc")
     // Spring Boot auto-configuration
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc")
     // Spring Modulith JDBC event publication through Exposed
@@ -642,6 +647,18 @@ application-owned lifecycle. R2DBC work stays coroutine-native through
 `exposedR2dbcTransaction()` / `suspendTransaction`. See
 [ktor/exposed/README.md](ktor/exposed/README.md) for StatusPages composition,
 readiness triage, rollback, and non-goals.
+
+For one database per tenant, add the backend-specific opt-in adapter and bind
+the validated `TenantId` before routing. Use an immutable exact-match resolver
+such as `databases::getValue`; missing context fails before resolution and an
+unknown tenant never falls back to a default database. The JDBC adapter requires
+an application-owned blocking dispatcher, while the R2DBC adapter remains
+coroutine-native. Map `MissingTenantContextException` to
+`tenant_context_missing` and resolver failures to `tenant_resolution_failed` in
+your existing `StatusPages` policy. The adapters do not log or tag raw tenant
+identifiers, headers, URLs, SQL, or credentials and do not own resource
+shutdown. See the [tenant JDBC manual](docs/manual/en/modules/bluetape4k-exposed-ktor-tenant-jdbc.md)
+and [tenant R2DBC manual](docs/manual/en/modules/bluetape4k-exposed-ktor-tenant-r2dbc.md).
 
 ## Requirements
 

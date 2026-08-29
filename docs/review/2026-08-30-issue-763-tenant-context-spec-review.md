@@ -56,6 +56,8 @@ dispatcher, metric, exception, cancellation semantics를 재사용하는 얇은
 - [x] P2 public `TenantId`/`KtorTenantContext` direct `api` 및 metadata 검증 명시
 - [x] P2 exact upstream digest manifest와 fail-closed checker 명시
 - [x] 명세의 exact API import, module boundary, failure/cancellation semantics 재확인
-- [x] `git diff --check`와 Korean terminology audit 재실행 예정
+- [x] `git diff --check`와 manual validator 재실행
+- [x] 현재 환경에 제공되지 않는 별도 Korean terminology audit helper 대신
+      한국어 README/manual read-back으로 용어·좌표·링크를 확인
 
 판정: **PASS — 구현 계획 단계로 진행 가능**

@@ -33,7 +33,15 @@ dependencies {
 }
 ```
 
-This artifact remains the compatibility aggregator for existing consumers. New applications should select `bluetape4k-exposed-ktor-core` plus exactly the `-jdbc`, `-r2dbc`, or `-cache` adapter they use. The selective child artifacts and their manuals are develop-only during the 2.0 migration and are not published in stable `1.12.1`; a stable consumer must keep this aggregator coordinate. The legacy coordinates and packages stay available during the migration window; move imports and dependencies one backend at a time before removing the aggregator from a future major release.
+This artifact remains the compatibility aggregator for existing consumers. New
+applications should select `bluetape4k-exposed-ktor-core` plus exactly the
+backend adapter they use, including `-tenant-jdbc` or `-tenant-r2dbc` when the
+database is selected by `TenantId`. The selective child artifacts and their
+manuals are develop-only during the 2.0 migration and are not published in
+stable `1.12.1`; a stable consumer must keep this aggregator coordinate. The
+legacy coordinates and packages stay available during the migration window;
+move imports and dependencies one backend at a time before removing the
+aggregator from a future major release.
 
 ## Core concepts {#concepts}
 
