@@ -95,6 +95,29 @@
       "org.jetbrains.exposed:exposed-bom",
       "org.jetbrains.exposed:exposed-core",
       "org.jetbrains.kotlinx:kotlinx-datetime-jvm"
+    ],
+    "tenant-jdbc": [
+      "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-jdbc",
+      "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-jdbc",
+      "io.github.bluetape4k:bluetape4k-ktor-tenant",
+      "io.github.bluetape4k:bluetape4k-tenant",
+      "org.jetbrains.exposed:exposed-bom",
+      "org.jetbrains.exposed:exposed-core",
+      "org.jetbrains.exposed:exposed-jdbc",
+      "org.jetbrains.kotlinx:kotlinx-datetime-jvm"
+    ],
+    "tenant-r2dbc": [
+      "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-r2dbc",
+      "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-r2dbc",
+      "io.github.bluetape4k:bluetape4k-ktor-tenant",
+      "io.github.bluetape4k:bluetape4k-tenant",
+      "io.r2dbc:r2dbc-spi",
+      "org.jetbrains.exposed:exposed-bom",
+      "org.jetbrains.exposed:exposed-core",
+      "org.jetbrains.exposed:exposed-r2dbc",
+      "org.jetbrains.kotlinx:kotlinx-coroutines-reactive",
+      "org.jetbrains.kotlinx:kotlinx-datetime-jvm",
+      "org.reactivestreams:reactive-streams"
     ]
   }
 }

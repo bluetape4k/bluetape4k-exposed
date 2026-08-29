@@ -13,7 +13,7 @@ BUILD_GRADLE = File.read(File.join(ROOT, "build.gradle.kts")).freeze
 ALIASES = POLICY.fetch("aliases").transform_keys(&:to_s).transform_values(&:to_s).freeze
 COMMON = Set.new(POLICY.fetch("common").map(&:to_s)).freeze
 MODULES = POLICY.fetch("modules").transform_values { |coordinates| Set.new(coordinates.map(&:to_s)) }.freeze
-SELECTIVE_MODULES = %w[core jdbc r2dbc cache].freeze
+SELECTIVE_MODULES = %w[core jdbc r2dbc cache tenant-jdbc tenant-r2dbc].freeze
 BOUNDARY_SURFACES = %w[api compileClasspath runtimeClasspath publishedPom publishedGradleMetadata].freeze
 SOURCE_CONFIGURATIONS = %w[api implementation compileOnly runtimeOnly].freeze
 CLASSPATH_CONFIGURATIONS = %w[compileClasspath runtimeClasspath].freeze
@@ -24,6 +24,8 @@ class KtorDependencyAllowlistTest < Minitest::Test
     "jdbc" => "io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc",
     "r2dbc" => "io.github.bluetape4k.exposed:bluetape4k-exposed-cache",
     "cache" => "io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc",
+    "tenant-jdbc" => "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-r2dbc",
+    "tenant-r2dbc" => "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-jdbc",
   }.freeze
 
   SERIALIZATION_VARIANTS = %w[
@@ -35,7 +37,7 @@ class KtorDependencyAllowlistTest < Minitest::Test
 
   def test_policy_has_exact_schema_and_selective_modules
     assert_equal 1, POLICY.fetch("schema")
-    assert_equal %w[cache core jdbc r2dbc], MODULES.keys.sort
+    assert_equal %w[cache core jdbc r2dbc tenant-jdbc tenant-r2dbc], MODULES.keys.sort
   end
 
   def test_policy_coordinates_are_fully_qualified
@@ -82,6 +84,8 @@ class KtorDependencyAllowlistTest < Minitest::Test
       scripts/verification/ktor-dependency-allowlist.json
       scripts/verification/ktor_dependency_allowlist_test.rb
       scripts/verification/validate_ktor_consumer.rb
+      scripts/verification/issue-763-tenant-snapshot.json
+      scripts/verification/validate_issue_763_tenant_snapshot.rb
     ].each do |workflow_path|
       assert_includes CI_WORKFLOW, "- '#{workflow_path}'"
     end
@@ -184,6 +188,8 @@ class KtorDependencyAllowlistTest < Minitest::Test
                     ":bluetape4k-exposed-ktor-jdbc",
                     ":bluetape4k-exposed-ktor-r2dbc",
                     ":bluetape4k-exposed-ktor-cache",
+                    ":bluetape4k-exposed-ktor-tenant-jdbc",
+                    ":bluetape4k-exposed-ktor-tenant-r2dbc",
                   ]
                   projectPaths.each { projectPath ->
                     def publicationDir = gradle.rootProject.project(projectPath).layout.buildDirectory
@@ -249,6 +255,8 @@ class KtorDependencyAllowlistTest < Minitest::Test
                     ":bluetape4k-exposed-ktor-jdbc",
                     ":bluetape4k-exposed-ktor-r2dbc",
                     ":bluetape4k-exposed-ktor-cache",
+                    ":bluetape4k-exposed-ktor-tenant-jdbc",
+                    ":bluetape4k-exposed-ktor-tenant-r2dbc",
                   ]
                   projectPaths.each { projectPath ->
                     def target = gradle.rootProject.project(projectPath)

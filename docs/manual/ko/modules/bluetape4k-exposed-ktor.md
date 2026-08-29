@@ -33,7 +33,15 @@ dependencies {
 }
 ```
 
-이 아티팩트는 기존 소비자를 위한 compatibility aggregator로 유지됩니다. 새 애플리케이션은 `bluetape4k-exposed-ktor-core`와 실제로 사용하는 `-jdbc`, `-r2dbc`, `-cache` 어댑터만 선택하세요. 선택형 자식 아티팩트와 해당 매뉴얼은 2.0 마이그레이션 동안 develop-only이며 안정판 `1.12.1`에는 배포되지 않습니다. 안정판 소비자는 이 aggregator 좌표를 유지해야 합니다. 마이그레이션 기간에는 기존 좌표와 package를 사용할 수 있으므로 import와 dependency를 backend별로 옮긴 뒤 향후 major release에서 aggregator를 제거할 수 있습니다.
+이 아티팩트는 기존 소비자를 위한 compatibility aggregator로 유지됩니다. 새
+애플리케이션은 `bluetape4k-exposed-ktor-core`와 실제로 사용하는 backend
+어댑터만 선택하세요. `TenantId`로 database를 선택한다면
+`-tenant-jdbc` 또는 `-tenant-r2dbc`를 사용합니다. 선택형 자식 아티팩트와
+해당 매뉴얼은 2.0 마이그레이션 동안 develop-only이며 안정판 `1.12.1`에는
+배포되지 않습니다. 안정판 소비자는 이 aggregator 좌표를 유지해야 합니다.
+마이그레이션 기간에는 기존 좌표와 package를 사용할 수 있으므로 import와
+dependency를 backend별로 옮긴 뒤 향후 major release에서 aggregator를 제거할
+수 있습니다.
 
 ## 핵심 개념 {#concepts}
 

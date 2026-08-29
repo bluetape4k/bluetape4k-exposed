@@ -86,6 +86,8 @@ Column codec, 데이터베이스별 helper, Spring Boot 4 자동 설정을 더�
 | `exposed-druid` | Apache Druid query-only Avatica JDBC 실험 |
 | `exposed-timefold-solver-persistence` | Timefold Score 값을 위한 Exposed 컬럼 매핑 |
 | `exposed-ktor` | 명시적 Exposed JDBC/R2DBC 트랜잭션, readiness route, status page용 Ktor 통합 |
+| `exposed-ktor-tenant-jdbc` | Ktor TenantContext 기반 JDBC transaction routing |
+| `exposed-ktor-tenant-r2dbc` | Ktor TenantContext 기반 coroutine-native R2DBC transaction routing |
 | `exposed-spring-boot-jdbc` | Spring Boot 4.x JDBC 자동 설정 |
 | `exposed-spring-boot-r2dbc` | Spring Boot 4.x R2DBC 자동 설정 |
 | `exposed-spring-boot-batch` | Spring Boot 4.x Batch 통합 |
@@ -192,6 +194,9 @@ dependencies {
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jackson2")
     // Ktor 통합
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor")
+    // Ktor tenant-aware JDBC/R2DBC transaction 어댑터 (opt-in)
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-jdbc")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-r2dbc")
     // Spring Boot 자동 설정
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc")
     // Exposed 기반 Spring Modulith JDBC 이벤트 발행
@@ -632,6 +637,19 @@ JDBC 작업은 blocking입니다. 전용 dispatcher를 넘기고 애플리케이
 닫아야 합니다. R2DBC 작업은 `exposedR2dbcTransaction()` /
 `suspendTransaction`을 통해 coroutine-native로 실행됩니다. StatusPages 조합,
 readiness triage, rollback, non-goal은 [ktor/exposed/README.ko.md](ktor/exposed/README.ko.md)를
+참고하세요.
+
+tenant마다 database를 사용할 때는 backend별 opt-in 어댑터를 추가하고 routing
+전에 검증된 `TenantId`를 binding하세요. `databases::getValue` 같은 immutable
+exact-match resolver를 사용하면 context 누락은 해석보다 먼저 실패하고 알 수
+없는 tenant는 기본 database로 fallback하지 않습니다. JDBC 어댑터에는
+애플리케이션 소유 blocking dispatcher가 필요하며 R2DBC 어댑터는
+coroutine-native로 실행됩니다. 기존 `StatusPages` 정책에서
+`MissingTenantContextException`을 `tenant_context_missing`으로, resolver 실패를
+`tenant_resolution_failed`로 매핑하세요. 어댑터는 raw tenant 식별자, header, URL,
+SQL, credential을 log나 tag에 넣지 않으며 resource 종료도 소유하지 않습니다.
+[tenant JDBC 매뉴얼](docs/manual/ko/modules/bluetape4k-exposed-ktor-tenant-jdbc.md)과
+[tenant R2DBC 매뉴얼](docs/manual/ko/modules/bluetape4k-exposed-ktor-tenant-r2dbc.md)을
 참고하세요.
 
 ## 요구사항

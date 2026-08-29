@@ -1,0 +1,5 @@
+public final class io/bluetape4k/exposed/ktor/tenant/jdbc/ExposedTenantJdbcTransactionsKt {
+	public static final fun exposedTenantJdbcTransaction (Lio/ktor/server/application/ApplicationCall;Lkotlin/jvm/functions/Function1;Lkotlinx/coroutines/CoroutineDispatcher;Lio/micrometer/core/instrument/MeterRegistry;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun exposedTenantJdbcTransaction$default (Lio/ktor/server/application/ApplicationCall;Lkotlin/jvm/functions/Function1;Lkotlinx/coroutines/CoroutineDispatcher;Lio/micrometer/core/instrument/MeterRegistry;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+

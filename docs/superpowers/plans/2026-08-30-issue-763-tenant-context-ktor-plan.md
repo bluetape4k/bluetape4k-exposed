@@ -22,8 +22,8 @@ artifact를 `develop`에 추가한다. 기존 `ktor/core`, `ktor/jdbc`,
   `CancellationException` 재전파를 새 adapter가 그대로 사용한다.
 - settings, module inventory, manual manifest, CI/nightly, Kover, production ABI,
   dependency allowlist와 README/KDoc이 모두 등록된다.
-- `bluetape4k-dependencies#213` alias handoff가 OPEN인 동안에는
-  `bt4kVersion("bluetape4k-bom")` 기반의 direct
+- `bluetape4k-dependencies#213` alias handoff가 OPEN인 동안에는 root `bt4k`
+  version catalog의 BOM version authority에 기반한 direct
   `io.github.bluetape4k:bluetape4k-tenant`와
   `io.github.bluetape4k:bluetape4k-ktor-tenant` 좌표를 임시 compile/test 증거로만
   사용한다. 현재 확인한 timestamped `2.0.0-SNAPSHOT` POM/JAR의 존재·checksum·
@@ -67,9 +67,10 @@ artifact를 `develop`에 추가한다. 기존 `ktor/core`, `ktor/jdbc`,
 검증:
 
 ```bash
+ruby scripts/verification/validate_issue_763_tenant_snapshot.rb
 ./gradlew :bluetape4k-exposed-ktor-tenant-jdbc:compileKotlin \
   :bluetape4k-exposed-ktor-tenant-r2dbc:compileKotlin \
-  --no-configuration-cache --no-parallel --max-workers=1 --no-daemon
+  --refresh-dependencies --no-configuration-cache --no-parallel --max-workers=1 --no-daemon
 ```
 
 실패 시 새 module 등록·dependency 좌표·upstream `2.0.0-SNAPSHOT` resolution을
@@ -97,7 +98,8 @@ ruby scripts/verification/validate_issue_763_tenant_snapshot.rb
    Ktor `testApplication` route에서 `KtorTenantContext.bindTenant`를 호출하고,
    (a) missing context resolver 호출 횟수 0, (b) resolver 예외 동일 인스턴스,
    (c) 두 H2 database marker의 A/B routing, (d) 동시 call isolation, (e)
-   transaction block의 cancellation 재전파와 timer outcome을 증명한다.
+   transaction block의 예외 wrapping·error timer와 cancellation 재전파·timer
+   outcome을 증명한다.
 2. 최소 구현으로 다음 public extension을 추가한다.
 
    ```kotlin
@@ -124,9 +126,10 @@ ruby scripts/verification/validate_issue_763_tenant_snapshot.rb
 검증:
 
 ```bash
+ruby scripts/verification/validate_issue_763_tenant_snapshot.rb
 ./gradlew :bluetape4k-exposed-ktor-tenant-jdbc:test \
   --tests '*ExposedTenantJdbcTransactionTest' \
-  --no-configuration-cache --no-parallel --max-workers=1 --no-daemon
+  --refresh-dependencies --no-configuration-cache --no-parallel --max-workers=1 --no-daemon
 ```
 
 ### 3. R2DBC adapter TDD
@@ -161,9 +164,10 @@ ruby scripts/verification/validate_issue_763_tenant_snapshot.rb
 검증:
 
 ```bash
+ruby scripts/verification/validate_issue_763_tenant_snapshot.rb
 ./gradlew :bluetape4k-exposed-ktor-tenant-r2dbc:test \
   --tests '*ExposedTenantR2dbcTransactionTest' \
-  --no-configuration-cache --no-parallel --max-workers=1 --no-daemon
+  --refresh-dependencies --no-configuration-cache --no-parallel --max-workers=1 --no-daemon
 ```
 
 ### 4. 사용자 문서와 module inventory
@@ -196,11 +200,9 @@ ruby scripts/verification/validate_issue_763_tenant_snapshot.rb
 
 ```bash
 git diff --check
-node /Users/debop/.codex/skills/bluetape-writer/scripts/audit-korean-terms.mjs \
-  ktor/tenant-jdbc/README.ko.md ktor/tenant-r2dbc/README.ko.md \
-  docs/manual/ko/modules/bluetape4k-exposed-ktor-tenant-jdbc.md \
-  docs/manual/ko/modules/bluetape4k-exposed-ktor-tenant-r2dbc.md
 ./gradlew exportManualModuleInventory
+ruby scripts/manual/validate_manuals.rb \
+  build/manual/module-inventory.json docs/manual/manifest.yaml
 ```
 
 ### 5. CI, dependency boundary, ABI와 BOM 확인
@@ -229,9 +231,10 @@ node /Users/debop/.codex/skills/bluetape-writer/scripts/audit-korean-terms.mjs \
 검증:
 
 ```bash
+ruby scripts/verification/validate_issue_763_tenant_snapshot.rb
 ./gradlew checkKtorDependencyBoundary checkProductionAbi \
   :bluetape4k-exposed-bom:generatePomFileForBluetapeExposedPublication \
-  --no-configuration-cache --no-parallel --max-workers=1 --no-daemon
+  --refresh-dependencies --no-configuration-cache --no-parallel --max-workers=1 --no-daemon
 ruby scripts/verification/ktor_dependency_allowlist_test.rb
 ```
 
@@ -259,13 +262,14 @@ ruby scripts/verification/ktor_dependency_allowlist_test.rb
 대표 검증 명령:
 
 ```bash
+ruby scripts/verification/validate_issue_763_tenant_snapshot.rb
 ./gradlew :bluetape4k-exposed-ktor-tenant-jdbc:test \
   :bluetape4k-exposed-ktor-tenant-r2dbc:test \
   :bluetape4k-exposed-ktor-jdbc:test \
   :bluetape4k-exposed-ktor-r2dbc:test \
   :bluetape4k-exposed-ktor:test \
   checkKtorDependencyBoundary checkProductionAbi exportManualModuleInventory \
-  detekt --no-configuration-cache --no-parallel --max-workers=1 --no-daemon
+  detekt --refresh-dependencies --no-configuration-cache --no-parallel --max-workers=1 --no-daemon
 ```
 
 ## 위험·완화·재실행 지점

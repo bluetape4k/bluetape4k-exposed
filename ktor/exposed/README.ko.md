@@ -42,9 +42,16 @@ dependencies {
     implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<version>"))
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-core")
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-jdbc")
-    // 이 서비스가 사용하면 -r2dbc 및/또는 -cache도 선택합니다.
+    // 필요하면 -r2dbc, -cache, -tenant-jdbc/-tenant-r2dbc도 선택합니다.
 }
 ```
+
+Tenant 기반 transaction routing은 opt-in이며 backend별로 제공합니다. JDBC에는
+`bluetape4k-exposed-ktor-tenant-jdbc`, R2DBC에는
+`bluetape4k-exposed-ktor-tenant-r2dbc`를 해당 backend adapter와 함께 추가하세요.
+tenant transaction helper를 호출하기 전에 검증한 `TenantId`를
+`KtorTenantContext`에 bind해야 하며, resolver는 호출자가 소유하는 exact-match,
+O(1), non-blocking lookup이어야 합니다.
 
 `bluetape4k-exposed-ktor`는 compatibility aggregator로 유지됩니다. 2.0
 migration window 동안 기존 import는 계속 동작하므로 backend별로 하나씩 옮겨

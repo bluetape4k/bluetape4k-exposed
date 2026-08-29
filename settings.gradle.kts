@@ -184,6 +184,8 @@ includeMappedModule("ktor/core", "bluetape4k-exposed-ktor-core")
 includeMappedModule("ktor/jdbc", "bluetape4k-exposed-ktor-jdbc")
 includeMappedModule("ktor/r2dbc", "bluetape4k-exposed-ktor-r2dbc")
 includeMappedModule("ktor/cache", "bluetape4k-exposed-ktor-cache")
+includeMappedModule("ktor/tenant-jdbc", "bluetape4k-exposed-ktor-tenant-jdbc")
+includeMappedModule("ktor/tenant-r2dbc", "bluetape4k-exposed-ktor-tenant-r2dbc")
 
 includeMappedModule("spring-boot/jdbc", "bluetape4k-exposed-spring-boot-jdbc")
 includeMappedModule("spring-boot/common", "bluetape4k-exposed-spring-boot-common")

@@ -846,6 +846,8 @@ tasks.register("checkKtorDependencyBoundary") {
         ":bluetape4k-exposed-ktor-jdbc",
         ":bluetape4k-exposed-ktor-r2dbc",
         ":bluetape4k-exposed-ktor-cache",
+        ":bluetape4k-exposed-ktor-tenant-jdbc",
+        ":bluetape4k-exposed-ktor-tenant-r2dbc",
     )
     dependsOn(
         selectivePaths.flatMap { path ->
@@ -907,6 +909,8 @@ tasks.register("checkKtorDependencyBoundary") {
             ":bluetape4k-exposed-ktor-jdbc" to "jdbc",
             ":bluetape4k-exposed-ktor-r2dbc" to "r2dbc",
             ":bluetape4k-exposed-ktor-cache" to "cache",
+            ":bluetape4k-exposed-ktor-tenant-jdbc" to "tenant-jdbc",
+            ":bluetape4k-exposed-ktor-tenant-r2dbc" to "tenant-r2dbc",
         )
         check(moduleNameByPath.values.all { it in moduleCoordinates }) {
             "Ktor dependency allowlist is missing a selective module definition"
@@ -1140,8 +1144,8 @@ val productionAbiProjects = publishableProjects
     .filterNot { it.name == "bluetape4k-exposed-bom" }
     .sortedBy(Project::getPath)
 
-check(productionAbiProjects.size == 42) {
-    "Production ABI publication inventory must contain 42 JVM modules, found ${productionAbiProjects.size}"
+check(productionAbiProjects.size == 44) {
+    "Production ABI publication inventory must contain 44 JVM modules, found ${productionAbiProjects.size}"
 }
 
 val productionAbiCheckTasks = productionAbiProjects.map { project ->
