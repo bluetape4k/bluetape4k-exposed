@@ -43,5 +43,5 @@ metric registry를 만들거나 닫지 않으므로 lifecycle은 애플리케이
 실패를 `tenant_resolution_failed`로 분류하세요. 로그와 metric에 raw tenant
 식별자, header, URL, SQL, credential을 넣지 마세요.
 
-[모듈 매뉴얼](../../docs/manual/ko/modules/bluetape4k-exposed-ktor-tenant-jdbc.md)을
+[모듈 매뉴얼](https://bluetape4k.github.io/ko/manual/bluetape4k-exposed/1.12/modules/bluetape4k-exposed-ktor-tenant-jdbc/)을
 참고하세요.

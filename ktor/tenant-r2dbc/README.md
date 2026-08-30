@@ -41,4 +41,4 @@ failures as `tenant_resolution_failed`. Cancellation, exception propagation,
 and transaction metrics remain those of the existing R2DBC helper. Do not put
 raw tenant identifiers, headers, URLs, SQL, or credentials in logs or metrics.
 
-See the [module manual](../../docs/manual/en/modules/bluetape4k-exposed-ktor-tenant-r2dbc.md).
+See the [module manual](https://bluetape4k.github.io/manual/bluetape4k-exposed/1.12/modules/bluetape4k-exposed-ktor-tenant-r2dbc/).

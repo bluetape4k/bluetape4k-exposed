@@ -43,4 +43,4 @@ Compose the existing `StatusPages` policy in the application to classify
 failures as `tenant_resolution_failed`. Do not put raw tenant identifiers,
 headers, URLs, SQL, or credentials in logs or metrics.
 
-See the [module manual](../../docs/manual/en/modules/bluetape4k-exposed-ktor-tenant-jdbc.md).
+See the [module manual](https://bluetape4k.github.io/manual/bluetape4k-exposed/1.12/modules/bluetape4k-exposed-ktor-tenant-jdbc/).

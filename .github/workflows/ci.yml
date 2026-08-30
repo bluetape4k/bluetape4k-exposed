@@ -361,6 +361,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Checkout central manual site
+        uses: actions/checkout@v7
+        with:
+          repository: bluetape4k/bluetape4k.github.io
+          ref: develop
+          path: .manual-site
+          fetch-depth: 1
+
       - name: Verify changed paths stay in the docs-only boundary
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -384,7 +392,9 @@ jobs:
           done <<< "$changed"
 
       - name: Validate README migration parity
-        run: ruby scripts/manual/validate_migration_readme_parity.rb README.md README.ko.md
+        run: |
+          ruby .manual-site/scripts/manual/repositories/bluetape4k-exposed/validate_migration_readme_parity.rb \
+            README.md README.ko.md
 
       - name: Validate diff whitespace
         env:
@@ -399,12 +409,23 @@ jobs:
     needs: [changes]
     steps:
       - uses: actions/checkout@v7
+      - name: Checkout central manual site
+        uses: actions/checkout@v7
+        with:
+          repository: bluetape4k/bluetape4k.github.io
+          ref: develop
+          path: .manual-site
+          fetch-depth: 1
 
       - name: Verify generated manual manifest parity
         run: |
           set -euo pipefail
-          ruby scripts/manual/export_manifest.rb --check docs/manual/manifest.yaml docs/manual/generated/manifest.json
-          ruby scripts/manual/export_manifest_test.rb
+          TOOL_ROOT="$GITHUB_WORKSPACE/.manual-site/scripts/manual/repositories/bluetape4k-exposed"
+          MANUAL_ROOT="$GITHUB_WORKSPACE/.manual-site/docs/manual/bluetape4k-exposed"
+          ruby "$TOOL_ROOT/export_manifest.rb" --check \
+            "$MANUAL_ROOT/manifest.yaml" "$MANUAL_ROOT/generated/manifest.json"
+          BLUETAPE4K_EXPOSED_MANUAL_ROOT="$MANUAL_ROOT" \
+            ruby -I "$TOOL_ROOT" "$TOOL_ROOT/export_manifest_test.rb"
           git diff --check
 
   # exposed-core + exposed-dao (H2)

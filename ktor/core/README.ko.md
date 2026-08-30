@@ -9,5 +9,5 @@ implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-core")
 ```
 
 호출자가 소유한 cooperative probe와 `Route.bluetape4kExposedHealthRoutes`를
-사용하세요. [모듈 매뉴얼](../../docs/manual/ko/modules/bluetape4k-exposed-ktor-core.md)을
+사용하세요. [모듈 매뉴얼](https://bluetape4k.github.io/ko/manual/bluetape4k-exposed/1.12/modules/bluetape4k-exposed-ktor-core/)을
 참고하세요.
