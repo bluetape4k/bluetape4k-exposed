@@ -44,9 +44,11 @@ implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-jdbc
 ```
 
 The module exposes the upstream `bluetape4k-tenant` and `bluetape4k-ktor-tenant`
-contracts through its public API. Keep the dependency platform aligned with
-the `2.0.0-SNAPSHOT` development train until the upstream catalog alias is
-available.
+contracts through its public API. The central catalog aliases
+`bt4k.bluetape4k.tenant` and `bt4k.bluetape4k.ktor.tenant` are available and
+were verified at catalog commit `29d858bd22553a31709123908a2eb5c5644093b3`.
+Keep the dependency platform aligned with the `2.0.0-SNAPSHOT` development
+train.
 
 ## Quick start {#quick-start}
 
@@ -159,8 +161,8 @@ line.
 This adapter does not parse tenant headers, authenticate requests, create
 databases, migrate schemas, or provide a fallback database. Those policies
 remain application responsibilities. The upstream tenant coordinates are
-currently pinned to the verified `2.0.0-SNAPSHOT` snapshot while the dependency
-catalog alias handoff is pending.
+pinned to the verified `2.0.0-SNAPSHOT` snapshot and the immutable catalog
+commit `29d858bd22553a31709123908a2eb5c5644093b3` for this development train.
 
 ## Sources {#sources}
 

@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.ktor.tenant.r2dbc
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.ktor.core.ExposedKtorTransactionException
 import io.bluetape4k.ktor.tenant.KtorTenantContext
 import io.bluetape4k.tenant.MissingTenantContextException
@@ -12,16 +13,22 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.single
+import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
@@ -170,31 +177,87 @@ class ExposedTenantR2dbcTransactionTest {
     }
 
     @Test
-    fun `cancellation is rethrown and recorded by existing helper`() = testApplication {
-        val database = tenantDatabase("cancel")
+    fun `cancelled request does not contaminate later tenant routing`() = testApplication {
         val meterRegistry = SimpleMeterRegistry()
-        val cancellation = CancellationException("request cancelled")
+        val resolverInputs = CopyOnWriteArrayList<TenantId>()
+        val databaseResolver = recordingDatabaseResolver(resolverInputs)
+        val transactionStarted = CompletableDeferred<Unit>()
+        val transactionCompleted = CompletableDeferred<Unit>()
+        val requestJob = CompletableDeferred<Job>()
         application {
             routing {
-                get("/cancel") {
-                    KtorTenantContext.bindTenant(call, TenantId("a"))
-                    val failure = runCatching {
+                get("/cancel/{id}") {
+                    val tenantId = TenantId(requireNotNull(call.parameters["id"]))
+                    KtorTenantContext.bindTenant(call, tenantId)
+                    requestJob.complete(checkNotNull(currentCoroutineContext()[Job]))
+                    try {
                         call.exposedTenantR2dbcTransaction(
-                            databaseResolver = { database },
+                            databaseResolver = databaseResolver,
                             meterRegistry = meterRegistry,
-                        ) { throw cancellation }
-                    }.exceptionOrNull()
-                    val timerCount = meterRegistry.get("bluetape4k.exposed.ktor.core.transaction")
-                        .tag("backend", "r2dbc")
-                        .tag("outcome", "cancelled")
-                        .timer()
-                        .count()
-                    call.respondText("${failure is CancellationException}:$timerCount")
+                        ) {
+                            transactionStarted.complete(Unit)
+                            awaitCancellation()
+                        }
+                    } finally {
+                        transactionCompleted.complete(Unit)
+                    }
+                }
+                get("/tenant/{id}") {
+                    val tenantId = TenantId(requireNotNull(call.parameters["id"]))
+                    KtorTenantContext.bindTenant(call, tenantId)
+                    val marker = call.exposedTenantR2dbcTransaction(
+                        databaseResolver = databaseResolver,
+                        meterRegistry = meterRegistry,
+                    ) {
+                        checkNotNull(exec("SELECT marker FROM tenant_marker") { row ->
+                            row.get(0, String::class.java)
+                        }!!.single())
+                    }
+                    call.respondText(marker)
                 }
             }
         }
 
-        client.get("/cancel").bodyAsText() shouldBeEqualTo "true:1"
+        coroutineScope {
+            val request = async { client.get("/cancel/a") }
+            withTimeout(5_000) { transactionStarted.await() }
+            val serverRequest = withTimeout(5_000) { requestJob.await() }
+            serverRequest.cancelAndJoin()
+            serverRequest.isCancelled.shouldBeTrue()
+            withTimeout(5_000) { transactionCompleted.await() }
+            request.cancelAndJoin()
+        }
+
+        client.get("/tenant/b").bodyAsText() shouldBeEqualTo "tenant-b"
+        client.get("/tenant/a").bodyAsText() shouldBeEqualTo "tenant-a"
+        resolverInputs.toList() shouldBeEqualTo listOf(TenantId("a"), TenantId("b"), TenantId("a"))
+        assertTransactionMetrics(meterRegistry)
+    }
+
+    private fun assertTransactionMetrics(meterRegistry: SimpleMeterRegistry) {
+        meterRegistry.get("bluetape4k.exposed.ktor.core.transaction")
+            .tag("backend", "r2dbc")
+            .tag("outcome", "cancelled")
+            .timer()
+            .count() shouldBeEqualTo 1L
+        meterRegistry.get("bluetape4k.exposed.ktor.core.transaction")
+            .tag("backend", "r2dbc")
+            .tag("outcome", "success")
+            .timer()
+            .count() shouldBeEqualTo 2L
+    }
+
+    private suspend fun recordingDatabaseResolver(
+        resolverInputs: MutableList<TenantId>,
+    ): (TenantId) -> R2dbcDatabase {
+        val databases = mapOf(
+            TenantId("a") to tenantDatabase("tenant-a"),
+            TenantId("b") to tenantDatabase("tenant-b"),
+        )
+        return { tenantId ->
+            resolverInputs += tenantId
+            databases.getValue(tenantId)
+        }
     }
 
     private suspend fun tenantDatabase(marker: String): R2dbcDatabase {
