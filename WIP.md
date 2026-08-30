@@ -15,7 +15,8 @@ TenantContext 기반 Ktor JDBC/R2DBC transaction bridge가 이슈
 현재 `develop`을 대상으로 한 열린 구현 PR은 없습니다. 문서 동기화 PR은 이
 구현 상태와 별도로 열릴 수 있습니다.
 
-현재 열려 있는 작업은 공개 릴리스 이후 매뉴얼 승격 handoff뿐입니다.
+`2.0.0` 구현 대기열에서 현재 추적하는 작업은 공개 릴리스 이후 매뉴얼 승격
+handoff뿐입니다.
 
 | 우선순위 | 이슈 | Milestone | 다음 조건 |
 |---|---|---|---|
