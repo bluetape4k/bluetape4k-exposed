@@ -28,6 +28,7 @@ Column codec, 데이터베이스별 helper, Spring Boot 4 자동 설정을 더�
 - **암호화** — Google Tink 기반 암호화 Column
 - **DB 특화 확장** — PostgreSQL, MySQL 8, BigQuery, ClickHouse, Trino, StarRocks, CockroachDB, DuckDB, Timefold persistence 헬퍼
 - **Ktor** — 호출자가 소유한 Exposed JDBC/R2DBC resource, readiness route, 안전한 status page를 위한 명시적 Ktor helper
+- **멀티테넌트 Ktor** — 기본 tenant fallback 없이 exact-match resolver를 사용하는 opt-in `TenantContext` 기반 JDBC/R2DBC transaction routing
 - **Spring Boot** — Spring Boot 4.x 자동 설정 (JDBC, R2DBC, Batch, Spring Modulith JDBC 이벤트 발행 통합)
 - **측정 단위 Column** — `bluetape4k-measured` 단위를 위한 Exposed Custom ColumnType
 
@@ -43,15 +44,25 @@ Column codec, 데이터베이스별 helper, Spring Boot 4 자동 설정을 더�
 
 ## 매뉴얼
 
-저장소의 `docs/manual/`이 안정판 1.11 문서의 기준입니다.
+저장소의 `docs/manual/`이 안정판 1.12.1 문서의 기준입니다.
 
 - [매뉴얼 개요](docs/manual/ko/index.md)
 - [시작하기](docs/manual/ko/getting-started.md)
 - [모듈 목록과 학습 경로](docs/manual/ko/guides/learning-path.md)
 
-배포된 Gradle 프로젝트 40개를 모두 다루며, 소유권 경계, 실행 예제, 실패 진단,
-운영 고려 사항, 배포본에 고정한 소스 링크를 영어와 한국어로 제공합니다. README는
-간단한 입구로 유지하고 상세 동작은 `docs/manual/`에서 설명합니다.
+배포 기준 프로젝트와 예제를 소유권 경계, 실행 예제, 실패 진단, 운영 고려 사항,
+배포본에 고정한 소스 링크와 함께 영어와 한국어로 제공합니다. 개발 전용 모듈은
+별도로 표시합니다. README는 간단한 입구로 유지하고 상세 동작은 `docs/manual/`에서
+설명합니다.
+
+## 릴리스 경계
+
+- **최신 안정판:** `1.12.1` (2026-08-06). 현재 release-pinned 매뉴얼은 이 ref를 사용합니다.
+- **현재 개발선:** `develop`의 `2.0.0`. TenantContext Ktor adapter와 완료된 train 변경은
+  소스에서 확인할 수 있지만 `2.0.0`은 아직 공개 배포되지 않았습니다.
+- 공개 `2.0.0` tag, Maven artifact, GitHub Release가 준비될 때까지 안정판 매뉴얼 anchor는
+  `1.12.1`로 유지합니다. 승격 작업은 [#651](https://github.com/bluetape4k/bluetape4k-exposed/issues/651)과
+  [#662](https://github.com/bluetape4k/bluetape4k-exposed/issues/662)에서 추적합니다.
 
 ## 모듈 목록
 
@@ -85,9 +96,18 @@ Column codec, 데이터베이스별 helper, Spring Boot 4 자동 설정을 더�
 | `exposed-duckdb` | DuckDB embedded analytics 지원 |
 | `exposed-druid` | Apache Druid query-only Avatica JDBC 실험 |
 | `exposed-timefold-solver-persistence` | Timefold Score 값을 위한 Exposed 컬럼 매핑 |
+| `exposed-batch` | Batch utility 호환성 aggregator |
+| `exposed-batch-core` | Backend-neutral batch 계약과 in-memory repository |
+| `exposed-batch-jdbc` | JDBC batch table, mapper, reader, writer |
+| `exposed-batch-r2dbc` | R2DBC batch table, mapper, reader, writer |
 | `exposed-ktor` | 명시적 Exposed JDBC/R2DBC 트랜잭션, readiness route, status page용 Ktor 통합 |
+| `exposed-ktor-core` | Backend-neutral Ktor 계약, error response, health/readiness route |
+| `exposed-ktor-jdbc` | JDBC 전용 Ktor transaction bridge |
+| `exposed-ktor-r2dbc` | R2DBC 전용 coroutine-native Ktor transaction bridge |
+| `exposed-ktor-cache` | Ktor cache health 및 metrics 통합 |
 | `exposed-ktor-tenant-jdbc` | Ktor TenantContext 기반 JDBC transaction routing |
 | `exposed-ktor-tenant-r2dbc` | Ktor TenantContext 기반 coroutine-native R2DBC transaction routing |
+| `exposed-spring-boot-common` | Spring Data annotation, mapping, query planning 공통 모듈 |
 | `exposed-spring-boot-jdbc` | Spring Boot 4.x JDBC 자동 설정 |
 | `exposed-spring-boot-r2dbc` | Spring Boot 4.x R2DBC 자동 설정 |
 | `exposed-spring-boot-batch` | Spring Boot 4.x Batch 통합 |
@@ -656,7 +676,7 @@ SQL, credential을 log나 tag에 넣지 않으며 resource 종료도 소유하�
 
 - JVM 25+
 - Kotlin 2.4+
-- JetBrains Exposed 1.3+
+- JetBrains Exposed 1.4+
 
 ## 라이선스
 

@@ -9,6 +9,12 @@
 
 ### 추가됨
 
+- Ktor `ApplicationCall`에 binding된 `TenantId`를 검증된 exact-match resolver로 전달하는
+  opt-in `bluetape4k-exposed-ktor-tenant-jdbc` 및
+  `bluetape4k-exposed-ktor-tenant-r2dbc` transaction adapter를 추가했습니다. JDBC는
+  애플리케이션 소유 blocking dispatcher를 사용하고 R2DBC는 coroutine-native로 실행하며,
+  알 수 없는 tenant를 기본 database로 fallback하지 않습니다
+  ([#763](https://github.com/bluetape4k/bluetape4k-exposed/issues/763)).
 - Spring Data JDBC와 R2DBC가 공유하는 annotation, mapping, query planning, sort 변환을
   `bluetape4k-exposed-spring-boot-common`으로 분리하고 BOM·manual·CI coverage를 등록했습니다
   ([#729](https://github.com/bluetape4k/bluetape4k-exposed/issues/729)).
@@ -23,6 +29,18 @@
 
 ### 변경됨
 
+- Ktor integration을 backend-selective child artifact로 분리하고 dependency allowlist와
+  generated manifest parity를 fail-closed로 검증하도록 정리했습니다
+  ([#748](https://github.com/bluetape4k/bluetape4k-exposed/issues/748),
+  [#762](https://github.com/bluetape4k/bluetape4k-exposed/issues/762)).
+- batch utility의 core·JDBC·R2DBC artifact ownership을 분리하고, 성공적으로 커밋된
+  chunk 뒤 `FAILED`된 실행의 checkpoint 보존과 재시작 경계를 정렬했습니다
+  ([#746](https://github.com/bluetape4k/bluetape4k-exposed/issues/746),
+  [#747](https://github.com/bluetape4k/bluetape4k-exposed/issues/747),
+  [#758](https://github.com/bluetape4k/bluetape4k-exposed/issues/758)).
+- Caffeine cache repository의 lifecycle coordinator와 backend conformance suite를
+  공통 경계로 정리했습니다
+  ([#755](https://github.com/bluetape4k/bluetape4k-exposed/issues/755)).
 - R2DBC Spring Data adapter가 JDBC adapter와 `spring-jdbc` 없이 common SPI만 사용하도록
   dependency 경계를 고정했으며, 기존 JDBC public symbol은 descriptor를 보존하는 deprecated
   facade로 유지했습니다
@@ -35,10 +53,23 @@
 
 ### 버그 수정
 
+- R2DBC Redisson 예외 로그에서 원문과 stack trace가 노출되지 않도록 정리하고,
+  `EntityMapLoader` 테스트가 테이블을 격리하도록 보강했습니다
+  ([#759](https://github.com/bluetape4k/bluetape4k-exposed/issues/759),
+  [#760](https://github.com/bluetape4k/bluetape4k-exposed/issues/760)).
+- CodeQL Gradle 검증을 configuration-cache 환경에서도 strict task로 실행하도록
+  수정했습니다
+  ([#757](https://github.com/bluetape4k/bluetape4k-exposed/issues/757)).
 - batch가 성공적으로 커밋한 청크 뒤에 `FAILED`되어도 마지막 checkpoint를 보존하고,
   동일 parameters 재시작이 그 key 다음부터 이어지도록 InMemory/JDBC/R2DBC 완료 갱신과
   취소 전파 계약을 정렬했습니다
   ([#745](https://github.com/bluetape4k/bluetape4k-exposed/issues/745)).
+
+### 문서화
+
+- Ktor child module의 generated manifest가 실제 모듈 경계와 일치하는지 CI에서 검증하도록
+  문서 계약을 보강했습니다
+  ([#761](https://github.com/bluetape4k/bluetape4k-exposed/issues/761)).
 
 ## [1.12.1] - 2026-08-06
 
