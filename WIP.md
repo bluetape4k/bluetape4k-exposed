@@ -12,7 +12,8 @@
 TenantContext 기반 Ktor JDBC/R2DBC transaction bridge가 이슈
 [#763](https://github.com/bluetape4k/bluetape4k-exposed/issues/763) 및 PR
 [#764](https://github.com/bluetape4k/bluetape4k-exposed/pull/764)로 병합되었고,
-현재 `develop`에는 열린 PR이 없습니다.
+현재 `develop`을 대상으로 한 열린 구현 PR은 없습니다. 문서 동기화 PR은 이
+구현 상태와 별도로 열릴 수 있습니다.
 
 현재 열려 있는 작업은 공개 릴리스 이후 매뉴얼 승격 handoff뿐입니다.
 
