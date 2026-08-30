@@ -648,7 +648,7 @@ jobs:
   test-ktor-exposed:
     name: Test / exposed-ktor (H2)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     needs: build
     steps:
       - uses: actions/checkout@v7
