@@ -29,6 +29,7 @@ auto-configuration only where the application data path needs them.
 - **Encryption** — Google Tink-based encrypted columns
 - **Database-specific Extensions** — PostgreSQL, MySQL 8, BigQuery, ClickHouse, Trino, StarRocks, CockroachDB, DuckDB, and Timefold persistence helpers
 - **Ktor** — Explicit Ktor helpers for caller-owned Exposed JDBC/R2DBC resources, readiness routes, and safe status pages
+- **Multi-tenant Ktor** — Opt-in `TenantContext`-based JDBC/R2DBC transaction routing with exact-match resolution and no default fallback
 - **Spring Boot** — Spring Boot 4.x auto-configuration (JDBC, R2DBC, Batch, and Spring Modulith JDBC event publication integration)
 - **Measured Columns** — Exposed custom column types for `bluetape4k-measured` units
 
@@ -44,16 +45,26 @@ auto-configuration only where the application data path needs them.
 
 ## Manual
 
-The repository-owned manual is the source of truth for the stable 1.11 line:
+The repository-owned manual is the source of truth for the stable 1.12.1 line:
 
 - [Manual overview](docs/manual/en/index.md)
 - [Getting started](docs/manual/en/getting-started.md)
 - [Module inventory and learning path](docs/manual/en/guides/learning-path.md)
 
-It covers all 40 released Gradle projects in English and Korean, including
+It covers release-backed projects and examples in English and Korean, including
 ownership boundaries, runnable examples, failure diagnosis, operations, and
-release-pinned source links. README files remain concise entry points; detailed
-behavior belongs in `docs/manual/`.
+release-pinned source links. Develop-only modules are marked separately. README
+files remain concise entry points; detailed behavior belongs in `docs/manual/`.
+
+## Release lines
+
+- **Latest stable:** `1.12.1` (2026-08-06). The release-pinned manual currently uses this ref.
+- **Current development:** `2.0.0` on `develop`. TenantContext Ktor adapters and the other
+  completed train changes are available from the source line, but `2.0.0` has not been
+  published yet.
+- The stable manual anchor remains `1.12.1` until the public `2.0.0` tag, Maven artifact,
+  and GitHub Release are available. Follow [#651](https://github.com/bluetape4k/bluetape4k-exposed/issues/651)
+  and [#662](https://github.com/bluetape4k/bluetape4k-exposed/issues/662) for that promotion.
 
 ## Modules
 
@@ -87,9 +98,18 @@ behavior belongs in `docs/manual/`.
 | `exposed-duckdb` | DuckDB embedded analytics support |
 | `exposed-druid` | Apache Druid query-only Avatica JDBC experiment |
 | `exposed-timefold-solver-persistence` | Exposed column mappings for Timefold Score values |
+| `exposed-batch` | Compatibility aggregator for batch utilities |
+| `exposed-batch-core` | Backend-neutral batch contracts and in-memory repository |
+| `exposed-batch-jdbc` | JDBC batch tables, mappers, readers, and writers |
+| `exposed-batch-r2dbc` | R2DBC batch tables, mappers, readers, and writers |
 | `exposed-ktor` | Ktor integration for explicit Exposed JDBC/R2DBC transactions, readiness routes, and status pages |
+| `exposed-ktor-core` | Backend-neutral Ktor contracts, error responses, and health/readiness routes |
+| `exposed-ktor-jdbc` | JDBC-specific Ktor transaction bridge |
+| `exposed-ktor-r2dbc` | R2DBC-specific coroutine-native Ktor transaction bridge |
+| `exposed-ktor-cache` | Ktor cache health and metrics integration |
 | `exposed-ktor-tenant-jdbc` | TenantContext-based JDBC transaction routing for Ktor |
 | `exposed-ktor-tenant-r2dbc` | TenantContext-based coroutine-native R2DBC transaction routing for Ktor |
+| `exposed-spring-boot-common` | Shared Spring Data annotations, mapping, and query planning |
 | `exposed-spring-boot-jdbc` | Spring Boot 4.x JDBC auto-configuration |
 | `exposed-spring-boot-r2dbc` | Spring Boot 4.x R2DBC auto-configuration |
 | `exposed-spring-boot-batch` | Spring Boot 4.x batch integration |
@@ -664,7 +684,7 @@ and [tenant R2DBC manual](docs/manual/en/modules/bluetape4k-exposed-ktor-tenant-
 
 - JVM 25+
 - Kotlin 2.4+
-- JetBrains Exposed 1.3+
+- JetBrains Exposed 1.4+
 
 ## License
 
