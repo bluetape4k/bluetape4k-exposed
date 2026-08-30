@@ -626,6 +626,52 @@
       "workshops": []
     },
     {
+      "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-jdbc",
+      "en": "en/modules/bluetape4k-exposed-ktor-tenant-jdbc.md",
+      "gradlePath": ":bluetape4k-exposed-ktor-tenant-jdbc",
+      "group": "integration",
+      "id": "bluetape4k-exposed-ktor-tenant-jdbc",
+      "kind": "library",
+      "ko": "ko/modules/bluetape4k-exposed-ktor-tenant-jdbc.md",
+      "releaseStatus": "develop-only",
+      "sourceDir": "ktor/tenant-jdbc",
+      "sourcePaths": [
+        "ktor/tenant-jdbc/src/main/kotlin"
+      ],
+      "testPaths": [
+        "ktor/tenant-jdbc/src/test/kotlin",
+        "ktor/tenant-jdbc/src/test/resources"
+      ],
+      "title": {
+        "en": "Exposed Ktor Tenant JDBC Adapter",
+        "ko": "Exposed Ktor Tenant JDBC 어댑터"
+      },
+      "workshops": []
+    },
+    {
+      "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-r2dbc",
+      "en": "en/modules/bluetape4k-exposed-ktor-tenant-r2dbc.md",
+      "gradlePath": ":bluetape4k-exposed-ktor-tenant-r2dbc",
+      "group": "integration",
+      "id": "bluetape4k-exposed-ktor-tenant-r2dbc",
+      "kind": "library",
+      "ko": "ko/modules/bluetape4k-exposed-ktor-tenant-r2dbc.md",
+      "releaseStatus": "develop-only",
+      "sourceDir": "ktor/tenant-r2dbc",
+      "sourcePaths": [
+        "ktor/tenant-r2dbc/src/main/kotlin"
+      ],
+      "testPaths": [
+        "ktor/tenant-r2dbc/src/test/kotlin",
+        "ktor/tenant-r2dbc/src/test/resources"
+      ],
+      "title": {
+        "en": "Exposed Ktor Tenant R2DBC Adapter",
+        "ko": "Exposed Ktor Tenant R2DBC 어댑터"
+      },
+      "workshops": []
+    },
+    {
       "artifact": "io.github.bluetape4k.exposed:bluetape4k-exposed-measured",
       "en": "en/modules/bluetape4k-exposed-measured.md",
       "gradlePath": ":bluetape4k-exposed-measured",
