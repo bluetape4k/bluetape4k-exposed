@@ -1,17 +1,11 @@
 dependencies {
-    val bluetape4kBomVersion = rootProject.extensions.getByType<org.gradle.api.artifacts.VersionCatalogsExtension>()
-        .named("bt4k")
-        .findVersion("bluetape4k-bom")
-        .get()
-        .requiredVersion
-
     api(platform(bt4k.ktor.bom))
     api(platform(bt4k.exposed.bom))
     api(platform(bt4k.kotlinx.coroutines.bom))
 
     api(project(":bluetape4k-exposed-ktor-r2dbc"))
-    api("io.github.bluetape4k:bluetape4k-tenant:$bluetape4kBomVersion")
-    api("io.github.bluetape4k:bluetape4k-ktor-tenant:$bluetape4kBomVersion")
+    api(bt4k.bluetape4k.tenant)
+    api(bt4k.bluetape4k.ktor.tenant)
     api(libs.kotlinx.coroutines.core)
 
     testImplementation(bt4k.bluetape4k.ktor.testing)
