@@ -654,7 +654,7 @@ jobs:
   test-ktor-exposed:
     name: Test / exposed-ktor (H2)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     needs: [build, changes]
     if: ${{ needs.changes.outputs.ktor == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
