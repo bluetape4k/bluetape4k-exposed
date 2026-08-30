@@ -13,11 +13,15 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.withTimeout
 import org.h2.jdbcx.JdbcDataSource
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -26,6 +30,8 @@ import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -207,35 +213,87 @@ class ExposedTenantJdbcTransactionTest {
     }
 
     @Test
-    fun `cancellation is rethrown and recorded by existing helper`() = testApplication {
+    fun `cancelled request does not contaminate later tenant routing`() = testApplication {
         val dispatcher = newDispatcher()
         val meterRegistry = SimpleMeterRegistry()
-        val cancellation = CancellationException("request cancelled")
+        val resolverInputs = CopyOnWriteArrayList<TenantId>()
+        val databaseResolver = recordingDatabaseResolver(resolverInputs)
+        val transactionStarted = CompletableDeferred<Unit>()
+        val transactionCompleted = CompletableDeferred<Unit>()
+        val requestJob = CompletableDeferred<Job>()
         try {
             application {
                 routing {
-                    get("/cancel") {
-                        KtorTenantContext.bindTenant(call, TenantId("a"))
-                        val failure = runCatching {
+                    get("/cancel/{id}") {
+                        val tenantId = TenantId(requireNotNull(call.parameters["id"]))
+                        KtorTenantContext.bindTenant(call, tenantId)
+                        requestJob.complete(checkNotNull(currentCoroutineContext()[Job]))
+                        try {
                             call.exposedTenantJdbcTransaction(
-                                databaseResolver = { tenantDatabase("cancel") },
+                                databaseResolver = databaseResolver,
                                 blockingDispatcher = dispatcher,
                                 meterRegistry = meterRegistry,
-                            ) { throw cancellation }
-                        }.exceptionOrNull()
-                        val timerCount = meterRegistry.get("bluetape4k.exposed.ktor.core.transaction")
-                            .tag("backend", "jdbc")
-                            .tag("outcome", "cancelled")
-                            .timer()
-                            .count()
-                        call.respondText("${failure is CancellationException}:$timerCount")
+                            ) {
+                                transactionStarted.complete(Unit)
+                                CountDownLatch(1).await()
+                            }
+                        } finally {
+                            transactionCompleted.complete(Unit)
+                        }
+                    }
+                    get("/tenant/{id}") {
+                        val tenantId = TenantId(requireNotNull(call.parameters["id"]))
+                        KtorTenantContext.bindTenant(call, tenantId)
+                        val marker = call.exposedTenantJdbcTransaction(
+                            databaseResolver = databaseResolver,
+                            blockingDispatcher = dispatcher,
+                            meterRegistry = meterRegistry,
+                        ) { TenantMarkers.selectAll().single()[TenantMarkers.marker] }
+                        call.respondText(marker)
                     }
                 }
             }
 
-            client.get("/cancel").bodyAsText() shouldBeEqualTo "true:1"
+            coroutineScope {
+                val request = async { client.get("/cancel/a") }
+                withTimeout(5_000) { transactionStarted.await() }
+                val serverRequest = withTimeout(5_000) { requestJob.await() }
+                serverRequest.cancelAndJoin()
+                serverRequest.isCancelled.shouldBeTrue()
+                withTimeout(5_000) { transactionCompleted.await() }
+                request.cancelAndJoin()
+            }
+
+            client.get("/tenant/b").bodyAsText() shouldBeEqualTo "tenant-b"
+            client.get("/tenant/a").bodyAsText() shouldBeEqualTo "tenant-a"
+            resolverInputs.toList() shouldBeEqualTo listOf(TenantId("a"), TenantId("b"), TenantId("a"))
+            assertTransactionMetrics(meterRegistry)
         } finally {
             dispatcher.close()
+        }
+    }
+
+    private fun assertTransactionMetrics(meterRegistry: SimpleMeterRegistry) {
+        meterRegistry.get("bluetape4k.exposed.ktor.core.transaction")
+            .tag("backend", "jdbc")
+            .tag("outcome", "cancelled")
+            .timer()
+            .count() shouldBeEqualTo 1L
+        meterRegistry.get("bluetape4k.exposed.ktor.core.transaction")
+            .tag("backend", "jdbc")
+            .tag("outcome", "success")
+            .timer()
+            .count() shouldBeEqualTo 2L
+    }
+
+    private fun recordingDatabaseResolver(resolverInputs: MutableList<TenantId>): (TenantId) -> Database {
+        val databases = mapOf(
+            TenantId("a") to tenantDatabase("tenant-a"),
+            TenantId("b") to tenantDatabase("tenant-b"),
+        )
+        return { tenantId ->
+            resolverInputs += tenantId
+            databases.getValue(tenantId)
         }
     }
 

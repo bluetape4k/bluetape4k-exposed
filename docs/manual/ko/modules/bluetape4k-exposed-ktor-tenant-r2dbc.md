@@ -44,8 +44,10 @@ implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-r2db
 ```
 
 모듈의 public API는 upstream `bluetape4k-tenant`와 `bluetape4k-ktor-tenant`
-계약을 노출합니다. upstream catalog alias가 준비될 때까지 `2.0.0-SNAPSHOT`
-개발 train과 dependency platform을 맞추세요.
+계약을 노출합니다. 중앙 catalog alias `bt4k.bluetape4k.tenant`와
+`bt4k.bluetape4k.ktor.tenant`는 준비되었으며 catalog commit
+`29d858bd22553a31709123908a2eb5c5644093b3`에서 검증했습니다.
+`2.0.0-SNAPSHOT` 개발 train과 dependency platform을 맞추세요.
 
 ## 빠르게 시작하기 {#quick-start}
 
@@ -152,8 +154,9 @@ routing, concurrent call 격리와 취소 재전파를 검증하세요. 먼저 H
 
 이 어댑터는 tenant header parsing, request authentication, database 생성,
 schema migration 또는 fallback database를 제공하지 않습니다. 이 정책들은
-애플리케이션 책임입니다. dependency catalog alias handoff가 끝날 때까지
-upstream tenant 좌표는 검증된 `2.0.0-SNAPSHOT` snapshot에 고정합니다.
+애플리케이션 책임입니다. 이 개발 train의 upstream tenant 좌표는 검증된
+`2.0.0-SNAPSHOT` snapshot과 immutable catalog commit
+`29d858bd22553a31709123908a2eb5c5644093b3`에 고정합니다.
 
 ## 출처 {#sources}
 
