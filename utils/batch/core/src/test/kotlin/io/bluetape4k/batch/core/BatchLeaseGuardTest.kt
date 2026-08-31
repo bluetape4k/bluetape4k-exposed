@@ -231,6 +231,55 @@ class BatchLeaseGuardTest {
     }
 
     @Test
+    fun `renewal이 mutex를 점유한 cleanup timeout 뒤 diagnostic snapshot은 대기하지 않는다`() = runTest {
+        val delegate = InMemoryBatchJobRepository()
+        val job = delegate.findOrCreateJobExecution("stalledRenewalJob")
+        val claimedJob = delegate.claimJobExecution(job, "owner-1", Duration.ofSeconds(30)).shouldNotBeNull()
+        val renewalStarted = CompletableDeferred<Unit>()
+        val releaseRenewal = CompletableDeferred<Unit>()
+        val repository = object : BatchJobRepository by delegate {
+            override suspend fun renewExecutionLeases(
+                jobExecution: JobExecution,
+                stepExecution: StepExecution?,
+                leaseDuration: Duration,
+            ): BatchExecutionLeaseSnapshot {
+                renewalStarted.complete(Unit)
+                withContext(NonCancellable) {
+                    releaseRenewal.await()
+                }
+                return BatchExecutionLeaseSnapshot(
+                    jobExecution = jobExecution.copy(version = jobExecution.version + 1L),
+                    stepExecution = stepExecution,
+                )
+            }
+        }
+        val guard = BatchLeaseGuard(
+            repository = repository,
+            ownerId = "owner-1",
+            executionLease = Duration.ofSeconds(30),
+            initialJobExecution = claimedJob,
+            initialStepExecution = null,
+            pause = {},
+        )
+        val heartbeat = guard.startHeartbeat(this)
+        renewalStarted.await()
+
+        try {
+            assertFailsWith<LeaseLostException> {
+                guard.stopHeartbeat()
+            }
+
+            val diagnostic = withTimeout(100L) {
+                guard.latestSnapshotForDiagnostics()
+            }
+            diagnostic.jobExecution shouldBeEqualTo claimedJob
+        } finally {
+            releaseRenewal.complete(Unit)
+            heartbeat.join()
+        }
+    }
+
+    @Test
     fun `상위 timeout은 lease loss로 변환하지 않고 그대로 전파한다`() = runTest {
         val delegate = InMemoryBatchJobRepository()
         val job = delegate.findOrCreateJobExecution("outerTimeoutJob")

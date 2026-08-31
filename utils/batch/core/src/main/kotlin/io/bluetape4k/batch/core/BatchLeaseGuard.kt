@@ -52,6 +52,8 @@ internal class BatchLeaseGuard(
     private val leaseNanos = timing.leaseMillis * NANOS_PER_MILLISECOND
     private var latestJobExecution = initialJobExecution
     private var latestStepExecution = initialStepExecution
+    @Volatile
+    private var diagnosticSnapshot = BatchExecutionLeaseSnapshot(initialJobExecution, initialStepExecution)
     private var jobDeadlineNanos = deadlineFrom(initialClaimStartedNanos ?: monotonicClock.nowNanos())
     private var stepDeadlineNanos = latestStepExecution?.let { jobDeadlineNanos }
     @Volatile
@@ -119,6 +121,7 @@ internal class BatchLeaseGuard(
             "Checkpoint update does not belong to the current lease"
         }
         latestStepExecution = updated
+        refreshDiagnosticSnapshot()
         updated
     }
 
@@ -181,9 +184,7 @@ internal class BatchLeaseGuard(
      * CAS 입력으로 사용해서는 안 된다. 호출자는 owner와 lease를 public report에
      * 복사하지 않는 sanitized projection을 만들어야 한다.
      */
-    suspend fun latestSnapshotForDiagnostics(): BatchExecutionLeaseSnapshot = mutex.withLock {
-        snapshotLocked()
-    }
+    fun latestSnapshotForDiagnostics(): BatchExecutionLeaseSnapshot = diagnosticSnapshot
 
     /** checkpoint readback으로 증가한 Step version을 guard 기준 데이터에 반영한다. */
     suspend fun recordStepExecution(
@@ -202,6 +203,7 @@ internal class BatchLeaseGuard(
         }
         latestStepExecution = updated
         claimStartedNanos?.let { stepDeadlineNanos = deadlineFrom(it) }
+        refreshDiagnosticSnapshot()
     }
 
     /** 최신 Step lease를 확인한 상태에서 terminal completion을 직렬화한다. */
@@ -217,6 +219,7 @@ internal class BatchLeaseGuard(
         }
         latestStepExecution = null
         stepDeadlineNanos = null
+        refreshDiagnosticSnapshot()
     }
 
     /** 정상 Step completion 뒤 다음 Step의 Job-only lease 구간으로 전환한다. */
@@ -224,6 +227,7 @@ internal class BatchLeaseGuard(
         ensureLeaseAvailable()
         latestStepExecution = null
         stepDeadlineNanos = null
+        refreshDiagnosticSnapshot()
     }
 
     /** heartbeat가 올린 최신 Job version을 외부 completion 경계에서 사용한다. */
@@ -237,6 +241,7 @@ internal class BatchLeaseGuard(
             "JobExecution update does not belong to the current lease"
         }
         latestJobExecution = updated
+        refreshDiagnosticSnapshot()
     }
 
     /** lease loss는 하나의 canonical 상태로 기록하고 같은 예외를 재사용한다. */
@@ -289,6 +294,7 @@ internal class BatchLeaseGuard(
         }
         latestJobExecution = renewed.jobExecution
         latestStepExecution = renewed.stepExecution
+        refreshDiagnosticSnapshot()
         val deadline = deadlineFrom(callStartedNanos)
         jobDeadlineNanos = deadline
         stepDeadlineNanos = latestStepExecution?.let { deadline }
@@ -300,6 +306,10 @@ internal class BatchLeaseGuard(
 
     private fun snapshotLocked(): BatchExecutionLeaseSnapshot =
         BatchExecutionLeaseSnapshot(latestJobExecution, latestStepExecution)
+
+    private fun refreshDiagnosticSnapshot() {
+        diagnosticSnapshot = snapshotLocked()
+    }
 
     private fun minDeadlineNanos(): Long = minOf(jobDeadlineNanos, stepDeadlineNanos ?: jobDeadlineNanos)
 
