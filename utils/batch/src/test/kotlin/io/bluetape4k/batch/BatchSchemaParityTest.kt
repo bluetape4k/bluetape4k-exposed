@@ -26,8 +26,7 @@ class BatchSchemaParityTest {
     private companion object {
         const val CHECKPOINT_STORAGE_CONTRACT =
             "text:CheckpointJson.write/read:v1:typed-envelope(className,payload):allowlisted-registry"
-        const val PARAMS_HASH_STORAGE_CONTRACT =
-            "varchar(64):Map.toParamsHash:v1:SHA-256(sorted-key=value,UTF-8,lowercase-hex,empty-map-empty)"
+        const val PARAMS_HASH_STORAGE_CONTRACT = BatchParameterHash.STORAGE_CONTRACT
     }
 
     @Test

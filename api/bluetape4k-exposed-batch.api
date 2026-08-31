@@ -5,6 +5,13 @@ public final class io/bluetape4k/batch/BatchDefaults {
 	public final fun getCOMMIT_TIMEOUT-UwyO8pc ()J
 }
 
+public final class io/bluetape4k/batch/BatchParameterHash {
+	public static final field INSTANCE Lio/bluetape4k/batch/BatchParameterHash;
+	public static final field STORAGE_CONTRACT Ljava/lang/String;
+	public static final field VERSION I
+	public final fun hash (Ljava/util/Map;)Ljava/lang/String;
+}
+
 public abstract interface class io/bluetape4k/batch/CheckpointJson {
 	public static final field Companion Lio/bluetape4k/batch/CheckpointJson$Companion;
 	public abstract fun read (Ljava/lang/String;)Ljava/lang/Object;
