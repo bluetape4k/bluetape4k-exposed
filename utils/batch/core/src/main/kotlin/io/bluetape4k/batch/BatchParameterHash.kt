@@ -145,16 +145,12 @@ private class ParameterEncoder {
     }
 
     private fun encodedValue(value: Any?, depth: Int): EncodedText {
-        if (depth > BatchParameterHash.MAX_NESTING_DEPTH) {
-            throw IllegalArgumentException(
-                "Batch parameter 중첩 깊이는 ${BatchParameterHash.MAX_NESTING_DEPTH} 이하여야 합니다.",
-            )
+        require(depth <= BatchParameterHash.MAX_NESTING_DEPTH) {
+            "Batch parameter 중첩 깊이는 ${BatchParameterHash.MAX_NESTING_DEPTH} 이하여야 합니다."
         }
         totalValues += 1
-        if (totalValues > BatchParameterHash.MAX_TOTAL_VALUES) {
-            throw IllegalArgumentException(
-                "Batch parameter 전체 value 수는 ${BatchParameterHash.MAX_TOTAL_VALUES} 이하여야 합니다.",
-            )
+        require(totalValues <= BatchParameterHash.MAX_TOTAL_VALUES) {
+            "Batch parameter 전체 value 수는 ${BatchParameterHash.MAX_TOTAL_VALUES} 이하여야 합니다."
         }
 
         val type = valueType(value)
@@ -247,8 +243,8 @@ private class ParameterEncoder {
     }
 
     private inline fun <T> withContainer(container: Any, block: () -> T): T {
-        if (activeContainers.put(container, Unit) != null) {
-            throw IllegalArgumentException("Batch parameter에는 순환 참조를 사용할 수 없습니다.")
+        require(activeContainers.put(container, Unit) == null) {
+            "Batch parameter에는 순환 참조를 사용할 수 없습니다."
         }
         return try {
             block()
@@ -264,10 +260,8 @@ private class ParameterEncoder {
             is BigDecimal -> value.unscaledValue().bitLength().toLong()
             else -> return
         }
-        if (bitLength > maxBits) {
-            throw IllegalArgumentException(
-                "Batch parameter scalar UTF-8 크기는 ${BatchParameterHash.MAX_SCALAR_UTF8_BYTES} bytes 이하여야 합니다.",
-            )
+        require(bitLength <= maxBits) {
+            "Batch parameter scalar UTF-8 크기는 ${BatchParameterHash.MAX_SCALAR_UTF8_BYTES} bytes 이하여야 합니다."
         }
     }
 
@@ -279,10 +273,8 @@ private class ParameterEncoder {
     }
 
     private fun checkedScalarSize(size: Long): Long {
-        if (size > BatchParameterHash.MAX_SCALAR_UTF8_BYTES) {
-            throw IllegalArgumentException(
-                "Batch parameter scalar UTF-8 크기는 ${BatchParameterHash.MAX_SCALAR_UTF8_BYTES} bytes 이하여야 합니다.",
-            )
+        require(size <= BatchParameterHash.MAX_SCALAR_UTF8_BYTES) {
+            "Batch parameter scalar UTF-8 크기는 ${BatchParameterHash.MAX_SCALAR_UTF8_BYTES} bytes 이하여야 합니다."
         }
         return size
     }
@@ -301,11 +293,9 @@ private class ParameterEncoder {
     }
 
     private fun checkCanonicalSize(size: Long) {
-        if (size > BatchParameterHash.MAX_CANONICAL_UTF8_BYTES) {
-            throw IllegalArgumentException(
-                "Batch parameter canonical UTF-8 크기는 " +
-                    "${BatchParameterHash.MAX_CANONICAL_UTF8_BYTES} bytes 이하여야 합니다.",
-            )
+        require(size <= BatchParameterHash.MAX_CANONICAL_UTF8_BYTES) {
+            "Batch parameter canonical UTF-8 크기는 " +
+                "${BatchParameterHash.MAX_CANONICAL_UTF8_BYTES} bytes 이하여야 합니다."
         }
     }
 }
@@ -329,10 +319,8 @@ private val strictUtf8Bytes: (String) -> ByteArray = { value ->
 private val utf8Size: (String) -> Long = { value -> strictUtf8Bytes(value).size.toLong() }
 
 private fun checkContainerSize(size: Int) {
-    if (size > BatchParameterHash.MAX_CONTAINER_ITEMS) {
-        throw IllegalArgumentException(
-            "Batch parameter container 항목 수는 ${BatchParameterHash.MAX_CONTAINER_ITEMS} 이하여야 합니다.",
-        )
+    require(size <= BatchParameterHash.MAX_CONTAINER_ITEMS) {
+        "Batch parameter container 항목 수는 ${BatchParameterHash.MAX_CONTAINER_ITEMS} 이하여야 합니다."
     }
 }
 
