@@ -1,5 +1,6 @@
 package io.bluetape4k.batch.api
 
+import java.time.Duration
 import java.time.Instant
 
 /**
@@ -19,7 +20,17 @@ import java.time.Instant
  *   → 그 외는 재실행 대상
  * ```
  */
+@Suppress("TooManyFunctions")
 interface BatchJobRepository {
+    /**
+     * 이 repository가 authoritative lease claim/renewal을 지원하는지 나타낸다.
+     *
+     * custom 구현은 새 Duration API와 원자적 renewal을 모두 구현한 뒤에만 true를
+     * 선언해야 한다. 기본값은 fail-closed를 위한 false다.
+     */
+    val supportsLeaseRenewal: Boolean
+        get() = false
+
     /**
      * jobName + params 조합의 재시작 대상 [JobExecution]을 조회하거나 신규 생성한다.
      *
@@ -41,6 +52,10 @@ interface BatchJobRepository {
      *
      * 이미 다른 owner가 유효 lease로 실행 중이면 null을 반환해야 한다.
      */
+    @Deprecated(
+        message = "Use the Duration-based claimJobExecution overload",
+        replaceWith = ReplaceWith("claimJobExecution(execution, ownerId, leaseDuration)"),
+    )
     suspend fun claimJobExecution(
         execution: JobExecution,
         ownerId: String,
@@ -52,6 +67,34 @@ interface BatchJobRepository {
             leaseUntil = leaseUntil,
             version = execution.version + 1,
         )
+
+    /**
+     * authoritative clock를 사용하는 [JobExecution] lease claim.
+     *
+     * legacy Instant overload로 fallback하지 않고 unsupported repository를 명확히
+     * fail-closed 한다.
+     */
+    suspend fun claimJobExecution(
+        execution: JobExecution,
+        ownerId: String,
+        leaseDuration: Duration,
+    ): JobExecution? = throw UnsupportedOperationException(
+        "Duration-based job lease claim is not implemented by this repository",
+    )
+
+    /**
+     * Job과 현재 Step lease를 하나의 atomic transaction으로 갱신한다.
+     *
+     * [stepExecution]이 null이면 Job-only renewal이며, 경쟁·stale version·terminal
+     * 전이·lease 만료가 하나라도 있으면 양쪽 모두 변경하지 않고 null을 반환한다.
+     */
+    suspend fun renewExecutionLeases(
+        jobExecution: JobExecution,
+        stepExecution: StepExecution?,
+        leaseDuration: Duration,
+    ): BatchExecutionLeaseSnapshot? = throw UnsupportedOperationException(
+        "Atomic batch lease renewal is not implemented by this repository",
+    )
 
     /**
      * [JobExecution]을 완료 상태로 갱신한다.
@@ -86,6 +129,10 @@ interface BatchJobRepository {
      *
      * 이미 완료된 step은 claim 대상이 아니며, 이미 다른 owner가 유효 lease로 실행 중이면 null을 반환해야 한다.
      */
+    @Deprecated(
+        message = "Use the Duration-based claimStepExecution overload",
+        replaceWith = ReplaceWith("claimStepExecution(execution, ownerId, leaseDuration)"),
+    )
     suspend fun claimStepExecution(
         execution: StepExecution,
         ownerId: String,
@@ -97,6 +144,20 @@ interface BatchJobRepository {
             leaseUntil = leaseUntil,
             version = execution.version + 1,
         )
+
+    /**
+     * authoritative clock를 사용하는 [StepExecution] lease claim.
+     *
+     * legacy Instant overload로 fallback하지 않고 unsupported repository를 명확히
+     * fail-closed 한다.
+     */
+    suspend fun claimStepExecution(
+        execution: StepExecution,
+        ownerId: String,
+        leaseDuration: Duration,
+    ): StepExecution? = throw UnsupportedOperationException(
+        "Duration-based step lease claim is not implemented by this repository",
+    )
 
     /**
      * [StepExecution]을 완료 상태로 갱신한다.

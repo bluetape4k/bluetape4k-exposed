@@ -1,0 +1,8 @@
+schemaVersion: 1
+application: bluetape4k-exposed-batch
+releaseHead: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+releaseOwner: batch-release-owner
+generatedAt: "2099-01-01T00:00:00Z"
+configChecksum: cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+writers:
+  - id: customer-upsert

@@ -154,6 +154,17 @@ SkipPolicy { e, count -> e is DataException && count < 50 }  // custom
 3. On restart, the checkpoint is restored via `reader.restoreFrom(checkpoint)` before the chunk loop begins
 4. `TypedCheckpoint` envelope (Jackson 3) ensures type-safe round-trip for all serializable types
 
+## BatchStatus Transitions
+
+```
+STARTING → RUNNING → COMPLETED
+                   → COMPLETED_WITH_SKIPS
+                   → FAILED
+                   → STOPPED (cancellation)
+```
+
+**Important**: `StepExecution` rows with `COMPLETED` or `COMPLETED_WITH_SKIPS` are skipped automatically on restart.
+
 ## Benchmarks
 
 The benchmark setup has been migrated to `kotlinx-benchmark` with DB-specific profiles for JDBC + Virtual Threads and R2DBC.
@@ -201,3 +212,105 @@ adapter is part of the application boundary. `CheckpointJson` is an explicit
 strategy: the core artifact supports a custom implementation without Jackson;
 `CheckpointJson.jackson3()` requires `bluetape4k-jackson3` on the runtime
 classpath.
+
+## Lease Safety and Operations
+
+Each job and step execution is fenced by an `ownerId` and a monotonically
+increasing `version`. The repository renews the job and step lease atomically;
+the runner performs a final lease check immediately before each writer call and
+checkpoint mutation. A lost lease returns a sanitized lease-loss failure and
+does not start another writer call. Custom `BatchJobRepository` implementations
+must advertise renewal and timeout support before a job starts; an adapter that
+cannot prove those capabilities is rejected fail-closed.
+
+Configure the same lease on the DSL job and its steps. The supported lease
+range is 30 seconds through 24 hours, and the default is 15 minutes:
+
+```kotlin
+val job = batchJob("importUsers") {
+    executionLease(15.minutes)
+    step<UserCsv, UserEntity>("loadStep") {
+        executionLease(15.minutes)
+    }
+}
+```
+
+The runtime emits the redacted structured events `batch.lease.renewal`,
+`batch.lease.loss`, `batch.lease.guard.blocked`,
+`batch.lease.capability.rejected`, and
+`batch.lease.cancellation_completion_failed`. Events contain the backend,
+execution kind, result category, bounded millisecond latency, expiry-margin
+bucket, and correlation id only; they must not contain owner ids, raw
+parameters, SQL, URLs, or credentials.
+
+### Release evidence and canary rollout
+
+The repository-owned operations directory contains the writer, capacity, alert,
+rollout, and rollback contracts. Validate the examples from the repository
+root, replacing the release head with the exact lowercase 40-hex commit being
+promoted:
+
+```bash
+ruby scripts/batch/validate_batch_writer_safety.rb \
+  utils/batch/operations/batch-writer-safety.example.yaml \
+  utils/batch/operations/batch-writer-inventory.example.yaml \
+  --expected-release-head aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+ruby scripts/batch/validate_batch_capacity_receipt.rb \
+  utils/batch/operations/batch-capacity-receipt.example.yaml \
+  --expected-release-head aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+ruby scripts/batch/validate_batch_alerts.rb \
+  utils/batch/operations/batch-alerts.yaml
+
+ruby scripts/batch/validate_batch_alert_resume.rb \
+  utils/batch/operations/batch-alert-resume-receipt.example.yaml \
+  --alerts utils/batch/operations/batch-alerts.yaml \
+  --expected-release-head aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+ruby scripts/batch/validate_batch_rollout.rb \
+  utils/batch/operations/batch-rollout-observation.example.yaml \
+  --writer-receipt utils/batch/operations/batch-writer-safety.example.yaml \
+  --capacity-receipt utils/batch/operations/batch-capacity-receipt.example.yaml \
+  --alerts utils/batch/operations/batch-alerts.yaml \
+  --alert-resume-dir utils/batch/operations \
+  --expected-release-head aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+```
+
+The rollout stages are `shadow`, `1`, `10`, `50`, and `100` percent. Every
+stage observes at least five minutes, 20 eligible samples, and two heartbeat
+windows. A critical alert, an alert-resume checksum mismatch, a writer-safety
+gap, or a capacity-budget violation blocks promotion. The four stable alert
+ids and their resume evidence are defined in
+`batch-alerts.yaml` and `batch-alert-resume-receipt.schema.json`.
+
+### Incident recovery and rollback
+
+On lease loss, stop new scheduling, use the correlation id to inspect the last
+successful renewal and blocked mutation, read the database owner/version/lease
+state, reconcile the external idempotency or outbox receipt, and only then
+decide whether a new execution may start. Never retry a lease-loss runner with
+the same execution object.
+
+Code rollback follows the same gate: stop dispatch, inventory active owners and
+leases read-only, wait for the last observed lease to expire, reconcile external
+writer receipts, and forbid old and new writers from running simultaneously.
+The approval and receipt contracts are
+`batch-rollback-approval.schema.json` and
+`batch-rollback-receipt.schema.json`; validate them before starting the old
+version:
+
+```bash
+ruby scripts/batch/validate_batch_lease_rollback.rb \
+  utils/batch/operations/batch-rollback-receipt.example.yaml \
+  --approval utils/batch/operations/batch-rollback-approval.example.yaml \
+  --expected-application bluetape4k-exposed-batch \
+  --expected-environment production \
+  --expected-release-head aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+```
+
+All non-zero validator exits block the next rollout stage or old-version
+startup. Approval-store references and evidence URIs are opaque
+`restricted://` references; never put credentials, tokens, raw payloads, or
+secrets in a receipt. The central user manual is a downstream handoff and is
+updated separately from this repository-owned operational contract.

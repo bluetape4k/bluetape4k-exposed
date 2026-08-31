@@ -1,11 +1,13 @@
 package io.bluetape4k.batch.core.dsl
 
 import io.bluetape4k.batch.api.BatchJobRepository
+import io.bluetape4k.batch.api.requireValidBatchLeaseDuration
 import io.bluetape4k.batch.core.BatchJob
 import io.bluetape4k.batch.core.BatchStep
 import io.bluetape4k.batch.core.InMemoryBatchJobRepository
 import io.bluetape4k.batch.api.requireValidBatchName
 import io.bluetape4k.logging.KLogging
+import java.time.Duration
 
 /**
  * [BatchJob] DSL 빌더.
@@ -38,6 +40,7 @@ class BatchJobBuilder(private val name: String) {
 
     private var _repository: BatchJobRepository = InMemoryBatchJobRepository()
     private var _params: Map<String, Any> = emptyMap()
+    private var _executionLease: Duration = Duration.ofMinutes(15)
     private val _steps = mutableListOf<BatchStep<*, *>>()
 
     /**
@@ -66,6 +69,11 @@ class BatchJobBuilder(private val name: String) {
      */
     fun params(map: Map<String, Any>) {
         _params = map
+    }
+
+    /** Job 실행 lease 기간을 설정합니다. 30초 이상 24시간 이하만 허용합니다. */
+    fun executionLease(duration: Duration) {
+        _executionLease = duration.requireValidBatchLeaseDuration("executionLease")
     }
 
     /**
@@ -117,6 +125,7 @@ class BatchJobBuilder(private val name: String) {
             params = _params,
             steps = _steps.toList(),
             repository = _repository,
+            executionLease = _executionLease,
         )
     }
 }

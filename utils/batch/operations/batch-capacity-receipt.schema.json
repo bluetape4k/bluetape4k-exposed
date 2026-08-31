@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bluetape4k.dev/schemas/batch-capacity-receipt.schema.json",
+  "title": "Bluetape4k batch capacity receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "application", "releaseHead", "releaseOwner", "generatedAt", "inputs", "calculated"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "application": {"type": "string", "minLength": 1},
+    "releaseHead": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "releaseOwner": {"type": "string", "minLength": 1},
+    "generatedAt": {"type": "string", "format": "date-time"},
+    "inputs": {"$ref": "#/$defs/inputs"},
+    "calculated": {"$ref": "#/$defs/calculated"}
+  },
+  "$defs": {
+    "nonNegativeNumber": {"type": "number", "minimum": 0},
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maxConcurrentRunners", "maxJobStartsPerSecond", "maxJobStartBurst",
+        "maxStepStartsPerSecond", "maxStepStartBurst",
+        "approvedDbStatementsPerSecond", "approvedDbBurstBudget"
+      ],
+      "properties": {
+        "maxConcurrentRunners": {"type": "integer", "minimum": 1},
+        "maxJobStartsPerSecond": {"$ref": "#/$defs/nonNegativeNumber"},
+        "maxJobStartBurst": {"$ref": "#/$defs/nonNegativeNumber"},
+        "maxStepStartsPerSecond": {"$ref": "#/$defs/nonNegativeNumber"},
+        "maxStepStartBurst": {"$ref": "#/$defs/nonNegativeNumber"},
+        "approvedDbStatementsPerSecond": {"type": "number", "exclusiveMinimum": 0},
+        "approvedDbBurstBudget": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "calculated": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["steadyStateStatementsPerSecond", "oneSecondBurstStatements"],
+      "properties": {
+        "steadyStateStatementsPerSecond": {"$ref": "#/$defs/nonNegativeNumber"},
+        "oneSecondBurstStatements": {"$ref": "#/$defs/nonNegativeNumber"}
+      }
+    }
+  }
+}

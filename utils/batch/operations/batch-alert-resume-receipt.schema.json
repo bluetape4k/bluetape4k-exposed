@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bluetape4k.dev/schemas/batch-alert-resume-receipt.schema.json",
+  "title": "Bluetape4k batch alert resume receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "application", "releaseHead", "releaseOwner", "alert",
+    "triggeredAt", "clearWindow", "resumeAuthority", "approvedAt", "expiresAt",
+    "protectedApproval", "requiredEvidence"
+  ],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "application": {"type": "string", "minLength": 1},
+    "releaseHead": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "releaseOwner": {"type": "string", "minLength": 1},
+    "alert": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "owner", "route"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "owner": {"const": "batch-platform"},
+        "route": {"const": "batch-oncall"}
+      }
+    },
+    "triggeredAt": {"type": "string", "format": "date-time"},
+    "clearWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startedAt", "endedAt", "sampleCount", "result"],
+      "properties": {
+        "startedAt": {"type": "string", "format": "date-time"},
+        "endedAt": {"type": "string", "format": "date-time"},
+        "sampleCount": {"type": "integer", "minimum": 1},
+        "result": {"const": "clear"}
+      }
+    },
+    "resumeAuthority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority", "role"],
+      "properties": {
+        "authority": {"const": "release-owner"},
+        "role": {"const": "release-owner"}
+      }
+    },
+    "approvedAt": {"type": "string", "format": "date-time"},
+    "expiresAt": {"type": "string", "format": "date-time"},
+    "protectedApproval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["storeReference", "signature", "checksum"],
+      "properties": {
+        "storeReference": {"$ref": "#/$defs/restrictedReference"},
+        "signature": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "checksum": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "requiredEvidence": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "uri", "sha256"],
+        "properties": {
+          "kind": {"type": "string", "enum": ["operator", "db-health", "capacity", "reconciliation"]},
+          "uri": {"$ref": "#/$defs/restrictedReference"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "restrictedReference": {
+      "type": "string",
+      "pattern": "^restricted://[^/?#[:space:]]+/.+$"
+    }
+  }
+}

@@ -1,6 +1,7 @@
 package io.bluetape4k.batch.core
 
 import io.bluetape4k.batch.api.BatchJobRepository
+import io.bluetape4k.batch.api.BatchExecutionLeaseSnapshot
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.BatchWriter
@@ -89,6 +90,8 @@ class BatchStepRunnerTimeoutTest {
         private val delegate: InMemoryBatchJobRepository = InMemoryBatchJobRepository(),
     ): BatchJobRepository {
 
+        override val supportsLeaseRenewal: Boolean = true
+
         @Volatile
         var lastReport: StepReport? = null
             private set
@@ -112,6 +115,19 @@ class BatchStepRunnerTimeoutTest {
             leaseUntil: Instant,
         ): JobExecution? = delegate.claimJobExecution(execution, ownerId, leaseUntil)
 
+        override suspend fun claimJobExecution(
+            execution: JobExecution,
+            ownerId: String,
+            leaseDuration: java.time.Duration,
+        ): JobExecution? = delegate.claimJobExecution(execution, ownerId, leaseDuration)
+
+        override suspend fun renewExecutionLeases(
+            jobExecution: JobExecution,
+            stepExecution: StepExecution?,
+            leaseDuration: java.time.Duration,
+        ): BatchExecutionLeaseSnapshot? =
+            delegate.renewExecutionLeases(jobExecution, stepExecution, leaseDuration)
+
         override suspend fun findOrCreateStepExecution(
             jobExecution: JobExecution,
             stepName: String,
@@ -122,6 +138,12 @@ class BatchStepRunnerTimeoutTest {
             ownerId: String,
             leaseUntil: Instant,
         ): StepExecution? = delegate.claimStepExecution(execution, ownerId, leaseUntil)
+
+        override suspend fun claimStepExecution(
+            execution: StepExecution,
+            ownerId: String,
+            leaseDuration: java.time.Duration,
+        ): StepExecution? = delegate.claimStepExecution(execution, ownerId, leaseDuration)
 
         override suspend fun completeStepExecution(execution: StepExecution, report: StepReport) {
             lastStepExecution = execution

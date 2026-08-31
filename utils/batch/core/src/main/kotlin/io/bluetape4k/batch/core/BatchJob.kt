@@ -3,10 +3,12 @@ package io.bluetape4k.batch.core
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchExecutionAlreadyClaimedException
+import io.bluetape4k.batch.api.BatchInfrastructureFailureException
 import io.bluetape4k.batch.api.BatchReport
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepReport
+import io.bluetape4k.batch.api.requireValidBatchLeaseDuration
 import io.bluetape4k.batch.api.requireValidBatchName
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.error
@@ -15,10 +17,14 @@ import io.bluetape4k.workflow.api.SuspendWork
 import io.bluetape4k.workflow.api.WorkContext
 import io.bluetape4k.workflow.api.WorkReport
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID
 
 /**
  * 배치 Job 실행기. 여러 [BatchStep]을 순차적으로 실행하며 재시작을 지원합니다.
@@ -49,7 +55,7 @@ class BatchJob(
     val params: Map<String, Any> = emptyMap(),
     val steps: List<BatchStep<*, *>>,
     val repository: BatchJobRepository,
-    private val executionLease: Duration = Duration.ofMinutes(15),
+    val executionLease: Duration = Duration.ofMinutes(15),
 ) : SuspendWork {
 
     companion object : KLoggingChannel()
@@ -57,6 +63,7 @@ class BatchJob(
     init {
         name.requireValidBatchName("name")
         steps.requireNotEmpty("steps")
+        executionLease.requireValidBatchLeaseDuration("executionLease")
     }
 
     /**
@@ -77,18 +84,39 @@ class BatchJob(
      *
      * @return [BatchReport.Success], [BatchReport.PartiallyCompleted], 또는 [BatchReport.Failure]
      */
+    @Suppress("LongMethod", "ReturnCount")
     suspend fun run(): BatchReport {
         val jobExecution = repository.findOrCreateJobExecution(name, params)
+        if (!repository.supportsLeaseRenewal) {
+            return BatchReport.Failure(
+                jobExecution,
+                emptyList(),
+                BatchInfrastructureFailureException(
+                    BatchInfrastructureFailureException.REPOSITORY_FAILURE,
+                    UUID.randomUUID().toString(),
+                ),
+            )
+        }
         val ownerId = "${name}-${Base58.randomString(8)}"
+        val claimStartedNanos = SYSTEM_BATCH_MONOTONIC_CLOCK.nowNanos()
         val claimedJobExecution = repository.claimJobExecution(
             execution = jobExecution,
             ownerId = ownerId,
-            leaseUntil = Instant.now().plus(executionLease),
+            leaseDuration = executionLease,
         ) ?: return BatchReport.Failure(
             jobExecution,
             emptyList(),
             BatchExecutionAlreadyClaimedException("Job", jobExecution.id, jobExecution.ownerId),
         )
+        val leaseGuard = BatchLeaseGuard(
+            repository = repository,
+            ownerId = ownerId,
+            executionLease = executionLease,
+            initialJobExecution = claimedJobExecution,
+            initialStepExecution = null,
+            initialClaimStartedNanos = claimStartedNanos,
+        )
+        leaseGuard.startHeartbeat(CoroutineScope(currentCoroutineContext()))
         val stepReports = mutableListOf<StepReport>()
 
         try {
@@ -98,6 +126,8 @@ class BatchJob(
                     step = step as BatchStep<Any, Any>,
                     jobExecution = claimedJobExecution,
                     repository = repository,
+                    leaseDuration = executionLease,
+                    leaseGuard = leaseGuard,
                 )
                 val report = runner.run()
                 stepReports += report
@@ -110,33 +140,116 @@ class BatchJob(
 
             val hasSkips = stepReports.any { it.skipCount > 0 }
             val finalStatus = if (hasSkips) BatchStatus.COMPLETED_WITH_SKIPS else BatchStatus.COMPLETED
-            repository.completeJobExecution(claimedJobExecution, finalStatus)
+            val completionExecution = stopHeartbeatAndGetLatest(leaseGuard, claimedJobExecution)
+            repository.completeJobExecution(completionExecution, finalStatus)
+            val reportExecution = completionExecution.copy(
+                status = finalStatus,
+                ownerId = null,
+                leaseUntil = null,
+            )
 
             return if (hasSkips) {
                 BatchReport.PartiallyCompleted(
-                    claimedJobExecution.copy(status = BatchStatus.COMPLETED_WITH_SKIPS),
+                    reportExecution,
                     stepReports,
                 )
             } else {
                 BatchReport.Success(
-                    claimedJobExecution.copy(status = BatchStatus.COMPLETED),
+                    reportExecution,
                     stepReports,
                 )
             }
 
+        } catch (_: LeaseLostException) {
+            val latest = stopHeartbeatAndGetDiagnostic(leaseGuard, claimedJobExecution)
+            val correlationId = UUID.randomUUID().toString()
+            val failure = BatchInfrastructureFailureException(
+                BatchInfrastructureFailureException.LEASE_LOST,
+                correlationId,
+            )
+            return BatchReport.Failure(
+                latest.sanitizeForLeaseLoss(),
+                stepReports.map { it.sanitizeForLeaseLoss(correlationId) },
+                failure,
+            )
         } catch (e: CancellationException) {
-            persistCompletionSafely(claimedJobExecution, BatchStatus.STOPPED, e)
+            compensateExternalCancellation(leaseGuard, claimedJobExecution, e)
             throw e
 
         } catch (e: Throwable) {
-            persistCompletionSafely(claimedJobExecution, BatchStatus.FAILED, e)
+            val latest = stopHeartbeatAndGetLatest(leaseGuard, claimedJobExecution)
+            persistCompletionSafely(latest, BatchStatus.FAILED, e)
             return BatchReport.Failure(
-                claimedJobExecution.copy(status = BatchStatus.FAILED),
+                latest.copy(status = BatchStatus.FAILED, ownerId = null, leaseUntil = null),
                 stepReports,
                 e,
             )
         }
     }
+
+    private suspend fun stopHeartbeatAndGetLatest(
+        leaseGuard: BatchLeaseGuard,
+        fallback: JobExecution,
+    ): JobExecution {
+        leaseGuard.stopHeartbeat()
+        return runCatching { leaseGuard.latestSnapshot().jobExecution }.getOrElse { fallback }
+    }
+
+    private suspend fun stopHeartbeatAndGetDiagnostic(
+        leaseGuard: BatchLeaseGuard,
+        fallback: JobExecution,
+    ): JobExecution = withContext(NonCancellable) {
+        leaseGuard.stopHeartbeat()
+        runCatching { leaseGuard.latestSnapshotForDiagnostics().jobExecution }.getOrElse { fallback }
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun compensateExternalCancellation(
+        leaseGuard: BatchLeaseGuard,
+        fallback: JobExecution,
+        primary: CancellationException,
+    ) {
+        try {
+            withContext(NonCancellable) {
+                withTimeout(leaseGuard.repositoryTimeoutMillis) {
+                    leaseGuard.stopHeartbeatInCurrentContext()
+                    val latest = runCatching {
+                        leaseGuard.latestSnapshotForDiagnostics().jobExecution
+                    }.getOrElse { fallback }
+                    repository.completeJobExecution(latest, BatchStatus.STOPPED)
+                }
+            }
+        } catch (failure: Throwable) {
+            if (failure !== primary) {
+                log.error(failure) {
+                    "STOPPED 상태 bounded compensation 실패 — job=$name, " +
+                        "executionId=${fallback.id}"
+                }
+                primary.addSuppressed(
+                    BatchInfrastructureFailureException(
+                        BatchInfrastructureFailureException.REPOSITORY_FAILURE,
+                        UUID.randomUUID().toString(),
+                    ),
+                )
+            }
+        }
+    }
+
+    private fun JobExecution.sanitizeForLeaseLoss(): JobExecution = copy(
+        params = emptyMap(),
+        ownerId = null,
+        leaseUntil = null,
+    )
+
+    private fun StepReport.sanitizeForLeaseLoss(correlationId: String): StepReport = copy(
+        checkpoint = null,
+        error = error?.let {
+            BatchInfrastructureFailureException(
+                BatchInfrastructureFailureException.LEASE_LOST,
+                correlationId,
+            )
+        },
+    )
 
     @Suppress("TooGenericExceptionCaught")
     private suspend fun persistCompletionSafely(
@@ -144,18 +257,16 @@ class BatchJob(
         status: BatchStatus,
         primary: Throwable,
     ) {
-        withContext(NonCancellable) {
-            try {
-                repository.completeJobExecution(execution, status)
-            } catch (persistenceCancellation: CancellationException) {
-                log.error(persistenceCancellation) {
-                    "$status 상태 저장 취소됨 — job=$name, executionId=${execution.id}, " +
-                        "실행 원인 예외와 함께 전파합니다"
-                }
-                propagateCompletionCancellation(primary, persistenceCancellation)
-            } catch (persistenceFailure: Throwable) {
-                preserveCompletionFailure(execution.id, primary, status, persistenceFailure)
+        try {
+            repository.completeJobExecution(execution, status)
+        } catch (persistenceCancellation: CancellationException) {
+            log.error(persistenceCancellation) {
+                "$status 상태 저장 취소됨 — job=$name, executionId=${execution.id}, " +
+                    "실행 원인 예외와 함께 전파합니다"
             }
+            propagateCompletionCancellation(primary, persistenceCancellation)
+        } catch (persistenceFailure: Throwable) {
+            preserveCompletionFailure(execution.id, primary, status, persistenceFailure)
         }
     }
 

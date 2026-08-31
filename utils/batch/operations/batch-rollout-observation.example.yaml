@@ -1,0 +1,28 @@
+schemaVersion: 1
+application: bluetape4k-exposed-batch
+releaseHead: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+releaseOwner: batch-release-owner
+stage: shadow
+startedAt: "2099-01-01T00:00:00Z"
+endedAt: "2099-01-01T00:05:00Z"
+eligibleSampleCount: 20
+heartbeatWindowCount: 2
+metrics:
+  renewalFailureRatio: 0.0
+  renewalLatencyP95Millis: 100
+  dbStatementsPerSecond: 45
+alertResult:
+  criticalAlertCount: 0
+  activeAlertIds: []
+artifacts:
+  writerReceipt:
+    path: utils/batch/operations/batch-writer-safety.example.yaml
+    sha256: 2564fa22dbc8643f83124dd37075adaaee65a918f41480f9c7e2431c09531dbd
+  capacityReceipt:
+    path: utils/batch/operations/batch-capacity-receipt.example.yaml
+    sha256: 95ef15b47e6bb84c02d894f4240da390694b806f86fbeaae28dadd23e0b238e8
+  alertCatalog:
+    path: utils/batch/operations/batch-alerts.yaml
+    sha256: 4f07f1189d364e885f6165bddcba069673daa4a9d3774ff2116eba0a43412388
+  alertResumes: []
+result: eligible

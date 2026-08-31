@@ -35,12 +35,13 @@ class BatchStepFailedException(
 /**
  * Job/Step 실행 row가 다른 runner에 의해 이미 claim된 경우.
  */
+@Suppress("UnusedPrivateProperty")
 class BatchExecutionAlreadyClaimedException(
     executionType: String,
     executionId: Long,
     ownerId: String?,
 ) : RuntimeException(
-    "$executionType execution is already claimed: id=$executionId, ownerId=${ownerId ?: "<unknown>"}",
+    "$executionType execution is already claimed: id=$executionId",
 ) {
     companion object : KLogging()
 }

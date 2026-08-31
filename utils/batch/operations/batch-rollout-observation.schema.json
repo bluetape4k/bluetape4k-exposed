@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bluetape4k.dev/schemas/batch-rollout-observation.schema.json",
+  "title": "Bluetape4k batch rollout observation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "application", "releaseHead", "releaseOwner", "stage",
+    "startedAt", "endedAt", "eligibleSampleCount", "heartbeatWindowCount",
+    "metrics", "alertResult", "artifacts", "result"
+  ],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "application": {"type": "string", "minLength": 1},
+    "releaseHead": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "releaseOwner": {"type": "string", "minLength": 1},
+    "stage": {"type": "string", "enum": ["shadow", "1", "10", "50", "100"]},
+    "startedAt": {"type": "string", "format": "date-time"},
+    "endedAt": {"type": "string", "format": "date-time"},
+    "eligibleSampleCount": {"type": "integer", "minimum": 0},
+    "heartbeatWindowCount": {"type": "integer", "minimum": 0},
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["renewalFailureRatio", "renewalLatencyP95Millis", "dbStatementsPerSecond"],
+      "properties": {
+        "renewalFailureRatio": {"type": "number", "minimum": 0, "maximum": 1},
+        "renewalLatencyP95Millis": {"type": "number", "minimum": 0},
+        "dbStatementsPerSecond": {"type": "number", "minimum": 0}
+      }
+    },
+    "alertResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["criticalAlertCount", "activeAlertIds"],
+      "properties": {
+        "criticalAlertCount": {"type": "integer", "minimum": 0},
+        "activeAlertIds": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "artifacts": {"$ref": "#/$defs/artifacts"},
+    "result": {"type": "string", "enum": ["eligible", "blocked"]}
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["writerReceipt", "capacityReceipt", "alertCatalog", "alertResumes"],
+      "properties": {
+        "writerReceipt": {"$ref": "#/$defs/artifact"},
+        "capacityReceipt": {"$ref": "#/$defs/artifact"},
+        "alertCatalog": {"$ref": "#/$defs/artifact"},
+        "alertResumes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/artifact"}
+        }
+      }
+    }
+  }
+}

@@ -32,6 +32,7 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -259,6 +260,31 @@ class ExposedJdbcBatchIntegrationTest : AbstractBatchJdbcTest() {
             failure.error shouldBeInstanceOf BatchExecutionAlreadyClaimedException::class
             writer.openCount.get() shouldBeEqualTo 1
             writer.writeCount.get() shouldBeEqualTo 3
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `실행 lease 갱신은 Job과 Step 버전을 함께 증가시킨다`(testDB: TestDB) {
+        withAllTables(testDB) {
+            val repository = ExposedJdbcBatchJobRepository(testDB.db!!, CheckpointJson.jackson3())
+            val initialJob = repository.findOrCreateJobExecution("leaseRenewalJob", emptyMap())
+            val claimedJob = checkNotNull(
+                repository.claimJobExecution(initialJob, "lease-owner", Duration.ofMinutes(1)),
+            )
+            val initialStep = repository.findOrCreateStepExecution(claimedJob, "leaseStep")
+            val claimedStep = checkNotNull(
+                repository.claimStepExecution(initialStep, "lease-owner", Duration.ofMinutes(1)),
+            )
+
+            val renewed = checkNotNull(
+                repository.renewExecutionLeases(claimedJob, claimedStep, Duration.ofMinutes(1)),
+            )
+
+            renewed.jobExecution.version shouldBeEqualTo claimedJob.version + 1
+            renewed.jobExecution.ownerId shouldBeEqualTo "lease-owner"
+            renewed.stepExecution?.version shouldBeEqualTo claimedStep.version + 1
+            renewed.stepExecution?.ownerId shouldBeEqualTo "lease-owner"
         }
     }
 

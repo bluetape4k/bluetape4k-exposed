@@ -1,0 +1,22 @@
+schemaVersion: 1
+application: bluetape4k-exposed-batch
+environment: production
+releaseHead: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+releaseOwner: batch-release-owner
+rollbackTargetHead: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+approval:
+  path: utils/batch/operations/batch-rollback-approval.example.yaml
+  sha256: 8d413cbdb4e2d9bcd7ef04cc3c153177581828b7734a0887fd5470d40db92c99
+schedulingStoppedAt: "2020-01-01T00:01:00Z"
+activeLeaseInventory:
+  path: utils/batch/operations/batch-writer-inventory.example.yaml
+  sha256: 2f3ffac5110539652cf06294f97ece4e5c74811d593ac8972c403455a6eefa20
+  lastActiveLeaseAt: "2020-01-01T00:02:00Z"
+writerReconciliation:
+  path: utils/batch/operations/batch-writer-safety.example.yaml
+  sha256: 2564fa22dbc8643f83124dd37075adaaee65a918f41480f9c7e2431c09531dbd
+drainStartedAt: "2020-01-01T00:03:00Z"
+drainedAt: "2020-01-01T00:04:00Z"
+resultAt: "2020-01-01T00:05:00Z"
+simultaneousWriterCount: 0
+result: ready

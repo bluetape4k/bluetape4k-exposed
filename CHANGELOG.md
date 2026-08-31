@@ -29,6 +29,10 @@
 
 ### 변경됨
 
+- batch Job/Step execution에 owner+version lease renewal과 writer/checkpoint
+  직전 fencing을 추가하고, capability preflight·redacted structured event·canary
+  rollout/rollback receipt validator를 제공했습니다
+  ([#768](https://github.com/bluetape4k/bluetape4k-exposed/issues/768)).
 - Ktor integration을 backend-selective child artifact로 분리하고 dependency allowlist와
   generated manifest parity를 fail-closed로 검증하도록 정리했습니다
   ([#748](https://github.com/bluetape4k/bluetape4k-exposed/issues/748),

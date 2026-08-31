@@ -12,6 +12,7 @@ import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.batch.api.BatchJobRepository
+import io.bluetape4k.batch.api.BatchInfrastructureFailureException
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchReport
 import io.bluetape4k.batch.api.BatchStatus
@@ -110,13 +111,13 @@ class BatchFailurePersistenceTest {
         }
 
         thrown shouldBeSameInstanceAs cancellation
-        thrown.suppressed.single() shouldBeSameInstanceAs persistenceFailure
+        assertSanitizedCompensationFailure(thrown)
         val storedStep = repository.findOrCreateStepExecution(execution, "step")
         storedStep.status shouldBe BatchStatus.RUNNING
     }
 
     @Test
-    fun `실제 Job 취소도 NonCancellable checkpoint와 STOPPED 저장을 보존한다`() = runSuspendIO {
+    fun `실제 Job 취소는 bounded STOPPED 저장만 수행하고 reader checkpoint를 호출하지 않는다`() = runSuspendIO {
         val repository = InMemoryBatchJobRepository()
         val execution = repository.findOrCreateJobExecution("actual-cancellation")
         val readerEntered = CompletableDeferred<Unit>()
@@ -130,29 +131,29 @@ class BatchFailurePersistenceTest {
             request.cancel(CancellationException("external cancellation"))
 
             assertFailsWith<CancellationException> { request.await() }
-            reader.checkpointCalls.get() shouldBeEqualTo 1
+            reader.checkpointCalls.get() shouldBeEqualTo 0
             val storedStep = repository.findOrCreateStepExecution(execution, "step")
             storedStep.status shouldBe BatchStatus.STOPPED
-            storedStep.checkpoint shouldBe "checkpoint"
+            storedStep.checkpoint shouldBe null
         }
     }
 
     @Test
-    fun `checkpoint 커밋 직후 취소도 InMemory STOPPED 저장과 재claim을 보존한다`() = runSuspendIO {
-        assertCheckpointCommitCancellationRecovery(InMemoryBatchJobRepository())
+    fun `checkpoint 커밋 readback 전 취소는 InMemory에서 stale STOPPED CAS를 하지 않는다`() = runSuspendIO {
+        assertCheckpointCommitCancellationFailClosed(InMemoryBatchJobRepository())
     }
 
     @Test
-    fun `checkpoint 커밋 직후 취소도 JDBC STOPPED 저장과 재claim을 보존한다`() = withJdbcBatchTables {
-        assertCheckpointCommitCancellationRecovery(
+    fun `checkpoint 커밋 readback 전 취소는 JDBC에서 stale STOPPED CAS를 하지 않는다`() = withJdbcBatchTables {
+        assertCheckpointCommitCancellationFailClosed(
             ExposedJdbcBatchJobRepository(checkNotNull(it.db), CheckpointJson.jackson3()),
         )
     }
 
     @Test
-    fun `checkpoint 커밋 직후 취소도 R2DBC STOPPED 저장과 재claim을 보존한다`() = runSuspendIO {
+    fun `checkpoint 커밋 readback 전 취소는 R2DBC에서 stale STOPPED CAS를 하지 않는다`() = runSuspendIO {
         withR2dbcBatchTables {
-            assertCheckpointCommitCancellationRecovery(
+            assertCheckpointCommitCancellationFailClosed(
                 ExposedR2dbcBatchJobRepository(checkNotNull(it.db), CheckpointJson.jackson3()),
             )
         }
@@ -197,7 +198,7 @@ class BatchFailurePersistenceTest {
         }
 
         thrown shouldBeSameInstanceAs cancellation
-        thrown.suppressed.single() shouldBeSameInstanceAs persistenceFailure
+        assertSanitizedCompensationFailure(thrown)
         val storedJob = repository.findOrCreateJobExecution("failure-persistence")
         storedJob.status shouldBe BatchStatus.RUNNING
         val storedStep = repository.findOrCreateStepExecution(storedJob, "step")
@@ -442,7 +443,7 @@ class BatchFailurePersistenceTest {
         repository.findOrCreateStepExecution(jobExecution, "step").checkpoint shouldBeEqualTo "checkpoint-1"
     }
 
-    private suspend fun assertCheckpointCommitCancellationRecovery(delegate: BatchJobRepository) {
+    private suspend fun assertCheckpointCommitCancellationFailClosed(delegate: BatchJobRepository) {
         val checkpointPersisted = CompletableDeferred<Unit>()
         val releaseCheckpointReturn = CompletableDeferred<Unit>()
         val repository = CommitReturnSuspendingRepository(
@@ -471,15 +472,15 @@ class BatchFailurePersistenceTest {
         }
 
         val storedStep = repository.findOrCreateStepExecution(execution, "step")
-        storedStep.status shouldBe BatchStatus.STOPPED
-        storedStep.ownerId shouldBe null
-        storedStep.leaseUntil shouldBe null
+        storedStep.status shouldBe BatchStatus.RUNNING
+        storedStep.ownerId.shouldNotBeNull()
+        storedStep.leaseUntil.shouldNotBeNull()
         storedStep.checkpoint shouldBeEqualTo "checkpoint-1"
         repository.claimStepExecution(
             storedStep,
             ownerId = "replacement-owner",
             leaseUntil = java.time.Instant.now().plusSeconds(60),
-        ).shouldNotBeNull()
+        ) shouldBe null
     }
 
     private suspend fun assertJobStoppedPersistenceFailure(delegate: BatchJobRepository) {
@@ -492,7 +493,7 @@ class BatchFailurePersistenceTest {
         }
 
         thrown shouldBeSameInstanceAs cancellation
-        thrown.suppressed.single() shouldBeSameInstanceAs persistenceFailure
+        assertSanitizedCompensationFailure(thrown)
         val storedJob = repository.reloadJobExecution()
         storedJob.status shouldBe BatchStatus.RUNNING
         repository.claimJobExecution(
@@ -535,8 +536,16 @@ class BatchFailurePersistenceTest {
         }
 
         thrown shouldBeSameInstanceAs cancellation
-        thrown.suppressed.single() shouldBeSameInstanceAs persistenceFailure
+        assertSanitizedCompensationFailure(thrown)
         repository.reloadStepExecution(execution).status shouldBe BatchStatus.RUNNING
+    }
+
+    private fun assertSanitizedCompensationFailure(cancellation: CancellationException) {
+        val diagnostic = cancellation.suppressed.single()
+        diagnostic shouldBeInstanceOf BatchInfrastructureFailureException::class
+        diagnostic as BatchInfrastructureFailureException
+        diagnostic.category shouldBe BatchInfrastructureFailureException.REPOSITORY_FAILURE
+        diagnostic.cause shouldBe null
     }
 
     private fun job(
