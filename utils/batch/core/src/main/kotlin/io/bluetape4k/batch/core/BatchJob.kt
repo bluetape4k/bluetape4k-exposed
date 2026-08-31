@@ -20,6 +20,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.time.Duration
@@ -57,6 +58,9 @@ class BatchJob(
     val repository: BatchJobRepository,
     val executionLease: Duration = Duration.ofMinutes(15),
 ) : SuspendWork {
+
+    /** heartbeat cleanup lifecycle을 실제 runner 경계에서 검증하기 위한 내부 clock seam. */
+    internal var heartbeatPause: suspend (Long) -> Unit = { delay(it) }
 
     companion object : KLoggingChannel() {
         private const val CORRELATION_ID_LENGTH = 16
@@ -130,6 +134,7 @@ class BatchJob(
             initialJobExecution = claimedJobExecution,
             initialStepExecution = null,
             initialClaimStartedNanos = claimStartedNanos,
+            pause = heartbeatPause,
         )
         leaseGuard.startHeartbeat(CoroutineScope(currentCoroutineContext()))
         val stepReports = mutableListOf<StepReport>()

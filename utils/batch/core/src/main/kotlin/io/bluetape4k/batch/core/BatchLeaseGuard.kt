@@ -56,6 +56,8 @@ internal class BatchLeaseGuard(
     private var stepDeadlineNanos = latestStepExecution?.let { jobDeadlineNanos }
     @Volatile
     private var leaseLost: LeaseLostException? = null
+    @Volatile
+    private var heartbeatCleanupTimedOut: Boolean = false
     private var heartbeatJob: Job? = null
 
     /** 외부 cancellation compensation이 공유하는 repository/cleanup 상한. */
@@ -138,17 +140,23 @@ internal class BatchLeaseGuard(
 
     /** heartbeat child를 bounded NonCancellable cleanup gate에서 종료한다. */
     suspend fun stopHeartbeat() {
+        if (heartbeatCleanupTimedOut) return
         withContext(kotlinx.coroutines.NonCancellable) {
+            if (heartbeatCleanupTimedOut) return@withContext
             val stopped = withTimeoutOrNull(timing.repositoryTimeoutMillis) {
                 stopHeartbeatInCurrentContext()
                 true
             } ?: false
-            if (!stopped) failLease()
+            if (!stopped) {
+                heartbeatCleanupTimedOut = true
+                failLease()
+            }
         }
     }
 
     /** 이미 만들어진 bounded cleanup envelope 안에서 heartbeat를 종료한다. */
     suspend fun stopHeartbeatInCurrentContext() {
+        if (heartbeatCleanupTimedOut) return
         val heartbeat = heartbeatJob ?: return
         heartbeat.cancel()
         try {

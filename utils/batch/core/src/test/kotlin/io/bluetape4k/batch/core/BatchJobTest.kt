@@ -17,6 +17,10 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldHaveSize
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.jupiter.api.Test
 
 /**
@@ -211,6 +215,58 @@ class BatchJobTest {
 
         thrown.shouldNotBeNull()
         thrown shouldBeInstanceOf kotlinx.coroutines.CancellationException::class
+    }
+
+    @Test
+    fun `heartbeat cleanup timeout은 재진입하지 않고 sanitized lease loss를 반환한다`() = runTest {
+        val pauseStarted = CompletableDeferred<Unit>()
+        val releasePause = CompletableDeferred<Unit>()
+        var read = false
+        val reader = object : BatchReader<String> {
+            override suspend fun read(): String? {
+                if (read) return null
+                pauseStarted.await()
+                read = true
+                return "item"
+            }
+        }
+        val repository = InMemoryBatchJobRepository()
+        val job = BatchJob(
+            name = "cleanup-timeout-job",
+            params = mapOf("secret" to "must-not-leak"),
+            steps = listOf(
+                BatchStep(
+                    name = "step",
+                    chunkSize = 1,
+                    reader = reader,
+                    writer = CollectingWriter(),
+                ),
+            ),
+            repository = repository,
+            executionLease = java.time.Duration.ofSeconds(30),
+        )
+        job.heartbeatPause = {
+            pauseStarted.complete(Unit)
+            withContext(NonCancellable) {
+                releasePause.await()
+            }
+        }
+
+        try {
+            val report = job.run()
+
+            report shouldBeInstanceOf BatchReport.Failure::class
+            val failure = report as BatchReport.Failure
+            failure.error shouldBeInstanceOf BatchInfrastructureFailureException::class
+            val diagnostic = failure.error as BatchInfrastructureFailureException
+            diagnostic.category shouldBeEqualTo BatchInfrastructureFailureException.LEASE_LOST
+            diagnostic.cause shouldBe null
+            failure.jobExecution.params shouldBeEqualTo emptyMap()
+            failure.jobExecution.ownerId shouldBe null
+            failure.jobExecution.leaseUntil shouldBe null
+        } finally {
+            releasePause.complete(Unit)
+        }
     }
 
     // ─── 재시작: FAILED 잡 재시작 시 COMPLETED Step skip ────────────────────

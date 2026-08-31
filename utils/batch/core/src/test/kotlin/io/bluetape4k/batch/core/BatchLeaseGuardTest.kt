@@ -223,6 +223,7 @@ class BatchLeaseGuardTest {
                 guard.stopHeartbeat()
             }
             guard.hasLostLease() shouldBeEqualTo true
+            guard.stopHeartbeat()
         } finally {
             releasePause.complete(Unit)
             heartbeat.join()
