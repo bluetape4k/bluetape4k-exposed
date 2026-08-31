@@ -3,6 +3,9 @@ package io.bluetape4k.batch
 import java.lang.reflect.Array
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.nio.CharBuffer
+import java.nio.charset.CharacterCodingException
+import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets.UTF_8
 import java.security.MessageDigest
 import java.time.Instant
@@ -130,7 +133,7 @@ private class ParameterEncoder {
 
         checkCanonicalSize(canonicalBytes)
 
-        return buildString {
+        return strictUtf8Bytes(buildString {
             append(CANONICAL_PREFIX)
             append(":v").append(BatchParameterHash.VERSION)
             appendField("count", entries.size.toString())
@@ -138,7 +141,7 @@ private class ParameterEncoder {
                 appendField("key", key)
                 appendField("value", value.text)
             }
-        }.toByteArray(UTF_8)
+        })
     }
 
     private fun encodedValue(value: Any?, depth: Int): EncodedText {
@@ -311,7 +314,19 @@ private val canonicalFieldSize: (String, Long) -> Long = { name, valueBytes ->
     1 + utf8Size(name) + 1 + valueBytes.toString().length + 1 + valueBytes
 }
 
-private val utf8Size: (String) -> Long = { value -> value.toByteArray(UTF_8).size.toLong() }
+private val strictUtf8Bytes: (String) -> ByteArray = { value ->
+    try {
+        val encoded = UTF_8.newEncoder()
+            .onMalformedInput(CodingErrorAction.REPORT)
+            .onUnmappableCharacter(CodingErrorAction.REPORT)
+            .encode(CharBuffer.wrap(value))
+        ByteArray(encoded.remaining()).also { bytes -> encoded.get(bytes) }
+    } catch (_: CharacterCodingException) {
+        throw IllegalArgumentException("Batch parameter String에는 잘못된 UTF-16 surrogate를 사용할 수 없습니다.")
+    }
+}
+
+private val utf8Size: (String) -> Long = { value -> strictUtf8Bytes(value).size.toLong() }
 
 private fun checkContainerSize(size: Int) {
     if (size > BatchParameterHash.MAX_CONTAINER_ITEMS) {
@@ -328,7 +343,7 @@ private const val DOUBLE_HEX_WIDTH = 16
 
 private fun StringBuilder.appendField(name: String, value: String) {
     append('|').append(name).append(':')
-    append(value.toByteArray(UTF_8).size)
+    append(strictUtf8Bytes(value).size)
     append(':').append(value)
 }
 

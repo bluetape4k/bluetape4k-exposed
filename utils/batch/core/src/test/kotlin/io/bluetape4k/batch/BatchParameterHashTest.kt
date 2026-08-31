@@ -35,6 +35,19 @@ class BatchParameterHashTest {
     }
 
     @Test
+    fun `잘못된 UTF-16 surrogate는 물음표와 충돌하기 전에 거부한다`() {
+        assertFailsWith<IllegalArgumentException> {
+            BatchParameterHash.hash(mapOf("value" to "\uD800"))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            BatchParameterHash.hash(mapOf("\uD800" to "value"))
+        }
+
+        BatchParameterHash.hash(mapOf("value" to "?")) shouldBeEqualTo
+            "5e54fba180869eaed6ecf9e9f9222e7e16a3e85614f46559f9b4aa5c29fdf1e6"
+    }
+
+    @Test
     fun `empty map은 기존 빈 hash 계약을 유지한다`() {
         BatchParameterHash.hash(emptyMap()) shouldBeEqualTo ""
 

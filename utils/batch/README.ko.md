@@ -78,6 +78,15 @@ array입니다. 임의 객체와 generic `Iterable`은 process별 `toString()` �
 달라질 수 있으므로 거부합니다.
 사용자 정의 값은 지원 scalar/collection으로 먼저 정규화하세요.
 
+String은 올바른 UTF-16이어야 하며, 짝이 없는 surrogate는 UTF-8 변환에서 치환하지 않고
+거부합니다. canonical 입력은 UTF-8 1 MiB, scalar 하나는 256 KiB, container 하나는
+1,000항목, 전체 tree는 10,000 value, 중첩은 32단계로 제한합니다. 상한을 넘으면
+`IllegalArgumentException`을 던집니다.
+
+repository 호출이 끝날 때까지 파라미터 Map과 모든 nested collection/array를 immutable로
+유지하세요. 동시 mutation은 identity hash와 영속 parameter payload가 서로 다른 입력을
+나타낼 수 있으므로 지원하지 않습니다.
+
 빈 파라미터 Map은 기존 `""` hash 규칙을 유지합니다. `v2` 알고리즘은 기존
 `key=value&...` 형식에서 non-empty hash를 변경하므로, legacy hash를 가진 기존
 row를 조용히 재사용하지 않습니다. 배포 전에 영속된 파라미터를 기준으로
