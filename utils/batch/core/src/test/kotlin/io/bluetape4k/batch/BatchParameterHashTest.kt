@@ -37,6 +37,14 @@ class BatchParameterHashTest {
     @Test
     fun `empty map은 기존 빈 hash 계약을 유지한다`() {
         BatchParameterHash.hash(emptyMap()) shouldBeEqualTo ""
+
+        val actual = mapOf<String, Any>("value" to 1)
+        val changingView = object : Map<String, Any> by actual {
+            override val size: Int = 0
+
+            override fun isEmpty(): Boolean = true
+        }
+        BatchParameterHash.hash(changingView) shouldBeEqualTo BatchParameterHash.hash(actual)
     }
 
     @Test
@@ -67,5 +75,94 @@ class BatchParameterHashTest {
         assertFailsWith<IllegalArgumentException> {
             BatchParameterHash.hash(mapOf("values" to sequenceOf(1, 2).asIterable()))
         }
+    }
+
+    @Test
+    fun `순환 참조와 과도한 중첩은 hash 계산 전에 거부한다`() {
+        val cycle = mutableListOf<Any>()
+        cycle.add(cycle)
+
+        assertFailsWith<IllegalArgumentException> {
+            BatchParameterHash.hash(mapOf("cycle" to cycle))
+        }
+
+        var nested: Any = "leaf"
+        repeat(BatchParameterHash.MAX_NESTING_DEPTH + 1) {
+            nested = listOf(nested)
+        }
+
+        assertFailsWith<IllegalArgumentException> {
+            BatchParameterHash.hash(mapOf("nested" to nested))
+        }
+    }
+
+    @Test
+    fun `container와 전체 value 상한을 초과하면 거부한다`() {
+        assertFailsWith<IllegalArgumentException> {
+            BatchParameterHash.hash(
+                mapOf("values" to List(BatchParameterHash.MAX_CONTAINER_ITEMS + 1) { it }),
+            )
+        }
+
+        val growingView = object : java.util.AbstractList<Int>() {
+            override val size: Int = 0
+
+            override fun get(index: Int): Int = index
+
+            override fun iterator(): MutableIterator<Int> =
+                (0..BatchParameterHash.MAX_CONTAINER_ITEMS).toMutableList().iterator()
+        }
+        assertFailsWith<IllegalArgumentException> {
+            BatchParameterHash.hash(mapOf("values" to growingView))
+        }
+
+        val manyValues = List(BatchParameterHash.MAX_CONTAINER_ITEMS) { it }
+        val parameters = (0..BatchParameterHash.MAX_TOTAL_VALUES / BatchParameterHash.MAX_CONTAINER_ITEMS)
+            .associate { index -> "values-$index" to manyValues }
+
+        assertFailsWith<IllegalArgumentException> {
+            BatchParameterHash.hash(parameters)
+        }
+    }
+
+    @Test
+    fun `scalar와 canonical UTF-8 byte 상한을 초과하면 거부한다`() {
+        assertFailsWith<IllegalArgumentException> {
+            BatchParameterHash.hash(
+                mapOf("value" to "a".repeat(BatchParameterHash.MAX_SCALAR_UTF8_BYTES + 1)),
+            )
+        }
+
+        val boundedScalar = "가".repeat(BatchParameterHash.MAX_SCALAR_UTF8_BYTES / 3)
+        val parameters = (1..5).associate { index -> "value-$index" to boundedScalar }
+
+        assertFailsWith<IllegalArgumentException> {
+            BatchParameterHash.hash(parameters)
+        }
+
+        var visited = 0
+        val lazyOversizedView = object : java.util.AbstractList<String>() {
+            override val size: Int = 0
+
+            override fun get(index: Int): String = boundedScalar
+
+            override fun iterator(): MutableIterator<String> = object : MutableIterator<String> {
+                private var index = 0
+
+                override fun hasNext(): Boolean = index < 100
+
+                override fun next(): String {
+                    index += 1
+                    visited += 1
+                    return boundedScalar
+                }
+
+                override fun remove() = throw UnsupportedOperationException()
+            }
+        }
+        assertFailsWith<IllegalArgumentException> {
+            BatchParameterHash.hash(mapOf("values" to lazyOversizedView))
+        }
+        (visited < 100) shouldBeEqualTo true
     }
 }
