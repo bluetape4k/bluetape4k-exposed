@@ -164,7 +164,7 @@ class BatchLeaseGuardTest {
     }
 
     @Test
-    fun `heartbeat의 lease loss는 parent를 취소하지 않고 guard의 canonical failure로 남긴다`() = runSuspendIO {
+    fun `heartbeat의 lease loss는 parent를 즉시 취소하고 guard의 canonical failure로 남긴다`() = runSuspendIO {
         val wallClock = MutableBatchClock(Instant.parse("2026-08-31T00:00:00Z"))
         val delegate = InMemoryBatchJobRepository(wallClock)
         val job = delegate.findOrCreateJobExecution("heartbeatLeaseLossJob")
@@ -180,17 +180,16 @@ class BatchLeaseGuardTest {
             pause = {},
         )
 
-        coroutineScope {
-            guard.startHeartbeat(this).join()
-
-            val writeFailure = assertFailsWith<LeaseLostException> {
-                guard.withWritePermit { error("write block must not run") }
+        val heartbeatFailure = assertFailsWith<LeaseLostException> {
+            coroutineScope {
+                guard.startHeartbeat(this).join()
             }
-            val snapshotFailure = assertFailsWith<LeaseLostException> {
-                guard.latestSnapshot()
-            }
-            snapshotFailure shouldBeSameInstanceAs writeFailure
         }
+        val snapshotFailure = assertFailsWith<LeaseLostException> {
+            guard.latestSnapshot()
+        }
+        val canonicalFailure = heartbeatFailure.cause as? LeaseLostException ?: heartbeatFailure
+        snapshotFailure shouldBeSameInstanceAs canonicalFailure
     }
 
     private class RenewalRejectingRepository(

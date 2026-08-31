@@ -318,8 +318,8 @@ class BatchInfrastructureFailureException(
 }
 ```
 
-public constructor는 category가 위 allowlist constant 중 하나이고 correlationId가 canonical
-UUID인지 검증하며 raw cause 인자를 열지 않는다. exception의 cause·suppressed 목록은 비어
+public constructor는 category가 위 allowlist constant 중 하나이고 correlationId가
+`Base58.randomString(16)` 형식인지 검증하며 raw cause 인자를 열지 않는다. exception의 cause·suppressed 목록은 비어
 있어야 한다. Kotlin `internal` constructor가 JVM/Java에서 public으로 노출되는 방식에는
 의존하지 않는다. Kotlin/Java source, API dump, serialization과 invalid-constructor 및
 exhaustive category fixture로 class, constructor, public property, constant와 stable message

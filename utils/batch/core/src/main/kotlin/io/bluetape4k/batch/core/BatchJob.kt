@@ -1,6 +1,5 @@
 package io.bluetape4k.batch.core
 
-import io.bluetape4k.codec.Base58
 import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchExecutionAlreadyClaimedException
 import io.bluetape4k.batch.api.BatchInfrastructureFailureException
@@ -10,6 +9,7 @@ import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.batch.api.requireValidBatchLeaseDuration
 import io.bluetape4k.batch.api.requireValidBatchName
+import io.bluetape4k.codec.Base58
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.error
 import io.bluetape4k.support.requireNotEmpty
@@ -24,7 +24,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.time.Duration
 import java.time.Instant
-import java.util.UUID
 
 /**
  * 배치 Job 실행기. 여러 [BatchStep]을 순차적으로 실행하며 재시작을 지원합니다.
@@ -59,7 +58,9 @@ class BatchJob(
     val executionLease: Duration = Duration.ofMinutes(15),
 ) : SuspendWork {
 
-    companion object : KLoggingChannel()
+    companion object : KLoggingChannel() {
+        private const val CORRELATION_ID_LENGTH = 16
+    }
 
     init {
         name.requireValidBatchName("name")
@@ -79,7 +80,7 @@ class BatchJob(
      * ## 취소 처리
      * - 외부 코루틴 취소([CancellationException]) → STOPPED 영속화 후 **반드시 재던짐**
      * - 치명적 예외([Throwable]) → FAILED 영속화 후 [BatchReport.Failure] 반환
-     * - 일반적인 FAILED/STOPPED 영속화 실패는 원인 예외의 suppressed cause로 보존하고
+     * - 일반적인 FAILED/STOPPED 영속화 실패는 raw cause를 제거한 진단 예외로 보존하고
      *   error 로그를 남긴다. 영속화 중 발생한 [CancellationException]은 원인 예외를
      *   suppressed로 연결한 뒤 전파한다. 자동 재시도·outbox는 이 실행기의 책임이 아니다.
      *
@@ -87,15 +88,8 @@ class BatchJob(
      */
     @Suppress("LongMethod", "ReturnCount", "CyclomaticComplexMethod", "ThrowsCount")
     suspend fun run(): BatchReport {
-        val jobExecution = try {
+        val jobExecution = repositoryCall {
             repository.findOrCreateJobExecution(name, params)
-        } catch (cancellation: CancellationException) {
-            throw cancellation
-        } catch (_: Throwable) {
-            return infrastructureFailure(
-                JobExecution(id = 0L, jobName = name, status = BatchStatus.FAILED),
-                BatchInfrastructureFailureException.REPOSITORY_FAILURE,
-            )
         }
         if (!repository.supportsLeaseRenewal) {
             return BatchReport.Failure(
@@ -103,24 +97,17 @@ class BatchJob(
                 emptyList(),
                 BatchInfrastructureFailureException(
                     BatchInfrastructureFailureException.REPOSITORY_FAILURE,
-                    UUID.randomUUID().toString(),
+                    Base58.randomString(CORRELATION_ID_LENGTH),
                 ),
             )
         }
         val ownerId = "${name}-${Base58.randomString(8)}"
         val claimStartedNanos = SYSTEM_BATCH_MONOTONIC_CLOCK.nowNanos()
-        val claimedJobExecution = try {
+        val claimedJobExecution = repositoryCall {
             repository.claimJobExecution(
                 execution = jobExecution,
                 ownerId = ownerId,
                 leaseDuration = executionLease,
-            )
-        } catch (cancellation: CancellationException) {
-            throw cancellation
-        } catch (_: Throwable) {
-            return infrastructureFailure(
-                jobExecution,
-                BatchInfrastructureFailureException.REPOSITORY_FAILURE,
             )
         } ?: return infrastructureFailure(
             jobExecution,
@@ -159,7 +146,9 @@ class BatchJob(
             val hasSkips = stepReports.any { it.skipCount > 0 }
             val finalStatus = if (hasSkips) BatchStatus.COMPLETED_WITH_SKIPS else BatchStatus.COMPLETED
             val completionExecution = stopHeartbeatAndGetLatest(leaseGuard)
-            repository.completeJobExecution(completionExecution, finalStatus)
+            repositoryCall {
+                repository.completeJobExecution(completionExecution, finalStatus)
+            }
             val reportExecution = completionExecution.copy(
                 status = finalStatus,
                 ownerId = null,
@@ -181,6 +170,9 @@ class BatchJob(
         } catch (_: LeaseLostException) {
             return leaseLossFailure(leaseGuard, claimedJobExecution, stepReports)
         } catch (e: CancellationException) {
+            if (leaseGuard.hasLostLease()) {
+                return leaseLossFailure(leaseGuard, claimedJobExecution, stepReports)
+            }
             compensateExternalCancellation(leaseGuard, claimedJobExecution, e)
             throw e
 
@@ -249,7 +241,7 @@ class BatchJob(
         stepReports: List<StepReport>,
     ): BatchReport.Failure {
         val latest = stopHeartbeatAndGetDiagnostic(leaseGuard, fallback)
-        val correlationId = UUID.randomUUID().toString()
+        val correlationId = Base58.randomString(CORRELATION_ID_LENGTH)
         return BatchReport.Failure(
             latest.sanitizeForInfrastructureFailure(),
             stepReports.map { it.sanitizeForInfrastructureFailure(correlationId) },
@@ -266,8 +258,20 @@ class BatchJob(
     ): BatchReport.Failure = BatchReport.Failure(
         execution.sanitizeForInfrastructureFailure().copy(status = BatchStatus.FAILED),
         emptyList(),
-        BatchInfrastructureFailureException(category, UUID.randomUUID().toString()),
+        BatchInfrastructureFailureException(category, Base58.randomString(CORRELATION_ID_LENGTH)),
     )
+
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun <T> repositoryCall(block: suspend () -> T): T = try {
+        block()
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (_: Throwable) {
+        throw BatchInfrastructureFailureException(
+            BatchInfrastructureFailureException.REPOSITORY_FAILURE,
+            Base58.randomString(CORRELATION_ID_LENGTH),
+        )
+    }
 
     @Suppress("TooGenericExceptionCaught")
     private suspend fun compensateExternalCancellation(
@@ -279,9 +283,13 @@ class BatchJob(
             withContext(NonCancellable) {
                 withTimeout(leaseGuard.repositoryTimeoutMillis) {
                     leaseGuard.stopHeartbeatInCurrentContext()
-                    val latest = runCatching {
+                    val latest = try {
                         leaseGuard.latestSnapshotForDiagnostics().jobExecution
-                    }.getOrElse { fallback }
+                    } catch (cancellation: CancellationException) {
+                        throw cancellation
+                    } catch (_: Throwable) {
+                        fallback
+                    }
                     repository.completeJobExecution(latest, BatchStatus.STOPPED)
                 }
             }
@@ -294,7 +302,7 @@ class BatchJob(
                 primary.addSuppressed(
                     BatchInfrastructureFailureException(
                         BatchInfrastructureFailureException.REPOSITORY_FAILURE,
-                        UUID.randomUUID().toString(),
+                        Base58.randomString(CORRELATION_ID_LENGTH),
                     ),
                 )
             }
@@ -308,7 +316,7 @@ class BatchJob(
     )
 
     private fun StepReport.sanitizeForInfrastructureFailure(
-        correlationId: String = UUID.randomUUID().toString(),
+        correlationId: String = Base58.randomString(CORRELATION_ID_LENGTH),
     ): StepReport = copy(
         checkpoint = null,
         error = error?.let {
@@ -348,12 +356,14 @@ class BatchJob(
         status: BatchStatus,
         persistenceFailure: Throwable,
     ) {
-        if (persistenceFailure !== primary) {
-            primary.addSuppressed(persistenceFailure)
-        }
-        log.error(persistenceFailure) {
+        val diagnostic = BatchInfrastructureFailureException(
+            BatchInfrastructureFailureException.REPOSITORY_FAILURE,
+            Base58.randomString(CORRELATION_ID_LENGTH),
+        )
+        if (persistenceFailure !== primary) primary.addSuppressed(diagnostic)
+        log.error {
             "$status 상태 저장 실패 — job=$name, executionId=$executionId, " +
-                "실행 원인 예외에 suppressed cause로 보존했습니다"
+                "category=${diagnostic.category}, correlationId=${diagnostic.correlationId}"
         }
     }
 

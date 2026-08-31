@@ -1,12 +1,12 @@
 package io.bluetape4k.batch.core
 
-import io.bluetape4k.codec.Base58
 import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchInfrastructureFailureException
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepExecution
 import io.bluetape4k.batch.api.StepReport
+import io.bluetape4k.codec.Base58
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.error
@@ -20,7 +20,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.time.Duration
 import java.time.Instant
-import java.util.UUID
 
 /**
  * [BatchStep]의 chunk 루프 실행 엔진.
@@ -38,7 +37,7 @@ import java.util.UUID
  * 1. [BatchJobRepository.findOrCreateStepExecution] 결과가 `COMPLETED` 또는 `COMPLETED_WITH_SKIPS`면
  *    reader/writer를 **절대 open하지 않고**, checkpoint 복원도 수행하지 않는다.
  * 2. [CancellationException]은 **절대 삼키지 않는다** — STOPPED 상태 저장 후 항상 즉시 재던진다.
- *    일반적인 상태 저장 실패는 원래 취소 예외의 suppressed cause로 보존하고, 저장 중
+ *    일반적인 상태 저장 실패는 raw cause를 제거한 진단 예외로 보존하고, 저장 중
  *    cancellation이 발생하면 원인 예외를 suppressed로 연결한 뒤 전파하며 error 로그를 남긴다.
  * 3. `reader.close()` / `writer.close()`는 `finally`의 [NonCancellable] 컨텍스트에서
  *    각각 독립적으로 실행하며, close 실패는 주 예외의 suppressed cause로 보존한다.
@@ -64,6 +63,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
 ) {
     companion object : KLoggingChannel() {
         private const val DEFAULT_LEASE_MINUTES = 15L
+        private const val CORRELATION_ID_LENGTH = 16
     }
 
     /**
@@ -299,7 +299,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
                 skipCount = skipCount,
                 error = BatchInfrastructureFailureException(
                     BatchInfrastructureFailureException.LEASE_LOST,
-                    UUID.randomUUID().toString(),
+                    Base58.randomString(CORRELATION_ID_LENGTH),
                 ),
             )
         } catch (e: CancellationException) {
@@ -364,13 +364,13 @@ internal class BatchStepRunner<I : Any, O : Any>(
     } catch (_: Throwable) {
         throw BatchInfrastructureFailureException(
             BatchInfrastructureFailureException.REPOSITORY_FAILURE,
-            UUID.randomUUID().toString(),
+            Base58.randomString(CORRELATION_ID_LENGTH),
         )
     }
 
     private fun infrastructureFailureReport(category: String): StepReport =
         infrastructureFailureReport(
-            BatchInfrastructureFailureException(category, UUID.randomUUID().toString()),
+            BatchInfrastructureFailureException(category, Base58.randomString(CORRELATION_ID_LENGTH)),
         )
 
     private fun infrastructureFailureReport(failure: BatchInfrastructureFailureException): StepReport =
@@ -415,7 +415,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
                 primary.addSuppressed(
                     BatchInfrastructureFailureException(
                         BatchInfrastructureFailureException.REPOSITORY_FAILURE,
-                        UUID.randomUUID().toString(),
+                        Base58.randomString(CORRELATION_ID_LENGTH),
                     ),
                 )
             }
@@ -463,12 +463,14 @@ internal class BatchStepRunner<I : Any, O : Any>(
         status: BatchStatus,
         persistenceFailure: Throwable,
     ) {
-        if (persistenceFailure !== primary) {
-            primary.addSuppressed(persistenceFailure)
-        }
-        log.error(persistenceFailure) {
+        val diagnostic = BatchInfrastructureFailureException(
+            BatchInfrastructureFailureException.REPOSITORY_FAILURE,
+            Base58.randomString(CORRELATION_ID_LENGTH),
+        )
+        if (persistenceFailure !== primary) primary.addSuppressed(diagnostic)
+        log.error {
             "$status 상태 저장 실패 — step=${step.name}, executionId=$executionId, " +
-                "실행 원인 예외에 suppressed cause로 보존했습니다"
+                "category=${diagnostic.category}, correlationId=${diagnostic.correlationId}"
         }
     }
 

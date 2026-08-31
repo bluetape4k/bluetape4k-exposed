@@ -56,6 +56,7 @@ internal class BatchLeaseGuard(
     private var latestStepExecution = initialStepExecution
     private var jobDeadlineNanos = deadlineFrom(initialClaimStartedNanos ?: monotonicClock.nowNanos())
     private var stepDeadlineNanos = latestStepExecution?.let { jobDeadlineNanos }
+    @Volatile
     private var leaseLost: LeaseLostException? = null
     private var heartbeatJob: Job? = null
 
@@ -125,18 +126,14 @@ internal class BatchLeaseGuard(
     fun startHeartbeat(scope: CoroutineScope): Job {
         check(heartbeatJob == null) { "Batch lease heartbeat is already running" }
         return scope.launch {
-            try {
-                while (isActive) {
-                    ensureActive()
-                    pause(timing.heartbeatIntervalMillis)
-                    ensureActive()
-                    mutex.withLock {
-                        ensureLeaseAvailable()
-                        renewLocked()
-                    }
+            while (isActive) {
+                ensureActive()
+                pause(timing.heartbeatIntervalMillis)
+                ensureActive()
+                mutex.withLock {
+                    ensureLeaseAvailable()
+                    renewLocked()
                 }
-            } catch (_: LeaseLostException) {
-                // canonical failure는 guard에 보존하고 parent를 외부 cancellation로 취소하지 않는다.
             }
         }.also { heartbeatJob = it }
     }
@@ -236,6 +233,9 @@ internal class BatchLeaseGuard(
         val failure = leaseLost ?: LeaseLostException(cause).also { leaseLost = it }
         throw failure
     }
+
+    /** heartbeat child cancellation을 외부 취소와 구분하기 위한 lock-free 진단 경계. */
+    fun hasLostLease(): Boolean = leaseLost != null
 
     @Suppress("TooGenericExceptionCaught")
     private suspend fun <T> boundedRepositoryCall(block: suspend () -> T): T = try {

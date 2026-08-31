@@ -20,6 +20,7 @@ import io.bluetape4k.batch.jdbc.tables.BatchStepExecutionTable
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
@@ -38,7 +39,6 @@ import org.junit.jupiter.params.provider.MethodSource
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.test.assertFailsWith
 
 /**
  * JDBC 배치 엔드투엔드 통합 테스트.
@@ -306,6 +306,18 @@ class ExposedJdbcBatchIntegrationTest : AbstractBatchJdbcTest() {
             val staleJob = checkNotNull(repository.claimJobExecution(initialJob, "owner-a", Instant.EPOCH))
             val initialStep = repository.findOrCreateStepExecution(staleJob, "leaseStep")
             val staleStep = checkNotNull(repository.claimStepExecution(initialStep, "owner-a", Instant.EPOCH))
+            assertFailsWith<IllegalStateException> {
+                repository.saveCheckpointAndReturn(staleStep, "expired-checkpoint")
+            }
+            assertFailsWith<IllegalStateException> {
+                repository.completeStepExecution(
+                    staleStep,
+                    StepReport("leaseStep", BatchStatus.COMPLETED),
+                )
+            }
+            assertFailsWith<IllegalStateException> {
+                repository.completeJobExecution(staleJob, BatchStatus.COMPLETED)
+            }
             val currentJob = checkNotNull(
                 repository.claimJobExecution(staleJob, "owner-b", Duration.ofMinutes(1)),
             )
@@ -360,13 +372,42 @@ class ExposedJdbcBatchIntegrationTest : AbstractBatchJdbcTest() {
                 val currentReport = withTimeout(10_000L) {
                     makeTakeoverJob(repository, SlowListReader(listOf(1, 2)), currentWriter).run()
                 }
+                val stateAfterCurrentCompletion = transaction(testDB.db!!) {
+                    val jobRow = BatchJobExecutionTable.selectAll().single()
+                    val stepRow = BatchStepExecutionTable.selectAll().single()
+                    listOf(
+                        jobRow[BatchJobExecutionTable.status],
+                        jobRow[BatchJobExecutionTable.version],
+                        jobRow[BatchJobExecutionTable.ownerId],
+                        jobRow[BatchJobExecutionTable.leaseUntil],
+                        stepRow[BatchStepExecutionTable.status],
+                        stepRow[BatchStepExecutionTable.version],
+                        stepRow[BatchStepExecutionTable.writeCount],
+                        stepRow[BatchStepExecutionTable.checkpoint],
+                    )
+                }
                 staleWriter.releaseFirstWrite.complete(Unit)
                 val staleReport = withTimeout(10_000L) { staleRun.await() }
+                val stateAfterStaleCompletion = transaction(testDB.db!!) {
+                    val jobRow = BatchJobExecutionTable.selectAll().single()
+                    val stepRow = BatchStepExecutionTable.selectAll().single()
+                    listOf(
+                        jobRow[BatchJobExecutionTable.status],
+                        jobRow[BatchJobExecutionTable.version],
+                        jobRow[BatchJobExecutionTable.ownerId],
+                        jobRow[BatchJobExecutionTable.leaseUntil],
+                        stepRow[BatchStepExecutionTable.status],
+                        stepRow[BatchStepExecutionTable.version],
+                        stepRow[BatchStepExecutionTable.writeCount],
+                        stepRow[BatchStepExecutionTable.checkpoint],
+                    )
+                }
 
                 currentReport shouldBeInstanceOf BatchReport.Success::class
                 staleReport shouldBeInstanceOf BatchReport.Failure::class
                 currentWriter.writeCount.get() shouldBeEqualTo 2
                 staleWriter.writeCount.get() shouldBeEqualTo 1
+                stateAfterStaleCompletion shouldBeEqualTo stateAfterCurrentCompletion
             }
         }
     }

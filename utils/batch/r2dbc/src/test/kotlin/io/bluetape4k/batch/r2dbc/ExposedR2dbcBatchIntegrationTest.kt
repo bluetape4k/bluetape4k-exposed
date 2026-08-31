@@ -20,6 +20,7 @@ import io.bluetape4k.batch.r2dbc.tables.BatchStepExecutionTable
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
@@ -28,6 +29,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
@@ -40,7 +43,6 @@ import org.junit.jupiter.params.provider.MethodSource
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.test.assertFailsWith
 
 /**
  * R2DBC 배치 엔드투엔드 통합 테스트.
@@ -341,6 +343,18 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
                 val staleJob = checkNotNull(repository.claimJobExecution(initialJob, "owner-a", Instant.EPOCH))
                 val initialStep = repository.findOrCreateStepExecution(staleJob, "leaseStep")
                 val staleStep = checkNotNull(repository.claimStepExecution(initialStep, "owner-a", Instant.EPOCH))
+                assertFailsWith<IllegalStateException> {
+                    repository.saveCheckpointAndReturn(staleStep, "expired-checkpoint")
+                }
+                assertFailsWith<IllegalStateException> {
+                    repository.completeStepExecution(
+                        staleStep,
+                        StepReport("leaseStep", BatchStatus.COMPLETED),
+                    )
+                }
+                assertFailsWith<IllegalStateException> {
+                    repository.completeJobExecution(staleJob, BatchStatus.COMPLETED)
+                }
                 val currentJob = checkNotNull(
                     repository.claimJobExecution(staleJob, "owner-b", Duration.ofMinutes(1)),
                 )
@@ -398,13 +412,52 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
                     val currentReport = withTimeout(10_000L) {
                         makeTakeoverJob(repository, SlowListReader(listOf(1, 2)), currentWriter).run()
                     }
+                    val stateAfterCurrentCompletion = suspendTransaction(db = database) {
+                        val jobState = BatchJobExecutionTable.selectAll().map { row ->
+                            listOf(
+                                row[BatchJobExecutionTable.status],
+                                row[BatchJobExecutionTable.version],
+                                row[BatchJobExecutionTable.ownerId],
+                                row[BatchJobExecutionTable.leaseUntil],
+                            )
+                        }.firstOrNull()
+                        val stepState = BatchStepExecutionTable.selectAll().map { row ->
+                            listOf(
+                                row[BatchStepExecutionTable.status],
+                                row[BatchStepExecutionTable.version],
+                                row[BatchStepExecutionTable.writeCount],
+                                row[BatchStepExecutionTable.checkpoint],
+                            )
+                        }.firstOrNull()
+                        jobState to stepState
+                    }
                     staleWriter.releaseFirstWrite.complete(Unit)
                     val staleReport = withTimeout(10_000L) { staleRun.await() }
+                    val stateAfterStaleCompletion = suspendTransaction(db = database) {
+                        val jobState = BatchJobExecutionTable.selectAll().map { row ->
+                            listOf(
+                                row[BatchJobExecutionTable.status],
+                                row[BatchJobExecutionTable.version],
+                                row[BatchJobExecutionTable.ownerId],
+                                row[BatchJobExecutionTable.leaseUntil],
+                            )
+                        }.firstOrNull()
+                        val stepState = BatchStepExecutionTable.selectAll().map { row ->
+                            listOf(
+                                row[BatchStepExecutionTable.status],
+                                row[BatchStepExecutionTable.version],
+                                row[BatchStepExecutionTable.writeCount],
+                                row[BatchStepExecutionTable.checkpoint],
+                            )
+                        }.firstOrNull()
+                        jobState to stepState
+                    }
 
                     currentReport shouldBeInstanceOf BatchReport.Success::class
                     staleReport shouldBeInstanceOf BatchReport.Failure::class
                     currentWriter.writeCount.get() shouldBeEqualTo 2
                     staleWriter.writeCount.get() shouldBeEqualTo 1
+                    stateAfterStaleCompletion shouldBeEqualTo stateAfterCurrentCompletion
                 }
             }
         }

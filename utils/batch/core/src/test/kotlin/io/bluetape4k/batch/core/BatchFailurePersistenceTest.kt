@@ -46,10 +46,31 @@ import java.util.concurrent.atomic.AtomicInteger
  * FAILED/STOPPED 상태 저장 실패가 실행 원인과 취소 전파에서 사라지지 않는지 검증한다.
  *
  * 자동 재시도나 outbox는 이 모듈의 저장소 계약에 포함하지 않는다. 실행기는 저장 실패를
- * 원인 예외에 suppressed cause로 연결하고 error 로그를 남기며, 재시도·알림은 호출자와
+ * cause가 제거된 진단 예외를 원인 예외에 suppressed로 연결하고 error 로그를 남기며, 재시도·알림은 호출자와
  * 저장소 운영 정책이 결정한다.
  */
 class BatchFailurePersistenceTest {
+
+    @Test
+    fun `JobExecution 조회 실패는 raw cause 없이 상관관계 ID만 노출한다`() = runSuspendIO {
+        val rawFailure = IllegalStateException("database password leaked")
+        val delegate = InMemoryBatchJobRepository()
+        val repository = object : BatchJobRepository by delegate {
+            override suspend fun findOrCreateJobExecution(
+                jobName: String,
+                params: Map<String, Any>,
+            ): JobExecution = throw rawFailure
+        }
+
+        val failure = assertFailsWith<BatchInfrastructureFailureException> {
+            job(repository, FailingReader(IllegalStateException("must not run"))).run()
+        }
+
+        failure.category shouldBe BatchInfrastructureFailureException.REPOSITORY_FAILURE
+        failure.cause shouldBe null
+        failure.suppressed.size shouldBeEqualTo 0
+        failure.correlationId.length shouldBeEqualTo 16
+    }
 
     @Test
     fun `step FAILED 저장 실패는 원인 예외에 suppressed 된다`() = runSuspendIO {
@@ -62,7 +83,7 @@ class BatchFailurePersistenceTest {
         report shouldBeInstanceOf BatchReport.Failure::class
         val failure = report as BatchReport.Failure
         failure.error shouldBeSameInstanceAs primaryFailure
-        failure.error.suppressed.single() shouldBeSameInstanceAs persistenceFailure
+        assertSanitizedPersistenceFailure(failure.error)
 
         val storedJob = repository.findOrCreateJobExecution("failure-persistence")
         val storedStep = repository.findOrCreateStepExecution(storedJob, "step")
@@ -85,7 +106,7 @@ class BatchFailurePersistenceTest {
         report shouldBeInstanceOf BatchReport.Failure::class
         val failure = report as BatchReport.Failure
         failure.error shouldBeSameInstanceAs primaryFailure
-        failure.error.suppressed.single() shouldBeSameInstanceAs persistenceFailure
+        assertSanitizedPersistenceFailure(failure.error)
 
         val storedJob = repository.findOrCreateJobExecution("failure-persistence")
         storedJob.status shouldBe BatchStatus.RUNNING
@@ -214,8 +235,8 @@ class BatchFailurePersistenceTest {
         try {
             job(repository, FailingReader(IllegalStateException("reader failed"))).run()
             appender.failureMessages shouldContain "FAILED 상태 저장 실패"
-            appender.throwableMessages shouldBeEqualTo listOf("step state write failed")
-            appender.errorMessages shouldBeEqualTo listOf("step state write failed")
+            appender.throwableMessages shouldBeEqualTo emptyList()
+            appender.errorMessages shouldBeEqualTo emptyList()
         } finally {
             appender.close()
         }
@@ -236,7 +257,7 @@ class BatchFailurePersistenceTest {
         report shouldBeInstanceOf BatchReport.Failure::class
         val failure = report as BatchReport.Failure
         failure.error shouldBeSameInstanceAs primaryFailure
-        failure.error.suppressed.single() shouldBeSameInstanceAs persistenceFailure
+        assertSanitizedPersistenceFailure(failure.error)
 
         val storedJob = repository.reloadJobExecution()
         storedJob.status shouldBe BatchStatus.RUNNING
@@ -285,7 +306,7 @@ class BatchFailurePersistenceTest {
             report shouldBeInstanceOf BatchReport.Failure::class
             val failure = report as BatchReport.Failure
             failure.error shouldBeSameInstanceAs primaryFailure
-            failure.error.suppressed.single() shouldBeSameInstanceAs persistenceFailure
+            assertSanitizedPersistenceFailure(failure.error)
 
             val storedJob = repository.reloadJobExecution()
             storedJob.status shouldBe BatchStatus.RUNNING
@@ -514,7 +535,7 @@ class BatchFailurePersistenceTest {
         report shouldBeInstanceOf BatchReport.Failure::class
         val failure = report as BatchReport.Failure
         failure.error shouldBeSameInstanceAs primaryFailure
-        failure.error.suppressed.single() shouldBeSameInstanceAs persistenceFailure
+        assertSanitizedPersistenceFailure(failure.error)
         val storedJob = repository.reloadJobExecution()
         val storedStep = repository.reloadStepExecution(storedJob)
         storedStep.status shouldBe BatchStatus.RUNNING
@@ -542,6 +563,14 @@ class BatchFailurePersistenceTest {
 
     private fun assertSanitizedCompensationFailure(cancellation: CancellationException) {
         val diagnostic = cancellation.suppressed.single()
+        diagnostic shouldBeInstanceOf BatchInfrastructureFailureException::class
+        diagnostic as BatchInfrastructureFailureException
+        diagnostic.category shouldBe BatchInfrastructureFailureException.REPOSITORY_FAILURE
+        diagnostic.cause shouldBe null
+    }
+
+    private fun assertSanitizedPersistenceFailure(primary: Throwable) {
+        val diagnostic = primary.suppressed.single()
         diagnostic shouldBeInstanceOf BatchInfrastructureFailureException::class
         diagnostic as BatchInfrastructureFailureException
         diagnostic.category shouldBe BatchInfrastructureFailureException.REPOSITORY_FAILURE
