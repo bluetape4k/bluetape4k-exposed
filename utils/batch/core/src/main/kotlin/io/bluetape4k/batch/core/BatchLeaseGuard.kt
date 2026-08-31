@@ -7,7 +7,7 @@ import io.bluetape4k.batch.api.StepExecution
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
@@ -106,7 +106,9 @@ internal class BatchLeaseGuard(
         val current = checkNotNull(latestStepExecution) {
             "Checkpoint save requires an active Step lease"
         }
-        val updated = repository.saveCheckpointAndReturn(current, checkpoint)
+        val updated = boundedRepositoryCall {
+            repository.saveCheckpointAndReturn(current, checkpoint)
+        }
         check(
             updated.id == current.id &&
                 updated.jobExecutionId == latestJobExecution.id &&
@@ -123,14 +125,18 @@ internal class BatchLeaseGuard(
     fun startHeartbeat(scope: CoroutineScope): Job {
         check(heartbeatJob == null) { "Batch lease heartbeat is already running" }
         return scope.launch {
-            while (isActive) {
-                ensureActive()
-                pause(timing.heartbeatIntervalMillis)
-                ensureActive()
-                mutex.withLock {
-                    ensureLeaseAvailable()
-                    renewLocked()
+            try {
+                while (isActive) {
+                    ensureActive()
+                    pause(timing.heartbeatIntervalMillis)
+                    ensureActive()
+                    mutex.withLock {
+                        ensureLeaseAvailable()
+                        renewLocked()
+                    }
                 }
+            } catch (_: LeaseLostException) {
+                // canonical failure는 guard에 보존하고 parent를 외부 cancellation로 취소하지 않는다.
             }
         }.also { heartbeatJob = it }
     }
@@ -147,8 +153,11 @@ internal class BatchLeaseGuard(
     /** 이미 만들어진 bounded cleanup envelope 안에서 heartbeat를 종료한다. */
     suspend fun stopHeartbeatInCurrentContext() {
         val heartbeat = heartbeatJob ?: return
-        heartbeatJob = null
-        heartbeat.cancelAndJoin()
+        heartbeat.cancel()
+        heartbeat.join()
+        if (heartbeat.isCompleted) {
+            heartbeatJob = null
+        }
     }
 
     /** 최신 guard snapshot을 읽는다. mutable permit은 반환하지 않는다. */
@@ -195,7 +204,9 @@ internal class BatchLeaseGuard(
         val execution = checkNotNull(latestStepExecution) {
             "Step completion requires an active Step lease"
         }
-        complete(execution)
+        boundedRepositoryCall {
+            complete(execution)
+        }
         latestStepExecution = null
         stepDeadlineNanos = null
     }
@@ -224,6 +235,21 @@ internal class BatchLeaseGuard(
     fun failLease(cause: Throwable? = null): Nothing {
         val failure = leaseLost ?: LeaseLostException(cause).also { leaseLost = it }
         throw failure
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun <T> boundedRepositoryCall(block: suspend () -> T): T = try {
+        withTimeout(timing.repositoryTimeoutMillis) {
+            block()
+        }
+    } catch (timeout: TimeoutCancellationException) {
+        failLease(timeout)
+    } catch (cancellation: CancellationException) {
+        // withTimeout의 stacktrace recovery가 CancellationException 복사본을 만들 수 있다.
+        // repository가 던진 원본 cancellation identity를 외부 계약에 그대로 보존한다.
+        throw (cancellation.cause as? CancellationException ?: cancellation)
+    } catch (failure: Exception) {
+        failLease(failure)
     }
 
     @Suppress("TooGenericExceptionCaught")

@@ -85,9 +85,18 @@ class BatchJob(
      *
      * @return [BatchReport.Success], [BatchReport.PartiallyCompleted], 또는 [BatchReport.Failure]
      */
-    @Suppress("LongMethod", "ReturnCount")
+    @Suppress("LongMethod", "ReturnCount", "CyclomaticComplexMethod", "ThrowsCount")
     suspend fun run(): BatchReport {
-        val jobExecution = repository.findOrCreateJobExecution(name, params)
+        val jobExecution = try {
+            repository.findOrCreateJobExecution(name, params)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: Throwable) {
+            return infrastructureFailure(
+                JobExecution(id = 0L, jobName = name, status = BatchStatus.FAILED),
+                BatchInfrastructureFailureException.REPOSITORY_FAILURE,
+            )
+        }
         if (!repository.supportsLeaseRenewal) {
             return BatchReport.Failure(
                 jobExecution.sanitizeForInfrastructureFailure(),
@@ -100,14 +109,22 @@ class BatchJob(
         }
         val ownerId = "${name}-${Base58.randomString(8)}"
         val claimStartedNanos = SYSTEM_BATCH_MONOTONIC_CLOCK.nowNanos()
-        val claimedJobExecution = repository.claimJobExecution(
-            execution = jobExecution,
-            ownerId = ownerId,
-            leaseDuration = executionLease,
-        ) ?: return BatchReport.Failure(
-            jobExecution.sanitizeForInfrastructureFailure(),
-            emptyList(),
-            BatchExecutionAlreadyClaimedException("Job", jobExecution.id, jobExecution.ownerId),
+        val claimedJobExecution = try {
+            repository.claimJobExecution(
+                execution = jobExecution,
+                ownerId = ownerId,
+                leaseDuration = executionLease,
+            )
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: Throwable) {
+            return infrastructureFailure(
+                jobExecution,
+                BatchInfrastructureFailureException.REPOSITORY_FAILURE,
+            )
+        } ?: return infrastructureFailure(
+            jobExecution,
+            BatchInfrastructureFailureException.EXECUTION_ALREADY_CLAIMED,
         )
         val leaseGuard = BatchLeaseGuard(
             repository = repository,
@@ -242,6 +259,15 @@ class BatchJob(
             ),
         )
     }
+
+    private fun infrastructureFailure(
+        execution: JobExecution,
+        category: String,
+    ): BatchReport.Failure = BatchReport.Failure(
+        execution.sanitizeForInfrastructureFailure().copy(status = BatchStatus.FAILED),
+        emptyList(),
+        BatchInfrastructureFailureException(category, UUID.randomUUID().toString()),
+    )
 
     @Suppress("TooGenericExceptionCaught")
     private suspend fun compensateExternalCancellation(

@@ -717,7 +717,7 @@ private fun R2dbcException.hasUniqueSqlState(): Boolean = sqlState == "23505"
 
 private fun Duration.toRenewalTimeoutSeconds(): Int {
     val timeoutMillis = minOf(toMillis() / 6L, MAX_RENEWAL_TIMEOUT_MILLIS)
-    return Math.ceilDiv(timeoutMillis, MILLIS_PER_SECOND)
+    return (timeoutMillis / MILLIS_PER_SECOND)
         .coerceAtLeast(1L)
         .toInt()
 }

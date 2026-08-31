@@ -1,8 +1,10 @@
 package io.bluetape4k.batch.core
 
-import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.batch.api.BatchExecutionLeaseSnapshot
+import io.bluetape4k.batch.api.BatchInfrastructureFailureException
 import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchStatus
@@ -34,20 +36,23 @@ class BatchStepRunnerLeaseFencingTest {
             writer = writer,
         )
 
-        assertFailsWith<LeaseLostException> {
-            BatchStepRunner(
-                step = step,
-                jobExecution = JobExecution(
-                    id = 1L,
-                    jobName = "fencedJob",
-                    status = BatchStatus.RUNNING,
-                ),
-                repository = repository,
-                leaseDuration = Duration.ofSeconds(30),
-                monotonicClock = monotonic,
-            ).run()
-        }
+        val report = BatchStepRunner(
+            step = step,
+            jobExecution = JobExecution(
+                id = 1L,
+                jobName = "fencedJob",
+                status = BatchStatus.RUNNING,
+            ),
+            repository = repository,
+            leaseDuration = Duration.ofSeconds(30),
+            monotonicClock = monotonic,
+        ).run()
 
+        report.status shouldBeEqualTo BatchStatus.FAILED
+        report.error shouldBeInstanceOf BatchInfrastructureFailureException::class
+        val diagnostic = report.error as BatchInfrastructureFailureException
+        diagnostic.category shouldBeEqualTo BatchInfrastructureFailureException.LEASE_LOST
+        diagnostic.cause.shouldBeNull()
         writer.calls shouldBeEqualTo 0
     }
 

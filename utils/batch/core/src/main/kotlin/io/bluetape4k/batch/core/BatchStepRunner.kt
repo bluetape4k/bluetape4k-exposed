@@ -2,7 +2,6 @@ package io.bluetape4k.batch.core
 
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.batch.api.BatchJobRepository
-import io.bluetape4k.batch.api.BatchExecutionAlreadyClaimedException
 import io.bluetape4k.batch.api.BatchInfrastructureFailureException
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.JobExecution
@@ -84,18 +83,18 @@ internal class BatchStepRunner<I : Any, O : Any>(
                 jobExecution
             } else {
                 val fallbackOwnerId = "${jobExecution.jobName}-${step.name}-${Base58.randomString(8)}"
-                repository.claimJobExecution(
-                    execution = jobExecution,
-                    ownerId = fallbackOwnerId,
-                    leaseDuration = leaseDuration,
-                ) ?: return StepReport(
-                    stepName = step.name,
-                    status = BatchStatus.FAILED,
-                    error = BatchExecutionAlreadyClaimedException(
-                        executionType = "Job",
-                        executionId = jobExecution.id,
-                        ownerId = jobExecution.ownerId,
-                    ),
+                try {
+                    repositoryCall {
+                        repository.claimJobExecution(
+                            execution = jobExecution,
+                            ownerId = fallbackOwnerId,
+                            leaseDuration = leaseDuration,
+                        )
+                    }
+                } catch (failure: BatchInfrastructureFailureException) {
+                    return infrastructureFailureReport(failure)
+                } ?: return infrastructureFailureReport(
+                    BatchInfrastructureFailureException.EXECUTION_ALREADY_CLAIMED,
                 )
             }
             BatchLeaseGuard(
@@ -109,7 +108,13 @@ internal class BatchStepRunner<I : Any, O : Any>(
             )
         }
         val claimedJobExecution = activeLeaseGuard.latestSnapshot().jobExecution
-        val stepExecution = repository.findOrCreateStepExecution(claimedJobExecution, step.name)
+        val stepExecution = try {
+            repositoryCall {
+                repository.findOrCreateStepExecution(claimedJobExecution, step.name)
+            }
+        } catch (failure: BatchInfrastructureFailureException) {
+            return infrastructureFailureReport(failure)
+        }
 
         // (1) 이미 완료된 Step은 즉시 기존 리포트 반환 — reader/writer open 및 checkpoint 복원 금지
         if (stepExecution.status == BatchStatus.COMPLETED ||
@@ -128,16 +133,15 @@ internal class BatchStepRunner<I : Any, O : Any>(
 
         val ownerId = requireNotNull(claimedJobExecution.ownerId)
         val claimStartedNanos = monotonicClock.nowNanos()
-        val claimedStepExecution = repository.claimStepExecution(stepExecution, ownerId, leaseDuration)
-            ?: return StepReport(
-                stepName = step.name,
-                status = BatchStatus.FAILED,
-                error = BatchExecutionAlreadyClaimedException(
-                    executionType = "Step",
-                    executionId = stepExecution.id,
-                    ownerId = stepExecution.ownerId,
-                ),
-            )
+        val claimedStepExecution = try {
+            repositoryCall {
+                repository.claimStepExecution(stepExecution, ownerId, leaseDuration)
+            }
+        } catch (failure: BatchInfrastructureFailureException) {
+            return infrastructureFailureReport(failure)
+        } ?: return infrastructureFailureReport(
+            BatchInfrastructureFailureException.EXECUTION_ALREADY_CLAIMED,
+        )
         activeLeaseGuard.recordStepExecution(claimedStepExecution, claimStartedNanos)
         if (ownsLeaseGuard) {
             activeLeaseGuard.startHeartbeat(
@@ -154,7 +158,9 @@ internal class BatchStepRunner<I : Any, O : Any>(
             step.writer.open()
 
             // (2) checkpoint 조회 — null이 아닐 때만 restoreFrom 호출
-            val checkpoint = repository.loadCheckpoint(claimedStepExecution.id)
+            val checkpoint = repositoryCall {
+                repository.loadCheckpoint(claimedStepExecution.id)
+            }
             if (checkpoint != null) {
                 log.debug { "체크포인트 복원 완료" }
                 step.reader.restoreFrom(checkpoint)
@@ -285,7 +291,17 @@ internal class BatchStepRunner<I : Any, O : Any>(
             return stepReport
         } catch (e: LeaseLostException) {
             primaryFailure = e
-            throw e
+            return StepReport(
+                stepName = step.name,
+                status = BatchStatus.FAILED,
+                readCount = readCount,
+                writeCount = writeCount,
+                skipCount = skipCount,
+                error = BatchInfrastructureFailureException(
+                    BatchInfrastructureFailureException.LEASE_LOST,
+                    UUID.randomUUID().toString(),
+                ),
+            )
         } catch (e: CancellationException) {
             // 취소 → STOPPED 저장 후 즉시 재던짐 — 절대 삼키지 않음
             primaryFailure = e
@@ -328,14 +344,41 @@ internal class BatchStepRunner<I : Any, O : Any>(
             return failedReport
         } finally {
             withContext(NonCancellable) {
-                if (ownsLeaseGuard) {
-                    activeLeaseGuard.stopHeartbeat()
+                try {
+                    if (ownsLeaseGuard) {
+                        activeLeaseGuard.stopHeartbeat()
+                    }
+                } finally {
+                    closeSafely("reader", primaryFailure) { step.reader.close() }
+                    closeSafely("writer", primaryFailure) { step.writer.close() }
                 }
-                closeSafely("reader", primaryFailure) { step.reader.close() }
-                closeSafely("writer", primaryFailure) { step.writer.close() }
             }
         }
     }
+
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun <T> repositoryCall(block: suspend () -> T): T = try {
+        block()
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (_: Throwable) {
+        throw BatchInfrastructureFailureException(
+            BatchInfrastructureFailureException.REPOSITORY_FAILURE,
+            UUID.randomUUID().toString(),
+        )
+    }
+
+    private fun infrastructureFailureReport(category: String): StepReport =
+        infrastructureFailureReport(
+            BatchInfrastructureFailureException(category, UUID.randomUUID().toString()),
+        )
+
+    private fun infrastructureFailureReport(failure: BatchInfrastructureFailureException): StepReport =
+        StepReport(
+            stepName = step.name,
+            status = BatchStatus.FAILED,
+            error = failure,
+        )
 
     @Suppress("TooGenericExceptionCaught")
     private suspend fun checkpointForFailure(primary: Throwable): Any? = try {

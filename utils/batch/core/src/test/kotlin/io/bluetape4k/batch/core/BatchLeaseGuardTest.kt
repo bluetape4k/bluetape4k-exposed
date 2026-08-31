@@ -2,6 +2,7 @@ package io.bluetape4k.batch.core
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.batch.api.BatchExecutionLeaseSnapshot
 import io.bluetape4k.batch.api.BatchJobRepository
@@ -159,6 +160,36 @@ class BatchLeaseGuardTest {
             finishWrite.complete(Unit)
             write.await()
             guard.stopHeartbeat()
+        }
+    }
+
+    @Test
+    fun `heartbeat의 lease loss는 parent를 취소하지 않고 guard의 canonical failure로 남긴다`() = runSuspendIO {
+        val wallClock = MutableBatchClock(Instant.parse("2026-08-31T00:00:00Z"))
+        val delegate = InMemoryBatchJobRepository(wallClock)
+        val job = delegate.findOrCreateJobExecution("heartbeatLeaseLossJob")
+        val step = delegate.findOrCreateStepExecution(job, "heartbeatLeaseLossStep")
+        val claimedJob = delegate.claimJobExecution(job, "owner-1", Duration.ofSeconds(30)).shouldNotBeNull()
+        val claimedStep = delegate.claimStepExecution(step, "owner-1", Duration.ofSeconds(30)).shouldNotBeNull()
+        val guard = BatchLeaseGuard(
+            repository = RenewalRejectingRepository(delegate),
+            ownerId = "owner-1",
+            executionLease = Duration.ofSeconds(30),
+            initialJobExecution = claimedJob,
+            initialStepExecution = claimedStep,
+            pause = {},
+        )
+
+        coroutineScope {
+            guard.startHeartbeat(this).join()
+
+            val writeFailure = assertFailsWith<LeaseLostException> {
+                guard.withWritePermit { error("write block must not run") }
+            }
+            val snapshotFailure = assertFailsWith<LeaseLostException> {
+                guard.latestSnapshot()
+            }
+            snapshotFailure shouldBeSameInstanceAs writeFailure
         }
     }
 

@@ -4,7 +4,7 @@ import io.bluetape4k.batch.BatchSourceTable
 import io.bluetape4k.batch.BatchTargetTable
 import io.bluetape4k.batch.SourceRecord
 import io.bluetape4k.batch.TargetRecord
-import io.bluetape4k.batch.api.BatchExecutionAlreadyClaimedException
+import io.bluetape4k.batch.api.BatchInfrastructureFailureException
 import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchReport
@@ -28,10 +28,12 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.batchInsert
 import org.jetbrains.exposed.v1.r2dbc.selectAll
+import org.jetbrains.exposed.v1.r2dbc.update
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -238,7 +240,7 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `checkpoint 저장 실패도 성공 writer counter와 receipt를 보존한다`(testDB: TestDB) {
+    fun `checkpoint 저장 실패는 raw cause를 숨기고 성공 writer counter를 보존한다`(testDB: TestDB) {
         runSuspendIO {
             withAllTables(testDB) {
                 val database = testDB.db!!
@@ -253,7 +255,7 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
 
                 report shouldBeInstanceOf BatchReport.Failure::class
                 report.stepReports.single().status shouldBe BatchStatus.FAILED
-                report.stepReports.single().checkpoint shouldBeEqualTo "checkpoint-1"
+                report.stepReports.single().checkpoint shouldBe null
                 report.stepReports.single().writeCount shouldBeEqualTo 1L
                 firstWriter.items shouldBeEqualTo listOf("first")
 
@@ -262,9 +264,9 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
                     mapOf("partition" to "test"),
                 )
                 val storedStep = delegate.findOrCreateStepExecution(execution, "checkpointStep")
-                storedStep.status shouldBe BatchStatus.FAILED
-                storedStep.checkpoint shouldBeEqualTo "checkpoint-1"
-                storedStep.writeCount shouldBeEqualTo 1L
+                storedStep.status shouldBe BatchStatus.RUNNING
+                storedStep.checkpoint shouldBe null
+                storedStep.writeCount shouldBeEqualTo 0L
             }
         }
     }
@@ -289,7 +291,10 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
                 reports.count { it is BatchReport.Success } shouldBeEqualTo 1
                 reports.count { it is BatchReport.Failure } shouldBeEqualTo 1
                 val failure = reports.filterIsInstance<BatchReport.Failure>().single()
-                failure.error shouldBeInstanceOf BatchExecutionAlreadyClaimedException::class
+                failure.error shouldBeInstanceOf BatchInfrastructureFailureException::class
+                val diagnostic = failure.error as BatchInfrastructureFailureException
+                diagnostic.category shouldBe BatchInfrastructureFailureException.EXECUTION_ALREADY_CLAIMED
+                diagnostic.cause shouldBe null
                 writer.openCount.get() shouldBeEqualTo 1
                 writer.writeCount.get() shouldBeEqualTo 3
             }
@@ -359,6 +364,47 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
                         staleStep,
                         StepReport("leaseStep", BatchStatus.COMPLETED),
                     )
+                }
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `두 BatchJob runner의 lease takeover 뒤 stale runner는 다음 write를 시작하지 않는다`(testDB: TestDB) {
+        runSuspendIO {
+            withAllTables(testDB) {
+                val database = testDB.db!!
+                val repository = ExposedR2dbcBatchJobRepository(database, CheckpointJson.jackson3())
+                val staleReader = BarrierCheckpointReader(listOf(1, 2))
+                val staleWriter = BarrierCountingWriter()
+                val currentWriter = CountingWriter()
+
+                coroutineScope {
+                    val staleRun = async {
+                        makeTakeoverJob(repository, staleReader, staleWriter).run()
+                    }
+                    staleWriter.firstWriteStarted.await()
+
+                    suspendTransaction(db = database) {
+                        BatchJobExecutionTable.update {
+                            it[leaseUntil] = Instant.EPOCH
+                        }
+                        BatchStepExecutionTable.update {
+                            it[leaseUntil] = Instant.EPOCH
+                        }
+                    }
+
+                    val currentReport = withTimeout(10_000L) {
+                        makeTakeoverJob(repository, SlowListReader(listOf(1, 2)), currentWriter).run()
+                    }
+                    staleWriter.releaseFirstWrite.complete(Unit)
+                    val staleReport = withTimeout(10_000L) { staleRun.await() }
+
+                    currentReport shouldBeInstanceOf BatchReport.Success::class
+                    staleReport shouldBeInstanceOf BatchReport.Failure::class
+                    currentWriter.writeCount.get() shouldBeEqualTo 2
+                    staleWriter.writeCount.get() shouldBeEqualTo 1
                 }
             }
         }
@@ -444,6 +490,57 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
 
         override suspend fun write(items: List<Int>) {
             delay(200)
+            writeCount.addAndGet(items.size)
+        }
+    }
+
+    private fun makeTakeoverJob(
+        repository: BatchJobRepository,
+        reader: BatchReader<Int>,
+        writer: BatchWriter<Int>,
+    ) = batchJob("runnerTakeoverJob") {
+        repository(repository)
+        executionLease(Duration.ofSeconds(30))
+        step<Int, Int>("takeoverStep") {
+            reader(reader)
+            writer(writer)
+            chunkSize(1)
+        }
+    }
+
+    private class BarrierCheckpointReader(
+        items: List<Int>,
+    ) : BatchReader<Int> {
+        private val queue = ArrayDeque(items)
+        private var committedCount = 0
+
+        override suspend fun read(): Int? = queue.removeFirstOrNull()
+
+        override suspend fun onChunkCommitted() {
+            committedCount++
+        }
+
+        override suspend fun checkpoint(): Any? = committedCount.takeIf { it > 0 }
+    }
+
+    private class BarrierCountingWriter : BatchWriter<Int> {
+        val firstWriteStarted = CompletableDeferred<Unit>()
+        val releaseFirstWrite = CompletableDeferred<Unit>()
+        val writeCount = AtomicInteger()
+
+        override suspend fun write(items: List<Int>) {
+            if (writeCount.get() == 0) {
+                firstWriteStarted.complete(Unit)
+                releaseFirstWrite.await()
+            }
+            writeCount.addAndGet(items.size)
+        }
+    }
+
+    private class CountingWriter : BatchWriter<Int> {
+        val writeCount = AtomicInteger()
+
+        override suspend fun write(items: List<Int>) {
             writeCount.addAndGet(items.size)
         }
     }
