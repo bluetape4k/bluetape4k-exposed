@@ -171,6 +171,15 @@ public final class io/bluetape4k/batch/api/BatchReport$Success : io/bluetape4k/b
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/bluetape4k/batch/api/BatchRepositoryRecoveryExhaustedException : java/lang/IllegalStateException {
+	public static final field Companion Lio/bluetape4k/batch/api/BatchRepositoryRecoveryExhaustedException$Companion;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getCorrelationId ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/batch/api/BatchRepositoryRecoveryExhaustedException$Companion {
+}
+
 public final class io/bluetape4k/batch/api/BatchStatus : java/lang/Enum {
 	public static final field COMPLETED Lio/bluetape4k/batch/api/BatchStatus;
 	public static final field COMPLETED_WITH_SKIPS Lio/bluetape4k/batch/api/BatchStatus;
@@ -182,6 +191,10 @@ public final class io/bluetape4k/batch/api/BatchStatus : java/lang/Enum {
 	public final fun isTerminal ()Z
 	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/batch/api/BatchStatus;
 	public static fun values ()[Lio/bluetape4k/batch/api/BatchStatus;
+}
+
+public final class io/bluetape4k/batch/api/BatchStatusKt {
+	public static final fun requireTerminalCompletionStatus (Lio/bluetape4k/batch/api/BatchStatus;)Lio/bluetape4k/batch/api/BatchStatus;
 }
 
 public final class io/bluetape4k/batch/api/BatchStepFailedException : java/lang/RuntimeException {

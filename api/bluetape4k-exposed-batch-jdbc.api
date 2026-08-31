@@ -50,6 +50,7 @@ public final class io/bluetape4k/batch/jdbc/ExposedJdbcBatchWriter$Companion : i
 
 public final class io/bluetape4k/batch/jdbc/tables/BatchJobExecutionTable : org/jetbrains/exposed/v1/core/dao/id/LongIdTable {
 	public static final field INSTANCE Lio/bluetape4k/batch/jdbc/tables/BatchJobExecutionTable;
+	public final fun getActiveKey ()Lorg/jetbrains/exposed/v1/core/Column;
 	public final fun getEndTime ()Lorg/jetbrains/exposed/v1/core/Column;
 	public final fun getJobName ()Lorg/jetbrains/exposed/v1/core/Column;
 	public final fun getLeaseUntil ()Lorg/jetbrains/exposed/v1/core/Column;

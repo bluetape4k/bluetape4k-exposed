@@ -29,6 +29,10 @@
 
 ### 변경됨
 
+- batch JDBC/R2DBC repository가 지원 DB 공통 `active_key` unique schema와 bounded
+  unique-conflict recovery를 사용하고, InMemory를 포함한 completion API가 terminal
+  상태만 저장하도록 계약을 강화했습니다
+  ([#771](https://github.com/bluetape4k/bluetape4k-exposed/issues/771)).
 - batch Job/Step execution에 owner+version lease renewal과 writer/checkpoint
   직전 fencing을 추가하고, capability preflight·redacted structured event·canary
   rollout/rollback receipt validator를 제공했습니다

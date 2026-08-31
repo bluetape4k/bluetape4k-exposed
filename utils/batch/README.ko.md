@@ -152,6 +152,20 @@ SkipPolicy { e, count -> e is DataException && count < 50 }  // 커스텀
 3. 재시작 시 청크 루프 시작 전 `reader.restoreFrom(checkpoint)` 호출로 상태 복원
 4. `TypedCheckpoint` 봉투(Jackson 3)로 모든 직렬화 가능 타입의 타입 안전 round-trip 보장
 
+## Repository 동시성 및 schema prerequisite
+
+`batch_job_execution`은 `(job_name, params_hash, active_key)` unique index로 재사용 가능한 실행을 하나만 허용합니다. `STARTING`, `RUNNING`, `FAILED`, `STOPPED` row의 `active_key`는 `ACTIVE`이고, `COMPLETED`, `COMPLETED_WITH_SKIPS` 이력은 `NULL`입니다. 이 계약은 PostgreSQL, MySQL 8.0.16+ InnoDB, H2의 `NULLS DISTINCT` 동작을 사용합니다.
+
+기존 schema는 runtime 시작 전에 다음 artifact를 순서대로 적용해야 합니다. library가 application startup에서 DDL을 실행하지는 않습니다.
+
+1. writer를 정지하고 `schema/<backend>/V001__active_job_execution_key_preflight.sql` 결과에 unknown status, null key, active duplicate가 없는지 확인합니다.
+2. `schema/<backend>/V001__active_job_execution_key_migrate.sql`을 migration 권한으로 실행합니다.
+3. `schema/<backend>/V001__active_job_execution_key_postflight.sql`의 진단 count가 모두 0이고 `batch_job_execution_active_uidx`가 존재하는지 확인한 뒤 traffic을 엽니다.
+
+unique conflict가 발생하면 repository는 active winner를 다시 조회합니다. 그 사이 winner가 terminal로 전이했다면 새 active execution을 한 번 생성하고, 다시 경합하면 마지막 winner 조회 후 종료합니다. JDBC/R2DBC 회귀 테스트는 H2, PostgreSQL, MySQL에서 conflict 후 re-query barrier를 검증합니다.
+
+`completeJobExecution`과 `completeStepExecution`은 `BatchStatus.isTerminal`인 `COMPLETED`, `COMPLETED_WITH_SKIPS`, `FAILED`, `STOPPED`만 허용합니다. `STARTING` 또는 `RUNNING`은 저장 전에 `IllegalArgumentException`으로 거부됩니다. 제한된 복구가 소진되면 16자 Base58 correlation ID를 가진 `BatchRepositoryRecoveryExhaustedException`이 발생합니다.
+
 ## BatchStatus 상태 전이
 
 ```

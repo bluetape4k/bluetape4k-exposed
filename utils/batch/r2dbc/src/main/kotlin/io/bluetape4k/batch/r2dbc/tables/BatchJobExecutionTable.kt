@@ -2,8 +2,26 @@ package io.bluetape4k.batch.r2dbc.tables
 
 import io.bluetape4k.batch.BatchParameterHash
 import io.bluetape4k.batch.api.BatchStatus
+import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.inList
+import org.jetbrains.exposed.v1.core.isNotNull
+import org.jetbrains.exposed.v1.core.isNull
+import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.javatime.timestamp
+
+internal const val BATCH_ACTIVE_KEY = "ACTIVE"
+private val BATCH_ACTIVE_STATUSES = listOf(
+    BatchStatus.STARTING,
+    BatchStatus.RUNNING,
+    BatchStatus.FAILED,
+    BatchStatus.STOPPED,
+)
+private val BATCH_COMPLETED_STATUSES = listOf(
+    BatchStatus.COMPLETED,
+    BatchStatus.COMPLETED_WITH_SKIPS,
+)
 
 /**
  * Job 실행 이력 테이블.
@@ -24,7 +42,10 @@ object BatchJobExecutionTable : LongIdTable("batch_job_execution") {
     val jobName = varchar("job_name", 100).index()
 
     /** Job 파라미터의 SHA-256 해시 (재시작 식별 키) */
-    val paramsHash = varchar("params_hash", 64).nullable()
+    val paramsHash = varchar("params_hash", 64)
+
+    /** 재사용 가능한 실행은 `ACTIVE`, 완료된 실행 이력은 null이다. */
+    val activeKey = varchar("active_key", 16).nullable()
 
     /** 현재 실행 상태 */
     val status = enumerationByName<BatchStatus>("status", 20)
@@ -46,6 +67,14 @@ object BatchJobExecutionTable : LongIdTable("batch_job_execution") {
 
     /** 실행 종료 시각 (UTC), 실행 중이면 null */
     val endTime = timestamp("end_time").nullable()
+
+    init {
+        uniqueIndex("batch_job_execution_active_uidx", jobName, paramsHash, activeKey)
+        check("batch_job_exec_status_active_key_chk") {
+            ((status inList BATCH_ACTIVE_STATUSES) and activeKey.isNotNull() and (activeKey eq BATCH_ACTIVE_KEY)) or
+                ((status inList BATCH_COMPLETED_STATUSES) and activeKey.isNull())
+        }
+    }
 }
 
 /**

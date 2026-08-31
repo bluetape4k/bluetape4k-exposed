@@ -154,6 +154,20 @@ SkipPolicy { e, count -> e is DataException && count < 50 }  // custom
 3. On restart, the checkpoint is restored via `reader.restoreFrom(checkpoint)` before the chunk loop begins
 4. `TypedCheckpoint` envelope (Jackson 3) ensures type-safe round-trip for all serializable types
 
+## Repository concurrency and schema prerequisites
+
+`batch_job_execution` uses a unique index on `(job_name, params_hash, active_key)` to allow at most one reusable execution. `active_key` is `ACTIVE` for `STARTING`, `RUNNING`, `FAILED`, and `STOPPED` rows, and `NULL` for `COMPLETED` and `COMPLETED_WITH_SKIPS` history. This contract relies on `NULLS DISTINCT` behavior in PostgreSQL, MySQL 8.0.16+ InnoDB, and H2.
+
+Apply the existing-schema artifacts before starting the new runtime. The library does not execute production DDL during application startup.
+
+1. Quiesce writers and run `schema/<backend>/V001__active_job_execution_key_preflight.sql`; unknown statuses, null keys, and active duplicates must be absent.
+2. Run `schema/<backend>/V001__active_job_execution_key_migrate.sql` with the migration role.
+3. Run `schema/<backend>/V001__active_job_execution_key_postflight.sql`; open traffic only when every diagnostic count is zero and `batch_job_execution_active_uidx` exists.
+
+After a unique conflict, the repository re-queries the active winner. If that winner becomes terminal first, the repository makes one bounded attempt to create a new active execution and finishes with one final winner query after another conflict. JDBC/R2DBC regression tests exercise the post-conflict re-query barrier on H2, PostgreSQL, and MySQL.
+
+`completeJobExecution` and `completeStepExecution` accept only terminal statuses: `COMPLETED`, `COMPLETED_WITH_SKIPS`, `FAILED`, and `STOPPED`. `STARTING` and `RUNNING` are rejected with `IllegalArgumentException` before persistence. Exhausted bounded recovery raises `BatchRepositoryRecoveryExhaustedException` with a 16-character Base58 correlation ID.
+
 ## BatchStatus Transitions
 
 ```
