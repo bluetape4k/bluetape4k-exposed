@@ -9,6 +9,11 @@ GROUP BY status
 HAVING status IS NULL
     OR status NOT IN ('STARTING', 'RUNNING', 'FAILED', 'STOPPED', 'COMPLETED', 'COMPLETED_WITH_SKIPS');
 
+SELECT status, COUNT(*) AS null_params_hash_count
+FROM batch_job_execution
+WHERE params_hash IS NULL
+GROUP BY status;
+
 SELECT job_name, params_hash, COUNT(*) AS active_row_count
 FROM batch_job_execution
 WHERE status IN ('STARTING', 'RUNNING', 'FAILED', 'STOPPED')

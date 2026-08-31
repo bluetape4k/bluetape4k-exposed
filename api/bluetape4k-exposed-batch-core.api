@@ -24,6 +24,11 @@ public final class io/bluetape4k/batch/CheckpointJson$Companion {
 	public final fun jackson3 ([Lkotlin/reflect/KClass;)Lio/bluetape4k/batch/CheckpointJson;
 }
 
+public final class io/bluetape4k/batch/api/BatchCompletionStatusException : java/lang/IllegalArgumentException {
+	public fun <init> (Lio/bluetape4k/batch/api/BatchStatus;)V
+	public final fun getStatus ()Lio/bluetape4k/batch/api/BatchStatus;
+}
+
 public final class io/bluetape4k/batch/api/BatchExecutionAlreadyClaimedException : java/lang/RuntimeException {
 	public static final field Companion Lio/bluetape4k/batch/api/BatchExecutionAlreadyClaimedException$Companion;
 	public fun <init> (Ljava/lang/String;JLjava/lang/String;)V

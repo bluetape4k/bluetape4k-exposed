@@ -8,6 +8,7 @@ import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.batch.api.BatchStatus
+import io.bluetape4k.batch.api.BatchCompletionStatusException
 import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.jdbc.tables.BatchJobExecutionTable
@@ -37,6 +38,7 @@ import org.junit.jupiter.api.condition.JRE
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.Instant
+import java.sql.SQLException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -595,14 +597,24 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
     fun `completion API는 non-terminal 상태를 저장 전에 거부한다`(testDB: TestDB) {
         withRepoTables(testDB) {
             val job = findOrCreateJobExecution("terminalContractJob", emptyMap())
-            assertFailsWith<IllegalArgumentException> {
+            val jobError = assertFailsWith<BatchCompletionStatusException> {
                 completeJobExecution(job, BatchStatus.RUNNING)
             }
+            jobError.status shouldBe BatchStatus.RUNNING
 
             val step = findOrCreateStepExecution(job, "terminalContractStep")
-            assertFailsWith<IllegalArgumentException> {
+            val stepError = assertFailsWith<BatchCompletionStatusException> {
                 completeStepExecution(step, StepReport(step.stepName, BatchStatus.STARTING))
             }
+            stepError.status shouldBe BatchStatus.STARTING
         }
+    }
+
+    @Test
+    fun `unique violation 판정은 JDBC 구조화 식별자만 허용한다`() {
+        SQLException("duplicate", "23505", 0).isUniqueViolation() shouldBe true
+        SQLException("duplicate", "23000", 1062).isUniqueViolation() shouldBe true
+        SQLException("integrity", "23000", 0).isUniqueViolation() shouldBe false
+        SQLException("unique constraint text", "HY000", 0).isUniqueViolation() shouldBe false
     }
 }

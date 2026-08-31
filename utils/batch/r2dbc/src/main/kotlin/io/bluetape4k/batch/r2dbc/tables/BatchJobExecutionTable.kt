@@ -27,12 +27,12 @@ private val BATCH_COMPLETED_STATUSES = listOf(
  * Job 실행 이력 테이블.
  *
  * ## 재시작 단일성
- * `(job_name, params_hash)` 조합으로 재시작 대상을 식별한다.
- * 권장 인덱스:
+ * `(job_name, params_hash, active_key)` 조합으로 재시작 대상을 식별한다.
+ * `STARTING`, `RUNNING`, `FAILED`, `STOPPED` row의 `active_key`는 `ACTIVE`이고
+ * 완료 row는 null이다. 필수 인덱스:
  * ```sql
- * CREATE UNIQUE INDEX batch_job_exec_active_uidx
- *   ON batch_job_execution(job_name, params_hash)
- *   WHERE status IN ('RUNNING', 'FAILED', 'STOPPED');
+ * CREATE UNIQUE INDEX batch_job_execution_active_uidx
+ *   ON batch_job_execution(job_name, params_hash, active_key);
  * ```
  * 동시 INSERT 경쟁은 `UNIQUE constraint violation` catch 후 재조회로 처리한다.
  * `SELECT ... FOR UPDATE`는 사용하지 않는다 (빈 결과 시 무의미).

@@ -47,6 +47,17 @@ class BatchExecutionAlreadyClaimedException(
 }
 
 /**
+ * 완료 API에 non-terminal [status]가 전달된 경우.
+ *
+ * 모든 repository 구현은 저장소를 변경하기 전에 이 예외를 던진다.
+ */
+class BatchCompletionStatusException(
+    val status: BatchStatus,
+) : IllegalArgumentException(
+    "Batch completion requires a terminal status: status=$status",
+)
+
+/**
  * 제한된 repository 복구 횟수 안에서 active winner를 확인하지 못한 경우.
  *
  * [correlationId]는 로그와 운영 진단을 연결하기 위한 16자 Base58 문자열이다.

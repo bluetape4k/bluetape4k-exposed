@@ -47,12 +47,16 @@ private const val MAX_RENEWAL_TIMEOUT_MILLIS = 30_000L
 private const val MILLIS_PER_SECOND = 1_000L
 private const val DEFAULT_REPOSITORY_QUERY_TIMEOUT_SECONDS = 5
 private const val RECOVERY_CORRELATION_ID_LENGTH = 16
+private const val UNIQUE_VIOLATION_SQL_STATE = "23505"
+private const val MYSQL_DUPLICATE_KEY_ERROR_CODE = 1062
 
 /**
  * Exposed JDBC 기반 [BatchJobRepository] 구현.
  *
  * ## 동시성 안전
- * `(job_name, params_hash)` partial unique index가 동시 INSERT 경쟁을 방지한다.
+ * `(job_name, params_hash, active_key)` unique index가 동시 INSERT 경쟁을 방지한다.
+ * `STARTING`, `RUNNING`, `FAILED`, `STOPPED` row는 `active_key='ACTIVE'`를 사용하고,
+ * 완료 row는 null을 사용한다.
  * UniqueConstraint 위반 시 catch 후 재조회(catch-and-retry)한다.
  *
  * ## Dispatchers.VT
@@ -865,17 +869,16 @@ class ExposedJdbcBatchJobRepository(
         return null
     }
 
-    /**
-     * 대표 DB의 unique constraint violation 판정.
-     * - PostgreSQL: SQLState `23505`
-     * - MySQL/MariaDB: errorCode `1062`
-     * - H2/기타: message에 "unique" 포함
-     */
-    private fun SQLException.isUniqueViolation(): Boolean =
-        sqlState == "23505" ||
-                errorCode == 1062 ||
-                message?.contains("unique", ignoreCase = true) == true
 }
+
+/**
+ * JDBC driver가 제공하는 구조화된 식별자만 사용해 unique violation을 판별한다.
+ *
+ * - PostgreSQL/H2: SQLSTATE 23505
+ * - MySQL/MariaDB: error code 1062
+ */
+internal fun SQLException.isUniqueViolation(): Boolean =
+    sqlState == UNIQUE_VIOLATION_SQL_STATE || errorCode == MYSQL_DUPLICATE_KEY_ERROR_CODE
 
 private fun Duration.toRenewalTimeoutSeconds(): Int {
     val timeoutMillis = minOf(toMillis() / 6L, MAX_RENEWAL_TIMEOUT_MILLIS)

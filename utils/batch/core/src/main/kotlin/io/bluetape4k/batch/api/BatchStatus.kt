@@ -56,12 +56,10 @@ enum class BatchStatus {
  * 완료 API에 전달할 상태가 terminal 상태인지 검증한다.
  *
  * @return 검증된 terminal 상태
- * @throws IllegalArgumentException [STARTING][BatchStatus.STARTING] 또는
+ * @throws BatchCompletionStatusException [STARTING][BatchStatus.STARTING] 또는
  * [RUNNING][BatchStatus.RUNNING]인 경우
  */
 fun BatchStatus.requireTerminalCompletionStatus(): BatchStatus {
-    require(isTerminal) {
-        "Batch completion requires a terminal status: status=$this"
-    }
+    if (!isTerminal) throw BatchCompletionStatusException(this)
     return this
 }

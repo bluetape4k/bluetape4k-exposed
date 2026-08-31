@@ -1,6 +1,7 @@
 package io.bluetape4k.batch.core
 
 import io.bluetape4k.batch.api.BatchStatus
+import io.bluetape4k.batch.api.BatchCompletionStatusException
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepExecution
 import io.bluetape4k.batch.api.StepReport
@@ -327,10 +328,11 @@ class InMemoryBatchJobRepositoryTest {
     fun `completeJobExecution - non-terminal status는 저장 전에 거부한다`() = runSuspendIO {
         val execution = repo.findOrCreateJobExecution("terminalJob", emptyMap())
 
-        val error = assertFailsWith<IllegalArgumentException> {
+        val error = assertFailsWith<BatchCompletionStatusException> {
             repo.completeJobExecution(execution, BatchStatus.RUNNING)
         }
 
+        error.status shouldBe BatchStatus.RUNNING
         error.message.shouldNotBeNull() shouldContain "Batch completion requires a terminal status:"
         repo.findOrCreateJobExecution("terminalJob", emptyMap()).status shouldBe BatchStatus.RUNNING
     }
@@ -340,13 +342,14 @@ class InMemoryBatchJobRepositoryTest {
         val job = repo.findOrCreateJobExecution("terminalStepJob", emptyMap())
         val step = repo.findOrCreateStepExecution(job, "terminalStep")
 
-        val error = assertFailsWith<IllegalArgumentException> {
+        val error = assertFailsWith<BatchCompletionStatusException> {
             repo.completeStepExecution(
                 step,
                 StepReport(stepName = step.stepName, status = BatchStatus.STARTING),
             )
         }
 
+        error.status shouldBe BatchStatus.STARTING
         error.message.shouldNotBeNull() shouldContain "Batch completion requires a terminal status:"
         repo.findOrCreateStepExecution(job, step.stepName).status shouldBe BatchStatus.RUNNING
     }

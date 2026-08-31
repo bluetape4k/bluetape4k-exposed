@@ -8,6 +8,7 @@ import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.batch.api.BatchStatus
+import io.bluetape4k.batch.api.BatchCompletionStatusException
 import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.r2dbc.tables.BatchJobExecutionTable
@@ -610,14 +611,16 @@ class ExposedR2dbcBatchJobRepositoryTest : AbstractBatchR2dbcTest() {
         runSuspendIO {
             withRepoTables(testDB) {
                 val job = findOrCreateJobExecution("terminalContractJob", emptyMap())
-                assertFailsWith<IllegalArgumentException> {
+                val jobError = assertFailsWith<BatchCompletionStatusException> {
                     completeJobExecution(job, BatchStatus.RUNNING)
                 }
+                jobError.status shouldBe BatchStatus.RUNNING
 
                 val step = findOrCreateStepExecution(job, "terminalContractStep")
-                assertFailsWith<IllegalArgumentException> {
+                val stepError = assertFailsWith<BatchCompletionStatusException> {
                     completeStepExecution(step, StepReport(step.stepName, BatchStatus.STARTING))
                 }
+                stepError.status shouldBe BatchStatus.STARTING
             }
         }
     }
