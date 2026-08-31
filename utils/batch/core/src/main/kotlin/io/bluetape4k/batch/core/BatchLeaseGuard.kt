@@ -7,7 +7,6 @@ import io.bluetape4k.batch.api.StepExecution
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
@@ -15,7 +14,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 
 /** lease를 잃은 뒤 write를 시작하지 않게 하는 runner 내부 예외. */
@@ -141,9 +139,11 @@ internal class BatchLeaseGuard(
     /** heartbeat child를 bounded NonCancellable cleanup gate에서 종료한다. */
     suspend fun stopHeartbeat() {
         withContext(kotlinx.coroutines.NonCancellable) {
-            withTimeout(timing.repositoryTimeoutMillis) {
+            val stopped = withTimeoutOrNull(timing.repositoryTimeoutMillis) {
                 stopHeartbeatInCurrentContext()
-            }
+                true
+            } ?: false
+            if (!stopped) failLease()
         }
     }
 
@@ -241,18 +241,19 @@ internal class BatchLeaseGuard(
     fun hasLostLease(): Boolean = leaseLost != null
 
     @Suppress("TooGenericExceptionCaught")
-    private suspend fun <T> boundedRepositoryCall(block: suspend () -> T): T = try {
-        withTimeout(timing.repositoryTimeoutMillis) {
-            block()
+    private suspend fun <T> boundedRepositoryCall(block: suspend () -> T): T {
+        val result = try {
+            withTimeoutOrNull(timing.repositoryTimeoutMillis) {
+                CompletedRepositoryCall(block())
+            } ?: failLease()
+        } catch (cancellation: CancellationException) {
+            // withTimeoutOrNull은 자신의 timeout만 null로 바꾸고 상위 cancellation은 전파한다.
+            // stacktrace recovery가 만든 복사본에서도 원본 cancellation identity를 보존한다.
+            throw (cancellation.cause as? CancellationException ?: cancellation)
+        } catch (failure: Exception) {
+            failLease(failure)
         }
-    } catch (timeout: TimeoutCancellationException) {
-        failLease(timeout)
-    } catch (cancellation: CancellationException) {
-        // withTimeout의 stacktrace recovery가 CancellationException 복사본을 만들 수 있다.
-        // repository가 던진 원본 cancellation identity를 외부 계약에 그대로 보존한다.
-        throw (cancellation.cause as? CancellationException ?: cancellation)
-    } catch (failure: Exception) {
-        failLease(failure)
+        return result.value
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -305,4 +306,6 @@ internal class BatchLeaseGuard(
     private companion object {
         const val NANOS_PER_MILLISECOND = 1_000_000L
     }
+
+    private class CompletedRepositoryCall<T>(val value: T)
 }

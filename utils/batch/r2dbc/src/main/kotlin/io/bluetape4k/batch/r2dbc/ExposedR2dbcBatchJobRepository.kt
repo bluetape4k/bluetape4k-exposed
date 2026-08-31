@@ -91,6 +91,7 @@ class ExposedR2dbcBatchJobRepository(
 
     companion object : KLoggingChannel()
 
+    @Suppress("TooGenericExceptionCaught")
     override suspend fun findOrCreateJobExecution(
         jobName: String,
         params: Map<String, Any>,
@@ -138,7 +139,7 @@ class ExposedR2dbcBatchJobRepository(
             }
         } catch (e: CancellationException) {
             throw e
-        } catch (e: Throwable) {
+        } catch (e: Exception) {
             if (!e.isUniqueViolation()) throw e
             log.debug { "동시 INSERT 감지 — JobExecution 재조회" }
             requeryJobExecutionAfterUniqueViolation(jobName, params)
@@ -425,6 +426,7 @@ class ExposedR2dbcBatchJobRepository(
         return createStepExecutionOrRequery(jobExecution.id, stepName)
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private suspend fun createStepExecutionOrRequery(
         jobExecutionId: Long,
         stepName: String,
@@ -450,7 +452,7 @@ class ExposedR2dbcBatchJobRepository(
             }
         } catch (e: CancellationException) {
             throw e
-        } catch (e: Throwable) {
+        } catch (e: Exception) {
             if (!e.isUniqueViolation()) throw e
             log.debug { "동시 INSERT 감지 — StepExecution 재조회" }
             requeryStepExecutionAfterUniqueViolation(jobExecutionId, stepName)

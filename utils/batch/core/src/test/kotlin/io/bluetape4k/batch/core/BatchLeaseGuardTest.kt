@@ -10,8 +10,12 @@ import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepExecution
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Test
 import java.time.Clock
@@ -189,6 +193,71 @@ class BatchLeaseGuardTest {
         }
         val canonicalFailure = heartbeatFailure.cause as? LeaseLostException ?: heartbeatFailure
         snapshotFailure shouldBeSameInstanceAs canonicalFailure
+    }
+
+    @Test
+    fun `heartbeat cleanup 자체 timeout은 lease loss로 기록한다`() = runTest {
+        val repository = InMemoryBatchJobRepository()
+        val job = repository.findOrCreateJobExecution("cleanupTimeoutJob")
+        val claimedJob = repository.claimJobExecution(job, "owner-1", Duration.ofSeconds(30)).shouldNotBeNull()
+        val pauseStarted = CompletableDeferred<Unit>()
+        val releasePause = CompletableDeferred<Unit>()
+        val guard = BatchLeaseGuard(
+            repository = repository,
+            ownerId = "owner-1",
+            executionLease = Duration.ofSeconds(30),
+            initialJobExecution = claimedJob,
+            initialStepExecution = null,
+            pause = {
+                pauseStarted.complete(Unit)
+                withContext(NonCancellable) {
+                    releasePause.await()
+                }
+            },
+        )
+        val heartbeat = guard.startHeartbeat(this)
+        pauseStarted.await()
+
+        try {
+            assertFailsWith<LeaseLostException> {
+                guard.stopHeartbeat()
+            }
+            guard.hasLostLease() shouldBeEqualTo true
+        } finally {
+            releasePause.complete(Unit)
+            heartbeat.join()
+        }
+    }
+
+    @Test
+    fun `상위 timeout은 lease loss로 변환하지 않고 그대로 전파한다`() = runTest {
+        val delegate = InMemoryBatchJobRepository()
+        val job = delegate.findOrCreateJobExecution("outerTimeoutJob")
+        val step = delegate.findOrCreateStepExecution(job, "outerTimeoutStep")
+        val claimedJob = delegate.claimJobExecution(job, "owner-1", Duration.ofSeconds(30)).shouldNotBeNull()
+        val claimedStep = delegate.claimStepExecution(step, "owner-1", Duration.ofSeconds(30)).shouldNotBeNull()
+        val repository = object : BatchJobRepository by delegate {
+            override suspend fun saveCheckpointAndReturn(
+                execution: StepExecution,
+                checkpoint: Any,
+            ): StepExecution = awaitCancellation()
+        }
+        val guard = BatchLeaseGuard(
+            repository = repository,
+            ownerId = "owner-1",
+            executionLease = Duration.ofSeconds(30),
+            initialJobExecution = claimedJob,
+            initialStepExecution = claimedStep,
+        )
+
+        assertFailsWith<kotlinx.coroutines.TimeoutCancellationException> {
+            withTimeout(100L) {
+                guard.saveCheckpoint("checkpoint")
+            }
+        }
+
+        guard.hasLostLease() shouldBeEqualTo false
+        guard.latestSnapshot().stepExecution.shouldNotBeNull() shouldBeEqualTo claimedStep
     }
 
     private class RenewalRejectingRepository(
