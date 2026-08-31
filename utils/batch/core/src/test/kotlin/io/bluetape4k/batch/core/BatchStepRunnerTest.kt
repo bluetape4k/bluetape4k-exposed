@@ -1,6 +1,7 @@
 package io.bluetape4k.batch.core
 
 import io.bluetape4k.batch.api.BatchProcessor
+import io.bluetape4k.batch.api.BatchInfrastructureFailureException
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.BatchWriter
@@ -484,20 +485,24 @@ class BatchStepRunnerTest {
         writer.collected.isEmpty() shouldBe true
     }
 
-    // ─── 15. writer.close() throws → 주 결과 마스킹 없음 ────────────────────
+    // ─── 15. writer.close() throws → 성공 결과 은닉 없음 ────────────────────
 
     @Test
-    fun `15 writer close 실패 - COMPLETED 결과를 마스킹하지 않음`() = runSuspendIO {
+    fun `15 writer close 실패 - 성공 결과 대신 sanitized FAILED를 저장`() = runSuspendIO {
         val reader = ListBatchReader(listOf("a", "b", "c"))
         val writer = FailOnCloseWriter<String>()
         val step = makeStep<String, String>(reader = reader, writer = writer)
 
-        // writer.close()에서 예외가 발생하더라도 COMPLETED 결과를 반환해야 함
         val report = runStep(step)
 
-        report.status shouldBe BatchStatus.COMPLETED
-        report.writeCount shouldBeEqualTo 3L
+        report.status shouldBe BatchStatus.FAILED
+        val failure = report.error.shouldBeInstanceOf<BatchInfrastructureFailureException>()
+        failure.cause shouldBe null
+        failure.category shouldBeEqualTo BatchInfrastructureFailureException.REPOSITORY_FAILURE
+        failure.correlationId.length shouldBeEqualTo 16
         writer.collected shouldBeEqualTo listOf("a", "b", "c")
+
+        repo.findOrCreateStepExecution(makeJobExecution(), step.name).status shouldBe BatchStatus.FAILED
     }
 
     // ─── 11. 이미 COMPLETED_WITH_SKIPS ───────────────────────────────────────

@@ -281,6 +281,48 @@ class InMemoryBatchJobRepositoryTest {
     }
 
     @Test
+    fun `owner-aware completion과 checkpoint는 만료 lease 또는 RUNNING 아닌 snapshot을 거부한다`() = runSuspendIO {
+        val job = repo.findOrCreateJobExecution("expired-ownerful-write", emptyMap())
+        val step = repo.findOrCreateStepExecution(job, "step")
+        val expiredAt = Instant.now().minusSeconds(1)
+        val claimedJob = repo.claimJobExecution(job, "owner-1", expiredAt).shouldNotBeNull()
+        val claimedStep = repo.claimStepExecution(step, "owner-1", expiredAt).shouldNotBeNull()
+
+        assertFailsWith<IllegalStateException> {
+            repo.completeJobExecution(claimedJob, BatchStatus.COMPLETED)
+        }
+        assertFailsWith<IllegalStateException> {
+            repo.completeStepExecution(claimedStep, StepReport("step", BatchStatus.COMPLETED))
+        }
+        assertFailsWith<IllegalStateException> {
+            repo.saveCheckpointAndReturn(claimedStep, "checkpoint")
+        }
+
+        val activeJob = repo.claimJobExecution(
+            claimedJob,
+            "owner-2",
+            Instant.now().plusSeconds(60),
+        ).shouldNotBeNull()
+        val activeStep = repo.claimStepExecution(
+            claimedStep,
+            "owner-2",
+            Instant.now().plusSeconds(60),
+        ).shouldNotBeNull()
+        assertFailsWith<IllegalStateException> {
+            repo.completeJobExecution(activeJob.copy(status = BatchStatus.COMPLETED), BatchStatus.COMPLETED)
+        }
+        assertFailsWith<IllegalStateException> {
+            repo.completeStepExecution(
+                activeStep.copy(status = BatchStatus.COMPLETED),
+                StepReport("step", BatchStatus.COMPLETED),
+            )
+        }
+        assertFailsWith<IllegalStateException> {
+            repo.saveCheckpointAndReturn(activeStep.copy(status = BatchStatus.COMPLETED), "checkpoint")
+        }
+    }
+
+    @Test
     fun `checkpoint 로그는 실행 ID와 payload를 노출하지 않는다`() = runSuspendIO {
         val (_, se) = newJobAndStep()
         val checkpoint = "token=batch-checkpoint-secret"

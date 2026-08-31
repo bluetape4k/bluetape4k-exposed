@@ -217,9 +217,9 @@ core artifact는 Jackson 없는 custom 구현을 지원하고,
 Repository는 Job과 Step lease를 atomic하게 갱신하고, runner는 각 Writer 호출과
 checkpoint mutation 직전에 마지막 lease 검사를 수행합니다. Lease를 잃으면
 sanitized lease-loss failure를 반환하고 다음 Writer 호출을 시작하지 않습니다.
-사용자 정의 `BatchJobRepository` 구현체는 Job 시작 전에 renewal 및 timeout 지원
-능력을 광고해야 하며, 그 능력을 증명하지 못하는 adapter는 fail-closed로
-거부됩니다.
+사용자 정의 `BatchJobRepository` 구현체는 Job 시작 전에 authoritative claim과
+atomic renewal 지원 능력을 광고해야 하며, 이를 구현하지 않은 adapter는
+fail-closed로 거부됩니다.
 
 DSL Job과 Step에 같은 lease를 설정하세요. 지원 범위는 30초부터 24시간이며
 기본값은 15분입니다.
@@ -233,80 +233,7 @@ val job = batchJob("importUsers") {
 }
 ```
 
-Runtime은 redacted structured event인 `batch.lease.renewal`,
-`batch.lease.loss`, `batch.lease.guard.blocked`,
-`batch.lease.capability.rejected`,
-`batch.lease.cancellation_completion_failed`를 기록합니다. Event에는 backend,
-execution kind, result category, 범위가 제한된 millisecond latency,
-expiry-margin bucket, correlation id만 포함하며 owner id, raw parameters, SQL,
-URL, credential은 포함하지 않습니다.
-
-### Release 증적과 canary rollout
-
-Repository가 소유하는 operations 디렉터리는 writer, capacity, alert, rollout,
-rollback 계약을 포함합니다. Repository root에서 다음 예제를 검증하되,
-승격할 정확한 lowercase 40-hex commit으로 release head를 바꾸세요.
-
-```bash
-ruby scripts/batch/validate_batch_writer_safety.rb \
-  utils/batch/operations/batch-writer-safety.example.yaml \
-  utils/batch/operations/batch-writer-inventory.example.yaml \
-  --expected-release-head aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-
-ruby scripts/batch/validate_batch_capacity_receipt.rb \
-  utils/batch/operations/batch-capacity-receipt.example.yaml \
-  --expected-release-head aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-
-ruby scripts/batch/validate_batch_alerts.rb \
-  utils/batch/operations/batch-alerts.yaml
-
-ruby scripts/batch/validate_batch_alert_resume.rb \
-  utils/batch/operations/batch-alert-resume-receipt.example.yaml \
-  --alerts utils/batch/operations/batch-alerts.yaml \
-  --expected-release-head aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-
-ruby scripts/batch/validate_batch_rollout.rb \
-  utils/batch/operations/batch-rollout-observation.example.yaml \
-  --writer-receipt utils/batch/operations/batch-writer-safety.example.yaml \
-  --capacity-receipt utils/batch/operations/batch-capacity-receipt.example.yaml \
-  --alerts utils/batch/operations/batch-alerts.yaml \
-  --alert-resume-dir utils/batch/operations \
-  --expected-release-head aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-```
-
-Rollout 단계는 `shadow`, `1`, `10`, `50`, `100`%입니다. 각 단계는 최소 5분,
-적격 sample 20개, heartbeat window 2개를 관찰합니다. Critical alert,
-alert-resume checksum 불일치, writer-safety 공백, capacity budget 초과가
-발생하면 승격을 차단합니다. 네 개의 stable alert id와 resume 증적은
-`batch-alerts.yaml` 및 `batch-alert-resume-receipt.schema.json`에 정의되어
-있습니다.
-
-### 장애 복구와 rollback
-
-Lease-loss가 발생하면 새 scheduling을 중단하고 correlation id로 마지막 성공
-renewal과 blocked mutation을 조회합니다. 이어서 DB owner/version/lease 상태를
-read-only로 확인하고 외부 idempotency 또는 outbox receipt를 reconcile한 뒤에만
-새 execution 시작 여부를 결정합니다. Lease-loss runner를 같은 execution 객체로
-retry하지 않습니다.
-
-Code rollback도 같은 gate를 따릅니다. Dispatch를 중단하고 active owner와 lease를
-read-only inventory한 뒤 마지막 관찰 lease가 만료될 때까지 기다리고 외부 Writer
-receipt를 reconcile합니다. 구 버전과 새 버전 Writer를 동시에 실행하지 않습니다.
-승인과 receipt 계약은 `batch-rollback-approval.schema.json` 및
-`batch-rollback-receipt.schema.json`에 있으며, 구 버전을 시작하기 전에 다음과
-같이 검증합니다.
-
-```bash
-ruby scripts/batch/validate_batch_lease_rollback.rb \
-  utils/batch/operations/batch-rollback-receipt.example.yaml \
-  --approval utils/batch/operations/batch-rollback-approval.example.yaml \
-  --expected-application bluetape4k-exposed-batch \
-  --expected-environment production \
-  --expected-release-head aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-```
-
-Validator exit가 0이 아니면 다음 rollout 단계 또는 구 버전 기동을 모두
-차단합니다. Approval store reference와 evidence URI는 불투명한
-`restricted://` reference만 사용하며 receipt에 credential, token, raw payload,
-secret을 넣지 않습니다. 중앙 사용자 manual은 이 repository 소유 운영 계약과
-분리된 downstream handoff로 별도 갱신합니다.
+Lease-loss가 발생하면 같은 execution 객체를 자동 재시도하지 마세요. DB의
+owner/version/lease 상태를 읽기 전용으로 확인하고, 외부 writer가 idempotency key,
+outbox 또는 동등한 fencing을 사용했는지 reconcile한 뒤 새 execution을 시작해야
+합니다. 이 library는 외부 시스템의 exactly-once를 제공하지 않습니다.

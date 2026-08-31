@@ -79,14 +79,20 @@ class BatchJob(
      *
      * ## 취소 처리
      * - 외부 코루틴 취소([CancellationException]) → STOPPED 영속화 후 **반드시 재던짐**
-     * - 치명적 예외([Throwable]) → FAILED 영속화 후 [BatchReport.Failure] 반환
+     * - 치명적 예외([Exception]) → FAILED 영속화 후 [BatchReport.Failure] 반환
      * - 일반적인 FAILED/STOPPED 영속화 실패는 raw cause를 제거한 진단 예외로 보존하고
      *   error 로그를 남긴다. 영속화 중 발생한 [CancellationException]은 원인 예외를
      *   suppressed로 연결한 뒤 전파한다. 자동 재시도·outbox는 이 실행기의 책임이 아니다.
      *
      * @return [BatchReport.Success], [BatchReport.PartiallyCompleted], 또는 [BatchReport.Failure]
      */
-    @Suppress("LongMethod", "ReturnCount", "CyclomaticComplexMethod", "ThrowsCount")
+    @Suppress(
+        "LongMethod",
+        "ReturnCount",
+        "CyclomaticComplexMethod",
+        "ThrowsCount",
+        "TooGenericExceptionCaught",
+    )
     suspend fun run(): BatchReport {
         val jobExecution = repositoryCall {
             repository.findOrCreateJobExecution(name, params)
@@ -103,12 +109,16 @@ class BatchJob(
         }
         val ownerId = "${name}-${Base58.randomString(8)}"
         val claimStartedNanos = SYSTEM_BATCH_MONOTONIC_CLOCK.nowNanos()
-        val claimedJobExecution = repositoryCall {
-            repository.claimJobExecution(
-                execution = jobExecution,
-                ownerId = ownerId,
-                leaseDuration = executionLease,
-            )
+        val claimedJobExecution = try {
+            repositoryCall {
+                repository.claimJobExecution(
+                    execution = jobExecution,
+                    ownerId = ownerId,
+                    leaseDuration = executionLease,
+                )
+            }
+        } catch (failure: BatchInfrastructureFailureException) {
+            return infrastructureFailure(jobExecution, failure)
         } ?: return infrastructureFailure(
             jobExecution,
             BatchInfrastructureFailureException.EXECUTION_ALREADY_CLAIMED,
@@ -180,7 +190,7 @@ class BatchJob(
             return executionFailure(leaseGuard, claimedJobExecution, stepReports, e, sanitize = true)
         } catch (e: BatchExecutionAlreadyClaimedException) {
             return executionFailure(leaseGuard, claimedJobExecution, stepReports, e, sanitize = true)
-        } catch (e: Throwable) {
+        } catch (e: Exception) {
             return executionFailure(leaseGuard, claimedJobExecution, stepReports, e, sanitize = false)
         }
     }
@@ -200,8 +210,9 @@ class BatchJob(
         leaseGuard.stopHeartbeat()
         try {
             leaseGuard.latestSnapshotForDiagnostics().jobExecution
-        } catch (failure: Throwable) {
-            failure.rethrowIfCancellation()
+        } catch (failure: CancellationException) {
+            throw failure
+        } catch (_: Exception) {
             fallback
         }
     }
@@ -227,7 +238,9 @@ class BatchJob(
                 leaseUntil = null,
             ),
             if (sanitize) {
-                stepReports.map { it.sanitizeForInfrastructureFailure() }
+                val category = (failure as? BatchInfrastructureFailureException)?.category
+                    ?: BatchInfrastructureFailureException.REPOSITORY_FAILURE
+                stepReports.map { it.sanitizeForInfrastructureFailure(category) }
             } else {
                 stepReports
             },
@@ -244,7 +257,12 @@ class BatchJob(
         val correlationId = Base58.randomString(CORRELATION_ID_LENGTH)
         return BatchReport.Failure(
             latest.sanitizeForInfrastructureFailure(),
-            stepReports.map { it.sanitizeForInfrastructureFailure(correlationId) },
+            stepReports.map {
+                it.sanitizeForInfrastructureFailure(
+                    BatchInfrastructureFailureException.LEASE_LOST,
+                    correlationId,
+                )
+            },
             BatchInfrastructureFailureException(
                 BatchInfrastructureFailureException.LEASE_LOST,
                 correlationId,
@@ -261,12 +279,28 @@ class BatchJob(
         BatchInfrastructureFailureException(category, Base58.randomString(CORRELATION_ID_LENGTH)),
     )
 
+    private fun infrastructureFailure(
+        execution: JobExecution,
+        failure: BatchInfrastructureFailureException,
+    ): BatchReport.Failure = BatchReport.Failure(
+        execution.sanitizeForInfrastructureFailure().copy(status = BatchStatus.FAILED),
+        emptyList(),
+        failure,
+    )
+
     @Suppress("TooGenericExceptionCaught")
     private suspend fun <T> repositoryCall(block: suspend () -> T): T = try {
         block()
     } catch (cancellation: CancellationException) {
         throw cancellation
-    } catch (_: Throwable) {
+    } catch (failure: BatchInfrastructureFailureException) {
+        throw failure
+    } catch (_: BatchExecutionAlreadyClaimedException) {
+        throw BatchInfrastructureFailureException(
+            BatchInfrastructureFailureException.EXECUTION_ALREADY_CLAIMED,
+            Base58.randomString(CORRELATION_ID_LENGTH),
+        )
+    } catch (_: Exception) {
         throw BatchInfrastructureFailureException(
             BatchInfrastructureFailureException.REPOSITORY_FAILURE,
             Base58.randomString(CORRELATION_ID_LENGTH),
@@ -287,17 +321,31 @@ class BatchJob(
                         leaseGuard.latestSnapshotForDiagnostics().jobExecution
                     } catch (cancellation: CancellationException) {
                         throw cancellation
-                    } catch (_: Throwable) {
+                    } catch (_: Exception) {
                         fallback
                     }
                     repository.completeJobExecution(latest, BatchStatus.STOPPED)
                 }
             }
-        } catch (failure: Throwable) {
+        } catch (cancellation: CancellationException) {
+            if (cancellation !== primary) {
+                log.error {
+                    "STOPPED 상태 bounded compensation 취소됨 — " +
+                        "category=${BatchInfrastructureFailureException.REPOSITORY_FAILURE}"
+                }
+                primary.addSuppressed(
+                    BatchInfrastructureFailureException(
+                        BatchInfrastructureFailureException.REPOSITORY_FAILURE,
+                        Base58.randomString(CORRELATION_ID_LENGTH),
+                    ),
+                )
+            }
+        } catch (failure: Exception) {
             if (failure !== primary) {
-                log.error(failure) {
+                log.error {
                     "STOPPED 상태 bounded compensation 실패 — job=$name, " +
-                        "executionId=${fallback.id}"
+                        "executionId=${fallback.id}, " +
+                        "category=${BatchInfrastructureFailureException.REPOSITORY_FAILURE}"
                 }
                 primary.addSuppressed(
                     BatchInfrastructureFailureException(
@@ -316,20 +364,17 @@ class BatchJob(
     )
 
     private fun StepReport.sanitizeForInfrastructureFailure(
+        category: String = BatchInfrastructureFailureException.LEASE_LOST,
         correlationId: String = Base58.randomString(CORRELATION_ID_LENGTH),
     ): StepReport = copy(
         checkpoint = null,
         error = error?.let {
             BatchInfrastructureFailureException(
-                BatchInfrastructureFailureException.LEASE_LOST,
+                category,
                 correlationId,
             )
         },
     )
-
-    private fun Throwable.rethrowIfCancellation() {
-        if (this is CancellationException) throw this
-    }
 
     @Suppress("TooGenericExceptionCaught")
     private suspend fun persistCompletionSafely(
@@ -340,12 +385,12 @@ class BatchJob(
         try {
             repository.completeJobExecution(execution, status)
         } catch (persistenceCancellation: CancellationException) {
-            log.error(persistenceCancellation) {
+            log.error {
                 "$status 상태 저장 취소됨 — job=$name, executionId=${execution.id}, " +
                     "실행 원인 예외와 함께 전파합니다"
             }
             propagateCompletionCancellation(primary, persistenceCancellation)
-        } catch (persistenceFailure: Throwable) {
+        } catch (persistenceFailure: Exception) {
             preserveCompletionFailure(execution.id, primary, status, persistenceFailure)
         }
     }

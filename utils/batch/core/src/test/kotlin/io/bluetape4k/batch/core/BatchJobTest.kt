@@ -1,6 +1,8 @@
 package io.bluetape4k.batch.core
 
 import io.bluetape4k.batch.api.BatchProcessor
+import io.bluetape4k.batch.api.BatchInfrastructureFailureException
+import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchReport
 import io.bluetape4k.batch.api.BatchStatus
@@ -102,6 +104,41 @@ class BatchJobTest {
         report.stepReports[1].stepName shouldBeEqualTo "step2"
         writer1.collected shouldBeEqualTo listOf("a", "b")
         writer2.collected shouldBeEqualTo listOf("c", "d")
+    }
+
+    @Test
+    fun `Job claim 실패는 raw cause 없이 category를 보존한 Failure로 매핑`() = runSuspendIO {
+        val delegate = InMemoryBatchJobRepository()
+        val repository = object : BatchJobRepository by delegate {
+            override suspend fun claimJobExecution(
+                execution: io.bluetape4k.batch.api.JobExecution,
+                ownerId: String,
+                leaseDuration: java.time.Duration,
+            ): io.bluetape4k.batch.api.JobExecution? {
+                throw IllegalStateException("database password leaked")
+            }
+        }
+        val writer = CollectingWriter<String>()
+        val job = BatchJob(
+            name = "claim-failure-job",
+            steps = listOf(simpleStep("step", listOf("never"), writer)),
+            repository = repository,
+        )
+
+        val report = job.run()
+
+        report shouldBeInstanceOf BatchReport.Failure::class
+        val failure = report as BatchReport.Failure
+        failure.error shouldBeInstanceOf BatchInfrastructureFailureException::class
+        val diagnostic = failure.error as BatchInfrastructureFailureException
+        diagnostic.category shouldBeEqualTo BatchInfrastructureFailureException.REPOSITORY_FAILURE
+        diagnostic.cause shouldBe null
+        diagnostic.suppressed shouldHaveSize 0
+        diagnostic.correlationId.length shouldBeEqualTo 16
+        failure.jobExecution.params shouldBeEqualTo emptyMap()
+        failure.jobExecution.ownerId shouldBe null
+        failure.jobExecution.leaseUntil shouldBe null
+        writer.collected.isEmpty() shouldBe true
     }
 
     // ─── Step FAILED → 후속 미실행 ───────────────────────────────────────────

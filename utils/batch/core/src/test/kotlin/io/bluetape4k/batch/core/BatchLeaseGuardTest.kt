@@ -12,7 +12,6 @@ import io.bluetape4k.junit5.coroutines.runSuspendIO
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Test
 import java.time.Clock
@@ -112,7 +111,7 @@ class BatchLeaseGuardTest {
 
         writes shouldBeEqualTo 0
         assertFailsWith<LeaseLostException> {
-            runBlocking { guard.latestSnapshot() }
+            guard.latestSnapshot()
         }
     }
 

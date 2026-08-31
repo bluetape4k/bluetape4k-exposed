@@ -1,6 +1,7 @@
 package io.bluetape4k.batch.core
 
 import io.bluetape4k.batch.api.BatchJobRepository
+import io.bluetape4k.batch.api.BatchExecutionAlreadyClaimedException
 import io.bluetape4k.batch.api.BatchInfrastructureFailureException
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.JobExecution
@@ -40,7 +41,8 @@ import java.time.Instant
  *    일반적인 상태 저장 실패는 raw cause를 제거한 진단 예외로 보존하고, 저장 중
  *    cancellation이 발생하면 원인 예외를 suppressed로 연결한 뒤 전파하며 error 로그를 남긴다.
  * 3. `reader.close()` / `writer.close()`는 `finally`의 [NonCancellable] 컨텍스트에서
- *    각각 독립적으로 실행하며, close 실패는 주 예외의 suppressed cause로 보존한다.
+ *    각각 독립적으로 실행하며, close 실패는 raw cause를 노출하지 않는 진단 예외로
+ *    보존한다. 정상 실행 중 close가 실패하면 성공 결과를 반환하지 않는다.
  * 4. EOF 판정은 `chunk.isEmpty()`가 아닌 `eofReached` 플래그로 판단한다 — 전부 필터링된 경우와 구분한다.
  * 5. [BatchJobRepository.loadCheckpoint] 결과가 null이면 [io.bluetape4k.batch.api.BatchReader.restoreFrom]을
  *    호출하지 않는다.
@@ -71,8 +73,18 @@ internal class BatchStepRunner<I : Any, O : Any>(
      *
      * @return 실행 결과 [StepReport]
      */
+    @Suppress(
+        "CyclomaticComplexMethod",
+        "LongMethod",
+        "NestedBlockDepth",
+        "ReturnCount",
+        "ThrowsCount",
+        "TooGenericExceptionCaught",
+    )
     suspend fun run(): StepReport {
         var primaryFailure: Throwable? = null
+        var resourcesNeedClose = false
+        var resourcesClosed = false
         val ownsLeaseGuard = leaseGuard == null
         val activeLeaseGuard = leaseGuard ?: run {
             check(repository.supportsLeaseRenewal) {
@@ -154,6 +166,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
         var skipCount = claimedStepExecution.skipCount
 
         try {
+            resourcesNeedClose = true
             step.reader.open()
             step.writer.open()
 
@@ -189,7 +202,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
                             step.processor.process(item)
                         } catch (e: CancellationException) {
                             throw e
-                        } catch (e: Throwable) {
+                        } catch (e: Exception) {
                             if (step.skipPolicy.shouldSkip(e, skipCount)) {
                                 skipCount++
                                 log.warn {
@@ -228,7 +241,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
                         break@writerLoop
                     } catch (e: CancellationException) {
                         throw e
-                    } catch (e: Throwable) {
+                    } catch (e: Exception) {
                         if (attempts < step.retryPolicy.maxAttempts) {
                             log.warn {
                                 "writer.write() 실패 — 재시도 예정: " +
@@ -285,6 +298,21 @@ internal class BatchStepRunner<I : Any, O : Any>(
                 skipCount = skipCount,
                 checkpoint = step.reader.checkpoint(),
             )
+            val closeFailure = withContext(NonCancellable) {
+                closeResources(primary = null)
+            }
+            resourcesClosed = true
+            if (closeFailure != null) {
+                primaryFailure = closeFailure
+                val failedReport = stepReport.copy(
+                    status = BatchStatus.FAILED,
+                    error = closeFailure,
+                )
+                activeLeaseGuard.completeStepExecution { completionExecution ->
+                    completeStepExecutionSafely(completionExecution, failedReport, closeFailure)
+                }
+                return failedReport
+            }
             activeLeaseGuard.completeStepExecution { completionExecution ->
                 repository.completeStepExecution(completionExecution, stepReport)
             }
@@ -314,7 +342,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
             )
             compensateExternalCancellation(activeLeaseGuard, stoppedReport, e)
             throw e
-        } catch (e: Throwable) {
+        } catch (e: Exception) {
             primaryFailure = e
             val failedReport = try {
                 StepReport(
@@ -323,7 +351,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
                     readCount = readCount,
                     writeCount = writeCount,
                     skipCount = skipCount,
-                    checkpoint = checkpointForFailure(e),
+                    checkpoint = checkpointForFailureReport(e, ::checkpointForFailure),
                     error = e,
                 )
             } catch (cancellation: CancellationException) {
@@ -338,6 +366,12 @@ internal class BatchStepRunner<I : Any, O : Any>(
                 compensateExternalCancellation(activeLeaseGuard, stoppedReport, cancellation)
                 propagateCompletionCancellation(e, cancellation)
             }
+            if (resourcesNeedClose && !resourcesClosed) {
+                withContext(NonCancellable) {
+                    closeResources(e)
+                }
+                resourcesClosed = true
+            }
             activeLeaseGuard.completeStepExecution { completionExecution ->
                 completeStepExecutionSafely(completionExecution, failedReport, e)
             }
@@ -349,8 +383,10 @@ internal class BatchStepRunner<I : Any, O : Any>(
                         activeLeaseGuard.stopHeartbeat()
                     }
                 } finally {
-                    closeSafely("reader", primaryFailure) { step.reader.close() }
-                    closeSafely("writer", primaryFailure) { step.writer.close() }
+                    if (resourcesNeedClose && !resourcesClosed) {
+                        closeResources(primaryFailure)
+                        resourcesClosed = true
+                    }
                 }
             }
         }
@@ -361,7 +397,14 @@ internal class BatchStepRunner<I : Any, O : Any>(
         block()
     } catch (cancellation: CancellationException) {
         throw cancellation
-    } catch (_: Throwable) {
+    } catch (failure: BatchInfrastructureFailureException) {
+        throw failure
+    } catch (_: BatchExecutionAlreadyClaimedException) {
+        throw BatchInfrastructureFailureException(
+            BatchInfrastructureFailureException.EXECUTION_ALREADY_CLAIMED,
+            Base58.randomString(CORRELATION_ID_LENGTH),
+        )
+    } catch (_: Exception) {
         throw BatchInfrastructureFailureException(
             BatchInfrastructureFailureException.REPOSITORY_FAILURE,
             Base58.randomString(CORRELATION_ID_LENGTH),
@@ -385,11 +428,18 @@ internal class BatchStepRunner<I : Any, O : Any>(
         step.reader.checkpoint()
     } catch (failure: CancellationException) {
         throw failure
-    } catch (failure: Throwable) {
+    } catch (failure: Exception) {
+        val diagnostic = BatchInfrastructureFailureException(
+            BatchInfrastructureFailureException.REPOSITORY_FAILURE,
+            Base58.randomString(CORRELATION_ID_LENGTH),
+        )
         if (failure !== primary) {
-            primary.addSuppressed(failure)
+            primary.addSuppressed(diagnostic)
         }
-        log.warn(failure) { "실패 상태 checkpoint 조회 실패 — suppressed cause로 보존" }
+        log.warn {
+            "실패 상태 checkpoint 조회 실패 — " +
+                "category=${diagnostic.category}, correlationId=${diagnostic.correlationId}"
+        }
         null
     }
 
@@ -407,10 +457,24 @@ internal class BatchStepRunner<I : Any, O : Any>(
                     }
                 }
             }
-        } catch (failure: Throwable) {
+        } catch (cancellation: CancellationException) {
+            if (cancellation !== primary) {
+                log.error {
+                    "STOPPED 상태 bounded compensation 취소됨 — " +
+                        "category=${BatchInfrastructureFailureException.REPOSITORY_FAILURE}"
+                }
+                primary.addSuppressed(
+                    BatchInfrastructureFailureException(
+                        BatchInfrastructureFailureException.REPOSITORY_FAILURE,
+                        Base58.randomString(CORRELATION_ID_LENGTH),
+                    ),
+                )
+            }
+        } catch (failure: Exception) {
             if (failure !== primary) {
-                log.error(failure) {
-                    "STOPPED 상태 bounded compensation 실패 — step=${step.name}"
+                log.error {
+                    "STOPPED 상태 bounded compensation 실패 — step=${step.name}, " +
+                        "category=${BatchInfrastructureFailureException.REPOSITORY_FAILURE}"
                 }
                 primary.addSuppressed(
                     BatchInfrastructureFailureException(
@@ -422,20 +486,41 @@ internal class BatchStepRunner<I : Any, O : Any>(
         }
     }
 
-    @Suppress("TooGenericExceptionCaught")
     private suspend fun closeSafely(
         resource: String,
         primary: Throwable?,
         close: suspend () -> Unit,
-    ) {
+    ): BatchInfrastructureFailureException? {
         try {
             close()
-        } catch (failure: Throwable) {
-            if (primary != null && failure !== primary) {
-                primary.addSuppressed(failure)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: Exception) {
+            val diagnostic = BatchInfrastructureFailureException(
+                BatchInfrastructureFailureException.REPOSITORY_FAILURE,
+                Base58.randomString(CORRELATION_ID_LENGTH),
+            )
+            if (primary != null && diagnostic !== primary) {
+                primary.addSuppressed(diagnostic)
             }
-            log.warn(failure) { "$resource close 실패" }
+            log.warn {
+                "$resource close 실패 — " +
+                    "category=${diagnostic.category}, correlationId=${diagnostic.correlationId}"
+            }
+            return diagnostic
         }
+        return null
+    }
+
+    private suspend fun closeResources(primary: Throwable?): BatchInfrastructureFailureException? {
+        var readerFailure: BatchInfrastructureFailureException? = null
+        var writerFailure: BatchInfrastructureFailureException? = null
+        try {
+            readerFailure = closeSafely("reader", primary) { step.reader.close() }
+        } finally {
+            writerFailure = closeSafely("writer", primary) { step.writer.close() }
+        }
+        return readerFailure ?: writerFailure
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -447,12 +532,12 @@ internal class BatchStepRunner<I : Any, O : Any>(
         try {
             repository.completeStepExecution(execution, report)
         } catch (persistenceCancellation: CancellationException) {
-            log.error(persistenceCancellation) {
+            log.error {
                 "${report.status} 상태 저장 취소됨 — step=${step.name}, executionId=${execution.id}, " +
                     "실행 원인 예외와 함께 전파합니다"
             }
             propagateCompletionCancellation(primary, persistenceCancellation)
-        } catch (persistenceFailure: Throwable) {
+        } catch (persistenceFailure: Exception) {
             preserveCompletionFailure(execution.id, primary, report.status, persistenceFailure)
         }
     }
@@ -487,4 +572,12 @@ internal class BatchStepRunner<I : Any, O : Any>(
         }
         throw persistenceCancellation
     }
+}
+
+private suspend fun checkpointForFailureReport(
+    failure: Exception,
+    checkpoint: suspend (Exception) -> Any?,
+): Any? = when (failure) {
+    is BatchInfrastructureFailureException -> null
+    else -> checkpoint(failure)
 }

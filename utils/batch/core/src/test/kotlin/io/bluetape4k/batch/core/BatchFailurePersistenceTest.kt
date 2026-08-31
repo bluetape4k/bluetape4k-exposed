@@ -11,6 +11,7 @@ import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchInfrastructureFailureException
 import io.bluetape4k.batch.api.BatchReader
@@ -192,6 +193,25 @@ class BatchFailurePersistenceTest {
 
         thrown shouldBeSameInstanceAs persistenceCancellation
         thrown.suppressed.single() shouldBeSameInstanceAs primaryFailure
+    }
+
+    @Test
+    fun `FAILED checkpoint 조회 실패는 raw cause 대신 sanitized 진단을 남긴다`() = runSuspendIO {
+        val primaryFailure = IllegalStateException("reader failed")
+        val checkpointFailure = IllegalStateException("checkpoint token leaked")
+        val repository = InMemoryBatchJobRepository()
+        val execution = repository.findOrCreateJobExecution("checkpoint-diagnostic")
+
+        val report = BatchStepRunner(
+            step(CheckpointFailingReader(primaryFailure, checkpointFailure)),
+            execution,
+            repository,
+        ).run()
+
+        report.status shouldBe BatchStatus.FAILED
+        report.error shouldBeSameInstanceAs primaryFailure
+        assertSanitizedPersistenceFailure(primaryFailure)
+        primaryFailure.suppressed.single().message shouldNotContain checkNotNull(checkpointFailure.message)
     }
 
     @Test
@@ -604,7 +624,7 @@ class BatchFailurePersistenceTest {
 
     private class CheckpointFailingReader(
         private val readFailure: Throwable,
-        private val checkpointFailure: CancellationException,
+        private val checkpointFailure: Throwable,
     ) : BatchReader<String> {
         override suspend fun read(): String? = throw readFailure
 

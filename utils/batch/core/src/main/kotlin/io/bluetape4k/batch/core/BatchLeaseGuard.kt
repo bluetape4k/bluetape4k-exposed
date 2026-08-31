@@ -151,9 +151,12 @@ internal class BatchLeaseGuard(
     suspend fun stopHeartbeatInCurrentContext() {
         val heartbeat = heartbeatJob ?: return
         heartbeat.cancel()
-        heartbeat.join()
-        if (heartbeat.isCompleted) {
-            heartbeatJob = null
+        try {
+            heartbeat.join()
+        } finally {
+            if (heartbeat.isCompleted) {
+                heartbeatJob = null
+            }
         }
     }
 

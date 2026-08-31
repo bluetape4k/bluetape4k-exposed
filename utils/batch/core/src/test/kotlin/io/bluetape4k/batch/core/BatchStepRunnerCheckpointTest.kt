@@ -33,7 +33,7 @@ import kotlin.time.Duration.Companion.seconds
  * 2. **chunk 단위 saveCheckpoint 호출**: 각 chunk 커밋 시점에 `saveCheckpoint()`가
  *    chunk 개수만큼 호출된다.
  * 3. **saveCheckpoint 실패 시 예외 전파**: `saveCheckpoint()`가 throw 하면 step은
- *    FAILED 상태로 종료된다 (BatchStepRunner의 catch (Throwable) 분기).
+ *    FAILED 상태로 종료된다 (BatchStepRunner의 catch (Exception) 분기).
  *
  * @see BatchStepRunner
  * @see BatchJobRepository.saveCheckpoint

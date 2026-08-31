@@ -265,12 +265,19 @@ class InMemoryBatchJobRepository(
         )
         withLock {
             val current = jobExecutions[execution.id]
+            val now = clock.instant()
             val ownerMatches = if (execution.ownerId == null) {
                 current?.ownerId == null
             } else {
                 current?.ownerId == execution.ownerId
             }
-            check(current != null && ownerMatches && current.version == execution.version) {
+            val ownerfulLeaseActive = execution.ownerId == null || (
+                execution.status == BatchStatus.RUNNING &&
+                    execution.leaseUntil?.isAfter(now) == true &&
+                    current?.status == BatchStatus.RUNNING &&
+                    current.leaseUntil?.isAfter(now) == true
+                )
+            check(current != null && ownerMatches && current.version == execution.version && ownerfulLeaseActive) {
                 "JobExecution completion rejected: id=${execution.id}"
             }
             jobExecutions[execution.id] = updated
@@ -412,12 +419,19 @@ class InMemoryBatchJobRepository(
     override suspend fun completeStepExecution(execution: StepExecution, report: StepReport) {
         withLock {
             val current = stepExecutions[execution.id]
+            val now = clock.instant()
             val ownerMatches = if (execution.ownerId == null) {
                 current?.ownerId == null
             } else {
                 current?.ownerId == execution.ownerId
             }
-            check(current != null && ownerMatches && current.version == execution.version) {
+            val ownerfulLeaseActive = execution.ownerId == null || (
+                execution.status == BatchStatus.RUNNING &&
+                    execution.leaseUntil?.isAfter(now) == true &&
+                    current?.status == BatchStatus.RUNNING &&
+                    current.leaseUntil?.isAfter(now) == true
+                )
+            check(current != null && ownerMatches && current.version == execution.version && ownerfulLeaseActive) {
                 "StepExecution completion rejected: id=${execution.id}"
             }
             val checkpoint = report.checkpoint ?: current.checkpoint ?: checkpoints[execution.id]
@@ -473,7 +487,15 @@ class InMemoryBatchJobRepository(
             val current = checkNotNull(stepExecutions[execution.id]) {
                 "StepExecution not found: id=${execution.id}"
             }
-            check(current.ownerId == ownerId && current.version == execution.version) {
+            val now = clock.instant()
+            check(
+                execution.status == BatchStatus.RUNNING &&
+                    execution.leaseUntil?.isAfter(now) == true &&
+                    current.status == BatchStatus.RUNNING &&
+                    current.leaseUntil?.isAfter(now) == true &&
+                    current.ownerId == ownerId &&
+                    current.version == execution.version,
+            ) {
                 "Owner-aware checkpoint update rejected: id=${execution.id}"
             }
             val next = current.copy(
