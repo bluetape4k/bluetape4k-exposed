@@ -44,15 +44,15 @@ Column codec, 데이터베이스별 helper, Spring Boot 4 자동 설정을 더�
 
 ## 매뉴얼
 
-저장소의 `docs/manual/`이 안정판 1.12.1 문서의 기준입니다.
+저장소의 `central manual`이 안정판 1.12.1 문서의 기준입니다.
 
-- [매뉴얼 개요](docs/manual/ko/index.md)
-- [시작하기](docs/manual/ko/getting-started.md)
-- [모듈 목록과 학습 경로](docs/manual/ko/guides/learning-path.md)
+- [매뉴얼 개요](https://bluetape4k.github.io/ko/manual/bluetape4k-exposed/1.12/)
+- [시작하기](https://bluetape4k.github.io/ko/manual/bluetape4k-exposed/1.12/getting-started/)
+- [모듈 목록과 학습 경로](https://bluetape4k.github.io/ko/manual/bluetape4k-exposed/1.12/guides/learning-path/)
 
 배포 기준 프로젝트와 예제를 소유권 경계, 실행 예제, 실패 진단, 운영 고려 사항,
 배포본에 고정한 소스 링크와 함께 영어와 한국어로 제공합니다. 개발 전용 모듈은
-별도로 표시합니다. README는 간단한 입구로 유지하고 상세 동작은 `docs/manual/`에서
+별도로 표시합니다. README는 간단한 입구로 유지하고 상세 동작은 `central manual`에서
 설명합니다.
 
 ## 릴리스 경계
@@ -683,8 +683,8 @@ coroutine-native로 실행됩니다. 기존 `StatusPages` 정책에서
 `MissingTenantContextException`을 `tenant_context_missing`으로, resolver 실패를
 `tenant_resolution_failed`로 매핑하세요. 어댑터는 raw tenant 식별자, header, URL,
 SQL, credential을 log나 tag에 넣지 않으며 resource 종료도 소유하지 않습니다.
-[tenant JDBC 매뉴얼](docs/manual/ko/modules/bluetape4k-exposed-ktor-tenant-jdbc.md)과
-[tenant R2DBC 매뉴얼](docs/manual/ko/modules/bluetape4k-exposed-ktor-tenant-r2dbc.md)을
+[tenant JDBC 매뉴얼](https://bluetape4k.github.io/ko/manual/bluetape4k-exposed/1.12/modules/bluetape4k-exposed-ktor-tenant-jdbc/)과
+[tenant R2DBC 매뉴얼](https://bluetape4k.github.io/ko/manual/bluetape4k-exposed/1.12/modules/bluetape4k-exposed-ktor-tenant-r2dbc/)을
 참고하세요.
 
 ## 요구사항

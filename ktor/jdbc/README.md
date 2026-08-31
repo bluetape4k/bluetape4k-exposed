@@ -9,4 +9,4 @@ implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-jdbc")
 ```
 
 Use this module with `bluetape4k-exposed-ktor-core`; R2DBC and cache adapters are
-separate. See the [module manual](../../docs/manual/en/modules/bluetape4k-exposed-ktor-jdbc.md).
+separate. See the [module manual](https://bluetape4k.github.io/manual/bluetape4k-exposed/1.12/modules/bluetape4k-exposed-ktor-jdbc/).

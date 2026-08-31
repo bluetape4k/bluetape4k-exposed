@@ -8,4 +8,4 @@ implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<version>"
 implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-r2dbc")
 ```
 
-Use this module with the backend-neutral core. See the [module manual](../../docs/manual/en/modules/bluetape4k-exposed-ktor-r2dbc.md).
+Use this module with the backend-neutral core. See the [module manual](https://bluetape4k.github.io/manual/bluetape4k-exposed/1.12/modules/bluetape4k-exposed-ktor-r2dbc/).
