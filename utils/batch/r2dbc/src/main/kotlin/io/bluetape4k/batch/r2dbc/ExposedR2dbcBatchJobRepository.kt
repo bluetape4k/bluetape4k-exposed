@@ -116,7 +116,7 @@ class ExposedR2dbcBatchJobRepository(
             insertJobExecution(jobName, params, hash)
         } catch (e: CancellationException) {
             throw e
-        } catch (e: Throwable) {
+        } catch (e: Exception) {
             if (!e.isUniqueViolation()) throw e
             log.debug { "동시 INSERT 감지 — JobExecution 재조회" }
             recoverJobExecutionAfterUniqueViolation(jobName, params, hash)
@@ -160,6 +160,7 @@ class ExposedR2dbcBatchJobRepository(
         )
     }
 
+    @Suppress("TooGenericExceptionCaught")
     internal suspend fun recoverJobExecutionAfterUniqueViolation(
         jobName: String,
         params: Map<String, Any>,
