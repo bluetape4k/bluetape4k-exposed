@@ -13,7 +13,9 @@ import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.error
 import io.bluetape4k.logging.warn
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -72,6 +74,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
      */
     suspend fun run(): StepReport {
         var primaryFailure: Throwable? = null
+        val ownsLeaseGuard = leaseGuard == null
         val activeLeaseGuard = leaseGuard ?: run {
             check(repository.supportsLeaseRenewal) {
                 "Batch step runner requires a repository with lease renewal support"
@@ -125,7 +128,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
 
         val ownerId = requireNotNull(claimedJobExecution.ownerId)
         val claimStartedNanos = monotonicClock.nowNanos()
-        var claimedStepExecution = repository.claimStepExecution(stepExecution, ownerId, leaseDuration)
+        val claimedStepExecution = repository.claimStepExecution(stepExecution, ownerId, leaseDuration)
             ?: return StepReport(
                 stepName = step.name,
                 status = BatchStatus.FAILED,
@@ -136,6 +139,11 @@ internal class BatchStepRunner<I : Any, O : Any>(
                 ),
             )
         activeLeaseGuard.recordStepExecution(claimedStepExecution, claimStartedNanos)
+        if (ownsLeaseGuard) {
+            activeLeaseGuard.startHeartbeat(
+                CoroutineScope(currentCoroutineContext()),
+            )
+        }
 
         var readCount = claimedStepExecution.readCount
         var writeCount = claimedStepExecution.writeCount
@@ -256,11 +264,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
                 step.reader.checkpoint()?.let { cp ->
                     // repository I/O는 caller cancellation에 협력한다. 성공한 readback을
                     // guard 기준 데이터로 교체하는 짧은 메모리 연산만 비취소 구간이다.
-                    val updatedStepExecution = repository.saveCheckpointAndReturn(claimedStepExecution, cp)
-                    claimedStepExecution = withContext(NonCancellable) {
-                        activeLeaseGuard.recordStepExecution(updatedStepExecution)
-                        updatedStepExecution
-                    }
+                    activeLeaseGuard.saveCheckpoint(cp)
                 }
             }
 
@@ -324,6 +328,9 @@ internal class BatchStepRunner<I : Any, O : Any>(
             return failedReport
         } finally {
             withContext(NonCancellable) {
+                if (ownsLeaseGuard) {
+                    activeLeaseGuard.stopHeartbeat()
+                }
                 closeSafely("reader", primaryFailure) { step.reader.close() }
                 closeSafely("writer", primaryFailure) { step.writer.close() }
             }

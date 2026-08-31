@@ -53,6 +53,34 @@ class BatchLeaseGuardTest {
     }
 
     @Test
+    fun `heartbeat로 Step version이 증가해도 checkpoint는 최신 snapshot으로 CAS한다`() = runSuspendIO {
+        val wallClock = MutableBatchClock(Instant.parse("2026-08-31T00:00:00Z"))
+        val monotonic = MutableBatchMonotonicClock()
+        val repository = InMemoryBatchJobRepository(wallClock)
+        val job = repository.findOrCreateJobExecution("checkpointRaceJob")
+        val step = repository.findOrCreateStepExecution(job, "checkpointRaceStep")
+        val claimedJob = repository.claimJobExecution(job, "owner-1", Duration.ofSeconds(30)).shouldNotBeNull()
+        val claimedStep = repository.claimStepExecution(step, "owner-1", Duration.ofSeconds(30)).shouldNotBeNull()
+        val guard = BatchLeaseGuard(
+            repository = repository,
+            ownerId = "owner-1",
+            executionLease = Duration.ofSeconds(30),
+            initialJobExecution = claimedJob,
+            initialStepExecution = claimedStep,
+            monotonicClock = monotonic,
+        )
+        monotonic.nowNanos = 20_000_000_000L
+        wallClock.advance(Duration.ofSeconds(1))
+        guard.checkBothAndMaybeRenew()
+
+        val checkpointed = guard.saveCheckpoint("checkpoint-1")
+
+        checkpointed.version shouldBeEqualTo claimedStep.version + 2L
+        repository.loadCheckpoint(claimedStep.id) shouldBeEqualTo "checkpoint-1"
+        guard.latestSnapshot().stepExecution.shouldNotBeNull().version shouldBeEqualTo checkpointed.version
+    }
+
+    @Test
     fun `renewal null이면 write block을 호출하지 않고 lease loss를 기록한다`() = runSuspendIO {
         val wallClock = MutableBatchClock(Instant.parse("2026-08-31T00:00:00Z"))
         val monotonic = MutableBatchMonotonicClock()

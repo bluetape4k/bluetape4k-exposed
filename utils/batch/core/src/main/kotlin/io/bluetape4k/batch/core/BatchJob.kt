@@ -50,6 +50,7 @@ import java.util.UUID
  * val report = job.run()
  * ```
  */
+@Suppress("TooManyFunctions")
 class BatchJob(
     val name: String,
     val params: Map<String, Any> = emptyMap(),
@@ -89,7 +90,7 @@ class BatchJob(
         val jobExecution = repository.findOrCreateJobExecution(name, params)
         if (!repository.supportsLeaseRenewal) {
             return BatchReport.Failure(
-                jobExecution,
+                jobExecution.sanitizeForInfrastructureFailure(),
                 emptyList(),
                 BatchInfrastructureFailureException(
                     BatchInfrastructureFailureException.REPOSITORY_FAILURE,
@@ -104,7 +105,7 @@ class BatchJob(
             ownerId = ownerId,
             leaseDuration = executionLease,
         ) ?: return BatchReport.Failure(
-            jobExecution,
+            jobExecution.sanitizeForInfrastructureFailure(),
             emptyList(),
             BatchExecutionAlreadyClaimedException("Job", jobExecution.id, jobExecution.ownerId),
         )
@@ -140,7 +141,7 @@ class BatchJob(
 
             val hasSkips = stepReports.any { it.skipCount > 0 }
             val finalStatus = if (hasSkips) BatchStatus.COMPLETED_WITH_SKIPS else BatchStatus.COMPLETED
-            val completionExecution = stopHeartbeatAndGetLatest(leaseGuard, claimedJobExecution)
+            val completionExecution = stopHeartbeatAndGetLatest(leaseGuard)
             repository.completeJobExecution(completionExecution, finalStatus)
             val reportExecution = completionExecution.copy(
                 status = finalStatus,
@@ -161,46 +162,85 @@ class BatchJob(
             }
 
         } catch (_: LeaseLostException) {
-            val latest = stopHeartbeatAndGetDiagnostic(leaseGuard, claimedJobExecution)
-            val correlationId = UUID.randomUUID().toString()
-            val failure = BatchInfrastructureFailureException(
-                BatchInfrastructureFailureException.LEASE_LOST,
-                correlationId,
-            )
-            return BatchReport.Failure(
-                latest.sanitizeForLeaseLoss(),
-                stepReports.map { it.sanitizeForLeaseLoss(correlationId) },
-                failure,
-            )
+            return leaseLossFailure(leaseGuard, claimedJobExecution, stepReports)
         } catch (e: CancellationException) {
             compensateExternalCancellation(leaseGuard, claimedJobExecution, e)
             throw e
 
+        } catch (e: BatchInfrastructureFailureException) {
+            return executionFailure(leaseGuard, claimedJobExecution, stepReports, e, sanitize = true)
+        } catch (e: BatchExecutionAlreadyClaimedException) {
+            return executionFailure(leaseGuard, claimedJobExecution, stepReports, e, sanitize = true)
         } catch (e: Throwable) {
-            val latest = stopHeartbeatAndGetLatest(leaseGuard, claimedJobExecution)
-            persistCompletionSafely(latest, BatchStatus.FAILED, e)
-            return BatchReport.Failure(
-                latest.copy(status = BatchStatus.FAILED, ownerId = null, leaseUntil = null),
-                stepReports,
-                e,
-            )
+            return executionFailure(leaseGuard, claimedJobExecution, stepReports, e, sanitize = false)
         }
     }
 
     private suspend fun stopHeartbeatAndGetLatest(
         leaseGuard: BatchLeaseGuard,
-        fallback: JobExecution,
     ): JobExecution {
         leaseGuard.stopHeartbeat()
-        return runCatching { leaseGuard.latestSnapshot().jobExecution }.getOrElse { fallback }
+        return leaseGuard.latestSnapshot().jobExecution
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private suspend fun stopHeartbeatAndGetDiagnostic(
         leaseGuard: BatchLeaseGuard,
         fallback: JobExecution,
     ): JobExecution = withContext(NonCancellable) {
         leaseGuard.stopHeartbeat()
-        runCatching { leaseGuard.latestSnapshotForDiagnostics().jobExecution }.getOrElse { fallback }
+        try {
+            leaseGuard.latestSnapshotForDiagnostics().jobExecution
+        } catch (failure: Throwable) {
+            failure.rethrowIfCancellation()
+            fallback
+        }
+    }
+
+    private suspend fun executionFailure(
+        leaseGuard: BatchLeaseGuard,
+        fallback: JobExecution,
+        stepReports: List<StepReport>,
+        failure: Throwable,
+        sanitize: Boolean,
+    ): BatchReport.Failure {
+        val latest = try {
+            stopHeartbeatAndGetLatest(leaseGuard)
+        } catch (_: LeaseLostException) {
+            return leaseLossFailure(leaseGuard, fallback, stepReports)
+        }
+        persistCompletionSafely(latest, BatchStatus.FAILED, failure)
+        return BatchReport.Failure(
+            latest.copy(
+                params = if (sanitize) emptyMap() else latest.params,
+                status = BatchStatus.FAILED,
+                ownerId = null,
+                leaseUntil = null,
+            ),
+            if (sanitize) {
+                stepReports.map { it.sanitizeForInfrastructureFailure() }
+            } else {
+                stepReports
+            },
+            failure,
+        )
+    }
+
+    private suspend fun leaseLossFailure(
+        leaseGuard: BatchLeaseGuard,
+        fallback: JobExecution,
+        stepReports: List<StepReport>,
+    ): BatchReport.Failure {
+        val latest = stopHeartbeatAndGetDiagnostic(leaseGuard, fallback)
+        val correlationId = UUID.randomUUID().toString()
+        return BatchReport.Failure(
+            latest.sanitizeForInfrastructureFailure(),
+            stepReports.map { it.sanitizeForInfrastructureFailure(correlationId) },
+            BatchInfrastructureFailureException(
+                BatchInfrastructureFailureException.LEASE_LOST,
+                correlationId,
+            ),
+        )
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -235,13 +275,15 @@ class BatchJob(
         }
     }
 
-    private fun JobExecution.sanitizeForLeaseLoss(): JobExecution = copy(
+    private fun JobExecution.sanitizeForInfrastructureFailure(): JobExecution = copy(
         params = emptyMap(),
         ownerId = null,
         leaseUntil = null,
     )
 
-    private fun StepReport.sanitizeForLeaseLoss(correlationId: String): StepReport = copy(
+    private fun StepReport.sanitizeForInfrastructureFailure(
+        correlationId: String = UUID.randomUUID().toString(),
+    ): StepReport = copy(
         checkpoint = null,
         error = error?.let {
             BatchInfrastructureFailureException(
@@ -250,6 +292,10 @@ class BatchJob(
             )
         },
     )
+
+    private fun Throwable.rethrowIfCancellation() {
+        if (this is CancellationException) throw this
+    }
 
     @Suppress("TooGenericExceptionCaught")
     private suspend fun persistCompletionSafely(

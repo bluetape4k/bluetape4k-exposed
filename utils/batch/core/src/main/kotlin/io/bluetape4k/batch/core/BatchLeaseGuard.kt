@@ -94,6 +94,31 @@ internal class BatchLeaseGuard(
         return block()
     }
 
+    /**
+     * heartbeat와 checkpoint CAS를 같은 version stream에서 직렬화한다.
+     * 외부 write 뒤에는 반드시 이 경계를 통해 최신 Step version으로 checkpoint를 저장한다.
+     */
+    suspend fun saveCheckpoint(checkpoint: Any): StepExecution = mutex.withLock {
+        ensureLeaseAvailable()
+        if (remainingNanos(minDeadlineNanos()) <= timing.safeMarginMillis * NANOS_PER_MILLISECOND) {
+            renewLocked()
+        }
+        val current = checkNotNull(latestStepExecution) {
+            "Checkpoint save requires an active Step lease"
+        }
+        val updated = repository.saveCheckpointAndReturn(current, checkpoint)
+        check(
+            updated.id == current.id &&
+                updated.jobExecutionId == latestJobExecution.id &&
+                updated.ownerId == ownerId &&
+                updated.version > current.version,
+        ) {
+            "Checkpoint update does not belong to the current lease"
+        }
+        latestStepExecution = updated
+        updated
+    }
+
     /** heartbeat 간격에 맞춰 Job(+현재 Step)을 한 번에 갱신하는 child를 시작한다. */
     fun startHeartbeat(scope: CoroutineScope): Job {
         check(heartbeatJob == null) { "Batch lease heartbeat is already running" }

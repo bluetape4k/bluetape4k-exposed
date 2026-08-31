@@ -38,6 +38,9 @@ import java.sql.SQLException
 import java.time.Duration
 import java.time.Instant
 
+private const val MAX_RENEWAL_TIMEOUT_MILLIS = 30_000L
+private const val MILLIS_PER_SECOND = 1_000L
+
 /**
  * Exposed JDBC 기반 [BatchJobRepository] 구현.
  *
@@ -271,6 +274,9 @@ class ExposedJdbcBatchJobRepository(
 
         return withContext(Dispatchers.VT) {
             transaction(database) {
+                maxAttempts = 1
+                queryTimeout = leaseDuration.toRenewalTimeoutSeconds()
+
                 // 항상 Job → Step 순서로 잠가 deadlock 가능성을 줄인다.
                 val currentJob = BatchJobExecutionTable.selectAll()
                     .where { BatchJobExecutionTable.id eq jobExecution.id }
@@ -330,17 +336,29 @@ class ExposedJdbcBatchJobRepository(
                         rollback()
                         return@transaction null
                     }
-                    currentStep.copy(
-                        leaseUntil = newLeaseUntil,
-                        version = currentStep.version + 1,
-                    )
+                    BatchStepExecutionTable.selectAll()
+                        .where { BatchStepExecutionTable.id eq currentStep.id }
+                        .limit(1)
+                        .firstOrNull()
+                        ?.toStepExecution(checkpointJson)
+                        ?: run {
+                            rollback()
+                            return@transaction null
+                        }
                 }
 
+                val renewedJob = BatchJobExecutionTable.selectAll()
+                    .where { BatchJobExecutionTable.id eq currentJob.id }
+                    .limit(1)
+                    .firstOrNull()
+                    ?.toJobExecution(checkpointJson)
+                    ?: run {
+                        rollback()
+                        return@transaction null
+                    }
+
                 BatchExecutionLeaseSnapshot(
-                    jobExecution = currentJob.copy(
-                        leaseUntil = newLeaseUntil,
-                        version = currentJob.version + 1,
-                    ),
+                    jobExecution = renewedJob,
                     stepExecution = renewedStep,
                 )
             }
@@ -798,4 +816,11 @@ class ExposedJdbcBatchJobRepository(
         sqlState == "23505" ||
                 errorCode == 1062 ||
                 message?.contains("unique", ignoreCase = true) == true
+}
+
+private fun Duration.toRenewalTimeoutSeconds(): Int {
+    val timeoutMillis = minOf(toMillis() / 6L, MAX_RENEWAL_TIMEOUT_MILLIS)
+    return Math.ceilDiv(timeoutMillis, MILLIS_PER_SECOND)
+        .coerceAtLeast(1L)
+        .toInt()
 }

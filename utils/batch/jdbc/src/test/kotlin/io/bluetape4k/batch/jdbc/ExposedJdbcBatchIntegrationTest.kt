@@ -12,6 +12,7 @@ import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.BatchWriter
 import io.bluetape4k.batch.api.SkipPolicy
 import io.bluetape4k.batch.api.StepExecution
+import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.batch.core.dsl.batchJob
 import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.jdbc.tables.BatchJobExecutionTable
@@ -33,7 +34,9 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.test.assertFailsWith
 
 /**
  * JDBC 배치 엔드투엔드 통합 테스트.
@@ -285,6 +288,43 @@ class ExposedJdbcBatchIntegrationTest : AbstractBatchJdbcTest() {
             renewed.jobExecution.ownerId shouldBeEqualTo "lease-owner"
             renewed.stepExecution?.version shouldBeEqualTo claimedStep.version + 1
             renewed.stepExecution?.ownerId shouldBeEqualTo "lease-owner"
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    @Suppress("DEPRECATION")
+    fun `lease 만료 takeover 뒤 stale owner의 외부 write와 상태 저장을 차단한다`(testDB: TestDB) {
+        withAllTables(testDB) {
+            val repository = ExposedJdbcBatchJobRepository(testDB.db!!, CheckpointJson.jackson3())
+            val initialJob = repository.findOrCreateJobExecution("leaseTakeoverJob", emptyMap())
+            val staleJob = checkNotNull(repository.claimJobExecution(initialJob, "owner-a", Instant.EPOCH))
+            val initialStep = repository.findOrCreateStepExecution(staleJob, "leaseStep")
+            val staleStep = checkNotNull(repository.claimStepExecution(initialStep, "owner-a", Instant.EPOCH))
+            val currentJob = checkNotNull(
+                repository.claimJobExecution(staleJob, "owner-b", Duration.ofMinutes(1)),
+            )
+            val currentStep = checkNotNull(
+                repository.claimStepExecution(staleStep, "owner-b", Duration.ofMinutes(1)),
+            )
+            val externalWriteCount = AtomicInteger()
+
+            if (repository.renewExecutionLeases(staleJob, staleStep, Duration.ofMinutes(1)) != null) {
+                externalWriteCount.incrementAndGet()
+            }
+            checkNotNull(repository.renewExecutionLeases(currentJob, currentStep, Duration.ofMinutes(1)))
+            externalWriteCount.incrementAndGet()
+
+            externalWriteCount.get() shouldBeEqualTo 1
+            assertFailsWith<IllegalStateException> {
+                repository.saveCheckpointAndReturn(staleStep, "stale-checkpoint")
+            }
+            assertFailsWith<IllegalStateException> {
+                repository.completeStepExecution(
+                    staleStep,
+                    StepReport("leaseStep", BatchStatus.COMPLETED),
+                )
+            }
         }
     }
 
