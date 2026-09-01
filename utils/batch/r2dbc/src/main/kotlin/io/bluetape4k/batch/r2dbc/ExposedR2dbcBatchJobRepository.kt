@@ -2,20 +2,25 @@ package io.bluetape4k.batch.r2dbc
 
 import io.bluetape4k.batch.api.BatchExecutionLeaseSnapshot
 import io.bluetape4k.batch.api.BatchJobRepository
+import io.bluetape4k.batch.api.BatchRepositoryRecoveryExhaustedException
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepExecution
 import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.api.requireValidBatchLeaseDuration
+import io.bluetape4k.batch.api.requireTerminalCompletionStatus
 import io.bluetape4k.batch.api.requireValidBatchName
+import io.bluetape4k.batch.r2dbc.tables.BATCH_ACTIVE_KEY
 import io.bluetape4k.batch.r2dbc.tables.BatchJobExecutionTable
 import io.bluetape4k.batch.r2dbc.tables.BatchStepExecutionTable
 import io.bluetape4k.batch.r2dbc.tables.toJobExecution
 import io.bluetape4k.batch.r2dbc.tables.toParamsHash
 import io.bluetape4k.batch.r2dbc.tables.toStepExecution
+import io.bluetape4k.codec.Base58
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
+import io.bluetape4k.logging.error
 import io.r2dbc.spi.R2dbcException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.firstOrNull
@@ -45,6 +50,7 @@ private const val MYSQL_DUPLICATE_KEY_ERROR_CODE = 1062
 private const val DEFAULT_REPOSITORY_QUERY_TIMEOUT_SECONDS = 5
 private const val MAX_RENEWAL_TIMEOUT_MILLIS = 30_000L
 private const val MILLIS_PER_SECOND = 1_000L
+private const val RECOVERY_CORRELATION_ID_LENGTH = 16
 
 /**
  * Exposed R2DBC 기반 [BatchJobRepository] 구현 — 네이티브 suspend.
@@ -75,6 +81,12 @@ class ExposedR2dbcBatchJobRepository(
     @Volatile
     internal var beforeStepInsertHook: (suspend () -> Unit)? = null
 
+    @Volatile
+    internal var beforeJobInsertHook: (suspend () -> Unit)? = null
+
+    @Volatile
+    internal var beforeRecoveryRequeryHook: (suspend () -> Unit)? = null
+
     /**
      * 이전 `internal.CheckpointJson` JVM descriptor를 사용하는 소비자를 위한
      * 한 minor line 호환 생성자입니다.
@@ -99,14 +111,26 @@ class ExposedR2dbcBatchJobRepository(
         jobName.requireValidBatchName("jobName")
         val hash = params.toParamsHash()
 
-        val existing = suspendTransaction(db = database) {
+        findReusableJobExecution(jobName, hash)?.let { return it }
+        beforeJobInsertHook?.invoke()
+        return try {
+            insertJobExecution(jobName, params, hash)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            if (!e.isUniqueViolation()) throw e
+            log.debug { "동시 INSERT 감지 — JobExecution 재조회" }
+            recoverJobExecutionAfterUniqueViolation(jobName, params, hash)
+        }
+    }
+
+    private suspend fun findReusableJobExecution(jobName: String, hash: String): JobExecution? =
+        suspendTransaction(db = database) {
             BatchJobExecutionTable.selectAll()
                 .where {
                     (BatchJobExecutionTable.jobName eq jobName) and
                         (BatchJobExecutionTable.paramsHash eq hash) and
-                        (BatchJobExecutionTable.status inList listOf(
-                            BatchStatus.RUNNING, BatchStatus.FAILED, BatchStatus.STOPPED,
-                        ))
+                        (BatchJobExecutionTable.activeKey eq BATCH_ACTIVE_KEY)
                 }
                 .orderBy(BatchJobExecutionTable.id, SortOrder.DESC)
                 .limit(1)
@@ -114,35 +138,44 @@ class ExposedR2dbcBatchJobRepository(
                 .firstOrNull()
         }
 
-        if (existing != null) {
-            return existing
+    private suspend fun insertJobExecution(
+        jobName: String,
+        params: Map<String, Any>,
+        hash: String,
+    ): JobExecution = suspendTransaction(db = database) {
+        val now = Instant.now()
+        val newId = BatchJobExecutionTable.insertAndGetId { row ->
+            row[BatchJobExecutionTable.jobName] = jobName
+            row[BatchJobExecutionTable.paramsHash] = hash
+            row[BatchJobExecutionTable.status] = BatchStatus.RUNNING
+            row[BatchJobExecutionTable.activeKey] = BATCH_ACTIVE_KEY
+            row[BatchJobExecutionTable.params] = if (params.isEmpty()) null else checkpointJson.write(params)
+            row[BatchJobExecutionTable.startTime] = now
         }
+        JobExecution(
+            id = newId.value,
+            jobName = jobName,
+            params = params,
+            status = BatchStatus.RUNNING,
+            startTime = now,
+        )
+    }
 
+    @Suppress("TooGenericExceptionCaught")
+    internal suspend fun recoverJobExecutionAfterUniqueViolation(
+        jobName: String,
+        params: Map<String, Any>,
+        hash: String,
+    ): JobExecution {
+        beforeRecoveryRequeryHook?.invoke()
+        findReusableJobExecution(jobName, hash)?.let { return it }
         return try {
-            suspendTransaction(db = database) {
-                val now = Instant.now()
-                val newId = BatchJobExecutionTable.insertAndGetId { row ->
-                    row[BatchJobExecutionTable.jobName] = jobName
-                    row[BatchJobExecutionTable.paramsHash] = hash  // "" for empty params (consistent with SELECT eq hash)
-                    row[BatchJobExecutionTable.status] = BatchStatus.RUNNING
-                    row[BatchJobExecutionTable.params] = if (params.isEmpty()) null
-                    else checkpointJson.write(params)
-                    row[BatchJobExecutionTable.startTime] = now
-                }
-                JobExecution(
-                    id = newId.value,
-                    jobName = jobName,
-                    params = params,
-                    status = BatchStatus.RUNNING,
-                    startTime = now,
-                )
-            }
+            insertJobExecution(jobName, params, hash)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             if (!e.isUniqueViolation()) throw e
-            log.debug { "동시 INSERT 감지 — JobExecution 재조회" }
-            requeryJobExecutionAfterUniqueViolation(jobName, params)
+            findReusableJobExecution(jobName, hash) ?: recoveryExhausted()
         }
     }
 
@@ -355,25 +388,11 @@ class ExposedR2dbcBatchJobRepository(
         params: Map<String, Any>,
     ): JobExecution {
         val hash = params.toParamsHash()
-
-        return suspendTransaction(db = database) {
-            BatchJobExecutionTable.selectAll()
-                .where {
-                    (BatchJobExecutionTable.jobName eq jobName) and
-                        (BatchJobExecutionTable.paramsHash eq hash) and
-                        (BatchJobExecutionTable.status inList listOf(
-                            BatchStatus.RUNNING, BatchStatus.FAILED, BatchStatus.STOPPED,
-                        ))
-                }
-                .orderBy(BatchJobExecutionTable.id, SortOrder.DESC)
-                .limit(1)
-                .map { it.toJobExecution(checkpointJson) }
-                .firstOrNull()
-                ?: error("Job execution disappeared after unique-constraint violation re-query.")
-        }
+        return recoverJobExecutionAfterUniqueViolation(jobName, params, hash)
     }
 
     override suspend fun completeJobExecution(execution: JobExecution, status: BatchStatus) {
+        status.requireTerminalCompletionStatus()
         suspendTransaction(db = database) {
             maxAttempts = 1
             queryTimeout = DEFAULT_REPOSITORY_QUERY_TIMEOUT_SECONDS
@@ -391,6 +410,12 @@ class ExposedR2dbcBatchJobRepository(
             }
             val updatedRows = BatchJobExecutionTable.update({ condition }) { row ->
                 row[BatchJobExecutionTable.status] = status
+                row[BatchJobExecutionTable.activeKey] =
+                    if (status == BatchStatus.COMPLETED || status == BatchStatus.COMPLETED_WITH_SKIPS) {
+                        null
+                    } else {
+                        BATCH_ACTIVE_KEY
+                    }
                 row[BatchJobExecutionTable.ownerId] = null
                 row[BatchJobExecutionTable.leaseUntil] = null
                 row[BatchJobExecutionTable.version] = execution.version + 1
@@ -576,6 +601,7 @@ class ExposedR2dbcBatchJobRepository(
     }
 
     override suspend fun completeStepExecution(execution: StepExecution, report: StepReport) {
+        report.status.requireTerminalCompletionStatus()
         suspendTransaction(db = database) {
             maxAttempts = 1
             queryTimeout = DEFAULT_REPOSITORY_QUERY_TIMEOUT_SECONDS
@@ -608,6 +634,15 @@ class ExposedR2dbcBatchJobRepository(
                 "StepExecution completion rejected: id=${execution.id}"
             }
         }
+    }
+
+    private fun recoveryExhausted(): Nothing {
+        val correlationId = Base58.randomString(RECOVERY_CORRELATION_ID_LENGTH)
+        log.error {
+            "Job repository recovery budget exhausted — " +
+                "category=RECOVERY_EXHAUSTED, correlationId=$correlationId"
+        }
+        throw BatchRepositoryRecoveryExhaustedException(correlationId)
     }
 
     override suspend fun saveCheckpoint(stepExecutionId: Long, checkpoint: Any) {

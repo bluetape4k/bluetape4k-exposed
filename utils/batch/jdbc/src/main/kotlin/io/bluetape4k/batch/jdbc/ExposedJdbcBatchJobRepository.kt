@@ -2,21 +2,26 @@ package io.bluetape4k.batch.jdbc
 
 import io.bluetape4k.batch.api.BatchExecutionLeaseSnapshot
 import io.bluetape4k.batch.api.BatchJobRepository
+import io.bluetape4k.batch.api.BatchRepositoryRecoveryExhaustedException
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepExecution
 import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.api.requireValidBatchLeaseDuration
+import io.bluetape4k.batch.api.requireTerminalCompletionStatus
 import io.bluetape4k.batch.api.requireValidBatchName
+import io.bluetape4k.batch.jdbc.tables.BATCH_ACTIVE_KEY
 import io.bluetape4k.batch.jdbc.tables.BatchJobExecutionTable
 import io.bluetape4k.batch.jdbc.tables.BatchStepExecutionTable
 import io.bluetape4k.batch.jdbc.tables.toJobExecution
 import io.bluetape4k.batch.jdbc.tables.toParamsHash
 import io.bluetape4k.batch.jdbc.tables.toStepExecution
+import io.bluetape4k.codec.Base58
 import io.bluetape4k.concurrent.virtualthread.VT
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
+import io.bluetape4k.logging.error
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -42,12 +47,17 @@ import java.time.Instant
 private const val MAX_RENEWAL_TIMEOUT_MILLIS = 30_000L
 private const val MILLIS_PER_SECOND = 1_000L
 private const val DEFAULT_REPOSITORY_QUERY_TIMEOUT_SECONDS = 5
+private const val RECOVERY_CORRELATION_ID_LENGTH = 16
+private const val UNIQUE_VIOLATION_SQL_STATE = "23505"
+private const val MYSQL_DUPLICATE_KEY_ERROR_CODE = 1062
 
 /**
  * Exposed JDBC 기반 [BatchJobRepository] 구현.
  *
  * ## 동시성 안전
- * `(job_name, params_hash)` partial unique index가 동시 INSERT 경쟁을 방지한다.
+ * `(job_name, params_hash, active_key)` unique index가 동시 INSERT 경쟁을 방지한다.
+ * `STARTING`, `RUNNING`, `FAILED`, `STOPPED` row는 `active_key='ACTIVE'`를 사용하고,
+ * 완료 row는 null을 사용한다.
  * UniqueConstraint 위반 시 catch 후 재조회(catch-and-retry)한다.
  *
  * ## Dispatchers.VT
@@ -79,6 +89,12 @@ class ExposedJdbcBatchJobRepository(
     @Volatile
     internal var beforeStepInsertHook: (suspend () -> Unit)? = null
 
+    @Volatile
+    internal var beforeJobInsertHook: (suspend () -> Unit)? = null
+
+    @Volatile
+    internal var beforeRecoveryRequeryHook: (suspend () -> Unit)? = null
+
     /**
      * 이전 `internal.CheckpointJson` JVM descriptor를 사용하는 소비자를 위한
      * 한 minor line 호환 생성자입니다.
@@ -108,20 +124,32 @@ class ExposedJdbcBatchJobRepository(
         jobName.requireValidBatchName("jobName")
         val hash = params.toParamsHash()
 
-        // 1. 재시작 대상 조회
-        val existing = withContext(Dispatchers.VT) {
+        findReusableJobExecution(jobName, hash)?.let {
+            log.debug { "기존 JobExecution 재사용: status=${it.status}" }
+            return it
+        }
+
+        beforeJobInsertHook?.invoke()
+        return try {
+            insertJobExecution(jobName, params, hash)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            val sqle = e.findSqlException()
+            if (sqle == null || !sqle.isUniqueViolation()) throw e
+            log.debug { "동시 INSERT 감지 — JobExecution 재조회" }
+            recoverJobExecutionAfterUniqueViolation(jobName, params, hash)
+        }
+    }
+
+    private suspend fun findReusableJobExecution(jobName: String, hash: String): JobExecution? =
+        withContext(Dispatchers.VT) {
             transaction(database) {
                 BatchJobExecutionTable.selectAll()
                     .where {
                         (BatchJobExecutionTable.jobName eq jobName) and
-                                (BatchJobExecutionTable.paramsHash eq hash) and
-                                (
-                                    BatchJobExecutionTable.status inList listOf(
-                                        BatchStatus.RUNNING,
-                                        BatchStatus.FAILED,
-                                        BatchStatus.STOPPED,
-                                    )
-                                )
+                            (BatchJobExecutionTable.paramsHash eq hash) and
+                            (BatchJobExecutionTable.activeKey eq BATCH_ACTIVE_KEY)
                     }
                     .orderBy(BatchJobExecutionTable.id, SortOrder.DESC)
                     .limit(1)
@@ -130,41 +158,46 @@ class ExposedJdbcBatchJobRepository(
             }
         }
 
-        if (existing != null) {
-            log.debug { "기존 JobExecution 재사용: status=${existing.status}" }
-            return existing
-        }
-
-        // 2. 신규 생성 — UniqueViolation 시 재조회
-        return try {
-            withContext(Dispatchers.VT) {
-                transaction(database) {
-                    val now = Instant.now()
-                    val newId = BatchJobExecutionTable.insertAndGetId { row ->
-                        row[BatchJobExecutionTable.jobName] = jobName
-                        row[BatchJobExecutionTable.paramsHash] = hash
-                        row[BatchJobExecutionTable.status] = BatchStatus.RUNNING
-                        row[BatchJobExecutionTable.params] =
-                            if (params.isEmpty()) null else checkpointJson.write(params)
-                        row[BatchJobExecutionTable.startTime] = now
-                    }
-                    log.debug { "신규 JobExecution 생성" }
-                    JobExecution(
-                        id = newId.value,
-                        jobName = jobName,
-                        params = params,
-                        status = BatchStatus.RUNNING,
-                        startTime = now,
-                    )
-                }
+    private suspend fun insertJobExecution(
+        jobName: String,
+        params: Map<String, Any>,
+        hash: String,
+    ): JobExecution = withContext(Dispatchers.VT) {
+        transaction(database) {
+            val now = Instant.now()
+            val newId = BatchJobExecutionTable.insertAndGetId { row ->
+                row[BatchJobExecutionTable.jobName] = jobName
+                row[BatchJobExecutionTable.paramsHash] = hash
+                row[BatchJobExecutionTable.status] = BatchStatus.RUNNING
+                row[BatchJobExecutionTable.activeKey] = BATCH_ACTIVE_KEY
+                row[BatchJobExecutionTable.params] = if (params.isEmpty()) null else checkpointJson.write(params)
+                row[BatchJobExecutionTable.startTime] = now
             }
+            JobExecution(
+                id = newId.value,
+                jobName = jobName,
+                params = params,
+                status = BatchStatus.RUNNING,
+                startTime = now,
+            )
+        }
+    }
+
+    internal suspend fun recoverJobExecutionAfterUniqueViolation(
+        jobName: String,
+        params: Map<String, Any>,
+        hash: String,
+    ): JobExecution {
+        beforeRecoveryRequeryHook?.invoke()
+        findReusableJobExecution(jobName, hash)?.let { return it }
+        return try {
+            insertJobExecution(jobName, params, hash)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             val sqle = e.findSqlException()
             if (sqle == null || !sqle.isUniqueViolation()) throw e
-            log.debug { "동시 INSERT 감지 — JobExecution 재조회" }
-            requeryJobExecutionAfterUniqueViolation(jobName, params)
+            findReusableJobExecution(jobName, hash) ?: recoveryExhausted()
         }
     }
 
@@ -383,31 +416,11 @@ class ExposedJdbcBatchJobRepository(
         params: Map<String, Any>,
     ): JobExecution {
         val hash = params.toParamsHash()
-
-        return withContext(Dispatchers.VT) {
-            transaction(database) {
-                BatchJobExecutionTable.selectAll()
-                    .where {
-                        (BatchJobExecutionTable.jobName eq jobName) and
-                                (BatchJobExecutionTable.paramsHash eq hash) and
-                                (
-                                    BatchJobExecutionTable.status inList listOf(
-                                        BatchStatus.RUNNING,
-                                        BatchStatus.FAILED,
-                                        BatchStatus.STOPPED,
-                                    )
-                                )
-                    }
-                    .orderBy(BatchJobExecutionTable.id, SortOrder.DESC)
-                    .limit(1)
-                    .firstOrNull()
-                    ?.toJobExecution(checkpointJson)
-                    ?: error("Job execution disappeared after unique-constraint violation re-query.")
-            }
-        }
+        return recoverJobExecutionAfterUniqueViolation(jobName, params, hash)
     }
 
     override suspend fun completeJobExecution(execution: JobExecution, status: BatchStatus) {
+        status.requireTerminalCompletionStatus()
         withContext(Dispatchers.VT) {
             transaction(database) {
                 maxAttempts = 1
@@ -426,6 +439,12 @@ class ExposedJdbcBatchJobRepository(
                 }
                 val updatedRows = BatchJobExecutionTable.update({ condition }) { row ->
                     row[BatchJobExecutionTable.status] = status
+                    row[BatchJobExecutionTable.activeKey] =
+                        if (status == BatchStatus.COMPLETED || status == BatchStatus.COMPLETED_WITH_SKIPS) {
+                            null
+                        } else {
+                            BATCH_ACTIVE_KEY
+                        }
                     row[BatchJobExecutionTable.ownerId] = null
                     row[BatchJobExecutionTable.leaseUntil] = null
                     row[BatchJobExecutionTable.version] = execution.version + 1
@@ -661,6 +680,7 @@ class ExposedJdbcBatchJobRepository(
     }
 
     override suspend fun completeStepExecution(execution: StepExecution, report: StepReport) {
+        report.status.requireTerminalCompletionStatus()
         withContext(Dispatchers.VT) {
             transaction(database) {
                 maxAttempts = 1
@@ -699,6 +719,15 @@ class ExposedJdbcBatchJobRepository(
             "StepExecution 완료: status=${report.status}, " +
                     "read=${report.readCount}, write=${report.writeCount}, skip=${report.skipCount}"
         }
+    }
+
+    private fun recoveryExhausted(): Nothing {
+        val correlationId = Base58.randomString(RECOVERY_CORRELATION_ID_LENGTH)
+        log.error {
+            "Job repository recovery budget exhausted — " +
+                "category=RECOVERY_EXHAUSTED, correlationId=$correlationId"
+        }
+        throw BatchRepositoryRecoveryExhaustedException(correlationId)
     }
 
     override suspend fun saveCheckpoint(stepExecutionId: Long, checkpoint: Any) {
@@ -847,17 +876,16 @@ class ExposedJdbcBatchJobRepository(
         return null
     }
 
-    /**
-     * 대표 DB의 unique constraint violation 판정.
-     * - PostgreSQL: SQLState `23505`
-     * - MySQL/MariaDB: errorCode `1062`
-     * - H2/기타: message에 "unique" 포함
-     */
-    private fun SQLException.isUniqueViolation(): Boolean =
-        sqlState == "23505" ||
-                errorCode == 1062 ||
-                message?.contains("unique", ignoreCase = true) == true
 }
+
+/**
+ * JDBC driver가 제공하는 구조화된 식별자만 사용해 unique violation을 판별한다.
+ *
+ * - PostgreSQL/H2: SQLSTATE 23505
+ * - MySQL/MariaDB: error code 1062
+ */
+internal fun SQLException.isUniqueViolation(): Boolean =
+    sqlState == UNIQUE_VIOLATION_SQL_STATE || errorCode == MYSQL_DUPLICATE_KEY_ERROR_CODE
 
 private fun Duration.toRenewalTimeoutSeconds(): Int {
     val timeoutMillis = minOf(toMillis() / 6L, MAX_RENEWAL_TIMEOUT_MILLIS)

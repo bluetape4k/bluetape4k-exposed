@@ -45,3 +45,37 @@ class BatchExecutionAlreadyClaimedException(
 ) {
     companion object : KLogging()
 }
+
+/**
+ * 완료 API에 non-terminal [status]가 전달된 경우.
+ *
+ * 모든 repository 구현은 저장소를 변경하기 전에 이 예외를 던진다.
+ */
+class BatchCompletionStatusException(
+    val status: BatchStatus,
+) : IllegalArgumentException(
+    "Batch completion requires a terminal status: status=$status",
+)
+
+/**
+ * 제한된 repository 복구 횟수 안에서 active winner를 확인하지 못한 경우.
+ *
+ * [correlationId]는 로그와 운영 진단을 연결하기 위한 16자 Base58 문자열이다.
+ * 예외에는 backend 원인이나 실행 입력을 포함하지 않는다.
+ */
+class BatchRepositoryRecoveryExhaustedException(
+    val correlationId: String,
+) : IllegalStateException(
+    "Batch repository recovery budget exhausted; correlationId=$correlationId",
+) {
+    init {
+        require(correlationId.length == CORRELATION_ID_LENGTH && correlationId.all { it in BASE58_ALPHABET }) {
+            "correlationId must be a 16-character Base58 string"
+        }
+    }
+
+    companion object {
+        private const val CORRELATION_ID_LENGTH = 16
+        private const val BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+    }
+}

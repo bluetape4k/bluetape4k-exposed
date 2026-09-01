@@ -45,8 +45,9 @@ class ResultRowMappersTest : AbstractExposedTest() {
             // params=null, endTime=null(기본값) 로 삽입
             val insertedId = BatchJobExecutionTable.insertAndGetId {
                 it[jobName] = "nullableJob"
-                it[paramsHash] = null
+                it[paramsHash] = emptyMap<String, Any>().toParamsHash()
                 it[status] = BatchStatus.RUNNING
+                it[activeKey] = BATCH_ACTIVE_KEY
                 it[params] = null
                 it[startTime] = now
                 // endTime 은 nullable — 명시적으로 설정하지 않으면 null
@@ -85,8 +86,9 @@ class ResultRowMappersTest : AbstractExposedTest() {
             // Job 먼저 삽입 (FK 참조)
             val jobId = BatchJobExecutionTable.insertAndGetId {
                 it[jobName] = "allFieldsJob"
-                it[paramsHash] = null
+                it[paramsHash] = emptyMap<String, Any>().toParamsHash()
                 it[status] = BatchStatus.RUNNING
+                it[activeKey] = BATCH_ACTIVE_KEY
                 it[params] = null
                 it[startTime] = now
             }
@@ -151,6 +153,7 @@ class ResultRowMappersTest : AbstractExposedTest() {
                 it[jobName] = "chainJob"
                 it[paramsHash] = paramsMap.toParamsHash()
                 it[status] = BatchStatus.RUNNING
+                it[activeKey] = BATCH_ACTIVE_KEY
                 it[params] = paramsJson
                 it[startTime] = now
             }

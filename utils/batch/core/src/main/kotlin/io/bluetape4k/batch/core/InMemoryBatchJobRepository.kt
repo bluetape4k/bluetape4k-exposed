@@ -7,6 +7,7 @@ import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepExecution
 import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.batch.api.requireValidBatchLeaseDuration
+import io.bluetape4k.batch.api.requireTerminalCompletionStatus
 import io.bluetape4k.batch.api.requireValidBatchName
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
@@ -260,6 +261,7 @@ class InMemoryBatchJobRepository(
      * @param status 최종 상태 (`COMPLETED`, `COMPLETED_WITH_SKIPS`, `FAILED`, `STOPPED` 중 하나)
      */
     override suspend fun completeJobExecution(execution: JobExecution, status: BatchStatus) {
+        status.requireTerminalCompletionStatus()
         val updated = execution.copy(
             status = status,
             ownerId = null,
@@ -425,6 +427,7 @@ class InMemoryBatchJobRepository(
      * @param report Step 실행 결과 보고서
      */
     override suspend fun completeStepExecution(execution: StepExecution, report: StepReport) {
+        report.status.requireTerminalCompletionStatus()
         withLock {
             val current = stepExecutions[execution.id]
             val now = clock.instant()

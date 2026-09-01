@@ -3,11 +3,14 @@ package io.bluetape4k.batch.r2dbc
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.batch.api.BatchStatus
+import io.bluetape4k.batch.api.BatchCompletionStatusException
 import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.r2dbc.tables.BatchJobExecutionTable
@@ -20,8 +23,12 @@ import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.support.requireNotNull
 import io.r2dbc.spi.R2dbcException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.core.and
@@ -49,15 +56,6 @@ import java.util.concurrent.atomic.AtomicInteger
  * 5. Checkpoint 저장 / 로드 round-trip
  */
 class ExposedR2dbcBatchJobRepositoryTest : AbstractBatchR2dbcTest() {
-
-    companion object {
-        private const val ACTIVE_JOB_EXECUTION_UNIQUE_INDEX_SQL =
-            """
-            CREATE UNIQUE INDEX batch_job_exec_active_uidx
-                ON batch_job_execution(job_name, params_hash)
-                WHERE status IN ('RUNNING', 'FAILED', 'STOPPED')
-            """
-    }
 
     private val batchTables = arrayOf(BatchJobExecutionTable, BatchStepExecutionTable)
 
@@ -94,9 +92,6 @@ class ExposedR2dbcBatchJobRepositoryTest : AbstractBatchR2dbcTest() {
         block: suspend ExposedR2dbcBatchJobRepository.() -> Unit,
     ) {
         withTables(testDB, *batchTables) { db ->
-            if (testDB == TestDB.POSTGRESQL) {
-                exec(ACTIVE_JOB_EXECUTION_UNIQUE_INDEX_SQL)
-            }
             commit()
             val repo = ExposedR2dbcBatchJobRepository(db.db.requireNotNull("db.db"), CheckpointJson.jackson3())
             repo.block()
@@ -167,7 +162,7 @@ class ExposedR2dbcBatchJobRepositoryTest : AbstractBatchR2dbcTest() {
                 val je = findOrCreateJobExecution("myJob", emptyMap())
                 je.jobName shouldBeEqualTo "myJob"
                 je.status shouldBe BatchStatus.RUNNING
-                (je.id > 0L) shouldBe true
+                (je.id > 0L).shouldBeTrue()
             }
         }
     }
@@ -205,7 +200,7 @@ class ExposedR2dbcBatchJobRepositoryTest : AbstractBatchR2dbcTest() {
                 completeJobExecution(je1, BatchStatus.COMPLETED)
 
                 val je2 = findOrCreateJobExecution("completedJob", emptyMap())
-                (je2.id > je1.id) shouldBe true
+                (je2.id > je1.id).shouldBeTrue()
             }
         }
     }
@@ -445,7 +440,7 @@ class ExposedR2dbcBatchJobRepositoryTest : AbstractBatchR2dbcTest() {
                 val je1 = findOrCreateJobExecution("paramJob", mapOf("date" to "2026-04-10"))
                 val je2 = findOrCreateJobExecution("paramJob", mapOf("date" to "2026-04-11"))
 
-                (je2.id > je1.id) shouldBe true
+                (je2.id > je1.id).shouldBeTrue()
             }
         }
     }
@@ -542,29 +537,102 @@ class ExposedR2dbcBatchJobRepositoryTest : AbstractBatchR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `UniqueViolation 재조회 - winner row가 없으면 민감한 맥락 없이 IllegalStateException을 던진다`(testDB: TestDB) {
+    fun `UniqueViolation 재조회 - terminal winner만 있으면 새 active 실행을 생성한다`(testDB: TestDB) {
         runSuspendIO {
             withRepoTables(testDB) {
-                val error = assertFailsWith<IllegalStateException> {
-                    requeryJobExecutionAfterUniqueViolation(
-                        jobName = "missingRetryJob",
-                        params = mapOf("date" to "2026-05-19"),
-                    )
+                val params = mapOf<String, Any>("date" to "2026-05-19")
+                val winner = findOrCreateJobExecution("terminalRetryJob", params)
+                completeJobExecution(winner, BatchStatus.COMPLETED)
+
+                val recovered = requeryJobExecutionAfterUniqueViolation("terminalRetryJob", params)
+
+                recovered.id shouldNotBeEqualTo winner.id
+                recovered.status shouldBe BatchStatus.RUNNING
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `winner가 conflict 후 재조회 직전에 terminal이면 새 active 실행을 생성한다`(testDB: TestDB) {
+        runSuspendIO {
+            withRepoTables(testDB) {
+                val repository = this
+                val params = mapOf<String, Any>("date" to "2026-05-20")
+                val bothSelected = CompletableDeferred<Unit>()
+                val recoveryReady = CompletableDeferred<Unit>()
+                val releaseRecovery = CompletableDeferred<Unit>()
+                val selected = AtomicInteger()
+
+                repository.beforeJobInsertHook = {
+                    if (selected.incrementAndGet() == 2) bothSelected.complete(Unit)
+                    withTimeout(5_000) { bothSelected.await() }
+                }
+                repository.beforeRecoveryRequeryHook = {
+                    recoveryReady.complete(Unit)
+                    withTimeout(5_000) { releaseRecovery.await() }
                 }
 
-                val message = error.message.shouldNotBeNull()
-                message shouldContain "Job execution disappeared after unique-constraint violation re-query"
-                (message.contains("missingRetryJob") || message.contains("date=2026-05-19")) shouldBeEqualTo false
+                val executions = ConcurrentLinkedQueue<io.bluetape4k.batch.api.JobExecution>()
+                val isolatedScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+                try {
+                    val firstResult = CompletableDeferred<io.bluetape4k.batch.api.JobExecution>()
+                    val contenders = (1..2).map {
+                        isolatedScope.async {
+                            repository.findOrCreateJobExecution("terminalRaceJob", params).also { execution ->
+                                executions += execution
+                                firstResult.complete(execution)
+                            }
+                        }
+                    }
+                    val terminalTransition = isolatedScope.async {
+                        val winner = withTimeout(10_000) { firstResult.await() }
+                        withTimeout(10_000) { recoveryReady.await() }
+                        repository.completeJobExecution(winner, BatchStatus.COMPLETED)
+                        releaseRecovery.complete(Unit)
+                    }
+                    withTimeout(30_000) {
+                        (contenders + terminalTransition).awaitAll()
+                    }
+                } finally {
+                    isolatedScope.cancel()
+                    repository.beforeJobInsertHook = null
+                    repository.beforeRecoveryRequeryHook = null
+                }
+
+                executions.map { it.id }.distinct() shouldHaveSize 2
+                val active = findOrCreateJobExecution("terminalRaceJob", params)
+                active.id shouldBeEqualTo executions.maxOf { it.id }
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `completion API는 non-terminal 상태를 저장 전에 거부한다`(testDB: TestDB) {
+        runSuspendIO {
+            withRepoTables(testDB) {
+                val job = findOrCreateJobExecution("terminalContractJob", emptyMap())
+                val jobError = assertFailsWith<BatchCompletionStatusException> {
+                    completeJobExecution(job, BatchStatus.RUNNING)
+                }
+                jobError.status shouldBe BatchStatus.RUNNING
+
+                val step = findOrCreateStepExecution(job, "terminalContractStep")
+                val stepError = assertFailsWith<BatchCompletionStatusException> {
+                    completeStepExecution(step, StepReport(step.stepName, BatchStatus.STARTING))
+                }
+                stepError.status shouldBe BatchStatus.STARTING
             }
         }
     }
 
     @Test
     fun `unique violation 판정은 R2DBC 구조화 식별자만 허용한다`() {
-        object : R2dbcException("duplicate", "23505", 0) {}.isUniqueViolation() shouldBe true
-        object : R2dbcException("duplicate", "23000", 1062) {}.isUniqueViolation() shouldBe true
-        object : R2dbcException("integrity", "23000", 0) {}.isUniqueViolation() shouldBe false
+        object : R2dbcException("duplicate", "23505", 0) {}.isUniqueViolation().shouldBeTrue()
+        object : R2dbcException("duplicate", "23000", 1062) {}.isUniqueViolation().shouldBeTrue()
+        object : R2dbcException("integrity", "23000", 0) {}.isUniqueViolation().shouldBeFalse()
         IllegalStateException("unique constraint text from application")
-            .isUniqueViolation() shouldBe false
+            .isUniqueViolation().shouldBeFalse()
     }
 }
