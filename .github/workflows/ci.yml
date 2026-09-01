@@ -75,6 +75,15 @@ jobs:
       - uses: actions/checkout@v7
       - uses: gradle/actions/wrapper-validation@v6.3.0
 
+  release-workflow-contract:
+    name: Release Workflow Contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Verify immutable stable release target
+        run: python3 scripts/ci/resolve_release_target_test.py
+
   # Detect changed modules (runs in parallel with build)
   changes:
     name: Detect changed modules
@@ -1908,6 +1917,7 @@ jobs:
       - changes
       - catalog-governance
       - gitleaks
+      - release-workflow-contract
       - build
       - docs-only-validation
       - manual-manifest-validation
