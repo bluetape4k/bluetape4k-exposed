@@ -1,6 +1,7 @@
 package io.bluetape4k.batch.core
 
 import io.bluetape4k.batch.api.requireValidBatchLeaseDuration
+import java.io.Serializable
 import java.time.Duration
 import kotlin.math.max
 import kotlin.math.min
@@ -18,7 +19,11 @@ internal data class BatchLeaseTiming(
     val safeMarginMillis: Long,
     val heartbeatIntervalMillis: Long,
     val latencyAlertThresholdMillis: Long,
-)
+) : Serializable {
+    companion object {
+        private const val serialVersionUID: Long = 1L
+    }
+}
 
 internal object BatchLeaseCalculator {
     private const val MAX_REPOSITORY_TIMEOUT_MILLIS = 30_000L

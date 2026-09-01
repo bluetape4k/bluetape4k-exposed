@@ -55,6 +55,7 @@ import java.time.Instant
  * @property jobExecution 소속 [JobExecution]
  * @property repository 실행 이력을 저장할 [BatchJobRepository]
  */
+@Suppress("TooManyFunctions")
 internal class BatchStepRunner<I : Any, O : Any>(
     private val step: BatchStep<I, O>,
     private val jobExecution: JobExecution,
@@ -111,7 +112,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
             }
             BatchLeaseGuard(
                 repository = repository,
-                ownerId = requireNotNull(claimed.ownerId),
+                ownerId = checkNotNull(claimed.ownerId),
                 executionLease = leaseDuration,
                 initialJobExecution = claimed,
                 initialStepExecution = null,
@@ -143,7 +144,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
             )
         }
 
-        val ownerId = requireNotNull(claimedJobExecution.ownerId)
+        val ownerId = checkNotNull(claimedJobExecution.ownerId)
         val claimStartedNanos = monotonicClock.nowNanos()
         val claimedStepExecution = try {
             repositoryCall {
@@ -400,15 +401,28 @@ internal class BatchStepRunner<I : Any, O : Any>(
     } catch (failure: BatchInfrastructureFailureException) {
         throw failure
     } catch (_: BatchExecutionAlreadyClaimedException) {
-        throw BatchInfrastructureFailureException(
+        throw repositoryDiagnostic(
             BatchInfrastructureFailureException.EXECUTION_ALREADY_CLAIMED,
-            Base58.randomString(CORRELATION_ID_LENGTH),
+            "Step repository 실행 claim 경계 실패",
         )
     } catch (_: Exception) {
-        throw BatchInfrastructureFailureException(
+        throw repositoryDiagnostic(
             BatchInfrastructureFailureException.REPOSITORY_FAILURE,
-            Base58.randomString(CORRELATION_ID_LENGTH),
+            "Step repository 호출 실패",
         )
+    }
+
+    private fun repositoryDiagnostic(
+        category: String,
+        message: String,
+    ): BatchInfrastructureFailureException = BatchInfrastructureFailureException(
+        category,
+        Base58.randomString(CORRELATION_ID_LENGTH),
+    ).also { diagnostic ->
+        log.error {
+            "$message — step=${step.name}, category=${diagnostic.category}, " +
+                "correlationId=${diagnostic.correlationId}"
+        }
     }
 
     private fun infrastructureFailureReport(category: String): StepReport =
@@ -515,12 +529,50 @@ internal class BatchStepRunner<I : Any, O : Any>(
     private suspend fun closeResources(primary: Throwable?): BatchInfrastructureFailureException? {
         var readerFailure: BatchInfrastructureFailureException? = null
         var writerFailure: BatchInfrastructureFailureException? = null
-        try {
-            readerFailure = closeSafely("reader", primary) { step.reader.close() }
-        } finally {
-            writerFailure = closeSafely("writer", primary) { step.writer.close() }
+        var cleanupCancellation: CancellationException? = null
+
+        readerFailure = try {
+            closeSafely("reader", primary) { step.reader.close() }
+        } catch (cancellation: CancellationException) {
+            cleanupCancellation = cancellation
+            recordCloseCancellation("reader", primary, cancellation)
+            null
+        }
+        writerFailure = try {
+            closeSafely("writer", primary) { step.writer.close() }
+        } catch (cancellation: CancellationException) {
+            cleanupCancellation?.addSuppressed(cancellation)
+            cleanupCancellation = cleanupCancellation ?: cancellation
+            recordCloseCancellation("writer", primary, cancellation)
+            null
+        }
+        if (readerFailure != null && writerFailure != null) {
+            readerFailure.addSuppressed(writerFailure)
+        }
+        if (cleanupCancellation != null && primary == null) {
+            writerFailure?.let { cleanupCancellation.addSuppressed(it) }
+            readerFailure?.let { cleanupCancellation.addSuppressed(it) }
+            throw cleanupCancellation
         }
         return readerFailure ?: writerFailure
+    }
+
+    private fun recordCloseCancellation(
+        resource: String,
+        primary: Throwable?,
+        cancellation: CancellationException,
+    ) {
+        val diagnostic = BatchInfrastructureFailureException(
+            BatchInfrastructureFailureException.REPOSITORY_FAILURE,
+            Base58.randomString(CORRELATION_ID_LENGTH),
+        )
+        if (primary != null && cancellation !== primary) {
+            primary.addSuppressed(diagnostic)
+        }
+        log.warn {
+            "$resource close 취소됨 — " +
+                "category=${diagnostic.category}, correlationId=${diagnostic.correlationId}"
+        }
     }
 
     @Suppress("TooGenericExceptionCaught")

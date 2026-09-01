@@ -385,6 +385,7 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
+    @Suppress("LongMethod")
     fun `두 BatchJob runner의 lease takeover 뒤 stale runner는 다음 write를 시작하지 않는다`(testDB: TestDB) {
         runSuspendIO {
             withAllTables(testDB) {

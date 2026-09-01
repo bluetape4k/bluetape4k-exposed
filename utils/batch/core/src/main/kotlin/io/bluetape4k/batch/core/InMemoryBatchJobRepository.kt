@@ -102,6 +102,10 @@ class InMemoryBatchJobRepository(
     }
 
     @Suppress("CyclomaticComplexMethod")
+    @Deprecated(
+        message = "Use the Duration-based claimJobExecution overload",
+        replaceWith = ReplaceWith("claimJobExecution(execution, ownerId, leaseDuration)"),
+    )
     override suspend fun claimJobExecution(
         execution: JobExecution,
         ownerId: String,
@@ -345,6 +349,10 @@ class InMemoryBatchJobRepository(
         }
     }
 
+    @Deprecated(
+        message = "Use the Duration-based claimStepExecution overload",
+        replaceWith = ReplaceWith("claimStepExecution(execution, ownerId, leaseDuration)"),
+    )
     override suspend fun claimStepExecution(
         execution: StepExecution,
         ownerId: String,

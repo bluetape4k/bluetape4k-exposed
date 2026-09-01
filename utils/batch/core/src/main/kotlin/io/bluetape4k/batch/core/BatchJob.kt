@@ -98,18 +98,11 @@ class BatchJob(
         "TooGenericExceptionCaught",
     )
     suspend fun run(): BatchReport {
+        if (!repository.supportsLeaseRenewal) {
+            return unsupportedRepositoryFailure()
+        }
         val jobExecution = repositoryCall {
             repository.findOrCreateJobExecution(name, params)
-        }
-        if (!repository.supportsLeaseRenewal) {
-            return BatchReport.Failure(
-                jobExecution.sanitizeForInfrastructureFailure(),
-                emptyList(),
-                BatchInfrastructureFailureException(
-                    BatchInfrastructureFailureException.REPOSITORY_FAILURE,
-                    Base58.randomString(CORRELATION_ID_LENGTH),
-                ),
-            )
         }
         val ownerId = "${name}-${Base58.randomString(8)}"
         val claimStartedNanos = SYSTEM_BATCH_MONOTONIC_CLOCK.nowNanos()
@@ -183,20 +176,20 @@ class BatchJob(
             }
 
         } catch (_: LeaseLostException) {
-            return leaseLossFailure(leaseGuard, claimedJobExecution, stepReports)
+            return leaseLossFailure(leaseGuard, stepReports)
         } catch (e: CancellationException) {
             if (leaseGuard.hasLostLease()) {
-                return leaseLossFailure(leaseGuard, claimedJobExecution, stepReports)
+                return leaseLossFailure(leaseGuard, stepReports)
             }
-            compensateExternalCancellation(leaseGuard, claimedJobExecution, e)
+            compensateExternalCancellation(leaseGuard, e)
             throw e
 
         } catch (e: BatchInfrastructureFailureException) {
-            return executionFailure(leaseGuard, claimedJobExecution, stepReports, e, sanitize = true)
+            return executionFailure(leaseGuard, stepReports, e, sanitize = true)
         } catch (e: BatchExecutionAlreadyClaimedException) {
-            return executionFailure(leaseGuard, claimedJobExecution, stepReports, e, sanitize = true)
+            return executionFailure(leaseGuard, stepReports, e, sanitize = true)
         } catch (e: Exception) {
-            return executionFailure(leaseGuard, claimedJobExecution, stepReports, e, sanitize = false)
+            return executionFailure(leaseGuard, stepReports, e, sanitize = false)
         }
     }
 
@@ -210,21 +203,13 @@ class BatchJob(
     @Suppress("TooGenericExceptionCaught")
     private suspend fun stopHeartbeatAndGetDiagnostic(
         leaseGuard: BatchLeaseGuard,
-        fallback: JobExecution,
     ): JobExecution = withContext(NonCancellable) {
         leaseGuard.stopHeartbeat()
-        try {
-            leaseGuard.latestSnapshotForDiagnostics().jobExecution
-        } catch (failure: CancellationException) {
-            throw failure
-        } catch (_: Exception) {
-            fallback
-        }
+        leaseGuard.latestSnapshotForDiagnostics().jobExecution
     }
 
     private suspend fun executionFailure(
         leaseGuard: BatchLeaseGuard,
-        fallback: JobExecution,
         stepReports: List<StepReport>,
         failure: Throwable,
         sanitize: Boolean,
@@ -232,7 +217,7 @@ class BatchJob(
         val latest = try {
             stopHeartbeatAndGetLatest(leaseGuard)
         } catch (_: LeaseLostException) {
-            return leaseLossFailure(leaseGuard, fallback, stepReports)
+            return leaseLossFailure(leaseGuard, stepReports)
         }
         persistCompletionSafely(latest, BatchStatus.FAILED, failure)
         return BatchReport.Failure(
@@ -255,11 +240,15 @@ class BatchJob(
 
     private suspend fun leaseLossFailure(
         leaseGuard: BatchLeaseGuard,
-        fallback: JobExecution,
         stepReports: List<StepReport>,
     ): BatchReport.Failure {
-        val latest = stopHeartbeatAndGetDiagnostic(leaseGuard, fallback)
+        val latest = stopHeartbeatAndGetDiagnostic(leaseGuard)
         val correlationId = Base58.randomString(CORRELATION_ID_LENGTH)
+        log.error {
+            "lease loss 감지 — job=$name, " +
+                "category=${BatchInfrastructureFailureException.LEASE_LOST}, " +
+                "correlationId=$correlationId"
+        }
         return BatchReport.Failure(
             latest.sanitizeForInfrastructureFailure(),
             stepReports.map {
@@ -278,20 +267,29 @@ class BatchJob(
     private fun infrastructureFailure(
         execution: JobExecution,
         category: String,
-    ): BatchReport.Failure = BatchReport.Failure(
-        execution.sanitizeForInfrastructureFailure().copy(status = BatchStatus.FAILED),
-        emptyList(),
-        BatchInfrastructureFailureException(category, Base58.randomString(CORRELATION_ID_LENGTH)),
-    )
+    ): BatchReport.Failure {
+        val failure = repositoryDiagnostic(category, "Job claim 경계 실패")
+        return BatchReport.Failure(
+            execution.sanitizeForInfrastructureFailure().copy(status = BatchStatus.FAILED),
+            emptyList(),
+            failure,
+        )
+    }
 
     private fun infrastructureFailure(
         execution: JobExecution,
         failure: BatchInfrastructureFailureException,
-    ): BatchReport.Failure = BatchReport.Failure(
-        execution.sanitizeForInfrastructureFailure().copy(status = BatchStatus.FAILED),
-        emptyList(),
-        failure,
-    )
+    ): BatchReport.Failure {
+        log.error {
+            "Job repository 진단 실패 — job=$name, " +
+                "category=${failure.category}, correlationId=${failure.correlationId}"
+        }
+        return BatchReport.Failure(
+            execution.sanitizeForInfrastructureFailure().copy(status = BatchStatus.FAILED),
+            emptyList(),
+            failure,
+        )
+    }
 
     @Suppress("TooGenericExceptionCaught")
     private suspend fun <T> repositoryCall(block: suspend () -> T): T = try {
@@ -301,34 +299,56 @@ class BatchJob(
     } catch (failure: BatchInfrastructureFailureException) {
         throw failure
     } catch (_: BatchExecutionAlreadyClaimedException) {
-        throw BatchInfrastructureFailureException(
+        throw repositoryDiagnostic(
             BatchInfrastructureFailureException.EXECUTION_ALREADY_CLAIMED,
-            Base58.randomString(CORRELATION_ID_LENGTH),
+            "Job repository 실행 claim 경계 실패",
         )
     } catch (_: Exception) {
-        throw BatchInfrastructureFailureException(
+        throw repositoryDiagnostic(
             BatchInfrastructureFailureException.REPOSITORY_FAILURE,
-            Base58.randomString(CORRELATION_ID_LENGTH),
+            "Job repository 호출 실패",
+        )
+    }
+
+    private fun repositoryDiagnostic(
+        category: String,
+        message: String,
+    ): BatchInfrastructureFailureException = BatchInfrastructureFailureException(
+        category,
+        Base58.randomString(CORRELATION_ID_LENGTH),
+    ).also { diagnostic ->
+        log.error {
+            "$message — job=$name, category=${diagnostic.category}, " +
+                "correlationId=${diagnostic.correlationId}"
+        }
+    }
+
+    private fun unsupportedRepositoryFailure(): BatchReport.Failure {
+        val failure = repositoryDiagnostic(
+            BatchInfrastructureFailureException.REPOSITORY_FAILURE,
+            "Lease renewal 미지원 repository",
+        )
+        return BatchReport.Failure(
+            JobExecution(
+                id = 0L,
+                jobName = name,
+                status = BatchStatus.FAILED,
+            ),
+            emptyList(),
+            failure,
         )
     }
 
     @Suppress("TooGenericExceptionCaught")
     private suspend fun compensateExternalCancellation(
         leaseGuard: BatchLeaseGuard,
-        fallback: JobExecution,
         primary: CancellationException,
     ) {
         try {
             withContext(NonCancellable) {
                 withTimeout(leaseGuard.repositoryTimeoutMillis) {
                     leaseGuard.stopHeartbeatInCurrentContext()
-                    val latest = try {
-                        leaseGuard.latestSnapshotForDiagnostics().jobExecution
-                    } catch (cancellation: CancellationException) {
-                        throw cancellation
-                    } catch (_: Exception) {
-                        fallback
-                    }
+                    val latest = leaseGuard.latestSnapshotForDiagnostics().jobExecution
                     repository.completeJobExecution(latest, BatchStatus.STOPPED)
                 }
             }
@@ -349,7 +369,6 @@ class BatchJob(
             if (failure !== primary) {
                 log.error {
                     "STOPPED 상태 bounded compensation 실패 — job=$name, " +
-                        "executionId=${fallback.id}, " +
                         "category=${BatchInfrastructureFailureException.REPOSITORY_FAILURE}"
                 }
                 primary.addSuppressed(

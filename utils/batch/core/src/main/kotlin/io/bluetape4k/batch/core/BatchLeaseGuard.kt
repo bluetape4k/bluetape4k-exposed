@@ -15,6 +15,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import java.util.concurrent.atomic.AtomicReference
 
 /** lease를 잃은 뒤 write를 시작하지 않게 하는 runner 내부 예외. */
 internal class LeaseLostException(
@@ -56,8 +57,7 @@ internal class BatchLeaseGuard(
     private var diagnosticSnapshot = BatchExecutionLeaseSnapshot(initialJobExecution, initialStepExecution)
     private var jobDeadlineNanos = deadlineFrom(initialClaimStartedNanos ?: monotonicClock.nowNanos())
     private var stepDeadlineNanos = latestStepExecution?.let { jobDeadlineNanos }
-    @Volatile
-    private var leaseLost: LeaseLostException? = null
+    private val leaseLost = AtomicReference<LeaseLostException?>()
     @Volatile
     private var heartbeatCleanupTimedOut: Boolean = false
     private var heartbeatJob: Job? = null
@@ -246,12 +246,17 @@ internal class BatchLeaseGuard(
 
     /** lease loss는 하나의 canonical 상태로 기록하고 같은 예외를 재사용한다. */
     fun failLease(cause: Throwable? = null): Nothing {
-        val failure = leaseLost ?: LeaseLostException(cause).also { leaseLost = it }
-        throw failure
+        while (true) {
+            leaseLost.get()?.let { throw it }
+            val candidate = LeaseLostException(cause)
+            if (leaseLost.compareAndSet(null, candidate)) {
+                throw candidate
+            }
+        }
     }
 
     /** heartbeat child cancellation을 외부 취소와 구분하기 위한 lock-free 진단 경계. */
-    fun hasLostLease(): Boolean = leaseLost != null
+    fun hasLostLease(): Boolean = leaseLost.get() != null
 
     @Suppress("TooGenericExceptionCaught")
     private suspend fun <T> boundedRepositoryCall(block: suspend () -> T): T {
@@ -301,7 +306,7 @@ internal class BatchLeaseGuard(
     }
 
     private fun ensureLeaseAvailable() {
-        leaseLost?.let { throw it }
+        leaseLost.get()?.let { throw it }
     }
 
     private fun snapshotLocked(): BatchExecutionLeaseSnapshot =

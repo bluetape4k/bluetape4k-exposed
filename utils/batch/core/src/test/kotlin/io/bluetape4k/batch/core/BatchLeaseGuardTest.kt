@@ -3,12 +3,16 @@ package io.bluetape4k.batch.core
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.batch.api.BatchExecutionLeaseSnapshot
 import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepExecution
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.junit5.concurrency.MultithreadingTester
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
@@ -22,6 +26,7 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /** combined guard의 monotonic margin, atomic renewal, write fencing 계약을 검증한다. */
 class BatchLeaseGuardTest {
@@ -196,6 +201,40 @@ class BatchLeaseGuardTest {
     }
 
     @Test
+    fun `동시 lease loss도 하나의 canonical exception 인스턴스를 재사용한다`() {
+        val guard = BatchLeaseGuard(
+            repository = InMemoryBatchJobRepository(),
+            ownerId = "owner-1",
+            executionLease = Duration.ofSeconds(30),
+            initialJobExecution = JobExecution(
+                id = 1L,
+                jobName = "concurrentLeaseLossJob",
+                status = io.bluetape4k.batch.api.BatchStatus.RUNNING,
+                ownerId = "owner-1",
+                leaseUntil = Instant.now().plusSeconds(30),
+            ),
+            initialStepExecution = null,
+        )
+        val failures = ConcurrentLinkedQueue<LeaseLostException>()
+
+        MultithreadingTester()
+            .workers(8)
+            .rounds(4)
+            .add {
+                try {
+                    guard.failLease()
+                } catch (failure: LeaseLostException) {
+                    failures += failure
+                }
+            }
+            .run()
+
+        failures shouldHaveSize 32
+        val canonical = failures.first()
+        failures.all { it === canonical }.shouldBeTrue()
+    }
+
+    @Test
     fun `heartbeat cleanup 자체 timeout은 lease loss로 기록한다`() = runTest {
         val repository = InMemoryBatchJobRepository()
         val job = repository.findOrCreateJobExecution("cleanupTimeoutJob")
@@ -222,7 +261,7 @@ class BatchLeaseGuardTest {
             assertFailsWith<LeaseLostException> {
                 guard.stopHeartbeat()
             }
-            guard.hasLostLease() shouldBeEqualTo true
+            guard.hasLostLease().shouldBeTrue()
             guard.stopHeartbeat()
         } finally {
             releasePause.complete(Unit)
@@ -306,7 +345,7 @@ class BatchLeaseGuardTest {
             }
         }
 
-        guard.hasLostLease() shouldBeEqualTo false
+        guard.hasLostLease().shouldBeFalse()
         guard.latestSnapshot().stepExecution.shouldNotBeNull() shouldBeEqualTo claimedStep
     }
 

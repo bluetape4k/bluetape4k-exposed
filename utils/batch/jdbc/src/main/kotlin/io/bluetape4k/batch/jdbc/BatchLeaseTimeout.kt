@@ -1,5 +1,6 @@
 package io.bluetape4k.batch.jdbc
 
+import java.io.Serializable
 import org.jetbrains.exposed.v1.core.vendors.H2Dialect
 import org.jetbrains.exposed.v1.core.vendors.MysqlDialect
 import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
@@ -10,12 +11,49 @@ private const val MILLIS_PER_SECOND = 1_000L
 internal data class H2Timeouts(
     val lockTimeoutMillis: Long,
     val queryTimeoutMillis: Long,
-)
+) : Serializable {
+    companion object {
+        private const val serialVersionUID: Long = 1L
+    }
+}
 
 internal data class MysqlTimeouts(
     val lockTimeoutSeconds: Long,
     val maxExecutionTimeMillis: Long,
-)
+) : Serializable {
+    companion object {
+        private const val serialVersionUID: Long = 1L
+    }
+}
+
+@Suppress("TooGenericExceptionCaught", "ThrowingExceptionFromFinally", "ThrowsCount")
+private inline fun <T> JdbcTransaction.withRestoredTimeouts(
+    restore: JdbcTransaction.() -> Unit,
+    block: JdbcTransaction.() -> T,
+): T {
+    var primary: Throwable? = null
+    try {
+        return block()
+    } catch (failure: Exception) {
+        primary = failure
+        throw failure
+    } catch (failure: Error) {
+        primary = failure
+        throw failure
+    } finally {
+        try {
+            restore()
+        } catch (restoreFailure: Exception) {
+            val original = primary
+            if (original == null) throw restoreFailure
+            if (restoreFailure !== original) original.addSuppressed(restoreFailure)
+        } catch (restoreFailure: Error) {
+            val original = primary
+            if (original == null) throw restoreFailure
+            if (restoreFailure !== original) original.addSuppressed(restoreFailure)
+        }
+    }
+}
 
 /** lease transaction이 DB lock/query 대기에서 무한정 머물지 않도록 dialect별 timeout을 적용한다. */
 internal inline fun <T> JdbcTransaction.withLeaseDatabaseTimeout(
@@ -42,25 +80,29 @@ internal inline fun <T> JdbcTransaction.withLeaseDatabaseTimeout(
                         "WHERE SETTING_NAME = 'QUERY_TIMEOUT'",
                 ),
             )
-            try {
+            withRestoredTimeouts(
+                restore = {
+                    exec("SET QUERY_TIMEOUT ${previous.queryTimeoutMillis}")
+                    exec("SET LOCK_TIMEOUT ${previous.lockTimeoutMillis}")
+                },
+            ) {
                 exec("SET QUERY_TIMEOUT $timeoutMillis")
                 exec("SET LOCK_TIMEOUT $timeoutMillis")
                 block()
-            } finally {
-                exec("SET QUERY_TIMEOUT ${previous.queryTimeoutMillis}")
-                exec("SET LOCK_TIMEOUT ${previous.lockTimeoutMillis}")
             }
         }
 
         is MysqlDialect -> {
             val previous = readMysqlTimeouts()
-            try {
+            withRestoredTimeouts(
+                restore = {
+                    exec("SET SESSION MAX_EXECUTION_TIME = ${previous.maxExecutionTimeMillis}")
+                    exec("SET SESSION innodb_lock_wait_timeout = ${previous.lockTimeoutSeconds}")
+                },
+            ) {
                 exec("SET SESSION MAX_EXECUTION_TIME = $timeoutMillis")
                 exec("SET SESSION innodb_lock_wait_timeout = $timeoutSeconds")
                 block()
-            } finally {
-                exec("SET SESSION MAX_EXECUTION_TIME = ${previous.maxExecutionTimeMillis}")
-                exec("SET SESSION innodb_lock_wait_timeout = ${previous.lockTimeoutSeconds}")
             }
         }
 

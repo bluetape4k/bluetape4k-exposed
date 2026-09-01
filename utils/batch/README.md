@@ -227,6 +227,11 @@ fail-closed.
 Configure the same lease on the DSL job and its steps. The supported lease
 range is 30 seconds through 24 hours, and the default is 15 minutes:
 
+JDBC and R2DBC lease database timeouts are currently implemented for
+PostgreSQL, H2, and MySQL dialects. Calling a lease operation with another
+Exposed dialect fails fast with an `Unsupported database dialect for batch lease
+timeout` error; configure a supported dialect before enabling lease renewal.
+
 ```kotlin
 val job = batchJob("importUsers") {
     executionLease(15.minutes)

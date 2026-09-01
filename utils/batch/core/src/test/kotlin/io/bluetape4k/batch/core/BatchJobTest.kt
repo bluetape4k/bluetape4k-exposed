@@ -15,6 +15,7 @@ import io.bluetape4k.workflow.api.WorkContext
 import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldHaveSize
 import kotlinx.coroutines.CompletableDeferred
@@ -142,7 +143,37 @@ class BatchJobTest {
         failure.jobExecution.params shouldBeEqualTo emptyMap()
         failure.jobExecution.ownerId shouldBe null
         failure.jobExecution.leaseUntil shouldBe null
-        writer.collected.isEmpty() shouldBe true
+        writer.collected.isEmpty().shouldBeTrue()
+    }
+
+    @Test
+    fun `lease renewal 미지원 repository는 첫 persistence 전에 Failure로 종료`() = runSuspendIO {
+        val delegate = InMemoryBatchJobRepository()
+        var findCalls = 0
+        val repository = object : BatchJobRepository by delegate {
+            override val supportsLeaseRenewal: Boolean = false
+
+            override suspend fun findOrCreateJobExecution(
+                jobName: String,
+                params: Map<String, Any>,
+            ): io.bluetape4k.batch.api.JobExecution {
+                findCalls++
+                return delegate.findOrCreateJobExecution(jobName, params)
+            }
+        }
+
+        val report = BatchJob(
+            name = "unsupported-lease-job",
+            steps = listOf(simpleStep("step", listOf("never"))),
+            repository = repository,
+        ).run()
+
+        report shouldBeInstanceOf BatchReport.Failure::class
+        val failure = report as BatchReport.Failure
+        failure.error shouldBeInstanceOf BatchInfrastructureFailureException::class
+        failure.jobExecution.id shouldBeEqualTo 0L
+        failure.jobExecution.params shouldBeEqualTo emptyMap()
+        findCalls shouldBeEqualTo 0
     }
 
     // ─── Step FAILED → 후속 미실행 ───────────────────────────────────────────
@@ -165,7 +196,7 @@ class BatchJobTest {
         failure.error.shouldNotBeNull()
         failure.stepReports shouldHaveSize 1  // step2 미실행
         failure.stepReports[0].stepName shouldBeEqualTo "failStep"
-        writer2.collected.isEmpty() shouldBe true  // step2 미실행
+        writer2.collected.isEmpty().shouldBeTrue()  // step2 미실행
     }
 
     // ─── Skip 발생 → PartiallyCompleted ─────────────────────────────────────
@@ -309,7 +340,7 @@ class BatchJobTest {
 
         val context = WorkContext()
         job.execute(context).status shouldBe io.bluetape4k.workflow.api.WorkStatus.COMPLETED
-        context.contains("batch.workJob.report") shouldBe true
+        context.contains("batch.workJob.report").shouldBeTrue()
     }
 
     @Test

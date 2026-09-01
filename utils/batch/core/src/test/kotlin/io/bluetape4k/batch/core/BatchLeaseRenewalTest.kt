@@ -2,6 +2,7 @@ package io.bluetape4k.batch.core
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.junit5.coroutines.runSuspendIO
@@ -22,7 +23,7 @@ class BatchLeaseRenewalTest {
         val job = repository.findOrCreateJobExecution("leaseJob")
         val step = repository.findOrCreateStepExecution(job, "leaseStep")
 
-        repository.supportsLeaseRenewal shouldBeEqualTo true
+        repository.supportsLeaseRenewal.shouldBeTrue()
 
         val claimedJob = repository.claimJobExecution(job, "owner-1", Duration.ofSeconds(30))
         val claimedStep = repository.claimStepExecution(step, "owner-1", Duration.ofSeconds(30))
@@ -41,8 +42,12 @@ class BatchLeaseRenewalTest {
         renewed.stepExecution.shouldNotBeNull()
         renewed.stepExecution.ownerId shouldBeEqualTo "owner-1"
         renewed.stepExecution.version shouldBeEqualTo claimedStep.version + 1L
-        (renewed.jobExecution.leaseUntil!! > claimedJob.leaseUntil!!) shouldBeEqualTo true
-        (renewed.stepExecution.leaseUntil!! > claimedStep.leaseUntil!!) shouldBeEqualTo true
+        val renewedJobLease = renewed.jobExecution.leaseUntil.shouldNotBeNull()
+        val claimedJobLease = claimedJob.leaseUntil.shouldNotBeNull()
+        val renewedStepLease = renewed.stepExecution.leaseUntil.shouldNotBeNull()
+        val claimedStepLease = claimedStep.leaseUntil.shouldNotBeNull()
+        (renewedJobLease > claimedJobLease).shouldBeTrue()
+        (renewedStepLease > claimedStepLease).shouldBeTrue()
     }
 
     @Test
