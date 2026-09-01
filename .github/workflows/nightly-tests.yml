@@ -662,6 +662,7 @@ jobs:
           cache-read-only: true
       - name: Test exposed-ktor selective modules and aggregator
         run: |
+          ruby scripts/verification/validate_issue_763_tenant_snapshot_test.rb
           ruby scripts/verification/validate_issue_763_tenant_snapshot.rb
           for attempt in 1 2 3 4 5; do
             ./gradlew :bluetape4k-exposed-ktor-core:test :bluetape4k-exposed-ktor-jdbc:test :bluetape4k-exposed-ktor-r2dbc:test :bluetape4k-exposed-ktor-cache:test :bluetape4k-exposed-ktor-tenant-jdbc:test :bluetape4k-exposed-ktor-tenant-r2dbc:test :bluetape4k-exposed-ktor:test --refresh-dependencies --no-configuration-cache --no-parallel --max-workers=1 --no-daemon && break

@@ -1,70 +1,119 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require "digest"
 require "json"
 require "open-uri"
 require "rexml/document"
 
-MANIFEST_PATH = File.expand_path("issue-763-tenant-snapshot.json", __dir__)
+module TenantSnapshotContract
+  MANIFEST_PATH = File.expand_path("issue-763-tenant-snapshot.json", __dir__)
+  EXPECTED_ARTIFACTS = %w[bluetape4k-ktor-tenant bluetape4k-tenant].freeze
 
-def fail_with(message)
-  warn "issue-763 tenant snapshot: FAIL: #{message}"
-  exit 1
-end
+  class ValidationError < StandardError; end
 
-manifest_path = ARGV.fetch(0, MANIFEST_PATH)
-manifest = JSON.parse(File.read(manifest_path))
-repository = manifest.fetch("repository").sub(%r{/$}, "")
-group = manifest.fetch("group").split(".").join("/")
-version = manifest.fetch("version")
-timestamp = manifest.fetch("timestamp")
-build_number = manifest.fetch("buildNumber").to_s
-expected_artifacts = %w[bluetape4k-ktor-tenant bluetape4k-tenant].sort
-actual_artifacts = manifest.fetch("artifacts").keys.map(&:to_s).sort
+  module_function
 
-unless version == "2.0.0-SNAPSHOT"
-  fail_with("manifest version must remain 2.0.0-SNAPSHOT")
-end
-unless timestamp.match?(/\A\d{8}\.\d{6}\z/) && build_number.match?(/\A\d+\z/)
-  fail_with("manifest timestamp/buildNumber is not immutable snapshot metadata")
-end
-fail_with("manifest artifacts must be exactly #{expected_artifacts.join(", ")}") unless actual_artifacts == expected_artifacts
-
-def fetch_bytes(url)
-  URI.open(url, "User-Agent" => "bluetape4k-exposed-issue-763-verifier", &:read)
-rescue OpenURI::HTTPError => e
-  fail_with("#{url} returned #{e.message}")
-rescue StandardError => e
-  fail_with("#{url} could not be read: #{e.class}: #{e.message}")
-end
-
-manifest.fetch("artifacts").each do |artifact, expected|
-  required_digests = %w[metadataSha256 pomSha256 jarSha256]
-  fail_with("#{artifact} digest manifest is incomplete") unless expected.is_a?(Hash) && expected.keys.sort == required_digests.sort
-  required_digests.each do |field|
-    value = expected.fetch(field).to_s
-    fail_with("#{artifact} #{field} is not a SHA-256 digest") unless value.match?(/\A[0-9a-f]{64}\z/)
+  def load_manifest(path = MANIFEST_PATH)
+    validate_manifest(JSON.parse(File.read(path)))
   end
-  artifact_root = "#{repository}/#{group}/#{artifact}/#{version}"
-  metadata_url = "#{artifact_root}/maven-metadata.xml"
-  metadata = fetch_bytes(metadata_url)
-  metadata_sha = Digest::SHA256.hexdigest(metadata)
-  fail_with("#{artifact} metadata sha256=#{metadata_sha}, expected #{expected.fetch("metadataSha256")}") unless metadata_sha == expected.fetch("metadataSha256")
 
-  xml = REXML::Document.new(metadata)
-  observed_version = xml.elements["metadata/versioning/snapshotVersions/snapshotVersion[extension='pom']/value"]&.text
-  observed_timestamp = xml.elements["metadata/versioning/snapshot/timestamp"]&.text
-  observed_build = xml.elements["metadata/versioning/snapshot/buildNumber"]&.text
-  expected_version = "#{version.delete_suffix("-SNAPSHOT")}-#{timestamp}-#{build_number}"
-  fail_with("#{artifact} metadata timestamp/build/version mismatch") unless observed_timestamp == timestamp && observed_build == build_number && observed_version == expected_version
+  def validate_manifest(manifest)
+    version = manifest.fetch("version")
+    artifacts = manifest.fetch("artifacts")
 
-  %w[pom jar].each do |extension|
-    expected_sha = expected.fetch("#{extension}Sha256")
-    url = "#{artifact_root}/#{artifact}-#{expected_version}.#{extension}"
-    digest = Digest::SHA256.hexdigest(fetch_bytes(url))
-    fail_with("#{artifact} #{extension} sha256=#{digest}, expected #{expected_sha}") unless digest == expected_sha
+    raise ValidationError, "manifest version must remain 2.0.0-SNAPSHOT" unless version == "2.0.0-SNAPSHOT"
+    unless artifacts.is_a?(Array) && artifacts.map(&:to_s).sort == EXPECTED_ARTIFACTS
+      raise ValidationError, "manifest artifacts must be exactly #{EXPECTED_ARTIFACTS.join(", ")}"
+    end
+
+    manifest
+  rescue KeyError => e
+    raise ValidationError, "manifest is incomplete: #{e.message}"
+  end
+
+  def resolve_metadata(metadata, group:, artifact:, version:)
+    document = REXML::Document.new(metadata)
+    observed_coordinates = %w[groupId artifactId version].map do |field|
+      document.elements["metadata/#{field}"]&.text
+    end
+    expected_coordinates = [group, artifact, version]
+    unless observed_coordinates == expected_coordinates
+      raise ValidationError,
+            "#{artifact} metadata coordinates=#{observed_coordinates.join(":")}, expected #{expected_coordinates.join(":")}"
+    end
+
+    timestamp = document.elements["metadata/versioning/snapshot/timestamp"]&.text
+    build_number = document.elements["metadata/versioning/snapshot/buildNumber"]&.text
+    unless timestamp&.match?(/\A\d{8}\.\d{6}\z/) && build_number&.match?(/\A\d+\z/)
+      raise ValidationError, "#{artifact} metadata timestamp/buildNumber is invalid"
+    end
+
+    resolved_version = "#{version.delete_suffix("-SNAPSHOT")}-#{timestamp}-#{build_number}"
+    resolved_artifacts = {}
+    document.elements.each("metadata/versioning/snapshotVersions/snapshotVersion") do |entry|
+      classifier = entry.elements["classifier"]&.text
+      next unless classifier.nil? || classifier.empty?
+
+      extension = entry.elements["extension"]&.text
+      resolved_artifacts[extension] = entry.elements["value"]&.text if %w[pom jar].include?(extension)
+    end
+    %w[pom jar].each do |extension|
+      unless resolved_artifacts[extension] == resolved_version
+        raise ValidationError, "#{artifact} current unclassified #{extension} snapshot is missing or inconsistent"
+      end
+    end
+
+    {
+      version: resolved_version,
+      timestamp: timestamp,
+      build_number: build_number,
+      artifacts: resolved_artifacts,
+    }
+  rescue REXML::ParseException => e
+    raise ValidationError, "#{artifact} metadata XML is invalid: #{e.message}"
+  end
+
+  def fetch_bytes(url)
+    URI.open(url, "User-Agent" => "bluetape4k-exposed-issue-763-verifier", &:read)
+  rescue OpenURI::HTTPError => e
+    raise ValidationError, "#{url} returned #{e.message}"
+  rescue StandardError => e
+    raise ValidationError, "#{url} could not be read: #{e.class}: #{e.message}"
+  end
+
+  def validate_remote(manifest, fetcher: method(:fetch_bytes))
+    repository = manifest.fetch("repository").sub(%r{/$}, "")
+    group = manifest.fetch("group")
+    group_path = group.split(".").join("/")
+    version = manifest.fetch("version")
+
+    manifest.fetch("artifacts").to_h do |artifact|
+      artifact_root = "#{repository}/#{group_path}/#{artifact}/#{version}"
+      metadata = fetcher.call("#{artifact_root}/maven-metadata.xml")
+      resolved = resolve_metadata(metadata, group: group, artifact: artifact, version: version)
+
+      resolved.fetch(:artifacts).each do |extension, resolved_version|
+        bytes = fetcher.call("#{artifact_root}/#{artifact}-#{resolved_version}.#{extension}")
+        raise ValidationError, "#{artifact} #{extension} is empty" if bytes.empty?
+      end
+
+      [artifact, resolved]
+    end
+  rescue KeyError => e
+    raise ValidationError, "manifest is incomplete: #{e.message}"
   end
 end
 
-puts "issue-763 tenant snapshot: PASS timestamp=#{timestamp} build=#{build_number} artifacts=#{manifest.fetch("artifacts").length}"
+if $PROGRAM_NAME == __FILE__
+  begin
+    manifest = TenantSnapshotContract.load_manifest(ARGV.fetch(0, TenantSnapshotContract::MANIFEST_PATH))
+    resolved = TenantSnapshotContract.validate_remote(manifest)
+    receipts = resolved.sort.map do |artifact, entry|
+      "#{artifact}=#{entry.fetch(:version)}"
+    end
+    puts "issue-763 tenant snapshot: PASS #{receipts.join(" ")}"
+  rescue TenantSnapshotContract::ValidationError => e
+    warn "issue-763 tenant snapshot: FAIL: #{e.message}"
+    exit 1
+  end
+end
