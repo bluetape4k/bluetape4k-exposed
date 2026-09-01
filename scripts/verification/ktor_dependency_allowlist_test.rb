@@ -86,6 +86,7 @@ class KtorDependencyAllowlistTest < Minitest::Test
       scripts/verification/validate_ktor_consumer.rb
       scripts/verification/issue-763-tenant-snapshot.json
       scripts/verification/validate_issue_763_tenant_snapshot.rb
+      scripts/verification/validate_issue_763_tenant_snapshot_test.rb
     ].each do |workflow_path|
       assert_includes CI_WORKFLOW, "- '#{workflow_path}'"
     end
