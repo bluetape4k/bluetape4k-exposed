@@ -19,6 +19,7 @@ import java.time.YearMonth
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
+import java.io.Serializable
 import java.util.IdentityHashMap
 import java.util.Locale
 import java.util.UUID
@@ -42,7 +43,7 @@ private const val CANONICAL_PREFIX = "bluetape4k-batch-params"
  * Map은 64자리 lowercase SHA-256 hex를 반환한다.
  */
 object BatchParameterHash {
-    /** canonical parameter hash encoding version. */
+    /** canonical 파라미터 해시 인코딩 버전. */
     const val VERSION: Int = 2
 
     /** batch execution schema descriptor가 참조하는 저장 계약. */
@@ -74,7 +75,11 @@ object BatchParameterHash {
 private data class EncodedText(
     val text: String,
     val utf8Bytes: Long,
-)
+) : Serializable {
+    companion object {
+        private const val serialVersionUID: Long = 1L
+    }
+}
 
 private class ParameterEncoder {
     private val activeContainers = IdentityHashMap<Any, Unit>()

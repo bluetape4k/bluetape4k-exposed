@@ -1,6 +1,7 @@
 package io.bluetape4k.batch
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeLessThan
 import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.assertions.assertFailsWith
 import org.junit.jupiter.api.Test
@@ -176,6 +177,6 @@ class BatchParameterHashTest {
         assertFailsWith<IllegalArgumentException> {
             BatchParameterHash.hash(mapOf("values" to lazyOversizedView))
         }
-        (visited < 100) shouldBeEqualTo true
+        visited shouldBeLessThan 100
     }
 }
