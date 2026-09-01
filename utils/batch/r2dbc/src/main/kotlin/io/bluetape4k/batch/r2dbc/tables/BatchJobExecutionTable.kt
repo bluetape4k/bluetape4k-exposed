@@ -1,10 +1,9 @@
 package io.bluetape4k.batch.r2dbc.tables
 
+import io.bluetape4k.batch.BatchParameterHash
 import io.bluetape4k.batch.api.BatchStatus
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.javatime.timestamp
-import java.security.MessageDigest
-import java.util.Locale
 
 /**
  * Job 실행 이력 테이블.
@@ -50,20 +49,14 @@ object BatchJobExecutionTable : LongIdTable("batch_job_execution") {
 }
 
 /**
- * Job 파라미터 Map을 SHA-256 해시 문자열로 변환한다.
+ * Job 파라미터 Map을 shared [BatchParameterHash]로 변환한다.
  *
- * 정렬된 `key=value` 문자열의 SHA-256 hex를 반환한다.
- * 빈 Map이면 빈 문자열을 반환한다.
- * stdlib만 사용하며 jackson3 의존성이 없다.
+ * key/value 바이트 길이와 value type을 포함한 `v2` canonical encoding의 SHA-256
+ * lowercase hex를 반환한다. 빈 Map이면 기존 저장 계약을 위해 빈 문자열을 반환한다.
  *
  * ```kotlin
  * val hash = mapOf("date" to "2026-04-10", "region" to "KR").toParamsHash()
- * // → "date=2026-04-10&region=KR" 의 SHA-256 hex
+ * // → canonical `v2` encoding의 SHA-256 lowercase hex
  * ```
  */
-internal fun Map<String, Any>.toParamsHash(): String {
-    if (isEmpty()) return ""
-    val sorted = entries.sortedBy { it.key }.joinToString("&") { "${it.key}=${it.value}" }
-    val digest = MessageDigest.getInstance("SHA-256").digest(sorted.toByteArray())
-    return digest.joinToString("") { "%02x".format(Locale.ROOT, it) }
-}
+internal fun Map<String, Any>.toParamsHash(): String = BatchParameterHash.hash(this)

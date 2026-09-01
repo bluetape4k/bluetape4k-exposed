@@ -62,6 +62,39 @@ val report1 = job.run()  // BatchReport.Failure
 val report2 = job.run()  // only step 2 runs again
 ```
 
+### Job parameter identity
+
+Persistent JDBC and R2DBC repositories identify a restartable job by
+`jobName + BatchParameterHash`. The shared `v2` encoding sorts keys and records
+the UTF-8 byte length and runtime type of every key/value before calculating a
+lowercase SHA-256 digest. Delimiters inside a value and values such as `1`
+(`Int`) and `"1"` (`String`) therefore remain distinct. JDBC and R2DBC use the
+same core implementation.
+
+Supported values are deterministic scalars (`String`, numbers, `Boolean`,
+`Char`, `Enum`, `UUID`, `Instant`, `LocalDate`, `LocalDateTime`, `LocalTime`,
+`OffsetDateTime`, `OffsetTime`, `ZonedDateTime`, `Year`, `YearMonth`, `ZoneId`,
+and `ZoneOffset`), `Map`, `List`, `Set`, and arrays. Arbitrary objects and generic
+`Iterable` values are rejected because
+their `toString()` output or iteration order can vary between processes.
+Normalize custom values to the supported scalars or collections first.
+
+Strings must contain well-formed UTF-16; unpaired surrogates are rejected
+instead of being replaced during UTF-8 encoding. Canonical input is limited to
+1 MiB of UTF-8, each scalar to 256 KiB, each container to 1,000 items, the full
+tree to 10,000 values, and nesting to 32 levels. Exceeding a limit throws
+`IllegalArgumentException`.
+
+Treat the parameter map and every nested collection or array as immutable for
+the entire repository call. Concurrent mutation is unsupported because the
+identity hash and persisted parameter payload must describe the same input.
+
+An empty parameter map keeps the existing `""` hash rule. The `v2` algorithm
+changes non-empty hashes from the legacy `key=value&...` format; existing rows
+with legacy hashes are not silently matched. Before a rollout, re-key or
+retire active legacy rows from their persisted parameters in a controlled
+migration, then use only `v2` for new executions.
+
 ### Workflow Embedding
 
 ```kotlin

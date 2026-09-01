@@ -24,6 +24,8 @@ interface BatchJobRepository {
      * jobName + params 조합의 재시작 대상 [JobExecution]을 조회하거나 신규 생성한다.
      *
      * RUNNING/FAILED/STOPPED 상태의 기존 실행을 재사용한다.
+     * 호출이 끝날 때까지 [params]와 모든 nested collection/array를 변경하지 않아야 한다.
+     * 동시 mutation은 hash와 영속 payload의 동일성을 보장하지 않으므로 지원하지 않는다.
      *
      * @param jobName Job 이름
      * @param params Job 실행 파라미터

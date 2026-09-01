@@ -324,8 +324,9 @@ class InMemoryBatchJobRepository : BatchJobRepository {
         }.requireValidBatchName("ownerId")
 
         val updated = withLock {
-            val current = stepExecutions[execution.id]
-                ?: throw IllegalStateException("StepExecution not found: id=${execution.id}")
+            val current = checkNotNull(stepExecutions[execution.id]) {
+                "StepExecution not found: id=${execution.id}"
+            }
             check(current.ownerId == ownerId && current.version == execution.version) {
                 "Owner-aware checkpoint update rejected: id=${execution.id}"
             }

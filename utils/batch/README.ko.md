@@ -62,6 +62,37 @@ val report1 = job.run()  // BatchReport.Failure
 val report2 = job.run()
 ```
 
+### Job 파라미터 식별자
+
+영속 JDBC 및 R2DBC 저장소는 `jobName + BatchParameterHash`로 재시작 가능한
+Job을 식별합니다. 공유 `v2` 인코딩은 key를 정렬하고 모든 key/value의 UTF-8
+바이트 길이와 runtime type을 기록한 뒤 lowercase SHA-256 digest를 계산합니다.
+따라서 값 안의 구분자나 `1`(`Int`)과 `"1"`(`String`)처럼 문자열 표현이 같은
+서로 다른 값도 별개의 파라미터로 유지됩니다. JDBC와 R2DBC는 같은 core 구현을
+사용합니다.
+
+지원 값은 재현 가능한 scalar(`String`, 숫자, `Boolean`, `Char`, `Enum`, `UUID`,
+`Instant`, `LocalDate`, `LocalDateTime`, `LocalTime`, `OffsetDateTime`, `OffsetTime`,
+`ZonedDateTime`, `Year`, `YearMonth`, `ZoneId`, `ZoneOffset`), `Map`, `List`, `Set`,
+array입니다. 임의 객체와 generic `Iterable`은 process별 `toString()` 또는 순회 순서가
+달라질 수 있으므로 거부합니다.
+사용자 정의 값은 지원 scalar/collection으로 먼저 정규화하세요.
+
+String은 올바른 UTF-16이어야 하며, 짝이 없는 surrogate는 UTF-8 변환에서 치환하지 않고
+거부합니다. canonical 입력은 UTF-8 1 MiB, scalar 하나는 256 KiB, container 하나는
+1,000항목, 전체 tree는 10,000 value, 중첩은 32단계로 제한합니다. 상한을 넘으면
+`IllegalArgumentException`을 던집니다.
+
+repository 호출이 끝날 때까지 파라미터 Map과 모든 nested collection/array를 immutable로
+유지하세요. 동시 mutation은 identity hash와 영속 parameter payload가 서로 다른 입력을
+나타낼 수 있으므로 지원하지 않습니다.
+
+빈 파라미터 Map은 기존 `""` hash 규칙을 유지합니다. `v2` 알고리즘은 기존
+`key=value&...` 형식에서 non-empty hash를 변경하므로, legacy hash를 가진 기존
+row를 조용히 재사용하지 않습니다. 배포 전에 영속된 파라미터를 기준으로
+활성 legacy row를 통제된 migration에서 re-key하거나 종료한 뒤, 새 실행에는
+`v2`만 사용하세요.
+
 ### Workflow에 임베딩
 
 ```kotlin

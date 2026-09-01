@@ -129,13 +129,13 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
     }
 
     @Test
-    fun `params hash codec는 정렬·UTF-8·SHA-256 hex 계약을 유지한다`() {
+    fun `params hash codec는 versioned canonical UTF-8 SHA-256 hex 계약을 유지한다`() {
         val params: Map<String, Any> = linkedMapOf(
             "region" to "KR",
             "date" to "2026-04-10",
         )
         val expectedHash =
-            "3befc559f29662638764e67938f8d674155a356e91286dd4e6e5e3133b74d1fc"
+            "90aebf7c6f3dd0fc7f971830c2e2f72bb08d3fa633ee06047daa30b9e3e9c576"
         val utf8Params: Map<String, Any> = linkedMapOf(
             "지역" to "대한민국",
             "date" to "2026-04-10",
@@ -144,7 +144,18 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
         params.toParamsHash() shouldBeEqualTo expectedHash
         emptyMap<String, Any>().toParamsHash() shouldBeEqualTo ""
         utf8Params.toParamsHash() shouldBeEqualTo
-            "ce97c1670f55a1644de4d550391f51abf054a79dff9aebaf39e1e7a7a312ab3b"
+            "0a045260ff22be1e00ea0e2b82eaa39e95f6396d7d39e37f28cbff396c75b18c"
+    }
+
+    @Test
+    fun `params hash codec는 delimiter와 type collision을 구분한다`() {
+        val delimiterLeft = mapOf("a" to "1&b=2")
+        val delimiterRight = mapOf("a" to "1", "b" to "2")
+        val typedInteger = mapOf("x" to 1)
+        val typedString = mapOf("x" to "1")
+
+        delimiterLeft.toParamsHash() shouldNotBeEqualTo delimiterRight.toParamsHash()
+        typedInteger.toParamsHash() shouldNotBeEqualTo typedString.toParamsHash()
     }
 
     // ─── 1. JobExecution 신규 생성 ────────────────────────────────────────────
@@ -352,6 +363,78 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
 
             je2.id shouldNotBeEqualTo je1.id
             (je2.id > je1.id) shouldBe true
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `충돌 가능한 서로 다른 params - 독립 실행과 restart 재사용을 보장한다`(testDB: TestDB) {
+        withRepoTables(testDB) {
+            val delimiterParams = mapOf<String, Any>("a" to "1&b=2")
+            val splitParams = mapOf<String, Any>("a" to "1", "b" to "2")
+            val integerParams = mapOf<String, Any>("x" to 1)
+            val stringParams = mapOf<String, Any>("x" to "1")
+
+            val delimiterExecution = findOrCreateJobExecution("delimiterCollisionJob", delimiterParams)
+            val splitExecution = findOrCreateJobExecution("delimiterCollisionJob", splitParams)
+            delimiterExecution.id shouldNotBeEqualTo splitExecution.id
+
+            completeJobExecution(delimiterExecution, BatchStatus.FAILED)
+            findOrCreateJobExecution("delimiterCollisionJob", delimiterParams).id shouldBeEqualTo
+                delimiterExecution.id
+
+            val integerExecution = findOrCreateJobExecution("typeCollisionJob", integerParams)
+            val stringExecution = findOrCreateJobExecution("typeCollisionJob", stringParams)
+            integerExecution.id shouldNotBeEqualTo stringExecution.id
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `충돌 가능 params의 동시 findOrCreate는 독립 실행과 restart를 유지한다`(testDB: TestDB) {
+        Assumptions.assumeTrue { testDB == TestDB.POSTGRESQL }
+
+        withRepoTables(testDB) {
+            val repository = this
+            val requests = ConcurrentLinkedQueue(
+                listOf(
+                    "delimiter" to mapOf<String, Any>("a" to "1&b=2"),
+                    "split" to mapOf<String, Any>("a" to "1", "b" to "2"),
+                ),
+            )
+            val executions = ConcurrentLinkedQueue<Pair<String, Long>>()
+
+            MultithreadingTester()
+                .workers(2)
+                .rounds(1)
+                .add {
+                    runSuspendIO {
+                        val (label, params) = requests.remove()
+                        val execution = repository.findOrCreateJobExecution("collisionRaceJob", params)
+                        executions += label to execution.id
+                    }
+                }
+                .run()
+
+            executions shouldHaveSize 2
+            executions.map { it.second }.distinct() shouldHaveSize 2
+
+            val executionByLabel = executions.toMap()
+            val delimiterExecution = findOrCreateJobExecution(
+                "collisionRaceJob",
+                mapOf("a" to "1&b=2"),
+            )
+            val splitExecution = findOrCreateJobExecution(
+                "collisionRaceJob",
+                mapOf("a" to "1", "b" to "2"),
+            )
+            completeJobExecution(delimiterExecution, BatchStatus.FAILED)
+            completeJobExecution(splitExecution, BatchStatus.FAILED)
+
+            findOrCreateJobExecution("collisionRaceJob", mapOf("a" to "1&b=2")).id shouldBeEqualTo
+                executionByLabel.getValue("delimiter")
+            findOrCreateJobExecution("collisionRaceJob", mapOf("a" to "1", "b" to "2")).id shouldBeEqualTo
+                executionByLabel.getValue("split")
         }
     }
 
