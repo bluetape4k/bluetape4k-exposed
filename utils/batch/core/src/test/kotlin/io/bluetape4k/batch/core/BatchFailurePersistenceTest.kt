@@ -11,7 +11,9 @@ import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.batch.api.BatchJobRepository
+import io.bluetape4k.batch.api.BatchInfrastructureFailureException
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchReport
 import io.bluetape4k.batch.api.BatchStatus
@@ -45,10 +47,31 @@ import java.util.concurrent.atomic.AtomicInteger
  * FAILED/STOPPED 상태 저장 실패가 실행 원인과 취소 전파에서 사라지지 않는지 검증한다.
  *
  * 자동 재시도나 outbox는 이 모듈의 저장소 계약에 포함하지 않는다. 실행기는 저장 실패를
- * 원인 예외에 suppressed cause로 연결하고 error 로그를 남기며, 재시도·알림은 호출자와
+ * cause가 제거된 진단 예외를 원인 예외에 suppressed로 연결하고 error 로그를 남기며, 재시도·알림은 호출자와
  * 저장소 운영 정책이 결정한다.
  */
 class BatchFailurePersistenceTest {
+
+    @Test
+    fun `JobExecution 조회 실패는 raw cause 없이 상관관계 ID만 노출한다`() = runSuspendIO {
+        val rawFailure = IllegalStateException("database password leaked")
+        val delegate = InMemoryBatchJobRepository()
+        val repository = object : BatchJobRepository by delegate {
+            override suspend fun findOrCreateJobExecution(
+                jobName: String,
+                params: Map<String, Any>,
+            ): JobExecution = throw rawFailure
+        }
+
+        val failure = assertFailsWith<BatchInfrastructureFailureException> {
+            job(repository, FailingReader(IllegalStateException("must not run"))).run()
+        }
+
+        failure.category shouldBe BatchInfrastructureFailureException.REPOSITORY_FAILURE
+        failure.cause shouldBe null
+        failure.suppressed.size shouldBeEqualTo 0
+        failure.correlationId.length shouldBeEqualTo 16
+    }
 
     @Test
     fun `step FAILED 저장 실패는 원인 예외에 suppressed 된다`() = runSuspendIO {
@@ -61,7 +84,7 @@ class BatchFailurePersistenceTest {
         report shouldBeInstanceOf BatchReport.Failure::class
         val failure = report as BatchReport.Failure
         failure.error shouldBeSameInstanceAs primaryFailure
-        failure.error.suppressed.single() shouldBeSameInstanceAs persistenceFailure
+        assertSanitizedPersistenceFailure(failure.error)
 
         val storedJob = repository.findOrCreateJobExecution("failure-persistence")
         val storedStep = repository.findOrCreateStepExecution(storedJob, "step")
@@ -84,7 +107,7 @@ class BatchFailurePersistenceTest {
         report shouldBeInstanceOf BatchReport.Failure::class
         val failure = report as BatchReport.Failure
         failure.error shouldBeSameInstanceAs primaryFailure
-        failure.error.suppressed.single() shouldBeSameInstanceAs persistenceFailure
+        assertSanitizedPersistenceFailure(failure.error)
 
         val storedJob = repository.findOrCreateJobExecution("failure-persistence")
         storedJob.status shouldBe BatchStatus.RUNNING
@@ -110,13 +133,13 @@ class BatchFailurePersistenceTest {
         }
 
         thrown shouldBeSameInstanceAs cancellation
-        thrown.suppressed.single() shouldBeSameInstanceAs persistenceFailure
+        assertSanitizedCompensationFailure(thrown)
         val storedStep = repository.findOrCreateStepExecution(execution, "step")
         storedStep.status shouldBe BatchStatus.RUNNING
     }
 
     @Test
-    fun `실제 Job 취소도 NonCancellable checkpoint와 STOPPED 저장을 보존한다`() = runSuspendIO {
+    fun `실제 Job 취소는 bounded STOPPED 저장만 수행하고 reader checkpoint를 호출하지 않는다`() = runSuspendIO {
         val repository = InMemoryBatchJobRepository()
         val execution = repository.findOrCreateJobExecution("actual-cancellation")
         val readerEntered = CompletableDeferred<Unit>()
@@ -130,29 +153,29 @@ class BatchFailurePersistenceTest {
             request.cancel(CancellationException("external cancellation"))
 
             assertFailsWith<CancellationException> { request.await() }
-            reader.checkpointCalls.get() shouldBeEqualTo 1
+            reader.checkpointCalls.get() shouldBeEqualTo 0
             val storedStep = repository.findOrCreateStepExecution(execution, "step")
             storedStep.status shouldBe BatchStatus.STOPPED
-            storedStep.checkpoint shouldBe "checkpoint"
+            storedStep.checkpoint shouldBe null
         }
     }
 
     @Test
-    fun `checkpoint 커밋 직후 취소도 InMemory STOPPED 저장과 재claim을 보존한다`() = runSuspendIO {
-        assertCheckpointCommitCancellationRecovery(InMemoryBatchJobRepository())
+    fun `checkpoint 커밋 readback 전 취소는 InMemory에서 stale STOPPED CAS를 하지 않는다`() = runSuspendIO {
+        assertCheckpointCommitCancellationFailClosed(InMemoryBatchJobRepository())
     }
 
     @Test
-    fun `checkpoint 커밋 직후 취소도 JDBC STOPPED 저장과 재claim을 보존한다`() = withJdbcBatchTables {
-        assertCheckpointCommitCancellationRecovery(
+    fun `checkpoint 커밋 readback 전 취소는 JDBC에서 stale STOPPED CAS를 하지 않는다`() = withJdbcBatchTables {
+        assertCheckpointCommitCancellationFailClosed(
             ExposedJdbcBatchJobRepository(checkNotNull(it.db), CheckpointJson.jackson3()),
         )
     }
 
     @Test
-    fun `checkpoint 커밋 직후 취소도 R2DBC STOPPED 저장과 재claim을 보존한다`() = runSuspendIO {
+    fun `checkpoint 커밋 readback 전 취소는 R2DBC에서 stale STOPPED CAS를 하지 않는다`() = runSuspendIO {
         withR2dbcBatchTables {
-            assertCheckpointCommitCancellationRecovery(
+            assertCheckpointCommitCancellationFailClosed(
                 ExposedR2dbcBatchJobRepository(checkNotNull(it.db), CheckpointJson.jackson3()),
             )
         }
@@ -170,6 +193,25 @@ class BatchFailurePersistenceTest {
 
         thrown shouldBeSameInstanceAs persistenceCancellation
         thrown.suppressed.single() shouldBeSameInstanceAs primaryFailure
+    }
+
+    @Test
+    fun `FAILED checkpoint 조회 실패는 raw cause 대신 sanitized 진단을 남긴다`() = runSuspendIO {
+        val primaryFailure = IllegalStateException("reader failed")
+        val checkpointFailure = IllegalStateException("checkpoint token leaked")
+        val repository = InMemoryBatchJobRepository()
+        val execution = repository.findOrCreateJobExecution("checkpoint-diagnostic")
+
+        val report = BatchStepRunner(
+            step(CheckpointFailingReader(primaryFailure, checkpointFailure)),
+            execution,
+            repository,
+        ).run()
+
+        report.status shouldBe BatchStatus.FAILED
+        report.error shouldBeSameInstanceAs primaryFailure
+        assertSanitizedPersistenceFailure(primaryFailure)
+        primaryFailure.suppressed.single().message shouldNotContain checkNotNull(checkpointFailure.message)
     }
 
     @Test
@@ -197,7 +239,7 @@ class BatchFailurePersistenceTest {
         }
 
         thrown shouldBeSameInstanceAs cancellation
-        thrown.suppressed.single() shouldBeSameInstanceAs persistenceFailure
+        assertSanitizedCompensationFailure(thrown)
         val storedJob = repository.findOrCreateJobExecution("failure-persistence")
         storedJob.status shouldBe BatchStatus.RUNNING
         val storedStep = repository.findOrCreateStepExecution(storedJob, "step")
@@ -213,8 +255,8 @@ class BatchFailurePersistenceTest {
         try {
             job(repository, FailingReader(IllegalStateException("reader failed"))).run()
             appender.failureMessages shouldContain "FAILED 상태 저장 실패"
-            appender.throwableMessages shouldBeEqualTo listOf("step state write failed")
-            appender.errorMessages shouldBeEqualTo listOf("step state write failed")
+            appender.throwableMessages shouldBeEqualTo emptyList()
+            appender.errorMessages shouldBeEqualTo emptyList()
         } finally {
             appender.close()
         }
@@ -235,7 +277,7 @@ class BatchFailurePersistenceTest {
         report shouldBeInstanceOf BatchReport.Failure::class
         val failure = report as BatchReport.Failure
         failure.error shouldBeSameInstanceAs primaryFailure
-        failure.error.suppressed.single() shouldBeSameInstanceAs persistenceFailure
+        assertSanitizedPersistenceFailure(failure.error)
 
         val storedJob = repository.reloadJobExecution()
         storedJob.status shouldBe BatchStatus.RUNNING
@@ -284,7 +326,7 @@ class BatchFailurePersistenceTest {
             report shouldBeInstanceOf BatchReport.Failure::class
             val failure = report as BatchReport.Failure
             failure.error shouldBeSameInstanceAs primaryFailure
-            failure.error.suppressed.single() shouldBeSameInstanceAs persistenceFailure
+            assertSanitizedPersistenceFailure(failure.error)
 
             val storedJob = repository.reloadJobExecution()
             storedJob.status shouldBe BatchStatus.RUNNING
@@ -442,7 +484,7 @@ class BatchFailurePersistenceTest {
         repository.findOrCreateStepExecution(jobExecution, "step").checkpoint shouldBeEqualTo "checkpoint-1"
     }
 
-    private suspend fun assertCheckpointCommitCancellationRecovery(delegate: BatchJobRepository) {
+    private suspend fun assertCheckpointCommitCancellationFailClosed(delegate: BatchJobRepository) {
         val checkpointPersisted = CompletableDeferred<Unit>()
         val releaseCheckpointReturn = CompletableDeferred<Unit>()
         val repository = CommitReturnSuspendingRepository(
@@ -471,15 +513,15 @@ class BatchFailurePersistenceTest {
         }
 
         val storedStep = repository.findOrCreateStepExecution(execution, "step")
-        storedStep.status shouldBe BatchStatus.STOPPED
-        storedStep.ownerId shouldBe null
-        storedStep.leaseUntil shouldBe null
+        storedStep.status shouldBe BatchStatus.RUNNING
+        storedStep.ownerId.shouldNotBeNull()
+        storedStep.leaseUntil.shouldNotBeNull()
         storedStep.checkpoint shouldBeEqualTo "checkpoint-1"
         repository.claimStepExecution(
             storedStep,
             ownerId = "replacement-owner",
             leaseUntil = java.time.Instant.now().plusSeconds(60),
-        ).shouldNotBeNull()
+        ) shouldBe null
     }
 
     private suspend fun assertJobStoppedPersistenceFailure(delegate: BatchJobRepository) {
@@ -492,7 +534,7 @@ class BatchFailurePersistenceTest {
         }
 
         thrown shouldBeSameInstanceAs cancellation
-        thrown.suppressed.single() shouldBeSameInstanceAs persistenceFailure
+        assertSanitizedCompensationFailure(thrown)
         val storedJob = repository.reloadJobExecution()
         storedJob.status shouldBe BatchStatus.RUNNING
         repository.claimJobExecution(
@@ -513,7 +555,7 @@ class BatchFailurePersistenceTest {
         report shouldBeInstanceOf BatchReport.Failure::class
         val failure = report as BatchReport.Failure
         failure.error shouldBeSameInstanceAs primaryFailure
-        failure.error.suppressed.single() shouldBeSameInstanceAs persistenceFailure
+        assertSanitizedPersistenceFailure(failure.error)
         val storedJob = repository.reloadJobExecution()
         val storedStep = repository.reloadStepExecution(storedJob)
         storedStep.status shouldBe BatchStatus.RUNNING
@@ -535,8 +577,24 @@ class BatchFailurePersistenceTest {
         }
 
         thrown shouldBeSameInstanceAs cancellation
-        thrown.suppressed.single() shouldBeSameInstanceAs persistenceFailure
+        assertSanitizedCompensationFailure(thrown)
         repository.reloadStepExecution(execution).status shouldBe BatchStatus.RUNNING
+    }
+
+    private fun assertSanitizedCompensationFailure(cancellation: CancellationException) {
+        val diagnostic = cancellation.suppressed.single()
+        diagnostic shouldBeInstanceOf BatchInfrastructureFailureException::class
+        diagnostic as BatchInfrastructureFailureException
+        diagnostic.category shouldBe BatchInfrastructureFailureException.REPOSITORY_FAILURE
+        diagnostic.cause shouldBe null
+    }
+
+    private fun assertSanitizedPersistenceFailure(primary: Throwable) {
+        val diagnostic = primary.suppressed.single()
+        diagnostic shouldBeInstanceOf BatchInfrastructureFailureException::class
+        diagnostic as BatchInfrastructureFailureException
+        diagnostic.category shouldBe BatchInfrastructureFailureException.REPOSITORY_FAILURE
+        diagnostic.cause shouldBe null
     }
 
     private fun job(
@@ -566,7 +624,7 @@ class BatchFailurePersistenceTest {
 
     private class CheckpointFailingReader(
         private val readFailure: Throwable,
-        private val checkpointFailure: CancellationException,
+        private val checkpointFailure: Throwable,
     ) : BatchReader<String> {
         override suspend fun read(): String? = throw readFailure
 

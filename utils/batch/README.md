@@ -154,6 +154,17 @@ SkipPolicy { e, count -> e is DataException && count < 50 }  // custom
 3. On restart, the checkpoint is restored via `reader.restoreFrom(checkpoint)` before the chunk loop begins
 4. `TypedCheckpoint` envelope (Jackson 3) ensures type-safe round-trip for all serializable types
 
+## BatchStatus Transitions
+
+```
+STARTING → RUNNING → COMPLETED
+                   → COMPLETED_WITH_SKIPS
+                   → FAILED
+                   → STOPPED (cancellation)
+```
+
+**Important**: `StepExecution` rows with `COMPLETED` or `COMPLETED_WITH_SKIPS` are skipped automatically on restart.
+
 ## Benchmarks
 
 The benchmark setup has been migrated to `kotlinx-benchmark` with DB-specific profiles for JDBC + Virtual Threads and R2DBC.
@@ -201,3 +212,37 @@ adapter is part of the application boundary. `CheckpointJson` is an explicit
 strategy: the core artifact supports a custom implementation without Jackson;
 `CheckpointJson.jackson3()` requires `bluetape4k-jackson3` on the runtime
 classpath.
+
+## Lease Safety and Operations
+
+Each job and step execution is fenced by an `ownerId` and a monotonically
+increasing `version`. The repository renews the job and step lease atomically;
+the runner performs a final lease check immediately before each writer call and
+checkpoint mutation. A lost lease returns a sanitized lease-loss failure and
+does not start another writer call. Custom `BatchJobRepository` implementations
+must advertise authoritative claim and atomic renewal support before a job
+starts; an adapter that does not implement those capabilities is rejected
+fail-closed.
+
+Configure the same lease on the DSL job and its steps. The supported lease
+range is 30 seconds through 24 hours, and the default is 15 minutes:
+
+JDBC and R2DBC lease database timeouts are currently implemented for
+PostgreSQL, H2, and MySQL dialects. Calling a lease operation with another
+Exposed dialect fails fast with an `Unsupported database dialect for batch lease
+timeout` error; configure a supported dialect before enabling lease renewal.
+
+```kotlin
+val job = batchJob("importUsers") {
+    executionLease(15.minutes)
+    step<UserCsv, UserEntity>("loadStep") {
+        executionLease(15.minutes)
+    }
+}
+```
+
+Do not automatically retry a lease-loss runner with the same execution object.
+Read the database owner/version/lease state, reconcile whether the external
+writer used an idempotency key, outbox, or equivalent fencing, and only then
+start a new execution. This library does not provide exactly-once semantics for
+external systems.

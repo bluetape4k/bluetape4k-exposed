@@ -210,3 +210,35 @@ JDBC 또는 R2DBC child를 선택하세요. `CheckpointJson`은 명시적인 str
 core artifact는 Jackson 없는 custom 구현을 지원하고,
 `CheckpointJson.jackson3()`는 runtime classpath에 `bluetape4k-jackson3`가 있어야
 합니다.
+
+## Lease 안전성과 운영
+
+각 Job과 Step execution은 `ownerId`와 단조 증가하는 `version`으로 fencing됩니다.
+Repository는 Job과 Step lease를 atomic하게 갱신하고, runner는 각 Writer 호출과
+checkpoint mutation 직전에 마지막 lease 검사를 수행합니다. Lease를 잃으면
+sanitized lease-loss failure를 반환하고 다음 Writer 호출을 시작하지 않습니다.
+사용자 정의 `BatchJobRepository` 구현체는 Job 시작 전에 authoritative claim과
+atomic renewal 지원 능력을 광고해야 하며, 이를 구현하지 않은 adapter는
+fail-closed로 거부됩니다.
+
+DSL Job과 Step에 같은 lease를 설정하세요. 지원 범위는 30초부터 24시간이며
+기본값은 15분입니다.
+
+JDBC와 R2DBC lease 데이터베이스 timeout은 현재 PostgreSQL, H2, MySQL
+dialect에서만 구현되어 있습니다. 다른 Exposed dialect에서 lease 연산을
+호출하면 `Unsupported database dialect for batch lease timeout` 오류로
+즉시 실패하므로, lease renewal을 활성화하기 전에 지원 dialect를 사용하세요.
+
+```kotlin
+val job = batchJob("importUsers") {
+    executionLease(15.minutes)
+    step<UserCsv, UserEntity>("loadStep") {
+        executionLease(15.minutes)
+    }
+}
+```
+
+Lease-loss가 발생하면 같은 execution 객체를 자동 재시도하지 마세요. DB의
+owner/version/lease 상태를 읽기 전용으로 확인하고, 외부 writer가 idempotency key,
+outbox 또는 동등한 fencing을 사용했는지 reconcile한 뒤 새 execution을 시작해야
+합니다. 이 library는 외부 시스템의 exactly-once를 제공하지 않습니다.

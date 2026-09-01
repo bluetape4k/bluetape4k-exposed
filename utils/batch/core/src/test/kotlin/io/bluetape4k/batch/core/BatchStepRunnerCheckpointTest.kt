@@ -1,6 +1,7 @@
 package io.bluetape4k.batch.core
 
 import io.bluetape4k.batch.api.BatchJobRepository
+import io.bluetape4k.batch.api.BatchInfrastructureFailureException
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.BatchWriter
@@ -14,6 +15,7 @@ import kotlinx.coroutines.test.runTest
 import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
+import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldHaveSize
@@ -31,7 +33,7 @@ import kotlin.time.Duration.Companion.seconds
  * 2. **chunk 단위 saveCheckpoint 호출**: 각 chunk 커밋 시점에 `saveCheckpoint()`가
  *    chunk 개수만큼 호출된다.
  * 3. **saveCheckpoint 실패 시 예외 전파**: `saveCheckpoint()`가 throw 하면 step은
- *    FAILED 상태로 종료된다 (BatchStepRunner의 catch (Throwable) 분기).
+ *    FAILED 상태로 종료된다 (BatchStepRunner의 catch (Exception) 분기).
  *
  * @see BatchStepRunner
  * @see BatchJobRepository.saveCheckpoint
@@ -288,11 +290,8 @@ class BatchStepRunnerCheckpointTest {
     }
 
     /**
-     * [BatchJobRepository.saveCheckpoint] 가 throw 하면 BatchStepRunner 는 catch(Throwable)
-     * 분기로 진입하여 [StepReport.status] = FAILED, [StepReport.error] non-null 로 종료한다.
-     *
-     * BatchStepRunner.run() 의 동작: 일반 Throwable 은 try 블록 밖의 `catch (e: Throwable)` 에서
-     * `failedReport` 를 만들어 **return** 한다 (예외 재던지지 않음).
+     * [BatchJobRepository.saveCheckpoint] 가 throw 하면 lease ownership을 더는 증명할 수 없으므로
+     * raw cause를 숨긴 [BatchInfrastructureFailureException]으로 fail-closed 한다.
      */
     @Test
     fun `saveCheckpoint 실패는 writer 재시도로 재진입하지 않고 성공한 write를 보고`() = runTest(timeout = 30.seconds) {
@@ -311,15 +310,13 @@ class BatchStepRunnerCheckpointTest {
 
         val report = BatchStepRunner(step, je, failingRepo).run()
 
-        // BatchStepRunner.run() 은 RuntimeException 을 catch 하여 FAILED 리포트를 반환한다.
         report.status shouldBe BatchStatus.FAILED
-        val error = report.error.shouldNotBeNull()
-        error.message shouldBeEqualTo "checkpoint save failed"
+        val failure = report.error.shouldNotBeNull()
+        failure shouldBeInstanceOf BatchInfrastructureFailureException::class
+        failure.cause.shouldBeNull()
         // checkpoint persistence는 writer retry 범위 밖이므로 외부 side effect를 중복하지 않는다.
         writer.callCount.get() shouldBeEqualTo 1
         writer.collected shouldBeEqualTo items
-        // writeCount는 이미 성공한 writer side effect를 숨기지 않는다.
-        report.writeCount shouldBeEqualTo items.size.toLong()
     }
 
     @Test

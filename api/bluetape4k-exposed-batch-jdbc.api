@@ -2,13 +2,17 @@ public final class io/bluetape4k/batch/jdbc/ExposedJdbcBatchJobRepository : io/b
 	public static final field Companion Lio/bluetape4k/batch/jdbc/ExposedJdbcBatchJobRepository$Companion;
 	public fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;Lio/bluetape4k/batch/CheckpointJson;)V
 	public fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;Lio/bluetape4k/batch/internal/CheckpointJson;)V
+	public fun claimJobExecution (Lio/bluetape4k/batch/api/JobExecution;Ljava/lang/String;Ljava/time/Duration;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun claimJobExecution (Lio/bluetape4k/batch/api/JobExecution;Ljava/lang/String;Ljava/time/Instant;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun claimStepExecution (Lio/bluetape4k/batch/api/StepExecution;Ljava/lang/String;Ljava/time/Duration;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun claimStepExecution (Lio/bluetape4k/batch/api/StepExecution;Ljava/lang/String;Ljava/time/Instant;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun completeJobExecution (Lio/bluetape4k/batch/api/JobExecution;Lio/bluetape4k/batch/api/BatchStatus;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun completeStepExecution (Lio/bluetape4k/batch/api/StepExecution;Lio/bluetape4k/batch/api/StepReport;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun findOrCreateJobExecution (Ljava/lang/String;Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun findOrCreateStepExecution (Lio/bluetape4k/batch/api/JobExecution;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getSupportsLeaseRenewal ()Z
 	public fun loadCheckpoint (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun renewExecutionLeases (Lio/bluetape4k/batch/api/JobExecution;Lio/bluetape4k/batch/api/StepExecution;Ljava/time/Duration;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun saveCheckpoint (JLjava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun saveCheckpoint (Lio/bluetape4k/batch/api/StepExecution;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun saveCheckpointAndReturn (Lio/bluetape4k/batch/api/StepExecution;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

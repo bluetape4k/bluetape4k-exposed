@@ -4,7 +4,7 @@ import io.bluetape4k.batch.BatchSourceTable
 import io.bluetape4k.batch.BatchTargetTable
 import io.bluetape4k.batch.SourceRecord
 import io.bluetape4k.batch.TargetRecord
-import io.bluetape4k.batch.api.BatchExecutionAlreadyClaimedException
+import io.bluetape4k.batch.api.BatchInfrastructureFailureException
 import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchReport
@@ -12,6 +12,7 @@ import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.BatchWriter
 import io.bluetape4k.batch.api.SkipPolicy
 import io.bluetape4k.batch.api.StepExecution
+import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.batch.core.dsl.batchJob
 import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.jdbc.tables.BatchJobExecutionTable
@@ -19,6 +20,7 @@ import io.bluetape4k.batch.jdbc.tables.BatchStepExecutionTable
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
@@ -27,11 +29,15 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.update
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -210,7 +216,7 @@ class ExposedJdbcBatchIntegrationTest : AbstractBatchJdbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `checkpoint 저장 실패도 성공 writer counter와 receipt를 보존한다`(testDB: TestDB) {
+    fun `checkpoint 저장 실패는 raw cause를 숨기고 성공 writer counter를 보존한다`(testDB: TestDB) {
         withAllTables(testDB) {
             val delegate = ExposedJdbcBatchJobRepository(testDB.db!!, CheckpointJson.jackson3())
             val firstWriter = RecordingWriter()
@@ -223,7 +229,7 @@ class ExposedJdbcBatchIntegrationTest : AbstractBatchJdbcTest() {
 
             report shouldBeInstanceOf BatchReport.Failure::class
             report.stepReports.single().status shouldBe BatchStatus.FAILED
-            report.stepReports.single().checkpoint shouldBeEqualTo "checkpoint-1"
+            report.stepReports.single().checkpoint shouldBe null
             report.stepReports.single().writeCount shouldBeEqualTo 1L
             firstWriter.items shouldBeEqualTo listOf("first")
 
@@ -232,9 +238,9 @@ class ExposedJdbcBatchIntegrationTest : AbstractBatchJdbcTest() {
                 mapOf("partition" to "test"),
             )
             val storedStep = delegate.findOrCreateStepExecution(execution, "checkpointStep")
-            storedStep.status shouldBe BatchStatus.FAILED
-            storedStep.checkpoint shouldBeEqualTo "checkpoint-1"
-            storedStep.writeCount shouldBeEqualTo 1L
+            storedStep.status shouldBe BatchStatus.RUNNING
+            storedStep.checkpoint shouldBe null
+            storedStep.writeCount shouldBeEqualTo 0L
         }
     }
 
@@ -256,9 +262,153 @@ class ExposedJdbcBatchIntegrationTest : AbstractBatchJdbcTest() {
             reports.count { it is BatchReport.Success } shouldBeEqualTo 1
             reports.count { it is BatchReport.Failure } shouldBeEqualTo 1
             val failure = reports.filterIsInstance<BatchReport.Failure>().single()
-            failure.error shouldBeInstanceOf BatchExecutionAlreadyClaimedException::class
+            failure.error shouldBeInstanceOf BatchInfrastructureFailureException::class
+            val diagnostic = failure.error as BatchInfrastructureFailureException
+            diagnostic.category shouldBe BatchInfrastructureFailureException.EXECUTION_ALREADY_CLAIMED
+            diagnostic.cause shouldBe null
             writer.openCount.get() shouldBeEqualTo 1
             writer.writeCount.get() shouldBeEqualTo 3
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `실행 lease 갱신은 Job과 Step 버전을 함께 증가시킨다`(testDB: TestDB) {
+        withAllTables(testDB) {
+            val repository = ExposedJdbcBatchJobRepository(testDB.db!!, CheckpointJson.jackson3())
+            val initialJob = repository.findOrCreateJobExecution("leaseRenewalJob", emptyMap())
+            val claimedJob = checkNotNull(
+                repository.claimJobExecution(initialJob, "lease-owner", Duration.ofMinutes(1)),
+            )
+            val initialStep = repository.findOrCreateStepExecution(claimedJob, "leaseStep")
+            val claimedStep = checkNotNull(
+                repository.claimStepExecution(initialStep, "lease-owner", Duration.ofMinutes(1)),
+            )
+
+            val renewed = checkNotNull(
+                repository.renewExecutionLeases(claimedJob, claimedStep, Duration.ofMinutes(1)),
+            )
+
+            renewed.jobExecution.version shouldBeEqualTo claimedJob.version + 1
+            renewed.jobExecution.ownerId shouldBeEqualTo "lease-owner"
+            renewed.stepExecution?.version shouldBeEqualTo claimedStep.version + 1
+            renewed.stepExecution?.ownerId shouldBeEqualTo "lease-owner"
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    @Suppress("DEPRECATION")
+    fun `lease 만료 takeover 뒤 stale owner의 외부 write와 상태 저장을 차단한다`(testDB: TestDB) {
+        withAllTables(testDB) {
+            val repository = ExposedJdbcBatchJobRepository(testDB.db!!, CheckpointJson.jackson3())
+            val initialJob = repository.findOrCreateJobExecution("leaseTakeoverJob", emptyMap())
+            val staleJob = checkNotNull(repository.claimJobExecution(initialJob, "owner-a", Instant.EPOCH))
+            val initialStep = repository.findOrCreateStepExecution(staleJob, "leaseStep")
+            val staleStep = checkNotNull(repository.claimStepExecution(initialStep, "owner-a", Instant.EPOCH))
+            assertFailsWith<IllegalStateException> {
+                repository.saveCheckpointAndReturn(staleStep, "expired-checkpoint")
+            }
+            assertFailsWith<IllegalStateException> {
+                repository.completeStepExecution(
+                    staleStep,
+                    StepReport("leaseStep", BatchStatus.COMPLETED),
+                )
+            }
+            assertFailsWith<IllegalStateException> {
+                repository.completeJobExecution(staleJob, BatchStatus.COMPLETED)
+            }
+            val currentJob = checkNotNull(
+                repository.claimJobExecution(staleJob, "owner-b", Duration.ofMinutes(1)),
+            )
+            val currentStep = checkNotNull(
+                repository.claimStepExecution(staleStep, "owner-b", Duration.ofMinutes(1)),
+            )
+            val externalWriteCount = AtomicInteger()
+
+            if (repository.renewExecutionLeases(staleJob, staleStep, Duration.ofMinutes(1)) != null) {
+                externalWriteCount.incrementAndGet()
+            }
+            checkNotNull(repository.renewExecutionLeases(currentJob, currentStep, Duration.ofMinutes(1)))
+            externalWriteCount.incrementAndGet()
+
+            externalWriteCount.get() shouldBeEqualTo 1
+            assertFailsWith<IllegalStateException> {
+                repository.saveCheckpointAndReturn(staleStep, "stale-checkpoint")
+            }
+            assertFailsWith<IllegalStateException> {
+                repository.completeStepExecution(
+                    staleStep,
+                    StepReport("leaseStep", BatchStatus.COMPLETED),
+                )
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `두 BatchJob runner의 lease takeover 뒤 stale runner는 다음 write를 시작하지 않는다`(testDB: TestDB) {
+        withAllTables(testDB) {
+            val repository = ExposedJdbcBatchJobRepository(testDB.db!!, CheckpointJson.jackson3())
+            val staleReader = BarrierCheckpointReader(listOf(1, 2))
+            val staleWriter = BarrierCountingWriter()
+            val currentWriter = CountingWriter()
+
+            coroutineScope {
+                val staleRun = async {
+                    makeTakeoverJob(repository, staleReader, staleWriter).run()
+                }
+                staleWriter.firstWriteStarted.await()
+
+                transaction(testDB.db!!) {
+                    BatchJobExecutionTable.update {
+                        it[leaseUntil] = Instant.EPOCH
+                    }
+                    BatchStepExecutionTable.update {
+                        it[leaseUntil] = Instant.EPOCH
+                    }
+                }
+
+                val currentReport = withTimeout(10_000L) {
+                    makeTakeoverJob(repository, SlowListReader(listOf(1, 2)), currentWriter).run()
+                }
+                val stateAfterCurrentCompletion = transaction(testDB.db!!) {
+                    val jobRow = BatchJobExecutionTable.selectAll().single()
+                    val stepRow = BatchStepExecutionTable.selectAll().single()
+                    listOf(
+                        jobRow[BatchJobExecutionTable.status],
+                        jobRow[BatchJobExecutionTable.version],
+                        jobRow[BatchJobExecutionTable.ownerId],
+                        jobRow[BatchJobExecutionTable.leaseUntil],
+                        stepRow[BatchStepExecutionTable.status],
+                        stepRow[BatchStepExecutionTable.version],
+                        stepRow[BatchStepExecutionTable.writeCount],
+                        stepRow[BatchStepExecutionTable.checkpoint],
+                    )
+                }
+                staleWriter.releaseFirstWrite.complete(Unit)
+                val staleReport = withTimeout(10_000L) { staleRun.await() }
+                val stateAfterStaleCompletion = transaction(testDB.db!!) {
+                    val jobRow = BatchJobExecutionTable.selectAll().single()
+                    val stepRow = BatchStepExecutionTable.selectAll().single()
+                    listOf(
+                        jobRow[BatchJobExecutionTable.status],
+                        jobRow[BatchJobExecutionTable.version],
+                        jobRow[BatchJobExecutionTable.ownerId],
+                        jobRow[BatchJobExecutionTable.leaseUntil],
+                        stepRow[BatchStepExecutionTable.status],
+                        stepRow[BatchStepExecutionTable.version],
+                        stepRow[BatchStepExecutionTable.writeCount],
+                        stepRow[BatchStepExecutionTable.checkpoint],
+                    )
+                }
+
+                currentReport shouldBeInstanceOf BatchReport.Success::class
+                staleReport shouldBeInstanceOf BatchReport.Failure::class
+                currentWriter.writeCount.get() shouldBeEqualTo 2
+                staleWriter.writeCount.get() shouldBeEqualTo 1
+                stateAfterStaleCompletion shouldBeEqualTo stateAfterCurrentCompletion
+            }
         }
     }
 
@@ -332,6 +482,57 @@ class ExposedJdbcBatchIntegrationTest : AbstractBatchJdbcTest() {
 
         override suspend fun write(items: List<Int>) {
             delay(200)
+            writeCount.addAndGet(items.size)
+        }
+    }
+
+    private fun makeTakeoverJob(
+        repository: BatchJobRepository,
+        reader: BatchReader<Int>,
+        writer: BatchWriter<Int>,
+    ) = batchJob("runnerTakeoverJob") {
+        repository(repository)
+        executionLease(Duration.ofSeconds(30))
+        step<Int, Int>("takeoverStep") {
+            reader(reader)
+            writer(writer)
+            chunkSize(1)
+        }
+    }
+
+    private class BarrierCheckpointReader(
+        items: List<Int>,
+    ) : BatchReader<Int> {
+        private val queue = ArrayDeque(items)
+        private var committedCount = 0
+
+        override suspend fun read(): Int? = queue.removeFirstOrNull()
+
+        override suspend fun onChunkCommitted() {
+            committedCount++
+        }
+
+        override suspend fun checkpoint(): Any? = committedCount.takeIf { it > 0 }
+    }
+
+    private class BarrierCountingWriter : BatchWriter<Int> {
+        val firstWriteStarted = CompletableDeferred<Unit>()
+        val releaseFirstWrite = CompletableDeferred<Unit>()
+        val writeCount = AtomicInteger()
+
+        override suspend fun write(items: List<Int>) {
+            if (writeCount.get() == 0) {
+                firstWriteStarted.complete(Unit)
+                releaseFirstWrite.await()
+            }
+            writeCount.addAndGet(items.size)
+        }
+    }
+
+    private class CountingWriter : BatchWriter<Int> {
+        val writeCount = AtomicInteger()
+
+        override suspend fun write(items: List<Int>) {
             writeCount.addAndGet(items.size)
         }
     }

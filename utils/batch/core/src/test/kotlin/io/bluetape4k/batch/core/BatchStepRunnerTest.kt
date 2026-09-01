@@ -1,21 +1,25 @@
 package io.bluetape4k.batch.core
 
 import io.bluetape4k.batch.api.BatchProcessor
+import io.bluetape4k.batch.api.BatchInfrastructureFailureException
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.BatchWriter
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.SkipPolicy
 import io.bluetape4k.batch.api.StepReport
+import io.bluetape4k.assertions.shouldBe
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.workflow.api.RetryPolicy
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
-import io.bluetape4k.assertions.shouldBe
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeInstanceOf
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -141,6 +145,15 @@ class BatchStepRunnerTest {
         }
     }
 
+    /** close() 시 예외를 던지는 reader (양쪽 close 실패 테스트용). */
+    class FailOnCloseReader<T : Any> : BatchReader<T> {
+        override suspend fun read(): T? = null
+
+        override suspend fun close() {
+            throw IllegalStateException("reader.close() 실패")
+        }
+    }
+
     /** 기본 JobExecution 팩토리. */
     private fun makeJobExecution(): JobExecution = JobExecution(
         id = 1L,
@@ -219,9 +232,9 @@ class BatchStepRunnerTest {
         report.writeCount shouldBeEqualTo 5L
         report.skipCount shouldBeEqualTo 0L
         writer.collected shouldBeEqualTo listOf("a", "b", "c", "d", "e")
-        reader.wasOpened shouldBe true
-        reader.wasClosed shouldBe true
-        writer.wasClosed shouldBe true
+        reader.wasOpened.shouldBeTrue()
+        reader.wasClosed.shouldBeTrue()
+        writer.wasClosed.shouldBeTrue()
     }
 
     // ─── 2. 빈 리더 ──────────────────────────────────────────────────────────
@@ -237,7 +250,7 @@ class BatchStepRunnerTest {
         report.status shouldBe BatchStatus.COMPLETED
         report.readCount shouldBeEqualTo 0L
         report.writeCount shouldBeEqualTo 0L
-        writer.collected.isEmpty() shouldBe true
+        writer.collected.isEmpty().shouldBeTrue()
     }
 
     // ─── 3. Processor null 필터 ──────────────────────────────────────────────
@@ -419,8 +432,8 @@ class BatchStepRunnerTest {
 
         report.status shouldBe BatchStatus.COMPLETED
         report.readCount shouldBeEqualTo 50L  // 기존 통계 반환
-        reader.wasOpened shouldBe false       // open 호출 없음
-        writer.collected.isEmpty() shouldBe true
+        reader.wasOpened.shouldBeFalse()       // open 호출 없음
+        writer.collected.isEmpty().shouldBeTrue()
     }
 
     // ─── 12. commitTimeout 초과 → WriteTimeoutException → skip 허용 ──────────
@@ -481,23 +494,40 @@ class BatchStepRunnerTest {
         report.status shouldBe BatchStatus.FAILED
         report.error.shouldNotBeNull()
         report.readCount shouldBeEqualTo 0L
-        writer.collected.isEmpty() shouldBe true
+        writer.collected.isEmpty().shouldBeTrue()
     }
 
-    // ─── 15. writer.close() throws → 주 결과 마스킹 없음 ────────────────────
+    // ─── 15. writer.close() throws → 성공 결과 은닉 없음 ────────────────────
 
     @Test
-    fun `15 writer close 실패 - COMPLETED 결과를 마스킹하지 않음`() = runSuspendIO {
+    fun `15 writer close 실패 - 성공 결과 대신 sanitized FAILED를 저장`() = runSuspendIO {
         val reader = ListBatchReader(listOf("a", "b", "c"))
         val writer = FailOnCloseWriter<String>()
         val step = makeStep<String, String>(reader = reader, writer = writer)
 
-        // writer.close()에서 예외가 발생하더라도 COMPLETED 결과를 반환해야 함
         val report = runStep(step)
 
-        report.status shouldBe BatchStatus.COMPLETED
-        report.writeCount shouldBeEqualTo 3L
+        report.status shouldBe BatchStatus.FAILED
+        val failure = report.error.shouldBeInstanceOf<BatchInfrastructureFailureException>()
+        failure.cause shouldBe null
+        failure.category shouldBeEqualTo BatchInfrastructureFailureException.REPOSITORY_FAILURE
+        failure.correlationId.length shouldBeEqualTo 16
         writer.collected shouldBeEqualTo listOf("a", "b", "c")
+
+        repo.findOrCreateStepExecution(makeJobExecution(), step.name).status shouldBe BatchStatus.FAILED
+    }
+
+    @Test
+    fun `reader와 writer close가 모두 실패하면 두 diagnostic을 보존한다`() = runSuspendIO {
+        val reader = FailOnCloseReader<String>()
+        val writer = FailOnCloseWriter<String>()
+        val report = runStep(makeStep(reader = reader, writer = writer))
+
+        report.status shouldBe BatchStatus.FAILED
+        val failure = report.error.shouldBeInstanceOf<BatchInfrastructureFailureException>()
+        failure.cause shouldBe null
+        failure.suppressed shouldHaveSize 1
+        failure.suppressed.single().shouldBeInstanceOf<BatchInfrastructureFailureException>()
     }
 
     // ─── 11. 이미 COMPLETED_WITH_SKIPS ───────────────────────────────────────
@@ -525,6 +555,6 @@ class BatchStepRunnerTest {
 
         report.status shouldBe BatchStatus.COMPLETED_WITH_SKIPS
         report.skipCount shouldBeEqualTo 2L
-        reader.wasOpened shouldBe false
+        reader.wasOpened.shouldBeFalse()
     }
 }
