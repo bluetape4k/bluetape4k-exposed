@@ -3,6 +3,8 @@ package io.bluetape4k.batch.jdbc
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
@@ -157,7 +159,7 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
             val je = findOrCreateJobExecution("myJob", emptyMap())
             je.jobName shouldBeEqualTo "myJob"
             je.status shouldBe BatchStatus.RUNNING
-            (je.id > 0L) shouldBe true
+            (je.id > 0L).shouldBeTrue()
         }
     }
 
@@ -191,7 +193,7 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
             completeJobExecution(je1, BatchStatus.COMPLETED)
 
             val je2 = findOrCreateJobExecution("completedJob", emptyMap())
-            (je2.id > je1.id) shouldBe true
+            (je2.id > je1.id).shouldBeTrue()
         }
     }
 
@@ -352,7 +354,7 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
             val je2 = findOrCreateJobExecution("paramJob", mapOf("date" to "2026-04-11"))
 
             je2.id shouldNotBeEqualTo je1.id
-            (je2.id > je1.id) shouldBe true
+            (je2.id > je1.id).shouldBeTrue()
         }
     }
 
@@ -612,9 +614,9 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
 
     @Test
     fun `unique violation 판정은 JDBC 구조화 식별자만 허용한다`() {
-        SQLException("duplicate", "23505", 0).isUniqueViolation() shouldBe true
-        SQLException("duplicate", "23000", 1062).isUniqueViolation() shouldBe true
-        SQLException("integrity", "23000", 0).isUniqueViolation() shouldBe false
-        SQLException("unique constraint text", "HY000", 0).isUniqueViolation() shouldBe false
+        SQLException("duplicate", "23505", 0).isUniqueViolation().shouldBeTrue()
+        SQLException("duplicate", "23000", 1062).isUniqueViolation().shouldBeTrue()
+        SQLException("integrity", "23000", 0).isUniqueViolation().shouldBeFalse()
+        SQLException("unique constraint text", "HY000", 0).isUniqueViolation().shouldBeFalse()
     }
 }

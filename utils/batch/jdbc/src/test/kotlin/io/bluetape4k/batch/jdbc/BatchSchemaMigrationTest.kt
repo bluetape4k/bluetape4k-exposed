@@ -48,6 +48,10 @@ class BatchSchemaMigrationTest : AbstractBatchJdbcTest() {
                 row[paramsHash] = "shared-hash"
                 row[status] = "COMPLETED"
             }
+            exec(
+                "CREATE UNIQUE INDEX batch_job_exec_active_uidx " +
+                    "ON batch_job_execution (job_name, params_hash, status)",
+            )
 
             val migration = schemaScript(dialect, "V001__active_job_execution_key_migrate.sql")
             executeScript(migration)
@@ -65,6 +69,12 @@ class BatchSchemaMigrationTest : AbstractBatchJdbcTest() {
                     "COMPLETED:null",
                     "STARTING:ACTIVE",
                 )
+            }
+
+            LegacyBatchJobExecutionTable.insert { row ->
+                row[jobName] = "shared-job"
+                row[paramsHash] = "shared-hash"
+                row[status] = "COMPLETED"
             }
         }
     }

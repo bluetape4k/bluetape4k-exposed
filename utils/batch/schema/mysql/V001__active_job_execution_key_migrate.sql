@@ -45,6 +45,21 @@ DEALLOCATE PREPARE migration_statement;
 SET @migration_sql = (
     SELECT IF(
         COUNT(*) = 0,
+        'SELECT 1',
+        'DROP INDEX batch_job_exec_active_uidx ON batch_job_execution'
+    )
+    FROM information_schema.statistics
+    WHERE table_schema = DATABASE()
+      AND table_name = 'batch_job_execution'
+      AND index_name = 'batch_job_exec_active_uidx'
+);
+PREPARE migration_statement FROM @migration_sql;
+EXECUTE migration_statement;
+DEALLOCATE PREPARE migration_statement;
+
+SET @migration_sql = (
+    SELECT IF(
+        COUNT(*) = 0,
         'CREATE UNIQUE INDEX batch_job_execution_active_uidx ON batch_job_execution (job_name, params_hash, active_key)',
         'SELECT 1'
     )

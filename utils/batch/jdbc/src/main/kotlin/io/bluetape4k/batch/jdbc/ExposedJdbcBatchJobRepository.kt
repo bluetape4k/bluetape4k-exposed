@@ -21,6 +21,7 @@ import io.bluetape4k.codec.Base58
 import io.bluetape4k.concurrent.virtualthread.VT
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
+import io.bluetape4k.logging.error
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -720,8 +721,14 @@ class ExposedJdbcBatchJobRepository(
         }
     }
 
-    private fun recoveryExhausted(): Nothing =
-        throw BatchRepositoryRecoveryExhaustedException(Base58.randomString(RECOVERY_CORRELATION_ID_LENGTH))
+    private fun recoveryExhausted(): Nothing {
+        val correlationId = Base58.randomString(RECOVERY_CORRELATION_ID_LENGTH)
+        log.error {
+            "Job repository recovery budget exhausted — " +
+                "category=RECOVERY_EXHAUSTED, correlationId=$correlationId"
+        }
+        throw BatchRepositoryRecoveryExhaustedException(correlationId)
+    }
 
     override suspend fun saveCheckpoint(stepExecutionId: Long, checkpoint: Any) {
         val json = checkpointJson.write(checkpoint)

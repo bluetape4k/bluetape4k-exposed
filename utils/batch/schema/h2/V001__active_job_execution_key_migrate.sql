@@ -16,5 +16,6 @@ ALTER TABLE batch_job_execution ADD CONSTRAINT IF NOT EXISTS batch_job_exec_stat
     OR (status IN ('COMPLETED', 'COMPLETED_WITH_SKIPS') AND active_key IS NULL)
 );
 
+DROP INDEX IF EXISTS batch_job_exec_active_uidx;
 CREATE UNIQUE INDEX IF NOT EXISTS batch_job_execution_active_uidx
     ON batch_job_execution (job_name, params_hash, active_key);
