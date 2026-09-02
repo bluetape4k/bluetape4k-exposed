@@ -20,6 +20,12 @@ WHERE status IN ('STARTING', 'RUNNING', 'FAILED', 'STOPPED')
 GROUP BY job_name, params_hash
 HAVING job_name IS NULL OR params_hash IS NULL OR COUNT(*) > 1;
 
+SELECT COUNT(*) AS legacy_active_params_hash_count
+FROM batch_job_execution
+WHERE status IN ('STARTING', 'RUNNING', 'FAILED', 'STOPPED')
+  AND params_hash <> ''
+  AND params_hash !~ '^[0-9a-f]{64}$';
+
 SELECT indexname, indexdef
 FROM pg_indexes
 WHERE tablename = 'batch_job_execution'

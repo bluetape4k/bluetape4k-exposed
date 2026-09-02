@@ -61,6 +61,10 @@
 
 ### 버그 수정
 
+- batch 2.0 migration이 active legacy parameter hash를 fail-closed로 차단하고,
+  H2·MySQL·PostgreSQL preflight/migrate/postflight SQL을 core와 aggregate JAR에
+  포함하도록 보강했습니다
+  ([#781](https://github.com/bluetape4k/bluetape4k-exposed/issues/781)).
 - R2DBC Redisson 예외 로그에서 원문과 stack trace가 노출되지 않도록 정리하고,
   `EntityMapLoader` 테스트가 테이블을 격리하도록 보강했습니다
   ([#759](https://github.com/bluetape4k/bluetape4k-exposed/issues/759),
