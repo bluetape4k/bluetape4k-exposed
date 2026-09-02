@@ -1,5 +1,31 @@
+import java.util.zip.ZipFile
+import org.gradle.language.jvm.tasks.ProcessResources
+
 plugins {
     alias(bt4k.plugins.kover)
+}
+
+tasks.named<ProcessResources>("processResources") {
+    from(layout.projectDirectory.dir("../schema")) {
+        into("schema")
+    }
+}
+
+val requiredBatchSchemaResources = listOf("h2", "mysql", "postgresql").flatMap { backend ->
+    listOf("preflight", "migrate", "postflight").map { phase ->
+        "schema/$backend/V001__active_job_execution_key_$phase.sql"
+    }
+}
+
+tasks.named<Jar>("jar") {
+    doLast {
+        ZipFile(archiveFile.get().asFile).use { archive ->
+            val missing = requiredBatchSchemaResources.filter { archive.getEntry(it) == null }
+            check(missing.isEmpty()) {
+                "Batch schema resources are missing from ${archiveFile.get().asFile.name}: ${missing.joinToString()}"
+            }
+        }
+    }
 }
 
 kover {

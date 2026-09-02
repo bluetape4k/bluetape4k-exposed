@@ -45,6 +45,22 @@ DEALLOCATE PREPARE migration_statement;
 SET @migration_sql = (
     SELECT IF(
         COUNT(*) = 0,
+        'ALTER TABLE batch_job_execution ADD CONSTRAINT batch_job_exec_active_params_hash_v2_chk CHECK (active_key IS NULL OR params_hash = '''' OR params_hash REGEXP ''^[0-9a-f]{64}$'')',
+        'SELECT 1'
+    )
+    FROM information_schema.table_constraints
+    WHERE table_schema = DATABASE()
+      AND table_name = 'batch_job_execution'
+      AND constraint_name = 'batch_job_exec_active_params_hash_v2_chk'
+      AND constraint_type = 'CHECK'
+);
+PREPARE migration_statement FROM @migration_sql;
+EXECUTE migration_statement;
+DEALLOCATE PREPARE migration_statement;
+
+SET @migration_sql = (
+    SELECT IF(
+        COUNT(*) = 0,
         'SELECT 1',
         'DROP INDEX batch_job_exec_active_uidx ON batch_job_execution'
     )

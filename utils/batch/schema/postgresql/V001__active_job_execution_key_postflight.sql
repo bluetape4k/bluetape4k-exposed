@@ -15,6 +15,12 @@ WHERE active_key = 'ACTIVE'
 GROUP BY job_name, params_hash
 HAVING COUNT(*) > 1;
 
+SELECT COUNT(*) AS legacy_active_params_hash_count
+FROM batch_job_execution
+WHERE active_key = 'ACTIVE'
+  AND params_hash <> ''
+  AND params_hash !~ '^[0-9a-f]{64}$';
+
 SELECT indexname
 FROM pg_indexes
 WHERE tablename = 'batch_job_execution'

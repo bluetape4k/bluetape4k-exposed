@@ -89,11 +89,12 @@ Treat the parameter map and every nested collection or array as immutable for
 the entire repository call. Concurrent mutation is unsupported because the
 identity hash and persisted parameter payload must describe the same input.
 
-An empty parameter map keeps the existing `""` hash rule. The `v2` algorithm
-changes non-empty hashes from the legacy `key=value&...` format; existing rows
-with legacy hashes are not silently matched. Before a rollout, re-key or
-retire active legacy rows from their persisted parameters in a controlled
-migration, then use only `v2` for new executions.
+빈 parameter map은 기존 `""` hash 규칙을 유지합니다. `v2` algorithm은 non-empty
+hash를 legacy `key=value&...` 형식에서 64자리 lowercase SHA-256으로 변경합니다.
+preflight가 active legacy hash를 한 건이라도 보고하면 rollout을 중단해야 합니다.
+authoritative persisted parameter에서 `v2` hash를 다시 계산하거나 해당 실행을
+terminal history로 retire한 뒤 preflight를 다시 실행하십시오. active legacy row를
+남긴 채 2.0 runtime을 시작하는 경로는 지원하지 않습니다.
 
 ### Workflow Embedding
 
@@ -158,11 +159,18 @@ SkipPolicy { e, count -> e is DataException && count < 50 }  // custom
 
 `batch_job_execution` uses a unique index on `(job_name, params_hash, active_key)` to allow at most one reusable execution. `active_key` is `ACTIVE` for `STARTING`, `RUNNING`, `FAILED`, and `STOPPED` rows, and `NULL` for `COMPLETED` and `COMPLETED_WITH_SKIPS` history. This contract relies on `NULLS DISTINCT` behavior in PostgreSQL, MySQL 8.0.16+ InnoDB, and H2.
 
-Apply the existing-schema artifacts before starting the new runtime. The library does not execute production DDL during application startup.
+새 runtime을 시작하기 전에 existing-schema artifact를 적용하십시오. library는
+application startup 중 production DDL을 실행하지 않습니다. SQL은
+`bluetape4k-exposed-batch-core` JAR과 aggregate JAR의
+`schema/<backend>/V001__active_job_execution_key_{preflight,migrate,postflight}.sql`
+classpath에 포함됩니다.
 
-1. Quiesce writers and run `schema/<backend>/V001__active_job_execution_key_preflight.sql`; unknown statuses, null `params_hash` values in every status, and active duplicates must be absent.
-2. Run `schema/<backend>/V001__active_job_execution_key_migrate.sql` with the migration role.
-3. Run `schema/<backend>/V001__active_job_execution_key_postflight.sql`; open traffic only when every diagnostic count is zero and `batch_job_execution_active_uidx` exists.
+1. writer를 quiesce하고 preflight를 실행합니다. unknown status, 모든 status의 null
+   `params_hash`, active duplicate, non-empty legacy active hash가 없어야 합니다.
+2. migration role로 migrate script를 실행합니다. PostgreSQL은 한 transaction 안에서
+   재실행할 수 있고 MySQL은 각 DDL을 `information_schema`로 guard합니다.
+3. postflight를 실행합니다. 모든 diagnostic count가 0이고
+   `batch_job_execution_active_uidx`가 존재할 때만 traffic을 다시 엽니다.
 
 The MySQL migration guards each column, CHECK, and index DDL because MySQL uses
 implicit commits. After a partial failure, keep writers quiesced, pass preflight
