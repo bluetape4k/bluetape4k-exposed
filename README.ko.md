@@ -57,18 +57,13 @@ Column codec, 데이터베이스별 helper, Spring Boot 4 자동 설정을 더�
 
 ## 릴리스 경계
 
-- **최신 안정판:** `1.12.1` (2026-08-06). 현재 release-pinned 매뉴얼은 이 ref를 사용합니다.
-- **현재 개발선:** `develop`의 `2.0.0`. TenantContext Ktor adapter와 완료된 train 변경은
-  소스에서 확인할 수 있지만 `2.0.0`은 아직 공개 배포되지 않았습니다.
-- 공개 `2.0.0` tag, Maven artifact, GitHub Release가 준비될 때까지 안정판 매뉴얼 anchor는
-  `1.12.1`로 유지합니다. 승격 작업은 [#651](https://github.com/bluetape4k/bluetape4k-exposed/issues/651)과
-  [#662](https://github.com/bluetape4k/bluetape4k-exposed/issues/662)에서 추적합니다.
+- **최신 안정판:** `2.0.0` (2026-09-02). release-pinned 매뉴얼은 이 ref를 사용합니다.
+- **현재 개발선:** `develop`의 `2.1.0-SNAPSHOT`.
 
 ## 모듈 목록
 
-모듈 목록에는 안정판 `1.12.1`과 현재 `2.0.0` 개발선이 함께 포함되어 있습니다.
-**2.0.0 develop-only(미배포)**로 표시한 행은 안정판 BOM에서 제공되지 않으므로
-일치하는 snapshot 또는 source checkout을 사용해야 합니다.
+아래 모듈은 안정판 `2.0.0` BOM에 포함됩니다. `develop`의 새 변경은
+`2.1.0-SNAPSHOT` 개발선을 대상으로 합니다.
 
 | 모듈 | 설명 |
 |------|------|
@@ -100,18 +95,18 @@ Column codec, 데이터베이스별 helper, Spring Boot 4 자동 설정을 더�
 | `exposed-duckdb` | DuckDB embedded analytics 지원 |
 | `exposed-druid` | Apache Druid query-only Avatica JDBC 실험 |
 | `exposed-timefold-solver-persistence` | Timefold Score 값을 위한 Exposed 컬럼 매핑 |
-| `exposed-batch` | Batch utility 호환성 aggregator (**2.0.0 develop-only, 미배포**) |
-| `exposed-batch-core` | Backend-neutral batch 계약과 in-memory repository (**2.0.0 develop-only, 미배포**) |
-| `exposed-batch-jdbc` | JDBC batch table, mapper, reader, writer (**2.0.0 develop-only, 미배포**) |
-| `exposed-batch-r2dbc` | R2DBC batch table, mapper, reader, writer (**2.0.0 develop-only, 미배포**) |
+| `exposed-batch` | Batch utility 호환성 aggregator |
+| `exposed-batch-core` | Backend-neutral batch 계약과 in-memory repository |
+| `exposed-batch-jdbc` | JDBC batch table, mapper, reader, writer |
+| `exposed-batch-r2dbc` | R2DBC batch table, mapper, reader, writer |
 | `exposed-ktor` | 명시적 Exposed JDBC/R2DBC 트랜잭션, readiness route, status page용 Ktor 통합 |
-| `exposed-ktor-core` | Backend-neutral Ktor 계약, error response, health/readiness route (**2.0.0 develop-only, 미배포**) |
-| `exposed-ktor-jdbc` | JDBC 전용 Ktor transaction bridge (**2.0.0 develop-only, 미배포**) |
-| `exposed-ktor-r2dbc` | R2DBC 전용 coroutine-native Ktor transaction bridge (**2.0.0 develop-only, 미배포**) |
-| `exposed-ktor-cache` | Ktor cache health 및 metrics 통합 (**2.0.0 develop-only, 미배포**) |
-| `exposed-ktor-tenant-jdbc` | Ktor TenantContext 기반 JDBC transaction routing (**2.0.0 develop-only, 미배포**) |
-| `exposed-ktor-tenant-r2dbc` | Ktor TenantContext 기반 coroutine-native R2DBC transaction routing (**2.0.0 develop-only, 미배포**) |
-| `exposed-spring-boot-common` | Spring Data annotation, mapping, query planning 공통 모듈 (**2.0.0 develop-only, 미배포**) |
+| `exposed-ktor-core` | Backend-neutral Ktor 계약, error response, health/readiness route |
+| `exposed-ktor-jdbc` | JDBC 전용 Ktor transaction bridge |
+| `exposed-ktor-r2dbc` | R2DBC 전용 coroutine-native Ktor transaction bridge |
+| `exposed-ktor-cache` | Ktor cache health 및 metrics 통합 |
+| `exposed-ktor-tenant-jdbc` | Ktor TenantContext 기반 JDBC transaction routing |
+| `exposed-ktor-tenant-r2dbc` | Ktor TenantContext 기반 coroutine-native R2DBC transaction routing |
+| `exposed-spring-boot-common` | Spring Data annotation, mapping, query planning 공통 모듈 |
 | `exposed-spring-boot-jdbc` | Spring Boot 4.x JDBC 자동 설정 |
 | `exposed-spring-boot-r2dbc` | Spring Boot 4.x R2DBC 자동 설정 |
 | `exposed-spring-boot-batch` | Spring Boot 4.x Batch 통합 |
@@ -225,10 +220,8 @@ dependencies {
 }
 ```
 
-TenantContext 어댑터는 **2.0.0 develop-only(미배포)**이며 안정판 `1.12.1` BOM에
-포함되지 않습니다. 사용하려면 아래 snapshot repository와 일치하는 `2.0.0`
-snapshot을 사용하거나 현재 source checkout을 빌드하세요. 안정판 `1.12.1`
-의존성 집합에 이 좌표를 추가하면 안 됩니다.
+TenantContext 어댑터는 안정판 `2.0.0` BOM에 포함됩니다. 아래 snapshot
+repository는 `2.1.0-SNAPSHOT` 개발선의 변경을 사용할 때만 필요합니다.
 
 ```kotlin
 dependencies {
@@ -672,9 +665,8 @@ JDBC 작업은 blocking입니다. 전용 dispatcher를 넘기고 애플리케이
 readiness triage, rollback, non-goal은 [ktor/exposed/README.ko.md](ktor/exposed/README.ko.md)를
 참고하세요.
 
-아래 tenant 매뉴얼은 **2.0.0 develop-only(미배포)** 모듈을 설명하며 안정판
-`1.12.1` 매뉴얼 anchor에 포함되지 않습니다. tenant마다 database를 사용할 때는
-backend별 opt-in 어댑터를 추가하고 routing
+아래 tenant 매뉴얼은 안정판 `2.0.0`에 포함된 모듈을 설명합니다. tenant마다
+database를 사용할 때는 backend별 opt-in 어댑터를 추가하고 routing
 전에 검증된 `TenantId`를 binding하세요. `databases::getValue` 같은 immutable
 exact-match resolver를 사용하면 context 누락은 해석보다 먼저 실패하고 알 수
 없는 tenant는 기본 database로 fallback하지 않습니다. JDBC 어댑터에는
