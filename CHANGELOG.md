@@ -7,6 +7,8 @@
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-09-02
+
 ### 추가됨
 
 - Ktor `ApplicationCall`에 binding된 `TenantId`를 검증된 exact-match resolver로 전달하는
