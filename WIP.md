@@ -1,8 +1,7 @@
 # 진행 중인 작업 - bluetape4k-exposed
 
-기준 시점: 2026-08-30 KST<br>
-기준 브랜치: `develop` (`42e2e6ad6583e6631fc0db244a09546f1df9b056`, PR
-[#764](https://github.com/bluetape4k/bluetape4k-exposed/pull/764) 병합 직후)<br>
+기준 시점: 2026-09-02 KST<br>
+기준 브랜치: `develop` (`7b43b624985dc3bb631d5d257214524f0fd384cd`)<br>
 개발선: `2.0.0` (`gradle.properties`의 `baseVersion=2.0.0`)<br>
 최신 안정 릴리스: `1.12.1` (2026-08-06)
 
@@ -12,8 +11,10 @@
 TenantContext 기반 Ktor JDBC/R2DBC transaction bridge가 이슈
 [#763](https://github.com/bluetape4k/bluetape4k-exposed/issues/763) 및 PR
 [#764](https://github.com/bluetape4k/bluetape4k-exposed/pull/764)로 병합되었고,
-현재 `develop`을 대상으로 한 열린 구현 PR은 없습니다. 문서 동기화 PR은 이
-구현 상태와 별도로 열릴 수 있습니다.
+현재 `develop`을 대상으로 한 열린 구현 PR은 없습니다. 이슈
+[#780](https://github.com/bluetape4k/bluetape4k-exposed/issues/780)은
+`2.0.0` 정식 배포 source를 stable Dependencies catalog에 고정하는 release-prep
+작업이며 새 기능이나 API 변경을 포함하지 않습니다.
 
 `2.0.0` 구현 대기열에서 현재 추적하는 작업은 공개 릴리스 이후 매뉴얼 승격
 handoff뿐입니다.
@@ -50,8 +51,7 @@ handoff뿐입니다.
 
 ## 다음 단계
 
-1. 새 기능이 `develop`에 병합될 때 이 문서와 `CHANGELOG.md`의 `Unreleased` 항목을 함께
-   갱신합니다.
+1. #780의 release-prep 검증을 끝낸 exact `develop` head에 `2.0.0` tag를 생성합니다.
 2. `2.0.0` tag, Maven artifact, GitHub Release가 실제로 공개되면 #651의 release anchor
    승격을 실행하고 #662 handoff를 완료합니다.
 3. 승격 시 `export_manifest`, manual validator, 한영 parity, release commit readback을
