@@ -58,19 +58,13 @@ files remain concise entry points; detailed behavior belongs in `central manual`
 
 ## Release lines
 
-- **Latest stable:** `1.12.1` (2026-08-06). The release-pinned manual currently uses this ref.
-- **Current development:** `2.0.0` on `develop`. TenantContext Ktor adapters and the other
-  completed train changes are available from the source line, but `2.0.0` has not been
-  published yet.
-- The stable manual anchor remains `1.12.1` until the public `2.0.0` tag, Maven artifact,
-  and GitHub Release are available. Follow [#651](https://github.com/bluetape4k/bluetape4k-exposed/issues/651)
-  and [#662](https://github.com/bluetape4k/bluetape4k-exposed/issues/662) for that promotion.
+- **Latest stable:** `2.0.0` (2026-09-02). The release-pinned manual uses this ref.
+- **Current development:** `2.1.0-SNAPSHOT` on `develop`.
 
 ## Modules
 
-The module list includes both the stable `1.12.1` line and the current
-`2.0.0` development line. Rows marked **2.0.0 develop-only (unpublished)** are
-not available from the stable BOM; use a matching snapshot or source checkout.
+The stable `2.0.0` BOM contains the modules below. New changes on `develop`
+target the `2.1.0-SNAPSHOT` line.
 
 | Module | Description |
 |--------|-------------|
@@ -102,18 +96,18 @@ not available from the stable BOM; use a matching snapshot or source checkout.
 | `exposed-duckdb` | DuckDB embedded analytics support |
 | `exposed-druid` | Apache Druid query-only Avatica JDBC experiment |
 | `exposed-timefold-solver-persistence` | Exposed column mappings for Timefold Score values |
-| `exposed-batch` | Compatibility aggregator for batch utilities (**2.0.0 develop-only, unpublished**) |
-| `exposed-batch-core` | Backend-neutral batch contracts and in-memory repository (**2.0.0 develop-only, unpublished**) |
-| `exposed-batch-jdbc` | JDBC batch tables, mappers, readers, and writers (**2.0.0 develop-only, unpublished**) |
-| `exposed-batch-r2dbc` | R2DBC batch tables, mappers, readers, and writers (**2.0.0 develop-only, unpublished**) |
+| `exposed-batch` | Compatibility aggregator for batch utilities |
+| `exposed-batch-core` | Backend-neutral batch contracts and in-memory repository |
+| `exposed-batch-jdbc` | JDBC batch tables, mappers, readers, and writers |
+| `exposed-batch-r2dbc` | R2DBC batch tables, mappers, readers, and writers |
 | `exposed-ktor` | Ktor integration for explicit Exposed JDBC/R2DBC transactions, readiness routes, and status pages |
-| `exposed-ktor-core` | Backend-neutral Ktor contracts, error responses, and health/readiness routes (**2.0.0 develop-only, unpublished**) |
-| `exposed-ktor-jdbc` | JDBC-specific Ktor transaction bridge (**2.0.0 develop-only, unpublished**) |
-| `exposed-ktor-r2dbc` | R2DBC-specific coroutine-native Ktor transaction bridge (**2.0.0 develop-only, unpublished**) |
-| `exposed-ktor-cache` | Ktor cache health and metrics integration (**2.0.0 develop-only, unpublished**) |
-| `exposed-ktor-tenant-jdbc` | TenantContext-based JDBC transaction routing for Ktor (**2.0.0 develop-only, unpublished**) |
-| `exposed-ktor-tenant-r2dbc` | TenantContext-based coroutine-native R2DBC transaction routing for Ktor (**2.0.0 develop-only, unpublished**) |
-| `exposed-spring-boot-common` | Shared Spring Data annotations, mapping, and query planning (**2.0.0 develop-only, unpublished**) |
+| `exposed-ktor-core` | Backend-neutral Ktor contracts, error responses, and health/readiness routes |
+| `exposed-ktor-jdbc` | JDBC-specific Ktor transaction bridge |
+| `exposed-ktor-r2dbc` | R2DBC-specific coroutine-native Ktor transaction bridge |
+| `exposed-ktor-cache` | Ktor cache health and metrics integration |
+| `exposed-ktor-tenant-jdbc` | TenantContext-based JDBC transaction routing for Ktor |
+| `exposed-ktor-tenant-r2dbc` | TenantContext-based coroutine-native R2DBC transaction routing for Ktor |
+| `exposed-spring-boot-common` | Shared Spring Data annotations, mapping, and query planning |
 | `exposed-spring-boot-jdbc` | Spring Boot 4.x JDBC auto-configuration |
 | `exposed-spring-boot-r2dbc` | Spring Boot 4.x R2DBC auto-configuration |
 | `exposed-spring-boot-batch` | Spring Boot 4.x batch integration |
@@ -231,11 +225,9 @@ dependencies {
 }
 ```
 
-The TenantContext adapters are **2.0.0 develop-only and unpublished**. They
-are not present in the stable `1.12.1` BOM. To try them, use a matching
-`2.0.0` snapshot with the snapshot repository below, or build the current
-source checkout; do not add these coordinates to a stable `1.12.1` dependency
-set.
+The TenantContext adapters are available in the stable `2.0.0` BOM. The
+snapshot repository below is needed only for changes on the `2.1.0-SNAPSHOT`
+development line.
 
 ```kotlin
 dependencies {
@@ -682,9 +674,8 @@ application-owned lifecycle. R2DBC work stays coroutine-native through
 [ktor/exposed/README.md](ktor/exposed/README.md) for StatusPages composition,
 readiness triage, rollback, and non-goals.
 
-The tenant manuals below describe **2.0.0 develop-only (unpublished)** modules;
-they are not part of the stable `1.12.1` manual anchor. For one database per
-tenant, add the backend-specific opt-in adapter and bind
+The tenant manuals below describe modules published in the stable `2.0.0`
+line. For one database per tenant, add the backend-specific opt-in adapter and bind
 the validated `TenantId` before routing. Use an immutable exact-match resolver
 such as `databases::getValue`; missing context fails before resolution and an
 unknown tenant never falls back to a default database. The JDBC adapter requires
