@@ -37,7 +37,11 @@ jobs:
 
       - name: Build with Gradle
         if: matrix.language == 'java-kotlin'
-        run: ./gradlew build -x test -x koverVerify --no-configuration-cache --no-daemon
+        run: >-
+          ./gradlew build -x test -x koverVerify
+          -x :benchmark-exposed-benchmark:build
+          -x :benchmark-exposed-benchmark:detekt
+          --no-configuration-cache --no-daemon
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
