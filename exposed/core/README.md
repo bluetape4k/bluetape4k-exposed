@@ -14,6 +14,7 @@ A foundation module that provides shared column types, table helpers, extension 
   `phoneNumberString`) based on Google libphonenumber
 - **Column extension functions**: Client-side ID generation (`timebasedGenerated`, `snowflakeGenerated`,
   `ksuidGenerated`, `ulidGenerated`, etc.)
+- **Kotlin UUID ID tables**: `KotlinUuidTable` backed by Exposed `UuidTable`, with V4 by default and V7 opt-in
 - **ResultRow extensions**: Helpers like `getOrNull` and `toMap`
 - **Blob extensions**: Utility functions for `ExposedBlob`
 - **Batch insert**: `BatchInsertOnConflictDoNothing` (ignore-duplicate batch insert)
@@ -87,6 +88,32 @@ object Orders: IntIdTable("orders") {
     val name = varchar("name", 255)
 }
 ```
+
+#### Kotlin UUID ID table
+
+`KotlinUuidTable` is the bluetape4k adapter for Exposed's `kotlin.uuid.Uuid` identity table. IDs are generated on
+the client immediately before insert. `UuidVersion.V4` is the default; select `UuidVersion.V7` when time-sortable
+UUIDs are required. The table-level version applies only to the `id` column; use Exposed's column-level
+`autoGenerate(UuidVersion.V4)` or `autoGenerate(UuidVersion.V7)` when defining additional Kotlin UUID columns.
+This is separate from `TimebasedUUIDTable`, which uses `java.util.UUID`.
+
+```kotlin
+import io.bluetape4k.exposed.core.dao.id.KotlinUuidTable
+import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.Table.UuidVersion
+
+object Events: KotlinUuidTable("events", uuidVersion = UuidVersion.V7) {
+    val payload = text("payload")
+}
+
+object EventLinks: Table("event_links") {
+    val eventId = uuid("event_id").autoGenerate(UuidVersion.V7)
+}
+```
+
+When migrating from `TimebasedUUIDTable`, replace `java.util.UUID` references with `kotlin.uuid.Uuid` only when
+the surrounding API is ready for the type change. Existing Java UUID tables keep their original schema and ABI;
+do not mix the two UUID types in the same entity contract.
 
 ### 2. Compressed column types
 
@@ -251,6 +278,7 @@ token, which remains the caller's responsibility.
 | File                                               | Description                                        |
 |----------------------------------------------------|----------------------------------------------------|
 | `ColumnExtensions.kt`                              | Client-side ID auto-generation extension functions |
+| `dao/id/KotlinUuidTable.kt`                        | Kotlin `Uuid` ID table with V4/V7 generation        |
 | `ExposedColumnSupports.kt`                         | Column type support utilities                      |
 | `ResultRowExtensions.kt`                           | ResultRow processing extensions                    |
 | `BatchInsertOnConflictDoNothing.kt`                | Ignore-duplicate batch insert                      |
