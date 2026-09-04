@@ -362,7 +362,12 @@ python3 bluetape4k-dependencies/scripts/sync-shared-versions.py \
   --check --summary
 ```
 
+From the workspace root, enter the repository checkout before running the
+fixture commands below. If you are using a linked worktree, replace the path
+with that worktree root; omit the `cd` when already there.
+
 ```bash
+cd bluetape4k-exposed
 ./gradlew :exposed-spring-boot-jdbc-demo:generateMigrations --filename=V1__create_products.sql --rerun --no-build-cache --no-configuration-cache --no-daemon
 ./gradlew :exposed-spring-boot-r2dbc-demo:generateMigrations --filename=V1__create_webflux_products.sql --rerun --no-build-cache --no-configuration-cache --no-daemon
 git status --short --untracked-files=all -- examples/jdbc-demo/src/main/resources/db/migration examples/r2dbc-demo/src/main/resources/db/migration

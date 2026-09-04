@@ -354,7 +354,12 @@ python3 bluetape4k-dependencies/scripts/sync-shared-versions.py \
   --check --summary
 ```
 
+workspace root에서 아래 fixture 명령을 실행하기 전에 repository checkout으로
+이동합니다. linked worktree를 사용한다면 해당 worktree root 경로로 바꾸고, 이미
+그 위치에 있다면 `cd` 줄을 생략합니다.
+
 ```bash
+cd bluetape4k-exposed
 ./gradlew :exposed-spring-boot-jdbc-demo:generateMigrations --filename=V1__create_products.sql --rerun --no-build-cache --no-configuration-cache --no-daemon
 ./gradlew :exposed-spring-boot-r2dbc-demo:generateMigrations --filename=V1__create_webflux_products.sql --rerun --no-build-cache --no-configuration-cache --no-daemon
 git status --short --untracked-files=all -- examples/jdbc-demo/src/main/resources/db/migration examples/r2dbc-demo/src/main/resources/db/migration
