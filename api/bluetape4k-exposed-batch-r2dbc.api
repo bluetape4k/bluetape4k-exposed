@@ -39,6 +39,7 @@ public final class io/bluetape4k/batch/r2dbc/ExposedR2dbcBatchReader$Companion :
 public final class io/bluetape4k/batch/r2dbc/ExposedR2dbcBatchWriter : io/bluetape4k/batch/api/BatchWriter {
 	public static final field Companion Lio/bluetape4k/batch/r2dbc/ExposedR2dbcBatchWriter$Companion;
 	public fun <init> (Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function2;)V
+	public fun <init> (Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;Lorg/jetbrains/exposed/v1/core/Table;ZLkotlin/jvm/functions/Function2;)V
 	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun open (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun write (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

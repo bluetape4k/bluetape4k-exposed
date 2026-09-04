@@ -4,6 +4,36 @@ English | [한국어](./README.ko.md)
 
 Provides extension functions and the Repository pattern for use with Exposed in R2DBC environments.
 
+## Opt-in multi-row VALUES
+
+Existing `batchInsert` calls keep the legacy path. Exposed 1.5.0 multi-row SQL is
+available through an additional overload with a required `useMultiRowValues` argument:
+
+```kotlin
+// Inside the caller's suspendTransaction {}:
+repository.batchInsert(items, useMultiRowValues = true) { item ->
+    this[Items.name] = item.name
+}
+```
+
+`false` delegates to the existing overload, including its `ignore` and generated-value
+settings. The repository rejects `true` combined with `ignore=true` before consuming
+input or executing SQL, even for empty input: Exposed 1.5.0 cannot reliably map
+partially ignored multi-row results. Use the legacy path when ignoring conflicts.
+
+For multi-row input, collection is bounded to the allowed row count plus one.
+The estimate `rows × table.columns.size` must not exceed 65,535 (SQLite: 32,766).
+This is not an exact bind count or a guarantee for every driver; use smaller chunks
+for expressions with multiple binds or lower driver limits. Valid empty input is
+a no-op. Oversized input is rejected before the binder/INSERT, without rolling back
+earlier work in the caller's transaction. On SQL failure, the caller must roll back.
+
+H2/PostgreSQL tests cover ordinary inserts, nullable values, generated IDs and input
+order. MySQL/Oracle generated-key combinations are not verified; use `false` when
+reliable generated-ID mapping is required. With `shouldReturnGeneratedValues=false`,
+the mapper must not require DB-generated values. `saveAll` is unchanged.
+SQL tuple/parameter-set observations do not establish network round-trips or a speedup.
+
 ## Overview
 
 `exposed-r2dbc` builds on the JetBrains Exposed R2DBC (Reactive Relational Database Connectivity) driver to deliver extensions for asynchronous, reactive database operations. Fully compatible with Kotlin Coroutines.

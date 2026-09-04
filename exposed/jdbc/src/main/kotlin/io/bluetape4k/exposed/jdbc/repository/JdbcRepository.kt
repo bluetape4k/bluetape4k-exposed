@@ -2,12 +2,14 @@ package io.bluetape4k.exposed.jdbc.repository
 
 import io.bluetape4k.exposed.core.ExposedPage
 import io.bluetape4k.support.requireGe
+import io.bluetape4k.support.requireLe
 import io.bluetape4k.support.requirePositiveNumber
 import org.jetbrains.exposed.v1.core.AbstractQuery
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.eq
@@ -16,6 +18,8 @@ import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.BatchUpsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.jetbrains.exposed.v1.core.statements.UpsertBuilder
+import org.jetbrains.exposed.v1.core.vendors.SQLiteDialect
+import org.jetbrains.exposed.v1.core.vendors.currentDialect
 import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.batchUpsert
 import org.jetbrains.exposed.v1.jdbc.deleteIgnoreWhere
@@ -26,6 +30,21 @@ import org.jetbrains.exposed.v1.jdbc.update
 import java.util.*
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+
+/**
+ * Exposed 1.5.0의 행 수 추정 한도를 INSERT 전에 확인합니다.
+ * 실행 경계별 모듈 독립성을 유지하기 위해 JDBC/R2DBC에서 같은 작은 검증을 사용합니다.
+ */
+private fun <D> multiRowValuesData(iterator: Iterator<D>, table: Table): List<D> {
+    if (!iterator.hasNext()) return emptyList()
+    val columns = table.columns.size
+    val parameterLimit = if (currentDialect is SQLiteDialect) 32_766 else 65_535
+    val rows = iterator.asSequence().take(parameterLimit / columns.coerceAtLeast(1) + 1).toList()
+    (rows.size.toLong() * columns.toLong()).requireLe(parameterLimit.toLong()) {
+        "Multi-row VALUES limit exceeded: rows=${rows.size}, columns=$columns, parameterLimit=$parameterLimit"
+    }
+    return rows
+}
 
 /**
  * [IdTable]을 기반으로 Exposed JDBC를 사용하는 기본 저장소 인터페이스입니다.
@@ -529,6 +548,93 @@ interface JdbcRepository<ID: Any, E: Any> {
                 shouldReturnGeneratedValues = shouldReturnGeneratedValues,
                 body = insertStatement
             ).map { it.toEntity() }
+
+
+    /**
+     * [useMultiRowValues]로 multi-row VALUES를 명시적으로 선택하여 삽입합니다.
+     *
+     * `false`는 기존 batchInsert에 위임합니다. `true`는 입력을 허용 행 수 + 1개까지만
+     * 수집하고, 행 수 × 전체 컬럼 수가 Exposed 한도(일반 65,535, SQLite 32,766)를
+     * 넘으면 바인더·INSERT 실행 전에 거부합니다. 이 값은 실제 bind 수의 추정치이며,
+     * 여러 bind를 만드는 표현식과 더 작은 driver 한도는 호출자가 청크를 줄여 관리해야 합니다.
+     *
+     * 기존 외부 트랜잭션의 선행 쓰기는 취소하지 않습니다. SQL 오류는 그대로 전파하므로
+     * 호출자가 rollback해야 합니다. 입력 수집은 O(허용 행 수)의 참조 메모리를 사용합니다.
+     * `true`와 `ignore=true` 조합은 빈 입력도 순회 전에 거부합니다. 충돌 무시는 기존
+     * `false` 경로를 사용하십시오. 생성 ID가 필요한 MySQL/Oracle 등
+     * 미검증 조합은 `false`를 사용하십시오. 생성 값 요청을 끄면 mapper가 해당 값을 요구하면 안 됩니다.
+     *
+     * @param entities 삽입할 데이터
+     * @param ignore 방언이 지원하는 중복 무시 옵션. 기본값은 false입니다.
+     * @param shouldReturnGeneratedValues 생성 값 요청 여부. 기본값은 true입니다.
+     * @param useMultiRowValues multi-row VALUES 사용 여부. 생략한 기존 호출은 false 경로입니다.
+     * @param insertStatement 각 데이터의 컬럼 할당. 외부 부작용을 두지 마십시오.
+     * @return Exposed가 반환한 행을 매핑한 엔티티. 중복 무시 시 입력보다 적을 수 있습니다.
+     * @throws IllegalArgumentException multi-row와 ignore를 함께 요청하거나 행 수 추정 한도를 초과한 경우
+     */
+    fun <D> batchInsert(
+        entities: Iterable<D>,
+        ignore: Boolean = false,
+        shouldReturnGeneratedValues: Boolean = true,
+        useMultiRowValues: Boolean,
+        insertStatement: BatchInsertStatement.(D) -> Unit,
+    ): List<E> {
+        if (!useMultiRowValues) {
+            return batchInsert(entities, ignore, shouldReturnGeneratedValues, insertStatement)
+        }
+        require(!ignore) { "useMultiRowValues=true cannot be combined with ignore=true; use the legacy batch path" }
+        val rows = multiRowValuesData(entities.iterator(), table)
+        return if (rows.isEmpty()) emptyList() else table.batchInsert(
+            data = rows,
+            useMultiRowValues = true,
+            ignore = ignore,
+            shouldReturnGeneratedValues = shouldReturnGeneratedValues,
+            body = insertStatement,
+        ).map { it.toEntity() }
+    }
+
+    /**
+     * [useMultiRowValues]로 multi-row VALUES를 명시적으로 선택하여 삽입합니다.
+     *
+     * `false`는 기존 batchInsert에 위임합니다. `true`는 입력을 허용 행 수 + 1개까지만
+     * 수집하고, 행 수 × 전체 컬럼 수가 Exposed 한도(일반 65,535, SQLite 32,766)를
+     * 넘으면 바인더·INSERT 실행 전에 거부합니다. 이 값은 실제 bind 수의 추정치이며,
+     * 여러 bind를 만드는 표현식과 더 작은 driver 한도는 호출자가 청크를 줄여 관리해야 합니다.
+     *
+     * 기존 외부 트랜잭션의 선행 쓰기는 취소하지 않습니다. SQL 오류는 그대로 전파하므로
+     * 호출자가 rollback해야 합니다. 입력 수집은 O(허용 행 수)의 참조 메모리를 사용합니다.
+     * `true`와 `ignore=true` 조합은 빈 입력도 순회 전에 거부합니다. 충돌 무시는 기존
+     * `false` 경로를 사용하십시오. 생성 ID가 필요한 MySQL/Oracle 등
+     * 미검증 조합은 `false`를 사용하십시오. 생성 값 요청을 끄면 mapper가 해당 값을 요구하면 안 됩니다.
+     *
+     * @param entities 삽입할 1회 순회 시퀀스
+     * @param ignore 방언이 지원하는 중복 무시 옵션. 기본값은 false입니다.
+     * @param shouldReturnGeneratedValues 생성 값 요청 여부. 기본값은 true입니다.
+     * @param useMultiRowValues multi-row VALUES 사용 여부. 생략한 기존 호출은 false 경로입니다.
+     * @param insertStatement 각 데이터의 컬럼 할당. 외부 부작용을 두지 마십시오.
+     * @return Exposed가 반환한 행을 매핑한 엔티티. 중복 무시 시 입력보다 적을 수 있습니다.
+     * @throws IllegalArgumentException multi-row와 ignore를 함께 요청하거나 행 수 추정 한도를 초과한 경우
+     */
+    fun <D> batchInsert(
+        entities: Sequence<D>,
+        ignore: Boolean = false,
+        shouldReturnGeneratedValues: Boolean = true,
+        useMultiRowValues: Boolean,
+        insertStatement: BatchInsertStatement.(D) -> Unit,
+    ): List<E> {
+        if (!useMultiRowValues) {
+            return batchInsert(entities, ignore, shouldReturnGeneratedValues, insertStatement)
+        }
+        require(!ignore) { "useMultiRowValues=true cannot be combined with ignore=true; use the legacy batch path" }
+        val rows = multiRowValuesData(entities.iterator(), table)
+        return if (rows.isEmpty()) emptyList() else table.batchInsert(
+            data = rows,
+            useMultiRowValues = true,
+            ignore = ignore,
+            shouldReturnGeneratedValues = shouldReturnGeneratedValues,
+            body = insertStatement,
+        ).map { it.toEntity() }
+    }
 
     /**
      * [entities]를 배치 업서트하고 [ResultRow.toEntity]로 매핑한 결과 엔티티를 반환합니다.
