@@ -102,6 +102,32 @@ def validate(workflow: str) -> List[str]:
         if "path: examples/ddd-spring-modulith-demo/build/reports/kover/" not in examples:
             errors.append("examples coverage artifact must be scoped to the instrumented demo")
 
+    batch_start = workflow.find("  test-utils-batch:\n")
+    coverage_start = workflow.find("  # Coverage aggregation\n", batch_start + 1)
+    if batch_start < 0 or coverage_start < 0:
+        errors.append("utils-batch coverage contract cannot locate test-utils-batch job")
+    else:
+        batch = workflow[batch_start:coverage_start]
+        for task in (
+            ":bluetape4k-exposed-batch-core:koverXmlReport",
+            ":bluetape4k-exposed-batch-jdbc:koverXmlReport",
+            ":bluetape4k-exposed-batch-r2dbc:koverXmlReport",
+        ):
+            if task not in batch:
+                errors.append(f"utils-batch coverage job is missing {task}")
+        aggregator_task = ":bluetape4k-exposed-batch:koverXmlReport"
+        if aggregator_task in batch:
+            errors.append(f"utils-batch coverage job invokes an uninstrumented task: {aggregator_task}")
+        for path in (
+            "utils/batch/core/build/reports/kover/",
+            "utils/batch/jdbc/build/reports/kover/",
+            "utils/batch/r2dbc/build/reports/kover/",
+        ):
+            if path not in batch:
+                errors.append(f"utils-batch coverage artifact is missing {path}")
+        if "utils/batch/build/reports/kover/" in batch:
+            errors.append("utils-batch coverage artifact includes the uninstrumented aggregator")
+
     ci_status_start = workflow.find("  ci-status:\n")
     ci_status = workflow[ci_status_start:]
     if "      - test-benchmark\n" not in ci_status:

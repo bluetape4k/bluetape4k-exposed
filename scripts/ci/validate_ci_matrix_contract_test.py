@@ -42,6 +42,19 @@ class CiMatrixContractTest(unittest.TestCase):
 
         self.assertTrue(any("examples coverage" in error for error in errors))
 
+    def test_rejects_uninstrumented_batch_aggregator_coverage_task(self):
+        with open(".github/workflows/ci.yml", encoding="utf-8") as workflow_file:
+            workflow = workflow_file.read()
+
+        broken_workflow = workflow.replace(
+            ":bluetape4k-exposed-batch-core:koverXmlReport",
+            ":bluetape4k-exposed-batch:koverXmlReport",
+            1,
+        )
+        errors = validate(broken_workflow)
+
+        self.assertTrue(any("utils-batch coverage" in error for error in errors))
+
 
 if __name__ == "__main__":
     unittest.main()

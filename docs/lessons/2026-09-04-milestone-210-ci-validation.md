@@ -14,6 +14,10 @@
   XML, instruction counter 부재/음수/중복은 성공으로 취급하지 않는다.
   다운로드 artifact에는 `if-no-files-found: error`를 사용하고, aggregator는
   유효한 보고서와 양의 총 instruction 수를 요구한다.
+- **coverage 대상은 실제 instrumentation 모듈로 한정한다.** `examples`와
+  `utils/batch`의 compatibility aggregator처럼 Kover task는 실행되지만
+  instruction이 0인 모듈은 report 생성·검증·업로드 목록에서 제외하고,
+  계약 테스트로 task와 artifact 경로를 고정한다.
 
 ## TDD 및 검증 근거
 
@@ -27,6 +31,10 @@
   잘못 전달했고, lane scope에는 절대 경로를 넣었다. 두 명령 모두 receipt를
   변경하지 않고 실패했으며, 이후 `--expected-head`에는 최신 receipt checksum,
   lane 입력에는 repo-relative scope만 사용하도록 수정했다.
+- exact-head hosted 재실행에서 `utils/batch/build/reports/kover/report.xml`의
+  instruction 수가 0으로 검출됐다. 실제 코드를 가진 `core`, `jdbc`,
+  `r2dbc` report만 남기고 compatibility aggregator task와 경로를 제거한 뒤
+  matrix 계약 테스트를 추가했다.
 
 ## 다음 작업 전 확인
 
