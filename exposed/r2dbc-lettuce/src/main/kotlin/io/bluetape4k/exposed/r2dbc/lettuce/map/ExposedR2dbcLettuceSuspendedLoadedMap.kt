@@ -294,21 +294,21 @@ class ExposedR2dbcLettuceSuspendedLoadedMap<K: Any, V: Any>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            val retryCount = entries.first().third + 1
             log.error {
-                "Write-behind flush failed (attempt $retryCount): entries=${batch.size}, " +
+                "Write-behind flush failed: entries=${batch.size}, " +
                     "errorType=${e::class.simpleName}"
             }
-            if (retryCount < MAX_DEAD_LETTER_RETRY) {
-                val dropped = mutableMapOf<K, V>()
-                entries.forEach { (key, value, _) ->
-                    val result = writeBehindChannel?.trySend(Triple(key, value, retryCount))
+            val dropped = mutableMapOf<K, V>()
+            entries.forEach { (key, value, retryCount) ->
+                val nextRetryCount = retryCount + 1
+                if (nextRetryCount < MAX_DEAD_LETTER_RETRY) {
+                    val result = writeBehindChannel?.trySend(Triple(key, value, nextRetryCount))
                     if (result == null || result.isFailure) dropped[key] = value
+                } else {
+                    dropped[key] = value
                 }
-                if (dropped.isNotEmpty()) writeToDeadLetter(dropped)
-            } else {
-                writeToDeadLetter(batch)
             }
+            if (dropped.isNotEmpty()) writeToDeadLetter(dropped)
         }
     }
 
