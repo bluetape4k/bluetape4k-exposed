@@ -53,6 +53,8 @@ class UnloadableEventPublicationException(
  *
  * 메서드는 Exposed Spring 통합이 생성한 `springTransactionManager`에 연결됩니다.
  * 따라서 게시 행은 애플리케이션 데이터와 같은 Exposed/JDBC 트랜잭션에 참여할 수 있습니다.
+ * 실패 게시 조회의 `FailedCriteria.maxItemsToRead`는 `-1`을 무제한으로 유지하고,
+ * Exposed JDBC의 `Int` limit 범위를 벗어나는 양수 값은 조회 전에 명시적으로 거부합니다.
  */
 @Transactional(transactionManager = "springTransactionManager")
 class ExposedEventPublicationRepository(
@@ -222,8 +224,12 @@ class ExposedEventPublicationRepository(
             query.andWhere { table.publicationDate less reference }
         }
 
-        val limited = if (criteria.maxItemsToRead != -1L) {
-            query.limit(criteria.maxItemsToRead.toInt())
+        val maxItemsToRead = criteria.maxItemsToRead
+        require(maxItemsToRead == -1L || maxItemsToRead in 1L..Int.MAX_VALUE.toLong()) {
+            "FailedCriteria.maxItemsToRead는 -1(무제한) 또는 1..${Int.MAX_VALUE} 범위여야 합니다: $maxItemsToRead"
+        }
+        val limited = if (maxItemsToRead != -1L) {
+            query.limit(maxItemsToRead.toInt())
         } else {
             query
         }

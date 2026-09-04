@@ -7,6 +7,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.assertions.shouldNotBeNull
@@ -131,6 +132,44 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
             )
 
             failed.map { it.identifier } shouldBeEqualTo listOf(oldFailed.identifier)
+        }
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("enabledDialects")
+    fun `findFailedPublications - 무제한 sentinel은 유지하고 안전하지 않은 상한은 거부한다`(testDB: TestDB) {
+        withApplicationContext(testDB, CompletionMode.UPDATE) { context ->
+            val repository = context.getBean(EventPublicationRepository::class.java)
+            val failedPublication = targetEventPublicationOf(
+                TestEvent("failed-limit-${testDB.name.lowercase()}"),
+                publicationTargetIdentifierOf("listener.failed.limit"),
+                Instant.parse("2026-05-16T00:00:00Z"),
+            )
+
+            repository.create(failedPublication)
+            repository.markFailed(failedPublication.identifier)
+
+            repository.findFailedPublications(
+                EventPublicationRepository.FailedCriteria.ALL.withItemsToRead(-1L),
+            ).map { it.identifier } shouldBeEqualTo listOf(failedPublication.identifier)
+            repository.findFailedPublications(
+                EventPublicationRepository.FailedCriteria.ALL.withItemsToRead(Int.MAX_VALUE.toLong()),
+            ).map { it.identifier } shouldBeEqualTo listOf(failedPublication.identifier)
+
+            listOf(Int.MAX_VALUE.toLong() + 1L, Long.MAX_VALUE).forEach { maxItemsToRead ->
+                val error = assertFailsWith<IllegalArgumentException> {
+                    repository.findFailedPublications(
+                        EventPublicationRepository.FailedCriteria.ALL.withItemsToRead(maxItemsToRead),
+                    )
+                }
+                error.message shouldContain maxItemsToRead.toString()
+            }
+        }
+
+        listOf(0L, -2L, Long.MIN_VALUE).forEach { maxItemsToRead ->
+            assertFailsWith<IllegalArgumentException> {
+                EventPublicationRepository.FailedCriteria.ALL.withItemsToRead(maxItemsToRead)
+            }
         }
     }
 
