@@ -1,5 +1,6 @@
 package io.bluetape4k.batch.core
 
+import io.bluetape4k.batch.BatchParameterHash
 import io.bluetape4k.batch.api.BatchExecutionLeaseSnapshot
 import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchStatus
@@ -27,6 +28,8 @@ import java.util.concurrent.locks.ReentrantLock
  * ## 특징
  * - checkpoint를 `Any` 객체 그대로 [ConcurrentHashMap]에 저장
  * - 재시작 시 `RUNNING/FAILED/STOPPED` 상태의 JobExecution을 재사용
+ * - 재시작 매칭은 [BatchParameterHash]의 typed-value canonical hash를 사용해 배열과
+ *   중첩 구조를 내용 기준으로 비교
  * - thread-safe ([ConcurrentHashMap] + [AtomicLong])
  * - 운영 로그에는 caller-owned 이름, 실행 ID, checkpoint payload를 기록하지 않음
  *
@@ -54,6 +57,7 @@ class InMemoryBatchJobRepository(
 
     private val idCounter = AtomicLong(0L)
     private val jobExecutions = ConcurrentHashMap<Long, JobExecution>()
+    private val jobParameterHashes = ConcurrentHashMap<Long, String>()
     private val stepExecutions = ConcurrentHashMap<Long, StepExecution>()
     private val checkpoints = ConcurrentHashMap<Long, Any>()
     private val lock = ReentrantLock()
@@ -75,11 +79,12 @@ class InMemoryBatchJobRepository(
         params: Map<String, Any>,
     ): JobExecution {
         jobName.requireValidBatchName("jobName")
+        val paramsHash = BatchParameterHash.hash(params)
 
         return withLock {
             val existing = jobExecutions.values.firstOrNull { je ->
                 je.jobName == jobName &&
-                    je.params == params &&
+                    jobParameterHashes[je.id] == paramsHash &&
                     je.status in setOf(BatchStatus.RUNNING, BatchStatus.FAILED, BatchStatus.STOPPED)
             }
 
@@ -96,6 +101,7 @@ class InMemoryBatchJobRepository(
                     startTime = clock.instant(),
                 )
                 jobExecutions[newId] = newExecution
+                jobParameterHashes[newId] = paramsHash
                 log.debug { "신규 JobExecution 생성" }
                 newExecution
             }
@@ -124,6 +130,7 @@ class InMemoryBatchJobRepository(
                     endTime = null,
                 )
                 jobExecutions[inserted.id] = inserted
+                jobParameterHashes[inserted.id] = BatchParameterHash.hash(inserted.params)
                 idCounter.updateAndGet { current -> maxOf(current, inserted.id) }
                 return@withLock inserted
             }
@@ -177,6 +184,7 @@ class InMemoryBatchJobRepository(
                     endTime = null,
                 )
                 jobExecutions[inserted.id] = inserted
+                jobParameterHashes[inserted.id] = BatchParameterHash.hash(inserted.params)
                 idCounter.updateAndGet { currentId -> maxOf(currentId, inserted.id) }
                 return@withLock inserted
             }

@@ -133,6 +133,38 @@ class InMemoryBatchJobRepositoryTest {
         je1.id shouldBeEqualTo je2.id - 1
     }
 
+    @Test
+    fun `findOrCreateJobExecution - 배열과 nested 구조는 값 기준으로 restart 재사용`() = runSuspendIO {
+        val firstParams: Map<String, Any> = linkedMapOf(
+            "ids" to intArrayOf(1, 2),
+            "metadata" to linkedMapOf(
+                "codes" to arrayOf("A", "B"),
+            ),
+        )
+        val first = repo.findOrCreateJobExecution("arrayJob", firstParams)
+        repo.completeJobExecution(first, BatchStatus.FAILED)
+
+        val equivalentParams: Map<String, Any> = linkedMapOf(
+            "metadata" to linkedMapOf(
+                "codes" to arrayOf("A", "B"),
+            ),
+            "ids" to intArrayOf(1, 2),
+        )
+        val reused = repo.findOrCreateJobExecution("arrayJob", equivalentParams)
+
+        reused.id shouldBeEqualTo first.id
+
+        val differentParams: Map<String, Any> = linkedMapOf(
+            "ids" to intArrayOf(1, 3),
+            "metadata" to linkedMapOf(
+                "codes" to arrayOf("A", "B"),
+            ),
+        )
+        val distinct = repo.findOrCreateJobExecution("arrayJob", differentParams)
+
+        distinct.id shouldBeEqualTo first.id + 1L
+    }
+
     // ─── findOrCreateStepExecution ───
 
     @Test
