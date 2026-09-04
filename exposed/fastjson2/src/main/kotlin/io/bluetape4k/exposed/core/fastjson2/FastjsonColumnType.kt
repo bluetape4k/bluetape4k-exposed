@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.core.fastjson2
 import io.bluetape4k.fastjson2.FastjsonSerializer
 import io.bluetape4k.support.toUtf8Bytes
 import io.bluetape4k.support.toUtf8String
+import java.sql.Clob
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ColumnType
 import org.jetbrains.exposed.v1.core.JsonColumnMarker
@@ -23,7 +24,7 @@ private fun jsonSqlLiteral(value: Any): String =
  * Fastjson2를 사용해 JSON 문자열 기반 컬럼을 매핑하는 Exposed 컬럼 타입입니다.
  *
  * ## 동작/계약
- * - DB 값이 `String` 또는 `ByteArray`이면 [deserialize]로 복원하고, 그 외 타입은 `T` 캐스팅을 시도합니다.
+ * - DB 값이 `String`, `ByteArray` 또는 `Clob`이면 [deserialize]로 복원하고, 그 외 타입은 `T` 캐스팅을 시도합니다.
  * - H2에서는 JSON 바인딩 시 바이트 배열로 전달하고, PostgreSQL에서는 `?::json` 캐스트 마커를 사용합니다.
  * - 예상하지 못한 DB 타입이 들어오면 `error(...)`로 `IllegalStateException`이 발생합니다.
  * - 직렬화는 [serilaize]를 그대로 호출하며, 별도 캐시 없이 호출 시점에 문자열을 새로 생성합니다.
@@ -89,11 +90,17 @@ open class FastjsonColumnType<T: Any>(
         super.setParameter(stmt, index, parameterValue)
     }
 
-    override fun readObject(rs: RowApi, index: Int): Any? = when (currentDialect) {
-        is PostgreSQLDialect -> rs.getString(index)
-        else -> super.readObject(rs, index)
+    override fun readObject(rs: RowApi, index: Int): Any? {
+        if (currentDialect is PostgreSQLDialect) return rs.getString(index)
+        return when (val value = super.readObject(rs, index)) {
+            is Clob -> value.readText()
+            else -> value
+        }
     }
 }
+
+/** Clob을 끝까지 읽고 스트림 reader를 닫습니다. */
+private fun Clob.readText(): String = characterStream.use { it.readText() }
 
 /**
  * Fastjson2 직렬화 함수를 사용해 JSON 문자열 컬럼을 등록합니다.
