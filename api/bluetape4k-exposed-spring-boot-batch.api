@@ -68,6 +68,7 @@ public final class io/bluetape4k/spring/batch/exposed/support/VirtualThreadParti
 public final class io/bluetape4k/spring/batch/exposed/writer/ExposedItemWriter : org/springframework/batch/infrastructure/item/ItemWriter {
 	public static final field Companion Lio/bluetape4k/spring/batch/exposed/writer/ExposedItemWriter$Companion;
 	public fun <init> (Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function2;)V
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/Table;ZLkotlin/jvm/functions/Function2;)V
 	public fun write (Lorg/springframework/batch/infrastructure/item/Chunk;)V
 }
 

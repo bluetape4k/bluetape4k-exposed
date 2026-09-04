@@ -127,6 +127,36 @@ class MigrationJobConfig(
 }
 ```
 
+### Opting into multi-row VALUES
+
+The existing `ExposedItemWriter(table) { ... }` constructor retains driver-level batching.
+Select the Exposed 1.5.0 multi-row VALUES path explicitly:
+
+```kotlin
+val writer = ExposedItemWriter<TargetRecord>(
+    table = TargetTable,
+    useMultiRowValues = true,
+) { record ->
+    this[TargetTable.sourceName] = record.sourceName
+    this[TargetTable.transformedValue] = record.transformedValue
+}
+```
+
+- The default is `false`; existing positional/trailing-lambda calls and the JVM constructor remain compatible.
+- Before invoking the binder or executing SQL, `true` validates `chunk rows × all table columns`.
+  The estimated limit is 65,535 parameters (32,766 for SQLite). Oversized chunks throw
+  `IllegalArgumentException` without automatic splitting. This estimate does not guarantee every driver's actual bind limit.
+- Empty chunks are no-ops even without a transaction. Binding preserves input order and supports nullable values.
+  Query ordering still requires an explicit `ORDER BY`.
+- Generated keys are neither requested nor returned (`shouldReturnGeneratedValues = false`). There is no ignore-duplicates option.
+- The writer neither opens nor commits a transaction. In a chunk step using `SpringTransactionManager`,
+  a propagated failure rolls back the current chunk while previously committed chunks remain intact.
+  Swallowing exceptions or changing skip/retry policies changes behavior according to the application's policy.
+- New integration coverage targets H2/PostgreSQL JDBC. The new MySQL/Oracle/SQLite paths are unverified;
+  check Exposed and driver dialect support and limits before using them.
+- Test SQL counts refer to Exposed `StatementContext` entries. They distinguish multi-row VALUES SQL from
+  row-wise batch SQL, but do not establish fewer network round trips or higher throughput.
+
 ### Restart Support
 
 When the same job parameters are launched again after a failure, Spring Batch
