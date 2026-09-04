@@ -16,6 +16,12 @@ DB 오류는 그대로 전파한다. 이번 작업은 새로운 dialect 정책 �
 
 ## 1. repository 계약 테스트
 
+2026-09-05 변경 승인: 아래 PostgreSQL 부분 충돌 반환 수용 조건은 repository의
+`useMultiRowValues=true + ignore=true` 조기 거부로 대체한다. Iterable/Sequence,
+빈 입력, 생성 값 요청 true/false 모두 입력 순회·바인더·INSERT가 0인지 검증한다.
+기존 false 경로와 writer의 ignore 계약은 그대로 유지한다.
+native 결함 재현 테스트는 원인 확인용으로 별도 유지한다.
+
 생성 파일:
 
 - `exposed/jdbc/src/test/kotlin/io/bluetape4k/exposed/jdbc/repository/JdbcRepositoryMultiRowValuesTest.kt`
@@ -51,6 +57,10 @@ EXPOSED_TEST_DB=H2 ./gradlew :bluetape4k-exposed-jdbc:test --tests '*RepositoryM
 예상: 신규 overload 부재로 compileTestKotlin 실패. 오류 원인이 정확히 `useMultiRowValues` 부재인지 확인한다.
 
 ## 2. repository 구현
+
+신규 true overload는 `require(!ignore)`를 입력 iterator 생성 전에 실행한다.
+기존 false 위임은 이 검사보다 먼저 유지한다. 이 변경과 README/KDoc/수용 기준을
+함께 검증한 뒤 보류된 writer·전체 테스트·ABI·리뷰·PR 단계를 재개한다.
 
 수정 파일:
 
@@ -121,5 +131,27 @@ EXPOSED_TEST_DB=H2 ./gradlew :bluetape4k-exposed-batch-jdbc:test --tests '*Write
 - [ ] exact-head CI와 리뷰 상태를 확인하고 머지 준비 DoD를 보고한다. 추가 인간 reviewer 부재는 1인 개발 저장소의 blocker가 아니다. 머지는 새 exact-head 승인 후에만 수행한다.
 
 ## 복구와 완료 기준
+
+### 2026-09-05 구현 중간 검증
+
+1. 완료: repository 신규 overload의 RED를 `No parameter with name 'useMultiRowValues' found`로 확인했다.
+2. 완료: 기존 overload를 보존한 구현 후 H2 JDBC 7개/R2DBC 7개 계약 테스트가 통과했다.
+3. 실패: H2+PostgreSQL 재실행은 28개 중 26개 통과, 부분 ignore 계약 2개 실패였다.
+   JDBC/R2DBC 모두 `id is not in record set`으로 실패했다. 실패 테스트는 그대로 보존한다.
+4. 완료: mapper를 제외한 native 호출도 PostgreSQL에서 반환 3행 중 ID가 있는 행이
+   2행임을 재현했다. H2 미지원 사례와 합친 진단 4개가 통과했다(기능 수용 성공 아님).
+5. 대기: writer 테스트 초안을 추가하고 두 모듈의 compileTestKotlin 실패를 확인했다.
+   신규 생성자의 `useMultiRowValues` 부재 오류가 있다. production writer는 아직 수정하지
+   않았다. 테스트 초안의 SQL 정규식/nullable 커버리지도 구현 재개 시 검토해야 한다.
+6. 대기: 부분 ignore 처리 계약 결정, 전체 모듈/ABI/리뷰/PR. 사전 거부 또는 upstream
+   결과 처리 보강은 승인된 '실제 삽입 행만 반환' 계약의 변경이므로 임의 적용하지 않는다.
+
+공식 `InsertBlockingExecutable.processResults`와 `InsertSuspendExecutable.processResults`는
+행별 영향 개수를 얻지 못하면 원래 입력을 유지한 뒤 반환 값을 인덱스로 결합한다.
+`MultiRowValuesInsertBlockingExecutable.isAlwaysBatch=false` 경로에서는 부분 충돌의
+입력 개수와 실제 반환 개수가 달라질 수 있다. 자세한 출처와 판단은 wiki의
+`research/2026-09-05-exposed-150-multi-row-ignore.md`에 기록했다.
+조사 기록은 wiki `908c4bb`로 commit/push했고 원격 일치를 확인했다.
+`git diff --check`는 통과했다. 노출된 실패를 유지하며 feature branch는 아직 push하지 않았다.
 
 모든 변경은 해당 worktree에 제한한다. 기존 #771 작업은 보존한다. 신규 옵션을 끄면 이전 동작으로 복귀하며 스키마 복구 작업은 없다. CI·테스트 미완료는 PENDING으로 남긴다. 구현 완료는 테스트/ABI/문서/독립 리뷰 증거가 모두 필요하고, 전체 DONE은 별도 머지 승인·머지·정리 이후다.
