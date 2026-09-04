@@ -81,6 +81,27 @@ def validate(workflow: str) -> List[str]:
     if "needs.changes.outputs['all-modules'] == 'true'" not in benchmark:
         errors.append("benchmark positive job is not enabled by all-modules")
 
+    examples_start = workflow.find("  test-examples:\n")
+    timefold_start = workflow.find("  test-timefold:\n", examples_start + 1)
+    if examples_start < 0 or timefold_start < 0:
+        errors.append("examples coverage contract cannot locate test-examples job")
+    else:
+        examples = workflow[examples_start:timefold_start]
+        expected_task = ":examples-ddd-spring-modulith-demo:koverXmlReport"
+        if expected_task not in examples:
+            errors.append("examples coverage job must generate the instrumented demo report")
+        for task in (
+            ":examples-exposed-bigquery-dry-run:koverXmlReport",
+            ":examples-exposed-clickhouse-oltp-olap:koverXmlReport",
+            ":examples-ktor-exposed-demo:koverXmlReport",
+            ":exposed-spring-boot-jdbc-demo:koverXmlReport",
+            ":exposed-spring-boot-r2dbc-demo:koverXmlReport",
+        ):
+            if task in examples:
+                errors.append(f"examples coverage job invokes an uninstrumented task: {task}")
+        if "path: examples/ddd-spring-modulith-demo/build/reports/kover/" not in examples:
+            errors.append("examples coverage artifact must be scoped to the instrumented demo")
+
     ci_status_start = workflow.find("  ci-status:\n")
     ci_status = workflow[ci_status_start:]
     if "      - test-benchmark\n" not in ci_status:

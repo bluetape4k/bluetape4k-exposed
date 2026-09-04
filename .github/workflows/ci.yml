@@ -1749,11 +1749,6 @@ jobs:
         run: >
           ./gradlew
           :examples-ddd-spring-modulith-demo:koverXmlReport
-          :examples-exposed-bigquery-dry-run:koverXmlReport
-          :examples-exposed-clickhouse-oltp-olap:koverXmlReport
-          :examples-ktor-exposed-demo:koverXmlReport
-          :exposed-spring-boot-jdbc-demo:koverXmlReport
-          :exposed-spring-boot-r2dbc-demo:koverXmlReport
           --no-configuration-cache
           --no-daemon
           -x test
@@ -1770,7 +1765,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: coverage-examples
-          path: '**/build/reports/kover/'
+          path: examples/ddd-spring-modulith-demo/build/reports/kover/
           if-no-files-found: error
           retention-days: 7
 

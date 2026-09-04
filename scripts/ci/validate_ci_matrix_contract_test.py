@@ -29,6 +29,19 @@ class CiMatrixContractTest(unittest.TestCase):
         self.assertTrue(any("benchmark positive job" in error for error in errors))
         self.assertTrue(any("changes output" in error for error in errors))
 
+    def test_rejects_uninstrumented_example_coverage_tasks(self):
+        with open(".github/workflows/ci.yml", encoding="utf-8") as workflow_file:
+            workflow = workflow_file.read()
+
+        broken_workflow = workflow.replace(
+            ":examples-ddd-spring-modulith-demo:koverXmlReport",
+            ":examples-exposed-bigquery-dry-run:koverXmlReport",
+            1,
+        )
+        errors = validate(broken_workflow)
+
+        self.assertTrue(any("examples coverage" in error for error in errors))
+
 
 if __name__ == "__main__":
     unittest.main()
