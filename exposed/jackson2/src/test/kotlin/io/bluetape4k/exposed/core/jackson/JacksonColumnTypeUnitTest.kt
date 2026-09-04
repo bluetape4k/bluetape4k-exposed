@@ -8,7 +8,15 @@ import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.support.toUtf8Bytes
+import java.io.IOException
+import java.io.Reader
+import java.io.StringReader
+import java.lang.reflect.Proxy
+import java.sql.Clob
+import java.util.concurrent.atomic.AtomicBoolean
+import org.jetbrains.exposed.v1.core.statements.api.RowApi
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.statements.jdbc.JdbcResult
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
 
@@ -209,5 +217,108 @@ class JacksonColumnTypeUnitTest {
         val jsonBytes = serializer.serializeAsString(source).toByteArray(Charsets.UTF_8)
 
         columnType.valueFromDB(jsonBytes) shouldBeEqualTo source
+    }
+
+    @Test
+    fun `readObject 는 JDBC Clob 을 JSON 문자열로 정규화한다`() {
+        val source = SamplePayload("clob", 42)
+        val json = serializer.serializeAsString(source)
+        val database = Database.connect(
+            url = "jdbc:h2:mem:jackson-clob-${Base58.randomString(8)};DB_CLOSE_DELAY=-1",
+            driver = "org.h2.Driver",
+        )
+        val reader = TrackingReader(json)
+        val row = rowWith(clobWith(reader))
+
+        transaction(database) {
+            val raw = columnType.readObject(row, 1)
+
+            raw shouldBeEqualTo json
+            columnType.valueFromDB(requireNotNull(raw)) shouldBeEqualTo source
+        }
+        reader.closed.get().shouldBeTrue()
+    }
+
+    @Test
+    fun `readObject 는 Clob 읽기 실패에도 reader를 닫는다`() {
+        val database = Database.connect(
+            url = "jdbc:h2:mem:jackson-clob-error-${Base58.randomString(8)};DB_CLOSE_DELAY=-1",
+            driver = "org.h2.Driver",
+        )
+        val reader = TrackingReader("invalid", failOnRead = true)
+        val row = rowWith(clobWith(reader))
+
+        assertFailsWith<IOException> {
+            transaction(database) {
+                columnType.readObject(row, 1)
+            }
+        }
+        reader.closed.get().shouldBeTrue()
+    }
+
+    @Test
+    fun `readObject 는 H2 Oracle mode의 실제 CLOB 결과를 JSON 문자열로 정규화한다`() {
+        val source = SamplePayload("oracle", 42)
+        val json = serializer.serializeAsString(source)
+        val database = Database.connect(
+            url = "jdbc:h2:mem:jackson-oracle-clob-${Base58.randomString(8)};MODE=Oracle;DB_CLOSE_DELAY=-1",
+            driver = "org.h2.Driver",
+        )
+
+        transaction(database) {
+            exec("CREATE TABLE json_clob_test (payload CLOB)")
+            exec("INSERT INTO json_clob_test (payload) VALUES ('$json')")
+            exec("SELECT payload FROM json_clob_test") { resultSet ->
+                resultSet.next().shouldBeTrue()
+                val raw = columnType.readObject(JdbcResult(resultSet), 1)
+
+                raw shouldBeEqualTo json
+                columnType.valueFromDB(requireNotNull(raw)) shouldBeEqualTo source
+            }
+        }
+    }
+
+    private fun rowWith(value: Any): RowApi =
+        Proxy.newProxyInstance(
+            RowApi::class.java.classLoader,
+            arrayOf(RowApi::class.java),
+        ) { _, method, _ ->
+            when (method.name) {
+                "getObject" -> value
+                "getString" -> value as? String
+                else -> error("Unexpected RowApi method: ${method.name}")
+            }
+        } as RowApi
+
+    private fun clobWith(reader: Reader): Clob =
+        Proxy.newProxyInstance(
+            Clob::class.java.classLoader,
+            arrayOf(Clob::class.java),
+        ) { _, method, _ ->
+            when (method.name) {
+                "getCharacterStream" -> reader
+                "toString" -> "tracking-clob"
+                "hashCode" -> System.identityHashCode(reader)
+                "equals" -> false
+                else -> error("Unexpected Clob method: ${method.name}")
+            }
+        } as Clob
+
+    private class TrackingReader(
+        text: String,
+        private val failOnRead: Boolean = false,
+    ) : Reader() {
+        private val delegate = StringReader(text)
+        val closed = AtomicBoolean(false)
+
+        override fun read(cbuf: CharArray, off: Int, len: Int): Int {
+            if (failOnRead) throw IOException("reader failed")
+            return delegate.read(cbuf, off, len)
+        }
+
+        override fun close() {
+            closed.set(true)
+            delegate.close()
+        }
     }
 }
