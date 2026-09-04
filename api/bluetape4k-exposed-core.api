@@ -216,6 +216,12 @@ public final class io/bluetape4k/exposed/core/compress/CompressedBlobTransformer
 	public fun wrap (Lorg/jetbrains/exposed/v1/core/statements/api/ExposedBlob;)[B
 }
 
+public class io/bluetape4k/exposed/core/dao/id/KotlinUuidTable : org/jetbrains/exposed/v1/core/dao/id/UuidTable {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lorg/jetbrains/exposed/v1/core/Table$UuidVersion;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lorg/jetbrains/exposed/v1/core/Table$UuidVersion;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
 public class io/bluetape4k/exposed/core/dao/id/KsuidMillisTable : org/jetbrains/exposed/v1/core/dao/id/IdTable {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V

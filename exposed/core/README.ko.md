@@ -12,6 +12,7 @@ JetBrains Exposed에서 공통으로 쓰는 컬럼 타입, 테이블 helper, 확
 - **네트워크 컬럼 타입**: IPv4/IPv6 주소(`inetAddress`), CIDR 블록(`cidr`), PostgreSQL `<<` 연산자
 - **전화번호 컬럼 타입**: E.164 정규화 저장(`phoneNumber`, `phoneNumberString`), Google libphonenumber 기반
 - **컬럼 확장 함수**: 클라이언트 측 ID 생성(`timebasedGenerated`, `snowflakeGenerated`, `ksuidGenerated`, `ulidGenerated` 등)
+- **Kotlin UUID ID 테이블**: Exposed `UuidTable` 기반 `KotlinUuidTable`, V4 기본값과 V7 선택 지원
 - **ResultRow 확장**: `getOrNull`, `toMap` 등 ResultRow 처리 보조
 - **Blob 확장**: `ExposedBlob` 유틸 함수
 - **배치 삽입**: `BatchInsertOnConflictDoNothing` (중복 무시 배치 삽입)
@@ -85,6 +86,32 @@ object Orders: IntIdTable("orders") {
     val name = varchar("name", 255)
 }
 ```
+
+#### Kotlin UUID ID 테이블
+
+`KotlinUuidTable`은 Exposed의 `kotlin.uuid.Uuid` ID 테이블을 위한 bluetape4k 어댑터입니다. ID는 INSERT 직전에
+클라이언트에서 생성됩니다. 기본 생성 전략은 `UuidVersion.V4`이며, 시간 정렬 가능한 UUID가 필요하면
+`UuidVersion.V7`을 선택합니다. 테이블 수준 버전은 `id` 컬럼에만 적용되므로, 추가 Kotlin UUID 컬럼에는
+Exposed의 컬럼 수준 `autoGenerate(UuidVersion.V4)` 또는 `autoGenerate(UuidVersion.V7)`를 명시합니다.
+`java.util.UUID`를 사용하는 `TimebasedUUIDTable`과는 별도 계층입니다.
+
+```kotlin
+import io.bluetape4k.exposed.core.dao.id.KotlinUuidTable
+import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.Table.UuidVersion
+
+object Events: KotlinUuidTable("events", uuidVersion = UuidVersion.V7) {
+    val payload = text("payload")
+}
+
+object EventLinks: Table("event_links") {
+    val eventId = uuid("event_id").autoGenerate(UuidVersion.V7)
+}
+```
+
+`TimebasedUUIDTable`에서 마이그레이션할 때는 주변 API가 타입 변경을 수용하는 경우에만 `java.util.UUID` 참조를
+`kotlin.uuid.Uuid`로 바꿉니다. 기존 Java UUID 테이블의 스키마와 ABI는 그대로 유지하며, 하나의 Entity 계약에서
+두 UUID 타입을 섞지 않습니다.
 
 ### 2. 압축 컬럼 타입
 
@@ -248,6 +275,7 @@ cursor token의 encode, 서명, 범위 지정, 만료, decode를 대신하지 �
 | 파일                                                 | 설명                                     |
 |----------------------------------------------------|----------------------------------------|
 | `ColumnExtensions.kt`                              | 클라이언트 측 ID 자동 생성 확장 함수                 |
+| `dao/id/KotlinUuidTable.kt`                        | Kotlin `Uuid` ID 테이블과 V4/V7 생성               |
 | `ExposedColumnSupports.kt`                         | 컬럼 타입 관련 지원 함수                         |
 | `ResultRowExtensions.kt`                           | ResultRow 처리 확장 함수                     |
 | `BatchInsertOnConflictDoNothing.kt`                | 중복 무시 배치 삽입                            |
