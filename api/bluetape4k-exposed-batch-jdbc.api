@@ -40,6 +40,8 @@ public final class io/bluetape4k/batch/jdbc/ExposedJdbcBatchWriter : io/bluetape
 	public static final field Companion Lio/bluetape4k/batch/jdbc/ExposedJdbcBatchWriter$Companion;
 	public fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;Lorg/jetbrains/exposed/v1/core/Table;ZLkotlin/jvm/functions/Function2;)V
 	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;Lorg/jetbrains/exposed/v1/core/Table;ZLkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;Lorg/jetbrains/exposed/v1/core/Table;ZZLkotlin/jvm/functions/Function2;)V
+	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;Lorg/jetbrains/exposed/v1/core/Table;ZZLkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun open (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun write (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

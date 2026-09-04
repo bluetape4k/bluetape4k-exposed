@@ -5,6 +5,36 @@
 JetBrains Exposed JDBC 계층을 위한 Repository 패턴, 트랜잭션 확장, 쿼리 유틸리티를 제공하는 모듈입니다.
 `exposed-core`와 `exposed-dao`를 기반으로 JDBC에 특화된 기능을 제공합니다.
 
+## Multi-row VALUES 선택
+
+기존 `batchInsert` 호출은 기존 경로를 유지한다. Exposed 1.5.0의 multi-row SQL은
+필수 `useMultiRowValues` 인자를 가진 추가 overload로 선택한다.
+
+```kotlin
+// 호출자가 연 transaction {} 내부:
+repository.batchInsert(items, useMultiRowValues = true) { item ->
+    this[Items.name] = item.name
+}
+```
+
+`false`는 `ignore`와 생성 값 요청 설정을 포함해 기존 overload에 위임한다.
+Repository는 `true`와 `ignore=true` 조합을 빈 입력에서도 순회·SQL 실행 전에 거부한다.
+Exposed 1.5.0의 부분 충돌 반환 결과를 정확히 매핑할 수 없기 때문이다.
+충돌 무시가 필요하면 기존 경로를 사용한다.
+
+Multi-row 입력은 허용 행 수 + 1개까지만 수집한다.
+`행 수 × table.columns.size` 추정치는 65,535(SQLite: 32,766)를 넘을 수 없다.
+실제 bind 수나 모든 driver의 한도를 보장하는 값은 아니다. 다중 bind 표현식이나
+더 작은 driver 한도는 청크 크기를 줄여 처리한다. 허용된 빈 입력은 no-op이다.
+초과 입력은 바인더·INSERT 전에 거부하지만 호출자 트랜잭션의 선행 쓰기는 취소하지 않는다.
+SQL 오류가 발생하면 호출자가 rollback해야 한다.
+
+H2/PostgreSQL 테스트는 일반 삽입, nullable 값, 생성 ID와 입력 순서를 검증한다.
+MySQL/Oracle의 생성 키 조합은 미검증이며, 정확한 생성 ID 매핑이 필요하면 `false`를 사용한다.
+`shouldReturnGeneratedValues=false`일 때 mapper는 DB 생성 값을 요구하면 안 된다.
+`saveAll`은 변경하지 않는다. SQL tuple·parameter-set 관찰은 네트워크 round-trip이나
+성능 배수의 근거가 아니다.
+
 ## 개요
 
 `exposed-jdbc`는 다음을 제공합니다:

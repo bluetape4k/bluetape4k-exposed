@@ -143,7 +143,9 @@ public final class io/bluetape4k/exposed/r2dbc/repository/AuditableR2dbcReposito
 	public static fun auditedUpdateById (Lio/bluetape4k/exposed/r2dbc/repository/AuditableR2dbcRepository;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun auditedUpdateById$default (Lio/bluetape4k/exposed/r2dbc/repository/AuditableR2dbcRepository;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/AuditableR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/AuditableR2dbcRepository;Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/AuditableR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/AuditableR2dbcRepository;Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/AuditableR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/AuditableR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/AuditableR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
@@ -184,7 +186,9 @@ public final class io/bluetape4k/exposed/r2dbc/repository/IntAuditableR2dbcRepos
 	public static fun auditedUpdateAll (Lio/bluetape4k/exposed/r2dbc/repository/IntAuditableR2dbcRepository;Ljava/lang/String;Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun auditedUpdateById (Lio/bluetape4k/exposed/r2dbc/repository/IntAuditableR2dbcRepository;ILjava/lang/String;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/IntAuditableR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/IntAuditableR2dbcRepository;Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/IntAuditableR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/IntAuditableR2dbcRepository;Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/IntAuditableR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/IntAuditableR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/IntAuditableR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
@@ -223,7 +227,9 @@ public abstract interface class io/bluetape4k/exposed/r2dbc/repository/IntR2dbcR
 
 public final class io/bluetape4k/exposed/r2dbc/repository/IntR2dbcRepository$DefaultImpls {
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/IntR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/IntR2dbcRepository;Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/IntR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/IntR2dbcRepository;Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/IntR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/IntR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/IntR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
@@ -262,7 +268,9 @@ public abstract interface class io/bluetape4k/exposed/r2dbc/repository/IntSoftDe
 
 public final class io/bluetape4k/exposed/r2dbc/repository/IntSoftDeletedR2dbcRepository$DefaultImpls {
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/IntSoftDeletedR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/IntSoftDeletedR2dbcRepository;Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/IntSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/IntSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/IntSoftDeletedR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/IntSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/IntSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
@@ -310,7 +318,9 @@ public abstract interface class io/bluetape4k/exposed/r2dbc/repository/JavaUuidR
 
 public final class io/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository$DefaultImpls {
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
@@ -349,7 +359,9 @@ public abstract interface class io/bluetape4k/exposed/r2dbc/repository/JavaUuidS
 
 public final class io/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository$DefaultImpls {
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/JavaUuidSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
@@ -397,7 +409,9 @@ public abstract interface class io/bluetape4k/exposed/r2dbc/repository/KotlinUui
 
 public final class io/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository$DefaultImpls {
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
@@ -436,7 +450,9 @@ public abstract interface class io/bluetape4k/exposed/r2dbc/repository/KotlinUui
 
 public final class io/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository$DefaultImpls {
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/KotlinUuidSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
@@ -486,7 +502,9 @@ public final class io/bluetape4k/exposed/r2dbc/repository/LongAuditableR2dbcRepo
 	public static fun auditedUpdateAll (Lio/bluetape4k/exposed/r2dbc/repository/LongAuditableR2dbcRepository;Ljava/lang/String;Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun auditedUpdateById (Lio/bluetape4k/exposed/r2dbc/repository/LongAuditableR2dbcRepository;JLjava/lang/String;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/LongAuditableR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/LongAuditableR2dbcRepository;Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/LongAuditableR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/LongAuditableR2dbcRepository;Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/LongAuditableR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/LongAuditableR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/LongAuditableR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
@@ -525,7 +543,9 @@ public abstract interface class io/bluetape4k/exposed/r2dbc/repository/LongR2dbc
 
 public final class io/bluetape4k/exposed/r2dbc/repository/LongR2dbcRepository$DefaultImpls {
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/LongR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/LongR2dbcRepository;Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/LongR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/LongR2dbcRepository;Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/LongR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/LongR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/LongR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
@@ -564,7 +584,9 @@ public abstract interface class io/bluetape4k/exposed/r2dbc/repository/LongSoftD
 
 public final class io/bluetape4k/exposed/r2dbc/repository/LongSoftDeletedR2dbcRepository$DefaultImpls {
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/LongSoftDeletedR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/LongSoftDeletedR2dbcRepository;Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/LongSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/LongSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/LongSoftDeletedR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/LongSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/LongSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
@@ -609,9 +631,13 @@ public final class io/bluetape4k/exposed/r2dbc/repository/LongSoftDeletedR2dbcRe
 
 public abstract interface class io/bluetape4k/exposed/r2dbc/repository/R2dbcRepository {
 	public fun batchInsert (Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun batchInsert (Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun batchInsert (Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun batchInsert (Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun batchInsert$default (Lio/bluetape4k/exposed/r2dbc/repository/R2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun batchInsert$default (Lio/bluetape4k/exposed/r2dbc/repository/R2dbcRepository;Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static synthetic fun batchInsert$default (Lio/bluetape4k/exposed/r2dbc/repository/R2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun batchInsert$default (Lio/bluetape4k/exposed/r2dbc/repository/R2dbcRepository;Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public fun batchUpsert (Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun batchUpsert (Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun batchUpsert$default (Lio/bluetape4k/exposed/r2dbc/repository/R2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
@@ -663,9 +689,13 @@ public abstract interface class io/bluetape4k/exposed/r2dbc/repository/R2dbcRepo
 
 public final class io/bluetape4k/exposed/r2dbc/repository/R2dbcRepository$DefaultImpls {
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/R2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/R2dbcRepository;Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/R2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/R2dbcRepository;Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun batchInsert$default (Lio/bluetape4k/exposed/r2dbc/repository/R2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun batchInsert$default (Lio/bluetape4k/exposed/r2dbc/repository/R2dbcRepository;Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static synthetic fun batchInsert$default (Lio/bluetape4k/exposed/r2dbc/repository/R2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun batchInsert$default (Lio/bluetape4k/exposed/r2dbc/repository/R2dbcRepository;Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/R2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/R2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun batchUpsert$default (Lio/bluetape4k/exposed/r2dbc/repository/R2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
@@ -740,7 +770,9 @@ public abstract interface class io/bluetape4k/exposed/r2dbc/repository/SoftDelet
 
 public final class io/bluetape4k/exposed/r2dbc/repository/SoftDeletedR2dbcRepository$DefaultImpls {
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/SoftDeletedR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/SoftDeletedR2dbcRepository;Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/SoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/SoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/SoftDeletedR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/SoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/SoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
@@ -795,7 +827,9 @@ public abstract interface class io/bluetape4k/exposed/r2dbc/repository/StringR2d
 
 public final class io/bluetape4k/exposed/r2dbc/repository/StringR2dbcRepository$DefaultImpls {
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/StringR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/StringR2dbcRepository;Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/StringR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/StringR2dbcRepository;Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/StringR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/StringR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/StringR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
@@ -834,7 +868,9 @@ public abstract interface class io/bluetape4k/exposed/r2dbc/repository/StringSof
 
 public final class io/bluetape4k/exposed/r2dbc/repository/StringSoftDeletedR2dbcRepository$DefaultImpls {
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/StringSoftDeletedR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/StringSoftDeletedR2dbcRepository;Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/StringSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/StringSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/StringSoftDeletedR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/StringSoftDeletedR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/StringSoftDeletedR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V
@@ -884,7 +920,9 @@ public final class io/bluetape4k/exposed/r2dbc/repository/UUIDAuditableR2dbcRepo
 	public static fun auditedUpdateAll (Lio/bluetape4k/exposed/r2dbc/repository/UUIDAuditableR2dbcRepository;Ljava/lang/String;Lkotlin/jvm/functions/Function0;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun auditedUpdateById (Lio/bluetape4k/exposed/r2dbc/repository/UUIDAuditableR2dbcRepository;Ljava/util/UUID;Ljava/lang/String;Ljava/lang/Integer;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/UUIDAuditableR2dbcRepository;Ljava/lang/Iterable;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/UUIDAuditableR2dbcRepository;Ljava/lang/Iterable;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/UUIDAuditableR2dbcRepository;Lkotlin/sequences/Sequence;ZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun batchInsert (Lio/bluetape4k/exposed/r2dbc/repository/UUIDAuditableR2dbcRepository;Lkotlin/sequences/Sequence;ZZZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/UUIDAuditableR2dbcRepository;Ljava/lang/Iterable;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun batchUpsert (Lio/bluetape4k/exposed/r2dbc/repository/UUIDAuditableR2dbcRepository;Lkotlin/sequences/Sequence;[Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun bindSave (Lio/bluetape4k/exposed/r2dbc/repository/UUIDAuditableR2dbcRepository;Lorg/jetbrains/exposed/v1/core/statements/BatchInsertStatement;Ljava/lang/Object;)V

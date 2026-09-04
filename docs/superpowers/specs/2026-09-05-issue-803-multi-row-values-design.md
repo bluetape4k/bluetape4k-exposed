@@ -28,7 +28,7 @@ Exposed 1.5.0의 multi-row VALUES를 JDBC/R2DBC repository의 `batchInsert`와
 6. 한도 초과 사전 거부는 행 수 기반 추정치에 한정한다. 여러 bind를 만드는 SQL 표현식과 드라이버 고유의 더 작은 한도는 호출자가 더 작은 청크로 관리한다. SQL 오류는 트랜잭션을 rollback해야 하며 호출자가 트랜잭션 내부에서 잡고 commit하면 부분 실행을 보존할 수 있다.
 7. 반환값은 Exposed가 반환한 `ResultRow`만 매핑한다. repository의 multi-row와 ignore 조합은 방언과 생성 값 요청 여부에 관계없이 `IllegalArgumentException`으로 거부한다. 일반 삽입의 결과·순서를 검증하고 Oracle/MySQL의 generated-key 제한을 문서화한다. `saveAll`은 생성 ID 계약을 그대로 유지한다.
 8. 네 모듈 사이에 새 의존성을 추가하지 않기 위해 작은 사전검증은 각 실행 경계에 둔다. 큰 공통 추상화나 새로운 공개 정책 타입은 도입하지 않는다.
-9. 사전 거부는 해당 repository 호출에서 INSERT를 실행하지 않는다는 뜻이다. 동일 외부 트랜잭션의 이전 쓰기는 자동 취소하지 않는다. writer는 자체 트랜잭션을 소유하므로 실패한 write의 쓰기는 rollback 대상이며 이전에 성공한 write는 유지한다. 두 경우를 각각 테스트한다.
+9. 사전 거부는 해당 repository 호출에서 INSERT를 실행하지 않는다는 뜻이다. 동일 외부 트랜잭션의 이전 쓰기는 자동 취소하지 않는다. writer가 소유한 트랜잭션의 실패는 rollback 대상이며 이미 commit한 쓰기는 유지한다. 기존 트랜잭션에 참여하는 경우 최종 commit/rollback은 호출자 책임이다.
 10. 재시도 횟수와 대상은 기존 Exposed 트랜잭션 설정을 그대로 따른다. 이 API는 별도 재시도를 추가하지 않는다. R2DBC는 실제 Job 취소의 `CancellationException`을 삼키거나 재시도하지 않고 rollback 경로로 전파한다. JDBC blocking 작업의 즉시 중단을 보장하지 않는다. 기존 취소 처리 자체의 광범위한 검증은 #808 범위다.
 11. PostgreSQL 부분 충돌은 native 진단 테스트로 upstream의 ID 누락을 고정하고 repository는 SQL 실행 전 거부를 검증한다. 기존 `false` 경로의 ignore 의미는 변경하지 않는다. 일반 입력의 순서를 테스트하되 모든 dialect의 순서를 일반화하지 않는다.
 12. writer는 빈 입력 확인 후 `database.dialect`로 한도를 계산하고 자체 트랜잭션 시작 전에 크기를 검증한다. repository는 호출자가 연 현재 트랜잭션에서 검증하되 바인더·INSERT보다 먼저 수행한다.
@@ -108,4 +108,6 @@ ID가 있는 행은 2행임을 JDBC/R2DBC 모두 재현했다. 반환 행 필터
 기준 writer 테스트: H2 JDBC 4 PASS/1 기존 skip, R2DBC 4 PASS.
 `batch-core:jar`의 configuration cache 직렬화 오류 때문에 기준 검증은
 `--no-configuration-cache`로 실행했다. #803 코드 수정과 무관한 기존 문제다.
-구현 검증과 독립 리뷰는 아직 진행 전이다.
+승인 후 구현 검증: H2/PostgreSQL 신규 60/60 PASS, H2 전체 511 PASS/40 조건부 생략,
+실패·오류 0. 네 모듈 detekt와 공개 모듈 ABI 44/44 PASS. 기존 writer 생성자와
+JDBC default bridge를 확인했다. 최종 리뷰와 PR/CI 상태는 구현 검증 기록에서 별도 추적한다.

@@ -4,6 +4,43 @@
 
 A coroutine-native batch processing framework for Kotlin. Implements a lightweight, checkpointable chunk-oriented pipeline — no Spring Batch required.
 
+## Opt-in multi-row writers
+
+Existing constructors keep the legacy batch path. Select the Exposed 1.5.0 multi-row
+VALUES path explicitly with the additional required Boolean:
+
+```kotlin
+val jdbcWriter = ExposedJdbcBatchWriter(
+    database = jdbcDatabase, table = Items, useMultiRowValues = true,
+) { item: Item -> this[Items.name] = item.name }
+
+val r2dbcWriter = ExposedR2dbcBatchWriter(
+    database = r2dbcDatabase, table = Items, useMultiRowValues = true,
+) { item: Item -> this[Items.name] = item.name }
+```
+
+Writers return `Unit`, not generated IDs or entities. JDBC keeps `ignore=false`
+by default and requests generated values as before; R2DBC keeps
+`shouldReturnGeneratedValues=false` and exposes no `ignore` option. JDBC writer's
+`ignore=true` remains dialect-dependent. Unlike the entity-returning repository,
+the writer does not reject `multi-row + ignore`; it does not map those results.
+
+Empty input is a no-op. With the option enabled, `items.size × table.columns.size`
+must be at most 65,535 (SQLite: 32,766), checked before starting the transaction or
+calling the binder. Oversized input is rejected, not split automatically. The estimate
+is not the exact bind count: callers must use smaller chunks for expressions with
+multiple binds or lower driver limits. SQL errors still propagate.
+
+The existing JDBC virtual-thread and R2DBC suspend transaction paths are retained.
+A failed writer-owned transaction rolls back that write; an earlier successfully
+committed write stays committed. When participating in an ambient transaction,
+the caller owns its final commit/rollback. Binders must avoid external side effects
+because the existing transaction retry policy may rerun them. No retry policy is added.
+Cancellation is propagated; immediate interruption of blocking JDBC work is not promised.
+MySQL/Oracle generated-key combinations are unverified; use the legacy path where
+those driver contracts matter. SQL shape and parameter-set tests are not a network
+round-trip benchmark. Spring Batch writers are outside this option's scope (#805).
+
 ## Runtime Role Map
 
 ![Batch runtime role map](../../docs/images/readme-diagrams/utils-batch-diagram-01.png)

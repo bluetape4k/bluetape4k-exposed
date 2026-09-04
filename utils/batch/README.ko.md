@@ -4,6 +4,42 @@
 
 Kotlin 코루틴 네이티브 배치 처리 프레임워크. Spring Batch 없이 경량화된 체크포인트 기반 청크 처리 파이프라인을 구현한다.
 
+## Multi-row writer 선택
+
+기존 생성자는 기존 batch 경로를 유지한다. Exposed 1.5.0의 multi-row VALUES 경로는
+추가 생성자의 필수 Boolean 인자로 명시적으로 선택한다.
+
+```kotlin
+val jdbcWriter = ExposedJdbcBatchWriter(
+    database = jdbcDatabase, table = Items, useMultiRowValues = true,
+) { item: Item -> this[Items.name] = item.name }
+
+val r2dbcWriter = ExposedR2dbcBatchWriter(
+    database = r2dbcDatabase, table = Items, useMultiRowValues = true,
+) { item: Item -> this[Items.name] = item.name }
+```
+
+Writer는 생성 ID나 엔티티가 아닌 `Unit`을 반환한다. JDBC는 기본 `ignore=false`와
+기존 생성 값 요청을 유지한다. R2DBC는 `shouldReturnGeneratedValues=false`를 유지하고
+`ignore` 옵션을 노출하지 않는다. JDBC writer의 `ignore=true` 지원은 방언에 따른다.
+엔티티를 반환하는 repository와 달리 writer는 반환 결과를 매핑하지 않으므로
+`multi-row + ignore` 조합을 거부하지 않는다.
+
+빈 입력은 no-op이다. 옵션을 켜면 `items.size × table.columns.size`가
+65,535(SQLite: 32,766) 이하인지 트랜잭션 시작과 바인더 호출 전에 검사한다.
+초과 입력은 자동 분할하지 않고 거부한다. 이 추정치는 실제 bind 수가 아니므로
+다중 bind 표현식이나 더 작은 driver 한도는 호출자가 청크 크기를 줄여 처리한다.
+SQL 오류는 그대로 전파한다.
+
+기존 JDBC 가상 스레드와 R2DBC suspend 트랜잭션 경로를 유지한다.
+Writer가 소유한 트랜잭션의 실패는 해당 쓰기를 rollback하며, 앞서 성공적으로 commit한
+쓰기는 유지된다. 외부 트랜잭션에 참여하면 최종 commit/rollback은 호출자가 책임진다.
+기존 트랜잭션 재시도 정책이 바인더를 재실행할 수 있으므로 바인더에 외부 부작용을 두지 않는다.
+별도 재시도 정책은 추가하지 않는다. 취소는 전파하지만 JDBC blocking 작업의 즉시 중단은
+보장하지 않는다. MySQL/Oracle의 생성 키 조합은 미검증이므로 해당 driver 계약이 중요하면
+기존 경로를 사용한다. SQL 형태·parameter-set 테스트는 네트워크 round-trip 벤치마크가 아니다.
+Spring Batch writer는 이 옵션의 범위가 아니다(#805).
+
 ## Runtime 역할 맵
 
 ![Batch runtime role map](../../docs/images/readme-diagrams/utils-batch-diagram-01.png)
