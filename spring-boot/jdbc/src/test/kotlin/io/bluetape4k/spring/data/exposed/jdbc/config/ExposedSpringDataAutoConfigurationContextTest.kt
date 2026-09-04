@@ -2,6 +2,8 @@ package io.bluetape4k.spring.data.exposed.jdbc.config
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.spring.data.exposed.common.mapping.ExposedMappingContext as CommonExposedMappingContext
+import io.bluetape4k.spring.data.exposed.r2dbc.config.ExposedR2dbcSpringDataAutoConfiguration
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.spring7.transaction.SpringTransactionManager
@@ -71,6 +73,19 @@ class ExposedSpringDataAutoConfigurationContextTest {
             context.containsBean("springTransactionManager").not().shouldBeTrue()
             context.getBeansOfType(PlatformTransactionManager::class.java).isEmpty().shouldBeTrue()
         }
+    }
+
+    @Test
+    fun `registers one common mapping context when JDBC and R2DBC auto-configurations are combined`() {
+        contextRunner
+            .withConfiguration(AutoConfigurations.of(ExposedR2dbcSpringDataAutoConfiguration::class.java))
+            .run { context ->
+                context.startupFailure?.let { throw it }
+
+                context.getBeansOfType(CommonExposedMappingContext::class.java).size shouldBeEqualTo 1
+                context.getBean("exposedMappingContext")
+                    .javaClass shouldBeEqualTo CommonExposedMappingContext::class.java
+            }
     }
 
     @TestConfiguration(proxyBeanMethods = false)

@@ -42,6 +42,7 @@ dependencies {
 
     api(project(":bluetape4k-exposed-jdbc"))
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
+    testImplementation(project(":bluetape4k-exposed-spring-boot-r2dbc"))
 
     compileOnly("org.springframework.boot:spring-boot-autoconfigure")
     compileOnly("org.springframework.boot:spring-boot-health")

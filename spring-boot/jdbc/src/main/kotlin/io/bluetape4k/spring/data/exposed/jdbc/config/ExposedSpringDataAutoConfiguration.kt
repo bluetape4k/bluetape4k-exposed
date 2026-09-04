@@ -1,5 +1,6 @@
 package io.bluetape4k.spring.data.exposed.jdbc.config
 
+import io.bluetape4k.spring.data.exposed.common.mapping.ExposedMappingContext as CommonExposedMappingContext
 import io.bluetape4k.spring.data.exposed.jdbc.mapping.ExposedMappingContext
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.dao.EntityClass
@@ -30,9 +31,18 @@ import javax.sql.DataSource
 @Configuration(proxyBeanMethods = false)
 class ExposedSpringDataAutoConfiguration {
 
-    @Bean
-    @ConditionalOnMissingBean(name = ["exposedMappingContext"])
+    /**
+     * 기존 JDBC 자동 설정 호출자의 binary compatibility를 유지하는 facade 생성 메서드입니다.
+     * 실제 Spring bean은 common mapping context를 사용합니다.
+     */
     fun exposedMappingContext(): ExposedMappingContext = ExposedMappingContext()
+
+    @Bean("exposedMappingContext")
+    @ConditionalOnMissingBean(
+        value = [CommonExposedMappingContext::class],
+        name = ["exposedMappingContext"],
+    )
+    private fun commonExposedMappingContext(): CommonExposedMappingContext = CommonExposedMappingContext()
 
     /**
      * 애플리케이션이 별도 설정을 제공하지 않을 때 사용할 Exposed 기본 설정입니다.
