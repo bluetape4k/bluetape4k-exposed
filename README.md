@@ -252,7 +252,7 @@ repositories {
 <!-- migration-guide:heading:availability -->
 #### Availability
 
-JetBrains Exposed 1.4.0 provides the Gradle migration plugin and the JDBC and
+JetBrains Exposed 1.5.0 provides the Gradle migration plugin and the JDBC and
 R2DBC `MigrationUtils` APIs. The dedicated `migrationDriftTest` tasks and CI
 checks described here are available on `develop` and first ship with
 bluetape4k-exposed 1.12.0. See the
@@ -266,17 +266,20 @@ and [Gradle Plugin Portal entry](https://plugins.gradle.org/plugin/org.jetbrains
 Use the Gradle plugin to compare Exposed table definitions with database
 metadata and generate a reviewable SQL file. The application owns the output
 directory, credentials, filename sequence, SQL review, and execution through
-Flyway, Liquibase, or another migration runner.
+Flyway, Liquibase, or another migration runner. When the central
+`bluetape4k-dependencies` catalog is available, prefer its Exposed plugin alias
+so the catalog remains the version source of truth.
 
 This self-contained PostgreSQL example pins the upstream plugin directly,
 keeps every connection value outside the build file, and includes the JDBC
 driver that matches `MIGRATION_JDBC_URL`. Applications that already import the
 central `bluetape4k-dependencies` catalog may replace the direct plugin line
-with `alias(bt4k.plugins.exposed.plugin)`:
+with `alias(bt4k.plugins.exposed.plugin)`. Do not copy the standalone example's
+version into repository build files when the central alias is available:
 
 ```kotlin
 plugins {
-    id("org.jetbrains.exposed.plugin") version "1.4.0"
+    id("org.jetbrains.exposed.plugin") version "1.5.0"
 }
 
 val migrationJdbcUrl = providers.environmentVariable("MIGRATION_JDBC_URL")
@@ -343,8 +346,21 @@ The demo V1 files are fixed-name repository fixtures. Contributors may
 regenerate and replace them intentionally; applications must not copy that
 naming policy. The demo proof requires only the Gradle wrapper and its H2 JDBC
 driver. It writes into the two demo migration directories. A clean bounded
-status proves that Exposed 1.4.0 regenerated those fixtures without repository
-drift; it does not prove that arbitrary application migrations are safe.
+status proves that catalog-selected Exposed 1.5.0 regenerated those fixtures
+without repository drift; it does not prove that arbitrary application
+migrations are safe.
+
+When the central catalog changes, update the immutable commit SHA in both
+`settings.gradle.kts` and `.github/workflows/ci.yml`; the two values must match.
+From the workspace root, run the catalog drift check before regenerating the
+fixtures:
+
+```bash
+python3 bluetape4k-dependencies/scripts/sync-shared-versions.py \
+  --workspace . \
+  --repo bluetape4k-exposed \
+  --check --summary
+```
 
 ```bash
 ./gradlew :exposed-spring-boot-jdbc-demo:generateMigrations --filename=V1__create_products.sql --rerun --no-build-cache --no-configuration-cache --no-daemon
