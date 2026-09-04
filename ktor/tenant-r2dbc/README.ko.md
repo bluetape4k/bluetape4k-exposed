@@ -41,5 +41,5 @@ transaction보다 먼저 실패합니다. database, pool, metric registry의
 계약을 유지합니다. 로그와 metric에 raw tenant 식별자, header, URL, SQL,
 credential을 넣지 마세요.
 
-[모듈 매뉴얼](https://bluetape4k.github.io/ko/manual/bluetape4k-exposed/1.12/modules/bluetape4k-exposed-ktor-tenant-r2dbc/)을
+[모듈 매뉴얼](https://bluetape4k.github.io/ko/manual/bluetape4k-exposed/2.0/modules/bluetape4k-exposed-ktor-tenant-r2dbc/)을
 참고하세요.

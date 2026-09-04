@@ -1,0 +1,56 @@
+name: Stable manual links
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [develop, main]
+    paths:
+      - '**/README.md'
+      - '**/README.ko.md'
+      - 'scripts/validate_stable_manual_links.rb'
+      - 'scripts/validate_stable_manual_links_test.rb'
+      - '.github/workflows/manual-links.yml'
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - '**/README.md'
+      - '**/README.ko.md'
+      - 'scripts/validate_stable_manual_links.rb'
+      - 'scripts/validate_stable_manual_links_test.rb'
+      - '.github/workflows/manual-links.yml'
+
+jobs:
+  validate:
+    name: Validate stable manual links
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Checkout central manual site
+        uses: actions/checkout@v7
+        with:
+          repository: bluetape4k/bluetape4k.github.io
+          ref: develop
+          path: .manual-site
+          fetch-depth: 1
+
+      - name: Run validator tests
+        run: |
+          ruby scripts/validate_stable_manual_links_test.rb
+          ruby scripts/validate_spring_modulith_readme_test.rb
+
+      - name: Validate README links against the central manifest
+        run: |
+          set -euo pipefail
+          readmes=()
+          while IFS= read -r path; do
+            readmes+=("$path")
+          done < <(git ls-files '*README.md' '*README.ko.md')
+
+          ruby scripts/validate_stable_manual_links.rb --http \
+            .manual-site/docs/manual/bluetape4k-exposed/manifest.yaml \
+            "${readmes[@]}"
