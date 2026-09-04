@@ -8,5 +8,5 @@ implementation(platform("io.github.bluetape4k:bluetape4k-dependencies:<version>"
 implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-cache")
 ```
 
-core route와 함께 사용하고 database 어댑터는 필요한 것만 선택하세요. [모듈 매뉴얼](https://bluetape4k.github.io/ko/manual/bluetape4k-exposed/1.12/modules/bluetape4k-exposed-ktor-cache/)을
+core route와 함께 사용하고 database 어댑터는 필요한 것만 선택하세요. [모듈 매뉴얼](https://bluetape4k.github.io/ko/manual/bluetape4k-exposed/2.0/modules/bluetape4k-exposed-ktor-cache/)을
 참고하세요.

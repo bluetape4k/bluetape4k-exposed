@@ -9,4 +9,4 @@ implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-cache")
 ```
 
 Use this module with the core route and choose database adapters independently.
-See the [module manual](https://bluetape4k.github.io/manual/bluetape4k-exposed/1.12/modules/bluetape4k-exposed-ktor-cache/).
+See the [module manual](https://bluetape4k.github.io/manual/bluetape4k-exposed/2.0/modules/bluetape4k-exposed-ktor-cache/).

@@ -45,11 +45,11 @@ auto-configuration only where the application data path needs them.
 
 ## Manual
 
-The repository-owned manual is the source of truth for the stable 1.12.1 line:
+The central manual is the source of truth for the stable `2.0.0` line:
 
-- [Manual overview](https://bluetape4k.github.io/manual/bluetape4k-exposed/1.12/)
-- [Getting started](https://bluetape4k.github.io/manual/bluetape4k-exposed/1.12/getting-started/)
-- [Module inventory and learning path](https://bluetape4k.github.io/manual/bluetape4k-exposed/1.12/guides/learning-path/)
+- [Manual overview](https://bluetape4k.github.io/manual/bluetape4k-exposed/2.0/)
+- [Getting started](https://bluetape4k.github.io/manual/bluetape4k-exposed/2.0/getting-started/)
+- [Module inventory and learning path](https://bluetape4k.github.io/manual/bluetape4k-exposed/2.0/guides/learning-path/)
 
 It covers release-backed projects and examples in English and Korean, including
 ownership boundaries, runnable examples, failure diagnosis, operations, and
@@ -684,8 +684,8 @@ coroutine-native. Map `MissingTenantContextException` to
 `tenant_context_missing` and resolver failures to `tenant_resolution_failed` in
 your existing `StatusPages` policy. The adapters do not log or tag raw tenant
 identifiers, headers, URLs, SQL, or credentials and do not own resource
-shutdown. See the [tenant JDBC manual](https://bluetape4k.github.io/manual/bluetape4k-exposed/1.12/modules/bluetape4k-exposed-ktor-tenant-jdbc/)
-and [tenant R2DBC manual](https://bluetape4k.github.io/manual/bluetape4k-exposed/1.12/modules/bluetape4k-exposed-ktor-tenant-r2dbc/).
+shutdown. See the [tenant JDBC manual](https://bluetape4k.github.io/manual/bluetape4k-exposed/2.0/modules/bluetape4k-exposed-ktor-tenant-jdbc/)
+and [tenant R2DBC manual](https://bluetape4k.github.io/manual/bluetape4k-exposed/2.0/modules/bluetape4k-exposed-ktor-tenant-r2dbc/).
 
 ## Requirements
 
