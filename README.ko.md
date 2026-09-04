@@ -246,7 +246,7 @@ repositories {
 <!-- migration-guide:heading:availability -->
 #### 제공 범위
 
-JetBrains Exposed 1.4.0은 Gradle migration plugin과 JDBC/R2DBC
+JetBrains Exposed 1.5.0은 Gradle migration plugin과 JDBC/R2DBC
 `MigrationUtils` API를 제공합니다. 여기서 설명하는 `migrationDriftTest` task와
 CI 검증은 `develop`에서 사용할 수 있고 bluetape4k-exposed 1.12.0부터
 배포됩니다. 자세한 내용은
@@ -260,17 +260,20 @@ CI 검증은 `develop`에서 사용할 수 있고 bluetape4k-exposed 1.12.0부�
 
 Gradle plugin은 Exposed table 정의와 database metadata를 비교해 검토 가능한 SQL
 파일을 만듭니다. 출력 directory, credential, filename 순서, SQL 검토, Flyway나
-Liquibase 같은 migration runner로 실행하는 과정은 application이 책임집니다.
+Liquibase 같은 migration runner로 실행하는 과정은 application이 책임집니다. 중앙
+`bluetape4k-dependencies` catalog를 사용할 수 있으면 Exposed plugin alias를
+우선해 catalog를 버전의 기준 데이터 원본으로 유지합니다.
 
 아래 PostgreSQL 예제는 upstream plugin을 직접 고정해 그대로 사용할 수 있고,
 모든 접속 정보를 build file 밖에서 읽으며 `MIGRATION_JDBC_URL`에 맞는 JDBC
 driver를 포함합니다. 중앙 `bluetape4k-dependencies` catalog를 이미 가져온
 application은 직접 선언한 plugin 줄을 `alias(bt4k.plugins.exposed.plugin)`으로
-바꿀 수 있습니다.
+바꿀 수 있습니다. 중앙 alias를 사용할 때 standalone 예제의 버전을 repository
+build file에 복사하지 마세요.
 
 ```kotlin
 plugins {
-    id("org.jetbrains.exposed.plugin") version "1.4.0"
+    id("org.jetbrains.exposed.plugin") version "1.5.0"
 }
 
 val migrationJdbcUrl = providers.environmentVariable("MIGRATION_JDBC_URL")
@@ -337,10 +340,26 @@ Demo V1 파일은 이름을 고정한 repository fixture입니다. 기여자는 
 다시 생성하고 교체할 수 있지만, application에서 이 naming 정책을 따라서는 안
 됩니다. Demo 검증에는 Gradle wrapper와 H2 JDBC driver만 필요하며 결과는 두 demo
 migration directory에 기록됩니다. 제한된 directory의 status가 깨끗하면 Exposed
-1.4.0이 repository drift 없이 fixture를 다시 만들었다는 뜻입니다. 임의의
-application migration이 안전하다는 뜻은 아닙니다.
+중앙 catalog가 선택한 Exposed 1.5.0이 repository drift 없이 fixture를 다시
+만들었다는 뜻입니다. 임의의 application migration이 안전하다는 뜻은 아닙니다.
+
+중앙 catalog가 바뀌면 `settings.gradle.kts`와 `.github/workflows/ci.yml`의
+immutable commit SHA를 함께 갱신하고 두 값이 같은지 확인합니다. fixture를
+다시 만들기 전에 workspace root에서 catalog drift 검사를 실행합니다.
 
 ```bash
+python3 bluetape4k-dependencies/scripts/sync-shared-versions.py \
+  --workspace . \
+  --repo bluetape4k-exposed \
+  --check --summary
+```
+
+workspace root에서 아래 fixture 명령을 실행하기 전에 repository checkout으로
+이동합니다. linked worktree를 사용한다면 해당 worktree root 경로로 바꾸고, 이미
+그 위치에 있다면 `cd` 줄을 생략합니다.
+
+```bash
+cd bluetape4k-exposed
 ./gradlew :exposed-spring-boot-jdbc-demo:generateMigrations --filename=V1__create_products.sql --rerun --no-build-cache --no-configuration-cache --no-daemon
 ./gradlew :exposed-spring-boot-r2dbc-demo:generateMigrations --filename=V1__create_webflux_products.sql --rerun --no-build-cache --no-configuration-cache --no-daemon
 git status --short --untracked-files=all -- examples/jdbc-demo/src/main/resources/db/migration examples/r2dbc-demo/src/main/resources/db/migration
