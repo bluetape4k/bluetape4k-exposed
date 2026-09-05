@@ -34,6 +34,38 @@ This module does not claim MySQL, PostgreSQL, Trino, or ClickHouse parity. Broad
 StarRocks DDL, partitioning, aggregate key variants, stream load, external
 catalogs, and StarRocks Cloud verification are out of scope.
 
+## Table option policy
+
+Exposed `1.5.0` does not validate dialect compatibility of generic
+`Table.options` or `storageParameters`. This policy applies to CREATE TABLE generation.
+
+| Table / DB | options | storageParameters |
+| --- | --- | --- |
+| Native Table / H2 | Upstream behavior unchanged; empty-option DDL verified | Empty list verified |
+| Native Table / PostgreSQL | `USING heap` rendering and execution verified | `FillFactorParameter(70)` and `AutovacuumEnabledParameter(false)` preservation and execution verified |
+| StarRocksTable | Nonempty lists throw `IllegalArgumentException` | Nonempty lists throw `IllegalArgumentException` |
+| ClickHouseTable | Nonempty lists throw `IllegalArgumentException` | Nonempty lists throw `IllegalArgumentException` |
+
+Custom tables reject typed, raw, and user-defined options before generating SQL.
+They do not invoke option `toSQL()` or infer safety by sanitizing its output.
+Even an empty-string option is rejected. This is a behavior change for callers
+that previously supplied raw options.
+
+StarRocks retains its fixed `ENGINE=OLAP PROPERTIES ("replication_num" = "1")`.
+ClickHouse retains `orderBy`, `partitionBy`, and `setting` through its existing
+`engine` DSL. MySQL engine/charset and PostgreSQL WITH parameters are not
+implicitly translated into these settings. There is currently no validated
+generic-option allowlist, and no new raw SQL escape hatch is provided.
+
+### Manual migration
+
+The [Exposed Table option contract](https://github.com/JetBrains/Exposed/blob/1.5.0/exposed-core/src/main/kotlin/org/jetbrains/exposed/v1/core/Table.kt)
+states that option changes are not tracked by migration diffs. Compare the current
+schema with the desired settings, write a separate DB-specific ALTER/recreation
+migration, and verify data preservation and recovery on a test database before
+applying it. Do not expect another `SchemaUtils.create` call or an automatic diff
+to update existing table options.
+
 ## Dependency
 
 ```kotlin

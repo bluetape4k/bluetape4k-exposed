@@ -140,6 +140,7 @@ class SchemaUtilsTest : AbstractClickHouseTest() {
         ddl shouldNotContain "typed_engine_test.id"
 
         transaction(db) {
+            ddl shouldBeEqualTo testTable.createStatement().single()
             SchemaUtils.create(testTable)
             SchemaUtils.drop(testTable)
         }

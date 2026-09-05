@@ -17,6 +17,11 @@ import org.jetbrains.exposed.v1.core.Table
  * - column comment DDL을 지원하지 않음 (filter로 제거됨) — KDoc 또는 README Caveats 참고
  * - PRIMARY KEY는 ORDER BY로 표현 (DSL 빌더에서 설정)
  * - FK 참조는 ClickHouse 미지원
+ * - [options]와 [storageParameters]는 빈 목록만 허용합니다. MySQL/PostgreSQL 옵션과
+ *   raw/custom 옵션은 SQL 생성 전에 [IllegalArgumentException]으로 거부하며 `toSQL()`을
+ *   호출하지 않습니다. engine/order-by/settings는 [engine] DSL로 설정합니다.
+ * - 옵션 변경은 Exposed migration diff에서 추적하지 않습니다. 기존 테이블의 변경은
+ *   검토된 수동 migration으로 적용해야 합니다.
  */
 @Suppress("AbstractClassCanBeConcreteClass")
 abstract class ClickHouseTable(
@@ -28,11 +33,16 @@ abstract class ClickHouseTable(
 
     open val engine: ClickHouseEngine = engine ?: mergeTree { unsafeRawOrderBy("id") }
 
-    override fun createStatement(): List<String> =
-        super.createStatement()
+    override fun createStatement(): List<String> {
+        require(options.isEmpty()) { "ClickHouseTable.options is unsupported; use the engine DSL." }
+        require(storageParameters.isEmpty()) {
+            "ClickHouseTable.storageParameters is unsupported; use engine settings instead of WITH parameters."
+        }
+        return super.createStatement()
             // CREATE TABLE 구문만 유지 (ALTER TABLE ADD CONSTRAINT, CREATE SEQUENCE, COMMENT ON 등 제거)
             .filter { sql -> sql.trimStart().startsWith("CREATE TABLE", ignoreCase = true) }
             .map { sql -> sanitizeForClickHouse(sql) + "\n${engine.toClause()}" }
+    }
 }
 
 private val CH_CONSTRAINT_PK_REGEX = Regex(",?\\s*CONSTRAINT\\s+\\S+\\s+PRIMARY\\s+KEY\\s*\\([^)]*\\)", RegexOption.IGNORE_CASE)

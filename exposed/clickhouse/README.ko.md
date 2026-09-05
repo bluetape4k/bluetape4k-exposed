@@ -18,6 +18,35 @@ ClickHouse JDBC를 위한 Kotlin/Exposed 다이얼렉트입니다. Exposed의 �
 - **집계 함수** — `argMax()`, `argMin()`, `quantile(level)()`, `uniq()`, `uniqExact()`
 - **코루틴 헬퍼** — `suspendTransaction {}`은 블로킹 Exposed 작업을 IO 디스패처에서 실행하고, `queryFlow {}`는 트랜잭션 안에서 결과를 먼저 materialize한 뒤 `Flow<T>`로 emit합니다.
 
+## Table 옵션 지원 정책
+
+Exposed `1.5.0`의 generic `Table.options`·`storageParameters`는 dialect별 안전성을
+검사하지 않습니다. 다음 정책은 CREATE TABLE 생성에만 적용됩니다.
+
+| 테이블 / DB | options | storageParameters |
+| --- | --- | --- |
+| 기본 Table / H2 | upstream 동작 유지, 빈 옵션 기준 DDL 검증 | 빈 목록 기준 검증 |
+| 기본 Table / PostgreSQL | `USING heap` 생성·실행 검증 | `FillFactorParameter(70)`·`AutovacuumEnabledParameter(false)` 보존·실행 검증 |
+| StarRocksTable | 비어 있지 않으면 `IllegalArgumentException` | 비어 있지 않으면 `IllegalArgumentException` |
+| ClickHouseTable | 비어 있지 않으면 `IllegalArgumentException` | 비어 있지 않으면 `IllegalArgumentException` |
+
+custom table에서는 typed·raw·사용자 정의 옵션을 모두 SQL 생성 전에 거부하며,
+옵션의 `toSQL()`이나 문자열 정제로 안전성을 추정하지 않습니다. 빈 문자열 옵션도
+지원으로 취급하지 않습니다. 이는 원래 raw 옵션을 지정하던 호출자에게 동작 변경입니다.
+
+StarRocks는 기존의 고정 `ENGINE=OLAP PROPERTIES ("replication_num" = "1")`을
+유지합니다. ClickHouse는 기존 `engine` DSL의 `orderBy`·`partitionBy`·`setting`을
+사용합니다. MySQL engine/charset과 PostgreSQL WITH 파라미터를 이 설정으로 자동 변환하지 않습니다.
+검증된 generic 옵션 allowlist는 현재 없으며, 임의 raw SQL 우회 API도 추가하지 않습니다.
+
+### 수동 migration
+
+[Exposed Table 옵션 계약](https://github.com/JetBrains/Exposed/blob/1.5.0/exposed-core/src/main/kotlin/org/jetbrains/exposed/v1/core/Table.kt)에
+따르면 옵션 변경은 migration diff로 추적되지 않습니다. 기존 테이블 변경은 현재 schema와
+원하는 설정을 비교한 뒤 DB별 ALTER/재생성 SQL을 별도 migration으로 작성하고,
+테스트 DB에서 데이터 보존과 복구 절차를 검증한 후 적용해야 합니다. `SchemaUtils.create`
+재호출이나 자동 diff만으로 옵션이 갱신된다고 가정하지 마세요.
+
 ## 빠른 시작
 
 ```kotlin
