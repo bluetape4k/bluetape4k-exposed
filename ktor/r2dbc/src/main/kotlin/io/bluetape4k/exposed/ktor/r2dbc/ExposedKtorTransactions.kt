@@ -10,7 +10,11 @@ import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 
-/** 호출자 소유 resource로 coroutine-native Exposed R2DBC transaction을 실행합니다. */
+/**
+ * 호출자 소유 자원으로 coroutine-native Exposed R2DBC 트랜잭션을 실행합니다.
+ * 취소와 [Error]는 그대로 전달하고, 일반 예외는 [ExposedKtorTransactionException]의 원인으로 보존합니다.
+ * 실패 경로의 메트릭 기록 예외는 주원인의 `suppressed`에 추가합니다.
+ */
 @Suppress("TooGenericExceptionCaught", "ThrowsCount")
 suspend fun <T> ApplicationCall.exposedR2dbcTransaction(
     db: R2dbcDatabase,
@@ -25,14 +29,30 @@ suspend fun <T> ApplicationCall.exposedR2dbcTransaction(
             started?.stopTransaction(meterRegistry, "success")
         }
     } catch (cancellation: CancellationException) {
-        started?.stopTransaction(meterRegistry, "cancelled")
+        started?.stopFailedTransaction(meterRegistry, "cancelled", cancellation)
         throw cancellation
     } catch (failure: Error) {
-        started?.stopTransaction(meterRegistry, "error")
+        started?.stopFailedTransaction(meterRegistry, "error", failure)
         throw failure
     } catch (failure: Exception) {
-        started?.stopTransaction(meterRegistry, "error")
+        started?.stopFailedTransaction(meterRegistry, "error", failure)
         throw ExposedKtorTransactionException().also { it.initCause(failure) }
+    }
+}
+
+/** 실패 경로의 metric 기록은 원래 취소·DB 예외를 대체하지 않는다. */
+@Suppress("TooGenericExceptionCaught")
+private fun Timer.Sample.stopFailedTransaction(
+    registry: MeterRegistry?,
+    outcome: String,
+    primary: Throwable,
+) {
+    try {
+        stopTransaction(registry, outcome)
+    } catch (metricFailure: Throwable) {
+        if (metricFailure !== primary) {
+            primary.addSuppressed(metricFailure)
+        }
     }
 }
 
