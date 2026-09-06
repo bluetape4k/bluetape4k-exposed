@@ -60,13 +60,18 @@
      `4 tests`, `py_compile`, 전체 `detekt`, terminology audit, `git diff --check`가 통과했다.
      중간 R2DBC 재실행의 task명 오타는 실행되지 않은 결과로 오인하지 않고 올바른 task로
      즉시 재실행했다.
-5. [ ] **C-05 / CG-09~10 — lesson·리뷰·커밋**
+5. [x] **C-05 / CG-09~10 — lesson·리뷰·커밋**
    - Action: 재발 방지 lesson 필요 여부를 결정하고 final diff를 독립 리뷰한다.
    - Expected DoD: P0=0/P1=0, `git diff --check` 통과, Lore commit과 정확한 head를 기록한다.
    - Lesson decision: 기존 `docs/lessons/2026-09-04-milestone-210-ci-validation.md`가
-     동일한 fail-closed Kover 규칙을 직접 예방하므로 재사용한다. 새 failure/recovery/design/
-     operational guidance나 invalidated assumption은 없으며, 중간 task명 오타는 단발성
-     실행 오류로 즉시 교정되어 별도 lesson을 요구하는 project rule이 아니다.
+     동일한 fail-closed Kover 규칙을 직접 예방하므로 재사용한다. MySQL schema 권한
+     가정에서 드러난 capability 경계는 별도 lesson으로 기록했으며, 그 외 새
+     failure/recovery/design/operational guidance나 invalidated assumption은 없다. 중간
+     task명 오타는 단발성 실행 오류로 즉시 교정되어 별도 lesson을 요구하는 project rule이 아니다.
+   - Evidence: MySQL schema capability 차이는 `docs/lessons/2026-09-07-issue-815-mysql-schema-capability.md`에
+     기록했고, 독립 리뷰 lane 중단 후 `docs/superpowers/reviews/2026-09-07-issue-815-nightly-blockers-inline-review.md`
+    에서 inline exact-diff review를 완료했다(`P0=0/P1=0/P2=0`). Lore commit은
+     `7257382f06d9e6cca6afa4742641c47b9fd2d7db`이며 이후 점검표 갱신도 같은 규칙으로 커밋한다.
 6. [ ] **C-06 / CG-11~15 — PR 생성 및 merge-ready 보고**
    - Action: 정확한 head를 push하고 `develop` 대상 PR을 생성한 뒤 live metadata, CI, review를 확인한다.
    - Expected DoD: PR의 마지막 `## DoD Status`와 검증 수치를 읽어 back하고, merge는 fresh approval 전까지 보류한다.
@@ -81,4 +86,4 @@
 
 ## 현재 상태
 
-**READY FOR REVIEW** — C-01~C-04와 로컬 검증을 완료했으며, 독립 리뷰·Lore commit·PR 생성이 남아 있다.
+**READY FOR PR** — C-01~C-05, lesson·inline review·Lore commit을 완료했으며, exact head push와 PR 생성·CI가 남아 있다.
