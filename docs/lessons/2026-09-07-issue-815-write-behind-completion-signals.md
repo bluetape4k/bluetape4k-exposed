@@ -16,10 +16,20 @@ retry 테스트가 첫 번째 `afterPersisted` 기록만 관찰한 상태에서 
 충족되는 문제였다. 로컬 단일 실행이 통과하더라도 hosted 부하에서는 조기 관찰
 구간이 드러날 수 있다.
 
+후속 exact head `6d3d2231dc1ec75765aad10491bd39b128e31a56`의
+[CI run `34047636254`](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/34047636254)에서는
+기대 건수를 정확하게 바꾼 뒤 MySQL 고유의 관찰 경계가 드러났다. Awaitility의
+polling thread는 새 transaction에서 `1003`건을 확인했지만, polling 종료 뒤 바깥
+Exposed transaction으로 돌아와 수행한 assertion은 MySQL `REPEATABLE READ`
+transaction의 초기 읽기 기준에 남은 `3`건을 다시 읽었다. 같은 공통 fixture를
+쓰는 Caffeine 1건과 Lettuce near/remote 2건이 모두
+`Expected <3> to equal to <1003>`으로 실패했다.
+
 ## 결정
 
 - 대량 insert 시나리오는 실행 전 DB 건수와 `entityMap`의 실제 고유 ID 수를
-  합산한다. 이 기대 건수에 도달할 때까지 기다린 뒤 정확히 같은지 검증한다.
+  합산한다. `untilAsserted`의 polling transaction 안에서 기대 건수와 정확히 같은지
+  검증해 기다림과 최종 assertion이 같은 DB 읽기 기준을 사용하게 한다.
 - JDBC, suspended JDBC, R2DBC 공통 시나리오에 같은 기준을 적용한다.
 - retry hook 테스트는 DB update 완료나 queue depth를 hook 완료의 대체 신호로
   쓰지 않는다. `afterPersisted`가 전체 batch를 기록한 뒤 latch를 해제한다.
@@ -31,6 +41,11 @@ retry 테스트가 첫 번째 `afterPersisted` 기록만 관찰한 상태에서 
 - `jdbc-caffeine` 전체는 PostgreSQL과 H2에서 각각 `181 tests / 2 skipped`로
   성공했다.
 - `r2dbc-caffeine` 전체 H2는 `121 tests / 1 skipped`로 성공했다.
+- 후속 MySQL 실패 수정 뒤 `jdbc-caffeine` 동기·suspended exact 시나리오가 각각
+  `2 tests / 1 skipped`, 전체 MySQL이 `181 tests / 18 skipped`로 성공했다.
+- 같은 공통 fixture를 쓰는 `jdbc-lettuce` write-behind near/remote 시나리오는
+  MySQL에서 `48 tests / 14 skipped`, R2DBC Caffeine H2 시나리오는
+  `27 tests / 1 skipped`로 성공했다.
 - canonical `./gradlew detekt`는 성공했다. 직접 실행한 `detektTestFixtures`와
   `detektTest`는 각각 기존 baseline과 같은 `50`, `22`개 진단으로 실패했다.
   이 source-set task는 현재 clean gate가 아니며, 신규 진단 통과로 기록하지 않는다.
@@ -39,6 +54,9 @@ retry 테스트가 첫 번째 `afterPersisted` 기록만 관찰한 상태에서 
 
 - 비동기 저장 건수는 입력 크기만 비교하지 말고 `초기 상태 + 실제 고유 입력`을
   기대값으로 만든다.
+- Awaitility가 별도 thread에서 DB 완료를 관찰한다면 polling 뒤 바깥 transaction에서
+  같은 값을 다시 읽지 않는다. 특히 MySQL `REPEATABLE READ`에서는 기다림과 최종
+  assertion을 같은 polling transaction 안에 둔다.
 - queue 정산, DB statement 실행, callback 완료는 서로 다른 관찰 경계다. 테스트가
   주장하는 마지막 side effect에서 완료 신호를 보낸다.
 - 재실행 통과만으로 race를 닫지 않는다. hosted failure의 조기 관찰 구간을 설명하고

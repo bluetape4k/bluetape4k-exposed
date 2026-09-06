@@ -72,11 +72,11 @@ interface R2dbcWriteBehindScenario<ID: Any, E: Serializable>: R2dbcCacheTestScen
             await
                 .atMost(Duration.ofSeconds(30))
                 .withPollInterval(Duration.ofSeconds(5))
-                .until { kotlinx.coroutines.runBlocking { getAllCountFromDB() } >= expectedCount }
-
-            // DB에서 조회한 값
-            val dbCount = getAllCountFromDB()
-            dbCount shouldBeEqualTo expectedCount
+                .untilAsserted {
+                    kotlinx.coroutines.runBlocking {
+                        getAllCountFromDB() shouldBeEqualTo expectedCount
+                    }
+                }
         }
     }
 }

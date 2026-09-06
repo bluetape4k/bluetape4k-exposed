@@ -32,6 +32,11 @@
 - failed-only rerun attempt 2는 DB update와 queue 정산 뒤 `afterPersisted`가 두 번째
   write를 기록하기 전에 assertion이 실행되어 `Expected [<1>] to equal to [<1>, <2>]`
   로 실패했다.
+- 후속 exact head `6d3d2231dc1ec75765aad10491bd39b128e31a56`의 CI run
+  `34047636254`는 Caffeine MySQL 1건과 Lettuce MySQL near/remote 2건에서
+  `Expected <3> to equal to <1003>`으로 실패했다. Awaitility polling thread의 새
+  transaction은 완료를 관찰했지만, 이후 바깥 MySQL `REPEATABLE READ` transaction의
+  초기 읽기 기준에서 assertion을 다시 수행한 것이 원인이다.
 
 ## 실행 순서
 
@@ -86,6 +91,11 @@
    - 진행 Evidence: PR #830 생성과 첫 exact-head CI read-back은 완료했다. 두 hosted
      failure의 완료 신호를 수정해 PostgreSQL 대상 4회 연속, JDBC 전체 PostgreSQL/H2
      각 `181 tests / 2 skipped`, R2DBC 전체 H2 `121 tests / 1 skipped`를 통과했다.
+     후속 exact-head MySQL transaction 읽기 기준 실패는 최종 assertion을 Awaitility polling
+     transaction 안으로 이동해 수정했다. MySQL에서 Caffeine 동기·suspended exact가
+     각각 `2 tests / 1 skipped`, Caffeine 전체가 `181 tests / 18 skipped`, Lettuce
+     write-behind가 `48 tests / 14 skipped`로 성공했고 R2DBC Caffeine H2도
+     `27 tests / 1 skipped`로 성공했다.
      canonical `detekt`도 성공했다. source-set Detekt 강제 실행의 기존 baseline
      `50`/`22` 진단은 변경 전 detached `HEAD`와 동일하며 통과로 세지 않는다.
      새 exact head push와 hosted CI가 남아 있다.
