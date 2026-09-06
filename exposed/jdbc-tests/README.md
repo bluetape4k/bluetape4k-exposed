@@ -2,6 +2,59 @@
 
 English | [한국어](./README.ko.md)
 
+
+## Exposed 1.5.0 one-way hashing
+
+Use upstream `exposed-crypt` directly, without a new Bluetape adapter.
+[`JdbcHashedColumnContractTest`](src/test/kotlin/io/bluetape4k/exposed/tests/crypt/JdbcHashedColumnContractTest.kt)
+covers H2 storage, reads, nullable values, resaving, custom hashers, and rehashing.
+R2DBC coverage is for the DSL, not DAO support.
+
+Applications explicitly opt in using their existing Exposed BOM/catalog.
+`exposed-crypt` 1.5.0 transitively requires `spring-security-crypto`, but no Spring Boot starter.
+Argon2/SCrypt additionally require BouncyCastle at runtime.
+With the Spring Security 7.1.1 resolved by this repository, validation also needs
+`spring-core`; its absence produced `NoClassDefFoundError: org/springframework/util/StringUtils`.
+The example assumes Spring versions are managed by the application's BOM.
+For test-only usage, replace implementation/runtimeOnly below with testImplementation/testRuntimeOnly.
+
+```kotlin
+dependencies {
+    implementation(libs.exposed.crypt)
+    runtimeOnly(bt4k.bouncycastle.bcprov) // Argon2 / SCrypt
+    runtimeOnly("org.springframework:spring-core") // Spring Security 7.1.x
+}
+```
+
+```kotlin
+import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.crypt.hash
+import org.jetbrains.exposed.v1.crypt.hashed
+
+object Accounts: Table("accounts") {
+    val password = varchar("password_hash", 512).hashed()
+}
+val encoded = Accounts.password.hash(submittedPassword)
+val accepted = encoded.matches(submittedPassword)
+```
+
+Use these values with the JDBC insert/update DSL inside its transaction.
+Declare nullable columns with `varchar("optional", 512).nullable().hashed()`.
+Assign a loaded `Hashed` directly when resaving. `Hashed(hasher, encodedValue)` only wraps an
+existing encoded value; it does not hash, so never pass plaintext to that constructor.
+
+- BCrypt produces 60 characters. The example's 512-character column leaves room for algorithm identifiers and parameter changes, but cannot guarantee space for every custom hasher.
+- Argon2/SCrypt output lengths depend on parameters. A PBKDF2 pepper is a separate secret and must remain available for verification.
+- `Hasher` has no `upgradeEncoding` API. Use `PasswordEncoderHasher(DelegatingPasswordEncoder(...))` to verify an existing `{id}hash`; only after successful authentication and a true `upgradeEncoding(encodedValue)` result, hash the submitted plaintext with the new settings and update it. Wrong input must not change stored values.
+- Changing configuration alone does not migrate hashes. Never rehash an old hash without plaintext. The application owns concurrent-update policy.
+- BCrypt strengths 4/5 in tests reduce test duration; they are not production recommendations. Measure production cost separately, define input-size/rate limits, and do not hash on an event loop.
+- `Hashed.toString()` returns `Hashed(***)`, but direct `encodedValue` output and custom encoder exceptions are not automatically redacted. Do not log plaintext, hashes, or request bodies, or publish them in events. Use generic authentication failure messages and separately restrict SQL/driver debug logging.
+- Plaintext storage/logger/database-error negative tests prove the configured upstream path, not arbitrary custom hashers or application-wide logging safety.
+- Reversible and searchable encryption remain separate [Tink module](../tink/README.md) features.
+
+Official baseline: [Exposed 1.5.0 crypt sources](https://github.com/JetBrains/Exposed/tree/84361204b6639cad5696506a26595c97afac3531/exposed-crypt).
+
+
 ## Overview
 
 Shared JDBC test infrastructure for Exposed-based modules. It gives test authors a stable `TestDB` selector, transaction-scoped helpers, schema/table fixture utilities, and reusable sample schemas so one test can run against fast H2 feedback or real MySQL/PostgreSQL coverage.

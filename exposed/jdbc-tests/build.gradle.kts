@@ -91,6 +91,8 @@ dependencies {
     api(bt4k.exposed.jdbc)
     api(libs.exposed.dao)
     implementation(libs.exposed.crypt)
+    testRuntimeOnly(bt4k.bouncycastle.bcprov)
+    testRuntimeOnly("org.springframework:spring-core")
     implementation(libs.exposed.kotlin.datetime)
     implementation(bt4k.exposed.java.time)
     implementation(libs.exposed.json)

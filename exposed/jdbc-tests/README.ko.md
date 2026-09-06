@@ -2,6 +2,58 @@
 
 [English](./README.md) | 한국어
 
+
+## Exposed 1.5.0 단방향 해시
+
+신규 Bluetape adapter 없이 upstream `exposed-crypt`를 직접 사용합니다. 이 모듈의
+[`JdbcHashedColumnContractTest`](src/test/kotlin/io/bluetape4k/exposed/tests/crypt/JdbcHashedColumnContractTest.kt)는
+H2에서 저장·조회·nullable·재저장·custom hasher·rehash를 검증합니다. R2DBC는 DSL 경로이며 DAO 지원을 뜻하지 않습니다.
+
+애플리케이션은 기존 Exposed BOM/catalog를 사용하고 필요한 의존성을 명시적으로 선택합니다.
+`exposed-crypt` 1.5.0은 `spring-security-crypto`를 전이 의존성으로 포함합니다.
+Spring Boot starter는 필요하지 않습니다. Argon2/SCrypt에는 별도 BouncyCastle runtime이 필요합니다.
+이 저장소에서 선택된 Spring Security 7.1.1의 검증 경로에는 `spring-core`도 필요합니다.
+누락 시 `NoClassDefFoundError: org/springframework/util/StringUtils`를 재현했습니다.
+아래 예제는 애플리케이션 BOM으로 Spring 버전을 관리한다는 전제입니다.
+테스트에서만 사용할 때는 아래 implementation/runtimeOnly를 testImplementation/testRuntimeOnly로 바꿉니다.
+
+```kotlin
+dependencies {
+    implementation(libs.exposed.crypt)
+    runtimeOnly(bt4k.bouncycastle.bcprov) // Argon2 / SCrypt
+    runtimeOnly("org.springframework:spring-core") // Spring Security 7.1.x
+}
+```
+
+```kotlin
+import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.crypt.hash
+import org.jetbrains.exposed.v1.crypt.hashed
+
+object Accounts: Table("accounts") {
+    val password = varchar("password_hash", 512).hashed()
+}
+val encoded = Accounts.password.hash(submittedPassword)
+val accepted = encoded.matches(submittedPassword)
+```
+
+이 코드는 JDBC transaction 안에서 해당 backend의 insert/update DSL과 함께 사용합니다.
+nullable 컬럼은 `varchar("optional", 512).nullable().hashed()`로 선언합니다.
+조회한 `Hashed`는 그대로 대입합니다. `Hashed(hasher, encodedValue)`는 이미 인코딩된 값을 감쌀 뿐
+해싱하지 않으므로 평문을 전달하면 안 됩니다.
+
+- BCrypt 출력은 60자입니다. 예제의 512자는 알고리즘 식별자·파라미터 변경 여유이며 모든 custom hasher의 길이를 보장하지 않습니다.
+- Argon2/SCrypt 출력 길이는 파라미터에 따라 달라집니다. PBKDF2의 pepper는 별도 비밀값이며 검증할 때 같은 pepper가 필요합니다.
+- `Hasher`에는 `upgradeEncoding`이 없습니다. `PasswordEncoderHasher(DelegatingPasswordEncoder(...))`를 사용해 기존 `{id}hash`를 검증하고, 인증 성공 및 `upgradeEncoding(encodedValue)`가 true인 경우에만 제출된 평문을 새 설정으로 해시해 갱신합니다. 실패 입력은 기존 값을 변경하지 않습니다.
+- 설정만 바꾸거나 평문 없이 기존 hash를 다시 해시해서 마이그레이션하지 않습니다. DB 갱신 경합 정책은 애플리케이션이 소유합니다.
+- 테스트의 BCrypt strength 4/5는 실행 시간 단축용입니다. production 비용·입력 크기 제한·rate limit은 별도 측정·정책이며, 해시 연산을 이벤트 루프에서 실행하지 않습니다.
+- `Hashed.toString()`은 `Hashed(***)`지만 `encodedValue` 직접 출력과 custom encoder 예외는 자동 redaction되지 않습니다. 평문·해시·요청 본문을 로그나 이벤트에 넣지 않고, 인증 실패는 일반화한 메시지로 처리합니다. SQL/driver debug logging도 별도로 제한합니다.
+- 평문 미저장·로거/DB 오류 평문 미노출 테스트는 구성한 upstream 경로의 증거이며 임의 custom hasher나 애플리케이션 전체 로깅의 안전성을 보증하지 않습니다.
+- 가역 암호화·검색 가능한 암호화는 [Tink 모듈](../tink/README.ko.md)의 별도 기능입니다.
+
+공식 기준: [Exposed 1.5.0 crypt 소스](https://github.com/JetBrains/Exposed/tree/84361204b6639cad5696506a26595c97afac3531/exposed-crypt).
+
+
 ## 개요
 
 Exposed 기반 모듈을 JDBC로 검증할 때 쓰는 공통 테스트 인프라입니다. 테스트 작성자는 `TestDB`로 실행 대상 DB를 고르고, 트랜잭션 스코프 헬퍼와 테이블/스키마 fixture 유틸을 사용해 H2 빠른 피드백부터 실제 MySQL/PostgreSQL 커버리지까지 같은 테스트 코드로 다룰 수 있습니다.

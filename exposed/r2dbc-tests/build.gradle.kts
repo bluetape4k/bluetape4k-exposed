@@ -67,6 +67,9 @@ dependencies {
     api(bt4k.exposed.core)
     api(bt4k.exposed.r2dbc)
     implementation(libs.exposed.migration.r2dbc)
+    testImplementation(libs.exposed.crypt)
+    testRuntimeOnly(bt4k.bouncycastle.bcprov)
+    testRuntimeOnly("org.springframework:spring-core")
     implementation(bt4k.exposed.java.time)
 
     // Id Generators
