@@ -1,3 +1,6 @@
+// 호출자 callback의 Error까지 원형대로 전파하고 cleanup 실패가 덮지 않도록 포착한다.
+@file:Suppress("TooGenericExceptionCaught")
+
 package io.bluetape4k.exposed.tests
 
 import org.jetbrains.exposed.v1.core.DatabaseConfig
@@ -5,37 +8,39 @@ import org.jetbrains.exposed.v1.core.Schema
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 
-
-/**
- * 스키마를 생성한 뒤 테스트 블록을 실행하고 종료 시 스키마를 정리합니다.
- *
- * ## 동작/계약
- * - 현재 dialect가 `supportsCreateSchema`일 때만 스키마 생성/삭제를 수행합니다.
- * - 블록 완료 후 `commit()`으로 변경을 반영한 뒤 `dropSchema(..., cascade = true)`를 호출합니다.
- * - [configure]를 [withDb]에 전달해 DB 설정을 임시 변경할 수 있습니다.
- *
- * ```kotlin
- * withSchemas(TestDB.POSTGRESQL, Schema("s1")) {
- *     // schema s1 안에서 테스트 실행
- * }
- * // 종료 시 schema s1 정리
- * ```
- */
+/** enum fixture의 요청 schema를 생성·정리하며 미지원 dialect에서는 본문을 실행하지 않습니다. */
 fun withSchemas(
     dialect: TestDB,
     vararg schemas: Schema,
-    configure: (DatabaseConfig.Builder.() -> Unit)? = { },
+    configure: (DatabaseConfig.Builder.() -> Unit)? = {},
     statement: JdbcTransaction.() -> Unit,
+) = withSchemas(jdbcFixtureFor(dialect), *schemas, configure = configure) { statement() }
+
+/**
+ * 호출자가 소유한 요청 schema만 생성하고 cascade 정리합니다.
+ * 부분 생성 실패도 정리하며 원래 본문 실패/취소를 우선하고 cleanup 실패를 suppressed로 보존합니다.
+ * 공유 schema나 production schema를 전달해서는 안 됩니다.
+ */
+fun <K> withSchemas(
+    fixture: JdbcTestDbFixture<K>,
+    vararg schemas: Schema,
+    configure: (DatabaseConfig.Builder.() -> Unit)? = {},
+    statement: JdbcTransaction.(K) -> Unit,
 ) {
-    withDb(dialect, configure) {
+    withDb(fixture, configure = configure) { key ->
         if (currentDialectTest.supportsCreateSchema) {
-            SchemaUtils.createSchema(*schemas)
+            var failure: Throwable? = null
             try {
-                statement()
-                commit()     // Need commit to persist data before drop schemas
-            } finally {
-                SchemaUtils.dropSchema(*schemas, cascade = true)
+                SchemaUtils.createSchema(*schemas)
+                statement(key)
                 commit()
+            } catch (thrown: Throwable) {
+                failure = thrown
+                throw thrown
+            } finally {
+                cleanupJdbcFixture(failure, recover = false) {
+                    SchemaUtils.dropSchema(*schemas, cascade = true)
+                }
             }
         }
     }

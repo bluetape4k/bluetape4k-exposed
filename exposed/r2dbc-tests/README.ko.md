@@ -22,7 +22,7 @@
 
 ```kotlin
 dependencies {
-    testImplementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-tests:${version}")
+    testImplementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-tests")
 }
 ```
 
@@ -31,7 +31,7 @@ dependencies {
 - **공통 테스트 베이스**: `AbstractExposedR2dbcTest`로 R2DBC 테스트 기본 구조 제공
 - **다중 DB 지원**: H2, MySQL, MariaDB, PostgreSQL R2DBC 테스트 지원
 - **Testcontainers 통합**: Docker 기반 실제 DB 테스트 지원
-- **Coroutine 네이티브 helper**: 데이터베이스 helper는 `suspend` 함수이며 `runTest` 안에서 자연스럽게 사용할 수 있음
+- **Coroutine 네이티브 helper**: 데이터베이스 helper는 `suspend` 함수이며 `runSuspendIO` 안에서 자연스럽게 사용할 수 있음
 - **테이블/스키마 유틸**: 테스트용 엔티티/테이블 재사용
 
 ## 지원 데이터베이스
@@ -54,7 +54,7 @@ dependencies {
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.selectAll
@@ -71,7 +71,7 @@ class UserRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `should insert and find user`(testDB: TestDB) = runTest {
+    fun `should insert and find user`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             // Insert
             Users.insert {
@@ -94,12 +94,12 @@ class UserRepositoryTest: AbstractExposedR2dbcTest() {
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import kotlin.test.assertTrue
 
 @ParameterizedTest
 @MethodSource(ENABLE_DIALECTS_METHOD)
-fun `should connect to database`(testDB: TestDB) = runTest {
+fun `should connect to database`(testDB: TestDB) = runSuspendIO {
     withDb(testDB) {
         // suspend 트랜잭션 내에서 실행
         val isConnected = true // 연결 확인 로직
@@ -113,11 +113,11 @@ fun `should connect to database`(testDB: TestDB) = runTest {
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 
 @ParameterizedTest
 @MethodSource(ENABLE_DIALECTS_METHOD)
-fun `should create and drop tables`(testDB: TestDB) = runTest {
+fun `should create and drop tables`(testDB: TestDB) = runSuspendIO {
     withTables(testDB, Users, Orders) {
         // 테스트 시작 전 테이블 자동 생성
         // 테스트 종료 후 테이블 자동 삭제
@@ -134,7 +134,7 @@ fun `should create and drop tables`(testDB: TestDB) = runTest {
 
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 
 class PostgresOnlyTest: AbstractExposedR2dbcTest() {
 
@@ -146,7 +146,7 @@ class PostgresOnlyTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("databases")
-    fun `postgres specific test`(testDB: TestDB) = runTest {
+    fun `postgres specific test`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             // PostgreSQL 전용 테스트
         }
@@ -158,7 +158,7 @@ class PostgresOnlyTest: AbstractExposedR2dbcTest() {
 
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 
 class MySQLLikeTest: AbstractExposedR2dbcTest() {
 
@@ -174,7 +174,7 @@ class MySQLLikeTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("databases")
-    fun `mysql compatible test`(testDB: TestDB) = runTest {
+    fun `mysql compatible test`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             // MySQL 호환 DB 테스트
         }
@@ -186,12 +186,12 @@ class MySQLLikeTest: AbstractExposedR2dbcTest() {
 
 ```kotlin
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import kotlin.test.assertEquals
 
 @ParameterizedTest
 @MethodSource(ENABLE_DIALECTS_METHOD)
-fun `should stream query results`(testDB: TestDB) = runTest {
+fun `should stream query results`(testDB: TestDB) = runSuspendIO {
     withTables(testDB, Users) {
         // 여러 레코드 삽입
         repeat(100) { i ->
@@ -303,7 +303,43 @@ Containers.Postgres
 
 ## 참고 사항
 
-- R2DBC helper는 `suspend` 함수이며 보통 `runTest` 안에서 호출합니다
+- R2DBC helper는 `suspend` 함수이며 보통 `runSuspendIO` 안에서 호출합니다
 - MySQL 5.7은 R2DBC 드라이버 호환성 문제로 제외됩니다
 - Testcontainers 사용 시 Docker가 필요합니다
 - Flow 기반 스트리밍 쿼리가 가능합니다
+
+## 호출자 소유 fixture 계약
+
+애플리케이션 자체 DB 식별자와 연결 공급원을 재사용하려면 `r2dbcTestDbFixture`로 `R2dbcTestDbFixture<K>`를 만듭니다. 물리 테스트 DB마다 fixture를 한 번 만들고 테스트 스위트/JVM 동안 공유합니다. custom key를 전역 등록하지 않습니다. 생성 callback은 기존 caller-owned pool/연결 공급원을 사용하는 Exposed wrapper를 반환해야 하며, 호출마다 장기 pool을 새로 만들면 안 됩니다.
+
+다음 예제는 애플리케이션의 `ApplicationDb`, `Orders`, 연결 공급원이 이미 준비되어 있다고 가정합니다.
+
+```kotlin
+val fixture = r2dbcTestDbFixture(
+    key = ApplicationDb.PRIMARY,
+    createDatabase = { configure ->
+        R2dbcDatabase.connect(
+            connectionPool,
+            R2dbcDatabaseConfig.Builder().apply {
+                setUrl(connectionUrl)
+                configure()
+            },
+        )
+    },
+)
+withTables(fixture, Orders) { key ->
+    // seed/FK/도메인 정리는 애플리케이션 wrapper에 둡니다.
+}
+```
+
+- 기존 enum 함수·기본 인자·deprecated 호환 별칭을 유지합니다. DB/table/schema helper에 fixture overload를 제공합니다.
+- 같은 fixture는 FIFO로 직렬화하고 다른 fixture는 독립 실행합니다. 활성 진입 토큰을 상속한 같은 fixture의 중첩 호출은 즉시 거부합니다. 종료된 진입은 후속 호출을 막지 않습니다.
+- `database`는 초기화와 종료 hook 등록 전에는 null이며 성공 후 기본 wrapper를 노출합니다. 첫 `configure`도 별도 일시 wrapper를 만들고 트랜잭션 종료 후 provider 등록을 해제합니다. 일시 구성에서 기본 wrapper와 같은 인스턴스를 반환하면 거부합니다.
+- 생성·종료 hook 등록 실패 뒤 초기화를 다시 시도할 수 있습니다. legacy `beforeConnection`은 실제 wrapper 생성마다 한 번 실행합니다. 외부 pool/container는 호출자 소유이며 provider가 닫지 않습니다.
+- `currentR2dbcTestDbFixture`는 트랜잭션 안에서 fixture를 식별하고 commit 후에도 유지합니다. legacy enum은 기존 `currentTestDB` 동작을 유지합니다. 본문은 `maxAttempts = 1`로 한 번 실행합니다.
+- 취소는 그대로 전파하며 필수 cleanup만 보호합니다. 본문 실패가 우선이고 cleanup/recovery 실패는 발생 순서대로 suppressed에 남습니다 단, 기존 R2DBC `withTables` 계약대로 본문 취소에는 cleanup/recovery suppressed를 추가하지 않습니다.
+- 전용 테스트 table/schema만 전달해야 합니다. 사전 drop과 cascade 정리가 수행됩니다. 부분 생성도 정리하되 `dropTables = false`는 종료 정리를 생략합니다. schema 미지원 dialect는 본문을 실행하지 않으며 DB 단절·의도적인 drop 실패에서는 잔여물이 생길 수 있습니다.
+- provider 로그에는 custom key·URL·설정·callback 예외 메시지를 넣지 않습니다. driver/애플리케이션 로그는 호출자 정책입니다. coroutine debug stacktrace recovery가 예외를 복제할 수 있지만 helper는 본문 실패를 다른 실패로 교체하지 않습니다.
+- 애플리케이션의 `bluetape4k-dependencies` BOM 아래 `testImplementation`으로 선언합니다. test runtime 지원과 application main runtime은 구분합니다. upstream이 로그만 남기는 Exposed 내부 cleanup 실패는 suppressed 보장 밖입니다(#817).
+
+workshop/clinic 이전과 배포는 별도 작업이며 이 provider 변경만으로 #815 전체가 완료되지는 않습니다.

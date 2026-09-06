@@ -1,85 +1,33 @@
 package io.bluetape4k.exposed.tests
 
-import io.bluetape4k.logging.info
-import io.bluetape4k.utils.Runtimex
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
-import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.v1.jdbc.transactions.transactionManager
 import kotlin.coroutines.CoroutineContext
 
-private suspend fun acquireSemaphoreSuspending(testDB: TestDB) =
-    withContext(Dispatchers.IO) {
-        testDbSemaphores.computeIfAbsent(testDB) { java.util.concurrent.Semaphore(1, true) }.acquire()
-    }
-
-@Suppress("DEPRECATION")
 /**
- * 코루틴 환경에서 테스트용 DB 트랜잭션을 열고 블록을 실행합니다.
- *
- * ## 동작/계약
- * - [withDb]와 동일하게 DB별 세마포어로 동시 접근을 제어합니다.
- * - 트랜잭션은 `newSuspendedTransaction`으로 생성되며 `currentTestDB`가 설정됩니다.
- * - [configure]를 전달하면 임시 DB 구성으로 실행 후 기존 구성으로 복원합니다.
- *
- * ```kotlin
- * withDbSuspending(TestDB.H2) {
- *     UtilityTable.exists()
- *     // result == false 또는 true
- * }
- * ```
+ * [withDb]와 같은 enum별 fixture에서 suspend 트랜잭션을 실행합니다.
+ * 취소 가능한 permit 대기와 일시 wrapper 정리를 보장하며 본문은 재시도하지 않습니다.
+ * permit 대기와 연결 생성은 IO dispatcher에서, 본문은 [context]의 dispatcher에서 수행합니다.
  */
 suspend fun withDbSuspending(
     testDB: TestDB,
     context: CoroutineContext? = Dispatchers.IO,
     configure: (DatabaseConfig.Builder.() -> Unit)? = null,
     statement: suspend JdbcTransaction.(TestDB) -> Unit,
-) {
-    logger.info { "Running withDbSuspending for $testDB" }
-    acquireSemaphoreSuspending(testDB)
-    try {
-        val unregistered = testDB !in registeredOnShutdown
-        val newConfiguration = configure != null && !unregistered
+) = jdbcFixtureFor(testDB).executeSuspending(context, configure, statement)
 
-        if (unregistered) {
-            testDB.beforeConnection()
-            Runtimex.addShutdownHook {
-                testDB.afterTestFinished()
-                registeredOnShutdown.remove(testDB)
-            }
-            registeredOnShutdown += testDB
-            testDB.db = testDB.connect(configure ?: {})
-        }
-
-        val registeredDb = checkNotNull(testDB.db) { "testDB.db must be initialized for $testDB" }
-        try {
-            // NOTE: 코루틴과 @ParameterizedTest 를 동시에 사용할 때, TestDB가 꼬일 때가 있다. 그래서 매번 connect 를 수행하도록 수정
-            if (newConfiguration) {
-                testDB.db = testDB.connect(configure)
-            }
-            val database = checkNotNull(testDB.db) { "testDB.db must be initialized for $testDB" }
-            newSuspendedTransaction(
-                context = context,
-                db = database,
-                transactionIsolation = database.transactionManager.defaultIsolationLevel,
-            ) {
-                maxAttempts = 1
-                registerInterceptor(CurrentTestDBInterceptor)
-                currentTestDB = testDB
-                statement(testDB)
-            }
-        } finally {
-            // revert any new configuration to not be carried over to the next test in suite
-            if (configure != null) {
-                testDB.db = registeredDb
-            }
-        }
-    } finally {
-        testDbSemaphores.getValue(testDB).release()
-    }
-}
+/**
+ * custom key의 [fixture]로 suspend 트랜잭션을 실행합니다.
+ * 같은 fixture의 blocking 호출과 permit을 공유하며 활성 중첩 호출은 거부합니다.
+ * 필수 정리를 제외하고 호출자의 취소를 유지합니다.
+ */
+suspend fun <K> withDbSuspending(
+    fixture: JdbcTestDbFixture<K>,
+    context: CoroutineContext? = Dispatchers.IO,
+    configure: (DatabaseConfig.Builder.() -> Unit)? = null,
+    statement: suspend JdbcTransaction.(K) -> Unit,
+) = fixture.executeSuspending(context, configure, statement)
 
 @Deprecated(
     message = "Use withDbSuspending() instead.",
@@ -88,14 +36,10 @@ suspend fun withDbSuspending(
         "io.bluetape4k.exposed.tests.withDbSuspending"
     )
 )
-/**
- * [withDbSuspending]의 deprecated 별칭입니다.
- */
+/** [withDbSuspending]의 기존 바이너리 호환 별칭입니다. */
 suspend fun withSuspendedDb(
     testDB: TestDB,
     context: CoroutineContext? = Dispatchers.IO,
     configure: (DatabaseConfig.Builder.() -> Unit)? = null,
     statement: suspend JdbcTransaction.(TestDB) -> Unit,
-) {
-    withDbSuspending(testDB, context, configure, statement)
-}
+) = withDbSuspending(testDB, context, configure, statement)

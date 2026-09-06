@@ -96,7 +96,6 @@ dependencies {
     implementation(libs.exposed.json)
     implementation(libs.exposed.money)
     implementation(bt4k.exposed.migration.jdbc)
-    implementation(bt4k.exposed.spring.boot4.starter)
 
     // Bluetape4k
     compileOnly(bt4k.bluetape4k.jdbc)

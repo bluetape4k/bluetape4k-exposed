@@ -22,7 +22,7 @@ The lifecycle view follows the most common helper. `withTables` delegates to `wi
 
 ```kotlin
 dependencies {
-    testImplementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-tests:${version}")
+    testImplementation("io.github.bluetape4k.exposed:bluetape4k-exposed-r2dbc-tests")
 }
 ```
 
@@ -31,7 +31,7 @@ dependencies {
 - **Common test base**: `AbstractExposedR2dbcTest` provides the base structure for R2DBC tests
 - **Multiple database support**: supports H2, MySQL, MariaDB, and PostgreSQL R2DBC tests
 - **Testcontainers integration**: supports real database tests through Docker-based containers
-- **Coroutine-native helpers**: database helpers are `suspend` functions and fit naturally inside `runTest`
+- **Coroutine-native helpers**: database helpers are `suspend` functions and fit naturally inside `runSuspendIO`
 - **Table and schema utilities**: reusable entities and tables for tests
 
 ## Supported Databases
@@ -54,7 +54,7 @@ dependencies {
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.selectAll
@@ -71,7 +71,7 @@ class UserRepositoryTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `should insert and find user`(testDB: TestDB) = runTest {
+    fun `should insert and find user`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             // Insert
             Users.insert {
@@ -94,12 +94,12 @@ class UserRepositoryTest: AbstractExposedR2dbcTest() {
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import kotlin.test.assertTrue
 
 @ParameterizedTest
 @MethodSource(ENABLE_DIALECTS_METHOD)
-fun `should connect to database`(testDB: TestDB) = runTest {
+fun `should connect to database`(testDB: TestDB) = runSuspendIO {
     withDb(testDB) {
         // runs inside a suspend transaction
         val isConnected = true // connection check logic
@@ -113,11 +113,11 @@ fun `should connect to database`(testDB: TestDB) = runTest {
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 
 @ParameterizedTest
 @MethodSource(ENABLE_DIALECTS_METHOD)
-fun `should create and drop tables`(testDB: TestDB) = runTest {
+fun `should create and drop tables`(testDB: TestDB) = runSuspendIO {
     withTables(testDB, Users, Orders) {
         // tables are created automatically before the test
         // tables are dropped automatically after the test
@@ -134,7 +134,7 @@ fun `should create and drop tables`(testDB: TestDB) = runTest {
 
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 
 class PostgresOnlyTest: AbstractExposedR2dbcTest() {
 
@@ -146,7 +146,7 @@ class PostgresOnlyTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("databases")
-    fun `postgres specific test`(testDB: TestDB) = runTest {
+    fun `postgres specific test`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             // PostgreSQL-specific test
         }
@@ -158,7 +158,7 @@ class PostgresOnlyTest: AbstractExposedR2dbcTest() {
 
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 
 class MySQLLikeTest: AbstractExposedR2dbcTest() {
 
@@ -174,7 +174,7 @@ class MySQLLikeTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest
     @MethodSource("databases")
-    fun `mysql compatible test`(testDB: TestDB) = runTest {
+    fun `mysql compatible test`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             // test on MySQL-compatible databases
         }
@@ -186,12 +186,12 @@ class MySQLLikeTest: AbstractExposedR2dbcTest() {
 
 ```kotlin
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import kotlin.test.assertEquals
 
 @ParameterizedTest
 @MethodSource(ENABLE_DIALECTS_METHOD)
-fun `should stream query results`(testDB: TestDB) = runTest {
+fun `should stream query results`(testDB: TestDB) = runSuspendIO {
     withTables(testDB, Users) {
         // insert multiple records
         repeat(100) { i ->
@@ -302,7 +302,43 @@ Containers.Postgres
 
 ## Notes
 
-- R2DBC helpers are `suspend` functions and should normally be called from `runTest`
+- R2DBC helpers are `suspend` functions and should normally be called from `runSuspendIO`
 - MySQL 5.7 is excluded due to R2DBC driver compatibility issues
 - Docker is required when using Testcontainers
 - Flow-based streaming queries are supported
+
+## Caller-owned fixture contracts
+
+Use `R2dbcTestDbFixture<K>` through `r2dbcTestDbFixture` when an application owns its DB selector and connection supply. Create one fixture per physical test DB and share it for the test-suite/JVM lifetime. Keys are not stored in a global registry. A factory callback returns an Exposed wrapper around an existing caller-owned pool or connection supply; it must not allocate a new long-lived pool on each call.
+
+The following fragment assumes the application's `ApplicationDb`, `Orders`, and connection supply already exist:
+
+```kotlin
+val fixture = r2dbcTestDbFixture(
+    key = ApplicationDb.PRIMARY,
+    createDatabase = { configure ->
+        R2dbcDatabase.connect(
+            connectionPool,
+            R2dbcDatabaseConfig.Builder().apply {
+                setUrl(connectionUrl)
+                configure()
+            },
+        )
+    },
+)
+withTables(fixture, Orders) { key ->
+    // Seed/FK/domain cleanup remains in the application wrapper.
+}
+```
+
+- Existing enum functions, default arguments, and deprecated compatibility aliases remain available. New overloads accept fixtures for DB, table and schema helpers.
+- Same-fixture calls are FIFO; distinct fixtures proceed independently. Active nested calls of the same fixture fail fast, including inherited coroutine contexts. A completed entry no longer blocks later calls.
+- `database` is null until initialization and shutdown-hook registration succeed, then exposes the baseline wrapper. Even the first `configure` call creates a separate temporary wrapper; after the transaction finishes its provider registration is removed. Returning the baseline wrapper for temporary configuration is rejected.
+- Creation or shutdown-hook registration failure allows a later initialization attempt. Each actual wrapper creation runs the legacy `beforeConnection` once. External pools/containers remain caller-owned; the provider does not close them.
+- `currentR2dbcTestDbFixture` identifies the fixture inside the transaction and survives commit. Legacy enum calls retain `currentTestDB` behavior. Transactions execute the body once (`maxAttempts = 1`).
+- Cancellation remains cancellation. Only required cleanup is protected. Body failure wins over cleanup/recovery failures, which are retained in occurrence order; the existing R2DBC `withTables` exception is preserved: body cancellation receives no cleanup/recovery suppressed exceptions.
+- Pass only exclusively owned test tables/schemas: pre-drop and cascade cleanup are intentional. Partial creation is cleaned up unless `dropTables = false`; unsupported schema dialects do not execute the body. Database outages or injected drop failures can leave residue.
+- Provider logs do not include custom keys, URLs, configuration or callback exception messages. Driver/application logging is caller policy. Coroutine debug stacktrace recovery may copy exceptions; the helper does not replace the primary failure.
+- Declare these artifacts with `testImplementation`, under the application's `bluetape4k-dependencies` BOM. Test runtime support is not application main runtime. Internal Exposed cleanup failures that upstream only logs remain outside the suppression guarantee (issue #817).
+
+Downstream workshop/clinic migration and publication are separate work; this provider change does not complete issue #815 by itself.

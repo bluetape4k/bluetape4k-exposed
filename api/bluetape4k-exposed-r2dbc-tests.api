@@ -463,6 +463,24 @@ public final class io/bluetape4k/exposed/r2dbc/tests/R2dbcExposedTestBase$Compan
 	public final fun getFaker ()Lnet/datafaker/Faker;
 }
 
+public final class io/bluetape4k/exposed/r2dbc/tests/R2dbcFixtureExecutionKt {
+	public static final fun getCurrentR2dbcTestDbFixture ()Lio/bluetape4k/exposed/r2dbc/tests/R2dbcTestDbFixture;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/tests/R2dbcTestDbFixture {
+	public static final field Companion Lio/bluetape4k/exposed/r2dbc/tests/R2dbcTestDbFixture$Companion;
+	public final fun getDatabase ()Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;
+	public final fun getKey ()Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/r2dbc/tests/R2dbcTestDbFixture$Companion : io/bluetape4k/logging/KLogging {
+}
+
+public final class io/bluetape4k/exposed/r2dbc/tests/R2dbcTestDbFixtureKt {
+	public static final fun r2dbcTestDbFixture (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function0;)Lio/bluetape4k/exposed/r2dbc/tests/R2dbcTestDbFixture;
+	public static synthetic fun r2dbcTestDbFixture$default (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Lio/bluetape4k/exposed/r2dbc/tests/R2dbcTestDbFixture;
+}
+
 public final class io/bluetape4k/exposed/r2dbc/tests/TestDB : java/lang/Enum {
 	public static final field Companion Lio/bluetape4k/exposed/r2dbc/tests/TestDB$Companion;
 	public static final field H2 Lio/bluetape4k/exposed/r2dbc/tests/TestDB;
@@ -526,17 +544,23 @@ public final class io/bluetape4k/exposed/r2dbc/tests/WithAutoCommitKt {
 }
 
 public final class io/bluetape4k/exposed/r2dbc/tests/WithDbKt {
+	public static final fun withDb (Lio/bluetape4k/exposed/r2dbc/tests/R2dbcTestDbFixture;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun withDb (Lio/bluetape4k/exposed/r2dbc/tests/TestDB;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withDb$default (Lio/bluetape4k/exposed/r2dbc/tests/R2dbcTestDbFixture;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static synthetic fun withDb$default (Lio/bluetape4k/exposed/r2dbc/tests/TestDB;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class io/bluetape4k/exposed/r2dbc/tests/WithSchemasKt {
+	public static final fun withSchemas (Lio/bluetape4k/exposed/r2dbc/tests/R2dbcTestDbFixture;[Lorg/jetbrains/exposed/v1/core/Schema;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun withSchemas (Lio/bluetape4k/exposed/r2dbc/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Schema;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withSchemas$default (Lio/bluetape4k/exposed/r2dbc/tests/R2dbcTestDbFixture;[Lorg/jetbrains/exposed/v1/core/Schema;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static synthetic fun withSchemas$default (Lio/bluetape4k/exposed/r2dbc/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Schema;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class io/bluetape4k/exposed/r2dbc/tests/WithTablesKt {
+	public static final fun withTables (Lio/bluetape4k/exposed/r2dbc/tests/R2dbcTestDbFixture;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun withTables (Lio/bluetape4k/exposed/r2dbc/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withTables$default (Lio/bluetape4k/exposed/r2dbc/tests/R2dbcTestDbFixture;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static synthetic fun withTables$default (Lio/bluetape4k/exposed/r2dbc/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 

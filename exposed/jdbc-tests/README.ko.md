@@ -18,7 +18,7 @@ Exposed 기반 모듈을 JDBC로 검증할 때 쓰는 공통 테스트 인프라
 
 ```kotlin
 dependencies {
-    testImplementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-tests:${version}")
+    testImplementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-tests")
 }
 ```
 
@@ -27,7 +27,7 @@ dependencies {
 - **공통 테스트 베이스**: `AbstractExposedTest`가 기본 시간대를 UTC로 고정하고, parameterized test용 `ENABLE_DIALECTS_METHOD`를 제공합니다.
 - **Dialect 선택**: `TestDB.enabledDialects()`가 `useFastDB`, `EXPOSED_TEST_DB`, 기본 `H2 + PostgreSQL + MySQL 8` 조합을 기준으로 실행 대상을 정합니다.
 - **JDBC 스코프 헬퍼**: `withDb`, `withTables`, `withSchemas`, auto-commit 변형이 하나의 Exposed transaction 안에서 fixture를 준비하고 정리합니다.
-- **Coroutine 변형**: suspending 헬퍼가 blocking JDBC 헬퍼와 같은 흐름을 `newSuspendedTransaction`으로 제공합니다.
+- **Coroutine 변형**: suspending 헬퍼가 blocking JDBC 헬퍼와 같은 흐름을 `suspendTransaction`으로 제공합니다.
 - **공유 스키마와 assertion**: movie, board, blog, person, order, composite-id fixture를 재사용해 각 모듈 테스트 코드를 줄입니다.
 
 ## 지원 데이터베이스
@@ -297,7 +297,37 @@ EXPOSED_TEST_DB=MYSQL_V8 ./gradlew :bluetape4k-exposed-jdbc-tests:test
 
 ## 참고 사항
 
-- 이 테스트 지원 모듈은 Detekt 검사가 비활성화되어 있습니다.
+- 테스트와 함께 모듈별 `detekt`와 `checkKotlinAbi` 검사를 실행합니다.
 - `TestDBConfig.useTestcontainers`가 `true`이면 Docker가 필요합니다.
 - 로컬 PostgreSQL/MySQL/MariaDB 서버를 사용할 때는 `TestDBConfig.useTestcontainers = false`로 설정합니다.
 - CI 매트릭스처럼 H2 옆에 실제 DB를 하나 더 붙일 때는 `EXPOSED_TEST_DB=POSTGRESQL` 또는 `EXPOSED_TEST_DB=MYSQL_V8`을 사용합니다.
+
+## 호출자 소유 fixture 계약
+
+애플리케이션 자체 DB 식별자와 연결 공급원을 재사용하려면 `jdbcTestDbFixture`로 `JdbcTestDbFixture<K>`를 만듭니다. 물리 테스트 DB마다 fixture를 한 번 만들고 테스트 스위트/JVM 동안 공유합니다. custom key를 전역 등록하지 않습니다. 생성 callback은 기존 caller-owned pool/연결 공급원을 사용하는 Exposed wrapper를 반환해야 하며, 호출마다 장기 pool을 새로 만들면 안 됩니다.
+
+다음 예제는 애플리케이션의 `ApplicationDb`, `Orders`, 연결 공급원이 이미 준비되어 있다고 가정합니다.
+
+```kotlin
+val fixture = jdbcTestDbFixture(
+    key = ApplicationDb.PRIMARY,
+    createDatabase = { configure ->
+        Database.connect(dataSource, databaseConfig = DatabaseConfig { configure() })
+    },
+)
+withTables(fixture, Orders) { key ->
+    // seed/FK/도메인 정리는 애플리케이션 wrapper에 둡니다.
+}
+```
+
+- 기존 enum 함수·기본 인자·deprecated 호환 별칭을 유지합니다. DB/table/schema helper에 fixture overload를 제공합니다(JDBC suspend 변형 포함).
+- 같은 fixture는 FIFO로 직렬화하고 다른 fixture는 독립 실행합니다. 활성 진입 토큰을 상속한 같은 fixture의 중첩 호출은 즉시 거부합니다. 종료된 진입은 후속 호출을 막지 않습니다.
+- `database`는 초기화와 종료 hook 등록 전에는 null이며 성공 후 기본 wrapper를 노출합니다. 첫 `configure`도 별도 일시 wrapper를 만들고 트랜잭션 종료 후 provider 등록을 해제합니다. 일시 구성에서 기본 wrapper와 같은 인스턴스를 반환하면 거부합니다.
+- 생성·종료 hook 등록 실패 뒤 초기화를 다시 시도할 수 있습니다. legacy `beforeConnection`은 실제 wrapper 생성마다 한 번 실행합니다. 외부 pool/container는 호출자 소유이며 provider가 닫지 않습니다.
+- `currentJdbcTestDbFixture`는 트랜잭션 안에서 fixture를 식별하고 commit 후에도 유지합니다. legacy enum은 기존 `currentTestDB` 동작을 유지합니다. 본문은 `maxAttempts = 1`로 한 번 실행합니다.
+- 취소는 그대로 전파하며 필수 cleanup만 보호합니다. 본문 실패가 우선이고 cleanup/recovery 실패는 발생 순서대로 suppressed에 남습니다.
+- 전용 테스트 table/schema만 전달해야 합니다. 사전 drop과 cascade 정리가 수행됩니다. 부분 생성도 정리하되 `dropTables = false`는 종료 정리를 생략합니다. schema 미지원 dialect는 본문을 실행하지 않으며 DB 단절·의도적인 drop 실패에서는 잔여물이 생길 수 있습니다.
+- provider 로그에는 custom key·URL·설정·callback 예외 메시지를 넣지 않습니다. driver/애플리케이션 로그는 호출자 정책입니다. coroutine debug stacktrace recovery가 예외를 복제할 수 있지만 helper는 본문 실패를 다른 실패로 교체하지 않습니다.
+- 애플리케이션의 `bluetape4k-dependencies` BOM 아래 `testImplementation`으로 선언합니다. test runtime 지원과 application main runtime은 구분합니다. upstream이 로그만 남기는 Exposed 내부 cleanup 실패는 suppressed 보장 밖입니다(#817).
+
+workshop/clinic 이전과 배포는 별도 작업이며 이 provider 변경만으로 #815 전체가 완료되지는 않습니다.
