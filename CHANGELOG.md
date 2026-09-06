@@ -7,9 +7,19 @@
 
 ## [Unreleased]
 
+### 추가
+
+- 자체 DB 식별자와 호출자 소유 연결 공급원을 사용하는 JDBC/R2DBC 테스트 fixture와
+  table/schema helper overload를 추가했다. 기존 enum API와 기본 인자 ABI는 유지한다
+  ([#815](https://github.com/bluetape4k/bluetape4k-exposed/issues/815)).
+
 ### 변경
 
 - `2.0.0` 정식 배포 후 다음 minor 개발선을 `2.1.0-SNAPSHOT`으로 열었다.
+- 테스트 helper의 첫 `configure`도 기본 연결과 분리된 임시 wrapper에만 적용한다.
+  같은 fixture의 활성 중첩 호출을 즉시 거부하고 취소 후 permit·임시 등록을 정리한다.
+- 테이블·스키마 정리 실패가 본문 실패를 덮지 않도록 하고, JDBC 테스트 지원 artifact의
+  불필요한 Spring Boot starter 전이 의존성을 제거했다. downstream 이전과 배포는 별도 작업이다.
 
 ## [2.0.0] - 2026-09-02
 

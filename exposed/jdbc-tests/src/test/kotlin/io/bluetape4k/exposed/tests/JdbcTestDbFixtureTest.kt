@@ -8,8 +8,43 @@ import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.junit.jupiter.api.Test
+import kotlinx.coroutines.async
 
 class JdbcTestDbFixtureTest {
+    @Test
+    fun `schema 미지원 dialect에서는 fixture 본문을 실행하지 않는다`() {
+        val unsupported = object: org.jetbrains.exposed.v1.core.vendors.H2Dialect() {
+            override val supportsCreateSchema: Boolean = false
+        }
+        val fixture = jdbcTestDbFixture("unsupported", { configure ->
+            database { configure(); explicitDialect = unsupported }
+        })
+        var executed = false
+        withSchemas(fixture, org.jetbrains.exposed.v1.core.Schema("must_not_create")) { executed = true }
+        executed shouldBeEqualTo false
+    }
+
+    @Test
+    fun `일시 구성 본문이 실제 취소되어도 등록과 기본 연결을 복원한다`() = io.bluetape4k.junit5.coroutines.runSuspendIO {
+        val fixture = jdbcTestDbFixture("temporary-cancel", { database(it) })
+        var temporary: Database? = null
+        kotlinx.coroutines.coroutineScope {
+            val entered = kotlinx.coroutines.CompletableDeferred<Unit>()
+            val job = async {
+                withDbSuspending(fixture, configure = {}) {
+                    temporary = db
+                    entered.complete(Unit)
+                    kotlinx.coroutines.awaitCancellation()
+                }
+            }
+            entered.await()
+            job.cancel()
+            assertFailsWith<java.util.concurrent.CancellationException> { job.await() }
+        }
+        assertFailsWith<IllegalStateException> { TransactionManager.managerFor(checkNotNull(temporary)) }
+        withDb(fixture) { db shouldBeSameInstanceAs fixture.database }
+    }
+
     @Test
     fun `종료 callback은 fixture별 한 번 등록하고 초기화 중 실행하지 않는다`() {
         val hooks = mutableListOf<() -> Unit>()
@@ -32,6 +67,8 @@ class JdbcTestDbFixtureTest {
     @Test
     fun `provider 로그는 key와 callback 예외의 민감값을 출력하지 않는다`() {
         val sentinel = "fixture-sensitive-sentinel"
+        val urlSentinel = "fixture_url_secret"
+        val configSentinel = 918273
         val key = object { override fun toString(): String = error(sentinel) }
         val logger = org.slf4j.LoggerFactory
             .getLogger("io.bluetape4k.exposed.tests") as ch.qos.logback.classic.Logger
@@ -39,12 +76,18 @@ class JdbcTestDbFixtureTest {
         appender.start()
         logger.addAppender(appender)
         try {
-            val fixture = jdbcTestDbFixture(key, { database(it) })
-            withDb(fixture) {}
+            val fixture = jdbcTestDbFixture(key, { configure ->
+                Database.connect("jdbc:h2:mem:$urlSentinel;DB_CLOSE_DELAY=-1", "org.h2.Driver",
+                                 databaseConfig = DatabaseConfig { configure() })
+            })
+            withDb(fixture, configure = { defaultFetchSize = configSentinel }) {}
             val broken = jdbcTestDbFixture(key, { throw IllegalArgumentException(sentinel) })
             assertFailsWith<IllegalArgumentException> { withDb(broken) {} }
             appender.list.isNotEmpty() shouldBeEqualTo true
-            val leaked = appender.list.any { it.formattedMessage.contains(sentinel) || it.throwableProxy != null }
+            val secrets = listOf(sentinel, urlSentinel, configSentinel.toString())
+            val leaked = appender.list.any { event ->
+                secrets.any(event.formattedMessage::contains) || event.throwableProxy != null
+            }
             leaked shouldBeEqualTo false
         } finally {
             logger.detachAppender(appender)
