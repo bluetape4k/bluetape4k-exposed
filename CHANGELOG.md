@@ -8,6 +8,10 @@
 ## [Unreleased]
 
 ### 버그 수정
+- JDBC Caffeine persisted hook 종료 테스트가 완료 알림을 스레드 종료로 오인하지 않도록
+  제한 시간 내 실제 종료를 기다려 간헐적인 실패를 제거했다. (#828)
+- JDBC Caffeine close timeout 테스트에서 생략 가능한 persisted hook을 timeout 이후에
+  기다리지 않도록 순서를 고정하고, 진행 중인 캐시 쓰기의 늦은 반영 차단 검증을 유지했다. (#828)
 
 - JDBC Caffeine close/flush 테스트가 fixture 종료 후 다른 기본 DB를 조회하지 않도록
   동일 fixture 안에서 새 읽기 트랜잭션으로 검증하고 테이블 정리를 복원했다.

@@ -777,6 +777,8 @@ class JdbcCaffeineRepositoryExtraTest {
 
                 try {
                     cachePutEntered.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    // timeout 이후에는 hook이 생략될 수 있으므로 DB 반영 신호를 먼저 확인한다.
+                    dbWriteCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
                     val workerCompleted = CountDownLatch(1)
                     writeBehindJobOf(repository).invokeOnCompletion { workerCompleted.countDown() }
                     repository.close()
@@ -785,7 +787,6 @@ class JdbcCaffeineRepositoryExtraTest {
 
                     releaseCachePut.release()
                     cacheValuePublished.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
-                    dbWriteCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
 
                     readThread = Thread {
                         try {

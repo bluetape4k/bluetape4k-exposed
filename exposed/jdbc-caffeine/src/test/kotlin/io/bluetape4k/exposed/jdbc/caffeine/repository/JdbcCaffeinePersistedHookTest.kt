@@ -58,16 +58,12 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
                 repository.put(actor.id, actor.copy(firstName = "hook-close-bound"))
                 hookStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
 
-                val closeCompleted = CountDownLatch(1)
                 val closeThread = Thread {
-                    try {
-                        repository.close()
-                    } finally {
-                        closeCompleted.countDown()
-                    }
+                    repository.close()
                 }.apply { start() }
                 try {
-                    closeCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
+                    // 작업 완료 알림이 아니라 실제 스레드 종료를 제한 시간 안에 확인한다.
+                    closeThread.join(1_000)
                     closeThread.isAlive.shouldBeFalse()
                     repository.closeInvalidations.get() shouldBeEqualTo 0
                     repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.FAILED
