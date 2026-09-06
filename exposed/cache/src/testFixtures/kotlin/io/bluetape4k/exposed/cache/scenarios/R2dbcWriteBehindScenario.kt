@@ -1,9 +1,9 @@
 package io.bluetape4k.exposed.cache.scenarios
 
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
-import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.junit5.coroutines.runSuspendIO
-import io.bluetape4k.assertions.shouldBeGreaterThan
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.withPollInterval
 import org.jetbrains.exposed.v1.core.autoIncColumnType
@@ -63,18 +63,20 @@ interface R2dbcWriteBehindScenario<ID: Any, E: Serializable>: R2dbcCacheTestScen
             "AutoInc 테이블은 Write-Behind로 신규 엔티티를 DB에 삽입하지 않아 이 테스트를 건너뜁니다"
         }
         withR2dbcEntityTable(testDB) {
+            val initialCount = getAllCountFromDB()
             val entities = createNewEntities(1000)
             val entityMap = entities.associateBy { repository.extractId(it) }
+            val expectedCount = initialCount + entityMap.size
             repository.putAll(entityMap)
 
             await
                 .atMost(Duration.ofSeconds(30))
                 .withPollInterval(Duration.ofSeconds(5))
-                .until { kotlinx.coroutines.runBlocking { getAllCountFromDB() } > entities.size.toLong() }
+                .until { kotlinx.coroutines.runBlocking { getAllCountFromDB() } >= expectedCount }
 
             // DB에서 조회한 값
             val dbCount = getAllCountFromDB()
-            dbCount shouldBeGreaterThan entities.size.toLong()
+            dbCount shouldBeEqualTo expectedCount
         }
     }
 }

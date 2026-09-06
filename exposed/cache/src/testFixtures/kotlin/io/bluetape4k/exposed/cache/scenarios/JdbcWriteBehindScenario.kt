@@ -1,8 +1,8 @@
 package io.bluetape4k.exposed.cache.scenarios
 
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeGreaterThan
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.withPollInterval
 import org.jetbrains.exposed.v1.core.autoIncColumnType
@@ -61,18 +61,20 @@ interface JdbcWriteBehindScenario<ID: Any, E: Serializable>: JdbcCacheTestScenar
             "AutoInc 테이블은 Write-Behind로 신규 엔티티를 DB에 삽입하지 않아 이 테스트를 건너뜁니다"
         }
         withEntityTable(testDB) {
+            val initialCount = getAllCountFromDB()
             val entities = createNewEntities(1000)
             val entityMap = entities.associateBy { repository.extractId(it) }
+            val expectedCount = initialCount + entityMap.size
             repository.putAll(entityMap)
 
             await
                 .atMost(Duration.ofSeconds(30))
                 .withPollInterval(Duration.ofMillis(5))
-                .until { getAllCountFromDB() >= entities.size.toLong() }
+                .until { getAllCountFromDB() >= expectedCount }
 
             // DB에서 조회한 값
             val dbCount = getAllCountFromDB()
-            dbCount shouldBeGreaterThan entities.size.toLong()
+            dbCount shouldBeEqualTo expectedCount
         }
     }
 }
