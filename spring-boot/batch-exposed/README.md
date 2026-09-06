@@ -23,6 +23,11 @@ for VirtualThread parallel execution, and Spring Boot Auto-Configuration.
   - Persists `lastKey` in `ExecutionContext` for restart support
   - Thread-safe with `reentrantLock().withLock { ... }` in `read()` (Virtual Thread-friendly)
   - Factory: `forEntityId(table, pageSize, rowMapper, database)`
+  - The primary constructor requires a strictly unique column that remains stable during traversal;
+    detected duplicates fail instead of silently dropping rows
+  - For duplicate `Long` values, `forColumnWithEntityIdTieBreaker(...)` uses `(column, table.id)`
+    as a composite cursor and persists both `lastKey` and `lastTieBreaker`
+  - A `(column, id)` index is recommended for the composite path; callers keep both values immutable
 
 - **`ExposedItemWriter<T>`** — Batch INSERT via Exposed `batchInsert`
 
@@ -161,7 +166,10 @@ val writer = ExposedItemWriter<TargetRecord>(
 
 When the same job parameters are launched again after a failure, Spring Batch
 restores each worker `ExecutionContext`. `ExposedKeysetItemReader` then resumes
-from the saved `lastKey` inside that partition range.
+from the saved cursor inside that partition range. `forEntityId` keeps the existing
+`lastKey` checkpoint, while `forColumnWithEntityIdTieBreaker` stores both `lastKey`
+and `lastTieBreaker`. A legacy single-column checkpoint has no tie-breaker, so a
+reader migrated to the composite factory fails explicitly instead of guessing a position.
 
 ```kotlin
 // First run: fails after some chunks

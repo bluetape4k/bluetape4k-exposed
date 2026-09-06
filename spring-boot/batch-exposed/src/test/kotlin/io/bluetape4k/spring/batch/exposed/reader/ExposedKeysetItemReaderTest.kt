@@ -1,22 +1,49 @@
 package io.bluetape4k.spring.batch.exposed.reader
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.spring.batch.exposed.AbstractExposedBatchTest
 import io.bluetape4k.spring.batch.exposed.SourceRecord
 import io.bluetape4k.spring.batch.exposed.SourceTable
 import io.bluetape4k.spring.batch.exposed.insertTestData
 import io.bluetape4k.spring.batch.exposed.partition.ExposedRangePartitioner
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldHaveSize
+import org.jetbrains.exposed.v1.core.SqlLogger
+import org.jetbrains.exposed.v1.core.Transaction
+import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.greaterEq
+import org.jetbrains.exposed.v1.core.statements.StatementContext
+import org.jetbrains.exposed.v1.jdbc.insert
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.batch.infrastructure.item.ExecutionContext
 
 class ExposedKeysetItemReaderTest : AbstractExposedBatchTest() {
+
+    private object DuplicateKeySourceTable : LongIdTable("duplicate_key_source") {
+        val groupKey = long("group_key")
+        val name = varchar("name", 32)
+
+        init {
+            index("idx_duplicate_key_source_cursor", isUnique = false, groupKey, id)
+        }
+    }
+
+    private class SelectLog : SqlLogger {
+        val entries = mutableListOf<String>()
+
+        override fun log(context: StatementContext, transaction: Transaction) {
+            context.sql(transaction)
+                .takeIf { it.startsWith("SELECT", ignoreCase = true) }
+                ?.let(entries::add)
+        }
+    }
 
     private fun createReader(testDB: TestDB): ExposedKeysetItemReader<SourceRecord> =
         ExposedKeysetItemReader.forEntityId(
@@ -31,6 +58,168 @@ class ExposedKeysetItemReaderTest : AbstractExposedBatchTest() {
             },
             database = testDB.db,
         )
+
+    private fun createDuplicateKeyReader(testDB: TestDB): ExposedKeysetItemReader<String> =
+        ExposedKeysetItemReader.forColumnWithEntityIdTieBreaker(
+            database = testDB.db,
+            pageSize = 2,
+            column = DuplicateKeySourceTable.groupKey,
+            table = DuplicateKeySourceTable,
+            rowMapper = { it[DuplicateKeySourceTable.name] },
+        )
+
+    private fun createUnsafeDuplicateKeyReader(testDB: TestDB): ExposedKeysetItemReader<String> =
+        ExposedKeysetItemReader(
+            database = testDB.db,
+            pageSize = 2,
+            column = DuplicateKeySourceTable.groupKey,
+            table = DuplicateKeySourceTable,
+            rowMapper = { it[DuplicateKeySourceTable.name] },
+        )
+
+    private fun insertDuplicateKeyRows() {
+        listOf(
+            1L to "a",
+            1L to "b",
+            1L to "c",
+            2L to "d",
+        ).forEach { (groupKey, name) ->
+            DuplicateKeySourceTable.insert {
+                it[DuplicateKeySourceTable.groupKey] = groupKey
+                it[DuplicateKeySourceTable.name] = name
+            }
+        }
+    }
+
+    private fun duplicateKeyContext(): ExecutionContext = ExecutionContext().apply {
+        putLong(ExposedRangePartitioner.PARTITION_MIN_ID, 1L)
+        putLong(ExposedRangePartitioner.PARTITION_MAX_ID, 2L)
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `중복 key가 page 경계를 넘어도 모든 행을 한 번씩 읽는다`(testDB: TestDB) {
+        withTables(testDB, DuplicateKeySourceTable) {
+            insertDuplicateKeyRows()
+
+            val reader = createDuplicateKeyReader(testDB)
+            reader.open(duplicateKeyContext())
+
+            val results = generateSequence { reader.read() }.toList()
+
+            results shouldBeEqualTo listOf("a", "b", "c", "d")
+            reader.close()
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `고유하지 않은 single-column cursor는 조용히 행을 누락하지 않고 실패한다`(testDB: TestDB) {
+        withTables(testDB, DuplicateKeySourceTable) {
+            insertDuplicateKeyRows()
+            val reader = createUnsafeDuplicateKeyReader(testDB)
+            reader.open(duplicateKeyContext())
+
+            val error = assertFailsWith<IllegalStateException> {
+                reader.read()
+            }
+
+            error.message shouldBeEqualTo
+                "Keyset column must be strictly unique; use forColumnWithEntityIdTieBreaker for duplicate keys"
+            reader.close()
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `중복 key 중간 checkpoint에서 재시작해도 남은 행을 정확히 읽는다`(testDB: TestDB) {
+        withTables(testDB, DuplicateKeySourceTable) {
+            insertDuplicateKeyRows()
+            val context = duplicateKeyContext()
+            val reader = createDuplicateKeyReader(testDB)
+            reader.open(context)
+
+            reader.read() shouldBeEqualTo "a"
+            reader.read() shouldBeEqualTo "b"
+            reader.update(context)
+            reader.close()
+
+            val restartReader = createDuplicateKeyReader(testDB)
+            restartReader.open(context)
+            val remaining = generateSequence { restartReader.read() }.toList()
+
+            remaining shouldBeEqualTo listOf("c", "d")
+            restartReader.close()
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `복합 cursor는 tie-breaker 없는 기존 checkpoint를 거부한다`(testDB: TestDB) {
+        withTables(testDB, DuplicateKeySourceTable) {
+            val legacyContext = duplicateKeyContext().apply {
+                putLong("lastKey", 1L)
+            }
+
+            val error = assertFailsWith<IllegalStateException> {
+                createDuplicateKeyReader(testDB).open(legacyContext)
+            }
+
+            error.message shouldBeEqualTo "Composite keyset checkpoint requires lastTieBreaker"
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `복합 cursor SQL은 group_key와 id 순서로 정렬하고 offset을 사용하지 않는다`(testDB: TestDB) {
+        val selectLog = SelectLog()
+        withTables(
+            testDB,
+            DuplicateKeySourceTable,
+            configure = { sqlLogger = selectLog },
+        ) {
+            insertDuplicateKeyRows()
+            val reader = createDuplicateKeyReader(testDB)
+            reader.open(duplicateKeyContext())
+
+            reader.read()
+
+            val sql = selectLog.entries.single().lowercase()
+            val orderBy = sql.substringAfter(" order by ")
+            val groupKeyIndex = orderBy.indexOf("group_key")
+            (groupKeyIndex >= 0).shouldBeTrue()
+            orderBy.indexOf("id").let { idIndex ->
+                (idIndex >= 0).shouldBeTrue()
+                (groupKeyIndex < idIndex).shouldBeTrue()
+            }
+            sql.contains(" offset ").shouldBeFalse()
+            reader.close()
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `Spring lifecycle을 우회해도 pageSize overflow를 거부한다`(testDB: TestDB) {
+        withBatchTables(testDB) {
+            val reader = ExposedKeysetItemReader.forEntityId(
+                table = SourceTable,
+                pageSize = Int.MAX_VALUE,
+                rowMapper = { it[SourceTable.id].value },
+                database = testDB.db,
+            )
+            reader.open(ExecutionContext().apply {
+                putLong(ExposedRangePartitioner.PARTITION_MIN_ID, 1L)
+                putLong(ExposedRangePartitioner.PARTITION_MAX_ID, 1L)
+            })
+
+            val error = assertFailsWith<IllegalArgumentException> {
+                reader.read()
+            }
+
+            error.message shouldBeEqualTo "pageSize must be less than Int.MAX_VALUE"
+            reader.close()
+        }
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)

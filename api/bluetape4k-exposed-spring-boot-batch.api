@@ -56,6 +56,8 @@ public class io/bluetape4k/spring/batch/exposed/reader/ExposedKeysetItemReader :
 }
 
 public final class io/bluetape4k/spring/batch/exposed/reader/ExposedKeysetItemReader$Companion : io/bluetape4k/logging/KLogging {
+	public final fun forColumnWithEntityIdTieBreaker (Lorg/jetbrains/exposed/v1/core/dao/id/LongIdTable;Lorg/jetbrains/exposed/v1/core/ExpressionWithColumnType;ILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lorg/jetbrains/exposed/v1/jdbc/Database;)Lio/bluetape4k/spring/batch/exposed/reader/ExposedKeysetItemReader;
+	public static synthetic fun forColumnWithEntityIdTieBreaker$default (Lio/bluetape4k/spring/batch/exposed/reader/ExposedKeysetItemReader$Companion;Lorg/jetbrains/exposed/v1/core/dao/id/LongIdTable;Lorg/jetbrains/exposed/v1/core/ExpressionWithColumnType;ILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lorg/jetbrains/exposed/v1/jdbc/Database;ILjava/lang/Object;)Lio/bluetape4k/spring/batch/exposed/reader/ExposedKeysetItemReader;
 	public final fun forEntityId (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;ILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lorg/jetbrains/exposed/v1/jdbc/Database;)Lio/bluetape4k/spring/batch/exposed/reader/ExposedKeysetItemReader;
 	public static synthetic fun forEntityId$default (Lio/bluetape4k/spring/batch/exposed/reader/ExposedKeysetItemReader$Companion;Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;ILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lorg/jetbrains/exposed/v1/jdbc/Database;ILjava/lang/Object;)Lio/bluetape4k/spring/batch/exposed/reader/ExposedKeysetItemReader;
 }

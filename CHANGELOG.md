@@ -8,6 +8,10 @@
 ## [Unreleased]
 
 ### 버그 수정
+- Spring Batch `ExposedKeysetItemReader`가 중복 정렬 key를 `(key, LongIdTable.id)`
+  복합 cursor로 순회하고 checkpoint에 두 값을 저장하여 page·restart 경계의 행 누락을 막는다.
+  기존 single-column 경로는 중복 key를 발견하면 fail-fast한다
+  ([#823](https://github.com/bluetape4k/bluetape4k-exposed/issues/823)).
 - JDBC Caffeine persisted hook 종료 테스트가 완료 알림을 스레드 종료로 오인하지 않도록
   제한 시간 내 실제 종료를 기다려 간헐적인 실패를 제거했다. (#828)
 - JDBC Caffeine close timeout 테스트에서 생략 가능한 persisted hook을 timeout 이후에

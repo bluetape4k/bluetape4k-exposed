@@ -23,6 +23,11 @@ Range Partitioner, Spring Boot Auto-Configuration을 제공합니다.
   - 재시작 시 `lastKey`를 `ExecutionContext`에 저장하여 마지막 위치부터 재개
   - `read()`에서 `reentrantLock().withLock { ... }`로 스레드 안전 보장 (Virtual Thread 친화적)
   - 팩토리: `forEntityId(table, pageSize, rowMapper, database)`
+  - 기본 생성자의 `column`은 strictly unique하고 순회 중 변경되지 않아야 하며, 중복을 발견하면
+    행을 조용히 누락하지 않고 실패
+  - 중복 가능한 `Long` 컬럼은 `forColumnWithEntityIdTieBreaker(...)`가 `(column, table.id)`를
+    복합 cursor로 사용하고 `lastKey`와 `lastTieBreaker`를 함께 저장
+  - 복합 cursor에는 `(column, id)` 인덱스를 권장하며 두 값의 순회 중 변경은 caller가 방지
 
 - **`ExposedItemWriter<T>`** — Exposed `batchInsert` 기반 대량 INSERT
 
@@ -162,7 +167,10 @@ val writer = ExposedItemWriter<TargetRecord>(
 
 동일한 Job 파라미터로 재실행하면 Spring Batch가 각 worker의 `ExecutionContext`를
 복원하고, `ExposedKeysetItemReader`가 해당 partition 범위 안에서 저장된
-`lastKey` 이후부터 다시 읽습니다.
+cursor 이후부터 다시 읽습니다. `forEntityId`는 기존 `lastKey`를 사용하고,
+`forColumnWithEntityIdTieBreaker`는 `lastKey`와 `lastTieBreaker`를 함께 사용합니다.
+기존 single-column checkpoint에는 tie-breaker가 없으므로 composite factory로 전환한
+reader에서 이어서 읽지 않고 명시적으로 실패합니다.
 
 ```kotlin
 // 1차 실행: 중간에 실패
