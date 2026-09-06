@@ -2,6 +2,8 @@ package io.bluetape4k.exposed.ktor.jdbc
 
 import io.bluetape4k.exposed.ktor.core.ExposedKtorReadinessBackend
 import io.bluetape4k.exposed.ktor.core.ExposedKtorTransactionException
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.warn
 import io.ktor.server.application.ApplicationCall
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
@@ -25,21 +27,53 @@ suspend fun <T> ApplicationCall.exposedJdbcTransaction(
     block: JdbcTransaction.() -> T,
 ): T {
     val started = meterRegistry?.let(Timer::start)
-    return try {
+    val result = try {
         runInterruptible(blockingDispatcher) {
             transaction(db = db) { block() }
-        }.also {
-            started?.stopTransaction(meterRegistry, "success")
         }
     } catch (cancellation: CancellationException) {
-        started?.stopTransaction(meterRegistry, "cancelled")
+        started?.stopFailedTransaction(meterRegistry, "cancelled", cancellation)
         throw cancellation
     } catch (failure: Error) {
-        started?.stopTransaction(meterRegistry, "error")
+        started?.stopFailedTransaction(meterRegistry, "error", failure)
         throw failure
     } catch (failure: Exception) {
-        started?.stopTransaction(meterRegistry, "error")
+        started?.stopFailedTransaction(meterRegistry, "error", failure)
         throw ExposedKtorTransactionException().also { it.initCause(failure) }
+    }
+    started?.stopSuccessfulTransaction(meterRegistry)
+    return result
+}
+
+/**
+ * 성공 후 metric 기록의 일반 [Exception]은 이미 commit된 transaction 결과를 변경하지 않는다.
+ * JVM [Error]는 복구 불가능한 fatal 신호로 간주하여 전파한다.
+ */
+@Suppress("TooGenericExceptionCaught")
+private fun Timer.Sample.stopSuccessfulTransaction(registry: MeterRegistry?) {
+    try {
+        stopTransaction(registry, "success")
+    } catch (metricFailure: Exception) {
+        TransactionMetricLog.log.warn(metricFailure) {
+            "Exposed Ktor transaction metric recording failed after a successful transaction. " +
+                "backend=jdbc, exceptionType=${metricFailure::class.qualifiedName}"
+        }
+    }
+}
+
+/** 실패 경로의 metric 기록은 원래 취소·DB 예외를 대체하지 않는다. */
+@Suppress("TooGenericExceptionCaught")
+private fun Timer.Sample.stopFailedTransaction(
+    registry: MeterRegistry?,
+    outcome: String,
+    primary: Throwable,
+) {
+    try {
+        stopTransaction(registry, outcome)
+    } catch (metricFailure: Throwable) {
+        if (metricFailure !== primary) {
+            primary.addSuppressed(metricFailure)
+        }
     }
 }
 
@@ -58,5 +92,7 @@ private fun Timer.Sample.stopTransaction(
             .register(registry),
     )
 }
+
+private object TransactionMetricLog : KLogging()
 
 private const val CORE_TRANSACTION_METER_NAME = "bluetape4k.exposed.ktor.core.transaction"
