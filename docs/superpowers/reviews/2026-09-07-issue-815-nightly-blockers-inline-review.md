@@ -47,6 +47,9 @@
 - JDBC, suspended JDBC, R2DBC 대량 insert 시나리오는 초기 DB 건수와
   `entityMap.size`를 더한 기대값을 사용한다. 기존 조건처럼 일부 batch만 저장된
   중간 상태에서 깨어나지 않으며, 중복 ID가 생겨도 실제 write 수와 일치한다.
+- 기대값 assertion은 Awaitility `untilAsserted`의 polling transaction 안에서
+  수행한다. polling 뒤 바깥 MySQL `REPEATABLE READ` transaction의 오래된 읽기 기준을
+  다시 읽지 않으므로 기다림과 검증의 관찰 경계가 일치한다.
 - retry hook 테스트는 성공한 `UpdateStatement`를 완료 신호로 쓰지 않는다.
   `afterPersisted(writes)`가 전체 목록을 기록한 뒤 latch를 해제하므로 assertion과
   같은 side effect를 동기화한다.
@@ -66,6 +69,11 @@
 - hosted 실패 대상 PostgreSQL 테스트는 수정 후 총 4회 연속 통과했다.
 - `jdbc-caffeine` 전체는 PostgreSQL/H2에서 각각 `181 tests / 2 skipped`,
   `r2dbc-caffeine` 전체 H2는 `121 tests / 1 skipped`로 성공했다.
+- 후속 exact-head MySQL transaction 읽기 기준 실패 수정 뒤 `jdbc-caffeine` 동기·suspended
+  시나리오는 각각 `2 tests / 1 skipped`, 전체 MySQL은
+  `181 tests / 18 skipped`로 성공했다.
+- 같은 공통 fixture의 `jdbc-lettuce` MySQL write-behind는
+  `48 tests / 14 skipped`, R2DBC Caffeine H2는 `27 tests / 1 skipped`로 성공했다.
 - canonical `./gradlew detekt`는 성공했다. 직접 실행한 source-set Detekt는 변경 전
   detached `HEAD`와 같은 `testFixtures=50`, `jdbc-caffeine test=22` 진단으로
   실패했으므로 별도 clean gate 통과로 주장하지 않는다.

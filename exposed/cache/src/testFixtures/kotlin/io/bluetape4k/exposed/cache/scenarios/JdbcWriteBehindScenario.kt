@@ -70,11 +70,7 @@ interface JdbcWriteBehindScenario<ID: Any, E: Serializable>: JdbcCacheTestScenar
             await
                 .atMost(Duration.ofSeconds(30))
                 .withPollInterval(Duration.ofMillis(5))
-                .until { getAllCountFromDB() >= expectedCount }
-
-            // DB에서 조회한 값
-            val dbCount = getAllCountFromDB()
-            dbCount shouldBeEqualTo expectedCount
+                .untilAsserted { getAllCountFromDB() shouldBeEqualTo expectedCount }
         }
     }
 }
