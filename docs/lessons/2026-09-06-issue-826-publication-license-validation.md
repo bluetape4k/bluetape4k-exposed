@@ -31,3 +31,21 @@ publication inventory 전체를 재생성한다. 설정 파일 한 곳이나 단
 이 변경은 저장소 LICENSE나 이미 발행한 artifact를 수정하지 않는다.
 수정 후 head가 바뀌므로 이전 head의 발행 승인을 재사용하지 않는다.
 일반 CI 성공과 Full Nightly·실제 발행 완료도 구분한다.
+
+## CI에서 드러난 fixture 수명 경계
+
+PR #827의 POM 검증은 통과했지만 Caffeine close/flush 테스트가 실패했다.
+`withTables(dropTables=false)` 종료 후 DB를 지정하지 않은 `transaction {}`이
+fixture와 다른 기본 DB를 조회하면서 `JDBC_CAFFEINE_CREDENTIALS`를 찾지 못했다.
+임시 wrapper 등록 해제와 permit 반환 뒤에도 테이블을 남기기만 하면 같은 DB를
+조회한다는 가정이 틀렸다. CI의 자동 재시도 5회도 이 오류를 해소하지 못했다.
+
+두 테스트만 실행하면 통과했고, 전체 H2 모듈에서는 같은 오류가 재현됐다.
+따라서 단독 테스트의 성공만으로 테스트 순서·DB 등록 상태의 영향을 배제하지 않는다.
+사용자가 별도 수정 범위를 승인한 뒤 검증을 fixture 안으로 옮겼다.
+close 후 commit으로 이전 읽기 경계를 끝내고 같은 DB에서 결과를 확인하며,
+기본 테이블 정리와 finally의 repository 종료를 유지한다.
+전체 H2 결과는 178개 성공·1개 실패·2개 제외에서 179개 성공·실패 0개·2개 제외로 바뀌었다.
+
+앞으로 fixture 바깥의 검증은 DB 식별자뿐 아니라 permit·등록·테이블 수명도 함께 확인한다.
+REPEATABLE READ 결과를 갱신할 때도 fixture를 벗어나지 않고 트랜잭션 경계만 새로 연다.

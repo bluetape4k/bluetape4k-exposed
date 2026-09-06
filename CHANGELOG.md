@@ -9,6 +9,8 @@
 
 ### 버그 수정
 
+- JDBC Caffeine close/flush 테스트가 fixture 종료 후 다른 기본 DB를 조회하지 않도록
+  동일 fixture 안에서 새 읽기 트랜잭션으로 검증하고 테이블 정리를 복원했다.
 - 전체 publication과 BOM의 POM 라이선스를 저장소의 MIT와 일치시키고, CI·발행 전
   검사에서 누락·잘못된 URL·복수 라이선스 선언을 거부한다
   ([#826](https://github.com/bluetape4k/bluetape4k-exposed/issues/826)).

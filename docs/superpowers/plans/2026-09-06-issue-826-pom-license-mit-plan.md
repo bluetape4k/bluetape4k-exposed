@@ -29,8 +29,26 @@ PR 대상은 bluetape4k/bluetape4k-exposed의 develop이다. 저장소 LICENSE·
   독립 리뷰의 P1 지적을 반영한 뒤 재생성·검증했다.
 - 전체 POM 검사: failures=0, files=45, dependencies=13138, maven_models=45.
 - metadata audit 테스트 15개/27개 assertion, Ruby syntax와 actionlint 통과.
-- 독립 재리뷰: P0=0, P1=0, APPROVE. CI·머지·발행은 별도이며 아직 수행하지 않았다.
-- C-07~C-09 대기: PR 생성 후 정확한 head의 CI를 확인하고 머지 승인을 받는다.
+- POM 독립 재리뷰: P0=0, P1=0, APPROVE. PR #827을 생성했다.
+- 최초 CI는 POM·ABI·컴파일을 통과했으나 JDBC Caffeine 테스트에서 실패했다.
+  C-07~C-09는 추가 수정·새 head CI·머지 승인 대기다. 머지·발행은 수행하지 않았다.
 - 원본·검증: root/BOM Gradle 설정, PomAudit, #826, 아래 교훈의 재현 기록.
 - 작성 검증: 한국어 유지보수 계획으로 승인 범위·실행 순서·실패 복구·검증 근거를 대조했다.
   SPW-01~SPW-05와 KO-01~KO-07 결과는 리뷰 문서에 기록한다.
+
+## 승인된 CI 추가 수정
+
+사용자는 PR #827의 JDBC Caffeine DB 선택·fixture 종료 경계 수정을 별도로 승인했다.
+같은 저장소·base·head를 유지하며, production 코드나 fixture API는 변경하지 않는다.
+
+1. 완료 — `af69a83f`의 전체 H2 모듈에서 테이블 누락을 재현했다.
+   단독 테스트 2개는 통과했지만 전체 181개에서는 1개가 실패했다.
+2. 완료 — 두 close/flush 테스트에서 count를 fixture 내부로 이동했다.
+   close 후 commit으로 이전 읽기 트랜잭션을 끝내고, 같은 DB에서 검증 후 기본 테이블 정리를 실행한다.
+   put 실패 시에도 finally에서 repository를 닫는다.
+3. 완료 — H2 전체 179개 성공·기존 제외 2개, detekt, PostgreSQL·MySQL 타깃 각 2개가 통과했다.
+   독립 리뷰의 시간 초과를 기록하고 inline fallback review로 P0=0/P1=0을 확인했다.
+4. 대기 — 별도 커밋으로 PR에 반영하고 새 head CI를 확인한다. 머지·발행 승인과는 구분한다.
+
+DB 선택 문제가 남으면 JDBC Caffeine 테스트만 다시 조사한다. fixture permit을 제거하거나
+기본 DB를 전역 고정하거나 재시도 횟수를 늘리는 방식으로 우회하지 않는다.

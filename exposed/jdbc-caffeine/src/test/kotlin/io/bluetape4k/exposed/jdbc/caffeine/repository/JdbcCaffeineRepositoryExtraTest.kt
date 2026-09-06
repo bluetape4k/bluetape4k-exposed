@@ -411,11 +411,8 @@ class JdbcCaffeineRepositoryExtraTest {
 
             val newEntities = List(10) { ActorSchema.newCredentialRecord() }
             val newMap = newEntities.associateBy { it.id }
-            var prevCount: Long = 0
 
-            // dropTables=false: statement 완료 후 테이블 유지 → statement 바깥에서 count 조회 가능
-            // 트랜잭션 격리(REPEATABLE READ) 문제를 피하기 위해 count 조회를 statement 바깥(독립 트랜잭션)에서 수행한다.
-            withTables(testDB, CredentialTable, dropTables = false) {
+            withTables(testDB, CredentialTable) {
                 repeat(3) {
                     CredentialTable.insert {
                         it[loginId] = faker.internet().domainWord() + "_wb_close_$it"
@@ -425,18 +422,20 @@ class JdbcCaffeineRepositoryExtraTest {
                 }
                 commit()
 
-                prevCount = CredentialTable.selectAll().count()
+                val prevCount = CredentialTable.selectAll().count()
 
-                // 새 엔티티 10개를 Write-Behind 큐에 넣음
-                repository.putAll(newMap)
+                try {
+                    repository.putAll(newMap)
+                } finally {
+                    // 큐를 비운 뒤 종료하며, 등록 실패 시에도 worker를 정리한다.
+                    repository.close()
+                }
 
-                // close() 호출 → 큐 드레인 후 종료 (flushBatch가 별도 transaction으로 커밋)
-                repository.close()
+                // fixture의 DB 등록·permit을 유지한 채 이전 읽기 트랜잭션을 끝낸다.
+                // 새 조회는 같은 DB에서 close()가 완료한 별도 flush 트랜잭션을 관찰한다.
+                commit()
+                CredentialTable.selectAll().count() shouldBeEqualTo prevCount + newEntities.size
             }
-
-            // DB에 모두 반영됐는지 독립 트랜잭션으로 확인 (격리 수준 문제 우회)
-            val newCount = transaction { CredentialTable.selectAll().count() }
-            newCount shouldBeEqualTo prevCount + newEntities.size
         }
 
         @ParameterizedTest
