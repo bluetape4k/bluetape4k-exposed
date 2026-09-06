@@ -285,8 +285,32 @@ git diff --check
 - [x] 승인 명세의 AC-01–AC-09를 작업과 검증에 연결
 - [x] 변경 파일·순서·소유권·호환성·복구 경계 명시
 - [x] 계획 리뷰 및 지적사항 해소 — native 실행 불가로 inline fallback, 리뷰 문서에 provenance 기록
-- [ ] 작성 계획 사용자 승인
+- [x] 작성 계획 사용자 승인 — 현재 스레드의 “승인”에 따라 구현 시작
 - [ ] RED/GREEN 구현과 최종 검증
 - [ ] 승인된 PR 생성 및 exact-head CI 확인
 
 계획 문서의 명령과 코드는 실행 지침이며 아직 구현·빌드 성공의 증거가 아니다.
+
+## 구현 실행 기록 — 2026-09-06
+
+위 본문은 승인 시점의 실행 계획이다. 완료 판단에는 아래 기록과
+[구현 리뷰](../../review/2026-09-06-issue-815-implementation-review.md)의 실제 검증 범위를 적용한다.
+미실행 실패 주입 행렬까지 일괄 체크하지 않는다.
+
+| 작업 | 현재 상태 | 근거 |
+|---|---|---|
+| 1 소비자 기준 | PASS | 이전 class 불변·후보 JAR checksum·main runtime 분리. 검증 runner 단위 테스트 5건 |
+| 2 JDBC fixture | 구현·핵심 검증 PASS, 세부 행렬 PENDING | 최초 configure·생성/등록 실패·기본 연결 복원. unregister 자체 실패 주입은 미실행 |
+| 3 JDBC 실행 | PASS | 혼합 FIFO·활성/만료 토큰·명시 dispatcher·대기/획득/본문 취소·permit 수 |
+| 4 R2DBC fixture | 구현·핵심 검증 PASS, 세부 행렬 PENDING | FIFO·취소·임시 등록 해제·hook. legacy beforeConnection 직접 계측은 미실행 |
+| 5 DDL | PASS | H2/PG cleanup, 부분 생성·opt-out·schema 미지원·예외 우선순위 |
+| 6 소비자·문서 | PASS, 실행 행렬 한계 기록 | 외부 enum·pool 소비자, 로그 sentinel, ABI 삭제 0, POM/metadata, README 네 파일·KDoc·CHANGELOG |
+| 7 리뷰·PR | BLOCKED | 코드 inline fallback 완료, 독립 아키텍처 검토 thread limit. PR/CI 미실행 |
+
+전체 테스트는 JDBC 213건·기존 skipped 16건, R2DBC 194건·기존 skipped 14건이며 실패·오류 0건이다.
+최종 PostgreSQL cleanup은 각 8건 통과했다. 신규 fixture 테스트 skipped는 없다.
+구현은 `4125687f`, 최종 테스트·CHANGELOG는 `99fea3e9`다.
+
+문서 검증: SPW-01–SPW-04 및 KO-01–KO-06은 실행 로그·SHA·미완료 행을 대조했다.
+SPW-05 최종 read-back과 용어 audit를 완료했다.
+다음 단계는 남은 실패 주입 행렬과 필수 아키텍처 검토를 마친 뒤 승인된 PR 생성이다.
