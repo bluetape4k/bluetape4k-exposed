@@ -1,3 +1,7 @@
+import io.bluetape4k.gradle.NormalizedSigningKeyId
+import io.bluetape4k.gradle.normalizeSigningKeyId
+import io.bluetape4k.gradle.resolveSigningKey
+import io.bluetape4k.gradle.resolveSigningKeyId
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.kotlin.dsl.configure
@@ -42,8 +46,11 @@ data class SigningConfig(
  * Env var keys: `SIGNING_KEY_ID`, `SIGNING_KEY`, `SIGNING_PASSWORD`
  */
 fun Project.resolveSigningConfig(): SigningConfig {
-    val keyId = getEnvOrProperty("signingKeyId", "SIGNING_KEY_ID")
-    val key = getEnvOrProperty("signingKey", "SIGNING_KEY").replace("\\n", "\n")
+    val normalizedKeyId: NormalizedSigningKeyId =
+        normalizeSigningKeyId(getEnvOrProperty("signingKeyId", "SIGNING_KEY_ID"))
+    val keyId = resolveSigningKeyId(normalizedKeyId.value)
+    normalizedKeyId.warning?.let(project.logger::warn)
+    val key = resolveSigningKey(getEnvOrProperty("signingKey", "SIGNING_KEY"))
     val password = getEnvOrProperty("signingPassword", "SIGNING_PASSWORD")
     val useGpgCmd = getEnvOrProperty("signingUseGpgCmd", "SIGNING_USE_GPG_CMD").toBoolean()
     val gpgExecutable = getEnvOrProperty("signing.gnupg.executable", "GPG_EXECUTABLE")
