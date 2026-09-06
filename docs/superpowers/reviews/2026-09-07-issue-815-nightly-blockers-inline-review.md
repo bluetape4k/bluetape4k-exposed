@@ -5,7 +5,8 @@
 - 저장소: `bluetape4k/bluetape4k-exposed`
 - 기준: `develop@18645ebbe8e0b8a3e0df9847dc016455fd3a80f9`
 - 대상: 현재 `fix/issue-815-nightly-blockers` worktree의 fixture 테스트,
-  Nightly workflow, CI 계약 테스트, lesson과 실행 점검표 변경
+  Nightly workflow, CI 계약 테스트, write-behind 공통 시나리오와 persisted hook
+  테스트, lesson과 실행 점검표 변경
 - 독립 리뷰: `code-reviewer` lane이 90초 이상 usable verdict를 반환하지 않아
   중단했다. 이 문서는 독립 모델·아키텍처 provenance가 아닌 leader의 inline
   exact-diff review 기록이다.
@@ -36,10 +37,21 @@
 
 ### 문서·운영 변경
 
-- MySQL table/schema capability 차이를 `docs/lessons/`에 기록해 다음 matrix
-  확장 시 권한을 capability별로 확인하도록 했다.
+- MySQL table/schema capability와 write-behind 완료 신호 경계를 `docs/lessons/`에
+  기록해 다음 matrix 확장과 비동기 테스트에서 실제 관찰 경계를 확인하도록 했다.
 - 실행 점검표에는 hosted 원인, RED/GREEN, 로컬 matrix/Kover/Detekt 결과와
   merge 보류 경계를 기록했다.
+
+### write-behind 완료 조건 변경
+
+- JDBC, suspended JDBC, R2DBC 대량 insert 시나리오는 초기 DB 건수와
+  `entityMap.size`를 더한 기대값을 사용한다. 기존 조건처럼 일부 batch만 저장된
+  중간 상태에서 깨어나지 않으며, 중복 ID가 생겨도 실제 write 수와 일치한다.
+- retry hook 테스트는 성공한 `UpdateStatement`를 완료 신호로 쓰지 않는다.
+  `afterPersisted(writes)`가 전체 목록을 기록한 뒤 latch를 해제하므로 assertion과
+  같은 side effect를 동기화한다.
+- 변경은 test fixture와 테스트 helper에만 있으며 production write-behind lifecycle,
+  ABI/API, dependency에는 영향이 없다.
 
 ## 검증 근거
 
@@ -51,8 +63,24 @@
   `r2dbc missed=0 covered=12`; aggregator report 미생성.
 - `actionlint`, CI contract `5 tests`, Kover validator `4 tests`, `py_compile`,
   `detekt`, terminology audit, `git diff --check` 통과.
+- hosted 실패 대상 PostgreSQL 테스트는 수정 후 총 4회 연속 통과했다.
+- `jdbc-caffeine` 전체는 PostgreSQL/H2에서 각각 `181 tests / 2 skipped`,
+  `r2dbc-caffeine` 전체 H2는 `121 tests / 1 skipped`로 성공했다.
+- canonical `./gradlew detekt`는 성공했다. 직접 실행한 source-set Detekt는 변경 전
+  detached `HEAD`와 같은 `testFixtures=50`, `jdbc-caffeine test=22` 진단으로
+  실패했으므로 별도 clean gate 통과로 주장하지 않는다.
 
 ## 남은 검토 범위
 
-PR exact head의 hosted CI와 live review/thread read-back은 PR 생성 후 CG-14에서
+새 exact head의 hosted CI와 live review/thread read-back은 push 후 CG-14에서
 확인한다. 이 문서는 merge 승인이나 merge-ready 판정을 대신하지 않는다.
+
+## Writer DoD
+
+- [x] SPW-01: 한국어 개발자용 inline review이며 exact base, 변경 범위, hosted
+  failure, 로컬 검증과 독립 리뷰 불가 사유를 고정했다.
+- [x] SPW-02: 범위, provenance, severity 판정, 파일별 근거, 검증, 남은 gate를
+  포함했다.
+- [x] SPW-03: KO-01–KO-07 검토에서 수치, 식별자, lifecycle 경계를 보존했다.
+- [x] SPW-04: 현재 diff, hosted assertion, 테스트·Detekt 결과를 대조했다.
+- [x] SPW-05: 최종 Markdown read-back과 terminology audit 결과를 기록한다.

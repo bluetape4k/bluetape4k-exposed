@@ -5,7 +5,9 @@
 - 유형: **Type-C Bug Fix**
 - 저장소: `bluetape4k/bluetape4k-exposed`
 - 기준: `develop@18645ebbe8e0b8a3e0df9847dc016455fd3a80f9`
-- 승인: 사용자가 Full Nightly 실패 후 보고한 두 차단 사유의 수정과 PR 생성을 승인했다.
+- 승인: 사용자가 Full Nightly 실패 후 보고한 두 차단 사유의 수정과 PR 생성을
+  승인했고, PR #830 exact-head CI에서 확인된 write-behind 테스트 2건의 안정화도
+  추가 승인했다.
 - 기존 이슈: [#815](https://github.com/bluetape4k/bluetape4k-exposed/issues/815)은
   published test-support 소비자 계약의 상위 범위다. 이번 수정은 issue를 닫지 않고
   provider의 MySQL 행렬과 Nightly coverage 계약만 보강한다.
@@ -24,6 +26,12 @@
   `INSTRUCTION covered=0/missed=0` 보고서를 집계해 실패했다.
 - 기존 CI workflow는 core/jdbc/r2dbc만 coverage task와 artifact에 포함하지만,
   Nightly workflow는 aggregator task와 전체 경로 glob을 아직 포함한다.
+- PR #830 exact head `fb71928179c88739aa4c3049c5af95ab1a897457`의 CI
+  run `34042513330` attempt 1은 대량 insert 완료 조건이 `1000`에서 조기
+  충족되어 `Expected <1000> to be greater than <1000>`으로 실패했다.
+- failed-only rerun attempt 2는 DB update와 queue 정산 뒤 `afterPersisted`가 두 번째
+  write를 기록하기 전에 assertion이 실행되어 `Expected [<1>] to equal to [<1>, <2>]`
+  로 실패했다.
 
 ## 실행 순서
 
@@ -65,16 +73,22 @@
    - Expected DoD: P0=0/P1=0, `git diff --check` 통과, Lore commit과 정확한 head를 기록한다.
    - Lesson decision: 기존 `docs/lessons/2026-09-04-milestone-210-ci-validation.md`가
      동일한 fail-closed Kover 규칙을 직접 예방하므로 재사용한다. MySQL schema 권한
-     가정에서 드러난 capability 경계는 별도 lesson으로 기록했으며, 그 외 새
-     failure/recovery/design/operational guidance나 invalidated assumption은 없다. 중간
-     task명 오타는 단발성 실행 오류로 즉시 교정되어 별도 lesson을 요구하는 project rule이 아니다.
-   - Evidence: MySQL schema capability 차이는 `docs/lessons/2026-09-07-issue-815-mysql-schema-capability.md`에
-     기록했고, 독립 리뷰 lane 중단 후 `docs/superpowers/reviews/2026-09-07-issue-815-nightly-blockers-inline-review.md`
-    에서 inline exact-diff review를 완료했다(`P0=0/P1=0/P2=0`). Lore commit은
+     가정과 write-behind 완료 신호 경계는 각각 별도 lesson으로 기록했다. 중간 task명
+     오타는 단발성 실행 오류로 즉시 교정되어 별도 lesson을 요구하는 project rule이 아니다.
+   - Evidence: `docs/lessons/2026-09-07-issue-815-mysql-schema-capability.md`와
+     `docs/lessons/2026-09-07-issue-815-write-behind-completion-signals.md`를 기록했고,
+     독립 리뷰 lane 중단 후 `docs/superpowers/reviews/2026-09-07-issue-815-nightly-blockers-inline-review.md`
+     에서 inline exact-diff review를 완료했다(`P0=0/P1=0/P2=0`). Lore commit은
      `7257382f06d9e6cca6afa4742641c47b9fd2d7db`이며 이후 점검표 갱신도 같은 규칙으로 커밋한다.
 6. [ ] **C-06 / CG-11~15 — PR 생성 및 merge-ready 보고**
    - Action: 정확한 head를 push하고 `develop` 대상 PR을 생성한 뒤 live metadata, CI, review를 확인한다.
-   - Expected DoD: PR의 마지막 `## DoD Status`와 검증 수치를 읽어 back하고, merge는 fresh approval 전까지 보류한다.
+   - Expected DoD: PR의 마지막 `## DoD Status`와 검증 수치를 read-back하고, merge는 fresh approval 전까지 보류한다.
+   - 진행 Evidence: PR #830 생성과 첫 exact-head CI read-back은 완료했다. 두 hosted
+     failure의 완료 신호를 수정해 PostgreSQL 대상 4회 연속, JDBC 전체 PostgreSQL/H2
+     각 `181 tests / 2 skipped`, R2DBC 전체 H2 `121 tests / 1 skipped`를 통과했다.
+     canonical `detekt`도 성공했다. source-set Detekt 강제 실행의 기존 baseline
+     `50`/`22` 진단은 변경 전 detached `HEAD`와 동일하며 통과로 세지 않는다.
+     새 exact head push와 hosted CI가 남아 있다.
 
 ## Writer DoD
 
@@ -86,4 +100,6 @@
 
 ## 현재 상태
 
-**READY FOR PR** — C-01~C-05, lesson·inline review·Lore commit을 완료했으며, exact head push와 PR 생성·CI가 남아 있다.
+**LOCAL FIX VERIFIED** — C-01~C-05와 PR #830 생성은 완료했다. 승인된 write-behind
+안정화 수정의 로컬 검증과 inline exact-diff review를 마쳤으며, 새 exact head
+push·hosted CI·merge-ready 판정이 남아 있다.

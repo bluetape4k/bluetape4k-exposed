@@ -113,7 +113,7 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `write-behind publishes retained batch plus appended writes only after successful retry`(testDB: TestDB) {
         val flushFailed = CountDownLatch(1)
-        val flushSucceeded = CountDownLatch(1)
+        val persistedHookCompleted = CountDownLatch(1)
         val repository = TransientFailingHookRepository(
             config = LocalCacheConfig(
                 keyPrefix = "jdbc:caffeine:hook:wb:retry",
@@ -122,7 +122,7 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
                 writeBehindQueueCapacity = 16,
             ),
             flushFailed = flushFailed,
-            flushSucceeded = flushSucceeded,
+            persistedHookCompleted = persistedHookCompleted,
         )
 
         withActorTable(testDB) {
@@ -136,7 +136,7 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
                 repository.persisted.shouldBeEmpty()
 
                 repository.put(second.id, second)
-                flushSucceeded.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                persistedHookCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
 
                 awaitHealthReport(repository) { it.queueDepth == 0 && it.lastFlushError == null }
                 repository.persisted.map { it.id } shouldBeEqualTo listOf(first.id, second.id)
@@ -322,7 +322,7 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
     private class TransientFailingHookRepository(
         config: LocalCacheConfig,
         private val flushFailed: CountDownLatch,
-        private val flushSucceeded: CountDownLatch,
+        private val persistedHookCompleted: CountDownLatch,
     ): RecordingActorRepository(config) {
 
         private val attempts = AtomicInteger()
@@ -333,7 +333,11 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
                 throw IllegalStateException("planned transient flush failure")
             }
             applyActorUpdate(entity)
-            flushSucceeded.countDown()
+        }
+
+        override fun afterPersisted(writes: List<CachePersistedWrite<Long, ActorRecord>>) {
+            super.afterPersisted(writes)
+            persistedHookCompleted.countDown()
         }
     }
 
