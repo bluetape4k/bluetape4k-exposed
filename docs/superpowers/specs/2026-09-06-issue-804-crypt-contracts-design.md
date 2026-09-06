@@ -16,6 +16,11 @@ Exposed 1.5.0의 `Hasher`, `Hashed`, `hashed()`와 column-bound `hash()`가 null
 
 ## 검증 계약
 
+실행 중 확인한 보완: 실제 선택된 Spring Security 7.1.1의 `matches`·`upgradeEncoding`은
+`spring-core`의 `StringUtils`를 사용하지만 crypto POM에는 이 의존성이 없다.
+두 모듈의 testRuntimeOnly에만 추가하고 production POM에는 추가하지 않는다.
+이는 승인된 직접 사용 경로의 실행 의존성을 명시하는 보완이며 공통/Tink 의존성 변경이 아니다.
+
 1. JDBC와 R2DBC H2에서 BCrypt 저장·조회·올바른/틀린 입력 matches, raw 컬럼에 평문 미저장, nullable null 보존을 검증한다.
 2. 조회한 Hashed를 다시 저장한 raw hash가 동일하고, custom Hasher 호출 횟수가 재저장 시 증가하지 않아야 한다.
 3. Argon2, PBKDF2, SCrypt도 저장·조회·matches 경로를 검증한다. 테스트용 저비용 파라미터를 production 권장값으로 문서화하지 않는다.

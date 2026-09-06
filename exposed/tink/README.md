@@ -6,6 +6,12 @@ A module for encrypting and decrypting Exposed column values using [Google Tink]
 
 ## Overview
 
+Tink encryption is reversible with the key; password verification needs one-way hashing.
+For Exposed 1.5.0 `hashed` / `Hashed` contracts, see the
+[JDBC guide](../jdbc-tests/README.md#exposed-150-one-way-hashing) and
+[R2DBC guide](../r2dbc-tests/README.md#exposed-150-one-way-hashing).
+The upstream `exposed-crypt` dependency is an explicit opt-in and is not added to this module.
+
 `exposed-tink` provides transparent authenticated encryption (AEAD — Authenticated Encryption with Associated Data) of JetBrains Exposed `VARCHAR`, `VARBINARY`, and `BLOB` column values using the Google Tink library.
 
 Google Tink is a modern cryptography library developed by Google, designed to be hard to misuse and to prevent incorrect usage by design. This module supports two encryption modes:

@@ -15,6 +15,9 @@
 
 ### 추가
 
+- Exposed 1.5.0 upstream 해시 컬럼의 JDBC/R2DBC 저장·재저장·알고리즘 전환 검증과
+  양언어 사용 예제를 추가했다. 새 암호 adapter나 Tink 의존성은 추가하지 않는다 (#804).
+
 - 자체 DB 식별자와 호출자 소유 연결 공급원을 사용하는 JDBC/R2DBC 테스트 fixture와
   table/schema helper overload를 추가했다. 기존 enum API와 기본 인자 ABI는 유지한다
   ([#815](https://github.com/bluetape4k/bluetape4k-exposed/issues/815)).
