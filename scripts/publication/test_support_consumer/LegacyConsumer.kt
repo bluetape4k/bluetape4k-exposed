@@ -6,6 +6,7 @@ import io.bluetape4k.exposed.tests.TestDB as JdbcTestDB
 import io.bluetape4k.exposed.tests.withDb as jdbcWithDb
 import io.bluetape4k.exposed.tests.withDbSuspending
 import io.bluetape4k.exposed.tests.withSuspendedDb
+import io.bluetape4k.exposed.tests.withSuspendedTables
 import io.bluetape4k.exposed.tests.withTables as jdbcWithTables
 import io.bluetape4k.exposed.tests.withTablesSuspending
 import io.bluetape4k.exposed.tests.withSchemas as jdbcWithSchemas
@@ -26,10 +27,11 @@ fun main() {
         withDbSuspending(JdbcTestDB.H2) { calls++ }
         withSuspendedDb(JdbcTestDB.H2) { calls++ }
         withTablesSuspending(JdbcTestDB.H2) { calls++ }
+        withSuspendedTables(JdbcTestDB.H2) { calls++ }
         withSchemasSuspending(JdbcTestDB.H2) { calls++ }
         r2dbcWithDb(R2dbcTestDB.H2) { calls++ }
         r2dbcWithTables(R2dbcTestDB.H2) { calls++ }
         r2dbcWithSchemas(R2dbcTestDB.H2) { calls++ }
     }
-    check(calls == 10) { "기존 진입점의 본문이 모두 실행되어야 한다: $calls" }
+    check(calls == 11) { "기존 진입점의 본문이 모두 실행되어야 한다: $calls" }
 }
