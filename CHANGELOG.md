@@ -9,6 +9,9 @@
 
 ### 버그 수정
 
+- 전체 publication과 BOM의 POM 라이선스를 저장소의 MIT와 일치시키고, CI·발행 전
+  검사에서 누락·잘못된 URL·복수 라이선스 선언을 거부한다
+  ([#826](https://github.com/bluetape4k/bluetape4k-exposed/issues/826)).
 - ClickHouse DDL 제약 제거가 문자열 리터럴·인용 식별자·DEFAULT 식을 훼손하지 않도록
   인용 영역과 괄호 깊이를 구분한다. 기본값의 실제 schema·저장 값 보존도 검증한다
   ([#821](https://github.com/bluetape4k/bluetape4k-exposed/issues/821)).

@@ -17,6 +17,14 @@ module Publication
 
       @paths.each do |path|
         document = REXML::Document.new(File.read(path))
+        licenses = REXML::XPath.match(document, "/project/licenses/license")
+        valid_license = licenses.length == 1 &&
+          licenses.first.elements["name"]&.text.to_s.strip == "MIT License" &&
+          licenses.first.elements["url"]&.text.to_s.strip == "https://opensource.org/licenses/MIT"
+        unless valid_license
+          errors << "#{path}: publication license must be MIT License (https://opensource.org/licenses/MIT)"
+        end
+
         managed_dependencies = REXML::XPath.match(
           document,
           "/project/dependencyManagement/dependencies/dependency",
