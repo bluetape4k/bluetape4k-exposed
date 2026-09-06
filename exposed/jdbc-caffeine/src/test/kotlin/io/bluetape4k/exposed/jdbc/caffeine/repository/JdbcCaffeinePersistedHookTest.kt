@@ -20,6 +20,8 @@ import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.ActorTable
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.toActorRecord
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.withActorTable
 import io.bluetape4k.exposed.tests.TestDB
+import io.mockk.every
+import io.mockk.mockk
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
@@ -36,6 +38,30 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.cancellation.CancellationException
 
 class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
+
+    @Test
+    fun `awaitHealthReport는 predicate 미충족 timeout을 성공으로 처리하지 않는다`() {
+        val finalReport = CacheHealthReport(
+            mode = CacheWriteMode.WRITE_BEHIND,
+            queueDepth = 1,
+            workerState = CacheWorkerState.RUNNING,
+            lastFlushError = IllegalStateException("flush is still pending"),
+        )
+        val repository = mockk<JdbcCaffeineRepository<*, *>>() {
+            every { validateConsistency() } returns finalReport
+        }
+
+        val failure = assertFailsWith<AssertionError> {
+            awaitHealthReport(
+                repository = repository,
+                expected = "queueDepth=0 && lastFlushError=null",
+            ) { it.queueDepth == 0 && it.lastFlushError == null }
+        }
+
+        failure.message.orEmpty().contains("expected=queueDepth=0 && lastFlushError=null").shouldBeTrue()
+        failure.message.orEmpty().contains("queueDepth=1").shouldBeTrue()
+        failure.message.orEmpty().contains("lastFlushError").shouldBeTrue()
+    }
 
     @Test
     fun `write-behind blocking persisted hook does not hold lifecycle lock past close deadline`() {
@@ -138,7 +164,10 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
                 repository.put(second.id, second)
                 persistedHookCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
 
-                awaitHealthReport(repository) { it.queueDepth == 0 && it.lastFlushError == null }
+                awaitHealthReport(
+                    repository = repository,
+                    expected = "queueDepth=0 && lastFlushError=null",
+                ) { it.queueDepth == 0 && it.lastFlushError == null }
                 repository.persisted.map { it.id } shouldBeEqualTo listOf(first.id, second.id)
             } finally {
                 repository.close()
@@ -181,7 +210,10 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
                 repository.validateConsistency().queueDepth shouldBeEqualTo 2
                 repository.cache.getIfPresent(repository.serializeKey(rejected.id)).shouldBeNull()
                 releaseFlush.countDown()
-                awaitHealthReport(repository) { it.queueDepth == 0 }
+                awaitHealthReport(
+                    repository = repository,
+                    expected = "queueDepth=0",
+                ) { it.queueDepth == 0 }
 
                 repository.persisted.map { it.id }.contains(rejected.id) shouldBeEqualTo false
             } finally {
@@ -215,12 +247,18 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
             try {
                 repository.put(first.id, first)
                 firstHookAttempted.await(5, TimeUnit.SECONDS).shouldBeTrue()
-                awaitHealthReport(repository) { it.queueDepth == 0 && it.lastFlushError == null }
+                awaitHealthReport(
+                    repository = repository,
+                    expected = "queueDepth=0 && lastFlushError=null",
+                ) { it.queueDepth == 0 && it.lastFlushError == null }
 
                 repository.put(second.id, second)
                 secondHookSucceeded.await(5, TimeUnit.SECONDS).shouldBeTrue()
 
-                awaitHealthReport(repository) { it.queueDepth == 0 && it.lastFlushError == null }
+                awaitHealthReport(
+                    repository = repository,
+                    expected = "queueDepth=0 && lastFlushError=null",
+                ) { it.queueDepth == 0 && it.lastFlushError == null }
                 repository.persisted.map { it.id } shouldBeEqualTo listOf(second.id)
             } finally {
                 repository.close()
@@ -255,7 +293,10 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
                 }
                 hookCancelled.await(5, TimeUnit.SECONDS).shouldBeTrue()
 
-                val failedReport = awaitHealthReport(repository) { it.workerState == CacheWorkerState.FAILED }
+                val failedReport = awaitHealthReport(
+                    repository = repository,
+                    expected = "workerState=FAILED",
+                ) { it.workerState == CacheWorkerState.FAILED }
                 failedReport.workerState shouldBeEqualTo CacheWorkerState.FAILED
                 failedReport.lastFlushError.shouldBeNull()
                 val rejection = assertFailsWith<IllegalStateException> {
@@ -395,15 +436,20 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
 
     private fun awaitHealthReport(
         repository: JdbcCaffeineRepository<*, *>,
+        expected: String,
         predicate: (CacheHealthReport) -> Boolean,
     ): CacheHealthReport {
-        repeat(100) {
+        var lastReport: CacheHealthReport? = null
+        repeat(100) { attempt ->
             val report = repository.validateConsistency()
+            lastReport = report
             if (predicate(report)) {
                 return report
             }
-            Thread.sleep(10)
+            if (attempt < 99) Thread.sleep(10)
         }
-        return repository.validateConsistency()
+        throw AssertionError(
+            "Timed out waiting for CacheHealthReport; expected=$expected, lastReport=$lastReport"
+        )
     }
 }
