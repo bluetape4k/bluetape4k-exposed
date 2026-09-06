@@ -13,12 +13,13 @@ import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.Schema
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.exists
+import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Test
 
 class JdbcFixtureCleanupTest {
     private class BodyFailure(val marker: Int): IllegalArgumentException("body sentinel")
     private val selected = TestDB.valueOf(System.getenv("EXPOSED_TEST_DB") ?: "H2").also {
-        check(it in setOf(TestDB.H2, TestDB.POSTGRESQL))
+        check(it in setOf(TestDB.H2, TestDB.POSTGRESQL, TestDB.MYSQL_V8))
     }
     private val fixture = jdbcTestDbFixture(selected, { configure -> selected.connect(configure) })
     private val table = object: Table("jdbc_fixture_cleanup") { val id = integer("id") }
@@ -81,6 +82,9 @@ class JdbcFixtureCleanupTest {
 
     @Test
     fun `schema 본문 실패와 suspend 취소 후 schema가 남지 않는다`() = runSuspendIO {
+        Assumptions.assumeTrue(selected in setOf(TestDB.H2, TestDB.POSTGRESQL)) {
+            "MySQL Testcontainers test user cannot create a schema/database"
+        }
         val schema = Schema("jdbc_fixture_schema")
         assertFailsWith<BodyFailure> {
             withSchemas(fixture, schema) { key ->

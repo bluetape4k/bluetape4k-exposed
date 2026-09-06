@@ -2111,7 +2111,6 @@ jobs:
           :bluetape4k-exposed-batch-core:koverXmlReport
           :bluetape4k-exposed-batch-jdbc:koverXmlReport
           :bluetape4k-exposed-batch-r2dbc:koverXmlReport
-          :bluetape4k-exposed-batch:koverXmlReport
           --no-configuration-cache --no-daemon -x test
       - name: Verify utils-batch Kover reports
         if: always()
@@ -2120,8 +2119,7 @@ jobs:
           for report in \
             utils/batch/core/build/reports/kover/report.xml \
             utils/batch/jdbc/build/reports/kover/report.xml \
-            utils/batch/r2dbc/build/reports/kover/report.xml \
-            utils/batch/build/reports/kover/report.xml; do
+            utils/batch/r2dbc/build/reports/kover/report.xml; do
             test -s "$report"
           done
       - name: Upload test results
@@ -2137,7 +2135,10 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: coverage-utils-batch-${{ matrix.db }}
-          path: '**/build/reports/kover/'
+          path: |
+            utils/batch/core/build/reports/kover/
+            utils/batch/jdbc/build/reports/kover/
+            utils/batch/r2dbc/build/reports/kover/
           if-no-files-found: error
           retention-days: 14
 
