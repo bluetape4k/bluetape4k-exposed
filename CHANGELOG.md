@@ -7,6 +7,12 @@
 
 ## [Unreleased]
 
+### 버그 수정
+
+- ClickHouse DDL 제약 제거가 문자열 리터럴·인용 식별자·DEFAULT 식을 훼손하지 않도록
+  인용 영역과 괄호 깊이를 구분한다. 기본값의 실제 schema·저장 값 보존도 검증한다
+  ([#821](https://github.com/bluetape4k/bluetape4k-exposed/issues/821)).
+
 ### 추가
 
 - 자체 DB 식별자와 호출자 소유 연결 공급원을 사용하는 JDBC/R2DBC 테스트 fixture와

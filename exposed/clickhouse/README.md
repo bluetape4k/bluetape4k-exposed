@@ -210,7 +210,7 @@ transaction(database) {
 
 5. **HikariCP configuration** — `autoCommit=true` is enforced. Set `minimumIdle=1` to avoid unnecessary connection churn.
 
-6. **No PRIMARY KEY in DDL** — `CREATE TABLE` strips `PRIMARY KEY` and `CONSTRAINT` clauses. Use `ORDER BY` in the engine DSL to define the physical sort key.
+6. **DDL constraint conversion** — Exposed-generated `CREATE TABLE` removes primary-key constraints, inline `REFERENCES`, and column nullability constraints. Quoted literals/identifiers, comments, `Nullable(T)`, and `DEFAULT` expressions are preserved. Use `ORDER BY` in the engine DSL for the physical sort key. Table-level foreign-key constraints are not supported; do not declare foreign keys on ClickHouse tables. This is a bounded Exposed DDL adapter, not a general parser for handwritten SQL or other dialects.
 
 7. **Column comments stripped** — `COMMENT ON COLUMN` statements are removed by the DDL filter and have no effect.
 
