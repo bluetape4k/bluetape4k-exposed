@@ -1,97 +1,29 @@
 package io.bluetape4k.exposed.r2dbc.tests
 
-import io.bluetape4k.utils.Runtimex
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.DatabaseConfig
-import org.jetbrains.exposed.v1.core.Key
-import org.jetbrains.exposed.v1.core.statements.StatementInterceptor
 import org.jetbrains.exposed.v1.core.transactions.nullableTransactionScope
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
-import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
-import org.jetbrains.exposed.v1.r2dbc.transactions.transactionManager
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Semaphore
-
-private val registeredOnShutdown = ConcurrentHashMap.newKeySet<TestDB>()
-private val testDbSemaphores = ConcurrentHashMap<TestDB, Semaphore>()
 
 internal var currentTestDB by nullableTransactionScope<TestDB>()
 
-private object CurrentTestDBInterceptor: StatementInterceptor {
-    override fun keepUserDataInTransactionStoreOnCommit(userData: Map<Key<*>, Any?>): Map<Key<*>, Any?> {
-        return userData.filterValues { it is TestDB }
-    }
-}
-
-private suspend fun acquireSemaphoreSuspending(testDB: TestDB) =
-    withContext(Dispatchers.IO) {
-        testDbSemaphores.computeIfAbsent(testDB) { Semaphore(1, true) }.acquire()
-    }
-
 /**
- * 지정한 [testDB]에 대해 R2DBC 트랜잭션 블록을 실행합니다.
- *
- * 같은 [testDB]를 사용하는 테스트는 공용 세마포어로 직렬화되어,
- * 병렬 실행 시 초기화/연결/테이블 작업 충돌을 방지합니다.
- *
- * ## 동작/계약
- * - 첫 호출 시 DB 연결을 생성해 [TestDB.db]에 저장하고 종료 훅을 등록합니다.
- * - [configure]를 전달하면 해당 호출에만 임시 적용한 뒤 기존 DB 참조로 복원합니다.
- * - 트랜잭션은 `maxAttempts = 1`로 실행되며 `currentTestDB`가 설정됩니다.
- *
- * ```kotlin
- * withDb(TestDB.H2) {
- *     val database = testDB.db
- *     // database != null
- * }
- * ```
+ * enum별 fixture에서 트랜잭션을 한 번 실행합니다.
+ * FIFO 대기 중 취소를 유지하며 첫 configure도 별도 일시 wrapper에만 적용합니다.
+ * 같은 fixture의 활성 중첩 호출은 거부합니다.
  */
 suspend fun withDb(
     testDB: TestDB,
     configure: (DatabaseConfig.Builder.() -> Unit)? = null,
     statement: suspend R2dbcTransaction.(TestDB) -> Unit,
-) {
-    acquireSemaphoreSuspending(testDB)
-    try {
-        val unregistered = testDB !in registeredOnShutdown
-        val newConfiguration = configure != null && !unregistered
+) = r2dbcFixtureFor(testDB).executeSuspending(configure, statement)
 
-        if (unregistered) {
-            testDB.beforeConnection()
-            Runtimex.addShutdownHook {
-                testDB.afterTestFinished()
-                registeredOnShutdown.remove(testDB)
-            }
-            registeredOnShutdown += testDB
-            testDB.db = testDB.connect(configure ?: {})
-        }
-
-        val registeredDb = checkNotNull(testDB.db) { "testDB.db must be initialized for $testDB" }
-        try {
-            if (newConfiguration) {
-                testDB.db = testDB.connect(configure)
-            }
-            val database = checkNotNull(testDB.db) { "testDB.db must be initialized for $testDB" }
-            val defaultIsolationLevel = checkNotNull(database.transactionManager.defaultIsolationLevel) {
-                "defaultIsolationLevel must be initialized for $testDB"
-            }
-            suspendTransaction(
-                transactionIsolation = defaultIsolationLevel,
-                db = database,
-            ) {
-                maxAttempts = 1
-                registerInterceptor(CurrentTestDBInterceptor)
-                currentTestDB = testDB
-                statement(testDB)
-            }
-        } finally {
-            // revert any new configuration to not be carried over to the next test in suite
-            if (configure != null) {
-                testDB.db = registeredDb
-            }
-        }
-    } finally {
-        testDbSemaphores.getValue(testDB).release()
-    }
-}
+/**
+ * 같은 [fixture] 호출을 직렬화하고 트랜잭션 receiver와 custom key를 전달합니다.
+ * [configure]는 현재 호출의 일시 wrapper에만 적용하며 종료 후 등록을 해제합니다.
+ * 같은 물리 DB에는 같은 fixture 인스턴스를 공유해야 합니다.
+ */
+suspend fun <K> withDb(
+    fixture: R2dbcTestDbFixture<K>,
+    configure: (DatabaseConfig.Builder.() -> Unit)? = null,
+    statement: suspend R2dbcTransaction.(K) -> Unit,
+) = fixture.executeSuspending(configure, statement)

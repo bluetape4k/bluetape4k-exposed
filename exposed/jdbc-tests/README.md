@@ -18,7 +18,7 @@ Shared JDBC test infrastructure for Exposed-based modules. It gives test authors
 
 ```kotlin
 dependencies {
-    testImplementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-tests:${version}")
+    testImplementation("io.github.bluetape4k.exposed:bluetape4k-exposed-jdbc-tests")
 }
 ```
 
@@ -27,7 +27,7 @@ dependencies {
 - **Common test base**: `AbstractExposedTest` fixes the default timezone to UTC and exposes `ENABLE_DIALECTS_METHOD` for parameterized tests.
 - **Dialect selection**: `TestDB.enabledDialects()` combines `useFastDB`, `EXPOSED_TEST_DB`, and the default H2/PostgreSQL/MySQL 8 set.
 - **Scoped JDBC helpers**: `withDb`, `withTables`, `withSchemas`, and auto-commit variants run inside one Exposed transaction and clean up fixtures.
-- **Coroutine variants**: suspending helpers mirror the blocking JDBC helpers while using `newSuspendedTransaction`.
+- **Coroutine variants**: suspending helpers mirror the blocking JDBC helpers while using `suspendTransaction`.
 - **Shared schemas and assertions**: reusable movie, board, blog, person, order, and composite-id fixtures keep module tests concise.
 
 ## Supported Databases
@@ -297,7 +297,37 @@ EXPOSED_TEST_DB=MYSQL_V8 ./gradlew :bluetape4k-exposed-jdbc-tests:test
 
 ## Notes
 
-- Detekt static analysis is disabled for this test-support module.
+- Run module-scoped `detekt` and `checkKotlinAbi` alongside tests.
 - Docker is required when `TestDBConfig.useTestcontainers` is `true`.
 - Set `TestDBConfig.useTestcontainers = false` when a local PostgreSQL/MySQL/MariaDB server should be used instead of Testcontainers.
 - `EXPOSED_TEST_DB=POSTGRESQL` or `EXPOSED_TEST_DB=MYSQL_V8` adds that real DB next to H2 for CI-style matrix runs.
+
+## Caller-owned fixture contracts
+
+Use `JdbcTestDbFixture<K>` through `jdbcTestDbFixture` when an application owns its DB selector and connection supply. Create one fixture per physical test DB and share it for the test-suite/JVM lifetime. Keys are not stored in a global registry. A factory callback returns an Exposed wrapper around an existing caller-owned pool or connection supply; it must not allocate a new long-lived pool on each call.
+
+The following fragment assumes the application's `ApplicationDb`, `Orders`, and connection supply already exist:
+
+```kotlin
+val fixture = jdbcTestDbFixture(
+    key = ApplicationDb.PRIMARY,
+    createDatabase = { configure ->
+        Database.connect(dataSource, databaseConfig = DatabaseConfig { configure() })
+    },
+)
+withTables(fixture, Orders) { key ->
+    // Seed/FK/domain cleanup remains in the application wrapper.
+}
+```
+
+- Existing enum functions, default arguments, and deprecated compatibility aliases remain available. New overloads accept fixtures for DB, table and schema helpers, including JDBC suspend variants.
+- Same-fixture calls are FIFO; distinct fixtures proceed independently. Active nested calls of the same fixture fail fast, including inherited coroutine contexts. A completed entry no longer blocks later calls.
+- `database` is null until initialization and shutdown-hook registration succeed, then exposes the baseline wrapper. Even the first `configure` call creates a separate temporary wrapper; after the transaction finishes its provider registration is removed. Returning the baseline wrapper for temporary configuration is rejected.
+- Creation or shutdown-hook registration failure allows a later initialization attempt. Each actual wrapper creation runs the legacy `beforeConnection` once. External pools/containers remain caller-owned; the provider does not close them.
+- `currentJdbcTestDbFixture` identifies the fixture inside the transaction and survives commit. Legacy enum calls retain `currentTestDB` behavior. Transactions execute the body once (`maxAttempts = 1`).
+- Cancellation remains cancellation. Only required cleanup is protected. Body failure wins over cleanup/recovery failures, which are retained in occurrence order.
+- Pass only exclusively owned test tables/schemas: pre-drop and cascade cleanup are intentional. Partial creation is cleaned up unless `dropTables = false`; unsupported schema dialects do not execute the body. Database outages or injected drop failures can leave residue.
+- Provider logs do not include custom keys, URLs, configuration or callback exception messages. Driver/application logging is caller policy. Coroutine debug stacktrace recovery may copy exceptions; the helper does not replace the primary failure.
+- Declare these artifacts with `testImplementation`, under the application's `bluetape4k-dependencies` BOM. Test runtime support is not application main runtime. Internal Exposed cleanup failures that upstream only logs remain outside the suppression guarantee (issue #817).
+
+Downstream workshop/clinic migration and publication are separate work; this provider change does not complete issue #815 by itself.

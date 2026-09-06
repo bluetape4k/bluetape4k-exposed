@@ -1,87 +1,44 @@
 package io.bluetape4k.exposed.tests
 
-import io.bluetape4k.logging.info
-import io.bluetape4k.utils.Runtimex
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.core.Key
 import org.jetbrains.exposed.v1.core.statements.StatementInterceptor
 import org.jetbrains.exposed.v1.core.transactions.nullableTransactionScope
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
-import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import org.jetbrains.exposed.v1.jdbc.transactions.transactionManager
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Semaphore
 
+// 기존 JVM 진입점을 보존한다. 실행 상태는 fixture가 소유한다.
 internal val registeredOnShutdown = ConcurrentHashMap.newKeySet<TestDB>()
 internal val testDbSemaphores = ConcurrentHashMap<TestDB, Semaphore>()
 
+/** 현재 legacy enum 트랜잭션의 DB 식별자입니다. */
 var currentTestDB by nullableTransactionScope<TestDB>()
 
+/** 기존 enum 식별자를 commit 후에도 보존하는 호환 interceptor입니다. */
 object CurrentTestDBInterceptor: StatementInterceptor {
-    override fun keepUserDataInTransactionStoreOnCommit(userData: Map<Key<*>, Any?>): Map<Key<*>, Any?> {
-        return userData.filterValues { it is TestDB }
-    }
+    override fun keepUserDataInTransactionStoreOnCommit(userData: Map<Key<*>, Any?>): Map<Key<*>, Any?> =
+        userData.filterValues { it is TestDB }
 }
 
 /**
- * 테스트용 DB에 트랜잭션을 열고 블록을 실행합니다.
- *
- * ## 동작/계약
- * - DB별 세마포어를 사용해 동일 [TestDB]에 대한 동시 실행을 직렬화합니다.
- * - 첫 호출 시 DB 연결을 생성해 [TestDB.db]에 캐시하고, shutdown hook으로 정리 작업을 등록합니다.
- * - [configure]를 전달하면 현재 호출에만 임시 적용한 뒤 기존 DB 레퍼런스로 되돌립니다.
- * - 블록 실행은 `maxAttempts = 1` 트랜잭션에서 수행되며 `currentTestDB`가 설정됩니다.
- *
- * ```kotlin
- * withDb(TestDB.H2) {
- *     UtilityTable.exists()
- *     // result == false 또는 true (현재 스키마 상태)
- * }
- * ```
+ * enum별 fixture를 공유하여 트랜잭션을 직렬 실행합니다.
+ * [configure]는 첫 호출에서도 별도 일시 wrapper에만 적용합니다.
+ * 같은 fixture의 중첩 실행은 거부하며 본문은 재시도하지 않습니다.
  */
 fun withDb(
     testDB: TestDB,
     configure: (DatabaseConfig.Builder.() -> Unit)? = null,
     statement: JdbcTransaction.(TestDB) -> Unit,
-) {
-    logger.info { "Running `withDb` for $testDB" }
-    val semaphore = testDbSemaphores.computeIfAbsent(testDB) { Semaphore(1, true) }
-    semaphore.acquire()
-    try {
-        val unregistered = testDB !in registeredOnShutdown
-        val newConfiguration = configure != null && !unregistered
+) = jdbcFixtureFor(testDB).executeBlocking(configure, statement)
 
-        if (unregistered) {
-            Runtimex.addShutdownHook {
-                testDB.afterTestFinished()
-                registeredOnShutdown.remove(testDB)
-            }
-            registeredOnShutdown += testDB
-            testDB.db = testDB.connect(configure ?: {})
-        }
-
-        val registeredDb = testDB.db
-        try {
-            if (newConfiguration) {
-                testDB.db = testDB.connect(configure)
-            }
-            val database = checkNotNull(testDB.db) { "testDB.db must be initialized for $testDB" }
-            transaction(
-                transactionIsolation = database.transactionManager.defaultIsolationLevel,
-                db = database,
-            ) {
-                maxAttempts = 1
-                registerInterceptor(CurrentTestDBInterceptor)  // interceptor 를 통해 다양한 작업을 할 수 있다
-                currentTestDB = testDB
-                statement(testDB)
-            }
-        } finally {
-            // revert any new configuration to not be carried over to the next test in suite
-            if (configure != null) {
-                testDB.db = registeredDb
-            }
-        }
-    } finally {
-        semaphore.release()
-    }
-}
+/**
+ * 같은 [fixture] 호출을 직렬화하고 트랜잭션 receiver와 custom key를 본문에 전달합니다.
+ * [configure]는 현재 호출의 별도 wrapper에만 적용하며 종료 후 등록을 해제합니다.
+ * 동일한 물리 DB에는 같은 fixture 인스턴스를 공유해야 합니다.
+ */
+fun <K> withDb(
+    fixture: JdbcTestDbFixture<K>,
+    configure: (DatabaseConfig.Builder.() -> Unit)? = null,
+    statement: JdbcTransaction.(K) -> Unit,
+) = fixture.executeBlocking(configure, statement)

@@ -897,6 +897,20 @@ public final class io/bluetape4k/exposed/tests/CurrentTestDBInterceptor : org/je
 	public fun keepUserDataInTransactionStoreOnCommit (Ljava/util/Map;)Ljava/util/Map;
 }
 
+public final class io/bluetape4k/exposed/tests/JdbcFixtureExecutionKt {
+	public static final fun getCurrentJdbcTestDbFixture ()Lio/bluetape4k/exposed/tests/JdbcTestDbFixture;
+}
+
+public final class io/bluetape4k/exposed/tests/JdbcTestDbFixture {
+	public final fun getDatabase ()Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public final fun getKey ()Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/tests/JdbcTestDbFixtureKt {
+	public static final fun jdbcTestDbFixture (Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;)Lio/bluetape4k/exposed/tests/JdbcTestDbFixture;
+	public static synthetic fun jdbcTestDbFixture$default (Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Lio/bluetape4k/exposed/tests/JdbcTestDbFixture;
+}
+
 public final class io/bluetape4k/exposed/tests/TestDB : java/lang/Enum {
 	public static final field Companion Lio/bluetape4k/exposed/tests/TestDB$Companion;
 	public static final field H2 Lio/bluetape4k/exposed/tests/TestDB;
@@ -975,36 +989,48 @@ public final class io/bluetape4k/exposed/tests/WithAutoCommitSuspendingKt {
 public final class io/bluetape4k/exposed/tests/WithDBKt {
 	public static final fun getCurrentTestDB ()Lio/bluetape4k/exposed/tests/TestDB;
 	public static final fun setCurrentTestDB (Lio/bluetape4k/exposed/tests/TestDB;)V
+	public static final fun withDb (Lio/bluetape4k/exposed/tests/JdbcTestDbFixture;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
 	public static final fun withDb (Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
+	public static synthetic fun withDb$default (Lio/bluetape4k/exposed/tests/JdbcTestDbFixture;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
 	public static synthetic fun withDb$default (Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
 }
 
 public final class io/bluetape4k/exposed/tests/WithDBSuspendingKt {
+	public static final fun withDbSuspending (Lio/bluetape4k/exposed/tests/JdbcTestDbFixture;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun withDbSuspending (Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withDbSuspending$default (Lio/bluetape4k/exposed/tests/JdbcTestDbFixture;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static synthetic fun withDbSuspending$default (Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static final fun withSuspendedDb (Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun withSuspendedDb$default (Lio/bluetape4k/exposed/tests/TestDB;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class io/bluetape4k/exposed/tests/WithSchemasKt {
+	public static final fun withSchemas (Lio/bluetape4k/exposed/tests/JdbcTestDbFixture;[Lorg/jetbrains/exposed/v1/core/Schema;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
 	public static final fun withSchemas (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Schema;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun withSchemas$default (Lio/bluetape4k/exposed/tests/JdbcTestDbFixture;[Lorg/jetbrains/exposed/v1/core/Schema;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
 	public static synthetic fun withSchemas$default (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Schema;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 }
 
 public final class io/bluetape4k/exposed/tests/WithSchemasSuspendingKt {
+	public static final fun withSchemasSuspending (Lio/bluetape4k/exposed/tests/JdbcTestDbFixture;[Lorg/jetbrains/exposed/v1/core/Schema;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun withSchemasSuspending (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Schema;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withSchemasSuspending$default (Lio/bluetape4k/exposed/tests/JdbcTestDbFixture;[Lorg/jetbrains/exposed/v1/core/Schema;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static synthetic fun withSchemasSuspending$default (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Schema;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class io/bluetape4k/exposed/tests/WithTablesKt {
+	public static final fun withTables (Lio/bluetape4k/exposed/tests/JdbcTestDbFixture;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function2;)V
 	public static final fun withTables (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function2;)V
+	public static synthetic fun withTables$default (Lio/bluetape4k/exposed/tests/JdbcTestDbFixture;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
 	public static synthetic fun withTables$default (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
 }
 
 public final class io/bluetape4k/exposed/tests/WithTablesSuspendingKt {
 	public static final fun withSuspendedTables (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun withSuspendedTables$default (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun withTablesSuspending (Lio/bluetape4k/exposed/tests/JdbcTestDbFixture;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun withTablesSuspending (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withTablesSuspending$default (Lio/bluetape4k/exposed/tests/JdbcTestDbFixture;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static synthetic fun withTablesSuspending$default (Lio/bluetape4k/exposed/tests/TestDB;[Lorg/jetbrains/exposed/v1/core/Table;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;ZLkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 

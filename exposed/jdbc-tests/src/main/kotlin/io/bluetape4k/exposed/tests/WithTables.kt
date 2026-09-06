@@ -1,65 +1,47 @@
+// 호출자 callback의 Error까지 원형대로 전파하고 cleanup 실패가 덮지 않도록 포착한다.
+@file:Suppress("TooGenericExceptionCaught")
+
 package io.bluetape4k.exposed.tests
 
-import io.bluetape4k.logging.error
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
-import org.jetbrains.exposed.v1.jdbc.transactions.inTopLevelTransaction
-import org.jetbrains.exposed.v1.jdbc.transactions.transactionManager
 
-
-/**
- * 테스트 블록 실행 전 테이블을 생성하고 종료 시 정리합니다.
- *
- * ## 동작/계약
- * - 시작 시 기존 테이블을 `runCatching`으로 드롭 시도 후 필요 시 새로 생성합니다.
- * - 블록 수행 후 `commit()`하고, [dropTables]가 `true`면 테이블 삭제를 시도합니다.
- * - 드롭 실패 시 top-level transaction으로 재시도합니다.
- *
- * ```kotlin
- * withTables(TestDB.H2, UtilityTable) {
- *     UtilityTable.exists()
- *     // result == true
- * }
- * ```
- */
+/** enum fixture의 요청 테이블을 생성·정리하며 본문 실패를 cleanup 실패보다 우선합니다. */
 fun withTables(
     testDB: TestDB,
     vararg tables: Table,
-    configure: (DatabaseConfig.Builder.() -> Unit)? = {},  // @PrameterizedTest 시 db가 캐시됨. withDb에서 매번 database를 생성하도록 수정함
+    configure: (DatabaseConfig.Builder.() -> Unit)? = {},
     dropTables: Boolean = true,
     statement: JdbcTransaction.(TestDB) -> Unit,
-) {
-    withDb(testDB, configure) {
-        runCatching {
-            SchemaUtils.drop(*tables)
-        }
+) = withTables(jdbcFixtureFor(testDB), *tables, configure = configure, dropTables = dropTables, statement = statement)
 
-        if (tables.isNotEmpty()) {
-            SchemaUtils.create(*tables)
-        }
+/**
+ * 호출자가 소유한 [tables]만 생성·정리합니다. 같은 물리 DB에는 같은 [fixture]를 공유합니다.
+ * 부분 생성 실패에도 정리를 시도하며 [dropTables]가 false이면 종료 정리를 하지 않습니다.
+ * 본문 실패는 유지하고 drop/recovery 실패를 발생 순서대로 suppressed에 추가합니다.
+ */
+fun <K> withTables(
+    fixture: JdbcTestDbFixture<K>,
+    vararg tables: Table,
+    configure: (DatabaseConfig.Builder.() -> Unit)? = {},
+    dropTables: Boolean = true,
+    statement: JdbcTransaction.(K) -> Unit,
+) {
+    withDb(fixture, configure) { key ->
+        jdbcPreDrop { SchemaUtils.drop(*tables) }
+        var failure: Throwable? = null
         try {
-            statement(testDB)
-            commit()  // Need commit to persist data before drop tables
+            if (tables.isNotEmpty()) SchemaUtils.create(*tables)
+            statement(key)
+            commit()
+        } catch (thrown: Throwable) {
+            failure = thrown
+            throw thrown
         } finally {
-            if (dropTables) {
-                try {
-                    if (tables.isNotEmpty()) {
-                        SchemaUtils.drop(*tables)
-                        commit()
-                    }
-                } catch (ex: Throwable) {
-                    logger.error(ex) { "Drop Tables 에서 예외가 발생했습니다. 삭제할 테이블: ${tables.joinToString { it.tableName }}" }
-                    val database = checkNotNull(testDB.db) { "testDB.db must be initialized for $testDB" }
-                    inTopLevelTransaction(
-                        db = database,
-                        transactionIsolation = database.transactionManager.defaultIsolationLevel
-                    ) {
-                        maxAttempts = 1
-                        SchemaUtils.drop(*tables)
-                    }
-                }
+            if (dropTables && tables.isNotEmpty()) {
+                cleanupJdbcFixture(failure, recover = true) { SchemaUtils.drop(*tables) }
             }
         }
     }
