@@ -55,6 +55,25 @@ class CiMatrixContractTest(unittest.TestCase):
 
         self.assertTrue(any("utils-batch coverage" in error for error in errors))
 
+    def test_nightly_utils_batch_coverage_omits_compatibility_aggregator(self):
+        with open(".github/workflows/nightly-tests.yml", encoding="utf-8") as workflow_file:
+            workflow = workflow_file.read()
+
+        batch_start = workflow.find("  test-utils-batch:\n")
+        coverage_start = workflow.find("\n  coverage-report:\n", batch_start + 1)
+        self.assertGreaterEqual(batch_start, 0)
+        self.assertGreater(coverage_start, batch_start)
+        batch = workflow[batch_start:coverage_start]
+
+        self.assertNotIn(":bluetape4k-exposed-batch:koverXmlReport", batch)
+        self.assertNotIn("utils/batch/build/reports/kover/", batch)
+        for path in (
+            "utils/batch/core/build/reports/kover/",
+            "utils/batch/jdbc/build/reports/kover/",
+            "utils/batch/r2dbc/build/reports/kover/",
+        ):
+            self.assertIn(path, batch)
+
 
 if __name__ == "__main__":
     unittest.main()

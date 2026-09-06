@@ -14,6 +14,7 @@ import org.jetbrains.exposed.v1.core.Schema
 import kotlinx.coroutines.flow.single
 import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
 import org.jetbrains.exposed.v1.r2dbc.exists
+import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CancellationException
 
@@ -21,7 +22,7 @@ class R2dbcFixtureCleanupTest {
     private class BodyFailure(val marker: Int): IllegalArgumentException("body sentinel")
     private class DropFailure(val index: Int): IllegalStateException("drop-$index")
     private val selected = TestDB.valueOf(System.getenv("EXPOSED_TEST_DB") ?: "H2").also {
-        check(it in setOf(TestDB.H2, TestDB.POSTGRESQL))
+        check(it in setOf(TestDB.H2, TestDB.POSTGRESQL, TestDB.MYSQL_V8))
     }
     private val fixture = r2dbcTestDbFixture(selected, { configure ->
         selected.beforeConnection()
@@ -87,6 +88,9 @@ class R2dbcFixtureCleanupTest {
 
     @Test
     fun `schema 본문 실패와 실제 취소 후 schema가 남지 않는다`() = runSuspendIO {
+        Assumptions.assumeTrue(selected in setOf(TestDB.H2, TestDB.POSTGRESQL)) {
+            "MySQL Testcontainers test user cannot create a schema/database"
+        }
         val schema = Schema("r2dbc_fixture_schema")
         assertFailsWith<BodyFailure> { withSchemas(fixture, schema) { throw BodyFailure(4) } }
         coroutineScope {
