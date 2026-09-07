@@ -63,14 +63,16 @@ files remain concise entry points; detailed behavior belongs in `central manual`
 
 ## Modules
 
-The stable `2.0.0` BOM contains the modules below. New changes on `develop`
-target the `2.1.0-SNAPSHOT` line.
+The stable `2.0.0` BOM contains the released modules below. New changes on
+`develop` target the `2.1.0-SNAPSHOT` line; `exposed-tenant-jdbc` is
+develop-only until that line publishes it.
 
 | Module | Description |
 |--------|-------------|
 | `exposed-core` | Core Column types, DSL helpers, extension functions |
 | `exposed-dao` | DAO Entity extensions, lifecycle hooks |
 | `exposed-jdbc` | JDBC-based Repository pattern, transaction DSL |
+| `exposed-tenant-jdbc` | Framework-neutral tenant `DataSource`/Exposed `Database` registry and lifecycle |
 | `exposed-r2dbc` | R2DBC coroutine-native Repository, suspend transactions |
 | `exposed-jdbc-tests` | JDBC integration test fixtures |
 | `exposed-r2dbc-tests` | R2DBC integration test fixtures |
@@ -233,8 +235,16 @@ development line.
 dependencies {
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-jdbc")
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-r2dbc")
+    // Framework-neutral tenant JDBC resource registry
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-tenant-jdbc")
 }
 ```
+
+`bluetape4k-exposed-tenant-jdbc` is introduced on the `2.1.0-SNAPSHOT`
+development line and is not available from the stable `2.0.0` BOM until that
+line publishes it. The registry owns tenant-keyed `DataSource`/Exposed
+`Database` creation and reverse-order cleanup; the application still performs
+authorization before lookup and drains active transactions before shutdown.
 
 Snapshots are published to Maven Central Snapshots. Add the repository:
 

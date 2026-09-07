@@ -62,14 +62,16 @@ Column codec, 데이터베이스별 helper, Spring Boot 4 자동 설정을 더�
 
 ## 모듈 목록
 
-아래 모듈은 안정판 `2.0.0` BOM에 포함됩니다. `develop`의 새 변경은
-`2.1.0-SNAPSHOT` 개발선을 대상으로 합니다.
+아래 목록의 배포된 모듈은 안정판 `2.0.0` BOM에 포함됩니다. `develop`의
+새 변경은 `2.1.0-SNAPSHOT` 개발선을 대상으로 하며,
+`exposed-tenant-jdbc`는 해당 개발선이 배포되기 전까지 개발 전용입니다.
 
 | 모듈 | 설명 |
 |------|------|
 | `exposed-core` | 핵심 Column 타입, DSL 헬퍼, 확장 함수 |
 | `exposed-dao` | DAO Entity 확장, 라이프사이클 훅 |
 | `exposed-jdbc` | JDBC 기반 Repository 패턴, 트랜잭션 DSL |
+| `exposed-tenant-jdbc` | framework-neutral tenant `DataSource`/Exposed `Database` registry와 lifecycle |
 | `exposed-r2dbc` | R2DBC 코루틴 네이티브 Repository, suspend 트랜잭션 |
 | `exposed-jdbc-tests` | JDBC 통합 테스트 픽스처 |
 | `exposed-r2dbc-tests` | R2DBC 통합 테스트 픽스처 |
@@ -227,8 +229,16 @@ repository는 `2.1.0-SNAPSHOT` 개발선의 변경을 사용할 때만 필요합
 dependencies {
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-jdbc")
     implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-ktor-tenant-r2dbc")
+    // framework-neutral tenant JDBC resource registry
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-tenant-jdbc")
 }
 ```
+
+`bluetape4k-exposed-tenant-jdbc`는 `2.1.0-SNAPSHOT` 개발선에서 추가되며,
+해당 개발선이 배포되기 전 안정판 `2.0.0` BOM에서는 사용할 수 없습니다.
+registry는 tenant별 `DataSource`/Exposed `Database` 생성과 역순 cleanup을
+소유하지만, 애플리케이션은 lookup 전에 인가를 수행하고 종료 전에 활성
+transaction을 drain해야 합니다.
 
 스냅샷은 Maven Central Snapshots에 배포됩니다:
 

@@ -30,7 +30,11 @@
 
 - Exposed 1.5.0 upstream 해시 컬럼의 JDBC/R2DBC 저장·재저장·알고리즘 전환 검증과
   양언어 사용 예제를 추가했다. 새 암호 adapter나 Tink 의존성은 추가하지 않는다 (#804).
-
+- tenant별 `DataSource`와 Exposed `Database`의 생성·exact lookup·역순 종료를
+  소유하는 framework-neutral `bluetape4k-exposed-tenant-jdbc` registry를 추가했다.
+  부분 초기화와 종료 cleanup의 예외를 보존하며, 인증·인가·readiness·retry/timeout·pool
+  설정과 활성 transaction drain은 호출자 책임이다
+  ([#816](https://github.com/bluetape4k/bluetape4k-exposed/issues/816)).
 - 자체 DB 식별자와 호출자 소유 연결 공급원을 사용하는 JDBC/R2DBC 테스트 fixture와
   table/schema helper overload를 추가했다. 기존 enum API와 기본 인자 ABI는 유지한다
   ([#815](https://github.com/bluetape4k/bluetape4k-exposed/issues/815)).
