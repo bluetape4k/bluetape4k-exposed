@@ -47,6 +47,37 @@ GLOBAL_PATHS = (
     ".github/scripts/**",
 )
 
+TENANT_JDBC_REQUIRED_TOKENS = (
+    ":bluetape4k-exposed-tenant-jdbc:test",
+    ":bluetape4k-exposed-tenant-jdbc:koverXmlReport",
+    "exposed/tenant-jdbc/build/reports/kover/report.xml",
+)
+
+
+def validate_tenant_jdbc_job(workflow: str) -> List[str]:
+    """워크플로의 tenant JDBC 테스트 및 커버리지 계약을 검증한다."""
+    job_start = workflow.find("  test-jdbc-h2:\n")
+    if job_start < 0:
+        return ["tenant-jdbc coverage contract cannot locate test-jdbc-h2 job"]
+
+    job_body_start = job_start + len("  test-jdbc-h2:\n")
+    next_job = re.search(
+        r"^  (?!#)[A-Za-z0-9][A-Za-z0-9_-]*:\n",
+        workflow[job_body_start:],
+        re.MULTILINE,
+    )
+    job = (
+        workflow[job_start : job_body_start + next_job.start()]
+        if next_job
+        else workflow[job_start:]
+    )
+
+    return [
+        f"tenant-jdbc JDBC job is missing {token}"
+        for token in TENANT_JDBC_REQUIRED_TOKENS
+        if token not in job
+    ]
+
 
 def validate(workflow: str) -> List[str]:
     errors: List[str] = []
@@ -134,6 +165,8 @@ def validate(workflow: str) -> List[str]:
         errors.append("ci-status must require test-benchmark")
     if "WRITE_BEHIND_REQUIRED:" not in ci_status or "needs.changes.outputs['all-modules']" not in ci_status:
         errors.append("write-behind required gate must include all-modules")
+
+    errors.extend(validate_tenant_jdbc_job(workflow))
 
     for line in workflow.splitlines():
         if "if: ${{ needs.changes.outputs" not in line:

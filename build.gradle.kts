@@ -1144,8 +1144,8 @@ val productionAbiProjects = publishableProjects
     .filterNot { it.name == "bluetape4k-exposed-bom" }
     .sortedBy(Project::getPath)
 
-check(productionAbiProjects.size == 44) {
-    "Production ABI publication inventory must contain 44 JVM modules, found ${productionAbiProjects.size}"
+check(productionAbiProjects.size == 45) {
+    "Production ABI publication inventory must contain 45 JVM modules, found ${productionAbiProjects.size}"
 }
 
 val productionAbiCheckTasks = productionAbiProjects.map { project ->

@@ -1,6 +1,11 @@
 import unittest
 
-from validate_ci_matrix_contract import MODULE_OUTPUTS, validate
+from validate_ci_matrix_contract import (
+    MODULE_OUTPUTS,
+    TENANT_JDBC_REQUIRED_TOKENS,
+    validate,
+    validate_tenant_jdbc_job,
+)
 
 
 class CiMatrixContractTest(unittest.TestCase):
@@ -9,6 +14,28 @@ class CiMatrixContractTest(unittest.TestCase):
             errors = validate(workflow_file.read())
 
         self.assertEqual([], errors)
+
+    def test_current_ci_and_nightly_workflows_satisfy_tenant_jdbc_contract(self):
+        for workflow_path in (".github/workflows/ci.yml", ".github/workflows/nightly-tests.yml"):
+            with (
+                self.subTest(workflow_path=workflow_path),
+                open(workflow_path, encoding="utf-8") as workflow_file,
+            ):
+                errors = validate_tenant_jdbc_job(workflow_file.read())
+
+            self.assertEqual([], errors)
+
+    def test_rejects_missing_tenant_jdbc_contract_tokens(self):
+        for workflow_path in (".github/workflows/ci.yml", ".github/workflows/nightly-tests.yml"):
+            with open(workflow_path, encoding="utf-8") as workflow_file:
+                workflow = workflow_file.read()
+
+            for token in TENANT_JDBC_REQUIRED_TOKENS:
+                with self.subTest(workflow_path=workflow_path, token=token):
+                    broken_workflow = workflow.replace(token, "")
+                    errors = validate_tenant_jdbc_job(broken_workflow)
+
+                self.assertTrue(any(token in error for error in errors))
 
     def test_rejects_module_condition_without_global_trigger(self):
         workflow = """
