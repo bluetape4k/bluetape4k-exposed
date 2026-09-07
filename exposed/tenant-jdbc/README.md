@@ -46,6 +46,7 @@ module.
 ```kotlin
 import io.github.bluetape4k.exposed.tenant.jdbc.TenantJdbcResourceRegistry
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 enum class TenantId { ACME, GLOBEX }
 
@@ -64,6 +65,11 @@ fun databaseFor(
     }
     return registry.databaseFor(requestedTenantId)
 }
+
+val database = databaseFor(requestedTenantId, allowedTenantIds)
+transaction(db = database) {
+    performTenantWork()
+}
 ```
 
 Authorize the requested tenant before calling `resourceFor`, `databaseFor`, or
@@ -71,6 +77,10 @@ Authorize the requested tenant before calling `resourceFor`, `databaseFor`, or
 every tenant in the registry, and an unknown tenant never falls back to a
 default resource. Lookup is an exact map lookup, not a lease: a returned
 resource may become unusable after shutdown begins.
+
+Always pass the selected `Database` explicitly as `transaction(db = database)`
+for tenant work. A parameterless `transaction {}` selects Exposed's global
+`primaryDatabase` and can bypass the tenant routing checked by the registry.
 
 An unknown tenant throws `UnknownTenantJdbcResourceException` with the fixed
 message `Unknown tenant JDBC resource.`. A lookup after close throws the fixed
@@ -128,10 +138,12 @@ close another registry synchronously in a cycle.
   owned resources to be attempted, then are rethrown to the cleanup owner. A
   concurrent or later caller observes the fixed fatal-state
   `IllegalStateException` instead of receiving the raw fatal error.
-- Raw callback exception graphs, including messages and stack traces, can stay
-  in memory while a failed registry remains reachable. The provider does not
-  log them or redact them. Do not expose them directly in application logs,
-  metrics, or HTTP responses; sanitize them at the application boundary.
+- When a registry with a non-fatal close failure remains reachable, its raw
+  callback exception graph, including messages and stack traces, remains in
+  memory so later callers can receive the same failure. The fatal error is
+  returned only to the cleanup owner and is not stored in registry state. The
+  provider does not log or redact raw failures. Sanitize them at the application
+  boundary before using them in logs, metrics, or HTTP responses.
 
 ## Caller responsibilities
 

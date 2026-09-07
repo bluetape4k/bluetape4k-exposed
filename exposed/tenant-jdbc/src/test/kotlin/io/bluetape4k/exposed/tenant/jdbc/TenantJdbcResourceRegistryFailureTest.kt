@@ -170,9 +170,10 @@ class TenantJdbcResourceRegistryFailureTest {
         val ordinary = IllegalStateException("ordinary")
         val fatal = LinkageError("fatal")
         val registry = fixture.create(listOf("a", "b"))
+        val databaseA = registry.databaseFor("a")
         fixture.unregisterFailures["b"] = ordinary
         fixture.disposeFailures["b"] = fatal
-        fixture.unregisterFailures["a"] = fatal
+        fixture.unregisterFailuresAfter["a"] = fatal
 
         val observed = catchThrowable { registry.close() }
 
@@ -180,6 +181,12 @@ class TenantJdbcResourceRegistryFailureTest {
         assertEquals(listOf(ordinary), observed.suppressed.toList())
         assertEquals(1, fixture.disposeCalls.getValue("a").get())
         assertEquals(1, fixture.disposeCalls.getValue("b").get())
+        assertThrows(IllegalStateException::class.java) { TransactionManager.managerFor(databaseA) }
+        val state = registry.javaClass.getDeclaredField("state").run {
+            isAccessible = true
+            (get(registry) as java.util.concurrent.atomic.AtomicReference<*>).get()
+        }
+        assertFalse(state!!::class.java.declaredFields.any { Throwable::class.java.isAssignableFrom(it.type) })
         val later = assertThrows(IllegalStateException::class.java) { registry.close() }
         assertEquals("Tenant JDBC resource registry closed after a fatal cleanup failure.", later.message)
     }
@@ -261,6 +268,7 @@ class TenantJdbcResourceRegistryFailureTest {
     private class FailureFixture {
         val events = mutableListOf<String>()
         val unregisterFailures = mutableMapOf<String, Throwable>()
+        val unregisterFailuresAfter = mutableMapOf<String, Throwable>()
         val disposeFailures = mutableMapOf<String, Throwable>()
         val disposeCalls = mutableMapOf<String, AtomicInteger>()
         private val tenantByDataSource = IdentityHashMap<DataSource, String>()
@@ -311,6 +319,7 @@ class TenantJdbcResourceRegistryFailureTest {
             events += "unregister:$tenant"
             unregisterFailures[tenant]?.let { throw it }
             TransactionManager.closeAndUnregister(database)
+            unregisterFailuresAfter[tenant]?.let { throw it }
         }
 
         fun forceUnregister() {

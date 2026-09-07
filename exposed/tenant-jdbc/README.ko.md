@@ -45,6 +45,7 @@ dependencies {
 ```kotlin
 import io.github.bluetape4k.exposed.tenant.jdbc.TenantJdbcResourceRegistry
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 enum class TenantId { ACME, GLOBEX }
 
@@ -63,6 +64,11 @@ fun databaseFor(
     }
     return registry.databaseFor(requestedTenantId)
 }
+
+val database = databaseFor(requestedTenantId, allowedTenantIds)
+transaction(db = database) {
+    performTenantWork()
+}
 ```
 
 `resourceFor`, `databaseFor`, `dataSourceFor`를 호출하기 전에 요청 tenant의
@@ -70,6 +76,10 @@ fun databaseFor(
 있다는 뜻은 아닙니다. 알 수 없는 tenant도 기본 resource로 fallback하지
 않습니다. lookup은 exact map 조회이지 lease가 아니므로, 종료가 시작된 뒤
 반환된 resource를 계속 사용할 수 있다는 보장은 없습니다.
+
+tenant 작업에서는 `Database`를 `transaction(db = database)`에 반드시 명시하세요.
+인자 없는 `transaction {}`은 Exposed의 전역 `primaryDatabase`를 선택하므로
+registry가 확인한 tenant routing을 우회할 수 있습니다.
 
 알 수 없는 tenant는 고정 메시지 `Unknown tenant JDBC resource.`의
 `UnknownTenantJdbcResourceException`으로 실패합니다. 종료 후 lookup은 tenant가
@@ -125,10 +135,12 @@ fun databaseFor(
   `ThreadDeath`, `LinkageError` 같은 fatal failure도 소유 resource 정리를
   시도한 뒤 cleanup owner에 다시 던집니다. 동시·후속 caller는 raw fatal 대신
   고정 fatal-state `IllegalStateException`을 관찰합니다.
-- 실패한 registry가 계속 참조되는 동안 callback 예외 graph의 message와
-  stack trace가 메모리에 남을 수 있습니다. provider는 이를 log로 남기거나
-  redaction하지 않습니다. 애플리케이션 경계에서 정제한 뒤 log, metric,
-  HTTP response에 사용하세요.
+- non-fatal close가 실패한 registry를 계속 참조하면 후속 caller에게 같은
+  실패를 전달하기 위해 callback 예외 graph의 message와 stack trace도 메모리에
+  남습니다. fatal 원형은 cleanup owner에게만 전달하며 registry 상태에는
+  보관하지 않습니다. provider는 raw 실패를 log로 남기거나 redaction하지
+  않습니다. 애플리케이션 경계에서 정제한 뒤 log, metric, HTTP response에
+  사용하세요.
 
 ## Caller responsibilities
 

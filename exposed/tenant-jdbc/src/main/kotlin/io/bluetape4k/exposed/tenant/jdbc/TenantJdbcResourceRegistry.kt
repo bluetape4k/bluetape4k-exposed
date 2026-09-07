@@ -46,7 +46,12 @@ class TenantJdbcResourceRegistry<K : Any> private constructor(
         return resources[tenant] ?: throw UnknownTenantJdbcResourceException()
     }
 
-    /** 등록된 tenant의 Exposed [Database]를 조회합니다. */
+    /**
+     * 등록된 tenant의 Exposed [Database]를 조회합니다.
+     *
+     * tenant 작업은 반환값을 `transaction(db = databaseFor(tenant))`처럼 명시적으로 전달해야 합니다.
+     * 인자 없는 `transaction {}`은 Exposed의 전역 primary database를 선택하므로 tenant routing을 보장하지 않습니다.
+     */
     fun databaseFor(tenant: K): Database = resourceFor(tenant).database
 
     /** 등록된 tenant의 JDBC [DataSource]를 조회합니다. */
@@ -88,7 +93,7 @@ class TenantJdbcResourceRegistry<K : Any> private constructor(
 
                 CloseState.ClosedSuccess -> return
                 is CloseState.ClosedFailure -> throw observed.failure
-                is CloseState.ClosedFatal -> throw IllegalStateException(FATAL_CLOSE_MESSAGE)
+                CloseState.ClosedFatal -> throw IllegalStateException(FATAL_CLOSE_MESSAGE)
             }
         }
     }
@@ -119,7 +124,7 @@ class TenantJdbcResourceRegistry<K : Any> private constructor(
         val primary = accumulator.finish()
         val finalState = when {
             primary == null -> CloseState.ClosedSuccess
-            primary.isFatal() -> CloseState.ClosedFatal(primary)
+            primary.isFatal() -> CloseState.ClosedFatal
             else -> CloseState.ClosedFailure(primary)
         }
         state.set(finalState)
@@ -129,7 +134,7 @@ class TenantJdbcResourceRegistry<K : Any> private constructor(
         when (finalState) {
             CloseState.ClosedSuccess -> Unit
             is CloseState.ClosedFailure -> throw finalState.failure
-            is CloseState.ClosedFatal -> throw finalState.failure
+            CloseState.ClosedFatal -> throw checkNotNull(primary)
             else -> error("Close owner published an invalid lifecycle state.")
         }
     }
@@ -292,7 +297,7 @@ private sealed interface CloseState {
 
     data class ClosedFailure(val failure: Throwable) : CloseState
 
-    data class ClosedFatal(val failure: Throwable) : CloseState
+    data object ClosedFatal : CloseState
 }
 
 private class AssemblyFailure(
