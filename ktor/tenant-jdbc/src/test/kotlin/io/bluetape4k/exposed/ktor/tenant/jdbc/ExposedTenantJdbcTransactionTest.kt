@@ -12,6 +12,8 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
+import io.micrometer.core.instrument.Meter
+import io.micrometer.core.instrument.config.MeterFilter
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
@@ -37,6 +39,39 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
 class ExposedTenantJdbcTransactionTest {
+
+    @Test
+    fun `tenant transaction keeps committed result when success metric fails`() = testApplication {
+        val dispatcher = newDispatcher()
+        val database = tenantDatabase("metric-failure")
+        val meterRegistry = failingMeterRegistry()
+        try {
+            application {
+                routing {
+                    get("/metric-failure") {
+                        KtorTenantContext.bindTenant(call, TenantId("metric-failure"))
+                        val result = call.exposedTenantJdbcTransaction(
+                            databaseResolver = { database },
+                            blockingDispatcher = dispatcher,
+                            meterRegistry = meterRegistry,
+                        ) {
+                            TenantMarkers.insert { it[marker] = "committed" }
+                            "committed"
+                        }
+                        call.respondText(result)
+                    }
+                }
+            }
+
+            client.get("/metric-failure").bodyAsText() shouldBeEqualTo "committed"
+            transaction(database) {
+                TenantMarkers.selectAll().count() shouldBeEqualTo 2L
+            }
+        } finally {
+            meterRegistry.close()
+            dispatcher.close()
+        }
+    }
 
     @Test
     fun `missing tenant context fails before resolver`() = testApplication {
@@ -315,6 +350,12 @@ class ExposedTenantJdbcTransactionTest {
     private fun newDispatcher(prefix: String = "tenant-jdbc"): kotlinx.coroutines.ExecutorCoroutineDispatcher =
         Executors.newFixedThreadPool(2) { runnable -> Thread(runnable, "$prefix-${THREAD_ID.incrementAndGet()}") }
             .asCoroutineDispatcher()
+
+    private fun failingMeterRegistry(): SimpleMeterRegistry = SimpleMeterRegistry().apply {
+        config().meterFilter(object : MeterFilter {
+            override fun map(id: Meter.Id): Meter.Id = throw IllegalStateException("metric recording failed")
+        })
+    }
 
     private object TenantMarkers : Table("tenant_markers") {
         val marker = varchar("marker", 64)

@@ -12,6 +12,8 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
+import io.micrometer.core.instrument.Meter
+import io.micrometer.core.instrument.config.MeterFilter
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
@@ -33,6 +35,39 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
 class ExposedTenantR2dbcTransactionTest {
+
+    @Test
+    fun `tenant transaction keeps committed result when success metric fails`() = testApplication {
+        val database = tenantDatabase("metric-failure")
+        val meterRegistry = failingMeterRegistry()
+        try {
+            application {
+                routing {
+                    get("/metric-failure") {
+                        KtorTenantContext.bindTenant(call, TenantId("metric-failure"))
+                        val result = call.exposedTenantR2dbcTransaction(
+                            databaseResolver = { database },
+                            meterRegistry = meterRegistry,
+                        ) {
+                            exec("INSERT INTO tenant_marker (marker) VALUES ('committed')")
+                            "committed"
+                        }
+                        call.respondText(result)
+                    }
+                }
+            }
+
+            client.get("/metric-failure").bodyAsText() shouldBeEqualTo "committed"
+            val count = suspendTransaction(database) {
+                exec("SELECT COUNT(*) FROM tenant_marker") { row ->
+                    (row.get(0) as Number).toLong()
+                }!!.single()
+            }
+            count shouldBeEqualTo 2L
+        } finally {
+            meterRegistry.close()
+        }
+    }
 
     @Test
     fun `missing tenant context fails before resolver`() = testApplication {
@@ -272,6 +307,12 @@ class ExposedTenantR2dbcTransactionTest {
             exec("INSERT INTO tenant_marker (marker) VALUES ('$marker')")
         }
         return database
+    }
+
+    private fun failingMeterRegistry(): SimpleMeterRegistry = SimpleMeterRegistry().apply {
+        config().meterFilter(object : MeterFilter {
+            override fun map(id: Meter.Id): Meter.Id = throw IllegalStateException("metric recording failed")
+        })
     }
 
     private companion object {

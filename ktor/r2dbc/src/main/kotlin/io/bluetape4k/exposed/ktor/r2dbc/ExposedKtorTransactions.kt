@@ -2,6 +2,8 @@ package io.bluetape4k.exposed.ktor.r2dbc
 
 import io.bluetape4k.exposed.ktor.core.ExposedKtorReadinessBackend
 import io.bluetape4k.exposed.ktor.core.ExposedKtorTransactionException
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.warn
 import io.ktor.server.application.ApplicationCall
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
@@ -22,11 +24,9 @@ suspend fun <T> ApplicationCall.exposedR2dbcTransaction(
     block: suspend R2dbcTransaction.() -> T,
 ): T {
     val started = meterRegistry?.let(Timer::start)
-    return try {
+    val result = try {
         suspendTransaction(db = db) {
             block()
-        }.also {
-            started?.stopTransaction(meterRegistry, "success")
         }
     } catch (cancellation: CancellationException) {
         started?.stopFailedTransaction(meterRegistry, "cancelled", cancellation)
@@ -37,6 +37,24 @@ suspend fun <T> ApplicationCall.exposedR2dbcTransaction(
     } catch (failure: Exception) {
         started?.stopFailedTransaction(meterRegistry, "error", failure)
         throw ExposedKtorTransactionException().also { it.initCause(failure) }
+    }
+    started?.stopSuccessfulTransaction(meterRegistry)
+    return result
+}
+
+/**
+ * 성공 후 metric 기록의 일반 [Exception]은 이미 commit된 transaction 결과를 변경하지 않는다.
+ * JVM [Error]는 복구 불가능한 fatal 신호로 간주하여 전파한다.
+ */
+@Suppress("TooGenericExceptionCaught")
+private fun Timer.Sample.stopSuccessfulTransaction(registry: MeterRegistry?) {
+    try {
+        stopTransaction(registry, "success")
+    } catch (metricFailure: Exception) {
+        TransactionMetricLog.log.warn(metricFailure) {
+            "Exposed Ktor transaction metric recording failed after a successful transaction. " +
+                "backend=r2dbc, exceptionType=${metricFailure::class.qualifiedName}"
+        }
     }
 }
 
@@ -71,5 +89,7 @@ private fun Timer.Sample.stopTransaction(
             .register(registry),
     )
 }
+
+private object TransactionMetricLog : KLogging()
 
 private const val CORE_TRANSACTION_METER_NAME = "bluetape4k.exposed.ktor.core.transaction"
