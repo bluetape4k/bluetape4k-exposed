@@ -6,10 +6,10 @@
 - 검토한 구현 SHA: `dafe7ddb4dd2161f5e358b21c7bf98270bd2ae12`.
 - 대상: 신규 `bluetape4k-exposed-tenant-jdbc` API·구현·테스트, ABI,
   publication/BOM, CI/Nightly 연결, 영어·한국어 문서.
-- 제외: PR exact-head CI, Full Nightly, Maven Central 배포, downstream
+- 제외: 검토 시점 이후 PR exact-head CI, Maven Central 배포, downstream
   `exposed-workshop#269` 이전, Spring/Ktor adapter 추가.
 - 최종 심각도: **P0=0, P1=0, P2=0, P3=0**.
-- 판정: **로컬 구현 리뷰 PASS**. 세 delivery 검증은 아직 실행하지 않았으므로
+- 판정: **로컬 구현 리뷰 PASS**. 검토 시점에는 hosted delivery 검증을 실행하지 않았으므로
   PR 또는 머지 준비 완료로 확대 해석하지 않는다.
 
 ## 관점별 리뷰
@@ -24,7 +24,7 @@ hosted 검증 공백을 정직하게 남긴 판정이며 P0–P3 발견 사항�
 | 성능 | `TenantJdbcResourceRegistry.kt:307`의 `FailureAccumulator`가 identity index를 한 번 만들고 suppressed graph를 선형으로 합친다. 128 tenant·256 cleanup failure 회귀 테스트를 확인했다. | 독립 재검토 `APPROVE`, P0/P1/P2/P3 0. |
 | 안정성 | `TenantJdbcResourceRegistry.kt:68-139`의 atomic close owner, completion latch, interrupt 복원, 역순 cleanup과 `:291-300`의 marker-only fatal state를 확인했다. | 독립 재검토 `PASS`, P0/P1/P2/P3 0. 15개 lifecycle/concurrency test를 직렬 실행했다. |
 | 보안 | `TenantJdbcResourceRegistry.kt:35-58`의 explicit database 선택 경고, 고정 오류 메시지, fatal 원형 비보관과 README의 authorization-before-lookup을 대조했다. | 독립 재검토 `PASS`, P0/P1/P2/P3 0. raw fatal과 tenant key를 provider 상태·오류에 복제하지 않는다. |
-| 운영 | `TenantJdbcResourceRegistry.kt:23-26`, `:109-139`, `:283-289`의 shutdown 책임, unregister-before-dispose, readiness 비보장을 확인했다. CI/Nightly H2 shard와 ABI 45/45도 대조했다. | 독립 `COMMENT`, P0/P1/P2/P3 0. GitHub CI·Full Nightly·Central 배포는 다음 gate다. |
+| 운영 | `TenantJdbcResourceRegistry.kt:23-26`, `:109-139`, `:283-289`의 shutdown 책임, unregister-before-dispose, readiness 비보장을 확인했다. CI/Nightly H2 shard와 ABI 45/45도 대조했다. | 독립 `COMMENT`, P0/P1/P2/P3 0. GitHub required CI와 Central 배포는 서로 다른 delivery gate다. 수동 Full Nightly는 고유한 tenant 검증 경로가 없어 N/A다. |
 | 개발/API | Kotlin generic/null 계약, Java null 방어, `registry::databaseFor` source compatibility, API baseline 23행과 Exposed 1.5.0 `Database.connect` 경계를 확인했다. | 독립 `COMMENT`, P0/P1/P2/P3 0. 27 tests와 `javap`, ABI baseline을 확인했다. |
 | 사용자/호출자 | `README.ko.md:24-178`의 BOM, 인가 선행, `transaction(db = database)`, shutdown, failure, unsupported 범위를 영어 문서와 대조했다. | 독립 `COMMENT`, P0/P1/P2/P3 0. 양 locale heading 8/8과 code block parity를 확인했다. |
 
@@ -74,6 +74,21 @@ hosted 검증 공백을 정직하게 남긴 판정이며 P0–P3 발견 사항�
 | CI contract | Python 7 tests, live validator, `py_compile`, CI/Nightly YAML parse와 actionlint 통과 |
 | 문서·diff | 영어·한국어 예제 동등성, `git diff --check` 통과 |
 
+## 검증 게이트 정정 리뷰
+
+기능 구현 리뷰와 별개로, 사용자가 Full Nightly 요구의 근거를 지적한 뒤 설계·계획·
+검증·리뷰·교훈 문서의 exact diff를 main session에서 inline으로 재검토했다. 독립 최종
+문서 reviewer 실행이 usable verdict를 남기지 못했기 때문에 이 검토는 독립 리뷰로
+기록하지 않는다.
+
+- CG-14 원문과 PR #836의 기능 head `e9a71a6a` required CI run `34126150959`를 다시
+  확인했다.
+- CI와 Nightly workflow의 tenant task·Kover 등록 위치를 대조했다. Nightly의 별도
+  PostgreSQL/MySQL job에는 tenant module을 실행하는 경로가 없다.
+- Nightly workflow 등록 검증과 수동 dispatch 필요성을 분리하고, 수동 Full Nightly를
+  N/A로 표시한 근거가 다섯 문서에서 일관되는지 확인했다.
+- inline exact-diff 판정은 **P0=0, P1=0, P2=0, P3=0**이다.
+
 ## Writer 검토
 
 - [x] **SPW-01**: issue, 기준·구현 SHA, 독자, 포함·제외 범위를 고정했다.
@@ -91,8 +106,9 @@ hosted 검증 공백을 정직하게 남긴 판정이며 P0–P3 발견 사항�
 - [x] 발견된 P1/P2를 수정하고 영향 관점 재검토 완료.
 - [x] 최종 구현의 P0/P1/P2/P3 0 확인.
 - [x] 로컬 테스트·ABI·publication·CI contract·문서 검증 완료.
-- [ ] PR 생성과 exact-head GitHub CI 확인.
-- [ ] Full Nightly 실행과 terminal job 확인.
+- [x] PR #836 생성과 기능 head `e9a71a6a` exact-head GitHub CI 성공 확인.
+- [x] 수동 Full Nightly: N/A. Nightly의 별도 DB job은 tenant module을 추가로 실행하지 않는다.
+- [ ] 문서 정정 head의 exact-head GitHub CI 확인.
 - [ ] merge, release, downstream `exposed-workshop#269` 이전.
 
-최종 상태: **로컬 리뷰 DONE, delivery PENDING**.
+최종 상태: **로컬 리뷰와 기능 head CI DONE, 문서 정정 head delivery PENDING**.

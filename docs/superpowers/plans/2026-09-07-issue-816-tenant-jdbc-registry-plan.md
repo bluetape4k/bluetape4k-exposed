@@ -17,7 +17,7 @@
 - provider branch/base: `feat/issue-816-tenant-jdbc-registry` → `develop`
 - downstream migration: <https://github.com/bluetape4k/exposed-workshop/issues/269>
 - #817 upstream 제보는 사용자 결정에 따라 이 계획의 범위에서 제외한다. #817의 GitHub 상태는 별도 명시적 지시 없이 바꾸지 않는다.
-- 구현 stop condition은 production code, 테스트, ABI, publication metadata, CI/Nightly wiring, README/KDoc, CHANGELOG, 독립 코드 리뷰가 모두 완료되고 P0/P1이 0인 커밋이다. PR 생성, Full Nightly dispatch, merge, release, downstream migration은 각각 별도 권한 게이트다.
+- 구현 stop condition은 production code, 테스트, ABI, publication metadata, CI/Nightly wiring, README/KDoc, CHANGELOG, 독립 코드 리뷰가 모두 완료되고 P0/P1이 0인 커밋이다. PR 생성, merge, release, downstream migration은 각각 별도 권한 게이트다. 수동 Full Nightly는 tenant 전용 미검증 경로가 확인되거나 사용자가 명시적으로 요청할 때만 별도 dispatch한다.
 
 ## 파일 구조와 책임
 
@@ -819,7 +819,7 @@ Tested: ABI 45/45, POM, Gradle metadata, BOM constraint, publication inventory
 Not-tested: Maven Central publication은 release gate 밖이다"
 ```
 
-### Task 8: CI와 Full Nightly의 JDBC shard에 신규 module을 연결한다
+### Task 8: CI와 Nightly workflow의 JDBC shard에 신규 module을 연결한다
 
 **Files:**
 - Modify: `.github/workflows/ci.yml:169-174,356-368,648-691`
@@ -880,7 +880,7 @@ Expected: validator/tests exit 0이고 두 YAML이 parse된다.
 ```bash
 git add .github/workflows/ci.yml .github/workflows/nightly-tests.yml scripts/ci
 git commit -m "tenant JDBC registry가 JDBC 검증 shard를 빠짐없이 통과하게 한다" \
-  -m "Constraint: 새 publishable module은 PR CI와 Full Nightly 양쪽에서 test와 non-empty Kover를 남겨야 한다
+  -m "Constraint: 새 publishable module은 CI와 Nightly workflow 양쪽의 H2 shard에서 test와 non-empty Kover를 남겨야 한다
 Rejected: settings 자동 발견에만 의존 | path-filtered CI에서 신규 테스트가 실행되지 않는다
 Confidence: high
 Scope-risk: moderate
@@ -960,7 +960,7 @@ exact `git rev-parse HEAD`와 `git diff origin/develop...HEAD`를 performance, s
 
 - [ ] **Step 5: review와 verification artifact를 한국어로 작성한다**
 
-두 artifact에 exact head SHA, changed files, JUnit 수, Kover XML 존재/크기, ABI 45/45, publication audit, dependency graph, 각 review provenance, P0/P1=0 여부, P2/P3 처분, 미실행 Full Nightly/PR/merge/release를 기록한다. `bluetape-writer` SPW-01~05 audit 결과도 포함한다.
+두 artifact에 exact head SHA, changed files, JUnit 수, Kover XML 존재/크기, ABI 45/45, publication audit, dependency graph, 각 review provenance, P0/P1=0 여부, P2/P3 처분, 미실행 PR/merge/release와 수동 Full Nightly 비필수 판단을 기록한다. `bluetape-writer` SPW-01~05 audit 결과도 포함한다.
 
 - [ ] **Step 6: implementation 완료 commit을 만든다**
 
@@ -970,13 +970,13 @@ git add docs/review/2026-09-07-issue-816-tenant-jdbc-registry-implementation-rev
   exposed/tenant-jdbc README.md README.ko.md AGENTS.md CHANGELOG.md api \
   build.gradle.kts .github/workflows scripts/ci
 git commit -m "tenant JDBC registry의 검증 가능한 수명 계약을 완성한다" \
-  -m "Constraint: provider 완료와 workshop migration, PR, Full Nightly, merge, release는 서로 다른 게이트다
+  -m "Constraint: provider 완료와 workshop migration, PR, merge, release는 서로 다른 게이트다
 Rejected: smoke test만으로 완료 선언 | lifecycle race와 publication 누락을 증명하지 못한다
 Confidence: high
 Scope-risk: broad
-Directive: PR 본문은 Closes #816을 사용하고 exact-head Full Nightly 없이 머지하지 않는다
+Directive: PR 본문은 Closes #816을 사용하고 exact-head required CI와 리뷰·thread 검증 없이 머지하지 않는다
 Tested: module/JDBC tests, concurrency repeat, detekt, ABI 45/45, POM, metadata, BOM, CI contract, 6관점 review
-Not-tested: GitHub exact-head CI와 Full Nightly는 PR 생성 후 별도 승인으로 실행한다"
+Not-tested: GitHub exact-head CI는 PR 생성 후 확인하며 수동 Full Nightly는 tenant delivery 필수 조건이 아니다"
 ```
 
 ## AC-to-task 추적표
@@ -1016,6 +1016,6 @@ publish 전 rollback은 `exposed/tenant-jdbc`, 신규 ABI baseline, root 문서,
 
 1. PR 생성 승인을 받으면 base `develop`, head `feat/issue-816-tenant-jdbc-registry`를 live read-back하고 PR 본문에 `Closes #816`과 마지막 `## DoD Status`를 사용한다.
 2. PR exact head CI의 terminal job, JUnit 수, review/thread, mergeability를 확인한다.
-3. broad module/BOM 변경이므로 Full Nightly dispatch는 별도 승인 후 exact head로 실행하고 `Nightly Status`, `publish_eligible`, non-empty aggregate Kover를 확인한다.
+3. 수동 Full Nightly는 merge gate로 요구하지 않는다. 사용자가 명시적으로 요청하거나 tenant가 포함되지 않은 backend 검증 공백이 새로 확인될 때만 별도 승인 후 실행한다.
 4. 머지는 exact head를 다시 읽은 뒤 fresh explicit approval을 받는다. auto-merge는 사용하지 않는다.
 5. release와 exposed-workshop #269 migration은 provider artifact publication을 확인한 다음 별도 checklist와 승인으로 진행한다.

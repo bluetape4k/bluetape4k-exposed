@@ -17,7 +17,7 @@
 | AC-07 | immutable configured tenant view, stable key, hash collision, 32 thread×10,000 lookup identity를 검증했다. | PASS |
 | AC-08 | OPEN을 관찰한 lookup과 close 경합, close 선점 후 고정 상태 오류, lookup 비-lease 계약을 검증했다. | PASS |
 | AC-09 | runtimeClasspath와 생성 POM/module metadata에 Spring, Ktor, HikariCP, Micrometer, Reactor가 없음을 확인했다. | PASS |
-| AC-10 | settings 자동 등록, BOM/publication inventory, CI/Nightly H2 test·Kover, ABI 45/45, root 문서 연결을 확인했다. | PASS(로컬); hosted run PENDING |
+| AC-10 | settings 자동 등록, BOM/publication inventory, CI/Nightly H2 test·Kover, ABI 45/45, root 문서 연결을 확인했다. 기능 head `e9a71a6a`의 required CI run `34126150959`도 성공했다. | PASS |
 | AC-11 | `registry::databaseFor` compile fixture와 test-scope Hikari consumer를 실행했다. 기존 Ktor production dependency는 바꾸지 않았다. | PASS |
 | AC-12 | public API baseline, 한국어 KDoc, 영어·한국어 README와 용어 검토를 완료했다. | PASS |
 
@@ -131,8 +131,12 @@ ABI, publication, CI, 문서를 대조했다. 해결한 P1 1건과 P2 3건의 �
 
 ## 남은 gate와 비목표
 
-- GitHub PR exact-head CI와 required checks는 아직 없다.
-- Full Nightly를 dispatch하거나 terminal job까지 확인하지 않았다.
+- PR #836의 기능 head `e9a71a6a4934159c2ba3128bbe5532a650c62a10`에서 required CI
+  run `34126150959`가 `39 success / 1 path-gated skip / 0 failure`로 종료됐다.
+  이 문서 정정 commit은 push 후 새 exact-head required CI를 live read-back한다.
+- 수동 Full Nightly는 이번 delivery의 필수 조건이 아니다. exact-head PR CI가 tenant
+  H2 test·Kover·ABI를 실행하며 Nightly의 PostgreSQL/MySQL job에는 tenant module을
+  추가로 실행하는 경로가 없다. Nightly workflow 등록 자체는 CI contract와 정적 검증으로 확인했다.
 - Maven Central 개발판/정식 publication과 외부 published-coordinate consumer는
   검증하지 않았다.
 - downstream `exposed-workshop#269`의 두 Spring MVC 예제 이전은 provider artifact를
@@ -140,8 +144,8 @@ ABI, publication, CI, 문서를 대조했다. 해결한 P1 1건과 P2 3건의 �
 - #817 범위의 Exposed 내부 cleanup 정책은 이번 provider에서 변경하지 않는다.
 - Spring Boot binding, 인증·인가, fallback tenant, implicit transaction routing,
   health/readiness, drain, timeout/retry, telemetry는 caller 또는 adapter 책임이다.
-- 1인 개발 저장소의 별도 인간 reviewer subgate만 N/A다. 독립 기술 리뷰, CI,
-  Full Nightly와 fresh merge 승인은 N/A가 아니다.
+- 1인 개발 저장소의 별도 인간 reviewer subgate만 N/A다. 독립 기술 리뷰, exact-head
+  required CI와 fresh merge 승인은 N/A가 아니다.
 
 ## 문서 검증 DoD
 
@@ -163,8 +167,9 @@ ABI, publication, CI, 문서를 대조했다. 해결한 P1 1건과 P2 3건의 �
 - [x] ABI 45/45, publication audit, runtime dependency와 CI contract 통과.
 - [x] 여섯 관점 exact-head 리뷰와 발견 사항 해결.
 - [x] 한국어 검증 문서와 writer audit 작성.
-- [ ] PR 생성, push와 exact-head hosted CI.
-- [ ] Full Nightly terminal 검증.
+- [x] PR #836 생성, push와 기능 head `e9a71a6a` exact-head hosted CI.
+- [x] 수동 Full Nightly: N/A. tenant 전용 추가 backend 검증 경로가 없어 merge gate로 요구하지 않는다.
+- [ ] 이 문서 정정 commit의 exact-head hosted CI read-back.
 - [ ] merge, release, downstream migration.
 
-최종 상태: **로컬 구현·검증 DONE, delivery PENDING**.
+최종 상태: **로컬 구현·기능 head 검증 DONE, 문서 정정 head delivery PENDING**.
