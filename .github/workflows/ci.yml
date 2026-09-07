@@ -169,6 +169,7 @@ jobs:
             jdbc:
               - 'exposed/jdbc/**'
               - 'exposed/jdbc-tests/**'
+              - 'exposed/tenant-jdbc/**'
             r2dbc:
               - 'exposed/r2dbc/**'
               - 'exposed/r2dbc-tests/**'
@@ -362,9 +363,9 @@ jobs:
           ./gradlew checkProductionAbi --no-daemon --no-configuration-cache --no-build-cache \
             2>&1 | tee build/abi/reports/check-production-abi.log
           test -s build/abi/reports/production-abi.txt
-          grep -F 'modules=44/44' build/abi/reports/production-abi.txt
-          grep -F 'baselines=44/44' build/abi/reports/production-abi.txt
-          grep -F 'actualDumps=44/44' build/abi/reports/production-abi.txt
+          grep -F 'modules=45/45' build/abi/reports/production-abi.txt
+          grep -F 'baselines=45/45' build/abi/reports/production-abi.txt
+          grep -F 'actualDumps=45/45' build/abi/reports/production-abi.txt
           grep -F 'emptyBaselines=0' build/abi/reports/production-abi.txt
 
       - name: Upload production ABI evidence
@@ -664,7 +665,7 @@ jobs:
       - name: Test exposed-jdbc (H2)
         run: |
           for attempt in 1 2 3 4 5; do
-            ./gradlew :bluetape4k-exposed-jdbc:test :bluetape4k-exposed-jdbc-tests:test --no-configuration-cache --no-daemon && break
+            ./gradlew :bluetape4k-exposed-jdbc:test :bluetape4k-exposed-jdbc-tests:test :bluetape4k-exposed-tenant-jdbc:test --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
@@ -677,23 +678,35 @@ jobs:
           ./gradlew
           :bluetape4k-exposed-jdbc:koverXmlReport
           :bluetape4k-exposed-jdbc-tests:koverXmlReport
+          :bluetape4k-exposed-tenant-jdbc:koverXmlReport
           --no-configuration-cache
           --no-daemon
           -x test
         continue-on-error: true
+      - name: Validate tenant JDBC Kover XML
+        if: always()
+        run: |
+          test -s exposed/tenant-jdbc/build/reports/kover/report.xml
+          grep -F '<class name=' exposed/tenant-jdbc/build/reports/kover/report.xml
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: test-results-jdbc-h2
-          path: '**/build/test-results/test/*.xml'
+          path: |
+            exposed/jdbc/build/test-results/test/*.xml
+            exposed/jdbc-tests/build/test-results/test/*.xml
+            exposed/tenant-jdbc/build/test-results/test/*.xml
           retention-days: 7
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: coverage-jdbc-h2
-          path: '**/build/reports/kover/'
+          path: |
+            exposed/jdbc/build/reports/kover/
+            exposed/jdbc-tests/build/reports/kover/
+            exposed/tenant-jdbc/build/reports/kover/
           if-no-files-found: error
           retention-days: 7
 
