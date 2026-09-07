@@ -320,8 +320,10 @@ private class FailureAccumulator {
 
     fun finish(): Throwable? {
         val selected = primary ?: return null
+        val suppressedIdentities = IdentityHashMap<Throwable, Unit>(selected.suppressed.size + failures.size)
+        selected.suppressed.forEach { suppressedIdentities[it] = Unit }
         for (failure in failures) {
-            if (failure !== selected && selected.suppressed.none { it === failure }) {
+            if (failure !== selected && suppressedIdentities.put(failure, Unit) == null) {
                 selected.addSuppressed(failure)
             }
         }
