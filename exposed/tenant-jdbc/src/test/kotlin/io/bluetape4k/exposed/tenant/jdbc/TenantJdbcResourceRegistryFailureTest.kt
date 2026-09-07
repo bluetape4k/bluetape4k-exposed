@@ -138,6 +138,33 @@ class TenantJdbcResourceRegistryFailureTest {
     }
 
     @Test
+    fun `많은 cleanup failure도 기존 suppressed identity와 발생 순서를 보존한다`() {
+        val fixture = failureFixture()
+        val tenants = (0 until 128).map { "tenant-$it" }
+        val cleanupFailures = tenants.asReversed().flatMap { tenant ->
+            val unregister = IllegalStateException("unregister-$tenant")
+            val dispose = IllegalArgumentException("dispose-$tenant")
+            fixture.unregisterFailures[tenant] = unregister
+            fixture.disposeFailures[tenant] = dispose
+            listOf(unregister, dispose)
+        }
+        val primary = cleanupFailures.first()
+        val alreadySuppressed = cleanupFailures[100]
+        primary.addSuppressed(alreadySuppressed)
+        val registry = fixture.create(tenants)
+
+        val observed = catchThrowable { registry.close() }
+
+        assertSame(primary, observed)
+        assertEquals(
+            listOf(alreadySuppressed) + cleanupFailures.drop(1).filterNot { it === alreadySuppressed },
+            observed.suppressed.toList(),
+        )
+        assertEquals(128, fixture.disposeCalls.size)
+        assertTrue(fixture.disposeCalls.values.all { it.get() == 1 })
+    }
+
+    @Test
     fun `cleanup fatal은 primary로 승격되고 동일 throwable은 self suppression에서 제외된다`() {
         val fixture = failureFixture()
         val ordinary = IllegalStateException("ordinary")
