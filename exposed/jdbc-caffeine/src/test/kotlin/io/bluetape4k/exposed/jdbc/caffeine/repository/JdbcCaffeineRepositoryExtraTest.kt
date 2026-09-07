@@ -21,6 +21,8 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.junit5.concurrency.MultithreadingTester
 import io.bluetape4k.logging.KLogging
+import io.mockk.every
+import io.mockk.mockk
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
@@ -70,6 +72,36 @@ import java.util.concurrent.atomic.AtomicReference
 class JdbcCaffeineRepositoryExtraTest {
 
     companion object: KLogging()
+
+    private val hasDrainingWorkerState: (CacheHealthReport) -> Boolean = {
+        it.workerState == CacheWorkerState.DRAINING
+    }
+
+    @Test
+    fun `awaitHealthReport는 predicate 미충족 timeout을 성공으로 처리하지 않는다`() {
+        val finalReport = CacheHealthReport(
+            mode = CacheWriteMode.WRITE_BEHIND,
+            queueDepth = 1,
+            workerState = CacheWorkerState.RUNNING,
+            lastFlushError = IllegalStateException("flush is still pending"),
+        )
+        val repository = mockk<JdbcCaffeineRepository<*, *>>() {
+            every { validateConsistency() } returns finalReport
+        }
+
+        val failure = assertFailsWith<AssertionError> {
+            awaitHealthReport(
+                repository = repository,
+                expected = "queueDepth=0 && lastFlushError=null",
+                maxAttempts = 1,
+                delayMillis = 0,
+            ) { it.queueDepth == 0 && it.lastFlushError == null }
+        }
+
+        failure.message.orEmpty().contains("expected=queueDepth=0 && lastFlushError=null").shouldBeTrue()
+        failure.message.orEmpty().contains("queueDepth=1").shouldBeTrue()
+        failure.message.orEmpty().contains("lastFlushError").shouldBeTrue()
+    }
 
     @Test
     fun `get - MultithreadingTester cache misses run one loader per key`() {
@@ -519,8 +551,7 @@ class JdbcCaffeineRepositoryExtraTest {
                 }.apply { start() }
 
                 try {
-                    awaitHealthReport(repository) { it.workerState == CacheWorkerState.DRAINING }
-                        .workerState shouldBeEqualTo CacheWorkerState.DRAINING
+                    awaitHealthReport(repository, "workerState=DRAINING", predicate = hasDrainingWorkerState)
                 } finally {
                     releaseFlush.countDown()
                     closeCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
@@ -639,8 +670,7 @@ class JdbcCaffeineRepositoryExtraTest {
                 }.apply { start() }
 
                 try {
-                    awaitHealthReport(repository) { it.workerState == CacheWorkerState.DRAINING }
-                        .workerState shouldBeEqualTo CacheWorkerState.DRAINING
+                    awaitHealthReport(repository, "workerState=DRAINING", predicate = hasDrainingWorkerState)
                     closeThread.interrupt()
                     closeCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
 
@@ -701,7 +731,7 @@ class JdbcCaffeineRepositoryExtraTest {
                         ownerCompleted.countDown()
                     }
                 }.apply { start() }
-                awaitHealthReport(repository) { it.workerState == CacheWorkerState.DRAINING }
+                awaitHealthReport(repository, "workerState=DRAINING", predicate = hasDrainingWorkerState)
                 val follower = Thread {
                     try {
                         repository.close()
@@ -897,8 +927,7 @@ class JdbcCaffeineRepositoryExtraTest {
                 try {
                     cachePutsEntered.await(5, TimeUnit.SECONDS).shouldBeTrue()
                     closeThread.start()
-                    awaitHealthReport(repository) { it.workerState == CacheWorkerState.DRAINING }
-                        .workerState shouldBeEqualTo CacheWorkerState.DRAINING
+                    awaitHealthReport(repository, "workerState=DRAINING", predicate = hasDrainingWorkerState)
 
                     val rejected = ActorSchema.newCredentialRecord().copy(loginId = "close-rejected")
                     val rejection = assertFailsWith<IllegalStateException> {
@@ -1079,7 +1108,10 @@ class JdbcCaffeineRepositoryExtraTest {
                 try {
                     repository.put(existingId, updated)
                     flushFailed.await(5, TimeUnit.SECONDS).shouldBeTrue()
-                    val report = awaitHealthReport(repository) { health ->
+                    val report = awaitHealthReport(
+                        repository = repository,
+                        expected = "queueDepth=1 && lastFlushError!=null",
+                    ) { health ->
                         health.queueDepth == 1 && health.lastFlushError != null
                     }
                     report.mode shouldBeEqualTo CacheWriteMode.WRITE_BEHIND
@@ -1141,7 +1173,10 @@ class JdbcCaffeineRepositoryExtraTest {
                 try {
                     repository.put(first.id, first)
                     flushFailed.await(5, TimeUnit.SECONDS).shouldBeTrue()
-                    val failedReport = awaitHealthReport(repository) { health ->
+                    val failedReport = awaitHealthReport(
+                        repository = repository,
+                        expected = "queueDepth=1 && lastFlushError!=null",
+                    ) { health ->
                         health.queueDepth == 1 && health.lastFlushError != null
                     }
                     failedReport.queueDepth shouldBeEqualTo 1
@@ -1150,7 +1185,10 @@ class JdbcCaffeineRepositoryExtraTest {
 
                     repository.put(second.id, second)
                     flushSucceeded.await(5, TimeUnit.SECONDS).shouldBeTrue()
-                    val recoveredReport = awaitHealthReport(repository) { health ->
+                    val recoveredReport = awaitHealthReport(
+                        repository = repository,
+                        expected = "queueDepth=0 && lastFlushError=null",
+                    ) { health ->
                         health.queueDepth == 0 && health.lastFlushError == null
                     }
                     recoveredReport.queueDepth shouldBeEqualTo 0
@@ -1182,7 +1220,10 @@ class JdbcCaffeineRepositoryExtraTest {
                 val existing = ActorTable.selectAll().first().toActorRecord()
                 try {
                     repository.put(existing.id, existing.copy(firstName = "permanent-failure"))
-                    val terminal = awaitHealthReport(repository) { health ->
+                    val terminal = awaitHealthReport(
+                        repository = repository,
+                        expected = "workerState=FAILED && lastFlushError!=null",
+                    ) { health ->
                         health.workerState == CacheWorkerState.FAILED && health.lastFlushError != null
                     }
                     terminal.workerState shouldBeEqualTo CacheWorkerState.FAILED
@@ -1502,16 +1543,26 @@ class JdbcCaffeineRepositoryExtraTest {
 
     private fun awaitHealthReport(
         repository: JdbcCaffeineRepository<*, *>,
+        expected: String,
+        maxAttempts: Int = 600,
+        delayMillis: Long = 10,
         predicate: (CacheHealthReport) -> Boolean,
     ): CacheHealthReport {
-        repeat(600) {
+        require(maxAttempts > 0) { "maxAttempts must be positive" }
+        require(delayMillis >= 0) { "delayMillis must not be negative" }
+
+        var lastReport: CacheHealthReport? = null
+        repeat(maxAttempts) {
             val report = repository.validateConsistency()
+            lastReport = report
             if (predicate(report)) {
                 return report
             }
-            Thread.sleep(10)
+            Thread.sleep(delayMillis)
         }
-        return repository.validateConsistency()
+        throw AssertionError(
+            "Timed out waiting for cache health report: expected=$expected, lastReport=$lastReport"
+        )
     }
 
     private fun awaitThreadWaiting(thread: Thread): Boolean {
