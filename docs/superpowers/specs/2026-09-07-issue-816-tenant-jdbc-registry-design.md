@@ -100,9 +100,11 @@ publication metadata에 들어가는지 별도 검증한다. CI의 경로 필터
 `exposed/tenant-jdbc/**`를 추가하고, 두 workflow의 `test-jdbc-h2` job에서 새 module의 `test`와
 `koverXmlReport`를 실행하도록 고정한다. 새 Kover XML이 실제로 존재하고 비어 있지 않은지 검사한 뒤에만
 coverage artifact를 올리며, `coverage-report` 집계 입력에도 포함한다. PR exact head에서는 `build`,
-`test-jdbc-h2`, publication metadata audit, production ABI module-count 검증을 통과해야 한다. broad module/BOM
-변경이므로 merge 전 exact-head Full Nightly는 필수다. workflow dispatch 자체는 별도 승인 게이트로 남기며,
-승인 후 실행한 exact head의 `Nightly Status`와 non-empty aggregate Kover 결과를 read-back한다.
+`test-jdbc-h2`, publication metadata audit, production ABI module-count, non-empty Kover와 CG-14의 리뷰·thread
+검증을 통과해야 한다. Nightly workflow 등록은 CI contract, YAML parse, actionlint로 검증하고 정기 실행에서
+계속 관찰한다. 수동 Full Nightly는 tenant 전용 추가 backend 경로를 검증하지 않으므로 merge 필수 조건이
+아니다. 사용자가 명시적으로 요청하거나 미검증 backend 위험이 새로 확인될 때만 별도 dispatch 게이트로
+실행한다.
 
 ## 공개 API 초안
 
