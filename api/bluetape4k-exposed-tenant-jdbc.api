@@ -1,0 +1,23 @@
+public abstract interface class io/bluetape4k/exposed/tenant/jdbc/TenantJdbcResource {
+	public abstract fun getDataSource ()Ljavax/sql/DataSource;
+	public abstract fun getDatabase ()Lorg/jetbrains/exposed/v1/jdbc/Database;
+}
+
+public final class io/bluetape4k/exposed/tenant/jdbc/TenantJdbcResourceRegistry : java/lang/AutoCloseable {
+	public static final field Companion Lio/bluetape4k/exposed/tenant/jdbc/TenantJdbcResourceRegistry$Companion;
+	public fun close ()V
+	public static final fun create (Ljava/lang/Iterable;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Lio/bluetape4k/exposed/tenant/jdbc/TenantJdbcResourceRegistry;
+	public final fun dataSourceFor (Ljava/lang/Object;)Ljavax/sql/DataSource;
+	public final fun databaseFor (Ljava/lang/Object;)Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public final fun getConfiguredTenants ()Ljava/util/Set;
+	public final fun resourceFor (Ljava/lang/Object;)Lio/bluetape4k/exposed/tenant/jdbc/TenantJdbcResource;
+}
+
+public final class io/bluetape4k/exposed/tenant/jdbc/TenantJdbcResourceRegistry$Companion {
+	public final fun create (Ljava/lang/Iterable;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Lio/bluetape4k/exposed/tenant/jdbc/TenantJdbcResourceRegistry;
+}
+
+public final class io/bluetape4k/exposed/tenant/jdbc/UnknownTenantJdbcResourceException : java/util/NoSuchElementException {
+	public fun <init> ()V
+}
+
