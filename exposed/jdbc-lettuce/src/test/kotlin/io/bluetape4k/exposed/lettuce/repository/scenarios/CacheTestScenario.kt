@@ -33,7 +33,7 @@ interface CacheTestScenario<ID: Any, E: java.io.Serializable>: JdbcCacheTestScen
             WriteMode.WRITE_BEHIND -> CacheWriteMode.WRITE_BEHIND
         }
 
-    /** 캐시 저장 방식 — config.nearCacheEnabled에서 파생 */
+    /** 동기 Repository는 Redis Remote Cache만 지원합니다. */
     override val cacheMode: CacheMode
-        get() = if (config.nearCacheEnabled) CacheMode.NEAR_CACHE else CacheMode.REMOTE
+        get() = CacheMode.REMOTE
 }

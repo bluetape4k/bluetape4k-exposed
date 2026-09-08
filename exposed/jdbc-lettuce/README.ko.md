@@ -43,6 +43,12 @@ dependencies {
 
 ### 1. 동기 레포지토리 구현 (AbstractJdbcLettuceRepository)
 
+동기 Repository는 Redis `REMOTE` 모드만 지원합니다. `*_WITH_NEAR_CACHE` preset을
+포함하여 `nearCacheEnabled=true`이면 Redis 연결 전에 `IllegalArgumentException`이
+발생합니다. Remote preset을 사용하거나 로컬 near cache가 필요하면
+`AbstractSuspendedJdbcLettuceRepository`를 사용하세요. 기존 동기 구현은 실제
+near cache 없이 `NEAR_CACHE`로 보고하던 잘못된 동작이었습니다.
+
 ```kotlin
 import io.bluetape4k.exposed.lettuce.repository.AbstractJdbcLettuceRepository
 import io.bluetape4k.exposed.lettuce.repository.ExposedLettuceCodecs
@@ -88,13 +94,16 @@ repo.delete(1L)                // Redis + DB 동시 삭제
 
 ### 2. 코루틴 레포지토리 구현 (AbstractSuspendedJdbcLettuceRepository)
 
+코루틴 Repository에서 Redis 앞에 로컬 NearCache를 사용하려면
+`*_WITH_NEAR_CACHE` preset을 사용하세요. 아래 예제는 해당 경로를 활성화합니다.
+
 ```kotlin
 import io.bluetape4k.exposed.lettuce.repository.AbstractSuspendedJdbcLettuceRepository
 
 class UserSuspendedRepository(redisClient: RedisClient):
     AbstractSuspendedJdbcLettuceRepository<Long, UserRecord>(
         client = redisClient,
-        config = LettuceCacheConfig.READ_WRITE_THROUGH,
+        config = LettuceCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE,
         valueCodec = ExposedLettuceCodecs.jackson3(UserRecord::class.java),
     ) {
     override val table = UserTable
@@ -126,6 +135,7 @@ suspend fun example(repo: UserSuspendedRepository) {
 | `saveAll(entities)`           | 다건 저장                            |
 | `delete(id)`                  | Redis + DB 동시 삭제                 |
 | `deleteAll(ids)`              | 다건 삭제                            |
+| `suspend invalidateByPattern(patterns, count)` | loaded-map 키 삭제 후 이 레포지토리의 NearCache 갱신 |
 | `clearCache()`                | Redis 키 전체 삭제 (DB 영향 없음)         |
 
 ## LettuceCacheConfig — 쓰기 모드
@@ -140,6 +150,16 @@ Write-behind 재시도 횟수는 실패한 flush에 서로 다른 값이 섞여 
 항목별로 관리합니다. 각 항목이 자신의 재시도 한도에 도달했거나 재큐잉에
 실패한 경우에만 Dead Letter 저장소로 보내며, suspend writer는
 `CancellationException`을 전파합니다.
+
+## 패턴 무효화와 NearCache
+
+`suspend invalidateByPattern(patterns, count)`의 `patterns`는 레포지토리의 `keyPrefix` 아래에서
+매칭할 패턴입니다. `count`는 Redis에 접근하기 전에 0보다 큰지 검증합니다. 먼저 loaded-map의
+backing 키를 삭제하고, 삭제가 성공하면 NearCache가 활성화된 경우 해당 `nearCacheName` namespace
+(로컬 front와 Redis back)를 비웁니다. 반환값은 backing에서 삭제된 키 수입니다. backing 캐시의
+실패나 코루틴 취소는 호출자에게 전파되며, backing 삭제가 실패하면 NearCache를 비우지 않습니다.
+NearCache는 요청한 패턴만이 아니라 해당 레포지토리 namespace 전체를 비울 수 있지만, 다른
+레포지토리의 namespace는 보존됩니다.
 
 ## Redis Codec 안전성
 

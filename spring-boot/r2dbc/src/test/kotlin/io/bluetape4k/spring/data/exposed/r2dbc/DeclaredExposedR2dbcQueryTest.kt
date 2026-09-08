@@ -30,6 +30,22 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     @Autowired
     private lateinit var userRepository: UserR2dbcRepository
 
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `JDBC와 같은 ID 결과 계약으로 누락과 NULL을 거부하고 명시적 ID를 읽는다`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, Users) {
+            createUsers()
+            assertFailsWith<IllegalArgumentException> {
+                userRepository.findWithoutIdNative("alice@example.com")
+            }.message shouldBeEqualTo "@Query method 'findWithoutIdNative' must select entity id column 'id'"
+            assertFailsWith<IllegalArgumentException> {
+                userRepository.findWithNullIdNative("alice@example.com")
+            }.message shouldBeEqualTo "@Query method 'findWithNullIdNative' returned null entity id"
+            userRepository.findWithExplicitIdNative("alice@example.com")
+                .single().email shouldBeEqualTo "alice@example.com"
+        }
+    }
+
     private suspend fun createUsers() {
         Users.insertAndGetId { row ->
             row[name] = "Alice"

@@ -53,7 +53,8 @@ import java.io.Serializable
  * @param ID PK 타입
  * @param E 엔티티(DTO) 타입
  * @param client Lettuce [RedisClient]
- * @param config [LettuceCacheConfig] 설정
+ * @param config [LettuceCacheConfig] 설정. 동기 구현은 Remote Cache만 지원하므로
+ * `nearCacheEnabled=true`이면 생성 시 [IllegalArgumentException]을 발생시킵니다.
  */
 abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
     client: RedisClient,
@@ -63,6 +64,10 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
     companion object: KLogging()
 
     init {
+        require(!config.nearCacheEnabled) {
+            "AbstractJdbcLettuceRepository does not support nearCacheEnabled; " +
+            "use AbstractSuspendedJdbcLettuceRepository"
+        }
         ExposedLettuceCodecs.requireConfigured(valueCodec)
     }
 
@@ -79,8 +84,7 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
     // JdbcCacheRepository 프로퍼티 구현
     override val cacheName: String get() = config.keyPrefix
     override val cacheMode: CacheMode
-        get() =
-            if (config.nearCacheEnabled) CacheMode.NEAR_CACHE else CacheMode.REMOTE
+        get() = CacheMode.REMOTE
     override val cacheWriteMode: CacheWriteMode
         get() = when (config.writeMode) {
             WriteMode.NONE          -> CacheWriteMode.READ_ONLY

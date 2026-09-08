@@ -53,6 +53,18 @@ interface UserJdbcRepository: ExposedJdbcRepository<UserEntity, Long> {
     @Query("SELECT * FROM $USERS_TABLE_NAME WHERE email = ?1")
     fun findByEmailNative(email: String): List<UserEntity>
 
+    @Query("SELECT CAST(age AS BIGINT) FROM $USERS_TABLE_NAME WHERE email = ?1")
+    fun findWithoutIdNative(email: String): List<UserEntity>
+
+    @Query(
+        "SELECT candidate.id FROM $USERS_TABLE_NAME source " +
+            "LEFT JOIN $USERS_TABLE_NAME candidate ON 1 = 0 WHERE source.email = ?1"
+    )
+    fun findWithNullIdNative(email: String): List<UserEntity>
+
+    @Query("SELECT age, id AS ID FROM $USERS_TABLE_NAME WHERE email = ?1")
+    fun findWithExplicitIdNative(email: String): List<UserEntity>
+
     @Query("SELECT * FROM $USERS_TABLE_NAME WHERE age = ?2 AND email = ?1")
     fun findByEmailAndAgeNative(email: String, age: Int): List<UserEntity>
 

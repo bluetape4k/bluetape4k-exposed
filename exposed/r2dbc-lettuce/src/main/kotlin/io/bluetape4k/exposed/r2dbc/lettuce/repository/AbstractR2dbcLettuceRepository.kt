@@ -276,7 +276,10 @@ abstract class AbstractR2dbcLettuceRepository<ID: Any, E: Serializable>(
     }
 
     override suspend fun invalidateByPattern(patterns: String, count: Int): Long {
-        return cache.invalidateByPattern(patterns, count.toLong())
+        count.requirePositiveNumber("count")
+        val deleted = cache.invalidateByPattern(patterns, count.toLong())
+        nearCache?.clearAll()
+        return deleted
     }
 
     // -------------------------------------------------------------------------

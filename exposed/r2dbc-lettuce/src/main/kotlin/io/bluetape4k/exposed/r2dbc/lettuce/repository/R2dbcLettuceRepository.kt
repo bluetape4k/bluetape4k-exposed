@@ -139,6 +139,10 @@ interface R2dbcLettuceRepository<ID: Any, E: Serializable>: R2dbcRedisRepository
 
     /**
      * 패턴에 맞는 키를 가진 엔티티를 캐시에서 제거합니다.
+     * loaded-map backing 키를 먼저 삭제하고, NearCache가 활성화된 경우 해당
+     * `nearCacheName` namespace의 local front와 Redis back을 함께 비웁니다.
+     * `count`가 0 이하이면 Redis에 접근하기 전에 예외를 던지며, backing 캐시의
+     * 실패와 코루틴 취소는 호출자에게 전파됩니다.
      *
      * @param patterns 키 패턴
      * @param count 최대 제거 개수

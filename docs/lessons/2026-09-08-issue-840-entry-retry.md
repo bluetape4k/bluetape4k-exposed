@@ -36,7 +36,7 @@ dead-letter로 보낼 항목을 독립적으로 결정합니다. 따라서 한 �
   `./gradlew :bluetape4k-exposed-jdbc-lettuce:test --tests "io.bluetape4k.exposed.lettuce.map.ExposedLettuceLoadedMapRetryTest" --no-build-cache`
   결과 2 passing, `BUILD SUCCESSFUL`.
 - GREEN suspend (`/private/tmp/840-jdbc-green-suspend.log`):
-  `./gradlew :bluetape4k.exposed-jdbc-lettuce:test --tests "io.bluetape4k.exposed.lettuce.map.ExposedLettuceSuspendedLoadedMapRetryTest" --no-build-cache`
+  `./gradlew :bluetape4k-exposed-jdbc-lettuce:test --tests "io.bluetape4k.exposed.lettuce.map.ExposedLettuceSuspendedLoadedMapRetryTest" --no-build-cache`
   결과 3 passing, `BUILD SUCCESSFUL`.
 - suspend 테스트의 writer 시작 신호 대기는 `withTimeout(5_000)`으로 제한해
   writer가 시작되지 않는 회귀가 무기한 대기하지 않도록 했습니다.
@@ -48,8 +48,18 @@ dead-letter로 보낼 항목을 독립적으로 결정합니다. 따라서 한 �
 - JUnit XML `exposed/jdbc-lettuce/build/test-results/test/`에서 sync 2개와
   suspend 3개 모두 `skipped="0"`, `failures="0"`, `errors="0"`을 확인했습니다.
 - `git diff --check`: PASS.
+- develop 통합 후 전체 모듈 재검증은 682개 통과, 조건부 skip 60개,
+  실패·오류 0개였다. 새 재시도 회귀 5개는 모두 skip 없이 통과했고 detekt·ABI도
+  통과했다. 근거: `/tmp/exposed-847-856-integration.log` 및 JUnit XML.
+  skip에는 MySQL 격리 수준, 캐시 모드·AutoInc 제약, StructuredTaskScope
+  런타임 부재 등 기존 assumption이 포함되며 성공으로 집계하지 않았다.
 
 ## 향후 지침
+
+develop 통합 시 두 README의 같은 위치에 추가된 재시도 설명과 #841의
+NearCache 무효화 설명을 모두 유지했다. #842의 동기 캐시 기능 제한도 보존했다.
+독립 아키텍처 리뷰에서 재시도 상태와 캐시 무효화·기능 제한의 소유 경계가
+분리되어 있음을 확인했다. 충돌 해결 시 한쪽 설명만 선택하지 않는다.
 
 write-behind retry 또는 dead-letter 정책을 변경할 때는 서로 다른 retry count의
 항목을 한 batch에 섞고 queue/channel 순서를 바꾸는 회귀 테스트를 먼저
