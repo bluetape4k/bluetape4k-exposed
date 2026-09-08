@@ -120,6 +120,10 @@ queryFlow(database,
 통합 테스트는 `clickhouse-jdbc` `0.9.9`와 ClickHouse Server
 `26.7.3.19` 조합을 사용합니다. JDBC URL의 서버 설정에는
 `clickhouse_setting_` 접두사가 필요합니다([ClickHouse JDBC URL 문서](https://github.com/ClickHouse/clickhouse-java/blob/v0.9.9/clickhouse-jdbc/README.md#jdbc-url)).
+catalog의 기본 `ClickHouseDriver`는 V2 경로입니다. 지연 행과
+`socket_timeout`을 사용한 bounded 로컬 probe에서는 기본 V2 경로의 read-timeout
+신호가 결정적으로 발생하지 않았으므로, 이 절에서는 V2 timeout·cancellation을
+보장하지 않습니다. 아래에서 재현 가능한 timeout 계약은 V1 driver로 한정합니다.
 
 - `clickhouse_setting_max_result_rows=2`와
   `clickhouse_setting_result_overflow_mode=throw` 조합은
@@ -131,14 +135,16 @@ queryFlow(database,
   `clickhouse_setting_max_result_rows`는 클라이언트의 정확한 절단 상한이
   아닙니다. 테스트는 `clickhouse_setting_max_block_size=2`를 고정하고 매번
   cold collection에서 두 행 접두사를 확인합니다.
-- read-timeout 테스트는 `com.clickhouse.jdbc.DriverV1`을 명시적으로 선택하고
+- V1 read-timeout 테스트는 `com.clickhouse.jdbc.DriverV1`을 명시적으로 선택하고
   `socket_timeout=200`을 설정합니다. 행마다 1초가 걸리는 쿼리는 mapper가
   한 행도 방출하기 전에 드라이버의 `BatchUpdateException("Read timed out")`
   (Exposed wrapping)을 발생시킵니다. 풀 자원을 반환한 직후 후속 수집도
   성공합니다. 이는 실제 JDBC socket-read timeout이며 서버 측
   `clickhouse_setting_max_execution_time` query-timeout과 다릅니다. 블로킹
-  JDBC 취소를 위해 연결 획득·소켓·조회 timeout을 유한하게 설정하고,
-  timeout이나 limit 오류가 발생한 수집은 종료된 것으로 처리하세요.
+  JDBC 취소를 위해 선택한 driver의 연결 획득·소켓·조회 timeout을 유한하게
+  설정하고, timeout이나 limit 오류가 발생한 수집은 종료된 것으로 처리하세요.
+  기본 V2 driver를 사용하는 애플리케이션은 자체 timeout 동작을 별도로
+  확인해야 하며, 이 V1 결과를 V2 보장으로 해석하지 마세요.
 
 ## 컬럼 타입
 

@@ -123,6 +123,11 @@ This helper logs lifecycle-only events, not SQL, bindings, rows or exception pay
 The integration tests exercise `clickhouse-jdbc` `0.9.9` against ClickHouse Server
 `26.7.3.19`. JDBC URL server settings use the `clickhouse_setting_` prefix (see
 the [ClickHouse JDBC URL documentation](https://github.com/ClickHouse/clickhouse-java/blob/v0.9.9/clickhouse-jdbc/README.md#jdbc-url)).
+The catalog `ClickHouseDriver` defaults to the V2 path. A bounded local probe of
+that default path with delayed rows and `socket_timeout` did not produce a
+deterministic read-timeout signal, so this section makes no V2 timeout or
+cancellation guarantee; the reproducible timeout contract below is explicitly
+scoped to the V1 driver.
 
 - `clickhouse_setting_max_result_rows=2` with
   `clickhouse_setting_result_overflow_mode=throw` raises a JDBC/Exposed SQL
@@ -134,14 +139,16 @@ the [ClickHouse JDBC URL documentation](https://github.com/ClickHouse/clickhouse
   `clickhouse_setting_max_result_rows` is not an exact client-side truncation.
   The test fixes `clickhouse_setting_max_block_size=2` and observes the two-row
   prefix on every cold collection.
-- The read-timeout test selects `com.clickhouse.jdbc.DriverV1` explicitly and
+- The V1 read-timeout test selects `com.clickhouse.jdbc.DriverV1` explicitly and
   sets `socket_timeout=200`. A one-second-per-row query raises the driver's
   `BatchUpdateException("Read timed out")`, wrapped by Exposed, before the
   mapper emits a row. The pool resources are returned and an immediate follow-up
   collection succeeds. This is an actual JDBC socket-read timeout, distinct from
   the server-side `clickhouse_setting_max_execution_time` query timeout; callers
   must configure finite connection, socket, and query timeouts for blocking JDBC
-  cancellation and treat timeout/limit failures as terminal for that collection.
+  cancellation on the selected driver and treat timeout/limit failures as
+  terminal for that collection. Applications using the default V2 driver must
+  verify its own timeout behavior; this V1 result is not a V2 guarantee.
 
 ## Column Types
 

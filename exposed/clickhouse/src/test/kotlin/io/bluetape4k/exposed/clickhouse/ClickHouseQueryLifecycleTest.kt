@@ -335,9 +335,11 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
     }
 
     @Test
-    fun `실제 driver read timeout은 부분 결과 없이 실패하고 연결을 반환한다`() = runSuspendIO {
+    fun `V1 driver read timeout은 부분 결과 없이 실패하고 연결을 반환한다`() = runSuspendIO {
         Fixture(
             "?socket_timeout=200&clickhouse_setting_max_block_size=1",
+            // catalog 기본 ClickHouseDriver(V2)는 지연 행의 socket timeout을
+            // 재현 가능하게 적용하지 않아, 확인된 계약을 V1 경로로 한정합니다.
             driverClassName = "com.clickhouse.jdbc.DriverV1",
         ).use { fixture ->
             val sleepEachRow = CustomFunction<Long>(

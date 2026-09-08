@@ -17,12 +17,17 @@
 - `max_execution_time`은 JDBC를 통해 실행되는 서버 query-timeout 경로다. socket
   read timeout과 다른 계층이므로 두 동작을 하나의 보장으로 합치지 않는다. 이번
   read-timeout 테스트는 서버 query-timeout 설정에 의존하지 않는다.
+- catalog 기본 `ClickHouseDriver`는 V2 경로지만, 지연 행과 `socket_timeout`을
+  사용한 bounded probe에서 deterministic read-timeout이 발생하지 않았다. 따라서
+  이번에 고정한 timeout·cleanup 계약은 명시적 V1 driver 범위이며 V2 보장으로
+  확장하지 않는다.
 
 ## 결정
 
-- production `queryFlow`와 공통 API는 변경하지 않는다. 실제 driver 동작을
+- production `queryFlow`와 공통 API는 변경하지 않는다. 실제 V1 driver 동작을
   검증하기 위해 test-only JDBC URL 옵션, 명시적 V1 driver fixture와 관측
-  fixture만 확장한다.
+  fixture만 확장한다. 기본 V2 timeout/cancellation은 별도 재현 테스트 전까지
+  보장하지 않는다.
 - 각 실패 뒤 `ResultSet`·`Statement`·`Connection` 정리와 호출자 pool 재사용을
   확인한다. 실패 후 같은 fixture에서 후속 수집이 성공해야 cleanup 증거로 인정한다.
 - timeout·limit은 해당 cold collection의 terminal failure로 취급한다. helper가
@@ -52,10 +57,11 @@
 3. 실제 driver timeout을 검증할 때 socket, server query, connection acquisition
    계층을 분리해 각각의 예외·정리·후속 연결 재사용을 관측한다.
 4. 독립 리뷰가 실패하면 실패 원인과 inline fallback 범위를 기록하되, 독립 PASS로
-   승격하지 않는다.
+   승격하지 않는다. V2에서 timeout이 재현되지 않으면 확인된 V1 범위로 문서와
+   수용 주장을 축소한다.
 
 ## DoD Status
 
 - 테스트·정리 교훈: `PASS`
-- 모듈 전체/정적: `PASS`; 최종 독립 exact-head 리뷰: `PENDING`
+- 모듈 전체/정적: `PASS`; 독립 리뷰 V2 범위 finding 반영, 최종 inline fallback: `PASS` (LSP 공백은 유지)
 - PR·머지: `PENDING`
