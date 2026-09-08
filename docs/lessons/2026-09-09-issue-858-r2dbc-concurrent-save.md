@@ -34,6 +34,16 @@ repository 경로를 오염시키지 않게 되었습니다. 이 수정은 #839/
 - Spring Boot R2DBC 모듈 전체 232 tests, failures 0, errors 0, skipped 0.
 - `detekt` 및 `checkKotlinAbi` 통과.
 
+## 독립 리뷰와 fallback
+
+exact HEAD `5cde8896`에 대한 독립 리뷰는 P0/P1/P2/P3 코드 이슈를 찾지
+않았지만, 리뷰 환경에서 `lsp_diagnostics`를 사용할 수 없고 Kotlin LSP도
+JDK 호환성 문제로 종료되어 엄격한 게이트 판정은 `REQUEST CHANGES`였다.
+이에 inline fallback으로 최종 diff의 source/caller 경로, 테스트 oracle과
+동시성 barrier, ABI 및 문서/CI 범위를 다시 대조했다. 별도 코드 결함은 없었고,
+compileTestKotlin·detekt·checkKotlinAbi를 실행 가능한 정적 검증으로 유지한다.
+LSP 및 호스팅 CI 결과는 PR 게이트에서 확인할 미해결 검증 공백으로 남긴다.
+
 ## 향후 지침
 
 R2DBC 경쟁 테스트에서 `withTables` callback 내부에 worker를 직접 시작하지
