@@ -100,6 +100,7 @@ suspend fun example(repo: UserR2dbcLettuceRepository) {
 | `suspend saveAll(entities)`           | Batch save                                                         |
 | `suspend delete(id)`                  | Deletes from both Redis and R2DBC DB simultaneously                |
 | `suspend deleteAll(ids)`              | Batch delete                                                       |
+| `suspend invalidateByPattern(patterns, count)` | Deletes matching loaded-map keys and refreshes this repository's NearCache |
 | `suspend clearCache()`                | Clears all NearCache + Redis keys (no effect on DB)                |
 
 ## LettuceCacheConfig — Write Modes
@@ -133,6 +134,17 @@ val config = LettuceCacheConfig(
 ```
 
 When NearCache is enabled, the lookup order is: **Caffeine (local) → Redis → DB**
+
+## Pattern Invalidation and NearCache
+
+`suspend invalidateByPattern(patterns, count)` treats `patterns` as a pattern below the repository's
+`keyPrefix`. `count` must be positive and is validated before Redis access. The loaded-map backing
+keys are deleted first; after a successful deletion, an enabled NearCache clears its own
+`nearCacheName` namespace (local front and Redis back). The method returns the number of backing keys
+deleted. A backing-cache failure or coroutine cancellation is propagated, and the NearCache is not
+cleared after an unsuccessful backing deletion. Because the NearCache namespace is cleared as a
+whole, entries in that repository's NearCache outside the requested pattern may also be removed;
+other repositories' namespaces are preserved.
 
 ## Differences from the JDBC Version
 

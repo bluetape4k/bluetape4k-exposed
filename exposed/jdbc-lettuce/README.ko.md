@@ -126,6 +126,7 @@ suspend fun example(repo: UserSuspendedRepository) {
 | `saveAll(entities)`           | 다건 저장                            |
 | `delete(id)`                  | Redis + DB 동시 삭제                 |
 | `deleteAll(ids)`              | 다건 삭제                            |
+| `suspend invalidateByPattern(patterns, count)` | loaded-map 키 삭제 후 이 레포지토리의 NearCache 갱신 |
 | `clearCache()`                | Redis 키 전체 삭제 (DB 영향 없음)         |
 
 ## LettuceCacheConfig — 쓰기 모드
@@ -135,6 +136,16 @@ suspend fun example(repo: UserSuspendedRepository) {
 | `READ_WRITE_THROUGH` | save 시 Redis + DB 동시 반영 (기본값) |
 | `READ_WRITE_BEHIND`  | save 시 Redis 즉시, DB는 비동기 반영   |
 | `READ_ONLY`          | Redis에만 저장, DB 쓰기 없음          |
+
+## 패턴 무효화와 NearCache
+
+`suspend invalidateByPattern(patterns, count)`의 `patterns`는 레포지토리의 `keyPrefix` 아래에서
+매칭할 패턴입니다. `count`는 Redis에 접근하기 전에 0보다 큰지 검증합니다. 먼저 loaded-map의
+backing 키를 삭제하고, 삭제가 성공하면 NearCache가 활성화된 경우 해당 `nearCacheName` namespace
+(로컬 front와 Redis back)를 비웁니다. 반환값은 backing에서 삭제된 키 수입니다. backing 캐시의
+실패나 코루틴 취소는 호출자에게 전파되며, backing 삭제가 실패하면 NearCache를 비우지 않습니다.
+NearCache는 요청한 패턴만이 아니라 해당 레포지토리 namespace 전체를 비울 수 있지만, 다른
+레포지토리의 namespace는 보존됩니다.
 
 ## Redis Codec 안전성
 
