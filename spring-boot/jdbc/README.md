@@ -554,6 +554,8 @@ Unsupported patterns:
 
 - `?1`, `?2`, ... : Method parameters by position (1-indexed)
 - Repeated placeholders supported: `?1 OR ?1`
+- Only SQL code is bound; quoted strings/identifiers, comments, and PostgreSQL dollar-quoted strings retain literal `?N` text.
+- Exposed 1.5.0's debug SQL logger separately expands arguments and does not recognize SQL comments. A `?` in a comment can therefore fail logging after execution; this binder does not change the application's logger configuration.
 - Skipping placeholders not supported: cannot use `?1` and `?3` simultaneously
 
 ## Multi-Database Support

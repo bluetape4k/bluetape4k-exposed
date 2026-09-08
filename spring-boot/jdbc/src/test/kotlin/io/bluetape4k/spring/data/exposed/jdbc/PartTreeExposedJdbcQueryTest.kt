@@ -11,6 +11,8 @@ import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.jdbc.deleteAll
+import org.jetbrains.exposed.v1.core.Slf4jSqlDebugLogger
+import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
@@ -29,6 +31,20 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     @AfterEach
     fun tearDown() {
         transaction { Users.deleteAll() }
+    }
+
+    @Test
+    fun `@Query native - 문자열과 주석의 placeholder는 바인딩하지 않는다`() {
+        createUsers()
+        // Exposed 1.5.0 expandArgs는 주석의 ?도 소비하므로 이 테스트의 logger만 제외합니다.
+        val logger = TransactionManager.current().defaultLogger
+        logger.removeLogger(Slf4jSqlDebugLogger)
+        try {
+            userJdbcRepository.findWithQuotedMarkersNative("alice@example.com")
+                .single().email shouldBeEqualTo "alice@example.com"
+        } finally {
+            logger.addLogger(Slf4jSqlDebugLogger)
+        }
     }
 
     private fun createUsers() {

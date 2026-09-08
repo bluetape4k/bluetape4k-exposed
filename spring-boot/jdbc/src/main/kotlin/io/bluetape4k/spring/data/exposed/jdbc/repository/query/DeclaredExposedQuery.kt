@@ -1,6 +1,7 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository.query
 
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.spring.data.exposed.common.repository.query.replaceSqlParameters
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedEntityInformation
 import org.jetbrains.exposed.v1.core.ColumnType
 import org.jetbrains.exposed.v1.core.InternalApi
@@ -31,7 +32,6 @@ class DeclaredExposedQuery<E: Entity<ID>, ID: Any>(
         val args: List<Pair<ColumnType<*>, Any?>>,
     )
 
-    private val positionalPlaceholderRegex = Regex("\\?(\\d+)")
     private val entityClass: EntityClass<ID, E> = entityInformation.entityClass
     private val rawSql: String =
         queryMethod.getAnnotatedQuery()
@@ -63,10 +63,10 @@ class DeclaredExposedQuery<E: Entity<ID>, ID: Any>(
     ): BoundSql {
         val args = mutableListOf<Pair<ColumnType<*>, Any?>>()
         val normalizedSql =
-            positionalPlaceholderRegex.replace(sql) { match ->
-                val placeholderIndex = match.groupValues[1].toInt() - 1
+            replaceSqlParameters(sql) { number ->
+                val placeholderIndex = number - 1
                 require(placeholderIndex in parameters.indices) {
-                    "Query placeholder index out of bounds: ${match.value} for parameter size ${parameters.size}"
+                    "Query placeholder index out of bounds: ?$number for parameter size ${parameters.size}"
                 }
                 args += toSqlArg(parameters[placeholderIndex])
                 "?"

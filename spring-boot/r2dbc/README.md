@@ -156,6 +156,9 @@ interface UserRepository : ExposedR2dbcRepository<User, Long> {
 ```
 
 Parameters are bound as prepared-statement placeholders, so SQL injection is prevented.
+Only SQL code is bound; quoted strings/identifiers, comments, and PostgreSQL dollar-quoted strings retain literal `?N` text. Repeated parameters are bound in occurrence order.
+
+Exposed 1.5.0's debug SQL logger separately expands arguments and does not recognize SQL comments. A `?` in a comment can therefore fail logging after execution; this binder does not change the application's logger configuration.
 
 The raw SQL must select the entity ID column under its mapped column name. Entities are reloaded
 through Exposed and returned in the exact ID order produced by the SQL, so `ORDER BY`, `LIMIT`,

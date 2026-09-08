@@ -549,6 +549,8 @@ fun createUser(name: String, email: String): User {
 ### @Query 플레이스홀더
 
 - `?1`, `?2`, ... : 메서드 파라미터 순서 (1-indexed)
+- SQL 코드 영역만 바인딩하며 문자열·인용 식별자·주석·PostgreSQL dollar-quoted 문자열 안의 `?N`은 보존합니다.
+- Exposed 1.5.0 디버그 SQL logger의 별도 인자 확장기는 SQL 주석을 인식하지 않습니다. 주석의 `?` 때문에 실행 후 로깅에서 실패할 수 있으며, 이 바인더는 애플리케이션의 logger 설정을 변경하지 않습니다.
 - 중복 플레이스홀더 지원: `?1 OR ?1`
 - 플레이스홀더 건너뛰기 미지원: `?1`과 `?3` 동시 사용 불가
 

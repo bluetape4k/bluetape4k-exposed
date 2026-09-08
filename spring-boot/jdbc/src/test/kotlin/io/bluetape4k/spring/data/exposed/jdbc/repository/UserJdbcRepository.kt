@@ -53,6 +53,9 @@ interface UserJdbcRepository: ExposedJdbcRepository<UserEntity, Long> {
     @Query("SELECT * FROM $USERS_TABLE_NAME WHERE email = ?1")
     fun findByEmailNative(email: String): List<UserEntity>
 
+    @Query("SELECT *, '?2' AS marker FROM $USERS_TABLE_NAME WHERE email = ?1 /* ignored ?3 */ -- ignored ?4")
+    fun findWithQuotedMarkersNative(email: String): List<UserEntity>
+
     @Query("SELECT * FROM $USERS_TABLE_NAME WHERE age = ?2 AND email = ?1")
     fun findByEmailAndAgeNative(email: String, age: Int): List<UserEntity>
 
