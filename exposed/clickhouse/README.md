@@ -118,6 +118,31 @@ The producer keeps at most one pending mapped item, in addition to the item bein
 
 This helper logs lifecycle-only events, not SQL, bindings, rows or exception payloads. Exposed and driver logs have their own policies. Paging or `queryList` may still be more appropriate when the caller needs detached bulk results or short-lived connections.
 
+### Driver timeout and row-limit behavior
+
+The integration tests exercise `clickhouse-jdbc` `0.9.9` against ClickHouse Server
+`26.7.3.19`. JDBC URL server settings use the `clickhouse_setting_` prefix (see
+the [ClickHouse JDBC URL documentation](https://github.com/ClickHouse/clickhouse-java/blob/v0.9.9/clickhouse-jdbc/README.md#jdbc-url)).
+
+- `clickhouse_setting_max_result_rows=2` with
+  `clickhouse_setting_result_overflow_mode=throw` raises a JDBC/Exposed SQL
+  exception (`TOO_MANY_ROWS_OR_BYTES`). `queryFlow` does not replay the query;
+  `ResultSet`, `Statement`, and `Connection` are released before the next
+  collection succeeds.
+- `clickhouse_setting_result_overflow_mode=break` returns a partial result.
+  The server may round the result up to a block boundary, so
+  `clickhouse_setting_max_result_rows` is not an exact client-side truncation.
+  The test fixes `clickhouse_setting_max_block_size=2` and observes the two-row
+  prefix on every cold collection.
+- The read-timeout test selects `com.clickhouse.jdbc.DriverV1` explicitly and
+  sets `socket_timeout=200`. A one-second-per-row query raises the driver's
+  `BatchUpdateException("Read timed out")`, wrapped by Exposed, before the
+  mapper emits a row. The pool resources are returned and an immediate follow-up
+  collection succeeds. This is an actual JDBC socket-read timeout, distinct from
+  the server-side `clickhouse_setting_max_execution_time` query timeout; callers
+  must configure finite connection, socket, and query timeouts for blocking JDBC
+  cancellation and treat timeout/limit failures as terminal for that collection.
+
 ## Column Types
 
 | ClickHouse Type | Kotlin Type | Builder |

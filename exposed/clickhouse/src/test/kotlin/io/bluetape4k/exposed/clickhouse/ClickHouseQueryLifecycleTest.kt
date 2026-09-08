@@ -24,8 +24,13 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import org.awaitility.Awaitility.await
+import org.jetbrains.exposed.v1.core.CustomFunction
+import org.jetbrains.exposed.v1.core.LongColumnType
 import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.decimalLiteral
+import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.inTopLevelSuspendTransaction
 import org.junit.jupiter.api.Test
@@ -33,6 +38,7 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import org.slf4j.LoggerFactory
+import java.sql.BatchUpdateException
 import java.sql.SQLException
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
@@ -49,10 +55,14 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
     private class SqlFailure(val marker: String): SQLException(marker)
     private class MarkerCancellation(val marker: String): CancellationException(marker)
 
-    private inner class Fixture: AutoCloseable {
+    private inner class Fixture(
+        private val jdbcOptions: String = "",
+        driverClassName: String? = null,
+    ): AutoCloseable {
         val observed = JdbcObservation()
         val pool = HikariDataSource(HikariConfig().apply {
-            jdbcUrl = "jdbc:clickhouse://${clickhouse.host}:${clickhouse.port}/default"
+            jdbcUrl = "jdbc:clickhouse://${clickhouse.host}:${clickhouse.port}/default$jdbcOptions"
+            driverClassName?.let { this.driverClassName = it }
             username = clickhouse.username
             password = clickhouse.password
             maximumPoolSize = 2
@@ -64,7 +74,11 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             TrackingClickHouseConnection(ClickHouseConnectionWrapper(pool.connection), observed)
         })
 
-        fun rows() = queryFlow(database, query = { Numbers.selectAll().limit(10) }, mapper = { it[Numbers.number] })
+        fun rows(limit: Int = 10) = queryFlow(
+            database,
+            query = { Numbers.selectAll().limit(limit) },
+            mapper = { it[Numbers.number] },
+        )
 
         fun assertReleased() {
             observed.connections.get() shouldBeEqualTo 0
@@ -266,6 +280,88 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             fixture.rows().take(1).toList() shouldBeEqualTo listOf(0L)
             fixture.assertReleased()
             fixture.observed.executed.get() shouldBeEqualTo 2
+        }
+    }
+
+    @Test
+    fun `실제 driver row limit 초과는 예외와 정리를 보존하고 재수집하지 않는다`() = runSuspendIO {
+        Fixture("?clickhouse_setting_max_result_rows=2&clickhouse_setting_result_overflow_mode=throw").use { fixture ->
+            val emitted = AtomicInteger()
+            val failure = assertFailsWith<SQLException> {
+                queryFlow(
+                    fixture.database,
+                    query = { Numbers.selectAll().limit(10) },
+                    mapper = { emitted.incrementAndGet(); it[Numbers.number] },
+                ).toList()
+            }
+
+            failure.javaClass shouldBeEqualTo ExposedSQLException::class.java
+            failure.cause?.javaClass shouldBeEqualTo SQLException::class.java
+            failure.message.orEmpty().contains("Code: 396").shouldBeTrue()
+            failure.message.orEmpty().contains("TOO_MANY_ROWS_OR_BYTES").shouldBeTrue()
+            emitted.get() shouldBeEqualTo 0
+            fixture.observed.executed.get() shouldBeEqualTo 1
+            fixture.assertReleased()
+            fixture.rows(limit = 1).toList() shouldBeEqualTo listOf(0L)
+            fixture.assertReleased()
+        }
+    }
+
+    @Test
+    fun `실제 driver row limit break는 부분 결과를 반복 수집마다 재현한다`() = runSuspendIO {
+        Fixture(
+            "?clickhouse_setting_max_result_rows=2&clickhouse_setting_max_block_size=2" +
+                "&clickhouse_setting_result_overflow_mode=break",
+        ).use { fixture ->
+            val expected = listOf(0L, 1L)
+            val firstEmitted = AtomicInteger()
+            queryFlow(
+                fixture.database,
+                query = { Numbers.selectAll().limit(10) },
+                mapper = { firstEmitted.incrementAndGet(); it[Numbers.number] },
+            ).toList() shouldBeEqualTo expected
+            firstEmitted.get() shouldBeEqualTo expected.size
+            fixture.assertReleased()
+            val secondEmitted = AtomicInteger()
+            queryFlow(
+                fixture.database,
+                query = { Numbers.selectAll().limit(10) },
+                mapper = { secondEmitted.incrementAndGet(); it[Numbers.number] },
+            ).toList() shouldBeEqualTo expected
+            secondEmitted.get() shouldBeEqualTo expected.size
+            fixture.assertReleased()
+            fixture.observed.executed.get() shouldBeEqualTo 2
+        }
+    }
+
+    @Test
+    fun `실제 driver read timeout은 부분 결과 없이 실패하고 연결을 반환한다`() = runSuspendIO {
+        Fixture(
+            "?socket_timeout=200&clickhouse_setting_max_block_size=1",
+            driverClassName = "com.clickhouse.jdbc.DriverV1",
+        ).use { fixture ->
+            val sleepEachRow = CustomFunction<Long>(
+                "sleepEachRow",
+                LongColumnType(),
+                decimalLiteral("1".toBigDecimal()),
+            )
+            val emitted = AtomicInteger()
+            val failure = assertFailsWith<SQLException> {
+                queryFlow(
+                    fixture.database,
+                    query = { Numbers.select(sleepEachRow, Numbers.number).limit(3) },
+                    mapper = { emitted.incrementAndGet(); it[Numbers.number] },
+                ).toList()
+            }
+
+            failure.javaClass shouldBeEqualTo ExposedSQLException::class.java
+            failure.cause?.javaClass shouldBeEqualTo BatchUpdateException::class.java
+            failure.cause?.message shouldBeEqualTo "Read timed out"
+            emitted.get() shouldBeEqualTo 0
+            fixture.assertReleased()
+            // timeout이 연결을 pool로 되돌린 직후에도 같은 pool로 다음 조회를 수행할 수 있어야 합니다.
+            fixture.rows().take(1).toList() shouldBeEqualTo listOf(0L)
+            fixture.assertReleased()
         }
     }
 
