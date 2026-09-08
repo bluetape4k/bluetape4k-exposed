@@ -38,6 +38,8 @@ Range Partitioner, Spring Boot Auto-Configuration을 제공합니다.
 - **`ExposedRangePartitioner`** — `[minId, maxId]` 범위를 N개 파티션으로 분할
   - 테이블에서 `MIN(id)` / `MAX(id)` 자동 조회
   - 파티션별 `minId` / `maxId`를 `ExecutionContext`에 저장
+  - 임의 정밀도 범위 산술을 사용하여 전체 `Long` 도메인도 분할 가능
+  - 생성자의 0 이하 `gridSize`는 거부하며, `partition(gridSize)` 인자가 0 이하이면 설정된 grid size로 fallback
 
 - **`ExposedBatchAutoConfiguration`** — Spring Boot Auto-Configuration
   - `batchPartitionTaskExecutor` (설정 가능한 `TaskExecutor`) 자동 등록
