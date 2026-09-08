@@ -43,6 +43,12 @@ dependencies {
 
 ### 1. 동기 레포지토리 구현 (AbstractJdbcLettuceRepository)
 
+동기 Repository는 Redis `REMOTE` 모드만 지원합니다. `*_WITH_NEAR_CACHE` preset을
+포함하여 `nearCacheEnabled=true`이면 Redis 연결 전에 `IllegalArgumentException`이
+발생합니다. Remote preset을 사용하거나 로컬 near cache가 필요하면
+`AbstractSuspendedJdbcLettuceRepository`를 사용하세요. 기존 동기 구현은 실제
+near cache 없이 `NEAR_CACHE`로 보고하던 잘못된 동작이었습니다.
+
 ```kotlin
 import io.bluetape4k.exposed.lettuce.repository.AbstractJdbcLettuceRepository
 import io.bluetape4k.exposed.lettuce.repository.ExposedLettuceCodecs
@@ -88,13 +94,16 @@ repo.delete(1L)                // Redis + DB 동시 삭제
 
 ### 2. 코루틴 레포지토리 구현 (AbstractSuspendedJdbcLettuceRepository)
 
+코루틴 Repository에서 Redis 앞에 로컬 NearCache를 사용하려면
+`*_WITH_NEAR_CACHE` preset을 사용하세요. 아래 예제는 해당 경로를 활성화합니다.
+
 ```kotlin
 import io.bluetape4k.exposed.lettuce.repository.AbstractSuspendedJdbcLettuceRepository
 
 class UserSuspendedRepository(redisClient: RedisClient):
     AbstractSuspendedJdbcLettuceRepository<Long, UserRecord>(
         client = redisClient,
-        config = LettuceCacheConfig.READ_WRITE_THROUGH,
+        config = LettuceCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE,
         valueCodec = ExposedLettuceCodecs.jackson3(UserRecord::class.java),
     ) {
     override val table = UserTable
