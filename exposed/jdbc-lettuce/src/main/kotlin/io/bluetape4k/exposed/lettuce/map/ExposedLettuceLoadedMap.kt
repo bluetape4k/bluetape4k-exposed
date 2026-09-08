@@ -269,23 +269,21 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
         val batch = entries.associate { it.first to it.second }
         runCatching { writer?.write(batch) }
             .onFailure { e ->
-                val retryCount = entries.first().third + 1
                 log.error {
-                    "Write-behind flush failed (attempt $retryCount): entries=${batch.size}, " +
+                    "Write-behind flush failed: entries=${batch.size}, " +
                         "errorType=${e::class.simpleName}"
                 }
-                if (retryCount < MAX_DEAD_LETTER_RETRY) {
-                    val failed = mutableListOf<Triple<K, V, Int>>()
-                    entries.forEach { (key, value, _) ->
-                        val offered = queue.offerFirst(Triple(key, value, retryCount))
-                        if (!offered) failed.add(Triple(key, value, retryCount))
+                val dropped = mutableListOf<Triple<K, V, Int>>()
+                entries.forEach { (key, value, retryCount) ->
+                    val nextRetryCount = retryCount + 1
+                    if (nextRetryCount < MAX_DEAD_LETTER_RETRY) {
+                        val offered = queue.offerFirst(Triple(key, value, nextRetryCount))
+                        if (!offered) dropped.add(Triple(key, value, nextRetryCount))
+                    } else {
+                        dropped.add(Triple(key, value, nextRetryCount))
                     }
-                    if (failed.isNotEmpty()) {
-                        writeDeadLetter(failed.associate { it.first to it.second })
-                    }
-                } else {
-                    writeDeadLetter(batch)
                 }
+                if (dropped.isNotEmpty()) writeDeadLetter(dropped.associate { it.first to it.second })
             }
     }
 

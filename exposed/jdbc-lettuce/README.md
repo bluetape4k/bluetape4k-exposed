@@ -146,6 +146,11 @@ suspend fun example(repo: UserSuspendedRepository) {
 | `READ_WRITE_BEHIND`  | On save, writes to Redis immediately; DB is updated asynchronously |
 | `READ_ONLY`          | Stores in Redis only; no DB writes                                 |
 
+Write-behind retries are tracked per entry, even when a failed flush contains
+mixed retry counts. An entry is sent to the dead-letter store only after its
+own retry limit is reached or re-enqueue fails; suspend writers propagate
+`CancellationException`.
+
 ## Pattern Invalidation and NearCache
 
 `suspend invalidateByPattern(patterns, count)` treats `patterns` as a pattern below the repository's
