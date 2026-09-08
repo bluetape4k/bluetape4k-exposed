@@ -26,7 +26,7 @@ import java.util.*
  *
  * - AutoIncrement Long ID 테이블 ([UserTable]) 과
  * - Client-generated UUID ID 테이블 ([UserCredentialsTable]) 에 대해 각각 검증한다.
- * - Remote Cache 및 Near Cache 두 가지 설정을 모두 테스트한다.
+ * - 동기 Repository가 지원하는 Remote Cache 설정을 테스트한다.
  */
 class ReadThroughCacheTest {
     companion object: KLogging()
@@ -68,14 +68,6 @@ class ReadThroughCacheTest {
         override val repository by lazy { UserRepository(redisClient, config) }
     }
 
-    @Nested
-    inner class AutoIncIdReadThroughNearCache: AutoIncIdReadThrough() {
-        override val config = LettuceCacheConfig.READ_ONLY_WITH_NEAR_CACHE.copy(
-            nearCacheName = "jdbc-lettuce-users-rt-near"
-        )
-        override val repository by lazy { UserRepository(redisClient, config) }
-    }
-
     // -------------------------------------------------------------------------
     // Client-generated UUID ID — UserCredentialsTable
     // -------------------------------------------------------------------------
@@ -113,11 +105,4 @@ class ReadThroughCacheTest {
         override val repository by lazy { UserCredentialRepository(redisClient, config) }
     }
 
-    @Nested
-    inner class ClientGeneratedIdReadThroughNearCache: ClientGeneratedIdReadThrough() {
-        override val config = LettuceCacheConfig.READ_ONLY_WITH_NEAR_CACHE.copy(
-            nearCacheName = "jdbc-lettuce-cred-rt-near"
-        )
-        override val repository by lazy { UserCredentialRepository(redisClient, config) }
-    }
 }

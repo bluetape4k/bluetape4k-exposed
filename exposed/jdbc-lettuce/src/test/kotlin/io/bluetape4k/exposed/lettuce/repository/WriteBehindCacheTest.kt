@@ -16,7 +16,6 @@ import io.bluetape4k.exposed.lettuce.repository.scenarios.WriteBehindScenario
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
-import io.bluetape4k.redis.lettuce.map.WriteMode
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -29,7 +28,7 @@ import java.util.*
  *
  * - AutoIncrement Long ID 테이블 ([UserTable]) 과
  * - Client-generated UUID ID 테이블 ([UserCredentialsTable]) 에 대해 각각 검증한다.
- * - Remote Cache 및 Near Cache 두 가지 설정을 모두 테스트한다.
+ * - 동기 Repository가 지원하는 Remote Cache 설정을 테스트한다.
  * - `writeBehindDelay = 300ms`로 설정하여 테스트 시 빠른 flush를 유도한다.
  */
 class WriteBehindCacheTest {
@@ -78,19 +77,6 @@ class WriteBehindCacheTest {
         override val repository by lazy { UserRepository(redisClient, config) }
     }
 
-    @Nested
-    inner class AutoIncIdWriteBehindNearCache: AutoIncIdWriteBehind() {
-        override val config = LettuceCacheConfig(
-            writeMode = WriteMode.WRITE_BEHIND,
-            writeBehindDelay = Duration.ofMillis(300),
-            writeBehindBatchSize = 50,
-            keyPrefix = "jdbc-wb-auto-inc-near",
-            nearCacheEnabled = true,
-            nearCacheName = "jdbc-lettuce-users-wb-near"
-        )
-        override val repository by lazy { UserRepository(redisClient, config) }
-    }
-
     // -------------------------------------------------------------------------
     // Client-generated UUID ID — UserCredentialsTable
     // -------------------------------------------------------------------------
@@ -134,16 +120,4 @@ class WriteBehindCacheTest {
         override val repository by lazy { UserCredentialRepository(redisClient, config) }
     }
 
-    @Nested
-    inner class ClientGeneratedIdWriteBehindNearCache: ClientGeneratedIdWriteBehind() {
-        override val config = LettuceCacheConfig(
-            writeMode = WriteMode.WRITE_BEHIND,
-            writeBehindDelay = Duration.ofMillis(300),
-            writeBehindBatchSize = 50,
-            keyPrefix = "jdbc-wb-client-uuid-near",
-            nearCacheEnabled = true,
-            nearCacheName = "jdbc-lettuce-cred-wb-near2"
-        )
-        override val repository by lazy { UserCredentialRepository(redisClient, config) }
-    }
 }

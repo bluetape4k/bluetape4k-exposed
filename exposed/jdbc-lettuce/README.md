@@ -43,6 +43,12 @@ The sequence view follows the read-through, write-through/write-behind, and inva
 
 ### 1. Synchronous Repository (AbstractJdbcLettuceRepository)
 
+The synchronous repository supports Redis `REMOTE` mode only. Setting
+`nearCacheEnabled=true`, including any `*_WITH_NEAR_CACHE` preset, now throws
+`IllegalArgumentException` before connecting to Redis. Use a remote preset or
+`AbstractSuspendedJdbcLettuceRepository` when a local near cache is required.
+Previously the synchronous flag reported `NEAR_CACHE` without providing one.
+
 ```kotlin
 import io.bluetape4k.exposed.lettuce.repository.AbstractJdbcLettuceRepository
 import io.bluetape4k.exposed.lettuce.repository.ExposedLettuceCodecs
@@ -88,13 +94,16 @@ repo.delete(1L)                // Deletes from both Redis and DB
 
 ### 2. Coroutine Repository (AbstractSuspendedJdbcLettuceRepository)
 
+Use a `*_WITH_NEAR_CACHE` preset when the coroutine repository should keep a
+local NearCache in front of Redis; the example below enables that path.
+
 ```kotlin
 import io.bluetape4k.exposed.lettuce.repository.AbstractSuspendedJdbcLettuceRepository
 
 class UserSuspendedRepository(redisClient: RedisClient):
     AbstractSuspendedJdbcLettuceRepository<Long, UserRecord>(
         client = redisClient,
-        config = LettuceCacheConfig.READ_WRITE_THROUGH,
+        config = LettuceCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE,
         valueCodec = ExposedLettuceCodecs.jackson3(UserRecord::class.java),
     ) {
     override val table = UserTable
