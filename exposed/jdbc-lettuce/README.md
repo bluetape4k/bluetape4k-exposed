@@ -126,6 +126,7 @@ suspend fun example(repo: UserSuspendedRepository) {
 | `saveAll(entities)`           | Batch save                                                |
 | `delete(id)`                  | Deletes from both Redis and DB simultaneously             |
 | `deleteAll(ids)`              | Batch delete                                              |
+| `suspend invalidateByPattern(patterns, count)` | Deletes matching loaded-map keys and refreshes this repository's NearCache |
 | `clearCache()`                | Removes all Redis keys (no effect on DB)                  |
 
 ## LettuceCacheConfig — Write Modes
@@ -135,6 +136,17 @@ suspend fun example(repo: UserSuspendedRepository) {
 | `READ_WRITE_THROUGH` | On save, writes to Redis + DB simultaneously (default)             |
 | `READ_WRITE_BEHIND`  | On save, writes to Redis immediately; DB is updated asynchronously |
 | `READ_ONLY`          | Stores in Redis only; no DB writes                                 |
+
+## Pattern Invalidation and NearCache
+
+`suspend invalidateByPattern(patterns, count)` treats `patterns` as a pattern below the repository's
+`keyPrefix`. `count` must be positive and is validated before Redis access. The loaded-map backing
+keys are deleted first; after a successful deletion, an enabled NearCache clears its own
+`nearCacheName` namespace (local front and Redis back). The method returns the number of backing keys
+deleted. A backing-cache failure or coroutine cancellation is propagated, and the NearCache is not
+cleared after an unsuccessful backing deletion. Because the NearCache namespace is cleared as a
+whole, entries in that repository's NearCache outside the requested pattern may also be removed;
+other repositories' namespaces are preserved.
 
 ## Redis Codec Safety
 
