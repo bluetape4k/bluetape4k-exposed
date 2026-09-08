@@ -86,6 +86,7 @@ jobs:
       - name: Validate CI matrix contract
         run: |
           python3 scripts/ci/validate_ci_matrix_contract_test.py
+          python3 scripts/ci/validate_required_jobs_test.py
           python3 scripts/ci/validate_ci_matrix_contract.py
 
   # Detect changed modules (runs in parallel with build)
@@ -94,35 +95,35 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      all-modules: ${{ steps.filter.outputs['all-modules'] }}
-      benchmark: ${{ steps.filter.outputs.benchmark == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      core: ${{ steps.filter.outputs.core == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      serialization: ${{ steps.filter.outputs.serialization == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      tink: ${{ steps.filter.outputs.tink == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      jdbc: ${{ steps.filter.outputs.jdbc == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      r2dbc: ${{ steps.filter.outputs.r2dbc == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      spring-boot: ${{ steps.filter.outputs['spring-boot'] == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      spring-modulith: ${{ steps.filter.outputs['spring-modulith'] == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      ktor: ${{ steps.filter.outputs.ktor == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      examples: ${{ steps.filter.outputs.examples == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      lettuce: ${{ steps.filter.outputs.lettuce == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      redisson: ${{ steps.filter.outputs.redisson == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      measured: ${{ steps.filter.outputs.measured == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      postgresql-module: ${{ steps.filter.outputs['postgresql-module'] == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      mysql8-module: ${{ steps.filter.outputs['mysql8-module'] == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      duckdb: ${{ steps.filter.outputs.duckdb == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      druid: ${{ steps.filter.outputs.druid == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      cache: ${{ steps.filter.outputs.cache == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      jdbc-caffeine: ${{ steps.filter.outputs['jdbc-caffeine'] == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      r2dbc-caffeine: ${{ steps.filter.outputs['r2dbc-caffeine'] == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      clickhouse: ${{ steps.filter.outputs.clickhouse == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      trino: ${{ steps.filter.outputs.trino == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      starrocks: ${{ steps.filter.outputs.starrocks == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      cockroachdb: ${{ steps.filter.outputs.cockroachdb == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      bigquery: ${{ steps.filter.outputs.bigquery == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      timefold: ${{ steps.filter.outputs.timefold == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      spring-boot-batch: ${{ steps.filter.outputs['spring-boot-batch'] == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
-      utils-batch: ${{ steps.filter.outputs['utils-batch'] == 'true' || steps.filter.outputs['all-modules'] == 'true' }}
+      all-modules: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs['all-modules'] == 'true') }}
+      benchmark: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.benchmark == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.core == 'true' || steps.filter.outputs.jdbc == 'true' || steps.filter.outputs.r2dbc == 'true' || steps.filter.outputs.cache == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true') }}
+      core: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.core == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true') }}
+      serialization: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.serialization == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.core == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true') }}
+      tink: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.tink == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.core == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true') }}
+      jdbc: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.jdbc == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.core == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true') }}
+      r2dbc: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.r2dbc == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.core == 'true' || steps.filter.outputs['r2dbc-test-fixture'] == 'true') }}
+      spring-boot: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs['spring-boot'] == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.core == 'true' || steps.filter.outputs.jdbc == 'true' || steps.filter.outputs.r2dbc == 'true' || steps.filter.outputs.cache == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true' || steps.filter.outputs['r2dbc-test-fixture'] == 'true') }}
+      spring-modulith: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs['spring-modulith'] == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.r2dbc == 'true' || steps.filter.outputs.cache == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true') }}
+      ktor: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.ktor == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.core == 'true' || steps.filter.outputs.jdbc == 'true' || steps.filter.outputs.r2dbc == 'true' || steps.filter.outputs.cache == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true' || steps.filter.outputs['r2dbc-test-fixture'] == 'true') }}
+      examples: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.examples == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.core == 'true' || steps.filter.outputs.jdbc == 'true' || steps.filter.outputs.r2dbc == 'true' || steps.filter.outputs.cache == 'true') }}
+      lettuce: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.lettuce == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.core == 'true' || steps.filter.outputs.jdbc == 'true' || steps.filter.outputs.r2dbc == 'true' || steps.filter.outputs.cache == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true' || steps.filter.outputs['r2dbc-test-fixture'] == 'true') }}
+      redisson: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.redisson == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.core == 'true' || steps.filter.outputs.jdbc == 'true' || steps.filter.outputs.r2dbc == 'true' || steps.filter.outputs.cache == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true' || steps.filter.outputs['r2dbc-test-fixture'] == 'true') }}
+      measured: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.measured == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true') }}
+      postgresql-module: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs['postgresql-module'] == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.core == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true') }}
+      mysql8-module: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs['mysql8-module'] == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.core == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true') }}
+      duckdb: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.duckdb == 'true' || steps.filter.outputs['all-modules'] == 'true') }}
+      druid: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.druid == 'true' || steps.filter.outputs['all-modules'] == 'true') }}
+      cache: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.cache == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true' || steps.filter.outputs['r2dbc-test-fixture'] == 'true') }}
+      jdbc-caffeine: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs['jdbc-caffeine'] == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.core == 'true' || steps.filter.outputs.jdbc == 'true' || steps.filter.outputs.cache == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true') }}
+      r2dbc-caffeine: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs['r2dbc-caffeine'] == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.core == 'true' || steps.filter.outputs.r2dbc == 'true' || steps.filter.outputs.cache == 'true' || steps.filter.outputs['r2dbc-test-fixture'] == 'true') }}
+      clickhouse: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.clickhouse == 'true' || steps.filter.outputs['all-modules'] == 'true') }}
+      trino: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.trino == 'true' || steps.filter.outputs['all-modules'] == 'true') }}
+      starrocks: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.starrocks == 'true' || steps.filter.outputs['all-modules'] == 'true') }}
+      cockroachdb: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.cockroachdb == 'true' || steps.filter.outputs['all-modules'] == 'true') }}
+      bigquery: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.bigquery == 'true' || steps.filter.outputs['all-modules'] == 'true') }}
+      timefold: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.timefold == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.core == 'true' || steps.filter.outputs.jdbc == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true') }}
+      spring-boot-batch: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs['spring-boot-batch'] == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.core == 'true' || steps.filter.outputs.jdbc == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true') }}
+      utils-batch: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs['utils-batch'] == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true' || steps.filter.outputs['r2dbc-test-fixture'] == 'true') }}
       docs-only: ${{ github.event_name == 'pull_request' && steps.filter.outputs['non-doc'] == 'false' }}
     steps:
       - uses: actions/checkout@v7
@@ -150,6 +151,7 @@ jobs:
               - 'buildSrc/**'
               - '.github/workflows/**'
               - '.github/scripts/**'
+              - 'scripts/ci/**'
             benchmark:
               - 'benchmark/**'
               - 'settings.gradle.kts'
@@ -171,6 +173,12 @@ jobs:
               - 'exposed/jdbc-tests/**'
               - 'exposed/tenant-jdbc/**'
             r2dbc:
+              - 'exposed/r2dbc/**'
+              - 'exposed/r2dbc-tests/**'
+            jdbc-test-fixture:
+              - 'exposed/jdbc/**'
+              - 'exposed/jdbc-tests/**'
+            r2dbc-test-fixture:
               - 'exposed/r2dbc/**'
               - 'exposed/r2dbc-tests/**'
             spring-boot:
@@ -2062,6 +2070,11 @@ jobs:
       - coverage-report
     if: always()
     steps:
+      - uses: actions/checkout@v7
+      - name: Require activated consumer tests
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: python3 scripts/ci/validate_required_jobs.py
       - name: Check all jobs
         env:
           RESULTS: ${{ join(needs.*.result, ',') }}
