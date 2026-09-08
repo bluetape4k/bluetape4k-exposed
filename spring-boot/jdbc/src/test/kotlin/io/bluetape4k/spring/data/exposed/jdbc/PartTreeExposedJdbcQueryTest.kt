@@ -237,6 +237,31 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
         found.first().name shouldBeEqualTo "Alice"
     }
 
+    @Test
+    fun `@Query native - ID가 없으면 첫 숫자 컬럼으로 대체하지 않는다`() {
+        createUsers()
+        val failure = assertFailsWith<IllegalArgumentException> {
+            userJdbcRepository.findWithoutIdNative("alice@example.com")
+        }
+        failure.message shouldBeEqualTo "@Query method 'findWithoutIdNative' must select entity id column 'id'"
+    }
+
+    @Test
+    fun `@Query native - NULL ID를 첫 컬럼으로 대체하지 않는다`() {
+        createUsers()
+        val failure = assertFailsWith<IllegalArgumentException> {
+            userJdbcRepository.findWithNullIdNative("alice@example.com")
+        }
+        failure.message shouldBeEqualTo "@Query method 'findWithNullIdNative' returned null entity id"
+    }
+
+    @Test
+    fun `@Query native - 대소문자가 다른 명시적 ID가 첫 컬럼이 아니어도 조회한다`() {
+        createUsers()
+        userJdbcRepository.findWithExplicitIdNative("alice@example.com")
+            .single().email shouldBeEqualTo "alice@example.com"
+    }
+
     // ── 추가 쿼리 타입 커버리지 테스트 ────────────────────────────────────────
 
     @Test

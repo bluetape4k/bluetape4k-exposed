@@ -3,6 +3,7 @@ package io.bluetape4k.spring.data.exposed.r2dbc.repository.query
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.warn
 import io.bluetape4k.spring.data.exposed.common.repository.query.replaceSqlParameters
+import io.bluetape4k.spring.data.exposed.common.repository.query.requireEntityQueryId
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.EntityIDColumnType
 import org.jetbrains.exposed.v1.core.IColumnType
@@ -307,9 +308,7 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
 
     @Suppress("UNCHECKED_CAST")
     private fun decodeId(rawId: Any?): ID {
-        val value = requireNotNull(rawId) {
-            "@Query method '${queryMethod.name}' returned null entity id"
-        }
+        val value = requireEntityQueryId(rawId, queryMethod.name)
         return try {
             val entityIdColumnType = mapper.table.id.columnType as EntityIDColumnType<ID>
             requireNotNull(entityIdColumnType.idColumn.columnType.valueFromDB(value)) {

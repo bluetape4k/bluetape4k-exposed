@@ -39,6 +39,7 @@ class SqlBindingConformanceTest {
             "\"x\"\"?99\"", "`x``?99`", "/* ?99 /* ?98 */ ?97 */",
             "-- ?99\n", "# ?99\r\n", "${dollar}${dollar}?99${dollar}${dollar}",
             "${dollar}tag${dollar}?99${dollar}tag${dollar}",
+            "payload #> '{?99}'", "payload #>> '{?99}'",
         )
         val values = Array<Any?>(10) { "value-${it + 1}" }
         fragments.forEach { fragment ->

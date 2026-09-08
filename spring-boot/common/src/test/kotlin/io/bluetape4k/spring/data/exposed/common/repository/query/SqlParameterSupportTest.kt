@@ -7,6 +7,19 @@ import org.junit.jupiter.api.Test
 class SqlParameterSupportTest {
 
     @Test
+    fun `PostgreSQL JSON 경로 연산자 뒤의 파라미터를 치환한다`() {
+        listOf("#>", "#>>").forEach { operator ->
+            val sql = "SELECT payload $operator '{name}' FROM users WHERE name = ?1 # ?2\nAND age = ?2"
+            val numbers = mutableListOf<Int>()
+            replaceSqlParameters(sql) { number ->
+                numbers += number
+                "?"
+            } shouldBeEqualTo "SELECT payload $operator '{name}' FROM users WHERE name = ? # ?2\nAND age = ?"
+            numbers shouldBeEqualTo listOf(1, 2)
+        }
+    }
+
+    @Test
     fun `실제 파라미터만 출현 순서대로 치환하고 반복 및 두 자리 번호를 보존한다`() {
         val numbers = mutableListOf<Int>()
         replaceSqlParameters("SELECT ?10, ?2, ?10, ?1") { number ->

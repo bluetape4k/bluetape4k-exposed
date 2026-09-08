@@ -9,12 +9,12 @@ import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.exposed.r2dbc.tests.withTables
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.UserR2dbcRepository
-import io.bluetape4k.junit5.coroutines.runSuspendIO
-import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
 import org.jetbrains.exposed.v1.core.Slf4jSqlDebugLogger
+import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.junit.jupiter.params.ParameterizedTest
@@ -44,6 +44,22 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             } finally {
                 defaultLogger.addLogger(Slf4jSqlDebugLogger)
             }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `JDBC와 같은 ID 결과 계약으로 누락과 NULL을 거부하고 명시적 ID를 읽는다`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, Users) {
+            createUsers()
+            assertFailsWith<IllegalArgumentException> {
+                userRepository.findWithoutIdNative("alice@example.com")
+            }.message shouldBeEqualTo "@Query method 'findWithoutIdNative' must select entity id column 'id'"
+            assertFailsWith<IllegalArgumentException> {
+                userRepository.findWithNullIdNative("alice@example.com")
+            }.message shouldBeEqualTo "@Query method 'findWithNullIdNative' returned null entity id"
+            userRepository.findWithExplicitIdNative("alice@example.com")
+                .single().email shouldBeEqualTo "alice@example.com"
         }
     }
 

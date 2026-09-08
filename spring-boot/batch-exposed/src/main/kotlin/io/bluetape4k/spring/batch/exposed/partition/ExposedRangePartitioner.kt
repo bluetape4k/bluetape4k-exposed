@@ -2,6 +2,7 @@ package io.bluetape4k.spring.batch.exposed.partition
 
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.batch.exposed.support.castToLong
+import io.bluetape4k.support.requirePositiveNumber
 import org.jetbrains.exposed.v1.core.ExpressionWithColumnType
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.Transaction
@@ -13,6 +14,7 @@ import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.springframework.batch.core.partition.Partitioner
 import org.springframework.batch.infrastructure.item.ExecutionContext
+import java.math.BigInteger
 
 /**
  * auto-increment PK/sequence `Column<Long>` 컬럼 기반으로 ID 범위를 N개 파티션으로 분할하는 [Partitioner].
@@ -43,6 +45,11 @@ import org.springframework.batch.infrastructure.item.ExecutionContext
  * @param column 분할 기준 컬럼 (PK, auto-increment). `Column<Long>` 또는 `castTo<Long>()` 결과 모두 허용
  * @param gridSize 파티션 수 (기본값: 8)
  * @param selectMinMax min/max 조회 람다 (커스터마이징 가능)
+ *
+ * `gridSize`는 양수여야 합니다. [partition]의 인자로 0 이하를 전달하면
+ * 생성자에서 설정한 양수를 사용하여 기존 Spring Batch 계약을 유지합니다.
+ * min/max 조회 결과가 유효하지 않으면(`min > max`) [IllegalArgumentException]을
+ * 발생시킵니다.
  */
 class ExposedRangePartitioner(
     private val database: Database? = null,
@@ -56,6 +63,10 @@ class ExposedRangePartitioner(
             .let { it[minExpr] to it[maxExpr] }
     },
 ) : Partitioner {
+
+    init {
+        gridSize.requirePositiveNumber("gridSize")
+    }
 
     companion object : KLogging() {
         /** ExecutionContext에 저장되는 파티션 시작 ID 키 */
@@ -111,13 +122,27 @@ class ExposedRangePartitioner(
             })
         }
 
-        val totalRange = max - min + 1
-        val safeGridSize = minOf(effectiveGridSize.toLong(), totalRange.coerceAtLeast(1L)).toInt()
-        val rangeSize = totalRange / safeGridSize
+        require(min <= max) { "min[$min] must not be greater than max[$max]." }
+
+        // Long 범위 전체는 2^64개이므로 경계 산술은 Long으로 표현할 수 없습니다.
+        val minValue = BigInteger.valueOf(min)
+        val maxValue = BigInteger.valueOf(max)
+        val totalRange = maxValue.subtract(minValue).add(BigInteger.ONE)
+        val safeGridSize = totalRange.min(BigInteger.valueOf(effectiveGridSize.toLong())).intValueExact()
+        val rangeSize = totalRange.divide(BigInteger.valueOf(safeGridSize.toLong()))
 
         return (0 until safeGridSize).associate { i ->
-            val partMinId = min + i * rangeSize
-            val partMaxId = if (i == safeGridSize - 1) max else min + (i + 1) * rangeSize - 1
+            val partMinId = minValue
+                .add(rangeSize.multiply(BigInteger.valueOf(i.toLong())))
+                .longValueExact()
+            val partMaxId = if (i == safeGridSize - 1) {
+                max
+            } else {
+                minValue
+                    .add(rangeSize.multiply(BigInteger.valueOf((i + 1).toLong())))
+                    .subtract(BigInteger.ONE)
+                    .longValueExact()
+            }
 
             "partition-$i" to ExecutionContext().apply {
                 putLong(PARTITION_MIN_ID, partMinId)

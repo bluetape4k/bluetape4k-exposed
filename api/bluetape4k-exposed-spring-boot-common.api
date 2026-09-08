@@ -32,6 +32,10 @@ public abstract interface class io/bluetape4k/spring/data/exposed/common/mapping
 	public abstract fun getColumn ()Lorg/jetbrains/exposed/v1/core/Column;
 }
 
+public final class io/bluetape4k/spring/data/exposed/common/repository/query/EntityQueryResultSupportKt {
+	public static final fun requireEntityQueryId (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+}
+
 public final class io/bluetape4k/spring/data/exposed/common/repository/query/ExposedQueryCreator : org/springframework/data/repository/query/parser/AbstractQueryCreator {
 	public static final field Companion Lio/bluetape4k/spring/data/exposed/common/repository/query/ExposedQueryCreator$Companion;
 	public fun <init> (Lorg/springframework/data/repository/query/parser/PartTree;Lorg/springframework/data/repository/query/ParameterAccessor;Lorg/jetbrains/exposed/v1/core/Table;)V

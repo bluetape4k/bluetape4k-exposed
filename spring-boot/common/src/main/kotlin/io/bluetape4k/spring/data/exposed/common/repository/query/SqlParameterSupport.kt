@@ -31,7 +31,7 @@ fun replaceSqlParameters(sql: String, replace: (Int) -> String): String = buildS
 
 private fun String.protectedRegionEnd(index: Int): Int? = when (val char = this[index]) {
     '\'', '"', '`' -> quotedEnd(index, char)
-    '#' -> lineCommentEnd(index)
+    '#' -> if (getOrNull(index + 1) == '>') null else lineCommentEnd(index)
     '$' -> dollarQuotedEnd(index)
     else -> when {
         startsWith("--", index) -> lineCommentEnd(index)

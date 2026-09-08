@@ -552,6 +552,12 @@ Unsupported patterns:
 
 ### @Query Placeholders
 
+Entity queries must expose exactly one result column with the mapped ID name
+(case-insensitive), including custom ID names. `SELECT *` and explicit IDs at
+any position are supported; an alias must retain the mapped ID name. Missing,
+ambiguous, NULL, or incompatible IDs fail instead of falling back to the first
+column. Missing ID labels are rejected even for empty results.
+
 - `?1`, `?2`, ... : Method parameters by position (1-indexed)
 - Repeated placeholders supported: `?1 OR ?1`
 - Only SQL code is bound; quoted strings/identifiers, comments, and PostgreSQL dollar-quoted strings retain literal `?N` text.

@@ -2,6 +2,7 @@ package io.bluetape4k.spring.data.exposed.jdbc.repository.query
 
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.common.repository.query.replaceSqlParameters
+import io.bluetape4k.spring.data.exposed.common.repository.query.requireEntityQueryId
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedEntityInformation
 import org.jetbrains.exposed.v1.core.ColumnType
 import org.jetbrains.exposed.v1.core.InternalApi
@@ -18,7 +19,9 @@ import java.sql.ResultSet
  * [@Query][io.bluetape4k.spring.data.exposed.annotation.Query] 어노테이션으로 지정한 raw SQL을 실행합니다.
  * 위치 기반 파라미터(?1, ?2, ...)를 Prepared Statement 바인딩으로 안전하게 처리합니다.
  *
- * 결과 매핑: SELECT id 컬럼에서 ID를 읽어 EntityClass.findById로 로드합니다.
+ * 결과는 매핑된 ID 컬럼명과 같은 결과 라벨에서 ID를 읽어 다시 로드합니다.
+ * 라벨의 대소문자는 무시하지만 다른 이름의 alias나 첫 컬럼 대체는 허용하지 않습니다.
+ * ID 누락과 NULL은 엔티티 조회 전에 거부합니다.
  */
 class DeclaredExposedQuery<E: Entity<ID>, ID: Any>(
     private val queryMethod: ExposedQueryMethod,
@@ -46,10 +49,10 @@ class DeclaredExposedQuery<E: Entity<ID>, ID: Any>(
         tx.flushCache()
 
         return tx.exec(boundSql.sql, boundSql.args) { rs ->
+            val idColumnIndex = findIdColumn(rs)
             val results = mutableListOf<E>()
             while (rs.next()) {
-                // id 컬럼에서 값을 읽어 EntityClass로 로드
-                val idVal = readIdValue(rs) ?: continue
+                val idVal = requireEntityQueryId(rs.getObject(idColumnIndex), queryMethod.name)
                 val normalizedId = coerceIdValue(idVal)
                 entityClass.findById(normalizedId)?.let { results.add(it) }
             }
@@ -88,10 +91,14 @@ class DeclaredExposedQuery<E: Entity<ID>, ID: Any>(
         return columnType to normalizedValue
     }
 
-    private fun readIdValue(rs: ResultSet): Any? {
+    private fun findIdColumn(rs: ResultSet): Int {
         val idColumnName = entityInformation.table.id.name
-        val byName = runCatching { rs.getObject(idColumnName) }.getOrNull()
-        return byName ?: rs.getObject(1)
+        val metadata = rs.metaData
+        return (1..metadata.columnCount).singleOrNull {
+            metadata.getColumnLabel(it).equals(idColumnName, ignoreCase = true)
+        } ?: throw IllegalArgumentException(
+            "@Query method '${queryMethod.name}' must select entity id column '$idColumnName'"
+        )
     }
 
     @Suppress("UNCHECKED_CAST")
