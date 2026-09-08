@@ -366,6 +366,7 @@ class BigQueryContext(
 
         var schema = initial.schema
         val jobId = initial.jobReference?.jobId
+        val jobLocation = initial.jobReference?.location ?: options.location
         var pageToken = initial.pageToken
         var jobComplete = initial.jobComplete ?: true
 
@@ -384,10 +385,7 @@ class BigQueryContext(
             currentCoroutineContext().ensureActive()
             checkNotNull(jobId) { "jobReference가 없는 상태에서 추가 페이지를 요청할 수 없습니다." }
             val page = withContext(dispatcher) {
-                bigquery.jobs().getQueryResults(projectId, jobId)
-                    .apply { if (pageToken != null) setPageToken(pageToken) }
-                    .setTimeoutMs(DEFAULT_QUERY_TIMEOUT_MS)
-                    .execute()
+                newQueryResultsRequest(jobId, jobLocation, pageToken).execute()
             }
 
             // 추가 페이지 응답에도 errors 필드가 포함될 수 있다.
@@ -415,6 +413,7 @@ class BigQueryContext(
         initial.checkErrors(sql)
 
         val jobId = initial.jobReference?.jobId
+        val jobLocation = initial.jobReference?.location ?: options.location
         val allRows = mutableListOf<TableRow>()
         allRows.addAll(initial.rows ?: emptyList())
 
@@ -424,10 +423,7 @@ class BigQueryContext(
 
         while (!jobComplete || pageToken != null) {
             checkNotNull(jobId) { "jobReference가 없는 상태에서 추가 페이지를 요청할 수 없습니다." }
-            val page = bigquery.jobs().getQueryResults(projectId, jobId)
-                .apply { if (pageToken != null) setPageToken(pageToken) }
-                .setTimeoutMs(DEFAULT_QUERY_TIMEOUT_MS)
-                .execute()
+            val page = newQueryResultsRequest(jobId, jobLocation, pageToken).execute()
 
             // collectAllRows(동기 버전)에서도 페이지 단위 오류를 동일하게 처리한다.
             // RuntimeException 대신 BigQueryQueryException으로 던져 호출자가 일관성 있게 catch할 수 있게 한다.
@@ -443,6 +439,20 @@ class BigQueryContext(
 
         return schema to allRows
     }
+
+    /**
+     * 쿼리 작업의 실제 위치를 보존한 결과 페이지 요청을 생성합니다.
+     * BigQuery 응답의 `jobReference.location`을 우선하고, 응답에 없으면 쿼리 옵션을 사용합니다.
+     */
+    private fun newQueryResultsRequest(
+        jobId: String,
+        jobLocation: String?,
+        pageToken: String?,
+    ): Bigquery.Jobs.GetQueryResults =
+        bigquery.jobs().getQueryResults(projectId, jobId).apply {
+            jobLocation?.let { setLocation(it) }
+            pageToken?.let { setPageToken(it) }
+        }.setTimeoutMs(DEFAULT_QUERY_TIMEOUT_MS)
 
     // QueryResponse.errors 는 최초 쿼리 응답(runRawQuery)에서 발생한 오류를 담는다.
     // SQL과 서버 오류 message는 리터럴을 포함할 수 있으므로 예외에 넣지 않는다.
