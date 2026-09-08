@@ -1,6 +1,6 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository
 
-import io.bluetape4k.spring.data.exposed.jdbc.annotation.Query
+import io.bluetape4k.spring.data.exposed.common.annotation.Query
 import io.bluetape4k.spring.data.exposed.jdbc.domain.USERS_TABLE_NAME
 import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
 
@@ -52,6 +52,9 @@ interface UserJdbcRepository: ExposedJdbcRepository<UserEntity, Long> {
 
     @Query("SELECT * FROM $USERS_TABLE_NAME WHERE email = ?1")
     fun findByEmailNative(email: String): List<UserEntity>
+
+    @Query("SELECT *, '?2' AS marker FROM $USERS_TABLE_NAME WHERE email = ?1 /* ignored ?3 */ -- ignored ?4")
+    fun findWithQuotedMarkersNative(email: String): List<UserEntity>
 
     @Query("SELECT CAST(age AS BIGINT) FROM $USERS_TABLE_NAME WHERE email = ?1")
     fun findWithoutIdNative(email: String): List<UserEntity>

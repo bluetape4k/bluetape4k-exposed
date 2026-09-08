@@ -65,6 +65,9 @@ interface UserR2dbcRepository: ExposedR2dbcQueryByExampleRepository<User, Long> 
     @Query("SELECT * FROM $USERS_TABLE_NAME WHERE email = ?1")
     suspend fun findByEmailNative(email: String): List<User>
 
+    @Query("SELECT *, '?2' AS marker FROM $USERS_TABLE_NAME WHERE email = ?1 /* ignored ?3 */ -- ignored ?4")
+    suspend fun findWithQuotedMarkersNative(email: String): List<User>
+
     @Query("SELECT age FROM $USERS_TABLE_NAME WHERE email = ?1")
     suspend fun findWithoutIdNative(email: String): List<User>
 

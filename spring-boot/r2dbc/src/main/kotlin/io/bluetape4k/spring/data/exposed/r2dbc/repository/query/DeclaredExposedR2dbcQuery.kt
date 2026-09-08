@@ -2,6 +2,7 @@ package io.bluetape4k.spring.data.exposed.r2dbc.repository.query
 
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.warn
+import io.bluetape4k.spring.data.exposed.common.repository.query.replaceSqlParameters
 import io.bluetape4k.spring.data.exposed.common.repository.query.requireEntityQueryId
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.EntityIDColumnType
@@ -39,7 +40,6 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
 
     companion object: KLoggingChannel()
 
-    private val positionalPlaceholderRegex = Regex("\\?(\\d+)")
     private val selectModifierRegex = Regex("(?i)^\\s*(?:DISTINCT|ALL)\\s+")
 
     private val rawSql: String = queryMethod.getAnnotatedQuery()
@@ -329,10 +329,10 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
 
     private fun bindParameters(sql: String, parameters: Array<out Any?>): BoundSql {
         val args = mutableListOf<Pair<IColumnType<*>, Any?>>()
-        val normalizedSql = positionalPlaceholderRegex.replace(sql) { match ->
-            val idx = match.groupValues[1].toInt() - 1
+        val normalizedSql = replaceSqlParameters(sql) { number ->
+            val idx = number - 1
             require(idx in parameters.indices) {
-                "Query placeholder index out of bounds: ${match.value} (param count: ${parameters.size})"
+                "Query placeholder index out of bounds: ?$number (param count: ${parameters.size})"
             }
             // Duplicate repeated placeholders in args because positional binding needs
             // one independent argument for each question-mark slot.

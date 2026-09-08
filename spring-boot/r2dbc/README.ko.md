@@ -156,6 +156,9 @@ interface UserRepository : ExposedR2dbcRepository<User, Long> {
 ```
 
 파라미터는 prepared statement 플레이스홀더로 바인딩되므로 SQL injection이 방지됩니다.
+SQL 코드 영역만 바인딩하며 문자열·인용 식별자·주석·PostgreSQL dollar-quoted 문자열 안의 `?N`은 보존합니다. 반복 파라미터는 출현 순서대로 바인딩됩니다.
+
+Exposed 1.5.0 디버그 SQL logger의 별도 인자 확장기는 SQL 주석을 인식하지 않습니다. 주석의 `?` 때문에 실행 후 로깅에서 실패할 수 있으며, 이 바인더는 애플리케이션의 logger 설정을 변경하지 않습니다.
 
 raw SQL은 엔티티 ID 컬럼을 매핑된 컬럼명으로 조회해야 합니다. 엔티티는 Exposed로 다시
 로드한 뒤 SQL이 반환한 ID 순서대로 정렬하므로 `ORDER BY`, `LIMIT`, JOIN 쿼리의 정렬 순서가 유지됩니다.

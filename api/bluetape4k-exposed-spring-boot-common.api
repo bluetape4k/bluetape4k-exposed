@@ -59,6 +59,10 @@ public final class io/bluetape4k/spring/data/exposed/common/repository/query/Par
 	public final fun of (Lorg/springframework/data/repository/query/Parameters;[Ljava/lang/Object;)Lio/bluetape4k/spring/data/exposed/common/repository/query/ParameterMetadataProvider;
 }
 
+public final class io/bluetape4k/spring/data/exposed/common/repository/query/SqlParameterSupportKt {
+	public static final fun replaceSqlParameters (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/lang/String;
+}
+
 public final class io/bluetape4k/spring/data/exposed/common/repository/support/ExposedSortSupportKt {
 	public static final fun toExposedOrderBy (Lorg/springframework/data/domain/Sort;Lorg/jetbrains/exposed/v1/core/Table;)[Lkotlin/Pair;
 }

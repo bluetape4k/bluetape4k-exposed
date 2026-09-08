@@ -9,10 +9,11 @@ import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.exposed.r2dbc.tests.withTables
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.UserR2dbcRepository
-import io.bluetape4k.junit5.coroutines.runSuspendIO
+import org.jetbrains.exposed.v1.core.Slf4jSqlDebugLogger
 import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
@@ -29,6 +30,22 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
 
     @Autowired
     private lateinit var userRepository: UserR2dbcRepository
+
+    @ParameterizedTest
+    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    fun `@Query native - 문자열과 주석의 placeholder는 바인딩하지 않는다`(testDB: TestDB) = runSuspendIO {
+        withTables(testDB, Users) {
+            createUsers()
+            // Exposed 1.5.0 expandArgs의 주석 해석 결함과 실제 바인딩 검증을 분리합니다.
+            defaultLogger.removeLogger(Slf4jSqlDebugLogger)
+            try {
+                userRepository.findWithQuotedMarkersNative("alice@example.com")
+                    .single().email shouldBeEqualTo "alice@example.com"
+            } finally {
+                defaultLogger.addLogger(Slf4jSqlDebugLogger)
+            }
+        }
+    }
 
     @ParameterizedTest
     @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
