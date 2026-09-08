@@ -38,6 +38,8 @@ for VirtualThread parallel execution, and Spring Boot Auto-Configuration.
 - **`ExposedRangePartitioner`** — Divides `[minId, maxId]` range into N partitions
   - Reads `MIN(id)` and `MAX(id)` from the table
   - Stores `minId` / `maxId` per partition in `ExecutionContext`
+  - Uses arbitrary-precision range arithmetic so the complete `Long` domain remains partitionable
+  - Rejects a non-positive constructor `gridSize`; a non-positive `partition(gridSize)` argument falls back to the configured grid size
 
 - **`ExposedBatchAutoConfiguration`** — Spring Boot Auto-Configuration
   - Registers `batchPartitionTaskExecutor` (configurable `TaskExecutor`)
