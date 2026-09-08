@@ -26,7 +26,8 @@ repository 경로를 오염시키지 않게 되었습니다. 이 수정은 #839/
 
 - 의도적으로 기존 `withTables` 구조에서 RED를 확인: H2/PostgreSQL 모두 6개
   worker가 동일한 `R2dbcTransaction`을 상속.
-- 수정 후 대상 테스트 H2/PostgreSQL 통과.
+- 수정 후 대상 테스트 H2/PostgreSQL 통과. barrier가 여섯 worker의 도달을
+  bounded하게 맞추고 `peakWorkers == 6`을 확인해 실제 동시 진입을 고정한다.
 - 대상 테스트 10회 순차 실행: 9회 테스트 PASS, 1회는 테스트 전 Dokka plugin
   초기화 오류(`kotlinx/serialization/StringFormat`)로 실패했고 동일 명령 재실행은
   PASS. `prepared statement` 오류는 관찰되지 않음.

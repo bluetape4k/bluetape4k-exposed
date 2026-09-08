@@ -46,6 +46,8 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.data.domain.Sort.Direction
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.minutes
 
@@ -111,6 +113,9 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
         withTopLevelUsers(testDB) {
             val savedIds = ConcurrentLinkedQueue<Long>()
             val workerSize = 6
+            val readyWorkers = CountDownLatch(workerSize)
+            val activeWorkers = AtomicInteger()
+            val peakWorkers = AtomicInteger()
 
             SuspendedJobTester()
                 .workers(workerSize)
@@ -118,22 +123,33 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
                 .addAll(
                     (1..workerSize).map { index ->
                         suspend {
-                            // 경쟁 worker는 fixture의 외부 트랜잭션을 상속하지 않아야
-                            // 각 save 호출이 자체 R2DBC transaction을 사용할 수 있습니다.
-                            TransactionManager.currentOrNull().shouldBeNull()
-                            val user = User(
-                                id = null,
-                                name = "Concurrent-$index",
-                                email = "concurrent-$index@example.com",
-                                age = 20 + index,
-                            )
-                            val saved = userRepository.save(user)
-                            saved.id.shouldNotBeNull().also(savedIds::add)
+                            val active = activeWorkers.incrementAndGet()
+                            peakWorkers.updateAndGet { current -> maxOf(current, active) }
+                            readyWorkers.countDown()
+                            try {
+                                check(readyWorkers.await(5, TimeUnit.SECONDS)) {
+                                    "모든 경쟁 worker가 bounded barrier에 도달하지 못했습니다."
+                                }
+                                // 경쟁 worker는 fixture의 외부 트랜잭션을 상속하지 않아야
+                                // 각 save 호출이 자체 R2DBC transaction을 사용할 수 있습니다.
+                                TransactionManager.currentOrNull().shouldBeNull()
+                                val user = User(
+                                    id = null,
+                                    name = "Concurrent-$index",
+                                    email = "concurrent-$index@example.com",
+                                    age = 20 + index,
+                                )
+                                val saved = userRepository.save(user)
+                                saved.id.shouldNotBeNull().also(savedIds::add)
+                            } finally {
+                                activeWorkers.decrementAndGet()
+                            }
                         }
                     }
                 )
                 .run()
 
+            peakWorkers.get() shouldBeEqualTo workerSize
             savedIds.distinct() shouldHaveSize workerSize
             userRepository.count() shouldBeEqualTo workerSize.toLong()
         }
