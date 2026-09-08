@@ -1,0 +1,63 @@
+{
+  "issue": 857,
+  "question": "How do queryFlow and queryList trade retained memory and first-item latency at 100,000 and 1,000,000 rows?",
+  "sourceRevision": "d5fb9602491ad64811bffcda227e3b2deecf9eea + feat/issue-857-clickhouse-streaming working tree",
+  "sourcePaths": [
+    "exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseExtensions.kt",
+    "exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseQueryStreaming.kt",
+    "benchmark/exposed-benchmark/src/benchmark/kotlin/io/bluetape4k/exposed/benchmark/clickhouse/ClickHouseStreamingProfile.kt",
+    "benchmark/exposed-benchmark/build/reports/clickhouse-profile/",
+    "benchmark/exposed-benchmark/build/reports/benchmarks/clickHouse/"
+  ],
+  "profile": {
+    "runs": 3,
+    "order": "run=1/3 list->flow; run=2 flow->list",
+    "warmupRows": 1000,
+    "warmupIterations": 2,
+    "gcSettleRounds": 5,
+    "metrics": [
+      {
+        "api": "queryFlow",
+        "rows": 100000,
+        "liveHeapDeltaBytes": 2660696,
+        "firstItemNs": 38995875,
+        "elapsedNs": 1238941709,
+        "rawHeapPeakBytes": 44927912,
+        "rssPeakKiB": 325856
+      },
+      {
+        "api": "queryFlow",
+        "rows": 1000000,
+        "liveHeapDeltaBytes": 2705872,
+        "firstItemNs": 37752500,
+        "elapsedNs": 7693465084,
+        "rawHeapPeakBytes": 159776408,
+        "rssPeakKiB": 379472
+      },
+      {
+        "api": "queryList",
+        "rows": 100000,
+        "liveHeapDeltaBytes": 3944736,
+        "firstItemNs": 80504167,
+        "elapsedNs": 110389042,
+        "rawHeapPeakBytes": 82472408,
+        "rssPeakKiB": 326896
+      },
+      {
+        "api": "queryList",
+        "rows": 1000000,
+        "liveHeapDeltaBytes": 29148136,
+        "firstItemNs": 457817209,
+        "elapsedNs": 516974917,
+        "rawHeapPeakBytes": 261918432,
+        "rssPeakKiB": 511312
+      }
+    ]
+  },
+  "jmh": [
+    {"api": "queryList", "rows": 100000, "method": "collected", "scoreOpsPerSecond": 76.55610756648186, "errorOpsPerSecond": 42.27607662644598},
+    {"api": "queryList", "rows": 1000000, "method": "collected", "scoreOpsPerSecond": 5.581788023142717, "errorOpsPerSecond": 8.88245017111868},
+    {"api": "queryFlow", "rows": 100000, "method": "streamed", "scoreOpsPerSecond": 2.0720916205171447, "errorOpsPerSecond": 3.2110796476498358},
+    {"api": "queryFlow", "rows": 1000000, "method": "streamed", "scoreOpsPerSecond": 0.14660998753441384, "errorOpsPerSecond": 1.117664513508461}
+  ]
+}

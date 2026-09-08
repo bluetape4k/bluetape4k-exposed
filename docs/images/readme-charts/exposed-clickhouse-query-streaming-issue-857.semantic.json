@@ -1,0 +1,29 @@
+{
+  "kind": "chart",
+  "source": {
+    "question": "같은 ClickHouse system.numbers 조회에서 queryList와 queryFlow의 retained memory 및 첫 detached 항목 지연 차이는 어떻게 보이는가?",
+    "revision": "d5fb9602491ad64811bffcda227e3b2deecf9eea + feat/issue-857-clickhouse-streaming working tree",
+    "paths": [
+      "docs/benchmarks/exposed-benchmark-2026-09-09-issue-857/summary.json",
+      "docs/benchmarks/exposed-benchmark-2026-09-09-issue-857/render_chart.py",
+      "benchmark/exposed-benchmark/src/benchmark/kotlin/io/bluetape4k/exposed/benchmark/clickhouse/ClickHouseStreamingProfile.kt",
+      "exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseQueryStreaming.kt"
+    ]
+  },
+  "nodes": [
+    {"id": "flow-memory-100k", "label": "queryFlow / 100,000 rows / 2,660,696 B", "source": "summary.json:profile.metrics"},
+    {"id": "flow-memory-1m", "label": "queryFlow / 1,000,000 rows / 2,705,872 B", "source": "summary.json:profile.metrics"},
+    {"id": "list-memory-100k", "label": "queryList / 100,000 rows / 3,944,736 B", "source": "summary.json:profile.metrics"},
+    {"id": "list-memory-1m", "label": "queryList / 1,000,000 rows / 29,148,136 B", "source": "summary.json:profile.metrics"},
+    {"id": "flow-latency-100k", "label": "queryFlow / 100,000 rows / 38.995875 ms", "source": "summary.json:profile.metrics"},
+    {"id": "flow-latency-1m", "label": "queryFlow / 1,000,000 rows / 37.7525 ms", "source": "summary.json:profile.metrics"},
+    {"id": "list-latency-100k", "label": "queryList / 100,000 rows / 80.504167 ms", "source": "summary.json:profile.metrics"},
+    {"id": "list-latency-1m", "label": "queryList / 1,000,000 rows / 457.817209 ms", "source": "summary.json:profile.metrics"}
+  ],
+  "edges": [],
+  "behavior": {"branches": 0, "loops": 0},
+  "repairs": [
+    {"target": "metric-panels", "reason": "live heap과 first-item latency를 서로 다른 단위와 축의 panel로 분리해 오해를 막음", "touches": 1},
+    {"target": "row-count-groups", "reason": "100,000행과 1,000,000행을 같은 panel 안에서 API별로 묶어 10배 증가율을 직접 비교함", "touches": 1}
+  ]
+}

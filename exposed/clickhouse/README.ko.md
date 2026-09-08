@@ -16,7 +16,7 @@ ClickHouse JDBC를 위한 Kotlin/Exposed 다이얼렉트입니다. Exposed의 �
 - **풍부한 컬럼 타입** — `String`, `FixedString(N)`, `Int8`–`Int64`, `UInt8`–`UInt64`, `Float32/64`, `DateTime64`, `Date32`, `LowCardinality(T)`, `Array(T)`, `Nullable(T)`
 - **날짜 함수** — `toYYYYMM()`, `dateDiff(unit, start, end)`, `toStartOfInterval()`
 - **집계 함수** — `argMax()`, `argMin()`, `quantile(level)()`, `uniq()`, `uniqExact()`
-- **코루틴 헬퍼** — `suspendTransaction {}`은 블로킹 Exposed 작업을 IO 디스패처에서 실행하고, `queryFlow {}`는 트랜잭션 안에서 결과를 먼저 materialize한 뒤 `Flow<T>`로 emit합니다.
+- **코루틴 헬퍼** — `suspendTransaction {}`은 호출자가 선택한 dispatcher에서 blocking JDBC를 실행하고, `queryList {}`는 전체 결과를 수집하며, `queryFlow(query = ..., mapper = ...)`는 변환한 행을 점진적으로 전달합니다. 기존 `queryFlow {}`의 전체 수집 동작은 유지합니다.
 
 ## Table 옵션 지원 정책
 
@@ -86,7 +86,7 @@ transaction(database) {
     }
 }
 
-// 5. 코루틴 쿼리 (논블로킹)
+// 5. 코루틴 쿼리 (IO 디스패처에서 블로킹 JDBC 실행)
 val results = suspendTransaction(database) {
     EventsTable
         .select(EventsTable.userId, EventsTable.value.sum())
@@ -94,6 +94,26 @@ val results = suspendTransaction(database) {
         .toList()
 }
 ```
+
+## List와 Flow 선택
+
+```kotlin
+val values = queryList(database) {
+    EventsTable.selectAll().limit(100).map { it[EventsTable.value] }
+}
+queryFlow(database,
+    query = { EventsTable.selectAll().limit(100_000) },
+    mapper = { it[EventsTable.value] },
+).take(10).collect { value -> process(value) }
+```
+
+`queryList`는 트랜잭션 안에서 전체 수집하며 결과 크기에 비례하는 메모리를 사용합니다. 기존 `suspendTransaction`의 참여·재시도 정책을 따릅니다. 기존 `queryFlow(database) { iterable }`는 첫 방출 전에 전체 수집하는 동작을 유지하며 deprecated 처리하지 않습니다.
+
+새 overload는 수집할 때마다 독립 트랜잭션·연결·Query를 생성합니다. 외부 트랜잭션과 연결 지역 tenant/보안 상태를 상속하지 않습니다. 권한 조건을 쿼리에 명시하고 적절한 접근 권한의 Database를 전달하세요. mapper는 짧게 실행하며 추가 SQL을 실행하지 않고, 지연 DAO나 자원 의존 값 대신 트랜잭션과 무관한 값을 반환해야 합니다. 변경 가능한 Query를 여러 수집에서 공유하지 마세요.
+
+생산자는 소비 중인 항목 외에 전달 대기 중인 항목 하나만 유지합니다. 드라이버 버퍼와 downstream `buffer()`는 이 상한 밖입니다. 헬퍼는 쿼리를 재시도하거나 행을 재전송하지 않으며, 드라이버 요청 재시도는 별도 설정입니다. 완료·실패·취소는 내부 자원 정리를 기다립니다. 취소가 블로킹 JDBC를 즉시 중단하지 않으므로 호출자가 유한한 연결 획득·소켓·조회 timeout을 설정해야 합니다. Database·풀·디스패처는 호출자 소유이며 헬퍼가 닫지 않습니다. ClickHouse DML 원자성은 보장하지 않습니다.
+
+헬퍼는 수명 관련 이벤트만 기록하며 SQL·바인딩·행·예외 내용은 기록하지 않습니다. Exposed와 드라이버 로그 정책은 별개입니다. 전체 결과를 독립 값으로 한 번에 받아야 하거나 연결 점유를 짧게 유지하려면 페이지 조회 또는 `queryList`를 선택하세요.
 
 ## 컬럼 타입
 

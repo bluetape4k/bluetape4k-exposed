@@ -11,7 +11,61 @@ Exposed JDBC, R2DBC, custom ID table, cache 전략을 독립적으로 실행하�
 | Custom ID tables | `./gradlew :benchmark-exposed-benchmark:idTablesBenchmark` | `UUIDTable`, `TimebasedUUIDTable`, `UlidTable`, Base62 UUIDv7, Snowflake, KSUID, KSUID millis 대량 insert/select 처리량 |
 | Local and near cache | `./gradlew :benchmark-exposed-benchmark:cacheBenchmark` | Caffeine hit, near-cache hit, read-through miss 처리량 |
 | Redis cache clients | `./gradlew :benchmark-exposed-benchmark:redisCacheBenchmark -Pbenchmark.parameters.redisUri=redis://127.0.0.1:6379` | Lettuce와 Redisson remote cache get 처리량 |
+| ClickHouse query collection | `./gradlew :benchmark-exposed-benchmark:clickHouseBenchmark` | 100,000/1,000,000행에서 materialized `queryList`와 매핑된 `queryFlow`의 JMH 처리량 |
+| ClickHouse memory profile | `./gradlew :benchmark-exposed-benchmark:profileClickHouseStreaming -PprofileApi=flow -PprofileRows=100000 -PprofileRun=1` | fresh JVM의 첫 항목 지연, 전체 시간, live heap, RSS, buffer pool, JFR 근거 |
 | Smoke | `./gradlew :benchmark-exposed-benchmark:smokeBenchmark` | Redis를 제외한 짧은 H2 기반 검증 실행 |
+
+### Issue #857: ClickHouse 전체 수집과 스트리밍 비교
+
+JMH 비교는 두 API에서 같은 `system.numbers` 쿼리와 detached `Long` 매핑을
+사용합니다. profile task는 API/행 수/run 조합마다 fresh JVM을 하나씩 실행합니다.
+Docker 환경에서 12개 조합을 순차 실행하고 JSON, CSV, JFR 원본을
+`build/reports/clickhouse-profile/`에 보관합니다.
+
+```bash
+./gradlew :benchmark-exposed-benchmark:clickHouseBenchmark \
+  --no-build-cache --no-configuration-cache --no-parallel --max-workers=1 --console=plain
+./gradlew :benchmark-exposed-benchmark:profileClickHouseStreaming \
+  -PprofileApi=flow -PprofileRows=100000 -PprofileRun=1 \
+  --no-build-cache --no-configuration-cache --no-parallel --max-workers=1 --console=plain
+```
+
+확인한 JMH 실행은 메서드마다 warmup 1회와 1초 iteration 3회를 사용했습니다.
+수치는 ops/s이며 JMH error 추정치를 함께 표시합니다.
+
+| API | 행 수 | 점수 |
+|---|---:|---:|
+| `queryList` (`collected`) | 100,000 | 76.556 ± 42.276 |
+| `queryList` (`collected`) | 1,000,000 | 5.582 ± 8.882 |
+| `queryFlow` (`streamed`) | 100,000 | 2.072 ± 3.211 |
+| `queryFlow` (`streamed`) | 1,000,000 | 0.147 ± 1.118 |
+
+![Issue #857 ClickHouse queryList와 queryFlow 메모리·지연 비교](../../docs/images/readme-charts/exposed-clickhouse-query-streaming-issue-857.ko.png)
+
+이 source-backed chart는 live heap과 첫 항목 지연을 별도 panel로 나누어
+단위와 낮을수록 좋은 방향을 명확히 보여줍니다. 원시 summary, JMH 표와 분석은
+[`Issue #857 evidence`](../../docs/benchmarks/exposed-benchmark-2026-09-09-issue-857/README.ko.md)에서 확인할 수 있습니다.
+
+스트리밍 경로는 rendezvous backpressure와 행 단위 매핑을 의도적으로 적용하므로,
+이 결과는 처리량과 메모리 사이의 trade-off를 보여줄 뿐 스트리밍이 더 빠르다는
+주장이 아닙니다. 계측하지 않은 JMH 수치를 forced-GC profile과 합쳐 latency SLO로
+해석하지 않습니다.
+
+최종 3회 profile 중앙값은 다음과 같습니다.
+
+| API | 행 수 | live heap 증가 | 1m/100k 비율 | 첫 항목 | 전체 시간 |
+|---|---:|---:|---:|---:|---:|
+| `queryFlow` | 100,000 | 2,660,696 B | — | 39.0 ms | 1.239 s |
+| `queryFlow` | 1,000,000 | 2,705,872 B | **1.02x** | 37.8 ms | 7.693 s |
+| `queryList` | 100,000 | 3,944,736 B | — | 80.5 ms | 110 ms |
+| `queryList` | 1,000,000 | 29,148,136 B | **7.39x** | 457.8 ms | 517 ms |
+
+profile은 1,000행 bounded warmup 2회, bounded GC settle 5회, forced-GC checkpoint를
+사용합니다. 따라서 이전의 행 수 의존 warmup 기준선 오염을 제거했습니다. 드라이버
+버퍼, downstream `buffer()` 연산자, test container는 한 개 pending item이라는 API
+계약에 포함되지 않습니다. 애플리케이션 retained memory 상한이 중요하면
+`queryFlow`를 선택하고, detached 전체 materialization이나 행 단위 오버헤드가 더
+중요하면 `queryList` 또는 paging을 선택합니다.
 
 ## 결과
 

@@ -16,7 +16,7 @@ Kotlin/Exposed dialect for ClickHouse JDBC. It keeps Exposed table/query syntax 
 - **Rich Column Types** — `String`, `FixedString(N)`, `Int8`–`Int64`, `UInt8`–`UInt64`, `Float32/64`, `DateTime64`, `Date32`, `LowCardinality(T)`, `Array(T)`, `Nullable(T)`
 - **Date Functions** — `toYYYYMM()`, `dateDiff(unit, start, end)`, `toStartOfInterval()`
 - **Aggregate Functions** — `argMax()`, `argMin()`, `quantile(level)()`, `uniq()`, `uniqExact()`
-- **Coroutine Helpers** — `suspendTransaction {}` runs blocking Exposed work on an IO dispatcher; `queryFlow {}` materializes results inside the transaction and then emits them as `Flow<T>`
+- **Coroutine Helpers** — `suspendTransaction {}` runs blocking JDBC work on a caller-selected dispatcher; `queryList {}` collects all results; `queryFlow(query = ..., mapper = ...)` streams mapped rows. The original `queryFlow {}` keeps its materializing behavior.
 
 ## Table option policy
 
@@ -89,7 +89,7 @@ transaction(database) {
     }
 }
 
-// 5. Coroutine query (non-blocking)
+// 5. Coroutine query (blocking JDBC on an IO dispatcher)
 val results = suspendTransaction(database) {
     EventsTable
         .select(EventsTable.userId, EventsTable.value.sum())
@@ -97,6 +97,26 @@ val results = suspendTransaction(database) {
         .toList()
 }
 ```
+
+## Choosing List or Flow
+
+```kotlin
+val values = queryList(database) {
+    EventsTable.selectAll().limit(100).map { it[EventsTable.value] }
+}
+queryFlow(database,
+    query = { EventsTable.selectAll().limit(100_000) },
+    mapper = { it[EventsTable.value] },
+).take(10).collect { value -> process(value) }
+```
+
+`queryList` collects inside the transaction and uses memory proportional to the result. It follows the existing `suspendTransaction` participation/retry policy. The original `queryFlow(database) { iterable }` still collects everything before emitting and is not deprecated.
+
+The new overload is cold: each collection creates an independent transaction, connection and Query. It does not inherit an outer transaction or connection-local tenant/security state. Put authorization predicates in the query and use the caller's appropriately secured Database. The mapper must be short, must not execute extra SQL, and must return detached values rather than lazy DAO/resource-backed values. Never share a mutable Query between collections.
+
+The producer keeps at most one pending mapped item, in addition to the item being consumed. Driver buffers and downstream `buffer()` are outside this bound. No application-level query retry or row replay occurs; driver request retries are a separate configuration. Completion, failure and cancellation wait for internal resource cleanup. Cancellation does not interrupt a blocking JDBC call immediately: callers must configure finite connection-acquisition, socket and query timeouts. The caller owns the Database, pool and dispatcher; the helper never closes them. ClickHouse DML atomicity is not provided.
+
+This helper logs lifecycle-only events, not SQL, bindings, rows or exception payloads. Exposed and driver logs have their own policies. Paging or `queryList` may still be more appropriate when the caller needs detached bulk results or short-lived connections.
 
 ## Column Types
 
