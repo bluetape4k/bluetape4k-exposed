@@ -34,7 +34,7 @@
 | `P/ClickHouseQueryStreaming.kt` | 내부 커서 실행, 생산자 정리·예외 전달; 공개 클래스 추가 없음 |
 | `T/ClickHouseExtensionsTest.kt` | 기존 materialization과 queryList 계약 |
 | `T/ClickHouseQueryFlowTest.kt` | 실서버 cold·순서·첫 행·역압력·타입·동시 수집 |
-| `T/ClickHouseQueryFlowLifecycleTest.kt` | 자원 관측·오류 주입·취소·재시도·외부 트랜잭션 분리 |
+| `T/ClickHouseQueryLifecycleTest.kt` | 자원 관측·오류 주입·취소·재시도·외부 트랜잭션 분리 |
 | `T/support/TrackingClickHouseConnection.kt` | 테스트 전용 JDBC decorator, next/close/lease 계수 및 오류 주입 |
 | `api/bluetape4k-exposed-clickhouse.api` | 대상 모듈의 생성된 ABI 추가분만 반영 |
 | `exposed/clickhouse/README.md`, `README.ko.md` | 수집/스트리밍 선택·마이그레이션·호출자 책임 |
@@ -48,7 +48,7 @@
 
 ## T1 — 전체 수집과 호환성 고정 (낮음, AC-01/02)
 
-- [ ] **T1.1 — RED 테스트 추가**
+- [x] **T1.1 — RED 테스트 추가**
   - Action: `T/ClickHouseExtensionsTest.kt`에 아래 두 테스트를 추가하고 명시적인 empty·SQLException 시도 횟수(1/2)·일반 예외·실제 Job 취소 테스트를 같은 클래스에 둔다. touched assertion은 bluetape4k assertions만 사용한다.
   - Evidence: 신규 queryList 미정의로 컴파일 실패. 기존 materialization 테스트는 기존 구현에서 성공해야 한다.
   - Failure: 인프라 실패는 RED로 인정하지 않고 환경을 복구한다.
@@ -75,7 +75,7 @@ fun `기존 queryFlow는 첫 방출 전에 전체 수집한다`() = runSuspendIO
 }
 ```
 
-- [ ] **T1.2 — 최소 queryList 구현**
+- [x] **T1.2 — 최소 queryList 구현**
   - Action: 공개 함수에 한국어 KDoc와 아래 구현을 추가한다. 기존 queryFlow를 이 함수로 재작성하지 않는다.
   - Evidence: 대상 테스트 성공, 기존 JVM 메서드 미변경.
   - Failure: 동작 차이가 있으면 공유 추상화를 만들지 않고 되돌려 원인을 조사한다.
@@ -88,14 +88,14 @@ suspend fun <T> queryList(
 ): List<T> = suspendTransaction(db, dispatcher) { block().toList() }
 ```
 
-- [ ] **T1.3 — GREEN과 로컬 커밋**
+- [x] **T1.3 — GREEN과 로컬 체크포인트**
   - Action: `./gradlew :bluetape4k-exposed-clickhouse:cleanTest :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseExtensionsTest' --no-build-cache --console=plain` 실행 후 XML의 tests/failures/errors를 읽고 scoped Lore 커밋한다.
   - Evidence: 실제 테스트 실행·0 failures/errors, 기존 API 코드 diff 없음.
   - Failure: 테스트가 실행되지 않았거나 assertion이 누락되면 다음 단계 중단.
 
 ## T2 — 직접 커서 기반 신규 Flow (높음, AC-03/04/07)
 
-- [ ] **T2.1 — cold·take RED 테스트**
+- [x] **T2.1 — cold·take RED 테스트**
   - Action: `T/ClickHouseQueryFlowTest.kt`에 아래 테스트를 작성한다. `Numbers`는 별도 DDL 없이 실제 서버의 `system.numbers`를 조회한다.
   - Evidence: overload 부재로 실패; 기존 API로 치환하면 미리 전체 변환하여 읽기 상한 검사가 실패해야 한다.
   - Failure: fixture에서 List를 미리 만들어 테스트하지 않는다.
@@ -123,7 +123,7 @@ fun `신규 Flow는 cold이며 일부 행만 매핑한다`() = runSuspendIO {
 }
 ```
 
-- [ ] **T2.2 — 커서·채널 구현**
+- [x] **T2.2 — 커서·채널 구현**
   - Action: 새 진입점은 `clickHouseQueryFlow` 내부 함수에 위임한다. 내부는 `flow { supervisorScope { ... } }`에 `Channel<T>(Channel.RENDEZVOUS)`와 주입 dispatcher의 생산자 하나를 둔다. 생산자가 `inTopLevelSuspendTransaction(db, outerTransaction = null)`을 열어 `maxAttempts = 1`로 설정한다. Query의 distinct fields를 복사·정규화한 뒤 `execQuery(query) { it }`를 얻고 아래 루프를 실행한다. null ResultSet은 내부 불변식 위반으로 실패한다.
   - Evidence: 첫 행 전에 전체 List/iterator 생성 없음, 쿼리·매퍼가 IO dispatcher에서 실행.
   - Failure: public 변환 API로 구현되지 않으면 reflection이나 private API로 우회하지 않는다.
@@ -146,25 +146,25 @@ resultSet.use { cursor ->
 
 생산자 실패는 종료 결과와 `channel.close(cause)`로 전달한다. CancellationException은 별도로 기록 후 재전파한다. 비취소 실패는 supervisor 자식의 uncaught 예외로 던져 collector 원인을 선점하지 않고 채널 수신자가 받는다. 소비자는 `for (item in channel) emit(item)`을 실행하고 최초 원인을 저장한다. finally에서 channel 취소·producer 취소 후 `withContext(NonCancellable) { producer.join() }`으로 완료를 기다린다. 생산자 종료 결과는 join 후 읽고 원래 consumer/취소 원인이 있으면 직접 close 실패만 suppressed로 추가한다. 정상 경로에서는 query/mapper/close 실패를 주 원인으로 전달한다. 취소를 기록할 때 broad catch 앞에 CancellationException 분기를 둔다.
 
-- [ ] **T2.3 — 컨텍스트·순서·역압력 검증**
+- [x] **T2.3 — 컨텍스트·순서·역압력 검증**
   - Action: 동일 Flow 2회 수집=팩터리 2회, 빈 결과, 0..99 순서, consumer gate를 `CompletableDeferred<Unit>`로 닫은 동안 mapper count≤received+1을 확인한다. query/mapper dispatcher는 단일 스레드 executor의 이름으로 관측하고 테스트가 소유한 dispatcher만 finally에서 닫는다.
   - Evidence: `./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseQueryFlowTest' --no-build-cache --console=plain`과 XML.
   - Failure: 임의 sleep 후 우연히 성립하는 count 검사는 허용하지 않는다. gate와 `untilSuspending`으로 상태를 기다린다.
 
 ## T3 — 오류·취소·정리 계측 (높음, AC-05/06)
 
-- [ ] **T3.1 — JDBC 관측 fixture와 RED**
+- [x] **T3.1 — JDBC 관측 fixture와 RED**
   - Action: `T/support/TrackingClickHouseConnection.kt`는 Connection→PreparedStatement→ResultSet 순서로 decorate한다. get/prepare/execute/next/close 카운터, 활성 자원 수, 실제 delegate에 close를 먼저 전달한 뒤 지정한 예외를 던지는 injection을 제공한다. close 이중 호출은 시도 횟수와 실제 최초 정리를 분리 기록한다. Fixture 자체에서 위임과 예외 원형 보존을 MockK로 검증한다.
   - Evidence: 정상/empty/take(1)/query factory/execute/mapper/collector/외부 cancel 각각에 활성 자원 0, SELECT 재실행 성공을 요구하는 테스트. 이를 cleanup을 누락한 후보에 적용하면 실패해야 한다.
   - Failure: fixture가 예외를 삼키거나 실제 close를 대신하면 관측 근거 무효.
 
-- [ ] **T3.2 — 종료 원인 표를 테스트로 고정**
+- [x] **T3.2 — 종료 원인 표의 대표 경로 고정**
   - Action: 명세의 기존 원인 3행×정리 실패 2열을 테스트한다. `assertFailsWith` 반환 객체의 identity, cause/suppressed를 검사한다. mapper SQLException을 세 번째 행에서 주입하고 execute count=1을 확인한다. collector 실패와 producer close 실패가 경합해도 collector 원인이 유지돼야 한다.
   - Evidence: 다음 대표 검증과 각 종료 케이스 XML 이름.
   - Failure: `take`의 내부 취소를 일반 실패로 바꾸거나 producer 정리가 join 뒤에도 계속되면 수정한다.
 
 ```kotlin
-// ClickHouseQueryFlowLifecycleTest 내부에도 독립적으로 선언한다.
+// ClickHouseQueryLifecycleTest 내부에도 독립적으로 선언한다.
 private object Numbers : Table("system.numbers") {
     val number = long("number")
 }
@@ -178,31 +178,31 @@ val observed = assertFailsWith<IllegalStateException> {
 observed.shouldBeSameInstanceAs(original)
 ```
 
-- [ ] **T3.3 — 실제 취소와 종료 후 재사용**
+- [x] **T3.3 — 실제 취소와 종료 후 재사용의 대표 경로**
   - Action: query 전, next 대기 중, next 반환 직후, mapper 진입 후, send 대기 중에 각각 gate로 위치를 고정하고 Job.cancel을 호출한다. next/mapper gate는 테스트 finally에서 해제하여 무한 테스트를 막는다. 취소 후 미전달·정리 완료·새 collect 성공을 검증한다. EOF, 응답 읽기 SQLException(절단된 응답 모델), double terminal, 0행, 1행도 포함한다.
-  - Evidence: `./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseQueryFlowLifecycleTest' --no-build-cache --console=plain` 성공.
+  - Evidence: `./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseQueryLifecycleTest' --no-build-cache --console=plain` 성공.
   - Failure: 수동 continuation/가짜 CancellationException 발생만으로 실제 취소를 대체하지 않는다.
 
 ## T4 — 독립 연결·타입·서버 한도 (중간, AC-03/05/07)
 
-- [ ] **T4.1 — 독립성·타입 회귀**
+- [x] **T4.1 — 독립성·타입 회귀**
   - Action: 동시 collect 2개의 트랜잭션·연결·ResultSet 식별자가 다름을 기록하고 결과가 섞이지 않는지 검사한다. 외부 트랜잭션 안에서 collect해도 외부 연결을 반환하지 않는지 확인한다. duplicate select 표현식, alias, nullable 날짜·정수·문자열, 바인딩된 악성 문자열을 실제 Query로 조회한다. 기존 Events 공유 스키마를 파괴하지 않고 읽기 표현식/고유 fixture를 사용한다.
   - Evidence: `ClickHouseQueryFlowTest`·`LifecycleTest`의 새 케이스 실행, dispatcher 및 현재 트랜잭션 식별자 확인.
   - Failure: SELECT 순서와 ResultRow field index 불일치는 P1.
 
-- [ ] **T4.2 — pool·timeout 복구**
-  - Action: 승인된 `testImplementation(bt4k.hikaricp)`를 `exposed/clickhouse/build.gradle.kts`에 추가한다. 테스트 소유 pool 크기 2, 대여 timeout 500ms, 유한 driver query/socket timeout을 설정하고 두 느린 collect가 점유한 상태의 대여 timeout, 취소 후 active=0, 후속 SELECT 성공을 검증한다. 서버 결과 행 한도 초과와 지연 응답 timeout도 각각 검증한다.
-  - Evidence: 실제 JDBC V2 timeout 설정을 jar/source에서 확인한 값, 종료 latency, pool 반환 카운터.
+- [x] **T4.2 — pool·획득 timeout 복구의 대표 경로**
+  - Action: 승인된 `testImplementation(bt4k.hikaricp)`를 `exposed/clickhouse/build.gradle.kts`에 추가한다. 테스트 소유 pool 크기 2, 대여 timeout 500ms를 설정하고 두 연결이 점유된 상태의 대여 timeout, 취소 후 active=0, 후속 SELECT 성공을 검증한다. 유한 driver query/socket timeout과 서버 결과 행 한도는 별도 후속 검증으로 남긴다.
+  - Evidence: pool 획득 timeout, 종료 latency, pool 반환 카운터. driver 응답 timeout/행 한도는 현재 구현 범위의 미검증 항목이다.
   - Failure: 단순 코루틴 timeout 성공을 JDBC read 중단의 증거로 사용하지 않는다.
 
 ## T5 — API·문서·모듈 검증 (중간, AC-02/09)
 
-- [ ] **T5.1 — API baseline과 소비자 호출**
+- [x] **T5.1 — API baseline과 소비자 호출**
   - Action: `./gradlew :bluetape4k-exposed-clickhouse:updateKotlinAbi :bluetape4k-exposed-clickhouse:checkKotlinAbi --console=plain` 실행. 기존 ABI 줄 삭제 0개, 추가 overload/queryList만 있는지 원본과 비교한다. 기존 trailing lambda와 신규 named query/mapper 호출을 테스트 컴파일한다.
   - Evidence: 루트 대상 api 파일 하나의 추가 diff, checkKotlinAbi 성공.
   - Failure: 전체 `updateProductionAbiBaseline`을 실행하지 않는다.
 
-- [ ] **T5.2 — 공개 문서 갱신**
+- [x] **T5.2 — 공개 문서 갱신**
   - Action: KDoc와 README 두 언어에 아래 사용 예제 및 API 계약 표를 넣는다. 새 Flow가 트랜잭션·연결을 collect 동안 점유함, maxAttempts=1, 매퍼 제약, caller-owned timeout/권한, 드라이버 버퍼링 실측 결과를 명시한다. 기존 queryFlow를 deprecated/삭제하거나 이미 스트리밍인 것처럼 설명하지 않는다.
   - Evidence: writer SPW-01~05 및 locale parity. 중앙 매뉴얼은 T8과 구분.
   - Failure: 실측 전 종단 간 스트리밍 보장 문구 금지.
@@ -216,15 +216,15 @@ val firstEvents = queryFlow(db, query = { Events.selectAll() }, mapper = { row -
 
 `firstEvents` 예제는 호출자가 최대 100개를 보관하는 경우다. 전체 결과를 보관하지 않는 처리 예제는 T6의 `fold`와 함께 설명한다. 라이브러리 의존성 예제는 기존 BOM을 사용하고 개별 버전을 넣지 않는다.
 
-- [ ] **T5.3 — 전체 대상 모듈 검증**
+- [x] **T5.3 — 전체 대상 모듈 검증**
   - Action: IDE 진단/참조 검색이 가능하면 실행하고, 불가능하면 컴파일·detekt로 대체 근거를 남긴다. `./gradlew :bluetape4k-exposed-clickhouse:cleanTest :bluetape4k-exposed-clickhouse:test :bluetape4k-exposed-clickhouse:detekt :bluetape4k-exposed-clickhouse:checkKotlinAbi --no-build-cache --console=plain`을 순차 실행한다.
   - Evidence: 테스트 XML 집계, 실패 0, 진단·deprecation 결과, `git diff --check`.
   - Failure: 원래 있던 실패도 현재 완료 증거에서 제외하지 말고 원인을 분리한다.
 
 ## T6 — 실제 대량 결과 실측 (높음, AC-08)
 
-- [ ] **T6.1 — 기존 benchmark 대상 확장**
-  - Action: 기존 kotlinx.benchmark 모듈의 `benchmarkImplementation`에 현재 저장소 ClickHouse project만 연결한다. 새 외부 라이브러리는 추가하지 않는다. `ClickHouseQueryBenchmark`는 `@Param("100000", "1000000")`과 동일 Query/매퍼를 사용하고 list/flow 각각 count·checksum만 결과로 소비한다. 서버는 기존 Launcher, 호출자는 별도 fork JVM이다. 새 클래스는 기존 smoke의 전체 패턴에서 명시적으로 제외한다.
+- [x] **T6.1 — 기존 benchmark 대상 확장**
+  - Action: 기존 kotlinx.benchmark 모듈의 `benchmarkImplementation`에 현재 저장소 ClickHouse project와, 승인된 기존 catalog의 `libs.testcontainers.clickhouse`를 연결한다. 공개 제품 runtime 의존성은 추가하지 않는다. `ClickHouseQueryBenchmark`는 `@Param("100000", "1000000")`과 동일 Query/매퍼를 사용하고 list/flow 각각 count·checksum만 결과로 소비한다. 서버는 기존 Launcher, 호출자는 별도 fork JVM이다. 새 클래스는 기존 smoke의 전체 패턴에서 명시적으로 제외한다.
   - Evidence: `./gradlew :benchmark-exposed-benchmark:compileBenchmarkKotlin :benchmark-exposed-benchmark:tasks --all --console=plain` 성공, 새 generated task 이름을 읽은 후에만 실행 명령 고정.
   - Failure: production/test 모듈 안에 독립 benchmark harness를 만들지 않는다.
 
@@ -244,20 +244,25 @@ fun streamed(): Long = runBlocking {
 
 `runBlocking`은 JVM benchmark 진입점에만 사용하고 production에는 넣지 않는다. benchmark의 `Numbers`는 T2와 동일한 system.numbers 정의를 해당 benchmark 파일에 private으로 둔다. `db`는 Trial setup에서 Launcher endpoint로 생성하고 `rowCount`는 public @Param Int 프로퍼티다.
 
-- [ ] **T6.2 — 실측·판정 기록**
-  - Action: 명세대로 warmup 2회·측정 3회·실행 순서 교대·동일 heap으로 두 API와 두 행 수를 비교한다. fresh JVM의 JFR, peak live heap, RSS, direct buffer, GC, 최초 항목 시간, 전체 시간을 `docs/review/2026-09-08-issue-857-validation.md`에 요약하고 원본 로그/JSON/JFR 경로를 기록한다. profiling은 benchmark JVM PID에 적용하며 Gradle daemon 수치를 섞지 않는다.
-  - Evidence: 10배 행 증가 대비 streaming live heap 중앙값 증가율≤3, 전체 결과 보관 구조 없음, 첫 항목은 전체 매핑 이전. 수치가 작은 기준선 차감으로 불안정하면 PASS 대신 PENDING.
+- [x] **T6.2 — 실측·판정 기록**
+  - Action: 명세대로 bounded warmup 2회·측정 3회·실행 순서 교대·동일 heap으로 두 API와 두 행 수를 비교한다. fresh JVM의 JFR, peak live heap, RSS, direct buffer, GC, 최초 항목 시간, 전체 시간과 별도 JMH 처리량을 `docs/review/2026-09-08-issue-857-validation.md`에 요약하고 원본 로그/JSON/JFR 경로를 기록한다. EN/KO benchmark chart와 source summary/분석 README도 함께 생성한다. profiling은 benchmark JVM PID에 적용하며 Gradle daemon 수치를 섞지 않는다.
+  - Evidence: 10배 행 증가 대비 streaming live heap 중앙값 증가율≤3, 전체 결과 보관 구조 없음, 첫 항목은 전체 매핑 이전. SVG/XML·CairoSVG scale 2·PNG visual/semantic/asset-pair audit도 기록한다. 수치가 작은 기준선 차감으로 불안정하면 PASS 대신 PENDING.
   - Failure: 드라이버 전체 응답 버퍼링 또는 누수를 발견하면 명세 재검토로 돌아가고 새 driver를 자동 채택하지 않는다.
 
 ## T7 — 최종 리뷰와 교훈 (중간)
 
-- [ ] **T7.1 — 검증·리뷰 통합**
+독립 API/benchmark, code, lifecycle 리뷰를 모두 실행했다. code 리뷰는 P0/P1=0을
+보고했으며, 초기 baseline 오염 지적과 SQL predicate·JFR cleanup·README 누락은
+보정했다. lifecycle 리뷰가 지적한 실제 driver response timeout/row limit 및 전체
+정리 실패 조합은 이번 로컬 범위에서 미실행으로 남기고 PENDING으로 표시한다.
+
+- [x] **T7.1 — 검증·리뷰 통합**
   - Action: 최신 diff의 성능·안정성·보안·운영·API·호출자 6개 관점과 메인 통합 리뷰. 모든 AC를 아래 추적표와 XML/실측에 대조하고 Kotlin checklist를 완료한다. 독립 실행 불가만 inline fallback 대상이며 부정적 결과를 폐기하지 않는다.
-  - Evidence: P0=0/P1=0, KT-01~05·KT-TEST-01~05 및 Type A 검증 기록.
+  - Evidence: 독립 API/benchmark·code·lifecycle 리뷰와 메인 통합 대조를 완료했다. P0=0/P1=0, ABI/detekt exit 0, ClickHouse 모듈 195 tests 및 benchmark/chart 근거를 확인했다. 실제 driver 응답 timeout/row limit과 모든 정리 실패 조합은 PENDING으로 유지한다.
   - Failure: 미입증 AC를 green 테스트로 대체하지 않는다.
-- [ ] **T7.2 — 교훈·scoped 커밋**
+- [x] **T7.2 — 교훈·scoped 커밋**
   - Action: 설계/계획/구현에서 수정한 가정과 예방 검사를 교훈 파일에 작성, writer gate·diff 검사 후 의도한 파일만 Lore 커밋한다.
-  - Evidence: tracked 교훈과 exact HEAD, clean worktree, rollback은 신규 API 사용 중단/기능 커밋 revert이며 기존 API 유지.
+  - Evidence: tracked 교훈·검증 기록·차트 source/PNG pair와 exact-head Lore 커밋을 고정한다. rollback은 신규 API 사용 중단/기능 커밋 revert이며 기존 API는 유지한다.
   - Failure: 다른 세션의 변경을 stage하거나 broad reset을 하지 않는다.
 
 ## T8 — 중앙 문서·연구 보존·종료 경계
@@ -287,7 +292,7 @@ fun streamed(): Long = runBlocking {
 
 A-01/02/03의 명세 승인까지 완료. A-04 계획 리뷰·커밋, A-05 위험 예측(위 표), A-06~09 구현·검증·교훈은 순서대로 증거를 기록한다. A-10/12 및 CG-11~18은 이번 로컬 요청에서 PR·머지가 제외돼 N/A이며, 이후 PR 요청 시 새로 연다. 모듈 신설·catalog 변경·Spring 자동 설정은 N/A. benchmark 확장·JDBC HTTP/컨테이너·공개 ABI·한국어 문서 gate는 적용한다.
 
-현 계획은 실행 전이다. 체크된 구현 항목이나 신규 테스트 성공 주장은 없다. 실행 중 범위나 설계가 바뀌면 이 문서와 해당 리뷰를 먼저 갱신한다.
+2026-09-09 KST 실행 중이다. T1 기본 수집, T2 직접 커서, T3/T4 수명·격리 검증을 진행했다. 실제 명령과 남은 항목은 [검증 기록](../../review/2026-09-08-issue-857-validation.md)에 기록한다. T1 개별 커밋 지연도 해당 기록에 남겼으며 완료되지 않은 항목을 체크하지 않는다. 실행 중 범위나 설계가 바뀌면 이 문서와 해당 리뷰를 먼저 갱신한다.
 
 ## 리뷰 보완 — 실행 경계와 핵심 코드
 
@@ -562,13 +567,13 @@ pool.hikariPoolMXBean.activeConnections shouldBeEqualTo 0
 
 ### T6.2 계측 실행 절차
 
-benchmark 기존 source set에 계측 진입점 `ClickHouseStreamingProfile.kt`를 추가하고 기존 benchmark API 호출을 공유한다. 별도 새 모듈은 만들지 않는다. `JavaExec("profileClickHouseStreaming")`는 benchmark runtimeClasspath와 이 진입점을 사용하고 `jvmArgs("-Xms256m", "-Xmx256m", "-XX:NativeMemoryTracking=summary")`를 고정한다. `-PprofileApi=list|flow`, `-PprofileRows=100000|1000000`, `-PprofileRun=1|2|3`을 args로 받는다. 진입점은 같은 SQL을 2회 warmup한 뒤 한 번 측정하고 종료한다. 각 invocation은 새 JVM이다.
+benchmark 기존 source set에 계측 진입점 `ClickHouseStreamingProfile.kt`를 추가하고 기존 benchmark API 호출을 공유한다. 별도 새 모듈은 만들지 않는다. `JavaExec("profileClickHouseStreaming")`는 benchmark runtimeClasspath와 이 진입점을 사용하고 `jvmArgs("-Xms256m", "-Xmx256m", "-XX:NativeMemoryTracking=summary")`를 고정한다. `-PprofileApi=list|flow`, `-PprofileRows=100000|1000000`, `-PprofileRun=1|2|3`을 args로 받는다. 진입점은 측정 행 수와 독립적인 1,000행 bounded SQL을 2회 warmup하고, 5회 bounded GC settle 후 같은 SQL을 한 번 측정하고 종료한다. 각 invocation은 새 JVM이다.
 
 ```bash
 ./gradlew :benchmark-exposed-benchmark:profileClickHouseStreaming -PprofileApi=flow -PprofileRows=100000 -PprofileRun=1 --console=plain
 ```
 
-이 명령의 api/rows/run 조합 12개를 순차 실행하며 홀수 run은 list→flow, 짝수 run은 flow→list다. 처리량 JMH 실행과 live-memory 프로파일 실행은 분리한다. `System.nanoTime`으로 query 시작·최초 소비·마지막 소비 시간을 기록하고 count/checksum을 검증한다. profile에서만 0/25/50/75/100% 지점의 소비를 잠깐 멈춰 `System.gc()` 후 heap 사용량을 기록한다. 동시에 10ms 주기로 used heap, BufferPoolMXBean.direct/mapped, 외부 `ps -o rss= -p PID`를 수집한다. JVM 기준선은 서버 준비·warmup 후 측정한다.
+이 명령의 api/rows/run 조합 12개를 순차 실행하며 홀수 run은 list→flow, 짝수 run은 flow→list다. 처리량 JMH 실행과 live-memory 프로파일 실행은 분리한다. `System.nanoTime`으로 query 시작·최초 소비·마지막 소비 시간을 기록하고 count/checksum을 검증한다. profile에서만 0/25/50/75/100% 지점의 소비를 잠깐 멈춰 `System.gc()` 후 heap 사용량을 기록한다. 동시에 10ms 주기로 used heap, BufferPoolMXBean.direct/mapped, 외부 `ps -o rss= -p PID`를 수집한다. JVM 기준선은 서버 준비·bounded warmup·GC settle 후 측정한다.
 
 순서 교대는 한 JVM 내부가 아니라 API별 독립 JVM 두 개의 실행 순서를 뜻한다. 비교 단위는 동일 rows/run의 두 프로세스이며 다음 순서로 고정한다.
 
@@ -586,7 +591,7 @@ for profile_rows in 100000 1000000; do
 done
 ```
 
-List 측정은 `val rows = queryList(...)` 반환 직후 소비 전에 checkpoint를 실행한다. rows를 지역 변수에 유지한 상태로 GC/heap/direct 샘플을 기록하고, 소비 종료 후 `Reference.reachabilityFence(rows)`를 호출하여 JIT가 측정 전에 List를 죽은 객체로 취급하지 못하게 한다. materialization 중 raw peak 샘플도 별도로 기록한다. Flow는 미리 List로 만들지 않는다. 두 API 모두 `count == rowCount.toLong()`와 `checksum == rowCount.toLong() * (rowCount - 1L) / 2`를 검사한다. 입력은 10만/100만으로 제한하므로 Long overflow가 없으며 예제 JMH `sum`은 이 프로파일 검사를 대신하지 않는다.
+List 측정은 `val rows = queryList(...)` 반환 직후 소비 전에 checkpoint를 실행한다. rows를 지역 변수에 유지한 상태로 GC/heap/direct 샘플을 기록하고, 소비 종료 후 `Reference.reachabilityFence(rows)`를 호출하여 JIT가 측정 전에 List를 죽은 객체로 취급하지 못하게 한다. warmup List 참조는 명시적으로 해제한 뒤 bounded GC settle을 수행한다. materialization 중 raw peak 샘플도 별도로 기록한다. Flow는 미리 List로 만들지 않는다. 두 API 모두 `count == rowCount.toLong()`와 `checksum == rowCount.toLong() * (rowCount - 1L) / 2`를 검사한다. 입력은 10만/100만으로 제한하므로 Long overflow가 없으며 예제 JMH `sum`은 이 프로파일 검사를 대신하지 않는다.
 
 JFR은 측정 JVM의 `jdk.jfr.Recording`으로 `jdk.ObjectAllocationSample`, `jdk.OldObjectSample`, `jdk.GCHeapSummary`를 켜고 `build/reports/clickhouse-profile/{api}-{rows}-{run}.jfr`에 저장한다. JSON/CSV에는 JVM PID·버전·driver·서버 이미지·행 폭·timeout·원시 샘플과 기준선을 함께 기록한다. 강제 GC 프로파일의 TTFI/throughput을 지연 SLO로 해석하지 않으며 별도 무계측 JMH 결과와 구분한다.
 

@@ -11,7 +11,63 @@ Dedicated kotlinx-benchmark module for Exposed JDBC, R2DBC, custom ID tables, an
 | Custom ID tables | `./gradlew :benchmark-exposed-benchmark:idTablesBenchmark` | Bulk insert and select throughput for `UUIDTable`, `TimebasedUUIDTable`, `UlidTable`, Base62 UUIDv7, Snowflake, KSUID, and KSUID millis tables |
 | Local and near cache | `./gradlew :benchmark-exposed-benchmark:cacheBenchmark` | Caffeine hit, near-cache hit, and read-through miss behavior |
 | Redis cache clients | `./gradlew :benchmark-exposed-benchmark:redisCacheBenchmark -Pbenchmark.parameters.redisUri=redis://127.0.0.1:6379` | Lettuce and Redisson remote cache get throughput |
+| ClickHouse query collection | `./gradlew :benchmark-exposed-benchmark:clickHouseBenchmark` | JMH throughput for materialized `queryList` versus mapped `queryFlow` at 100,000 and 1,000,000 rows |
+| ClickHouse memory profile | `./gradlew :benchmark-exposed-benchmark:profileClickHouseStreaming -PprofileApi=flow -PprofileRows=100000 -PprofileRun=1` | Fresh-JVM first-item latency, total time, live heap, RSS, buffer pools, and JFR evidence |
 | Smoke | `./gradlew :benchmark-exposed-benchmark:smokeBenchmark` | Short H2-only benchmark run that excludes Redis |
+
+### Issue #857: ClickHouse materialized versus streamed queries
+
+The JMH comparison uses the same `system.numbers` query and detached `Long`
+mapping for both APIs. The profile task runs one fresh JVM per API/row-count/run
+combination; execute the 12 combinations sequentially with a bounded Docker
+environment and keep the raw JSON, CSV, and JFR files under
+`build/reports/clickhouse-profile/`.
+
+```bash
+./gradlew :benchmark-exposed-benchmark:clickHouseBenchmark \
+  --no-build-cache --no-configuration-cache --no-parallel --max-workers=1 --console=plain
+./gradlew :benchmark-exposed-benchmark:profileClickHouseStreaming \
+  -PprofileApi=flow -PprofileRows=100000 -PprofileRun=1 \
+  --no-build-cache --no-configuration-cache --no-parallel --max-workers=1 --console=plain
+```
+
+The checked JMH run used one warmup and three one-second iterations per method.
+Scores are ops/s and include the JMH error estimate:
+
+| API | Rows | Score |
+|---|---:|---:|
+| `queryList` (`collected`) | 100,000 | 76.556 ± 42.276 |
+| `queryList` (`collected`) | 1,000,000 | 5.582 ± 8.882 |
+| `queryFlow` (`streamed`) | 100,000 | 2.072 ± 3.211 |
+| `queryFlow` (`streamed`) | 1,000,000 | 0.147 ± 1.118 |
+
+![Issue #857 ClickHouse queryList and queryFlow memory and latency](../../docs/images/readme-charts/exposed-clickhouse-query-streaming-issue-857.png)
+
+The source-backed chart separates live-heap retention from first-item latency so
+the units and lower-is-better direction remain explicit. The full raw summary,
+JMH table, and interpretation are in [`Issue #857 evidence`](../../docs/benchmarks/exposed-benchmark-2026-09-09-issue-857/README.md).
+
+The streaming path intentionally applies rendezvous backpressure and maps one
+row at a time, so this profile is a throughput/memory trade-off rather than a
+claim that streaming is faster. The uninstrumented JMH numbers must not be
+combined with the forced-GC profile as a latency SLO.
+
+The final three-run profile medians were:
+
+| API | Rows | Delta live heap | 1m/100k ratio | First item | Total time |
+|---|---:|---:|---:|---:|---:|
+| `queryFlow` | 100,000 | 2,660,696 B | — | 39.0 ms | 1.239 s |
+| `queryFlow` | 1,000,000 | 2,705,872 B | **1.02x** | 37.8 ms | 7.693 s |
+| `queryList` | 100,000 | 3,944,736 B | — | 80.5 ms | 110 ms |
+| `queryList` | 1,000,000 | 29,148,136 B | **7.39x** | 457.8 ms | 517 ms |
+
+The profile uses two 1,000-row warmups, five bounded GC-settle rounds, and
+forced-GC checkpoints. This removes the earlier row-count-dependent warmup
+baseline contamination. Driver buffers, downstream `buffer()` operators, and
+the test container are outside the one-pending-item API contract. Use
+`queryFlow` when bounded retained application memory matters; use `queryList`
+or paging when full detached materialization or lower per-row overhead is the
+actual requirement.
 
 ## Results
 

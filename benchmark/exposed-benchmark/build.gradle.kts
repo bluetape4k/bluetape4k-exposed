@@ -125,9 +125,20 @@ benchmark {
             outputTimeUnit = "s"
             reportFormat = "json"
         }
+        register("clickHouse") {
+            include("io.bluetape4k.exposed.benchmark.clickhouse.ClickHouseQueryBenchmark.*")
+            warmups = 1
+            iterations = 3
+            iterationTime = 1
+            iterationTimeUnit = "s"
+            mode = "thrpt"
+            outputTimeUnit = "s"
+            reportFormat = "json"
+        }
         register("smoke") {
             include("io.bluetape4k.exposed.benchmark.*.*")
             exclude("io.bluetape4k.exposed.benchmark.cache.RedisCacheBenchmark.*")
+            exclude("io.bluetape4k.exposed.benchmark.clickhouse.*")
             warmups = 1
             iterations = 1
             iterationTime = 100
@@ -139,6 +150,19 @@ benchmark {
             param("cacheSize", "1000")
         }
     }
+}
+
+tasks.register<JavaExec>("profileClickHouseStreaming") {
+    dependsOn("benchmarkClasses")
+    classpath = sourceSets["benchmark"].runtimeClasspath
+    mainClass.set("io.bluetape4k.exposed.benchmark.clickhouse.ClickHouseStreamingProfile")
+    jvmArgs("-Xms256m", "-Xmx256m", "-XX:NativeMemoryTracking=summary")
+    args(
+        providers.gradleProperty("profileApi").getOrElse("flow"),
+        providers.gradleProperty("profileRows").getOrElse("100000"),
+        providers.gradleProperty("profileRun").getOrElse("1"),
+        layout.buildDirectory.dir("reports/clickhouse-profile").get().asFile.absolutePath,
+    )
 }
 
 tasks.register<JavaExec>("generateBenchmarkDocs") {
@@ -166,6 +190,7 @@ dependencies {
     add("benchmarkImplementation", bt4k.jmh.core)
 
     add("benchmarkImplementation", project(":bluetape4k-exposed-core"))
+    add("benchmarkImplementation", project(":bluetape4k-exposed-clickhouse"))
     add("benchmarkImplementation", project(":bluetape4k-exposed-dao"))
     add("benchmarkImplementation", project(":bluetape4k-exposed-jdbc"))
     add("benchmarkImplementation", project(":bluetape4k-exposed-r2dbc"))
@@ -195,6 +220,7 @@ dependencies {
     add("benchmarkImplementation", bt4k.h2.v2)
     add("benchmarkImplementation", libs.testcontainers.mysql)
     add("benchmarkImplementation", libs.testcontainers.postgresql)
+    add("benchmarkImplementation", libs.testcontainers.clickhouse)
     add("benchmarkImplementation", bt4k.mysql.connector.j)
     add("benchmarkImplementation", bt4k.postgresql)
     add("benchmarkImplementation", bt4k.hikaricp)

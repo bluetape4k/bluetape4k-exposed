@@ -9,6 +9,7 @@ dependencies {
     api(bt4k.clickhouse.jdbc)
 
     testImplementation(bt4k.bluetape4k.junit5)
+    testImplementation(bt4k.hikaricp)
     testImplementation(bt4k.bluetape4k.testcontainers)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.testcontainers.clickhouse)

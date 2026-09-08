@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1180" viewBox="0 0 1600 1180" role="img" aria-labelledby="title desc">
+<title id="title">ClickHouse queryList | queryFlow comparison</title>
+<desc id="desc">Issue #857 | median of 3 fresh-JVM profiles | 100,000 / 1,000,000 rows; live heap retention and first detached item latency for queryFlow and queryList.</desc>
+<defs>
+  <filter id="panel-shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#020617" flood-opacity="0.35"/></filter>
+  <style>
+    .canvas{fill:#0D1728}
+    .panel{fill:#15243A;stroke:#2E4565;stroke-width:1.8;filter:url(#panel-shadow)}
+    .band{fill:#102A35;stroke:#58D6C0;stroke-width:1.8}
+    .title{font-family:"Architects Daughter";font-size:42px;fill:#F5F8FF;font-weight:700}
+    .subtitle,.panelTitle,.axis,.tick,.value,.row,.legend,.bandTitle,.bandText{font-family:"Comic Mono";fill:#E9F0FF}
+    .subtitle{font-size:17px;fill:#A9B9D4}
+    .panelTitle{font-size:21px;font-weight:700}
+    .axis{font-size:14px;fill:#B8C8E2}
+    .tick{font-size:12px;fill:#9CB0D0}
+    .value{font-size:14px;font-weight:700}
+    .row,.legend{font-size:14px;fill:#C7D6F0}
+    .grid{stroke:#2B405E;stroke-width:1;stroke-dasharray:5 7}
+    .baseline{stroke:#6D83A4;stroke-width:1.5}
+    .bandTitle{font-size:19px;fill:#9BF2E3;font-weight:700}
+    .bandText{font-size:15px;fill:#D9FFF8}
+  </style>
+</defs>
+<rect class="canvas" width="1600" height="1180"/>
+<text class="title" x="70" y="72">ClickHouse queryList | queryFlow comparison</text>
+<text class="subtitle" x="74" y="106">Issue #857 | median of 3 fresh-JVM profiles | 100,000 / 1,000,000 rows</text>
+<rect x="875" y="91" width="20" height="14" rx="4" fill="#58D6C0" stroke="#9BF2E3" stroke-width="1.2"/>
+<text class="legend" x="904" y="103">queryFlow | rendezvous streaming</text>
+<rect x="1185" y="91" width="20" height="14" rx="4" fill="#B68CFF" stroke="#DEC9FF" stroke-width="1.2"/>
+<text class="legend" x="1214" y="103">queryList | full materialization</text>
+<rect class="panel" x="60" y="145" width="1480" height="350" rx="16"/>
+<text class="panelTitle" x="95" y="187">Live heap delta after forced GC (MiB | lower is smaller)</text>
+<line class="grid" x1="310.0" y1="245" x2="310.0" y2="430"/>
+<text class="tick" x="310.0" y="454" text-anchor="middle">0</text>
+<line class="grid" x1="602.5" y1="245" x2="602.5" y2="430"/>
+<text class="tick" x="602.5" y="454" text-anchor="middle">8</text>
+<line class="grid" x1="895.0" y1="245" x2="895.0" y2="430"/>
+<text class="tick" x="895.0" y="454" text-anchor="middle">16</text>
+<line class="grid" x1="1187.5" y1="245" x2="1187.5" y2="430"/>
+<text class="tick" x="1187.5" y="454" text-anchor="middle">24</text>
+<line class="grid" x1="1480.0" y1="245" x2="1480.0" y2="430"/>
+<text class="tick" x="1480.0" y="454" text-anchor="middle">32</text>
+<text class="axis" x="1480" y="187" text-anchor="end">MiB</text>
+<line class="baseline" x1="310" y1="430" x2="1480" y2="430"/>
+<text class="row" x="95" y="278">100,000 rows</text>
+<rect x="310" y="250" width="92.8" height="28" rx="7" fill="#58D6C0" stroke="#9BF2E3" stroke-width="1.4"/>
+<text class="value" x="414.8" y="270" text-anchor="start" fill="#E9F0FF">2.54 MiB</text>
+<rect x="310" y="292" width="137.5" height="28" rx="7" fill="#B68CFF" stroke="#DEC9FF" stroke-width="1.4"/>
+<text class="value" x="459.5" y="312" text-anchor="start" fill="#E9F0FF">3.76 MiB</text>
+<text class="row" x="95" y="378">1,000,000 rows</text>
+<rect x="310" y="350" width="94.4" height="28" rx="7" fill="#58D6C0" stroke="#9BF2E3" stroke-width="1.4"/>
+<text class="value" x="416.4" y="370" text-anchor="start" fill="#E9F0FF">2.58 MiB</text>
+<rect x="310" y="392" width="1016.4" height="28" rx="7" fill="#B68CFF" stroke="#DEC9FF" stroke-width="1.4"/>
+<text class="value" x="1338.4" y="412" text-anchor="start" fill="#E9F0FF">27.80 MiB</text>
+<rect class="panel" x="60" y="555" width="1480" height="350" rx="16"/>
+<text class="panelTitle" x="95" y="597">First detached item latency (ms | lower is faster)</text>
+<line class="grid" x1="310.0" y1="655" x2="310.0" y2="840"/>
+<text class="tick" x="310.0" y="864" text-anchor="middle">0</text>
+<line class="grid" x1="544.0" y1="655" x2="544.0" y2="840"/>
+<text class="tick" x="544.0" y="864" text-anchor="middle">100</text>
+<line class="grid" x1="778.0" y1="655" x2="778.0" y2="840"/>
+<text class="tick" x="778.0" y="864" text-anchor="middle">200</text>
+<line class="grid" x1="1012.0" y1="655" x2="1012.0" y2="840"/>
+<text class="tick" x="1012.0" y="864" text-anchor="middle">300</text>
+<line class="grid" x1="1246.0" y1="655" x2="1246.0" y2="840"/>
+<text class="tick" x="1246.0" y="864" text-anchor="middle">400</text>
+<line class="grid" x1="1480.0" y1="655" x2="1480.0" y2="840"/>
+<text class="tick" x="1480.0" y="864" text-anchor="middle">500</text>
+<text class="axis" x="1480" y="597" text-anchor="end">ms</text>
+<line class="baseline" x1="310" y1="840" x2="1480" y2="840"/>
+<text class="row" x="95" y="688">100,000 rows</text>
+<rect x="310" y="660" width="91.3" height="28" rx="7" fill="#58D6C0" stroke="#9BF2E3" stroke-width="1.4"/>
+<text class="value" x="413.3" y="680" text-anchor="start" fill="#E9F0FF">39.0 ms</text>
+<rect x="310" y="702" width="188.4" height="28" rx="7" fill="#B68CFF" stroke="#DEC9FF" stroke-width="1.4"/>
+<text class="value" x="510.4" y="722" text-anchor="start" fill="#E9F0FF">80.5 ms</text>
+<text class="row" x="95" y="788">1,000,000 rows</text>
+<rect x="310" y="760" width="88.3" height="28" rx="7" fill="#58D6C0" stroke="#9BF2E3" stroke-width="1.4"/>
+<text class="value" x="410.3" y="780" text-anchor="start" fill="#E9F0FF">37.8 ms</text>
+<rect x="310" y="802" width="1071.3" height="28" rx="7" fill="#B68CFF" stroke="#DEC9FF" stroke-width="1.4"/>
+<text class="value" x="1369.3" y="822" text-anchor="end" fill="#0D1728">457.8 ms</text>
+<rect class="band" x="60" y="965" width="1480" height="150" rx="16"/>
+<text class="bandTitle" x="90" y="1003">Reading the result</text>
+<text class="bandText" x="90" y="1040">At 10x the rows, queryFlow live heap grew 1.02x while queryList grew 7.39x.</text>
+<text class="bandText" x="90" y="1075">queryFlow delivered the first detached item before full mapping; JMH throughput remains a separate high-variance table.</text>
+</svg>

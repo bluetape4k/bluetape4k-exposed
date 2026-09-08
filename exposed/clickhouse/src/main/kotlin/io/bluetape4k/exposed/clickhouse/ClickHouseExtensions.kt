@@ -6,9 +6,65 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
+import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
+import org.jetbrains.exposed.v1.jdbc.Query
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+
+/**
+ * 호출 시 조회 결과를 트랜잭션 안에서 모두 수집하여 반환합니다.
+ *
+ * ```kotlin
+ * val names = queryList(db) { Events.selectAll().limit(100).map { it[Events.eventName] } }
+ * ```
+ *
+ * 결과 크기에 비례하는 메모리를 사용하므로 Query 또는 서버에서 결과 상한을 설정해야 합니다.
+ * [suspendTransaction]의 트랜잭션 참여·재시도 정책을 따릅니다. 블록이 재실행될 수 있으므로
+ * 조회 외 부수 효과를 넣지 마세요. ClickHouse의 DML 원자성이나 롤백을 보장하지 않습니다.
+ *
+ * @param db 호출자가 소유하는 데이터베이스입니다.
+ * @param dispatcher 블로킹 JDBC 조회를 실행할 디스패처입니다.
+ * @param block 트랜잭션 안에서 전체 수집할 조회 결과입니다.
+ */
+suspend fun <T> queryList(
+    db: Database,
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    block: JdbcTransaction.() -> Iterable<T>,
+): List<T> = suspendTransaction(db, dispatcher) { block().toList() }
+
+/**
+ * 수집할 때마다 독립된 트랜잭션에서 조회하고 행을 하나씩 변환하여 전달합니다.
+ *
+ * ```kotlin
+ * queryFlow(db, query = { Events.selectAll().limit(100) }, mapper = {
+ *     it[Events.eventName]
+ * }).take(10).collect { name -> process(name) }
+ * ```
+ *
+ * 전체 결과를 List로 수집하지 않으며 생산자는 전달 대기 중인 항목 하나만 보관합니다.
+ * 소비자 항목, 드라이버 내부 버퍼와 호출자가 추가한 Flow buffer는 이 상한에 포함되지 않습니다.
+ * 쿼리는 재시도하지 않으며 이미 전달한 행을 다시 보내지 않습니다.
+ * 외부 트랜잭션과 연결 지역 상태를 상속하지 않으므로 보안 조건을 [query]에 명시해야 합니다.
+ *
+ * [query]는 매번 새 Query를 반환해야 하며 [mapper]는 짧게 실행하고 트랜잭션 밖에서도
+ * 유효한 값을 반환해야 합니다. 추가 SQL이나 지연 로딩 자원을 mapper에서 사용하지 마세요.
+ * 취소는 블로킹 JDBC 호출을 즉시 중단하지 않습니다. 호출자가 유한한 연결 획득·소켓·조회
+ * timeout을 설정해야 합니다. 정상 완료와 취소 모두 내부 자원 정리가 끝난 후 반환합니다.
+ * 데이터베이스·풀·디스패처는 호출자 소유이며 이 함수가 닫지 않습니다.
+ * ClickHouse의 DML 원자성이나 롤백은 보장하지 않습니다.
+ *
+ * @param db 호출자가 소유하는 데이터베이스입니다.
+ * @param dispatcher 블로킹 조회와 매핑을 실행할 디스패처입니다.
+ * @param query 독립 트랜잭션에서 수집마다 새로 만드는 조회입니다.
+ * @param mapper 현재 행을 트랜잭션과 무관한 값으로 변환합니다.
+ */
+fun <T> queryFlow(
+    db: Database,
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    query: JdbcTransaction.() -> Query,
+    mapper: (ResultRow) -> T,
+): Flow<T> = clickHouseQueryFlow(db, dispatcher, query, mapper)
 
 /**
  * ClickHouse에서 suspend 트랜잭션을 실행합니다.
