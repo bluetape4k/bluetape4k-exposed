@@ -136,6 +136,11 @@ suspend fun example(repo: UserSuspendedRepository) {
 | `READ_WRITE_BEHIND`  | save 시 Redis 즉시, DB는 비동기 반영   |
 | `READ_ONLY`          | Redis에만 저장, DB 쓰기 없음          |
 
+Write-behind 재시도 횟수는 실패한 flush에 서로 다른 값이 섞여 있어도
+항목별로 관리합니다. 각 항목이 자신의 재시도 한도에 도달했거나 재큐잉에
+실패한 경우에만 Dead Letter 저장소로 보내며, suspend writer는
+`CancellationException`을 전파합니다.
+
 ## Redis Codec 안전성
 
 Repository 생성자는 값 직렬화를 위한 `RedisCodec<String, E>`를 명시적으로 요구합니다. 기존 Lettuce
