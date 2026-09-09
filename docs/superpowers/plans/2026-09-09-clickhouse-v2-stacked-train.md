@@ -332,7 +332,7 @@ git diff --check
 
 Expected: Java/validation failures/errors/skipped=0, ABI exit 0, `javap`에 신규 두 descriptor와 기존 descriptor/bridge가 모두 있고 baseline diff는 의도한 symbols뿐이다. README EN/KO는 options 예제·precedence·redaction·#863 한계를 동일하게 설명한다.
 
-- [ ] **Step 4: #865 commit과 PR을 생성한다**
+- [x] **Step 4: #865 commit과 PR을 생성한다**
 
 ```bash
 git add exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseConnectionException.kt exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseDatabase.kt exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseDatabaseValidationTest.kt exposed/clickhouse/src/test/java/io/bluetape4k/exposed/clickhouse/ClickHouseDatabaseJavaInteropTest.java api/bluetape4k-exposed-clickhouse.api exposed/clickhouse/README.md exposed/clickhouse/README.ko.md
@@ -359,6 +359,8 @@ gh pr edit "$pr_865" --repo bluetape4k/bluetape4k-exposed --add-assignee debop -
 ```
 
 PR 생성 후 `gh pr view --json headRefOid,baseRefName,headRefName,statusCheckRollup,reviews,reviewThreads,mergeable`로 fresh exact-head evidence를 남기고 merge하지 않는다.
+
+실행 결과: PR #869 (`5474d51f30e07cb8198d6be7f71d7ed0970dd361`) 생성 완료.
 
 ## Task 4: #866 RED — nullability·nested depth·JDBC lifecycle matrix를 고정한다
 
