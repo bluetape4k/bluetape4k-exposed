@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.clickhouse
 
+import io.bluetape4k.AbstractValueObject
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
@@ -89,16 +90,21 @@ class ClickHouseV2OptionsTest {
         basic.getProperty("user") shouldBeEqualTo "u"
         basic.getProperty("password") shouldBeEqualTo "p"
 
+        assertFailsWith<IllegalArgumentException> {
+            ClickHouseV2Options(
+                authentication = ClickHouseV2Authentication.AccessToken("access-canary"),
+            ).toEffectiveProperties(user = "u", password = "p")
+        }
         val accessToken = ClickHouseV2Options(
             authentication = ClickHouseV2Authentication.AccessToken("access-canary"),
-        ).toEffectiveProperties(user = "u", password = "p")
+        ).toEffectiveProperties(user = "default", password = "")
         accessToken.getProperty("access_token") shouldBeEqualTo "access-canary"
         accessToken.getProperty("http_use_basic_auth") shouldBeEqualTo "false"
         accessToken.containsKey("password").shouldBeFalse()
 
         val bearerToken = ClickHouseV2Options(
             authentication = ClickHouseV2Authentication.BearerToken("bearer-canary"),
-        ).toEffectiveProperties(user = "u", password = "p")
+        ).toEffectiveProperties(user = "default", password = "")
         bearerToken.getProperty("bearer_token") shouldBeEqualTo "bearer-canary"
         bearerToken.getProperty("http_use_basic_auth") shouldBeEqualTo "false"
         bearerToken.containsKey("user").shouldBeFalse()
@@ -123,7 +129,12 @@ class ClickHouseV2OptionsTest {
             ClickHouseV2Options(customHeaders = mapOf("Authorization" to "token"))
         }
         assertFailsWith<IllegalArgumentException> {
-            ClickHouseV2Options(customHeaders = mapOf("X-ClickHouse-User-Agent" to "a", "x-clickhouse-user-agent" to "b"))
+            ClickHouseV2Options(
+                customHeaders = mapOf(
+                    "X-ClickHouse-User-Agent" to "a",
+                    "x-clickhouse-user-agent" to "b",
+                ),
+            )
         }
         assertFailsWith<IllegalArgumentException> {
             ClickHouseV2Options(customHeaders = mapOf("X-ClickHouse-User-Agent" to "bad\nvalue"))
@@ -150,5 +161,21 @@ class ClickHouseV2OptionsTest {
         )
         options.toEffectiveProperties("default", "").getProperty("proxy_host") shouldBeEqualTo "proxy"
         options.toEffectiveProperties("default", "").getProperty("trust_store") shouldBeEqualTo "file:/tmp/truststore"
+    }
+
+    @Test
+    fun `options use value object equality and redact secrets`() {
+        val first = ClickHouseV2Options(
+            authentication = ClickHouseV2Authentication.AccessToken("access-canary"),
+        )
+        val second = ClickHouseV2Options(
+            authentication = ClickHouseV2Authentication.AccessToken("access-canary"),
+        )
+
+        val valueObject: AbstractValueObject = first
+        valueObject.hashCode() shouldBeEqualTo first.hashCode()
+        first shouldBeEqualTo second
+        first.toString().contains("access-canary").shouldBeFalse()
+        first.toString().contains("authentication=AccessToken").shouldBeTrue()
     }
 }
