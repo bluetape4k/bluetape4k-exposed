@@ -120,10 +120,12 @@ queryFlow(database,
 통합 테스트는 `clickhouse-jdbc` `0.9.9`와 ClickHouse Server
 `26.7.3.19` 조합을 사용합니다. JDBC URL의 서버 설정에는
 `clickhouse_setting_` 접두사가 필요합니다([ClickHouse JDBC URL 문서](https://github.com/ClickHouse/clickhouse-java/blob/v0.9.9/clickhouse-jdbc/README.md#jdbc-url)).
-catalog의 기본 `ClickHouseDriver`는 V2 경로입니다. 지연 행과
-`socket_timeout`을 사용한 bounded 로컬 probe에서는 기본 V2 경로의 read-timeout
-신호가 결정적으로 발생하지 않았으므로, 이 절에서는 V2 timeout·cancellation을
-보장하지 않습니다. 아래에서 재현 가능한 timeout 계약은 V1 driver로 한정합니다.
+catalog의 기본 `ClickHouseDriver`(`com.clickhouse.jdbc.ClickHouseDriver`)는
+V2 경로이며, 테스트에서 `ClickHouse` metadata와 `0.9.9` driver 버전을
+기록하고 실제 `com.clickhouse.jdbc.ConnectionImpl`로 unwrap되는지 확인합니다.
+V2 probe matrix는 연결 시도, 서버 실행 timeout, 전송 socket timeout,
+로컬/downstream cancellation을 분리합니다. 호출 수락이나 로컬 정리를
+원격 query cancellation 보장으로 확대하지 않습니다.
 
 - `clickhouse_setting_max_result_rows=2`와
   `clickhouse_setting_result_overflow_mode=throw` 조합은
@@ -135,6 +137,37 @@ catalog의 기본 `ClickHouseDriver`는 V2 경로입니다. 지연 행과
   `clickhouse_setting_max_result_rows`는 클라이언트의 정확한 절단 상한이
   아닙니다. 테스트는 `clickhouse_setting_max_block_size=2`를 고정하고 매번
   cold collection에서 두 행 접두사를 확인합니다.
+- V2 `Statement#setQueryTimeout(1)` 직접 probe는
+  `SELECT sleepEachRow(1), number FROM system.numbers LIMIT 3`을 세 번
+  실행합니다. 매번 행을 방출하기 전에
+  `SQLTimeoutException("Query execution time exceeded limit")`이 발생하며,
+  `ResultSet`·`Statement`·`Connection`을 정리한 뒤 후속 `queryFlow` 수집도
+  성공합니다. 이는 직접 설정한 JDBC statement에서 V2 서버
+  `max_execution_time`을 적용하는 계약입니다. `queryFlow`는 해당 statement
+  handle을 노출하지 않습니다. Hikari `connectionTimeout`은 풀에서
+  connection을 빌리는 시간일 뿐 query deadline이 아니므로, 호출자는
+  `Statement#setQueryTimeout` 또는 `clickhouse_setting_max_execution_time`을
+  JDBC/DataSource 경계에서 설정해야 합니다.
+- 같은 지연 행 형태에 V2 `socket_timeout=200`을 설정한 probe는 세 번 모두
+  약 2.0초에 두 행을 정상 반환하고 SQL 예외를 발생시키지 않았습니다. 이
+  probe 조건과 서버/driver 조합의 전송 read-timeout 계약은 `N/A`이며 URL에
+  옵션을 넣었다는 이유만으로 socket timeout을 가정하지 마세요.
+- V2 연결 probe는 닫힌 ephemeral loopback 포트에
+  `connect_timeout=200&connection_timeout=200`을 넣은 `DriverManager` 연결을
+  세 번 시도합니다. 모두 5초 이내 `SQLException`으로 거부됩니다. 이는
+  bounded 연결 거부 결과일 뿐 timeout 만료나 ClickHouse handshake 중단의
+  증거가 아닙니다. V2 client 속성 목록의 연결 timeout 키는
+  `connection_timeout`이며, 이슈에서 요청한 표기인 `connect_timeout`은 V2
+  보장으로 문서화하지 않습니다.
+- `queryFlow(...).take(1)` 수집 세 번은 로컬 cursor와 풀 connection을 정리하고
+  bounded 테스트 시간 안에 후속 수집을 성공시켰습니다. 이는 로컬
+  producer/ResultSet 정리를 입증하지만, 블로킹 V2 JDBC read 즉시 중단이나
+  원격 query 종료를 입증하지 않습니다.
+- V2 `Statement#cancel()`을 행을 받은 뒤 세 번 호출했고 모두 로컬 자원을
+  정리했습니다. `clickhouse-jdbc` `0.9.9` V2 구현은 비동기 `KILL QUERY`를
+  전송합니다([driver source](https://github.com/ClickHouse/clickhouse-java/blob/v0.9.9/jdbc-v2/src/main/java/com/clickhouse/jdbc/StatementImpl.java), [KILL QUERY 문서](https://clickhouse.com/docs/reference/statements/kill)).
+  따라서 `cancel()` 반환 성공만으로 ClickHouse가 원격 query를 종료했다는
+  증거로 삼지 않습니다.
 - V1 read-timeout 테스트는 `com.clickhouse.jdbc.DriverV1`을 명시적으로 선택하고
   `socket_timeout=200`을 설정합니다. 행마다 1초가 걸리는 쿼리는 mapper가
   한 행도 방출하기 전에 드라이버의 `BatchUpdateException("Read timed out")`
@@ -143,8 +176,7 @@ catalog의 기본 `ClickHouseDriver`는 V2 경로입니다. 지연 행과
   `clickhouse_setting_max_execution_time` query-timeout과 다릅니다. 블로킹
   JDBC 취소를 위해 선택한 driver의 연결 획득·소켓·조회 timeout을 유한하게
   설정하고, timeout이나 limit 오류가 발생한 수집은 종료된 것으로 처리하세요.
-  기본 V2 driver를 사용하는 애플리케이션은 자체 timeout 동작을 별도로
-  확인해야 하며, 이 V1 결과를 V2 보장으로 해석하지 마세요.
+  이 V1 결과를 V2 보장으로 해석하지 마세요.
 
 ## 컬럼 타입
 

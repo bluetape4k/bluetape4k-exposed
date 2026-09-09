@@ -38,8 +38,12 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import org.slf4j.LoggerFactory
+import java.net.ServerSocket
 import java.sql.BatchUpdateException
+import java.sql.Connection
+import java.sql.DriverManager
 import java.sql.SQLException
+import java.sql.SQLTimeoutException
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -73,6 +77,11 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
         val database = Database.connect(getNewConnection = {
             TrackingClickHouseConnection(ClickHouseConnectionWrapper(pool.connection), observed)
         })
+
+        fun <T> withTrackedConnection(
+            observation: JdbcObservation = observed,
+            block: (Connection) -> T,
+        ): T = TrackingClickHouseConnection(ClickHouseConnectionWrapper(pool.connection), observation).use(block)
 
         fun rows(limit: Int = 10) = queryFlow(
             database,
@@ -368,6 +377,159 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
     }
 
     @Test
+    fun `기본 ClickHouseDriver는 catalog V2 경로와 버전을 사용한다`() = runSuspendIO {
+        Fixture().use { fixture ->
+            fixture.withTrackedConnection { connection ->
+                val v2ConnectionClass = Class.forName("com.clickhouse.jdbc.ConnectionImpl")
+
+                connection.metaData.driverName.contains("ClickHouse").shouldBeTrue()
+                connection.metaData.driverVersion.startsWith("0.9.9").shouldBeTrue()
+                connection.isWrapperFor(v2ConnectionClass).shouldBeTrue()
+                connection.unwrap(v2ConnectionClass).javaClass.name shouldBeEqualTo v2ConnectionClass.name
+            }
+            fixture.assertReleased()
+        }
+    }
+
+    @Test
+    fun `기본 V2 setQueryTimeout은 server execution timeout으로 종료하고 재사용한다`() = runSuspendIO {
+        Fixture("?clickhouse_setting_max_block_size=1").use { fixture ->
+            val directObserved = JdbcObservation()
+            val timeoutFailures = (1..3).map {
+                var emitted = 0
+                val failure = fixture.withTrackedConnection(directObserved) { connection ->
+                    connection.prepareStatement(
+                        "SELECT sleepEachRow(1), number FROM system.numbers LIMIT 3",
+                    ).use { statement ->
+                        statement.queryTimeout = 1
+                        try {
+                            statement.executeQuery().use { result ->
+                                while (result.next()) emitted++
+                            }
+                            null
+                        } catch (caught: SQLException) {
+                            caught
+                        }
+                    }
+                }
+                check(failure != null) { "V2 query timeout must fail the delayed query" }
+                failure.javaClass shouldBeEqualTo SQLTimeoutException::class.java
+                failure.message.orEmpty().contains("Query execution time exceeded limit").shouldBeTrue()
+                emitted shouldBeEqualTo 0
+                fixture.assertReleased()
+                fixture.rows(limit = 1).toList() shouldBeEqualTo listOf(0L)
+                fixture.assertReleased()
+                failure
+            }
+
+            timeoutFailures.size shouldBeEqualTo 3
+            directObserved.executed.get() shouldBeEqualTo 3
+            directObserved.queryTimeouts.get() shouldBeEqualTo 3
+            directObserved.connections.get() shouldBeEqualTo 0
+            directObserved.statements.get() shouldBeEqualTo 0
+            directObserved.results.get() shouldBeEqualTo 0
+        }
+    }
+
+    @Test
+    fun `기본 V2 socket timeout probe는 세 번의 bounded 결과를 기록한다`() = runSuspendIO {
+        Fixture("?socket_timeout=200&clickhouse_setting_max_block_size=1").use { fixture ->
+            val outcomes = (1..3).map { attempt ->
+                val started = System.nanoTime()
+                var values: List<Long>? = null
+                var failure: SQLException? = null
+                var emitted = 0
+                try {
+                    values = delayedRows(fixture, limit = 2) { emitted++ }.toList()
+                } catch (caught: SQLException) {
+                    failure = caught
+                }
+                val elapsedMillis = (System.nanoTime() - started) / 1_000_000
+                (elapsedMillis < 10_000L).shouldBeTrue()
+                values?.let { rows -> rows.all { it in 0L..1L }.shouldBeTrue() }
+                fixture.assertReleased()
+                fixture.rows(limit = 1).toList() shouldBeEqualTo listOf(0L)
+                fixture.assertReleased()
+                ProbeOutcome(attempt, elapsedMillis, emitted, values, failure)
+            }
+
+            outcomes.size shouldBeEqualTo 3
+            outcomes.all { it.elapsedMillis < 10_000L }.shouldBeTrue()
+            LoggerFactory.getLogger("io.bluetape4k.exposed.clickhouse.ClickHouseV2Probe").info(
+                "V2 socket_timeout probe outcomes: {}",
+                outcomes.joinToString { it.summary() },
+            )
+        }
+    }
+
+    @Test
+    fun `기본 V2 connect_timeout 연결 시도는 세 번의 bounded 결과를 기록한다`() = runSuspendIO {
+        Class.forName("com.clickhouse.jdbc.ClickHouseDriver")
+        val unavailablePort = ServerSocket(0).use { it.localPort }
+        val outcomes = (1..3).map { attempt ->
+            val started = System.nanoTime()
+            var connection: Connection? = null
+            var failure: SQLException? = null
+            try {
+                connection = DriverManager.getConnection(
+                    "jdbc:clickhouse://127.0.0.1:$unavailablePort/default?connect_timeout=200&connection_timeout=200",
+                )
+            } catch (caught: SQLException) {
+                failure = caught
+            } finally {
+                connection?.close()
+            }
+            val elapsedMillis = (System.nanoTime() - started) / 1_000_000
+            (elapsedMillis < 5_000L).shouldBeTrue()
+            (failure != null).shouldBeTrue()
+            ConnectOutcome(attempt, elapsedMillis, failure)
+        }
+
+        outcomes.size shouldBeEqualTo 3
+        outcomes.all { it.elapsedMillis < 5_000L }.shouldBeTrue()
+        LoggerFactory.getLogger("io.bluetape4k.exposed.clickhouse.ClickHouseV2Probe").info(
+            "V2 connect_timeout probe outcomes: {}",
+            outcomes.joinToString { it.summary() },
+        )
+    }
+
+    @Test
+    fun `기본 V2 downstream cancellation은 자원을 정리하고 후속 조회를 재사용한다`() = runSuspendIO {
+        Fixture("?clickhouse_setting_max_block_size=1").use { fixture ->
+            repeat(3) {
+                val started = System.nanoTime()
+                val values = delayedRows(fixture, limit = 3).take(1).toList()
+                values shouldBeEqualTo listOf(0L)
+                ((System.nanoTime() - started) / 1_000_000 < 10_000L).shouldBeTrue()
+                fixture.assertReleased()
+                fixture.rows(limit = 1).toList() shouldBeEqualTo listOf(0L)
+                fixture.assertReleased()
+            }
+            fixture.observed.executed.get() shouldBeEqualTo 6
+        }
+    }
+
+    @Test
+    fun `기본 V2 Statement cancel 요청은 KILL QUERY 경로를 호출한다`() = runSuspendIO {
+        Fixture().use { fixture ->
+            repeat(3) {
+                fixture.withTrackedConnection { connection ->
+                    connection.prepareStatement("SELECT number FROM system.numbers LIMIT 1").use { statement ->
+                        statement.executeQuery().use { result ->
+                            result.next().shouldBeTrue()
+                        }
+                        statement.cancel()
+                    }
+                }
+                fixture.assertReleased()
+            }
+            fixture.observed.cancels.get() shouldBeEqualTo 3
+            fixture.rows(limit = 1).toList() shouldBeEqualTo listOf(0L)
+            fixture.assertReleased()
+        }
+    }
+
+    @Test
     fun `중간 SQL 오류는 이미 전달한 행을 재실행하지 않는다`() = runSuspendIO {
         Fixture().use { fixture ->
             val values = mutableListOf<Long>()
@@ -484,4 +646,45 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             fixture.assertReleased()
         }
     }
+
+    private data class ProbeOutcome(
+        val attempt: Int,
+        val elapsedMillis: Long,
+        val emitted: Int,
+        val values: List<Long>?,
+        val failure: Throwable?,
+    ) {
+        fun summary(): String =
+            "attempt=$attempt elapsedMillis=$elapsedMillis emitted=$emitted " +
+                "rows=${values?.size ?: 0} failure=${failure?.javaClass?.simpleName ?: "none"}"
+    }
+
+    private data class ConnectOutcome(
+        val attempt: Int,
+        val elapsedMillis: Long,
+        val failure: SQLException?,
+    ) {
+        fun summary(): String =
+            "attempt=$attempt elapsedMillis=$elapsedMillis failure=${failure?.javaClass?.simpleName ?: "none"}"
+    }
+
+    private fun delayedRows(
+        fixture: Fixture,
+        limit: Int,
+        onMap: () -> Unit = {},
+    ) = queryFlow(
+        fixture.database,
+        query = {
+            val sleepEachRow = CustomFunction<Long>(
+                "sleepEachRow",
+                LongColumnType(),
+                decimalLiteral("1".toBigDecimal()),
+            )
+            Numbers.select(sleepEachRow, Numbers.number).limit(limit)
+        },
+        mapper = {
+            onMap()
+            it[Numbers.number]
+        },
+    )
 }
