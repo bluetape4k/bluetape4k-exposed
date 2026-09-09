@@ -373,7 +373,7 @@ PR 생성 후 `gh pr view --json headRefOid,baseRefName,headRefName,statusCheckR
 - Modify: `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/AbstractClickHouseTest.kt`
 - Modify: `exposed/clickhouse/src/test/resources/junit-platform.properties`
 
-- [ ] **Step 0: #865 exact head에서 child worktree를 만든다**
+- [x] **Step 0: #865 exact head에서 child worktree를 만든다**
 
 ```bash
 git fetch origin develop feat/issue-865-clickhouse-v2-options
@@ -384,7 +384,7 @@ test "$(git -C /Users/debop/work/bluetape4k/bluetape4k-exposed/.worktrees/feat/i
 
 Expected: child worktree HEAD가 #865 `headRefOid`와 같고, canonical `develop`와 부모/자식 worktree에는 변경이 없다.
 
-- [ ] **Step 1: H2 RED matrix를 작성한다**
+- [x] **Step 1: H2 RED matrix를 작성한다**
 
 `ClickHouseComplexTypesH2Test`는 ClickHouse wire semantics 증거가 아니라 converter 의미론 증거다. `Column<List<T?>>`와 `Column<List<T?>?>`를 별도 검사하고, Array/nested Array, Map null key·duplicate key, Tuple arity, Nested ragged row, JSON invalid text/codec exception, UUID/IP family, DateTime64 precision·zone·epoch overflow, Decimal rounding/precision, Enum ordinal 금지, UInt64 high-bit, mutable collection copy, `valueFromDB`/`notNullValueToDB`/`setParameter`/`readObject` nullability를 모두 실제 assertion으로 작성한다.
 
@@ -405,13 +405,15 @@ fun `빈 배열은 element schema 없이 추측하지 않는다`() {
 }
 ```
 
-- [ ] **Step 2: H2 RED selector를 실행한다**
+- [x] **Step 2: H2 RED selector를 실행한다**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseComplexTypesH2Test' --no-parallel --max-workers=1 --no-daemon --console=plain
 ```
 
 Expected: 신규 builders/lifecycle 부재 compile failure. H2 test 결과를 ClickHouse 증거로 집계하지 않는다.
+
+실행 결과: `ClickHouseComplexTypesH2Test`를 추가하고 selector를 실행했다. `compileTestKotlin`이 `ClickHouseJsonCodec`, nullable-array builder, UUID/IP/Decimal/Enum adapter 부재의 unresolved reference로 실패했다. 이는 구현 전 RED 증거이며 H2/ClickHouse wire 결과로 집계하지 않는다.
 
 - [ ] **Step 3: ClickHouse wire RED round-trip을 작성한다**
 
