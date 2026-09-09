@@ -178,4 +178,18 @@ class ClickHouseV2OptionsTest {
         first.toString().contains("access-canary").shouldBeFalse()
         first.toString().contains("authentication=AccessToken").shouldBeTrue()
     }
+
+    @Test
+    fun `nested option strings redact custom secret provider text`() {
+        val provider = object: ClickHouseV2SecretProvider {
+            override fun resolve(): CharArray = "proxy-secret".toCharArray()
+
+            override fun toString(): String = "proxy-secret"
+        }
+        val proxy = ClickHouseV2ProxyOptions(host = "proxy", port = 8080, password = provider)
+        val tls = ClickHouseV2TlsOptions(keyStorePassword = provider)
+
+        proxy.toString().contains("proxy-secret").shouldBeFalse()
+        tls.toString().contains("proxy-secret").shouldBeFalse()
+    }
 }

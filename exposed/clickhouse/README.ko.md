@@ -18,6 +18,56 @@ ClickHouse JDBC를 위한 Kotlin/Exposed 다이얼렉트입니다. Exposed의 �
 - **집계 함수** — `argMax()`, `argMin()`, `quantile(level)()`, `uniq()`, `uniqExact()`
 - **코루틴 헬퍼** — `suspendTransaction {}`은 호출자가 선택한 dispatcher에서 blocking JDBC를 실행하고, `queryList {}`는 전체 결과를 수집하며, `queryFlow(query = ..., mapper = ...)`는 변환한 행을 점진적으로 전달합니다. 기존 `queryFlow {}`의 전체 수집 동작은 유지합니다.
 
+### ClickHouse JDBC V2 연결 옵션
+
+`ClickHouseV2Options`는 불변 `AbstractValueObject`입니다. 연결을 열기 전에
+ClickHouse JDBC V2 property 경계를 검증하고 collection 입력을 방어적으로
+복사합니다. options overload는 기존 `connect` overload와 분리되어 기존 소스와
+JVM descriptor를 그대로 유지합니다.
+
+```kotlin
+val options = ClickHouseV2Options(
+    connectionTimeoutMillis = 1_500,
+    socketOperationTimeoutMillis = 2_000,
+    connectionPoolEnabled = true,
+    maxOpenConnections = 8,
+    clientName = "analytics-api",
+    customHeaders = mapOf("X-ClickHouse-User-Agent" to "bluetape/analytics"),
+)
+
+val database = ClickHouseDatabase.connect(
+    host = "localhost",
+    port = 8123,
+    database = "analytics",
+    user = "default",
+    password = "",
+    options = options,
+)
+```
+
+typed field는 `connection_timeout`, `socket_timeout`,
+`connection_request_timeout`, `connection_ttl`, `http_keep_alive_timeout`,
+압축/재시도 설정, `query_id`, `clickhouse_setting_<name>` 같은 V2 property로
+변환됩니다. timeout 값은 milliseconds 단위이며 driver가 default로 정의한 경우에만
+`0`을 허용합니다. pool limit와 buffer 크기는 양수여야 합니다.
+
+`authentication`은 `Basic`, `AccessToken`, `BearerToken` 중 하나입니다.
+Basic 인증은 `user`/`password` 인자를 사용합니다. token mode는 placeholder인
+`user = "default"`, `password = ""`만 허용하며 token property와
+`http_use_basic_auth=false`만 내보냅니다. credential이나 token 값을
+`rawProperties` 또는 JDBC URL query에 넣지 마세요. 알 수 없는 raw key,
+RowBinary beta key, typed/raw 중복은 즉시 실패합니다. raw server setting은
+`clickhouse_setting_<name>`으로 제한하고 custom header는
+`X-ClickHouse-User-Agent`만 허용하며 header value는 로그에 남기지 않습니다.
+
+TLS에는 파일 또는 secret-store reference만 지정하고 인증서/키 본문은 넣지
+않습니다. `ClickHouseV2SecretProvider`는 property 변환 순간에만 password를
+제공하며 반환된 `CharArray`는 즉시 지웁니다. `toString()`과 연결 예외는
+password, token, secret, JDBC URL query 값을 redact합니다. options URL에서
+인증 property를 지정하면 선택한 인증 모드를 우회할 수 없도록 거부하며,
+인증 이외의 JDBC URL query property는 driver precedence에 따라 가장 높은
+우선순위를 가집니다.
+
 ## Table 옵션 지원 정책
 
 Exposed `1.5.0`의 generic `Table.options`·`storageParameters`는 dialect별 안전성을

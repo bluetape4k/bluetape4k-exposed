@@ -69,6 +69,14 @@ data class ClickHouseV2ProxyOptions(
             require(it.none(Char::isISOControl)) { "proxy user에는 제어 문자를 사용할 수 없습니다." }
         }
     }
+
+    override fun toString(): String = ToStringBuilder(this)
+        .add("type", type)
+        .add("host", host)
+        .add("port", port)
+        .add("user", user)
+        .add("password", password?.let { "***" })
+        .toString()
 }
 
 /**
@@ -108,6 +116,18 @@ data class ClickHouseV2TlsOptions(
             require(it.none(Char::isISOControl)) { "sslSocketSni에는 제어 문자를 사용할 수 없습니다." }
         }
     }
+
+    override fun toString(): String = ToStringBuilder(this)
+        .add("trustStore", trustStore)
+        .add("keyStoreType", keyStoreType)
+        .add("sslKeyStore", sslKeyStore)
+        .add("keyStorePassword", keyStorePassword?.let { "***" })
+        .add("sslKeyReference", sslKeyReference)
+        .add("sslRootCertReference", sslRootCertReference)
+        .add("sslCertReference", sslCertReference)
+        .add("sslAuthentication", sslAuthentication)
+        .add("sslSocketSni", sslSocketSni)
+        .toString()
 }
 
 /**

@@ -153,7 +153,7 @@ Expected: commit에는 plan/review만 있고 production source·test source·Gra
 
 **Files:** Create `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseV2OptionsTest.kt`; modify `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseDatabaseValidationTest.kt`
 
-- [ ] **Step 1: mapping/auth/header RED 테스트를 작성한다**
+- [x] **Step 1: mapping/auth/header RED 테스트를 작성한다**
 
 테스트는 `connection_timeout=1500`, `socket_timeout=2000`, `connection_request_timeout=3000`, `compress/decompress/client.use_http_compression`, retry, query id, `clickhouse_setting_<name>`의 정확한 값과 milliseconds 단위를 비교한다. `rawProperties` defensive copy, unknown/credential/
 `beta.row_binary_for_simple_insert` 거부, timeout negative와 zero-as-driver-default, Basic/AccessToken/BearerToken one-of, token+explicit credential 충돌, case-insensitive `X-ClickHouse-User-Agent`, duplicate header, CR/LF, 인증·routing·hop-by-hop header 거부, URL auth key 거부, scrubbed message/cause/suppressed/logger canary를 각각 독립 assertion으로 둔다.
@@ -165,7 +165,7 @@ assertFailsWith<IllegalArgumentException> { ClickHouseV2Options(rawProperties = 
 assertFailsWith<IllegalArgumentException> { ClickHouseV2Options(customHeaders = mapOf("Authorization" to "token")) }
 ```
 
-- [ ] **Step 2: RED selector를 실행한다**
+- [x] **Step 2: RED selector를 실행한다**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseV2OptionsTest' --no-parallel --max-workers=1 --no-daemon --console=plain
@@ -177,18 +177,20 @@ Expected: 새 model/mapper 부재 compile failure. 기존 baseline test 성공�
 
 **Files:** Create `ClickHouseV2Options.kt`, `ClickHouseV2Properties.kt`, `ClickHouseV2Redaction.kt` under `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse`
 
-- [ ] **Step 1: public model을 구현한다**
+- [x] **Step 1: public model을 구현한다**
 
-`ClickHouseV2Options`는 `connectionTimeoutMillis: Long?`, `socketOperationTimeoutMillis: Int?`, `connectionRequestTimeoutMillis: Long?`, `connectionTtlMillis`, `httpKeepAliveTimeoutMillis`, `connectionPoolEnabled`, `maxOpenConnections`, `connectionReuseStrategy`, `useServerTimeZone`, `compressServerResponse`, `compressClientRequest`, `useHttpCompression`, `lz4UncompressedBufferSize`, `retryOnFailure`, `authentication`, `clientName`, `sessionDbRoles`, `sessionTimezone: ZoneId?`, `queryId`, `logComment`, `serverSettings`, `proxy`, `tls`, `customHeaders`, `rawProperties`를 가진 immutable data class로 선언한다. `ClickHouseV2Authentication`은 `Basic`, `AccessToken(value)`, `BearerToken(value)` one-of sealed type이며, proxy/TLS nested map·list와 raw input은 생성 시 복사한다.
+`ClickHouseV2Options`는 `connectionTimeoutMillis: Long?`, `socketOperationTimeoutMillis: Int?`, `connectionRequestTimeoutMillis: Long?`, `connectionTtlMillis`, `httpKeepAliveTimeoutMillis`, `connectionPoolEnabled`, `maxOpenConnections`, `connectionReuseStrategy`, `useServerTimeZone`, `compressServerResponse`, `compressClientRequest`, `useHttpCompression`, `lz4UncompressedBufferSize`, `retryOnFailure`, `authentication`, `clientName`, `sessionDbRoles`, `sessionTimezone: ZoneId?`, `queryId`, `logComment`, `serverSettings`, `proxy`, `tls`, `customHeaders`, `rawProperties`를 가진 immutable `AbstractValueObject`로 선언한다. 방어적 collection 복사와 민감정보를 제거한 `buildStringHelper()`를 함께 제공해야 하므로 data class 자동 생성 메서드보다 값 객체 기반 equality·문자열 경계를 우선한다. `ClickHouseV2Authentication`은 `Basic`, `AccessToken(value)`, `BearerToken(value)` one-of sealed type이며, proxy/TLS nested map·list와 raw input은 생성 시 복사한다.
 
 ```kotlin
+import io.bluetape4k.AbstractValueObject
+
 sealed interface ClickHouseV2Authentication {
     data object Basic : ClickHouseV2Authentication
     data class AccessToken(val value: String) : ClickHouseV2Authentication
     data class BearerToken(val value: String) : ClickHouseV2Authentication
 }
 
-data class ClickHouseV2Options(
+class ClickHouseV2Options(
     val connectionTimeoutMillis: Long? = null,
     val socketOperationTimeoutMillis: Int? = null,
     val connectionRequestTimeoutMillis: Long? = null,
@@ -214,7 +216,7 @@ data class ClickHouseV2Options(
     val tls: ClickHouseV2TlsOptions? = null,
     val customHeaders: Map<String, String> = emptyMap(),
     val rawProperties: Map<String, String> = emptyMap(),
-)
+) : AbstractValueObject()
 ```
 
 같은 파일에 `enum class ClickHouseV2ConnectionReuseStrategy { FIFO, LIFO }`, `fun interface ClickHouseV2SecretProvider { fun resolve(): CharArray }`, 다음 두 immutable value를 선언한다.
@@ -264,13 +266,13 @@ data class ClickHouseV2TlsOptions(
 
 `serverSettings`는 `clickhouse_setting_<name>`로만 내보내고, proxy/TLS는 V2 driver의 proxy·TLS key allowlist로 직렬화한다. typed field와 동일한 raw key가 함께 있으면 typed 우선이 아니라 생성 시 명시적 중복 오류를 낸다. authentication은 `Basic`, `AccessToken`, `BearerToken` one-of를 유지하고 token mode는 default placeholder user/password 외의 명시 credentials와 함께 사용할 수 없다.
 
-- [ ] **Step 2: effective properties와 redaction을 구현한다**
+- [x] **Step 2: effective properties와 redaction을 구현한다**
 
 V2 `ClientConfigProperties` allowlist와 `clickhouse_setting_<name>`·`http_header_X-ClickHouse-User-Agent` prefix만 raw로 허용한다. RowBinary beta key와 credentials/TLS secret duplicate 및 unknown key는 fail-fast한다. 일반 precedence는 `JDBC URL query > explicit argument 또는 typed option > rawProperties > driver default`이며 새 options overload URL의 `user`, `password`, `access_token`, `bearer_token`, `http_use_basic_auth`는 key만 남긴 scrubbed error로 거부한다. token mode effective map에는 token key와 `http_use_basic_auth=false`만 남긴다. URL query value, password, token, TLS secret, header value, SQL bind와 원본 exception graph를 redaction helper가 제거한다.
 
 테스트와 구현이 공유하는 내부 변환 경계는 `internal fun ClickHouseV2Options.toEffectiveProperties(user: String, password: String, jdbcUrl: String? = null): Properties`로 고정한다. 이 함수는 URL query를 파싱하되 값을 로그·예외에 재사용하지 않고, 반환 `Properties`를 호출자 변경과 드라이버 변경으로부터 보호하는 방어적 복사로 만든다.
 
-- [ ] **Step 3: GREEN options와 detekt를 실행한다**
+- [x] **Step 3: GREEN options와 detekt를 실행한다**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseV2OptionsTest' --no-parallel --max-workers=1 --no-daemon --console=plain
@@ -279,7 +281,7 @@ V2 `ClientConfigProperties` allowlist와 `clickhouse_setting_<name>`·`http_head
 
 Expected: selector tests와 detekt가 exit 0, failures/errors/skipped=0. `build/reports/clickhouse-v2/ds-02.json`에 실제 key/unit/default와 redaction 결과를 기록한다.
 
-- [ ] **Step 4: options boundary commit을 만든다**
+- [x] **Step 4: options boundary commit을 만든다**
 
 ```bash
 git add exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseV2*.kt exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseV2OptionsTest.kt
@@ -297,7 +299,7 @@ Not-tested: Database.connect wrapper와 JVM descriptor는 Task 3에서 검증한
 
 **Files:** Create `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseConnectionException.kt`; modify `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseDatabase.kt`, `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseDatabaseValidationTest.kt`; create `exposed/clickhouse/src/test/java/io/bluetape4k/exposed/clickhouse/ClickHouseDatabaseJavaInteropTest.java`; modify generated `api/bluetape4k-exposed-clickhouse.api`, `exposed/clickhouse/README.md`, `exposed/clickhouse/README.ko.md`
 
-- [ ] **Step 1: overload/Java RED fixture를 작성하고 실행한다**
+- [x] **Step 1: overload/Java RED fixture를 작성하고 실행한다**
 
 Java fixture는 `getMethod("connect", String.class, int.class, String.class, String.class, String.class, ClickHouseV2Options.class)`와 `getMethod("connect", String.class, String.class, String.class, ClickHouseV2Options.class)`를 확인하고 return type이 `Database`인지 assertion한다. 기존 Kotlin named/positional call도 그대로 둔다.
 
@@ -307,7 +309,7 @@ Java fixture는 `getMethod("connect", String.class, int.class, String.class, Str
 
 Expected: 신규 overload 부재 compile/reflection failure.
 
-- [ ] **Step 2: 두 신규 overload와 exception wrapper를 구현한다**
+- [x] **Step 2: 두 신규 overload와 exception wrapper를 구현한다**
 
 정확한 선언은 다음과 같고 options에는 default를 주지 않는다.
 
@@ -318,7 +320,7 @@ fun connect(jdbcUrl: String, user: String = "default", password: String = "", op
 
 기존 두 descriptor와 `$default` bridge는 유지한다. 새 경로는 effective properties로 DriverManager를 호출하고, 연결/래퍼 생성 실패를 `ClickHouseConnectionException`으로 감싸며 SQLState/vendor code만 복사한다. 원본 cause/suppressed는 연결하지 않는다. raw connection cleanup 실패는 `SanitizedCleanupException(reasonCode, sqlState, vendorCode)`로 변환해 wrapper suppressed에만 둔다.
 
-- [ ] **Step 3: ABI·validation·docs GREEN을 실행한다**
+- [x] **Step 3: ABI·validation·docs GREEN을 실행한다**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseDatabaseJavaInteropTest' --tests '*ClickHouseDatabaseValidationTest' --no-parallel --max-workers=1 --no-daemon --console=plain

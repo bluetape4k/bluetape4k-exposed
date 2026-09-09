@@ -1,7 +1,12 @@
 package io.bluetape4k.exposed.clickhouse
 
-import org.junit.jupiter.api.Test
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import org.junit.jupiter.api.Test
+import java.sql.SQLException
 
 /**
  * [ClickHouseDatabase.connect] 입력 유효성 검증 테스트.
@@ -51,5 +56,34 @@ class ClickHouseDatabaseValidationTest {
         assertFailsWith<IllegalArgumentException> {
             ClickHouseDatabase.connect(jdbcUrl = "jdbc:postgresql://localhost/db")
         }
+    }
+
+    @Test
+    fun `options jdbc URL rejects authentication keys without exposing values`() {
+        val failure = assertFailsWith<IllegalArgumentException> {
+            ClickHouseV2Options().toEffectiveProperties(
+                user = "default",
+                password = "",
+                jdbcUrl = "jdbc:clickhouse://localhost:8123/default?password=secret-canary&query_id=q",
+            )
+        }
+
+        failure.message.orEmpty().contains("secret-canary").shouldBeFalse()
+        failure.message.orEmpty().contains("password=REDACTED").shouldBeTrue()
+    }
+
+    @Test
+    fun `connection exception preserves only safe JDBC diagnostics`() {
+        val original = SQLException("password=secret-canary token=token-canary", "08001", 1001)
+        val failure = original.toClickHouseConnectionException(
+            "jdbc:clickhouse://localhost:8123/default?password=secret-canary",
+        )
+
+        failure.message.orEmpty().contains("secret-canary").shouldBeFalse()
+        failure.message.orEmpty().contains("token-canary").shouldBeFalse()
+        failure.sqlState shouldBeEqualTo "08001"
+        failure.errorCode shouldBeEqualTo 1001
+        failure.cause shouldBeEqualTo null
+        failure.suppressed.shouldHaveSize(0)
     }
 }
