@@ -53,13 +53,25 @@
 
 `ClickHouseV2Options`는 다음 그룹을 immutable property로 가진다.
 
+인증 property의 정확한 shape은 `ClickHouseV2Authentication.Basic`,
+`ClickHouseV2Authentication.AccessToken(value)`, `ClickHouseV2Authentication.BearerToken(value)`
+중 하나이며, `accessToken`·`bearerToken`을 독립적으로 동시에 보관하지 않는다.
+
 - 연결: `connectionTimeout`, `socketOperationTimeout`, `connectionRequestTimeout`, keep-alive/connection TTL
-- 보안: TLS 활성화, trust/key store 참조, mTLS 설정, bearer/access token, SNI/SSL auth
+- 보안: `Basic | AccessToken | BearerToken` one-of 인증, TLS 활성화, trust/key store 참조, mTLS 설정, SNI/SSL auth
 - 전송: client/server compression, LZ4 buffer, proxy, retry 정책
 - 세션·식별: client name, session timezone, roles, log comment, server settings
 - 확장: 명시적 custom header allowlist와 추가 raw property
 
 민감한 값은 `toString`, debug log, 진단 callback에 원문으로 노출하지 않는다. 옵션은 `Properties`로 변환하는 단일 내부 경계를 가지며, 호출자가 제공한 map을 mutate하지 않는다. username/password는 기존 연결 인자에만 두고 raw map의 중복 credential key는 거부한다.
+
+`rawProperties`는 V2 `ClientConfigProperties`의 명시된 key와
+`clickhouse_setting_<name>`, `http_header_<allowlisted-name>` prefix만 허용한다.
+`beta.row_binary_for_simple_insert`는 #867 `ClickHouseRowBinaryOptions`와
+`ClickHouseConnectionProvider`가 단일 소유하므로 #865 raw map에서는 거부한다. `user`,
+`password`, `database`, `access_token`, `bearer_token`, TLS secret과 중복되는 raw key는 typed 인자와
+관계없이 거부하고, 알려지지 않은 key도 조용히 전달하지 않고 연결 전에 고정 예외로
+거부한다. 새 driver key는 별도 이슈에서 mapping·redaction·fixture를 추가한 뒤 허용한다.
 
 V2 `0.9.9`의 property mapping은 다음 key와 단위를 고정한다.
 
@@ -73,26 +85,41 @@ V2 `0.9.9`의 property mapping은 다음 key와 단위를 고정한다.
 | `connectionPoolEnabled` | `connection_pool_enabled` | `Boolean` | driver default `true` |
 | `maxOpenConnections` | `max_open_connections` | `Int`, count | `> 0` |
 | `connectionReuseStrategy` | `connection_reuse_strategy` | `ConnectionReuseStrategy` | driver default `FIFO` |
+| `useServerTimeZone` | `use_server_time_zone` | `Boolean` | driver default `true` |
 | `compressServerResponse` | `compress` | `Boolean` | driver default `true` |
 | `compressClientRequest` | `decompress` | `Boolean` | driver default `false` |
 | `useHttpCompression` | `client.use_http_compression` | `Boolean` | driver default `false` |
+| `lz4UncompressedBufferSize` | `compression.lz4.uncompressed_buffer_size` | `Int`, bytes | `> 0`; driver default 유지 |
 | `retryOnFailure` | `retry` | `Int`, count | `>= 0`; driver default `3` |
-| `accessToken` | `access_token` | opaque `String` | empty 값 금지 |
-| `bearerToken` | `bearer_token` | opaque `String` | empty 값 금지 |
+| `authentication=AccessToken(value)` | `access_token` | opaque `String` | empty 값 금지 |
+| `authentication=BearerToken(value)` | `bearer_token` | opaque `String` | empty 값 금지 |
+| `authentication` | `http_use_basic_auth` 및 위 token key | `Basic | AccessToken | BearerToken` one-of | token 모드는 basic auth를 끄고 복수 지정은 거부 |
 | `clientName` | `client_name` | `String` | empty 허용 |
 | `sessionDbRoles` | `session_db_roles` | comma-separated roles | 각 role non-blank |
 | `sessionTimezone` | `use_time_zone` | `TimeZone` name | 유효한 IANA zone |
+| `queryId` | `query_id` | opaque `String` | non-blank; #868 진단의 단일 출처 |
+| `logComment` | `clickhouse_setting_log_comment` | opaque `String` | 제어문자 금지; custom header 중복 금지 |
 | `serverSettings` | `clickhouse_setting_<name>` | `String` value | name allowlist·non-blank |
 | `proxy` | `proxy_type`, `proxy_host`, `proxy_port`, `proxy_user`, `proxy_password` | typed proxy fields | host/port pair and secret redaction |
 | `tls` | `trust_store`, `key_store_type`, `ssl_key_store`, `key_store_password`, `ssl_key`, `sslrootcert`, `sslcert`, `ssl_authentication`, `ssl_socket_sni` | typed TLS fields | path/reference ownership is caller-owned |
 | `customHeaders` | `http_header_<normalized-name>` | `String` value | strict allowlist, duplicate/control-character rejection |
 
-Custom header는 case-insensitive로 정규화한 뒤 `X-ClickHouse-Query-Id`,
-`X-ClickHouse-Log-Comment`, `X-ClickHouse-User-Agent`만 허용한다. `Authorization`,
+Custom header는 case-insensitive로 정규화한 뒤 `X-ClickHouse-User-Agent`만 허용한다.
+query id와 log comment는 typed option이 단일 출처이며 대응하는 custom header는 거부한다.
+`Authorization`,
 `Proxy-Authorization`, `Cookie`, `X-ClickHouse-Key`, `X-ClickHouse-User`, `Host`,
 `Content-Length`, `Transfer-Encoding` 등 인증·routing·hop-by-hop header는 항상 거부한다.
 이름과 값의 CR/LF 및 제어문자도 거부하며, 동일 header의 대소문자 중복은 하나로 합치지 않고
 오류로 처리한다. 새 vendor header가 필요하면 allowlist를 별도 이슈에서 갱신한다.
+
+인증은 `Basic`, `AccessToken`, `BearerToken` 중 정확히 하나의 mode로 해석한다. token이
+지정되면 기본 인자 값인 `user="default"`, `password=""`는 placeholder로만 허용하고
+그 외 `user/password`와 `http_use_basic_auth=true`를 함께 지정할 수 없다. token mode의
+effective `Properties`에는 선택한 token key와 `http_use_basic_auth=false`만 남기며,
+placeholder `user/password`조차 전달하지 않는다. token 두 개, token과 명시적 basic
+credential, typed/raw 인증 key 중복은 연결 전에 fail-fast한다. Basic mode는 기존
+`user/password` 인자를 사용하며 raw credential key와 raw `http_use_basic_auth` override는
+허용하지 않는다.
 
 ### 연결 API 계약
 
@@ -125,16 +152,26 @@ Java 호출자는 위 descriptor를 직접 사용한다. `user/password` 인자�
 명시적 중복 오류로 처리한다.
 
 실효값 precedence는 `JDBC URL query property > 기존 명시 인자 또는 typed option > rawProperties > driver default`다.
-URL query와 중복되는 값은 드라이버의 URL precedence를 그대로 따르며, options가 URL을 덮어쓰지 않는다.
+URL query와 중복되는 일반 값은 드라이버의 URL precedence를 그대로 따르며, options가 URL을
+덮어쓰지 않는다. 단, 새 options overload의 URL에는 `user`, `password`, `access_token`,
+`bearer_token`, `http_use_basic_auth` 같은 인증 key를 포함할 수 없다. 이 보안 key는 URL
+우선순위로 token/basic one-of를 우회할 수 있으므로 연결 전에 scrub된 validation 오류로
+거부하고, 인증은 options mode와 명시적 `user/password` 인자에서만 결정한다. 기존
+options 없는 overload의 URL 인증 동작은 변경하지 않는다.
 
 - 연결 실패 시 기존 overload는 기존 예외 계약을 유지한다. 신규 options overload는
   `ClickHouseConnectionException`으로 감싸되 SQLState와 vendor code를 복사하고, message에는
   scrub된 URL과 구조화된 원인만 둔다. 원본 예외 객체를 cause/suppressed로 붙이지 않아
   exception graph와 rendered stack trace의 secret 재노출을 막는다. cleanup 실패는 wrapper의
   suppressed에 추가하며, 원본 예외의 민감하지 않은 진단 필드는 내부 테스트 값으로만 보존한다.
+  cleanup 실패는 `SanitizedCleanupException(reasonCode, sqlState, vendorCode)`로 변환하고
+  원본 cleanup `Throwable`을 cause/suppressed에 연결하지 않는다. 이 sanitized 예외만
+  wrapper의 suppressed에 추가해 전체 exception graph redaction을 닫는다.
 - `jdbcUrl` validation 오류는 scheme/host/path만 표시하고 query value는 모두 `REDACTED`로
-  바꾼다. token/password를 포함한 synthetic URL을 message, cause, suppressed, logger에
-  심는 redaction 회귀 테스트를 둔다.
+  바꾼다. 확장이 생성하는 message, cause, suppressed, logger에 token/password를 포함한
+  synthetic URL이 다시 나타나지 않는 redaction 회귀 테스트를 둔다. ClickHouse driver가
+  자체적으로 출력하는 외부 logger는 이 확장의 재출력 대상이 아니며, 해당 범위는 별도 driver
+  설정과 운영 로그 정책으로 다룬다.
 
 ### 검증 계약
 
@@ -198,14 +235,46 @@ nullability를 동일한 matrix로 구현한다. 반환 collection은 immutable 
 - V2 `ConnectionImpl.prepareStatement`가 connection-level property에 따라 statement 구현을
   한 번 선택하므로 driver-owned 경로를 채택한다. Exposed가 driver private buffer를 감싸거나
   setter 이후 statement를 교체하지 않는다.
+- `beta.row_binary_for_simple_insert`는 connection-scoped property다. 따라서
+  `ClickHouseRowBinaryExecutor`는 batch마다 preflight 결과에 맞는 caller-owned connection
+  profile을 먼저 선택한다. 이를 위해 다음 public contract의
+  `ClickHouseConnectionProvider`를 주입한다.
+
+  ```kotlin
+  fun interface ClickHouseConnectionProvider {
+      fun open(rowBinaryEnabled: Boolean): Connection
+  }
+  ```
+
+  `open(true)`는 provider가 새로 구성한 connection-level
+  `beta.row_binary_for_simple_insert=true` profile만 반환하고, `open(false)`는 해당 key가
+  false인 일반 JDBC profile만 반환해야 한다. provider는 요청한 profile을 확인할 수 없거나
+  pooled connection에 다른 profile이 남아 있으면 connection을 반환하지 않고 고정
+  `UnsupportedConfiguration`으로 fail-closed한다. 각 profile은 독립 `DataSource`/pool 또는
+  동등한 connection factory로 구성하며 두 profile 사이에서 connection을 재사용하거나
+  기존 `Database`/pool의 property를 mutate하지 않는다. provider와 그 내부
+  `DataSource`/pool은 호출자가 소유하고, executor는 provider가 빌려준 connection·statement·
+  result만 operation 종료 시 닫아 pool에 반환한다. provider는 connection을 반환하기 전에
+  요청 profile과 실제 connection property의 일치를 검증하고, 그 검증을 수행할 수 없으면
+  `UnsupportedConfiguration`을 낸다. executor는 provider 계약을 충족한 connection만
+  statement에 사용한다. 적격 batch는 beta-enabled connection,
+  부적격·capability-unknown batch는 beta-disabled 일반 JDBC connection을 **statement 생성
+  전에** 연다. executor는 provider가 반환한 operation-scoped connection을 닫지만
+  commit/rollback은 호출하지 않는다. transaction과 pool 반환 정책은 provider가 소유한다.
+  ambient Exposed transaction connection은 넘기지 않으며, ambient transaction과 연결하려면
+  provider가 그 경계를 별도로 명시하고 동일 profile 증거를 제공해야 한다. provider가 없는
+  executor 호출은 잘못된 writer를 선택하는 대신 고정 `UnsupportedConfiguration`으로
+  fail-closed한다.
 - writer는 connection/statement를 만들기 전에 query가 단순 `INSERT ... VALUES (?, ...)`인지,
   단일 values group인지, 대상 column과 setter가 지원 matrix에 있는지, RowBinary option이
   유효한지 preflight한다. invalid option은 원래 예외로 fail-fast한다.
 - unsupported query/type 또는 capability unknown은 `beta.row_binary_for_simple_insert`를
   켜지 않은 일반 `PreparedStatement` 경로를 **statement 생성 전에** 선택한다. fallback은
   첫 setter·첫 byte/row 전송 전 한 번만 허용하며, 전송 시작 후에는 fallback·재실행·자동 재시도를
-  하지 않는다. `internal ClickHouseRowBinaryFallbackEvent`가 이유 code만 기록하고 #868에서
-  public 진단 값으로 변환한다.
+하지 않는다. `internal ClickHouseRowBinaryFallbackEvent`가 이유 code만 기록하고 #868에서
+public 진단 값으로 변환한다. 이 internal event는 provider가 실제로 beta-disabled
+connection을 선택한 경우에만 발행하며, 고정 beta-enabled `Database`에서 fail-closed한
+경우에는 발행하지 않는다.
 - V2 setter가 statement 생성 후 실패하거나 no-op을 반환하면 writer를 unusable로 표시하고
   connection/statement를 닫은 뒤 원래 실패를 전달한다. 이 시점의 JDBC fallback은 허용하지 않는다.
 - RowBinary 경로의 `executeBatch()` update count 배열은 `SUCCESS_NO_INFO`와
@@ -222,9 +291,13 @@ nullability를 동일한 matrix로 구현한다. 반환 collection은 immutable 
 - 한 batch flush 실패 후 동일 writer를 재사용할 수 없으면 명시적 상태 오류를 내고, 이미 전송된 batch를 자동 재전송하지 않는다. 재실행이 필요하면 호출자가 새 writer와 idempotency 정책을 준비한다.
 - connection, statement, stream 자원은 writer가 소유한 범위에서 정리하며 외부 transaction/pool은 닫지 않는다.
 
+기존 `Database`가 beta-enabled profile로 고정된 상태에서 unsupported SQL을 직접 실행하는
+경우에는 일반 JDBC로 몰래 바꾸지 않고 `UnsupportedConfiguration`을 낸다. 일반 JDBC
+fallback 증거는 주입된 provider가 beta-disabled profile을 선택한 경우에만 유효하다.
+
 ### 검증·benchmark 산출물
 
-- 단순 INSERT/복합 INSERT, nullable·중첩·특수 타입, unsupported setter matrix, 빈 입력, 부분 flush, invalid option fail-fast, preflight fallback, setter 후 실패, update count, 실패 후 unusable 상태를 검증한다.
+- 단순 INSERT/복합 INSERT, nullable·중첩·특수 타입, unsupported setter matrix, 빈 입력, 부분 flush, invalid option fail-fast, provider의 beta-enabled/beta-disabled profile 일치, preflight fallback, setter 후 실패, update count, 실패 후 unusable 상태를 검증한다.
 - RowBinary opt-in과 기본 JDBC 경로를 같은 fixture에서 비교하고, 각 driver-specific Gradle task를 `--no-parallel --max-workers=1`로 실행한다. `junit.jupiter.execution.parallel.enabled=false`와 `@ResourceLock("clickhouse-v2")`로 공유 container/schema를 직렬화한다.
 - benchmark matrix는 `rowCount={10_000,100_000,1_000_000}`, `maxRowsPerFlush={256,1024,4096}`, `rowShape={narrow,wide}`, `path={rowbinary,jdbc-fallback}`로 고정한다. 각 조합을 warmup 2회 후 독립 측정 5회 실행하고 median과 각 raw score를 모두 보존한다.
 - 각 run은 JDK/OS/CPU architecture, implementation SHA와 dirty flag, catalog/driver artifact version, Docker image tag와 digest, heap/RSS, JVM flags, Gradle task와 arguments, input seed, row width를 raw JSON metadata에 기록한다. raw JSON은 `docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-{1,2,3}.json`과 `jdbc-fallback-run-{1,2,3}.json`, SHA-256 manifest로 보존한다.
@@ -245,6 +318,14 @@ ResponseReceived → (Completed|Failed|Cancelled)`이며 terminal 이벤트는 �
 정확히 한 번 전달한다. callback 예외는 `callbackFailure`로 진단 값에 기록하고 SQL 결과,
 원래 예외, `CancellationException`을 대체하거나 재시도하지 않는다.
 
+호출자가 최종 진단을 관찰해야 할 때는 선택적 `ClickHouseQueryDiagnosticsSink.accept(
+diagnostics: ClickHouseQueryDiagnostics)`를 주입한다. sink는 호출자가 소유하는 동기·
+non-blocking 함수이며 자원 정리와 terminal event 전달이 끝난 뒤 정확히 한 번 호출된다.
+listener 또는 sink가 던진 예외는 민감 값을 제거한 `callbackFailure`로 최종 진단에 남기고,
+별도의 bounded `query_listener_failures_total` 관측값을 증가시키며 SQL 결과·원래 예외·취소를
+대체하지 않는다. sink가 없으면 callbackFailure는 terminal event의 진단 값과 제한된
+lifecycle log에서만 관찰한다.
+
 취소 상태는 다음 네 가지를 구분한다.
 
 | 상태 | 의미 | 이번 train 보장 |
@@ -261,6 +342,11 @@ ResponseReceived → (Completed|Failed|Cancelled)`이며 terminal 이벤트는 �
 
 - lifecycle log는 query id와 제한된 구조화 필드만 기록한다. SQL text, bind 값, token, password, custom header 원문은 기록하지 않는다. `rawProperties`, nested map, throwable message/cause/suppressed/stack trace에 민감 값이 남지 않았는지 canary 테스트를 둔다.
 - 메트릭 callback은 core ClickHouse 모듈에 Micrometer/OTel 타입을 노출하지 않는다. 어댑터가 필요하면 후속 모듈에서 이 모델을 소비한다.
+- 선택적 메트릭 어댑터는 `query_started_total`, `query_completed_total`,
+  `query_failed_total`, `query_cancelled_total`, `query_listener_failures_total`,
+  `query_duration_ms`, `query_rows`만
+  소비하며, label은 `outcome`, `transport`, `database`처럼 bounded cardinality인 값으로
+  제한한다. `query_id`, SQL text, bind 값, 사용자 header는 label로 사용하지 않는다.
 - response metadata는 JDBC vendor code, elapsed, rows처럼 드라이버가 실제 제공한 값만 노출한다. 제공되지 않는 값은 추정하지 않는다.
 - query id/log comment/client name/session setting은 #865 옵션 모델과 중복 정의하지 않고 진단 값 사본에서 참조·복사한다. #867은 public 진단 타입을 사용하지 않고 `internal ClickHouseRowBinaryFallbackEvent(reasonCode, beforeFirstByte)`만 생성하며, #868이 이를 `ClickHouseQueryEvent`로 변환한다.
 
@@ -269,6 +355,15 @@ ResponseReceived → (Completed|Failed|Cancelled)`이며 terminal 이벤트는 �
 - caller-supplied/generated query id, monotonic elapsed, null metadata, redaction, callback 실행 위치·순서·정확히 한 번인 terminal event, 성공·실패·취소 lifecycle, callback 예외 격리를 검증한다.
 - 응답 metadata와 vendor exception의 code/message 보존을 확인하고, 없는 metadata를 임의의 zero 값으로 포장하지 않는다.
 - 기존 queryList/queryFlow의 결과·트랜잭션·재시도 동작을 변경하지 않는 회귀 테스트를 실행한다. `queryList`의 기존 transaction retry와 `queryFlow`의 `maxAttempts=1`을 matrix로 기록하고, local cancellation은 재시도하지 않는다.
+
+재시도·취소 matrix는 다음과 같다.
+
+| 경로 | 기존 재시도 | 취소 시 동작 | 이번 train의 원격 종료 주장 |
+|---|---|---|---|
+| `queryList` | 기존 transaction retry 설정을 그대로 사용 | `CancellationException`을 보존하고 재시도하지 않음 | 없음 |
+| `queryFlow` | `maxAttempts=1`을 유지 | collector 취소 후 local/unknown으로 종료 | 없음 |
+| RowBinary batch | driver retry 정책만 적용, Exposed 자동 재실행 없음 | 전송 전 취소만 local로 기록; 전송 후 자동 중단·resend 없음 | 없음 |
+| #863 전용 fixture | 명시된 테스트 정책만 사용 | cancel request와 remote observed를 별도 기록 | fixture 증거가 있을 때만 `RemoteTerminationObserved` |
 
 ## PR train 통합 계약
 
@@ -298,7 +393,7 @@ ResponseReceived → (Completed|Failed|Cancelled)`이며 terminal 이벤트는 �
 | DS-05 | input batch 상한과 재현 가능한 benchmark | `for run in 1 2 3; do ./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseRowBinaryBenchmarkTest' -PclickhouseV2Benchmark=true -PclickhouseV2BenchmarkRun="$run" --no-parallel --max-workers=1 --no-daemon --console=plain || exit 1; done` 실행; 각 run은 warmup 2회와 독립 측정 5회, 36조합 전부 기록. private driver buffer의 byte bound는 주장하지 않으며 peak heap/RSS만 관측 | `docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json`, `rowbinary-run-2.json`, `rowbinary-run-3.json`, `jdbc-fallback-run-1.json`, `jdbc-fallback-run-2.json`, `jdbc-fallback-run-3.json`, `SHA256SUMS`, `README.md`, `README.ko.md`, `docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.semantic.json`, deterministic SVG/PNG chart 4종, `build/reports/clickhouse-v2/ds-05.json` |
 | DS-06 | #868 immutable diagnostics와 callback 격리 | `./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseQueryDiagnosticsTest' --no-parallel --max-workers=1 --no-daemon --console=plain` 성공; ID/monotonic elapsed/null metadata/redaction/callback thread·order/terminal-once/success-failure-cancel assertions 통과 | JUnit XML, `build/reports/clickhouse-v2/ds-06.json`, lifecycle event trace |
 | DS-07 | 트랜잭션·자원 소유권·취소 경계 보존 | `./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseResourceLifecycleTest' --no-parallel --max-workers=1 --no-daemon --console=plain` 성공; close/rollback/exception precedence와 `CancellationException` 보존, remote termination 미관측 상태를 `Unknown`으로 기록 | JUnit XML, `build/reports/clickhouse-v2/ds-07.json`, cleanup trace |
-| DS-08 | 문서·KDoc·PR train metadata 일치 | `git diff --check`; `./gradlew :bluetape4k-exposed-clickhouse:detekt --no-daemon --console=plain`; `node ~/.codex/skills/bluetape-writer/scripts/audit-korean-terms.mjs --json --series clinic-appointment docs/superpowers/specs/2026-09-09-clickhouse-v2-stacked-train-design.md exposed/clickhouse/README.ko.md`; issue/PR에 exact parent head와 `Closes #...` 확인 | `exposed/clickhouse/README.md`, `README.ko.md`, public KDoc, `docs/superpowers/specs|plans|reviews|lessons`, `build/reports/clickhouse-v2/ds-08.json`, central-manual trace receipt |
+| DS-08 | 문서·KDoc·PR train metadata 일치 | `git diff --check`; `./gradlew :bluetape4k-exposed-clickhouse:detekt --no-daemon --console=plain`; `node ~/.codex/skills/bluetape-writer/scripts/audit-korean-terms.mjs --json docs/superpowers/specs/2026-09-09-clickhouse-v2-stacked-train-design.md exposed/clickhouse/README.ko.md`; issue/PR에 exact parent head와 `Closes #...` 확인 | `exposed/clickhouse/README.md`, `README.ko.md`, public KDoc, `docs/superpowers/specs`, `docs/superpowers/plans`, `docs/superpowers/reviews`, `docs/superpowers/lessons`, `docs/lessons/2026-09-09-clickhouse-v2-*.md`(repo lesson), `build/reports/clickhouse-v2/ds-08.json`, `build/reports/clickhouse-v2/central-manual-traceability.json` |
 | DS-09 | 전체 검증과 독립 리뷰 | `./gradlew :bluetape4k-exposed-clickhouse:test :bluetape4k-exposed-clickhouse:checkKotlinAbi :bluetape4k-exposed-clickhouse:detekt --no-parallel --max-workers=1 --no-daemon --console=plain` 성공, 여섯 관점 독립 리뷰에서 P0/P1=0, hosted CI check·review thread·mergeability 재확인 | `build/reports/clickhouse-v2/ds-09.json`, 독립 리뷰 receipt, exact-head CI receipt |
 
 필수 산출물은 구현 코드, 모듈 테스트, 공개 API baseline 갱신(필요한 경우), 양언어 README/KDoc, #867 benchmark chart/분석, 설계·계획·리뷰·lesson 문서다. 중앙 매뉴얼은 소유 저장소의 별도 변경으로 다루며 이 저장소에 두 번째 `docs/manual` 트리를 만들지 않는다.
@@ -356,8 +451,9 @@ non-finite score, provenance 불일치, driver 내부 전체 버퍼링 관측은
 |---|---|---|
 | English/Korean module guide | `exposed/clickhouse/README.md`, `exposed/clickhouse/README.ko.md` | API 예제의 options·types·RowBinary opt-in이 동일하고 버전은 BOM만 사용 |
 | Public KDoc | `exposed/clickhouse/src/main/kotlin/**`의 공개 options/type/diagnostics 선언 | `detekt`와 source/API fixture에서 문서 링크·계약 확인 |
-| Design/plan/review/lesson | `docs/superpowers/{specs,plans,reviews,lessons}/2026-09-09-clickhouse-v2-*` | SPW receipt와 `git diff --check` |
-| 중앙 매뉴얼 | `${MANUAL_SITE_ROOT:-../bluetape4k.github.io}/docs/manual/bluetape4k-exposed`의 EN/KO landing | 이 train에서는 현 저장소에 생성하지 않으며, 경로·링크 존재 여부를 `central-manual-traceability.json`에 `N/A` 또는 `PASS`로 명시 |
+| Design/plan/review | `docs/superpowers/specs/2026-09-09-clickhouse-v2-*`, `docs/superpowers/plans/2026-09-09-clickhouse-v2-*`, `docs/superpowers/reviews/2026-09-09-clickhouse-v2-*` | SPW receipt `docs/superpowers/reviews/2026-09-09-clickhouse-v2-writer-review.md`와 `git diff --check` |
+| Lesson | `docs/lessons/2026-09-09-clickhouse-v2-*.md` | 구현·검증 후 Korean lesson과 known gaps 기록 |
+| 중앙 매뉴얼 | `${MANUAL_SITE_ROOT:-../bluetape4k.github.io}/docs/manual/bluetape4k-exposed`의 EN/KO landing | 이 train에서는 현 저장소에 생성하지 않으며, 경로·링크 존재 여부를 `build/reports/clickhouse-v2/central-manual-traceability.json`에 `N/A` 또는 `PASS`로 명시 |
 
 ### 운영·실패 매트릭스
 
@@ -365,7 +461,7 @@ non-finite score, provenance 불일치, driver 내부 전체 버퍼링 관측은
 |---|---|---|
 | 인증 실패·DNS 실패·pool exhaustion | scrubbed `ClickHouseConnectionException`, 원인 분류, secret 미노출 | credential/host/pool을 확인한 뒤 새 연결로 재시도; 원본 예외 graph를 재출력하지 않음 |
 | malformed typed/raw property 또는 header | 연결/statement 이전 fail-fast, fallback하지 않음 | 옵션을 수정하고 재실행 |
-| driver capability/version skew | RowBinary statement 생성 전에 일반 JDBC 경로 선택, reason code 기록 | driver 버전과 matrix를 receipt에 남기고 강제 opt-in하지 않음 |
+| driver capability/version skew 또는 profile provider 부재 | provider가 있으면 RowBinary statement 생성 전에 beta-disabled 일반 JDBC 경로 선택, 없으면 `UnsupportedConfiguration` fail-closed; reason code는 provider fallback 때만 기록 | driver 버전·provider profile·matrix를 receipt에 남기고 강제 opt-in하지 않음 |
 | callback sink failure | SQL 결과·원래 예외·취소를 보존하고 `callbackFailure`만 진단 | sink를 비활성화하거나 non-blocking sink로 교체; query 재실행은 호출자 판단 |
 | RowBinary partial acceptance 또는 duplicate/replay 위험 | accepted count를 불완전할 수 있는 값으로 표시, 자동 resend 금지 | 새 writer와 idempotency 정책으로 호출자가 명시적으로 재실행 |
 
@@ -377,8 +473,8 @@ API·JVM 호환성, Kotlin 타입 의미론, 테스트·성능, 문서·운영)�
 
 | 관점 | 최초 finding | 수정본 처분 | 재검토 완료 조건 |
 |---|---|---|---|
-| 아키텍처·소유권 | V2 writer가 statement 생성 시 고정되고 private buffer는 무제한이라 기존 설계의 post-fallback·byte bound 주장이 불가능 | #867을 driver-owned fail-closed로 고정하고 preflight fallback을 statement 생성 전에만 허용; `maxRowsPerFlush`는 input 행 상한으로 한정하고 driver peak heap/RSS만 관측 | 재현 fixture에서 전송 후 fallback·자동 resend가 없고 자원 소유권이 분리됨 |
-| 보안·redaction | header allowlist와 exception graph 재노출 경계가 불명확 | case-insensitive strict allowlist, 인증·routing·hop-by-hop 거부, CR/LF 거부, URL query scrub, 원본 cause/suppressed 미연결 wrapper와 synthetic canary를 고정 | message·cause·suppressed·rendered stack·logger 전부 canary 비노출 |
+| 아키텍처·소유권 | V2 writer가 statement 생성 시 고정되고 private buffer는 무제한이라 기존 설계의 post-fallback·byte bound 주장이 불가능 | #867을 driver-owned fail-closed로 고정하고 connection-scoped beta profile을 preflight로 선택; 적격 batch만 beta-enabled connection을 열고 부적격 batch는 beta-disabled connection을 statement 생성 전에 선택한다. `maxRowsPerFlush`는 input 행 상한으로 한정하고 driver peak heap/RSS만 관측 | 재현 fixture에서 profile 혼합·전송 후 fallback·자동 resend가 없고 자원 소유권이 분리됨 |
+| 보안·redaction | header allowlist와 exception graph 재노출 경계가 불명확하고 basic/token 인증 조합이 미정 | case-insensitive strict allowlist, query-id/log-comment typed-only, 인증·routing·hop-by-hop 거부, CR/LF 거부, URL query scrub, Basic/AccessToken/BearerToken one-of, 원본 cause/suppressed 미연결 wrapper와 sanitized cleanup exception·synthetic canary를 고정 | message·cause·suppressed·rendered stack·logger 전부 canary 비노출, 인증 mode 충돌 fail-fast |
 | API·JVM 호환성 | overload descriptor/default bridge와 URL·typed·raw precedence가 미정 | 두 신규 overload의 정확한 선언/descriptor, options 필수 trailing 인자, 중복 오류와 precedence matrix, Kotlin·Java fixture·`javap` 증거를 고정 | 기존 API baseline 불변, 신규 fixture 컴파일·실행 성공 |
 | Kotlin 타입 의미론 | nullable container/element와 Decimal·Enum·IP·UInt64 경계가 고수준 | nullability 축과 lifecycle matrix, accepted class·wire·overflow/rounding/timezone/precision/malformed 표를 고정 | H2-only와 ClickHouse-only 결과가 분리되고 boundary matrix 전부 통과 |
 | 테스트·성능 | DS 기준·benchmark provenance·직렬화·PENDING 규칙이 불충분 | DS-01~09에 exact command/expected/artifact/receipt를 추가하고 Testcontainers lock, 36조합·3 run·raw SHA·chart ledger를 고정 | 누락·비결정성·환경 실패가 PASS로 승격되지 않음 |
@@ -402,7 +498,7 @@ API·JVM 호환성, Kotlin 타입 의미론, 테스트·성능, 문서·운영)�
 - [x] #865~#868별 공개 모델·실패·검증 계약
 - [x] stacked base와 자동 이슈 종료 계약
 - [x] 최초 6관점 설계 리뷰와 P1 처분 반영
-- [ ] 수정본 6관점 설계 재검토(P0/P1=0)
+- [x] 수정본 6관점 설계 재검토(P0/P1=0, inline fallback·비독립)
 - [ ] 실행 계획과 계획 리뷰
 - [ ] TDD 구현·검증·PR 생성
 - [ ] CI/최종 리뷰 및 merge-ready 보고
