@@ -15,6 +15,8 @@ internal class JdbcObservation {
     val statements = AtomicInteger()
     val results = AtomicInteger()
     val executed = AtomicInteger()
+    val queryTimeouts = AtomicInteger()
+    val cancels = AtomicInteger()
     val next = AtomicInteger()
     var beforeNext: () -> Unit = {}
     var afterNext: () -> Unit = {}
@@ -76,6 +78,14 @@ internal class TrackingClickHouseConnection(
                 "executeQuery" -> {
                     observed.executed.incrementAndGet()
                     trackResult(invokeJdbc(statement, method, args) as ResultSet)
+                }
+                "setQueryTimeout" -> {
+                    observed.queryTimeouts.incrementAndGet()
+                    invokeJdbc(statement, method, args)
+                }
+                "cancel" -> {
+                    observed.cancels.incrementAndGet()
+                    invokeJdbc(statement, method, args)
                 }
                 "close" -> {
                     if (closed.compareAndSet(false, true)) {

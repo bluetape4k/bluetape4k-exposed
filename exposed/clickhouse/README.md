@@ -123,11 +123,12 @@ This helper logs lifecycle-only events, not SQL, bindings, rows or exception pay
 The integration tests exercise `clickhouse-jdbc` `0.9.9` against ClickHouse Server
 `26.7.3.19`. JDBC URL server settings use the `clickhouse_setting_` prefix (see
 the [ClickHouse JDBC URL documentation](https://github.com/ClickHouse/clickhouse-java/blob/v0.9.9/clickhouse-jdbc/README.md#jdbc-url)).
-The catalog `ClickHouseDriver` defaults to the V2 path. A bounded local probe of
-that default path with delayed rows and `socket_timeout` did not produce a
-deterministic read-timeout signal, so this section makes no V2 timeout or
-cancellation guarantee; the reproducible timeout contract below is explicitly
-scoped to the V1 driver.
+The catalog `ClickHouseDriver` (`com.clickhouse.jdbc.ClickHouseDriver`) defaults
+to the V2 path; the test records the `ClickHouse` metadata and `0.9.9` driver
+version, and unwraps the actual `com.clickhouse.jdbc.ConnectionImpl`. The V2
+probe matrix separates connection attempts, server execution timeout, transport
+socket timeout, and local/downstream cancellation. It does not turn an
+observed request or cleanup into a remote query-cancellation guarantee.
 
 - `clickhouse_setting_max_result_rows=2` with
   `clickhouse_setting_result_overflow_mode=throw` raises a JDBC/Exposed SQL
@@ -139,6 +140,37 @@ scoped to the V1 driver.
   `clickhouse_setting_max_result_rows` is not an exact client-side truncation.
   The test fixes `clickhouse_setting_max_block_size=2` and observes the two-row
   prefix on every cold collection.
+- A direct V2 `Statement#setQueryTimeout(1)` probe runs
+  `SELECT sleepEachRow(1), number FROM system.numbers LIMIT 3` three times. Each
+  attempt raises `SQLTimeoutException("Query execution time exceeded limit")`
+  before a row is emitted; the `ResultSet`, `Statement`, and `Connection` are
+  released and a follow-up `queryFlow` collection succeeds. This is the V2
+  server-side `max_execution_time` contract for a directly configured JDBC
+  statement. Hikari `connectionTimeout` only bounds pool acquisition; it is not
+  a query deadline. `queryFlow` does not expose that statement handle, so callers
+  must configure `Statement#setQueryTimeout` or
+  `clickhouse_setting_max_execution_time` at their JDBC/DataSource boundary.
+- A V2 `socket_timeout=200` probe with the same delayed-row shape completes all
+  two rows on three attempts (about 2.0 seconds each) without a SQL exception.
+  The transport read-timeout contract is therefore `N/A` for this probe
+  condition/server/driver combination; do not infer a socket timeout from the
+  URL alone.
+- A V2 connection probe repeats a `DriverManager` attempt against a closed
+  ephemeral loopback port with `connect_timeout=200&connection_timeout=200`.
+  All three attempts fail with `SQLException` within five seconds. This is a
+  bounded connection-refusal result, not proof that a timeout expired or that a
+  ClickHouse handshake was interrupted. V2 exposes `connection_timeout` in its
+  client property list; `connect_timeout` is retained in the probe because it is
+  the issue's requested spelling and must not be documented as a V2 guarantee.
+- Three `queryFlow(...).take(1)` collections release the local cursor and pool
+  connection and each follow-up collection succeeds within the bounded test
+  window. This proves local producer/ResultSet cleanup, not interruption of a
+  blocking V2 JDBC read or termination of the remote query.
+- Three direct V2 `Statement#cancel()` calls are accepted after a row and release
+  local resources. In `clickhouse-jdbc` `0.9.9`, the V2 implementation issues
+  `KILL QUERY` asynchronously (see the [driver source](https://github.com/ClickHouse/clickhouse-java/blob/v0.9.9/jdbc-v2/src/main/java/com/clickhouse/jdbc/StatementImpl.java)); a successful
+  `cancel()` return is not proof that ClickHouse has finished terminating the
+  remote query (see [KILL QUERY](https://clickhouse.com/docs/reference/statements/kill)).
 - The V1 read-timeout test selects `com.clickhouse.jdbc.DriverV1` explicitly and
   sets `socket_timeout=200`. A one-second-per-row query raises the driver's
   `BatchUpdateException("Read timed out")`, wrapped by Exposed, before the
@@ -147,8 +179,7 @@ scoped to the V1 driver.
   the server-side `clickhouse_setting_max_execution_time` query timeout; callers
   must configure finite connection, socket, and query timeouts for blocking JDBC
   cancellation on the selected driver and treat timeout/limit failures as
-  terminal for that collection. Applications using the default V2 driver must
-  verify its own timeout behavior; this V1 result is not a V2 guarantee.
+  terminal for that collection. The V1 result is not a V2 guarantee.
 
 ## Column Types
 
