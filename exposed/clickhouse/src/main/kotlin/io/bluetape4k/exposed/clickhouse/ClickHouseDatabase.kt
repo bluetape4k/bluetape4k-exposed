@@ -181,8 +181,8 @@ object ClickHouseDatabase: KLogging() {
     /**
      * 전달받은 JDBC URL과 ClickHouse JDBC V2 옵션으로 연결을 생성합니다.
      *
-     * URL의 query value는 오류 메시지에서 모두 `REDACTED`로 치환되며, 인증 key는
-     * options의 one-of 모드를 우회하지 못하도록 fail-fast 합니다.
+     * URL의 query value와 authority userinfo는 오류 메시지에서 모두 `REDACTED`로
+     * 치환되며, 인증 key는 options의 one-of 모드를 우회하지 못하도록 fail-fast 합니다.
      */
     fun connect(
         jdbcUrl: String,
@@ -193,6 +193,10 @@ object ClickHouseDatabase: KLogging() {
         requireNotNull(jdbcUrl.ifBlank { null }) { "jdbcUrl은 공백일 수 없습니다." }
         require(jdbcUrl.startsWith("jdbc:clickhouse://")) {
             "jdbcUrl은 'jdbc:clickhouse://'로 시작해야 합니다: ${ClickHouseV2Redaction.redactJdbcUrl(jdbcUrl)}"
+        }
+        require(!ClickHouseV2Redaction.containsUserInfo(jdbcUrl)) {
+            "options 연결의 jdbcUrl에는 authority userinfo를 포함할 수 없습니다: " +
+                ClickHouseV2Redaction.redactJdbcUrl(jdbcUrl)
         }
         return connectWithV2Options(jdbcUrl, user, password, options)
     }

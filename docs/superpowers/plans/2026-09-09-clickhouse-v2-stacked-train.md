@@ -238,7 +238,7 @@ data class ClickHouseV2TlsOptions(
     val sslKeyReference: String? = null,
     val sslRootCertReference: String? = null,
     val sslCertReference: String? = null,
-    val sslAuthentication: String? = null,
+    val sslAuthentication: Boolean? = null,
     val sslSocketSni: String? = null,
 )
 ```

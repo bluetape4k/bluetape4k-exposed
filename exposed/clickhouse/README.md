@@ -62,7 +62,9 @@ RowBinary beta key, and duplicate typed/raw keys fail fast. Raw server settings
 are limited to `clickhouse_setting_<name>`, and custom headers are limited to
 `X-ClickHouse-User-Agent`; header values are never logged.
 
-TLS accepts file or secret-store references, not certificate/key material.
+TLS options enable the driver's secure transport (`ssl=true`) and accept file or
+secret-store references, not certificate/key material. `sslAuthentication` is a
+strict Boolean for mTLS client-certificate authentication.
 `ClickHouseV2SecretProvider` supplies a password just for property conversion;
 the returned `CharArray` is cleared immediately afterwards. `toString()` and
 connection failures redact passwords, tokens, secret values, and JDBC URL

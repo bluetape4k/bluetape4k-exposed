@@ -83,6 +83,8 @@ data class ClickHouseV2ProxyOptions(
  * ClickHouse JDBC V2 TLS 설정입니다.
  *
  * 인증서와 키 자체가 아니라 파일 또는 secret-store reference만 받습니다.
+ * 옵션이 존재하면 secure transport를 활성화하며, mTLS client-certificate 인증은
+ * [sslAuthentication] Boolean으로 선택합니다.
  */
 data class ClickHouseV2TlsOptions(
     val trustStore: String? = null,
@@ -92,7 +94,7 @@ data class ClickHouseV2TlsOptions(
     val sslKeyReference: String? = null,
     val sslRootCertReference: String? = null,
     val sslCertReference: String? = null,
-    val sslAuthentication: String? = null,
+    val sslAuthentication: Boolean? = null,
     val sslSocketSni: String? = null,
 ) {
     init {
@@ -106,10 +108,6 @@ data class ClickHouseV2TlsOptions(
         keyStoreType?.let {
             requireNotBlank(it, "keyStoreType")
             require(it.none(Char::isISOControl)) { "keyStoreType에는 제어 문자를 사용할 수 없습니다." }
-        }
-        sslAuthentication?.let {
-            requireNotBlank(it, "sslAuthentication")
-            require(it.none(Char::isISOControl)) { "sslAuthentication에는 제어 문자를 사용할 수 없습니다." }
         }
         sslSocketSni?.let {
             requireNotBlank(it, "sslSocketSni")
@@ -332,6 +330,9 @@ class ClickHouseV2Options(
     }
 
     private fun validateServerSettingCollision(key: String) {
+        require(key != "log_comment" || logComment == null) {
+            "logComment과 serverSettings를 중복 지정할 수 없습니다."
+        }
         require("clickhouse_setting_$key" !in rawProperties) {
             "serverSettings와 raw property를 중복 지정할 수 없습니다: $key"
         }
@@ -345,6 +346,7 @@ private const val MAX_PORT = 65535
 private val PROXY_KEYS = setOf("proxy_type", "proxy_host", "proxy_port", "proxy_user", "proxy_password")
 
 private val TLS_KEYS = setOf(
+    "ssl",
     "trust_store",
     "key_store_type",
     "ssl_key_store",

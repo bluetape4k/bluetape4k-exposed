@@ -177,7 +177,29 @@ class ClickHouseV2OptionsTest {
             ),
         )
         options.toEffectiveProperties("default", "").getProperty("proxy_host") shouldBeEqualTo "proxy"
+        options.toEffectiveProperties("default", "").getProperty("proxy_type") shouldBeEqualTo "HTTP"
         options.toEffectiveProperties("default", "").getProperty("trust_store") shouldBeEqualTo "file:/tmp/truststore"
+        options.toEffectiveProperties("default", "").getProperty("ssl") shouldBeEqualTo "true"
+    }
+
+    @Test
+    fun `TLS client certificate authentication is mapped as a strict boolean`() {
+        val properties = ClickHouseV2Options(
+            tls = ClickHouseV2TlsOptions(sslAuthentication = true),
+        ).toEffectiveProperties("default", "")
+
+        properties.getProperty("ssl_authentication") shouldBeEqualTo "true"
+        properties.getProperty("ssl") shouldBeEqualTo "true"
+    }
+
+    @Test
+    fun `typed log comment cannot be shadowed by a server setting`() {
+        assertFailsWith<IllegalArgumentException> {
+            ClickHouseV2Options(
+                logComment = "typed-comment",
+                serverSettings = mapOf("log_comment" to "server-comment"),
+            )
+        }
     }
 
     @Test

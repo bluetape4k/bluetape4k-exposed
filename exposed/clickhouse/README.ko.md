@@ -60,8 +60,10 @@ RowBinary beta key, typed/raw 중복은 즉시 실패합니다. raw server setti
 `clickhouse_setting_<name>`으로 제한하고 custom header는
 `X-ClickHouse-User-Agent`만 허용하며 header value는 로그에 남기지 않습니다.
 
-TLS에는 파일 또는 secret-store reference만 지정하고 인증서/키 본문은 넣지
-않습니다. `ClickHouseV2SecretProvider`는 property 변환 순간에만 password를
+TLS options를 지정하면 driver의 secure transport(`ssl=true`)가 활성화되며,
+파일 또는 secret-store reference만 지정하고 인증서/키 본문은 넣지 않습니다.
+`sslAuthentication`은 mTLS client-certificate 인증을 위한 Boolean 값입니다.
+`ClickHouseV2SecretProvider`는 property 변환 순간에만 password를
 제공하며 반환된 `CharArray`는 즉시 지웁니다. `toString()`과 연결 예외는
 password, token, secret, JDBC URL query 값을 redact합니다. options URL에서
 인증 property를 지정하면 선택한 인증 모드를 우회할 수 없도록 거부하며,
