@@ -3,15 +3,18 @@ package io.bluetape4k.exposed.core.fastjson2
 import com.alibaba.fastjson2.JSON
 import com.alibaba.fastjson2.JSONArray
 import com.alibaba.fastjson2.JSONObject
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.logging.KLogging
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.Table
@@ -21,15 +24,19 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldHaveSize
+import java.io.Serializable
 
 class ResultRowExtensionsTest: AbstractExposedTest() {
+
+    companion object: KLogging()
 
     private val expr = mockk<Expression<Any?>>()
     private val row = mockk<ResultRow>()
 
-    private data class Payload(val user: FastjsonSchema.User, val active: Boolean)
+    private data class Payload(
+        val user: FastjsonSchema.User,
+        val active: Boolean,
+    ): Serializable
 
     private object JsonTextTable: Table("fastjson_result_row_test") {
         val jsonObjectText = text("json_object_text")
@@ -62,7 +69,7 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
             row.getFastjsonObject(JsonTextTable.jsonObjectText).getJSONObject("user")
                 .getString("name") shouldBeEqualTo "tester"
             row.getFastjsonArray(JsonTextTable.jsonArrayText) shouldHaveSize 3
-            row.getFastjsonOrNull<Payload>(JsonTextTable.nullableText) shouldBeEqualTo null
+            row.getFastjsonOrNull<Payload>(JsonTextTable.nullableText).shouldBeNull()
         }
     }
 
