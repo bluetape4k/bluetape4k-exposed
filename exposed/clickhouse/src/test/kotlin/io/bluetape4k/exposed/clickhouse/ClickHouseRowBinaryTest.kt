@@ -5,6 +5,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.clickhouse.support.RowBinaryConnectionProviderFixture
 import org.junit.jupiter.api.Test
 import java.sql.SQLException
+import java.sql.SQLFeatureNotSupportedException
 import java.sql.Statement
 
 /**
@@ -96,6 +97,98 @@ class ClickHouseRowBinaryTest {
         fixture.openedProfiles shouldBeEqualTo listOf(false)
         fixture.fallbackEvents.single().beforeFirstByte shouldBeEqualTo true
         fixture.fallbackEvents.single().reasonCode shouldBeEqualTo "INSERT_SELECT"
+    }
+
+    @Test
+    fun `multiple values groups and value functions use jdbc fallback`() {
+        val fixture = RowBinaryConnectionProviderFixture(executionCounts = listOf(intArrayOf(1), intArrayOf(1)))
+        val executor = ClickHouseRowBinaryExecutor(fixture, ClickHouseRowBinaryOptions(enabled = true))
+
+        val multiple = executor.executeBatch(
+            "INSERT INTO events (id) VALUES (?), (?)",
+            listOf(Row { it.setInt(1, 1) }),
+        )
+        val function = executor.executeBatch(
+            "INSERT INTO events (created_at) VALUES (toDate(?))",
+            listOf(Row { it.setString(1, "2026-01-01") }),
+        )
+
+        multiple.path shouldBeEqualTo ClickHouseBatchPath.JDBC_FALLBACK
+        function.path shouldBeEqualTo ClickHouseBatchPath.JDBC_FALLBACK
+        fixture.openedProfiles shouldBeEqualTo listOf(false, false)
+        fixture.fallbackEvents.map { it.reasonCode } shouldBeEqualTo listOf("MULTIPLE_VALUES_GROUPS", "VALUES_FUNCTION")
+    }
+
+    @Test
+    fun `unsupported setter before first byte is replayed once through jdbc fallback`() {
+        val fixture = RowBinaryConnectionProviderFixture(
+            setterFailure = UnsupportedOperationException("nested setter unsupported"),
+            executionCounts = listOf(intArrayOf(1)),
+        )
+        val executor = ClickHouseRowBinaryExecutor(fixture, ClickHouseRowBinaryOptions(enabled = true))
+
+        val result = executor.executeBatch("INSERT INTO events VALUES (?)", listOf(Row { it.setInt(1, 1) }))
+
+        result.path shouldBeEqualTo ClickHouseBatchPath.JDBC_FALLBACK
+        result.updateCounts shouldBeEqualTo listOf(1)
+        fixture.openedProfiles shouldBeEqualTo listOf(true, false)
+        fixture.fallbackEvents.single().reasonCode shouldBeEqualTo "UNSUPPORTED_SETTER"
+        fixture.assertClosedExactlyOnce()
+    }
+
+    @Test
+    fun `capability unknown on enabled profile falls back before opening a statement`() {
+        val fixture = RowBinaryConnectionProviderFixture(
+            rowBinaryOpenFailure = SQLFeatureNotSupportedException("writer capability unknown"),
+            executionCounts = listOf(intArrayOf(1)),
+        )
+        val executor = ClickHouseRowBinaryExecutor(fixture, ClickHouseRowBinaryOptions(enabled = true))
+
+        val result = executor.executeBatch("INSERT INTO events VALUES (?)", listOf(Row { it.setInt(1, 1) }))
+
+        result.path shouldBeEqualTo ClickHouseBatchPath.JDBC_FALLBACK
+        fixture.openedProfiles shouldBeEqualTo listOf(true, false)
+        fixture.fallbackEvents.single().reasonCode shouldBeEqualTo "CAPABILITY_UNKNOWN"
+        fixture.executedBatchSizes shouldBeEqualTo listOf(1)
+    }
+
+    @Test
+    fun `flush size bounds each execute batch without changing the profile`() {
+        val fixture = RowBinaryConnectionProviderFixture(
+            executionCounts = listOf(intArrayOf(1, 1), intArrayOf(1)),
+        )
+        val executor = ClickHouseRowBinaryExecutor(
+            fixture,
+            ClickHouseRowBinaryOptions(enabled = true, maxRowsPerFlush = 2),
+        )
+
+        val result = executor.executeBatch(
+            "INSERT INTO events VALUES (?)",
+            (1..3).map { id -> Row { it.setInt(1, id) } },
+        )
+
+        result.updateCounts shouldBeEqualTo listOf(1, 1, 1)
+        fixture.openedProfiles shouldBeEqualTo listOf(true)
+        fixture.executedBatchSizes shouldBeEqualTo listOf(2, 1)
+    }
+
+    @Test
+    fun `first byte failure preserves original exception and makes executor unusable`() {
+        val original = SQLException("first byte failed")
+        val fixture = RowBinaryConnectionProviderFixture(firstByteFailure = original)
+        val executor = ClickHouseRowBinaryExecutor(fixture, ClickHouseRowBinaryOptions(enabled = true))
+
+        val thrown = assertFailsWith<SQLException> {
+            executor.executeBatch("INSERT INTO events VALUES (?)", listOf(Row { it.setInt(1, 1) }))
+        }
+
+        thrown shouldBeEqualTo original
+        fixture.openedProfiles shouldBeEqualTo listOf(true)
+        fixture.fallbackEvents shouldBeEqualTo emptyList()
+        fixture.assertClosedExactlyOnce()
+        assertFailsWith<ClickHouseRowBinaryExecutor.UnsupportedConfiguration> {
+            executor.executeBatch("INSERT INTO events VALUES (?)", listOf(Row { it.setInt(1, 2) }))
+        }
     }
 
     @Test

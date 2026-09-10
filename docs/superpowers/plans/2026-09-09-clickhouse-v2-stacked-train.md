@@ -683,7 +683,7 @@ preflight 관련 미정의 symbol이 관찰됐다. 이는 구현 전 RED 증거�
 - Create: `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryExecutor.kt`
 - Modify: `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/support/RowBinaryConnectionProviderFixture.kt`
 
-- [ ] **Step 1: public API와 preflight를 구현한다**
+- [x] **Step 1: public API와 preflight를 구현한다**
 
 ```kotlin
 data class ClickHouseRowBinaryOptions(
@@ -723,7 +723,13 @@ class ClickHouseRowBinaryExecutor(
 
 `ClickHouseRowBinaryPreflight`는 connection/statement를 만들기 전에 SQL이 단순 `INSERT ... VALUES (?, ...)`, 단일 values group, supported column/setter, valid options인지 판정한다. eligible이면 provider `open(true)`, unsupported/capability unknown이면 `open(false)`를 호출한다. provider가 실제 profile을 검증하지 못하면 고정 `UnsupportedConfiguration`으로 fail-closed한다. beta property는 connection-scoped이며 기존 `Database`/pool properties를 mutate하지 않는다.
 
-- [ ] **Step 2: operation lifecycle과 fallback state machine을 구현한다**
+실행 결과: `ClickHouseRowBinaryOptions`, dual-profile
+`ClickHouseConnectionProvider`, 보수적 SQL preflight와 immutable result/path
+계약을 추가했다. provider 부재·capability unknown은 fail-closed 또는 disabled
+profile fallback으로 분기하며 beta property는 provider 경계 밖에서 mutate하지
+않는다.
+
+- [x] **Step 2: operation lifecycle과 fallback state machine을 구현한다**
 
 executor는 provider가 반환한 operation-scoped connection에서 statement를 만들고 rows를 `maxRowsPerFlush` 행 이하로 flush한다. provider/DataSource/pool/ambient Exposed transaction은 닫지 않으며 `commit()`·`rollback()`을 호출하지 않는다.
 
@@ -743,13 +749,24 @@ connection.use { connection ->
 
 fallback은 첫 setter/byte/row 전송 전 한 번만 허용하며, provider가 실제 beta-disabled profile을 선택한 경우에만 internal `ClickHouseRowBinaryFallbackEvent(reasonCode, beforeFirstByte=true)`를 만든다. 첫 setter 이후 실패하면 writer를 unusable로 만들고 원래 예외를 던지며 fallback/retry/resend하지 않는다. fixed beta-enabled Database에서 unsupported SQL이면 일반 JDBC로 몰래 변경하지 않고 `UnsupportedConfiguration`을 던지며 fallback event를 만들지 않는다. `SUCCESS_NO_INFO`·`EXECUTE_FAILED`를 포함한 update count 배열을 그대로 보존하고, accepted count가 불완전할 수 있는 경우 flag를 true로 둔다. terminal 상태 후 writer 재사용은 고정 예외로 거부한다.
 
-- [ ] **Step 3: GREEN RowBinary test를 실행한다**
+실행 결과: operation-scoped connection/statement만 닫고 commit/rollback은
+호출하지 않도록 executor를 구현했다. `maxRowsPerFlush` 단위 flush, pre-byte
+setter fallback, first-byte 이후 원래 예외·unusable 보존, partial count
+sentinel/불완전 accepted flag를 모두 적용했다.
+
+- [x] **Step 3: GREEN RowBinary test를 실행한다**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseRowBinaryTest' --no-parallel --max-workers=1 --no-daemon --console=plain
 ```
 
 Expected: simple/complex/unsupported/invalid-option/setter-failure/partial-count/unusable assertion과 dual-profile assertion이 모두 통과한다. JUnit XML과 `build/reports/clickhouse-v2/ds-04.json`에 fallback reason code와 profile sequence를 기록한다.
+
+실행 결과: `ClickHouseRowBinaryTest` 14개가 모두 통과했다. selector는
+`--no-parallel --max-workers=1 --no-daemon`으로 실행했으며, JUnit 결과는
+`tests=14, failures=0, errors=0, skipped=0`이다. fixture에서 profile sequence,
+fallback reason, flush size, 자원 close 횟수를 확인했다. 실제 DS-04 JSON과
+ClickHouse container 증거는 Step 4에서 보강한다.
 
 - [ ] **Step 4: 실제 ClickHouse profile fixture를 검증한다**
 
