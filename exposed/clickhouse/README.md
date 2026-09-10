@@ -70,6 +70,112 @@ query values. A JDBC URL query has the driver's highest precedence for
 non-authentication properties; authentication keys in an options URL are
 rejected so they cannot bypass the selected authentication mode.
 
+### ClickHouse JDBC V2 RowBinary batch writer
+
+`ClickHouseRowBinaryExecutor` is an explicit opt-in batch writer for the
+ClickHouse JDBC V2 `RowBinaryWithDefaults` path. The caller owns a
+`ClickHouseConnectionProvider`; it opens a connection with
+`beta.row_binary_for_simple_insert=true` for the RowBinary profile and
+`false` for the JDBC fallback profile. The property is connection-scoped and
+is deliberately not part of `ClickHouseV2Options`.
+
+```kotlin
+val writer = ClickHouseRowBinaryExecutor(
+    provider = ClickHouseConnectionProvider { rowBinaryEnabled ->
+        openConnection(rowBinaryEnabled) // caller applies the V2 profile property
+    },
+    options = ClickHouseRowBinaryOptions(
+        enabled = true,
+        maxRowsPerFlush = 1_024,
+    ),
+)
+
+val result = writer.executeBatch(
+    sql = "INSERT INTO events (id, label) VALUES (?, ?)",
+    rows = events.asSequence().map { event -> listOf(event.id, event.label) },
+)
+```
+
+Only one simple `INSERT ... VALUES (...)` group is eligible. Placeholders and
+`DEFAULT` are delegated to the driver; `INSERT ... SELECT`, multiple value
+groups, nested value expressions/functions, unsupported setters, a missing
+provider, or unknown driver capability select the disabled JDBC profile before
+the first byte. The executor never retries or resends a chunk after a setter
+has run or the first byte has been written. A setter/first-byte failure is
+terminal for that executor instance and the original exception is preserved.
+
+`ClickHouseRowBinaryResult.updateCounts` keeps driver sentinel values such as
+`SUCCESS_NO_INFO` and `EXECUTE_FAILED`. `acceptedCount` sums only
+non-negative counts; `acceptedCountMayBeIncomplete=true` records that the driver returned a
+sentinel. The writer chunks input at `maxRowsPerFlush`, does not commit or
+rollback a caller-owned connection, and does not close the caller's pool or
+dispatcher. A writer instance is not reusable after a post-byte failure.
+
+The real profile test uses `clickhouse-jdbc` `0.9.9` and ClickHouse Server
+`26.7.3.19`, verifies the driver `WriterStatementImpl` for the opted-in path,
+`PreparedStatementImpl` for unsupported SQL, and checks `DEFAULT` handling:
+
+```bash
+./gradlew :bluetape4k-exposed-clickhouse:test \
+  --tests '*ClickHouseRowBinaryIntegrationTest' \
+  -PclickhouseV2Integration=true \
+  --no-parallel --max-workers=1 --no-daemon --console=plain
+```
+
+The bounded fixture benchmark covers 3 logical row counts × 3 flush sizes ×
+2 row shapes × 2 paths across three fresh test processes (36 records per run
+set). The fixture measures at most 2,048 in-memory rows, so the logical
+10,000/100,000/1,000,000 row labels are not production wire throughput and do
+not establish a private driver buffer or heap bound. The numeric source is
+[clickhouse-v2-rowbinary](../../docs/benchmarks/clickhouse-v2-rowbinary);
+the chart compares the three-process medians:
+
+| Row shape | Logical rows | Flush | RowBinary rows/s | JDBC fallback rows/s | RowBinary / fallback |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| narrow | 10,000 | 256 | 4.28M | 14.30M | 0.30x |
+| narrow | 10,000 | 1,024 | 9.91M | 15.40M | 0.64x |
+| narrow | 10,000 | 4,096 | 14.60M | 21.74M | 0.67x |
+| narrow | 100,000 | 256 | 18.12M | 21.34M | 0.85x |
+| narrow | 100,000 | 1,024 | 17.91M | 22.12M | 0.81x |
+| narrow | 100,000 | 4,096 | 20.51M | 21.14M | 0.97x |
+| narrow | 1,000,000 | 256 | 18.94M | 19.99M | 0.95x |
+| narrow | 1,000,000 | 1,024 | 19.83M | 22.71M | 0.87x |
+| narrow | 1,000,000 | 4,096 | 20.39M | 22.94M | 0.89x |
+| wide | 10,000 | 256 | 1.85M | 3.46M | 0.54x |
+| wide | 10,000 | 1,024 | 4.53M | 3.80M | 1.19x |
+| wide | 10,000 | 4,096 | 7.42M | 10.18M | 0.73x |
+| wide | 100,000 | 256 | 11.00M | 10.66M | 1.03x |
+| wide | 100,000 | 1,024 | 12.04M | 11.63M | 1.04x |
+| wide | 100,000 | 4,096 | 12.34M | 10.93M | 1.13x |
+| wide | 1,000,000 | 256 | 12.24M | 16.91M | 0.72x |
+| wide | 1,000,000 | 1,024 | 12.42M | 14.90M | 0.83x |
+| wide | 1,000,000 | 4,096 | 13.46M | 14.43M | 0.93x |
+
+![ClickHouse JDBC V2 RowBinary benchmark](../../docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.png)
+
+The fixture shows a path/shape/flush interaction rather than a universal
+optimization: JDBC fallback is faster in every narrow cell, while RowBinary
+leads in the wide 10,000/1,024 cell (1.19x) and all three 100,000-row cells
+(1.03x–1.13x). Treat the ratios as directional local evidence only. Recreate
+the raw runs and chart with:
+
+```bash
+for run in 1 2 3; do
+  ./gradlew :bluetape4k-exposed-clickhouse:test \
+    --tests '*ClickHouseRowBinaryBenchmarkTest' \
+    -PclickhouseV2Benchmark=true -PclickhouseV2BenchmarkRun="$run" \
+    --no-parallel --max-workers=1 --no-daemon --console=plain
+done
+python3 docs/benchmarks/clickhouse-v2-rowbinary/render_rowbinary_chart.py \
+  --input-dir docs/benchmarks/clickhouse-v2-rowbinary --locale en \
+  --output docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.svg \
+  --semantic-ledger docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.semantic.json
+```
+
+General stream-writer support, `async_insert`, and remote cancellation or
+`KILL QUERY` completion remain outside this issue; the latter is tracked by
+#863.
+
 ## Table option policy
 
 Exposed `1.5.0` does not validate dialect compatibility of generic

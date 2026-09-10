@@ -18,6 +18,7 @@ internal object ClickHouseRowBinaryPreflight {
     private const val INSERT = "insert"
     private const val VALUES = "values"
 
+    @Suppress("CyclomaticComplexMethod", "ReturnCount")
     fun inspect(sql: String): ClickHouseRowBinaryPreflightResult {
         val source = stripComments(sql).trim().removeSuffix(";").trim()
         if (source.isEmpty()) return ineligible("INVALID_SQL")
@@ -74,6 +75,7 @@ internal object ClickHouseRowBinaryPreflight {
         source.regionMatches(0, word, 0, word.length, ignoreCase = true) &&
             (source.length == word.length || !source[word.length].isIdentifierPart())
 
+    @Suppress("LoopWithTooManyJumpStatements")
     private fun findKeyword(source: String, keyword: String): Int {
         var quote: Char? = null
         var index = 0
@@ -173,6 +175,7 @@ internal object ClickHouseRowBinaryPreflight {
         return result
     }
 
+    @Suppress("CyclomaticComplexMethod")
     private fun stripComments(source: String): String {
         val result = StringBuilder(source.length)
         var quote: Char? = null

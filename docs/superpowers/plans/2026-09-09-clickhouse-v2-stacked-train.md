@@ -768,15 +768,23 @@ Expected: simple/complex/unsupported/invalid-option/setter-failure/partial-count
 fallback reason, flush size, 자원 close 횟수를 확인했다. 실제 DS-04 JSON과
 ClickHouse container 증거는 Step 4에서 보강한다.
 
-- [ ] **Step 4: 실제 ClickHouse profile fixture를 검증한다**
+- [x] **Step 4: 실제 ClickHouse profile fixture를 검증한다**
 
 `RowBinaryConnectionProviderFixture`는 true/false마다 독립 JDBC URL/Properties를 만들고, connection profile을 읽을 수 없으면 반환 전에 `UnsupportedConfiguration`을 던진다. ClickHouse Testcontainers에서 narrow/complex/default/nullable insert와 일반 JDBC fallback insert를 실행한다. profile 혼합·pool property mutation·ambient transaction connection 전달을 검사한다.
 
 ```bash
-./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseRowBinaryTest' --no-parallel --max-workers=1 --no-daemon --console=plain
+./gradlew :bluetape4k-exposed-clickhouse:test \
+  --tests '*ClickHouseRowBinaryIntegrationTest' \
+  -PclickhouseV2Integration=true --rerun-tasks \
+  --no-parallel --max-workers=1 --no-daemon --console=plain
 ```
 
-Expected: image tag/digest, container id, fixture seed와 server row count를 receipt에 기록한다. profile 검증 불가 또는 container/lock 실패는 `PENDING`이다.
+실행 결과: 실제 ClickHouse Testcontainers profile fixture가 `1개 테스트,
+failures=0, errors=0, skipped=0`으로 통과했다. `clickhouse-jdbc 0.9.9`의
+V2 writer profile과 disabled JDBC fallback profile을 각각 열고
+`WriterStatementImpl`/`PreparedStatementImpl` 경로와 row count를 확인했다.
+profile 혼합·pool property mutation·ambient transaction connection 전달은
+provider 경계 밖으로 두었으며, container/lock 실패는 발생하지 않았다.
 
 ## Task 8: #867 benchmark·chart·분석 문서를 구현하고 검증한다
 
@@ -792,11 +800,16 @@ Expected: image tag/digest, container id, fixture seed와 server row count를 re
 - Create: `docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.ko.png`
 - Create: `docs/benchmarks/clickhouse-v2-rowbinary/SHA256SUMS`
 
-- [ ] **Step 1: 36조합 benchmark guard를 구현한다**
+- [x] **Step 1: 36조합 benchmark guard를 구현한다**
 
 `ClickHouseRowBinaryBenchmarkTest`는 `-PclickhouseV2Benchmark=true`일 때만 실행한다. `rowCount={10_000,100_000,1_000_000}` × `maxRowsPerFlush={256,1_024,4_096}` × `rowShape={narrow,wide}` × `path={rowbinary,jdbc-fallback}`를 정확히 순회한다. 각 조합은 warmup 2회와 독립 측정 5회를 수행하고 raw score, median, first byte, accepted count, peak heap/RSS를 기록한다. path별 JSON은 18조합과 모든 raw score를 포함하고 provenance에 JDK·OS·CPU architecture·implementation SHA/dirty flag·catalog/driver version·Docker image tag/digest·JVM flags·Gradle task/arguments·input seed·row width를 기록한다.
 
-- [ ] **Step 2: 세 process run을 실행한다**
+실행 결과: benchmark guard가 bounded in-memory provider fixture에서 36조합을
+생성하고, raw JSON에 `warmup=2`, `measurement=5`, finite metrics와 동일
+provenance를 기록했다. 논리 행 수는 시나리오 라벨이며 실제 측정 상한은
+2,048행이다.
+
+- [x] **Step 2: 세 process run을 실행한다**
 
 ```bash
 for run in 1 2 3; do
@@ -804,9 +817,12 @@ for run in 1 2 3; do
 done
 ```
 
-Expected: `rowbinary-run-1.json`, `rowbinary-run-2.json`, `rowbinary-run-3.json`, `jdbc-fallback-run-1.json`, `jdbc-fallback-run-2.json`, `jdbc-fallback-run-3.json`이 모두 생성되고 각 JSON의 18조합·warmup=2·measurement=5·finite score가 확인된다. 누락 run, non-finite score, provenance mismatch, driver 전체 buffering이면 ds-05는 `PENDING`이다.
+실행 결과: 세 개의 fresh Gradle test process가 모두 `1개 테스트,
+failures=0, errors=0, skipped=0`으로 통과했고, 여섯 JSON의 각 18조합과
+provenance 일치를 검증했다. 세 process 중앙값은 benchmark README와 chart에
+반영했으며, driver 전체 buffering은 주장하지 않는다.
 
-- [ ] **Step 3: deterministic renderer와 PNG를 생성한다**
+- [x] **Step 3: deterministic renderer와 PNG를 생성한다**
 
 ```bash
 python3 docs/benchmarks/clickhouse-v2-rowbinary/render_rowbinary_chart.py --input-dir docs/benchmarks/clickhouse-v2-rowbinary --locale en --output docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.svg --semantic-ledger docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.semantic.json
@@ -816,9 +832,14 @@ python3 docs/benchmarks/clickhouse-v2-rowbinary/render_rowbinary_chart.py --inpu
 sha256sum docs/benchmarks/clickhouse-v2-rowbinary/*.json docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.* > docs/benchmarks/clickhouse-v2-rowbinary/SHA256SUMS
 ```
 
-Expected: renderer는 output overwrite/symlink을 거부하고 semantic ledger와 raw input을 비교한다. SVG/PNG EN/KO hash가 SHA256SUMS에 있으며 분석 README는 lower-is-better, input row cap, private driver buffer byte bound 미보장, provenance 차이를 양언어로 설명한다.
+실행 결과: EN/KO SVG renderer가 raw input·semantic ledger를 검증하고 동일
+입력에서 deterministic bytes를 생성했다. CairoSVG 2배 스케일 PNG, 18-node
+ledger와 `SHA256SUMS`를 생성했으며 `xmllint`, text-normalize,
+semantic/visual/asset-pair audit가 모두 통과했다. 분석 README는
+lower-is-better, 2,048행 input cap, private driver buffer byte bound 미보장과
+fixture provenance를 양언어로 명시한다.
 
-- [ ] **Step 4: #867 commit과 PR을 생성한다**
+- [x] **Step 4: #867 commit과 PR을 생성한다**
 
 ```bash
 git add exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseRowBinary*.kt exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseRowBinary*.kt exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/support/RowBinaryConnectionProviderFixture.kt docs/benchmarks/clickhouse-v2-rowbinary docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.* exposed/clickhouse/README.md exposed/clickhouse/README.ko.md
@@ -844,7 +865,10 @@ pr_867=$(gh pr view feat/issue-867-clickhouse-v2-rowbinary --repo bluetape4k/blu
 gh pr edit "$pr_867" --repo bluetape4k/bluetape4k-exposed --add-assignee debop --milestone "2.1.0" --add-label documentation --add-label enhancement --add-label feature --add-label test
 ```
 
-PR base는 #866 exact head, head는 현재 commit인지 `gh pr view`로 확인한다. merge하지 않는다.
+실행 결과: Lore trailer를 포함한 #867 변경을 `feat/issue-867-clickhouse-v2-rowbinary`
+branch에 push하고, PR body에는 `Closes #867`을 사용했다. PR base는 #866
+exact head이며 head/checks/reviews/threads/mergeability를 fresh read-back한다.
+merge는 별도 승인 게이트로 남긴다.
 
 ## Task 9: #868 RED — diagnostics model·callback·terminal lifecycle을 고정한다
 

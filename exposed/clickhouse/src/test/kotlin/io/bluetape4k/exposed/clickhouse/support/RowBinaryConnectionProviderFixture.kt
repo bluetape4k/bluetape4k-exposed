@@ -107,7 +107,9 @@ internal class RowBinaryConnectionProviderFixture(
                 }
                 method.name == "executeBatch" -> {
                     executedBatchSizes += addedRows
-                    val counts = executionCounts.getOrElse(executionIndex) { executionCounts.lastOrNull() ?: intArrayOf() }
+                    val counts = executionCounts.getOrElse(executionIndex) {
+                        executionCounts.lastOrNull() ?: intArrayOf()
+                    }
                     executionIndex++
                     addedRows = 0
                     counts.copyOf()
