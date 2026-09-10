@@ -1,13 +1,14 @@
 package io.bluetape4k.exposed.core.compress
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeLessThan
 import io.bluetape4k.exposed.core.statements.api.toExposedBlob
 import io.bluetape4k.io.compressor.Compressor
 import io.bluetape4k.io.compressor.Compressors
 import io.bluetape4k.support.toUtf8Bytes
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeLessThan
 import org.junit.jupiter.api.Test
-import io.bluetape4k.assertions.assertFailsWith
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * 특정 예외를 던지는 테스트용 Compressor 구현체.
@@ -253,40 +254,40 @@ class CompressionTransformersTest {
      */
     @Test
     fun `CancellationException 은 Binary unwrap 에서 재전파된다`() {
-        val cancellation = kotlin.coroutines.cancellation.CancellationException("test cancel")
+        val cancellation = CancellationException("test cancel")
         val transformer = CompressedBinaryTransformer(ThrowingCompressor(cancellation))
 
-        assertFailsWith<kotlin.coroutines.cancellation.CancellationException> {
+        assertFailsWith<CancellationException> {
             transformer.unwrap(ByteArray(10))
         }
     }
 
     @Test
     fun `CancellationException 은 Binary wrap 에서 재전파된다`() {
-        val cancellation = kotlin.coroutines.cancellation.CancellationException("test cancel")
+        val cancellation = CancellationException("test cancel")
         val transformer = CompressedBinaryTransformer(ThrowingCompressor(cancellation))
 
-        assertFailsWith<kotlin.coroutines.cancellation.CancellationException> {
+        assertFailsWith<CancellationException> {
             transformer.wrap(ByteArray(10))
         }
     }
 
     @Test
     fun `CancellationException 은 Blob unwrap 에서 재전파된다`() {
-        val cancellation = kotlin.coroutines.cancellation.CancellationException("test cancel")
+        val cancellation = CancellationException("test cancel")
         val transformer = CompressedBlobTransformer(ThrowingCompressor(cancellation))
 
-        assertFailsWith<kotlin.coroutines.cancellation.CancellationException> {
+        assertFailsWith<CancellationException> {
             transformer.unwrap(ByteArray(10))
         }
     }
 
     @Test
     fun `CancellationException 은 Blob wrap 에서 재전파된다`() {
-        val cancellation = kotlin.coroutines.cancellation.CancellationException("test cancel")
+        val cancellation = CancellationException("test cancel")
         val transformer = CompressedBlobTransformer(ThrowingCompressor(cancellation))
 
-        assertFailsWith<kotlin.coroutines.cancellation.CancellationException> {
+        assertFailsWith<CancellationException> {
             transformer.wrap(ByteArray(10).toExposedBlob())
         }
     }

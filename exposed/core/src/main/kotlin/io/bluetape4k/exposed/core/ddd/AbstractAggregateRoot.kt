@@ -1,5 +1,7 @@
 package io.bluetape4k.exposed.core.ddd
 
+import io.bluetape4k.support.requireEquals
+
 /**
  * [AggregateRoot]의 event 기록 기능을 제공하는 최소 base 구현입니다.
  *
@@ -14,7 +16,7 @@ package io.bluetape4k.exposed.core.ddd
  * 취급하지 않습니다. Event payload는 [DomainEvent] 지침에 따라 불투명한 비민감 identifier와
  * 최소한의 business fact만 포함해야 합니다.
  */
-abstract class AbstractAggregateRoot<ID : Any> : AggregateRoot<ID> {
+abstract class AbstractAggregateRoot<ID: Any>: AggregateRoot<ID> {
 
     abstract override val id: ID
 
@@ -30,7 +32,8 @@ abstract class AbstractAggregateRoot<ID : Any> : AggregateRoot<ID> {
     }
 
     override fun drainDomainEvents(handoff: (List<DomainEvent<ID>>) -> Unit): List<DomainEvent<ID>> {
-        if (recordedDomainEvents.isEmpty()) return emptyList()
+        if (recordedDomainEvents.isEmpty())
+            return emptyList()
 
         val snapshot = recordedDomainEvents.toList()
         handoff(snapshot)
@@ -44,9 +47,7 @@ abstract class AbstractAggregateRoot<ID : Any> : AggregateRoot<ID> {
      * Event의 aggregate id는 [id]와 같아야 하며, 불일치는 호출자 오류입니다.
      */
     protected fun recordDomainEvent(event: DomainEvent<ID>) {
-        require(event.aggregateId == id) {
-            "Domain event aggregateId must match aggregate id"
-        }
+        event.aggregateId.requireEquals(id) { "Domain event aggregateId must match aggregate id[$id]" }
         recordedDomainEvents += event
     }
 }

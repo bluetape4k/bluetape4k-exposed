@@ -1,22 +1,25 @@
 package io.bluetape4k.exposed.core
 
-import io.bluetape4k.idgenerators.uuid.Uuid
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
-import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.idgenerators.uuid.Uuid
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.math.BigDecimal
-import java.util.*
 
 class ResultRowExtensionsTest: AbstractExposedTest() {
+
+    companion object: KLogging()
 
     object ResultRowExtTable: Table("result_row_ext_test") {
         val text = varchar("text", 64)
@@ -66,8 +69,8 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
 
             val row = ResultRowExtTable.selectAll().single()
 
-            row.getStringOrNull(ResultRowExtTable.nullableText) shouldBeEqualTo null
-            row.getIntOrNull(ResultRowExtTable.nullableText) shouldBeEqualTo null
+            row.getStringOrNull(ResultRowExtTable.nullableText).shouldBeNull()
+            row.getIntOrNull(ResultRowExtTable.nullableText).shouldBeNull()
 
             val ex = assertFailsWith<IllegalStateException> {
                 row.getInt(ResultRowExtTable.nullableText)

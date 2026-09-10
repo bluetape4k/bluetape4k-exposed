@@ -1,20 +1,17 @@
 package io.bluetape4k.exposed.core.dao.id
 
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
-import org.jetbrains.exposed.v1.core.Table.UuidVersion
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalUuidApi::class)
 class KotlinUuidTableTest: AbstractExposedTest() {
 
     private object V4Items: KotlinUuidTable("kotlin_uuid_v4_items") {
@@ -56,7 +53,7 @@ class KotlinUuidTableTest: AbstractExposedTest() {
 
             ids.forEach { it.uuidVersion() shouldBeEqualTo 7 }
             ids.zipWithNext().forEach { (previous, current) ->
-                (previous.v7Timestamp() <= current.v7Timestamp()).shouldBeTrue()
+                previous.v7Timestamp() shouldNotBeEqualTo current.v7Timestamp()
             }
             ids.toSet() shouldHaveSize 2
             val rows = V7Items.selectAll().toList()
@@ -67,8 +64,10 @@ class KotlinUuidTableTest: AbstractExposedTest() {
         }
     }
 
+    // TODO: 이 함수는 bluetape4k-core 의 UuidSupport.kt 에 정의하도록 하자
     private fun Uuid.uuidVersion(): Int = (toByteArray()[6].toInt() ushr 4) and 0x0F
 
+    // TODO: 이 함수는 bluetape4k-core 의 UuidSupport.kt 에 정의하도록 하자
     private fun Uuid.v7Timestamp(): Long = toByteArray()
         .take(6)
         .fold(0L) { timestamp, byte ->

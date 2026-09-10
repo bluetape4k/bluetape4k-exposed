@@ -3,12 +3,16 @@ package io.bluetape4k.exposed.core
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 
 /**
  * [ExposedPage] 단위 테스트입니다.
  */
 class ExposedPageTest {
+
+    companion object: KLogging()
+
     @Test
     fun `totalPages는 totalCount와 pageSize로 올림 나눗셈을 계산한다`() {
         ExposedPage(listOf(1, 2), totalCount = 10L, pageNumber = 0, pageSize = 2).totalPages shouldBeEqualTo 5
