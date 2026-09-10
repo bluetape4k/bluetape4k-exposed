@@ -1,5 +1,13 @@
 package io.bluetape4k.exposed.jdbc.repository
 
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContainAll
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.jdbc.repository.EdgeCaseSchema.EdgeCaseRecord
 import io.bluetape4k.exposed.jdbc.repository.EdgeCaseSchema.EdgeCaseRepository
 import io.bluetape4k.exposed.jdbc.repository.EdgeCaseSchema.EdgeCaseTable
@@ -7,14 +15,7 @@ import io.bluetape4k.exposed.jdbc.repository.EdgeCaseSchema.withEdgeCaseTable
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeEmpty
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldContainAll
-import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greater
@@ -57,6 +58,8 @@ class JdbcRepositoryReadEdgeCaseTest : AbstractExposedTest() {
         withEdgeCaseTable(testDB) {
             val saved = repo.save(EdgeCaseRecord(name = "Alice", age = 30, isActive = true))
             val found = repo.findByIdOrNull(saved.id)
+
+            log.debug { "found: $found" }
             found.shouldNotBeNull()
             found.name shouldBeEqualTo "Alice"
             found.age shouldBeEqualTo 30
@@ -79,6 +82,8 @@ class JdbcRepositoryReadEdgeCaseTest : AbstractExposedTest() {
             repo.save(EdgeCaseRecord(name = "name-2", age = 30))
 
             val found = repo.findFirstOrNull { EdgeCaseTable.name eq "name-1" }
+
+            log.debug { "found: $found" }
             found.shouldNotBeNull()
             found.name shouldBeEqualTo "name-1"
             found.age shouldBeEqualTo 20
@@ -100,6 +105,8 @@ class JdbcRepositoryReadEdgeCaseTest : AbstractExposedTest() {
             repo.save(EdgeCaseRecord(name = "rec-3", age = 30))
 
             val found = repo.findLastOrNull { EdgeCaseTable.age eq 20 }
+
+            log.debug { "found: $found" }
             found.shouldNotBeNull()
             // PK DESC → "rec-2"가 "rec-1"보다 id가 높으므로 "rec-2"가 반환되어야 한다
             found.name shouldBeEqualTo "rec-2"
@@ -163,9 +170,9 @@ class JdbcRepositoryReadEdgeCaseTest : AbstractExposedTest() {
             repo.save(EdgeCaseRecord(name = "adult1", age = 25))
             repo.save(EdgeCaseRecord(name = "adult2", age = 35))
 
-            val predicate: () -> org.jetbrains.exposed.v1.core.Op<Boolean> =
-                { EdgeCaseTable.age greater 18 }
+            val predicate: () -> org.jetbrains.exposed.v1.core.Op<Boolean> = { EdgeCaseTable.age greater 18 }
             val result = repo.findBy(predicate)
+
             result shouldHaveSize 2
             result.map { it.name } shouldContainAll listOf("adult1", "adult2")
         }

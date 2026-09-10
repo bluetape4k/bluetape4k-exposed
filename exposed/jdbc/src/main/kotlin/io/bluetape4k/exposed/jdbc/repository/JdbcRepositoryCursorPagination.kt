@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.jdbc.repository
 
 import io.bluetape4k.exposed.core.ExposedCursorPage
+import io.bluetape4k.support.requireInRange
 import org.jetbrains.exposed.v1.core.EntityIDColumnType
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -26,12 +27,12 @@ fun <ID : Comparable<ID>, E : Any> JdbcRepository<ID, E>.findCursorPage(
     sortOrder: SortOrder = SortOrder.ASC,
     predicate: () -> Op<Boolean> = { Op.TRUE },
 ): ExposedCursorPage<E, ID> {
-    require(pageSize in 1..MAX_CURSOR_PAGE_SIZE) {
-        "pageSize must be between 1 and $MAX_CURSOR_PAGE_SIZE"
-    }
+
+    pageSize.requireInRange(1, MAX_CURSOR_PAGE_SIZE, "pageSize")
 
     val basePredicate = predicate()
     val wherePredicate = cursor?.let { basePredicate and table.cursorBoundary(it, sortOrder) } ?: basePredicate
+
     val rows = table
         .selectAll()
         .where(wherePredicate)

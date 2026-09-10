@@ -11,6 +11,7 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.Containers
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.TestDBConfig
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.eq
@@ -28,8 +29,8 @@ import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.sql.Connection
-import java.sql.SQLIntegrityConstraintViolationException
 import java.sql.SQLException
+import java.sql.SQLIntegrityConstraintViolationException
 import java.sql.SQLTransientConnectionException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -50,6 +51,16 @@ import javax.sql.DataSource
  * 오류는 가정으로 숨기지 않고 테스트 실패로 남깁니다.
  */
 class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
+
+    companion object: KLogging() {
+        private const val DEFAULT_HIKARI_TIMEOUT_MS = 5_000L
+        private const val LATCH_TIMEOUT_SECONDS = 5L
+        private const val MYSQL_DRIVER = "com.mysql.cj.jdbc.Driver"
+        private val tableSequence = AtomicLong()
+
+        private fun newEnumerationTable(): EnumerationTable =
+            EnumerationTable("jdbc_parallel_mysql_698_${tableSequence.incrementAndGet()}")
+    }
 
     @Test
     fun `MySQL sparse IDs keep sequential and parallel ordering`() {
@@ -669,7 +680,7 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
             primary?.let { throw it }
         }
 
-        companion object {
+        companion object: KLogging() {
             fun create(
                 table: EnumerationTable,
                 poolSize: Int = 4,
@@ -820,15 +831,5 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
             } catch (cause: InvocationTargetException) {
                 throw cause.targetException
             }
-    }
-
-    companion object {
-        private const val DEFAULT_HIKARI_TIMEOUT_MS = 5_000L
-        private const val LATCH_TIMEOUT_SECONDS = 5L
-        private const val MYSQL_DRIVER = "com.mysql.cj.jdbc.Driver"
-        private val tableSequence = AtomicLong()
-
-        private fun newEnumerationTable(): EnumerationTable =
-            EnumerationTable("jdbc_parallel_mysql_698_${tableSequence.incrementAndGet()}")
     }
 }

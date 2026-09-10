@@ -1,9 +1,10 @@
 package io.bluetape4k.exposed.jdbc
 
 import io.bluetape4k.collections.toList
+import io.bluetape4k.support.requireNull
 import io.bluetape4k.support.requirePositiveNumber
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.channelFlow
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.EntityIDColumnType
 import org.jetbrains.exposed.v1.core.FieldSet
@@ -60,7 +61,9 @@ fun Query.fetchBatchedResultFlow(
     // 따라서 이미 limit/orderBy 가 설정된 Query 를 그대로 전달하면 해당 설정이 무시되어
     // 의도하지 않은 배치 결과가 발생할 수 있습니다. caller 에게 즉시 명확한 예외를 전달해
     // 사용 오류를 조기에 발견할 수 있도록 진입점에서 사전 검증합니다.
-    require(limit == null) { "A manual `LIMIT` clause should not be set. By default, `batchSize` will be used." }
+    limit.requireNull { "A manual `LIMIT` clause should not be set. By default, `batchSize` will be used." }
+
+    // TODO: bluetape4k-core RequireSupport.kt 에 requireEmpty() 메소드 추가 필요
     require(orderByExpressions.isEmpty()) {
         "A manual `ORDER BY` clause should not be set. By default, the auto-incrementing column will be used."
     }
@@ -102,7 +105,8 @@ open class SuspendedQuery(
         batchSize.requirePositiveNumber("batchSize")
         // WHY: fetchBatchResultFlow 는 내부에서 limit = batchSize 와 orderBy = cursorColumn 을 직접 설정합니다.
         // 외부에서 이미 limit/orderBy 를 지정하면 내부 설정과 충돌하여 페이징이 올바르게 동작하지 않습니다.
-        require(limit == null) { "A manual `LIMIT` clause should not be set. By default, `batchSize` will be used." }
+        limit.requireNull { "A manual `LIMIT` clause should not be set. By default, `batchSize` will be used." }
+        // require(limit == null) { "A manual `LIMIT` clause should not be set. By default, `batchSize` will be used." }
         require(orderByExpressions.isEmpty()) {
             "A manual `ORDER BY` clause should not be set. By default, the auto-incrementing column will be used."
         }
@@ -129,6 +133,7 @@ open class SuspendedQuery(
         val fetchInAscendingOrder =
             sortOrder in listOf(SortOrder.ASC, SortOrder.ASC_NULLS_FIRST, SortOrder.ASC_NULLS_LAST)
 
+        // TODO: 이 함수 어디인가 있는 것 같은데??? 아니라면 공용 함수로 만드는게 낫지 않나?
         fun toLong(autoIncVal: Any): Long =
             when (autoIncVal) {
                 is EntityID<*> -> toLong(autoIncVal.value)
@@ -139,7 +144,7 @@ open class SuspendedQuery(
                 )
             }
 
-        return flow {
+        return channelFlow {
             // limit/orderBy 변이를 flow 수집 시점으로 지연시켜
             // fetchBatchResultFlow() 호출 시점에는 원본 Query를 변경하지 않습니다.
             val originalLimit = this@SuspendedQuery.limit
@@ -154,6 +159,7 @@ open class SuspendedQuery(
                             lastOffset?.let { lastOffset ->
                                 whereOp and
                                         if (fetchInAscendingOrder) {
+                                            // TODO: private 함수로 빼자
                                             when (cursorColumn.columnType) {
                                                 is EntityIDColumnType<*> -> {
                                                     (cursorColumn as? Column<EntityID<Long>>)?.let {
@@ -167,6 +173,7 @@ open class SuspendedQuery(
                                                 }
                                             }
                                         } else {
+                                            // TODO: private 함수로 빼자 
                                             when (cursorColumn.columnType) {
                                                 is EntityIDColumnType<*> -> {
                                                     (cursorColumn as? Column<EntityID<Long>>)?.let {
@@ -184,7 +191,7 @@ open class SuspendedQuery(
                         }
                     val results = query.iterator().toList()
                     if (results.isNotEmpty()) {
-                        emit(results)
+                        send(results)
                     }
                     if (results.size < batchSize) break
 

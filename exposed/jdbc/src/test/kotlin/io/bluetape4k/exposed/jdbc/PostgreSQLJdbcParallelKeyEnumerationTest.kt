@@ -3,7 +3,10 @@ package io.bluetape4k.exposed.jdbc
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeLessOrEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotContain
@@ -11,8 +14,9 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.Containers
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.TestDBConfig
-import org.jetbrains.exposed.v1.core.eq
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
@@ -45,6 +49,17 @@ import javax.sql.DataSource
  * 변경하지 않으며, Hikari connection lease 계측은 test-only decorator로 한정합니다.
  */
 class PostgreSQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
+
+    companion object: KLogging() {
+        private const val DEFAULT_HIKARI_TIMEOUT_MS = 5_000L
+        private const val LATCH_TIMEOUT_SECONDS = 5L
+        private const val POSTGRESQL_DRIVER = "org.postgresql.Driver"
+        private const val POSTGRESQL_CONNECTION_TYPE = "org.postgresql.PGConnection"
+        private val tableSequence = AtomicLong()
+
+        private fun newEnumerationTable(): EnumerationTable =
+            EnumerationTable("jdbc_parallel_pg_694_${tableSequence.incrementAndGet()}")
+    }
 
     @Test
     @Suppress("LongMethod")
@@ -123,8 +138,8 @@ class PostgreSQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                 )
 
                 actual shouldBeEqualTo expected
-                (actual.size == actual.distinct().size).shouldBeTrue()
-                executor.isShutdown.shouldBeEqualTo(false)
+                actual.size shouldBeEqualTo actual.distinct().size
+                executor.isShutdown.shouldBeFalse()
             } finally {
                 executor.close()
             }
@@ -156,10 +171,10 @@ class PostgreSQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                         emptyList()
                     }
 
-                    result shouldBeEqualTo emptyList()
-                    (fixture.tracker.peak.get() <= minOf(poolSize, 2)).shouldBeTrue()
+                    result.shouldBeEmpty()
+                    fixture.tracker.peak.get() shouldBeLessOrEqualTo minOf(poolSize, 2)
                     fixture.tracker.active.get() shouldBeEqualTo 0
-                    executor.isShutdown.shouldBeEqualTo(false)
+                    executor.isShutdown.shouldBeFalse()
                 } finally {
                     executor.close()
                 }
@@ -199,7 +214,7 @@ class PostgreSQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
 
                 hasConnectionTimeoutCause(failure).shouldBeTrue()
                 fixture.tracker.active.get() shouldBeEqualTo 0
-                executor.isShutdown.shouldBeEqualTo(false)
+                executor.isShutdown.shouldBeFalse()
             } finally {
                 executor.close()
             }
@@ -265,7 +280,7 @@ class PostgreSQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                 }
                 fixture.tracker.active.get() shouldBeEqualTo 0
                 activeChildren.get() shouldBeEqualTo 0
-                executor.isShutdown.shouldBeEqualTo(false)
+                executor.isShutdown.shouldBeFalse()
             } finally {
                 check(allFinished.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                     "PostgreSQL interrupt-ignoring sibling must finish"
@@ -306,10 +321,10 @@ class PostgreSQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                     ),
                 )
 
-                result shouldBeEqualTo emptyList()
+                result.shouldBeEmpty()
                 fixture.tracker.active.get() shouldBeEqualTo 0
                 fixture.tracker.peak.get() shouldBeEqualTo 0
-                executor.isShutdown.shouldBeEqualTo(false)
+                executor.isShutdown.shouldBeFalse()
 
                 assertFailsWith<IllegalArgumentException> {
                     parallelJdbcKeyEnumeration(
@@ -460,13 +475,13 @@ class PostgreSQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
     private fun hasConnectionTimeoutCause(failure: Throwable): Boolean =
         generateSequence(failure) { it.cause }.any { cause ->
             cause is SQLTransientConnectionException ||
-                cause.message.orEmpty().contains("Connection is not available", ignoreCase = true)
+                    cause.message.orEmpty().contains("Connection is not available", ignoreCase = true)
         }
 
     private fun hasSerializationFailureCause(failure: Throwable): Boolean =
         generateSequence(failure) { it.cause }.any { cause ->
             cause.message.orEmpty().contains("40001") ||
-                cause::class.simpleName.orEmpty().contains("Serialization", ignoreCase = true)
+                    cause::class.simpleName.orEmpty().contains("Serialization", ignoreCase = true)
         }
 
     private class EnumerationTable(name: String): LongIdTable(name) {
@@ -596,16 +611,5 @@ class PostgreSQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
             } catch (cause: InvocationTargetException) {
                 throw cause.targetException
             }
-    }
-
-    companion object {
-        private const val DEFAULT_HIKARI_TIMEOUT_MS = 5_000L
-        private const val LATCH_TIMEOUT_SECONDS = 5L
-        private const val POSTGRESQL_DRIVER = "org.postgresql.Driver"
-        private const val POSTGRESQL_CONNECTION_TYPE = "org.postgresql.PGConnection"
-        private val tableSequence = AtomicLong()
-
-        private fun newEnumerationTable(): EnumerationTable =
-            EnumerationTable("jdbc_parallel_pg_694_${tableSequence.incrementAndGet()}")
     }
 }

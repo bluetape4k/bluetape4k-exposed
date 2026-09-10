@@ -1,21 +1,21 @@
 package io.bluetape4k.exposed.jdbc.repository
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.core.auditable.Auditable
 import io.bluetape4k.exposed.core.auditable.AuditableLongIdTable
 import io.bluetape4k.exposed.core.auditable.UserContext
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.io.Serializable
 import java.time.Instant
 
 /**
@@ -25,6 +25,8 @@ import java.time.Instant
  * [AuditableJdbcRepository.auditedUpdateById] 및 [AuditableJdbcRepository.auditedUpdateAll] 동작을 검증합니다.
  */
 class AuditableJdbcRepositoryTest: AbstractExposedTest() {
+
+    companion object: KLogging()
 
     // 테이블 정의
     object ActorTable: AuditableLongIdTable("auditable_actors") {
@@ -41,7 +43,7 @@ class AuditableJdbcRepositoryTest: AbstractExposedTest() {
         override val updatedBy: String? = null,
         override val updatedAt: Instant? = null,
         val id: Long = 0L,
-    ): Auditable, Serializable {
+    ): Auditable {
         companion object {
             private const val serialVersionUID = 1L
         }

@@ -1,5 +1,8 @@
 package io.bluetape4k.exposed.jdbc.repository
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.jdbc.repository.EdgeCaseSchema.EdgeCaseRecord
 import io.bluetape4k.exposed.jdbc.repository.EdgeCaseSchema.EdgeCaseRepository
 import io.bluetape4k.exposed.jdbc.repository.EdgeCaseSchema.EdgeCaseTable
@@ -7,9 +10,6 @@ import io.bluetape4k.exposed.jdbc.repository.EdgeCaseSchema.withEdgeCaseTable
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeTrue
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
@@ -124,6 +124,7 @@ class JdbcRepositoryExistenceTest : AbstractExposedTest() {
             val missingQuery = EdgeCaseTable.selectAll()
                 .where { EdgeCaseTable.name eq "Ghost" }
                 .limit(1)
+
             EdgeCaseRepository.exists(missingQuery).shouldBeFalse()
         }
     }

@@ -1,5 +1,12 @@
 package io.bluetape4k.exposed.jdbc.repository
 
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
+import io.bluetape4k.assertions.shouldBeGreaterThan
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.core.auditable.Auditable
 import io.bluetape4k.exposed.core.auditable.AuditableLongIdTable
 import io.bluetape4k.exposed.core.auditable.UserContext
@@ -7,13 +14,6 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeEmpty
-import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
-import io.bluetape4k.assertions.shouldBeGreaterThan
-import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldBeTrue
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
@@ -119,6 +119,7 @@ class AuditableJdbcRepositoryEdgeCaseTest : AbstractExposedTest() {
             ids shouldHaveSize 1
             ids.first().shouldBeGreaterThan(0L)
             AuditableEdgeCaseTable.selectAll().count() shouldBeEqualTo 1L
+
             val saved = findById(ids.first())
             saved.createdBy shouldBeEqualTo UserContext.DEFAULT_USERNAME
             saved.createdAt.shouldNotBeNull()
@@ -138,6 +139,7 @@ class AuditableJdbcRepositoryEdgeCaseTest : AbstractExposedTest() {
             ids shouldHaveSize records.size
             ids.all { id -> id > 0L }.shouldBeTrue()
             AuditableEdgeCaseTable.selectAll().count() shouldBeEqualTo records.size.toLong()
+
             val saved = findById(ids.first())
             saved.createdBy shouldBeEqualTo UserContext.DEFAULT_USERNAME
             saved.createdAt.shouldNotBeNull()

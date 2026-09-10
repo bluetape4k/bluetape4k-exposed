@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicLong
 @OutputTimeUnit(TimeUnit.SECONDS)
 @Warmup(iterations = 2, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 3, time = 3, timeUnit = TimeUnit.SECONDS)
-open class ExposedJdbcBenchmark {
+class ExposedJdbcBenchmark {
 
     companion object: KLogging() {
         private const val SEED_USERS = 2_000
@@ -165,7 +165,7 @@ open class ExposedJdbcBenchmark {
      */
     @Benchmark
     @Threads(14)
-    open fun singleFindById(): Int {
+    fun singleFindById(): Int {
         val pk = (findIdSeq.getAndIncrement() % SEED_USERS) + 1
         return transaction(database) {
             BenchmarkUsers
@@ -181,7 +181,7 @@ open class ExposedJdbcBenchmark {
      */
     @Benchmark
     @Threads(14)
-    open fun singleUpdate(): Int {
+    fun singleUpdate(): Int {
         val pk = (updateIdSeq.getAndIncrement() % SEED_USERS) + 1
         val newAge = 20 + ThreadLocalRandom.current().nextInt(50)
         return transaction(database) {
@@ -195,7 +195,7 @@ open class ExposedJdbcBenchmark {
      * batchInsert — `batchSize` 파라미터에 따른 배치 INSERT 처리량.
      */
     @Benchmark
-    open fun batchInsert(): Int {
+    fun batchInsert(): Int {
         val rows = (1..batchSize).toList()
         return transaction(database) {
             BenchmarkUsers.batchInsert(rows) { i ->
@@ -210,7 +210,7 @@ open class ExposedJdbcBenchmark {
      * 복잡 JOIN — users INNER JOIN orders WHERE amount > X AND status = Y.
      */
     @Benchmark
-    open fun joinQuery(): Int {
+    fun joinQuery(): Int {
         return transaction(database) {
             BenchmarkUsers
                 .innerJoin(BenchmarkOrders)

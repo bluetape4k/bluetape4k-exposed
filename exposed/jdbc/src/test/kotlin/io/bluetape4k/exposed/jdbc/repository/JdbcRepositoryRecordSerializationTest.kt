@@ -1,7 +1,8 @@
 package io.bluetape4k.exposed.jdbc.repository
 
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.io.ObjectStreamClass
 import java.io.Serializable
@@ -10,6 +11,8 @@ import java.io.Serializable
  * Verifies repository test records keep stable Java serialization contracts.
  */
 class JdbcRepositoryRecordSerializationTest {
+
+    companion object: KLogging()
 
     @Test
     fun `repository test records are Serializable with stable serialVersionUID`() {
@@ -24,7 +27,7 @@ class JdbcRepositoryRecordSerializationTest {
         )
 
         recordTypes.forEach { recordType ->
-            Serializable::class.java.isAssignableFrom(recordType).shouldBeTrue()
+            recordType shouldBeInstanceOf Serializable::class
             ObjectStreamClass.lookup(recordType).serialVersionUID shouldBeEqualTo 1L
         }
     }
