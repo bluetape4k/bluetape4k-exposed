@@ -537,7 +537,7 @@ Expected: 기존 `chArray` descriptor 불변, 신규 symbols만 baseline에 추�
 API baseline에 추가됐다. EN/KO README의 타입·lifecycle·서버 제한 표가
 동일하다.
 
-- [ ] **Step 5: #866 commit과 PR을 생성한다**
+- [x] **Step 5: #866 commit과 PR을 생성한다**
 
 ```bash
 git add exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/types exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/types exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/AbstractClickHouseTest.kt exposed/clickhouse/src/test/resources/junit-platform.properties exposed/clickhouse/README.md exposed/clickhouse/README.ko.md api/bluetape4k-exposed-clickhouse.api
@@ -564,6 +564,15 @@ gh pr edit "$pr_866" --repo bluetape4k/bluetape4k-exposed --add-assignee debop -
 ```
 
 PR base/head를 `gh pr view`로 read-back하고 #865 exact head가 history에 포함되는지 확인한다. merge하지 않는다.
+
+실행 결과: 커밋 `b84e8ffb44ea71e4115f08930148207599845f0e`를
+`feat/issue-866-clickhouse-v2-types`에 푸시하고 PR #870을 생성했다. PR
+base는 `feat/issue-865-clickhouse-v2-options`
+(`7c7aec04e3c2f9f8fb9cd699ca0678939f6f1ea7`), head는 위 커밋이며,
+`debop` assignee·milestone `2.1.0`·`documentation`, `enhancement`,
+`feature`, `test` labels와 `Closes #866` 본문을 read-back했다. GitHub는
+현재 `MERGEABLE`/`CLEAN`, hosted check 0건, review 0건을 반환했으며
+merge는 실행하지 않았다.
 
 ## Task 6: #867 RED — profile·preflight·fallback·count 계약을 고정한다
 
