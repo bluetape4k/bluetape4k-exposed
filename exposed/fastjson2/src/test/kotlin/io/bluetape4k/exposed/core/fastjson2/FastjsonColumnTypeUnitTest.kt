@@ -34,7 +34,11 @@ class FastjsonColumnTypeUnitTest {
     private data class SamplePayload(
         val name: String,
         val count: Int,
-    ): Serializable
+    ): Serializable {
+        companion object {
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 
     private val serializer = DefaultFastjsonSerializer
     private val columnType = FastjsonColumnType(

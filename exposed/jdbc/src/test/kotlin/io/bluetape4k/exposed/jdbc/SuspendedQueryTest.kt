@@ -104,7 +104,11 @@ class SuspendedQueryTest: AbstractExposedTest() {
     data class Item(
         val name: String,
         val price: Int,
-    ): Serializable
+    ): Serializable {
+        companion object {
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)

@@ -583,7 +583,9 @@ interface JdbcRepository<ID: Any, E: Any> {
         if (!useMultiRowValues) {
             return batchInsert(entities, ignore, shouldReturnGeneratedValues, insertStatement)
         }
-        ignore.requireEquals(false) { "useMultiRowValues=true cannot be combined with ignore=true; use the legacy batch path" }
+        ignore.requireEquals(false) {
+            "useMultiRowValues=true cannot be combined with ignore=true; use the legacy batch path"
+        }
         val rows = multiRowValuesData(entities.iterator(), table)
 
         return if (rows.isEmpty()) emptyList()
@@ -628,7 +630,9 @@ interface JdbcRepository<ID: Any, E: Any> {
         if (!useMultiRowValues) {
             return batchInsert(entities, ignore, shouldReturnGeneratedValues, insertStatement)
         }
-        ignore.requireEquals(false) { "useMultiRowValues=true cannot be combined with ignore=true; use the legacy batch path" }
+        ignore.requireEquals(false) {
+            "useMultiRowValues=true cannot be combined with ignore=true; use the legacy batch path"
+        }
         val rows = multiRowValuesData(entities.iterator(), table)
 
         return if (rows.isEmpty()) emptyList()

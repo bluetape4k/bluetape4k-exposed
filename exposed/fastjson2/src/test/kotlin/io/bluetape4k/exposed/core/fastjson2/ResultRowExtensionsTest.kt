@@ -36,7 +36,11 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
     private data class Payload(
         val user: FastjsonSchema.User,
         val active: Boolean,
-    ): Serializable
+    ): Serializable {
+        companion object {
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 
     private object JsonTextTable: Table("fastjson_result_row_test") {
         val jsonObjectText = text("json_object_text")

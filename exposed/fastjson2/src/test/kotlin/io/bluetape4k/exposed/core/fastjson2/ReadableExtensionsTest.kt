@@ -17,7 +17,11 @@ class ReadableExtensionsTest {
 
     companion object: KLogging()
 
-    private data class Payload(val name: String, val age: Int): Serializable
+    private data class Payload(val name: String, val age: Int): Serializable {
+        companion object {
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 
     private class FakeReadable(
         private val valuesByIndex: Map<Int, Any?> = emptyMap(),
@@ -117,7 +121,8 @@ class ReadableExtensionsTest {
             valuesByIndex = mapOf(1 to objectText, 2 to arrayText),
         )
 
-        readable.getFastjsonObject(1).getJSONObject("user").getString("name") shouldBeEqualTo "tester"
+        readable.getFastjsonObject(1).getJSONObject("user")
+            .getString("name") shouldBeEqualTo "tester"
         readable.getFastjsonArray(2) shouldHaveSize 3
     }
 
@@ -234,7 +239,9 @@ class ReadableExtensionsTest {
         val jsonText = """{"user":{"name":"tester"}}"""
         val readable = FakeReadable(valuesByName = mapOf("payload" to jsonText))
 
-        readable.getFastjsonObject("payload").getJSONObject("user").getString("name") shouldBeEqualTo "tester"
+        readable.getFastjsonObject("payload")
+            .getJSONObject("user")
+            .getString("name") shouldBeEqualTo "tester"
     }
 
     @Test
