@@ -118,6 +118,23 @@ class ClickHouseV2OptionsTest {
     }
 
     @Test
+    fun `JDBC URL query remains driver owned instead of being copied into properties`() {
+        val options = ClickHouseV2Options(
+            clientName = "typed-client",
+            queryId = "typed-query",
+        )
+
+        val properties = options.toEffectiveProperties(
+            user = "default",
+            password = "",
+            jdbcUrl = "jdbc:clickhouse://localhost:8123/default?client_name=url%2Bclient&query_id=url%2Bquery",
+        )
+
+        properties.getProperty("client_name") shouldBeEqualTo "typed-client"
+        properties.getProperty("query_id") shouldBeEqualTo "typed-query"
+    }
+
+    @Test
     fun `custom headers are case insensitive and allow only user agent`() {
         val options = ClickHouseV2Options(
             customHeaders = mapOf("x-clickhouse-user-agent" to "bluetape/865"),

@@ -270,7 +270,7 @@ data class ClickHouseV2TlsOptions(
 
 V2 `ClientConfigProperties` allowlist와 `clickhouse_setting_<name>`·`http_header_X-ClickHouse-User-Agent` prefix만 raw로 허용한다. RowBinary beta key와 credentials/TLS secret duplicate 및 unknown key는 fail-fast한다. 일반 precedence는 `JDBC URL query > explicit argument 또는 typed option > rawProperties > driver default`이며 새 options overload URL의 `user`, `password`, `access_token`, `bearer_token`, `http_use_basic_auth`는 key만 남긴 scrubbed error로 거부한다. token mode effective map에는 token key와 `http_use_basic_auth=false`만 남긴다. URL query value, password, token, TLS secret, header value, SQL bind와 원본 exception graph를 redaction helper가 제거한다.
 
-테스트와 구현이 공유하는 내부 변환 경계는 `internal fun ClickHouseV2Options.toEffectiveProperties(user: String, password: String, jdbcUrl: String? = null): Properties`로 고정한다. 이 함수는 URL query를 파싱하되 값을 로그·예외에 재사용하지 않고, 반환 `Properties`를 호출자 변경과 드라이버 변경으로부터 보호하는 방어적 복사로 만든다.
+테스트와 구현이 공유하는 내부 변환 경계는 `internal fun ClickHouseV2Options.toEffectiveProperties(user: String, password: String, jdbcUrl: String? = null): Properties`로 고정한다. 이 함수는 URL query에서 인증 key만 검증하고 일반 query value는 복사하지 않으며, 원본 URL은 driver에 그대로 전달한다. 반환 `Properties`는 호출자 변경과 드라이버 변경으로부터 보호하는 방어적 복사로 만든다.
 
 - [x] **Step 3: GREEN options와 detekt를 실행한다**
 
