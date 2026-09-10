@@ -415,7 +415,7 @@ Expected: 신규 builders/lifecycle 부재 compile failure. H2 test 결과를 Cl
 
 실행 결과: `ClickHouseComplexTypesH2Test`를 추가하고 selector를 실행했다. `compileTestKotlin`이 `ClickHouseJsonCodec`, nullable-array builder, UUID/IP/Decimal/Enum adapter 부재의 unresolved reference로 실패했다. 이는 구현 전 RED 증거이며 H2/ClickHouse wire 결과로 집계하지 않는다.
 
-- [ ] **Step 3: ClickHouse wire RED round-trip을 작성한다**
+- [x] **Step 3: ClickHouse wire RED round-trip을 작성한다**
 
 `ClickHouseComplexTypesTest`는 클래스별 고유 table/schema와 seed를 사용해 DDL→insert→select→metadata를 실행하고 `finally`에서 정리한다. Array(Nullable), nested Array, Map, Tuple, Nested, JSON, UUID, IPv4/IPv6, Date/DateTime64, Decimal, Enum, UInt64를 각각 insert/select한다. `ResultSetMetaData`의 type name, JDBC type, nullability, precision/scale, nested signature을 별도 assertion으로 둔다. JDBC `Array`/`Struct`는 읽은 뒤 즉시 close한다.
 
@@ -436,16 +436,24 @@ fun `ClickHouse complex type round trip은 순서 null metadata를 보존한다`
 }
 ```
 
+실행 결과: `ClickHouseComplexTypesTest`는 구현 전에는 fixture의 신규
+adapter/빌더가 없어 컴파일되지 않았고, 구현 후 동일 selector에서 실제
+ClickHouse `26.7.3.19`의 DDL→insert→select→metadata와 JDBC
+`Array`/`Struct`/`getResultSet` lifecycle을 검증했다. `Nullable(Array(...))`는
+서버 Code 43, 단일 `Nested(...)`는 물리 subcolumn 확장으로 Code 16을
+반환하므로 wire fixture에서 제외하고 H2 의미론으로 별도 검증한다.
+
 ## Task 5: #866 GREEN — collection·special·temporal adapter와 metadata를 구현한다
 
 **Files:**
 - Modify: `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/types/ArrayColumnType.kt`
 - Create: `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/types/CollectionColumnTypes.kt`
+- Create: `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/types/CollectionSupport.kt`
 - Create: `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/types/SpecialColumnTypes.kt`
 - Modify: `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/types/DateTime64ColumnType.kt`
 - Modify: `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/types/UnsignedColumnTypes.kt`
 
-- [ ] **Step 1: Array/Map/Tuple/Nested adapter를 구현한다**
+- [x] **Step 1: Array/Map/Tuple/Nested adapter를 구현한다**
 
 기존 `fun <T: Any> Table.chArray(name: String, innerType: ColumnType<T>): Column<List<T>>`의 source/JVM surface는 유지한다. 새 nullable element/container overload는 별도 이름으로 선언하고 `Column<List<T?>>`와 `Column<List<T?>?>`를 혼동하지 않는다.
 
@@ -454,7 +462,7 @@ fun <T : Any> Table.chArray(name: String, innerType: ColumnType<T>): Column<List
     registerColumn(name, ClickHouseArrayColumnType(innerType))
 
 fun <T : Any> Table.chArrayNullableElements(name: String, innerType: ColumnType<T>): Column<List<T?>> =
-    registerColumn(name, ClickHouseNullableArrayColumnType(innerType, nullableContainer = false))
+    registerColumn(name, ClickHouseArrayNullableElementsColumnType(innerType))
 
 fun <T : Any> Table.chNullableArray(name: String, innerType: ColumnType<T>): Column<List<T?>?> =
     registerColumn(name, ClickHouseNullableArrayColumnType(innerType, nullableContainer = true))
@@ -468,7 +476,7 @@ fun Table.chNested(name: String, elements: List<ColumnType<*>>): Column<List<Lis
 
 각 adapter가 `valueFromDB`, `notNullValueToDB`, `setParameter`, `readObject`에서 같은 matrix를 적용한다. Map key는 non-null·unique, Tuple arity는 고정, Nested 모든 column 길이는 동일해야 한다. JDBC `Array`/`Struct`/`ResultSet`은 converter가 읽은 직후 `finally`에서 close하고 반환 collection은 immutable copy다. unsupported type을 String으로 fallback하지 않는다.
 
-- [ ] **Step 2: JSON/network/decimal/enum/temporal/UInt64를 구현한다**
+- [x] **Step 2: JSON/network/decimal/enum/temporal/UInt64를 구현한다**
 
 ```kotlin
 fun Table.chJson(name: String): Column<String>
@@ -480,7 +488,7 @@ fun Table.chDecimal(name: String, precision: Int, scale: Int): Column<BigDecimal
 fun <E : Enum<E>> Table.chEnum(name: String, values: Map<E, String>): Column<E>
 ```
 
-JSON raw mode는 유효 JSON text만 허용하고 codec은 caller 소유다. Enum은 ordinal을 사용하지 않고 선언된 name/alias만 wire에 쓴다. Decimal은 declared precision/scale과 `RoundingMode.UNNECESSARY`를 적용한다. DateTime64는 precision과 zone이 없으면 실패하며, UInt64는 signed `Long` high-bit 축소를 금지하고 `BigInteger` 범위를 검증한다. production serializer dependency는 추가하지 않는다.
+JSON raw mode는 유효 JSON text만 허용하고 codec은 caller 소유다. Enum은 ordinal을 사용하지 않고 선언된 name/alias만 wire에 쓴다. Decimal은 declared precision/scale과 `RoundingMode.UNNECESSARY`를 적용한다. DateTime64는 precision과 zone이 없으면 실패하며 입력 소수부는 선언된 precision으로 절삭해 기존 `Instant` 사용처의 기본 동작을 보존한다. UInt64는 signed `Long` high-bit 축소를 금지하고 `BigInteger` 범위를 검증한다. production serializer dependency는 추가하지 않는다.
 
 경계 matrix는 다음 입력·wire·실패 규칙을 코드와 receipt에 그대로 반영한다.
 
@@ -495,7 +503,7 @@ JSON raw mode는 유효 JSON text만 허용하고 codec은 caller 소유다. Enu
 | Enum | 명시한 name/alias ↔ enum 값 | ordinal·미등록 alias |
 | UInt64 | `BigInteger` `0..2^64-1` | signed `Long` high-bit 축소, 음수·범위 초과 |
 
-- [ ] **Step 3: H2와 ClickHouse GREEN을 순차 실행한다**
+- [x] **Step 3: H2와 ClickHouse GREEN을 순차 실행한다**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseComplexTypesH2Test' --no-parallel --max-workers=1 --no-daemon --console=plain
@@ -504,7 +512,16 @@ JSON raw mode는 유효 JSON text만 허용하고 codec은 caller 소유다. Enu
 
 Expected: 두 명령 exit 0, 각 XML failures/errors/skipped=0, H2와 ClickHouse receipt가 별도 생성된다. ClickHouse receipt에 image tag/digest, container id, fixture name, seed, start/end time을 기록한다. container/lock failure는 `PENDING`이다.
 
-- [ ] **Step 4: #866 ABI·문서를 확인한다**
+실행 결과: 두 selector를 `--no-parallel --max-workers=1`로 순차 실행해
+총 9개 테스트가 통과했다. H2 XML은 `tests=8, failures=0, errors=0,
+skipped=0`, ClickHouse XML은 `tests=1, failures=0, errors=0, skipped=0`이다.
+Testcontainers는 `clickhouse/clickhouse-server:26.7.3.19`
+(`sha256:f90a77560f72b10802106ee49e9870e41668cbc496e280c3911f6e3b216657f3`)
+를 사용했고 fixture seed는 `866`이다. 컨테이너는 테스트 종료 시 정리되며,
+위의 Code 43/16 서버 경계는 PASS에 포함하지 않고 명시적 미지원 범위로
+기록했다.
+
+- [x] **Step 4: #866 ABI·문서를 확인한다**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:checkKotlinAbi --no-daemon --console=plain
@@ -513,6 +530,12 @@ git diff --check
 ```
 
 Expected: 기존 `chArray` descriptor 불변, 신규 symbols만 baseline에 추가, detekt/diff check exit 0. README EN/KO 타입 matrix와 unsupported 정책이 동일하다.
+
+실행 결과: `checkKotlinAbi`와 `detekt`가 최신 소스 기준으로 각각 exit
+0이고 `git diff --check`도 오류 없이 완료됐다. 기존 `chArray`와
+`dateTime64` 기본 descriptor는 유지되고 신규 adapter·timezone overload만
+API baseline에 추가됐다. EN/KO README의 타입·lifecycle·서버 제한 표가
+동일하다.
 
 - [ ] **Step 5: #866 commit과 PR을 생성한다**
 

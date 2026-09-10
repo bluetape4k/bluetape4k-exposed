@@ -2,6 +2,8 @@ package io.bluetape4k.exposed.clickhouse.types
 
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ColumnType
+import org.jetbrains.exposed.v1.core.statements.api.PreparedStatementApi
+import org.jetbrains.exposed.v1.core.statements.api.RowApi
 import org.jetbrains.exposed.v1.core.Table
 
 /**
@@ -10,8 +12,9 @@ import org.jetbrains.exposed.v1.core.Table
  * Kotlin [List]<T> 와 매핑됩니다.
  *
  * ## 주의
- * - `Array(Nullable(T))` 등 nullable element 는 미지원합니다 (null element 발견 시 명확한 오류).
- * - JDBC 가 [java.sql.Array], [List], 또는 native Java 배열로 반환할 수 있어 모두 방어적으로 처리합니다.
+ * - 기본 타입은 non-null element를 사용하며, nullable element가 필요하면
+ *   [ClickHouseArrayNullableElementsColumnType] 또는 [chArrayNullableElements]를 사용합니다.
+ * - JDBC가 [java.sql.Array], [List], 또는 native Java 배열로 반환할 수 있어 모두 방어적으로 처리합니다.
  *
  * @property inner 원소 컬럼 타입
  */
@@ -19,22 +22,24 @@ import org.jetbrains.exposed.v1.core.Table
 class ClickHouseArrayColumnType<T: Any>(val inner: ColumnType<T>): ColumnType<List<T>>() {
     override fun sqlType(): String = "Array(${inner.sqlType()})"
 
-    override fun valueFromDB(value: Any): List<T> = when (value) {
-        is List<*> -> value.map { elem ->
-            if (elem == null) error("Array element is null — Array(Nullable(T)) is not supported")
+    override fun valueFromDB(value: Any): List<T> = clickHouseImmutableList(
+        clickHouseArrayElements(value).map { elem ->
+            require(elem != null) {
+                "Array element is null — use Array(Nullable(T)) for nullable elements"
+            }
             inner.valueFromDB(elem) as T
-        }
-        is Array<*> -> value.map { elem ->
-            if (elem == null) error("Array element is null — Array(Nullable(T)) is not supported")
-            inner.valueFromDB(elem) as T
-        }
-        is java.sql.Array -> valueFromDB(value.array)
-        is String -> error("Array value returned as String literal '$value' — unsupported. Report this as a ClickHouse JDBC issue.")
-        else -> error("Unexpected Array value: $value (${value::class.simpleName})")
-    }
+        },
+    )
 
     override fun notNullValueToDB(value: List<T>): Any =
         value.map { inner.notNullValueToDB(it) }.toTypedArray()
+
+    override fun readObject(rs: RowApi, index: Int): Any? =
+        super.readObject(rs, index)?.let(::valueFromDB)
+
+    override fun setParameter(stmt: PreparedStatementApi, index: Int, value: Any?) {
+        clickHouseSetParameter(stmt, index, value, this)
+    }
 }
 
 /**
@@ -52,3 +57,20 @@ class ClickHouseArrayColumnType<T: Any>(val inner: ColumnType<T>): ColumnType<Li
  */
 fun <T: Any> Table.chArray(name: String, innerType: ColumnType<T>): Column<List<T>> =
     registerColumn(name, ClickHouseArrayColumnType(innerType))
+
+/**
+ * ClickHouse `Array(Nullable(T))` 컬럼을 등록합니다.
+ *
+ * 배열 컨테이너 자체는 필수이고 원소만 nullable인 `Column<List<T?>>`를 반환합니다.
+ */
+fun <T: Any> Table.chArrayNullableElements(name: String, innerType: ColumnType<T>): Column<List<T?>> =
+    registerColumn(name, ClickHouseArrayNullableElementsColumnType(innerType))
+
+/**
+ * ClickHouse `Nullable(Array(Nullable(T)))` 컬럼을 등록합니다.
+ *
+ * 배열 컨테이너와 원소를 모두 nullable로 표현하는 `Column<List<T?>?>`를 반환합니다.
+ */
+@Suppress("UNCHECKED_CAST")
+fun <T: Any> Table.chNullableArray(name: String, innerType: ColumnType<T>): Column<List<T?>?> =
+    registerColumn<List<T?>>(name, ClickHouseNullableArrayColumnType(innerType)) as Column<List<T?>?>

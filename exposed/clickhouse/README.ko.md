@@ -245,11 +245,37 @@ V2 probe matrix는 연결 시도, 서버 실행 timeout, 전송 socket timeout,
 | UInt64 | BigInteger | `chUInt64BigInt(name)` |
 | Float32 | Float | `chFloat32(name)` |
 | Float64 | Double | `chFloat64(name)` |
-| DateTime64(n) | Instant | `dateTime64(name, precision)` |
+| DateTime64(n[, timezone]) | Instant | `dateTime64(name, precision, zone)` |
 | Date32 | LocalDate | `date32(name)` |
 | LowCardinality(T) | T | `lowCardinality(name, innerType)` / `lowCardinalityString(name)` |
 | Array(T) | List\<T\> | `chArray(name, innerType)` |
+| Array(Nullable(T)) | List\<T?\> | `chArrayNullableElements(name, innerType)` |
+| Array(Array(...)) | List\<List\<...\>\> | `chArray(name, ClickHouseArrayNullableElementsColumnType(...))` |
+| Nullable(Array(...)) | List\<T?\>? | `chNullableArray(name, innerType)` |
+| Map(K, V) | Map\<K, V\> | `chMap(name, keyType, valueType)` |
+| Tuple(...) | List\<Any?\> | `chTuple(name, elements)` |
+| Nested(...) | List\<List\<Any?\>\> | `chNested(name, elements)` (의미론 adapter) |
+| JSON | String / caller type | `chJson(name)` / `chJson(name, codec)` |
+| UUID | UUID | `chUuid(name)` |
+| IPv4 | Inet4Address | `chIpv4(name)` |
+| IPv6 | Inet6Address | `chIpv6(name)` |
+| Decimal(P, S) | BigDecimal | `chDecimal(name, precision, scale)` |
+| Enum8/Enum16 | Enum\<E\> | `chEnum(name, values)` |
 | Nullable(T) | T? | `chNullable(name, innerType)` |
+
+복합 타입 adapter는 JDBC `Array`/`Struct`/`ResultSet` 값을 반환 전에 복사해
+불변 collection으로 만들고, 같은 변환 경계에서 driver 소유 자원을 해제합니다.
+JSON raw 모드는 JSON text를 검증하고 codec overload의 직렬화·역직렬화는
+호출자가 소유합니다. Enum은 명시한 wire name과 타입 지정
+`CAST(? AS Enum...)` marker를 사용하며 ordinal 값은 사용하지 않습니다.
+DateTime64 입력 소수부는 선언된 정밀도에 맞춰 절삭합니다.
+
+ClickHouse 26.7.3.19는 `Nullable(Array(...))` (Code 43)을 거부하며, 단일
+Exposed column으로는 서버가 물리 subcolumn으로 확장하는 `Nested(...)`를
+표현할 수 없습니다(Code 16). 따라서 이 두 형태는 H2/의미론 adapter에서
+검증하고 wire fixture에서는 의도적으로 제외했습니다. 서버에서 Nested를
+사용할 때는 물리 subcolumn을 선언하세요. JDBC V2 JSON object는 driver의
+canonical JSON spacing을 가진 map으로 반환될 수 있습니다.
 
 ## 엔진 DSL
 

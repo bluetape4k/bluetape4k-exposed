@@ -1,14 +1,22 @@
 package io.bluetape4k.exposed.clickhouse.types
 
 import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.ArrayColumnType
+import org.jetbrains.exposed.v1.core.IColumnType
+import org.jetbrains.exposed.v1.core.statements.api.PreparedStatementApi
+import org.jetbrains.exposed.v1.core.statements.api.RowApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.io.InputStream
 import java.math.BigDecimal
 import java.net.Inet4Address
 import java.net.Inet6Address
 import java.net.InetAddress
+import java.time.Instant
+import java.time.ZoneId
 import java.util.UUID
 
 /**
@@ -29,7 +37,10 @@ class ClickHouseComplexTypesH2Test {
     private object ComplexTable: Table("complex_types_h2") {
         val nullableElements = chArrayNullableElements("nullable_elements", ClickHouseInt32ColumnType())
         val nullableContainer = chNullableArray("nullable_container", ClickHouseStringColumnType())
-        val nestedArray = chArray("nested_array", ClickHouseArrayNullableElementsColumnType(ClickHouseInt32ColumnType()))
+        val nestedArray = chArray(
+            "nested_array",
+            ClickHouseArrayNullableElementsColumnType(ClickHouseInt32ColumnType()),
+        )
         val labels = chMap("labels", ClickHouseStringColumnType(), ClickHouseInt32ColumnType())
         val tuple = chTuple("tuple", listOf(ClickHouseStringColumnType(), ClickHouseInt32ColumnType()))
         val nested = chNested("nested", listOf(ClickHouseStringColumnType(), ClickHouseInt32ColumnType()))
@@ -52,7 +63,7 @@ class ClickHouseComplexTypesH2Test {
         assertEquals("Array(Array(Nullable(Int32)))", ComplexTable.nestedArray.columnType.sqlType())
         assertEquals("Map(String, Int32)", ComplexTable.labels.columnType.sqlType())
         assertEquals("Tuple(String, Int32)", ComplexTable.tuple.columnType.sqlType())
-        assertEquals("Nested(String, Int32)", ComplexTable.nested.columnType.sqlType())
+        assertEquals("Nested(field_0 String, field_1 Int32)", ComplexTable.nested.columnType.sqlType())
         assertEquals("JSON", ComplexTable.rawJson.columnType.sqlType())
         assertEquals("UUID", ComplexTable.uuid.columnType.sqlType())
         assertEquals("IPv4", ComplexTable.ipv4.columnType.sqlType())
@@ -70,10 +81,13 @@ class ClickHouseComplexTypesH2Test {
         assertEquals(listOf(1, null, 3), decoded)
         source[0] = 99
         assertEquals(listOf(1, null, 3), decoded)
+        assertThrows(UnsupportedOperationException::class.java) {
+            (decoded as MutableList<Int?>)[0] = 4
+        }
 
         val encoded = type.notNullValueToDB(listOf(1, null, 3)) as Array<*>
         assertEquals(listOf(1, null, 3), encoded.toList())
-        assertThrows(IllegalArgumentException::class.java) {
+        assertThrows(IllegalStateException::class.java) {
             type.valueFromDB("[1,null]")
         }
     }
@@ -81,27 +95,38 @@ class ClickHouseComplexTypesH2Test {
     @Test
     fun `nullable array distinguishes nullable container from nullable elements`() {
         val type = ClickHouseNullableArrayColumnType(ClickHouseStringColumnType())
-        assertEquals(null, type.valueFromDB(null))
-        assertEquals(listOf("a", null), type.valueFromDB(listOf("a", null)))
-        assertEquals(arrayOf("a", null).toList(), (type.notNullValueToDB(listOf("a", null)) as Array<*>).toList())
+        assertEquals(null, type.valueToDB(null))
+        assertEquals(listOf("a", "b"), type.valueFromDB(listOf("a", "b")))
+        assertEquals(arrayOf("a", "b").toList(), (type.notNullValueToDB(listOf("a", "b")) as Array<*>).toList())
+        assertThrows(IllegalArgumentException::class.java) { type.valueFromDB(listOf("a", null)) }
     }
 
     @Test
     fun `nested arrays maps tuples and nested rows remain immutable and validate shape`() {
-        val nestedArray = ClickHouseArrayColumnType(ClickHouseArrayNullableElementsColumnType(ClickHouseInt32ColumnType()))
-        assertEquals(listOf(listOf(1, null), listOf(2, 3)), nestedArray.valueFromDB(arrayOf(arrayOf(1, null), arrayOf(2, 3))))
+        val nestedArray = ClickHouseArrayColumnType(
+            ClickHouseArrayNullableElementsColumnType(ClickHouseInt32ColumnType()),
+        )
+        val decodedNestedArray = nestedArray.valueFromDB(arrayOf(arrayOf(1, null), arrayOf(2, 3)))
+        assertEquals(listOf(listOf(1, null), listOf(2, 3)), decodedNestedArray)
+        assertThrows(UnsupportedOperationException::class.java) {
+            (decodedNestedArray as MutableList<List<Int?>>).clear()
+        }
 
         val map = ClickHouseMapColumnType(ClickHouseStringColumnType(), ClickHouseInt32ColumnType())
         val decodedMap = map.valueFromDB(linkedMapOf("a" to 1, "b" to 2))
         assertEquals(linkedMapOf("a" to 1, "b" to 2), decodedMap)
         assertFalse(decodedMap === linkedMapOf("a" to 1, "b" to 2))
+        assertThrows(UnsupportedOperationException::class.java) {
+            (decodedMap as MutableMap<String, Int>) ["c"] = 3
+        }
         assertThrows(IllegalArgumentException::class.java) {
             map.valueFromDB(listOf(listOf("a", 1), listOf("a", 2)))
         }
 
         val tuple = ClickHouseTupleColumnType(listOf(ClickHouseStringColumnType(), ClickHouseInt32ColumnType()))
-        assertEquals(listOf("x", 7), tuple.valueFromDB(arrayOf("x", 7)))
-        assertThrows(IllegalArgumentException::class.java) { tuple.valueFromDB(arrayOf("x")) }
+        assertEquals(listOf("x", 7), tuple.valueFromDB(arrayOf<Any?>("x", 7)))
+        assertTrue(tuple.notNullValueToDB(listOf("x", 7)) is com.clickhouse.data.Tuple)
+        assertThrows(IllegalArgumentException::class.java) { tuple.valueFromDB(arrayOf<Any?>("x")) }
 
         val nested = ClickHouseNestedColumnType(listOf(ClickHouseStringColumnType(), ClickHouseInt32ColumnType()))
         assertEquals(listOf(listOf("x", 7), listOf("y", 8)), nested.valueFromDB(listOf(listOf("x", 7), listOf("y", 8))))
@@ -152,5 +177,74 @@ class ClickHouseComplexTypesH2Test {
         assertThrows(IllegalArgumentException::class.java) {
             ClickHouseULongColumnType().valueFromDB(-1L)
         }
+    }
+
+    @Test
+    fun `DateTime64 precision and zone are explicit and UInt64 keeps high bit`() {
+        val zone = ZoneId.of("Asia/Seoul")
+        val dateTime64 = DateTime64ColumnType(6, zone)
+        assertEquals("DateTime64(6, 'Asia/Seoul')", dateTime64.sqlType())
+        val precise = Instant.parse("2026-04-25T12:34:56.123456Z")
+        assertEquals(precise, dateTime64.valueFromDB(precise))
+        val subPrecision = Instant.parse("2026-04-25T12:34:56.1234567Z")
+        assertEquals(
+            Instant.parse("2026-04-25T12:34:56.123456Z"),
+            dateTime64.valueFromDB(subPrecision),
+        )
+
+        val highBit = BigDecimal("9223372036854775808").toBigInteger()
+        val unsigned = ClickHouseULongColumnType()
+        assertEquals(highBit.toString().toULong(), unsigned.valueFromDB(highBit))
+        assertEquals(highBit, unsigned.notNullValueToDB(highBit.toString().toULong()))
+        assertEquals(highBit, ClickHouseUInt64BigIntColumnType().notNullValueToDB(highBit))
+    }
+
+    @Test
+    fun `setParameter and readObject apply the same conversion and nullability`() {
+        val statement = RecordingPreparedStatement()
+        val array = ClickHouseArrayNullableElementsColumnType(ClickHouseInt32ColumnType())
+        array.setParameter(statement, 1, array.notNullValueToDB(listOf(1, null, 3)))
+        assertEquals(listOf(1, null, 3), (statement.boundValue as Array<*>).toList())
+
+        val row = RecordingRow(arrayOf<Any?>(1, null, 3))
+        assertEquals(listOf(1, null, 3), array.readObject(row, 1))
+
+        val nullableArray = ClickHouseNullableArrayColumnType(ClickHouseStringColumnType())
+        assertEquals(null, nullableArray.readObject(RecordingRow(null), 1))
+        nullableArray.setParameter(statement, 2, null)
+        assertEquals(2, statement.nullIndex)
+    }
+
+    private class RecordingPreparedStatement: PreparedStatementApi {
+        var boundValue: Any? = null
+        var nullIndex: Int? = null
+
+        override fun set(index: Int, value: Any, columnType: IColumnType<*>) {
+            boundValue = value
+        }
+
+        override fun setNull(index: Int, columnType: IColumnType<*>) {
+            nullIndex = index
+            boundValue = null
+        }
+
+        override fun setInputStream(index: Int, inputStream: InputStream, setAsBlobObject: Boolean) = Unit
+
+        override fun setArray(index: Int, type: ArrayColumnType<*, *>, array: Array<*>) {
+            boundValue = array
+        }
+    }
+
+    private class RecordingRow(private val value: Any?): RowApi {
+        override fun getObject(index: Int): Any? = value
+        override fun getObject(name: String): Any? = value
+
+        @Suppress("UNCHECKED_CAST")
+        override fun <T> getObject(index: Int, type: Class<T>): T? = value as T?
+
+        @Suppress("UNCHECKED_CAST")
+        override fun <T> getObject(name: String, type: Class<T>): T? = value as T?
+
+        override fun getString(index: Int): String? = value?.toString()
     }
 }

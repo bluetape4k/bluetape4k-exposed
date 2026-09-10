@@ -250,11 +250,37 @@ observed request or cleanup into a remote query-cancellation guarantee.
 | UInt64 | BigInteger | `chUInt64BigInt(name)` |
 | Float32 | Float | `chFloat32(name)` |
 | Float64 | Double | `chFloat64(name)` |
-| DateTime64(n) | Instant | `dateTime64(name, precision)` |
+| DateTime64(n[, timezone]) | Instant | `dateTime64(name, precision, zone)` |
 | Date32 | LocalDate | `date32(name)` |
 | LowCardinality(T) | T | `lowCardinality(name, innerType)` / `lowCardinalityString(name)` |
 | Array(T) | List\<T\> | `chArray(name, innerType)` |
+| Array(Nullable(T)) | List\<T?\> | `chArrayNullableElements(name, innerType)` |
+| Array(Array(...)) | List\<List\<...\>\> | `chArray(name, ClickHouseArrayNullableElementsColumnType(...))` |
+| Nullable(Array(...)) | List\<T?\>? | `chNullableArray(name, innerType)` |
+| Map(K, V) | Map\<K, V\> | `chMap(name, keyType, valueType)` |
+| Tuple(...) | List\<Any?\> | `chTuple(name, elements)` |
+| Nested(...) | List\<List\<Any?\>\> | `chNested(name, elements)` (semantic adapter) |
+| JSON | String / caller type | `chJson(name)` / `chJson(name, codec)` |
+| UUID | UUID | `chUuid(name)` |
+| IPv4 | Inet4Address | `chIpv4(name)` |
+| IPv6 | Inet6Address | `chIpv6(name)` |
+| Decimal(P, S) | BigDecimal | `chDecimal(name, precision, scale)` |
+| Enum8/Enum16 | Enum\<E\> | `chEnum(name, values)` |
 | Nullable(T) | T? | `chNullable(name, innerType)` |
+
+Composite adapters copy JDBC `Array`/`Struct`/`ResultSet` values before returning
+immutable collections and release the driver-owned resource in the same
+conversion boundary. JSON raw mode validates JSON text; the codec overload
+keeps serialization and deserialization caller-owned. Enum values use explicit
+wire names and a typed `CAST(? AS Enum...)` marker, never ordinal values.
+DateTime64 fractional input is truncated to the declared precision.
+
+ClickHouse 26.7.3.19 rejects `Nullable(Array(...))` (Code 43) and a single
+Exposed column cannot represent server-expanded `Nested(...)` subcolumns (Code
+16). Those shapes are covered by H2/semantic adapters and are intentionally
+excluded from the wire fixture; define physical Nested subcolumns when using
+them on a server. A JDBC V2 JSON object may be returned as a map with the
+driver's canonical JSON spacing.
 
 ## Engine DSL
 
