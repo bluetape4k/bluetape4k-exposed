@@ -5,19 +5,19 @@ import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.core.dao.id.KotlinUuidTable
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
-import org.jetbrains.exposed.v1.core.Table.UuidVersion
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.dao.UuidEntity
 import org.jetbrains.exposed.v1.dao.UuidEntityClass
-import org.jetbrains.exposed.v1.dao.flushCache
+import org.jetbrains.exposed.v1.dao.entityCache
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalUuidApi::class)
 class KotlinUuidEntityTest: AbstractCustomIdTableTest() {
+
+    companion object: KLogging()
 
     object Items: KotlinUuidTable(
         name = "kotlin_uuid_entities",
@@ -27,7 +27,7 @@ class KotlinUuidEntityTest: AbstractCustomIdTableTest() {
     }
 
     class Item(id: EntityID<Uuid>): UuidEntity(id) {
-        companion object : UuidEntityClass<Item>(Items)
+        companion object: UuidEntityClass<Item>(Items)
 
         var name by Items.name
     }
@@ -39,7 +39,7 @@ class KotlinUuidEntityTest: AbstractCustomIdTableTest() {
             val entity = Item.new {
                 name = "kotlin-uuid-item"
             }
-            flushCache()
+            entityCache.clear()
 
             val loaded = Item.findById(entity.id).shouldNotBeNull()
             loaded.id.value shouldBeEqualTo entity.id.value
@@ -49,5 +49,6 @@ class KotlinUuidEntityTest: AbstractCustomIdTableTest() {
         }
     }
 
+    // TODO: bluetape4k-core 에 uuidVersion() 함수를 추가한다.
     private fun Uuid.uuidVersion(): Int = (toByteArray()[6].toInt() ushr 4) and 0x0F
 }

@@ -1,11 +1,13 @@
 package io.bluetape4k.exposed.dao
 
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.dao.entityCache
@@ -13,22 +15,25 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
 class StringEntityTest: AbstractExposedTest() {
+
+    companion object: KLogging()
+
     object StringEntityTable: IdTable<String>("string_entity_table") {
         override val id = varchar("id", 64).entityId()
         val name = varchar("name", 100)
         override val primaryKey = PrimaryKey(id)
     }
 
-    class StringUser(
-        id: EntityID<String>,
-    ): StringEntity(id) {
+    class StringUser(id: EntityID<String>): StringEntity(id) {
         companion object: StringEntityClass<StringUser>(StringEntityTable)
 
         var name by StringEntityTable.name
 
         override fun equals(other: Any?): Boolean = idEquals(other)
-
         override fun hashCode(): Int = idHashCode()
+        override fun toString(): String = entityToStringBuilder()
+            .add("name", name)
+            .toString()
     }
 
     @ParameterizedTest
@@ -42,6 +47,8 @@ class StringEntityTest: AbstractExposedTest() {
             entityCache.clear()
 
             val loaded = StringUser.findById("user-001")!!
+
+            log.debug { "loaded=$loaded" }
 
             loaded.id.value shouldBeEqualTo "user-001"
             loaded.idValue shouldBeEqualTo "user-001"
@@ -109,7 +116,7 @@ class StringEntityTest: AbstractExposedTest() {
 
             val loaded = StringUser.findById("")!!
             loaded.name shouldBeEqualTo "EmptyId"
-            loaded.idValue shouldBeEqualTo ""
+            loaded.idValue.shouldBeEmpty()
         }
     }
 
@@ -121,8 +128,8 @@ class StringEntityTest: AbstractExposedTest() {
             entityCache.clear()
 
             val user2 = StringUser.findById("eq-test")!!
-            (user1 == user2).shouldBeTrue()
-            user1.hashCode() shouldBeEqualTo user2.hashCode()
+            user2 shouldBeEqualTo user1
+            user2.hashCode() shouldBeEqualTo user1.hashCode()
         }
     }
 }
