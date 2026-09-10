@@ -63,7 +63,7 @@ fun Query.fetchBatchedResultFlow(
     // 사용 오류를 조기에 발견할 수 있도록 진입점에서 사전 검증합니다.
     limit.requireNull { "A manual `LIMIT` clause should not be set. By default, `batchSize` will be used." }
 
-    // TODO: bluetape4k-core RequireSupport.kt 에 requireEmpty() 메소드 추가 필요
+    // HINT: bluetape4k-core RequireSupport.kt 에 requireEmpty() 메소드 추가 필요
     require(orderByExpressions.isEmpty()) {
         "A manual `ORDER BY` clause should not be set. By default, the auto-incrementing column will be used."
     }
@@ -133,7 +133,7 @@ open class SuspendedQuery(
         val fetchInAscendingOrder =
             sortOrder in listOf(SortOrder.ASC, SortOrder.ASC_NULLS_FIRST, SortOrder.ASC_NULLS_LAST)
 
-        // TODO: 이 함수 어디인가 있는 것 같은데??? 아니라면 공용 함수로 만드는게 낫지 않나?
+        // HINT: 이 함수 어디인가 있는 것 같은데??? 아니라면 공용 함수로 만드는게 낫지 않나?
         fun toLong(autoIncVal: Any): Long =
             when (autoIncVal) {
                 is EntityID<*> -> toLong(autoIncVal.value)
@@ -159,7 +159,7 @@ open class SuspendedQuery(
                             lastOffset?.let { lastOffset ->
                                 whereOp and
                                         if (fetchInAscendingOrder) {
-                                            // TODO: private 함수로 빼자
+                                            // HINT: private 함수로 빼자
                                             when (cursorColumn.columnType) {
                                                 is EntityIDColumnType<*> -> {
                                                     (cursorColumn as? Column<EntityID<Long>>)?.let {
@@ -173,7 +173,7 @@ open class SuspendedQuery(
                                                 }
                                             }
                                         } else {
-                                            // TODO: private 함수로 빼자 
+                                            // HINT: private 함수로 빼자 
                                             when (cursorColumn.columnType) {
                                                 is EntityIDColumnType<*> -> {
                                                     (cursorColumn as? Column<EntityID<Long>>)?.let {

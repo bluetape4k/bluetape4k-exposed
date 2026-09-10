@@ -64,10 +64,10 @@ class KotlinUuidTableTest: AbstractExposedTest() {
         }
     }
 
-    // TODO: 이 함수는 bluetape4k-core 의 UuidSupport.kt 에 정의하도록 하자
+    // HINT: 이 함수는 bluetape4k-core 의 UuidSupport.kt 에 정의하도록 하자
     private fun Uuid.uuidVersion(): Int = (toByteArray()[6].toInt() ushr 4) and 0x0F
 
-    // TODO: 이 함수는 bluetape4k-core 의 UuidSupport.kt 에 정의하도록 하자
+    // HINT: 이 함수는 bluetape4k-core 의 UuidSupport.kt 에 정의하도록 하자
     private fun Uuid.v7Timestamp(): Long = toByteArray()
         .take(6)
         .fold(0L) { timestamp, byte ->

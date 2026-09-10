@@ -49,6 +49,6 @@ class KotlinUuidEntityTest: AbstractCustomIdTableTest() {
         }
     }
 
-    // TODO: bluetape4k-core 에 uuidVersion() 함수를 추가한다.
+    // HINT: bluetape4k-core 에 uuidVersion() 함수를 추가한다.
     private fun Uuid.uuidVersion(): Int = (toByteArray()[6].toInt() ushr 4) and 0x0F
 }
