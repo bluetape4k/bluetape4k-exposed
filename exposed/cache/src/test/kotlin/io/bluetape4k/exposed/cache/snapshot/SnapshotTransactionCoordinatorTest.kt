@@ -3,10 +3,14 @@
 package io.bluetape4k.exposed.cache.snapshot
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBe
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.DatabaseApi
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.core.statements.StatementInterceptor
@@ -22,8 +26,19 @@ import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage
+import kotlin.collections.ArrayDeque
 
 class SnapshotTransactionCoordinatorTest {
+
+    companion object: KLogging() {
+        private val VALIDATOR = CacheSnapshotValueValidator<Payload> {}
+        private val ASYNC_STORE_ID = SnapshotStoreId("remote", "fatal:v1")
+
+        private fun successReport(operation: SnapshotCacheOperation, count: Int) =
+            SnapshotCacheApplyReport(
+                listOf(SnapshotCacheOperationResult(operation, SnapshotCacheOutcome.SUCCESS, count)),
+            )
+    }
 
     @Test
     fun `staging accepts only current root open transactions and registers once`() {
@@ -36,23 +51,27 @@ class SnapshotTransactionCoordinatorTest {
 
         bridge.interceptors.size shouldBeEqualTo 1
         bridge.current = false
+
         assertFailsWith<IllegalStateException> {
             stageInvalidationMutation(transaction, bridge, store, 3L)
         }
 
         val captured = TestTransaction()
         val capturedBridge = TestBridge(current = false)
+
         assertFailsWith<IllegalStateException> {
             stageInvalidationMutation(captured, capturedBridge, store, 1L)
         }
 
         val nested = TestTransaction(outerTransaction = transaction)
+
         assertFailsWith<IllegalStateException> {
             stageInvalidationMutation(nested, TestBridge(), store, 1L)
         }
 
         bridge.current = true
         bridge.interceptor().beforeCommit(transaction)
+
         assertFailsWith<IllegalStateException> {
             stageInvalidationMutation(transaction, bridge, store, 4L)
         }
@@ -73,7 +92,7 @@ class SnapshotTransactionCoordinatorTest {
 
         val validBridge = TestBridge()
         stageInvalidationMutation(transaction, validBridge, store, 1L)
-        validBridge.interceptors.size shouldBeEqualTo 1
+        validBridge.interceptors shouldHaveSize 1
 
         val nonCurrentBridge = TestBridge(current = false)
         var mapperCalled = false
@@ -84,7 +103,7 @@ class SnapshotTransactionCoordinatorTest {
                 store,
                 miss,
                 Payload("source"),
-                CacheSnapshotMapper {
+                {
                     mapperCalled = true
                     CacheSnapshot(it)
                 },
@@ -108,7 +127,7 @@ class SnapshotTransactionCoordinatorTest {
                 mapperStore,
                 mapperMiss,
                 Payload("source"),
-                CacheSnapshotMapper { throw MapperFailure() },
+                { throw MapperFailure() },
                 VALIDATOR,
             )
         }
@@ -134,8 +153,7 @@ class SnapshotTransactionCoordinatorTest {
                 validatorStore,
                 validatorMiss,
                 CacheSnapshot(Payload("invalid")),
-                CacheSnapshotValueValidator { throw ValidationFailure() },
-            )
+            ) { throw ValidationFailure() }
         }
         assertFailsWith<IllegalStateException> {
             stageSnapshotMutation(
@@ -239,13 +257,15 @@ class SnapshotTransactionCoordinatorTest {
         )
 
         stageSnapshotMutation(transaction, bridge, unweighted, miss(), CacheSnapshot(Payload("one")), VALIDATOR)
+
         assertFailsWith<IllegalStateException> {
             stageInvalidationMutation(transaction, bridge, weighted, 2L)
         }
+
         bridge.commit(transaction)
 
         unweighted.puts.single().single().snapshot.value shouldBeEqualTo Payload("one")
-        weighted.invalidations.shouldBeEqualTo(emptyList())
+        weighted.invalidations.shouldBeEmpty()
     }
 
     @Test
@@ -261,9 +281,11 @@ class SnapshotTransactionCoordinatorTest {
 
         stageInvalidationMutation(transaction, bridge, store, 1L)
         stageInvalidationMutation(transaction, bridge, store, 1L)
+
         assertFailsWith<IllegalStateException> {
             stageInvalidationMutation(transaction, bridge, store, 2L)
         }
+
         assertFailsWith<IllegalStateException> {
             stageInvalidationMutation(transaction, bridge, store, 1L)
         }
@@ -309,9 +331,11 @@ class SnapshotTransactionCoordinatorTest {
 
         wrongToken.claimCount shouldBeEqualTo 0
         wrongFingerprint.claimCount shouldBeEqualTo 0
+
         bridge.commit(transaction)
+
         first.invalidations shouldBeEqualTo listOf(listOf(1L))
-        wrongFailureBuffer.invalidations.shouldBeEqualTo(emptyList())
+        wrongFailureBuffer.invalidations.shouldBeEmpty()
     }
 
     @Test
@@ -377,7 +401,7 @@ class SnapshotTransactionCoordinatorTest {
         bridge.commit(transaction)
 
         first.invalidations shouldBeEqualTo listOf(listOf(1L))
-        second.invalidations.shouldBeEqualTo(emptyList())
+        second.invalidations.shouldBeEmpty()
         failures.poll()?.outcome shouldBeEqualTo SnapshotCacheOutcome.NOT_ATTEMPTED
     }
 
@@ -552,7 +576,7 @@ class SnapshotTransactionCoordinatorTest {
         completion.completeExceptionally(fatal).shouldBeTrue()
 
         val thrown = assertFailsWith<CompletionException> { observed.toCompletableFuture().join() }
-        (thrown.cause === fatal).shouldBeTrue()
+        thrown.cause shouldBe fatal
         failures.size shouldBeEqualTo 0
     }
 
@@ -571,7 +595,7 @@ class SnapshotTransactionCoordinatorTest {
         val committedStore = RecordingStore()
         val commitTransaction = TestTransaction()
         val commitBridge = TestBridge()
-        commitBridge.interceptors += object : StatementInterceptor {
+        commitBridge.interceptors += object: StatementInterceptor {
             override fun beforeCommit(transaction: Transaction) {
                 stageInvalidationMutation(commitTransaction, commitBridge, committedStore, 2L)
             }
@@ -585,7 +609,7 @@ class SnapshotTransactionCoordinatorTest {
         val rolledBackStore = RecordingStore()
         val rollbackTransaction = TestTransaction()
         val rollbackBridge = TestBridge()
-        rollbackBridge.interceptors += object : StatementInterceptor {
+        rollbackBridge.interceptors += object: StatementInterceptor {
             override fun beforeRollback(transaction: Transaction) {
                 stageInvalidationMutation(rollbackTransaction, rollbackBridge, rolledBackStore, 2L)
             }
@@ -594,7 +618,7 @@ class SnapshotTransactionCoordinatorTest {
 
         rollbackBridge.rollbackAll(rollbackTransaction)
 
-        rolledBackStore.invalidations.shouldBeEqualTo(emptyList())
+        rolledBackStore.invalidations.shouldBeEmpty()
     }
 
     @Test
@@ -629,7 +653,7 @@ class SnapshotTransactionCoordinatorTest {
         coordinator.stageInvalidation(transaction, bridge, store, 1L)
         val coordinatorInterceptor = bridge.interceptor()
         coordinatorInterceptor.beforeCommit(transaction)
-        val earlierInterceptor = object : StatementInterceptor {
+        val earlierInterceptor = object: StatementInterceptor {
             override fun afterCommit(transaction: Transaction) {
                 throw ThirdPartyFailure()
             }
@@ -639,7 +663,7 @@ class SnapshotTransactionCoordinatorTest {
             listOf(earlierInterceptor, coordinatorInterceptor).forEach { it.afterCommit(transaction) }
         }
 
-        store.invalidations.shouldBeEqualTo(emptyList())
+        store.invalidations.shouldBeEmpty()
         failures.size shouldBeEqualTo 0
     }
 
@@ -672,7 +696,7 @@ class SnapshotTransactionCoordinatorTest {
         return weakStore
     }
 
-    private fun <T : Any> awaitReclamation(
+    private fun <T: Any> awaitReclamation(
         reference: WeakReference<T>,
         referenceQueue: ReferenceQueue<T>,
     ): Boolean {
@@ -692,7 +716,7 @@ class SnapshotTransactionCoordinatorTest {
         var current: Boolean = true,
         private val root: Boolean = true,
         private val maxAttempts: Int = 1,
-    ) : SnapshotTransactionBridge<TestTransaction> {
+    ): SnapshotTransactionBridge<TestTransaction> {
         val interceptors = mutableListOf<StatementInterceptor>()
 
         override fun isRoot(transaction: TestTransaction): Boolean = root && transaction.outerTransaction == null
@@ -730,7 +754,7 @@ class SnapshotTransactionCoordinatorTest {
 
     private class TestTransaction(
         override val outerTransaction: Transaction? = null,
-    ) : Transaction() {
+    ): Transaction() {
         override val db: DatabaseApi
             get() = error("Database is not used by coordinator tests")
         override val transactionManager: TransactionManagerApi
@@ -751,14 +775,14 @@ class SnapshotTransactionCoordinatorTest {
         private val malformedReport: Boolean = false,
         private val fatalError: Error? = null,
         private val afterInvalidation: () -> Unit = {},
-    ) : SnapshotCacheStore<Long, Payload> {
+    ): SnapshotCacheStore<Long, Payload> {
         constructor(
             storeId: SnapshotStoreId,
             token: Any,
             fingerprint: String,
             preparedId: Long = 1L,
             failureBuffer: SnapshotCacheFailureBuffer = snapshotCacheFailureBuffer(16),
-        ) : this(
+        ): this(
             storeId = storeId,
             preparedId = preparedId,
             storeInstanceToken = token,
@@ -813,7 +837,7 @@ class SnapshotTransactionCoordinatorTest {
         private val completion: CompletionStage<SnapshotCacheApplyReport>? = null,
         override val limits: SnapshotCacheLimits = SnapshotCacheLimits(10, 4),
         private val measuredBytes: ArrayDeque<Int> = ArrayDeque(),
-    ) : AsyncSnapshotInvalidationStore<Long> {
+    ): AsyncSnapshotInvalidationStore<Long> {
         override val storeId = SnapshotStoreId("remote", "$name:v1")
         override val storeInstanceToken: Any = Any()
         override val compatibilityFingerprint: String = "remote:v1"
@@ -837,23 +861,14 @@ class SnapshotTransactionCoordinatorTest {
         }
     }
 
-    private data class Payload(val text: String) : Serializable
+    private data class Payload(val text: String): Serializable
 
-    private class StoreFatalError : Error()
+    private class StoreFatalError: Error()
 
-    private class MapperFailure : RuntimeException()
+    private class MapperFailure: RuntimeException()
 
-    private class ValidationFailure : RuntimeException()
+    private class ValidationFailure: RuntimeException()
 
-    private class ThirdPartyFailure : RuntimeException()
+    private class ThirdPartyFailure: RuntimeException()
 
-    companion object {
-        private val VALIDATOR = CacheSnapshotValueValidator<Payload> {}
-        private val ASYNC_STORE_ID = SnapshotStoreId("remote", "fatal:v1")
-
-        private fun successReport(operation: SnapshotCacheOperation, count: Int) =
-            SnapshotCacheApplyReport(
-                listOf(SnapshotCacheOperationResult(operation, SnapshotCacheOutcome.SUCCESS, count)),
-            )
-    }
 }

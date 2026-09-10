@@ -1,17 +1,18 @@
 package io.bluetape4k.exposed.cache
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.io.serializer.BinarySerializers
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.support.requireNotNull
 import org.junit.jupiter.api.Test
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
 import java.io.ObjectStreamClass
-import java.io.Serializable
 import kotlin.reflect.full.memberProperties
 
 class CacheHealthReportTest {
+
+    companion object: KLogging()
 
     @Test
     fun `worker states have the exact public order`() {
@@ -40,7 +41,7 @@ class CacheHealthReportTest {
             restored.mode shouldBeEqualTo report.mode
             restored.queueDepth shouldBeEqualTo report.queueDepth
             restored.workerState shouldBeEqualTo workerState
-            restored.lastFlushError?.javaClass shouldBeEqualTo IllegalStateException::class.java
+            restored.lastFlushError shouldBeInstanceOf IllegalStateException::class
             restored.lastFlushError?.message shouldBeEqualTo "flush-$workerState"
         }
     }
@@ -50,6 +51,7 @@ class CacheHealthReportTest {
         CacheHealthReport::class.memberProperties
             .none { it.name == "isFlushJobRunning" }
             .shouldBeTrue()
+
         CacheHealthReport::class.java.methods
             .none { it.name == "isFlushJobRunning" }
             .shouldBeTrue()
@@ -62,13 +64,8 @@ class CacheHealthReportTest {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T : Serializable> serializeRoundTrip(value: T): T {
-        val bytes = ByteArrayOutputStream().use { output ->
-            ObjectOutputStream(output).use { it.writeObject(value) }
-            output.toByteArray()
-        }
-        return ByteArrayInputStream(bytes).use { input ->
-            ObjectInputStream(input).use { it.readObject() as T }
-        }
+    private fun <T: Any> serializeRoundTrip(value: T): T {
+        val bytes = BinarySerializers.FastFory.serialize(value)
+        return BinarySerializers.FastFory.deserialize<T>(bytes).requireNotNull("$value")
     }
 }

@@ -1,10 +1,13 @@
 package io.bluetape4k.exposed.cache.snapshot
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.io.ObjectStreamClass
 import java.io.Serializable
@@ -22,6 +25,18 @@ import java.util.concurrent.atomic.AtomicLong
 @OptIn(InternalSnapshotCacheApi::class)
 class SnapshotCacheStoreTest {
 
+    companion object: KLogging() {
+        private val PER_INPUT_OUTCOMES = listOf(
+            SnapshotCacheOutcome.SUCCESS,
+            SnapshotCacheOutcome.FAILED,
+            SnapshotCacheOutcome.REJECTED,
+            SnapshotCacheOutcome.NOT_ATTEMPTED,
+        )
+
+        private fun exceptionType(outcome: SnapshotCacheOutcome): String? =
+            if (outcome == SnapshotCacheOutcome.FAILED) IllegalStateException::class.java.name else null
+    }
+
     @Test
     fun `lookup represents exactly one hit or opaque miss`() {
         val snapshot = CacheSnapshot(Payload("cached"), "r-1")
@@ -32,8 +47,8 @@ class SnapshotCacheStoreTest {
         hit.miss.shouldBeNull()
         miss.snapshot.shouldBeNull()
         miss.miss?.toString() shouldBeEqualTo "SnapshotCacheMiss(opaque)"
-        Serializable::class.java.isAssignableFrom(miss.miss?.javaClass).shouldBeFalse()
-        miss.miss?.javaClass?.declaredFields?.isEmpty()?.shouldBeTrue()
+        Serializable::class.java.isAssignableFrom(miss.miss!!.javaClass).shouldBeFalse()
+        miss.miss.javaClass.declaredFields.shouldBeEmpty()
     }
 
     @Test
@@ -54,7 +69,10 @@ class SnapshotCacheStoreTest {
         mutation.snapshot shouldBeEqualTo CacheSnapshot(Payload("loaded"), "r-2")
         val localFence = mutation.localFence ?: error("Expected local fence")
         fences.putIfCurrent(mutation.id, localFence) {}.shouldBeTrue()
-        assertFailsWith<IllegalStateException> { registry.claim(miss) }
+
+        assertFailsWith<IllegalStateException> {
+            registry.claim(miss)
+        }
         assertFailsWith<IllegalStateException> {
             claimed.prepare(CacheSnapshot(Payload("loaded-again")))
         }
@@ -70,8 +88,13 @@ class SnapshotCacheStoreTest {
 
         val first = registry.register(1L, fences.capture(1L)).miss ?: error("Expected first miss")
         registry.claim(first)
-        assertFailsWith<MappingFailure> { throw MappingFailure() }
-        assertFailsWith<IllegalStateException> { registry.claim(first) }
+
+        assertFailsWith<MappingFailure> {
+            throw MappingFailure()
+        }
+        assertFailsWith<IllegalStateException> {
+            registry.claim(first)
+        }
 
         val fresh = registry.register(1L, fences.capture(1L)).miss ?: error("Expected fresh miss")
         registry.claim(fresh).prepare(CacheSnapshot(Payload("fresh"))).id shouldBeEqualTo 1L
@@ -88,7 +111,9 @@ class SnapshotCacheStoreTest {
         val replacement = registry.register(2L, fences.capture(2L))
         replacement.miss?.toString() shouldBeEqualTo "SnapshotCacheMiss(opaque)"
         val retainedMiss = retainedLookup.miss ?: error("Expected retained miss")
-        assertFailsWith<IllegalStateException> { registry.claim(retainedMiss) }
+        assertFailsWith<IllegalStateException> {
+            registry.claim(retainedMiss)
+        }
     }
 
     @Test
@@ -112,7 +137,7 @@ class SnapshotCacheStoreTest {
             claimResults.count { it.isSuccess } shouldBeEqualTo 1
             val claimFailures = claimResults.mapNotNull { it.exceptionOrNull() }
             claimFailures.size shouldBeEqualTo 1
-            claimFailures.single().javaClass shouldBeEqualTo IllegalStateException::class.java
+            claimFailures.single() shouldBeInstanceOf IllegalStateException::class
         } finally {
             start.countDown()
             executor.close()
@@ -143,7 +168,7 @@ class SnapshotCacheStoreTest {
             prepareResults.count { it.isSuccess } shouldBeEqualTo 1
             val prepareFailures = prepareResults.mapNotNull { it.exceptionOrNull() }
             prepareFailures.size shouldBeEqualTo 1
-            prepareFailures.single().javaClass shouldBeEqualTo IllegalStateException::class.java
+            prepareFailures.single() shouldBeInstanceOf IllegalStateException::class
         } finally {
             start.countDown()
             executor.close()
@@ -395,7 +420,7 @@ class SnapshotCacheStoreTest {
         private val outcomeFor: (Int, SnapshotCacheDeadline) -> SnapshotCacheOutcome = { index, _ ->
             PER_INPUT_OUTCOMES[index]
         },
-    ) : SnapshotCacheStore<Long, Payload> {
+    ): SnapshotCacheStore<Long, Payload> {
         override val storeId = SnapshotStoreId("local", "orders:v1")
         override val storeInstanceToken: Any = Any()
         override val compatibilityFingerprint: String = "local:v1"
@@ -444,7 +469,7 @@ class SnapshotCacheStoreTest {
         }
     }
 
-    private class RecordingAsyncStore : AsyncSnapshotInvalidationStore<Long> {
+    private class RecordingAsyncStore: AsyncSnapshotInvalidationStore<Long> {
         override val storeId = SnapshotStoreId("remote", "orders:v1")
         override val storeInstanceToken: Any = Any()
         override val compatibilityFingerprint: String = "remote:v1"
@@ -470,13 +495,13 @@ class SnapshotCacheStoreTest {
             )
     }
 
-    private data class Payload(val text: String) : Serializable {
+    private data class Payload(val text: String): Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
     }
 
-    private class MappingFailure : RuntimeException()
+    private class MappingFailure: RuntimeException()
 
     private fun clearAndEnqueueRegisteredWeakKey(
         registry: SnapshotMissCapabilityRegistry<Long, Payload>,
@@ -502,19 +527,7 @@ class SnapshotCacheStoreTest {
         return lookup
     }
 
-    companion object {
-        private val PER_INPUT_OUTCOMES = listOf(
-            SnapshotCacheOutcome.SUCCESS,
-            SnapshotCacheOutcome.FAILED,
-            SnapshotCacheOutcome.REJECTED,
-            SnapshotCacheOutcome.NOT_ATTEMPTED,
-        )
-
-        private fun exceptionType(outcome: SnapshotCacheOutcome): String? =
-            if (outcome == SnapshotCacheOutcome.FAILED) IllegalStateException::class.java.name else null
-    }
-
-    private class TrackedExecutor(threadCount: Int) : AutoCloseable {
+    private class TrackedExecutor(threadCount: Int): AutoCloseable {
         private val executor = Executors.newFixedThreadPool(threadCount)
         private val futures = mutableListOf<Future<*>>()
 

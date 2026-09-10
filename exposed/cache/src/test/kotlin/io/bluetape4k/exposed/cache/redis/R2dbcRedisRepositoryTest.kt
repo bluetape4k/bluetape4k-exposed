@@ -1,12 +1,12 @@
 package io.bluetape4k.exposed.cache.redis
 
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.JdbcCacheRepository
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.KLogging
 import io.mockk.mockk
-import io.bluetape4k.assertions.shouldBeEqualTo
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -57,7 +57,9 @@ class R2dbcRedisRepositoryTest {
         }
 
         // count를 생략하면 인터페이스의 기본값 DEFAULT_BATCH_SIZE가 $default 경로로 주입된다.
-        runSuspendIO { repo.invalidateByPattern("*test*") }
+        runSuspendIO {
+            repo.invalidateByPattern("*test*")
+        }
         capturedCount shouldBeEqualTo JdbcCacheRepository.DEFAULT_BATCH_SIZE
     }
 

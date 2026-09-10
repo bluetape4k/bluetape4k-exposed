@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.cache.snapshot
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.io.Serializable
@@ -47,7 +48,7 @@ class CacheSnapshotDaoFreeClasspathTest {
         }
     }
 
-    companion object {
+    companion object: KLogging() {
         private const val EXPOSED_DAO_ENTITY_CLASS_NAME = "org.jetbrains.exposed.v1.dao.Entity"
         private const val CHILD_TIMEOUT_SECONDS = 30L
         private const val CHILD_CLEANUP_TIMEOUT_SECONDS = 5L

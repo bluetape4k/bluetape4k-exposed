@@ -23,7 +23,9 @@ dependencies {
     api(platform(bt4k.kotlinx.coroutines.bom))
 
     // Bluetape4k
-    api(bt4k.bluetape4k.logging)
+    api(bt4k.bluetape4k.core)
+    testImplementation(bt4k.bluetape4k.io)
+    testImplementation(bt4k.fory.kotlin)
 
     // Exposed
     api(platform(bt4k.exposed.bom))

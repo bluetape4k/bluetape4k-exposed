@@ -4,6 +4,7 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.dao.Entity
@@ -17,6 +18,8 @@ import java.io.Serializable
 import java.lang.reflect.Modifier
 
 class CacheSnapshotTest {
+
+    companion object: KLogging()
 
     @Test
     fun `snapshot envelope exposes final value and revision references`() {

@@ -1,11 +1,13 @@
 package io.bluetape4k.exposed.cache
 
-import io.bluetape4k.logging.KLogging
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.io.serializer.BinarySerializers
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.support.requireNotNull
 import org.junit.jupiter.api.Test
-import io.bluetape4k.assertions.assertFailsWith
 import java.time.Duration
 
 /**
@@ -212,13 +214,8 @@ class LocalCacheConfigTest {
             writeMode = CacheWriteMode.WRITE_THROUGH,
         )
 
-        val bytes = java.io.ByteArrayOutputStream().use { baos ->
-            java.io.ObjectOutputStream(baos).use { oos -> oos.writeObject(original) }
-            baos.toByteArray()
-        }
-        val restored = java.io.ByteArrayInputStream(bytes).use { bais ->
-            java.io.ObjectInputStream(bais).use { ois -> ois.readObject() as LocalCacheConfig }
-        }
+        val bytes = BinarySerializers.FastFory.serialize(original)
+        val restored = BinarySerializers.FastFory.deserialize<LocalCacheConfig>(bytes).requireNotNull("$original")
 
         restored.keyPrefix shouldBeEqualTo original.keyPrefix
         restored.maximumSize shouldBeEqualTo original.maximumSize

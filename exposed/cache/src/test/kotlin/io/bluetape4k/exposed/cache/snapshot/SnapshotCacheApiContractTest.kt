@@ -5,10 +5,13 @@ package io.bluetape4k.exposed.cache.snapshot
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 
 class SnapshotCacheApiContractTest {
+
+    companion object: KLogging()
 
     @Test
     fun `internal annotation is an error level opt in contract`() {
