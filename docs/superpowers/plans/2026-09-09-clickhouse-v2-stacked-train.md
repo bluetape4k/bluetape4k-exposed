@@ -583,7 +583,7 @@ merge는 실행하지 않았다.
 - Create: `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/support/RowBinaryConnectionProviderFixture.kt`
 - Create: `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryBenchmarkTest.kt`
 
-- [ ] **Step 0: #866 exact head에서 child worktree를 만든다**
+- [x] **Step 0: #866 exact head에서 child worktree를 만든다**
 
 ```bash
 git fetch origin feat/issue-866-clickhouse-v2-types
@@ -594,7 +594,12 @@ test "$(git -C /Users/debop/work/bluetape4k/bluetape4k-exposed/.worktrees/feat/i
 
 Expected: child worktree HEAD가 #866 `headRefOid`와 같고, #865 변경이 history에 포함되며 다른 worktree는 dirty하지 않다.
 
-- [ ] **Step 1: provider/options RED API test를 작성한다**
+실행 결과: PR #870의 head `ac011e5119a192a1476bb7e85ce4c973f068ad58`를
+fetch하고 `feat/issue-867-clickhouse-v2-rowbinary` worktree를 생성했다.
+child HEAD가 해당 exact head와 일치하며 기존 worktree의 변경은 건드리지
+않았다.
+
+- [x] **Step 1: provider/options RED API test를 작성한다**
 
 ```kotlin
 @Test
@@ -616,7 +621,13 @@ fun `provider가 없으면 unsupported configuration으로 fail closed 한다`()
 
 `ClickHouseRowBinaryOptions`는 `enabled=false`, 양수 `maxRowsPerFlush`, beta property raw override 금지를 고정한다. provider/DataSource/pool은 caller 소유이고 executor는 빌린 connection/statement/result만 닫는다.
 
-- [ ] **Step 2: preflight/fallback RED matrix를 작성한다**
+실행 결과: `ClickHouseRowBinaryTest`에 disabled 기본값·flush 상한, true/false
+profile 독립성, provider 부재 fail-closed, eligible 단순 INSERT, disabled
+fallback, setter 예외·unusable, partial count sentinel, empty input 계약을
+추가했다. `RowBinaryConnectionProviderFixture`는 connection/statement close,
+profile sequence, fallback event를 관찰하도록 작성했다.
+
+- [x] **Step 2: preflight/fallback RED matrix를 작성한다**
 
 단순 single-values eligible, `INSERT SELECT`, 여러 values group, values function, unsupported nested setter, invalid option, capability unknown, provider absent, setter failure after statement, first-byte 이후 failure, empty input, partial update counts를 각각 작성한다.
 
@@ -641,13 +652,25 @@ fun `setter 이후 실패는 원래 예외와 unusable 상태를 보존하고 fa
 }
 ```
 
-- [ ] **Step 3: RED selector를 실행한다**
+실행 결과: SQL preflight와 lifecycle 행렬에 대한 assertion을 먼저 고정했으며,
+fixture는 setter·first-byte 오류와 driver update-count sentinel을 주입할 수
+있도록 구성했다. 아직 production API가 없어 selector는 의도적으로 compile
+RED 상태다.
+
+- [x] **Step 3: RED selector를 실행한다**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseRowBinaryTest' --no-parallel --max-workers=1 --no-daemon --console=plain
 ```
 
 Expected: options/provider/executor/preflight 미정의 compile RED.
+
+실행 결과: `./gradlew :bluetape4k-exposed-clickhouse:test --tests
+'*ClickHouseRowBinaryTest' --no-parallel --max-workers=1 --no-daemon
+--console=plain`이 `:bluetape4k-exposed-clickhouse:compileTestKotlin
+FAILED`로 종료했고, `ClickHouseRowBinaryOptions`, provider, executor,
+preflight 관련 미정의 symbol이 관찰됐다. 이는 구현 전 RED 증거이며 다음
+단계에서 production API를 추가한다.
 
 ## Task 7: #867 GREEN — driver-owned executor와 result lifecycle을 구현한다
 
