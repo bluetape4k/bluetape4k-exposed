@@ -416,3 +416,4 @@ public final class io/bluetape4k/exposed/core/statements/api/ExposedBlobExtensio
 	public static final fun toInputStream (Lorg/jetbrains/exposed/v1/core/statements/api/ExposedBlob;)Ljava/io/InputStream;
 	public static final fun toUtf8String (Lorg/jetbrains/exposed/v1/core/statements/api/ExposedBlob;)Ljava/lang/String;
 }
+
