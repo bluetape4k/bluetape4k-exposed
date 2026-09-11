@@ -1,27 +1,27 @@
 package io.bluetape4k.exposed.lettuce.map
 
-import io.bluetape4k.exposed.tests.AbstractExposedTest
-import io.bluetape4k.exposed.tests.TestDB
-import io.bluetape4k.exposed.tests.withTablesSuspending
-import io.bluetape4k.logging.KLogging
-import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.exposed.tests.AbstractExposedTest
+import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.exposed.tests.withTablesSuspending
+import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
-import org.jetbrains.exposed.v1.core.statements.StatementContext
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.statements.StatementContext
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.junit.jupiter.api.Test
 import java.io.Serializable
-import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldHaveSize
 
 /**
  * [SuspendedExposedEntityMapLoader] 단위 테스트.
@@ -31,30 +31,35 @@ import io.bluetape4k.assertions.shouldHaveSize
  * 따라서 각 테스트에서 insert 후 `commit()`을 호출한다.
  */
 class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
+
     companion object: KLogging()
 
     private data class SuspendedLoaderEntity(
         val id: Long,
         val name: String,
-    ): Serializable
+    ): Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+
+        fun withId(newId: Long) = copy(id = newId)
+    }
 
     private object SuspendedLoaderTable: LongIdTable("suspended_loader_test") {
         val name = varchar("name", 64)
     }
 
-    private fun ResultRow.toSuspendedLoaderEntity(): SuspendedLoaderEntity =
-        SuspendedLoaderEntity(
-            id = this[SuspendedLoaderTable.id].value,
-            name = this[SuspendedLoaderTable.name]
-        )
+    private fun ResultRow.toSuspendedLoaderEntity(): SuspendedLoaderEntity = SuspendedLoaderEntity(
+        id = this[SuspendedLoaderTable.id].value,
+        name = this[SuspendedLoaderTable.name]
+    )
 
     @Test
     fun `load - suspend 컨텍스트에서 단건 조회 성공`() = runSuspendIO {
         withTablesSuspending(TestDB.H2, SuspendedLoaderTable) {
-            val insertedId =
-                SuspendedLoaderTable.insert {
-                    it[name] = "alice"
-                } get SuspendedLoaderTable.id
+            val insertedId = SuspendedLoaderTable.insert {
+                it[name] = "alice"
+            } get SuspendedLoaderTable.id
 
             // suspendedTransactionAsync는 새 트랜잭션을 열므로 먼저 커밋해야 데이터가 보인다
             commit()
@@ -127,7 +132,7 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
             TestDB.H2,
             SuspendedLoaderTable,
             configure = {
-                sqlLogger = object : SqlLogger {
+                sqlLogger = object: SqlLogger {
                     override fun log(context: StatementContext, transaction: Transaction) {
                         sqlStatements += context.sql(transaction)
                     }
@@ -160,10 +165,10 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
     @Test
     fun `loadAllKeys - sparse ID를 순서대로 중복 없이 반환한다`() = runSuspendIO {
         withTablesSuspending(TestDB.H2, SuspendedLoaderTable) {
-            val initialIds =
-                List(5) { index ->
-                    SuspendedLoaderTable.insert { it[name] = "user-$index" } get SuspendedLoaderTable.id
-                }.map { it.value }
+
+            val initialIds = List(5) { index ->
+                SuspendedLoaderTable.insert { it[name] = "user-$index" } get SuspendedLoaderTable.id
+            }.map { it.value }
             SuspendedLoaderTable.deleteWhere { SuspendedLoaderTable.id eq initialIds[1] }
             commit()
 
@@ -187,7 +192,7 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
             TestDB.H2,
             SuspendedLoaderTable,
             configure = {
-                sqlLogger = object : SqlLogger {
+                sqlLogger = object: SqlLogger {
                     override fun log(context: StatementContext, transaction: Transaction) {
                         sqlStatements += context.sql(transaction)
                     }

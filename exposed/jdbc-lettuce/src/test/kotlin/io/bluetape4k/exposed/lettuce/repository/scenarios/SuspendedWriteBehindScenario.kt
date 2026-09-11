@@ -1,13 +1,13 @@
 package io.bluetape4k.exposed.lettuce.repository.scenarios
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.cache.scenarios.SuspendedJdbcWriteBehindScenario
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest.Companion.ENABLE_DIALECTS_METHOD
 import io.bluetape4k.exposed.tests.TestDB
-import io.bluetape4k.logging.coroutines.KLoggingChannel
-import kotlinx.coroutines.runBlocking
+import io.bluetape4k.junit5.awaitility.untilSuspending
 import io.bluetape4k.junit5.coroutines.runSuspendIO
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.withPollInterval
 import org.junit.jupiter.api.Assumptions
@@ -42,59 +42,60 @@ interface SuspendedWriteBehindScenario<ID: Any, E: java.io.Serializable>:
                 val id = getExistingId()
                 val entity = repository.findByIdFromDb(id).shouldNotBeNull()
                 val updated = updateEmail(entity)
-                repository.put(id, updated)
 
+                repository.put(id, updated)
                 repository.get(id) shouldBeEqualTo updated
             }
         }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `put - WRITE_BEHIND flush 주기 후 DB에 반영된다`(testDB: TestDB) =
-        runSuspendIO(timeout = 10.seconds) {
-            // MySQL/MariaDB의 REPEATABLE READ 격리 수준은 외부 트랜잭션에서 커밋된 데이터를 볼 수 없어 스킵
-            Assumptions.assumeTrue(testDB !in TestDB.ALL_MYSQL_MARIADB) {
-                "${testDB}은 REPEATABLE READ 격리 수준으로 Write-Behind DB 가시성 테스트 불가"
-            }
-            withSuspendedEntityTable(testDB) {
-                val id = getExistingId()
-                val entity = repository.findByIdFromDb(id).shouldNotBeNull()
-                val updated = updateEmail(entity)
-                repository.put(id, updated)
-
-                await
-                    .atMost(Duration.ofSeconds(5))
-                    .withPollInterval(Duration.ofMillis(100))
-                    .until { runBlocking { repository.findByIdFromDb(id) == updated } }
-
-                repository.findByIdFromDb(id) shouldBeEqualTo updated
-            }
+    fun `put - WRITE_BEHIND flush 주기 후 DB에 반영된다`(testDB: TestDB) = runSuspendIO(timeout = 10.seconds) {
+        // MySQL/MariaDB의 REPEATABLE READ 격리 수준은 외부 트랜잭션에서 커밋된 데이터를 볼 수 없어 스킵
+        Assumptions.assumeTrue(testDB !in TestDB.ALL_MYSQL_MARIADB) {
+            "${testDB}은 REPEATABLE READ 격리 수준으로 Write-Behind DB 가시성 테스트 불가"
         }
+        withSuspendedEntityTable(testDB) {
+            val id = getExistingId()
+            val entity = repository.findByIdFromDb(id).shouldNotBeNull()
+            val updated = updateEmail(entity)
+            repository.put(id, updated)
+
+            await
+                .atMost(Duration.ofSeconds(5))
+                .withPollInterval(Duration.ofMillis(500))
+                .untilSuspending {
+                    repository.findByIdFromDb(id) == updated
+                }
+
+            repository.findByIdFromDb(id) shouldBeEqualTo updated
+        }
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `putAll - 여러 레코드를 배치로 비동기 적재한다`(testDB: TestDB) =
-        runSuspendIO(timeout = 10.seconds) {
-            // MySQL/MariaDB의 REPEATABLE READ 격리 수준은 외부 트랜잭션에서 커밋된 데이터를 볼 수 없어 스킵
-            Assumptions.assumeTrue(testDB !in TestDB.ALL_MYSQL_MARIADB) {
-                "${testDB}은 REPEATABLE READ 격리 수준으로 Write-Behind DB 가시성 테스트 불가"
+    fun `putAll - 여러 레코드를 배치로 비동기 적재한다`(testDB: TestDB) = runSuspendIO(timeout = 10.seconds) {
+        // MySQL/MariaDB의 REPEATABLE READ 격리 수준은 외부 트랜잭션에서 커밋된 데이터를 볼 수 없어 스킵
+        Assumptions.assumeTrue(testDB !in TestDB.ALL_MYSQL_MARIADB) {
+            "${testDB}은 REPEATABLE READ 격리 수준으로 Write-Behind DB 가시성 테스트 불가"
+        }
+        withSuspendedEntityTable(testDB) {
+            val ids = getExistingIds()
+            val entities = ids.associateWith { id ->
+                updateEmail(repository.findByIdFromDb(id)!!)
             }
-            withSuspendedEntityTable(testDB) {
-                val ids = getExistingIds()
-                val entities =
-                    ids.associateWith { id ->
-                        updateEmail(repository.findByIdFromDb(id)!!)
-                    }
-                repository.putAll(entities)
+            repository.putAll(entities)
 
-                await
-                    .atMost(Duration.ofSeconds(5))
-                    .withPollInterval(Duration.ofMillis(100))
-                    .until { runBlocking { entities.all { (id, e) -> repository.findByIdFromDb(id) == e } } }
-
-                entities.forEach { (id, expected) ->
-                    repository.findByIdFromDb(id) shouldBeEqualTo expected
+            await
+                .atMost(Duration.ofSeconds(5))
+                .withPollInterval(Duration.ofMillis(500))
+                .untilSuspending {
+                    entities.all { (id, e) -> repository.findByIdFromDb(id) == e }
                 }
+
+            entities.forEach { (id, expected) ->
+                repository.findByIdFromDb(id) shouldBeEqualTo expected
             }
         }
+    }
 }

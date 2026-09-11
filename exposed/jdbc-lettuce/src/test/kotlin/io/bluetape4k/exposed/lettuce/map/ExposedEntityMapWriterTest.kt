@@ -1,12 +1,14 @@
 package io.bluetape4k.exposed.lettuce.map
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.lettuce.map.WriteMode
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
@@ -17,18 +19,24 @@ import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.api.Test
 import java.io.Serializable
-import io.bluetape4k.assertions.assertFailsWith
 
 /**
  * [ExposedEntityMapWriter] 단위 테스트.
  */
 class ExposedEntityMapWriterTest: AbstractExposedTest() {
+
     companion object: KLogging()
 
     private data class WriterEntity(
         val id: Long,
         val name: String,
-    ): Serializable
+    ): Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+
+        fun withId(newId: Long) = copy(id = newId)
+    }
 
     // 클라이언트 생성 ID 테이블 (AutoInc 아님) — Writer 삽입 동작을 직접 테스트하기 위해 사용
     private object WriterTable: IdTable<Long>("lettuce_writer_test") {
@@ -37,11 +45,10 @@ class ExposedEntityMapWriterTest: AbstractExposedTest() {
         override val primaryKey = PrimaryKey(id)
     }
 
-    private fun ResultRow.toWriterEntity(): WriterEntity =
-        WriterEntity(
-            id = this[WriterTable.id].value,
-            name = this[WriterTable.name]
-        )
+    private fun ResultRow.toWriterEntity(): WriterEntity = WriterEntity(
+        id = this[WriterTable.id].value,
+        name = this[WriterTable.name]
+    )
 
     private fun newWriter(writeMode: WriteMode = WriteMode.WRITE_THROUGH): ExposedEntityMapWriter<Long, WriterEntity> =
         ExposedEntityMapWriter(
@@ -93,7 +100,7 @@ class ExposedEntityMapWriterTest: AbstractExposedTest() {
             val writer = newWriter()
             writer.write(emptyMap())
 
-            WriterTable.selectAll().toList().shouldHaveSize(0)
+            WriterTable.selectAll().toList().shouldBeEmpty()
         }
     }
 
@@ -103,7 +110,7 @@ class ExposedEntityMapWriterTest: AbstractExposedTest() {
             val writer = newWriter(WriteMode.NONE)
             writer.write(mapOf(1L to WriterEntity(id = 1L, name = "alice")))
 
-            WriterTable.selectAll().toList().shouldHaveSize(0)
+            WriterTable.selectAll().toList().shouldBeEmpty()
         }
     }
 
@@ -139,7 +146,7 @@ class ExposedEntityMapWriterTest: AbstractExposedTest() {
             val writer = newWriter()
             writer.delete(emptyList())
 
-            WriterTable.selectAll().toList().shouldHaveSize(1)
+            WriterTable.selectAll().toList() shouldHaveSize 1
         }
     }
 

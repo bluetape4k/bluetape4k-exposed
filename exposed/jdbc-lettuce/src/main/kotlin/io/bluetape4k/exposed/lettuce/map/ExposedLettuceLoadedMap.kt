@@ -1,14 +1,16 @@
 package io.bluetape4k.exposed.lettuce.map
 
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.error
+import io.bluetape4k.logging.info
 import io.bluetape4k.logging.warn
-import io.bluetape4k.support.requirePositiveNumber
-import io.lettuce.core.LettuceFutures
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.redis.lettuce.map.MapLoader
 import io.bluetape4k.redis.lettuce.map.MapWriter
 import io.bluetape4k.redis.lettuce.map.WriteMode
+import io.bluetape4k.support.requirePositiveNumber
+import io.lettuce.core.LettuceFutures
 import io.lettuce.core.RedisClient
 import io.lettuce.core.ScanArgs
 import io.lettuce.core.ScanCursor
@@ -79,13 +81,18 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
     operator fun get(key: K): V? {
         val redisKey = redisKey(key)
         val cached = runCatching { commands.get(redisKey) }
-            .onFailure { e -> log.warn { "Redis GET failed, loader fallback: errorType=${e::class.simpleName}" } }
+            .onFailure { e -> log.warn(e) { "Redis GET failed, loader fallback: errorType=${e::class.simpleName}" } }
             .getOrNull()
+
         if (cached != null) return cached
         val loader = loader ?: return null
         val value = loader.load(key) ?: return null
-        runCatching { commands.set(redisKey, value, SetArgs().ex(ttlSeconds)) }
-            .onFailure { e -> log.warn { "Redis SETEX failed: errorType=${e::class.simpleName}" } }
+
+        runCatching {
+            commands.set(redisKey, value, SetArgs().ex(ttlSeconds))
+        }.onFailure { e ->
+            log.warn(e) { "Redis SETEX failed: errorType=${e::class.simpleName}" }
+        }
         return value
     }
 
@@ -101,9 +108,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
             WriteMode.WRITE_BEHIND  -> {
                 val queue = writeBehindQueue ?: return
                 if (!queue.offer(Triple(key, value, 0))) {
-                    throw IllegalStateException(
-                        "Write-behind queue is full (capacity=${config.writeBehindQueueCapacity})"
-                    )
+                    error("Write-behind queue is full (capacity=${config.writeBehindQueueCapacity})")
                 }
                 commands.set(redisKey(key), value, SetArgs().ex(ttlSeconds))
             }
@@ -117,15 +122,18 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
         batchSize.requirePositiveNumber("batchSize")
         if (entries.isEmpty()) return
 
-        entries.entries.chunked(batchSize).forEach { chunkEntries ->
-            val chunk = chunkEntries.associate { it.key to it.value }
-            when (config.writeMode) {
-                WriteMode.NONE          -> Unit
-                WriteMode.WRITE_THROUGH -> writer?.write(chunk)
-                WriteMode.WRITE_BEHIND  -> enqueueWriteBehind(chunk)
+        log.debug { "putAll: entries=${entries.size}, batchSize=$batchSize" }
+        entries.entries
+            .chunked(batchSize)
+            .forEach { chunkEntries ->
+                val chunk = chunkEntries.associate { it.key to it.value }
+                when (config.writeMode) {
+                    WriteMode.NONE          -> Unit
+                    WriteMode.WRITE_THROUGH -> writer?.write(chunk)
+                    WriteMode.WRITE_BEHIND  -> enqueueWriteBehind(chunk)
+                }
+                putCacheOnly(chunk)
             }
-            putCacheOnly(chunk)
-        }
     }
 
     /**
@@ -134,28 +142,33 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
     fun warmAll(entries: Map<K, V>, batchSize: Int) {
         batchSize.requirePositiveNumber("batchSize")
         if (entries.isEmpty()) return
-        entries.entries.chunked(batchSize).forEach { chunkEntries ->
-            putCacheOnly(chunkEntries.associate { it.key to it.value })
-        }
+
+        entries.entries
+            .chunked(batchSize)
+            .forEach { chunkEntries ->
+                putCacheOnly(chunkEntries.associate { it.key to it.value })
+            }
     }
 
     private fun enqueueWriteBehind(entries: Map<K, V>) {
         val queue = writeBehindQueue ?: return
+
+        log.debug { "enqueueWriteBehind: entries=${entries.size}" }
         entries.forEach { (key, value) ->
             if (!queue.offer(Triple(key, value, 0))) {
-                throw IllegalStateException(
-                    "Write-behind queue is full (capacity=${config.writeBehindQueueCapacity})"
-                )
+                error("Write-behind queue is full (capacity=${config.writeBehindQueueCapacity})")
             }
         }
     }
 
     private fun putCacheOnly(entries: Map<K, V>) {
         if (entries.isEmpty()) return
+
         bulkLock.withLock {
             val bulk = bulkConnection.value
             val bulkCommands = bulk.async()
             bulk.setAutoFlushCommands(false)
+
             try {
                 val futures = entries.map { (key, value) ->
                     bulkCommands.set(redisKey(key), value, SetArgs().ex(ttlSeconds))
@@ -177,9 +190,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
 
         val mgetResult = runCatching { commands.mget(*redisKeys) }
             .onFailure { e ->
-                log.warn {
-                    "Redis MGET failed, loader fallback: requested=${keys.size}, errorType=${e::class.simpleName}"
-                }
+                log.warn(e) { "Redis MGET failed, loader fallback: requested=${keys.size}" }
             }
             .getOrNull()
 
@@ -202,30 +213,39 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
             missedKeys.forEach { key ->
                 val value = loader.load(key) ?: return@forEach
                 result[key] = value
-                runCatching { commands.set(redisKey(key), value, SetArgs().ex(ttlSeconds)) }
-                    .onFailure { e -> log.warn { "Redis SETEX failed: errorType=${e::class.simpleName}" } }
+                runCatching {
+                    commands.set(redisKey(key), value, SetArgs().ex(ttlSeconds))
+                }.onFailure { e ->
+                    log.warn(e) { "Redis SETEX failed" }
+                }
             }
         }
         return result
     }
 
     fun delete(key: K) {
+        log.debug { "delete: key=$key" }
         if (config.writeMode != WriteMode.NONE) writer?.delete(listOf(key))
         commands.del(redisKey(key))
     }
 
     fun deleteAll(keys: Collection<K>) {
         if (keys.isEmpty()) return
+
+        log.debug { "deleteAll: keys=$keys" }
         if (config.writeMode != WriteMode.NONE) writer?.delete(keys)
         commands.unlink(*keys.map { redisKey(it) }.toTypedArray())
     }
 
     fun evict(key: K) {
+        log.debug { "evict: key=$key" }
         commands.del(redisKey(key))
     }
 
     fun evictAll(keys: Collection<K>) {
         if (keys.isEmpty()) return
+
+        log.debug { "evictAll: keys=$keys" }
         commands.unlink(*keys.map { redisKey(it) }.toTypedArray())
     }
 
@@ -234,6 +254,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
         val scanArgs = ScanArgs.Builder.matches(keyPattern).limit(count)
         var cursor: ScanCursor = ScanCursor.INITIAL
         var deleted = 0L
+
         do {
             val scanResult = commands.scan(cursor, scanArgs)
             if (scanResult.keys.isNotEmpty()) {
@@ -241,13 +262,16 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
             }
             cursor = scanResult
         } while (!cursor.isFinished)
+
         return deleted
     }
 
     fun clear() {
+        log.debug { "clear ..." }
         val pattern = "${config.keyPrefix}:*"
         val scanArgs = ScanArgs.Builder.matches(pattern).limit(100)
         var cursor: ScanCursor = ScanCursor.INITIAL
+
         do {
             val scanResult = commands.scan(cursor, scanArgs)
             if (scanResult.keys.isNotEmpty()) {
@@ -258,6 +282,8 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
     }
 
     private fun flushWriteBehindQueue() {
+        log.debug { "flushWriteBehindQueue ..." }
+
         val queue = writeBehindQueue ?: return
         val entries = mutableListOf<Triple<K, V, Int>>()
         repeat(config.writeBehindBatchSize) {
@@ -269,11 +295,10 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
         val batch = entries.associate { it.first to it.second }
         runCatching { writer?.write(batch) }
             .onFailure { e ->
-                log.error {
-                    "Write-behind flush failed: entries=${batch.size}, " +
-                        "errorType=${e::class.simpleName}"
-                }
+                log.error(e) { "Write-behind flush failed: entries=${batch.size}" }
+
                 val dropped = mutableListOf<Triple<K, V, Int>>()
+
                 entries.forEach { (key, value, retryCount) ->
                     val nextRetryCount = retryCount + 1
                     if (nextRetryCount < MAX_DEAD_LETTER_RETRY) {
@@ -283,11 +308,15 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
                         dropped.add(Triple(key, value, nextRetryCount))
                     }
                 }
-                if (dropped.isNotEmpty()) writeDeadLetter(dropped.associate { it.first to it.second })
+                if (dropped.isNotEmpty()) {
+                    writeDeadLetter(dropped.associate { it.first to it.second })
+                }
             }
     }
 
     private fun writeDeadLetter(batch: Map<K, V>) {
+        log.debug { "writeDeadLetter: batch=${batch.size}" }
+        
         runCatching {
             val deadLetterKey = "${config.keyPrefix}:dead-letter"
             val deadLetterValuesKey = "${config.keyPrefix}:dead-letter:values"
@@ -295,16 +324,22 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
             commands.hset(deadLetterValuesKey, valueMap)
             val serializedKeys = batch.keys.map { keySerializer(it) }
             strCommands.lpush(deadLetterKey, *serializedKeys.toTypedArray())
-        }.onFailure { e -> log.error { "Dead letter write failed: errorType=${e::class.simpleName}" } }
+        }.onFailure { e ->
+            log.error(e) { "Dead letter write failed." }
+        }
     }
 
     override fun close() {
+        log.debug { "close ..." }
+
         scheduler?.let { sched ->
             sched.shutdown()
             val deadline = System.currentTimeMillis() + config.writeBehindShutdownTimeout.toMillis()
+
             while (writeBehindQueue?.isNotEmpty() == true && System.currentTimeMillis() < deadline) {
                 flushWriteBehindQueue()
             }
+
             if (writeBehindQueue?.isNotEmpty() == true) {
                 log.warn { "Write-behind shutdown timed out: ${writeBehindQueue.size} entries may be lost" }
             }
@@ -313,5 +348,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
         if (lazyStrConnection.isInitialized()) strConnection.close()
         if (bulkConnection.isInitialized()) bulkConnection.value.close()
         connection.close()
+
+        log.info { "close completed." }
     }
 }

@@ -9,7 +9,7 @@ import io.bluetape4k.exposed.lettuce.domain.UserSchema.withUserTable
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.junit5.coroutines.runSuspendIO
-import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
+import io.bluetape4k.logging.KLogging
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.api.async.RedisAsyncCommands
@@ -66,7 +66,8 @@ class LettuceRepositoryContractTest: AbstractExposedTest() {
 
     @Test
     fun `suspended jdbc findAll propagates cache warming cancellation`() = runSuspendIO {
-        val repository = SuspendedJdbcProbeRepository(redisClientWithAsyncSetFailure(CancellationException("cancel warm")))
+        val repository =
+            SuspendedJdbcProbeRepository(redisClientWithAsyncSetFailure(CancellationException("cancel warm")))
 
         withSuspendedUserTable(TestDB.H2) {
             val previousDefault = TransactionManager.defaultDatabase
@@ -96,6 +97,7 @@ class LettuceRepositoryContractTest: AbstractExposedTest() {
             updateCount++
             this[UserTable.firstName] = entity.firstName
         }
+
         override fun BatchInsertStatement.insertEntity(entity: UserRecord) {
             this[UserTable.firstName] = entity.firstName
         }
@@ -113,12 +115,13 @@ class LettuceRepositoryContractTest: AbstractExposedTest() {
         override fun UpdateStatement.updateEntity(entity: UserRecord) {
             this[UserTable.firstName] = entity.firstName
         }
+
         override fun BatchInsertStatement.insertEntity(entity: UserRecord) {
             this[UserTable.firstName] = entity.firstName
         }
     }
 
-    private companion object {
+    private companion object: KLogging() {
         fun ResultRow.toUserRecord() = UserRecord(
             id = this[UserTable.id].value,
             firstName = this[UserTable.firstName],

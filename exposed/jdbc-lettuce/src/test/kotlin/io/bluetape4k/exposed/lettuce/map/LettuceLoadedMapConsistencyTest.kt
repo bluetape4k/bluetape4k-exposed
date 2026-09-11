@@ -1,35 +1,35 @@
 package io.bluetape4k.exposed.lettuce.map
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.redis.lettuce.map.LettuceLoadedMap
 import io.bluetape4k.redis.lettuce.map.MapWriter
 import io.bluetape4k.testcontainers.storage.RedisServer
 import io.lettuce.core.RedisClient
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
 import org.junit.jupiter.api.Test
-import java.util.*
 
 class LettuceLoadedMapConsistencyTest: AbstractJdbcLettuceTest() {
+
+    companion object: KLogging()
+
     @Test
     fun `WRITE_THROUGH save 실패 시 Redis는 갱신되지 않는다`() {
-        val map =
-            newMap(
-                config =
-                    LettuceCacheConfig.READ_WRITE_THROUGH.copy(
-                        keyPrefix = "write-through-fail-${Base58.randomString(8)}"
-                    ),
-                writer =
-                    object: MapWriter<String, String> {
-                        override fun write(map: Map<String, String>) {
-                            error("write failure")
-                        }
+        val map = newMap(
+            config = LettuceCacheConfig.READ_WRITE_THROUGH.copy(
+                keyPrefix = "write-through-fail-${Base58.randomString(8)}"
+            ),
+            writer = object: MapWriter<String, String> {
+                override fun write(map: Map<String, String>) {
+                    error("write failure")
+                }
 
-                        override fun delete(keys: Collection<String>) = Unit
-                    }
-            )
+                override fun delete(keys: Collection<String>) = Unit
+            }
+        )
 
         map.use {
             runCatching { it["k"] = "v" }.exceptionOrNull()?.message shouldBeEqualTo "write failure"
@@ -44,18 +44,16 @@ class LettuceLoadedMapConsistencyTest: AbstractJdbcLettuceTest() {
             seed["k"] = "v"
         }
 
-        val map =
-            newMap(
-                config = LettuceCacheConfig.READ_WRITE_THROUGH.copy(keyPrefix = keyPrefix),
-                writer =
-                    object: MapWriter<String, String> {
-                        override fun write(map: Map<String, String>) = Unit
+        val map = newMap(
+            config = LettuceCacheConfig.READ_WRITE_THROUGH.copy(keyPrefix = keyPrefix),
+            writer = object: MapWriter<String, String> {
+                override fun write(map: Map<String, String>) = Unit
 
-                        override fun delete(keys: Collection<String>) {
-                            error("delete failure")
-                        }
-                    }
-            )
+                override fun delete(keys: Collection<String>) {
+                    error("delete failure")
+                }
+            }
+        )
 
         map.use {
             runCatching { it.delete("k") }.exceptionOrNull()?.message shouldBeEqualTo "delete failure"
@@ -70,10 +68,10 @@ class LettuceLoadedMapConsistencyTest: AbstractJdbcLettuceTest() {
         config: LettuceCacheConfig,
         writer: MapWriter<String, String>? = null,
     ): LettuceLoadedMap<String, String> {
-        val client =
-            RedisClient.create(
-                RedisServer.Launcher.LettuceLib.getRedisURI(redis.host, redis.port)
-            )
+        val client = RedisClient.create(
+            RedisServer.Launcher.LettuceLib.getRedisURI(redis.host, redis.port)
+        )
+        
         return LettuceLoadedMap(
             client = client,
             writer = writer,

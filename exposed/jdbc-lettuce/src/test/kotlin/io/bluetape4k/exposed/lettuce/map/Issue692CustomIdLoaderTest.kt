@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.sql.Connection
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -33,12 +34,13 @@ class Issue692CustomIdLoaderTest: AbstractExposedTest() {
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `custom ID fallback emits ordered bounded pages`(testDB: TestDB) = runSuspendIO {
-        val sqlStatements = mutableListOf<String>()
+        val sqlStatements = CopyOnWriteArrayList<String>()
+
         withTablesSuspending(
             testDB,
             Issue692CustomIdTable,
             configure = {
-                sqlLogger = object : SqlLogger {
+                sqlLogger = object: SqlLogger {
                     override fun log(context: StatementContext, transaction: Transaction) {
                         sqlStatements += context.sql(transaction)
                     }
@@ -92,7 +94,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedTest() {
                 testDB,
                 Issue692CustomIdTable,
                 configure = {
-                    sqlLogger = object : SqlLogger {
+                    sqlLogger = object: SqlLogger {
                         override fun log(context: StatementContext, transaction: Transaction) {
                             val sql = context.sql(transaction)
                             sqlStatements += sql
@@ -169,7 +171,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedTest() {
 
         val firstSelect = CompletableDeferred<Unit>()
         val releaseSelect = CountDownLatch(1)
-        val sqlLogger = object : SqlLogger {
+        val sqlLogger = object: SqlLogger {
             override fun log(context: StatementContext, transaction: Transaction) {
                 if (context.sql(transaction).trimStart().startsWith("SELECT", ignoreCase = true) &&
                     !firstSelect.isCompleted

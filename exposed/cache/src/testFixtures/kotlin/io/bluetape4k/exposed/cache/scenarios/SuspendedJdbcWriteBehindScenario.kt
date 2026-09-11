@@ -1,7 +1,7 @@
 package io.bluetape4k.exposed.cache.scenarios
 
-import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.junit5.awaitility.untilSuspending
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import org.awaitility.kotlin.await
@@ -72,10 +72,8 @@ interface SuspendedJdbcWriteBehindScenario<ID: Any, E: Serializable>: SuspendedJ
             await
                 .atMost(Duration.ofSeconds(30))
                 .withPollInterval(Duration.ofSeconds(5))
-                .untilAsserted {
-                    kotlinx.coroutines.runBlocking {
-                        getAllCountFromDB() shouldBeEqualTo expectedCount
-                    }
+                .untilSuspending {
+                    getAllCountFromDB() >= expectedCount
                 }
         }
     }

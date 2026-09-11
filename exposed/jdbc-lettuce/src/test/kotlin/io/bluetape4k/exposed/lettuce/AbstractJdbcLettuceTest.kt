@@ -2,7 +2,6 @@ package io.bluetape4k.exposed.lettuce
 
 import io.bluetape4k.LibraryName
 import io.bluetape4k.codec.Base58
-import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest.Companion.redisClient
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.junit5.faker.Fakers
@@ -22,6 +21,7 @@ import io.lettuce.core.RedisClient
  * 테스트 클래스에서 직접 `redisClient.shutdown()`을 호출하지 말 것.
  */
 abstract class AbstractJdbcLettuceTest: AbstractExposedTest() {
+
     companion object: KLogging() {
 
         @JvmStatic
@@ -40,7 +40,7 @@ abstract class AbstractJdbcLettuceTest: AbstractExposedTest() {
 
         @JvmStatic
         protected fun randomString(): String =
-            Fakers.randomString(1024, 2048)
+            Fakers.randomString(512, 1024)
 
         @JvmStatic
         protected fun randomName(): String = "${LibraryName}:${Base58.randomString(8)}"

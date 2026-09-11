@@ -1,6 +1,9 @@
 package io.bluetape4k.exposed.lettuce.map
 
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.redis.lettuce.map.WriteMode
+import io.bluetape4k.support.requireNotNull
 import io.bluetape4k.support.requirePositiveNumber
 import io.github.resilience4j.retry.RetryConfig
 import org.jetbrains.exposed.v1.core.autoIncColumnType
@@ -53,6 +56,8 @@ class ExposedEntityMapWriter<ID: Any, E: Any>(
         .waitDuration(retryInterval)
         .build()
 ) {
+    companion object: KLogging()
+
     init {
         chunkSize.requirePositiveNumber("chunkSize")
     }
@@ -60,19 +65,20 @@ class ExposedEntityMapWriter<ID: Any, E: Any>(
     override fun writeEntities(map: Map<ID, E>) {
         if (map.isEmpty() || writeMode == WriteMode.NONE) return
 
-        val existingIds =
-            table
-                .select(table.id)
-                .where { table.id inList map.keys }
-                .map { it[table.id].value }
-                .toSet()
+        val existingIds = table
+            .select(table.id)
+            .where { table.id inList map.keys }
+            .map { it[table.id].value }
+            .toSet()
 
         existingIds.forEach { id ->
             // WHY: existingIds는 DB에서 map.keys를 기준으로 조회된 ID 집합이므로
             //      map에 반드시 해당 키가 존재한다. force unwrap 대신 requireNotNull을 사용해
             //      NPE 발생 시 명확한 오류 메시지를 제공한다.
-            val entity = requireNotNull(map[id]) { "map에 id=$id 에 해당하는 엔티티가 없습니다" }
-            table.update({ table.id eq id }) { updateEntity(it, entity) }
+            val entity = map[id].requireNotNull { "map에 id=$id 에 해당하는 엔티티가 없습니다" }
+            table.update({ table.id eq id }) {
+                updateEntity(it, entity)
+            }
         }
 
         // WHY: AutoInc 테이블은 DB가 PK를 자동 할당하므로, 클라이언트가 지정한 ID로 INSERT하면
@@ -81,9 +87,10 @@ class ExposedEntityMapWriter<ID: Any, E: Any>(
         val newIds = map.keys - existingIds
         if (newIds.isNotEmpty() && !isAutoInc) {
             newIds.chunked(chunkSize).forEach { chunk ->
+                log.debug { "inserting chunk: $chunk" }
                 table.batchInsert(chunk) { id ->
                     // WHY: newIds는 map.keys에서 existingIds를 뺀 집합이므로 map에 반드시 존재한다
-                    val entity = requireNotNull(map[id]) { "map에 id=$id 에 해당하는 엔티티가 없습니다" }
+                    val entity = map[id].requireNotNull { "map에 id=$id 에 해당하는 엔티티가 없습니다" }
                     insertEntity(this, entity)
                 }
             }

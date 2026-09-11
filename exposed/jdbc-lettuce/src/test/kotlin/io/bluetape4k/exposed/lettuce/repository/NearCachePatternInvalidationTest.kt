@@ -10,6 +10,7 @@ import io.bluetape4k.exposed.lettuce.domain.UserSchema.UserTable
 import io.bluetape4k.exposed.lettuce.domain.UserSchema.withSuspendedUserTable
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.lettuce.core.RedisClient
 import io.lettuce.core.ScanArgs
@@ -31,6 +32,19 @@ import org.junit.jupiter.params.provider.ValueSource
 
 class NearCachePatternInvalidationTest: AbstractJdbcLettuceTest() {
 
+    private companion object: KLogging() {
+        fun redisClientWithScanFailure(failure: Throwable): RedisClient {
+            val client = mockk<RedisClient>()
+            val connection = mockk<StatefulRedisConnection<String, UserRecord>>()
+            val commands = mockk<RedisAsyncCommands<String, UserRecord>>()
+
+            every { client.connect(any<RedisCodec<String, UserRecord>>()) } returns connection
+            every { connection.async() } returns commands
+            every { commands.scan(any<ScanCursor>(), any<ScanArgs>()) } throws failure
+            return client
+        }
+    }
+
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
     fun `ID 전체 패턴 무효화가 DB 갱신값을 노출하고 다른 namespace는 보존한다`(nearEnabled: Boolean) = runSuspendIO {
@@ -42,10 +56,12 @@ class NearCachePatternInvalidationTest: AbstractJdbcLettuceTest() {
                 nearCacheEnabled = nearEnabled,
             )
             val repository = SuspendedUserRepository(redisClient, config)
-            val other = SuspendedUserRepository(redisClient, config.copy(
-                keyPrefix = "$prefix-other",
-                nearCacheName = "$prefix-other-near",
-            ))
+            val other = SuspendedUserRepository(
+                redisClient, config.copy(
+                    keyPrefix = "$prefix-other",
+                    nearCacheName = "$prefix-other-near",
+                )
+            )
             try {
                 val id = UserTable.selectAll().first()[UserTable.id].value
                 val original = requireNotNull(other.get(id)).email
@@ -56,10 +72,10 @@ class NearCachePatternInvalidationTest: AbstractJdbcLettuceTest() {
                     commit()
                     requireNotNull(repository.get(id)).email shouldBeEqualTo stale
                     when (operation) {
-                        "id" -> repository.invalidate(id)
+                        "id"  -> repository.invalidate(id)
                         "ids" -> repository.invalidateAll(listOf(id))
                         "pattern" -> repository.invalidateByPattern("*", 1) shouldBeEqualTo 1L
-                        else -> repository.clear()
+                        else  -> repository.clear()
                     }
                     requireNotNull(repository.get(id)).email shouldBeEqualTo fresh
                     requireNotNull(other.get(id)).email shouldBeEqualTo original
@@ -67,9 +83,17 @@ class NearCachePatternInvalidationTest: AbstractJdbcLettuceTest() {
                 repository.invalidateByPattern("missing-*", 1) shouldBeEqualTo 0L
             } finally {
                 withContext(NonCancellable) {
-                    try { repository.clear() } finally {
-                        try { other.clear() } finally {
-                            try { repository.close() } finally { other.close() }
+                    try {
+                        repository.clear()
+                    } finally {
+                        try {
+                            other.clear()
+                        } finally {
+                            try {
+                                repository.close()
+                            } finally {
+                                other.close()
+                            }
                         }
                     }
                 }
@@ -109,16 +133,5 @@ class NearCachePatternInvalidationTest: AbstractJdbcLettuceTest() {
         }.message shouldBeEqualTo "planned cancellation"
     }
 
-    private companion object {
-        fun redisClientWithScanFailure(failure: Throwable): RedisClient {
-            val client = mockk<RedisClient>()
-            val connection = mockk<StatefulRedisConnection<String, UserRecord>>()
-            val commands = mockk<RedisAsyncCommands<String, UserRecord>>()
 
-            every { client.connect(any<RedisCodec<String, UserRecord>>()) } returns connection
-            every { connection.async() } returns commands
-            every { commands.scan(any<ScanCursor>(), any<ScanArgs>()) } throws failure
-            return client
-        }
-    }
 }

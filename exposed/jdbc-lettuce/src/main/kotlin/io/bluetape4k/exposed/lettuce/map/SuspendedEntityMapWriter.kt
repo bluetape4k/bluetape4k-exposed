@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.lettuce.map
 
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.SuspendedMapWriter
 import io.github.resilience4j.kotlin.retry.executeSuspendFunction
 import io.github.resilience4j.retry.Retry
@@ -31,6 +32,9 @@ import org.jetbrains.exposed.v1.jdbc.transactions.experimental.suspendedTransact
 abstract class SuspendedEntityMapWriter<ID: Any, E: Any>(
     retryConfig: RetryConfig = RetryConfig.ofDefaults(),
 ): SuspendedMapWriter<ID, E> {
+
+    companion object: KLoggingChannel()
+
     private val retry = Retry.of("exposed-jdbc-lettuce-suspended-writer", retryConfig)
 
     @Suppress("DEPRECATION")

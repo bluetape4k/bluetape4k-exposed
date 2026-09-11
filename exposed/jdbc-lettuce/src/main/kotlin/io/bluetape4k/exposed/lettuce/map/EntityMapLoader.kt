@@ -21,6 +21,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
  * @param E 엔티티 타입
  */
 abstract class EntityMapLoader<ID: Any, E: Any>: MapLoader<ID, E> {
+
     override fun load(key: ID): E? = transaction { loadById(key) }
 
     override fun loadAllKeys(): Iterable<ID> = transaction { loadAllIds() }

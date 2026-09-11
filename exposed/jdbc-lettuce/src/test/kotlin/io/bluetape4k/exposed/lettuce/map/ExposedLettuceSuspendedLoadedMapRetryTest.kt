@@ -4,6 +4,7 @@ import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.redis.lettuce.map.SuspendedMapWriter
 import io.bluetape4k.redis.lettuce.map.WriteMode
@@ -19,6 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class ExposedLettuceSuspendedLoadedMapRetryTest: AbstractJdbcLettuceTest() {
 
+    companion object: KLoggingChannel()
+
     @Test
     fun `write-behind mixed retry batch preserves each entry count for fresh-first order`() = runSuspendIO {
         val prefix = randomName()
@@ -27,23 +30,24 @@ class ExposedLettuceSuspendedLoadedMapRetryTest: AbstractJdbcLettuceTest() {
         val firstAttemptStarted = CompletableDeferred<Unit>()
         val releaseFirstAttempt = CompletableDeferred<Unit>()
         val freshWritten = CompletableDeferred<Unit>()
-        val writer =
-            object: SuspendedMapWriter<String, String> {
-                override suspend fun write(map: Map<String, String>) {
-                    attemptedBatches += map.keys.toList()
-                    when (attempts.incrementAndGet()) {
-                        1 -> {
-                            firstAttemptStarted.complete(Unit)
-                            releaseFirstAttempt.await()
-                            error("planned first write failure")
-                        }
-                        2, 3 -> error("planned mixed write failure")
-                        else -> if ("fresh" in map) freshWritten.complete(Unit)
-                    }
-                }
 
-                override suspend fun delete(keys: Collection<String>) = Unit
+        val writer = object: SuspendedMapWriter<String, String> {
+            override suspend fun write(map: Map<String, String>) {
+                attemptedBatches += map.keys.toList()
+                when (attempts.incrementAndGet()) {
+                    1    -> {
+                        firstAttemptStarted.complete(Unit)
+                        releaseFirstAttempt.await()
+                        error("planned first write failure")
+                    }
+                    2, 3 -> error("planned mixed write failure")
+                    else -> if ("fresh" in map) freshWritten.complete(Unit)
+                }
             }
+
+            override suspend fun delete(keys: Collection<String>) = Unit
+        }
+
         val map = newMap(
             prefix = prefix,
             writer = writer,
@@ -53,11 +57,11 @@ class ExposedLettuceSuspendedLoadedMapRetryTest: AbstractJdbcLettuceTest() {
 
         try {
             map.set("retried", "old")
-            withTimeout(5_000) { firstAttemptStarted.await() }
+            withTimeout(timeMillis = 5_000) { firstAttemptStarted.await() }
+
             map.set("fresh", "new")
             releaseFirstAttempt.complete(Unit)
-
-            withTimeout(5_000) { freshWritten.await() }
+            withTimeout(timeMillis = 5_000) { freshWritten.await() }
 
             attemptedBatches shouldBeEqualTo listOf(
                 listOf("retried"),
@@ -65,6 +69,7 @@ class ExposedLettuceSuspendedLoadedMapRetryTest: AbstractJdbcLettuceTest() {
                 listOf("fresh", "retried"),
                 listOf("fresh")
             )
+
             deadLetterKeys(prefix) shouldBeEqualTo listOf("retried")
         } finally {
             releaseFirstAttempt.complete(Unit)
@@ -80,20 +85,21 @@ class ExposedLettuceSuspendedLoadedMapRetryTest: AbstractJdbcLettuceTest() {
         val firstAttemptStarted = CompletableDeferred<Unit>()
         val releaseFirstAttempt = CompletableDeferred<Unit>()
         val freshWritten = CompletableDeferred<Unit>()
-        val writer =
-            object: SuspendedMapWriter<String, String> {
-                override suspend fun write(map: Map<String, String>) {
-                    attemptedBatches += map.keys.toList()
-                    if (attempts.incrementAndGet() == 1) {
-                        firstAttemptStarted.complete(Unit)
-                        releaseFirstAttempt.await()
-                        error("planned channel saturation failure")
-                    }
-                    if ("fresh" in map) freshWritten.complete(Unit)
-                }
 
-                override suspend fun delete(keys: Collection<String>) = Unit
+        val writer = object: SuspendedMapWriter<String, String> {
+            override suspend fun write(map: Map<String, String>) {
+                attemptedBatches += map.keys.toList()
+                if (attempts.incrementAndGet() == 1) {
+                    firstAttemptStarted.complete(Unit)
+                    releaseFirstAttempt.await()
+                    error("planned channel saturation failure")
+                }
+                if ("fresh" in map) freshWritten.complete(Unit)
             }
+
+            override suspend fun delete(keys: Collection<String>) = Unit
+        }
+
         val map = newMap(
             prefix = prefix,
             writer = writer,
@@ -104,11 +110,11 @@ class ExposedLettuceSuspendedLoadedMapRetryTest: AbstractJdbcLettuceTest() {
 
         try {
             map.set("retried", "old")
-            withTimeout(5_000) { firstAttemptStarted.await() }
+            withTimeout(timeMillis = 5_000) { firstAttemptStarted.await() }
+
             map.set("fresh", "new")
             releaseFirstAttempt.complete(Unit)
-
-            withTimeout(5_000) { freshWritten.await() }
+            withTimeout(timeMillis = 5_000) { freshWritten.await() }
 
             attemptedBatches shouldBeEqualTo listOf(listOf("retried"), listOf("fresh"))
             deadLetterKeys(prefix) shouldBeEqualTo listOf("retried")
@@ -123,16 +129,16 @@ class ExposedLettuceSuspendedLoadedMapRetryTest: AbstractJdbcLettuceTest() {
         val prefix = randomName()
         val attempts = AtomicInteger()
         val writerStarted = CompletableDeferred<Unit>()
-        val writer =
-            object: SuspendedMapWriter<String, String> {
-                override suspend fun write(map: Map<String, String>) {
-                    attempts.incrementAndGet()
-                    writerStarted.complete(Unit)
-                    throw CancellationException("planned writer cancellation")
-                }
-
-                override suspend fun delete(keys: Collection<String>) = Unit
+        val writer = object: SuspendedMapWriter<String, String> {
+            override suspend fun write(map: Map<String, String>) {
+                attempts.incrementAndGet()
+                writerStarted.complete(Unit)
+                throw CancellationException("planned writer cancellation")
             }
+
+            override suspend fun delete(keys: Collection<String>) = Unit
+        }
+
         val map = newMap(
             prefix = prefix,
             writer = writer,
@@ -143,7 +149,7 @@ class ExposedLettuceSuspendedLoadedMapRetryTest: AbstractJdbcLettuceTest() {
         var closed = false
         try {
             map.set("cancelled", "value")
-            withTimeout(5_000) { writerStarted.await() }
+            withTimeout(timeMillis = 5_000) { writerStarted.await() }
             map.suspendClose()
             closed = true
 
@@ -164,15 +170,14 @@ class ExposedLettuceSuspendedLoadedMapRetryTest: AbstractJdbcLettuceTest() {
         ExposedLettuceSuspendedLoadedMap(
             client = redisClient,
             writer = writer,
-            config =
-                LettuceCacheConfig(
-                    keyPrefix = prefix,
-                    writeMode = WriteMode.WRITE_BEHIND,
-                    writeBehindBatchSize = writeBehindBatchSize,
-                    writeBehindQueueCapacity = writeBehindQueueCapacity,
-                    writeBehindDelay = writeBehindDelay,
-                    writeBehindShutdownTimeout = Duration.ofSeconds(5)
-                ),
+            config = LettuceCacheConfig(
+                keyPrefix = prefix,
+                writeMode = WriteMode.WRITE_BEHIND,
+                writeBehindBatchSize = writeBehindBatchSize,
+                writeBehindQueueCapacity = writeBehindQueueCapacity,
+                writeBehindDelay = writeBehindDelay,
+                writeBehindShutdownTimeout = Duration.ofSeconds(5)
+            ),
             valueCodec = StringCodec.UTF8
         )
 

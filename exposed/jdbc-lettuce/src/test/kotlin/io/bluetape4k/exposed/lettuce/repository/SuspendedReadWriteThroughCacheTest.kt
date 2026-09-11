@@ -1,6 +1,5 @@
 package io.bluetape4k.exposed.lettuce.repository
 
-import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest
 import io.bluetape4k.exposed.lettuce.domain.SuspendedUserCredentialRepository
@@ -15,6 +14,7 @@ import io.bluetape4k.exposed.lettuce.domain.UserSchema.withSuspendedUserTable
 import io.bluetape4k.exposed.lettuce.repository.scenarios.SuspendedReadThroughScenario
 import io.bluetape4k.exposed.lettuce.repository.scenarios.SuspendedWriteThroughScenario
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
@@ -33,6 +33,7 @@ import kotlin.coroutines.CoroutineContext
  * - 각 ID 유형에 대해 Remote 캐시와 NearCache 두 가지 설정으로 테스트한다.
  */
 class SuspendedReadWriteThroughCacheTest {
+
     companion object: KLoggingChannel()
 
     // -------------------------------------------------------------------------
@@ -51,21 +52,19 @@ class SuspendedReadWriteThroughCacheTest {
             statement: suspend JdbcTransaction.() -> Unit,
         ) = withSuspendedUserTable(testDB, context, statement)
 
-        override suspend fun getExistingId(): Long =
-            newSuspendedTransaction {
-                UserTable
-                    .select(UserTable.id)
-                    .limit(1)
-                    .first()[UserTable.id]
-                    .value
-            }
+        override suspend fun getExistingId(): Long = newSuspendedTransaction {
+            UserTable
+                .select(UserTable.id)
+                .limit(1)
+                .first()[UserTable.id]
+                .value
+        }
 
-        override suspend fun getExistingIds(): List<Long> =
-            newSuspendedTransaction {
-                UserTable
-                    .select(UserTable.id)
-                    .map { it[UserTable.id].value }
-            }
+        override suspend fun getExistingIds(): List<Long> = newSuspendedTransaction {
+            UserTable
+                .select(UserTable.id)
+                .map { it[UserTable.id].value }
+        }
 
         override suspend fun getNonExistentId(): Long = Long.MIN_VALUE
 
@@ -100,6 +99,7 @@ class SuspendedReadWriteThroughCacheTest {
         AbstractJdbcLettuceTest(),
         SuspendedReadThroughScenario<UUID, UserCredentialsRecord>,
         SuspendedWriteThroughScenario<UUID, UserCredentialsRecord> {
+
         companion object: KLoggingChannel()
 
         override suspend fun withSuspendedEntityTable(
@@ -108,21 +108,19 @@ class SuspendedReadWriteThroughCacheTest {
             statement: suspend JdbcTransaction.() -> Unit,
         ) = withSuspendedUserCredentialsTable(testDB, context, statement)
 
-        override suspend fun getExistingId(): UUID =
-            newSuspendedTransaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .limit(1)
-                    .first()[UserCredentialsTable.id]
-                    .value
-            }
+        override suspend fun getExistingId(): UUID = newSuspendedTransaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .limit(1)
+                .first()[UserCredentialsTable.id]
+                .value
+        }
 
-        override suspend fun getExistingIds(): List<UUID> =
-            newSuspendedTransaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .map { it[UserCredentialsTable.id].value }
-            }
+        override suspend fun getExistingIds(): List<UUID> = newSuspendedTransaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .map { it[UserCredentialsTable.id].value }
+        }
 
         override suspend fun getNonExistentId(): UUID = Uuid.V7.nextId()
 
@@ -138,7 +136,9 @@ class SuspendedReadWriteThroughCacheTest {
     @Nested
     inner class ClientGenIdSuspendedReadWriteThroughRemoteCache: ClientGenIdSuspendedReadWriteThrough() {
         override val config = LettuceCacheConfig.READ_WRITE_THROUGH
-        override val repository by lazy { SuspendedUserCredentialRepository(redisClient, config) }
+        override val repository by lazy {
+            SuspendedUserCredentialRepository(redisClient, config)
+        }
     }
 
     @Nested
@@ -146,6 +146,8 @@ class SuspendedReadWriteThroughCacheTest {
         override val config = LettuceCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE.copy(
             nearCacheName = "jdbc-lettuce-cred-srwt-near"
         )
-        override val repository by lazy { SuspendedUserCredentialRepository(redisClient, config) }
+        override val repository by lazy {
+            SuspendedUserCredentialRepository(redisClient, config)
+        }
     }
 }

@@ -3,6 +3,8 @@ package io.bluetape4k.exposed.lettuce.map
 import io.bluetape4k.exposed.jdbc.JdbcKeyRange
 import io.bluetape4k.exposed.jdbc.JdbcParallelKeyEnumerationOptions
 import io.bluetape4k.exposed.jdbc.parallelJdbcKeyEnumeration
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.support.requirePositiveNumber
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.EntityIDColumnType
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -13,7 +15,6 @@ import org.jetbrains.exposed.v1.core.greater
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import kotlin.collections.AbstractIterator
 
 /**
  * Exposed DSL을 사용해 DB에서 엔티티를 로드하는 [EntityMapLoader] 구현체.
@@ -37,8 +38,11 @@ class ExposedEntityMapLoader<ID: Any, E: Any>(
     private val toEntity: (ResultRow) -> E,
     private val batchSize: Int = 1000,
 ): EntityMapLoader<ID, E>() {
+
+    companion object: KLogging()
+
     init {
-        require(batchSize > 0) { "batchSize는 0보다 커야 합니다. batchSize=$batchSize" }
+        batchSize.requirePositiveNumber("batchSize")
     }
 
     /**
@@ -60,12 +64,11 @@ class ExposedEntityMapLoader<ID: Any, E: Any>(
         options: JdbcParallelKeyEnumerationOptions<ID> = JdbcParallelKeyEnumerationOptions(),
     ): List<ID> = parallelJdbcKeyEnumeration(table, ranges, options)
 
-    override fun loadById(id: ID): E? =
-        table
-            .selectAll()
-            .where { table.id eq id }
-            .singleOrNull()
-            ?.let(toEntity)
+    override fun loadById(id: ID): E? = table
+        .selectAll()
+        .where { table.id eq id }
+        .singleOrNull()
+        ?.let(toEntity)
 
     /**
      * 전체 키를 lazy page로 반환한다.
@@ -81,7 +84,7 @@ class ExposedEntityMapLoader<ID: Any, E: Any>(
         val sourceTable = table
         val pageSize = batchSize
         return Iterable {
-            object : AbstractIterator<ID>() {
+            object: AbstractIterator<ID>() {
                 private var page: List<ID> = emptyList()
                 private var pageIndex = 0
                 private var lastId: ID? = null
@@ -156,14 +159,15 @@ private fun <ID: Any> ID.asComparableKey(): Comparable<Any> =
 @JvmSynthetic
 internal fun Any.isKeysetScalar(): Boolean =
     this is Comparable<*> &&
-        when (this) {
-            is Byte, is Short, is Int, is Long, is Float, is Double,
-            is UByte, is UShort, is UInt, is ULong,
-            is java.math.BigDecimal, is java.math.BigInteger,
-            is String, is Char, is java.util.UUID,
-            is java.sql.Date, is java.sql.Time, is java.sql.Timestamp -> true
-            else -> javaClass.name.startsWith("java.time.")
-        }
+            when (this) {
+                is Byte, is Short, is Int, is Long, is Float, is Double,
+                is UByte, is UShort, is UInt, is ULong,
+                is java.math.BigDecimal, is java.math.BigInteger,
+                is String, is Char, is java.util.UUID,
+                is java.sql.Date, is java.sql.Time, is java.sql.Timestamp,
+                     -> true
+                else -> javaClass.name.startsWith("java.time.")
+            }
 
 @Suppress("UNCHECKED_CAST")
 private fun <ID: Any> IdTable<ID>.rawIdColumn(): Column<Comparable<Any>> =

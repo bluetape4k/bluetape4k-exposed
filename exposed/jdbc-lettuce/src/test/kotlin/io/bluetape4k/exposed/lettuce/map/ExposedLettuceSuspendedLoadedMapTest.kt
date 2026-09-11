@@ -4,12 +4,13 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest
+import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.redis.lettuce.map.SuspendedMapLoader
 import io.bluetape4k.redis.lettuce.map.SuspendedMapWriter
 import io.bluetape4k.redis.lettuce.map.WriteMode
 import io.lettuce.core.codec.StringCodec
-import io.bluetape4k.junit5.coroutines.runSuspendIO
 import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
@@ -17,23 +18,26 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class ExposedLettuceSuspendedLoadedMapTest: AbstractJdbcLettuceTest() {
 
+    companion object: KLoggingChannel()
+
     @Test
     fun `get and getAll load cache misses and pattern invalidation removes cached values`() = runSuspendIO {
         val prefix = randomName()
         val loadCalls = AtomicInteger()
-        val loader =
-            object: SuspendedMapLoader<String, String> {
-                private val values = mapOf("a" to "alpha", "b" to "bravo")
 
-                override suspend fun load(key: String): String? {
-                    loadCalls.incrementAndGet()
-                    return values[key]
-                }
+        val loader = object: SuspendedMapLoader<String, String> {
+            private val values = mapOf("a" to "alpha", "b" to "bravo")
 
-                override suspend fun loadAllKeys(): List<String> = values.keys.toList()
+            override suspend fun load(key: String): String? {
+                loadCalls.incrementAndGet()
+                return values[key]
             }
 
+            override suspend fun loadAllKeys(): List<String> = values.keys.toList()
+        }
+
         val map = newMap(prefix = prefix, loader = loader)
+
         try {
             map.get("a") shouldBeEqualTo "alpha"
             map.get("a") shouldBeEqualTo "alpha"
@@ -56,23 +60,24 @@ class ExposedLettuceSuspendedLoadedMapTest: AbstractJdbcLettuceTest() {
         val prefix = randomName()
         val written = ConcurrentHashMap<String, String>()
         val deleted = mutableListOf<String>()
-        val writer =
-            object: SuspendedMapWriter<String, String> {
-                override suspend fun write(map: Map<String, String>) {
-                    written.putAll(map)
-                }
 
-                override suspend fun delete(keys: Collection<String>) {
-                    deleted.addAll(keys)
-                    keys.forEach { written.remove(it) }
-                }
+        val writer = object: SuspendedMapWriter<String, String> {
+            override suspend fun write(map: Map<String, String>) {
+                written.putAll(map)
             }
+
+            override suspend fun delete(keys: Collection<String>) {
+                deleted.addAll(keys)
+                keys.forEach { written.remove(it) }
+            }
+        }
 
         val map = newMap(
             prefix = prefix,
             writer = writer,
             writeMode = WriteMode.WRITE_THROUGH
         )
+
         try {
             map.set("a", "alpha")
             map.set("b", "bravo")
@@ -123,14 +128,13 @@ class ExposedLettuceSuspendedLoadedMapTest: AbstractJdbcLettuceTest() {
     fun `write-behind failure is handled during suspendClose`() = runSuspendIO {
         val map = newMap(
             prefix = randomName(),
-            writer =
-                object: SuspendedMapWriter<String, String> {
-                    override suspend fun write(map: Map<String, String>) {
-                        error("planned write failure")
-                    }
+            writer = object: SuspendedMapWriter<String, String> {
+                override suspend fun write(map: Map<String, String>) {
+                    error("planned write failure")
+                }
 
-                    override suspend fun delete(keys: Collection<String>) = Unit
-                },
+                override suspend fun delete(keys: Collection<String>) = Unit
+            },
             writeMode = WriteMode.WRITE_BEHIND
         )
 
@@ -148,14 +152,13 @@ class ExposedLettuceSuspendedLoadedMapTest: AbstractJdbcLettuceTest() {
             client = redisClient,
             loader = loader,
             writer = writer,
-            config =
-                LettuceCacheConfig(
-                    keyPrefix = prefix,
-                    writeMode = writeMode,
-                    writeBehindDelay = Duration.ofMillis(10),
-                    writeBehindBatchSize = 10,
-                    writeBehindShutdownTimeout = Duration.ofSeconds(5)
-                ),
+            config = LettuceCacheConfig(
+                keyPrefix = prefix,
+                writeMode = writeMode,
+                writeBehindDelay = Duration.ofMillis(10),
+                writeBehindBatchSize = 10,
+                writeBehindShutdownTimeout = Duration.ofSeconds(5)
+            ),
             valueCodec = StringCodec.UTF8
         )
 
