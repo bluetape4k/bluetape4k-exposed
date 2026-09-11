@@ -2,6 +2,8 @@ package io.bluetape4k.exposed.postgresql.pgvector
 
 import com.pgvector.PGvector
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.support.requireEquals
+import io.bluetape4k.support.requireNotBlank
 import io.bluetape4k.support.requirePositiveNumber
 import org.jetbrains.exposed.v1.core.ColumnType
 
@@ -36,7 +38,7 @@ class VectorColumnType(val dimension: Int): ColumnType<FloatArray>() {
     override fun sqlType(): String = "VECTOR($dimension)"
 
     override fun notNullValueToDB(value: FloatArray): Any {
-        require(value.size == dimension) {
+        value.size.requireEquals(dimension) {
             "벡터 차원 불일치: expected=$dimension, actual=${value.size}"
         }
         return PGvector(value)
@@ -58,9 +60,7 @@ class VectorColumnType(val dimension: Int): ColumnType<FloatArray>() {
         is String   -> {
             // PGvector(emptyString)은 NPE 없이 잘못된 배열을 반환하므로
             // 빈 문자열을 사전 차단하여 파싱 오류를 명확하게 전파한다.
-            require(value.isNotBlank()) {
-                "VectorColumnType: DB 에서 읽은 벡터 문자열이 비어 있습니다."
-            }
+            value.requireNotBlank { "VectorColumnType: DB 에서 읽은 벡터 문자열이 비어 있습니다." }
             PGvector(value).toArray()
         }
         // 이전 코드의 "Unsupported value type" → 한국어 + 클래스명 포함으로 디버깅 용이성 개선
