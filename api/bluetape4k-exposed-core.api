@@ -130,7 +130,7 @@ public final class io/bluetape4k/exposed/core/ResultRowExtensionsKt {
 	public static final fun getZonedDateTimeOrNull (Lorg/jetbrains/exposed/v1/core/ResultRow;Lorg/jetbrains/exposed/v1/core/Expression;)Ljava/time/ZonedDateTime;
 }
 
-public abstract interface class io/bluetape4k/exposed/core/auditable/Auditable {
+public abstract interface class io/bluetape4k/exposed/core/auditable/Auditable : java/io/Serializable {
 	public abstract fun getCreatedAt ()Ljava/time/Instant;
 	public abstract fun getCreatedBy ()Ljava/lang/String;
 	public abstract fun getUpdatedAt ()Ljava/time/Instant;
@@ -294,14 +294,14 @@ public abstract class io/bluetape4k/exposed/core/ddd/AbstractAggregateRoot : io/
 	protected final fun recordDomainEvent (Lio/bluetape4k/exposed/core/ddd/DomainEvent;)V
 }
 
-public abstract interface class io/bluetape4k/exposed/core/ddd/AggregateRoot {
+public abstract interface class io/bluetape4k/exposed/core/ddd/AggregateRoot : java/io/Serializable {
 	public abstract fun clearDomainEvents ()V
 	public abstract fun domainEvents ()Ljava/util/List;
 	public abstract fun drainDomainEvents (Lkotlin/jvm/functions/Function1;)Ljava/util/List;
 	public abstract fun getId ()Ljava/lang/Object;
 }
 
-public abstract interface class io/bluetape4k/exposed/core/ddd/DomainEvent {
+public abstract interface class io/bluetape4k/exposed/core/ddd/DomainEvent : java/io/Serializable {
 	public abstract fun getAggregateId ()Ljava/lang/Object;
 	public abstract fun getOccurredAt ()Ljava/time/Instant;
 }
@@ -416,4 +416,3 @@ public final class io/bluetape4k/exposed/core/statements/api/ExposedBlobExtensio
 	public static final fun toInputStream (Lorg/jetbrains/exposed/v1/core/statements/api/ExposedBlob;)Ljava/io/InputStream;
 	public static final fun toUtf8String (Lorg/jetbrains/exposed/v1/core/statements/api/ExposedBlob;)Ljava/lang/String;
 }
-
