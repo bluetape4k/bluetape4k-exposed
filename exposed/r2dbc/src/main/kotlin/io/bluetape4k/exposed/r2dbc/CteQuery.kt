@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.r2dbc
 
 import io.bluetape4k.exposed.core.CteTable
+import io.bluetape4k.support.requireNotEmpty
 import org.jetbrains.exposed.v1.core.QueryBuilder
 import org.jetbrains.exposed.v1.r2dbc.Query
 
@@ -27,7 +28,7 @@ class CteQuery(
     }
 
     override fun prepareSQL(builder: QueryBuilder): String {
-        require(ctes.isNotEmpty()) { "At least one CTE table is required" }
+        ctes.requireNotEmpty { "At least one CTE table is required" }
 
         builder {
             append("WITH ")
