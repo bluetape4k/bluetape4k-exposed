@@ -2,8 +2,10 @@ package io.bluetape4k.exposed.cache.internal
 
 import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
-import java.util.IdentityHashMap
+import kotlinx.atomicfu.locks.withLock
+import java.util.*
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.locks.ReentrantLock
 
 /**
  * Write-behind 큐의 adapter-independent admission/lifecycle 상한입니다.
@@ -109,7 +111,7 @@ internal class WriteBehindCoordinator(
         SETTLED,
     }
 
-    private val lock = Any()
+    private val lock = ReentrantLock()
     private val nextToken = AtomicLong(0L)
     private val tokens = IdentityHashMap<AdmissionToken, TokenState>()
 
@@ -140,7 +142,7 @@ internal class WriteBehindCoordinator(
      * 경우 accepted handoff를 선형화하지 않고 token을 rejected로 정산합니다.
      */
     fun settleEnqueue(token: AdmissionToken, accepted: Boolean): Boolean {
-        synchronized(lock) {
+        lock.withLock {
             val state = tokens[token] ?: error("Unknown write-behind admission token")
             check(token.owner === this) { "Admission token belongs to another coordinator" }
             check(state == TokenState.RESERVED || state == TokenState.ENQUEUED) {
@@ -172,7 +174,7 @@ internal class WriteBehindCoordinator(
 
     /** adapter가 send 성공 전에 worker가 관찰하지 않도록 token을 명시적으로 표시합니다. */
     internal fun markEnqueued(token: AdmissionToken) {
-        synchronized(lock) {
+        lock.withLock {
             val state = tokens[token] ?: error("Unknown write-behind admission token")
             check(token.owner === this) { "Admission token belongs to another coordinator" }
             check(state == TokenState.RESERVED) { "Write-behind admission token was already enqueued" }
@@ -182,7 +184,7 @@ internal class WriteBehindCoordinator(
 
     /** 성공한 flush만 depth를 감소시키고 이전 flush failure를 회복합니다. */
     fun onFlushSucceeded(count: Int) {
-        synchronized(lock) {
+        lock.withLock {
             if (lifecycle == Lifecycle.STOPPED || lifecycle == Lifecycle.FAILED) return
             require(count >= 0) { "Flush count must not be negative" }
             require(count <= queueDepth) {
@@ -195,7 +197,7 @@ internal class WriteBehindCoordinator(
 
     /** 일반 flush 실패는 retained batch/depth를 보존합니다. */
     fun onFlushFailed() {
-        synchronized(lock) {
+        lock.withLock {
             if (lifecycle == Lifecycle.STOPPED || lifecycle == Lifecycle.FAILED) return
             failureKind = WriteBehindFailureKind.FLUSH
         }
@@ -208,7 +210,7 @@ internal class WriteBehindCoordinator(
             kind == WriteBehindFailureKind.CLOSE_INTERRUPTED) {
             "Close failure kind must describe worker or close termination: $kind"
         }
-        synchronized(lock) {
+        lock.withLock {
             if (lifecycle == Lifecycle.STOPPED || lifecycle == Lifecycle.FAILED) return
             failureKind = kind
             lifecycle = Lifecycle.FAILED
@@ -218,7 +220,7 @@ internal class WriteBehindCoordinator(
 
     /** worker terminal callback을 한 번 선형화합니다. */
     fun onWorkerCompleted(completion: WriteBehindWorkerCompletion) {
-        synchronized(lock) {
+        lock.withLock {
             if (lifecycle == Lifecycle.STOPPED || lifecycle == Lifecycle.FAILED) return
             when (completion) {
                 WriteBehindWorkerCompletion.DRAINED -> {
@@ -269,7 +271,7 @@ internal class WriteBehindCoordinator(
 
     /** owner identity와 unpublished→published CAS를 함께 검증하여 completion을 발행합니다. */
     fun publishCloseCompletion(owner: CloseLease.Owner, completion: CloseCompletion) {
-        synchronized(lock) {
+        lock.withLock {
             check(activeOwner === owner) { "Close completion owner is not active" }
             check(!completionPublished) { "Close completion was already published" }
             check(lifecycle == Lifecycle.DRAINING || lifecycle == Lifecycle.FAILED) {

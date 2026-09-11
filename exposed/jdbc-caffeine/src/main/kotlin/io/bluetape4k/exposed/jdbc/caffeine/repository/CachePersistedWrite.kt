@@ -21,4 +21,6 @@ data class CachePersistedWrite<ID: Any, E: Serializable>(
     companion object {
         private const val serialVersionUID: Long = 8453867830790425321L
     }
+
+    fun withId(newId: ID) = this.copy(id = newId)
 }
