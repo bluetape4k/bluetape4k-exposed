@@ -1,34 +1,41 @@
 package io.bluetape4k.exposed.core.jackson3
 
-import io.bluetape4k.jackson3.JacksonSerializer
-import io.r2dbc.spi.Readable
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
-import tools.jackson.databind.JsonNode
+import io.bluetape4k.logging.KLogging
+import io.r2dbc.spi.Readable
 import org.junit.jupiter.api.Test
-import io.bluetape4k.assertions.assertFailsWith
+import tools.jackson.databind.JsonNode
+import java.io.Serializable
 
 class ReadableExtensionsTest {
 
-    private data class Payload(val name: String, val age: Int)
+    companion object: KLogging()
+
+    private data class Payload(val name: String, val age: Int): Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+    }
 
     private class FakeReadable(
         private val valuesByIndex: Map<Int, Any?> = emptyMap(),
         private val valuesByName: Map<String, Any?> = emptyMap(),
     ): Readable {
-        override fun <T: Any?> get(index: Int, type: Class<T>): T? {
+        override fun <T: Any> get(index: Int, type: Class<T>): T? {
             val value = valuesByIndex[index] ?: return null
             if (!type.isInstance(value)) return null
             @Suppress("UNCHECKED_CAST")
-            return value as T
+            return value as? T
         }
 
-        override fun <T: Any?> get(name: String, type: Class<T>): T? {
+        override fun <T: Any> get(name: String, type: Class<T>): T? {
             val value = valuesByName[name] ?: return null
             if (!type.isInstance(value)) return null
             @Suppress("UNCHECKED_CAST")
-            return value as T
+            return value as? T
         }
 
         override fun get(index: Int): Any? = valuesByIndex[index]

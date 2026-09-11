@@ -21,6 +21,7 @@ class ReadableExtensionsTest {
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     private class FakeReadable(
         private val valuesByIndex: Map<Int, Any?> = emptyMap(),
         private val valuesByName: Map<String, Any?> = emptyMap(),
@@ -28,15 +29,13 @@ class ReadableExtensionsTest {
         override fun <T: Any> get(index: Int, type: Class<T>): T? {
             val value = valuesByIndex[index] ?: return null
             if (!type.isInstance(value)) return null
-            @Suppress("UNCHECKED_CAST")
-            return value as T
+            return value as? T
         }
 
         override fun <T: Any> get(name: String, type: Class<T>): T? {
             val value = valuesByName[name] ?: return null
             if (!type.isInstance(value)) return null
-            @Suppress("UNCHECKED_CAST")
-            return value as T
+            return value as? T
         }
 
         override fun get(index: Int): Any? = valuesByIndex[index]

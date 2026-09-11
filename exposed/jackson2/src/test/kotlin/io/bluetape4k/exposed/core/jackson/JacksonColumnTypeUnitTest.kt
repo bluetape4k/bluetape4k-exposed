@@ -39,11 +39,10 @@ class JacksonColumnTypeUnitTest {
     }
 
     private val serializer = DefaultJacksonSerializer
-    private val columnType =
-        JacksonColumnType<SamplePayload>(
-            serilaize = { serializer.serializeAsString(it) },
-            deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
-        )
+    private val columnType = JacksonColumnType<SamplePayload>(
+        serilaize = { serializer.serializeAsString(it) },
+        deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
+    )
 
     @Test
     fun `valueFromDB 는 문자열 JSON 을 객체로 역직렬화한다`() {
@@ -71,10 +70,9 @@ class JacksonColumnTypeUnitTest {
         val source = SamplePayload("gamma", 30)
         val result = columnType.notNullValueToDB(source)
 
-        result shouldBeInstanceOf String::class
-        val json = result as String
-        json shouldContain "\"name\":\"gamma\""
-        json shouldContain "\"count\":30"
+        result.shouldBeInstanceOf<String>()
+        result shouldContain "\"name\":\"gamma\""
+        result shouldContain "\"count\":30"
     }
 
     @Test
@@ -115,21 +113,19 @@ class JacksonColumnTypeUnitTest {
 
     @Test
     fun `JacksonBColumnType 은 usesBinaryFormat 이 true 이다`() {
-        val bColumnType =
-            JacksonBColumnType<SamplePayload>(
-                serialize = { serializer.serializeAsString(it) },
-                deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
-            )
+        val bColumnType = JacksonBColumnType<SamplePayload>(
+            serialize = { serializer.serializeAsString(it) },
+            deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
+        )
         bColumnType.usesBinaryFormat.shouldBeTrue()
     }
 
     @Test
     fun `JacksonBColumnType 은 valueFromDB 에서 문자열을 역직렬화한다`() {
-        val bColumnType =
-            JacksonBColumnType<SamplePayload>(
-                serialize = { serializer.serializeAsString(it) },
-                deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
-            )
+        val bColumnType = JacksonBColumnType<SamplePayload>(
+            serialize = { serializer.serializeAsString(it) },
+            deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
+        )
         val source = SamplePayload("jsonb", 42)
         val json = serializer.serializeAsString(source)
 
@@ -308,15 +304,15 @@ class JacksonColumnTypeUnitTest {
                 "getCharacterStream" -> reader
                 "toString" -> "tracking-clob"
                 "hashCode" -> System.identityHashCode(reader)
-                "equals" -> false
-                else -> error("Unexpected Clob method: ${method.name}")
+                "equals"   -> false
+                else       -> error("Unexpected Clob method: ${method.name}")
             }
         } as Clob
 
     private class TrackingReader(
         text: String,
         private val failOnRead: Boolean = false,
-    ) : Reader() {
+    ): Reader() {
         private val delegate = StringReader(text)
         val closed = AtomicBoolean(false)
 
