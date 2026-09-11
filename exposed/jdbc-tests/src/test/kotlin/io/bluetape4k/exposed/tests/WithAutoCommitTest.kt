@@ -3,11 +3,15 @@ package io.bluetape4k.exposed.tests
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
 
 class WithAutoCommitTest: AbstractExposedTest() {
+
+    companion object: KLogging()
+
     private object TestTable: IntIdTable("test_autocommit") {
         val name = varchar("name", 255)
     }

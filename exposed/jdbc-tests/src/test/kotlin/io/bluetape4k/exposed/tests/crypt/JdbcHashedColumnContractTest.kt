@@ -5,6 +5,9 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeEmpty
+import io.bluetape4k.assertions.shouldNotBeEqualTo
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import org.jetbrains.exposed.v1.core.SqlLogger
@@ -49,7 +52,7 @@ class JdbcHashedColumnContractTest {
 
     @ParameterizedTest
     @ValueSource(strings = ["bcrypt", "argon2", "pbkdf2", "scrypt"])
-    fun `각 알고리즘의 저장 조회 nullable 재저장은 평문을 보존하지 않는다`(algorithm: String)  {
+    fun `각 알고리즘의 저장 조회 nullable 재저장은 평문을 보존하지 않는다`(algorithm: String) {
         val hasher = when (algorithm) {
             "bcrypt" -> BCryptHasher(4) // 테스트 비용이며 production 권장 strength가 아니다.
             "argon2" -> Argon2Hasher()
@@ -58,27 +61,42 @@ class JdbcHashedColumnContractTest {
         }
         val table = Secrets(hasher)
         withTables(TestDB.H2, table) {
-            table.insert { it[id] = 1; it[secret] = table.secret.hash(plainText); it[optional] = null }
+            table.insert {
+                it[id] = 1
+                it[secret] = table.secret.hash(plainText)
+                it[optional] = null
+            }
+
             val row = table.selectAll().single()
             row[table.optional].shouldBeNull()
+
             val loaded = row[table.secret]
             loaded.matches(plainText).shouldBeTrue()
             loaded.matches("wrong-input").shouldBeFalse()
             loaded.toString() shouldBeEqualTo "Hashed(***)"
+
             val encoded = RawSecrets.selectAll().single()[RawSecrets.secret]
-            (encoded == plainText).shouldBeFalse()
-            encoded.contains(plainText).shouldBeFalse()
+            encoded shouldNotBeEqualTo plainText
+            encoded shouldNotContain plainText
             encoded shouldBeEqualTo loaded.encodedValue
-            table.update { it[secret] = loaded; it[optional] = table.optional.hash(plainText) }
+
+            table.update {
+                it[secret] = loaded
+                it[optional] = table.optional.hash(plainText)
+            }
             RawSecrets.selectAll().single()[RawSecrets.secret] shouldBeEqualTo encoded
-            table.selectAll().single()[table.optional]?.matches(plainText) shouldBeEqualTo true
-            table.update { it[secret] = Hashed(hasher, encoded); it[optional] = null }
+
+            table.selectAll().single()[table.optional]?.matches(plainText).shouldBeTrue()
+            table.update {
+                it[secret] = Hashed(hasher, encoded)
+                it[optional] = null
+            }
             RawSecrets.selectAll().single()[RawSecrets.secret] shouldBeEqualTo encoded
         }
     }
 
     @Test
-    fun `custom hasher는 최초 변환에만 호출되고 재저장에서는 호출되지 않는다`()  {
+    fun `custom hasher는 최초 변환에만 호출되고 재저장에서는 호출되지 않는다`() {
         var calls = 0
         val delegate = BCryptHasher(4)
         val custom = object: Hasher {
@@ -86,15 +104,23 @@ class JdbcHashedColumnContractTest {
                 calls++
                 return Hashed(this, delegate.hash(plainText).encodedValue)
             }
+
             override fun matches(plainText: String, encodedValue: String): Boolean =
                 delegate.matches(plainText, encodedValue)
         }
         val table = Secrets(custom)
         withTables(TestDB.H2, table) {
-            table.insert { it[id] = 1; it[secret] = table.secret.hash(plainText); it[optional] = null }
+            table.insert {
+                it[id] = 1
+                it[secret] = table.secret.hash(plainText)
+                it[optional] = null
+            }
+
             val loaded = table.selectAll().single()[table.secret]
+
             loaded.matches(plainText).shouldBeTrue()
             table.update { it[secret] = loaded }
+
             calls shouldBeEqualTo 1
             RawSecrets.selectAll().single()[RawSecrets.secret] shouldBeEqualTo loaded.encodedValue
         }
@@ -102,7 +128,7 @@ class JdbcHashedColumnContractTest {
 
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
-    fun `인증 성공 후에만 비용 또는 알고리즘을 승격한다`(changeAlgorithm: Boolean)  {
+    fun `인증 성공 후에만 비용 또는 알고리즘을 승격한다`(changeAlgorithm: Boolean) {
         val oldEncoder = BCryptPasswordEncoder(4)
         val encoders = mapOf<String, PasswordEncoder>(
             "bcrypt" to BCryptPasswordEncoder(5),
@@ -111,6 +137,7 @@ class JdbcHashedColumnContractTest {
         val current = DelegatingPasswordEncoder(if (changeAlgorithm) "pbkdf2" else "bcrypt", encoders)
         val table = Secrets(PasswordEncoderHasher(current))
         val oldHash = "{bcrypt}" + oldEncoder.encode(plainText)
+
         withTables(TestDB.H2, table) {
             table.insert {
                 it[id] = 1
@@ -120,19 +147,23 @@ class JdbcHashedColumnContractTest {
             val loaded = table.selectAll().single()[table.secret]
             current.upgradeEncoding(loaded.encodedValue).shouldBeTrue()
             loaded.matches("wrong-input").shouldBeFalse()
+
             RawSecrets.selectAll().single()[RawSecrets.secret] shouldBeEqualTo oldHash
             if (loaded.matches(plainText) && current.upgradeEncoding(loaded.encodedValue)) {
-                table.update { it[secret] = table.secret.hash(plainText) }
+                table.update {
+                    it[secret] = table.secret.hash(plainText)
+                }
             }
+
             val upgraded = table.selectAll().single()[table.secret]
             upgraded.matches(plainText).shouldBeTrue()
             current.upgradeEncoding(upgraded.encodedValue).shouldBeFalse()
-            (upgraded.encodedValue == oldHash).shouldBeFalse()
+            upgraded.encodedValue shouldNotBeEqualTo oldHash
         }
     }
 
     @Test
-    fun `SQL logger와 중복 키 예외에 평문이 포함되지 않는다`()  {
+    fun `SQL logger와 중복 키 예외에 평문이 포함되지 않는다`() {
         val table = Secrets(BCryptHasher(4))
         val statements = mutableListOf<String>()
         val failure = assertFailsWith<Exception> {
@@ -148,14 +179,20 @@ class JdbcHashedColumnContractTest {
                 }
             }
         }
-        statements.isNotEmpty().shouldBeTrue()
+        statements.shouldNotBeEmpty()
+
         generateSequence<Throwable>(failure) { it.cause }
             .filterIsInstance<SQLException>()
             .any { it.sqlState == "23505" }.shouldBeTrue()
+
         statements.any { it.contains("INSERT", ignoreCase = true) }.shouldBeTrue()
-        statements.joinToString().contains(plainText).shouldBeFalse()
-        failure.stackTraceToString().contains(plainText).shouldBeFalse()
+        statements.joinToString() shouldNotContain plainText
+
+        failure.stackTraceToString() shouldNotContain plainText
+
         // 검출기가 평문을 포함한 입력을 실제로 거부하는지 별도 대조한다.
-        assertFailsWith<AssertionError> { plainText.contains(plainText).shouldBeFalse() }
+        assertFailsWith<AssertionError> {
+            plainText.contains(plainText).shouldBeFalse()
+        }
     }
 }

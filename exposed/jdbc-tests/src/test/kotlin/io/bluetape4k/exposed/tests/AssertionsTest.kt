@@ -1,9 +1,9 @@
 package io.bluetape4k.exposed.tests
 
-import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldNotBeNull
-import org.junit.jupiter.api.Test
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
+import org.junit.jupiter.api.Test
 
 class AssertionsTest: AbstractExposedTest() {
 
@@ -103,7 +103,7 @@ class AssertionsTest: AbstractExposedTest() {
         withDb(TestDB.H2) {
             assertFailsWith<AssertionError> {
                 expectException<IllegalArgumentException> {
-                    throw IllegalStateException("Wrong exception type")
+                    error("Wrong exception type")
                 }
             }
         }
