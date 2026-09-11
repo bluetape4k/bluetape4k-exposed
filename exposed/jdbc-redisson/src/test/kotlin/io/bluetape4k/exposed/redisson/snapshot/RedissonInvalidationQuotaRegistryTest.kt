@@ -1,14 +1,16 @@
 package io.bluetape4k.exposed.redisson.snapshot
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBe
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
 import io.bluetape4k.junit5.concurrency.MultithreadingTester
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import org.redisson.api.RedissonClient
 import org.redisson.client.codec.StringCodec
@@ -17,6 +19,8 @@ import java.lang.reflect.Proxy
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class RedissonInvalidationQuotaRegistryTest {
+
+    companion object: KLogging()
 
     @Test
     fun `first valid client lookup pins positive quota limits`() {
@@ -33,7 +37,7 @@ class RedissonInvalidationQuotaRegistryTest {
         val first = registry.quotaFor(client, maxOutstandingChunks = 2, maxOutstandingEncodedBytes = 32)
         val matching = registry.quotaFor(client, maxOutstandingChunks = 2, maxOutstandingEncodedBytes = 32)
 
-        (matching === first).shouldBeTrue()
+        matching shouldBe first
         assertFailsWith<IllegalArgumentException> {
             registry.quotaFor(client, maxOutstandingChunks = 3, maxOutstandingEncodedBytes = 32)
         }
@@ -60,7 +64,7 @@ class RedissonInvalidationQuotaRegistryTest {
         val first = registry.quotaFor(firstClient, maxOutstandingChunks = 1, maxOutstandingEncodedBytes = 8)
         val second = registry.quotaFor(secondClient, maxOutstandingChunks = 2, maxOutstandingEncodedBytes = 16)
 
-        (first === second).shouldBeFalse()
+        first shouldNotBe second
         first.tryAdmit(encodedBytes = 8).shouldNotBeNull()
         second.health() shouldBeEqualTo SnapshotInvalidationQuotaHealth(2, 0, 16, 0, 0, false)
     }
@@ -110,8 +114,13 @@ class RedissonInvalidationQuotaRegistryTest {
 
         retainedLease.release()
         quota.health() shouldBeEqualTo SnapshotInvalidationQuotaHealth(2, 0, 5, 0, 102, false)
-        assertFailsWith<IllegalArgumentException> { quota.tryAdmit(encodedBytes = 0) }
-        assertFailsWith<IllegalArgumentException> { quota.tryAdmit(encodedBytes = -1) }
+
+        assertFailsWith<IllegalArgumentException> {
+            quota.tryAdmit(encodedBytes = 0)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            quota.tryAdmit(encodedBytes = -1)
+        }
     }
 
     @Test
@@ -119,6 +128,7 @@ class RedissonInvalidationQuotaRegistryTest {
         val registry = RedissonInvalidationQuotaRegistry()
         val firstClient = equalToEveryClientProxy()
         val codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy())
+
         registry.reserveComposition(
             firstClient,
             RedissonInvalidationCompositionDescriptor(
@@ -133,13 +143,14 @@ class RedissonInvalidationQuotaRegistryTest {
                 snapshotCacheFailureBuffer(4),
             ),
         ).commit()
+
         clearAndEnqueueRegisteredWeakKey(registry)
 
         val replacementClient = equalToEveryClientProxy()
         registry.quotaFor(replacementClient, maxOutstandingChunks = 2, maxOutstandingEncodedBytes = 16)
 
         registeredWeakKeys(registry).size shouldBeEqualTo 1
-        (registeredWeakKeys(registry).single().get() === replacementClient).shouldBeTrue()
+        registeredWeakKeys(registry).single().get() shouldBe replacementClient
     }
 
     @Test
@@ -167,7 +178,7 @@ class RedissonInvalidationQuotaRegistryTest {
             .run()
         val (first, second) = reservations.toList()
 
-        (first.storeInstanceToken === second.storeInstanceToken).shouldBeTrue()
+        first.storeInstanceToken shouldBe second.storeInstanceToken
         first.rollback()
         val mismatch = RedissonInvalidationCompositionDescriptor(
             codec,
@@ -176,11 +187,13 @@ class RedissonInvalidationQuotaRegistryTest {
             config,
             snapshotCacheFailureBuffer(4),
         )
-        assertFailsWith<IllegalArgumentException> { registry.reserveComposition(client, mismatch) }
+        assertFailsWith<IllegalArgumentException> {
+            registry.reserveComposition(client, mismatch)
+        }
 
         second.rollback()
         val replacement = registry.reserveComposition(client, mismatch)
-        (replacement.storeInstanceToken === first.storeInstanceToken).shouldBeFalse()
+        replacement.storeInstanceToken shouldNotBe first.storeInstanceToken
         replacement.rollback()
         registeredWeakKeys(registry).size shouldBeEqualTo 0
     }
@@ -193,7 +206,7 @@ class RedissonInvalidationQuotaRegistryTest {
             "equals" -> true
             "hashCode" -> 1
             "toString" -> "EqualRedissonClientProxy"
-            else -> error("Unexpected RedissonClient call: ${method.name}(${args?.size ?: 0})")
+            else     -> error("Unexpected RedissonClient call: ${method.name}(${args?.size ?: 0})")
         }
     } as RedissonClient
 

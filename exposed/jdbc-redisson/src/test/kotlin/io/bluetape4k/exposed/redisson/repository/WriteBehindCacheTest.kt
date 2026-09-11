@@ -1,6 +1,5 @@
 package io.bluetape4k.exposed.redisson.repository
 
-import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.exposed.redisson.AbstractRedissonTest
 import io.bluetape4k.exposed.redisson.domain.UserCacheRepository
 import io.bluetape4k.exposed.redisson.domain.UserCredentialCacheRepository
@@ -13,6 +12,7 @@ import io.bluetape4k.exposed.redisson.domain.UserSchema.withUserCredentialsTable
 import io.bluetape4k.exposed.redisson.domain.UserSchema.withUserTable
 import io.bluetape4k.exposed.redisson.repository.scenarios.WriteBehindScenario
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
@@ -22,31 +22,31 @@ import org.junit.jupiter.api.Nested
 import java.util.*
 
 class WriteBehindCacheTest {
+
     companion object: KLogging()
 
     abstract class AutoIncIdReadWriteBehind:
         AbstractRedissonTest(),
         WriteBehindScenario<Long, UserRecord> {
+
         override fun withEntityTable(
             testDB: TestDB,
             statement: JdbcTransaction.() -> Unit,
         ) = withUserTable(testDB, statement)
 
-        override fun getExistingId() =
-            transaction {
-                UserTable
-                    .select(UserTable.id)
-                    .limit(1)
-                    .first()[UserTable.id]
-                    .value
-            }
+        override fun getExistingId() = transaction {
+            UserTable
+                .select(UserTable.id)
+                .limit(1)
+                .first()[UserTable.id]
+                .value
+        }
 
-        override fun getExistingIds() =
-            transaction {
-                UserTable
-                    .select(UserTable.id)
-                    .map { it[UserTable.id].value }
-            }
+        override fun getExistingIds() = transaction {
+            UserTable
+                .select(UserTable.id)
+                .map { it[UserTable.id].value }
+        }
 
         override fun getNonExistentId() = Long.MIN_VALUE
 
@@ -55,6 +55,7 @@ class WriteBehindCacheTest {
 
     @Nested
     inner class AutoIncIdReadWriteBehindRemoteCache: AutoIncIdReadWriteBehind() {
+
         override val cacheConfig = RedissonCacheConfig.WRITE_BEHIND
 
         override val repository by lazy {
@@ -67,6 +68,7 @@ class WriteBehindCacheTest {
 
     @Nested
     inner class AutoIncIdReadWriteBehindNearCache: AutoIncIdReadWriteBehind() {
+
         override val cacheConfig = RedissonCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE
 
         override val repository by lazy {
@@ -80,26 +82,25 @@ class WriteBehindCacheTest {
     abstract class ClientGeneratedIdReadWriteBehind:
         AbstractRedissonTest(),
         WriteBehindScenario<UUID, UserCredentialsRecord> {
+
         override fun withEntityTable(
             testDB: TestDB,
             statement: JdbcTransaction.() -> Unit,
         ) = withUserCredentialsTable(testDB, statement)
 
-        override fun getExistingId() =
-            transaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .limit(1)
-                    .first()[UserCredentialsTable.id]
-                    .value
-            }
+        override fun getExistingId() = transaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .limit(1)
+                .first()[UserCredentialsTable.id]
+                .value
+        }
 
-        override fun getExistingIds() =
-            transaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .map { it[UserCredentialsTable.id].value }
-            }
+        override fun getExistingIds() = transaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .map { it[UserCredentialsTable.id].value }
+        }
 
         override fun getNonExistentId(): UUID = Uuid.V7.nextId()
 
@@ -108,6 +109,7 @@ class WriteBehindCacheTest {
 
     @Nested
     inner class ClientGeneratedIdReadBehindRemoteCache: ClientGeneratedIdReadWriteBehind() {
+
         override val cacheConfig = RedissonCacheConfig.WRITE_BEHIND
 
         override val repository by lazy {
@@ -120,6 +122,7 @@ class WriteBehindCacheTest {
 
     @Nested
     inner class ClientGeneratedIdReadBehindNearCache: ClientGeneratedIdReadWriteBehind() {
+
         override val cacheConfig = RedissonCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE
 
         override val repository by lazy {

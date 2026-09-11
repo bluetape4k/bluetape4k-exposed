@@ -1,23 +1,25 @@
 package io.bluetape4k.exposed.redisson.repository.scenarios
 
-import io.bluetape4k.exposed.redisson.AbstractRedissonTest.Companion.ENABLE_DIALECTS_METHOD
-import io.bluetape4k.exposed.tests.TestDB
-import io.bluetape4k.logging.KLogging
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.exposed.redisson.AbstractRedissonTest.Companion.ENABLE_DIALECTS_METHOD
+import io.bluetape4k.exposed.redisson.repository.AbstractJdbcRedissonRepository
+import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldHaveSize
 
 interface ReadThroughScenario<ID: Any, E: java.io.Serializable>: CacheTestScenario<ID, E> {
+
     companion object: KLogging()
 
     @ParameterizedTest
@@ -97,9 +99,9 @@ interface ReadThroughScenario<ID: Any, E: java.io.Serializable>: CacheTestScenar
             val entities = repository.findAll()
             entities.shouldNotBeEmpty()
             entities shouldHaveSize repository.table
-                        .selectAll()
-                        .count()
-                        .toInt()
+                .selectAll()
+                .count()
+                .toInt()
         }
     }
 
@@ -128,8 +130,7 @@ interface ReadThroughScenario<ID: Any, E: java.io.Serializable>: CacheTestScenar
     fun `getAllBatch - batchSize 는 0보다 커야 한다`(testDB: TestDB) {
         withEntityTable(testDB) {
             assertFailsWith<IllegalArgumentException> {
-                (repository as io.bluetape4k.exposed.redisson.repository.AbstractJdbcRedissonRepository<ID, E>)
-                    .getAll(getExistingIds(), batchSize = 0)
+                (repository as AbstractJdbcRedissonRepository<ID, E>).getAll(getExistingIds(), batchSize = 0)
             }
         }
     }
@@ -143,9 +144,8 @@ interface ReadThroughScenario<ID: Any, E: java.io.Serializable>: CacheTestScenar
         withEntityTable(testDB) {
             repository.getAll(getExistingIds())
 
-            val invalidated =
-                repository.invalidateByPattern("*1*") +
-                        ('A'..'Z').sumOf { repository.invalidateByPattern("*$it*") }
+            val invalidated = repository.invalidateByPattern("*1*") +
+                    ('A'..'Z').sumOf { repository.invalidateByPattern("*$it*") }
 
             invalidated shouldBeGreaterThan 0
         }

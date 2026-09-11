@@ -1,12 +1,15 @@
 package io.bluetape4k.exposed.redisson.snapshot
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBe
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
 import io.bluetape4k.exposed.redisson.repository.ExposedRedissonCodecSafety
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.redisson.codec.RedissonCodecs
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -14,12 +17,15 @@ import org.junit.jupiter.params.provider.EnumSource
 import org.redisson.api.options.LocalCachedMapOptions
 import org.redisson.client.codec.StringCodec
 import java.time.Duration
-import java.util.UUID
+import java.util.*
 
 class SnapshotRedissonCodecTest {
 
+    companion object: KLogging()
+
     @Test
     fun `Long identifiers use signed eight-byte big-endian canonical vectors`() {
+
         val codec = snapshotRedissonCodec(
             delegate = StringCodec(),
             codecVersion = "json-v1",
@@ -64,8 +70,12 @@ class SnapshotRedissonCodecTest {
         val policy = longSnapshotIdentifierPolicy() as SnapshotIdentifierPolicy<Any>
         val codec = snapshotRedissonCodec(StringCodec(), "v1", policy)
 
-        assertFailsWith<IllegalArgumentException> { encodeMapKey(codec, "secret-token") }
-        assertFailsWith<IllegalArgumentException> { encodeMapKey(codec, listOf(1L)) }
+        assertFailsWith<IllegalArgumentException> {
+            encodeMapKey(codec, "secret-token")
+        }
+        assertFailsWith<IllegalArgumentException> {
+            encodeMapKey(codec, listOf(1L))
+        }
     }
 
     @Test
@@ -73,13 +83,13 @@ class SnapshotRedissonCodecTest {
         val delegate = StringCodec()
         val codec = snapshotRedissonCodec(delegate, "json-v1", longSnapshotIdentifierPolicy())
 
-        (codec.mapValueEncoder === delegate.mapValueEncoder).shouldBeTrue()
-        (codec.mapValueDecoder === delegate.mapValueDecoder).shouldBeTrue()
-        (codec.valueEncoder === delegate.valueEncoder).shouldBeTrue()
-        (codec.valueDecoder === delegate.valueDecoder).shouldBeTrue()
-        (codec.classLoader === delegate.classLoader).shouldBeTrue()
-        (codec.mapKeyEncoder === delegate.mapKeyEncoder).shouldBeFalse()
-        (codec.mapKeyDecoder === delegate.mapKeyDecoder).shouldBeFalse()
+        codec.mapValueEncoder shouldBe delegate.mapValueEncoder
+        codec.mapValueDecoder shouldBe delegate.mapValueDecoder
+        codec.valueEncoder shouldBe delegate.valueEncoder
+        codec.valueDecoder shouldBe delegate.valueDecoder
+        codec.classLoader shouldBe delegate.classLoader
+        codec.mapKeyEncoder shouldNotBe delegate.mapKeyEncoder
+        codec.mapKeyDecoder shouldNotBe delegate.mapKeyDecoder
     }
 
     @Test
@@ -94,7 +104,11 @@ class SnapshotRedissonCodecTest {
     @Test
     fun `codec version accepts only the bounded compatibility token`() {
         listOf("v1", "json.codec_1-2", "A".repeat(64)).forEach { version ->
-            snapshotRedissonCodec(StringCodec(), version, longSnapshotIdentifierPolicy()).codecVersion shouldBeEqualTo version
+            snapshotRedissonCodec(
+                StringCodec(),
+                version,
+                longSnapshotIdentifierPolicy()
+            ).codecVersion shouldBeEqualTo version
         }
         listOf("", " ", "v/1", "v:1", "A".repeat(65)).forEach { version ->
             assertFailsWith<IllegalArgumentException> {
@@ -111,7 +125,7 @@ class SnapshotRedissonCodecTest {
             snapshotRedissonCodec(StringCodec(), invalid, longSnapshotIdentifierPolicy())
         }
 
-        thrown.message.orEmpty().shouldNotContain(invalid)
+        thrown.message shouldNotContain invalid
     }
 
     @Test
@@ -122,6 +136,7 @@ class SnapshotRedissonCodecTest {
             assertFailsWith<IllegalArgumentException> {
                 ExposedRedissonCodecSafety.requireSafe(codec, trustedBinaryCache = false)
             }
+
             ExposedRedissonCodecSafety.requireSafe(codec, trustedBinaryCache = true)
         }
     }
@@ -131,7 +146,9 @@ class SnapshotRedissonCodecTest {
         val codec = snapshotRedissonCodec(RedissonCodecs.Kryo5, "kryo-v1", longSnapshotIdentifierPolicy())
         val config = JdbcRedissonSnapshotInvalidatorConfig(snapshotConfig())
 
-        assertFailsWith<IllegalArgumentException> { config.requireSafeCodec(codec) }
+        assertFailsWith<IllegalArgumentException> {
+            config.requireSafeCodec(codec)
+        }
         config.copy(trustedBinaryCache = true).requireSafeCodec(codec)
     }
 
@@ -220,7 +237,7 @@ class SnapshotRedissonCodecTest {
             LocalCachedMapOptions.SyncStrategy.INVALIDATE ->
                 JdbcRedissonSnapshotInvalidatorConfig(snapshotConfig(), synchronizationStrategy = strategy)
 
-            LocalCachedMapOptions.SyncStrategy.NONE -> {
+            LocalCachedMapOptions.SyncStrategy.NONE   -> {
                 assertFailsWith<IllegalArgumentException> {
                     JdbcRedissonSnapshotInvalidatorConfig(snapshotConfig(), synchronizationStrategy = strategy)
                 }

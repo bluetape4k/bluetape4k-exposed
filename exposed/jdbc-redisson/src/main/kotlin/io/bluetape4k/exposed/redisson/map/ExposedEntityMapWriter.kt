@@ -72,6 +72,7 @@ open class ExposedEntityMapWriter<ID: Any, E: Any>(
     }
 ) {
     companion object: KLogging() {
+
         private const val DEFAULT_BATCH_SIZE = 1000
 
         private fun <K: Any, V: Any> writeThrough(

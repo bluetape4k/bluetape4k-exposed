@@ -3,9 +3,15 @@
 package io.bluetape4k.exposed.redisson.snapshot
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBe
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBe
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.cache.snapshot.MeasuredInvalidation
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheApplyReport
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
@@ -14,6 +20,7 @@ import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOperationResult
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOutcome
 import io.bluetape4k.exposed.cache.snapshot.SnapshotStoreId
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.Test
@@ -39,11 +46,21 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.function.BiConsumer
+import kotlin.collections.ArrayDeque
 import kotlin.reflect.KClass
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.declaredMemberFunctions
 
 class JdbcRedissonSnapshotInvalidatorTest {
+
+    private companion object: KLogging() {
+        const val MARKER_ABSENT = 0L
+        const val MARKER_EXACT = 1L
+        const val MARKER_MISMATCH = 2L
+
+        fun markerState(marker: Long, mapExists: Boolean): List<Long> =
+            listOf(marker, if (mapExists) 1L else 0L)
+    }
 
     @Test
     fun `direct invalidator exposes the injected fingerprint authority`() {
@@ -91,7 +108,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
         client.scriptCalls.single().arguments shouldBeEqualTo listOf(expectedFingerprint)
         client.scriptCalls.single().mode shouldBeEqualTo RScript.Mode.READ_WRITE
         client.scriptCalls.single().returnType shouldBeEqualTo RScript.ReturnType.LIST
-        client.scriptCalls.single().script.contains("redis.call('set', KEYS[1], ARGV[1])").shouldBeTrue()
+        client.scriptCalls.single().script shouldContain "redis.call('set', KEYS[1], ARGV[1])"
     }
 
     @Test
@@ -118,8 +135,8 @@ class JdbcRedissonSnapshotInvalidatorTest {
                 )
             }
 
-            client.options shouldBeEqualTo emptyList()
-            client.events.contains("map-access").shouldBeFalse()
+            client.options.shouldBeEmpty()
+            client.events shouldNotContain "map-access"
 
             val retryConfig = rejectedConfig.copy(
                 nearCacheMaximumSize = rejectedConfig.nearCacheMaximumSize + 1,
@@ -149,7 +166,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
         assertFailsWith<TimeoutException> {
             jdbcRedissonSnapshotInvalidator(timedOut.proxy, codec, Long::class, Payload::class, config())
         }
-        timedOut.options shouldBeEqualTo emptyList()
+        timedOut.options.shouldBeEmpty()
         timedOut.markerCancelCalled.shouldBeFalse()
 
         val connectionFailure = MarkerConnectionFailure()
@@ -157,11 +174,12 @@ class JdbcRedissonSnapshotInvalidatorTest {
         val thrown = assertFailsWith<MarkerConnectionFailure> {
             jdbcRedissonSnapshotInvalidator(disconnected.proxy, codec, Long::class, Payload::class, config())
         }
-        (thrown === connectionFailure).shouldBeTrue()
-        disconnected.options shouldBeEqualTo emptyList()
+        thrown shouldBe connectionFailure
+        disconnected.options.shouldBeEmpty()
 
         val recovered = RecordingRedissonClient(map.proxy)
             .thenReturnMarker(markerState(MARKER_EXACT, mapExists = false))
+
         jdbcRedissonSnapshotInvalidator(
             recovered.proxy,
             codec,
@@ -183,9 +201,9 @@ class JdbcRedissonSnapshotInvalidatorTest {
             val thrown = assertFailsWith<InterruptedException> {
                 jdbcRedissonSnapshotInvalidator(interrupted.proxy, codec, Long::class, Payload::class, config())
             }
-            (thrown === interruption).shouldBeTrue()
+            thrown shouldBe interruption
             Thread.currentThread().isInterrupted.shouldBeTrue()
-            interrupted.options shouldBeEqualTo emptyList()
+            interrupted.options.shouldBeEmpty()
             interrupted.markerCancelCalled.shouldBeFalse()
         } finally {
             Thread.interrupted()
@@ -196,16 +214,16 @@ class JdbcRedissonSnapshotInvalidatorTest {
         val asyncThrown = assertFailsWith<FatalMarkerError> {
             jdbcRedissonSnapshotInvalidator(asynchronous.proxy, codec, Long::class, Payload::class, config())
         }
-        (asyncThrown === asynchronousFatal).shouldBeTrue()
-        asynchronous.options shouldBeEqualTo emptyList()
+        asyncThrown shouldBe asynchronousFatal
+        asynchronous.options.shouldBeEmpty()
 
         val directFatal = FatalMarkerError()
         val direct = RecordingRedissonClient(map.proxy).failScriptAccess(directFatal)
         val directThrown = assertFailsWith<FatalMarkerError> {
             jdbcRedissonSnapshotInvalidator(direct.proxy, codec, Long::class, Payload::class, config())
         }
-        (directThrown === directFatal).shouldBeTrue()
-        direct.options shouldBeEqualTo emptyList()
+        directThrown shouldBe directFatal
+        direct.options.shouldBeEmpty()
     }
 
     @Test
@@ -233,10 +251,11 @@ class JdbcRedissonSnapshotInvalidatorTest {
         )
 
         repositoryConfig.name shouldBeEqualTo invalidator.storeId.namespace
-        (repositoryConfig.codec === codec).shouldBeTrue()
-        (invalidator.failureBuffer === failureBuffer).shouldBeTrue()
+        repositoryConfig.codec shouldBe codec
+        invalidator.failureBuffer shouldBe failureBuffer
         client.options.single().option("getName") shouldBeEqualTo repositoryConfig.name
-        (client.options.single().option("getCodec") === repositoryConfig.codec).shouldBeTrue()
+        client.options.single().option("getCodec") shouldBe repositoryConfig.codec
+
         invalidator.compatibilityFingerprint shouldBeEqualTo snapshotNamespaceFingerprint(
             backend = "redisson-jdbc",
             namespace = namespace,
@@ -275,8 +294,8 @@ class JdbcRedissonSnapshotInvalidatorTest {
         )
 
         explicit.storeId shouldBeEqualTo SnapshotStoreId("redisson-jdbc", "orders:v1")
-        (explicit.failureBuffer === failureBuffer).shouldBeTrue()
-        (reified.failureBuffer === failureBuffer).shouldBeTrue()
+        explicit.failureBuffer shouldBe failureBuffer
+        reified.failureBuffer shouldBe failureBuffer
         explicit.compatibilityFingerprint shouldBeEqualTo snapshotNamespaceFingerprint(
             backend = "redisson-jdbc",
             namespace = "orders:v1",
@@ -287,12 +306,13 @@ class JdbcRedissonSnapshotInvalidatorTest {
             synchronizationStrategy = LocalCachedMapOptions.SyncStrategy.INVALIDATE,
         )
         reified.compatibilityFingerprint shouldBeEqualTo explicit.compatibilityFingerprint
-        (reified.storeInstanceToken === explicit.storeInstanceToken).shouldBeTrue()
+        reified.storeInstanceToken shouldBe explicit.storeInstanceToken
         explicit.limits.maxStagedWeight shouldBeEqualTo config.maxCommitEncodedKeyBytes.toLong()
-        client.options.size shouldBeEqualTo 2
+        client.options shouldHaveSize 2
+
         client.options.forEach { options ->
             options.option("getName") shouldBeEqualTo "orders:v1"
-            (options.option("getCodec") === codec).shouldBeTrue()
+            options.option("getCodec") shouldBe codec
             options.option("getCacheSize") shouldBeEqualTo config.nearCacheMaximumSize
             options.option("getSyncStrategy") shouldBeEqualTo config.synchronizationStrategy
             options.option("getReconnectionStrategy") shouldBeEqualTo config.reconnectionStrategy
@@ -311,15 +331,26 @@ class JdbcRedissonSnapshotInvalidatorTest {
         ) {
             val client = RecordingRedissonClient(RecordingLocalMap<Long>().proxy)
             first(client.proxy)
-            client.options.size shouldBeEqualTo 1
+            client.options shouldHaveSize 1
 
-            assertFailsWith<IllegalArgumentException> { mismatch(client.proxy) }
+            assertFailsWith<IllegalArgumentException> {
+                mismatch(client.proxy)
+            }
 
-            client.options.size shouldBeEqualTo 1
+            client.options shouldHaveSize 1
         }
 
         assertRejected(
-            first = { jdbcRedissonSnapshotInvalidator(it, baseCodec, Long::class, Payload::class, baseConfig, baseBuffer) },
+            first = {
+                jdbcRedissonSnapshotInvalidator(
+                    it,
+                    baseCodec,
+                    Long::class,
+                    Payload::class,
+                    baseConfig,
+                    baseBuffer
+                )
+            },
             mismatch = {
                 jdbcRedissonSnapshotInvalidator(
                     it,
@@ -332,7 +363,16 @@ class JdbcRedissonSnapshotInvalidatorTest {
             },
         )
         assertRejected(
-            first = { jdbcRedissonSnapshotInvalidator(it, baseCodec, Long::class, Payload::class, baseConfig, baseBuffer) },
+            first = {
+                jdbcRedissonSnapshotInvalidator(
+                    it,
+                    baseCodec,
+                    Long::class,
+                    Payload::class,
+                    baseConfig,
+                    baseBuffer
+                )
+            },
             mismatch = {
                 jdbcRedissonSnapshotInvalidator(
                     it,
@@ -345,7 +385,16 @@ class JdbcRedissonSnapshotInvalidatorTest {
             },
         )
         assertRejected(
-            first = { jdbcRedissonSnapshotInvalidator(it, baseCodec, Long::class, Payload::class, baseConfig, baseBuffer) },
+            first = {
+                jdbcRedissonSnapshotInvalidator(
+                    it,
+                    baseCodec,
+                    Long::class,
+                    Payload::class,
+                    baseConfig,
+                    baseBuffer
+                )
+            },
             mismatch = {
                 jdbcRedissonSnapshotInvalidator(
                     it,
@@ -358,7 +407,16 @@ class JdbcRedissonSnapshotInvalidatorTest {
             },
         )
         assertRejected(
-            first = { jdbcRedissonSnapshotInvalidator(it, baseCodec, Long::class, Payload::class, baseConfig, baseBuffer) },
+            first = {
+                jdbcRedissonSnapshotInvalidator(
+                    it,
+                    baseCodec,
+                    Long::class,
+                    Payload::class,
+                    baseConfig,
+                    baseBuffer
+                )
+            },
             mismatch = {
                 jdbcRedissonSnapshotInvalidator(
                     it,
@@ -371,7 +429,16 @@ class JdbcRedissonSnapshotInvalidatorTest {
             },
         )
         assertRejected(
-            first = { jdbcRedissonSnapshotInvalidator(it, baseCodec, Long::class, Payload::class, baseConfig, baseBuffer) },
+            first = {
+                jdbcRedissonSnapshotInvalidator(
+                    it,
+                    baseCodec,
+                    Long::class,
+                    Payload::class,
+                    baseConfig,
+                    baseBuffer
+                )
+            },
             mismatch = {
                 jdbcRedissonSnapshotInvalidator(
                     it,
@@ -392,6 +459,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
         val client = RecordingRedissonClient(firstMap.proxy)
             .thenReturnMap(firstMap.proxy)
             .thenReturnMap(secondMap.proxy)
+
         val codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy())
         val buffer = snapshotCacheFailureBuffer(4)
         val firstConfig = config(maxOutstandingChunks = 4, maxOutstandingEncodedBytes = 128)
@@ -414,7 +482,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
             buffer,
         )
 
-        (first.storeInstanceToken === second.storeInstanceToken).shouldBeFalse()
+        first.storeInstanceToken shouldNotBe second.storeInstanceToken
         client.options.map { it.option("getName") } shouldBeEqualTo listOf("orders:v1", "customers:v1")
         first.quotaHealth() shouldBeEqualTo second.quotaHealth()
     }
@@ -425,6 +493,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
         val client = RecordingRedissonClient(map.proxy)
             .thenThrowMap(MapConstructionFailure())
             .thenReturnMap(map.proxy)
+
         val codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy())
         val failedConfig = config(maxOutstandingChunks = 1, maxOutstandingEncodedBytes = 8)
         val retryConfig = failedConfig.copy(
@@ -452,7 +521,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
         )
 
         retry.quotaHealth() shouldBeEqualTo SnapshotInvalidationQuotaHealth(2, 0, 16, 0, 0, false)
-        client.options.size shouldBeEqualTo 2
+        client.options shouldHaveSize 2
     }
 
     @Test
@@ -463,7 +532,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
         val valid = config(maxOutstandingChunks = 1, maxOutstandingEncodedBytes = 8)
 
         jdbcRedissonSnapshotInvalidator(client.proxy, codec, Long::class, Payload::class, valid)
-        client.options.size shouldBeEqualTo 1
+        client.options shouldHaveSize 1 
 
         assertFailsWith<IllegalArgumentException> {
             jdbcRedissonSnapshotInvalidator(
@@ -497,7 +566,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
             )
         }
 
-        client.options.size shouldBeEqualTo 1
+        client.options shouldHaveSize 1
     }
 
     @Test
@@ -512,13 +581,17 @@ class JdbcRedissonSnapshotInvalidatorTest {
         valid.limits.maxStagedWeight shouldBeEqualTo valid.configForTest.maxCommitEncodedKeyBytes.toLong()
 
         val undersized = newInvalidator(codec, config(maxEncodedKeyBytes = 7))
-        assertFailsWith<IllegalArgumentException> { undersized.measure(1L) }
+        assertFailsWith<IllegalArgumentException> {
+            undersized.measure(1L)
+        }
     }
 
     @Test
     fun `submission chunks in order reencodes every id and issues invalidation only`() {
         val map = RecordingLocalMap<Long>()
-        repeat(3) { map.thenReturn(completedRFuture(1L)) }
+        repeat(3) {
+            map.thenReturn(completedRFuture(1L))
+        }
         val invalidator = newInvalidator(
             codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy()),
             config = config(maxBatchEncodedKeyBytes = 16, maxOutstandingChunks = 3),
@@ -608,7 +681,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
             invalidator.submitInvalidation(listOf(invalidator.measure(1L), invalidator.measure(2L)))
         }
 
-        (thrown === fatal).shouldBeTrue()
+        thrown shouldBe fatal
         map.submittedIds shouldBeEqualTo listOf(listOf(1L))
         invalidator.quotaHealth() shouldBeEqualTo SnapshotInvalidationQuotaHealth(1, 0, 8, 0, 0, false)
         invalidator.failureBuffer.size shouldBeEqualTo 0
@@ -860,10 +933,10 @@ class JdbcRedissonSnapshotInvalidatorTest {
                     options += args.orEmpty().single()
                     if (mapBehaviors.isEmpty()) localCacheMap else mapBehaviors.removeFirst()()
                 }
-                "equals" -> instance === args.orEmpty().singleOrNull()
-                "hashCode" -> System.identityHashCode(instance)
-                "toString" -> "RecordingRedissonClient"
-                else -> error("Unexpected RedissonClient call: ${method.name}")
+                "equals"    -> instance === args.orEmpty().singleOrNull()
+                "hashCode"  -> System.identityHashCode(instance)
+                "toString"  -> "RecordingRedissonClient"
+                else        -> error("Unexpected RedissonClient call: ${method.name}")
             }
         } as RedissonClient
 
@@ -897,10 +970,10 @@ class JdbcRedissonSnapshotInvalidatorTest {
                         },
                     )
                 }
-                "equals" -> instance === args.orEmpty().singleOrNull()
+                "equals"   -> instance === args.orEmpty().singleOrNull()
                 "hashCode" -> System.identityHashCode(instance)
                 "toString" -> "RecordingMarkerScript"
-                else -> error("Unexpected RScript call: ${method.name}")
+                else       -> error("Unexpected RScript call: ${method.name}")
             }
         } as RScript
 
@@ -910,14 +983,14 @@ class JdbcRedissonSnapshotInvalidatorTest {
             arrayOf(RFuture::class.java),
         ) { instance, method, args ->
             when (method.name) {
-                "get" -> {
+                "get"    -> {
                     if (args.orEmpty().size != 2) error("Unbounded marker Future.get() is forbidden.")
                     events += "marker-wait"
                     when (behavior) {
-                        is MarkerBehavior.Value -> behavior.value
+                        is MarkerBehavior.Value   -> behavior.value
                         is MarkerBehavior.Failure -> throw ExecutionException(behavior.failure)
                         is MarkerBehavior.Interrupted -> throw behavior.interruption
-                        MarkerBehavior.Never -> throw TimeoutException("marker verification timed out")
+                        MarkerBehavior.Never      -> throw TimeoutException("marker verification timed out")
                     }
                 }
                 "cancel" -> {
@@ -927,7 +1000,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
                 "equals" -> instance === args.orEmpty().singleOrNull()
                 "hashCode" -> System.identityHashCode(instance)
                 "toString" -> "RecordingMarkerFuture"
-                else -> method.invoke(CompletableFuture<List<Long>>(), *args.orEmpty())
+                else     -> method.invoke(CompletableFuture<List<Long>>(), *args.orEmpty())
             }
         } as RFuture<List<Long>>
 
@@ -960,7 +1033,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
         }
     }
 
-    private class RecordingLocalMap<ID : Any>(
+    private class RecordingLocalMap<ID: Any>(
         private val retainSubmittedIds: Boolean = true,
     ) {
         private val behaviors = ArrayDeque<() -> RFuture<Long>>()
@@ -981,10 +1054,10 @@ class JdbcRedissonSnapshotInvalidatorTest {
                     check(behaviors.isNotEmpty()) { "No submission behavior configured" }
                     behaviors.removeFirst()()
                 }
-                "equals" -> instance === args.orEmpty().singleOrNull()
+                "equals"   -> instance === args.orEmpty().singleOrNull()
                 "hashCode" -> System.identityHashCode(instance)
                 "toString" -> "RecordingLocalMap"
-                else -> error("Non-invalidation Redisson map command invoked: ${method.name}")
+                else       -> error("Non-invalidation Redisson map command invoked: ${method.name}")
             }
         } as RLocalCachedMap<ID, Any?>
 
@@ -1006,10 +1079,10 @@ class JdbcRedissonSnapshotInvalidatorTest {
     ) { instance, method, args ->
         when (method.name) {
             "whenComplete" -> throw failure
-            "equals" -> instance === args.orEmpty().singleOrNull()
+            "equals"   -> instance === args.orEmpty().singleOrNull()
             "hashCode" -> System.identityHashCode(instance)
             "toString" -> "ThrowingWhenCompleteRFuture"
-            else -> method.invoke(CompletableFuture<Long>(), *args.orEmpty())
+            else       -> method.invoke(CompletableFuture<Long>(), *args.orEmpty())
         }
     } as RFuture<Long>
 
@@ -1032,22 +1105,22 @@ class JdbcRedissonSnapshotInvalidatorTest {
                     }
                     proxy
                 }
-                "equals" -> instance === args.orEmpty().singleOrNull()
+                "equals"   -> instance === args.orEmpty().singleOrNull()
                 "hashCode" -> System.identityHashCode(instance)
                 "toString" -> "RFutureProxy"
-                else -> method.invoke(delegate, *args.orEmpty())
+                else       -> method.invoke(delegate, *args.orEmpty())
             }
         } as RFuture<Long>
         return proxy
     }
 
-    private data class Payload(val value: String = "value") : Serializable {
+    private data class Payload(val value: String = "value"): Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
     }
 
-    private data class AlternatePayload(val value: String = "value") : Serializable {
+    private data class AlternatePayload(val value: String = "value"): Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
@@ -1055,21 +1128,21 @@ class JdbcRedissonSnapshotInvalidatorTest {
 
     private class NonSerializable
 
-    private class SubmissionFailure : RuntimeException()
+    private class SubmissionFailure: RuntimeException()
 
-    private class FatalSubmissionError : Error()
+    private class FatalSubmissionError: Error()
 
-    private class MapConstructionFailure : RuntimeException()
+    private class MapConstructionFailure: RuntimeException()
 
-    private class MarkerConnectionFailure : RuntimeException()
+    private class MarkerConnectionFailure: RuntimeException()
 
-    private class FatalMarkerError : Error()
+    private class FatalMarkerError: Error()
 
     private sealed interface MarkerBehavior {
-        data class Value(val value: List<Long>) : MarkerBehavior
-        data class Failure(val failure: Throwable) : MarkerBehavior
-        data class Interrupted(val interruption: InterruptedException) : MarkerBehavior
-        data object Never : MarkerBehavior
+        data class Value(val value: List<Long>): MarkerBehavior
+        data class Failure(val failure: Throwable): MarkerBehavior
+        data class Interrupted(val interruption: InterruptedException): MarkerBehavior
+        data object Never: MarkerBehavior
     }
 
     private data class MarkerScriptCall(
@@ -1080,12 +1153,5 @@ class JdbcRedissonSnapshotInvalidatorTest {
         val arguments: List<Any?>,
     )
 
-    private companion object {
-        const val MARKER_ABSENT = 0L
-        const val MARKER_EXACT = 1L
-        const val MARKER_MISMATCH = 2L
 
-        fun markerState(marker: Long, mapExists: Boolean): List<Long> =
-            listOf(marker, if (mapExists) 1L else 0L)
-    }
 }
