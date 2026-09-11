@@ -1,33 +1,42 @@
 package io.bluetape4k.exposed.core.jackson
 
-import io.bluetape4k.codec.Base58
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.codec.Base58
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.support.toUtf8Bytes
-import java.io.IOException
-import java.io.Reader
-import java.io.StringReader
-import java.lang.reflect.Proxy
-import java.sql.Clob
-import java.util.concurrent.atomic.AtomicBoolean
 import org.jetbrains.exposed.v1.core.statements.api.RowApi
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.statements.jdbc.JdbcResult
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
+import java.io.IOException
+import java.io.Reader
+import java.io.Serializable
+import java.io.StringReader
+import java.lang.reflect.Proxy
+import java.sql.Clob
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * [JacksonColumnType] 및 [JacksonBColumnType]의 직렬화/역직렬화 단위 테스트입니다.
  */
 class JacksonColumnTypeUnitTest {
+
+    companion object: KLogging()
+
     private data class SamplePayload(
         val name: String,
         val count: Int,
-    )
+    ): Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+    }
 
     private val serializer = DefaultJacksonSerializer
     private val columnType =
