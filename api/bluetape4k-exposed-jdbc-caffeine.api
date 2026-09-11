@@ -83,6 +83,7 @@ public final class io/bluetape4k/exposed/jdbc/caffeine/repository/CachePersisted
 	public final fun getId ()Ljava/lang/Object;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+public final fun withId (Ljava/lang/Object;)Lio/bluetape4k/exposed/jdbc/caffeine/repository/CachePersistedWrite;
 }
 
 public final class io/bluetape4k/exposed/jdbc/caffeine/repository/CachePersistedWrite$Companion {
@@ -138,7 +139,7 @@ public final class io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcCaffeineSnap
 	public final fun lookup (Ljava/lang/Object;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheLookup;
 }
 
-public final class io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcCaffeineSnapshotCache$Companion {
+public final class io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcCaffeineSnapshotCache$Companion : io/bluetape4k/logging/KLogging {
 }
 
 public final class io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcCaffeineSnapshotCacheKt {
@@ -151,4 +152,3 @@ public final class io/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcSnapshotTran
 	public static final fun stageSnapshot (Lorg/jetbrains/exposed/v1/jdbc/JdbcTransaction;Lio/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcCaffeineSnapshotCache;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheMiss;Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;)Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;
 	public static final fun stageSnapshot (Lorg/jetbrains/exposed/v1/jdbc/JdbcTransaction;Lio/bluetape4k/exposed/jdbc/caffeine/snapshot/JdbcCaffeineSnapshotCache;Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheMiss;Ljava/lang/Object;Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshotMapper;)Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;
 }
-
