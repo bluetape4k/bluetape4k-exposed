@@ -58,9 +58,6 @@ private fun <D> multiRowValuesData(iterator: Iterator<D>, table: Table): List<D>
  * 기본 키 타입 [ID]로 식별되는 [E] 엔티티의 조회, 저장, 삭제를 위한 공통 CRUD 연산을 제공합니다.
  * 단일 행 조회와 쓰기는 일시 중단 함수이며, 다중 행 조회는 [kotlinx.coroutines.flow.Flow]를 반환합니다.
  *
- * @param ID 기본 키 타입(예: [Long], [Int], [java.util.UUID])
- * @param E [ResultRow]에서 매핑되는 엔티티(레코드) 타입
- *
  * ## 사용 예
  *
  * ```kotlin
@@ -106,6 +103,9 @@ private fun <D> multiRowValuesData(iterator: Iterator<D>, table: Table): List<D>
  *     val page  = repo.findPage(pageNumber = 0, pageSize = 20)
  * }
  * ```
+ *
+ * @param ID 기본 키 타입(예: [Long], [Int], [java.util.UUID])
+ * @param E [ResultRow]에서 매핑되는 엔티티(레코드) 타입
  */
 interface R2dbcRepository<ID: Any, E: Any> {
     /**

@@ -17,7 +17,6 @@ import io.bluetape4k.logging.debug
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapNotNull
 import org.jetbrains.exposed.v1.core.Join
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.alias
@@ -32,6 +31,7 @@ import org.jetbrains.exposed.v1.r2dbc.selectAll
 import java.time.LocalDate
 
 class MovieR2dbcRepository: LongR2dbcRepository<MovieRecord> {
+
     companion object: KLoggingChannel() {
         private val MovieActorJoin: Join by lazy {
             MovieTable
@@ -77,22 +77,21 @@ class MovieR2dbcRepository: LongR2dbcRepository<MovieRecord> {
 
         params.forEach { (key, value) ->
             when (key) {
-                LongIdTable::id.name         -> {
+                LongIdTable::id.name          ->
                     value?.run { query.andWhere { MovieTable.id eq value.toLong() } }
-                }
-                MovieTable::name.name        -> {
+
+                MovieTable::name.name         ->
                     value?.run { query.andWhere { MovieTable.name eq value } }
-                }
-                MovieTable::producerName.name -> {
+
+                MovieTable::producerName.name ->
                     value?.run {
                         query.andWhere { MovieTable.producerName eq value }
                     }
-                }
-                MovieTable::releaseDate.name -> {
+
+                MovieTable::releaseDate.name  ->
                     value?.run {
                         query.andWhere { MovieTable.releaseDate eq LocalDate.parse(value) }
                     }
-                }
             }
         }
 
@@ -127,13 +126,15 @@ class MovieR2dbcRepository: LongR2dbcRepository<MovieRecord> {
                 ActorTable.firstName,
                 ActorTable.lastName,
                 ActorTable.birthday
-            ).map { row ->
+            )
+            .map { row ->
                 val movie = row.toMovieRecord()
                 val actor = row.toActorRecord()
 
                 movie to actor
-            }.bufferUntilChanged { it.first.id }
-            .mapNotNull { pairs ->
+            }
+            .bufferUntilChanged { it.first.id }
+            .map { pairs ->
                 val movie = pairs.first().first
                 val actors = pairs.map { it.second }
                 movie.toMovieWithActorRecord(actors)
@@ -172,18 +173,21 @@ class MovieR2dbcRepository: LongR2dbcRepository<MovieRecord> {
                 ActorTable.firstName,
                 ActorTable.lastName,
                 ActorTable.birthday
-            ).where { MovieTable.id eq movieId }
+            )
+            .where { MovieTable.id eq movieId }
             .map { row ->
                 val movie = row.toMovieRecord()
                 val actor = row.toActorRecord()
 
                 movie to actor
-            }.bufferUntilChanged { it.first.id }
-            .mapNotNull { pairs ->
+            }
+            .bufferUntilChanged { it.first.id }
+            .map { pairs ->
                 val movie = pairs.first().first
                 val actors = pairs.map { it.second }
                 movie.toMovieWithActorRecord(actors)
-            }.firstOrNull()
+            }
+            .firstOrNull()
     }
 
     /**

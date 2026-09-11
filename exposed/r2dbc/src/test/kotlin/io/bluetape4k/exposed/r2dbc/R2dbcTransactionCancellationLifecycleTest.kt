@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.r2dbc
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.r2dbc.spi.Connection
 import io.r2dbc.spi.ConnectionFactories
 import io.r2dbc.spi.ConnectionFactory
@@ -35,9 +36,14 @@ import java.util.concurrent.CopyOnWriteArrayList
 /** 실제 연결과 제어 가능한 Publisher로 취소 시 구독 해제와 정리 완료를 확인한다. */
 class R2dbcTransactionCancellationLifecycleTest {
 
-    enum class Boundary { ACQUISITION, BEGIN_PENDING, STATEMENT_PENDING, BEGIN_FAILURE }
+    enum class Boundary {
+        ACQUISITION,
+        BEGIN_PENDING,
+        STATEMENT_PENDING,
+        BEGIN_FAILURE
+    }
 
-    companion object {
+    companion object: KLoggingChannel() {
         @JvmStatic
         fun cases() = TestDB.enabledDialects()
             .filter { it == TestDB.H2 || it == TestDB.POSTGRESQL }
@@ -45,8 +51,8 @@ class R2dbcTransactionCancellationLifecycleTest {
     }
 
     // 추가 상태는 coroutine stacktrace recovery의 예외 복사를 배제한다.
-    private class BoundaryCancellation(val boundary: Boundary) : CancellationException(boundary.name)
-    private class BeginFailure(val boundary: Boundary) : IllegalStateException(boundary.name)
+    private class BoundaryCancellation(val boundary: Boundary): CancellationException(boundary.name)
+    private class BeginFailure(val boundary: Boundary): IllegalStateException(boundary.name)
 
     @ParameterizedTest
     @MethodSource("cases")
@@ -57,13 +63,15 @@ class R2dbcTransactionCancellationLifecycleTest {
         val cancellation = BoundaryCancellation(boundary)
         val beginFailure = BeginFailure(boundary)
         val acquisitionRelease = Sinks.empty<Void>()
-        fun <T : Any> pending(): Mono<T> = Mono.never<T>()
+
+        fun <T: Any> pending(): Mono<T> = Mono.never<T>()
             .doOnSubscribe { reached.complete(Unit) }
             .doOnCancel { events.add("cancel") }
             .timeout(Duration.ofSeconds(5))
 
         val delegate = ConnectionFactories.get(testDB.connection())
-        val factory = object : ConnectionFactory {
+
+        val factory = object: ConnectionFactory {
             override fun getMetadata() = delegate.metadata
 
             override fun create(): Publisher<out Connection> =
@@ -108,7 +116,7 @@ class R2dbcTransactionCancellationLifecycleTest {
         })
         try {
             // 단계별 구독 barrier가 필요하므로 stress tester 대신 실제 자식 Job을 취소한다.
-            withTimeout(15_000) {
+            withTimeout(timeMillis = 15_000) {
                 coroutineScope {
                     val observed = CompletableDeferred<Throwable>()
                     val job = launch {
@@ -151,7 +159,7 @@ class R2dbcTransactionCancellationLifecycleTest {
         }
     }
 
-    private inline fun <reified T : Any> proxy(target: T, crossinline call: (Method, Array<out Any?>?) -> Any?): T =
+    private inline fun <reified T: Any> proxy(target: T, crossinline call: (Method, Array<out Any?>?) -> Any?): T =
         Proxy.newProxyInstance(target.javaClass.classLoader, arrayOf(T::class.java)) { _, method, args ->
             call(method, args)
         } as T

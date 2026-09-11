@@ -5,10 +5,13 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.r2dbc.pool.ConnectionPool
 import io.r2dbc.pool.ConnectionPoolConfiguration
 import io.r2dbc.spi.ConnectionFactories
@@ -20,8 +23,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
@@ -29,6 +32,7 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.statements.StatementContext
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
+import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
 import org.jetbrains.exposed.v1.r2dbc.deleteWhere
 import org.jetbrains.exposed.v1.r2dbc.insert
@@ -37,9 +41,9 @@ import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.util.UUID
+import java.util.*
 
-private object R2dbcCursorPaginationTable : IdTable<Long>("r2dbc_cursor_pagination_rows") {
+private object R2dbcCursorPaginationTable: IdTable<Long>("r2dbc_cursor_pagination_rows") {
     override val id: Column<EntityID<Long>> = long("id").entityId()
     override val primaryKey = PrimaryKey(id)
     val active = bool("active")
@@ -50,7 +54,7 @@ private data class R2dbcCursorRecord(
     val active: Boolean,
 )
 
-private object R2dbcCursorPaginationRepository : LongR2dbcRepository<R2dbcCursorRecord> {
+private object R2dbcCursorPaginationRepository: LongR2dbcRepository<R2dbcCursorRecord> {
     override val table = R2dbcCursorPaginationTable
 
     override fun extractId(entity: R2dbcCursorRecord): Long = entity.id
@@ -71,7 +75,7 @@ private object R2dbcCursorPaginationRepository : LongR2dbcRepository<R2dbcCursor
 private class BlockingR2dbcCursorPaginationRepository(
     private val mapperEntered: CompletableDeferred<Unit>,
     private val releaseMapper: CompletableDeferred<Unit>,
-) : LongR2dbcRepository<R2dbcCursorRecord> {
+): LongR2dbcRepository<R2dbcCursorRecord> {
     override val table = R2dbcCursorPaginationTable
 
     override fun extractId(entity: R2dbcCursorRecord): Long = entity.id
@@ -86,7 +90,10 @@ private class BlockingR2dbcCursorPaginationRepository(
     }
 }
 
-class R2dbcRepositoryCursorPaginationTest : AbstractExposedR2dbcTest() {
+class R2dbcRepositoryCursorPaginationTest: AbstractExposedR2dbcTest() {
+
+    companion object: KLoggingChannel()
+
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `suspend 커서 페이지는 sparse ID를 오름차순으로 이어서 조회한다`(testDB: TestDB) = runSuspendIO {
@@ -215,7 +222,7 @@ class R2dbcRepositoryCursorPaginationTest : AbstractExposedR2dbcTest() {
                 R2dbcCursorRecord(20, true),
             )
             val sqlStatements = mutableListOf<String>()
-            addLogger(object : SqlLogger {
+            addLogger(object: SqlLogger {
                 override fun log(context: StatementContext, transaction: Transaction) {
                     sqlStatements += context.sql(transaction)
                 }
@@ -228,11 +235,12 @@ class R2dbcRepositoryCursorPaginationTest : AbstractExposedR2dbcTest() {
             val selectStatements = sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
             selectStatements.size shouldBeEqualTo 1
             sqlStatements.none { it.contains("count(", ignoreCase = true) }.shouldBeTrue()
+
             val sql = selectStatements.single().lowercase()
-            sql.contains("> ").shouldBeTrue()
-            sql.contains("active").shouldBeTrue()
-            sql.contains("order by").shouldBeTrue()
-            sql.contains("limit").shouldBeTrue()
+            sql shouldContain "> "
+            sql shouldContain "active"
+            sql shouldContain "order by"
+            sql shouldContain "limit"
         }
     }
 
@@ -276,7 +284,7 @@ class R2dbcRepositoryCursorPaginationTest : AbstractExposedR2dbcTest() {
             nextPage.content.map(R2dbcCursorRecord::id) shouldBeEqualTo listOf(5L, 7L)
             nextPage.nextCursor shouldBeEqualTo 7L
             nextPage.hasNext.shouldBeTrue()
-            connectionIds.distinct().size shouldBeEqualTo 3
+            connectionIds.distinct() shouldHaveSize 3
         } finally {
             suspendTransaction(db = database) {
                 SchemaUtils.drop(R2dbcCursorPaginationTable)
@@ -323,9 +331,10 @@ class R2dbcRepositoryCursorPaginationTest : AbstractExposedR2dbcTest() {
             request.cancel()
             assertFailsWith<CancellationException> { request.await() }
 
-            val idsAfterCancellation = withTimeout(5_000L) {
+            val idsAfterCancellation = withTimeout(timeMillis = 5_000L) {
                 suspendTransaction(db = database) {
-                    val ids = R2dbcCursorPaginationRepository.findCursorPage(pageSize = 100).content
+                    val ids = R2dbcCursorPaginationRepository.findCursorPage(pageSize = 100)
+                        .content
                         .map(R2dbcCursorRecord::id)
                     commit()
                     ids
@@ -344,9 +353,12 @@ class R2dbcRepositoryCursorPaginationTest : AbstractExposedR2dbcTest() {
         }
     }
 
-    private suspend fun org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction.seed(
+    @Suppress("UnusedReceiverParameter")
+    private suspend fun R2dbcTransaction.seed(
         vararg records: R2dbcCursorRecord,
     ) {
-        records.forEach { R2dbcCursorPaginationRepository.insert(it) }
+        records.forEach {
+            R2dbcCursorPaginationRepository.insert(it)
+        }
     }
 }

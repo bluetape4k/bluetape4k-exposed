@@ -7,14 +7,11 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.Table.UuidVersion
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalUuidApi::class)
 class KotlinUuidTableR2dbcTest: AbstractExposedR2dbcTest() {
 
     private object Items: KotlinUuidTable(
@@ -55,5 +52,6 @@ class KotlinUuidTableR2dbcTest: AbstractExposedR2dbcTest() {
         }
     }
 
+    // HINT: bluetape4k-core 에 UuidSupport.kt 에 추가하자 
     private fun Uuid.uuidVersion(): Int = (toByteArray()[6].toInt() ushr 4) and 0x0F
 }

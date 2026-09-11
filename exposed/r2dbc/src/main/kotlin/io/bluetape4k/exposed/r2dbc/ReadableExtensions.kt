@@ -338,7 +338,9 @@ private suspend fun Any?.toExposedBlobOrNull(): ExposedBlob? =
                 stream().asFlow().collect { buf ->
                     val bytes = ByteArray(buf.remaining())
                     buf.get(bytes)
-                    out.write(bytes)
+                    withContext(Dispatchers.IO) {
+                        out.write(bytes)
+                    }
                 }
                 out.toByteArray().toExposedBlob()
             }
