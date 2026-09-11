@@ -1,9 +1,9 @@
 package io.bluetape4k.exposed.mysql8.gis
 
-import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.select
@@ -45,7 +45,9 @@ class SpatialFunctionTest: AbstractMySqlGisTest() {
 
     @Test
     fun `ST_SRID - 컬럼 SRID 반환`() {
-        val table = transaction(db) { GeoFuncPointTable() }
+        val table = transaction(db) {
+            GeoFuncPointTable()
+        }
 
         withGeoTables(table) {
             table.insert {

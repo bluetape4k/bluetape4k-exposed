@@ -1,9 +1,9 @@
 package io.bluetape4k.exposed.mysql8.gis
 
-import io.bluetape4k.logging.KLogging
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -145,7 +145,7 @@ class SpatialRelationTest: AbstractMySqlGisTest() {
                 .where { table.zoneA.stOverlaps(table.zoneB) }
                 .toList()
 
-            rows.isEmpty().shouldBeTrue()
+            rows.shouldBeEmpty()
         }
     }
 
@@ -193,7 +193,7 @@ class SpatialRelationTest: AbstractMySqlGisTest() {
                 .where { table.pointA.stDWithin(table.pointB, 1000.0) }
                 .toList()
 
-            notWithinRows.isEmpty().shouldBeTrue()
+            notWithinRows.shouldBeEmpty()
         }
     }
 }

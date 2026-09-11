@@ -1,10 +1,10 @@
 package io.bluetape4k.exposed.mysql8.gis
 
-import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.assertions.shouldBeLessOrEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -37,7 +37,9 @@ class SpatialMeasurementTest: AbstractMySqlGisTest() {
 
     @Test
     fun `ST_Distance - 서울-수원 거리 약 30km`() {
-        val table = transaction(db) { PointMeasureTable() }
+        val table = transaction(db) {
+            PointMeasureTable()
+        }
 
         withGeoTables(table) {
             table.insert {
@@ -57,7 +59,9 @@ class SpatialMeasurementTest: AbstractMySqlGisTest() {
 
     @Test
     fun `ST_Distance_Sphere - 서울-부산 거리 약 325km`() {
-        val table = transaction(db) { PointMeasureTable() }
+        val table = transaction(db) {
+            PointMeasureTable()
+        }
 
         withGeoTables(table) {
             table.insert {
@@ -77,7 +81,9 @@ class SpatialMeasurementTest: AbstractMySqlGisTest() {
 
     @Test
     fun `ST_Area - 큰 폴리곤이 작은 폴리곤보다 넓이가 크다`() {
-        val table = transaction(db) { PolygonMeasureTable() }
+        val table = transaction(db) {
+            PolygonMeasureTable()
+        }
 
         withGeoTables(table) {
             table.insert {
@@ -102,7 +108,9 @@ class SpatialMeasurementTest: AbstractMySqlGisTest() {
 
     @Test
     fun `ST_Length - LineString 길이 측정`() {
-        val table = transaction(db) { LineMeasureTable() }
+        val table = transaction(db) {
+            LineMeasureTable()
+        }
 
         withGeoTables(table) {
             table.insert {

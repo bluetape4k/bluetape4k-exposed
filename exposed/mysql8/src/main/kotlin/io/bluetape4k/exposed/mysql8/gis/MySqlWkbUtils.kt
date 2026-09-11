@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.mysql8.gis
 
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.warn
+import io.bluetape4k.support.requireGe
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.io.ByteOrderValues
 import org.locationtech.jts.io.WKBReader
@@ -41,7 +42,7 @@ object MySqlWkbUtils: KLogging() {
      * @return JTS Geometry (SRID 설정됨)
      */
     fun parseMySqlInternalGeometry(bytes: ByteArray): Geometry {
-        require(bytes.size >= 5) {
+        bytes.size.requireGe(5) {
             "MySQL internal geometry format requires at least 5 bytes (4 SRID + 1 WKB), got ${bytes.size}"
         }
         val srid = ByteBuffer.wrap(bytes, 0, 4).order(ByteOrder.LITTLE_ENDIAN).int
@@ -50,9 +51,11 @@ object MySqlWkbUtils: KLogging() {
         // runCatching으로 감싸는 이유: 예외 발생 시 srid와 wkbSize 같은 진단 컨텍스트를
         // warn 로그에 포함시켜 어떤 데이터가 파싱에 실패했는지 추적할 수 있도록 하기 위함이다.
         // getOrThrow()로 예외를 재전파하여 호출 측의 정상 오류 흐름은 그대로 유지한다.
-        val geometry = runCatching { WKBReader().read(wkb) }
-            .onFailure { e -> log.warn(e) { "WKB 파싱 실패: srid=$srid, wkbSize=${wkb.size}" } }
-            .getOrThrow()
+        val geometry = runCatching {
+            WKBReader().read(wkb)
+        }.onFailure { e ->
+            log.warn(e) { "WKB 파싱 실패: srid=$srid, wkbSize=${wkb.size}" }
+        }.getOrThrow()
         geometry.srid = srid
         return geometry
     }
