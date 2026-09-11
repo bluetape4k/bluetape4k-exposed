@@ -2,6 +2,10 @@
 
 package io.bluetape4k.exposed.cache.snapshot
 
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.support.requireGe
+import io.bluetape4k.support.requireGt
+import io.bluetape4k.support.requirePositiveNumber
 import java.io.Serializable
 import java.lang.ref.ReferenceQueue
 import java.lang.ref.WeakReference
@@ -51,7 +55,7 @@ class SnapshotCacheLookup<ID : Any, V : Serializable> private constructor(
     }
 
     /** Creates hit and miss lookup values. */
-    companion object {
+    companion object: KLogging() {
         /**
          * Creates a lookup containing [snapshot].
          */
@@ -317,15 +321,16 @@ data class MeasuredInvalidation<ID : Any>(
     val encodedBytes: Int,
     /** payload 본문을 노출하지 않는 lowercase SHA-256 digest입니다. */
     val encodedSha256: String,
-) {
+): Serializable {
     init {
-        require(encodedBytes >= 0) { "encodedBytes[$encodedBytes] must not be negative." }
+        encodedBytes.requireGe(0, "encodedBytes")
         require(SHA_256_PATTERN.matches(encodedSha256)) {
             "encodedSha256 must be a 64-character lowercase hexadecimal SHA-256 digest."
         }
     }
 
     companion object {
+        private const val serialVersionUID = 1L
         private val SHA_256_PATTERN = Regex("[0-9a-f]{64}")
     }
 }
@@ -438,13 +443,14 @@ internal class MonotonicSnapshotCacheDeadline(
     timeout: Duration,
     private val nanoTimeSource: () -> Long = System::nanoTime,
 ) : SnapshotCacheDeadline {
-    /** [timeout]을 nanosecond 단위로 변환한 deadline 폭입니다. */
+
+    /** `timeout` 을 nanosecond 단위로 변환한 deadline 폭입니다. */
     private val timeoutNanos: Long
     /** deadline 계산의 기준이 되는 시작 시각입니다. */
     private val startedAtNanos: Long
 
     init {
-        require(timeout > Duration.ZERO) { "timeout[$timeout] must be positive." }
+        timeout.requireGt(Duration.ZERO, "timeout")
         timeoutNanos = try {
             timeout.toNanos()
         } catch (e: ArithmeticException) {
@@ -474,7 +480,7 @@ class SnapshotMissCapabilityRegistry<ID : Any, V : Serializable>(
     maxOutstandingMissTokens: Int,
 ) {
     private val maxOutstandingMissTokens = maxOutstandingMissTokens.also {
-        require(it > 0) { "maxOutstandingMissTokens[$it] must be positive." }
+        it.requirePositiveNumber("maxOutstandingMissTokens")
     }
     private val lock = ReentrantLock()
     private val staleMisses = ReferenceQueue<SnapshotCacheMiss<ID, V>>()
@@ -516,7 +522,11 @@ private data class MissCapability<ID : Any>(
     val id: ID,
     /** miss 관찰 이후 같은 process에서 경쟁 write를 감지하기 위한 local fence입니다. */
     val localFence: SnapshotLocalFence<ID>,
-)
+): Serializable {
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+}
 
 @OptIn(InternalSnapshotCacheApi::class)
 private class OneShotClaimedSnapshotMiss<ID : Any, V : Serializable>(

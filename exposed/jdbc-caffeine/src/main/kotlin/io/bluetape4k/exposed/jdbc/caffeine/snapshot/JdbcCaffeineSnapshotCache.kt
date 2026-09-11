@@ -28,6 +28,7 @@ import io.bluetape4k.exposed.cache.snapshot.SnapshotValueSizer
 import io.bluetape4k.exposed.cache.snapshot.rejectDirectEntitySnapshotValues
 import io.bluetape4k.exposed.cache.snapshot.sanitizeSnapshotCacheExceptionType
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
+import io.bluetape4k.logging.KLogging
 import java.io.Serializable
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -47,6 +48,7 @@ class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
     /** 이 facade가 사용하는 호출자 소유의 bounded failure buffer입니다. */
     override val failureBuffer: SnapshotCacheFailureBuffer,
 ) : SnapshotCacheStore<ID, V> {
+
     private val cache: Cache<ID, StoredSnapshot<V>> = buildCache(config)
     private val fences = SnapshotLocalFenceRegistry<ID>(config.fenceStripes)
     private val misses = SnapshotMissCapabilityRegistry<ID, V>(config.maxOutstandingMissTokens)
@@ -197,7 +199,7 @@ class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
         }
     }
 
-    companion object {
+    companion object: KLogging() {
         private const val BACKEND = "caffeine-jdbc"
         private const val VERSION = "jdbc-caffeine-snapshot-v1"
 
@@ -262,4 +264,8 @@ private fun <ID : Any, V : Serializable> buildCache(
 private data class StoredSnapshot<V : Serializable>(
     val snapshot: CacheSnapshot<V>,
     val caffeineWeight: Int,
-)
+): Serializable {
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+}

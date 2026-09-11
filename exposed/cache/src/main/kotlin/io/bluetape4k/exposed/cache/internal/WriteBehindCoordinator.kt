@@ -125,7 +125,7 @@ internal class WriteBehindCoordinator(
     private var completionPublished = false
 
     /** OPEN 상태에서만 admission capability를 예약합니다. */
-    fun reserveAdmission(): AdmissionToken = synchronized(lock) {
+    fun reserveAdmission(): AdmissionToken = lock.withLock {
         check(mode == CacheWriteMode.WRITE_BEHIND) {
             "Write-behind admission is not applicable for mode=$mode"
         }
@@ -205,9 +205,11 @@ internal class WriteBehindCoordinator(
 
     /** close/worker terminal failure를 stable kind으로 기록합니다. */
     fun onCloseFailed(kind: WriteBehindFailureKind) {
-        require(kind == WriteBehindFailureKind.WORKER ||
-            kind == WriteBehindFailureKind.CLOSE_TIMEOUT ||
-            kind == WriteBehindFailureKind.CLOSE_INTERRUPTED) {
+        require(
+            kind == WriteBehindFailureKind.WORKER ||
+                    kind == WriteBehindFailureKind.CLOSE_TIMEOUT ||
+                    kind == WriteBehindFailureKind.CLOSE_INTERRUPTED
+        ) {
             "Close failure kind must describe worker or close termination: $kind"
         }
         lock.withLock {
@@ -244,7 +246,7 @@ internal class WriteBehindCoordinator(
 
                 WriteBehindWorkerCompletion.CANCELLED,
                 WriteBehindWorkerCompletion.FAILED,
-                -> {
+                    -> {
                     workerState = CacheWorkerState.FAILED
                     lifecycle = Lifecycle.FAILED
                     failureKind = WriteBehindFailureKind.WORKER
@@ -254,7 +256,7 @@ internal class WriteBehindCoordinator(
     }
 
     /** OPEN close를 owner로, 동시 호출을 follower로 분배합니다. */
-    fun beginClose(): CloseLease = synchronized(lock) {
+    fun beginClose(): CloseLease = lock.withLock {
         when (lifecycle) {
             Lifecycle.OPEN -> {
                 lifecycle = Lifecycle.DRAINING
@@ -265,7 +267,7 @@ internal class WriteBehindCoordinator(
             Lifecycle.DRAINING -> CloseLease.Follower
             Lifecycle.STOPPED,
             Lifecycle.FAILED,
-            -> CloseLease.Follower
+                           -> CloseLease.Follower
         }
     }
 
@@ -290,9 +292,9 @@ internal class WriteBehindCoordinator(
                 lifecycle = Lifecycle.FAILED
                 workerState = CacheWorkerState.FAILED
                 failureKind = when (completion.kind) {
-                    CloseCompletionKind.TIMEOUT -> WriteBehindFailureKind.CLOSE_TIMEOUT
+                    CloseCompletionKind.TIMEOUT   -> WriteBehindFailureKind.CLOSE_TIMEOUT
                     CloseCompletionKind.INTERRUPTED -> WriteBehindFailureKind.CLOSE_INTERRUPTED
-                    CloseCompletionKind.FAILED -> WriteBehindFailureKind.WORKER
+                    CloseCompletionKind.FAILED    -> WriteBehindFailureKind.WORKER
                     CloseCompletionKind.COMPLETED -> WriteBehindFailureKind.WORKER
                 }
             }
@@ -300,12 +302,12 @@ internal class WriteBehindCoordinator(
     }
 
     /** raw exception을 포함하지 않는 현재 coordinator 상태입니다. */
-    fun snapshot(): CoordinatorSnapshot = synchronized(lock) {
+    fun snapshot(): CoordinatorSnapshot = lock.withLock {
         CoordinatorSnapshot(mode, queueDepth, workerState, failureKind)
     }
 
     /** adapter 테스트/진단용 terminal 판정입니다. */
-    internal fun isTerminal(): Boolean = synchronized(lock) {
+    internal fun isTerminal(): Boolean = lock.withLock {
         lifecycle == Lifecycle.STOPPED || lifecycle == Lifecycle.FAILED
     }
 }

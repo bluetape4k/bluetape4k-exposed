@@ -1,12 +1,14 @@
 package io.bluetape4k.exposed.jdbc.caffeine.snapshot
 
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotMapper
 import io.bluetape4k.exposed.cache.snapshot.CaffeineSnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.junit.jupiter.api.Test
 import java.io.Serializable
@@ -15,6 +17,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 class JdbcSnapshotCacheApiUsageTest {
+
+    companion object: KLogging()
 
     @Test
     fun `canonical JDBC README blocks equal the compiled fixture`() {
@@ -77,18 +81,17 @@ class JdbcSnapshotCacheApiUsageTest {
         val transactionMethods = transactionClass.declaredMethods.filter { Modifier.isPublic(it.modifiers) }
         val transactionSignatures = transactionMethods.joinToString("\n") { it.toGenericString() }
 
-        publicConstructors.isEmpty() shouldBeEqualTo true
+        publicConstructors.isEmpty().shouldBeTrue()
         factoryClass.declaredMethods.count { it.name == "jdbcCaffeineSnapshotCache" } shouldBeEqualTo 2
         transactionMethods.count { it.name == "stageSnapshot" } shouldBeEqualTo 2
         transactionMethods.count { it.name == "stageInvalidation" } shouldBeEqualTo 1
-        factorySignatures.contains("kotlin.reflect.KClass").shouldBeTrue()
-        transactionSignatures.contains("JdbcTransaction").shouldBeTrue()
-        transactionSignatures.contains("R2dbcTransaction").shouldBeFalse()
-        transactionSignatures.contains("LocalCacheConfig").shouldBeFalse()
+        factorySignatures shouldContain "kotlin.reflect.KClass"
+        transactionSignatures shouldContain "JdbcTransaction"
+        transactionSignatures shouldNotContain "R2dbcTransaction"
+        transactionSignatures shouldNotContain "LocalCacheConfig"
     }
 
-    private data class Payload(val value: String) : Serializable
-
+    private data class Payload(val value: String): Serializable
     private fun projectFile(relativePath: String): Path {
         val rootCandidate = Path.of(relativePath)
         if (Files.exists(rootCandidate)) return rootCandidate
@@ -98,7 +101,7 @@ class JdbcSnapshotCacheApiUsageTest {
     private fun extractMarkedBlock(source: String, begin: String, end: String): String {
         val start = source.indexOf(begin)
         val finish = source.indexOf(end, startIndex = start + begin.length)
-        check(start >= 0 && finish > start) { "Missing canonical README markers: $begin .. $end" }
+        check(start in 0..<finish) { "Missing canonical README markers: $begin .. $end" }
         return source.substring(start + begin.length, finish).trim('\n', '\r')
     }
 }

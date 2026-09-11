@@ -12,6 +12,7 @@ import io.bluetape4k.logging.KLogging
  * - Redis/Testcontainers 불필요 (Caffeine 로컬 캐시)
  */
 abstract class AbstractJdbcCaffeineTest: AbstractExposedTest() {
+
     companion object: KLogging() {
         @JvmStatic
         protected val faker = Fakers.faker

@@ -6,8 +6,8 @@ import com.github.benmanes.caffeine.cache.Cache
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
 import io.bluetape4k.exposed.cache.snapshot.CaffeineSnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
@@ -16,6 +16,7 @@ import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOutcome
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheStore
 import io.bluetape4k.exposed.cache.snapshot.SnapshotValueSizer
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 import java.time.Duration
@@ -26,6 +27,12 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 class JdbcCaffeineSnapshotCacheTest {
+
+    companion object: KLogging() {
+        private const val RACE_REPETITIONS: Int = 100
+        private const val CONCURRENT_PUTS: Int = 8
+        private const val CONCURRENT_MAXIMUM_SIZE: Long = 2L
+    }
 
     @Test
     fun `explicit and reified factories preserve caller failure buffer identity`() {
@@ -372,9 +379,4 @@ class JdbcCaffeineSnapshotCacheTest {
         }
     }
 
-    companion object {
-        private const val RACE_REPETITIONS: Int = 100
-        private const val CONCURRENT_PUTS: Int = 8
-        private const val CONCURRENT_MAXIMUM_SIZE: Long = 2L
-    }
 }
