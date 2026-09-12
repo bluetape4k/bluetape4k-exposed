@@ -2,8 +2,9 @@ package io.bluetape4k.exposed.ktor.core
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.logging.KLogging
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
@@ -14,22 +15,25 @@ import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.junit.jupiter.api.Test
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class ExposedKtorCoreContractTest {
 
+    companion object: KLogging()
+
     @Test
     fun `core status pages keep the documented JVM facade owner`() {
         Class.forName("io.bluetape4k.exposed.ktor.core.ExposedKtorCoreStatusPagesKt")
             .name shouldBeEqualTo "io.bluetape4k.exposed.ktor.core.ExposedKtorCoreStatusPagesKt"
+
         ExposedKtorTransactionException::class.java.constructors
             .map { it.parameterTypes.toList() } shouldBeEqualTo listOf(emptyList())
     }
@@ -49,14 +53,14 @@ class ExposedKtorCoreContractTest {
         val response = client.get("/internal/secret")
         response.status shouldBeEqualTo HttpStatusCode.InternalServerError
         val body = response.bodyAsText()
-        body.contains("EXPOSED_TRANSACTION_FAILED").shouldBeTrue()
-        body.contains("Exposed transaction failed").shouldBeTrue()
-        body.contains("/internal/secret").shouldBeFalse()
+        body shouldContain "EXPOSED_TRANSACTION_FAILED"
+        body shouldContain "Exposed transaction failed"
+        body shouldNotContain "/internal/secret"
     }
 
     @Test
     fun `registration requires cooperative probes and immutable safe components`() {
-        val nonCooperative = object : ExposedKtorReadinessProbe {
+        val nonCooperative = object: ExposedKtorReadinessProbe {
             override val component: String = "orders"
             override val backend: ExposedKtorReadinessBackend = ExposedKtorReadinessBackend.JDBC
             override suspend fun probe(timeout: kotlin.time.Duration): ExposedKtorReadinessOutcome =
@@ -122,8 +126,8 @@ class ExposedKtorCoreContractTest {
     @Test
     fun `active probe timeout cancellation is down while caller cancellation is rethrown`() = runTest {
         val directTimeout = cooperativeProbe("timeout") {
-            kotlinx.coroutines.withTimeout(1.milliseconds) {
-                kotlinx.coroutines.delay(10.seconds)
+            withTimeout(1.milliseconds) {
+                delay(10.seconds)
             }
             ExposedKtorReadinessOutcome.UP
         }
@@ -134,7 +138,7 @@ class ExposedKtorCoreContractTest {
         timeoutDetails["timeout"] shouldBeEqualTo ExposedKtorReadinessOutcome.DOWN.name
 
         assertFailsWith<TimeoutCancellationException> {
-            withTimeout(10) {
+            withTimeout(timeMillis = 10) {
                 evaluateExposedKtorReadiness(
                     probes = listOf(
                         RegisteredProbe(
@@ -211,7 +215,7 @@ class ExposedKtorCoreContractTest {
     private fun cooperativeProbe(
         component: String,
         probe: suspend () -> ExposedKtorReadinessOutcome = { ExposedKtorReadinessOutcome.UP },
-    ): ExposedKtorCooperativeReadinessProbe = object : ExposedKtorCooperativeReadinessProbe {
+    ): ExposedKtorCooperativeReadinessProbe = object: ExposedKtorCooperativeReadinessProbe {
         override val component: String = component
         override val backend: ExposedKtorReadinessBackend = ExposedKtorReadinessBackend.CACHE
         override suspend fun probe(timeout: kotlin.time.Duration): ExposedKtorReadinessOutcome = probe()

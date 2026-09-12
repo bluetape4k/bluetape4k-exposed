@@ -3,18 +3,21 @@ package io.bluetape4k.exposed.ktor
 import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheFailureBuffer
+import io.bluetape4k.exposed.ktor.cache.exposedKtorCacheReadinessProbes
+import java.util.*
+import kotlin.time.Duration
 import io.bluetape4k.exposed.ktor.cache.ExposedKtorCacheContributor as ChildCacheContributor
 import io.bluetape4k.exposed.ktor.cache.ExposedKtorCacheReadinessConfig as ChildCacheReadinessConfig
-import io.bluetape4k.exposed.ktor.cache.exposedKtorCacheReadinessProbes
-import java.util.Collections
-import kotlin.time.Duration
 
 @Deprecated(
     message = "bluetape4k-exposed-ktor-cache의 cache status를 사용하세요.",
     level = DeprecationLevel.WARNING,
 )
 /** custom contributor가 노출하는 유한 cache-readiness 상태입니다. */
-enum class ExposedKtorCacheStatus { UP, DOWN }
+enum class ExposedKtorCacheStatus {
+    UP,
+    DOWN
+}
 
 @Deprecated(
     message = "bluetape4k-exposed-ktor-cache의 contributor를 사용하세요.",
@@ -227,12 +230,12 @@ internal class ExposedKtorCacheSample private constructor(
                     CacheWorkerState.NOT_APPLICABLE,
                     CacheWorkerState.IDLE,
                     CacheWorkerState.RUNNING,
-                    -> ExposedKtorCacheStatus.UP
+                        -> ExposedKtorCacheStatus.UP
 
                     CacheWorkerState.DRAINING,
                     CacheWorkerState.FAILED,
                     CacheWorkerState.STOPPED,
-                    -> ExposedKtorCacheStatus.DOWN
+                        -> ExposedKtorCacheStatus.DOWN
                 }
             }
             return ExposedKtorCacheSample(

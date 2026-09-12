@@ -1,8 +1,10 @@
 package io.bluetape4k.exposed.ktor
 
 import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.should
-
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.logging.KLogging
 import io.ktor.server.application.Application
 import io.ktor.server.routing.Route
 import kotlinx.coroutines.CoroutineDispatcher
@@ -25,10 +27,12 @@ class ExposedKtorAbiCompatibilityTest {
                 "Bluetape4kExposedKtorConfig has no code source; cannot locate compiled production output."
             }.location.toURI()
         ).toAbsolutePath().normalize()
+
         val inspections = EXPECTED_MEMBERS
             .map(AbiMember::owner)
             .distinct()
             .associateWith { owner -> inspectClass(owner, productionLocation) }
+
         val mismatches = EXPECTED_MEMBERS.mapNotNull { expected ->
             val actual = inspections.getValue(expected.owner).descriptors[expected.jvmName].orEmpty()
             if (expected.descriptor in actual) {
@@ -55,7 +59,7 @@ class ExposedKtorAbiCompatibilityTest {
                 appendLine(inspection.diagnostics)
             }
         }
-        (mismatches.isEmpty()).should(diagnostics) { it }
+        mismatches.shouldBeEmpty()
     }
 
     @Test
@@ -63,6 +67,7 @@ class ExposedKtorAbiCompatibilityTest {
         val productionLocation = Path.of(
             requireNotNull(Bluetape4kExposedKtorConfig::class.java.protectionDomain.codeSource).location.toURI()
         ).toAbsolutePath().normalize()
+
         val shadowedLocation = Path.of(
             requireNotNull(Test::class.java.protectionDomain.codeSource).location.toURI()
         ).toAbsolutePath().normalize()
@@ -70,10 +75,9 @@ class ExposedKtorAbiCompatibilityTest {
         val error = assertFailsWith<IllegalStateException> {
             inspectWithReflection(Test::class.java.name, productionLocation, "forced fallback")
         }
-        (error.message?.contains("expected: $productionLocation") == true)
-            .should("fallback diagnostics did not include the expected production location") { it }
-        (error.message?.contains("actual: $shadowedLocation") == true)
-            .should("fallback diagnostics did not include the actual shadowed location") { it }
+
+        error.message shouldContain "expected: $productionLocation"
+        error.message shouldContain "actual: $shadowedLocation"
     }
 
     @Test
@@ -87,9 +91,9 @@ class ExposedKtorAbiCompatibilityTest {
             timeoutUnit = TimeUnit.MILLISECONDS,
         )
 
-        execution.timedOut.should("process exceeded its timeout but was reported as completed") { it }
-        (execution.output.contains("timeout-probe")).should("timeout diagnostics did not retain process output") { it }
-        (Files.notExists(execution.outputFile)).should("temporary process output was not deleted") { it }
+        execution.timedOut.shouldBeTrue()
+        execution.output shouldContain "timeout-probe"
+        Files.notExists(execution.outputFile).shouldBeTrue()
     }
 
     private fun inspectClass(owner: String, productionLocation: Path): AbiInspection =
@@ -215,7 +219,7 @@ class ExposedKtorAbiCompatibilityTest {
             ?.normalize()
         check(actualProductionLocation == expectedProductionLocation) {
             "Reflection fallback rejected $owner from an unexpected code source; " +
-                "expected: $expectedProductionLocation; actual: ${actualProductionLocation ?: "<unavailable>"}"
+                    "expected: $expectedProductionLocation; actual: ${actualProductionLocation ?: "<unavailable>"}"
         }
         val descriptors = linkedMapOf<String, MutableSet<String>>()
         type.declaredConstructors.forEach { constructor ->
@@ -224,7 +228,9 @@ class ExposedKtorAbiCompatibilityTest {
         }
         type.declaredMethods.forEach { method ->
             descriptors.getOrPut(method.name) { linkedSetOf() }
-                .add(MethodType.methodType(method.returnType, method.parameterTypes.toList()).toMethodDescriptorString())
+                .add(
+                    MethodType.methodType(method.returnType, method.parameterTypes.toList()).toMethodDescriptorString()
+                )
         }
         return AbiInspection(
             owner = owner,
@@ -258,7 +264,7 @@ class ExposedKtorAbiCompatibilityTest {
         val outputFile: Path,
     )
 
-    companion object {
+    companion object: KLogging() {
         private const val PACKAGE_NAME = "io.bluetape4k.exposed.ktor"
         private const val CONFIG_CLASS = "$PACKAGE_NAME.Bluetape4kExposedKtorConfig"
         private const val INSTALLER_CLASS = "$PACKAGE_NAME.Bluetape4kExposedKtorKt"
@@ -269,65 +275,65 @@ class ExposedKtorAbiCompatibilityTest {
                 CONFIG_CLASS,
                 "<init>",
                 "(Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;" +
-                    "Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;ZZLjava/lang/String;Ljava/lang/String;JJ" +
-                    "Lio/micrometer/core/instrument/MeterRegistry;)V",
+                        "Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;ZZLjava/lang/String;Ljava/lang/String;JJ" +
+                        "Lio/micrometer/core/instrument/MeterRegistry;)V",
             ),
             AbiMember(
                 CONFIG_CLASS,
                 "<init>",
                 "(Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;" +
-                    "Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;ZZLjava/lang/String;Ljava/lang/String;JJ" +
-                    "Lio/micrometer/core/instrument/MeterRegistry;ILkotlin/jvm/internal/DefaultConstructorMarker;)V",
+                        "Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;ZZLjava/lang/String;Ljava/lang/String;JJ" +
+                        "Lio/micrometer/core/instrument/MeterRegistry;ILkotlin/jvm/internal/DefaultConstructorMarker;)V",
             ),
             AbiMember(
                 INSTALLER_CLASS,
                 "installBluetape4kExposedKtor",
                 "(Lio/ktor/server/application/Application;" +
-                    "Lio/bluetape4k/exposed/ktor/Bluetape4kExposedKtorConfig;)V",
+                        "Lio/bluetape4k/exposed/ktor/Bluetape4kExposedKtorConfig;)V",
             ),
             AbiMember(
                 INSTALLER_CLASS,
                 "installBluetape4kExposedKtor\$default",
                 "(Lio/ktor/server/application/Application;" +
-                    "Lio/bluetape4k/exposed/ktor/Bluetape4kExposedKtorConfig;ILjava/lang/Object;)V",
+                        "Lio/bluetape4k/exposed/ktor/Bluetape4kExposedKtorConfig;ILjava/lang/Object;)V",
             ),
             AbiMember(
                 INSTALLER_CLASS,
                 "installBluetape4kExposedKtor",
                 "(Lio/ktor/server/application/Application;" +
-                    "Lio/bluetape4k/exposed/ktor/Bluetape4kExposedKtorConfig;" +
-                    "Lio/bluetape4k/exposed/ktor/ExposedKtorCacheReadinessConfig;)V",
+                        "Lio/bluetape4k/exposed/ktor/Bluetape4kExposedKtorConfig;" +
+                        "Lio/bluetape4k/exposed/ktor/ExposedKtorCacheReadinessConfig;)V",
             ),
             AbiMember(
                 ROUTES_CLASS,
                 "bluetape4kExposedHealthRoutes-021xcDE",
                 "(Lio/ktor/server/routing/Route;Lorg/jetbrains/exposed/v1/jdbc/Database;" +
-                    "Lkotlinx/coroutines/CoroutineDispatcher;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;" +
-                    "Ljava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;)V",
+                        "Lkotlinx/coroutines/CoroutineDispatcher;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;" +
+                        "Ljava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;)V",
             ),
             AbiMember(
                 ROUTES_CLASS,
                 "bluetape4kExposedHealthRoutes-021xcDE\$default",
                 "(Lio/ktor/server/routing/Route;Lorg/jetbrains/exposed/v1/jdbc/Database;" +
-                    "Lkotlinx/coroutines/CoroutineDispatcher;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;" +
-                    "Ljava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;" +
-                    "ILjava/lang/Object;)V",
+                        "Lkotlinx/coroutines/CoroutineDispatcher;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;" +
+                        "Ljava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;" +
+                        "ILjava/lang/Object;)V",
             ),
             AbiMember(
                 ROUTES_CLASS,
                 "bluetape4kExposedHealthRoutes-PLKeYGg",
                 "(Lio/ktor/server/routing/Route;Lorg/jetbrains/exposed/v1/jdbc/Database;" +
-                    "Lkotlinx/coroutines/CoroutineDispatcher;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;" +
-                    "Ljava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;" +
-                    "Lio/bluetape4k/exposed/ktor/ExposedKtorCacheReadinessConfig;)V",
+                        "Lkotlinx/coroutines/CoroutineDispatcher;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;" +
+                        "Ljava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;" +
+                        "Lio/bluetape4k/exposed/ktor/ExposedKtorCacheReadinessConfig;)V",
             ),
             AbiMember(
                 ROUTES_CLASS,
                 "bluetape4kExposedHealthRoutes-PLKeYGg\$default",
                 "(Lio/ktor/server/routing/Route;Lorg/jetbrains/exposed/v1/jdbc/Database;" +
-                    "Lkotlinx/coroutines/CoroutineDispatcher;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;" +
-                    "Ljava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;" +
-                    "Lio/bluetape4k/exposed/ktor/ExposedKtorCacheReadinessConfig;ILjava/lang/Object;)V",
+                        "Lkotlinx/coroutines/CoroutineDispatcher;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;" +
+                        "Ljava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;" +
+                        "Lio/bluetape4k/exposed/ktor/ExposedKtorCacheReadinessConfig;ILjava/lang/Object;)V",
             ),
         )
     }

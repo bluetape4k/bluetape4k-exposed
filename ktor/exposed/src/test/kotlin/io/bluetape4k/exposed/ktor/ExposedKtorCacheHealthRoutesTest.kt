@@ -4,14 +4,17 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.should
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.ktor.core.Bluetape4kKtorCoreConfig
 import io.bluetape4k.ktor.core.HealthResponse
 import io.bluetape4k.ktor.core.installBluetape4kKtorCore
 import io.bluetape4k.ktor.testing.bluetape4kJsonClient
 import io.bluetape4k.ktor.testing.decodeJsonBody
 import io.bluetape4k.ktor.testing.shouldHaveStatus
+import io.bluetape4k.logging.KLogging
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
@@ -37,6 +40,8 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class ExposedKtorCacheHealthRoutesTest {
+
+    companion object: KLogging()
 
     @Test
     fun `direct routes reject equivalent health and readiness paths`() = testApplication {
@@ -85,13 +90,13 @@ class ExposedKtorCacheHealthRoutesTest {
             .shouldHaveStatus(HttpStatusCode.OK)
             .decodeJsonBody<HealthResponse>() shouldBeEqualTo
                 HealthResponse.up(mapOf("exposed" to HealthResponse.UP))
-        (invocations.get()) shouldBeEqualTo 0
+        invocations.get() shouldBeEqualTo 0
 
         client.get("/readyz/exposed")
             .shouldHaveStatus(HttpStatusCode.OK)
             .decodeJsonBody<HealthResponse>() shouldBeEqualTo
                 HealthResponse.up(mapOf("cache.orders" to HealthResponse.UP))
-        (invocations.get()) shouldBeEqualTo 1
+        invocations.get() shouldBeEqualTo 1
     }
 
     @Test
@@ -135,6 +140,7 @@ class ExposedKtorCacheHealthRoutesTest {
 
         val response = bluetape4kJsonClient().get("/readyz/exposed")
             .shouldHaveStatus(HttpStatusCode.ServiceUnavailable)
+
         val health = response.decodeJsonBody<HealthResponse>()
         health shouldBeEqualTo HealthResponse.down(
             linkedMapOf(
@@ -143,13 +149,17 @@ class ExposedKtorCacheHealthRoutesTest {
                 "cache.third" to HealthResponse.UP,
             )
         )
+
         order shouldBeEqualTo listOf("first", "second", "third")
+
         val body = response.bodyAsText()
         secrets.forEach { (body.contains(it)).should(it) { !it } }
+
         val exportedTags = registry.meters.flatMap { meter -> meter.id.tags.map { it.key to it.value } }
-        (exportedTags.all { (key, _) -> key in setOf("component", "kind", "operation", "outcome") }).shouldBeTrue()
+        exportedTags.map { it.first }.all { it in setOf("component", "kind", "operation", "outcome") }.shouldBeTrue()
+
         secrets.forEach { secret ->
-            (exportedTags.none { (_, value) -> value.contains(secret) }).should(secret) { it }
+            exportedTags.map { it.second }.none { it.contains(secret) }.shouldBeTrue()
         }
         val production = healthRoutesSource()
         Regex("io\\.bluetape4k\\.logging|KLogging|logger\\.|log\\.(warn|error|info)")
@@ -193,10 +203,10 @@ class ExposedKtorCacheHealthRoutesTest {
             response.decodeJsonBody<HealthResponse>() shouldBeEqualTo HealthResponse.down(
                 linkedMapOf("cache.self_cancel" to HealthResponse.DOWN, "cache.later" to HealthResponse.UP)
             )
-            (response.bodyAsText().contains(secret)).shouldBeFalse()
-            (later.get()) shouldBeEqualTo 1
-            (timerCount(registry, "self_cancel", ERROR_OUTCOME)) shouldBeEqualTo 1L
-            (timerCount(registry, "self_cancel", CANCELLED_OUTCOME)) shouldBeEqualTo 0L
+            response.bodyAsText() shouldNotContain secret
+            later.get() shouldBeEqualTo 1
+            timerCount(registry, "self_cancel", ERROR_OUTCOME) shouldBeEqualTo 1L
+            timerCount(registry, "self_cancel", CANCELLED_OUTCOME) shouldBeEqualTo 0L
         }
 
     @Test
@@ -227,38 +237,42 @@ class ExposedKtorCacheHealthRoutesTest {
             .shouldHaveStatus(HttpStatusCode.ServiceUnavailable)
             .decodeJsonBody<HealthResponse>()
         health shouldBeEqualTo HealthResponse.down(mapOf("cache.slow" to TIMEOUT_OUTCOME))
-        (timerCount(registry, "slow", TIMEOUT_OUTCOME)) shouldBeEqualTo 1L
-        (timerCount(registry, "slow", CANCELLED_OUTCOME)) shouldBeEqualTo 0L
+        timerCount(registry, "slow", TIMEOUT_OUTCOME) shouldBeEqualTo 1L
+        timerCount(registry, "slow", CANCELLED_OUTCOME) shouldBeEqualTo 0L
     }
 
     @Test
-    fun `supplier cancellation while request remains active is one sanitized error and later probes continue`() = runTest {
-        val registry = SimpleMeterRegistry()
-        val later = AtomicInteger()
-        val bindings = bindings(
-            registry,
-            contributor("cancel") {
-                throw CancellationException("cache-key=secret password=top-secret")
-            },
-            contributor("later") {
-                later.incrementAndGet()
-                ExposedKtorCacheStatus.UP
-            },
-        )
+    fun `supplier cancellation while request remains active is one sanitized error and later probes continue`() =
+        runTest {
+            val registry = SimpleMeterRegistry()
+            val later = AtomicInteger()
+            val bindings = bindings(
+                registry,
+                contributor("cancel") {
+                    throw CancellationException("cache-key=secret password=top-secret")
+                },
+                contributor("later") {
+                    later.incrementAndGet()
+                    ExposedKtorCacheStatus.UP
+                },
+            )
 
-        val details = aggregateExposedKtorReadiness(
-            jdbcProbe = null,
-            r2dbcProbe = null,
-            cacheBindings = bindings,
-            cachePhaseTimeout = 1.seconds,
-            timeSource = testScheduler.timeSource,
-        )
+            val details = aggregateExposedKtorReadiness(
+                jdbcProbe = null,
+                r2dbcProbe = null,
+                cacheBindings = bindings,
+                cachePhaseTimeout = 1.seconds,
+                timeSource = testScheduler.timeSource,
+            )
 
-        details shouldBeEqualTo linkedMapOf("cache.cancel" to HealthResponse.DOWN, "cache.later" to HealthResponse.UP)
-        (later.get()) shouldBeEqualTo 1
-        (timerCount(registry, "cancel", ERROR_OUTCOME)) shouldBeEqualTo 1L
-        (timerCount(registry, "cancel", CANCELLED_OUTCOME)) shouldBeEqualTo 0L
-    }
+            details shouldBeEqualTo linkedMapOf(
+                "cache.cancel" to HealthResponse.DOWN,
+                "cache.later" to HealthResponse.UP
+            )
+            later.get() shouldBeEqualTo 1
+            timerCount(registry, "cancel", ERROR_OUTCOME) shouldBeEqualTo 1L
+            timerCount(registry, "cancel", CANCELLED_OUTCOME) shouldBeEqualTo 0L
+        }
 
     @Test
     fun `parent cancellation rethrows records cancelled once and clears only active newest generation`() = runTest {
@@ -271,6 +285,7 @@ class ExposedKtorCacheHealthRoutesTest {
                 awaitCancellation()
             },
         ).single()
+
         val job = launch {
             aggregateExposedKtorReadiness(
                 jdbcProbe = null,
@@ -284,10 +299,10 @@ class ExposedKtorCacheHealthRoutesTest {
         job.cancelAndJoin()
 
         job.isCancelled.shouldBeTrue()
-        (binding.currentSample().queueDepth.isNaN()).shouldBeTrue()
-        (timerCount(registry, "active", CANCELLED_OUTCOME)) shouldBeEqualTo 1L
-        (timerCount(registry, "active", TIMEOUT_OUTCOME)) shouldBeEqualTo 0L
-        (timerCount(registry, "active", ERROR_OUTCOME)) shouldBeEqualTo 0L
+        binding.currentSample().queueDepth.isNaN().shouldBeTrue()
+        timerCount(registry, "active", CANCELLED_OUTCOME) shouldBeEqualTo 1L
+        timerCount(registry, "active", TIMEOUT_OUTCOME) shouldBeEqualTo 0L
+        timerCount(registry, "active", ERROR_OUTCOME) shouldBeEqualTo 0L
     }
 
     @Test
@@ -308,8 +323,8 @@ class ExposedKtorCacheHealthRoutesTest {
             )
         }.exceptionOrNull()
 
-        (failure is AssertionError).shouldBeTrue()
-        (timerCount(registry, "fatal", ERROR_OUTCOME)) shouldBeEqualTo 0L
+        failure.shouldBeInstanceOf<AssertionError>()
+        timerCount(registry, "fatal", ERROR_OUTCOME) shouldBeEqualTo 0L
     }
 
     @Test
@@ -340,7 +355,7 @@ class ExposedKtorCacheHealthRoutesTest {
                 older.join()
             }
 
-            (binding.currentSample().status) shouldBeEqualTo ExposedKtorCacheStatus.UP
+            binding.currentSample().status shouldBeEqualTo ExposedKtorCacheStatus.UP
         }
     }
 
@@ -367,7 +382,7 @@ class ExposedKtorCacheHealthRoutesTest {
             aggregateExposedKtorReadiness(null, null, listOf(binding), 10.seconds, testScheduler.timeSource)
             older.cancelAndJoin()
 
-            (binding.currentSample().status) shouldBeEqualTo ExposedKtorCacheStatus.UP
+            binding.currentSample().status shouldBeEqualTo ExposedKtorCacheStatus.UP
         }
     }
 
@@ -419,7 +434,8 @@ class ExposedKtorCacheHealthRoutesTest {
 
     private fun healthRoutesSource(): String {
         val relative = "ktor/exposed/src/main/kotlin/io/bluetape4k/exposed/ktor/ExposedKtorHealthRoutes.kt"
-        val paths = listOf(Path.of(relative), Path.of("src/main/kotlin/io/bluetape4k/exposed/ktor/ExposedKtorHealthRoutes.kt"))
+        val paths =
+            listOf(Path.of(relative), Path.of("src/main/kotlin/io/bluetape4k/exposed/ktor/ExposedKtorHealthRoutes.kt"))
         return Files.readString(paths.first(Files::exists))
     }
 }
