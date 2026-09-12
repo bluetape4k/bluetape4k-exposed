@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.ktor.core
 
+import io.bluetape4k.logging.KLogging
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import io.micrometer.core.instrument.Timer
@@ -24,7 +25,7 @@ internal class CoreReadinessMetricBinding private constructor(
         timers[outcome]?.record(elapsedNanos.coerceAtLeast(0L), TimeUnit.NANOSECONDS)
     }
 
-    companion object {
+    companion object: KLogging() {
         fun withoutRegistry(): CoreReadinessMetricBinding = CoreReadinessMetricBinding(emptyMap())
 
         fun install(
