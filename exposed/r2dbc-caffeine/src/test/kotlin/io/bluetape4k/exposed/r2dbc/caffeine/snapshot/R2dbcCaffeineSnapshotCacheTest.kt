@@ -4,10 +4,13 @@ package io.bluetape4k.exposed.r2dbc.caffeine.snapshot
 
 import com.github.benmanes.caffeine.cache.Cache
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeLessOrEqualTo
 import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
 import io.bluetape4k.exposed.cache.snapshot.CaffeineSnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
@@ -43,8 +46,8 @@ class R2dbcCaffeineSnapshotCacheTest {
             failureBuffer = reifiedBuffer,
         )
 
-        (explicit.failureBuffer === explicitBuffer) shouldBeEqualTo true
-        (reified.failureBuffer === reifiedBuffer) shouldBeEqualTo true
+        explicit.failureBuffer shouldBe explicitBuffer
+        reified.failureBuffer shouldBe reifiedBuffer
         explicit.storeId.namespace shouldBeEqualTo "explicit:v1"
         reified.storeId.namespace shouldBeEqualTo "reified:v1"
     }
@@ -59,7 +62,10 @@ class R2dbcCaffeineSnapshotCacheTest {
 
         lookup.snapshot.shouldBeNull()
         lookup.miss.shouldNotBeNull().toString() shouldBeEqualTo "SnapshotCacheMiss(opaque)"
-        assertFailsWith<IllegalStateException> { cache.lookup(8L) }
+
+        assertFailsWith<IllegalStateException> {
+            cache.lookup(8L)
+        }
     }
 
     @Test
@@ -92,10 +98,12 @@ class R2dbcCaffeineSnapshotCacheTest {
         val miss = cache.lookup(1L).miss.shouldNotBeNull()
 
         val failure = assertFailsWith<IllegalArgumentException> {
-            (cache as SnapshotCacheStore<Long, Payload>).claimMiss(miss).prepare(CacheSnapshot(Payload("bad")))
+            (cache as SnapshotCacheStore<Long, Payload>)
+                .claimMiss(miss)
+                .prepare(CacheSnapshot(Payload("bad")))
         }
 
-        failure.message?.contains("non-negative") shouldBeEqualTo true
+        failure.message shouldContain "non-negative"
     }
 
     @Test
@@ -111,7 +119,9 @@ class R2dbcCaffeineSnapshotCacheTest {
         val miss = cache.lookup(1L).miss.shouldNotBeNull()
 
         assertFailsWith<IllegalArgumentException> {
-            (cache as SnapshotCacheStore<Long, Payload>).claimMiss(miss).prepare(CacheSnapshot(Payload("too-large")))
+            (cache as SnapshotCacheStore<Long, Payload>)
+                .claimMiss(miss)
+                .prepare(CacheSnapshot(Payload("too-large")))
         }
     }
 
@@ -126,8 +136,12 @@ class R2dbcCaffeineSnapshotCacheTest {
             },
         )
         val store = cache as SnapshotCacheStore<Long, Payload>
-        val first = store.claimMiss(cache.lookup(1L).miss.shouldNotBeNull()).prepare(CacheSnapshot(Payload("one")))
-        val second = store.claimMiss(cache.lookup(2L).miss.shouldNotBeNull()).prepare(CacheSnapshot(Payload("two")))
+        val first = store
+            .claimMiss(cache.lookup(1L).miss.shouldNotBeNull())
+            .prepare(CacheSnapshot(Payload("one")))
+        val second = store
+            .claimMiss(cache.lookup(2L).miss.shouldNotBeNull())
+            .prepare(CacheSnapshot(Payload("two")))
 
         store.applySnapshots(listOf(first, second), NeverExpiredDeadline)
 
@@ -142,7 +156,8 @@ class R2dbcCaffeineSnapshotCacheTest {
             valueSizer = SnapshotValueSizer { 7L },
         )
         val store = cache as SnapshotCacheStore<Long, Payload>
-        val put = store.claimMiss(cache.lookup(1L).miss.shouldNotBeNull())
+        val put = store
+            .claimMiss(cache.lookup(1L).miss.shouldNotBeNull())
             .prepare(CacheSnapshot(Payload("seven")))
 
         store.applySnapshots(listOf(put), NeverExpiredDeadline)
@@ -158,7 +173,9 @@ class R2dbcCaffeineSnapshotCacheTest {
         )
         val store = cache as SnapshotCacheStore<Long, Payload>
         val puts = (1L..3L).map { id ->
-            store.claimMiss(cache.lookup(id).miss.shouldNotBeNull()).prepare(CacheSnapshot(Payload("value-$id")))
+            store
+                .claimMiss(cache.lookup(id).miss.shouldNotBeNull())
+                .prepare(CacheSnapshot(Payload("value-$id")))
         }
 
         store.applySnapshots(puts, NeverExpiredDeadline)
@@ -201,14 +218,15 @@ class R2dbcCaffeineSnapshotCacheTest {
                 ready.await(5, TimeUnit.SECONDS).shouldBeTrue()
                 start.countDown()
                 futures.forEach { future ->
-                    future.get(5, TimeUnit.SECONDS).results.map { it.outcome to it.affectedCount } shouldBeEqualTo
-                        listOf(SnapshotCacheOutcome.SUCCESS to 1)
+                    future.get(5, TimeUnit.SECONDS).results
+                        .map { it.outcome to it.affectedCount } shouldBeEqualTo
+                            listOf(SnapshotCacheOutcome.SUCCESS to 1)
                 }
 
                 val caffeine = caffeineCache(cache)
                 caffeine.cleanUp()
-                (caffeine.estimatedSize() <= CONCURRENT_MAXIMUM_SIZE).shouldBeTrue()
-                (caffeine.asMap().size <= CONCURRENT_MAXIMUM_SIZE).shouldBeTrue()
+                caffeine.estimatedSize() shouldBeLessOrEqualTo CONCURRENT_MAXIMUM_SIZE
+                caffeine.asMap().size shouldBeLessOrEqualTo CONCURRENT_MAXIMUM_SIZE.toInt()
             }
         } finally {
             executor.close()
@@ -294,8 +312,11 @@ class R2dbcCaffeineSnapshotCacheTest {
             config("maintenance-overrun:v1", maximumSize = 1L),
         )
         val store = cache as SnapshotCacheStore<Long, Payload>
-        fun put(id: Long) = store.claimMiss(cache.lookup(id).miss.shouldNotBeNull())
+
+        fun put(id: Long) = store
+            .claimMiss(cache.lookup(id).miss.shouldNotBeNull())
             .prepare(CacheSnapshot(Payload(id.toString())))
+
         store.applySnapshots(listOf(put(1L)), NeverExpiredDeadline)
         val deadline = ExpireAfterSecondPollDeadline()
 
@@ -330,7 +351,7 @@ class R2dbcCaffeineSnapshotCacheTest {
         maxOutstandingMissTokens = maxOutstandingMissTokens,
     )
 
-    private data class Payload(val value: String) : Serializable
+    private data class Payload(val value: String): Serializable
 
     private fun weightedSize(cache: R2dbcCaffeineSnapshotCache<Long, Payload>): Long {
         return caffeineCache(cache).policy().eviction().orElseThrow().weightedSize().orElseThrow()
@@ -341,25 +362,25 @@ class R2dbcCaffeineSnapshotCacheTest {
         return field.get(cache) as Cache<*, *>
     }
 
-    private object NeverExpiredDeadline : SnapshotCacheDeadline {
+    private object NeverExpiredDeadline: SnapshotCacheDeadline {
         override fun remaining(): Duration = Duration.ofDays(1)
         override val isExpired: Boolean = false
     }
 
-    private class ExpireAfterFirstPollDeadline : SnapshotCacheDeadline {
+    private class ExpireAfterFirstPollDeadline: SnapshotCacheDeadline {
         private val polls = AtomicInteger()
         override fun remaining(): Duration = if (isExpired) Duration.ZERO else Duration.ofSeconds(1)
         override val isExpired: Boolean get() = polls.incrementAndGet() > 1
     }
 
-    private class ExpireAfterSecondPollDeadline : SnapshotCacheDeadline {
+    private class ExpireAfterSecondPollDeadline: SnapshotCacheDeadline {
         private val polls = AtomicInteger()
         val pollCount: Int get() = polls.get()
         override fun remaining(): Duration = if (isExpired) Duration.ZERO else Duration.ofSeconds(1)
         override val isExpired: Boolean get() = polls.incrementAndGet() > 2
     }
 
-    private class TrackedExecutor(threadCount: Int) : AutoCloseable {
+    private class TrackedExecutor(threadCount: Int): AutoCloseable {
         private val executor = Executors.newFixedThreadPool(threadCount)
         private val futures = mutableListOf<Future<*>>()
 

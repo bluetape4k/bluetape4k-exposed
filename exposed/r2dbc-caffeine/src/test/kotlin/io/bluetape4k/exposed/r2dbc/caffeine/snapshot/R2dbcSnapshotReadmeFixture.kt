@@ -5,7 +5,6 @@ import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotMapper
 import io.bluetape4k.exposed.cache.snapshot.CaffeineSnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
-import io.bluetape4k.exposed.r2dbc.caffeine.snapshot.R2dbcCaffeineSnapshotCache
 import io.bluetape4k.exposed.r2dbc.caffeine.snapshot.r2dbcCaffeineSnapshotCache
 import io.bluetape4k.exposed.r2dbc.caffeine.snapshot.stageInvalidation
 import io.bluetape4k.exposed.r2dbc.caffeine.snapshot.stageSnapshot

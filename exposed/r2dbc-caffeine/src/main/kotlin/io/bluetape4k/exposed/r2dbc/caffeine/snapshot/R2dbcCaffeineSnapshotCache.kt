@@ -39,21 +39,21 @@ import kotlin.reflect.KClass
  * 인스턴스는 스레드나 닫아야 할 리소스를 소유하지 않습니다.
  * 데이터베이스 접근의 생명주기는 전적으로 호출자가 관리합니다.
  */
-class R2dbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
+class R2dbcCaffeineSnapshotCache<ID: Any, V: Serializable> private constructor(
     idType: KClass<ID>,
     valueType: KClass<V>,
     private val config: CaffeineSnapshotCacheConfig,
     private val valueSizer: SnapshotValueSizer<V>?,
     internal val validator: CacheSnapshotValueValidator<V>,
-/** 이 파사드가 사용하는 호출자 소유의 용량 제한 실패 버퍼입니다. */
+    /** 이 파사드가 사용하는 호출자 소유의 용량 제한 실패 버퍼입니다. */
     override val failureBuffer: SnapshotCacheFailureBuffer,
-) : SnapshotCacheStore<ID, V> {
+): SnapshotCacheStore<ID, V> {
     private val cache: Cache<ID, StoredSnapshot<V>> = buildCache(config)
     private val fences = SnapshotLocalFenceRegistry<ID>(config.fenceStripes)
     private val misses = SnapshotMissCapabilityRegistry<ID, V>(config.maxOutstandingMissTokens)
     private val maintenanceLock = ReentrantLock()
 
-/** 이 캐시의 안정적인 논리 식별자입니다. */
+    /** 이 캐시의 안정적인 논리 식별자입니다. */
     override val storeId: SnapshotStoreId = SnapshotStoreId(BACKEND, config.snapshot.namespace)
 
     @InternalSnapshotCacheApi
@@ -202,7 +202,7 @@ class R2dbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor
         private const val BACKEND = "caffeine-r2dbc"
         private const val VERSION = "r2dbc-caffeine-snapshot-v1"
 
-        internal fun <ID : Any, V : Serializable> create(
+        internal fun <ID: Any, V: Serializable> create(
             idType: KClass<ID>,
             valueType: KClass<V>,
             config: CaffeineSnapshotCacheConfig,
@@ -223,7 +223,7 @@ class R2dbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor
 }
 
 /** 명시적 런타임 타입 토큰으로 캐시 전용 R2DBC Caffeine 스냅샷 파사드를 생성합니다. */
-fun <ID : Any, V : Serializable> r2dbcCaffeineSnapshotCache(
+fun <ID: Any, V: Serializable> r2dbcCaffeineSnapshotCache(
     idType: KClass<ID>,
     valueType: KClass<V>,
     config: CaffeineSnapshotCacheConfig,
@@ -238,7 +238,7 @@ fun <ID : Any, V : Serializable> r2dbcCaffeineSnapshotCache(
 }
 
 /** 구체화된 런타임 타입 토큰으로 캐시 전용 R2DBC Caffeine 스냅샷 파사드를 생성합니다. */
-inline fun <reified ID : Any, reified V : Serializable> r2dbcCaffeineSnapshotCache(
+inline fun <reified ID: Any, reified V: Serializable> r2dbcCaffeineSnapshotCache(
     config: CaffeineSnapshotCacheConfig,
     valueSizer: SnapshotValueSizer<V>? = null,
     validator: CacheSnapshotValueValidator<V> = rejectDirectEntitySnapshotValues(),
@@ -246,7 +246,7 @@ inline fun <reified ID : Any, reified V : Serializable> r2dbcCaffeineSnapshotCac
 ): R2dbcCaffeineSnapshotCache<ID, V> =
     r2dbcCaffeineSnapshotCache(ID::class, V::class, config, valueSizer, validator, failureBuffer)
 
-private fun <ID : Any, V : Serializable> buildCache(
+private fun <ID: Any, V: Serializable> buildCache(
     config: CaffeineSnapshotCacheConfig,
 ): Cache<ID, StoredSnapshot<V>> {
     val base = Caffeine.newBuilder()
@@ -260,7 +260,7 @@ private fun <ID : Any, V : Serializable> buildCache(
     return base.maximumSize(config.maximumSize).build()
 }
 
-private data class StoredSnapshot<V : Serializable>(
+private data class StoredSnapshot<V: Serializable>(
     val snapshot: CacheSnapshot<V>,
     val caffeineWeight: Int,
 )

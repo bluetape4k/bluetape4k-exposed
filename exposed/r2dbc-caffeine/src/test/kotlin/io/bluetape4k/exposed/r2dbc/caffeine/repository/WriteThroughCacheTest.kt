@@ -1,6 +1,6 @@
 package io.bluetape4k.exposed.r2dbc.caffeine.repository
 
-import io.bluetape4k.idgenerators.uuid.Uuid
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
@@ -18,11 +18,11 @@ import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.withActorTable
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.withCredentialTable
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.CredentialR2dbcCaffeineRepository
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
-import io.bluetape4k.assertions.shouldBeEqualTo
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction

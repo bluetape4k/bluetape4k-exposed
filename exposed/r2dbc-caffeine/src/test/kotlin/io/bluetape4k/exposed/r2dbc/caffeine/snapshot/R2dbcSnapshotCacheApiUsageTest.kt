@@ -87,7 +87,7 @@ class R2dbcSnapshotCacheApiUsageTest {
         transactionSignatures.contains("LocalCacheConfig").shouldBeFalse()
     }
 
-    private data class Payload(val value: String) : Serializable
+    private data class Payload(val value: String): Serializable
 
     private fun projectFile(relativePath: String): Path {
         val rootCandidate = Path.of(relativePath)
