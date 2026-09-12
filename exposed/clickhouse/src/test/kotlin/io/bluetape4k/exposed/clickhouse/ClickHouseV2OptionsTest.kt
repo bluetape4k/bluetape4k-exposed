@@ -219,6 +219,22 @@ class ClickHouseV2OptionsTest {
     }
 
     @Test
+    fun `options redact opaque query metadata from their string representation`() {
+        val options = ClickHouseV2Options(
+            clientName = "analytics-client",
+            queryId = "query-id-canary",
+            logComment = "log-comment-canary",
+        )
+
+        val rendered = options.toString()
+
+        rendered.contains("query-id-canary").shouldBeFalse()
+        rendered.contains("log-comment-canary").shouldBeFalse()
+        rendered.contains("queryId=***").shouldBeTrue()
+        rendered.contains("logComment=***").shouldBeTrue()
+    }
+
+    @Test
     fun `nested option strings redact custom secret provider text`() {
         val provider = object: ClickHouseV2SecretProvider {
             override fun resolve(): CharArray = "proxy-secret".toCharArray()
