@@ -1,11 +1,11 @@
 package io.bluetape4k.exposed.jdbc
 
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withDb
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeTrue
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.exists
@@ -17,15 +17,15 @@ import org.junit.jupiter.params.provider.MethodSource
  *
  * 누락 테이블 생성, 이미 존재하는 테이블에 대한 멱등성, 복수 테이블 처리를 검증합니다.
  */
-class SchemaUtilsExtensionsTest : AbstractExposedTest() {
+class SchemaUtilsExtensionsTest: AbstractExposedTest() {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
-    private object SimpleTable : IntIdTable("jdbc_schema_ext_simple") {
+    private object SimpleTable: IntIdTable("jdbc_schema_ext_simple") {
         val name = varchar("name", 255)
     }
 
-    private object AnotherTable : IntIdTable("jdbc_schema_ext_another") {
+    private object AnotherTable: IntIdTable("jdbc_schema_ext_another") {
         val value = integer("value")
     }
 

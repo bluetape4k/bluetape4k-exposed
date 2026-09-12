@@ -18,9 +18,9 @@ import org.junit.jupiter.params.provider.MethodSource
 /**
  * JdbcRepository의 존재 여부 확인 메서드 (isEmpty, isNotEmpty, existsBy, existsById, exists, countBy) 테스트.
  */
-class JdbcRepositoryExistenceTest : AbstractExposedTest() {
+class JdbcRepositoryExistenceTest: AbstractExposedTest() {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     /**
      * isEmpty 는 데이터가 없는 빈 테이블에서 true 를 반환해야 한다.

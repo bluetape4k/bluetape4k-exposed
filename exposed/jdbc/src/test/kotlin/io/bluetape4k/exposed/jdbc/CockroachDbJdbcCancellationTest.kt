@@ -120,7 +120,7 @@ class CockroachDbJdbcCancellationTest: AbstractExposedTest() {
                     val queryColumn = (1..result.metaData.columnCount)
                         .firstOrNull { column ->
                             result.metaData.getColumnLabel(column).equals("query", ignoreCase = true) ||
-                                result.metaData.getColumnName(column).equals("query", ignoreCase = true)
+                                    result.metaData.getColumnName(column).equals("query", ignoreCase = true)
                         }
                     if (queryColumn != null) {
                         while (result.next()) {
@@ -154,7 +154,7 @@ class CockroachDbJdbcCancellationTest: AbstractExposedTest() {
         generateSequence(failure) { it.cause }.any { cause ->
             val sqlException = cause as? SQLException
             sqlException?.sqlState == "57014" ||
-                cause.message.orEmpty().contains("canceling statement", ignoreCase = true)
+                    cause.message.orEmpty().contains("canceling statement", ignoreCase = true)
         }
 
     private class TrackingDataSource(

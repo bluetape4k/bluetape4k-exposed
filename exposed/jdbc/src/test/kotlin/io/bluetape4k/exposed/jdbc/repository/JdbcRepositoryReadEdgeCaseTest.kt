@@ -29,9 +29,9 @@ import org.junit.jupiter.params.provider.MethodSource
  * `findBy`, `findByField`, `findByFieldOrNull`, `findAllByIds`, `findPage` 의
  * 경계 조건과 조합 동작을 검증한다.
  */
-class JdbcRepositoryReadEdgeCaseTest : AbstractExposedTest() {
+class JdbcRepositoryReadEdgeCaseTest: AbstractExposedTest() {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     private val repo = EdgeCaseRepository
 

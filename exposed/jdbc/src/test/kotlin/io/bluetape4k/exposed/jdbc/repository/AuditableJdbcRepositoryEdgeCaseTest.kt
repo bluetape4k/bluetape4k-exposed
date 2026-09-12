@@ -35,13 +35,13 @@ import java.time.Instant
  * - UserContext 설정 시 updatedBy 저장
  * - auditedUpdateById의 동작 검증
  */
-class AuditableJdbcRepositoryEdgeCaseTest : AbstractExposedTest() {
+class AuditableJdbcRepositoryEdgeCaseTest: AbstractExposedTest() {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     // ── 테이블 정의 ─────────────────────────────────────────────────────────────
 
-    object AuditableEdgeCaseTable : AuditableLongIdTable("auditable_edge_items") {
+    object AuditableEdgeCaseTable: AuditableLongIdTable("auditable_edge_items") {
         val name = varchar("name", 255)
         val age = integer("age").default(0)
     }
@@ -56,7 +56,7 @@ class AuditableJdbcRepositoryEdgeCaseTest : AbstractExposedTest() {
         override val createdAt: Instant? = null,
         override val updatedBy: String? = null,
         override val updatedAt: Instant? = null,
-    ) : Auditable, Serializable {
+    ): Auditable, Serializable {
         companion object {
             private const val serialVersionUID = 1L
         }
@@ -64,7 +64,7 @@ class AuditableJdbcRepositoryEdgeCaseTest : AbstractExposedTest() {
 
     // ── Repository 구현 ──────────────────────────────────────────────────────────
 
-    object AuditableEdgeCaseRepository :
+    object AuditableEdgeCaseRepository:
         LongAuditableJdbcRepository<AuditableEdgeCaseRecord, AuditableEdgeCaseTable> {
 
         override val table = AuditableEdgeCaseTable

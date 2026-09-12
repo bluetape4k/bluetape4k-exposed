@@ -208,7 +208,7 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                     readerFailure.get()?.let { throw it }
                     check(fixture.tracker.peak.get() == expectedPeak) {
                         "expected peak=$expectedPeak, actual=${fixture.tracker.peak.get()}, " +
-                            "requests=${fixture.tracker.requests.get()}, active=${fixture.tracker.active.get()}"
+                                "requests=${fixture.tracker.requests.get()}, active=${fixture.tracker.active.get()}"
                     }
                     fixture.tracker.active.get() shouldBeEqualTo 0
                 } finally {
@@ -633,20 +633,20 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
         generateSequence(failure) { it.cause }.any { cause ->
             val sqlException = cause as? SQLException
             sqlException?.errorCode == 1317 ||
-                sqlException?.sqlState == "70100" ||
-                cause.message.orEmpty().contains("interrupted", ignoreCase = true)
+                    sqlException?.sqlState == "70100" ||
+                    cause.message.orEmpty().contains("interrupted", ignoreCase = true)
         }
 
     private fun hasConnectionTimeoutCause(failure: Throwable): Boolean =
         generateSequence(failure) { it.cause }.any { cause ->
             cause is SQLTransientConnectionException ||
-                cause.message.orEmpty().contains("Connection is not available", ignoreCase = true)
+                    cause.message.orEmpty().contains("Connection is not available", ignoreCase = true)
         }
 
     private fun hasIntegrityConstraintCause(failure: Throwable): Boolean =
         generateSequence(failure) { it.cause }.any { cause ->
             cause is SQLIntegrityConstraintViolationException ||
-                (cause as? SQLException)?.sqlState?.startsWith("23") == true
+                    (cause as? SQLException)?.sqlState?.startsWith("23") == true
         }
 
     private class EnumerationTable(name: String): LongIdTable(name) {

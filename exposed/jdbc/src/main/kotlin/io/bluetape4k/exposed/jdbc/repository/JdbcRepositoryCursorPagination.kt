@@ -21,7 +21,7 @@ private const val MAX_CURSOR_PAGE_SIZE = 10_000
  * 삭제 행을 자동으로 제외하지 않으므로 soft-delete 저장소는 predicate에 활성 조건을
  * 명시해야 합니다.
  */
-fun <ID : Comparable<ID>, E : Any> JdbcRepository<ID, E>.findCursorPage(
+fun <ID: Comparable<ID>, E: Any> JdbcRepository<ID, E>.findCursorPage(
     pageSize: Int,
     cursor: ID? = null,
     sortOrder: SortOrder = SortOrder.ASC,
@@ -53,7 +53,7 @@ fun <ID : Comparable<ID>, E : Any> JdbcRepository<ID, E>.findCursorPage(
     )
 }
 
-private fun <ID : Comparable<ID>> IdTable<ID>.cursorBoundary(
+private fun <ID: Comparable<ID>> IdTable<ID>.cursorBoundary(
     cursor: ID,
     sortOrder: SortOrder,
 ): Op<Boolean> {
@@ -70,10 +70,10 @@ private fun SortOrder.isAscending(): Boolean = when (this) {
     SortOrder.ASC,
     SortOrder.ASC_NULLS_FIRST,
     SortOrder.ASC_NULLS_LAST,
-    -> true
+        -> true
 
     SortOrder.DESC,
     SortOrder.DESC_NULLS_FIRST,
     SortOrder.DESC_NULLS_LAST,
-    -> false
+        -> false
 }
