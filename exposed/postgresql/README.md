@@ -2,8 +2,7 @@
 
 English | [한국어](./README.ko.md)
 
-A Kotlin Exposed extension module for PostgreSQL. It adds three focused column families: PostGIS spatial
-data, pgvector similarity search, and TSTZRANGE time-range columns.
+A Kotlin Exposed extension module for PostgreSQL. It adds three focused column families: PostGIS spatial data, pgvector similarity search, and TSTZRANGE time-range columns.
 
 ## Feature Coverage
 
@@ -36,7 +35,7 @@ import net.postgis.jdbc.geometry.Point
 import net.postgis.jdbc.geometry.Polygon
 import org.jetbrains.exposed.v1.core.Table
 
-object LocationTable : Table("locations") {
+object LocationTable: Table("locations") {
     val id = integer("id").primaryKey()
     val name = varchar("name", 100)
     val point = geoPoint("point")        // POINT column
@@ -74,13 +73,16 @@ transaction {
         .toList()
 
     // Check if two polygons overlap
-    if (area1.stOverlaps(area2)) { /* ... */ }
+  if (area1.stOverlaps(area2)) { /* ... */
+  }
 
     // Check if two polygons intersect
-    if (area1.stIntersects(area2)) { /* ... */ }
+  if (area1.stIntersects(area2)) { /* ... */
+  }
 
     // Check if two polygons are completely separate
-    if (area1.stDisjoint(area2)) { /* ... */ }
+  if (area1.stDisjoint(area2)) { /* ... */
+  }
 
     // Calculate the area of a polygon (in degree²)
     LocationTable
@@ -113,7 +115,7 @@ Store vectors and compute distances for machine-learning-based similarity search
 
 #### Column Types
 
-- `VectorColumnType(dimension)`: Stores a `FloatArray` as a VECTOR(n) column
+- `VectorColumnType(dimension)`: Stores a `FloatArray` as a VECTOR (n) column
 
 #### Usage Example
 
@@ -122,7 +124,7 @@ import io.bluetape4k.exposed.postgresql.pgvector.*
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
-object DocumentTable : Table("documents") {
+object DocumentTable: Table("documents") {
     val id = integer("id").primaryKey()
     val title = varchar("title", 200)
     val embedding = vector("embedding", 384)  // 384-dimensional vector
@@ -192,7 +194,7 @@ data class TimestampRange(
 
 #### Column Type
 
-- `TstzRangeColumnType`: Stored as TSTZRANGE (PostgreSQL) or VARCHAR(120) (H2 and others)
+- `TstzRangeColumnType`: Stored as TSTZRANGE (PostgreSQL) or VARCHAR (120) (H2 and others)
     - Parses both PostgreSQL JDBC literals and ISO-8601 literals
     - Supports fractional seconds (e.g., `2024-01-01 00:00:00.123456+00`)
 
@@ -203,7 +205,7 @@ import io.bluetape4k.exposed.postgresql.tsrange.*
 import java.time.Instant
 import org.jetbrains.exposed.v1.core.Table
 
-object EventTable : Table("events") {
+object EventTable: Table("events") {
     val id = integer("id").primaryKey()
     val name = varchar("name", 100)
     val duration = tstzRange("duration")  // [start, end) time range
@@ -323,8 +325,8 @@ val server = PgvectorServer.Launcher.withExtensions("pg_trgm")
 
 ## Notes
 
-- **PostgreSQL only**: PostGIS, pgvector, and SQL range operators require the PostgreSQL dialect. Only the
-  TSTZRANGE column type has a `VARCHAR(120)` fallback for non-PostgreSQL test dialects such as H2.
+- **PostgreSQL
+  only**: PostGIS, pgvector, and SQL range operators require the PostgreSQL dialect. Only the TSTZRANGE column type has a `VARCHAR(120)` fallback for non-PostgreSQL test dialects such as H2.
 - **PostGIS extension**: The `postgis` extension is activated automatically when using
   `PostgisServer`. For direct server connections, run `CREATE EXTENSION IF NOT EXISTS postgis` manually.
 - **pgvector extension**: The `vector` extension is activated automatically when using
