@@ -96,6 +96,12 @@ val result = writer.executeBatch(
 )
 ```
 
+Pass `diagnostics = ClickHouseQueryDiagnosticsConfig(...)` to the overload when
+the batch operation needs the same immutable lifecycle events, query ID, and
+accepted-row summary. A RowBinary writer has no `QueryResponse`, so server
+display name and response headers remain absent; the listener and sink still
+run synchronously after statement/connection cleanup.
+
 Only one simple `INSERT ... VALUES (...)` group is eligible. Placeholders and
 `DEFAULT` are delegated to the driver; `INSERT ... SELECT`, multiple value
 groups, nested value expressions/functions, unsupported setters, a missing
@@ -275,6 +281,55 @@ The new overload is cold: each collection creates an independent transaction, co
 The producer keeps at most one pending mapped item, in addition to the item being consumed. Driver buffers and downstream `buffer()` are outside this bound. No application-level query retry or row replay occurs; driver request retries are a separate configuration. Completion, failure and cancellation wait for internal resource cleanup. Cancellation does not interrupt a blocking JDBC call immediately: callers must configure finite connection-acquisition, socket and query timeouts. The caller owns the Database, pool and dispatcher; the helper never closes them. ClickHouse DML atomicity is not provided.
 
 This helper logs lifecycle-only events, not SQL, bindings, rows or exception payloads. Exposed and driver logs have their own policies. Paging or `queryList` may still be more appropriate when the caller needs detached bulk results or short-lived connections.
+
+### Query diagnostics
+
+The diagnostics overloads connect one `queryList` or `queryFlow` collection to a
+small immutable `ClickHouseQueryDiagnostics` snapshot. A caller-supplied query ID
+wins; otherwise the helper generates a collision-checked opaque UUID for the
+active request. `logComment`, `clientName`, session settings, timezone, and roles
+are copied into the request boundary and can be correlated with the ClickHouse
+query log when the V2 driver exposes them:
+
+```kotlin
+val diagnostics = ClickHouseQueryDiagnosticsConfig(
+    queryId = "analytics-${job.id}",
+    logComment = "job=analytics",
+    clientName = "bluetape4k-analytics",
+    sessionTimezone = ZoneId.of("UTC"),
+    listener = ClickHouseQueryListener { event -> diagnosticsLog(event) },
+    sink = ClickHouseQueryDiagnosticsSink { snapshot -> diagnosticsStore(snapshot) },
+)
+
+val values = queryFlow(
+    database,
+    diagnostics = diagnostics,
+    query = { EventsTable.selectAll().limit(100) },
+    mapper = { it[EventsTable.value] },
+).toList()
+```
+
+Events are delivered synchronously on the selected JDBC dispatcher in the order
+`Started → RequestPrepared → ResponseReceived → Completed|Failed|Cancelled`.
+The listener and terminal sink must be short and non-blocking; callback failures
+are isolated, sanitized, and never replace the SQL result or the original
+`CancellationException`. The sink runs once after cursor, statement, and
+transaction cleanup. `returnedRows`, elapsed time, vendor error code,
+`serverDisplayName`, and the driver's allowlisted response headers are optional
+and remain `null`/empty when the driver does not provide them; no metadata is
+guessed. The only built-in metric is the bounded
+`query_listener_failures_total` counter. Consumers may adapt the snapshot to
+`query_started_total`, `query_completed_total`, `query_failed_total`,
+`query_cancelled_total`, `query_duration_ms`, and `query_rows` without adding a
+Micrometer dependency; labels must stay bounded (`outcome`, `transport`, or
+`database`) and must not contain query IDs, SQL, bindings, or user headers.
+
+SQL text, parameters, rows, credentials, and unknown response headers are never
+stored in the diagnostics payload. Known sensitive assignments are redacted and
+callback exceptions keep only a type/reason summary. `Cancelled` currently means
+local cancellation (or `Unknown` at an adapter boundary); this API does not claim
+that an in-flight remote query was terminated. Deterministic socket timeout and
+remote `KILL QUERY` completion remain the follow-up scope in #863.
 
 ### Driver timeout and row-limit behavior
 

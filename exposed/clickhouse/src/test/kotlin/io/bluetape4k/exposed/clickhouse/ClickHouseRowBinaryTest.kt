@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import java.sql.SQLException
 import java.sql.SQLFeatureNotSupportedException
 import java.sql.Statement
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * ClickHouse JDBC V2 RowBinary writer의 선택·fallback·수명주기 계약을 고정합니다.
@@ -77,6 +78,43 @@ class ClickHouseRowBinaryTest {
         result.acceptedCount shouldBeEqualTo 2
         result.acceptedCountMayBeIncomplete shouldBeEqualTo false
         fixture.openedProfiles shouldBeEqualTo listOf(true)
+        fixture.assertClosedExactlyOnce()
+    }
+
+    @Test
+    fun `batch diagnostics는 query id와 row summary를 terminal once로 연결한다`() {
+        val fixture = RowBinaryConnectionProviderFixture(executionCounts = listOf(intArrayOf(1, 1)))
+        val events = CopyOnWriteArrayList<ClickHouseQueryEvent>()
+        val snapshots = CopyOnWriteArrayList<ClickHouseQueryDiagnostics>()
+        val executor = ClickHouseRowBinaryExecutor(
+            provider = fixture,
+            options = ClickHouseRowBinaryOptions(enabled = true, maxRowsPerFlush = 8),
+        )
+
+        val result = executor.executeBatch(
+            sql = "INSERT INTO events (id, value) VALUES (?, ?)",
+            rows = listOf(
+                Row { it.setInt(1, 1); it.setString(2, "one") },
+                Row { it.setInt(1, 2); it.setString(2, "two") },
+            ),
+            diagnostics = ClickHouseQueryDiagnosticsConfig(
+                queryId = "batch-diagnostics-868",
+                listener = ClickHouseQueryListener { events += it },
+                sink = ClickHouseQueryDiagnosticsSink { snapshots += it },
+            ),
+        )
+
+        result.acceptedCount shouldBeEqualTo 2
+        events.map { it.kind } shouldBeEqualTo listOf(
+            ClickHouseQueryEventKind.Started,
+            ClickHouseQueryEventKind.RequestPrepared,
+            ClickHouseQueryEventKind.ResponseReceived,
+            ClickHouseQueryEventKind.Completed,
+        )
+        events.count { it.isTerminal } shouldBeEqualTo 1
+        snapshots.single().queryId shouldBeEqualTo "batch-diagnostics-868"
+        snapshots.single().returnedRows shouldBeEqualTo 2L
+        snapshots.single().outcome shouldBeEqualTo ClickHouseQueryOutcome.Success
         fixture.assertClosedExactlyOnce()
     }
 

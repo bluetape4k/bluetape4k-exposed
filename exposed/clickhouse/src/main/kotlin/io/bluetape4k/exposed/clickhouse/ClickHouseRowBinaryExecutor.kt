@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.clickhouse
 
+import kotlinx.coroutines.CancellationException
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.SQLException
@@ -22,6 +23,52 @@ class ClickHouseRowBinaryExecutor(
 
     /** 작업 중 terminal failure가 발생한 executor는 재사용할 수 없습니다. */
     fun executeBatch(sql: String, rows: Iterable<ClickHouseRowBinaryRow>): ClickHouseRowBinaryResult {
+        return executeBatchInternal(sql, rows, diagnostics = null, queryId = null)
+    }
+
+    /** RowBinary/JDBC batch operation을 immutable diagnostics lifecycle에 연결합니다. */
+    @Suppress("TooGenericExceptionCaught") // 원래 batch 예외와 취소 원인을 보존하는 경계다.
+    fun executeBatch(
+        sql: String,
+        rows: Iterable<ClickHouseRowBinaryRow>,
+        diagnostics: ClickHouseQueryDiagnosticsConfig,
+    ): ClickHouseRowBinaryResult {
+        val recorder = ClickHouseQueryDiagnosticsRecorder(diagnostics)
+        recorder.started()
+        recorder.requestPrepared()
+        var failure: Throwable? = null
+        var outcome: ClickHouseQueryOutcome? = null
+        return try {
+            val result = executeBatchInternal(sql, rows, diagnostics, recorder.queryIdValue)
+            val rowSummary = result.acceptedCount
+                .takeIf { !result.acceptedCountMayBeIncomplete }
+                ?.toLong()
+            recorder.responseReceived(rowSummary)
+            outcome = ClickHouseQueryOutcome.Success
+            result
+        } catch (cancelled: CancellationException) {
+            failure = cancelled
+            outcome = cancelled.clickHouseCancellationOutcome()
+            throw cancelled
+        } catch (caught: Throwable) {
+            failure = caught
+            outcome = caught.clickHouseSqlFailure()
+            throw caught
+        } finally {
+            recorder.finishAfterCleanup(
+                outcome = outcome ?: ClickHouseQueryOutcome.Failure(null, failure?.clickHouseVendorCode()),
+                vendorCode = failure?.clickHouseVendorCode(),
+            )
+        }
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private fun executeBatchInternal(
+        sql: String,
+        rows: Iterable<ClickHouseRowBinaryRow>,
+        diagnostics: ClickHouseQueryDiagnosticsConfig?,
+        queryId: String?,
+    ): ClickHouseRowBinaryResult {
         checkUsable()
         val iterator = rows.iterator()
         if (!iterator.hasNext()) return emptyResult()
@@ -31,7 +78,7 @@ class ClickHouseRowBinaryExecutor(
             message = "RowBinary/JDBC 배치에는 ClickHouseConnectionProvider가 필요합니다.",
         )
         return if (options.enabled) {
-            executeEnabled(connectionProvider, sql, iterator)
+            executeEnabled(connectionProvider, sql, iterator, diagnostics, queryId)
         } else {
             recordFallback("ROW_BINARY_DISABLED")
             executeWithProfile(
@@ -40,6 +87,8 @@ class ClickHouseRowBinaryExecutor(
                 sql = sql,
                 rows = iterableFrom(iterator),
                 path = ClickHouseBatchPath.JDBC_FALLBACK,
+                diagnostics = diagnostics,
+                queryId = queryId,
             )
         }
     }
@@ -49,6 +98,8 @@ class ClickHouseRowBinaryExecutor(
         connectionProvider: ClickHouseConnectionProvider,
         sql: String,
         rows: Iterator<ClickHouseRowBinaryRow>,
+        diagnostics: ClickHouseQueryDiagnosticsConfig?,
+        queryId: String?,
     ): ClickHouseRowBinaryResult {
         val preflight = ClickHouseRowBinaryPreflight.inspect(sql)
         if (!preflight.eligible) {
@@ -59,6 +110,8 @@ class ClickHouseRowBinaryExecutor(
                 sql = sql,
                 rows = iterableFrom(rows),
                 path = ClickHouseBatchPath.JDBC_FALLBACK,
+                diagnostics = diagnostics,
+                queryId = queryId,
             )
         }
 
@@ -76,6 +129,8 @@ class ClickHouseRowBinaryExecutor(
                 sql = sql,
                 rows = iterableFrom(rows),
                 path = ClickHouseBatchPath.JDBC_FALLBACK,
+                diagnostics = diagnostics,
+                queryId = queryId,
             )
         }
         return try {
@@ -85,6 +140,8 @@ class ClickHouseRowBinaryExecutor(
                 rows = rows,
                 path = ClickHouseBatchPath.ROW_BINARY,
                 rowBinaryEnabled = true,
+                diagnostics = diagnostics,
+                queryId = queryId,
             )
         } catch (fallback: UnsupportedBeforeFirstByte) {
             closeConnection(rowBinaryConnection, fallback.cause)
@@ -95,6 +152,8 @@ class ClickHouseRowBinaryExecutor(
                 sql = sql,
                 rows = fallback.replayRows,
                 path = ClickHouseBatchPath.JDBC_FALLBACK,
+                diagnostics = diagnostics,
+                queryId = queryId,
             )
         } catch (failure: Throwable) {
             unusable = true
@@ -109,6 +168,8 @@ class ClickHouseRowBinaryExecutor(
         sql: String,
         rows: Iterable<ClickHouseRowBinaryRow>,
         path: ClickHouseBatchPath,
+        diagnostics: ClickHouseQueryDiagnosticsConfig?,
+        queryId: String?,
     ): ClickHouseRowBinaryResult {
         val connection = try {
             connectionProvider.open(rowBinaryEnabled)
@@ -117,7 +178,15 @@ class ClickHouseRowBinaryExecutor(
             throw failure
         }
         return try {
-            executeOnConnection(connection, sql, rows.iterator(), path, rowBinaryEnabled)
+            executeOnConnection(
+                connection = connection,
+                sql = sql,
+                rows = rows.iterator(),
+                path = path,
+                rowBinaryEnabled = rowBinaryEnabled,
+                diagnostics = diagnostics,
+                queryId = queryId,
+            )
         } catch (failure: Throwable) {
             unusable = true
             throw failure
@@ -131,8 +200,13 @@ class ClickHouseRowBinaryExecutor(
         rows: Iterator<ClickHouseRowBinaryRow>,
         path: ClickHouseBatchPath,
         rowBinaryEnabled: Boolean,
+        diagnostics: ClickHouseQueryDiagnosticsConfig?,
+        queryId: String?,
     ): ClickHouseRowBinaryResult {
         val aggregate = try {
+            diagnostics?.let {
+                applyClickHouseQueryDiagnostics(connection, it, checkNotNull(queryId))
+            }
             connection.prepareStatement(sql).use { statement ->
                 processRows(statement, rows, rowBinaryEnabled)
             }
