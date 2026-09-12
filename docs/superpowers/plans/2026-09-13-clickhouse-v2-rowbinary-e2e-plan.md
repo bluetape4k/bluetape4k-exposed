@@ -36,11 +36,11 @@
 - Modify: `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryIntegrationTest.kt`
 - Test: same file
 
-- [ ] **Step 1: RED — flush/close receipt assertion을 추가한다.**
+- [x] **Step 1: RED — flush/close receipt assertion을 추가한다.**
 
 `RecordingProvider`에 `openedProfiles`, `preparedStatementClasses`, `executeBatchSizes`, `statementCloseCount`, `connectionCloseCount`를 노출하고, 기존 enabled/fallback test에서 `true`, `false`, `[2]`, `[1]`, close exactly-once를 기대한다. 구현 전에는 새 counters가 없으므로 compile failure가 아닌 assertion/기호 failure가 발생해야 한다.
 
-- [ ] **Step 2: RED 확인**
+- [x] **Step 2: RED 확인**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:test \
@@ -51,11 +51,11 @@
 
 예상 결과: 새 receipt assertion이 아직 구현되지 않아 실패한다. Docker가 없으면 해당 환경 blocker를 기록하고 unit RED를 별도로 확인한다.
 
-- [ ] **Step 3: GREEN — JDBC proxy에 최소 observation을 구현한다.**
+- [x] **Step 3: GREEN — JDBC proxy에 최소 observation을 구현한다.**
 
 `recordingConnection`은 `prepareStatement` 반환 객체를 `PreparedStatement` proxy로 감싸고 `addBatch` 누적 수, `executeBatch` 시점의 chunk 크기, `close` exactly-once를 기록한다. connection proxy의 `close`도 `AtomicBoolean`으로 한 번만 센다. `invokeJdbc`로 delegate 예외를 원형 그대로 전달하고 credential/SQL payload를 receipt에 기록하지 않는다.
 
-- [ ] **Step 4: GREEN 확인**
+- [x] **Step 4: GREEN 확인**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:test \
@@ -66,7 +66,7 @@
 
 예상 결과: enabled/fallback statement class와 close/flush counters가 통과한다.
 
-- [ ] **Step 5: REFACTOR — provider helper의 소유권을 정리한다.**
+- [x] **Step 5: REFACTOR — provider helper의 소유권을 정리한다.**
 
 DDL/read connection은 `use`로 닫고 executor가 빌린 connection만 provider가 추적한다. 기존 `RecordingProvider.open(rowBinaryEnabled)` contract와 실제 `DriverManager` profile property를 유지한다.
 
@@ -76,7 +76,7 @@ DDL/read connection은 `use`로 닫고 executor가 빌린 connection만 provider
 - Modify: `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryIntegrationTest.kt`
 - Test: `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryTest.kt`
 
-- [ ] **Step 1: RED — 실제 table assertion을 행렬로 추가한다.**
+- [x] **Step 1: RED — 실제 table assertion을 행렬로 추가한다.**
 
 고정 table에 `id Int32`와 `label String DEFAULT 'default-label'`을 만들고 다음 독립 test를 먼저 추가한다.
 
@@ -94,7 +94,7 @@ fun `실제 V2 fallback은 unsupported SQL을 한 번만 실행한다`() {
 
 `NULL`은 driver setter capability가 실제로 지원하는 경우에만 nullable table/row를 추가하고, 지원하지 않으면 before-first-byte fallback receipt와 N/A를 남긴다. unit fixture에서는 `ClickHouseRowBinaryResult.updateCounts`, `acceptedCount`, `acceptedCountMayBeIncomplete`와 `Statement.SUCCESS_NO_INFO`/`EXECUTE_FAILED`를 계속 검증한다.
 
-- [ ] **Step 2: RED 확인**
+- [x] **Step 2: RED 확인**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:test \
@@ -105,15 +105,15 @@ fun `실제 V2 fallback은 unsupported SQL을 한 번만 실행한다`() {
 
 예상 결과: 새 test가 아직 행렬 helper/DDL/assertion을 갖지 않아 실패한다.
 
-- [ ] **Step 3: GREEN — 최소 행렬 구현**
+- [x] **Step 3: GREEN — 최소 행렬 구현**
 
 각 test는 새 table을 만들지 않고 class-level 고정 이름에 suffix를 붙여 충돌을 방지한다. `executeBatch` 결과의 `path`, `updateCounts`, `acceptedCount`, `acceptedCountMayBeIncomplete`를 확인하고, 별도 read connection으로 `count()`와 `countIf`를 조회한다. `provider.statementClasses`에서 enabled에는 `WriterStatementImpl`, fallback에는 `PreparedStatementImpl`가 각각 존재해야 한다.
 
-- [ ] **Step 4: 실패 경계 회귀를 유지한다.**
+- [x] **Step 4: 실패 경계 회귀를 유지한다.**
 
 `ClickHouseRowBinaryTest`의 fixture cases에 before-first-byte unsupported setter, first-byte failure no-replay, partial sentinel, empty input, close exactly-once가 모두 남아 있는지 확인한다. 실제 driver에서 강제할 수 없는 실패는 fixture로 증명하며 실제 server 성공으로 대체하지 않는다.
 
-- [ ] **Step 5: GREEN 확인**
+- [x] **Step 5: GREEN 확인**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:test \
@@ -130,7 +130,7 @@ fun `실제 V2 fallback은 unsupported SQL을 한 번만 실행한다`() {
 **Files:**
 - Create: `docs/superpowers/verification/2026-09-13-issue-874-rowbinary-e2e.md`
 
-- [ ] **Step 1: test output과 환경을 수집한다.**
+- [x] **Step 1: test output과 환경을 수집한다.**
 
 ```bash
 git rev-parse HEAD
@@ -141,11 +141,11 @@ git status --short --untracked-files=all
   --no-parallel --max-workers=1 --no-daemon --console=plain
 ```
 
-- [ ] **Step 2: artifact를 작성한다.**
+- [x] **Step 2: artifact를 작성한다.**
 
 문서에는 기준/실행 SHA, dirty 여부, Gradle task와 selector, catalog driver coordinate/version, ClickHouse image tag/digest, repeat count, statement class, flush/update counts, row count/default/NULL 결과, cleanup counters, 실패 또는 N/A 사유를 기록한다. SQL credential과 token은 기록하지 않는다.
 
-- [ ] **Step 3: read-back과 diff check**
+- [x] **Step 3: read-back과 diff check**
 
 ```bash
 git diff --check
@@ -160,11 +160,11 @@ sed -n '1,260p' docs/superpowers/verification/2026-09-13-issue-874-rowbinary-e2e
 - Conditional modify: `docs/benchmarks/clickhouse-v2-rowbinary/*`
 - Conditional modify: `docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.*`
 
-- [ ] **Step 1: 기존 fixture benchmark provenance를 확인한다.**
+- [x] **Step 1: 기존 fixture benchmark provenance를 확인한다.**
 
 `container=not-run`인 세 process fixture 결과를 실제 server 결과와 합치지 않는다. 실제 wire 수치가 필요하고 Testcontainers 실행 비용을 감당할 수 있을 때만 별도 output 이름과 metadata schema를 사용한다.
 
-- [ ] **Step 2: 선택 실행**
+- [x] **Step 2: 선택 실행 — N/A (actual wire throughput을 측정하지 않음)**
 
 ```bash
 for run in 1 2 3; do
@@ -183,11 +183,11 @@ done
 - Modify: `exposed/clickhouse/README.md`
 - Modify: `exposed/clickhouse/README.ko.md`
 
-- [ ] **Step 1: 실제 결과를 반영할 문장을 먼저 고정한다.**
+- [x] **Step 1: 실제 결과를 반영할 문장을 먼저 고정한다.**
 
 기존 RowBinary example/API token은 보존하고, 통합 selector가 확인하는 writer/fallback·flush·cleanup 범위와 fixture-only benchmark의 한계를 같은 의미로 추가한다. 실제 수치가 없으면 성능 문장을 추가하지 않는다.
 
-- [ ] **Step 2: EN/KO parity 확인**
+- [x] **Step 2: EN/KO parity 확인**
 
 ```bash
   rg -n "ClickHouseRowBinaryOptions|executeBatch|RowBinary|clickhouseV2Integration|maxRowsPerFlush|fixture|wire" \
@@ -203,7 +203,7 @@ node /Users/debop/.codex/skills/bluetape-writer/scripts/audit-korean-terms.mjs -
 **Files:**
 - Inspect all changed files in this branch.
 
-- [ ] **Step 1: targeted compile/test**
+- [x] **Step 1: targeted compile/test**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:test \
@@ -213,7 +213,7 @@ node /Users/debop/.codex/skills/bluetape-writer/scripts/audit-korean-terms.mjs -
 
 실제 Docker integration은 별도 명령으로 한 번에 순차 실행하고, XML에서 `failures=0`, `errors=0`, `skipped=0`을 확인한다.
 
-- [ ] **Step 2: static/API checks**
+- [x] **Step 2: static/API checks**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:detekt \
@@ -225,7 +225,7 @@ git diff --check
 
 public signature, deprecated import, receiver shadowing, credential redaction, and no new dependency를 확인한다. 변경이 test/docs뿐이면 ABI 결과는 N/A로 기록하되 compile 결과는 필요하다.
 
-- [ ] **Step 3: inline 7-Tier review**
+- [x] **Step 3: inline 7-Tier review**
 
 현재 런타임에서 독립 code-review lane이 실패/비가용이면 아래 관점을 주 세션에서 각각 수행하고 **비독립 inline fallback**으로 기록한다.
 
@@ -241,7 +241,7 @@ public signature, deprecated import, receiver shadowing, credential redaction, a
 
 P0/P1이 발견되면 수정 후 영향 관점과 통합 검토를 반복한다. 1인 개발자 human-review lane은 N/A이며, review artifact에 근거와 범위를 기록한다.
 
-- [ ] **Step 4: commit**
+- [ ] **Step 4: commit — PR branch finalization pending**
 
 ```bash
 git add exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryIntegrationTest.kt \
