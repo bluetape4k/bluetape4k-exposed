@@ -19,7 +19,6 @@ configurations {
 }
 
 dependencies {
-    implementation(platform(bt4k.spring.boot4.dependencies))
     api(platform(bt4k.kotlinx.coroutines.bom))
 
     // Bluetape4k
