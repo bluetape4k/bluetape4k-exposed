@@ -3,8 +3,8 @@
 
 package io.bluetape4k.exposed.r2dbc.tests
 
-import io.bluetape4k.logging.info
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.info
 import io.bluetape4k.utils.Runtimex
 import kotlinx.coroutines.sync.Semaphore
 import org.jetbrains.exposed.v1.core.DatabaseConfig

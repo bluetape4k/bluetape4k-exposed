@@ -1,16 +1,16 @@
 package io.bluetape4k.exposed.r2dbc.tests.dml
 
-import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
-import io.bluetape4k.exposed.r2dbc.tests.TestDB
-import io.bluetape4k.exposed.r2dbc.tests.inProperCase
-import io.bluetape4k.exposed.r2dbc.tests.withDb
-import io.bluetape4k.logging.coroutines.KLoggingChannel
-import io.bluetape4k.logging.debug
-import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
+import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.exposed.r2dbc.tests.inProperCase
+import io.bluetape4k.exposed.r2dbc.tests.withDb
+import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.Table

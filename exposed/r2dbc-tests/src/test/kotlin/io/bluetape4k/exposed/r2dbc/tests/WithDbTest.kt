@@ -1,10 +1,11 @@
 package io.bluetape4k.exposed.r2dbc.tests
 
-import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
 import org.jetbrains.exposed.v1.r2dbc.exists
@@ -12,7 +13,6 @@ import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import io.bluetape4k.assertions.assertFailsWith
 
 class WithDbTest: AbstractExposedR2dbcTest() {
 
@@ -93,7 +93,9 @@ class WithDbTest: AbstractExposedR2dbcTest() {
         } finally {
             // 정리
             withDb(testDB) {
-                runCatching { SchemaUtils.drop(SampleTable) }
+                runCatching {
+                    SchemaUtils.drop(SampleTable)
+                }
             }
         }
     }
