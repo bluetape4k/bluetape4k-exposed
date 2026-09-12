@@ -464,7 +464,7 @@ fun <T : Any> Table.chArray(name: String, innerType: ColumnType<T>): Column<List
 fun <T : Any> Table.chArrayNullableElements(name: String, innerType: ColumnType<T>): Column<List<T?>> =
     registerColumn(name, ClickHouseArrayNullableElementsColumnType(innerType))
 
-fun <T : Any> Table.chNullableArray(name: String, innerType: ColumnType<T>): Column<List<T?>?> =
+fun <T : Any> Table.chNullableArray(name: String, innerType: ColumnType<T>): Column<List<T>?> =
     registerColumn(name, ClickHouseNullableArrayColumnType(innerType, nullableContainer = true))
 
 fun <K : Any, V> Table.chMap(name: String, keyType: ColumnType<K>, valueType: ColumnType<V>): Column<Map<K, V>>
@@ -472,7 +472,11 @@ fun Table.chTuple(name: String, elements: List<ColumnType<*>>): Column<List<Any?
 fun Table.chNested(name: String, elements: List<ColumnType<*>>): Column<List<List<Any?>>>
 ```
 
-`ClickHouseNullableArrayColumnType<T : Any>(inner: ColumnType<T>, nullableContainer: Boolean)`를 새 내부 adapter로 정의해 element nullability와 container nullability를 각각 표현한다. 기존 `ClickHouseArrayColumnType<T : Any>`의 constructor와 descriptor는 바꾸지 않는다.
+`ClickHouseArrayNullableElementsColumnType<T : Any>`와
+`ClickHouseNullableArrayColumnType<T : Any>(inner: ColumnType<T>, nullableContainer: Boolean)`를
+별도 내부 adapter로 정의해 element nullability와 container nullability를
+혼동하지 않는다. 기존 `ClickHouseArrayColumnType<T : Any>`의 constructor와
+descriptor는 바꾸지 않는다.
 
 각 adapter가 `valueFromDB`, `notNullValueToDB`, `setParameter`, `readObject`에서 같은 matrix를 적용한다. Map key는 non-null·unique, Tuple arity는 고정, Nested 모든 column 길이는 동일해야 한다. JDBC `Array`/`Struct`/`ResultSet`은 converter가 읽은 직후 `finally`에서 close하고 반환 collection은 immutable copy다. unsupported type을 String으로 fallback하지 않는다.
 

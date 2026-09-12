@@ -39,7 +39,13 @@ class ClickHouseArrayNullableElementsColumnType<T: Any>(val inner: ColumnType<T>
 class ClickHouseNullableArrayColumnType<T: Any>(
     val inner: ColumnType<T>,
     val nullableContainer: Boolean = true,
-): ColumnType<List<T?>>(nullableContainer) {
+): ColumnType<List<T>>(nullableContainer) {
+
+    init {
+        require(nullableContainer) {
+            "Use ClickHouseArrayNullableElementsColumnType for Array(Nullable(T))"
+        }
+    }
 
     override fun sqlType(): String = if (nullableContainer) {
         "Nullable(Array(${inner.sqlType()}))"
@@ -47,7 +53,7 @@ class ClickHouseNullableArrayColumnType<T: Any>(
         "Array(Nullable(${inner.sqlType()}))"
     }
 
-    override fun valueFromDB(value: Any): List<T?> =
+    override fun valueFromDB(value: Any): List<T> =
         clickHouseImmutableList(clickHouseArrayElements(value).map { element ->
             if (element == null) {
                 throw IllegalArgumentException(
@@ -59,8 +65,8 @@ class ClickHouseNullableArrayColumnType<T: Any>(
             }
         })
 
-    override fun notNullValueToDB(value: List<T?>): Any =
-        value.map { element -> element?.let { clickHouseValueToDB(inner, it) } }.toTypedArray()
+    override fun notNullValueToDB(value: List<T>): Any =
+        value.map { element -> clickHouseValueToDB(inner, element) }.toTypedArray()
 
     override fun readObject(rs: RowApi, index: Int): Any? =
         super.readObject(rs, index)?.let(::valueFromDB)

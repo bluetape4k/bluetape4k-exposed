@@ -371,7 +371,7 @@ observed request or cleanup into a remote query-cancellation guarantee.
 | Array(T) | List\<T\> | `chArray(name, innerType)` |
 | Array(Nullable(T)) | List\<T?\> | `chArrayNullableElements(name, innerType)` |
 | Array(Array(...)) | List\<List\<...\>\> | `chArray(name, ClickHouseArrayNullableElementsColumnType(...))` |
-| Nullable(Array(...)) | List\<T?\>? | `chNullableArray(name, innerType)` |
+| Nullable(Array(...)) | List\<T\>? | `chNullableArray(name, innerType)` (nullable container; use `chArrayNullableElements` for nullable elements) |
 | Map(K, V) | Map\<K, V\> | `chMap(name, keyType, valueType)` |
 | Tuple(...) | List\<Any?\> | `chTuple(name, elements)` |
 | Nested(...) | List\<List\<Any?\>\> | `chNested(name, elements)` (semantic adapter) |

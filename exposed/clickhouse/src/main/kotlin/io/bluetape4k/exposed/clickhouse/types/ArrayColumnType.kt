@@ -67,10 +67,11 @@ fun <T: Any> Table.chArrayNullableElements(name: String, innerType: ColumnType<T
     registerColumn(name, ClickHouseArrayNullableElementsColumnType(innerType))
 
 /**
- * ClickHouse `Nullable(Array(Nullable(T)))` 컬럼을 등록합니다.
+ * ClickHouse `Nullable(Array(T))` 컬럼을 등록합니다.
  *
- * 배열 컨테이너와 원소를 모두 nullable로 표현하는 `Column<List<T?>?>`를 반환합니다.
+ * 배열 컨테이너만 nullable로 표현하는 `Column<List<T>?>`를 반환합니다.
+ * 원소까지 nullable한 배열은 [chArrayNullableElements]를 사용하세요.
  */
 @Suppress("UNCHECKED_CAST")
-fun <T: Any> Table.chNullableArray(name: String, innerType: ColumnType<T>): Column<List<T?>?> =
-    registerColumn<List<T?>>(name, ClickHouseNullableArrayColumnType(innerType)) as Column<List<T?>?>
+fun <T: Any> Table.chNullableArray(name: String, innerType: ColumnType<T>): Column<List<T>?> =
+    registerColumn<List<T>>(name, ClickHouseNullableArrayColumnType(innerType)) as Column<List<T>?>

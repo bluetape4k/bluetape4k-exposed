@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.clickhouse.types
 
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.ArrayColumnType
+import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.IColumnType
 import org.jetbrains.exposed.v1.core.statements.api.PreparedStatementApi
 import org.jetbrains.exposed.v1.core.statements.api.RowApi
@@ -73,6 +74,13 @@ class ClickHouseComplexTypesH2Test {
     }
 
     @Test
+    fun `nullable array exposes outer nullable list type`() {
+        val column: Column<List<String>?> = ComplexTable.nullableContainer
+        assertTrue(column.columnType.nullable)
+        assertEquals("Nullable(Array(String))", column.columnType.sqlType())
+    }
+
+    @Test
     fun `nullable array preserves null elements and defensive copies`() {
         val type = ClickHouseArrayNullableElementsColumnType(ClickHouseInt32ColumnType())
         val source = arrayOf<Any?>(1, null, 3)
@@ -99,6 +107,13 @@ class ClickHouseComplexTypesH2Test {
         assertEquals(listOf("a", "b"), type.valueFromDB(listOf("a", "b")))
         assertEquals(arrayOf("a", "b").toList(), (type.notNullValueToDB(listOf("a", "b")) as Array<*>).toList())
         assertThrows(IllegalArgumentException::class.java) { type.valueFromDB(listOf("a", null)) }
+    }
+
+    @Test
+    fun `nullable array adapter rejects inner-nullability mode`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            ClickHouseNullableArrayColumnType(ClickHouseStringColumnType(), nullableContainer = false)
+        }
     }
 
     @Test

@@ -354,7 +354,7 @@ V2 probe matrix는 연결 시도, 서버 실행 timeout, 전송 socket timeout,
 | Array(T) | List\<T\> | `chArray(name, innerType)` |
 | Array(Nullable(T)) | List\<T?\> | `chArrayNullableElements(name, innerType)` |
 | Array(Array(...)) | List\<List\<...\>\> | `chArray(name, ClickHouseArrayNullableElementsColumnType(...))` |
-| Nullable(Array(...)) | List\<T?\>? | `chNullableArray(name, innerType)` |
+| Nullable(Array(...)) | List\<T\>? | `chNullableArray(name, innerType)` (컨테이너만 nullable; nullable 원소는 `chArrayNullableElements`) |
 | Map(K, V) | Map\<K, V\> | `chMap(name, keyType, valueType)` |
 | Tuple(...) | List\<Any?\> | `chTuple(name, elements)` |
 | Nested(...) | List\<List\<Any?\>\> | `chNested(name, elements)` (의미론 adapter) |
