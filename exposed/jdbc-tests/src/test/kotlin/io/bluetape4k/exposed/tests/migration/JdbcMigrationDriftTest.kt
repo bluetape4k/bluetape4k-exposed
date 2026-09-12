@@ -264,7 +264,7 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
     }
 
     companion object: KLogging() {
-        
+
         private const val IDENTIFIER_TOKEN = "(?:\"[^\"]+\"|`[^`]+`|[A-Za-z_][A-Za-z0-9_]*)"
         private val ADDITIVE_STATEMENT = Regex(
             "^ALTER TABLE ($IDENTIFIER_TOKEN) ADD(?: COLUMN)? ($IDENTIFIER_TOKEN) " +

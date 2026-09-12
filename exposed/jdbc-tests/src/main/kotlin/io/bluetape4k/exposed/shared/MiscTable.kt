@@ -1,7 +1,7 @@
 package io.bluetape4k.exposed.shared
 
-import io.bluetape4k.exposed.shared.MiscTable.E
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.exposed.shared.MiscTable.E
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.statements.InsertStatement
