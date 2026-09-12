@@ -131,6 +131,17 @@ The real profile test uses `clickhouse-jdbc` `0.9.9` and ClickHouse Server
   --no-parallel --max-workers=1 --no-daemon --console=plain
 ```
 
+The opt-in integration suite repeats each actual-server scenario three times
+(six invocations total) against `clickhouse/clickhouse-server:26.7.3.19` with
+the catalog `com.clickhouse.jdbc.ClickHouseDriver` `0.9.9`. The receipt observes
+`WriterStatementImpl` for the RowBinary profile and `PreparedStatementImpl` for
+the JDBC fallback, flushes `[2, 1, 1, 1]`, five inserted rows, two
+`DEFAULT` labels, one `Nullable(String)` `NULL`, and exactly-once statement and
+connection cleanup. This is wire-level correctness evidence only; it is not a
+throughput benchmark or a remote cancellation guarantee. The reproducible
+details are kept in
+[`issue-874-rowbinary-e2e.md`](../../docs/superpowers/verification/2026-09-13-issue-874-rowbinary-e2e.md).
+
 The bounded fixture benchmark covers 3 logical row counts × 3 flush sizes ×
 2 row shapes × 2 paths across three fresh test processes (36 records per run
 set). The fixture measures at most 2,048 in-memory rows, so the logical
@@ -183,7 +194,7 @@ python3 docs/benchmarks/clickhouse-v2-rowbinary/render_rowbinary_chart.py \
 
 General stream-writer support, `async_insert`, and remote cancellation or
 `KILL QUERY` completion remain outside this issue; the latter is tracked by
-#863.
+#875.
 
 ## Table option policy
 
