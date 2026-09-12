@@ -5,7 +5,6 @@ import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ColumnDiff
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.GroupConcat
-import org.jetbrains.exposed.v1.core.InternalApi
 import org.jetbrains.exposed.v1.core.QueryBuilder
 import org.jetbrains.exposed.v1.core.stringLiteral
 import org.jetbrains.exposed.v1.core.vendors.FunctionProvider
@@ -39,7 +38,6 @@ class TrinoDialect: PostgreSQLDialect(name = dialectName) {
     // Trino는 WINDOW FRAME GROUPS 지원
     override val supportsWindowFrameGroupsMode: Boolean = true
 
-    @OptIn(InternalApi::class)
     override fun modifyColumn(column: Column<*>, columnDiff: ColumnDiff): List<String> = emptyList()
 }
 

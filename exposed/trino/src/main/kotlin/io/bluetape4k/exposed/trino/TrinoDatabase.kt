@@ -52,7 +52,7 @@ import java.sql.DriverManager
  * - DDL에서는 [org.jetbrains.exposed.v1.core.Table]보다 [TrinoTable]을 사용하여 Trino에
  *   전달하기 전에 `PRIMARY KEY` clause를 제거하십시오.
  */
-object TrinoDatabase : KLogging() {
+object TrinoDatabase: KLogging() {
 
     /**
      * Trino JDBC driver class name입니다.
@@ -97,13 +97,16 @@ object TrinoDatabase : KLogging() {
         // A blank host produces "jdbc:trino://:8080//" — an invalid URL that causes
         // an obscure DriverManager exception. Fail early with a clear message.
         requireNotNull(host.ifBlank { null }) { "host must not be blank." }
+
         // An invalid port only fails at TCP connect time; reject it early.
         require(port in 1..65535) { "port must be in range 1..65535: $port" }
+
         // Trino requires catalog and schema as path segments in the JDBC URL.
         requireNotNull(catalog.ifBlank { null }) { "catalog must not be blank." }
         requireNotNull(schema.ifBlank { null }) { "schema must not be blank." }
 
         val url = "jdbc:trino://$host:$port/$catalog/$schema"
+
         return Database.connect(
             getNewConnection = {
                 val props = options.toProperties(user)

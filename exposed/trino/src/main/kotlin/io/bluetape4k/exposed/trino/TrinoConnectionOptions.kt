@@ -1,7 +1,7 @@
 package io.bluetape4k.exposed.trino
 
 import java.io.Serializable
-import java.util.Properties
+import java.util.*
 
 /**
  * 운영 및 성능 tuning에 사용하는 typed Trino JDBC connection property입니다.

@@ -1,16 +1,15 @@
 package io.bluetape4k.exposed.trino.insert
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.exposed.trino.AbstractTrinoTest
 import io.bluetape4k.exposed.trino.TrinoBatchInsertOptions
 import io.bluetape4k.exposed.trino.domain.Events
 import io.bluetape4k.exposed.trino.trinoBatchInsert
-import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEmpty
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.insert

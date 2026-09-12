@@ -1,5 +1,7 @@
 package io.bluetape4k.exposed.trino
 
+import io.bluetape4k.support.requirePositiveNumber
+import io.bluetape4k.support.requireZeroOrPositiveNumber
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -35,8 +37,8 @@ data class TrinoPagedQueryOptions(
     }
 
     init {
-        require(pageSize > 0) { "pageSize must be positive: $pageSize" }
-        require(initialOffset >= 0L) { "initialOffset must be non-negative: $initialOffset" }
+        pageSize.requirePositiveNumber("pageSize")
+        initialOffset.requireZeroOrPositiveNumber("initialOffset")
     }
 }
 
@@ -60,7 +62,7 @@ data class TrinoBatchInsertOptions(
     }
 
     init {
-        require(chunkSize > 0) { "chunkSize must be positive: $chunkSize" }
+        chunkSize.requirePositiveNumber("chunkSize")
     }
 }
 
@@ -94,16 +96,18 @@ fun <E> Table.trinoBatchInsert(
     body: BatchInsertStatement.(E) -> Unit,
 ): List<ResultRow> {
     val generatedRows = mutableListOf<ResultRow>()
-    data.asSequence().chunked(options.chunkSize).forEach { chunk ->
-        val rows = batchInsert(
-            data = chunk,
-            shouldReturnGeneratedValues = options.shouldReturnGeneratedValues,
-            body = body,
-        )
-        if (options.shouldReturnGeneratedValues) {
-            generatedRows += rows
+    data.asSequence()
+        .chunked(options.chunkSize)
+        .forEach { chunk ->
+            val rows = batchInsert(
+                data = chunk,
+                shouldReturnGeneratedValues = options.shouldReturnGeneratedValues,
+                body = body,
+            )
+            if (options.shouldReturnGeneratedValues) {
+                generatedRows += rows
+            }
         }
-    }
     return generatedRows
 }
 
@@ -143,7 +147,9 @@ suspend fun <T> suspendTransaction(
     // Dispatchers.IO(또는 Virtual Thread 전용 디스패처)로 컨텍스트를 전환합니다.
 ): T = withContext(dispatcher) {
     try {
-        transaction(db) { block() }
+        transaction(db) {
+            block()
+        }
     } catch (e: CancellationException) {
         // 코루틴 취소는 반드시 재전파해야 합니다 — 삼키면 구조적 동시성이 깨집니다.
         throw e
@@ -188,7 +194,11 @@ fun <T> queryFlow(
     // ResultSet 수명(트랜잭션 경계 내)과 Flow emit 경계가 겹치지 않도록
     // 트랜잭션 내에서 List로 완전히 materialize한 뒤 방출합니다.
     val items = try {
-        withContext(dispatcher) { transaction(db) { block().toList() } }
+        withContext(dispatcher) {
+            transaction(db) {
+                block().toList()
+            }
+        }
     } catch (e: CancellationException) {
         // 코루틴 취소는 반드시 재전파해야 합니다 — 삼키면 구조적 동시성이 깨집니다.
         throw e
@@ -263,7 +273,9 @@ fun <T> pagedQueryFlow(
         if (page.size < options.pageSize) break
 
         val nextOffset = offset + page.size.toLong()
-        check(nextOffset > offset) { "pagedQueryFlow offset overflow at offset=$offset, pageSize=${page.size}" }
+        check(nextOffset > offset) {
+            "pagedQueryFlow offset overflow at offset=$offset, pageSize=${page.size}"
+        }
         offset = nextOffset
     }
 }
