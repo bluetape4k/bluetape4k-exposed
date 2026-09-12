@@ -25,9 +25,7 @@ dependencies {
 ```
 
 기본 오버로드는 `DefaultFastjsonSerializer`를 사용하며, 이 값은
-`io.bluetape4k.fastjson2.FastjsonSerializer.Default`를 재노출합니다. 다른
-Fastjson2 설정이 필요하면 `fastjson`, `fastjsonb`, `extract`, ResultRow /
-Readable getter에 사용자 정의 `FastjsonSerializer`를 전달하면 됩니다.
+`io.bluetape4k.fastjson2.FastjsonSerializer.Default`를 재노출합니다. 다른 Fastjson2 설정이 필요하면 `fastjson`, `fastjsonb`, `extract`, ResultRow / Readable getter에 사용자 정의 `FastjsonSerializer`를 전달하면 됩니다.
 
 ## Fastjson2 어댑터 경계
 
@@ -109,23 +107,23 @@ val extraData: Map<String, Any>? = resultRow.getFastjsonOrNull(Products.extraDat
 
 ## 주요 파일/클래스 목록
 
-| 파일                       | 설명                   |
-|--------------------------|----------------------|
+| 파일                     | 설명                             |
+|--------------------------|----------------------------------|
 | `FastjsonSerializer.kt`  | 기본 Fastjson2 serializer facade |
-| `FastjsonColumnType.kt`  | JSON 컬럼 타입 (문자열 기반)  |
-| `FastjsonBColumnType.kt` | JSONB 컬럼 타입 (이진 포맷)  |
-| `JsonFunctions.kt`       | JSON 함수 확장           |
-| `JsonConditions.kt`      | JSON 조건식 확장          |
-| `ResultRowExtensions.kt` | ResultRow JSON 읽기 확장 |
+| `FastjsonColumnType.kt`  | JSON 컬럼 타입 (문자열 기반)     |
+| `FastjsonBColumnType.kt` | JSONB 컬럼 타입 (이진 포맷)      |
+| `JsonFunctions.kt`       | JSON 함수 확장                   |
+| `JsonConditions.kt`      | JSON 조건식 확장                 |
+| `ResultRowExtensions.kt` | ResultRow JSON 읽기 확장         |
 
 ## Jackson vs Fastjson2 선택 가이드
 
-| 특징    | Jackson | Fastjson2 |
-|-------|---------|-----------|
-| 성능    | 좋음      | 매우 빠름     |
-| 안정성   | 높음      | 중간        |
-| 기능    | 풍부      | 기본적       |
-| 권장 용도 | 일반적 사용  | 고성능 필요 시  |
+| 특징      | Jackson     | Fastjson2      |
+|-----------|-------------|----------------|
+| 성능      | 좋음        | 매우 빠름      |
+| 안정성    | 높음        | 중간           |
+| 기능      | 풍부        | 기본적         |
+| 권장 용도 | 일반적 사용 | 고성능 필요 시 |
 
 ## 테스트
 

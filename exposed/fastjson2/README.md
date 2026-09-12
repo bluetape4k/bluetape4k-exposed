@@ -11,7 +11,8 @@ A module for serializing and deserializing Exposed JSON/JSONB columns using Fast
 ### Key Features
 
 - **Fastjson column types**: JSON/JSONB column mapping
-- **Default serializer facade**: `DefaultFastjsonSerializer` exposes the shared Fastjson2 serializer for Exposed defaults
+- **Default serializer
+  facade**: `DefaultFastjsonSerializer` exposes the shared Fastjson2 serializer for Exposed defaults
 - **ResultRow extensions**: Utilities for reading JSON column values
 - **JSON functions/conditions**: Helpers for building database-specific JSON query conditions
 
@@ -62,8 +63,7 @@ object Products: IdTable<Long>("products") {
 
 The default overloads use `DefaultFastjsonSerializer`, which delegates to
 `io.bluetape4k.fastjson2.FastjsonSerializer.Default`. Pass a custom
-`FastjsonSerializer` to `fastjson`, `fastjsonb`, `extract`, or the ResultRow /
-Readable getters when a different Fastjson2 configuration is required.
+`FastjsonSerializer` to `fastjson`, `fastjsonb`, `extract`, or the ResultRow / Readable getters when a different Fastjson2 configuration is required.
 
 ### 2. Using JSON Columns
 
