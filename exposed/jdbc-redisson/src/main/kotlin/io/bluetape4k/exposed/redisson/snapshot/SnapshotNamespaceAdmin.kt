@@ -196,7 +196,7 @@ internal fun verifyOrClaimSnapshotNamespace(
     return when {
         state.marker == RemoteMarker.ABSENT && state.mapAbsent -> SnapshotNamespaceMarkerVerification.CLAIMED
         state.marker == RemoteMarker.EXACT -> SnapshotNamespaceMarkerVerification.MATCHED
-        else                               -> throw IllegalStateException("Snapshot namespace compatibility marker could not be verified.")
+        else -> throw IllegalStateException("Snapshot namespace compatibility marker could not be verified.")
     }
 }
 
@@ -250,7 +250,7 @@ private fun redisClusterSlotTag(key: String): String {
     return key.substring(open + 1, close)
 }
 
-private fun <ID: Any> clearNamespace(
+private fun <ID : Any> clearNamespace(
     redissonClient: RedissonClient,
     codec: SnapshotRedissonCodec<ID>,
     namespace: String,
@@ -275,7 +275,7 @@ private fun <ID: Any> clearNamespace(
                 if (!initial.mapAbsent || retainMarker) return failedState(mapAbsent, markerPresent)
                 true
             }
-            RemoteMarker.EXACT  -> false
+            RemoteMarker.EXACT -> false
         }
 
         val options = LocalCachedMapOptions.name<ID, Any?>(namespace).apply {

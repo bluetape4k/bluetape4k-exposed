@@ -48,7 +48,7 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
             private const val serialVersionUID: Long = 1L
         }
 
-        fun withId(newId: Long): LoaderEntity = copy()
+        fun withId(newId: Long): LoaderEntity = copy(id = newId)
     }
 
     private data class ComparableCustomId(val value: String): Comparable<ComparableCustomId>, Serializable {

@@ -219,21 +219,9 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
         val namespace = namespace("recovery")
         val codec = codec()
         val buffer = snapshotCacheFailureBuffer(4)
-        val old = jdbcRedissonSnapshotInvalidator(
-            oldClient,
-            codec,
-            Long::class,
-            String::class,
-            config(namespace),
-            buffer
-        )
-        val database = Database.connect(
-            "jdbc:h2:mem:${UUID.randomUUID()};DB_CLOSE_DELAY=-1",
-            driver = "org.h2.Driver"
-        )
-
+        val old = jdbcRedissonSnapshotInvalidator(oldClient, codec, Long::class, String::class, config(namespace), buffer)
+        val database = Database.connect("jdbc:h2:mem:${UUID.randomUUID()};DB_CLOSE_DELAY=-1", driver = "org.h2.Driver")
         pauseRedis()
-
         try {
             transaction(database) {
                 maxAttempts = 1
@@ -253,13 +241,7 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
         }
         oldClient.isShutdown.shouldBeTrue()
         assertFailsWith<Exception> {
-            jdbcRedissonSnapshotInvalidator(
-                oldClient,
-                codec,
-                Long::class,
-                String::class,
-                config(namespace)
-            )
+            jdbcRedissonSnapshotInvalidator(oldClient, codec, Long::class, String::class, config(namespace))
         }
 
         val replacementClient = newClient()
@@ -286,9 +268,7 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
         } finally {
             restoreRedis()
         }
-        awaitCondition("Redis service restoration after expiry proof") {
-            redisAvailable(replacementClient)
-        }
+        awaitCondition("Redis service restoration after expiry proof") { redisAvailable(replacementClient) }
     }
 
     @Test
