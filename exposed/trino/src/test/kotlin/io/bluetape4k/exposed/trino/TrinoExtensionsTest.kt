@@ -191,8 +191,7 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
             }
 
             val rows = queryFlow(db) {
-                Events.selectAll()
-                    .orderBy(Events.eventId to SortOrder.ASC)
+                Events.selectAll().orderBy(Events.eventId to SortOrder.ASC)
             }.toList()
 
             rows shouldHaveSize 3
@@ -229,10 +228,7 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
     @Test
     fun `queryFlow 는 빈 테이블에서 빈 리스트를 반환한다`() = runSuspendIO {
         withEventsTableSuspend {
-            val rows = queryFlow(db) {
-                Events.selectAll()
-            }.toList()
-
+            val rows = queryFlow(db) { Events.selectAll() }.toList()
             rows.shouldBeEmpty()
         }
     }

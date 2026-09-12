@@ -5,6 +5,7 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.trino.dialect.TrinoDialect
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
 
@@ -12,6 +13,8 @@ import org.junit.jupiter.api.Test
  * [TrinoDatabase] 연결 팩토리 및 [TrinoDialect] 기본 동작을 검증하는 테스트.
  */
 class TrinoDatabaseTest: AbstractTrinoTest() {
+
+    companion object: KLogging()
 
     @Test
     fun `db dialect 는 TrinoDialect 인스턴스이다`() {
@@ -43,6 +46,7 @@ class TrinoDatabaseTest: AbstractTrinoTest() {
             user = trino.username ?: "trino",
         )
         newDb.shouldNotBeNull()
+
         transaction(newDb) {
             exec("SELECT 1") { rs ->
                 rs.next()
@@ -59,6 +63,7 @@ class TrinoDatabaseTest: AbstractTrinoTest() {
             user = trino.username ?: "trino",
         )
         newDb.shouldNotBeNull()
+
         transaction(newDb) {
             exec("SELECT 1") { rs ->
                 rs.next()

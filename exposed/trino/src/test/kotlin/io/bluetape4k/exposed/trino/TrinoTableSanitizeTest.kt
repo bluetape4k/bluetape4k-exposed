@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.trino
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
@@ -14,6 +15,8 @@ import org.junit.jupiter.api.Test
  * Testcontainers Trino 연결을 사용합니다.
  */
 class TrinoTableSanitizeTest: AbstractTrinoTest() {
+
+    companion object: KLogging()
 
     /**
      * PrimaryKey를 가진 Trino 테이블 픽스처.

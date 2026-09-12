@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.trino
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 
 /**
@@ -11,6 +12,8 @@ import org.junit.jupiter.api.Test
  * 예외가 발생하는지를 확인합니다.
  */
 class TrinoDatabaseValidationTest {
+
+    companion object: KLogging()
 
     // ----------------------------------------------------------------
     // connect(host, port, catalog, schema, user) 오버로드 검증
@@ -82,11 +85,15 @@ class TrinoDatabaseValidationTest {
 
     @Test
     fun `jdbcUrl 이 공백이면 IllegalArgumentException 을 던진다`() {
-        assertFailsWith<IllegalArgumentException> { TrinoDatabase.connect(jdbcUrl = "") }
+        assertFailsWith<IllegalArgumentException> {
+            TrinoDatabase.connect(jdbcUrl = "")
+        }
     }
 
     @Test
     fun `jdbcUrl 이 trino 프로토콜로 시작하지 않으면 IllegalArgumentException 을 던진다`() {
-        assertFailsWith<IllegalArgumentException> { TrinoDatabase.connect(jdbcUrl = "jdbc:postgresql://localhost/mydb") }
+        assertFailsWith<IllegalArgumentException> {
+            TrinoDatabase.connect(jdbcUrl = "jdbc:postgresql://localhost/mydb")
+        }
     }
 }
