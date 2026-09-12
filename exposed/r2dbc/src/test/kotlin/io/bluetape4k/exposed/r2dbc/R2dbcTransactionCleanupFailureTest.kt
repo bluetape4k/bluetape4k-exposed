@@ -112,7 +112,7 @@ class R2dbcTransactionCleanupFailureTest {
                                 completed
                             }
                         }
-                        "close" -> {
+                        "close"           -> {
                             events.add("connection-close")
                             @Suppress("UNCHECKED_CAST")
                             val publisher = invoke(connection, method, args) as Publisher<Void>
@@ -123,7 +123,7 @@ class R2dbcTransactionCleanupFailureTest {
                                 completed
                             }
                         }
-                        else -> invoke(connection, method, args)
+                        else              -> invoke(connection, method, args)
                     }
                 }
             }

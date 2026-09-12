@@ -15,6 +15,7 @@ data class MovieRecord(
     companion object {
         private const val serialVersionUID = 1L
     }
+
     fun withId(id: Long) = copy(id = id)
 }
 
@@ -30,6 +31,7 @@ data class ActorRecord(
     companion object {
         private const val serialVersionUID = 1L
     }
+
     fun withId(id: Long) = copy(id = id)
 }
 

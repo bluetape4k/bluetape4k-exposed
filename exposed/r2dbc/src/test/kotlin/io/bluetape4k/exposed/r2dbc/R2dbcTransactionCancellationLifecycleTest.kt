@@ -89,7 +89,7 @@ class R2dbcTransactionCancellationLifecycleTest {
                                 Boundary.BEGIN_FAILURE -> Mono.error<Void>(beginFailure)
                                 else -> invoke(connection, method, args)
                             }
-                            "createStatement" -> {
+                            "createStatement"  -> {
                                 val statement = invoke(connection, method, args) as Statement
                                 proxy<Statement>(statement) { statementMethod, statementArgs ->
                                     if (statementMethod.name == "execute") pending<io.r2dbc.spi.Result>()
@@ -103,7 +103,7 @@ class R2dbcTransactionCancellationLifecycleTest {
                                     .doOnSubscribe { events.add(method.name) }
                                     .doOnSuccess { events.add("${method.name}-done") }
                             }
-                            else -> invoke(connection, method, args)
+                            else               -> invoke(connection, method, args)
                         }
                     }
                 }
