@@ -1,10 +1,11 @@
 package io.bluetape4k.exposed.ktor
 
-import io.bluetape4k.assertions.should
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeGreaterThan
+import io.bluetape4k.assertions.shouldBeLessThan
 import io.bluetape4k.assertions.shouldBeTrue
-
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheFailure
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheFailureBuffer
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOperation
@@ -17,6 +18,7 @@ import io.bluetape4k.ktor.core.installBluetape4kKtorCore
 import io.bluetape4k.ktor.testing.bluetape4kJsonClient
 import io.bluetape4k.ktor.testing.decodeJsonBody
 import io.bluetape4k.ktor.testing.shouldHaveStatus
+import io.bluetape4k.logging.KLogging
 import io.ktor.client.request.get
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.routing.routing
@@ -61,6 +63,8 @@ import kotlin.time.TimeSource
 
 class ExposedKtorReadinessBudgetTest {
 
+    companion object: KLogging()
+
     @Test
     fun `database probes precede sequential cache contributors in deterministic order`() = runTest {
         val order = mutableListOf<String>()
@@ -91,11 +95,11 @@ class ExposedKtorReadinessBudgetTest {
 
         order shouldBeEqualTo listOf("jdbc", "r2dbc", "cache-first", "cache-second")
         details shouldBeEqualTo linkedMapOf(
-                "jdbc" to HealthResponse.UP,
-                "r2dbc" to HealthResponse.UP,
-                "cache.first" to HealthResponse.DOWN,
-                "cache.second" to HealthResponse.UP,
-            )
+            "jdbc" to HealthResponse.UP,
+            "r2dbc" to HealthResponse.UP,
+            "cache.first" to HealthResponse.DOWN,
+            "cache.second" to HealthResponse.UP,
+        )
     }
 
     @Test
@@ -130,16 +134,16 @@ class ExposedKtorReadinessBudgetTest {
 
         testScheduler.currentTime shouldBeEqualTo 100L
         details shouldBeEqualTo linkedMapOf(
-                "cache.first" to HealthResponse.UP,
-                "cache.active" to TIMEOUT_OUTCOME,
-                "cache.skipped" to TIMEOUT_OUTCOME,
-            )
-        (invocations.map(AtomicInteger::get)) shouldBeEqualTo listOf(1, 1, 0)
-        (timerCount(registry, "first", SUCCESS_OUTCOME)) shouldBeEqualTo 1L
-        (timerCount(registry, "active", TIMEOUT_OUTCOME)) shouldBeEqualTo 1L
-        (CACHE_OUTCOMES.sumOf { timerCount(registry, "skipped", it) }) shouldBeEqualTo 0L
-        (bindings[1].currentSample().queueDepth.isNaN()).shouldBeTrue()
-        (bindings[2].currentSample().queueDepth.isNaN()).shouldBeTrue()
+            "cache.first" to HealthResponse.UP,
+            "cache.active" to TIMEOUT_OUTCOME,
+            "cache.skipped" to TIMEOUT_OUTCOME,
+        )
+        invocations.map(AtomicInteger::get) shouldBeEqualTo listOf(1, 1, 0)
+        timerCount(registry, "first", SUCCESS_OUTCOME) shouldBeEqualTo 1L
+        timerCount(registry, "active", TIMEOUT_OUTCOME) shouldBeEqualTo 1L
+        CACHE_OUTCOMES.sumOf { timerCount(registry, "skipped", it) } shouldBeEqualTo 0L
+        bindings[1].currentSample().queueDepth.isNaN().shouldBeTrue()
+        bindings[2].currentSample().queueDepth.isNaN().shouldBeTrue()
     }
 
     @Test
@@ -171,11 +175,11 @@ class ExposedKtorReadinessBudgetTest {
 
         testScheduler.currentTime shouldBeEqualTo (r + jEffective + r + r).inWholeMilliseconds
         details shouldBeEqualTo linkedMapOf(
-                "jdbc" to HealthResponse.UP,
-                "r2dbc" to HealthResponse.UP,
-                "cache.cache" to TIMEOUT_OUTCOME,
-            )
-        (timerCount(registry, "cache", TIMEOUT_OUTCOME)) shouldBeEqualTo 1L
+            "jdbc" to HealthResponse.UP,
+            "r2dbc" to HealthResponse.UP,
+            "cache.cache" to TIMEOUT_OUTCOME,
+        )
+        timerCount(registry, "cache", TIMEOUT_OUTCOME) shouldBeEqualTo 1L
     }
 
     @Test
@@ -213,45 +217,48 @@ class ExposedKtorReadinessBudgetTest {
             releaseOlderB.complete(Unit)
             older.join()
 
-            (bindings[1].currentSample().status) shouldBeEqualTo ExposedKtorCacheStatus.UP
-            (timerCount(registry, "b", SUCCESS_OUTCOME)) shouldBeEqualTo 1L
-            (timerCount(registry, "b", CANCELLED_OUTCOME)) shouldBeEqualTo 0L
+            bindings[1].currentSample().status shouldBeEqualTo ExposedKtorCacheStatus.UP
+            timerCount(registry, "b", SUCCESS_OUTCOME) shouldBeEqualTo 1L
+            timerCount(registry, "b", CANCELLED_OUTCOME) shouldBeEqualTo 0L
         }
     }
 
     @Test
-    fun `blocking cancellation-insensitive probe may outlive deadline and library adds no compensating worker`() = runBlocking {
-        val entered = CountDownLatch(1)
-        val release = CountDownLatch(1)
-        val deadlinePassed = CountDownLatch(1)
-        val executor = Executors.newSingleThreadExecutor()
-        val timer = Executors.newSingleThreadScheduledExecutor()
-        val dispatcher = executor.asCoroutineDispatcher()
-        try {
-            val binding = bindings(
-                contributor("blocking") {
-                    entered.countDown()
-                    release.await()
-                    ExposedKtorCacheStatus.UP
+    fun `blocking cancellation-insensitive probe may outlive deadline and library adds no compensating worker`() =
+        runBlocking {
+            val entered = CountDownLatch(1)
+            val release = CountDownLatch(1)
+            val deadlinePassed = CountDownLatch(1)
+            val executor = Executors.newSingleThreadExecutor()
+            val timer = Executors.newSingleThreadScheduledExecutor()
+            val dispatcher = executor.asCoroutineDispatcher()
+            try {
+                val binding = bindings(
+                    contributor("blocking") {
+                        entered.countDown()
+                        release.await()
+                        ExposedKtorCacheStatus.UP
+                    }
+                )
+                val attempt = async(dispatcher) {
+                    aggregateExposedKtorReadiness(null, null, binding, 20.milliseconds)
                 }
-            )
-            val attempt = async(dispatcher) {
-                aggregateExposedKtorReadiness(null, null, binding, 20.milliseconds)
+
+                entered.await(2, TimeUnit.SECONDS).shouldBeTrue()
+                timer.schedule({ deadlinePassed.countDown() }, 80, TimeUnit.MILLISECONDS)
+                deadlinePassed.await(2, TimeUnit.SECONDS).shouldBeTrue()
+                attempt.isCompleted.shouldBeFalse()
+
+                release.countDown()
+                withTimeout(2.seconds) { attempt.await() }
+            } finally {
+                release.countDown()
+                dispatcher.close()
+                timer.shutdownNow()
+                executor.awaitTermination(2, TimeUnit.SECONDS).shouldBeTrue()
+                timer.awaitTermination(2, TimeUnit.SECONDS).shouldBeTrue()
             }
-            (entered.await(2, TimeUnit.SECONDS)).shouldBeTrue()
-            timer.schedule({ deadlinePassed.countDown() }, 80, TimeUnit.MILLISECONDS)
-            (deadlinePassed.await(2, TimeUnit.SECONDS)).shouldBeTrue()
-            attempt.isCompleted.shouldBeFalse()
-            release.countDown()
-            withTimeout(2.seconds) { attempt.await() }
-        } finally {
-            release.countDown()
-            dispatcher.close()
-            timer.shutdownNow()
-            (executor.awaitTermination(2, TimeUnit.SECONDS)).shouldBeTrue()
-            (timer.awaitTermination(2, TimeUnit.SECONDS)).shouldBeTrue()
         }
-    }
 
     @Test
     fun `jdbc parent cancellation records exactly one cancelled outcome and no timeout`() = runBlocking {
@@ -280,7 +287,7 @@ class ExposedKtorReadinessBudgetTest {
                     meterRegistry = registry,
                 )
             }
-            (connectionRequested.await(2, TimeUnit.SECONDS)).shouldBeTrue()
+            connectionRequested.await(2, TimeUnit.SECONDS).shouldBeTrue()
             attempt.cancel()
             connectionGate.countDown()
             statementGate.countDown()
@@ -295,7 +302,7 @@ class ExposedKtorReadinessBudgetTest {
             connectionGate.countDown()
             statementGate.countDown()
             dispatcher.close()
-            (executor.awaitTermination(2, TimeUnit.SECONDS)).shouldBeTrue()
+            executor.awaitTermination(2, TimeUnit.SECONDS).shouldBeTrue()
             h2.connection.use { connection ->
                 connection.createStatement().use { it.execute("SHUTDOWN") }
             }
@@ -313,6 +320,7 @@ class ExposedKtorReadinessBudgetTest {
                 listOf(ExposedKtorCacheContributor.snapshot("snapshot", buffer))
             ),
         ).single()
+
         val roundBoundary = CyclicBarrier(3)
         val produced = Semaphore(0)
         val executor = Executors.newFixedThreadPool(3)
@@ -331,8 +339,8 @@ class ExposedKtorReadinessBudgetTest {
                 val drainer = async(dispatcher) {
                     repeat(rounds) {
                         roundBoundary.await(5, TimeUnit.SECONDS)
-                        (produced.tryAcquire(5, TimeUnit.SECONDS)).shouldBeTrue()
-                        (buffer.poll()?.affectedCount) shouldBeEqualTo 1
+                        produced.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
+                        buffer.poll()?.affectedCount shouldBeEqualTo 1
                         roundBoundary.await(5, TimeUnit.SECONDS)
                     }
                 }
@@ -340,7 +348,7 @@ class ExposedKtorReadinessBudgetTest {
                     repeat(rounds) {
                         roundBoundary.await(5, TimeUnit.SECONDS)
                         val details = aggregateExposedKtorReadiness(null, null, listOf(binding), 1.seconds)
-                        (details["cache.snapshot"]) shouldBeEqualTo HealthResponse.UP
+                        details["cache.snapshot"] shouldBeEqualTo HealthResponse.UP
                         roundBoundary.await(5, TimeUnit.SECONDS)
                     }
                 }
@@ -351,6 +359,7 @@ class ExposedKtorReadinessBudgetTest {
 
             buffer.size shouldBeEqualTo rounds
             buffer.recordForTest(affectedCount = 777)
+
             val retainedAffectedCounts = mutableListOf<Int>()
             val drain = buffer.drainTo(
                 observer = { retainedAffectedCounts += it.affectedCount },
@@ -360,21 +369,23 @@ class ExposedKtorReadinessBudgetTest {
             drain.deliveredCount shouldBeEqualTo rounds + 1
             drain.observerFailedCount shouldBeEqualTo 0
             drain.remainingCount shouldBeEqualTo 0
-            (retainedAffectedCounts.count { it == 1 }) shouldBeEqualTo rounds
-            (retainedAffectedCounts.count { it == 777 }) shouldBeEqualTo 1
+            retainedAffectedCounts.count { it == 1 } shouldBeEqualTo rounds
+            retainedAffectedCounts.count { it == 777 } shouldBeEqualTo 1
             buffer.size shouldBeEqualTo 0
             buffer.droppedCount shouldBeEqualTo 0L
             buffer.observerFailureCount shouldBeEqualTo 0L
-            (timerCount(registry, "snapshot", SUCCESS_OUTCOME, kind = "snapshot")) shouldBeEqualTo rounds.toLong()
+            timerCount(registry, "snapshot", SUCCESS_OUTCOME, kind = "snapshot") shouldBeEqualTo rounds.toLong()
             registry.meters.size shouldBeEqualTo 8
             registry.meters.filter { it.id.type.name == "GAUGE" }.forEach { meter ->
-                meter.measure().forEach { value -> (value.value.isNaN() || value.value >= 0.0).shouldBeTrue() }
+                meter.measure().forEach { value ->
+                    (value.value.isNaN() || value.value >= 0.0).shouldBeTrue()
+                }
             }
         } finally {
             roundBoundary.reset()
             produced.release(rounds)
             dispatcher.close()
-            (executor.awaitTermination(2, TimeUnit.SECONDS)).shouldBeTrue()
+            executor.awaitTermination(2, TimeUnit.SECONDS).shouldBeTrue()
         }
     }
 
@@ -429,13 +440,13 @@ class ExposedKtorReadinessBudgetTest {
                 val responseAttempt = async(Dispatchers.Default) {
                     bluetape4kJsonClient().get("/readyz/exposed")
                 }
-                (connectionRequested.await(2, TimeUnit.SECONDS)).shouldBeTrue()
+                connectionRequested.await(2, TimeUnit.SECONDS).shouldBeTrue()
                 scheduler.schedule(
                     { connectionGate.countDown() },
                     connectionDelay.inWholeMilliseconds,
                     TimeUnit.MILLISECONDS,
                 )
-                (statementStarted.await(2, TimeUnit.SECONDS)).shouldBeTrue()
+                statementStarted.await(2, TimeUnit.SECONDS).shouldBeTrue()
                 val statementHoldStarted = TimeSource.Monotonic.markNow()
                 scheduler.schedule(
                     { statementGate.countDown() },
@@ -448,31 +459,32 @@ class ExposedKtorReadinessBudgetTest {
             }
             val elapsed = started.elapsedNow()
 
-            (response.decodeJsonBody<HealthResponse>()) shouldBeEqualTo HealthResponse.down(
-                    linkedMapOf(
-                        "jdbc" to TIMEOUT_OUTCOME,
-                        "r2dbc" to HealthResponse.UP,
-                        "cache.cache" to HealthResponse.UP,
-                    )
+            response.decodeJsonBody<HealthResponse>() shouldBeEqualTo HealthResponse.down(
+                linkedMapOf(
+                    "jdbc" to TIMEOUT_OUTCOME,
+                    "r2dbc" to HealthResponse.UP,
+                    "cache.cache" to HealthResponse.UP,
                 )
-            (statementHeld >= jdbcQueryTimeout - 150.milliseconds).should("statementHeld=$statementHeld") { it }
-            (elapsed >= connectionDelay + jdbcQueryTimeout - 200.milliseconds)
-                .should("elapsed=$elapsed connectionDelay=$connectionDelay jdbcQueryTimeout=$jdbcQueryTimeout") { it }
+            )
+            statementHeld shouldBeGreaterThan jdbcQueryTimeout - 150.milliseconds
+            elapsed shouldBeGreaterThan connectionDelay + jdbcQueryTimeout - 200.milliseconds
+
             val formula = readinessTimeout + jdbcQueryTimeout + readinessTimeout + readinessTimeout
-            (elapsed < formula + 2.seconds).should("elapsed=$elapsed formula=$formula") { it }
-            (databaseTimerCount(meterRegistry, JDBC_BACKEND, TIMEOUT_OUTCOME)) shouldBeEqualTo 1L
-            (databaseTimerCount(meterRegistry, JDBC_BACKEND, CANCELLED_OUTCOME)) shouldBeEqualTo 0L
-            (databaseTimerCount(meterRegistry, JDBC_BACKEND, SUCCESS_OUTCOME)) shouldBeEqualTo 0L
-            (databaseTimerCount(meterRegistry, JDBC_BACKEND, ERROR_OUTCOME)) shouldBeEqualTo 0L
-            (databaseTimerCount(meterRegistry, R2DBC_BACKEND, SUCCESS_OUTCOME)) shouldBeEqualTo 1L
-            (timerCount(meterRegistry, "cache", SUCCESS_OUTCOME)) shouldBeEqualTo 1L
+            elapsed shouldBeLessThan formula + 2.seconds
+
+            databaseTimerCount(meterRegistry, JDBC_BACKEND, TIMEOUT_OUTCOME) shouldBeEqualTo 1L
+            databaseTimerCount(meterRegistry, JDBC_BACKEND, CANCELLED_OUTCOME) shouldBeEqualTo 0L
+            databaseTimerCount(meterRegistry, JDBC_BACKEND, SUCCESS_OUTCOME) shouldBeEqualTo 0L
+            databaseTimerCount(meterRegistry, JDBC_BACKEND, ERROR_OUTCOME) shouldBeEqualTo 0L
+            databaseTimerCount(meterRegistry, R2DBC_BACKEND, SUCCESS_OUTCOME) shouldBeEqualTo 1L
+            timerCount(meterRegistry, "cache", SUCCESS_OUTCOME) shouldBeEqualTo 1L
         } finally {
             connectionGate.countDown()
             statementGate.countDown()
             jdbcDispatcher.close()
             scheduler.shutdownNow()
-            (jdbcExecutor.awaitTermination(2, TimeUnit.SECONDS)).shouldBeTrue()
-            (scheduler.awaitTermination(2, TimeUnit.SECONDS)).shouldBeTrue()
+            jdbcExecutor.awaitTermination(2, TimeUnit.SECONDS).shouldBeTrue()
+            scheduler.awaitTermination(2, TimeUnit.SECONDS).shouldBeTrue()
             h2.connection.use { connection ->
                 connection.createStatement().use { it.execute("SHUTDOWN") }
             }
@@ -511,7 +523,9 @@ class ExposedKtorReadinessBudgetTest {
             "jdbcQueryTimeout",
             "defaultQueryTimeout",
             "no separate Ktor query timeout",
-        ).forEach { (kdoc.contains(it)).should(it) { it } }
+        ).forEach {
+            kdoc shouldContain it
+        }
     }
 
     private fun bindings(
@@ -567,7 +581,8 @@ class ExposedKtorReadinessBudgetTest {
 
     private fun healthRoutesSource(): String {
         val relative = "ktor/exposed/src/main/kotlin/io/bluetape4k/exposed/ktor/ExposedKtorHealthRoutes.kt"
-        val paths = listOf(Path.of(relative), Path.of("src/main/kotlin/io/bluetape4k/exposed/ktor/ExposedKtorHealthRoutes.kt"))
+        val paths =
+            listOf(Path.of(relative), Path.of("src/main/kotlin/io/bluetape4k/exposed/ktor/ExposedKtorHealthRoutes.kt"))
         return Files.readString(paths.first(Files::exists))
     }
 
@@ -577,7 +592,7 @@ class ExposedKtorReadinessBudgetTest {
         private val connectionGate: CountDownLatch,
         private val statementStarted: CountDownLatch,
         private val statementGate: CountDownLatch,
-    ) : DataSource {
+    ): DataSource {
         override fun getConnection(): Connection {
             connectionRequested.countDown()
             connectionGate.await()
@@ -591,11 +606,17 @@ class ExposedKtorReadinessBudgetTest {
         }
 
         override fun getLogWriter(): PrintWriter? = delegate.logWriter
-        override fun setLogWriter(out: PrintWriter?) { delegate.logWriter = out }
-        override fun setLoginTimeout(seconds: Int) { delegate.loginTimeout = seconds }
+        override fun setLogWriter(out: PrintWriter?) {
+            delegate.logWriter = out
+        }
+
+        override fun setLoginTimeout(seconds: Int) {
+            delegate.loginTimeout = seconds
+        }
+
         override fun getLoginTimeout(): Int = delegate.loginTimeout
         override fun getParentLogger(): Logger = delegate.parentLogger
-        override fun <T : Any?> unwrap(iface: Class<T>?): T = delegate.unwrap(iface)
+        override fun <T: Any?> unwrap(iface: Class<T>?): T = delegate.unwrap(iface)
         override fun isWrapperFor(iface: Class<*>?): Boolean = delegate.isWrapperFor(iface)
     }
 
@@ -605,12 +626,12 @@ class ExposedKtorReadinessBudgetTest {
             when (result) {
                 is PreparedStatement -> result.gated(started, release, PreparedStatement::class.java)
                 is Statement -> result.gated(started, release, Statement::class.java)
-                else -> result
+                else         -> result
             }
         } as Connection
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T : Statement> T.gated(
+    private fun <T: Statement> T.gated(
         started: CountDownLatch,
         release: CountDownLatch,
         type: Class<T>,
