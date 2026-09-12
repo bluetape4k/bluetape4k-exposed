@@ -12,39 +12,33 @@ ClickHouse JDBC를 위한 Kotlin/Exposed 다이얼렉트입니다. Exposed의 �
 
 - **ClickHouseDatabase** — `connect(host, port, database)` 및 `connect(jdbcUrl)` 팩토리 함수로 JDBC 연결 설정
 - **ClickHouseTable** — `engine: ClickHouseEngine` 파라미터를 받는 추상 기본 클래스; DDL 정제 및 ENGINE 절 주입 처리
-- **MergeTree 엔진 DSL** — `mergeTree {}`, `replacingMergeTree {}`, `summingMergeTree {}`, `aggregatingMergeTree {}`, `Log`, `TinyLog`, `Memory` 타입 안전 DSL
-- **풍부한 컬럼 타입** — `String`, `FixedString(N)`, `Int8`–`Int64`, `UInt8`–`UInt64`, `Float32/64`, `DateTime64`, `Date32`, `LowCardinality(T)`, `Array(T)`, `Nullable(T)`
+- **MergeTree 엔진
+  DSL** — `mergeTree {}`, `replacingMergeTree {}`, `summingMergeTree {}`, `aggregatingMergeTree {}`, `Log`, `TinyLog`, `Memory` 타입 안전 DSL
+- **풍부한 컬럼
+  타입** — `String`, `FixedString(N)`, `Int8`–`Int64`, `UInt8`–`UInt64`, `Float32/64`, `DateTime64`, `Date32`, `LowCardinality(T)`, `Array(T)`, `Nullable(T)`
 - **날짜 함수** — `toYYYYMM()`, `dateDiff(unit, start, end)`, `toStartOfInterval()`
 - **집계 함수** — `argMax()`, `argMin()`, `quantile(level)()`, `uniq()`, `uniqExact()`
-- **코루틴 헬퍼** — `suspendTransaction {}`은 호출자가 선택한 dispatcher에서 blocking JDBC를 실행하고, `queryList {}`는 전체 결과를 수집하며, `queryFlow(query = ..., mapper = ...)`는 변환한 행을 점진적으로 전달합니다. 기존 `queryFlow {}`의 전체 수집 동작은 유지합니다.
+- **코루틴
+  헬퍼** — `suspendTransaction {}`은 호출자가 선택한 dispatcher에서 blocking JDBC를 실행하고, `queryList {}`는 전체 결과를 수집하며, `queryFlow(query = ..., mapper = ...)`는 변환한 행을 점진적으로 전달합니다. 기존 `queryFlow {}`의 전체 수집 동작은 유지합니다.
 
 ## Table 옵션 지원 정책
 
-Exposed `1.5.0`의 generic `Table.options`·`storageParameters`는 dialect별 안전성을
-검사하지 않습니다. 다음 정책은 CREATE TABLE 생성에만 적용됩니다.
+Exposed `1.5.0`의 generic `Table.options`·`storageParameters`는 dialect별 안전성을 검사하지 않습니다. 다음 정책은 CREATE TABLE 생성에만 적용됩니다.
 
-| 테이블 / DB | options | storageParameters |
-| --- | --- | --- |
-| 기본 Table / H2 | upstream 동작 유지, 빈 옵션 기준 DDL 검증 | 빈 목록 기준 검증 |
-| 기본 Table / PostgreSQL | `USING heap` 생성·실행 검증 | `FillFactorParameter(70)`·`AutovacuumEnabledParameter(false)` 보존·실행 검증 |
-| StarRocksTable | 비어 있지 않으면 `IllegalArgumentException` | 비어 있지 않으면 `IllegalArgumentException` |
-| ClickHouseTable | 비어 있지 않으면 `IllegalArgumentException` | 비어 있지 않으면 `IllegalArgumentException` |
+| 테이블 / DB             | options                                     | storageParameters                                                            |
+|-------------------------|---------------------------------------------|------------------------------------------------------------------------------|
+| 기본 Table / H2         | upstream 동작 유지, 빈 옵션 기준 DDL 검증   | 빈 목록 기준 검증                                                            |
+| 기본 Table / PostgreSQL | `USING heap` 생성·실행 검증                 | `FillFactorParameter(70)`·`AutovacuumEnabledParameter(false)` 보존·실행 검증 |
+| StarRocksTable          | 비어 있지 않으면 `IllegalArgumentException` | 비어 있지 않으면 `IllegalArgumentException`                                  |
+| ClickHouseTable         | 비어 있지 않으면 `IllegalArgumentException` | 비어 있지 않으면 `IllegalArgumentException`                                  |
 
-custom table에서는 typed·raw·사용자 정의 옵션을 모두 SQL 생성 전에 거부하며,
-옵션의 `toSQL()`이나 문자열 정제로 안전성을 추정하지 않습니다. 빈 문자열 옵션도
-지원으로 취급하지 않습니다. 이는 원래 raw 옵션을 지정하던 호출자에게 동작 변경입니다.
+custom table에서는 typed·raw·사용자 정의 옵션을 모두 SQL 생성 전에 거부하며, 옵션의 `toSQL()`이나 문자열 정제로 안전성을 추정하지 않습니다. 빈 문자열 옵션도 지원으로 취급하지 않습니다. 이는 원래 raw 옵션을 지정하던 호출자에게 동작 변경입니다.
 
-StarRocks는 기존의 고정 `ENGINE=OLAP PROPERTIES ("replication_num" = "1")`을
-유지합니다. ClickHouse는 기존 `engine` DSL의 `orderBy`·`partitionBy`·`setting`을
-사용합니다. MySQL engine/charset과 PostgreSQL WITH 파라미터를 이 설정으로 자동 변환하지 않습니다.
-검증된 generic 옵션 allowlist는 현재 없으며, 임의 raw SQL 우회 API도 추가하지 않습니다.
+StarRocks는 기존의 고정 `ENGINE=OLAP PROPERTIES ("replication_num" = "1")`을 유지합니다. ClickHouse는 기존 `engine` DSL의 `orderBy`·`partitionBy`·`setting`을 사용합니다. MySQL engine/charset과 PostgreSQL WITH 파라미터를 이 설정으로 자동 변환하지 않습니다. 검증된 generic 옵션 allowlist는 현재 없으며, 임의 raw SQL 우회 API도 추가하지 않습니다.
 
 ### 수동 migration
 
-[Exposed Table 옵션 계약](https://github.com/JetBrains/Exposed/blob/1.5.0/exposed-core/src/main/kotlin/org/jetbrains/exposed/v1/core/Table.kt)에
-따르면 옵션 변경은 migration diff로 추적되지 않습니다. 기존 테이블 변경은 현재 schema와
-원하는 설정을 비교한 뒤 DB별 ALTER/재생성 SQL을 별도 migration으로 작성하고,
-테스트 DB에서 데이터 보존과 복구 절차를 검증한 후 적용해야 합니다. `SchemaUtils.create`
+[Exposed Table 옵션 계약](https://github.com/JetBrains/Exposed/blob/1.5.0/exposed-core/src/main/kotlin/org/jetbrains/exposed/v1/core/Table.kt)에 따르면 옵션 변경은 migration diff로 추적되지 않습니다. 기존 테이블 변경은 현재 schema와 원하는 설정을 비교한 뒤 DB별 ALTER/재생성 SQL을 별도 migration으로 작성하고, 테스트 DB에서 데이터 보존과 복구 절차를 검증한 후 적용해야 합니다. `SchemaUtils.create`
 재호출이나 자동 diff만으로 옵션이 갱신된다고 가정하지 마세요.
 
 ## 빠른 시작
@@ -119,87 +113,54 @@ queryFlow(database,
 
 통합 테스트는 `clickhouse-jdbc` `0.9.9`와 ClickHouse Server
 `26.7.3.19` 조합을 사용합니다. JDBC URL의 서버 설정에는
-`clickhouse_setting_` 접두사가 필요합니다([ClickHouse JDBC URL 문서](https://github.com/ClickHouse/clickhouse-java/blob/v0.9.9/clickhouse-jdbc/README.md#jdbc-url)).
-catalog의 기본 `ClickHouseDriver`(`com.clickhouse.jdbc.ClickHouseDriver`)는
-V2 경로이며, 테스트에서 `ClickHouse` metadata와 `0.9.9` driver 버전을
-기록하고 실제 `com.clickhouse.jdbc.ConnectionImpl`로 unwrap되는지 확인합니다.
-V2 probe matrix는 연결 시도, 서버 실행 timeout, 전송 socket timeout,
-로컬/downstream cancellation을 분리합니다. 호출 수락이나 로컬 정리를
-원격 query cancellation 보장으로 확대하지 않습니다.
+`clickhouse_setting_` 접두사가 필요합니다 ([ClickHouse JDBC URL 문서](https://github.com/ClickHouse/clickhouse-java/blob/v0.9.9/clickhouse-jdbc/README.md#jdbc-url)). catalog의 기본 `ClickHouseDriver`(`com.clickhouse.jdbc.ClickHouseDriver`)는 V2 경로이며, 테스트에서 `ClickHouse` metadata와 `0.9.9` driver 버전을 기록하고 실제 `com.clickhouse.jdbc.ConnectionImpl`로 unwrap되는지 확인합니다. V2 probe matrix는 연결 시도, 서버 실행 timeout, 전송 socket timeout, 로컬/downstream cancellation을 분리합니다. 호출 수락이나 로컬 정리를 원격 query cancellation 보장으로 확대하지 않습니다.
 
 - `clickhouse_setting_max_result_rows=2`와
   `clickhouse_setting_result_overflow_mode=throw` 조합은
   `TOO_MANY_ROWS_OR_BYTES` JDBC/Exposed SQL 예외를 발생시킵니다.
   `queryFlow`는 쿼리를 재실행하지 않으며 `ResultSet`·`Statement`·`Connection`
   을 정리한 뒤 다음 수집을 성공시킵니다.
-- `clickhouse_setting_result_overflow_mode=break`는 부분 결과를 반환합니다.
-  서버는 블록 경계까지 결과를 반올림할 수 있으므로
-  `clickhouse_setting_max_result_rows`는 클라이언트의 정확한 절단 상한이
-  아닙니다. 테스트는 `clickhouse_setting_max_block_size=2`를 고정하고 매번
-  cold collection에서 두 행 접두사를 확인합니다.
+- `clickhouse_setting_result_overflow_mode=break`는 부분 결과를 반환합니다. 서버는 블록 경계까지 결과를 반올림할 수 있으므로
+  `clickhouse_setting_max_result_rows`는 클라이언트의 정확한 절단 상한이 아닙니다. 테스트는 `clickhouse_setting_max_block_size=2`를 고정하고 매번 cold collection에서 두 행 접두사를 확인합니다.
 - V2 `Statement#setQueryTimeout(1)` 직접 probe는
-  `SELECT sleepEachRow(1), number FROM system.numbers LIMIT 3`을 세 번
-  실행합니다. 매번 행을 방출하기 전에
+  `SELECT sleepEachRow(1), number FROM system.numbers LIMIT 3`을 세 번 실행합니다. 매번 행을 방출하기 전에
   `SQLTimeoutException("Query execution time exceeded limit")`이 발생하며,
-  `ResultSet`·`Statement`·`Connection`을 정리한 뒤 후속 `queryFlow` 수집도
-  성공합니다. 이는 직접 설정한 JDBC statement에서 V2 서버
-  `max_execution_time`을 적용하는 계약입니다. `queryFlow`는 해당 statement
-  handle을 노출하지 않습니다. Hikari `connectionTimeout`은 풀에서
-  connection을 빌리는 시간일 뿐 query deadline이 아니므로, 호출자는
-  `Statement#setQueryTimeout` 또는 `clickhouse_setting_max_execution_time`을
-  JDBC/DataSource 경계에서 설정해야 합니다.
-- 같은 지연 행 형태에 V2 `socket_timeout=200`을 설정한 probe는 세 번 모두
-  약 2.0초에 두 행을 정상 반환하고 SQL 예외를 발생시키지 않았습니다. 이
-  probe 조건과 서버/driver 조합의 전송 read-timeout 계약은 `N/A`이며 URL에
-  옵션을 넣었다는 이유만으로 socket timeout을 가정하지 마세요.
+  `ResultSet`·`Statement`·`Connection`을 정리한 뒤 후속 `queryFlow` 수집도 성공합니다. 이는 직접 설정한 JDBC statement에서 V2 서버
+  `max_execution_time`을 적용하는 계약입니다. `queryFlow`는 해당 statement handle을 노출하지 않습니다. Hikari `connectionTimeout`은 풀에서 connection을 빌리는 시간일 뿐 query deadline이 아니므로, 호출자는
+  `Statement#setQueryTimeout` 또는 `clickhouse_setting_max_execution_time`을 JDBC/DataSource 경계에서 설정해야 합니다.
+- 같은 지연 행 형태에 V2 `socket_timeout=200`을 설정한 probe는 세 번 모두 약 2.0초에 두 행을 정상 반환하고 SQL 예외를 발생시키지 않았습니다. 이 probe 조건과 서버/driver 조합의 전송 read-timeout 계약은 `N/A`이며 URL에 옵션을 넣었다는 이유만으로 socket timeout을 가정하지 마세요.
 - V2 연결 probe는 닫힌 ephemeral loopback 포트에
-  `connect_timeout=200&connection_timeout=200`을 넣은 `DriverManager` 연결을
-  세 번 시도합니다. 모두 5초 이내 `SQLException`으로 거부됩니다. 이는
-  bounded 연결 거부 결과일 뿐 timeout 만료나 ClickHouse handshake 중단의
-  증거가 아닙니다. V2 client 속성 목록의 연결 timeout 키는
-  `connection_timeout`이며, 이슈에서 요청한 표기인 `connect_timeout`은 V2
-  보장으로 문서화하지 않습니다.
-- `queryFlow(...).take(1)` 수집 세 번은 로컬 cursor와 풀 connection을 정리하고
-  bounded 테스트 시간 안에 후속 수집을 성공시켰습니다. 이는 로컬
-  producer/ResultSet 정리를 입증하지만, 블로킹 V2 JDBC read 즉시 중단이나
-  원격 query 종료를 입증하지 않습니다.
-- V2 `Statement#cancel()`을 행을 받은 뒤 세 번 호출했고 모두 로컬 자원을
-  정리했습니다. `clickhouse-jdbc` `0.9.9` V2 구현은 비동기 `KILL QUERY`를
-  전송합니다([driver source](https://github.com/ClickHouse/clickhouse-java/blob/v0.9.9/jdbc-v2/src/main/java/com/clickhouse/jdbc/StatementImpl.java), [KILL QUERY 문서](https://clickhouse.com/docs/reference/statements/kill)).
-  따라서 `cancel()` 반환 성공만으로 ClickHouse가 원격 query를 종료했다는
-  증거로 삼지 않습니다.
+  `connect_timeout=200&connection_timeout=200`을 넣은 `DriverManager` 연결을 세 번 시도합니다. 모두 5초 이내 `SQLException`으로 거부됩니다. 이는 bounded 연결 거부 결과일 뿐 timeout 만료나 ClickHouse handshake 중단의 증거가 아닙니다. V2 client 속성 목록의 연결 timeout 키는
+  `connection_timeout`이며, 이슈에서 요청한 표기인 `connect_timeout`은 V2 보장으로 문서화하지 않습니다.
+- `queryFlow(...).take(1)` 수집 세 번은 로컬 cursor와 풀 connection을 정리하고 bounded 테스트 시간 안에 후속 수집을 성공시켰습니다. 이는 로컬 producer/ResultSet 정리를 입증하지만, 블로킹 V2 JDBC read 즉시 중단이나 원격 query 종료를 입증하지 않습니다.
+- V2 `Statement#cancel()`을 행을 받은 뒤 세 번 호출했고 모두 로컬 자원을 정리했습니다. `clickhouse-jdbc` `0.9.9` V2 구현은 비동기 `KILL QUERY`를 전송합니다 ([driver source](https://github.com/ClickHouse/clickhouse-java/blob/v0.9.9/jdbc-v2/src/main/java/com/clickhouse/jdbc/StatementImpl.java), [KILL QUERY 문서](https://clickhouse.com/docs/reference/statements/kill)). 따라서 `cancel()` 반환 성공만으로 ClickHouse가 원격 query를 종료했다는 증거로 삼지 않습니다.
 - V1 read-timeout 테스트는 `com.clickhouse.jdbc.DriverV1`을 명시적으로 선택하고
-  `socket_timeout=200`을 설정합니다. 행마다 1초가 걸리는 쿼리는 mapper가
-  한 행도 방출하기 전에 드라이버의 `BatchUpdateException("Read timed out")`
-  (Exposed wrapping)을 발생시킵니다. 풀 자원을 반환한 직후 후속 수집도
-  성공합니다. 이는 실제 JDBC socket-read timeout이며 서버 측
-  `clickhouse_setting_max_execution_time` query-timeout과 다릅니다. 블로킹
-  JDBC 취소를 위해 선택한 driver의 연결 획득·소켓·조회 timeout을 유한하게
-  설정하고, timeout이나 limit 오류가 발생한 수집은 종료된 것으로 처리하세요.
-  이 V1 결과를 V2 보장으로 해석하지 마세요.
+  `socket_timeout=200`을 설정합니다. 행마다 1초가 걸리는 쿼리는 mapper가 한 행도 방출하기 전에 드라이버의 `BatchUpdateException("Read timed out")`
+  (Exposed wrapping)을 발생시킵니다. 풀 자원을 반환한 직후 후속 수집도 성공합니다. 이는 실제 JDBC socket-read timeout이며 서버 측
+  `clickhouse_setting_max_execution_time` query-timeout과 다릅니다. 블로킹 JDBC 취소를 위해 선택한 driver의 연결 획득·소켓·조회 timeout을 유한하게 설정하고, timeout이나 limit 오류가 발생한 수집은 종료된 것으로 처리하세요. 이 V1 결과를 V2 보장으로 해석하지 마세요.
 
 ## 컬럼 타입
 
-| ClickHouse 타입 | Kotlin 타입 | 빌더 |
-|----------------|-------------|------|
-| String | String | `chString(name)` |
-| FixedString(N) | String | `fixedString(name, n)` |
-| Int8 | Byte | `chInt8(name)` |
-| Int16 | Short | `chInt16(name)` |
-| Int32 | Int | `chInt32(name)` |
-| Int64 | Long | `chInt64(name)` |
-| UInt8 | UByte | `chUByte(name)` |
-| UInt16 | UShort | `chUShort(name)` |
-| UInt32 | UInt | `chUInt(name)` |
-| UInt64 | ULong | `chULong(name)` |
-| UInt64 | BigInteger | `chUInt64BigInt(name)` |
-| Float32 | Float | `chFloat32(name)` |
-| Float64 | Double | `chFloat64(name)` |
-| DateTime64(n) | Instant | `dateTime64(name, precision)` |
-| Date32 | LocalDate | `date32(name)` |
-| LowCardinality(T) | T | `lowCardinality(name, innerType)` / `lowCardinalityString(name)` |
-| Array(T) | List\<T\> | `chArray(name, innerType)` |
-| Nullable(T) | T? | `chNullable(name, innerType)` |
+| ClickHouse 타입   | Kotlin 타입 | 빌더                                                             |
+|-------------------|-------------|------------------------------------------------------------------|
+| String            | String      | `chString(name)`                                                 |
+| FixedString(N)    | String      | `fixedString(name, n)`                                           |
+| Int8              | Byte        | `chInt8(name)`                                                   |
+| Int16             | Short       | `chInt16(name)`                                                  |
+| Int32             | Int         | `chInt32(name)`                                                  |
+| Int64             | Long        | `chInt64(name)`                                                  |
+| UInt8             | UByte       | `chUByte(name)`                                                  |
+| UInt16            | UShort      | `chUShort(name)`                                                 |
+| UInt32            | UInt        | `chUInt(name)`                                                   |
+| UInt64            | ULong       | `chULong(name)`                                                  |
+| UInt64            | BigInteger  | `chUInt64BigInt(name)`                                           |
+| Float32           | Float       | `chFloat32(name)`                                                |
+| Float64           | Double      | `chFloat64(name)`                                                |
+| DateTime64(n)     | Instant     | `dateTime64(name, precision)`                                    |
+| Date32            | LocalDate   | `date32(name)`                                                   |
+| LowCardinality(T) | T           | `lowCardinality(name, innerType)` / `lowCardinalityString(name)` |
+| Array(T)          | List\<T\>   | `chArray(name, innerType)`                                       |
+| Nullable(T)       | T?          | `chNullable(name, innerType)`                                    |
 
 ## 엔진 DSL
 
@@ -280,17 +241,21 @@ transaction(database) {
 
 ## 주의사항
 
-1. **트랜잭션 원자성 없음** — `ClickHouseConnectionWrapper`에서 `commit()`과 `rollback()`은 no-op입니다. 실패 전에 실행된 DML은 **롤백되지 않습니다**. 멱등 삽입이나 ReplacingMergeTree를 이용한 중복 제거로 설계하세요.
+1. **트랜잭션 원자성 없음** — `ClickHouseConnectionWrapper`에서 `commit()`과 `rollback()`은 no-op입니다. 실패 전에 실행된 DML은 **롤백되지
+   않습니다**. 멱등 삽입이나 ReplacingMergeTree를 이용한 중복 제거로 설계하세요.
 
-2. **`modifyColumn` 미지원** — `alterTable { modifyColumn(...) }`은 빈 리스트를 반환합니다. 컬럼 타입 변경은 ClickHouse 네이티브 DDL로 직접 처리해야 합니다.
+2. **`modifyColumn`
+   미지원** — `alterTable { modifyColumn(...) }`은 빈 리스트를 반환합니다. 컬럼 타입 변경은 ClickHouse 네이티브 DDL로 직접 처리해야 합니다.
 
 3. **JDBC 전용, R2DBC 미지원** — 이 모듈은 JDBC 기반입니다. R2DBC/리액티브 통합은 지원하지 않습니다.
 
-4. **`LowCardinality` 래핑 순서** — ClickHouse는 `Nullable(LowCardinality(T))`를 지원하지 않습니다. 반드시 `LowCardinality(Nullable(T))` 순서를 사용하세요.
+4. **`LowCardinality` 래핑
+   순서** — ClickHouse는 `Nullable(LowCardinality(T))`를 지원하지 않습니다. 반드시 `LowCardinality(Nullable(T))` 순서를 사용하세요.
 
 5. **HikariCP 설정** — `autoCommit=true`가 강제됩니다. 불필요한 연결 낭비를 막으려면 `minimumIdle=1`을 설정하세요.
 
-6. **DDL 제약 변환** — Exposed가 생성한 `CREATE TABLE`에서 기본 키 제약·인라인 `REFERENCES`·컬럼 nullability 제약을 제거합니다. 인용된 문자열과 식별자, 주석, `Nullable(T)`, `DEFAULT` 식은 보존합니다. 엔진 DSL의 `ORDER BY`로 물리적 정렬 키를 정의하세요. 테이블 수준 외래 키 제약은 지원하지 않으므로 ClickHouse 테이블에는 외래 키를 선언하지 마세요. Exposed DDL에 한정된 어댑터이며 수동 SQL이나 다른 dialect를 위한 범용 파서는 아닙니다.
+6. **DDL 제약
+   변환** — Exposed가 생성한 `CREATE TABLE`에서 기본 키 제약·인라인 `REFERENCES`·컬럼 nullability 제약을 제거합니다. 인용된 문자열과 식별자, 주석, `Nullable(T)`, `DEFAULT` 식은 보존합니다. 엔진 DSL의 `ORDER BY`로 물리적 정렬 키를 정의하세요. 테이블 수준 외래 키 제약은 지원하지 않으므로 ClickHouse 테이블에는 외래 키를 선언하지 마세요. Exposed DDL에 한정된 어댑터이며 수동 SQL이나 다른 dialect를 위한 범용 파서는 아닙니다.
 
 7. **컬럼 코멘트 제거** — `COMMENT ON COLUMN` 구문은 DDL 필터에 의해 제거되어 효과가 없습니다.
 

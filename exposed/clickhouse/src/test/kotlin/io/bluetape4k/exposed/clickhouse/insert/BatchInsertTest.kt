@@ -1,10 +1,11 @@
 package io.bluetape4k.exposed.clickhouse.insert
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.exposed.clickhouse.AbstractClickHouseTest
 import io.bluetape4k.exposed.clickhouse.domain.Events
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
+import io.bluetape4k.logging.info
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -22,9 +23,9 @@ import java.time.Instant
  * 블록 중간 예외가 발생해도 이미 INSERT된 행은 롤백되지 않습니다.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class BatchInsertTest : AbstractClickHouseTest() {
+class BatchInsertTest: AbstractClickHouseTest() {
 
-    companion object : KLogging() {
+    companion object: KLogging() {
         private const val BATCH_SIZE = 10_000
         private const val HALF_BATCH = BATCH_SIZE / 2
     }
@@ -88,8 +89,9 @@ class BatchInsertTest : AbstractClickHouseTest() {
             exec("SELECT count(*) FROM events") { rs -> rs.next(); rs.getLong(1) } ?: 0L
         }
         count shouldBeGreaterOrEqualTo 0L  // 남아있을 수도 있고, 드라이버 구현에 따라 0일 수도 있음
+
         // 핵심: 예외가 발생해도 프로그램 자체는 계속 실행 가능
-        log.info("After exception in transaction, row count: $count (원자성 없음 확인)")
+        log.info { "After exception in transaction, row count: $count (원자성 없음 확인)" }
     }
 
     @Test

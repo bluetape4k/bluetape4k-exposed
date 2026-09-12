@@ -16,8 +16,8 @@ class Date32ColumnType: ColumnType<LocalDate>() {
     override fun valueFromDB(value: Any): LocalDate = when (value) {
         is LocalDate -> value
         is java.sql.Date -> value.toLocalDate()
-        is String -> LocalDate.parse(value)
-        else -> error("Unexpected Date32 value: $value (${value::class.simpleName})")
+        is String    -> LocalDate.parse(value)
+        else         -> error("Unexpected Date32 value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: LocalDate): Any = java.sql.Date.valueOf(value)

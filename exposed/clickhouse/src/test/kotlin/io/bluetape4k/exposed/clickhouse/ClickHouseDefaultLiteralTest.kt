@@ -54,7 +54,7 @@ class ClickHouseDefaultLiteralTest: AbstractClickHouseTest() {
                 SchemaUtils.create(table)
                 val defaultExpression = exec(
                     "SELECT default_expression FROM system.columns " +
-                        "WHERE database = currentDatabase() AND table = 'issue821_default_literal' AND name = 'value'",
+                            "WHERE database = currentDatabase() AND table = 'issue821_default_literal' AND name = 'value'",
                 ) { rs -> check(rs.next()); rs.getString(1) }
                 defaultExpression shouldBeEqualTo "'$defaultValue'"
                 // JDBC INSERT 경로 차이와 분리하여 서버가 실제 DEFAULT를 적용하는지 검증합니다.

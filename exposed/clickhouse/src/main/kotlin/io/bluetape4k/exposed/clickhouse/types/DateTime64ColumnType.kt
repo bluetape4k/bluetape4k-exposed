@@ -21,13 +21,13 @@ class DateTime64ColumnType(val precision: Int = 3): ColumnType<Instant>() {
     override fun sqlType(): String = "DateTime64($precision, 'UTC')"
 
     override fun valueFromDB(value: Any): Instant = when (value) {
-        is Instant -> value
-        is java.sql.Timestamp -> value.toInstant()
+        is Instant                 -> value
+        is java.sql.Timestamp      -> value.toInstant()
         is java.time.LocalDateTime -> value.toInstant(java.time.ZoneOffset.UTC)
         is java.time.OffsetDateTime -> value.toInstant()
-        is Long -> Instant.ofEpochMilli(value)
-        is String -> Instant.parse(value)
-        else -> error("Unexpected DateTime64 value: $value (${value::class.simpleName})")
+        is Long                    -> Instant.ofEpochMilli(value)
+        is String                  -> Instant.parse(value)
+        else                       -> error("Unexpected DateTime64 value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: Instant): Any =

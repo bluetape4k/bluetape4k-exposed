@@ -1,7 +1,7 @@
 package io.bluetape4k.exposed.clickhouse
 
-import org.junit.jupiter.api.Test
 import io.bluetape4k.assertions.assertFailsWith
+import org.junit.jupiter.api.Test
 
 /**
  * [ClickHouseDatabase.connect] 입력 유효성 검증 테스트.

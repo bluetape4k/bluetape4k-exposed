@@ -17,7 +17,7 @@ class ClickHouseUByteColumnType: ColumnType<UByte>() {
         is UByte -> value
         is Number -> value.toInt().toUByte()
         is String -> value.toUByte()
-        else -> error("Unexpected UInt8 value: $value (${value::class.simpleName})")
+        else     -> error("Unexpected UInt8 value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: UByte): Any = value.toShort()
@@ -53,7 +53,7 @@ class ClickHouseUIntColumnType: ColumnType<UInt>() {
         is UInt -> value
         is Number -> value.toLong().toUInt()
         is String -> value.toUInt()
-        else -> error("Unexpected UInt32 value: $value (${value::class.simpleName})")
+        else    -> error("Unexpected UInt32 value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: UInt): Any = value.toLong()
@@ -69,8 +69,8 @@ class ClickHouseULongColumnType: ColumnType<ULong>() {
     override fun sqlType(): String = "UInt64"
 
     override fun valueFromDB(value: Any): ULong = when (value) {
-        is ULong -> value
-        is Long -> value.toULong()
+        is ULong  -> value
+        is Long   -> value.toULong()
         is BigInteger -> {
             // 2^63 이상의 값은 Long.toULong()으로 truncation 없이 변환 가능 (ULong은 2^64-1까지 지원)
             // BigInteger가 ULong 범위(0..2^64-1)를 초과하면 명시적 에러
@@ -81,7 +81,7 @@ class ClickHouseULongColumnType: ColumnType<ULong>() {
         }
         is Number -> value.toLong().toULong()
         is String -> value.toULong()
-        else -> error("Unexpected UInt64 value: $value (${value::class.simpleName})")
+        else      -> error("Unexpected UInt64 value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: ULong): Any = value.toLong()
@@ -99,7 +99,7 @@ class ClickHouseUInt64BigIntColumnType: ColumnType<BigInteger>() {
         is BigInteger -> value
         is Number -> BigInteger.valueOf(value.toLong())
         is String -> BigInteger(value)
-        else -> error("Unexpected UInt64 value: $value (${value::class.simpleName})")
+        else      -> error("Unexpected UInt64 value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: BigInteger): Any = value

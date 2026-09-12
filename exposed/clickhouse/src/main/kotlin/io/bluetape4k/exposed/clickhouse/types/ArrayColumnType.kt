@@ -20,7 +20,7 @@ class ClickHouseArrayColumnType<T: Any>(val inner: ColumnType<T>): ColumnType<Li
     override fun sqlType(): String = "Array(${inner.sqlType()})"
 
     override fun valueFromDB(value: Any): List<T> = when (value) {
-        is List<*> -> value.map { elem ->
+        is List<*>  -> value.map { elem ->
             if (elem == null) error("Array element is null — Array(Nullable(T)) is not supported")
             inner.valueFromDB(elem) as T
         }
@@ -29,8 +29,8 @@ class ClickHouseArrayColumnType<T: Any>(val inner: ColumnType<T>): ColumnType<Li
             inner.valueFromDB(elem) as T
         }
         is java.sql.Array -> valueFromDB(value.array)
-        is String -> error("Array value returned as String literal '$value' — unsupported. Report this as a ClickHouse JDBC issue.")
-        else -> error("Unexpected Array value: $value (${value::class.simpleName})")
+        is String   -> error("Array value returned as String literal '$value' — unsupported. Report this as a ClickHouse JDBC issue.")
+        else        -> error("Unexpected Array value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: List<T>): Any =

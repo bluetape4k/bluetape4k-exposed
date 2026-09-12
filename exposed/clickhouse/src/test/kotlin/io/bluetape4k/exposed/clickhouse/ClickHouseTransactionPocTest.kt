@@ -1,16 +1,17 @@
 package io.bluetape4k.exposed.clickhouse
 
-import io.bluetape4k.logging.KLogging
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.info
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import io.bluetape4k.assertions.assertFailsWith
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLFeatureNotSupportedException
-import java.util.Properties
+import java.util.*
 
 /**
  * ClickHouse JDBC 0.9.5 트랜잭션 동작 PoC 테스트.
@@ -20,9 +21,9 @@ import java.util.Properties
  * 2. requiresAutoCommitOnCreateDrop flag의 DDL 영향 확인
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class ClickHouseTransactionPocTest : AbstractClickHouseTest() {
+class ClickHouseTransactionPocTest: AbstractClickHouseTest() {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     private fun rawConnection(): Connection {
         val props = Properties().apply {
@@ -45,7 +46,7 @@ class ClickHouseTransactionPocTest : AbstractClickHouseTest() {
             assertFailsWith<SQLFeatureNotSupportedException> {
                 conn.commit()
             }
-            log.info("raw commit() with autoCommit=true: throws SQLFeatureNotSupportedException as expected")
+            log.info { "raw commit() with autoCommit=true: throws SQLFeatureNotSupportedException as expected" }
         }
     }
 
@@ -60,7 +61,7 @@ class ClickHouseTransactionPocTest : AbstractClickHouseTest() {
             assertFailsWith<SQLFeatureNotSupportedException> {
                 conn.rollback()
             }
-            log.info("raw rollback() with autoCommit=true: throws SQLFeatureNotSupportedException as expected")
+            log.info { "raw rollback() with autoCommit=true: throws SQLFeatureNotSupportedException as expected" }
         }
     }
 

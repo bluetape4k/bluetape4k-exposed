@@ -1,11 +1,11 @@
 package io.bluetape4k.exposed.clickhouse
 
-import io.mockk.every
-import io.mockk.clearMocks
-import io.mockk.mockk
-import io.mockk.verify
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
+import io.mockk.clearMocks
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.sql.Connection

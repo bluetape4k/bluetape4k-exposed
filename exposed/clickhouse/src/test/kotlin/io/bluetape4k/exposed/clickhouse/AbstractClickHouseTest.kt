@@ -44,7 +44,12 @@ abstract class AbstractClickHouseTest {
                     return
                 }.onFailure { e ->
                     if (attempt < maxAttempts - 1) {
-                        log.warn("ClickHouse not ready (attempt {}/{}), waiting {}ms...", attempt + 1, maxAttempts, backoffMillis)
+                        log.warn(
+                            "ClickHouse not ready (attempt {}/{}), waiting {}ms...",
+                            attempt + 1,
+                            maxAttempts,
+                            backoffMillis
+                        )
                         Thread.sleep(backoffMillis)
                     } else {
                         throw e

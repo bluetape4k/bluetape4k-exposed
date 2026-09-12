@@ -1,24 +1,24 @@
 package io.bluetape4k.exposed.clickhouse
 
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.runBlocking
-import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
-import io.bluetape4k.assertions.assertFailsWith
-import java.sql.ResultSet
-import java.sql.DriverManager
-import java.sql.SQLException
-import org.jetbrains.exposed.v1.core.DatabaseConfig
-import org.jetbrains.exposed.v1.jdbc.Database
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import org.jetbrains.exposed.v1.core.DatabaseConfig
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
+import java.sql.DriverManager
+import java.sql.ResultSet
+import java.sql.SQLException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -32,10 +32,12 @@ class ClickHouseExtensionsTest: AbstractClickHouseTest() {
 
     private fun database(attempts: Int): Database = Database.connect(
         getNewConnection = {
-            ClickHouseConnectionWrapper(DriverManager.getConnection(
-                "jdbc:clickhouse://${clickhouse.host}:${clickhouse.port}/default",
-                clickhouse.username, clickhouse.password,
-            ))
+            ClickHouseConnectionWrapper(
+                DriverManager.getConnection(
+                    "jdbc:clickhouse://${clickhouse.host}:${clickhouse.port}/default",
+                    clickhouse.username, clickhouse.password,
+                )
+            )
         },
         databaseConfig = DatabaseConfig {
             defaultMaxAttempts = attempts
@@ -108,7 +110,7 @@ class ClickHouseExtensionsTest: AbstractClickHouseTest() {
 
     @Test
     fun `queryList는 빈 결과를 반환한다`() = runSuspendIO {
-        queryList(db) { emptyList<Int>() } shouldBeEqualTo emptyList()
+        queryList(db) { emptyList<Int>() }.shouldBeEmpty()
     }
 
     @Test
@@ -125,9 +127,11 @@ class ClickHouseExtensionsTest: AbstractClickHouseTest() {
         val visited = mutableListOf<Int>()
         queryFlow(db) {
             Iterable { (1..3).asSequence().onEach(visited::add).iterator() }
-        }.take(1).collect {
-            visited shouldBeEqualTo listOf(1, 2, 3)
         }
+            .take(1)
+            .collect {
+                visited shouldBeEqualTo listOf(1, 2, 3)
+            }
     }
 
     @Test
@@ -153,6 +157,6 @@ class ClickHouseExtensionsTest: AbstractClickHouseTest() {
             emptyList<Int>()
         }.toList()
 
-        results shouldBeEqualTo emptyList()
+        results.shouldBeEmpty()
     }
 }

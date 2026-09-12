@@ -1,9 +1,10 @@
 package io.bluetape4k.exposed.clickhouse.insert
 
+import io.bluetape4k.assertions.shouldBeLessOrEqualTo
 import io.bluetape4k.exposed.clickhouse.AbstractClickHouseTest
 import io.bluetape4k.exposed.clickhouse.domain.Events
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeLessOrEqualTo
+import io.bluetape4k.logging.info
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -20,9 +21,9 @@ import java.time.Instant
  * 임계치: 10,000행당 2000ms 이내 (CI 환경의 느린 runner 고려)
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class BatchInsertBenchmarkTest : AbstractClickHouseTest() {
+class BatchInsertBenchmarkTest: AbstractClickHouseTest() {
 
-    companion object : KLogging() {
+    companion object: KLogging() {
         private const val TOTAL_ROWS = 100_000
         private const val ROUNDS = 3
         private const val THRESHOLD_MS_PER_10K = 2000L  // 임계치: 10K 행당 2000ms (CI 환경 고려)
@@ -30,12 +31,18 @@ class BatchInsertBenchmarkTest : AbstractClickHouseTest() {
 
     @BeforeEach
     fun setup() {
-        transaction(db) { SchemaUtils.create(Events) }
+        transaction(db) {
+            SchemaUtils.create(Events)
+        }
     }
 
     @AfterEach
     fun teardown() {
-        transaction(db) { runCatching { SchemaUtils.drop(Events) } }
+        transaction(db) {
+            runCatching {
+                SchemaUtils.drop(Events)
+            }
+        }
     }
 
     @Test
@@ -60,15 +67,15 @@ class BatchInsertBenchmarkTest : AbstractClickHouseTest() {
                 }
             }
             val elapsed = System.currentTimeMillis() - start
-            log.info("Round $round: ${elapsed}ms for $TOTAL_ROWS rows")
+            log.info { "Round $round: ${elapsed}ms for $TOTAL_ROWS rows" }
             elapsed
         }
 
         val avgMs = durations.average().toLong()
         val avgPer10K = avgMs * 10_000 / TOTAL_ROWS
 
-        log.info("BatchInsert $TOTAL_ROWS rows — 3회 평균: ${avgMs}ms (${avgPer10K}ms/10K)")
-        log.info("개별 측정: ${durations.map { "${it}ms" }}")
+        log.info { "BatchInsert $TOTAL_ROWS rows — 3회 평균: ${avgMs}ms (${avgPer10K}ms/10K)" }
+        log.info { "개별 측정: ${durations.map { "${it}ms" }}" }
 
         // 임계치 검증: 10K 행당 2000ms 이내
         avgPer10K shouldBeLessOrEqualTo THRESHOLD_MS_PER_10K

@@ -1,13 +1,13 @@
 package io.bluetape4k.exposed.clickhouse.types
 
-import io.bluetape4k.exposed.clickhouse.AbstractClickHouseTest
-import io.bluetape4k.exposed.clickhouse.ClickHouseTable
-import io.bluetape4k.exposed.clickhouse.engine.mergeTree
-import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.exposed.clickhouse.AbstractClickHouseTest
+import io.bluetape4k.exposed.clickhouse.ClickHouseTable
+import io.bluetape4k.exposed.clickhouse.engine.mergeTree
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -33,13 +33,14 @@ class LowCardinalityTest: AbstractClickHouseTest() {
 
     @Test
     fun `LowCardinality(String) sqlType`() {
-        LowCardinalityColumnType(ClickHouseStringColumnType()).sqlType() shouldBeEqualTo "LowCardinality(String)"
+        LowCardinalityColumnType(ClickHouseStringColumnType())
+            .sqlType() shouldBeEqualTo "LowCardinality(String)"
     }
 
     @Test
     fun `LowCardinality(FixedString) sqlType`() {
-        LowCardinalityColumnType(ClickHouseFixedStringColumnType(8)).sqlType() shouldBeEqualTo
-            "LowCardinality(FixedString(8))"
+        LowCardinalityColumnType(ClickHouseFixedStringColumnType(8))
+            .sqlType() shouldBeEqualTo "LowCardinality(FixedString(8))"
     }
 
     @Test
