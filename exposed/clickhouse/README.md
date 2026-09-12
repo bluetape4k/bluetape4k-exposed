@@ -60,7 +60,9 @@ token property and `http_use_basic_auth=false`. Do not put credentials or token
 values in `rawProperties` or the JDBC URL query. Unknown raw keys, the
 RowBinary beta key, and duplicate typed/raw keys fail fast. Raw server settings
 are limited to `clickhouse_setting_<name>`, and custom headers are limited to
-`X-ClickHouse-User-Agent`; header values are never logged.
+`X-ClickHouse-User-Agent`; header values are never logged. `query_id` and
+`clickhouse_setting_log_comment` are owned by the typed `queryId` and
+`logComment` options and are rejected from `rawProperties`.
 
 TLS options enable the driver's secure transport (`ssl=true`) and accept file or
 secret-store references, not certificate/key material. `sslAuthentication` is a

@@ -59,6 +59,8 @@ Basic 인증은 `user`/`password` 인자를 사용합니다. token mode는 place
 RowBinary beta key, typed/raw 중복은 즉시 실패합니다. raw server setting은
 `clickhouse_setting_<name>`으로 제한하고 custom header는
 `X-ClickHouse-User-Agent`만 허용하며 header value는 로그에 남기지 않습니다.
+`query_id`와 `clickhouse_setting_log_comment`은 typed `queryId`와
+`logComment`가 소유하므로 `rawProperties`에서 거부합니다.
 
 TLS options를 지정하면 driver의 secure transport(`ssl=true`)가 활성화되며,
 파일 또는 secret-store reference만 지정하고 인증서/키 본문은 넣지 않습니다.
