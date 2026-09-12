@@ -13,7 +13,7 @@ import java.io.Serializable
 
 data class R2dbcOrderRow(val id: Long, val description: String)
 
-data class R2dbcOrderSnapshot(val id: Long, val description: String) : Serializable {
+data class R2dbcOrderSnapshot(val id: Long, val description: String): Serializable {
     private companion object {
         private const val serialVersionUID: Long = 1L
     }
