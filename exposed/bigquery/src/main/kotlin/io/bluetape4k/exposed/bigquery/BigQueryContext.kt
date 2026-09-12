@@ -5,8 +5,8 @@ import com.google.api.services.bigquery.model.DatasetReference
 import com.google.api.services.bigquery.model.QueryRequest
 import com.google.api.services.bigquery.model.QueryResponse
 import com.google.api.services.bigquery.model.TableRow
-import io.bluetape4k.exposed.bigquery.BigQueryContext.Companion.create
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
@@ -118,8 +118,9 @@ class BigQueryContext(
             datasetId: String,
             dispatcher: CoroutineDispatcher = Dispatchers.IO,
         ): BigQueryContext {
-            val dbName = "bq_sqlgen_${projectId}_${datasetId}"
-                .replace(DB_NAME_SANITIZE_REGEX, "_")
+            log.debug { "Creating BigQueryContext for projectId: $projectId, datasetId: $datasetId" }
+
+            val dbName = "bq_sqlgen_${projectId}_${datasetId}".replace(DB_NAME_SANITIZE_REGEX, "_")
             val sqlGenDb = Database.connect(
                 url = "jdbc:h2:mem:$dbName;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
                 driver = "org.h2.Driver",
@@ -138,11 +139,13 @@ class BigQueryContext(
         sql: String,
         options: BigQueryQueryOptions = BigQueryQueryOptions(),
     ): QueryRequest =
-        options.applyTo(QueryRequest()
-            .setQuery(sql.trimIndent().trim())
-            .setUseLegacySql(false)
-            .setDefaultDataset(DatasetReference().setProjectId(projectId).setDatasetId(datasetId))
-            .setTimeoutMs(options.timeoutMs ?: DEFAULT_QUERY_TIMEOUT_MS))
+        options.applyTo(
+            QueryRequest()
+                .setQuery(sql.trimIndent().trim())
+                .setUseLegacySql(false)
+                .setDefaultDataset(DatasetReference().setProjectId(projectId).setDatasetId(datasetId))
+                .setTimeoutMs(options.timeoutMs ?: DEFAULT_QUERY_TIMEOUT_MS)
+        )
 
     // ── RAW SQL ───────────────────────────────────────────────────────────────
 

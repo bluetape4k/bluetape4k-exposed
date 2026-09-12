@@ -1,7 +1,6 @@
-
 dependencies {
     api(platform(bt4k.kotlinx.coroutines.bom))
-    api(bt4k.bluetape4k.logging)
+    api(bt4k.bluetape4k.core)
     api(bt4k.exposed.core)
     // BigQueryContext 가 Database.connect(), transaction() 을 내부적으로 호출하므로 implementation 필요
     implementation(bt4k.exposed.jdbc)
