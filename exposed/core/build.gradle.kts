@@ -29,6 +29,7 @@ dependencies {
     //
 
     // Compress column types
+    api(bt4k.bluetape4k.core)
     compileOnly(bt4k.bluetape4k.io)
 
     // Serializer (runtime for tests)
