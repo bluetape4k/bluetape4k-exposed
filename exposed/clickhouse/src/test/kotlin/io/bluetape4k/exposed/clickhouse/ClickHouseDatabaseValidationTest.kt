@@ -86,6 +86,19 @@ class ClickHouseDatabaseValidationTest {
     }
 
     @Test
+    fun `options host overload rejects authority userinfo without exposing credentials`() {
+        val failure = assertFailsWith<IllegalArgumentException> {
+            ClickHouseDatabase.connect(
+                host = "user:secret-canary@localhost",
+                options = ClickHouseV2Options(),
+            )
+        }
+
+        failure.message.orEmpty().contains("secret-canary").shouldBeFalse()
+        failure.message.orEmpty().contains("REDACTED@localhost").shouldBeTrue()
+    }
+
+    @Test
     fun `connection exception preserves only safe JDBC diagnostics`() {
         val original = SQLException("password=secret-canary token=token-canary", "08001", 1001)
         val failure = original.toClickHouseConnectionException(

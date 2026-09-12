@@ -175,6 +175,10 @@ object ClickHouseDatabase: KLogging() {
         requireNotNull(database.ifBlank { null }) { "database는 공백일 수 없습니다." }
 
         val url = "jdbc:clickhouse://$host:$port/$database"
+        require(!ClickHouseV2Redaction.containsUserInfo(url)) {
+            "options 연결의 host에는 authority userinfo를 포함할 수 없습니다: " +
+                ClickHouseV2Redaction.redactJdbcUrl(url)
+        }
         return connectWithV2Options(url, user, password, options)
     }
 
