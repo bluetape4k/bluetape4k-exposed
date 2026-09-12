@@ -1,0 +1,37 @@
+{
+  "issue": 867,
+  "path": "jdbc-fallback",
+  "run": 2,
+  "warmupIterations": 2,
+  "measurementIterations": 5,
+  "measurementScope": "bounded in-memory provider fixture; logical row counts are scenario labels",
+  "provenance": {
+    "implementationSha": "local",
+    "gitDirty": true,
+    "driverArtifact": "com.clickhouse:clickhouse-jdbc:0.9.9",
+    "jdk": "25.0.4.1",
+    "os": "Mac OS X",
+    "architecture": "aarch64",
+    "container": "not-run"
+  },
+  "records": [
+    {"rowCount":10000,"maxRowsPerFlush":256,"rowShape":"narrow","path":"jdbc-fallback","logicalRows":10000,"measuredRows":2048,"rawElapsedNs":[143000,135125,132083,131667,153042],"medianElapsedNs":135125,"medianRowsPerSecond":15156336.725254,"firstByteNs":135125,"acceptedCount":40,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":374712},
+    {"rowCount":10000,"maxRowsPerFlush":256,"rowShape":"wide","path":"jdbc-fallback","logicalRows":10000,"measuredRows":2048,"rawElapsedNs":[199708,193125,186500,196875,184083],"medianElapsedNs":193125,"medianRowsPerSecond":10604530.744337,"firstByteNs":193125,"acceptedCount":40,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":374704},
+    {"rowCount":10000,"maxRowsPerFlush":1024,"rowShape":"narrow","path":"jdbc-fallback","logicalRows":10000,"measuredRows":2048,"rawElapsedNs":[133791,93292,92959,91958,91833],"medianElapsedNs":92959,"medianRowsPerSecond":22031218.063878,"firstByteNs":92959,"acceptedCount":10,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":374712},
+    {"rowCount":10000,"maxRowsPerFlush":1024,"rowShape":"wide","path":"jdbc-fallback","logicalRows":10000,"measuredRows":2048,"rawElapsedNs":[178125,180666,178083,180000,179208],"medianElapsedNs":179208,"medianRowsPerSecond":11428061.247266,"firstByteNs":179208,"acceptedCount":10,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":222632},
+    {"rowCount":10000,"maxRowsPerFlush":4096,"rowShape":"narrow","path":"jdbc-fallback","logicalRows":10000,"measuredRows":2048,"rawElapsedNs":[95000,94209,93459,91584,94541],"medianElapsedNs":94209,"medianRowsPerSecond":21738899.680498,"firstByteNs":94209,"acceptedCount":5,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":374712},
+    {"rowCount":10000,"maxRowsPerFlush":4096,"rowShape":"wide","path":"jdbc-fallback","logicalRows":10000,"measuredRows":2048,"rawElapsedNs":[180250,192750,178417,180708,182500],"medianElapsedNs":180708,"medianRowsPerSecond":11333200.522390,"firstByteNs":180708,"acceptedCount":5,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":382112},
+    {"rowCount":100000,"maxRowsPerFlush":256,"rowShape":"narrow","path":"jdbc-fallback","logicalRows":100000,"measuredRows":2048,"rawElapsedNs":[97833,97250,95917,95667,95958],"medianElapsedNs":95958,"medianRowsPerSecond":21342670.751787,"firstByteNs":95958,"acceptedCount":40,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":376168},
+    {"rowCount":100000,"maxRowsPerFlush":256,"rowShape":"wide","path":"jdbc-fallback","logicalRows":100000,"measuredRows":2048,"rawElapsedNs":[184292,181125,182083,183917,184875],"medianElapsedNs":183917,"medianRowsPerSecond":11135457.842396,"firstByteNs":183917,"acceptedCount":40,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":374712},
+    {"rowCount":100000,"maxRowsPerFlush":1024,"rowShape":"narrow","path":"jdbc-fallback","logicalRows":100000,"measuredRows":2048,"rawElapsedNs":[93416,92583,91334,94917,92458],"medianElapsedNs":92583,"medianRowsPerSecond":22120691.703661,"firstByteNs":92583,"acceptedCount":10,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":374712},
+    {"rowCount":100000,"maxRowsPerFlush":1024,"rowShape":"wide","path":"jdbc-fallback","logicalRows":100000,"measuredRows":2048,"rawElapsedNs":[193208,210500,206250,187833,197000],"medianElapsedNs":197000,"medianRowsPerSecond":10395939.086294,"firstByteNs":197000,"acceptedCount":10,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":374712},
+    {"rowCount":100000,"maxRowsPerFlush":4096,"rowShape":"narrow","path":"jdbc-fallback","logicalRows":100000,"measuredRows":2048,"rawElapsedNs":[112542,95959,96875,141084,95583],"medianElapsedNs":96875,"medianRowsPerSecond":21140645.161290,"firstByteNs":96875,"acceptedCount":5,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":374712},
+    {"rowCount":100000,"maxRowsPerFlush":4096,"rowShape":"wide","path":"jdbc-fallback","logicalRows":100000,"measuredRows":2048,"rawElapsedNs":[189542,194375,187459,184083,169916],"medianElapsedNs":187459,"medianRowsPerSecond":10925055.612161,"firstByteNs":187459,"acceptedCount":5,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":374712},
+    {"rowCount":1000000,"maxRowsPerFlush":256,"rowShape":"narrow","path":"jdbc-fallback","logicalRows":1000000,"measuredRows":2048,"rawElapsedNs":[146875,147041,144625,144375,157875],"medianElapsedNs":146875,"medianRowsPerSecond":13943829.787234,"firstByteNs":146875,"acceptedCount":40,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":374712},
+    {"rowCount":1000000,"maxRowsPerFlush":256,"rowShape":"wide","path":"jdbc-fallback","logicalRows":1000000,"measuredRows":2048,"rawElapsedNs":[156250,151916,151417,155625,155583],"medianElapsedNs":155583,"medianRowsPerSecond":13163391.887288,"firstByteNs":155583,"acceptedCount":40,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":374712},
+    {"rowCount":1000000,"maxRowsPerFlush":1024,"rowShape":"narrow","path":"jdbc-fallback","logicalRows":1000000,"measuredRows":2048,"rawElapsedNs":[134541,139417,147666,143416,138000],"medianElapsedNs":139417,"medianRowsPerSecond":14689743.718485,"firstByteNs":139417,"acceptedCount":10,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":374712},
+    {"rowCount":1000000,"maxRowsPerFlush":1024,"rowShape":"wide","path":"jdbc-fallback","logicalRows":1000000,"measuredRows":2048,"rawElapsedNs":[148625,149083,148500,147917,157708],"medianElapsedNs":148625,"medianRowsPerSecond":13779646.761985,"firstByteNs":148625,"acceptedCount":10,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":374712},
+    {"rowCount":1000000,"maxRowsPerFlush":4096,"rowShape":"narrow","path":"jdbc-fallback","logicalRows":1000000,"measuredRows":2048,"rawElapsedNs":[139333,139625,143708,146417,140375],"medianElapsedNs":140375,"medianRowsPerSecond":14589492.430988,"firstByteNs":140375,"acceptedCount":5,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":376904},
+    {"rowCount":1000000,"maxRowsPerFlush":4096,"rowShape":"wide","path":"jdbc-fallback","logicalRows":1000000,"measuredRows":2048,"rawElapsedNs":[147875,148417,167250,146083,147416],"medianElapsedNs":147875,"medianRowsPerSecond":13849535.080304,"firstByteNs":147875,"acceptedCount":5,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":382112}
+  ]
+}

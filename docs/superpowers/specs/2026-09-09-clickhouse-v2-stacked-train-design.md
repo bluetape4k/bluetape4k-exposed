@@ -101,7 +101,7 @@ V2 `0.9.9`의 property mapping은 다음 key와 단위를 고정한다.
 | `logComment` | `clickhouse_setting_log_comment` | opaque `String` | 제어문자 금지; custom header 중복 금지 |
 | `serverSettings` | `clickhouse_setting_<name>` | `String` value | name allowlist·non-blank |
 | `proxy` | `proxy_type`, `proxy_host`, `proxy_port`, `proxy_user`, `proxy_password` | typed proxy fields | host/port pair and secret redaction |
-| `tls` | `ssl=true`, `trust_store`, `key_store_type`, `ssl_key_store`, `key_store_password`, `ssl_key`, `sslrootcert`, `sslcert`, `ssl_authentication`, `ssl_socket_sni` | typed TLS fields; `ssl_authentication` is Boolean | presence of `tls` enables secure transport; path/reference ownership is caller-owned |
+| `tls` | `trust_store`, `key_store_type`, `ssl_key_store`, `key_store_password`, `ssl_key`, `sslrootcert`, `sslcert`, `ssl_authentication`, `ssl_socket_sni` | typed TLS fields | path/reference ownership is caller-owned |
 | `customHeaders` | `http_header_<normalized-name>` | `String` value | strict allowlist, duplicate/control-character rejection |
 
 Custom header는 case-insensitive로 정규화한 뒤 `X-ClickHouse-User-Agent`만 허용한다.

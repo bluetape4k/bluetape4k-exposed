@@ -1,5 +1,17 @@
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseBatchPath : java/lang/Enum {
+	public static final field JDBC_FALLBACK Lio/bluetape4k/exposed/clickhouse/ClickHouseBatchPath;
+	public static final field ROW_BINARY Lio/bluetape4k/exposed/clickhouse/ClickHouseBatchPath;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/exposed/clickhouse/ClickHouseBatchPath;
+	public static fun values ()[Lio/bluetape4k/exposed/clickhouse/ClickHouseBatchPath;
+}
+
 public final class io/bluetape4k/exposed/clickhouse/ClickHouseConnectionException : java/sql/SQLException {
 	public final fun getSanitizedCause ()Ljava/lang/String;
+}
+
+public abstract interface class io/bluetape4k/exposed/clickhouse/ClickHouseConnectionProvider {
+	public abstract fun open (Z)Ljava/sql/Connection;
 }
 
 public final class io/bluetape4k/exposed/clickhouse/ClickHouseDatabase : io/bluetape4k/logging/KLogging {
@@ -24,6 +36,52 @@ public final class io/bluetape4k/exposed/clickhouse/ClickHouseExtensionsKt {
 	public static synthetic fun queryList$default (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static final fun suspendTransaction (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun suspendTransaction$default (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryExecutor {
+	public fun <init> (Lio/bluetape4k/exposed/clickhouse/ClickHouseConnectionProvider;Lio/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryOptions;)V
+	public final fun executeBatch (Ljava/lang/String;Ljava/lang/Iterable;)Lio/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryResult;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryExecutor$UnsupportedConfiguration : java/lang/IllegalStateException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun getReasonCode ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryOptions {
+	public fun <init> ()V
+	public fun <init> (ZI)V
+	public synthetic fun <init> (ZIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()I
+	public final fun copy (ZI)Lio/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryOptions;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryOptions;ZIILjava/lang/Object;)Lio/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnabled ()Z
+	public final fun getMaxRowsPerFlush ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryResult {
+	public fun <init> (Ljava/util/List;ILio/bluetape4k/exposed/clickhouse/ClickHouseBatchPath;Z)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()I
+	public final fun component3 ()Lio/bluetape4k/exposed/clickhouse/ClickHouseBatchPath;
+	public final fun component4 ()Z
+	public final fun copy (Ljava/util/List;ILio/bluetape4k/exposed/clickhouse/ClickHouseBatchPath;Z)Lio/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryResult;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryResult;Ljava/util/List;ILio/bluetape4k/exposed/clickhouse/ClickHouseBatchPath;ZILjava/lang/Object;)Lio/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAcceptedCount ()I
+	public final fun getAcceptedCountMayBeIncomplete ()Z
+	public final fun getPath ()Lio/bluetape4k/exposed/clickhouse/ClickHouseBatchPath;
+	public final fun getUpdateCounts ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryRow {
+	public abstract fun bind (Ljava/sql/PreparedStatement;)V
 }
 
 public abstract class io/bluetape4k/exposed/clickhouse/ClickHouseTable : org/jetbrains/exposed/v1/core/Table {
@@ -586,6 +644,8 @@ public final class io/bluetape4k/exposed/clickhouse/functions/UniqExact : org/je
 
 public final class io/bluetape4k/exposed/clickhouse/types/ArrayColumnTypeKt {
 	public static final fun chArray (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;Lorg/jetbrains/exposed/v1/core/ColumnType;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun chArrayNullableElements (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;Lorg/jetbrains/exposed/v1/core/ColumnType;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun chNullableArray (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;Lorg/jetbrains/exposed/v1/core/ColumnType;)Lorg/jetbrains/exposed/v1/core/Column;
 }
 
 public final class io/bluetape4k/exposed/clickhouse/types/BasicColumnTypesKt {
@@ -605,9 +665,50 @@ public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseArrayColumnT
 	public final fun getInner ()Lorg/jetbrains/exposed/v1/core/ColumnType;
 	public synthetic fun notNullValueToDB (Ljava/lang/Object;)Ljava/lang/Object;
 	public fun notNullValueToDB (Ljava/util/List;)Ljava/lang/Object;
+	public fun readObject (Lorg/jetbrains/exposed/v1/core/statements/api/RowApi;I)Ljava/lang/Object;
+	public fun setParameter (Lorg/jetbrains/exposed/v1/core/statements/api/PreparedStatementApi;ILjava/lang/Object;)V
 	public fun sqlType ()Ljava/lang/String;
 	public synthetic fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
 	public fun valueFromDB (Ljava/lang/Object;)Ljava/util/List;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseArrayNullableElementsColumnType : org/jetbrains/exposed/v1/core/ColumnType {
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/ColumnType;)V
+	public final fun getInner ()Lorg/jetbrains/exposed/v1/core/ColumnType;
+	public synthetic fun notNullValueToDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun notNullValueToDB (Ljava/util/List;)Ljava/lang/Object;
+	public fun readObject (Lorg/jetbrains/exposed/v1/core/statements/api/RowApi;I)Ljava/lang/Object;
+	public fun setParameter (Lorg/jetbrains/exposed/v1/core/statements/api/PreparedStatementApi;ILjava/lang/Object;)V
+	public fun sqlType ()Ljava/lang/String;
+	public synthetic fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun valueFromDB (Ljava/lang/Object;)Ljava/util/List;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseDecimalColumnType : org/jetbrains/exposed/v1/core/ColumnType {
+	public fun <init> (II)V
+	public final fun getPrecision ()I
+	public final fun getScale ()I
+	public synthetic fun notNullValueToDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun notNullValueToDB (Ljava/math/BigDecimal;)Ljava/lang/Object;
+	public fun readObject (Lorg/jetbrains/exposed/v1/core/statements/api/RowApi;I)Ljava/lang/Object;
+	public fun setParameter (Lorg/jetbrains/exposed/v1/core/statements/api/PreparedStatementApi;ILjava/lang/Object;)V
+	public fun sqlType ()Ljava/lang/String;
+	public synthetic fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun valueFromDB (Ljava/lang/Object;)Ljava/math/BigDecimal;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseEnumColumnType : org/jetbrains/exposed/v1/core/ColumnType {
+	public fun <init> (Ljava/util/Map;)V
+	public final fun getValues ()Ljava/util/Map;
+	public fun notNullValueToDB (Ljava/lang/Enum;)Ljava/lang/Object;
+	public synthetic fun notNullValueToDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun parameterMarker (Ljava/lang/Enum;)Ljava/lang/String;
+	public synthetic fun parameterMarker (Ljava/lang/Object;)Ljava/lang/String;
+	public fun readObject (Lorg/jetbrains/exposed/v1/core/statements/api/RowApi;I)Ljava/lang/Object;
+	public fun setParameter (Lorg/jetbrains/exposed/v1/core/statements/api/PreparedStatementApi;ILjava/lang/Object;)V
+	public fun sqlType ()Ljava/lang/String;
+	public fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Enum;
+	public synthetic fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseFixedStringColumnType : org/jetbrains/exposed/v1/core/ColumnType {
@@ -674,6 +775,93 @@ public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseInt8ColumnTy
 	public synthetic fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
 }
 
+public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseIpv4ColumnType : org/jetbrains/exposed/v1/core/ColumnType {
+	public fun <init> ()V
+	public synthetic fun notNullValueToDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun notNullValueToDB (Ljava/net/Inet4Address;)Ljava/lang/Object;
+	public fun readObject (Lorg/jetbrains/exposed/v1/core/statements/api/RowApi;I)Ljava/lang/Object;
+	public fun setParameter (Lorg/jetbrains/exposed/v1/core/statements/api/PreparedStatementApi;ILjava/lang/Object;)V
+	public fun sqlType ()Ljava/lang/String;
+	public synthetic fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun valueFromDB (Ljava/lang/Object;)Ljava/net/Inet4Address;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseIpv6ColumnType : org/jetbrains/exposed/v1/core/ColumnType {
+	public fun <init> ()V
+	public synthetic fun notNullValueToDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun notNullValueToDB (Ljava/net/Inet6Address;)Ljava/lang/Object;
+	public fun readObject (Lorg/jetbrains/exposed/v1/core/statements/api/RowApi;I)Ljava/lang/Object;
+	public fun setParameter (Lorg/jetbrains/exposed/v1/core/statements/api/PreparedStatementApi;ILjava/lang/Object;)V
+	public fun sqlType ()Ljava/lang/String;
+	public synthetic fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun valueFromDB (Ljava/lang/Object;)Ljava/net/Inet6Address;
+}
+
+public abstract interface class io/bluetape4k/exposed/clickhouse/types/ClickHouseJsonCodec {
+	public abstract fun decode (Ljava/lang/String;)Ljava/lang/Object;
+	public abstract fun encode (Ljava/lang/Object;)Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseJsonCodecColumnType : org/jetbrains/exposed/v1/core/ColumnType {
+	public fun <init> (Lio/bluetape4k/exposed/clickhouse/types/ClickHouseJsonCodec;)V
+	public final fun getCodec ()Lio/bluetape4k/exposed/clickhouse/types/ClickHouseJsonCodec;
+	public fun notNullValueToDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun readObject (Lorg/jetbrains/exposed/v1/core/statements/api/RowApi;I)Ljava/lang/Object;
+	public fun setParameter (Lorg/jetbrains/exposed/v1/core/statements/api/PreparedStatementApi;ILjava/lang/Object;)V
+	public fun sqlType ()Ljava/lang/String;
+	public fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseJsonColumnType : org/jetbrains/exposed/v1/core/ColumnType {
+	public fun <init> ()V
+	public synthetic fun notNullValueToDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun notNullValueToDB (Ljava/lang/String;)Ljava/lang/Object;
+	public fun readObject (Lorg/jetbrains/exposed/v1/core/statements/api/RowApi;I)Ljava/lang/Object;
+	public fun setParameter (Lorg/jetbrains/exposed/v1/core/statements/api/PreparedStatementApi;ILjava/lang/Object;)V
+	public fun sqlType ()Ljava/lang/String;
+	public synthetic fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun valueFromDB (Ljava/lang/Object;)Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseMapColumnType : org/jetbrains/exposed/v1/core/ColumnType {
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/ColumnType;Lorg/jetbrains/exposed/v1/core/ColumnType;)V
+	public final fun getKeyType ()Lorg/jetbrains/exposed/v1/core/ColumnType;
+	public final fun getValueType ()Lorg/jetbrains/exposed/v1/core/ColumnType;
+	public synthetic fun notNullValueToDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun notNullValueToDB (Ljava/util/Map;)Ljava/lang/Object;
+	public fun readObject (Lorg/jetbrains/exposed/v1/core/statements/api/RowApi;I)Ljava/lang/Object;
+	public fun setParameter (Lorg/jetbrains/exposed/v1/core/statements/api/PreparedStatementApi;ILjava/lang/Object;)V
+	public fun sqlType ()Ljava/lang/String;
+	public synthetic fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun valueFromDB (Ljava/lang/Object;)Ljava/util/Map;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseNestedColumnType : org/jetbrains/exposed/v1/core/ColumnType {
+	public fun <init> (Ljava/util/List;)V
+	public final fun getElements ()Ljava/util/List;
+	public synthetic fun notNullValueToDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun notNullValueToDB (Ljava/util/List;)Ljava/lang/Object;
+	public fun readObject (Lorg/jetbrains/exposed/v1/core/statements/api/RowApi;I)Ljava/lang/Object;
+	public fun setParameter (Lorg/jetbrains/exposed/v1/core/statements/api/PreparedStatementApi;ILjava/lang/Object;)V
+	public fun sqlType ()Ljava/lang/String;
+	public synthetic fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun valueFromDB (Ljava/lang/Object;)Ljava/util/List;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseNullableArrayColumnType : org/jetbrains/exposed/v1/core/ColumnType {
+	public fun <init> (Lorg/jetbrains/exposed/v1/core/ColumnType;Z)V
+	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/core/ColumnType;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getInner ()Lorg/jetbrains/exposed/v1/core/ColumnType;
+	public final fun getNullableContainer ()Z
+	public synthetic fun notNullValueToDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun notNullValueToDB (Ljava/util/List;)Ljava/lang/Object;
+	public fun readObject (Lorg/jetbrains/exposed/v1/core/statements/api/RowApi;I)Ljava/lang/Object;
+	public fun setParameter (Lorg/jetbrains/exposed/v1/core/statements/api/PreparedStatementApi;ILjava/lang/Object;)V
+	public fun sqlType ()Ljava/lang/String;
+	public synthetic fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun valueFromDB (Ljava/lang/Object;)Ljava/util/List;
+}
+
 public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseNullableColumnType : org/jetbrains/exposed/v1/core/ColumnType {
 	public fun <init> (Lorg/jetbrains/exposed/v1/core/ColumnType;)V
 	public final fun getInner ()Lorg/jetbrains/exposed/v1/core/ColumnType;
@@ -689,6 +877,18 @@ public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseStringColumn
 	public fun sqlType ()Ljava/lang/String;
 	public synthetic fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
 	public fun valueFromDB (Ljava/lang/Object;)Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseTupleColumnType : org/jetbrains/exposed/v1/core/ColumnType {
+	public fun <init> (Ljava/util/List;)V
+	public final fun getElements ()Ljava/util/List;
+	public synthetic fun notNullValueToDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun notNullValueToDB (Ljava/util/List;)Ljava/lang/Object;
+	public fun readObject (Lorg/jetbrains/exposed/v1/core/statements/api/RowApi;I)Ljava/lang/Object;
+	public fun setParameter (Lorg/jetbrains/exposed/v1/core/statements/api/PreparedStatementApi;ILjava/lang/Object;)V
+	public fun sqlType ()Ljava/lang/String;
+	public synthetic fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun valueFromDB (Ljava/lang/Object;)Ljava/util/List;
 }
 
 public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseUByteColumnType : org/jetbrains/exposed/v1/core/ColumnType {
@@ -736,6 +936,23 @@ public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseUShortColumn
 	public fun valueFromDB-BwKQO78 (Ljava/lang/Object;)S
 }
 
+public final class io/bluetape4k/exposed/clickhouse/types/ClickHouseUuidColumnType : org/jetbrains/exposed/v1/core/ColumnType {
+	public fun <init> ()V
+	public synthetic fun notNullValueToDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun notNullValueToDB (Ljava/util/UUID;)Ljava/lang/Object;
+	public fun readObject (Lorg/jetbrains/exposed/v1/core/statements/api/RowApi;I)Ljava/lang/Object;
+	public fun setParameter (Lorg/jetbrains/exposed/v1/core/statements/api/PreparedStatementApi;ILjava/lang/Object;)V
+	public fun sqlType ()Ljava/lang/String;
+	public synthetic fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun valueFromDB (Ljava/lang/Object;)Ljava/util/UUID;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/types/CollectionColumnTypesKt {
+	public static final fun chMap (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;Lorg/jetbrains/exposed/v1/core/ColumnType;Lorg/jetbrains/exposed/v1/core/ColumnType;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun chNested (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;Ljava/util/List;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun chTuple (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;Ljava/util/List;)Lorg/jetbrains/exposed/v1/core/Column;
+}
+
 public final class io/bluetape4k/exposed/clickhouse/types/Date32ColumnType : org/jetbrains/exposed/v1/core/ColumnType {
 	public fun <init> ()V
 	public synthetic fun notNullValueToDB (Ljava/lang/Object;)Ljava/lang/Object;
@@ -753,9 +970,13 @@ public final class io/bluetape4k/exposed/clickhouse/types/DateTime64ColumnType :
 	public fun <init> ()V
 	public fun <init> (I)V
 	public synthetic fun <init> (IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (ILjava/time/ZoneId;)V
 	public final fun getPrecision ()I
+	public final fun getZone ()Ljava/time/ZoneId;
 	public synthetic fun notNullValueToDB (Ljava/lang/Object;)Ljava/lang/Object;
 	public fun notNullValueToDB (Ljava/time/Instant;)Ljava/lang/Object;
+	public fun readObject (Lorg/jetbrains/exposed/v1/core/statements/api/RowApi;I)Ljava/lang/Object;
+	public fun setParameter (Lorg/jetbrains/exposed/v1/core/statements/api/PreparedStatementApi;ILjava/lang/Object;)V
 	public fun sqlType ()Ljava/lang/String;
 	public synthetic fun valueFromDB (Ljava/lang/Object;)Ljava/lang/Object;
 	public fun valueFromDB (Ljava/lang/Object;)Ljava/time/Instant;
@@ -763,6 +984,7 @@ public final class io/bluetape4k/exposed/clickhouse/types/DateTime64ColumnType :
 
 public final class io/bluetape4k/exposed/clickhouse/types/DateTime64ColumnTypeKt {
 	public static final fun dateTime64 (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;I)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun dateTime64 (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;ILjava/time/ZoneId;)Lorg/jetbrains/exposed/v1/core/Column;
 	public static synthetic fun dateTime64$default (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;IILjava/lang/Object;)Lorg/jetbrains/exposed/v1/core/Column;
 }
 
@@ -777,6 +999,16 @@ public final class io/bluetape4k/exposed/clickhouse/types/LowCardinalityColumnTy
 public final class io/bluetape4k/exposed/clickhouse/types/LowCardinalityColumnTypeKt {
 	public static final fun lowCardinality (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;Lorg/jetbrains/exposed/v1/core/ColumnType;)Lorg/jetbrains/exposed/v1/core/Column;
 	public static final fun lowCardinalityString (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/types/SpecialColumnTypesKt {
+	public static final fun chDecimal (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;II)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun chEnum (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;Ljava/util/Map;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun chIpv4 (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun chIpv6 (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun chJson (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun chJson (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;Lio/bluetape4k/exposed/clickhouse/types/ClickHouseJsonCodec;)Lorg/jetbrains/exposed/v1/core/Column;
+	public static final fun chUuid (Lorg/jetbrains/exposed/v1/core/Table;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Column;
 }
 
 public final class io/bluetape4k/exposed/clickhouse/types/UnsignedColumnTypesKt {

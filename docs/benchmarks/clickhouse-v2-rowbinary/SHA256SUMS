@@ -1,0 +1,11 @@
+2d1f85e3b21a297572d18b861f9fb698ef7ea2c446a6cc7a62ae4241f19b3206  docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json
+d0346780fcade51fd38d91c4ce163947c62c07a03dcf3bf08543145f04095441  docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-2.json
+71e47f8b45948da07d38a26d249dbb9257f6e1d10350c1a717bd8d4220af1a6e  docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-3.json
+bafff679693db24cb7ecfb642bca45133c0c2e82ae9e874bae0ef3cf33be6279  docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json
+93a611ff16ecddf16d90fdc0799105c42da625ce5c71147751ff267f9c6dcd5f  docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-2.json
+a7b202a4d0350bac4c94a5d515233f6cd8e89c191ca998ab6c1d7f57700bda17  docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-3.json
+eea63b860b41dc8b4b0162299dc3829334c9e3bf7769b7ba8ea399dc9510b4b1  docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.ko.png
+00cb97b20234f375619069c275b42c3752fdb97c2761fb1c3e0d2349a0bd2034  docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.ko.svg
+c35e95608b0032d61fe9083fd5231cc0109bc38569b6fac95a1fb2d97085464f  docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.png
+85547ad74d1daed0889904ff5beb96483b23c318df1619433ff25c050ce07b75  docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.semantic.json
+f697f5436ee991989f2b77e087b3d705abcac5c4c801252beef4b25f11340de1  docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.svg

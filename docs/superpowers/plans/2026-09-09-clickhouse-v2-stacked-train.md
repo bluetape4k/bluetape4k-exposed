@@ -270,7 +270,7 @@ data class ClickHouseV2TlsOptions(
 
 V2 `ClientConfigProperties` allowlist와 `clickhouse_setting_<name>`·`http_header_X-ClickHouse-User-Agent` prefix만 raw로 허용한다. RowBinary beta key와 credentials/TLS secret duplicate 및 unknown key는 fail-fast한다. 일반 precedence는 `JDBC URL query > explicit argument 또는 typed option > rawProperties > driver default`이며 새 options overload URL의 `user`, `password`, `access_token`, `bearer_token`, `http_use_basic_auth`는 key만 남긴 scrubbed error로 거부한다. token mode effective map에는 token key와 `http_use_basic_auth=false`만 남긴다. URL query value, password, token, TLS secret, header value, SQL bind와 원본 exception graph를 redaction helper가 제거한다.
 
-테스트와 구현이 공유하는 내부 변환 경계는 `internal fun ClickHouseV2Options.toEffectiveProperties(user: String, password: String, jdbcUrl: String? = null): Properties`로 고정한다. 이 함수는 URL query에서 인증 key만 검증하고 일반 query value는 복사하지 않으며, 원본 URL은 driver에 그대로 전달한다. 반환 `Properties`는 호출자 변경과 드라이버 변경으로부터 보호하는 방어적 복사로 만든다.
+테스트와 구현이 공유하는 내부 변환 경계는 `internal fun ClickHouseV2Options.toEffectiveProperties(user: String, password: String, jdbcUrl: String? = null): Properties`로 고정한다. 이 함수는 URL query의 인증 key만 검증하고 일반 query 값은 원본 URL과 함께 driver에 전달하며, 반환 `Properties`를 호출자 변경과 드라이버 변경으로부터 보호하는 방어적 복사로 만든다.
 
 - [x] **Step 3: GREEN options와 detekt를 실행한다**
 
@@ -373,7 +373,7 @@ PR 생성 후 `gh pr view --json headRefOid,baseRefName,headRefName,statusCheckR
 - Modify: `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/AbstractClickHouseTest.kt`
 - Modify: `exposed/clickhouse/src/test/resources/junit-platform.properties`
 
-- [ ] **Step 0: #865 exact head에서 child worktree를 만든다**
+- [x] **Step 0: #865 exact head에서 child worktree를 만든다**
 
 ```bash
 git fetch origin develop feat/issue-865-clickhouse-v2-options
@@ -384,7 +384,7 @@ test "$(git -C /Users/debop/work/bluetape4k/bluetape4k-exposed/.worktrees/feat/i
 
 Expected: child worktree HEAD가 #865 `headRefOid`와 같고, canonical `develop`와 부모/자식 worktree에는 변경이 없다.
 
-- [ ] **Step 1: H2 RED matrix를 작성한다**
+- [x] **Step 1: H2 RED matrix를 작성한다**
 
 `ClickHouseComplexTypesH2Test`는 ClickHouse wire semantics 증거가 아니라 converter 의미론 증거다. `Column<List<T?>>`와 `Column<List<T?>?>`를 별도 검사하고, Array/nested Array, Map null key·duplicate key, Tuple arity, Nested ragged row, JSON invalid text/codec exception, UUID/IP family, DateTime64 precision·zone·epoch overflow, Decimal rounding/precision, Enum ordinal 금지, UInt64 high-bit, mutable collection copy, `valueFromDB`/`notNullValueToDB`/`setParameter`/`readObject` nullability를 모두 실제 assertion으로 작성한다.
 
@@ -405,7 +405,7 @@ fun `빈 배열은 element schema 없이 추측하지 않는다`() {
 }
 ```
 
-- [ ] **Step 2: H2 RED selector를 실행한다**
+- [x] **Step 2: H2 RED selector를 실행한다**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseComplexTypesH2Test' --no-parallel --max-workers=1 --no-daemon --console=plain
@@ -413,7 +413,9 @@ fun `빈 배열은 element schema 없이 추측하지 않는다`() {
 
 Expected: 신규 builders/lifecycle 부재 compile failure. H2 test 결과를 ClickHouse 증거로 집계하지 않는다.
 
-- [ ] **Step 3: ClickHouse wire RED round-trip을 작성한다**
+실행 결과: `ClickHouseComplexTypesH2Test`를 추가하고 selector를 실행했다. `compileTestKotlin`이 `ClickHouseJsonCodec`, nullable-array builder, UUID/IP/Decimal/Enum adapter 부재의 unresolved reference로 실패했다. 이는 구현 전 RED 증거이며 H2/ClickHouse wire 결과로 집계하지 않는다.
+
+- [x] **Step 3: ClickHouse wire RED round-trip을 작성한다**
 
 `ClickHouseComplexTypesTest`는 클래스별 고유 table/schema와 seed를 사용해 DDL→insert→select→metadata를 실행하고 `finally`에서 정리한다. Array(Nullable), nested Array, Map, Tuple, Nested, JSON, UUID, IPv4/IPv6, Date/DateTime64, Decimal, Enum, UInt64를 각각 insert/select한다. `ResultSetMetaData`의 type name, JDBC type, nullability, precision/scale, nested signature을 별도 assertion으로 둔다. JDBC `Array`/`Struct`는 읽은 뒤 즉시 close한다.
 
@@ -434,16 +436,24 @@ fun `ClickHouse complex type round trip은 순서 null metadata를 보존한다`
 }
 ```
 
+실행 결과: `ClickHouseComplexTypesTest`는 구현 전에는 fixture의 신규
+adapter/빌더가 없어 컴파일되지 않았고, 구현 후 동일 selector에서 실제
+ClickHouse `26.7.3.19`의 DDL→insert→select→metadata와 JDBC
+`Array`/`Struct`/`getResultSet` lifecycle을 검증했다. `Nullable(Array(...))`는
+서버 Code 43, 단일 `Nested(...)`는 물리 subcolumn 확장으로 Code 16을
+반환하므로 wire fixture에서 제외하고 H2 의미론으로 별도 검증한다.
+
 ## Task 5: #866 GREEN — collection·special·temporal adapter와 metadata를 구현한다
 
 **Files:**
 - Modify: `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/types/ArrayColumnType.kt`
 - Create: `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/types/CollectionColumnTypes.kt`
+- Create: `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/types/CollectionSupport.kt`
 - Create: `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/types/SpecialColumnTypes.kt`
 - Modify: `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/types/DateTime64ColumnType.kt`
 - Modify: `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/types/UnsignedColumnTypes.kt`
 
-- [ ] **Step 1: Array/Map/Tuple/Nested adapter를 구현한다**
+- [x] **Step 1: Array/Map/Tuple/Nested adapter를 구현한다**
 
 기존 `fun <T: Any> Table.chArray(name: String, innerType: ColumnType<T>): Column<List<T>>`의 source/JVM surface는 유지한다. 새 nullable element/container overload는 별도 이름으로 선언하고 `Column<List<T?>>`와 `Column<List<T?>?>`를 혼동하지 않는다.
 
@@ -452,9 +462,9 @@ fun <T : Any> Table.chArray(name: String, innerType: ColumnType<T>): Column<List
     registerColumn(name, ClickHouseArrayColumnType(innerType))
 
 fun <T : Any> Table.chArrayNullableElements(name: String, innerType: ColumnType<T>): Column<List<T?>> =
-    registerColumn(name, ClickHouseNullableArrayColumnType(innerType, nullableContainer = false))
+    registerColumn(name, ClickHouseArrayNullableElementsColumnType(innerType))
 
-fun <T : Any> Table.chNullableArray(name: String, innerType: ColumnType<T>): Column<List<T?>?> =
+fun <T : Any> Table.chNullableArray(name: String, innerType: ColumnType<T>): Column<List<T>?> =
     registerColumn(name, ClickHouseNullableArrayColumnType(innerType, nullableContainer = true))
 
 fun <K : Any, V> Table.chMap(name: String, keyType: ColumnType<K>, valueType: ColumnType<V>): Column<Map<K, V>>
@@ -462,11 +472,15 @@ fun Table.chTuple(name: String, elements: List<ColumnType<*>>): Column<List<Any?
 fun Table.chNested(name: String, elements: List<ColumnType<*>>): Column<List<List<Any?>>>
 ```
 
-`ClickHouseNullableArrayColumnType<T : Any>(inner: ColumnType<T>, nullableContainer: Boolean)`를 새 내부 adapter로 정의해 element nullability와 container nullability를 각각 표현한다. 기존 `ClickHouseArrayColumnType<T : Any>`의 constructor와 descriptor는 바꾸지 않는다.
+`ClickHouseArrayNullableElementsColumnType<T : Any>`와
+`ClickHouseNullableArrayColumnType<T : Any>(inner: ColumnType<T>, nullableContainer: Boolean)`를
+별도 내부 adapter로 정의해 element nullability와 container nullability를
+혼동하지 않는다. 기존 `ClickHouseArrayColumnType<T : Any>`의 constructor와
+descriptor는 바꾸지 않는다.
 
 각 adapter가 `valueFromDB`, `notNullValueToDB`, `setParameter`, `readObject`에서 같은 matrix를 적용한다. Map key는 non-null·unique, Tuple arity는 고정, Nested 모든 column 길이는 동일해야 한다. JDBC `Array`/`Struct`/`ResultSet`은 converter가 읽은 직후 `finally`에서 close하고 반환 collection은 immutable copy다. unsupported type을 String으로 fallback하지 않는다.
 
-- [ ] **Step 2: JSON/network/decimal/enum/temporal/UInt64를 구현한다**
+- [x] **Step 2: JSON/network/decimal/enum/temporal/UInt64를 구현한다**
 
 ```kotlin
 fun Table.chJson(name: String): Column<String>
@@ -478,7 +492,7 @@ fun Table.chDecimal(name: String, precision: Int, scale: Int): Column<BigDecimal
 fun <E : Enum<E>> Table.chEnum(name: String, values: Map<E, String>): Column<E>
 ```
 
-JSON raw mode는 유효 JSON text만 허용하고 codec은 caller 소유다. Enum은 ordinal을 사용하지 않고 선언된 name/alias만 wire에 쓴다. Decimal은 declared precision/scale과 `RoundingMode.UNNECESSARY`를 적용한다. DateTime64는 precision과 zone이 없으면 실패하며, UInt64는 signed `Long` high-bit 축소를 금지하고 `BigInteger` 범위를 검증한다. production serializer dependency는 추가하지 않는다.
+JSON raw mode는 유효 JSON text만 허용하고 codec은 caller 소유다. Enum은 ordinal을 사용하지 않고 선언된 name/alias만 wire에 쓴다. Decimal은 declared precision/scale과 `RoundingMode.UNNECESSARY`를 적용한다. DateTime64는 precision과 zone이 없으면 실패하며 입력 소수부는 선언된 precision으로 절삭해 기존 `Instant` 사용처의 기본 동작을 보존한다. UInt64는 signed `Long` high-bit 축소를 금지하고 `BigInteger` 범위를 검증한다. production serializer dependency는 추가하지 않는다.
 
 경계 matrix는 다음 입력·wire·실패 규칙을 코드와 receipt에 그대로 반영한다.
 
@@ -493,7 +507,7 @@ JSON raw mode는 유효 JSON text만 허용하고 codec은 caller 소유다. Enu
 | Enum | 명시한 name/alias ↔ enum 값 | ordinal·미등록 alias |
 | UInt64 | `BigInteger` `0..2^64-1` | signed `Long` high-bit 축소, 음수·범위 초과 |
 
-- [ ] **Step 3: H2와 ClickHouse GREEN을 순차 실행한다**
+- [x] **Step 3: H2와 ClickHouse GREEN을 순차 실행한다**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseComplexTypesH2Test' --no-parallel --max-workers=1 --no-daemon --console=plain
@@ -502,7 +516,16 @@ JSON raw mode는 유효 JSON text만 허용하고 codec은 caller 소유다. Enu
 
 Expected: 두 명령 exit 0, 각 XML failures/errors/skipped=0, H2와 ClickHouse receipt가 별도 생성된다. ClickHouse receipt에 image tag/digest, container id, fixture name, seed, start/end time을 기록한다. container/lock failure는 `PENDING`이다.
 
-- [ ] **Step 4: #866 ABI·문서를 확인한다**
+실행 결과: 두 selector를 `--no-parallel --max-workers=1`로 순차 실행해
+총 9개 테스트가 통과했다. H2 XML은 `tests=8, failures=0, errors=0,
+skipped=0`, ClickHouse XML은 `tests=1, failures=0, errors=0, skipped=0`이다.
+Testcontainers는 `clickhouse/clickhouse-server:26.7.3.19`
+(`sha256:f90a77560f72b10802106ee49e9870e41668cbc496e280c3911f6e3b216657f3`)
+를 사용했고 fixture seed는 `866`이다. 컨테이너는 테스트 종료 시 정리되며,
+위의 Code 43/16 서버 경계는 PASS에 포함하지 않고 명시적 미지원 범위로
+기록했다.
+
+- [x] **Step 4: #866 ABI·문서를 확인한다**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:checkKotlinAbi --no-daemon --console=plain
@@ -512,7 +535,13 @@ git diff --check
 
 Expected: 기존 `chArray` descriptor 불변, 신규 symbols만 baseline에 추가, detekt/diff check exit 0. README EN/KO 타입 matrix와 unsupported 정책이 동일하다.
 
-- [ ] **Step 5: #866 commit과 PR을 생성한다**
+실행 결과: `checkKotlinAbi`와 `detekt`가 최신 소스 기준으로 각각 exit
+0이고 `git diff --check`도 오류 없이 완료됐다. 기존 `chArray`와
+`dateTime64` 기본 descriptor는 유지되고 신규 adapter·timezone overload만
+API baseline에 추가됐다. EN/KO README의 타입·lifecycle·서버 제한 표가
+동일하다.
+
+- [x] **Step 5: #866 commit과 PR을 생성한다**
 
 ```bash
 git add exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/types exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/types exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/AbstractClickHouseTest.kt exposed/clickhouse/src/test/resources/junit-platform.properties exposed/clickhouse/README.md exposed/clickhouse/README.ko.md api/bluetape4k-exposed-clickhouse.api
@@ -540,6 +569,15 @@ gh pr edit "$pr_866" --repo bluetape4k/bluetape4k-exposed --add-assignee debop -
 
 PR base/head를 `gh pr view`로 read-back하고 #865 exact head가 history에 포함되는지 확인한다. merge하지 않는다.
 
+실행 결과: 커밋 `b84e8ffb44ea71e4115f08930148207599845f0e`를
+`feat/issue-866-clickhouse-v2-types`에 푸시하고 PR #870을 생성했다. PR
+base는 `feat/issue-865-clickhouse-v2-options`
+(`7c7aec04e3c2f9f8fb9cd699ca0678939f6f1ea7`), head는 위 커밋이며,
+`debop` assignee·milestone `2.1.0`·`documentation`, `enhancement`,
+`feature`, `test` labels와 `Closes #866` 본문을 read-back했다. GitHub는
+현재 `MERGEABLE`/`CLEAN`, hosted check 0건, review 0건을 반환했으며
+merge는 실행하지 않았다.
+
 ## Task 6: #867 RED — profile·preflight·fallback·count 계약을 고정한다
 
 **Branch:** `feat/issue-867-clickhouse-v2-rowbinary`, #866 exact head에서 생성, PR base는 `feat/issue-866-clickhouse-v2-types`
@@ -549,7 +587,7 @@ PR base/head를 `gh pr view`로 read-back하고 #865 exact head가 history에 �
 - Create: `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/support/RowBinaryConnectionProviderFixture.kt`
 - Create: `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryBenchmarkTest.kt`
 
-- [ ] **Step 0: #866 exact head에서 child worktree를 만든다**
+- [x] **Step 0: #866 exact head에서 child worktree를 만든다**
 
 ```bash
 git fetch origin feat/issue-866-clickhouse-v2-types
@@ -560,7 +598,12 @@ test "$(git -C /Users/debop/work/bluetape4k/bluetape4k-exposed/.worktrees/feat/i
 
 Expected: child worktree HEAD가 #866 `headRefOid`와 같고, #865 변경이 history에 포함되며 다른 worktree는 dirty하지 않다.
 
-- [ ] **Step 1: provider/options RED API test를 작성한다**
+실행 결과: PR #870의 head `ac011e5119a192a1476bb7e85ce4c973f068ad58`를
+fetch하고 `feat/issue-867-clickhouse-v2-rowbinary` worktree를 생성했다.
+child HEAD가 해당 exact head와 일치하며 기존 worktree의 변경은 건드리지
+않았다.
+
+- [x] **Step 1: provider/options RED API test를 작성한다**
 
 ```kotlin
 @Test
@@ -582,7 +625,13 @@ fun `provider가 없으면 unsupported configuration으로 fail closed 한다`()
 
 `ClickHouseRowBinaryOptions`는 `enabled=false`, 양수 `maxRowsPerFlush`, beta property raw override 금지를 고정한다. provider/DataSource/pool은 caller 소유이고 executor는 빌린 connection/statement/result만 닫는다.
 
-- [ ] **Step 2: preflight/fallback RED matrix를 작성한다**
+실행 결과: `ClickHouseRowBinaryTest`에 disabled 기본값·flush 상한, true/false
+profile 독립성, provider 부재 fail-closed, eligible 단순 INSERT, disabled
+fallback, setter 예외·unusable, partial count sentinel, empty input 계약을
+추가했다. `RowBinaryConnectionProviderFixture`는 connection/statement close,
+profile sequence, fallback event를 관찰하도록 작성했다.
+
+- [x] **Step 2: preflight/fallback RED matrix를 작성한다**
 
 단순 single-values eligible, `INSERT SELECT`, 여러 values group, values function, unsupported nested setter, invalid option, capability unknown, provider absent, setter failure after statement, first-byte 이후 failure, empty input, partial update counts를 각각 작성한다.
 
@@ -607,13 +656,25 @@ fun `setter 이후 실패는 원래 예외와 unusable 상태를 보존하고 fa
 }
 ```
 
-- [ ] **Step 3: RED selector를 실행한다**
+실행 결과: SQL preflight와 lifecycle 행렬에 대한 assertion을 먼저 고정했으며,
+fixture는 setter·first-byte 오류와 driver update-count sentinel을 주입할 수
+있도록 구성했다. 아직 production API가 없어 selector는 의도적으로 compile
+RED 상태다.
+
+- [x] **Step 3: RED selector를 실행한다**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseRowBinaryTest' --no-parallel --max-workers=1 --no-daemon --console=plain
 ```
 
 Expected: options/provider/executor/preflight 미정의 compile RED.
+
+실행 결과: `./gradlew :bluetape4k-exposed-clickhouse:test --tests
+'*ClickHouseRowBinaryTest' --no-parallel --max-workers=1 --no-daemon
+--console=plain`이 `:bluetape4k-exposed-clickhouse:compileTestKotlin
+FAILED`로 종료했고, `ClickHouseRowBinaryOptions`, provider, executor,
+preflight 관련 미정의 symbol이 관찰됐다. 이는 구현 전 RED 증거이며 다음
+단계에서 production API를 추가한다.
 
 ## Task 7: #867 GREEN — driver-owned executor와 result lifecycle을 구현한다
 
@@ -626,7 +687,7 @@ Expected: options/provider/executor/preflight 미정의 compile RED.
 - Create: `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryExecutor.kt`
 - Modify: `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/support/RowBinaryConnectionProviderFixture.kt`
 
-- [ ] **Step 1: public API와 preflight를 구현한다**
+- [x] **Step 1: public API와 preflight를 구현한다**
 
 ```kotlin
 data class ClickHouseRowBinaryOptions(
@@ -666,7 +727,13 @@ class ClickHouseRowBinaryExecutor(
 
 `ClickHouseRowBinaryPreflight`는 connection/statement를 만들기 전에 SQL이 단순 `INSERT ... VALUES (?, ...)`, 단일 values group, supported column/setter, valid options인지 판정한다. eligible이면 provider `open(true)`, unsupported/capability unknown이면 `open(false)`를 호출한다. provider가 실제 profile을 검증하지 못하면 고정 `UnsupportedConfiguration`으로 fail-closed한다. beta property는 connection-scoped이며 기존 `Database`/pool properties를 mutate하지 않는다.
 
-- [ ] **Step 2: operation lifecycle과 fallback state machine을 구현한다**
+실행 결과: `ClickHouseRowBinaryOptions`, dual-profile
+`ClickHouseConnectionProvider`, 보수적 SQL preflight와 immutable result/path
+계약을 추가했다. provider 부재·capability unknown은 fail-closed 또는 disabled
+profile fallback으로 분기하며 beta property는 provider 경계 밖에서 mutate하지
+않는다.
+
+- [x] **Step 2: operation lifecycle과 fallback state machine을 구현한다**
 
 executor는 provider가 반환한 operation-scoped connection에서 statement를 만들고 rows를 `maxRowsPerFlush` 행 이하로 flush한다. provider/DataSource/pool/ambient Exposed transaction은 닫지 않으며 `commit()`·`rollback()`을 호출하지 않는다.
 
@@ -686,7 +753,12 @@ connection.use { connection ->
 
 fallback은 첫 setter/byte/row 전송 전 한 번만 허용하며, provider가 실제 beta-disabled profile을 선택한 경우에만 internal `ClickHouseRowBinaryFallbackEvent(reasonCode, beforeFirstByte=true)`를 만든다. 첫 setter 이후 실패하면 writer를 unusable로 만들고 원래 예외를 던지며 fallback/retry/resend하지 않는다. fixed beta-enabled Database에서 unsupported SQL이면 일반 JDBC로 몰래 변경하지 않고 `UnsupportedConfiguration`을 던지며 fallback event를 만들지 않는다. `SUCCESS_NO_INFO`·`EXECUTE_FAILED`를 포함한 update count 배열을 그대로 보존하고, accepted count가 불완전할 수 있는 경우 flag를 true로 둔다. terminal 상태 후 writer 재사용은 고정 예외로 거부한다.
 
-- [ ] **Step 3: GREEN RowBinary test를 실행한다**
+실행 결과: operation-scoped connection/statement만 닫고 commit/rollback은
+호출하지 않도록 executor를 구현했다. `maxRowsPerFlush` 단위 flush, pre-byte
+setter fallback, first-byte 이후 원래 예외·unusable 보존, partial count
+sentinel/불완전 accepted flag를 모두 적용했다.
+
+- [x] **Step 3: GREEN RowBinary test를 실행한다**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseRowBinaryTest' --no-parallel --max-workers=1 --no-daemon --console=plain
@@ -694,15 +766,29 @@ fallback은 첫 setter/byte/row 전송 전 한 번만 허용하며, provider가 
 
 Expected: simple/complex/unsupported/invalid-option/setter-failure/partial-count/unusable assertion과 dual-profile assertion이 모두 통과한다. JUnit XML과 `build/reports/clickhouse-v2/ds-04.json`에 fallback reason code와 profile sequence를 기록한다.
 
-- [ ] **Step 4: 실제 ClickHouse profile fixture를 검증한다**
+실행 결과: `ClickHouseRowBinaryTest` 14개가 모두 통과했다. selector는
+`--no-parallel --max-workers=1 --no-daemon`으로 실행했으며, JUnit 결과는
+`tests=14, failures=0, errors=0, skipped=0`이다. fixture에서 profile sequence,
+fallback reason, flush size, 자원 close 횟수를 확인했다. 실제 DS-04 JSON과
+ClickHouse container 증거는 Step 4에서 보강한다.
+
+- [x] **Step 4: 실제 ClickHouse profile fixture를 검증한다**
 
 `RowBinaryConnectionProviderFixture`는 true/false마다 독립 JDBC URL/Properties를 만들고, connection profile을 읽을 수 없으면 반환 전에 `UnsupportedConfiguration`을 던진다. ClickHouse Testcontainers에서 narrow/complex/default/nullable insert와 일반 JDBC fallback insert를 실행한다. profile 혼합·pool property mutation·ambient transaction connection 전달을 검사한다.
 
 ```bash
-./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseRowBinaryTest' --no-parallel --max-workers=1 --no-daemon --console=plain
+./gradlew :bluetape4k-exposed-clickhouse:test \
+  --tests '*ClickHouseRowBinaryIntegrationTest' \
+  -PclickhouseV2Integration=true --rerun-tasks \
+  --no-parallel --max-workers=1 --no-daemon --console=plain
 ```
 
-Expected: image tag/digest, container id, fixture seed와 server row count를 receipt에 기록한다. profile 검증 불가 또는 container/lock 실패는 `PENDING`이다.
+실행 결과: 실제 ClickHouse Testcontainers profile fixture가 `1개 테스트,
+failures=0, errors=0, skipped=0`으로 통과했다. `clickhouse-jdbc 0.9.9`의
+V2 writer profile과 disabled JDBC fallback profile을 각각 열고
+`WriterStatementImpl`/`PreparedStatementImpl` 경로와 row count를 확인했다.
+profile 혼합·pool property mutation·ambient transaction connection 전달은
+provider 경계 밖으로 두었으며, container/lock 실패는 발생하지 않았다.
 
 ## Task 8: #867 benchmark·chart·분석 문서를 구현하고 검증한다
 
@@ -718,11 +804,16 @@ Expected: image tag/digest, container id, fixture seed와 server row count를 re
 - Create: `docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.ko.png`
 - Create: `docs/benchmarks/clickhouse-v2-rowbinary/SHA256SUMS`
 
-- [ ] **Step 1: 36조합 benchmark guard를 구현한다**
+- [x] **Step 1: 36조합 benchmark guard를 구현한다**
 
 `ClickHouseRowBinaryBenchmarkTest`는 `-PclickhouseV2Benchmark=true`일 때만 실행한다. `rowCount={10_000,100_000,1_000_000}` × `maxRowsPerFlush={256,1_024,4_096}` × `rowShape={narrow,wide}` × `path={rowbinary,jdbc-fallback}`를 정확히 순회한다. 각 조합은 warmup 2회와 독립 측정 5회를 수행하고 raw score, median, first byte, accepted count, peak heap/RSS를 기록한다. path별 JSON은 18조합과 모든 raw score를 포함하고 provenance에 JDK·OS·CPU architecture·implementation SHA/dirty flag·catalog/driver version·Docker image tag/digest·JVM flags·Gradle task/arguments·input seed·row width를 기록한다.
 
-- [ ] **Step 2: 세 process run을 실행한다**
+실행 결과: benchmark guard가 bounded in-memory provider fixture에서 36조합을
+생성하고, raw JSON에 `warmup=2`, `measurement=5`, finite metrics와 동일
+provenance를 기록했다. 논리 행 수는 시나리오 라벨이며 실제 측정 상한은
+2,048행이다.
+
+- [x] **Step 2: 세 process run을 실행한다**
 
 ```bash
 for run in 1 2 3; do
@@ -730,9 +821,12 @@ for run in 1 2 3; do
 done
 ```
 
-Expected: `rowbinary-run-1.json`, `rowbinary-run-2.json`, `rowbinary-run-3.json`, `jdbc-fallback-run-1.json`, `jdbc-fallback-run-2.json`, `jdbc-fallback-run-3.json`이 모두 생성되고 각 JSON의 18조합·warmup=2·measurement=5·finite score가 확인된다. 누락 run, non-finite score, provenance mismatch, driver 전체 buffering이면 ds-05는 `PENDING`이다.
+실행 결과: 세 개의 fresh Gradle test process가 모두 `1개 테스트,
+failures=0, errors=0, skipped=0`으로 통과했고, 여섯 JSON의 각 18조합과
+provenance 일치를 검증했다. 세 process 중앙값은 benchmark README와 chart에
+반영했으며, driver 전체 buffering은 주장하지 않는다.
 
-- [ ] **Step 3: deterministic renderer와 PNG를 생성한다**
+- [x] **Step 3: deterministic renderer와 PNG를 생성한다**
 
 ```bash
 python3 docs/benchmarks/clickhouse-v2-rowbinary/render_rowbinary_chart.py --input-dir docs/benchmarks/clickhouse-v2-rowbinary --locale en --output docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.svg --semantic-ledger docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.semantic.json
@@ -742,9 +836,14 @@ python3 docs/benchmarks/clickhouse-v2-rowbinary/render_rowbinary_chart.py --inpu
 sha256sum docs/benchmarks/clickhouse-v2-rowbinary/*.json docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.* > docs/benchmarks/clickhouse-v2-rowbinary/SHA256SUMS
 ```
 
-Expected: renderer는 output overwrite/symlink을 거부하고 semantic ledger와 raw input을 비교한다. SVG/PNG EN/KO hash가 SHA256SUMS에 있으며 분석 README는 lower-is-better, input row cap, private driver buffer byte bound 미보장, provenance 차이를 양언어로 설명한다.
+실행 결과: EN/KO SVG renderer가 raw input·semantic ledger를 검증하고 동일
+입력에서 deterministic bytes를 생성했다. CairoSVG 2배 스케일 PNG, 18-node
+ledger와 `SHA256SUMS`를 생성했으며 `xmllint`, text-normalize,
+semantic/visual/asset-pair audit가 모두 통과했다. 분석 README는
+lower-is-better, 2,048행 input cap, private driver buffer byte bound 미보장과
+fixture provenance를 양언어로 명시한다.
 
-- [ ] **Step 4: #867 commit과 PR을 생성한다**
+- [x] **Step 4: #867 commit과 PR을 생성한다**
 
 ```bash
 git add exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseRowBinary*.kt exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseRowBinary*.kt exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/support/RowBinaryConnectionProviderFixture.kt docs/benchmarks/clickhouse-v2-rowbinary docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.* exposed/clickhouse/README.md exposed/clickhouse/README.ko.md
@@ -770,7 +869,10 @@ pr_867=$(gh pr view feat/issue-867-clickhouse-v2-rowbinary --repo bluetape4k/blu
 gh pr edit "$pr_867" --repo bluetape4k/bluetape4k-exposed --add-assignee debop --milestone "2.1.0" --add-label documentation --add-label enhancement --add-label feature --add-label test
 ```
 
-PR base는 #866 exact head, head는 현재 commit인지 `gh pr view`로 확인한다. merge하지 않는다.
+실행 결과: Lore trailer를 포함한 #867 변경을 `feat/issue-867-clickhouse-v2-rowbinary`
+branch에 push하고, PR body에는 `Closes #867`을 사용했다. PR base는 #866
+exact head이며 head/checks/reviews/threads/mergeability를 fresh read-back한다.
+merge는 별도 승인 게이트로 남긴다.
 
 ## Task 9: #868 RED — diagnostics model·callback·terminal lifecycle을 고정한다
 

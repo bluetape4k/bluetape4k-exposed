@@ -59,18 +59,117 @@ Basic 인증은 `user`/`password` 인자를 사용합니다. token mode는 place
 RowBinary beta key, typed/raw 중복은 즉시 실패합니다. raw server setting은
 `clickhouse_setting_<name>`으로 제한하고 custom header는
 `X-ClickHouse-User-Agent`만 허용하며 header value는 로그에 남기지 않습니다.
-`query_id`와 `clickhouse_setting_log_comment`은 typed `queryId`와
-`logComment`가 소유하므로 `rawProperties`에서 거부합니다.
 
-TLS options를 지정하면 driver의 secure transport(`ssl=true`)가 활성화되며,
-파일 또는 secret-store reference만 지정하고 인증서/키 본문은 넣지 않습니다.
-`sslAuthentication`은 mTLS client-certificate 인증을 위한 Boolean 값입니다.
-`ClickHouseV2SecretProvider`는 property 변환 순간에만 password를
+TLS에는 파일 또는 secret-store reference만 지정하고 인증서/키 본문은 넣지
+않습니다. `ClickHouseV2SecretProvider`는 property 변환 순간에만 password를
 제공하며 반환된 `CharArray`는 즉시 지웁니다. `toString()`과 연결 예외는
 password, token, secret, JDBC URL query 값을 redact합니다. options URL에서
 인증 property를 지정하면 선택한 인증 모드를 우회할 수 없도록 거부하며,
 인증 이외의 JDBC URL query property는 driver precedence에 따라 가장 높은
 우선순위를 가집니다.
+`tls`가 있으면 adapter가 driver의 Boolean property `ssl=true`를 설정하고,
+선택한 `sslAuthentication`도 driver의 Boolean property로 전달합니다.
+`user:password@host`처럼 authority userinfo가 포함된 options URL은 연결 전에
+거부하며 오류 경계에는 redacted authority만 남깁니다.
+
+### ClickHouse JDBC V2 RowBinary 배치 writer
+
+`ClickHouseRowBinaryExecutor`는 ClickHouse JDBC V2
+`RowBinaryWithDefaults` 경로를 명시적으로 opt-in하는 배치 writer입니다.
+호출자가 `ClickHouseConnectionProvider`를 소유하며, RowBinary profile에는
+`beta.row_binary_for_simple_insert=true`, JDBC fallback profile에는 `false`를
+connection별로 적용해 연결을 엽니다. 이 property는 connection-scoped이므로
+`ClickHouseV2Options`에는 의도적으로 포함하지 않습니다.
+
+```kotlin
+val writer = ClickHouseRowBinaryExecutor(
+    provider = ClickHouseConnectionProvider { rowBinaryEnabled ->
+        openConnection(rowBinaryEnabled) // 호출자가 V2 profile property를 적용
+    },
+    options = ClickHouseRowBinaryOptions(
+        enabled = true,
+        maxRowsPerFlush = 1_024,
+    ),
+)
+
+val result = writer.executeBatch(
+    sql = "INSERT INTO events (id, label) VALUES (?, ?)",
+    rows = events.asSequence().map { event ->
+        ClickHouseRowBinaryRow { statement ->
+            statement.setLong(1, event.id)
+            statement.setString(2, event.label)
+        }
+    }.asIterable(),
+)
+```
+
+정확히 하나의 단순한 `INSERT ... VALUES (...)` 그룹만 eligible입니다.
+placeholder와 `DEFAULT`는 driver에 위임합니다. `INSERT ... SELECT`, 여러
+VALUES 그룹, 중첩 value expression/function, 지원하지 않는 setter, provider
+부재, driver capability 미확인은 첫 byte 전에 비활성 JDBC profile을
+선택합니다. setter가 실행된 뒤 또는 첫 byte가 기록된 뒤에는 fallback으로
+재시도하거나 chunk를 재전송하지 않습니다. setter/first-byte 오류가 나면
+해당 executor 인스턴스는 terminal 상태가 되고 원래 예외를 그대로 보존합니다.
+
+`ClickHouseRowBinaryResult.updateCounts`는 `SUCCESS_NO_INFO`와
+`EXECUTE_FAILED` 같은 driver sentinel을 보존합니다. `acceptedCount`는
+음수가 아닌 count만 합산하며, sentinel이 있으면
+`acceptedCountMayBeIncomplete=true`로 기록합니다. writer는 입력을
+`maxRowsPerFlush` 단위로 나누고 호출자가 소유한 connection에서
+commit/rollback을 수행하지 않으며, 호출자의 pool/dispatcher도 닫지 않습니다.
+전송 후 오류가 난 writer 인스턴스는 재사용할 수 없습니다.
+
+실제 profile 테스트는 `clickhouse-jdbc` `0.9.9`와 ClickHouse Server
+`26.7.3.19`를 사용하고, opt-in 경로의 driver가 `WriterStatementImpl`인지,
+지원하지 않는 SQL이 `PreparedStatementImpl`인지, `DEFAULT` 처리가
+동작하는지 확인합니다.
+
+```bash
+./gradlew :bluetape4k-exposed-clickhouse:test \
+  --tests '*ClickHouseRowBinaryIntegrationTest' \
+  -PclickhouseV2Integration=true \
+  --no-parallel --max-workers=1 --no-daemon --console=plain
+```
+
+bounded fixture benchmark는 논리 행 수 3종 × flush 크기 3종 × row shape
+2종 × path 2종을 fresh test process 세 번에 걸쳐 측정합니다(run set 기준
+36개 record). fixture는 메모리 안에서 최대 2,048행만 측정하므로
+10,000/100,000/1,000,000행 라벨은 production wire 처리량이 아니며 driver
+private buffer나 heap 상한을 입증하지 않습니다. 숫자의 원본은
+[clickhouse-v2-rowbinary](../../docs/benchmarks/clickhouse-v2-rowbinary)이고,
+chart는 세 process 중앙값을 비교합니다.
+
+| Row shape | 논리 행 수 | Flush | RowBinary rows/s | JDBC fallback rows/s | RowBinary / fallback |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| narrow | 10,000 | 256 | 4.28M | 14.30M | 0.30x |
+| narrow | 10,000 | 1,024 | 9.91M | 15.40M | 0.64x |
+| narrow | 10,000 | 4,096 | 14.60M | 21.74M | 0.67x |
+| narrow | 100,000 | 256 | 18.12M | 21.34M | 0.85x |
+| narrow | 100,000 | 1,024 | 17.91M | 22.12M | 0.81x |
+| narrow | 100,000 | 4,096 | 20.51M | 21.14M | 0.97x |
+| narrow | 1,000,000 | 256 | 18.94M | 19.99M | 0.95x |
+| narrow | 1,000,000 | 1,024 | 19.83M | 22.71M | 0.87x |
+| narrow | 1,000,000 | 4,096 | 20.39M | 22.94M | 0.89x |
+| wide | 10,000 | 256 | 1.85M | 3.46M | 0.54x |
+| wide | 10,000 | 1,024 | 4.53M | 3.80M | 1.19x |
+| wide | 10,000 | 4,096 | 7.42M | 10.18M | 0.73x |
+| wide | 100,000 | 256 | 11.00M | 10.66M | 1.03x |
+| wide | 100,000 | 1,024 | 12.04M | 11.63M | 1.04x |
+| wide | 100,000 | 4,096 | 12.34M | 10.93M | 1.13x |
+| wide | 1,000,000 | 256 | 12.24M | 16.91M | 0.72x |
+| wide | 1,000,000 | 1,024 | 12.42M | 14.90M | 0.83x |
+| wide | 1,000,000 | 4,096 | 13.46M | 14.43M | 0.93x |
+
+![ClickHouse JDBC V2 RowBinary benchmark](../../docs/images/readme-charts/exposed-clickhouse-rowbinary-issue-867.ko.png)
+
+fixture 결과는 보편적인 최적화가 아니라 path/shape/flush 상호작용을
+보여줍니다. narrow 모든 cell에서는 JDBC fallback이 더 빠르고, wide
+10,000행·1,024 flush(1.19x)와 100,000행의 세 cell(1.03x–1.13x)에서는
+RowBinary가 앞섭니다. 비율은 로컬 방향성 근거로만 해석하세요. raw run과 chart 재생성 명령은 영어 README의
+`Recreate` 블록과 동일하며, output locale만 `ko`로 바꿉니다.
+
+일반 stream writer 지원, `async_insert`, remote cancellation 또는 `KILL QUERY`
+완료 보장은 이 이슈 범위 밖이며 후자는 #863에서 추적합니다.
 
 ## Table 옵션 지원 정책
 
@@ -249,11 +348,37 @@ V2 probe matrix는 연결 시도, 서버 실행 timeout, 전송 socket timeout,
 | UInt64 | BigInteger | `chUInt64BigInt(name)` |
 | Float32 | Float | `chFloat32(name)` |
 | Float64 | Double | `chFloat64(name)` |
-| DateTime64(n) | Instant | `dateTime64(name, precision)` |
+| DateTime64(n[, timezone]) | Instant | `dateTime64(name, precision, zone)` |
 | Date32 | LocalDate | `date32(name)` |
 | LowCardinality(T) | T | `lowCardinality(name, innerType)` / `lowCardinalityString(name)` |
 | Array(T) | List\<T\> | `chArray(name, innerType)` |
+| Array(Nullable(T)) | List\<T?\> | `chArrayNullableElements(name, innerType)` |
+| Array(Array(...)) | List\<List\<...\>\> | `chArray(name, ClickHouseArrayNullableElementsColumnType(...))` |
+| Nullable(Array(...)) | List\<T\>? | `chNullableArray(name, innerType)` (컨테이너만 nullable; nullable 원소는 `chArrayNullableElements`) |
+| Map(K, V) | Map\<K, V\> | `chMap(name, keyType, valueType)` |
+| Tuple(...) | List\<Any?\> | `chTuple(name, elements)` |
+| Nested(...) | List\<List\<Any?\>\> | `chNested(name, elements)` (의미론 adapter) |
+| JSON | String / caller type | `chJson(name)` / `chJson(name, codec)` |
+| UUID | UUID | `chUuid(name)` |
+| IPv4 | Inet4Address | `chIpv4(name)` |
+| IPv6 | Inet6Address | `chIpv6(name)` |
+| Decimal(P, S) | BigDecimal | `chDecimal(name, precision, scale)` |
+| Enum8/Enum16 | Enum\<E\> | `chEnum(name, values)` |
 | Nullable(T) | T? | `chNullable(name, innerType)` |
+
+복합 타입 adapter는 JDBC `Array`/`Struct`/`ResultSet` 값을 반환 전에 복사해
+불변 collection으로 만들고, 같은 변환 경계에서 driver 소유 자원을 해제합니다.
+JSON raw 모드는 JSON text를 검증하고 codec overload의 직렬화·역직렬화는
+호출자가 소유합니다. Enum은 명시한 wire name과 타입 지정
+`CAST(? AS Enum...)` marker를 사용하며 ordinal 값은 사용하지 않습니다.
+DateTime64 입력 소수부는 선언된 정밀도에 맞춰 절삭합니다.
+
+ClickHouse 26.7.3.19는 `Nullable(Array(...))` (Code 43)을 거부하며, 단일
+Exposed column으로는 서버가 물리 subcolumn으로 확장하는 `Nested(...)`를
+표현할 수 없습니다(Code 16). 따라서 이 두 형태는 H2/의미론 adapter에서
+검증하고 wire fixture에서는 의도적으로 제외했습니다. 서버에서 Nested를
+사용할 때는 물리 subcolumn을 선언하세요. JDBC V2 JSON object는 driver의
+canonical JSON spacing을 가진 map으로 반환될 수 있습니다.
 
 ## 엔진 DSL
 
