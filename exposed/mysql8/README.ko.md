@@ -2,7 +2,7 @@
 
 [English](./README.md) | 한국어
 
-`exposed-mysql8`는 MySQL 8.0+ 공간 데이터(GIS)를 JetBrains Exposed ORM에서 다루기 위한 모듈입니다.
+`exposed-mysql8`는 MySQL 8.0+ 공간 데이터 (GIS)를 JetBrains Exposed ORM에서 다루기 위한 모듈입니다.
 
 JTS geometry 값을 MySQL spatial column에 매핑하고, SRID 처리를 명시적으로 유지하며, 공간 관계 조건, 측정식, 메타데이터 조회, 일부 topology 연산을 Exposed expression으로 제공합니다.
 
@@ -16,7 +16,8 @@ JTS geometry 값을 MySQL spatial column에 매핑하고, SRID 처리를 명시�
 
 ## 개요
 
-- **Geometry 타입**: Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection, Geometry (범용)
+- **Geometry
+  타입**: Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection, Geometry (범용)
 - **좌표계**: WGS84 (SRID 4326) 기본값
 - **공간 함수**: 관계 predicate, 측정 expression, 메타데이터 expression, 일부 topology helper
 - **MySQL 전용**: `MysqlDialect` 사용 시에만 동작
@@ -26,21 +27,21 @@ JTS geometry 값을 MySQL spatial column에 매핑하고, SRID 처리를 명시�
 
 ## 지원하는 Geometry 타입
 
-| 타입                 | JTS 클래스              | 설명              |
-|--------------------|----------------------|-----------------|
-| POINT              | `Point`              | 단일 좌표           |
-| LINESTRING         | `LineString`         | 선분              |
+| 타입               | JTS 클래스           | 설명                 |
+|--------------------|----------------------|----------------------|
+| POINT              | `Point`              | 단일 좌표            |
+| LINESTRING         | `LineString`         | 선분                 |
 | POLYGON            | `Polygon`            | 폐곡선 영역          |
-| MULTIPOINT         | `MultiPoint`         | 다중 점            |
-| MULTILINESTRING    | `MultiLineString`    | 다중 선분           |
-| MULTIPOLYGON       | `MultiPolygon`       | 다중 폐곡선 영역       |
+| MULTIPOINT         | `MultiPoint`         | 다중 점              |
+| MULTILINESTRING    | `MultiLineString`    | 다중 선분            |
+| MULTIPOLYGON       | `MultiPolygon`       | 다중 폐곡선 영역     |
 | GEOMETRYCOLLECTION | `GeometryCollection` | 혼합 geometry 컬렉션 |
-| GEOMETRY           | `Geometry`           | 범용(모든 타입 허용)    |
+| GEOMETRY           | `Geometry`           | 범용(모든 타입 허용) |
 
 ## Table 확장 함수
 
 ```kotlin
-class Locations : LongIdTable("locations") {
+class Locations: LongIdTable("locations") {
     val name = varchar("name", 255)
     val point = geoPoint("point")                    // POINT
     val line = geoLineString("line")                 // LINESTRING
@@ -53,8 +54,7 @@ class Locations : LongIdTable("locations") {
 }
 ```
 
-모든 확장 함수는 기본 SRID 4326(WGS84)을 사용합니다. 다른 SRID가 필요한 경우 두 번째 인자로 명시할 수 있습니다.
-아래 예제의 `Locations`는 MySQL transaction 안에서 이미 인스턴스화한 table을 가리키는 이름으로 사용합니다.
+모든 확장 함수는 기본 SRID 4326 (WGS84)을 사용합니다. 다른 SRID가 필요한 경우 두 번째 인자로 명시할 수 있습니다. 아래 예제의 `Locations`는 MySQL transaction 안에서 이미 인스턴스화한 table을 가리키는 이름으로 사용합니다.
 
 ```kotlin
 val point = geoPoint("location", srid = 3857)  // Web Mercator
@@ -62,7 +62,7 @@ val point = geoPoint("location", srid = 3857)  // Web Mercator
 
 ## WGS84 좌표 생성 헬퍼
 
-**좌표 순서 규약**: longitude(경도, X축) 먼저, latitude(위도, Y축) 두 번째
+**좌표 순서 규약**: longitude (경도, X축) 먼저, latitude (위도, Y축) 두 번째
 
 ```kotlin
 // Point
@@ -99,7 +99,7 @@ val areas = wgs84MultiPolygon(area1, area2)
 
 ## 공간 관계 함수
 
-9가지 공간 술어(predicate) 함수를 제공합니다. 모두 `Op<Boolean>`을 반환하여 WHERE 절에서 사용할 수 있습니다.
+9가지 공간 술어 (predicate) 함수를 제공합니다. 모두 `Op<Boolean>`을 반환하여 WHERE 절에서 사용할 수 있습니다.
 
 ```kotlin
 // ST_Contains — A가 B를 완전히 포함하는가?
@@ -308,12 +308,12 @@ transaction(db) {
 
 ## 기술 요건
 
-| 항목           | 버전                                 |
+| 항목         | 버전                               |
 |--------------|------------------------------------|
 | **MySQL**    | 8.0+ (Testcontainers: `mysql:8.0`) |
-| **JTS Core** | 1.20.0 이상                          |
+| **JTS Core** | 1.20.0 이상                        |
 | **Exposed**  | v1 (JetBrains)                     |
-| **SRID**     | 4326 (WGS84, 기본값)                  |
+| **SRID**     | 4326 (WGS84, 기본값)               |
 
 ## 의존성
 
@@ -341,12 +341,12 @@ val point = geoPoint("location")  // IllegalStateException: geoPoint는 MySQL di
 
 ### Geographic SRS 주의사항
 
-MySQL의 `ST_Centroid()`, `ST_Envelope()` 등 일부 공간 함수는 geographic SRID(4326)에서
+MySQL의 `ST_Centroid()`, `ST_Envelope()` 등 일부 공간 함수는 geographic SRID (4326)에서
 `ER_NOT_IMPLEMENTED_FOR_GEOGRAPHIC_SRS` 오류를 발생시킵니다. 이 모듈은 해당 API를 deprecated로 유지하고, 일반적인 WGS84 helper처럼 보이지 않도록 위험을 문서화합니다.
 
 ### 좌표 순서
 
-WGS84(SRID 4326)은 axis-order가 **longitude-latitude(경도-위도)**입니다. 모든 헬퍼 함수는 이 순서를 따릅니다.
+WGS84 (SRID 4326)은 axis-order가 **longitude-latitude (경도-위도)**입니다. 모든 헬퍼 함수는 이 순서를 따릅니다.
 
 ```kotlin
 // ✅ 올바름
@@ -361,8 +361,8 @@ wgs84Point(lng = 37.5665, lat = 126.9780)
 테스트는 Testcontainers를 사용하여 MySQL 8.0을 자동으로 시작합니다.
 
 ```kotlin
-abstract class AbstractMySqlGisTest : AbstractExposedTest() {
-    companion object : KLogging() {
+abstract class AbstractMySqlGisTest: AbstractExposedTest() {
+  companion object: KLogging() {
         @JvmStatic
         val mysqlContainer: MySQL8Server = MySQL8Server.Launcher.mysql
 
