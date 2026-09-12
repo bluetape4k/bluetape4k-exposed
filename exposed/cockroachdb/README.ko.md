@@ -3,9 +3,7 @@
 [English](./README.md) | 한국어
 
 JetBrains Exposed ORM을 위한 최소 CockroachDB JDBC 통합 모듈입니다. 이 모듈은
-`bluetape4k-exposed`에서 CockroachDB를 지원하기 위한 첫 경로로 PostgreSQL wire
-JDBC 연결, 제한된 serializable transaction retry helper, 실제 Testcontainers 기반
-smoke test를 검증합니다.
+`bluetape4k-exposed`에서 CockroachDB를 지원하기 위한 첫 경로로 PostgreSQL wire JDBC 연결, 제한된 serializable transaction retry helper, 실제 Testcontainers 기반 smoke test를 검증합니다.
 
 ## 범위
 
@@ -19,18 +17,13 @@ smoke test를 검증합니다.
 - **Testcontainers smoke coverage**:
   `bluetape4k-testcontainers`의 `CockroachServer`를 사용하는 단일 노드 CockroachDB 테스트
 - **Serializable transaction retry helper**:
-  CockroachDB transaction retry error(`40001` + `restart transaction`)만 재시도하는
+  CockroachDB transaction retry error (`40001` + `restart transaction`)만 재시도하는
   `withCockroachTransaction`
 
-CockroachDB는 PostgreSQL wire protocol과 호환되지만 PostgreSQL과 동일하지는
-않습니다. 이 모듈은 의도적으로 custom Exposed dialect를 등록하지 않으며 넓은
-PostgreSQL DDL parity를 주장하지 않습니다.
+CockroachDB는 PostgreSQL wire protocol과 호환되지만 PostgreSQL과 동일하지는 않습니다. 이 모듈은 의도적으로 custom Exposed dialect를 등록하지 않으며 넓은 PostgreSQL DDL parity를 주장하지 않습니다.
 
-현재 `bluetape4k-exposed` 1.13.0 개발선은 JetBrains Exposed 1.4.0을 대상으로
-합니다. [Exposed 1.4.0 release](https://github.com/JetBrains/Exposed/releases/tag/1.4.0)와
-[1.4.0 changelog](https://github.com/JetBrains/Exposed/blob/1.4.0/CHANGELOG.md)에는
-built-in CockroachDB dialect를 추가했다는 근거가 없습니다. 따라서 이 모듈은 full
-dialect가 아니라 제한된 helper와 검증된 compatibility slice로 보아야 합니다.
+현재 `bluetape4k-exposed` 1.13.0 개발선은 JetBrains Exposed 1.4.0을 대상으로 합니다. [Exposed 1.4.0 release](https://github.com/JetBrains/Exposed/releases/tag/1.4.0)와
+[1.4.0 changelog](https://github.com/JetBrains/Exposed/blob/1.4.0/CHANGELOG.md)에는 built-in CockroachDB dialect를 추가했다는 근거가 없습니다. 따라서 이 모듈은 full dialect가 아니라 제한된 helper와 검증된 compatibility slice로 보아야 합니다.
 
 ## 헬퍼 경계
 
@@ -38,18 +31,18 @@ dialect가 아니라 제한된 helper와 검증된 compatibility slice로 보아
 
 ## 호환성 경계
 
-| 기능 | 상태 | 근거 |
-|---|---|---|
-| Primary key DDL | Supported | CockroachDB에서 `SchemaUtils.create/drop` 성공 |
-| Unique and index DDL | Supported | unique duplicate insert 실패 및 index metadata 조회 성공 |
-| Generated ID | Supported | `LongIdTable.insertAndGetId`가 generated ID 반환 |
-| `RETURNING` | Supported | PostgreSQL JDBC를 통한 raw `INSERT ... RETURNING` 성공 |
-| Schema metadata | Supported | HikariCP 경유 `DatabaseMetaData`로 table/index metadata 조회 성공 |
-| Serializable transaction retry | Supported | `withCockroachTransaction`이 CockroachDB retryable transaction error만 재시도 |
-| Migration diff no-op | Deferred | `MigrationUtils`가 create 이후에도 generated-ID sequence ownership 변경을 제안 |
-| `CREATE DOMAIN` | Deferred | [CockroachDB 공식 문서에서 unsupported PostgreSQL feature로 분류](https://www.cockroachlabs.com/docs/stable/query-behavior-troubleshooting) |
-| PostgreSQL range types | Deferred | [CockroachDB 공식 문서에서 PostgreSQL range types를 unsupported로 분류](https://www.cockroachlabs.com/docs/stable/postgresql-compatibility) |
-| Custom CockroachDB dialect | Out of scope | accepted path가 dialect를 요구하기 전까지 `bluetape4k-exposed` 1.13.0 개발선은 helper-only 계약을 유지 |
+| 기능                           | 상태         | 근거                                                                                                                                        |
+|--------------------------------|--------------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| Primary key DDL                | Supported    | CockroachDB에서 `SchemaUtils.create/drop` 성공                                                                                              |
+| Unique and index DDL           | Supported    | unique duplicate insert 실패 및 index metadata 조회 성공                                                                                    |
+| Generated ID                   | Supported    | `LongIdTable.insertAndGetId`가 generated ID 반환                                                                                            |
+| `RETURNING`                    | Supported    | PostgreSQL JDBC를 통한 raw `INSERT ... RETURNING` 성공                                                                                      |
+| Schema metadata                | Supported    | HikariCP 경유 `DatabaseMetaData`로 table/index metadata 조회 성공                                                                           |
+| Serializable transaction retry | Supported    | `withCockroachTransaction`이 CockroachDB retryable transaction error만 재시도                                                               |
+| Migration diff no-op           | Deferred     | `MigrationUtils`가 create 이후에도 generated-ID sequence ownership 변경을 제안                                                              |
+| `CREATE DOMAIN`                | Deferred     | [CockroachDB 공식 문서에서 unsupported PostgreSQL feature로 분류](https://www.cockroachlabs.com/docs/stable/query-behavior-troubleshooting) |
+| PostgreSQL range types         | Deferred     | [CockroachDB 공식 문서에서 PostgreSQL range types를 unsupported로 분류](https://www.cockroachlabs.com/docs/stable/postgresql-compatibility) |
+| Custom CockroachDB dialect     | Out of scope | accepted path가 dialect를 요구하기 전까지 `bluetape4k-exposed` 1.13.0 개발선은 helper-only 계약을 유지                                      |
 
 ## 범위 밖
 
@@ -68,15 +61,13 @@ dependencies {
 }
 ```
 
-이 모듈은 CockroachDB의 PostgreSQL wire protocol을 사용하므로 PostgreSQL JDBC
-driver를 사용합니다:
+이 모듈은 CockroachDB의 PostgreSQL wire protocol을 사용하므로 PostgreSQL JDBC driver를 사용합니다:
 
 ```kotlin
 implementation("org.postgresql:postgresql")
 ```
 
-아래의 선택적 `bluetape4k-jdbc` HikariCP 예제를 사용하는 경우 다음 의존성도
-추가합니다:
+아래의 선택적 `bluetape4k-jdbc` HikariCP 예제를 사용하는 경우 다음 의존성도 추가합니다:
 
 ```kotlin
 implementation("io.github.bluetape4k:bluetape4k-jdbc:${version}")
@@ -106,9 +97,7 @@ transaction(db) {
 
 ## Serializable Transaction Retry
 
-CockroachDB 공식 [transaction retry error reference](https://www.cockroachlabs.com/docs/stable/transaction-retry-error-reference)는
-transaction retry error를 SQLSTATE `40001`과 `restart transaction`으로 시작하는
-메시지로 설명합니다. 이 retryable signature만 제한적으로 재시도하려면
+CockroachDB 공식 [transaction retry error reference](https://www.cockroachlabs.com/docs/stable/transaction-retry-error-reference)는 transaction retry error를 SQLSTATE `40001`과 `restart transaction`으로 시작하는 메시지로 설명합니다. 이 retryable signature만 제한적으로 재시도하려면
 `withCockroachTransaction`을 사용합니다:
 
 ```kotlin
@@ -130,17 +119,12 @@ withCockroachTransaction(db, options) {
 }
 ```
 
-JetBrains Exposed에도 `maxAttempts`, `minRetryDelay`, `maxRetryDelay` 같은 generic
-transaction retry knob이 있습니다. 하지만 Exposed JDBC retry loop는 `SQLException`
-전체를 재시도합니다. `withCockroachTransaction`은 내부 Exposed transaction을 한 번만
-시도하도록 고정한 뒤, CockroachDB가 문서화한 transaction retry signature만
-재시도합니다.
+JetBrains Exposed에도 `maxAttempts`, `minRetryDelay`, `maxRetryDelay` 같은 generic transaction retry knob이 있습니다. 하지만 Exposed JDBC retry loop는 `SQLException`
+전체를 재시도합니다. `withCockroachTransaction`은 내부 Exposed transaction을 한 번만 시도하도록 고정한 뒤, CockroachDB가 문서화한 transaction retry signature만 재시도합니다.
 
 ![CockroachDB transaction retry flow](../../docs/images/readme-diagrams/exposed-cockroachdb-flow-02.png)
 
-caller-managed pool을 쓰는 경우 `DataSource`를 `CockroachDatabase.connect`에
-전달합니다. 예를 들어 `bluetape4k-jdbc`로 PostgreSQL JDBC URL 기반 HikariCP
-pool을 만들 수 있습니다:
+caller-managed pool을 쓰는 경우 `DataSource`를 `CockroachDatabase.connect`에 전달합니다. 예를 들어 `bluetape4k-jdbc`로 PostgreSQL JDBC URL 기반 HikariCP pool을 만들 수 있습니다:
 
 ```kotlin
 import io.bluetape4k.jdbc.JdbcDrivers

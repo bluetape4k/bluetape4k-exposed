@@ -43,7 +43,7 @@ data class CockroachTransactionRetryOptions(
         minRetryDelayMillis.requireZeroOrPositiveNumber("minRetryDelayMillis")
         maxRetryDelayMillis.requireZeroOrPositiveNumber("maxRetryDelayMillis")
         require(maxRetryDelayMillis >= minRetryDelayMillis) {
-            "maxRetryDelayMillis must be greater than or equal to minRetryDelayMillis."
+            "maxRetryDelayMillis[$maxRetryDelayMillis] must be greater than or equal to minRetryDelayMillis[$minRetryDelayMillis]."
         }
         queryTimeoutSeconds?.requirePositiveNumber("queryTimeoutSeconds")
         require(transactionIsolation in JDBC_TRANSACTION_ISOLATION_LEVELS) {

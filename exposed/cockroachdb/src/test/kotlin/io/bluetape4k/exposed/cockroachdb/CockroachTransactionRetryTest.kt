@@ -6,6 +6,7 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -21,6 +22,8 @@ import kotlin.time.Duration.Companion.milliseconds
  * Regression tests for CockroachDB transaction retry helpers.
  */
 class CockroachTransactionRetryTest: AbstractCockroachDbTest() {
+
+    companion object: KLogging()
 
     @Test
     fun `retry predicate detects CockroachDB transaction retry error`() {
