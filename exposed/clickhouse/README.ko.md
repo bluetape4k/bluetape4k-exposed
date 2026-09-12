@@ -327,11 +327,16 @@ V2 probe matrix는 연결 시도, 서버 실행 timeout, 전송 socket timeout,
   bounded 테스트 시간 안에 후속 수집을 성공시켰습니다. 이는 로컬
   producer/ResultSet 정리를 입증하지만, 블로킹 V2 JDBC read 즉시 중단이나
   원격 query 종료를 입증하지 않습니다.
-- V2 `Statement#cancel()`을 행을 받은 뒤 세 번 호출했고 모두 로컬 자원을
-  정리했습니다. `clickhouse-jdbc` `0.9.9` V2 구현은 비동기 `KILL QUERY`를
+- in-flight V2 `Statement#cancel()`을 첫 행 이후 세 번 호출했고 모두 요청을
+  수락한 뒤 로컬 자원을 정리했습니다. test-only `system.processes` observer가
+  각 `query_id`를 5초 동안 polling했지만 세 번 모두 첫 관찰 없이 `TIMEOUT`
+  (`POLL_DEADLINE_EXPIRED`)이었습니다. 따라서 원격 종료는 `N/A`이며 성공으로
+  주장하지 않습니다. `clickhouse-jdbc` `0.9.9` V2 구현은 비동기 `KILL QUERY`를
   전송합니다([driver source](https://github.com/ClickHouse/clickhouse-java/blob/v0.9.9/jdbc-v2/src/main/java/com/clickhouse/jdbc/StatementImpl.java), [KILL QUERY 문서](https://clickhouse.com/docs/reference/statements/kill)).
-  따라서 `cancel()` 반환 성공만으로 ClickHouse가 원격 query를 종료했다는
-  증거로 삼지 않습니다.
+  `cancel()` 반환 성공만으로 ClickHouse가 원격 query를 종료했다는 증거로
+  삼지 않습니다. redact한 receipt는
+  [`issue-875-timeout-cleanup.md`](../../docs/superpowers/verification/2026-09-13-issue-875-timeout-cleanup.md)에
+  보존합니다.
 - V1 read-timeout 테스트는 `com.clickhouse.jdbc.DriverV1`을 명시적으로 선택하고
   `socket_timeout=200`을 설정합니다. 행마다 1초가 걸리는 쿼리는 mapper가
   한 행도 방출하기 전에 드라이버의 `BatchUpdateException("Read timed out")`

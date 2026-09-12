@@ -344,11 +344,17 @@ observed request or cleanup into a remote query-cancellation guarantee.
   connection and each follow-up collection succeeds within the bounded test
   window. This proves local producer/ResultSet cleanup, not interruption of a
   blocking V2 JDBC read or termination of the remote query.
-- Three direct V2 `Statement#cancel()` calls are accepted after a row and release
-  local resources. In `clickhouse-jdbc` `0.9.9`, the V2 implementation issues
-  `KILL QUERY` asynchronously (see the [driver source](https://github.com/ClickHouse/clickhouse-java/blob/v0.9.9/jdbc-v2/src/main/java/com/clickhouse/jdbc/StatementImpl.java)); a successful
+- Three in-flight V2 `Statement#cancel()` calls are accepted after the first row
+  and release local resources. A test-only `system.processes` observer polls
+  each `query_id` for five seconds; all three attempts returned `TIMEOUT`
+  (`POLL_DEADLINE_EXPIRED`) without a first observation. Remote termination is
+  therefore `N/A`, not a success claim. In `clickhouse-jdbc` `0.9.9`, the V2
+  implementation issues `KILL QUERY` asynchronously (see the [driver
+  source](https://github.com/ClickHouse/clickhouse-java/blob/v0.9.9/jdbc-v2/src/main/java/com/clickhouse/jdbc/StatementImpl.java)); a successful
   `cancel()` return is not proof that ClickHouse has finished terminating the
   remote query (see [KILL QUERY](https://clickhouse.com/docs/reference/statements/kill)).
+  The redacted receipt is
+  [`issue-875-timeout-cleanup.md`](../../docs/superpowers/verification/2026-09-13-issue-875-timeout-cleanup.md).
 - The V1 read-timeout test selects `com.clickhouse.jdbc.DriverV1` explicitly and
   sets `socket_timeout=200`. A one-second-per-row query raises the driver's
   `BatchUpdateException("Read timed out")`, wrapped by Exposed, before the

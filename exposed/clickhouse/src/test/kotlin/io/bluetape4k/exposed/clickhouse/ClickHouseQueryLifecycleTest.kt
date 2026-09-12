@@ -11,6 +11,8 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.clickhouse.support.JdbcObservation
+import io.bluetape4k.exposed.clickhouse.support.ClickHouseQueryObservation
+import io.bluetape4k.exposed.clickhouse.support.QueryObservationOutcome
 import io.bluetape4k.exposed.clickhouse.support.TrackingClickHouseConnection
 import io.bluetape4k.junit5.awaitility.untilSuspending
 import io.bluetape4k.junit5.coroutines.runSuspendIO
@@ -45,6 +47,7 @@ import java.sql.DriverManager
 import java.sql.SQLException
 import java.sql.SQLTimeoutException
 import java.time.Duration
+import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -58,6 +61,19 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
     private class MarkerFailure(val marker: String): IllegalStateException(marker)
     private class SqlFailure(val marker: String): SQLException(marker)
     private class MarkerCancellation(val marker: String): CancellationException(marker)
+
+    @Test
+    fun `원격 query observation은 빈 id에서 연결 없이 unavailable을 반환한다`() {
+        var opened = false
+        val result = ClickHouseQueryObservation(connectionFactory = {
+            opened = true
+            error("empty query id must not open an observation connection")
+        }).awaitDisappearance("", Duration.ofSeconds(1))
+
+        result.outcome shouldBeEqualTo QueryObservationOutcome.UNAVAILABLE
+        result.reasonCode shouldBeEqualTo "EMPTY_QUERY_ID"
+        opened.shouldBeFalse()
+    }
 
     private inner class Fixture(
         private val jdbcOptions: String = "",
@@ -510,23 +526,49 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
     }
 
     @Test
-    fun `기본 V2 Statement cancel 요청은 KILL QUERY 경로를 호출한다`() = runSuspendIO {
-        Fixture().use { fixture ->
-            repeat(3) {
-                fixture.withTrackedConnection { connection ->
-                    connection.prepareStatement("SELECT number FROM system.numbers LIMIT 1").use { statement ->
+    fun `기본 V2 in-flight cancel 요청과 원격 query 관찰을 분리한다`() = runSuspendIO {
+        val remoteOutcomes = (1..3).map { attempt ->
+            val queryId = "issue-875-cancel-$attempt-${UUID.randomUUID()}"
+            Fixture("?query_id=$queryId&clickhouse_setting_max_block_size=1").use { fixture ->
+                var requestAccepted = false
+                val remoteObservation = fixture.withTrackedConnection { connection ->
+                    connection.prepareStatement(
+                        "SELECT sleepEachRow(1), number FROM system.numbers LIMIT 5",
+                    ).use { statement ->
                         statement.executeQuery().use { result ->
                             result.next().shouldBeTrue()
+                            requestAccepted = runCatching {
+                                statement.cancel()
+                                true
+                            }.getOrDefault(false)
+                            ClickHouseQueryObservation(
+                                connectionFactory = {
+                                    DriverManager.getConnection(
+                                        "jdbc:clickhouse://${clickhouse.host}:${clickhouse.port}/default",
+                                        clickhouse.username,
+                                        clickhouse.password,
+                                    )
+                                },
+                            ).awaitDisappearance(queryId, Duration.ofSeconds(5))
                         }
-                        statement.cancel()
                     }
                 }
+
+                requestAccepted.shouldBeTrue()
+                fixture.observed.cancels.get() shouldBeEqualTo 1
                 fixture.assertReleased()
+                fixture.rows(limit = 1).toList() shouldBeEqualTo listOf(0L)
+                fixture.assertReleased()
+                println(
+                    "V2_CANCEL_RECEIPT attempt=$attempt requestAccepted=$requestAccepted " +
+                        "remoteOutcome=${remoteObservation.outcome} reason=${remoteObservation.reasonCode}",
+                )
+                remoteObservation.outcome
             }
-            fixture.observed.cancels.get() shouldBeEqualTo 3
-            fixture.rows(limit = 1).toList() shouldBeEqualTo listOf(0L)
-            fixture.assertReleased()
         }
+
+        remoteOutcomes.size shouldBeEqualTo 3
+        remoteOutcomes.all { it in QueryObservationOutcome.entries }.shouldBeTrue()
     }
 
     @Test
