@@ -2,20 +2,13 @@
 
 [English](./README.md) | 한국어
 
-
 ## Exposed 1.5.0 단방향 해시
 
 신규 Bluetape adapter 없이 upstream `exposed-crypt`를 직접 사용합니다. 이 모듈의
-[`R2dbcHashedColumnContractTest`](src/test/kotlin/io/bluetape4k/exposed/r2dbc/tests/crypt/R2dbcHashedColumnContractTest.kt)는
-H2에서 저장·조회·nullable·재저장·custom hasher·rehash를 검증합니다. R2DBC는 DSL 경로이며 DAO 지원을 뜻하지 않습니다.
+[`R2dbcHashedColumnContractTest`](src/test/kotlin/io/bluetape4k/exposed/r2dbc/tests/crypt/R2dbcHashedColumnContractTest.kt)는 H2에서 저장·조회·nullable·재저장·custom hasher·rehash를 검증합니다. R2DBC는 DSL 경로이며 DAO 지원을 뜻하지 않습니다.
 
 애플리케이션은 기존 Exposed BOM/catalog를 사용하고 필요한 의존성을 명시적으로 선택합니다.
-`exposed-crypt` 1.5.0은 `spring-security-crypto`를 전이 의존성으로 포함합니다.
-Spring Boot starter는 필요하지 않습니다. Argon2/SCrypt에는 별도 BouncyCastle runtime이 필요합니다.
-이 저장소에서 선택된 Spring Security 7.1.1의 검증 경로에는 `spring-core`도 필요합니다.
-누락 시 `NoClassDefFoundError: org/springframework/util/StringUtils`를 재현했습니다.
-아래 예제는 애플리케이션 BOM으로 Spring 버전을 관리한다는 전제입니다.
-테스트에서만 사용할 때는 아래 implementation/runtimeOnly를 testImplementation/testRuntimeOnly로 바꿉니다.
+`exposed-crypt` 1.5.0은 `spring-security-crypto`를 전이 의존성으로 포함합니다. Spring Boot starter는 필요하지 않습니다. Argon2/SCrypt에는 별도 BouncyCastle runtime이 필요합니다. 이 저장소에서 선택된 Spring Security 7.1.1의 검증 경로에는 `spring-core`도 필요합니다. 누락 시 `NoClassDefFoundError: org/springframework/util/StringUtils`를 재현했습니다. 아래 예제는 애플리케이션 BOM으로 Spring 버전을 관리한다는 전제입니다. 테스트에서만 사용할 때는 아래 implementation/runtimeOnly를 testImplementation/testRuntimeOnly로 바꿉니다.
 
 ```kotlin
 dependencies {
@@ -37,10 +30,7 @@ val encoded = Accounts.password.hash(submittedPassword)
 val accepted = encoded.matches(submittedPassword)
 ```
 
-이 코드는 suspend R2DBC transaction 안에서 해당 backend의 insert/update DSL과 함께 사용합니다.
-nullable 컬럼은 `varchar("optional", 512).nullable().hashed()`로 선언합니다.
-조회한 `Hashed`는 그대로 대입합니다. `Hashed(hasher, encodedValue)`는 이미 인코딩된 값을 감쌀 뿐
-해싱하지 않으므로 평문을 전달하면 안 됩니다.
+이 코드는 suspend R2DBC transaction 안에서 해당 backend의 insert/update DSL과 함께 사용합니다. nullable 컬럼은 `varchar("optional", 512).nullable().hashed()`로 선언합니다. 조회한 `Hashed`는 그대로 대입합니다. `Hashed(hasher, encodedValue)`는 이미 인코딩된 값을 감쌀 뿐 해싱하지 않으므로 평문을 전달하면 안 됩니다.
 
 - BCrypt 출력은 60자입니다. 예제의 512자는 알고리즘 식별자·파라미터 변경 여유이며 모든 custom hasher의 길이를 보장하지 않습니다.
 - Argon2/SCrypt 출력 길이는 파라미터에 따라 달라집니다. PBKDF2의 pepper는 별도 비밀값이며 검증할 때 같은 pepper가 필요합니다.
@@ -52,7 +42,6 @@ nullable 컬럼은 `varchar("optional", 512).nullable().hashed()`로 선언합�
 - 가역 암호화·검색 가능한 암호화는 [Tink 모듈](../tink/README.ko.md)의 별도 기능입니다.
 
 공식 기준: [Exposed 1.5.0 crypt 소스](https://github.com/JetBrains/Exposed/tree/84361204b6639cad5696506a26595c97afac3531/exposed-crypt).
-
 
 ## 개요
 
@@ -88,15 +77,15 @@ dependencies {
 
 ## 지원 데이터베이스
 
-| 데이터베이스           | TestDB       | R2DBC Driver       |
-|------------------|--------------|--------------------|
-| H2               | `H2`         | `r2dbc-h2`         |
+| 데이터베이스       | TestDB       | R2DBC Driver       |
+|--------------------|--------------|--------------------|
+| H2                 | `H2`         | `r2dbc-h2`         |
 | H2 MySQL 모드      | `H2_MYSQL`   | `r2dbc-h2`         |
 | H2 MariaDB 모드    | `H2_MARIADB` | `r2dbc-h2`         |
 | H2 PostgreSQL 모드 | `H2_PSQL`    | `r2dbc-h2`         |
-| MariaDB          | `MARIADB`    | `r2dbc-mariadb`    |
-| MySQL 8.0        | `MYSQL_V8`   | `r2dbc-mysql`      |
-| PostgreSQL       | `POSTGRESQL` | `r2dbc-postgresql` |
+| MariaDB            | `MARIADB`    | `r2dbc-mariadb`    |
+| MySQL 8.0          | `MYSQL_V8`   | `r2dbc-mysql`      |
+| PostgreSQL         | `POSTGRESQL` | `r2dbc-postgresql` |
 
 ## 사용 예시
 
@@ -275,24 +264,21 @@ object TestDBConfig {
 ```
 
 모듈 기본값은 `useFastDB = false`입니다. 따라서 별도 설정이 없으면
-`enabledDialects()`는 H2, PostgreSQL, MySQL 8.0을 반환합니다. 빠른 H2 전용
-경로가 필요할 때 `useFastDB = true`로 좁히세요. CI에서는
-`EXPOSED_TEST_DB=POSTGRESQL` 또는 `EXPOSED_TEST_DB=MYSQL_V8`로 H2와 특정 실제
-드라이버 하나만 실행하도록 제한할 수 있습니다. Testcontainers 기반
-데이터베이스에는 Docker가 필요합니다.
+`enabledDialects()`는 H2, PostgreSQL, MySQL 8.0을 반환합니다. 빠른 H2 전용 경로가 필요할 때 `useFastDB = true`로 좁히세요. CI에서는
+`EXPOSED_TEST_DB=POSTGRESQL` 또는 `EXPOSED_TEST_DB=MYSQL_V8`로 H2와 특정 실제 드라이버 하나만 실행하도록 제한할 수 있습니다. Testcontainers 기반 데이터베이스에는 Docker가 필요합니다.
 
 ## 테스트용 스키마/데이터
 
 ### 공유 테이블 스키마
 
-| 파일                               | 설명               |
-|----------------------------------|------------------|
-| `shared/entities/BoardSchema.kt` | Board 테이블        |
+| 파일                             | 설명                  |
+|----------------------------------|-----------------------|
+| `shared/entities/BoardSchema.kt` | Board 테이블          |
 | `shared/mapping/PersonSchema.kt` | Person 매핑 테이블    |
 | `shared/mapping/OrderSchema.kt`  | Order 매핑 테이블     |
 | `shared/samples/BankSchema.kt`   | Bank 계좌 테이블      |
 | `shared/samples/UserCities.kt`   | User-City 관계 테이블 |
-| `shared/dml/DMLTestData.kt`      | DML 테스트 데이터      |
+| `shared/dml/DMLTestData.kt`      | DML 테스트 데이터     |
 
 ## Testcontainers 구성
 
@@ -311,26 +297,26 @@ Containers.Postgres
 
 ## JDBC vs R2DBC 테스트 비교
 
-| 특징         | exposed-tests     | exposed-r2dbc-tests      |
+| 특징       | exposed-tests     | exposed-r2dbc-tests      |
 |------------|-------------------|--------------------------|
 | API        | JDBC              | R2DBC                    |
-| 실행 모델      | 동기/비동기            | Coroutine 네이티브           |
+| 실행 모델  | 동기/비동기       | Coroutine 네이티브       |
 | withDb     | `withDb`          | `suspend fun withDb`     |
 | withTables | `withTables`      | `suspend fun withTables` |
-| 트랜잭션       | `JdbcTransaction` | `R2dbcTransaction`       |
+| 트랜잭션   | `JdbcTransaction` | `R2dbcTransaction`       |
 
 ## 주요 기능 상세
 
-| 파일                            | 설명                                                                                                                                                   |
-|-------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 파일                          | 설명                                                                                                                                                         |
+|-------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `AbstractExposedR2dbcTest.kt` | R2DBC 테스트 기본 클래스                                                                                                                                     |
-| `TestDB.kt`                   | R2DBC 지원 DB 정의                                                                                                                                       |
-| `TestDBConfig.kt`             | 테스트 환경 설정 (useTestcontainers, useFastDB)                                                                                                             |
-| `Containers.kt`               | Testcontainers 컨테이너 관리                                                                                                                               |
-| `withDb.kt`                   | R2DBC DB 연결 유틸                                                                                                                                       |
-| `withTables.kt`               | R2DBC 테이블 유틸                                                                                                                                         |
-| `withAutoCommit.kt`           | AutoCommit 모드 유틸                                                                                                                                     |
-| `withSchemas.kt`              | Schema 유틸                                                                                                                                            |
+| `TestDB.kt`                   | R2DBC 지원 DB 정의                                                                                                                                           |
+| `TestDBConfig.kt`             | 테스트 환경 설정 (useTestcontainers, useFastDB)                                                                                                              |
+| `Containers.kt`               | Testcontainers 컨테이너 관리                                                                                                                                 |
+| `withDb.kt`                   | R2DBC DB 연결 유틸                                                                                                                                           |
+| `withTables.kt`               | R2DBC 테이블 유틸                                                                                                                                            |
+| `withAutoCommit.kt`           | AutoCommit 모드 유틸                                                                                                                                         |
+| `withSchemas.kt`              | Schema 유틸                                                                                                                                                  |
 | `Assertions.kt`               | 테스트 어설션 유틸 (`assertTrue`, `assertFalse`, `assertEquals`, `assertNotEquals`, `assertFailAndRollback`, `expectException`, `expectExceptionSuspending`) |
 | `TestSupports.kt`             | 테스트 보조 유틸 (`inProperCase`, `currentDialectTest`, `insertAndSuspending` 등)                                                                            |
 
@@ -392,6 +378,6 @@ withTables(fixture, Orders) { key ->
 - 취소는 그대로 전파하며 필수 cleanup만 보호합니다. 본문 실패가 우선이고 cleanup/recovery 실패는 발생 순서대로 suppressed에 남습니다 단, 기존 R2DBC `withTables` 계약대로 본문 취소에는 cleanup/recovery suppressed를 추가하지 않습니다.
 - 전용 테스트 table/schema만 전달해야 합니다. 사전 drop과 cascade 정리가 수행됩니다. 부분 생성도 정리하되 `dropTables = false`는 종료 정리를 생략합니다. schema 미지원 dialect는 본문을 실행하지 않으며 DB 단절·의도적인 drop 실패에서는 잔여물이 생길 수 있습니다.
 - provider 로그에는 custom key·URL·설정·callback 예외 메시지를 넣지 않습니다. driver/애플리케이션 로그는 호출자 정책입니다. coroutine debug stacktrace recovery가 예외를 복제할 수 있지만 helper는 본문 실패를 다른 실패로 교체하지 않습니다.
-- 애플리케이션의 `bluetape4k-dependencies` BOM 아래 `testImplementation`으로 선언합니다. test runtime 지원과 application main runtime은 구분합니다. upstream이 로그만 남기는 Exposed 내부 cleanup 실패는 suppressed 보장 밖입니다(#817).
+- 애플리케이션의 `bluetape4k-dependencies` BOM 아래 `testImplementation`으로 선언합니다. test runtime 지원과 application main runtime은 구분합니다. upstream이 로그만 남기는 Exposed 내부 cleanup 실패는 suppressed 보장 밖입니다 (#817).
 
 workshop/clinic 이전과 배포는 별도 작업이며 이 provider 변경만으로 #815 전체가 완료되지는 않습니다.
