@@ -1,8 +1,10 @@
 package io.bluetape4k.exposed.duckdb
 
-import io.bluetape4k.exposed.duckdb.domain.Events
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.exposed.duckdb.domain.Events
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -10,9 +12,10 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.Instant
-import io.bluetape4k.assertions.assertFailsWith
 
 class DuckDBDatabaseTest {
+
+    companion object: KLogging()
 
     @Test
     fun `inMemory 는 트랜잭션 사이에서 상태를 공유하지 않는다`() {

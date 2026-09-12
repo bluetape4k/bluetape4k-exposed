@@ -1,9 +1,9 @@
 package io.bluetape4k.exposed.duckdb
 
-import io.bluetape4k.exposed.duckdb.DuckDBDatabase.file
 import io.bluetape4k.exposed.duckdb.dialect.DuckDBDialect
 import io.bluetape4k.exposed.duckdb.dialect.DuckDBDialectMetadata
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.support.requireNotBlank
 import org.jetbrains.exposed.v1.core.DatabaseApi
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -57,14 +57,14 @@ object DuckDBDatabase: KLogging() {
      * DuckDB JDBC 드라이버 클래스명.
      * `const val` 대신 `val`을 사용하여 이 프로퍼티 접근 시 객체 초기화(init{})를 보장합니다.
      */
-    val DRIVER = "org.duckdb.DuckDBDriver"
+    const val DRIVER = "org.duckdb.DuckDBDriver"
 
     init {
         // Database.Companion.init{}를 먼저 트리거한 뒤 DuckDB 드라이버/다이얼렉트 등록
         Database.registerJdbcDriver("jdbc:duckdb", DRIVER, DuckDBDialect.dialectName)
         DatabaseApi.registerDialect(DuckDBDialect.dialectName) { DuckDBDialect() }
         Database.registerDialectMetadata(DuckDBDialect.dialectName) { DuckDBDialectMetadata() }
-        log.debug("DuckDB dialect registered: ${DuckDBDialect.dialectName}")
+        log.debug { "DuckDB dialect registered: ${DuckDBDialect.dialectName}" }
     }
 
     /**
