@@ -14,7 +14,7 @@ Exposed R2DBC와 Redisson 캐시를 결합해 코루틴 기반 Read-Through, Wri
     - `R2dbcExposedEntityMapLoader`는 지원되는 scalar ID에서 오름차순 keyset page를 사용하고 custom ID에는 기존 offset fallback을 사용
     - `loadAllKeys()`는 rendezvous channel back-pressure로 PK 오름차순을 안정적으로 순회하며 한 번에 `batchSize` page만 materialize합니다. 전체 열거는 weakly consistent합니다
     - top-level streaming에는 Exposed `maxAttempts = 1`을 적용해 retry 재방출을 막고, producer 오류와 timeout 원인은 정상 종료가 아닌 `AsyncIterator` 예외로 전달합니다
-    - `loadAllKeys()`가 실행하는 각 database statement에는 Exposed transaction `queryTimeout` 30초를 적용합니다(`queryTimeout` 단위는 초). 전체 열거 예산은 별도 60초이며 timeout은 `AsyncIterator` 실패로 전달됩니다
+  - `loadAllKeys()`가 실행하는 각 database statement에는 Exposed transaction `queryTimeout` 30초를 적용합니다 (`queryTimeout` 단위는 초). 전체 열거 예산은 별도 60초이며 timeout은 `AsyncIterator` 실패로 전달됩니다
     - caller-owned ambient transaction은 자체 retry 정책을 유지하므로 outer retry 뒤 partial ID가 다시 관찰될 수 있습니다. 정확히 한 번 관찰하려면 중복 제거·멱등 처리를 적용하거나 성공 전 외부 side effect를 buffer해야 하며, 전체 열거 재시도는 completeness만 복구합니다. 기본 loader scope는 한 번의 실패가 후속 호출을 취소하지 않도록 격리합니다
 - **Repository 추상화**: 캐시 + DB 접근 공통 패턴 (`R2dbcRedissonRepository`)
 - **Coroutines 네이티브 Repository API**: 캐시와 Repository 호출은 `suspend` 함수이고, Redisson SPI 어댑터는 내부적으로 async로 동작
@@ -156,9 +156,7 @@ val nearCacheConfig = RedissonCacheConfig.readOnly(
 ## Redis Codec 안전성
 
 `RedissonCacheConfig` 상수는 기본적으로 Fory 계열 binary codec을 사용합니다. Repository 생성자는
-`trustedBinaryCache = true`를 명시하지 않으면 Fory/Kryo/JDK 계열 binary codec을 거부합니다. 이 opt-in은
-Redis 인스턴스가 private이고, Redis 내용을 신뢰할 수 없는 클라이언트가 쓸 수 없는 경우에만 사용하세요.
-dependency 경계에 놓인 Redis 데이터에는 기본 binary codec 대신 검토된 custom codec을 제공하세요.
+`trustedBinaryCache = true`를 명시하지 않으면 Fory/Kryo/JDK 계열 binary codec을 거부합니다. 이 opt-in은 Redis 인스턴스가 private이고, Redis 내용을 신뢰할 수 없는 클라이언트가 쓸 수 없는 경우에만 사용하세요. dependency 경계에 놓인 Redis 데이터에는 기본 binary codec 대신 검토된 custom codec을 제공하세요.
 
 ## 캐시 패턴
 
@@ -182,60 +180,58 @@ dependency 경계에 놓인 Redis 데이터에는 기본 binary codec 대신 검
 
 ## R2dbcRedissonRepository 주요 메서드
 
-| 메서드                                     | 설명                                |
-|-----------------------------------------|-----------------------------------|
-| `containsKey(id)`                            | 캐시에 해당 ID 캐시 키 존재 여부 확인 (suspend)      |
-| `get(id)`                               | 캐시에서 엔티티 조회, 미스 시 DB 로드 (suspend) |
-| `getAll(ids, batchSize)`                | 캐시에서 여러 엔티티 배치 조회 (suspend)       |
-| `findByIdFromDb(id)`                    | DB에서 직접 조회, 캐시 우회 (suspend)       |
-| `findAllFromDb(ids)`                    | DB에서 여러 엔티티 직접 조회 (suspend)       |
-| `findAll(limit, offset, sortBy, where)` | DB 조회 후 캐시 동기화 (suspend)          |
-| `put(id, entity)`                       | 엔티티 하나를 캐시에 저장하며, writer 동작은 캐시 모드에 따라 달라짐 (suspend) |
-| `putAll(entities, batchSize)`           | ID-to-entity map을 캐시에 일괄 저장하며, writer 동작은 캐시 모드에 따라 달라짐 (suspend) |
-| `upsertAll(entities, batchSize)`        | 배치 map write 기반 명시적 벌크 캐시 upsert (suspend) |
+| 메서드                                  | 설명                                                                                         |
+|-----------------------------------------|----------------------------------------------------------------------------------------------|
+| `containsKey(id)`                       | 캐시에 해당 ID 캐시 키 존재 여부 확인 (suspend)                                              |
+| `get(id)`                               | 캐시에서 엔티티 조회, 미스 시 DB 로드 (suspend)                                              |
+| `getAll(ids, batchSize)`                | 캐시에서 여러 엔티티 배치 조회 (suspend)                                                     |
+| `findByIdFromDb(id)`                    | DB에서 직접 조회, 캐시 우회 (suspend)                                                        |
+| `findAllFromDb(ids)`                    | DB에서 여러 엔티티 직접 조회 (suspend)                                                       |
+| `findAll(limit, offset, sortBy, where)` | DB 조회 후 캐시 동기화 (suspend)                                                             |
+| `put(id, entity)`                       | 엔티티 하나를 캐시에 저장하며, writer 동작은 캐시 모드에 따라 달라짐 (suspend)               |
+| `putAll(entities, batchSize)`           | ID-to-entity map을 캐시에 일괄 저장하며, writer 동작은 캐시 모드에 따라 달라짐 (suspend)     |
+| `upsertAll(entities, batchSize)`        | 배치 map write 기반 명시적 벌크 캐시 upsert (suspend)                                        |
 | `invalidate(id)`                        | 캐시 엔트리 하나를 제거하며, DB 삭제는 `deleteFromDBOnInvalidate` 설정 시에만 수행 (suspend) |
 | `invalidateAll(ids)`                    | 여러 캐시 엔트리를 제거하며, DB 삭제는 `deleteFromDBOnInvalidate` 설정 시에만 수행 (suspend) |
-| `clear()`                               | map 엔트리를 비우며, 기본 경로는 writer 없는 cache-only 제거를 사용 (suspend) |
-| `invalidateByPattern(pattern, count)`   | 패턴에 맞는 키 캐시 제거 (suspend)          |
+| `clear()`                               | map 엔트리를 비우며, 기본 경로는 writer 없는 cache-only 제거를 사용 (suspend)                |
+| `invalidateByPattern(pattern, count)`   | 패턴에 맞는 키 캐시 제거 (suspend)                                                           |
 
 ## 캐시 설정 상수 (`RedissonCacheConfig`)
 
 자주 사용하는 캐시 모드 설정값이 상수로 제공됩니다.
 
-| 상수                                                    | 설명                              |
-|-------------------------------------------------------|---------------------------------|
-| `RedissonCacheConfig.READ_ONLY`                          | Read-Through 전용 (원격 캐시)         |
+| 상수                                                     | 설명                            |
+|----------------------------------------------------------|---------------------------------|
+| `RedissonCacheConfig.READ_ONLY`                          | Read-Through 전용 (원격 캐시)   |
 | `RedissonCacheConfig.READ_ONLY_WITH_NEAR_CACHE`          | Read-Through + Near Cache       |
 | `RedissonCacheConfig.READ_WRITE_THROUGH`                 | Read-Through + Write-Through    |
 | `RedissonCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE` | Read-Write-Through + Near Cache |
-| `RedissonCacheConfig.WRITE_BEHIND`                       | Write-Behind (원격 캐시)            |
+| `RedissonCacheConfig.WRITE_BEHIND`                       | Write-Behind (원격 캐시)        |
 | `RedissonCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE`       | Write-Behind + Near Cache       |
 
 ## 주요 파일/클래스 목록
 
 ### Repository (repository/)
 
-| 파일                                   | 설명                                 |
-|--------------------------------------|------------------------------------|
-| `R2dbcRedissonRepository.kt`         | R2DBC 비동기 캐시 Repository 인터페이스      |
-| `AbstractR2dbcRedissonRepository.kt` | R2DBC 비동기 캐시 Repository 추상 클래스     |
-| `ExposedR2dbcRedissonCodecSafety.kt` | 신뢰된 binary codec opt-in guard             |
+| 파일                                 | 설명                                     |
+|--------------------------------------|------------------------------------------|
+| `R2dbcRedissonRepository.kt`         | R2DBC 비동기 캐시 Repository 인터페이스  |
+| `AbstractR2dbcRedissonRepository.kt` | R2DBC 비동기 캐시 Repository 추상 클래스 |
+| `ExposedR2dbcRedissonCodecSafety.kt` | 신뢰된 binary codec opt-in guard         |
 
 ### Map (map/)
 
-| 파일                               | 설명                                                            |
-|----------------------------------|---------------------------------------------------------------|
-| `R2dbcEntityMapLoader.kt`        | R2DBC 비동기 MapLoader 기본 구현 (`MapLoaderAsync`)                  |
-| `R2dbcEntityMapWriter.kt`        | R2DBC 비동기 MapWriter 기본 구현 (`MapWriterAsync`)                  |
+| 파일                             | 설명                                                               |
+|----------------------------------|--------------------------------------------------------------------|
+| `R2dbcEntityMapLoader.kt`        | R2DBC 비동기 MapLoader 기본 구현 (`MapLoaderAsync`)                |
+| `R2dbcEntityMapWriter.kt`        | R2DBC 비동기 MapWriter 기본 구현 (`MapWriterAsync`)                |
 | `R2dbcExposedEntityMapLoader.kt` | Exposed IdTable 기반 MapLoader 구현체                              |
 | `R2dbcExposedEntityMapWriter.kt` | Exposed IdTable 기반 MapWriter 구현체 (Write-Through/Write-Behind) |
-| `AsyncIteratorSupport.kt`        | Redisson `AsyncIterator`를 `List`로 수집하는 확장 함수                  |
+| `AsyncIteratorSupport.kt`        | Redisson `AsyncIterator`를 `List`로 수집하는 확장 함수             |
 
 ## 운영 로그 계약
 
-Loader와 writer의 운영 로그에는 고정된 작업명, 제한된 count/timeout,
-안전한 예외 타입만 기록합니다. `Throwable`을 첨부하거나 caller 소유 ID,
-엔티티 payload, 예외 message, stack trace를 출력하지 않습니다.
+Loader와 writer의 운영 로그에는 고정된 작업명, 제한된 count/timeout, 안전한 예외 타입만 기록합니다. `Throwable`을 첨부하거나 caller 소유 ID, 엔티티 payload, 예외 message, stack trace를 출력하지 않습니다.
 `CancellationException`은 오류 로그 없이 재전파합니다.
 
 ## 테스트

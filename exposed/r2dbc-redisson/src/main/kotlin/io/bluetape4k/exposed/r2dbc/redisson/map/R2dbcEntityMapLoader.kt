@@ -8,14 +8,13 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ChannelResult
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
@@ -147,7 +146,7 @@ open class R2dbcEntityMapLoader<ID: Any, E: Any>(
                         )
                         log.warn {
                             "DB에서 모든 ID를 읽는 작업 중 Timeout 이 발생했습니다. " +
-                                "timeout=$timeoutMillis msec, errorType=${timeout::class.simpleName}"
+                                    "timeout=$timeoutMillis msec, errorType=${timeout::class.simpleName}"
                         }
                         throw timeout
                     }

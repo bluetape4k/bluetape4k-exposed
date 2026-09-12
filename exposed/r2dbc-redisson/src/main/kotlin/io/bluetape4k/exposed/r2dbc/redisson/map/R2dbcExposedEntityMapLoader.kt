@@ -6,14 +6,13 @@ import io.bluetape4k.logging.error
 import io.bluetape4k.support.requirePositiveNumber
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.coroutines.flow.toList
-import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.EntityIDColumnType
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greater
@@ -137,14 +136,15 @@ private fun <ID: Any> ID.asComparableKey(): Comparable<Any> =
 @JvmSynthetic
 internal fun Any.isKeysetScalar(): Boolean =
     this is Comparable<*> &&
-        when (this) {
-            is Byte, is Short, is Int, is Long, is Float, is Double,
-            is UByte, is UShort, is UInt, is ULong,
-            is java.math.BigDecimal, is java.math.BigInteger,
-            is String, is Char, is java.util.UUID,
-            is java.sql.Date, is java.sql.Time, is java.sql.Timestamp -> true
-            else -> javaClass.name.startsWith("java.time.")
-        }
+            when (this) {
+                is Byte, is Short, is Int, is Long, is Float, is Double,
+                is UByte, is UShort, is UInt, is ULong,
+                is java.math.BigDecimal, is java.math.BigInteger,
+                is String, is Char, is java.util.UUID,
+                is java.sql.Date, is java.sql.Time, is java.sql.Timestamp,
+                     -> true
+                else -> javaClass.name.startsWith("java.time.")
+            }
 
 @Suppress("UNCHECKED_CAST")
 private fun <ID: Any> IdTable<ID>.rawIdColumn(): Column<Comparable<Any>> =

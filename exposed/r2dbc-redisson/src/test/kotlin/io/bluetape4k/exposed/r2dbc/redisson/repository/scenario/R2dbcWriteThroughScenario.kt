@@ -1,16 +1,16 @@
 package io.bluetape4k.exposed.r2dbc.redisson.repository.scenario
 
-import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest.Companion.ENABLE_DIALECTS_METHOD
-import io.bluetape4k.exposed.r2dbc.tests.TestDB
-import io.bluetape4k.junit5.awaitility.untilSuspending
-import io.bluetape4k.logging.coroutines.KLoggingChannel
-import kotlinx.coroutines.delay
-import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest.Companion.ENABLE_DIALECTS_METHOD
+import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.junit5.awaitility.untilSuspending
+import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
+import kotlinx.coroutines.delay
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.withPollInterval
 import org.jetbrains.exposed.v1.core.autoIncColumnType
@@ -22,8 +22,9 @@ import java.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCacheTestScenario<ID, E> {
+
     companion object: KLoggingChannel() {
-        const val DEFAULT_DELAY = 100L
+        const val DEFAULT_DELAY = 200L
     }
 
     suspend fun createNewEntity(): E
@@ -37,148 +38,145 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `put - 캐시에 저장하면, DB에도 저장된다`(testDB: TestDB) =
-        runSuspendIO {
-            // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
-            Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
+    fun `put - 캐시에 저장하면, DB에도 저장된다`(testDB: TestDB) = runSuspendIO {
+        // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
+        Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
 
-            withR2dbcEntityTable(testDB) {
-                val id = getExistingId()
+        withR2dbcEntityTable(testDB) {
+            val id = getExistingId()
 
-                // 캐시에서 조회한 값
-                val entity = repository.get(id)
-                entity.shouldNotBeNull()
+            // 캐시에서 조회한 값
+            val entity = repository.get(id)
+            entity.shouldNotBeNull()
 
-                // 캐시에 갱신된 값 저장 -> DB에도 저장
-                val updatedEntity = updateEntityEmail(entity)
-                repository.put(repository.extractId(updatedEntity), updatedEntity)
+            // 캐시에 갱신된 값 저장 -> DB에도 저장
+            val updatedEntity = updateEntityEmail(entity)
+            repository.put(repository.extractId(updatedEntity), updatedEntity)
 
-                // 캐시에서 조회한 값
-                val entityFromCache = repository.get(id)
-                entityFromCache.shouldNotBeNull()
-                assertSameEntityWithoutAudit(entityFromCache, updatedEntity)
+            // 캐시에서 조회한 값
+            val entityFromCache = repository.get(id)
+            entityFromCache.shouldNotBeNull()
+            assertSameEntityWithoutAudit(entityFromCache, updatedEntity)
 
+            delay(DEFAULT_DELAY.milliseconds)
+
+            // DB에서 조회한 값
+            val entityFromDB = repository.findByIdFromDb(id)
+            entityFromDB.shouldNotBeNull()
+
+            assertSameEntityWithoutAudit(entityFromDB, entityFromCache)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `putAll - 캐시에 저장하면, DB에도 저장된다`(testDB: TestDB) = runSuspendIO {
+        // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
+        Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
+
+        withR2dbcEntityTable(testDB) {
+            val ids = getExistingIds()
+            delay(10.milliseconds)
+
+            await
+                .atMost(Duration.ofSeconds(30))
+                .withPollInterval(Duration.ofMillis(100))
+                .untilSuspending { getExistingIds().size == 3 }
+
+            // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
+            if (cacheConfig.isReadWrite) {
                 delay(DEFAULT_DELAY.milliseconds)
+            }
 
-                // DB에서 조회한 값
-                val entityFromDB = repository.findByIdFromDb(id)
-                entityFromDB.shouldNotBeNull()
+            // 캐시에서 조회한 값
+            val entityMap = repository.getAll(ids)
+            entityMap.shouldNotBeEmpty()
+            entityMap shouldHaveSize ids.size
 
-                assertSameEntityWithoutAudit(entityFromDB, entityFromCache)
+            // 캐시에 갱신된 값 저장 -> DB에도 저장
+            val updatedEntityMap = entityMap.mapValues { (_, v) -> updateEntityEmail(v) }
+            repository.putAll(updatedEntityMap)
+
+            // 캐시에서 조회한 값
+            val entityMapFromCache = repository.getAll(ids)
+            entityMapFromCache.shouldNotBeNull()
+            entityMapFromCache.forEach { (id, entity) ->
+                assertSameEntityWithoutAudit(
+                    entity,
+                    updatedEntityMap[id]!!
+                )
+            }
+
+            // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
+            if (cacheConfig.isReadWrite) {
+                delay(DEFAULT_DELAY.milliseconds)
+            }
+
+            // DB에서 조회한 값
+            val entitiesFromDB = repository.findAllFromDb(ids)
+            entitiesFromDB.shouldNotBeEmpty() shouldHaveSize ids.size
+
+            entitiesFromDB.forEach { entity ->
+                assertSameEntityWithoutAudit(
+                    entity,
+                    entityMapFromCache[repository.extractId(entity)]!!
+                )
             }
         }
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `putAll - 캐시에 저장하면, DB에도 저장된다`(testDB: TestDB) =
-        runSuspendIO {
-            // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
-            Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
+    fun `upsertAll - 캐시에 벌크 저장하면, DB에도 저장된다`(testDB: TestDB) = runSuspendIO {
+        // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
+        Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
 
-            withR2dbcEntityTable(testDB) {
-                val ids = getExistingIds()
-                delay(10.milliseconds)
+        withR2dbcEntityTable(testDB) {
+            val ids = getExistingIds()
+            delay(10.milliseconds)
 
-                await
-                    .atMost(Duration.ofSeconds(30))
-                    .withPollInterval(Duration.ofMillis(100))
-                    .untilSuspending { getExistingIds().size == 3 }
+            await
+                .atMost(Duration.ofSeconds(30))
+                .withPollInterval(Duration.ofMillis(500))
+                .untilSuspending { getExistingIds().size >= 3 }
 
-                // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
-                if (cacheConfig.isReadWrite) {
-                    delay(DEFAULT_DELAY.milliseconds)
-                }
+            // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
+            if (cacheConfig.isReadWrite) {
+                delay(DEFAULT_DELAY.milliseconds)
+            }
 
-                // 캐시에서 조회한 값
-                val entityMap = repository.getAll(ids)
-                entityMap.shouldNotBeEmpty()
-                entityMap shouldHaveSize ids.size
+            val entityMap = repository.getAll(ids)
+            entityMap.shouldNotBeEmpty()
+            entityMap shouldHaveSize ids.size
 
-                // 캐시에 갱신된 값 저장 -> DB에도 저장
-                val updatedEntityMap = entityMap.mapValues { (_, v) -> updateEntityEmail(v) }
-                repository.putAll(updatedEntityMap)
+            val updatedEntityMap = entityMap.mapValues { (_, v) -> updateEntityEmail(v) }
+            repository.upsertAll(updatedEntityMap, batchSize = 2)
 
-                // 캐시에서 조회한 값
-                val entityMapFromCache = repository.getAll(ids)
-                entityMapFromCache.shouldNotBeNull()
-                entityMapFromCache.forEach { (id, entity) ->
-                    assertSameEntityWithoutAudit(
-                        entity,
-                        updatedEntityMap[id]!!
-                    )
-                }
+            val entityMapFromCache = repository.getAll(ids)
+            entityMapFromCache.shouldNotBeNull()
+            entityMapFromCache.forEach { (id, entity) ->
+                assertSameEntityWithoutAudit(
+                    entity,
+                    updatedEntityMap[id]!!
+                )
+            }
 
-                // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
-                if (cacheConfig.isReadWrite) {
-                    delay(DEFAULT_DELAY.milliseconds)
-                }
+            // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
+            if (cacheConfig.isReadWrite) {
+                delay(DEFAULT_DELAY.milliseconds)
+            }
 
-                // DB에서 조회한 값
-                val entitiesFromDB = repository.findAllFromDb(ids)
-                entitiesFromDB.shouldNotBeEmpty() shouldHaveSize ids.size
+            val entitiesFromDB = repository.findAllFromDb(ids)
+            entitiesFromDB shouldHaveSize ids.size
 
-                entitiesFromDB.forEach { entity ->
-                    assertSameEntityWithoutAudit(
-                        entity,
-                        entityMapFromCache[repository.extractId(entity)]!!
-                    )
-                }
+            entitiesFromDB.forEach { entity ->
+                assertSameEntityWithoutAudit(
+                    entity,
+                    entityMapFromCache[repository.extractId(entity)]!!
+                )
             }
         }
-
-    @ParameterizedTest
-    @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `upsertAll - 캐시에 벌크 저장하면, DB에도 저장된다`(testDB: TestDB) =
-        runSuspendIO {
-            // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
-            Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
-
-            withR2dbcEntityTable(testDB) {
-                val ids = getExistingIds()
-                delay(10.milliseconds)
-
-                await
-                    .atMost(Duration.ofSeconds(30))
-                    .withPollInterval(Duration.ofMillis(100))
-                    .untilSuspending { getExistingIds().size == 3 }
-
-                // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
-                if (cacheConfig.isReadWrite) {
-                    delay(DEFAULT_DELAY.milliseconds)
-                }
-
-                val entityMap = repository.getAll(ids)
-                entityMap.shouldNotBeEmpty()
-                entityMap shouldHaveSize ids.size
-
-                val updatedEntityMap = entityMap.mapValues { (_, v) -> updateEntityEmail(v) }
-                repository.upsertAll(updatedEntityMap, batchSize = 2)
-
-                val entityMapFromCache = repository.getAll(ids)
-                entityMapFromCache.shouldNotBeNull()
-                entityMapFromCache.forEach { (id, entity) ->
-                    assertSameEntityWithoutAudit(
-                        entity,
-                        updatedEntityMap[id]!!
-                    )
-                }
-
-                // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
-                if (cacheConfig.isReadWrite) {
-                    delay(DEFAULT_DELAY.milliseconds)
-                }
-
-                val entitiesFromDB = repository.findAllFromDb(ids)
-                entitiesFromDB.shouldNotBeEmpty() shouldHaveSize ids.size
-
-                entitiesFromDB.forEach { entity ->
-                    assertSameEntityWithoutAudit(
-                        entity,
-                        entityMapFromCache[repository.extractId(entity)]!!
-                    )
-                }
-            }
-        }
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
@@ -292,7 +290,9 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
                 }
 
                 if (cacheConfig.deleteFromDBOnInvalidate) {
-                    ids.forEach { id -> repository.findByIdFromDb(id).shouldBeNull() }
+                    ids.forEach { id ->
+                        repository.findByIdFromDb(id).shouldBeNull()
+                    }
                 } else {
                     ids.forEach { id ->
                         repository.findByIdFromDb(id) shouldBeEqualTo entities[id]

@@ -6,11 +6,10 @@ import io.bluetape4k.logging.error
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.future.asCompletableFuture
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.redisson.api.map.MapWriterAsync

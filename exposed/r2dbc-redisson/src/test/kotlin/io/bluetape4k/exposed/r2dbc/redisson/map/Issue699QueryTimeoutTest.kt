@@ -1,10 +1,10 @@
 package io.bluetape4k.exposed.r2dbc.redisson.map
 
-import io.r2dbc.spi.R2dbcException
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.r2dbc.spi.R2dbcException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
