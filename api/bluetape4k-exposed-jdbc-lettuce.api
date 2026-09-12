@@ -17,7 +17,7 @@ public abstract class io/bluetape4k/exposed/lettuce/map/EntityMapWriter : io/blu
 }
 
 public final class io/bluetape4k/exposed/lettuce/map/ExposedEntityMapLoader : io/bluetape4k/exposed/lettuce/map/EntityMapLoader {
-public static final field Companion Lio/bluetape4k/exposed/lettuce/map/ExposedEntityMapLoader$Companion;
+	public static final field Companion Lio/bluetape4k/exposed/lettuce/map/ExposedEntityMapLoader$Companion;
 	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;Lkotlin/jvm/functions/Function1;I)V
 	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;Lkotlin/jvm/functions/Function1;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun loadAllKeys ()Ljava/lang/Iterable;
@@ -25,15 +25,17 @@ public static final field Companion Lio/bluetape4k/exposed/lettuce/map/ExposedEn
 	public static synthetic fun loadAllKeysInParallel$default (Lio/bluetape4k/exposed/lettuce/map/ExposedEntityMapLoader;Ljava/util/List;Lio/bluetape4k/exposed/jdbc/JdbcParallelKeyEnumerationOptions;ILjava/lang/Object;)Ljava/util/List;
 }
 
-public final class io/bluetape4k/exposed/lettuce/map/ExposedEntityMapLoader$Companion : io/bluetape4k/logging/KLogging {}
+public final class io/bluetape4k/exposed/lettuce/map/ExposedEntityMapLoader$Companion : io/bluetape4k/logging/KLogging {
+}
 
 public final class io/bluetape4k/exposed/lettuce/map/ExposedEntityMapWriter : io/bluetape4k/exposed/lettuce/map/EntityMapWriter {
-public static final field Companion Lio/bluetape4k/exposed/lettuce/map/ExposedEntityMapWriter$Companion;
+	public static final field Companion Lio/bluetape4k/exposed/lettuce/map/ExposedEntityMapWriter$Companion;
 	public fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;Lio/bluetape4k/redis/lettuce/map/WriteMode;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;IILjava/time/Duration;)V
 	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;Lio/bluetape4k/redis/lettuce/map/WriteMode;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;IILjava/time/Duration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
-public final class io/bluetape4k/exposed/lettuce/map/ExposedEntityMapWriter$Companion : io/bluetape4k/logging/KLogging {}
+public final class io/bluetape4k/exposed/lettuce/map/ExposedEntityMapWriter$Companion : io/bluetape4k/logging/KLogging {
+}
 
 public final class io/bluetape4k/exposed/lettuce/map/ExposedLettuceLoadedMap : java/io/Closeable {
 	public static final field Companion Lio/bluetape4k/exposed/lettuce/map/ExposedLettuceLoadedMap$Companion;
@@ -89,7 +91,7 @@ public abstract class io/bluetape4k/exposed/lettuce/map/SuspendedEntityMapLoader
 }
 
 public abstract class io/bluetape4k/exposed/lettuce/map/SuspendedEntityMapWriter : io/bluetape4k/redis/lettuce/map/SuspendedMapWriter {
-public static final field Companion Lio/bluetape4k/exposed/lettuce/map/SuspendedEntityMapWriter$Companion;
+	public static final field Companion Lio/bluetape4k/exposed/lettuce/map/SuspendedEntityMapWriter$Companion;
 	public fun <init> ()V
 	public fun <init> (Lio/github/resilience4j/retry/RetryConfig;)V
 	public synthetic fun <init> (Lio/github/resilience4j/retry/RetryConfig;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -99,7 +101,8 @@ public static final field Companion Lio/bluetape4k/exposed/lettuce/map/Suspended
 	protected abstract fun writeEntities (Ljava/util/Map;)V
 }
 
-public final class io/bluetape4k/exposed/lettuce/map/SuspendedEntityMapWriter$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {}
+public final class io/bluetape4k/exposed/lettuce/map/SuspendedEntityMapWriter$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {
+}
 
 public final class io/bluetape4k/exposed/lettuce/map/SuspendedExposedEntityMapLoader : io/bluetape4k/exposed/lettuce/map/SuspendedEntityMapLoader {
 	public static final field Companion Lio/bluetape4k/exposed/lettuce/map/SuspendedExposedEntityMapLoader$Companion;
@@ -269,3 +272,4 @@ public final class io/bluetape4k/exposed/lettuce/repository/SuspendedJdbcLettuce
 	public static fun put (Lio/bluetape4k/exposed/lettuce/repository/SuspendedJdbcLettuceRepository;Ljava/lang/Object;Ljava/io/Serializable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun putAll (Lio/bluetape4k/exposed/lettuce/repository/SuspendedJdbcLettuceRepository;Ljava/util/Map;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
+

@@ -39,7 +39,7 @@ object StarRocksDatabase: KLogging() {
      *
      * `val`이므로 property 접근 시 이 객체의 initializer를 통해 dialect 등록이 실행됩니다.
      */
-    const val DRIVER: String = "com.starrocks.cj.jdbc.Driver"
+    val DRIVER: String = "com.starrocks.cj.jdbc.Driver"
 
     init {
         Database.registerJdbcDriver("jdbc:starrocks", DRIVER, StarRocksDialect.dialectName)

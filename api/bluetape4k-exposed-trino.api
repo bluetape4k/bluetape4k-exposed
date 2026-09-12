@@ -45,7 +45,7 @@ public final class io/bluetape4k/exposed/trino/TrinoConnectionOptions : java/io/
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class io/bluetape4k/exposed/trino/TrinoConnectionOptions$Companion {
+public final class io/bluetape4k/exposed/trino/TrinoConnectionOptions$Companion : io/bluetape4k/logging/KLogging {
 }
 
 public final class io/bluetape4k/exposed/trino/TrinoDatabase : io/bluetape4k/logging/KLogging {
