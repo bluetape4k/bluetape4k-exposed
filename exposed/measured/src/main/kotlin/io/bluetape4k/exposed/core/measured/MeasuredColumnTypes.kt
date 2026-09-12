@@ -132,8 +132,10 @@ class TemperatureDeltaColumnType: ColumnType<TemperatureDelta>() {
     override fun valueFromDB(value: Any): TemperatureDelta? = when (value) {
         is TemperatureDelta -> value
         is Number           -> TemperatureDelta(value.toDouble())
-        else ->
-            error("TemperatureDeltaColumnType: DB에서 읽은 값 타입이 지원되지 않습니다. value=$value, type=${value::class.qualifiedName}")
+        else                -> error(
+            "TemperatureDeltaColumnType: DB에서 읽은 값 타입이 지원되지 않습니다. " +
+                "value=$value, type=${value::class.qualifiedName}"
+        )
     }
 
     override fun notNullValueToDB(value: TemperatureDelta): Any = value.inKelvin()

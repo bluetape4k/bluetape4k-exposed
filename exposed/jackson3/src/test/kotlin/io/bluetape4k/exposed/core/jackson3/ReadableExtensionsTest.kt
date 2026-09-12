@@ -26,16 +26,12 @@ class ReadableExtensionsTest {
     ): Readable {
         override fun <T: Any> get(index: Int, type: Class<T>): T? {
             val value = valuesByIndex[index] ?: return null
-            if (!type.isInstance(value)) return null
-            @Suppress("UNCHECKED_CAST")
-            return value as? T
+            return if (type.isInstance(value)) value as? T else null
         }
 
         override fun <T: Any> get(name: String, type: Class<T>): T? {
             val value = valuesByName[name] ?: return null
-            if (!type.isInstance(value)) return null
-            @Suppress("UNCHECKED_CAST")
-            return value as? T
+            return if (type.isInstance(value)) value as? T else null
         }
 
         override fun get(index: Int): Any? = valuesByIndex[index]

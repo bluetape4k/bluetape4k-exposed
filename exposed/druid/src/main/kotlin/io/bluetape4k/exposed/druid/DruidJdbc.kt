@@ -16,7 +16,7 @@ import java.sql.ResultSet
 object DruidJdbc: KLogging() {
 
     /** Apache Calcite Avatica remote JDBC driver class name입니다. */
-    const val DRIVER = "org.apache.calcite.avatica.remote.Driver"
+    val DRIVER = "org.apache.calcite.avatica.remote.Driver"
 
     init {
         Class.forName(DRIVER)
