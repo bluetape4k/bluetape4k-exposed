@@ -21,8 +21,8 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.update
@@ -43,10 +43,12 @@ class NearCachePatternInvalidationTest: AbstractR2dbcLettuceTest() {
                 nearCacheEnabled = nearEnabled,
             )
             val repository = R2dbcUserLettuceRepository(redisClient, config)
-            val other = R2dbcUserLettuceRepository(redisClient, config.copy(
-                keyPrefix = "$prefix-other",
-                nearCacheName = "$prefix-other-near",
-            ))
+            val other = R2dbcUserLettuceRepository(
+                redisClient, config.copy(
+                    keyPrefix = "$prefix-other",
+                    nearCacheName = "$prefix-other-near",
+                )
+            )
             try {
                 val id = UserTable.selectAll().first()[UserTable.id].value
                 val original = requireNotNull(other.get(id)).email
@@ -57,10 +59,10 @@ class NearCachePatternInvalidationTest: AbstractR2dbcLettuceTest() {
                     commit()
                     requireNotNull(repository.get(id)).email shouldBeEqualTo stale
                     when (operation) {
-                        "id" -> repository.invalidate(id)
+                        "id"  -> repository.invalidate(id)
                         "ids" -> repository.invalidateAll(listOf(id))
                         "pattern" -> repository.invalidateByPattern("*", 1) shouldBeEqualTo 1L
-                        else -> repository.clear()
+                        else  -> repository.clear()
                     }
                     requireNotNull(repository.get(id)).email shouldBeEqualTo fresh
                     requireNotNull(other.get(id)).email shouldBeEqualTo original
@@ -68,9 +70,17 @@ class NearCachePatternInvalidationTest: AbstractR2dbcLettuceTest() {
                 repository.invalidateByPattern("missing-*", 1) shouldBeEqualTo 0L
             } finally {
                 withContext(NonCancellable) {
-                    try { repository.clear() } finally {
-                        try { other.clear() } finally {
-                            try { repository.close() } finally { other.close() }
+                    try {
+                        repository.clear()
+                    } finally {
+                        try {
+                            other.clear()
+                        } finally {
+                            try {
+                                repository.close()
+                            } finally {
+                                other.close()
+                            }
                         }
                     }
                 }
