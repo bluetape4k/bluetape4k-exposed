@@ -7,10 +7,15 @@ import io.bluetape4k.exposed.ktor.core.ExposedKtorCooperativeReadinessProbe
 import io.bluetape4k.exposed.ktor.core.ExposedKtorReadinessBackend
 import io.bluetape4k.exposed.ktor.core.ExposedKtorReadinessOutcome
 import io.bluetape4k.exposed.ktor.core.ExposedKtorReadinessProbe
-import java.util.Collections
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
+import io.bluetape4k.support.requireLe
+import io.bluetape4k.support.requireNotEmpty
+import io.bluetape4k.support.requirePositiveNumber
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
+import java.util.*
 import kotlin.time.Duration
 
 /** custom observer가 제공하는 유한 cache readiness 상태입니다. */
@@ -33,7 +38,7 @@ class ExposedKtorCacheContributor private constructor(
 ) {
     internal suspend fun sample(): ExposedKtorCacheSample = sampleSupplier()
 
-    companion object {
+    companion object: KLogging() {
         /** O(1) JDBC cache health 상태에서 contributor를 생성합니다. */
         fun jdbcRepository(
             component: String,
@@ -83,6 +88,7 @@ class ExposedKtorCacheContributor private constructor(
             kind: Kind,
             supplier: suspend () -> ExposedKtorCacheSample,
         ): ExposedKtorCacheContributor {
+            log.debug { "Creating ExposedKtorCacheContributor for component: $component" }
             validateCacheComponent(component)
             return ExposedKtorCacheContributor(component, kind, supplier)
         }
@@ -104,10 +110,9 @@ class ExposedKtorCacheReadinessConfig(
         Collections.unmodifiableList(ArrayList(contributors))
 
     init {
-        require(this.contributors.isNotEmpty()) { "Cache contributors must not be empty." }
-        require(this.contributors.size <= MAX_CACHE_CONTRIBUTORS) {
-            "Cache contributors must contain at most $MAX_CACHE_CONTRIBUTORS entries."
-        }
+        contributors.requireNotEmpty("contributors")
+        contributors.size.requireLe(MAX_CACHE_CONTRIBUTORS, "contributors.size")
+
         val components = HashSet<String>(this.contributors.size)
         this.contributors.forEachIndexed { index, contributor ->
             validateCacheComponent(contributor.component, index)
@@ -127,13 +132,18 @@ fun exposedKtorCacheReadinessProbes(
 
 private class CacheReadinessProbe(
     private val contributor: ExposedKtorCacheContributor,
-) : ExposedKtorCooperativeReadinessProbe {
+): ExposedKtorCooperativeReadinessProbe {
+
+    companion object: KLogging()
+
     override val component: String = contributor.component
     override val backend: ExposedKtorReadinessBackend = ExposedKtorReadinessBackend.CACHE
 
     @Suppress("TooGenericExceptionCaught")
     override suspend fun probe(timeout: Duration): ExposedKtorReadinessOutcome {
         require(timeout.isFinite() && timeout.isPositive()) { "timeout must be finite and positive." }
+        log.debug { "Probing ExposedKtorCacheContributor for component: $component" }
+        
         return try {
             contributor.sample().status.toReadinessOutcome()
         } catch (cancellation: CancellationException) {
@@ -160,16 +170,17 @@ internal class ExposedKtorCacheSample(
         }
     }
 
-    companion object {
+    companion object: KLogging() {
         fun fromReport(report: CacheHealthReport): ExposedKtorCacheSample {
-            require(report.queueDepth >= 0) { "Cache queue depth must be non-negative." }
+            report.queueDepth.requirePositiveNumber { "Cache queue depth must be positive." }
+            
             val status = when {
                 report.lastFlushError != null -> ExposedKtorCacheStatus.DOWN
                 report.workerState in setOf(
                     CacheWorkerState.NOT_APPLICABLE,
                     CacheWorkerState.IDLE,
                     CacheWorkerState.RUNNING,
-                ) -> ExposedKtorCacheStatus.UP
+                )    -> ExposedKtorCacheStatus.UP
                 else -> ExposedKtorCacheStatus.DOWN
             }
             return ExposedKtorCacheSample(
