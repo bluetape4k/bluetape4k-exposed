@@ -113,15 +113,15 @@ val metadata: ProductMetadata? = resultRow.getJacksonOrNull(Products.metadata)
 
 ## 주요 파일/클래스 목록
 
-| 파일                       | 설명                    |
-|--------------------------|-----------------------|
-| `JacksonColumnType.kt`   | JSON 컬럼 타입 (문자열 기반)   |
-| `JacksonBColumnType.kt`  | JSONB 컬럼 타입 (이진 포맷)   |
-| `JacksonSerializer.kt`   | Jackson Serializer 구성 |
-| `JsonFunctions.kt`       | JSON 함수 확장            |
-| `JsonConditions.kt`      | JSON 조건식 확장           |
-| `ResultRowExtensions.kt` | ResultRow JSON 읽기 확장  |
-| `ReadableExtensions.kt`  | Readable JSON 읽기 확장   |
+| 파일                     | 설명                         |
+|--------------------------|------------------------------|
+| `JacksonColumnType.kt`   | JSON 컬럼 타입 (문자열 기반) |
+| `JacksonBColumnType.kt`  | JSONB 컬럼 타입 (이진 포맷)  |
+| `JacksonSerializer.kt`   | Jackson Serializer 구성      |
+| `JsonFunctions.kt`       | JSON 함수 확장               |
+| `JsonConditions.kt`      | JSON 조건식 확장             |
+| `ResultRowExtensions.kt` | ResultRow JSON 읽기 확장     |
+| `ReadableExtensions.kt`  | Readable JSON 읽기 확장      |
 
 ## 테스트
 

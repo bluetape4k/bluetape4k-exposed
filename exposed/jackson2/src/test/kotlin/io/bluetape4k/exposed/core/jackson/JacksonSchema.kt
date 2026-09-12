@@ -74,7 +74,7 @@ object JacksonSchema {
     }
 
 
-    data class DataHolder(val user: User, val logins: Int, val active: Boolean, val team: String?): Serializable 
+    data class DataHolder(val user: User, val logins: Int, val active: Boolean, val team: String?): Serializable
 
     data class User(val name: String, val team: String?): Serializable
 
