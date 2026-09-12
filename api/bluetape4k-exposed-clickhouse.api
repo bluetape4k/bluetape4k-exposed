@@ -6,6 +6,21 @@ public final class io/bluetape4k/exposed/clickhouse/ClickHouseBatchPath : java/l
 	public static fun values ()[Lio/bluetape4k/exposed/clickhouse/ClickHouseBatchPath;
 }
 
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseCallbackFailure {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/bluetape4k/exposed/clickhouse/ClickHouseCallbackFailure;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/clickhouse/ClickHouseCallbackFailure;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/clickhouse/ClickHouseCallbackFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExceptionType ()Ljava/lang/String;
+	public final fun getReasonCode ()Ljava/lang/String;
+	public final fun getSanitizedMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/bluetape4k/exposed/clickhouse/ClickHouseConnectionException : java/sql/SQLException {
 	public final fun getSanitizedCause ()Ljava/lang/String;
 }
@@ -28,19 +43,180 @@ public final class io/bluetape4k/exposed/clickhouse/ClickHouseDatabase : io/blue
 }
 
 public final class io/bluetape4k/exposed/clickhouse/ClickHouseExtensionsKt {
+	public static final fun queryFlow (Lorg/jetbrains/exposed/v1/jdbc/Database;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsConfig;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun queryFlow (Lorg/jetbrains/exposed/v1/jdbc/Database;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsConfig;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
 	public static final fun queryFlow (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
 	public static final fun queryFlow (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun queryFlow$default (Lorg/jetbrains/exposed/v1/jdbc/Database;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsConfig;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun queryFlow$default (Lorg/jetbrains/exposed/v1/jdbc/Database;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsConfig;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 	public static synthetic fun queryFlow$default (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 	public static synthetic fun queryFlow$default (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun queryList (Lorg/jetbrains/exposed/v1/jdbc/Database;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsConfig;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun queryList (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun queryList$default (Lorg/jetbrains/exposed/v1/jdbc/Database;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsConfig;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static synthetic fun queryList$default (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static final fun suspendTransaction (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun suspendTransaction$default (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseQueryCancellationState : java/lang/Enum {
+	public static final field CancelRequested Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryCancellationState;
+	public static final field LocalCancellation Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryCancellationState;
+	public static final field RemoteTerminationObserved Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryCancellationState;
+	public static final field Unknown Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryCancellationState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryCancellationState;
+	public static fun values ()[Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryCancellationState;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnostics {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/time/Instant;Ljava/time/Instant;Ljava/time/Duration;Ljava/lang/Long;Ljava/lang/Integer;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome;Lio/bluetape4k/exposed/clickhouse/ClickHouseCallbackFailure;Ljava/lang/String;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/time/Instant;Ljava/time/Instant;Ljava/time/Duration;Ljava/lang/Long;Ljava/lang/Integer;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome;Lio/bluetape4k/exposed/clickhouse/ClickHouseCallbackFailure;Ljava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome;
+	public final fun component11 ()Lio/bluetape4k/exposed/clickhouse/ClickHouseCallbackFailure;
+	public final fun component12 ()Ljava/lang/String;
+	public final fun component13 ()Ljava/util/Map;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/Map;
+	public final fun component5 ()Ljava/time/Instant;
+	public final fun component6 ()Ljava/time/Instant;
+	public final fun component7 ()Ljava/time/Duration;
+	public final fun component8 ()Ljava/lang/Long;
+	public final fun component9 ()Ljava/lang/Integer;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/time/Instant;Ljava/time/Instant;Ljava/time/Duration;Ljava/lang/Long;Ljava/lang/Integer;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome;Lio/bluetape4k/exposed/clickhouse/ClickHouseCallbackFailure;Ljava/lang/String;Ljava/util/Map;)Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnostics;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnostics;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/time/Instant;Ljava/time/Instant;Ljava/time/Duration;Ljava/lang/Long;Ljava/lang/Integer;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome;Lio/bluetape4k/exposed/clickhouse/ClickHouseCallbackFailure;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnostics;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCallbackFailure ()Lio/bluetape4k/exposed/clickhouse/ClickHouseCallbackFailure;
+	public final fun getClientName ()Ljava/lang/String;
+	public final fun getElapsed ()Ljava/time/Duration;
+	public final fun getFinishedAt ()Ljava/time/Instant;
+	public final fun getLogComment ()Ljava/lang/String;
+	public final fun getOutcome ()Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome;
+	public final fun getQueryId ()Ljava/lang/String;
+	public final fun getResponseHeaders ()Ljava/util/Map;
+	public final fun getReturnedRows ()Ljava/lang/Long;
+	public final fun getServerDisplayName ()Ljava/lang/String;
+	public final fun getSessionSettings ()Ljava/util/Map;
+	public final fun getStartedAt ()Ljava/time/Instant;
+	public final fun getVendorCode ()Ljava/lang/Integer;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsConfig {
+	public static final field Companion Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsConfig$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryIdGenerator;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/util/List;Ljava/time/ZoneId;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryListener;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsSink;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryIdGenerator;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/util/List;Ljava/time/ZoneId;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryListener;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsSink;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryIdGenerator;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/util/Map;
+	public final fun component6 ()Ljava/util/List;
+	public final fun component7 ()Ljava/time/ZoneId;
+	public final fun component8 ()Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryListener;
+	public final fun component9 ()Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsSink;
+	public final fun copy (Ljava/lang/String;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryIdGenerator;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/util/List;Ljava/time/ZoneId;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryListener;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsSink;)Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsConfig;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsConfig;Ljava/lang/String;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryIdGenerator;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/util/List;Ljava/time/ZoneId;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryListener;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsSink;ILjava/lang/Object;)Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getClientName ()Ljava/lang/String;
+	public final fun getListener ()Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryListener;
+	public final fun getLogComment ()Ljava/lang/String;
+	public final fun getQueryId ()Ljava/lang/String;
+	public final fun getQueryIdGenerator ()Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryIdGenerator;
+	public final fun getSessionDbRoles ()Ljava/util/List;
+	public final fun getSessionSettings ()Ljava/util/Map;
+	public final fun getSessionTimezone ()Ljava/time/ZoneId;
+	public final fun getSink ()Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsSink;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsConfig$Companion {
+	public final fun from (Lio/bluetape4k/exposed/clickhouse/ClickHouseV2Options;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryListener;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsSink;)Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsConfig;
+	public static synthetic fun from$default (Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsConfig$Companion;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2Options;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryListener;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsSink;ILjava/lang/Object;)Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsConfig;
+}
+
+public abstract interface class io/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsSink {
+	public abstract fun accept (Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnostics;)V
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseQueryEvent {
+	public fun <init> (Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryEventKind;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnostics;Z)V
+	public final fun component1 ()Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryEventKind;
+	public final fun component2 ()Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnostics;
+	public final fun component3 ()Z
+	public final fun copy (Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryEventKind;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnostics;Z)Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryEvent;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryEvent;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryEventKind;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnostics;ZILjava/lang/Object;)Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDiagnostics ()Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnostics;
+	public final fun getKind ()Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryEventKind;
+	public fun hashCode ()I
+	public final fun isTerminal ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseQueryEventKind : java/lang/Enum {
+	public static final field Cancelled Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryEventKind;
+	public static final field Completed Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryEventKind;
+	public static final field Failed Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryEventKind;
+	public static final field RequestPrepared Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryEventKind;
+	public static final field ResponseReceived Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryEventKind;
+	public static final field Started Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryEventKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryEventKind;
+	public static fun values ()[Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryEventKind;
+}
+
+public abstract interface class io/bluetape4k/exposed/clickhouse/ClickHouseQueryIdGenerator {
+	public abstract fun generate ()Ljava/lang/String;
+}
+
+public abstract interface class io/bluetape4k/exposed/clickhouse/ClickHouseQueryListener {
+	public abstract fun onEvent (Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryEvent;)V
+}
+
+public abstract interface class io/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome {
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome$Cancelled : io/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome {
+	public fun <init> (Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryCancellationState;)V
+	public final fun component1 ()Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryCancellationState;
+	public final fun copy (Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryCancellationState;)Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome$Cancelled;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome$Cancelled;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryCancellationState;ILjava/lang/Object;)Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome$Cancelled;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getState ()Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryCancellationState;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome$Failure : io/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Integer;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/Integer;
+	public final fun copy (Ljava/lang/String;Ljava/lang/Integer;)Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome$Failure;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome$Failure;Ljava/lang/String;Ljava/lang/Integer;ILjava/lang/Object;)Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome$Failure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSqlState ()Ljava/lang/String;
+	public final fun getVendorCode ()Ljava/lang/Integer;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome$Success : io/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome {
+	public static final field INSTANCE Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryOutcome$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryExecutor {
 	public fun <init> (Lio/bluetape4k/exposed/clickhouse/ClickHouseConnectionProvider;Lio/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryOptions;)V
 	public final fun executeBatch (Ljava/lang/String;Ljava/lang/Iterable;)Lio/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryResult;
+	public final fun executeBatch (Ljava/lang/String;Ljava/lang/Iterable;Lio/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsConfig;)Lio/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryResult;
 }
 
 public final class io/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryExecutor$UnsupportedConfiguration : java/lang/IllegalStateException {

@@ -879,7 +879,7 @@ merge는 별도 승인 게이트로 남긴다.
 - Create: `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseResourceLifecycleTest.kt`
 - Modify: `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseQueryLifecycleTest.kt`
 
-- [ ] **Step 0: #867 exact head에서 child worktree를 만든다**
+- [x] **Step 0: #867 exact head에서 child worktree를 만든다**
 
 ```bash
 git fetch origin feat/issue-867-clickhouse-v2-rowbinary
@@ -890,7 +890,7 @@ test "$(git -C /Users/debop/work/bluetape4k/bluetape4k-exposed/.worktrees/feat/i
 
 Expected: child worktree HEAD가 #867 `headRefOid`와 같고, #865·#866·#867 변경이 history에 포함되며 다른 worktree는 dirty하지 않다.
 
-- [ ] **Step 1: diagnostics RED test를 작성한다**
+- [x] **Step 1: diagnostics RED test를 작성한다**
 
 ```kotlin
 @Test
@@ -920,7 +920,7 @@ fun `listener 예외는 callbackFailure로 격리하고 원래 취소를 보존�
 
 추가 RED cases는 caller/generated UUID uniqueness, monotonic elapsed non-negative, UTC instants, null vendor/row metadata, listener thread/order, sink exactly once after cleanup, bounded `query_listener_failures_total`, SQL·bind·token·password·header redaction, queryList retry와 queryFlow `maxAttempts=1`, local cancellation no retry, RowBinary fallback conversion을 포함한다.
 
-- [ ] **Step 2: diagnostics RED selector를 실행한다**
+- [x] **Step 2: diagnostics RED selector를 실행한다**
 
 ```bash
 ./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseQueryDiagnosticsTest' --tests '*ClickHouseResourceLifecycleTest' --no-parallel --max-workers=1 --no-daemon --console=plain
@@ -936,11 +936,13 @@ Expected: diagnostics config/model 부재 compile RED.
 - Create: `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsRedaction.kt`
 - Modify: `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseExtensions.kt`
 - Modify: `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseQueryStreaming.kt`
+- Modify: `exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryExecutor.kt`
 - Modify: `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsTest.kt`
 - Modify: `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseResourceLifecycleTest.kt`
 - Modify: `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseQueryLifecycleTest.kt`
+- Modify: `exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryTest.kt`
 
-- [ ] **Step 1: immutable public model과 새 overload를 구현한다**
+- [x] **Step 1: immutable public model과 새 overload를 구현한다**
 
 기존 `queryList` 두 descriptor와 기존 `queryFlow` 두 descriptor는 변경하지 않고, `diagnostics`를 필수로 받는 별도 overload를 추가한다. 새 overload는 기존 dispatcher default를 재사용하며 기존 호출의 source·binary compatibility를 보존한다.
 
@@ -1008,7 +1010,13 @@ fun <T> queryFlow(
 ): Flow<T>
 ~~~
 
-- [ ] **Step 2: recorder·callback isolation·terminal once를 구현한다**
+RowBinary batch writer에는 기존 `executeBatch(sql, rows)`의 source/binary
+호환성을 유지하는 `executeBatch(sql, rows, diagnostics)` overload를 추가한다.
+이 overload는 `acceptedCount`를 returned-row summary로 연결하고, writer에는
+`QueryResponse`가 없으므로 server display name·response headers를 추정하지
+않는다.
+
+- [x] **Step 2: recorder·callback isolation·terminal once를 구현한다**
 
 `ClickHouseQueryDiagnosticsRecorder`는 `TimeSource.Monotonic.markNow()`로 elapsed를 계산하고 wall-clock은 `Instant.now(Clock.systemUTC())`로 저장한다. caller query id가 없을 때만 요청 범위 UUID를 생성하고, `sessionSettings`와 options 값은 immutable copy로 보관한다. 이벤트는 `Started → RequestPrepared → ResponseReceived → terminal` 순서이며 terminal 이벤트는 cursor/statement/transaction 정리 이후 한 번만 발행한다.
 
@@ -1018,15 +1026,15 @@ listener는 query dispatcher에서 동기로 호출하되 blocking I/O와 재진
 
 선택적 metrics adapter가 소비할 수 있는 이름은 `query_started_total`, `query_completed_total`, `query_failed_total`, `query_cancelled_total`, `query_listener_failures_total`, `query_duration_ms`, `query_rows`로 고정한다. label은 `outcome`, `transport`, `database`처럼 bounded 값만 허용하고 query id·SQL·bind·사용자 header는 payload나 label에 넣지 않는다.
 
-- [ ] **Step 3: diagnostics와 resource lifecycle GREEN을 실행한다**
+- [x] **Step 3: diagnostics와 resource lifecycle GREEN을 실행한다**
 
 ~~~bash
 ./gradlew :bluetape4k-exposed-clickhouse:test --tests '*ClickHouseQueryDiagnosticsTest' --tests '*ClickHouseResourceLifecycleTest' --tests '*ClickHouseQueryLifecycleTest' --no-parallel --max-workers=1 --no-daemon --console=plain
 ~~~
 
-Expected: ID uniqueness, monotonic elapsed, UTC instant, null metadata, event order/thread, terminal-once, callback/sink failure isolation, redaction, success/failure/cancel outcome, queryList retry·queryFlow no-retry, RowBinary fallback conversion이 모두 통과한다. JUnit XML의 failures/errors/skipped=0을 확인하고 `build/reports/clickhouse-v2/ds-06.json`, `ds-07.json`에 event trace·cleanup order·counter를 기록한다. callback 또는 sink 테스트가 실패하면 원래 SQL/취소 결과를 바꾸지 않은 채 해당 PR을 `PENDING`으로 둔다.
+Expected: ID uniqueness, monotonic elapsed, UTC instant, null metadata, event order/thread, terminal-once, callback/sink failure isolation, redaction, success/failure/cancel outcome, queryList retry·queryFlow no-retry, RowBinary fallback conversion, batch diagnostics row summary가 모두 통과한다. JUnit XML의 failures/errors/skipped=0을 확인하고 `build/reports/clickhouse-v2/ds-06.json`, `ds-07.json`에 event trace·cleanup order·counter를 기록한다. callback 또는 sink 테스트가 실패하면 원래 SQL/취소 결과를 바꾸지 않은 채 해당 PR을 `PENDING`으로 둔다.
 
-- [ ] **Step 4: diagnostics ABI·문서·lesson을 확인한다**
+- [x] **Step 4: diagnostics ABI·문서·lesson을 확인한다**
 
 ~~~bash
 ./gradlew :bluetape4k-exposed-clickhouse:checkKotlinAbi --no-daemon --console=plain

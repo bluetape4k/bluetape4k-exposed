@@ -94,6 +94,12 @@ val result = writer.executeBatch(
 )
 ```
 
+배치 작업에도 동일한 immutable lifecycle event, query ID, accepted-row
+summary가 필요하면 `diagnostics = ClickHouseQueryDiagnosticsConfig(...)`
+오버로드를 사용하세요. RowBinary writer에는 `QueryResponse`가 없으므로
+server display name과 response header는 비어 있으며, listener와 sink는
+statement/connection cleanup 이후 동기적으로 한 번 실행됩니다.
+
 정확히 하나의 단순한 `INSERT ... VALUES (...)` 그룹만 eligible입니다.
 placeholder와 `DEFAULT`는 driver에 위임합니다. `INSERT ... SELECT`, 여러
 VALUES 그룹, 중첩 value expression/function, 지원하지 않는 setter, provider
@@ -258,6 +264,54 @@ queryFlow(database,
 생산자는 소비 중인 항목 외에 전달 대기 중인 항목 하나만 유지합니다. 드라이버 버퍼와 downstream `buffer()`는 이 상한 밖입니다. 헬퍼는 쿼리를 재시도하거나 행을 재전송하지 않으며, 드라이버 요청 재시도는 별도 설정입니다. 완료·실패·취소는 내부 자원 정리를 기다립니다. 취소가 블로킹 JDBC를 즉시 중단하지 않으므로 호출자가 유한한 연결 획득·소켓·조회 timeout을 설정해야 합니다. Database·풀·디스패처는 호출자 소유이며 헬퍼가 닫지 않습니다. ClickHouse DML 원자성은 보장하지 않습니다.
 
 헬퍼는 수명 관련 이벤트만 기록하며 SQL·바인딩·행·예외 내용은 기록하지 않습니다. Exposed와 드라이버 로그 정책은 별개입니다. 전체 결과를 독립 값으로 한 번에 받아야 하거나 연결 점유를 짧게 유지하려면 페이지 조회 또는 `queryList`를 선택하세요.
+
+### Query diagnostics
+
+diagnostics overload는 `queryList` 또는 `queryFlow` 한 번의 수집을 작은
+immutable `ClickHouseQueryDiagnostics` snapshot에 연결합니다. 호출자가 지정한
+query ID가 우선하며, 없으면 활성 요청 범위에서 충돌을 확인한 opaque UUID를
+생성합니다. `logComment`, `clientName`, session setting, timezone, role은 요청
+경계에서 복사되며 V2 driver가 제공하는 경우 ClickHouse query log와 상관 분석할
+수 있습니다.
+
+```kotlin
+val diagnostics = ClickHouseQueryDiagnosticsConfig(
+    queryId = "analytics-${job.id}",
+    logComment = "job=analytics",
+    clientName = "bluetape4k-analytics",
+    sessionTimezone = ZoneId.of("UTC"),
+    listener = ClickHouseQueryListener { event -> diagnosticsLog(event) },
+    sink = ClickHouseQueryDiagnosticsSink { snapshot -> diagnosticsStore(snapshot) },
+)
+
+val values = queryFlow(
+    database,
+    diagnostics = diagnostics,
+    query = { EventsTable.selectAll().limit(100) },
+    mapper = { it[EventsTable.value] },
+).toList()
+```
+
+이벤트는 선택한 JDBC dispatcher에서 동기로
+`Started → RequestPrepared → ResponseReceived → Completed|Failed|Cancelled`
+순서로 전달됩니다. listener와 terminal sink는 짧은 non-blocking 작업만 수행해야
+하며, callback 오류는 격리·sanitized 처리되어 SQL 결과나 원래
+`CancellationException`을 대체하지 않습니다. sink는 cursor·statement·transaction
+정리 뒤 정확히 한 번 호출됩니다. `returnedRows`, elapsed, vendor error code,
+`serverDisplayName`, driver가 허용한 response header는 선택적이며 driver가
+제공하지 않으면 `null`/빈 값으로 남깁니다. metadata를 추정하지 않습니다. 기본
+제공 metric은 bounded `query_listener_failures_total` 하나입니다. Micrometer
+직접 의존 없이 snapshot을 `query_started_total`, `query_completed_total`,
+`query_failed_total`, `query_cancelled_total`, `query_duration_ms`, `query_rows`로
+변환할 수 있지만, label은 `outcome`, `transport`, `database` 같은 bounded 값만
+사용하고 query ID·SQL·binding·사용자 header를 넣지 마세요.
+
+diagnostics payload에는 SQL·parameter·행·credential·알 수 없는 response header를
+저장하지 않습니다. 알려진 민감 assignment는 redaction하며 callback exception은
+type/reason 요약만 남깁니다. 현재 `Cancelled`는 local cancellation(어댑터 경계의
+`Unknown` 포함)만 의미하며, 진행 중인 원격 query가 종료되었다고 주장하지
+않습니다. deterministic socket timeout과 원격 `KILL QUERY` 완료 보장은 후속
+이슈 #863 범위입니다.
 
 ### 드라이버 timeout과 row-limit 동작
 

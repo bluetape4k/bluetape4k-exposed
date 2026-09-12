@@ -34,6 +34,52 @@ suspend fun <T> queryList(
 ): List<T> = suspendTransaction(db, dispatcher) { block().toList() }
 
 /**
+ * [queryList]와 동일한 결과·재시도 경계를 유지하면서 선택적 query diagnostics를 수집합니다.
+ *
+ * diagnostics callback은 JDBC dispatcher에서 동기로 실행되며 callback 오류는 조회 결과나
+ * 원래 예외를 대체하지 않습니다. terminal event와 sink는 transaction 정리 뒤 한 번 전달됩니다.
+ */
+@Suppress("TooGenericExceptionCaught") // 원래 SQL/취소 Throwable을 보존하는 callback 경계다.
+suspend fun <T> queryList(
+    db: Database,
+    diagnostics: ClickHouseQueryDiagnosticsConfig,
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    block: JdbcTransaction.() -> Iterable<T>,
+): List<T> = withContext(dispatcher) {
+    val recorder = ClickHouseQueryDiagnosticsRecorder(diagnostics)
+    recorder.started()
+    recorder.requestPrepared()
+    var result: List<T>? = null
+    var outcome: ClickHouseQueryOutcome? = null
+    var failure: Throwable? = null
+    try {
+        result = transaction(db) {
+            applyClickHouseQueryDiagnostics(
+                connection.connection as java.sql.Connection,
+                diagnostics,
+                recorder.queryIdValue,
+            )
+            block().toList()
+        }
+        recorder.responseReceived(result.size.toLong())
+        outcome = ClickHouseQueryOutcome.Success
+    } catch (cancelled: CancellationException) {
+        failure = cancelled
+        outcome = cancelled.clickHouseCancellationOutcome()
+    } catch (caught: Throwable) {
+        failure = caught
+        outcome = caught.clickHouseSqlFailure()
+    } finally {
+        recorder.finishAfterCleanup(
+            outcome = outcome ?: ClickHouseQueryOutcome.Failure(null, failure?.clickHouseVendorCode()),
+            vendorCode = failure?.clickHouseVendorCode(),
+        )
+    }
+    failure?.let { throw it }
+    checkNotNull(result)
+}
+
+/**
  * 수집할 때마다 독립된 트랜잭션에서 조회하고 행을 하나씩 변환하여 전달합니다.
  *
  * ```kotlin
@@ -65,6 +111,15 @@ fun <T> queryFlow(
     query: JdbcTransaction.() -> Query,
     mapper: (ResultRow) -> T,
 ): Flow<T> = clickHouseQueryFlow(db, dispatcher, query, mapper)
+
+/** Query 기반 [queryFlow]에 선택적 immutable diagnostics lifecycle을 연결합니다. */
+fun <T> queryFlow(
+    db: Database,
+    diagnostics: ClickHouseQueryDiagnosticsConfig,
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    query: JdbcTransaction.() -> Query,
+    mapper: (ResultRow) -> T,
+): Flow<T> = clickHouseQueryFlow(db, dispatcher, diagnostics, query, mapper)
 
 /**
  * ClickHouse에서 suspend 트랜잭션을 실행합니다.
@@ -155,4 +210,14 @@ fun <T> queryFlow(
         throw e
     }
     items.forEach { emit(it) }
+}
+
+/** Iterable 기반 [queryFlow]에 [queryList]와 같은 선택적 diagnostics를 연결합니다. */
+fun <T> queryFlow(
+    db: Database,
+    diagnostics: ClickHouseQueryDiagnosticsConfig,
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    block: JdbcTransaction.() -> Iterable<T>,
+): Flow<T> = flow {
+    queryList(db, diagnostics, dispatcher, block).forEach { emit(it) }
 }
