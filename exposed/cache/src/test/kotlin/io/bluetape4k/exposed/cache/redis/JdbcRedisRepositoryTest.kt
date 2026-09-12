@@ -1,11 +1,11 @@
 package io.bluetape4k.exposed.cache.redis
 
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.JdbcCacheRepository
 import io.bluetape4k.logging.KLogging
 import io.mockk.mockk
-import io.bluetape4k.assertions.shouldBeEqualTo
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -21,7 +21,7 @@ import java.io.Serializable
  */
 class JdbcRedisRepositoryTest {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     // ----------------------------------------------------------------
     // invalidateByPattern 기본 파라미터 ($default 메서드 경로)
@@ -30,7 +30,7 @@ class JdbcRedisRepositoryTest {
     @Test
     fun `invalidateByPattern을 count 없이 호출하면 DEFAULT_BATCH_SIZE가 사용된다`() {
         var capturedCount = -1
-        val repo: JdbcRedisRepository<Long, DummyEntity> = object : JdbcRedisRepository<Long, DummyEntity> {
+        val repo: JdbcRedisRepository<Long, DummyEntity> = object: JdbcRedisRepository<Long, DummyEntity> {
             override val table: IdTable<Long> = mockk(relaxed = true)
             override val cacheName = "test"
             override val cacheMode = CacheMode.LOCAL
@@ -40,7 +40,14 @@ class JdbcRedisRepositoryTest {
             override fun findByIdFromDb(id: Long): DummyEntity? = null
             override fun findAllFromDb(ids: Collection<Long>) = emptyList<DummyEntity>()
             override fun countFromDb() = 0L
-            override fun findAll(limit: Int?, offset: Long?, sortBy: Expression<*>, sortOrder: SortOrder, where: () -> Op<Boolean>) = emptyList<DummyEntity>()
+            override fun findAll(
+                limit: Int?,
+                offset: Long?,
+                sortBy: Expression<*>,
+                sortOrder: SortOrder,
+                where: () -> Op<Boolean>,
+            ) = emptyList<DummyEntity>()
+
             override fun containsKey(id: Long) = false
             override fun get(id: Long): DummyEntity? = null
             override fun getAll(ids: Collection<Long>) = emptyMap<Long, DummyEntity>()
@@ -64,7 +71,7 @@ class JdbcRedisRepositoryTest {
     // Stub entity
     // ----------------------------------------------------------------
 
-    private data class DummyEntity(val id: Long = 0L) : Serializable {
+    private data class DummyEntity(val id: Long = 0L): Serializable {
         companion object {
             private const val serialVersionUID = 1L
         }

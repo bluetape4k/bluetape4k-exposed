@@ -6,7 +6,6 @@ import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.io.serializer.BinarySerializers
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.support.requireNotNull
 import org.junit.jupiter.api.Test
 import java.time.Duration
 
@@ -17,7 +16,7 @@ import java.time.Duration
  */
 class LocalCacheConfigTest {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     // ----------------------------------------------------------------
     // 기본값 및 정상 생성
@@ -215,7 +214,7 @@ class LocalCacheConfigTest {
         )
 
         val bytes = BinarySerializers.FastFory.serialize(original)
-        val restored = BinarySerializers.FastFory.deserialize<LocalCacheConfig>(bytes).requireNotNull("$original")
+        val restored = BinarySerializers.FastFory.deserialize<LocalCacheConfig>(bytes).shouldNotBeNull()
 
         restored.keyPrefix shouldBeEqualTo original.keyPrefix
         restored.maximumSize shouldBeEqualTo original.maximumSize

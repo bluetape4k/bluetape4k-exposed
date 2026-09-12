@@ -42,7 +42,7 @@ annotation class InternalSnapshotCacheApi
  * @property miss cache miss일 때 backend adapter가 발급하는 opaque capability입니다. hit일 때는 `null`이며
  * capability 내부의 key/fence 상태는 외부에 노출되지 않습니다.
  */
-class SnapshotCacheLookup<ID : Any, V : Serializable> private constructor(
+class SnapshotCacheLookup<ID: Any, V: Serializable> private constructor(
     /** Cache hit일 때의 분리 snapshot입니다. miss이면 `null`입니다. */
     val snapshot: CacheSnapshot<V>?,
     /** Cache miss를 claim하기 위한 opaque capability입니다. hit이면 `null`입니다. */
@@ -60,7 +60,7 @@ class SnapshotCacheLookup<ID : Any, V : Serializable> private constructor(
          * Creates a lookup containing [snapshot].
          */
         @InternalSnapshotCacheApi
-        fun <ID : Any, V : Serializable> hit(snapshot: CacheSnapshot<V>): SnapshotCacheLookup<ID, V> =
+        fun <ID: Any, V: Serializable> hit(snapshot: CacheSnapshot<V>): SnapshotCacheLookup<ID, V> =
             SnapshotCacheLookup(snapshot, null)
 
         /**
@@ -69,10 +69,10 @@ class SnapshotCacheLookup<ID : Any, V : Serializable> private constructor(
          * Backend adapters use their internal capability registry for claimable misses.
          */
         @InternalSnapshotCacheApi
-        fun <ID : Any, V : Serializable> miss(): SnapshotCacheLookup<ID, V> =
+        fun <ID: Any, V: Serializable> miss(): SnapshotCacheLookup<ID, V> =
             SnapshotCacheLookup(null, SnapshotCacheMiss())
 
-        internal fun <ID : Any, V : Serializable> registeredMiss(
+        internal fun <ID: Any, V: Serializable> registeredMiss(
             miss: SnapshotCacheMiss<ID, V>,
         ): SnapshotCacheLookup<ID, V> = SnapshotCacheLookup(null, miss)
     }
@@ -83,7 +83,7 @@ class SnapshotCacheLookup<ID : Any, V : Serializable> private constructor(
  *
  * The capability intentionally exposes neither the key nor local concurrency-fence state and is not serializable.
  */
-class SnapshotCacheMiss<ID : Any, V : Serializable> internal constructor() {
+class SnapshotCacheMiss<ID: Any, V: Serializable> internal constructor() {
     override fun toString(): String = "SnapshotCacheMiss(opaque)"
 }
 
@@ -91,7 +91,7 @@ class SnapshotCacheMiss<ID : Any, V : Serializable> internal constructor() {
  * A claimed miss that can prepare one guarded snapshot insertion.
  */
 @InternalSnapshotCacheApi
-fun interface ClaimedSnapshotMiss<ID : Any, V : Serializable> {
+fun interface ClaimedSnapshotMiss<ID: Any, V: Serializable> {
     /**
      * Prepares a guarded insertion for [snapshot].
      *
@@ -104,7 +104,7 @@ fun interface ClaimedSnapshotMiss<ID : Any, V : Serializable> {
  * Synchronous snapshot-cache backend contract.
  */
 @InternalSnapshotCacheApi
-interface SnapshotCacheStore<ID : Any, V : Serializable> {
+interface SnapshotCacheStore<ID: Any, V: Serializable> {
     /** 안정적인 logical store identity입니다. */
     val storeId: SnapshotStoreId
 
@@ -144,7 +144,7 @@ interface SnapshotCacheStore<ID : Any, V : Serializable> {
  * Asynchronous invalidation backend contract.
  */
 @InternalSnapshotCacheApi
-interface AsyncSnapshotInvalidationStore<ID : Any> {
+interface AsyncSnapshotInvalidationStore<ID: Any> {
     /** 안정적인 logical store identity입니다. */
     val storeId: SnapshotStoreId
 
@@ -198,7 +198,7 @@ data class SnapshotStoreId(
     val backend: String,
     /** 논리 cache namespace입니다. request/user/entity 값 같은 동적 식별자를 포함하지 않아야 합니다. */
     val namespace: String,
-) : Serializable {
+): Serializable {
     init {
         require(backend.isNotBlank()) { "backend must not be blank." }
         require(namespace.isNotBlank()) { "namespace must not be blank." }
@@ -234,7 +234,7 @@ data class SnapshotCacheLimits(
     val maxStagedWeight: Long? = null,
     /** 로컬 cache backend의 commit 이후 drain 시간 예산입니다. 설정하지 않으면 deadline 없이 drain합니다. */
     val localDrainBudget: Duration? = null,
-) : Serializable {
+): Serializable {
     init {
         require(maxStagedMutations > 0) { "maxStagedMutations[$maxStagedMutations] must be positive." }
         require(maxParticipatingStores > 0) {
@@ -264,22 +264,22 @@ data class SnapshotCacheLimits(
 /**
  * Mutation prepared for a snapshot-cache phase.
  */
-sealed interface SnapshotCacheMutation<ID : Any, V : Serializable> {
+sealed interface SnapshotCacheMutation<ID: Any, V: Serializable> {
     /** Cache identifier affected by this mutation. */
     val id: ID
 
     /**
      * [id]에 대한 [snapshot]의 guarded insertion입니다.
- *
+     *
      * [localFence]는 process-local concurrency 상태이므로 저장하거나 전송하면 안 됩니다. [estimatedWeight]는 owning
      * adapter가 준비한 non-negative retained-weight 추정치입니다.
- *
+     *
      * @property id cache identifier입니다.
      * @property snapshot cache에 삽입할 분리 snapshot입니다.
      * @property localFence 선택적 process-local generation fence입니다.
      * @property estimatedWeight 선택적 retained-weight 추정치입니다.
      */
-    data class Put<ID : Any, V : Serializable>(
+    data class Put<ID: Any, V: Serializable>(
         override val id: ID,
         /** Cache backend에 삽입할 불변 분리 snapshot입니다. */
         val snapshot: CacheSnapshot<V>,
@@ -287,7 +287,7 @@ sealed interface SnapshotCacheMutation<ID : Any, V : Serializable> {
         @InternalSnapshotCacheApi val localFence: SnapshotLocalFence<ID>? = null,
         /** transaction limit과 backend eviction 판단에 쓰는 추정 retained weight입니다. */
         @InternalSnapshotCacheApi val estimatedWeight: Long? = null,
-    ) : SnapshotCacheMutation<ID, V> {
+    ): SnapshotCacheMutation<ID, V> {
         init {
             estimatedWeight?.let {
                 require(it >= 0L) { "estimatedWeight[$it] must not be negative." }
@@ -297,13 +297,13 @@ sealed interface SnapshotCacheMutation<ID : Any, V : Serializable> {
 
     /**
      * [id]를 invalidate합니다.
- *
+     *
      * @property id invalidate 대상 cache identifier입니다.
      */
-    data class Invalidate<ID : Any, V : Serializable>(
+    data class Invalidate<ID: Any, V: Serializable>(
         /** invalidate 대상 cache identifier입니다. */
         override val id: ID,
-    ) : SnapshotCacheMutation<ID, V>
+    ): SnapshotCacheMutation<ID, V>
 }
 
 /**
@@ -314,7 +314,7 @@ sealed interface SnapshotCacheMutation<ID : Any, V : Serializable> {
  * @property encodedSha256 encoded payload의 lowercase hexadecimal SHA-256 digest입니다. payload 본문 없이 구조적
  * 식별과 진단을 남기기 위한 bounded metadata입니다.
  */
-data class MeasuredInvalidation<ID : Any>(
+data class MeasuredInvalidation<ID: Any>(
     /** invalidate 대상 cache identifier입니다. */
     val id: ID,
     /** async invalidation payload의 encoded byte 크기입니다. */
@@ -343,7 +343,7 @@ data class MeasuredInvalidation<ID : Any>(
 data class SnapshotCacheApplyReport(
     /** 적용 결과를 operation/outcome 단위로 집계한 목록입니다. */
     val results: List<SnapshotCacheOperationResult>,
-) : Serializable {
+): Serializable {
     /**
      * Requires this report to account exactly for one bulk [operation] input boundary.
      *
@@ -389,7 +389,7 @@ data class SnapshotCacheOperationResult(
     val affectedCount: Int,
     /** 실패 원인의 안전하게 정제된 JVM exception class name입니다. 없거나 unsafe이면 `null`입니다. */
     val exceptionType: String? = null,
-) : Serializable {
+): Serializable {
     init {
         require(affectedCount >= 0) { "affectedCount[$affectedCount] must not be negative." }
         require(outcome != SnapshotCacheOutcome.OVERRUN || affectedCount == 0) {
@@ -442,10 +442,11 @@ enum class SnapshotCacheOutcome {
 internal class MonotonicSnapshotCacheDeadline(
     timeout: Duration,
     private val nanoTimeSource: () -> Long = System::nanoTime,
-) : SnapshotCacheDeadline {
+): SnapshotCacheDeadline {
 
     /** `timeout` 을 nanosecond 단위로 변환한 deadline 폭입니다. */
     private val timeoutNanos: Long
+
     /** deadline 계산의 기준이 되는 시작 시각입니다. */
     private val startedAtNanos: Long
 
@@ -476,7 +477,7 @@ internal class MonotonicSnapshotCacheDeadline(
  * returns a one-shot snapshot preparer.
  */
 @InternalSnapshotCacheApi
-class SnapshotMissCapabilityRegistry<ID : Any, V : Serializable>(
+class SnapshotMissCapabilityRegistry<ID: Any, V: Serializable>(
     maxOutstandingMissTokens: Int,
 ) {
     private val maxOutstandingMissTokens = maxOutstandingMissTokens.also {
@@ -517,7 +518,7 @@ class SnapshotMissCapabilityRegistry<ID : Any, V : Serializable>(
     }
 }
 
-private data class MissCapability<ID : Any>(
+private data class MissCapability<ID: Any>(
     /** miss를 관찰한 cache identifier입니다. capability 밖으로 직접 노출하지 않습니다. */
     val id: ID,
     /** miss 관찰 이후 같은 process에서 경쟁 write를 감지하기 위한 local fence입니다. */
@@ -529,14 +530,15 @@ private data class MissCapability<ID : Any>(
 }
 
 @OptIn(InternalSnapshotCacheApi::class)
-private class OneShotClaimedSnapshotMiss<ID : Any, V : Serializable>(
+private class OneShotClaimedSnapshotMiss<ID: Any, V: Serializable>(
     /** claim된 miss가 삽입하려는 cache identifier입니다. */
     private val id: ID,
     /** guarded insertion에 포함할 process-local generation fence입니다. */
     private val localFence: SnapshotLocalFence<ID>,
-) : ClaimedSnapshotMiss<ID, V> {
+): ClaimedSnapshotMiss<ID, V> {
     /** one-shot prepare 상태를 보호하는 lock입니다. */
     private val lock = ReentrantLock()
+
     /** 아직 [prepare]를 호출할 수 있는지 나타내는 one-shot flag입니다. */
     private var available = true
 
@@ -547,10 +549,10 @@ private class OneShotClaimedSnapshotMiss<ID : Any, V : Serializable>(
     }
 }
 
-private class IdentityWeakReference<T : Any>(
+private class IdentityWeakReference<T: Any>(
     referent: T,
     queue: ReferenceQueue<T>? = null,
-) : WeakReference<T>(referent, queue) {
+): WeakReference<T>(referent, queue) {
     /** referent가 사라진 뒤에도 hash bucket을 안정적으로 찾기 위한 identity hash입니다. */
     private val identityHashCode = System.identityHashCode(referent)
 

@@ -3,7 +3,6 @@ package io.bluetape4k.exposed.cache.scenarios
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.SuspendedJdbcCacheRepository
-import io.bluetape4k.exposed.cache.scenarios.SuspendedJdbcCacheTestScenario.Companion.DefaultCacheDispatcher
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.Dispatchers

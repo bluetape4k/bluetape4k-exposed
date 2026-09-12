@@ -49,7 +49,7 @@ open class LocalCacheConfig(
     val writeMode: CacheWriteMode = CacheWriteMode.READ_ONLY,
     val writeBehindBatchSize: Int = 100,
     val writeBehindQueueCapacity: Int = 10_000,
-) : Serializable {
+): Serializable {
 
     init {
         // keyPrefix가 공백이면 캐시 키 네임스페이스 충돌로 서로 다른 저장소 데이터가 덮어써진다.
@@ -78,7 +78,7 @@ open class LocalCacheConfig(
         )
     }
 
-    companion object : KLogging() {
+    companion object: KLogging() {
         private const val serialVersionUID = 1L
 
         /**

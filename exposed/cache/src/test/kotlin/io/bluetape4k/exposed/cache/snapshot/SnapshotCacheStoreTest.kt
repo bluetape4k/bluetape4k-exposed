@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.cache.snapshot
 
+import io.bluetape4k.apache.isAssignable
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
@@ -47,7 +48,7 @@ class SnapshotCacheStoreTest {
         hit.miss.shouldBeNull()
         miss.snapshot.shouldBeNull()
         miss.miss?.toString() shouldBeEqualTo "SnapshotCacheMiss(opaque)"
-        Serializable::class.java.isAssignableFrom(miss.miss!!.javaClass).shouldBeFalse()
+        Serializable::class.isAssignable(miss.miss!!::class).shouldBeFalse()
         miss.miss.javaClass.declaredFields.shouldBeEmpty()
     }
 
@@ -168,7 +169,7 @@ class SnapshotCacheStoreTest {
             prepareResults.count { it.isSuccess } shouldBeEqualTo 1
             val prepareFailures = prepareResults.mapNotNull { it.exceptionOrNull() }
             prepareFailures.size shouldBeEqualTo 1
-            prepareFailures.single() shouldBeInstanceOf IllegalStateException::class
+            prepareFailures.single().shouldBeInstanceOf<IllegalStateException>()
         } finally {
             start.countDown()
             executor.close()
@@ -438,7 +439,7 @@ class SnapshotCacheStoreTest {
         ): SnapshotCacheApplyReport {
             snapshotBatches += snapshots
             return SnapshotCacheApplyReport(
-                snapshots.mapIndexed { index, _ ->
+                List(snapshots.size) { index ->
                     val outcome = outcomeFor(index, deadline)
                     SnapshotCacheOperationResult(
                         operation = SnapshotCacheOperation.PUT,

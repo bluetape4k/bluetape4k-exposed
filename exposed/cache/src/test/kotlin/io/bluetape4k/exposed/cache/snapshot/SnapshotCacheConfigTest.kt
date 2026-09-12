@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.cache.snapshot
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.io.serializer.BinarySerializers
 import io.bluetape4k.logging.KLogging
@@ -77,7 +78,7 @@ class SnapshotCacheConfigTest {
             SnapshotCacheConfig(invalid, "schema")
         }
 
-        thrown.message.orEmpty() shouldNotContain invalid
+        thrown.message shouldNotContain invalid
     }
 
     @Test
@@ -203,6 +204,6 @@ class SnapshotCacheConfigTest {
     @Suppress("UNCHECKED_CAST")
     private fun <T: Any> serializeRoundTrip(value: T): T {
         val bytes = BinarySerializers.FastFory.serialize(value)
-        return BinarySerializers.FastFory.deserialize<T>(bytes)!!
+        return BinarySerializers.FastFory.deserialize<T>(bytes).shouldNotBeNull()
     }
 }

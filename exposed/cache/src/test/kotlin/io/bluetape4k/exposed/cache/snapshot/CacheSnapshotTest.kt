@@ -125,7 +125,7 @@ class CacheSnapshotTest {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T : Serializable> serializeRoundTrip(value: T): T {
+    private fun <T: Serializable> serializeRoundTrip(value: T): T {
         val bytes = ByteArrayOutputStream().use { output ->
             ObjectOutputStream(output).use { it.writeObject(value) }
             output.toByteArray()
@@ -138,7 +138,7 @@ class CacheSnapshotTest {
     private data class Source(
         val name: String,
         val revision: String?,
-    ) : Serializable {
+    ): Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
@@ -146,15 +146,15 @@ class CacheSnapshotTest {
 
     private data class Payload(
         val text: String,
-    ) : Serializable {
+    ): Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
     }
 
-    private object Entities : IntIdTable("snapshot_entities")
+    private object Entities: IntIdTable("snapshot_entities")
 
-    private class SerializableEntity(id: EntityID<Int>) : Entity<Int>(id), Serializable {
+    private class SerializableEntity(id: EntityID<Int>): Entity<Int>(id), Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }

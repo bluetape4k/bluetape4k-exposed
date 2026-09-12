@@ -76,7 +76,7 @@ class CacheSnapshotDaoFreeClasspathTest {
 
     private data class Payload(
         val text: String,
-    ) : Serializable {
+    ): Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }

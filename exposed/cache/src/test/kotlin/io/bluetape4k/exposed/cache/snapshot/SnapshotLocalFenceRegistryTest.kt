@@ -5,6 +5,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -17,6 +18,8 @@ import kotlin.reflect.full.declaredMemberProperties
 
 @OptIn(InternalSnapshotCacheApi::class)
 class SnapshotLocalFenceRegistryTest {
+
+    companion object: KLogging()
 
     @Test
     fun `local fence exposes no construction state or capability operations`() {

@@ -154,11 +154,13 @@ internal fun sanitizeExceptionType(exceptionType: String): String? =
 private class BoundedSnapshotCacheFailureBuffer(
     /** buffer가 보관할 수 있는 failure event 최대 개수입니다. */
     override val capacity: Int,
-) : SnapshotCacheFailureBuffer {
+): SnapshotCacheFailureBuffer {
     /** non-blocking admission을 제공하는 bounded failure queue입니다. */
     private val failures = ArrayBlockingQueue<SnapshotCacheFailure>(capacity)
+
     /** capacity 초과로 drop된 failure event 누적 개수입니다. */
     private val dropped = AtomicLong()
+
     /** observer 예외가 발생한 drain 시도 누적 개수입니다. */
     private val observerFailures = AtomicLong()
 
@@ -204,7 +206,7 @@ private class BoundedSnapshotCacheFailureBuffer(
     }
 }
 
-private object SnapshotCacheFailureLogging : KLogging()
+private object SnapshotCacheFailureLogging: KLogging()
 
 private fun String.validateExceptionType() {
     require(isNotBlank()) { "exceptionType must not be blank when set." }

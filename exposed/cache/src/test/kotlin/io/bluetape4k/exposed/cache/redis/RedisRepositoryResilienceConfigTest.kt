@@ -18,7 +18,7 @@ import java.time.Duration
  */
 class RedisRepositoryResilienceConfigTest {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     // ----------------------------------------------------------------
     // 기본값 생성

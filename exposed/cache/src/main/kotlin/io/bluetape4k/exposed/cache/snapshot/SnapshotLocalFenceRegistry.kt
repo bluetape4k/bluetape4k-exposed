@@ -18,7 +18,7 @@ import kotlin.concurrent.withLock
  * @param generationToken lookup 시점의 stripe generation token입니다.
  */
 @InternalSnapshotCacheApi
-class SnapshotLocalFence<ID : Any> internal constructor(
+class SnapshotLocalFence<ID: Any> internal constructor(
     /** fence를 발급한 registry instance의 process-local owner token입니다. */
     private val ownerToken: Any,
     /** cache identifier가 배정된 stripe index입니다. */
@@ -35,9 +35,9 @@ class SnapshotLocalFence<ID : Any> internal constructor(
         generationToken: Any,
     ): Boolean =
         this.ownerToken === ownerToken &&
-            this.stripe == stripe &&
-            capturedId == id &&
-            this.generationToken === generationToken
+                this.stripe == stripe &&
+                capturedId == id &&
+                this.generationToken === generationToken
 }
 
 /**
@@ -49,13 +49,15 @@ class SnapshotLocalFence<ID : Any> internal constructor(
  * @param stripeCount local fence를 분산할 stripe 개수입니다. 양수인 2의 거듭제곱이어야 합니다.
  */
 @InternalSnapshotCacheApi
-class SnapshotLocalFenceRegistry<ID : Any>(
+class SnapshotLocalFenceRegistry<ID: Any>(
     stripeCount: Int,
 ) {
     /** 이 registry가 발급한 fence인지 확인하는 process-local owner token입니다. */
     private val ownerToken = Any()
+
     /** hash를 stripe index로 접기 위한 bit mask입니다. */
     private val stripeMask: Int
+
     /** identifier별 generation을 분산 관리하는 stripe 배열입니다. */
     private val stripes: Array<Stripe>
 
@@ -107,6 +109,7 @@ class SnapshotLocalFenceRegistry<ID : Any>(
     private class Stripe {
         /** stripe 안의 generation token advance와 mutation을 직렬화하는 lock입니다. */
         val lock = ReentrantLock()
+
         /** 이 stripe의 현재 generation을 나타내는 opaque process-local token입니다. */
         var generationToken: Any = Any()
     }

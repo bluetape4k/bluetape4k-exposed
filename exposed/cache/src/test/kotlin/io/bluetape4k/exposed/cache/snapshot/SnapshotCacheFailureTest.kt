@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.cache.snapshot
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotContain
@@ -61,7 +62,7 @@ class SnapshotCacheFailureTest {
         buffer.recordFailure(failure(SnapshotCacheOutcome.FAILED, 1))
 
         assertFailsWith<ObserverFatalError> {
-            buffer.drainTo(SnapshotCacheFailureObserver { throw ObserverFatalError() })
+            buffer.drainTo({ throw ObserverFatalError() })
         }
 
         buffer.size shouldBeEqualTo 0
@@ -87,7 +88,7 @@ class SnapshotCacheFailureTest {
         rendered shouldNotContain "password=secret"
         failure.javaClass.declaredFields
             .map { it.type }
-            .any(Throwable::class.java::isAssignableFrom) shouldBeEqualTo false
+            .any(Throwable::class.java::isAssignableFrom).shouldBeFalse()
     }
 
     @Test
@@ -101,7 +102,7 @@ class SnapshotCacheFailureTest {
         val buffer = snapshotCacheFailureBuffer(1)
         buffer.recordFailure(failure)
 
-        val drained = buffer.drainTo(SnapshotCacheFailureObserver { throw CustomException() })
+        val drained = buffer.drainTo({ throw CustomException() })
 
         failure.exceptionType shouldBeEqualTo CustomException::class.java.name
         drained.observerExceptionType shouldBeEqualTo CustomException::class.java.name
@@ -160,7 +161,7 @@ class SnapshotCacheFailureTest {
     fun `buffer and count inputs are validated`() {
         assertFailsWith<IllegalArgumentException> { snapshotCacheFailureBuffer(0) }
         assertFailsWith<IllegalArgumentException> {
-            snapshotCacheFailureBuffer(1).drainTo(SnapshotCacheFailureObserver {}, -1)
+            snapshotCacheFailureBuffer(1).drainTo({}, -1)
         }
         assertFailsWith<IllegalArgumentException> {
             SnapshotCacheFailure(STORE_ID, SnapshotCacheOperation.PUT, SnapshotCacheOutcome.FAILED, -1)
