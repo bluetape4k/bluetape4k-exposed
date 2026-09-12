@@ -1044,7 +1044,7 @@ git diff --check
 
 `api/bluetape4k-exposed-clickhouse.api`에서 기존 queryList/queryFlow symbol이 사라지지 않고 새 diagnostics overload만 추가됐는지 확인한다. `exposed/clickhouse/README.md`와 `README.ko.md`에 listener/sink 계약, callback thread, bounded metrics, cancellation state, no remote termination claim, #863 후속 범위를 같은 예제로 기록한다. `docs/lessons/2026-09-09-clickhouse-v2-diagnostics.md`에는 실제 실패·재실행·미검증 범위를 Korean으로 남기고 writer receipt를 추가한다.
 
-- [ ] **Step 5: #868 commit과 PR을 생성한다**
+- [x] **Step 5: #868 commit과 PR을 생성한다**
 
 ~~~bash
 git add exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnostics*.kt exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseExtensions.kt exposed/clickhouse/src/main/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseQueryStreaming.kt exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseQueryDiagnosticsTest.kt exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseResourceLifecycleTest.kt exposed/clickhouse/src/test/kotlin/io/bluetape4k/exposed/clickhouse/ClickHouseQueryLifecycleTest.kt exposed/clickhouse/README.md exposed/clickhouse/README.ko.md docs/lessons/2026-09-09-clickhouse-v2-diagnostics.md api/bluetape4k-exposed-clickhouse.api
