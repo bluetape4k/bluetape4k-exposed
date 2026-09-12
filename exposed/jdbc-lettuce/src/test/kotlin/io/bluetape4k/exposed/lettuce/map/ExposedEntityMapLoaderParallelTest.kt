@@ -50,14 +50,13 @@ class ExposedEntityMapLoaderParallelTest: AbstractExposedTest() {
                 toEntity = { row -> row.toLoaderEntity() },
             )
             val sequential = loader.loadAllKeys().toList()
-            val parallel =
-                loader.loadAllKeysInParallel(
-                    ranges = listOf(
-                        JdbcKeyRange(upperExclusive = 5L),
-                        JdbcKeyRange(lowerInclusive = 5L),
-                    ),
-                    options = JdbcParallelKeyEnumerationOptions(maxConcurrency = 2),
-                )
+            val parallel = loader.loadAllKeysInParallel(
+                ranges = listOf(
+                    JdbcKeyRange(upperExclusive = 5L),
+                    JdbcKeyRange(lowerInclusive = 5L),
+                ),
+                options = JdbcParallelKeyEnumerationOptions(maxConcurrency = 2),
+            )
 
             parallel shouldBeEqualTo sequential
             parallel shouldBeEqualTo (1L..8L).toList()

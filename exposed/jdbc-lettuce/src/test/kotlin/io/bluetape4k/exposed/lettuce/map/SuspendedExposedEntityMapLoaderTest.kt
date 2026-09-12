@@ -20,6 +20,7 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.statements.StatementContext
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 
@@ -57,9 +58,9 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
     @Test
     fun `load - suspend 컨텍스트에서 단건 조회 성공`() = runSuspendIO {
         withTablesSuspending(TestDB.H2, SuspendedLoaderTable) {
-            val insertedId = SuspendedLoaderTable.insert {
+            val insertedId = SuspendedLoaderTable.insertAndGetId {
                 it[name] = "alice"
-            } get SuspendedLoaderTable.id
+            }
 
             // suspendedTransactionAsync는 새 트랜잭션을 열므로 먼저 커밋해야 데이터가 보인다
             commit()
@@ -167,7 +168,7 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
         withTablesSuspending(TestDB.H2, SuspendedLoaderTable) {
 
             val initialIds = List(5) { index ->
-                SuspendedLoaderTable.insert { it[name] = "user-$index" } get SuspendedLoaderTable.id
+                SuspendedLoaderTable.insertAndGetId { it[name] = "user-$index" }
             }.map { it.value }
             SuspendedLoaderTable.deleteWhere { SuspendedLoaderTable.id eq initialIds[1] }
             commit()

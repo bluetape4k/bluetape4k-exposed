@@ -71,7 +71,7 @@ class LettuceLoadedMapConsistencyTest: AbstractJdbcLettuceTest() {
         val client = RedisClient.create(
             RedisServer.Launcher.LettuceLib.getRedisURI(redis.host, redis.port)
         )
-        
+
         return LettuceLoadedMap(
             client = client,
             writer = writer,

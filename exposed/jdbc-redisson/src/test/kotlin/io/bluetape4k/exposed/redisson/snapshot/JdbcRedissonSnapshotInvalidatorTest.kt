@@ -532,7 +532,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
         val valid = config(maxOutstandingChunks = 1, maxOutstandingEncodedBytes = 8)
 
         jdbcRedissonSnapshotInvalidator(client.proxy, codec, Long::class, Payload::class, valid)
-        client.options shouldHaveSize 1 
+        client.options shouldHaveSize 1
 
         assertFailsWith<IllegalArgumentException> {
             jdbcRedissonSnapshotInvalidator(

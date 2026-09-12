@@ -84,7 +84,9 @@ interface WriteBehindScenario<ID: Any, E: java.io.Serializable>:
             await
                 .atMost(Duration.ofSeconds(5))
                 .withPollInterval(Duration.ofMillis(100))
-                .until { entities.all { (id, expected) -> repository.findByIdFromDb(id) == expected } }
+                .until {
+                    entities.all { (id, expected) -> repository.findByIdFromDb(id) == expected }
+                }
 
             entities.forEach { (id, expected) ->
                 repository.findByIdFromDb(id) shouldBeEqualTo expected

@@ -269,7 +269,7 @@ class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
         fun exposeCacheOnlyMap() = cacheOnlyMap
     }
 
-    private class CyclicDelegatingCodec : ExposedRedissonDelegatingCodec {
+    private class CyclicDelegatingCodec: ExposedRedissonDelegatingCodec {
         private val safe = StringCodec()
         override val delegateCodec: Codec get() = this
         override fun getMapValueDecoder(): Decoder<Any> = safe.mapValueDecoder

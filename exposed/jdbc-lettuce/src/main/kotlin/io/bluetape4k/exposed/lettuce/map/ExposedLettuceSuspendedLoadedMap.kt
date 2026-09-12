@@ -86,7 +86,7 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.warn { "Redis GET failed, loader fallback: errorType=${e::class.simpleName}" }
+            log.warn(e) { "Redis GET failed, loader fallback: key=$key" }
             null
         }
         if (cached != null) return cached
@@ -197,7 +197,7 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.warn(e) { "Redis MGET failed, loader fallback: requested=${keys.size}" }
+            log.warn(e) { "Redis MGET failed, loader fallback: requested keys=$keys" }
             null
         }
 

@@ -9,6 +9,7 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeInstanceOf
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.collections.toList
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
@@ -175,7 +176,6 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
             ids shouldHaveSize 5
             ids shouldBeEqualTo ids.sorted()
             loader.loadAllKeys().shouldNotBeInstanceOf<List<*>>()
-            // (loader.loadAllKeys() is List<*>).shouldBeFalse()
 
             val selects = sqlStatements
                 .filter {
@@ -220,7 +220,7 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
     fun `loadAllKeys - sparse ID와 page 사이 append에서도 중복 없이 진행한다`() {
         withTables(TestDB.H2, LoaderTable) {
             val initialIds = List(5) { index ->
-                LoaderTable.insert { it[name] = "user-$index" } get LoaderTable.id
+                LoaderTable.insertAndGetId { it[name] = "user-$index" }
             }.map { it.value }
 
             LoaderTable.deleteWhere { LoaderTable.id eq initialIds[1] }
@@ -233,8 +233,8 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
 
             val iterator = loader.loadAllKeys().iterator()
             val firstPage = listOf(iterator.next(), iterator.next())
-            val appendedId = (LoaderTable.insert { it[name] = "appended" } get LoaderTable.id).value
-            val remaining = iterator.asSequence().toList()
+            val appendedId = LoaderTable.insertAndGetId { it[name] = "appended" }.value
+            val remaining = iterator.toList()
             val ids = firstPage + remaining
 
             ids shouldBeEqualTo (initialIds.filterNot { it == initialIds[1] } + appendedId).sorted()

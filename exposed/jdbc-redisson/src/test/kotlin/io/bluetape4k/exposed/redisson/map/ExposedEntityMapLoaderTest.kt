@@ -263,7 +263,7 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
     fun `batchSize 는 0보다 커야 한다`() {
         withTables(TestDB.H2, LoaderTable) {
 
-        assertFailsWith<IllegalArgumentException> {
+            assertFailsWith<IllegalArgumentException> {
                 ExposedEntityMapLoader(
                     entityTable = LoaderTable,
                     batchSize = 0,

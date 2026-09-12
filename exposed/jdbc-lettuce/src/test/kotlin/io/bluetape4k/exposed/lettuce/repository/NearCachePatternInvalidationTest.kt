@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.lettuce.repository
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest
 import io.bluetape4k.exposed.lettuce.domain.SuspendedUserRepository
@@ -68,17 +69,19 @@ class NearCachePatternInvalidationTest: AbstractJdbcLettuceTest() {
                 listOf("id", "ids", "pattern", "clear").forEach { operation ->
                     val stale = requireNotNull(repository.get(id)).email
                     val fresh = "$operation@updated.example"
+
                     UserTable.update({ UserTable.id eq id }) { it[email] = fresh }
                     commit()
                     requireNotNull(repository.get(id)).email shouldBeEqualTo stale
+
                     when (operation) {
                         "id"  -> repository.invalidate(id)
                         "ids" -> repository.invalidateAll(listOf(id))
                         "pattern" -> repository.invalidateByPattern("*", 1) shouldBeEqualTo 1L
                         else  -> repository.clear()
                     }
-                    requireNotNull(repository.get(id)).email shouldBeEqualTo fresh
-                    requireNotNull(other.get(id)).email shouldBeEqualTo original
+                    repository.get(id).shouldNotBeNull().email shouldBeEqualTo fresh
+                    other.get(id).shouldNotBeNull().email shouldBeEqualTo original
                 }
                 repository.invalidateByPattern("missing-*", 1) shouldBeEqualTo 0L
             } finally {
@@ -132,6 +135,4 @@ class NearCachePatternInvalidationTest: AbstractJdbcLettuceTest() {
             repository.invalidateByPattern("*", 1)
         }.message shouldBeEqualTo "planned cancellation"
     }
-
-
 }

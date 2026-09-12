@@ -318,7 +318,7 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
         trace += "v2-deployed"
 
         rolloutV1.quotaHealth().outstandingChunks shouldBeEqualTo 0
-        
+
         shutdownAppClient(rolloutV1Client)
         trace += "v1-writers-stopped"
         clearSnapshotNamespace(

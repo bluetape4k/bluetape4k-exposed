@@ -91,7 +91,7 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
 
     override val cacheWriteMode: CacheWriteMode
         get() = when (config.writeMode) {
-            WriteMode.NONE         -> CacheWriteMode.READ_ONLY
+            WriteMode.NONE -> CacheWriteMode.READ_ONLY
             WriteMode.WRITE_THROUGH -> CacheWriteMode.WRITE_THROUGH
             WriteMode.WRITE_BEHIND -> CacheWriteMode.WRITE_BEHIND
         }

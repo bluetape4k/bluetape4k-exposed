@@ -81,7 +81,9 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
     operator fun get(key: K): V? {
         val redisKey = redisKey(key)
         val cached = runCatching { commands.get(redisKey) }
-            .onFailure { e -> log.warn(e) { "Redis GET failed, loader fallback: errorType=${e::class.simpleName}" } }
+            .onFailure { e ->
+                log.warn(e) { "Redis GET failed, loader fallback: errorType=${e::class.simpleName}" }
+            }
             .getOrNull()
 
         if (cached != null) return cached
@@ -91,7 +93,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
         runCatching {
             commands.set(redisKey, value, SetArgs().ex(ttlSeconds))
         }.onFailure { e ->
-            log.warn(e) { "Redis SETEX failed: errorType=${e::class.simpleName}" }
+            log.warn(e) { "Redis SETEX failed. key=$key" }
         }
         return value
     }
@@ -216,7 +218,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
                 runCatching {
                     commands.set(redisKey(key), value, SetArgs().ex(ttlSeconds))
                 }.onFailure { e ->
-                    log.warn(e) { "Redis SETEX failed" }
+                    log.warn(e) { "Redis SETEX failed. key=$key" }
                 }
             }
         }
@@ -316,7 +318,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
 
     private fun writeDeadLetter(batch: Map<K, V>) {
         log.debug { "writeDeadLetter: batch=${batch.size}" }
-        
+
         runCatching {
             val deadLetterKey = "${config.keyPrefix}:dead-letter"
             val deadLetterValuesKey = "${config.keyPrefix}:dead-letter:values"
