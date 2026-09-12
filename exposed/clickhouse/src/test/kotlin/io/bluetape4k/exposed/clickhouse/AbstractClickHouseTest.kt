@@ -7,6 +7,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
+import org.junit.jupiter.api.parallel.ResourceLock
 
 /**
  * ClickHouse 컨테이너를 공유하는 통합 테스트의 기반 클래스.
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode
  * - [BeforeAll]에서 단순 SELECT 쿼리를 통해 컨테이너 ready 상태를 polling 합니다.
  */
 @Execution(ExecutionMode.SAME_THREAD)
+@ResourceLock("clickhouse-v2")
 abstract class AbstractClickHouseTest {
 
     companion object: KLogging() {

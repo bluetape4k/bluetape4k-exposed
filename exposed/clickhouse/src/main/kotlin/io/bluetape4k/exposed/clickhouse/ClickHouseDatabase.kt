@@ -5,8 +5,10 @@ import io.bluetape4k.exposed.clickhouse.dialect.ClickHouseDialectMetadata
 import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.DatabaseApi
 import org.jetbrains.exposed.v1.jdbc.Database
+import java.sql.Connection
 import java.sql.DriverManager
-import java.util.*
+import java.sql.SQLException
+import java.util.Properties
 
 /**
  * Exposed ORM에서 ClickHouse 데이터베이스 연결을 생성하는 팩토리 객체입니다.
@@ -152,5 +154,102 @@ object ClickHouseDatabase: KLogging() {
                     }
             }
         )
+    }
+
+    /**
+     * ClickHouse JDBC V2 옵션을 적용해 host/port 기반 연결을 생성합니다.
+     *
+     * [options]는 기존 overload와 분리된 trailing 인자이며, URL query가 존재하는
+     * 경우 driver의 URL precedence를 유지합니다. 인증 URL key는 보안상 거부합니다.
+     */
+    fun connect(
+        host: String = "localhost",
+        port: Int = 8123,
+        database: String = "default",
+        user: String = "default",
+        password: String = "",
+        options: ClickHouseV2Options,
+    ): Database {
+        requireNotNull(host.ifBlank { null }) { "host는 공백일 수 없습니다." }
+        require(port in 1..65535) { "port는 1~65535 범위여야 합니다: $port" }
+        requireNotNull(database.ifBlank { null }) { "database는 공백일 수 없습니다." }
+
+        val url = "jdbc:clickhouse://$host:$port/$database"
+        require(!ClickHouseV2Redaction.containsUserInfo(url)) {
+            "options 연결의 host에는 authority userinfo를 포함할 수 없습니다: " +
+                ClickHouseV2Redaction.redactJdbcUrl(url)
+        }
+        return connectWithV2Options(url, user, password, options)
+    }
+
+    /**
+     * 전달받은 JDBC URL과 ClickHouse JDBC V2 옵션으로 연결을 생성합니다.
+     *
+     * URL의 query value와 authority userinfo는 오류 메시지에서 모두 `REDACTED`로
+     * 치환되며, 인증 key는 options의 one-of 모드를 우회하지 못하도록 fail-fast 합니다.
+     */
+    fun connect(
+        jdbcUrl: String,
+        user: String = "default",
+        password: String = "",
+        options: ClickHouseV2Options,
+    ): Database {
+        requireNotNull(jdbcUrl.ifBlank { null }) { "jdbcUrl은 공백일 수 없습니다." }
+        require(jdbcUrl.startsWith("jdbc:clickhouse://")) {
+            "jdbcUrl은 'jdbc:clickhouse://'로 시작해야 합니다: ${ClickHouseV2Redaction.redactJdbcUrl(jdbcUrl)}"
+        }
+        require(!ClickHouseV2Redaction.containsUserInfo(jdbcUrl)) {
+            "options 연결의 jdbcUrl에는 authority userinfo를 포함할 수 없습니다: " +
+                ClickHouseV2Redaction.redactJdbcUrl(jdbcUrl)
+        }
+        return connectWithV2Options(jdbcUrl, user, password, options)
+    }
+
+    private fun connectWithV2Options(
+        jdbcUrl: String,
+        user: String,
+        password: String,
+        options: ClickHouseV2Options,
+    ): Database {
+        return Database.connect(
+            getNewConnection = {
+                val properties = options.toEffectiveProperties(user, password, jdbcUrl)
+                wrapConnection(connectRaw(jdbcUrl, properties), jdbcUrl)
+            },
+        )
+    }
+
+    // Driver implementations may throw unchecked exceptions containing connection details;
+    // this boundary deliberately sanitizes them before exposing an application-facing error.
+    @Suppress("TooGenericExceptionCaught")
+    private fun connectRaw(jdbcUrl: String, properties: Properties): Connection = try {
+        DriverManager.getConnection(jdbcUrl, properties)
+    } catch (error: SQLException) {
+        throw error.toClickHouseConnectionException(jdbcUrl)
+    } catch (error: RuntimeException) {
+        throw error.toClickHouseConnectionException(jdbcUrl)
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private fun wrapConnection(raw: Connection, jdbcUrl: String): Connection = try {
+        ClickHouseConnectionWrapper(raw)
+    } catch (error: SQLException) {
+        closeAfterFailure(raw, error, jdbcUrl)
+    } catch (error: RuntimeException) {
+        closeAfterFailure(raw, error, jdbcUrl)
+    }
+
+    // The driver may throw unchecked failures while closing; sanitize every Exception at this boundary.
+    @Suppress("TooGenericExceptionCaught")
+    private fun closeAfterFailure(raw: Connection, error: Exception, jdbcUrl: String): Nothing {
+        val wrapped = error.toClickHouseConnectionException(jdbcUrl)
+        try {
+            raw.close()
+        } catch (cleanupError: SQLException) {
+            wrapped.addSuppressed(cleanupError.toSanitizedCleanupException())
+        } catch (cleanupError: RuntimeException) {
+            wrapped.addSuppressed(cleanupError.toSanitizedCleanupException())
+        }
+        throw wrapped
     }
 }

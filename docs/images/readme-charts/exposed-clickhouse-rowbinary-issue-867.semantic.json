@@ -1,0 +1,125 @@
+{
+  "kind": "chart",
+  "source": {
+    "question": "ClickHouse JDBC V2 RowBinary와 JDBC fallback의 배치 경로·flush·행 모양별 처리량은 어떻게 다른가?",
+    "revision": "local",
+    "paths": [
+      "docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json",
+      "docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-2.json",
+      "docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-3.json",
+      "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json",
+      "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-2.json",
+      "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-3.json",
+      "docs/benchmarks/clickhouse-v2-rowbinary/render_rowbinary_chart.py"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "narrow-10000-256",
+      "label": "narrow / 10,000 logical rows / flush 256 / RowBinary 4.3M vs JDBC fallback 14.3M rows/s",
+      "source": "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json..rowbinary-run-3.json:records; docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json..jdbc-fallback-run-3.json:records"
+    },
+    {
+      "id": "narrow-10000-1024",
+      "label": "narrow / 10,000 logical rows / flush 1024 / RowBinary 9.9M vs JDBC fallback 15.4M rows/s",
+      "source": "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json..rowbinary-run-3.json:records; docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json..jdbc-fallback-run-3.json:records"
+    },
+    {
+      "id": "narrow-10000-4096",
+      "label": "narrow / 10,000 logical rows / flush 4096 / RowBinary 14.6M vs JDBC fallback 21.7M rows/s",
+      "source": "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json..rowbinary-run-3.json:records; docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json..jdbc-fallback-run-3.json:records"
+    },
+    {
+      "id": "narrow-100000-256",
+      "label": "narrow / 100,000 logical rows / flush 256 / RowBinary 18.1M vs JDBC fallback 21.3M rows/s",
+      "source": "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json..rowbinary-run-3.json:records; docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json..jdbc-fallback-run-3.json:records"
+    },
+    {
+      "id": "narrow-100000-1024",
+      "label": "narrow / 100,000 logical rows / flush 1024 / RowBinary 17.9M vs JDBC fallback 22.1M rows/s",
+      "source": "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json..rowbinary-run-3.json:records; docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json..jdbc-fallback-run-3.json:records"
+    },
+    {
+      "id": "narrow-100000-4096",
+      "label": "narrow / 100,000 logical rows / flush 4096 / RowBinary 20.5M vs JDBC fallback 21.1M rows/s",
+      "source": "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json..rowbinary-run-3.json:records; docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json..jdbc-fallback-run-3.json:records"
+    },
+    {
+      "id": "narrow-1000000-256",
+      "label": "narrow / 1,000,000 logical rows / flush 256 / RowBinary 18.9M vs JDBC fallback 20.0M rows/s",
+      "source": "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json..rowbinary-run-3.json:records; docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json..jdbc-fallback-run-3.json:records"
+    },
+    {
+      "id": "narrow-1000000-1024",
+      "label": "narrow / 1,000,000 logical rows / flush 1024 / RowBinary 19.8M vs JDBC fallback 22.7M rows/s",
+      "source": "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json..rowbinary-run-3.json:records; docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json..jdbc-fallback-run-3.json:records"
+    },
+    {
+      "id": "narrow-1000000-4096",
+      "label": "narrow / 1,000,000 logical rows / flush 4096 / RowBinary 20.4M vs JDBC fallback 22.9M rows/s",
+      "source": "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json..rowbinary-run-3.json:records; docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json..jdbc-fallback-run-3.json:records"
+    },
+    {
+      "id": "wide-10000-256",
+      "label": "wide / 10,000 logical rows / flush 256 / RowBinary 1.9M vs JDBC fallback 3.5M rows/s",
+      "source": "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json..rowbinary-run-3.json:records; docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json..jdbc-fallback-run-3.json:records"
+    },
+    {
+      "id": "wide-10000-1024",
+      "label": "wide / 10,000 logical rows / flush 1024 / RowBinary 4.5M vs JDBC fallback 3.8M rows/s",
+      "source": "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json..rowbinary-run-3.json:records; docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json..jdbc-fallback-run-3.json:records"
+    },
+    {
+      "id": "wide-10000-4096",
+      "label": "wide / 10,000 logical rows / flush 4096 / RowBinary 7.4M vs JDBC fallback 10.2M rows/s",
+      "source": "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json..rowbinary-run-3.json:records; docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json..jdbc-fallback-run-3.json:records"
+    },
+    {
+      "id": "wide-100000-256",
+      "label": "wide / 100,000 logical rows / flush 256 / RowBinary 11.0M vs JDBC fallback 10.7M rows/s",
+      "source": "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json..rowbinary-run-3.json:records; docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json..jdbc-fallback-run-3.json:records"
+    },
+    {
+      "id": "wide-100000-1024",
+      "label": "wide / 100,000 logical rows / flush 1024 / RowBinary 12.0M vs JDBC fallback 11.6M rows/s",
+      "source": "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json..rowbinary-run-3.json:records; docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json..jdbc-fallback-run-3.json:records"
+    },
+    {
+      "id": "wide-100000-4096",
+      "label": "wide / 100,000 logical rows / flush 4096 / RowBinary 12.3M vs JDBC fallback 10.9M rows/s",
+      "source": "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json..rowbinary-run-3.json:records; docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json..jdbc-fallback-run-3.json:records"
+    },
+    {
+      "id": "wide-1000000-256",
+      "label": "wide / 1,000,000 logical rows / flush 256 / RowBinary 12.2M vs JDBC fallback 16.9M rows/s",
+      "source": "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json..rowbinary-run-3.json:records; docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json..jdbc-fallback-run-3.json:records"
+    },
+    {
+      "id": "wide-1000000-1024",
+      "label": "wide / 1,000,000 logical rows / flush 1024 / RowBinary 12.4M vs JDBC fallback 14.9M rows/s",
+      "source": "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json..rowbinary-run-3.json:records; docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json..jdbc-fallback-run-3.json:records"
+    },
+    {
+      "id": "wide-1000000-4096",
+      "label": "wide / 1,000,000 logical rows / flush 4096 / RowBinary 13.5M vs JDBC fallback 14.4M rows/s",
+      "source": "docs/benchmarks/clickhouse-v2-rowbinary/rowbinary-run-1.json..rowbinary-run-3.json:records; docs/benchmarks/clickhouse-v2-rowbinary/jdbc-fallback-run-1.json..jdbc-fallback-run-3.json:records"
+    }
+  ],
+  "edges": [],
+  "behavior": {
+    "branches": 0,
+    "loops": 0
+  },
+  "repairs": [
+    {
+      "target": "path-comparison",
+      "reason": "RowBinary opt-in과 JDBC fallback을 같은 논리 시나리오에서 두 profile로 나눠 비교함",
+      "touches": 1
+    },
+    {
+      "target": "bounded-fixture-disclosure",
+      "reason": "실제 측정 행 상한과 private driver buffer 미검증 경계를 차트 하단에 고정함",
+      "touches": 1
+    }
+  ]
+}
