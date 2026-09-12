@@ -9,7 +9,7 @@ class DruidConnectionOptionsTest {
     @Test
     fun `default options build official Avatica Router URL`() {
         DruidConnectionOptions().jdbcUrl() shouldBeEqualTo
-            "jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true"
+                "jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true"
     }
 
     @Test
@@ -18,7 +18,7 @@ class DruidConnectionOptionsTest {
             avaticaEndpoint = "http://localhost:8888/druid/v2/sql/avatica-protobuf/",
             serialization = DruidAvaticaSerialization.PROTOBUF,
         ).jdbcUrl() shouldBeEqualTo
-            "jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica-protobuf/;transparent_reconnection=true;serialization=protobuf"
+                "jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica-protobuf/;transparent_reconnection=true;serialization=protobuf"
     }
 
     @Test

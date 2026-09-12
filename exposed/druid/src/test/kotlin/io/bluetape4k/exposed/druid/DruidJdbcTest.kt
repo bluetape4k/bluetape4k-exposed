@@ -18,10 +18,13 @@ class DruidJdbcTest {
         DruidJdbc.DRUID_COLUMNS_SQL shouldContain "TABLE_SCHEMA = ?"
         DruidJdbc.DRUID_COLUMNS_SQL shouldContain "TABLE_NAME = ?"
     }
+
     @Test
     fun `query helper rejects non query statements before opening a connection`() {
         assertFailsWith<IllegalArgumentException> {
-            DruidJdbc.query("INSERT INTO foo SELECT 1") { rs -> rs.getInt(1) }
+            DruidJdbc.query("INSERT INTO foo SELECT 1") { rs ->
+                rs.getInt(1)
+            }
         }
     }
 }
