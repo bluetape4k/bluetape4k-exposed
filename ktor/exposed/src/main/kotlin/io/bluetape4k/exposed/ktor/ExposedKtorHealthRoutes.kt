@@ -65,8 +65,8 @@ fun Route.bluetape4kExposedHealthRoutes(
          * 다시 던져 readiness 처리를 종료합니다. response는 검증된 component 이름과 유한 `UP`, `DOWN`, `timeout` 값만 노출하며
          * supplier exception message, cause, cache key, SQL, URL, namespace, credential, measurement는 반환하거나 기록하지 않습니다.
          *
-         * Contract: probes and resources are caller-owned, including authentication and request concurrency. This helper
-         * creates or closes no resources. Responses never expose cache keys, SQL, URLs, or credentials.
+         * Contract: probes and resources are caller-owned, including authentication and request concurrency.
+         * This helper creates or closes no resources. Responses never expose cache keys, SQL, URLs, or credentials.
          * Timeout contract: `readinessProbeTimeout` is the coroutine wall-clock budget. JDBC readiness always applies
          * `jdbcQueryTimeout`, truncating sub-second durations to whole seconds with a minimum of one, so it overrides
          * `DatabaseConfig.defaultQueryTimeout`. R2DBC readiness inherits `R2dbcDatabaseConfig.defaultQueryTimeout` and
