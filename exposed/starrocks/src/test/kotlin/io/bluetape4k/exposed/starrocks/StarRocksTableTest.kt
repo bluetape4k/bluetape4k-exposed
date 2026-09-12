@@ -1,9 +1,11 @@
 package io.bluetape4k.exposed.starrocks
 
-import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeEmpty
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
 
@@ -11,6 +13,8 @@ import org.junit.jupiter.api.Test
  * DDL rendering tests for [StarRocksTable].
  */
 class StarRocksTableTest: AbstractStarRocksTest() {
+
+    companion object: KLogging()
 
     private object SimpleTable: StarRocksTable("starrocks_table_rendering") {
         val id = long("id")
@@ -22,6 +26,8 @@ class StarRocksTableTest: AbstractStarRocksTest() {
     fun `createStatement removes generic primary key syntax and appends StarRocks options`() {
         transaction(db) {
             val ddl = SimpleTable.createStatement().single()
+
+            log.debug { "DDL: $ddl" }
 
             ddl.contains("PRIMARY KEY", ignoreCase = true).shouldBeFalse()
             ddl shouldContain "ENGINE=OLAP"

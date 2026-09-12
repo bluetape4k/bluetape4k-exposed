@@ -3,7 +3,6 @@ package io.bluetape4k.exposed.starrocks.dialect
 import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ColumnDiff
-import org.jetbrains.exposed.v1.core.InternalApi
 import org.jetbrains.exposed.v1.core.vendors.MysqlDialect
 
 /**
@@ -16,7 +15,7 @@ import org.jetbrains.exposed.v1.core.vendors.MysqlDialect
 class StarRocksDialect: MysqlDialect() {
 
     companion object: KLogging() {
-/** Exposed에 등록하는 dialect 이름입니다. */
+        /** Exposed에 등록하는 dialect 이름입니다. */
         const val dialectName: String = "starrocks"
     }
 
@@ -36,6 +35,5 @@ class StarRocksDialect: MysqlDialect() {
 
     override val requiresAutoCommitOnCreateDrop: Boolean = true
 
-    @OptIn(InternalApi::class)
     override fun modifyColumn(column: Column<*>, columnDiff: ColumnDiff): List<String> = emptyList()
 }

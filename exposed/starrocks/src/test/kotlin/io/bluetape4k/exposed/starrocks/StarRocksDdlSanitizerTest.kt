@@ -1,10 +1,14 @@
 package io.bluetape4k.exposed.starrocks
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
 
 /** StarRocks DDL 보정이 SQL 구조 밖의 텍스트를 훼손하지 않는지 검증한다. */
 class StarRocksDdlSanitizerTest {
+
+    companion object: KLogging()
 
     @Test
     fun `DEFAULT literal과 주석 및 인용 식별자의 키워드를 보존한다`() {
@@ -13,14 +17,14 @@ class StarRocksDdlSanitizerTest {
                 `PRIMARY KEY` VARCHAR(100) DEFAULT 'x NULL PRIMARY KEY ENGINE=fake' /* NULL PRIMARY KEY ENGINE=fake */ NULL,
                 value BIGINT -- NULL PRIMARY KEY ENGINE=fake
             )
-        """.trimIndent()
+            """.trimIndent()
 
         sanitizeForTest(sql) shouldBeEqualTo """
             CREATE TABLE `quoted NULL` (
                 `PRIMARY KEY` VARCHAR(100) DEFAULT 'x NULL PRIMARY KEY ENGINE=fake' /* NULL PRIMARY KEY ENGINE=fake */,
                 value BIGINT -- NULL PRIMARY KEY ENGINE=fake
             ) ENGINE=OLAP PROPERTIES ("replication_num" = "1")
-        """.trimIndent()
+            """.trimIndent()
     }
 
     @Test
@@ -38,7 +42,7 @@ class StarRocksDdlSanitizerTest {
                 id BIGINT NOT NULL,
                 note VARCHAR(100) DEFAULT 'NULL PRIMARY KEY ENGINE=fake'
             ) ENGINE=OLAP PROPERTIES ("replication_num" = "1")
-        """.trimIndent()
+            """.trimIndent()
     }
 
     @Test
@@ -46,7 +50,7 @@ class StarRocksDdlSanitizerTest {
         val sql = "CREATE TABLE t (value VARCHAR(100) DEFAULT 'ENGINE=fake')"
 
         sanitizeForTest(sql) shouldBeEqualTo
-            "$sql ENGINE=OLAP PROPERTIES (\"replication_num\" = \"1\")"
+                "$sql ENGINE=OLAP PROPERTIES (\"replication_num\" = \"1\")"
     }
 
     @Test
@@ -65,14 +69,17 @@ class StarRocksDdlSanitizerTest {
 
         sqls.forEach { sql ->
             sanitizeForTest(sql) shouldBeEqualTo
-                "$sql ENGINE=OLAP PROPERTIES (\"replication_num\" = \"1\")"
+                    "$sql ENGINE=OLAP PROPERTIES (\"replication_num\" = \"1\")"
         }
     }
 
     private fun sanitizeForTest(sql: String): String {
-        val method = Class.forName("io.bluetape4k.exposed.starrocks.StarRocksTableKt")
-            .getDeclaredMethod("sanitizeForStarRocks", String::class.java)
-        check(method.trySetAccessible()) { "StarRocks sanitizer is not accessible for regression testing." }
-        return method.invoke(null, sql) as String
+//        val method = Class.forName("io.bluetape4k.exposed.starrocks.StarRocksTableKt")
+//            .getDeclaredMethod("sanitizeForStarRocks", String::class.java)
+//        check(method.trySetAccessible()) { "StarRocks sanitizer is not accessible for regression testing." }
+//        return method.invoke(null, sql) as String
+        return sql.sanitizeForStarRocks().apply {
+            log.debug { "sanitized: $this" }
+        }
     }
 }

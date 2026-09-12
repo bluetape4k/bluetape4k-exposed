@@ -5,18 +5,16 @@ import io.bluetape4k.utils.ShutdownQueue
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
-import java.sql.DriverManager
 import java.time.Duration
-import java.util.Properties
+import java.util.*
 
 /**
  * Testcontainers-backed StarRocks server fixture for integration tests.
  */
-class StarRocksTestServer private constructor(
-    private val container: GenericContainer<*>,
-) {
+// NOTE: bluetape4k-testcontainers 에 추가하도록 하자
+class StarRocksTestServer private constructor(private val container: GenericContainer<*>) {
 
-    companion object {
+    companion object: KLogging() {
         const val QUERY_PORT = 9030
         const val HTTP_PORT = 8030
         const val BE_HTTP_PORT = 8040
