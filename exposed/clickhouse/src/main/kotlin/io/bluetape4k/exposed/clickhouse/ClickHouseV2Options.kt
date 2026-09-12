@@ -3,6 +3,9 @@ package io.bluetape4k.exposed.clickhouse
 import io.bluetape4k.AbstractValueObject
 import io.bluetape4k.ToStringBuilder
 import java.time.ZoneId
+import java.util.ArrayList
+import java.util.Collections
+import java.util.LinkedHashMap
 
 /**
  * ClickHouse JDBC V2 인증 방식을 나타냅니다.
@@ -162,16 +165,16 @@ class ClickHouseV2Options(
     rawProperties: Map<String, String> = emptyMap(),
 ): AbstractValueObject() {
     /** 외부 collection 변경과 분리된 immutable session role 목록입니다. */
-    val sessionDbRoles: List<String> = sessionDbRoles.toList()
+    val sessionDbRoles: List<String> = Collections.unmodifiableList(ArrayList(sessionDbRoles))
 
     /** 외부 map 변경과 분리된 immutable server settings입니다. */
-    val serverSettings: Map<String, String> = serverSettings.toMap()
+    val serverSettings: Map<String, String> = Collections.unmodifiableMap(LinkedHashMap(serverSettings))
 
     /** 외부 map 변경과 분리된 immutable custom headers입니다. */
-    val customHeaders: Map<String, String> = customHeaders.toMap()
+    val customHeaders: Map<String, String> = Collections.unmodifiableMap(LinkedHashMap(customHeaders))
 
     /** 외부 map 변경과 분리된 immutable raw properties입니다. */
-    val rawProperties: Map<String, String> = rawProperties.toMap()
+    val rawProperties: Map<String, String> = Collections.unmodifiableMap(LinkedHashMap(rawProperties))
 
     init {
         requirePositive("connectionTimeoutMillis", connectionTimeoutMillis)
@@ -208,16 +211,16 @@ class ClickHouseV2Options(
     }
 
     /** 외부 map/list 변경과 분리된 defensive copy를 반환합니다. */
-    val immutableSessionDbRoles: List<String> = sessionDbRoles
+    val immutableSessionDbRoles: List<String> = this.sessionDbRoles
 
     /** 외부 map 변경과 분리된 server settings copy입니다. */
-    val immutableServerSettings: Map<String, String> = serverSettings
+    val immutableServerSettings: Map<String, String> = this.serverSettings
 
     /** 외부 map 변경과 분리된 custom header copy입니다. */
-    val immutableCustomHeaders: Map<String, String> = customHeaders
+    val immutableCustomHeaders: Map<String, String> = this.customHeaders
 
     /** 외부 map 변경과 분리된 raw property copy입니다. */
-    val immutableRawProperties: Map<String, String> = rawProperties
+    val immutableRawProperties: Map<String, String> = this.rawProperties
 
     override fun equalProperties(other: Any): Boolean =
         other is ClickHouseV2Options && equalityComponents() == other.equalityComponents()
@@ -365,6 +368,8 @@ private val FORBIDDEN_RAW_KEYS = setOf(
     "user",
     "password",
     "database",
+    "query_id",
+    "clickhouse_setting_log_comment",
     "access_token",
     "bearer_token",
     "http_use_basic_auth",

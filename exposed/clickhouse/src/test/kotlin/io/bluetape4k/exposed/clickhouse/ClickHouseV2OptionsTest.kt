@@ -89,6 +89,67 @@ class ClickHouseV2OptionsTest {
     }
 
     @Test
+    fun `all collection inputs remain isolated from effective property mapping`() {
+        val roles = mutableListOf("role_a")
+        val serverSettings = mutableMapOf("max_threads" to "4")
+        val customHeaders = mutableMapOf("X-ClickHouse-User-Agent" to "bluetape/865")
+        val rawProperties = mutableMapOf("clickhouse_setting_custom" to "value")
+        val options = ClickHouseV2Options(
+            sessionDbRoles = roles,
+            serverSettings = serverSettings,
+            customHeaders = customHeaders,
+            rawProperties = rawProperties,
+        )
+
+        roles += "role_injected"
+        serverSettings["log_comment"] = "server-injected"
+        customHeaders["X-ClickHouse-User-Agent"] = "mutated"
+        rawProperties["clickhouse_setting_custom"] = "mutated"
+        rawProperties["clickhouse_setting_injected"] = "injected"
+
+        val properties = options.toEffectiveProperties("default", "")
+        properties.getProperty("session_db_roles") shouldBeEqualTo "role_a"
+        properties.getProperty("clickhouse_setting_max_threads") shouldBeEqualTo "4"
+        properties.getProperty("http_header_X-ClickHouse-User-Agent") shouldBeEqualTo "bluetape/865"
+        properties.getProperty("clickhouse_setting_custom") shouldBeEqualTo "value"
+        properties.containsKey("clickhouse_setting_injected").shouldBeFalse()
+        properties.containsKey("clickhouse_setting_log_comment").shouldBeFalse()
+    }
+
+    @Test
+    fun `collection views reject direct mutation`() {
+        val options = ClickHouseV2Options(
+            sessionDbRoles = listOf("role_a"),
+            serverSettings = mapOf("max_threads" to "4"),
+            customHeaders = mapOf("X-ClickHouse-User-Agent" to "bluetape/865"),
+            rawProperties = mapOf("clickhouse_setting_custom" to "value"),
+        )
+
+        assertFailsWith<UnsupportedOperationException> {
+            (options.sessionDbRoles as MutableList<String>).add("role_injected")
+        }
+        assertFailsWith<UnsupportedOperationException> {
+            (options.serverSettings as MutableMap<String, String>)["injected"] = "value"
+        }
+        assertFailsWith<UnsupportedOperationException> {
+            (options.customHeaders as MutableMap<String, String>)["X-ClickHouse-User-Agent"] = "mutated"
+        }
+        assertFailsWith<UnsupportedOperationException> {
+            (options.rawProperties as MutableMap<String, String>)["clickhouse_setting_injected"] = "value"
+        }
+    }
+
+    @Test
+    fun `raw query metadata stays owned by typed options`() {
+        assertFailsWith<IllegalArgumentException> {
+            ClickHouseV2Options(rawProperties = mapOf("query_id" to "raw-query"))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            ClickHouseV2Options(rawProperties = mapOf("clickhouse_setting_log_comment" to "raw-comment"))
+        }
+    }
+
+    @Test
     fun `session database roles reject comma delimiters`() {
         assertFailsWith<IllegalArgumentException> {
             ClickHouseV2Options(sessionDbRoles = listOf("role_a,role_b"))
